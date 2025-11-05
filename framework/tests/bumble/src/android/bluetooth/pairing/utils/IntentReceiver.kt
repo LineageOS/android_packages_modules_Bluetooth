@@ -302,7 +302,6 @@ class IntentReceiver private constructor(builder: Builder) {
          * Note: This is a helper function to be used in testStep functions where properties are
          * updated in the new builder instance, and then pushed to the parent instance.
          */
-        @JvmStatic
         fun update(parentIntentReceiver: IntentReceiver?, builder: Builder): IntentReceiver {
             if (parentIntentReceiver == null) return builder.build()
 

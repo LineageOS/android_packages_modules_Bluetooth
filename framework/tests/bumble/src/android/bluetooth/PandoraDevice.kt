@@ -45,15 +45,15 @@ import pandora.l2cap.L2CAPGrpc
 
 private const val TAG = "PandoraDevice"
 
-public final class PandoraDevice(
-    val networkAddress: String = "localhost",
+class PandoraDevice(
+    private val networkAddress: String = "localhost",
     private val port: Int = 7999,
 ) : ExternalResource() {
 
-    lateinit var publicBluetoothAddress: String
-    var channel: ManagedChannel? = null
+    private lateinit var publicBluetoothAddress: String
+    private var channel: ManagedChannel? = null
 
-    override protected fun before() {
+    protected override fun before() {
         Log.i(TAG, "factoryReset")
         // FactoryReset is killing the server and restarting all channels created before the server
         // restarted that cannot be reused
@@ -65,8 +65,7 @@ public final class PandoraDevice(
             stub.factoryReset(Empty.getDefaultInstance())
         } catch (e: StatusRuntimeException) {
             if (
-                e.getStatus().getCode() == Status.Code.CANCELLED ||
-                    e.getStatus().getCode() == Status.Code.UNAVAILABLE
+                e.status.code == Status.Code.CANCELLED || e.status.code == Status.Code.UNAVAILABLE
             ) {
                 // Server is shutting down, the call might be canceled with a CANCELLED or
                 // UNAVAILABLE status because the stream is closed.
@@ -107,7 +106,7 @@ public final class PandoraDevice(
         get() =
             ApplicationProvider.getApplicationContext<android.content.Context>()
                 .getSystemService(BluetoothManager::class.java)
-                .getAdapter()
+                .adapter
                 .getRemoteDevice(publicBluetoothAddress)
 
     /**
@@ -128,11 +127,10 @@ public final class PandoraDevice(
                 .setOwnAddressType(ownAddressType)
 
         if (serviceUuid != null) {
-            requestBuilder.setData(
+            requestBuilder.data =
                 HostProto.DataTypes.newBuilder()
                     .addCompleteServiceClassUuids128(serviceUuid.toString())
                     .build()
-            )
         }
 
         val cancellableContext = Context.current().withCancellation()
@@ -209,6 +207,6 @@ public final class PandoraDevice(
          *
          * @return PandoraDevice object
          */
-        @JvmStatic fun createSecondPandoraDevice() = PandoraDevice("localhost", 7998)
+        fun createSecondPandoraDevice() = PandoraDevice("localhost", 7998)
     }
 }
