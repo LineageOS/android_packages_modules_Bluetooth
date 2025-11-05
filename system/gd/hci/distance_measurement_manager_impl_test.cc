@@ -63,6 +63,11 @@ static constexpr uint8_t kMaxRetryCounterForCsEnable = 0x03;
 static constexpr uint8_t kConnInterval = 24;
 static constexpr uint16_t kMinProcedureInterval = 0x01;
 static constexpr uint16_t kCommandRetryIntervalMs = 300;
+// These are standalone constants from the original implementation file,
+// needed for validating the test expectations.
+static constexpr int kInvalidAzimuthAngleDegree = -1;
+static constexpr int kInvalidAltitudeAngleDegree = -91;
+static constexpr uint8_t KPacketNadmAttackUnlikely = 0x02;
 }  // namespace
 
 namespace bluetooth {
@@ -1884,6 +1889,52 @@ TEST_F(DistanceMeasurementManagerTest, ranging_hal_on_closed_after_started) {
 
   cs_requester_.sync_client_handler();
   cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
+}
+
+TEST_F(DistanceMeasurementManagerTest, ranging_hal_on_result_v2) {
+  // 1. Setup: Start a CS session so a tracker exists.
+  // This is the step that was missing before.
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+  cs_requester_.sync_client_handler();
+
+  // 2. Define the mock result from HAL
+  hal::RangingResult ranging_result;
+  ranging_result.result_meters_ = 10.5;
+  ranging_result.error_meters_ = 0.5;
+  ranging_result.confidence_level_ = 90;
+  ranging_result.delay_spread_meters_ = 1.2;
+  ranging_result.detected_attack_level_ = KPacketNadmAttackUnlikely;
+  ranging_result.velocity_meters_per_second_ = 0.1;
+  ranging_result.elapsed_timestamp_nanos_ = 123456789;  // Specific timestamp for V2
+
+  // 3. Set the expectation on the final callback
+  // We expect OnDistanceMeasurementResult to be called with:
+  // - Distances converted to centimeters (10.5m -> 1050cm)
+  // - The exact timestamp from the V2 HAL result
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+              OnDistanceMeasurementResult(
+                      params.responder_addr,
+                      static_cast<uint32_t>(ranging_result.result_meters_ * 100),  // 1050
+                      static_cast<uint32_t>(ranging_result.error_meters_ * 100),   // 50
+                      kInvalidAzimuthAngleDegree, kInvalidAzimuthAngleDegree,
+                      kInvalidAltitudeAngleDegree, kInvalidAltitudeAngleDegree,
+                      ranging_result.elapsed_timestamp_nanos_,  // V2 uses the provided timestamp
+                      ranging_result.confidence_level_,         // 90
+                      ranging_result.delay_spread_meters_,      // 1.2
+                      static_cast<DistanceMeasurementDetectedAttackLevel>(
+                              ranging_result.detected_attack_level_),  // NADM_ATTACK_UNLIKELY
+                      ranging_result.velocity_meters_per_second_,      // 0.1
+                      DistanceMeasurementMethod::METHOD_CS))
+          .Times(1);
+
+  // 4. Trigger the OnResult callback
+  // We get the registered callback from the mock HAL and invoke it.
+  cs_requester_.mock_ranging_hal_->GetRangingHalCallback()->OnResult(params.connection_handle,
+                                                                     ranging_result);
+
+  // 5. Synchronize handler to process the callback
+  cs_requester_.sync_client_handler();
 }
 
 }  // namespace

@@ -327,12 +327,13 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
       log::warn("Can't find CS tracker for connection_handle {}", connection_handle);
       return;
     }
-    log::debug("address {}, resultMeters {}", cs_requester_trackers_[connection_handle].address,
-               ranging_result.result_meters_);
     uint64_t elapsedRealtimeNanos = ::android::elapsedRealtimeNano();
-    if (is_hal_v2()) {
+    if (is_hal_v2() && ranging_result.elapsed_timestamp_nanos_ != 0) {
       elapsedRealtimeNanos = ranging_result.elapsed_timestamp_nanos_;
     }
+    log::info("address:{}, resultMeters:{}, confidence_level_:{}, elapsedRealtimeNanos:{}",
+              cs_requester_trackers_[connection_handle].address, ranging_result.result_meters_,
+              ranging_result.confidence_level_, elapsedRealtimeNanos);
     distance_measurement_callbacks_->OnDistanceMeasurementResult(
             cs_requester_trackers_[connection_handle].address, ranging_result.result_meters_ * 100,
             ranging_result.error_meters_ * 100, kInvalidAzimuthAngleDegree,
@@ -1721,6 +1722,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
         subevent_result->frequency_compensation_ = cs_event_result.GetFrequencyCompensation();
         subevent_result->reference_power_level_ = cs_event_result.GetReferencePowerLevel();
         subevent_result->num_antenna_paths_ = cs_event_result.GetNumAntennaPaths();
+        subevent_result->timestamp_nanos_ = ::android::elapsedRealtimeNano();
         procedure_data->procedure_data_v2_.local_subevent_data_.emplace_back(subevent_result);
       }
     } else {
