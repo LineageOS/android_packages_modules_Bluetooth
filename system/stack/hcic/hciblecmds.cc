@@ -711,7 +711,9 @@ void btsnd_hcic_ble_set_big_channel_map_classification_vsc(uint8_t action, uint8
   UINT8_TO_STREAM(pp, action);
   UINT8_TO_STREAM(pp, big_handle);
   UINT8_TO_STREAM(pp, handles.size());
-  ARRAY_TO_STREAM(pp, handles.data(), static_cast<int>(handles.size() * 2));
+  for (uint16_t handle : handles) {
+    UINT16_TO_STREAM(pp, handle);
+  }
 
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
