@@ -220,7 +220,7 @@ class HearingAidServiceBinder extends IBluetoothHearingAid.Stub implements IProf
 
         if (!Util.checkProfileAvailable(service, TAG)
                 || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
-                || !Utils.checkScanPermissionForDataDelivery(
+                || !Util.enforceScanPermissionForDataDelivery(
                         service, source, TAG, "getAdvertisementServiceData")) {
             return null;
         }

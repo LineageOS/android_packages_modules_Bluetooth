@@ -24,10 +24,10 @@ import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.ChangeIds.ENFORCE_CONNECT;
+import static com.android.bluetooth.Util.enforceScanPermissionForDataDelivery;
 import static com.android.bluetooth.Utils.callerIsSystem;
 import static com.android.bluetooth.Utils.callerIsSystemOrActiveOrManagedUser;
 import static com.android.bluetooth.Utils.checkConnectPermissionForDataDelivery;
-import static com.android.bluetooth.Utils.checkScanPermissionForDataDelivery;
 import static com.android.bluetooth.Utils.getBytesFromAddress;
 import static com.android.bluetooth.Utils.getUidPidString;
 
@@ -214,7 +214,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getScanMode")
-                || !checkScanPermissionForDataDelivery(service, source, TAG, "getScanMode")) {
+                || !enforceScanPermissionForDataDelivery(service, source, TAG, "getScanMode")) {
             return SCAN_MODE_NONE;
         }
 
@@ -226,7 +226,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setScanMode")
-                || !checkScanPermissionForDataDelivery(service, source, TAG, "setScanMode")) {
+                || !enforceScanPermissionForDataDelivery(service, source, TAG, "setScanMode")) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_SCAN_PERMISSION;
         }
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
@@ -247,7 +247,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getDiscoverableTimeout")
-                || !checkScanPermissionForDataDelivery(
+                || !enforceScanPermissionForDataDelivery(
                         service, source, TAG, "getDiscoverableTimeout")) {
             return -1;
         }
@@ -260,7 +260,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setDiscoverableTimeout")
-                || !checkScanPermissionForDataDelivery(
+                || !enforceScanPermissionForDataDelivery(
                         service, source, TAG, "setDiscoverableTimeout")) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_SCAN_PERMISSION;
         }
@@ -276,7 +276,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "startDiscovery")
-                || !checkScanPermissionForDataDelivery(service, source, TAG, "startDiscovery")) {
+                || !enforceScanPermissionForDataDelivery(service, source, TAG, "startDiscovery")) {
             return false;
         }
 
@@ -289,7 +289,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "cancelDiscovery")
-                || !checkScanPermissionForDataDelivery(service, source, TAG, "cancelDiscovery")) {
+                || !enforceScanPermissionForDataDelivery(service, source, TAG, "cancelDiscovery")) {
             return false;
         }
 
@@ -302,7 +302,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         AdapterService service = getService();
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "isDiscovering")
-                || !checkScanPermissionForDataDelivery(service, source, TAG, "isDiscovering")) {
+                || !enforceScanPermissionForDataDelivery(service, source, TAG, "isDiscovering")) {
             return false;
         }
 
@@ -1826,7 +1826,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (service == null
                 || !callerIsSystemOrActiveOrManagedUser(
                         service, TAG, "getOffloadedTransportDiscoveryDataScanSupported")
-                || !checkScanPermissionForDataDelivery(
+                || !enforceScanPermissionForDataDelivery(
                         service, source, TAG, "getOffloadedTransportDiscoveryDataScanSupported")) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_SCAN_PERMISSION;
         }

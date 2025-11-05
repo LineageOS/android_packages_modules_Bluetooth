@@ -17,6 +17,7 @@
 package com.android.bluetooth
 
 import android.Manifest.permission.BLUETOOTH_CONNECT
+import android.Manifest.permission.BLUETOOTH_SCAN
 import android.annotation.PermissionMethod
 import android.annotation.PermissionName
 import android.annotation.RequiresPermission
@@ -82,6 +83,23 @@ object Util {
             BluetoothDevice.TRANSPORT_LE -> "LE"
             else -> "Unknown transport ($transport)"
         }
+
+    /**
+     * Returns `true` if the [BLUETOOTH_SCAN] permission is granted for the calling app. Returns
+     * `false` if the result is a soft denial. Throws [SecurityException] if the result is a hard
+     * denial.
+     *
+     * Should be used in situations where data will be delivered and hence the app op should be
+     * noted.
+     */
+    @JvmStatic
+    @RequiresPermission(BLUETOOTH_SCAN)
+    fun enforceScanPermissionForDataDelivery(
+        context: Context,
+        source: AttributionSource,
+        tag: String,
+        method: String,
+    ) = enforcePermissionForDataDelivery(context, BLUETOOTH_SCAN, source, "$tag.$method()")
 
     /**
      * Returns `true` if the [BLUETOOTH_CONNECT] permission is granted for the calling app. Returns

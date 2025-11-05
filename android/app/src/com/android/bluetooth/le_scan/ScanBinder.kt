@@ -33,7 +33,7 @@ import android.bluetooth.le.ScanSettings
 import android.content.AttributionSource
 import android.os.WorkSource
 import android.util.Log
-import com.android.bluetooth.Utils.checkScanPermissionForDataDelivery
+import com.android.bluetooth.Util.enforceScanPermissionForDataDelivery
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.le_scan.ScanUtil.toStringShort
 
@@ -62,12 +62,8 @@ class ScanBinder(
 
     @RequiresPermission(BLUETOOTH_SCAN)
     private fun getController(source: AttributionSource, method: String): ScanController? {
-        if (
-            !isAvailable || !checkScanPermissionForDataDelivery(adapterService, source, TAG, method)
-        ) {
-            return null
-        }
-
+        if (!isAvailable) return null
+        if (!enforceScanPermissionForDataDelivery(adapterService, source, TAG, method)) return null
         return scanController
     }
 

@@ -475,20 +475,6 @@ public final class Utils {
     }
 
     /**
-     * Returns true if the BLUETOOTH_SCAN permission is granted for the calling app. Returns false
-     * if the result is a soft denial. Throws SecurityException if the result is a hard denial.
-     *
-     * <p>Should be used in situations where data will be delivered and hence the app op should be
-     * noted.
-     */
-    @RequiresPermission(BLUETOOTH_SCAN)
-    public static boolean checkScanPermissionForDataDelivery(
-            Context context, AttributionSource source, String tag, String method) {
-        return enforcePermissionForDataDelivery(
-                context, BLUETOOTH_SCAN, source, tag + "." + method + "()");
-    }
-
-    /**
      * Returns true if the BLUETOOTH_ADVERTISE permission is granted for the calling app. Returns
      * false if the result is a soft denial. Throws SecurityException if the result is a hard
      * denial.
