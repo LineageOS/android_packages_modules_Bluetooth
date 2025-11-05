@@ -20,6 +20,7 @@ import android.bluetooth.BluetoothDevice
 import android.util.Log
 import androidx.datastore.core.DataMigration
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.btservice.storage.DatabaseManager
 import com.android.bluetooth.btservice.storage.Metadata
 import com.android.bluetooth.btservice.storage.MetadataDatabase
 import com.google.protobuf.ByteString
@@ -58,6 +59,10 @@ class MigrationFromRoomDatabase(private val adapterService: AdapterService) :
         val activeHfpDevices = mutableListOf<String>()
 
         for (metadata in metadataList) {
+            if (metadata.address == DatabaseManager.LOCAL_STORAGE) {
+                Log.d(TAG, "Skipping legacy device: ${metadata.address}")
+                continue
+            }
             Log.d(TAG, "Migrating device: ${metadata.address}")
             val deviceBuilder = Device.newBuilder()
 
