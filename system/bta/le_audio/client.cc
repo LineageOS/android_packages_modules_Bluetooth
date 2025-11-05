@@ -7496,7 +7496,7 @@ private:
   alarm_t* close_vbc_timeout_;
   alarm_t* suspend_timeout_;
 
-  /* Reconfiguration guard to make sure reconfigration is not broken by unexpected Metadata change.
+  /* Reconfiguration guard to make sure reconfiguration is not broken by unexpected Metadata change.
    * When Reconfiguration is scheduled then
    * 1. BT stack remembers local directions which should be resumed after reconfiguration
    * 2. Blocks another reconfiguration until:
@@ -7513,8 +7513,6 @@ private:
   uint32_t cached_channel_timestamp_ = 0;
   bluetooth::le_audio::CodecInterface* cached_channel_ = nullptr;
 
-  base::WeakPtrFactory<LeAudioClientImpl> weak_factory_{this};
-
   std::map<int, GroupStreamStatus> lastNotifiedGroupStreamStatusMap_;
 
   /* This is used for the workaround with Pixel HIDL Audio HAL */
@@ -7522,6 +7520,11 @@ private:
 
   /* Assume that  Audio HAL can send empty metadata when tracks are closed */
   bool audio_hal_is_capable_to_send_empty_metadata_ = true;
+
+  // Member variables should appear before the WeakPtrFactory, to ensure
+  // that any WeakPtrs are invalidated before its members
+  // variable's destructors are executed, rendering them invalid.
+  base::WeakPtrFactory<LeAudioClientImpl> weak_factory_{this};
 
   void ClientAudioInterfaceRelease() {
     auto group = aseGroups_.FindById(active_group_id_);

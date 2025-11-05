@@ -69,6 +69,9 @@ struct eatt_impl {
   uint16_t max_mps_;
   tL2CAP_APPL_INFO reg_info_;
 
+  // Member variables should appear before the WeakPtrFactory, to ensure
+  // that any WeakPtrs are invalidated before its members
+  // variable's destructors are executed, rendering them invalid.
   base::WeakPtrFactory<eatt_impl> weak_factory_{this};
 
   eatt_impl() {

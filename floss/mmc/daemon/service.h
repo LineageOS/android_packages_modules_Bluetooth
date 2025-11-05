@@ -82,6 +82,9 @@ private:
                         std::unique_ptr<std::future<void>>>>
           thread_pool_;
 
+  // Member variables should appear before the WeakPtrFactory, to ensure
+  // that any WeakPtrs are invalidated before its members
+  // variable's destructors are executed, rendering them invalid.
   base::WeakPtrFactory<Service> weak_ptr_factory_;
 };
 

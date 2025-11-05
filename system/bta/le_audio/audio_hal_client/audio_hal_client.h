@@ -114,6 +114,9 @@ public:
     virtual void OnAudioMetadataUpdate(
             const std::vector<struct record_track_metadata_v7> sink_metadata) = 0;
 
+    // Member variables should appear before the WeakPtrFactory, to ensure
+    // that any WeakPtrs are invalidated before its members
+    // variable's destructors are executed, rendering them invalid.
     base::WeakPtrFactory<Callbacks> weak_factory_{this};
   };
 
@@ -157,6 +160,9 @@ public:
             const std::vector<struct playback_track_metadata_v7> source_metadata,
             DsaMode dsa_mode) = 0;
 
+    // Member variables should appear before the WeakPtrFactory, to ensure
+    // that any WeakPtrs are invalidated before its members
+    // variable's destructors are executed, rendering them invalid.
     base::WeakPtrFactory<Callbacks> weak_factory_{this};
   };
 

@@ -312,13 +312,16 @@ private:
   base::PlatformThreadId thread_id_;
   // Linux specific abstractions
   pid_t linux_tid_;
-  base::WeakPtrFactory<MessageLoopThread> weak_ptr_factory_;
   bool shutting_down_;
 
   os::Thread* handler_thread_;
   os::Handler* handler_;
   os::Thread::Priority handler_thread_priority_;
   static tBlockedThreads blocked_threads_;
+  // Member variables should appear before the WeakPtrFactory, to ensure
+  // that any WeakPtrs are invalidated before its members
+  // variable's destructors are executed, rendering them invalid.
+  base::WeakPtrFactory<MessageLoopThread> weak_ptr_factory_{this};
 };
 
 inline std::ostream& operator<<(std::ostream& os, const bluetooth::common::MessageLoopThread& a) {
