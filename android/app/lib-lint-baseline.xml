@@ -938,17 +938,6 @@
 
     <issue
         id="IncorrectRequiresPermissionPropagation"
-        message="Method `Utils.checkCallerHasNetworkSettingsPermission` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.NETWORK_SETTINGS]} but is only annotated with [none]."
-        errorLine1="    public static boolean checkCallerHasNetworkSettingsPermission(Context context) {"
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/Utils.java"
-            line="860"
-            column="27"/>
-    </issue>
-
-    <issue
-        id="IncorrectRequiresPermissionPropagation"
         message="Method `Utils.checkCallerHasNetworkSetupWizardPermission` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.NETWORK_SETUP_WIZARD]} but is only annotated with [none]."
         errorLine1="    public static boolean checkCallerHasNetworkSetupWizardPermission(Context context) {"
         errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">

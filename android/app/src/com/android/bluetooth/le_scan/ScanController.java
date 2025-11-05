@@ -1133,7 +1133,7 @@ public class ScanController {
             }
         }
         scanClient.setHasNetworkSettingsPermission(
-                Utils.checkCallerHasNetworkSettingsPermission(mAdapterService));
+                Util.checkCallerHasNetworkSettingsPermission(mAdapterService));
         scanClient.setHasNetworkSetupWizardPermission(
                 Utils.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
         scanClient.setHasScanWithoutLocationPermission(
@@ -1157,7 +1157,7 @@ public class ScanController {
                         Binder.getCallingUserHandle(),
                         true);
         scanClient.setHasNetworkSettingsPermission(
-                Utils.checkCallerHasNetworkSettingsPermission(mAdapterService));
+                Util.checkCallerHasNetworkSettingsPermission(mAdapterService));
         scanClient.setHasNetworkSetupWizardPermission(
                 Utils.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
         scanClient.setHasScanWithoutLocationPermission(
@@ -1251,7 +1251,7 @@ public class ScanController {
             }
         }
         app.setHasNetworkSettingsPermission(
-                Utils.checkCallerHasNetworkSettingsPermission(mAdapterService));
+                Util.checkCallerHasNetworkSettingsPermission(mAdapterService));
         app.setHasNetworkSetupWizardPermission(
                 Utils.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
         app.setHasScanWithoutLocationPermission(
