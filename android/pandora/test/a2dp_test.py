@@ -24,7 +24,25 @@ import numpy as np
 import time
 from unittest.mock import ANY
 
-from a2dp.packets.avdtp import *
+from a2dp.packets.avdtp import (
+    ErrorCode,
+    SeidInformation,
+    Tsep,
+    ServiceCategory,
+    MediaCodecCapability,
+    ServiceCapability,
+    MediaTransportCapability,
+    ContentProtectionCapability,
+    DelayReportingCapability,
+    OpenCommand,
+    OpenResponse,
+    StartCommand,
+    StartReject,
+    SuspendCommand,
+    SuspendReject,
+    DiscoverCommand,
+    DiscoverResponse,
+)
 from a2dp.signaling_channel import SignalingChannel
 from avatar import BumblePandoraDevice, PandoraDevice, PandoraDevices, pandora_snippet, enableFlag
 from bumble.a2dp import (
@@ -37,15 +55,13 @@ from bumble.a2dp import (
 from bumble.avctp import AVCTP_PSM
 from bumble.avdtp import (
     AVDTP_AUDIO_MEDIA_TYPE,
-    AVDTP_BAD_STATE_ERROR,
-    AVDTP_OPEN_STATE,
     AVDTP_PSM,
-    AVDTP_STREAMING_STATE,
     AVDTP_TSEP_SRC,
     Listener,
     MediaCodecCapabilities,
     Protocol,
     Stream,
+    State,
 )
 from bumble.l2cap import (
     L2CAP_SIGNALING_CID,
@@ -57,7 +73,6 @@ from bumble.l2cap import (
     L2CAP_Connection_Response,
 )
 from bumble.pairing import PairingDelegate
-from pandora_services import utils
 from google.protobuf import empty_pb2
 from mobly import base_test, test_runner, signals
 from mobly.asserts import assert_equal  # type: ignore
@@ -65,7 +80,6 @@ from mobly.asserts import assert_greater_equal  # type: ignore
 from mobly.asserts import assert_in  # type: ignore
 from mobly.asserts import assert_less_equal  # type: ignore
 from mobly.asserts import assert_raises  # type: ignore
-from mobly.asserts import fail  # type: ignore
 from pandora.a2dp_grpc_aio import A2DP
 from pandora.a2dp_pb2 import STEREO, CodecId, CodecParameters, Configuration, PlaybackAudioRequest, Source
 from pandora.host_pb2 import Connection, ConnectResponse
@@ -321,18 +335,18 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         # Connect AVDTP to RD1.
         dut_ref1_source = await open_source(self.dut_a2dp, dut_ref1)
         assert self.ref1_a2dp_sink is not None and self.ref1_a2dp_sink.stream is not None
-        assert_in(self.ref1_a2dp_sink.stream.state, [AVDTP_OPEN_STATE, AVDTP_STREAMING_STATE])
+        assert_in(self.ref1_a2dp_sink.stream.state, [State.OPEN, State.STREAMING])
 
         # Start streaming to RD1.
         await self.dut_a2dp.Start(source=dut_ref1_source)
 
         generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
         await self.dut_a2dp.PlaybackAudio(generated_audio)
-        assert_equal(self.ref1_a2dp_sink.stream.state, AVDTP_STREAMING_STATE)
+        assert_equal(self.ref1_a2dp_sink.stream.state, State.STREAMING)
 
         # Stop streaming to RD1.
         await self.dut_a2dp.Suspend(source=dut_ref1_source)
-        assert_equal(self.ref1_a2dp_sink.stream.state, AVDTP_OPEN_STATE)
+        assert_equal(self.ref1_a2dp_sink.stream.state, State.OPEN)
 
     @avatar.asynchronous
     async def test_signaling_channel_and_streaming(self) -> None:
@@ -430,7 +444,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         # Connect AVDTP to RD2.
         dut_ref2_source = await open_source(self.dut_a2dp, dut_ref2)
         assert self.ref2_a2dp_sink is not None and self.ref2_a2dp_sink.stream is not None
-        assert_in(self.ref2_a2dp_sink.stream.state, [AVDTP_OPEN_STATE, AVDTP_STREAMING_STATE])
+        assert_in(self.ref2_a2dp_sink.stream.state, [State.OPEN, State.STREAMING])
 
         # Get current codec status
         configurationResponse = await self.dut_a2dp.GetConfiguration(connection=dut_ref2)
@@ -470,7 +484,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         # Connect AVDTP to RD2.
         dut_ref2_source = await open_source(self.dut_a2dp, dut_ref2)
         assert self.ref2_a2dp_sink is not None and self.ref2_a2dp_sink.stream is not None
-        assert_in(self.ref2_a2dp_sink.stream.state, [AVDTP_OPEN_STATE, AVDTP_STREAMING_STATE])
+        assert_in(self.ref2_a2dp_sink.stream.state, [State.OPEN, State.STREAMING])
 
         # Get current codec status
         configurationResponse = await self.dut_a2dp.GetConfiguration(connection=dut_ref2)
@@ -504,7 +518,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         # Connect AVDTP to RD2.
         dut_ref2_source = await open_source(self.dut_a2dp, dut_ref2)
         assert self.ref2_a2dp_sink is not None and self.ref2_a2dp_sink.stream is not None
-        assert_in(self.ref2_a2dp_sink.stream.state, [AVDTP_OPEN_STATE, AVDTP_STREAMING_STATE])
+        assert_in(self.ref2_a2dp_sink.stream.state, [State.OPEN, State.STREAMING])
 
         # Get current codec status
         configurationResponse = await self.dut_a2dp.GetConfiguration(connection=dut_ref2)
@@ -741,7 +755,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
             accept_pairing(self.ref1, self.dut.address),
         )
 
-        def dut_open_source() -> None:
+        def dut_open_source() -> None:  # type: ignore[no-redef]
             self.dut_a2dp.OpenSource(connection=dut_ref1)
 
         # Retrieve Bumble connection object from Pandora connection token
@@ -1507,20 +1521,18 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         discover_rsp = await channel.initiate_discover()
         logger.debug(f"SEID information: {discover_rsp.seid_information}")
 
-        service_capabilities: list[ServiceCapability] = []
+        service_capabilities: list[list[ServiceCapability]] = []
         for seid in discover_rsp.seid_information:
             getcap_rsp = await channel.initiate_get_all_capabilities(seid_information=seid)
             service_capabilities.append(getcap_rsp.service_capabilities)
         assert_equal(len(service_capabilities), len(discover_rsp.seid_information))
         logger.debug(f"Service capabilities: {service_capabilities}")
 
-        acp_seid = 0
-        aac_configuration: ServiceCapability | None = None
-        for capabilities, seid_info in zip(service_capabilities, discover_rsp.seid_information):
-            if (capabilities[1].media_codec_type == A2DP_MPEG_2_4_AAC_CODEC_TYPE):
-                acp_seid = seid_info.acp_seid
-                aac_configuration = capabilities
-                break
+        acp_seid, aac_configuration = next(
+            (seid_info.acp_seid, capabilities)
+            for capabilities, seid_info in zip(service_capabilities, discover_rsp.seid_information)
+            if isinstance(capabilities[1], MediaCodecCapability) and
+            capabilities[1].media_codec_type == A2DP_MPEG_2_4_AAC_CODEC_TYPE)
 
         local_seid_information = [
             SeidInformation(acp_seid=0x01, tsep=Tsep.SINK, media_type=AVDTP_AUDIO_MEDIA_TYPE),

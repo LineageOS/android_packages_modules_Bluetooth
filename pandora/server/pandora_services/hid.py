@@ -714,7 +714,7 @@ class HIDService(HIDServicer):
             return
 
         recv_data = hid_pb2.ReportDataEvent()
-        recv_data.report_type = pdu[0] & 0x0F
+        recv_data.report_type = pdu[0] & 0x0F  # type: ignore
         recv_data.report_data = str(pdu[1:].hex())
 
         if self.hid_interrupt_data_queue:

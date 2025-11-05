@@ -31,7 +31,7 @@ from bumble.gatt import (
     CharacteristicValue,
     TemplateService,
 )
-from bumble.l2cap import Channel
+from bumble import l2cap
 from pandora_services import utils
 from bumble.utils import AsyncRunner
 from google.protobuf.empty_pb2 import Empty  # pytype: disable=pyi-error
@@ -142,7 +142,7 @@ class AshaGattService(TemplateService):
         )
 
         # Register an L2CAP CoC server
-        def on_coc(channel: Channel) -> None:
+        def on_coc(channel: l2cap.LeCreditBasedChannel) -> None:
 
             def on_data(data: bytes) -> None:
                 logging.debug(f"data received:{data.hex()}")
@@ -153,7 +153,8 @@ class AshaGattService(TemplateService):
             channel.sink = on_data
 
         # let the server find a free PSM
-        self.psm = self.device.register_l2cap_channel_server(self.psm, on_coc, 8)
+        self.psm = self.device.create_l2cap_server(
+            spec=l2cap.LeCreditBasedChannelSpec(psm=self.psm), handler=on_coc).psm
         self.le_psm_out_characteristic = Characteristic[bytes](
             GATT_ASHA_LE_PSM_OUT_CHARACTERISTIC,
             Characteristic.READ,
