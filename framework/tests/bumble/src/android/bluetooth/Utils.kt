@@ -43,30 +43,26 @@ fun Intent.getParcelUuidArray(key: String): Array<ParcelUuid> {
 object Utils {
     const val TAG = "Utils"
 
-    @JvmField val BUMBLE_DEVICE_NAME = "Bumble"
-    @JvmField val BUMBLE_DEVICE_NAME_2 = "Bumble_2"
+    const val BUMBLE_DEVICE_NAME = "Bumble"
+    const val BUMBLE_DEVICE_NAME_2 = "Bumble_2"
 
-    @JvmField val BUMBLE_RANDOM_ADDRESS = "51:F7:A8:75:AC:5E"
-    @JvmField val BUMBLE_RANDOM_ADDRESS_2 = "51:F7:A8:75:AC:5F"
+    const val BUMBLE_RANDOM_ADDRESS = "51:F7:A8:75:AC:5E"
+    const val BUMBLE_RANDOM_ADDRESS_2 = "51:F7:A8:75:AC:5F"
 
-    @JvmField val BUMBLE_IRK = base16().decode("1F66F4B5F0C742F807DD0DDBF64E9213")
+    val BUMBLE_IRK = base16().decode("1F66F4B5F0C742F807DD0DDBF64E9213")
 
-    @JvmStatic
     fun addressStringFromByteString(bs: ByteString) =
         bs.toByteArray().joinToString(":") { "%02X".format(it) }
 
-    @JvmStatic
     fun addressBytesFromString(address: String): ByteArray {
         return base16().upperCase().withSeparator(":", 2).decode(address.uppercase(Locale.US))
     }
 
-    @JvmStatic
     fun addresStringFromBytes(b: ByteArray): String {
         val reversedBytes = b.reversedArray()
         return reversedBytes.joinToString(separator = ":") { byte -> String.format("%02X", byte) }
     }
 
-    @JvmStatic
     fun uuidFromString(uuidString: String): UUID? {
         val baseUuidPostfix = "-0000-1000-8000-00805F9B34FB"
         return when (uuidString.length) {
@@ -87,8 +83,7 @@ object Utils {
     }
 
     fun intentLogger(tag: String, intent: Intent) {
-        val action = intent.getAction()
-        when (action) {
+        when (val action = intent.action) {
             BluetoothAdapter.ACTION_BLE_STATE_CHANGED,
             BluetoothAdapter.ACTION_STATE_CHANGED -> {
                 val fromState =
@@ -165,16 +160,14 @@ object Utils {
         }
     }
 
-    fun getAudioConnectionStateName(state: Int): String {
-        return when (state) {
+    fun getAudioConnectionStateName(state: Int) =
+        when (state) {
             BluetoothHeadset.STATE_AUDIO_DISCONNECTED -> "AUDIO_STATE_DISCONNECTED"
             BluetoothHeadset.STATE_AUDIO_CONNECTING -> "AUDIO_STATE_CONNECTING"
             BluetoothHeadset.STATE_AUDIO_CONNECTED -> "AUDIO_STATE_CONNECTED"
             else -> "STATE_UNKNOWN"
         }
-    }
 
-    @JvmStatic
     fun setupIntentLogger(tag: String, receiver: BroadcastReceiver) {
         doAnswer { invocation ->
                 intentLogger(tag, invocation.getArgument(1))

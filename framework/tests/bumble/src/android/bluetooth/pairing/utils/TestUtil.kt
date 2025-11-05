@@ -114,7 +114,6 @@ private constructor(
          * @param irk irk to be used for generating RPA
          * @return RPA address string
          */
-        @JvmStatic
         @Throws(Exception::class)
         fun generateRpa(irk: ByteArray?): String {
             if (irk == null) {
@@ -135,7 +134,6 @@ private constructor(
          *
          * @return A 3-byte array representing the PRAND.
          */
-        @JvmStatic
         fun generatePrand(): ByteArray {
             val secureRandom = SecureRandom()
             val prandBytesFull = ByteArray(6)
@@ -158,7 +156,6 @@ private constructor(
          * @param prand random bytes
          * @return Address hash byte array
          */
-        @JvmStatic
         @Throws(Exception::class)
         fun generateAddressHash(irk: ByteArray, prand: ByteArray): ByteArray {
             // Padding of 13 zero bytes
