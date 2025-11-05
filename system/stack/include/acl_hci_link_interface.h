@@ -31,10 +31,8 @@
 // This header contains functions for HCIF-Acl Management to invoke
 //
 void btm_connection_request(const RawAddress& bda, const bluetooth::hci::ClassOfDevice& cod);
-void btm_acl_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS status,
-                       uint8_t enc_mode);
 void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
-                             bool locally_initiated);
+                             bool locally_initiated, tHCI_ROLE role);
 void on_acl_br_edr_failed(const RawAddress& bda, tHCI_STATUS status, bool locally_initiated);
 void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle, tHCI_STATUS reason);
 void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr, tHCI_ROLE new_role);

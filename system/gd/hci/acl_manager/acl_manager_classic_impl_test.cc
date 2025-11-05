@@ -148,13 +148,14 @@ protected:
             LeSetRandomAddressCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
 
     ON_CALL(mock_connection_callback_, OnConnectSuccess)
-            .WillByDefault([this](std::unique_ptr<ClassicAclConnection> connection) {
-              connections_.push_back(std::move(connection));
-              if (connection_promise_ != nullptr) {
-                connection_promise_->set_value();
-                connection_promise_.reset();
-              }
-            });
+            .WillByDefault(
+                    [this](std::unique_ptr<ClassicAclConnection> connection, Role /* role */) {
+                      connections_.push_back(std::move(connection));
+                      if (connection_promise_ != nullptr) {
+                        connection_promise_->set_value();
+                        connection_promise_.reset();
+                      }
+                    });
   }
 
   void TearDown() override {

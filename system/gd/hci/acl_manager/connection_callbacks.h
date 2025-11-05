@@ -31,7 +31,7 @@ class ConnectionCallbacks {
 public:
   virtual ~ConnectionCallbacks() = default;
   // Invoked when controller sends Connection Complete event with Success error code
-  virtual void OnConnectSuccess(std::unique_ptr<ClassicAclConnection>) = 0;
+  virtual void OnConnectSuccess(std::unique_ptr<ClassicAclConnection>, Role role) = 0;
   // Invoked when controller sends Connection Request
   virtual void OnConnectRequest(Address, ClassOfDevice) = 0;
   // Invoked when controller sends Connection Complete event with non-Success error code

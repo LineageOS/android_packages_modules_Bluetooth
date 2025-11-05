@@ -32,7 +32,7 @@ namespace shim {
 
 typedef struct {
   void (*on_connected)(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
-                       bool locally_initiated);
+                       bool locally_initiated, tHCI_ROLE role);
   void (*on_connect_request)(const RawAddress& bda, const hci::ClassOfDevice&);
   void (*on_failed)(const RawAddress& bda, tHCI_STATUS status, bool locally_initiated);
   void (*on_disconnected)(tHCI_STATUS status, uint16_t handle, tHCI_STATUS reason);

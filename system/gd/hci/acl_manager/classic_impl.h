@@ -19,6 +19,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <memory>
 
@@ -360,19 +361,31 @@ public:
                     queue_down_end, handler_,
                     connection->GetEventCallbacks(
                             [this](uint16_t handle) { this->connections.invalidate(handle); }));
-    connections.execute(address, [=, this](ConnectionManagementCallbacks* callbacks) {
-      if (delayed_role_change_ == nullptr) {
-        callbacks->OnRoleChange(hci::ErrorCode::SUCCESS, current_role);
-      } else if (delayed_role_change_->GetBdAddr() == address) {
-        log::info("Sending delayed role change for {}", delayed_role_change_->GetBdAddr());
-        callbacks->OnRoleChange(delayed_role_change_->GetStatus(),
-                                delayed_role_change_->GetNewRole());
-        delayed_role_change_.reset();
-      }
-    });
+
+    if (!com_android_bluetooth_flags_remove_fake_role_change_event()) {
+      connections.execute(address, [=, this](ConnectionManagementCallbacks* callbacks) {
+        if (delayed_role_change_ == nullptr) {
+          log::info("Sending fake role change for {}", address);
+          callbacks->OnRoleChange(hci::ErrorCode::SUCCESS, current_role);
+        } else if (delayed_role_change_->GetBdAddr() == address) {
+          log::info("Sending delayed role change for {}", delayed_role_change_->GetBdAddr());
+          callbacks->OnRoleChange(delayed_role_change_->GetStatus(),
+                                  delayed_role_change_->GetNewRole());
+          delayed_role_change_.reset();
+        }
+      });
+    }
+
+    if (delayed_role_change_ != nullptr && delayed_role_change_->IsValid() &&
+        delayed_role_change_->GetBdAddr() == address) {
+      current_role = delayed_role_change_->GetNewRole();
+      log::verbose("{} Role had changed to {} prior to connection complete", address, current_role);
+      delayed_role_change_.reset();
+    }
+
     client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectSuccess,
                                            common::Unretained(client_callbacks_),
-                                           std::move(connection)));
+                                           std::move(connection), std::move(current_role)));
   }
 
   void on_connection_complete(EventView packet) {
