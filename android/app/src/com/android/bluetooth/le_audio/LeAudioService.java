@@ -1628,6 +1628,11 @@ public class LeAudioService extends ConnectableProfile {
             mBroadcastIdDeactivatedForUnicastTransition = Optional.empty();
         }
         mLeAudioBroadcasterNativeInterface.get().destroyBroadcast(broadcastId);
+
+        // CLEAR action does not require a sink device, as it applies to all sink devices
+        // associated with the BIG.
+        setBigChannelMapClassification(
+                SetBigChannelMapClassificationAction.CLEAR.getValue(), null, broadcastId);
     }
 
     /**
@@ -1653,11 +1658,6 @@ public class LeAudioService extends ConnectableProfile {
         LeAudioBroadcastDescriptor descriptor = mBroadcastDescriptors.get(broadcastId);
         if (descriptor == null) {
             Log.e(TAG, "No valid descriptor for broadcastId: " + broadcastId);
-            return;
-        }
-
-        if (action == SetBigChannelMapClassificationAction.NO_ACTION.getValue()) {
-            Log.e(TAG, "NO_ACTION for SetBigChannelMapClassification");
             return;
         }
 

@@ -30,11 +30,13 @@ import android.bluetooth.BluetoothLeBroadcastMetadata;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.bass_client.BassClientService.SetBigChannelMapClassificationAction;
 import com.android.bluetooth.btservice.AdapterService;
 
 /** LeAudio Native Interface to/from JNI. */
 public class LeAudioBroadcasterNativeInterface {
     private static final String TAG = LeAudioBroadcasterNativeInterface.class.getSimpleName();
+    private static final byte[] EMPTY_ADDRESS_BYTES = new byte[] {0, 0, 0, 0, 0, 0};
 
     private final AdapterService mAdapterService;
     private final LeAudioService mService;
@@ -210,7 +212,27 @@ public class LeAudioBroadcasterNativeInterface {
      * @param broadcastId The Broadcast ID.
      */
     void setBigChannelMapClassification(int action, BluetoothDevice sink, int broadcastId) {
-        setBigChannelMapClassificationNative(action, Utils.getByteAddress(sink), broadcastId);
+        if (action == SetBigChannelMapClassificationAction.NO_ACTION.getValue()) {
+            Log.e(TAG, "NO_ACTION for SetBigChannelMapClassification");
+            return;
+        }
+
+        if (action != SetBigChannelMapClassificationAction.CLEAR.getValue() && sink == null) {
+            Log.e(
+                    TAG,
+                    "Action "
+                            + SetBigChannelMapClassificationAction.toString(action)
+                            + " requires a non-null sink device, but sink is null.");
+            return;
+        }
+
+        byte[] sinkAddr;
+        if (action == SetBigChannelMapClassificationAction.CLEAR.getValue()) {
+            sinkAddr = EMPTY_ADDRESS_BYTES;
+        } else {
+            sinkAddr = Utils.getByteAddress(sink);
+        }
+        setBigChannelMapClassificationNative(action, sinkAddr, broadcastId);
     }
 
     // Native methods that call into the JNI interface
