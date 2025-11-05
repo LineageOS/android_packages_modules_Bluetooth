@@ -72,7 +72,7 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
 
         if (!Util.checkProfileAvailable(service, TAG)
                 || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
-                || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
+                || !Util.enforceConnectPermissionForDataDelivery(service, source, TAG)) {
             Log.w(TAG, "Hearing Access call not allowed for non-active user");
             return null;
         }

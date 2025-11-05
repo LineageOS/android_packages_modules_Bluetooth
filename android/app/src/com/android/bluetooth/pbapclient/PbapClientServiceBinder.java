@@ -65,7 +65,7 @@ class PbapClientServiceBinder extends IBluetoothPbapClient.Stub implements IProf
         }
 
         if (!Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
-                || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
+                || !Util.enforceConnectPermissionForDataDelivery(service, source, TAG)) {
             Log.w(TAG, "getService() failed, rejected due to permissions");
             return null;
         }

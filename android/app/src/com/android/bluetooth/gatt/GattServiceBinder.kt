@@ -32,6 +32,7 @@ import android.content.AttributionSource
 import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
+import com.android.bluetooth.Util
 import com.android.bluetooth.Util.checkProfileAvailable
 import com.android.bluetooth.Utils
 import com.android.bluetooth.gatt.GattUtil.isHidCharUuid
@@ -55,7 +56,7 @@ class GattServiceBinder(private var gattService: GattService?) :
     @RequiresPermission(BLUETOOTH_CONNECT)
     private fun getServiceAndEnforceConnect(source: AttributionSource): GattService? {
         val gatt = getGattService() ?: return null
-        if (!Utils.checkConnectPermissionForDataDelivery(gatt, source, TAG)) return null
+        if (!Util.enforceConnectPermissionForDataDelivery(gatt, source, TAG)) return null
         return gatt
     }
 
@@ -377,7 +378,12 @@ class GattServiceBinder(private var gattService: GattService?) :
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED
         }
         if (
-            !Utils.checkConnectPermissionForDataDelivery(service, source, TAG, "subrateModeRequest")
+            !Util.enforceConnectPermissionForDataDelivery(
+                service,
+                source,
+                TAG,
+                "subrateModeRequest",
+            )
         ) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION
         }

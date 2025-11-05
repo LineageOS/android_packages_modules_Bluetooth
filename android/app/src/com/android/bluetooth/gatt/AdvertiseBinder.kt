@@ -27,8 +27,8 @@ import android.bluetooth.le.IAdvertisingSetCallback
 import android.bluetooth.le.PeriodicAdvertisingParameters
 import android.content.AttributionSource
 import android.content.Context
+import com.android.bluetooth.Util
 import com.android.bluetooth.Util.checkProfileAvailable
-import com.android.bluetooth.Utils
 
 private const val TAG = GattUtil.TAG_PREFIX + "AdvertiseBinder"
 
@@ -51,7 +51,7 @@ class AdvertiseBinder(
         val gatt = gattService ?: return
         val manager = advertiseManager ?: return
         if (!gatt.checkProfileAvailable(TAG)) return
-        if (!Utils.checkAdvertisePermissionForDataDelivery(gatt, source, TAG)) return
+        if (!Util.enforceAdvertisePermissionForDataDelivery(gatt, source, TAG)) return
         manager.doOnAdvertiseThread { manager.block() }
     }
 

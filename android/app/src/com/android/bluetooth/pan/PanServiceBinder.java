@@ -57,7 +57,7 @@ class PanServiceBinder extends IBluetoothPan.Stub implements IProfileServiceBind
         }
         if (!Util.checkProfileAvailable(mService, TAG)
                 || !Utils.checkCallerIsSystemOrActiveOrManagedUser(mService, TAG)
-                || !Utils.checkConnectPermissionForDataDelivery(mService, source, TAG)) {
+                || !Util.enforceConnectPermissionForDataDelivery(mService, source, TAG)) {
             return null;
         }
         return mService;

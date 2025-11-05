@@ -18,8 +18,6 @@ package com.android.bluetooth;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
-import static android.Manifest.permission.BLUETOOTH_ADVERTISE;
-import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
 import static android.Manifest.permission.NETWORK_SETTINGS;
@@ -33,8 +31,6 @@ import static android.content.pm.PackageManager.GET_PERMISSIONS;
 import static android.content.pm.PackageManager.MATCH_UNINSTALLED_PACKAGES;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED;
-
-import static com.android.bluetooth.Util.enforcePermissionForDataDelivery;
 
 import static java.util.Objects.requireNonNull;
 
@@ -452,54 +448,6 @@ public final class Utils {
         return new AttributionSource.Builder(callingUid)
                 .setPackageName(context.getPackageManager().getPackagesForUid(callingUid)[0])
                 .build();
-    }
-
-    /**
-     * Returns true if the BLUETOOTH_CONNECT permission is granted for the calling app. Returns
-     * false if the result is a soft denial. Throws SecurityException if the result is a hard
-     * denial.
-     *
-     * <p>Should be used in situations where data will be delivered and hence the app op should be
-     * noted.
-     */
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    public static boolean checkConnectPermissionForDataDelivery(
-            Context context, AttributionSource source, String message) {
-        return enforcePermissionForDataDelivery(context, BLUETOOTH_CONNECT, source, message);
-    }
-
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    public static boolean checkConnectPermissionForDataDelivery(
-            Context context, AttributionSource source, String tag, String method) {
-        return checkConnectPermissionForDataDelivery(context, source, tag + "." + method + "()");
-    }
-
-    /**
-     * Returns true if the BLUETOOTH_SCAN permission is granted for the calling app. Returns false
-     * if the result is a soft denial. Throws SecurityException if the result is a hard denial.
-     *
-     * <p>Should be used in situations where data will be delivered and hence the app op should be
-     * noted.
-     */
-    @RequiresPermission(BLUETOOTH_SCAN)
-    public static boolean checkScanPermissionForDataDelivery(
-            Context context, AttributionSource source, String tag, String method) {
-        return enforcePermissionForDataDelivery(
-                context, BLUETOOTH_SCAN, source, tag + "." + method + "()");
-    }
-
-    /**
-     * Returns true if the BLUETOOTH_ADVERTISE permission is granted for the calling app. Returns
-     * false if the result is a soft denial. Throws SecurityException if the result is a hard
-     * denial.
-     *
-     * <p>Should be used in situations where data will be delivered and hence the app op should be
-     * noted.
-     */
-    @RequiresPermission(BLUETOOTH_ADVERTISE)
-    public static boolean checkAdvertisePermissionForDataDelivery(
-            Context context, AttributionSource source, String message) {
-        return enforcePermissionForDataDelivery(context, BLUETOOTH_ADVERTISE, source, message);
     }
 
     /**

@@ -60,7 +60,7 @@ class SapServiceBinder extends IBluetoothSap.Stub implements IProfileServiceBind
 
         if (!Util.checkProfileAvailable(service, TAG)
                 || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
-                || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
+                || !Util.enforceConnectPermissionForDataDelivery(service, source, TAG)) {
             return null;
         }
 
