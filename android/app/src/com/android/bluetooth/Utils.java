@@ -20,7 +20,6 @@ import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
-import static android.Manifest.permission.RADIO_SCAN_WITHOUT_LOCATION;
 import static android.Manifest.permission.RENOUNCE_PERMISSIONS;
 import static android.Manifest.permission.WRITE_SMS;
 import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringRunnable;
@@ -677,12 +676,6 @@ public final class Utils {
 
         Log.e(TAG, "Need ACCESS_FINE_LOCATION permission for " + currentAttribution);
         return false;
-    }
-
-    /** Returns true if the caller holds RADIO_SCAN_WITHOUT_LOCATION */
-    public static boolean checkCallerHasScanWithoutLocationPermission(Context context) {
-        return context.checkCallingOrSelfPermission(RADIO_SCAN_WITHOUT_LOCATION)
-                == PERMISSION_GRANTED;
     }
 
     public static boolean checkCallerHasPrivilegedPermission(Context context) {

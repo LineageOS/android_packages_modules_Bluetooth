@@ -21,6 +21,7 @@ import android.Manifest.permission.BLUETOOTH_CONNECT
 import android.Manifest.permission.BLUETOOTH_SCAN
 import android.Manifest.permission.NETWORK_SETTINGS
 import android.Manifest.permission.NETWORK_SETUP_WIZARD
+import android.Manifest.permission.RADIO_SCAN_WITHOUT_LOCATION
 import android.annotation.PermissionMethod
 import android.annotation.PermissionName
 import android.annotation.RequiresPermission
@@ -100,6 +101,12 @@ object Util {
     @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
     fun checkCallerHasNetworkSetupWizardPermission(context: Context) =
         context.checkCallingOrSelfPermission(NETWORK_SETUP_WIZARD) == PERMISSION_GRANTED
+
+    /** Returns `true` if the caller holds [RADIO_SCAN_WITHOUT_LOCATION] */
+    @JvmStatic
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
+    fun checkCallerHasScanWithoutLocationPermission(context: Context) =
+        context.checkCallingOrSelfPermission(RADIO_SCAN_WITHOUT_LOCATION) == PERMISSION_GRANTED
 
     /**
      * Returns `true` if the [BLUETOOTH_ADVERTISE] permission is granted for the calling app.

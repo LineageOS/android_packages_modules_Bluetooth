@@ -1137,7 +1137,7 @@ public class ScanController {
         scanClient.setHasNetworkSetupWizardPermission(
                 Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
         scanClient.setHasScanWithoutLocationPermission(
-                Utils.checkCallerHasScanWithoutLocationPermission(mAdapterService));
+                Util.checkCallerHasScanWithoutLocationPermission(mAdapterService));
         scanClient.setAssociatedDevices(getAssociatedDevices(callingPackage));
 
         dispatchStartScan(scannerId, settings, filters, scanClient);
@@ -1161,7 +1161,7 @@ public class ScanController {
         scanClient.setHasNetworkSetupWizardPermission(
                 Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
         scanClient.setHasScanWithoutLocationPermission(
-                Utils.checkCallerHasScanWithoutLocationPermission(mAdapterService));
+                Util.checkCallerHasScanWithoutLocationPermission(mAdapterService));
         scanClient.setAssociatedDevices(Collections.emptyList());
 
         dispatchStartScan(scannerId, settings, filters, scanClient);
@@ -1255,7 +1255,7 @@ public class ScanController {
         app.setHasNetworkSetupWizardPermission(
                 Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
         app.setHasScanWithoutLocationPermission(
-                Utils.checkCallerHasScanWithoutLocationPermission(mAdapterService));
+                Util.checkCallerHasScanWithoutLocationPermission(mAdapterService));
         app.setAssociatedDevices(getAssociatedDevices(callingPackage));
 
         mScanManager.registerScanner(uuid);
