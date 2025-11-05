@@ -28,6 +28,7 @@
 
 #include <cerrno>
 #include <cstring>
+#include <utility>
 
 #include "mmc/daemon/constants.h"
 #include "mmc/metrics/mmc_rtt_logger.h"
@@ -69,7 +70,7 @@ CodecClient::CodecClient() {
   // Set up DBus connection.
   dbus::Bus::Options options;
   options.bus_type = dbus::Bus::SYSTEM;
-  bus_ = new dbus::Bus(options);
+  bus_ = new dbus::Bus(std::move(options));
 
   if (!bus_->Connect()) {
     log::error("Failed to connect system bus");
