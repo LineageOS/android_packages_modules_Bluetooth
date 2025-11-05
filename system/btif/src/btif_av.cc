@@ -4111,7 +4111,6 @@ static void btif_debug_av_sink_dump(int fd) {
   }
   dprintf(fd, "  Active peer: %s\n",
           btif_av_sink.ActivePeer().ToRedactedStringForLogging().c_str());
-  dprintf(fd, "  Peers:\n");
   btif_av_sink.DumpPeersInfo(fd);
 }
 
