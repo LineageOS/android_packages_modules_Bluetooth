@@ -394,12 +394,7 @@ public class BassClientService extends ConnectableProfile {
                 if (!mCachedBroadcasts.containsKey(broadcastId)) {
                     Log.d(TAG, "selectBroadcastSource: broadcastId " + broadcastId);
                     mCachedBroadcasts.put(broadcastId, result);
-                    if (Flags.scanControllerThread()) {
-                        mHandler.post(
-                                () -> addSelectSourceRequest(broadcastId, /* hasPriority */ false));
-                    } else {
-                        addSelectSourceRequest(broadcastId, /* hasPriority */ false);
-                    }
+                    addSelectSourceRequest(broadcastId, /* hasPriority */ false);
                 } else {
                     if (mTimeoutHandler.isStarted(broadcastId, MESSAGE_SYNC_LOST_TIMEOUT)) {
                         mTimeoutHandler.stop(broadcastId, MESSAGE_SYNC_LOST_TIMEOUT);
@@ -409,14 +404,7 @@ public class BassClientService extends ConnectableProfile {
                     if (isOorMonitoringPauseReason(broadcastId)
                             || (leaudioBroadcastImproveSourceOperations()
                                     && isWaitingForPast(broadcastId))) {
-                        if (Flags.scanControllerThread()) {
-                            mHandler.post(
-                                    () ->
-                                            addSelectSourceRequest(
-                                                    broadcastId, /* hasPriority */ true));
-                        } else {
-                            addSelectSourceRequest(broadcastId, /* hasPriority */ true);
-                        }
+                        addSelectSourceRequest(broadcastId, /* hasPriority */ true);
                     }
                 }
             }
@@ -3475,8 +3463,12 @@ public class BassClientService extends ConnectableProfile {
                         return false;
                     }
                     var periodicAdvertisingCallback = mPeriodicAdvCallbacksMap.get(syncHandle);
-                    scanController.doOnScanThread(
-                            () -> scanController.unregisterSync(periodicAdvertisingCallback));
+                    if (scanController.isOnScanThread()) {
+                        scanController.unregisterSync(periodicAdvertisingCallback);
+                    } else {
+                        scanController.doOnScanThread(
+                                () -> scanController.unregisterSync(periodicAdvertisingCallback));
+                    }
                 } else {
                     Log.d(TAG, "calling unregisterSync, not found syncHandle: " + syncHandle);
                 }
@@ -3788,14 +3780,23 @@ public class BassClientService extends ConnectableProfile {
                     handleSelectSourceRequest();
                     return;
                 }
-                scanController.doOnScanThread(
-                        () ->
-                                scanController.registerSync(
-                                        paResult.getDevice(),
-                                        paResult.getAdvSid(),
-                                        0,
-                                        BassConstants.PSYNC_TIMEOUT,
-                                        paCb));
+                if (scanController.isOnScanThread()) {
+                    scanController.registerSync(
+                            paResult.getDevice(),
+                            paResult.getAdvSid(),
+                            0,
+                            BassConstants.PSYNC_TIMEOUT,
+                            paCb);
+                } else {
+                    scanController.doOnScanThread(
+                            () ->
+                                    scanController.registerSync(
+                                            paResult.getDevice(),
+                                            paResult.getAdvSid(),
+                                            0,
+                                            BassConstants.PSYNC_TIMEOUT,
+                                            paCb));
+                }
             } else {
                 try {
                     mPeriodicAdvertisingManager.registerSync(
