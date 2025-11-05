@@ -24,7 +24,7 @@ package com.android.bluetooth.util
  * @param width Optional width. If null, width is calculated dynamically.
  * @param value Extracts cell content from a data object.
  */
-data class Column<T>(val header: String, val width: Int? = null, val value: (T) -> String)
+data class Column<T>(val header: String, val width: Int? = null, val value: (T) -> Any)
 
 fun <T> Iterable<T>.toTable(vararg columns: Column<T>) = toTable(columns.toList())
 
@@ -51,17 +51,28 @@ fun <T> Iterable<T>.toTable(columns: List<Column<T>>): String {
     val colWidths =
         columns.map { column ->
             column.width
-                ?: maxOf(column.header.length, data.maxOfOrNull { column.value(it).length } ?: 0)
+                ?: maxOf(
+                    column.header.length,
+                    data.maxOfOrNull { column.value(it).toString().length } ?: 0,
+                )
         }
 
     return buildString {
         // Headers
-        appendLine(columns.zip(colWidths) { c, w -> c.header.padEnd(w) }.joinToString(" "))
+        appendLine(
+            columns
+                .zip(colWidths) { column, width -> column.header.padEnd(width) }
+                .joinToString(" ")
+        )
         // Separators
-        appendLine(colWidths.joinToString(" ") { "-".repeat(it) })
+        appendLine(colWidths.joinToString(" ") { width -> "-".repeat(width) })
         // Values
         data.forEach {
-            appendLine(columns.zip(colWidths) { c, w -> c.value(it).padEnd(w) }.joinToString(" "))
+            appendLine(
+                columns
+                    .zip(colWidths) { column, width -> column.value(it).toString().padEnd(width) }
+                    .joinToString(" ")
+            )
         }
     }
 }

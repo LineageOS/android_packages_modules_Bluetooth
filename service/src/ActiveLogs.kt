@@ -95,7 +95,7 @@ class ActiveLogs {
                 .toTable(
                     Column("TIMESTAMP", width = 18) { Log.timeToStringWithZone(it.timestamp) },
                     Column("ACTION", width = 10) { it.action },
-                    Column("REASON", width = 20) { it.reason.toString() },
+                    Column("REASON", width = 20) { it.reason },
                     Column("PACKAGE") { it.packageName },
                 )
                 .indent("  ")
