@@ -678,10 +678,6 @@ public final class Utils {
         return false;
     }
 
-    public static boolean checkCallerHasPrivilegedPermission(Context context) {
-        return context.checkCallingOrSelfPermission(BLUETOOTH_PRIVILEGED) == PERMISSION_GRANTED;
-    }
-
     public static boolean checkCallerHasWriteSmsPermission(Context context) {
         return context.checkCallingOrSelfPermission(WRITE_SMS) == PERMISSION_GRANTED;
     }

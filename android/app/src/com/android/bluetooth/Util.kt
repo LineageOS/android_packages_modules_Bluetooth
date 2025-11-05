@@ -18,6 +18,7 @@ package com.android.bluetooth
 
 import android.Manifest.permission.BLUETOOTH_ADVERTISE
 import android.Manifest.permission.BLUETOOTH_CONNECT
+import android.Manifest.permission.BLUETOOTH_PRIVILEGED
 import android.Manifest.permission.BLUETOOTH_SCAN
 import android.Manifest.permission.NETWORK_SETTINGS
 import android.Manifest.permission.NETWORK_SETUP_WIZARD
@@ -107,6 +108,12 @@ object Util {
     @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
     fun checkCallerHasScanWithoutLocationPermission(context: Context) =
         context.checkCallingOrSelfPermission(RADIO_SCAN_WITHOUT_LOCATION) == PERMISSION_GRANTED
+
+    /** Returns `true` if the caller holds [BLUETOOTH_PRIVILEGED] */
+    @JvmStatic
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
+    fun checkCallerHasPrivilegedPermission(context: Context) =
+        context.checkCallingOrSelfPermission(BLUETOOTH_PRIVILEGED) == PERMISSION_GRANTED
 
     /**
      * Returns `true` if the [BLUETOOTH_ADVERTISE] permission is granted for the calling app.

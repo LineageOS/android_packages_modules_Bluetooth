@@ -938,17 +938,6 @@
 
     <issue
         id="IncorrectRequiresPermissionPropagation"
-        message="Method `Utils.checkCallerHasPrivilegedPermission` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with [none]."
-        errorLine1="    public static boolean checkCallerHasPrivilegedPermission(Context context) {"
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/Utils.java"
-            line="875"
-            column="27"/>
-    </issue>
-
-    <issue
-        id="IncorrectRequiresPermissionPropagation"
         message="Method `Utils.checkCallerHasWriteSmsPermission` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.WRITE_SMS]} but is only annotated with [none]."
         errorLine1="    public static boolean checkCallerHasWriteSmsPermission(Context context) {"
         errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">

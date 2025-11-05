@@ -975,7 +975,7 @@ public class ScanController {
         var appScanStats = mScannerMap.getAppScanStatsByUid(uid);
         if (appScanStats != null
                 && appScanStats.isScanningTooFrequently()
-                && !Utils.checkCallerHasPrivilegedPermission(mAdapterService)) {
+                && !Util.checkCallerHasPrivilegedPermission(mAdapterService)) {
             Log.e(TAG, "registerScanner(): " + appScanStats + " is scanning too frequently");
             try {
                 callback.onScannerRegistered(ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY, -1);
@@ -998,7 +998,7 @@ public class ScanController {
         var appScanStats = mScannerMap.getAppScanStatsByUid(uid);
         if (appScanStats != null
                 && appScanStats.isScanningTooFrequently()
-                && !Utils.checkCallerHasPrivilegedPermission(mAdapterService)) {
+                && !Util.checkCallerHasPrivilegedPermission(mAdapterService)) {
             Log.e(TAG, "registerAndStartScan(): " + appScanStats + " is scanning too frequently");
             try {
                 callback.onScannerRegistered(ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY, -1);
