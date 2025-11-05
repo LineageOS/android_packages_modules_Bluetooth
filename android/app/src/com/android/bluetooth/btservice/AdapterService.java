@@ -2800,7 +2800,7 @@ public class AdapterService extends Service {
         }
         if (Util.checkCallerHasNetworkSettingsPermission(this)) {
             permission = android.Manifest.permission.NETWORK_SETTINGS;
-        } else if (Utils.checkCallerHasNetworkSetupWizardPermission(this)) {
+        } else if (Util.checkCallerHasNetworkSetupWizardPermission(this)) {
             permission = android.Manifest.permission.NETWORK_SETUP_WIZARD;
         } else if (!hasDisavowedLocation) {
             if (isQApp) {

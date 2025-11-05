@@ -20,6 +20,7 @@ import android.Manifest.permission.BLUETOOTH_ADVERTISE
 import android.Manifest.permission.BLUETOOTH_CONNECT
 import android.Manifest.permission.BLUETOOTH_SCAN
 import android.Manifest.permission.NETWORK_SETTINGS
+import android.Manifest.permission.NETWORK_SETUP_WIZARD
 import android.annotation.PermissionMethod
 import android.annotation.PermissionName
 import android.annotation.RequiresPermission
@@ -93,6 +94,12 @@ object Util {
     @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
     fun checkCallerHasNetworkSettingsPermission(context: Context) =
         context.checkCallingOrSelfPermission(NETWORK_SETTINGS) == PERMISSION_GRANTED
+
+    /** Returns `true` if the caller holds [NETWORK_SETUP_WIZARD] */
+    @JvmStatic
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
+    fun checkCallerHasNetworkSetupWizardPermission(context: Context) =
+        context.checkCallingOrSelfPermission(NETWORK_SETUP_WIZARD) == PERMISSION_GRANTED
 
     /**
      * Returns `true` if the [BLUETOOTH_ADVERTISE] permission is granted for the calling app.

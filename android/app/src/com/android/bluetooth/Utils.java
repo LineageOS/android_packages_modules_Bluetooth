@@ -20,7 +20,6 @@ import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
-import static android.Manifest.permission.NETWORK_SETUP_WIZARD;
 import static android.Manifest.permission.RADIO_SCAN_WITHOUT_LOCATION;
 import static android.Manifest.permission.RENOUNCE_PERMISSIONS;
 import static android.Manifest.permission.WRITE_SMS;
@@ -678,11 +677,6 @@ public final class Utils {
 
         Log.e(TAG, "Need ACCESS_FINE_LOCATION permission for " + currentAttribution);
         return false;
-    }
-
-    /** Returns true if the caller holds NETWORK_SETUP_WIZARD */
-    public static boolean checkCallerHasNetworkSetupWizardPermission(Context context) {
-        return context.checkCallingOrSelfPermission(NETWORK_SETUP_WIZARD) == PERMISSION_GRANTED;
     }
 
     /** Returns true if the caller holds RADIO_SCAN_WITHOUT_LOCATION */
