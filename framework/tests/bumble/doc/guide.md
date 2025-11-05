@@ -95,17 +95,17 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
 
-@RunWith(AndroidJUnit4::class)
-public class DckTest {
-  private val TAG = "DckTest"
+private const val TAG = "DckTest"
 
+@RunWith(AndroidJUnit4::class)
+class DckTest {
   // A Rule live from a test setup through it's teardown.
   // Gives shell permissions during the test.
-  @Rule @JvmField val mPermissionRule = AdoptShellPermissionsRule()
+  @Rule @JvmField val permissionRule = AdoptShellPermissionsRule()
 
   // Setup a Bumble Pandora device for the duration of the test.
   // Acting as a Pandora client, it can be interacted with through the Pandora APIs.
-  @Rule @JvmField val mBumble = PandoraDevice()
+  @Rule @JvmField val bumble = PandoraDevice()
 
   @Test
   fun testDiscoverDkGattService() {
@@ -123,7 +123,7 @@ the Dck Gatt service.
 //- `dckBlocking()` is likely a stub accessing the DCK service over gRPC in a synchronous manner.
 //- `withDeadline(Deadline.after(TIMEOUT, TimeUnit.MILLISECONDS))` sets a timeout for the call.
 //- `register(Empty.getDefaultInstance())` communicates our registration to the server.
-mBumble
+bumble
     .dckBlocking()
     .withDeadline(Deadline.after(TIMEOUT, TimeUnit.MILLISECONDS))
     .register(Empty.getDefaultInstance())
@@ -135,7 +135,7 @@ If our device wants to be discoverable and indicate its capabilities, it would "
 capabilities. Here, it's done via another gRPC call.
 
 ```kotlin
-mBumble
+bumble
     .hostBlocking()
     .advertise(
         AdvertiseRequest.newBuilder()

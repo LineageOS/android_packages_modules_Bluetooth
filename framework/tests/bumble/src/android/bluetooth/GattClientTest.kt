@@ -68,8 +68,7 @@ class GattClientTest {
     @get:Rule(order = 2) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val manager: BluetoothManager = context.getSystemService(BluetoothManager::class.java)
-    private val adapter: BluetoothAdapter = manager.adapter
+    private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
 
     private lateinit var host: Host
     private lateinit var remoteLeDevice: BluetoothDevice

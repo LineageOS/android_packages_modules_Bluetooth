@@ -98,6 +98,8 @@ import pandora.HidProto.ServiceRequest
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.OwnAddressType
 
+private const val TAG = "HidHostDualModeTest"
+
 /** Test cases for [BluetoothHidHost]. */
 @SuppressLint("MissingPermission")
 @RunWith(AndroidJUnit4::class)
@@ -494,7 +496,6 @@ class HidHostDualModeTest {
     }
 
     companion object {
-        private val TAG = HidHostDualModeTest::class.java.simpleName
         private val INTENT_TIMEOUT = Duration.ofSeconds(10)
         private const val REPORT_UPDATE_TIMEOUT_MS = 100L
         private const val KEYBD_RPT_ID = 1

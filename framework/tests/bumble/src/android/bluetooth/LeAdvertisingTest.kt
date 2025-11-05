@@ -36,6 +36,8 @@ import org.junit.runner.RunWith
 import pandora.HostProto.ScanRequest
 import pandora.HostProto.ScanningResponse
 
+private const val TAG = "LeAdvertisingTest"
+
 /** Test cases for [AdvertiseManager]. */
 @RunWith(AndroidJUnit4::class)
 class LeAdvertisingTest {
@@ -86,7 +88,6 @@ class LeAdvertisingTest {
     }
 
     companion object {
-        private val TAG = LeAdvertisingTest::class.java.simpleName
         private const val TIMEOUT_ADVERTISING_MS = 1000L
 
         private fun startAdvertising(): CompletableFuture<Pair<String, Int>> {

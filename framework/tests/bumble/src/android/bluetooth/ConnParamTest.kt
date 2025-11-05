@@ -56,36 +56,35 @@ class ConnParamTest {
 
     @get:Rule(order = 1) val bumble = PandoraDevice()
 
-    @get:Rule(order = 2) val mEnableBluetoothRule = EnableBluetoothRule(false, true)
+    @get:Rule(order = 2) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
-    private val mContext: Context = ApplicationProvider.getApplicationContext()
-    private val mManager: BluetoothManager = mContext.getSystemService(BluetoothManager::class.java)
-    private val mAdapter: BluetoothAdapter = mManager.adapter
+    private val context = ApplicationProvider.getApplicationContext<Context>()
+    private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
 
-    private lateinit var mHost: Host
-    private lateinit var mRemoteLeDevice: BluetoothDevice
+    private lateinit var host: Host
+    private lateinit var remoteLeDevice: BluetoothDevice
 
     @Before
     fun setUp() {
         InstrumentationRegistry.getInstrumentation().uiAutomation.adoptShellPermissionIdentity()
 
-        mHost = Host(mContext)
-        mRemoteLeDevice =
-            mAdapter.getRemoteLeDevice(
+        host = Host(context)
+        remoteLeDevice =
+            adapter.getRemoteLeDevice(
                 Utils.BUMBLE_RANDOM_ADDRESS,
                 BluetoothDevice.ADDRESS_TYPE_RANDOM,
             )
-        mRemoteLeDevice.removeBond()
+        remoteLeDevice.removeBond()
     }
 
     @After
     fun tearDown() {
         InstrumentationRegistry.getInstrumentation().uiAutomation.dropShellPermissionIdentity()
-        val bondedDevices = mAdapter.bondedDevices
-        if (bondedDevices.contains(mRemoteLeDevice)) {
-            mHost.removeBondAndVerify(mRemoteLeDevice)
+        val bondedDevices = adapter.bondedDevices
+        if (bondedDevices.contains(remoteLeDevice)) {
+            host.removeBondAndVerify(remoteLeDevice)
         }
-        mHost.close()
+        host.close()
     }
 
     @RequiresFlagsEnabled(Flags.FLAG_INITIAL_CONN_PARAMS_P1)
@@ -124,7 +123,7 @@ class ConnParamTest {
     @Test
     fun connParamsAreRelaxedForBondedDevice_withBluetoothRestart() {
         checkAggressiveConnectionWillBeUsed()
-        createLeBondAndWaitBonding(mRemoteLeDevice)
+        createLeBondAndWaitBonding(remoteLeDevice)
 
         // Turn BT off, and then turn it on
         assertThat(BlockingBluetoothAdapter.disable(false)).isTrue()
@@ -166,7 +165,7 @@ class ConnParamTest {
 
         val observer = advertiseWithBumble()
 
-        val gatt = mRemoteLeDevice.connectGatt(mContext, autoConnect, callback)
+        val gatt = remoteLeDevice.connectGatt(context, autoConnect, callback)
         verify(callback, timeout(1000)).onConnectionStateChange(eq(gatt), eq(status), eq(state))
         observer.cancel("Canceling advertisement")
 
@@ -191,7 +190,7 @@ class ConnParamTest {
 
     private fun createLeBondAndWaitBonding(device: BluetoothDevice) {
         val observer = advertiseWithBumble()
-        mHost.createBondAndVerify(device)
+        host.createBondAndVerify(device)
         observer.cancel("Canceling advertisement")
     }
 
