@@ -1588,6 +1588,11 @@ public class LeAudioService extends ConnectableProfile {
             return;
         }
 
+        // CLEAR action does not require a sink device, as it applies to all sink devices
+        // associated with the BIG.
+        setBigChannelMapClassification(
+                SetBigChannelMapClassificationAction.CLEAR.getValue(), null, broadcastId);
+
         Log.d(TAG, "stopBroadcast");
 
         // log group size before stop
@@ -1628,11 +1633,6 @@ public class LeAudioService extends ConnectableProfile {
             mBroadcastIdDeactivatedForUnicastTransition = Optional.empty();
         }
         mLeAudioBroadcasterNativeInterface.get().destroyBroadcast(broadcastId);
-
-        // CLEAR action does not require a sink device, as it applies to all sink devices
-        // associated with the BIG.
-        setBigChannelMapClassification(
-                SetBigChannelMapClassificationAction.CLEAR.getValue(), null, broadcastId);
     }
 
     /**
