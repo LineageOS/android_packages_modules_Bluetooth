@@ -23,6 +23,7 @@ import android.Manifest.permission.BLUETOOTH_SCAN
 import android.Manifest.permission.NETWORK_SETTINGS
 import android.Manifest.permission.NETWORK_SETUP_WIZARD
 import android.Manifest.permission.RADIO_SCAN_WITHOUT_LOCATION
+import android.Manifest.permission.WRITE_SMS
 import android.annotation.PermissionMethod
 import android.annotation.PermissionName
 import android.annotation.RequiresPermission
@@ -114,6 +115,12 @@ object Util {
     @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
     fun checkCallerHasPrivilegedPermission(context: Context) =
         context.checkCallingOrSelfPermission(BLUETOOTH_PRIVILEGED) == PERMISSION_GRANTED
+
+    /** Returns `true` if the caller holds [WRITE_SMS] */
+    @JvmStatic
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
+    fun checkCallerHasWriteSmsPermission(context: Context): Boolean =
+        context.checkCallingOrSelfPermission(WRITE_SMS) == PERMISSION_GRANTED
 
     /**
      * Returns `true` if the [BLUETOOTH_ADVERTISE] permission is granted for the calling app.

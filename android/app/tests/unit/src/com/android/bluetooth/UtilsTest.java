@@ -140,7 +140,7 @@ public class UtilsTest {
         try {
             var source = context.getAttributionSource();
             Util.enforceAdvertisePermissionForDataDelivery(context, source, "message");
-            Utils.checkCallerHasWriteSmsPermission(context);
+            Util.checkCallerHasWriteSmsPermission(context);
             Util.enforceConnectPermissionForPreflight(context, source);
         } catch (SecurityException e) {
             // SecurityException could happen.

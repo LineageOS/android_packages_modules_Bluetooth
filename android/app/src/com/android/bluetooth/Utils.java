@@ -21,7 +21,6 @@ import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
 import static android.Manifest.permission.RENOUNCE_PERMISSIONS;
-import static android.Manifest.permission.WRITE_SMS;
 import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringRunnable;
 import static android.bluetooth.BluetoothUtils.USER_HANDLE_NULL;
 import static android.content.pm.PackageManager.GET_PERMISSIONS;
@@ -676,10 +675,6 @@ public final class Utils {
 
         Log.e(TAG, "Need ACCESS_FINE_LOCATION permission for " + currentAttribution);
         return false;
-    }
-
-    public static boolean checkCallerHasWriteSmsPermission(Context context) {
-        return context.checkCallingOrSelfPermission(WRITE_SMS) == PERMISSION_GRANTED;
     }
 
     /**
