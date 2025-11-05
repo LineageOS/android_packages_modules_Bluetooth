@@ -1364,10 +1364,13 @@ public class BassClientService extends ConnectableProfile {
         if (leaudioBroadcastImproveSourceOperations()) {
             synchronized (mPastResponseTimeouts) {
                 PastResponseTimeout timeout = new PastResponseTimeout(sink, sourceId, broadcastId);
-                mPastResponseTimeouts
-                        .computeIfAbsent(sink, k -> new ConcurrentHashMap<>())
-                        .put(sourceId, timeout);
-                mHandler.postDelayed(timeout, sPastResponseTimeout.toMillis());
+                if (mPastResponseTimeouts
+                                .computeIfAbsent(sink, k -> new ConcurrentHashMap<>())
+                                .putIfAbsent(sourceId, timeout)
+                        == null) {
+                    mHandler.postDelayed(timeout, sPastResponseTimeout.toMillis());
+                    Log.d(TAG, "syncRequestForPast: timeout scheduled");
+                }
             }
         } else {
             synchronized (mSinksWaitingForPast) {
