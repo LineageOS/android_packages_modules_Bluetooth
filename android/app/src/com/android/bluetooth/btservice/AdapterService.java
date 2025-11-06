@@ -2248,6 +2248,17 @@ public class AdapterService extends Service {
         return mDatabaseManager.getKeyMissingCount(device); // Migrating
     }
 
+    /**
+     * Wrapper to provide the bons loss status directly through {@link
+     * AdapterService#getKeyMissingCount}
+     *
+     * @param device is the remote device whose bond state we want to check
+     * @return true if the bond loss is already detected on the device, false otherwise
+     */
+    public boolean isBondLost(BluetoothDevice device) {
+        return getKeyMissingCount(device) > 0;
+    }
+
     /** see {@link DatabaseManager#updateKeyMissingCount} */
     public void updateKeyMissingCount(BluetoothDevice device, boolean isKeyMissingDetected) {
         if (Flags.mainlineBetaStorage()) {
@@ -2991,7 +3002,12 @@ public class AdapterService extends Service {
         // Pairing is unreliable while scanning, so cancel discovery
         // Note, remove this when native stack improves
         mNativeInterface.cancelDiscovery();
+        sendCreateBondMessage(device, transport, remoteP192Data, remoteP256Data);
+        return true;
+    }
 
+    void sendCreateBondMessage(
+            BluetoothDevice device, int transport, OobData remoteP192Data, OobData remoteP256Data) {
         Message msg = mBondStateMachine.obtainMessage(BondStateMachine.MESSAGE_CREATE_BOND);
         msg.obj = device;
         msg.arg1 = transport;
@@ -3018,7 +3034,6 @@ public class AdapterService extends Service {
                             Binder.getCallingUid());
         }
         mBondStateMachine.sendMessage(msg);
-        return true;
     }
 
     boolean removeBond(BluetoothDevice device) {

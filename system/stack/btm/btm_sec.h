@@ -715,3 +715,25 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported, bool hos
  *
  ******************************************************************************/
 void btm_sec_cr_loc_oob_data_cback_event(const RawAddress& address, tSMP_LOC_OOB_DATA loc_oob_data);
+
+/*******************************************************************************
+ *
+ * Function         btm_is_bond_lost
+ *
+ * Description      This function is called to check if the bond is lost
+ *
+ * Returns          bool
+ *
+ ******************************************************************************/
+bool btm_is_bond_lost(const RawAddress& bd_addr);
+
+/*******************************************************************************
+ *
+ * Function         btm_update_bond_lost
+ *
+ * Description      This function is called to set the bond lost status.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void btm_update_bond_lost(const RawAddress& bd_addr, bool bond_lost);

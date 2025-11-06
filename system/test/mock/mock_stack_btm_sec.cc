@@ -32,6 +32,7 @@
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
 #include "test/common/mock_functions.h"
+#include "stack/btm/btm_sec.h"
 
 // Original usings
 
@@ -97,6 +98,8 @@ struct btm_sec_role_changed btm_sec_role_changed;
 struct btm_sec_set_peer_sec_caps btm_sec_set_peer_sec_caps;
 struct btm_sec_update_clock_offset btm_sec_update_clock_offset;
 struct btm_simple_pair_complete btm_simple_pair_complete;
+struct btm_is_bond_lost btm_is_bond_lost;
+struct btm_update_bond_lost btm_update_bond_lost;
 
 }  // namespace stack_btm_sec
 }  // namespace mock
@@ -128,6 +131,7 @@ tBTM_STATUS btm_sec_disconnect::return_value = tBTM_STATUS::BTM_SUCCESS;
 tBTM_STATUS btm_sec_l2cap_access_req::return_value = tBTM_STATUS::BTM_SUCCESS;
 tBTM_STATUS btm_sec_l2cap_access_req_by_requirement::return_value = tBTM_STATUS::BTM_SUCCESS;
 tBTM_STATUS btm_sec_service_access_request::return_value = tBTM_STATUS::BTM_SUCCESS;
+bool btm_is_bond_lost::return_value = false;
 
 }  // namespace stack_btm_sec
 }  // namespace mock
@@ -384,6 +388,14 @@ void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset) {
 void btm_simple_pair_complete(const RawAddress bd_addr, uint8_t status) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::btm_simple_pair_complete(bd_addr, status);
+}
+bool btm_is_bond_lost(const RawAddress& bd_addr) {
+  inc_func_call_count(__func__);
+  return test::mock::stack_btm_sec::btm_is_bond_lost(bd_addr);
+}
+void btm_update_bond_lost(const RawAddress& bd_addr, bool bond_lost) {
+  inc_func_call_count(__func__);
+  test::mock::stack_btm_sec::btm_update_bond_lost(bd_addr, bond_lost);
 }
 // Mocked functions complete
 // END mockcify generation
