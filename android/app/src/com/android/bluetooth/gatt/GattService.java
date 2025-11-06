@@ -37,6 +37,7 @@ import static com.android.bluetooth.util.AttributionSourceUtils.getLastAttributi
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
+import android.annotation.Nullable;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -50,8 +51,10 @@ import android.bluetooth.IBluetoothGattServerCallback;
 import android.companion.CompanionDeviceManager;
 import android.content.AttributionSource;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.SystemProperties;
 import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
@@ -59,6 +62,7 @@ import android.util.Log;
 
 import com.android.bluetooth.ActionOnDeathRecipient;
 import com.android.bluetooth.Util;
+import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AbstractionLayer;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
@@ -77,11 +81,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /** Provides Bluetooth Gatt profile, as a service in the Bluetooth application. */
 public class GattService extends ProfileService {
     private static final String TAG = GattUtil.TAG_PREFIX + GattService.class.getSimpleName();
+
+    private static final long RUN_SYNC_WAIT_TIME_MS = 2000L;
 
     private final int[] mSubrateHighParameters;
     private final int[] mSubrateBalancedParameters;
@@ -166,7 +178,12 @@ public class GattService extends ProfileService {
     private final CompanionDeviceManager mCompanionDeviceManager;
     private final GattServerManager mServerManager;
     private final GattNativeInterface mNativeInterface;
-    private final HandlerThread mHandlerThread;
+    // TODO(b/449681465) Remove @Nullable on flag cleanup
+    @Nullable private final HandlerThread mGattThread;
+    @Nullable private final Looper mGattLooper;
+    @Nullable private final Handler mGattHandler;
+    // TODO(b/449681465) Remove on flag cleanup
+    @Nullable private final HandlerThread mHandlerThread;
     private final AdvertiseManager mAdvertiseManager;
     private final DistanceMeasurementManager mDistanceMeasurementManager;
     private final TimeProvider mTimeProvider;
@@ -188,6 +205,7 @@ public class GattService extends ProfileService {
                 new ContextMap<>() /* mServerMap */,
                 new HashSet<>() /* mReliableQueue */,
                 companionDeviceManager,
+                null,
                 TimeProvider.getSystemClock());
     }
 
@@ -201,6 +219,7 @@ public class GattService extends ProfileService {
             ContextMap<IBluetoothGattServerCallback> serverMap,
             Set<BluetoothDevice> reliableQueue,
             CompanionDeviceManager companionDeviceManager,
+            @Nullable Looper gattLooper,
             TimeProvider timeProvider) {
         super(BluetoothProfile.GATT, adapterService);
         mClientMap = requireNonNull(clientMap);
@@ -219,10 +238,22 @@ public class GattService extends ProfileService {
                         nativeInterface, () -> new GattNativeInterface(nativeCallback));
         mNativeInterface.init();
 
-        // Create a thread to handle LE operations
-        mHandlerThread = new HandlerThread("Bluetooth LE");
-        mHandlerThread.start();
-        final var looper = mHandlerThread.getLooper();
+        Looper looper;
+        if (Flags.gattThread()) {
+            mGattThread = new HandlerThread("BluetoothGatt");
+            mGattThread.start();
+            mGattLooper = requireNonNullElseGet(gattLooper, mGattThread::getLooper);
+            looper = mGattLooper;
+            mGattHandler = new Handler(mGattLooper);
+            mHandlerThread = null;
+        } else {
+            mHandlerThread = new HandlerThread("Bluetooth LE");
+            mHandlerThread.start();
+            looper = mHandlerThread.getLooper();
+            mGattThread = null;
+            mGattLooper = null;
+            mGattHandler = null;
+        }
 
         mAdvertiseManager =
                 new AdvertiseManager(
@@ -297,15 +328,25 @@ public class GattService extends ProfileService {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        mClientMap.clear();
-        mRestrictedHandles.clear();
-        mServerManager.clear();
-        mRssiCache.clear();
-        mReliableQueue.clear();
-        mNativeInterface.cleanup();
-        mAdvertiseManager.cleanup();
-        mDistanceMeasurementManager.cleanup();
-        mHandlerThread.quit();
+        if (Flags.gattThread()) {
+            mGattHandler.removeCallbacksAndMessages(null);
+        }
+        forceRunSyncOnGattThread(
+                () -> {
+                    mClientMap.clear();
+                    mRestrictedHandles.clear();
+                    mServerManager.clear();
+                    mRssiCache.clear();
+                    mReliableQueue.clear();
+                    mNativeInterface.cleanup();
+                    mAdvertiseManager.cleanup();
+                    mDistanceMeasurementManager.cleanup();
+                    if (Flags.gattThread()) {
+                        mGattThread.quitSafely();
+                    } else {
+                        mHandlerThread.quit();
+                    }
+                });
     }
 
     @Override
@@ -1530,5 +1571,94 @@ public class GattService extends ProfileService {
             case BluetoothGatt.SUBRATE_MODE_HIGH -> mSubrateHighParameters[type];
             default -> mSubrateOffParameters[type];
         };
+    }
+
+    void doOnGattThread(Runnable r) {
+        if (!Flags.gattThread()) {
+            r.run();
+            return;
+        }
+        enforceGattThreadIsNotUsed();
+        if (!isAvailable()) return;
+        var posted =
+                mGattHandler.post(
+                        () -> {
+                            if (isAvailable()) {
+                                r.run();
+                            }
+                        });
+        if (!posted) {
+            Log.w(TAG, "Failed to post async task\n" + Log.getStackTraceString(new Throwable()));
+        }
+    }
+
+    private void forceRunSyncOnGattThread(Runnable r) {
+        if (!Flags.gattThread() || Utils.isInstrumentationTestMode()) {
+            r.run();
+            return;
+        }
+        enforceGattThreadIsNotUsed();
+        var future = new CompletableFuture<>();
+        var posted =
+                mGattHandler.postAtFrontOfQueue(
+                        () -> {
+                            r.run();
+                            future.complete(null);
+                        });
+        if (!posted) {
+            Log.w(TAG, "Failed to post sync task\n" + Log.getStackTraceString(new Throwable()));
+            return;
+        }
+        try {
+            future.get(RUN_SYNC_WAIT_TIME_MS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | TimeoutException | ExecutionException e) {
+            Log.w(TAG, "Failed to complete sync task: " + e);
+        }
+    }
+
+    <T> T fetchOnGattThread(Supplier<T> supplier, T defaultValue) {
+        if (!Flags.gattThread()) {
+            return supplier.get();
+        }
+        enforceGattThreadIsNotUsed();
+        if (!isAvailable()) return defaultValue;
+        final var task =
+                new FutureTask<>(
+                        () -> {
+                            if (!isAvailable()) {
+                                return defaultValue;
+                            }
+                            return supplier.get();
+                        });
+        if (!mGattHandler.post(task)) {
+            Log.w(TAG, "Failed to post async task\n" + Log.getStackTraceString(new Throwable()));
+            return defaultValue;
+        }
+        try {
+            return task.get(RUN_SYNC_WAIT_TIME_MS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            Log.w(TAG, "Failed to complete fetch sync task: " + e);
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            task.cancel(true);
+        }
+        return defaultValue;
+    }
+
+    void enforceGattThread() {
+        if (!Flags.gattThread() || Utils.isInstrumentationTestMode()) return;
+
+        if (!mGattHandler.getLooper().isCurrentThread()) {
+            throw new IllegalStateException("Not on gatt thread");
+        }
+    }
+
+    private void enforceGattThreadIsNotUsed() {
+        if (!Flags.gattThread() || Utils.isInstrumentationTestMode()) return;
+
+        if (mGattHandler.getLooper().isCurrentThread()) {
+            throw new IllegalStateException("Must NOT be on gatt thread");
+        }
     }
 }
