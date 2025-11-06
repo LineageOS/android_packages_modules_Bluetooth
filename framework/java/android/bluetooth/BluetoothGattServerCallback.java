@@ -158,28 +158,32 @@ public abstract class BluetoothGattServerCallback {
      * Callback triggered as result of {@link BluetoothGattServer#setPreferredPhy}, or as a result
      * of remote device changing the PHY.
      *
-     * @param device The remote device
-     * @param txPhy the transmitter PHY in use. One of {@link BluetoothDevice#PHY_LE_1M}, {@link
-     *     BluetoothDevice#PHY_LE_2M}, and {@link BluetoothDevice#PHY_LE_CODED}
-     * @param rxPhy the receiver PHY in use. One of {@link BluetoothDevice#PHY_LE_1M}, {@link
-     *     BluetoothDevice#PHY_LE_2M}, and {@link BluetoothDevice#PHY_LE_CODED}
+     * @param device The remote device.
+     * @param txPhy the transmitter PHY in use.
+     * @param rxPhy the receiver PHY in use.
      * @param status Status of the PHY update operation. {@link BluetoothGatt#GATT_SUCCESS} if the
      *     operation succeeds.
      */
-    public void onPhyUpdate(BluetoothDevice device, int txPhy, int rxPhy, int status) {}
+    public void onPhyUpdate(
+            BluetoothDevice device,
+            @BluetoothDevice.PhyType int txPhy,
+            @BluetoothDevice.PhyType int rxPhy,
+            int status) {}
 
     /**
      * Callback triggered as result of {@link BluetoothGattServer#readPhy}
      *
-     * @param device The remote device that requested the PHY read
-     * @param txPhy the transmitter PHY in use. One of {@link BluetoothDevice#PHY_LE_1M}, {@link
-     *     BluetoothDevice#PHY_LE_2M}, and {@link BluetoothDevice#PHY_LE_CODED}
-     * @param rxPhy the receiver PHY in use. One of {@link BluetoothDevice#PHY_LE_1M}, {@link
-     *     BluetoothDevice#PHY_LE_2M}, and {@link BluetoothDevice#PHY_LE_CODED}
+     * @param device The remote device that requested the PHY read.
+     * @param txPhy the transmitter PHY in use.
+     * @param rxPhy the receiver PHY in use.
      * @param status Status of the PHY read operation. {@link BluetoothGatt#GATT_SUCCESS} if the
      *     operation succeeds.
      */
-    public void onPhyRead(BluetoothDevice device, int txPhy, int rxPhy, int status) {}
+    public void onPhyRead(
+            BluetoothDevice device,
+            @BluetoothDevice.PhyType int txPhy,
+            @BluetoothDevice.PhyType int rxPhy,
+            int status) {}
 
     /**
      * Callback indicating the connection parameters were updated.

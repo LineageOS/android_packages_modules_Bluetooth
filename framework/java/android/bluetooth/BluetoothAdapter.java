@@ -2337,6 +2337,25 @@ public final class BluetoothAdapter {
     }
 
     /**
+     * Checks if LE High Data Throughput (HDT) PHY is supported.
+     *
+     * @return the support status of the feature.
+     */
+    @RequiresNoPermission
+    @FlaggedApi(Flags.FLAG_LEAUDIO_OVER_HDT_PHY_API)
+    public @LeFeatureReturnValues int isLeHighDataThroughputPhySupported() {
+        if (!getLeAccess()) {
+            return ERROR_BLUETOOTH_NOT_ENABLED;
+        }
+        return callServiceIfEnabled(
+                s ->
+                        s.isLeHighDataThroughputPhySupported()
+                                ? BluetoothStatusCodes.FEATURE_SUPPORTED
+                                : BluetoothStatusCodes.FEATURE_NOT_SUPPORTED,
+                ERROR_BLUETOOTH_NOT_ENABLED);
+    }
+
+    /**
      * Returns whether the distance measurement feature is supported.
      *
      * @return whether the Bluetooth distance measurement is supported
