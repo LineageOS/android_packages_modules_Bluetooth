@@ -94,33 +94,32 @@ object Util {
 
     /** Returns `true` if the caller holds [NETWORK_SETTINGS] */
     @JvmStatic
-    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
     fun checkCallerHasNetworkSettingsPermission(context: Context) =
-        context.checkCallingOrSelfPermission(NETWORK_SETTINGS) == PERMISSION_GRANTED
+        context.checkCallerHasPermission(NETWORK_SETTINGS)
 
     /** Returns `true` if the caller holds [NETWORK_SETUP_WIZARD] */
     @JvmStatic
-    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
     fun checkCallerHasNetworkSetupWizardPermission(context: Context) =
-        context.checkCallingOrSelfPermission(NETWORK_SETUP_WIZARD) == PERMISSION_GRANTED
+        context.checkCallerHasPermission(NETWORK_SETUP_WIZARD)
 
     /** Returns `true` if the caller holds [RADIO_SCAN_WITHOUT_LOCATION] */
     @JvmStatic
-    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
     fun checkCallerHasScanWithoutLocationPermission(context: Context) =
-        context.checkCallingOrSelfPermission(RADIO_SCAN_WITHOUT_LOCATION) == PERMISSION_GRANTED
+        context.checkCallerHasPermission(RADIO_SCAN_WITHOUT_LOCATION)
 
     /** Returns `true` if the caller holds [BLUETOOTH_PRIVILEGED] */
     @JvmStatic
-    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
     fun checkCallerHasPrivilegedPermission(context: Context) =
-        context.checkCallingOrSelfPermission(BLUETOOTH_PRIVILEGED) == PERMISSION_GRANTED
+        context.checkCallerHasPermission(BLUETOOTH_PRIVILEGED)
 
     /** Returns `true` if the caller holds [WRITE_SMS] */
     @JvmStatic
-    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
-    fun checkCallerHasWriteSmsPermission(context: Context): Boolean =
-        context.checkCallingOrSelfPermission(WRITE_SMS) == PERMISSION_GRANTED
+    fun checkCallerHasWriteSmsPermission(context: Context) =
+        context.checkCallerHasPermission(WRITE_SMS)
+
+    @PermissionMethod
+    private fun Context.checkCallerHasPermission(@PermissionName permission: String) =
+        checkCallingOrSelfPermission(permission) == PERMISSION_GRANTED
 
     /**
      * Returns `true` if the [BLUETOOTH_ADVERTISE] permission is granted for the calling app.
