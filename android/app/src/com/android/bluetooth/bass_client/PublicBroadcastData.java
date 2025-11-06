@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.bass_client;
 
+import android.bluetooth.BluetoothLeAudioContentMetadata;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 import android.util.Log;
 
@@ -70,7 +71,11 @@ class PublicBroadcastData {
         PublicBroadcastInfo publicBroadcastInfo = new PublicBroadcastInfo();
         publicBroadcastInfo.audioConfigQuality = metadata.getAudioConfigQuality();
         publicBroadcastInfo.isEncrypted = metadata.isEncrypted();
-        publicBroadcastInfo.metaData = metadata.getPublicBroadcastMetadata().getRawMetadata();
+        BluetoothLeAudioContentMetadata publicBroadcastMetadata =
+                metadata.getPublicBroadcastMetadata();
+        if (publicBroadcastMetadata != null) {
+            publicBroadcastInfo.metaData = publicBroadcastMetadata.getRawMetadata();
+        }
 
         publicBroadcastInfo.print();
         return new PublicBroadcastData(publicBroadcastInfo);
