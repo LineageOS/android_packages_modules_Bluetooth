@@ -91,6 +91,7 @@ import com.android.bluetooth.btservice.Config;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.le_scan.ScanController;
 import com.android.bluetooth.storage.BluetoothStorageManager;
 import com.android.bluetooth.tbs.TbsService;
 import com.android.bluetooth.vc.VolumeControlService;
@@ -129,6 +130,7 @@ public class LeAudioBroadcastServiceTest {
     @Rule public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(Config.class);
 
     @Mock private ActiveDeviceManager mActiveDeviceManager;
+    @Mock private ScanController mScanController;
     @Mock private AdapterService mAdapterService;
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private BluetoothStorageManager mStorage;
@@ -245,6 +247,7 @@ public class LeAudioBroadcastServiceTest {
                         mLeAudioNativeInterface,
                         mLeAudioBroadcasterNativeInterface,
                         mActiveDeviceManager,
+                        mScanController,
                         mLooper.getLooper(),
                         mActivityManager,
                         mPackageManager);

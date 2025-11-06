@@ -1346,10 +1346,11 @@ public class AdapterService extends Service {
             case BluetoothProfile.HEARING_AID -> new HearingAidService(this, mActiveDeviceManager);
             case BluetoothProfile.HID_DEVICE -> new HidDeviceService(this);
             case BluetoothProfile.HID_HOST -> new HidHostService(this);
-            case BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT -> new BassClientService(this);
+            case BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT ->
+                    new BassClientService(this, mScanController);
             case BluetoothProfile.LE_AUDIO_BROADCAST -> new LeAudioBroadcast(this);
             case BluetoothProfile.LE_AUDIO ->
-                    new LeAudioService(this, mStorage, mActiveDeviceManager);
+                    new LeAudioService(this, mStorage, mActiveDeviceManager, mScanController);
             case BluetoothProfile.LE_CALL_CONTROL -> new TbsService(this, mGattService);
             case BluetoothProfile.MAP_CLIENT -> new MapClientService(this);
             case BluetoothProfile.MAP -> new BluetoothMapService(this);

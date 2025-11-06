@@ -23,6 +23,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.le_scan.ScanController;
 import com.android.internal.annotations.VisibleForTesting;
 
 /** Factory class for object initialization to help with unit testing */
@@ -76,10 +77,16 @@ public class BassObjectsFactory {
             BluetoothDevice device,
             BassClientService service,
             AdapterService adapterService,
+            ScanController scanController,
             PeriodicAdvertisingManager periodicAdvertisingManager,
             Looper looper) {
         return new BassClientStateMachine(
-                device, service, adapterService, periodicAdvertisingManager, looper);
+                device,
+                service,
+                adapterService,
+                scanController,
+                periodicAdvertisingManager,
+                looper);
     }
 
     /**
