@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <android_bluetooth_sysprop.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/metrics/os_metrics.h>
@@ -734,15 +735,29 @@ public:
             handler_->BindOnce(check_complete<WriteDefaultLinkPolicySettingsCompleteView>));
   }
 
+  AcceptConnectionRequestRole get_preferred_role() {
+    auto sysprop_value = android::sysprop::bluetooth::Core::getClassicPreferredRole().value_or(
+            android::sysprop::bluetooth::Core::getClassicPreferredRole_values::CENTRAL);
+
+    if (sysprop_value ==
+        android::sysprop::bluetooth::Core::getClassicPreferredRole_values::PERIPHERAL) {
+      return AcceptConnectionRequestRole::REMAIN_PERIPHERAL;
+    } else {
+      return AcceptConnectionRequestRole::BECOME_CENTRAL;
+    }
+  }
+
   void accept_connection(Address address) {
-    auto role = AcceptConnectionRequestRole::BECOME_CENTRAL;  // We prefer to be central
+    auto role = get_preferred_role();
 
     // Some devices would not respond when local  accept connection as central.
     RawAddress raw_address = ToRawAddress(address);
-    if (interop_match_addr(INTEROP_REMAIN_PERIPHERAL_ON_ACCEPT_CONNECTION_REQUEST, &raw_address)) {
+    if (role == AcceptConnectionRequestRole::BECOME_CENTRAL &&
+        interop_match_addr(INTEROP_REMAIN_PERIPHERAL_ON_ACCEPT_CONNECTION_REQUEST, &raw_address)) {
       log::info("IOP workaround for {}, accept connection as peripheral", raw_address);
       role = AcceptConnectionRequestRole::REMAIN_PERIPHERAL;
     }
+
     acl_connection_interface_->EnqueueCommand(
             AcceptConnectionRequestBuilder::Create(address, role),
             handler_->BindOnceOn(this, &classic_impl::on_accept_connection_status, address));
