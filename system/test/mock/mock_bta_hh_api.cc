@@ -58,6 +58,7 @@ void BTA_HhGetReport(uint8_t /* dev_handle */, tBTA_HH_RPT_TYPE /* r_type */, ui
 void BTA_HhOpen(const AclLinkSpec& /* link_spec */, bool /* direct */) {
   inc_func_call_count(__func__);
 }
+void BTA_HhCancelOpen(const AclLinkSpec& /* link_spec */) { inc_func_call_count(__func__); }
 void BTA_HhRemoveDev(uint8_t /* dev_handle */) { inc_func_call_count(__func__); }
 void BTA_HhSendCtrl(uint8_t /* dev_handle */, tBTA_HH_TRANS_CTRL_TYPE /* c_type */) {
   inc_func_call_count(__func__);

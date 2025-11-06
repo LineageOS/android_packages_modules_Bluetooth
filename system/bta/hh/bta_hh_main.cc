@@ -60,6 +60,8 @@ static const char* bta_hh_evt_code(tBTA_HH_INT_EVT evt_code) {
   switch (evt_code) {
     case BTA_HH_API_OPEN_EVT:
       return "BTA_HH_API_OPEN_EVT";
+    case BTA_HH_API_CANCEL_OPEN_EVT:
+      return "BTA_HH_API_CANCEL_OPEN_EVT";
     case BTA_HH_API_CLOSE_EVT:
       return "BTA_HH_API_CLOSE_EVT";
     case BTA_HH_INT_OPEN_EVT:
@@ -154,6 +156,8 @@ static tBTA_HH_DEV_CB* bta_hh_find_cb_by_event(const BT_HDR_RIGID* p_msg) {
     }
   } else if (p_msg->event == BTA_HH_INT_OPEN_EVT) {
     p_cb = bta_hh_get_cb(((tBTA_HH_CBACK_DATA*)p_msg)->link_spec);
+  } else if (p_msg->event == BTA_HH_API_CANCEL_OPEN_EVT) {
+    p_cb = bta_hh_get_cb(((tBTA_HH_API_CANCEL_CONN*)p_msg)->link_spec);
   } else {
     p_cb = bta_hh_find_cb_by_handle((uint8_t)p_msg->layer_specific);
   }
@@ -212,6 +216,12 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, tBTA_HH_INT_EVT event, const tBTA_H
             break;
           }
           bta_hh_connect_upgrade(p_cb, p_data);
+          break;
+        case BTA_HH_API_CANCEL_OPEN_EVT:
+          if (com_android_bluetooth_flags_hogp_cancel_gatt_if_policy_forbidden()) {
+            p_cb->state = BTA_HH_IDLE_ST;
+            bta_hh_cancel_connect(p_cb, p_data);
+          }
           break;
         case BTA_HH_API_CLOSE_EVT:
           p_cb->state = BTA_HH_IDLE_ST;
