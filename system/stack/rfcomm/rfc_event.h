@@ -101,6 +101,7 @@ inline std::string rfcomm_mx_event_text(const tRFC_MX_EVENT& event) {
     CASE_RETURN_TEXT(RFC_MX_EVENT_CONF_IND);
     CASE_RETURN_TEXT(RFC_MX_EVENT_QOS_VIOLATION_IND);
     CASE_RETURN_TEXT(RFC_MX_EVENT_DISC_IND);
+    CASE_RETURN_TEXT(RFC_MX_EVENT_COLLISION);
     default:
       return std::string("UNKNOWN[") + std::to_string(event) + std::string("]");
   }
