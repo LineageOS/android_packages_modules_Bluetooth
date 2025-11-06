@@ -418,7 +418,6 @@ public class BassClientServiceTest {
                         })
                 .when(mScanController)
                 .doOnScanThread(any(Runnable.class));
-        doReturn(mScanController).when(mAdapterService).getBluetoothScanController();
 
         doAnswer(
                         invocation -> {
@@ -449,7 +448,8 @@ public class BassClientServiceTest {
 
         mLooper = new TestLooper();
 
-        mBassClientService = new BassClientService(mAdapterService, mLooper.getLooper());
+        mBassClientService =
+                new BassClientService(mAdapterService, mScanController, mLooper.getLooper());
         mBassClientService.setAvailable(true);
 
         doReturn(Optional.of(mCsipService)).when(mAdapterService).getCsipSetCoordinatorService();
@@ -782,7 +782,8 @@ public class BassClientServiceTest {
         mBassClientService.cleanup();
 
         // Start again
-        mBassClientService = new BassClientService(mAdapterService, mLooper.getLooper());
+        mBassClientService =
+                new BassClientService(mAdapterService, mScanController, mLooper.getLooper());
 
         // Start searching again
         prepareConnectedDeviceGroup();

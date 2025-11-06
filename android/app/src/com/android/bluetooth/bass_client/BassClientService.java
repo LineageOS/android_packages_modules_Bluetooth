@@ -72,6 +72,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioStackEvent;
+import com.android.bluetooth.le_scan.ScanController;
 import com.android.bluetooth.profile.ConnectableProfile;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -193,6 +194,7 @@ public class BassClientService extends ConnectableProfile {
     private final BluetoothAdapter mAdapter;
     // TODO Delete it on leaudioBroadcastImproveSourceOperations flag cleanup
     private final PeriodicAdvertisingManager mPeriodicAdvertisingManager;
+    private final ScanController mScanController;
     private final Handler mHandler;
     private final HandlerThread mStateMachinesThread;
     private final Looper mStateMachinesLooper;
@@ -246,16 +248,6 @@ public class BassClientService extends ConnectableProfile {
                     }
                     return;
                 }
-                final var scanController = mAdapterService.getBluetoothScanController();
-                if (scanController == null) {
-                    Log.d(TAG, "registerAndStartScan: ScanController is null");
-                    if (mIsForegroundScan) {
-                        mCallbacks.notifySearchStartFailed(BluetoothStatusCodes.ERROR_UNKNOWN);
-                    }
-                    mIsForegroundScan = false;
-                    mIsBackgroundScan = false;
-                    return;
-                }
                 if (filters != null) {
                     mBaasUuidFilters.addAll(filters);
                 }
@@ -281,31 +273,25 @@ public class BassClientService extends ConnectableProfile {
                                     .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
                                     .setLegacy(false)
                                     .build();
-                    scanController.doOnScanThread(
+                    mScanController.doOnScanThread(
                             () ->
-                                    scanController.registerAndStartScanInternal(
+                                    mScanController.registerAndStartScanInternal(
                                             this, source, settings, mBaasUuidFilters));
                     return;
                 }
 
-                scanController.doOnScanThread(
-                        () -> scanController.registerScannerInternal(this, null, source));
+                mScanController.doOnScanThread(
+                        () -> mScanController.registerScannerInternal(this, null, source));
             }
         }
 
         void stopScanAndUnregister() {
             synchronized (this) {
-                final var scanController = mAdapterService.getBluetoothScanController();
-                if (scanController == null) {
-                    Log.d(TAG, "stopScanAndUnregister: ScanController is null");
-                    mCallbacks.notifySearchStopFailed(BluetoothStatusCodes.ERROR_UNKNOWN);
-                    return;
-                }
                 final var scannerIdToStop = mScannerId;
-                scanController.doOnScanThread(
+                mScanController.doOnScanThread(
                         () -> {
-                            scanController.stopScan(scannerIdToStop);
-                            scanController.unregisterScanner(scannerIdToStop);
+                            mScanController.stopScan(scannerIdToStop);
+                            mScanController.unregisterScanner(scannerIdToStop);
                         });
                 mBaasUuidFilters.clear();
                 mScannerId = SCANNER_ID_NOT_INITIALIZED;
@@ -350,15 +336,7 @@ public class BassClientService extends ConnectableProfile {
                                 .setLegacy(false)
                                 .build();
 
-                final var scanController = mAdapterService.getBluetoothScanController();
-                if (scanController == null) {
-                    Log.d(TAG, "onScannerRegistered: ScanController is null");
-                    if (mIsForegroundScan) {
-                        mCallbacks.notifySearchStartFailed(BluetoothStatusCodes.ERROR_UNKNOWN);
-                    }
-                    return;
-                }
-                scanController.startScanInternal(scannerId, settings, mBaasUuidFilters);
+                mScanController.startScanInternal(scannerId, settings, mBaasUuidFilters);
                 if (mIsForegroundScan) {
                     mCallbacks.notifySearchStarted(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST);
                 }
@@ -593,15 +571,16 @@ public class BassClientService extends ConnectableProfile {
         }
     }
 
-    public BassClientService(AdapterService adapterService) {
-        this(adapterService, null);
+    public BassClientService(AdapterService adapterService, ScanController scanController) {
+        this(adapterService, scanController, null);
     }
 
     @VisibleForTesting
-    BassClientService(AdapterService adapterService, Looper looper) {
+    BassClientService(AdapterService adapterService, ScanController scanController, Looper looper) {
         super(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, adapterService);
         mAdapter = obtainSystemService(BluetoothManager.class).getAdapter();
         mPeriodicAdvertisingManager = mAdapter.getPeriodicAdvertisingManager();
+        mScanController = scanController;
 
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
@@ -3457,17 +3436,12 @@ public class BassClientService extends ConnectableProfile {
         synchronized (mSourceSyncRequestsQueue) {
             if (leaudioBroadcastImproveSourceOperations()) {
                 if (mPeriodicAdvCallbacksMap.containsKey(syncHandle)) {
-                    final var scanController = mAdapterService.getBluetoothScanController();
-                    if (scanController == null) {
-                        Log.e(TAG, "calling unregisterSync: ScanController is null");
-                        return false;
-                    }
                     var periodicAdvertisingCallback = mPeriodicAdvCallbacksMap.get(syncHandle);
-                    if (scanController.isOnScanThread()) {
-                        scanController.unregisterSync(periodicAdvertisingCallback);
+                    if (mScanController.isOnScanThread()) {
+                        mScanController.unregisterSync(periodicAdvertisingCallback);
                     } else {
-                        scanController.doOnScanThread(
-                                () -> scanController.unregisterSync(periodicAdvertisingCallback));
+                        mScanController.doOnScanThread(
+                                () -> mScanController.unregisterSync(periodicAdvertisingCallback));
                     }
                 } else {
                     Log.d(TAG, "calling unregisterSync, not found syncHandle: " + syncHandle);
@@ -3773,24 +3747,17 @@ public class BassClientService extends ConnectableProfile {
             }
 
             if (leaudioBroadcastImproveSourceOperations()) {
-                final var scanController = mAdapterService.getBluetoothScanController();
-                if (scanController == null) {
-                    Log.e(TAG, "handleSelectSourceRequest: ScanController is null");
-                    clearAllDataForSyncHandle(BassConstants.PENDING_SYNC_HANDLE);
-                    handleSelectSourceRequest();
-                    return;
-                }
-                if (scanController.isOnScanThread()) {
-                    scanController.registerSync(
+                if (mScanController.isOnScanThread()) {
+                    mScanController.registerSync(
                             paResult.getDevice(),
                             paResult.getAdvSid(),
                             0,
                             BassConstants.PSYNC_TIMEOUT,
                             paCb);
                 } else {
-                    scanController.doOnScanThread(
+                    mScanController.doOnScanThread(
                             () ->
-                                    scanController.registerSync(
+                                    mScanController.registerSync(
                                             paResult.getDevice(),
                                             paResult.getAdvSid(),
                                             0,
