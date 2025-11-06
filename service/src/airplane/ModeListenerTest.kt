@@ -69,16 +69,16 @@ import org.robolectric.Shadows.shadowOf
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @kotlin.time.ExperimentalTime
 class ModeListenerTest(private val flags: FlagsWrapper) {
-    @get:Rule val mSetFlagsRule: SetFlagsRule = SetFlagsRule(flags.flags)
+    @get:Rule val setFlagsRule: SetFlagsRule = SetFlagsRule(flags.flags)
     @get:Rule val testName = TestName()
 
     private val looper: Looper = Looper.getMainLooper()
     private val state = BluetoothAdapterState()
-    private val mContext = ApplicationProvider.getApplicationContext<Context>()
-    private val resolver: ContentResolver = mContext.contentResolver
+    private val context = ApplicationProvider.getApplicationContext<Context>()
+    private val resolver: ContentResolver = context.contentResolver
 
     private val userContext =
-        mContext.createContextAsUser(UserHandle.of(ActivityManager.getCurrentUser()), 0)
+        context.createContextAsUser(UserHandle.of(ActivityManager.getCurrentUser()), 0)
 
     private lateinit var mode: ArrayList<Boolean>
     private lateinit var notification: ArrayList<String>
