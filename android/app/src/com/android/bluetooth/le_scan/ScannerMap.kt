@@ -188,9 +188,9 @@ class ScannerMap {
         if (apps.isNotEmpty()) {
             val columns =
                 mutableListOf<Column<ScannerApp>>(
-                    Column("UID", width = 5) { it.uid.toString() },
-                    Column("PID", width = 5) { it.pid.toString() },
-                    Column("ID", width = 2) { it.id.toString() },
+                    Column("UID", width = 5) { it.uid },
+                    Column("PID", width = 5) { it.pid },
+                    Column("ID", width = 2) { it.id },
                     Column("PACKAGE") { it.name },
                 )
 
