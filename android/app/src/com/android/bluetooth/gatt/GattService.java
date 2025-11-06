@@ -396,6 +396,7 @@ public class GattService extends ProfileService {
      *************************************************************************/
 
     void onClientRegisteredFromNative(int status, int clientIf, UUID uuid) {
+        enforceGattThread();
         Log.d(TAG, "onClientRegistered(): UUID=" + uuid + ", clientIf=" + clientIf);
         var app = mClientMap.getByUuid(uuid);
         if (app == null) {
@@ -416,6 +417,7 @@ public class GattService extends ProfileService {
 
     void onConnectedFromNative(
             int clientIf, int connId, int transport, int status, BluetoothDevice device) {
+        enforceGattThread();
         Log.d(
                 TAG,
                 ("onConnected(): clientIf=" + clientIf + " connId=" + connId)
@@ -447,6 +449,7 @@ public class GattService extends ProfileService {
 
     void onDisconnectedFromNative(
             int clientIf, int connId, int transport, int status, BluetoothDevice device) {
+        enforceGattThread();
         Log.d(
                 TAG,
                 ("onDisconnected(): clientIf=" + clientIf + ", connId=" + connId)
@@ -494,6 +497,7 @@ public class GattService extends ProfileService {
     }
 
     void onClientPhyUpdateFromNative(int connId, int txPhy, int rxPhy, int status) {
+        enforceGattThread();
         Log.d(TAG, "onClientPhyUpdate(): connId=" + connId + ", status=" + statusToString(status));
 
         final var device = mClientMap.deviceByConnId(connId);
@@ -511,6 +515,7 @@ public class GattService extends ProfileService {
 
     void onClientPhyReadFromNative(
             int clientIf, BluetoothDevice device, int txPhy, int rxPhy, int status) {
+        enforceGattThread();
         Log.d(
                 TAG,
                 ("onClientPhyRead(): clientIf=" + clientIf + ", device=" + device)
@@ -532,6 +537,7 @@ public class GattService extends ProfileService {
 
     void onClientConnUpdateFromNative(
             int connId, int interval, int latency, int timeout, int status) {
+        enforceGattThread();
         Log.d(TAG, "onClientConnUpdate(): connId=" + connId + ", status=" + statusToString(status));
 
         final var device = mClientMap.deviceByConnId(connId);
@@ -551,6 +557,7 @@ public class GattService extends ProfileService {
     }
 
     void onServiceChangedFromNative(int connId) {
+        enforceGattThread();
         Log.d(TAG, "onServiceChanged(): connId=" + connId);
 
         final var device = mClientMap.deviceByConnId(connId);
@@ -574,6 +581,7 @@ public class GattService extends ProfileService {
             int timeout,
             int mode,
             int status) {
+        enforceGattThread();
         Log.d(
                 TAG,
                 "onClientSubrateChange(): connId=" + connId + ", status=" + statusToString(status));
@@ -606,6 +614,7 @@ public class GattService extends ProfileService {
     }
 
     void onGetGattDbFromNative(int connId, List<GattDbElement> db) {
+        enforceGattThread();
         final var device = mClientMap.deviceByConnId(connId);
         Log.d(TAG, "onGetGattDb(): device=" + device);
 
@@ -680,6 +689,7 @@ public class GattService extends ProfileService {
     }
 
     void onRegisterForNotificationsFromNative(int connId, int status, int registered, int handle) {
+        enforceGattThread();
         final var device = mClientMap.deviceByConnId(connId);
         Log.d(
                 TAG,
@@ -690,6 +700,7 @@ public class GattService extends ProfileService {
 
     void onNotifyFromNative(
             int connId, BluetoothDevice device, int handle, boolean isNotify, byte[] data) {
+        enforceGattThread();
         Log.v(
                 TAG,
                 "onNotify(): device=" + device + ", handle=" + handle + ", length=" + data.length);
@@ -702,6 +713,7 @@ public class GattService extends ProfileService {
     }
 
     void onReadCharacteristicFromNative(int connId, int status, int handle, byte[] data) {
+        enforceGattThread();
         final var device = mClientMap.deviceByConnId(connId);
         Log.v(
                 TAG,
@@ -716,6 +728,7 @@ public class GattService extends ProfileService {
     }
 
     void onWriteCharacteristicFromNative(int connId, int status, int handle, byte[] data) {
+        enforceGattThread();
         final var device = mClientMap.deviceByConnId(connId);
         synchronized (mPermits) {
             Log.d(TAG, "onWriteCharacteristic(): Increasing permit for device=" + device);
@@ -746,6 +759,7 @@ public class GattService extends ProfileService {
     }
 
     void onExecuteCompletedFromNative(int connId, int status) {
+        enforceGattThread();
         final var device = mClientMap.deviceByConnId(connId);
         Log.v(TAG, "onExecuteCompleted(): device=" + device + ", status=" + statusToString(status));
 
@@ -757,6 +771,7 @@ public class GattService extends ProfileService {
     }
 
     void onReadDescriptorFromNative(int connId, int status, int handle, byte[] data) {
+        enforceGattThread();
         final var device = mClientMap.deviceByConnId(connId);
         Log.v(
                 TAG,
@@ -771,6 +786,7 @@ public class GattService extends ProfileService {
     }
 
     void onWriteDescriptorFromNative(int connId, int status, int handle, byte[] data) {
+        enforceGattThread();
         final var device = mClientMap.deviceByConnId(connId);
         Log.v(
                 TAG,
@@ -785,6 +801,7 @@ public class GattService extends ProfileService {
     }
 
     void onReadRemoteRssiFromNative(int clientIf, BluetoothDevice device, int rssi, int status) {
+        enforceGattThread();
         Log.d(
                 TAG,
                 ("onReadRemoteRssi(): clientIf=" + clientIf + ", device=" + device)
@@ -805,6 +822,7 @@ public class GattService extends ProfileService {
     }
 
     void onConfigureMTUFromNative(int connId, int status, int mtu) {
+        enforceGattThread();
         final var device = mClientMap.deviceByConnId(connId);
         Log.d(
                 TAG,
@@ -819,6 +837,7 @@ public class GattService extends ProfileService {
     }
 
     void onClientCongestionFromNative(int connId, boolean congested) {
+        enforceGattThread();
         Log.v(TAG, "onClientCongestion(): connId=" + connId + ", congested=" + congested);
         var app = mClientMap.getByConnId(connId);
         if (app == null) {
@@ -842,6 +861,7 @@ public class GattService extends ProfileService {
     }
 
     void onClientCharacteristicsUnoffloadedFromNative(int connId, int sessionId, int status) {
+        enforceGattThread();
         Log.d(
                 TAG,
                 ("onClientCharacteristicsUnoffloadedFromNative(): connId=" + connId)

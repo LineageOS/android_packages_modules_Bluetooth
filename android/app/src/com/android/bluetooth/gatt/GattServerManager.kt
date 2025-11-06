@@ -59,6 +59,7 @@ class GattServerManager(
     }
 
     fun onServerRegisteredFromNative(status: Int, serverIf: Int, uuid: UUID) {
+        gatt.enforceGattThread()
         Log.d(TAG, "onServerRegistered(${Status(status)}, serverIf=$serverIf, uuid=$uuid)")
         val app = serverMap.getByUuid(uuid) ?: return
         app.id = serverIf
@@ -68,6 +69,7 @@ class GattServerManager(
     }
 
     fun onServiceAddedFromNative(status: Int, serverIf: Int, service: List<GattDbElement>) {
+        gatt.enforceGattThread()
         Log.d(TAG, "onServiceAdded(${Status(status)}, serverIf=$serverIf, service=$service)")
         if (status != BluetoothGatt.GATT_SUCCESS) {
             return
@@ -139,6 +141,7 @@ class GattServerManager(
     }
 
     fun onServiceStoppedFromNative(status: Int, serverIf: Int, srvcHandle: Int) {
+        gatt.enforceGattThread()
         Log.d(TAG, "onServiceStopped(${Status(status)}, serverIf=$serverIf, handle=$srvcHandle)")
         if (status == BluetoothGatt.GATT_SUCCESS) {
             handleMap.setStarted(serverIf, srvcHandle, false)
@@ -147,6 +150,7 @@ class GattServerManager(
     }
 
     fun onServiceDeletedFromNative(status: Int, serverIf: Int, srvcHandle: Int) {
+        gatt.enforceGattThread()
         Log.d(TAG, "onServiceDeleted(${Status(status)}, serverIf=$serverIf, handle=$srvcHandle)")
         handleMap.deleteService(serverIf, srvcHandle)
     }
@@ -158,6 +162,7 @@ class GattServerManager(
         connId: Int,
         serverIf: Int,
     ) {
+        gatt.enforceGattThread()
         val header =
             "onClientConnected($device, ${Transport(transport)}, connected=$connected" +
                 ", connId=$connId, serverIf=$serverIf):"
@@ -231,6 +236,7 @@ class GattServerManager(
     }
 
     fun onServerPhyUpdateFromNative(connId: Int, txPhy: Int, rxPhy: Int, status: Int) {
+        gatt.enforceGattThread()
         Log.d(
             TAG,
             "onServerPhyUpdate(connId=$connId, txPhy=$txPhy, rxPhy=$rxPhy, ${Status(status)})",
@@ -247,6 +253,7 @@ class GattServerManager(
         rxPhy: Int,
         status: Int,
     ) {
+        gatt.enforceGattThread()
         Log.d(TAG, "onServerPhyRead($device, ${Status(status)})")
         val connections = serverMap.getConnectionsByDevice(serverIf, device)
         val connId = if (connections.isEmpty()) null else connections[0].connId
@@ -271,6 +278,7 @@ class GattServerManager(
         timeout: Int,
         status: Int,
     ) {
+        gatt.enforceGattThread()
         Log.d(TAG, "onServerConnUpdate(connId=$connId, ${Status(status)})")
         val device = serverMap.deviceByConnId(connId) ?: return
         val app = serverMap.getByConnId(connId) ?: return
@@ -291,6 +299,7 @@ class GattServerManager(
         mode: Int,
         status: Int,
     ) {
+        gatt.enforceGattThread()
         Log.d(TAG, "onServerSubrateChange(connId=$connId, ${Status(status)})")
         val device: BluetoothDevice = serverMap.deviceByConnId(connId) ?: return
         val app: ContextApp<IBluetoothGattServerCallback> = serverMap.getByConnId(connId) ?: return
@@ -318,6 +327,7 @@ class GattServerManager(
         offset: Int,
         isLong: Boolean,
     ) {
+        gatt.enforceGattThread()
         Log.v(
             TAG,
             "onServerReadCharacteristic($device, connId=$connId, transId=$transId" +
@@ -347,6 +357,7 @@ class GattServerManager(
         offset: Int,
         isLong: Boolean,
     ) {
+        gatt.enforceGattThread()
         Log.v(
             TAG,
             "onServerReadDescriptor($device, connId=$connId, transId=$transId" +
@@ -379,6 +390,7 @@ class GattServerManager(
         isPrep: Boolean,
         data: ByteArray?,
     ) {
+        gatt.enforceGattThread()
         Log.v(
             TAG,
             "onServerWriteCharacteristic($device, connId=$connId, transId=$transId" +
@@ -420,6 +432,7 @@ class GattServerManager(
         isPrep: Boolean,
         data: ByteArray?,
     ) {
+        gatt.enforceGattThread()
         Log.v(
             TAG,
             "onServerWriteDescriptor($device, connId=$connId, transId=$transId, handle=$handle" +
@@ -456,6 +469,7 @@ class GattServerManager(
         transId: Int,
         execWrite: Int,
     ) {
+        gatt.enforceGattThread()
         val operation = if (execWrite == 1) "WRITE" else "CANCEL"
         Log.d(
             TAG,
@@ -476,6 +490,7 @@ class GattServerManager(
     }
 
     fun onNotificationSentFromNative(connId: Int, status: Int) {
+        gatt.enforceGattThread()
         Log.v(TAG, "onNotificationSent(connId=$connId, ${Status(status)})")
         val device = serverMap.deviceByConnId(connId) ?: return
         val app = serverMap.getByConnId(connId) ?: return
@@ -492,6 +507,7 @@ class GattServerManager(
     }
 
     fun onServerCongestionFromNative(connId: Int, congested: Boolean) {
+        gatt.enforceGattThread()
         Log.d(TAG, "onServerCongestion(connId=$connId, congested=$congested)")
         val app = serverMap.getByConnId(connId) ?: return
         app.isCongested = congested
@@ -504,6 +520,7 @@ class GattServerManager(
     }
 
     fun onMtuChangedFromNative(connId: Int, mtu: Int) {
+        gatt.enforceGattThread()
         Log.d(TAG, "onMtuChanged(connId=$connId, mtu=$mtu)")
         val device = serverMap.deviceByConnId(connId) ?: return
         val app = serverMap.getByConnId(connId) ?: return
@@ -512,6 +529,7 @@ class GattServerManager(
     }
 
     fun onServerCharacteristicsUnoffloadedFromNative(connId: Int, sessionId: Int, status: Int) {
+        gatt.enforceGattThread()
         Log.d(
             TAG,
             "onServerCharacteristicsUnoffloaded(connId=$connId, sessionId=$sessionId" +
