@@ -271,10 +271,7 @@ public class GattServiceTest {
 
             if (Flags.leSubrateManager()) {
                 inOrder.verify(mNativeInterface)
-                        .gattSubrateModeRequest(
-                                eq(CLIENT_IF),
-                                eq(mDevice),
-                                eq(subrateMode));
+                        .gattSubrateModeRequest(eq(CLIENT_IF), eq(mDevice), eq(subrateMode));
             } else {
                 inOrder.verify(mNativeInterface)
                         .gattSubrateRequest(
@@ -307,41 +304,37 @@ public class GattServiceTest {
 
         mService.subrateModeRequest(mGattCallback, mDevice, BluetoothGatt.SUBRATE_MODE_HIGH);
         if (Flags.leSubrateManager()) {
-                inOrder.verify(mNativeInterface)
-                        .gattSubrateModeRequest(
-                                eq(CLIENT_IF), eq(mDevice), eq(BluetoothGatt.SUBRATE_MODE_HIGH));
+            inOrder.verify(mNativeInterface)
+                    .gattSubrateModeRequest(
+                            eq(CLIENT_IF), eq(mDevice), eq(BluetoothGatt.SUBRATE_MODE_HIGH));
         } else {
-                inOrder.verify(mNativeInterface)
-                        .gattSubrateRequest(
-                                eq(CLIENT_IF),
-                                eq(mDevice),
-                                anyInt(),
-                                anyInt(),
-                                eq(0),
-                                anyInt(),
-                                anyInt());
+            inOrder.verify(mNativeInterface)
+                    .gattSubrateRequest(
+                            eq(CLIENT_IF),
+                            eq(mDevice),
+                            anyInt(),
+                            anyInt(),
+                            eq(0),
+                            anyInt(),
+                            anyInt());
         }
-
 
         mService.subrateModeRequest(mGattCallback, mDevice, BluetoothGatt.SUBRATE_MODE_OFF);
         if (Flags.leSubrateManager()) {
-                inOrder.verify(mNativeInterface)
-                        .gattSubrateModeRequest(
-                                eq(CLIENT_IF),
-                                eq(mDevice),
-                                eq(BluetoothGatt.SUBRATE_MODE_OFF));
+            inOrder.verify(mNativeInterface)
+                    .gattSubrateModeRequest(
+                            eq(CLIENT_IF), eq(mDevice), eq(BluetoothGatt.SUBRATE_MODE_OFF));
         } else {
-                inOrder.verify(mNativeInterface)
-                        .gattSubrateRequest(
-                                eq(CLIENT_IF),
-                                eq(mDevice),
-                                anyInt(),
-                                anyInt(),
-                                eq(peripheralLatency),
-                                anyInt(),
-                                anyInt());
+            inOrder.verify(mNativeInterface)
+                    .gattSubrateRequest(
+                            eq(CLIENT_IF),
+                            eq(mDevice),
+                            anyInt(),
+                            anyInt(),
+                            eq(peripheralLatency),
+                            anyInt(),
+                            anyInt());
         }
-
     }
 
     @Test
@@ -413,13 +406,7 @@ public class GattServiceTest {
         boolean opportunistic = true;
 
         mService.clientConnect(
-                mGattCallback,
-                mDevice,
-                addressType,
-                isDirect,
-                transport,
-                opportunistic,
-                mSource);
+                mGattCallback, mDevice, addressType, isDirect, transport, opportunistic, mSource);
 
         verify(mNativeInterface)
                 .gattClientConnect(
