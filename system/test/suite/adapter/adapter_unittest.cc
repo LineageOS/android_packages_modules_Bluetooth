@@ -19,6 +19,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
+#include <com_android_bluetooth_flags.h>
 
 #include "adapter/bluetooth_test.h"
 #include "osi/include/allocator.h"
@@ -108,6 +109,7 @@ static bool property_equals(const bt_property_t* p1, const bt_property_t* p2) {
 }
 
 TEST_F(BluetoothTest, AdapterSetGetName) {
+  com::android::bluetooth::flags::provider_->set_name_in_system_server(false);
   bt_property_t* new_name = property_new_name("BluetoothTestName1");
 
   EXPECT_EQ(bt_interface()->enable("test_name"), BT_STATUS_SUCCESS);
