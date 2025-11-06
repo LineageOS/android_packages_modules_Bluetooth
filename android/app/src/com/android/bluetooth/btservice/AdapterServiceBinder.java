@@ -23,6 +23,7 @@ import static android.bluetooth.BluetoothAdapter.SCAN_MODE_NONE;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
+import static com.android.bluetooth.ChangeIds.BONDING_APIS_REQUIRE_PRIVILEGED_PERMISSION;
 import static com.android.bluetooth.ChangeIds.ENFORCE_CONNECT;
 import static com.android.bluetooth.Util.enforceConnectPermissionForDataDelivery;
 import static com.android.bluetooth.Util.enforceScanPermissionForDataDelivery;
@@ -439,6 +440,29 @@ class AdapterServiceBinder extends IBluetooth.Stub {
                 device, transport, remoteP192Data, remoteP256Data, source.getPackageName());
     }
 
+    private boolean bondingInitiator(DeviceProperties deviceProp, AttributionSource source) {
+        AdapterService service = getService();
+
+        if (service == null) return false;
+
+        if (deviceProp == null) {
+            return false;
+        }
+
+        Optional<String> packageName =
+                service.getCallingPackageName(deviceProp.getDevice().getAddress());
+
+        if (!packageName.isPresent()) {
+            return false;
+        }
+
+        if (!deviceProp.isBondingInitiatedLocally()) {
+            return false;
+        }
+
+        return (source.getPackageName().equals(packageName.get()));
+    }
+
     @Override
     public boolean cancelBondProcess(BluetoothDevice device, AttributionSource source) {
         requireNonNull(device);
@@ -450,11 +474,14 @@ class AdapterServiceBinder extends IBluetooth.Stub {
             return false;
         }
 
-        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        DeviceProperties deviceProp = service.getRemoteDevices().getDeviceProperties(device);
+
+        if (!Flags.apairing26q2PermissionImprovements() || !bondingInitiator(deviceProp, source)) {
+            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        }
 
         Log.i(TAG, "cancelBondProcess: device=" + device + ", from " + getUidPidString());
 
-        DeviceProperties deviceProp = service.getRemoteDevices().getDeviceProperties(device);
         if (deviceProp != null) {
             deviceProp.setBondingInitiatedLocally(false);
         }
@@ -471,6 +498,24 @@ class AdapterServiceBinder extends IBluetooth.Stub {
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "removeBond")
                 || !enforceConnectPermissionForDataDelivery(service, source, TAG, "removeBond")) {
             return false;
+        }
+
+        if (Flags.apairing26q2PermissionImprovements()) {
+            boolean checkPrivileged = false;
+            final int callingUid = Binder.getCallingUid();
+            final long token = Binder.clearCallingIdentity();
+
+            try {
+                checkPrivileged =
+                        CompatChanges.isChangeEnabled(
+                                BONDING_APIS_REQUIRE_PRIVILEGED_PERMISSION, callingUid);
+            } finally {
+                Binder.restoreCallingIdentity(token);
+            }
+
+            if (checkPrivileged) {
+                service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+            }
         }
 
         Log.i(TAG, "removeBond: device=" + device + ", from " + getUidPidString());
@@ -878,6 +923,23 @@ class AdapterServiceBinder extends IBluetooth.Stub {
                 || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setPin")
                 || !enforceConnectPermissionForDataDelivery(service, source, TAG, "setPin")) {
             return false;
+        }
+
+        if (Flags.apairing26q2PermissionImprovements()) {
+            boolean checkPrivileged = false;
+            final int callingUid = Binder.getCallingUid();
+            final long token = Binder.clearCallingIdentity();
+            try {
+                checkPrivileged =
+                        CompatChanges.isChangeEnabled(
+                                BONDING_APIS_REQUIRE_PRIVILEGED_PERMISSION, callingUid);
+            } finally {
+                Binder.restoreCallingIdentity(token);
+            }
+
+            if (checkPrivileged) {
+                service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+            }
         }
 
         DeviceProperties deviceProp = service.getRemoteDevices().getDeviceProperties(device);

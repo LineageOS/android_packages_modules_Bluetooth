@@ -241,6 +241,7 @@ flag {
     namespace: "bluetooth"
     description: "Permission improvements for pairing in 26Q2"
     bug: "449010608"
+    is_exported: true
 }
 
 flag {

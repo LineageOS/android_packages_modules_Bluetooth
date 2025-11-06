@@ -28,4 +28,13 @@ public class ChangeIds {
     @ChangeId
     @EnabledSince(targetSdkVersion = android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     public static final long ENFORCE_CONNECT = 211757425L;
+
+    /**
+     * Starting from {@link android.os.Build.VERSION_CODES#CINNAMON_BUN}, {@link
+     * BluetoothDevice#removeBond()} and {@link BluetoothDevice#setPin()} require the
+     * BLUETOOTH_PRIVILEGED permission.
+     */
+    @ChangeId
+    @EnabledSince(targetSdkVersion = android.os.Build.VERSION_CODES.CINNAMON_BUN)
+    public static final long BONDING_APIS_REQUIRE_PRIVILEGED_PERMISSION = 401333807L;
 }
