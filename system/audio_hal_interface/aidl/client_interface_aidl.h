@@ -157,6 +157,7 @@ protected:
 
 private:
   IBluetoothTransportInstance* transport_;
+  std::optional<IBluetoothAudioProviderFactory::ProviderInfo> provider_info_;
   std::vector<AudioCapabilities> capabilities_;
   std::vector<LatencyMode> latency_modes_;
 };
