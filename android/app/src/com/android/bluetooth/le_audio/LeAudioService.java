@@ -308,7 +308,7 @@ public class LeAudioService extends ConnectableProfile {
                         nativeInterface, () -> new LeAudioNativeInterface(adapterService, this));
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
         mActiveDeviceManager = activeDeviceManager;
-        mScanController = scanController;
+        mScanController = requireNonNull(scanController);
 
         if (looper == null) {
             mHandler = new Handler(Looper.getMainLooper());

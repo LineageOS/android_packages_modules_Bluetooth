@@ -580,7 +580,7 @@ public class BassClientService extends ConnectableProfile {
         super(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, adapterService);
         mAdapter = obtainSystemService(BluetoothManager.class).getAdapter();
         mPeriodicAdvertisingManager = mAdapter.getPeriodicAdvertisingManager();
-        mScanController = scanController;
+        mScanController = requireNonNull(scanController);
 
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
