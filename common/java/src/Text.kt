@@ -18,6 +18,9 @@
 
 package com.android.bluetooth.util
 
+import java.time.Duration
+import java.time.Instant
+import java.util.Locale
 import kotlin.text.Charsets.UTF_8
 
 /**
@@ -75,3 +78,17 @@ fun String.truncateUtf8String(maxBytes: Int): String {
 
     return String(bytes, 0, validEndIndex, UTF_8)
 }
+
+/**
+ * Calculates the elapsed time between [this] (the start [Instant]) and the given [end] [Instant]
+ * and formats it into a simple human-readable string (e.g., "1h 23m 45s").
+ *
+ * @param end The end [Instant] for the calculation. This must be chronologically after [this].
+ * @return A human-readable duration string (e.g., "1h 23m 45s").
+ */
+fun Instant.elapsedString(end: Instant) =
+    Duration.between(this, end)
+        .toString() // Example: "PT1H23M45S"
+        .substring(2) // Drop "PT" -> "1H23M45S"
+        .replace("(\\d[HMS])(?!$)".toRegex(), "$1 ") // Add spaces -> "1H 23M 45S"
+        .lowercase(Locale.US)

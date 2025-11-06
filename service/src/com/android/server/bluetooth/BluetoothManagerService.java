@@ -41,6 +41,8 @@ import static android.bluetooth.IBluetoothManager.EXTRA_STATE;
 import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED;
 import static android.provider.Settings.Global.DEVICE_NAME;
 
+import static com.android.bluetooth.util.Text.elapsedString;
+
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
@@ -1181,8 +1183,7 @@ class BluetoothManagerService {
                 Log.e(TAG, "Unknown service disconnected: " + name);
                 return;
             }
-            sendMessage(
-                    MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED, componentName.getPackageName());
+            sendMessage(MESSAGE_BLUETOOTH_SERVICE_DISCONNECTED, componentName.getPackageName());
         }
 
         @Override
@@ -1858,13 +1859,7 @@ class BluetoothManagerService {
         writer.println("  Name:          " + mName);
         writer.println("  Inner app:     " + mBluetoothComponent.getPackageName());
         if (!mState.oneOf(State.OFF)) {
-            Duration elapsed = Duration.between(mLastBindingTime, Instant.now());
-            writer.println(
-                    "  Uptime:        "
-                            + elapsed.toString()
-                                    .substring(2)
-                                    .replaceAll("(\\d[HMS])(?!$)", "$1 ")
-                                    .toLowerCase(Locale.US));
+            writer.println("  Uptime:        " + elapsedString(mLastBindingTime, Instant.now()));
         }
 
         writer.println("");
