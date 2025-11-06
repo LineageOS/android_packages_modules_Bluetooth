@@ -390,7 +390,7 @@ public class HapClientService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         enforceMainLooperIsUsed();
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
+        mAdapterService.setProfileConnectionPolicy(device, getProfileId(), connectionPolicy);
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
             connect(device);
         } else if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
@@ -421,9 +421,10 @@ public class HapClientService extends ConnectableProfile {
                 removeStateMachine(device);
             }
         }
-        mActiveDeviceManager.profileConnectionStateChanged(mProfileId, device, fromState, toState);
+        mActiveDeviceManager.profileConnectionStateChanged(
+                getProfileId(), device, fromState, toState);
         mAdapterService.updateProfileConnectionAdapterProperties(
-                device, mProfileId, toState, fromState);
+                device, getProfileId(), toState, fromState);
     }
 
     @Override

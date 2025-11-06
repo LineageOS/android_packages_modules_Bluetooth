@@ -303,7 +303,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
     @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
+        mAdapterService.setProfileConnectionPolicy(device, getProfileId(), connectionPolicy);
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
             connect(device);
         } else if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
@@ -843,7 +843,8 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
             mGroupIdToConnectedDevices.get(groupId).add(device);
             disableCsipIfNeeded(groupId);
         }
-        mAdapterService.handleProfileConnectionStateChange(mProfileId, device, fromState, toState);
+        mAdapterService.handleProfileConnectionStateChange(
+                getProfileId(), device, fromState, toState);
     }
 
     @Override

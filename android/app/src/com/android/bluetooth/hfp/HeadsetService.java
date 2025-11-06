@@ -779,7 +779,7 @@ public class HeadsetService extends ConnectableProfile {
                         + ", "
                         + Utils.getUidPidString());
 
-        if (!mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
+        if (!mAdapterService.setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -2005,17 +2005,20 @@ public class HeadsetService extends ConnectableProfile {
             }
         }
 
-        mActiveDeviceManager.profileConnectionStateChanged(mProfileId, device, fromState, toState);
+        mActiveDeviceManager.profileConnectionStateChanged(
+                getProfileId(), device, fromState, toState);
         mAdapterService
                 .getSilenceDeviceManager()
                 .hfpConnectionStateChanged(device, fromState, toState);
         mAdapterService
                 .getRemoteDevices()
                 .handleHeadsetConnectionStateChanged(device, fromState, toState);
-        mAdapterService.notifyProfileConnectionStateChangeToScan(mProfileId, fromState, toState);
-        mAdapterService.handleProfileConnectionStateChange(mProfileId, device, fromState, toState);
+        mAdapterService.notifyProfileConnectionStateChangeToScan(
+                getProfileId(), fromState, toState);
+        mAdapterService.handleProfileConnectionStateChange(
+                getProfileId(), device, fromState, toState);
         mAdapterService.updateProfileConnectionAdapterProperties(
-                device, mProfileId, toState, fromState);
+                device, getProfileId(), toState, fromState);
     }
 
     /** Called from {@link HeadsetClientStateMachine} to update inband ringing status. */
@@ -2091,7 +2094,7 @@ public class HeadsetService extends ConnectableProfile {
      * @return true if it is a BluetoothDevice with only HFP profile connectable
      */
     private boolean isHFPAudioOnly(@NonNull BluetoothDevice device) {
-        int hfpPolicy = mAdapterService.getProfileConnectionPolicy(device, mProfileId);
+        int hfpPolicy = mAdapterService.getProfileConnectionPolicy(device, getProfileId());
         int a2dpPolicy = mAdapterService.getProfileConnectionPolicy(device, BluetoothProfile.A2DP);
         int leAudioPolicy =
                 mAdapterService.getProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO);
@@ -2212,11 +2215,11 @@ public class HeadsetService extends ConnectableProfile {
     private void broadcastActiveDevice(BluetoothDevice device) {
         logD("broadcastActiveDevice: " + device);
 
-        mAdapterService.handleActiveDeviceChange(mProfileId, device);
+        mAdapterService.handleActiveDeviceChange(getProfileId(), device);
 
         BluetoothStatsLog.write(
                 BluetoothStatsLog.BLUETOOTH_ACTIVE_DEVICE_CHANGED,
-                mProfileId,
+                getProfileId(),
                 mAdapterService.obfuscateAddress(device),
                 mAdapterService.getMetricId(device));
 

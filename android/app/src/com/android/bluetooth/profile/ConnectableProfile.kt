@@ -129,7 +129,7 @@ constructor(
      */
     @BluetoothProfile.ConnectionPolicy
     fun getConnectionPolicy(device: BluetoothDevice) =
-        mAdapterService.getProfileConnectionPolicy(device, mProfileId)
+        mAdapterService.getProfileConnectionPolicy(device, profileId)
 
     /**
      * Set connection policy of the profile and connects it if connectionPolicy is

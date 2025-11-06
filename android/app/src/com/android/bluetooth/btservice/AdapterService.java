@@ -644,7 +644,7 @@ public class AdapterService extends Service {
                     mRunningProfiles.add(profile);
                     // TODO(b/228875190): GATT is assumed supported. GATT starting triggers hardware
                     // initialization. Configuring a device without GATT causes start up failures.
-                    if (!(profile.mProfileId == BluetoothProfile.GATT
+                    if (!(profile.getProfileId() == BluetoothProfile.GATT
                                     && !Flags.onlyStartScanDuringBleOn())
                             && mRegisteredProfiles.size() == Config.getSupportedProfiles().length
                             && mRegisteredProfiles.size() == mRunningProfiles.size()) {
@@ -676,7 +676,8 @@ public class AdapterService extends Service {
                         // only profile available in the "BLE ON" state. If only GATT is left, send
                         // BREDR_STOPPED. If GATT is stopped, deinitialize the hardware.
                         if (mRunningProfiles.size() == 1
-                                && mRunningProfiles.get(0).mProfileId == BluetoothProfile.GATT) {
+                                && mRunningProfiles.get(0).getProfileId()
+                                        == BluetoothProfile.GATT) {
                             mAdapterStateMachine.sendMessage(AdapterState.BREDR_STOPPED);
                         }
                     }
@@ -1482,7 +1483,7 @@ public class AdapterService extends Service {
             // move on to BREDR_STOPPED
             if (supportedProfiles.length == 1
                     && mRunningProfiles.size() == 1
-                    && mRunningProfiles.get(0).mProfileId == BluetoothProfile.GATT) {
+                    && mRunningProfiles.get(0).getProfileId() == BluetoothProfile.GATT) {
                 Log.d(
                         TAG,
                         "stopProfileServices(): No profiles services to stop or already stopped.");
@@ -1973,7 +1974,7 @@ public class AdapterService extends Service {
         return !mStartedProfiles.values().stream()
                 .anyMatch(
                         profile ->
-                                getProfileConnectionPolicy(device, profile.mProfileId)
+                                getProfileConnectionPolicy(device, profile.getProfileId())
                                         != CONNECTION_POLICY_UNKNOWN);
     }
 

@@ -340,7 +340,7 @@ public class PanService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
+        if (!mAdapterService.setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -520,7 +520,7 @@ public class PanService extends ConnectableProfile {
         }
 
         mAdapterService.updateProfileConnectionAdapterProperties(
-                device, mProfileId, state, prevState);
+                device, getProfileId(), state, prevState);
 
         /* Notifying the connection state change of the profile before sending the intent for
         connection state change, as it was causing a race condition, with the UI not being

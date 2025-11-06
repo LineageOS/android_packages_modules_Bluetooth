@@ -494,7 +494,7 @@ public class BluetoothMapService extends ConnectableProfile {
         int prevState = mState;
         mState = state;
         mAdapterService.updateProfileConnectionAdapterProperties(
-                mRemoteDevice, mProfileId, mState, prevState);
+                mRemoteDevice, getProfileId(), mState, prevState);
 
         BluetoothMap.invalidateBluetoothGetConnectionStateCache();
         Intent intent = new Intent(BluetoothMap.ACTION_CONNECTION_STATE_CHANGED);
@@ -596,7 +596,7 @@ public class BluetoothMapService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.v(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
+        if (!mAdapterService.setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {

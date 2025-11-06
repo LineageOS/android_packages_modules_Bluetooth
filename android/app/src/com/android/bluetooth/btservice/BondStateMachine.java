@@ -819,7 +819,7 @@ public final class BondStateMachine extends StateMachine {
                 .flatMap(Optional::stream)
                 .forEach(
                         profile -> {
-                            if (profile.mProfileId == HAP_CLIENT
+                            if (profile.getProfileId() == HAP_CLIENT
                                     && Flags.hapOnMainLooper()
                                     && !Flags.bondStateMachineLooper()) {
                                 ((HapClientService) profile)

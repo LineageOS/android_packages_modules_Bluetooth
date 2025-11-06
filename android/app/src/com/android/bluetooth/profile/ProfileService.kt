@@ -29,7 +29,7 @@ import java.util.Optional
 /** Base class for a Bluetooth profile. */
 abstract class ProfileService(
     /** The id of this Profile. see [BluetoothProfile] */
-    @JvmField val mProfileId: Int,
+    val profileId: Int,
     @JvmField protected val mAdapterService: AdapterService,
 ) : ContextWrapper(mAdapterService) {
 

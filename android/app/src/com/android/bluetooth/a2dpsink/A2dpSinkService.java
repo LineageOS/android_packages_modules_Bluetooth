@@ -314,7 +314,7 @@ public class A2dpSinkService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
+        if (!mAdapterService.setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -406,8 +406,9 @@ public class A2dpSinkService extends ConnectableProfile {
     }
 
     void connectionStateChanged(BluetoothDevice device, int fromState, int toState) {
-        mAdapterService.notifyProfileConnectionStateChangeToScan(mProfileId, fromState, toState);
+        mAdapterService.notifyProfileConnectionStateChangeToScan(
+                getProfileId(), fromState, toState);
         mAdapterService.updateProfileConnectionAdapterProperties(
-                device, mProfileId, toState, fromState);
+                device, getProfileId(), toState, fromState);
     }
 }
