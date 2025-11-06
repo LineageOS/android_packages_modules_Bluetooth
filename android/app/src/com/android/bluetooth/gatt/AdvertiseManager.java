@@ -704,6 +704,11 @@ public class AdvertiseManager {
     }
 
     private void forceRunSyncOnAdvertiseThread(Runnable r) {
+        if (Utils.isInstrumentationTestMode()) {
+            r.run();
+            return;
+        }
+
         final CompletableFuture<Void> future = new CompletableFuture<>();
         final var posted =
                 mHandler.postAtFrontOfQueue(
