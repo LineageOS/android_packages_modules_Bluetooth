@@ -386,7 +386,7 @@ public class HearingAidService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
+        if (!mAdapterService.setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -539,7 +539,7 @@ public class HearingAidService extends ConnectableProfile {
     }
 
     private void notifyActiveDeviceChanged() {
-        mAdapterService.handleActiveDeviceChange(mProfileId, mActiveDevice);
+        mAdapterService.handleActiveDeviceChange(getProfileId(), mActiveDevice);
         Intent intent = new Intent(BluetoothHearingAid.ACTION_ACTIVE_DEVICE_CHANGED);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mActiveDevice);
         intent.addFlags(
@@ -643,7 +643,7 @@ public class HearingAidService extends ConnectableProfile {
 
         BluetoothStatsLog.write(
                 BluetoothStatsLog.BLUETOOTH_ACTIVE_DEVICE_CHANGED,
-                mProfileId,
+                getProfileId(),
                 mAdapterService.obfuscateAddress(device),
                 mAdapterService.getMetricId(device));
 
@@ -761,11 +761,14 @@ public class HearingAidService extends ConnectableProfile {
                 removeStateMachine(device);
             }
         }
-        mAdapterService.notifyProfileConnectionStateChangeToScan(mProfileId, fromState, toState);
-        mAdapterService.handleProfileConnectionStateChange(mProfileId, device, fromState, toState);
-        mActiveDeviceManager.profileConnectionStateChanged(mProfileId, device, fromState, toState);
+        mAdapterService.notifyProfileConnectionStateChangeToScan(
+                getProfileId(), fromState, toState);
+        mAdapterService.handleProfileConnectionStateChange(
+                getProfileId(), device, fromState, toState);
+        mActiveDeviceManager.profileConnectionStateChanged(
+                getProfileId(), device, fromState, toState);
         mAdapterService.updateProfileConnectionAdapterProperties(
-                device, mProfileId, toState, fromState);
+                device, getProfileId(), toState, fromState);
     }
 
     @Override

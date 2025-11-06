@@ -756,7 +756,7 @@ public class HidHostService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "setConnectionPolicy: device=" + device);
 
-        if (!mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
+        if (!mAdapterService.setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
             return false;
         }
         Log.d(TAG, "Saved connectionPolicy=" + connectionPolicy + " for device=" + device);
@@ -1036,7 +1036,7 @@ public class HidHostService extends ConnectableProfile {
                         + (" prevState=" + prevState + " -> newState=" + newState));
 
         mAdapterService.updateProfileConnectionAdapterProperties(
-                device, mProfileId, newState, prevState);
+                device, getProfileId(), newState, prevState);
 
         Intent intent = new Intent(BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED);
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);

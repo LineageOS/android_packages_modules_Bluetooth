@@ -584,7 +584,7 @@ public class HidDeviceService extends ProfileService {
         }
 
         mAdapterService.updateProfileConnectionAdapterProperties(
-                device, mProfileId, newState, prevState);
+                device, getProfileId(), newState, prevState);
 
         Intent intent = new Intent(BluetoothHidDevice.ACTION_CONNECTION_STATE_CHANGED);
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);

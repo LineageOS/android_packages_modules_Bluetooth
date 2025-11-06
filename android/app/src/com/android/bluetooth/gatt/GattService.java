@@ -207,7 +207,7 @@ public class GattService extends ProfileService {
         mReliableQueue = requireNonNull(reliableQueue);
         mCompanionDeviceManager = companionDeviceManager;
         mTimeProvider = timeProvider;
-        mMetricsReporter = new GattMetricsReporter(mProfileId, adapterService);
+        mMetricsReporter = new GattMetricsReporter(getProfileId(), adapterService);
 
         Settings.Global.putInt(
                 getContentResolver(), "bluetooth_sanitized_exposure_notification_supported", 1);

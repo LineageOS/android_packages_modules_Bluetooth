@@ -84,7 +84,7 @@ class ConnectableProfileTest {
 
     @Test
     fun profileId_returnsCorrectId() {
-        assertThat(connectableProfile.mProfileId).isEqualTo(TEST_PROFILE_ID)
+        assertThat(connectableProfile.profileId).isEqualTo(TEST_PROFILE_ID)
     }
 
     @Test

@@ -2138,11 +2138,14 @@ public class LeAudioService extends ConnectableProfile {
                         + newState
                         + ")");
 
-        mAdapterService.notifyProfileConnectionStateChangeToScan(mProfileId, prevState, newState);
-        mAdapterService.handleProfileConnectionStateChange(mProfileId, device, prevState, newState);
-        mActiveDeviceManager.profileConnectionStateChanged(mProfileId, device, prevState, newState);
+        mAdapterService.notifyProfileConnectionStateChangeToScan(
+                getProfileId(), prevState, newState);
+        mAdapterService.handleProfileConnectionStateChange(
+                getProfileId(), device, prevState, newState);
+        mActiveDeviceManager.profileConnectionStateChanged(
+                getProfileId(), device, prevState, newState);
         mAdapterService.updateProfileConnectionAdapterProperties(
-                device, mProfileId, newState, prevState);
+                device, getProfileId(), newState, prevState);
 
         Intent intent = new Intent(BluetoothLeAudio.ACTION_LE_AUDIO_CONNECTION_STATE_CHANGED);
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
@@ -2209,7 +2212,7 @@ public class LeAudioService extends ConnectableProfile {
                         + " Currently exposed device "
                         + mExposedActiveDevice);
 
-        mAdapterService.handleActiveDeviceChange(mProfileId, device);
+        mAdapterService.handleActiveDeviceChange(getProfileId(), device);
         notifyVolumeControlServiceAboutActiveGroup(device);
         sendActiveDeviceChangeIntent(device);
         if (device != null) {
@@ -4796,7 +4799,7 @@ public class LeAudioService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
+        if (!mAdapterService.setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
             return false;
         }
 

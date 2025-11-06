@@ -525,7 +525,7 @@ public class SapService extends ConnectableProfile
         int prevState = mState;
         mState = state;
         mAdapterService.updateProfileConnectionAdapterProperties(
-                mRemoteDevice, mProfileId, mState, prevState);
+                mRemoteDevice, getProfileId(), mState, prevState);
 
         BluetoothSap.invalidateBluetoothGetConnectionStateCache();
         Intent intent = new Intent(BluetoothSap.ACTION_CONNECTION_STATE_CHANGED);
@@ -630,7 +630,7 @@ public class SapService extends ConnectableProfile
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         enforceCallingOrSelfPermission(
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
-        mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
+        mAdapterService.setProfileConnectionPolicy(device, getProfileId(), connectionPolicy);
         if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
             disconnect(device);
         }
