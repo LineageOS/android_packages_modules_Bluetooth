@@ -45,8 +45,8 @@ class GattServiceBinderTest {
     @get:Rule val mockitoRule = MockitoRule()
 
     @Mock private lateinit var source: AttributionSource
-    @Mock private lateinit var gattServerCallback: IBluetoothGattServerCallback
-    @Mock private lateinit var gattCallback: IBluetoothGattCallback
+    @Mock private lateinit var serverCallback: IBluetoothGattServerCallback
+    @Mock private lateinit var callback: IBluetoothGattCallback
     @Mock private lateinit var service: GattService
     @Mock private lateinit var serverManager: GattServerManager
 
@@ -76,19 +76,15 @@ class GattServiceBinderTest {
         val eattSupport = true
         val transport = BluetoothDevice.TRANSPORT_LE
 
-        binder.registerClient(ParcelUuid(uuid), gattCallback, eattSupport, transport, source)
-        verify(service).registerClient(uuid, gattCallback, eattSupport, transport, source)
+        binder.registerClient(ParcelUuid(uuid), callback, eattSupport, transport, source)
+        verify(service).registerClient(uuid, callback, eattSupport, transport, source)
     }
 
     @Test
     fun unregisterClient() {
-        binder.unregisterClient(gattCallback, source)
+        binder.unregisterClient(callback, source)
         verify(service)
-            .unregisterClient(
-                gattCallback,
-                source,
-                ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT,
-            )
+            .unregisterClient(callback, source, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT)
     }
 
     @Test
@@ -99,7 +95,7 @@ class GattServiceBinderTest {
         val opportunistic = true
 
         binder.clientConnect(
-            gattCallback,
+            callback,
             device,
             addressType,
             isDirect,
@@ -109,7 +105,7 @@ class GattServiceBinderTest {
         )
         verify(service)
             .clientConnect(
-                gattCallback,
+                callback,
                 device,
                 addressType,
                 isDirect,
@@ -121,8 +117,8 @@ class GattServiceBinderTest {
 
     @Test
     fun clientDisconnect() {
-        binder.clientDisconnect(gattCallback, device, source)
-        verify(service).clientDisconnect(gattCallback, device, source)
+        binder.clientDisconnect(callback, device, source)
+        verify(service).clientDisconnect(callback, device, source)
     }
 
     @Test
@@ -131,34 +127,34 @@ class GattServiceBinderTest {
         val rxPhy = 1
         val phyOptions = 3
 
-        binder.clientSetPreferredPhy(gattCallback, device, txPhy, rxPhy, phyOptions, source)
-        verify(service).clientSetPreferredPhy(gattCallback, device, txPhy, rxPhy, phyOptions)
+        binder.clientSetPreferredPhy(callback, device, txPhy, rxPhy, phyOptions, source)
+        verify(service).clientSetPreferredPhy(callback, device, txPhy, rxPhy, phyOptions)
     }
 
     @Test
     fun clientReadPhy() {
-        binder.clientReadPhy(gattCallback, device, source)
-        verify(service).clientReadPhy(gattCallback, device)
+        binder.clientReadPhy(callback, device, source)
+        verify(service).clientReadPhy(callback, device)
     }
 
     @Test
     fun refreshDevice() {
-        binder.refreshDevice(gattCallback, device, source)
-        verify(service).refreshDevice(gattCallback, device)
+        binder.refreshDevice(callback, device, source)
+        verify(service).refreshDevice(callback, device)
     }
 
     @Test
     fun discoverServices() {
-        binder.discoverServices(gattCallback, device, source)
-        verify(service).discoverServices(gattCallback, device)
+        binder.discoverServices(callback, device, source)
+        verify(service).discoverServices(callback, device)
     }
 
     @Test
     fun discoverServiceByUuid() {
         val uuid = UUID.randomUUID()
 
-        binder.discoverServiceByUuid(gattCallback, device, ParcelUuid(uuid), source)
-        verify(service).discoverServiceByUuid(gattCallback, device, uuid)
+        binder.discoverServiceByUuid(callback, device, ParcelUuid(uuid), source)
+        verify(service).discoverServiceByUuid(callback, device, uuid)
     }
 
     @Test
@@ -166,8 +162,8 @@ class GattServiceBinderTest {
         val handle = 2
         val authReq = 3
 
-        binder.readCharacteristic(gattCallback, device, handle, authReq, source)
-        verify(service).readCharacteristic(gattCallback, device, handle, authReq)
+        binder.readCharacteristic(callback, device, handle, authReq, source)
+        verify(service).readCharacteristic(callback, device, handle, authReq)
     }
 
     @Test
@@ -178,7 +174,7 @@ class GattServiceBinderTest {
         val authReq = 4
 
         binder.readUsingCharacteristicUuid(
-            gattCallback,
+            callback,
             device,
             ParcelUuid(uuid),
             startHandle,
@@ -187,14 +183,7 @@ class GattServiceBinderTest {
             source,
         )
         verify(service)
-            .readUsingCharacteristicUuid(
-                gattCallback,
-                device,
-                uuid,
-                startHandle,
-                endHandle,
-                authReq,
-            )
+            .readUsingCharacteristicUuid(callback, device, uuid, startHandle, endHandle, authReq)
     }
 
     @Test
@@ -204,8 +193,8 @@ class GattServiceBinderTest {
         val authReq = 4
         val value = byteArrayOf(5, 6)
 
-        binder.writeCharacteristic(gattCallback, device, handle, writeType, authReq, value, source)
-        verify(service).writeCharacteristic(gattCallback, device, handle, writeType, authReq, value)
+        binder.writeCharacteristic(callback, device, handle, writeType, authReq, value, source)
+        verify(service).writeCharacteristic(callback, device, handle, writeType, authReq, value)
     }
 
     @Test
@@ -213,8 +202,8 @@ class GattServiceBinderTest {
         val handle = 2
         val authReq = 3
 
-        binder.readDescriptor(gattCallback, device, handle, authReq, source)
-        verify(service).readDescriptor(gattCallback, device, handle, authReq)
+        binder.readDescriptor(callback, device, handle, authReq, source)
+        verify(service).readDescriptor(callback, device, handle, authReq)
     }
 
     @Test
@@ -223,8 +212,8 @@ class GattServiceBinderTest {
         val authReq = 3
         val value = byteArrayOf(4, 5)
 
-        binder.writeDescriptor(gattCallback, device, handle, authReq, value, source)
-        verify(service).writeDescriptor(gattCallback, device, handle, authReq, value)
+        binder.writeDescriptor(callback, device, handle, authReq, value, source)
+        verify(service).writeDescriptor(callback, device, handle, authReq, value)
     }
 
     @Test
@@ -237,8 +226,8 @@ class GattServiceBinderTest {
     fun endReliableWrite() {
         val execute = true
 
-        binder.endReliableWrite(gattCallback, device, execute, source)
-        verify(service).endReliableWrite(gattCallback, device, execute)
+        binder.endReliableWrite(callback, device, execute, source)
+        verify(service).endReliableWrite(callback, device, execute)
     }
 
     @Test
@@ -246,30 +235,30 @@ class GattServiceBinderTest {
         val handle = 2
         val enable = true
 
-        binder.registerForNotification(gattCallback, device, handle, enable, source)
-        verify(service).registerForNotification(gattCallback, device, handle, enable)
+        binder.registerForNotification(callback, device, handle, enable, source)
+        verify(service).registerForNotification(callback, device, handle, enable)
     }
 
     @Test
     fun readRemoteRssi() {
-        binder.readRemoteRssi(gattCallback, device, source)
-        verify(service).readRemoteRssi(gattCallback, device)
+        binder.readRemoteRssi(callback, device, source)
+        verify(service).readRemoteRssi(callback, device)
     }
 
     @Test
     fun configureMTU() {
         val mtu = 2
 
-        binder.configureMTU(gattCallback, device, mtu, source)
-        verify(service).configureMTU(gattCallback, device, mtu)
+        binder.configureMTU(callback, device, mtu, source)
+        verify(service).configureMTU(callback, device, mtu)
     }
 
     @Test
     fun connectionParameterUpdate() {
         val connectionPriority = 2
 
-        binder.connectionParameterUpdate(gattCallback, device, connectionPriority, source)
-        verify(service).connectionParameterUpdate(gattCallback, device, connectionPriority)
+        binder.connectionParameterUpdate(callback, device, connectionPriority, source)
+        verify(service).connectionParameterUpdate(callback, device, connectionPriority)
     }
 
     @Test
@@ -282,7 +271,7 @@ class GattServiceBinderTest {
         val maxConnectionEventLen = 8
 
         binder.leConnectionUpdate(
-            gattCallback,
+            callback,
             device,
             minConnectionInterval,
             maxConnectionInterval,
@@ -294,7 +283,7 @@ class GattServiceBinderTest {
         )
         verify(service)
             .leConnectionUpdate(
-                gattCallback,
+                callback,
                 device,
                 minConnectionInterval,
                 maxConnectionInterval,
@@ -310,9 +299,9 @@ class GattServiceBinderTest {
         val testDevice = getTestDevice(5)
         val subrateMode = 0
 
-        binder.subrateModeRequest(gattCallback, testDevice, subrateMode, source)
+        binder.subrateModeRequest(callback, testDevice, subrateMode, source)
 
-        verify(service).subrateModeRequest(gattCallback, testDevice, subrateMode)
+        verify(service).subrateModeRequest(callback, testDevice, subrateMode)
     }
 
     @Test
@@ -321,15 +310,14 @@ class GattServiceBinderTest {
         val eattSupport = true
         val transport = BluetoothDevice.TRANSPORT_LE
 
-        binder.registerServer(ParcelUuid(uuid), gattServerCallback, eattSupport, transport, source)
-        verify(serverManager)
-            .registerServer(uuid, gattServerCallback, eattSupport, transport, source)
+        binder.registerServer(ParcelUuid(uuid), serverCallback, eattSupport, transport, source)
+        verify(serverManager).registerServer(uuid, serverCallback, eattSupport, transport, source)
     }
 
     @Test
     fun unregisterServer() {
-        binder.unregisterServer(gattServerCallback, source)
-        verify(serverManager).unregisterServer(gattServerCallback)
+        binder.unregisterServer(serverCallback, source)
+        verify(serverManager).unregisterServer(serverCallback)
     }
 
     @Test
@@ -338,15 +326,15 @@ class GattServiceBinderTest {
         val isDirect = true
         val transport = 2
 
-        binder.serverConnect(gattServerCallback, device, addressType, isDirect, transport, source)
+        binder.serverConnect(serverCallback, device, addressType, isDirect, transport, source)
         verify(serverManager)
-            .serverConnect(gattServerCallback, device, addressType, isDirect, transport, source)
+            .serverConnect(serverCallback, device, addressType, isDirect, transport, source)
     }
 
     @Test
     fun serverDisconnect() {
-        binder.serverDisconnect(gattServerCallback, device, source)
-        verify(serverManager).serverDisconnect(gattServerCallback, device)
+        binder.serverDisconnect(serverCallback, device, source)
+        verify(serverManager).serverDisconnect(serverCallback, device)
     }
 
     @Test
@@ -355,37 +343,37 @@ class GattServiceBinderTest {
         val rxPhy = 1
         val phyOptions = 3
 
-        binder.serverSetPreferredPhy(gattServerCallback, device, txPhy, rxPhy, phyOptions, source)
+        binder.serverSetPreferredPhy(serverCallback, device, txPhy, rxPhy, phyOptions, source)
         verify(serverManager)
-            .serverSetPreferredPhy(gattServerCallback, device, txPhy, rxPhy, phyOptions)
+            .serverSetPreferredPhy(serverCallback, device, txPhy, rxPhy, phyOptions)
     }
 
     @Test
     fun serverReadPhy() {
-        binder.serverReadPhy(gattServerCallback, device, source)
-        verify(serverManager).serverReadPhy(gattServerCallback, device)
+        binder.serverReadPhy(serverCallback, device, source)
+        verify(serverManager).serverReadPhy(serverCallback, device)
     }
 
     @Test
     fun addService() {
         val svc = mock<BluetoothGattService>()
 
-        binder.addService(gattServerCallback, svc, source)
-        verify(serverManager).addService(gattServerCallback, svc)
+        binder.addService(serverCallback, svc, source)
+        verify(serverManager).addService(serverCallback, svc)
     }
 
     @Test
     fun removeService() {
         val handle = 2
 
-        binder.removeService(gattServerCallback, handle, source)
-        verify(serverManager).removeService(gattServerCallback, handle)
+        binder.removeService(serverCallback, handle, source)
+        verify(serverManager).removeService(serverCallback, handle)
     }
 
     @Test
     fun clearServices() {
-        binder.clearServices(gattServerCallback, source)
-        verify(serverManager).clearServices(gattServerCallback)
+        binder.clearServices(serverCallback, source)
+        verify(serverManager).clearServices(serverCallback)
     }
 
     @Test
@@ -393,11 +381,13 @@ class GattServiceBinderTest {
         val requestId = 2
         val status = 3
         val offset = 4
-        val value = byteArrayOf(5, 6)
+        val values = listOf(null, byteArrayOf(5, 6))
 
-        binder.sendResponse(gattServerCallback, device, requestId, status, offset, value, source)
-        verify(serverManager)
-            .sendResponse(gattServerCallback, device, requestId, status, offset, value)
+        values.forEach { value ->
+            binder.sendResponse(serverCallback, device, requestId, status, offset, value, source)
+            verify(serverManager)
+                .sendResponse(serverCallback, device, requestId, status, offset, value)
+        }
     }
 
     @Test
@@ -406,8 +396,8 @@ class GattServiceBinderTest {
         val confirm = true
         val value = byteArrayOf(5, 6)
 
-        binder.sendNotification(gattServerCallback, device, handle, confirm, value, source)
-        verify(serverManager).sendNotification(gattServerCallback, device, handle, confirm, value)
+        binder.sendNotification(serverCallback, device, handle, confirm, value, source)
+        verify(serverManager).sendNotification(serverCallback, device, handle, confirm, value)
     }
 
     @Test
