@@ -176,13 +176,13 @@ public class BassClientStateMachineTest {
                         })
                 .when(mScanController)
                 .doOnScanThread(any(Runnable.class));
-        doReturn(mScanController).when(mAdapterService).getBluetoothScanController();
 
         mStateMachine =
                 new StubBassClientStateMachine(
                         mDevice,
                         mBassClientService,
                         mAdapterService,
+                        mScanController,
                         mPeriodicAdvertisingManager,
                         mLooper.getLooper());
         mStateMachine.start();
@@ -2826,9 +2826,16 @@ public class BassClientStateMachineTest {
                 BluetoothDevice device,
                 BassClientService service,
                 AdapterService adapterService,
+                ScanController scanController,
                 PeriodicAdvertisingManager periodicAdvertisingManager,
                 Looper looper) {
-            super(device, service, adapterService, periodicAdvertisingManager, looper);
+            super(
+                    device,
+                    service,
+                    adapterService,
+                    scanController,
+                    periodicAdvertisingManager,
+                    looper);
         }
 
         @Override

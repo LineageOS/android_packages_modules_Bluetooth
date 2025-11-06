@@ -1814,6 +1814,7 @@ public class BassClientService extends ConnectableProfile {
                                     device,
                                     this,
                                     mAdapterService,
+                                    mScanController,
                                     mPeriodicAdvertisingManager,
                                     mStateMachinesLooper);
             if (stateMachine != null) {

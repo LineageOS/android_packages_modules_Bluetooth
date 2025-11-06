@@ -444,7 +444,7 @@ public class BassClientServiceTest {
                             return stateMachine;
                         })
                 .when(mObjectsFactory)
-                .makeStateMachine(any(), any(), any(), any(), any());
+                .makeStateMachine(any(), any(), any(), any(), any(), any());
 
         mLooper = new TestLooper();
 
@@ -538,6 +538,7 @@ public class BassClientServiceTest {
                         eq(mCurrentDevice),
                         eq(mBassClientService),
                         eq(mAdapterService),
+                        eq(mScanController),
                         eq(mPeriodicAdvertisingManager),
                         any());
         BassClientStateMachine stateMachine = mStateMachines.get(mCurrentDevice);
