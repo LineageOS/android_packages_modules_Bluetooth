@@ -800,7 +800,7 @@ package android.bluetooth {
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public int notifyCharacteristicChanged(@NonNull android.bluetooth.BluetoothDevice, @NonNull android.bluetooth.BluetoothGattCharacteristic, boolean, @NonNull byte[]);
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public void readPhy(android.bluetooth.BluetoothDevice);
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean removeService(android.bluetooth.BluetoothGattService);
-    method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean sendResponse(android.bluetooth.BluetoothDevice, int, int, int, byte[]);
+    method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean sendResponse(@NonNull android.bluetooth.BluetoothDevice, int, int, int, @Nullable byte[]);
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public void setPreferredPhy(android.bluetooth.BluetoothDevice, int, int, int);
   }
 
