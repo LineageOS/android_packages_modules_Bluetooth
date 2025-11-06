@@ -21,6 +21,7 @@
 #include <binder/ProcessState.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <mutex>
 
@@ -100,6 +101,7 @@ static bt_callbacks_t callbacks = {
 };
 
 void BluetoothTest::SetUp() {
+  com::android::bluetooth::flags::provider_->reset_flags();
   android::ProcessState::self()->startThreadPool();
   state_ = BT_STATE_OFF;
   properties_changed_count_ = 0;
