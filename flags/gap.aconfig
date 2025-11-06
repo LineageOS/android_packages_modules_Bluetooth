@@ -328,3 +328,13 @@ flag {
     description: "GATT connection settings & related APIs"
     bug: "450085002"
 }
+
+flag {
+    name: "notify_unconditional_disconnect_le"
+    namespace: "bluetooth"
+    description: "Notify connecting clients of an uncoditional disconnect to prevent a stuck connecting state"
+    bug: "458272298"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
