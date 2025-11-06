@@ -145,8 +145,8 @@ public class LeAudioServiceTest {
     @Rule public final TemporaryFolder mTempFolder = new TemporaryFolder();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private ScanController mScanController;
     @Mock private ActiveDeviceManager mActiveDeviceManager;
+    @Mock private ScanController mScanController;
     @Mock private AudioManager mAudioManager;
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private LeAudioNativeInterface mNativeInterface;
@@ -308,7 +308,6 @@ public class LeAudioServiceTest {
                         })
                 .when(mScanController)
                 .doOnScanThread(any(Runnable.class));
-        doReturn(mScanController).when(mAdapterService).getBluetoothScanController();
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
         doAnswer(invocation -> mBondedDevices.toArray(new BluetoothDevice[] {}))
                 .when(mAdapterService)
@@ -370,6 +369,7 @@ public class LeAudioServiceTest {
                         mNativeInterface,
                         mLeAudioBroadcasterNativeInterface,
                         mActiveDeviceManager,
+                        mScanController,
                         mLooper.getLooper(),
                         mActivityManager,
                         mPackageManager);
@@ -453,6 +453,7 @@ public class LeAudioServiceTest {
                                 mNativeInterface,
                                 mLeAudioBroadcasterNativeInterface,
                                 mActiveDeviceManager,
+                                mScanController,
                                 mLooper.getLooper(),
                                 mActivityManager,
                                 mPackageManager)

@@ -94,6 +94,7 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.Config;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.le_scan.ScanController;
 import com.android.bluetooth.profile.ConnectableProfile;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.bluetooth.storage.BluetoothStorageManager;
@@ -167,13 +168,14 @@ public class LeAudioService extends ConnectableProfile {
     private final ArrayDeque<BluetoothLeBroadcastSettings> mCreateBroadcastQueue =
             new ArrayDeque<>();
 
-    private final ActiveDeviceManager mActiveDeviceManager;
     private final LeAudioNativeInterface mNativeInterface;
+    private final Optional<LeAudioBroadcasterNativeInterface> mLeAudioBroadcasterNativeInterface;
+    private final ActiveDeviceManager mActiveDeviceManager;
+    private final ScanController mScanController;
     private final HandlerThread mStateMachinesThread;
     private final LeAudioCodecConfig mLeAudioCodecConfig;
     private final AudioManager mAudioManager;
     private final int mTmapRoleMask;
-    private final Optional<LeAudioBroadcasterNativeInterface> mLeAudioBroadcasterNativeInterface;
 
     private volatile BluetoothDevice mActiveAudioOutDevice;
     private volatile BluetoothDevice mActiveAudioInDevice;
@@ -275,8 +277,18 @@ public class LeAudioService extends ConnectableProfile {
     public LeAudioService(
             AdapterService adapterService,
             BluetoothStorageManager storage,
-            ActiveDeviceManager activeDeviceManager) {
-        this(adapterService, storage, null, null, activeDeviceManager, null, null, null);
+            ActiveDeviceManager activeDeviceManager,
+            ScanController scanController) {
+        this(
+                adapterService,
+                storage,
+                null /* nativeInterface */,
+                null /* leAudioBroadcasterNativeInterface */,
+                activeDeviceManager,
+                scanController,
+                null /* looper */,
+                null /* activityManager */,
+                null /* packageManager */);
     }
 
     @VisibleForTesting
@@ -286,6 +298,7 @@ public class LeAudioService extends ConnectableProfile {
             LeAudioNativeInterface nativeInterface,
             LeAudioBroadcasterNativeInterface leAudioBroadcasterNativeInterface,
             ActiveDeviceManager activeDeviceManager,
+            ScanController scanController,
             Looper looper,
             ActivityManager activityManager,
             PackageManager packageManager) {
@@ -295,6 +308,7 @@ public class LeAudioService extends ConnectableProfile {
                         nativeInterface, () -> new LeAudioNativeInterface(adapterService, this));
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
         mActiveDeviceManager = activeDeviceManager;
+        mScanController = scanController;
 
         if (looper == null) {
             mHandler = new Handler(Looper.getMainLooper());
@@ -2307,7 +2321,6 @@ public class LeAudioService extends ConnectableProfile {
             }
 
             mScannerId = SCANNER_INITIALIZING;
-            final var scanController = mAdapterService.getBluetoothScanController();
             var source = getAttributionSource();
 
             if (Flags.scanRegisterAndStart()) {
@@ -2323,15 +2336,15 @@ public class LeAudioService extends ConnectableProfile {
                                 .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
                                 .setPhy(BluetoothDevice.PHY_LE_1M)
                                 .build();
-                scanController.doOnScanThread(
+                mScanController.doOnScanThread(
                         () ->
-                                scanController.registerAndStartScanInternal(
+                                mScanController.registerAndStartScanInternal(
                                         this, source, settings, List.of(filter)));
                 return;
             }
 
-            scanController.doOnScanThread(
-                    () -> scanController.registerScannerInternal(this, null, source));
+            mScanController.doOnScanThread(
+                    () -> mScanController.registerScannerInternal(this, null, source));
         }
 
         synchronized void stopBackgroundScan() {
@@ -2339,12 +2352,11 @@ public class LeAudioService extends ConnectableProfile {
                 Log.d(TAG, "Scanner is not running (mScannerId=" + mScannerId + ")");
                 return;
             }
-            final var scanController = mAdapterService.getBluetoothScanController();
             final var scannerIdToStop = mScannerId;
-            scanController.doOnScanThread(
+            mScanController.doOnScanThread(
                     () -> {
-                        scanController.stopScan(scannerIdToStop);
-                        scanController.unregisterScanner(scannerIdToStop);
+                        mScanController.stopScan(scannerIdToStop);
+                        mScanController.unregisterScanner(scannerIdToStop);
                     });
             mScannerId = SCANNER_NOT_INITIALIZED;
         }
@@ -2376,8 +2388,7 @@ public class LeAudioService extends ConnectableProfile {
                             .setPhy(BluetoothDevice.PHY_LE_1M)
                             .build();
 
-            final var scanController = mAdapterService.getBluetoothScanController();
-            scanController.startScanInternal(scannerId, settings, List.of(filter));
+            mScanController.startScanInternal(scannerId, settings, List.of(filter));
         }
 
         @Override
@@ -3494,7 +3505,7 @@ public class LeAudioService extends ConnectableProfile {
         int groupIdToActivate = mBroadcastToUnicastFallbackGroup;
 
         if (Flags.leaudioFallbackGroupSelection()) {
-            /* If there were no set fallback group aprior, pick deactivated group as backup.
+            /* If there were no set fallback group prior, pick deactivated group as backup.
              * This may happen if broadcast is not started properly e.g. create broadcast failed
              */
             if (groupIdToActivate == LE_AUDIO_GROUP_ID_INVALID) {
