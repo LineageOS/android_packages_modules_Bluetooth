@@ -1669,6 +1669,10 @@ bool GATT_CancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_dir
     }
   }
 
+  // Notify connecting clients of unconditional disconnect
+  if (com_android_bluetooth_flags_notify_unconditional_disconnect_le() && gatt_if == 0 && !p_tcb) {
+    gatt_cleanup_upon_disc(bd_addr, GATT_CONN_TERMINATE_LOCAL_HOST, BT_TRANSPORT_LE);
+  }
   if (!connection_manager::remove_unconditional(bd_addr)) {
     log::error("no app associated with the bg device for unconditional removal");
     return false;
