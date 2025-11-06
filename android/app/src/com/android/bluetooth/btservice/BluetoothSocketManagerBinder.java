@@ -173,7 +173,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
 
         if ((Flags.lecocWithFixedPsm()
                 && type == BluetoothSocket.TYPE_LE
-                && !Utils.checkCallerHasPrivilegedPermission(mService))) {
+                && !Util.checkCallerHasPrivilegedPermission(mService))) {
             // for non privileged app, ignore the input LE CoC Psm
             port = BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP;
         }

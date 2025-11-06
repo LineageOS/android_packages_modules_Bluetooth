@@ -18,7 +18,12 @@ package com.android.bluetooth
 
 import android.Manifest.permission.BLUETOOTH_ADVERTISE
 import android.Manifest.permission.BLUETOOTH_CONNECT
+import android.Manifest.permission.BLUETOOTH_PRIVILEGED
 import android.Manifest.permission.BLUETOOTH_SCAN
+import android.Manifest.permission.NETWORK_SETTINGS
+import android.Manifest.permission.NETWORK_SETUP_WIZARD
+import android.Manifest.permission.RADIO_SCAN_WITHOUT_LOCATION
+import android.Manifest.permission.WRITE_SMS
 import android.annotation.PermissionMethod
 import android.annotation.PermissionName
 import android.annotation.RequiresPermission
@@ -27,6 +32,8 @@ import android.content.AttributionSource
 import android.content.Context
 import android.os.IBinder
 import android.permission.PermissionManager
+import android.permission.PermissionManager.PERMISSION_GRANTED
+import android.permission.PermissionManager.PERMISSION_HARD_DENIED
 import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.profile.ProfileService
@@ -84,6 +91,36 @@ object Util {
             BluetoothDevice.TRANSPORT_LE -> "LE"
             else -> "Unknown transport ($transport)"
         }
+
+    /** Returns `true` if the caller holds [NETWORK_SETTINGS] */
+    @JvmStatic
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
+    fun checkCallerHasNetworkSettingsPermission(context: Context) =
+        context.checkCallingOrSelfPermission(NETWORK_SETTINGS) == PERMISSION_GRANTED
+
+    /** Returns `true` if the caller holds [NETWORK_SETUP_WIZARD] */
+    @JvmStatic
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
+    fun checkCallerHasNetworkSetupWizardPermission(context: Context) =
+        context.checkCallingOrSelfPermission(NETWORK_SETUP_WIZARD) == PERMISSION_GRANTED
+
+    /** Returns `true` if the caller holds [RADIO_SCAN_WITHOUT_LOCATION] */
+    @JvmStatic
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
+    fun checkCallerHasScanWithoutLocationPermission(context: Context) =
+        context.checkCallingOrSelfPermission(RADIO_SCAN_WITHOUT_LOCATION) == PERMISSION_GRANTED
+
+    /** Returns `true` if the caller holds [BLUETOOTH_PRIVILEGED] */
+    @JvmStatic
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
+    fun checkCallerHasPrivilegedPermission(context: Context) =
+        context.checkCallingOrSelfPermission(BLUETOOTH_PRIVILEGED) == PERMISSION_GRANTED
+
+    /** Returns `true` if the caller holds [WRITE_SMS] */
+    @JvmStatic
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
+    fun checkCallerHasWriteSmsPermission(context: Context): Boolean =
+        context.checkCallingOrSelfPermission(WRITE_SMS) == PERMISSION_GRANTED
 
     /**
      * Returns `true` if the [BLUETOOTH_ADVERTISE] permission is granted for the calling app.
@@ -171,12 +208,12 @@ object Util {
                 currentAttribution,
                 message,
             )
-        if (result == PermissionManager.PERMISSION_GRANTED) {
+        if (result == PERMISSION_GRANTED) {
             return true
         }
 
         val msg = "Need $permission permission for $currentAttribution: $message"
-        if (result == PermissionManager.PERMISSION_HARD_DENIED) {
+        if (result == PERMISSION_HARD_DENIED) {
             throw SecurityException(msg)
         } else {
             Log.w(TAG, msg)
@@ -193,12 +230,12 @@ object Util {
         val permissionManager =
             context.getSystemService(PermissionManager::class.java) ?: return false
         val result = permissionManager.checkPermissionForPreflight(permission, source)
-        if (result == PermissionManager.PERMISSION_GRANTED) {
+        if (result == PERMISSION_GRANTED) {
             return true
         }
 
         val msg = "Need $permission permission"
-        if (result == PermissionManager.PERMISSION_HARD_DENIED) {
+        if (result == PERMISSION_HARD_DENIED) {
             throw SecurityException(msg)
         } else {
             Log.w(TAG, msg)

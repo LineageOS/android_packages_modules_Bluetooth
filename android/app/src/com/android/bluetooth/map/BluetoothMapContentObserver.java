@@ -53,6 +53,7 @@ import android.util.Log;
 import android.util.Xml;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.map.BluetoothMapContract.MessageColumns;
@@ -3936,7 +3937,7 @@ public class BluetoothMapContentObserver {
     public static void actionSmsSentDisconnected(Context context, Intent intent, int result) {
         /* Check permission for message deletion. */
         if ((Binder.getCallingPid() != Process.myPid())
-                || !Utils.checkCallerHasWriteSmsPermission(context)) {
+                || !Util.checkCallerHasWriteSmsPermission(context)) {
             Log.w(TAG, "actionSmsSentDisconnected: Not allowed to delete SMS/MMS messages");
             return;
         }

@@ -975,7 +975,7 @@ public class ScanController {
         var appScanStats = mScannerMap.getAppScanStatsByUid(uid);
         if (appScanStats != null
                 && appScanStats.isScanningTooFrequently()
-                && !Utils.checkCallerHasPrivilegedPermission(mAdapterService)) {
+                && !Util.checkCallerHasPrivilegedPermission(mAdapterService)) {
             Log.e(TAG, "registerScanner(): " + appScanStats + " is scanning too frequently");
             try {
                 callback.onScannerRegistered(ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY, -1);
@@ -998,7 +998,7 @@ public class ScanController {
         var appScanStats = mScannerMap.getAppScanStatsByUid(uid);
         if (appScanStats != null
                 && appScanStats.isScanningTooFrequently()
-                && !Utils.checkCallerHasPrivilegedPermission(mAdapterService)) {
+                && !Util.checkCallerHasPrivilegedPermission(mAdapterService)) {
             Log.e(TAG, "registerAndStartScan(): " + appScanStats + " is scanning too frequently");
             try {
                 callback.onScannerRegistered(ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY, -1);
@@ -1133,11 +1133,11 @@ public class ScanController {
             }
         }
         scanClient.setHasNetworkSettingsPermission(
-                Utils.checkCallerHasNetworkSettingsPermission(mAdapterService));
+                Util.checkCallerHasNetworkSettingsPermission(mAdapterService));
         scanClient.setHasNetworkSetupWizardPermission(
-                Utils.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
+                Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
         scanClient.setHasScanWithoutLocationPermission(
-                Utils.checkCallerHasScanWithoutLocationPermission(mAdapterService));
+                Util.checkCallerHasScanWithoutLocationPermission(mAdapterService));
         scanClient.setAssociatedDevices(getAssociatedDevices(callingPackage));
 
         dispatchStartScan(scannerId, settings, filters, scanClient);
@@ -1157,11 +1157,11 @@ public class ScanController {
                         Binder.getCallingUserHandle(),
                         true);
         scanClient.setHasNetworkSettingsPermission(
-                Utils.checkCallerHasNetworkSettingsPermission(mAdapterService));
+                Util.checkCallerHasNetworkSettingsPermission(mAdapterService));
         scanClient.setHasNetworkSetupWizardPermission(
-                Utils.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
+                Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
         scanClient.setHasScanWithoutLocationPermission(
-                Utils.checkCallerHasScanWithoutLocationPermission(mAdapterService));
+                Util.checkCallerHasScanWithoutLocationPermission(mAdapterService));
         scanClient.setAssociatedDevices(Collections.emptyList());
 
         dispatchStartScan(scannerId, settings, filters, scanClient);
@@ -1251,11 +1251,11 @@ public class ScanController {
             }
         }
         app.setHasNetworkSettingsPermission(
-                Utils.checkCallerHasNetworkSettingsPermission(mAdapterService));
+                Util.checkCallerHasNetworkSettingsPermission(mAdapterService));
         app.setHasNetworkSetupWizardPermission(
-                Utils.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
+                Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
         app.setHasScanWithoutLocationPermission(
-                Utils.checkCallerHasScanWithoutLocationPermission(mAdapterService));
+                Util.checkCallerHasScanWithoutLocationPermission(mAdapterService));
         app.setAssociatedDevices(getAssociatedDevices(callingPackage));
 
         mScanManager.registerScanner(uuid);
