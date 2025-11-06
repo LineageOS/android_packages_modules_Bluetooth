@@ -52,7 +52,7 @@ import org.robolectric.shadows.ShadowBinder
 @SmallTest
 @RunWith(ParameterizedRobolectricTestRunner::class)
 class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue: Boolean) {
-    @get:Rule val mSetFlagsRule: SetFlagsRule = SetFlagsRule(flags.flags)
+    @get:Rule val setFlagsRule: SetFlagsRule = SetFlagsRule(flags.flags)
     @get:Rule val testName = TestName()
 
     private val mockApi: BluetoothManagerServiceApi = mock()
