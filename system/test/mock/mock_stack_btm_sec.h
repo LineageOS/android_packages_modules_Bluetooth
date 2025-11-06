@@ -733,6 +733,27 @@ struct btm_simple_pair_complete {
 };
 extern struct btm_simple_pair_complete btm_simple_pair_complete;
 
+// Name: btm_is_bond_lost
+// Params: RawAddress bd_addr
+// Return: bool
+struct btm_is_bond_lost {
+  static bool return_value;
+  std::function<bool(const RawAddress& bd_addr)> body{
+          [](const RawAddress& /* bd_addr */) { return return_value; }};
+  bool operator()(const RawAddress& bd_addr) { return body(bd_addr); }
+};
+extern struct btm_is_bond_lost btm_is_bond_lost;
+
+// Name: btm_update_bond_lost
+// Params: RawAddress bd_addr, bool bond_lost
+// Return: void
+struct btm_update_bond_lost {
+  std::function<void(const RawAddress& bd_addr, bool bond_lost)> body{
+          [](const RawAddress& /* bd_addr */, bool /* bond_lost */) {}};
+  void operator()(const RawAddress& bd_addr, bool bond_lost) { body(bd_addr, bond_lost); }
+};
+extern struct btm_update_bond_lost btm_update_bond_lost;
+
 // Name: BTM_IsRemoteNameKnown
 // Params: const RawAddress& bd_addr, tBT_TRANSPORT transport
 // Return: bool

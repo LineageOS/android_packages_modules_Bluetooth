@@ -152,6 +152,8 @@ public:
   tBTM_LE_CONN_PRAMS conn_params;
   // security related properties
   BtmSecurityRecord sec_rec;
+
+  bool bond_lost;  /* indicates if the bond is lost */
 };
 
 namespace std {

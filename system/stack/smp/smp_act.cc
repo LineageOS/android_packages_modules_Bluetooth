@@ -550,7 +550,11 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     if (BTM_IsBonded(p_cb->pairing_bda, BT_TRANSPORT_LE) &&
         !BTM_IsEncrypted(p_cb->pairing_bda, BT_TRANSPORT_LE)) {
       get_btm_client_interface().security.BTM_SecReportBondLoss(p_cb->pairing_bda, BT_TRANSPORT_LE);
-      return;
+      if (!com::android::bluetooth::flags::enable_autonomous_repairing() ||
+          !p_device->bond_lost) {
+        // continue with pairing if it's a bond loss scenario.
+        return;
+      }
     }
 
     btm_sec_clear_ble_keys(p_device);
