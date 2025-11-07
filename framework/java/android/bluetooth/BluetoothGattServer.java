@@ -27,6 +27,7 @@ import android.annotation.FlaggedApi;
 import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
+import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
 import android.annotation.SystemApi;
@@ -787,7 +788,12 @@ public final class BluetoothGattServer implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean sendResponse(
-            BluetoothDevice device, int requestId, int status, int offset, byte[] value) {
+            @NonNull BluetoothDevice device,
+            int requestId,
+            int status,
+            int offset,
+            @Nullable byte[] value) {
+        requireNonNull(device);
         if (VDBG) Log.d(TAG, "sendResponse() - device: " + device);
         if (mService == null || !mServerRegistered) return false;
 
