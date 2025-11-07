@@ -97,7 +97,7 @@ object ScanUtil {
     fun hasScanResultPermission(adapterService: AdapterService, client: ScanClient) =
         when {
             // Bypass permission check for internal clients
-            client.isInternalClient ||
+            client.isInternal ||
                 client.hasNetworkSettingsPermission ||
                 client.hasNetworkSetupWizardPermission ||
                 client.hasScanWithoutLocationPermission ||

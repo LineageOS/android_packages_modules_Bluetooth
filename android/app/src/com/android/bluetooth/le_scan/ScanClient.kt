@@ -32,7 +32,7 @@ private constructor(
     val scanModeApp: Int,
     val filters: List<ScanFilter>,
     val userHandle: UserHandle?,
-    val isInternalClient: Boolean,
+    val isInternal: Boolean = false,
     var started: Boolean = false,
     var appDied: Boolean = false,
     var hasLocationPermission: Boolean = false,
@@ -51,8 +51,30 @@ private constructor(
         settings: ScanSettings = ScanSettings.Builder().build(),
         filters: List<ScanFilter> = emptyList(),
         userHandle: UserHandle? = null,
-        isInternalClient: Boolean = false,
-    ) : this(appUid, scannerId, settings, settings.scanMode, filters, userHandle, isInternalClient)
+    ) : this(appUid, scannerId, settings, settings.scanMode, filters, userHandle)
+
+    // Constructor to be used for internal clients only
+    constructor(
+        appUid: Int,
+        scannerId: Int,
+        settings: ScanSettings = ScanSettings.Builder().build(),
+        filters: List<ScanFilter> = emptyList(),
+        userHandle: UserHandle? = null,
+        hasNetworkSettingsPermission: Boolean,
+        hasNetworkSetupWizardPermission: Boolean,
+        hasScanWithoutLocationPermission: Boolean,
+    ) : this(
+        appUid = appUid,
+        scannerId = scannerId,
+        settings = settings,
+        scanModeApp = settings.scanMode,
+        filters = filters,
+        userHandle = userHandle,
+        isInternal = true,
+        hasNetworkSettingsPermission = hasNetworkSettingsPermission,
+        hasNetworkSetupWizardPermission = hasNetworkSetupWizardPermission,
+        hasScanWithoutLocationPermission = hasScanWithoutLocationPermission,
+    )
 
     override fun equals(other: Any?): Boolean {
         if (this === other) {
