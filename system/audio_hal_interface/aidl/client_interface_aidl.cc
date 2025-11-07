@@ -265,6 +265,8 @@ bool BluetoothAudioClientInterface::UpdateAudioConfig(const AudioConfiguration& 
            transport_->GetSessionType() == SessionType::LE_AUDIO_SOFTWARE_DECODING_DATAPATH ||
            transport_->GetSessionType() ==
                    SessionType::LE_AUDIO_BROADCAST_SOFTWARE_ENCODING_DATAPATH ||
+           transport_->GetSessionType() ==
+                   SessionType::LE_AUDIO_BROADCAST_SOFTWARE_DECODING_DATAPATH ||
            (bta_ag_is_sco_managed_by_audio() &&
             (transport_->GetSessionType() == SessionType::HFP_SOFTWARE_ENCODING_DATAPATH ||
              transport_->GetSessionType() == SessionType::HFP_SOFTWARE_DECODING_DATAPATH)));
@@ -277,7 +279,9 @@ bool BluetoothAudioClientInterface::UpdateAudioConfig(const AudioConfiguration& 
                    SessionType::LE_AUDIO_HARDWARE_OFFLOAD_DECODING_DATAPATH);
   bool is_leaudio_broadcast_offload_session =
           (transport_->GetSessionType() ==
-           SessionType::LE_AUDIO_BROADCAST_HARDWARE_OFFLOAD_ENCODING_DATAPATH);
+           SessionType::LE_AUDIO_BROADCAST_HARDWARE_OFFLOAD_ENCODING_DATAPATH ||
+           transport_->GetSessionType() ==
+           SessionType::LE_AUDIO_BROADCAST_HARDWARE_OFFLOAD_DECODING_DATAPATH);
   auto audio_config_tag = audio_config.getTag();
   bool is_software_audio_config =
           (is_software_session && audio_config_tag == AudioConfiguration::pcmConfig);
@@ -402,6 +406,8 @@ int BluetoothAudioClientInterface::StartSession() {
                      SessionType::LE_AUDIO_HARDWARE_OFFLOAD_ENCODING_DATAPATH ||
              transport_->GetSessionType() ==
                      SessionType::LE_AUDIO_BROADCAST_HARDWARE_OFFLOAD_ENCODING_DATAPATH ||
+             transport_->GetSessionType() ==
+                     SessionType::LE_AUDIO_BROADCAST_HARDWARE_OFFLOAD_DECODING_DATAPATH ||
              (bta_ag_is_sco_managed_by_audio() &&
               transport_->GetSessionType() == SessionType::HFP_HARDWARE_OFFLOAD_DATAPATH)) {
     transport_->ResetPresentationPosition();
@@ -488,6 +494,8 @@ void BluetoothAudioClientInterface::FlushAudioData() {
       transport_->GetSessionType() == SessionType::LE_AUDIO_HARDWARE_OFFLOAD_DECODING_DATAPATH ||
       transport_->GetSessionType() ==
               SessionType::LE_AUDIO_BROADCAST_HARDWARE_OFFLOAD_ENCODING_DATAPATH ||
+      transport_->GetSessionType() ==
+              SessionType::LE_AUDIO_BROADCAST_HARDWARE_OFFLOAD_DECODING_DATAPATH ||
       (bta_ag_is_sco_managed_by_audio() &&
        transport_->GetSessionType() == SessionType::HFP_HARDWARE_OFFLOAD_DATAPATH)) {
     return;
