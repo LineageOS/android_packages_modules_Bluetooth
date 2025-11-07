@@ -24,6 +24,7 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.BluetoothStatusCodes
+import android.bluetooth.BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND
 import android.bluetooth.GattOffloadSession
 import android.bluetooth.IBluetoothGatt
 import android.bluetooth.IBluetoothGattCallback
@@ -43,43 +44,53 @@ private const val TAG = GattUtil.TAG_PREFIX + "GattServiceBinder"
 class GattServiceBinder(private var gattService: GattService?) :
     IBluetoothGatt.Stub(), ProfileService.IProfileServiceBinder {
 
+    private val gattUnavailableException = IllegalArgumentException("GattService is null")
+
     override fun cleanup() {
         gattService = null
     }
 
-    private fun getGattService(): GattService? {
+    private fun gatt(): GattService? {
         val gatt = gattService ?: return null
         if (!gatt.checkProfileAvailable(TAG)) return null
         return gatt
     }
 
     @RequiresPermission(BLUETOOTH_CONNECT)
-    private fun getServiceAndEnforceConnect(source: AttributionSource): GattService? {
-        val gatt = getGattService() ?: return null
+    private fun gattEnforceConnect(source: AttributionSource): GattService? {
+        val gatt = gatt() ?: return null
         if (!Util.enforceConnectPermissionForDataDelivery(gatt, source, TAG)) return null
         return gatt
     }
 
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    private fun getServerManagerAndEnforceConnect(source: AttributionSource): GattServerManager? {
-        return getServiceAndEnforceConnect(source)?.serverManager
+    @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED])
+    private fun gattEnforceConnectAndPrivileged(source: AttributionSource): GattService? {
+        val gatt = gattEnforceConnect(source) ?: return null
+        gatt.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+        return gatt
     }
 
-    @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED])
-    private fun getServerManagerAndEnforceConnectAndPrivileged(
-        source: AttributionSource
-    ): GattServerManager? {
-        val service = getServiceAndEnforceConnect(source) ?: return null
-        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
-        return service.serverManager
-    }
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    private fun onGattThreadEnforceConnect(
+        source: AttributionSource,
+        block: GattService.() -> Unit,
+    ) = gattEnforceConnect(source)?.let { it.doOnGattThread { it.block() } }
+
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    private fun serverOnGattThreadEnforceConnect(
+        source: AttributionSource,
+        block: GattServerManager.() -> Unit,
+    ) = gattEnforceConnect(source)?.let { it.doOnGattThread { it.serverManager.block() } }
 
     override fun getDevicesMatchingConnectionStates(
         states: IntArray,
         source: AttributionSource,
     ): List<BluetoothDevice> {
-        val service = getServiceAndEnforceConnect(source) ?: return emptyList()
-        return service.getDevicesMatchingConnectionStates(states)
+        val gatt = gattEnforceConnect(source) ?: return emptyList()
+        return gatt.fetchOnGattThread(
+            { gatt.getDevicesMatchingConnectionStates(states) },
+            emptyList(),
+        )
     }
 
     override fun registerClient(
@@ -89,13 +100,15 @@ class GattServiceBinder(private var gattService: GattService?) :
         transport: Int,
         source: AttributionSource,
     ) {
-        getServiceAndEnforceConnect(source)
-            ?.registerClient(uuid.uuid, callback, eattSupport, transport, source)
+        onGattThreadEnforceConnect(source) {
+            registerClient(uuid.uuid, callback, eattSupport, transport, source)
+        }
     }
 
     override fun unregisterClient(callback: IBluetoothGattCallback, source: AttributionSource) {
-        getServiceAndEnforceConnect(source)
-            ?.unregisterClient(callback, source, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT)
+        onGattThreadEnforceConnect(source) {
+            unregisterClient(callback, source, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT)
+        }
     }
 
     override fun clientConnect(
@@ -107,16 +120,9 @@ class GattServiceBinder(private var gattService: GattService?) :
         opportunistic: Boolean,
         source: AttributionSource,
     ) {
-        getServiceAndEnforceConnect(source)
-            ?.clientConnect(
-                callback,
-                device,
-                addressType,
-                isDirect,
-                transport,
-                opportunistic,
-                source,
-            )
+        onGattThreadEnforceConnect(source) {
+            clientConnect(callback, device, addressType, isDirect, transport, opportunistic, source)
+        }
     }
 
     override fun clientDisconnect(
@@ -124,7 +130,7 @@ class GattServiceBinder(private var gattService: GattService?) :
         device: BluetoothDevice,
         source: AttributionSource,
     ) {
-        getServiceAndEnforceConnect(source)?.clientDisconnect(callback, device, source)
+        onGattThreadEnforceConnect(source) { clientDisconnect(callback, device, source) }
     }
 
     override fun clientSetPreferredPhy(
@@ -135,8 +141,9 @@ class GattServiceBinder(private var gattService: GattService?) :
         phyOptions: Int,
         source: AttributionSource,
     ) {
-        getServiceAndEnforceConnect(source)
-            ?.clientSetPreferredPhy(callback, device, txPhy, rxPhy, phyOptions)
+        onGattThreadEnforceConnect(source) {
+            clientSetPreferredPhy(callback, device, txPhy, rxPhy, phyOptions)
+        }
     }
 
     override fun clientReadPhy(
@@ -144,7 +151,7 @@ class GattServiceBinder(private var gattService: GattService?) :
         device: BluetoothDevice,
         source: AttributionSource,
     ) {
-        getServiceAndEnforceConnect(source)?.clientReadPhy(callback, device)
+        onGattThreadEnforceConnect(source) { clientReadPhy(callback, device) }
     }
 
     override fun refreshDevice(
@@ -152,7 +159,7 @@ class GattServiceBinder(private var gattService: GattService?) :
         device: BluetoothDevice,
         source: AttributionSource,
     ) {
-        getServiceAndEnforceConnect(source)?.refreshDevice(callback, device)
+        onGattThreadEnforceConnect(source) { refreshDevice(callback, device) }
     }
 
     override fun discoverServices(
@@ -160,7 +167,7 @@ class GattServiceBinder(private var gattService: GattService?) :
         device: BluetoothDevice,
         source: AttributionSource,
     ) {
-        getServiceAndEnforceConnect(source)?.discoverServices(callback, device)
+        onGattThreadEnforceConnect(source) { discoverServices(callback, device) }
     }
 
     override fun discoverServiceByUuid(
@@ -169,7 +176,7 @@ class GattServiceBinder(private var gattService: GattService?) :
         uuid: ParcelUuid,
         source: AttributionSource,
     ) {
-        getServiceAndEnforceConnect(source)?.discoverServiceByUuid(callback, device, uuid.uuid)
+        onGattThreadEnforceConnect(source) { discoverServiceByUuid(callback, device, uuid.uuid) }
     }
 
     override fun readCharacteristic(
@@ -179,19 +186,19 @@ class GattServiceBinder(private var gattService: GattService?) :
         authReq: Int,
         source: AttributionSource,
     ) {
-        val service = getServiceAndEnforceConnect(source) ?: return
+        val gatt = gattEnforceConnect(source) ?: return
         try {
-            enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle)
+            enforcePrivilegedPermissionIfNeededForHandle(gatt, callback, device, handle)
         } catch (ex: SecurityException) {
             val callingPackage = source.packageName
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (Utils.checkCallerTargetSdk(service, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
+            if (Utils.checkCallerTargetSdk(gatt, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
                 throw ex
             }
             Log.w(TAG, "readCharacteristic() - permission check failed!")
             return
         }
-        service.readCharacteristic(callback, device, handle, authReq)
+        gatt.doOnGattThread { gatt.readCharacteristic(callback, device, handle, authReq) }
     }
 
     override fun readUsingCharacteristicUuid(
@@ -203,28 +210,30 @@ class GattServiceBinder(private var gattService: GattService?) :
         authReq: Int,
         source: AttributionSource,
     ) {
-        val service = getServiceAndEnforceConnect(source) ?: return
+        val gatt = gattEnforceConnect(source) ?: return
         try {
             if (isHidCharUuid(uuid.uuid)) {
-                service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+                gatt.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
             }
         } catch (ex: SecurityException) {
             val callingPackage = source.packageName
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (Utils.checkCallerTargetSdk(service, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
+            if (Utils.checkCallerTargetSdk(gatt, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
                 throw ex
             }
             Log.w(TAG, "readUsingCharacteristicUuid() - permission check failed!")
             return
         }
-        service.readUsingCharacteristicUuid(
-            callback,
-            device,
-            uuid.uuid,
-            startHandle,
-            endHandle,
-            authReq,
-        )
+        gatt.doOnGattThread {
+            gatt.readUsingCharacteristicUuid(
+                callback,
+                device,
+                uuid.uuid,
+                startHandle,
+                endHandle,
+                authReq,
+            )
+        }
     }
 
     override fun writeCharacteristic(
@@ -236,11 +245,12 @@ class GattServiceBinder(private var gattService: GattService?) :
         value: ByteArray,
         source: AttributionSource,
     ): Int {
-        val service =
-            getServiceAndEnforceConnect(source)
-                ?: return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND
-        enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle)
-        return service.writeCharacteristic(callback, device, handle, writeType, authReq, value)
+        val gatt = gattEnforceConnect(source) ?: return ERROR_PROFILE_SERVICE_NOT_BOUND
+        enforcePrivilegedPermissionIfNeededForHandle(gatt, callback, device, handle)
+        return gatt.fetchOnGattThread(
+            { gatt.writeCharacteristic(callback, device, handle, writeType, authReq, value) },
+            BluetoothStatusCodes.ERROR_UNKNOWN,
+        )
     }
 
     override fun readDescriptor(
@@ -250,19 +260,19 @@ class GattServiceBinder(private var gattService: GattService?) :
         authReq: Int,
         source: AttributionSource,
     ) {
-        val service = getServiceAndEnforceConnect(source) ?: return
+        val gatt = gattEnforceConnect(source) ?: return
         try {
-            enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle)
+            enforcePrivilegedPermissionIfNeededForHandle(gatt, callback, device, handle)
         } catch (ex: SecurityException) {
             val callingPackage = source.packageName
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (Utils.checkCallerTargetSdk(service, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
+            if (Utils.checkCallerTargetSdk(gatt, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
                 throw ex
             }
             Log.w(TAG, "readDescriptor() - permission check failed!")
             return
         }
-        service.readDescriptor(callback, device, handle, authReq)
+        gatt.doOnGattThread { gatt.readDescriptor(callback, device, handle, authReq) }
     }
 
     override fun writeDescriptor(
@@ -273,15 +283,16 @@ class GattServiceBinder(private var gattService: GattService?) :
         value: ByteArray,
         source: AttributionSource,
     ): Int {
-        val service =
-            getServiceAndEnforceConnect(source)
-                ?: return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND
-        enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle)
-        return service.writeDescriptor(callback, device, handle, authReq, value)
+        val gatt = gattEnforceConnect(source) ?: return ERROR_PROFILE_SERVICE_NOT_BOUND
+        enforcePrivilegedPermissionIfNeededForHandle(gatt, callback, device, handle)
+        return gatt.fetchOnGattThread(
+            { gatt.writeDescriptor(callback, device, handle, authReq, value) },
+            BluetoothStatusCodes.ERROR_UNKNOWN,
+        )
     }
 
     override fun beginReliableWrite(device: BluetoothDevice, source: AttributionSource) {
-        getServiceAndEnforceConnect(source)?.beginReliableWrite(device)
+        onGattThreadEnforceConnect(source) { beginReliableWrite(device) }
     }
 
     override fun endReliableWrite(
@@ -290,7 +301,7 @@ class GattServiceBinder(private var gattService: GattService?) :
         execute: Boolean,
         source: AttributionSource,
     ) {
-        getServiceAndEnforceConnect(source)?.endReliableWrite(callback, device, execute)
+        onGattThreadEnforceConnect(source) { endReliableWrite(callback, device, execute) }
     }
 
     override fun registerForNotification(
@@ -300,20 +311,20 @@ class GattServiceBinder(private var gattService: GattService?) :
         enable: Boolean,
         source: AttributionSource,
     ) {
-        val service = getServiceAndEnforceConnect(source) ?: return
+        val gatt = gattEnforceConnect(source) ?: return
         try {
-            enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle)
+            enforcePrivilegedPermissionIfNeededForHandle(gatt, callback, device, handle)
         } catch (ex: SecurityException) {
             val callingPackage = source.packageName
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (Utils.checkCallerTargetSdk(service, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
+            if (Utils.checkCallerTargetSdk(gatt, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
                 throw ex
             }
             Log.w(TAG, "registerForNotification() - permission check failed!")
             return
         }
 
-        service.registerForNotification(callback, device, handle, enable)
+        gatt.doOnGattThread { gatt.registerForNotification(callback, device, handle, enable) }
     }
 
     override fun readRemoteRssi(
@@ -321,7 +332,7 @@ class GattServiceBinder(private var gattService: GattService?) :
         device: BluetoothDevice,
         source: AttributionSource,
     ) {
-        getServiceAndEnforceConnect(source)?.readRemoteRssi(callback, device)
+        onGattThreadEnforceConnect(source) { readRemoteRssi(callback, device) }
     }
 
     override fun configureMTU(
@@ -330,7 +341,7 @@ class GattServiceBinder(private var gattService: GattService?) :
         mtu: Int,
         source: AttributionSource,
     ) {
-        getServiceAndEnforceConnect(source)?.configureMTU(callback, device, mtu)
+        onGattThreadEnforceConnect(source) { configureMTU(callback, device, mtu) }
     }
 
     override fun connectionParameterUpdate(
@@ -339,8 +350,9 @@ class GattServiceBinder(private var gattService: GattService?) :
         connectionPriority: Int,
         source: AttributionSource,
     ) {
-        getServiceAndEnforceConnect(source)
-            ?.connectionParameterUpdate(callback, device, connectionPriority)
+        onGattThreadEnforceConnect(source) {
+            connectionParameterUpdate(callback, device, connectionPriority)
+        }
     }
 
     override fun leConnectionUpdate(
@@ -354,8 +366,8 @@ class GattServiceBinder(private var gattService: GattService?) :
         maxConnectionEventLen: Int,
         source: AttributionSource,
     ) {
-        getServiceAndEnforceConnect(source)
-            ?.leConnectionUpdate(
+        onGattThreadEnforceConnect(source) {
+            leConnectionUpdate(
                 callback,
                 device,
                 minConnectionInterval,
@@ -365,6 +377,7 @@ class GattServiceBinder(private var gattService: GattService?) :
                 minConnectionEventLen,
                 maxConnectionEventLen,
             )
+        }
     }
 
     override fun subrateModeRequest(
@@ -373,23 +386,18 @@ class GattServiceBinder(private var gattService: GattService?) :
         subrateMode: Int,
         source: AttributionSource,
     ): Int {
-        val service = getGattService() ?: return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED
-        if (!Utils.callerIsSystemOrActiveOrManagedUser(service, TAG, "subrateModeRequest")) {
+        val gatt = gatt() ?: return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED
+        if (!Utils.callerIsSystemOrActiveOrManagedUser(gatt, TAG, "subrateModeRequest")) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED
         }
         if (
-            !Util.enforceConnectPermissionForDataDelivery(
-                service,
-                source,
-                TAG,
-                "subrateModeRequest",
-            )
+            !Util.enforceConnectPermissionForDataDelivery(gatt, source, TAG, "subrateModeRequest")
         ) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION
         }
         Utils.enforceCdmAssociationIfNotBluetoothPrivileged(
-            service,
-            service.companionDeviceManager,
+            gatt,
+            gatt.companionDeviceManager,
             source,
             device,
         )
@@ -399,11 +407,15 @@ class GattServiceBinder(private var gattService: GattService?) :
         ) {
             throw IllegalArgumentException("Subrate Mode not within valid range")
         }
-        return service.subrateModeRequest(callback, device, subrateMode)
+
+        return gatt.fetchOnGattThread(
+            { gatt.subrateModeRequest(callback, device, subrateMode) },
+            BluetoothStatusCodes.ERROR_UNKNOWN,
+        )
     }
 
     override fun disconnectAll(source: AttributionSource) {
-        getServiceAndEnforceConnect(source)?.disconnectAll(source)
+        onGattThreadEnforceConnect(source) { disconnectAll(source) }
     }
 
     override fun registerServer(
@@ -413,15 +425,16 @@ class GattServiceBinder(private var gattService: GattService?) :
         transport: Int,
         source: AttributionSource,
     ) {
-        getServerManagerAndEnforceConnect(source)
-            ?.registerServer(uuid.uuid, callback, eattSupport, transport, source)
+        serverOnGattThreadEnforceConnect(source) {
+            registerServer(uuid.uuid, callback, eattSupport, transport, source)
+        }
     }
 
     override fun unregisterServer(
         callback: IBluetoothGattServerCallback,
         source: AttributionSource,
     ) {
-        getServerManagerAndEnforceConnect(source)?.unregisterServer(callback)
+        serverOnGattThreadEnforceConnect(source) { unregisterServer(callback) }
     }
 
     override fun serverConnect(
@@ -432,8 +445,9 @@ class GattServiceBinder(private var gattService: GattService?) :
         transport: Int,
         source: AttributionSource,
     ) {
-        getServerManagerAndEnforceConnect(source)
-            ?.serverConnect(callback, device, addressType, isDirect, transport, source)
+        serverOnGattThreadEnforceConnect(source) {
+            serverConnect(callback, device, addressType, isDirect, transport, source)
+        }
     }
 
     override fun serverDisconnect(
@@ -441,7 +455,7 @@ class GattServiceBinder(private var gattService: GattService?) :
         device: BluetoothDevice,
         source: AttributionSource,
     ) {
-        getServerManagerAndEnforceConnect(source)?.serverDisconnect(callback, device)
+        serverOnGattThreadEnforceConnect(source) { serverDisconnect(callback, device) }
     }
 
     override fun serverSetPreferredPhy(
@@ -452,8 +466,9 @@ class GattServiceBinder(private var gattService: GattService?) :
         phyOptions: Int,
         source: AttributionSource,
     ) {
-        getServerManagerAndEnforceConnect(source)
-            ?.serverSetPreferredPhy(callback, device, txPhy, rxPhy, phyOptions)
+        serverOnGattThreadEnforceConnect(source) {
+            serverSetPreferredPhy(callback, device, txPhy, rxPhy, phyOptions)
+        }
     }
 
     override fun serverReadPhy(
@@ -461,7 +476,7 @@ class GattServiceBinder(private var gattService: GattService?) :
         device: BluetoothDevice,
         source: AttributionSource,
     ) {
-        getServerManagerAndEnforceConnect(source)?.serverReadPhy(callback, device)
+        serverOnGattThreadEnforceConnect(source) { serverReadPhy(callback, device) }
     }
 
     override fun addService(
@@ -469,7 +484,7 @@ class GattServiceBinder(private var gattService: GattService?) :
         svc: BluetoothGattService,
         source: AttributionSource,
     ) {
-        getServerManagerAndEnforceConnect(source)?.addService(callback, svc)
+        serverOnGattThreadEnforceConnect(source) { addService(callback, svc) }
     }
 
     override fun removeService(
@@ -477,11 +492,11 @@ class GattServiceBinder(private var gattService: GattService?) :
         handle: Int,
         source: AttributionSource,
     ) {
-        getServerManagerAndEnforceConnect(source)?.removeService(callback, handle)
+        serverOnGattThreadEnforceConnect(source) { removeService(callback, handle) }
     }
 
     override fun clearServices(callback: IBluetoothGattServerCallback, source: AttributionSource) {
-        getServerManagerAndEnforceConnect(source)?.clearServices(callback)
+        serverOnGattThreadEnforceConnect(source) { clearServices(callback) }
     }
 
     override fun sendResponse(
@@ -493,8 +508,9 @@ class GattServiceBinder(private var gattService: GattService?) :
         value: ByteArray?,
         source: AttributionSource,
     ) {
-        getServerManagerAndEnforceConnect(source)
-            ?.sendResponse(callback, device, requestId, status, offset, value)
+        serverOnGattThreadEnforceConnect(source) {
+            sendResponse(callback, device, requestId, status, offset, value)
+        }
     }
 
     override fun sendNotification(
@@ -505,10 +521,11 @@ class GattServiceBinder(private var gattService: GattService?) :
         value: ByteArray,
         source: AttributionSource,
     ): Int {
-        val serverManager =
-            getServerManagerAndEnforceConnect(source)
-                ?: return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND
-        return serverManager.sendNotification(callback, device, handle, confirm, value)
+        val gatt = gattEnforceConnect(source) ?: return ERROR_PROFILE_SERVICE_NOT_BOUND
+        return gatt.fetchOnGattThread(
+            { gatt.serverManager.sendNotification(callback, device, handle, confirm, value) },
+            BluetoothStatusCodes.ERROR_UNKNOWN,
+        )
     }
 
     override fun offloadClientCharacteristics(
@@ -520,17 +537,23 @@ class GattServiceBinder(private var gattService: GattService?) :
         hubId: Long,
         source: AttributionSource,
     ): GattOffloadSession.InnerParcel {
-        val serverManager =
-            getServerManagerAndEnforceConnectAndPrivileged(source)
-                ?: throw IllegalArgumentException("Service is null")
-        return serverManager.offloadClientCharacteristics(
-            callback,
-            device,
-            gattService,
-            characteristics,
-            endpointId,
-            hubId,
-        )
+        val gatt = gattEnforceConnectAndPrivileged(source) ?: throw gattUnavailableException
+        val result: GattOffloadSession.InnerParcel? =
+            gatt.fetchOnGattThread(
+                {
+                    gatt.serverManager.offloadClientCharacteristics(
+                        callback,
+                        device,
+                        gattService,
+                        characteristics,
+                        endpointId,
+                        hubId,
+                    )
+                },
+                null,
+            )
+        val message = "Failed to complete offloadClientCharacteristics synchronously on GATT thread"
+        return result ?: throw IllegalStateException(message)
     }
 
     override fun unoffloadClientCharacteristics(
@@ -539,10 +562,10 @@ class GattServiceBinder(private var gattService: GattService?) :
         sessionId: Int,
         source: AttributionSource,
     ) {
-        val serverManager =
-            getServerManagerAndEnforceConnectAndPrivileged(source)
-                ?: throw IllegalArgumentException("Service is null")
-        serverManager.unoffloadClientCharacteristics(callback, device, sessionId)
+        val gatt = gattEnforceConnectAndPrivileged(source) ?: throw gattUnavailableException
+        gatt.doOnGattThread {
+            gatt.serverManager.unoffloadClientCharacteristics(callback, device, sessionId)
+        }
     }
 
     override fun offloadServerCharacteristics(
@@ -554,17 +577,23 @@ class GattServiceBinder(private var gattService: GattService?) :
         hubId: Long,
         source: AttributionSource,
     ): GattOffloadSession.InnerParcel {
-        val serverManager =
-            getServerManagerAndEnforceConnectAndPrivileged(source)
-                ?: throw IllegalArgumentException("Service is null")
-        return serverManager.offloadServerCharacteristics(
-            callback,
-            device,
-            gattService,
-            characteristics,
-            endpointId,
-            hubId,
-        )
+        val gatt = gattEnforceConnectAndPrivileged(source) ?: throw gattUnavailableException
+        val result: GattOffloadSession.InnerParcel? =
+            gatt.fetchOnGattThread(
+                {
+                    gatt.serverManager.offloadServerCharacteristics(
+                        callback,
+                        device,
+                        gattService,
+                        characteristics,
+                        endpointId,
+                        hubId,
+                    )
+                },
+                null,
+            )
+        val message = "Failed to complete offloadServerCharacteristics synchronously on GATT thread"
+        return result ?: throw IllegalStateException(message)
     }
 
     override fun unoffloadServerCharacteristics(
@@ -573,10 +602,10 @@ class GattServiceBinder(private var gattService: GattService?) :
         sessionId: Int,
         source: AttributionSource,
     ) {
-        val serverManager =
-            getServerManagerAndEnforceConnectAndPrivileged(source)
-                ?: throw IllegalArgumentException("Service is null")
-        serverManager.unoffloadServerCharacteristics(callback, device, sessionId)
+        val gatt = gattEnforceConnectAndPrivileged(source) ?: throw gattUnavailableException
+        gatt.doOnGattThread {
+            gatt.serverManager.unoffloadServerCharacteristics(callback, device, sessionId)
+        }
     }
 
     // The permission enforcement for BLUETOOTH_PRIVILEGED is complex-conditional. Callers like
