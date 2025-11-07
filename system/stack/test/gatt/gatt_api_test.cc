@@ -29,9 +29,8 @@ extern tBTM_SEC_CB btm_sec_cb;
 static const size_t QUEUE_SIZE_MAX = 10;
 
 static BtmDevice* make_bonded_ble_device(const RawAddress& bda, const RawAddress& rra) {
-  BtmDevice* dev = btm_sec_allocate_dev_rec();
+  BtmDevice* dev = btm_sec_allocate_dev_rec(bda);
   dev->sec_rec.sec_flags |= BTM_SEC_LE_LINK_KEY_KNOWN;
-  dev->bd_addr = bda;
   dev->ble.pseudo_addr = rra;
   dev->sec_rec.ble_keys.key_type = BTM_LE_KEY_PID | BTM_LE_KEY_PENC | BTM_LE_KEY_LENC;
   return dev;
