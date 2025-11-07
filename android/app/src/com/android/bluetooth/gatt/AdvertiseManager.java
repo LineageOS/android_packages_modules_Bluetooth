@@ -183,10 +183,7 @@ public class AdvertiseManager {
 
         mAdvertiseSuspendManager.onAdvertisingSetStarted(regId, advertiserId, status);
 
-        callbackToApp(
-                () ->
-                        callback.onAdvertisingSetStarted(
-                                mAdvertiseBinder, advertiserId, txPower, status));
+        callbackToApp(() -> callback.onAdvertisingSetStarted(advertiserId, txPower, status));
     }
 
     void onAdvertisingEnabled(int advertiserId, boolean enable, int status) {
@@ -282,10 +279,7 @@ public class AdvertiseManager {
             Log.w(TAG, "Cannot advertise an isolated GATT server using a resolvable address");
             try {
                 callback.onAdvertisingSetStarted(
-                        mAdvertiseBinder,
-                        0x00,
-                        0x00,
-                        AdvertiseCallback.ADVERTISE_FAILED_INTERNAL_ERROR);
+                        0x00, 0x00, AdvertiseCallback.ADVERTISE_FAILED_INTERNAL_ERROR);
             } catch (RemoteException exception) {
                 Log.e(TAG, "Failed to callback:" + Log.getStackTraceString(exception));
             }
@@ -343,10 +337,7 @@ public class AdvertiseManager {
             try {
                 binder.unlinkToDeath(deathRecipient, 0);
                 callback.onAdvertisingSetStarted(
-                        mAdvertiseBinder,
-                        0x00,
-                        0x00,
-                        AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE);
+                        0x00, 0x00, AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE);
             } catch (RemoteException exception) {
                 Log.e(TAG, "Failed to callback:" + Log.getStackTraceString(exception));
             }
