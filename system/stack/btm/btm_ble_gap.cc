@@ -981,14 +981,13 @@ static bool use_msft_filtering() {
 static void msft_adv_mon_enable_cb(bool restart_scan, bool enable, uint8_t status) {
   if (status == MSFT_FILTER_ENABLE_CMD_DISALLOWED) {
     log::warn("MSFT: Advertisement monitor is already {}", enable ? "enabled" : "disabled");
-    return;
-  }
-  if (status != MSFT_FILTER_ENABLE_SUCCESS) {
+  } else if (status != MSFT_FILTER_ENABLE_SUCCESS) {
     log::error("MSFT: {} advertisement monitor failed with status: {}",
                enable ? "Enabling" : "Disabling", status);
     return;
+  } else {
+    log::debug("MSFT: Advertisement monitor {}", enable ? "enabled" : "disabled");
   }
-  log::debug("MSFT: Advertisement monitor {}", enable ? "enabled" : "disabled");
 
   // To retain the correct command sequencing, only re-enable LE scanning now
   // that we know MSFT filtered scanning has been re-enabled.
