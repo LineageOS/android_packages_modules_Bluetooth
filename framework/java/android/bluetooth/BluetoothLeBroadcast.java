@@ -34,6 +34,7 @@ import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
 import android.content.AttributionSource;
 import android.content.Context;
 import android.os.IBinder;
+import android.os.Process;
 import android.os.RemoteException;
 import android.util.CloseGuard;
 import android.util.Log;
@@ -63,6 +64,7 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
 
     private final CloseGuard mCloseGuard;
 
+    private final Context mContext;
     private final BluetoothAdapter mAdapter;
     private final AttributionSource mAttributionSource;
 
@@ -267,7 +269,8 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
      * @param context for to operate this API class
      */
     @Hide
-    /*package*/ BluetoothLeBroadcast(Context context, BluetoothAdapter adapter) {
+    BluetoothLeBroadcast(Context context, BluetoothAdapter adapter) {
+        mContext = requireNonNull(context);
         mAdapter = adapter;
         mAttributionSource = mAdapter.getAttributionSource();
         mService = null;
@@ -331,8 +334,15 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
             @NonNull @CallbackExecutor Executor executor, @NonNull Callback callback) {
         requireNonNull(executor);
         requireNonNull(callback);
-
         Log.d(TAG, "registerCallback");
+
+        // Enforcing permission in the framework is useless from security point of view.
+        // This is being done to help normal app developer to catch the missing permission, since
+        // the call to the service is oneway and the SecurityException will just be logged
+        final int pid = Process.myPid();
+        final int uid = Process.myUid();
+        mContext.enforcePermission(BLUETOOTH_CONNECT, pid, uid, null);
+        mContext.enforcePermission(BLUETOOTH_PRIVILEGED, pid, uid, null);
 
         synchronized (mCallbackExecutorMap) {
             // If the callback map is empty, we register the service-to-app callback
@@ -380,8 +390,15 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public void unregisterCallback(@NonNull Callback callback) {
         requireNonNull(callback);
-
         Log.d(TAG, "unregisterCallback");
+
+        // Enforcing permission in the framework is useless from security point of view.
+        // This is being done to help normal app developer to catch the missing permission, since
+        // the call to the service is oneway and the SecurityException will just be logged
+        final int pid = Process.myPid();
+        final int uid = Process.myUid();
+        mContext.enforcePermission(BLUETOOTH_CONNECT, pid, uid, null);
+        mContext.enforcePermission(BLUETOOTH_PRIVILEGED, pid, uid, null);
 
         synchronized (mCallbackExecutorMap) {
             if (mCallbackExecutorMap.remove(callback) == null) {
