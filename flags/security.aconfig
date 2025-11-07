@@ -80,3 +80,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "btsec_sdp_database_thread_sync"
+    namespace: "bluetooth"
+    description: "Use new thread synchronization for SDP database access"
+    bug: "458487080"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
