@@ -26,12 +26,14 @@ import com.android.bluetooth.Utils
 import com.android.bluetooth.btservice.AdapterService
 import java.util.Optional
 
-/** Base class for a Bluetooth profile. */
-abstract class ProfileService(
-    /** The id of this Profile. see [BluetoothProfile] */
-    val profileId: Int,
-    @JvmField protected val mAdapterService: AdapterService,
-) : ContextWrapper(mAdapterService) {
+/**
+ * Base class for a Bluetooth profile.
+ *
+ * @param profileId The id of this Profile. see [BluetoothProfile]
+ * @param adapterService The [AdapterService].
+ */
+abstract class ProfileService(val profileId: Int, val adapterService: AdapterService) :
+    ContextWrapper(adapterService) {
 
     interface IProfileServiceBinder : IBinder {
         fun cleanup()
@@ -59,7 +61,7 @@ abstract class ProfileService(
     abstract fun cleanup()
 
     protected fun <T> obtainSystemService(serviceClass: Class<T>): T {
-        return mAdapterService.getSystemService(serviceClass)
+        return adapterService.getSystemService(serviceClass)
     }
 
     /**

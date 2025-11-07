@@ -211,7 +211,7 @@ public class VolumeControlService extends ConnectableProfile {
             return false;
         }
 
-        final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
+        final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
         if (!Utils.arrayContains(featureUuids, BluetoothUuid.VOLUME_CONTROL)) {
             Log.e(
                     TAG,
@@ -299,13 +299,13 @@ public class VolumeControlService extends ConnectableProfile {
         if (states == null) {
             return devices;
         }
-        final BluetoothDevice[] bondedDevices = mAdapterService.getBondedDevices();
+        final BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
         if (bondedDevices == null) {
             return devices;
         }
         synchronized (mStateMachines) {
             for (BluetoothDevice device : bondedDevices) {
-                final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
+                final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
                 if (!Utils.arrayContains(featureUuids, BluetoothUuid.VOLUME_CONTROL)) {
                     continue;
                 }
@@ -354,7 +354,7 @@ public class VolumeControlService extends ConnectableProfile {
     @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        mAdapterService.setProfileConnectionPolicy(device, getProfileId(), connectionPolicy);
+        getAdapterService().setProfileConnectionPolicy(device, getProfileId(), connectionPolicy);
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
             connect(device);
         } else if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
@@ -833,11 +833,11 @@ public class VolumeControlService extends ConnectableProfile {
                         + (", mGroupVolumeCache: " + mGroupVolumeCache)
                         + (", mGroupMuteCache: " + mGroupMuteCache));
 
-        final var leAudio = mAdapterService.getLeAudioService();
+        final var leAudio = getAdapterService().getLeAudioService();
         if (leAudio.isPresent()) {
             int currentlyActiveGroupId = leAudio.get().getActiveGroupId();
             if (currentlyActiveGroupId == GROUP_ID_INVALID || groupId != currentlyActiveGroupId) {
-                final var bassClient = mAdapterService.getBassClientService();
+                final var bassClient = getAdapterService().getBassClientService();
                 if (bassClient.isEmpty()
                         || bassClient.get().getSyncedBroadcastSinks().stream()
                                 .map(dev -> getGroupId(dev))
@@ -917,7 +917,7 @@ public class VolumeControlService extends ConnectableProfile {
             mIgnoreSetVolumeFromAF = value;
         } else {
             boolean broadcastActive = false;
-            final var leAudio = mAdapterService.getLeAudioService();
+            final var leAudio = getAdapterService().getLeAudioService();
             if (leAudio.isPresent()) {
                 broadcastActive = leAudio.get().isBroadcastActive();
             }
@@ -1579,15 +1579,15 @@ public class VolumeControlService extends ConnectableProfile {
 
         // Check if the device is disconnected - if unbond, remove the state machine
         if (toState == STATE_DISCONNECTED) {
-            int bondState = mAdapterService.getBondState(device);
+            int bondState = getAdapterService().getBondState(device);
             if (bondState == BOND_NONE) {
                 Log.d(TAG, device + " is unbond. Remove state machine");
                 removeStateMachine(device);
                 removeDeviceData(device);
             }
         }
-        mAdapterService.handleProfileConnectionStateChange(
-                getProfileId(), device, fromState, toState);
+        getAdapterService()
+                .handleProfileConnectionStateChange(getProfileId(), device, fromState, toState);
     }
 
     @Override

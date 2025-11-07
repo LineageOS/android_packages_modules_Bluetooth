@@ -77,17 +77,18 @@ public class A2dpSinkService extends ConnectableProfile {
     A2dpSinkService(
             AdapterService adapterService, A2dpSinkNativeInterface nativeInterface, Looper looper) {
         super(BluetoothProfile.A2DP_SINK, adapterService);
-        var nativeCallback = new A2dpSinkNativeCallback(mAdapterService, this);
+        var nativeCallback = new A2dpSinkNativeCallback(getAdapterService(), this);
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
-                        () -> new A2dpSinkNativeInterface(nativeCallback, mAdapterService));
+                        () -> new A2dpSinkNativeInterface(nativeCallback, getAdapterService()));
         mLooper = requireNonNull(looper);
         mHandler = new Handler(mLooper);
-        mMaxConnectedAudioDevices = mAdapterService.getMaxConnectedAudioDevices();
+        mMaxConnectedAudioDevices = getAdapterService().getMaxConnectedAudioDevices();
         mNativeInterface.init(mMaxConnectedAudioDevices);
         synchronized (mStreamHandlerLock) {
-            mA2dpSinkStreamHandler = new A2dpSinkStreamHandler(mAdapterService, mNativeInterface);
+            mA2dpSinkStreamHandler =
+                    new A2dpSinkStreamHandler(getAdapterService(), mNativeInterface);
         }
     }
 
@@ -257,7 +258,7 @@ public class A2dpSinkService extends ConnectableProfile {
     List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
         Log.d(TAG, "getDevicesMatchingConnectionStates(states=" + Arrays.toString(states) + ")");
         List<BluetoothDevice> deviceList = new ArrayList<>();
-        BluetoothDevice[] bondedDevices = mAdapterService.getBondedDevices();
+        BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
         int connectionState;
         for (BluetoothDevice device : bondedDevices) {
             connectionState = getConnectionState(device);
@@ -314,7 +315,8 @@ public class A2dpSinkService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mAdapterService.setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
+        if (!getAdapterService()
+                .setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -406,9 +408,10 @@ public class A2dpSinkService extends ConnectableProfile {
     }
 
     void connectionStateChanged(BluetoothDevice device, int fromState, int toState) {
-        mAdapterService.notifyProfileConnectionStateChangeToScan(
-                getProfileId(), fromState, toState);
-        mAdapterService.updateProfileConnectionAdapterProperties(
-                device, getProfileId(), toState, fromState);
+        getAdapterService()
+                .notifyProfileConnectionStateChangeToScan(getProfileId(), fromState, toState);
+        getAdapterService()
+                .updateProfileConnectionAdapterProperties(
+                        device, getProfileId(), toState, fromState);
     }
 }

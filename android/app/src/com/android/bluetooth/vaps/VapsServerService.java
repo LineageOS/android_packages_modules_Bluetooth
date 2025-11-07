@@ -138,7 +138,7 @@ public class VapsServerService extends ProfileService {
     public void setCcid() {
         int ccid =
                 ContentControlIdKeeper.acquireCcid(
-                        mAdapterService,
+                        getAdapterService(),
                         BluetoothUuid.VAPS,
                         BluetoothLeAudio.CONTEXT_TYPE_VOICE_ASSISTANTS);
         if (ccid == ContentControlIdKeeper.CCID_INVALID) {
@@ -182,7 +182,7 @@ public class VapsServerService extends ProfileService {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         Log.d(TAG, "activateVoiceRecognition: ");
         try {
-            mAdapterService.startActivity(intent);
+            getAdapterService().startActivity(intent);
         } catch (ActivityNotFoundException e) {
             Log.e(TAG, "activateVoiceRecognition, failed due to activity not found for " + intent);
             return false;
@@ -195,7 +195,7 @@ public class VapsServerService extends ProfileService {
         Intent intent = new Intent(Intent.ACTION_STOP_VOICE_COMMAND);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         intent.putExtra(BluetoothProfile.EXTRA_PROFILE, BluetoothProfile.LE_AUDIO);
-        mAdapterService.sendBroadcast(intent);
+        getAdapterService().sendBroadcast(intent);
         return true;
     }
 

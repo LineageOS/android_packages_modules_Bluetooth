@@ -126,7 +126,7 @@ public class SapService extends ConnectableProfile
 
         registerReceiver(mSapReceiver, filter);
 
-        mAdapterService.registerBluetoothStateCallback(getMainExecutor(), this);
+        getAdapterService().registerBluetoothStateCallback(getMainExecutor(), this);
         // start RFCOMM listener
         mSessionStatusHandler.sendMessage(mSessionStatusHandler.obtainMessage(START_LISTENER));
     }
@@ -150,7 +150,7 @@ public class SapService extends ConnectableProfile
     }
 
     private void removeSdpRecord() {
-        final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();
+        final var nativeInterface = getAdapterService().getSdpManagerNativeInterface();
         if (mSdpHandle >= 0 && nativeInterface.isPresent()) {
             Log.v(TAG, "Removing SDP record handle: " + mSdpHandle);
             nativeInterface.get().removeSdpRecord(mSdpHandle);
@@ -185,7 +185,7 @@ public class SapService extends ConnectableProfile
                 mServerSocket = mAdapter.listenUsingRfcommOn(true, true);
                 removeSdpRecord();
 
-                final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();
+                final var nativeInterface = getAdapterService().getSdpManagerNativeInterface();
                 if (nativeInterface.isEmpty()) {
                     Log.e(TAG, "SdpManagerNativeInterface is not available");
                     break;
@@ -207,7 +207,7 @@ public class SapService extends ConnectableProfile
 
             if (!initSocketOK) {
                 // Need to break out of this loop if BT is being turned off.
-                int state = mAdapterService.getState();
+                int state = getAdapterService().getState();
                 if ((state != BluetoothAdapter.STATE_TURNING_ON)
                         && (state != BluetoothAdapter.STATE_ON)) {
                     Log.w(TAG, "initServerSocket failed as BT is (being) turned off");
@@ -300,7 +300,7 @@ public class SapService extends ConnectableProfile
         mSapServer =
                 new SapServer(
                         mSessionStatusHandler,
-                        mAdapterService,
+                        getAdapterService(),
                         mConnSocket.getInputStream(),
                         mConnSocket.getOutputStream());
         mSapServer.start();
@@ -335,7 +335,7 @@ public class SapService extends ConnectableProfile
 
         // Last SAP transaction is finished, we start to listen for incoming
         // rfcomm connection again
-        if (mAdapterService.isEnabled()) {
+        if (getAdapterService().isEnabled()) {
             startRfcommSocketListener();
         }
     }
@@ -381,12 +381,12 @@ public class SapService extends ConnectableProfile
                         break;
                     }
 
-                    sRemoteDeviceName = mAdapterService.getRemoteName(mRemoteDevice);
+                    sRemoteDeviceName = getAdapterService().getRemoteName(mRemoteDevice);
                     // In case getRemoteName failed and return null
                     if (TextUtils.isEmpty(sRemoteDeviceName)) {
                         sRemoteDeviceName = getString(R.string.defaultname);
                     }
-                    int permission = mAdapterService.getSimAccessPermission(mRemoteDevice);
+                    int permission = getAdapterService().getSimAccessPermission(mRemoteDevice);
 
                     Log.v(TAG, "getSimAccessPermission() = " + permission);
 
@@ -458,7 +458,7 @@ public class SapService extends ConnectableProfile
 
                     switch (msg.what) {
                         case START_LISTENER -> {
-                            if (mAdapterService.isEnabled()) {
+                            if (getAdapterService().isEnabled()) {
                                 startRfcommSocketListener();
                             }
                         }
@@ -524,8 +524,9 @@ public class SapService extends ConnectableProfile
         Log.d(TAG, "Sap state " + mState + " -> " + state + ", result = " + result);
         int prevState = mState;
         mState = state;
-        mAdapterService.updateProfileConnectionAdapterProperties(
-                mRemoteDevice, getProfileId(), mState, prevState);
+        getAdapterService()
+                .updateProfileConnectionAdapterProperties(
+                        mRemoteDevice, getProfileId(), mState, prevState);
 
         BluetoothSap.invalidateBluetoothGetConnectionStateCache();
         Intent intent = new Intent(BluetoothSap.ACTION_CONNECTION_STATE_CHANGED);
@@ -579,11 +580,11 @@ public class SapService extends ConnectableProfile
 
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
         List<BluetoothDevice> deviceList = new ArrayList<>();
-        BluetoothDevice[] bondedDevices = mAdapterService.getBondedDevices();
+        BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
         int connectionState;
         synchronized (this) {
             for (BluetoothDevice device : bondedDevices) {
-                final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
+                final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
                 if (!BluetoothUuid.containsAnyUuid(featureUuids, SAP_UUIDS)) {
                     continue;
                 }
@@ -630,7 +631,7 @@ public class SapService extends ConnectableProfile
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         enforceCallingOrSelfPermission(
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
-        mAdapterService.setProfileConnectionPolicy(device, getProfileId(), connectionPolicy);
+        getAdapterService().setProfileConnectionPolicy(device, getProfileId(), connectionPolicy);
         if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
             disconnect(device);
         }
@@ -647,7 +648,7 @@ public class SapService extends ConnectableProfile
         Log.i(TAG, "cleanup()");
 
         unregisterReceiver(mSapReceiver);
-        mAdapterService.unregisterBluetoothStateCallback(this);
+        getAdapterService().unregisterBluetoothStateCallback(this);
         setState(BluetoothSap.STATE_DISCONNECTED, BluetoothSap.RESULT_CANCELED);
         sendShutdownMessage();
 

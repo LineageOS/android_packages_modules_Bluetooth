@@ -71,7 +71,8 @@ public class MapClientService extends ConnectableProfile {
     @VisibleForTesting
     MapClientService(AdapterService adapterService, Looper looper, MnsService mnsServer) {
         super(BluetoothProfile.MAP_CLIENT, adapterService);
-        mMnsServer = requireNonNullElseGet(mnsServer, () -> new MnsService(mAdapterService, this));
+        mMnsServer =
+                requireNonNullElseGet(mnsServer, () -> new MnsService(getAdapterService(), this));
 
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
@@ -85,7 +86,7 @@ public class MapClientService extends ConnectableProfile {
         }
 
         removeUncleanAccounts();
-        MapClientContent.clearAllContent(mAdapterService);
+        MapClientContent.clearAllContent(getAdapterService());
     }
 
     public static boolean isEnabled() {
@@ -110,7 +111,7 @@ public class MapClientService extends ConnectableProfile {
         Log.d(TAG, "connect(device= " + device + "): devices=" + mMapInstanceMap.keySet());
         if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN
                 || (Flags.mapClientCheckAccessPermission()
-                        && mAdapterService.getMessageAccessPermission(device)
+                        && getAdapterService().getMessageAccessPermission(device)
                                 != BluetoothDevice.ACCESS_ALLOWED)) {
             Log.w(
                     TAG,
@@ -167,9 +168,9 @@ public class MapClientService extends ConnectableProfile {
         MceStateMachine mapStateMachine;
         if (mStateMachinesLooper != null) {
             mapStateMachine =
-                    new MceStateMachine(this, device, mAdapterService, mStateMachinesLooper);
+                    new MceStateMachine(this, device, getAdapterService(), mStateMachinesLooper);
         } else {
-            mapStateMachine = new MceStateMachine(this, device, mAdapterService);
+            mapStateMachine = new MceStateMachine(this, device, getAdapterService());
         }
         mMapInstanceMap.put(device, mapStateMachine);
     }
@@ -202,7 +203,7 @@ public class MapClientService extends ConnectableProfile {
     public synchronized List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
         Log.d(TAG, "getDevicesMatchingConnectionStates" + Arrays.toString(states));
         List<BluetoothDevice> deviceList = new ArrayList<>();
-        BluetoothDevice[] bondedDevices = mAdapterService.getBondedDevices();
+        BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
         int connectionState;
         for (BluetoothDevice device : bondedDevices) {
             connectionState = getConnectionState(device);
@@ -242,7 +243,8 @@ public class MapClientService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.v(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mAdapterService.setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
+        if (!getAdapterService()
+                .setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {

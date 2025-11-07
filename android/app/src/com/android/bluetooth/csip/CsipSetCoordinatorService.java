@@ -107,7 +107,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
-                        () -> new CsipSetCoordinatorNativeInterface(mAdapterService, this));
+                        () -> new CsipSetCoordinatorNativeInterface(getAdapterService(), this));
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));
             mStateMachinesThread = new HandlerThread("CsipSetCoordinatorService.StateMachines");
@@ -184,7 +184,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
             return false;
         }
 
-        final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
+        final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
         if (!Utils.arrayContains(featureUuids, BluetoothUuid.COORDINATED_SET)) {
             Log.e(TAG, "Cannot connect to " + device + " : Remote does not have CSIS UUID");
             return false;
@@ -240,13 +240,13 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
         if (states == null) {
             return devices;
         }
-        final BluetoothDevice[] bondedDevices = mAdapterService.getBondedDevices();
+        final BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
         if (bondedDevices == null) {
             return devices;
         }
         synchronized (mStateMachines) {
             for (BluetoothDevice device : bondedDevices) {
-                final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
+                final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
                 if (!Utils.arrayContains(featureUuids, BluetoothUuid.COORDINATED_SET)) {
                     continue;
                 }
@@ -303,7 +303,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
     @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        mAdapterService.setProfileConnectionPolicy(device, getProfileId(), connectionPolicy);
+        getAdapterService().setProfileConnectionPolicy(device, getProfileId(), connectionPolicy);
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
             connect(device);
         } else if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
@@ -515,7 +515,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
     private void disableCsipIfNeeded(int groupId) {
         /* Make sure CSIP connection policy mirrors that of LeAudioService once all CSIP
         characteristic reads have completed (ensures we can pair other set devices) */
-        final var leAudio = mAdapterService.getLeAudioService();
+        final var leAudio = getAdapterService().getLeAudioService();
         if (leAudio.isEmpty()) {
             Log.w(TAG, "checkIfGroupPaired: LE Audio Service is null");
             return;
@@ -825,7 +825,7 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
 
         // Check if the device is disconnected - if unbond, remove the state machine
         if (toState == STATE_DISCONNECTED) {
-            int bondState = mAdapterService.getBondState(device);
+            int bondState = getAdapterService().getBondState(device);
             if (bondState == BluetoothDevice.BOND_NONE) {
                 Log.d(TAG, device + " is unbond. Remove state machine");
                 removeStateMachine(device);
@@ -843,8 +843,8 @@ public class CsipSetCoordinatorService extends ConnectableProfile {
             mGroupIdToConnectedDevices.get(groupId).add(device);
             disableCsipIfNeeded(groupId);
         }
-        mAdapterService.handleProfileConnectionStateChange(
-                getProfileId(), device, fromState, toState);
+        getAdapterService()
+                .handleProfileConnectionStateChange(getProfileId(), device, fromState, toState);
     }
 
     @Override
