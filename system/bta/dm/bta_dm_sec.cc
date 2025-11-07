@@ -633,16 +633,12 @@ static void ble_io_req(const RawAddress& bd_addr, BtIoCap* p_io_cap, tBTM_OOB_DA
             bte_appl_cfg.ble_auth_req | (bte_appl_cfg.ble_auth_req & 0x04) | ((*p_auth_req) & 0x04);
   }
 
-  /* if OOB is not supported, this call-out function does not need to do
-   * anything
-   * otherwise, look for the OOB data associated with the address and set
-   * *p_oob_data accordingly.
-   * If the answer can not be obtained right away,
-   * set *p_oob_data to BTA_OOB_UNKNOWN and call bta_dm_ci_io_req() when the
-   * answer is available.
-   */
+  /* If OOB is not supported, this call-out function does not need to do anything.
+   * Otherwise, look for the OOB data associated with the address and set *p_oob_data accordingly.
+   * If the answer can not be obtained right away, set *p_oob_data to BTA_OOB_UNKNOWN and call
+   * bta_dm_ci_io_req() when the answer is available. */
 
-  btif_dm_set_oob_for_le_io_req(bd_addr, p_oob_data, p_auth_req);
+  *p_oob_data = btif_dm_set_oob_for_le_io_req(bd_addr, p_auth_req);
 
   /* Override priority order:
   * 1. Application config

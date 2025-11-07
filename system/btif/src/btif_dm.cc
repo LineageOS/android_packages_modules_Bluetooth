@@ -3324,8 +3324,9 @@ void btif_dm_set_oob_for_io_req(tBTM_OOB_DATA* p_has_oob_data) {
   log::verbose("*p_has_oob_data={}", *p_has_oob_data);
 }
 
-void btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr, tBTM_OOB_DATA* p_has_oob_data,
-                                   tBTM_LE_AUTH_REQ* p_auth_req) {
+tBTM_OOB_DATA btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr,
+                                            tBTM_LE_AUTH_REQ* p_auth_req) {
+  tBTM_OOB_DATA has_oob_data;
   switch (oob_cb.data_present) {
     case BTM_OOB_PRESENT_192_AND_256:
       log::info("Have both P192 and  P256");
@@ -3337,10 +3338,11 @@ void btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr, tBTM_OOB_DATA* p_h
         /* make sure OOB data is for this particular device */
         if (bd_addr == oob_cb.bdaddr) {
           *p_auth_req = ((*p_auth_req) | BTM_LE_AUTH_REQ_SC_ONLY);
-          *p_has_oob_data = true;
+          has_oob_data = true;
         } else {
-          *p_has_oob_data = false;
-          log::warn("P256-1: Remote address didn't match OOB data address");
+          has_oob_data = false;
+          log::warn("P256-1: Remote address didn't match OOB data address {} {}", bd_addr,
+                    oob_cb.bdaddr);
         }
       } else if (!is_empty_128bit(oob_cb.p256_data.sm_tk)) {
         /* We have security manager TK */
@@ -3350,13 +3352,14 @@ void btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr, tBTM_OOB_DATA* p_h
           // When using OOB with TK, SC Secure Connections bit must be disabled.
           tBTM_LE_AUTH_REQ mask = ~BTM_LE_AUTH_REQ_SC_ONLY;
           *p_auth_req = ((*p_auth_req) & mask);
-          *p_has_oob_data = true;
+          has_oob_data = true;
         } else {
-          *p_has_oob_data = false;
-          log::warn("P256-2: Remote address didn't match OOB data address");
+          has_oob_data = false;
+          log::warn("P256-2: Remote address didn't match OOB data address {} {}", bd_addr,
+                    oob_cb.bdaddr);
         }
       } else {
-        *p_has_oob_data = false;
+        has_oob_data = false;
       }
       break;
     case BTM_OOB_PRESENT_192:
@@ -3365,10 +3368,11 @@ void btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr, tBTM_OOB_DATA* p_h
         /* make sure OOB data is for this particular device */
         if (bd_addr == oob_cb.bdaddr) {
           *p_auth_req = ((*p_auth_req) | BTM_LE_AUTH_REQ_SC_ONLY);
-          *p_has_oob_data = true;
+          has_oob_data = true;
         } else {
-          *p_has_oob_data = false;
-          log::warn("P192-1: Remote address didn't match OOB data address");
+          has_oob_data = false;
+          log::warn("P192-1: Remote address didn't match OOB data address {} {}", bd_addr,
+                    oob_cb.bdaddr);
         }
       } else if (!is_empty_128bit(oob_cb.p192_data.sm_tk)) {
         /* We have security manager TK */
@@ -3378,17 +3382,19 @@ void btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr, tBTM_OOB_DATA* p_h
           // When using OOB with TK, SC Secure Connections bit must be disabled.
           tBTM_LE_AUTH_REQ mask = ~BTM_LE_AUTH_REQ_SC_ONLY;
           *p_auth_req = ((*p_auth_req) & mask);
-          *p_has_oob_data = true;
+          has_oob_data = true;
         } else {
-          *p_has_oob_data = false;
-          log::warn("P192-2: Remote address didn't match OOB data address");
+          has_oob_data = false;
+          log::warn("P192-2: Remote address didn't match OOB data address {} {}", bd_addr,
+                    oob_cb.bdaddr);
         }
       } else {
-        *p_has_oob_data = false;
+        has_oob_data = false;
       }
       break;
   }
-  log::verbose("*p_has_oob_data={}", *p_has_oob_data);
+  log::verbose("has_oob_data={}", has_oob_data);
+  return has_oob_data;
 }
 
 void btif_dm_load_local_oob(void) {
@@ -4049,10 +4055,8 @@ static void btif_dm_ble_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
   log::verbose("addr:{}", req_oob_type->bd_addr);
 
   RawAddress bd_addr = req_oob_type->bd_addr;
-  /* We already checked if OOB data is present in
-   * btif_dm_set_oob_for_le_io_req, but check here again. If it's not present
-   * do nothing, pairing will timeout.
-   */
+  /* We already checked if OOB data is present in btif_dm_set_oob_for_le_io_req, but check here
+   * again. If it's not present do nothing, pairing will timeout. */
   if (is_empty_128bit(oob_cb.p192_data.sm_tk)) {
     return;
   }
@@ -4087,10 +4091,8 @@ static void btif_dm_ble_sc_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
     return;
   }
 
-  /* We already checked if OOB data is present in
-   * btif_dm_set_oob_for_le_io_req, but check here again. If it's not present
-   * do nothing, pairing will timeout.
-   */
+  /* We already checked if OOB data is present in btif_dm_set_oob_for_le_io_req, but check here
+   * again. If it's not present do nothing, pairing will timeout. */
   bt_oob_data_t oob_data_to_use = {};
   switch (oob_cb.data_present) {
     case BTM_OOB_PRESENT_192_AND_256:
