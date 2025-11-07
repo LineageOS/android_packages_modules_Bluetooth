@@ -18,6 +18,7 @@ package com.android.bluetooth.le_scan;
 
 import static com.android.bluetooth.Utils.callbackToApp;
 import static com.android.bluetooth.Utils.checkCallerTargetSdk;
+import static com.android.bluetooth.le_scan.BatchScanUtil.permittedResults;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_TRUNCATED;
 
 import static java.util.Objects.requireNonNull;
@@ -618,22 +619,6 @@ public class ScanController {
         }
     }
 
-    private List<ScanResult> permittedResults(final ScanClient client, Set<ScanResult> results) {
-        if (ScanUtil.hasScanResultPermission(mAdapterService, client)) {
-            return new ArrayList<>(results);
-        }
-
-        List<ScanResult> permittedResults = new ArrayList<>();
-        for (ScanResult scanResult : results) {
-            for (String associatedDevice : client.getAssociatedDevices()) {
-                if (associatedDevice.equalsIgnoreCase(scanResult.getDevice().getAddress())) {
-                    permittedResults.add(scanResult);
-                }
-            }
-        }
-        return permittedResults;
-    }
-
     // Check if a scan record matches a specific filters.
     @VisibleForTesting
     static boolean matchesFilters(ScanClient client, ScanResult scanResult) {
@@ -734,8 +719,7 @@ public class ScanController {
                 return;
             }
 
-            List<ScanResult> permittedResults = permittedResults(client, results);
-
+            List<ScanResult> permittedResults = permittedResults(mAdapterService, client, results);
             if (client.getHasDisavowedLocation()) {
                 permittedResults.removeIf(mLocationDenylistPredicate);
             }
@@ -775,8 +759,7 @@ public class ScanController {
             return;
         }
 
-        List<ScanResult> permittedResults = permittedResults(client, allResults);
-
+        List<ScanResult> permittedResults = permittedResults(mAdapterService, client, allResults);
         if (client.getFilters().isEmpty()) {
             sendBatchScanResults(app, client, permittedResults);
             return;

@@ -249,4 +249,21 @@ object BatchScanUtil {
         // Timestamp is in every 50 ms.
         return TimeUnit.MILLISECONDS.toNanos(timestampUnit * 50)
     }
+
+    @JvmStatic
+    fun permittedResults(
+        adapterService: AdapterService,
+        client: ScanClient,
+        results: Set<ScanResult>,
+    ): List<ScanResult> {
+        if (ScanUtil.hasScanResultPermission(adapterService, client)) {
+            return results.toList()
+        }
+
+        return results.filter { result ->
+            client.associatedDevices.any { associatedDevice ->
+                associatedDevice.equals(result.device.address, ignoreCase = true)
+            }
+        }
+    }
 }
