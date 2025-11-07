@@ -67,7 +67,7 @@ constructor(
         if (Flags.mainlineBetaStorage()) {
             null
         } else {
-            mAdapterService.databaseManager
+            adapterService.databaseManager
         }
 
     /**
@@ -84,13 +84,13 @@ constructor(
     open fun okToConnect(device: BluetoothDevice): Boolean {
         val log = "okToConnect($device): Connect rejected: "
         // Check if this is an incoming connection in Quiet mode.
-        if (mAdapterService.isQuietModeEnabled) {
+        if (adapterService.isQuietModeEnabled) {
             Log.e(name, "${log}quiet mode enabled")
             return false
         }
         // Allow this connection only if the device is bonded.
         // Any attempt to connect while bonding would lead to an unauthorized connection.
-        val bondState = mAdapterService.getBondState(device)
+        val bondState = adapterService.getBondState(device)
         if (bondState != BOND_BONDED) {
             Log.e(name, "${log}invalid bond state: $bondState")
             return false
@@ -129,7 +129,7 @@ constructor(
      */
     @BluetoothProfile.ConnectionPolicy
     fun getConnectionPolicy(device: BluetoothDevice) =
-        mAdapterService.getProfileConnectionPolicy(device, profileId)
+        adapterService.getProfileConnectionPolicy(device, profileId)
 
     /**
      * Set connection policy of the profile and connects it if connectionPolicy is

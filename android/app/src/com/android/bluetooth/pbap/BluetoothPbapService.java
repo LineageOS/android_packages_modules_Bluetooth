@@ -199,10 +199,10 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
         filter.addAction(AUTH_CANCELLED_ACTION);
         BluetoothPbapConfig.init(this);
         registerReceiver(mPbapReceiver, filter);
-        mAdapterService
+        getAdapterService()
                 .getContentResolver()
                 .registerContentObserver(
-                        DevicePolicyUtils.getEnterprisePhoneUri(mAdapterService),
+                        DevicePolicyUtils.getEnterprisePhoneUri(getAdapterService()),
                         false,
                         mContactChangeObserver);
 
@@ -213,7 +213,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
         mSessionStatusHandler.sendEmptyMessage(START_LISTENER);
 
         mIsPseDynamicVersionUpgradeEnabled =
-                mAdapterService.pbapPseDynamicVersionUpgradeIsEnabled();
+                getAdapterService().pbapPseDynamicVersionUpgradeIsEnabled();
         Log.d(TAG, "mIsPseDynamicVersionUpgradeEnabled: " + mIsPseDynamicVersionUpgradeEnabled);
     }
 
@@ -275,13 +275,13 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
 
                 if (access == BluetoothDevice.CONNECTION_ACCESS_YES) {
                     if (savePreference) {
-                        mAdapterService.setPhonebookAccessPermission(device, ACCESS_ALLOWED);
+                        getAdapterService().setPhonebookAccessPermission(device, ACCESS_ALLOWED);
                         Log.v(TAG, "setPhonebookAccessPermission(ACCESS_ALLOWED)");
                     }
                     sm.sendMessage(PbapStateMachine.AUTHORIZED);
                 } else {
                     if (savePreference) {
-                        mAdapterService.setPhonebookAccessPermission(device, ACCESS_REJECTED);
+                        getAdapterService().setPhonebookAccessPermission(device, ACCESS_REJECTED);
                         Log.v(TAG, "setPhonebookAccessPermission(ACCESS_REJECTED)");
                     }
                     sm.sendMessage(PbapStateMachine.REJECTED);
@@ -394,7 +394,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
                         ? SDP_PBAP_SUPPORTED_REPOSITORIES_WITH_SIM
                         : SDP_PBAP_SUPPORTED_REPOSITORIES_WITHOUT_SIM;
 
-        final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();
+        final var nativeInterface = getAdapterService().getSdpManagerNativeInterface();
         if (nativeInterface.isEmpty()) {
             Log.e(TAG, "SdpManagerNativeInterface is not available");
             return;
@@ -421,7 +421,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
         }
         int sdpHandle = mSdpHandle;
         mSdpHandle = -1;
-        final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();
+        final var nativeInterface = getAdapterService().getSdpManagerNativeInterface();
         Log.d(TAG, "cleanUpSdpRecord, mSdpHandle=" + sdpHandle);
         if (nativeInterface.isEmpty()) {
             Log.e(TAG, "SdpManagerNativeInterface is not available");
@@ -456,12 +456,12 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
 
     /* Checks if notification for Version Upgrade is required */
     protected void handleNotificationTask(BluetoothDevice remoteDevice) {
-        int pce_version = mAdapterService.getRemotePbapPceVersion(remoteDevice.getAddress());
+        int pce_version = getAdapterService().getRemotePbapPceVersion(remoteDevice.getAddress());
         Log.d(TAG, "pce_version: " + pce_version);
 
         boolean matched =
                 InteropUtil.interopMatchAddrOrName(
-                        mAdapterService,
+                        getAdapterService(),
                         InteropUtil.InteropFeature.INTEROP_ADV_PBAP_VER_1_2,
                         remoteDevice.getAddress());
         Log.d(TAG, "INTEROP_ADV_PBAP_VER_1_2: matched=" + matched);
@@ -487,7 +487,8 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
             switch (msg.what) {
                 case START_LISTENER -> {
                     mServerSockets =
-                            ObexServerSockets.create(mAdapterService, BluetoothPbapService.this);
+                            ObexServerSockets.create(
+                                    getAdapterService(), BluetoothPbapService.this);
                     if (mServerSockets == null) {
                         Log.w(TAG, "ObexServerSockets.create() returned null");
                         break;
@@ -617,7 +618,8 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mAdapterService.setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
+        if (!getAdapterService()
+                .setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
@@ -673,7 +675,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
         }
         mContactsLoaded = false;
         unregisterReceiver(mPbapReceiver);
-        mAdapterService.getContentResolver().unregisterContentObserver(mContactChangeObserver);
+        getAdapterService().getContentResolver().unregisterContentObserver(mContactChangeObserver);
         setComponentAvailable(PBAP_ACTIVITY, false);
         synchronized (mPbapStateMachineMap) {
             mPbapStateMachineMap.clear();
@@ -698,7 +700,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
 
         PbapStateMachine sm =
                 new PbapStateMachine(
-                        mAdapterService,
+                        getAdapterService(),
                         this,
                         mNotificationManager,
                         mLooper,
@@ -726,7 +728,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
     @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
     public void checkOrGetPhonebookPermission(PbapStateMachine stateMachine) {
         BluetoothDevice device = stateMachine.getRemoteDevice();
-        int permission = mAdapterService.getPhonebookAccessPermission(device);
+        int permission = getAdapterService().getPhonebookAccessPermission(device);
         Log.d(TAG, "getPhonebookAccessPermission() = " + permission);
 
         if (permission == ACCESS_ALLOWED) {

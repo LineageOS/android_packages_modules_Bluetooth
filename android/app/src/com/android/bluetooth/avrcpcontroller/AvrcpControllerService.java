@@ -139,7 +139,7 @@ public class AvrcpControllerService extends ProfileService {
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface,
-                        () -> new AvrcpControllerNativeInterface(mAdapterService, this));
+                        () -> new AvrcpControllerNativeInterface(getAdapterService(), this));
         mNativeInterface.init();
 
         setComponentAvailable(ON_ERROR_SETTINGS_ACTIVITY, true);
@@ -147,12 +147,13 @@ public class AvrcpControllerService extends ProfileService {
         if (mCoverArtEnabled) {
             setComponentAvailable(COVER_ART_PROVIDER, true);
             mCoverArtManager =
-                    new AvrcpCoverArtManager(mAdapterService, this, new ImageDownloadCallback());
+                    new AvrcpCoverArtManager(
+                            getAdapterService(), this, new ImageDownloadCallback());
         } else {
             mCoverArtManager = null;
         }
 
-        mBrowseTree = new BrowseTree(mAdapterService, null);
+        mBrowseTree = new BrowseTree(getAdapterService(), null);
 
         // Start the media browser service.
         Intent startIntent = new Intent(this, BluetoothMediaBrowserService.class);
@@ -198,7 +199,7 @@ public class AvrcpControllerService extends ProfileService {
     @VisibleForTesting
     boolean setActiveDevice(BluetoothDevice device) {
         Log.d(TAG, "setActiveDevice(device=" + device + ")");
-        final var a2dpSink = mAdapterService.getA2dpSinkService();
+        final var a2dpSink = getAdapterService().getA2dpSinkService();
         if (a2dpSink.isEmpty()) {
             Log.w(TAG, "setActiveDevice(device=" + device + "): A2DP Sink not available");
             return false;
@@ -596,7 +597,8 @@ public class AvrcpControllerService extends ProfileService {
 
     protected AvrcpControllerStateMachine getOrCreateStateMachine(BluetoothDevice device) {
         AvrcpControllerStateMachine newStateMachine =
-                new AvrcpControllerStateMachine(mAdapterService, this, device, mNativeInterface);
+                new AvrcpControllerStateMachine(
+                        getAdapterService(), this, device, mNativeInterface);
         AvrcpControllerStateMachine existingStateMachine =
                 mDeviceStateMap.putIfAbsent(device, newStateMachine);
         // Given null is not a valid value in our map, ConcurrentHashMap will return null if the
@@ -621,7 +623,7 @@ public class AvrcpControllerService extends ProfileService {
     List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
         Log.d(TAG, "getDevicesMatchingConnectionStates(states=" + Arrays.toString(states) + ")");
         List<BluetoothDevice> deviceList = new ArrayList<>();
-        BluetoothDevice[] bondedDevices = mAdapterService.getBondedDevices();
+        BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
         int connectionState;
         for (BluetoothDevice device : bondedDevices) {
             connectionState = getConnectionState(device);
