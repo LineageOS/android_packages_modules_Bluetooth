@@ -47,7 +47,8 @@ static tBTM_STATUS bta_dm_new_link_key_cback(const RawAddress& bd_addr, DEV_CLAS
                                              BD_NAME bd_name, const LinkKey& key, uint8_t key_type,
                                              bool is_ctkd);
 static tBTM_STATUS bta_dm_pin_cback(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                                    const BD_NAME bd_name, bool min_16_digit);
+                                    const BD_NAME bd_name, bool min_16_digit,
+                                    PairingAlgorithm pairing_algorithm);
 static tBTM_STATUS bta_dm_sirk_verification_cback(const RawAddress& bd_addr);
 static void bta_dm_authentication_complete_cback(const RawAddress& bd_addr, DEV_CLASS dev_class,
                                                  BD_NAME bd_name, tHCI_REASON result);
@@ -271,7 +272,8 @@ static void bta_dm_pinname_cback(const tBTM_REMOTE_DEV_NAME* p_data) {
  *
  ******************************************************************************/
 static tBTM_STATUS bta_dm_pin_cback(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                                    const BD_NAME bd_name, bool min_16_digit) {
+                                    const BD_NAME bd_name, bool min_16_digit,
+                                    PairingAlgorithm pairing_algorithm) {
   if (!bta_dm_sec_cb.p_sec_cback) {
     return tBTM_STATUS::BTM_NOT_AUTHORIZED;
   }
@@ -296,6 +298,7 @@ static tBTM_STATUS bta_dm_pin_cback(const RawAddress& bd_addr, DEV_CLASS dev_cla
                                    .dev_class = dev_class,
                                    .bd_name = "",
                                    .min_16_digit = min_16_digit,
+                                   .pairing_algorithm = pairing_algorithm,
                            }};
   bd_name_copy(sec_event.pin_req.bd_name, bd_name);
 
@@ -438,7 +441,7 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) 
       sec_event.cfm_req.rmt_auth_req = p_data->cfm_req.rmt_auth_req;
       sec_event.cfm_req.loc_io_caps = p_data->cfm_req.loc_io_caps;
       sec_event.cfm_req.rmt_io_caps = p_data->cfm_req.rmt_io_caps;
-
+      sec_event.cfm_req.pairing_algorithm = p_data->cfm_req.pairing_algorithm;
       [[fallthrough]];
     /* Passkey entry mode, mobile device with output capability is very
         unlikely to receive key request, so skip this event */
@@ -488,6 +491,7 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) 
       if (BTM_SP_KEY_NOTIF_EVT == event) {
         /* If the device name is not known, save bdaddr and devclass
            and initiate a name request with values from key_notif */
+        sec_event.key_notif.pairing_algorithm = p_data->key_notif.pairing_algorithm;
         if (p_data->key_notif.bd_name[0] == 0) {
           bta_dm_sec_cb.pin_evt = pin_evt;
           bta_dm_sec_cb.pin_bd_addr = p_data->key_notif.bd_addr;
@@ -734,6 +738,7 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
       bd_name_from_char_pointer(sec_event.ble_req.bd_name,
                                 get_btm_client_interface().security.BTM_SecReadDevName(bda));
       sec_event.ble_req.dev_class = dev_class;
+      sec_event.ble_req.pairing_algorithm = p_data->pairing_algorithm;
       bta_dm_sec_cb.p_sec_cback(BTA_DM_BLE_CONSENT_REQ_EVT, &sec_event);
       break;
 
@@ -742,6 +747,7 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
       bd_name_from_char_pointer(sec_event.ble_req.bd_name,
                                 get_btm_client_interface().security.BTM_SecReadDevName(bda));
       sec_event.ble_req.dev_class = dev_class;
+      sec_event.ble_req.pairing_algorithm = p_data->pairing_algorithm;
       bta_dm_sec_cb.p_sec_cback(BTA_DM_BLE_SEC_REQ_EVT, &sec_event);
       break;
 
@@ -751,6 +757,7 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
                                 get_btm_client_interface().security.BTM_SecReadDevName(bda));
       sec_event.key_notif.dev_class = dev_class;
       sec_event.key_notif.passkey = p_data->key_notif;
+      sec_event.key_notif.pairing_algorithm = p_data->pairing_algorithm;
       bta_dm_sec_cb.p_sec_cback(BTA_DM_BLE_PASSKEY_NOTIF_EVT, &sec_event);
       break;
 
@@ -759,6 +766,7 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
       bd_name_from_char_pointer(sec_event.pin_req.bd_name,
                                 get_btm_client_interface().security.BTM_SecReadDevName(bda));
       sec_event.pin_req.dev_class = dev_class;
+      sec_event.pin_req.pairing_algorithm = p_data->pairing_algorithm;
       bta_dm_sec_cb.p_sec_cback(BTA_DM_BLE_PASSKEY_REQ_EVT, &sec_event);
       break;
 
@@ -767,6 +775,7 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
       bd_name_from_char_pointer(sec_event.rmt_oob.bd_name,
                                 get_btm_client_interface().security.BTM_SecReadDevName(bda));
       sec_event.rmt_oob.dev_class = dev_class;
+      sec_event.rmt_oob.pairing_algorithm = p_data->pairing_algorithm;
       bta_dm_sec_cb.p_sec_cback(BTA_DM_BLE_OOB_REQ_EVT, &sec_event);
       break;
 
@@ -776,11 +785,13 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
                                 get_btm_client_interface().security.BTM_SecReadDevName(bda));
       sec_event.key_notif.dev_class = dev_class;
       sec_event.key_notif.passkey = p_data->key_notif;
+      sec_event.key_notif.pairing_algorithm = p_data->pairing_algorithm;
       bta_dm_sec_cb.p_sec_cback(BTA_DM_BLE_NC_REQ_EVT, &sec_event);
       break;
 
     case BTM_LE_SC_OOB_REQ_EVT:
       sec_event.rmt_oob.bd_addr = bda;
+      sec_event.rmt_oob.pairing_algorithm = p_data->pairing_algorithm;
       bta_dm_sec_cb.p_sec_cback(BTA_DM_BLE_SC_OOB_REQ_EVT, &sec_event);
       break;
 

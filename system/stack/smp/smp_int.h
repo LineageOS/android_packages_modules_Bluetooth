@@ -35,6 +35,7 @@
 #include "osi/include/alarm.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/smp_api_types.h"
+#include "stack/btm/btm_security_record.h"
 
 typedef enum : uint16_t {
   SMP_METRIC_COMMAND_LE_FLAG = 0x0000,
@@ -520,6 +521,7 @@ tSMP_STATUS smp_calculate_confirm(tSMP_CB* p_cb, const Octet16& rand, Octet16* o
 
 void print128(const Octet16& x, const char* key_name);
 void smp_xor_128(Octet16* a, const Octet16& b);
+PairingAlgorithm smp_get_pairing_algorithm(tSMP_CB* p_cb);
 
 /* Save the p_cb->sc_oob_data.loc_oob_data for later, since the p_cb gets
  * cleaned up */

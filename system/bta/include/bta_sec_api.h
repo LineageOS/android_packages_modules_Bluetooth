@@ -79,6 +79,7 @@ typedef struct {
   BD_NAME bd_name;     /* Name of peer device. */
 
   bool min_16_digit;   /* true if the pin returned must be at least 16 digits */
+  PairingAlgorithm pairing_algorithm;
 } tBTA_DM_PIN_REQ;
 
 /* BLE related definition */
@@ -128,6 +129,8 @@ typedef struct {
   RawAddress bd_addr; /* peer address */
   DEV_CLASS dev_class;
   BD_NAME bd_name;    /* peer device name */
+
+  PairingAlgorithm pairing_algorithm;
 } tBTA_DM_BLE_SEC_REQ;
 
 typedef struct {
@@ -182,6 +185,7 @@ typedef struct {
   tBTM_AUTH_REQ rmt_auth_req; /* Authentication required for peer device */
   BtIoCap loc_io_caps;        /* IO Capabilities of local device */
   BtIoCap rmt_io_caps;        // IO Capabilities of remote device
+  PairingAlgorithm pairing_algorithm;
 } tBTA_DM_SP_CFM_REQ;
 
 /* Structure associated with BTA_DM_SP_KEY_NOTIF_EVT */
@@ -194,6 +198,7 @@ typedef struct {
 
   uint32_t passkey;    /* the numeric value for comparison. If just_works, do not
                           show this number to UI */
+  PairingAlgorithm pairing_algorithm;
 } tBTA_DM_SP_KEY_NOTIF;
 
 /* Structure associated with BTA_DM_SP_RMT_OOB_EVT */
@@ -203,6 +208,8 @@ typedef struct {
   RawAddress bd_addr;  /* peer address */
   DEV_CLASS dev_class; /* peer CoD */
   BD_NAME bd_name;     /* peer device name */
+
+  PairingAlgorithm pairing_algorithm;
 } tBTA_DM_SP_RMT_OOB;
 
 /* Structure associated with BTA_DM_BOND_CANCEL_CMPL_EVT */

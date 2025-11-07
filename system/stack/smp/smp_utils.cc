@@ -1489,6 +1489,7 @@ void smp_save_secure_connections_long_term_key(tSMP_CB* p_cb) {
                           .key_size = p_cb->loc_enc_size,
                           .sec_level = p_cb->sec_level,
                   },
+          .pairing_algorithm = PairingAlgorithm::SC,
   };
   btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LENC, &lle_key, true);
 
@@ -1500,6 +1501,7 @@ void smp_save_secure_connections_long_term_key(tSMP_CB* p_cb) {
                           .sec_level = p_cb->sec_level,
                           .key_size = p_cb->loc_enc_size,
                   },
+          .pairing_algorithm = PairingAlgorithm::SC,
   };
   ple_key.penc_key.rand = ZERO_OCTET8;
   btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PENC, &ple_key, true);
@@ -1581,4 +1583,19 @@ void print128(const Octet16& x, const char* key_name) {
                            p[kOctet16Length - i * 4 - 4]);
   }
   log::verbose("{}(MSB~LSB): {}", key_name, key_str);
+}
+
+/*******************************************************************************
+ *
+ * Function         smp_get_pairing_algorithm
+ *
+ * Description      Returns the pairing algorithm used by the SMP process.
+ *
+ * Returns          PairingAlgorithm
+ *
+ ******************************************************************************/
+PairingAlgorithm smp_get_pairing_algorithm(tSMP_CB* p_cb) {
+  return (p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT) && (p_cb->peer_auth_req & SMP_SC_SUPPORT_BIT)
+                 ? PairingAlgorithm::SC
+                 : PairingAlgorithm::LEGACY;
 }

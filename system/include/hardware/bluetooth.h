@@ -570,6 +570,24 @@ typedef struct {
 
 #define BT_MAX_NUM_UUIDS 32
 
+enum class PairingAlgorithm : uint8_t {
+  NONE, /* Indicates pairing information is not available */
+  LEGACY, /* Used by both BR/EDR and LE */
+  SSP, /* Secure Simple Pairing (only used for BR/EDR) */
+  SC,  /* Secure Connections (for both BR/EDR and LE) */
+};
+
+static inline std::string pairing_algorithm_text(const PairingAlgorithm& pairing_algorithm) {
+  switch (pairing_algorithm) {
+    CASE_RETURN_STRING(PairingAlgorithm::NONE);
+    CASE_RETURN_STRING(PairingAlgorithm::LEGACY);
+    CASE_RETURN_STRING(PairingAlgorithm::SC);
+    CASE_RETURN_STRING(PairingAlgorithm::SSP);
+    default:
+      RETURN_UNKNOWN_TYPE_STRING(PairingAlgorithm, pairing_algorithm);
+  }
+}
+
 /** Bluetooth Interface callbacks */
 
 /** Bluetooth Enable/Disable Callback. */
@@ -605,7 +623,7 @@ typedef void (*discovery_state_changed_callback)(bt_discovery_state_t state);
 
 /** Bluetooth Legacy PinKey Request callback */
 typedef void (*pin_request_callback)(RawAddress* remote_bd_addr, bt_bdname_t* bd_name, uint32_t cod,
-                                     bool min_16_digit);
+                                     bool min_16_digit, PairingAlgorithm pairing_algorithm);
 
 /** Bluetooth SSP Request callback - Just Works & Numeric Comparison*/
 /** pass_key - Shall be 0 for BT_SSP_PAIRING_VARIANT_CONSENT &
@@ -613,7 +631,7 @@ typedef void (*pin_request_callback)(RawAddress* remote_bd_addr, bt_bdname_t* bd
 /* TODO: Passkey request callback shall not be needed for devices with display
  * capability. We still need support this in the stack for completeness */
 typedef void (*ssp_request_callback)(RawAddress* remote_bd_addr, bt_ssp_variant_t pairing_variant,
-                                     uint32_t pass_key);
+                                     uint32_t pass_key, PairingAlgorithm pairing_algorithm);
 
 /** Bluetooth Bond state changed callback */
 /* Invoked in response to create_bond, cancel_bond or remove_bond */
@@ -1083,6 +1101,8 @@ struct formatter<BtIoCap> : formatter<std::string> {
     return std::formatter<std::string>::format(BtIoCapText(io_cap), ctx);
   }
 };
+template <>
+struct formatter<PairingAlgorithm> : string_formatter<PairingAlgorithm, &pairing_algorithm_text> {};
 }  // namespace std
 
 #endif  // __has_include(<bluetooth/log.h>)

@@ -38,8 +38,13 @@ class AdapterNativeCallback(
         bondStateMachine = null
     }
 
-    fun sspRequestCallback(address: ByteArray, pairingVariant: Int, passkey: Int) {
-        bondStateMachine?.sspRequestCallback(address, pairingVariant, passkey)
+    fun sspRequestCallback(
+        address: ByteArray,
+        pairingVariant: Int,
+        passkey: Int,
+        pairingAlgorithm: Int,
+    ) {
+        bondStateMachine?.sspRequestCallback(address, pairingVariant, passkey, pairingAlgorithm)
     }
 
     fun devicePropertyChangedCallback(
@@ -55,8 +60,14 @@ class AdapterNativeCallback(
         remoteDevices?.deviceFoundCallback(address)
     }
 
-    fun pinRequestCallback(address: ByteArray, name: ByteArray, cod: Int, min16Digits: Boolean) {
-        bondStateMachine?.pinRequestCallback(address, name, cod, min16Digits)
+    fun pinRequestCallback(
+        address: ByteArray,
+        name: ByteArray,
+        cod: Int,
+        min16Digits: Boolean,
+        pairingAlgorithm: Int,
+    ) {
+        bondStateMachine?.pinRequestCallback(address, name, cod, min16Digits, pairingAlgorithm)
     }
 
     fun bondStateChangeCallback(status: Int, address: ByteArray, newState: Int, hciReason: Int) {

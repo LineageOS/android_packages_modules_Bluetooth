@@ -170,14 +170,16 @@ struct BtmSecurityRecord {
                                    ** for SM over BR/EDR. */
 
   // BREDR Link Key Info
-  LinkKey link_key;         /* Device link key */
-  uint8_t link_key_type;    /* Type of key used in pairing */
-  uint8_t enc_key_size;     /* current link encryption key size for BR/EDR */
-  uint8_t le_enc_key_size;  /* current link encryption key size for LE */
-  tBTM_BOND_TYPE bond_type; /* Whether the BR/EDR pairing was persistent or temporary */
+  LinkKey link_key;                   /* Device link key */
+  uint8_t link_key_type;              /* Type of key used in pairing */
+  uint8_t enc_key_size;               /* current link encryption key size for BR/EDR */
+  uint8_t le_enc_key_size;            /* current link encryption key size for LE */
+  tBTM_BOND_TYPE bond_type;           /* Whether the BR/EDR pairing was persistent or temporary */
+  PairingAlgorithm pairing_algorithm; /* The pairing algorithm used for BR/EDR pairing */
 
   // LE Link Key Info
   tBTM_SEC_BLE_KEYS ble_keys;
+  PairingAlgorithm ble_pairing_algorithm; /* The pairing algorithm used for LE pairing */
 
 public:
   bool is_device_authenticated() const { return sec_flags & BTM_SEC_AUTHENTICATED; }
@@ -247,13 +249,15 @@ public:
     return std::format(
             "bredr_linkkey_known:{:c},le_linkkey_known:{:c},bond_type:{},bredr_linkkey_type:{},ble_"
             "enc_key_size:{},le_enc_key_size:{},bredr_authenticated:{:c},le_authenticated:{:c},16_"
-            "digit_key_authenticated:{:c},bredr_encrypted:{:c},le_encrypted:{:c}",
+            "digit_key_authenticated:{:c},bredr_encrypted:{:c},le_encrypted:{:c}, "
+            "pairing_algorithm:{}, ble_pairing_algorithm:{}",
             is_link_key_known() ? 'T' : 'F', is_le_link_key_known() ? 'T' : 'F',
             bond_type_text(bond_type), linkkey_type_text(link_key_type), enc_key_size,
             le_enc_key_size, is_device_authenticated() ? 'T' : 'F',
             is_le_device_authenticated() ? 'T' : 'F',
             is_le_link_16_digit_key_authenticated() ? 'T' : 'F', is_device_encrypted() ? 'T' : 'F',
-            is_le_device_encrypted() ? 'T' : 'F');
+            is_le_device_encrypted() ? 'T' : 'F', pairing_algorithm_text(pairing_algorithm),
+            pairing_algorithm_text(ble_pairing_algorithm));
   }
 };
 

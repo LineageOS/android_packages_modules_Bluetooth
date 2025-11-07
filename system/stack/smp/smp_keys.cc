@@ -109,6 +109,7 @@ static void smp_proc_passkey(tSMP_CB* p_cb, uint64_t rand) {
   if (p_cb->p_callback) {
     tSMP_EVT_DATA smp_evt_data = {
             .passkey = passkey,
+            .pairing_algorithm = smp_get_pairing_algorithm(p_cb),
     };
     (*p_cb->p_callback)(SMP_PASSKEY_NOTIF_EVT, p_cb->pairing_bda, &smp_evt_data);
   }

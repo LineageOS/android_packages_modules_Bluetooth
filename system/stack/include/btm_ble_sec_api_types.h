@@ -66,12 +66,15 @@ typedef struct {
   RawAddress identity_addr;
 } tBTM_LE_PID_KEYS;
 
-typedef union {
-  tBTM_LE_PENC_KEYS penc_key;   /* received peer encryption key */
-  tBTM_LE_PCSRK_KEYS pcsrk_key; /* received peer device SRK */
-  tBTM_LE_PID_KEYS pid_key;     /* peer device ID key */
-  tBTM_LE_LENC_KEYS lenc_key;   /* local encryption reproduction keys LTK = = d1(ER, DIV, 0) */
-  tBTM_LE_LCSRK_KEYS lcsrk_key; /* local device CSRK = d1(ER,DIV,1)*/
+typedef struct {
+  union {
+    tBTM_LE_PENC_KEYS penc_key;   /* received peer encryption key */
+    tBTM_LE_PCSRK_KEYS pcsrk_key; /* received peer device SRK */
+    tBTM_LE_PID_KEYS pid_key;     /* peer device ID key */
+    tBTM_LE_LENC_KEYS lenc_key;   /* local encryption reproduction keys LTK = = d1(ER, DIV, 0) */
+    tBTM_LE_LCSRK_KEYS lcsrk_key; /* local device CSRK = d1(ER,DIV,1)*/
+  };
+  PairingAlgorithm pairing_algorithm;
 } tBTM_LE_KEY_VALUE;
 
 typedef struct {
@@ -79,16 +82,20 @@ typedef struct {
   tBTM_LE_KEY_VALUE* p_key_value;
 } tBTM_LE_KEY;
 
-typedef union {
-  tBTM_LE_IO_REQ io_req; /* BTM_LE_IO_REQ_EVT */
-  uint32_t key_notif;    /* BTM_LE_KEY_NOTIF_EVT */
-                         /* BTM_LE_NC_REQ_EVT */
-                         /* no callback data for BTM_LE_KEY_REQ_EVT and BTM_LE_OOB_REQ_EVT */
-  tBTM_LE_COMPLT complt; /* BTM_LE_COMPLT_EVT */
-  tSMP_OOB_DATA_TYPE req_oob_type;
-  tBTM_LE_KEY key;
-  tSMP_LOC_OOB_DATA local_oob_data;
-  tBLE_BD_ADDR id_addr_with_type;
+// This should be the same as tSMP_EVT_DATA.
+typedef struct {
+  union {
+    tBTM_LE_IO_REQ io_req; /* BTM_LE_IO_REQ_EVT */
+    uint32_t key_notif;    /* BTM_LE_KEY_NOTIF_EVT */
+                          /* BTM_LE_NC_REQ_EVT */
+                          /* no callback data for BTM_LE_KEY_REQ_EVT and BTM_LE_OOB_REQ_EVT */
+    tBTM_LE_COMPLT complt; /* BTM_LE_COMPLT_EVT */
+    tSMP_OOB_DATA_TYPE req_oob_type;
+    tBTM_LE_KEY key;
+    tSMP_LOC_OOB_DATA local_oob_data;
+    tBLE_BD_ADDR id_addr_with_type;
+  };
+  PairingAlgorithm pairing_algorithm;
 } tBTM_LE_EVT_DATA;
 
 /* Simple Pairing Events. Called by the stack when Simple Pairing related

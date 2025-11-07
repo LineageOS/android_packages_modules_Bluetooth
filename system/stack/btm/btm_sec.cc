@@ -2182,7 +2182,8 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr, const uint8_
       btm_sec_cb.pairing_flags |= BTM_PAIR_FLAGS_PIN_REQD;
       (*btm_sec_cb.api.p_pin_callback)(
               p_device->bd_addr, p_device->dev_class, p_device->sec_bd_name,
-              p_device->sec_rec.required_security_flags_for_pairing& BTM_SEC_IN_MIN_16_DIGIT_PIN);
+              p_device->sec_rec.required_security_flags_for_pairing& BTM_SEC_IN_MIN_16_DIGIT_PIN,
+              p_device->sec_rec.pairing_algorithm);
     }
 
     /* Set the same state again to force the timer to be restarted */
@@ -2687,11 +2688,13 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, const RawAddress bda, const uint32_t
         evt_data.cfm_req.rmt_auth_req = p_device->sec_rec.rmt_auth_req;
         evt_data.cfm_req.loc_io_caps = btm_sec_cb.devcb.loc_io_caps;
         evt_data.cfm_req.rmt_io_caps = p_device->sec_rec.rmt_io_caps;
+        evt_data.cfm_req.pairing_algorithm = p_device->sec_rec.pairing_algorithm;
         break;
 
       case BTM_SP_KEY_NOTIF_EVT:
         /* Passkey notification (other side is a keyboard) */
         evt_data.key_notif.passkey = value;
+        evt_data.key_notif.pairing_algorithm = p_device->sec_rec.pairing_algorithm;
         log::verbose("passkey:{}", evt_data.key_notif.passkey);
 
         btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
@@ -4127,6 +4130,7 @@ void btm_sec_link_key_notification(const RawAddress& p_bda, const Octet16& link_
   /* save LTK derived LK no matter what */
   if (ltk_derived_lk) {
     if (btm_sec_cb.api.p_link_key_callback) {
+      p_device->sec_rec.pairing_algorithm = PairingAlgorithm::SC; // for CTKD
       log::verbose("Save LTK derived LK (key_type = {})", p_device->sec_rec.link_key_type);
       (*btm_sec_cb.api.p_link_key_callback)(p_bda, p_device->dev_class, p_device->sec_bd_name,
                                             link_key, p_device->sec_rec.link_key_type,
@@ -4404,6 +4408,7 @@ void btm_sec_pin_code_request(const RawAddress p_bda) {
 
   /* received PIN code request. must be non-sm4 */
   p_device->sm4 = BTM_SM4_KNOWN;
+  p_device->sec_rec.pairing_algorithm = PairingAlgorithm::LEGACY;
 
   if (btm_sec_cb.pairing_state == BTM_PAIR_STATE_IDLE) {
     btm_sec_cb.link_spec.addrt.bda = p_bda;
@@ -4476,7 +4481,8 @@ void btm_sec_pin_code_request(const RawAddress p_bda) {
       if (p_cb->api.p_pin_callback) {
         (*p_cb->api.p_pin_callback)(
                 p_bda, p_device->dev_class, p_device->sec_bd_name,
-                p_device->sec_rec.required_security_flags_for_pairing& BTM_SEC_IN_MIN_16_DIGIT_PIN);
+                p_device->sec_rec.required_security_flags_for_pairing& BTM_SEC_IN_MIN_16_DIGIT_PIN,
+                p_device->sec_rec.pairing_algorithm);
       }
     } else {
       log::verbose("btm_sec_pin_code_request going for remote name");
@@ -4954,6 +4960,7 @@ static bool btm_sec_check_prefetch_pin(BtmDevice* p_device) {
     }
   } else {
     btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_WAIT_LOCAL_PIN);
+    p_device->sec_rec.pairing_algorithm = PairingAlgorithm::LEGACY;
 
     /* If we got a PIN, use that, else try to get one */
     if (btm_sec_cb.pin_code_len) {
@@ -4968,10 +4975,10 @@ static bool btm_sec_check_prefetch_pin(BtmDevice* p_device) {
                                                                   BT_TRANSPORT_BR_EDR)) {
           btm_sec_cb.pairing_flags |= BTM_PAIR_FLAGS_PIN_REQD;
         }
-        (btm_sec_cb.api.p_pin_callback)(p_device->bd_addr, p_device->dev_class,
-                                        p_device->sec_bd_name,
-                                        p_device->sec_rec.required_security_flags_for_pairing &
-                                                BTM_SEC_IN_MIN_16_DIGIT_PIN);
+        (btm_sec_cb.api.p_pin_callback)(
+                p_device->bd_addr, p_device->dev_class, p_device->sec_bd_name,
+                p_device->sec_rec.required_security_flags_for_pairing & BTM_SEC_IN_MIN_16_DIGIT_PIN,
+                p_device->sec_rec.pairing_algorithm);
       }
     }
 
@@ -5182,6 +5189,23 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported, bool hos
     p_device->sm4 = BTM_SM4_KNOWN;
     p_device->remote_host_supports_secure_connections = false;
     p_device->remote_controller_supports_secure_connections = false;
+  }
+
+  // To determine the pairing algorithm, check remote device features, and local controller
+  // features. For local host, refer to local support bits, locally SC supported.
+  if (!p_device->sec_rec.is_bonded()) {
+    if (bluetooth::shim::GetController()->SupportsSecureConnections()) {
+      if (p_device->remote_host_supports_secure_connections &&
+          p_device->remote_controller_supports_secure_connections) {
+        p_device->sec_rec.pairing_algorithm = PairingAlgorithm::SC;
+      } else {
+        p_device->sec_rec.pairing_algorithm = PairingAlgorithm::SSP;
+      }
+    } else if (bluetooth::shim::GetController()->SupportsSimplePairing()) {
+      p_device->sec_rec.pairing_algorithm = PairingAlgorithm::SSP;
+    } else {
+      p_device->sec_rec.pairing_algorithm = PairingAlgorithm::LEGACY;
+    }
   }
 
   if (p_device->remote_features_needed) {

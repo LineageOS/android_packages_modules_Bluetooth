@@ -130,9 +130,11 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
         break;
 
       case SMP_NC_REQ_EVT:
+        cb_data.pairing_algorithm = PairingAlgorithm::SC;
         cb_data.passkey = p_data->passkey;
         break;
       case SMP_SC_OOB_REQ_EVT:
+        cb_data.pairing_algorithm = PairingAlgorithm::SC;
         cb_data.req_oob_type = p_data->req_oob_type;
         break;
       case SMP_SC_LOC_OOB_DATA_UP_EVT:
@@ -151,6 +153,15 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
       case SMP_LE_ADDR_ASSOC_EVT:
         cb_data.id_addr_with_type.bda = p_cb->id_addr;
         cb_data.id_addr_with_type.type = p_cb->id_addr_type;
+        break;
+
+      case SMP_PASSKEY_REQ_EVT:
+      case SMP_CONSENT_REQ_EVT:
+      case SMP_OOB_REQ_EVT:
+        cb_data.pairing_algorithm = smp_get_pairing_algorithm(p_cb);
+        break;
+      case SMP_SEC_REQUEST_EVT:
+        cb_data.pairing_algorithm = PairingAlgorithm::NONE; // Pairing participation
         break;
 
       default:
@@ -1022,6 +1033,7 @@ void smp_proc_central_id(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   le_key.penc_key.ltk = p_cb->ltk;
   le_key.penc_key.sec_level = p_cb->sec_level;
   le_key.penc_key.key_size = p_cb->loc_enc_size;
+  le_key.pairing_algorithm = smp_get_pairing_algorithm(p_cb);
 
   if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
     btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PENC, &le_key, true);
