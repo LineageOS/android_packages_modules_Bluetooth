@@ -76,6 +76,26 @@ private constructor(
         hasScanWithoutLocationPermission = hasScanWithoutLocationPermission,
     )
 
+    constructor(
+        scannerId: Int,
+        pendingIntentInfo: ScanController.PendingIntentInfo,
+        app: ScannerApp,
+    ) : this(
+        appUid = pendingIntentInfo.callingUid,
+        scannerId = scannerId,
+        settings = pendingIntentInfo.settings,
+        scanModeApp = pendingIntentInfo.settings.scanMode,
+        filters = pendingIntentInfo.filters,
+        userHandle = app.userHandle,
+        hasLocationPermission = app.hasLocationPermission,
+        isEligibleForSanitizedExposureNotification = app.eligibleForSanitizedExposureNotification,
+        hasNetworkSettingsPermission = app.hasNetworkSettingsPermission,
+        hasNetworkSetupWizardPermission = app.hasNetworkSetupWizardPermission,
+        hasScanWithoutLocationPermission = app.hasScanWithoutLocationPermission,
+        associatedDevices = app.associatedDevices ?: emptyList(),
+        hasDisavowedLocation = app.hasDisavowedLocation,
+    )
+
     override fun equals(other: Any?): Boolean {
         if (this === other) {
             return true

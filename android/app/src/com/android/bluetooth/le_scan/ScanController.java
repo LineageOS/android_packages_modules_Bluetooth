@@ -1264,25 +1264,7 @@ public class ScanController {
     @VisibleForTesting
     void continuePiStartScan(int scannerId, ScannerApp app) {
         final PendingIntentInfo piInfo = app.getInfo();
-        final ScanClient scanClient =
-                new ScanClient(
-                        piInfo.callingUid,
-                        scannerId,
-                        piInfo.settings,
-                        piInfo.filters,
-                        app.getUserHandle());
-        scanClient.setHasLocationPermission(app.getHasLocationPermission());
-        scanClient.setEligibleForSanitizedExposureNotification(
-                app.getEligibleForSanitizedExposureNotification());
-        scanClient.setHasNetworkSettingsPermission(app.getHasNetworkSettingsPermission());
-        scanClient.setHasNetworkSetupWizardPermission(app.getHasNetworkSetupWizardPermission());
-        scanClient.setHasScanWithoutLocationPermission(app.getHasScanWithoutLocationPermission());
-        scanClient.setAssociatedDevices(
-                app.getAssociatedDevices() == null
-                        ? Collections.emptyList()
-                        : app.getAssociatedDevices());
-        scanClient.setHasDisavowedLocation(app.getHasDisavowedLocation());
-
+        var scanClient = new ScanClient(scannerId, piInfo, app);
         var appScanStats = mScannerMap.getAppScanStatsById(scannerId);
         if (appScanStats != null) {
             scanClient.setAppScanStats(appScanStats);
