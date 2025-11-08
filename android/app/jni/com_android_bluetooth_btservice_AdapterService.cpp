@@ -413,7 +413,7 @@ static void discovery_state_changed_callback(bt_discovery_state_t state) {
 }
 
 static void pin_request_callback(RawAddress* bd_addr, bt_bdname_t* bdname, uint32_t cod,
-                                 bool min_16_digits) {
+                                 bool min_16_digits, PairingAlgorithm pairing_algorithm) {
   if (!bd_addr) {
     log::error("Address is null");
     return;
@@ -442,11 +442,11 @@ static void pin_request_callback(RawAddress* bd_addr, bt_bdname_t* bdname, uint3
                                    reinterpret_cast<jbyte*>(bdname));
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_pinRequestCallback, addr.get(),
-                               devname.get(), cod, min_16_digits);
+                               devname.get(), cod, min_16_digits, (jint)pairing_algorithm);
 }
 
 static void ssp_request_callback(RawAddress* bd_addr, bt_ssp_variant_t pairing_variant,
-                                 uint32_t pass_key) {
+                                 uint32_t pass_key, PairingAlgorithm pairing_algorithm) {
   if (!bd_addr) {
     log::error("Address is null");
     return;
@@ -466,7 +466,7 @@ static void ssp_request_callback(RawAddress* bd_addr, bt_ssp_variant_t pairing_v
   ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_sspRequestCallback, addr.get(),
-                               (jint)pairing_variant, pass_key);
+                               (jint)pairing_variant, pass_key, (jint)pairing_algorithm);
 }
 
 static jobject createClassicOobDataObject(JNIEnv* env, bt_oob_data_t oob_data) {
@@ -2056,8 +2056,8 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"discoveryStateChangeCallback", "(I)V", &method_discoveryStateChangeCallback},
           {"devicePropertyChangedCallback", "([BI[I[[B)V", &method_devicePropertyChangedCallback},
           {"deviceFoundCallback", "([B)V", &method_deviceFoundCallback},
-          {"pinRequestCallback", "([B[BIZ)V", &method_pinRequestCallback},
-          {"sspRequestCallback", "([BII)V", &method_sspRequestCallback},
+          {"pinRequestCallback", "([B[BIZI)V", &method_pinRequestCallback},
+          {"sspRequestCallback", "([BIII)V", &method_sspRequestCallback},
           {"bondStateChangeCallback", "(I[BII)V", &method_bondStateChangeCallback},
           {"addressConsolidateCallback", "([B[B)V", &method_addressConsolidateCallback},
           {"leAddressAssociateCallback", "([B[BI)V", &method_leAddressAssociateCallback},

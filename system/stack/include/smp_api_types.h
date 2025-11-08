@@ -197,13 +197,16 @@ typedef struct {
   tSMP_PEER_OOB_DATA peer_oob_data;
 } tSMP_SC_OOB_DATA;
 
-typedef union {
-  uint32_t passkey;
-  tSMP_IO_REQ io_req; /* IO request */
-  tSMP_CMPL cmplt;
-  tSMP_OOB_DATA_TYPE req_oob_type;
-  tSMP_LOC_OOB_DATA loc_oob_data;
-  tBLE_BD_ADDR id_addr_with_type;
+typedef struct {
+  union {
+    uint32_t passkey;
+    tSMP_IO_REQ io_req; /* IO request */
+    tSMP_CMPL cmplt;
+    tSMP_OOB_DATA_TYPE req_oob_type;
+    tSMP_LOC_OOB_DATA loc_oob_data;
+    tBLE_BD_ADDR id_addr_with_type;
+  };
+  PairingAlgorithm pairing_algorithm;
 } tSMP_EVT_DATA;
 
 /* Security Manager events - Called by the stack when Security Manager related

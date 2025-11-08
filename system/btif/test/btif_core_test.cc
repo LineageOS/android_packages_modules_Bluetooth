@@ -140,9 +140,10 @@ void remote_device_properties_callback(bt_status_t /* status */, RawAddress* /* 
 void device_found_callback(int /* num_properties */, bt_property_t* /* properties */) {}
 void discovery_state_changed_callback(bt_discovery_state_t /* state */) {}
 void pin_request_callback(RawAddress* /* remote_bd_addr */, bt_bdname_t* /* bd_name */,
-                          uint32_t /* cod */, bool /* min_16_digit */) {}
+                          uint32_t /* cod */, bool /* min_16_digit */,
+                          PairingAlgorithm /* pairing_algorithm */) {}
 void ssp_request_callback(RawAddress* /* remote_bd_addr */, bt_ssp_variant_t /* pairing_variant */,
-                          uint32_t /* pass_key */) {}
+                          uint32_t /* pass_key */, PairingAlgorithm /* pairing_algorithm */) {}
 void bond_state_changed_callback(bt_status_t /* status */, RawAddress* /* remote_bd_addr */,
                                  bt_bond_state_t /* state */, int /* fail_reason */) {}
 void address_consolidate_callback(RawAddress* /* main_bd_addr */,
