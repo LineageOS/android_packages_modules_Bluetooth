@@ -33,7 +33,7 @@ import android.util.Log
 import com.android.bluetooth.ActionOnDeathRecipient
 import com.android.bluetooth.Util.Transport
 import com.android.bluetooth.Util.appNameOrUnknown
-import com.android.bluetooth.Utils.callbackToApp
+import com.android.bluetooth.Util.callbackToApp
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.gatt.GattUtil.Status
