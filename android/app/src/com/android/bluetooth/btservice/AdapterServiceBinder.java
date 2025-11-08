@@ -452,7 +452,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         Optional<String> packageName =
                 service.getCallingPackageName(deviceProp.getDevice().getAddress());
 
-        if (!packageName.isPresent()) {
+        if (packageName.isEmpty()) {
             return false;
         }
 
@@ -1890,7 +1890,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
         Optional<byte[]> cookie =
                 service.getBluetoothHciVendorSpecificDispatcher().getRegisteredCookie(callback);
-        if (!cookie.isPresent()) {
+        if (cookie.isEmpty()) {
             Log.e(TAG, "send command without registered callback");
             throw new IllegalStateException("callback not registered");
         }

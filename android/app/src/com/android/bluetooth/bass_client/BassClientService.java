@@ -1362,7 +1362,7 @@ public class BassClientService extends ConnectableProfile {
         if (isLocalBroadcast(broadcastId)) {
             Log.d(TAG, "syncRequestForMetadata: local broadcast, updateMetadata");
             final var leAudio = getAdapterService().getLeAudioService();
-            if (!leAudio.isEmpty()) {
+            if (leAudio.isPresent()) {
                 BluetoothLeBroadcastMetadata metadata =
                         leAudio.get().getBroadcastMetadata(broadcastId);
                 if (metadata != null) {
@@ -1523,9 +1523,7 @@ public class BassClientService extends ConnectableProfile {
                             sink, broadcastId, receiveState);
             if (action != SetBigChannelMapClassificationAction.NO_ACTION.getValue()) {
                 final var leAudio = getAdapterService().getLeAudioService();
-                if (!leAudio.isEmpty()) {
-                    leAudio.get().setBigChannelMapClassification(action, sink, broadcastId);
-                }
+                leAudio.ifPresent(l -> l.setBigChannelMapClassification(action, sink, broadcastId));
             }
         }
     }
@@ -1955,7 +1953,7 @@ public class BassClientService extends ConnectableProfile {
         }
 
         final var leAudio = getAdapterService().getLeAudioService();
-        if (!leAudio.isEmpty()) {
+        if (leAudio.isPresent()) {
             boolean isOnlyHighQualityAvailable =
                     metadata.getAudioConfigQuality()
                             == BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_HIGH;
