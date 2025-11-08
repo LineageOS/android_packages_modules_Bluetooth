@@ -68,6 +68,17 @@ public class CallbackWrapperTest {
     }
 
     @Test
+    public void isEmpty_reflectsMapState() {
+        assertThat(mCallbackWrapper.isEmpty()).isTrue();
+
+        mCallbackWrapper.registerCallback(mUnusedCounter, mCallback, mExecutor);
+        assertThat(mCallbackWrapper.isEmpty()).isFalse();
+
+        mCallbackWrapper.unregisterCallback(mUnusedCounter, mCallback);
+        assertThat(mCallbackWrapper.isEmpty()).isTrue();
+    }
+
+    @Test
     public void registerCallback_enforceValidParams() {
         assertThrows(
                 NullPointerException.class,
@@ -96,7 +107,6 @@ public class CallbackWrapperTest {
     @Test
     public void registerCallback_whenEmpty_callConsumer() {
         int[] counter = {0};
-
         mCallbackWrapper.registerCallback(counter, mCallback, mExecutor);
 
         assertThat(counter[0]).isEqualTo(1);
@@ -106,8 +116,8 @@ public class CallbackWrapperTest {
     @Test
     public void unregisterCallback_whenRegistered_callConsumer() {
         mCallbackWrapper.registerCallback(mUnusedCounter, mCallback, mExecutor);
-        int[] counter = {0};
 
+        int[] counter = {0};
         mCallbackWrapper.unregisterCallback(counter, mCallback);
 
         assertThat(counter[0]).isEqualTo(-1);
@@ -117,7 +127,6 @@ public class CallbackWrapperTest {
     @Test
     public void unregisterCallbackWithNoService_whenRegistered_stillRemovedFromMap() {
         mCallbackWrapper.registerCallback(mUnusedCounter, mCallback, mExecutor);
-
         mCallbackWrapper.unregisterCallback(null, mCallback);
 
         assertThat(mCallbackExecutorMap).isEmpty();
@@ -126,8 +135,8 @@ public class CallbackWrapperTest {
     @Test
     public void registerCallback_whenWrapperAlreadyRegisteredToService_doNothing() {
         mCallbackWrapper.registerCallback(mUnusedCounter, mCallback, mExecutor);
-        int[] counter = {0};
 
+        int[] counter = {0};
         mCallbackWrapper.registerCallback(counter, mCallback2, mExecutor);
 
         assertThat(counter[0]).isEqualTo(0);
@@ -139,8 +148,8 @@ public class CallbackWrapperTest {
     public void unregisterCallback_whenMultiplesCallbackAreRegister_doNothing() {
         mCallbackWrapper.registerCallback(mUnusedCounter, mCallback, mExecutor);
         mCallbackWrapper.registerCallback(mUnusedCounter, mCallback2, mExecutor);
-        int[] counter = {0};
 
+        int[] counter = {0};
         mCallbackWrapper.unregisterCallback(counter, mCallback2);
 
         assertThat(counter[0]).isEqualTo(0);
@@ -150,7 +159,6 @@ public class CallbackWrapperTest {
     @Test
     public void registerCallback_whenCallbackAlreadyRegistered_throwException() {
         mCallbackWrapper.registerCallback(null, mCallback, mExecutor);
-
         assertThrows(
                 IllegalArgumentException.class,
                 () -> mCallbackWrapper.registerCallback(null, mCallback, mExecutor));
@@ -168,7 +176,6 @@ public class CallbackWrapperTest {
     @Test
     public void registerToNewService_whenNoCallback_doNothing() {
         int[] counter = {0};
-
         mCallbackWrapper.registerToNewService(counter);
 
         assertThat(counter[0]).isEqualTo(0);
@@ -177,8 +184,8 @@ public class CallbackWrapperTest {
     @Test
     public void registerToNewService_whenCallback_callConsumer() {
         mCallbackWrapper.registerCallback(null, mCallback, mExecutor);
-        int[] counter = {0};
 
+        int[] counter = {0};
         mCallbackWrapper.registerToNewService(counter);
 
         assertThat(counter[0]).isEqualTo(1);
