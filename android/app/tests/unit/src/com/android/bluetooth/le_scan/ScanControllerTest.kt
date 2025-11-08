@@ -166,8 +166,13 @@ class ScanControllerTest(flags: FlagsWrapper) {
                 .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
                 .setLegacy(false)
                 .build()
-        val scanClient = ScanClient(appUid, TEST_SCANNER_ID, scanSettings)
-        scanClient.hasNetworkSettingsPermission = true
+        val scanClient =
+            ScanClient(
+                appUid,
+                TEST_SCANNER_ID,
+                scanSettings,
+                hasNetworkSettingsPermission = true, // Bypass permission checks
+            )
         val appScanStats = mock(AppScanStats::class.java)
         doReturn(appScanStats).whenever(app).appScanStats
         scanClient.appScanStats = appScanStats
@@ -241,8 +246,15 @@ class ScanControllerTest(flags: FlagsWrapper) {
         val matchingSettings =
             ScanSettings.Builder().setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES).build()
         val matchingFilters = listOf(ScanFilter.Builder().setDeviceName("TestDevice").build())
-        val matchingClient = ScanClient(1000, matchingScannerId, matchingSettings, matchingFilters)
-        matchingClient.hasNetworkSettingsPermission = true // Bypass permission checks
+        val matchingClient =
+            ScanClient(
+                1000,
+                matchingScannerId,
+                matchingSettings,
+                matchingFilters,
+                hasNetworkSettingsPermission = true, // Bypass permission checks
+            )
+
         val matchingApp = mock(ScannerApp::class.java)
         val matchingCallback = mock(IScannerCallback::class.java)
         val matchingAppScanStats = mock(AppScanStats::class.java)
@@ -256,8 +268,13 @@ class ScanControllerTest(flags: FlagsWrapper) {
             ScanSettings.Builder().setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES).build()
         val nonMatchingFilters = listOf(ScanFilter.Builder().setDeviceName("OtherDevice").build())
         val nonMatchingClient =
-            ScanClient(1001, nonMatchingScannerId, nonMatchingSettings, nonMatchingFilters)
-        nonMatchingClient.hasNetworkSettingsPermission = true // Bypass permission checks
+            ScanClient(
+                1001,
+                nonMatchingScannerId,
+                nonMatchingSettings,
+                nonMatchingFilters,
+                hasNetworkSettingsPermission = true, // Bypass permission checks
+            )
         val nonMatchingApp = mock(ScannerApp::class.java)
         val nonMatchingCallback = mock(IScannerCallback::class.java)
         val nonMatchingAppScanStats = mock(AppScanStats::class.java)
@@ -462,14 +479,16 @@ class ScanControllerTest(flags: FlagsWrapper) {
 
         val scanClientSet = mutableSetOf<ScanClient>()
         val appUid = 1234
-        val scanClient = ScanClient(appUid, TEST_SCANNER_ID)
-        if (expectResults) {
-            if (isTruncated) {
-                scanClient.associatedDevices = listOf("02:00:00:00:00:00")
-            } else {
-                scanClient.hasScanWithoutLocationPermission = true
-            }
-        }
+        val associatedDevices =
+            if (expectResults && isTruncated) listOf("02:00:00:00:00:00") else emptyList()
+        val hasScanWithoutLocationPermission = expectResults && isTruncated.not()
+        val scanClient =
+            ScanClient(
+                appUid,
+                TEST_SCANNER_ID,
+                hasScanWithoutLocationPermission = hasScanWithoutLocationPermission,
+                associatedDevices = associatedDevices,
+            )
         scanClientSet.add(scanClient)
         if (isTruncated) {
             doReturn(scanClientSet).whenever(scanManager).batchScanQueue
@@ -520,8 +539,12 @@ class ScanControllerTest(flags: FlagsWrapper) {
         val timeStamp = 11
 
         val appUid = 1234
-        val scanClient = ScanClient(appUid, TEST_SCANNER_ID)
-        scanClient.hasNetworkSettingsPermission = true
+        val scanClient =
+            ScanClient(
+                appUid,
+                TEST_SCANNER_ID,
+                hasNetworkSettingsPermission = true, // Bypass permission checks
+            )
         scanClient.settings =
             ScanSettings.Builder()
                 .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH)
