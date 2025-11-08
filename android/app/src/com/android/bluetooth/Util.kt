@@ -28,9 +28,11 @@ import android.annotation.PermissionMethod
 import android.annotation.PermissionName
 import android.annotation.RequiresPermission
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothUtils
 import android.content.AttributionSource
 import android.content.Context
 import android.os.IBinder
+import android.os.RemoteException
 import android.permission.PermissionManager
 import android.permission.PermissionManager.PERMISSION_GRANTED
 import android.permission.PermissionManager.PERMISSION_HARD_DENIED
@@ -241,6 +243,14 @@ object Util {
             return false
         }
     }
+
+    /** Execute a remote callback without propagating the [RemoteException] of a dead app */
+    internal inline fun callbackToApp(block: () -> Unit) =
+        try {
+            block()
+        } catch (e: RemoteException) {
+            BluetoothUtils.logRemoteException(TAG, e)
+        }
 }
 
 class ActionOnDeathRecipient(
