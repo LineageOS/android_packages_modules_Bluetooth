@@ -141,9 +141,8 @@ class AppScanStats(
 
     @Synchronized fun getScanFromScannerId(scannerId: Int) = ongoingScans[scannerId]
 
-    @JvmOverloads
     @Synchronized
-    fun addResults(scannerId: Int, numberOfNewResults: Int = 1) {
+    fun addResults(scannerId: Int, numberOfNewResults: Int) {
         val isScreenOn = sIsScreenOn.get()
         if (isScreenOn) {
             resultsScreenOn += numberOfNewResults

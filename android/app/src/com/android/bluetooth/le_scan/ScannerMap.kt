@@ -42,7 +42,34 @@ class ScannerMap {
     private val appScanStatsMap = mutableMapOf<Int, AppScanStats>()
     private val apps = ConcurrentLinkedQueue<ScannerApp>()
 
-    @JvmOverloads // TODO(b/455057044) Remove on cleanup
+    // TODO(b/455057044) Remove on flag cleanup as only the below `addWithCallback` will be used
+    fun addWithCallback(
+        appUid: Int,
+        appPid: Int,
+        appName: String,
+        uuid: UUID,
+        source: AttributionSource,
+        workSource: WorkSource?,
+        callback: IScannerCallback,
+        adapterService: AdapterService,
+        isInternal: Boolean,
+    ): ScannerApp =
+        add(
+            appUid = appUid,
+            appPid = appPid,
+            appName = appName,
+            uuid = uuid,
+            userHandle = null,
+            source = source,
+            workSource = workSource,
+            callback = callback,
+            settings = null,
+            filters = null,
+            piInfo = null,
+            adapterService = adapterService,
+            isInternal = isInternal,
+        )
+
     fun addWithCallback(
         appUid: Int,
         appPid: Int,

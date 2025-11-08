@@ -519,7 +519,7 @@ public class ScanController {
             }
 
             try {
-                app.getAppScanStats().addResults(client.getScannerId());
+                app.getAppScanStats().addResults(client.getScannerId(), 1);
                 if (app.getCallback() != null) {
                     app.getCallback().onScanResult(result);
                 } else {
@@ -1008,7 +1008,7 @@ public class ScanController {
                 ("registerScanner(): uid=" + uid + ", pid=" + uid + ", ")
                         + ("app=" + appName + ", UUID=" + uuid));
         mScannerMap.addWithCallback(
-                uid, pid, appName, uuid, source, workSource, callback, mAdapterService);
+                uid, pid, appName, uuid, source, workSource, callback, mAdapterService, false);
         mScanManager.registerScanner(uuid);
     }
 
@@ -1086,6 +1086,7 @@ public class ScanController {
         return Collections.emptyList();
     }
 
+    // TODO(b/455057044) Make private on cleanup
     void startScan(
             int scannerId,
             ScanSettings settings,
