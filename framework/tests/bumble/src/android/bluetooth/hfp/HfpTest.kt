@@ -50,6 +50,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.util.Log
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
@@ -108,6 +109,7 @@ class HfpTest {
     private lateinit var hfpService: BluetoothHeadset
     private lateinit var a2dpService: BluetoothA2dp
     private lateinit var inOrder: InOrder
+    private val TEST_PHONE_NUMBER = "1234567890"
 
     @Before
     fun setUp() {
@@ -259,6 +261,7 @@ class HfpTest {
         verifyConnectionState(STATE_CONNECTED, bumbleDevice)
         assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_CONNECTED)
         assertThat(hfpService.setActiveDevice(bumbleDevice)).isTrue()
+        dialOutgoingCall()
         // Allow one second delay to complete  SLC on bumble side
         Thread.sleep(1000)
         assertThat(hfpService.connectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
@@ -266,6 +269,7 @@ class HfpTest {
         verifyAudioState(STATE_AUDIO_CONNECTED, bumbleDevice)
         assertThat(hfpService.disconnectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
         verifyAudioState(STATE_AUDIO_DISCONNECTED, bumbleDevice)
+        endActiveCall()
     }
 
     /**
@@ -304,6 +308,7 @@ class HfpTest {
         assertThat(hfpService.getConnectionState(bumbleDevice)).isEqualTo(STATE_CONNECTED)
         assertThat(hfpService.setActiveDevice(bumbleDevice)).isTrue()
 
+        dialOutgoingCall()
         // Disconnect sco to first bumble device while in connecting state
         assertThat(hfpService.connectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
         verifyAudioState(STATE_AUDIO_CONNECTING, bumbleDevice)
@@ -316,6 +321,7 @@ class HfpTest {
         verifyAudioState(STATE_AUDIO_CONNECTED, bumbleDevice)
         assertThat(hfpService.disconnectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
         verifyAudioState(STATE_AUDIO_DISCONNECTED, bumbleDevice)
+        endActiveCall()
     }
 
     @Test
@@ -337,6 +343,7 @@ class HfpTest {
         assertThat(hfpService.getConnectionState(secondBumbleDevice)).isEqualTo(STATE_CONNECTED)
 
         assertThat(hfpService.setActiveDevice(bumbleDevice)).isTrue()
+        dialOutgoingCall()
         // Disconnect sco to first bumble device while in connecting state
         assertThat(hfpService.connectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
         verifyAudioState(STATE_AUDIO_CONNECTING, bumbleDevice)
@@ -349,6 +356,7 @@ class HfpTest {
         verifyAudioState(STATE_AUDIO_CONNECTED, secondBumbleDevice)
         assertThat(hfpService.disconnectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
         verifyAudioState(STATE_AUDIO_DISCONNECTED, secondBumbleDevice)
+        endActiveCall()
     }
 
     @Test
@@ -370,7 +378,7 @@ class HfpTest {
         assertThat(hfpService.getConnectionState(secondBumbleDevice)).isEqualTo(STATE_CONNECTED)
 
         assertThat(hfpService.setActiveDevice(bumbleDevice)).isTrue()
-
+        dialOutgoingCall()
         assertThat(hfpService.connectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
         verifyAudioState(STATE_AUDIO_CONNECTING, bumbleDevice)
         verifyAudioState(STATE_AUDIO_CONNECTED, bumbleDevice)
@@ -381,6 +389,7 @@ class HfpTest {
         assertThat(hfpService.connectAudio()).isEqualTo(BluetoothStatusCodes.SUCCESS)
         verifyAudioState(STATE_AUDIO_CONNECTING, secondBumbleDevice)
         verifyAudioState(STATE_AUDIO_CONNECTED, secondBumbleDevice)
+        endActiveCall()
     }
 
     private fun prepareBumbleDeviceAsBondedAndDisconnected() {
@@ -521,6 +530,19 @@ class HfpTest {
             .deleteBond(
                 SecurityProto.DeleteBondRequest.newBuilder().setPublic(localAddress).build()
             )
+    }
+
+    private fun dialOutgoingCall() {
+        val address: Uri = Uri.fromParts("tel", TEST_PHONE_NUMBER, null)
+        val intent =
+            Intent(Intent.ACTION_CALL, address).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+        targetContext.startActivity(intent)
+        // Allow some time to launch call screen.
+        Thread.sleep(300)
+    }
+
+    private fun endActiveCall() {
+        Runtime.getRuntime().exec("input keyevent 6").waitFor()
     }
 
     private fun verifyIntentReceived(vararg matchers: Matcher<Intent>) {
