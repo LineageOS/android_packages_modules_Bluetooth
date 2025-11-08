@@ -215,9 +215,17 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_allocate_dev_rec__all) {
     ASSERT_EQ(kBtmSecMaxDeviceRecords-1, p_devices[kBtmSecMaxDeviceRecords - 1]->timestamp);
 
     for (size_t i = 0; i < kBtmSecMaxDeviceRecords; i++) {
+      /**
+       * Since we are now using btm_sec_cb.device_records as static array, so there will be no
+       * deletion/creation of records, and hence the addresses will be the same. So, need to store
+       * the timestamp, before the second allocation of record (or clean and re-allocate in this
+       * case) and then see whether the timestamp has changed.
+       */
+      auto timestamp = p_devices[i]->timestamp;
+
       BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
-      ASSERT_NE(nullptr, p_device);                             // must be a valid entry
-      ASSERT_NE(p_devices[i]->timestamp, p_device->timestamp);  // should be a new record
+      ASSERT_NE(nullptr, p_device);               // must be a valid entry
+      ASSERT_NE(timestamp, p_device->timestamp);  // should be a new record
       p_devices[i] = p_device;
     }
   }
