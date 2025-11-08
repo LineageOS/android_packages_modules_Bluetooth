@@ -366,17 +366,6 @@
 
     <issue
         id="IncorrectRequiresPermissionPropagation"
-        message="Method `BluetoothLeBroadcast.onServiceConnected` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with [none]."
-        errorLine1="    public void onServiceConnected(IBinder service) {"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothLeBroadcast.java"
-            line="767"
-            column="17"/>
-    </issue>
-
-    <issue
-        id="IncorrectRequiresPermissionPropagation"
         message="Method `BluetoothLeScanner.startScanFromSource` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_PRIVILEGED, android.permission.BLUETOOTH_SCAN, android.permission.UPDATE_DEVICE_STATS]} but only calls APIs requiring {allOf=[android.permission.BLUETOOTH_PRIVILEGED, android.permission.BLUETOOTH_SCAN]}."
         errorLine1="    public void startScanFromSource("
         errorLine2="                ~~~~~~~~~~~~~~~~~~~">
