@@ -1148,22 +1148,16 @@ public class ScanController {
     public void startScanInternal(int scannerId, ScanSettings settings, List<ScanFilter> filters) {
         enforceScanThread(); // TODO(b/455057044) Remove on cleanup
         // This ScanClient will be billed to the Bluetooth app due to its internal usage
-        final ScanClient scanClient =
+        var scanClient =
                 new ScanClient(
                         Binder.getCallingUid(),
                         scannerId,
                         settings,
                         filters,
                         Binder.getCallingUserHandle(),
-                        true);
-        scanClient.setHasNetworkSettingsPermission(
-                Util.checkCallerHasNetworkSettingsPermission(mAdapterService));
-        scanClient.setHasNetworkSetupWizardPermission(
-                Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
-        scanClient.setHasScanWithoutLocationPermission(
-                Util.checkCallerHasScanWithoutLocationPermission(mAdapterService));
-        scanClient.setAssociatedDevices(Collections.emptyList());
-
+                        Util.checkCallerHasNetworkSettingsPermission(mAdapterService),
+                        Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService),
+                        Util.checkCallerHasScanWithoutLocationPermission(mAdapterService));
         dispatchStartScan(scannerId, settings, filters, scanClient);
     }
 
