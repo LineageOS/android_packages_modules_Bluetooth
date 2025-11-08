@@ -327,4 +327,5 @@ flag {
     namespace: "bluetooth"
     description: "GATT connection settings & related APIs"
     bug: "450085002"
+    is_exported: true
 }
