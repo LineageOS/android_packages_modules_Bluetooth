@@ -610,11 +610,11 @@ class GattServiceBinder(private var gattService: GattService?) :
 
     // The permission enforcement for BLUETOOTH_PRIVILEGED is complex-conditional. Callers like
     // `readCharacteristic` and `registerForNotification` only require to throw an exception on
-    // SDK T+ for specific handles that are stored in `mRestrictedHandles` via the code flow found
-    // in GattService#isRestrictedSrvcUuid
+    // SDK T+ for specific handles that are stored in `GattService#mRestrictedHandles` via the code
+    // flow found in GattService#isRestrictedSrvcUuid
     @SuppressWarnings("IncorrectRequiresPermissionPropagation")
     private fun enforcePrivilegedPermissionIfNeededForHandle(
-        service: GattService,
+        gatt: GattService,
         callback: IBluetoothGattCallback,
         device: BluetoothDevice,
         handle: Int,
@@ -623,22 +623,29 @@ class GattServiceBinder(private var gattService: GattService?) :
             return
         }
 
-        val clientApp = service.clientMap.getByCallbackId(callback)
-        if (clientApp == null) {
-            Log.w(TAG, "($callback) - App not registered")
-            return
-        }
-        val connId = service.getFirstConnectionIdForDevice(clientApp.id, device)
-        if (connId == null) {
-            Log.e(TAG, "($device) - No connection")
-            return
-        }
+        val header = "enforcePrivilegedPermissionIfNeededForHandle($callback, $device):"
+        val isHandleRestricted =
+            gatt.fetchOnGattThread(
+                {
+                    val clientApp = gatt.clientMap.getByCallbackId(callback)
+                    if (clientApp == null) {
+                        Log.w(TAG, "$header App not registered")
+                        return@fetchOnGattThread false
+                    }
 
-        if (isHandleRestricted(service, connId, handle)) {
-            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+                    val connId = gatt.getFirstConnectionIdForDevice(clientApp.id, device)
+                    if (connId == null) {
+                        Log.e(TAG, "$header No connection")
+                        return@fetchOnGattThread false
+                    }
+
+                    gatt.restrictedHandles[connId]?.contains(handle) ?: false
+                },
+                false,
+            )
+
+        if (isHandleRestricted) {
+            gatt.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
         }
     }
-
-    private fun isHandleRestricted(service: GattService, connId: Int, handle: Int) =
-        service.mRestrictedHandles[connId]?.contains(handle) ?: false
 }

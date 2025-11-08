@@ -157,7 +157,7 @@ public class GattService extends ProfileService {
     /**
      * Set of restricted (which require a BLUETOOTH_PRIVILEGED permission) handles per connectionId.
      */
-    final Map<Integer, Set<Integer>> mRestrictedHandles = new HashMap<>();
+    private final Map<Integer, Set<Integer>> mRestrictedHandles = new HashMap<>();
 
     /**
      * HashMap used to synchronize writeCharacteristic calls mapping remote device to available
@@ -377,14 +377,22 @@ public class GattService extends ProfileService {
     }
 
     ContextMap<IBluetoothGattCallback> getClientMap() {
+        enforceGattThread();
         return mClientMap;
     }
 
     ContextMap<IBluetoothGattServerCallback> getServerMap() {
+        enforceGattThread();
         return mServerManager.getServerMap();
     }
 
+    Map<Integer, Set<Integer>> getRestrictedHandles() {
+        enforceGattThread();
+        return mRestrictedHandles;
+    }
+
     Map<BluetoothDevice, Integer> getCachedPeripheralLatency() {
+        enforceGattThread();
         return mCachedPeripheralLatency;
     }
 
