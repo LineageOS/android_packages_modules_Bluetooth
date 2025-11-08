@@ -56,7 +56,6 @@ class AdvertiseManagerNativeCallback(private val manager: AdvertiseManager) : Na
         doOnAdvertiseThread { onPeriodicAdvertisingEnabled(advertiserId, enable, status) }
     }
 
-    private fun doOnAdvertiseThread(block: AdvertiseManager.() -> Unit) {
+    private fun doOnAdvertiseThread(block: AdvertiseManager.() -> Unit) =
         manager.doOnAdvertiseThread { manager.block() }
-    }
 }
