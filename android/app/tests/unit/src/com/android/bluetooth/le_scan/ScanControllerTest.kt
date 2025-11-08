@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,714 +14,767 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.le_scan;
+package com.android.bluetooth.le_scan
 
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
+import android.app.AppOpsManager
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothProfile
+import android.bluetooth.le.IPeriodicAdvertisingCallback
+import android.bluetooth.le.IScannerCallback
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanRecord
+import android.bluetooth.le.ScanResult
+import android.bluetooth.le.ScanSettings
+import android.companion.CompanionDeviceManager
+import android.content.AttributionSource
+import android.content.Context
+import android.content.res.Resources
+import android.location.LocationManager
+import android.os.Binder
+import android.os.RemoteException
+import android.os.WorkSource
+import android.platform.test.annotations.EnableFlags
+import android.platform.test.flag.junit.SetFlagsRule
+import androidx.test.filters.SmallTest
+import androidx.test.platform.app.InstrumentationRegistry
+import com.android.bluetooth.TestLooper
+import com.android.bluetooth.TestUtils.getTestDevice
+import com.android.bluetooth.TestUtils.mockGetBluetoothManager
+import com.android.bluetooth.TestUtils.mockGetRemoteDevice
+import com.android.bluetooth.TestUtils.mockGetSystemService
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.le_scan.BatchScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS
+import com.android.bluetooth.le_scan.BatchScanUtil.enforceReportDelayFloor
+import com.android.bluetooth.le_scan.BatchScanUtil.parseTimestampNanos
+import com.android.bluetooth.util.TimeProvider
+import com.android.tests.bluetooth.FlagsWrapper
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import com.google.protobuf.ByteString
+import java.util.UUID
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.Mockito.doReturn
+import org.mockito.Mockito.doThrow
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.never
+import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.whenever
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4
+import platform.test.runner.parameterized.Parameters
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
-import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
-import static com.android.bluetooth.TestUtils.mockGetSystemService;
-import static com.android.bluetooth.le_scan.BatchScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS;
-
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
-import android.app.AppOpsManager;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
-import android.bluetooth.le.IPeriodicAdvertisingCallback;
-import android.bluetooth.le.IScannerCallback;
-import android.bluetooth.le.ScanFilter;
-import android.bluetooth.le.ScanRecord;
-import android.bluetooth.le.ScanResult;
-import android.bluetooth.le.ScanSettings;
-import android.companion.CompanionDeviceManager;
-import android.content.AttributionSource;
-import android.content.Context;
-import android.content.res.Resources;
-import android.location.LocationManager;
-import android.os.Binder;
-import android.os.RemoteException;
-import android.os.WorkSource;
-import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.SetFlagsRule;
-
-import androidx.test.filters.SmallTest;
-import androidx.test.platform.app.InstrumentationRegistry;
-
-import com.android.bluetooth.TestLooper;
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.util.TimeProvider;
-import com.android.tests.bluetooth.FlagsWrapper;
-import com.android.tests.bluetooth.MockitoRule;
-
-import com.google.protobuf.ByteString;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-
-import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
-import platform.test.runner.parameterized.Parameters;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-
-/** Test cases for {@link ScanController}. */
+/** Test cases for [ScanController]. */
 @SmallTest
-@RunWith(ParameterizedAndroidJunit4.class)
-public class ScanControllerTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(ParameterizedAndroidJunit4::class)
+class ScanControllerTest(flags: FlagsWrapper) {
+    @get:Rule val mMockitoRule = MockitoRule()
+    @get:Rule val mSetFlagsRule = SetFlagsRule(flags.flags)
 
-    @Rule public final SetFlagsRule mSetFlagsRule;
+    @Mock private lateinit var mSource: AttributionSource
+    @Mock private lateinit var mAdapterService: AdapterService
+    @Mock private lateinit var mScanManager: ScanManager
+    @Mock private lateinit var mScanNativeInterface: ScanNativeInterface
+    @Mock private lateinit var mPeriodicScanManager: PeriodicScanManager
+    @Mock private lateinit var mPeriodicScanNativeInterface: PeriodicScanNativeInterface
+    @Mock private lateinit var mCompanionDeviceManager: CompanionDeviceManager
+    @Mock private lateinit var mResources: Resources
+    @Mock private lateinit var mScannerMap: ScannerMap
+    @Mock private lateinit var mApp: ScannerApp
+    @Mock private lateinit var mTimeProvider: TimeProvider
 
-    @Mock private AttributionSource mSource;
-    @Mock private AdapterService mAdapterService;
-    @Mock private ScanManager mScanManager;
-    @Mock private ScanNativeInterface mScanNativeInterface;
-    @Mock private PeriodicScanManager mPeriodicScanManager;
-    @Mock private PeriodicScanNativeInterface mPeriodicScanNativeInterface;
-    @Mock private CompanionDeviceManager mCompanionDeviceManager;
-    @Mock private Resources mResources;
-    @Mock private ScannerMap mScannerMap;
-    @Mock private ScannerApp mApp;
-    @Mock private TimeProvider mTimeProvider;
+    private val mDevice: BluetoothDevice = getTestDevice(89)
 
-    private static final int TEST_SCANNER_ID = 1;
-    private static final int TEST_STATUS = 0;
-    private static final String TEST_ADDRESS = "00:11:22:33:FF:EE";
-
-    private final BluetoothDevice mDevice = getTestDevice(89);
-
-    private ScanController mScanController;
-    private TestLooper mLooper;
-
-    @Parameters(name = "{0}")
-    public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_SCAN_CONTROLLER_THREAD);
-    }
-
-    public ScanControllerTest(FlagsWrapper flags) {
-        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
-    }
+    private lateinit var mScanController: ScanController
 
     @Before
-    public void setUp() throws Exception {
-        doReturn(mResources).when(mAdapterService).getResources();
+    fun setUp() {
+        doReturn(mResources).whenever(mAdapterService).resources
 
-        final Context context = InstrumentationRegistry.getInstrumentation().getContext();
-        doReturn(context.getPackageManager()).when(mAdapterService).getPackageManager();
-        doReturn(context.getPackageName()).when(mSource).getPackageName();
+        val context = InstrumentationRegistry.getInstrumentation().context
+        doReturn(context.packageManager).whenever(mAdapterService).packageManager
+        doReturn(context.packageName).whenever(mSource).packageName
         doReturn(context.getSharedPreferences("ScanControllerTest", Context.MODE_PRIVATE))
-                .when(mAdapterService)
-                .getSharedPreferences(anyString(), anyInt());
-        doReturn(TEST_ADDRESS).when(mDevice).getAddress();
+            .whenever(mAdapterService)
+            .getSharedPreferences(any<String>(), any<Int>())
+        doReturn(TEST_ADDRESS).whenever(mDevice).address
 
-        mockGetRemoteDevice(mAdapterService, mDevice);
-        mockGetBluetoothManager(mAdapterService);
-        mockGetSystemService(mAdapterService, LocationManager.class);
-        mockGetSystemService(mAdapterService, AppOpsManager.class);
+        mockGetRemoteDevice(mAdapterService, mDevice)
+        mockGetBluetoothManager(mAdapterService)
+        mockGetSystemService(mAdapterService, LocationManager::class.java)
+        mockGetSystemService(mAdapterService, AppOpsManager::class.java)
 
-        mLooper = new TestLooper();
         mScanController =
-                new ScanController(
-                        mAdapterService,
-                        mScanManager,
-                        mScanNativeInterface,
-                        mPeriodicScanManager,
-                        mPeriodicScanNativeInterface,
-                        mScannerMap,
-                        mCompanionDeviceManager,
-                        mLooper.getLooper(),
-                        mTimeProvider);
+            ScanController(
+                mAdapterService,
+                mScanManager,
+                mScanNativeInterface,
+                mPeriodicScanManager,
+                mPeriodicScanNativeInterface,
+                mScannerMap,
+                mCompanionDeviceManager,
+                TestLooper().looper,
+                mTimeProvider,
+            )
     }
 
     @After
-    public void tearDown() throws Exception {
-        mScanController.cleanup();
+    fun tearDown() {
+        mScanController.cleanup()
     }
 
     @Test
-    public void notifyProfileConnectionStateChange_notify_scanManager() {
+    fun notifyProfileConnectionStateChange_notify_scanManager() {
         mScanController.notifyProfileConnectionStateChange(
-                BluetoothProfile.A2DP, STATE_CONNECTING, STATE_CONNECTED);
+            BluetoothProfile.A2DP,
+            BluetoothProfile.STATE_CONNECTING,
+            BluetoothProfile.STATE_CONNECTED,
+        )
         verify(mScanManager)
-                .handleBluetoothProfileConnectionStateChanged(
-                        BluetoothProfile.A2DP, STATE_CONNECTING, STATE_CONNECTED);
+            .handleBluetoothProfileConnectionStateChanged(
+                BluetoothProfile.A2DP,
+                BluetoothProfile.STATE_CONNECTING,
+                BluetoothProfile.STATE_CONNECTED,
+            )
     }
 
     @Test
-    public void onScanResult_remoteException_clientDied() throws Exception {
+    @Throws(Exception::class)
+    fun onScanResult_remoteException_clientDied() {
         // scannable and scan response
-        int eventType = 0x0A;
-        int addressType = 0;
-        int primaryPhy = 0;
-        int secondPhy = 0;
-        int advertisingSid = 0;
-        int txPower = 0;
-        int rssi = 0;
-        int periodicAdvInt = 0;
-        byte[] advData = new byte[0];
+        val eventType = 0x0A
+        val addressType = 0
+        val primaryPhy = 0
+        val secondPhy = 0
+        val advertisingSid = 0
+        val txPower = 0
+        val rssi = 0
+        val periodicAdvInt = 0
+        val advData = ByteArray(0)
 
-        final int appUid = 1234;
-        ScanSettings scanSettings =
-                new ScanSettings.Builder()
-                        .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-                        .setLegacy(false)
-                        .build();
-        ScanClient scanClient = new ScanClient(appUid, TEST_SCANNER_ID, scanSettings);
-        scanClient.setHasNetworkSettingsPermission(true);
-        AppScanStats appScanStats = mock(AppScanStats.class);
-        doReturn(appScanStats).when(mApp).getAppScanStats();
-        scanClient.setAppScanStats(appScanStats);
-        var callback = mock(IScannerCallback.class);
-        doReturn(callback).when(mApp).getCallback();
-        Set<ScanClient> scanClientSet = Collections.singleton(scanClient);
-        doReturn(TEST_ADDRESS).when(mAdapterService).getIdentityAddress(anyString());
-        doReturn(scanClientSet).when(mScanManager).getRegularScanQueue();
-        doReturn(mApp).when(mScannerMap).getById(scanClient.getScannerId());
-        doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(scanClient.getScannerId());
+        val appUid = 1234
+        val scanSettings =
+            ScanSettings.Builder()
+                .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
+                .setLegacy(false)
+                .build()
+        val scanClient = ScanClient(appUid, TEST_SCANNER_ID, scanSettings)
+        scanClient.hasNetworkSettingsPermission = true
+        val appScanStats = mock(AppScanStats::class.java)
+        doReturn(appScanStats).whenever(mApp).appScanStats
+        scanClient.appScanStats = appScanStats
+        val callback = mock(IScannerCallback::class.java)
+        doReturn(callback).whenever(mApp).callback
+        val scanClientSet = mutableSetOf(scanClient)
+        doReturn(TEST_ADDRESS).whenever(mAdapterService).getIdentityAddress(any<String>())
+        doReturn(scanClientSet).whenever(mScanManager).regularScanQueue
+        doReturn(mApp).whenever(mScannerMap).getById(scanClient.scannerId)
+        doReturn(appScanStats).whenever(mScannerMap).getAppScanStatsById(scanClient.scannerId)
 
         // Simulate remote client crash
-        doThrow(new RemoteException()).when(callback).onScanResult(any());
+        doThrow(RemoteException()).whenever(callback).onScanResult(any())
 
         mScanController.onScanResult(
-                eventType,
-                addressType,
-                TEST_ADDRESS,
-                primaryPhy,
-                secondPhy,
-                advertisingSid,
-                txPower,
-                rssi,
-                periodicAdvInt,
-                advData,
-                TEST_ADDRESS);
+            eventType,
+            addressType,
+            TEST_ADDRESS,
+            primaryPhy,
+            secondPhy,
+            advertisingSid,
+            txPower,
+            rssi,
+            periodicAdvInt,
+            advData,
+            TEST_ADDRESS,
+        )
 
-        assertThat(scanClient.getAppDied()).isTrue();
-        verify(appScanStats).recordScanStop(TEST_SCANNER_ID);
+        assertThat(scanClient.appDied).isTrue()
+        verify(appScanStats).recordScanStop(TEST_SCANNER_ID)
     }
 
     @Test
-    public void onScanResult_multipleClients_oneMatchesFilter() throws Exception {
+    @Throws(Exception::class)
+    fun onScanResult_multipleClients_oneMatchesFilter() {
         // Setup common parameters for onScanResult
-        int eventType = 0x1B; // Connectable and scannable legacy advertising PDU
-        int addressType = 0;
-        int primaryPhy = 1;
-        int secondPhy = 0;
-        int advertisingSid = 0xFF;
-        int txPower = 127;
-        int rssi = -50;
-        int periodicAdvInt = 0;
-        BluetoothDevice device = getTestDevice(0xAA);
-        String deviceAddress = device.getAddress();
-        mockGetRemoteDevice(mAdapterService, device);
+        val eventType = 0x1B // Connectable and scannable legacy advertising PDU
+        val addressType = 0
+        val primaryPhy = 1
+        val secondPhy = 0
+        val advertisingSid = 0xFF
+        val txPower = 127
+        val rssi = -50
+        val periodicAdvInt = 0
+        val device = getTestDevice(0xAA)
+        val deviceAddress = device.address
+        mockGetRemoteDevice(mAdapterService, device)
 
         // Create a scan record for a device named "TestDevice"
-        byte[] scanRecordBytes =
-                new byte[] {
-                    0x02,
-                    0x01,
-                    0x06, // AD Flags
-                    0x0B,
-                    0x09,
-                    'T',
-                    'e',
-                    's',
-                    't',
-                    'D',
-                    'e',
-                    'v',
-                    'i',
-                    'c',
-                    'e' // Complete Local Name
-                };
+        val scanRecordBytes =
+            byteArrayOf(
+                0x02,
+                0x01,
+                0x06, // AD Flags
+                0x0B,
+                0x09,
+                'T'.code.toByte(),
+                'e'.code.toByte(),
+                's'.code.toByte(),
+                't'.code.toByte(),
+                'D'.code.toByte(),
+                'e'.code.toByte(),
+                'v'.code.toByte(),
+                'i'.code.toByte(),
+                'c'.code.toByte(),
+                'e'.code.toByte(), // Complete Local Name
+            )
 
         // Setup matching client
-        final int matchingScannerId = 1;
-        ScanSettings matchingSettings =
-                new ScanSettings.Builder()
-                        .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-                        .build();
-        List<ScanFilter> matchingFilters =
-                List.of(new ScanFilter.Builder().setDeviceName("TestDevice").build());
-        ScanClient matchingClient =
-                new ScanClient(1000, matchingScannerId, matchingSettings, matchingFilters);
-        matchingClient.setHasNetworkSettingsPermission(true); // Bypass permission checks
-        ScannerApp matchingApp = mock(ScannerApp.class);
-        IScannerCallback matchingCallback = mock(IScannerCallback.class);
-        AppScanStats matchingAppScanStats = mock(AppScanStats.class);
-        doReturn(matchingCallback).when(matchingApp).getCallback();
-        doReturn(matchingAppScanStats).when(matchingApp).getAppScanStats();
-        matchingClient.setAppScanStats(matchingAppScanStats);
+        val matchingScannerId = 1
+        val matchingSettings =
+            ScanSettings.Builder().setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES).build()
+        val matchingFilters = listOf(ScanFilter.Builder().setDeviceName("TestDevice").build())
+        val matchingClient = ScanClient(1000, matchingScannerId, matchingSettings, matchingFilters)
+        matchingClient.hasNetworkSettingsPermission = true // Bypass permission checks
+        val matchingApp = mock(ScannerApp::class.java)
+        val matchingCallback = mock(IScannerCallback::class.java)
+        val matchingAppScanStats = mock(AppScanStats::class.java)
+        doReturn(matchingCallback).whenever(matchingApp).callback
+        doReturn(matchingAppScanStats).whenever(matchingApp).appScanStats
+        matchingClient.appScanStats = matchingAppScanStats
 
         // Setup non-matching client
-        final int nonMatchingScannerId = 2;
-        ScanSettings nonMatchingSettings =
-                new ScanSettings.Builder()
-                        .setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES)
-                        .build();
-        List<ScanFilter> nonMatchingFilters =
-                List.of(new ScanFilter.Builder().setDeviceName("OtherDevice").build());
-        ScanClient nonMatchingClient =
-                new ScanClient(1001, nonMatchingScannerId, nonMatchingSettings, nonMatchingFilters);
-        nonMatchingClient.setHasNetworkSettingsPermission(true); // Bypass permission checks
-        ScannerApp nonMatchingApp = mock(ScannerApp.class);
-        IScannerCallback nonMatchingCallback = mock(IScannerCallback.class);
-        AppScanStats nonMatchingAppScanStats = mock(AppScanStats.class);
-        doReturn(nonMatchingCallback).when(nonMatchingApp).getCallback();
-        doReturn(nonMatchingAppScanStats).when(nonMatchingApp).getAppScanStats();
-        nonMatchingClient.setAppScanStats(nonMatchingAppScanStats);
+        val nonMatchingScannerId = 2
+        val nonMatchingSettings =
+            ScanSettings.Builder().setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES).build()
+        val nonMatchingFilters = listOf(ScanFilter.Builder().setDeviceName("OtherDevice").build())
+        val nonMatchingClient =
+            ScanClient(1001, nonMatchingScannerId, nonMatchingSettings, nonMatchingFilters)
+        nonMatchingClient.hasNetworkSettingsPermission = true // Bypass permission checks
+        val nonMatchingApp = mock(ScannerApp::class.java)
+        val nonMatchingCallback = mock(IScannerCallback::class.java)
+        val nonMatchingAppScanStats = mock(AppScanStats::class.java)
+        doReturn(nonMatchingCallback).whenever(nonMatchingApp).callback
+        doReturn(nonMatchingAppScanStats).whenever(nonMatchingApp).appScanStats
+        nonMatchingClient.appScanStats = nonMatchingAppScanStats
 
         // Mock dependencies
-        doReturn(Set.of(matchingClient, nonMatchingClient))
-                .when(mScanManager)
-                .getRegularScanQueue();
-        doReturn(matchingApp).when(mScannerMap).getById(matchingScannerId);
-        doReturn(nonMatchingApp).when(mScannerMap).getById(nonMatchingScannerId);
-        doReturn(deviceAddress).when(mAdapterService).getIdentityAddress(anyString());
+        doReturn(setOf(matchingClient, nonMatchingClient)).whenever(mScanManager).regularScanQueue
+        doReturn(matchingApp).whenever(mScannerMap).getById(matchingScannerId)
+        doReturn(nonMatchingApp).whenever(mScannerMap).getById(nonMatchingScannerId)
+        doReturn(deviceAddress).whenever(mAdapterService).getIdentityAddress(any<String>())
 
         // Execute the method under test
         mScanController.onScanResult(
-                eventType,
-                addressType,
-                deviceAddress,
-                primaryPhy,
-                secondPhy,
-                advertisingSid,
-                txPower,
-                rssi,
-                periodicAdvInt,
-                scanRecordBytes,
-                deviceAddress);
+            eventType,
+            addressType,
+            deviceAddress,
+            primaryPhy,
+            secondPhy,
+            advertisingSid,
+            txPower,
+            rssi,
+            periodicAdvInt,
+            scanRecordBytes,
+            deviceAddress,
+        )
 
         // Verify that only the matching client received the scan result
-        verify(matchingCallback).onScanResult(any(ScanResult.class));
-        verify(matchingAppScanStats).addResults(matchingScannerId);
+        verify(matchingCallback).onScanResult(any<ScanResult>())
+        verify(matchingAppScanStats).addResults(matchingScannerId, 1)
 
         // Verify that the non-matching client did not receive the scan result
-        verify(nonMatchingCallback, never()).onScanResult(any(ScanResult.class));
-        verify(nonMatchingAppScanStats, never()).addResults(anyInt());
+        verify(nonMatchingCallback, never()).onScanResult(any<ScanResult>())
+        verify(nonMatchingAppScanStats, never()).addResults(any<Int>(), any<Int>())
     }
 
     @Test
-    public void onScannerRegistered_success_callback() throws RemoteException {
-        long uuidLsb = 12345L;
-        long uuidMsb = 67890L;
-        UUID uuid = new UUID(uuidMsb, uuidLsb);
-        var callback = mock(IScannerCallback.class);
-        doReturn(callback).when(mApp).getCallback();
-        doReturn(new ScanSettings.Builder().build()).when(mApp).getSettings();
-        doReturn(new ArrayList<ScanFilter>()).when(mApp).getFilters();
-        doReturn(mSource).when(mApp).getSource();
-        doReturn(mApp).when(mScannerMap).getByUuid(uuid);
+    @Throws(RemoteException::class)
+    fun onScannerRegistered_success_callback() {
+        val uuidLsb = 12345L
+        val uuidMsb = 67890L
+        val uuid = UUID(uuidMsb, uuidLsb)
+        val callback = mock(IScannerCallback::class.java)
+        doReturn(callback).whenever(mApp).callback
+        doReturn(ScanSettings.Builder().build()).whenever(mApp).settings
+        doReturn(listOf<ScanFilter>()).whenever(mApp).filters
+        doReturn(mSource).whenever(mApp).source
+        doReturn(mApp).whenever(mScannerMap).getByUuid(uuid)
 
-        mScanController.onScannerRegistered(TEST_STATUS, TEST_SCANNER_ID, uuid);
+        mScanController.onScannerRegistered(TEST_STATUS, TEST_SCANNER_ID, uuid)
 
-        verify(mApp).linkToDeath(any());
-        verify(callback).onScannerRegistered(TEST_STATUS, TEST_SCANNER_ID);
-        verify(mApp).setId(TEST_SCANNER_ID);
+        verify(mApp).linkToDeath(any())
+        verify(callback).onScannerRegistered(TEST_STATUS, TEST_SCANNER_ID)
+        verify(mApp).id = TEST_SCANNER_ID
     }
 
     @Test
-    public void onBatchScanReportsInternal_deliverTruncatedBatchScan_expectResults()
-            throws RemoteException {
-        verifyOnBatchScanReportsInternal(/* expectResults= */ true, /* isTruncated= */ true);
+    @Throws(RemoteException::class)
+    fun onBatchScanReportsInternal_deliverTruncatedBatchScan_expectResults() {
+        verifyOnBatchScanReportsInternal(expectResults = true, isTruncated = true)
     }
 
     @Test
-    public void onBatchScanReportsInternal_deliverTruncatedBatchScan_noResults()
-            throws RemoteException {
-        verifyOnBatchScanReportsInternal(/* expectResults= */ false, /* isTruncated= */ true);
+    @Throws(RemoteException::class)
+    fun onBatchScanReportsInternal_deliverTruncatedBatchScan_noResults() {
+        verifyOnBatchScanReportsInternal(expectResults = false, isTruncated = true)
     }
 
     @Test
-    public void onBatchScanReportsInternal_deliverFullBatchScan_expectResults()
-            throws RemoteException {
-        verifyOnBatchScanReportsInternal(/* expectResults= */ true, /* isTruncated= */ false);
+    @Throws(RemoteException::class)
+    fun onBatchScanReportsInternal_deliverFullBatchScan_expectResults() {
+        verifyOnBatchScanReportsInternal(expectResults = true, isTruncated = false)
     }
 
     @Test
-    public void onBatchScanReportsInternal_deliverFullBatchScan_noResults() throws RemoteException {
-        verifyOnBatchScanReportsInternal(/* expectResults= */ false, /* isTruncated= */ false);
+    @Throws(RemoteException::class)
+    fun onBatchScanReportsInternal_deliverFullBatchScan_noResults() {
+        verifyOnBatchScanReportsInternal(expectResults = false, isTruncated = false)
     }
 
     @Test
-    public void onBatchScanReportsInternal_truncatedScanClientNotFound() {
-        final int reportType = ScanUtil.SCAN_RESULT_TYPE_TRUNCATED;
-        final int numRecords = 1;
-        final byte[] recordData =
-                new byte[] {
-                    0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x06, 0x04, 0x02, 0x02, 0x00, 0x00, 0x02
-                };
+    fun onBatchScanReportsInternal_truncatedScanClientNotFound() {
+        val reportType = ScanUtil.SCAN_RESULT_TYPE_TRUNCATED
+        val numRecords = 1
+        val recordData =
+            byteArrayOf(
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x02,
+                0x06,
+                0x04,
+                0x02,
+                0x02,
+                0x00,
+                0x00,
+                0x02,
+            )
 
         // Setup so that no client is found
-        doReturn(Collections.emptySet()).when(mScanManager).getBatchScanQueue();
-        doReturn(mApp).when(mScannerMap).getById(TEST_SCANNER_ID);
+        doReturn(setOf<ScanClient>()).whenever(mScanManager).batchScanQueue
+        doReturn(mApp).whenever(mScannerMap).getById(TEST_SCANNER_ID)
 
         mScanController.onBatchScanReportsInternal(
-                TEST_STATUS, TEST_SCANNER_ID, reportType, numRecords, recordData);
+            TEST_STATUS,
+            TEST_SCANNER_ID,
+            reportType,
+            numRecords,
+            recordData,
+        )
 
         // Verify that callbackDone is not called because the method returns early when client is
         // not found.
-        verify(mScanManager, never()).callbackDone(anyInt(), anyInt());
+        verify(mScanManager, never()).callbackDone(any<Int>(), any<Int>())
     }
 
     @Test
-    public void onBatchScanReportsInternal_fullBatchScanNoClients() {
-        final int reportType = ScanUtil.SCAN_RESULT_TYPE_FULL;
-        final int numRecords = 1;
-        final byte[] recordData =
-                new byte[] {
-                    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0x00, 0x00, 0x00
-                };
+    fun onBatchScanReportsInternal_fullBatchScanNoClients() {
+        val reportType = ScanUtil.SCAN_RESULT_TYPE_FULL
+        val numRecords = 1
+        val recordData =
+            byteArrayOf(
+                0x01,
+                0x02,
+                0x03,
+                0x04,
+                0x05,
+                0x06,
+                0x07,
+                0x08,
+                0x09,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+            )
 
-        final BluetoothDevice device = getTestDevice("02:00:00:00:00:00");
-        mockGetRemoteDevice(mAdapterService, device);
+        val device = getTestDevice("02:00:00:00:00:00")
+        mockGetRemoteDevice(mAdapterService, device)
 
-        doReturn(Collections.emptySet()).when(mScanManager).getFullBatchScanQueue();
+        doReturn(setOf<ScanClient>()).whenever(mScanManager).fullBatchScanQueue
 
         mScanController.onBatchScanReportsInternal(
-                TEST_STATUS, TEST_SCANNER_ID, reportType, numRecords, recordData);
+            TEST_STATUS,
+            TEST_SCANNER_ID,
+            reportType,
+            numRecords,
+            recordData,
+        )
 
         if (!Flags.scanControllerThread()) {
-            verify(mScanManager).callbackDone(TEST_SCANNER_ID, TEST_STATUS);
+            verify(mScanManager).callbackDone(TEST_SCANNER_ID, TEST_STATUS)
         }
-        verify(mScannerMap, never()).getById(anyInt());
+        verify(mScannerMap, never()).getById(any<Int>())
     }
 
-    private void verifyOnBatchScanReportsInternal(boolean expectResults, boolean isTruncated)
-            throws RemoteException {
-        final int reportType =
-                isTruncated ? ScanUtil.SCAN_RESULT_TYPE_TRUNCATED : ScanUtil.SCAN_RESULT_TYPE_FULL;
-        final int numRecords = 1;
-        final byte[] recordData;
+    @Throws(RemoteException::class)
+    private fun verifyOnBatchScanReportsInternal(expectResults: Boolean, isTruncated: Boolean) {
+        val reportType =
+            if (isTruncated) ScanUtil.SCAN_RESULT_TYPE_TRUNCATED else ScanUtil.SCAN_RESULT_TYPE_FULL
+        val numRecords = 1
+        val recordData: ByteArray
         if (isTruncated) {
             recordData =
-                    new byte[] {
-                        0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x06, 0x04, 0x02, 0x02, 0x00, 0x00, 0x02
-                    };
+                byteArrayOf(
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x02,
+                    0x06,
+                    0x04,
+                    0x02,
+                    0x02,
+                    0x00,
+                    0x00,
+                    0x02,
+                )
         } else {
             recordData =
-                    new byte[] {
-                        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0x00, 0x00, 0x00
-                    };
+                byteArrayOf(
+                    0x01,
+                    0x02,
+                    0x03,
+                    0x04,
+                    0x05,
+                    0x06,
+                    0x07,
+                    0x08,
+                    0x09,
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00,
+                )
         }
 
-        final BluetoothDevice device = getTestDevice("02:00:00:00:00:00");
-        mockGetRemoteDevice(mAdapterService, device);
+        val device = getTestDevice("02:00:00:00:00:00")
+        mockGetRemoteDevice(mAdapterService, device)
 
-        Set<ScanClient> scanClientSet = new HashSet<>();
-        final int appUid = 1234;
-        ScanClient scanClient = new ScanClient(appUid, TEST_SCANNER_ID);
-        scanClient.setAssociatedDevices(new ArrayList<>());
+        val scanClientSet = mutableSetOf<ScanClient>()
+        val appUid = 1234
+        val scanClient = ScanClient(appUid, TEST_SCANNER_ID)
         if (expectResults) {
             if (isTruncated) {
-                scanClient.getAssociatedDevices().add("02:00:00:00:00:00");
+                scanClient.associatedDevices = listOf("02:00:00:00:00:00")
             } else {
-                scanClient.setHasScanWithoutLocationPermission(true);
+                scanClient.hasScanWithoutLocationPermission = true
             }
         }
-        scanClientSet.add(scanClient);
+        scanClientSet.add(scanClient)
         if (isTruncated) {
-            doReturn(scanClientSet).when(mScanManager).getBatchScanQueue();
+            doReturn(scanClientSet).whenever(mScanManager).batchScanQueue
         } else {
-            doReturn(scanClientSet).when(mScanManager).getFullBatchScanQueue();
+            doReturn(scanClientSet).whenever(mScanManager).fullBatchScanQueue
         }
-        doReturn(mApp).when(mScannerMap).getById(scanClient.getScannerId());
-        doReturn(mock(AppScanStats.class)).when(mApp).getAppScanStats();
-        var callback = mock(IScannerCallback.class);
-        doReturn(callback).when(mApp).getCallback();
+        doReturn(mApp).whenever(mScannerMap).getById(scanClient.scannerId)
+        doReturn(mock(AppScanStats::class.java)).whenever(mApp).appScanStats
+        val callback = mock(IScannerCallback::class.java)
+        doReturn(callback).whenever(mApp).callback
 
         mScanController.onBatchScanReportsInternal(
-                TEST_STATUS, TEST_SCANNER_ID, reportType, numRecords, recordData);
+            TEST_STATUS,
+            TEST_SCANNER_ID,
+            reportType,
+            numRecords,
+            recordData,
+        )
         if (!Flags.scanControllerThread()) {
-            verify(mScanManager).callbackDone(TEST_SCANNER_ID, TEST_STATUS);
+            verify(mScanManager).callbackDone(TEST_SCANNER_ID, TEST_STATUS)
         }
         if (expectResults) {
-            verify(callback).onBatchScanResults(any());
+            verify(callback).onBatchScanResults(any())
         } else {
-            verify(callback, never()).onBatchScanResults(any());
+            verify(callback, never()).onBatchScanResults(any())
         }
     }
 
     @Test
-    public void parseTimestampNanos() {
-        long timestampNanos = BatchScanUtil.parseTimestampNanos(new byte[] {-54, 7});
-        assertThat(timestampNanos).isEqualTo(99700000000L);
+    fun parseTimestampNanos() {
+        val timestampNanos = parseTimestampNanos(byteArrayOf(-54, 7))
+        assertThat(timestampNanos).isEqualTo(99700000000L)
     }
 
     @Test
-    public void onTrackAdvFoundLost() throws RemoteException {
-        int advPacketLen = 1;
-        byte[] advPacket = new byte[] {0x02};
-        int scanResponseLen = 3;
-        byte[] scanResponse = new byte[] {0x04};
-        int filtIndex = 5;
-        int advState = ScanController.ADVT_STATE_ONFOUND;
-        int advInfoPresent = 7;
-        int addrType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
-        int txPower = 9;
-        int rssiValue = 10;
-        int timeStamp = 11;
+    @Throws(RemoteException::class)
+    fun onTrackAdvFoundLost() {
+        val advPacketLen = 1
+        val advPacket = byteArrayOf(0x02)
+        val scanResponseLen = 3
+        val scanResponse = byteArrayOf(0x04)
+        val filtIndex = 5
+        val advState = ScanController.ADVT_STATE_ONFOUND
+        val advInfoPresent = 7
+        val addrType = BluetoothDevice.ADDRESS_TYPE_RANDOM
+        val txPower = 9
+        val rssiValue = 10
+        val timeStamp = 11
 
-        final int appUid = 1234;
-        ScanClient scanClient = new ScanClient(appUid, TEST_SCANNER_ID);
-        scanClient.setHasNetworkSettingsPermission(true);
-        scanClient.setSettings(
-                new ScanSettings.Builder()
-                        .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH)
-                        .setLegacy(false)
-                        .build());
-        Set<ScanClient> scanClientSet = Collections.singleton(scanClient);
+        val appUid = 1234
+        val scanClient = ScanClient(appUid, TEST_SCANNER_ID)
+        scanClient.hasNetworkSettingsPermission = true
+        scanClient.settings =
+            ScanSettings.Builder()
+                .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH)
+                .setLegacy(false)
+                .build()
+        val scanClientSet = mutableSetOf(scanClient)
 
-        ScannerApp app = mock(ScannerApp.class);
-        var callback = mock(IScannerCallback.class);
-        doReturn(callback).when(app).getCallback();
-        doReturn(app).when(mScannerMap).getById(TEST_SCANNER_ID);
-        doReturn(scanClientSet).when(mScanManager).getRegularScanQueue();
+        val app = mock(ScannerApp::class.java)
+        val callback = mock(IScannerCallback::class.java)
+        doReturn(callback).whenever(app).callback
+        doReturn(app).whenever(mScannerMap).getById(TEST_SCANNER_ID)
+        doReturn(scanClientSet).whenever(mScanManager).regularScanQueue
 
-        AdvtFilterOnFoundOnLostInfo advtFilterOnFoundOnLostInfo =
-                new AdvtFilterOnFoundOnLostInfo(
-                        TEST_SCANNER_ID,
-                        advPacketLen,
-                        ByteString.copyFrom(advPacket),
-                        scanResponseLen,
-                        ByteString.copyFrom(scanResponse),
-                        filtIndex,
-                        advState,
-                        advInfoPresent,
-                        TEST_ADDRESS,
-                        addrType,
-                        txPower,
-                        rssiValue,
-                        timeStamp);
+        val advtFilterOnFoundOnLostInfo =
+            AdvtFilterOnFoundOnLostInfo(
+                TEST_SCANNER_ID,
+                advPacketLen,
+                ByteString.copyFrom(advPacket),
+                scanResponseLen,
+                ByteString.copyFrom(scanResponse),
+                filtIndex,
+                advState,
+                advInfoPresent,
+                TEST_ADDRESS,
+                addrType,
+                txPower,
+                rssiValue,
+                timeStamp,
+            )
 
-        mScanController.onTrackAdvFoundLost(advtFilterOnFoundOnLostInfo);
-        ArgumentCaptor<ScanResult> result = ArgumentCaptor.forClass(ScanResult.class);
-        verify(callback).onFoundOrLost(eq(true), result.capture());
-        assertThat(result.getValue().getDevice()).isNotNull();
-        assertThat(result.getValue().getDevice().getAddress()).isEqualTo(TEST_ADDRESS);
-        assertThat(result.getValue().getDevice().getAddressType()).isEqualTo(addrType);
+        mScanController.onTrackAdvFoundLost(advtFilterOnFoundOnLostInfo)
+        val resultCaptor = argumentCaptor<ScanResult>()
+        verify(callback).onFoundOrLost(eq(true), resultCaptor.capture())
+        assertThat(resultCaptor.firstValue.device).isNotNull()
+        assertThat(resultCaptor.firstValue.device.address).isEqualTo(TEST_ADDRESS)
+        assertThat(resultCaptor.firstValue.device.addressType).isEqualTo(addrType)
     }
 
     @Test
-    public void registerScanner() {
-        var callback = mock(IScannerCallback.class);
-        WorkSource workSource = mock(WorkSource.class);
-        AppScanStats appScanStats = mock(AppScanStats.class);
-        doReturn(appScanStats).when(mScannerMap).getAppScanStatsByUid(Binder.getCallingUid());
+    fun registerScanner() {
+        val callback = mock(IScannerCallback::class.java)
+        val workSource = mock(WorkSource::class.java)
+        val appScanStats = mock(AppScanStats::class.java)
+        doReturn(appScanStats).whenever(mScannerMap).getAppScanStatsByUid(Binder.getCallingUid())
 
-        mScanController.registerScanner(callback, workSource, mSource);
+        mScanController.registerScanner(callback, workSource, mSource)
         verify(mScannerMap)
-                .addWithCallback(
-                        anyInt(),
-                        anyInt(),
-                        anyString(),
-                        any(),
-                        eq(mSource),
-                        eq(workSource),
-                        eq(callback),
-                        any());
-        verify(mScanManager).registerScanner(any());
+            .addWithCallback(
+                any<Int>(),
+                any<Int>(),
+                any<String>(),
+                any<UUID>(),
+                eq(mSource),
+                eq(workSource),
+                eq(callback),
+                eq(mAdapterService),
+                eq(false),
+            )
+        verify(mScanManager).registerScanner(any())
     }
 
     @Test
-    public void unregisterScanner() {
-        mScanController.unregisterScanner(TEST_SCANNER_ID);
+    fun unregisterScanner() {
+        mScanController.unregisterScanner(TEST_SCANNER_ID)
 
-        verify(mScannerMap).remove(TEST_SCANNER_ID);
-        verify(mScanManager).unregisterScanner(TEST_SCANNER_ID);
+        verify(mScannerMap).remove(TEST_SCANNER_ID)
+        verify(mScanManager).unregisterScanner(TEST_SCANNER_ID)
     }
 
     @Test
-    public void continuePiStartScan() {
-        List<ScanFilter> filters = new ArrayList<>();
-        ScanController.PendingIntentInfo pii =
-                new ScanController.PendingIntentInfo(
-                        null, new ScanSettings.Builder().build(), filters, null, 0, 0);
-        doReturn(pii).when(mApp).getInfo();
-        AppScanStats appScanStats = mock(AppScanStats.class);
-        doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(TEST_SCANNER_ID);
+    fun continuePiStartScan() {
+        val filters = emptyList<ScanFilter>()
+        val pii =
+            ScanController.PendingIntentInfo(
+                null,
+                ScanSettings.Builder().build(),
+                filters,
+                null,
+                0,
+                0,
+            )
+        doReturn(pii).whenever(mApp).info
+        val appScanStats = mock(AppScanStats::class.java)
+        doReturn(appScanStats).whenever(mScannerMap).getAppScanStatsById(TEST_SCANNER_ID)
 
-        mScanController.continuePiStartScan(TEST_SCANNER_ID, mApp);
+        mScanController.continuePiStartScan(TEST_SCANNER_ID, mApp)
         verify(appScanStats)
-                .recordScanStart(
-                        pii.settings(), pii.filters(), false, false, TEST_SCANNER_ID, null);
-        verify(mScanManager).startScan(any());
+            .recordScanStart(pii.settings, pii.filters, false, false, TEST_SCANNER_ID, null)
+        verify(mScanManager).startScan(any())
     }
 
     @Test
-    public void continuePiStartScanCheckUid() {
-        List<ScanFilter> filters = new ArrayList<>();
-        ScanController.PendingIntentInfo pii =
-                new ScanController.PendingIntentInfo(
-                        null, new ScanSettings.Builder().build(), filters, null, 123, 456);
-        doReturn(pii).when(mApp).getInfo();
-        AppScanStats appScanStats = mock(AppScanStats.class);
-        doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(TEST_SCANNER_ID);
+    fun continuePiStartScanCheckUid() {
+        val filters = emptyList<ScanFilter>()
+        val pii =
+            ScanController.PendingIntentInfo(
+                null,
+                ScanSettings.Builder().build(),
+                filters,
+                null,
+                123,
+                456,
+            )
+        doReturn(pii).whenever(mApp).info
+        val appScanStats = mock(AppScanStats::class.java)
+        doReturn(appScanStats).whenever(mScannerMap).getAppScanStatsById(TEST_SCANNER_ID)
 
-        mScanController.continuePiStartScan(TEST_SCANNER_ID, mApp);
+        mScanController.continuePiStartScan(TEST_SCANNER_ID, mApp)
         verify(appScanStats)
-                .recordScanStart(
-                        pii.settings(), pii.filters(), false, false, TEST_SCANNER_ID, null);
-        verify(mScanManager).startScan(argThat(client -> pii.callingUid() == client.getAppUid()));
+            .recordScanStart(pii.settings, pii.filters, false, false, TEST_SCANNER_ID, null)
+        verify(mScanManager).startScan(argThat { client -> pii.callingUid == client.appUid })
     }
 
     @Test
-    public void flushPendingBatchResults() {
-        Set<ScanClient> scanClientSet = new HashSet<>();
-        final int appUid = 1234;
-        ScanClient scanClient = new ScanClient(appUid, TEST_SCANNER_ID);
-        scanClientSet.add(scanClient);
-        doReturn(scanClientSet).when(mScanManager).getBatchScanQueue();
+    fun flushPendingBatchResults() {
+        val scanClientSet = mutableSetOf<ScanClient>()
+        val appUid = 1234
+        val scanClient = ScanClient(appUid, TEST_SCANNER_ID)
+        scanClientSet.add(scanClient)
+        doReturn(scanClientSet).whenever(mScanManager).batchScanQueue
 
-        mScanController.flushPendingBatchResults(TEST_SCANNER_ID);
-        verify(mScanManager).flushBatchScanResults(scanClient);
+        mScanController.flushPendingBatchResults(TEST_SCANNER_ID)
+        verify(mScanManager).flushBatchScanResults(scanClient)
     }
 
     @Test
-    public void flushPendingBatchResults_clientNotFound() {
+    fun flushPendingBatchResults_clientNotFound() {
         // Setup so that no client is found
-        doReturn(Collections.emptySet()).when(mScanManager).getBatchScanQueue();
+        doReturn(setOf<ScanClient>()).whenever(mScanManager).batchScanQueue
 
-        mScanController.flushPendingBatchResults(TEST_SCANNER_ID);
+        mScanController.flushPendingBatchResults(TEST_SCANNER_ID)
 
         // Verify that flush is not called.
-        verify(mScanManager, never()).flushBatchScanResults(any());
+        verify(mScanManager, never()).flushBatchScanResults(any())
     }
 
     @Test
-    public void registerSync() {
-        int sid = 123;
-        int skip = 1;
-        int timeout = 2;
-        IPeriodicAdvertisingCallback callback = mock(IPeriodicAdvertisingCallback.class);
+    fun registerSync() {
+        val sid = 123
+        val skip = 1
+        val timeout = 2
+        val callback = mock(IPeriodicAdvertisingCallback::class.java)
 
-        mScanController.registerSync(mDevice, sid, skip, timeout, callback);
-        verify(mPeriodicScanManager).startSync(mDevice, sid, skip, timeout, callback);
+        mScanController.registerSync(mDevice, sid, skip, timeout, callback)
+        verify(mPeriodicScanManager).startSync(mDevice, sid, skip, timeout, callback)
     }
 
     @Test
-    public void registerSyncScanResult() {
-        ScanResult scanResult = new ScanResult(mDevice, 1, 2, 3, 4, 5, 6, 7, null, 8);
-        int skip = 1;
-        int timeout = 2;
-        IPeriodicAdvertisingCallback callback = mock(IPeriodicAdvertisingCallback.class);
+    fun registerSyncScanResult() {
+        val scanResult = ScanResult(mDevice, 1, 2, 3, 4, 5, 6, 7, null, 8)
+        val skip = 1
+        val timeout = 2
+        val callback = mock(IPeriodicAdvertisingCallback::class.java)
 
-        mScanController.registerSync(scanResult, skip, timeout, callback);
-        verify(mPeriodicScanManager).startSync(scanResult, skip, timeout, callback);
+        mScanController.registerSync(scanResult, skip, timeout, callback)
+        verify(mPeriodicScanManager).startSync(scanResult, skip, timeout, callback)
     }
 
     @Test
-    public void unregisterSync() {
-        IPeriodicAdvertisingCallback callback = mock(IPeriodicAdvertisingCallback.class);
+    fun unregisterSync() {
+        val callback = mock(IPeriodicAdvertisingCallback::class.java)
 
-        mScanController.unregisterSync(callback);
-        verify(mPeriodicScanManager).stopSync(callback);
+        mScanController.unregisterSync(callback)
+        verify(mPeriodicScanManager).stopSync(callback)
     }
 
     @Test
-    public void transferSync() {
-        int serviceData = 1;
-        int syncHandle = 2;
+    fun transferSync() {
+        val serviceData = 1
+        val syncHandle = 2
 
-        mScanController.transferSync(mDevice, serviceData, syncHandle);
-        verify(mPeriodicScanManager).transferSync(mDevice, serviceData, syncHandle);
+        mScanController.transferSync(mDevice, serviceData, syncHandle)
+        verify(mPeriodicScanManager).transferSync(mDevice, serviceData, syncHandle)
     }
 
     @Test
-    public void transferSetInfo() {
-        int serviceData = 1;
-        int advHandle = 2;
-        IPeriodicAdvertisingCallback callback = mock(IPeriodicAdvertisingCallback.class);
+    fun transferSetInfo() {
+        val serviceData = 1
+        val advHandle = 2
+        val callback = mock(IPeriodicAdvertisingCallback::class.java)
 
-        mScanController.transferSetInfo(mDevice, serviceData, advHandle, callback);
-        verify(mPeriodicScanManager).transferSetInfo(mDevice, serviceData, advHandle, callback);
+        mScanController.transferSetInfo(mDevice, serviceData, advHandle, callback)
+        verify(mPeriodicScanManager).transferSetInfo(mDevice, serviceData, advHandle, callback)
     }
 
     @Test
-    public void enforceReportDelayFloor() {
-        long reportDelayFloorHigher = DEFAULT_REPORT_DELAY_FLOOR_MS + 1;
-        ScanSettings scanSettings =
-                new ScanSettings.Builder().setReportDelay(reportDelayFloorHigher).build();
-        ScanSettings newScanSettings = BatchScanUtil.enforceReportDelayFloor(scanSettings);
+    fun enforceReportDelayFloor() {
+        val reportDelayFloorHigher = DEFAULT_REPORT_DELAY_FLOOR_MS + 1
+        val scanSettings = ScanSettings.Builder().setReportDelay(reportDelayFloorHigher).build()
+        val newScanSettings = enforceReportDelayFloor(scanSettings)
 
-        assertThat(newScanSettings.getReportDelayMillis())
-                .isEqualTo(scanSettings.getReportDelayMillis());
+        assertThat(newScanSettings.reportDelayMillis).isEqualTo(scanSettings.reportDelayMillis)
 
-        ScanSettings scanSettingsFloor = new ScanSettings.Builder().setReportDelay(1).build();
-        ScanSettings newScanSettingsFloor =
-                BatchScanUtil.enforceReportDelayFloor(scanSettingsFloor);
+        val scanSettingsFloor = ScanSettings.Builder().setReportDelay(1).build()
+        val newScanSettingsFloor = enforceReportDelayFloor(scanSettingsFloor)
 
-        assertThat(newScanSettingsFloor.getReportDelayMillis())
-                .isEqualTo(DEFAULT_REPORT_DELAY_FLOOR_MS);
+        assertThat(newScanSettingsFloor.reportDelayMillis).isEqualTo(DEFAULT_REPORT_DELAY_FLOOR_MS)
     }
 
     @Test
     @EnableFlags(Flags.FLAG_RSSI_SCAN_FILTER)
-    public void matchesFilters_rssiThreshold() {
-        final int rssiThreshold = -50;
-        final int rssiAboveThreshold = -40;
-        final int rssiBelowThreshold = -60;
+    fun matchesFilters_rssiThreshold() {
+        val rssiThreshold = -50
+        val rssiAboveThreshold = -40
+        val rssiBelowThreshold = -60
 
-        ScanSettings settings = new ScanSettings.Builder().setRssiThreshold(rssiThreshold).build();
-        final int appUid = 1234;
-        ScanClient client = new ScanClient(appUid, TEST_SCANNER_ID, settings);
+        val settings = ScanSettings.Builder().setRssiThreshold(rssiThreshold).build()
+        val appUid = 1234
+        val client = ScanClient(appUid, TEST_SCANNER_ID, settings)
 
-        ScanRecord mockScanRecord = mock(ScanRecord.class);
-        ScanResult resultAboveThreshold =
-                new ScanResult(mDevice, 0, 0, 0, 0, 0, rssiAboveThreshold, 0, mockScanRecord, 0);
-        assertThat(ScanController.matchesFilters(client, resultAboveThreshold)).isTrue();
+        val mockScanRecord = mock(ScanRecord::class.java)
+        val resultAboveThreshold =
+            ScanResult(mDevice, 0, 0, 0, 0, 0, rssiAboveThreshold, 0, mockScanRecord, 0)
+        assertThat(ScanController.matchesFilters(client, resultAboveThreshold)).isTrue()
 
-        ScanResult resultBelowThreshold =
-                new ScanResult(mDevice, 0, 0, 0, 0, 0, rssiBelowThreshold, 0, mockScanRecord, 0);
-        assertThat(ScanController.matchesFilters(client, resultBelowThreshold)).isFalse();
+        val resultBelowThreshold =
+            ScanResult(mDevice, 0, 0, 0, 0, 0, rssiBelowThreshold, 0, mockScanRecord, 0)
+        assertThat(ScanController.matchesFilters(client, resultBelowThreshold)).isFalse()
     }
 
     @Test
     @EnableFlags(Flags.FLAG_ORIGINAL_ADDRESS_FILTER_MATCH)
-    public void matchesFilters_originalAddress() {
+    fun matchesFilters_originalAddress() {
         // This address is different from mDevice.getAddress()
-        String originalAddress = "00:11:22:33:CC:DD";
-        ScanFilter filter = new ScanFilter.Builder().setDeviceAddress(originalAddress).build();
-        List<ScanFilter> filters = new ArrayList<>();
-        filters.add(filter);
-        ScanSettings settings = new ScanSettings.Builder().build();
-        ScanRecord mockScanRecord = mock(ScanRecord.class);
+        val originalAddress = "00:11:22:33:CC:DD"
+        val filter = ScanFilter.Builder().setDeviceAddress(originalAddress).build()
+        val filters = listOf(filter)
+        val settings = ScanSettings.Builder().build()
+        val mockScanRecord = mock(ScanRecord::class.java)
 
-        final int appUid = 1234;
-        ScanClient client = new ScanClient(appUid, TEST_SCANNER_ID, settings, filters);
-        ScanResult scanResult = new ScanResult(mDevice, 0, 0, 0, 0, 0, 0, 0, mockScanRecord, 0);
+        val appUid = 1234
+        val client = ScanClient(appUid, TEST_SCANNER_ID, settings, filters)
+        val scanResult = ScanResult(mDevice, 0, 0, 0, 0, 0, 0, 0, mockScanRecord, 0)
 
-        assertThat(ScanController.matchesFilters(client, scanResult, originalAddress)).isTrue();
+        assertThat(ScanController.matchesFilters(client, scanResult, originalAddress)).isTrue()
     }
 
     @Test
-    public void dump_doesNotCrash() {
-        StringBuilder sb = new StringBuilder();
-        mScanController.dump(sb);
-        assertThat(sb.toString()).isNotNull();
+    fun dump_doesNotCrash() {
+        val sb = StringBuilder()
+        mScanController.dump(sb)
+        assertThat(sb.toString()).isNotNull()
+    }
+
+    companion object {
+        private const val TEST_SCANNER_ID = 1
+        private const val TEST_STATUS = 0
+        private const val TEST_ADDRESS = "00:11:22:33:FF:EE"
+
+        @JvmStatic
+        @Parameters(name = "{0}")
+        fun getParams() = FlagsWrapper.progressionOf(Flags.FLAG_SCAN_CONTROLLER_THREAD)
     }
 }
