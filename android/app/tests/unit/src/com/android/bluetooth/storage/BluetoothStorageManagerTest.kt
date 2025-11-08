@@ -20,6 +20,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN
+import android.bluetooth.BluetoothSinkAudioPolicy
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.test.core.app.ApplicationProvider
@@ -213,5 +214,43 @@ class BluetoothStorageManagerTest {
             // device2 should be gone
             assertThat(newStorageManager.getProfileConnectionPolicy(device2, BluetoothProfile.A2DP))
                 .isEqualTo(CONNECTION_POLICY_UNKNOWN)
+        }
+
+    @Test
+    fun getAudioPolicyMetadata_deviceNotInStorage_returnsDefault() =
+        runTest(testDispatcher) {
+            assertThat(storageManager.getAudioPolicyMetadata(device1))
+                .isEqualTo(BluetoothSinkAudioPolicy.Builder().build())
+        }
+
+    @Test
+    fun getAudioPolicyMetadata_deviceInStorageWithoutHfpSettings_returnsDefault() =
+        runTest(testDispatcher) {
+            // Scenario: The device is present in storage, but has no HFP settings.
+            // We add it to storage by setting some other metadata.
+            storageManager.setCustomMetadata(
+                device1,
+                BluetoothDevice.METADATA_MANUFACTURER_NAME,
+                "test".toByteArray(),
+            )
+
+            assertThat(storageManager.getAudioPolicyMetadata(device1))
+                .isEqualTo(BluetoothSinkAudioPolicy.Builder().build())
+        }
+
+    @Test
+    fun setAndGetAudioPolicyMetadata_returnsCorrectPolicy() =
+        runTest(testDispatcher) {
+            val testPolicy =
+                BluetoothSinkAudioPolicy.Builder()
+                    .setCallEstablishPolicy(BluetoothSinkAudioPolicy.POLICY_ALLOWED)
+                    .setActiveDevicePolicyAfterConnection(BluetoothSinkAudioPolicy.POLICY_ALLOWED)
+                    .setInBandRingtonePolicy(BluetoothSinkAudioPolicy.POLICY_ALLOWED)
+                    .build()
+
+            storageManager.setAudioPolicyMetadata(device1, testPolicy)
+            val retrievedPolicy = storageManager.getAudioPolicyMetadata(device1)
+
+            assertThat(retrievedPolicy).isEqualTo(testPolicy)
         }
 }
