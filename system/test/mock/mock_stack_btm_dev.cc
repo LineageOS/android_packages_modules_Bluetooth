@@ -79,7 +79,7 @@ BtmDevice* btm_sec_alloc_dev(const RawAddress& /* bd_addr */) {
   inc_func_call_count(__func__);
   return nullptr;
 }
-BtmDevice* btm_sec_allocate_dev_rec(void) {
+BtmDevice* btm_sec_allocate_dev_rec(const RawAddress& /* bd_addr */) {
   inc_func_call_count(__func__);
   return nullptr;
 }

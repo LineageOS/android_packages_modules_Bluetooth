@@ -95,7 +95,7 @@ void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class, LinkKey li
   BtmDevice* p_device = btm_find_dev(bd_addr);
 
   if (p_device == nullptr) {
-    p_device = btm_sec_allocate_dev_rec();
+    p_device = btm_sec_allocate_dev_rec(bd_addr);
 
     if (p_device == nullptr) {
       log::warn("device record allocation failed bd_addr:{}", bd_addr);
@@ -107,7 +107,6 @@ void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class, LinkKey li
             "link_key_type: 0x{:x}",
             bd_addr, dev_class[0], dev_class[1], dev_class[2], key_type);
 
-    p_device->bd_addr = bd_addr;
     p_device->hci_handle =
             get_btm_client_interface().peer.BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_BR_EDR);
 
@@ -275,7 +274,7 @@ DEV_CLASS BTM_SecReadDevClass(const RawAddress& bd_addr) {
 BtmDevice* btm_sec_alloc_dev(const RawAddress& bd_addr) {
   tBTM_INQ_INFO* p_inq_info;
 
-  BtmDevice* p_device = btm_sec_allocate_dev_rec();
+  BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
 
   if (p_device == nullptr) {
     log::warn("device record allocation failed bd_addr:{}", bd_addr);
@@ -303,8 +302,6 @@ BtmDevice* btm_sec_alloc_dev(const RawAddress& bd_addr) {
 
   /* update conn params, use default value for background connection params */
   memset(&p_device->conn_params, 0xff, sizeof(tBTM_LE_CONN_PRAMS));
-
-  p_device->bd_addr = bd_addr;
 
   p_device->ble_hci_handle =
           get_btm_client_interface().peer.BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
@@ -785,7 +782,7 @@ static BtmDevice* btm_find_oldest_dev_rec(void) {
  * Returns          Pointer to the newly allocated record
  *
  ******************************************************************************/
-BtmDevice* btm_sec_allocate_dev_rec(void) {
+BtmDevice* btm_sec_allocate_dev_rec(const RawAddress& bd_addr) {
   if (!is_main_thread()) {
     log::error("Called from non-main thread");
   }
@@ -830,6 +827,7 @@ BtmDevice* btm_sec_allocate_dev_rec(void) {
   p_device->timestamp = btm_sec_cb.dev_rec_count++;
   p_device->sec_rec.rmt_io_caps = BtIoCap::IO_CAP_UNKNOWN;
   p_device->suggested_tx_octets = 0;
+  p_device->bd_addr = bd_addr;
 
   return p_device;
 }

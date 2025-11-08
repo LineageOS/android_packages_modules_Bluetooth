@@ -130,10 +130,9 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_encrypt_change) {
   ASSERT_EQ(0UL, ::btm_sec_cb.collision_start_time);
 
   // Setup device
-  BtmDevice* p_device = btm_sec_allocate_dev_rec();
+  BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
   ASSERT_NE(nullptr, p_device);
   ASSERT_EQ(BTM_SEC_IN_USE, p_device->sec_rec.sec_flags);
-  p_device->bd_addr = bd_addr;
   p_device->hci_handle = classic_handle;
   p_device->ble_hci_handle = ble_handle;
 
@@ -170,9 +169,8 @@ TEST_F(StackBtmSecWithInitFreeTest, BTM_SetEncryption) {
             BTM_SetEncryption(bd_addr, transport, p_callback, nullptr, sec_act));
 
   // With device
-  BtmDevice* p_device = btm_sec_allocate_dev_rec();
+  BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
   ASSERT_NE(nullptr, p_device);
-  p_device->bd_addr = bd_addr;
   p_device->hci_handle = 0x1234;
 
   ASSERT_EQ(tBTM_STATUS::BTM_WRONG_MODE,
@@ -190,17 +188,18 @@ TEST_F(StackBtmSecTest, btm_ble_sec_req_act_text) {
 
 TEST_F(StackBtmSecWithInitFreeTest, btm_sec_allocate_dev_rec__all) {
   BtmDevice* p_devices[kBtmSecMaxDeviceRecords];
+  const RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
 
   // Fill up the records
   if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
     for (size_t i = 0; i < kBtmSecMaxDeviceRecords; i++) {
       ASSERT_EQ(i, list_length(::btm_sec_cb.sec_dev_rec));
-      p_devices[i] = btm_sec_allocate_dev_rec();
+      p_devices[i] = btm_sec_allocate_dev_rec(bd_addr);
       ASSERT_NE(nullptr, p_devices[i]);
     }
   } else {
     for (size_t i = 0; i < kBtmSecMaxDeviceRecords; i++) {
-      p_devices[i] = btm_sec_allocate_dev_rec();
+      p_devices[i] = btm_sec_allocate_dev_rec(bd_addr);
     }
   }
 
@@ -208,7 +207,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_allocate_dev_rec__all) {
   if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
     for (size_t i = 0; i < kBtmSecMaxDeviceRecords; i++) {
       ASSERT_EQ(kBtmSecMaxDeviceRecords, list_length(::btm_sec_cb.sec_dev_rec));
-      p_devices[i] = btm_sec_allocate_dev_rec();
+      p_devices[i] = btm_sec_allocate_dev_rec(bd_addr);
       ASSERT_NE(nullptr, p_devices[i]);
     }
   } else {
@@ -216,7 +215,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_allocate_dev_rec__all) {
     ASSERT_EQ(kBtmSecMaxDeviceRecords-1, p_devices[kBtmSecMaxDeviceRecords - 1]->timestamp);
 
     for (size_t i = 0; i < kBtmSecMaxDeviceRecords; i++) {
-      BtmDevice* p_device = btm_sec_allocate_dev_rec();
+      BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
       ASSERT_NE(nullptr, p_device);                             // must be a valid entry
       ASSERT_NE(p_devices[i]->timestamp, p_device->timestamp);  // should be a new record
       p_devices[i] = p_device;
@@ -268,10 +267,9 @@ TEST_F(StackBtmSecWithInitFreeTest, wipe_secrets_and_remove) {
   const uint16_t ble_handle = 0x9876;
 
   // Setup device
-  BtmDevice* p_device = btm_sec_allocate_dev_rec();
+  BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
   ASSERT_NE(nullptr, p_device);
   ASSERT_EQ(BTM_SEC_IN_USE, p_device->sec_rec.sec_flags);
-  p_device->bd_addr = bd_addr;
   p_device->hci_handle = classic_handle;
   p_device->ble_hci_handle = ble_handle;
 
@@ -307,8 +305,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_authenticated_tempora
   const uint16_t classic_handle = 0x1234;
   const uint16_t ble_handle = 0x9876;
 
-  BtmDevice* p_device = btm_sec_allocate_dev_rec();
-  p_device->bd_addr = bd_addr;
+  BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
   p_device->hci_handle = classic_handle;
   p_device->ble_hci_handle = ble_handle;
 
@@ -332,8 +329,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_non_authenticated_tem
   const uint16_t classic_handle = 0x1234;
   const uint16_t ble_handle = 0x9876;
 
-  BtmDevice* p_device = btm_sec_allocate_dev_rec();
-  p_device->bd_addr = bd_addr;
+  BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
   p_device->hci_handle = classic_handle;
   p_device->ble_hci_handle = ble_handle;
 
@@ -359,8 +355,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_authenticated_persist
   const uint16_t classic_handle = 0x1234;
   const uint16_t ble_handle = 0x9876;
 
-  BtmDevice* p_device = btm_sec_allocate_dev_rec();
-  p_device->bd_addr = bd_addr;
+  BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
   p_device->hci_handle = classic_handle;
   p_device->ble_hci_handle = ble_handle;
 
@@ -386,8 +381,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_upgrade_needed) {
   const uint16_t classic_handle = 0x1234;
   const uint16_t ble_handle = 0x9876;
 
-  BtmDevice* p_device = btm_sec_allocate_dev_rec();
-  p_device->bd_addr = bd_addr;
+  BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
   p_device->hci_handle = classic_handle;
   p_device->ble_hci_handle = ble_handle;
 
@@ -418,8 +412,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_encryption_required) 
   const uint16_t classic_handle = 0x1234;
   const uint16_t ble_handle = 0x9876;
 
-  BtmDevice* p_device = btm_sec_allocate_dev_rec();
-  p_device->bd_addr = bd_addr;
+  BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
   p_device->hci_handle = classic_handle;
   p_device->ble_hci_handle = ble_handle;
 
@@ -446,9 +439,8 @@ class StackBtmSecSecurityUpgradeTest : public StackBtmSecWithInitFreeTest {
 protected:
   void SetUp() override {
     StackBtmSecWithInitFreeTest::SetUp();
-    p_device_ = btm_sec_allocate_dev_rec();
+    p_device_ = btm_sec_allocate_dev_rec(kRawAddress);
     ASSERT_NE(p_device_, nullptr);
-    p_device_->bd_addr = kRawAddress;
     p_device_->hci_handle = 0x1;  // Needed for btm_sec_service_access_request
     p_device_->sec_rec.sec_flags |= BTM_SEC_NAME_KNOWN;  // Avoid RNR
     p_device_->sm4 = BTM_SM4_TRUE;                       // Enable SM4 path
