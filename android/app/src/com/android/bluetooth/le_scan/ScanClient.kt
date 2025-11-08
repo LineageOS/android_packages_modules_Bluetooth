@@ -35,20 +35,17 @@ private constructor(
     val isInternal: Boolean = false,
     val hasLocationPermission: Boolean = false,
     val isEligibleForSanitizedExposureNotification: Boolean = false,
-    // TODO(b/458821587): Make `val` when `ScanControllerTest` is fixed
-    var hasNetworkSettingsPermission: Boolean = false,
+    val hasNetworkSettingsPermission: Boolean = false,
     val hasNetworkSetupWizardPermission: Boolean = false,
-    // TODO(b/458821587): Make `val` when `ScanControllerTest` is fixed
-    var hasScanWithoutLocationPermission: Boolean = false,
+    val hasScanWithoutLocationPermission: Boolean = false,
     val hasDisavowedLocation: Boolean = false,
-    // TODO(b/458821587): Make `val` when `ScanControllerTest` is fixed
-    var associatedDevices: List<String> = emptyList(),
+    val associatedDevices: List<String> = emptyList(),
 ) {
     var started = false
     var appDied = false
     var appScanStats: AppScanStats? = null
 
-    // This constructor is only ever used when `ScanClient` acts as a `scannerId` wrapper.
+    // This constructor is only used when `ScanClient` acts as a `scannerId` wrapper and for tests
     @JvmOverloads
     constructor(
         appUid: Int,
@@ -56,7 +53,20 @@ private constructor(
         settings: ScanSettings = ScanSettings.Builder().build(),
         filters: List<ScanFilter> = emptyList(),
         userHandle: UserHandle? = null,
-    ) : this(appUid, scannerId, settings, settings.scanMode, filters, userHandle)
+        hasNetworkSettingsPermission: Boolean = false,
+        hasScanWithoutLocationPermission: Boolean = false,
+        associatedDevices: List<String> = emptyList(),
+    ) : this(
+        appUid,
+        scannerId,
+        settings,
+        settings.scanMode,
+        filters,
+        userHandle,
+        hasNetworkSettingsPermission = hasNetworkSettingsPermission,
+        hasScanWithoutLocationPermission = hasScanWithoutLocationPermission,
+        associatedDevices = associatedDevices,
+    )
 
     constructor(
         appUid: Int,
