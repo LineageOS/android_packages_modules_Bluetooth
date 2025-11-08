@@ -33,17 +33,21 @@ private constructor(
     val filters: List<ScanFilter>,
     val userHandle: UserHandle?,
     val isInternal: Boolean = false,
-    var started: Boolean = false,
-    var appDied: Boolean = false,
-    var hasLocationPermission: Boolean = false,
-    var isEligibleForSanitizedExposureNotification: Boolean = false,
+    val hasLocationPermission: Boolean = false,
+    val isEligibleForSanitizedExposureNotification: Boolean = false,
+    // TODO(b/458821587): Make `val` when `ScanControllerTest` is fixed
     var hasNetworkSettingsPermission: Boolean = false,
-    var hasNetworkSetupWizardPermission: Boolean = false,
+    val hasNetworkSetupWizardPermission: Boolean = false,
+    // TODO(b/458821587): Make `val` when `ScanControllerTest` is fixed
     var hasScanWithoutLocationPermission: Boolean = false,
-    var hasDisavowedLocation: Boolean = false,
+    val hasDisavowedLocation: Boolean = false,
+    // TODO(b/458821587): Make `val` when `ScanControllerTest` is fixed
     var associatedDevices: List<String> = emptyList(),
-    var appScanStats: AppScanStats? = null,
 ) {
+    var started = false
+    var appDied = false
+    var appScanStats: AppScanStats? = null
+
     // This constructor is only ever used when `ScanClient` acts as a `scannerId` wrapper.
     @JvmOverloads
     constructor(
