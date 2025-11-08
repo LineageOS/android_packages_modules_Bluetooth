@@ -1113,32 +1113,36 @@ public class ScanController {
         String callingPackage = source.getPackageName();
         settings = BatchScanUtil.enforceReportDelayFloor(settings);
         final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
-        final ScanClient scanClient =
-                new ScanClient(uid, scannerId, settings, filters, Binder.getCallingUserHandle());
         mAppOps.checkPackage(uid, callingPackage);
-        scanClient.setEligibleForSanitizedExposureNotification(
-                callingPackage.equals(mExposureNotificationPackage));
-        scanClient.setHasDisavowedLocation(
-                Utils.hasDisavowedLocationForScan(mAdapterService, source, mTestModeEnabled));
+        var hasDisavowedLocation =
+                Utils.hasDisavowedLocationForScan(mAdapterService, source, mTestModeEnabled);
         var isQApp = checkCallerTargetSdk(mAdapterService, callingPackage, Build.VERSION_CODES.Q);
-        if (!scanClient.getHasDisavowedLocation()) {
+        var userHandle = Binder.getCallingUserHandle();
+        var hasLocationPermission = false; // Unacted upon if `hasDisavowedLocation` is true
+        if (!hasDisavowedLocation) {
             if (isQApp) {
-                scanClient.setHasLocationPermission(
-                        Utils.checkCallerHasFineLocation(
-                                mAdapterService, source, scanClient.getUserHandle()));
+                hasLocationPermission =
+                        Utils.checkCallerHasFineLocation(mAdapterService, source, userHandle);
             } else {
-                scanClient.setHasLocationPermission(
+                hasLocationPermission =
                         Utils.checkCallerHasCoarseOrFineLocation(
-                                mAdapterService, source, scanClient.getUserHandle()));
+                                mAdapterService, source, userHandle);
             }
         }
-        scanClient.setHasNetworkSettingsPermission(
-                Util.checkCallerHasNetworkSettingsPermission(mAdapterService));
-        scanClient.setHasNetworkSetupWizardPermission(
-                Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
-        scanClient.setHasScanWithoutLocationPermission(
-                Util.checkCallerHasScanWithoutLocationPermission(mAdapterService));
-        scanClient.setAssociatedDevices(getAssociatedDevices(callingPackage));
+        var scanClient =
+                new ScanClient(
+                        uid,
+                        scannerId,
+                        settings,
+                        filters,
+                        userHandle,
+                        callingPackage.equals(mExposureNotificationPackage),
+                        hasDisavowedLocation,
+                        hasLocationPermission, // Unacted upon if `hasDisavowedLocation` is true
+                        Util.checkCallerHasNetworkSettingsPermission(mAdapterService),
+                        Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService),
+                        Util.checkCallerHasScanWithoutLocationPermission(mAdapterService),
+                        getAssociatedDevices(callingPackage));
 
         dispatchStartScan(scannerId, settings, filters, scanClient);
     }

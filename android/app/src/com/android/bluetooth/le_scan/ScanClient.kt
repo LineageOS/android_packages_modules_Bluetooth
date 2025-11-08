@@ -44,6 +44,7 @@ private constructor(
     var associatedDevices: List<String> = emptyList(),
     var appScanStats: AppScanStats? = null,
 ) {
+    // This constructor is only ever used when `ScanClient` acts as a `scannerId` wrapper.
     @JvmOverloads
     constructor(
         appUid: Int,
@@ -52,6 +53,35 @@ private constructor(
         filters: List<ScanFilter> = emptyList(),
         userHandle: UserHandle? = null,
     ) : this(appUid, scannerId, settings, settings.scanMode, filters, userHandle)
+
+    constructor(
+        appUid: Int,
+        scannerId: Int,
+        settings: ScanSettings = ScanSettings.Builder().build(),
+        filters: List<ScanFilter> = emptyList(),
+        userHandle: UserHandle?,
+        eligibleForSanitizedExposureNotification: Boolean,
+        hasDisavowedLocation: Boolean,
+        hasLocationPermission: Boolean,
+        hasNetworkSettingsPermission: Boolean,
+        hasNetworkSetupWizardPermission: Boolean,
+        hasScanWithoutLocationPermission: Boolean,
+        associatedDevices: List<String>,
+    ) : this(
+        appUid = appUid,
+        scannerId = scannerId,
+        settings = settings,
+        scanModeApp = settings.scanMode,
+        filters = filters,
+        userHandle = userHandle,
+        isEligibleForSanitizedExposureNotification = eligibleForSanitizedExposureNotification,
+        hasDisavowedLocation = hasDisavowedLocation,
+        hasLocationPermission = hasLocationPermission,
+        hasNetworkSettingsPermission = hasNetworkSettingsPermission,
+        hasNetworkSetupWizardPermission = hasNetworkSetupWizardPermission,
+        hasScanWithoutLocationPermission = hasScanWithoutLocationPermission,
+        associatedDevices = associatedDevices,
+    )
 
     // Constructor to be used for internal clients only
     constructor(
