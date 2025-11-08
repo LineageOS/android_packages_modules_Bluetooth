@@ -17,26 +17,13 @@
 
 package com.android.server.bluetooth.airplane
 
-import android.bluetooth.State
 import android.content.ContentResolver
-import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Looper
 import android.provider.Settings
-import com.android.bluetooth.BluetoothStatsLog
-import com.android.server.bluetooth.BackupHelper
-import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
 import com.android.server.bluetooth.initializeRadioModeListener
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.TimeMark
-import kotlin.time.TimeSource
 
 private const val TAG = "AirplaneModeListener"
-
-/** @return true if Bluetooth state is currently impacted by airplane mode */
-var isOnOverrode = false
-    private set
 
 /**
  * @return true if airplane is ON on the device.
@@ -47,318 +34,43 @@ var isOnOverrode = false
 var isOn = false
     private set
 
-/**
- * The airplane ModeListener handles system airplane mode change and checks whether it need to
- * trigger the callback or not.
- *
- * <p>The information of airplane mode being turns on would not be passed when Bluetooth is on and
- * one of the following situations is met:
- * <ul>
- * <li> "Airplane Enhancement Mode" is enabled and the user asked for Bluetooth to be on previously
- * <li> A media profile is connected (one of A2DP | Hearing Aid | Le Audio)
- * </ul>
- */
-@kotlin.time.ExperimentalTime
-fun initialize(
-    looper: Looper,
-    systemResolver: ContentResolver,
-    state: BluetoothAdapterState,
-    modeCallback: (m: Boolean) -> Unit,
-    notificationCallback: (state: String) -> Unit,
-    getUser: () -> Context,
-    timeSource: TimeSource,
-) {
+var isEnhancementEnabled = false
+    private set
 
+/** Listen on satellite mode and trigger the callback if it has changed */
+fun initialize(looper: Looper, resolver: ContentResolver, callback: (m: Boolean) -> Unit) {
     // Wifi got support for "Airplane Enhancement Mode" prior to Bluetooth.
     // In order for Wifi to be aware that Bluetooth also support the feature, Bluetooth need to set
     // the APM_ENHANCEMENT settings to `1`.
     // Value will be set to DEFAULT_APM_ENHANCEMENT_STATE only if the APM_ENHANCEMENT is not set.
-    Settings.Global.putInt(
-        systemResolver,
-        APM_ENHANCEMENT,
-        Settings.Global.getInt(systemResolver, APM_ENHANCEMENT, DEFAULT_APM_ENHANCEMENT_STATE),
-    )
+    // Any modification to the value require a reboot to take effect
+    val apmEnhancement =
+        Settings.Global.getInt(resolver, APM_ENHANCEMENT, DEFAULT_APM_ENHANCEMENT_STATE)
+    isEnhancementEnabled = apmEnhancement == 1
+    Settings.Global.putInt(resolver, APM_ENHANCEMENT, apmEnhancement)
 
-    val airplaneModeAtBoot =
+    isOn =
         initializeRadioModeListener(
             looper,
-            systemResolver,
+            resolver,
             Settings.Global.AIRPLANE_MODE_RADIOS,
             Settings.Global.AIRPLANE_MODE_ON,
             fun(newMode: Boolean) {
+                val previousMode = isOn
                 isOn = newMode
-                val previous = isOnOverrode
-                val isBluetoothOn = state.oneOf(State.ON, State.TURNING_ON, State.TURNING_OFF)
-
-                isOnOverrode =
-                    airplaneModeValueOverride(
-                        systemResolver,
-                        newMode,
-                        isBluetoothOn,
-                        notificationCallback,
-                        getUser,
-                    )
-
-                AirplaneMetricSession.handleModeChange(
-                    newMode,
-                    isBluetoothOn,
-                    notificationCallback,
-                    getUser,
-                    timeSource.markNow(),
-                )
-
-                val description = "previous=$previous, isOn=$isOn, isOnOverrode=$isOnOverrode"
-
-                if (previous == isOnOverrode) {
-                    Log.d(TAG, "Ignore mode change to same state. $description")
-                    return
-                } else if (isOnOverrode == false && state.oneOf(State.ON)) {
-                    Log.d(TAG, "Ignore mode change as Bluetooth is ON. $description")
+                if (previousMode == isOn) {
+                    Log.d(TAG, "Ignore satellite mode change because is already: $isOn")
                     return
                 }
-
-                Log.i(TAG, "Trigger callback. $description")
-                modeCallback(isOnOverrode)
+                Log.i(TAG, "Trigger callback with state: $isOn")
+                callback(isOn)
             },
         )
-
-    isOn = airplaneModeAtBoot
-    isOnOverrode =
-        airplaneModeValueOverride(
-            systemResolver,
-            airplaneModeAtBoot,
-            null, // Do not provide a Bluetooth on / off as we want to evaluate override
-            null, // Do not provide a notification callback as we want to keep the boot silent
-            getUser,
-        )
-
-    // Bluetooth is always off during initialize, and no media profile can be connected
-    AirplaneMetricSession.handleModeChange(
-        airplaneModeAtBoot,
-        false,
-        notificationCallback,
-        getUser,
-        timeSource.markNow(),
-    )
-    Log.i(TAG, "Init completed. isOn=$isOn, isOnOverrode=$isOnOverrode")
+    Log.i(TAG, "Initialized successfully with state: $isOn")
 }
-
-@kotlin.time.ExperimentalTime
-fun notifyUserToggledBluetooth(
-    resolver: ContentResolver,
-    userContext: Context,
-    isBluetoothOn: Boolean,
-) {
-    AirplaneMetricSession.notifyUserToggledBluetooth(resolver, userContext, isBluetoothOn)
-}
-
-fun setIsMediaProfileConnected(connected: Boolean) {
-    isMediaProfileConnected = connected
-}
-
-fun setWatchConnectionState(connected: Boolean) {
-    watchConnectionState = connected
-}
-
-fun factoryReset(resolver: ContentResolver, userContext: Context) {
-    Settings.Global.putInt(resolver, APM_ENHANCEMENT, DEFAULT_APM_ENHANCEMENT_STATE)
-    setUserSettingsSecure(userContext, BLUETOOTH_APM_STATE, 0)
-    setUserSettingsSecure(userContext, APM_USER_TOGGLED_BLUETOOTH, 0)
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////// PRIVATE METHODS /////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-private var isMediaProfileConnected = false
-
-private var watchConnectionState = false
-
-private fun airplaneModeValueOverride(
-    resolver: ContentResolver,
-    currentAirplaneMode: Boolean,
-    currentBluetoothStatus: Boolean?,
-    sendAirplaneModeNotification: ((state: String) -> Unit)?,
-    getUser: () -> Context,
-): Boolean {
-    // Airplane mode is being disabled or bluetooth was not ON: no override
-    if (!currentAirplaneMode || currentBluetoothStatus == false) {
-        return currentAirplaneMode
-    }
-    // If "Airplane Enhancement Mode" is ON and the user already used the feature …
-    if (isApmEnhancementEnabled(resolver) && hasUserToggledApm(getUser())) {
-        // … Staying ON only depend on its last action in airplane mode
-        if (isBluetoothOnAPM(getUser)) {
-            val isWifiOn = isWifiOnApm(resolver, getUser)
-            sendAirplaneModeNotification?.invoke(
-                if (isWifiOn) APM_WIFI_BT_NOTIFICATION else APM_BT_NOTIFICATION
-            )
-            Log.i(TAG, "Enhancement Mode: override and stays ON")
-            return false
-        }
-        Log.i(TAG, "Enhancement Mode: override and turns OFF")
-        return true
-    }
-    // … Else, staying ON only depend on a media profile or a watch being connected or not
-    //
-    // Note: Once the "Airplane Enhancement Mode" has been used, media override no longer apply
-    //       This has been done on purpose to avoid complex scenario like:
-    //           1. User wants Bluetooth OFF according to "Airplane Enhancement Mode"
-    //           2. User switches airplane while there is media => so Bluetooth stays ON
-    //           3. User turns airplane OFF, stops media and toggles airplane back ON
-    //       Should we turn Bluetooth OFF like asked initially ? Or keep it ON like the toggle ?
-    if (isMediaProfileConnected) {
-        Log.i(TAG, "Legacy Mode: override and stays ON since media profile are connected")
-        sendAirplaneModeNotification?.invoke(APM_BT_NOTIFICATION_DUE_TO_MEDIA)
-        return false
-    }
-    if (watchConnectionState) {
-        val isWatch = getUser().packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH)
-        Log.i(TAG, "Legacy Mode: override and stays ON due to watch connection. isWatch=$isWatch")
-        sendAirplaneModeNotification?.invoke(
-            if (isWatch) APM_BT_NOTIFICATION_ON_WATCH else APM_BT_NOTIFICATION_DUE_TO_WATCH
-        )
-        return false
-    }
-    Log.i(TAG, "Legacy Mode: no override, turns OFF")
-    return true
-}
-
-@kotlin.time.ExperimentalTime
-private class AirplaneMetricSession(
-    private val isBluetoothOnBeforeApmToggle: Boolean,
-    private val sendAirplaneModeNotification: (state: String) -> Unit,
-    private val sessionStartTime: TimeMark,
-) {
-
-    private val isMediaProfileConnectedBeforeApmToggle = isMediaProfileConnected
-    private val isBluetoothOnAfterApmToggle = !isOnOverrode
-    private var userToggledBluetoothDuringApm = false
-    private var userToggledBluetoothDuringApmWithinMinute = false
-
-    fun notifyUserToggledBluetooth(
-        resolver: ContentResolver,
-        userContext: Context,
-        isBluetoothOn: Boolean,
-    ) {
-        val isFirstToggle = !userToggledBluetoothDuringApm
-        userToggledBluetoothDuringApm = true
-
-        if (isFirstToggle) {
-            val oneMinute = sessionStartTime + 1.minutes
-            userToggledBluetoothDuringApmWithinMinute = !oneMinute.hasPassedNow()
-        }
-
-        if (isApmEnhancementEnabled(resolver)) {
-            // Set "Airplane Enhancement Mode" settings for a specific user
-            setUserSettingsSecure(userContext, BLUETOOTH_APM_STATE, if (isBluetoothOn) 1 else 0)
-            setUserSettingsSecure(userContext, APM_USER_TOGGLED_BLUETOOTH, 1)
-
-            if (isBluetoothOn) {
-                Log.i(TAG, "Enhancement Mode will keep Bluetooth ON when toggling Airplane")
-                sendAirplaneModeNotification(APM_BT_ENABLED_NOTIFICATION)
-            } else {
-                Log.i(TAG, "Enhancement Mode will turn Bluetooth OFF when toggling Airplane")
-            }
-        }
-
-        Log.i(TAG, "Triggering data backup")
-        BackupHelper.sendBroadcast(userContext)
-    }
-
-    /** Log current airplaneSession. Session cannot be re-use */
-    fun terminate(getUser: () -> Context, isBluetoothOn: Boolean) {
-        BluetoothStatsLog.write(
-            BluetoothStatsLog.AIRPLANE_MODE_SESSION_REPORTED,
-            BluetoothStatsLog.AIRPLANE_MODE_SESSION_REPORTED__PACKAGE_NAME__BLUETOOTH,
-            isBluetoothOnBeforeApmToggle,
-            isBluetoothOnAfterApmToggle,
-            isBluetoothOn,
-            hasUserToggledApm(getUser()),
-            userToggledBluetoothDuringApm,
-            userToggledBluetoothDuringApmWithinMinute,
-            isMediaProfileConnectedBeforeApmToggle,
-        )
-    }
-
-    companion object {
-        private var session: AirplaneMetricSession? = null
-
-        fun handleModeChange(
-            isAirplaneModeOn: Boolean,
-            isBluetoothOn: Boolean,
-            sendAirplaneModeNotification: (state: String) -> Unit,
-            getUser: () -> Context,
-            startTime: TimeMark,
-        ) {
-            if (isAirplaneModeOn) {
-                session =
-                    AirplaneMetricSession(isBluetoothOn, sendAirplaneModeNotification, startTime)
-            } else {
-                session?.let { it.terminate(getUser, isBluetoothOn) }
-                session = null
-            }
-        }
-
-        fun notifyUserToggledBluetooth(
-            resolver: ContentResolver,
-            userContext: Context,
-            isBluetoothOn: Boolean,
-        ) {
-            session?.let { it.notifyUserToggledBluetooth(resolver, userContext, isBluetoothOn) }
-        }
-    }
-}
-
-// Notification Id for when the airplane mode is turn on but Bluetooth stay on
-internal const val APM_BT_NOTIFICATION = "apm_bt_notification"
-
-// Notification Id for when the airplane mode is turn on but a device is connected (on a watch)
-internal const val APM_BT_NOTIFICATION_ON_WATCH = "apm_bt_notification_on_watch"
-
-// Notification Id for when the airplane mode is turn on but a watch is connected (not on a watch)
-internal const val APM_BT_NOTIFICATION_DUE_TO_WATCH = "apm_bt_notification_due_to_watch"
-
-// Notification Id for when the airplane mode is turn on but a watch is connected (not on a watch)
-internal const val APM_BT_NOTIFICATION_DUE_TO_MEDIA = "apm_bt_notification_due_to_media"
-
-// Notification Id for when the airplane mode is turn on but Bluetooth and Wifi stay on
-internal const val APM_WIFI_BT_NOTIFICATION = "apm_wifi_bt_notification"
-
-// Notification Id for when the Bluetooth is turned back on during airplane mode
-internal const val APM_BT_ENABLED_NOTIFICATION = "apm_bt_enabled_notification"
 
 // Whether the "Airplane Enhancement Mode" is enabled
 internal const val APM_ENHANCEMENT = "apm_enhancement_enabled"
 
-// Whether the user has already toggled and used the "Airplane Enhancement Mode" feature
-internal const val APM_USER_TOGGLED_BLUETOOTH = "apm_user_toggled_bluetooth"
-
-// Whether Bluetooth should remain on in airplane mode
-internal const val BLUETOOTH_APM_STATE = "bluetooth_apm_state"
-
-// Whether Wifi should remain on in airplane mode
-internal const val WIFI_APM_STATE = "wifi_apm_state"
-
-private fun setUserSettingsSecure(userContext: Context, name: String, value: Int) =
-    Settings.Secure.putInt(userContext.contentResolver, name, value)
-
 // Define if the "Airplane Enhancement Mode" feature is enabled by default. `0` == disabled
 private const val DEFAULT_APM_ENHANCEMENT_STATE = 1
-
-/** Airplane Enhancement Mode: Indicate if the feature is enabled or not. */
-private fun isApmEnhancementEnabled(resolver: ContentResolver) =
-    Settings.Global.getInt(resolver, APM_ENHANCEMENT, DEFAULT_APM_ENHANCEMENT_STATE) == 1
-
-/** Airplane Enhancement Mode: Return true if the wifi should stays on during airplane mode */
-private fun isWifiOnApm(resolver: ContentResolver, getUser: () -> Context) =
-    Settings.Global.getInt(resolver, Settings.Global.WIFI_ON, 0) != 0 &&
-        Settings.Secure.getInt(getUser().contentResolver, WIFI_APM_STATE, 0) == 1
-
-/** Airplane Enhancement Mode: Return true if this user already toggled (aka used) the feature */
-fun hasUserToggledApm(userContext: Context) =
-    Settings.Secure.getInt(userContext.contentResolver, APM_USER_TOGGLED_BLUETOOTH, 0) == 1
-
-/** Airplane Enhancement Mode: Return true if the bluetooth should stays on during airplane mode */
-private fun isBluetoothOnAPM(getUser: () -> Context) =
-    Settings.Secure.getInt(getUser().contentResolver, BLUETOOTH_APM_STATE, 0) == 1

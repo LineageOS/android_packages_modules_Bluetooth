@@ -34,7 +34,8 @@ import android.os.SystemClock
 import android.os.UserHandle
 import android.provider.Settings
 import androidx.annotation.VisibleForTesting
-import com.android.server.bluetooth.airplane.hasUserToggledApm
+import com.android.server.bluetooth.airplane.AirplaneModeController
+import com.android.server.bluetooth.airplane.hasAirplaneModeEnhanced
 import com.android.server.bluetooth.satellite.isOn as isSatelliteModeOn
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -45,13 +46,14 @@ import kotlin.time.toDuration
 
 private const val TAG = "AutoOn"
 
+@kotlin.time.ExperimentalTime
 class AutoOn(
     private val looper: Looper,
     private val context: Context,
     private val user: UserHandle,
     private val state: BluetoothAdapterState,
     private val callback_on: () -> Unit,
-    private val is_airplane_mode_on: () -> Boolean,
+    private val airplaneModeController: AirplaneModeController,
 ) {
     private val contentResolver: ContentResolver = context.contentResolver
 
@@ -74,8 +76,8 @@ class AutoOn(
             Log.d(TAG, "Satellite prevent feature activation")
             return
         }
-        if (is_airplane_mode_on()) {
-            if (!hasUserToggledApm(context)) {
+        if (airplaneModeController.isOnForUser) {
+            if (!context.hasAirplaneModeEnhanced()) {
                 Log.d(TAG, "Airplane prevent feature activation")
                 return
             }
