@@ -110,3 +110,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "not_set_l2cap_idle_timeout_0_when_disconnect_hid"
+    namespace: "bluetooth"
+    description: "remove l2cap idle timeout to 0 when disconnect HID host"
+    bug: "458592689"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
