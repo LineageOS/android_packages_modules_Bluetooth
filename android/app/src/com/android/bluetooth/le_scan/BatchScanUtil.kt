@@ -31,6 +31,7 @@ import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_INTERVAL_MS
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_WINDOW_MS
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_INTERVAL_MS
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_WINDOW_MS
+import com.android.bluetooth.le_scan.ScanUtil.toBuilder
 import com.android.bluetooth.util.NumberUtils
 import java.util.concurrent.TimeUnit
 
@@ -145,16 +146,7 @@ object BatchScanUtil {
                 settings
             } else {
                 Log.d(TAG, "$header Delay ${originalDelay}ms < floor, setting to ${floor}ms")
-                ScanSettings.Builder()
-                    .setCallbackType(settings.callbackType)
-                    .setLegacy(settings.legacy)
-                    .setMatchMode(settings.matchMode)
-                    .setNumOfMatches(settings.numOfMatches)
-                    .setPhy(settings.phy)
-                    .setReportDelay(floor) // Set the new floor value
-                    .setScanMode(settings.scanMode)
-                    .setScanResultType(settings.scanResultType)
-                    .build()
+                settings.toBuilder().setReportDelay(floor).build()
             }
         } finally {
             Binder.restoreCallingIdentity(callerToken)

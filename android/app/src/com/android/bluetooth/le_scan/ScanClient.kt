@@ -20,6 +20,7 @@ import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
 import android.os.UserHandle
 import com.android.bluetooth.le_scan.ScanUtil.scanModeToString
+import com.android.bluetooth.le_scan.ScanUtil.toBuilder
 import java.util.Objects
 import java.util.function.Consumer
 
@@ -173,17 +174,7 @@ private constructor(
             return false
         }
 
-        settings =
-            ScanSettings.Builder()
-                .setScanMode(newScanMode)
-                .setCallbackType(settings.callbackType)
-                .setScanResultType(settings.scanResultType)
-                .setReportDelay(settings.reportDelayMillis)
-                .setNumOfMatches(settings.numOfMatches)
-                .setMatchMode(settings.matchMode)
-                .setLegacy(settings.legacy)
-                .setPhy(settings.phy)
-                .build()
+        settings = settings.toBuilder().setScanMode(newScanMode).build()
         return true
     }
 }
