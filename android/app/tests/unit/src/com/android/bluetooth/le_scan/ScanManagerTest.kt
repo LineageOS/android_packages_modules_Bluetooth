@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.le_scan
 
 import android.app.ActivityManager
@@ -101,64 +102,64 @@ private const val TAG = "ScanManagerTest"
 @SmallTest
 @RunWith(ParameterizedAndroidJunit4::class)
 class ScanManagerTest(flags: FlagsWrapper) {
-    @get:Rule val mMockitoRule = StaticMockitoRule(SystemProperties::class.java)
-    @get:Rule val mSetFlagsRule = SetFlagsRule(flags.flags)
+    @get:Rule val mockitoRule = StaticMockitoRule(SystemProperties::class.java)
+    @get:Rule val setFlagsRule = SetFlagsRule(flags.flags)
 
-    @Mock private lateinit var mAdapterService: AdapterService
-    @Mock private lateinit var mBluetoothManager: BluetoothManager
-    @Mock private lateinit var mAdapter: BluetoothAdapter
-    @Mock private lateinit var mLocationManager: LocationManager
-    @Mock private lateinit var mMetricsLogger: MetricsLogger
-    @Mock private lateinit var mScanNativeCallback: ScanNativeCallback
-    @Mock private lateinit var mScanNativeInterface: ScanNativeInterface
-    @Mock private lateinit var mScanController: ScanController
+    @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var bluetoothManager: BluetoothManager
+    @Mock private lateinit var adapter: BluetoothAdapter
+    @Mock private lateinit var locationManager: LocationManager
+    @Mock private lateinit var metricsLogger: MetricsLogger
+    @Mock private lateinit var nativeCallback: ScanNativeCallback
+    @Mock private lateinit var nativeInterface: ScanNativeInterface
+    @Mock private lateinit var scanController: ScanController
 
-    private val mTimeProvider = FakeTimeProvider()
+    private val timeProvider = FakeTimeProvider()
 
-    private lateinit var mAppScanStats: AppScanStats
-    private lateinit var mScanManager: ScanManager
-    private lateinit var mLooper: TestLooper
-    private lateinit var mInOrder: InOrder
+    private lateinit var appScanStats: AppScanStats
+    private lateinit var scanManager: ScanManager
+    private lateinit var looper: TestLooper
+    private lateinit var inOrder: InOrder
 
-    private var mScanReportDelay = 0L
-    private var mClientId = 0
+    private var scanReportDelay = 0L
+    private var scannerId = 0
 
     @Before
     fun setUp() {
-        doReturn(DEFAULT_SCAN_TIMEOUT).whenever(mAdapterService).getScanTimeout()
+        doReturn(DEFAULT_SCAN_TIMEOUT).whenever(adapterService).scanTimeout
         doReturn(DEFAULT_NUM_OFFLOAD_SCAN_FILTER)
-            .whenever(mAdapterService)
-            .getNumOfOffloadedScanFilterSupported()
+            .whenever(adapterService)
+            .numOfOffloadedScanFilterSupported
         doReturn(DEFAULT_BYTES_OFFLOAD_SCAN_RESULT_STORAGE)
-            .whenever(mAdapterService)
-            .getOffloadedScanResultStorage()
-        doReturn(TEST_SCAN_QUOTA_COUNT).whenever(mAdapterService).getScanQuotaCount()
+            .whenever(adapterService)
+            .offloadedScanResultStorage
+        doReturn(TEST_SCAN_QUOTA_COUNT).whenever(adapterService).scanQuotaCount
         doReturn(SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW)
-            .whenever(mAdapterService)
-            .getScreenOffLowPowerWindow()
+            .whenever(adapterService)
+            .screenOffLowPowerWindow
         doReturn(SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW)
-            .whenever(mAdapterService)
-            .getScreenOffBalancedWindow()
+            .whenever(adapterService)
+            .screenOffBalancedWindow
         doReturn(SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL)
-            .whenever(mAdapterService)
-            .getScreenOffLowPowerInterval()
+            .whenever(adapterService)
+            .screenOffLowPowerInterval
         doReturn(SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL)
-            .whenever(mAdapterService)
-            .getScreenOffBalancedInterval()
+            .whenever(adapterService)
+            .screenOffBalancedInterval
         doReturn(DEFAULT_TOTAL_NUM_OF_TRACKABLE_ADVERTISEMENTS)
-            .whenever(mAdapterService)
-            .getTotalNumOfTrackableAdvertisements()
+            .whenever(adapterService)
+            .totalNumOfTrackableAdvertisements
 
-        mockGetSystemService(mAdapterService, LocationManager::class.java, mLocationManager)
-        doReturn(true).whenever(mLocationManager).isLocationEnabled()
-        mockGetSystemService(mAdapterService, DisplayManager::class.java)
-        mockGetSystemService(mAdapterService, BatteryStatsManager::class.java)
-        mockGetSystemService(mAdapterService, AlarmManager::class.java)
-        mockGetSystemService(mAdapterService, BluetoothManager::class.java, mBluetoothManager)
-        doReturn(mAdapter).whenever(mBluetoothManager).getAdapter()
+        mockGetSystemService(adapterService, LocationManager::class.java, locationManager)
+        doReturn(true).whenever(locationManager).isLocationEnabled
+        mockGetSystemService(adapterService, DisplayManager::class.java)
+        mockGetSystemService(adapterService, BatteryStatsManager::class.java)
+        mockGetSystemService(adapterService, AlarmManager::class.java)
+        mockGetSystemService(adapterService, BluetoothManager::class.java, bluetoothManager)
+        doReturn(adapter).whenever(bluetoothManager).adapter
 
-        val context = InstrumentationRegistry.getInstrumentation().getContext()
-        doReturn(context.getResources()).whenever(mAdapterService).getResources()
+        val context = InstrumentationRegistry.getInstrumentation().context
+        doReturn(context.resources).whenever(adapterService).resources
         val mockContentResolver = MockContentResolver(context)
         mockContentResolver.addProvider(
             Settings.AUTHORITY,
@@ -168,39 +169,39 @@ class ScanManagerTest(flags: FlagsWrapper) {
                 }
             },
         )
-        doReturn(mockContentResolver).whenever(mAdapterService).getContentResolver()
+        doReturn(mockContentResolver).whenever(adapterService).contentResolver
         // Needed to mock Native call/callback when hw offload scan filter is enabled
-        doReturn(true).whenever(mAdapter).isOffloadedFilteringSupported()
+        doReturn(true).whenever(adapter).isOffloadedFilteringSupported
 
         // TODO(b/397863857) Delete on `Flags.scanControllerThread()` cleanup
         // Mock JNI callback in ScanNativeCallback
-        doReturn(true).whenever(mScanNativeCallback).waitForCallback(anyInt().toLong())
+        doReturn(true).whenever(nativeCallback).waitForCallback(anyInt().toLong())
 
-        val scanRadioStats = ScanRadioStats(mTimeProvider)
-        doReturn(scanRadioStats).whenever(mScanController).getScanRadioStats()
-        MetricsLogger.setInstanceForTesting(mMetricsLogger)
-        mInOrder = Mockito.inOrder(mMetricsLogger)
+        val scanRadioStats = ScanRadioStats(timeProvider)
+        doReturn(scanRadioStats).whenever(scanController).getScanRadioStats()
+        MetricsLogger.setInstanceForTesting(metricsLogger)
+        inOrder = Mockito.inOrder(metricsLogger)
 
-        doReturn(context.getUser()).whenever(mAdapterService).getUser()
-        doReturn(context.getPackageName()).whenever(mAdapterService).getPackageName()
+        doReturn(context.user).whenever(adapterService).user
+        doReturn(context.packageName).whenever(adapterService).packageName
 
-        mClientId = 0
-        mLooper = TestLooper()
-        mScanManager =
+        scannerId = 0
+        looper = TestLooper()
+        scanManager =
             ScanManager(
-                mAdapterService,
-                mScanController,
-                mScanNativeCallback,
-                mScanNativeInterface,
-                mLooper.getLooper(),
-                mTimeProvider,
+                adapterService,
+                scanController,
+                nativeCallback,
+                nativeInterface,
+                looper.looper,
+                timeProvider,
             )
 
-        mScanReportDelay = DEFAULT_BATCH_SCAN_REPORT_DELAY_MS.toLong()
+        scanReportDelay = DEFAULT_BATCH_SCAN_REPORT_DELAY_MS.toLong()
         val appUid = 1234
         val appPid = 5678
-        mAppScanStats =
-            spy(AppScanStats(appUid, appPid, TEST_APP_NAME, null, mAdapterService, mTimeProvider))
+        appScanStats =
+            spy(AppScanStats(appUid, appPid, TEST_APP_NAME, null, adapterService, timeProvider))
     }
 
     @After
@@ -209,300 +210,13 @@ class ScanManagerTest(flags: FlagsWrapper) {
         MetricsLogger.getInstance()
     }
 
-    private fun advanceTime(amountToAdvance: Duration) {
-        mLooper.moveTimeForward(amountToAdvance.toMillis())
-        mTimeProvider.advanceTime(amountToAdvance)
-    }
-
-    private fun advanceTime(amountToAdvanceMillis: Long) {
-        mLooper.moveTimeForward(amountToAdvanceMillis)
-        mTimeProvider.advanceTime(Duration.ofMillis(amountToAdvanceMillis))
-    }
-
-    private fun startScan(client: ScanClient?) {
-        if (Flags.scanControllerThread()) {
-            executeOnScanThread { mScanManager.startScan(client) }
-        } else {
-            sendMessageWaitForProcessed(createStartStopScanMessage(true, client))
-        }
-    }
-
-    private fun stopScan(client: ScanClient) {
-        if (Flags.scanControllerThread()) {
-            executeOnScanThread { mScanManager.stopScan(client.scannerId) }
-        } else {
-            sendMessageWaitForProcessed(createStartStopScanMessage(false, client))
-        }
-    }
-
-    private fun setScreenOn(isScreenOn: Boolean) {
-        if (Flags.scanControllerThread()) {
-            executeOnScanThread(
-                if (isScreenOn) Runnable { mScanManager.handleScreenOn() }
-                else Runnable { mScanManager.handleScreenOff() }
-            )
-        } else {
-            sendMessageWaitForProcessed(createScreenOnOffMessage(isScreenOn))
-        }
-    }
-
-    private fun setLocationOn(isLocationOn: Boolean) {
-        if (Flags.scanControllerThread()) {
-            executeOnScanThread(
-                if (isLocationOn) Runnable { mScanManager.handleResumeScans() }
-                else Runnable { mScanManager.handleSuspendScans() }
-            )
-        } else {
-            sendMessageWaitForProcessed(createLocationOnOffMessage(isLocationOn))
-        }
-    }
-
-    private fun setAppImportance(isForeground: Boolean, uid: Int) {
-        val importance =
-            if (isForeground) ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
-            else ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE + 1
-        val uidImportance = ScanManager.UidImportance(uid, importance)
-        if (Flags.scanControllerThread()) {
-            executeOnScanThread { mScanManager.handleImportanceChange(uidImportance) }
-        } else {
-            val message = Message()
-            message.what = ScanManager.MSG_IMPORTANCE_CHANGE
-            message.obj = uidImportance
-            sendMessageWaitForProcessed(message)
-        }
-    }
-
-    private fun setConnectingState(isConnecting: Boolean) {
-        if (Flags.scanControllerThread()) {
-            executeOnScanThread(
-                if (isConnecting) Runnable { mScanManager.handleConnectingState() }
-                else Runnable { mScanManager.handleClearConnectingState() }
-            )
-        } else {
-            sendMessageWaitForProcessed(createConnectingMessage(isConnecting))
-        }
-    }
-
-    private fun executeOnScanThread(r: Runnable) {
-        mScanManager.mHandler!!.post(r)
-        assertThat(mLooper.dispatchAll()).isEqualTo(1)
-    }
-
-    private fun sendMessageWaitForProcessed(msg: Message) {
-        mScanManager.mClientHandler!!.sendMessage(msg)
-        mLooper.dispatchAll()
-    }
-
-    private fun createScanClient(
-        isFiltered: Boolean,
-        scanMode: Int,
-        isBatch: Boolean,
-        isAutoBatch: Boolean,
-        appUid: Int,
-        appScanStats: AppScanStats?,
-        scanFilterList: List<ScanFilter>,
-    ): ScanClient {
-        val scanSettings = createScanSettings(scanMode, isBatch, isAutoBatch)
-        mClientId += 1
-        val client = ScanClient(appUid, mClientId, scanSettings, scanFilterList)
-        client.appScanStats = appScanStats
-        client.appScanStats!!.recordScanStart(
-            scanSettings,
-            scanFilterList,
-            isFiltered,
-            false,
-            mClientId,
-            null,
-        )
-        return client
-    }
-
-    private fun createScanClient(
-        isFiltered: Boolean,
-        isEmptyFilter: Boolean,
-        scanMode: Int,
-        isBatch: Boolean,
-        isAutoBatch: Boolean,
-        appUid: Int,
-        appScanStats: AppScanStats?,
-    ): ScanClient {
-        val scanFilterList = createScanFilterList(isFiltered, isEmptyFilter)
-        return createScanClient(
-            isFiltered,
-            scanMode,
-            isBatch,
-            isAutoBatch,
-            appUid,
-            appScanStats,
-            scanFilterList,
-        )
-    }
-
-    private fun createScanClient(isFiltered: Boolean, scanMode: Int): ScanClient {
-        return createScanClient(
-            isFiltered,
-            false,
-            scanMode,
-            false,
-            false,
-            Binder.getCallingUid(),
-            mAppScanStats,
-        )
-    }
-
-    private fun createScanClient(
-        isFiltered: Boolean,
-        scanMode: Int,
-        appUid: Int,
-        appScanStats: AppScanStats?,
-    ): ScanClient {
-        return createScanClient(isFiltered, false, scanMode, false, false, appUid, appScanStats)
-    }
-
-    private fun createScanClient(
-        isFiltered: Boolean,
-        scanMode: Int,
-        isBatch: Boolean,
-        isAutoBatch: Boolean,
-    ): ScanClient {
-        return createScanClient(
-            isFiltered,
-            false,
-            scanMode,
-            isBatch,
-            isAutoBatch,
-            Binder.getCallingUid(),
-            mAppScanStats,
-        )
-    }
-
-    private fun createScanClient(
-        isFiltered: Boolean,
-        isEmptyFilter: Boolean,
-        scanMode: Int,
-    ): ScanClient {
-        return createScanClient(
-            isFiltered,
-            isEmptyFilter,
-            scanMode,
-            false,
-            false,
-            Binder.getCallingUid(),
-            mAppScanStats,
-        )
-    }
-
-    private fun createScanFilterList(
-        isFiltered: Boolean,
-        isEmptyFilter: Boolean,
-    ): List<ScanFilter> {
-        val filters = mutableListOf<ScanFilter>()
-        if (isFiltered) {
-            if (isEmptyFilter) {
-                filters.add(ScanFilter.Builder().build())
-            } else {
-                filters.add(ScanFilter.Builder().setDeviceName("TestName").build())
-            }
-        }
-        return filters
-    }
-
-    private fun createScanSettingsWithPhy(scanMode: Int, phy: Int): ScanSettings {
-        val scanSettings: ScanSettings
-        scanSettings = ScanSettings.Builder().setScanMode(scanMode).setPhy(phy).build()
-
-        return scanSettings
-    }
-
-    private fun createScanSettings(
-        scanMode: Int,
-        isBatch: Boolean,
-        isAutoBatch: Boolean,
-    ): ScanSettings {
-        val scanSettings: ScanSettings
-        if (isBatch && isAutoBatch) {
-            val autoCallbackType = ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH
-            scanSettings =
-                ScanSettings.Builder()
-                    .setScanMode(scanMode)
-                    .setReportDelay(mScanReportDelay)
-                    .setCallbackType(autoCallbackType)
-                    .build()
-        } else if (isBatch) {
-            scanSettings =
-                ScanSettings.Builder()
-                    .setScanMode(scanMode)
-                    .setReportDelay(mScanReportDelay)
-                    .build()
-        } else {
-            scanSettings = ScanSettings.Builder().setScanMode(scanMode).build()
-        }
-        return scanSettings
-    }
-
-    private fun createScanClientWithPhy(
-        id: Int,
-        isFiltered: Boolean,
-        isEmptyFilter: Boolean,
-        scanMode: Int,
-        phy: Int,
-    ): ScanClient {
-        val scanFilterList = createScanFilterList(isFiltered, isEmptyFilter)
-        val scanSettings: ScanSettings = createScanSettingsWithPhy(scanMode, phy)
-
-        val appUid = 1234
-        val client = ScanClient(appUid, id, scanSettings, scanFilterList)
-        client.appScanStats = mAppScanStats
-        client.appScanStats!!.recordScanStart(
-            scanSettings,
-            scanFilterList,
-            isFiltered,
-            false,
-            id,
-            null,
-        )
-        return client
-    }
-
-    private fun createStartStopScanMessage(isStartScan: Boolean, obj: Any?): Message {
-        val message = Message()
-        message.what =
-            if (isStartScan) ScanManager.MSG_START_BLE_SCAN else ScanManager.MSG_STOP_BLE_SCAN
-        message.obj = obj
-        return message
-    }
-
-    private fun createScreenOnOffMessage(isScreenOn: Boolean): Message {
-        val message = Message()
-        message.what = if (isScreenOn) ScanManager.MSG_SCREEN_ON else ScanManager.MSG_SCREEN_OFF
-        message.obj = null
-        return message
-    }
-
-    private fun createLocationOnOffMessage(isLocationOn: Boolean): Message {
-        val message = Message()
-        message.what =
-            if (isLocationOn) ScanManager.MSG_RESUME_SCANS else ScanManager.MSG_SUSPEND_SCANS
-        message.obj = null
-        return message
-    }
-
-    private fun createConnectingMessage(isConnectingOn: Boolean): Message {
-        val message = Message()
-        message.what =
-            if (isConnectingOn) ScanManager.MSG_START_CONNECTING
-            else ScanManager.MSG_STOP_CONNECTING
-        message.obj = null
-        return message
-    }
-
     @Test
     fun testScreenOffStartUnfilteredScan() {
         // Set filtered scan flag
         val isFiltered = false
 
         defaultScanMode.forEach { (scanMode, expectedScanMode) ->
-            mClientId += 1
+            scannerId += 1
             Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
             // Turn off screen
             setScreenOn(false)
@@ -510,9 +224,9 @@ class ScanManagerTest(flags: FlagsWrapper) {
             val client = createScanClient(isFiltered, scanMode)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).contains(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).contains(client)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
         }
     }
 
@@ -541,9 +255,9 @@ class ScanManagerTest(flags: FlagsWrapper) {
             val client = createScanClient(isFiltered, scanMode)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
         }
     }
 
@@ -554,18 +268,18 @@ class ScanManagerTest(flags: FlagsWrapper) {
         val isEmptyFilter = true
 
         defaultScanMode.forEach { (scanMode, expectedScanMode) ->
-            mClientId += 1
+            scannerId += 1
             Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
 
             // Turn off screen
             setScreenOn(false)
             // Create scan client
-            val client = createScanClient(isFiltered, isEmptyFilter, scanMode)
+            val client = createScanClient(isFiltered, scanMode, isEmptyFilter = isEmptyFilter)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).contains(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).contains(client)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
         }
     }
 
@@ -575,7 +289,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
         val isFiltered = false
 
         defaultScanMode.forEach { (scanMode, expectedScanMode) ->
-            mClientId += 1
+            scannerId += 1
             Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
 
             // Turn on screen
@@ -584,9 +298,9 @@ class ScanManagerTest(flags: FlagsWrapper) {
             val client = createScanClient(isFiltered, scanMode)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
         }
     }
 
@@ -596,7 +310,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
         val isFiltered = true
 
         defaultScanMode.forEach { (scanMode, expectedScanMode) ->
-            mClientId += 1
+            scannerId += 1
             Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
 
             // Turn on screen
@@ -605,9 +319,9 @@ class ScanManagerTest(flags: FlagsWrapper) {
             val client = createScanClient(isFiltered, scanMode)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
         }
     }
 
@@ -635,14 +349,14 @@ class ScanManagerTest(flags: FlagsWrapper) {
             val client = createScanClient(isFiltered, scanMode)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).contains(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(scanMode)
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).contains(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
             // Turn on screen
             setScreenOn(true)
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(scanMode)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
         }
     }
 
@@ -670,14 +384,14 @@ class ScanManagerTest(flags: FlagsWrapper) {
             val client = createScanClient(isFiltered, scanMode)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
             // Turn on screen
             setScreenOn(true)
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(scanMode)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
         }
     }
 
@@ -688,7 +402,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
 
         defaultScanMode.forEach { (scanMode, expectedScanMode) ->
             var expectedScanMode = expectedScanMode
-            mClientId += 1
+            scannerId += 1
             expectedScanMode = ScanSettings.SCAN_MODE_OPPORTUNISTIC
             Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
             // Turn on screen
@@ -697,24 +411,24 @@ class ScanManagerTest(flags: FlagsWrapper) {
             val client = createScanClient(isFiltered, scanMode)
             // Start scan
             startScan(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(scanMode)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
             // Wait for scan timeout
             advanceTime(DEFAULT_SCAN_TIMEOUT)
-            mLooper.dispatchAll()
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
             assertThat(client.appScanStats?.isScanTimeout(client.scannerId)).isTrue()
             // Turn off screen
             setScreenOn(false)
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
             // Turn on screen
             setScreenOn(true)
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
             // Set as background app
             setAppImportance(false, Binder.getCallingUid())
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
             // Set as foreground app
             setAppImportance(true, Binder.getCallingUid())
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
         }
     }
 
@@ -725,7 +439,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
 
         defaultScanMode.forEach { (scanMode, expectedScanMode) ->
             var expectedScanMode = expectedScanMode
-            mClientId += 1
+            scannerId += 1
             expectedScanMode = ScanSettings.SCAN_MODE_LOW_POWER
             Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
             // Turn on screen
@@ -734,27 +448,27 @@ class ScanManagerTest(flags: FlagsWrapper) {
             val client = createScanClient(isFiltered, scanMode)
             // Start scan, this sends scan timeout message with delay
             startScan(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(scanMode)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
             // Move time forward so scan timeout message can be dispatched
             advanceTime(DEFAULT_SCAN_TIMEOUT)
             // Since we are using a TestLooper, need to mock AppScanStats.isScanningTooLong
             // to return true because no real time is elapsed
-            doReturn(true).whenever(mAppScanStats).isScanningTooLong()
-            mLooper.dispatchAll()
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            doReturn(true).whenever(appScanStats).isScanningTooLong()
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
             assertThat(client.appScanStats?.isScanTimeout(client.scannerId)).isTrue()
             // Turn off screen
             setScreenOn(false)
-            assertThat(client.settings.getScanMode()).isEqualTo(ScanSettings.SCAN_MODE_SCREEN_OFF)
+            assertThat(client.settings.scanMode).isEqualTo(ScanSettings.SCAN_MODE_SCREEN_OFF)
             // Set as background app
             setAppImportance(false, Binder.getCallingUid())
-            assertThat(client.settings.getScanMode()).isEqualTo(ScanSettings.SCAN_MODE_SCREEN_OFF)
+            assertThat(client.settings.scanMode).isEqualTo(ScanSettings.SCAN_MODE_SCREEN_OFF)
             // Turn on screen
             setScreenOn(true)
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
             // Set as foreground app
             setAppImportance(true, Binder.getCallingUid())
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
         }
     }
 
@@ -770,8 +484,8 @@ class ScanManagerTest(flags: FlagsWrapper) {
         if (Flags.scanControllerThread()) {
             // Put a timeout runnable in the map to emulate the scan being started already
             val fakeTimeoutRunnable = Runnable {}
-            mScanManager.mScanTimeoutRunnables!!.put(client, fakeTimeoutRunnable)
-            mScanManager.mHandler!!.postDelayed(
+            scanManager.mScanTimeoutRunnables!![client] = fakeTimeoutRunnable
+            scanManager.mHandler!!.postDelayed(
                 fakeTimeoutRunnable,
                 DEFAULT_SCAN_TIMEOUT.dividedBy(2).toMillis(),
             )
@@ -780,38 +494,37 @@ class ScanManagerTest(flags: FlagsWrapper) {
         } else {
             // Put a timeout message in the queue to emulate the scan being started already
             val timeoutMessage =
-                mScanManager.mClientHandler!!.obtainMessage(ScanManager.MSG_SCAN_TIMEOUT, client)
-            mScanManager.mClientHandler!!.sendMessageDelayed(
+                scanManager.mClientHandler!!.obtainMessage(ScanManager.MSG_SCAN_TIMEOUT, client)
+            scanManager.mClientHandler!!.sendMessageDelayed(
                 timeoutMessage,
                 DEFAULT_SCAN_TIMEOUT.dividedBy(2).toMillis(),
             )
-            mScanManager.mClientHandler!!.sendMessage(createStartStopScanMessage(true, client))
+            scanManager.mClientHandler!!.sendMessage(createStartStopScanMessage(true, client))
         }
 
         if (Flags.scanControllerThread()) {
             // Verify that only the new, real runnable is in the map.
-            assertThat(mScanManager.mScanTimeoutRunnables).hasSize(1)
+            assertThat(scanManager.mScanTimeoutRunnables).hasSize(1)
         } else {
             // Dispatching all messages only runs start scan
-            assertThat(mLooper.dispatchAll()).isEqualTo(1)
+            assertThat(looper.dispatchAll()).isEqualTo(1)
         }
 
         advanceTime(DEFAULT_SCAN_TIMEOUT.dividedBy(2))
         // After restarting the scan, we can check that the initial timeout message is not triggered
-        assertThat(mLooper.dispatchAll()).isEqualTo(0)
+        assertThat(looper.dispatchAll()).isEqualTo(0)
 
         // After timeout, the next message that is run should be a timeout message
         advanceTime(DEFAULT_SCAN_TIMEOUT.dividedBy(2))
 
         if (Flags.scanControllerThread()) {
             // Dispatching should now execute the real timeout.
-            mLooper.dispatchAll()
+            looper.dispatchAll()
             // Verify the client was moved to opportunistic mode, proving the timeout logic ran.
-            assertThat(client.settings.getScanMode())
-                .isEqualTo(ScanSettings.SCAN_MODE_OPPORTUNISTIC)
+            assertThat(client.settings.scanMode).isEqualTo(ScanSettings.SCAN_MODE_OPPORTUNISTIC)
             assertThat(client.appScanStats?.isScanTimeout(client.scannerId)).isTrue()
         } else {
-            val nextMessage = mLooper.nextMessage()
+            val nextMessage = looper.nextMessage()
             assertThat(nextMessage.what).isEqualTo(ScanManager.MSG_SCAN_TIMEOUT)
             assertThat(nextMessage.obj).isEqualTo(client)
         }
@@ -824,7 +537,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
 
         defaultScanMode.forEach { (scanMode, expectedScanMode) ->
             var expectedScanMode = expectedScanMode
-            mClientId += 1
+            scannerId += 1
             expectedScanMode = ScanSettings.SCAN_MODE_LOW_POWER
             Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
             // Turn on screen
@@ -833,19 +546,19 @@ class ScanManagerTest(flags: FlagsWrapper) {
             val client = createScanClient(isFiltered, scanMode)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(scanMode)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
             // Set as background app
             setAppImportance(false, Binder.getCallingUid())
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
             // Set as foreground app
             setAppImportance(true, Binder.getCallingUid())
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(scanMode)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
         }
     }
 
@@ -856,7 +569,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
 
         defaultScanMode.forEach { (scanMode, expectedScanMode) ->
             var expectedScanMode = expectedScanMode
-            mClientId += 1
+            scannerId += 1
             expectedScanMode = ScanSettings.SCAN_MODE_LOW_POWER
             Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
             // Turn on screen
@@ -865,19 +578,19 @@ class ScanManagerTest(flags: FlagsWrapper) {
             val client = createScanClient(isFiltered, scanMode)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(scanMode)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
             // Set as background app
             setAppImportance(false, Binder.getCallingUid())
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
             // Set as foreground app
             setAppImportance(true, Binder.getCallingUid())
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(scanMode)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
         }
     }
 
@@ -894,7 +607,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
             ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY,
             ScanSettings.SCAN_MODE_LOW_LATENCY,
         )
-        doReturn(DEFAULT_SCAN_UPGRADE_DURATION).whenever(mAdapterService).getScanUpgradeDuration()
+        doReturn(DEFAULT_SCAN_UPGRADE_DURATION).whenever(adapterService).scanUpgradeDuration
 
         for (i in 0..<scanModeMap.size()) {
             val scanMode = scanModeMap.keyAt(i)
@@ -908,29 +621,29 @@ class ScanManagerTest(flags: FlagsWrapper) {
             val client = createScanClient(isFiltered, scanMode)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
             // Wait for upgrade duration
             advanceTime(DEFAULT_SCAN_UPGRADE_DURATION)
-            mLooper.dispatchAll()
-            assertThat(client.settings.getScanMode()).isEqualTo(scanMode)
+            looper.dispatchAll()
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
         }
     }
 
     @Test
     fun testUpDowngradeStartScanForConcurrency() {
-        doReturn(DEFAULT_SCAN_UPGRADE_DURATION).whenever(mAdapterService).getScanUpgradeDuration()
+        doReturn(DEFAULT_SCAN_UPGRADE_DURATION).whenever(adapterService).scanUpgradeDuration
         doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
-            .whenever(mAdapterService)
-            .getScanDowngradeDuration()
+            .whenever(adapterService)
+            .scanDowngradeDuration
 
         // Set filtered scan flag
         val isFiltered = true
 
         defaultScanMode.forEach { (scanMode, expectedScanMode) ->
             var expectedScanMode = expectedScanMode
-            mClientId += 1
+            scannerId += 1
             expectedScanMode = ScanSettings.SCAN_MODE_BALANCED
             Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
             // Turn on screen
@@ -943,9 +656,9 @@ class ScanManagerTest(flags: FlagsWrapper) {
             val client = createScanClient(isFiltered, scanMode)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
             // Wait for upgrade and downgrade duration
             val maxDuration: Duration =
                 if (
@@ -956,8 +669,8 @@ class ScanManagerTest(flags: FlagsWrapper) {
                     DEFAULT_SCAN_UPGRADE_DURATION
                 else DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING
             advanceTime(maxDuration)
-            mLooper.dispatchAll()
-            assertThat(client.settings.getScanMode()).isEqualTo(scanMode)
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
         }
     }
 
@@ -976,8 +689,8 @@ class ScanManagerTest(flags: FlagsWrapper) {
         )
 
         doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
-            .whenever(mAdapterService)
-            .getScanDowngradeDuration()
+            .whenever(adapterService)
+            .scanDowngradeDuration
 
         for (i in 0..<scanModeMap.size()) {
             val scanMode = scanModeMap.keyAt(i)
@@ -991,16 +704,16 @@ class ScanManagerTest(flags: FlagsWrapper) {
             val client = createScanClient(isFiltered, scanMode)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(scanMode)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
             // Set connecting state
             setConnectingState(true)
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
             // Wait for downgrade duration
             advanceTime(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
-            mLooper.dispatchAll()
-            assertThat(client.settings.getScanMode()).isEqualTo(scanMode)
+            looper.dispatchAll()
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
         }
     }
 
@@ -1019,8 +732,8 @@ class ScanManagerTest(flags: FlagsWrapper) {
         )
 
         doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
-            .whenever(mAdapterService)
-            .getScanDowngradeDuration()
+            .whenever(adapterService)
+            .scanDowngradeDuration
 
         for (i in 0..<scanModeMap.size()) {
             val scanMode = scanModeMap.keyAt(i)
@@ -1034,34 +747,34 @@ class ScanManagerTest(flags: FlagsWrapper) {
             val client = createScanClient(isFiltered, scanMode)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(scanMode)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
             // Set connecting state
             setConnectingState(true)
             // Turn off screen
             setScreenOn(false)
             // Move time forward so that stop connecting action can be dispatched
             advanceTime(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
-            mLooper.dispatchAll()
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            looper.dispatchAll()
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
         }
     }
 
     @Test
     fun testDowngradeDuringScanForConcurrencyBackground() {
         doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
-            .whenever(mAdapterService)
-            .getScanDowngradeDuration()
+            .whenever(adapterService)
+            .scanDowngradeDuration
 
         // Set filtered scan flag
         val isFiltered = true
 
         defaultScanMode.forEach { (scanMode, expectedScanMode) ->
             var expectedScanMode = expectedScanMode
-            mClientId += 1
+            scannerId += 1
             expectedScanMode = ScanSettings.SCAN_MODE_LOW_POWER
             Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
             // Turn on screen
@@ -1072,19 +785,19 @@ class ScanManagerTest(flags: FlagsWrapper) {
             val client = createScanClient(isFiltered, scanMode)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(scanMode)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
             // Set connecting state
             setConnectingState(true)
             // Set as background app
             setAppImportance(false, Binder.getCallingUid())
             // Wait for downgrade duration
             advanceTime(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
-            mLooper.dispatchAll()
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(expectedScanMode)
+            this@ScanManagerTest.looper.dispatchAll()
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(client.settings.scanMode).isEqualTo(expectedScanMode)
         }
     }
 
@@ -1112,18 +825,19 @@ class ScanManagerTest(flags: FlagsWrapper) {
             // Turn off screen
             setScreenOn(false)
             // Create scan client
-            val client = createScanClient(isFiltered, scanMode, isBatch, isAutoBatch)
+            val client =
+                createScanClient(isFiltered, scanMode, isBatch = isBatch, isAutoBatch = isAutoBatch)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).contains(client)
-            assertThat(mScanManager.getBatchScanQueue()).doesNotContain(client)
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).contains(client)
+            assertThat(scanManager.batchScanQueue).doesNotContain(client)
             // Turn on screen
             setScreenOn(true)
-            assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getBatchScanQueue()).contains(client)
-            assertThat(mScanManager.getBatchScanParams().scanMode).isEqualTo(expectedScanMode)
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanQueue).contains(client)
+            assertThat(scanManager.batchScanParams.scanMode).isEqualTo(expectedScanMode)
         }
     }
 
@@ -1151,18 +865,19 @@ class ScanManagerTest(flags: FlagsWrapper) {
             // Turn off screen
             setScreenOn(false)
             // Create scan client
-            val client = createScanClient(isFiltered, scanMode, isBatch, isAutoBatch)
+            val client =
+                createScanClient(isFiltered, scanMode, isBatch = isBatch, isAutoBatch = isAutoBatch)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getBatchScanParams().scanMode).isEqualTo(expectedScanMode)
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanParams.scanMode).isEqualTo(expectedScanMode)
             // Turn on screen
             setScreenOn(true)
-            assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getBatchScanQueue()).contains(client)
-            assertThat(mScanManager.getBatchScanParams().scanMode).isEqualTo(expectedScanMode)
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanQueue).contains(client)
+            assertThat(scanManager.batchScanParams.scanMode).isEqualTo(expectedScanMode)
         }
     }
 
@@ -1173,37 +888,38 @@ class ScanManagerTest(flags: FlagsWrapper) {
         val isBatch = true
         val isAutoBatch = true
         // Set report delay for auto batch scan callback type
-        mScanReportDelay = ScanSettings.AUTO_BATCH_MIN_REPORT_DELAY_MILLIS
+        scanReportDelay = ScanSettings.AUTO_BATCH_MIN_REPORT_DELAY_MILLIS
 
         defaultScanMode.forEach { (scanMode, expectedScanMode) ->
             var expectedScanMode = expectedScanMode
-            mClientId += 1
+            scannerId += 1
             expectedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF
             Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
 
             // Turn off screen
             setScreenOn(false)
             // Create scan client
-            val client = createScanClient(isFiltered, scanMode, isBatch, isAutoBatch)
+            val client =
+                createScanClient(isFiltered, scanMode, isBatch = isBatch, isAutoBatch = isAutoBatch)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).contains(client)
-            assertThat(mScanManager.getBatchScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getBatchScanParams()).isNull()
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).contains(client)
+            assertThat(scanManager.batchScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanParams).isNull()
             // Turn on screen
             setScreenOn(true)
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(scanMode)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getBatchScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getBatchScanParams()).isNull()
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanParams).isNull()
             // Turn off screen
             setScreenOn(false)
-            assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).contains(client)
-            assertThat(mScanManager.getBatchScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getBatchScanParams()).isNull()
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).contains(client)
+            assertThat(scanManager.batchScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanParams).isNull()
         }
     }
 
@@ -1214,37 +930,38 @@ class ScanManagerTest(flags: FlagsWrapper) {
         val isBatch = true
         val isAutoBatch = true
         // Set report delay for auto batch scan callback type
-        mScanReportDelay = ScanSettings.AUTO_BATCH_MIN_REPORT_DELAY_MILLIS
+        scanReportDelay = ScanSettings.AUTO_BATCH_MIN_REPORT_DELAY_MILLIS
 
         defaultScanMode.forEach { (scanMode, expectedScanMode) ->
             var expectedScanMode = expectedScanMode
-            mClientId += 1
+            scannerId += 1
             expectedScanMode = ScanSettings.SCAN_MODE_SCREEN_OFF
             Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
 
             // Turn off screen
             setScreenOn(false)
             // Create scan client
-            val client = createScanClient(isFiltered, scanMode, isBatch, isAutoBatch)
+            val client =
+                createScanClient(isFiltered, scanMode, isBatch = isBatch, isAutoBatch = isAutoBatch)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getBatchScanQueue()).contains(client)
-            assertThat(mScanManager.getBatchScanParams().scanMode).isEqualTo(expectedScanMode)
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanQueue).contains(client)
+            assertThat(scanManager.batchScanParams.scanMode).isEqualTo(expectedScanMode)
             // Turn on screen
             setScreenOn(true)
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(client.settings.getScanMode()).isEqualTo(scanMode)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getBatchScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getBatchScanParams()).isNull()
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(client.settings.scanMode).isEqualTo(scanMode)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanParams).isNull()
             // Turn off screen
             setScreenOn(false)
-            assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getBatchScanQueue()).contains(client)
-            assertThat(mScanManager.getBatchScanParams().scanMode).isEqualTo(expectedScanMode)
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+            assertThat(scanManager.batchScanQueue).contains(client)
+            assertThat(scanManager.batchScanParams.scanMode).isEqualTo(expectedScanMode)
         }
     }
 
@@ -1270,26 +987,26 @@ class ScanManagerTest(flags: FlagsWrapper) {
             val client = createScanClient(isFiltered, scanMode)
             // Start scan
             startScan(client)
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
             // Turn off location
-            doReturn(false).whenever(mLocationManager).isLocationEnabled()
+            doReturn(false).whenever(locationManager).isLocationEnabled
             setLocationOn(false)
-            assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).contains(client)
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).contains(client)
             // Turn off screen
             setScreenOn(false)
-            assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).contains(client)
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).contains(client)
             // Turn on screen
             setScreenOn(true)
-            assertThat(mScanManager.getRegularScanQueue()).doesNotContain(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).contains(client)
+            assertThat(scanManager.regularScanQueue).doesNotContain(client)
+            assertThat(scanManager.suspendedScanQueue).contains(client)
             // Turn on location
-            doReturn(true).whenever(mLocationManager).isLocationEnabled()
+            doReturn(true).whenever(locationManager).isLocationEnabled
             setLocationOn(true)
-            assertThat(mScanManager.getRegularScanQueue()).contains(client)
-            assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
+            assertThat(scanManager.regularScanQueue).contains(client)
+            assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
         }
     }
 
@@ -1330,18 +1047,18 @@ class ScanManagerTest(flags: FlagsWrapper) {
             val PACKAGE_NAME = TEST_PACKAGE_NAME + i
             val source = WorkSource(UID, PACKAGE_NAME)
             // Create app scan stats for the app
-            val appUid = 1234
             val appPid = 5678
-            val appScanStats =
-                spy(AppScanStats(appUid, appPid, APP_NAME, source, mAdapterService, mTimeProvider))
+            val appScanStatsSpy =
+                spy(AppScanStats(UID, appPid, APP_NAME, source, adapterService, timeProvider))
             // Set app importance as Foreground Service for the stats
-            appScanStats.appImportance =
+            appScanStatsSpy.appImportance =
                 ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
             // Create scan client for the app, which also records scan start
-            val client = createScanClient(isFiltered, scanMode, UID, appScanStats)
+            val client =
+                createScanClient(isFiltered, scanMode, uid = UID, appScanStatsPar = appScanStatsSpy)
             // Verify that the app scan start is logged
-            mInOrder
-                .verify(mMetricsLogger)
+            inOrder
+                .verify(metricsLogger)
                 .logAppScanStateChanged(
                     intArrayOf(UID),
                     arrayOf(PACKAGE_NAME),
@@ -1363,10 +1080,10 @@ class ScanManagerTest(flags: FlagsWrapper) {
 
             advanceTime(scanTestDuration)
             // Record scan stop
-            client.appScanStats?.recordScanStop(mClientId)
+            client.appScanStats?.recordScanStop(scannerId)
             // Verify that the app scan stop is logged
-            mInOrder
-                .verify(mMetricsLogger)
+            inOrder
+                .verify(metricsLogger)
                 .logAppScanStateChanged(
                     eq(intArrayOf(UID)),
                     eq(arrayOf(PACKAGE_NAME)),
@@ -1401,49 +1118,57 @@ class ScanManagerTest(flags: FlagsWrapper) {
         setScreenOn(true)
 
         // Create workSource for the first app
-        val UID_1 = 10001
-        val APP_NAME_1 = TEST_APP_NAME + UID_1
-        val PACKAGE_NAME_1 = TEST_PACKAGE_NAME + UID_1
-        val source1 = WorkSource(UID_1, PACKAGE_NAME_1)
+        val uid1 = 10001
+        val appName1 = TEST_APP_NAME + uid1
+        val packageName1 = TEST_PACKAGE_NAME + uid1
+        val source1 = WorkSource(uid1, packageName1)
         // Create app scan stats for the first app
-        val appUid1 = 12341
         val appPid1 = 5678
         val appScanStats1 =
-            spy(AppScanStats(appUid1, appPid1, APP_NAME_1, source1, mAdapterService, mTimeProvider))
+            spy(AppScanStats(uid1, appPid1, appName1, source1, adapterService, timeProvider))
         // Set app importance as Foreground Service for the stats
         appScanStats1.appImportance =
             ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
         // Create scan client for the first app
         val client1 =
-            createScanClient(isFiltered, ScanSettings.SCAN_MODE_LOW_POWER, UID_1, appScanStats1)
+            createScanClient(
+                isFiltered,
+                ScanSettings.SCAN_MODE_LOW_POWER,
+                uid = uid1,
+                appScanStatsPar = appScanStats1,
+            )
         // Start scan with lower duty cycle for the first app
         startScan(client1)
         advanceTime(scanTestDuration)
 
         // Create workSource for the second app
-        val UID_2 = 10002
-        val APP_NAME_2 = TEST_APP_NAME + UID_2
-        val PACKAGE_NAME_2 = TEST_PACKAGE_NAME + UID_2
-        val source2 = WorkSource(UID_2, PACKAGE_NAME_2)
+        val uid2 = 10002
+        val appName2 = TEST_APP_NAME + uid2
+        val packageName2 = TEST_PACKAGE_NAME + uid2
+        val source2 = WorkSource(uid2, packageName2)
         // Create app scan stats for the second app
-        val appUid2 = 12342
         val appPid2 = 56782
         val appScanStats2 =
-            spy(AppScanStats(appUid2, appPid2, APP_NAME_2, source2, mAdapterService, mTimeProvider))
+            spy(AppScanStats(uid2, appPid2, appName2, source2, adapterService, timeProvider))
         // Set app importance as Foreground Service for the stats
         appScanStats2.appImportance =
             ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
         // Create scan client for the second app
         val client2 =
-            createScanClient(isFiltered, ScanSettings.SCAN_MODE_BALANCED, UID_2, appScanStats2)
+            createScanClient(
+                isFiltered,
+                ScanSettings.SCAN_MODE_BALANCED,
+                uid = uid2,
+                appScanStatsPar = appScanStats2,
+            )
         // Start scan with higher duty cycle for the second app
         startScan(client2)
         // Verify radio scan stop is logged with the first app
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .logRadioScanStopped(
-                eq(intArrayOf(UID_1)),
-                eq(arrayOf(PACKAGE_NAME_1)),
+                eq(intArrayOf(uid1)),
+                eq(arrayOf(packageName1)),
                 eq(BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_TYPE__SCAN_TYPE_REGULAR),
                 eq(BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_LOW_POWER),
                 eq(SCAN_MODE_LOW_POWER_INTERVAL_MS.toLong()),
@@ -1456,29 +1181,33 @@ class ScanManagerTest(flags: FlagsWrapper) {
         advanceTime(scanTestDuration)
 
         // Create workSource for the third app
-        val UID_3 = 10003
-        val APP_NAME_3 = TEST_APP_NAME + UID_3
-        val PACKAGE_NAME_3 = TEST_PACKAGE_NAME + UID_3
-        val source3 = WorkSource(UID_3, PACKAGE_NAME_3)
+        val uid3 = 10003
+        val appName3 = TEST_APP_NAME + uid3
+        val packageName3 = TEST_PACKAGE_NAME + uid3
+        val source3 = WorkSource(uid3, packageName3)
         // Create app scan stats for the third app
-        val appUid3 = 12343
         val appPid3 = 56783
         val appScanStats3 =
-            spy(AppScanStats(appUid3, appPid3, APP_NAME_3, source3, mAdapterService, mTimeProvider))
+            spy(AppScanStats(uid3, appPid3, appName3, source3, adapterService, timeProvider))
         // Set app importance as Foreground Service for the stats
         appScanStats3.appImportance =
             ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
         // Create scan client for the third app
         val client3 =
-            createScanClient(isFiltered, ScanSettings.SCAN_MODE_LOW_LATENCY, UID_3, appScanStats3)
+            createScanClient(
+                isFiltered,
+                ScanSettings.SCAN_MODE_LOW_LATENCY,
+                uid = uid3,
+                appScanStatsPar = appScanStats3,
+            )
         // Start scan with highest duty cycle for the third app
         startScan(client3)
         // Verify radio scan stop is logged with the second app
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .logRadioScanStopped(
-                eq(intArrayOf(UID_2)),
-                eq(arrayOf(PACKAGE_NAME_2)),
+                eq(intArrayOf(uid2)),
+                eq(arrayOf(packageName2)),
                 eq(BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_TYPE__SCAN_TYPE_REGULAR),
                 eq(BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_BALANCED),
                 eq(SCAN_MODE_BALANCED_INTERVAL_MS.toLong()),
@@ -1491,15 +1220,14 @@ class ScanManagerTest(flags: FlagsWrapper) {
         advanceTime(scanTestDuration)
 
         // Create workSource for the fourth app
-        val UID_4 = 10004
-        val APP_NAME_4 = TEST_APP_NAME + UID_4
-        val PACKAGE_NAME_4 = TEST_PACKAGE_NAME + UID_4
-        val source4 = WorkSource(UID_4, PACKAGE_NAME_4)
+        val uid4 = 10004
+        val appName4 = TEST_APP_NAME + uid4
+        val packageName4 = TEST_PACKAGE_NAME + uid4
+        val source4 = WorkSource(uid4, packageName4)
         // Create app scan stats for the fourth app
-        val appUid4 = 12344
         val appPid4 = 56784
         val appScanStats4 =
-            spy(AppScanStats(appUid4, appPid4, APP_NAME_4, source4, mAdapterService, mTimeProvider))
+            spy(AppScanStats(uid4, appPid4, appName4, source4, adapterService, timeProvider))
         // Set app importance as Foreground Service for the stats
         appScanStats4.appImportance =
             ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
@@ -1508,18 +1236,18 @@ class ScanManagerTest(flags: FlagsWrapper) {
             createScanClient(
                 isFiltered,
                 ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY,
-                UID_4,
-                appScanStats4,
+                uid = uid4,
+                appScanStatsPar = appScanStats4,
             )
         // Start scan with lower duty cycle for the fourth app
         startScan(client4)
         // Verify radio scan stop is not logged with the third app since there is no change in radio
         // scan
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .logRadioScanStopped(
-                eq(intArrayOf(UID_3)),
-                eq(arrayOf(PACKAGE_NAME_3)),
+                eq(intArrayOf(uid3)),
+                eq(arrayOf(packageName3)),
                 anyInt(),
                 anyInt(),
                 anyLong(),
@@ -1532,18 +1260,18 @@ class ScanManagerTest(flags: FlagsWrapper) {
         advanceTime(scanTestDuration)
 
         // Set as background app
-        setAppImportance(false, UID_1)
-        setAppImportance(false, UID_2)
-        setAppImportance(false, UID_3)
-        setAppImportance(false, UID_4)
+        setAppImportance(false, uid1)
+        setAppImportance(false, uid2)
+        setAppImportance(false, uid3)
+        setAppImportance(false, uid4)
         // Turn off screen
         setScreenOn(false)
         // Verify radio scan stop is logged with the third app when screen turns off
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .logRadioScanStopped(
-                eq(intArrayOf(UID_3)),
-                eq(arrayOf(PACKAGE_NAME_3)),
+                eq(intArrayOf(uid3)),
+                eq(arrayOf(packageName3)),
                 eq(BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_TYPE__SCAN_TYPE_REGULAR),
                 eq(
                     BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_LOW_LATENCY
@@ -1560,19 +1288,19 @@ class ScanManagerTest(flags: FlagsWrapper) {
         // Get the most aggressive scan client when screen is off
         // Since all the clients are updated to SCAN_MODE_SCREEN_OFF when screen is off and
         // app is in background mode, get the first client in the iterator
-        val scanClients = mScanManager.getRegularScanQueue()
+        val scanClients = scanManager.regularScanQueue
         val mostAggressiveClient = scanClients.iterator().next()
 
         // Turn on screen
         setScreenOn(true)
         // Set as foreground app
-        setAppImportance(true, UID_1)
-        setAppImportance(true, UID_2)
-        setAppImportance(true, UID_3)
-        setAppImportance(true, UID_4)
+        setAppImportance(true, uid1)
+        setAppImportance(true, uid2)
+        setAppImportance(true, uid3)
+        setAppImportance(true, uid4)
         // Verify radio scan stop is logged with the third app when screen turns on
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .logRadioScanStopped(
                 eq(intArrayOf(mostAggressiveClient.appUid)),
                 eq(arrayOf(TEST_PACKAGE_NAME + mostAggressiveClient.appUid)),
@@ -1591,11 +1319,11 @@ class ScanManagerTest(flags: FlagsWrapper) {
         stopScan(client4)
         // Verify radio scan stop is not logged with the third app since there is no change in radio
         // scan
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .logRadioScanStopped(
-                eq(intArrayOf(UID_3)),
-                eq(arrayOf(PACKAGE_NAME_3)),
+                eq(intArrayOf(uid3)),
+                eq(arrayOf(packageName3)),
                 anyInt(),
                 anyInt(),
                 anyLong(),
@@ -1610,11 +1338,11 @@ class ScanManagerTest(flags: FlagsWrapper) {
         // Stop scan for the third app
         stopScan(client3)
         // Verify radio scan stop is logged with the third app
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .logRadioScanStopped(
-                eq(intArrayOf(UID_3)),
-                eq(arrayOf(PACKAGE_NAME_3)),
+                eq(intArrayOf(uid3)),
+                eq(arrayOf(packageName3)),
                 eq(BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_TYPE__SCAN_TYPE_REGULAR),
                 eq(
                     BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_LOW_LATENCY
@@ -1631,11 +1359,11 @@ class ScanManagerTest(flags: FlagsWrapper) {
         // Stop scan for the second app
         stopScan(client2)
         // Verify radio scan stop is logged with the second app
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .logRadioScanStopped(
-                eq(intArrayOf(UID_2)),
-                eq(arrayOf(PACKAGE_NAME_2)),
+                eq(intArrayOf(uid2)),
+                eq(arrayOf(packageName2)),
                 eq(BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_TYPE__SCAN_TYPE_REGULAR),
                 eq(BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_BALANCED),
                 eq(SCAN_MODE_BALANCED_INTERVAL_MS.toLong()),
@@ -1650,11 +1378,11 @@ class ScanManagerTest(flags: FlagsWrapper) {
         // Stop scan for the first app
         stopScan(client1)
         // Verify radio scan stop is logged with the first app
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .logRadioScanStopped(
-                eq(intArrayOf(UID_1)),
-                eq(arrayOf(PACKAGE_NAME_1)),
+                eq(intArrayOf(uid1)),
+                eq(arrayOf(packageName1)),
                 eq(BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_TYPE__SCAN_TYPE_REGULAR),
                 eq(BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__LE_SCAN_MODE__SCAN_MODE_LOW_POWER),
                 eq(SCAN_MODE_LOW_POWER_INTERVAL_MS.toLong()),
@@ -1672,19 +1400,19 @@ class ScanManagerTest(flags: FlagsWrapper) {
         val isFiltered = true
         // Turn on screen
         setScreenOn(true)
-        clearInvocations(mMetricsLogger)
+        clearInvocations(metricsLogger)
         // Create scan client
         val client = createScanClient(isFiltered, ScanSettings.SCAN_MODE_LOW_POWER)
         // Start scan
         startScan(client)
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
                 anyLong(),
@@ -1692,14 +1420,14 @@ class ScanManagerTest(flags: FlagsWrapper) {
         advanceTime(50)
         // Stop scan
         stopScan(client)
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
                 anyLong(),
@@ -1712,19 +1440,19 @@ class ScanManagerTest(flags: FlagsWrapper) {
         val isFiltered = true
         // Turn on screen
         setScreenOn(true)
-        clearInvocations(mMetricsLogger)
+        clearInvocations(metricsLogger)
         // Create scan client
         val client = createScanClient(isFiltered, ScanSettings.SCAN_MODE_LOW_POWER)
         // Start scan
         startScan(client)
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
                 anyLong(),
@@ -1732,14 +1460,14 @@ class ScanManagerTest(flags: FlagsWrapper) {
         advanceTime(50)
         // Turn off screen
         setScreenOn(false)
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
                 anyLong(),
@@ -1747,14 +1475,14 @@ class ScanManagerTest(flags: FlagsWrapper) {
         advanceTime(50)
         // Turn on screen
         setScreenOn(true)
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
                 anyLong(),
@@ -1762,14 +1490,14 @@ class ScanManagerTest(flags: FlagsWrapper) {
         advanceTime(50)
         // Stop scan
         stopScan(client)
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
                 anyLong(),
@@ -1782,20 +1510,20 @@ class ScanManagerTest(flags: FlagsWrapper) {
         val isFiltered = true
         // Turn on screen
         setScreenOn(true)
-        clearInvocations(mMetricsLogger)
+        clearInvocations(metricsLogger)
         // Create scan clients with different duty cycles
         val client = createScanClient(isFiltered, ScanSettings.SCAN_MODE_LOW_POWER)
         val client2 = createScanClient(isFiltered, ScanSettings.SCAN_MODE_BALANCED)
         // Start scan with lower duty cycle
         startScan(client)
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
                 anyLong(),
@@ -1803,14 +1531,14 @@ class ScanManagerTest(flags: FlagsWrapper) {
         advanceTime(50)
         // Start scan with higher duty cycle
         startScan(client2)
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
                 anyLong(),
@@ -1818,17 +1546,17 @@ class ScanManagerTest(flags: FlagsWrapper) {
         advanceTime(50)
         // Stop scan with lower duty cycle
         stopScan(client)
-        mInOrder.verify(mMetricsLogger, never()).cacheCount(anyInt(), anyLong())
+        inOrder.verify(metricsLogger, never()).cacheCount(anyInt(), anyLong())
         // Stop scan with higher duty cycle
         stopScan(client2)
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
                 anyLong(),
@@ -1864,8 +1592,8 @@ class ScanManagerTest(flags: FlagsWrapper) {
             advanceTime(Duration.ofMillis(scanTestDuration))
             // Stop scan
             stopScan(client)
-            mInOrder
-                .verify(mMetricsLogger)
+            inOrder
+                .verify(metricsLogger)
                 .cacheCount(
                     eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR),
                     eq(weightedScanDuration),
@@ -1877,22 +1605,20 @@ class ScanManagerTest(flags: FlagsWrapper) {
     fun testMetricsScreenOnOff() {
         // Turn off screen initially
         setScreenOn(false)
-        clearInvocations(mMetricsLogger)
+        clearInvocations(metricsLogger)
         // Turn on screen
         setScreenOn(true)
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .cacheCount(eq(BluetoothProtoEnums.SCREEN_OFF_EVENT), anyLong())
-        mInOrder
-            .verify(mMetricsLogger)
-            .cacheCount(eq(BluetoothProtoEnums.SCREEN_ON_EVENT), anyLong())
+        inOrder.verify(metricsLogger).cacheCount(eq(BluetoothProtoEnums.SCREEN_ON_EVENT), anyLong())
         // Turn off screen
         setScreenOn(false)
-        mInOrder
-            .verify(mMetricsLogger, never())
+        inOrder
+            .verify(metricsLogger, never())
             .cacheCount(eq(BluetoothProtoEnums.SCREEN_ON_EVENT), anyLong())
-        mInOrder
-            .verify(mMetricsLogger)
+        inOrder
+            .verify(metricsLogger)
             .cacheCount(eq(BluetoothProtoEnums.SCREEN_OFF_EVENT), anyLong())
     }
 
@@ -1902,8 +1628,8 @@ class ScanManagerTest(flags: FlagsWrapper) {
         val isFiltered = true
 
         doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
-            .whenever(mAdapterService)
-            .getScanDowngradeDuration()
+            .whenever(adapterService)
+            .scanDowngradeDuration
 
         // Turn off screen
         setScreenOn(false)
@@ -1911,13 +1637,13 @@ class ScanManagerTest(flags: FlagsWrapper) {
         val client = createScanClient(isFiltered, ScanSettings.SCAN_MODE_LOW_LATENCY)
         // Start Scan
         startScan(client)
-        assertThat(mScanManager.getRegularScanQueue()).contains(client)
-        assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-        assertThat(client.settings.getScanMode()).isEqualTo(ScanSettings.SCAN_MODE_LOW_LATENCY)
+        assertThat(scanManager.regularScanQueue).contains(client)
+        assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+        assertThat(client.settings.scanMode).isEqualTo(ScanSettings.SCAN_MODE_LOW_LATENCY)
         // Set connecting state
         setConnectingState(true)
         // SCAN_MODE_LOW_LATENCY is now downgraded to SCAN_MODE_BALANCED
-        assertThat(client.settings.getScanMode()).isEqualTo(ScanSettings.SCAN_MODE_BALANCED)
+        assertThat(client.settings.scanMode).isEqualTo(ScanSettings.SCAN_MODE_BALANCED)
     }
 
     @Test
@@ -1926,8 +1652,8 @@ class ScanManagerTest(flags: FlagsWrapper) {
         val isFiltered = true
 
         doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
-            .whenever(mAdapterService)
-            .getScanDowngradeDuration()
+            .whenever(adapterService)
+            .scanDowngradeDuration
 
         // Turn off screen
         setScreenOn(false)
@@ -1935,58 +1661,58 @@ class ScanManagerTest(flags: FlagsWrapper) {
         val client = createScanClient(isFiltered, ScanSettings.SCAN_MODE_LOW_LATENCY)
         // Start Scan
         startScan(client)
-        assertThat(mScanManager.getRegularScanQueue()).contains(client)
-        assertThat(mScanManager.getSuspendedScanQueue()).doesNotContain(client)
-        assertThat(client.settings.getScanMode()).isEqualTo(ScanSettings.SCAN_MODE_LOW_LATENCY)
+        assertThat(scanManager.regularScanQueue).contains(client)
+        assertThat(scanManager.suspendedScanQueue).doesNotContain(client)
+        assertThat(client.settings.scanMode).isEqualTo(ScanSettings.SCAN_MODE_LOW_LATENCY)
         // Set AppScanStats to empty
         client.appScanStats = null
         // Set connecting state
         setConnectingState(true)
         // Since AppScanStats is null, no downgrade takes place for scan mode
-        assertThat(client.settings.getScanMode()).isEqualTo(ScanSettings.SCAN_MODE_LOW_LATENCY)
+        assertThat(client.settings.scanMode).isEqualTo(ScanSettings.SCAN_MODE_LOW_LATENCY)
     }
 
     @Test
     fun profileConnectionStateChanged_sendStartConnectionMessage() {
         doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
-            .whenever(mAdapterService)
-            .getScanDowngradeDuration()
-        assertThat(mScanManager.mIsConnecting).isFalse()
+            .whenever(adapterService)
+            .scanDowngradeDuration
+        assertThat(scanManager.mIsConnecting).isFalse()
 
-        mScanManager.handleBluetoothProfileConnectionStateChanged(
+        scanManager.handleBluetoothProfileConnectionStateChanged(
             BluetoothProfile.A2DP,
             BluetoothProfile.STATE_DISCONNECTED,
             BluetoothProfile.STATE_CONNECTING,
         )
 
-        mLooper.dispatchAll()
-        assertThat(mScanManager.mIsConnecting).isTrue()
+        looper.dispatchAll()
+        assertThat(scanManager.mIsConnecting).isTrue()
     }
 
     @Test
     fun multipleProfileConnectionStateChanged_updateCountersCorrectly() {
         doReturn(DEFAULT_SCAN_DOWNGRADE_DURATION_BT_CONNECTING)
-            .whenever(mAdapterService)
-            .getScanDowngradeDuration()
-        assertThat(mScanManager.mIsConnecting).isFalse()
+            .whenever(adapterService)
+            .scanDowngradeDuration
+        assertThat(scanManager.mIsConnecting).isFalse()
 
-        mScanManager.handleBluetoothProfileConnectionStateChanged(
+        scanManager.handleBluetoothProfileConnectionStateChanged(
             BluetoothProfile.HEADSET,
             BluetoothProfile.STATE_DISCONNECTED,
             BluetoothProfile.STATE_CONNECTING,
         )
-        mScanManager.handleBluetoothProfileConnectionStateChanged(
+        scanManager.handleBluetoothProfileConnectionStateChanged(
             BluetoothProfile.A2DP,
             BluetoothProfile.STATE_DISCONNECTED,
             BluetoothProfile.STATE_CONNECTING,
         )
-        mScanManager.handleBluetoothProfileConnectionStateChanged(
+        scanManager.handleBluetoothProfileConnectionStateChanged(
             BluetoothProfile.HID_HOST,
             BluetoothProfile.STATE_DISCONNECTED,
             BluetoothProfile.STATE_CONNECTING,
         )
-        mLooper.dispatchAll()
-        assertThat(mScanManager.mProfilesConnecting).isEqualTo(3)
+        looper.dispatchAll()
+        assertThat(scanManager.mProfilesConnecting).isEqualTo(3)
     }
 
     @Test
@@ -1995,7 +1721,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
         scanSettings =
             ScanSettings.Builder().setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT).build()
 
-        assertThat(mScanManager.getNumOfTrackingAdvertisements(scanSettings))
+        assertThat(scanManager.getNumOfTrackingAdvertisements(scanSettings))
             .isEqualTo(DEFAULT_TOTAL_NUM_OF_TRACKABLE_ADVERTISEMENTS / 4)
     }
 
@@ -2041,24 +1767,29 @@ class ScanManagerTest(flags: FlagsWrapper) {
         val isEmptyFilter = false
 
         defaultScanMode.forEach { (scanMode, expectedScanMode) ->
-            mClientId += 1
+            scannerId += 1
             Log.d(TAG, "ScanMode: $scanMode expectedScanMode: $expectedScanMode")
 
             // Turn on screen
             setScreenOn(true)
             // Create scan client
             val client =
-                createScanClientWithPhy(mClientId, isFiltered, isEmptyFilter, scanMode, phy)
-            // Start scan
+                createScanClient(
+                    isFiltered,
+                    scanMode,
+                    isEmptyFilter,
+                    scannerIdPar = scannerId,
+                    phy = phy,
+                )
             startScan(client)
 
-            assertThat(client.settings.getPhy()).isEqualTo(phy)
-            verify(mScanNativeInterface)
+            assertThat(client.settings.phy).isEqualTo(phy)
+            verify(nativeInterface)
                 .setScanParameters(
-                    eq(if (expect1m) mClientId else 0),
+                    eq(if (expect1m) scannerId else 0),
                     anyInt(),
                     anyInt(),
-                    eq(if (expectCoded) mClientId else 0),
+                    eq(if (expectCoded) scannerId else 0),
                     anyInt(),
                     anyInt(),
                     eq(expectedPhyMask),
@@ -2071,29 +1802,29 @@ class ScanManagerTest(flags: FlagsWrapper) {
 
     @Test
     fun startScan_phyTestMultiplexing() {
-        val clientId1m = ++mClientId
-        val clientIdCoded = ++mClientId
+        val scannerId1m = ++scannerId
+        val scannerIdCoded = ++scannerId
 
         // Turn on screen
         setScreenOn(true)
 
         // Create 1m scan client
         val client1m =
-            createScanClientWithPhy(
-                clientId1m,
+            createScanClient(
                 true,
-                false,
                 ScanSettings.SCAN_MODE_LOW_LATENCY,
-                BluetoothDevice.PHY_LE_1M,
+                false,
+                scannerIdPar = scannerId1m,
+                phy = BluetoothDevice.PHY_LE_1M,
             )
 
         // Start scan on 1m
         startScan(client1m)
 
-        assertThat(client1m.settings.getPhy()).isEqualTo(BluetoothDevice.PHY_LE_1M)
-        verify(mScanNativeInterface)
+        assertThat(client1m.settings.phy).isEqualTo(BluetoothDevice.PHY_LE_1M)
+        verify(nativeInterface)
             .setScanParameters(
-                eq(clientId1m),
+                eq(scannerId1m),
                 eq(Utils.millsToUnit(SCAN_MODE_LOW_LATENCY_INTERVAL_MS)),
                 eq(Utils.millsToUnit(SCAN_MODE_LOW_LATENCY_WINDOW_MS)),
                 eq(0),
@@ -2104,24 +1835,24 @@ class ScanManagerTest(flags: FlagsWrapper) {
 
         // Create coded scan client
         val clientCoded =
-            createScanClientWithPhy(
-                clientIdCoded,
+            createScanClient(
                 true,
-                false,
                 ScanSettings.SCAN_MODE_BALANCED,
-                BluetoothDevice.PHY_LE_CODED,
+                false,
+                scannerIdPar = scannerIdCoded,
+                phy = BluetoothDevice.PHY_LE_CODED,
             )
 
         // Start scan on coded
         startScan(clientCoded)
 
-        assertThat(clientCoded.settings.getPhy()).isEqualTo(BluetoothDevice.PHY_LE_CODED)
-        verify(mScanNativeInterface)
+        assertThat(clientCoded.settings.phy).isEqualTo(BluetoothDevice.PHY_LE_CODED)
+        verify(nativeInterface)
             .setScanParameters(
-                eq(clientId1m),
+                eq(scannerId1m),
                 eq(Utils.millsToUnit(SCAN_MODE_LOW_LATENCY_INTERVAL_MS)),
                 eq(Utils.millsToUnit(SCAN_MODE_LOW_LATENCY_WINDOW_MS)),
-                eq(clientIdCoded),
+                eq(scannerIdCoded),
                 eq(Utils.millsToUnit(SCAN_MODE_BALANCED_INTERVAL_MS)),
                 eq(Utils.millsToUnit(SCAN_MODE_BALANCED_WINDOW_MS)),
                 eq(BluetoothDevice.PHY_LE_1M_MASK or BluetoothDevice.PHY_LE_CODED_MASK),
@@ -2130,12 +1861,12 @@ class ScanManagerTest(flags: FlagsWrapper) {
         // Stop scan on 1m
         stopScan(client1m)
 
-        verify(mScanNativeInterface)
+        verify(nativeInterface)
             .setScanParameters(
                 eq(0),
                 anyInt(),
                 anyInt(),
-                eq(clientIdCoded),
+                eq(scannerIdCoded),
                 eq(Utils.millsToUnit(SCAN_MODE_BALANCED_INTERVAL_MS)),
                 eq(Utils.millsToUnit(SCAN_MODE_BALANCED_WINDOW_MS)),
                 eq(BluetoothDevice.PHY_LE_CODED_MASK),
@@ -2144,16 +1875,16 @@ class ScanManagerTest(flags: FlagsWrapper) {
         // Stop scan on coded
         stopScan(clientCoded)
 
-        verify(mScanNativeInterface, atLeastOnce()).scan(eq(false), anyString())
-        verify(mScanNativeInterface, never())
+        verify(nativeInterface, atLeastOnce()).scan(eq(false), anyString())
+        verify(nativeInterface, never())
             .setScanParameters(anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), eq(0))
     }
 
     @Test
     @EnableFlags(Flags.FLAG_LE_SCAN_MSFT_SUPPORT)
     fun testMsftScan() {
-        doReturn(true).whenever(mScanNativeInterface).isMsftSupported()
-        doReturn(false).whenever(mAdapter).isOffloadedFilteringSupported()
+        doReturn(true).whenever(nativeInterface).isMsftSupported
+        doReturn(false).whenever(adapter).isOffloadedFilteringSupported
 
         val isFiltered = true
         val serviceUuid = ParcelUuid(UUID.fromString("12345678-90AB-CDEF-1234-567890ABCDEF"))
@@ -2161,14 +1892,14 @@ class ScanManagerTest(flags: FlagsWrapper) {
 
         // Create new ScanManager since sysprop and MSFT support are only checked when
         // ScanManager is created
-        mScanManager =
+        scanManager =
             ScanManager(
-                mAdapterService,
-                mScanController,
-                mScanNativeCallback,
-                mScanNativeInterface,
-                mLooper.getLooper(),
-                mTimeProvider,
+                adapterService,
+                scanController,
+                nativeCallback,
+                nativeInterface,
+                looper.looper,
+                timeProvider,
             )
 
         // Turn on screen
@@ -2180,11 +1911,11 @@ class ScanManagerTest(flags: FlagsWrapper) {
             createScanClient(
                 isFiltered,
                 ScanSettings.SCAN_MODE_LOW_POWER,
-                false,
-                false,
-                Binder.getCallingUid(),
-                mAppScanStats,
-                scanFilterList,
+                isBatch = false,
+                isAutoBatch = false,
+                uid = Binder.getCallingUid(),
+                appScanStatsPar = appScanStats,
+                filterList = scanFilterList,
             )
         // Start scan
         startScan(client)
@@ -2194,17 +1925,17 @@ class ScanManagerTest(flags: FlagsWrapper) {
             createScanClient(
                 isFiltered,
                 ScanSettings.SCAN_MODE_LOW_POWER,
-                false,
-                false,
-                Binder.getCallingUid(),
-                mAppScanStats,
-                scanFilterList,
+                isBatch = false,
+                isAutoBatch = false,
+                uid = Binder.getCallingUid(),
+                appScanStatsPar = appScanStats,
+                filterList = scanFilterList,
             )
         // Start scan
         startScan(anotherClient)
 
         // Verify MSFT APIs are only called once
-        verify(mScanNativeInterface)
+        verify(nativeInterface)
             .msftAdvMonitorAdd(
                 any(MsftAdvMonitor.Monitor::class.java),
                 any(Array<MsftAdvMonitor.Pattern>::class.java),
@@ -2212,28 +1943,28 @@ class ScanManagerTest(flags: FlagsWrapper) {
                 any(MsftAdvMonitor.Address::class.java),
                 anyInt(),
             )
-        verify(mScanNativeInterface).msftAdvMonitorEnable(eq(true))
+        verify(nativeInterface).msftAdvMonitorEnable(eq(true))
     }
 
     @Test
     @EnableFlags(Flags.FLAG_LE_SCAN_MSFT_SUPPORT)
     fun testPreferApcfOverMsftScan() {
-        doReturn(true).whenever(mScanNativeInterface).isMsftSupported()
-        doReturn(true).whenever(mAdapter).isOffloadedFilteringSupported()
+        doReturn(true).whenever(nativeInterface).isMsftSupported
+        doReturn(true).whenever(adapter).isOffloadedFilteringSupported
 
         val isFiltered = true
         val serviceUuid = ParcelUuid(UUID.fromString("12345678-90AB-CDEF-1234-567890ABCDEF"))
         val serviceData = byteArrayOf(0x01, 0x02, 0x03)
 
         // Create new ScanManager since sysprop and MSFT support are only on ScanManager creation
-        mScanManager =
+        scanManager =
             ScanManager(
-                mAdapterService,
-                mScanController,
-                mScanNativeCallback,
-                mScanNativeInterface,
-                mLooper.getLooper(),
-                mTimeProvider,
+                adapterService,
+                scanController,
+                nativeCallback,
+                nativeInterface,
+                looper.looper,
+                timeProvider,
             )
 
         // Turn on screen
@@ -2245,20 +1976,20 @@ class ScanManagerTest(flags: FlagsWrapper) {
             createScanClient(
                 isFiltered,
                 ScanSettings.SCAN_MODE_LOW_POWER,
-                false,
-                false,
-                Binder.getCallingUid(),
-                mAppScanStats,
-                scanFilterList,
+                isBatch = false,
+                isAutoBatch = false,
+                uid = Binder.getCallingUid(),
+                appScanStatsPar = appScanStats,
+                filterList = scanFilterList,
             )
         // Start scan
         startScan(client)
 
         // Verify APCF APIs are called
-        verify(mScanNativeInterface).scanFilterParamAdd(any())
+        verify(nativeInterface).scanFilterParamAdd(any())
 
         // Verify MSFT APIs are never called
-        verify(mScanNativeInterface, never())
+        verify(nativeInterface, never())
             .msftAdvMonitorAdd(
                 any(MsftAdvMonitor.Monitor::class.java),
                 any(Array<MsftAdvMonitor.Pattern>::class.java),
@@ -2266,17 +1997,188 @@ class ScanManagerTest(flags: FlagsWrapper) {
                 any(MsftAdvMonitor.Address::class.java),
                 anyInt(),
             )
-        verify(mScanNativeInterface, never()).msftAdvMonitorEnable(anyBoolean())
+        verify(nativeInterface, never()).msftAdvMonitorEnable(anyBoolean())
 
         // Stop scan
         stopScan(client)
 
         // Verify APCF APIs are called
-        verify(mScanNativeInterface).scanFilterParamDelete(anyInt(), anyInt())
+        verify(nativeInterface).scanFilterParamDelete(anyInt(), anyInt())
 
         // Verify MSFT APIs are never called
-        verify(mScanNativeInterface, never()).msftAdvMonitorRemove(anyInt(), anyInt())
-        verify(mScanNativeInterface, never()).msftAdvMonitorEnable(anyBoolean())
+        verify(nativeInterface, never()).msftAdvMonitorRemove(anyInt(), anyInt())
+        verify(nativeInterface, never()).msftAdvMonitorEnable(anyBoolean())
+    }
+
+    private fun createScanClient(
+        isFiltered: Boolean,
+        scanMode: Int,
+        isEmptyFilter: Boolean = false,
+        isBatch: Boolean = false,
+        isAutoBatch: Boolean = false,
+        uid: Int = Binder.getCallingUid(),
+        appScanStatsPar: AppScanStats = this@ScanManagerTest.appScanStats,
+        scannerIdPar: Int? = null,
+        phy: Int? = null,
+        filterList: List<ScanFilter>? = null,
+    ): ScanClient {
+        val settings =
+            ScanSettings.Builder()
+                .apply {
+                    setScanMode(scanMode)
+                    if (isBatch) {
+                        setReportDelay(scanReportDelay)
+                        if (isAutoBatch) {
+                            setCallbackType(ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH)
+                        }
+                    }
+                    phy?.let { setPhy(it) }
+                }
+                .build()
+        val filters =
+            filterList
+                ?: if (isFiltered) {
+                    if (isEmptyFilter) {
+                        listOf(ScanFilter.Builder().build())
+                    } else {
+                        listOf(ScanFilter.Builder().setDeviceName("TestName").build())
+                    }
+                } else {
+                    emptyList()
+                }
+        val scannerIdForClient = scannerIdPar ?: ++scannerId
+        return ScanClient(
+                appUid = uid,
+                scannerId = scannerIdForClient,
+                settings = settings,
+                filters = filters,
+            )
+            .apply {
+                appScanStats = appScanStatsPar
+                appScanStats!!.recordScanStart(
+                    settings,
+                    filters,
+                    isFiltered,
+                    false,
+                    scannerIdForClient,
+                    null,
+                )
+            }
+    }
+
+    private fun advanceTime(amountToAdvance: Duration) {
+        looper.moveTimeForward(amountToAdvance.toMillis())
+        timeProvider.advanceTime(amountToAdvance)
+    }
+
+    private fun advanceTime(amountToAdvanceMillis: Long) {
+        looper.moveTimeForward(amountToAdvanceMillis)
+        timeProvider.advanceTime(Duration.ofMillis(amountToAdvanceMillis))
+    }
+
+    private fun startScan(client: ScanClient?) {
+        if (Flags.scanControllerThread()) {
+            executeOnScanThread { scanManager.startScan(client) }
+        } else {
+            sendMessageWaitForProcessed(createStartStopScanMessage(true, client))
+        }
+    }
+
+    private fun stopScan(client: ScanClient) {
+        if (Flags.scanControllerThread()) {
+            executeOnScanThread { scanManager.stopScan(client.scannerId) }
+        } else {
+            sendMessageWaitForProcessed(createStartStopScanMessage(false, client))
+        }
+    }
+
+    private fun setScreenOn(isScreenOn: Boolean) {
+        if (Flags.scanControllerThread()) {
+            executeOnScanThread {
+                if (isScreenOn) scanManager.handleScreenOn() else scanManager.handleScreenOff()
+            }
+        } else {
+            sendMessageWaitForProcessed(createScreenOnOffMessage(isScreenOn))
+        }
+    }
+
+    private fun setLocationOn(isLocationOn: Boolean) {
+        if (Flags.scanControllerThread()) {
+            executeOnScanThread {
+                if (isLocationOn) scanManager.handleResumeScans()
+                else scanManager.handleSuspendScans()
+            }
+        } else {
+            sendMessageWaitForProcessed(createLocationOnOffMessage(isLocationOn))
+        }
+    }
+
+    private fun setAppImportance(isForeground: Boolean, uid: Int) {
+        val importance =
+            if (isForeground) ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
+            else ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE + 1
+        val uidImportance = ScanManager.UidImportance(uid, importance)
+        if (Flags.scanControllerThread()) {
+            executeOnScanThread { scanManager.handleImportanceChange(uidImportance) }
+        } else {
+            val message = Message()
+            message.what = ScanManager.MSG_IMPORTANCE_CHANGE
+            message.obj = uidImportance
+            sendMessageWaitForProcessed(message)
+        }
+    }
+
+    private fun setConnectingState(isConnecting: Boolean) {
+        if (Flags.scanControllerThread()) {
+            executeOnScanThread {
+                if (isConnecting) scanManager.handleConnectingState()
+                else scanManager.handleClearConnectingState()
+            }
+        } else {
+            sendMessageWaitForProcessed(createConnectingMessage(isConnecting))
+        }
+    }
+
+    private fun executeOnScanThread(r: Runnable) {
+        scanManager.mHandler!!.post(r)
+        assertThat(looper.dispatchAll()).isEqualTo(1)
+    }
+
+    private fun sendMessageWaitForProcessed(msg: Message) {
+        scanManager.mClientHandler!!.sendMessage(msg)
+        looper.dispatchAll()
+    }
+
+    private fun createStartStopScanMessage(isStartScan: Boolean, obj: Any?): Message {
+        val message = Message()
+        message.what =
+            if (isStartScan) ScanManager.MSG_START_BLE_SCAN else ScanManager.MSG_STOP_BLE_SCAN
+        message.obj = obj
+        return message
+    }
+
+    private fun createScreenOnOffMessage(isScreenOn: Boolean): Message {
+        val message = Message()
+        message.what = if (isScreenOn) ScanManager.MSG_SCREEN_ON else ScanManager.MSG_SCREEN_OFF
+        message.obj = null
+        return message
+    }
+
+    private fun createLocationOnOffMessage(isLocationOn: Boolean): Message {
+        val message = Message()
+        message.what =
+            if (isLocationOn) ScanManager.MSG_RESUME_SCANS else ScanManager.MSG_SUSPEND_SCANS
+        message.obj = null
+        return message
+    }
+
+    private fun createConnectingMessage(isConnectingOn: Boolean): Message {
+        val message = Message()
+        message.what =
+            if (isConnectingOn) ScanManager.MSG_START_CONNECTING
+            else ScanManager.MSG_STOP_CONNECTING
+        message.obj = null
+        return message
     }
 
     companion object {
