@@ -72,6 +72,17 @@ public class AdapterServiceBinderTest {
     }
 
     @Test
+    public void cancelDiscovery_whenServiceNotAvailable_returnsFalse() {
+        // Setup: Simulate the service being unavailable.
+        doReturn(false).when(mService).isAvailable();
+
+        boolean result = mBinder.cancelDiscovery(mAttributionSource);
+
+        assertThat(result).isFalse();
+        verify(mService, never()).cancelDiscovery(any());
+    }
+
+    @Test
     public void dump() {
         FileDescriptor fd = new FileDescriptor();
         String[] args = new String[] {};
