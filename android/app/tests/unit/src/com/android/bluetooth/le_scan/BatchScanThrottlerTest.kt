@@ -14,184 +14,161 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.le_scan;
+package com.android.bluetooth.le_scan
 
-import static android.bluetooth.le.ScanSettings.SCAN_MODE_BALANCED;
+import android.bluetooth.le.ScanFilter
+import android.bluetooth.le.ScanSettings
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.le_scan.BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT
+import com.android.bluetooth.le_scan.BatchScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS
+import com.android.tests.bluetooth.FakeTimeProvider
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
+import java.time.Duration
+import kotlin.math.max
+import kotlin.time.ExperimentalTime
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import static com.android.bluetooth.le_scan.BatchScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS;
-
-import static com.google.common.truth.Truth.assertThat;
-
-import android.bluetooth.le.ScanFilter;
-import android.bluetooth.le.ScanSettings;
-import android.platform.test.flag.junit.SetFlagsRule;
-
-import androidx.test.filters.SmallTest;
-
-import com.android.tests.bluetooth.FakeTimeProvider;
-import com.android.tests.bluetooth.MockitoRule;
-
-import com.google.testing.junit.testparameterinjector.TestParameter;
-import com.google.testing.junit.testparameterinjector.TestParameterInjector;
-
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.LongStream;
-
-/** Test cases for {@link BatchScanThrottler}. */
+/** Test cases for [BatchScanThrottler]. */
+@OptIn(ExperimentalTime::class)
 @SmallTest
-@RunWith(TestParameterInjector.class)
-public class BatchScanThrottlerTest {
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+@RunWith(TestParameterInjector::class)
+class BatchScanThrottlerTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    private final FakeTimeProvider mTimeProvider = new FakeTimeProvider();
-
-    private void advanceTime(long amountToAdvanceMillis) {
-        mTimeProvider.advanceTime(Duration.ofMillis(amountToAdvanceMillis));
-    }
+    private val timeProvider = FakeTimeProvider()
 
     @Test
-    public void basicThrottling(
-            @TestParameter boolean isFiltered, @TestParameter boolean isScreenOn) {
-        BatchScanThrottler throttler = new BatchScanThrottler(mTimeProvider, isScreenOn);
+    fun basicThrottling(@TestParameter isFiltered: Boolean, @TestParameter isScreenOn: Boolean) {
+        val throttler = BatchScanThrottler(timeProvider, isScreenOn)
         if (!isScreenOn) {
-            advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_DEFAULT);
+            advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_DEFAULT)
         }
-        Set<ScanClient> clients =
-                Collections.singleton(
-                        createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR_MS, isFiltered));
-        long[] backoffIntervals =
-                getBackoffIntervals(
-                        isScreenOn
-                                ? DEFAULT_REPORT_DELAY_FLOOR_MS
-                                : BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT);
-        for (long x : backoffIntervals) {
-            long expected = adjustExpectedInterval(x, isFiltered, isScreenOn);
-            assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(expected);
+        val clients = setOf(createBatchScanClient(isFiltered))
+        val backoffIntervals =
+            getBackoffIntervals(
+                if (isScreenOn) DEFAULT_REPORT_DELAY_FLOOR_MS
+                else SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT.toLong()
+            )
+        for (x in backoffIntervals) {
+            val expected = adjustExpectedInterval(x, isFiltered, isScreenOn)
+            assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(expected)
         }
-        long expected =
-                adjustExpectedInterval(
-                        backoffIntervals[backoffIntervals.length - 1], isFiltered, isScreenOn);
+        val expected =
+            adjustExpectedInterval(
+                backoffIntervals[backoffIntervals.size - 1],
+                isFiltered,
+                isScreenOn,
+            )
         // Ensure that subsequent calls continue to return the final throttled interval
-        assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(expected);
-        assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(expected);
+        assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(expected)
+        assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(expected)
     }
 
     @Test
-    public void screenOffDelayAndReset(@TestParameter boolean screenOnAtStart) {
-        BatchScanThrottler throttler = new BatchScanThrottler(mTimeProvider, screenOnAtStart);
+    fun screenOffDelayAndReset(@TestParameter screenOnAtStart: Boolean) {
+        val throttler = BatchScanThrottler(timeProvider, screenOnAtStart)
         if (screenOnAtStart) {
-            throttler.onScreenOn(false);
+            throttler.onScreenOn(false)
         }
-        Set<ScanClient> clients =
-                Collections.singleton(createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR_MS, true));
-        long[] backoffIntervals = getBackoffIntervals(DEFAULT_REPORT_DELAY_FLOOR_MS);
-        advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_DEFAULT - 1);
-        for (long x : backoffIntervals) {
-            assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x);
+        val clients = setOf(createBatchScanClient(true))
+        var backoffIntervals = getBackoffIntervals(DEFAULT_REPORT_DELAY_FLOOR_MS)
+        advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_DEFAULT - 1)
+        for (x in backoffIntervals) {
+            assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x)
         }
 
-        backoffIntervals =
-                getBackoffIntervals(BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT);
-        advanceTime(1);
-        for (long x : backoffIntervals) {
-            assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x);
+        backoffIntervals = getBackoffIntervals(SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT.toLong())
+        advanceTime(1)
+        for (x in backoffIntervals) {
+            assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x)
         }
         assertThat(throttler.getBatchTriggerIntervalMillis(clients))
-                .isEqualTo(backoffIntervals[backoffIntervals.length - 1]);
+            .isEqualTo(backoffIntervals[backoffIntervals.size - 1])
     }
 
     @Test
-    public void testScreenOnReset() {
-        BatchScanThrottler throttler = new BatchScanThrottler(mTimeProvider, false);
-        advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_DEFAULT);
-        Set<ScanClient> clients =
-                Collections.singleton(createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR_MS, true));
-        long[] backoffIntervals =
-                getBackoffIntervals(BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT);
-        for (long x : backoffIntervals) {
-            assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x);
+    fun testScreenOnReset() {
+        val throttler = BatchScanThrottler(timeProvider, false)
+        advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_DEFAULT)
+        val clients = setOf(createBatchScanClient(true))
+        var backoffIntervals = getBackoffIntervals(SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT.toLong())
+        for (x in backoffIntervals) {
+            assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x)
         }
 
-        throttler.onScreenOn(true);
-        backoffIntervals = getBackoffIntervals(DEFAULT_REPORT_DELAY_FLOOR_MS);
-        for (long x : backoffIntervals) {
-            assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x);
+        throttler.onScreenOn(true)
+        backoffIntervals = getBackoffIntervals(DEFAULT_REPORT_DELAY_FLOOR_MS)
+        for (x in backoffIntervals) {
+            assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x)
         }
         assertThat(throttler.getBatchTriggerIntervalMillis(clients))
-                .isEqualTo(backoffIntervals[backoffIntervals.length - 1]);
+            .isEqualTo(backoffIntervals[backoffIntervals.size - 1])
     }
 
     @Test
-    public void resetBackoff_restartsToFirstStage(@TestParameter boolean isScreenOn) {
-        BatchScanThrottler throttler = new BatchScanThrottler(mTimeProvider, isScreenOn);
+    fun resetBackoff_restartsToFirstStage(@TestParameter isScreenOn: Boolean) {
+        val throttler = BatchScanThrottler(timeProvider, isScreenOn)
         if (!isScreenOn) {
             // Advance the time before we start the test to when the screen-off intervals should be
             // used
-            advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_DEFAULT);
+            advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_DEFAULT)
         }
-        Set<ScanClient> clients =
-                Collections.singleton(createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR_MS, true));
-        long[] backoffIntervals =
-                getBackoffIntervals(
-                        isScreenOn
-                                ? DEFAULT_REPORT_DELAY_FLOOR_MS
-                                : BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT);
-        for (long x : backoffIntervals) {
-            assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x);
-        }
-        assertThat(throttler.getBatchTriggerIntervalMillis(clients))
-                .isEqualTo(backoffIntervals[backoffIntervals.length - 1]);
-
-        throttler.resetBackoff();
-        for (long x : backoffIntervals) {
-            assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x);
+        val clients = setOf(createBatchScanClient(true))
+        val backoffIntervals =
+            getBackoffIntervals(
+                if (isScreenOn) DEFAULT_REPORT_DELAY_FLOOR_MS
+                else SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT.toLong()
+            )
+        for (x in backoffIntervals) {
+            assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x)
         }
         assertThat(throttler.getBatchTriggerIntervalMillis(clients))
-                .isEqualTo(backoffIntervals[backoffIntervals.length - 1]);
-    }
+            .isEqualTo(backoffIntervals[backoffIntervals.size - 1])
 
-    private static long adjustExpectedInterval(
-            long interval, boolean isFiltered, boolean isScreenOn) {
-        if (isFiltered) {
-            return interval;
+        throttler.resetBackoff()
+        for (x in backoffIntervals) {
+            assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x)
         }
-        long threshold =
-                isScreenOn
-                        ? BatchScanThrottler.UNFILTERED_DELAY_FLOOR_DEFAULT
-                        : BatchScanThrottler.UNFILTERED_SCREEN_OFF_DELAY_FLOOR_DEFAULT;
-        return Math.max(interval, threshold);
+        assertThat(throttler.getBatchTriggerIntervalMillis(clients))
+            .isEqualTo(backoffIntervals[backoffIntervals.size - 1])
     }
 
-    private static long[] getBackoffIntervals(long baseInterval) {
-        return LongStream.range(0, BatchScanThrottler.BACKOFF_MULTIPLIERS.length)
-                .map(x -> BatchScanThrottler.BACKOFF_MULTIPLIERS[(int) x] * baseInterval)
-                .toArray();
-    }
-
-    private static ScanClient createBatchScanClient(long reportDelayMillis, boolean isFiltered) {
-        ScanSettings scanSettings =
-                new ScanSettings.Builder()
-                        .setScanMode(SCAN_MODE_BALANCED)
-                        .setReportDelay(reportDelayMillis)
-                        .build();
-
-        return new ScanClient(1, 1, scanSettings, createScanFilterList(isFiltered));
-    }
-
-    private static List<ScanFilter> createScanFilterList(boolean isFiltered) {
+    private fun adjustExpectedInterval(
+        interval: Long,
+        isFiltered: Boolean,
+        isScreenOn: Boolean,
+    ): Long {
         if (isFiltered) {
-            return List.of(new ScanFilter.Builder().setDeviceName("TestName").build());
-        } else {
-            return new ArrayList<>();
+            return interval
         }
+        val threshold =
+            if (isScreenOn) BatchScanThrottler.UNFILTERED_DELAY_FLOOR_DEFAULT
+            else BatchScanThrottler.UNFILTERED_SCREEN_OFF_DELAY_FLOOR_DEFAULT
+        return max(interval, threshold.toLong())
     }
+
+    private fun getBackoffIntervals(baseInterval: Long) =
+        BatchScanThrottler.BACKOFF_MULTIPLIERS.map { it * baseInterval }
+
+    private fun createBatchScanClient(isFiltered: Boolean) =
+        ScanClient(
+            appUid = 1001,
+            scannerId = 1,
+            settings =
+                ScanSettings.Builder()
+                    .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
+                    .setReportDelay(DEFAULT_REPORT_DELAY_FLOOR_MS)
+                    .build(),
+            filters =
+                if (isFiltered) listOf(ScanFilter.Builder().setDeviceName("TestName").build())
+                else emptyList(),
+        )
+
+    private fun advanceTime(amountToAdvanceMillis: Int) =
+        timeProvider.advanceTime(Duration.ofMillis(amountToAdvanceMillis.toLong()))
 }
