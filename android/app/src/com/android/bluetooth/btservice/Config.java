@@ -202,7 +202,7 @@ public class Config {
         // This means that the OS will not automatically enable ASHA on these platforms, but these
         // platforms can choose to enable ASHA themselves
         if (BluetoothProperties.isProfileAshaCentralEnabled().isEmpty()) {
-            if (Utils.isAutomotive(ctx) || Utils.isTv(ctx) || Utils.isWatch(ctx)) {
+            if (Util.isAutomotive(ctx) || Utils.isTv(ctx) || Utils.isWatch(ctx)) {
                 setProfileEnabled(BluetoothProfile.HEARING_AID, false);
             }
         }

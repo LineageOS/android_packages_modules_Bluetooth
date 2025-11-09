@@ -19,7 +19,7 @@ import android.bluetooth.BluetoothDevice
 import android.content.Context
 import android.media.AudioManager
 import android.util.Log
-import com.android.bluetooth.Utils
+import com.android.bluetooth.Util
 
 /**
  * Handler for [AvrcpControllerStateMachine] volume operations, which are handled differently
@@ -58,7 +58,7 @@ class AvrcpControllerVolumeHandler(
 
     /** The volume strategy in use by our device. */
     val volumeStrategy: Int =
-        if (mAudioManager.isVolumeFixed() || Utils.isAutomotive(mContext)) STRATEGY_LOUD
+        if (mAudioManager.isVolumeFixed() || Util.isAutomotive(mContext)) STRATEGY_LOUD
         else STRATEGY_ABSOLUTE
 
     private val isLoud: Boolean

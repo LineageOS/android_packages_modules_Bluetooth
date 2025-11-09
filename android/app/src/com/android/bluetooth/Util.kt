@@ -105,6 +105,11 @@ object Util {
     fun isBleSupported(context: Context) =
         context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)
 
+    /** @return `true` if this Android device is an automotive device, `false` otherwise */
+    @JvmStatic
+    fun isAutomotive(context: Context) =
+        context.packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
+
     /** Returns `true` if the caller holds [NETWORK_SETTINGS] */
     @JvmStatic
     fun checkCallerHasNetworkSettingsPermission(context: Context) =

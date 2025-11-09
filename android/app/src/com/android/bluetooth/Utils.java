@@ -925,13 +925,6 @@ public final class Utils {
     }
 
     /**
-     * @return true if this Android device is an automotive device, false otherwise
-     */
-    public static boolean isAutomotive(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE);
-    }
-
-    /**
      * @return true if this Android device is a watch device, false otherwise
      */
     public static boolean isWatch(Context context) {
