@@ -110,6 +110,11 @@ object Util {
     fun isAutomotive(context: Context) =
         context.packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
 
+    /** @return `true` if this Android device is a watch device, `false` otherwise */
+    @JvmStatic
+    fun isWatch(context: Context) =
+        context.packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH)
+
     /** Returns `true` if the caller holds [NETWORK_SETTINGS] */
     @JvmStatic
     fun checkCallerHasNetworkSettingsPermission(context: Context) =

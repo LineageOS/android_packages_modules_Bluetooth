@@ -925,13 +925,6 @@ public final class Utils {
     }
 
     /**
-     * @return true if this Android device is a watch device, false otherwise
-     */
-    public static boolean isWatch(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WATCH);
-    }
-
-    /**
      * @return true if this Android device is a TV device, false otherwise
      */
     public static boolean isTv(Context context) {
