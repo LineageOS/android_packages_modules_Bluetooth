@@ -23,7 +23,6 @@ import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.Util;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.avrcp.AvrcpTargetService;
@@ -202,7 +201,7 @@ public class Config {
         // This means that the OS will not automatically enable ASHA on these platforms, but these
         // platforms can choose to enable ASHA themselves
         if (BluetoothProperties.isProfileAshaCentralEnabled().isEmpty()) {
-            if (Util.isAutomotive(ctx) || Utils.isTv(ctx) || Util.isWatch(ctx)) {
+            if (Util.isAutomotive(ctx) || Util.isTv(ctx) || Util.isWatch(ctx)) {
                 setProfileEnabled(BluetoothProfile.HEARING_AID, false);
             }
         }

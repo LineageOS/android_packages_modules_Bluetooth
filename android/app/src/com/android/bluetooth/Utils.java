@@ -925,15 +925,6 @@ public final class Utils {
     }
 
     /**
-     * @return true if this Android device is a TV device, false otherwise
-     */
-    public static boolean isTv(Context context) {
-        PackageManager pm = context.getPackageManager();
-        return pm.hasSystemFeature(PackageManager.FEATURE_TELEVISION)
-                || pm.hasSystemFeature(PackageManager.FEATURE_LEANBACK);
-    }
-
-    /**
      * Reverses the elements of {@code array}. This is equivalent to {@code
      * Collections.reverse(Bytes.asList(array))}, but is likely to be more efficient.
      */

@@ -110,6 +110,12 @@ object Util {
     fun isAutomotive(context: Context) =
         context.packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
 
+    /** @return `true` if this Android device is a TV device, `false` otherwise */
+    @JvmStatic
+    fun isTv(context: Context) =
+        context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION) ||
+            context.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+
     /** @return `true` if this Android device is a watch device, `false` otherwise */
     @JvmStatic
     fun isWatch(context: Context) =
