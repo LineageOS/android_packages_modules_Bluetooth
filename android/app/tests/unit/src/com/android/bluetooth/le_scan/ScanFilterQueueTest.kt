@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,324 +14,348 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.le_scan;
+package com.android.bluetooth.le_scan
 
-import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothUuid
+import android.bluetooth.le.ScanFilter
+import android.os.ParcelUuid
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.google.common.primitives.Bytes
+import com.google.common.truth.Truth.assertThat
+import java.util.UUID
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mockito.mock
+import org.mockito.kotlin.whenever
 
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothUuid;
-import android.bluetooth.le.ScanFilter;
-import android.os.ParcelUuid;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.google.common.primitives.Bytes;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.util.UUID;
-
-/** Test cases for {@link ScanFilterQueue}. */
+/** Test cases for [ScanFilterQueue]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class ScanFilterQueueTest {
-    private static final String TEST_UUID_STRING = "00001805-0000-1000-8000-00805f9b34fb";
-    private static final String UNMATCHED_UUID_STRING = "00001815-0000-1000-8000-00805f9b34fb";
-    private static final byte[] TEST_SERVICE_DATA = new byte[] {(byte) 0x18, (byte) 0x0F};
-    private static final byte[] PARTIALLY_MATCHED_SERVICE_DATA =
-            new byte[] {(byte) 0x08, (byte) 0x0F, (byte) 0xAB, (byte) 0xCD};
-    private static final byte[] UNMATCHED_SERVICE_DATA = new byte[] {(byte) 0x08, (byte) 0x0E};
-    private static final byte[] PARTIAL_SERVICE_DATA_MASK = new byte[] {(byte) 0x00, (byte) 0xFF};
-    private static final byte[] FULL_SERVICE_DATA_MASK = new byte[] {(byte) 0xFF, (byte) 0xFF};
-
+@RunWith(AndroidJUnit4::class)
+class ScanFilterQueueTest {
     @Test
-    public void scanFilterQueueParams() {
-        ScanFilterQueue queue = new ScanFilterQueue();
+    fun scanFilterQueueParams() {
+        val queue = ScanFilterQueue()
 
-        String address = "address";
-        byte type = 1;
-        byte[] irk = new byte[] {0x02};
-        queue.addDeviceAddress(address, type, irk);
+        val address = "address"
+        val type: Byte = 1
+        val irk = byteArrayOf(0x02)
+        queue.addDeviceAddress(address, type, irk)
 
-        UUID uuid = UUID.randomUUID();
-        queue.addUuid(uuid);
+        val uuid = UUID.randomUUID()
+        queue.addUuid(uuid)
 
-        UUID uuidMask = UUID.randomUUID();
-        queue.addUuid(uuid, uuidMask);
+        val uuidMask = UUID.randomUUID()
+        queue.addUuid(uuid, uuidMask)
 
-        UUID solicitUuid = UUID.randomUUID();
-        UUID solicitUuidMask = UUID.randomUUID();
-        queue.addSolicitUuid(solicitUuid, solicitUuidMask);
+        val solicitUuid = UUID.randomUUID()
+        val solicitUuidMask = UUID.randomUUID()
+        queue.addSolicitUuid(solicitUuid, solicitUuidMask)
 
-        String name = "name";
-        queue.addName(name);
+        val name = "name"
+        queue.addName(name)
 
-        int company = 2;
-        byte[] data = new byte[] {0x04};
-        queue.addManufacturerData(company, data);
+        val company = 2
+        val data = byteArrayOf(0x04)
+        queue.addManufacturerData(company, data)
 
-        int companyMask = 2;
-        byte[] dataMask = new byte[] {0x05};
-        queue.addManufacturerData(company, companyMask, data, dataMask);
+        val companyMask = 2
+        val dataMask = byteArrayOf(0x05)
+        queue.addManufacturerData(company, companyMask, data, dataMask)
 
-        byte[] serviceData = new byte[] {0x06};
-        byte[] serviceDataMask = new byte[] {0x08};
-        queue.addServiceData(serviceData, serviceDataMask);
+        val serviceData = byteArrayOf(0x06)
+        val serviceDataMask = byteArrayOf(0x08)
+        queue.addServiceData(serviceData, serviceDataMask)
 
-        int adType = 3;
-        byte[] adData = new byte[] {0x10};
-        byte[] adDataMask = new byte[] {0x12};
-        queue.addAdvertisingDataType(adType, adData, adDataMask);
+        val adType = 3
+        val adData = byteArrayOf(0x10)
+        val adDataMask = byteArrayOf(0x12)
+        queue.addAdvertisingDataType(adType, adData, adDataMask)
 
-        ScanFilterQueue.Entry[] entries = queue.toArray();
-        int entriesLength = 9;
-        assertThat(entries.length).isEqualTo(entriesLength);
+        val entries = queue.toArray()
+        val entriesLength = 9
+        assertThat(entries.size).isEqualTo(entriesLength)
 
-        for (ScanFilterQueue.Entry entry : entries) {
-            switch (entry.type) {
-                case ScanFilterQueue.TYPE_DEVICE_ADDRESS -> {
-                    assertThat(entry.address).isEqualTo(address);
-                    assertThat(entry.addr_type).isEqualTo(type);
-                    assertThat(entry.irk).isEqualTo(irk);
+        for (entry in entries) {
+            when (entry.type.toInt()) {
+                ScanFilterQueue.TYPE_DEVICE_ADDRESS -> {
+                    assertThat(entry.address).isEqualTo(address)
+                    assertThat(entry.addr_type).isEqualTo(type)
+                    assertThat(entry.irk).isEqualTo(irk)
                 }
-                case ScanFilterQueue.TYPE_SERVICE_DATA_CHANGED -> {
-                    assertThat(entry).isNotNull();
+                ScanFilterQueue.TYPE_SERVICE_DATA_CHANGED -> assertThat(entry).isNotNull()
+                ScanFilterQueue.TYPE_SERVICE_UUID -> assertThat(entry.uuid).isEqualTo(uuid)
+                ScanFilterQueue.TYPE_SOLICIT_UUID -> {
+                    assertThat(entry.uuid).isEqualTo(solicitUuid)
+                    assertThat(entry.uuid_mask).isEqualTo(solicitUuidMask)
                 }
-                case ScanFilterQueue.TYPE_SERVICE_UUID -> assertThat(entry.uuid).isEqualTo(uuid);
-                case ScanFilterQueue.TYPE_SOLICIT_UUID -> {
-                    assertThat(entry.uuid).isEqualTo(solicitUuid);
-                    assertThat(entry.uuid_mask).isEqualTo(solicitUuidMask);
+                ScanFilterQueue.TYPE_LOCAL_NAME -> assertThat(entry.name).isEqualTo(name)
+                ScanFilterQueue.TYPE_MANUFACTURER_DATA -> {
+                    assertThat(entry.company).isEqualTo(company)
+                    assertThat(entry.data).isEqualTo(data)
                 }
-                case ScanFilterQueue.TYPE_LOCAL_NAME -> assertThat(entry.name).isEqualTo(name);
-                case ScanFilterQueue.TYPE_MANUFACTURER_DATA -> {
-                    assertThat(entry.company).isEqualTo(company);
-                    assertThat(entry.data).isEqualTo(data);
+                ScanFilterQueue.TYPE_SERVICE_DATA -> {
+                    assertThat(entry.data).isEqualTo(serviceData)
+                    assertThat(entry.data_mask).isEqualTo(serviceDataMask)
                 }
-                case ScanFilterQueue.TYPE_SERVICE_DATA -> {
-                    assertThat(entry.data).isEqualTo(serviceData);
-                    assertThat(entry.data_mask).isEqualTo(serviceDataMask);
+                ScanFilterQueue.TYPE_ADVERTISING_DATA_TYPE -> {
+                    assertThat(entry.ad_type).isEqualTo(adType)
+                    assertThat(entry.data).isEqualTo(adData)
+                    assertThat(entry.data_mask).isEqualTo(adDataMask)
                 }
-                case ScanFilterQueue.TYPE_ADVERTISING_DATA_TYPE -> {
-                    assertThat(entry.ad_type).isEqualTo(adType);
-                    assertThat(entry.data).isEqualTo(adData);
-                    assertThat(entry.data_mask).isEqualTo(adDataMask);
-                }
-                default -> {} // Nothing to do
             }
         }
     }
 
     @Test
-    public void popEmpty() {
-        ScanFilterQueue queue = new ScanFilterQueue();
-
-        ScanFilterQueue.Entry entry = queue.pop();
-        assertThat(entry).isNull();
+    fun popEmpty() {
+        val queue = ScanFilterQueue()
+        val entry = queue.pop()
+        assertThat(entry).isNull()
     }
 
     @Test
-    public void popFromQueue() {
-        ScanFilterQueue queue = new ScanFilterQueue();
+    fun popFromQueue() {
+        val queue = ScanFilterQueue()
 
-        byte[] serviceData = new byte[] {0x02};
-        byte[] serviceDataMask = new byte[] {0x04};
-        queue.addServiceData(serviceData, serviceDataMask);
+        val serviceData = byteArrayOf(0x02)
+        val serviceDataMask = byteArrayOf(0x04)
+        queue.addServiceData(serviceData, serviceDataMask)
 
-        ScanFilterQueue.Entry entry = queue.pop();
-        assertThat(entry.data).isEqualTo(serviceData);
-        assertThat(entry.data_mask).isEqualTo(serviceDataMask);
+        val entry = queue.pop()
+        assertThat(entry.data).isEqualTo(serviceData)
+        assertThat(entry.data_mask).isEqualTo(serviceDataMask)
     }
 
     @Test
-    public void checkFeatureSelection() {
-        ScanFilterQueue queue = new ScanFilterQueue();
+    fun checkFeatureSelection() {
+        val queue = ScanFilterQueue()
 
-        byte[] serviceData = new byte[] {0x02};
-        byte[] serviceDataMask = new byte[] {0x04};
-        queue.addServiceData(serviceData, serviceDataMask);
+        val serviceData = byteArrayOf(0x02)
+        val serviceDataMask = byteArrayOf(0x04)
+        queue.addServiceData(serviceData, serviceDataMask)
 
-        int feature = 1 << ScanFilterQueue.TYPE_SERVICE_DATA;
-        assertThat(queue.getFeatureSelection()).isEqualTo(feature);
+        val feature = 1 shl ScanFilterQueue.TYPE_SERVICE_DATA
+        assertThat(queue.getFeatureSelection()).isEqualTo(feature)
     }
 
     @Test
-    public void convertQueueToArray() {
-        ScanFilterQueue queue = new ScanFilterQueue();
+    fun convertQueueToArray() {
+        val queue = ScanFilterQueue()
 
-        byte[] serviceData = new byte[] {0x02};
-        byte[] serviceDataMask = new byte[] {0x04};
-        queue.addServiceData(serviceData, serviceDataMask);
+        val serviceData = byteArrayOf(0x02)
+        val serviceDataMask = byteArrayOf(0x04)
+        queue.addServiceData(serviceData, serviceDataMask)
 
-        ScanFilterQueue.Entry[] entries = queue.toArray();
-        int entriesLength = 1;
-        assertThat(entries.length).isEqualTo(entriesLength);
+        val entries = queue.toArray()
+        val entriesLength = 1
+        assertThat(entries.size).isEqualTo(entriesLength)
 
-        ScanFilterQueue.Entry entry = entries[0];
-        assertThat(entry.data).isEqualTo(serviceData);
-        assertThat(entry.data_mask).isEqualTo(serviceDataMask);
+        val entry = entries[0]
+        assertThat(entry.data).isEqualTo(serviceData)
+        assertThat(entry.data_mask).isEqualTo(serviceDataMask)
     }
 
     @Test
-    public void queueAddScanFilter() {
-        ScanFilterQueue queue = new ScanFilterQueue();
+    fun queueAddScanFilter() {
+        val queue = ScanFilterQueue()
 
-        String name = "name";
-        String deviceAddress = "00:11:22:33:FF:EE";
-        ParcelUuid serviceUuid = ParcelUuid.fromString(UUID.randomUUID().toString());
-        ParcelUuid serviceSolicitationUuid = ParcelUuid.fromString(UUID.randomUUID().toString());
-        int manufacturerId = 0;
-        byte[] manufacturerData = new byte[0];
-        ParcelUuid serviceDataUuid = ParcelUuid.fromString(UUID.randomUUID().toString());
-        byte[] serviceData = new byte[0];
-        int advertisingDataType = 1;
+        val name = "name"
+        val deviceAddress = "00:11:22:33:FF:EE"
+        val serviceUuid = ParcelUuid.fromString(UUID.randomUUID().toString())
+        val serviceSolicitationUuid = ParcelUuid.fromString(UUID.randomUUID().toString())
+        val manufacturerId = 0
+        val manufacturerData = ByteArray(0)
+        val serviceDataUuid = ParcelUuid.fromString(UUID.randomUUID().toString())
+        val serviceData = ByteArray(0)
+        val advertisingDataType = 1
 
-        ScanFilter filter =
-                new ScanFilter.Builder()
-                        .setDeviceName(name)
-                        .setDeviceAddress(deviceAddress)
-                        .setServiceUuid(serviceUuid)
-                        .setServiceSolicitationUuid(serviceSolicitationUuid)
-                        .setManufacturerData(manufacturerId, manufacturerData)
-                        .setServiceData(serviceDataUuid, serviceData)
-                        .setAdvertisingDataType(advertisingDataType)
-                        .build();
-        queue.addScanFilter(filter);
+        val filter =
+            ScanFilter.Builder()
+                .setDeviceName(name)
+                .setDeviceAddress(deviceAddress)
+                .setServiceUuid(serviceUuid)
+                .setServiceSolicitationUuid(serviceSolicitationUuid)
+                .setManufacturerData(manufacturerId, manufacturerData)
+                .setServiceData(serviceDataUuid, serviceData)
+                .setAdvertisingDataType(advertisingDataType)
+                .build()
+        queue.addScanFilter(filter)
 
-        int numOfEntries = 7;
-        assertThat(queue.toArray().length).isEqualTo(numOfEntries);
+        val numOfEntries = 7
+        assertThat(queue.toArray().size).isEqualTo(numOfEntries)
     }
 
     @Test
-    public void addScanFilter_withAddressTypeAndIrk_propagatesToEntry() {
-        // This test verifies that when a ScanFilter with a specific address type and IRK
-        // is added, the ScanFilterQueue correctly creates an Entry with those properties.
-        // This is important for ensuring that address resolution information is correctly
-        // passed down.
-        ScanFilterQueue queue = new ScanFilterQueue();
-        final String deviceAddress = "00:11:22:33:FF:EE";
-        final int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
-        final byte[] irk =
-                new byte[] {
-                    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D,
-                    0x0E, 0x0F, 0x10
-                };
+    fun addScanFilter_withAddressTypeAndIrk_propagatesToEntry() {
+        // This test verifies that when a ScanFilter with a specific address type and IRK is added,
+        // the ScanFilterQueue correctly creates an Entry with those properties. This is important
+        // for ensuring that address resolution information is correctly passed down.
+        val queue = ScanFilterQueue()
+        val deviceAddress = "00:11:22:33:FF:EE"
+        val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
+        val irk =
+            byteArrayOf(
+                0x01,
+                0x02,
+                0x03,
+                0x04,
+                0x05,
+                0x06,
+                0x07,
+                0x08,
+                0x09,
+                0x0A,
+                0x0B,
+                0x0C,
+                0x0D,
+                0x0E,
+                0x0F,
+                0x10,
+            )
 
         // Mock a ScanFilter since creating one with addressType and IRK requires SystemApi.
-        ScanFilter mockFilter = mock(ScanFilter.class);
-        when(mockFilter.getDeviceAddress()).thenReturn(deviceAddress);
-        when(mockFilter.getAddressType()).thenReturn(addressType);
-        when(mockFilter.getIrk()).thenReturn(irk);
+        val mockFilter = mock(ScanFilter::class.java)
+        whenever(mockFilter.deviceAddress).thenReturn(deviceAddress)
+        whenever(mockFilter.addressType).thenReturn(addressType)
+        whenever(mockFilter.irk).thenReturn(irk)
 
         // Add the mocked filter to the queue.
-        queue.addScanFilter(mockFilter);
+        queue.addScanFilter(mockFilter)
 
         // The queue should contain one entry for the device address.
-        ScanFilterQueue.Entry[] entries = queue.toArray();
-        assertThat(entries.length).isEqualTo(1);
+        val entries = queue.toArray()
+        assertThat(entries.size).isEqualTo(1)
 
         // Verify the entry's properties match the mocked filter's properties.
-        ScanFilterQueue.Entry entry = entries[0];
-        assertThat(entry.type).isEqualTo(ScanFilterQueue.TYPE_DEVICE_ADDRESS);
-        assertThat(entry.address).isEqualTo(deviceAddress);
-        assertThat(entry.addr_type).isEqualTo((byte) addressType);
-        assertThat(entry.irk).isEqualTo(irk);
+        val entry = entries[0]
+        assertThat(entry.type).isEqualTo(ScanFilterQueue.TYPE_DEVICE_ADDRESS)
+        assertThat(entry.address).isEqualTo(deviceAddress)
+        assertThat(entry.addr_type).isEqualTo(addressType.toByte())
+        assertThat(entry.irk).isEqualTo(irk)
     }
 
     @Test
-    public void serviceDataFilterNoMask1() {
-        ScanFilter filter =
-                new ScanFilter.Builder()
-                        .setServiceData(ParcelUuid.fromString(TEST_UUID_STRING), TEST_SERVICE_DATA)
-                        .build();
-        testServiceDataFilter(filter, false);
+    fun serviceDataFilterNoMask1() {
+        val filter =
+            ScanFilter.Builder()
+                .setServiceData(ParcelUuid.fromString(TEST_UUID_STRING), TEST_SERVICE_DATA)
+                .build()
+        testServiceDataFilter(filter, false)
     }
 
     @Test
-    public void serviceDataFilterWithFullMask() {
-        ScanFilter filter =
-                new ScanFilter.Builder()
-                        .setServiceData(
-                                ParcelUuid.fromString(TEST_UUID_STRING),
-                                TEST_SERVICE_DATA,
-                                FULL_SERVICE_DATA_MASK)
-                        .build();
-        testServiceDataFilter(filter, false);
+    fun serviceDataFilterWithFullMask() {
+        val filter =
+            ScanFilter.Builder()
+                .setServiceData(
+                    ParcelUuid.fromString(TEST_UUID_STRING),
+                    TEST_SERVICE_DATA,
+                    FULL_SERVICE_DATA_MASK,
+                )
+                .build()
+        testServiceDataFilter(filter, false)
     }
 
     @Test
-    public void serviceDataFilterWithPartialMask() {
-        ScanFilter filter =
-                new ScanFilter.Builder()
-                        .setServiceData(
-                                ParcelUuid.fromString(TEST_UUID_STRING),
-                                TEST_SERVICE_DATA,
-                                PARTIAL_SERVICE_DATA_MASK)
-                        .build();
-        testServiceDataFilter(filter, true);
+    fun serviceDataFilterWithPartialMask() {
+        val filter =
+            ScanFilter.Builder()
+                .setServiceData(
+                    ParcelUuid.fromString(TEST_UUID_STRING),
+                    TEST_SERVICE_DATA,
+                    PARTIAL_SERVICE_DATA_MASK,
+                )
+                .build()
+        testServiceDataFilter(filter, true)
     }
 
-    private static void testServiceDataFilter(
-            ScanFilter filter, boolean partialServiceDataMatchResult) {
-        ScanFilterQueue queue = new ScanFilterQueue();
-        queue.addScanFilter(filter);
-        ScanFilterQueue.Entry entry = queue.pop();
-        assertThat(entry.type).isEqualTo(ScanFilterQueue.TYPE_SERVICE_DATA);
+    private fun testServiceDataFilter(filter: ScanFilter, partialServiceDataMatchResult: Boolean) {
+        val queue = ScanFilterQueue()
+        queue.addScanFilter(filter)
+        val entry = queue.pop()
+        assertThat(entry.type).isEqualTo(ScanFilterQueue.TYPE_SERVICE_DATA)
         assertThat(entry.data)
-                .isEqualTo(
-                        Bytes.concat(
-                                BluetoothUuid.uuidToBytes(ParcelUuid.fromString(TEST_UUID_STRING)),
-                                TEST_SERVICE_DATA));
+            .isEqualTo(
+                Bytes.concat(
+                    BluetoothUuid.uuidToBytes(ParcelUuid.fromString(TEST_UUID_STRING)),
+                    TEST_SERVICE_DATA,
+                )
+            )
         assertThat(
-                        serviceDataMatches(
-                                entry.data,
-                                Bytes.concat(
-                                        BluetoothUuid.uuidToBytes(
-                                                ParcelUuid.fromString(TEST_UUID_STRING)),
-                                        TEST_SERVICE_DATA),
-                                entry.data_mask))
-                .isTrue();
+                serviceDataMatches(
+                    entry.data,
+                    Bytes.concat(
+                        BluetoothUuid.uuidToBytes(ParcelUuid.fromString(TEST_UUID_STRING)),
+                        TEST_SERVICE_DATA,
+                    ),
+                    entry.data_mask,
+                )
+            )
+            .isTrue()
         assertThat(
-                        serviceDataMatches(
-                                entry.data,
-                                Bytes.concat(
-                                        BluetoothUuid.uuidToBytes(
-                                                ParcelUuid.fromString(UNMATCHED_UUID_STRING)),
-                                        TEST_SERVICE_DATA),
-                                entry.data_mask))
-                .isFalse();
+                serviceDataMatches(
+                    entry.data,
+                    Bytes.concat(
+                        BluetoothUuid.uuidToBytes(ParcelUuid.fromString(UNMATCHED_UUID_STRING)),
+                        TEST_SERVICE_DATA,
+                    ),
+                    entry.data_mask,
+                )
+            )
+            .isFalse()
         assertThat(
-                        serviceDataMatches(
-                                entry.data,
-                                Bytes.concat(
-                                        BluetoothUuid.uuidToBytes(
-                                                ParcelUuid.fromString(TEST_UUID_STRING)),
-                                        UNMATCHED_SERVICE_DATA),
-                                entry.data_mask))
-                .isFalse();
+                serviceDataMatches(
+                    entry.data,
+                    Bytes.concat(
+                        BluetoothUuid.uuidToBytes(ParcelUuid.fromString(TEST_UUID_STRING)),
+                        UNMATCHED_SERVICE_DATA,
+                    ),
+                    entry.data_mask,
+                )
+            )
+            .isFalse()
         assertThat(
-                        serviceDataMatches(
-                                entry.data,
-                                Bytes.concat(
-                                        BluetoothUuid.uuidToBytes(
-                                                ParcelUuid.fromString(TEST_UUID_STRING)),
-                                        PARTIALLY_MATCHED_SERVICE_DATA),
-                                entry.data_mask))
-                .isEqualTo(partialServiceDataMatchResult);
+                serviceDataMatches(
+                    entry.data,
+                    Bytes.concat(
+                        BluetoothUuid.uuidToBytes(ParcelUuid.fromString(TEST_UUID_STRING)),
+                        PARTIALLY_MATCHED_SERVICE_DATA,
+                    ),
+                    entry.data_mask,
+                )
+            )
+            .isEqualTo(partialServiceDataMatchResult)
     }
 
-    private static boolean serviceDataMatches(byte[] filterData, byte[] resultData, byte[] mask) {
-        if (filterData.length > resultData.length || filterData.length != mask.length) {
-            return false;
+    private fun serviceDataMatches(
+        filterData: ByteArray,
+        resultData: ByteArray,
+        mask: ByteArray,
+    ): Boolean {
+        if (filterData.size > resultData.size || filterData.size != mask.size) {
+            return false
         }
-        for (int i = 0; i < filterData.length; i++) {
-            if ((filterData[i] & mask[i]) != (resultData[i] & mask[i])) {
-                return false;
+        for (i in filterData.indices) {
+            if (
+                (filterData[i].toInt() and mask[i].toInt()) !=
+                    (resultData[i].toInt() and mask[i].toInt())
+            ) {
+                return false
             }
         }
-        return true;
+        return true
+    }
+
+    companion object {
+        private const val TEST_UUID_STRING = "00001805-0000-1000-8000-00805f9b34fb"
+        private const val UNMATCHED_UUID_STRING = "00001815-0000-1000-8000-00805f9b34fb"
+        private val TEST_SERVICE_DATA = byteArrayOf(0x18.toByte(), 0x0F.toByte())
+        private val PARTIALLY_MATCHED_SERVICE_DATA =
+            byteArrayOf(0x08.toByte(), 0x0F.toByte(), 0xAB.toByte(), 0xCD.toByte())
+        private val UNMATCHED_SERVICE_DATA = byteArrayOf(0x08.toByte(), 0x0E.toByte())
+        private val PARTIAL_SERVICE_DATA_MASK = byteArrayOf(0x00.toByte(), 0xFF.toByte())
+        private val FULL_SERVICE_DATA_MASK = byteArrayOf(0xFF.toByte(), 0xFF.toByte())
     }
 }
