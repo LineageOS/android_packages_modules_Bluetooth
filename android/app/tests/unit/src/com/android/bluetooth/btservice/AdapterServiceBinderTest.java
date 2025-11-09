@@ -234,4 +234,55 @@ public class AdapterServiceBinderTest {
 
         verify(mService).notifyActiveDeviceChangeApplied(mDevice);
     }
+
+    @Test
+    public void connectAllEnabledProfiles_whenServiceNotAvailable_returnsError() {
+        // The service is not available
+        doReturn(false).when(mService).isAvailable();
+
+        // Call the method and verify that it returns an error and doesn't proceed
+        int result = mBinder.connectAllEnabledProfiles(mDevice, mAttributionSource);
+        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
+        verify(mService, never()).connectAllEnabledProfiles(any());
+    }
+
+    @Test
+    public void connectAllEnabledProfiles_whenServiceNotEnabled_returnsError() {
+        // The service is available but not enabled
+        when(mService.isEnabled()).thenReturn(false);
+
+        // Call the method and verify that it returns an error and doesn't proceed
+        int result = mBinder.connectAllEnabledProfiles(mDevice, mAttributionSource);
+        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
+        verify(mService, never()).connectAllEnabledProfiles(any());
+    }
+
+    @Test
+    public void connectAllEnabledProfiles_whenServiceEnabled_callsService() {
+        // The service is available and enabled
+        when(mService.isEnabled()).thenReturn(true);
+
+        // Call the method and verify that the underlying service method is called
+        mBinder.connectAllEnabledProfiles(mDevice, mAttributionSource);
+        verify(mService).connectAllEnabledProfiles(mDevice);
+    }
+
+    @Test
+    public void disconnectAllEnabledProfiles_whenServiceNotAvailable_returnsError() {
+        // The service is not available
+        doReturn(false).when(mService).isAvailable();
+
+        // Call the method and verify that it returns an error and doesn't proceed
+        int result = mBinder.disconnectAllEnabledProfiles(mDevice, mAttributionSource);
+        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
+        verify(mService, never()).disconnectAllEnabledProfiles(any());
+    }
+
+    @Test
+    public void disconnectAllEnabledProfiles_whenServiceAvailable_callsService() {
+        // The service is available
+        // Call the method and verify that the underlying service method is called
+        mBinder.disconnectAllEnabledProfiles(mDevice, mAttributionSource);
+        verify(mService).disconnectAllEnabledProfiles(mDevice);
+    }
 }
