@@ -31,6 +31,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothUtils
 import android.content.AttributionSource
 import android.content.Context
+import android.content.pm.PackageManager
 import android.os.IBinder
 import android.os.RemoteException
 import android.permission.PermissionManager
@@ -93,6 +94,16 @@ object Util {
             BluetoothDevice.TRANSPORT_LE -> "LE"
             else -> "Unknown transport ($transport)"
         }
+
+    /**
+     * Check if BLE is supported by this platform
+     *
+     * @param context current device context
+     * @return `true` if BLE is supported, `false` otherwise
+     */
+    @JvmStatic
+    fun isBleSupported(context: Context) =
+        context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)
 
     /** Returns `true` if the caller holds [NETWORK_SETTINGS] */
     @JvmStatic

@@ -925,16 +925,6 @@ public final class Utils {
     }
 
     /**
-     * Check if BLE is supported by this platform
-     *
-     * @param context current device context
-     * @return true if BLE is supported, false otherwise
-     */
-    public static boolean isBleSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
-    }
-
-    /**
      * @return true if this Android device is an automotive device, false otherwise
      */
     public static boolean isAutomotive(Context context) {

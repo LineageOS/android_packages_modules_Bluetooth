@@ -22,6 +22,7 @@ import android.os.SystemProperties;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
@@ -208,7 +209,7 @@ public class Config {
 
         // Disable ASHA if BLE is not supported on this platform even if the platform enabled ASHA
         // accidentally
-        if (!Utils.isBleSupported(ctx)) {
+        if (!Util.isBleSupported(ctx)) {
             setProfileEnabled(BluetoothProfile.HEARING_AID, false);
         }
 
