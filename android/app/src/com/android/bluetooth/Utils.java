@@ -925,39 +925,6 @@ public final class Utils {
     }
 
     /**
-     * Check if BLE is supported by this platform
-     *
-     * @param context current device context
-     * @return true if BLE is supported, false otherwise
-     */
-    public static boolean isBleSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
-    }
-
-    /**
-     * @return true if this Android device is an automotive device, false otherwise
-     */
-    public static boolean isAutomotive(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE);
-    }
-
-    /**
-     * @return true if this Android device is a watch device, false otherwise
-     */
-    public static boolean isWatch(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WATCH);
-    }
-
-    /**
-     * @return true if this Android device is a TV device, false otherwise
-     */
-    public static boolean isTv(Context context) {
-        PackageManager pm = context.getPackageManager();
-        return pm.hasSystemFeature(PackageManager.FEATURE_TELEVISION)
-                || pm.hasSystemFeature(PackageManager.FEATURE_LEANBACK);
-    }
-
-    /**
      * Reverses the elements of {@code array}. This is equivalent to {@code
      * Collections.reverse(Bytes.asList(array))}, but is likely to be more efficient.
      */

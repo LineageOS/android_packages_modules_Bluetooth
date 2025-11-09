@@ -34,7 +34,7 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.android.bluetooth.R;
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.messages.SystemMessageProto.SystemMessage;
 
@@ -168,7 +168,7 @@ public class NotificationHelperService extends Service {
                             PendingIntent.FLAG_UPDATE_CURRENT,
                             new Intent("android.settings.BLUETOOTH_DASHBOARD_SETTINGS"),
                             PendingIntent.FLAG_IMMUTABLE));
-        } else if (!Utils.isWatch(this)) {
+        } else if (!Util.isWatch(this)) {
             // Do not display url link on watch, as they cannot show webpage
             String helpLinkUrl = getString(R.string.config_apmLearnMoreLink);
             builder.setContentIntent(
