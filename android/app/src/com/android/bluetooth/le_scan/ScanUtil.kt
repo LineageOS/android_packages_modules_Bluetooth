@@ -404,15 +404,7 @@ object ScanUtil {
 
     @JvmStatic
     fun setOpportunisticScanClient(client: ScanClient) {
-        val existingSettings = client.settings
-        client.settings =
-            ScanSettings.Builder()
-                .setScanMode(SCAN_MODE_OPPORTUNISTIC)
-                .setCallbackType(existingSettings.callbackType)
-                .setScanResultType(existingSettings.scanResultType)
-                .setReportDelay(existingSettings.reportDelayMillis)
-                .setNumOfMatches(existingSettings.numOfMatches)
-                .build()
+        client.settings = client.settings.toBuilder().setScanMode(SCAN_MODE_OPPORTUNISTIC).build()
     }
 
     @JvmStatic
@@ -499,6 +491,19 @@ object ScanUtil {
         }
         return true
     }
+
+    fun ScanSettings.toBuilder() =
+        ScanSettings.Builder()
+            .setScanMode(scanMode)
+            .setCallbackType(callbackType)
+            .setScanResultType(scanResultType)
+            .setReportDelay(reportDelayMillis)
+            .setMatchMode(matchMode)
+            .setNumOfMatches(numOfMatches)
+            .setLegacy(legacy)
+            .setPhy(phy)
+            .setRssiThreshold(rssiThreshold)
+            .setScanType(scanType)
 
     @JvmStatic
     fun ScanSettings.toStringShort() =
