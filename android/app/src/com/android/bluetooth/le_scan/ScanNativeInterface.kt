@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,215 +14,228 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.le_scan;
+package com.android.bluetooth.le_scan
 
-import static java.util.Objects.requireNonNull;
+import android.util.Log
+import com.android.bluetooth.profile.NativeInterface
 
-import android.util.Log;
+private const val TAG = ScanUtil.TAG_PREFIX + "ScanNativeInterface"
 
-import com.android.bluetooth.profile.NativeInterface;
+class ScanNativeInterface(nativeCallback: ScanNativeCallback) :
+    NativeInterface<ScanNativeCallback>(nativeCallback) {
 
-public class ScanNativeInterface extends NativeInterface<ScanNativeCallback> {
-    private static final String TAG =
-            ScanUtil.TAG_PREFIX + ScanNativeInterface.class.getSimpleName();
-
-    ScanNativeInterface(ScanNativeCallback nativeCallback) {
-        super(requireNonNull(nativeCallback));
+    fun init() {
+        initializeNative()
     }
 
-    void init() {
-        initializeNative();
+    override fun cleanup() {
+        cleanupNative()
     }
 
-    @Override
-    public void cleanup() {
-        cleanupNative();
+    private external fun initializeNative()
+
+    private external fun cleanupNative()
+
+    /** ************************ Regular scan related native methods ************************* */
+    private external fun registerScannerNative(appUuidLsb: Long, appUuidMsb: Long)
+
+    private external fun unregisterScannerNative(scannerId: Int)
+
+    private external fun scanNative(start: Boolean)
+
+    private external fun setScanParametersNative(
+        clientIf1m: Int,
+        scanInterval1m: Int,
+        scanWindow1m: Int,
+        clientIfCoded: Int,
+        scanIntervalCoded: Int,
+        scanWindowCoded: Int,
+        scanPhy: Int,
+    )
+
+    /** ************************ Filter related native methods ******************************* */
+    private external fun scanFilterAddNative(
+        clientId: Int,
+        entries: Array<ScanFilterQueue.Entry>,
+        filterIndex: Int,
+    )
+
+    private external fun scanFilterParamAddNative(filtValue: FilterParams)
+
+    private external fun scanFilterParamDeleteNative(clientIf: Int, filtIndex: Int)
+
+    private external fun scanFilterClearNative(clientIf: Int, filterIndex: Int)
+
+    private external fun scanFilterEnableNative(clientIf: Int, enable: Boolean)
+
+    /** ************************ MSFT scan related native methods **************************** */
+    private external fun isMsftSupportedNative(): Boolean
+
+    private external fun msftAdvMonitorAddNative(
+        msft_adv_monitor: MsftAdvMonitor.Monitor,
+        msft_adv_monitor_patterns: Array<MsftAdvMonitor.Pattern>,
+        msft_adv_monitor_uuid: MsftAdvMonitor.Uuid,
+        msft_adv_monitor_address: MsftAdvMonitor.Address,
+        filter_index: Int,
+    )
+
+    private external fun msftAdvMonitorRemoveNative(filter_index: Int, monitor_handle: Int)
+
+    private external fun msftAdvMonitorEnableNative(enable: Boolean)
+
+    /** ************************ Batch related native methods ******************************** */
+    private external fun configBatchScanStorageNative(
+        clientIf: Int,
+        maxFullReportsPercent: Int,
+        maxTruncatedReportsPercent: Int,
+        notifyThresholdPercent: Int,
+    )
+
+    private external fun startBatchScanNative(
+        clientIf: Int,
+        scanMode: Int,
+        scanIntervalUnit: Int,
+        scanWindowUnit: Int,
+        addressType: Int,
+        discardRule: Int,
+    )
+
+    private external fun stopBatchScanNative(clientIf: Int)
+
+    private external fun readScanReportsNative(clientIf: Int, scanType: Int)
+
+    fun registerScanner(appUuidLsb: Long, appUuidMsb: Long) {
+        registerScannerNative(appUuidLsb, appUuidMsb)
     }
 
-    private native void initializeNative();
-
-    private native void cleanupNative();
-
-    /************************** Regular scan related native methods **************************/
-    private native void registerScannerNative(long appUuidLsb, long appUuidMsb);
-
-    private native void unregisterScannerNative(int scannerId);
-
-    private native void scanNative(boolean start);
-
-    private native void setScanParametersNative(
-            int clientIf1m,
-            int scanInterval1m,
-            int scanWindow1m,
-            int clientIfCoded,
-            int scanIntervalCoded,
-            int scanWindowCoded,
-            int scanPhy);
-
-    /************************** Filter related native methods ********************************/
-    private native void scanFilterAddNative(
-            int clientId, ScanFilterQueue.Entry[] entries, int filterIndex);
-
-    private native void scanFilterParamAddNative(FilterParams filtValue);
-
-    private native void scanFilterParamDeleteNative(int clientIf, int filtIndex);
-
-    private native void scanFilterClearNative(int clientIf, int filterIndex);
-
-    private native void scanFilterEnableNative(int clientIf, boolean enable);
-
-    /************************** MSFT scan related native methods *****************************/
-    private native boolean isMsftSupportedNative();
-
-    private native void msftAdvMonitorAddNative(
-            MsftAdvMonitor.Monitor msft_adv_monitor,
-            MsftAdvMonitor.Pattern[] msft_adv_monitor_patterns,
-            MsftAdvMonitor.Uuid msft_adv_monitor_uuid,
-            MsftAdvMonitor.Address msft_adv_monitor_address,
-            int filter_index);
-
-    private native void msftAdvMonitorRemoveNative(int filter_index, int monitor_handle);
-
-    private native void msftAdvMonitorEnableNative(boolean enable);
-
-    /************************** Batch related native methods *********************************/
-    private native void configBatchScanStorageNative(
-            int clientIf,
-            int maxFullReportsPercent,
-            int maxTruncatedReportsPercent,
-            int notifyThresholdPercent);
-
-    private native void startBatchScanNative(
-            int clientIf,
-            int scanMode,
-            int scanIntervalUnit,
-            int scanWindowUnit,
-            int addressType,
-            int discardRule);
-
-    private native void stopBatchScanNative(int clientIf);
-
-    private native void readScanReportsNative(int clientIf, int scanType);
-
-    void registerScanner(long appUuidLsb, long appUuidMsb) {
-        registerScannerNative(appUuidLsb, appUuidMsb);
+    fun unregisterScanner(scannerId: Int) {
+        unregisterScannerNative(scannerId)
     }
 
-    void unregisterScanner(int scannerId) {
-        unregisterScannerNative(scannerId);
-    }
-
-    void scan(boolean start, String caller) {
-        Log.d(TAG, "Scan=(" + (start ? "START" : "STOP") + "), caller=(" + caller + ")");
-        scanNative(start);
+    fun scan(start: Boolean, caller: String) {
+        Log.d(TAG, "Scan=${if (start) "START" else "STOP"}, caller=$caller")
+        scanNative(start)
     }
 
     /** Configure BLE scan parameters */
-    void setScanParameters(
-            int clientIf1m,
-            int scanInterval1m,
-            int scanWindow1m,
-            int clientIfCoded,
-            int scanIntervalCoded,
-            int scanWindowCoded,
-            int scanPhy) {
+    fun setScanParameters(
+        clientIf1m: Int,
+        scanInterval1m: Int,
+        scanWindow1m: Int,
+        clientIfCoded: Int,
+        scanIntervalCoded: Int,
+        scanWindowCoded: Int,
+        scanPhy: Int,
+    ) {
         setScanParametersNative(
-                clientIf1m,
-                scanInterval1m,
-                scanWindow1m,
-                clientIfCoded,
-                scanIntervalCoded,
-                scanWindowCoded,
-                scanPhy);
+            clientIf1m,
+            scanInterval1m,
+            scanWindow1m,
+            clientIfCoded,
+            scanIntervalCoded,
+            scanWindowCoded,
+            scanPhy,
+        )
     }
 
     /** Add BLE scan filter */
-    void scanFilterAdd(int clientId, ScanFilterQueue.Entry[] entries, int filterIndex) {
-        scanFilterAddNative(clientId, entries, filterIndex);
+    fun scanFilterAdd(clientId: Int, entries: Array<ScanFilterQueue.Entry>, filterIndex: Int) {
+        scanFilterAddNative(clientId, entries, filterIndex)
     }
 
     /** Add BLE scan filter parameters */
-    void scanFilterParamAdd(FilterParams filtValue) {
-        scanFilterParamAddNative(filtValue);
+    fun scanFilterParamAdd(filtValue: FilterParams) {
+        scanFilterParamAddNative(filtValue)
     }
 
     /** Delete BLE scan filter parameters */
-    void scanFilterParamDelete(int clientIf, int filtIndex) {
-        scanFilterParamDeleteNative(clientIf, filtIndex);
+    fun scanFilterParamDelete(clientIf: Int, filtIndex: Int) {
+        scanFilterParamDeleteNative(clientIf, filtIndex)
     }
 
     /** Clear BLE scan filter */
-    void scanFilterClear(int clientIf, int filterIndex) {
-        scanFilterClearNative(clientIf, filterIndex);
+    fun scanFilterClear(clientIf: Int, filterIndex: Int) {
+        scanFilterClearNative(clientIf, filterIndex)
     }
 
     /** Enable/disable BLE scan filter */
-    void scanFilterEnable(int clientIf, boolean enable) {
-        scanFilterEnableNative(clientIf, enable);
+    fun scanFilterEnable(clientIf: Int, enable: Boolean) {
+        scanFilterEnableNative(clientIf, enable)
     }
 
     /** Check if MSFT HCI extension is supported */
-    boolean isMsftSupported() {
-        return isMsftSupportedNative();
+    fun isMsftSupported(): Boolean {
+        return isMsftSupportedNative()
     }
 
     /** Add a MSFT Advertisement Monitor */
-    void msftAdvMonitorAdd(
-            MsftAdvMonitor.Monitor msft_adv_monitor,
-            MsftAdvMonitor.Pattern[] msft_adv_monitor_patterns,
-            MsftAdvMonitor.Uuid msft_adv_monitor_uuid,
-            MsftAdvMonitor.Address msft_adv_monitor_address,
-            int filter_index) {
+    fun msftAdvMonitorAdd(
+        msft_adv_monitor: MsftAdvMonitor.Monitor,
+        msft_adv_monitor_patterns: Array<MsftAdvMonitor.Pattern>,
+        msft_adv_monitor_uuid: MsftAdvMonitor.Uuid,
+        msft_adv_monitor_address: MsftAdvMonitor.Address,
+        filter_index: Int,
+    ) {
         msftAdvMonitorAddNative(
-                msft_adv_monitor,
-                msft_adv_monitor_patterns,
-                msft_adv_monitor_uuid,
-                msft_adv_monitor_address,
-                filter_index);
+            msft_adv_monitor,
+            msft_adv_monitor_patterns,
+            msft_adv_monitor_uuid,
+            msft_adv_monitor_address,
+            filter_index,
+        )
     }
 
     /** Remove a MSFT Advertisement Monitor */
-    void msftAdvMonitorRemove(int filterIndex, int monitorHandle) {
-        msftAdvMonitorRemoveNative(filterIndex, monitorHandle);
+    fun msftAdvMonitorRemove(filterIndex: Int, monitorHandle: Int) {
+        msftAdvMonitorRemoveNative(filterIndex, monitorHandle)
     }
 
     /** Enable a MSFT Advertisement Monitor */
-    void msftAdvMonitorEnable(boolean enable) {
-        msftAdvMonitorEnableNative(enable);
+    fun msftAdvMonitorEnable(enable: Boolean) {
+        msftAdvMonitorEnableNative(enable)
     }
 
     /** Configure BLE batch scan storage */
-    void configBatchScanStorage(
-            int clientIf,
-            int maxFullReportsPercent,
-            int maxTruncatedReportsPercent,
-            int notifyThresholdPercent) {
+    fun configBatchScanStorage(
+        clientIf: Int,
+        maxFullReportsPercent: Int,
+        maxTruncatedReportsPercent: Int,
+        notifyThresholdPercent: Int,
+    ) {
         configBatchScanStorageNative(
-                clientIf,
-                maxFullReportsPercent,
-                maxTruncatedReportsPercent,
-                notifyThresholdPercent);
+            clientIf,
+            maxFullReportsPercent,
+            maxTruncatedReportsPercent,
+            notifyThresholdPercent,
+        )
     }
 
     /** Enable BLE batch scan with the parameters */
-    void startBatchScan(
-            int clientIf,
-            int scanMode,
-            int scanIntervalUnit,
-            int scanWindowUnit,
-            int addressType,
-            int discardRule) {
+    fun startBatchScan(
+        clientIf: Int,
+        scanMode: Int,
+        scanIntervalUnit: Int,
+        scanWindowUnit: Int,
+        addressType: Int,
+        discardRule: Int,
+    ) {
         startBatchScanNative(
-                clientIf, scanMode, scanIntervalUnit, scanWindowUnit, addressType, discardRule);
+            clientIf,
+            scanMode,
+            scanIntervalUnit,
+            scanWindowUnit,
+            addressType,
+            discardRule,
+        )
     }
 
     /** Disable BLE batch scan */
-    void stopBatchScan(int clientIf) {
-        stopBatchScanNative(clientIf);
+    fun stopBatchScan(clientIf: Int) {
+        stopBatchScanNative(clientIf)
     }
 
     /** Read BLE batch scan reports */
-    void readScanReports(int clientIf, int scanType) {
-        readScanReportsNative(clientIf, scanType);
+    fun readScanReports(clientIf: Int, scanType: Int) {
+        readScanReportsNative(clientIf, scanType)
     }
 }

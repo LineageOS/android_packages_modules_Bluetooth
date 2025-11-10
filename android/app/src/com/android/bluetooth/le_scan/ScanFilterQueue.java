@@ -31,7 +31,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /** Helper class used to manage advertisement package filters. */
-/* package */ class ScanFilterQueue {
+public class ScanFilterQueue {
     @VisibleForTesting static final int TYPE_DEVICE_ADDRESS = 0;
     @VisibleForTesting static final int TYPE_SERVICE_DATA_CHANGED = 1;
     @VisibleForTesting static final int TYPE_SERVICE_UUID = 2;
@@ -48,7 +48,7 @@ import java.util.UUID;
     // Max length is 31 - 3(flags) - 2 (one byte for length and one byte for type).
     private static final int MAX_LEN_PER_FIELD = 26;
 
-    static class Entry {
+    public static class Entry {
         public byte type;
         public String address;
         public byte addr_type;
