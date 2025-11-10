@@ -33,6 +33,7 @@ import android.bluetooth.pairing.utils.IntentReceiver
 import android.bluetooth.pairing.utils.TestUtil
 import android.bluetooth.test_utils.BlockingBluetoothAdapter
 import android.bluetooth.test_utils.EnableBluetoothRule
+import android.bluetooth.toAddressBytes
 import android.bluetooth.toAddressString
 import android.content.Context
 import android.os.ParcelUuid
@@ -938,8 +939,8 @@ class PairingTest {
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
             )
         }
-        // delete keys at  bumble side
-        val address = Utils.addressBytesFromString(adapter.address)
+        // delete keys at bumble side
+        val address = adapter.address.toAddressBytes()
         currentDevice
             .securityStorageBlocking()
             .deleteBond(
@@ -999,8 +1000,8 @@ class PairingTest {
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
             )
         }
-        // delete keys at  bumble side
-        val address = Utils.addressBytesFromString(adapter.address)
+        // delete keys at bumble side
+        val address = adapter.address.toAddressBytes()
         currentDevice
             .securityStorageBlocking()
             .deleteBond(
@@ -1319,9 +1320,7 @@ class PairingTest {
                 .hostBlocking()
                 .connect(
                     ConnectRequest.newBuilder()
-                        .setAddress(
-                            ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
-                        )
+                        .setAddress(ByteString.copyFrom(adapter.address.toAddressBytes()))
                         .build()
                 )
         intentReceiver.verifyReceivedOrdered(
@@ -1361,9 +1360,7 @@ class PairingTest {
                 .connectLE(
                     ConnectLERequest.newBuilder()
                         .setOwnAddressType(OwnAddressType.PUBLIC)
-                        .setPublic(
-                            ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
-                        )
+                        .setPublic(ByteString.copyFrom(adapter.address.toAddressBytes()))
                         .build()
                 )
         intentReceiver.verifyReceivedOrdered(
@@ -1834,9 +1831,7 @@ class PairingTest {
                 .hostBlocking()
                 .connect(
                     ConnectRequest.newBuilder()
-                        .setAddress(
-                            ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
-                        )
+                        .setAddress(ByteString.copyFrom(adapter.address.toAddressBytes()))
                         .build()
                 )
         // Start pairing from Bumble
@@ -1897,9 +1892,7 @@ class PairingTest {
                 .connectLE(
                     ConnectLERequest.newBuilder()
                         .setOwnAddressType(OwnAddressType.PUBLIC)
-                        .setPublic(
-                            ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
-                        )
+                        .setPublic(ByteString.copyFrom(adapter.address.toAddressBytes()))
                         .build()
                 )
         // Start pairing from Bumble

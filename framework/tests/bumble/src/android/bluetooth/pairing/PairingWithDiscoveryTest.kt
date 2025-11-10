@@ -35,6 +35,7 @@ import android.bluetooth.pairing.utils.IntentReceiver
 import android.bluetooth.pairing.utils.TestUtil
 import android.bluetooth.test_utils.BlockingBluetoothAdapter
 import android.bluetooth.test_utils.EnableBluetoothRule
+import android.bluetooth.toAddressBytes
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -356,9 +357,7 @@ class PairingWithDiscoveryTest {
                 .hostBlocking()
                 .connect(
                     HostProto.ConnectRequest.newBuilder()
-                        .apply {
-                            setAddress(copyFrom(Utils.addressBytesFromString(adapter.address)))
-                        }
+                        .setAddress(copyFrom(adapter.address.toAddressBytes()))
                         .build()
                 )
         assertThat(conn.hasConnection()).isTrue()
@@ -375,9 +374,7 @@ class PairingWithDiscoveryTest {
         bumble
             .hostBlocking()
             .disconnect(
-                HostProto.DisconnectRequest.newBuilder()
-                    .apply { setConnection(conn.connection) }
-                    .build()
+                HostProto.DisconnectRequest.newBuilder().setConnection(conn.connection).build()
             )
 
         // Verify ACL disconnection
@@ -989,7 +986,7 @@ class PairingWithDiscoveryTest {
                         setConnectable(true)
                         setOwnAddressType(OwnAddressType.RESOLVABLE_OR_RANDOM)
                         setData(dataTypeBuilder.build())
-                        setRandomAddress(copyFrom(Utils.addressBytesFromString(rpa)))
+                        setRandomAddress(copyFrom(rpa.toAddressBytes()))
                     }
                     .build()
             )

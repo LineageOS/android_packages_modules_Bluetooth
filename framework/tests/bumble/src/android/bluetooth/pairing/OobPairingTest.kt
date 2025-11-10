@@ -26,6 +26,7 @@ import android.bluetooth.Utils
 import android.bluetooth.cts.EnableBluetoothRule
 import android.bluetooth.pairing.utils.IntentReceiver
 import android.bluetooth.pairing.utils.TestUtil
+import android.bluetooth.toAddressBytes
 import android.bluetooth.toAddressString
 import android.content.Context
 import android.util.Log
@@ -285,7 +286,7 @@ class OobPairingTest {
             remoteOobData.oob
                 .substring(RANDOMIZER_START_POSITION, RANDOMIZER_END_POSITION)
                 .toByteArray()
-        val address = Utils.addressBytesFromString(Utils.BUMBLE_RANDOM_ADDRESS)
+        val address = Utils.BUMBLE_RANDOM_ADDRESS.toAddressBytes()
         val addressType = byteArrayOf(BluetoothDevice.ADDRESS_TYPE_RANDOM.toByte())
 
         return OobData.LeBuilder(

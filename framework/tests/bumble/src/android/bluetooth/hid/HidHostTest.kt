@@ -44,9 +44,9 @@ import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.bluetooth.BluetoothProfile.STATE_DISCONNECTING
 import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.PandoraDevice
-import android.bluetooth.Utils
 import android.bluetooth.VirtualOnly
 import android.bluetooth.cts.EnableBluetoothRule
+import android.bluetooth.toAddressBytes
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -421,7 +421,7 @@ class HidHostTest {
         // Remove the bond on the Bumble device as well.
         // Not doing so will cause authentication failures because of the
         // incorrect link key.
-        val localAddress = ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
+        val localAddress = ByteString.copyFrom(adapter.address.toAddressBytes())
         bumble
             .securityStorageBlocking()
             .deleteBond(
