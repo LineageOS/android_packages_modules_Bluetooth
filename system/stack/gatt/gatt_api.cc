@@ -788,7 +788,7 @@ tGATT_STATUS GATTC_ConfigureMTU(tCONN_ID conn_id, uint16_t mtu) {
             mtu);
 
   auto result = attp_send_cl_msg(*p_clcb->p_tcb, p_clcb, GATT_REQ_MTU, &gatt_cl_msg);
-  if (result == GATT_SUCCESS) {
+  if (result == GATT_SUCCESS || result == GATT_CMD_STARTED) {
     p_clcb->p_tcb->pending_user_mtu_exchange_value = mtu;
   }
   return result;
