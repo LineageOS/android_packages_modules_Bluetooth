@@ -21,6 +21,7 @@ import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import static android.bluetooth.BluetoothUtils.enforcePermissionInFramework;
 
 import static java.util.Objects.requireNonNull;
 
@@ -44,7 +45,6 @@ import android.compat.annotation.EnabledSince;
 import android.content.AttributionSource;
 import android.content.Context;
 import android.os.IBinder;
-import android.os.Process;
 import android.os.RemoteException;
 import android.util.CloseGuard;
 import android.util.Log;
@@ -787,14 +787,7 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public void registerCallback(
             @NonNull @CallbackExecutor Executor executor, @NonNull Callback callback) {
-        // Enforcing permission in the framework is useless from security point of view.
-        // This is being done to help normal app developer to catch the missing permission, since
-        // the call to the service is oneway and the SecurityException will just be logged
-        final int pid = Process.myPid();
-        final int uid = Process.myUid();
-        mContext.enforcePermission(BLUETOOTH_CONNECT, pid, uid, null);
-        mContext.enforcePermission(BLUETOOTH_PRIVILEGED, pid, uid, null);
-
+        enforcePermissionInFramework(mContext, BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
         mCallbackWrapper.registerCallback(getService(), callback, executor);
     }
 
@@ -815,14 +808,7 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public void unregisterCallback(@NonNull Callback callback) {
-        // Enforcing permission in the framework is useless from security point of view.
-        // This is being done to help normal app developer to catch the missing permission, since
-        // the call to the service is oneway and the SecurityException will just be logged
-        final int pid = Process.myPid();
-        final int uid = Process.myUid();
-        mContext.enforcePermission(BLUETOOTH_CONNECT, pid, uid, null);
-        mContext.enforcePermission(BLUETOOTH_PRIVILEGED, pid, uid, null);
-
+        enforcePermissionInFramework(mContext, BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
         mCallbackWrapper.unregisterCallback(getService(), callback);
     }
 
