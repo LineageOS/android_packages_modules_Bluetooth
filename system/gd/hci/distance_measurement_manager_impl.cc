@@ -119,6 +119,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
       ranging_header_.ranging_counter_ = counter;
       ranging_header_.configuration_id_ = configuration_id;
       ranging_header_.selected_tx_power_ = selected_tx_power;
+      // Updated to 'Previously used' per Erratum 26610; kept original logic for backward
+      // compatibility
       ranging_header_.antenna_paths_mask_ = 0;
       for (uint8_t i = 0; i < num_antenna_paths; i++) {
         ranging_header_.antenna_paths_mask_ |= (1 << i);
@@ -2019,12 +2021,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
       return;
     }
 
-    uint8_t num_antenna_paths = 0;
-    for (uint8_t i = 0; i < 4; i++) {
-      if ((ranging_header.antenna_paths_mask_ & (1 << i)) != 0) {
-        num_antenna_paths++;
-      }
-    }
+    uint8_t num_antenna_paths = procedure_data->num_antenna_paths;
 
     // Get role of the remote device
     CsRole remote_role = cs_requester_trackers_[connection_handle].role == CsRole::INITIATOR
