@@ -723,7 +723,8 @@ public final class ScanFilter implements Parcelable {
                 + (", mAdvertisingDataType=" + mAdvertisingDataType)
                 + (", mAdvertisingData=" + Arrays.toString(mAdvertisingData))
                 + (", mAdvertisingDataMask=" + Arrays.toString(mAdvertisingDataMask))
-                + (", mTransportBlockFilter=" + mTransportBlockFilter + "]");
+                + (", mTransportBlockFilter=" + mTransportBlockFilter)
+                + (", mIrk=" + (mIrk == null ? 0 : 1) + "]");
     }
 
     @Override
