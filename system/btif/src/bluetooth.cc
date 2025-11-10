@@ -1395,13 +1395,16 @@ void invoke_oob_data_request_cb(tBT_TRANSPORT t, bool valid, Octet16 c, Octet16 
   }
 }
 
-void invoke_bond_state_changed_cb(bt_status_t status, RawAddress bd_addr, bt_bond_state_t state,
+void invoke_bond_state_changed_cb(bt_status_t status, RawAddress bd_addr, tBT_TRANSPORT transport,
+                                  bt_bond_state_t state, PairingType pairing_type,
                                   int fail_reason) {
   do_in_jni_thread(base::BindOnce(
-          [](bt_status_t status, RawAddress bd_addr, bt_bond_state_t state, int fail_reason) {
-            HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, status, &bd_addr, state, fail_reason);
+          [](bt_status_t status, RawAddress bd_addr, tBT_TRANSPORT transport, bt_bond_state_t state,
+             PairingType pairing_type, int fail_reason) {
+            HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, status, &bd_addr, transport, state,
+                      pairing_type, fail_reason);
           },
-          status, bd_addr, state, fail_reason));
+          status, bd_addr, transport, state, pairing_type, fail_reason));
 }
 
 void invoke_address_consolidate_cb(RawAddress main_bd_addr, RawAddress secondary_bd_addr) {

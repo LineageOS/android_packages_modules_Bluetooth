@@ -70,8 +70,24 @@ class AdapterNativeCallback(
         bondStateMachine?.pinRequestCallback(address, name, cod, min16Digits, pairingAlgorithm)
     }
 
-    fun bondStateChangeCallback(status: Int, address: ByteArray, newState: Int, hciReason: Int) {
-        bondStateMachine?.bondStateChangeCallback(status, address, newState, hciReason)
+    fun bondStateChangeCallback(
+        status: Int,
+        address: ByteArray,
+        transport: Int,
+        newState: Int,
+        pairingAlgorithm: Int,
+        pairingVariant: Int,
+        hciReason: Int,
+    ) {
+        bondStateMachine?.bondStateChangeCallback(
+            status,
+            address,
+            transport,
+            newState,
+            pairingAlgorithm,
+            pairingVariant,
+            hciReason,
+        )
     }
 
     fun addressConsolidateCallback(mainAddress: ByteArray, secondaryAddress: ByteArray) {

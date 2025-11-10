@@ -394,6 +394,11 @@ public class RemoteDevices {
         private BluetoothSinkAudioPolicy mAudioPolicy;
         private Optional<Integer> mLastBondLossReason;
 
+        private record BondStatus(int pairingAlgorithm, int pairingVariant) {}
+
+        private BondStatus mBredrBond;
+        private BondStatus mLeBond;
+
         static class LinkState {
             private final int mConnectionHandle;
             private EncryptionStatus mEncryptionStatus;
@@ -555,6 +560,30 @@ public class RemoteDevices {
                     default ->
                             errorLog("setDisconnected(): unexpected transport value " + transport);
                 }
+            }
+        }
+
+        void setBondStatus(int transport, int pairingAlgorithm, int pairingVariant) {
+            synchronized (mObject) {
+                switch (transport) {
+                    case TRANSPORT_BREDR ->
+                            mBredrBond = new BondStatus(pairingAlgorithm, pairingVariant);
+                    case TRANSPORT_LE -> mLeBond = new BondStatus(pairingAlgorithm, pairingVariant);
+                    default -> errorLog("setBondStatus(): unexpected transport value " + transport);
+                }
+            }
+        }
+
+        BondStatus getBondStatus(int transport) {
+            synchronized (mObject) {
+                return switch (transport) {
+                    case TRANSPORT_BREDR -> mBredrBond;
+                    case TRANSPORT_LE -> mLeBond;
+                    default -> {
+                        errorLog("getBondStatus(): unexpected transport value " + transport);
+                        yield null;
+                    }
+                };
             }
         }
 
@@ -1794,11 +1823,33 @@ public class RemoteDevices {
         }
     }
 
-    void onBondStateChange(BluetoothDevice device, int newState) {
+    void onBondStateChange(
+            BluetoothDevice device,
+            int transport,
+            int newState,
+            int pairingAlgorithm,
+            int pairingVariant) {
         String address = device.getAddress();
 
         if (newState == BluetoothDevice.BOND_NONE) {
             removeDeviceProperties(address);
+        } else if (newState == BluetoothDevice.BOND_BONDED) {
+            Log.i(
+                    TAG,
+                    "onBondStateChange: device="
+                            + device
+                            + " newState="
+                            + newState
+                            + " transport="
+                            + transport
+                            + " pairingAlgorithm="
+                            + pairingAlgorithm
+                            + " pairingVariant="
+                            + pairingVariant);
+            DeviceProperties deviceProperties = getDeviceProperties(device);
+            if (deviceProperties != null) {
+                deviceProperties.setBondStatus(transport, pairingAlgorithm, pairingVariant);
+            }
         }
     }
 
@@ -2399,6 +2450,9 @@ public class RemoteDevices {
                             : "XX:XX:XX:XX:XX:XX";
             int identityAddressType = deviceProperties.getIdentityAddress().getAddressType();
 
+            DeviceProperties.BondStatus bredrBondStatus =
+                    deviceProperties.getBondStatus(TRANSPORT_BREDR);
+            DeviceProperties.BondStatus leBondStatus = deviceProperties.getBondStatus(TRANSPORT_LE);
             boolean connectedBrEdr =
                     deviceProperties.getConnectionHandle(TRANSPORT_BREDR) != BluetoothDevice.ERROR;
             boolean connectedLe =
@@ -2419,6 +2473,10 @@ public class RemoteDevices {
                     .append(Util.deviceTypeToString(deviceProperties.getDeviceType()))
                     .append("] [0x")
                     .append(String.format("%06X", deviceProperties.getBluetoothClass()))
+                    .append("] [Pairing Algorithm BR/EDR: ")
+                    .append(bredrBondStatus == null ? "N/A" : bredrBondStatus.pairingAlgorithm)
+                    .append(" LE: ")
+                    .append(leBondStatus == null ? "N/A" : leBondStatus.pairingAlgorithm)
                     .append("] [ACL BR/EDR:")
                     .append(connectedBrEdr ? "Y" : "N")
                     .append(" LE:")
