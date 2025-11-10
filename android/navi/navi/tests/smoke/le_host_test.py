@@ -19,6 +19,7 @@ import itertools
 import uuid
 
 from bumble import core
+from bumble import data_types
 from bumble import device
 from bumble import hci
 from mobly import test_runner
@@ -38,6 +39,7 @@ _AdvertisingData = core.AdvertisingData
 
 class _AdvertisingVariant(enum.Enum):
     LEGACY_NO_ADV_DATA = enum.auto()
+    LEGACY_CCCDK_SERVICE_UUID_AND_DATA = enum.auto()
     EXTENDED_ADV_DATA_1_BYTES = enum.auto()
     EXTENDED_ADV_DATA_200_BYTES = enum.auto()
 
@@ -83,7 +85,7 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
             gatt_client = await self.dut.bl4a.connect_gatt_client(
                 address=ref_address,
                 transport=android_constants.Transport.LE,
-                address_type=ref_address_type,
+                address_type=android_constants.AddressTypeStatus(ref_address_type.value),
             )
             await dut_cb.wait_for_event(event=bl4a_api.AclConnected(
                 address=ref_address, transport=android_constants.Transport.LE),)
@@ -134,6 +136,7 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
 
     @navi_test_base.parameterized(
         _AdvertisingVariant.LEGACY_NO_ADV_DATA,
+        _AdvertisingVariant.LEGACY_CCCDK_SERVICE_UUID_AND_DATA,
         _AdvertisingVariant.EXTENDED_ADV_DATA_1_BYTES,
         _AdvertisingVariant.EXTENDED_ADV_DATA_200_BYTES,
     )
@@ -148,6 +151,10 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
     Args:
       ref_advertising_variant: advertising variant of REF device.
     """
+        scan_filter = bl4a_api.ScanFilter(
+            device=self.ref.address,
+            address_type=android_constants.AddressTypeStatus.PUBLIC,
+        )
         match ref_advertising_variant:
             case _AdvertisingVariant.LEGACY_NO_ADV_DATA:
                 advertising_data = b""
@@ -162,6 +169,22 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
             case _AdvertisingVariant.EXTENDED_ADV_DATA_200_BYTES:
                 advertising_data = bytes(200)
                 advertising_properties = device.AdvertisingEventProperties(is_connectable=True,)
+            case _AdvertisingVariant.LEGACY_CCCDK_SERVICE_UUID_AND_DATA:
+                advertising_data = bytes(
+                    core.AdvertisingData([
+                        data_types.CompleteListOf16BitServiceUUIDs([core.UUID("FFF5")]),
+                        data_types.ServiceData128BitUUID(
+                            core.UUID("5810bbc0-b499-11e9-a2a3-2a2ae2dbcce4"),
+                            bytes.fromhex("01") + bytes.fromhex("0002"),
+                        ),
+                    ]))
+                advertising_properties = device.AdvertisingEventProperties(
+                    is_connectable=True,
+                    is_scannable=True,
+                    is_legacy=True,
+                )
+                scan_filter = bl4a_api.ScanFilter(
+                    service_uuids="0000fff5-0000-1000-8000-00805f9b34fb")
             case _:
                 self.fail(f"Invalid advertising variant {ref_advertising_variant}.")
 
@@ -178,10 +201,7 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
         # [DUT] Start scanning.
         with self.dut.bl4a.start_scanning(
                 scan_settings=bl4a_api.ScanSettings(legacy=False,),
-                scan_filter=bl4a_api.ScanFilter(
-                    device=self.ref.address,
-                    address_type=android_constants.AddressTypeStatus.PUBLIC,
-                ),
+                scan_filter=scan_filter,
         ) as scan_cb:
             # [DUT] Wait for advertising report(scan result) from REF.
             event = await scan_cb.wait_for_event(bl4a_api.ScanResult)
@@ -326,7 +346,8 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
     """
         with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_cb:
 
-            await self.ref.device.set_scan_enable(inquiry_scan_enabled=0, page_scan_enabled=0)
+            await self.ref.device.set_scan_enable(inquiry_scan_enabled=False,
+                                                  page_scan_enabled=False)
             # [REF] Start advertising.
             await self.ref.device.start_advertising(
                 own_address_type=_OwnAddressType.PUBLIC,
@@ -411,6 +432,39 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
             address_type=identity_address_type,
             transport=android_constants.Transport.LE,
         )
+
+    async def test_scan_with_identify_address_and_irk(self) -> None:
+        """Tests that DUT can scan with identify address and IRK.
+
+    Test steps:
+      1. Generate a static address.
+      2. Start advertising on REF with RPA.
+      3. Start scanning on DUT with static address and REF's IRK.
+      4. Check that DUT can receive scan result from REF.
+    """
+        target_address = hci.Address.generate_static_address().to_string()
+        self.logger.info("[REF] Start advertising.")
+        async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
+            await self.ref.device.start_advertising(
+                advertising_type=device.AdvertisingType.UNDIRECTED_CONNECTABLE_SCANNABLE,
+                own_address_type=hci.OwnAddressType.RESOLVABLE_OR_RANDOM,
+            )
+        self.logger.info("[DUT] Start scanning for REF with IRK.")
+        with self.dut.bl4a.start_scanning(
+                scan_settings=bl4a_api.ScanSettings(
+                    scan_mode=android_constants.BleScanMode.LOW_LATENCY,
+                    callback_type=android_constants.BleScanCallbackType.ALL_MATCHES,
+                    match_mode=android_constants.BleScanMatchMode.STICKY,
+                ),
+                scan_filter=bl4a_api.ScanFilter(
+                    device=target_address,
+                    address_type=android_constants.AddressTypeStatus.RANDOM,
+                    irk=self.ref.device.irk,
+                ),
+        ) as scan_cb:
+            # [DUT] Wait for advertising report(scan result) from REF.
+            event = await scan_cb.wait_for_event(bl4a_api.ScanResult)
+            self.assertEqual(event.address, target_address)
 
 
 if __name__ == "__main__":

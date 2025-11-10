@@ -140,7 +140,7 @@ public class McpService extends ProfileService {
             return authorization;
         }
 
-        final var leAudio = mAdapterService.getLeAudioService();
+        final var leAudio = getAdapterService().getLeAudioService();
         if (leAudio.isEmpty()) {
             Log.e(TAG, "MCS access not permitted. LeAudioService not available");
             return BluetoothDevice.ACCESS_UNKNOWN;

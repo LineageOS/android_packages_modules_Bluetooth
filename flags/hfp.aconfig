@@ -185,3 +185,11 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "deprecate_connect_audio"
+    namespace: "bluetooth"
+    is_exported: true
+    description: "Deprecate methods that will not be used for Audio managed by Sco"
+    bug: "456541678"
+}

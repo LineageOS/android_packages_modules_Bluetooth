@@ -23,6 +23,7 @@ import android.os.Looper
 import android.os.UserHandle
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.util.TimeProvider
+import com.android.server.bluetooth.airplane.initialize as initializeAirplaneMode
 import com.android.server.bluetooth.satellite.initialize as initializeSatelliteMode
 import java.io.FileDescriptor
 import java.io.PrintWriter
@@ -55,6 +56,7 @@ class BluetoothSupervisor(
                 TimeProvider.systemClock,
             )
 
+        initializeAirplaneMode(looper, context.contentResolver, this::onAirplaneModeChanged)
         initializeSatelliteMode(looper, context.contentResolver, this::onSatelliteModeChanged)
         Log.i(TAG, "Created BluetoothSupervisor")
     }
@@ -62,6 +64,15 @@ class BluetoothSupervisor(
     fun onBluetoothDisallowed() {
         enforceCorrectThread()
         bms.onBluetoothDisallowed()
+    }
+
+    fun onAirplaneModeChanged(isAirplaneModeOn: Boolean) {
+        enforceCorrectThread()
+        if (!mInitialized) {
+            Log.i(TAG, "onAirplaneModeChanged before initialization - skipping")
+            return
+        }
+        bms.airplaneModeController.onAirplaneModeChanged(isAirplaneModeOn)
     }
 
     fun onSatelliteModeChanged(isSatelliteModeOn: Boolean) {

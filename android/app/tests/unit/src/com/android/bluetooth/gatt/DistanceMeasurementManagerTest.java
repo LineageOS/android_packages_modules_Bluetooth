@@ -72,6 +72,7 @@ public class DistanceMeasurementManagerTest {
 
     @Mock private DistanceMeasurementNativeInterface mNativeInterface;
     @Mock private AdapterService mAdapterService;
+    @Mock private GattService mGattService;
     @Mock private PackageManager mPackageManager;
     @Mock private IDistanceMeasurementCallback mCallback;
 
@@ -98,15 +99,15 @@ public class DistanceMeasurementManagerTest {
 
         mHandlerThread = new HandlerThread("DistanceMeasurementManagerTest");
         mHandlerThread.start();
+        var looper = mHandlerThread.getLooper();
         mTestLooperManager =
-                InstrumentationRegistry.getInstrumentation()
-                        .acquireLooperManager(mHandlerThread.getLooper());
+                InstrumentationRegistry.getInstrumentation().acquireLooperManager(looper);
 
         MetricsLogger.setInstanceForTesting(mMockMetricsLogger);
 
         mDistanceMeasurementManager =
                 new DistanceMeasurementManager(
-                        mAdapterService, mNativeInterface, mHandlerThread.getLooper());
+                        mAdapterService, mGattService, mNativeInterface, looper);
         Message msg = mTestLooperManager.next();
         mTestLooperManager.execute(msg);
         mUuid = UUID.randomUUID();

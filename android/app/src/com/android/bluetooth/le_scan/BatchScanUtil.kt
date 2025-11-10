@@ -34,7 +34,7 @@ import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_WINDOW_MS
 import com.android.bluetooth.util.NumberUtils
 import java.util.concurrent.TimeUnit
 
-private const val TAG = "BatchScanUtil"
+private const val TAG = ScanUtil.TAG_PREFIX + "BatchScanUtil"
 
 data class BatchScanParams(
     val scanMode: Int,
@@ -248,5 +248,22 @@ object BatchScanUtil {
         val timestampUnit = NumberUtils.littleEndianByteArrayToInt(data).toLong()
         // Timestamp is in every 50 ms.
         return TimeUnit.MILLISECONDS.toNanos(timestampUnit * 50)
+    }
+
+    @JvmStatic
+    fun permittedResults(
+        adapterService: AdapterService,
+        client: ScanClient,
+        results: Set<ScanResult>,
+    ): List<ScanResult> {
+        if (ScanUtil.hasScanResultPermission(adapterService, client)) {
+            return results.toList()
+        }
+
+        return results.filter { result ->
+            client.associatedDevices.any { associatedDevice ->
+                associatedDevice.equals(result.device.address, ignoreCase = true)
+            }
+        }
     }
 }

@@ -18,6 +18,7 @@ package com.android.bluetooth.le_scan;
 
 import static com.android.bluetooth.Utils.callbackToApp;
 import static com.android.bluetooth.Utils.checkCallerTargetSdk;
+import static com.android.bluetooth.le_scan.BatchScanUtil.permittedResults;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_TRUNCATED;
 
 import static java.util.Objects.requireNonNull;
@@ -56,6 +57,7 @@ import android.os.WorkSource;
 import android.text.format.DateUtils;
 import android.util.Log;
 
+import com.android.bluetooth.ActionOnDeathRecipient;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
@@ -84,7 +86,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class ScanController {
-    private static final String TAG = ScanController.class.getSimpleName();
+    private static final String TAG = ScanUtil.TAG_PREFIX + ScanController.class.getSimpleName();
 
     private static final long RUN_SYNC_WAIT_TIME_MS = 2000L;
 
@@ -517,7 +519,7 @@ public class ScanController {
             }
 
             try {
-                app.getAppScanStats().addResults(client.getScannerId());
+                app.getAppScanStats().addResults(client.getScannerId(), 1);
                 if (app.getCallback() != null) {
                     app.getCallback().onScanResult(result);
                 } else {
@@ -598,7 +600,9 @@ public class ScanController {
         // If app is callback based, setup a death recipient. App will initiate the start.
         // Otherwise, if PendingIntent based, start the scan directly.
         if (scannerApp.getCallback() != null) {
-            scannerApp.linkToDeath(new ScannerDeathRecipient(scannerId, scannerApp.getName()));
+            var message = "Unregister " + scannerId + " for " + scannerApp;
+            Runnable onDeathAction = () -> doOnScanThread(() -> handleDeadScanClient(scannerId));
+            scannerApp.linkToDeath(new ActionOnDeathRecipient(TAG, message, onDeathAction));
             if (Flags.scanRegisterAndStart()) {
                 if (scannerApp.isInternal()) {
                     startScanInternal(scannerId, scannerApp.getSettings(), scannerApp.getFilters());
@@ -613,22 +617,6 @@ public class ScanController {
         } else {
             continuePiStartScan(scannerId, scannerApp);
         }
-    }
-
-    private List<ScanResult> permittedResults(final ScanClient client, Set<ScanResult> results) {
-        if (ScanUtil.hasScanResultPermission(mAdapterService, client)) {
-            return new ArrayList<>(results);
-        }
-
-        List<ScanResult> permittedResults = new ArrayList<>();
-        for (ScanResult scanResult : results) {
-            for (String associatedDevice : client.getAssociatedDevices()) {
-                if (associatedDevice.equalsIgnoreCase(scanResult.getDevice().getAddress())) {
-                    permittedResults.add(scanResult);
-                }
-            }
-        }
-        return permittedResults;
     }
 
     // Check if a scan record matches a specific filters.
@@ -731,8 +719,7 @@ public class ScanController {
                 return;
             }
 
-            List<ScanResult> permittedResults = permittedResults(client, results);
-
+            List<ScanResult> permittedResults = permittedResults(mAdapterService, client, results);
             if (client.getHasDisavowedLocation()) {
                 permittedResults.removeIf(mLocationDenylistPredicate);
             }
@@ -772,8 +759,7 @@ public class ScanController {
             return;
         }
 
-        List<ScanResult> permittedResults = permittedResults(client, allResults);
-
+        List<ScanResult> permittedResults = permittedResults(mAdapterService, client, allResults);
         if (client.getFilters().isEmpty()) {
             sendBatchScanResults(app, client, permittedResults);
             return;
@@ -972,7 +958,7 @@ public class ScanController {
         var appScanStats = mScannerMap.getAppScanStatsByUid(uid);
         if (appScanStats != null
                 && appScanStats.isScanningTooFrequently()
-                && !Utils.checkCallerHasPrivilegedPermission(mAdapterService)) {
+                && !Util.checkCallerHasPrivilegedPermission(mAdapterService)) {
             Log.e(TAG, "registerScanner(): " + appScanStats + " is scanning too frequently");
             try {
                 callback.onScannerRegistered(ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY, -1);
@@ -995,7 +981,7 @@ public class ScanController {
         var appScanStats = mScannerMap.getAppScanStatsByUid(uid);
         if (appScanStats != null
                 && appScanStats.isScanningTooFrequently()
-                && !Utils.checkCallerHasPrivilegedPermission(mAdapterService)) {
+                && !Util.checkCallerHasPrivilegedPermission(mAdapterService)) {
             Log.e(TAG, "registerAndStartScan(): " + appScanStats + " is scanning too frequently");
             try {
                 callback.onScannerRegistered(ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY, -1);
@@ -1022,7 +1008,7 @@ public class ScanController {
                 ("registerScanner(): uid=" + uid + ", pid=" + uid + ", ")
                         + ("app=" + appName + ", UUID=" + uuid));
         mScannerMap.addWithCallback(
-                uid, pid, appName, uuid, source, workSource, callback, mAdapterService);
+                uid, pid, appName, uuid, source, workSource, callback, mAdapterService, false);
         mScanManager.registerScanner(uuid);
     }
 
@@ -1051,8 +1037,8 @@ public class ScanController {
         Log.d(
                 TAG,
                 ("registerAndStartScan(): uid=" + uid + ", pid=" + uid + ", app=" + appName)
-                        + (", UUID=" + uuid + ", settings=" + settings + ", filters=" + filters)
-                        + (", isInternal=" + isInternal));
+                        + (", UUID=" + uuid + ", settings=" + ScanUtil.toStringShort(settings))
+                        + (", filters=" + filters + ", isInternal=" + isInternal));
         mScannerMap.addWithCallback(
                 uid,
                 pid,
@@ -1100,6 +1086,7 @@ public class ScanController {
         return Collections.emptyList();
     }
 
+    // TODO(b/455057044) Make private on cleanup
     void startScan(
             int scannerId,
             ScanSettings settings,
@@ -1110,32 +1097,36 @@ public class ScanController {
         String callingPackage = source.getPackageName();
         settings = BatchScanUtil.enforceReportDelayFloor(settings);
         final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
-        final ScanClient scanClient =
-                new ScanClient(uid, scannerId, settings, filters, Binder.getCallingUserHandle());
         mAppOps.checkPackage(uid, callingPackage);
-        scanClient.setEligibleForSanitizedExposureNotification(
-                callingPackage.equals(mExposureNotificationPackage));
-        scanClient.setHasDisavowedLocation(
-                Utils.hasDisavowedLocationForScan(mAdapterService, source, mTestModeEnabled));
+        var hasDisavowedLocation =
+                Utils.hasDisavowedLocationForScan(mAdapterService, source, mTestModeEnabled);
         var isQApp = checkCallerTargetSdk(mAdapterService, callingPackage, Build.VERSION_CODES.Q);
-        if (!scanClient.getHasDisavowedLocation()) {
+        var userHandle = Binder.getCallingUserHandle();
+        var hasLocationPermission = false; // Unacted upon if `hasDisavowedLocation` is true
+        if (!hasDisavowedLocation) {
             if (isQApp) {
-                scanClient.setHasLocationPermission(
-                        Utils.checkCallerHasFineLocation(
-                                mAdapterService, source, scanClient.getUserHandle()));
+                hasLocationPermission =
+                        Utils.checkCallerHasFineLocation(mAdapterService, source, userHandle);
             } else {
-                scanClient.setHasLocationPermission(
+                hasLocationPermission =
                         Utils.checkCallerHasCoarseOrFineLocation(
-                                mAdapterService, source, scanClient.getUserHandle()));
+                                mAdapterService, source, userHandle);
             }
         }
-        scanClient.setHasNetworkSettingsPermission(
-                Utils.checkCallerHasNetworkSettingsPermission(mAdapterService));
-        scanClient.setHasNetworkSetupWizardPermission(
-                Utils.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
-        scanClient.setHasScanWithoutLocationPermission(
-                Utils.checkCallerHasScanWithoutLocationPermission(mAdapterService));
-        scanClient.setAssociatedDevices(getAssociatedDevices(callingPackage));
+        var scanClient =
+                new ScanClient(
+                        uid,
+                        scannerId,
+                        settings,
+                        filters,
+                        userHandle,
+                        callingPackage.equals(mExposureNotificationPackage),
+                        hasDisavowedLocation,
+                        hasLocationPermission, // Unacted upon if `hasDisavowedLocation` is true
+                        Util.checkCallerHasNetworkSettingsPermission(mAdapterService),
+                        Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService),
+                        Util.checkCallerHasScanWithoutLocationPermission(mAdapterService),
+                        getAssociatedDevices(callingPackage));
 
         dispatchStartScan(scannerId, settings, filters, scanClient);
     }
@@ -1145,22 +1136,16 @@ public class ScanController {
     public void startScanInternal(int scannerId, ScanSettings settings, List<ScanFilter> filters) {
         enforceScanThread(); // TODO(b/455057044) Remove on cleanup
         // This ScanClient will be billed to the Bluetooth app due to its internal usage
-        final ScanClient scanClient =
+        var scanClient =
                 new ScanClient(
                         Binder.getCallingUid(),
                         scannerId,
                         settings,
                         filters,
                         Binder.getCallingUserHandle(),
-                        true);
-        scanClient.setHasNetworkSettingsPermission(
-                Utils.checkCallerHasNetworkSettingsPermission(mAdapterService));
-        scanClient.setHasNetworkSetupWizardPermission(
-                Utils.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
-        scanClient.setHasScanWithoutLocationPermission(
-                Utils.checkCallerHasScanWithoutLocationPermission(mAdapterService));
-        scanClient.setAssociatedDevices(Collections.emptyList());
-
+                        Util.checkCallerHasNetworkSettingsPermission(mAdapterService),
+                        Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService),
+                        Util.checkCallerHasScanWithoutLocationPermission(mAdapterService));
         dispatchStartScan(scannerId, settings, filters, scanClient);
     }
 
@@ -1248,11 +1233,11 @@ public class ScanController {
             }
         }
         app.setHasNetworkSettingsPermission(
-                Utils.checkCallerHasNetworkSettingsPermission(mAdapterService));
+                Util.checkCallerHasNetworkSettingsPermission(mAdapterService));
         app.setHasNetworkSetupWizardPermission(
-                Utils.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
+                Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService));
         app.setHasScanWithoutLocationPermission(
-                Utils.checkCallerHasScanWithoutLocationPermission(mAdapterService));
+                Util.checkCallerHasScanWithoutLocationPermission(mAdapterService));
         app.setAssociatedDevices(getAssociatedDevices(callingPackage));
 
         mScanManager.registerScanner(uuid);
@@ -1267,25 +1252,7 @@ public class ScanController {
     @VisibleForTesting
     void continuePiStartScan(int scannerId, ScannerApp app) {
         final PendingIntentInfo piInfo = app.getInfo();
-        final ScanClient scanClient =
-                new ScanClient(
-                        piInfo.callingUid,
-                        scannerId,
-                        piInfo.settings,
-                        piInfo.filters,
-                        app.getUserHandle());
-        scanClient.setHasLocationPermission(app.getHasLocationPermission());
-        scanClient.setEligibleForSanitizedExposureNotification(
-                app.getEligibleForSanitizedExposureNotification());
-        scanClient.setHasNetworkSettingsPermission(app.getHasNetworkSettingsPermission());
-        scanClient.setHasNetworkSetupWizardPermission(app.getHasNetworkSetupWizardPermission());
-        scanClient.setHasScanWithoutLocationPermission(app.getHasScanWithoutLocationPermission());
-        scanClient.setAssociatedDevices(
-                app.getAssociatedDevices() == null
-                        ? Collections.emptyList()
-                        : app.getAssociatedDevices());
-        scanClient.setHasDisavowedLocation(app.getHasDisavowedLocation());
-
+        var scanClient = new ScanClient(scannerId, piInfo, app);
         var appScanStats = mScannerMap.getAppScanStatsById(scannerId);
         if (appScanStats != null) {
             scanClient.setAppScanStats(appScanStats);
@@ -1387,26 +1354,6 @@ public class ScanController {
                 - mScanManager.getCurrentUsedTrackingAdvertisement();
     }
 
-    /**
-     * DeathRecipient handler used to unregister applications that disconnect ungracefully (ie.
-     * crash or forced close).
-     */
-    public class ScannerDeathRecipient implements IBinder.DeathRecipient {
-        private final int mScannerId;
-        private final String mPackageName;
-
-        ScannerDeathRecipient(int scannerId, String packageName) {
-            mScannerId = scannerId;
-            mPackageName = packageName;
-        }
-
-        @Override
-        public void binderDied() {
-            Log.d(TAG, "binderDied(): Unregister scannerId=" + mScannerId + " for " + mPackageName);
-            doOnScanThread(() -> handleDeadScanClient(mScannerId));
-        }
-    }
-
     void enforceScanThread() {
         if (!Flags.scanControllerThread() || Utils.isInstrumentationTestMode()) return;
 
@@ -1421,6 +1368,11 @@ public class ScanController {
         if (mScanHandler.getLooper().isCurrentThread()) {
             throw new IllegalStateException("Must NOT be on scan thread");
         }
+    }
+
+    public boolean isOnScanThread() {
+        if (!Flags.scanControllerThread() || Utils.isInstrumentationTestMode()) return false;
+        return mScanHandler.getLooper().isCurrentThread();
     }
 
     public void doOnScanThread(Runnable r) {

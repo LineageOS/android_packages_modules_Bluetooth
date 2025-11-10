@@ -27,36 +27,42 @@ private const val TAG = "GattNativeCallback"
 
 class GattNativeCallback(
     private val adapterService: AdapterService,
-    private val service: GattService,
+    private val gatt: GattService,
     private val gattServer: GattServerManager,
 ) : NativeCallback {
 
     fun onClientRegistered(status: Int, clientIf: Int, uuidLsb: Long, uuidMsb: Long) {
-        service.onClientRegisteredFromNative(status, clientIf, UUID(uuidMsb, uuidLsb))
+        doOnGattThread { onClientRegisteredFromNative(status, clientIf, UUID(uuidMsb, uuidLsb)) }
     }
 
     fun onConnected(clientIf: Int, connId: Int, transport: Int, status: Int, address: String) {
-        service.onConnectedFromNative(clientIf, connId, transport, status, getDevice(address))
+        doOnGattThread {
+            onConnectedFromNative(clientIf, connId, transport, status, getDevice(address))
+        }
     }
 
     fun onDisconnected(clientIf: Int, connId: Int, transport: Int, status: Int, address: String) {
-        service.onDisconnectedFromNative(clientIf, connId, transport, status, getDevice(address))
+        doOnGattThread {
+            onDisconnectedFromNative(clientIf, connId, transport, status, getDevice(address))
+        }
     }
 
     fun onClientPhyUpdate(connId: Int, txPhy: Int, rxPhy: Int, status: Int) {
-        service.onClientPhyUpdateFromNative(connId, txPhy, rxPhy, status)
+        doOnGattThread { onClientPhyUpdateFromNative(connId, txPhy, rxPhy, status) }
     }
 
     fun onClientPhyRead(clientIf: Int, address: String, txPhy: Int, rxPhy: Int, status: Int) {
-        service.onClientPhyReadFromNative(clientIf, getDevice(address), txPhy, rxPhy, status)
+        doOnGattThread {
+            onClientPhyReadFromNative(clientIf, getDevice(address), txPhy, rxPhy, status)
+        }
     }
 
     fun onClientConnUpdate(connId: Int, interval: Int, latency: Int, timeout: Int, status: Int) {
-        service.onClientConnUpdateFromNative(connId, interval, latency, timeout, status)
+        doOnGattThread { onClientConnUpdateFromNative(connId, interval, latency, timeout, status) }
     }
 
     fun onServiceChanged(connId: Int) {
-        service.onServiceChangedFromNative(connId)
+        doOnGattThread { onServiceChangedFromNative(connId) }
     }
 
     fun onClientSubrateChange(
@@ -68,27 +74,33 @@ class GattNativeCallback(
         subrateMode: Int,
         status: Int,
     ) {
-        service.onClientSubrateChangeFromNative(
-            connId,
-            subrateFactor,
-            latency,
-            contNum,
-            timeout,
-            subrateMode,
-            status,
-        )
+        doOnGattThread {
+            onClientSubrateChangeFromNative(
+                connId,
+                subrateFactor,
+                latency,
+                contNum,
+                timeout,
+                subrateMode,
+                status,
+            )
+        }
     }
 
     fun onServerPhyUpdate(connId: Int, txPhy: Int, rxPhy: Int, status: Int) {
-        gattServer.onServerPhyUpdateFromNative(connId, txPhy, rxPhy, status)
+        serverDoOnGattThread { onServerPhyUpdateFromNative(connId, txPhy, rxPhy, status) }
     }
 
     fun onServerPhyRead(serverIf: Int, address: String, txPhy: Int, rxPhy: Int, status: Int) {
-        gattServer.onServerPhyReadFromNative(serverIf, getDevice(address), txPhy, rxPhy, status)
+        serverDoOnGattThread {
+            onServerPhyReadFromNative(serverIf, getDevice(address), txPhy, rxPhy, status)
+        }
     }
 
     fun onServerConnUpdate(connId: Int, interval: Int, latency: Int, timeout: Int, status: Int) {
-        gattServer.onServerConnUpdateFromNative(connId, interval, latency, timeout, status)
+        serverDoOnGattThread {
+            onServerConnUpdateFromNative(connId, interval, latency, timeout, status)
+        }
     }
 
     fun onServerSubrateChange(
@@ -100,83 +112,87 @@ class GattNativeCallback(
         subrateMode: Int,
         status: Int,
     ) {
-        gattServer.onServerSubrateChangeFromNative(
-            connId,
-            subrateFactor,
-            latency,
-            contNum,
-            timeout,
-            subrateMode,
-            status,
-        )
+        serverDoOnGattThread {
+            onServerSubrateChangeFromNative(
+                connId,
+                subrateFactor,
+                latency,
+                contNum,
+                timeout,
+                subrateMode,
+                status,
+            )
+        }
     }
 
     fun getSampleGattDbElement() = GattDbElement()
 
     fun onGetGattDb(connId: Int, db: List<GattDbElement>) {
-        service.onGetGattDbFromNative(connId, db)
+        doOnGattThread { onGetGattDbFromNative(connId, db) }
     }
 
     fun onRegisterForNotifications(connId: Int, status: Int, registered: Int, handle: Int) {
-        service.onRegisterForNotificationsFromNative(connId, status, registered, handle)
+        doOnGattThread { onRegisterForNotificationsFromNative(connId, status, registered, handle) }
     }
 
     fun onNotify(connId: Int, address: String, handle: Int, isNotify: Boolean, data: ByteArray) {
-        service.onNotifyFromNative(connId, getDevice(address), handle, isNotify, data)
+        doOnGattThread { onNotifyFromNative(connId, getDevice(address), handle, isNotify, data) }
     }
 
     fun onReadCharacteristic(connId: Int, status: Int, handle: Int, data: ByteArray) {
-        service.onReadCharacteristicFromNative(connId, status, handle, data)
+        doOnGattThread { onReadCharacteristicFromNative(connId, status, handle, data) }
     }
 
     fun onWriteCharacteristic(connId: Int, status: Int, handle: Int, data: ByteArray) {
-        service.onWriteCharacteristicFromNative(connId, status, handle, data)
+        doOnGattThread { onWriteCharacteristicFromNative(connId, status, handle, data) }
     }
 
     fun onExecuteCompleted(connId: Int, status: Int) {
-        service.onExecuteCompletedFromNative(connId, status)
+        doOnGattThread { onExecuteCompletedFromNative(connId, status) }
     }
 
     fun onReadDescriptor(connId: Int, status: Int, handle: Int, data: ByteArray) {
-        service.onReadDescriptorFromNative(connId, status, handle, data)
+        doOnGattThread { onReadDescriptorFromNative(connId, status, handle, data) }
     }
 
     fun onWriteDescriptor(connId: Int, status: Int, handle: Int, data: ByteArray) {
-        service.onWriteDescriptorFromNative(connId, status, handle, data)
+        doOnGattThread { onWriteDescriptorFromNative(connId, status, handle, data) }
     }
 
     fun onReadRemoteRssi(clientIf: Int, address: String, rssi: Int, status: Int) {
-        service.onReadRemoteRssiFromNative(clientIf, getDevice(address), rssi, status)
+        doOnGattThread { onReadRemoteRssiFromNative(clientIf, getDevice(address), rssi, status) }
     }
 
     fun onConfigureMTU(connId: Int, status: Int, mtu: Int) {
-        service.onConfigureMTUFromNative(connId, status, mtu)
+        doOnGattThread { onConfigureMTUFromNative(connId, status, mtu) }
     }
 
     fun onClientCongestion(connId: Int, congested: Boolean) {
-        service.onClientCongestionFromNative(connId, congested)
+        doOnGattThread { onClientCongestionFromNative(connId, congested) }
     }
 
     fun onClientCharacteristicsUnoffloaded(connId: Int, sessionId: Int, status: Int) {
-        service.onClientCharacteristicsUnoffloadedFromNative(connId, sessionId, status)
+        doOnGattThread { onClientCharacteristicsUnoffloadedFromNative(connId, sessionId, status) }
     }
 
     /* Server callbacks */
 
     fun onServerRegistered(status: Int, serverIf: Int, uuidLsb: Long, uuidMsb: Long) {
-        gattServer.onServerRegisteredFromNative(status, serverIf, UUID(uuidMsb, uuidLsb))
+        serverDoOnGattThread {
+            onServerRegisteredFromNative(status, serverIf, UUID(uuidMsb, uuidLsb))
+        }
     }
 
     fun onServiceAdded(status: Int, serverIf: Int, serviceAdded: List<GattDbElement>) {
-        gattServer.onServiceAddedFromNative(status, serverIf, serviceAdded)
+        serverDoOnGattThread { onServiceAddedFromNative(status, serverIf, serviceAdded) }
     }
 
     fun onServiceStopped(status: Int, serverIf: Int, srvcHandle: Int) {
-        gattServer.onServiceStoppedFromNative(status, serverIf, srvcHandle)
+        serverDoOnGattThread { onServiceStoppedFromNative(status, serverIf, srvcHandle) }
     }
 
     fun onServiceDeleted(status: Int, serverIf: Int, srvcHandle: Int) {
-        gattServer.onServiceDeletedFromNative(status, serverIf, srvcHandle)
+        serverDoOnGattThread { onServiceDeletedFromNative(status, serverIf, srvcHandle) }
     }
 
     fun onClientConnected(
@@ -186,13 +202,9 @@ class GattNativeCallback(
         connId: Int,
         serverIf: Int,
     ) {
-        gattServer.onClientConnectedFromNative(
-            getDevice(address),
-            transport,
-            connected,
-            connId,
-            serverIf,
-        )
+        serverDoOnGattThread {
+            onClientConnectedFromNative(getDevice(address), transport, connected, connId, serverIf)
+        }
     }
 
     fun onServerReadCharacteristic(
@@ -203,14 +215,16 @@ class GattNativeCallback(
         offset: Int,
         isLong: Boolean,
     ) {
-        gattServer.onServerReadCharacteristicFromNative(
-            getDevice(address),
-            connId,
-            transId,
-            handle,
-            offset,
-            isLong,
-        )
+        serverDoOnGattThread {
+            onServerReadCharacteristicFromNative(
+                getDevice(address),
+                connId,
+                transId,
+                handle,
+                offset,
+                isLong,
+            )
+        }
     }
 
     fun onServerReadDescriptor(
@@ -221,14 +235,16 @@ class GattNativeCallback(
         offset: Int,
         isLong: Boolean,
     ) {
-        gattServer.onServerReadDescriptorFromNative(
-            getDevice(address),
-            connId,
-            transId,
-            handle,
-            offset,
-            isLong,
-        )
+        serverDoOnGattThread {
+            onServerReadDescriptorFromNative(
+                getDevice(address),
+                connId,
+                transId,
+                handle,
+                offset,
+                isLong,
+            )
+        }
     }
 
     fun onServerWriteCharacteristic(
@@ -242,17 +258,19 @@ class GattNativeCallback(
         isPrep: Boolean,
         data: ByteArray,
     ) {
-        gattServer.onServerWriteCharacteristicFromNative(
-            getDevice(address),
-            connId,
-            transId,
-            handle,
-            offset,
-            length,
-            needRsp,
-            isPrep,
-            data,
-        )
+        serverDoOnGattThread {
+            onServerWriteCharacteristicFromNative(
+                getDevice(address),
+                connId,
+                transId,
+                handle,
+                offset,
+                length,
+                needRsp,
+                isPrep,
+                data,
+            )
+        }
     }
 
     fun onServerWriteDescriptor(
@@ -266,21 +284,25 @@ class GattNativeCallback(
         isPrep: Boolean,
         data: ByteArray,
     ) {
-        gattServer.onServerWriteDescriptorFromNative(
-            getDevice(address),
-            connId,
-            transId,
-            handle,
-            offset,
-            length,
-            needRsp,
-            isPrep,
-            data,
-        )
+        serverDoOnGattThread {
+            onServerWriteDescriptorFromNative(
+                getDevice(address),
+                connId,
+                transId,
+                handle,
+                offset,
+                length,
+                needRsp,
+                isPrep,
+                data,
+            )
+        }
     }
 
     fun onExecuteWrite(address: String, connId: Int, transId: Int, execWrite: Int) {
-        gattServer.onExecuteWriteFromNative(getDevice(address), connId, transId, execWrite)
+        serverDoOnGattThread {
+            onExecuteWriteFromNative(getDevice(address), connId, transId, execWrite)
+        }
     }
 
     fun onResponseSendCompleted(status: Int, attrHandle: Int) {
@@ -288,23 +310,30 @@ class GattNativeCallback(
     }
 
     fun onNotificationSent(connId: Int, status: Int) {
-        gattServer.onNotificationSentFromNative(connId, status)
+        serverDoOnGattThread { onNotificationSentFromNative(connId, status) }
     }
 
     fun onServerCongestion(connId: Int, congested: Boolean) {
-        gattServer.onServerCongestionFromNative(connId, congested)
+        serverDoOnGattThread { onServerCongestionFromNative(connId, congested) }
     }
 
     fun onMtuChanged(connId: Int, mtu: Int) {
-        gattServer.onMtuChangedFromNative(connId, mtu)
+        serverDoOnGattThread { onMtuChangedFromNative(connId, mtu) }
     }
 
     fun onServerCharacteristicsUnoffloaded(connId: Int, sessionId: Int, status: Int) {
-        gattServer.onServerCharacteristicsUnoffloadedFromNative(connId, sessionId, status)
+        serverDoOnGattThread {
+            onServerCharacteristicsUnoffloadedFromNative(connId, sessionId, status)
+        }
     }
 
     private fun getDevice(address: String): BluetoothDevice {
         val addressBytes = Utils.getBytesFromAddress(address)
         return adapterService.getDeviceFromByte(addressBytes)
     }
+
+    private fun doOnGattThread(block: GattService.() -> Unit) = gatt.doOnGattThread { gatt.block() }
+
+    private fun serverDoOnGattThread(block: GattServerManager.() -> Unit) =
+        gatt.doOnGattThread { gattServer.block() }
 }

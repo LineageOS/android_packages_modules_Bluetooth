@@ -333,6 +333,13 @@ class BleScanCallbackType(enum.IntFlag):
     ALL_MATCHES_AUTO_BATCH = 8
 
 
+class BleScanMatchMode(enum.IntEnum):
+    """android.bluetooth.le.ScanSettings.MATCH_MODE_*."""
+
+    AGGRESSIVE = 1
+    STICKY = 2
+
+
 class BleScanResultType(enum.IntEnum):
     """android.bluetooth.le.ScanSettings.SCAN_RESULT_TYPE_*."""
 

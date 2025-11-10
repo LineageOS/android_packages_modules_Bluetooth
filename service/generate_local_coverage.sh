@@ -36,6 +36,7 @@ ln -s "${ANDROID_BUILD_TOP}"/packages/modules/Bluetooth/service/src ${COVERAGE_T
 unzip "${ANDROID_HOST_OUT}"/testcases/ServiceBluetoothRoboTests/ServiceBluetoothRoboTests.jar "com/android/server/bluetooth*" -d ${COVERAGE_TMP_FOLDER}/ServiceBluetoothRobo_unzip
 # shellcheck disable=SC2046
 rm -rf $(find ${COVERAGE_TMP_FOLDER}/ServiceBluetoothRobo_unzip -iname "*test*")
+rm -rf $(find ${COVERAGE_TMP_FOLDER}/ServiceBluetoothRobo_unzip -iname "*SystemServiceMessage*")
 # shellcheck disable=SC2016
 rm -rf ${COVERAGE_TMP_FOLDER}/ServiceBluetoothRobo_unzip/com/android/server/bluetooth/'BluetoothAdapterState$waitForState$3$invokeSuspend$$inlined$filter$1.class'
 # shellcheck disable=SC2016

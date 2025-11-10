@@ -100,7 +100,7 @@ constructor(
 ) {
     private val ioScope = CoroutineScope(dispatcher + SupervisorJob())
 
-    private val mEventLog = BluetoothEventLogger(30, TAG) // Dumpsys logger
+    private val eventLog = BluetoothEventLogger(30, TAG) // Dumpsys logger
 
     // The DataStore instance that handles the UserStorage proto.
     // Data is stored in a file named "user_storage" in the app's device protected storage.
@@ -156,7 +156,7 @@ constructor(
 
     /** Dump metadata changes for debugging purposes while keeping the address anonymized. */
     fun dump(sb: StringBuilder) {
-        mEventLog.dump(sb)
+        eventLog.dump(sb)
 
         sb.append(
             currentStorage
@@ -853,7 +853,7 @@ constructor(
 
     /** Logs a metadata change event for dumpsys. */
     private fun logEvent(device: BluetoothDevice, log: String) {
-        mEventLog.logi(TAG, "$device: ${log.anonymizeAddress()}")
+        eventLog.logi(TAG, "$device: ${log.anonymizeAddress()}")
     }
 
     // Serializer for the UserStorage proto to tells DataStore how to read and write the data.

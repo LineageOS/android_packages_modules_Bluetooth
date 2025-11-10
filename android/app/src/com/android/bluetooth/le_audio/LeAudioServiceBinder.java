@@ -37,6 +37,7 @@ import android.bluetooth.IBluetoothLeBroadcastCallback;
 import android.content.AttributionSource;
 import android.os.ParcelUuid;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 
@@ -64,7 +65,7 @@ class LeAudioServiceBinder extends IBluetoothLeAudio.Stub implements IProfileSer
             return service;
         }
 
-        if (!Utils.checkServiceAvailable(service, TAG)
+        if (!Util.checkProfileAvailable(service, TAG)
                 || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)) {
             return null;
         }
@@ -80,9 +81,9 @@ class LeAudioServiceBinder extends IBluetoothLeAudio.Stub implements IProfileSer
             return service;
         }
 
-        if (!Utils.checkServiceAvailable(service, TAG)
+        if (!Util.checkProfileAvailable(service, TAG)
                 || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
-                || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
+                || !Util.enforceConnectPermissionForDataDelivery(service, source, TAG)) {
             return null;
         }
         return service;

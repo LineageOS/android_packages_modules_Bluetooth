@@ -38,6 +38,7 @@ import android.bluetooth.IBluetoothHapClientCallback;
 import android.content.AttributionSource;
 import android.util.Log;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
@@ -69,9 +70,9 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
             return service;
         }
 
-        if (!Utils.checkServiceAvailable(service, TAG)
+        if (!Util.checkProfileAvailable(service, TAG)
                 || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
-                || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
+                || !Util.enforceConnectPermissionForDataDelivery(service, source, TAG)) {
             Log.w(TAG, "Hearing Access call not allowed for non-active user");
             return null;
         }

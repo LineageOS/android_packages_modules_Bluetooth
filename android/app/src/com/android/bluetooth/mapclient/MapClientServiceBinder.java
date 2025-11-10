@@ -30,6 +30,7 @@ import android.content.AttributionSource;
 import android.net.Uri;
 import android.util.Log;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 
@@ -62,10 +63,10 @@ class MapClientServiceBinder extends IBluetoothMapClient.Stub implements IProfil
             return service;
         }
 
-        if (!Utils.checkServiceAvailable(service, TAG)
+        if (!Util.checkProfileAvailable(service, TAG)
                 || !(getCallingUserHandle().isSystem()
                         || Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG))
-                || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
+                || !Util.enforceConnectPermissionForDataDelivery(service, source, TAG)) {
             return null;
         }
         return service;
@@ -79,10 +80,10 @@ class MapClientServiceBinder extends IBluetoothMapClient.Stub implements IProfil
             return service;
         }
 
-        if (!Utils.checkServiceAvailable(service, TAG)
+        if (!Util.checkProfileAvailable(service, TAG)
                 || !(getCallingUserHandle().isSystem()
                         || Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG))
-                || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
+                || !Util.enforceConnectPermissionForDataDelivery(service, source, TAG)) {
             return null;
         }
 

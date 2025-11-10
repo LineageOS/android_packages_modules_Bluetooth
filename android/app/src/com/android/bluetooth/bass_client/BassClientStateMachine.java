@@ -61,6 +61,7 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
+import com.android.bluetooth.le_scan.ScanController;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
@@ -134,6 +135,7 @@ class BassClientStateMachine extends StateMachine {
 
     private final AdapterService mAdapterService;
     private final BluetoothAdapter mAdapter;
+    private final ScanController mScanController;
     // TODO Delete it on leaudioBroadcastImproveSourceOperations flag cleanup
     private final PeriodicAdvertisingManager mPeriodicAdvertisingManager;
 
@@ -176,6 +178,7 @@ class BassClientStateMachine extends StateMachine {
             BluetoothDevice device,
             BassClientService svc,
             AdapterService adapterService,
+            ScanController scanController,
             PeriodicAdvertisingManager periodicAdvertisingManager,
             Looper looper) {
         super(TAG + "(" + device + ")", looper);
@@ -183,6 +186,7 @@ class BassClientStateMachine extends StateMachine {
         mService = svc;
         mAdapterService = adapterService;
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
+        mScanController = scanController;
         mPeriodicAdvertisingManager = periodicAdvertisingManager;
         addState(mDisconnected);
         addState(mConnected);
@@ -460,15 +464,10 @@ class BassClientStateMachine extends StateMachine {
                                 + ", serviceData: "
                                 + serviceData);
                 if (leaudioBroadcastImproveSourceOperations()) {
-                    final var scanController = mAdapterService.getBluetoothScanController();
-                    if (scanController == null) {
-                        Log.e(TAG, "processPASyncState: ScanController is null");
-                        return;
-                    }
                     final int sd = serviceData;
-                    scanController.doOnScanThread(
+                    mScanController.doOnScanThread(
                             () ->
-                                    scanController.transferSetInfo(
+                                    mScanController.transferSetInfo(
                                             mDevice, sd, advHandle, mLocalPeriodicAdvCallback));
                 } else {
                     mPeriodicAdvertisingManager.transferSetInfo(
@@ -511,14 +510,9 @@ class BassClientStateMachine extends StateMachine {
                             + ", serviceData: "
                             + serviceData);
             if (leaudioBroadcastImproveSourceOperations()) {
-                final var scanController = mAdapterService.getBluetoothScanController();
-                if (scanController == null) {
-                    Log.e(TAG, "initiatePaSyncTransfer: ScanController is null");
-                    return;
-                }
                 final int sd = serviceData;
-                scanController.doOnScanThread(
-                        () -> scanController.transferSync(mDevice, sd, syncHandle));
+                mScanController.doOnScanThread(
+                        () -> mScanController.transferSync(mDevice, sd, syncHandle));
             } else {
                 mPeriodicAdvertisingManager.transferSync(mDevice, serviceData, syncHandle);
             }

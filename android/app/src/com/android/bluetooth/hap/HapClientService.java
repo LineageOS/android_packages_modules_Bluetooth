@@ -303,13 +303,13 @@ public class HapClientService extends ConnectableProfile {
         if (states == null) {
             return devices;
         }
-        final BluetoothDevice[] bondedDevices = mAdapterService.getBondedDevices();
+        final BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
         if (bondedDevices == null) {
             return devices;
         }
         synchronized (mStateMachines) {
             for (BluetoothDevice device : bondedDevices) {
-                final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
+                final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
                 if (!Utils.arrayContains(featureUuids, BluetoothUuid.HAS)) {
                     continue;
                 }
@@ -390,7 +390,7 @@ public class HapClientService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         enforceMainLooperIsUsed();
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
+        getAdapterService().setProfileConnectionPolicy(device, getProfileId(), connectionPolicy);
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
             connect(device);
         } else if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
@@ -415,15 +415,17 @@ public class HapClientService extends ConnectableProfile {
 
         // Check if the device is disconnected - if unbond, remove the state machine
         if (toState == STATE_DISCONNECTED) {
-            int bondState = mAdapterService.getBondState(device);
+            int bondState = getAdapterService().getBondState(device);
             if (bondState == BluetoothDevice.BOND_NONE) {
                 Log.d(TAG, device + " is unbond. Remove state machine");
                 removeStateMachine(device);
             }
         }
-        mActiveDeviceManager.profileConnectionStateChanged(mProfileId, device, fromState, toState);
-        mAdapterService.updateProfileConnectionAdapterProperties(
-                device, mProfileId, toState, fromState);
+        mActiveDeviceManager.profileConnectionStateChanged(
+                getProfileId(), device, fromState, toState);
+        getAdapterService()
+                .updateProfileConnectionAdapterProperties(
+                        device, getProfileId(), toState, fromState);
     }
 
     @Override
@@ -436,7 +438,7 @@ public class HapClientService extends ConnectableProfile {
             return false;
         }
 
-        final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
+        final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
         if (!Utils.arrayContains(featureUuids, BluetoothUuid.HAS)) {
             Log.e(
                     TAG,
@@ -516,7 +518,7 @@ public class HapClientService extends ConnectableProfile {
     }
 
     int getHapGroup(BluetoothDevice device) {
-        final var csipSetCoordinator = mAdapterService.getCsipSetCoordinatorService();
+        final var csipSetCoordinator = getAdapterService().getCsipSetCoordinatorService();
         if (csipSetCoordinator.isPresent()) {
             final Map<Integer, ParcelUuid> groups =
                     csipSetCoordinator.get().getGroupUuidMapByDevice(device);
@@ -684,7 +686,7 @@ public class HapClientService extends ConnectableProfile {
             return false;
         }
 
-        return mAdapterService
+        return getAdapterService()
                 .getCsipSetCoordinatorService()
                 .map(csipClient -> csipClient.getAllGroupIds(BluetoothUuid.CAP).contains(groupId))
                 .orElse(false);
@@ -769,7 +771,7 @@ public class HapClientService extends ConnectableProfile {
             return emptyList();
         }
 
-        return mAdapterService
+        return getAdapterService()
                 .getCsipSetCoordinatorService()
                 .map(csipClient -> csipClient.getGroupDevicesOrdered(groupId))
                 .orElse(emptyList());

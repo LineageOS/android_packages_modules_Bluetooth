@@ -35,7 +35,8 @@ import java.util.Set;
  * longer when the screen is off.
  */
 class BatchScanThrottler {
-    private static final String TAG = BatchScanThrottler.class.getSimpleName();
+    private static final String TAG =
+            ScanUtil.TAG_PREFIX + BatchScanThrottler.class.getSimpleName();
 
     // Minimum batch trigger interval to check for batched results when the screen is off
     private static final String SCREEN_OFF_MINIMUM_DELAY_FLOOR_PROP =

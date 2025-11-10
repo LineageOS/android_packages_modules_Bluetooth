@@ -2012,7 +2012,9 @@ bool acl_set_peer_le_features_from_handle(uint16_t hci_handle, const uint8_t* p)
 }
 
 void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
-                             bool locally_initiated) {
+                             bool locally_initiated, tHCI_ROLE role) {
+  log::verbose("{}, handle:{}, role:{}, enc_mode:{}, locally_initiated:{}", bda, handle,
+               hci_role_text(role), enc_mode, locally_initiated);
   power_telemetry::GetInstance().LogLinkDetails(handle, bda, true, true);
   if (delayed_role_change_ != nullptr && delayed_role_change_->bd_addr == bda) {
     btm_sec_connected(bda, handle, HCI_SUCCESS, enc_mode, delayed_role_change_->new_role);
@@ -2032,6 +2034,9 @@ void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle, uint8_t enc
   }
 
   acl_set_locally_initiated(locally_initiated);
+  if (com_android_bluetooth_flags_remove_fake_role_change_event()) {
+    p_acl->link_role = role;
+  }
 
   /*
    * The legacy code path informs the upper layer via the BTA
@@ -2056,17 +2061,6 @@ void on_acl_br_edr_failed(const RawAddress& bda, tHCI_STATUS status, bool locall
 
   acl_set_locally_initiated(locally_initiated);
   btm_acl_create_failed(link_spec, status);
-}
-
-void btm_acl_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS status,
-                       uint8_t enc_mode) {
-  switch (status) {
-    case HCI_SUCCESS:
-      power_telemetry::GetInstance().LogLinkDetails(handle, bda, true, true);
-      return on_acl_br_edr_connected(bda, handle, enc_mode, true /* locally_initiated */);
-    default:
-      return on_acl_br_edr_failed(bda, status, /* locally_initiated */ true);
-  }
 }
 
 void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle, tHCI_REASON reason) {

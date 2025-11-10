@@ -15,11 +15,13 @@
 import asyncio
 import datetime
 import secrets
+import struct
 import uuid
 
 from bumble import device
 from bumble import gatt
 from bumble import hci
+from bumble.profiles import gatt_service
 from mobly import asserts
 from mobly import test_runner
 from mobly import signals
@@ -28,6 +30,8 @@ from typing_extensions import override
 from navi.tests import navi_test_base
 from navi.utils import android_constants
 from navi.utils import bl4a_api
+
+_DEFAULT_TIMEOUT = 10.0
 
 
 class GattClientTest(navi_test_base.TwoDevicesTestBase):
@@ -222,6 +226,46 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
             datetime.timedelta(seconds=10),
         )
         asserts.assert_equal(expected_value, notification.value)
+
+    async def test_service_changed_indication(self) -> None:
+        """Test service changed indication.
+
+    Test steps:
+      1. Connect GATT to REF from DUT.
+      2. Discover services from DUT.
+      3. Notify service changed from REF.
+      4. Wait for service changed indication from DUT.
+    """
+        ref_gatt_service = self.ref.device.gatt_service
+        assert isinstance(ref_gatt_service, gatt_service.GenericAttributeProfileService)
+        ref_service_changed_characteristic = (ref_gatt_service.service_changed_characteristic)
+        assert isinstance(ref_service_changed_characteristic, gatt.Characteristic)
+
+        self.logger.info("[REF] Start advertising.")
+        async with self.assert_not_timeout(_DEFAULT_TIMEOUT):
+            await self.ref.device.start_advertising(own_address_type=hci.OwnAddressType.RANDOM)
+        self.logger.info("[DUT] Connect to REF.")
+        gatt_client = await self.dut.bl4a.connect_gatt_client(
+            str(self.ref.random_address),
+            android_constants.Transport.LE,
+            android_constants.AddressTypeStatus.RANDOM,
+        )
+        self.logger.info("[DUT] Discover services.")
+        await gatt_client.discover_services()
+
+        self.logger.info("[REF] Notify service changed.")
+        async with self.assert_not_timeout(_DEFAULT_TIMEOUT):
+            for connection in self.ref.device.connections.values():
+                # This is a workaround - Currently, Android doesn't always subscribe to
+                # the service changed characteristic after connection.
+                await self.ref.device.indicate_subscriber(
+                    connection=connection,
+                    attribute=ref_service_changed_characteristic,
+                    value=struct.pack("<HH", 0x0000, 0xFFFF),
+                    force=True,
+                )
+        self.logger.info("[DUT] Wait for service changed.")
+        await gatt_client.wait_for_event(bl4a_api.GattServiceChanged)
 
 
 if __name__ == "__main__":

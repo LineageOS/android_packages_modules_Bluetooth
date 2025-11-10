@@ -121,6 +121,7 @@ public class AdapterProperties {
     private boolean mIsActivityAndEnergyReporting;
     private boolean mIsLe2MPhySupported;
     private boolean mIsLeCodedPhySupported;
+    private boolean mIsLeHighDataThroughputPhySupported;
     private boolean mIsLeExtendedAdvertisingSupported;
     private boolean mIsLePeriodicAdvertisingSupported;
     private int mLeMaximumAdvertisingDataLength;
@@ -300,6 +301,10 @@ public class AdapterProperties {
 
     boolean isLeCodedPhySupported() {
         return mIsLeCodedPhySupported;
+    }
+
+    boolean isLeHighDataThroughputPhySupported() {
+        return mIsLeHighDataThroughputPhySupported;
     }
 
     boolean isLeExtendedAdvertisingSupported() {
@@ -823,6 +828,7 @@ public class AdapterProperties {
         mIsLePeriodicAdvertisingSyncTransferRecipientSupported = ((0xFF & ((int) val[27])) != 0);
         mIsOffloadedTransportDiscoveryDataScanSupported = ((0x01 & ((int) val[28])) != 0);
         mIsLeChannelSoundingSupported = ((0xFF & ((int) val[30])) != 0);
+        mIsLeHighDataThroughputPhySupported = ((0xFF & ((int) val[31])) != 0);
 
         debugLog(
                 "BT_PROPERTY_LOCAL_LE_FEATURES: update from BT controller"
@@ -859,7 +865,9 @@ public class AdapterProperties {
                                 + mIsLePeriodicAdvertisingSyncTransferRecipientSupported)
                         + (", isOffloadedTransportDiscoveryDataScanSupported="
                                 + mIsOffloadedTransportDiscoveryDataScanSupported)
-                        + (", isLeChannelSoundingSupported = " + mIsLeChannelSoundingSupported));
+                        + (", isLeChannelSoundingSupported = " + mIsLeChannelSoundingSupported)
+                        + (", isLeHighDataThroughputPhySupported = "
+                                + mIsLeHighDataThroughputPhySupported));
         invalidateIsOffloadedFilteringSupportedCache();
     }
 

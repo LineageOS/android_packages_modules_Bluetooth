@@ -61,14 +61,15 @@ import android.provider.Settings;
 import android.test.mock.MockContentProvider;
 import android.test.mock.MockContentResolver;
 
-import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.FakeTimeProvider;
+import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
@@ -79,6 +80,9 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.stubbing.Answer;
+
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -92,10 +96,10 @@ import java.util.UUID;
 
 /** Test cases for {@link GattService}. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
+@RunWith(ParameterizedAndroidJunit4.class)
 public class GattServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+    @Rule public final SetFlagsRule mSetFlagsRule;
 
     @Mock private AttributionSource mSource;
     @Mock private IBluetoothGattCallback mGattCallback;
@@ -108,6 +112,7 @@ public class GattServiceTest {
     @Mock private Resources mResources;
     @Mock private AdapterService mAdapterService;
 
+    private TestLooper mLooper;
     private GattService mService;
 
     private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
@@ -128,6 +133,15 @@ public class GattServiceTest {
     private final FakeTimeProvider mTimeProvider = new FakeTimeProvider();
 
     private final List<ContextMap.Connection> mServerConnections = new ArrayList<>();
+
+    @Parameters(name = "{0}")
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(Flags.FLAG_GATT_THREAD);
+    }
+
+    public GattServiceTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -217,6 +231,7 @@ public class GattServiceTest {
         CompanionManager mBtCompanionManager = new CompanionManager(mAdapterService);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
 
+        mLooper = new TestLooper();
         mService =
                 new GattService(
                         mAdapterService,
@@ -227,6 +242,7 @@ public class GattServiceTest {
                         mServerMap,
                         mReliableQueue,
                         mCompanionDeviceManager,
+                        mLooper.getLooper(),
                         mTimeProvider);
 
         mockGetRemoteDevice(mAdapterService, mDevice);
@@ -251,6 +267,7 @@ public class GattServiceTest {
                             mServerMap,
                             mReliableQueue,
                             mCompanionDeviceManager,
+                            mLooper.getLooper(),
                             mTimeProvider);
         }
     }
@@ -271,10 +288,7 @@ public class GattServiceTest {
 
             if (Flags.leSubrateManager()) {
                 inOrder.verify(mNativeInterface)
-                        .gattSubrateModeRequest(
-                                eq(CLIENT_IF),
-                                eq(mDevice),
-                                eq(subrateMode));
+                        .gattSubrateModeRequest(eq(CLIENT_IF), eq(mDevice), eq(subrateMode));
             } else {
                 inOrder.verify(mNativeInterface)
                         .gattSubrateRequest(
@@ -307,41 +321,37 @@ public class GattServiceTest {
 
         mService.subrateModeRequest(mGattCallback, mDevice, BluetoothGatt.SUBRATE_MODE_HIGH);
         if (Flags.leSubrateManager()) {
-                inOrder.verify(mNativeInterface)
-                        .gattSubrateModeRequest(
-                                eq(CLIENT_IF), eq(mDevice), eq(BluetoothGatt.SUBRATE_MODE_HIGH));
+            inOrder.verify(mNativeInterface)
+                    .gattSubrateModeRequest(
+                            eq(CLIENT_IF), eq(mDevice), eq(BluetoothGatt.SUBRATE_MODE_HIGH));
         } else {
-                inOrder.verify(mNativeInterface)
-                        .gattSubrateRequest(
-                                eq(CLIENT_IF),
-                                eq(mDevice),
-                                anyInt(),
-                                anyInt(),
-                                eq(0),
-                                anyInt(),
-                                anyInt());
+            inOrder.verify(mNativeInterface)
+                    .gattSubrateRequest(
+                            eq(CLIENT_IF),
+                            eq(mDevice),
+                            anyInt(),
+                            anyInt(),
+                            eq(0),
+                            anyInt(),
+                            anyInt());
         }
-
 
         mService.subrateModeRequest(mGattCallback, mDevice, BluetoothGatt.SUBRATE_MODE_OFF);
         if (Flags.leSubrateManager()) {
-                inOrder.verify(mNativeInterface)
-                        .gattSubrateModeRequest(
-                                eq(CLIENT_IF),
-                                eq(mDevice),
-                                eq(BluetoothGatt.SUBRATE_MODE_OFF));
+            inOrder.verify(mNativeInterface)
+                    .gattSubrateModeRequest(
+                            eq(CLIENT_IF), eq(mDevice), eq(BluetoothGatt.SUBRATE_MODE_OFF));
         } else {
-                inOrder.verify(mNativeInterface)
-                        .gattSubrateRequest(
-                                eq(CLIENT_IF),
-                                eq(mDevice),
-                                anyInt(),
-                                anyInt(),
-                                eq(peripheralLatency),
-                                anyInt(),
-                                anyInt());
+            inOrder.verify(mNativeInterface)
+                    .gattSubrateRequest(
+                            eq(CLIENT_IF),
+                            eq(mDevice),
+                            anyInt(),
+                            anyInt(),
+                            eq(peripheralLatency),
+                            anyInt(),
+                            anyInt());
         }
-
     }
 
     @Test
@@ -413,13 +423,7 @@ public class GattServiceTest {
         boolean opportunistic = true;
 
         mService.clientConnect(
-                mGattCallback,
-                mDevice,
-                addressType,
-                isDirect,
-                transport,
-                opportunistic,
-                mSource);
+                mGattCallback, mDevice, addressType, isDirect, transport, opportunistic, mSource);
 
         verify(mNativeInterface)
                 .gattClientConnect(

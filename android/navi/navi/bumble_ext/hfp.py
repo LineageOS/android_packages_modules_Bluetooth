@@ -14,6 +14,7 @@
 """Extended Bumble implementation of HFP protocol."""
 
 import asyncio
+from collections.abc import Iterable, Sequence
 import logging
 
 from bumble import hci
@@ -56,6 +57,70 @@ ESCO_PARAMETERS_T2_TRANSPARENT = hfp.EscoParameters(
     retransmission_effort=hci.HCI_Enhanced_Setup_Synchronous_Connection_Command.
     RetransmissionEffort.OPTIMIZE_FOR_QUALITY,
 )
+
+
+def make_hf_configuration(
+    supported_hf_features: Sequence[hfp.HfFeature] = (),
+    supported_hf_indicators: Sequence[hfp.HfIndicator] = (),
+    supported_audio_codecs: Sequence[hfp.AudioCodec] = (
+        hfp.AudioCodec.CVSD,
+        hfp.AudioCodec.MSBC,
+    ),
+) -> hfp.HfConfiguration:
+    """Creates an HFP HF configuration.
+
+  Args:
+    supported_hf_features: A list of supported HF features.
+    supported_hf_indicators: A list of supported HF indicators.
+    supported_audio_codecs: A list of supported audio codecs. If empty, defaults
+      to CVSD and MSBC.
+
+  Returns:
+    An HfConfiguration object.
+  """
+    return hfp.HfConfiguration(
+        supported_hf_features=supported_hf_features,
+        supported_hf_indicators=supported_hf_indicators,
+        supported_audio_codecs=supported_audio_codecs,
+    )
+
+
+def make_ag_configuration(
+    supported_ag_features: Iterable[hfp.AgFeature] = (hfp.AgFeature.ENHANCED_CALL_STATUS,),
+    supported_ag_indicators: Sequence[hfp.AgIndicatorState] = (
+        hfp.AgIndicatorState.call(),
+        hfp.AgIndicatorState.callsetup(),
+        hfp.AgIndicatorState.service(),
+        hfp.AgIndicatorState.signal(),
+        hfp.AgIndicatorState.roam(),
+        hfp.AgIndicatorState.callheld(),
+        hfp.AgIndicatorState.battchg(),
+    ),
+    supported_hf_indicators: Iterable[hfp.HfIndicator] = (),
+    supported_ag_call_hold_operations: Iterable[hfp.CallHoldOperation] = (),
+    supported_audio_codecs: Iterable[hfp.AudioCodec] = (hfp.AudioCodec.CVSD,),
+) -> hfp.AgConfiguration:
+    """Creates an HFP AG configuration.
+
+  Args:
+    supported_ag_features: A list of supported AG features.
+    supported_ag_indicators: A list of supported AG indicators.
+    supported_hf_indicators: A list of supported HF indicators.
+    supported_ag_call_hold_operations: A list of supported AG call hold
+      operations.
+    supported_audio_codecs: A list of supported audio codecs. If empty, defaults
+      to CVSD.
+
+  Returns:
+    An AG Configuration object.
+  """
+    return hfp.AgConfiguration(
+        supported_ag_features=supported_ag_features,
+        supported_ag_indicators=supported_ag_indicators,
+        supported_hf_indicators=supported_hf_indicators,
+        supported_ag_call_hold_operations=supported_ag_call_hold_operations,
+        supported_audio_codecs=supported_audio_codecs,
+    )
 
 
 class HfProtocol(hfp.HfProtocol):
@@ -116,7 +181,12 @@ class HfProtocol(hfp.HfProtocol):
             device = dlc.multiplexer.l2cap_channel.connection.device
             device.on(device.EVENT_SCO_REQUEST, self._on_sco_request)
             dlc.once(dlc.EVENT_CLOSE, self._on_disconnection)
+
         super().__init__(dlc=dlc, configuration=configuration)
+
+        self.speaker_volume_condition = asyncio.Condition()
+        self.speaker_volume = 7
+        self.on(self.EVENT_SPEAKER_VOLUME, self._on_speaker_volume)
 
     @override
     async def initiate_slc(self) -> None:
@@ -132,6 +202,11 @@ class HfProtocol(hfp.HfProtocol):
         # sent during SCO setup.
         connection = self.dlc.multiplexer.l2cap_channel.connection
         connection.abort_on("disconnection", self.execute_command(f"AT+BCS={codec_id}"))
+
+    async def _on_speaker_volume(self, volume_level: int) -> None:
+        async with self.speaker_volume_condition:
+            self.speaker_volume = volume_level
+            self.speaker_volume_condition.notify_all()
 
     def _on_disconnection(self) -> None:
         device = self.dlc.multiplexer.l2cap_channel.connection.device

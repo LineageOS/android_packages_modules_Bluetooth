@@ -110,6 +110,29 @@ public class PublicBroadcastDataTest {
     }
 
     @Test
+    public void buildPublicBroadcastData_withNullPublicMetadata_doesNotCrash() {
+        BluetoothLeBroadcastMetadata.Builder builder =
+                new BluetoothLeBroadcastMetadata.Builder()
+                        .setSourceDevice(getTestDevice(0), ADDRESS_TYPE_RANDOM)
+                        .addSubgroup(createBroadcastSubgroup())
+                        .setEncrypted(true)
+                        .setPublicBroadcast(true)
+                        .setAudioConfigQuality(
+                                BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_STANDARD)
+                        .setPublicBroadcastMetadata(null);
+        BluetoothLeBroadcastMetadata metadata = builder.build();
+
+        // This should not throw a NullPointerException
+        PublicBroadcastData pbData = PublicBroadcastData.buildPublicBroadcastData(metadata);
+
+        assertThat(pbData).isNotNull();
+        assertThat(pbData.isEncrypted()).isTrue();
+        assertThat(pbData.getAudioConfigQuality())
+                .isEqualTo(BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_STANDARD);
+        assertThat(pbData.getMetadata()).isEqualTo(new byte[0]);
+    }
+
+    @Test
     public void parsePublicBroadcastData() {
         assertThat(PublicBroadcastData.parsePublicBroadcastData(null)).isNull();
 

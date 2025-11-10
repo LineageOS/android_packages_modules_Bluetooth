@@ -163,7 +163,7 @@ public class PbapClientService extends ConnectableProfile {
      * up when we shutdown.
      */
     private void registerSdpRecord() {
-        final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();
+        final var nativeInterface = getAdapterService().getSdpManagerNativeInterface();
         if (nativeInterface.isEmpty()) {
             Log.e(TAG, "SdpManagerNativeInterface is not available");
             return;
@@ -184,7 +184,7 @@ public class PbapClientService extends ConnectableProfile {
         }
         int sdpHandle = mSdpHandle;
         mSdpHandle = -1;
-        final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();
+        final var nativeInterface = getAdapterService().getSdpManagerNativeInterface();
         if (nativeInterface.isEmpty()) {
             Log.e(
                     TAG,
@@ -228,7 +228,7 @@ public class PbapClientService extends ConnectableProfile {
                 }
                 stateMachine =
                         new PbapClientStateMachine(
-                                mAdapterService,
+                                getAdapterService(),
                                 device,
                                 mPbapClientContactsStorage,
                                 this,
@@ -389,7 +389,7 @@ public class PbapClientService extends ConnectableProfile {
         Log.d(TAG, "connect(device=" + device.getAddress() + ")");
         if (getConnectionPolicy(device) <= CONNECTION_POLICY_FORBIDDEN
                 || (Flags.pbapClientCheckAccessPermission()
-                        && mAdapterService.getPhonebookAccessPermission(device)
+                        && getAdapterService().getPhonebookAccessPermission(device)
                                 != BluetoothDevice.ACCESS_ALLOWED)) {
             return false;
         }
@@ -500,7 +500,8 @@ public class PbapClientService extends ConnectableProfile {
         }
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
+        if (!getAdapterService()
+                .setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {

@@ -181,3 +181,14 @@ prop {
     access: Readonly
     prop_name: "bluetooth.core.classic.page_timeout"
 }
+
+# This is used to set the default preferred role for incoming BR/EDR connections.
+# The default perferred role is central.
+prop {
+    api_name: "getClassicPreferredRole"
+    type: Enum
+    scope: Internal
+    access: Readonly
+    enum_values: "central|peripheral"
+    prop_name: "bluetooth.core.classic.preferred_role"
+}

@@ -45,6 +45,7 @@ package android.bluetooth {
     method public int isLeAudioSupported();
     method public boolean isLeCodedPhySupported();
     method public boolean isLeExtendedAdvertisingSupported();
+    method @FlaggedApi("com.android.bluetooth.flags.leaudio_over_hdt_phy_api") public int isLeHighDataThroughputPhySupported();
     method public boolean isLePeriodicAdvertisingSupported();
     method public boolean isMultipleAdvertisementSupported();
     method public boolean isOffloadedFilteringSupported();
@@ -526,11 +527,14 @@ package android.bluetooth {
   }
 
   public final class BluetoothDevice implements android.os.Parcelable {
-    method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback);
-    method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback, int);
-    method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback, int, int);
-    method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback, int, int, android.os.Handler);
+    method @FlaggedApi("com.android.bluetooth.flags.apairing_26q2_permission_improvements") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional=true) public boolean cancelBondProcess();
+    method @Deprecated @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback);
+    method @Deprecated @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback, int);
+    method @Deprecated @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback, int, int);
+    method @Deprecated @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback, int, int, android.os.Handler);
+    method @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") @Nullable @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(@NonNull android.bluetooth.BluetoothGattConnectionSettings);
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean createBond();
+    method @FlaggedApi("com.android.bluetooth.flags.apairing_26q2_permission_improvements") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean createBond(int);
     method @NonNull public android.bluetooth.BluetoothSocket createInsecureL2capChannel(int) throws java.io.IOException;
     method public android.bluetooth.BluetoothSocket createInsecureRfcommSocketToServiceRecord(java.util.UUID) throws java.io.IOException;
     method @NonNull public android.bluetooth.BluetoothSocket createL2capChannel(int) throws java.io.IOException;
@@ -552,7 +556,7 @@ package android.bluetooth {
     method @FlaggedApi("com.android.bluetooth.flags.link_status_api") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean isConnected(int);
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional=true) public int setAlias(@Nullable String);
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public boolean setPairingConfirmation(boolean);
-    method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean setPin(byte[]);
+    method @Deprecated @FlaggedApi("com.android.bluetooth.flags.apairing_26q2_permission_improvements") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional=true) public boolean setPin(byte[]);
     method public void writeToParcel(android.os.Parcel, int);
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_ACL_CONNECTED = "android.bluetooth.device.action.ACL_CONNECTED";
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_ACL_DISCONNECTED = "android.bluetooth.device.action.ACL_DISCONNECTED";
@@ -614,6 +618,8 @@ package android.bluetooth {
     field public static final int PHY_LE_2M_MASK = 2; // 0x2
     field public static final int PHY_LE_CODED = 3; // 0x3
     field public static final int PHY_LE_CODED_MASK = 4; // 0x4
+    field @FlaggedApi("com.android.bluetooth.flags.leaudio_over_hdt_phy_api") public static final int PHY_LE_HDT = 5; // 0x5
+    field @FlaggedApi("com.android.bluetooth.flags.leaudio_over_hdt_phy_api") public static final int PHY_LE_HDT_MASK = 16; // 0x10
     field public static final int PHY_OPTION_NO_PREFERRED = 0; // 0x0
     field public static final int PHY_OPTION_S2 = 1; // 0x1
     field public static final int PHY_OPTION_S8 = 2; // 0x2
@@ -757,6 +763,22 @@ package android.bluetooth {
     field protected java.util.List<android.bluetooth.BluetoothGattDescriptor> mDescriptors;
   }
 
+  @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") public final class BluetoothGattConnectionSettings {
+    method @NonNull public android.bluetooth.BluetoothGattCallback getBluetoothGattCallback();
+    method @NonNull public java.util.concurrent.Executor getBluetoothGattCallbackExecutor();
+    method public int getTransport();
+    method public boolean isAutoConnectEnabled();
+    method public boolean isOpportunisticEnabled();
+  }
+
+  public static final class BluetoothGattConnectionSettings.Builder {
+    ctor public BluetoothGattConnectionSettings.Builder(@NonNull java.util.concurrent.Executor, @NonNull android.bluetooth.BluetoothGattCallback);
+    method @NonNull public android.bluetooth.BluetoothGattConnectionSettings build();
+    method @NonNull public android.bluetooth.BluetoothGattConnectionSettings.Builder setAutoConnectEnabled(boolean);
+    method @NonNull public android.bluetooth.BluetoothGattConnectionSettings.Builder setOpportunisticEnabled(boolean);
+    method @NonNull public android.bluetooth.BluetoothGattConnectionSettings.Builder setTransport(int);
+  }
+
   public class BluetoothGattDescriptor implements android.os.Parcelable {
     ctor public BluetoothGattDescriptor(java.util.UUID, int);
     method public int describeContents();
@@ -795,7 +817,7 @@ package android.bluetooth {
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public int notifyCharacteristicChanged(@NonNull android.bluetooth.BluetoothDevice, @NonNull android.bluetooth.BluetoothGattCharacteristic, boolean, @NonNull byte[]);
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public void readPhy(android.bluetooth.BluetoothDevice);
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean removeService(android.bluetooth.BluetoothGattService);
-    method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean sendResponse(android.bluetooth.BluetoothDevice, int, int, int, byte[]);
+    method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean sendResponse(@NonNull android.bluetooth.BluetoothDevice, int, int, int, @Nullable byte[]);
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public void setPreferredPhy(android.bluetooth.BluetoothDevice, int, int, int);
   }
 

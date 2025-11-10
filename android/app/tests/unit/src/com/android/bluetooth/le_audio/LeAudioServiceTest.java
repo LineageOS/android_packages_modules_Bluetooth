@@ -46,6 +46,7 @@ import static com.android.bluetooth.le_audio.LeAudioTmapGattServer.TMAP_ROLE_FLA
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -57,6 +58,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.app.ActivityManager;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.BluetoothLeAudioCodecConfig;
@@ -69,6 +71,7 @@ import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.media.BluetoothProfileConnectionInfo;
@@ -142,14 +145,16 @@ public class LeAudioServiceTest {
     @Rule public final TemporaryFolder mTempFolder = new TemporaryFolder();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private ScanController mScanController;
     @Mock private ActiveDeviceManager mActiveDeviceManager;
+    @Mock private ScanController mScanController;
     @Mock private AudioManager mAudioManager;
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private LeAudioNativeInterface mNativeInterface;
     @Mock private ApplicationInfo mMockApplicationInfo;
     @Mock private LeAudioBroadcasterNativeInterface mLeAudioBroadcasterNativeInterface;
     @Mock private LeAudioTmapGattServer mTmapGattServer;
+    @Mock private ActivityManager mActivityManager;
+    @Mock private PackageManager mPackageManager;
     @Mock private A2dpService mA2dpService;
     @Mock private BassClientService mBassClientService;
     @Mock private CsipSetCoordinatorService mCsipSetCoordinatorService;
@@ -173,9 +178,6 @@ public class LeAudioServiceTest {
     private final BluetoothDevice mSingleDevice_2 = getTestDevice(3);
     private final BluetoothDevice mBroadcastDevice = getTestDevice("FF:FF:FF:FF:FF:FF");
 
-    private LeAudioService mService;
-    private BluetoothStorageManager mStorage;
-    private TestLooper mLooper;
     private static final int TEST_GROUP_ID = 1;
     private static final int TEST_GROUP_ID2 = 2;
     private boolean onGroupStatusCallbackCalled = false;
@@ -252,6 +254,9 @@ public class LeAudioServiceTest {
     private static final List<BluetoothLeAudioCodecConfig> OPUS_SELECTABLE_CONFIGS =
             List.of(LC3_48KHZ_16KHZ_CONFIG, OPUS_48KHZ_CONFIG, OPUS_HI_RES_96KHZ_CONFIG);
 
+    private LeAudioService mService;
+    private BluetoothStorageManager mStorage;
+    private TestLooper mLooper;
     private InOrder mInOrder;
 
     @Parameters(name = "{0}")
@@ -303,7 +308,6 @@ public class LeAudioServiceTest {
                         })
                 .when(mScanController)
                 .doOnScanThread(any(Runnable.class));
-        doReturn(mScanController).when(mAdapterService).getBluetoothScanController();
         mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
         doAnswer(invocation -> mBondedDevices.toArray(new BluetoothDevice[] {}))
                 .when(mAdapterService)
@@ -365,7 +369,10 @@ public class LeAudioServiceTest {
                         mNativeInterface,
                         mLeAudioBroadcasterNativeInterface,
                         mActiveDeviceManager,
-                        mLooper.getLooper());
+                        mScanController,
+                        mLooper.getLooper(),
+                        mActivityManager,
+                        mPackageManager);
         mService.setAvailable(true);
 
         LeAudioStackEvent stackEvent =
@@ -446,7 +453,10 @@ public class LeAudioServiceTest {
                                 mNativeInterface,
                                 mLeAudioBroadcasterNativeInterface,
                                 mActiveDeviceManager,
-                                mLooper.getLooper())
+                                mScanController,
+                                mLooper.getLooper(),
+                                mActivityManager,
+                                mPackageManager)
                         .getTmapRoleMask();
         assertThat(mask).isEqualTo(expectedMasks);
     }
@@ -3796,6 +3806,168 @@ public class LeAudioServiceTest {
             assertThat(mService.mLeAudioCallbacks.beginBroadcast()).isEqualTo(0);
             mService.mLeAudioCallbacks.finishBroadcast();
         }
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_GAME_DETECTOR)
+    public void testGameModeActivation_singleGame() throws Exception {
+        int testUid = 1001;
+        String gamePackageName = "com.example.game";
+
+        // Mock package manager to identify the app as a game
+        when(mPackageManager.getPackagesForUid(testUid)).thenReturn(new String[] {gamePackageName});
+        ApplicationInfo gameAppInfo = new ApplicationInfo();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            gameAppInfo.category = ApplicationInfo.CATEGORY_GAME;
+        } else {
+            gameAppInfo.flags = ApplicationInfo.FLAG_IS_GAME;
+        }
+
+        when(mPackageManager.getApplicationInfo(eq(gamePackageName), anyInt()))
+                .thenReturn(gameAppInfo);
+
+        ArgumentCaptor<ActivityManager.OnUidImportanceListener> listenerCaptor =
+                ArgumentCaptor.forClass(ActivityManager.OnUidImportanceListener.class);
+
+        verify(mActivityManager)
+                .addOnUidImportanceListener(
+                        listenerCaptor.capture(),
+                        eq(ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE));
+
+        // Initial state: no games running
+        assertThat(mService.mGameTrackingList).isEmpty();
+        verify(mNativeInterface, never()).setInGame(anyBoolean());
+
+        // 1. Game app comes to foreground
+        listenerCaptor
+                .getValue()
+                .onUidImportance(
+                        testUid, ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND);
+        mLooper.dispatchAll();
+
+        // Verify game mode is enabled
+        verify(mNativeInterface).setInGame(true);
+        assertThat(mService.mGameTrackingList).hasSize(1);
+        assertThat(mService.mGameTrackingList.get(0).getUid()).isEqualTo(testUid);
+
+        // 2. Game app goes to background (cached)
+        listenerCaptor
+                .getValue()
+                .onUidImportance(testUid, ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED);
+        mLooper.dispatchAll();
+
+        // Verify game mode is still enabled, and background monitor is active
+        verify(mNativeInterface, times(1)).setInGame(true); // no change
+        assertThat(mService.mGameTrackingList).hasSize(1);
+        assertThat(mService.mGameTrackingList.get(0).isBackgroundMonitorActive()).isTrue();
+
+        // 3. Game app is gone
+        listenerCaptor
+                .getValue()
+                .onUidImportance(testUid, ActivityManager.RunningAppProcessInfo.IMPORTANCE_GONE);
+        mLooper.dispatchAll();
+
+        // Verify game mode is disabled
+        verify(mNativeInterface).setInGame(false);
+        assertThat(mService.mGameTrackingList).isEmpty();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_GAME_DETECTOR)
+    public void testGameModeActivation_multipleGames() throws Exception {
+        int testUid1 = 1001;
+        String gamePackageName1 = "com.example.game1";
+        int testUid2 = 1002;
+        String gamePackageName2 = "com.example.game2";
+
+        // Mock package manager for two game apps
+        when(mPackageManager.getPackagesForUid(testUid1))
+                .thenReturn(new String[] {gamePackageName1});
+        when(mPackageManager.getPackagesForUid(testUid2))
+                .thenReturn(new String[] {gamePackageName2});
+        ApplicationInfo gameAppInfo = new ApplicationInfo();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            gameAppInfo.category = ApplicationInfo.CATEGORY_GAME;
+        } else {
+            gameAppInfo.flags = ApplicationInfo.FLAG_IS_GAME;
+        }
+        when(mPackageManager.getApplicationInfo(eq(gamePackageName1), anyInt()))
+                .thenReturn(gameAppInfo);
+        when(mPackageManager.getApplicationInfo(eq(gamePackageName2), anyInt()))
+                .thenReturn(gameAppInfo);
+
+        ArgumentCaptor<ActivityManager.OnUidImportanceListener> listenerCaptor =
+                ArgumentCaptor.forClass(ActivityManager.OnUidImportanceListener.class);
+
+        verify(mActivityManager)
+                .addOnUidImportanceListener(
+                        listenerCaptor.capture(),
+                        eq(ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE));
+        // Initial state
+        assertThat(mService.mGameTrackingList).isEmpty();
+
+        // 1. First game app comes to foreground
+        listenerCaptor
+                .getValue()
+                .onUidImportance(
+                        testUid1, ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND);
+        mLooper.dispatchAll();
+
+        // Verify game mode is enabled
+        verify(mNativeInterface, times(1)).setInGame(true);
+        assertThat(mService.mGameTrackingList).hasSize(1);
+
+        // 2. Second game app comes to foreground
+        listenerCaptor
+                .getValue()
+                .onUidImportance(
+                        testUid2, ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND);
+        mLooper.dispatchAll();
+
+        // Verify setInGame(true) is not called again
+        verify(mNativeInterface, times(1)).setInGame(true);
+        assertThat(mService.mGameTrackingList).hasSize(2);
+
+        // 3. First game app goes away
+        listenerCaptor
+                .getValue()
+                .onUidImportance(testUid1, ActivityManager.RunningAppProcessInfo.IMPORTANCE_GONE);
+        mLooper.dispatchAll();
+
+        // Verify game mode is still enabled
+        verify(mNativeInterface, never()).setInGame(false);
+        assertThat(mService.mGameTrackingList).hasSize(1);
+
+        // 4. Second game app goes to background (cached)
+        listenerCaptor
+                .getValue()
+                .onUidImportance(testUid2, ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED);
+        mLooper.dispatchAll();
+
+        // Verify game mode is still enabled and background monitor is active
+        verify(mNativeInterface, never()).setInGame(false);
+        assertThat(mService.mGameTrackingList).hasSize(1);
+        assertThat(mService.mGameTrackingList.get(0).isBackgroundMonitorActive()).isTrue();
+
+        // 5. Second game app comes back to foreground
+        listenerCaptor
+                .getValue()
+                .onUidImportance(
+                        testUid2, ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND);
+        mLooper.dispatchAll();
+
+        // Verify background monitor is stopped
+        assertThat(mService.mGameTrackingList.get(0).isBackgroundMonitorActive()).isFalse();
+
+        // 6. Second game app finally goes away
+        listenerCaptor
+                .getValue()
+                .onUidImportance(testUid2, ActivityManager.RunningAppProcessInfo.IMPORTANCE_GONE);
+        mLooper.dispatchAll();
+
+        // Verify game mode is disabled
+        verify(mNativeInterface).setInGame(false);
+        assertThat(mService.mGameTrackingList).isEmpty();
     }
 
     private void verifyActiveDeviceStateIntent(BluetoothDevice device) {

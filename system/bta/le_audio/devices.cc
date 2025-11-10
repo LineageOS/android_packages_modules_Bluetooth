@@ -1552,6 +1552,8 @@ void LeAudioDevice::StartConnSubrate() {
           BTA_GATTC_SubrateModeRequest(client_if_, address_, GATT_SUBRATE_MODE_LEA);
 
       if (status != GATT_SUCCESS) {
+        stack::l2cap::get_interface().L2CA_LockBleConnParamsForLeAudioSubrate(address_, false);
+        SetSubrateState(SubrateState::DISABLED);
         log::error("Fail to request subrate mode.");
       } else {
         SetSubrateState(SubrateState::PENDING_ENABLING_SUBRATE_UPDATE);

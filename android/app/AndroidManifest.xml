@@ -92,7 +92,8 @@
          android:usesCleartextTraffic="false"
          android:directBootAware="true"
          android:defaultToDeviceProtectedStorage="true"
-         android:memtagMode="async">
+         android:memtagMode="async"
+         android:backupAgent="com.android.bluetooth.backup.BluetoothBackupAgent">
 
         <service android:process="@string/process"
              android:name="com.android.bluetooth.btservice.AdapterService"
@@ -285,5 +286,13 @@
             <meta-data android:name="android.accounts.AccountAuthenticator"
                  android:resource="@xml/authenticator"/>
         </service>
+
+        <receiver
+            android:name="com.android.bluetooth.backup.BackupBroadcastReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.android.bluetooth.backup.ACTION_BACKUP_DATA" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

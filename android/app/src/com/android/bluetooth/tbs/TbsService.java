@@ -148,7 +148,7 @@ public class TbsService extends ProfileService {
             return authorization;
         }
 
-        final var leAudio = mAdapterService.getLeAudioService();
+        final var leAudio = getAdapterService().getLeAudioService();
         if (leAudio.isEmpty()) {
             Log.e(TAG, "TBS access not permitted. LeAudioService not available");
             return BluetoothDevice.ACCESS_UNKNOWN;

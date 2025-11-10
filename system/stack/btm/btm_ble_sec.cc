@@ -30,6 +30,7 @@
 #include <optional>
 
 #include "btif/include/btif_storage.h"
+#include "btm_security_record.h"
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "device/include/interop.h"
 #include "hci/controller.h"
@@ -82,14 +83,13 @@ void BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
 
   BtmDevice* p_device = btm_find_dev(bd_addr);
   if (!p_device) {
-    p_device = btm_sec_allocate_dev_rec();
+    p_device = btm_sec_allocate_dev_rec(bd_addr);
 
     if (p_device == nullptr) {
       log::warn("device record allocation failed bd_addr:{}", bd_addr);
       return;
     }
 
-    p_device->bd_addr = bd_addr;
     p_device->hci_handle =
             get_btm_client_interface().peer.BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_BR_EDR);
     p_device->ble_hci_handle =
@@ -653,6 +653,13 @@ void btm_sec_save_le_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
       } else {
         p_device->sec_rec.sec_flags &= ~BTM_SEC_LE_LINK_KEY_AUTHED;
       }
+
+      if (p_keys->pairing_algorithm != PairingAlgorithm::LEGACY &&
+          p_keys->pairing_algorithm != PairingAlgorithm::SC) {
+        log::error("Invalid pairing algorithm: {} for bd_addr: {}", p_keys->pairing_algorithm,
+                   bd_addr);
+      }
+      p_device->sec_rec.ble_pairing_algorithm = p_keys->pairing_algorithm;
       log::verbose("BTM_LE_KEY_PENC key_type=0x{:x} sec_flags=0x{:x} sec_leve=0x{:x} for {}",
                    p_device->sec_rec.ble_keys.key_type, p_device->sec_rec.sec_flags,
                    p_device->sec_rec.ble_keys.sec_level, bd_addr);
@@ -695,6 +702,13 @@ void btm_sec_save_le_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
       p_device->sec_rec.ble_keys.sec_level = p_keys->lenc_key.sec_level;
       p_device->sec_rec.ble_keys.key_size = p_keys->lenc_key.key_size;
       p_device->sec_rec.ble_keys.key_type |= BTM_LE_KEY_LENC;
+
+      if (p_keys->pairing_algorithm != PairingAlgorithm::LEGACY &&
+          p_keys->pairing_algorithm != PairingAlgorithm::SC) {
+        log::error("Invalid pairing algorithm: {} for bd_addr: {}", p_keys->pairing_algorithm,
+                   bd_addr);
+      }
+      p_device->sec_rec.ble_pairing_algorithm = p_keys->pairing_algorithm;
 
       log::verbose(
               "BTM_LE_KEY_LENC key_type=0x{:x} DIV=0x{:x} key_size=0x{:x} "

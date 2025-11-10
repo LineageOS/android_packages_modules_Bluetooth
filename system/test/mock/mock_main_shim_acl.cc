@@ -96,7 +96,8 @@ void shim::Acl::OnLeLinkDisconnected(HciHandle /* handle */, hci::ErrorCode /* r
 }
 
 void shim::Acl::OnConnectSuccess(
-        std::unique_ptr<hci::acl_manager::ClassicAclConnection> /* connection */) {
+        std::unique_ptr<hci::acl_manager::ClassicAclConnection> /* connection */,
+        hci::Role /* role */) {
   inc_func_call_count(__func__);
 }
 

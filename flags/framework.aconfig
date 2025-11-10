@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "set_component_available_fix"
-    namespace: "bluetooth"
-    description: "Ensure the state in PackageManager has DISABLED to ENABLED to trigger PACKAGE_CHANGED"
-    bug: "391084450"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "fix_started_module_race"
     namespace: "bluetooth"
     description: "Fix race in modifying and accessing started modules"

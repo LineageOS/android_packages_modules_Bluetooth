@@ -16,9 +16,11 @@
 
 #pragma once
 
+#include <android_bluetooth_sysprop.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <memory>
 
@@ -360,19 +362,31 @@ public:
                     queue_down_end, handler_,
                     connection->GetEventCallbacks(
                             [this](uint16_t handle) { this->connections.invalidate(handle); }));
-    connections.execute(address, [=, this](ConnectionManagementCallbacks* callbacks) {
-      if (delayed_role_change_ == nullptr) {
-        callbacks->OnRoleChange(hci::ErrorCode::SUCCESS, current_role);
-      } else if (delayed_role_change_->GetBdAddr() == address) {
-        log::info("Sending delayed role change for {}", delayed_role_change_->GetBdAddr());
-        callbacks->OnRoleChange(delayed_role_change_->GetStatus(),
-                                delayed_role_change_->GetNewRole());
-        delayed_role_change_.reset();
-      }
-    });
+
+    if (!com_android_bluetooth_flags_remove_fake_role_change_event()) {
+      connections.execute(address, [=, this](ConnectionManagementCallbacks* callbacks) {
+        if (delayed_role_change_ == nullptr) {
+          log::info("Sending fake role change for {}", address);
+          callbacks->OnRoleChange(hci::ErrorCode::SUCCESS, current_role);
+        } else if (delayed_role_change_->GetBdAddr() == address) {
+          log::info("Sending delayed role change for {}", delayed_role_change_->GetBdAddr());
+          callbacks->OnRoleChange(delayed_role_change_->GetStatus(),
+                                  delayed_role_change_->GetNewRole());
+          delayed_role_change_.reset();
+        }
+      });
+    }
+
+    if (delayed_role_change_ != nullptr && delayed_role_change_->IsValid() &&
+        delayed_role_change_->GetBdAddr() == address) {
+      current_role = delayed_role_change_->GetNewRole();
+      log::verbose("{} Role had changed to {} prior to connection complete", address, current_role);
+      delayed_role_change_.reset();
+    }
+
     client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectSuccess,
                                            common::Unretained(client_callbacks_),
-                                           std::move(connection)));
+                                           std::move(connection), std::move(current_role)));
   }
 
   void on_connection_complete(EventView packet) {
@@ -721,15 +735,29 @@ public:
             handler_->BindOnce(check_complete<WriteDefaultLinkPolicySettingsCompleteView>));
   }
 
+  AcceptConnectionRequestRole get_preferred_role() {
+    auto sysprop_value = android::sysprop::bluetooth::Core::getClassicPreferredRole().value_or(
+            android::sysprop::bluetooth::Core::getClassicPreferredRole_values::CENTRAL);
+
+    if (sysprop_value ==
+        android::sysprop::bluetooth::Core::getClassicPreferredRole_values::PERIPHERAL) {
+      return AcceptConnectionRequestRole::REMAIN_PERIPHERAL;
+    } else {
+      return AcceptConnectionRequestRole::BECOME_CENTRAL;
+    }
+  }
+
   void accept_connection(Address address) {
-    auto role = AcceptConnectionRequestRole::BECOME_CENTRAL;  // We prefer to be central
+    auto role = get_preferred_role();
 
     // Some devices would not respond when local  accept connection as central.
     RawAddress raw_address = ToRawAddress(address);
-    if (interop_match_addr(INTEROP_REMAIN_PERIPHERAL_ON_ACCEPT_CONNECTION_REQUEST, &raw_address)) {
+    if (role == AcceptConnectionRequestRole::BECOME_CENTRAL &&
+        interop_match_addr(INTEROP_REMAIN_PERIPHERAL_ON_ACCEPT_CONNECTION_REQUEST, &raw_address)) {
       log::info("IOP workaround for {}, accept connection as peripheral", raw_address);
       role = AcceptConnectionRequestRole::REMAIN_PERIPHERAL;
     }
+
     acl_connection_interface_->EnqueueCommand(
             AcceptConnectionRequestBuilder::Create(address, role),
             handler_->BindOnceOn(this, &classic_impl::on_accept_connection_status, address));

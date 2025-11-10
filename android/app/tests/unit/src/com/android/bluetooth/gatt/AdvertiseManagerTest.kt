@@ -28,6 +28,7 @@ import androidx.test.filters.SmallTest
 import com.android.bluetooth.TestLooper
 import com.android.bluetooth.btservice.AdapterService
 import com.android.tests.bluetooth.MockitoRule
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -98,6 +99,11 @@ class AdvertiseManagerTest {
         )
 
         advertiserId = advertiseManager.mTempRegistrationId
+    }
+
+    @After
+    fun tearDown() {
+        advertiseManager.cleanup()
     }
 
     @Test

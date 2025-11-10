@@ -144,7 +144,7 @@ public class HeadsetClientService extends ConnectableProfile {
             if (getPackageManager() != null
                     && !getPackageManager().hasSystemFeature(FEATURE_WATCH)) {
                 Intent stopIntent = new Intent(this, HfpClientConnectionService.class);
-                mAdapterService.stopService(stopIntent);
+                getAdapterService().stopService(stopIntent);
             }
         }
 
@@ -382,7 +382,8 @@ public class HeadsetClientService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
+        if (!getAdapterService()
+                .setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -874,9 +875,9 @@ public class HeadsetClientService extends ConnectableProfile {
             Log.d(TAG, "Creating a new state machine");
             sm =
                     new HeadsetClientStateMachine(
-                            mAdapterService,
+                            getAdapterService(),
                             this,
-                            mAdapterService.getHeadsetService(),
+                            getAdapterService().getHeadsetService(),
                             mSmThread.getLooper(),
                             mNativeInterface);
             mStateMachineMap.put(device, sm);
@@ -908,7 +909,7 @@ public class HeadsetClientService extends ConnectableProfile {
     }
 
     void handleBatteryLevelChanged(BluetoothDevice device, int batteryLevel) {
-        mAdapterService.getRemoteDevices().handleAgBatteryLevelChanged(device, batteryLevel);
+        getAdapterService().getRemoteDevices().handleAgBatteryLevelChanged(device, batteryLevel);
     }
 
     @Override

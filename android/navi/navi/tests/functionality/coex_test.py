@@ -26,6 +26,7 @@ from mobly import test_runner
 from typing_extensions import override
 
 from navi.bumble_ext import a2dp as a2dp_ext
+from navi.bumble_ext import avrcp as avrcp_ext
 from navi.bumble_ext import hfp as hfp_ext
 from navi.tests import navi_test_base
 from navi.utils import android_constants
@@ -46,34 +47,6 @@ _ScoState = android_constants.ScoState
 _HfpAgAudioStateChange = bl4a_api.HfpAgAudioStateChanged
 _CallState = android_constants.CallState
 _CallbackHandler = bl4a_api.CallbackHandler
-
-_DEFAULT_HF_CONFIGURATION = hfp.HfConfiguration(
-    supported_hf_features=[],
-    supported_hf_indicators=[],
-    supported_audio_codecs=[
-        _AudioCodec.CVSD,
-        _AudioCodec.MSBC,
-    ],
-)
-
-_DEFAULT_AG_CONFIGURATION = hfp.AgConfiguration(
-    supported_ag_features=(hfp.AgFeature.ENHANCED_CALL_STATUS,),
-    supported_ag_indicators=([
-        hfp.AgIndicatorState.call(),
-        hfp.AgIndicatorState.callsetup(),
-        hfp.AgIndicatorState.service(),
-        hfp.AgIndicatorState.signal(),
-        hfp.AgIndicatorState.roam(),
-        hfp.AgIndicatorState.callheld(),
-        hfp.AgIndicatorState.battchg(),
-    ]),
-    supported_hf_indicators=[],
-    supported_ag_call_hold_operations=[],
-    supported_audio_codecs=[
-        _AudioCodec.CVSD,
-        _AudioCodec.MSBC,
-    ],
-)
 
 
 class CoexTest(navi_test_base.MultiDevicesTestBase):
@@ -116,7 +89,7 @@ class CoexTest(navi_test_base.MultiDevicesTestBase):
                 [codec.get_default_capabilities() for codec in a2dp_codecs],
                 _A2DP_SERVICE_RECORD_HANDLE,
             )
-            a2dp_ext.setup_avrcp_server(
+            avrcp_ext.setup_server(
                 ref.device,
                 avrcp_controller_handle=_AVRCP_CONTROLLER_RECORD_HANDLE,
                 avrcp_target_handle=_AVRCP_TARGET_RECORD_HANDLE,
@@ -137,7 +110,7 @@ class CoexTest(navi_test_base.MultiDevicesTestBase):
                 self.dut.bl4a.register_callback(_Module.HFP_AG) as dut_cb_hfp,
         ):
             self._setup_headset_device(
-                hfp_configuration=_DEFAULT_HF_CONFIGURATION,
+                hfp_configuration=hfp_ext.make_hf_configuration(),
                 a2dp_codecs=[a2dp_ext.A2dpCodec.SBC],
             )
             self.logger.info("[DUT] Connect and pair REF.")
@@ -306,7 +279,7 @@ class CoexTest(navi_test_base.MultiDevicesTestBase):
                 hfp_ext.HfProtocol.setup_server(
                     ref.device,
                     sdp_handle=_HFP_SDP_HANDLE,
-                    configuration=_DEFAULT_HF_CONFIGURATION,
+                    configuration=hfp_ext.make_hf_configuration(),
                 )
 
                 # Disable CTKD to stop the DUT from connecting to REF on LE transport.
@@ -458,20 +431,20 @@ class CoexTest(navi_test_base.MultiDevicesTestBase):
         ref_hf_protocol_queue = hfp_ext.HfProtocol.setup_server(
             self.refs[0].device,
             sdp_handle=_HFP_SDP_HANDLE,
-            configuration=_DEFAULT_HF_CONFIGURATION,
+            configuration=hfp_ext.make_hf_configuration(),
         )
 
         self.ref_ag_protocols = asyncio.Queue[hfp.AgProtocol]()
 
         def on_dlc(dlc: rfcomm.DLC):
-            self.ref_ag_protocols.put_nowait(hfp.AgProtocol(dlc, _DEFAULT_AG_CONFIGURATION))
+            self.ref_ag_protocols.put_nowait(hfp.AgProtocol(dlc, hfp_ext.make_ag_configuration()))
 
         self.refs[1].device.sdp_service_records = {
             _HFP_SDP_HANDLE:
                 hfp.make_ag_sdp_records(
                     service_record_handle=_HFP_SDP_HANDLE,
                     rfcomm_channel=rfcomm.Server(self.refs[1].device).listen(on_dlc),
-                    configuration=_DEFAULT_AG_CONFIGURATION,
+                    configuration=hfp_ext.make_ag_configuration(),
                 )
         }
 

@@ -32,18 +32,20 @@ private constructor(
     val scanModeApp: Int,
     val filters: List<ScanFilter>,
     val userHandle: UserHandle?,
-    val isInternalClient: Boolean,
-    var started: Boolean = false,
-    var appDied: Boolean = false,
-    var hasLocationPermission: Boolean = false,
-    var isEligibleForSanitizedExposureNotification: Boolean = false,
-    var hasNetworkSettingsPermission: Boolean = false,
-    var hasNetworkSetupWizardPermission: Boolean = false,
-    var hasScanWithoutLocationPermission: Boolean = false,
-    var hasDisavowedLocation: Boolean = false,
-    var associatedDevices: List<String> = emptyList(),
-    var appScanStats: AppScanStats? = null,
+    val isInternal: Boolean = false,
+    val hasLocationPermission: Boolean = false,
+    val isEligibleForSanitizedExposureNotification: Boolean = false,
+    val hasNetworkSettingsPermission: Boolean = false,
+    val hasNetworkSetupWizardPermission: Boolean = false,
+    val hasScanWithoutLocationPermission: Boolean = false,
+    val hasDisavowedLocation: Boolean = false,
+    val associatedDevices: List<String> = emptyList(),
 ) {
+    var started = false
+    var appDied = false
+    var appScanStats: AppScanStats? = null
+
+    // This constructor is only used when `ScanClient` acts as a `scannerId` wrapper and for tests
     @JvmOverloads
     constructor(
         appUid: Int,
@@ -51,8 +53,92 @@ private constructor(
         settings: ScanSettings = ScanSettings.Builder().build(),
         filters: List<ScanFilter> = emptyList(),
         userHandle: UserHandle? = null,
-        isInternalClient: Boolean = false,
-    ) : this(appUid, scannerId, settings, settings.scanMode, filters, userHandle, isInternalClient)
+        hasNetworkSettingsPermission: Boolean = false,
+        hasScanWithoutLocationPermission: Boolean = false,
+        associatedDevices: List<String> = emptyList(),
+    ) : this(
+        appUid,
+        scannerId,
+        settings,
+        settings.scanMode,
+        filters,
+        userHandle,
+        hasNetworkSettingsPermission = hasNetworkSettingsPermission,
+        hasScanWithoutLocationPermission = hasScanWithoutLocationPermission,
+        associatedDevices = associatedDevices,
+    )
+
+    constructor(
+        appUid: Int,
+        scannerId: Int,
+        settings: ScanSettings = ScanSettings.Builder().build(),
+        filters: List<ScanFilter> = emptyList(),
+        userHandle: UserHandle?,
+        eligibleForSanitizedExposureNotification: Boolean,
+        hasDisavowedLocation: Boolean,
+        hasLocationPermission: Boolean,
+        hasNetworkSettingsPermission: Boolean,
+        hasNetworkSetupWizardPermission: Boolean,
+        hasScanWithoutLocationPermission: Boolean,
+        associatedDevices: List<String>,
+    ) : this(
+        appUid = appUid,
+        scannerId = scannerId,
+        settings = settings,
+        scanModeApp = settings.scanMode,
+        filters = filters,
+        userHandle = userHandle,
+        isEligibleForSanitizedExposureNotification = eligibleForSanitizedExposureNotification,
+        hasDisavowedLocation = hasDisavowedLocation,
+        hasLocationPermission = hasLocationPermission,
+        hasNetworkSettingsPermission = hasNetworkSettingsPermission,
+        hasNetworkSetupWizardPermission = hasNetworkSetupWizardPermission,
+        hasScanWithoutLocationPermission = hasScanWithoutLocationPermission,
+        associatedDevices = associatedDevices,
+    )
+
+    // Constructor to be used for internal clients only
+    constructor(
+        appUid: Int,
+        scannerId: Int,
+        settings: ScanSettings = ScanSettings.Builder().build(),
+        filters: List<ScanFilter> = emptyList(),
+        userHandle: UserHandle? = null,
+        hasNetworkSettingsPermission: Boolean,
+        hasNetworkSetupWizardPermission: Boolean,
+        hasScanWithoutLocationPermission: Boolean,
+    ) : this(
+        appUid = appUid,
+        scannerId = scannerId,
+        settings = settings,
+        scanModeApp = settings.scanMode,
+        filters = filters,
+        userHandle = userHandle,
+        isInternal = true,
+        hasNetworkSettingsPermission = hasNetworkSettingsPermission,
+        hasNetworkSetupWizardPermission = hasNetworkSetupWizardPermission,
+        hasScanWithoutLocationPermission = hasScanWithoutLocationPermission,
+    )
+
+    constructor(
+        scannerId: Int,
+        pendingIntentInfo: ScanController.PendingIntentInfo,
+        app: ScannerApp,
+    ) : this(
+        appUid = pendingIntentInfo.callingUid,
+        scannerId = scannerId,
+        settings = pendingIntentInfo.settings,
+        scanModeApp = pendingIntentInfo.settings.scanMode,
+        filters = pendingIntentInfo.filters,
+        userHandle = app.userHandle,
+        hasLocationPermission = app.hasLocationPermission,
+        isEligibleForSanitizedExposureNotification = app.eligibleForSanitizedExposureNotification,
+        hasNetworkSettingsPermission = app.hasNetworkSettingsPermission,
+        hasNetworkSetupWizardPermission = app.hasNetworkSetupWizardPermission,
+        hasScanWithoutLocationPermission = app.hasScanWithoutLocationPermission,
+        associatedDevices = app.associatedDevices ?: emptyList(),
+        hasDisavowedLocation = app.hasDisavowedLocation,
+    )
 
     override fun equals(other: Any?): Boolean {
         if (this === other) {

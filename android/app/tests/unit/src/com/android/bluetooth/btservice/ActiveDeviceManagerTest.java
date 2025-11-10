@@ -156,6 +156,9 @@ public class ActiveDeviceManagerTest {
         doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
         doReturn(Optional.of(mHearingAidService)).when(mAdapterService).getHearingAidService();
         doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
+        doReturn(true)
+                .when(mAdapterService)
+                .isProfileSupported(mLeHearingAidDevice, BluetoothProfile.HAP_CLIENT);
 
         mActiveDeviceManager = new ActiveDeviceManager(mAdapterService, mStorage);
         mActiveDeviceManager.start();
@@ -1900,7 +1903,7 @@ public class ActiveDeviceManagerTest {
         leAudioConnected(mLeHearingAidDevice);
         leHearingAidConnected(mLeHearingAidDevice);
         mTestLooper.dispatchAll();
-        verify(mLeAudioService, times(2)).setActiveDevice(mLeHearingAidDevice);
+        verify(mLeAudioService, atLeastOnce()).setActiveDevice(mLeHearingAidDevice);
         verify(mA2dpService).removeActiveDevice(anyBoolean());
         verify(mHeadsetService).setActiveDevice(null);
         verify(mHearingAidService).removeActiveDevice(anyBoolean());

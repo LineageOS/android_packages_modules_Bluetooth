@@ -18,7 +18,7 @@ A simple LE connection test looks like this:
 ```kotlin
 // Setup a Bumble Pandora device for the duration of the test.
 // Acting as a Pandora client, it can be interacted with through the Pandora APIs.
-@Rule @JvmField val mBumble = PandoraDevice()
+@Rule @JvmField val bumble = PandoraDevice()
 
 /**
  * Tests the Bluetooth GATT connection process with a mock callback.
@@ -34,7 +34,7 @@ fun testGattConnect() {
     // - `hostBlocking()` accesses another gRPC service related to the host.
     //   The following `advertise(...)` sends an advertise request to the server, setting
     //   specific attributes.
-    mBumble
+    bumble
         .hostBlocking()
         .advertise(
             AdvertiseRequest.newBuilder()

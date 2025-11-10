@@ -68,7 +68,7 @@ public class DatabaseManager {
     private static final int MSG_UPDATE_DATABASE = 1;
     private static final int MSG_DELETE_DATABASE = 2;
     private static final int MSG_CLEAR_DATABASE = 100;
-    private static final String LOCAL_STORAGE = "LocalStorage";
+    public static final String LOCAL_STORAGE = "LocalStorage";
 
     private final AdapterService mAdapterService;
     private HandlerThread mHandlerThread = null;

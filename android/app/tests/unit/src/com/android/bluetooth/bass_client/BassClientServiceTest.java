@@ -418,7 +418,6 @@ public class BassClientServiceTest {
                         })
                 .when(mScanController)
                 .doOnScanThread(any(Runnable.class));
-        doReturn(mScanController).when(mAdapterService).getBluetoothScanController();
 
         doAnswer(
                         invocation -> {
@@ -445,11 +444,12 @@ public class BassClientServiceTest {
                             return stateMachine;
                         })
                 .when(mObjectsFactory)
-                .makeStateMachine(any(), any(), any(), any(), any());
+                .makeStateMachine(any(), any(), any(), any(), any(), any());
 
         mLooper = new TestLooper();
 
-        mBassClientService = new BassClientService(mAdapterService, mLooper.getLooper());
+        mBassClientService =
+                new BassClientService(mAdapterService, mScanController, mLooper.getLooper());
         mBassClientService.setAvailable(true);
 
         doReturn(Optional.of(mCsipService)).when(mAdapterService).getCsipSetCoordinatorService();
@@ -538,6 +538,7 @@ public class BassClientServiceTest {
                         eq(mCurrentDevice),
                         eq(mBassClientService),
                         eq(mAdapterService),
+                        eq(mScanController),
                         eq(mPeriodicAdvertisingManager),
                         any());
         BassClientStateMachine stateMachine = mStateMachines.get(mCurrentDevice);
@@ -782,7 +783,8 @@ public class BassClientServiceTest {
         mBassClientService.cleanup();
 
         // Start again
-        mBassClientService = new BassClientService(mAdapterService, mLooper.getLooper());
+        mBassClientService =
+                new BassClientService(mAdapterService, mScanController, mLooper.getLooper());
 
         // Start searching again
         prepareConnectedDeviceGroup();
@@ -1218,9 +1220,6 @@ public class BassClientServiceTest {
     private void generateScanResult(ScanResult result) {
         try {
             mBassScanCallbackCaptor.getValue().onScanResult(result);
-            if (Flags.scanControllerThread()) {
-                mLooper.dispatchAll();
-            }
         } catch (RemoteException e) {
             // the mocked onScanResult doesn't throw RemoteException
         }

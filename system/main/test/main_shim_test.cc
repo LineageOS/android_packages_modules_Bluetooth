@@ -120,8 +120,8 @@ static void mock_on_send_data_upwards(BT_HDR*) {}
 static void mock_on_packets_completed(uint16_t /*handle*/, uint16_t /*num_packets*/) {}
 
 static void mock_connection_classic_on_connected(const RawAddress& /*bda*/, uint16_t /*handle*/,
-                                                 uint8_t /*enc_mode*/, bool /*locally_initiated*/) {
-}
+                                                 uint8_t /*enc_mode*/, bool /*locally_initiated*/,
+                                                 tHCI_ROLE /*role*/) {}
 
 static void mock_connection_classic_on_failed(const RawAddress& /*bda*/, tHCI_STATUS /*status*/,
                                               bool /*locally_initiated*/) {}
@@ -386,7 +386,7 @@ protected:
     ASSERT_EQ(hci::Address({0x11, 0x22, 0x33, 0x44, 0x55, 0x66}), connection->GetAddress());
     raw_connection_ = connection.get();
 
-    acl_->OnConnectSuccess(std::move(connection));
+    acl_->OnConnectSuccess(std::move(connection), hci::Role::CENTRAL);
     ASSERT_EQ(nullptr, connection);
     ASSERT_NE(nullptr, raw_connection_->callbacks_);
   }
@@ -457,7 +457,7 @@ TEST_F(MainShimTest, connect_and_disconnect) {
   ASSERT_EQ(hci::Address({0x11, 0x22, 0x33, 0x44, 0x55, 0x66}), connection->GetAddress());
   MockClassicAclConnection* raw_connection = connection.get();
 
-  acl->OnConnectSuccess(std::move(connection));
+  acl->OnConnectSuccess(std::move(connection), hci::Role::CENTRAL);
   ASSERT_EQ(nullptr, connection);
 
   // Specify local disconnect request

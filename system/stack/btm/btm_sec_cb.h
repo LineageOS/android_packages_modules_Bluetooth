@@ -99,7 +99,9 @@ public:
   bool IsDeviceEncrypted(const RawAddress bd_addr, tBT_TRANSPORT transport);
   bool IsDeviceAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT transport);
   bool IsLinkKeyAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT transport);
-  bool IsSecCBInitialized() { return security_mode != 0; }
+  bool IsSecCBInitialized() {
+    return sec_collision_timer != nullptr; /* re-using the timer as init indicator */
+  }
 
   BtmSecurityRecord* getSecRec(const RawAddress bd_addr);
 

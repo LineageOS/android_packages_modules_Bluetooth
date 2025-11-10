@@ -33,7 +33,7 @@ import com.google.android.mobly.snippet.event.EventCache
 import com.google.android.mobly.snippet.event.SnippetEvent
 import com.google.android.mobly.snippet.rpc.AsyncRpc
 import com.google.android.mobly.snippet.rpc.Rpc
-import com.google.android.mobly.snippet.rpc.RpcOptional
+import com.google.android.mobly.snippet.rpc.RpcDefault
 import java.util.UUID
 import java.util.concurrent.Semaphore
 
@@ -183,13 +183,14 @@ class BluetoothGattClientSnippet : Snippet {
         callbackId: String,
         address: String,
         transport: Int,
-        @RpcOptional addressType: Int?,
+        @RpcDefault(
+            BluetoothDevice.ADDRESS_TYPE_RANDOM.toString(),
+            converter = Utils.IntConverter::class,
+        )
+        addressType: Int = BluetoothDevice.ADDRESS_TYPE_RANDOM,
     ) {
         if (transport == BluetoothDevice.TRANSPORT_LE) {
-                bluetoothAdapter.getRemoteLeDevice(
-                    address,
-                    addressType ?: BluetoothDevice.ADDRESS_TYPE_RANDOM,
-                )
+                bluetoothAdapter.getRemoteLeDevice(address, addressType)
             } else {
                 bluetoothAdapter.getRemoteDevice(address)
             }

@@ -33,10 +33,11 @@ import android.bluetooth.le.ScanSettings
 import android.content.AttributionSource
 import android.os.WorkSource
 import android.util.Log
-import com.android.bluetooth.Utils.checkScanPermissionForDataDelivery
+import com.android.bluetooth.Util.enforceScanPermissionForDataDelivery
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.le_scan.ScanUtil.toStringShort
 
-private const val TAG = "ScanBinder"
+private const val TAG = ScanUtil.TAG_PREFIX + "ScanBinder"
 
 class ScanBinder(
     private val adapterService: AdapterService,
@@ -61,12 +62,8 @@ class ScanBinder(
 
     @RequiresPermission(BLUETOOTH_SCAN)
     private fun getController(source: AttributionSource, method: String): ScanController? {
-        if (
-            !isAvailable || !checkScanPermissionForDataDelivery(adapterService, source, TAG, method)
-        ) {
-            return null
-        }
-
+        if (!isAvailable) return null
+        if (!enforceScanPermissionForDataDelivery(adapterService, source, TAG, method)) return null
         return scanController
     }
 
@@ -195,6 +192,8 @@ class ScanBinder(
         settings: ScanSettings,
         filters: List<ScanFilter>,
     ) {
+        Log.d(TAG, "enforcePrivilegedPermissionIfNeeded(${settings.toStringShort()}, $filters")
+
         fun needsPrivilegedPermissionForScan(settings: ScanSettings): Boolean {
             // BLE scan only mode needs special permission.
             if (adapterService.getState() != BluetoothAdapter.STATE_ON) {
@@ -237,15 +236,6 @@ class ScanBinder(
                     }
                 }
             }
-
-        Log.d(
-            TAG,
-            "enforcePrivilegedPermissionIfNeeded: " +
-                "scanMode=${ScanUtil.scanModeToString(settings.scanMode)}, " +
-                "reportDelayMillis=${settings.reportDelayMillis}, " +
-                "scanResultType=${settings.scanResultType}, " +
-                "filters=$filters",
-        )
 
         if (needsPrivilegedPermissionForScan(settings)) {
             adapterService.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)

@@ -355,6 +355,26 @@ public:
     dev_groups_->RemoveDevice(addr);
   }
 
+  bool ShallCsisBeUsedForTheDevice(const RawAddress& addr) override {
+    if (!com_android_bluetooth_flags_csis_quirk_for_single_device_with_sirk_all_zeros()) {
+      return true;
+    }
+
+    auto device = FindDeviceByAddress(addr);
+    if (device == nullptr) {
+      return false;
+    }
+
+    /* In case remote device has CSIS service BUT something went wrong with connecting this device,
+     * LeAudio code need to make a decision if LeAudio should be connected or not.
+     * If the CSIS is not connected because of the missconfiguration i.e. Sirk is 0x00 and group
+     * size is 1, that means we can just treat device as it does not have CSIS. If there are other
+     * reasons for device being not connected, we consider it as Valid CSIS device and in case of
+     * error it will not be connected. */
+
+    return !device->sirk_all_zeros_size_one;
+  }
+
   int GetGroupId(const RawAddress& addr, Uuid uuid) override {
     auto device = FindDeviceByAddress(addr);
     if (device == nullptr) {
@@ -1137,6 +1157,18 @@ private:
       return;
     }
 
+    auto new_size = value[0];
+
+    if (!device->is_gatt_service_valid && device->sirk_all_zeros && new_size == 1) {
+      /* This is incorrectly configured device which has CSIS service with size 1 and SIRK 0.
+       * We disconnect CSIS and not use it.
+       */
+      device->sirk_all_zeros_size_one = true;
+      log::error("Disconnecting due to invalid SIRK, but device is size 1", device->addr);
+      BTA_GATTC_Close(device->conn_id);
+      return;
+    }
+
     auto csis_instance = device->GetCsisInstanceByOwningHandle(handle);
     if (csis_instance == nullptr) {
       log::error("Unknown csis instance");
@@ -1149,7 +1181,6 @@ private:
       return;
     }
 
-    auto new_size = value[0];
     csis_group->SetDesiredSize(new_size);
 
     if (notify_valid_services) {
@@ -1624,8 +1655,17 @@ private:
     /* Verify if sirk is not all zeros */
     Octet16 zero{};
     if (memcmp(zero.data(), value + 1, 16) == 0) {
-      log::error("Received invalid zero SIRK conn_id: 0x{:02x}. Disconnecting", device->conn_id);
-      BTA_GATTC_Close(device->conn_id);
+      log::error("Received invalid zero SIRK for {}, conn_id: {:#x}.", device->addr,
+                 device->conn_id);
+      if (!com_android_bluetooth_flags_csis_quirk_for_single_device_with_sirk_all_zeros() ||
+          device->is_gatt_service_valid ||
+          (csis_instance->svc_data.size_handle.val_hdl == GAP_INVALID_HANDLE)) {
+        log::error("Disconnecting out of spec device {}", device->addr);
+        BTA_GATTC_Close(device->conn_id);
+      } else {
+        device->sirk_all_zeros = true;
+        log::warn("Wait for the set size before disconnect");
+      }
       return;
     }
 

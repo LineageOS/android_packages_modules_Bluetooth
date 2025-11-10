@@ -104,9 +104,9 @@ interface IBluetoothLeAudio {
 
     // Broadcaster API
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
-    void registerLeBroadcastCallback(in IBluetoothLeBroadcastCallback callback, in AttributionSource attributionSource);
+    oneway void registerLeBroadcastCallback(in IBluetoothLeBroadcastCallback callback, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
-    void unregisterLeBroadcastCallback(in IBluetoothLeBroadcastCallback callback, in AttributionSource attributionSource);
+    oneway void unregisterLeBroadcastCallback(in IBluetoothLeBroadcastCallback callback, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     void startBroadcast(in BluetoothLeBroadcastSettings broadcastSettings, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")

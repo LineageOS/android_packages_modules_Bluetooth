@@ -176,6 +176,7 @@ static const types::DataPathConfiguration lc3_data_path = {
 };
 
 static const BroadcastQosConfig qos_config_2_10 = BroadcastQosConfig(2, 10);
+static const BroadcastQosConfig qos_config_4_20 = BroadcastQosConfig(4, 20);
 static const BroadcastQosConfig qos_config_4_45 = BroadcastQosConfig(4, 45);
 static const BroadcastQosConfig qos_config_4_50 = BroadcastQosConfig(4, 50);
 static const BroadcastQosConfig qos_config_4_60 = BroadcastQosConfig(4, 60);
@@ -249,6 +250,18 @@ static const BroadcastConfiguration lc3_stereo_48_1_2 = {
         .data_path = lc3_data_path,
         .sduIntervalUs = 10000,
         .maxSduOctets = 150,
+        .phy = 0x02,   // PHY_LE_2M
+        .packing = 0,  // Sequential
+        .framing = 0   // Unframed,
+};
+
+static const BroadcastConfiguration lc3_stereo_48_2_1 = {
+        // subgroup list, qos configuration, data path configuration
+        .subgroups = {lc3_stereo_48_2},
+        .qos = qos_config_4_20,
+        .data_path = lc3_data_path,
+        .sduIntervalUs = 10000,
+        .maxSduOctets = 100,
         .phy = 0x02,   // PHY_LE_2M
         .packing = 0,  // Sequential
         .framing = 0   // Unframed,

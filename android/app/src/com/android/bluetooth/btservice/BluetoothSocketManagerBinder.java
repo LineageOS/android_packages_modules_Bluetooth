@@ -29,6 +29,7 @@ import android.os.ParcelFileDescriptor;
 import android.os.ParcelUuid;
 import android.util.Log;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
 
@@ -58,7 +59,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
 
         enforceActiveUser();
 
-        if (!Utils.checkConnectPermissionForPreflight(mService, source)) {
+        if (!Util.enforceConnectPermissionForPreflight(mService, source)) {
             return null;
         }
 
@@ -112,7 +113,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
 
         enforceActiveUser();
 
-        if (!Utils.checkConnectPermissionForPreflight(mService, source)) {
+        if (!Util.enforceConnectPermissionForPreflight(mService, source)) {
             return null;
         }
 
@@ -166,13 +167,13 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
 
         enforceActiveUser();
 
-        if (!Utils.checkConnectPermissionForPreflight(mService, source)) {
+        if (!Util.enforceConnectPermissionForPreflight(mService, source)) {
             return null;
         }
 
         if ((Flags.lecocWithFixedPsm()
                 && type == BluetoothSocket.TYPE_LE
-                && !Utils.checkCallerHasPrivilegedPermission(mService))) {
+                && !Util.checkCallerHasPrivilegedPermission(mService))) {
             // for non privileged app, ignore the input LE CoC Psm
             port = BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP;
         }
@@ -222,7 +223,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
 
         enforceActiveUser();
 
-        if (!Utils.checkConnectPermissionForPreflight(mService, source)) {
+        if (!Util.enforceConnectPermissionForPreflight(mService, source)) {
             return null;
         }
 
@@ -274,7 +275,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
     public void requestMaximumTxDataLength(BluetoothDevice device, AttributionSource source) {
         enforceActiveUser();
 
-        if (!Utils.checkConnectPermissionForPreflight(mService, source)) {
+        if (!Util.enforceConnectPermissionForPreflight(mService, source)) {
             return;
         }
 

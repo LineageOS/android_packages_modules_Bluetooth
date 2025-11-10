@@ -22,6 +22,8 @@ import android.bluetooth.BluetoothManager
 import android.bluetooth.PandoraDevice
 import android.bluetooth.StreamObserverSpliterator
 import android.bluetooth.Utils
+import android.bluetooth.Utils.BUMBLE_DEVICE_NAME
+import android.bluetooth.Utils.BUMBLE_DEVICE_NAME_2
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSetCallback
 import android.bluetooth.le.AdvertisingSetParameters
@@ -1201,8 +1203,6 @@ class PairingWithDiscoveryTest {
     }
 
     companion object {
-        private const val BUMBLE_DEVICE_NAME = "Bumble"
-        private const val BUMBLE_DEVICE_NAME_2 = "Bumble_2"
         private val BOND_INTENT_TIMEOUT = Duration.ofSeconds(10)
         private const val DISCOVERY_TIMEOUT = 5000L
         private val BATTERY_UUID = ParcelUuid.fromString("0000180F-0000-1000-8000-00805F9B34FB")

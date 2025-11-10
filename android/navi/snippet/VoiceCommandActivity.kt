@@ -18,15 +18,18 @@ package com.google.android.bluetooth.snippet
 
 import android.app.Activity
 import android.content.Intent
+import android.util.Log
 
 class VoiceCommandActivity : Activity() {
 
     override fun onStart() {
         super.onStart()
+        Log.i(TAG, "onStart")
         sendBroadcast(Intent(ACTION_COMMAND).putExtra(EXTRA_INTENT, intent).setPackage(packageName))
     }
 
     companion object {
+        const val TAG = "VoiceCommandActivity"
         const val ACTION_COMMAND = "com.google.android.bluetooth.snippet.ACTION_COMMAND"
         const val EXTRA_INTENT = "intent"
     }

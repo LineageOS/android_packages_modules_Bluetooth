@@ -33,7 +33,7 @@ import com.android.bluetooth.util.toTable
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue
 
-private const val TAG = "ScannerMap"
+private const val TAG = ScanUtil.TAG_PREFIX + "ScannerMap"
 
 /** List of our registered scanners. */
 class ScannerMap {
@@ -42,7 +42,34 @@ class ScannerMap {
     private val appScanStatsMap = mutableMapOf<Int, AppScanStats>()
     private val apps = ConcurrentLinkedQueue<ScannerApp>()
 
-    @JvmOverloads // TODO(b/455057044) Remove on cleanup
+    // TODO(b/455057044) Remove on flag cleanup as only the below `addWithCallback` will be used
+    fun addWithCallback(
+        appUid: Int,
+        appPid: Int,
+        appName: String,
+        uuid: UUID,
+        source: AttributionSource,
+        workSource: WorkSource?,
+        callback: IScannerCallback,
+        adapterService: AdapterService,
+        isInternal: Boolean,
+    ): ScannerApp =
+        add(
+            appUid = appUid,
+            appPid = appPid,
+            appName = appName,
+            uuid = uuid,
+            userHandle = null,
+            source = source,
+            workSource = workSource,
+            callback = callback,
+            settings = null,
+            filters = null,
+            piInfo = null,
+            adapterService = adapterService,
+            isInternal = isInternal,
+        )
+
     fun addWithCallback(
         appUid: Int,
         appPid: Int,
@@ -188,9 +215,9 @@ class ScannerMap {
         if (apps.isNotEmpty()) {
             val columns =
                 mutableListOf<Column<ScannerApp>>(
-                    Column("UID", width = 5) { it.uid.toString() },
-                    Column("PID", width = 5) { it.pid.toString() },
-                    Column("ID", width = 2) { it.id.toString() },
+                    Column("UID", width = 5) { it.uid },
+                    Column("PID", width = 5) { it.pid },
+                    Column("ID", width = 2) { it.id },
                     Column("PACKAGE") { it.name },
                 )
 

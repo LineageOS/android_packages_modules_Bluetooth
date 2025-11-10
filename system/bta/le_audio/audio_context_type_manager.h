@@ -56,6 +56,9 @@ public:
   virtual void SetInCall(bool in_call) = 0;
   virtual bool IsInCall(void) = 0;
 
+  virtual void SetInGame(bool in_game) = 0;
+  virtual bool IsInGame(void) = 0;
+
   /* Get the VOIP call state based on the provided metadata */
   virtual bool IsInVoip(void) = 0;
 

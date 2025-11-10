@@ -687,6 +687,18 @@ static void groupConfirmActiveNative(JNIEnv* /* env */, jobject /* object */, ji
   sLeAudioClientInterface->GroupConfirmActive(group_id);
 }
 
+static void setInGameNative(JNIEnv* /* env */, jobject /* object */, jboolean in_game) {
+  log::info("");
+  std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
+
+  if (!sLeAudioClientInterface) {
+    log::error("Failed to get the Bluetooth LeAudio Interface");
+    return;
+  }
+
+  sLeAudioClientInterface->SetInGame(in_game);
+}
+
 /* Le Audio Broadcaster */
 static jmethodID method_onBroadcastCreated;
 static jmethodID method_onBroadcastDestroyed;
@@ -1538,6 +1550,7 @@ int register_com_android_bluetooth_le_audio(JNIEnv* env) {
           {"sendAudioProfilePreferencesNative", "(IZZ)V", (void*)sendAudioProfilePreferencesNative},
           {"setGroupAllowedContextMaskNative", "(III)V", (void*)setGroupAllowedContextMaskNative},
           {"groupConfirmActiveNative", "(I)V", (void*)groupConfirmActiveNative},
+          {"setInGameNative", "(Z)V", (void*)setInGameNative},
   };
 
   const int result = REGISTER_NATIVE_METHODS(

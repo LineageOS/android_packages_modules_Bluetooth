@@ -295,6 +295,75 @@ pub fn gen_cxx_extern_trivial(_attr: TokenStream, item: TokenStream) -> TokenStr
     .into()
 }
 
+/// Generate impl cxx::ExternType for a trivial newtype struct.
+///
+/// This is an alternative to `gen_cxx_extern_trivial` for use with newtype
+/// structs instead of type aliases, which is useful for satisfying the
+/// orphan rule with primitive types.
+///
+/// This macro prepends a #[repr(transparent)] to the struct to make sure
+/// the memory layout is the same.
+///
+/// Usage (assume C++ type `some::ns::sample_t` is `u8`):
+/// ```ignore
+/// #[gen_cxx_extern_trivial_tuple]
+/// pub struct SampleType(bindings::some::ns::sample_t);
+/// ```
+#[proc_macro_attribute]
+pub fn gen_cxx_extern_trivial_tuple(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let input = syn::parse_macro_input!(item as syn::ItemStruct);
+
+    let ident = input.ident.clone();
+
+    let inner_type = if let syn::Fields::Unnamed(fields) = &input.fields {
+        if fields.unnamed.len() != 1 {
+            panic!("Struct must have exactly one field");
+        }
+        &fields.unnamed.first().unwrap().ty
+    } else {
+        panic!("gen_cxx_extern_trivial_tuple only supports tuple structs");
+    };
+
+    let segs = match inner_type {
+        Type::Path(syn::TypePath {
+            qself: None,
+            path: Path { leading_colon: None, ref segments },
+        }) => segments,
+        _ => panic!("Unsupported type in struct field"),
+    };
+
+    let mut iter = segs.iter();
+
+    match iter.next() {
+        Some(seg) if seg.ident == "bindings" => {}
+        _ => panic!("Unexpected type: Must starts with \"bindings::\""),
+    }
+
+    if let Some(seg) = iter.clone().next() {
+        if seg.ident == "root" {
+            // Skip the "root" module in bindings
+            iter.next();
+        }
+    }
+
+    let cxx_ident = iter.map(|seg| seg.ident.to_string()).collect::<Vec<String>>().join("::");
+
+    if cxx_ident.is_empty() {
+        panic!("Empty cxx ident");
+    }
+
+    quote! {
+        #[repr(transparent)]
+        #input
+
+        unsafe impl cxx::ExternType for #ident {
+            type Id = cxx::type_id!(#cxx_ident);
+            type Kind = cxx::kind::Trivial;
+        }
+    }
+    .into()
+}
+
 #[proc_macro_attribute]
 /// Implement a function to log the arguments of another function.
 ///

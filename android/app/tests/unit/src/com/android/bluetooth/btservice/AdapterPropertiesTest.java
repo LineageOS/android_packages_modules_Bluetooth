@@ -32,12 +32,14 @@ import android.bluetooth.BluetoothManager;
 import android.companion.CompanionDeviceManager;
 import android.content.pm.PackageManager;
 import android.os.HandlerThread;
+import android.platform.test.annotations.DisableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -136,6 +138,7 @@ public class AdapterPropertiesTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_SET_NAME_IN_SYSTEM_SERVER)
     public void setName_shortName_isEqual() {
         StringBuilder builder = new StringBuilder();
         String stringName = "Wonderful Bluetooth Name Using utf8";
@@ -155,6 +158,7 @@ public class AdapterPropertiesTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_SET_NAME_IN_SYSTEM_SERVER)
     public void setName_tooLongName_isTruncated() {
         StringBuilder builder = new StringBuilder();
         String stringName = "Wonderful Bluetooth Name Using utf8 ... But this name is too long";

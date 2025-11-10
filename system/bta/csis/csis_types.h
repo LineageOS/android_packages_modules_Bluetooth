@@ -66,7 +66,7 @@ struct hdl_pair {
 };
 
 /* CSIS Types */
-static constexpr uint8_t kDefaultScanDurationS = 5;
+static constexpr uint8_t kDefaultScanDurationS = 10;
 static constexpr uint8_t kDefaultCsisSetSize = 1;
 static constexpr uint8_t kUnknownRank = 0xff;
 
@@ -95,6 +95,8 @@ public:
   tCONN_ID conn_id = GATT_INVALID_CONN_ID;
   uint16_t service_handle = GAP_INVALID_HANDLE;
   bool is_gatt_service_valid = false;
+  bool sirk_all_zeros = false;
+  bool sirk_all_zeros_size_one = false;
 
   GattServiceDevice(const RawAddress& addr, bool connecting)
       : addr(addr), connecting_actively(connecting) {}
@@ -211,6 +213,8 @@ public:
   void ClearSvcData() {
     GattServiceDevice::service_handle = GAP_INVALID_HANDLE;
     GattServiceDevice::is_gatt_service_valid = false;
+    GattServiceDevice::sirk_all_zeros = false;
+    GattServiceDevice::sirk_all_zeros_size_one = false;
 
     csis_instances_.clear();
   }

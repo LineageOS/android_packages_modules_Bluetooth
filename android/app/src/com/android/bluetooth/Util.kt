@@ -16,11 +16,48 @@
 
 package com.android.bluetooth
 
+import android.Manifest.permission.BLUETOOTH_ADVERTISE
+import android.Manifest.permission.BLUETOOTH_CONNECT
+import android.Manifest.permission.BLUETOOTH_PRIVILEGED
+import android.Manifest.permission.BLUETOOTH_SCAN
+import android.Manifest.permission.NETWORK_SETTINGS
+import android.Manifest.permission.NETWORK_SETUP_WIZARD
+import android.Manifest.permission.RADIO_SCAN_WITHOUT_LOCATION
+import android.Manifest.permission.WRITE_SMS
+import android.annotation.PermissionMethod
+import android.annotation.PermissionName
+import android.annotation.RequiresPermission
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothUtils
+import android.content.AttributionSource
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.IBinder
+import android.os.RemoteException
+import android.permission.PermissionManager
+import android.permission.PermissionManager.PERMISSION_GRANTED
+import android.permission.PermissionManager.PERMISSION_HARD_DENIED
+import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.profile.ProfileService
+
+private const val TAG = Util.BT_PREFIX + "Util"
 
 object Util {
     const val BT_PREFIX = "Bluetooth"
+
+    @JvmStatic
+    fun ProfileService?.checkProfileAvailable(tag: String): Boolean {
+        if (this == null) {
+            Log.w(TAG, "$tag - Not present")
+            return false
+        }
+        if (!this.isAvailable) {
+            Log.w(TAG, "$tag - Not available")
+            return false
+        }
+        return true
+    }
 
     @JvmStatic
     fun AdapterService.appNameOrUnknown(uid: Int) =
@@ -57,4 +94,205 @@ object Util {
             BluetoothDevice.TRANSPORT_LE -> "LE"
             else -> "Unknown transport ($transport)"
         }
+
+    /**
+     * Check if BLE is supported by this platform
+     *
+     * @param context current device context
+     * @return `true` if BLE is supported, `false` otherwise
+     */
+    @JvmStatic
+    fun isBleSupported(context: Context) =
+        context.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)
+
+    /** @return `true` if this Android device is an automotive device, `false` otherwise */
+    @JvmStatic
+    fun isAutomotive(context: Context) =
+        context.packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
+
+    /** @return `true` if this Android device is a TV device, `false` otherwise */
+    @JvmStatic
+    fun isTv(context: Context) =
+        context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION) ||
+            context.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+
+    /** @return `true` if this Android device is a watch device, `false` otherwise */
+    @JvmStatic
+    fun isWatch(context: Context) =
+        context.packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH)
+
+    /** Returns `true` if the caller holds [NETWORK_SETTINGS] */
+    @JvmStatic
+    fun checkCallerHasNetworkSettingsPermission(context: Context) =
+        context.checkCallerHasPermission(NETWORK_SETTINGS)
+
+    /** Returns `true` if the caller holds [NETWORK_SETUP_WIZARD] */
+    @JvmStatic
+    fun checkCallerHasNetworkSetupWizardPermission(context: Context) =
+        context.checkCallerHasPermission(NETWORK_SETUP_WIZARD)
+
+    /** Returns `true` if the caller holds [RADIO_SCAN_WITHOUT_LOCATION] */
+    @JvmStatic
+    fun checkCallerHasScanWithoutLocationPermission(context: Context) =
+        context.checkCallerHasPermission(RADIO_SCAN_WITHOUT_LOCATION)
+
+    /** Returns `true` if the caller holds [BLUETOOTH_PRIVILEGED] */
+    @JvmStatic
+    fun checkCallerHasPrivilegedPermission(context: Context) =
+        context.checkCallerHasPermission(BLUETOOTH_PRIVILEGED)
+
+    /** Returns `true` if the caller holds [WRITE_SMS] */
+    @JvmStatic
+    fun checkCallerHasWriteSmsPermission(context: Context) =
+        context.checkCallerHasPermission(WRITE_SMS)
+
+    @PermissionMethod
+    private fun Context.checkCallerHasPermission(@PermissionName permission: String) =
+        checkCallingOrSelfPermission(permission) == PERMISSION_GRANTED
+
+    /**
+     * Returns `true` if the [BLUETOOTH_ADVERTISE] permission is granted for the calling app.
+     * Returns `false` if the result is a soft denial. Throws [SecurityException] if the result is a
+     * hard denial.
+     *
+     * Should be used in situations where data will be delivered and hence the app op should be
+     * noted.
+     */
+    @JvmStatic
+    @RequiresPermission(BLUETOOTH_ADVERTISE)
+    fun enforceAdvertisePermissionForDataDelivery(
+        context: Context,
+        source: AttributionSource,
+        message: String,
+    ) = enforcePermissionForDataDelivery(context, BLUETOOTH_ADVERTISE, source, message)
+
+    /**
+     * Returns `true` if the [BLUETOOTH_CONNECT] permission is granted for the calling app. Returns
+     * `false` if the result is a soft denial. Throws [SecurityException] if the result is a hard
+     * denial.
+     *
+     * Should be used in situations where data will be delivered and hence the app op should be
+     * noted.
+     */
+    @JvmOverloads
+    @JvmStatic
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    fun enforceConnectPermissionForDataDelivery(
+        context: Context,
+        source: AttributionSource,
+        tagOrMessage: String,
+        method: String? = null,
+    ): Boolean {
+        val message = if (method == null) tagOrMessage else "$tagOrMessage.$method()"
+        return enforcePermissionForDataDelivery(context, BLUETOOTH_CONNECT, source, message)
+    }
+
+    /**
+     * Returns `true` if the [BLUETOOTH_SCAN] permission is granted for the calling app. Returns
+     * `false` if the result is a soft denial. Throws [SecurityException] if the result is a hard
+     * denial.
+     *
+     * Should be used in situations where data will be delivered and hence the app op should be
+     * noted.
+     */
+    @JvmStatic
+    @RequiresPermission(BLUETOOTH_SCAN)
+    fun enforceScanPermissionForDataDelivery(
+        context: Context,
+        source: AttributionSource,
+        tag: String,
+        method: String,
+    ) = enforcePermissionForDataDelivery(context, BLUETOOTH_SCAN, source, "$tag.$method()")
+
+    /**
+     * Returns `true` if the [BLUETOOTH_CONNECT] permission is granted for the calling app. Returns
+     * `false` if the result is a soft denial. Throws [SecurityException] if the result is a hard
+     * denial.
+     *
+     * Should be used in situations where the app op should not be noted.
+     */
+    @JvmStatic
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    fun enforceConnectPermissionForPreflight(context: Context, source: AttributionSource) =
+        enforcePermissionForPreflight(context, BLUETOOTH_CONNECT, source)
+
+    @PermissionMethod
+    fun enforcePermissionForDataDelivery(
+        context: Context,
+        @PermissionName permission: String,
+        source: AttributionSource,
+        message: String?,
+    ): Boolean {
+        if (Utils.isInstrumentationTestMode()) {
+            return true
+        }
+        val currentAttribution =
+            AttributionSource.Builder(context.attributionSource).setNext(source).build()
+        val permissionManager =
+            context.getSystemService(PermissionManager::class.java) ?: return false
+        val result =
+            permissionManager.checkPermissionForDataDeliveryFromDataSource(
+                permission,
+                currentAttribution,
+                message,
+            )
+        if (result == PERMISSION_GRANTED) {
+            return true
+        }
+
+        val msg = "Need $permission permission for $currentAttribution: $message"
+        if (result == PERMISSION_HARD_DENIED) {
+            throw SecurityException(msg)
+        } else {
+            Log.w(TAG, msg)
+            return false
+        }
+    }
+
+    @PermissionMethod
+    private fun enforcePermissionForPreflight(
+        context: Context,
+        @PermissionName permission: String,
+        source: AttributionSource,
+    ): Boolean {
+        val permissionManager =
+            context.getSystemService(PermissionManager::class.java) ?: return false
+        val result = permissionManager.checkPermissionForPreflight(permission, source)
+        if (result == PERMISSION_GRANTED) {
+            return true
+        }
+
+        val msg = "Need $permission permission"
+        if (result == PERMISSION_HARD_DENIED) {
+            throw SecurityException(msg)
+        } else {
+            Log.w(TAG, msg)
+            return false
+        }
+    }
+
+    /** Execute a remote callback without propagating the [RemoteException] of a dead app */
+    internal inline fun callbackToApp(block: () -> Unit) =
+        try {
+            block()
+        } catch (e: RemoteException) {
+            BluetoothUtils.logRemoteException(TAG, e)
+        }
+}
+
+class ActionOnDeathRecipient(
+    private val tag: String,
+    private val message: String,
+    private val action: () -> Unit,
+) : IBinder.DeathRecipient {
+    constructor(
+        tag: String,
+        message: String,
+        actionRunnable: Runnable,
+    ) : this(tag, message, { actionRunnable.run() })
+
+    override fun binderDied() {
+        Log.d(tag, "binderDied(): $message")
+        action()
+    }
 }

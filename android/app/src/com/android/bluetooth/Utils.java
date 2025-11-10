@@ -18,29 +18,20 @@ package com.android.bluetooth;
 
 import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
-import static android.Manifest.permission.BLUETOOTH_ADVERTISE;
-import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
-import static android.Manifest.permission.NETWORK_SETTINGS;
-import static android.Manifest.permission.NETWORK_SETUP_WIZARD;
-import static android.Manifest.permission.RADIO_SCAN_WITHOUT_LOCATION;
 import static android.Manifest.permission.RENOUNCE_PERMISSIONS;
-import static android.Manifest.permission.WRITE_SMS;
 import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringRunnable;
 import static android.bluetooth.BluetoothUtils.USER_HANDLE_NULL;
 import static android.content.pm.PackageManager.GET_PERMISSIONS;
 import static android.content.pm.PackageManager.MATCH_UNINSTALLED_PACKAGES;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED;
-import static android.permission.PermissionManager.PERMISSION_HARD_DENIED;
 
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
-import android.annotation.PermissionMethod;
-import android.annotation.PermissionName;
 import android.annotation.RequiresPermission;
 import android.app.BroadcastOptions;
 import android.bluetooth.BluetoothAdapter;
@@ -72,7 +63,6 @@ import android.provider.Telephony;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.profile.ProfileService;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -456,123 +446,6 @@ public final class Utils {
                 .build();
     }
 
-    @PermissionMethod
-    private static boolean checkPermissionForPreflight(
-            Context context, @PermissionName String permission, AttributionSource source) {
-        PermissionManager pm = context.getSystemService(PermissionManager.class);
-        if (pm == null) {
-            return false;
-        }
-        requireNonNull(source);
-        final int result = pm.checkPermissionForPreflight(permission, source);
-        if (result == PERMISSION_GRANTED) {
-            return true;
-        }
-
-        final String msg = "Need " + permission + " permission";
-        if (result == PERMISSION_HARD_DENIED) {
-            throw new SecurityException(msg);
-        } else {
-            Log.w(TAG, msg);
-            return false;
-        }
-    }
-
-    @PermissionMethod
-    private static boolean checkPermissionForDataDelivery(
-            Context context,
-            @PermissionName String permission,
-            AttributionSource source,
-            String message) {
-        if (isInstrumentationTestMode()) {
-            return true;
-        }
-        AttributionSource currentAttribution =
-                new AttributionSource.Builder(context.getAttributionSource())
-                        .setNext(requireNonNull(source))
-                        .build();
-        PermissionManager pm = context.getSystemService(PermissionManager.class);
-        if (pm == null) {
-            return false;
-        }
-        final int result =
-                pm.checkPermissionForDataDeliveryFromDataSource(
-                        permission, currentAttribution, message);
-        if (result == PERMISSION_GRANTED) {
-            return true;
-        }
-
-        final String msg =
-                "Need " + permission + " permission for " + currentAttribution + ": " + message;
-        if (result == PERMISSION_HARD_DENIED) {
-            throw new SecurityException(msg);
-        } else {
-            Log.w(TAG, msg);
-            return false;
-        }
-    }
-
-    /**
-     * Returns true if the BLUETOOTH_CONNECT permission is granted for the calling app. Returns
-     * false if the result is a soft denial. Throws SecurityException if the result is a hard
-     * denial.
-     *
-     * <p>Should be used in situations where the app op should not be noted.
-     */
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    public static boolean checkConnectPermissionForPreflight(
-            Context context, AttributionSource source) {
-        return checkPermissionForPreflight(context, BLUETOOTH_CONNECT, source);
-    }
-
-    /**
-     * Returns true if the BLUETOOTH_CONNECT permission is granted for the calling app. Returns
-     * false if the result is a soft denial. Throws SecurityException if the result is a hard
-     * denial.
-     *
-     * <p>Should be used in situations where data will be delivered and hence the app op should be
-     * noted.
-     */
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    public static boolean checkConnectPermissionForDataDelivery(
-            Context context, AttributionSource source, String message) {
-        return checkPermissionForDataDelivery(context, BLUETOOTH_CONNECT, source, message);
-    }
-
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    public static boolean checkConnectPermissionForDataDelivery(
-            Context context, AttributionSource source, String tag, String method) {
-        return checkConnectPermissionForDataDelivery(context, source, tag + "." + method + "()");
-    }
-
-    /**
-     * Returns true if the BLUETOOTH_SCAN permission is granted for the calling app. Returns false
-     * if the result is a soft denial. Throws SecurityException if the result is a hard denial.
-     *
-     * <p>Should be used in situations where data will be delivered and hence the app op should be
-     * noted.
-     */
-    @RequiresPermission(BLUETOOTH_SCAN)
-    public static boolean checkScanPermissionForDataDelivery(
-            Context context, AttributionSource source, String tag, String method) {
-        return checkPermissionForDataDelivery(
-                context, BLUETOOTH_SCAN, source, tag + "." + method + "()");
-    }
-
-    /**
-     * Returns true if the BLUETOOTH_ADVERTISE permission is granted for the calling app. Returns
-     * false if the result is a soft denial. Throws SecurityException if the result is a hard
-     * denial.
-     *
-     * <p>Should be used in situations where data will be delivered and hence the app op should be
-     * noted.
-     */
-    @RequiresPermission(BLUETOOTH_ADVERTISE)
-    public static boolean checkAdvertisePermissionForDataDelivery(
-            Context context, AttributionSource source, String message) {
-        return checkPermissionForDataDelivery(context, BLUETOOTH_ADVERTISE, source, message);
-    }
-
     /**
      * Returns true if the specified package has disavowed the use of bluetooth scans for location,
      * that is, if they have specified the {@code neverForLocation} flag on the BLUETOOTH_SCAN
@@ -703,18 +576,6 @@ public final class Utils {
         return checkCallerIsSystemOrActiveOrManagedUser(context, tag + "." + method + "()");
     }
 
-    public static boolean checkServiceAvailable(ProfileService service, String tag) {
-        if (service == null) {
-            Log.w(TAG, tag + " - Not present");
-            return false;
-        }
-        if (!service.isAvailable()) {
-            Log.w(TAG, tag + " - Not available");
-            return false;
-        }
-        return true;
-    }
-
     /** Checks whether location is off and must be on for us to perform some operation */
     public static boolean blockedByLocationOff(Context context, UserHandle userHandle) {
         return !context.getSystemService(LocationManager.class)
@@ -814,30 +675,6 @@ public final class Utils {
 
         Log.e(TAG, "Need ACCESS_FINE_LOCATION permission for " + currentAttribution);
         return false;
-    }
-
-    /** Returns true if the caller holds NETWORK_SETTINGS */
-    public static boolean checkCallerHasNetworkSettingsPermission(Context context) {
-        return context.checkCallingOrSelfPermission(NETWORK_SETTINGS) == PERMISSION_GRANTED;
-    }
-
-    /** Returns true if the caller holds NETWORK_SETUP_WIZARD */
-    public static boolean checkCallerHasNetworkSetupWizardPermission(Context context) {
-        return context.checkCallingOrSelfPermission(NETWORK_SETUP_WIZARD) == PERMISSION_GRANTED;
-    }
-
-    /** Returns true if the caller holds RADIO_SCAN_WITHOUT_LOCATION */
-    public static boolean checkCallerHasScanWithoutLocationPermission(Context context) {
-        return context.checkCallingOrSelfPermission(RADIO_SCAN_WITHOUT_LOCATION)
-                == PERMISSION_GRANTED;
-    }
-
-    public static boolean checkCallerHasPrivilegedPermission(Context context) {
-        return context.checkCallingOrSelfPermission(BLUETOOTH_PRIVILEGED) == PERMISSION_GRANTED;
-    }
-
-    public static boolean checkCallerHasWriteSmsPermission(Context context) {
-        return context.checkCallingOrSelfPermission(WRITE_SMS) == PERMISSION_GRANTED;
     }
 
     /**
@@ -1085,39 +922,6 @@ public final class Utils {
             return "INDICATION";
         }
         return "";
-    }
-
-    /**
-     * Check if BLE is supported by this platform
-     *
-     * @param context current device context
-     * @return true if BLE is supported, false otherwise
-     */
-    public static boolean isBleSupported(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
-    }
-
-    /**
-     * @return true if this Android device is an automotive device, false otherwise
-     */
-    public static boolean isAutomotive(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE);
-    }
-
-    /**
-     * @return true if this Android device is a watch device, false otherwise
-     */
-    public static boolean isWatch(Context context) {
-        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WATCH);
-    }
-
-    /**
-     * @return true if this Android device is a TV device, false otherwise
-     */
-    public static boolean isTv(Context context) {
-        PackageManager pm = context.getPackageManager();
-        return pm.hasSystemFeature(PackageManager.FEATURE_TELEVISION)
-                || pm.hasSystemFeature(PackageManager.FEATURE_LEANBACK);
     }
 
     /**

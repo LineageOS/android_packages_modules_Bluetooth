@@ -325,6 +325,23 @@ public:
   }
 
   virtual void TearDown() override {
+    /* It is essential to clear expectations on mocks that are not owned by
+     * the test fixture.
+     */
+    if (mock_le_audio_source_hal_client_) {
+      Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+    }
+    if (mock_broadcast_le_audio_source_hal_client_) {
+      Mock::VerifyAndClearExpectations(mock_broadcast_le_audio_source_hal_client_);
+    }
+    if (mock_le_audio_sink_hal_client_) {
+      Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
+    }
+
+    owned_mock_le_audio_source_hal_client_.reset();
+    owned_mock_broadcast_le_audio_source_hal_client_.reset();
+    owned_mock_le_audio_sink_hal_client_.reset();
+
     codec_manager->Stop();
     bluetooth::hci::testing::mock_controller_.release();
   }

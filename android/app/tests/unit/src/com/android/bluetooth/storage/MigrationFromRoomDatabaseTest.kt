@@ -31,6 +31,7 @@ import androidx.test.filters.SmallTest
 import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.TestUtils.mockGetRemoteDevice
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.btservice.storage.DatabaseManager
 import com.android.bluetooth.btservice.storage.Metadata
 import com.android.bluetooth.btservice.storage.MetadataDatabase
 import com.android.bluetooth.storage.ActiveAudioPolicy.Type as ActiveAudioPolicy
@@ -196,5 +197,37 @@ class MigrationFromRoomDatabaseTest {
         assertThat(migratedStorage.currentConnectionNumber).isEqualTo(123L)
         assertThat(migratedStorage.activeA2DpDevicesList).containsExactly(mDevice.address)
         assertThat(migratedStorage.activeHfpDevicesList).containsExactly(mDevice.address)
+    }
+
+    @Test
+    fun migrate_withLocalStorage_skipsLocalStorageEntry(): Unit = runBlocking {
+        // 1. Create a temporary Room database and populate it with sample Metadata
+        val roomDb =
+            Room.databaseBuilder(adapterService, MetadataDatabase::class.java, dbFile.name)
+                .allowMainThreadQueries()
+                .build()
+
+        // A regular device metadata
+        val regularMetadata = Metadata(mDevice.address)
+        regularMetadata.last_active_time = 123L
+        roomDb.insert(regularMetadata)
+
+        // The local storage metadata that should be skipped
+        val localStorageMetadata = Metadata(DatabaseManager.LOCAL_STORAGE)
+        localStorageMetadata.last_active_time = 456L // some value to ensure it's not used
+        roomDb.insert(localStorageMetadata)
+
+        roomDb.close()
+
+        // 2. Run the migrate function
+        val migratedStorage = migration.migrate(UserStorage.getDefaultInstance())
+
+        // 3. Assert that the UserStorage proto contains only the regular device
+        assertThat(migratedStorage.devicesMap).hasSize(1)
+        assertThat(migratedStorage.devicesMap).containsKey(mDevice.address)
+        assertThat(migratedStorage.devicesMap).doesNotContainKey(DatabaseManager.LOCAL_STORAGE)
+
+        // Also assert that the connection number is from the regular device, not local storage
+        assertThat(migratedStorage.currentConnectionNumber).isEqualTo(123L)
     }
 }

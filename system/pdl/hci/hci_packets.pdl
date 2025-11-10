@@ -7551,6 +7551,7 @@ enum LeSetBigChannelMapClassificationSubOpcode : 8 {
 enum LeSetBigChannelMapClassificationAction : 8 {
   ADD = 0x00,
   DELETE = 0x01,
+  CLEAR = 0x02,
 }
 
 packet LeSetBigChannelMapClassificationByConnHandle : VendorCommand(op_code = LE_SET_BIG_CHANNEL_MAP_CLASSIFICATION) {

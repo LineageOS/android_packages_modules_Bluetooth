@@ -22,7 +22,6 @@ import static com.android.bluetooth.Utils.formatSimple;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
@@ -34,7 +33,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import com.android.bluetooth.profile.ProfileService;
 import com.android.bluetooth.util.Text;
 
 import com.google.common.truth.Expect;
@@ -42,7 +40,6 @@ import com.google.common.truth.Expect;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -80,19 +77,6 @@ public class UtilsTest {
         converter.putLong(16, 30);
         converter.putLong(24, 40);
         assertThat(Utils.uuidsToByteArray(uuids)).isEqualTo(converter.array());
-    }
-
-    @Test
-    public void checkServiceAvailable() {
-        final String tag = "UTILS_TEST";
-        assertThat(Utils.checkServiceAvailable(null, tag)).isFalse();
-
-        ProfileService mockProfile = Mockito.mock(ProfileService.class);
-        when(mockProfile.isAvailable()).thenReturn(false);
-        assertThat(Utils.checkServiceAvailable(mockProfile, tag)).isFalse();
-
-        when(mockProfile.isAvailable()).thenReturn(true);
-        assertThat(Utils.checkServiceAvailable(mockProfile, tag)).isTrue();
     }
 
     @Test
@@ -154,9 +138,10 @@ public class UtilsTest {
     public void checkPermissionMethod_doesNotCrash() {
         Context context = InstrumentationRegistry.getInstrumentation().getContext();
         try {
-            Utils.checkAdvertisePermissionForDataDelivery(context, null, "message");
-            Utils.checkCallerHasWriteSmsPermission(context);
-            Utils.checkConnectPermissionForPreflight(context, context.getAttributionSource());
+            var source = context.getAttributionSource();
+            Util.enforceAdvertisePermissionForDataDelivery(context, source, "message");
+            Util.checkCallerHasWriteSmsPermission(context);
+            Util.enforceConnectPermissionForPreflight(context, source);
         } catch (SecurityException e) {
             // SecurityException could happen.
         }

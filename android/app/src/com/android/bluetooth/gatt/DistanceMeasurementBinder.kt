@@ -16,7 +16,8 @@
 
 package com.android.bluetooth.gatt
 
-import android.Manifest
+import android.Manifest.permission.BLUETOOTH_CONNECT
+import android.Manifest.permission.BLUETOOTH_PRIVILEGED
 import android.annotation.RequiresPermission
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothStatusCodes
@@ -28,51 +29,51 @@ import android.bluetooth.le.IDistanceMeasurementCallback
 import android.content.AttributionSource
 import android.content.Context
 import android.os.ParcelUuid
+import com.android.bluetooth.Util
+import com.android.bluetooth.Util.checkProfileAvailable
 import com.android.bluetooth.Utils
-import kotlin.concurrent.Volatile
 
 private const val TAG = GattUtil.TAG_PREFIX + "DistanceMeasurementBinder"
 
 class DistanceMeasurementBinder(
     private val context: Context,
-    private val distanceMeasurementManager: DistanceMeasurementManager,
+    private var gattService: GattService?,
+    private var distanceMeasurementManager: DistanceMeasurementManager?,
 ) : IDistanceMeasurement.Stub() {
 
-    @Volatile private var isAvailable = true
-
     fun cleanup() {
-        isAvailable = false
+        gattService = null
+        distanceMeasurementManager = null
     }
 
-    @RequiresPermission(
-        allOf = [Manifest.permission.BLUETOOTH_CONNECT, Manifest.permission.BLUETOOTH_PRIVILEGED]
-    )
-    private fun getManager(source: AttributionSource, method: String): DistanceMeasurementManager? {
+    private fun getManager(): DistanceMeasurementManager? {
+        val gatt = gattService ?: return null
+        val manager = distanceMeasurementManager ?: return null
+        if (!gatt.checkProfileAvailable(TAG)) return null
+        return manager
+    }
+
+    @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED])
+    private fun getManagerEnforceConnectAndPrivileged(
+        source: AttributionSource,
+        method: String,
+    ): DistanceMeasurementManager? {
+        val manager = getManager()
         if (
-            !isAvailable ||
-                !Utils.callerIsSystemOrActiveOrManagedUser(
-                    context,
-                    TAG,
-                    "DistanceMeasurement $method",
-                ) ||
-                !Utils.checkConnectPermissionForDataDelivery(
-                    context,
-                    source,
-                    "DistanceMeasurement $method",
-                )
+            !Utils.callerIsSystemOrActiveOrManagedUser(context, TAG, "$TAG $method") ||
+                !Util.enforceConnectPermissionForDataDelivery(context, source, "$TAG $method")
         ) {
             return null
         }
-        context.enforceCallingOrSelfPermission(Manifest.permission.BLUETOOTH_PRIVILEGED, null)
-        return distanceMeasurementManager
+        context.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+        return manager
     }
 
     override fun getSupportedDistanceMeasurementMethods(
         source: AttributionSource
     ): List<DistanceMeasurementMethod> {
-        val manager: DistanceMeasurementManager =
-            getManager(source, "getSupportedDistanceMeasurementMethods") ?: return emptyList()
-
+        val method = "getSupportedDistanceMeasurementMethods"
+        val manager = getManagerEnforceConnectAndPrivileged(source, method) ?: return emptyList()
         return manager.runOnDistanceMeasurementThreadAndWaitForResult {
             manager.getSupportedDistanceMeasurementMethods()
         }
@@ -84,9 +85,8 @@ class DistanceMeasurementBinder(
         callback: IDistanceMeasurementCallback,
         source: AttributionSource,
     ) {
-        val manager: DistanceMeasurementManager =
-            getManager(source, "startDistanceMeasurement") ?: return
-
+        val method = "startDistanceMeasurement"
+        val manager = getManagerEnforceConnectAndPrivileged(source, method) ?: return
         manager.postOnDistanceMeasurementThread {
             manager.startDistanceMeasurement(
                 uuid.uuid,
@@ -103,25 +103,20 @@ class DistanceMeasurementBinder(
         method: Int,
         source: AttributionSource,
     ): Int {
-        if (!isAvailable) {
-            return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED
-        } else if (
-            !Utils.callerIsSystemOrActiveOrManagedUser(context, TAG, "stopDistanceMeasurement")
-        ) {
+        val manager = getManager() ?: return BluetoothStatusCodes.ERROR_UNKNOWN
+
+        val methodName = "stopDistanceMeasurement"
+        if (!Utils.callerIsSystemOrActiveOrManagedUser(context, TAG, methodName)) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED
         } else if (
-            !Utils.checkConnectPermissionForDataDelivery(
-                context,
-                source,
-                "DistanceMeasurement stopDistanceMeasurement",
-            )
+            !Util.enforceConnectPermissionForDataDelivery(context, source, "$TAG $methodName")
         ) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION
         }
-        context.enforceCallingOrSelfPermission(Manifest.permission.BLUETOOTH_PRIVILEGED, null)
+        context.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
 
-        return distanceMeasurementManager.runOnDistanceMeasurementThreadAndWaitForResult {
-            distanceMeasurementManager.stopDistanceMeasurement(uuid.uuid, device, method, false)
+        return manager.runOnDistanceMeasurementThreadAndWaitForResult {
+            manager.stopDistanceMeasurement(uuid.uuid, device, method, false)
         } ?: BluetoothStatusCodes.ERROR_UNKNOWN
     }
 
@@ -129,8 +124,9 @@ class DistanceMeasurementBinder(
         remoteDevice: BluetoothDevice,
         source: AttributionSource,
     ): Int {
-        val manager: DistanceMeasurementManager =
-            getManager(source, "getChannelSoundingMaxSupportedSecurityLevel")
+        val method = "getChannelSoundingMaxSupportedSecurityLevel"
+        val manager =
+            getManagerEnforceConnectAndPrivileged(source, method)
                 ?: return ChannelSoundingParams.CS_SECURITY_LEVEL_UNKNOWN
 
         return manager.runOnDistanceMeasurementThreadAndWaitForResult {
@@ -139,8 +135,9 @@ class DistanceMeasurementBinder(
     }
 
     override fun getLocalChannelSoundingMaxSupportedSecurityLevel(source: AttributionSource): Int {
-        val manager: DistanceMeasurementManager =
-            getManager(source, "getLocalChannelSoundingMaxSupportedSecurityLevel")
+        val method = "getLocalChannelSoundingMaxSupportedSecurityLevel"
+        val manager =
+            getManagerEnforceConnectAndPrivileged(source, method)
                 ?: return ChannelSoundingParams.CS_SECURITY_LEVEL_UNKNOWN
 
         return manager.runOnDistanceMeasurementThreadAndWaitForResult {
@@ -149,8 +146,8 @@ class DistanceMeasurementBinder(
     }
 
     override fun getChannelSoundingSupportedSecurityLevels(source: AttributionSource): IntArray {
-        val manager: DistanceMeasurementManager =
-            getManager(source, "getChannelSoundingSupportedSecurityLevels") ?: return IntArray(0)
+        val method = "getChannelSoundingSupportedSecurityLevels"
+        val manager = getManagerEnforceConnectAndPrivileged(source, method) ?: return IntArray(0)
 
         val result =
             manager.runOnDistanceMeasurementThreadAndWaitForResult {

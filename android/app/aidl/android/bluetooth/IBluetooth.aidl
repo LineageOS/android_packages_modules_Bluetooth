@@ -94,7 +94,7 @@ interface IBluetooth {
     boolean createBondOutOfBand(in BluetoothDevice device, in int transport, in OobData p192Data, in OobData p256Data, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     boolean cancelBondProcess(in BluetoothDevice device, in AttributionSource attributionSource);
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf = {android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional = true)")
     boolean removeBond(in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     int getBondState(in BluetoothDevice device, in AttributionSource attributionSource);
@@ -127,7 +127,7 @@ interface IBluetooth {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     int getMaxConnectedAudioDevices(in AttributionSource attributionSource);
 
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf = {android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional = true)")
     boolean setPin(in BluetoothDevice device, boolean accept, int len, in byte[] pinCode, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     boolean setPairingConfirmation(in BluetoothDevice device, boolean accept, in AttributionSource attributionSource);
@@ -171,6 +171,8 @@ interface IBluetooth {
     boolean isLe2MPhySupported();
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     boolean isLeCodedPhySupported();
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
+    boolean isLeHighDataThroughputPhySupported();
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     boolean isLeExtendedAdvertisingSupported();
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")

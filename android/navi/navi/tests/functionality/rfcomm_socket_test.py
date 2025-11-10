@@ -171,10 +171,6 @@ class RfcommSocketTest(navi_test_base.TwoDevicesTestBase):
       4. Verify the DUT can catch the exceptions raised for both RFCOMM
       connections .
     """
-        # TODO: Remove this skip once the flag is removed.
-        if not self.dut.bluetooth_flags.get("fix_socket_connection_failed_no_callback", False):
-            self.skipTest("Skip until the fix flag(ag/33721603) is enabled.")
-
         original_on_l2cap_connection_request = (
             self.ref.device.l2cap_channel_manager.on_l2cap_connection_request)
 

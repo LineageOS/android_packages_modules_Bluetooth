@@ -1452,7 +1452,7 @@ void bta_gattc_process_api_refresh(const RawAddress& remote_bda) {
     /* try to find a CLCB */
     if (p_srvc_cb->connected && p_srvc_cb->num_clcb != 0) {
       bool found = false;
-      tBTA_GATTC_CLCB* p_clcb = &bta_gattc_cb.clcb[0];
+      tBTA_GATTC_CLCB* p_clcb = nullptr;
       for (auto& p_clcb_i : bta_gattc_cb.clcb_set) {
         if (p_clcb_i->in_use && p_clcb_i->p_srcb == p_srvc_cb) {
           p_clcb = p_clcb_i.get();

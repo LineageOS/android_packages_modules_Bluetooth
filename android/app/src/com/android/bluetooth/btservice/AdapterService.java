@@ -474,10 +474,11 @@ public class AdapterService extends Service {
         mHandler = new AdapterServiceHandler(mLooper);
         mNativeInterface = requireNonNull(nativeInterface);
         mBluetoothKeystoreService = new BluetoothKeystoreService(bluetoothKeystoreNativeInterface);
+        var bQRnativeCallback = new BluetoothQualityReportNativeCallback(this);
         mBluetoothQualityReportNativeInterface =
                 requireNonNullElseGet(
                         bluetoothQualityReportNativeInterface,
-                        () -> new BluetoothQualityReportNativeInterface(this));
+                        () -> new BluetoothQualityReportNativeInterface(bQRnativeCallback));
         mBluetoothHciVendorSpecificNativeInterface =
                 requireNonNullElseGet(
                         bluetoothHciVendorSpecificNativeInterface,
@@ -643,7 +644,7 @@ public class AdapterService extends Service {
                     mRunningProfiles.add(profile);
                     // TODO(b/228875190): GATT is assumed supported. GATT starting triggers hardware
                     // initialization. Configuring a device without GATT causes start up failures.
-                    if (!(profile.mProfileId == BluetoothProfile.GATT
+                    if (!(profile.getProfileId() == BluetoothProfile.GATT
                                     && !Flags.onlyStartScanDuringBleOn())
                             && mRegisteredProfiles.size() == Config.getSupportedProfiles().length
                             && mRegisteredProfiles.size() == mRunningProfiles.size()) {
@@ -675,7 +676,8 @@ public class AdapterService extends Service {
                         // only profile available in the "BLE ON" state. If only GATT is left, send
                         // BREDR_STOPPED. If GATT is stopped, deinitialize the hardware.
                         if (mRunningProfiles.size() == 1
-                                && mRunningProfiles.get(0).mProfileId == BluetoothProfile.GATT) {
+                                && mRunningProfiles.get(0).getProfileId()
+                                        == BluetoothProfile.GATT) {
                             mAdapterStateMachine.sendMessage(AdapterState.BREDR_STOPPED);
                         }
                     }
@@ -974,6 +976,13 @@ public class AdapterService extends Service {
         return Optional.ofNullable(mStartedProfiles.get(id));
     }
 
+    Optional<String> getCallingPackageName(String address) {
+        if (mBondAttemptCallerInfo.get(address) == null) {
+            return Optional.empty();
+        }
+        return Optional.of(mBondAttemptCallerInfo.get(address).callerPackageName());
+    }
+
     /**
      * Initialize AdapterService with necessary configuration parameters and progress AdapterService
      * state from OFF to BLE ON.
@@ -1052,7 +1061,9 @@ public class AdapterService extends Service {
         mNativeAvailable = true;
         // Load the name and address
         mNativeInterface.getAdapterProperty(AbstractionLayer.BT_PROPERTY_BDADDR);
-        mNativeInterface.getAdapterProperty(AbstractionLayer.BT_PROPERTY_BDNAME);
+        if (!Flags.setNameInSystemServer()) {
+            mNativeInterface.getAdapterProperty(AbstractionLayer.BT_PROPERTY_BDNAME);
+        }
         mNativeInterface.getAdapterProperty(AbstractionLayer.BT_PROPERTY_CLASS_OF_DEVICE);
 
         mBluetoothKeystoreService.initJni();
@@ -1336,10 +1347,11 @@ public class AdapterService extends Service {
             case BluetoothProfile.HEARING_AID -> new HearingAidService(this, mActiveDeviceManager);
             case BluetoothProfile.HID_DEVICE -> new HidDeviceService(this);
             case BluetoothProfile.HID_HOST -> new HidHostService(this);
-            case BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT -> new BassClientService(this);
+            case BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT ->
+                    new BassClientService(this, mScanController);
             case BluetoothProfile.LE_AUDIO_BROADCAST -> new LeAudioBroadcast(this);
             case BluetoothProfile.LE_AUDIO ->
-                    new LeAudioService(this, mStorage, mActiveDeviceManager);
+                    new LeAudioService(this, mStorage, mActiveDeviceManager, mScanController);
             case BluetoothProfile.LE_CALL_CONTROL -> new TbsService(this, mGattService);
             case BluetoothProfile.MAP_CLIENT -> new MapClientService(this);
             case BluetoothProfile.MAP -> new BluetoothMapService(this);
@@ -1479,7 +1491,7 @@ public class AdapterService extends Service {
             // move on to BREDR_STOPPED
             if (supportedProfiles.length == 1
                     && mRunningProfiles.size() == 1
-                    && mRunningProfiles.get(0).mProfileId == BluetoothProfile.GATT) {
+                    && mRunningProfiles.get(0).getProfileId() == BluetoothProfile.GATT) {
                 Log.d(
                         TAG,
                         "stopProfileServices(): No profiles services to stop or already stopped.");
@@ -1552,6 +1564,8 @@ public class AdapterService extends Service {
         if (mNativeInterface.getCallbacks() != null) {
             mNativeInterface.getCallbacks().cleanup();
         }
+
+        mBluetoothQualityReportNativeInterface.cleanup();
 
         if (mBluetoothKeystoreService != null) {
             Log.d(TAG, "cleanup(): mBluetoothKeystoreService.cleanup()");
@@ -1968,7 +1982,7 @@ public class AdapterService extends Service {
         return !mStartedProfiles.values().stream()
                 .anyMatch(
                         profile ->
-                                getProfileConnectionPolicy(device, profile.mProfileId)
+                                getProfileConnectionPolicy(device, profile.getProfileId())
                                         != CONNECTION_POLICY_UNKNOWN);
     }
 
@@ -2241,6 +2255,17 @@ public class AdapterService extends Service {
             return mStorage.getKeyMissingCount(device);
         }
         return mDatabaseManager.getKeyMissingCount(device); // Migrating
+    }
+
+    /**
+     * Wrapper to provide the bons loss status directly through {@link
+     * AdapterService#getKeyMissingCount}
+     *
+     * @param device is the remote device whose bond state we want to check
+     * @return true if the bond loss is already detected on the device, false otherwise
+     */
+    public boolean isBondLost(BluetoothDevice device) {
+        return getKeyMissingCount(device) > 0;
     }
 
     /** see {@link DatabaseManager#updateKeyMissingCount} */
@@ -2793,9 +2818,9 @@ public class AdapterService extends Service {
         if (getState() != BluetoothAdapter.STATE_ON) {
             return false;
         }
-        if (Utils.checkCallerHasNetworkSettingsPermission(this)) {
+        if (Util.checkCallerHasNetworkSettingsPermission(this)) {
             permission = android.Manifest.permission.NETWORK_SETTINGS;
-        } else if (Utils.checkCallerHasNetworkSetupWizardPermission(this)) {
+        } else if (Util.checkCallerHasNetworkSetupWizardPermission(this)) {
             permission = android.Manifest.permission.NETWORK_SETUP_WIZARD;
         } else if (!hasDisavowedLocation) {
             if (isQApp) {
@@ -2815,11 +2840,16 @@ public class AdapterService extends Service {
             boolean discovering = isDiscovering();
             DiscoveringPackageInfo pkgInfo =
                     new DiscoveringPackageInfo(permission, hasDisavowedLocation);
-            mDiscoveringPackages.put(callingPackage, pkgInfo);
+            DiscoveringPackageInfo oldPkgInfo = mDiscoveringPackages.put(callingPackage, pkgInfo);
 
             if (Flags.ignoreRedundantDiscoveryIfSameState() && discovering) {
                 // If discovery is already running, broadcast the ACTION_DISCOVERY_STARTED intent.
                 Log.d(TAG, "startDiscovery: discovery is already running");
+                if (oldPkgInfo != null) {
+                    Log.e(TAG, "startDiscovery: discovery already started by the same package");
+                    return false;
+                }
+
                 Intent intent = new Intent(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
                 intent.setPackage(callingPackage);
                 sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
@@ -2981,7 +3011,12 @@ public class AdapterService extends Service {
         // Pairing is unreliable while scanning, so cancel discovery
         // Note, remove this when native stack improves
         mNativeInterface.cancelDiscovery();
+        sendCreateBondMessage(device, transport, remoteP192Data, remoteP256Data);
+        return true;
+    }
 
+    void sendCreateBondMessage(
+            BluetoothDevice device, int transport, OobData remoteP192Data, OobData remoteP256Data) {
         Message msg = mBondStateMachine.obtainMessage(BondStateMachine.MESSAGE_CREATE_BOND);
         msg.obj = device;
         msg.arg1 = transport;
@@ -3008,7 +3043,6 @@ public class AdapterService extends Service {
                             Binder.getCallingUid());
         }
         mBondStateMachine.sendMessage(msg);
-        return true;
     }
 
     boolean removeBond(BluetoothDevice device) {
@@ -3966,6 +4000,18 @@ public class AdapterService extends Service {
 
     public boolean isLeCodedPhySupported() {
         return mAdapterProperties.isLeCodedPhySupported();
+    }
+
+    /**
+     * Check if the LE high data throughput phy feature is supported.
+     *
+     * @return true, if the LE high data throughput phy feature is supported
+     */
+    public boolean isLeHighDataThroughputPhySupported() {
+        if (!Flags.leaudioOverHdtPhyApi()) {
+            return false;
+        }
+        return mAdapterProperties.isLeHighDataThroughputPhySupported();
     }
 
     public boolean isLeExtendedAdvertisingSupported() {

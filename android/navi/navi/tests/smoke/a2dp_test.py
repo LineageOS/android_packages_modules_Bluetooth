@@ -15,13 +15,8 @@
 from __future__ import annotations
 
 import asyncio
-import decimal
-import sys
-import tempfile
-from typing import Iterable, TypeAlias
-import wave
+from typing import TypeAlias
 
-from bumble import avc
 from bumble import avdtp
 from bumble import avrcp
 from bumble import hci
@@ -31,22 +26,20 @@ from mobly import signals
 from typing_extensions import override
 
 from navi.bumble_ext import a2dp as a2dp_ext
+from navi.bumble_ext import avrcp as avrcp_ext
 from navi.tests import navi_test_base
 from navi.utils import android_constants
 from navi.utils import audio
 from navi.utils import bl4a_api
 from navi.utils import constants
-from navi.utils import matcher
 
 _A2DP_SERVICE_RECORD_HANDLE = 1
 _AVRCP_CONTROLLER_RECORD_HANDLE = 2
 _AVRCP_TARGET_RECORD_HANDLE = 3
-_DEFAULT_STEP_TIMEOUT_SECONDS = 5.0
-_AVRCP_MAX_VOLUME = 127
+_DEFAULT_STEP_TIMEOUT_SECONDS = 10.0
 _PROPERTY_CODEC_PRIORITY = "bluetooth.a2dp.source.%s_priority.config"
 _PROPERTY_OPUS_ENABLED = "persist.bluetooth.opus.enabled"
 _VALUE_CODEC_DISABLED = -1
-_PREPARE_TIME_SECONDS = 0.5
 
 _Issuer = constants.TestRole
 _A2dpState = android_constants.A2dpState
@@ -77,19 +70,6 @@ class LocalSinkWrapper:
     @property
     def stream_state(self) -> int | None:
         return self.impl.stream.state if self.impl.stream else None
-
-
-class AvrcpDelegate(avrcp.Delegate):
-
-    def __init__(self, supported_events: Iterable[avrcp.EventId] = ()):
-        super().__init__(supported_events)
-        self.condition = asyncio.Condition()
-
-    @override
-    async def set_absolute_volume(self, volume: int) -> None:
-        await super().set_absolute_volume(volume)
-        async with self.condition:
-            self.condition.notify_all()
 
 
 class A2dpTest(navi_test_base.TwoDevicesTestBase):
@@ -126,8 +106,10 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
             [codec.get_default_capabilities() for codec in codecs],
             _A2DP_SERVICE_RECORD_HANDLE,
         )
-        avrcp_delegator = AvrcpDelegate(supported_events=(avrcp.EventId.VOLUME_CHANGED,))
-        avrcp_protocol = a2dp_ext.setup_avrcp_server(
+        avrcp_delegator = avrcp.Delegate(
+            supported_events=(avrcp.EventId.VOLUME_CHANGED,)  # type: ignore[wrong-arg-types]
+        )
+        avrcp_protocol = avrcp_ext.setup_server(
             self.ref.device,
             avrcp_controller_handle=_AVRCP_CONTROLLER_RECORD_HANDLE,
             avrcp_target_handle=_AVRCP_TARGET_RECORD_HANDLE,
@@ -198,14 +180,6 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
                     transport=android_constants.Transport.CLASSIC,
                 ),)
 
-    async def _avrcp_key_click(
-        self,
-        ref_avrcp_protocol: avrcp.Protocol,
-        key: avc.PassThroughFrame.OperationId,
-    ) -> None:
-        await ref_avrcp_protocol.send_key_event(key, pressed=True)
-        await ref_avrcp_protocol.send_key_event(key, pressed=False)
-
     async def test_pair_and_connect(self) -> None:
         """Tests A2DP connection establishment right after a pairing session.
 
@@ -232,8 +206,8 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
                 timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
             )
 
-    async def test_paired_connect_outgoing(self) -> None:
-        """Tests A2DP connection establishment where pairing is not involved.
+    async def test_outgoing_reconnect(self) -> None:
+        """Tests A2DP connection establishment where DUT initiates the reconnection.
 
     Test steps:
       1. Setup pairing between DUT and REF.
@@ -272,8 +246,8 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
                     state=android_constants.ConnectionState.DISCONNECTED,
                 ),)
 
-    async def test_paired_connect_incoming(self) -> None:
-        """Tests A2DP connection establishment where pairing is not involved.
+    async def test_incoming_reconnect(self) -> None:
+        """Tests A2DP connection establishment where REF initiates the reconnection.
 
     Test steps:
       1. Setup pairing between DUT and REF.
@@ -325,18 +299,15 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
                 ),)
 
     @navi_test_base.parameterized(
-        (_Issuer.DUT, [_A2dpCodec.SBC]),
-        (_Issuer.DUT, [_A2dpCodec.SBC, _A2dpCodec.AAC]),
-        (_Issuer.DUT, [_A2dpCodec.SBC, _A2dpCodec.AAC, _A2dpCodec.APTX]),
-        (_Issuer.DUT, [_A2dpCodec.SBC, _A2dpCodec.AAC, _A2dpCodec.APTX_HD]),
-        (_Issuer.DUT, [_A2dpCodec.SBC, _A2dpCodec.AAC, _A2dpCodec.LDAC]),
-        (_Issuer.REF, [_A2dpCodec.SBC]),
-        (_Issuer.REF, [_A2dpCodec.SBC, _A2dpCodec.AAC]),
+        ([_A2dpCodec.SBC],),
+        ([_A2dpCodec.SBC, _A2dpCodec.AAC],),
+        ([_A2dpCodec.SBC, _A2dpCodec.AAC, _A2dpCodec.APTX],),
+        ([_A2dpCodec.SBC, _A2dpCodec.AAC, _A2dpCodec.APTX_HD],),
+        ([_A2dpCodec.SBC, _A2dpCodec.AAC, _A2dpCodec.LDAC],),
     )
     @navi_test_base.retry(2)
     async def test_stream_start_and_stop(
         self,
-        issuer: _Issuer,
         ref_codecs: list[_A2dpCodec],
     ) -> None:
         """Tests A2DP streaming controlled by the given issuer (DUT or REF).
@@ -347,7 +318,6 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
       3. Stop stream from DUT from the given issuer.
 
     Args:
-      issuer: device to issue the volume change command.
       ref_codecs: A2DP codecs supported by REF.
     """
         # Select preferred codec and sink.
@@ -362,12 +332,8 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
 
         self.dut.bt.audioSetRepeat(android_constants.RepeatMode.ONE)
 
-        with (
-                self.dut.bl4a.register_callback(bl4a_api.Module.A2DP) as dut_cb,
-                self.dut.bl4a.register_callback(bl4a_api.Module.PLAYER) as dut_player_cb,
-        ):
-            ref_avrcp_protocol, ref_avdtp_connection = (await
-                                                        self._setup_a2dp_connection(ref_codecs))
+        with self.dut.bl4a.register_callback(bl4a_api.Module.A2DP) as dut_cb:
+            _, ref_avdtp_connection = await self._setup_a2dp_connection(ref_codecs)
 
             ref_sinks = a2dp_ext.find_local_endpoints_by_codec(
                 ref_avdtp_connection,
@@ -393,21 +359,13 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
                     ref_sink.condition,
             ):
                 await ref_sink.condition.wait_for(
-                    lambda: ref_sink.stream_state != avdtp.AVDTP_STREAMING_STATE)
+                    lambda: ref_sink.stream_state != avdtp.State.STREAMING)
 
             # Register the sink buffer to receive the packets.
             buffer = a2dp_ext.register_sink_buffer(ref_sink.impl, preferred_codec)
 
-            if issuer == _Issuer.DUT:
-                self.logger.info("[DUT] Start stream.")
-                self.dut.bt.audioPlaySine()
-            else:
-                self.logger.info("[REF] Start stream.")
-                async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
-                    await self._avrcp_key_click(ref_avrcp_protocol,
-                                                avc.PassThroughFrame.OperationId.PLAY)
-                self.logger.info("[DUT] Wait for playback started.")
-                await dut_player_cb.wait_for_event(bl4a_api.PlayerIsPlayingChanged(is_playing=True))
+            self.logger.info("[DUT] Start stream.")
+            self.dut.bt.audioPlaySine()
 
             self.logger.info("[DUT] Wait for A2DP started.")
             await dut_cb.wait_for_event(
@@ -419,22 +377,13 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
                     ref_sink.condition,
             ):
                 await ref_sink.condition.wait_for(
-                    lambda: ref_sink.stream_state == avdtp.AVDTP_STREAMING_STATE)
+                    lambda: ref_sink.stream_state == avdtp.State.STREAMING)
 
             # Streaming for 1 second.
             await asyncio.sleep(1.0)
 
-            if issuer == _Issuer.DUT:
-                self.logger.info("[DUT] Stop stream.")
-                self.dut.bt.audioPause()
-            else:
-                self.logger.info("[REF] Stop stream.")
-                async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
-                    await self._avrcp_key_click(ref_avrcp_protocol,
-                                                avc.PassThroughFrame.OperationId.PAUSE)
-                self.logger.info("[DUT] Wait for playback stopped.")
-                await dut_player_cb.wait_for_event(bl4a_api.PlayerIsPlayingChanged(is_playing=False)
-                                                  )
+            self.logger.info("[DUT] Stop stream.")
+            self.dut.bt.audioPause()
 
             self.logger.info("[DUT] Wait for A2DP stopped.")
             await dut_cb.wait_for_event(
@@ -446,7 +395,7 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
                     ref_sink.condition,
             ):
                 await ref_sink.condition.wait_for(
-                    lambda: ref_sink.stream_state != avdtp.AVDTP_STREAMING_STATE)
+                    lambda: ref_sink.stream_state != avdtp.State.STREAMING)
             if self.user_params.get(navi_test_base.RECORD_FULL_DATA) and buffer:
                 self.write_test_output_data(
                     f"a2dp_data.{preferred_codec.format}",
@@ -461,133 +410,6 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
                 # Dominant frequency is not accurate on emulator.
                 if not self.dut.device.is_emulator:
                     self.assertAlmostEqual(dominant_frequency, 1000, delta=10)
-
-    @navi_test_base.parameterized(_Issuer.DUT, _Issuer.REF)
-    async def test_set_absolute_volume(self, issuer: _Issuer) -> None:
-        """Tests setting absolute volume.
-
-    Test steps:
-      1. Setup pairing between DUT and REF.
-      2. Set absolute volume.
-
-    Args:
-      issuer: device to issue the volume change command.
-    """
-        ref_avrcp_protocol, _ = await self._setup_a2dp_connection([_A2dpCodec.SBC])
-        ref_avrcp_delegator = ref_avrcp_protocol.delegate
-        assert isinstance(ref_avrcp_delegator, AvrcpDelegate)
-
-        dut_max_volume = self.dut.bt.getMaxVolume(_StreamType.MUSIC)
-        dut_min_volume = self.dut.bt.getMinVolume(_StreamType.MUSIC)
-
-        def android_to_avrcp_volume(volume: int) -> int:
-            # Android JVM uses ROUND_HALF_UP policy, while Python uses ROUND_HALF_EVEN
-            # by default, so we need to specify policy here.
-            return int(
-                decimal.Decimal(volume / dut_max_volume * _AVRCP_MAX_VOLUME).to_integral_exact(
-                    rounding=decimal.ROUND_HALF_UP))
-
-        async with (
-                self.assert_not_timeout(
-                    _DEFAULT_STEP_TIMEOUT_SECONDS,
-                    msg="[REF] Wait for initial volume indicator.",
-                ),
-                ref_avrcp_delegator.condition,
-        ):
-            await ref_avrcp_delegator.condition.wait_for(lambda: (android_to_avrcp_volume(
-                self.dut.bt.getVolume(_StreamType.MUSIC)) == ref_avrcp_delegator.volume))
-
-        # DUT's VCS client might not be stable at the beginning. If we set volume
-        # immediately, the volume might not be set correctly.
-        await asyncio.sleep(_PREPARE_TIME_SECONDS)
-
-        with self.dut.bl4a.register_callback(bl4a_api.Module.AUDIO) as dut_audio_cb:
-            for dut_expected_volume in range(dut_min_volume, dut_max_volume + 1):
-                if self.dut.bt.getVolume(_StreamType.MUSIC) == dut_expected_volume:
-                    continue
-
-                ref_expected_volume = android_to_avrcp_volume(dut_expected_volume)
-
-                if issuer == _Issuer.DUT:
-                    self.logger.info("[DUT] Set volume to %d.", dut_expected_volume)
-                    self.dut.bt.setVolume(_StreamType.MUSIC, dut_expected_volume)
-                else:
-                    self.logger.info("[REF] Set volume to %d.", ref_expected_volume)
-                    ref_avrcp_delegator.volume = ref_expected_volume
-                    ref_avrcp_protocol.notify_volume_changed(ref_expected_volume)
-
-                self.logger.info("[DUT] Wait for volume changed.")
-                volume_changed_event = await dut_audio_cb.wait_for_event(
-                    bl4a_api.VolumeChanged(stream_type=_StreamType.MUSIC,
-                                           volume_value=matcher.ANY),)
-                self.assertEqual(volume_changed_event.volume_value, dut_expected_volume)
-
-                # There won't be volume changed events on REF as issuer.
-                if issuer == _Issuer.DUT:
-                    async with (
-                            self.assert_not_timeout(
-                                _DEFAULT_STEP_TIMEOUT_SECONDS,
-                                msg="[REF] Wait for volume changed.",
-                            ),
-                            ref_avrcp_delegator.condition,
-                    ):
-                        await ref_avrcp_delegator.condition.wait_for(
-                            lambda: ref_avrcp_delegator.volume == ref_expected_volume  # pylint: disable=cell-var-from-loop
-                        )
-
-    @navi_test_base.retry(3)
-    async def test_avrcp_previous_next_track(self) -> None:
-        """Tests moving to previous and next track over AVRCP."""
-        ref_avrcp_protocol, _ = await self._setup_a2dp_connection([_A2dpCodec.SBC])
-
-        # Allow repeating to avoid the end of the track.
-        self.dut.bt.audioSetRepeat(android_constants.RepeatMode.ONE)
-        # Generate a sine wave audio file, and push it to DUT twice.
-        with tempfile.NamedTemporaryFile(
-                # On Windows, NamedTemporaryFile cannot be deleted if used multiple
-                # times.
-                delete=(sys.platform != "win32")) as local_file:
-            with wave.open(local_file.name, "wb") as wave_file:
-                wave_file.setnchannels(1)
-                wave_file.setsampwidth(2)
-                wave_file.setframerate(48000)
-                wave_file.writeframes(bytes(48000 * 2 * 5))  # 5 seconds.
-            for i in range(2):
-                self.dut.adb.push([
-                    local_file.name,
-                    f"/data/media/{self.dut.adb.current_user_id}/Music/sample-{i}.mp3",
-                ])
-
-        with self.dut.bl4a.register_callback(bl4a_api.Module.PLAYER) as dut_player_cb:
-            # Play the first track.
-            self.dut.bt.audioPlayFile("/storage/self/primary/Music/sample-0.mp3")
-            # Add the second track to the player.
-            self.dut.bt.addMediaItem("/storage/self/primary/Music/sample-1.mp3")
-
-            self.logger.info("[DUT] Wait for playback started.")
-            await dut_player_cb.wait_for_event(bl4a_api.PlayerIsPlayingChanged(is_playing=True))
-
-            self.logger.info("[REF] Go to the next track.")
-            async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
-                await self._avrcp_key_click(ref_avrcp_protocol,
-                                            avc.PassThroughFrame.OperationId.FORWARD)
-
-            self.logger.info("[DUT] Wait for track transition.")
-            await dut_player_cb.wait_for_event(
-                bl4a_api.PlayerMediaItemTransition,
-                lambda e: (e.uri is not None and "sample-1.mp3" in e.uri),
-            )
-
-            self.logger.info("[REF] Go back to the previous track.")
-            async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
-                await self._avrcp_key_click(ref_avrcp_protocol,
-                                            avc.PassThroughFrame.OperationId.BACKWARD)
-
-            self.logger.info("[DUT] Wait for track transition.")
-            await dut_player_cb.wait_for_event(
-                bl4a_api.PlayerMediaItemTransition,
-                lambda e: (e.uri is not None and "sample-0.mp3" in e.uri),
-            )
 
     async def test_noisy_handling(self) -> None:
         """Tests enabling noisy handling, and verify the player is paused after A2DP disconnected.

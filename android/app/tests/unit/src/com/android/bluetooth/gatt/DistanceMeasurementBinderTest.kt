@@ -49,14 +49,16 @@ class DistanceMeasurementBinderTest {
     @get:Rule val mockitoRule = MockitoRule()
 
     @Mock private lateinit var source: AttributionSource
-    @Mock private lateinit var distanceMeasurementManager: DistanceMeasurementManager
     @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var gattService: GattService
+    @Mock private lateinit var distanceMeasurementManager: DistanceMeasurementManager
 
     private lateinit var binder: DistanceMeasurementBinder
 
     @Before
     fun setUp() {
-        binder = DistanceMeasurementBinder(adapterService, distanceMeasurementManager)
+        doReturn(true).whenever(gattService).isAvailable
+        binder = DistanceMeasurementBinder(adapterService, gattService, distanceMeasurementManager)
         doReturn(emptyList<DistanceMeasurementMethod>())
             .whenever(distanceMeasurementManager)
             .getSupportedDistanceMeasurementMethods()

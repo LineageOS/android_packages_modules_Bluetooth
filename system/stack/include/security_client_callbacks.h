@@ -42,9 +42,11 @@ typedef tBTM_STATUS(tBTM_AUTHORIZE_CALLBACK)(uint8_t service_id);
  *              Device Class of remote
  *              BD Name of remote
  *              Flag indicating the minimum pin code length to be 16 digits
+ *              Pairing Algorithm being used
  */
 typedef tBTM_STATUS(tBTM_PIN_CALLBACK)(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                                       const BD_NAME bd_name, bool min_16_digit);
+                                       const BD_NAME bd_name, bool min_16_digit,
+                                       PairingAlgorithm pairing_algorithm);
 
 /* New Link Key for the connection.  Parameters are
  *              BD Address of remote

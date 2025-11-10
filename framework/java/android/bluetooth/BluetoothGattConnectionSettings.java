@@ -21,9 +21,11 @@ import static android.bluetooth.BluetoothDevice.Transport;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.CallbackExecutor;
+import android.annotation.FlaggedApi;
 import android.annotation.NonNull;
-import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
+
+import com.android.bluetooth.flags.Flags;
 
 import java.util.concurrent.Executor;
 
@@ -37,7 +39,8 @@ import java.util.concurrent.Executor;
  *
  * @see BluetoothDevice#connectGatt
  */
-/*public*/ final class BluetoothGattConnectionSettings {
+@FlaggedApi(Flags.FLAG_GATT_CONN_SETTINGS)
+public final class BluetoothGattConnectionSettings {
     /**
      * Setting this to true, would enable the automatic connection to remote device when It is
      * available, false would trigger direction LE connection to remote device
@@ -46,6 +49,7 @@ import java.util.concurrent.Executor;
 
     /** Determine if this GATT client connection is opportunistic or not */
     private final boolean mOpportunisticEnabled;
+
 
     /** Transport to be used for GATT connection. */
     private final @Transport int mTransport;
@@ -57,7 +61,7 @@ import java.util.concurrent.Executor;
     private final @NonNull BluetoothGattCallback mBluetoothGattCallback;
 
     /** Executor on which callbacks will be invoked */
-    private Executor mCallbackExecutor = null;
+    private final @NonNull Executor mCallbackExecutor;
 
     /** Returns true if auto connection enabled or false otherwise. */
     @RequiresNoPermission
@@ -127,17 +131,27 @@ import java.util.concurrent.Executor;
         private boolean mAutoConnectEnabled = false;
         private boolean mOpportunisticEnabled = false;
         private @Transport int mTransport = BluetoothDevice.TRANSPORT_LE;
-        private @Nullable BluetoothGattCallback mBluetoothGattCallback = null;
-        private @Nullable Executor mExecutor = null;
-
-        Builder() {}
+        private @NonNull BluetoothGattCallback mBluetoothGattCallback;
+        private @NonNull Executor mExecutor;
 
         /**
-         * Setting this to true will enable the automatic connection to remote devuce when It is
+         * Creates a new Builder for {@link BluetoothGattConnectionSettings}.
+         *
+         * @param executor The executor on which GATT callbacks will be invoked.
+         * @param bluetoothGattCallback The callback object to receive GATT events.
+         */
+        public Builder(
+                @NonNull @CallbackExecutor Executor executor,
+                @NonNull BluetoothGattCallback bluetoothGattCallback) {
+            mExecutor = requireNonNull(executor);
+            mBluetoothGattCallback = requireNonNull(bluetoothGattCallback);
+        }
+
+        /**
+         * Setting this to true will enable the automatic connection to remote device when It is
          * available. Setting it to False would trigger direct connect to remote device
          *
-         * @param autoConnectEnabled true if Default MTU setting need to be applied on this
-         *     connection, false otherwise.
+         * @param autoConnectEnabled true if auto connection enabled, false otherwise.
          * @return This builder.
          */
         @NonNull
@@ -152,8 +166,7 @@ import java.util.concurrent.Executor;
          * hold a GATT connection. It automatically disconnects when no other GATT connections are
          * active for the remote device
          *
-         * @param opportunisticEnabled true if Default MTU setting need to be applied on this
-         *     connection, false otherwise.
+         * @param opportunisticEnabled true if this connection is opportunistic, false otherwise.
          * @return This builder.
          */
         @NonNull
@@ -173,24 +186,6 @@ import java.util.concurrent.Executor;
         @RequiresNoPermission
         public Builder setTransport(@Transport int transport) {
             mTransport = transport;
-            return this;
-        }
-
-        /**
-         * Sets BluetoothGattCallback object so that application will be notified on various GATT
-         * statuses.
-         *
-         * @param bluetoothGattCallback handle to {@link BluetoothGattCallback} where application
-         *     would get notified on gatt statuses
-         * @return This builder.
-         */
-        @NonNull
-        @RequiresNoPermission
-        public Builder setBluetoothGattCallback(
-                @NonNull @CallbackExecutor Executor executor,
-                @NonNull BluetoothGattCallback bluetoothGattCallback) {
-            mExecutor = requireNonNull(executor);
-            mBluetoothGattCallback = requireNonNull(bluetoothGattCallback);
             return this;
         }
 

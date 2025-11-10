@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.storage
 
-import android.bluetooth.BluetoothDevice
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -49,7 +48,7 @@ class MigrationFromAccessPermissionsTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private lateinit var migration: MigrationFromAccessPermissions
     private lateinit var prefsDir: File
-    private val mDevice: BluetoothDevice = getTestDevice(42)
+    private val device = getTestDevice(42)
 
     @Before
     fun setUp() {
@@ -91,7 +90,7 @@ class MigrationFromAccessPermissionsTest {
         context
             .getSharedPreferences(PHONEBOOK_FILE, Context.MODE_PRIVATE)
             .edit()
-            .putBoolean(mDevice.address, true)
+            .putBoolean(device.address, true)
             .commit()
 
         assertThat(migration.shouldMigrate(UserStorage.getDefaultInstance())).isTrue()
@@ -103,13 +102,13 @@ class MigrationFromAccessPermissionsTest {
         context
             .getSharedPreferences(PHONEBOOK_FILE, Context.MODE_PRIVATE)
             .edit()
-            .putBoolean(mDevice.address, true)
+            .putBoolean(device.address, true)
             .commit()
 
         context
             .getSharedPreferences(MESSAGE_FILE, Context.MODE_PRIVATE)
             .edit()
-            .putBoolean(mDevice.address, false)
+            .putBoolean(device.address, false)
             .commit()
 
         // SIM permission is not set for this device
@@ -118,7 +117,7 @@ class MigrationFromAccessPermissionsTest {
         val migratedStorage = migration.migrate(UserStorage.getDefaultInstance())
 
         // Verify the migrated data
-        val deviceProto = migratedStorage.devicesMap[mDevice.address]!!
+        val deviceProto = migratedStorage.devicesMap[device.address]!!
         assertThat(deviceProto.permissions.phonebook).isTrue()
         assertThat(deviceProto.permissions.message).isFalse()
         assertThat(deviceProto.permissions.hasSim()).isFalse() // Should not be set
@@ -130,17 +129,17 @@ class MigrationFromAccessPermissionsTest {
         context
             .getSharedPreferences(PHONEBOOK_FILE, Context.MODE_PRIVATE)
             .edit()
-            .putBoolean(mDevice.address, true)
+            .putBoolean(device.address, true)
             .commit()
         context
             .getSharedPreferences(MESSAGE_FILE, Context.MODE_PRIVATE)
             .edit()
-            .putBoolean(mDevice.address, true)
+            .putBoolean(device.address, true)
             .commit()
         context
             .getSharedPreferences(SIM_FILE, Context.MODE_PRIVATE)
             .edit()
-            .putBoolean(mDevice.address, true)
+            .putBoolean(device.address, true)
             .commit()
 
         val phonebookFile = File(prefsDir, "$PHONEBOOK_FILE.xml")

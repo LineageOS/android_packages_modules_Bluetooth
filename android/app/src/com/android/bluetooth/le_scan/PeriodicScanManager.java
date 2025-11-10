@@ -33,6 +33,7 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.android.bluetooth.ActionOnDeathRecipient;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -46,7 +47,8 @@ import java.util.stream.Collectors;
 
 /** Manages Bluetooth LE Periodic scans */
 public class PeriodicScanManager {
-    private static final String TAG = PeriodicScanManager.class.getSimpleName();
+    private static final String TAG =
+            ScanUtil.TAG_PREFIX + PeriodicScanManager.class.getSimpleName();
 
     @VisibleForTesting int mTempRegistrationId = -1;
 
@@ -101,22 +103,8 @@ public class PeriodicScanManager {
             String address,
             Integer skip,
             Integer timeout,
-            SyncDeathRecipient deathRecipient,
+            ActionOnDeathRecipient deathRecipient,
             IPeriodicAdvertisingCallback callback) {}
-
-    private final class SyncDeathRecipient implements IBinder.DeathRecipient {
-        private final IPeriodicAdvertisingCallback mCallback;
-
-        SyncDeathRecipient(IPeriodicAdvertisingCallback callback) {
-            mCallback = callback;
-        }
-
-        @Override
-        public void binderDied() {
-            Log.d(TAG, "binderDied(): Unregistering advertising set");
-            doOnScanThread(() -> stopSync(mCallback));
-        }
-    }
 
     private Map.Entry<IBinder, SyncTransferInfo> findSyncTransfer(String address) {
         return mSyncTransfers.entrySet().stream()
@@ -271,7 +259,7 @@ public class PeriodicScanManager {
             int timeout,
             IPeriodicAdvertisingCallback callback) {
         mScanController.enforceScanThread();
-        SyncDeathRecipient deathRecipient = new SyncDeathRecipient(callback);
+        var deathRecipient = syncDeathRecipient(callback);
         IBinder binder = callback.asBinder();
         try {
             binder.linkToDeath(deathRecipient, 0);
@@ -398,11 +386,10 @@ public class PeriodicScanManager {
             int advHandle,
             IPeriodicAdvertisingCallback callback) {
         mScanController.enforceScanThread();
-        SyncDeathRecipient deathRecipient = new SyncDeathRecipient(callback);
         IBinder binder = callback.asBinder();
         Log.d(TAG, "transferSetInfo() " + binder);
         try {
-            binder.linkToDeath(deathRecipient, 0);
+            binder.linkToDeath(syncDeathRecipient(callback), 0);
         } catch (RemoteException e) {
             throw new IllegalArgumentException("Can't link to periodic scanner death");
         }
@@ -412,5 +399,11 @@ public class PeriodicScanManager {
 
     void doOnScanThread(Runnable r) {
         mScanController.doOnScanThread(r);
+    }
+
+    private ActionOnDeathRecipient syncDeathRecipient(IPeriodicAdvertisingCallback callback) {
+        var message = "Unregistering advertising set for " + callback;
+        Runnable onDeathAction = () -> doOnScanThread(() -> stopSync(callback));
+        return new ActionOnDeathRecipient(TAG, message, onDeathAction);
     }
 }

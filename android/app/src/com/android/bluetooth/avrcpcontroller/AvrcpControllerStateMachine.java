@@ -241,7 +241,7 @@ class AvrcpControllerStateMachine extends StateMachine {
      * @param sb output string
      */
     public void dump(StringBuilder sb) {
-        ProfileService.println(sb, "mDevice: " + mDevice + this.toString());
+        ProfileService.println(sb, "mDevice: " + mDevice + " " + this.toString());
         ProfileService.println(sb, "isActive: " + isActive());
         ProfileService.println(sb, "Control: " + mRemoteControlConnected);
         ProfileService.println(sb, "Browsing: " + mBrowsingConnected);

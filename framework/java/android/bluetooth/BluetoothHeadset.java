@@ -890,30 +890,6 @@ public final class BluetoothHeadset implements BluetoothProfile {
         return BluetoothStatusCodes.ERROR_UNKNOWN;
     }
 
-    /**
-     * Force SCO audio to be opened regardless any other restrictions
-     *
-     * @param forced Whether or not SCO audio connection should be forced: True to force SCO audio
-     *     False to use SCO audio in normal manner
-     */
-    @Hide
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    public void setForceScoAudio(boolean forced) {
-        if (VDBG) log("setForceScoAudio " + String.valueOf(forced));
-        final IBluetoothHeadset service = getService();
-        if (service == null) {
-            Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
-        } else if (isEnabled()) {
-            try {
-                service.setForceScoAudio(forced, mAttributionSource);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            }
-        }
-    }
-
     @Hide
     @Retention(RetentionPolicy.SOURCE)
     @IntDef(
@@ -943,8 +919,12 @@ public final class BluetoothHeadset implements BluetoothProfile {
      * audio connection.
      *
      * @return whether the connection was successfully initiated or an error code on failure
+     * @deprecated Starting with API 37, applications should use {@link
+     *     android.telecom.InCallService#requestBluetoothAudio(BluetoothDevice)}
      */
     @Hide
+    @FlaggedApi(Flags.FLAG_DEPRECATE_CONNECT_AUDIO)
+    @Deprecated
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -993,8 +973,12 @@ public final class BluetoothHeadset implements BluetoothProfile {
      * #STATE_AUDIO_DISCONNECTED}.
      *
      * @return whether the disconnection was initiated successfully or an error code on failure
+     * @deprecated Starting with API 37, applications should use {@link
+     *     android.telecom.InCallService#requestBluetoothAudio(BluetoothDevice)}
      */
     @Hide
+    @FlaggedApi(Flags.FLAG_DEPRECATE_CONNECT_AUDIO)
+    @Deprecated
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -1156,8 +1140,11 @@ public final class BluetoothHeadset implements BluetoothProfile {
      * @param device Remote Bluetooth Device, could be null if phone call audio should not be
      *     streamed to a headset
      * @return false on immediate error, true otherwise
+     * @deprecated this method should not be utilized for audio routing. System components can use
+     *     {@link BluetoothAdapter#setActiveDevice(BluetoothDevice, int)}
      */
     @Hide
+    @Deprecated
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
@@ -1188,8 +1175,11 @@ public final class BluetoothHeadset implements BluetoothProfile {
      * Get the connected device that is active.
      *
      * @return the connected device that is active or null if no device is active.
+     * @deprecated this method should not be utilized for audio routing. System components can use
+     *     {@link BluetoothAdapter#getActiveDevices(int)}
      */
     @Hide
+    @Deprecated
     @UnsupportedAppUsage(trackingBug = 171933273)
     @Nullable
     @RequiresLegacyBluetoothPermission

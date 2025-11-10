@@ -289,6 +289,7 @@ typedef struct {
   tBTM_AUTH_REQ rmt_auth_req; /* Authentication required for peer device */
   BtIoCap loc_io_caps;        /* IO Capabilities of the local device */
   BtIoCap rmt_io_caps;        /* IO Capabilities of the remot device */
+  PairingAlgorithm pairing_algorithm;
 } tBTM_SP_CFM_REQ;
 
 /* data type for BTM_SP_KEY_REQ_EVT */
@@ -304,6 +305,7 @@ typedef struct {
   DEV_CLASS dev_class; /* peer CoD */
   BD_NAME bd_name;     /* peer device name */
   uint32_t passkey;    /* passkey */
+  PairingAlgorithm pairing_algorithm;
 } tBTM_SP_KEY_NOTIF;
 
 /* data type for BTM_SP_LOC_OOB_EVT */

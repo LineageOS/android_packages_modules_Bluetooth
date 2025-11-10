@@ -588,6 +588,18 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
           "2:bonded],prev_state={}, sdp_attempts={}",
           state, pairing_cb.state, pairing_cb.sdp_attempts);
 
+  if (com::android::bluetooth::flags::enable_autonomous_repairing() && btm_is_bond_lost(bd_addr) &&
+      (state == BT_BOND_STATE_NONE)) {
+    const std::string bd_addr_str = bd_addr.ToString();
+    bt_status_t fetch_status = btif_in_fetch_bonded_device(bd_addr_str);
+    log::debug(
+            "Re-pairing attempt, changing the bond state from BOND_NONE to BOND_BONDED, fetching "
+            "device details from persistent storage: {}",
+            bt_status_text(fetch_status));
+    status = BT_STATUS_SUCCESS;
+    state = BT_BOND_STATE_BONDED;
+  }
+
   if (state == BT_BOND_STATE_NONE) {
     bluetooth::metrics::ForgetDeviceFromMetricIdAllocator(bd_addr);
     btif_config_remove_device(bd_addr.ToString());
@@ -969,9 +981,10 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
 
   /* check for auto pair possibility only if bond was initiated by local device
    */
-  if (pairing_cb.is_local_initiated && !p_pin_req->min_16_digit) {
-    if (btif_check_cod(&bd_addr, COD_AV_HEADSETS) ||
-        btif_check_cod(&bd_addr, COD_AV_HEADPHONES) ||
+  if (!(com::android::bluetooth::flags::enable_autonomous_repairing() &&
+        btm_is_bond_lost(bd_addr)) &&
+      pairing_cb.is_local_initiated && !p_pin_req->min_16_digit) {
+    if (btif_check_cod(&bd_addr, COD_AV_HEADSETS) || btif_check_cod(&bd_addr, COD_AV_HEADPHONES) ||
         btif_check_cod(&bd_addr, COD_AV_PORTABLE_AUDIO) ||
         btif_check_cod(&bd_addr, COD_AV_HIFI_AUDIO) ||
         btif_check_cod_hid_major(bd_addr, COD_HID_POINTING)) {
@@ -1008,8 +1021,8 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Pin request",
                  std::format("name:\"{}\" min16:{:c}", reinterpret_cast<char const*>(bd_name.name),
                              p_pin_req->min_16_digit ? 'T' : 'F'));
-  GetInterfaceToProfiles()->events->invoke_pin_request_cb(bd_addr, bd_name, cod,
-                                                          p_pin_req->min_16_digit);
+  GetInterfaceToProfiles()->events->invoke_pin_request_cb(
+          bd_addr, bd_name, cod, p_pin_req->min_16_digit, p_pin_req->pairing_algorithm);
 }
 
 static tBTM_BOND_TYPE btif_dm_get_pairing_type(const RawAddress& bd_addr, const bool just_works,
@@ -1079,7 +1092,7 @@ static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
   GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
           bd_addr,
           p_ssp_cfm_req->just_works ? BT_SSP_VARIANT_CONSENT : BT_SSP_VARIANT_PASSKEY_CONFIRMATION,
-          p_ssp_cfm_req->num_val);
+          p_ssp_cfm_req->num_val, p_ssp_cfm_req->pairing_algorithm);
 }
 
 static void btif_dm_ssp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
@@ -1107,7 +1120,8 @@ static void btif_dm_ssp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Ssp request",
                  std::format("passkey:{}", p_ssp_key_notif->passkey));
   GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
-          bd_addr, BT_SSP_VARIANT_PASSKEY_NOTIFICATION, p_ssp_key_notif->passkey);
+          bd_addr, BT_SSP_VARIANT_PASSKEY_NOTIFICATION, p_ssp_key_notif->passkey,
+          p_ssp_key_notif->pairing_algorithm);
 }
 
 /*******************************************************************************
@@ -1314,6 +1328,17 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
     // a device is removed from the pairing list.
     if (pairing_cb.state == BT_BOND_STATE_BONDING) {
       bond_state_changed(status, bd_addr, state);
+    }
+
+    // If the bonding is initiated by local device (on a bond los device) and it fails, we should
+    // disconnect the link. This should be done at the end, as if the auth_cmpl failed because of
+    // any reason, it will be handled above (such as re-pairing attempt).
+    // This reason: HCI_ERR_ILLEGAL_COMMAND is used to report AUTH_COMPL from BTM_SecBond().
+    if (com::android::bluetooth::flags::enable_autonomous_repairing() &&
+        btm_is_bond_lost(bd_addr) && p_auth_cmpl->fail_reason == HCI_ERR_ILLEGAL_COMMAND) {
+      log::info("Disconnecting the link, because create bond failed.");
+      btif_dm_disconnect_acl(
+              bd_addr, BT_TRANSPORT_AUTO);  // `btif_dm_disconnect_acl` will identify the transport.
     }
   }
 }
@@ -2931,7 +2956,10 @@ void btif_dm_cancel_bond(const RawAddress bd_addr) {
       } else {
         BTA_DmConfirm(bd_addr, false);
         BTA_DmBondCancel(bd_addr);
-        btif_storage_remove_bonded_device(&bd_addr);
+        if (!com::android::bluetooth::flags::enable_autonomous_repairing() ||
+            !btm_is_bond_lost(bd_addr)) {
+          btif_storage_remove_bonded_device(&bd_addr);
+        }
       }
     } else {
       if (pairing_cb.is_le_only) {
@@ -2958,6 +2986,9 @@ void btif_dm_remove_bond(const RawAddress bd_addr) {
 
   BTM_LogHistory(kBtmLogTag, bd_addr, "Remove bond");
 
+  if (com::android::bluetooth::flags::enable_autonomous_repairing()) {
+    btm_update_bond_lost(bd_addr, false);  // reset the bond lost status
+  }
   btif_stats_add_bond_event(bd_addr, BTIF_DM_FUNC_REMOVE_BOND, pairing_cb.state);
 
   // special handling for HID devices
@@ -3294,8 +3325,9 @@ void btif_dm_set_oob_for_io_req(tBTM_OOB_DATA* p_has_oob_data) {
   log::verbose("*p_has_oob_data={}", *p_has_oob_data);
 }
 
-void btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr, tBTM_OOB_DATA* p_has_oob_data,
-                                   tBTM_LE_AUTH_REQ* p_auth_req) {
+tBTM_OOB_DATA btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr,
+                                            tBTM_LE_AUTH_REQ* p_auth_req) {
+  tBTM_OOB_DATA has_oob_data;
   switch (oob_cb.data_present) {
     case BTM_OOB_PRESENT_192_AND_256:
       log::info("Have both P192 and  P256");
@@ -3307,10 +3339,11 @@ void btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr, tBTM_OOB_DATA* p_h
         /* make sure OOB data is for this particular device */
         if (bd_addr == oob_cb.bdaddr) {
           *p_auth_req = ((*p_auth_req) | BTM_LE_AUTH_REQ_SC_ONLY);
-          *p_has_oob_data = true;
+          has_oob_data = true;
         } else {
-          *p_has_oob_data = false;
-          log::warn("P256-1: Remote address didn't match OOB data address");
+          has_oob_data = false;
+          log::warn("P256-1: Remote address didn't match OOB data address {} {}", bd_addr,
+                    oob_cb.bdaddr);
         }
       } else if (!is_empty_128bit(oob_cb.p256_data.sm_tk)) {
         /* We have security manager TK */
@@ -3320,13 +3353,14 @@ void btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr, tBTM_OOB_DATA* p_h
           // When using OOB with TK, SC Secure Connections bit must be disabled.
           tBTM_LE_AUTH_REQ mask = ~BTM_LE_AUTH_REQ_SC_ONLY;
           *p_auth_req = ((*p_auth_req) & mask);
-          *p_has_oob_data = true;
+          has_oob_data = true;
         } else {
-          *p_has_oob_data = false;
-          log::warn("P256-2: Remote address didn't match OOB data address");
+          has_oob_data = false;
+          log::warn("P256-2: Remote address didn't match OOB data address {} {}", bd_addr,
+                    oob_cb.bdaddr);
         }
       } else {
-        *p_has_oob_data = false;
+        has_oob_data = false;
       }
       break;
     case BTM_OOB_PRESENT_192:
@@ -3335,10 +3369,11 @@ void btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr, tBTM_OOB_DATA* p_h
         /* make sure OOB data is for this particular device */
         if (bd_addr == oob_cb.bdaddr) {
           *p_auth_req = ((*p_auth_req) | BTM_LE_AUTH_REQ_SC_ONLY);
-          *p_has_oob_data = true;
+          has_oob_data = true;
         } else {
-          *p_has_oob_data = false;
-          log::warn("P192-1: Remote address didn't match OOB data address");
+          has_oob_data = false;
+          log::warn("P192-1: Remote address didn't match OOB data address {} {}", bd_addr,
+                    oob_cb.bdaddr);
         }
       } else if (!is_empty_128bit(oob_cb.p192_data.sm_tk)) {
         /* We have security manager TK */
@@ -3348,17 +3383,19 @@ void btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr, tBTM_OOB_DATA* p_h
           // When using OOB with TK, SC Secure Connections bit must be disabled.
           tBTM_LE_AUTH_REQ mask = ~BTM_LE_AUTH_REQ_SC_ONLY;
           *p_auth_req = ((*p_auth_req) & mask);
-          *p_has_oob_data = true;
+          has_oob_data = true;
         } else {
-          *p_has_oob_data = false;
-          log::warn("P192-2: Remote address didn't match OOB data address");
+          has_oob_data = false;
+          log::warn("P192-2: Remote address didn't match OOB data address {} {}", bd_addr,
+                    oob_cb.bdaddr);
         }
       } else {
-        *p_has_oob_data = false;
+        has_oob_data = false;
       }
       break;
   }
-  log::verbose("*p_has_oob_data={}", *p_has_oob_data);
+  log::verbose("has_oob_data={}", has_oob_data);
+  return has_oob_data;
 }
 
 void btif_dm_load_local_oob(void) {
@@ -3645,7 +3682,8 @@ static void btif_dm_ble_passkey_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif)
                  std::format("passkey:{}", p_ssp_key_notif->passkey));
 
   GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
-          bd_addr, BT_SSP_VARIANT_PASSKEY_NOTIFICATION, p_ssp_key_notif->passkey);
+          bd_addr, BT_SSP_VARIANT_PASSKEY_NOTIFICATION, p_ssp_key_notif->passkey,
+          p_ssp_key_notif->pairing_algorithm);
 }
 
 static bool btif_dm_ble_is_temp_pairing(RawAddress& bd_addr, bool ctkd) {
@@ -3817,6 +3855,17 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
     bond_state_changed(status, bd_addr, BT_BOND_STATE_BONDING);
   }
   bond_state_changed(status, bd_addr, state);
+
+  // If the bonding is initiated by local device (on a bond los device) and it fails, we should
+  // disconnect the link. This should be done at the end, as if the auth_cmpl failed because of
+  // any reason, it will be handled above (such as re-pairing attempt).
+  // This reason: HCI_ERR_ILLEGAL_COMMAND is used to report AUTH_COMPL from BTM_SecBond().
+  if (com::android::bluetooth::flags::enable_autonomous_repairing() && btm_is_bond_lost(bd_addr) &&
+      p_auth_cmpl->fail_reason == HCI_ERR_ILLEGAL_COMMAND) {
+    log::info("Disconnecting the link, because create bond failed.");
+    btif_dm_disconnect_acl(
+            bd_addr, BT_TRANSPORT_AUTO);  // `btif_dm_disconnect_acl` will identify the transport.
+  }
   // TODO(240451061): Calling `stop_oob_advertiser();` gets command
   // disallowed...
 }
@@ -3942,7 +3991,8 @@ static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool consent
                  consent ? "BT_SSP_VARIANT_CONSENT" : "BT_SSP_VARIANT_PARTICIPATION");
 
   GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
-          bd_addr, consent ? BT_SSP_VARIANT_CONSENT : BT_SSP_VARIANT_PARTICIPATION, 0);
+          bd_addr, consent ? BT_SSP_VARIANT_CONSENT : BT_SSP_VARIANT_PARTICIPATION, 0,
+          p_ble_req->pairing_algorithm);
 }
 
 /*******************************************************************************
@@ -3978,7 +4028,8 @@ static void btif_dm_ble_passkey_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "PIN request",
                  std::format("name:'{}'", reinterpret_cast<char const*>(bd_name.name)));
 
-  GetInterfaceToProfiles()->events->invoke_pin_request_cb(bd_addr, bd_name, cod, false);
+  GetInterfaceToProfiles()->events->invoke_pin_request_cb(bd_addr, bd_name, cod, false,
+                                                          p_pin_req->pairing_algorithm);
 }
 
 static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF* p_notif_req) {
@@ -4001,17 +4052,16 @@ static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF* p_notif_req) {
                  std::format("passkey:{}", p_notif_req->passkey));
 
   GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
-          bd_addr, BT_SSP_VARIANT_PASSKEY_CONFIRMATION, p_notif_req->passkey);
+          bd_addr, BT_SSP_VARIANT_PASSKEY_CONFIRMATION, p_notif_req->passkey,
+          p_notif_req->pairing_algorithm);
 }
 
 static void btif_dm_ble_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
   log::verbose("addr:{}", req_oob_type->bd_addr);
 
   RawAddress bd_addr = req_oob_type->bd_addr;
-  /* We already checked if OOB data is present in
-   * btif_dm_set_oob_for_le_io_req, but check here again. If it's not present
-   * do nothing, pairing will timeout.
-   */
+  /* We already checked if OOB data is present in btif_dm_set_oob_for_le_io_req, but check here
+   * again. If it's not present do nothing, pairing will timeout. */
   if (is_empty_128bit(oob_cb.p192_data.sm_tk)) {
     return;
   }
@@ -4032,6 +4082,8 @@ static void btif_dm_ble_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
   pairing_cb.is_le_nc = false;
   pairing_cb.bond_type = BOND_TYPE_PERSISTENT;
 
+  // TODO (b/268380987): Update the pairing algorithm in Java for OOB.
+
   BTM_BleOobDataReply(req_oob_type->bd_addr, tBTM_STATUS::BTM_SUCCESS, 16, oob_cb.p192_data.sm_tk);
 }
 
@@ -4046,10 +4098,8 @@ static void btif_dm_ble_sc_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
     return;
   }
 
-  /* We already checked if OOB data is present in
-   * btif_dm_set_oob_for_le_io_req, but check here again. If it's not present
-   * do nothing, pairing will timeout.
-   */
+  /* We already checked if OOB data is present in btif_dm_set_oob_for_le_io_req, but check here
+   * again. If it's not present do nothing, pairing will timeout. */
   bt_oob_data_t oob_data_to_use = {};
   switch (oob_cb.data_present) {
     case BTM_OOB_PRESENT_192_AND_256:
@@ -4084,6 +4134,8 @@ static void btif_dm_ble_sc_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
   pairing_cb.is_le_only = true;
   pairing_cb.is_le_nc = false;
   pairing_cb.bond_type = BOND_TYPE_PERSISTENT;
+
+  // TODO (b/268380987): Update the pairing algorithm to Java for OOB.
 
   BTM_BleSecureConnectionOobDataReply(req_oob_type->bd_addr, oob_data_to_use.c, oob_data_to_use.r);
 }

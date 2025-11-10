@@ -40,36 +40,6 @@ from pandora.gatt_pb2 import SUCCESS, ReadCharacteristicsFromUuidResponse
 from typing import Optional, Tuple
 
 
-# TODO: b/437518704 - Implement in Bumble.
-@dataclasses.dataclass
-class L2capCreditBasedConnectionRequest(l2cap.L2CAP_Control_Frame):
-    code = 0x17
-    name = "L2CAP_CREDIT_BASED_CONNECTION_REQUEST"
-
-    spsm: int = dataclasses.field(metadata=hci.metadata(2))
-    mtu: int = dataclasses.field(metadata=hci.metadata(2))
-    mps: int = dataclasses.field(metadata=hci.metadata(2))
-    initial_credits: int = dataclasses.field(metadata=hci.metadata(2))
-    source_cid: bytes = dataclasses.field(metadata=hci.metadata(2))
-
-
-@dataclasses.dataclass
-class L2capCreditBasedConnectionResponse(l2cap.L2CAP_Control_Frame):
-    code = 0x18
-    name = "L2CAP_CREDIT_BASED_CONNECTION_RESPONSE"
-
-    mtu: int = dataclasses.field(metadata=hci.metadata(2))
-    mps: int = dataclasses.field(metadata=hci.metadata(2))
-    initial_credits: int = dataclasses.field(metadata=hci.metadata(2))
-    result: int = dataclasses.field(metadata=hci.metadata(2))
-    destination_cid: bytes = dataclasses.field(metadata=hci.metadata(2))
-
-
-for subclass in (L2capCreditBasedConnectionRequest, L2capCreditBasedConnectionResponse):
-    subclass.fields = hci.HCI_Object.fields_from_dataclass(subclass)
-    l2cap.L2CAP_Control_Frame.classes[subclass.code] = subclass
-
-
 class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
     devices: Optional[PandoraDevices] = None
 
@@ -306,19 +276,20 @@ class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
         connection = self.ref.device.lookup_connection(int.from_bytes(ref_dut.cookie.value, 'big'))
         assert connection
 
-        fut: asyncio.Future[L2capCreditBasedConnectionResponse] = asyncio.get_running_loop(
-        ).create_future()
+        fut: asyncio.Future[
+            l2cap.L2CAP_Credit_Based_Connection_Response] = asyncio.get_running_loop(
+            ).create_future()
         setattr(self.ref.device.l2cap_channel_manager, "on_l2cap_credit_based_connection_response",
                 lambda _, _1, frame: fut.set_result(frame))
         self.ref.device.l2cap_channel_manager.send_control_frame(
             connection, 0x05,
-            L2capCreditBasedConnectionRequest(
+            l2cap.L2CAP_Credit_Based_Connection_Request(
                 identifier=self.ref.device.l2cap_channel_manager.next_identifier(connection),
                 spsm=0x27,
                 mtu=0x64,
                 mps=0x64,
                 initial_credits=0x64,
-                source_cid=0x40))
+                source_cid=[0x40]))
         control_frame = await asyncio.wait_for(fut, 15.0)
 
         assert_equal(control_frame.result,

@@ -162,6 +162,10 @@ class HapTest(navi_test_base.MultiDevicesTestBase):
                     ),
                     timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
                 )
+                self.logger.info("[DUT] Set MTU to 517 for REF-%d", i)
+                gatt_client = await self.dut.bl4a.connect_gatt_client(
+                    ref.random_address, transport=android_constants.Transport.LE)
+                await gatt_client.request_mtu(517)
 
     @navi_test_base.named_parameterized(
         ("binaural", _HaType.BINAURAL_HEARING_AID),

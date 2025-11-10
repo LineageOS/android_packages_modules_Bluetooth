@@ -461,3 +461,11 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_over_hdt_phy_api"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Configure LE Audio over HDT PHY API"
+    bug: "455581672"
+}

@@ -140,7 +140,7 @@ public class A2dpService extends ConnectableProfile {
         mLooper = requireNonNull(looper);
         mHandler = new Handler(mLooper);
 
-        mMaxConnectedAudioDevices = mAdapterService.getMaxConnectedAudioDevices();
+        mMaxConnectedAudioDevices = getAdapterService().getMaxConnectedAudioDevices();
         Log.i(TAG, "Max connected audio devices set to " + mMaxConnectedAudioDevices);
 
         mA2dpCodecConfig = new A2dpCodecConfig(this, mNativeInterface, mAudioManager);
@@ -150,7 +150,7 @@ public class A2dpService extends ConnectableProfile {
                 mA2dpCodecConfig.codecConfigPriorities(),
                 mA2dpCodecConfig.codecConfigOffloading());
 
-        mA2dpOffloadEnabled = mAdapterService.isA2dpOffloadEnabled();
+        mA2dpOffloadEnabled = getAdapterService().isA2dpOffloadEnabled();
         Log.d(TAG, "A2DP offload flag set to " + mA2dpOffloadEnabled);
 
         mAudioManager.registerAudioDeviceCallback(mAudioManagerAudioDeviceCallback, mHandler);
@@ -201,7 +201,8 @@ public class A2dpService extends ConnectableProfile {
             return false;
         }
 
-        if (!Utils.arrayContains(mAdapterService.getRemoteUuids(device), BluetoothUuid.A2DP_SINK)) {
+        if (!Utils.arrayContains(
+                getAdapterService().getRemoteUuids(device), BluetoothUuid.A2DP_SINK)) {
             Log.e(TAG, "Cannot connect to " + device + " : Remote does not have A2DP Sink UUID");
             return false;
         }
@@ -308,7 +309,7 @@ public class A2dpService extends ConnectableProfile {
     public boolean okToConnect(BluetoothDevice device, boolean isOutgoingRequest) {
         Log.i(TAG, "okToConnect: device " + device + " isOutgoingRequest: " + isOutgoingRequest);
         // Check if this is an incoming connection in Quiet mode.
-        if (mAdapterService.isQuietModeEnabled() && !isOutgoingRequest) {
+        if (getAdapterService().isQuietModeEnabled() && !isOutgoingRequest) {
             Log.e(TAG, "okToConnect: cannot connect to " + device + " : quiet mode enabled");
             return false;
         }
@@ -324,7 +325,7 @@ public class A2dpService extends ConnectableProfile {
         if (connectionPolicy != CONNECTION_POLICY_UNKNOWN
                 && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
             if (!isOutgoingRequest) {
-                final var headset = mAdapterService.getHeadsetService();
+                final var headset = getAdapterService().getHeadsetService();
                 if (headset.isPresent() && headset.get().okToAcceptConnection(device, true)) {
                     Log.d(
                             TAG,
@@ -346,14 +347,14 @@ public class A2dpService extends ConnectableProfile {
         if (states == null) {
             return devices;
         }
-        final BluetoothDevice[] bondedDevices = mAdapterService.getBondedDevices();
+        final BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
         if (bondedDevices == null) {
             return devices;
         }
         synchronized (mStateMachines) {
             for (BluetoothDevice device : bondedDevices) {
                 if (!Utils.arrayContains(
-                        mAdapterService.getRemoteUuids(device), BluetoothUuid.A2DP_SINK)) {
+                        getAdapterService().getRemoteUuids(device), BluetoothUuid.A2DP_SINK)) {
                     continue;
                 }
                 int connectionState = STATE_DISCONNECTED;
@@ -538,7 +539,7 @@ public class A2dpService extends ConnectableProfile {
 
             // Tasks of Bluetooth are done, and now restore the AudioManager side.
             int rememberedVolume = -1;
-            final var avrcpTarget = mAdapterService.getAvrcpTargetService();
+            final var avrcpTarget = getAdapterService().getAvrcpTargetService();
             if (avrcpTarget.isPresent()) {
                 rememberedVolume = avrcpTarget.get().getRememberedVolumeForDevice(newActiveDevice);
             }
@@ -590,7 +591,8 @@ public class A2dpService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
+        if (!getAdapterService()
+                .setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -602,7 +604,7 @@ public class A2dpService extends ConnectableProfile {
     }
 
     public void setAvrcpAbsoluteVolume(int volume) {
-        mAdapterService
+        getAdapterService()
                 .getAvrcpTargetService()
                 .ifPresent(avrcpTarget -> avrcpTarget.sendVolumeChanged(volume));
     }
@@ -809,7 +811,7 @@ public class A2dpService extends ConnectableProfile {
      *     BluetoothA2dp#DYNAMIC_BUFFER_SUPPORT_A2DP_SOFTWARE_ENCODING}.
      */
     public int getDynamicBufferSupport() {
-        return mAdapterService.getDynamicBufferSupport();
+        return getAdapterService().getDynamicBufferSupport();
     }
 
     /**
@@ -818,7 +820,7 @@ public class A2dpService extends ConnectableProfile {
      * @return BufferConstraints
      */
     public BufferConstraints getBufferConstraints() {
-        return mAdapterService.getBufferConstraints();
+        return getAdapterService().getBufferConstraints();
     }
 
     /**
@@ -829,7 +831,7 @@ public class A2dpService extends ConnectableProfile {
      * @return true if the settings is successful, false otherwise
      */
     public boolean setBufferLengthMillis(int codec, int value) {
-        return mAdapterService.setBufferLengthMillis(codec, value);
+        return getAdapterService().setBufferLengthMillis(codec, value);
     }
 
     // Handle messages from native (JNI) to Java
@@ -882,10 +884,10 @@ public class A2dpService extends ConnectableProfile {
             boolean sameAudioFeedingParameters) {
         // Log codec config and capability metrics
         BluetoothCodecConfig codecConfig = codecStatus.getCodecConfig();
-        int metricId = mAdapterService.getMetricId(device);
+        int metricId = getAdapterService().getMetricId(device);
         BluetoothStatsLog.write(
                 BluetoothStatsLog.BLUETOOTH_A2DP_CODEC_CONFIG_CHANGED,
-                mAdapterService.obfuscateAddress(device),
+                getAdapterService().obfuscateAddress(device),
                 codecConfig.getCodecType(),
                 codecConfig.getCodecPriority(),
                 codecConfig.getSampleRate(),
@@ -901,7 +903,7 @@ public class A2dpService extends ConnectableProfile {
         for (BluetoothCodecConfig codecCapability : codecCapabilities) {
             BluetoothStatsLog.write(
                     BluetoothStatsLog.BLUETOOTH_A2DP_CODEC_CAPABILITY_CHANGED,
-                    mAdapterService.obfuscateAddress(device),
+                    getAdapterService().obfuscateAddress(device),
                     codecCapability.getCodecType(),
                     codecCapability.getCodecPriority(),
                     codecCapability.getSampleRate(),
@@ -970,7 +972,7 @@ public class A2dpService extends ConnectableProfile {
                     }
 
                     byte[] addressBytes = Utils.getBytesFromAddress(address);
-                    BluetoothDevice device = mAdapterService.getDeviceFromByte(addressBytes);
+                    BluetoothDevice device = getAdapterService().getDeviceFromByte(addressBytes);
 
                     Log.d(
                             TAG,
@@ -1038,17 +1040,17 @@ public class A2dpService extends ConnectableProfile {
         Log.d(TAG, "updateAndBroadcastActiveDevice(" + device + ")");
 
         // Make sure volume has been store before device been remove from active.
-        mAdapterService
+        getAdapterService()
                 .getAvrcpTargetService()
                 .ifPresent(avrcpTarget -> avrcpTarget.handleA2dpActiveDeviceChanged(device));
 
-        mAdapterService.handleActiveDeviceChange(mProfileId, device);
+        getAdapterService().handleActiveDeviceChange(getProfileId(), device);
 
         BluetoothStatsLog.write(
                 BluetoothStatsLog.BLUETOOTH_ACTIVE_DEVICE_CHANGED,
-                mProfileId,
-                mAdapterService.obfuscateAddress(device),
-                mAdapterService.getMetricId(device));
+                getProfileId(),
+                getAdapterService().obfuscateAddress(device),
+                getAdapterService().getMetricId(device));
 
         Intent intent = new Intent(BluetoothA2dp.ACTION_ACTIVE_DEVICE_CHANGED);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
@@ -1090,7 +1092,7 @@ public class A2dpService extends ConnectableProfile {
             return;
         }
         if (!Flags.mainlineBetaStorage()) {
-            mAdapterService
+            getAdapterService()
                     .getAvrcpTargetService()
                     .ifPresent(
                             avrcpTarget -> {
@@ -1204,7 +1206,7 @@ public class A2dpService extends ConnectableProfile {
                             == BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED) {
                 lowLatencyAudioAllow = true;
             }
-            mAdapterService.allowLowLatencyAudio(lowLatencyAudioAllow, device);
+            getAdapterService().allowLowLatencyAudio(lowLatencyAudioAllow, device);
         }
     }
 
@@ -1229,9 +1231,9 @@ public class A2dpService extends ConnectableProfile {
 
         // Check if the device is disconnected - if unbond, remove the state machine
         if (toState == STATE_DISCONNECTED) {
-            if (mAdapterService.getBondState(device) == BluetoothDevice.BOND_NONE) {
+            if (getAdapterService().getBondState(device) == BluetoothDevice.BOND_NONE) {
                 if (!Flags.mainlineBetaStorage()) {
-                    mAdapterService
+                    getAdapterService()
                             .getAvrcpTargetService()
                             .ifPresent(
                                     avrcpTarget -> avrcpTarget.removeStoredVolumeForDevice(device));
@@ -1239,19 +1241,23 @@ public class A2dpService extends ConnectableProfile {
                 removeStateMachine(device);
             }
         }
-        mAdapterService
+        getAdapterService()
                 .getAvrcpTargetService()
                 .ifPresent(
                         avrcpTarget ->
                                 avrcpTarget.handleA2dpConnectionStateChanged(device, toState));
-        mAdapterService.notifyProfileConnectionStateChangeToScan(mProfileId, fromState, toState);
-        mAdapterService.handleProfileConnectionStateChange(mProfileId, device, fromState, toState);
-        mActiveDeviceManager.profileConnectionStateChanged(mProfileId, device, fromState, toState);
-        mAdapterService
+        getAdapterService()
+                .notifyProfileConnectionStateChangeToScan(getProfileId(), fromState, toState);
+        getAdapterService()
+                .handleProfileConnectionStateChange(getProfileId(), device, fromState, toState);
+        mActiveDeviceManager.profileConnectionStateChanged(
+                getProfileId(), device, fromState, toState);
+        getAdapterService()
                 .getSilenceDeviceManager()
                 .a2dpConnectionStateChanged(device, fromState, toState);
-        mAdapterService.updateProfileConnectionAdapterProperties(
-                device, mProfileId, toState, fromState);
+        getAdapterService()
+                .updateProfileConnectionAdapterProperties(
+                        device, getProfileId(), toState, fromState);
     }
 
     /** Retrieves the most recently connected device in the A2DP connected devices list. */

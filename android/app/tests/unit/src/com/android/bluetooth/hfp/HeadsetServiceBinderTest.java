@@ -164,14 +164,6 @@ public class HeadsetServiceBinderTest {
     }
 
     @Test
-    public void setForceScoAudio() {
-        boolean forced = true;
-
-        mBinder.setForceScoAudio(forced, mAttributionSource);
-        verify(mService).setForceScoAudio(forced);
-    }
-
-    @Test
     public void startScoUsingVirtualVoiceCall() {
         mBinder.startScoUsingVirtualVoiceCall(mAttributionSource);
         verify(mService).startScoUsingVirtualVoiceCall();

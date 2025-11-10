@@ -228,7 +228,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapbMessage.java"
-            line="892"
+            line="900"
             column="9"/>
     </issue>
 
@@ -338,7 +338,7 @@
         errorLine2="                    ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientService.java"
-            line="3272"
+            line="3455"
             column="21"/>
     </issue>
 
@@ -349,7 +349,7 @@
         errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientService.java"
-            line="3487"
+            line="3673"
             column="18"/>
     </issue>
 
@@ -360,7 +360,7 @@
         errorLine2="                 ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="438"
+            line="437"
             column="18"/>
     </issue>
 
@@ -371,7 +371,7 @@
         errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="496"
+            line="495"
             column="18"/>
     </issue>
 
@@ -382,7 +382,7 @@
         errorLine2="                   ~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="1131"
+            line="1130"
             column="20"/>
     </issue>
 
@@ -393,7 +393,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2453"
+            line="2269"
             column="24"/>
     </issue>
 
@@ -404,7 +404,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2458"
+            line="2274"
             column="24"/>
     </issue>
 
@@ -415,7 +415,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2466"
+            line="2282"
             column="24"/>
     </issue>
 
@@ -426,7 +426,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2471"
+            line="2287"
             column="24"/>
     </issue>
 
@@ -437,7 +437,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2476"
+            line="2292"
             column="24"/>
     </issue>
 
@@ -448,7 +448,7 @@
         errorLine2="                       ~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2481"
+            line="2297"
             column="24"/>
     </issue>
 
@@ -459,7 +459,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2486"
+            line="2302"
             column="24"/>
     </issue>
 
@@ -470,7 +470,7 @@
         errorLine2="                    ~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2492"
+            line="2308"
             column="21"/>
     </issue>
 
@@ -481,7 +481,7 @@
         errorLine2="                    ~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2497"
+            line="2313"
             column="21"/>
     </issue>
 
@@ -718,17 +718,6 @@
 
     <issue
         id="IncorrectRequiresPermissionPropagation"
-        message="Method `GattServiceBinder.enforcePrivilegedPermissionIfNeededForHandle` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with [none]."
-        errorLine1="    private static void enforcePrivilegedPermissionIfNeededForHandle("
-        errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/gatt/GattServiceBinder.java"
-            line="677"
-            column="25"/>
-    </issue>
-
-    <issue
-        id="IncorrectRequiresPermissionPropagation"
         message="Method `BluetoothGattServerProxy.open` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_CONNECT]} but is only annotated with [none]."
         errorLine1="        boolean open(BluetoothGattServerCallback callback) {"
         errorLine2="                ~~~~">
@@ -899,7 +888,7 @@
         errorLine2="                    ~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
-            line="175"
+            line="173"
             column="21"/>
     </issue>
 
@@ -910,7 +899,7 @@
         errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/Utils.java"
-            line="613"
+            line="454"
             column="27"/>
     </issue>
 
@@ -921,7 +910,7 @@
         errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/Utils.java"
-            line="765"
+            line="586"
             column="27"/>
     </issue>
 
@@ -932,7 +921,7 @@
         errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/Utils.java"
-            line="795"
+            line="616"
             column="27"/>
     </issue>
 
@@ -943,62 +932,7 @@
         errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/Utils.java"
-            line="832"
-            column="27"/>
-    </issue>
-
-    <issue
-        id="IncorrectRequiresPermissionPropagation"
-        message="Method `Utils.checkCallerHasNetworkSettingsPermission` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.NETWORK_SETTINGS]} but is only annotated with [none]."
-        errorLine1="    public static boolean checkCallerHasNetworkSettingsPermission(Context context) {"
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/Utils.java"
-            line="860"
-            column="27"/>
-    </issue>
-
-    <issue
-        id="IncorrectRequiresPermissionPropagation"
-        message="Method `Utils.checkCallerHasNetworkSetupWizardPermission` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.NETWORK_SETUP_WIZARD]} but is only annotated with [none]."
-        errorLine1="    public static boolean checkCallerHasNetworkSetupWizardPermission(Context context) {"
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/Utils.java"
-            line="865"
-            column="27"/>
-    </issue>
-
-    <issue
-        id="IncorrectRequiresPermissionPropagation"
-        message="Method `Utils.checkCallerHasScanWithoutLocationPermission` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.RADIO_SCAN_WITHOUT_LOCATION]} but is only annotated with [none]."
-        errorLine1="    public static boolean checkCallerHasScanWithoutLocationPermission(Context context) {"
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/Utils.java"
-            line="870"
-            column="27"/>
-    </issue>
-
-    <issue
-        id="IncorrectRequiresPermissionPropagation"
-        message="Method `Utils.checkCallerHasPrivilegedPermission` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_PRIVILEGED]} but is only annotated with [none]."
-        errorLine1="    public static boolean checkCallerHasPrivilegedPermission(Context context) {"
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/Utils.java"
-            line="875"
-            column="27"/>
-    </issue>
-
-    <issue
-        id="IncorrectRequiresPermissionPropagation"
-        message="Method `Utils.checkCallerHasWriteSmsPermission` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.WRITE_SMS]} but is only annotated with [none]."
-        errorLine1="    public static boolean checkCallerHasWriteSmsPermission(Context context) {"
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/Utils.java"
-            line="879"
+            line="653"
             column="27"/>
     </issue>
 
@@ -1009,7 +943,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/RemoteDevices.java"
-            line="1843"
+            line="1844"
             column="25"/>
     </issue>
 
@@ -1097,7 +1031,7 @@
         errorLine2="                                          ~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
-            line="500"
+            line="498"
             column="43"/>
     </issue>
 
@@ -1108,7 +1042,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/AdapterService.java"
-            line="4366"
+            line="4443"
             column="17"/>
     </issue>
 
@@ -1174,7 +1108,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
-            line="298"
+            line="296"
             column="13"/>
     </issue>
 
@@ -1185,7 +1119,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
-            line="489"
+            line="487"
             column="33"/>
     </issue>
 
@@ -1196,7 +1130,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/AdapterService.java"
-            line="1096"
+            line="1113"
             column="9"/>
     </issue>
 
@@ -1273,7 +1207,7 @@
         errorLine2="            ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppService.java"
-            line="312"
+            line="310"
             column="13"/>
     </issue>
 
@@ -1295,7 +1229,7 @@
         errorLine2="            ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hid/HidHostService.java"
-            line="304"
+            line="303"
             column="13"/>
     </issue>
 
@@ -1306,7 +1240,7 @@
         errorLine2="            ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
-            line="456"
+            line="454"
             column="13"/>
     </issue>
 

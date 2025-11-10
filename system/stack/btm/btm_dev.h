@@ -180,7 +180,7 @@ BtmDevice* btm_find_or_alloc_dev(const RawAddress& bd_addr);
  * Returns          Pointer to the newly allocated record
  *
  ******************************************************************************/
-BtmDevice* btm_sec_allocate_dev_rec(void);
+BtmDevice* btm_sec_allocate_dev_rec(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *

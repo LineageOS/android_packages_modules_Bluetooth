@@ -33,6 +33,7 @@ import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.Mockito.any
 import org.mockito.Mockito.doAnswer
+import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.whenever
@@ -46,19 +47,21 @@ class AdvertiseBinderTest {
 
     @Mock private lateinit var source: AttributionSource
     @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var gattService: GattService
     @Mock private lateinit var advertiseManager: AdvertiseManager
 
     private lateinit var binder: AdvertiseBinder
 
     @Before
     fun setUp() {
+        doReturn(true).whenever(gattService).isAvailable
         doAnswer { invocation ->
                 (invocation.getArgument(0) as Runnable).run()
                 null
             }
             .whenever(advertiseManager)
             .doOnAdvertiseThread(any())
-        binder = AdvertiseBinder(adapterService, advertiseManager)
+        binder = AdvertiseBinder(adapterService, gattService, advertiseManager)
     }
 
     @Test

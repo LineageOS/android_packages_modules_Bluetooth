@@ -75,6 +75,13 @@ public class CallbackWrapper<T, S> {
         mCallbackExecutorMap = requireNonNull(map);
     }
 
+    /** Checks if there are any callbacks currently registered */
+    public boolean isEmpty() {
+        synchronized (mCallbackExecutorMap) {
+            return mCallbackExecutorMap.isEmpty();
+        }
+    }
+
     /** Dispatch the callback from the Bluetooth service to all the currently registered callback */
     public void forEach(Consumer<T> consumer) {
         synchronized (mCallbackExecutorMap) {

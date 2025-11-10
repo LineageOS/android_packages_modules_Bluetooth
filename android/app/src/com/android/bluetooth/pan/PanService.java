@@ -94,7 +94,7 @@ public class PanService extends ConnectableProfile {
                         Log.e(TAG, "Error setting up tether interface: " + error);
                         for (BluetoothDevice device : mPanDevices.keySet()) {
                             mNativeInterface.disconnect(
-                                    Utils.getByteBrEdrAddress(mAdapterService, device));
+                                    Utils.getByteBrEdrAddress(getAdapterService(), device));
                         }
                         mPanDevices.clear();
                         mIsTethering = false;
@@ -190,7 +190,7 @@ public class PanService extends ConnectableProfile {
                 case MESSAGE_CONNECT -> {
                     BluetoothDevice connectDevice = (BluetoothDevice) msg.obj;
                     if (!mNativeInterface.connect(
-                            Utils.getByteBrEdrAddress(mAdapterService, connectDevice))) {
+                            Utils.getByteBrEdrAddress(getAdapterService(), connectDevice))) {
                         handlePanDeviceStateChange(
                                 connectDevice,
                                 null,
@@ -208,7 +208,7 @@ public class PanService extends ConnectableProfile {
                 case MESSAGE_DISCONNECT -> {
                     BluetoothDevice disconnectDevice = (BluetoothDevice) msg.obj;
                     if (!mNativeInterface.disconnect(
-                            Utils.getByteBrEdrAddress(mAdapterService, disconnectDevice))) {
+                            Utils.getByteBrEdrAddress(getAdapterService(), disconnectDevice))) {
                         handlePanDeviceStateChange(
                                 disconnectDevice,
                                 mPanIfName,
@@ -225,7 +225,7 @@ public class PanService extends ConnectableProfile {
                 }
                 case MESSAGE_CONNECT_STATE_CHANGED -> {
                     ConnectState cs = (ConnectState) msg.obj;
-                    final BluetoothDevice device = mAdapterService.getDeviceFromByte(cs.addr);
+                    final BluetoothDevice device = getAdapterService().getDeviceFromByte(cs.addr);
                     // TBD get iface from the msg
                     Log.d(TAG, "MESSAGE_CONNECT_STATE_CHANGED: " + device + " state: " + cs.state);
                     // It could be null if the connection up is coming when the
@@ -340,7 +340,8 @@ public class PanService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
+        if (!getAdapterService()
+                .setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -466,7 +467,8 @@ public class PanService extends ConnectableProfile {
                             "handlePanDeviceStateChange BT tethering is off/Local role"
                                     + " is PANU drop the connection");
                     mPanDevices.remove(device);
-                    mNativeInterface.disconnect(Utils.getByteBrEdrAddress(mAdapterService, device));
+                    mNativeInterface.disconnect(
+                            Utils.getByteBrEdrAddress(getAdapterService(), device));
                     return;
                 }
                 Log.d(TAG, "handlePanDeviceStateChange LOCAL_NAP_ROLE:REMOTE_PANU_ROLE");
@@ -519,8 +521,8 @@ public class PanService extends ConnectableProfile {
             }
         }
 
-        mAdapterService.updateProfileConnectionAdapterProperties(
-                device, mProfileId, state, prevState);
+        getAdapterService()
+                .updateProfileConnectionAdapterProperties(device, getProfileId(), state, prevState);
 
         /* Notifying the connection state change of the profile before sending the intent for
         connection state change, as it was causing a race condition, with the UI not being

@@ -192,7 +192,6 @@ public class HeadsetStateMachineTest {
         doReturn("").when(mResources).getString(anyInt());
 
         doReturn(CONNECTION_POLICY_ALLOWED).when(mHeadsetService).getConnectionPolicy(any());
-        doReturn(true).when(mHeadsetService).getForceScoAudio();
         doReturn(true).when(mHeadsetService).okToAcceptConnection(any(), anyBoolean());
         doReturn(SUCCESS).when(mHeadsetService).isScoAcceptable(any());
 
