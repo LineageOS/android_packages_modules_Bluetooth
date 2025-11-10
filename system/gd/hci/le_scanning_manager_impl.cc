@@ -721,14 +721,18 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   }
 
   bool is_bonded(Address target_address) {
-    for (auto device : storage_module_->GetBondedDevices()) {
-      if (device.GetAddress() == target_address) {
-        log::debug("Addresses match!");
-        return true;
+    if (com::android::bluetooth::flags::irk_scanning_bond_check_update()) {
+      return BTM_IsBonded(RawAddress(target_address.address), BT_TRANSPORT_LE);
+    } else {
+      for (auto device : storage_module_->GetBondedDevices()) {
+        if (device.GetAddress() == target_address) {
+          log::debug("Addresses match!");
+          return true;
+        }
       }
+      log::debug("Addresses don't match!");
+      return false;
     }
-    log::debug("Addresses don't match!");
-    return false;
   }
 
   void scan_filter_parameter_setup(ApcfAction action, uint8_t filter_index,
