@@ -561,21 +561,7 @@ static void gatt_le_connect_cback(uint16_t /* chan */, const RawAddress& bd_addr
     return;
   }
 
-  /* do we have a channel initiating a connection? */
-  if (p_tcb) {
-    /* we are initiating connection */
-    if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN) {
-      /* send callback */
-      gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
-      p_tcb->payload_size = GATT_DEF_BLE_MTU_SIZE;
-
-      gatt_send_conn_cback(p_tcb);
-    }
-    if (check_srv_chg) {
-      gatt_chk_srv_chg(p_srv_chg_clt);
-    }
-  } else {
-    /* this is incoming connection or background connection callback */
+  if (!p_tcb) {
     p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, BT_TRANSPORT_LE);
     if (!p_tcb) {
       log::error("Disconnecting address:{} due to out of resources.", bd_addr);
@@ -584,17 +570,25 @@ static void gatt_le_connect_cback(uint16_t /* chan */, const RawAddress& bd_addr
       btm_remove_acl(bd_addr, transport);
       return;
     }
-
     p_tcb->att_lcid = L2CAP_ATT_CID;
+    p_tcb->ch_state = GATT_CH_CONN;
+  }
 
+  /* this is incoming connection or background connection callback */
+  if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN) {
+    /* send callback */
     gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
-
     p_tcb->payload_size = GATT_DEF_BLE_MTU_SIZE;
 
     gatt_send_conn_cback(p_tcb);
-    if (check_srv_chg) {
-      gatt_chk_srv_chg(p_srv_chg_clt);
+  }
+  if (check_srv_chg) {
+    // If the database hash has been changed, we should send it.
+    if (com_android_bluetooth_flags_send_service_changed_indication_upon_reconnection() &&
+        !p_srv_chg_clt->srv_changed && !p_tcb->is_robust_cache_change_aware) {
+      p_srv_chg_clt->srv_changed = true;
     }
+    gatt_chk_srv_chg(p_srv_chg_clt);
   }
 
   auto advertising_set = bluetooth::shim::ACL_GetAdvertisingSetConnectedTo(bd_addr);
