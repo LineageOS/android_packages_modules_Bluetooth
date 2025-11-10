@@ -103,7 +103,7 @@ public:
 /* Used by the local BLE Audio Sink device to pass the audio data
  * received from a remote BLE Audio Source to the Audio HAL.
  */
-class LeAudioSinkAudioHalClient {
+class LeAudioSinkAudioHalClient : public LeAudioCommonAudioHalClient {
 public:
   class Callbacks {
   public:
@@ -133,11 +133,14 @@ public:
   virtual void UpdateAudioConfigToHal(const ::bluetooth::le_audio::stream_config& config) = 0;
   virtual void SetCodecPriority(const ::bluetooth::le_audio::types::LeAudioCodecId& codecId,
                                 int32_t priority) = 0;
+  virtual void UpdateBroadcastAudioConfigToHal(
+          const ::bluetooth::le_audio::broadcast_offload_config& config) = 0;
   virtual void SuspendedForReconfiguration() = 0;
   virtual void ReconfigurationComplete() = 0;
   virtual void StreamSuspended() = 0;
 
   static std::unique_ptr<LeAudioSinkAudioHalClient> AcquireUnicast();
+  static std::unique_ptr<LeAudioSinkAudioHalClient> AcquireBroadcast();
   static void DebugDump(int fd);
 
 protected:

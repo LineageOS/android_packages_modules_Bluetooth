@@ -57,12 +57,20 @@ public:
                         int32_t priority) override;
   void UpdateRemoteDelay(uint16_t remote_delay_ms) override;
   void UpdateAudioConfigToHal(const ::bluetooth::le_audio::stream_config& config) override;
+  std::optional<broadcaster::BroadcastConfiguration> GetBroadcastConfig(
+          const std::vector<std::pair<types::LeAudioContextType, uint8_t>>& subgroup_quality,
+          const std::optional<std::vector<::bluetooth::le_audio::types::acs_ac_record>>& pacs)
+          const override;
+  std::optional<::bluetooth::le_audio::types::AudioSetConfiguration> GetUnicastConfig(
+          const CodecManager::UnicastConfigurationRequirements& requirements) const override;
+  void UpdateBroadcastAudioConfigToHal(
+          const ::bluetooth::le_audio::broadcast_offload_config& config) override;
   void SuspendedForReconfiguration() override;
   void ReconfigurationComplete() override;
   void StreamSuspended() override;
 
   // Internal functionality
-  SinkImpl() = default;
+  SinkImpl(bool is_broadcast_sink = false) : is_broadcast_sink_(is_broadcast_sink) {}
   ~SinkImpl() override {
     if (le_audio_source_hal_state != HAL_UNINITIALIZED) {
       Release();
@@ -74,6 +82,8 @@ public:
   bool OnMetadataUpdateReq(const sink_metadata_v7_t& sink_metadata);
   bool Acquire();
   void Release();
+
+  bool is_broadcast_sink_;
 
   bluetooth::audio::le_audio::LeAudioClientInterface::Source* halSourceInterface_ = nullptr;
   LeAudioSinkAudioHalClient::Callbacks* audioSinkCallbacks_ = nullptr;
@@ -93,7 +103,8 @@ bool SinkImpl::Acquire() {
     return false;
   }
 
-  halSourceInterface_ = halInterface->GetSource(source_stream_cb, get_main_thread());
+  halSourceInterface_ = halInterface->GetSource(
+      source_stream_cb, get_main_thread(), is_broadcast_sink_);
 
   if (halSourceInterface_ == nullptr) {
     log::error("Can't get Audio HAL Audio source interface");
@@ -336,12 +347,53 @@ void SinkImpl::UpdateAudioConfigToHal(const ::bluetooth::le_audio::stream_config
   log::info("");
   halSourceInterface_->UpdateAudioConfigToHal(config);
 }
+
+std::optional<broadcaster::BroadcastConfiguration> SinkImpl::GetBroadcastConfig(
+        const std::vector<std::pair<types::LeAudioContextType, uint8_t>>& subgroup_quality,
+        const std::optional<std::vector<::bluetooth::le_audio::types::acs_ac_record>>& pacs) const {
+  if (halSourceInterface_ == nullptr) {
+    log::error("Audio HAL Audio source interface not acquired");
+    return std::nullopt;
+  }
+
+  log::info("");
+  return halSourceInterface_->GetBroadcastConfig(subgroup_quality, pacs);
+}
+
+std::optional<::bluetooth::le_audio::types::AudioSetConfiguration> SinkImpl::GetUnicastConfig(
+        const CodecManager::UnicastConfigurationRequirements& /* requirements */) const {
+  log::error("GetUnicastConfig() is not supported for sink direction.");
+  return std::nullopt;
+}
+
+void SinkImpl::UpdateBroadcastAudioConfigToHal(
+        const ::bluetooth::le_audio::broadcast_offload_config& config) {
+  if (halSourceInterface_ == nullptr) {
+    log::error("Audio HAL Audio source interface not acquired");
+    return;
+  }
+
+  log::info("");
+  halSourceInterface_->UpdateBroadcastAudioConfigToHal(config);
+}
 }  // namespace
 
 std::unique_ptr<LeAudioSinkAudioHalClient> LeAudioSinkAudioHalClient::AcquireUnicast() {
-  std::unique_ptr<SinkImpl> impl(new SinkImpl());
+  std::unique_ptr<SinkImpl> impl(new SinkImpl(false));
   if (!impl->Acquire()) {
     log::error("Could not acquire Unicast Sink on LE Audio HAL enpoint");
+    impl.reset();
+    return nullptr;
+  }
+
+  log::info("");
+  return std::move(impl);
+}
+
+std::unique_ptr<LeAudioSinkAudioHalClient> LeAudioSinkAudioHalClient::AcquireBroadcast() {
+  std::unique_ptr<SinkImpl> impl(new SinkImpl(true));
+  if (!impl->Acquire()) {
+    log::error("Could not acquire Broadcast Sink on LE Audio HAL endpoint");
     impl.reset();
     return nullptr;
   }
