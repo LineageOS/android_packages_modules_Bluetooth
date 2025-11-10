@@ -35,7 +35,6 @@ import android.annotation.Nullable;
 import android.annotation.RequiresPermission;
 import android.app.BroadcastOptions;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.companion.AssociationInfo;
 import android.companion.CompanionDeviceManager;
@@ -136,31 +135,6 @@ public final class Utils {
     public static boolean isDualModeAudioEnabled() {
         Log.i(TAG, "Dual mode enable state is: " + DualModeAudioSetting.sEnabled);
         return DualModeAudioSetting.sEnabled;
-    }
-
-    /**
-     * Checks CoD and metadata to determine if the remote device is a watch
-     *
-     * @return whether it's a watch or not
-     */
-    public static boolean remoteDeviceIsWatch(
-            @NonNull AdapterService service, @NonNull BluetoothDevice device) {
-        // Check CoD
-        BluetoothClass deviceClass = new BluetoothClass(service.getRemoteClass(device));
-        if (deviceClass.getDeviceClass() == BluetoothClass.Device.WEARABLE_WRIST_WATCH) {
-            return true;
-        }
-
-        // Check metadata
-        byte[] deviceType = service.getMetadata(device, BluetoothDevice.METADATA_DEVICE_TYPE);
-        if (deviceType == null) {
-            return false;
-        }
-        String deviceTypeStr = new String(deviceType);
-        if (deviceTypeStr.equals(BluetoothDevice.DEVICE_TYPE_WATCH)) {
-            return true;
-        }
-        return false;
     }
 
     /**

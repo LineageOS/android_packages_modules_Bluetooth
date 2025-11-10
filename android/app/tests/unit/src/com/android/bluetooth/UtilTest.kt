@@ -60,12 +60,12 @@ class UtilTest {
 
     @Test
     fun remoteDeviceIsWatch() {
-        assertThat(Utils.remoteDeviceIsWatch(adapterService, device)).isFalse()
+        assertThat(Util.remoteDeviceIsWatch(adapterService, device)).isFalse()
 
         doReturn(BluetoothClass.Device.WEARABLE_WRIST_WATCH)
             .whenever(adapterService)
             .getRemoteClass(device)
-        assertThat(Utils.remoteDeviceIsWatch(adapterService, device)).isTrue()
+        assertThat(Util.remoteDeviceIsWatch(adapterService, device)).isTrue()
 
         // IS a watch (Metadata matches, even if CoD doesn't)
         doReturn(BluetoothClass.Device.WEARABLE_UNCATEGORIZED)
@@ -75,6 +75,6 @@ class UtilTest {
             .whenever(adapterService)
             .getMetadata(device, BluetoothDevice.METADATA_DEVICE_TYPE)
 
-        assertThat(Utils.remoteDeviceIsWatch(adapterService, device)).isTrue()
+        assertThat(Util.remoteDeviceIsWatch(adapterService, device)).isTrue()
     }
 }

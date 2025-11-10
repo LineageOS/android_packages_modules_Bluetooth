@@ -59,6 +59,7 @@ import android.telecom.PhoneAccount;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
@@ -2546,7 +2547,7 @@ public class HeadsetService extends ConnectableProfile {
         List<BluetoothDevice> fallbackCandidates = getConnectedDevices();
         List<BluetoothDevice> uninterestedCandidates = new ArrayList<>();
         for (BluetoothDevice device : fallbackCandidates) {
-            if (Utils.remoteDeviceIsWatch(getAdapterService(), device)) {
+            if (Util.remoteDeviceIsWatch(getAdapterService(), device)) {
                 uninterestedCandidates.add(device);
             }
         }
