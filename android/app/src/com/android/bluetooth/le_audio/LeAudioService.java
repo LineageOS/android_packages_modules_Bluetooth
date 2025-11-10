@@ -1392,7 +1392,7 @@ public class LeAudioService extends ConnectableProfile {
      * @param broadcastSettings broadcast settings for this broadcast source
      */
     public void createBroadcast(BluetoothLeBroadcastSettings broadcastSettings) {
-        if (!mLeAudioBroadcasterNativeInterface.isPresent()) {
+        if (mLeAudioBroadcasterNativeInterface.isEmpty()) {
             Log.w(TAG, "Native interface not available.");
             return;
         }
@@ -1503,7 +1503,7 @@ public class LeAudioService extends ConnectableProfile {
      * @param broadcastId broadcast instance identifier
      */
     private void startBroadcast(int broadcastId) {
-        if (!mLeAudioBroadcasterNativeInterface.isPresent()) {
+        if (mLeAudioBroadcasterNativeInterface.isEmpty()) {
             Log.w(TAG, "Native interface not available.");
             return;
         }
@@ -1519,7 +1519,7 @@ public class LeAudioService extends ConnectableProfile {
      * @param broadcastSettings broadcast settings for this broadcast source
      */
     public void updateBroadcast(int broadcastId, BluetoothLeBroadcastSettings broadcastSettings) {
-        if (!mLeAudioBroadcasterNativeInterface.isPresent()) {
+        if (mLeAudioBroadcasterNativeInterface.isEmpty()) {
             Log.w(TAG, "Native interface not available.");
             return;
         }
@@ -1563,7 +1563,7 @@ public class LeAudioService extends ConnectableProfile {
      * @param broadcastId broadcast instance identifier
      */
     private void pauseBroadcast(Integer broadcastId) {
-        if (!mLeAudioBroadcasterNativeInterface.isPresent()) {
+        if (mLeAudioBroadcasterNativeInterface.isEmpty()) {
             Log.w(TAG, "Native interface not available.");
             return;
         }
@@ -1591,7 +1591,7 @@ public class LeAudioService extends ConnectableProfile {
      * @param broadcastId broadcast instance identifier
      */
     public void stopBroadcast(Integer broadcastId) {
-        if (!mLeAudioBroadcasterNativeInterface.isPresent()) {
+        if (mLeAudioBroadcasterNativeInterface.isEmpty()) {
             Log.w(TAG, "Native interface not available.");
             return;
         }
@@ -1629,7 +1629,7 @@ public class LeAudioService extends ConnectableProfile {
      * @param broadcastId broadcast instance identifier
      */
     private void destroyBroadcast(int broadcastId) {
-        if (!mLeAudioBroadcasterNativeInterface.isPresent()) {
+        if (mLeAudioBroadcasterNativeInterface.isEmpty()) {
             Log.w(TAG, "Native interface not available.");
             return;
         }
@@ -1668,7 +1668,7 @@ public class LeAudioService extends ConnectableProfile {
             return;
         }
 
-        if (!mLeAudioBroadcasterNativeInterface.isPresent()) {
+        if (mLeAudioBroadcasterNativeInterface.isEmpty()) {
             Log.w(TAG, "Native interface not available.");
             return;
         }

@@ -1575,7 +1575,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
             sb.append("    Fallback: ");
             final var a2dp = mAdapterService.getA2dpService();
             BluetoothDevice a2dpFallbackDevice = null;
-            if (!a2dp.isEmpty()) {
+            if (a2dp.isPresent()) {
                 a2dpFallbackDevice = a2dp.get().getFallbackDevice();
             }
             getDevicesInfo(sb, a2dpFallbackDevice);
@@ -1592,7 +1592,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
             sb.append("    Fallback: ");
             final var headset = mAdapterService.getHeadsetService();
             BluetoothDevice headsetFallbackDevice = null;
-            if (!headset.isEmpty()) {
+            if (headset.isPresent()) {
                 headsetFallbackDevice = headset.get().getFallbackDevice();
             }
             getDevicesInfo(sb, headsetFallbackDevice);
