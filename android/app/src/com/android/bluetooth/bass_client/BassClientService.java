@@ -288,11 +288,16 @@ public class BassClientService extends ConnectableProfile {
         void stopScanAndUnregister() {
             synchronized (this) {
                 final var scannerIdToStop = mScannerId;
-                mScanController.doOnScanThread(
-                        () -> {
-                            mScanController.stopScan(scannerIdToStop);
-                            mScanController.unregisterScanner(scannerIdToStop);
-                        });
+                if (mScanController.isOnScanThread()) {
+                    mScanController.stopScan(scannerIdToStop);
+                    mScanController.unregisterScanner(scannerIdToStop);
+                } else {
+                    mScanController.doOnScanThread(
+                            () -> {
+                                mScanController.stopScan(scannerIdToStop);
+                                mScanController.unregisterScanner(scannerIdToStop);
+                            });
+                }
                 mBaasUuidFilters.clear();
                 mScannerId = SCANNER_ID_NOT_INITIALIZED;
             }
