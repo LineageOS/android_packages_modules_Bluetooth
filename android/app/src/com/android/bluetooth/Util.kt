@@ -27,7 +27,9 @@ import android.Manifest.permission.WRITE_SMS
 import android.annotation.PermissionMethod
 import android.annotation.PermissionName
 import android.annotation.RequiresPermission
+import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.METADATA_DEVICE_TYPE
 import android.bluetooth.BluetoothUtils
 import android.content.AttributionSource
 import android.content.Context
@@ -120,6 +122,24 @@ object Util {
     @JvmStatic
     fun isWatch(context: Context) =
         context.packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH)
+
+    /**
+     * Checks CoD and metadata to determine if the remote device is a watch
+     *
+     * @return whether it's a watch or not
+     */
+    @JvmStatic
+    fun remoteDeviceIsWatch(adapterService: AdapterService, device: BluetoothDevice): Boolean {
+        // Check CoD
+        val deviceClass = BluetoothClass(adapterService.getRemoteClass(device))
+        if (deviceClass.deviceClass == BluetoothClass.Device.WEARABLE_WRIST_WATCH) {
+            return true
+        }
+
+        // Check metadata
+        val deviceType = adapterService.getMetadata(device, METADATA_DEVICE_TYPE) ?: return false
+        return String(deviceType) == BluetoothDevice.DEVICE_TYPE_WATCH
+    }
 
     /** Returns `true` if the caller holds [NETWORK_SETTINGS] */
     @JvmStatic
