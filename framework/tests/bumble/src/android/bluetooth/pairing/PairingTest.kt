@@ -33,6 +33,7 @@ import android.bluetooth.pairing.utils.IntentReceiver
 import android.bluetooth.pairing.utils.TestUtil
 import android.bluetooth.test_utils.BlockingBluetoothAdapter
 import android.bluetooth.test_utils.EnableBluetoothRule
+import android.bluetooth.toAddressString
 import android.content.Context
 import android.os.ParcelUuid
 import android.platform.test.annotations.RequiresFlagsEnabled
@@ -144,10 +145,7 @@ class PairingTest {
         // Always read fresh address
         val readLocalAddressResponse =
             currentDevice.hostBlocking().readLocalAddress(Empty.getDefaultInstance())
-        bumbleDevice =
-            adapter.getRemoteDevice(
-                Utils.addressStringFromByteString(readLocalAddressResponse.address)
-            )
+        bumbleDevice = adapter.getRemoteDevice(readLocalAddressResponse.address.toAddressString())
         Log.d(TAG, "Bumble Device: $bumbleDevice")
         Log.d(TAG, "Bumble LE Device: $remoteLeDevice")
 
@@ -952,10 +950,7 @@ class PairingTest {
         // Read fresh address
         val readLocalAddressResponse =
             currentDevice.hostBlocking().readLocalAddress(Empty.getDefaultInstance())
-        bumbleDevice =
-            adapter.getRemoteDevice(
-                Utils.addressStringFromByteString(readLocalAddressResponse.address)
-            )
+        bumbleDevice = adapter.getRemoteDevice(readLocalAddressResponse.address.toAddressString())
         testStep_BondBredrFromRemote(intentReceiver)
         assertThat(adapter.bondedDevices).contains(bumbleDevice)
     }
@@ -1016,10 +1011,7 @@ class PairingTest {
         // Read fresh address
         val readLocalAddressResponse =
             currentDevice.hostBlocking().readLocalAddress(Empty.getDefaultInstance())
-        bumbleDevice =
-            adapter.getRemoteDevice(
-                Utils.addressStringFromByteString(readLocalAddressResponse.address)
-            )
+        bumbleDevice = adapter.getRemoteDevice(readLocalAddressResponse.address.toAddressString())
         testStep_BondBredr(intentReceiver)
         assertThat(adapter.bondedDevices).contains(bumbleDevice)
     }
@@ -1056,10 +1048,7 @@ class PairingTest {
         // Read fresh address
         val readLocalAddressResponse =
             currentDevice.hostBlocking().readLocalAddress(Empty.getDefaultInstance())
-        bumbleDevice =
-            adapter.getRemoteDevice(
-                Utils.addressStringFromByteString(readLocalAddressResponse.address)
-            )
+        bumbleDevice = adapter.getRemoteDevice(readLocalAddressResponse.address.toAddressString())
         currentDevice
             .gattBlocking()
             .registerService(
@@ -1158,10 +1147,7 @@ class PairingTest {
         // Read fresh address
         val readLocalAddressResponse =
             currentDevice.hostBlocking().readLocalAddress(Empty.getDefaultInstance())
-        bumbleDevice =
-            adapter.getRemoteDevice(
-                Utils.addressStringFromByteString(readLocalAddressResponse.address)
-            )
+        bumbleDevice = adapter.getRemoteDevice(readLocalAddressResponse.address.toAddressString())
         currentDevice
             .gattBlocking()
             .registerService(

@@ -30,6 +30,8 @@ import org.mockito.Mockito.any
 import org.mockito.Mockito.doAnswer
 import org.mockito.kotlin.whenever
 
+fun ByteString.toAddressString() = toByteArray().joinToString(":") { "%02X".format(it) }
+
 fun Intent.getBluetoothDeviceExtra(): BluetoothDevice =
     this.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)!!
 
@@ -50,9 +52,6 @@ object Utils {
     const val BUMBLE_RANDOM_ADDRESS_2 = "51:F7:A8:75:AC:5F"
 
     val BUMBLE_IRK = base16().decode("1F66F4B5F0C742F807DD0DDBF64E9213")
-
-    fun addressStringFromByteString(bs: ByteString) =
-        bs.toByteArray().joinToString(":") { "%02X".format(it) }
 
     fun addressBytesFromString(address: String): ByteArray {
         return base16().upperCase().withSeparator(":", 2).decode(address.uppercase(Locale.US))

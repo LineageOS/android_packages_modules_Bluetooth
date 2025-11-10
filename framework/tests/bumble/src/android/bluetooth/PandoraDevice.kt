@@ -86,7 +86,7 @@ class PandoraDevice(
                 .withWaitForReady()
                 .withDeadlineAfter(10, TimeUnit.SECONDS)
                 .readLocalAddress(Empty.getDefaultInstance())
-        publicBluetoothAddress = Utils.addressStringFromByteString(readLocalAddressResponse.address)
+        publicBluetoothAddress = readLocalAddressResponse.address.toAddressString()
         Log.i(TAG, "factoryReset complete")
     }
 

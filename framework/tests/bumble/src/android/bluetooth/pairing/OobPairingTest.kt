@@ -26,6 +26,7 @@ import android.bluetooth.Utils
 import android.bluetooth.cts.EnableBluetoothRule
 import android.bluetooth.pairing.utils.IntentReceiver
 import android.bluetooth.pairing.utils.TestUtil
+import android.bluetooth.toAddressString
 import android.content.Context
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
@@ -245,7 +246,7 @@ class OobPairingTest {
             if (scanningResponseIterator.hasNext()) {
                 val scanningResponse = scanningResponseIterator.next()
                 // Select DUT address from scan results
-                val scannedDevice = Utils.addressStringFromByteString(scanningResponse.random)
+                val scannedDevice = scanningResponse.random.toAddressString()
                 Log.d(TAG, "Scanned Devices: $scannedDevice")
                 if (scannedDevice == dutAddr) {
                     deviceAddr = scanningResponse.random
