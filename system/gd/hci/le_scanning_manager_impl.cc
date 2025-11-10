@@ -897,6 +897,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
 
         // Now replace it with a new one
         std::array<uint8_t, 16> empty_irk;
+        log::verbose("irk scan start process: add device to resolving list");
         le_address_manager_->AddDeviceToResolvingList(static_cast<PeerAddressType>(address_type),
                                                       address, irk, empty_irk);
         remove_me_later_map_.emplace(
