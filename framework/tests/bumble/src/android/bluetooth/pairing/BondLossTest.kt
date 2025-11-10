@@ -128,7 +128,7 @@ class BondLossTest {
         )
 
         testStep_BondBredr()
-        val address = Utils.addressBytesFromString(adapter.address)
+        val address = adapter.address.toAddressBytes()
         bumble
             .securityStorageBlocking()
             .deleteBond(
@@ -176,7 +176,7 @@ class BondLossTest {
         )
 
         testStep_BondBredr()
-        val address = Utils.addressBytesFromString(adapter.address)
+        val address = adapter.address.toAddressBytes()
         bumble
             .securityStorageBlocking()
             .deleteBond(

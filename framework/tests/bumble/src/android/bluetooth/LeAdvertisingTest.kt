@@ -73,13 +73,11 @@ class LeAdvertisingTest {
         val responseObserverIterator = responseObserver.iterator()
         while (true) {
             val scanningResponse = responseObserverIterator.next()
-            val addr =
-                Utils.addressStringFromByteString(
-                    if (addressType == AdvertisingSetParameters.ADDRESS_TYPE_PUBLIC)
-                        scanningResponse.public
-                    else scanningResponse.random
-                )
-
+            val scanningResponseBytes =
+                if (addressType == AdvertisingSetParameters.ADDRESS_TYPE_PUBLIC)
+                    scanningResponse.public
+                else scanningResponse.random
+            val addr = scanningResponseBytes.toAddressString()
             if (addr == address) {
                 responseObserver.cancel("Cancelling scan request")
                 return scanningResponse
