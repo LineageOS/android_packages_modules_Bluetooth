@@ -54,7 +54,7 @@ protected:
     if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
       btm_sec_cb.sec_dev_rec = list_new(osi_free);
     } else {
-      btm_sec_cb.device_records = {};
+      ::btm_sec_cb.Init(BTM_SEC_MODE_SC);  // Initialize the CB
     }
 
     gatt_cb.srv_chg_clt_q = fixed_queue_new(QUEUE_SIZE_MAX);
@@ -65,7 +65,7 @@ protected:
     if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
       list_free(btm_sec_cb.sec_dev_rec);
     } else {
-      btm_sec_cb.device_records = {};
+      ::btm_sec_cb.Free();  // Free the CB
     }
   }
 };

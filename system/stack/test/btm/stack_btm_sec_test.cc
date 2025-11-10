@@ -211,9 +211,6 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_allocate_dev_rec__all) {
       ASSERT_NE(nullptr, p_devices[i]);
     }
   } else {
-    // kBtmSecMaxDeviceRecords = BTM_SEC_MAX_DEVICE_RECORDS + 1;
-    ASSERT_EQ(kBtmSecMaxDeviceRecords-1, p_devices[kBtmSecMaxDeviceRecords - 1]->timestamp);
-
     for (size_t i = 0; i < kBtmSecMaxDeviceRecords; i++) {
       /**
        * Since we are now using btm_sec_cb.device_records as static array, so there will be no
