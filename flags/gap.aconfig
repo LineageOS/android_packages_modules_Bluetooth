@@ -91,16 +91,6 @@ flag {
 }
 
 flag {
-    name: "irk_scan_bond_check_update"
-    namespace: "bluetooth"
-    description: "Update bond state check in IRK scan to cover all identity address types."
-    bug: "406905829"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "preload_gatt_database"
     namespace: "bluetooth"
     description: "Add API to allow apps to preload GATT databases to allow skipping service discovery on initial connection."
