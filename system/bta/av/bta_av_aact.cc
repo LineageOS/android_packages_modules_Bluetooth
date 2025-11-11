@@ -1119,7 +1119,17 @@ void bta_av_setconfig_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     } else if (p_scb->uuid_int == 0) {
       p_scb->uuid_int = p_scb->open_api.uuid;
     }
-    bta_av_discover_req(p_scb, NULL);
+    if (com_android_bluetooth_flags_a2dp_skip_discover_after_set_config()) {
+      if (interop_match_addr(INTEROP_AVDTP_SKIP_DISCOVER_AFTER_CONFIG,
+                             &p_scb->PeerAddress())) {
+        log::info("IOP workaround for {}: skip discover after set config", p_scb->PeerAddress());
+      } else {
+        bta_av_discover_req(p_scb, NULL);
+      }
+    } else {
+      bta_av_discover_req(p_scb, NULL);
+    }
+
     // Set timer to initiate stream opening if peer doesn't
     if (!p_scb->accept_open_timer) {
       p_scb->accept_open_timer = alarm_new("accept_open_timer");

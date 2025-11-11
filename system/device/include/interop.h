@@ -389,6 +389,11 @@ typedef enum {
 
   INTEROP_HFP_SEND_OK_FOR_CLCC_AFTER_VOIP_CALL_END,
 
+  // Some older A2DP Sink devices do not behave well if they receive a
+  // Discover command right after a SetConfiguration is accepted, causing
+  // subsequent Start commands to be rejected.
+  INTEROP_AVDTP_SKIP_DISCOVER_AFTER_CONFIG,
+
   END_OF_INTEROP_LIST
 } interop_feature_t;
 
