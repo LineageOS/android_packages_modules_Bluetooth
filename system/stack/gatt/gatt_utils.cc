@@ -1797,7 +1797,8 @@ void gatt_cleanup_upon_disc(const RawAddress& bda, tGATT_DISCONN_REASON reason,
 
   if (com::android::bluetooth::flags::gatt_offload_api()) {
     /* Notify disconnection to offload HAL */
-    gatt_offload_clear_sessions_by_acl_handle(gatt_get_acl_handle_by_tcb(p_tcb));
+    gatt_offload_clear_sessions_by_acl_handle(gatt_get_acl_handle_by_tcb(p_tcb),
+                                              bluetooth::hal::GATT_ERROR_NONE);
   }
 
   gatt_set_ch_state(p_tcb, GATT_CH_CLOSE);

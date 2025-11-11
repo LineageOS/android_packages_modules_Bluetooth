@@ -113,6 +113,13 @@ public:
   MOCK_METHOD(void, LogMetricBluetoothEnergyMonitorReported,
               (uint16_t, const bqr::BqrEnergyMonitorEvent&));
   MOCK_METHOD(void, LogMetricBluetoothRFStatsReported, (uint16_t, const bqr::BqrRFStatsEvent&));
+  MOCK_METHOD(void, LogGattOffloadSessionStateChanged,
+              (const hci::Address& address, int32_t session_id,
+               android::bluetooth::gatt::GattRoleEnum gatt_role,
+               android::bluetooth::gatt::GattOffloadSessionStateEnum state,
+               int32_t gatt_characteristic_properties_bitmask, int64_t session_duration_ms,
+               android::bluetooth::gatt::GattOffloadErrorEnum error_code, int32_t uid,
+               const std::string& attribution_tag));
 };
 
 }  // namespace bluetooth::metrics

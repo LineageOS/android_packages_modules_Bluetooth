@@ -71,6 +71,15 @@ struct formatter<android::bluetooth::SocketErrorEnum>
 template <>
 struct formatter<bluetooth::metrics::CounterKey> : enum_formatter<bluetooth::metrics::CounterKey> {
 };
+template <>
+struct formatter<android::bluetooth::gatt::GattRoleEnum>
+    : enum_formatter<android::bluetooth::gatt::GattRoleEnum> {};
+template <>
+struct formatter<android::bluetooth::gatt::GattOffloadSessionStateEnum>
+    : enum_formatter<android::bluetooth::gatt::GattOffloadSessionStateEnum> {};
+template <>
+struct formatter<android::bluetooth::gatt::GattOffloadErrorEnum>
+    : enum_formatter<android::bluetooth::gatt::GattOffloadErrorEnum> {};
 }  // namespace std
 
 namespace bluetooth::metrics {
@@ -586,6 +595,25 @@ void LogMetricBluetoothRFStatsReported(uint16_t bqr_version, const bqr::BqrRFSta
           event.rssi_delta_5_8, event.rssi_delta_8_11, event.rssi_delta_11_up);
   if (ret < 0) {
     log::warn("failed to log BQR RF stats event to statsd, error {}", ret);
+  }
+}
+
+void LogGattOffloadSessionStateChanged(const Address& address, int32_t session_id,
+                                       android::bluetooth::gatt::GattRoleEnum gatt_role,
+                                       android::bluetooth::gatt::GattOffloadSessionStateEnum state,
+                                       int32_t gatt_characteristic_properties_bitmask,
+                                       int64_t session_duration_ms,
+                                       android::bluetooth::gatt::GattOffloadErrorEnum error_code,
+                                       int32_t uid, const std::string& attribution_tag) {
+  int metric_id = 0;
+  if (!address.IsEmpty()) {
+    metric_id = MetricIdManager::GetInstance().AllocateId(address);
+  }
+  int ret = stats_write(BLUETOOTH_GATT_OFFLOAD_SESSION_STATE_CHANGED, metric_id, session_id,
+                        gatt_role, state, gatt_characteristic_properties_bitmask,
+                        session_duration_ms, error_code, uid, attribution_tag.c_str());
+  if (ret < 0) {
+    log::warn("failed to log gatt offload session state changed to statsd, error {}", ret);
   }
 }
 

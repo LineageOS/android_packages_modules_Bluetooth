@@ -30,14 +30,18 @@
 #include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/gatt/enums.pb.h>
 
 #include <ios>
 #include <list>
 #include <vector>
 
+#include "bluetooth/metrics/os_metrics.h"
 #include "bta/gatt/bta_gattc_int.h"
 #include "gd/os/rand.h"
+#include "hci/address.h"
 #include "osi/include/allocator.h"
+#include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"
 
@@ -853,12 +857,23 @@ void BTA_GATTC_OffloadCharacteristics(tCONN_ID conn_id, std::vector<btgatt_db_el
                                               tGATT_STATUS::GATT_INVALID_HANDLE});
     return;
   }
+  int32_t characteristic_properties_bitmask = 0;
   for (auto const& element : service) {
     if (element.type != BTGATT_DB_CHARACTERISTIC) {
       continue;
     }
+    characteristic_properties_bitmask |= element.properties;
     if (bta_gattc_get_regcb_by_notification_handle(element.attribute_handle, remote_bda)) {
       log::error("Handle 0x{:x} was already registered for notification", element.attribute_handle);
+      bluetooth::metrics::LogGattOffloadSessionStateChanged(
+              bluetooth::hci::Address{remote_bda.address}, conn_id,
+              android::bluetooth::gatt::GattRoleEnum::GATT_ROLE_CLIENT,
+              android::bluetooth::gatt::GattOffloadSessionStateEnum::
+                      GATT_OFFLOAD_SESSION_STATE_FAILED,
+              characteristic_properties_bitmask, /*session_duration_ms=*/0,
+              android::bluetooth::gatt::GattOffloadErrorEnum::
+                      GATT_OFFLOAD_ERROR_CONCURRENT_NOTIFICATION_INDICATION,
+              uid, attribution_tag);
       promise.set_value(
               btgatt_offload_result_t{BTGATT_OFFLOAD_SESSION_ID_UNKNOWN, tGATT_STATUS::GATT_BUSY});
       return;
