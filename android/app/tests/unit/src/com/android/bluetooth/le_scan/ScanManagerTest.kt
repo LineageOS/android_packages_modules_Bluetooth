@@ -76,12 +76,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.anyBoolean
-import org.mockito.ArgumentMatchers.anyInt
-import org.mockito.ArgumentMatchers.anyLong
-import org.mockito.ArgumentMatchers.anyString
-import org.mockito.ArgumentMatchers.eq
 import org.mockito.InOrder
 import org.mockito.Mock
 import org.mockito.Mockito
@@ -91,6 +85,8 @@ import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 import platform.test.runner.parameterized.ParameterizedAndroidJunit4
 import platform.test.runner.parameterized.Parameters
@@ -175,7 +171,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
 
         // TODO(b/397863857) Delete on `Flags.scanControllerThread()` cleanup
         // Mock JNI callback in ScanNativeCallback
-        doReturn(true).whenever(nativeCallback).waitForCallback(anyInt().toLong())
+        doReturn(true).whenever(nativeCallback).waitForCallback(any<Int>().toLong())
 
         val scanRadioStats = ScanRadioStats(timeProvider)
         doReturn(scanRadioStats).whenever(scanController).getScanRadioStats()
@@ -1248,13 +1244,13 @@ class ScanManagerTest(flags: FlagsWrapper) {
             .logRadioScanStopped(
                 eq(intArrayOf(uid3)),
                 eq(arrayOf(packageName3)),
-                anyInt(),
-                anyInt(),
-                anyLong(),
-                anyLong(),
-                anyBoolean(),
-                anyLong(),
-                anyInt(),
+                any<Int>(),
+                any<Int>(),
+                any<Long>(),
+                any<Long>(),
+                any<Boolean>(),
+                any<Long>(),
+                any<Int>(),
                 eq(""),
             )
         advanceTime(scanTestDuration)
@@ -1324,13 +1320,13 @@ class ScanManagerTest(flags: FlagsWrapper) {
             .logRadioScanStopped(
                 eq(intArrayOf(uid3)),
                 eq(arrayOf(packageName3)),
-                anyInt(),
-                anyInt(),
-                anyLong(),
-                anyLong(),
-                anyBoolean(),
-                anyLong(),
-                anyInt(),
+                any<Int>(),
+                any<Int>(),
+                any<Long>(),
+                any<Long>(),
+                any<Boolean>(),
+                any<Long>(),
+                any<Int>(),
                 eq(""),
             )
         advanceTime(scanTestDuration)
@@ -1407,30 +1403,36 @@ class ScanManagerTest(flags: FlagsWrapper) {
         startScan(client)
         inOrder
             .verify(metricsLogger, never())
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
+            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), any<Long>())
         inOrder
             .verify(metricsLogger, never())
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
+            .cacheCount(
+                eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON),
+                any<Long>(),
+            )
         inOrder
             .verify(metricsLogger, never())
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
-                anyLong(),
+                any<Long>(),
             )
         advanceTime(50)
         // Stop scan
         stopScan(client)
         inOrder
             .verify(metricsLogger)
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
+            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), any<Long>())
         inOrder
             .verify(metricsLogger)
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
+            .cacheCount(
+                eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON),
+                any<Long>(),
+            )
         inOrder
             .verify(metricsLogger, never())
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
-                anyLong(),
+                any<Long>(),
             )
     }
 
@@ -1447,60 +1449,72 @@ class ScanManagerTest(flags: FlagsWrapper) {
         startScan(client)
         inOrder
             .verify(metricsLogger, never())
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
+            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), any<Long>())
         inOrder
             .verify(metricsLogger, never())
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
+            .cacheCount(
+                eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON),
+                any<Long>(),
+            )
         inOrder
             .verify(metricsLogger, never())
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
-                anyLong(),
+                any<Long>(),
             )
         advanceTime(50)
         // Turn off screen
         setScreenOn(false)
         inOrder
             .verify(metricsLogger)
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
+            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), any<Long>())
         inOrder
             .verify(metricsLogger)
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
+            .cacheCount(
+                eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON),
+                any<Long>(),
+            )
         inOrder
             .verify(metricsLogger, never())
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
-                anyLong(),
+                any<Long>(),
             )
         advanceTime(50)
         // Turn on screen
         setScreenOn(true)
         inOrder
             .verify(metricsLogger)
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
+            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), any<Long>())
         inOrder
             .verify(metricsLogger, never())
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
+            .cacheCount(
+                eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON),
+                any<Long>(),
+            )
         inOrder
             .verify(metricsLogger)
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
-                anyLong(),
+                any<Long>(),
             )
         advanceTime(50)
         // Stop scan
         stopScan(client)
         inOrder
             .verify(metricsLogger)
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
+            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), any<Long>())
         inOrder
             .verify(metricsLogger)
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
+            .cacheCount(
+                eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON),
+                any<Long>(),
+            )
         inOrder
             .verify(metricsLogger, never())
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
-                anyLong(),
+                any<Long>(),
             )
     }
 
@@ -1518,48 +1532,57 @@ class ScanManagerTest(flags: FlagsWrapper) {
         startScan(client)
         inOrder
             .verify(metricsLogger, never())
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
+            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), any<Long>())
         inOrder
             .verify(metricsLogger, never())
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
+            .cacheCount(
+                eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON),
+                any<Long>(),
+            )
         inOrder
             .verify(metricsLogger, never())
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
-                anyLong(),
+                any<Long>(),
             )
         advanceTime(50)
         // Start scan with higher duty cycle
         startScan(client2)
         inOrder
             .verify(metricsLogger)
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
+            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), any<Long>())
         inOrder
             .verify(metricsLogger)
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
+            .cacheCount(
+                eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON),
+                any<Long>(),
+            )
         inOrder
             .verify(metricsLogger, never())
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
-                anyLong(),
+                any<Long>(),
             )
         advanceTime(50)
         // Stop scan with lower duty cycle
         stopScan(client)
-        inOrder.verify(metricsLogger, never()).cacheCount(anyInt(), anyLong())
+        inOrder.verify(metricsLogger, never()).cacheCount(any<Int>(), any<Long>())
         // Stop scan with higher duty cycle
         stopScan(client2)
         inOrder
             .verify(metricsLogger)
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong())
+            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), any<Long>())
         inOrder
             .verify(metricsLogger)
-            .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON), anyLong())
+            .cacheCount(
+                eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON),
+                any<Long>(),
+            )
         inOrder
             .verify(metricsLogger, never())
             .cacheCount(
                 eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF),
-                anyLong(),
+                any<Long>(),
             )
     }
 
@@ -1610,16 +1633,18 @@ class ScanManagerTest(flags: FlagsWrapper) {
         setScreenOn(true)
         inOrder
             .verify(metricsLogger, never())
-            .cacheCount(eq(BluetoothProtoEnums.SCREEN_OFF_EVENT), anyLong())
-        inOrder.verify(metricsLogger).cacheCount(eq(BluetoothProtoEnums.SCREEN_ON_EVENT), anyLong())
+            .cacheCount(eq(BluetoothProtoEnums.SCREEN_OFF_EVENT), any<Long>())
+        inOrder
+            .verify(metricsLogger)
+            .cacheCount(eq(BluetoothProtoEnums.SCREEN_ON_EVENT), any<Long>())
         // Turn off screen
         setScreenOn(false)
         inOrder
             .verify(metricsLogger, never())
-            .cacheCount(eq(BluetoothProtoEnums.SCREEN_ON_EVENT), anyLong())
+            .cacheCount(eq(BluetoothProtoEnums.SCREEN_ON_EVENT), any<Long>())
         inOrder
             .verify(metricsLogger)
-            .cacheCount(eq(BluetoothProtoEnums.SCREEN_OFF_EVENT), anyLong())
+            .cacheCount(eq(BluetoothProtoEnums.SCREEN_OFF_EVENT), any<Long>())
     }
 
     @Test
@@ -1787,11 +1812,11 @@ class ScanManagerTest(flags: FlagsWrapper) {
             verify(nativeInterface)
                 .setScanParameters(
                     eq(if (expect1m) scannerId else 0),
-                    anyInt(),
-                    anyInt(),
+                    any<Int>(),
+                    any<Int>(),
                     eq(if (expectCoded) scannerId else 0),
-                    anyInt(),
-                    anyInt(),
+                    any<Int>(),
+                    any<Int>(),
                     eq(expectedPhyMask),
                 )
 
@@ -1828,8 +1853,8 @@ class ScanManagerTest(flags: FlagsWrapper) {
                 eq(Utils.millsToUnit(SCAN_MODE_LOW_LATENCY_INTERVAL_MS)),
                 eq(Utils.millsToUnit(SCAN_MODE_LOW_LATENCY_WINDOW_MS)),
                 eq(0),
-                anyInt(),
-                anyInt(),
+                any<Int>(),
+                any<Int>(),
                 eq(BluetoothDevice.PHY_LE_1M_MASK),
             )
 
@@ -1864,8 +1889,8 @@ class ScanManagerTest(flags: FlagsWrapper) {
         verify(nativeInterface)
             .setScanParameters(
                 eq(0),
-                anyInt(),
-                anyInt(),
+                any<Int>(),
+                any<Int>(),
                 eq(scannerIdCoded),
                 eq(Utils.millsToUnit(SCAN_MODE_BALANCED_INTERVAL_MS)),
                 eq(Utils.millsToUnit(SCAN_MODE_BALANCED_WINDOW_MS)),
@@ -1875,9 +1900,17 @@ class ScanManagerTest(flags: FlagsWrapper) {
         // Stop scan on coded
         stopScan(clientCoded)
 
-        verify(nativeInterface, atLeastOnce()).scan(eq(false), anyString())
+        verify(nativeInterface, atLeastOnce()).scan(eq(false), any<String>())
         verify(nativeInterface, never())
-            .setScanParameters(anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), anyInt(), eq(0))
+            .setScanParameters(
+                any<Int>(),
+                any<Int>(),
+                any<Int>(),
+                any<Int>(),
+                any<Int>(),
+                any<Int>(),
+                eq(0),
+            )
     }
 
     @Test
@@ -1937,11 +1970,11 @@ class ScanManagerTest(flags: FlagsWrapper) {
         // Verify MSFT APIs are only called once
         verify(nativeInterface)
             .msftAdvMonitorAdd(
-                any(MsftAdvMonitor.Monitor::class.java),
-                any(Array<MsftAdvMonitor.Pattern>::class.java),
-                any(MsftAdvMonitor.Uuid::class.java),
-                any(MsftAdvMonitor.Address::class.java),
-                anyInt(),
+                any<MsftAdvMonitor.Monitor>(),
+                any<Array<MsftAdvMonitor.Pattern>>(),
+                any<MsftAdvMonitor.Uuid>(),
+                any<MsftAdvMonitor.Address>(),
+                any<Int>(),
             )
         verify(nativeInterface).msftAdvMonitorEnable(eq(true))
     }
@@ -1986,28 +2019,28 @@ class ScanManagerTest(flags: FlagsWrapper) {
         startScan(client)
 
         // Verify APCF APIs are called
-        verify(nativeInterface).scanFilterParamAdd(any())
+        verify(nativeInterface).scanFilterParamAdd(any<FilterParams>())
 
         // Verify MSFT APIs are never called
         verify(nativeInterface, never())
             .msftAdvMonitorAdd(
-                any(MsftAdvMonitor.Monitor::class.java),
-                any(Array<MsftAdvMonitor.Pattern>::class.java),
-                any(MsftAdvMonitor.Uuid::class.java),
-                any(MsftAdvMonitor.Address::class.java),
-                anyInt(),
+                any<MsftAdvMonitor.Monitor>(),
+                any<Array<MsftAdvMonitor.Pattern>>(),
+                any<MsftAdvMonitor.Uuid>(),
+                any<MsftAdvMonitor.Address>(),
+                any<Int>(),
             )
-        verify(nativeInterface, never()).msftAdvMonitorEnable(anyBoolean())
+        verify(nativeInterface, never()).msftAdvMonitorEnable(any<Boolean>())
 
         // Stop scan
         stopScan(client)
 
         // Verify APCF APIs are called
-        verify(nativeInterface).scanFilterParamDelete(anyInt(), anyInt())
+        verify(nativeInterface).scanFilterParamDelete(any<Int>(), any<Int>())
 
         // Verify MSFT APIs are never called
-        verify(nativeInterface, never()).msftAdvMonitorRemove(anyInt(), anyInt())
-        verify(nativeInterface, never()).msftAdvMonitorEnable(anyBoolean())
+        verify(nativeInterface, never()).msftAdvMonitorRemove(any<Int>(), any<Int>())
+        verify(nativeInterface, never()).msftAdvMonitorEnable(any<Boolean>())
     }
 
     private fun createScanClient(
