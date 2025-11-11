@@ -1883,7 +1883,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
     @Test
     @EnableFlags(Flags.FLAG_LE_SCAN_MSFT_SUPPORT)
     fun testMsftScan() {
-        doReturn(true).whenever(nativeInterface).isMsftSupported
+        doReturn(true).whenever(nativeInterface).isMsftSupported()
         doReturn(false).whenever(adapter).isOffloadedFilteringSupported
 
         val isFiltered = true
@@ -1949,7 +1949,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
     @Test
     @EnableFlags(Flags.FLAG_LE_SCAN_MSFT_SUPPORT)
     fun testPreferApcfOverMsftScan() {
-        doReturn(true).whenever(nativeInterface).isMsftSupported
+        doReturn(true).whenever(nativeInterface).isMsftSupported()
         doReturn(true).whenever(adapter).isOffloadedFilteringSupported
 
         val isFiltered = true
