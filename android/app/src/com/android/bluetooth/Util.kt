@@ -113,6 +113,7 @@ object Util {
         context.packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
 
     /** @return `true` if this Android device is a TV device, `false` otherwise */
+    @Suppress("DEPRECATION") // Checking deprecated PackageManager.FEATURE_TELEVISION
     @JvmStatic
     fun isTv(context: Context) =
         context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION) ||
