@@ -857,12 +857,13 @@ public class GattServiceTest {
 
         mService.onGetGattDbFromNative(CLIENT_CONN_ID, db);
         // HID characteristics should be restricted
-        assertThat(mService.mRestrictedHandles.get(CLIENT_CONN_ID)).contains(hidInfoChar.id);
-        assertThat(mService.mRestrictedHandles.get(CLIENT_CONN_ID)).doesNotContain(randomChar.id);
+        assertThat(mService.getRestrictedHandles().get(CLIENT_CONN_ID)).contains(hidInfoChar.id);
+        assertThat(mService.getRestrictedHandles().get(CLIENT_CONN_ID))
+                .doesNotContain(randomChar.id);
 
         mService.onDisconnectedFromNative(
                 CLIENT_IF, CLIENT_CONN_ID, TRANSPORT_LE, BluetoothGatt.GATT_SUCCESS, mDevice);
-        assertThat(mService.mRestrictedHandles).doesNotContainKey(CLIENT_CONN_ID);
+        assertThat(mService.getRestrictedHandles()).doesNotContainKey(CLIENT_CONN_ID);
     }
 
     @Test
@@ -889,10 +890,10 @@ public class GattServiceTest {
 
         mService.onGetGattDbFromNative(CLIENT_CONN_ID, db);
         // ANCS should be restricted
-        assertThat(mService.mRestrictedHandles.get(CLIENT_CONN_ID)).contains(ancsService.id);
+        assertThat(mService.getRestrictedHandles().get(CLIENT_CONN_ID)).contains(ancsService.id);
 
         mService.onDisconnectedFromNative(
                 CLIENT_IF, CLIENT_CONN_ID, TRANSPORT_LE, BluetoothGatt.GATT_SUCCESS, mDevice);
-        assertThat(mService.mRestrictedHandles).doesNotContainKey(CLIENT_CONN_ID);
+        assertThat(mService.getRestrictedHandles()).doesNotContainKey(CLIENT_CONN_ID);
     }
 }
