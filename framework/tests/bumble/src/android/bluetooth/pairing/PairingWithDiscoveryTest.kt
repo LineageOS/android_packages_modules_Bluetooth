@@ -63,7 +63,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.any
 import org.mockito.InOrder
 import org.mockito.Mock
 import org.mockito.Mockito.doAnswer
@@ -71,6 +70,7 @@ import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.timeout
 import org.mockito.MockitoAnnotations
 import org.mockito.hamcrest.MockitoHamcrest
+import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import org.mockito.stubbing.Answer
 import pandora.BumbleConfigProto
@@ -1098,13 +1098,13 @@ class PairingWithDiscoveryTest {
     private fun verifyIntentReceived(vararg matchers: Matcher<Intent>) {
         inOrder
             .verify(receiver, timeout(BOND_INTENT_TIMEOUT.toMillis()))
-            .onReceive(any(Context::class.java), MockitoHamcrest.argThat(AllOf.allOf(*matchers)))
+            .onReceive(any<Context>(), MockitoHamcrest.argThat(AllOf.allOf(*matchers)))
     }
 
     private fun verifyIntentReceivedUnordered(num: Int, vararg matchers: Matcher<Intent>) {
         inOrder
             .verify(receiver, timeout(BOND_INTENT_TIMEOUT.toMillis()).times(num))
-            .onReceive(any(Context::class.java), MockitoHamcrest.argThat(AllOf.allOf(*matchers)))
+            .onReceive(any<Context>(), MockitoHamcrest.argThat(AllOf.allOf(*matchers)))
     }
 
     private fun verifyIntentReceivedUnordered(vararg matchers: Matcher<Intent>) {

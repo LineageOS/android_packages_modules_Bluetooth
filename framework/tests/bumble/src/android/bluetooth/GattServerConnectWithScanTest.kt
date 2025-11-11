@@ -34,12 +34,11 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.anyInt
-import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.OwnAddressType
 
@@ -80,7 +79,7 @@ class GattServerConnectWithScanTest {
 
             gattServer.connect(device, false)
             verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
-                .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED))
+                .onConnectionStateChange(any(), any<Int>(), eq(STATE_CONNECTED))
         } finally {
             gattServer.close()
         }
@@ -111,7 +110,7 @@ class GattServerConnectWithScanTest {
 
             gattServer.connect(device, false)
             verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
-                .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED))
+                .onConnectionStateChange(any(), any<Int>(), eq(STATE_CONNECTED))
         } finally {
             gattServer.close()
         }
@@ -137,7 +136,7 @@ class GattServerConnectWithScanTest {
         try {
             gattServer.connect(bumble.remoteDevice, false)
             verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
-                .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED))
+                .onConnectionStateChange(any(), any<Int>(), eq(STATE_CONNECTED))
         } finally {
             gattServer.close()
         }
@@ -163,7 +162,7 @@ class GattServerConnectWithScanTest {
         try {
             gattServer.connect(bumble.remoteDevice, false)
             verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
-                .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED))
+                .onConnectionStateChange(any(), any<Int>(), eq(STATE_CONNECTED))
         } finally {
             gattServer.close()
         }

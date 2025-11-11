@@ -31,14 +31,13 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.InOrder
 import org.mockito.Mock
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 
 @SmallTest
@@ -86,7 +85,7 @@ class WatchConnectionStateListenerTest {
 
         listener.onDeviceConnected(device, TRANSPORT_LE)
         listener.onDeviceDisconnected(device, TRANSPORT_LE)
-        inOrder.verify(adapterService, never()).updateWatchConnection(anyBoolean())
+        inOrder.verify(adapterService, never()).updateWatchConnection(any<Boolean>())
     }
 
     @Test
