@@ -39,12 +39,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.anyInt
-import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.AdvertiseResponse
 import pandora.HostProto.OwnAddressType
@@ -102,9 +101,9 @@ class ConnParamTest {
             .onConnectionUpdated(
                 any(),
                 connectionIntervalCaptor.capture(),
-                anyInt(),
-                anyInt(),
-                anyInt(),
+                any<Int>(),
+                any<Int>(),
+                any<Int>(),
             )
 
         val capturedConnectionIntervals = connectionIntervalCaptor.allValues
@@ -139,9 +138,9 @@ class ConnParamTest {
             .onConnectionUpdated(
                 any(),
                 connectionIntervalCaptor.capture(),
-                anyInt(),
-                anyInt(),
-                anyInt(),
+                any<Int>(),
+                any<Int>(),
+                any<Int>(),
             )
 
         val capturedConnectionIntervals = connectionIntervalCaptor.allValues
@@ -206,7 +205,7 @@ class ConnParamTest {
         ) {
             val state = STATE_DISCONNECTED
             gatt.disconnect()
-            verify(callback, timeout(1000)).onConnectionStateChange(eq(gatt), anyInt(), eq(state))
+            verify(callback, timeout(1000)).onConnectionStateChange(eq(gatt), any<Int>(), eq(state))
 
             gatt.close()
         }

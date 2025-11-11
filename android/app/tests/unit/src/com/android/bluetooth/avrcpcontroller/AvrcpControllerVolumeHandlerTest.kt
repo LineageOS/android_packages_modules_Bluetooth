@@ -29,10 +29,10 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.anyInt
-import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mock
+import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -103,7 +103,11 @@ class AvrcpControllerVolumeHandlerTest {
         val absVol = mVolumeHandler.setAbsoluteVolume(20, label.toInt())
         assertThat(absVol).isEqualTo(127)
         verify(mAudioManager, never())
-            .setStreamVolume(eq(AudioManager.STREAM_MUSIC), anyInt(), eq(AudioManager.FLAG_SHOW_UI))
+            .setStreamVolume(
+                eq(AudioManager.STREAM_MUSIC),
+                any<Int>(),
+                eq(AudioManager.FLAG_SHOW_UI),
+            )
     }
 
     /** Test #setAbsoluteVolume */
@@ -129,7 +133,11 @@ class AvrcpControllerVolumeHandlerTest {
         val absVol = mVolumeHandler.setAbsoluteVolume(20, label.toInt())
         assertThat(absVol).isEqualTo(127)
         verify(mAudioManager, never())
-            .setStreamVolume(eq(AudioManager.STREAM_MUSIC), anyInt(), eq(AudioManager.FLAG_SHOW_UI))
+            .setStreamVolume(
+                eq(AudioManager.STREAM_MUSIC),
+                any<Int>(),
+                eq(AudioManager.FLAG_SHOW_UI),
+            )
     }
 
     /** Create a volume handler to test */
