@@ -592,8 +592,8 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
           bd_addr, bt_transport_text(transport), state, pairing_cb.state, pairing_cb.sdp_attempts,
           pairing_type.algorithm);
 
-  if (com::android::bluetooth::flags::enable_autonomous_repairing() && btm_is_bond_lost(bd_addr) &&
-      (state == BT_BOND_STATE_NONE)) {
+  if (com::android::bluetooth::flags::autonomous_repairing_initiation() &&
+      btm_is_bond_lost(bd_addr) && (state == BT_BOND_STATE_NONE)) {
     const std::string bd_addr_str = bd_addr.ToString();
     bt_status_t fetch_status = btif_in_fetch_bonded_device(bd_addr_str);
     log::debug(
@@ -990,7 +990,7 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
 
   /* check for auto pair possibility only if bond was initiated by local device
    */
-  if (!(com::android::bluetooth::flags::enable_autonomous_repairing() &&
+  if (!(com::android::bluetooth::flags::autonomous_repairing_initiation() &&
         btm_is_bond_lost(bd_addr)) &&
       pairing_cb.is_local_initiated && !p_pin_req->min_16_digit) {
     if (btif_check_cod(&bd_addr, COD_AV_HEADSETS) || btif_check_cod(&bd_addr, COD_AV_HEADPHONES) ||
@@ -1353,7 +1353,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
     // disconnect the link. This should be done at the end, as if the auth_cmpl failed because of
     // any reason, it will be handled above (such as re-pairing attempt).
     // This reason: HCI_ERR_ILLEGAL_COMMAND is used to report AUTH_COMPL from BTM_SecBond().
-    if (com::android::bluetooth::flags::enable_autonomous_repairing() &&
+    if (com::android::bluetooth::flags::autonomous_repairing_initiation() &&
         btm_is_bond_lost(bd_addr) && p_auth_cmpl->fail_reason == HCI_ERR_ILLEGAL_COMMAND) {
       log::info("Disconnecting the link, because create bond failed.");
       btif_dm_disconnect_acl(
@@ -2978,7 +2978,7 @@ void btif_dm_cancel_bond(const RawAddress bd_addr) {
       } else {
         BTA_DmConfirm(bd_addr, false);
         BTA_DmBondCancel(bd_addr);
-        if (!com::android::bluetooth::flags::enable_autonomous_repairing() ||
+        if (!com::android::bluetooth::flags::autonomous_repairing_initiation() ||
             !btm_is_bond_lost(bd_addr)) {
           btif_storage_remove_bonded_device(&bd_addr);
         }
@@ -3008,7 +3008,7 @@ void btif_dm_remove_bond(const RawAddress bd_addr) {
 
   BTM_LogHistory(kBtmLogTag, bd_addr, "Remove bond");
 
-  if (com::android::bluetooth::flags::enable_autonomous_repairing()) {
+  if (com::android::bluetooth::flags::autonomous_repairing_initiation()) {
     btm_update_bond_lost(bd_addr, false);  // reset the bond lost status
   }
   btif_stats_add_bond_event(bd_addr, BTIF_DM_FUNC_REMOVE_BOND, pairing_cb.state);
@@ -3889,8 +3889,8 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
   // disconnect the link. This should be done at the end, as if the auth_cmpl failed because of
   // any reason, it will be handled above (such as re-pairing attempt).
   // This reason: HCI_ERR_ILLEGAL_COMMAND is used to report AUTH_COMPL from BTM_SecBond().
-  if (com::android::bluetooth::flags::enable_autonomous_repairing() && btm_is_bond_lost(bd_addr) &&
-      p_auth_cmpl->fail_reason == HCI_ERR_ILLEGAL_COMMAND) {
+  if (com::android::bluetooth::flags::autonomous_repairing_initiation() &&
+      btm_is_bond_lost(bd_addr) && p_auth_cmpl->fail_reason == HCI_ERR_ILLEGAL_COMMAND) {
     log::info("Disconnecting the link, because create bond failed.");
     btif_dm_disconnect_acl(
             bd_addr, BT_TRANSPORT_AUTO);  // `btif_dm_disconnect_acl` will identify the transport.
