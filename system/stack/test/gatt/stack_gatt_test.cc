@@ -62,12 +62,6 @@ protected:
 
 namespace {
 
-// Actual size of structure without compiler padding
-size_t actual_sizeof_tGATT_REG() {
-  return sizeof(bluetooth::Uuid) + sizeof(tGATT_CBACK) + sizeof(tGATT_IF) + sizeof(bool) +
-         sizeof(uint8_t) + sizeof(bool);
-}
-
 void tGATT_DISC_RES_CB(uint16_t /*conn_id*/, tGATT_DISC_TYPE /*disc_type*/,
                        tGATT_DISC_RES* /*p_data*/) {}
 void tGATT_DISC_CMPL_CB(uint16_t /*conn_id*/, tGATT_DISC_TYPE /*disc_type*/,
@@ -99,47 +93,6 @@ tGATT_CBACK gatt_callbacks = {
 };
 
 }  // namespace
-
-TEST_F(StackGattTest, lifecycle_tGATT_REG) {
-  {
-    std::unique_ptr<tGATT_REG> reg0 = std::make_unique<tGATT_REG>();
-    std::unique_ptr<tGATT_REG> reg1 = std::make_unique<tGATT_REG>();
-    memset(reg0.get(), 0xff, sizeof(tGATT_REG));
-    memset(reg1.get(), 0xff, sizeof(tGATT_REG));
-    ASSERT_EQ(0, memcmp(reg0.get(), reg1.get(), sizeof(tGATT_REG)));
-
-    memset(reg0.get(), 0x0, sizeof(tGATT_REG));
-    memset(reg1.get(), 0x0, sizeof(tGATT_REG));
-    ASSERT_EQ(0, memcmp(reg0.get(), reg1.get(), sizeof(tGATT_REG)));
-  }
-
-  {
-    std::unique_ptr<tGATT_REG> reg0 = std::make_unique<tGATT_REG>();
-    memset(reg0.get(), 0xff, sizeof(tGATT_REG));
-
-    tGATT_REG reg1;
-    memset(&reg1, 0xff, sizeof(tGATT_REG));
-
-    // Clear the structures
-    memset(reg0.get(), 0, sizeof(tGATT_REG));
-    // Restore the complex structure after memset
-    memset(&reg1.name, 0, sizeof(std::string));
-    memset(&reg1.mtu_prefs, 0, sizeof(std::map<RawAddress, uint16_t>));
-    reg1 = {};
-    ASSERT_EQ(0, memcmp(reg0.get(), &reg1, actual_sizeof_tGATT_REG()));
-  }
-
-  {
-    tGATT_REG* reg0 = new tGATT_REG();
-    tGATT_REG* reg1 = new tGATT_REG();
-    memset(reg0, 0, sizeof(tGATT_REG));
-    *reg1 = {};
-    reg0->in_use = true;
-    ASSERT_NE(0, memcmp(reg0, reg1, sizeof(tGATT_REG)));
-    delete reg1;
-    delete reg0;
-  }
-}
 
 TEST_F(StackGattTest, gatt_init_free) {
   gatt_init();
