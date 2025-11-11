@@ -219,17 +219,23 @@ class GattServiceBinder(private var gattService: GattService?) :
     ) {
         val gatt = gattEnforceConnect(source) ?: return
         try {
-            enforcePrivilegedPermissionIfNeededForHandle(gatt, callback, device, handle)
+            onGattThreadAndEnforcePrivilegedOnBinderIfNeeded(
+                gatt,
+                callback,
+                device,
+                handle,
+                Unit, // Nothing to return
+            ) {
+                readCharacteristic(callback, device, handle, authReq)
+            }
         } catch (ex: SecurityException) {
             val callingPackage = source.packageName
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
             if (Utils.checkCallerTargetSdk(gatt, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
                 throw ex
             }
-            Log.w(TAG, "readCharacteristic() - permission check failed!")
-            return
+            Log.w(TAG, "readCharacteristic(): Permission check failed!")
         }
-        gatt.doOnGattThread { gatt.readCharacteristic(callback, device, handle, authReq) }
     }
 
     override fun readUsingCharacteristicUuid(
@@ -277,11 +283,15 @@ class GattServiceBinder(private var gattService: GattService?) :
         source: AttributionSource,
     ): Int {
         val gatt = gattEnforceConnect(source) ?: return ERROR_PROFILE_SERVICE_NOT_BOUND
-        enforcePrivilegedPermissionIfNeededForHandle(gatt, callback, device, handle)
-        return gatt.fetchOnGattThread(
-            { gatt.writeCharacteristic(callback, device, handle, writeType, authReq, value) },
+        return onGattThreadAndEnforcePrivilegedOnBinderIfNeeded(
+            gatt,
+            callback,
+            device,
+            handle,
             BluetoothStatusCodes.ERROR_UNKNOWN,
-        )
+        ) {
+            writeCharacteristic(callback, device, handle, writeType, authReq, value)
+        }
     }
 
     override fun readDescriptor(
@@ -293,17 +303,23 @@ class GattServiceBinder(private var gattService: GattService?) :
     ) {
         val gatt = gattEnforceConnect(source) ?: return
         try {
-            enforcePrivilegedPermissionIfNeededForHandle(gatt, callback, device, handle)
+            onGattThreadAndEnforcePrivilegedOnBinderIfNeeded(
+                gatt,
+                callback,
+                device,
+                handle,
+                Unit, // Nothing to return
+            ) {
+                readDescriptor(callback, device, handle, authReq)
+            }
         } catch (ex: SecurityException) {
             val callingPackage = source.packageName
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
             if (Utils.checkCallerTargetSdk(gatt, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
                 throw ex
             }
-            Log.w(TAG, "readDescriptor() - permission check failed!")
-            return
+            Log.w(TAG, "readDescriptor(): Permission check failed!")
         }
-        gatt.doOnGattThread { gatt.readDescriptor(callback, device, handle, authReq) }
     }
 
     override fun writeDescriptor(
@@ -315,11 +331,15 @@ class GattServiceBinder(private var gattService: GattService?) :
         source: AttributionSource,
     ): Int {
         val gatt = gattEnforceConnect(source) ?: return ERROR_PROFILE_SERVICE_NOT_BOUND
-        enforcePrivilegedPermissionIfNeededForHandle(gatt, callback, device, handle)
-        return gatt.fetchOnGattThread(
-            { gatt.writeDescriptor(callback, device, handle, authReq, value) },
+        return onGattThreadAndEnforcePrivilegedOnBinderIfNeeded(
+            gatt,
+            callback,
+            device,
+            handle,
             BluetoothStatusCodes.ERROR_UNKNOWN,
-        )
+        ) {
+            writeDescriptor(callback, device, handle, authReq, value)
+        }
     }
 
     override fun beginReliableWrite(device: BluetoothDevice, source: AttributionSource) {
@@ -344,18 +364,23 @@ class GattServiceBinder(private var gattService: GattService?) :
     ) {
         val gatt = gattEnforceConnect(source) ?: return
         try {
-            enforcePrivilegedPermissionIfNeededForHandle(gatt, callback, device, handle)
+            onGattThreadAndEnforcePrivilegedOnBinderIfNeeded(
+                gatt,
+                callback,
+                device,
+                handle,
+                Unit, // Nothing to return
+            ) {
+                registerForNotification(callback, device, handle, enable)
+            }
         } catch (ex: SecurityException) {
             val callingPackage = source.packageName
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
             if (Utils.checkCallerTargetSdk(gatt, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
                 throw ex
             }
-            Log.w(TAG, "registerForNotification() - permission check failed!")
-            return
+            Log.w(TAG, "registerForNotification(): Permission check failed!")
         }
-
-        gatt.doOnGattThread { gatt.registerForNotification(callback, device, handle, enable) }
     }
 
     override fun readRemoteRssi(
@@ -639,44 +664,63 @@ class GattServiceBinder(private var gattService: GattService?) :
         }
     }
 
-    // The permission enforcement for BLUETOOTH_PRIVILEGED is complex-conditional. Callers like
-    // `readCharacteristic` and `registerForNotification` only require to throw an exception on
-    // SDK T+ for specific handles that are stored in `GattService#mRestrictedHandles` via the code
-    // flow found in GattService#isRestrictedSrvcUuid
+    /**
+     * Runs a GATT action in a single thread hop, returning the result of [block] or [defaultValue].
+     * If a specific [handle] requires [BLUETOOTH_PRIVILEGED], the enforcement is done on the Binder
+     * thread to ensure the delivery of the exception to the requesting app.
+     *
+     * Permission enforcement for `BLUETOOTH_PRIVILEGED` is complex-conditional. Callers like
+     * `readCharacteristic` and `registerForNotification` only require to throw an exception on SDK
+     * T+ for specific handles that are stored in [GattService.restrictedHandles] via the code flow
+     * found in [GattService.isRestrictedSrvcUuid].
+     */
     @SuppressWarnings("IncorrectRequiresPermissionPropagation")
-    private fun enforcePrivilegedPermissionIfNeededForHandle(
+    private fun <T> onGattThreadAndEnforcePrivilegedOnBinderIfNeeded(
         gatt: GattService,
         callback: IBluetoothGattCallback,
         device: BluetoothDevice,
         handle: Int,
-    ) {
+        defaultValue: T,
+        block: GattService.() -> T,
+    ): T {
         if (Utils.isInstrumentationTestMode()) {
-            return
+            return gatt.block()
         }
 
-        val header = "enforcePrivilegedPermissionIfNeededForHandle($callback, $device):"
-        val isHandleRestricted =
+        val hasPrivilegedPermission = Util.checkCallerHasPrivilegedPermission(gatt)
+
+        val header = "onGattThreadAndEnforcePrivilegedOnBinderIfNeeded($callback, $device):"
+        val (result, isRestricted) =
             gatt.fetchOnGattThread(
                 {
                     val clientApp = gatt.clientMap.getByCallbackId(callback)
                     if (clientApp == null) {
                         Log.w(TAG, "$header App not registered")
-                        return@fetchOnGattThread false
+                        return@fetchOnGattThread defaultValue to false
                     }
 
                     val connId = gatt.getFirstConnectionIdForDevice(clientApp.id, device)
                     if (connId == null) {
                         Log.e(TAG, "$header No connection")
-                        return@fetchOnGattThread false
+                        return@fetchOnGattThread defaultValue to false
                     }
 
-                    gatt.restrictedHandles[connId]?.contains(handle) ?: false
+                    val isRestricted = gatt.restrictedHandles[connId]?.contains(handle) == true
+                    if (isRestricted && !hasPrivilegedPermission) {
+                        // Restricted handle requires BLUETOOTH_PRIVILEGED but caller lacks it
+                        // Return `defaultValue` and exception will be thrown during enforcement
+                        defaultValue to true
+                    } else {
+                        gatt.block() to isRestricted
+                    }
                 },
-                false,
+                defaultValue to false,
             )
 
-        if (isHandleRestricted) {
+        if (isRestricted) {
             gatt.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
         }
+
+        return result
     }
 }
