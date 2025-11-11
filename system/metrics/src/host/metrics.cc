@@ -27,6 +27,9 @@ void Counter(CounterKey /* key */, int64_t /* count */) {}
 void LogBluetoothEvent(const Address& /* address */, EventType /* event type */,
                        State /* state */) {}
 
+void LogBluetoothEvent(const Address& /* address */, EventType /* event type */, State /* state */,
+                       int /* uid */) {}
+
 void LogMetricClassicPairingEvent(const Address& /* address */, uint16_t /* handle */,
                                   uint32_t /* hci_cmd */, uint16_t /* hci_event */,
                                   uint16_t /* cmd_status */, uint16_t /* reason_code */,

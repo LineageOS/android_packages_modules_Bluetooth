@@ -39,6 +39,7 @@ public:
   // Methods from os_metrics.h
   MOCK_METHOD(void, Counter, (bluetooth::metrics::CounterKey, int64_t));
   MOCK_METHOD(void, LogBluetoothEvent, (const hci::Address&, EventType, State));
+  MOCK_METHOD(void, LogBluetoothEvent, (const hci::Address&, EventType, State, int));
   MOCK_METHOD(void, LogMetricLinkLayerConnectionEvent,
               (const hci::Address&, uint32_t, android::bluetooth::DirectionEnum, uint16_t, uint32_t,
                uint16_t, uint16_t, uint16_t, uint16_t));
