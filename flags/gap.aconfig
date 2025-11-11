@@ -329,3 +329,13 @@ flag {
     bug: "450085002"
     is_exported: true
 }
+
+flag {
+    name: "irk_scanning_bond_check_update"
+    namespace: "bluetooth"
+    description: "Update bond state check during IRK scanning to cover all identity address types"
+    bug: "459303393"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
