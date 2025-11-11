@@ -246,10 +246,12 @@ void GATT_StartIf(tGATT_IF gatt_if) {
 }
 void GATTC_OffloadCharacteristics(tCONN_ID conn_id, btgatt_db_element_t* service,
                                   size_t elements_count, uint64_t endpoint_id, uint64_t hub_id,
+                                  int uid, std::string attribution_tag,
                                   std::promise<btgatt_offload_result_t> promise) {
   inc_func_call_count(__func__);
-  test::mock::stack_gatt_api::GATTC_OffloadCharacteristics(conn_id, service, elements_count,
-                                                           endpoint_id, hub_id, std::move(promise));
+  test::mock::stack_gatt_api::GATTC_OffloadCharacteristics(
+          conn_id, service, elements_count, endpoint_id, hub_id, uid, std::move(attribution_tag),
+          std::move(promise));
 }
 void GATTC_UnoffloadCharacteristics(tCONN_ID conn_id, uint16_t session_id) {
   inc_func_call_count(__func__);
@@ -269,10 +271,12 @@ void GATTC_SetDefaultMtu(const RawAddress& remote_bda) {
 }
 void GATTS_OffloadCharacteristics(tCONN_ID conn_id, btgatt_db_element_t* service,
                                   size_t elements_count, uint64_t endpoint_id, uint64_t hub_id,
+                                  int uid, std::string attribution_tag,
                                   std::promise<btgatt_offload_result_t> promise) {
   inc_func_call_count(__func__);
-  test::mock::stack_gatt_api::GATTS_OffloadCharacteristics(conn_id, service, elements_count,
-                                                           endpoint_id, hub_id, std::move(promise));
+  test::mock::stack_gatt_api::GATTS_OffloadCharacteristics(
+          conn_id, service, elements_count, endpoint_id, hub_id, uid, std::move(attribution_tag),
+          std::move(promise));
 }
 void GATTS_UnoffloadCharacteristics(tCONN_ID conn_id, uint16_t session_id) {
   inc_func_call_count(__func__);

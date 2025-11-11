@@ -385,15 +385,19 @@ void BTA_GATTS_InitBonded(void) {
  *                  service - vector describing service.
  *                  endpoint_id - ID of the hub end point.
  *                  hub_id - ID of the hub to which the end point belongs.
+ *                  uid - The UID of the application.
+ *                  attribution_tag - The attribution tag.
  *                  promise - object used to signal the completion status.
  *
  ******************************************************************************/
 void BTA_GATTS_OffloadCharacteristics(tCONN_ID conn_id, std::vector<btgatt_db_element_t> service,
-                                      uint64_t endpoint_id, uint64_t hub_id,
+                                      uint64_t endpoint_id, uint64_t hub_id, int uid,
+                                      std::string attribution_tag,
                                       std::promise<btgatt_offload_result_t> promise) {
-  log::verbose("conn_id: {}, endpoint_id: {}, hub_id: {}", conn_id, endpoint_id, hub_id);
-  GATTS_OffloadCharacteristics(conn_id, service.data(), service.size(), endpoint_id, hub_id,
-                               std::move(promise));
+  log::verbose("conn_id: {}, endpoint_id: {}, hub_id: {}, uid: {}, attribution_tag: {}", conn_id,
+               endpoint_id, hub_id, uid, attribution_tag);
+  GATTS_OffloadCharacteristics(conn_id, service.data(), service.size(), endpoint_id, hub_id, uid,
+                               std::move(attribution_tag), std::move(promise));
 }
 
 /*******************************************************************************

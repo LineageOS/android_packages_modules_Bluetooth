@@ -896,6 +896,8 @@ class GattServerManager(
         characteristics: List<BluetoothGattCharacteristic>,
         endpointId: Long,
         hubId: Long,
+        uid: Int,
+        attributionTag: String?,
     ): GattOffloadSession.InnerParcel {
         gatt.enforceGattThread()
         check(adapterService.isGattClientOffloadSupported()) { "GATT client offload unsupported" }
@@ -917,6 +919,8 @@ class GattServerManager(
                 getGattDatabaseForOffload(service, characteristics),
                 endpointId,
                 hubId,
+                uid,
+                attributionTag ?: "",
             )
         }
     }
@@ -950,6 +954,8 @@ class GattServerManager(
         characteristics: List<BluetoothGattCharacteristic>,
         endpointId: Long,
         hubId: Long,
+        uid: Int,
+        attributionTag: String?,
     ): GattOffloadSession.InnerParcel {
         gatt.enforceGattThread()
         check(adapterService.isGattServerOffloadSupported()) { "GATT server offload unsupported" }
@@ -973,6 +979,8 @@ class GattServerManager(
                 getGattDatabaseForOffload(service, characteristics),
                 endpointId,
                 hubId,
+                uid,
+                attributionTag ?: "",
             )
         }
     }

@@ -255,6 +255,7 @@ typedef struct {
   /** Offload GATT characteristics */
   BtStatus (*offload_characteristics)(int conn_id, btgatt_db_element_t* service,
                                       size_t elements_count, uint64_t endpoint_id, uint64_t hub_id,
+                                      int uid, std::string attribution_tag,
                                       btgatt_offload_result_t* result);
 
   /** Unoffload GATT characteristics */

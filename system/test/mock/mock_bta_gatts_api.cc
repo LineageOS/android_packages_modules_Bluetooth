@@ -66,6 +66,7 @@ void BTA_GATTS_InitBonded(void) { inc_func_call_count(__func__); }
 void BTA_GATTS_OffloadCharacteristics(tCONN_ID /* conn_id */,
                                       std::vector<btgatt_db_element_t> /* service */,
                                       uint64_t /* endpoint_id */, uint64_t /* hub_id */,
+                                      int /* uid */, std::string /* attribution_tag */,
                                       std::promise<btgatt_offload_result_t> /* promise */) {
   inc_func_call_count(__func__);
 }

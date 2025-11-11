@@ -129,6 +129,7 @@ bool gatt_offload_init() {
  ******************************************************************************/
 void gatt_offload_characteristics(tCONN_ID conn_id, bool is_server, btgatt_db_element_t* service,
                                   size_t elements_count, uint64_t endpoint_id, uint64_t hub_id,
+                                  int uid, std::string attribution_tag,
                                   std::promise<btgatt_offload_result_t> promise) {
   bluetooth::hal::GattSession hal_session;
   tGATT_STATUS status = gatt_offload_characteristics_impl(
@@ -137,8 +138,11 @@ void gatt_offload_characteristics(tCONN_ID conn_id, bool is_server, btgatt_db_el
     send_offload_session_register_complete(hal_session.id, status, promise);
     return;
   }
-  add_hal_session(tGATT_OFFLOAD_SESSION{
-          .hal_session = hal_session, .conn_id = conn_id, .promise_opt = std::move(promise)});
+  add_hal_session(tGATT_OFFLOAD_SESSION{.hal_session = hal_session,
+                                        .conn_id = conn_id,
+                                        .promise_opt = std::move(promise),
+                                        .uid = uid,
+                                        .attribution_tag = std::move(attribution_tag)});
 }
 
 /*******************************************************************************
@@ -262,28 +266,44 @@ void gatt_offload_clear_sessions_by_conn_id(tCONN_ID conn_id) {
  *
  ******************************************************************************/
 void gatt_offload_sessions_dump(int fd) {
-  std::stringstream stream;
+  std::string result;
+  auto out = std::back_inserter(result);
 
-  stream << "Number of active offload sessions: " << gatt_cb.offload_sessions.size() << "\n";
+  std::map<int, std::vector<const tGATT_OFFLOAD_SESSION*>> sessions_by_uid;
+
+  std::format_to(out, "Number of active offload sessions: {}\n", gatt_cb.offload_sessions.size());
   for (const auto& element : gatt_cb.offload_sessions) {
-    const tGATT_OFFLOAD_SESSION& session = element.second;
-    stream << " session_id: " << session.hal_session.id
-           << " acl_connection_handle: " << std::setw(4) << std::setfill('0') << std::hex
-           << session.hal_session.acl_connection_handle
-           << " att_mtu: " << session.hal_session.att_mtu
-           << " gatt_role: " << static_cast<int>(session.hal_session.role)
-           << " service_uuid: " << session.hal_session.service_uuid.ToString()
-           << " endpoint_id: " << session.hal_session.endpoint_info.endpoint_id
-           << " hub_id: " << session.hal_session.endpoint_info.hub_id
-           << " conn_id: " << session.conn_id;
-    for (const auto& characteristic : session.hal_session.characteristics) {
-      stream << " char uuid: " << characteristic.uuid.ToString()
-             << " char properties: " << std::setw(1) << std::setfill('0') << std::hex
-             << characteristic.properties << " char handle: " << characteristic.value_handle;
-    }
-    stream << "\n";
+    sessions_by_uid[element.second.uid].push_back(&element.second);
   }
-  dprintf(fd, "GATT offload sessions\n%s\n", stream.str().c_str());
+
+  for (const auto& pair : sessions_by_uid) {
+    std::format_to(out, "  UID: {}\n", pair.first);
+    for (const auto* session_ptr : pair.second) {
+      const tGATT_OFFLOAD_SESSION& session = *session_ptr;
+      std::format_to(out,
+                     "    Session ID: {}, Conn ID: {}, ACL Handle: {:04x}, MTU: {}\n"
+                     "      GATT Role: {}, Service UUID: {}\n"
+                     "      Endpoint ID: {}, Hub ID: {}\n"
+                     "      Attribution Tag: {}\n",
+                     session.hal_session.id, session.conn_id,
+                     session.hal_session.acl_connection_handle, session.hal_session.att_mtu,
+                     static_cast<int>(session.hal_session.role), session.hal_session.service_uuid,
+                     session.hal_session.endpoint_info.endpoint_id,
+                     session.hal_session.endpoint_info.hub_id, session.attribution_tag);
+
+      if (!session.hal_session.characteristics.empty()) {
+        std::format_to(out, "      Characteristics:\n");
+        for (const auto& characteristic : session.hal_session.characteristics) {
+          std::format_to(out,
+                         "        - UUID: {}\n"
+                         "          Handle: {}, Properties: {:02x}\n",
+                         characteristic.uuid, characteristic.value_handle,
+                         characteristic.properties);
+        }
+      }
+    }
+  }
+  dprintf(fd, "GATT offload sessions\n%s\n", result.c_str());
 }
 
 static tGATT_STATUS gatt_offload_characteristics_impl(tCONN_ID conn_id, bool is_server,

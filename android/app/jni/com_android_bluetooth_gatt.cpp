@@ -1946,17 +1946,19 @@ static void setPeriodicAdvertisingEnableNative(JNIEnv* /* env */, jobject /* obj
 
 static jobject gattClientOffloadCharacteristicsNative(JNIEnv* env, jobject /* object */,
                                                       jint conn_id, jobject gatt_db_elements,
-                                                      jlong endpoint_Id, jlong hub_id) {
+                                                      jlong endpoint_Id, jlong hub_id, jint uid,
+                                                      jstring attribution_tag) {
   if (!sGattIf) {
     return env->NewObject(android_bluetooth_GattOffloadSession.clazz,
                           android_bluetooth_GattOffloadSession.constructor,
                           BTGATT_OFFLOAD_SESSION_ID_UNKNOWN, tGATT_STATUS::GATT_ERROR);
   }
 
+  std::string attribution_tag_str = stringFromJstring(env, attribution_tag);
   btgatt_offload_result_t result{BTGATT_OFFLOAD_SESSION_ID_UNKNOWN, tGATT_STATUS::GATT_ERROR};
   std::vector<btgatt_db_element_t> db = convertToDbElementsVector(env, gatt_db_elements);
-  sGattIf->client->offload_characteristics(conn_id, db.data(), db.size(), endpoint_Id, hub_id,
-                                           &result);
+  sGattIf->client->offload_characteristics(conn_id, db.data(), db.size(), endpoint_Id, hub_id, uid,
+                                           std::move(attribution_tag_str), &result);
   return env->NewObject(android_bluetooth_GattOffloadSession.clazz,
                         android_bluetooth_GattOffloadSession.constructor, result.session_id,
                         result.status);
@@ -1964,16 +1966,18 @@ static jobject gattClientOffloadCharacteristicsNative(JNIEnv* env, jobject /* ob
 
 static jobject gattServerOffloadCharacteristicsNative(JNIEnv* env, jobject /* object */,
                                                       jint conn_id, jobject gatt_db_elements,
-                                                      jlong endpoint_Id, jlong hub_id) {
+                                                      jlong endpoint_Id, jlong hub_id, jint uid,
+                                                      jstring attribution_tag) {
   if (!sGattIf) {
     return env->NewObject(android_bluetooth_GattOffloadSession.clazz,
                           android_bluetooth_GattOffloadSession.constructor,
                           BTGATT_OFFLOAD_SESSION_ID_UNKNOWN, tGATT_STATUS::GATT_ERROR);
   }
+  std::string attribution_tag_str = stringFromJstring(env, attribution_tag);
   btgatt_offload_result_t result{BTGATT_OFFLOAD_SESSION_ID_UNKNOWN, tGATT_STATUS::GATT_ERROR};
   std::vector<btgatt_db_element_t> db = convertToDbElementsVector(env, gatt_db_elements);
-  sGattIf->server->offload_characteristics(conn_id, db.data(), db.size(), endpoint_Id, hub_id,
-                                           &result);
+  sGattIf->server->offload_characteristics(conn_id, db.data(), db.size(), endpoint_Id, hub_id, uid,
+                                           std::move(attribution_tag_str), &result);
   return env->NewObject(android_bluetooth_GattOffloadSession.clazz,
                         android_bluetooth_GattOffloadSession.constructor, result.session_id,
                         result.status);
@@ -2173,10 +2177,12 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
           {"gattSubrateRequestNative", "(ILjava/lang/String;IIIII)I",
            (void*)gattSubrateRequestNative},
           {"gattClientOffloadCharacteristicsNative",
-           "(ILjava/util/List;JJ)Landroid/bluetooth/GattOffloadSession$InnerParcel;",
+           "(ILjava/util/List;JJILjava/lang/String;)Landroid/bluetooth/"
+           "GattOffloadSession$InnerParcel;",
            (void*)gattClientOffloadCharacteristicsNative},
           {"gattServerOffloadCharacteristicsNative",
-           "(ILjava/util/List;JJ)Landroid/bluetooth/GattOffloadSession$InnerParcel;",
+           "(ILjava/util/List;JJILjava/lang/String;)Landroid/bluetooth/"
+           "GattOffloadSession$InnerParcel;",
            (void*)gattServerOffloadCharacteristicsNative},
           {"gattClientUnoffloadCharacteristicsNative", "(II)V",
            (void*)gattClientUnoffloadCharacteristicsNative},
