@@ -44,8 +44,10 @@ public:
    *
    * @param state one of the values from bthf_audio_state_t
    * @param bd_addr remote device address
+   * @param reason optional information about the audio state change
    */
-  virtual void AudioStateCallback(bthf_audio_state_t state, RawAddress* bd_addr) = 0;
+  virtual void AudioStateCallback(bthf_audio_state_t state, RawAddress* bd_addr,
+                                  uint8_t reason) = 0;
 
   /**
    * Callback for VR connection state change.
