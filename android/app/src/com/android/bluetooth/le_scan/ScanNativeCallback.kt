@@ -90,18 +90,23 @@ class ScanNativeCallback(private val scanController: ScanController) : NativeCal
             onScannerRegistered(status, scannerId, UUID(uuidMsb, uuidLsb))
         }
 
-    fun onScanFilterEnableDisabled(action: Int, status: Int, clientIf: Int) {
+    fun onScanFilterEnableDisabled(action: Int, status: Int, scannerId: Int) {
         Log.d(
             TAG,
-            "onScanFilterEnableDisabled(): action=$action, status=$status, clientIf=$clientIf",
+            "onScanFilterEnableDisabled(): action=$action, status=$status, scannerId=$scannerId",
         )
         callbackDone()
     }
 
-    fun onScanFilterParamsConfigured(action: Int, status: Int, clientIf: Int, availableSpace: Int) {
+    fun onScanFilterParamsConfigured(
+        action: Int,
+        status: Int,
+        scannerId: Int,
+        availableSpace: Int,
+    ) {
         Log.d(
             TAG,
-            "onScanFilterParamsConfigured(): action=$action, status=$status, clientIf=$clientIf," +
+            "onScanFilterParamsConfigured(): action=$action, status=$status, scannerId=$scannerId," +
                 " availableSpace=$availableSpace",
         )
         callbackDone()
@@ -110,29 +115,29 @@ class ScanNativeCallback(private val scanController: ScanController) : NativeCal
     fun onScanFilterConfig(
         action: Int,
         status: Int,
-        clientIf: Int,
+        scannerId: Int,
         filterType: Int,
         availableSpace: Int,
     ) {
         Log.d(
             TAG,
-            "onScanFilterConfig(): action=$action, status=$status, clientIf=$clientIf," +
+            "onScanFilterConfig(): action=$action, status=$status, scannerId=$scannerId," +
                 " filterType=$filterType, availableSpace=$availableSpace",
         )
         callbackDone()
     }
 
-    fun onBatchScanStorageConfigured(status: Int, clientIf: Int) {
-        Log.d(TAG, "onBatchScanStorageConfigured(): status=$status, clientIf=$clientIf")
+    fun onBatchScanStorageConfigured(status: Int, scannerId: Int) {
+        Log.d(TAG, "onBatchScanStorageConfigured(): status=$status, scannerId=$scannerId")
         callbackDone()
     }
 
     // TODO: split into two different callbacks : onBatchScanStarted and onBatchScanStopped
-    fun onBatchScanStartStopped(startStopAction: Int, status: Int, clientIf: Int) {
+    fun onBatchScanStartStopped(startStopAction: Int, status: Int, scannerId: Int) {
         Log.d(
             TAG,
             "onBatchScanStartStopped(): startStopAction=$startStopAction, status=$status," +
-                " clientIf=$clientIf",
+                " scannerId=$scannerId",
         )
         callbackDone()
     }
@@ -155,12 +160,12 @@ class ScanNativeCallback(private val scanController: ScanController) : NativeCal
         doOnScanThread { onBatchScanReports(status, scannerId, reportType, numRecords, recordData) }
     }
 
-    fun onBatchScanThresholdCrossed(clientIf: Int) = doOnScanThread {
-        onBatchScanThresholdCrossed(clientIf)
+    fun onBatchScanThresholdCrossed(scannerId: Int) = doOnScanThread {
+        onBatchScanThresholdCrossed(scannerId)
     }
 
     fun createOnTrackAdvFoundLostObject(
-        clientIf: Int,
+        scannerId: Int,
         advPacketLen: Int,
         advPacket: ByteArray?,
         scanResponseLen: Int,
@@ -175,7 +180,7 @@ class ScanNativeCallback(private val scanController: ScanController) : NativeCal
         timeStamp: Int,
     ) =
         AdvtFilterOnFoundOnLostInfo(
-            clientIf,
+            scannerId,
             advPacketLen,
             ByteString.copyFrom(advPacket),
             scanResponseLen,
