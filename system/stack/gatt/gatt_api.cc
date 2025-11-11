@@ -1286,6 +1286,36 @@ void GATTC_InformServiceChangedIndication(const RawAddress& remote_bda) {
   gattc_offload_handle_service_changed_indication(p_tcb);
 }
 
+/*******************************************************************************
+ *
+ * Function         GATTC_SetDefaultMtu
+ *
+ * Description      Set the default MTU for ATT bearer associated with remote device.
+ *
+ * Parameter        remote_bda    : peer device address. (input)
+ *
+ ******************************************************************************/
+void GATTC_SetDefaultMtu(const RawAddress& remote_bda) {
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(remote_bda, BT_TRANSPORT_LE);
+  if (!p_tcb) {
+    log::info("Unknown remote_bda: {}", remote_bda);
+    return;
+  }
+
+  for (auto& [i, p_reg] : gatt_cb.cl_rcb_map) {
+    if (!p_reg->in_use) {
+      continue;
+    }
+    auto mtu_pref = p_reg->auto_mtu_enabled.find(remote_bda);
+    if (mtu_pref != p_reg->auto_mtu_enabled.cend() && mtu_pref->second) {
+      tCONN_ID conn_id = gatt_create_conn_id(p_tcb->tcb_idx, p_reg->gatt_if);
+      tGATT_STATUS status = GATTC_ConfigureMTU(conn_id, gatt_get_local_mtu());
+      log::verbose("set default MTU for the app: {}, status: {}", p_reg->gatt_if, status);
+      break;
+    }
+  }
+}
+
 /******************************************************************************/
 /*                                                                            */
 /*                  GATT  APIs                                                */
@@ -1613,6 +1643,8 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE ad
     }
     p_reg->auto_mtu_enabled.erase(bd_addr);
     p_reg->auto_mtu_enabled.insert({bd_addr, auto_mtu_enabled});
+    log::verbose("Saving MTU preference from app {} for {} : auto_mtu_enabled: {}", gatt_if,
+                 bd_addr, auto_mtu_enabled);
   }
 
   return ret;

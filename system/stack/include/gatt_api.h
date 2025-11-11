@@ -1402,6 +1402,17 @@ bool GATT_SubrateRequest(tGATT_IF client_if, const RawAddress& bd_addr,
 void GATT_UpdateSubrateConfig(tGATT_SUBRATE_MODE subrate_mode,
                               uint16_t subrate_max, uint16_t subrate_min,
                               uint16_t cont_num);
+
+/*******************************************************************************
+ * Function         GATTC_SetDefaultMtu
+ *
+ * Description      Set the default MTU for ATT bearer associated with remote device.
+ *
+ * Parameter        remote_bda    : peer device address. (input)
+ *
+ ******************************************************************************/
+void GATTC_SetDefaultMtu(const RawAddress& remote_bda);
+
 // Enables the GATT profile on the device.
 // It clears out the control blocks, and registers with L2CAP.
 void gatt_init(void);
