@@ -143,6 +143,26 @@ void BTA_HhOpen(const AclLinkSpec& link_spec, bool direct) {
 
 /*******************************************************************************
  *
+ * Function         BTA_HhOpen
+ *
+ * Description      Cancel connecting to a device of specified BD address.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void BTA_HhCancelOpen(const AclLinkSpec& link_spec) {
+  tBTA_HH_API_CANCEL_CONN* p_buf =
+          (tBTA_HH_API_CANCEL_CONN*)osi_calloc(sizeof(tBTA_HH_API_CANCEL_CONN));
+
+  p_buf->hdr.event = BTA_HH_API_CANCEL_OPEN_EVT;
+  p_buf->hdr.layer_specific = BTA_HH_INVALID_HANDLE;
+  p_buf->link_spec = link_spec;
+
+  bta_sys_sendmsg((void*)p_buf);
+}
+
+/*******************************************************************************
+ *
  * Function  bta_hh_snd_write_dev
  *
  ******************************************************************************/

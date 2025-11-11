@@ -529,6 +529,22 @@ void bta_hh_connect(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
 
 /*******************************************************************************
  *
+ * Function         bta_hh_cancel_connect
+ *
+ * Description      Cancel HID host connection.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void bta_hh_cancel_connect(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* /* p_data */) {
+  // Only applicable to LE background connection for now.
+  if (p_cb->link_spec.transport == BT_TRANSPORT_LE) {
+    bta_hh_le_remove_dev_bg_conn(p_cb);
+  }
+}
+
+/*******************************************************************************
+ *
  * Function         bta_hh_api_disc_act
  *
  * Description      HID Host initiate a disconnection.

@@ -1725,16 +1725,20 @@ static BtStatus disconnect(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRA
     return BtifStatus(UNHANDLED);
   }
 
+  btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
   if (!reconnect_allowed) {
     log::info("Incoming reconnections disabled for device {}", link_spec);
     btif_hh_added_device_t* added_dev = btif_hh_find_added_dev(link_spec);
     if (added_dev != nullptr) {
       added_dev->reconnect_allowed = reconnect_allowed;
       btif_storage_set_hid_connection_policy(added_dev->link_spec, reconnect_allowed);
+      // If a bonded LE device is not currently connected, cancel the background connection.
+      if (p_dev == nullptr && transport == BT_TRANSPORT_LE) {
+        BTA_HhCancelOpen(link_spec);
+      }
     }
   }
 
-  btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
   if (p_dev == nullptr) {
     // Conclude the request if the device is already disconnected
     p_dev = btif_hh_find_dev_by_link_spec(link_spec);

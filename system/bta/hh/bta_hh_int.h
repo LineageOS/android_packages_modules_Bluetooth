@@ -42,6 +42,7 @@
 /* state machine events, these events are handled by the state machine */
 enum tBTA_HH_INT_EVT : uint16_t {
   BTA_HH_API_OPEN_EVT = BTA_SYS_EVT_START(BTA_ID_HH),
+  BTA_HH_API_CANCEL_OPEN_EVT,
   BTA_HH_API_CLOSE_EVT,
   BTA_HH_INT_OPEN_EVT,
   BTA_HH_INT_CLOSE_EVT,
@@ -96,6 +97,11 @@ typedef struct {
   bool direct;
 } tBTA_HH_API_CONN;
 
+typedef struct {
+  BT_HDR_RIGID hdr;
+  AclLinkSpec link_spec;
+} tBTA_HH_API_CANCEL_CONN;
+
 /* internal event data from BTE HID callback */
 typedef struct {
   BT_HDR_RIGID hdr;
@@ -130,6 +136,7 @@ typedef struct {
 typedef union {
   BT_HDR_RIGID hdr;
   tBTA_HH_API_CONN api_conn;
+  tBTA_HH_API_CANCEL_CONN api_cancel_conn;
   tBTA_HH_API_CLOSE api_close;
   tBTA_HH_CMD_DATA api_sndcmd;
   tBTA_HH_CBACK_DATA hid_cback;
@@ -267,6 +274,7 @@ void bta_hh_data_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
 void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
 void bta_hh_connect(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
 void bta_hh_connect_upgrade(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
+void bta_hh_cancel_connect(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
 void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
 void bta_hh_write_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
 void bta_hh_get_dscp_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
