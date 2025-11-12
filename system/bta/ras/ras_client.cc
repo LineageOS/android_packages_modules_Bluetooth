@@ -821,7 +821,7 @@ public:
         return;
       }
       uint16_t first_segment_timeout_ms = kFirstSegmentRangingDataTimeoutMs;
-      BtmDevice* p_device = btm_find_dev(tracker->address_);
+      const BtmDevice* p_device = btm_find_dev(tracker->address_);
       if (p_device && (p_device->conn_params.peripheral_latency >= 2)) {
         first_segment_timeout_ms = kLowPowerFirstSegmentRangingDataTimeoutMs;
       }

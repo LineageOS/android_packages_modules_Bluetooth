@@ -58,7 +58,7 @@ bool BTM_SecDeleteRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback) {
 }
 
 bool BTM_IsRemoteNameKnown(const RawAddress& bd_addr, tBT_TRANSPORT /* transport */) {
-  BtmDevice* p_device = btm_find_dev(bd_addr);
+  const BtmDevice* p_device = btm_find_dev(bd_addr);
   return (p_device == nullptr) ? false : p_device->sec_rec.is_name_known();
 }
 

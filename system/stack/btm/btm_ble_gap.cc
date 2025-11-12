@@ -1212,7 +1212,7 @@ static void btm_ble_read_remote_appearance_cmpl(bool status, const RawAddress& b
   log::info("Appearance 0x{:04x}, Class of Device {} found for {}", appearance, dev_class_text(cod),
             bda);
 
-  BtmDevice* p_device = btm_find_dev(bda);
+  BtmDevice* p_device = btm_get_dev(bda);
   if (p_device != nullptr) {
     p_device->dev_class = cod;
   }

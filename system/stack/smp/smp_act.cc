@@ -292,7 +292,7 @@ void smp_send_pair_fail(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Description  actions related to sending pairing request
  ******************************************************************************/
 void smp_send_pair_req(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
-  BtmDevice* p_device = btm_find_dev(p_cb->pairing_bda);
+  BtmDevice* p_device = btm_get_dev(p_cb->pairing_bda);
   log::verbose("addr:{}", p_cb->pairing_bda);
 
   /* erase all keys when central sends pairing req*/
@@ -548,7 +548,7 @@ void smp_proc_pair_fail(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  ******************************************************************************/
 void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   uint8_t* p = p_data->p_data;
-  BtmDevice* p_device = btm_find_dev(p_cb->pairing_bda);
+  BtmDevice* p_device = btm_get_dev(p_cb->pairing_bda);
 
   log::verbose("pairing_bda={}", p_cb->pairing_bda);
 
@@ -845,9 +845,15 @@ void smp_process_keypress_notification(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  ******************************************************************************/
 void smp_br_process_pairing_command(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   uint8_t* p = p_data->p_data;
-  BtmDevice* p_device = btm_find_dev(p_cb->pairing_bda);
+  BtmDevice* p_device = btm_get_dev(p_cb->pairing_bda);
 
   log::verbose("addr:{}", p_cb->pairing_bda);
+
+  if (p_device == nullptr) {
+    log::error("Device not found for bd_addr: {}", p_cb->pairing_bda);
+    return;
+  }
+
   /* rejecting BR pairing request over non-SC BR link */
   if (!p_device->sec_rec.new_encryption_key_is_p256 && p_cb->role == HCI_ROLE_PERIPHERAL) {
     tSMP_INT_DATA smp_int_data;
@@ -1375,7 +1381,12 @@ void smp_key_distribution(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     /* state check to prevent re-entrant */
     if (smp_get_state() == SMP_STATE_BOND_PENDING) {
       if (p_cb->derive_lk) {
-        BtmDevice* p_device = btm_find_dev(p_cb->pairing_bda);
+        const BtmDevice* p_device = btm_find_dev(p_cb->pairing_bda);
+        if (p_device == nullptr) {
+          log::error("Device record not found for bd_addr: {}", p_cb->pairing_bda);
+          return;
+        }
+
         if (!(p_device->sec_rec.sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED) &&
             (p_device->sec_rec.sec_flags & BTM_SEC_LINK_KEY_AUTHED)) {
           log::verbose("BR key is higher security than existing LE keys, don't derive LK from LTK");
@@ -2135,7 +2146,7 @@ bool smp_proc_ltk_request(const RawAddress& bda) {
   if (bda == smp_cb.pairing_bda) {
     match = true;
   } else {
-    BtmDevice* p_device = btm_find_dev(bda);
+    const BtmDevice* p_device = btm_find_dev(bda);
     if (p_device != NULL && p_device->ble.pseudo_addr == smp_cb.pairing_bda &&
         p_device->ble.pseudo_addr != RawAddress::kEmpty) {
       match = true;
@@ -2234,7 +2245,7 @@ void smp_br_process_link_key(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
     return;
   }
 
-  BtmDevice* p_device = btm_find_dev(p_cb->pairing_bda);
+  BtmDevice* p_device = btm_get_dev(p_cb->pairing_bda);
   if (p_device) {
     log::verbose("dev_type={}", p_device->device_type);
     p_device->device_type |= BT_DEVICE_TYPE_BLE;
