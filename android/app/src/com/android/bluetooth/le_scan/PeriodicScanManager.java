@@ -79,7 +79,9 @@ public class PeriodicScanManager {
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mScanController = scanController;
         mNativeCallback =
-                requireNonNullElseGet(nativeCallback, () -> new PeriodicScanNativeCallback(this));
+                requireNonNullElseGet(
+                        nativeCallback,
+                        () -> new PeriodicScanNativeCallback(mAdapterService, this));
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface, () -> new PeriodicScanNativeInterface(mNativeCallback));

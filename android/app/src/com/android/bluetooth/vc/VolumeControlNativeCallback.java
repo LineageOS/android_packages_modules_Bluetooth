@@ -31,7 +31,6 @@ import android.bluetooth.AudioInputControl.AudioInputStatus;
 import android.bluetooth.AudioInputControl.AudioInputType;
 import android.bluetooth.AudioInputControl.GainMode;
 import android.bluetooth.AudioInputControl.Mute;
-import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
@@ -40,20 +39,15 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.function.Consumer;
 
-class VolumeControlNativeCallback implements NativeCallback {
+class VolumeControlNativeCallback extends NativeCallback {
     private static final String TAG = VolumeControlNativeCallback.class.getSimpleName();
 
-    private final AdapterService mAdapterService;
     private final VolumeControlService mVolumeControlService;
 
     VolumeControlNativeCallback(
             AdapterService adapterService, VolumeControlService volumeControlService) {
-        mAdapterService = requireNonNull(adapterService);
+        super(adapterService);
         mVolumeControlService = requireNonNull(volumeControlService);
-    }
-
-    private BluetoothDevice getDevice(byte[] address) {
-        return mAdapterService.getDeviceFromByte(address);
     }
 
     private void sendMessageToService(Consumer<VolumeControlService> action) {

@@ -18,12 +18,14 @@ package com.android.bluetooth.pan
 
 import android.bluetooth.BluetoothProfile
 import android.util.Log
+import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.profile.NativeCallback
 import com.android.internal.annotations.VisibleForTesting
 
 private const val TAG = "PanNativeCallback"
 
-class PanNativeCallback(private val service: PanService) : NativeCallback {
+class PanNativeCallback(adapterService: AdapterService, private val service: PanService) :
+    NativeCallback(adapterService) {
 
     fun onControlStateChanged(localRole: Int, halState: Int, error: Int, ifname: String) {
         service.onControlStateChanged(localRole, convertHalState(halState), error, ifname)

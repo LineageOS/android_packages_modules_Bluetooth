@@ -34,19 +34,14 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /** Hearing Access Profile Client Native Callback (from native to Java). */
-public class HapClientNativeCallback implements NativeCallback {
+public class HapClientNativeCallback extends NativeCallback {
     private static final String TAG = HapClientNativeCallback.class.getSimpleName();
 
-    private final AdapterService mAdapterService;
     private final HapClientService mHapClientService;
 
     HapClientNativeCallback(AdapterService adapterService, HapClientService hapClientService) {
-        mAdapterService = requireNonNull(adapterService);
+        super(adapterService);
         mHapClientService = requireNonNull(hapClientService);
-    }
-
-    private BluetoothDevice getDevice(byte[] address) {
-        return mAdapterService.getDeviceFromByte(address);
     }
 
     private void sendMessageToService(Consumer<HapClientService> action) {

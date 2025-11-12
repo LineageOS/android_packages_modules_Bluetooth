@@ -114,7 +114,9 @@ public class PanService extends ConnectableProfile {
             UserManager userManager,
             Looper looper) {
         super(BluetoothProfile.PAN, adapterService);
-        mNativeCallback = requireNonNullElseGet(nativeCallback, () -> new PanNativeCallback(this));
+        mNativeCallback =
+                requireNonNullElseGet(
+                        nativeCallback, () -> new PanNativeCallback(getAdapterService(), this));
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface, () -> new PanNativeInterface(mNativeCallback));

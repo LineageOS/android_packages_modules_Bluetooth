@@ -132,8 +132,8 @@ public class A2dpService extends ConnectableProfile {
                         nativeInterface,
                         () ->
                                 new A2dpNativeInterface(
-                                        adapterService,
-                                        new A2dpNativeCallback(adapterService, this)));
+                                        getAdapterService(),
+                                        new A2dpNativeCallback(getAdapterService(), this)));
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
         mActiveDeviceManager = activeDeviceManager;
         mCompanionDeviceManager = companionDeviceManager;

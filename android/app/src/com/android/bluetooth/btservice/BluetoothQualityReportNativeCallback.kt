@@ -25,8 +25,8 @@ import com.android.bluetooth.profile.NativeCallback
 
 private const val TAG = "BluetoothQualityReportNativeCallback"
 
-class BluetoothQualityReportNativeCallback(private val adapterService: AdapterService) :
-    NativeCallback {
+class BluetoothQualityReportNativeCallback(adapterService: AdapterService) :
+    NativeCallback(adapterService) {
 
     private fun bqrDeliver(
         remoteAddr: ByteArray,

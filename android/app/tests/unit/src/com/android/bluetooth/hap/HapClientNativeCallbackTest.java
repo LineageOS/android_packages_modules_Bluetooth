@@ -22,6 +22,7 @@ import static android.bluetooth.BluetoothStatusCodes.ERROR_HAP_PRESET_NAME_TOO_L
 import static android.bluetooth.BluetoothStatusCodes.ERROR_REMOTE_OPERATION_NOT_SUPPORTED;
 import static android.bluetooth.BluetoothStatusCodes.ERROR_REMOTE_OPERATION_REJECTED;
 
+import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.hap.HapClientNativeCallback.STATUS_INVALID_PRESET_INDEX;
 import static com.android.bluetooth.hap.HapClientNativeCallback.STATUS_INVALID_PRESET_NAME_LENGTH;
 import static com.android.bluetooth.hap.HapClientNativeCallback.STATUS_OPERATION_NOT_POSSIBLE;
@@ -34,9 +35,11 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHapPresetInfo;
 import android.platform.test.flag.junit.SetFlagsRule;
 
+import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.tests.bluetooth.FlagsWrapper;
@@ -67,6 +70,8 @@ public class HapClientNativeCallbackTest {
     @Mock private AdapterService mAdapterService;
     @Mock private HapClientService mService;
 
+    private final BluetoothDevice mDevice = getTestDevice(0);
+
     private InOrder mInOrder;
     private HapClientNativeCallback mNativeCallback;
 
@@ -83,6 +88,8 @@ public class HapClientNativeCallbackTest {
     public void setUp() throws Exception {
         mInOrder = inOrder(mService);
         doReturn(true).when(mService).isAvailable();
+        var deviceBytes = getByteAddress(mDevice);
+        doReturn(mDevice).when(mAdapterService).getDeviceFromByte(deviceBytes);
         doAnswer(
                         inv -> {
                             ((Consumer<HapClientService>) inv.getArgument(0)).accept(mService);
@@ -95,29 +102,29 @@ public class HapClientNativeCallbackTest {
 
     @Test
     public void onConnectionStateChanged() {
-        mNativeCallback.onConnectionStateChanged(null, STATE_CONNECTED);
-        verify(mService).onConnectionStateChanged(null, STATE_CONNECTED);
+        mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice), STATE_CONNECTED);
+        verify(mService).onConnectionStateChanged(mDevice, STATE_CONNECTED);
     }
 
     @Test
     public void onDeviceAvailable() {
         int features = 1;
-        mNativeCallback.onDeviceAvailable(null, features);
-        verify(mService).onDeviceAvailable(null, features);
+        mNativeCallback.onDeviceAvailable(getByteAddress(mDevice), features);
+        verify(mService).onDeviceAvailable(mDevice, features);
     }
 
     @Test
     public void onFeaturesUpdate() {
         int features = 1;
-        mNativeCallback.onFeaturesUpdate(null, features);
-        verify(mService).onFeaturesUpdate(null, features);
+        mNativeCallback.onFeaturesUpdate(getByteAddress(mDevice), features);
+        verify(mService).onFeaturesUpdate(mDevice, features);
     }
 
     @Test
     public void onPresetSelected() {
         int presetIndex = 0;
-        mNativeCallback.onPresetSelected(null, presetIndex);
-        verify(mService).onPresetSelected(null, presetIndex);
+        mNativeCallback.onPresetSelected(getByteAddress(mDevice), presetIndex);
+        verify(mService).onPresetSelected(mDevice, presetIndex);
     }
 
     @Test
@@ -130,26 +137,27 @@ public class HapClientNativeCallbackTest {
 
     @Test
     public void onPresetSelectionFailed() {
+        byte[] deviceBytes = getByteAddress(mDevice);
         /* Not a valid name length */
-        mNativeCallback.onPresetSelectionFailed(null, STATUS_INVALID_PRESET_NAME_LENGTH);
-        mInOrder.verify(mService).onPresetSelectionFailed(null, ERROR_HAP_PRESET_NAME_TOO_LONG);
+        mNativeCallback.onPresetSelectionFailed(deviceBytes, STATUS_INVALID_PRESET_NAME_LENGTH);
+        mInOrder.verify(mService).onPresetSelectionFailed(mDevice, ERROR_HAP_PRESET_NAME_TOO_LONG);
 
         /* Invalid preset index provided */
-        mNativeCallback.onPresetSelectionFailed(null, STATUS_INVALID_PRESET_INDEX);
-        mInOrder.verify(mService).onPresetSelectionFailed(null, ERROR_HAP_INVALID_PRESET_INDEX);
+        mNativeCallback.onPresetSelectionFailed(deviceBytes, STATUS_INVALID_PRESET_INDEX);
+        mInOrder.verify(mService).onPresetSelectionFailed(mDevice, ERROR_HAP_INVALID_PRESET_INDEX);
 
         /* Not allowed on this particular preset */
-        mNativeCallback.onPresetSelectionFailed(null, STATUS_SET_NAME_NOT_ALLOWED);
-        mInOrder.verify(mService).onPresetSelectionFailed(null, ERROR_REMOTE_OPERATION_REJECTED);
+        mNativeCallback.onPresetSelectionFailed(deviceBytes, STATUS_SET_NAME_NOT_ALLOWED);
+        mInOrder.verify(mService).onPresetSelectionFailed(mDevice, ERROR_REMOTE_OPERATION_REJECTED);
 
         /* Not allowed on this particular preset at this time, might be possible later on */
-        mNativeCallback.onPresetSelectionFailed(null, STATUS_OPERATION_NOT_POSSIBLE);
-        mInOrder.verify(mService).onPresetSelectionFailed(null, ERROR_REMOTE_OPERATION_REJECTED);
+        mNativeCallback.onPresetSelectionFailed(deviceBytes, STATUS_OPERATION_NOT_POSSIBLE);
+        mInOrder.verify(mService).onPresetSelectionFailed(mDevice, ERROR_REMOTE_OPERATION_REJECTED);
 
         /* Not allowed on all presets - for example missing characteristic */
-        mNativeCallback.onPresetSelectionFailed(null, STATUS_OPERATION_NOT_SUPPORTED);
+        mNativeCallback.onPresetSelectionFailed(deviceBytes, STATUS_OPERATION_NOT_SUPPORTED);
         mInOrder.verify(mService)
-                .onPresetSelectionFailed(null, ERROR_REMOTE_OPERATION_NOT_SUPPORTED);
+                .onPresetSelectionFailed(mDevice, ERROR_REMOTE_OPERATION_NOT_SUPPORTED);
     }
 
     @Test
@@ -191,8 +199,8 @@ public class HapClientNativeCallbackTest {
                     .setAvailable(false)
                     .build()
         };
-        mNativeCallback.onPresetInfo(null, reason, presets);
-        verify(mService).onPresetInfo(null, reason, List.of(presets));
+        mNativeCallback.onPresetInfo(getByteAddress(mDevice), reason, presets);
+        verify(mService).onPresetInfo(mDevice, reason, List.of(presets));
     }
 
     @Test
@@ -211,25 +219,27 @@ public class HapClientNativeCallbackTest {
 
     @Test
     public void onSetPresetNameFailed() {
+        byte[] deviceBytes = getByteAddress(mDevice);
         /* Not a valid name length */
-        mNativeCallback.onSetPresetNameFailed(null, STATUS_INVALID_PRESET_NAME_LENGTH);
-        mInOrder.verify(mService).onSetPresetNameFailed(null, ERROR_HAP_PRESET_NAME_TOO_LONG);
+        mNativeCallback.onSetPresetNameFailed(deviceBytes, STATUS_INVALID_PRESET_NAME_LENGTH);
+        mInOrder.verify(mService).onSetPresetNameFailed(mDevice, ERROR_HAP_PRESET_NAME_TOO_LONG);
 
         /* Invalid preset index provided */
-        mNativeCallback.onSetPresetNameFailed(null, STATUS_INVALID_PRESET_INDEX);
-        mInOrder.verify(mService).onSetPresetNameFailed(null, ERROR_HAP_INVALID_PRESET_INDEX);
+        mNativeCallback.onSetPresetNameFailed(deviceBytes, STATUS_INVALID_PRESET_INDEX);
+        mInOrder.verify(mService).onSetPresetNameFailed(mDevice, ERROR_HAP_INVALID_PRESET_INDEX);
 
         /* Not allowed on this particular preset */
-        mNativeCallback.onSetPresetNameFailed(null, STATUS_SET_NAME_NOT_ALLOWED);
-        mInOrder.verify(mService).onSetPresetNameFailed(null, ERROR_REMOTE_OPERATION_REJECTED);
+        mNativeCallback.onSetPresetNameFailed(deviceBytes, STATUS_SET_NAME_NOT_ALLOWED);
+        mInOrder.verify(mService).onSetPresetNameFailed(mDevice, ERROR_REMOTE_OPERATION_REJECTED);
 
         /* Not allowed on this particular preset at this time, might be possible later on */
-        mNativeCallback.onSetPresetNameFailed(null, STATUS_OPERATION_NOT_POSSIBLE);
-        mInOrder.verify(mService).onSetPresetNameFailed(null, ERROR_REMOTE_OPERATION_REJECTED);
+        mNativeCallback.onSetPresetNameFailed(deviceBytes, STATUS_OPERATION_NOT_POSSIBLE);
+        mInOrder.verify(mService).onSetPresetNameFailed(mDevice, ERROR_REMOTE_OPERATION_REJECTED);
 
         /* Not allowed on all presets - for example missing characteristic */
-        mNativeCallback.onSetPresetNameFailed(null, STATUS_OPERATION_NOT_SUPPORTED);
-        mInOrder.verify(mService).onSetPresetNameFailed(null, ERROR_REMOTE_OPERATION_NOT_SUPPORTED);
+        mNativeCallback.onSetPresetNameFailed(deviceBytes, STATUS_OPERATION_NOT_SUPPORTED);
+        mInOrder.verify(mService)
+                .onSetPresetNameFailed(mDevice, ERROR_REMOTE_OPERATION_NOT_SUPPORTED);
     }
 
     @Test
@@ -259,5 +269,9 @@ public class HapClientNativeCallbackTest {
         mNativeCallback.onSetPresetNameForGroupFailed(groupId, STATUS_OPERATION_NOT_SUPPORTED);
         mInOrder.verify(mService)
                 .onSetPresetNameForGroupFailed(groupId, ERROR_REMOTE_OPERATION_NOT_SUPPORTED);
+    }
+
+    private static byte[] getByteAddress(BluetoothDevice device) {
+        return Utils.getBytesFromAddress(device.getAddress());
     }
 }

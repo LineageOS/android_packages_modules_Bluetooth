@@ -16,30 +16,25 @@
 
 package com.android.bluetooth.hearingaid
 
-import android.bluetooth.BluetoothDevice
 import android.util.Log
-import com.android.bluetooth.Utils
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.profile.NativeCallback
 
 private const val TAG = "HearingAidNativeCallback"
 
 class HearingAidNativeCallback(
-    private val adapterService: AdapterService,
+    adapterService: AdapterService,
     private val service: HearingAidService,
-) : NativeCallback {
-
-    private fun getDevice(address: ByteArray) =
-        adapterService.getRemoteDevice(Utils.getAddressStringFromByte(address))
+) : NativeCallback(adapterService) {
 
     fun onConnectionStateChanged(state: Int, address: ByteArray) {
-        val device: BluetoothDevice = getDevice(address)
+        val device = getDevice(address)
         Log.d(TAG, "onConnectionStateChanged(): device=$device, state=$state")
         service.onConnectionStateChangedFromNative(device, state)
     }
 
     fun onDeviceAvailable(capabilities: Byte, hiSyncId: Long, address: ByteArray) {
-        val device: BluetoothDevice = getDevice(address)
+        val device = getDevice(address)
         Log.d(
             TAG,
             ("onDeviceAvailable(): device=$device, capabilities=${capabilities.toInt()}") +

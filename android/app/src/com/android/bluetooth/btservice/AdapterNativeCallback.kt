@@ -21,9 +21,9 @@ import android.bluetooth.UidTraffic
 import com.android.bluetooth.profile.NativeCallback
 
 class AdapterNativeCallback(
-    private val adapterService: AdapterService,
+    adapterService: AdapterService,
     private val adapterProperties: AdapterProperties,
-) : NativeCallback {
+) : NativeCallback(adapterService) {
 
     private var remoteDevices: RemoteDevices? = null
     private var bondStateMachine: BondStateMachine? = null

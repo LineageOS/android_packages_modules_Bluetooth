@@ -66,7 +66,7 @@ public class VapsServerService extends ProfileService {
                         nativeInterface,
                         () ->
                                 new VapsServerNativeInterface(
-                                        new VapsServerNativeCallback(adapterService, this)));
+                                        new VapsServerNativeCallback(getAdapterService(), this)));
         Log.d(TAG, " VapsServerService(): service is starting");
 
         if (looper == null) {

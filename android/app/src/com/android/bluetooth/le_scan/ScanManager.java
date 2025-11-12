@@ -228,7 +228,7 @@ class ScanManager {
         this(
                 service,
                 scanController,
-                new ScanNativeCallback(scanController),
+                new ScanNativeCallback(service, scanController),
                 nativeInterface,
                 looper,
                 timeProvider);
