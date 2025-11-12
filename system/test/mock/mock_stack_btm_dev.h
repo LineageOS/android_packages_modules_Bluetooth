@@ -26,11 +26,18 @@ namespace stack_btm_dev {
 
 // Function state capture and return values, if needed
 struct btm_find_dev {
+  std::function<const BtmDevice*(const RawAddress& bd_addr)> body{
+          [](const RawAddress&) { return nullptr; }};
+  const BtmDevice* operator()(const RawAddress& bd_addr) { return body(bd_addr); }
+};
+extern struct btm_find_dev btm_find_dev;
+
+struct btm_get_dev {
   std::function<BtmDevice*(const RawAddress& bd_addr)> body{
           [](const RawAddress&) { return nullptr; }};
   BtmDevice* operator()(const RawAddress& bd_addr) { return body(bd_addr); }
 };
-extern struct btm_find_dev btm_find_dev;
+extern struct btm_get_dev btm_get_dev;
 
 struct BTM_Sec_AddressKnown {
   std::function<bool(const RawAddress& address)> body{

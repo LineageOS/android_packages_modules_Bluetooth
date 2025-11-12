@@ -161,6 +161,10 @@ BtmDevice* btm_ble_resolve_random_addr(const RawAddress& random_bda) {
     return (n == nullptr) ? (nullptr) : (static_cast<BtmDevice*>(list_node(n)));
   }
 
+  if (!btm_sec_cb.IsSecCBInitialized()) {
+    return nullptr;
+  }
+
   return btm_sec_cb.for_each_dev_rec(btm_ble_match_random_bda, (void*)&random_bda);
 }
 
@@ -205,6 +209,10 @@ static BtmDevice* btm_find_dev_by_identity_addr_(const RawAddress& bd_addr, uint
 static BtmDevice* btm_find_dev_by_identity_addr(const RawAddress& bd_addr, uint8_t addr_type) {
   if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
     return btm_find_dev_by_identity_addr_(bd_addr, addr_type);
+  }
+
+  if (!btm_sec_cb.IsSecCBInitialized()) {
+    return nullptr;
   }
 
   for (BtmDevice& device : btm_sec_cb.device_records) {
@@ -262,7 +270,7 @@ bool btm_identity_addr_to_random_pseudo_from_address_with_type(tBLE_BD_ADDR* add
  ******************************************************************************/
 bool btm_random_pseudo_to_identity_addr(RawAddress* random_pseudo,
                                         tBLE_ADDR_TYPE* p_identity_addr_type) {
-  BtmDevice* p_device = btm_find_dev(*random_pseudo);
+  const BtmDevice* p_device = btm_find_dev(*random_pseudo);
 
   if (p_device != NULL) {
     if (p_device->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
@@ -289,7 +297,7 @@ bool btm_random_pseudo_to_identity_addr(RawAddress* random_pseudo,
 void btm_ble_refresh_peer_resolvable_private_addr(const RawAddress& pseudo_bda,
                                                   const RawAddress& rpa,
                                                   tBLE_RAND_ADDR_TYPE rra_type) {
-  BtmDevice* p_device = btm_find_dev(pseudo_bda);
+  BtmDevice* p_device = btm_get_dev(pseudo_bda);
   if (p_device == nullptr) {
     log::warn("No matching known device in record");
     return;

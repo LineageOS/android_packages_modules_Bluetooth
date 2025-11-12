@@ -938,7 +938,7 @@ void smp_calculate_peer_dhkey_check(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) 
  *
  ******************************************************************************/
 bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb) {
-  BtmDevice* p_device;
+  const BtmDevice* p_device;
   RawAddress bda_for_lk;
   tBLE_ADDR_TYPE conn_addr_type;
 
@@ -998,7 +998,7 @@ bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb) {
 
 /** The function calculates and saves SC LTK derived from BR/EDR link key. */
 bool smp_calculate_long_term_key_from_link_key(tSMP_CB* p_cb) {
-  BtmDevice* p_device;
+  const BtmDevice* p_device;
 
   log::verbose("addr:{}", p_cb->pairing_bda);
 

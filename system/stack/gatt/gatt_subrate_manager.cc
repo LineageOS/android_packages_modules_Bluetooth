@@ -220,7 +220,7 @@ static void process_subrate_request(const RawAddress& bd_addr) {
         // Notify new client_if but no require to update subrate
         if (gatt_cb.subrate_info[bd_addr].has_new_request) {
             gatt_cb.subrate_info[bd_addr].has_new_request = false;
-            BtmDevice* p_device = btm_find_dev(bd_addr);
+            const BtmDevice* p_device = btm_find_dev(bd_addr);
 
             if (p_device == nullptr) {
                 log::warn("No matching known device in record");
