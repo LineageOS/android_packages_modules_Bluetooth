@@ -64,6 +64,7 @@ import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_INTE
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW
+import com.android.bluetooth.util.WorkSourceUtil
 import com.android.tests.bluetooth.FakeTimeProvider
 import com.android.tests.bluetooth.FlagsWrapper
 import com.android.tests.bluetooth.StaticMockitoRule
@@ -105,6 +106,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
     @Mock private lateinit var bluetoothManager: BluetoothManager
     @Mock private lateinit var adapter: BluetoothAdapter
     @Mock private lateinit var locationManager: LocationManager
+    @Mock private lateinit var batteryStatsManager: BatteryStatsManager
     @Mock private lateinit var metricsLogger: MetricsLogger
     @Mock private lateinit var nativeCallback: ScanNativeCallback
     @Mock private lateinit var nativeInterface: ScanNativeInterface
@@ -149,7 +151,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
         mockGetSystemService(adapterService, LocationManager::class.java, locationManager)
         doReturn(true).whenever(locationManager).isLocationEnabled
         mockGetSystemService(adapterService, DisplayManager::class.java)
-        mockGetSystemService(adapterService, BatteryStatsManager::class.java)
+        mockGetSystemService(adapterService, BatteryStatsManager::class.java, batteryStatsManager)
         mockGetSystemService(adapterService, AlarmManager::class.java)
         mockGetSystemService(adapterService, BluetoothManager::class.java, bluetoothManager)
         doReturn(adapter).whenever(bluetoothManager).adapter
@@ -196,8 +198,21 @@ class ScanManagerTest(flags: FlagsWrapper) {
         scanReportDelay = DEFAULT_BATCH_SCAN_REPORT_DELAY_MS.toLong()
         val appUid = 1234
         val appPid = 5678
+        val workSource = WorkSource(appUid, TEST_PACKAGE_NAME)
+        val workSourceUtil = WorkSourceUtil(workSource)
+        val metricsReporter = ScanMetricsReporter(workSource, workSourceUtil, batteryStatsManager)
         appScanStats =
-            spy(AppScanStats(appUid, appPid, TEST_APP_NAME, null, adapterService, timeProvider))
+            spy(
+                AppScanStats(
+                    appUid,
+                    appPid,
+                    TEST_APP_NAME,
+                    workSourceUtil,
+                    adapterService,
+                    metricsReporter,
+                    timeProvider,
+                )
+            )
     }
 
     @After
@@ -1040,12 +1055,24 @@ class ScanManagerTest(flags: FlagsWrapper) {
             // Create workSource for the app
             val APP_NAME = TEST_APP_NAME + i
             val UID = 10000 + i
-            val PACKAGE_NAME = TEST_PACKAGE_NAME + i
-            val source = WorkSource(UID, PACKAGE_NAME)
-            // Create app scan stats for the app
             val appPid = 5678
+            val PACKAGE_NAME = TEST_PACKAGE_NAME + i
+            val workSource = WorkSource(UID, PACKAGE_NAME)
+            val workSourceUtil = WorkSourceUtil(workSource)
+            val metricsReporter =
+                ScanMetricsReporter(workSource, workSourceUtil, batteryStatsManager)
             val appScanStatsSpy =
-                spy(AppScanStats(UID, appPid, APP_NAME, source, adapterService, timeProvider))
+                spy(
+                    AppScanStats(
+                        UID,
+                        appPid,
+                        APP_NAME,
+                        workSourceUtil,
+                        adapterService,
+                        metricsReporter,
+                        timeProvider,
+                    )
+                )
             // Set app importance as Foreground Service for the stats
             appScanStatsSpy.appImportance =
                 ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
@@ -1117,11 +1144,23 @@ class ScanManagerTest(flags: FlagsWrapper) {
         val uid1 = 10001
         val appName1 = TEST_APP_NAME + uid1
         val packageName1 = TEST_PACKAGE_NAME + uid1
-        val source1 = WorkSource(uid1, packageName1)
-        // Create app scan stats for the first app
         val appPid1 = 5678
+        val workSource1 = WorkSource(uid1, packageName1)
+        val workSourceUtil1 = WorkSourceUtil(workSource1)
+        val metricsReporter1 =
+            ScanMetricsReporter(workSource1, workSourceUtil1, batteryStatsManager)
         val appScanStats1 =
-            spy(AppScanStats(uid1, appPid1, appName1, source1, adapterService, timeProvider))
+            spy(
+                AppScanStats(
+                    uid1,
+                    appPid1,
+                    appName1,
+                    workSourceUtil1,
+                    adapterService,
+                    metricsReporter1,
+                    timeProvider,
+                )
+            )
         // Set app importance as Foreground Service for the stats
         appScanStats1.appImportance =
             ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
@@ -1141,11 +1180,23 @@ class ScanManagerTest(flags: FlagsWrapper) {
         val uid2 = 10002
         val appName2 = TEST_APP_NAME + uid2
         val packageName2 = TEST_PACKAGE_NAME + uid2
-        val source2 = WorkSource(uid2, packageName2)
-        // Create app scan stats for the second app
         val appPid2 = 56782
+        val workSource2 = WorkSource(uid2, packageName2)
+        val workSourceUtil2 = WorkSourceUtil(workSource2)
+        val metricsReporter2 =
+            ScanMetricsReporter(workSource2, workSourceUtil2, batteryStatsManager)
         val appScanStats2 =
-            spy(AppScanStats(uid2, appPid2, appName2, source2, adapterService, timeProvider))
+            spy(
+                AppScanStats(
+                    uid2,
+                    appPid2,
+                    appName2,
+                    workSourceUtil2,
+                    adapterService,
+                    metricsReporter2,
+                    timeProvider,
+                )
+            )
         // Set app importance as Foreground Service for the stats
         appScanStats2.appImportance =
             ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
@@ -1180,11 +1231,23 @@ class ScanManagerTest(flags: FlagsWrapper) {
         val uid3 = 10003
         val appName3 = TEST_APP_NAME + uid3
         val packageName3 = TEST_PACKAGE_NAME + uid3
-        val source3 = WorkSource(uid3, packageName3)
-        // Create app scan stats for the third app
         val appPid3 = 56783
+        val workSource3 = WorkSource(uid3, packageName3)
+        val workSourceUtil3 = WorkSourceUtil(workSource3)
+        val metricsReporter3 =
+            ScanMetricsReporter(workSource3, workSourceUtil3, batteryStatsManager)
         val appScanStats3 =
-            spy(AppScanStats(uid3, appPid3, appName3, source3, adapterService, timeProvider))
+            spy(
+                AppScanStats(
+                    uid3,
+                    appPid3,
+                    appName3,
+                    workSourceUtil3,
+                    adapterService,
+                    metricsReporter3,
+                    timeProvider,
+                )
+            )
         // Set app importance as Foreground Service for the stats
         appScanStats3.appImportance =
             ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
@@ -1219,11 +1282,23 @@ class ScanManagerTest(flags: FlagsWrapper) {
         val uid4 = 10004
         val appName4 = TEST_APP_NAME + uid4
         val packageName4 = TEST_PACKAGE_NAME + uid4
-        val source4 = WorkSource(uid4, packageName4)
-        // Create app scan stats for the fourth app
         val appPid4 = 56784
+        val workSource4 = WorkSource(uid4, packageName4)
+        val workSourceUtil4 = WorkSourceUtil(workSource4)
+        val metricsReporter4 =
+            ScanMetricsReporter(workSource4, workSourceUtil4, batteryStatsManager)
         val appScanStats4 =
-            spy(AppScanStats(uid4, appPid4, appName4, source4, adapterService, timeProvider))
+            spy(
+                AppScanStats(
+                    uid4,
+                    appPid4,
+                    appName4,
+                    workSourceUtil4,
+                    adapterService,
+                    metricsReporter4,
+                    timeProvider,
+                )
+            )
         // Set app importance as Foreground Service for the stats
         appScanStats4.appImportance =
             ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE

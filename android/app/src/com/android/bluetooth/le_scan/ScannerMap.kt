@@ -21,12 +21,14 @@ import android.bluetooth.le.IScannerCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
 import android.content.AttributionSource
+import android.os.BatteryStatsManager
 import android.os.UserHandle
 import android.os.WorkSource
 import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.util.Column
 import com.android.bluetooth.util.TimeProvider
+import com.android.bluetooth.util.WorkSourceUtil
 import com.android.bluetooth.util.getLastAttributionTag
 import com.android.bluetooth.util.indent
 import com.android.bluetooth.util.toTable
@@ -142,12 +144,20 @@ class ScannerMap {
     ): ScannerApp {
         val appScanStats =
             appScanStatsMap.getOrPut(appUid) {
+                // Bill the caller uid if the work source isn't passed through
+                val workSource = workSource ?: WorkSource(appUid, appName)
+                val workSourceUtil = WorkSourceUtil(workSource)
+                val batteryStatsManager =
+                    adapterService.getSystemService(BatteryStatsManager::class.java)
+                val scanMetricsReporter =
+                    ScanMetricsReporter(workSource, workSourceUtil, batteryStatsManager)
                 AppScanStats(
                     appUid,
                     appPid,
                     appName,
-                    workSource,
+                    workSourceUtil,
                     adapterService,
+                    scanMetricsReporter,
                     TimeProvider.systemClock,
                 )
             }
