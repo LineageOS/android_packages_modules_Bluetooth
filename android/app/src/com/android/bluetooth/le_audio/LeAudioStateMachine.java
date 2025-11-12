@@ -49,8 +49,6 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static android.bluetooth.BluetoothProfile.getConnectionStateName;
 
-import static com.android.bluetooth.flags.Flags.leaudioIntentBroadcastInStateMachineCleanup;
-
 import android.bluetooth.BluetoothDevice;
 import android.os.Looper;
 import android.os.Message;
@@ -118,7 +116,7 @@ final class LeAudioStateMachine extends StateMachine {
 
     public void doQuit() {
         log("doQuit for device " + mDevice);
-        if (leaudioIntentBroadcastInStateMachineCleanup()
+        if (Flags.leaudioIntentBroadcastInStateMachineCleanup()
                 && mConnectionState != STATE_DISCONNECTED
                 && mLastConnectionState != -1) {
             // Broadcast CONNECTION_STATE_CHANGED when state machine is turned off while
