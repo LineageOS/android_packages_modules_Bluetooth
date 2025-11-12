@@ -22,7 +22,6 @@ import static com.android.bluetooth.vaps.VapsServerStackEvent.EVENT_TYPE_ON_STOP
 
 import static java.util.Objects.requireNonNull;
 
-import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
@@ -30,19 +29,14 @@ import com.android.bluetooth.profile.NativeCallback;
 import com.android.internal.annotations.VisibleForTesting;
 
 /** Voice Assistant Profile Server Native Callback (from native to Java). */
-public class VapsServerNativeCallback implements NativeCallback {
+public class VapsServerNativeCallback extends NativeCallback {
     private static final String TAG = VapsServerNativeCallback.class.getSimpleName();
 
-    private final AdapterService mAdapterService;
     private final VapsServerService mVapsServerService;
 
     VapsServerNativeCallback(AdapterService adapterService, VapsServerService vapsServerService) {
-        mAdapterService = requireNonNull(adapterService);
+        super(adapterService);
         mVapsServerService = requireNonNull(vapsServerService);
-    }
-
-    private BluetoothDevice getDevice(byte[] address) {
-        return mAdapterService.getDeviceFromByte(address);
     }
 
     void onInitialized() {

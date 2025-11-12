@@ -21,11 +21,13 @@ import android.bluetooth.BluetoothProfile.STATE_CONNECTING
 import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.bluetooth.BluetoothProfile.STATE_DISCONNECTING
 import android.util.Log
+import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.profile.NativeCallback
 
 private const val TAG = "HidHostNativeCallback"
 
-class HidHostNativeCallback(private val service: HidHostService) : NativeCallback {
+class HidHostNativeCallback(adapterService: AdapterService, private val service: HidHostService) :
+    NativeCallback(adapterService) {
 
     private fun onConnectStateChanged(
         address: ByteArray,

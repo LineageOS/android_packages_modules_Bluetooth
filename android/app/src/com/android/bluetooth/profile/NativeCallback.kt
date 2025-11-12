@@ -16,8 +16,18 @@
 
 package com.android.bluetooth.profile
 
+import com.android.bluetooth.Utils
+import com.android.bluetooth.btservice.AdapterService
+
 /**
- * A marker interface for all native callback interfaces. This allows for a common type to be used
- * in the base native interface class.
+ * Base class for native callback interfaces.
+ *
+ * This class provides common functionality, such as converting a Bluetooth device address (as a
+ * `String` or `ByteArray`) into a `BluetoothDevice` object using the [AdapterService].
  */
-interface NativeCallback
+abstract class NativeCallback(internal val adapterService: AdapterService) {
+
+    fun getDevice(address: String) = getDevice(Utils.getBytesFromAddress(address))
+
+    fun getDevice(address: ByteArray) = adapterService.getDeviceFromByte(address)
+}

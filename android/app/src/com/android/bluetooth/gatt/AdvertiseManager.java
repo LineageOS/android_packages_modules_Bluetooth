@@ -88,7 +88,7 @@ public class AdvertiseManager {
         Log.d(TAG, "advertise manager created");
         mAdapterService = adapterService;
         mGattService = gattService;
-        var nativeCallback = new AdvertiseManagerNativeCallback(this);
+        var nativeCallback = new AdvertiseManagerNativeCallback(mAdapterService, this);
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface, () -> new AdvertiseManagerNativeInterface(nativeCallback));
