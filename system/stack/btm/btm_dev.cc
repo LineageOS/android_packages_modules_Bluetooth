@@ -483,7 +483,7 @@ static bool has_lenc_and_address_is_equal(void* data, void* context) {
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-BtmDevice* btm_find_dev_with_lenc(const RawAddress& bd_addr) {
+static BtmDevice* find_dev_with_lenc(const RawAddress& bd_addr) {
   if (com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
     if (!btm_sec_cb.IsSecCBInitialized()) {
       return nullptr;
@@ -504,6 +504,19 @@ BtmDevice* btm_find_dev_with_lenc(const RawAddress& bd_addr) {
 
   return NULL;
 }
+
+const BtmDevice* btm_find_dev_with_lenc(const RawAddress& bd_addr) {
+  return find_dev_with_lenc(bd_addr);
+}
+
+BtmDevice* btm_get_dev_with_lenc(const RawAddress& bd_addr) {
+  if (!com::android::bluetooth::flags::fix_sec_dev_rec_access()) {
+    return find_dev_with_lenc(bd_addr);
+  }
+
+  return get_main_thread()->DoInThreadSynchronously(&find_dev_with_lenc, bd_addr);
+}
+
 /*******************************************************************************
  *
  * Function         btm_consolidate_dev

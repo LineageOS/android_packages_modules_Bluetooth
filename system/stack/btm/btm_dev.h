@@ -135,7 +135,22 @@ const BtmDevice* btm_find_dev(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
- * Function         btm_find_dev_with_lenc
+ * Function         btm_get_dev_with_lenc (read/write version)
+ *
+ * Description      Look for the record in the device database with LTK and
+ *                  specified BD address
+ * Note: This is a blocking call, as it will post the get to the main thread (if not already in the
+ * main thread), and then wait for it to complete.
+ *
+ * Returns          Pointer to the record or NULL
+ *
+ ******************************************************************************/
+BtmDevice* btm_get_dev_with_lenc(const RawAddress& bd_addr);
+
+/*******************************************************************************
+ *
+ * Function         btm_find_dev_with_lenc (read-only version of
+ *                                            btm_get_dev_with_lenc)
  *
  * Description      Look for the record in the device database with LTK and
  *                  specified BD address
@@ -143,7 +158,7 @@ const BtmDevice* btm_find_dev(const RawAddress& bd_addr);
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-BtmDevice* btm_find_dev_with_lenc(const RawAddress& bd_addr);
+const BtmDevice* btm_find_dev_with_lenc(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
