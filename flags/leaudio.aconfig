@@ -243,6 +243,7 @@ flag {
 
 flag {
     name: "leaudio_peripheral_feature"
+    is_exported: true
     namespace: "bluetooth"
     description: "LE Audio peripheral feature"
     bug: "428719427"

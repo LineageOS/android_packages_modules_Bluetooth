@@ -38,6 +38,8 @@ filegroup {
         "android/bluetooth/IBluetoothHidHost.aidl",
         "android/bluetooth/IBluetoothLeAudio.aidl",
         "android/bluetooth/IBluetoothLeAudioCallback.aidl",
+        "android/bluetooth/IBluetoothLeAudioPeripheral.aidl",
+        "android/bluetooth/IBluetoothLeAudioPeripheralCallback.aidl",
         "android/bluetooth/IBluetoothLeBroadcastAssistant.aidl",
         "android/bluetooth/IBluetoothLeBroadcastAssistantCallback.aidl",
         "android/bluetooth/IBluetoothLeBroadcastCallback.aidl",
