@@ -34,6 +34,8 @@ TEST(RegisterNotificationRequestTest, getterTest) {
 
   ASSERT_EQ(test_packet->GetEventRegistered(), Event::PLAYBACK_STATUS_CHANGED);
   ASSERT_EQ(test_packet->GetInterval(), 5u);
+  // GetLength() should return the parameter length from the packet header.
+  ASSERT_EQ(test_packet->GetLength(), 5u);
 }
 
 TEST(RegisterNotificationRequestTest, validTest) {
