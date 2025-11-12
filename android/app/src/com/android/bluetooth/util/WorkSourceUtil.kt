@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,44 +14,30 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.util;
+package com.android.bluetooth.util
 
-import android.os.WorkSource;
-
-import java.util.ArrayList;
-import java.util.List;
+import android.os.WorkSource
 
 /** Class for general helper methods for WorkSource operations. */
-public class WorkSourceUtil {
-    private final int[] mUids;
-    private final String[] mTags;
+class WorkSourceUtil(workSource: WorkSource) {
+    val uids: IntArray
+    val tags: Array<String?>
 
-    public WorkSourceUtil(WorkSource ws) {
-        List<Integer> uids = new ArrayList<>();
-        List<String> tags = new ArrayList<>();
+    init {
+        val uidList = mutableListOf<Int>()
+        val tagList = mutableListOf<String?>()
 
-        for (int i = 0; i < ws.size(); i++) {
-            uids.add(ws.getUid(i));
-            tags.add(ws.getPackageName(i));
+        for (i in 0 until workSource.size()) {
+            uidList.add(workSource.getUid(i))
+            tagList.add(workSource.getPackageName(i))
         }
 
-        final List<WorkSource.WorkChain> workChains = ws.getWorkChains();
-        if (workChains != null) {
-            for (int i = 0; i < workChains.size(); ++i) {
-                final WorkSource.WorkChain workChain = workChains.get(i);
-                uids.add(workChain.getAttributionUid());
-                tags.add(workChain.getAttributionTag());
-            }
+        workSource.workChains?.forEach { workChain ->
+            uidList.add(workChain.attributionUid)
+            tagList.add(workChain.attributionTag)
         }
-        mUids = uids.stream().mapToInt(Integer::intValue).toArray();
-        mTags = tags.toArray(new String[0]);
-    }
 
-    public String[] getTags() {
-        return mTags;
-    }
-
-    public int[] getUids() {
-        return mUids;
+        uids = uidList.toIntArray()
+        tags = tagList.toTypedArray()
     }
 }
