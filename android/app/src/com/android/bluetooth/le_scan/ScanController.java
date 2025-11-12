@@ -661,7 +661,10 @@ public class ScanController {
     }
 
     private void handleDeadScanClient(int scannerId) {
-        var client = findScanClientById(scannerId);
+        var client = ScanUtil.findById(mScanManager.getRegularScanQueue(), scannerId);
+        if (client == null) {
+            client = ScanUtil.findById(mScanManager.getBatchScanQueue(), scannerId);
+        }
         if (client != null) {
             handleDeadScanClient(client);
         }
@@ -675,20 +678,6 @@ public class ScanController {
         client.setAppDied(true);
         client.ifAppScanStatsPresent(stats -> stats.setAppDead(true));
         stopScan(client.getScannerId());
-    }
-
-    private ScanClient findScanClientById(int scannerId) {
-        for (ScanClient client : mScanManager.getRegularScanQueue()) {
-            if (client.getScannerId() == scannerId) {
-                return client;
-            }
-        }
-        for (ScanClient client : mScanManager.getBatchScanQueue()) {
-            if (client.getScannerId() == scannerId) {
-                return client;
-            }
-        }
-        return null;
     }
 
     /** Callback method for batch scan reports */
