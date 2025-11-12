@@ -203,11 +203,11 @@ bool GATT_CancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_dir
 }
 bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                   tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport, bool opportunistic,
-                  uint16_t preferred_mtu, bool prefer_relax_mode) {
+                  uint16_t preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled) {
   inc_func_call_count(__func__);
   return test::mock::stack_gatt_api::GATT_Connect(gatt_if, bd_addr, addr_type, connection_type,
                                                   transport, opportunistic, preferred_mtu,
-                                                  prefer_relax_mode);
+                                                  prefer_relax_mode, auto_mtu_enabled);
 }
 void GATT_Deregister(tGATT_IF gatt_if) {
   inc_func_call_count(__func__);
@@ -279,7 +279,7 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBTM_BLE_CONN_TYP
                   tBT_TRANSPORT transport, bool opportunistic) {
   inc_func_call_count(__func__);
   return test::mock::stack_gatt_api::GATT_Connect(gatt_if, bd_addr, 0, connection_type, transport,
-                                                  opportunistic, 0, false);
+                                                  opportunistic, 0, false, false);
 }
 
 // END mockcify generation

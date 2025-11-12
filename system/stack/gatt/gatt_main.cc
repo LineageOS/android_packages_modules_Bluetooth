@@ -1028,6 +1028,15 @@ static void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
       gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, true);
     }
 
+    if (com::android::bluetooth::flags::gatt_conn_settings()) {
+      conn_id = gatt_create_conn_id(p_tcb->tcb_idx, p_reg->gatt_if);
+      /*Set the default based on the APP's preference*/
+      if (is_app_prefer_auto_mtu(p_reg.get(), p_tcb->peer_bda)) {
+        tGATT_STATUS status = GATTC_ConfigureMTU(conn_id, gatt_get_local_mtu());
+        log::verbose("set default MTU for the app: {}, status: {}", p_reg->gatt_if, status);
+      }
+    }
+
     if (p_reg->app_cb.p_conn_cb) {
       conn_id = gatt_create_conn_id(p_tcb->tcb_idx, p_reg->gatt_if);
       (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, p_tcb->peer_bda, conn_id, kGattConnected,

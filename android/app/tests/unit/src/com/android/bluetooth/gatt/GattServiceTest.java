@@ -421,9 +421,17 @@ public class GattServiceTest {
         boolean isDirect = false;
         int transport = 2;
         boolean opportunistic = true;
+        boolean isAutomaticMtuEnabled = false;
 
         mService.clientConnect(
-                mGattCallback, mDevice, addressType, isDirect, transport, opportunistic, mSource);
+                mGattCallback,
+                mDevice,
+                addressType,
+                isDirect,
+                transport,
+                opportunistic,
+                isAutomaticMtuEnabled,
+                mSource);
 
         verify(mNativeInterface)
                 .gattClientConnect(
@@ -434,7 +442,8 @@ public class GattServiceTest {
                         transport,
                         opportunistic,
                         0,
-                        false);
+                        false,
+                        isAutomaticMtuEnabled);
     }
 
     @Test
@@ -443,6 +452,8 @@ public class GattServiceTest {
         boolean isDirect = false;
         int transport = 2;
         boolean opportunistic = true;
+        boolean isAutomaticMtuEnabled = false;
+
         AttributionSource source =
                 new AttributionSource.Builder(Process.myUid())
                         .setPackageName("com.test.package")
@@ -450,7 +461,14 @@ public class GattServiceTest {
                         .build();
 
         mService.clientConnect(
-                mGattCallback, mDevice, addressType, isDirect, transport, opportunistic, source);
+                mGattCallback,
+                mDevice,
+                addressType,
+                isDirect,
+                transport,
+                opportunistic,
+                isAutomaticMtuEnabled,
+                source);
 
         verify(mNativeInterface)
                 .gattClientConnect(
@@ -461,7 +479,8 @@ public class GattServiceTest {
                         transport,
                         opportunistic,
                         0,
-                        true /* preferRelaxMode */);
+                        true /* preferRelaxMode */,
+                        isAutomaticMtuEnabled);
     }
 
     @Test
@@ -470,6 +489,7 @@ public class GattServiceTest {
         boolean isDirect = true;
         int transport = TRANSPORT_LE;
         boolean opportunistic = false;
+        boolean isAutomaticMtuEnabled = false;
 
         AttributionSource testAttributeSource =
                 new AttributionSource.Builder(Process.SYSTEM_UID)
@@ -486,6 +506,7 @@ public class GattServiceTest {
                 isDirect,
                 transport,
                 opportunistic,
+                isAutomaticMtuEnabled,
                 testAttributeSource);
 
         verify(mAdapterService).notifyDirectLeGattClientConnect(anyInt(), any());
@@ -498,7 +519,9 @@ public class GattServiceTest {
                         transport,
                         opportunistic,
                         0,
-                        false);
+                        false,
+                        isAutomaticMtuEnabled);
+
         mService.onConnectedFromNative(
                 CLIENT_IF, 0, transport, BluetoothGatt.GATT_CONNECTION_TIMEOUT, mDevice);
         verify(mAdapterService).notifyGattClientConnectFailed(anyInt(), any());
@@ -510,6 +533,7 @@ public class GattServiceTest {
         boolean isDirect = true;
         int transport = TRANSPORT_LE;
         boolean opportunistic = false;
+        boolean isAutomaticMtuEnabled = false;
 
         AttributionSource testAttributeSource =
                 new AttributionSource.Builder(Process.SYSTEM_UID)
@@ -526,6 +550,7 @@ public class GattServiceTest {
                 isDirect,
                 transport,
                 opportunistic,
+                isAutomaticMtuEnabled,
                 testAttributeSource);
 
         verify(mAdapterService).notifyDirectLeGattClientConnect(anyInt(), any());
@@ -538,7 +563,9 @@ public class GattServiceTest {
                         transport,
                         opportunistic,
                         0,
-                        false);
+                        false,
+                        isAutomaticMtuEnabled);
+
         mService.onConnectedFromNative(
                 CLIENT_IF, 15, transport, BluetoothGatt.GATT_SUCCESS, mDevice);
         mService.clientDisconnect(mGattCallback, mDevice, mSource);
@@ -552,6 +579,7 @@ public class GattServiceTest {
         boolean isDirect = true;
         int transport = TRANSPORT_LE;
         boolean opportunistic = false;
+        boolean isAutomaticMtuEnabled = false;
 
         AttributionSource testAttributeSource =
                 new AttributionSource.Builder(Process.SYSTEM_UID)
@@ -568,6 +596,7 @@ public class GattServiceTest {
                 isDirect,
                 transport,
                 opportunistic,
+                isAutomaticMtuEnabled,
                 testAttributeSource);
 
         verify(mAdapterService).notifyDirectLeGattClientConnect(anyInt(), any());
@@ -580,7 +609,9 @@ public class GattServiceTest {
                         transport,
                         opportunistic,
                         0,
-                        false);
+                        false,
+                        isAutomaticMtuEnabled);
+
         mService.onConnectedFromNative(
                 CLIENT_IF, 15, transport, BluetoothGatt.GATT_SUCCESS, mDevice);
         mService.onDisconnectedFromNative(CLIENT_IF, 15, transport, 1, mDevice);

@@ -118,10 +118,20 @@ class GattServiceBinder(private var gattService: GattService?) :
         isDirect: Boolean,
         transport: Int,
         opportunistic: Boolean,
+        autoMtuEnabled: Boolean,
         source: AttributionSource,
     ) {
         onGattThreadEnforceConnect(source) {
-            clientConnect(callback, device, addressType, isDirect, transport, opportunistic, source)
+            clientConnect(
+                callback,
+                device,
+                addressType,
+                isDirect,
+                transport,
+                opportunistic,
+                autoMtuEnabled,
+                source,
+            )
         }
     }
 

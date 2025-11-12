@@ -1529,7 +1529,7 @@ void GATT_StartIf(tGATT_IF gatt_if) {
  ******************************************************************************/
 bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                   tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport, bool opportunistic,
-                  uint16_t preferred_mtu, bool prefer_relax_mode) {
+                  uint16_t preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled) {
   /* Make sure app is registered */
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
   if (!p_reg) {
@@ -1611,6 +1611,8 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE ad
       log::verbose("Saving MTU preference from app {} for {}", gatt_if, bd_addr);
       p_reg->mtu_prefs.insert({bd_addr, preferred_mtu});
     }
+    p_reg->auto_mtu_enabled.erase(bd_addr);
+    p_reg->auto_mtu_enabled.insert({bd_addr, auto_mtu_enabled});
   }
 
   return ret;
@@ -1619,7 +1621,7 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE ad
 bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBTM_BLE_CONN_TYPE connection_type,
                   tBT_TRANSPORT transport, bool opportunistic) {
   return GATT_Connect(gatt_if, bd_addr, BLE_ADDR_PUBLIC, connection_type, transport, opportunistic,
-                      0, false);
+                      0, false, false);
 }
 
 /*******************************************************************************
