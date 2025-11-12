@@ -62,12 +62,11 @@ class LeAdvertisingTest {
 
     private fun startAdvertising(): CompletableFuture<Pair<String, Int>> {
         val future = CompletableFuture<Pair<String, Int>>()
-
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
 
         // Start advertising
-        val leAdvertiser = bluetoothAdapter.bluetoothLeAdvertiser
+        val leAdvertiser =
+            context.getSystemService(BluetoothManager::class.java).adapter.bluetoothLeAdvertiser!!
         val parameters =
             AdvertisingSetParameters.Builder()
                 .setOwnAddressType(AdvertisingSetParameters.ADDRESS_TYPE_RANDOM)

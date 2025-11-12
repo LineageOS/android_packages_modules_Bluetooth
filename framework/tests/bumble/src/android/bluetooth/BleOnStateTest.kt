@@ -58,8 +58,8 @@ class BleOnStateTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
-    private val leScanner
-        get() = adapter.bluetoothLeScanner
+    private val leAdvertiser = adapter.bluetoothLeAdvertiser!!
+    private val leScanner = adapter.bluetoothLeScanner!!
 
     private var wasBluetoothAdapterEnabled = true
 
@@ -108,8 +108,6 @@ class BleOnStateTest {
     @Test
     @RequiresFlagsDisabled("com.android.bluetooth.flags.only_start_scan_during_ble_on")
     fun whenOnlyStartScanDuringBleOnOff_canAdvertise() {
-        val bluetoothLeAdvertiser = adapter.bluetoothLeAdvertiser ?: return
-
         val settings = AdvertiseSettings.Builder().build()
         val advertiseData = AdvertiseData.Builder().build()
 
@@ -127,22 +125,20 @@ class BleOnStateTest {
             }
 
         try {
-            bluetoothLeAdvertiser.startAdvertising(settings, advertiseData, advertiseCallback)
+            leAdvertiser.startAdvertising(settings, advertiseData, advertiseCallback)
             future.completeOnTimeout(null, TIMEOUT_ADVERTISING_MS, TimeUnit.MILLISECONDS).join()
 
             val advertisingResult = future.get()
             assertThat(advertisingResult).isNotNull()
             assertThat(advertisingResult).isEqualTo(ADVERTISE_SUCCESS)
         } finally {
-            bluetoothLeAdvertiser.stopAdvertising(advertiseCallback)
+            leAdvertiser.stopAdvertising(advertiseCallback)
         }
     }
 
     @Test
     @RequiresFlagsEnabled("com.android.bluetooth.flags.only_start_scan_during_ble_on")
     fun whenOnlyStartScanDuringBleOnOn_cantAdvertise() {
-        val bluetoothLeAdvertiser = adapter.bluetoothLeAdvertiser ?: return
-
         val settings = AdvertiseSettings.Builder().build()
         val advertiseData = AdvertiseData.Builder().build()
 
@@ -160,14 +156,14 @@ class BleOnStateTest {
             }
 
         try {
-            bluetoothLeAdvertiser.startAdvertising(settings, advertiseData, advertiseCallback)
+            leAdvertiser.startAdvertising(settings, advertiseData, advertiseCallback)
             future.completeOnTimeout(null, TIMEOUT_ADVERTISING_MS, TimeUnit.MILLISECONDS).join()
 
             val advertisingResult = future.get()
             assertThat(advertisingResult).isNotNull()
             assertThat(advertisingResult).isEqualTo(ADVERTISE_FAILED_INTERNAL_ERROR)
         } finally {
-            bluetoothLeAdvertiser.stopAdvertising(advertiseCallback)
+            leAdvertiser.stopAdvertising(advertiseCallback)
         }
     }
 
@@ -246,7 +242,6 @@ class BleOnStateTest {
         callbackType: Int,
         isLegacy: Boolean,
     ): List<ScanResult>? {
-        val scanner = leScanner ?: return null
         val future = CompletableFuture<List<ScanResult>?>()
         val scanResults = mutableListOf<ScanResult>()
 
@@ -283,12 +278,12 @@ class BleOnStateTest {
                 }
             }
 
-        scanner.startScan(listOf(scanFilter), scanSettings, scanCallback)
+        leScanner.startScan(listOf(scanFilter), scanSettings, scanCallback)
 
         val result =
             future.completeOnTimeout(null, TIMEOUT_SCANNING_MS, TimeUnit.MILLISECONDS).join()
 
-        scanner.stopScan(scanCallback)
+        leScanner.stopScan(scanCallback)
 
         return result
     }

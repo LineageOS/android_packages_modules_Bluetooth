@@ -20,7 +20,9 @@ import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSet
 import android.bluetooth.le.AdvertisingSetCallback
 import android.bluetooth.le.AdvertisingSetParameters
+import android.content.Context
 import android.os.ParcelUuid
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
@@ -33,12 +35,14 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class LeLegacyAdvertisingTest {
-    @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
+    @get:Rule(order = 0) val permissionRule = AdoptShellPermissionsRule()
+
+    private val context = ApplicationProvider.getApplicationContext<Context>()
+    private val leAdvertiser =
+        context.getSystemService(BluetoothManager::class.java).adapter.bluetoothLeAdvertiser!!
 
     @Test
     fun setAdvertisingDataOver31Bytes() {
-        val advertiser = BluetoothAdapter.getDefaultAdapter().bluetoothLeAdvertiser
-
         // Set legacy scan mode
         val params =
             AdvertisingSetParameters.Builder()
@@ -73,7 +77,7 @@ class LeLegacyAdvertisingTest {
             }
 
         try {
-            advertiser.startAdvertisingSet(params, advertiseData, null, null, null, callback)
+            leAdvertiser.startAdvertisingSet(params, advertiseData, null, null, null, callback)
             future.completeOnTimeout(null, TIMEOUT_MS, TimeUnit.MILLISECONDS).join()
 
             val setAdvertingDataResult = future.get()
@@ -81,14 +85,12 @@ class LeLegacyAdvertisingTest {
             assertThat(setAdvertingDataResult)
                 .isEqualTo(AdvertisingSetCallback.ADVERTISE_FAILED_DATA_TOO_LARGE)
         } finally {
-            advertiser.stopAdvertisingSet(callback)
+            leAdvertiser.stopAdvertisingSet(callback)
         }
     }
 
     @Test
     fun setScanResponseDataOver31Bytes() {
-        val advertiser = BluetoothAdapter.getDefaultAdapter().bluetoothLeAdvertiser
-
         // Set legacy scan mode
         val params =
             AdvertisingSetParameters.Builder()
@@ -123,7 +125,7 @@ class LeLegacyAdvertisingTest {
             }
 
         try {
-            advertiser.startAdvertisingSet(params, advertiseData, null, null, null, callback)
+            leAdvertiser.startAdvertisingSet(params, advertiseData, null, null, null, callback)
             future.completeOnTimeout(null, TIMEOUT_MS, TimeUnit.MILLISECONDS).join()
 
             val setScanResponseResult = future.get()
@@ -131,7 +133,7 @@ class LeLegacyAdvertisingTest {
             assertThat(setScanResponseResult)
                 .isEqualTo(AdvertisingSetCallback.ADVERTISE_FAILED_DATA_TOO_LARGE)
         } finally {
-            advertiser.stopAdvertisingSet(callback)
+            leAdvertiser.stopAdvertisingSet(callback)
         }
     }
 
