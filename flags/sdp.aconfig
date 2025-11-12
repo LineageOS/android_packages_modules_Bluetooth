@@ -35,3 +35,10 @@ flag {
   bug: "457242678"
   is_exported: true  # Required for @FlaggedApi
 }
+
+flag {
+    name: "enable_service_discovery_server"
+    namespace: "bluetooth"
+    description: "Enables the ServiceDiscoveryServer service class and the ServiceDatabaseState attribute."
+    bug: "460011459"
+}
