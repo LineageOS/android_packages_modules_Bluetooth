@@ -33,6 +33,7 @@
 
 #include <cstdint>
 
+#include "bluetooth/metrics/bluetooth_event.h"
 #include "hal/snoop_logger.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
@@ -84,6 +85,8 @@ int port_open_continue(tPORT* p_port) {
 
   switch (p_mcb->state) {
     case RFC_MX_STATE_CONNECTED:
+      bluetooth::metrics::LogRfcommMxEvent(p_mcb->bd_addr,
+                                           bluetooth::metrics::State::ALREADY_CONNECTED);
       RFCOMM_ParameterNegotiationRequest(p_mcb, p_port->dlci, p_port->mtu);
       log::verbose("Multiplexer already connected peer:{} state:{} cid:{}", p_port->bd_addr,
                    p_mcb->state, p_mcb->lcid);
@@ -216,6 +219,8 @@ void PORT_StartCnf(tRFC_MCB* p_mcb, uint16_t result) {
 
       if (result == RFCOMM_SUCCESS) {
         log::verbose("dlci {}", p_port->dlci);
+        bluetooth::metrics::LogRfcommMxEvent(p_mcb->bd_addr,
+                                             bluetooth::metrics::State::STATE_CONNECTED);
         RFCOMM_ParameterNegotiationRequest(p_mcb, p_port->dlci, p_port->mtu);
       } else {
         log::warn("Unable start configuration dlci:{} result:{}", p_port->dlci, result);

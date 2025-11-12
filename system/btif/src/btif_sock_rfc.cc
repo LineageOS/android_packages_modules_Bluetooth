@@ -21,6 +21,7 @@
 #include "btif_sock_rfc.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/metrics/os_metrics.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
@@ -537,6 +538,7 @@ static void cleanup_rfc_slot(rfc_slot_t* slot, btsock_error_code_t error_code) {
             "disconnected from RFCOMM socket connections for device: {}, scn: {}, "
             "app_uid: {}, slot_id: {}, socket_id: {}",
             slot->addr, slot->scn, slot->app_uid, slot->id, slot->socket_id);
+    bluetooth::metrics::LogRfcommSocketDisconnectionEvent(slot->addr, slot->app_uid, error_code);
     btif_sock_connection_logger(
             slot->addr, slot->id, BTSOCK_RFCOMM, SOCKET_CONNECTION_STATE_DISCONNECTED,
             slot->f.server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, slot->app_uid, slot->scn,
@@ -669,6 +671,9 @@ static uint32_t on_srv_rfc_connect_offload(tBTA_JV_RFCOMM_SRV_OPEN* p_open, rfc_
           "connected to RFCOMM socket connections for device: {}, scn: {}, "
           "app_uid: {}, id: {}, socket_id: {}",
           accept_rs->addr, accept_rs->scn, accept_rs->app_uid, accept_rs->id, accept_rs->socket_id);
+  bluetooth::metrics::LogRfcommNativeConnectionCompleteEvent(
+          accept_rs->addr, bluetooth::metrics::EventType::RFCOMM_SOCKET_NATIVE_CONNECTION, false,
+          accept_rs->app_uid);
   btif_sock_connection_logger(accept_rs->addr, accept_rs->id, BTSOCK_RFCOMM,
                               SOCKET_CONNECTION_STATE_CONNECTED,
                               accept_rs->f.server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION,
@@ -731,6 +736,9 @@ static uint32_t on_srv_rfc_connect(tBTA_JV_RFCOMM_SRV_OPEN* p_open, uint32_t id)
           "connected to RFCOMM socket connections for device: {}, scn: {}, "
           "app_uid: {}, slot_id: {}, socket_id: {}",
           accept_rs->addr, accept_rs->scn, accept_rs->app_uid, accept_rs->id, accept_rs->socket_id);
+  bluetooth::metrics::LogRfcommNativeConnectionCompleteEvent(
+          accept_rs->addr, bluetooth::metrics::EventType::RFCOMM_SOCKET_NATIVE_CONNECTION, false,
+          accept_rs->app_uid);
   btif_sock_connection_logger(accept_rs->addr, accept_rs->id, BTSOCK_RFCOMM,
                               SOCKET_CONNECTION_STATE_CONNECTED,
                               accept_rs->f.server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION,
@@ -758,6 +766,9 @@ static void on_cli_rfc_connect_offload(tBTA_JV_RFCOMM_OPEN* p_open, rfc_slot_t* 
           "connected to RFCOMM socket connections for device: {}, scn: {}, "
           "app_uid: {}, id: {}, socket_id: {}",
           slot->addr, slot->scn, slot->app_uid, slot->id, slot->socket_id);
+  bluetooth::metrics::LogRfcommNativeConnectionCompleteEvent(
+          slot->addr, bluetooth::metrics::EventType::RFCOMM_SOCKET_NATIVE_CONNECTION, true,
+          slot->app_uid);
   btif_sock_connection_logger(
           slot->addr, slot->id, BTSOCK_RFCOMM, SOCKET_CONNECTION_STATE_CONNECTED,
           slot->f.server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, slot->app_uid, slot->scn, 0,
@@ -814,6 +825,9 @@ static void on_cli_rfc_connect(tBTA_JV_RFCOMM_OPEN* p_open, uint32_t id) {
           "connected to RFCOMM socket connections for device: {}, scn: {}, "
           "app_uid: {}, id: {}, socket_id: {}",
           slot->addr, slot->scn, slot->app_uid, slot->id, slot->socket_id);
+  bluetooth::metrics::LogRfcommNativeConnectionCompleteEvent(
+          slot->addr, bluetooth::metrics::EventType::RFCOMM_SOCKET_NATIVE_CONNECTION, true,
+          slot->app_uid);
   btif_sock_connection_logger(
           slot->addr, slot->id, BTSOCK_RFCOMM, SOCKET_CONNECTION_STATE_CONNECTED,
           slot->f.server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, slot->app_uid, slot->scn, 0,
@@ -897,7 +911,7 @@ static uint64_t btif_rfc_sock_generate_socket_id() {
   return socket_id;
 }
 
-static void on_rfc_close(tBTA_JV_RFCOMM_CLOSE* /* p_close */, uint32_t id) {
+static void on_rfc_close(tBTA_JV_RFCOMM_CLOSE* p_close, uint32_t id) {
   log::verbose("id:{}", id);
   std::unique_lock<std::recursive_mutex> lock(slot_lock);
 
@@ -907,6 +921,11 @@ static void on_rfc_close(tBTA_JV_RFCOMM_CLOSE* /* p_close */, uint32_t id) {
     log::warn("RFCOMM slot with id {} not found.", id);
     return;
   }
+
+  bluetooth::metrics::LogRfcommPortFailureEvent(
+          slot->addr, bluetooth::metrics::EventType::RFCOMM_SOCKET_NATIVE_CONNECTION_FAILURE,
+          slot->app_uid, static_cast<tPORT_RESULT>(p_close->port_status));
+
   bluetooth::metrics::LogMetricSocketConnectionState(
           slot->addr, slot->id, BTSOCK_RFCOMM,
           android::bluetooth::SOCKET_CONNECTION_STATE_DISCONNECTING, 0, 0, slot->app_uid, slot->scn,

@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
@@ -91,6 +92,8 @@ void rfcomm_l2cap_if_init() {
  ******************************************************************************/
 void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid, uint16_t /* psm */, uint8_t id) {
   tRFC_MCB* p_mcb = rfc_alloc_multiplexer_channel(bd_addr, false);
+  bluetooth::metrics::LogRfcommMxEvent(bd_addr,
+                                       bluetooth::metrics::State::L2CAP_CONNECT_REQUEST_RECEIVED);
   if (!com_android_bluetooth_flags_rfcomm_fix_mux_collision_handling()) {
     if (p_mcb != nullptr && p_mcb->is_initiator && p_mcb->state == RFC_MX_STATE_WAIT_CONN_CNF) {
       p_mcb->pending_lcid = lcid;
@@ -140,6 +143,8 @@ void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid, uint16_t /* psm
             "RFCOMM MUX Collision - accepting incoming connection. incoming lcid:{0:x}, cached "
             "lcid:{0:x}",
             lcid, p_mcb->lcid);
+    bluetooth::metrics::LogRfcommMxEvent(
+            p_mcb->bd_addr, bluetooth::metrics::State::COLLISION_DETECTED_ACCEPT_INCOMING);
     p_mcb->collision_outgoing_lcid = p_mcb->lcid;
     /* note: mcb will be stored if appropriate in COLLISION event */
     p_mcb->lcid = lcid;
@@ -181,6 +186,8 @@ void RFCOMM_ConnectCnf(uint16_t lcid, tL2CAP_CONN result) {
       if (result != tL2CAP_CONN::L2CAP_CONN_OK) {
         /* We cached the corresponding lcid but its connection failed. */
         /* We can remove from cache */
+        bluetooth::metrics::LogRfcommMxEvent(mcb->bd_addr,
+                                             bluetooth::metrics::State::COLLISION_OUTGOING_FAILED);
         mcb->collision_outgoing_lcid = 0;
       } else {
         /* we started accepting incoming connection and outgoing connection went through */
@@ -198,6 +205,10 @@ void RFCOMM_ConnectCnf(uint16_t lcid, tL2CAP_CONN result) {
     log::error("RFCOMM_ConnectCnf LCID:0x{:x}", lcid);
     return;
   }
+
+  bluetooth::metrics::LogRfcommL2capEvent(
+          p_mcb->bd_addr, bluetooth::metrics::EventType::RFCOMM_L2CAP_CONNECTION_RESPONSE_RECEIVED,
+          result);
 
   if (p_mcb->pending_lcid) {
     /* if peer rejects our connect request but peer's connect request is pending
@@ -321,6 +332,9 @@ void RFCOMM_DisconnectInd(uint16_t lcid, bool is_conf_needed) {
     log::warn("no mcb for lcid 0x{:x}", lcid);
     return;
   }
+
+  bluetooth::metrics::LogRfcommMxEvent(
+          p_mcb->bd_addr, bluetooth::metrics::State::L2CAP_DISCONNECT_REQUEST_RECEIVED);
   rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_DISC_IND, nullptr);
 }
 

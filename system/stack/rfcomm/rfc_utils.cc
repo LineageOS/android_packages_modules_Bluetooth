@@ -25,6 +25,7 @@
 #define LOG_TAG "rfcomm"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/types/address.h>
 
 #include <cstdint>
@@ -190,6 +191,8 @@ tRFC_MCB* rfc_alloc_multiplexer_channel(const RawAddress& bd_addr, bool is_initi
  *
  ******************************************************************************/
 void rfc_release_multiplexer_channel(tRFC_MCB* p_mcb) {
+  bluetooth::metrics::LogRfcommMxEvent(p_mcb->bd_addr,
+                                       bluetooth::metrics::State::STATE_DISCONNECTED);
   /* Remove the MCB from the mapping table */
   rfc_save_lcid_mcb(NULL, p_mcb->lcid);
 

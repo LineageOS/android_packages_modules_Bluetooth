@@ -25,6 +25,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/types/address.h>
 
 #include <cstddef>
@@ -93,6 +94,9 @@ static void bta_hf_client_mgmt_cback(const tPORT_RESULT code, uint16_t port_hand
 
   if (code == PORT_SUCCESS) {
     if (client_cb && port_handle == client_cb->conn_handle) { /* out conn */
+      bluetooth::metrics::LogRfcommNativeConnectionCompleteEvent(
+              client_cb->peer_addr, bluetooth::metrics::EventType::RFCOMM_HFP_HF_CONNECTION, true,
+              0);
       p_buf->hdr.event = BTA_HF_CLIENT_RFC_OPEN_EVT;
     } else if (port_handle == bta_hf_client_cb_arr.serv_handle) {
       p_buf->hdr.event = BTA_HF_CLIENT_RFC_OPEN_EVT;
@@ -114,6 +118,9 @@ static void bta_hf_client_mgmt_cback(const tPORT_RESULT code, uint16_t port_hand
       // If allocation fails then we abort.
       if (client_cb == NULL) {
         log::error("error allocating a new handle");
+        bluetooth::metrics::LogBluetoothEvent(
+                peer_addr, bluetooth::metrics::EventType::RFCOMM_HFP_HF_CONNECTION_FAILURE,
+                bluetooth::metrics::State::RESOURCES_ALLOCATION_FAILED, 0);
         p_buf->hdr.event = BTA_HF_CLIENT_RFC_CLOSE_EVT;
         if (RFCOMM_RemoveConnection(port_handle) != PORT_SUCCESS) {
           log::warn("Unable to remote RFCOMM server connection handle:{}", port_handle);
@@ -122,7 +129,8 @@ static void bta_hf_client_mgmt_cback(const tPORT_RESULT code, uint16_t port_hand
       } else {
         // Set the connection fields for this new CB
         client_cb->conn_handle = port_handle;
-
+        bluetooth::metrics::LogRfcommNativeConnectionCompleteEvent(
+                peer_addr, bluetooth::metrics::EventType::RFCOMM_HFP_HF_CONNECTION, false, 0);
         // Since we have accepted an incoming RFCOMM connection:
         // a) Release the current server from it duties
         // b) Start a new server for more new incoming connection
@@ -136,7 +144,9 @@ static void bta_hf_client_mgmt_cback(const tPORT_RESULT code, uint16_t port_hand
     }
   } else if (client_cb != NULL && port_handle == client_cb->conn_handle) { /* code != PORT_SUC */
     log::error("closing port handle {} dev {}", port_handle, client_cb->peer_addr);
-
+    bluetooth::metrics::LogRfcommPortFailureEvent(
+            client_cb->peer_addr, bluetooth::metrics::EventType::RFCOMM_HFP_HF_CONNECTION_FAILURE,
+            0, code);
     if (RFCOMM_RemoveServer(port_handle) != PORT_SUCCESS) {
       log::warn("Unable to remote RFCOMM server connection handle:{}", port_handle);
     }
@@ -243,7 +253,8 @@ void bta_hf_client_rfc_do_open(tBTA_HF_CLIENT_DATA* p_data) {
     log::error("cb not found for handle {}", p_data->hdr.layer_specific);
     return;
   }
-
+  bluetooth::metrics::LogRfcommNativeStartEvent(
+          client_cb->peer_addr, bluetooth::metrics::EventType::RFCOMM_HFP_HF_CONNECTION, 0);
   int status = RFCOMM_CreateConnectionWithSecurity(
           UUID_SERVCLASS_HF_HANDSFREE, client_cb->peer_scn, false, BTA_HF_CLIENT_MTU,
           client_cb->peer_addr, &(client_cb->conn_handle), bta_hf_client_mgmt_cback,
@@ -283,6 +294,9 @@ void bta_hf_client_rfc_do_close(tBTA_HF_CLIENT_DATA* p_data) {
     if (RFCOMM_RemoveConnection(client_cb->conn_handle) != PORT_SUCCESS) {
       log::warn("Unable to remove RFCOMM connection peer:{} handle:{}", client_cb->peer_addr,
                 client_cb->conn_handle);
+    } else {
+      bluetooth::metrics::LogRfcommNativeDisconnectionEvent(
+              client_cb->peer_addr, bluetooth::metrics::EventType::RFCOMM_HFP_HF_CONNECTION, 0);
     }
   } else {
     /* Close API was called while HF Client is in Opening state.        */
