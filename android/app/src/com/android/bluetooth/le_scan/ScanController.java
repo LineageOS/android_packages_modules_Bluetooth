@@ -615,7 +615,7 @@ public class ScanController {
                 }
             }
         } else {
-            continuePiStartScan(scannerId, scannerApp);
+            dispatchPendingIntentStartScan(scannerId, scannerApp);
         }
     }
 
@@ -1248,9 +1248,8 @@ public class ScanController {
         }
     }
 
-    /** Start a scan with pending intent. */
     @VisibleForTesting
-    void continuePiStartScan(int scannerId, ScannerApp app) {
+    void dispatchPendingIntentStartScan(int scannerId, ScannerApp app) {
         final PendingIntentInfo piInfo = app.getInfo();
         var scanClient = new ScanClient(scannerId, piInfo, app);
         var appScanStats = mScannerMap.getAppScanStatsById(scannerId);
