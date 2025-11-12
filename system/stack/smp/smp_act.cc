@@ -1442,7 +1442,8 @@ void smp_decide_association_model(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
         int_evt = SMP_AUTH_CMPL_EVT;
       } else {
         if (!GetInterfaceToProfiles()->config->isAndroidTVDevice() &&
-            (p_cb->local_io_capability == BtIoCap::DISPLAY_YES_NO ||
+            (com_android_bluetooth_flags_prevent_jw_auto_accept() ||
+             p_cb->local_io_capability == BtIoCap::DISPLAY_YES_NO ||
              p_cb->local_io_capability == BtIoCap::KEYBOARD_DISPLAY)) {
           /* display consent dialog if this device has a display */
           log::verbose("ENCRYPTION_ONLY showing Consent Dialog");
@@ -1831,7 +1832,8 @@ void smp_process_peer_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
 
       if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS) {
         if (!GetInterfaceToProfiles()->config->isAndroidTVDevice() &&
-            (p_cb->local_io_capability == BtIoCap::DISPLAY_YES_NO ||
+            (com_android_bluetooth_flags_prevent_jw_auto_accept() ||
+             p_cb->local_io_capability == BtIoCap::DISPLAY_YES_NO ||
              p_cb->local_io_capability == BtIoCap::KEYBOARD_DISPLAY)) {
           /* display consent dialog */
           log::verbose("JUST WORKS showing Consent Dialog");
