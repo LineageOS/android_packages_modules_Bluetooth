@@ -18,6 +18,7 @@ package com.android.bluetooth.vc;
 
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
+import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED;
 import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_DEVICE_AVAILABLE;
 import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED;
@@ -30,10 +31,12 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
+import android.bluetooth.BluetoothDevice;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
 
+import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.tests.bluetooth.FlagsWrapper;
 import com.android.tests.bluetooth.MockitoRule;
@@ -64,6 +67,8 @@ public class VolumeControlNativeCallbackTest {
     @Mock private VolumeControlService mService;
     @Captor private ArgumentCaptor<VolumeControlStackEvent> mEvent;
 
+    private final BluetoothDevice mDevice = getTestDevice(0);
+
     private VolumeControlNativeCallback mNativeCallback;
 
     @Parameters(name = "{0}")
@@ -78,7 +83,6 @@ public class VolumeControlNativeCallbackTest {
     @Before
     public void setUp() throws Exception {
         doReturn(true).when(mService).isAvailable();
-
         mNativeCallback = new VolumeControlNativeCallback(mAdapterService, mService);
     }
 
@@ -86,7 +90,7 @@ public class VolumeControlNativeCallbackTest {
     public void onConnectionStateChanged() {
         int state = STATE_CONNECTED;
 
-        mNativeCallback.onConnectionStateChanged(state, null);
+        mNativeCallback.onConnectionStateChanged(state, getByteAddress(mDevice));
         verify(mService).messageFromNative(mEvent.capture());
         VolumeControlStackEvent event = mEvent.getValue();
 
@@ -101,7 +105,8 @@ public class VolumeControlNativeCallbackTest {
         int flags = 1;
         boolean isAutonomous = false;
 
-        mNativeCallback.onVolumeStateChanged(volume, mute, flags, null, isAutonomous);
+        mNativeCallback.onVolumeStateChanged(
+                volume, mute, flags, getByteAddress(mDevice), isAutonomous);
         verify(mService).messageFromNative(mEvent.capture());
         VolumeControlStackEvent event = mEvent.getValue();
 
@@ -132,7 +137,8 @@ public class VolumeControlNativeCallbackTest {
         int numOfExternalOutputs = 3;
         int numOfExternalInputs = 0;
 
-        mNativeCallback.onDeviceAvailable(groupId, numOfExternalOutputs, numOfExternalInputs, null);
+        mNativeCallback.onDeviceAvailable(
+                groupId, numOfExternalOutputs, numOfExternalInputs, getByteAddress(mDevice));
         verify(mService).messageFromNative(mEvent.capture());
         VolumeControlStackEvent event = mEvent.getValue();
 
@@ -144,7 +150,8 @@ public class VolumeControlNativeCallbackTest {
         int externalOutputId = 2;
         int offset = 0;
 
-        mNativeCallback.onExtAudioOutVolumeOffsetChanged(externalOutputId, offset, null);
+        mNativeCallback.onExtAudioOutVolumeOffsetChanged(
+                externalOutputId, offset, getByteAddress(mDevice));
         verify(mService).messageFromNative(mEvent.capture());
         VolumeControlStackEvent event = mEvent.getValue();
 
@@ -156,7 +163,8 @@ public class VolumeControlNativeCallbackTest {
         int externalOutputId = 2;
         int location = 100;
 
-        mNativeCallback.onExtAudioOutLocationChanged(externalOutputId, location, null);
+        mNativeCallback.onExtAudioOutLocationChanged(
+                externalOutputId, location, getByteAddress(mDevice));
         verify(mService).messageFromNative(mEvent.capture());
         VolumeControlStackEvent event = mEvent.getValue();
 
@@ -168,7 +176,8 @@ public class VolumeControlNativeCallbackTest {
         int externalOutputId = 2;
         String descr = "test-descr";
 
-        mNativeCallback.onExtAudioOutDescriptionChanged(externalOutputId, descr, null);
+        mNativeCallback.onExtAudioOutDescriptionChanged(
+                externalOutputId, descr, getByteAddress(mDevice));
         verify(mService).messageFromNative(mEvent.capture());
         VolumeControlStackEvent event = mEvent.getValue();
 
@@ -182,7 +191,8 @@ public class VolumeControlNativeCallbackTest {
         int gainMode = 0;
         int mute = 0;
 
-        mNativeCallback.onExtAudioInStateChanged(id, gainSetting, mute, gainMode, null);
+        mNativeCallback.onExtAudioInStateChanged(
+                id, gainSetting, mute, gainMode, getByteAddress(mDevice));
         verify(mService)
                 .onExtAudioInStateChanged(any(), eq(id), eq(gainSetting), eq(mute), eq(gainMode));
     }
@@ -192,7 +202,7 @@ public class VolumeControlNativeCallbackTest {
         int id = 2;
         int status = 1;
 
-        mNativeCallback.onExtAudioInStatusChanged(id, status, null);
+        mNativeCallback.onExtAudioInStatusChanged(id, status, getByteAddress(mDevice));
         verify(mService).onExtAudioInStatusChanged(any(), eq(id), eq(status));
     }
 
@@ -201,7 +211,7 @@ public class VolumeControlNativeCallbackTest {
         int id = 2;
         int type = 1;
 
-        mNativeCallback.onExtAudioInTypeChanged(id, type, null);
+        mNativeCallback.onExtAudioInTypeChanged(id, type, getByteAddress(mDevice));
         verify(mService).onExtAudioInTypeChanged(any(), eq(id), eq(type));
     }
 
@@ -211,7 +221,8 @@ public class VolumeControlNativeCallbackTest {
         String description = "microphone";
         boolean isWritable = true;
 
-        mNativeCallback.onExtAudioInDescriptionChanged(id, description, isWritable, null);
+        mNativeCallback.onExtAudioInDescriptionChanged(
+                id, description, isWritable, getByteAddress(mDevice));
         verify(mService)
                 .onExtAudioInDescriptionChanged(any(), eq(id), eq(description), eq(isWritable));
     }
@@ -223,9 +234,14 @@ public class VolumeControlNativeCallbackTest {
         int min = 0;
         int max = 100;
 
-        mNativeCallback.onExtAudioInGainSettingPropertiesChanged(id, unit, min, max, null);
+        mNativeCallback.onExtAudioInGainSettingPropertiesChanged(
+                id, unit, min, max, getByteAddress(mDevice));
         verify(mService)
                 .onExtAudioInGainSettingPropertiesChanged(
                         any(), eq(id), eq(unit), eq(min), eq(max));
+    }
+
+    private static byte[] getByteAddress(BluetoothDevice device) {
+        return Utils.getBytesFromAddress(device.getAddress());
     }
 }
