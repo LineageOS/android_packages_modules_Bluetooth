@@ -615,7 +615,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
     }
 
     @Test
-    fun continuePiStartScan() {
+    fun dispatchPendingIntentStartScan() {
         val filters = emptyList<ScanFilter>()
         val pii =
             ScanController.PendingIntentInfo(
@@ -630,14 +630,14 @@ class ScanControllerTest(flags: FlagsWrapper) {
         val appScanStats = mock(AppScanStats::class.java)
         doReturn(appScanStats).whenever(scannerMap).getAppScanStatsById(TEST_SCANNER_ID)
 
-        scanController.continuePiStartScan(TEST_SCANNER_ID, app)
+        scanController.dispatchPendingIntentStartScan(TEST_SCANNER_ID, app)
         verify(appScanStats)
             .recordScanStart(pii.settings, pii.filters, false, false, TEST_SCANNER_ID, null)
         verify(scanManager).startScan(any())
     }
 
     @Test
-    fun continuePiStartScanCheckUid() {
+    fun dispatchPendingIntentStartScanCheckUid() {
         val filters = emptyList<ScanFilter>()
         val pii =
             ScanController.PendingIntentInfo(
@@ -652,7 +652,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
         val appScanStats = mock(AppScanStats::class.java)
         doReturn(appScanStats).whenever(scannerMap).getAppScanStatsById(TEST_SCANNER_ID)
 
-        scanController.continuePiStartScan(TEST_SCANNER_ID, app)
+        scanController.dispatchPendingIntentStartScan(TEST_SCANNER_ID, app)
         verify(appScanStats)
             .recordScanStart(pii.settings, pii.filters, false, false, TEST_SCANNER_ID, null)
         verify(scanManager).startScan(argThat { client -> pii.callingUid == client.appUid })
