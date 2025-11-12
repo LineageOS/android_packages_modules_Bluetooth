@@ -1772,7 +1772,7 @@ public class RemoteDevices {
 
         // Send the ACTION_KEY_MISSING Intent here if the link is disconnected in a bond-loss
         // scenario.
-        if (Flags.enableAutonomousRepairing()
+        if (Flags.autonomousRepairingInitiation()
                 && mAdapterService.isBondLost(device)
                 && newState == AbstractionLayer.BT_ACL_STATE_DISCONNECTED
                 && deviceProperties.getLastBondLossReason().isPresent()) {
@@ -1906,7 +1906,7 @@ public class RemoteDevices {
             }
         }
 
-        if (!Flags.enableAutonomousRepairing()) {
+        if (!Flags.autonomousRepairingInitiation()) {
             sendKeyMissingIntent(device, reason);
             return;
         }
@@ -2488,7 +2488,7 @@ public class RemoteDevices {
                     .append("] ")
                     .append(deviceProperties.getName());
 
-            if (Flags.enableAutonomousRepairing()
+            if (Flags.autonomousRepairingInitiation()
                     && deviceProperties.getLastBondLossReason().isPresent()) {
                 sb.append("[Latest bond-loss reason: ")
                         .append(deviceProperties.getLastBondLossReason().get())
@@ -2536,7 +2536,7 @@ public class RemoteDevices {
         writer.println();
     }
 
-    // TODO: Remove this when enable_autonomous_repairing flag is removed.
+    // TODO: Remove this when use_autonomous_repairing flag is removed.
     private void sendKeyMissingIntent(BluetoothDevice device, int reason) {
         Intent keyMissingIntent =
                 new Intent(BluetoothDevice.ACTION_KEY_MISSING)
