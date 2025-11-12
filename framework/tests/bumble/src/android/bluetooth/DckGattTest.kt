@@ -55,11 +55,10 @@ import pandora.HostProto.OwnAddressType
 
 /** DCK GATT Tests */
 @RunWith(TestParameterInjector::class)
-public class DckGattTest() {
+class DckGattTest() {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)!!
-    private val bluetoothAdapter = bluetoothManager.adapter
+    private val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
     private val leScanner = bluetoothAdapter.bluetoothLeScanner
 
     private val scanResultCaptor = argumentCaptor<ScanResult>()
