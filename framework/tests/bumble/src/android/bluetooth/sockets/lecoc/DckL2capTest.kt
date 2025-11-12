@@ -75,12 +75,11 @@ import pandora.l2cap.L2CAPProto.WaitDisconnectionRequest
 /** DCK L2CAP Tests */
 @RunWith(TestParameterInjector::class)
 @kotlinx.coroutines.ExperimentalCoroutinesApi
-public class DckL2capTest() : Closeable {
+class DckL2capTest() : Closeable {
 
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)!!
-    private val bluetoothAdapter = bluetoothManager.adapter
+    private val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
     private val openedGatts: MutableList<BluetoothGatt> = mutableListOf()
     private var serviceDiscoveredFlow = MutableStateFlow(false)
     private var connectionStateFlow = MutableStateFlow(STATE_DISCONNECTED)
