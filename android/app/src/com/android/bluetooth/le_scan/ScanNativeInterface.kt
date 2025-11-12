@@ -44,10 +44,10 @@ class ScanNativeInterface(nativeCallback: ScanNativeCallback) :
     private external fun scanNative(start: Boolean)
 
     private external fun setScanParametersNative(
-        clientIf1m: Int,
+        scannerId1m: Int,
         scanInterval1m: Int,
         scanWindow1m: Int,
-        clientIfCoded: Int,
+        scannerIdCoded: Int,
         scanIntervalCoded: Int,
         scanWindowCoded: Int,
         scanPhy: Int,
@@ -62,11 +62,11 @@ class ScanNativeInterface(nativeCallback: ScanNativeCallback) :
 
     private external fun scanFilterParamAddNative(filtValue: FilterParams)
 
-    private external fun scanFilterParamDeleteNative(clientIf: Int, filtIndex: Int)
+    private external fun scanFilterParamDeleteNative(scannerId: Int, filtIndex: Int)
 
-    private external fun scanFilterClearNative(clientIf: Int, filterIndex: Int)
+    private external fun scanFilterClearNative(scannerId: Int, filterIndex: Int)
 
-    private external fun scanFilterEnableNative(clientIf: Int, enable: Boolean)
+    private external fun scanFilterEnableNative(scannerId: Int, enable: Boolean)
 
     /** ************************ MSFT scan related native methods **************************** */
     private external fun isMsftSupportedNative(): Boolean
@@ -85,14 +85,14 @@ class ScanNativeInterface(nativeCallback: ScanNativeCallback) :
 
     /** ************************ Batch related native methods ******************************** */
     private external fun configBatchScanStorageNative(
-        clientIf: Int,
+        scannerId: Int,
         maxFullReportsPercent: Int,
         maxTruncatedReportsPercent: Int,
         notifyThresholdPercent: Int,
     )
 
     private external fun startBatchScanNative(
-        clientIf: Int,
+        scannerId: Int,
         scanMode: Int,
         scanIntervalUnit: Int,
         scanWindowUnit: Int,
@@ -100,9 +100,9 @@ class ScanNativeInterface(nativeCallback: ScanNativeCallback) :
         discardRule: Int,
     )
 
-    private external fun stopBatchScanNative(clientIf: Int)
+    private external fun stopBatchScanNative(scannerId: Int)
 
-    private external fun readScanReportsNative(clientIf: Int, scanType: Int)
+    private external fun readScanReportsNative(scannerId: Int, scanType: Int)
 
     fun registerScanner(appUuidLsb: Long, appUuidMsb: Long) {
         registerScannerNative(appUuidLsb, appUuidMsb)
@@ -119,19 +119,19 @@ class ScanNativeInterface(nativeCallback: ScanNativeCallback) :
 
     /** Configure BLE scan parameters */
     fun setScanParameters(
-        clientIf1m: Int,
+        scannerId1m: Int,
         scanInterval1m: Int,
         scanWindow1m: Int,
-        clientIfCoded: Int,
+        scannerIdCoded: Int,
         scanIntervalCoded: Int,
         scanWindowCoded: Int,
         scanPhy: Int,
     ) {
         setScanParametersNative(
-            clientIf1m,
+            scannerId1m,
             scanInterval1m,
             scanWindow1m,
-            clientIfCoded,
+            scannerIdCoded,
             scanIntervalCoded,
             scanWindowCoded,
             scanPhy,
@@ -149,18 +149,18 @@ class ScanNativeInterface(nativeCallback: ScanNativeCallback) :
     }
 
     /** Delete BLE scan filter parameters */
-    fun scanFilterParamDelete(clientIf: Int, filtIndex: Int) {
-        scanFilterParamDeleteNative(clientIf, filtIndex)
+    fun scanFilterParamDelete(scannerId: Int, filtIndex: Int) {
+        scanFilterParamDeleteNative(scannerId, filtIndex)
     }
 
     /** Clear BLE scan filter */
-    fun scanFilterClear(clientIf: Int, filterIndex: Int) {
-        scanFilterClearNative(clientIf, filterIndex)
+    fun scanFilterClear(scannerId: Int, filterIndex: Int) {
+        scanFilterClearNative(scannerId, filterIndex)
     }
 
     /** Enable/disable BLE scan filter */
-    fun scanFilterEnable(clientIf: Int, enable: Boolean) {
-        scanFilterEnableNative(clientIf, enable)
+    fun scanFilterEnable(scannerId: Int, enable: Boolean) {
+        scanFilterEnableNative(scannerId, enable)
     }
 
     /** Check if MSFT HCI extension is supported */
@@ -197,13 +197,13 @@ class ScanNativeInterface(nativeCallback: ScanNativeCallback) :
 
     /** Configure BLE batch scan storage */
     fun configBatchScanStorage(
-        clientIf: Int,
+        scannerId: Int,
         maxFullReportsPercent: Int,
         maxTruncatedReportsPercent: Int,
         notifyThresholdPercent: Int,
     ) {
         configBatchScanStorageNative(
-            clientIf,
+            scannerId,
             maxFullReportsPercent,
             maxTruncatedReportsPercent,
             notifyThresholdPercent,
@@ -212,7 +212,7 @@ class ScanNativeInterface(nativeCallback: ScanNativeCallback) :
 
     /** Enable BLE batch scan with the parameters */
     fun startBatchScan(
-        clientIf: Int,
+        scannerId: Int,
         scanMode: Int,
         scanIntervalUnit: Int,
         scanWindowUnit: Int,
@@ -220,7 +220,7 @@ class ScanNativeInterface(nativeCallback: ScanNativeCallback) :
         discardRule: Int,
     ) {
         startBatchScanNative(
-            clientIf,
+            scannerId,
             scanMode,
             scanIntervalUnit,
             scanWindowUnit,
@@ -230,12 +230,12 @@ class ScanNativeInterface(nativeCallback: ScanNativeCallback) :
     }
 
     /** Disable BLE batch scan */
-    fun stopBatchScan(clientIf: Int) {
-        stopBatchScanNative(clientIf)
+    fun stopBatchScan(scannerId: Int) {
+        stopBatchScanNative(scannerId)
     }
 
     /** Read BLE batch scan reports */
-    fun readScanReports(clientIf: Int, scanType: Int) {
-        readScanReportsNative(clientIf, scanType)
+    fun readScanReports(scannerId: Int, scanType: Int) {
+        readScanReportsNative(scannerId, scanType)
     }
 }

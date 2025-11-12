@@ -677,14 +677,14 @@ public class ScanController {
         stopScan(client.getScannerId());
     }
 
-    private ScanClient findScanClientById(int clientIf) {
+    private ScanClient findScanClientById(int scannerId) {
         for (ScanClient client : mScanManager.getRegularScanQueue()) {
-            if (client.getScannerId() == clientIf) {
+            if (client.getScannerId() == scannerId) {
                 return client;
             }
         }
         for (ScanClient client : mScanManager.getBatchScanQueue()) {
-            if (client.getScannerId() == clientIf) {
+            if (client.getScannerId() == scannerId) {
                 return client;
             }
         }
@@ -801,10 +801,10 @@ public class ScanController {
         mScanManager.batchScanResultDelivered();
     }
 
-    void onBatchScanThresholdCrossed(int clientIf) {
+    void onBatchScanThresholdCrossed(int scannerId) {
         enforceScanThread();
-        Log.d(TAG, "onBatchScanThresholdCrossed() - clientIf=" + clientIf);
-        flushPendingBatchResults(clientIf);
+        Log.d(TAG, "onBatchScanThresholdCrossed(scannerId=" + scannerId + ")");
+        flushPendingBatchResults(scannerId);
     }
 
     void onTrackAdvFoundLost(AdvtFilterOnFoundOnLostInfo trackingInfo) {
@@ -812,12 +812,12 @@ public class ScanController {
         Log.d(
                 TAG,
                 "onTrackAdvFoundLost() -"
-                        + (" scannerId=" + trackingInfo.clientIf())
+                        + (" scannerId=" + trackingInfo.scannerId())
                         + (", address=" + trackingInfo.address())
                         + (", addressType=" + trackingInfo.addressType())
                         + (", adv_state=" + trackingInfo.advState()));
 
-        final ScannerApp app = mScannerMap.getById(trackingInfo.clientIf());
+        final ScannerApp app = mScannerMap.getById(trackingInfo.scannerId());
         if (app == null) {
             Log.e(TAG, "app is null");
             return;
@@ -834,7 +834,7 @@ public class ScanController {
                         SystemClock.elapsedRealtimeNanos());
 
         for (ScanClient client : mScanManager.getRegularScanQueue()) {
-            if (client.getScannerId() == trackingInfo.clientIf()) {
+            if (client.getScannerId() == trackingInfo.scannerId()) {
                 ScanSettings settings = client.getSettings();
                 if ((advertiserState == ADVT_STATE_ONFOUND)
                         && ((settings.getCallbackType() & ScanSettings.CALLBACK_TYPE_FIRST_MATCH)

@@ -32,7 +32,7 @@ class AdvtFilterOnFoundOnLostInfoTest {
 
     @Test
     fun advtFilterOnFoundOnLostInfoParams() {
-        val clientIf = 0
+        val scannerId = 0
         val advPacketLen = 1
         val advPacket = ByteString.copyFrom(byteArrayOf(0x02))
         val scanResponseLen = 3
@@ -49,7 +49,7 @@ class AdvtFilterOnFoundOnLostInfoTest {
 
         val advtFilterOnFoundOnLostInfo =
             AdvtFilterOnFoundOnLostInfo(
-                clientIf,
+                scannerId,
                 advPacketLen,
                 advPacket,
                 scanResponseLen,
@@ -64,7 +64,7 @@ class AdvtFilterOnFoundOnLostInfoTest {
                 timeStamp,
             )
 
-        expect.that(advtFilterOnFoundOnLostInfo.clientIf).isEqualTo(clientIf)
+        expect.that(advtFilterOnFoundOnLostInfo.scannerId).isEqualTo(scannerId)
         expect.that(advtFilterOnFoundOnLostInfo.advPacketLen).isEqualTo(advPacketLen)
         expect.that(advtFilterOnFoundOnLostInfo.advPacket).isEqualTo(advPacket)
         expect.that(advtFilterOnFoundOnLostInfo.scanResponseLen).isEqualTo(scanResponseLen)
