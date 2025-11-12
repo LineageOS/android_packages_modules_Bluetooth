@@ -2303,7 +2303,7 @@ impl IBluetoothGatt for BluetoothGatt {
             // Addr type is default PUBLIC.
             0,
             is_direct,
-            transport.into(),
+            transport as i32,
             opportunistic,
             phy.into(),
             0,
@@ -2605,7 +2605,7 @@ impl IBluetoothGatt for BluetoothGatt {
             // Addr type is default PUBLIC.
             0,
             is_direct,
-            transport.into(),
+            transport as i32,
         );
 
         true
