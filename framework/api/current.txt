@@ -22,8 +22,8 @@ package android.bluetooth {
     method @Deprecated @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean disable();
     method @Deprecated @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean enable();
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.LOCAL_MAC_ADDRESS}) public String getAddress();
-    method public android.bluetooth.le.BluetoothLeAdvertiser getBluetoothLeAdvertiser();
-    method public android.bluetooth.le.BluetoothLeScanner getBluetoothLeScanner();
+    method @Nullable public android.bluetooth.le.BluetoothLeAdvertiser getBluetoothLeAdvertiser();
+    method @Nullable public android.bluetooth.le.BluetoothLeScanner getBluetoothLeScanner();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public java.util.Set<android.bluetooth.BluetoothDevice> getBondedDevices();
     method @Deprecated public static android.bluetooth.BluetoothAdapter getDefaultAdapter();
     method @Nullable @RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN) public java.time.Duration getDiscoverableTimeout();

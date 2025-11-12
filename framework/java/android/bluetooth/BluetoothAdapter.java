@@ -1157,11 +1157,12 @@ public final class BluetoothAdapter {
      * return null if Bluetooth is turned off or if Bluetooth LE Advertising is not supported on
      * this device.
      *
-     * <p>Use {@link #isMultipleAdvertisementSupported()} to check whether LE Advertising is
-     * supported on this device before calling this method.
+     * <p>Use {@link #isEnabled()} to check if Bluetooth is currently enabled. Use {@link
+     * #isMultipleAdvertisementSupported()} to check whether LE Advertising is supported on this
+     * device before calling this method.
      */
     @RequiresNoPermission
-    public BluetoothLeAdvertiser getBluetoothLeAdvertiser() {
+    public @Nullable BluetoothLeAdvertiser getBluetoothLeAdvertiser() {
         if (!getLeAccess()) {
             return null;
         }
@@ -1178,12 +1179,13 @@ public final class BluetoothAdapter {
      * operations. Will return null if Bluetooth is turned off or if Bluetooth LE Periodic
      * Advertising is not supported on this device.
      *
-     * <p>Use {@link #isLePeriodicAdvertisingSupported()} to check whether LE Periodic Advertising
-     * is supported on this device before calling this method.
+     * <p>Use {@link #isEnabled()} to check if Bluetooth is currently enabled. Use {@link
+     * #isLePeriodicAdvertisingSupported()} to check whether LE Periodic Advertising is supported on
+     * this device before calling this method.
      */
     @Hide
     @RequiresNoPermission
-    public PeriodicAdvertisingManager getPeriodicAdvertisingManager() {
+    public @Nullable PeriodicAdvertisingManager getPeriodicAdvertisingManager() {
         if (!getLeAccess()) {
             return null;
         }
@@ -1200,9 +1202,14 @@ public final class BluetoothAdapter {
         }
     }
 
-    /** Returns a {@link BluetoothLeScanner} object for Bluetooth LE scan operations. */
+    /**
+     * Returns a {@link BluetoothLeScanner} object for Bluetooth LE scan operations. Will return
+     * null if Bluetooth is turned off.
+     *
+     * <p>Use {@link #isEnabled()} to check if Bluetooth is currently enabled.
+     */
     @RequiresNoPermission
-    public BluetoothLeScanner getBluetoothLeScanner() {
+    public @Nullable BluetoothLeScanner getBluetoothLeScanner() {
         if (!getLeAccess()) {
             return null;
         }
