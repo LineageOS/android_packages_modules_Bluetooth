@@ -37,6 +37,7 @@
 #include "packet/avrcp/set_absolute_volume.h"
 #include "packet/avrcp/set_addressed_player.h"
 #include "packet/avrcp/set_player_application_setting_value.h"
+#include "stack/include/main_thread.h"
 
 template <>
 struct std::formatter<bluetooth::avrcp::PlayState> : enum_formatter<bluetooth::avrcp::PlayState> {};
@@ -807,6 +808,19 @@ void Device::PlaybackPosNotificationResponse(uint8_t label, bool interim, PlaySt
     log::verbose("Queue next play position update");
     play_pos_update_cb_.Reset(
             base::Bind(&Device::HandlePlayPosUpdate, weak_ptr_factory_.GetWeakPtr()));
+    if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+      /**
+       * The `replace_message_loop_thread_with_gd_handler` flag converts libchrome `base::Thread`
+       * usage to `GdThread`. This makes `btbase::AbstractMessageLoop::current_task_runner()` return
+       * `NULL`, so we must post delayed tasks directly to the main thread.
+       *
+       * Considering `play_pos_interval_` is in `seconds` unit.
+       */
+      do_in_main_thread_delayed(play_pos_update_cb_.callback(),
+                                std::chrono::microseconds(play_pos_interval_ * 1000000));
+      return;
+    }
+
     btbase::AbstractMessageLoop::current_task_runner()->PostDelayedTask(
             FROM_HERE, play_pos_update_cb_.callback(),
 #if BASE_VER < 931007
