@@ -388,7 +388,6 @@ protected:
     ContentControlIdKeeper::GetInstance()->Stop();
 
     bluetooth::hci::testing::mock_controller_.release();
-    delete mock_audio_source_;
     iso_active_callback = nullptr;
     delete mock_audio_source_;
     iso_manager_->Stop();
