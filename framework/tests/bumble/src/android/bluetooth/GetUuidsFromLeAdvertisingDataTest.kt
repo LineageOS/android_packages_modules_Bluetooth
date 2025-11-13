@@ -27,7 +27,6 @@ import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
-import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
@@ -41,7 +40,6 @@ import org.hamcrest.Matcher
 import org.hamcrest.Matchers.arrayContainingInAnyOrder
 import org.hamcrest.core.AllOf
 import org.junit.After
-import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -111,14 +109,13 @@ class GetUuidsFromLeAdvertisingDataTest {
         }
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_GET_SVC_UUIDS_FROM_BLE_ADV_DATA)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.get_svc_uuids_from_ble_adv_data")
     @Test
     fun getUuidsFromServiceUuid(
         @TestParameter usePublicAddress: Boolean,
         @TestParameter createLeBond: Boolean,
     ) {
         if (createLeBond) {
-            assumeTrue(Flags.getSvcUuidsBugfix())
             createLeBondAndVerify(usePublicAddress)
             restartBluetooth()
         }
@@ -140,14 +137,13 @@ class GetUuidsFromLeAdvertisingDataTest {
         verifyDiscoveryBroadcastUuids(dataType, usePublicAddress, expectedUuids)
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_GET_SVC_UUIDS_FROM_BLE_ADV_DATA)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.get_svc_uuids_from_ble_adv_data")
     @Test
     fun getUuidsFromServiceData(
         @TestParameter usePublicAddress: Boolean,
         @TestParameter createLeBond: Boolean,
     ) {
         if (createLeBond) {
-            assumeTrue(Flags.getSvcUuidsBugfix())
             createLeBondAndVerify(usePublicAddress)
             restartBluetooth()
         }
@@ -168,14 +164,13 @@ class GetUuidsFromLeAdvertisingDataTest {
     }
 
     // Due to packet size limit in legacy advertising, separate test for 128 bit UUID.
-    @RequiresFlagsEnabled(Flags.FLAG_GET_SVC_UUIDS_FROM_BLE_ADV_DATA)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.get_svc_uuids_from_ble_adv_data")
     @Test
     fun getUuidsFromServiceData_128BitUuid(
         @TestParameter usePublicAddress: Boolean,
         @TestParameter createLeBond: Boolean,
     ) {
         if (createLeBond) {
-            assumeTrue(Flags.getSvcUuidsBugfix())
             createLeBondAndVerify(usePublicAddress)
             restartBluetooth()
         }
@@ -190,14 +185,13 @@ class GetUuidsFromLeAdvertisingDataTest {
         verifyDiscoveryBroadcastUuids(dataType, usePublicAddress, expectedUuids)
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_GET_SVC_UUIDS_FROM_BLE_ADV_DATA)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.get_svc_uuids_from_ble_adv_data")
     @Test
     fun getUuidsFromBothServiceUuidAndData(
         @TestParameter usePublicAddress: Boolean,
         @TestParameter createLeBond: Boolean,
     ) {
         if (createLeBond) {
-            assumeTrue(Flags.getSvcUuidsBugfix())
             createLeBondAndVerify(usePublicAddress)
             restartBluetooth()
         }
@@ -218,8 +212,8 @@ class GetUuidsFromLeAdvertisingDataTest {
     }
 
     @RequiresFlagsEnabled(
-        Flags.FLAG_GET_SVC_UUIDS_FROM_BLE_ADV_DATA,
-        Flags.FLAG_GET_SVC_UUIDS_BUGFIX,
+        "com.android.bluetooth.flags.get_svc_uuids_from_ble_adv_data",
+        "com.android.bluetooth.flags.get_svc_uuids_bugfix",
     )
     @Test
     fun doesNotContainAnyUuidDataType_shouldReturnNullUuid(
@@ -244,8 +238,8 @@ class GetUuidsFromLeAdvertisingDataTest {
     }
 
     @RequiresFlagsEnabled(
-        Flags.FLAG_GET_SVC_UUIDS_FROM_BLE_ADV_DATA,
-        Flags.FLAG_GET_SVC_UUIDS_BUGFIX,
+        "com.android.bluetooth.flags.get_svc_uuids_from_ble_adv_data",
+        "com.android.bluetooth.flags.get_svc_uuids_bugfix",
     )
     @Test
     fun uuidTypesAreRemovedFromAdvertisement_shouldReturnNullUuid(

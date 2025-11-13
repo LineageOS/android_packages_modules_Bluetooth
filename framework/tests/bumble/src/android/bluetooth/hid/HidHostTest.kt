@@ -58,7 +58,6 @@ import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
-import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
@@ -701,7 +700,9 @@ class HidHostTest {
      * Expectation: HID profile should connect successful after repairing.
      */
     @SuppressLint("MissingPermission")
-    @RequiresFlagsEnabled(Flags.FLAG_RESET_STATE_WHEN_REMOVING_NON_CONNECTED_HID_DEVICE)
+    @RequiresFlagsEnabled(
+        "com.android.bluetooth.flags.reset_state_when_removing_non_connected_hid_device"
+    )
     @Test
     fun hidRemoveBondWhenConnectionPendingTest(@TestParameter repair: Boolean) {
         assertThat(device.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS)

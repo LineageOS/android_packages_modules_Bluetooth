@@ -43,7 +43,6 @@ import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
-import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
@@ -242,7 +241,7 @@ class PairingTest {
      * 6. Android verifies bonded intent
      */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_IGNORE_UNRELATED_CANCEL_BOND)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.ignore_unrelated_cancel_bond")
     fun testBrEdrPairing_cancelBond_forUnrelatedDevice() {
         val intentReceiver =
             IntentReceiver.Builder(
