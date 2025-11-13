@@ -51,6 +51,16 @@ void Counter(CounterKey key, int64_t count = 1);
 void LogBluetoothEvent(const hci::Address& address, EventType event_type, State state);
 
 /**
+ * Logs a Bluetooth Event
+ *
+ * @param address address of associated device
+ * @param event_type type of event where this is getting logged from
+ * @param state state associated with the event
+ * @param uid uid of the app associated with the event
+ */
+void LogBluetoothEvent(const hci::Address& address, EventType event_type, State state, int uid);
+
+/**
  * Log link layer connection event
  *
  * @param address Stack wide consistent Bluetooth address of this event,
