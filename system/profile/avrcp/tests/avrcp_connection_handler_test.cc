@@ -112,6 +112,9 @@ protected:
   NiceMock<MockMediaInterface> mock_media_;
   NiceMock<MockA2dpInterface> mock_a2dp_;
   NiceMock<MockPlayerSettingsInterface> mock_player_settings_;
+  // Member variables should appear before the WeakPtrFactory, to ensure
+  // that any WeakPtrs are invalidated before its members
+  // variable's destructors are executed, rendering them invalid.
   base::WeakPtrFactory<AvrcpConnectionHandlerTest> weak_factory_{this};
 };
 
