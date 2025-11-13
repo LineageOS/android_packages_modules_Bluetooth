@@ -1702,6 +1702,12 @@ public class GattService extends ProfileService {
         return defaultValue;
     }
 
+    // TODO(b/377424060) Remove when "use internal APIs instead of framework APIs" is fixed
+    boolean isOnGattThread() {
+        if (!Flags.gattThread() || Utils.isInstrumentationTestMode()) return false;
+        return mGattHandler.getLooper().isCurrentThread();
+    }
+
     void enforceGattThread() {
         if (!Flags.gattThread() || Utils.isInstrumentationTestMode()) return;
 

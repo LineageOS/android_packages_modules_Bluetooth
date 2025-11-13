@@ -87,6 +87,11 @@ class GattServiceBinder(private var gattService: GattService?) :
         source: AttributionSource,
     ): List<BluetoothDevice> {
         val gatt = gattEnforceConnect(source) ?: return emptyList()
+        // Internal clients that use Gatt via framework APIs call this already on gatt thread
+        // TODO(b/377424060) Remove when "use internal APIs instead of framework APIs" is fixed
+        if (gatt.isOnGattThread()) {
+            return gatt.getDevicesMatchingConnectionStates(states)
+        }
         return gatt.fetchOnGattThread(
             { gatt.getDevicesMatchingConnectionStates(states) },
             emptyList(),
@@ -121,8 +126,24 @@ class GattServiceBinder(private var gattService: GattService?) :
         autoMtuEnabled: Boolean,
         source: AttributionSource,
     ) {
-        onGattThreadEnforceConnect(source) {
-            clientConnect(
+        val gatt = gattEnforceConnect(source) ?: return
+        // Internal clients that use Gatt via framework APIs call this already on gatt thread
+        // TODO(b/377424060) Remove when "use internal APIs instead of framework APIs" is fixed
+        if (gatt.isOnGattThread()) {
+            gatt.clientConnect(
+                callback,
+                device,
+                addressType,
+                isDirect,
+                transport,
+                opportunistic,
+                autoMtuEnabled,
+                source,
+            )
+            return
+        }
+        gatt.doOnGattThread {
+            gatt.clientConnect(
                 callback,
                 device,
                 addressType,
