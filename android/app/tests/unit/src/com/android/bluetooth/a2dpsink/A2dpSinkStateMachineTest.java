@@ -127,6 +127,8 @@ public class A2dpSinkStateMachineTest {
     @Test
     public void testIncomingConnectedInDisconnected() {
         sendConnectionEvent(STATE_CONNECTED);
+        verify(mService).connectionStateChanged(mDevice, STATE_DISCONNECTED, STATE_CONNECTING);
+        verify(mService).connectionStateChanged(mDevice, STATE_CONNECTING, STATE_CONNECTED);
         assertThat(mStateMachine.getState()).isEqualTo(STATE_CONNECTED);
     }
 
