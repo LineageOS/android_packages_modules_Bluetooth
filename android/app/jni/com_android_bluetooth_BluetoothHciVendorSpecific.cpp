@@ -33,6 +33,7 @@ static std::shared_timed_mutex callbacks_mutex;
 static jmethodID method_onCommandStatus;
 static jmethodID method_onCommandComplete;
 static jmethodID method_onEvent;
+static jmethodID method_onAclEvent;
 static jobject mCallbacksObj = nullptr;
 
 class BluetoothHciVendorSpecificCallbacksImpl
@@ -96,6 +97,24 @@ public:
     }
 
     callbackEnv->CallVoidMethod(mCallbacksObj, method_onEvent, (jint)code, j_data.get());
+  }
+
+  void onAclEvent(uint16_t handle, std::vector<uint8_t> data) override {
+    log::info("");
+    std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
+
+    CallbackEnv callbackEnv(__func__);
+    if (!callbackEnv.valid() || mCallbacksObj == nullptr) {
+      return;
+    }
+
+    auto j_data = toJByteArray(callbackEnv.get(), data);
+    if (!j_data.get()) {
+      log::error("Error while allocating byte array for ACL event data");
+      return;
+    }
+
+    callbackEnv->CallVoidMethod(mCallbacksObj, method_onAclEvent, (jint)handle, j_data.get());
   }
 
 private:
@@ -208,6 +227,7 @@ int register_com_android_bluetooth_btservice_BluetoothHciVendorSpecific(JNIEnv* 
           {"onCommandStatus", "(II[B)V", &method_onCommandStatus},
           {"onCommandComplete", "(I[B[B)V", &method_onCommandComplete},
           {"onEvent", "(I[B)V", &method_onEvent},
+          {"onAclEvent", "(I[B)V", &method_onAclEvent},
   };
   GET_JAVA_METHODS(env, "com/android/bluetooth/btservice/BluetoothHciVendorSpecificNativeInterface",
                    javaMethods);

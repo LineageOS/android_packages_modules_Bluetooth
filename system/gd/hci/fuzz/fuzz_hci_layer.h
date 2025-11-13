@@ -114,6 +114,14 @@ public:
     }
   }
 
+  void SetVendorAclHandleRange(uint16_t /* min */, uint16_t /* max */) override {}
+
+  void RegisterVendorSpecificAclHandler(
+          common::ContextualCallback<void(uint16_t, std::vector<uint8_t>)> /* handler */) override {
+  }
+
+  void UnregisterVendorSpecificAclHandler() override {}
+
   hci::SecurityInterface* GetSecurityInterface(
           common::ContextualCallback<void(hci::EventView)> event_handler) override;
 

@@ -100,6 +100,11 @@ public:
   void SetLeAclDataConsumer(LeAclDataConsumer* le_acl_data_consumer) override;
   void SetClassicAclDataConsumer(ClassicAclDataConsumer* classic_acl_data_consumer) override;
 
+  void SetVendorAclHandleRange(uint16_t min, uint16_t max) override;
+  void RegisterVendorSpecificAclHandler(
+          common::ContextualCallback<void(uint16_t, std::vector<uint8_t>)> handler) override;
+  void UnregisterVendorSpecificAclHandler() override;
+
   os::Handler* handler_;
 
 private:
@@ -116,6 +121,10 @@ private:
           GUARDED_BY(mutex_);
   std::map<VseSubeventCode, common::ContextualCallback<void(VendorSpecificEventView)>>
           registered_vs_events_ GUARDED_BY(mutex_);
+  uint16_t vendor_connection_handle_min_ GUARDED_BY(mutex_) = 0;
+  uint16_t vendor_connection_handle_max_ GUARDED_BY(mutex_) = 0;
+  common::ContextualCallback<void(uint16_t, std::vector<uint8_t>)> vendor_specific_acl_handler_
+          GUARDED_BY(mutex_);
 
   common::BidiQueue<AclView, AclBuilder> acl_queue_ GUARDED_BY(mutex_){
           3 /* TODO: Set queue depth */};

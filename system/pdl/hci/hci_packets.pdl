@@ -5381,6 +5381,12 @@ packet LeGetVendorCapabilitiesComplete105 : LeGetVendorCapabilitiesComplete104 {
   _payload_,
 }
 
+// HCI v1.06
+packet LeGetVendorCapabilitiesComplete106 : LeGetVendorCapabilitiesComplete105 {
+  vendor_connection_handle_min : 16,
+  vendor_connection_handle_max : 16,
+}
+
 enum SubOcf : 8 {
   SET_PARAM = 0x01,
   SET_DATA = 0x02,
