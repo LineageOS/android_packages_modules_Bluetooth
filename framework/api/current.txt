@@ -541,7 +541,8 @@ package android.bluetooth {
     method public android.bluetooth.BluetoothSocket createRfcommSocketToServiceRecord(java.util.UUID) throws java.io.IOException;
     method @NonNull public android.bluetooth.BluetoothSocket createUsingSocketSettings(@NonNull android.bluetooth.BluetoothSocketSettings) throws java.io.IOException;
     method public int describeContents();
-    method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean fetchUuidsWithSdp();
+    method @FlaggedApi("com.android.bluetooth.flags.explicit_uuid_transport_api") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean fetchUuids(int);
+    method @Deprecated @FlaggedApi("com.android.bluetooth.flags.explicit_uuid_transport_api") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean fetchUuidsWithSdp();
     method public String getAddress();
     method public int getAddressType();
     method @Nullable @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public String getAlias();

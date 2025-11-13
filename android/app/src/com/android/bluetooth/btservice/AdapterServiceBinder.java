@@ -21,6 +21,8 @@ import static android.Manifest.permission.DUMP;
 import static android.Manifest.permission.MODIFY_PHONE_STATE;
 import static android.bluetooth.BluetoothAdapter.SCAN_MODE_NONE;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.ChangeIds.BONDING_APIS_REQUIRE_PRIVILEGED_PERMISSION;
@@ -881,8 +883,43 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
+    public boolean fetchRemoteUuidsWithSdp(
+            BluetoothDevice device, int transport, AttributionSource source) {
+        requireNonNull(device);
+        AdapterService service = getService();
+        if (service == null
+                || !callerIsSystemOrActiveOrManagedUser(service, TAG, "fetchRemoteUuidsWithSdp")
+                || !enforceConnectPermissionForDataDelivery(
+                        service, source, TAG, "fetchRemoteUuidsWithSdp")) {
+            return false;
+        }
+        if (transport != TRANSPORT_AUTO) {
+            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+        }
+
+        Log.i(
+                TAG,
+                "fetchRemoteUuidsWithSdp: device="
+                        + device
+                        + ", transport="
+                        + transport
+                        + ", from "
+                        + getUidPidString());
+
+        service.addAssociatedPackage(device, source.getPackageName());
+        service.getRemoteDevices().fetchUuids(device, transport);
+        MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_FETCH_UUID_REQUEST, 1);
+        return true;
+    }
+
+    @Override
     public boolean fetchRemoteUuids(
             BluetoothDevice device, int transport, AttributionSource source) {
+        if (transport != TRANSPORT_AUTO
+                && transport != TRANSPORT_BREDR
+                && transport != TRANSPORT_LE) {
+            throw new IllegalArgumentException("invalid transport: " + transport);
+        }
         requireNonNull(device);
         AdapterService service = getService();
         if (service == null
@@ -890,9 +927,6 @@ class AdapterServiceBinder extends IBluetooth.Stub {
                 || !enforceConnectPermissionForDataDelivery(
                         service, source, TAG, "fetchRemoteUuids")) {
             return false;
-        }
-        if (transport != TRANSPORT_AUTO) {
-            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         }
 
         Log.i(
