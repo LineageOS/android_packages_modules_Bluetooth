@@ -32,6 +32,7 @@
 #include "bta_le_audio_broadcaster_api.h"
 #include "btif/include/btif_common.h"
 #include "btif/include/mock_core_callbacks.h"
+#include "btif_status.h"
 #include "btif_storage_mock.h"
 #include "btm_api_mock.h"
 #include "btm_iso_api.h"
@@ -130,7 +131,7 @@ bool hold_delayed_tasks = false;
 void init_message_loop_thread();
 void cleanup_message_loop_thread();
 
-bt_status_t do_in_main_thread(base::OnceClosure task) {
+BtStatus do_in_main_thread(base::OnceClosure task) {
   // Wrap the task with task counter so we could later know if there are
   // any callbacks scheduled and we should wait before performing some actions
   if (!message_loop_thread.DoInThread(base::BindOnce(
@@ -140,19 +141,19 @@ bt_status_t do_in_main_thread(base::OnceClosure task) {
               },
               std::move(task), std::ref(num_async_tasks)))) {
     bluetooth::log::error("failed to post task to task runner!");
-    return BT_STATUS_FAIL;
+    return BtifStatus(FAIL);
   }
   num_async_tasks++;
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
-bt_status_t do_in_main_thread_delayed(base::OnceClosure task, std::chrono::microseconds /*delay*/) {
+BtStatus do_in_main_thread_delayed(base::OnceClosure task, std::chrono::microseconds /*delay*/) {
   if (hold_delayed_tasks) {
     /* Wrap the task with task counter so we could later know if there are
      * any callbacks scheduled and we should wait before performing some actions
      */
     pending_delayed_tasks_.push_back(std::move(task));
-    return BT_STATUS_SUCCESS;
+    return BtifStatus();
   } else {
     /* For testing purpose it is ok to just skip delay */
     return do_in_main_thread(std::move(task));

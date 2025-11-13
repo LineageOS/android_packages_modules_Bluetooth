@@ -1385,12 +1385,12 @@ void invoke_oob_data_request_cb(tBT_TRANSPORT t, bool valid, Octet16 c, Octet16 
   // of itself. 16 + 16 + 2 = 34 Data 0x0022 Little Endian order 0x2200
   oob_data.oob_data_length[0] = 0;
   oob_data.oob_data_length[1] = 34;
-  bt_status_t status = do_in_jni_thread(base::BindOnce(
+  BtStatus status = do_in_jni_thread(base::BindOnce(
           [](tBT_TRANSPORT t, bt_oob_data_t oob_data) {
             HAL_CBACK(bt_hal_cbacks, generate_local_oob_data_cb, t, oob_data);
           },
           t, oob_data));
-  if (status != BT_STATUS_SUCCESS) {
+  if (!status) {
     log::error("Failed to call callback!");
   }
 }

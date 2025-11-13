@@ -474,8 +474,8 @@ bool btif_a2dp_source_start_session(const RawAddress& peer_address,
 
   btif_a2dp_source_audio_tx_flush_req();
 
-  if (do_in_main_thread(base::BindOnce(&btif_a2dp_source_start_session_delayed, peer_address,
-                                       std::move(peer_ready_promise))) != BT_STATUS_SUCCESS) {
+  if (!do_in_main_thread(base::BindOnce(&btif_a2dp_source_start_session_delayed, peer_address,
+                                        std::move(peer_ready_promise)))) {
     log::fatal("peer_address={} state={} fails to context switch", peer_address,
                btif_a2dp_source_cb.StateStr());
     return false;
@@ -705,9 +705,9 @@ void btif_a2dp_source_encoder_user_config_update_req(
   log::info("peer_address={} state={} {} codec_preference(s)", peer_address,
             btif_a2dp_source_cb.StateStr(), codec_user_preferences.size());
 
-  if (do_in_main_thread(base::BindOnce(&btif_a2dp_source_encoder_user_config_update_event,
-                                       peer_address, codec_user_preferences,
-                                       std::move(peer_ready_promise))) != BT_STATUS_SUCCESS) {
+  if (!do_in_main_thread(base::BindOnce(&btif_a2dp_source_encoder_user_config_update_event,
+                                        peer_address, codec_user_preferences,
+                                        std::move(peer_ready_promise)))) {
     // cannot set promise but triggers crash
     log::fatal("peer_address={} state={} fails to context switch", peer_address,
                btif_a2dp_source_cb.StateStr());

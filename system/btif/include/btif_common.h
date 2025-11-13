@@ -31,6 +31,7 @@
 #include <functional>
 
 #include "abstract_message_loop.h"
+#include "bt_status.h"
 #include "bta/include/bta_api.h"
 #include "common/message_loop_thread.h"
 #include "include/hardware/bluetooth.h"
@@ -99,7 +100,7 @@ typedef struct {
  *  Functions
  ******************************************************************************/
 
-bt_status_t do_in_jni_thread(base::OnceClosure task);
+BtStatus do_in_jni_thread(base::OnceClosure task);
 bool is_on_jni_thread();
 bluetooth::common::MessageLoopThread* get_jni_thread();
 
@@ -133,8 +134,8 @@ void btif_remote_properties_evt(bt_status_t status, RawAddress* remote_addr,
                                 tBLE_ADDR_TYPE addr_type, uint32_t num_props,
                                 bt_property_t* p_props);
 
-bt_status_t btif_transfer_context(tBTIF_CBACK* p_cback, uint16_t event, char* p_params,
-                                  int param_len, tBTIF_COPY_CBACK* p_copy_cback);
+BtStatus btif_transfer_context(tBTIF_CBACK* p_cback, uint16_t event, char* p_params, int param_len,
+                               tBTIF_COPY_CBACK* p_copy_cback);
 
 void btif_init_ok();
 

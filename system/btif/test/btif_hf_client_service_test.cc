@@ -5,6 +5,7 @@
 
 #undef LOG_TAG
 #include "btif/src/btif_hf_client.cc"
+#include "btif_status.h"
 
 static tBTA_HF_CLIENT_FEAT gFeatures;
 
@@ -28,9 +29,9 @@ tBTA_STATUS BTA_HfClientEnable(tBTA_HF_CLIENT_CBACK* /*p_cback*/, tBTA_HF_CLIENT
   return BTA_SUCCESS;
 }
 void BTA_HfClientDisable(void) {}
-bt_status_t btif_transfer_context(tBTIF_CBACK* /*p_cback*/, uint16_t /*event*/, char* /*p_params*/,
-                                  int /*param_len*/, tBTIF_COPY_CBACK* /*p_copy_cback*/) {
-  return BT_STATUS_SUCCESS;
+BtStatus btif_transfer_context(tBTIF_CBACK* /*p_cback*/, uint16_t /*event*/, char* /*p_params*/,
+                               int /*param_len*/, tBTIF_COPY_CBACK* /*p_copy_cback*/) {
+  return BtifStatus();
 }
 void btif_queue_advance() {}
 std::string dump_hf_client_event(uint16_t /*event*/) { return "UNKNOWN MSG ID"; }

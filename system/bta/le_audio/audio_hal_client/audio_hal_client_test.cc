@@ -27,8 +27,8 @@
 
 #include "audio_hal_interface/le_audio_software.h"
 #include "base/bind_helpers.h"
+#include "btif_status.h"
 #include "common/message_loop_thread.h"
-#include "hardware/bluetooth.h"
 #include "osi/include/wakelock.h"
 #include "stack/include/main_thread.h"
 
@@ -55,12 +55,12 @@ using namespace bluetooth;
 bluetooth::common::MessageLoopThread message_loop_thread(
         "test message loop", bluetooth::os::Thread::Priority::REAL_TIME);
 bluetooth::common::MessageLoopThread* get_main_thread() { return &message_loop_thread; }
-bt_status_t do_in_main_thread(base::OnceClosure task) {
+BtStatus do_in_main_thread(base::OnceClosure task) {
   if (!message_loop_thread.DoInThread(std::move(task))) {
     log::error("failed to post task to task runner!");
-    return BT_STATUS_FAIL;
+    return BtifStatus(JNI_THREAD_ATTACH_ERROR);
   }
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 static void init_message_loop_thread() {

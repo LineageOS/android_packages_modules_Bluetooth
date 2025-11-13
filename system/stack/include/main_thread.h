@@ -21,7 +21,7 @@
 
 #include "common/message_loop_thread.h"
 #include "common/postable_context.h"
-#include "include/hardware/bluetooth.h"
+#include "include/bt_status.h"
 
 using BtMainClosure = std::function<void()>;
 
@@ -29,8 +29,8 @@ bluetooth::common::MessageLoopThread* get_main_thread();
 bluetooth::common::PostableContext* get_main();
 
 bool is_main_thread();
-bt_status_t do_in_main_thread(base::OnceClosure task);
-bt_status_t do_in_main_thread_delayed(base::OnceClosure task, std::chrono::microseconds delay);
+BtStatus do_in_main_thread(base::OnceClosure task);
+BtStatus do_in_main_thread_delayed(base::OnceClosure task, std::chrono::microseconds delay);
 void post_on_bt_main(BtMainClosure closure);
 void main_thread_start_up();
 void main_thread_shut_down();

@@ -28,7 +28,7 @@
 static const hci_t* hci;
 
 static void post_to_main_message_loop(BT_HDR* p_msg) {
-  if (do_in_main_thread(base::Bind(&btu_hci_msg_process, p_msg)) != BT_STATUS_SUCCESS) {
+  if (!do_in_main_thread(base::Bind(&btu_hci_msg_process, p_msg))) {
     bluetooth::log::error("do_in_main_thread failed");
   }
 }

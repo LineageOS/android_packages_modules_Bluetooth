@@ -23,6 +23,7 @@
 #include <functional>
 #include <vector>
 
+#include "bt_status.h"
 #include "osi/include/allocator.h"
 #include "stack/include/avct_api.h"
 #include "stack/include/avrc_api.h"
@@ -39,7 +40,7 @@ using namespace bluetooth;
 using ::testing::NiceMock;
 using ::testing::Unused;
 
-bt_status_t do_in_main_thread(base::OnceCallback<void()>) {
+BtStatus do_in_main_thread(base::OnceCallback<void()>) {
   // this is not properly mocked, so we use abort to catch if this is used in
   // any test cases
   abort();

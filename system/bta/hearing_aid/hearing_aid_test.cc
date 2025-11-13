@@ -33,6 +33,7 @@
 #include "bta_gatt_api_mock.h"
 #include "bta_gatt_queue_mock.h"
 #include "bta_hearing_aid_api.h"
+#include "btif_status.h"
 #include "btif_storage_mock.h"
 #include "btm_api_mock.h"
 #include "gatt/database_builder.h"
@@ -74,7 +75,7 @@ std::atomic<int> num_async_tasks;
 bluetooth::common::MessageLoopThread message_loop_thread(
         "test message loop", bluetooth::os::Thread::Priority::REAL_TIME);
 
-bt_status_t do_in_main_thread(base::OnceClosure task) {
+BtStatus do_in_main_thread(base::OnceClosure task) {
   // Wrap the task with task counter so we could later know if there are
   // any callbacks scheduled and we should wait before performing some actions
   if (!message_loop_thread.DoInThread(base::BindOnce(
@@ -84,10 +85,10 @@ bt_status_t do_in_main_thread(base::OnceClosure task) {
               },
               std::move(task), std::ref(num_async_tasks)))) {
     log::error("failed to post task to task runner!");
-    return BT_STATUS_FAIL;
+    return BtifStatus(FAIL);
   }
   num_async_tasks++;
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 static void init_message_loop_thread() {

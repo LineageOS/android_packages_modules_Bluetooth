@@ -814,8 +814,8 @@ static void bte_hf_evt(tBTA_AG_EVT event, tBTA_AG* p_data) {
 
   /* switch context to btif task context (copy full union size for convenience)
    */
-  status = BtifStatus(static_cast<BtifStatusCode>(btif_transfer_context(
-          btif_hf_upstreams_evt, (uint16_t)event, (char*)p_data, param_len, nullptr)));
+  status = btif_transfer_context(btif_hf_upstreams_evt, (uint16_t)event, (char*)p_data, param_len,
+                                 nullptr);
 
   /* catch any failed context transfers */
   ASSERTC(status, "context transfer failed", status);

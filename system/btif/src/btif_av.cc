@@ -3490,10 +3490,10 @@ BtStatus btif_av_source_init(btav_source_callbacks_t* callbacks, int max_connect
   log::info("");
   std::promise<BtStatus> init_complete_promise;
   std::future<BtStatus> init_complete_promise_future = init_complete_promise.get_future();
-  const auto& status = BtifStatus(static_cast<BtifStatusCode>(do_in_main_thread(
+  const auto& status = do_in_main_thread(
           base::BindOnce(&BtifAvSource::Init, base::Unretained(&btif_av_source), callbacks,
                          max_connected_audio_devices, codec_priorities, offloading_preference,
-                         supported_codecs, std::move(init_complete_promise)))));
+                         supported_codecs, std::move(init_complete_promise)));
   if (status) {
     init_complete_promise_future.wait();
     return init_complete_promise_future.get();
@@ -3509,9 +3509,9 @@ BtStatus btif_av_sink_init(btav_sink_callbacks_t* callbacks, int max_connected_a
 
   std::promise<BtStatus> init_complete_promise;
   std::future<BtStatus> init_complete_promise_future = init_complete_promise.get_future();
-  const auto status = BtifStatus(static_cast<BtifStatusCode>(do_in_main_thread(
+  const auto status = do_in_main_thread(
           base::BindOnce(&BtifAvSink::Init, base::Unretained(&btif_av_sink), callbacks,
-                         max_connected_audio_devices, std::move(init_complete_promise)))));
+                         max_connected_audio_devices, std::move(init_complete_promise)));
   if (status) {
     init_complete_promise_future.wait();
     return init_complete_promise_future.get();
@@ -3559,8 +3559,7 @@ static BtStatus connect_int(RawAddress peer_address, uint16_t uuid) {
     }
     peer->StateMachine().ProcessEvent(BTIF_AV_CONNECT_REQ_EVT, nullptr);
   };
-  BtStatus status = BtifStatus(static_cast<BtifStatusCode>(
-          do_in_main_thread(base::BindOnce(connection_task, peer_address, uuid))));
+  BtStatus status = do_in_main_thread(base::BindOnce(connection_task, peer_address, uuid));
   if (!status) {
     log::error("can't post connection task to main_thread");
   }
@@ -3639,10 +3638,9 @@ BtStatus btif_av_source_disconnect(const RawAddress& peer_address) {
   }
 
   BtifAvEvent btif_av_event(BTIF_AV_DISCONNECT_REQ_EVT, &peer_address, sizeof(peer_address));
-  return BtifStatus(static_cast<BtifStatusCode>(
-          do_in_main_thread(base::BindOnce(&btif_av_handle_event,
-                                           AVDT_TSEP_SNK,  // peer_sep
-                                           peer_address, kBtaHandleUnknown, btif_av_event))));
+  return do_in_main_thread(base::BindOnce(&btif_av_handle_event,
+                                          AVDT_TSEP_SNK,  // peer_sep
+                                          peer_address, kBtaHandleUnknown, btif_av_event));
 }
 
 BtStatus btif_av_sink_disconnect(const RawAddress& peer_address) {
@@ -3654,10 +3652,9 @@ BtStatus btif_av_sink_disconnect(const RawAddress& peer_address) {
   }
 
   BtifAvEvent btif_av_event(BTIF_AV_DISCONNECT_REQ_EVT, &peer_address, sizeof(peer_address));
-  return BtifStatus(static_cast<BtifStatusCode>(
-          do_in_main_thread(base::BindOnce(&btif_av_handle_event,
-                                           AVDT_TSEP_SRC,  // peer_sep
-                                           peer_address, kBtaHandleUnknown, btif_av_event))));
+  return do_in_main_thread(base::BindOnce(&btif_av_handle_event,
+                                          AVDT_TSEP_SRC,  // peer_sep
+                                          peer_address, kBtaHandleUnknown, btif_av_event));
 }
 
 BtStatus btif_av_sink_set_active_device(const RawAddress& peer_address) {
@@ -3670,9 +3667,9 @@ BtStatus btif_av_sink_set_active_device(const RawAddress& peer_address) {
 
   std::promise<void> peer_ready_promise;
   std::future<void> peer_ready_future = peer_ready_promise.get_future();
-  BtStatus status = BtifStatus(static_cast<BtifStatusCode>(do_in_main_thread(
-      base::BindOnce(&set_active_peer_int, AVDT_TSEP_SRC,  // peer_sep
-                     peer_address, std::move(peer_ready_promise)))));
+  BtStatus status =
+          do_in_main_thread(base::BindOnce(&set_active_peer_int, AVDT_TSEP_SRC,  // peer_sep
+                                           peer_address, std::move(peer_ready_promise)));
   if (status) {
     peer_ready_future.wait();
   } else {
@@ -3689,8 +3686,7 @@ BtStatus btif_av_source_set_silence_device(const RawAddress& peer_address, bool 
     return BtifStatus(NOT_READY);
   }
 
-  return BtifStatus(static_cast<BtifStatusCode>(do_in_main_thread(
-      base::BindOnce(&set_source_silence_peer_int, peer_address, silence))));
+  return do_in_main_thread(base::BindOnce(&set_source_silence_peer_int, peer_address, silence));
 }
 
 BtStatus btif_av_source_set_active_device(const RawAddress& peer_address) {
@@ -3703,9 +3699,9 @@ BtStatus btif_av_source_set_active_device(const RawAddress& peer_address) {
 
   std::promise<void> peer_ready_promise;
   std::future<void> peer_ready_future = peer_ready_promise.get_future();
-  BtStatus status = BtifStatus(static_cast<BtifStatusCode>(do_in_main_thread(
-      base::BindOnce(&set_active_peer_int, AVDT_TSEP_SNK,  // peer_sep
-                     peer_address, std::move(peer_ready_promise)))));
+  BtStatus status =
+          do_in_main_thread(base::BindOnce(&set_active_peer_int, AVDT_TSEP_SNK,  // peer_sep
+                                           peer_address, std::move(peer_ready_promise)));
   if (status) {
     peer_ready_future.wait();
   } else {

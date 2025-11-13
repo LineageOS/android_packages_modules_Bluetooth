@@ -25,8 +25,8 @@
 #include <base/threading/thread.h>
 #include <bluetooth/log.h>
 
+#include "btif_status.h"
 #include "common/message_loop_thread.h"
-#include "include/hardware/bluetooth.h"
 
 using bluetooth::common::MessageLoopThread;
 using namespace bluetooth;
@@ -38,30 +38,30 @@ bluetooth::common::PostableContext* get_main() { return main_thread.Postable(); 
 
 bool is_main_thread() { return main_thread.IsRunningOnSameThread(); }
 
-bt_status_t do_in_main_thread(base::OnceClosure task) {
+BtStatus do_in_main_thread(base::OnceClosure task) {
   if (!main_thread.DoInThread(std::move(task))) {
     log::error("failed to post task to task runner!");
-    return BT_STATUS_JNI_THREAD_ATTACH_ERROR;
+    return BtifStatus(JNI_THREAD_ATTACH_ERROR);
   }
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
-bt_status_t do_in_main_thread_delayed(base::OnceClosure task, std::chrono::microseconds delay) {
+BtStatus do_in_main_thread_delayed(base::OnceClosure task, std::chrono::microseconds delay) {
   if (!main_thread.DoInThreadDelayed(std::move(task), delay)) {
     log::error("failed to post task to task runner!");
-    return BT_STATUS_JNI_THREAD_ATTACH_ERROR;
+    return BtifStatus(JNI_THREAD_ATTACH_ERROR);
   }
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 static void do_post_on_bt_main(BtMainClosure closure) { closure(); }
 
 void post_on_bt_main(BtMainClosure closure) {
-  log::assert_that(do_in_main_thread(base::BindOnce(do_post_on_bt_main, std::move(closure))) ==
-                           BT_STATUS_SUCCESS,
-                   "assert failed: do_in_main_thread("
-                   "base::BindOnce(do_post_on_bt_main, std::move(closure))) == "
-                   "BT_STATUS_SUCCESS");
+  log::assert_that(
+          do_in_main_thread(base::BindOnce(do_post_on_bt_main, std::move(closure))) == BtifStatus(),
+          "assert failed: do_in_main_thread("
+          "base::BindOnce(do_post_on_bt_main, std::move(closure))) == "
+          "BtifStatus()");
 }
 
 void main_thread_start_up() {
