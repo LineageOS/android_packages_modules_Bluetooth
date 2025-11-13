@@ -231,6 +231,7 @@ public:
 #define BTM_SEC_RS_NOT_PENDING 0 /* Role Switch not in progress */
 #define BTM_SEC_RS_PENDING 1     /* Role Switch in progress */
 #define BTM_SEC_DISC_PENDING 2   /* Disconnect is pending */
+
 private:
   uint8_t rs_disc_pending = BTM_SEC_RS_NOT_PENDING;
   friend struct StackAclBtmAcl;
