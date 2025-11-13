@@ -41,6 +41,7 @@
 #include "bta/include/bta_sdp_api.h"
 #include "bta_api.h"
 #include "btif_common.h"
+#include "btif_status.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;
@@ -59,7 +60,8 @@ static void btif_sdp_search_comp_evt(uint16_t event, char* p_param) {
     return;
   }
 
-  HAL_CBACK(bt_sdp_callbacks, sdp_search_cb, (bt_status_t)evt_data->status, evt_data->remote_addr,
+  HAL_CBACK(bt_sdp_callbacks, sdp_search_cb,
+            BtifStatus(static_cast<BtifStatusCode>(evt_data->status)), evt_data->remote_addr,
             evt_data->uuid, evt_data->record_count, evt_data->records);
 }
 
@@ -105,7 +107,7 @@ static void sdp_dm_cback(tBTA_SDP_EVT event, tBTA_SDP* p_data, void* user_data) 
   }
 }
 
-static bt_status_t init(btsdp_callbacks_t* callbacks) {
+static BtStatus init(btsdp_callbacks_t* callbacks) {
   log::verbose("Sdp Search Init");
 
   bt_sdp_callbacks = callbacks;
@@ -113,22 +115,22 @@ static bt_status_t init(btsdp_callbacks_t* callbacks) {
 
   btif_enable_service(BTA_SDP_SERVICE_ID);
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
-static bt_status_t deinit() {
+static BtStatus deinit() {
   log::verbose("Sdp Search Deinit");
 
   bt_sdp_callbacks = NULL;
   sdp_server_cleanup();
   btif_disable_service(BTA_SDP_SERVICE_ID);
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
-static bt_status_t search(RawAddress bd_addr, const Uuid& uuid) {
+static BtStatus search(RawAddress bd_addr, const Uuid& uuid) {
   BTA_SdpSearch(bd_addr, uuid);
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 static const btsdp_interface_t sdp_if = {
@@ -145,10 +147,10 @@ const btsdp_interface_t* btif_sdp_get_interface(void) {
  *
  * Description      Initializes/Shuts down the service
  *
- * Returns          BT_STATUS_SUCCESS on success, BT_STATUS_FAIL otherwise
+ * Returns          BtifStatus() on success, BtifStatus(FAIL) otherwise
  *
  ******************************************************************************/
-bt_status_t btif_sdp_execute_service(bool b_enable) {
+BtStatus btif_sdp_execute_service(bool b_enable) {
   log::verbose("enable:{}", b_enable);
 
   if (b_enable) {
@@ -156,5 +158,5 @@ bt_status_t btif_sdp_execute_service(bool b_enable) {
   } else {
     /* This is called on BT disable so no need to extra cleanup */
   }
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
