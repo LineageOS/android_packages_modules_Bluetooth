@@ -180,7 +180,7 @@ public class A2dpSinkService extends ConnectableProfile {
         mHandler.post(
                 () -> {
                     A2dpSinkStateMachine stateMachine = getOrCreateStateMachine(device);
-                    stateMachine.dispatchMessage(A2dpSinkStateMachine.MESSAGE_CONNECT);
+                    stateMachine.connect();
                 });
 
         return true;
@@ -363,21 +363,13 @@ public class A2dpSinkService extends ConnectableProfile {
         mHandler.post(
                 () -> {
                     A2dpSinkStateMachine stateMachine = getOrCreateStateMachine(device);
-                    stateMachine.dispatchMessage(
-                            A2dpSinkStateMachine.MESSAGE_CONNECTION_STATE_CHANGED, state);
+                    stateMachine.onConnectionStateChanged(state);
                 });
     }
 
     void onAudioStateChangedFromNative(int state) {
         synchronized (mStreamHandlerLock) {
-            if (state == A2dpSinkNativeInterface.AUDIO_STATE_STARTED) {
-                mA2dpSinkStreamHandler.sendEmptyMessage(A2dpSinkStreamHandler.SRC_STR_START);
-            } else if (state == A2dpSinkNativeInterface.AUDIO_STATE_STOPPED
-                    || state == A2dpSinkNativeInterface.AUDIO_STATE_REMOTE_SUSPEND) {
-                mA2dpSinkStreamHandler.sendEmptyMessage(A2dpSinkStreamHandler.SRC_STR_STOP);
-            } else {
-                Log.w(TAG, "Unhandled audio state change, state=" + state);
-            }
+            mA2dpSinkStreamHandler.onAudioStateChanged(state);
         }
     }
 
@@ -399,8 +391,7 @@ public class A2dpSinkService extends ConnectableProfile {
             Log.w(TAG, "onAudioConfigChangedFromNative(device=" + device + "): Not connected");
             return;
         }
-        stateMachine.sendMessage(
-                A2dpSinkStateMachine.MESSAGE_AUDIO_CONFIG_CHANGED, sampleRate, channelCount);
+        stateMachine.onAudioConfigChanged(sampleRate, channelCount);
     }
 
     void connectionStateChanged(BluetoothDevice device, int fromState, int toState) {

@@ -114,9 +114,22 @@ class A2dpSinkStateMachine extends StateMachine {
         return mDevice;
     }
 
-    /** send the Disconnect command asynchronously */
+    /** Send the Connect command */
+    final void connect() {
+        dispatchMessage(MESSAGE_CONNECT);
+    }
+
+    /** Send the Disconnect command asynchronously */
     final void disconnect() {
         sendMessage(MESSAGE_DISCONNECT);
+    }
+
+    final void onConnectionStateChanged(int state) {
+        dispatchMessage(MESSAGE_CONNECTION_STATE_CHANGED, state);
+    }
+
+    final void onAudioConfigChanged(int sampleRate, int channelCount) {
+        sendMessage(MESSAGE_AUDIO_CONFIG_CHANGED, sampleRate, channelCount);
     }
 
     /**
@@ -140,7 +153,7 @@ class A2dpSinkStateMachine extends StateMachine {
             if (mMostRecentState != STATE_DISCONNECTED) {
                 sendMessage(CLEANUP);
             }
-            onConnectionStateChanged(STATE_DISCONNECTED);
+            setMostRecentState(STATE_DISCONNECTED);
         }
 
         @Override
@@ -176,7 +189,7 @@ class A2dpSinkStateMachine extends StateMachine {
                     }
                 }
                 case STATE_CONNECTED -> {
-                    onConnectionStateChanged(STATE_CONNECTING);
+                    setMostRecentState(STATE_CONNECTING);
                     transitionTo(mConnected);
                 }
                 case STATE_DISCONNECTED -> sendMessage(CLEANUP);
@@ -189,7 +202,7 @@ class A2dpSinkStateMachine extends StateMachine {
         @Override
         public void enter() {
             debug("Enter");
-            onConnectionStateChanged(STATE_CONNECTING);
+            setMostRecentState(STATE_CONNECTING);
             removeMessages(CLEANUP);
             sendMessageDelayed(MESSAGE_CONNECT_TIMEOUT, CONNECT_TIMEOUT_MS);
         }
@@ -231,7 +244,7 @@ class A2dpSinkStateMachine extends StateMachine {
         public void enter() {
             debug("Enter");
             removeMessages(CLEANUP);
-            onConnectionStateChanged(STATE_CONNECTED);
+            setMostRecentState(STATE_CONNECTED);
         }
 
         @Override
@@ -269,12 +282,12 @@ class A2dpSinkStateMachine extends StateMachine {
         @Override
         public void enter() {
             debug("Enter");
-            onConnectionStateChanged(STATE_DISCONNECTING);
+            setMostRecentState(STATE_DISCONNECTING);
             transitionTo(mDisconnected);
         }
     }
 
-    protected void onConnectionStateChanged(int currentState) {
+    protected void setMostRecentState(int currentState) {
         if (mMostRecentState == currentState) {
             return;
         }
