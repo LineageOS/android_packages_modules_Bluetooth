@@ -1112,8 +1112,7 @@ public class ScanController {
                         Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService),
                         Util.checkCallerHasScanWithoutLocationPermission(mAdapterService),
                         getAssociatedDevices(callingPackage));
-
-        dispatchStartScan(scannerId, settings, filters, scanClient);
+        dispatchStartScan(scanClient);
     }
 
     // TODO(b/455057044) Make private on cleanup
@@ -1131,31 +1130,30 @@ public class ScanController {
                         Util.checkCallerHasNetworkSettingsPermission(mAdapterService),
                         Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService),
                         Util.checkCallerHasScanWithoutLocationPermission(mAdapterService));
-        dispatchStartScan(scannerId, settings, filters, scanClient);
+        dispatchStartScan(scanClient);
     }
 
-    private void dispatchStartScan(
-            int scannerId, ScanSettings settings, List<ScanFilter> filters, ScanClient scanClient) {
-        var appScanStats = mScannerMap.getAppScanStatsById(scannerId);
+    private void dispatchStartScan(ScanClient client) {
+        var appScanStats = mScannerMap.getAppScanStatsById(client.getScannerId());
         if (appScanStats != null) {
-            scanClient.setAppScanStats(appScanStats);
-            mScanManager.fetchAppForegroundState(scanClient);
-            boolean isFilteredScan = !filters.isEmpty();
+            client.setAppScanStats(appScanStats);
+            mScanManager.fetchAppForegroundState(client);
+            boolean isFilteredScan = !client.getFilters().isEmpty();
             boolean isCallbackScan = false;
 
-            var app = mScannerMap.getById(scannerId);
+            var app = mScannerMap.getById(client.getScannerId());
             if (app != null) {
                 isCallbackScan = app.getCallback() != null;
             }
             appScanStats.recordScanStart(
-                    settings,
-                    filters,
+                    client.getSettings(),
+                    client.getFilters(),
                     isFilteredScan,
                     isCallbackScan,
-                    scannerId,
+                    client.getScannerId(),
                     app == null ? null : app.getAttributionTag());
         }
-        mScanManager.startScan(scanClient);
+        mScanManager.startScan(client);
     }
 
     void registerPiAndStartScan(
