@@ -310,16 +310,13 @@ object ScanUtil {
     // A valid filter need at least one field not empty
     private fun isFilteredScan(client: ScanClient) = client.filters.any { !it.isAllFieldsEmpty }
 
-    @JvmStatic
     fun isBackgroundScan(settings: ScanSettings) =
         (settings.callbackType and ScanSettings.CALLBACK_TYPE_FIRST_MATCH) != 0
 
-    @JvmStatic
     fun isBatchScan(settings: ScanSettings) =
         settings.callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES &&
             settings.reportDelayMillis != 0L
 
-    @JvmStatic
     fun isOpportunisticScan(settings: ScanSettings) = settings.scanMode == SCAN_MODE_OPPORTUNISTIC
 
     @JvmStatic
@@ -336,7 +333,6 @@ object ScanUtil {
     private fun isFirstMatchScanClient(client: ScanClient) =
         (client.settings.callbackType and ScanSettings.CALLBACK_TYPE_FIRST_MATCH) != 0
 
-    @JvmStatic
     fun isAllMatchesAutoBatchScanClient(client: ScanClient) =
         client.settings.callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH
 
