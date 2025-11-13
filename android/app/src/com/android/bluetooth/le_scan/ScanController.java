@@ -430,7 +430,7 @@ public class ScanController {
 
         var noFilterMatchedClients = new ArrayList<ScanClient>();
         for (ScanClient client : mScanManager.getRegularScanQueue()) {
-            ScannerApp app = mScannerMap.getById(client.getScannerId());
+            var app = mScannerMap.getById(client.getScannerId());
             if (app == null) {
                 Log.v(TAG, "App is null for " + client + "; Skip");
                 continue;
@@ -579,13 +579,13 @@ public class ScanController {
                 (header + "UUID=" + uuid + ", scannerId=" + scannerId)
                         + (", status=" + ScanUtil.statusToString(status)));
 
-        var scannerApp = mScannerMap.getByUuid(uuid);
-        if (scannerApp == null) {
+        var app = mScannerMap.getByUuid(uuid);
+        if (app == null) {
             Log.e(TAG, header + "ScannerApp not found in ScannerMap");
             return;
         }
-        if (scannerApp.getCallback() != null) {
-            callbackToApp(() -> scannerApp.getCallback().onScannerRegistered(status, scannerId));
+        if (app.getCallback() != null) {
+            callbackToApp(() -> app.getCallback().onScannerRegistered(status, scannerId));
         }
         if (status != ScanCallback.NO_ERROR) {
             if (Flags.scanRegisterAndStart()) {
@@ -595,27 +595,23 @@ public class ScanController {
             }
             return;
         }
-        scannerApp.setId(scannerId);
+        app.setId(scannerId);
         // TODO(b/455057044) Delete the comment below on flag cleanup
         // If app is callback based, setup a death recipient. App will initiate the start.
         // Otherwise, if PendingIntent based, start the scan directly.
-        if (scannerApp.getCallback() != null) {
-            var message = "Unregister " + scannerId + " for " + scannerApp;
+        if (app.getCallback() != null) {
+            var message = "Unregister " + scannerId + " for " + app;
             Runnable onDeathAction = () -> doOnScanThread(() -> handleDeadScanClient(scannerId));
-            scannerApp.linkToDeath(new ActionOnDeathRecipient(TAG, message, onDeathAction));
+            app.linkToDeath(new ActionOnDeathRecipient(TAG, message, onDeathAction));
             if (Flags.scanRegisterAndStart()) {
-                if (scannerApp.isInternal()) {
-                    startScanInternal(scannerId, scannerApp.getSettings(), scannerApp.getFilters());
+                if (app.isInternal()) {
+                    startScanInternal(scannerId, app.getSettings(), app.getFilters());
                 } else {
-                    startScan(
-                            scannerId,
-                            scannerApp.getSettings(),
-                            scannerApp.getFilters(),
-                            scannerApp.getSource());
+                    startScan(scannerId, app.getSettings(), app.getFilters(), app.getSource());
                 }
             }
         } else {
-            dispatchPendingIntentStartScan(scannerId, scannerApp);
+            dispatchPendingIntentStartScan(scannerId, app);
         }
     }
 
@@ -698,7 +694,7 @@ public class ScanController {
                 BatchScanUtil.parseResults(mAdapterService, numRecords, reportType, recordData);
         if (reportType == SCAN_RESULT_TYPE_TRUNCATED) {
             // We only support single client for truncated mode.
-            ScannerApp app = mScannerMap.getById(scannerId);
+            var app = mScannerMap.getById(scannerId);
             if (app == null) {
                 return;
             }
@@ -743,7 +739,7 @@ public class ScanController {
 
     // Check and deliver scan results for different scan clients.
     private void deliverBatchScan(ScanClient client, Set<ScanResult> allResults) {
-        ScannerApp app = mScannerMap.getById(client.getScannerId());
+        var app = mScannerMap.getById(client.getScannerId());
         if (app == null) {
             return;
         }
@@ -806,7 +802,7 @@ public class ScanController {
                         + (", addressType=" + trackingInfo.addressType())
                         + (", adv_state=" + trackingInfo.advState()));
 
-        final ScannerApp app = mScannerMap.getById(trackingInfo.scannerId());
+        var app = mScannerMap.getById(trackingInfo.scannerId());
         if (app == null) {
             Log.e(TAG, "app is null");
             return;
@@ -865,7 +861,7 @@ public class ScanController {
     void onScanParamSetupCompleted(int status, int scannerId) {
         enforceScanThread();
         Log.d(TAG, "onScanParamSetupCompleted() - scannerId=" + scannerId + ", status=" + status);
-        final ScannerApp app = mScannerMap.getById(scannerId);
+        var app = mScannerMap.getById(scannerId);
         if (app == null || app.getCallback() == null) {
             Log.e(TAG, "Advertise app or callback is null");
             return;
@@ -875,7 +871,7 @@ public class ScanController {
     // callback from ScanManager for dispatch of errors apps.
     void onScanManagerErrorCallback(int scannerId, int errorCode) {
         enforceScanThread();
-        final ScannerApp app = mScannerMap.getById(scannerId);
+        var app = mScannerMap.getById(scannerId);
         if (app == null) {
             Log.e(TAG, "App null");
             return;
@@ -1147,9 +1143,9 @@ public class ScanController {
             boolean isFilteredScan = !filters.isEmpty();
             boolean isCallbackScan = false;
 
-            ScannerApp scannerApp = mScannerMap.getById(scannerId);
-            if (scannerApp != null) {
-                isCallbackScan = scannerApp.getCallback() != null;
+            var app = mScannerMap.getById(scannerId);
+            if (app != null) {
+                isCallbackScan = app.getCallback() != null;
             }
             appScanStats.recordScanStart(
                     settings,
@@ -1157,7 +1153,7 @@ public class ScanController {
                     isFilteredScan,
                     isCallbackScan,
                     scannerId,
-                    scannerApp == null ? null : scannerApp.getAttributionTag());
+                    app == null ? null : app.getAttributionTag());
         }
         mScanManager.startScan(scanClient);
     }
@@ -1190,7 +1186,7 @@ public class ScanController {
         }
 
         final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
-        ScannerApp app =
+        var app =
                 mScannerMap.addWithPendingIntent(
                         Util.appNameOrUnknown(mAdapterService, callingUid),
                         uuid,
@@ -1285,13 +1281,13 @@ public class ScanController {
 
     void stopScan(PendingIntent intent) {
         enforceScanThread();
-        var scannerApp = mScannerMap.getByPendingIntentInfo(intent);
-        if (scannerApp == null) {
+        var app = mScannerMap.getByPendingIntentInfo(intent);
+        if (app == null) {
             Log.e(TAG, "stopScan(PendingIntent): Cannot find app for intent=" + intent);
             return;
         }
-        var scannerId = scannerApp.getId();
-        Log.v(TAG, "stopScan(PendingIntent): For " + scannerApp + " with scannerId=" + scannerId);
+        var scannerId = app.getId();
+        Log.v(TAG, "stopScan(PendingIntent): For " + app + " with scannerId=" + scannerId);
         intent.removeCancelListener(mScanIntentCancelListener);
         stopScan(scannerId);
         unregisterScanner(scannerId);
