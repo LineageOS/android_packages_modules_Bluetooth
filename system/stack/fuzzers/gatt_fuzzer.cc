@@ -74,6 +74,7 @@ class FakeBtStack {
 public:
   FakeBtStack() {
     test::mock::stack_btm_dev::btm_find_dev.body = [](const RawAddress&) { return &btm_device; };
+    test::mock::stack_btm_dev::btm_get_dev.body = [](const RawAddress&) { return &btm_device; };
 
     test::mock::stack_l2cap_ble::L2CA_GetBleConnRole.body = [](const RawAddress&) {
       return HCI_ROLE_CENTRAL;
@@ -122,6 +123,7 @@ public:
 
   ~FakeBtStack() {
     test::mock::stack_btm_dev::btm_find_dev = {};
+    test::mock::stack_btm_dev::btm_get_dev = {};
 
     test::mock::stack_l2cap_ble::L2CA_GetBleConnRole = {};
 
