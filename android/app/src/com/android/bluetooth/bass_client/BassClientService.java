@@ -420,76 +420,69 @@ public class BassClientService extends ConnectableProfile {
                             new Handler(Looper.getMainLooper()) {
                                 @Override
                                 public void handleMessage(Message msg) {
-                                    switch (msg.what) {
-                                        case MESSAGE_SYNC_LOST_TIMEOUT:
-                                            {
-                                                Log.d(TAG, "MESSAGE_SYNC_LOST_TIMEOUT");
-                                                // fall through
-                                            }
-                                        case MESSAGE_OOR_MONITOR_TIMEOUT:
-                                            {
-                                                Log.d(TAG, "MESSAGE_OOR_MONITOR_TIMEOUT");
-                                                if (getActiveSyncedSources()
-                                                        .contains(
-                                                                getSyncHandleForBroadcastId(
-                                                                        broadcastId))) {
-                                                    break;
-                                                }
-                                                // Clear from cache to make possible sync again
-                                                // (only during active searching)
-                                                synchronized (mSearchScanCallbackLock) {
-                                                    if (isAnySearchInProgress()) {
-                                                        mCachedBroadcasts.remove(broadcastId);
-                                                    }
-                                                }
-                                                Log.d(
-                                                        TAG,
-                                                        "Notify broadcast source lost, broadcast"
-                                                                + " id: "
-                                                                + broadcastId);
-                                                if (!Flags.leaudioBroadcastFixAutonomousSourceAdding()
-                                                        || mIsForegroundScan) {
-                                                    mCallbacks.notifySourceLost(broadcastId);
-                                                }
-                                                if (!isOorMonitoringPauseReason(broadcastId)) {
-                                                    // In case of syncLost
-                                                    break;
-                                                }
-                                                // fall through
-                                            }
-                                        case MESSAGE_BIG_MONITOR_TIMEOUT:
-                                            {
-                                                Log.d(TAG, "MESSAGE_BIG_MONITOR_TIMEOUT");
-                                                stopSourceReceivers(broadcastId);
-                                                break;
-                                            }
-                                        case MESSAGE_UPDATE_METADATA_TIMEOUT:
-                                            {
-                                                Log.d(TAG, "MESSAGE_UPDATE_METADATA_TIMEOUT");
-                                                synchronized (mSinksWaitingForMetadata) {
-                                                    mSinksWaitingForMetadata
-                                                            .entrySet()
-                                                            .removeIf(
-                                                                    entry ->
-                                                                            entry.getValue()
-                                                                                    == broadcastId);
-                                                    if (mSinksWaitingForMetadata.isEmpty()
-                                                            && mIsBackgroundScan) {
-                                                        stopSearchingForSources(
-                                                                /* foreground= */ false);
-                                                    }
-                                                }
-                                                break;
-                                            }
-                                        default:
-                                            break;
-                                    }
-                                    Handler handler = getOrCreateHandler(broadcastId);
-                                    if (!handler.hasMessagesOrCallbacks()) {
-                                        mHandlers.remove(broadcastId);
-                                    }
+                                    handleTimeoutMessage(msg, broadcastId);
                                 }
                             });
+        }
+
+        private void handleTimeoutMessage(Message msg, int broadcastId) {
+            switch (msg.what) {
+                case MESSAGE_SYNC_LOST_TIMEOUT:
+                    {
+                        Log.d(TAG, "MESSAGE_SYNC_LOST_TIMEOUT");
+                        // fall through
+                    }
+                case MESSAGE_OOR_MONITOR_TIMEOUT:
+                    {
+                        Log.d(TAG, "MESSAGE_OOR_MONITOR_TIMEOUT");
+                        if (getActiveSyncedSources()
+                                .contains(getSyncHandleForBroadcastId(broadcastId))) {
+                            break;
+                        }
+                        // Clear from cache to make possible sync again
+                        // (only during active searching)
+                        synchronized (mSearchScanCallbackLock) {
+                            if (isAnySearchInProgress()) {
+                                mCachedBroadcasts.remove(broadcastId);
+                            }
+                        }
+                        Log.d(TAG, "Notify broadcast source lost, broadcast id: " + broadcastId);
+                        if (!Flags.leaudioBroadcastFixAutonomousSourceAdding()
+                                || mIsForegroundScan) {
+                            mCallbacks.notifySourceLost(broadcastId);
+                        }
+                        if (!isOorMonitoringPauseReason(broadcastId)) {
+                            // In case of syncLost
+                            break;
+                        }
+                        // fall through
+                    }
+                case MESSAGE_BIG_MONITOR_TIMEOUT:
+                    {
+                        Log.d(TAG, "MESSAGE_BIG_MONITOR_TIMEOUT");
+                        stopSourceReceivers(broadcastId);
+                        break;
+                    }
+                case MESSAGE_UPDATE_METADATA_TIMEOUT:
+                    {
+                        Log.d(TAG, "MESSAGE_UPDATE_METADATA_TIMEOUT");
+                        synchronized (mSinksWaitingForMetadata) {
+                            mSinksWaitingForMetadata
+                                    .entrySet()
+                                    .removeIf(entry -> entry.getValue() == broadcastId);
+                            if (mSinksWaitingForMetadata.isEmpty() && mIsBackgroundScan) {
+                                stopSearchingForSources(/* foreground= */ false);
+                            }
+                        }
+                        break;
+                    }
+                default:
+                    break;
+            }
+            Handler handler = getOrCreateHandler(broadcastId);
+            if (!handler.hasMessagesOrCallbacks()) {
+                mHandlers.remove(broadcastId);
+            }
         }
 
         void start(int broadcastId, int msg, Duration duration) {
