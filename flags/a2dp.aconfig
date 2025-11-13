@@ -185,3 +185,13 @@ flag {
     is_exported: true
     bug: "445930556"
 }
+
+flag {
+    name: "a2dp_skip_discover_after_set_config"
+    namespace: "bluetooth"
+    description: "Skip AVDTP discover after set config to work around issues with older sinks."
+    bug: "459426256"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
