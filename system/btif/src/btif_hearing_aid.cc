@@ -36,7 +36,7 @@
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/main_thread.h"
 
-using base::Bind;
+using base::BindOnce;
 using base::Unretained;
 
 // template specialization
@@ -55,55 +55,56 @@ class HearingAidInterfaceImpl : public HearingAidInterface, public HearingAidCal
 
   void Init(HearingAidCallbacks* callbacks) override {
     this->callbacks = callbacks;
-    do_in_main_thread(Bind(&HearingAid::Initialize, this,
-                           jni_thread_wrapper(Bind(&btif_storage_load_bonded_hearing_aids))));
+    do_in_main_thread(
+            BindOnce(&HearingAid::Initialize, this,
+                     jni_thread_wrapper(base::Bind(&btif_storage_load_bonded_hearing_aids))));
   }
 
   void OnConnectionState(ConnectionState state, const RawAddress& address) override {
-    do_in_jni_thread(
-            Bind(&HearingAidCallbacks::OnConnectionState, Unretained(callbacks), state, address));
+    do_in_jni_thread(BindOnce(&HearingAidCallbacks::OnConnectionState, Unretained(callbacks), state,
+                              address));
   }
 
   void OnDeviceAvailable(uint8_t capabilities, uint64_t hiSyncId,
                          const RawAddress& address) override {
-    do_in_jni_thread(Bind(&HearingAidCallbacks::OnDeviceAvailable, Unretained(callbacks),
-                          capabilities, hiSyncId, address));
+    do_in_jni_thread(BindOnce(&HearingAidCallbacks::OnDeviceAvailable, Unretained(callbacks),
+                              capabilities, hiSyncId, address));
   }
 
   void Connect(const RawAddress& address) override {
-    do_in_main_thread(base::BindOnce(
+    do_in_main_thread(BindOnce(
             [](RawAddress bd_addr) {
               stack::l2cap::get_interface().L2CA_LockBleConnParamsForProfileConnection(bd_addr,
                                                                                        false);
             },
             address));
-    do_in_main_thread(Bind(&HearingAid::Connect, address));
+    do_in_main_thread(BindOnce(&HearingAid::Connect, address));
   }
 
   void Disconnect(const RawAddress& address) override {
-    do_in_main_thread(Bind(&HearingAid::Disconnect, address));
-    do_in_jni_thread(Bind(&btif_storage_set_hearing_aid_acceptlist, address, false));
+    do_in_main_thread(BindOnce(&HearingAid::Disconnect, address));
+    do_in_jni_thread(BindOnce(&btif_storage_set_hearing_aid_acceptlist, address, false));
   }
 
   void AddToAcceptlist(const RawAddress& address) override {
-    do_in_main_thread(Bind(&HearingAid::AddToAcceptlist, address));
-    do_in_jni_thread(Bind(&btif_storage_set_hearing_aid_acceptlist, address, true));
+    do_in_main_thread(BindOnce(&HearingAid::AddToAcceptlist, address));
+    do_in_jni_thread(BindOnce(&btif_storage_set_hearing_aid_acceptlist, address, true));
   }
 
   void SetVolume(int8_t volume) override {
-    do_in_main_thread(Bind(&HearingAid::SetVolume, volume));
+    do_in_main_thread(BindOnce(&HearingAid::SetVolume, volume));
   }
 
   void RemoveDevice(const RawAddress& address) override {
     // RemoveDevice can be called on devices that don't have HA enabled
     if (HearingAid::IsHearingAidRunning()) {
-      do_in_main_thread(Bind(&HearingAid::Disconnect, address));
+      do_in_main_thread(BindOnce(&HearingAid::Disconnect, address));
     }
 
-    do_in_jni_thread(Bind(&btif_storage_remove_hearing_aid, address));
+    do_in_jni_thread(BindOnce(&btif_storage_remove_hearing_aid, address));
   }
 
-  void Cleanup(void) override { do_in_main_thread(Bind(&HearingAid::CleanUp)); }
+  void Cleanup(void) override { do_in_main_thread(BindOnce(&HearingAid::CleanUp)); }
 
 private:
   HearingAidCallbacks* callbacks;

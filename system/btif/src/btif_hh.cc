@@ -994,7 +994,7 @@ static void btif_hh_remove_device_in_jni_thread(const AclLinkSpec& link_spec) {
     if (com::android::bluetooth::flags::hidh_close_in_jni_thread()) {
       BTHH_STATE_UPDATE(p_dev->link_spec, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK);
     } else {
-      do_in_jni_thread(base::Bind(
+      do_in_jni_thread(base::BindOnce(
               [](AclLinkSpec ls) { BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK); },
               p_dev->link_spec));
     }
@@ -1030,7 +1030,7 @@ static void btif_hh_remove_device_in_jni_thread(const AclLinkSpec& link_spec) {
     return;
   }
 
-  do_in_jni_thread(base::Bind(
+  do_in_jni_thread(base::BindOnce(
           [](AclLinkSpec ls) {
             HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, &ls.addrt.bda, ls.addrt.type,
                       ls.transport, BTHH_OK);
@@ -1070,7 +1070,7 @@ static void btif_hh_remove_pending_connection(const AclLinkSpec& link_spec) {
       if (com_android_bluetooth_flags_hh_state_update_race_fix()) {
         BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK);
       } else {
-        do_in_jni_thread(base::Bind(
+        do_in_jni_thread(base::BindOnce(
                 [](AclLinkSpec ls) {
                   BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK);
                 },
@@ -1089,7 +1089,7 @@ static void btif_hh_remove_pending_connection(const AclLinkSpec& link_spec) {
       HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, &ls.addrt.bda, ls.addrt.type, ls.transport,
                 BTHH_OK);
     } else {
-      do_in_jni_thread(base::Bind(
+      do_in_jni_thread(base::BindOnce(
               [](AclLinkSpec ls) {
                 HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, &ls.addrt.bda, ls.addrt.type,
                           ls.transport, BTHH_OK);
@@ -1144,8 +1144,8 @@ BtStatus btif_hh_virtual_unplug(const AclLinkSpec& link_spec) {
 BtStatus btif_hh_virtual_unplug_from_main(const AclLinkSpec& link_spec) {
   if (btif_hh_find_dev_by_link_spec(link_spec) != nullptr ||
       btif_hh_find_added_dev(link_spec) != nullptr) {
-    do_in_jni_thread(base::Bind([](AclLinkSpec link_spec) { btif_hh_virtual_unplug(link_spec); },
-                                link_spec));
+    do_in_jni_thread(base::BindOnce(
+            [](AclLinkSpec link_spec) { btif_hh_virtual_unplug(link_spec); }, link_spec));
     return BtifStatus();
   }
   return BtifStatus(DEVICE_NOT_FOUND);
@@ -1208,7 +1208,7 @@ BtStatus btif_hh_connect(const AclLinkSpec& link_spec) {
     AclLinkSpec ls = link_spec;
     BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_CONNECTING, BTHH_OK);
   } else {
-    do_in_jni_thread(base::Bind(
+    do_in_jni_thread(base::BindOnce(
             [](AclLinkSpec link_spec) {
               BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_CONNECTING, BTHH_OK);
             },

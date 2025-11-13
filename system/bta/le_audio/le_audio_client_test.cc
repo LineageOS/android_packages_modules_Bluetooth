@@ -11532,10 +11532,10 @@ TEST_F(UnicastTestCsis, TwoEarbudsStreamingProfileDisconnectStreamStopTimeout) {
   EXPECT_CALL(mock_gatt_interface_, Close(_)).Times(0);
   EXPECT_CALL(mock_btm_interface_, AclDisconnectFromHandle(_, _)).Times(0);
 
-  do_in_main_thread(base::Bind(&LeAudioClient::Disconnect, base::Unretained(LeAudioClient::Get()),
-                               test_address0));
-  do_in_main_thread(base::Bind(&LeAudioClient::Disconnect, base::Unretained(LeAudioClient::Get()),
-                               test_address1));
+  do_in_main_thread(base::BindOnce(&LeAudioClient::Disconnect,
+                                   base::Unretained(LeAudioClient::Get()), test_address0));
+  do_in_main_thread(base::BindOnce(&LeAudioClient::Disconnect,
+                                   base::Unretained(LeAudioClient::Get()), test_address1));
 
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_gatt_interface_);

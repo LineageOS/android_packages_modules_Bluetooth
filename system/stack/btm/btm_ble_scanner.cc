@@ -61,20 +61,20 @@ public:
                                uint16_t sync_handle,
                                BleScannerHciInterface::handle_cb command_complete) override {
     GetHciInterface()->PeriodicAdvSyncTransfer(bd_addr, service_data, sync_handle,
-                                               command_complete);
+                                               std::move(command_complete));
   }
 
   void PeriodicAdvSetInfoTransfer(const RawAddress& bd_addr, uint16_t service_data,
                                   uint8_t adv_handle, handle_cb command_complete) override {
     GetHciInterface()->PeriodicAdvSetInfoTransfer(bd_addr, service_data, adv_handle,
-                                                  command_complete);
+                                                  std::move(command_complete));
   }
 
   void SetPeriodicAdvSyncTransferParams(const RawAddress& bd_addr, uint8_t mode, uint16_t skip,
                                         uint16_t sync_timeout, uint8_t cte_type, bool set_defaults,
                                         status_cb command_complete) override {
     GetHciInterface()->SetPeriodicAdvSyncTransferParams(bd_addr, mode, skip, sync_timeout, cte_type,
-                                                        set_defaults, command_complete);
+                                                        set_defaults, std::move(command_complete));
   }
 
   void OnPeriodicScanResult(uint16_t sync_handle, uint8_t tx_power, int8_t rssi, uint8_t cte_type,

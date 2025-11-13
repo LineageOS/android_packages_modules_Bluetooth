@@ -131,21 +131,18 @@ struct MsftExtensionManager::impl {
       }
 
       if (monitor.condition_type == MSFT_CONDITION_TYPE_ADDRESS) {
-        msft_adv_monitor_add_cb_ = cb;
         Address addr = monitor.addr_info.bd_addr;
         hci_layer_->EnqueueCommand(
                 MsftLeMonitorAdvConditionAddressBuilder::Create(
                         static_cast<OpCode>(msft_.opcode.value()), monitor.rssi_threshold_high,
                         monitor.rssi_threshold_low, monitor.rssi_threshold_low_time_interval,
                         monitor.rssi_sampling_period, monitor.addr_info.addr_type, addr),
-                handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete));
+                handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete, std::move(cb)));
         return;
       }
     }
 
     if (monitor.condition_type == MSFT_CONDITION_TYPE_UUID) {
-      msft_adv_monitor_add_cb_ = cb;
-
       if (monitor.uuid_info.uuid.size() == 2) {
         std::array<uint8_t, 2> uuid;
         std::copy(monitor.uuid_info.uuid.begin(), monitor.uuid_info.uuid.begin() + uuid.size(),
@@ -155,7 +152,7 @@ struct MsftExtensionManager::impl {
                         static_cast<OpCode>(msft_.opcode.value()), monitor.rssi_threshold_high,
                         monitor.rssi_threshold_low, monitor.rssi_threshold_low_time_interval,
                         monitor.rssi_sampling_period, uuid),
-                handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete));
+                handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete, std::move(cb)));
         return;
       }
 
@@ -168,7 +165,7 @@ struct MsftExtensionManager::impl {
                         static_cast<OpCode>(msft_.opcode.value()), monitor.rssi_threshold_high,
                         monitor.rssi_threshold_low, monitor.rssi_threshold_low_time_interval,
                         monitor.rssi_sampling_period, uuid),
-                handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete));
+                handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete, std::move(cb)));
         return;
       }
 
@@ -181,7 +178,7 @@ struct MsftExtensionManager::impl {
                         static_cast<OpCode>(msft_.opcode.value()), monitor.rssi_threshold_high,
                         monitor.rssi_threshold_low, monitor.rssi_threshold_low_time_interval,
                         monitor.rssi_sampling_period, uuid),
-                handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete));
+                handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete, std::move(cb)));
         return;
       }
 
@@ -206,13 +203,12 @@ struct MsftExtensionManager::impl {
       patterns.push_back(pattern);
     }
 
-    msft_adv_monitor_add_cb_ = cb;
     hci_layer_->EnqueueCommand(
             MsftLeMonitorAdvConditionPatternsBuilder::Create(
                     static_cast<OpCode>(msft_.opcode.value()), monitor.rssi_threshold_high,
                     monitor.rssi_threshold_low, monitor.rssi_threshold_low_time_interval,
                     monitor.rssi_sampling_period, patterns),
-            handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete));
+            handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete, std::move(cb)));
   }
 
   void msft_adv_monitor_remove(uint8_t monitor_handle, MsftAdvMonitorRemoveCallback cb) {
@@ -221,11 +217,10 @@ struct MsftExtensionManager::impl {
       return;
     }
 
-    msft_adv_monitor_remove_cb_ = cb;
     hci_layer_->EnqueueCommand(
             MsftLeCancelMonitorAdvBuilder::Create(static_cast<OpCode>(msft_.opcode.value()),
                                                   monitor_handle),
-            handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_remove_complete));
+            handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_remove_complete, std::move(cb)));
   }
 
   void msft_adv_monitor_enable(bool enable, MsftAdvMonitorEnableCallback cb) {
@@ -234,11 +229,10 @@ struct MsftExtensionManager::impl {
       return;
     }
 
-    msft_adv_monitor_enable_cb_ = cb;
     hci_layer_->EnqueueCommand(
             MsftLeSetAdvFilterEnableBuilder::Create(static_cast<OpCode>(msft_.opcode.value()),
                                                     enable),
-            handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_enable_complete));
+            handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_enable_complete, std::move(cb)));
   }
 
   void set_scanning_callback(ScanningCallback* callbacks) { scanning_callbacks_ = callbacks; }
@@ -291,7 +285,8 @@ struct MsftExtensionManager::impl {
             handler_->BindOn(this, &impl::handle_msft_events));
   }
 
-  void on_msft_adv_monitor_add_complete(CommandCompleteView view) {
+  void on_msft_adv_monitor_add_complete(MsftAdvMonitorAddCallback msft_adv_monitor_add_cb,
+                                        CommandCompleteView view) {
     log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view =
             MsftLeMonitorAdvCommandCompleteView::Create(MsftCommandCompleteView::Create(view));
@@ -303,10 +298,11 @@ struct MsftExtensionManager::impl {
       return;
     }
 
-    msft_adv_monitor_add_cb_.Run(status_view.GetMonitorHandle(), status_view.GetStatus());
+    std::move(msft_adv_monitor_add_cb).Run(status_view.GetMonitorHandle(), status_view.GetStatus());
   }
 
-  void on_msft_adv_monitor_remove_complete(CommandCompleteView view) {
+  void on_msft_adv_monitor_remove_complete(MsftAdvMonitorRemoveCallback msft_adv_monitor_remove_cb,
+                                           CommandCompleteView view) {
     log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view = MsftLeCancelMonitorAdvCommandCompleteView::Create(
             MsftCommandCompleteView::Create(view));
@@ -318,10 +314,11 @@ struct MsftExtensionManager::impl {
       return;
     }
 
-    msft_adv_monitor_remove_cb_.Run(status_view.GetStatus());
+    std::move(msft_adv_monitor_remove_cb).Run(status_view.GetStatus());
   }
 
-  void on_msft_adv_monitor_enable_complete(CommandCompleteView view) {
+  void on_msft_adv_monitor_enable_complete(MsftAdvMonitorEnableCallback msft_adv_monitor_enable_cb,
+                                           CommandCompleteView view) {
     log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view = MsftLeSetAdvFilterEnableCommandCompleteView::Create(
             MsftCommandCompleteView::Create(view));
@@ -333,16 +330,13 @@ struct MsftExtensionManager::impl {
       return;
     }
 
-    msft_adv_monitor_enable_cb_.Run(status_view.GetStatus());
+    std::move(msft_adv_monitor_enable_cb).Run(status_view.GetStatus());
   }
 
   os::Handler* handler_;
   hal::HciHal* hal_;
   hci::HciInterface* hci_layer_;
   Msft msft_;
-  MsftAdvMonitorAddCallback msft_adv_monitor_add_cb_;
-  MsftAdvMonitorRemoveCallback msft_adv_monitor_remove_cb_;
-  MsftAdvMonitorEnableCallback msft_adv_monitor_enable_cb_;
   ScanningCallback* scanning_callbacks_;
 };
 
@@ -359,16 +353,17 @@ bool MsftExtensionManager::SupportsMsftExtensions() { return pimpl_->supports_ms
 
 void MsftExtensionManager::MsftAdvMonitorAdd(const MsftAdvMonitor& monitor,
                                              MsftAdvMonitorAddCallback cb) {
-  pimpl_->handler_->CallOn(pimpl_.get(), &impl::msft_adv_monitor_add, monitor, cb);
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::msft_adv_monitor_add, monitor, std::move(cb));
 }
 
 void MsftExtensionManager::MsftAdvMonitorRemove(uint8_t monitor_handle,
                                                 MsftAdvMonitorRemoveCallback cb) {
-  pimpl_->handler_->CallOn(pimpl_.get(), &impl::msft_adv_monitor_remove, monitor_handle, cb);
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::msft_adv_monitor_remove, monitor_handle,
+                           std::move(cb));
 }
 
 void MsftExtensionManager::MsftAdvMonitorEnable(bool enable, MsftAdvMonitorEnableCallback cb) {
-  pimpl_->handler_->CallOn(pimpl_.get(), &impl::msft_adv_monitor_enable, enable, cb);
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::msft_adv_monitor_enable, enable, std::move(cb));
 }
 
 void MsftExtensionManager::SetScanningCallback(ScanningCallback* callbacks) {

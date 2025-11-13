@@ -137,7 +137,7 @@ bool BTM_UseLeLink(const RawAddress& bd_addr) {
   return dev_type == BT_DEVICE_TYPE_BLE;
 }
 
-static void read_phy_cb(base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb,
+static void read_phy_cb(base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb,
                         uint8_t* data, uint16_t len) {
   uint8_t status, tx_phy, rx_phy;
   uint16_t handle;
@@ -150,7 +150,7 @@ static void read_phy_cb(base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint
   STREAM_TO_UINT8(tx_phy, pp);
   STREAM_TO_UINT8(rx_phy, pp);
 
-  cb.Run(tx_phy, rx_phy, status);
+  std::move(cb).Run(tx_phy, rx_phy, status);
 }
 
 /*******************************************************************************
@@ -486,10 +486,10 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr, uint16_t tx_pdu_leng
  *
  ******************************************************************************/
 void BTM_BleReadPhy(const RawAddress& bd_addr,
-                    base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
+                    base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
   if (!get_btm_client_interface().peer.BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
     log::error("Wrong mode: no LE link exist or LE not supported");
-    cb.Run(0, 0, HCI_ERR_NO_CONNECTION);
+    std::move(cb).Run(0, 0, HCI_ERR_NO_CONNECTION);
     return;
   }
 
@@ -497,7 +497,7 @@ void BTM_BleReadPhy(const RawAddress& bd_addr,
   // neither LE_2M nor LE_CODED PHYs.
   if (!bluetooth::shim::GetController()->SupportsBle2mPhy() &&
       !bluetooth::shim::GetController()->SupportsBleCodedPhy()) {
-    cb.Run(1, 1, HCI_SUCCESS);
+    std::move(cb).Run(1, 1, HCI_SUCCESS);
     return;
   }
 
