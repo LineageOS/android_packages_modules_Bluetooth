@@ -55,6 +55,7 @@ import android.location.LocationManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.Process;
+import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Settings;
@@ -278,7 +279,8 @@ public class GattServiceTest {
     }
 
     @Test
-    public void subrateModeRequest() {
+    @DisableFlags(Flags.FLAG_LE_SUBRATE_MANAGER)
+    public void subrateModeRequest_withLeSubrateManagerDisabled() {
         InOrder inOrder = inOrder(mNativeInterface);
 
         for (int subrateMode = BluetoothGatt.SUBRATE_MODE_OFF;
@@ -286,20 +288,33 @@ public class GattServiceTest {
                 subrateMode++) {
             mService.subrateModeRequest(mGattCallback, mDevice, subrateMode);
 
-            if (Flags.leSubrateManager()) {
-                inOrder.verify(mNativeInterface)
-                        .gattSubrateModeRequest(eq(CLIENT_IF), eq(mDevice), eq(subrateMode));
-            } else {
-                inOrder.verify(mNativeInterface)
-                        .gattSubrateRequest(
-                                eq(CLIENT_IF),
-                                eq(mDevice),
-                                anyInt(),
-                                anyInt(),
-                                anyInt(),
-                                anyInt(),
-                                anyInt());
-            }
+            // With no cached latency, latency for SUBRATE_MODE_OFF is 0.
+            // For other modes, latency is hardcoded to 0.
+            final int expectedLatency = 0;
+            inOrder.verify(mNativeInterface)
+                    .gattSubrateRequest(
+                            eq(CLIENT_IF),
+                            eq(mDevice),
+                            anyInt(),
+                            anyInt(),
+                            eq(expectedLatency),
+                            anyInt(),
+                            anyInt());
+        }
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LE_SUBRATE_MANAGER)
+    public void subrateModeRequest_withLeSubrateManagerEnabled() {
+        InOrder inOrder = inOrder(mNativeInterface);
+
+        for (int subrateMode = BluetoothGatt.SUBRATE_MODE_OFF;
+                subrateMode <= BluetoothGatt.SUBRATE_MODE_HIGH;
+                subrateMode++) {
+            mService.subrateModeRequest(mGattCallback, mDevice, subrateMode);
+
+            inOrder.verify(mNativeInterface)
+                    .gattSubrateModeRequest(eq(CLIENT_IF), eq(mDevice), eq(subrateMode));
         }
     }
 
