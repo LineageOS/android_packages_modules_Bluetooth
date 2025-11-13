@@ -25,8 +25,6 @@ import android.bluetooth.le.ScanSettings.SCAN_MODE_BALANCED
 import android.bluetooth.le.ScanSettings.SCAN_MODE_LOW_LATENCY
 import android.bluetooth.le.ScanSettings.SCAN_MODE_LOW_POWER
 import android.bluetooth.le.ScanSettings.SCAN_MODE_OPPORTUNISTIC
-import android.os.BatteryStatsManager
-import android.os.WorkSource
 import com.android.bluetooth.Utils
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.le_scan.ScanUtil.WEIGHT_AMBIENT_DISCOVERY
@@ -65,8 +63,9 @@ class AppScanStats(
     val uid: Int,
     val pid: Int,
     val name: String,
-    source: WorkSource?,
+    val workSourceUtil: WorkSourceUtil,
     private val adapterService: AdapterService,
+    private val scanMetricsReporter: ScanMetricsReporter,
     private val timeProvider: TimeProvider,
 ) {
 
@@ -98,9 +97,6 @@ class AppScanStats(
     private val lastScans: MutableList<LastScan> = ArrayList()
     private val ongoingScans: MutableMap<Int, LastScan> = HashMap()
 
-    val workSourceUtil: WorkSourceUtil
-    private val scanMetricsReporter: ScanMetricsReporter
-
     var isAppDead = false
     var isRegistered = false
     var appImportance = IMPORTANCE_CACHED
@@ -126,14 +122,6 @@ class AppScanStats(
     private var resultsScreenOn = 0
     private var resultsScreenOff = 0
     private var scheduledBatchAlarmCount = 0
-
-    init {
-        // Bill the caller uid if the work source isn't passed through
-        val workSource = source ?: WorkSource(uid, name)
-        workSourceUtil = WorkSourceUtil(workSource)
-        val batteryStatsManager = adapterService.getSystemService(BatteryStatsManager::class.java)
-        scanMetricsReporter = ScanMetricsReporter(workSource, workSourceUtil, batteryStatsManager)
-    }
 
     override fun toString() = "AppScanStats(uid=$uid, name=$name)"
 
