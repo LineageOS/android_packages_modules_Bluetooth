@@ -254,11 +254,12 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * Broadcast Action: Indicates a change in the bond state of a remote device. For example, if a
      * device is bonded (paired).
      *
-     * <p>Always contains the extra fields {@link #EXTRA_DEVICE}, {@link #EXTRA_BOND_STATE} and
-     * {@link #EXTRA_PREVIOUS_BOND_STATE}.
+     * <p>Always contains the extra fields {@link #EXTRA_DEVICE}, {@link #EXTRA_BOND_STATE}, and
+     * {@link #EXTRA_PREVIOUS_BOND_STATE}. Also, from {@link
+     * android.os.Build.VERSION_CODES#CINNAMON_BUN}, {@link #EXTRA_PAIRING_CONTEXT} will be
+     * available. An extra field {@link #EXTRA_UNBOND_REASON} will be present, if the {@link
+     * #EXTRA_BOND_STATE} is {@link #BOND_NONE}.
      */
-    // Note: When EXTRA_BOND_STATE is BOND_NONE then this will also
-    // contain a hidden extra field EXTRA_UNBOND_REASON with the result code.
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -548,6 +549,29 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @SuppressLint("ActionValue")
     public static final String EXTRA_PAIRING_INITIATOR =
             "android.bluetooth.device.extra.PAIRING_INITIATOR";
+
+    /**
+     * Used as an int extra field in {@link #ACTION_PAIRING_REQUEST} and {@link
+     * #ACTION_BOND_STATE_CHANGED} intents which indicates the pairing context. Possible values for
+     * {@link #ACTION_PAIRING_REQUEST} are: {@link #PAIRING_CONTEXT_USER_PARTICIPATION_REQUESTED}, {@link
+     * #PAIRING_CONTEXT_USER_APPROVAL_REQUESTED}, and {@link #PAIRING_CONTEXT_REPAIRING}, while the
+     * possible value for {@link #ACTION_BOND_STATE_CHANGED} is {@link #PAIRING_CONTEXT_REPAIRING}.
+     */
+    @FlaggedApi(Flags.FLAG_AUTONOMOUS_REPAIRING_INITIATION)
+    @SuppressLint("ActionValue")
+    public static final String EXTRA_PAIRING_CONTEXT =
+            "android.bluetooth.device.extra.PAIRING_CONTEXT";
+
+    /**
+     * Used as an int extra field in {@link #ACTION_PAIRING_REQUEST} intents which indicates the
+     * pairing algorithm used. Possible values are: {@link #PAIRING_ALGORITHM_LE_LEGACY}, {@link
+     * #PAIRING_ALGORITHM_BREDR_LEGACY}, {@link #PAIRING_ALGORITHM_BREDR_SSP}, and {@link
+     * #PAIRING_ALGORITHM_SC}.
+     */
+    @FlaggedApi(Flags.FLAG_PROVIDE_PAIRING_ALGO)
+    @SuppressLint("ActionValue")
+    public static final String EXTRA_PAIRING_ALGORITHM =
+            "android.bluetooth.device.extra.PAIRING_ALGORITHM";
 
     /**
      * Used as an int extra field in {@link #ACTION_ENCRYPTION_CHANGE} intents as the size of the
@@ -959,7 +983,20 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     public static final String ACTION_NAME_FAILED = "android.bluetooth.device.action.NAME_FAILED";
 
-    /** Broadcast Action: This intent is used to broadcast PAIRING REQUEST */
+    /**
+     * Broadcast Action: This intent is used to broadcast a PAIRING REQUEST.
+     *
+     * <p>It will contain the following extra fields:
+     *
+     * <ul>
+     *   <li>{@link #EXTRA_DEVICE}
+     *   <li>{@link #EXTRA_PAIRING_KEY}
+     *   <li>{@link #EXTRA_PAIRING_CONTEXT}, post {@link
+     *       android.os.Build.VERSION_CODES#CINNAMON_BUN} only
+     *   <li>{@link #EXTRA_PAIRING_ALGORITHM}, post {@link
+     *       android.os.Build.VERSION_CODES#CINNAMON_BUN} only
+     * </ul>
+     */
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -1176,6 +1213,54 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * user.
      */
     @Hide @SystemApi public static final int PAIRING_VARIANT_PIN_16_DIGITS = 7;
+
+    /** Indicates that user participation is requested to initiate the pairing process. */
+    @FlaggedApi(Flags.FLAG_AUTONOMOUS_REPAIRING_INITIATION)
+    public static final int PAIRING_CONTEXT_USER_PARTICIPATION_REQUESTED = 0;
+
+    /**
+     * Indicates that the pairing process is initiated, and user approval is requested to complete
+     * the pairing process.
+     */
+    @FlaggedApi(Flags.FLAG_AUTONOMOUS_REPAIRING_INITIATION)
+    public static final int PAIRING_CONTEXT_USER_APPROVAL_REQUESTED = 1;
+
+    /** Indicates that the re-pairing process is initiated. */
+    @FlaggedApi(Flags.FLAG_AUTONOMOUS_REPAIRING_INITIATION)
+    public static final int PAIRING_CONTEXT_REPAIRING = 2;
+
+    /** Indicates the pairing algorithm used. */
+    @Hide
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(
+            prefix = "PAIRING_ALGORITHM_",
+            value = {
+                PAIRING_ALGORITHM_LE_LEGACY,
+                PAIRING_ALGORITHM_BREDR_LEGACY,
+                PAIRING_ALGORITHM_BREDR_SSP,
+                PAIRING_ALGORITHM_SC,
+            })
+    @FlaggedApi(Flags.FLAG_PROVIDE_PAIRING_ALGO)
+    public @interface PairingAlgorithm {}
+
+    /** Indicates the pairing algorithm used is LE legacy. */
+    @FlaggedApi(Flags.FLAG_PROVIDE_PAIRING_ALGO)
+    public static final int PAIRING_ALGORITHM_LE_LEGACY = 0;
+
+    /** Indicates the pairing algorithm used is BR/EDR legacy. */
+    @FlaggedApi(Flags.FLAG_PROVIDE_PAIRING_ALGO)
+    public static final int PAIRING_ALGORITHM_BREDR_LEGACY = 1;
+
+    /** Indicates the pairing algorithm used is BR/EDR SSP. */
+    @FlaggedApi(Flags.FLAG_PROVIDE_PAIRING_ALGO)
+    public static final int PAIRING_ALGORITHM_BREDR_SSP = 2;
+
+    /**
+     * Indicates the pairing algorithm used is Secure Connections. This is applicable for both
+     * BR/EDR and LE transports.
+     */
+    @FlaggedApi(Flags.FLAG_PROVIDE_PAIRING_ALGO)
+    public static final int PAIRING_ALGORITHM_SC = 3;
 
     /**
      * Contains the {@link android.os.ParcelUuid}s of the remote device which is a parcelable
