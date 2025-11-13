@@ -107,7 +107,7 @@ protected:
     BTA_GATTS_AddServiceCb captured_cb;
     EXPECT_CALL(mock_gatt_server_interface_, AddService(_, _, _))
             .WillOnce(DoAll(SaveArg<0>(&captured_server_if), SaveArg<1>(&captured_service),
-                            SaveArg<2>(&captured_cb), Return()));
+                            testing::WithArg<2>([&](auto arg) { captured_cb = std::move(arg); })));
 
     tBTA_GATTS gatts_cb_data;
     gatts_cb_data.reg_oper.status = GATT_SUCCESS;
@@ -117,7 +117,7 @@ protected:
 
     EXPECT_CALL(mock_callbacks_, OnInitialized());
     UpdateTestServiceHandle(captured_service);
-    captured_cb.Run(GATT_SUCCESS, captured_server_if, std::move(captured_service));
+    std::move(captured_cb).Run(GATT_SUCCESS, captured_server_if, std::move(captured_service));
     SyncOnMainLoop();
 
     // Connect a client
