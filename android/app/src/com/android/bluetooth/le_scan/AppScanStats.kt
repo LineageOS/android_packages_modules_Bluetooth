@@ -34,7 +34,6 @@ import com.android.bluetooth.le_scan.ScanUtil.WEIGHT_BALANCED
 import com.android.bluetooth.le_scan.ScanUtil.WEIGHT_LOW_LATENCY
 import com.android.bluetooth.le_scan.ScanUtil.WEIGHT_LOW_POWER
 import com.android.bluetooth.le_scan.ScanUtil.WEIGHT_OPPORTUNISTIC
-import com.android.bluetooth.le_scan.ScanUtil.callbackTypeToString
 import com.android.bluetooth.le_scan.ScanUtil.isBackgroundScan
 import com.android.bluetooth.le_scan.ScanUtil.isBatchScan
 import com.android.bluetooth.le_scan.ScanUtil.isOpportunisticScan
@@ -77,7 +76,7 @@ class AppScanStats(
         internal var endTimestamp: Long = 0,
         internal val scannerId: Int,
         internal val scanMode: Int,
-        internal val scanCallbackType: Int,
+        internal val callbackType: CallbackType,
         internal val reportDelayMillis: Long,
         internal val isBackgroundScan: Boolean,
         internal val isBatchScan: Boolean,
@@ -193,7 +192,7 @@ class AppScanStats(
                 startTimestamp = startTimestamp,
                 scannerId = scannerId,
                 scanMode = settings.scanMode,
-                scanCallbackType = settings.callbackType,
+                callbackType = CallbackType(settings.callbackType),
                 reportDelayMillis = settings.reportDelayMillis,
                 isBackgroundScan = isBackgroundScan(settings),
                 isBatchScan = isBatchScan(settings),
@@ -521,7 +520,7 @@ class AppScanStats(
         }
 
         append("  └ Config: [ScanMode=${scanModeToString(scanMode)}")
-        appendLine(", callbackType=${callbackTypeToString(scanCallbackType)}]")
+        appendLine(", callbackType=$callbackType]")
 
         if (isFilterScan) append(filterStringBuilder.toString().indent("  └ "))
     }
