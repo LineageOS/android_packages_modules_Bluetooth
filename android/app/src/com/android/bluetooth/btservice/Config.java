@@ -85,7 +85,6 @@ public class Config {
         BluetoothProfile.CSIP_SET_COORDINATOR,
         BluetoothProfile.MCP_SERVER,
         BluetoothProfile.LE_CALL_CONTROL,
-        BluetoothProfile.VAPS_SERVER,
     };
 
     /**
