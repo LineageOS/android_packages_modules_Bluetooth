@@ -73,9 +73,9 @@ class ScanMetricsReporter(
             true, /* enabled */
             scan.isFilterScan,
             scan.isCallbackScan,
-            convertScanCallbackType(scan.scanCallbackType),
+            convertScanCallbackType(scan.callbackType),
             convertScanType(scan),
-            convertScanMode(scan.scanMode),
+            convertScanMode(scan.scanMode.value),
             scan.reportDelayMillis,
             0, /* app_scan_duration_ms */
             ongoingScansCount,
@@ -132,9 +132,9 @@ class ScanMetricsReporter(
             false, /* enabled */
             scan.isFilterScan,
             scan.isCallbackScan,
-            convertScanCallbackType(scan.scanCallbackType),
+            convertScanCallbackType(scan.callbackType),
             convertScanType(scan),
-            convertScanMode(scan.scanMode),
+            convertScanMode(scan.scanMode.value),
             scan.reportDelayMillis,
             duration,
             ongoingScansCount,
@@ -185,8 +185,8 @@ class ScanMetricsReporter(
             .cacheCount(BluetoothProtoEnums.LE_SCAN_ABUSE_COUNT_HW_FILTER_NOT_AVAILABLE, 1)
     }
 
-    private fun convertScanCallbackType(type: Int): Int =
-        when (type) {
+    private fun convertScanCallbackType(callbackType: CallbackType): Int =
+        when (callbackType.value) {
             ScanSettings.CALLBACK_TYPE_ALL_MATCHES ->
                 BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED__SCAN_CALLBACK_TYPE__TYPE_ALL_MATCHES
             ScanSettings.CALLBACK_TYPE_FIRST_MATCH ->

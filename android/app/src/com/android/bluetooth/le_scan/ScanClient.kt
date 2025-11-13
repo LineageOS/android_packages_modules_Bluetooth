@@ -19,7 +19,6 @@ package com.android.bluetooth.le_scan
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
 import android.os.UserHandle
-import com.android.bluetooth.le_scan.ScanUtil.scanModeToString
 import com.android.bluetooth.le_scan.ScanUtil.toBuilder
 import java.util.Objects
 import java.util.function.Consumer
@@ -158,8 +157,7 @@ private constructor(
     override fun toString() =
         "ScanClient(" +
             (appScanStats?.let { "${it.name}, " } ?: "") +
-            "id=$scannerId, " +
-            "mode[${scanModeToString(scanModeApp)}, used=${scanModeToString(settings.scanMode)}])"
+            "id=$scannerId, mode[${ScanMode(scanModeApp)}, used=${ScanMode(settings.scanMode)}])"
 
     fun ifAppScanStatsPresent(action: Consumer<AppScanStats>) =
         appScanStats?.let { action.accept(it) }
