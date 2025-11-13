@@ -244,7 +244,11 @@ TEST_F(GattSubrateManagerTest, RegisterSubrateConfig_TriggersLeaRequest) {
 
     // LEA Parameters are fixed
     EXPECT_CALL(mock_stack_l2cap_interface_,
-        L2CA_SubrateRequest(Eq(test_addr_), Eq(1), Eq(2), Eq(0), Eq(1), Eq(500)))
+                L2CA_SubrateRequest(Eq(test_addr_),
+                                    Eq(kDefaultSubrateLeAudioModeMinSubrate),
+                                    Eq(kDefaultSubrateLeAudioModeMaxSubrate),
+                                    Eq(0), Eq(kDefaultSubrateLeAudioModeContNum),
+                                    Eq(500)))
             .Times(1).WillOnce(Return(true));
 
     // Action: Register a LEA mode request
