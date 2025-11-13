@@ -77,6 +77,7 @@ import android.bluetooth.BluetoothSocket;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUtils;
 import android.bluetooth.BluetoothUuid;
+import android.bluetooth.BondStatus;
 import android.bluetooth.BufferConstraints;
 import android.bluetooth.EncryptionStatus;
 import android.bluetooth.GattOffloadCapabilities;
@@ -5345,6 +5346,15 @@ public class AdapterService extends Service {
                 mDiscoveredDevices.add(device);
             }
         }
+    }
+
+    public BondStatus getBondStatus(BluetoothDevice device, int transport) {
+        DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
+        if (deviceProp == null) {
+            return null;
+        }
+
+        return deviceProp.getBondStatus(transport);
     }
 
     /**

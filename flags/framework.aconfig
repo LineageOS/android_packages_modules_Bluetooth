@@ -60,3 +60,11 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "enable_get_bond_status"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Enable getBondStatus API"
+    bug: "459659453"
+}
