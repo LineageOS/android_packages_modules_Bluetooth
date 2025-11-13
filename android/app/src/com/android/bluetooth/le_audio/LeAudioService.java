@@ -29,10 +29,6 @@ import static com.android.bluetooth.BluetoothStatsLog.BROADCAST_AUDIO_SESSION_RE
 import static com.android.bluetooth.BluetoothStatsLog.BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_STANDARD;
 import static com.android.bluetooth.BluetoothStatsLog.BROADCAST_AUDIO_SESSION_REPORTED__AUDIO_QUALITY__QUALITY_UNKNOWN;
 import static com.android.bluetooth.bass_client.BassConstants.INVALID_BROADCAST_ID;
-import static com.android.bluetooth.flags.Flags.doNotHardcodeTmapRoleMask;
-import static com.android.bluetooth.flags.Flags.leaudioBroadcastCreationTimeoutFix;
-import static com.android.bluetooth.flags.Flags.leaudioBroadcastSourceChannelMapClassification;
-import static com.android.bluetooth.flags.Flags.leaudioIntentBroadcastInStateMachineCleanup;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -323,7 +319,7 @@ public class LeAudioService extends ConnectableProfile {
         }
 
         // Initialize Broadcast native interface
-        if (doNotHardcodeTmapRoleMask()) {
+        if (Flags.doNotHardcodeTmapRoleMask()) {
             int mask = 0;
             if (Config.isProfileSupported(BluetoothProfile.LE_CALL_CONTROL)) {
                 // Table 3.5 of TMAP v1.0: CCP Server is mandatory for the TMAP CG role.
@@ -381,7 +377,7 @@ public class LeAudioService extends ConnectableProfile {
 
         mAudioManager.registerAudioDeviceCallback(mAudioManagerAudioDeviceCallback, mHandler);
 
-        if (!leaudioBroadcastCreationTimeoutFix()) {
+        if (!Flags.leaudioBroadcastCreationTimeoutFix()) {
             // Mark service as started
             setLeAudioService(this);
         }
@@ -832,7 +828,7 @@ public class LeAudioService extends ConnectableProfile {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        if (!leaudioBroadcastCreationTimeoutFix() && sLeAudioService == null) {
+        if (!Flags.leaudioBroadcastCreationTimeoutFix() && sLeAudioService == null) {
             Log.w(TAG, "cleanup() called before initialization");
             return;
         }
@@ -893,7 +889,7 @@ public class LeAudioService extends ConnectableProfile {
                     if (sm == null) {
                         continue;
                     }
-                    if (leaudioIntentBroadcastInStateMachineCleanup()) {
+                    if (Flags.leaudioIntentBroadcastInStateMachineCleanup()) {
                         sm.doQuit();
                     } else {
                         sm.quit();
@@ -922,7 +918,7 @@ public class LeAudioService extends ConnectableProfile {
         mActiveAudioInDevice = null;
         mExposedActiveDevice = null;
 
-        if (!leaudioBroadcastCreationTimeoutFix()) {
+        if (!Flags.leaudioBroadcastCreationTimeoutFix()) {
             // Set the service and BLE devices as inactive
             setLeAudioService(null);
         }
@@ -1664,7 +1660,7 @@ public class LeAudioService extends ConnectableProfile {
      * @param broadcastId The Broadcast ID.
      */
     public void setBigChannelMapClassification(int action, BluetoothDevice sink, int broadcastId) {
-        if (!leaudioBroadcastSourceChannelMapClassification()) {
+        if (!Flags.leaudioBroadcastSourceChannelMapClassification()) {
             return;
         }
 
@@ -4519,7 +4515,7 @@ public class LeAudioService extends ConnectableProfile {
                     return;
                 }
                 Log.i(TAG, "removeStateMachine: removing state machine for device: " + device);
-                if (leaudioIntentBroadcastInStateMachineCleanup()) {
+                if (Flags.leaudioIntentBroadcastInStateMachineCleanup()) {
                     sm.doQuit();
                 } else {
                     sm.quit();
@@ -5988,7 +5984,7 @@ public class LeAudioService extends ConnectableProfile {
         public void run() {
             Log.w(TAG, "Failed to start Broadcast in time");
 
-            if (!leaudioBroadcastCreationTimeoutFix()) {
+            if (!Flags.leaudioBroadcastCreationTimeoutFix()) {
                 if (getLeAudioService() == null) {
                     Log.e(TAG, "CreateBroadcastTimeoutEvent: No LE Audio service");
                     return;
