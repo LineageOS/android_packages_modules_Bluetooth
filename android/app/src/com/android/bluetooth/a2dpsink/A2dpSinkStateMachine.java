@@ -150,6 +150,7 @@ class A2dpSinkStateMachine extends StateMachine {
                 case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(msg.arg1);
                 case MESSAGE_CONNECT -> {
                     debug("Placing outgoing connection request");
+                    mNativeInterface.connectA2dpSink(mDevice);
                     transitionTo(mConnecting);
                 }
                 case CLEANUP -> {
@@ -171,7 +172,6 @@ class A2dpSinkStateMachine extends StateMachine {
                         warn("Reject connection, policy=CONNECTION_POLICY_FORBIDDEN");
                         mNativeInterface.disconnectA2dpSink(mDevice);
                     } else {
-                        mConnecting.mIncomingConnection = true;
                         transitionTo(mConnecting);
                     }
                 }
@@ -183,20 +183,12 @@ class A2dpSinkStateMachine extends StateMachine {
     }
 
     class Connecting extends State {
-        boolean mIncomingConnection = false;
-
         @Override
         public void enter() {
             debug("Enter");
             onConnectionStateChanged(STATE_CONNECTING);
             removeMessages(CLEANUP);
             sendMessageDelayed(MESSAGE_CONNECT_TIMEOUT, CONNECT_TIMEOUT_MS);
-
-            if (!mIncomingConnection) {
-                mNativeInterface.connectA2dpSink(mDevice);
-            }
-
-            super.enter();
         }
 
         @Override
@@ -228,7 +220,6 @@ class A2dpSinkStateMachine extends StateMachine {
         @Override
         public void exit() {
             removeMessages(MESSAGE_CONNECT_TIMEOUT);
-            mIncomingConnection = false;
         }
     }
 
