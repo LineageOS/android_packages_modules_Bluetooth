@@ -1176,7 +1176,7 @@ class BluetoothManagerService {
         public void onServiceDisconnected(ComponentName componentName) {
             // Called if we unexpectedly disconnect.
             String name = componentName.getClassName();
-            Log.d(TAG, "ServiceConnection.onServiceDisconnected(" + name + ")");
+            Log.e(TAG, "ServiceConnection.onServiceDisconnected(" + name + ")");
             if (!name.equals("com.android.bluetooth.btservice.AdapterService")) {
                 Log.e(TAG, "Unknown service disconnected: " + name);
                 return;
@@ -1382,7 +1382,7 @@ class BluetoothManagerService {
             delay = delay.multipliedBy(10);
         }
 
-        Log.d(TAG, "Recovery #" + mRetryCounter + " scheduled in " + delay.toString().substring(2));
+        Log.e(TAG, "Recovery #" + mRetryCounter + " scheduled in " + delay.toString().substring(2));
         sendMessageDelayed(MESSAGE_RESTART_BLUETOOTH_SERVICE, delay);
     }
 
