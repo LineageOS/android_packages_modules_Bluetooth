@@ -75,7 +75,7 @@ class ScanMetricsReporter(
             scan.isCallbackScan,
             convertScanCallbackType(scan.callbackType),
             convertScanType(scan),
-            convertScanMode(scan.scanMode),
+            convertScanMode(scan.scanMode.value),
             scan.reportDelayMillis,
             0, /* app_scan_duration_ms */
             ongoingScansCount,
@@ -134,7 +134,7 @@ class ScanMetricsReporter(
             scan.isCallbackScan,
             convertScanCallbackType(scan.callbackType),
             convertScanType(scan),
-            convertScanMode(scan.scanMode),
+            convertScanMode(scan.scanMode.value),
             scan.reportDelayMillis,
             duration,
             ongoingScansCount,

@@ -297,18 +297,7 @@ object ScanUtil {
             else -> "UNKNOWN($status)"
         }
 
-    @JvmStatic
-    fun scanModeToString(scanMode: Int) =
-        when (scanMode) {
-            SCAN_MODE_OPPORTUNISTIC -> "OPPORTUNISTIC"
-            SCAN_MODE_LOW_POWER -> "LOW_POWER"
-            SCAN_MODE_BALANCED -> "BALANCED"
-            SCAN_MODE_LOW_LATENCY -> "LOW_LATENCY"
-            SCAN_MODE_AMBIENT_DISCOVERY -> "AMBIENT_DISCOVERY"
-            SCAN_MODE_SCREEN_OFF -> "SCREEN_OFF"
-            SCAN_MODE_SCREEN_OFF_BALANCED -> "SCREEN_OFF_BALANCED"
-            else -> "UNKNOWN($scanMode)"
-        }
+    @JvmStatic fun scanModeToString(scanMode: Int) = ScanMode(scanMode).toString()
 
     @JvmStatic
     fun requiresScreenOn(client: ScanClient) =
@@ -400,9 +389,9 @@ object ScanUtil {
         if (isAutoBatchScanClientEnabled(client)) {
             return
         }
+        val scanMode = ScanMode(SCAN_MODE_SCREEN_OFF)
+        Log.d(TAG, "setAutoBatchScanClient($client): Update scan mode to $scanMode")
         client.updateScanMode(SCAN_MODE_SCREEN_OFF)
-        val scanModeString = scanModeToString(client.scanModeApp)
-        Log.d(TAG, "Scan mode update during setAutoBatchScanClient() to $scanModeString")
         client.appScanStats?.setAutoBatchScan(client.scannerId, true)
     }
 
@@ -411,9 +400,9 @@ object ScanUtil {
         if (!isAutoBatchScanClientEnabled(client)) {
             return
         }
+        val scanMode = ScanMode(client.scanModeApp)
+        Log.d(TAG, "clearAutoBatchScanClient($client): Update scan mode to $scanMode")
         client.updateScanMode(client.scanModeApp)
-        val scanModeString = scanModeToString(client.scanModeApp)
-        Log.d(TAG, "Scan mode update during clearAutoBatchScanClient() to $scanModeString")
         client.appScanStats?.setAutoBatchScan(client.scannerId, false)
     }
 
@@ -528,6 +517,21 @@ value class CallbackType(val value: Int) {
             ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH -> "ALL_MATCHES_AUTO_BATCH"
             ScanSettings.CALLBACK_TYPE_FIRST_MATCH or ScanSettings.CALLBACK_TYPE_MATCH_LOST ->
                 "[FIRST_MATCH | LOST]"
+            else -> "UNKNOWN($value)"
+        }
+}
+
+@JvmInline
+value class ScanMode(val value: Int) {
+    override fun toString() =
+        when (value) {
+            SCAN_MODE_OPPORTUNISTIC -> "OPPORTUNISTIC"
+            SCAN_MODE_LOW_POWER -> "LOW_POWER"
+            SCAN_MODE_BALANCED -> "BALANCED"
+            SCAN_MODE_LOW_LATENCY -> "LOW_LATENCY"
+            SCAN_MODE_AMBIENT_DISCOVERY -> "AMBIENT_DISCOVERY"
+            SCAN_MODE_SCREEN_OFF -> "SCREEN_OFF"
+            SCAN_MODE_SCREEN_OFF_BALANCED -> "SCREEN_OFF_BALANCED"
             else -> "UNKNOWN($value)"
         }
 }
