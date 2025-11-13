@@ -31,6 +31,7 @@
 #include <cstdint>
 #include <functional>
 
+#include "bt_status.h"
 #include "btif/include/btif_uid.h"
 #include "hardware/bt_sock.h"
 #include "stack/include/bt_hdr.h"
@@ -89,22 +90,22 @@ extern struct btsock_rfc_cleanup btsock_rfc_cleanup;
 
 // Name: btsock_rfc_connect
 // Params: const RawAddress* bd_addr, const Uuid* service_uuid, int channel,
-// int* sock_fd, int flags, int app_uid Return: bt_status_t
+// int* sock_fd, int flags, int app_uid Return: BtStatus
 struct btsock_rfc_connect {
-  static bt_status_t return_value;
-  std::function<bt_status_t(const RawAddress* bd_addr, const bluetooth::Uuid* uuid, int channel,
-                            int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
-                            const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
-                            int max_rx_packet_size)>
+  static BtStatus return_value;
+  std::function<BtStatus(const RawAddress* bd_addr, const bluetooth::Uuid* uuid, int channel,
+                         int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
+                         const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
+                         int max_rx_packet_size)>
           body{[](const RawAddress* /*bd_addr*/, const bluetooth::Uuid* /*uuid*/, int /*channel*/,
                   int* /*sock_fd*/, int /*flags*/, int /*app_uid*/,
                   btsock_data_path_t /*data_path*/, const char* /*socket_name*/,
                   uint64_t /*hub_id*/, uint64_t /*endpoint_id*/,
                   int /*max_rx_packet_size*/) { return return_value; }};
-  bt_status_t operator()(const RawAddress* bd_addr, const bluetooth::Uuid* uuid, int channel,
-                         int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
-                         const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
-                         int max_rx_packet_size) {
+  BtStatus operator()(const RawAddress* bd_addr, const bluetooth::Uuid* uuid, int channel,
+                      int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
+                      const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
+                      int max_rx_packet_size) {
     return body(bd_addr, uuid, channel, sock_fd, flags, app_uid, data_path, socket_name, hub_id,
                 endpoint_id, max_rx_packet_size);
   }
@@ -114,18 +115,18 @@ extern struct btsock_rfc_connect btsock_rfc_connect;
 // Name: btsock_rfc_control_req
 // Params: uint8_t dlci, const RawAddress& bd_addr, uint8_t modem_signal,
 // uint8_t break_signal, uint8_t discard_buffers, uint8_t break_signal_seq, bool
-// fc Return: bt_status_t
+// fc Return: BtStatus
 struct btsock_rfc_control_req {
-  static bt_status_t return_value;
-  std::function<bt_status_t(uint8_t dlci, const RawAddress& bd_addr, uint8_t modem_signal,
-                            uint8_t break_signal, uint8_t discard_buffers, uint8_t break_signal_seq,
-                            bool fc)>
+  static BtStatus return_value;
+  std::function<BtStatus(uint8_t dlci, const RawAddress& bd_addr, uint8_t modem_signal,
+                         uint8_t break_signal, uint8_t discard_buffers, uint8_t break_signal_seq,
+                         bool fc)>
           body{[](uint8_t /* dlci */, const RawAddress& /* bd_addr */, uint8_t /* modem_signal */,
                   uint8_t /* break_signal */, uint8_t /* discard_buffers */,
                   uint8_t /* break_signal_seq */, bool /* fc */) { return return_value; }};
-  bt_status_t operator()(uint8_t dlci, const RawAddress& bd_addr, uint8_t modem_signal,
-                         uint8_t break_signal, uint8_t discard_buffers, uint8_t break_signal_seq,
-                         bool fc) {
+  BtStatus operator()(uint8_t dlci, const RawAddress& bd_addr, uint8_t modem_signal,
+                      uint8_t break_signal, uint8_t discard_buffers, uint8_t break_signal_seq,
+                      bool fc) {
     return body(dlci, bd_addr, modem_signal, break_signal, discard_buffers, break_signal_seq, fc);
   }
 };
@@ -133,23 +134,23 @@ extern struct btsock_rfc_control_req btsock_rfc_control_req;
 
 // Name: btsock_rfc_disconnect
 // Params: const RawAddress* bd_addr
-// Return: bt_status_t
+// Return: BtStatus
 struct btsock_rfc_disconnect {
-  static bt_status_t return_value;
-  std::function<bt_status_t(const RawAddress* bd_addr)> body{
+  static BtStatus return_value;
+  std::function<BtStatus(const RawAddress* bd_addr)> body{
           [](const RawAddress* /* bd_addr */) { return return_value; }};
-  bt_status_t operator()(const RawAddress* bd_addr) { return body(bd_addr); }
+  BtStatus operator()(const RawAddress* bd_addr) { return body(bd_addr); }
 };
 extern struct btsock_rfc_disconnect btsock_rfc_disconnect;
 
 // Name: btsock_rfc_init
 // Params: int poll_thread_handle, uid_set_t* set
-// Return: bt_status_t
+// Return: BtStatus
 struct btsock_rfc_init {
-  static bt_status_t return_value;
-  std::function<bt_status_t(int poll_thread_handle, uid_set_t* set)> body{
+  static BtStatus return_value;
+  std::function<BtStatus(int poll_thread_handle, uid_set_t* set)> body{
           [](int /* poll_thread_handle */, uid_set_t* /* set */) { return return_value; }};
-  bt_status_t operator()(int poll_thread_handle, uid_set_t* set) {
+  BtStatus operator()(int poll_thread_handle, uid_set_t* set) {
     return body(poll_thread_handle, set);
   }
 };
@@ -157,22 +158,21 @@ extern struct btsock_rfc_init btsock_rfc_init;
 
 // Name: btsock_rfc_listen
 // Params: const char* service_name, const Uuid* service_uuid, int channel, int*
-// sock_fd, int flags, int app_uid Return: bt_status_t
+// sock_fd, int flags, int app_uid Return: BtStatus
 struct btsock_rfc_listen {
-  static bt_status_t return_value;
-  std::function<bt_status_t(const char* service_name, const Uuid* service_uuid, int channel,
-                            int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
-                            const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
-                            int max_rx_packet_size)>
+  static BtStatus return_value;
+  std::function<BtStatus(const char* service_name, const Uuid* service_uuid, int channel,
+                         int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
+                         const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
+                         int max_rx_packet_size)>
           body{[](const char* /* service_name */, const Uuid* /* service_uuid */, int /* channel */,
                   int* /* sock_fd */, int /* flags */, int /* app_uid */,
                   btsock_data_path_t /*data_path*/, const char* /*socket_name*/,
                   uint64_t /*hub_id*/, uint64_t /*endpoint_id*/,
                   int /*max_rx_packet_size*/) { return return_value; }};
-  bt_status_t operator()(const char* service_name, const Uuid* service_uuid, int channel,
-                         int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
-                         const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
-                         int max_rx_packet_size) {
+  BtStatus operator()(const char* service_name, const Uuid* service_uuid, int channel, int* sock_fd,
+                      int flags, int app_uid, btsock_data_path_t data_path, const char* socket_name,
+                      uint64_t hub_id, uint64_t endpoint_id, int max_rx_packet_size) {
     return body(service_name, service_uuid, channel, sock_fd, flags, app_uid, data_path,
                 socket_name, hub_id, endpoint_id, max_rx_packet_size);
   }

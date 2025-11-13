@@ -1036,7 +1036,7 @@ TEST_F(BtifCoreSocketTest, CreateRfcommServerSocket) {
   uint64_t hub_id = 0;
   uint64_t endpoint_id = 0;
   int max_rx_packet_size = 0;
-  ASSERT_EQ(BT_STATUS_SUCCESS,
+  ASSERT_EQ(BtifStatus(),
             btif_sock_get_interface()->listen(
                     BTSOCK_RFCOMM, "TestService", &server_uuid, kChannelOne, &socket_number, kFlags,
                     kAppUid, data_path, "TestSocket", hub_id, endpoint_id, max_rx_packet_size));
@@ -1052,7 +1052,7 @@ TEST_F(BtifCoreSocketTest, CreateTwoRfcommServerSockets) {
   uint64_t hub_id = 0;
   uint64_t endpoint_id = 0;
   int max_rx_packet_size = 0;
-  ASSERT_EQ(BT_STATUS_SUCCESS,
+  ASSERT_EQ(BtifStatus(),
             btif_sock_get_interface()->listen(
                     BTSOCK_RFCOMM, "TestService", &server_uuid, kChannelOne, &socket_number, kFlags,
                     kAppUid, data_path, "TestSocket", hub_id, endpoint_id, max_rx_packet_size));
@@ -1061,10 +1061,10 @@ TEST_F(BtifCoreSocketTest, CreateTwoRfcommServerSockets) {
   static constexpr int kAppUidTwo = 6;
   const Uuid server_uuid_two = Uuid::FromString("12345678-1234-2345-3456-456789123456");
   int socket_number_two = 1;
-  ASSERT_EQ(BT_STATUS_SUCCESS, btif_sock_get_interface()->listen(
-                                       BTSOCK_RFCOMM, "ServiceTwo", &server_uuid_two, kChannelTwo,
-                                       &socket_number_two, kFlagsTwo, kAppUidTwo, data_path,
-                                       "TestSocket", hub_id, endpoint_id, max_rx_packet_size));
+  ASSERT_EQ(BtifStatus(), btif_sock_get_interface()->listen(
+                                  BTSOCK_RFCOMM, "ServiceTwo", &server_uuid_two, kChannelTwo,
+                                  &socket_number_two, kFlagsTwo, kAppUidTwo, data_path,
+                                  "TestSocket", hub_id, endpoint_id, max_rx_packet_size));
 }
 
 TEST_F(BtifCoreSocketTest, CreateManyRfcommServerSockets) {
@@ -1084,7 +1084,7 @@ TEST_F(BtifCoreSocketTest, CreateManyRfcommServerSockets) {
     uint64_t hub_id = 0;
     uint64_t endpoint_id = 0;
     int max_rx_packet_size = 0;
-    ASSERT_EQ(BT_STATUS_SUCCESS,
+    ASSERT_EQ(BtifStatus(),
               btif_sock_get_interface()->listen(
                       BTSOCK_RFCOMM, "TestService", &server_uuid, channel, &socket_number, flags,
                       app_uuid, data_path, "TestSocket", hub_id, endpoint_id, max_rx_packet_size));

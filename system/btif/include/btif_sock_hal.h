@@ -16,6 +16,6 @@
 
 #pragma once
 
-#include <hardware/bluetooth.h>
+#include "bt_status.h"
 
-bt_status_t btsock_hal_init();
+BtStatus btsock_hal_init();
