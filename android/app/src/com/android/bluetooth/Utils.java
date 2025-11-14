@@ -725,15 +725,6 @@ public final class Utils {
         return SystemProperties.getBoolean(PTS_TEST_MODE_PROPERTY, false);
     }
 
-    /**
-     * Get uid/pid string in a binder call
-     *
-     * @return "uid/pid=xxxx/yyyy"
-     */
-    public static String getUidPidString() {
-        return "uid/pid=" + Binder.getCallingUid() + "/" + Binder.getCallingPid();
-    }
-
     private static final DateTimeFormatter DATE_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("MM-dd HH:mm:ss.SSS").withZone(ZoneId.systemDefault());
 
