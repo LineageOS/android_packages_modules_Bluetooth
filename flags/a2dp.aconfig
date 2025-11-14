@@ -195,3 +195,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "a2dp_sink_offload"
+    namespace: "bluetooth"
+    description: "API change for A2DP Sink Offload"
+    bug: "460665704"
+}
