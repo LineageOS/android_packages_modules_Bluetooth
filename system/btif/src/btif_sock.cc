@@ -22,6 +22,7 @@
 
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
@@ -226,6 +227,11 @@ static bt_status_t btsock_connect(const RawAddress bd_addr, btsock_type_t type, 
     case BTSOCK_RFCOMM:
       status = btsock_rfc_connect(&bd_addr, uuid, channel, sock_fd, flags, app_uid, data_path,
                                   socket_name, hub_id, endpoint_id, max_rx_packet_size);
+      if (status != BT_STATUS_SUCCESS) {
+        bluetooth::metrics::LogBluetoothEvent(
+                bd_addr, bluetooth::metrics::EventType::RFCOMM_SOCKET_DISCONNECTION,
+                bluetooth::metrics::State::SOCKET_CONNECTION_FAILURE, app_uid);
+      }
       break;
 
     case BTSOCK_L2CAP:

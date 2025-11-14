@@ -23,9 +23,11 @@
 #include "bta/include/bta_sec_api.h"
 #include "hci/address.h"
 #include "hci/hci_packets.h"
+#include "include/hardware/bt_sock.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/l2cdefs.h"
+#include "stack/include/port_api.h"
 
 namespace bluetooth::metrics {
 
@@ -250,5 +252,64 @@ void LogAvdtpCloseResponseSendEvent(hci::Address address);
  * @param result The result of the state change
  */
 void LogA2dpBtifAvStateChangeEvent(hci::Address address, uint8_t result);
+/**
+ * Logs the start of a client RFCOMM connection, typically initiated by calling
+ * `RFCOMM_CreateConnectionWithSecurity()`.
+ * @param address
+ * @param event
+ * @param uid
+ */
+void LogRfcommNativeStartEvent(hci::Address address, EventType event, int uid);
+
+/**
+ * Logs when a RFCOMM connection is successfully completed
+ * @param address
+ * @param event
+ * @param uid
+ * @param is_client true if the connection is client, false if server
+ */
+void LogRfcommNativeConnectionCompleteEvent(hci::Address address, EventType event, bool is_client,
+                                            int uid);
+
+/**
+ * Logs when a RFCOMM connection is disconnected
+ * @param address
+ * @param event
+ * @param uid
+ */
+void LogRfcommNativeDisconnectionEvent(hci::Address address, EventType event, int uid);
+/**
+ * Logs when a RFCOMM socket connection is disconnected with socket error code
+ * @param address
+ * @param uid
+ * @param error_code error code of the socket disconnection
+ */
+void LogRfcommSocketDisconnectionEvent(hci::Address address, int uid,
+                                       btsock_error_code_t error_code);
+
+/**
+ * Logs when port returns failure result
+ * @param address
+ * @param event
+ * @param uid
+ * @param result port result of the disconnection
+ */
+void LogRfcommPortFailureEvent(hci::Address address, EventType event, int uid, tPORT_RESULT result);
+
+/**
+ * Logs RFCOMM L2CAP channel events
+ * @param address
+ * @param event
+ * @param l2cap_result The result of the L2CAP events
+ */
+void LogRfcommL2capEvent(hci::Address address, EventType event, tL2CAP_CONN l2cap_result);
+
+/**
+ * Logs RFCOMM multiplexer events
+ * @param address
+ * @param event
+ * @param state
+ */
+void LogRfcommMxEvent(hci::Address address, State state);
 
 }  // namespace bluetooth::metrics

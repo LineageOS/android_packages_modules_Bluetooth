@@ -449,6 +449,92 @@ static State MapAdditionalAvdtpErrorToState(uint16_t err_code) {
   }
 }
 
+static State MapBtsockErrorToState(btsock_error_code_t error_code) {
+  switch (error_code) {
+    case BTSOCK_ERROR_NONE:
+      return State::SOCKET_CLOSED;
+    case BTSOCK_ERROR_CLIENT_INIT_FAILURE:
+      return State::SOCKET_CLIENT_INIT_FAILURE;
+    case BTSOCK_ERROR_CONNECTION_FAILURE:
+      return State::SOCKET_CONNECTION_FAILURE;
+    case BTSOCK_ERROR_OPEN_FAILURE:
+      return State::SOCKET_OPEN_FAILURE;
+    case BTSOCK_ERROR_OFFLOAD_SERVER_NOT_ACCEPTING:
+      return State::SOCKET_OFFLOAD_SERVER_NOT_ACCEPTING;
+    case BTSOCK_ERROR_OFFLOAD_HAL_OPEN_FAILURE:
+      return State::SOCKET_OFFLOAD_HAL_OPEN_FAILURE;
+    case BTSOCK_ERROR_SEND_TO_APP_FAILURE:
+      return State::SOCKET_SEND_TO_APP_FAILURE;
+    case BTSOCK_ERROR_RECEIVE_DATA_FAILURE:
+      return State::SOCKET_RECEIVE_DATA_FAILURE;
+    case BTSOCK_ERROR_READ_SIGNALED_FAILURE:
+      return State::SOCKET_READ_SIGNALED_FAILURE;
+    case BTSOCK_ERROR_WRITE_SIGNALED_FAILURE:
+      return State::SOCKET_WRITE_SIGNALED_FAILURE;
+    case BTSOCK_ERROR_SEND_SCN_FAILURE:
+      return State::SOCKET_SEND_SCN_FAILURE;
+    case BTSOCK_ERROR_SCN_ALLOCATION_FAILURE:
+      return State::SOCKET_SCN_ALLOCATION_FAILURE;
+    case BTSOCK_ERROR_SDP_DISCOVERY_FAILURE:
+      return State::SOCKET_SDP_DISCOVERY_FAILURE;
+    default:
+      return State::STATE_UNKNOWN;
+  }
+}
+
+static State MapPortResultToState(tPORT_RESULT result) {
+  switch (result) {
+    case PORT_SUCCESS:
+      return State::SUCCESS;
+    case PORT_ALREADY_OPENED:
+      return State::PORT_STATUS_ALREADY_OPENED;
+    case PORT_CMD_PENDING:
+      return State::PORT_STATUS_CMD_PENDING;
+    case PORT_APP_NOT_REGISTERED:
+      return State::PORT_STATUS_APP_NOT_REGISTERED;
+    case PORT_NO_MEM:
+      return State::PORT_STATUS_NO_MEM;
+    case PORT_NO_RESOURCES:
+      return State::PORT_STATUS_NO_RESOURCES;
+    case PORT_BAD_BD_ADDR:
+      return State::PORT_STATUS_BAD_BD_ADDR;
+    case PORT_BAD_HANDLE:
+      return State::PORT_STATUS_BAD_HANDLE;
+    case PORT_NOT_OPENED:
+      return State::PORT_STATUS_NOT_OPENED;
+    case PORT_LINE_ERR:
+      return State::PORT_STATUS_LINE_ERR;
+    case PORT_START_FAILED:
+      return State::PORT_STATUS_START_FAILED;
+    case PORT_PAR_NEG_FAILED:
+      return State::PORT_STATUS_PAR_NEG_FAILED;
+    case PORT_PORT_NEG_FAILED:
+      return State::PORT_STATUS_PORT_NEG_FAILED;
+    case PORT_SEC_FAILED:
+      return State::PORT_STATUS_SEC_FAILED;
+    case PORT_PEER_CONNECTION_FAILED:
+      return State::PORT_STATUS_PEER_CONNECTION_FAILED;
+    case PORT_PEER_FAILED:
+      return State::PORT_STATUS_PEER_FAILED;
+    case PORT_PEER_TIMEOUT:
+      return State::PORT_STATUS_PEER_TIMEOUT;
+    case PORT_CLOSED:
+      return State::PORT_STATUS_CLOSED;
+    case PORT_TX_FULL:
+      return State::PORT_STATUS_TX_FULL;
+    case PORT_LOCAL_CLOSED:
+      return State::PORT_STATUS_LOCAL_CLOSED;
+    case PORT_LOCAL_TIMEOUT:
+      return State::PORT_STATUS_LOCAL_TIMEOUT;
+    case PORT_TX_QUEUE_DISABLED:
+      return State::PORT_STATUS_TX_QUEUE_DISABLED;
+    case PORT_INVALID_SCN:
+      return State::PORT_STATUS_INVALID_SCN;
+    default:
+      return State::STATE_UNKNOWN;
+  }
+}
+
 void LogIncomingAclStartEvent(const hci::Address& address) {
   LogBluetoothEvent(address, EventType::ACL_CONNECTION_RESPONDER, State::START);
 }
@@ -649,6 +735,39 @@ void LogAvdtpCloseResponseSendEvent(hci::Address address) {
 void LogA2dpBtifAvStateChangeEvent(hci::Address address, uint8_t result) {
   LogBluetoothEvent(address, EventType::A2DP_BTIF_AV_STATE_CHANGE_EVT,
                     bluetooth::metrics::MapBtaAvResultToState(result));
+}
+
+void LogRfcommNativeStartEvent(hci::Address address, EventType event, int uid) {
+  LogBluetoothEvent(address, event, State::START, uid);
+}
+
+void LogRfcommNativeConnectionCompleteEvent(hci::Address address, EventType event, bool is_client,
+                                            int uid) {
+  LogBluetoothEvent(address, event, is_client ? State::SUCCESS_CONNECT : State::SUCCESS_ACCEPT,
+                    uid);
+}
+
+void LogRfcommNativeDisconnectionEvent(hci::Address address, EventType event, int uid) {
+  LogBluetoothEvent(address, event, State::STATE_DISCONNECTED, uid);
+}
+
+void LogRfcommSocketDisconnectionEvent(hci::Address address, int uid,
+                                       btsock_error_code_t error_code) {
+  LogBluetoothEvent(address, EventType::RFCOMM_SOCKET_DISCONNECTION,
+                    MapBtsockErrorToState(error_code), uid);
+}
+
+void LogRfcommPortFailureEvent(hci::Address address, EventType event, int uid,
+                               tPORT_RESULT result) {
+  LogBluetoothEvent(address, event, MapPortResultToState(result), uid);
+}
+
+void LogRfcommL2capEvent(hci::Address address, EventType event, tL2CAP_CONN l2cap_result) {
+  LogBluetoothEvent(address, event, MapL2capResultToState(l2cap_result));
+}
+
+void LogRfcommMxEvent(hci::Address address, State state) {
+  LogBluetoothEvent(address, EventType::RFCOMM_MX_EVENT, state);
 }
 
 }  // namespace bluetooth::metrics
