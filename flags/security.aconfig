@@ -100,3 +100,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "local_pin_key_type"
+    namespace: "bluetooth"
+    description: "Android Bluetooth must not set local pin key type to fixed for BR/EDR legacy pairing"
+    bug: "460620223"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
