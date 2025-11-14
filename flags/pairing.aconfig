@@ -267,3 +267,13 @@ flag {
     description: "Initiate autonomous re-pairing when bond loss is detected."
     bug: "459695529"
 }
+
+flag {
+    name: "security_mode_3_pairing"
+    namespace: "bluetooth"
+    description: "Fixes pairing with devices which are in BR/EDR security mode 3."
+    bug: "460502961"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
