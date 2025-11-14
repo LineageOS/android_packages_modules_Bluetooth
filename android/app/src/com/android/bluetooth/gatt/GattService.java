@@ -1448,7 +1448,7 @@ public class GattService extends ProfileService {
                 companionManager.getGattConnParameters(
                         device, CompanionManager.GATT_CONN_LATENCY, connectionPriority);
 
-        final int timeout = 500; // 5s. Link supervision timeout is measured in N * 10ms
+        final int timeout = companionManager.getGattSupervisionTimeout(device);
         Log.d(
                 TAG,
                 ("connectionParameterUpdate(): device=" + device + ", params=" + connectionPriority)
@@ -1517,7 +1517,8 @@ public class GattService extends ProfileService {
             maxLatency = mCachedPeripheralLatency.getOrDefault(device, 0);
         }
 
-        int supervisionTimeout = 500; // 5s. Link supervision timeout is measured in N * 10ms
+        final int supervisionTimeout =
+                getAdapterService().getCompanionManager().getGattSupervisionTimeout(device);
 
         // Confirm flag config
         if (Flags.leSubrateManager()) {

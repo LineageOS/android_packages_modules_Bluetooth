@@ -68,6 +68,19 @@ public class CompanionManager {
     private final int[] mGattConnLowDefault;
     private final int[] mGattConnDckDefault;
 
+    private final int mPrimarySupervisionTimeout;
+    private final int mSecondarySupervisionTimeout;
+    private final int mDefaultSupervisionTimeout;
+
+    static final String PRIMARY_SUPERVISION_TIMEOUT_PROP =
+            "bluetooth.ble.primary_supervision_timeout.config";
+
+    /** BLE Link supervision timeouts is measured in N * 10ms. */
+    public static final int PRIMARY_SUPERVISION_TIMEOUT_DEFAULT = 500;
+
+    public static final int SECONDARY_SUPERVISION_TIMEOUT_DEFAULT = 500;
+    public static final int DEFAULT_SUPERVISION_TIMEOUT_DEFAULT = 500;
+
     @VisibleForTesting static final int COMPANION_TYPE_NONE = 0;
     @VisibleForTesting static final int COMPANION_TYPE_PRIMARY = 1;
     @VisibleForTesting static final int COMPANION_TYPE_SECONDARY = 2;
@@ -214,6 +227,20 @@ public class CompanionManager {
                             PROPERTY_LOW_LATENCY + PROPERTY_SUFFIX_SECONDARY,
                             R.integer.gatt_low_power_latency_secondary)
                 };
+
+        int primaryTimeout =
+                SystemProperties.getInt(
+                        PRIMARY_SUPERVISION_TIMEOUT_PROP, PRIMARY_SUPERVISION_TIMEOUT_DEFAULT);
+        if (primaryTimeout > PRIMARY_SUPERVISION_TIMEOUT_DEFAULT) {
+            mPrimarySupervisionTimeout = primaryTimeout;
+        } else {
+            Log.d(TAG, "Invalid Primary Supervision Timeout property, restoring to default");
+            mPrimarySupervisionTimeout = PRIMARY_SUPERVISION_TIMEOUT_DEFAULT;
+        }
+        mSecondarySupervisionTimeout =
+                SECONDARY_SUPERVISION_TIMEOUT_DEFAULT; // 5s. measured in N * 10ms
+        mDefaultSupervisionTimeout =
+                DEFAULT_SUPERVISION_TIMEOUT_DEFAULT; // 5s. measured in N * 10ms
     }
 
     private int getGattConfig(String property, int resId) {
@@ -300,6 +327,22 @@ public class CompanionManager {
             case COMPANION_TYPE_PRIMARY -> getGattConnParameterPrimary(type, priority);
             case COMPANION_TYPE_SECONDARY -> getGattConnParameterSecondary(type, priority);
             default -> getGattConnParameterDefault(type, priority);
+        };
+    }
+
+    /**
+     * Gets the GATT connection supervision timeout parameter
+     *
+     * @param device the Bluetooth device
+     * @return the connection parameter in integer
+     */
+    public int getGattSupervisionTimeout(BluetoothDevice device) {
+        int companionType = getCompanionType(requireNonNull(device));
+        Log.i(TAG, "companionType: " + companionType);
+        return switch (companionType) {
+            case COMPANION_TYPE_PRIMARY -> mPrimarySupervisionTimeout;
+            case COMPANION_TYPE_SECONDARY -> mSecondarySupervisionTimeout;
+            default -> mDefaultSupervisionTimeout;
         };
     }
 

@@ -171,6 +171,8 @@ public class CompanionManagerTest {
         final int maxInterval = 3200; // 0x0C80
         final int minLatency = 0; // 0x0000
         final int maxLatency = 499; // 0x01F3
+        final int minTimeout = 500; // 0x01F4
+        final int maxTimeout = 3200; // 0x0C80
 
         int min =
                 mCompanionManager.getGattConnParameters(
@@ -181,6 +183,7 @@ public class CompanionManagerTest {
         int latency =
                 mCompanionManager.getGattConnParameters(
                         mDevice, CompanionManager.GATT_CONN_LATENCY, priority);
+        int timeout = mCompanionManager.getGattSupervisionTimeout(mDevice);
 
         assertThat(max).isAtLeast(min);
         assertThat(max).isAtLeast(minInterval);
@@ -189,5 +192,7 @@ public class CompanionManagerTest {
         assertThat(min).isAtMost(maxInterval);
         assertThat(latency).isAtLeast(minLatency);
         assertThat(latency).isAtMost(maxLatency);
+        assertThat(timeout).isAtLeast(minTimeout);
+        assertThat(timeout).isAtMost(maxTimeout);
     }
 }
