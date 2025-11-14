@@ -604,6 +604,8 @@ package android.bluetooth {
     field public static final String EXTRA_IS_COORDINATED_SET_MEMBER = "android.bluetooth.extra.IS_COORDINATED_SET_MEMBER";
     field public static final String EXTRA_KEY_SIZE = "android.bluetooth.device.extra.KEY_SIZE";
     field public static final String EXTRA_NAME = "android.bluetooth.device.extra.NAME";
+    field @FlaggedApi("com.android.bluetooth.flags.provide_pairing_algo") public static final String EXTRA_PAIRING_ALGORITHM = "android.bluetooth.device.extra.PAIRING_ALGORITHM";
+    field @FlaggedApi("com.android.bluetooth.flags.autonomous_repairing_initiation") public static final String EXTRA_PAIRING_CONTEXT = "android.bluetooth.device.extra.PAIRING_CONTEXT";
     field public static final String EXTRA_PAIRING_KEY = "android.bluetooth.device.extra.PAIRING_KEY";
     field public static final String EXTRA_PAIRING_VARIANT = "android.bluetooth.device.extra.PAIRING_VARIANT";
     field public static final String EXTRA_PREVIOUS_BOND_STATE = "android.bluetooth.device.extra.PREVIOUS_BOND_STATE";
@@ -611,6 +613,13 @@ package android.bluetooth {
     field public static final String EXTRA_TRANSPORT = "android.bluetooth.device.extra.TRANSPORT";
     field public static final String EXTRA_UUID = "android.bluetooth.device.extra.UUID";
     field @FlaggedApi("com.android.bluetooth.flags.get_svc_uuids_from_ble_adv_data") public static final String EXTRA_UUID_LE = "android.bluetooth.device.extra.UUID_LE";
+    field @FlaggedApi("com.android.bluetooth.flags.provide_pairing_algo") public static final int PAIRING_ALGORITHM_BREDR_LEGACY = 1; // 0x1
+    field @FlaggedApi("com.android.bluetooth.flags.provide_pairing_algo") public static final int PAIRING_ALGORITHM_BREDR_SSP = 2; // 0x2
+    field @FlaggedApi("com.android.bluetooth.flags.provide_pairing_algo") public static final int PAIRING_ALGORITHM_LE_LEGACY = 0; // 0x0
+    field @FlaggedApi("com.android.bluetooth.flags.provide_pairing_algo") public static final int PAIRING_ALGORITHM_SC = 3; // 0x3
+    field @FlaggedApi("com.android.bluetooth.flags.autonomous_repairing_initiation") public static final int PAIRING_CONTEXT_REPAIRING = 2; // 0x2
+    field @FlaggedApi("com.android.bluetooth.flags.autonomous_repairing_initiation") public static final int PAIRING_CONTEXT_USER_APPROVAL_REQUESTED = 1; // 0x1
+    field @FlaggedApi("com.android.bluetooth.flags.autonomous_repairing_initiation") public static final int PAIRING_CONTEXT_USER_PARTICIPATION_REQUESTED = 0; // 0x0
     field public static final int PAIRING_VARIANT_PASSKEY_CONFIRMATION = 2; // 0x2
     field public static final int PAIRING_VARIANT_PIN = 0; // 0x0
     field public static final int PHY_LE_1M = 1; // 0x1

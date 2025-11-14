@@ -89,10 +89,6 @@ public final class BondStateMachine extends StateMachine {
     static final String KEY_PAIRING_VARIANT = "pairing_variant";
     static final String KEY_PAIRING_CONTEXT = "pairing_context";
 
-    static final int PAIRING_CONTEXT_PARTICIPATION = 0;
-    static final int PAIRING_CONTEXT_APPROVAL = 1;
-    static final int PAIRING_CONTEXT_REPAIRING = 2;
-
     // Bond retry values
     private static final int BOND_MAX_RETRIES = 30;
     private static final int BOND_RETRY_DELAY_MS = 500;
@@ -516,6 +512,12 @@ public final class BondStateMachine extends StateMachine {
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         maybePin.ifPresent(pin -> intent.putExtra(BluetoothDevice.EXTRA_PAIRING_KEY, pin));
         intent.putExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, variant);
+        if (Flags.autonomousRepairingInitiation()) {
+            intent.putExtra(BluetoothDevice.EXTRA_PAIRING_CONTEXT, pairingContext);
+        }
+        if (Flags.providePairingAlgo()) {
+            intent.putExtra(BluetoothDevice.EXTRA_PAIRING_ALGORITHM, pairingAlgo);
+        }
         intent.setFlags(Intent.FLAG_RECEIVER_FOREGROUND);
         // Workaround for Android Auto until pre-accepting pairing requests is added.
         intent.addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
@@ -701,6 +703,11 @@ public final class BondStateMachine extends StateMachine {
         if (newState == BluetoothDevice.BOND_NONE) {
             intent.putExtra(BluetoothDevice.EXTRA_UNBOND_REASON, reason);
         }
+        if (Flags.autonomousRepairingInitiation() && mAdapterService.isBondLost(device)) {
+            intent.putExtra(
+                    BluetoothDevice.EXTRA_PAIRING_CONTEXT,
+                    BluetoothDevice.PAIRING_CONTEXT_REPAIRING);
+        }
 
         if (Flags.onlyBroadcastToLocalUser()) {
             mAdapterService.sendBroadcast(
@@ -765,7 +772,7 @@ public final class BondStateMachine extends StateMachine {
     void sspRequestCallback(byte[] address, int pairingVariant, int passkey, int pairingAlgorithm) {
         int variant;
         boolean displayPasskey = false;
-        int context = PAIRING_CONTEXT_APPROVAL;
+        int context = BluetoothDevice.PAIRING_CONTEXT_USER_APPROVAL_REQUESTED;
         switch (pairingVariant) {
             case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_CONFIRMATION -> {
                 variant = BluetoothDevice.PAIRING_VARIANT_PASSKEY_CONFIRMATION;
@@ -777,7 +784,7 @@ public final class BondStateMachine extends StateMachine {
 
             case AbstractionLayer.BT_SSP_VARIANT_PARTICIPATION -> {
                 variant = BluetoothDevice.PAIRING_VARIANT_CONSENT;
-                context = PAIRING_CONTEXT_PARTICIPATION;
+                context = BluetoothDevice.PAIRING_CONTEXT_USER_PARTICIPATION_REQUESTED;
             }
 
             case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_ENTRY ->
@@ -815,12 +822,12 @@ public final class BondStateMachine extends StateMachine {
             logW("sspRequestCallback: Unknown device:" + device);
         }
 
-        if (context == PAIRING_CONTEXT_APPROVAL) {
+        if (context == BluetoothDevice.PAIRING_CONTEXT_USER_APPROVAL_REQUESTED) {
             // Identify whether its re-pairing or pairing
             if (device != null
                     && Flags.autonomousRepairingInitiation()
                     && mAdapterService.isBondLost(device)) {
-                context = PAIRING_CONTEXT_REPAIRING;
+                context = BluetoothDevice.PAIRING_CONTEXT_REPAIRING;
             }
         }
 
@@ -885,8 +892,8 @@ public final class BondStateMachine extends StateMachine {
         bundle.putInt(
                 KEY_PAIRING_CONTEXT,
                 (Flags.autonomousRepairingInitiation() && mAdapterService.isBondLost(bdDevice))
-                        ? PAIRING_CONTEXT_REPAIRING
-                        : PAIRING_CONTEXT_APPROVAL);
+                        ? BluetoothDevice.PAIRING_CONTEXT_REPAIRING
+                        : BluetoothDevice.PAIRING_CONTEXT_USER_APPROVAL_REQUESTED);
         bundle.putInt(KEY_PAIRING_ALGORITHM, pairingAlgorithm);
         msg.setData(bundle);
         msg.arg2 = min16Digits ? 1 : 0; // Use arg2 to pass the min16Digit boolean

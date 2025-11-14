@@ -259,6 +259,7 @@ flag {
     namespace: "bluetooth"
     description: "Add pairing algorithm in pairing request"
     bug: "453979807"
+    is_exported: true
 }
 
 flag {
@@ -266,4 +267,5 @@ flag {
     namespace: "bluetooth"
     description: "Initiate autonomous re-pairing when bond loss is detected."
     bug: "459695529"
+    is_exported: true
 }
