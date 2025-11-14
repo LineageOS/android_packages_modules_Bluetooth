@@ -1098,7 +1098,7 @@ public class ScanController {
                                 mAdapterService, source, userHandle);
             }
         }
-        var scanClient =
+        var client =
                 new ScanClient(
                         uid,
                         scannerId,
@@ -1112,7 +1112,7 @@ public class ScanController {
                         Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService),
                         Util.checkCallerHasScanWithoutLocationPermission(mAdapterService),
                         getAssociatedDevices(callingPackage));
-        dispatchStartScan(scanClient);
+        dispatchStartScan(client);
     }
 
     // TODO(b/455057044) Make private on cleanup
@@ -1120,7 +1120,7 @@ public class ScanController {
     public void startScanInternal(int scannerId, ScanSettings settings, List<ScanFilter> filters) {
         enforceScanThread(); // TODO(b/455057044) Remove on cleanup
         // This ScanClient will be billed to the Bluetooth app due to its internal usage
-        var scanClient =
+        var client =
                 new ScanClient(
                         Binder.getCallingUid(),
                         scannerId,
@@ -1130,7 +1130,7 @@ public class ScanController {
                         Util.checkCallerHasNetworkSettingsPermission(mAdapterService),
                         Util.checkCallerHasNetworkSetupWizardPermission(mAdapterService),
                         Util.checkCallerHasScanWithoutLocationPermission(mAdapterService));
-        dispatchStartScan(scanClient);
+        dispatchStartScan(client);
     }
 
     private void dispatchStartScan(ScanClient client) {
@@ -1234,11 +1234,11 @@ public class ScanController {
     @VisibleForTesting
     void dispatchPendingIntentStartScan(int scannerId, ScannerApp app) {
         final PendingIntentInfo piInfo = app.getInfo();
-        var scanClient = new ScanClient(scannerId, piInfo, app);
+        var client = new ScanClient(scannerId, piInfo, app);
         var appScanStats = mScannerMap.getAppScanStatsById(scannerId);
         if (appScanStats != null) {
-            scanClient.setAppScanStats(appScanStats);
-            mScanManager.fetchAppForegroundState(scanClient);
+            client.setAppScanStats(appScanStats);
+            mScanManager.fetchAppForegroundState(client);
             boolean isFilteredScan = !piInfo.filters.isEmpty();
             appScanStats.recordScanStart(
                     piInfo.settings,
@@ -1248,7 +1248,7 @@ public class ScanController {
                     scannerId,
                     app.getAttributionTag());
         }
-        mScanManager.startScan(scanClient);
+        mScanManager.startScan(client);
     }
 
     void flushPendingBatchResults(int scannerId) {

@@ -493,7 +493,8 @@ class ScanManager {
                 case MSG_STOP_BLE_SCAN -> handleStopScanClientHandlerImpl((ScanClient) msg.obj);
                 case MSG_FLUSH_BATCH_RESULTS ->
                         handleFlushBatchResultsClientHandlerImpl((ScanClient) msg.obj);
-                case MSG_SCAN_TIMEOUT -> regularScanTimeoutClientHandlerImpl((ScanClient) msg.obj);
+                case MSG_SCAN_TIMEOUT ->
+                        handleRegularScanTimeoutClientHandlerImpl((ScanClient) msg.obj);
                 case MSG_SUSPEND_SCANS -> handleSuspendScansClientHandlerImpl();
                 case MSG_RESUME_SCANS -> handleResumeScansClientHandlerImpl();
                 case MSG_SCREEN_OFF -> handleScreenOffClientHandlerImpl();
@@ -521,8 +522,8 @@ class ScanManager {
             handleFlushBatchResults(client);
         }
 
-        void regularScanTimeoutClientHandlerImpl(ScanClient client) {
-            regularScanTimeout(client);
+        void handleRegularScanTimeoutClientHandlerImpl(ScanClient client) {
+            handleRegularScanTimeout(client);
         }
 
         void handleSuspendScansClientHandlerImpl() {
@@ -661,7 +662,7 @@ class ScanManager {
                     () -> {
                         if (!mIsAvailable) return;
                         mScanTimeoutRunnables.remove(client);
-                        regularScanTimeout(client);
+                        handleRegularScanTimeout(client);
                     };
             mScanTimeoutRunnables.put(client, timeoutRunnable);
             mHandler.postDelayed(timeoutRunnable, mAdapterService.getScanTimeout().toMillis());
@@ -1465,8 +1466,8 @@ class ScanManager {
         }
     }
 
-    private void regularScanTimeout(ScanClient client) {
-        var header = "regularScanTimeout(" + client + "): ";
+    private void handleRegularScanTimeout(ScanClient client) {
+        var header = "handleRegularScanTimeout(" + client + "): ";
         var appScanStats = client.getAppScanStats();
         var isScanningTooLong = appScanStats == null || appScanStats.isScanningTooLong();
         if (!isExemptFromScanTimeout(client) && isScanningTooLong) {
@@ -1492,8 +1493,8 @@ class ScanManager {
         // The scan should continue for background scans
         configureRegularScanParams();
         if (numRegularScanClients() == 0) {
-            mNativeInterface.scan(false, "regularScanTimeout");
-            mScanController.getScanRadioStats().recordScanRadioStop("regularScanTimeout");
+            mNativeInterface.scan(false, "handleRegularScanTimeout");
+            mScanController.getScanRadioStats().recordScanRadioStop("handleRegularScanTimeout");
         }
     }
 
