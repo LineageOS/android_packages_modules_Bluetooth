@@ -585,7 +585,7 @@ class Host(
                         .setScannable(request.legacy && request.connectable)
                         .build()
 
-                bluetoothAdapter.bluetoothLeAdvertiser.startAdvertisingSet(
+                bluetoothAdapter.bluetoothLeAdvertiser!!.startAdvertisingSet(
                     advertisingSetParameters,
                     advertisingData,
                     null, /* scanResponse */
@@ -608,7 +608,7 @@ class Host(
                     }
                 }
 
-                awaitClose { bluetoothAdapter.bluetoothLeAdvertiser.stopAdvertisingSet(callback) }
+                awaitClose { bluetoothAdapter.bluetoothLeAdvertiser!!.stopAdvertisingSet(callback) }
             }
         }
     }
@@ -821,9 +821,9 @@ class Host(
                         .setLegacy(request.legacy)
                         .setPhy(PHY_LE_ALL_SUPPORTED)
                         .build()
-                bluetoothAdapter.bluetoothLeScanner.startScan(null, scanSettings, callback)
+                bluetoothAdapter.bluetoothLeScanner!!.startScan(null, scanSettings, callback)
 
-                awaitClose { bluetoothAdapter.bluetoothLeScanner.stopScan(callback) }
+                awaitClose { bluetoothAdapter.bluetoothLeScanner!!.stopScan(callback) }
             }
         }
     }
