@@ -480,8 +480,10 @@ object ScanUtil {
 
     @JvmStatic
     fun ScanSettings.toStringShort() =
-        "ScanSettings(mode=${scanModeToString(scanMode)}, reportDelayMs=$reportDelayMillis" +
-            ", resultType=${CallbackType(scanResultType)})"
+        "ScanSettings(mode=${ScanMode(scanMode)}" +
+            ", reportDelayMs=$reportDelayMillis" +
+            ", callbackType=${CallbackType(callbackType)})" +
+            ", resultType=${ResultType(scanResultType)})"
 
     fun ScanFilter.toStringWithoutNullParam() = buildString {
         append("Filter: [")
@@ -513,6 +515,16 @@ value class CallbackType(val value: Int) {
             ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH -> "ALL_MATCHES_AUTO_BATCH"
             ScanSettings.CALLBACK_TYPE_FIRST_MATCH or ScanSettings.CALLBACK_TYPE_MATCH_LOST ->
                 "[FIRST_MATCH | LOST]"
+            else -> "UNKNOWN($value)"
+        }
+}
+
+@JvmInline
+value class ResultType(val value: Int) {
+    override fun toString() =
+        when (value) {
+            ScanSettings.SCAN_RESULT_TYPE_FULL -> "FULL"
+            ScanSettings.SCAN_RESULT_TYPE_ABBREVIATED -> "ABBREVIATED"
             else -> "UNKNOWN($value)"
         }
 }
