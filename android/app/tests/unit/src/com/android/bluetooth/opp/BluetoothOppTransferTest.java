@@ -31,6 +31,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -83,7 +84,8 @@ public class BluetoothOppTransferTest {
     @Before
     public void setUp() throws Exception {
         mockGetSystemService(mAdapterService, NotificationManager.class);
-
+        doCallRealMethod().when(mAdapterService).getBrEdrAddress(any(BluetoothDevice.class));
+        doCallRealMethod().when(mAdapterService).getBrEdrAddress(any(String.class));
         doAnswer(
                         invocation -> {
                             String address = invocation.getArgument(0);

@@ -20,6 +20,8 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
@@ -64,6 +66,8 @@ public class DipTest {
     @Before
     public void setUp() throws Exception {
         doReturn("00:01:02:03:04:05").when(mAdapterService).getIdentityAddress("00:01:02:03:04:05");
+        doCallRealMethod().when(mAdapterService).getBrEdrAddress(any(BluetoothDevice.class));
+        doCallRealMethod().when(mAdapterService).getBrEdrAddress(any(String.class));
 
         if (Looper.myLooper() == null) {
             Looper.prepare();

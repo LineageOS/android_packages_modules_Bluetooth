@@ -55,7 +55,6 @@ import android.os.Process;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.obex.BluetoothObexTransport;
 import com.android.internal.annotations.VisibleForTesting;
@@ -148,9 +147,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                         Log.w(TAG, "OPP SDP search, target device is null, ignoring result");
                         return;
                     }
-                    String deviceIdentityAddress = Utils.getBrEdrAddress(device, mAdapterService);
-                    String transferDeviceIdentityAddress =
-                            Utils.getBrEdrAddress(mDevice, mAdapterService);
+                    String deviceIdentityAddress = mAdapterService.getBrEdrAddress(device);
+                    String transferDeviceIdentityAddress = mAdapterService.getBrEdrAddress(mDevice);
                     if (deviceIdentityAddress == null
                             || transferDeviceIdentityAddress == null
                             || !deviceIdentityAddress.equalsIgnoreCase(

@@ -24,6 +24,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -94,6 +95,8 @@ public class AdapterPropertiesTest {
         mockGetBluetoothManager(mAdapterService);
         mockGetSystemService(mAdapterService, CompanionDeviceManager.class);
         doReturn(mPackageManager).when(mAdapterService).getPackageManager();
+        doCallRealMethod().when(mAdapterService).getBrEdrAddress(any(BluetoothDevice.class));
+        doCallRealMethod().when(mAdapterService).getBrEdrAddress(any(String.class));
         when(mAdapterService.getIdentityAddress(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES)))
                 .thenReturn(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES));
         when(mAdapterService.getIdentityAddress(
