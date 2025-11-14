@@ -83,7 +83,6 @@ public final class BluetoothCodecType implements Parcelable {
     @FlaggedApi(Flags.FLAG_A2DP_LHDC_API)
     public static final long CODEC_ID_LHDCV5 = 0x4c35_053a_ffL;
 
-    /** @hide */
     @Hide
     @Retention(RetentionPolicy.SOURCE)
     @LongDef({
