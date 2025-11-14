@@ -463,7 +463,7 @@ public class SdpManager {
             inst.startSearch(); // Trigger timeout message
 
             mNativeInterface.sdpSearch(
-                    Utils.getByteBrEdrAddress(mAdapterService, inst.getDevice()),
+                    mAdapterService.getByteBrEdrAddress(inst.getDevice()),
                     Utils.uuidToByteArray(inst.getUuid()));
         } else { // Else queue is empty.
             Log.d(

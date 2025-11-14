@@ -26,7 +26,6 @@ import static java.util.Objects.requireNonNull;
 import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 
 /**
@@ -289,7 +288,7 @@ public class HeadsetClientNativeInterface {
     }
 
     private byte[] getByteAddress(BluetoothDevice device) {
-        return Utils.getByteBrEdrAddress(mAdapterService, device);
+        return mAdapterService.getByteBrEdrAddress(device);
     }
 
     // Callbacks from the native back into the java framework. All callbacks are routed via the

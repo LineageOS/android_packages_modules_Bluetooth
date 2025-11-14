@@ -171,13 +171,13 @@ public class HidHostService extends ConnectableProfile {
             return Utils.getByteAddress(device);
         } else if (transport == TRANSPORT_BREDR) {
             // Use BR/EDR address if HID is to be used
-            return Utils.getByteBrEdrAddress(getAdapterService(), device);
+            return getAdapterService().getByteBrEdrAddress(device);
         } else { // TRANSPORT_AUTO
             boolean hidSupported = Utils.arrayContains(uuids, BluetoothUuid.HID);
             // Prefer HID over HOGP
             if (hidSupported) {
                 // Use BR/EDR address if HID is available
-                return Utils.getByteBrEdrAddress(getAdapterService(), device);
+                return getAdapterService().getByteBrEdrAddress(device);
             } else {
                 // Otherwise use pseudo address
                 return Utils.getByteAddress(device);

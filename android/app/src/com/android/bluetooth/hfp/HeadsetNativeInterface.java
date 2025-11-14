@@ -42,7 +42,7 @@ public class HeadsetNativeInterface extends NativeInterface<HeadsetNativeCallbac
             // Set bt_stack's active device to default if java layer set active device to null
             return Utils.getBytesFromAddress("00:00:00:00:00:00");
         }
-        return Utils.getByteBrEdrAddress(mAdapterService, device);
+        return mAdapterService.getByteBrEdrAddress(device);
     }
 
     /**
