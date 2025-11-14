@@ -91,6 +91,11 @@ const BtmDevice* btm_find_dev(const RawAddress& bd_addr) {
   return btm_interface->FindDevice(bd_addr);
 }
 
+BtmDevice* btm_get_dev(const RawAddress& bd_addr) {
+  log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
+  return btm_interface->FindDevice(bd_addr);
+}
+
 bool maybe_resolve_address(RawAddress* bda, tBLE_ADDR_TYPE* bda_type) {
   log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
   return btm_interface->MaybeResolveAddress(bda, bda_type);
