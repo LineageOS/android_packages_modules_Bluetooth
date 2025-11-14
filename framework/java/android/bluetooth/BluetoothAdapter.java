@@ -961,21 +961,21 @@ public final class BluetoothAdapter {
      *
      * @return the default local adapter, or null if Bluetooth is not supported on this hardware
      *     platform
-     * @deprecated this method will continue to work, but developers are strongly encouraged to
-     *     migrate to using {@link BluetoothManager#getAdapter()}, since that approach enables
-     *     support for {@link Context#createAttributionContext}.
+     * @deprecated Use {@code context.getSystemService(BluetoothManager.class).getAdapter()} instead
+     *     to allows context override such as {@link Context#createAttributionContext} or {@link
+     *     Context#createContextAsUser}.
      */
     @Deprecated
     @RequiresNoPermission
     public static synchronized BluetoothAdapter getDefaultAdapter() {
+        Log.e(TAG, "BluetoothAdapter.getDefaultAdapter is deprecated.", new Throwable());
         if (sAdapter == null) {
             sAdapter = createAdapter(null);
         }
         return sAdapter;
     }
 
-    @Hide
-    public static BluetoothAdapter createAdapter(Context context) {
+    static BluetoothAdapter createAdapter(Context context) {
         BluetoothServiceManager manager =
                 BluetoothFrameworkInitializer.getBluetoothServiceManager();
         if (manager == null) {
@@ -985,12 +985,11 @@ public final class BluetoothAdapter {
         IBluetoothManager service =
                 IBluetoothManager.Stub.asInterface(
                         manager.getBluetoothManagerServiceRegisterer().get());
-        if (service != null) {
-            return new BluetoothAdapter(service, context);
-        } else {
+        if (service == null) {
             Log.e(TAG, "Bluetooth service is null");
             return null;
         }
+        return new BluetoothAdapter(service, context);
     }
 
     private BluetoothAdapter(IBluetoothManager managerService, @Nullable Context context) {
