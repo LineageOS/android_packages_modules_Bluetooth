@@ -37,7 +37,7 @@ protected:
     ::benchmark::Fixture::SetUp(st);
     thread_ = std::make_unique<Thread>("timer_benchmark", Thread::Priority::REAL_TIME);
     handler_ = std::make_unique<Handler>(thread_.get());
-    alarm_ = std::make_unique<Alarm>(handler_.get());
+    alarm_ = std::make_unique<Alarm>(thread_.get());
     repeating_alarm_ = std::make_unique<RepeatingAlarm>(handler_.get());
     map_.clear();
     scheduled_tasks_ = 0;

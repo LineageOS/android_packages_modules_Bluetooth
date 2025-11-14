@@ -20,10 +20,12 @@ package {
 android_test {
     name: "ServiceBluetoothTests",
     defaults: ["service-bluetooth-buildflags"],
-    srcs: [
-        "src/**/*.java",
-        "src/**/*.kt",
-    ],
+
+    lint: {
+        test: true,
+    },
+
+    srcs: ["src/**/*.java"],
 
     static_libs: [
         "androidx.test.espresso.intents",
@@ -36,10 +38,9 @@ android_test {
         "platform-compat-test-rules",
         "platform-parametric-runner-lib",
         "platform-test-annotations",
-
-        // Linking source to test the working copy, not the on-device copy.
-        // Use 'pre-jarjar' so that we can reference symbols before renaming.
+        "service-bluetooth-binder-aidl",
         "service-bluetooth-pre-jarjar",
+        "service-bluetooth.change-ids",
         "truth",
     ],
 
@@ -47,9 +48,9 @@ android_test {
         "android.test.base.stubs.system",
         "android.test.mock.stubs.system",
         "android.test.runner.stubs.system",
-        "framework-bluetooth-pre-jarjar",
-        "service-bluetooth.change-ids",
+        "framework-permission-s.stubs.module_lib",
     ],
+
     jni_libs: [
         // these are needed for Extended Mockito
         "libdexmakerjvmtiagent",
@@ -62,5 +63,6 @@ android_test {
         "mts-bt",
     ],
 
-    min_sdk_version: "Tiramisu",
+    sdk_version: "system_server_current",
+    min_sdk_version: "36",
 }

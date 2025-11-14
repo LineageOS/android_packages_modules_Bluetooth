@@ -19,7 +19,7 @@ package android.bluetooth.le;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
-import android.annotation.SuppressLint;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.bluetooth.BluetoothUuid;
 import android.compat.annotation.UnsupportedAppUsage;
@@ -39,7 +39,6 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 /** Represents a scan record from Bluetooth LE scan. */
-@SuppressLint("AndroidFrameworkBluetoothPermission")
 public final class ScanRecord {
     private static final String TAG = ScanRecord.class.getSimpleName();
 
@@ -364,6 +363,7 @@ public final class ScanRecord {
      * Returns the advertising flags indicating the discoverable mode and capability of the device.
      * Returns -1 if the flag field is not set.
      */
+    @RequiresNoPermission // Framework record can't enforce permission
     public int getAdvertiseFlags() {
         return mAdvertiseFlags;
     }
@@ -372,6 +372,7 @@ public final class ScanRecord {
      * Returns a list of service UUIDs within the advertisement that are used to identify the
      * bluetooth GATT services.
      */
+    @RequiresNoPermission // Framework record can't enforce permission
     public List<ParcelUuid> getServiceUuids() {
         return mServiceUuids;
     }
@@ -380,8 +381,8 @@ public final class ScanRecord {
      * Returns a list of service solicitation UUIDs within the advertisement that are used to
      * identify the Bluetooth GATT services.
      */
-    @NonNull
-    public List<ParcelUuid> getServiceSolicitationUuids() {
+    @RequiresNoPermission // Framework record can't enforce permission
+    public @NonNull List<ParcelUuid> getServiceSolicitationUuids() {
         return mServiceSolicitationUuids;
     }
 
@@ -389,6 +390,7 @@ public final class ScanRecord {
      * Returns a sparse array of manufacturer identifier and its corresponding manufacturer specific
      * data.
      */
+    @RequiresNoPermission // Framework record can't enforce permission
     public SparseArray<byte[]> getManufacturerSpecificData() {
         return mManufacturerSpecificData;
     }
@@ -397,8 +399,8 @@ public final class ScanRecord {
      * Returns the manufacturer specific data associated with the manufacturer id. Returns {@code
      * null} if the {@code manufacturerId} is not found.
      */
-    @Nullable
-    public byte[] getManufacturerSpecificData(int manufacturerId) {
+    @RequiresNoPermission // Framework record can't enforce permission
+    public @Nullable byte[] getManufacturerSpecificData(int manufacturerId) {
         if (mManufacturerSpecificData == null) {
             return null;
         }
@@ -406,6 +408,7 @@ public final class ScanRecord {
     }
 
     /** Returns a map of service UUID and its corresponding service data. */
+    @RequiresNoPermission // Framework record can't enforce permission
     public Map<ParcelUuid, byte[]> getServiceData() {
         return mServiceData;
     }
@@ -414,8 +417,8 @@ public final class ScanRecord {
      * Returns the service data byte array associated with the {@code serviceUuid}. Returns {@code
      * null} if the {@code serviceDataUuid} is not found.
      */
-    @Nullable
-    public byte[] getServiceData(ParcelUuid serviceDataUuid) {
+    @RequiresNoPermission // Framework record can't enforce permission
+    public @Nullable byte[] getServiceData(ParcelUuid serviceDataUuid) {
         if (serviceDataUuid == null || mServiceData == null) {
             return null;
         }
@@ -429,13 +432,14 @@ public final class ScanRecord {
      *
      * <p><code>pathloss = txPowerLevel - rssi</code>
      */
+    @RequiresNoPermission // Framework record can't enforce permission
     public int getTxPowerLevel() {
         return mTxPowerLevel;
     }
 
     /** Returns the local name of the BLE device. This is a UTF-8 encoded string. */
-    @Nullable
-    public String getDeviceName() {
+    @RequiresNoPermission // Framework record can't enforce permission
+    public @Nullable String getDeviceName() {
         return mDeviceName;
     }
 
@@ -444,6 +448,7 @@ public final class ScanRecord {
      * advertising data type are defined in the Bluetooth Generic Access Profile
      * (https://www.bluetooth.com/specifications/assigned-numbers/)
      */
+    @RequiresNoPermission // Framework record can't enforce permission
     public @NonNull Map<Integer, byte[]> getAdvertisingDataMap() {
         return mAdvertisingDataMap;
     }
@@ -454,12 +459,13 @@ public final class ScanRecord {
      * @hide
      */
     @SystemApi
-    @Nullable
-    public TransportDiscoveryData getTransportDiscoveryData() {
+    @RequiresNoPermission // Framework record can't enforce permission
+    public @Nullable TransportDiscoveryData getTransportDiscoveryData() {
         return mTransportDiscoveryData;
     }
 
     /** Returns raw bytes of scan record. */
+    @RequiresNoPermission // Framework record can't enforce permission
     public byte[] getBytes() {
         return mBytes;
     }
@@ -469,6 +475,7 @@ public final class ScanRecord {
      *
      * @hide
      */
+    @RequiresNoPermission // Framework record can't enforce permission
     public boolean matchesAnyField(@NonNull Predicate<byte[]> matcher) {
         int pos = 0;
         while (pos < mBytes.length) {

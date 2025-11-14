@@ -67,7 +67,7 @@ A0:E9:DB = Address_Based                                                        
 Motorola Keyboard KZ500 = Name_Based                                                         \n\
 0x22b8-0x093D = Vndr_Prdt_Based                                                              \n\
                                                                                              \n\
-# some remote hid devices cannot work properly as they load special hid usb driver in kernel,\n\
+# some remote hid devices cannot work properly as they load special hid usb driver in kernel \n\
 # so modify their vid/pid so that generic hid driver are loaded.                             \n\
 [INTEROP_CHANGE_HID_VID_PID]                                                                 \n\
 CK87BT = Name_Based                                                                          \n\

@@ -20,6 +20,7 @@
 
 #include <base/files/file_util.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 
 #include <chrono>
@@ -73,11 +74,11 @@ bool hearing_aid_on_suspend_req();
 void send_audio_data() {
   uint32_t bytes_per_tick = (num_channels * sample_rate * data_interval_ms * (bit_rate / 8)) / 1000;
 
-  uint8_t p_buf[bytes_per_tick];
+  std::vector<uint8_t> data(bytes_per_tick);
 
   uint32_t bytes_read = 0;
   if (bluetooth::audio::hearing_aid::is_hal_enabled()) {
-    bytes_read = bluetooth::audio::hearing_aid::read(p_buf, bytes_per_tick);
+    bytes_read = bluetooth::audio::hearing_aid::read(data.data(), bytes_per_tick);
   }
 
   log::debug("bytes_read: {}", bytes_read);
@@ -87,7 +88,7 @@ void send_audio_data() {
     stats.media_read_last_underflow_us = bluetooth::common::time_get_os_boottime_us();
   }
 
-  std::vector<uint8_t> data(p_buf, p_buf + bytes_read);
+  data.resize(bytes_read);
 
   if (localAudioReceiver != nullptr) {
     localAudioReceiver->OnAudioDataReady(data);
@@ -99,7 +100,10 @@ void start_audio_ticks() {
     log::fatal("Unsupported data interval: {}", data_interval_ms);
   }
 
-  wakelock_acquire();
+  if (!com::android::bluetooth::flags::ref_counted_native_wakelock() ||
+      !audio_timer.IsScheduled()) {
+    wakelock_acquire();
+  }
   audio_timer.SchedulePeriodic(get_main_thread()->GetWeakPtr(),
                                base::BindRepeating(&send_audio_data),
                                std::chrono::milliseconds(data_interval_ms));
@@ -108,8 +112,10 @@ void start_audio_ticks() {
 
 void stop_audio_ticks() {
   log::info("stopped");
-  audio_timer.CancelAndWait();
-  wakelock_release();
+  if (!com::android::bluetooth::flags::ref_counted_native_wakelock() || audio_timer.IsScheduled()) {
+    audio_timer.CancelAndWait();
+    wakelock_release();
+  }
 }
 
 bool hearing_aid_on_resume_req(bool start_media_task) {

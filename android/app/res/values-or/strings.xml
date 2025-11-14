@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"ଯଦି ଆପଣ ବ୍ଲୁଟୁଥକୁ ଚାଲୁ ରଖନ୍ତି, ତେବେ ଆପଣ ପରବର୍ତ୍ତୀ ଥର ଏୟାରପ୍ଲେନ ମୋଡରେ ଥିବା ସମୟରେ ଆପଣଙ୍କ ଡିଭାଇସ ଏହାକୁ ଚାଲୁ ରଖିବା ପାଇଁ ମନେ ରଖିବ"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"ବ୍ଲୁଟୁଥ ଚାଲୁ ରହେ"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"ଆପଣଙ୍କ ଡିଭାଇସ ଏୟାରପ୍ଲେନ ମୋଡରେ ବ୍ଲୁଟୁଥକୁ ଚାଲୁ ରଖିବା ପାଇଁ ମନେ ରଖେ। ଯଦି ଆପଣ ବ୍ଲୁଟୁଥ ଚାଲୁ ରହୁ ବୋଲି ଚାହୁଁନାହାଁନ୍ତି ତେବେ ଏହାକୁ ବନ୍ଦ କରନ୍ତୁ।"</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"ଅନ୍ୟ ଡିଭାଇସ ସହ କନେକ୍ଟ ହୋଇଥିବା ସମୟରେ ବ୍ଲୁଟୁଥ ଏୟାରପ୍ଲେନ ମୋଡରେ ଚାଲୁ ରହିଥାଏ।"</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"ଆପଣଙ୍କ ୱାଚ ସହିତ କନେକ୍ଟ ହୋଇଥିବା ସମୟରେ ଆପଣଙ୍କ ଡିଭାଇସ ଏୟାରପ୍ଲେନ ମୋଡରେ ବ୍ଲୁଟୁଥକୁ ଚାଲୁ ରଖିବ।"</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"ଏକ ମିଡିଆ ଡିଭାଇସ ସହ କନେକ୍ଟ ହୋଇଥିବା ସମୟରେ ବ୍ଲୁଟୁଥ ଏୟାରପ୍ଲେନ ମୋଡରେ ଚାଲୁ ରହିଥାଏ।"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"ୱାଇ-ଫାଇ ଏବଂ ବ୍ଲୁଟୁଥ ଚାଲୁ ରହେ"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"ଆପଣଙ୍କ ଡିଭାଇସ ଏୟାରପ୍ଲେନ ମୋଡରେ ୱାଇ-ଫାଇ ଏବଂ ବ୍ଲୁଟୁଥକୁ ଚାଲୁ ରଖିବା ପାଇଁ ମନେ ରଖେ। ଯଦି ଆପଣ ୱାଇ-ଫାଇ ଏବଂ ବ୍ଲୁଟୁଥ ଚାଲୁ ରହୁ ବୋଲି ଚାହୁଁନାହାଁନ୍ତି ତେବେ ସେଗୁଡ଼ିକୁ ବନ୍ଦ କରନ୍ତୁ।"</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"ବ୍ଲୁଟୁଥକୁ ପୁଣି ଚାଲୁ କରାଯାଇଛି"</string>

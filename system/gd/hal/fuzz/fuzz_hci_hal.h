@@ -36,15 +36,6 @@ public:
 
   void injectArbitrary(FuzzedDataProvider& fdp);
 
-  std::string ToString() const override { return "HciHalFuzz"; }
-
-  static const ModuleFactory Factory;
-
-protected:
-  void ListDependencies(ModuleList* /* list */) const override {}
-  void Start() override {}
-  void Stop() override {}
-
 private:
   void injectAclData(std::vector<uint8_t> data);
   void injectHciEvent(std::vector<uint8_t> data);

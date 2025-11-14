@@ -479,7 +479,7 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTM_PM_PWR_MD bta_dm_pm_md[] = {
 /* the smaller of the SSR max latency wins.
  * the entries in this table must be from highest latency (biggest interval) to
  * lowest latency */
-tBTA_DM_SSR_SPEC bta_dm_ssr_spec[] = {
+static tBTA_DM_SSR_SPEC bta_dm_ssr_spec[] = {
         /*max_lat, min_rmt_to, min_loc_to*/
         {0, 0, 0, "no_ssr"}, /* BTA_DM_PM_SSR0 - do not use SSR */
         /* BTA_DM_PM_SSR1 - HH, can NOT share entry with any other profile, setting

@@ -54,7 +54,7 @@ class Hid(val context: Context) : HIDImplBase(), Closeable {
             bluetoothHidHost.setReport(
                 request.address.toBluetoothDevice(bluetoothAdapter),
                 request.reportType.number.toByte(),
-                request.report
+                request.report,
             )
             SendHostReportResponse.getDefaultInstance()
         }

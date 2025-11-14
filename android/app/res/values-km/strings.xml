@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"ប្រសិនបើអ្នក​បន្តបើកប៊្លូធូស នោះឧបករណ៍​របស់អ្នកនឹង​ចាំថាត្រូវបន្តបើកវា នៅលើកក្រោយ​ដែលអ្នកស្ថិតក្នុង​មុខងារពេលជិះយន្តហោះ"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"ប៊្លូធូសបន្តបើក"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"ឧបករណ៍របស់អ្នក​ចាំថាត្រូវបន្តបើកប៊្លូធូស​នៅក្នុង​មុខងារពេលជិះយន្តហោះ។ បិទប៊្លូធូស ប្រសិនបើអ្នក​មិនចង់ឱ្យបន្តបើកទេ។"</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"ប៊្លូធូសបន្តបើកនៅក្នុងមុខងារពេល​ជិះ​យន្តហោះ នៅពេលបានភ្ជាប់ទៅឧបករណ៍ផ្សេងទៀត។"</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"ឧបករណ៍របស់អ្នកនឹងបន្តបើកប៊្លូធូសនៅក្នុងមុខងារពេល​ជិះ​យន្តហោះ នៅពេលបានភ្ជាប់ទៅនាឡិការបស់អ្នក។"</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"ប៊្លូធូសបន្តបើកនៅក្នុងមុខងារពេល​ជិះ​យន្តហោះ នៅពេលបានភ្ជាប់ទៅឧបករណ៍ផ្ទុកទិន្នន័យ។"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi និងប៊្លូធូស​បន្តបើក"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"ឧបករណ៍របស់អ្នក​ចាំថាត្រូវបន្តបើក Wi-Fi និងប៊្លូធូស​នៅក្នុង​មុខងារពេលជិះយន្តហោះ។ បិទ Wi-Fi និង​ប៊្លូធូស ប្រសិនបើអ្នក​មិនចង់ឱ្យបន្តបើកទេ។"</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"បានបើកប៊្លូធូសវិញ"</string>

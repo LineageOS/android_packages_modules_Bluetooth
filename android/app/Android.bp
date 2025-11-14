@@ -1,5 +1,3 @@
-// MAP API module
-
 package {
     default_applicable_licenses: ["packages_apps_Bluetooth_license"],
 }
@@ -29,31 +27,14 @@ license {
 }
 
 java_library {
-    name: "bluetooth.mapsapi",
-
-    srcs: ["lib/mapapi/**/*.java"],
-    apex_available: ["com.android.bt"],
-    min_sdk_version: "Tiramisu",
-    sdk_version: "module_current",
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
-}
-
-java_library {
     name: "mmslib",
-
+    defaults: ["bluetooth_lint_rules"],
     srcs: [":framework-mms-shared-srcs"],
     libs: ["unsupportedappusage"],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     sdk_version: "module_current",
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
 }
-
-// Bluetooth JNI
 
 cc_library_shared {
     name: "libbluetooth_jni",
@@ -69,9 +50,6 @@ cc_library_shared {
         "jni_headers",
         "libbluetooth_headers",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
@@ -97,6 +75,7 @@ cc_library_shared {
         "android.system.suspend-V1-ndk",
         "android.system.suspend.control-V1-ndk",
         "avrcp-target-service",
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib",
         "lib-bt-packets-avrcp",
         "lib-bt-packets-base",
@@ -109,6 +88,7 @@ cc_library_shared {
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
+        "libbluetooth_metrics",
         "libbt-audio-asrc",
         "libbt-audio-hal-interface",
         "libbt-bta",
@@ -126,7 +106,6 @@ cc_library_shared {
         "libchrome",
         "libcutils",
         "libevent",
-        "libexpresslog",
         "libflags_rust_cpp_bridge",
         "libflatbuffers-cpp",
         "libfmq",
@@ -138,9 +117,6 @@ cc_library_shared {
         "libosi",
         "libperfetto_client_experimental",
         "libprotobuf-cpp-lite",
-        "libstatslog_bt",
-        "libstatslog_express",
-        "libtextclassifier_hash_static",
         "libudrv-uipc",
         "libutils",
         "server_configurable_flags",
@@ -158,12 +134,15 @@ cc_library_shared {
         scs: true,
     },
     apex_available: ["com.android.bt"],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
 }
 
 android_library {
     name: "BluetoothLib",
-    defaults: ["bluetooth_framework_errorprone_rules"],
+    defaults: [
+        "bluetooth_framework_errorprone_rules",
+        "bluetooth_lint_rules",
+    ],
     manifest: "LibAndroidManifest.xml",
 
     srcs: [
@@ -171,6 +150,7 @@ android_library {
         ":statslog-bt-restricted-java-gen",
         ":system-messages-proto-src",
         "proto/keystore.proto",
+        "proto/le_audio_storage.proto",
         "src/**/*.java",
         "src/**/*.kt",
     ],
@@ -180,7 +160,7 @@ android_library {
 
     libs: [
         "PlatformProperties",
-        "bluetooth_constants_java",
+        "bluetooth_constants-java",
         "bluetooth_flags_java_lib",
         "error_prone_annotations",
         "framework-annotations-lib",
@@ -195,10 +175,8 @@ android_library {
         "framework-tethering.stubs.module_lib",
         "framework-wifi.stubs.module_lib",
         "modules-utils-build",
-        "modules-utils-expresslog",
     ],
     static_libs: [
-        "BluetoothApiShims",
         "android.hardware.radio-V1.0-java",
         "android.hardware.radio.sap-V1-java",
         "android.media.audio-aconfig-exported-java",
@@ -211,8 +189,8 @@ android_library {
         "bluetooth-proto-enums-java-gen",
         "bluetooth-protos-lite",
         "bluetooth.change-ids",
-        "bluetooth.mapsapi",
         "com.android.obex",
+        "com.android.sysprop.bluetooth",
         "com.android.vcard",
         "guava",
         "libprotobuf-java-lite",
@@ -236,52 +214,12 @@ android_library {
     javacflags: ["-Aroom.schemaLocation=packages/modules/Bluetooth/android/app/tests/unit/src/com/android/bluetooth/btservice/storage/schemas"],
 
     lint: {
-        error_checks: [
-            "Autofill",
-            "DefaultLocale",
-            "DuplicateDefinition",
-            // "ExportedContentProvider", // TODO: b/289445022 - enable this check
-            // "ExportedReceiver", // TODO: b/289445022 - enable this check
-            // "ExportedService", // TODO: b/289445022 - enable this check
-            "ExtraText",
-            "ExtraTranslation",
-            "GestureBackNavigation",
-            "GuardedLogInvocation",
-            "HandlerLeak",
-            "InflateParams",
-            // "InvalidPermission", // TODO: b/289445022 - enable this check
-            "LabelFor",
-            "MissingClass",
-            // "MissingVersion", // TODO: b/289445022 - enable this check
-            "MonochromeLauncherIcon",
-            "NewApi",
-            "ObsoleteSdkInt",
-            // "QueryAllPackagesPermission", // TODO: b/289445022 - enable this check
-            "Recycle",
-            "RtlHardcoded",
-            "RtlSymmetry",
-            "ScrollViewSize",
-            "SetTextI18n",
-            "SimpleDateFormat",
-            "StaticFieldLeak",
-            "StringFormatCount",
-            "StringFormatInvalid",
-            "TextFields",
-            "TypographyEllipsis",
-            "UseSparseArrays",
-            "UseValueOf",
-            "VectorPath",
-            "VisibleForTests",
-            "Wakelock",
-            "WakelockTimeout",
-        ],
-        extra_check_modules: ["BluetoothLintChecker"],
         baseline_filename: "lib-lint-baseline.xml",
     },
 
     installable: false,
     apex_available: ["com.android.bt"],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     sdk_version: "module_current",
 }
 
@@ -290,9 +228,13 @@ android_app {
     name: "Bluetooth",
     certificate: "bluetooth",
     static_libs: ["BluetoothLib"],
+    defaults: [
+        "bluetooth_framework_errorprone_rules",
+        "bluetooth_lint_rules",
+    ],
 
     apex_available: ["com.android.bt"],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     sdk_version: "module_current",
     updatable: true,
     jarjar_rules: ":bluetooth-jarjar-rules",
@@ -308,52 +250,13 @@ android_app {
     },
 
     lint: {
-        error_checks: [
-            "Autofill",
-            "DefaultLocale",
-            "DuplicateDefinition",
-            // "ExportedContentProvider", // TODO: b/289445022 - enable this check
-            // "ExportedReceiver", // TODO: b/289445022 - enable this check
-            // "ExportedService", // TODO: b/289445022 - enable this check
-            "ExtraText",
-            "ExtraTranslation",
-            "GestureBackNavigation",
-            "GuardedLogInvocation",
-            "HandlerLeak",
-            "InflateParams",
-            // "InvalidPermission", // TODO: b/289445022 - enable this check
-            "LabelFor",
-            "MissingClass",
-            // "MissingVersion", // TODO: b/289445022 - enable this check
-            "MonochromeLauncherIcon",
-            "NewApi",
-            "ObsoleteSdkInt",
-            // "QueryAllPackagesPermission", // TODO: b/289445022 - enable this check
-            "Recycle",
-            "RtlHardcoded",
-            "RtlSymmetry",
-            "ScrollViewSize",
-            "SetTextI18n",
-            "SimpleDateFormat",
-            "StaticFieldLeak",
-            "StringFormatCount",
-            "StringFormatInvalid",
-            "TextFields",
-            "TypographyEllipsis",
-            "UseSparseArrays",
-            "UseValueOf",
-            "VectorPath",
-            "VisibleForTests",
-            "Wakelock",
-            "WakelockTimeout",
-        ],
-        extra_check_modules: ["BluetoothLintChecker"],
         baseline_filename: "lint-baseline.xml",
     },
 }
 
 java_library {
     name: "bluetooth-proto-enums-java-gen",
+    defaults: ["bluetooth_lint_rules"],
     installable: false,
     proto: {
         type: "stream",
@@ -362,7 +265,7 @@ java_library {
         ":srcs_bluetooth_protos",
     ],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     sdk_version: "module_current",
 }
 

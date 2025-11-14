@@ -81,6 +81,25 @@ private:
   std::unique_ptr<Timestamper> timestamper_{std::make_unique<TimestamperInMilliseconds>()};
 };
 
+class TimestampedStringCircularBuffer : public TimestampedCircularBuffer<std::string> {
+public:
+  explicit TimestampedStringCircularBuffer(size_t size)
+      : TimestampedCircularBuffer<std::string>(size) {}
+
+  void Push(const std::string& s) {
+    TimestampedCircularBuffer<std::string>::Push(s.substr(0, kMaxLogSize));
+  }
+
+  template <typename... Args>
+  void Push(Args... args) {
+    char buf[kMaxLogSize];
+    std::snprintf(buf, sizeof(buf), args...);
+    TimestampedCircularBuffer<std::string>::Push(std::string(buf));
+  }
+
+private:
+  static constexpr size_t kMaxLogSize = 255;
+};
 }  // namespace common
 }  // namespace bluetooth
 

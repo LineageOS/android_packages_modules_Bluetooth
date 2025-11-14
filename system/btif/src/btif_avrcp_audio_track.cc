@@ -47,7 +47,7 @@ constexpr float kMaxTrackGain = 1.0f;
 // Minimum track gain that can be set.
 constexpr float kMinTrackGain = 0.0f;
 
-struct AudioEngine {
+static struct AudioEngine {
   int trackFreq = 0;
   int channelCount = 0;
   std::thread* thread = nullptr;

@@ -15,15 +15,11 @@
 #
 
 config("log_defaults") {
-  include_dirs = [
-    "//bt/system/log/include",
-  ]
+  include_dirs = [ "//bt/system/log/include" ]
 }
 
 static_library("libbluetooth_log") {
-  cflags = [
-     "-fvisibility=default",
-  ]
+  cflags = [ "-fvisibility=default" ]
   sources = [
     "include/bluetooth/log.h",
     "src/truncating_buffer.h",

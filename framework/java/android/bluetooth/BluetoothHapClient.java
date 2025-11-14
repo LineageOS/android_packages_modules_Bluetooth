@@ -398,8 +398,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      *
      * @hide
      */
-    public static final int FEATURE_SYNCHRONIZATED_PRESETS_MASK =
-            1 << IBluetoothHapClient.FEATURE_BIT_NUM_SYNCHRONIZATED_PRESETS;
+    public static final int FEATURE_SYNCHRONIZED_PRESETS_MASK =
+            1 << IBluetoothHapClient.FEATURE_BIT_NUM_SYNCHRONIZED_PRESETS;
 
     /**
      * Feature mask value.
@@ -431,7 +431,7 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
             flag = true,
             value = {
                 FEATURE_HEARING_AID_TYPE_MASK,
-                FEATURE_SYNCHRONIZATED_PRESETS_MASK,
+                FEATURE_SYNCHRONIZED_PRESETS_MASK,
                 FEATURE_INDEPENDENT_PRESETS_MASK,
                 FEATURE_DYNAMIC_PRESETS_MASK,
                 FEATURE_WRITABLE_PRESETS_MASK,
@@ -987,8 +987,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean supportsSynchronizedPresets(@NonNull BluetoothDevice device) {
-        return (getFeatures(device) & FEATURE_SYNCHRONIZATED_PRESETS_MASK)
-                == FEATURE_SYNCHRONIZATED_PRESETS_MASK;
+        return (getFeatures(device) & FEATURE_SYNCHRONIZED_PRESETS_MASK)
+                == FEATURE_SYNCHRONIZED_PRESETS_MASK;
     }
 
     /**

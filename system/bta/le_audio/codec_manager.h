@@ -43,12 +43,14 @@ struct broadcast_offload_config {
 struct ProviderInfo {
   bool allowAsymmetric = false;
   bool lowLatency = false;
+  bool isMulticodecSupported = false;
 
   inline std::string toString() const {
     std::ostringstream _aidl_os;
     _aidl_os << "ProviderInfo{";
     _aidl_os << "allowAsymmetric: " << allowAsymmetric;
     _aidl_os << ", lowLatency: " << lowLatency;
+    _aidl_os << ", isMulticodecSupported: " << isMulticodecSupported;
     _aidl_os << "}";
     return _aidl_os.str();
   }
@@ -58,8 +60,9 @@ class CodecManager {
 public:
   enum Flags {
     NONE = 0x00,
-    LOW_LATENCY,
-    ALLOW_ASYMMETRIC,
+    LOW_LATENCY = 0x01,
+    ALLOW_ASYMMETRIC = 0x02,
+    SPATIAL_AUDIO = 0x04,
   };
 
   struct UnicastConfigurationRequirements {
@@ -124,6 +127,8 @@ public:
   virtual std::unique_ptr<::bluetooth::le_audio::types::AudioSetConfiguration> GetCodecConfig(
           const UnicastConfigurationRequirements& requirements,
           UnicastConfigurationProvider provider);
+  virtual void UpdateSelectedCodecConfig(
+          const ::bluetooth::le_audio::types::AudioSetConfiguration& config) const;
   virtual bool CheckCodecConfigIsBiDirSwb(
           const ::bluetooth::le_audio::types::AudioSetConfiguration& config) const;
   virtual bool CheckCodecConfigIsDualBiDirSwb(
@@ -138,6 +143,11 @@ public:
   virtual std::vector<bluetooth::le_audio::btle_audio_codec_config_t>
   GetLocalAudioOutputCodecCapa();
   virtual std::vector<bluetooth::le_audio::btle_audio_codec_config_t> GetLocalAudioInputCodecCapa();
+  std::vector<bluetooth::le_audio::btle_audio_codec_config_t> GetRemoteAudioCodecCapa(
+          const bluetooth::le_audio::types::PublishedAudioCapabilities& pac) const;
+
+  virtual void ConfigureDataPath(hci_data_direction_t direction, uint8_t dataPathId,
+                                 std::vector<uint8_t> dataPathConfig) const;
 
 private:
   CodecManager();

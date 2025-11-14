@@ -21,9 +21,12 @@
 #include "bta/ras/ras_types.h"
 #include "bta/test/common/bta_gatt_api_mock.h"
 #include "bta_gatt_queue_mock.h"
+#include "btm_api_mock.h"
+#include "fake_osi.h"
 #include "include/hardware/bluetooth.h"
 #include "internal_include/stack_config.h"
 #include "log/include/bluetooth/log.h"
+#include "stack/btm/security_device_record.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/main_thread.h"
 #include "test/mock/mock_main_shim_entry.h"
@@ -46,6 +49,7 @@ using namespace bluetooth::ras;
 using namespace ::ras;
 using namespace ::ras::uuid;
 using namespace bluetooth;
+extern struct fake_osi_alarm_set_on_mloop fake_osi_alarm_set_on_mloop_;
 
 static const uint16_t kVendorSpecificCharacteristic16Bit1 = 0x5566;
 static const uint16_t kVendorSpecificCharacteristic16Bit2 = 0x5567;
@@ -113,6 +117,7 @@ protected:
     // Init test data
     InitRangingService();
     gatt::SetMockBtaGattInterface(&mock_gatt_interface_);
+    bluetooth::manager::SetMockBtmInterface(&btm_interface_);
     RawAddress::FromString("11:22:33:44:55:66", test_address_);
     VendorSpecificCharacteristic vendor_specific_characteristic1, vendor_specific_characteristic2;
     vendor_specific_characteristic1.characteristicUuid_ = kVendorSpecificCharacteristic1;
@@ -155,6 +160,22 @@ protected:
                 callback(conn_id, GATT_SUCCESS, handle, value.size(), value.data(), cb_data);
               }
             }));
+  }
+
+  void TearDown() {
+    gatt::SetMockBtaGattInterface(nullptr);
+    bluetooth::manager::SetMockBtmInterface(nullptr);
+  }
+
+  void DisconnectGatt() {
+    tBTA_GATTC p_data5;
+    tBTA_GATTC_CLOSE close_data;
+    close_data.remote_bda = test_address_;
+    close_data.conn_id = test_conn_id_;
+    close_data.status = GATT_SUCCESS;
+    close_data.reason = GATT_CONN_TIMEOUT;
+    p_data5.close = close_data;
+    captured_gatt_callback_(BTA_GATTC_CLOSE_EVT, &p_data5);
   }
 
   void InitRangingService() {
@@ -259,6 +280,7 @@ protected:
   RawAddress test_address_;
   uint16_t test_conn_id_ = 0x0001;
   tBTA_GATTC_CBACK* captured_gatt_callback_ = nullptr;
+  NiceMock<bluetooth::manager::MockBtmInterface> btm_interface_;
   gatt::MockBtaGattInterface mock_gatt_interface_;
   MockRasClientCallbacks mock_ras_client_callbacks_;
   std::vector<VendorSpecificCharacteristic> vendor_specific_characteristics_;
@@ -323,14 +345,8 @@ class RasClientTest : public RasClientTestNoInit {
     EXPECT_CALL(mock_ras_client_callbacks_,
                 OnDisconnected(test_address_, RasDisconnectReason::GATT_DISCONNECT))
             .Times(1);
-    tBTA_GATTC p_data;
-    tBTA_GATTC_CLOSE close_data;
-    close_data.remote_bda = test_address_;
-    close_data.conn_id = test_conn_id_;
-    close_data.status = GATT_SUCCESS;
-    close_data.reason = GATT_CONN_TIMEOUT;
-    p_data.close = close_data;
-    captured_gatt_callback_(BTA_GATTC_CLOSE_EVT, &p_data);
+    DisconnectGatt();
+    RasClientTestNoInit::TearDown();
   }
 
 protected:
@@ -417,14 +433,54 @@ TEST_F(RasClientTestNoInit, ConnectDisconnect) {
   EXPECT_CALL(mock_ras_client_callbacks_,
               OnDisconnected(test_address_, RasDisconnectReason::GATT_DISCONNECT))
           .Times(1);
-  tBTA_GATTC p_data5;
-  tBTA_GATTC_CLOSE close_data;
-  close_data.remote_bda = test_address_;
-  close_data.conn_id = test_conn_id_;
-  close_data.status = GATT_SUCCESS;
-  close_data.reason = GATT_CONN_TIMEOUT;
-  p_data5.close = close_data;
-  captured_gatt_callback_(BTA_GATTC_CLOSE_EVT, &p_data5);
+
+  DisconnectGatt();
+}
+
+TEST_F(RasClientTestNoInit, SetFirstSegmentTimeoutInLowPowerMode) {
+  // AppRegister should be triggered when Initialize
+  EXPECT_CALL(mock_gatt_interface_, AppRegister(_, _, _, _))
+          .WillOnce(testing::SaveArg<1>(&captured_gatt_callback_));
+  GetRasClient()->Initialize();
+  ASSERT_NE(captured_gatt_callback_, nullptr);
+  GetRasClient()->RegisterCallbacks(&mock_ras_client_callbacks_);
+
+  // Open should be triggered when connect
+  EXPECT_CALL(mock_gatt_interface_, Open(_, test_address_, BTM_BLE_DIRECT_CONNECTION, _)).Times(1);
+  GetRasClient()->Connect(test_address_);
+
+  // ServiceSearchRequest should be trigger after BTA_GATTC_OPEN_EVT
+  EXPECT_CALL(mock_gatt_interface_, ServiceSearchRequest(test_conn_id_, _)).Times(1);
+  tBTA_GATTC p_data;
+  tBTA_GATTC_OPEN open_event_data;
+  open_event_data.remote_bda = test_address_;
+  open_event_data.conn_id = test_conn_id_;
+  open_event_data.status = GATT_SUCCESS;
+  open_event_data.transport = BT_TRANSPORT_LE;
+  p_data.open = open_event_data;
+  captured_gatt_callback_(BTA_GATTC_OPEN_EVT, &p_data);
+
+  // GetServices should after BTA_GATTC_SEARCH_CMPL_EVT
+  EXPECT_CALL(mock_gatt_interface_, GetServices(test_conn_id_))
+          .WillOnce(Return(&services_to_return_));
+
+  tBTM_SEC_DEV_REC btm_sec_dev_rec;
+  btm_sec_dev_rec.conn_params.peripheral_latency = 2;
+  EXPECT_CALL(btm_interface_, FindDevice(_)).WillOnce(Return(&btm_sec_dev_rec));
+
+  tBTA_GATTC p_data2;
+  tBTA_GATTC_SEARCH_CMPL search_cmpl_event_data;
+  search_cmpl_event_data.conn_id = test_conn_id_;
+  p_data2.search_cmpl = search_cmpl_event_data;
+  captured_gatt_callback_(BTA_GATTC_SEARCH_CMPL_EVT, &p_data2);
+
+  EXPECT_EQ(fake_osi_alarm_set_on_mloop_.interval_ms, (uint64_t)10000);
+
+  EXPECT_CALL(mock_ras_client_callbacks_, OnRemoteDataTimeout(test_address_));
+
+  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+
+  DisconnectGatt();
 }
 
 TEST_F(RasClientTest, OnConnIntervalUpdatedInvalid) {

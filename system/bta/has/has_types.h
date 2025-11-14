@@ -127,9 +127,9 @@ public:
 };
 
 /* Build on top of the base GattServiceDevice extends the base device context
- * with service specific informations such as the currently active preset,
+ * with service specific information such as the currently active preset,
  * all available presets, and supported optional operations. It also stores
- * HAS service specific GATT informations such as characteristic handles.
+ * HAS service specific GATT information such as characteristic handles.
  */
 class HasDevice : public GattServiceDevice {
   uint8_t features = 0x00;

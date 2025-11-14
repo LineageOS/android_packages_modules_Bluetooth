@@ -250,6 +250,7 @@ typedef union {
   tSMP_STATUS status;
   uint32_t passkey;
   tSMP_OOB_DATA_TYPE req_oob_type;
+  RawAddress p_bda;
 } tSMP_INT_DATA;
 
 /* internal status mask */

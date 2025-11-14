@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Bluetootha aktibatuta utziz gero, hura aktibatuta mantentzeaz gogoratuko da gailua hegaldi modua erabiltzen duzun hurrengoan"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetootha aktibatuta mantenduko da"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Hegaldi moduan, Bluetootha aktibatuta mantentzeaz gogoratzen da gailua. Halakorik nahi ez baduzu, desaktiba ezazu zuk zeuk."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Bluetoothak aktibatuta jarraitzen du hegaldi moduan, beste gailu batzuetara konektatuta dagoen bitartean."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Gailuak Bluetootha aktibatuta mantenduko du hegaldi moduan, erlojuarekin konektatuta dagoen bitartean."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Bluetoothak aktibatuta jarraitzen du hegaldi moduan, multimedia-gailu batera konektatuta dagoen bitartean."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wifia eta Bluetootha aktibatuta mantentzen dira"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Hegaldi moduan, wifia eta Bluetootha aktibatuta mantentzeaz gogoratzen da gailua. Halakorik nahi ez baduzu, desaktiba itzazu zuk zeuk."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Berriro aktibatu da Bluetootha"</string>

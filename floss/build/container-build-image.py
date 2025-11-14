@@ -59,19 +59,24 @@ class ContainerImageBuilder:
             raise Exception("{} failed. Return code is {}".format(target, rc))
 
     def _container_build(self):
-        self.run_command(self.container_binary + ' build', [self.container_binary, 'build', '-t', self.build_tag, '.'])
+        self.run_command(self.container_binary + ' build',
+                         [self.container_binary, 'build', '-t', self.build_tag, '.'])
 
     def _build_dpkg_and_commit(self):
         # Try to remove any previous instance of the container that may be
         # running if this script didn't complete cleanly last time.
-        self.run_command(self.container_binary + ' stop', [self.container_binary, 'stop', '-t', '1', self.container_name], ignore_rc=True)
-        self.run_command(self.container_binary + ' rm', [self.container_binary, 'rm', self.container_name], ignore_rc=True)
+        self.run_command(self.container_binary + ' stop',
+                         [self.container_binary, 'stop', '-t', '1', self.container_name],
+                         ignore_rc=True)
+        self.run_command(self.container_binary + ' rm',
+                         [self.container_binary, 'rm', self.container_name],
+                         ignore_rc=True)
 
         # Runs never terminating application on the newly built image in detached mode
         mount_str = 'type=bind,src={},dst={},readonly'.format(self.rootdir, SRC_MOUNT)
         self.run_command(self.container_binary + ' run', [
-            self.container_binary, 'run', '--name', self.container_name, '--mount', mount_str, '-d', self.build_tag, 'tail', '-f',
-            '/dev/null'
+            self.container_binary, 'run', '--name', self.container_name, '--mount', mount_str, '-d',
+            self.build_tag, 'tail', '-f', '/dev/null'
         ])
 
         commands = [
@@ -88,7 +93,10 @@ class ContainerImageBuilder:
             [f'{SRC_MOUNT}/system/build/dpkg/libchrome/gen-src-pkg.sh', '/tmp/libchrome'],
 
             # Install libchrome.
-            ['find', '/tmp/libchrome', '-name', 'libchrome_*.deb', '-exec', 'dpkg', '-i', '{}', '+'],
+            [
+                'find', '/tmp/libchrome', '-name', 'libchrome_*.deb', '-exec', 'dpkg', '-i', '{}',
+                '+'
+            ],
 
             # Run the dpkg builder for sysprop
             [f'{SRC_MOUNT}/system/build/dpkg/sysprop/gen-src-pkg.sh', '/tmp/sysprop'],
@@ -103,14 +111,18 @@ class ContainerImageBuilder:
         try:
             # Run commands in container first to install everything.
             for i, cmd in enumerate(commands):
-                self.run_command(self.container_binary + ' exec #{}'.format(i), [self.container_binary, 'exec', '-it', self.container_name] + cmd)
+                self.run_command(self.container_binary + ' exec #{}'.format(i),
+                                 [self.container_binary, 'exec', '-it', self.container_name] + cmd)
 
             # Commit changes into the final tag name
-            self.run_command(self.container_binary + ' commit', [self.container_binary, 'commit', self.container_name, self.final_tag])
+            self.run_command(self.container_binary + ' commit',
+                             [self.container_binary, 'commit', self.container_name, self.final_tag])
         finally:
             # Stop running the container and remove it
-            self.run_command(self.container_binary + ' stop', [self.container_binary, 'stop', '-t', '1', self.container_name])
-            self.run_command(self.container_binary + ' rm', [self.container_binary, 'rm', self.container_name])
+            self.run_command(self.container_binary + ' stop',
+                             [self.container_binary, 'stop', '-t', '1', self.container_name])
+            self.run_command(self.container_binary + ' rm',
+                             [self.container_binary, 'rm', self.container_name])
 
     def _check_container_runnable(self):
         try:
@@ -139,9 +151,13 @@ class ContainerImageBuilder:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Build container image for Floss build environment.')
+    parser = argparse.ArgumentParser(
+        description='Build container image for Floss build environment.')
     parser.add_argument('--tag', required=True, help='Tag for container image. i.e. floss:latest')
-    parser.add_argument('--use-docker', action='store_true', default=False, help='Use flag to use Docker to build Floss. Defaults to using podman.')
+    parser.add_argument('--use-docker',
+                        action='store_true',
+                        default=False,
+                        help='Use flag to use Docker to build Floss. Defaults to using podman.')
     args = parser.parse_args()
 
     # cwd should be set to same directory as this script (that's where

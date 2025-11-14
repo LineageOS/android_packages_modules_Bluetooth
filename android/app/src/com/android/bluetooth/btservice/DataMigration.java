@@ -25,6 +25,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.storage.BluetoothDatabaseMigration;
 import com.android.bluetooth.opp.BluetoothOppProvider;
 import com.android.internal.annotations.VisibleForTesting;
@@ -32,7 +33,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import java.util.List;
 
 final class DataMigration {
-    private static final String TAG = DataMigration.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + DataMigration.class.getSimpleName();
 
     private DataMigration() {}
 

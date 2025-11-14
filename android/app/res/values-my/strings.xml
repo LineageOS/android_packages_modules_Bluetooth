@@ -120,8 +120,11 @@
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"ဘလူးတုသ်သို့ ချိတ်ဆက်ရန်"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"လေယာဉ်ပျံမုဒ်တွင် ဘလူးတုသ် ပွင့်နေသည်"</string>
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"ဘလူးတုသ် ဆက်ဖွင့်ထားပါက နောက်တစ်ကြိမ်လေယာဉ်ပျံမုဒ် သုံးချိန်တွင် ၎င်းဆက်ဖွင့်ရန် သင့်စက်က မှတ်ထားမည်"</string>
-    <string name="bluetooth_stays_on_title" msgid="39720820955212918">"ဘလူးတုသ် ဆက်ပွင့်နေသည်"</string>
+    <string name="bluetooth_stays_on_title" msgid="39720820955212918">"ဘလူးတုသ် ဖွင့်ထားမည်"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"လေယာဉ်ပျံမုဒ်သုံးစဉ် ဘလူးတုသ် ဆက်ဖွင့်ထားရန် သင့်စက်က မှတ်မိသည်။ ဘလူးတုသ် ဆက်ဖွင့်မထားလိုပါက ပိတ်နိုင်သည်။"</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"အခြားစက်များနှင့် ချိတ်ဆက်ထားစဉ် လေယာဉ်ပျံမုဒ်တွင် ဘလူးတုသ်ကို ဖွင့်ထားပါမည်။"</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"သင့်စက်သည် လက်ပတ်နာရီနှင့် ချိတ်ဆက်ထားစဉ် ဘလူးတုသ်ကို လေယာဉ်ပျံမုဒ်တွင် ဖွင့်ထားပါမည်။"</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"မီဒီယာ စက်ပစ္စည်းနှင့် ချိတ်ဆက်ထားစဉ် လေယာဉ်ပျံမုဒ်တွင် ဘလူးတုသ်ကို ဖွင့်ထားပါမည်။"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi နှင့် ဘလူးတုသ် ဆက်ဖွင့်ထားသည်"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"လေယာဉ်ပျံမုဒ်သုံးစဉ် Wi-Fi နှင့် ဘလူးတုသ် ဆက်ဖွင့်ထားရန် သင့်စက်က မှတ်မိသည်။ Wi-Fi နှင့် ဘလူးတုသ် ဆက်ဖွင့်မထားလိုပါက ပိတ်နိုင်သည်။"</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"ဘလူးတုသ် ပြန်ဖွင့်ထားသည်"</string>

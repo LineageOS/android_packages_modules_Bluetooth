@@ -40,6 +40,7 @@
 #include "main/shim/dumpsys.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_ble_privacy.h"
@@ -50,8 +51,6 @@
 #include "types/raw_address.h"
 
 using namespace bluetooth;
-
-extern tBTM_CB btm_cb;
 
 namespace {
 
@@ -568,7 +567,6 @@ void btm_dev_consolidate_existing_connections(const RawAddress& bd_addr) {
  ******************************************************************************/
 tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const RawAddress& bd_addr) {
   tBTM_SEC_DEV_REC* p_dev_rec;
-  log::verbose("btm_find_or_alloc_dev");
   p_dev_rec = btm_find_dev(bd_addr);
   if (p_dev_rec == nullptr) {
     /* Allocate a new device record or reuse the oldest one */
@@ -695,7 +693,13 @@ bool btm_set_bond_type_dev(const RawAddress& bd_addr, tBTM_BOND_TYPE bond_type) 
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
 
   if (p_dev_rec == nullptr) {
+    log::warn("No security record for device {}", bd_addr);
     return false;
+  }
+
+  if (p_dev_rec->sec_rec.bond_type != bond_type) {
+    log::info("{} bond_type changed: {} -> {}", bd_addr,
+              bond_type_text(p_dev_rec->sec_rec.bond_type), bond_type_text(bond_type));
   }
 
   p_dev_rec->sec_rec.bond_type = bond_type;

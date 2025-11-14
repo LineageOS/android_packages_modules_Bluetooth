@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Bluetooth ഓണാക്കി വച്ചാൽ, അടുത്ത തവണ നിങ്ങൾ ഫ്ലൈറ്റ് മോഡിൽ ആയിരിക്കുമ്പോൾ നിങ്ങളുടെ ഉപകരണം അത് ഓണാക്കി വയ്ക്കാൻ ഓർക്കും"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetooth ഓണാക്കിയ നിലയിൽ തുടരും"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"ഫ്ലൈറ്റ് മോഡിലായിരിക്കുമ്പോൾ Bluetooth ഓണാക്കി വയ്ക്കാൻ നിങ്ങളുടെ ഉപകരണം ഓർമ്മിക്കുന്നു. Bluetooth ഓണാക്കി വയ്ക്കാൻ താൽപ്പര്യമില്ലെങ്കിൽ അത് ഓഫാക്കുക."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"മറ്റ് ഉപകരണങ്ങളുമായി കണക്റ്റ് ചെയ്തിരിക്കുമ്പോൾ ഫ്ലൈറ്റ് മോഡിൽ ബ്ലൂടൂത്ത് ഓണായി തുടരും."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"നിങ്ങളുടെ വാച്ചുമായി കണക്റ്റ് ചെയ്തിരിക്കുമ്പോൾ ഫ്ലൈറ്റ് മോഡിൽ നിങ്ങളുടെ ഉപകരണം ബ്ലൂടൂത്ത് ഓണാക്കി നിലനിർത്തും."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"മീഡിയാ ഉപകരണവുമായി കണക്റ്റ് ചെയ്തിരിക്കുമ്പോൾ ഫ്ലൈറ്റ് മോഡിൽ ബ്ലൂടൂത്ത് ഓണായി തുടരുന്നു."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"വൈഫൈ, Bluetooth എന്നിവ ഓണായ നിലയിൽ തുടരും"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"ഫ്ലൈറ്റ് മോഡിലായിരിക്കുമ്പോൾ വൈഫൈ, Bluetooth എന്നിവ ഓണാക്കി വയ്ക്കാൻ നിങ്ങളുടെ ഉപകരണം ഓർമ്മിക്കുന്നു. വൈഫൈ, Bluetooth എന്നിവ ഓണാക്കി വയ്‌ക്കാൻ താൽപ്പര്യമില്ലെങ്കിൽ അവ ഓഫാക്കുക."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth വീണ്ടും ഓണാക്കി"</string>

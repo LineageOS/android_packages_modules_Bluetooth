@@ -18,6 +18,7 @@ package com.android.bluetooth.avrcpcontroller;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -47,10 +48,6 @@ import java.io.IOException;
  */
 public class AvrcpCoverArtProvider extends ContentProvider {
     private static final String TAG = AvrcpCoverArtProvider.class.getSimpleName();
-
-    private BluetoothAdapter mAdapter;
-
-    public AvrcpCoverArtProvider() {}
 
     static final String AUTHORITY = "com.android.bluetooth.avrcpcontroller.AvrcpCoverArtProvider";
     static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
@@ -130,8 +127,10 @@ public class AvrcpCoverArtProvider extends ContentProvider {
             throw new FileNotFoundException();
         }
 
+        BluetoothAdapter adapter =
+                getContext().getSystemService(BluetoothManager.class).getAdapter();
         try {
-            device = mAdapter.getRemoteDevice(address);
+            device = adapter.getRemoteDevice(address);
         } catch (IllegalArgumentException e) {
             throw new FileNotFoundException();
         }
@@ -148,7 +147,6 @@ public class AvrcpCoverArtProvider extends ContentProvider {
 
     @Override
     public boolean onCreate() {
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
         return true;
     }
 

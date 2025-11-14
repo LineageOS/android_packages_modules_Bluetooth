@@ -81,6 +81,7 @@ public class OobPairingTest {
     private final BluetoothAdapter mAdapter =
             mContext.getSystemService(BluetoothManager.class).getAdapter();
     private OobDataResponse mRemoteOobData;
+    private String mDutAddr;
     private boolean mRemoteInitiator = false;
     private static final int TIMEOUT_ADVERTISING_MS = 1000;
 
@@ -99,40 +100,41 @@ public class OobPairingTest {
     public final EnableBluetoothRule enableBluetoothRule = new EnableBluetoothRule(false, true);
 
     private TestUtil mUtil;
-     /**
-     * IntentListener for the received intents
-     * Note: This is added as a default listener for all the IntentReceiver
-     *  instances created in this test class. Please add your own listener if
-     *  required as per the test requirement.
+
+    /**
+     * IntentListener for the received intents Note: This is added as a default listener for all the
+     * IntentReceiver instances created in this test class. Please add your own listener if required
+     * as per the test requirement.
      */
-    private IntentReceiver.IntentListener intentListener = new IntentReceiver.IntentListener() {
-        @Override
-        public void onReceive(Intent intent) {
-            String action = intent.getAction();
-            if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
-                BluetoothDevice device =
-                        intent.getParcelableExtra(
-                                BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
-                int bondState =
-                        intent.getIntExtra(
-                                BluetoothDevice.EXTRA_BOND_STATE, BluetoothAdapter.ERROR);
-                int prevBondState =
-                        intent.getIntExtra(
-                                BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE,
-                                BluetoothAdapter.ERROR);
-                Log.i(
-                        TAG,
-                        "onReceive(): device "
-                                + device
-                                + " bond state changed from "
-                                + prevBondState
-                                + " to "
-                                + bondState);
-            } else {
-                Log.i(TAG, "onReceive(): unknown intent action " + action);
-            }
-        }
-    };
+    private final IntentReceiver.IntentListener mIntentListener =
+            new IntentReceiver.IntentListener() {
+                @Override
+                public void onReceive(Intent intent) {
+                    String action = intent.getAction();
+                    if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
+                        BluetoothDevice device =
+                                intent.getParcelableExtra(
+                                        BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
+                        int bondState =
+                                intent.getIntExtra(
+                                        BluetoothDevice.EXTRA_BOND_STATE, BluetoothAdapter.ERROR);
+                        int prevBondState =
+                                intent.getIntExtra(
+                                        BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE,
+                                        BluetoothAdapter.ERROR);
+                        Log.i(
+                                TAG,
+                                "onReceive(): device "
+                                        + device
+                                        + " bond state changed from "
+                                        + prevBondState
+                                        + " to "
+                                        + bondState);
+                    } else {
+                        Log.i(TAG, "onReceive(): unknown intent action " + action);
+                    }
+                }
+            };
 
     private final OobDataCallback mGenerateOobDataCallback =
             new OobDataCallback() {
@@ -146,6 +148,7 @@ public class OobPairingTest {
                     Log.d(TAG, "OobData: " + data);
                     data.getConfirmationHash();
                     data.getRandomizerHash();
+                    mDutAddr = getReveseAddressString(data.getDeviceAddressWithType());
                     byte[] localData =
                             Bytes.concat(data.getConfirmationHash(), data.getRandomizerHash());
                     OobDataRequest localOobData =
@@ -180,22 +183,22 @@ public class OobPairingTest {
 
     /** All the test function goes here */
 
-    /**
-     * Process of writing a test function
-     *
-     * 1. Create an IntentReceiver object first with following way:
-     *      IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
-     *          BluetoothDevice.ACTION_1,
-     *          BluetoothDevice.ACTION_2)
-     *          .setIntentListener(--) // optional
-     *          .setIntentTimeout(--)  // optional
-     *          .build();
-     * 2. Use the intentReceiver instance for all Intent related verification, and pass
-     *     the same instance to all the helper/testStep functions which has similar Intent
-     *     requirements.
-     * 3. Once all the verification is done, call `intentReceiver.close()` before returning
-     *     from the function.
-     */
+    //
+    // Process of writing a test function
+    //
+    // 1. Create an IntentReceiver object first with following way:
+    //      IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
+    //          BluetoothDevice.ACTION_1,
+    //          BluetoothDevice.ACTION_2)
+    //          .setIntentListener(--) // optional
+    //          .setIntentTimeout(--)  // optional
+    //          .build();
+    // 2. Use the intentReceiver instance for all Intent related verification, and pass
+    //     the same instance to all the helper/testStep functions which has similar Intent
+    //     requirements.
+    // 3. Once all the verification is done, call `intentReceiver.close()` before returning
+    //     from the function.
+    //
 
     /**
      * Test OOB pairing: Configuration: Initiator: Locali, Local OOB: No, Remote OOB: Yes ,Secure
@@ -211,7 +214,7 @@ public class OobPairingTest {
     public void createBondWithRemoteOob() throws Exception {
         IntentReceiver intentReceiver =
                 new IntentReceiver.Builder(mContext, BluetoothDevice.ACTION_BOND_STATE_CHANGED)
-                        .setIntentListener(intentListener)
+                        .setIntentListener(mIntentListener)
                         .setIntentTimeout(INTENT_TIMEOUT)
                         .build();
 
@@ -247,7 +250,7 @@ public class OobPairingTest {
     public void createBondWithRemoteAndLocalOob() throws Exception {
         IntentReceiver intentReceiver =
                 new IntentReceiver.Builder(mContext, BluetoothDevice.ACTION_BOND_STATE_CHANGED)
-                        .setIntentListener(intentListener)
+                        .setIntentListener(mIntentListener)
                         .setIntentTimeout(INTENT_TIMEOUT)
                         .build();
 
@@ -280,7 +283,7 @@ public class OobPairingTest {
     public void createBondByRemoteDeviceWithLocalOob() throws Exception {
         IntentReceiver intentReceiver =
                 new IntentReceiver.Builder(mContext, BluetoothDevice.ACTION_BOND_STATE_CHANGED)
-                        .setIntentListener(intentListener)
+                        .setIntentListener(mIntentListener)
                         .setIntentTimeout(INTENT_TIMEOUT)
                         .build();
 
@@ -326,12 +329,12 @@ public class OobPairingTest {
     /**
      * Initiates pairing from Bumble
      *
-     * <p>Bumble starts scanning and selects first available device, then
-     *  connects to it and starts pairing.
+     * <p>Bumble starts scanning and selects first available device, then connects to it and starts
+     * pairing.
      */
     private void testStep_initiatePairingFromRemote() {
         ByteString deviceAddr;
-        StreamObserverSpliterator<ScanningResponse> scanningResponseObserver =
+        StreamObserverSpliterator<ScanRequest, ScanningResponse> scanningResponseObserver =
                 new StreamObserverSpliterator<>();
         Deadline deadline = Deadline.after(TIMEOUT_ADVERTISING_MS, TimeUnit.MILLISECONDS);
         mBumble.host()
@@ -342,9 +345,12 @@ public class OobPairingTest {
         while (true) {
             if (scanningResponseIterator.hasNext()) {
                 ScanningResponse scanningResponse = scanningResponseIterator.next();
-                // select first available device with Random address type
-                deviceAddr = scanningResponse.getRandom();
-                if (deviceAddr != null) {
+                // Select DUT address from scan results
+                String scannedDevice =
+                        Utils.addressStringFromByteString(scanningResponse.getRandom());
+                Log.d(TAG, "Scanned Devices: " + scannedDevice);
+                if (scannedDevice.equals(mDutAddr)) {
+                    deviceAddr = scanningResponse.getRandom();
                     break;
                 }
             }
@@ -359,7 +365,7 @@ public class OobPairingTest {
                                         .setRandom(deviceAddr)
                                         .build());
         // Start pairing from Bumble
-        StreamObserverSpliterator<SecureResponse> responseObserver =
+        StreamObserverSpliterator<SecureRequest, SecureResponse> responseObserver =
                 new StreamObserverSpliterator<>();
         mBumble.security()
                 .secure(
@@ -392,5 +398,11 @@ public class OobPairingTest {
                         .setRandomizerHash(randomizer)
                         .build();
         return p256;
+    }
+
+    private static String getReveseAddressString(byte[] address) {
+        return String.format(
+                "%02X:%02X:%02X:%02X:%02X:%02X",
+                address[5], address[4], address[3], address[2], address[1], address[0]);
     }
 }

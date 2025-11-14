@@ -84,9 +84,9 @@ static const char* INTEROP_STATIC_FILE_PATH = kStaticConfigFileConfigFile.c_str(
 
 static list_t* interop_list = NULL;
 
-bool interop_is_initialized = false;
+static bool interop_is_initialized = false;
 // protects operations on |interop_list|
-pthread_mutex_t interop_list_lock;
+static pthread_mutex_t interop_list_lock;
 
 // protects operations on |config|
 static pthread_mutex_t file_lock;
@@ -393,6 +393,7 @@ static const char* interop_feature_string_(const interop_feature_t feature) {
     CASE_RETURN_STR(INTEROP_HOGP_FORCE_MTU_EXCHANGE);
     CASE_RETURN_STR(INTEROP_DISABLE_HF_PROFILE);
     CASE_RETURN_STR(INTEROP_DISABLE_READ_LE_APPEARANCE);
+    CASE_RETURN_STR(INTEROP_INBAND_RINGTONE_SET_TO_FALSE);
   }
   return UNKNOWN_INTEROP_FEATURE;
 }

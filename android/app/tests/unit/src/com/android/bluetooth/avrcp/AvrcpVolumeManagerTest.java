@@ -18,20 +18,22 @@ package com.android.bluetooth.avrcp;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.avrcp.AvrcpVolumeManager.AVRCP_MAX_VOL;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.content.res.Resources;
 import android.media.AudioManager;
 
 import androidx.test.filters.SmallTest;
@@ -54,9 +56,10 @@ public class AvrcpVolumeManagerTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public TestName testName = new TestName();
 
+    @Mock private Resources mResources;
     @Mock private AvrcpNativeInterface mNativeInterface;
     @Mock private AdapterService mAdapterService;
-    @Mock AudioManager mAudioManager;
+    @Mock private AudioManager mAudioManager;
 
     private static final int TEST_DEVICE_MAX_VOLUME = 25;
 
@@ -70,13 +73,15 @@ public class AvrcpVolumeManagerTest {
                 .when(mAudioManager)
                 .getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         Context ctx = InstrumentationRegistry.getInstrumentation().getContext();
+        doReturn(mResources).when(mAdapterService).getResources();
+        doReturn(8).when(mResources).getInteger(anyInt());
         doReturn(
                         ctx.getSharedPreferences(
                                 testName.getMethodName() + "TmpPref", Context.MODE_PRIVATE))
                 .when(mAdapterService)
                 .getSharedPreferences(anyString(), anyInt());
-        mAvrcpVolumeManager =
-                new AvrcpVolumeManager(mAdapterService, mAudioManager, mNativeInterface);
+        mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
+        mAvrcpVolumeManager = new AvrcpVolumeManager(mAdapterService, mNativeInterface);
     }
 
     @Test
@@ -101,14 +106,12 @@ public class AvrcpVolumeManagerTest {
     @Test
     public void sendVolumeChanged() {
         mAvrcpVolumeManager.sendVolumeChanged(mDevice, TEST_DEVICE_MAX_VOLUME);
-
         verify(mNativeInterface).sendVolumeChanged(mDevice, AVRCP_MAX_VOL);
     }
 
     @Test
     public void setVolume() {
         mAvrcpVolumeManager.setVolume(mDevice, AVRCP_MAX_VOL);
-
         verify(mAudioManager)
                 .setStreamVolume(
                         eq(AudioManager.STREAM_MUSIC), eq(TEST_DEVICE_MAX_VOLUME), anyInt());

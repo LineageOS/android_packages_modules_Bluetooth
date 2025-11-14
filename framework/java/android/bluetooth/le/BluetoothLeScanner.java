@@ -42,6 +42,8 @@ import android.os.RemoteException;
 import android.os.WorkSource;
 import android.util.Log;
 
+import com.android.bluetooth.flags.Flags;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -60,8 +62,7 @@ import java.util.Map;
 public final class BluetoothLeScanner {
     private static final String TAG = BluetoothLeScanner.class.getSimpleName();
 
-    private static final boolean DBG = true;
-    private static final boolean VDBG = false;
+    private static final boolean VDBG = Log.isLoggable("bluetooth", Log.VERBOSE);
 
     /**
      * Extra containing a list of ScanResults. It can have one or more results if there was no
@@ -264,13 +265,22 @@ public final class BluetoothLeScanner {
                 return postCallbackErrorOrReturn(
                         callback, ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED);
             }
+            if (Flags.batchScanSupportCheck()) {
+                if (!mBluetoothAdapter.isOffloadedScanBatchingSupported()
+                        && settings.getReportDelayMillis() > 0) {
+                    Log.w(TAG, "Batch scan requested but not supported");
+                    return postCallbackErrorOrReturn(
+                            callback, ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED);
+                }
+            }
             if (callback != null) {
                 BleScanCallbackWrapper wrapper =
                         new BleScanCallbackWrapper(scan, filters, settings, workSource, callback);
                 wrapper.startRegistration();
             } else {
                 try {
-                    scan.startScanForIntent(callbackIntent, settings, filters, mAttributionSource);
+                    scan.registerPiAndStartScan(
+                            callbackIntent, settings, filters, mAttributionSource);
                 } catch (RemoteException e) {
                     return ScanCallback.SCAN_FAILED_INTERNAL_ERROR;
                 }
@@ -288,7 +298,7 @@ public final class BluetoothLeScanner {
         synchronized (mLeScanClients) {
             BleScanCallbackWrapper wrapper = mLeScanClients.remove(callback);
             if (wrapper == null) {
-                if (DBG) Log.d(TAG, "could not find callback wrapper");
+                Log.d(TAG, "could not find callback wrapper");
                 return;
             }
             wrapper.stopLeScan();
@@ -517,10 +527,11 @@ public final class BluetoothLeScanner {
         @Override
         public void onScanResult(final ScanResult scanResult) {
             Attributable.setAttributionSource(scanResult, mAttributionSource);
-            if (Log.isLoggable(TAG, Log.DEBUG)) {
+            if (VDBG) {
+                Log.d(TAG, "onScanResult() - " + scanResult.toString());
+            } else if (Log.isLoggable(TAG, Log.DEBUG)) {
                 Log.d(TAG, "onScanResult() - mScannerId=" + mScannerId);
             }
-            if (VDBG) Log.d(TAG, "onScanResult() - " + scanResult.toString());
 
             // Check null in case the scan has been stopped
             synchronized (this) {
@@ -591,7 +602,6 @@ public final class BluetoothLeScanner {
         }
     }
 
-    @SuppressLint("AndroidFrameworkBluetoothPermission")
     private void postCallbackError(final ScanCallback callback, final int errorCode) {
         mHandler.post(() -> callback.onScanFailed(errorCode));
     }

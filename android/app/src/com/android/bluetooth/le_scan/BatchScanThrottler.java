@@ -18,6 +18,7 @@ package com.android.bluetooth.le_scan;
 
 import static com.android.bluetooth.le_scan.ScanController.DEFAULT_REPORT_DELAY_FLOOR;
 
+import android.os.SystemProperties;
 import android.provider.DeviceConfig;
 
 import com.android.bluetooth.Utils.TimeProvider;
@@ -32,18 +33,29 @@ import java.util.Set;
  */
 class BatchScanThrottler {
     // Minimum batch trigger interval to check for batched results when the screen is off
-    @VisibleForTesting static final long SCREEN_OFF_MINIMUM_DELAY_FLOOR_MS = 20000L;
+    private static final String SCREEN_OFF_MINIMUM_DELAY_FLOOR_PROP =
+            "bluetooth.ble.batch_scan.screen_off_minimum_delay_floor_ms.config";
     // Adjusted minimum report delay for unfiltered batch scan clients
-    @VisibleForTesting static final long UNFILTERED_DELAY_FLOOR_MS = 20000L;
+    private static final String UNFILTERED_DELAY_FLOOR_PROP =
+            "bluetooth.ble.batch_scan.unfiltered_delay_floor_ms.config";
     // Adjusted minimum report delay for unfiltered batch scan clients when the screen is off
-    @VisibleForTesting static final long UNFILTERED_SCREEN_OFF_DELAY_FLOOR_MS = 60000L;
-    // Backoff stages used as multipliers for the minimum delay floor (standard or screen-off)
-    @VisibleForTesting static final int[] BACKOFF_MULTIPLIERS = {1, 1, 2, 2, 4};
+    private static final String UNFILTERED_SCREEN_OFF_DELAY_FLOOR_PROP =
+            "bluetooth.ble.batch_scan.unfiltered_screen_off_delay_floor_ms.config";
     // Start screen-off trigger interval throttling after the screen has been off for this period
     // of time. This allows the screen-on intervals to be used for a short period of time after the
     // screen has gone off, and avoids too much flipping between screen-off and screen-on backoffs
     // when the screen is off for a short period of time
-    @VisibleForTesting static final long SCREEN_OFF_DELAY_MS = 60000L;
+    private static final String SCREEN_OFF_DELAY_PROP =
+            "bluetooth.ble.batch_scan.screen_off_delay_ms.config";
+
+    @VisibleForTesting static final int SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT = 20000;
+    @VisibleForTesting static final int UNFILTERED_DELAY_FLOOR_DEFAULT = 20000;
+    @VisibleForTesting static final int UNFILTERED_SCREEN_OFF_DELAY_FLOOR_DEFAULT = 60000;
+    @VisibleForTesting static final int SCREEN_OFF_DELAY_DEFAULT = 60000;
+
+    // Backoff stages used as multipliers for the minimum delay floor (standard or screen-off)
+    @VisibleForTesting static final int[] BACKOFF_MULTIPLIERS = {1, 1, 2, 2, 4};
+
     private final TimeProvider mTimeProvider;
     private final long mDelayFloor;
     private final long mScreenOffDelayFloor;
@@ -51,14 +63,34 @@ class BatchScanThrottler {
     private long mScreenOffTriggerTime = 0L;
     private boolean mScreenOffThrottling = false;
 
+    private int mScreenOffMinimumDelayFloorMs;
+    private int mUnfilteredDelayFloorMs;
+    private int mUnfilteredScreenOffDelayFloorMs;
+    private int mScreenOffDelayMs;
+
     BatchScanThrottler(TimeProvider timeProvider, boolean screenOn) {
         mTimeProvider = timeProvider;
+
+        mScreenOffMinimumDelayFloorMs =
+                SystemProperties.getInt(
+                        SCREEN_OFF_MINIMUM_DELAY_FLOOR_PROP,
+                        SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT);
+        mUnfilteredDelayFloorMs =
+                SystemProperties.getInt(
+                        UNFILTERED_DELAY_FLOOR_PROP, UNFILTERED_DELAY_FLOOR_DEFAULT);
+        mUnfilteredScreenOffDelayFloorMs =
+                SystemProperties.getInt(
+                        UNFILTERED_SCREEN_OFF_DELAY_FLOOR_PROP,
+                        UNFILTERED_SCREEN_OFF_DELAY_FLOOR_DEFAULT);
+        mScreenOffDelayMs =
+                SystemProperties.getInt(SCREEN_OFF_DELAY_PROP, SCREEN_OFF_DELAY_DEFAULT);
+
         mDelayFloor =
                 DeviceConfig.getLong(
                         DeviceConfig.NAMESPACE_BLUETOOTH,
                         "report_delay",
                         DEFAULT_REPORT_DELAY_FLOOR);
-        mScreenOffDelayFloor = Math.max(mDelayFloor, SCREEN_OFF_MINIMUM_DELAY_FLOOR_MS);
+        mScreenOffDelayFloor = Math.max(mDelayFloor, mScreenOffMinimumDelayFloorMs);
         onScreenOn(screenOn);
     }
 
@@ -73,7 +105,7 @@ class BatchScanThrottler {
             resetBackoff();
         } else {
             // Screen-off intervals to be used after the trigger time
-            mScreenOffTriggerTime = mTimeProvider.elapsedRealtime() + SCREEN_OFF_DELAY_MS;
+            mScreenOffTriggerTime = mTimeProvider.elapsedRealtime() + mScreenOffDelayMs;
         }
     }
 
@@ -86,15 +118,12 @@ class BatchScanThrottler {
             resetBackoff();
         }
         long unfilteredFloor =
-                mScreenOffThrottling
-                        ? UNFILTERED_SCREEN_OFF_DELAY_FLOOR_MS
-                        : UNFILTERED_DELAY_FLOOR_MS;
+                mScreenOffThrottling ? mUnfilteredScreenOffDelayFloorMs : mUnfilteredDelayFloorMs;
         long intervalMillis = Long.MAX_VALUE;
         for (ScanClient client : batchClients) {
             if (client.mSettings.getReportDelayMillis() > 0) {
                 long clientIntervalMillis = client.mSettings.getReportDelayMillis();
-                if ((client.mFilters == null || client.mFilters.isEmpty())
-                        && clientIntervalMillis < unfilteredFloor) {
+                if (client.mFilters.isEmpty() && clientIntervalMillis < unfilteredFloor) {
                     clientIntervalMillis = unfilteredFloor;
                 }
                 intervalMillis = Math.min(intervalMillis, clientIntervalMillis);

@@ -24,6 +24,8 @@ import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothHapPresetInfo;
 
+import androidx.test.runner.AndroidJUnit4;
+
 import com.android.bluetooth.btservice.AdapterService;
 
 import com.google.common.truth.Expect;
@@ -31,11 +33,13 @@ import com.google.common.truth.Expect;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 
 /** Test cases for {@link HapClientNativeCallback}. */
+@RunWith(AndroidJUnit4.class)
 public class HapClientNativeCallbackTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public Expect expect = Expect.create();
@@ -96,14 +100,15 @@ public class HapClientNativeCallbackTest {
     }
 
     @Test
-    public void onActivePresetGroupSelected() {
+    public void onActivePresetSelectedForGroup() {
         int groupId = 1;
         int presetIndex = 0;
-        mNativeCallback.onActivePresetGroupSelected(groupId, presetIndex);
+        mNativeCallback.onActivePresetSelectedForGroup(groupId, presetIndex);
 
         verify(mHapClientService).messageFromNative(mEvent.capture());
         HapClientStackEvent event = mEvent.getValue();
-        expect.that(event.type).isEqualTo(HapClientStackEvent.EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED);
+        expect.that(event.type)
+                .isEqualTo(HapClientStackEvent.EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED_FOR_GROUP);
         expect.that(event.valueInt1).isEqualTo(presetIndex);
         expect.that(event.valueInt2).isEqualTo(groupId);
     }

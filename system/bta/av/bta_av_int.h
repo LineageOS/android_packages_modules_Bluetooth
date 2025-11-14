@@ -488,6 +488,7 @@ public:
   list_t* a2dp_list;       /* used for audio channels only */
   tBTA_AV_Q_INFO q_info;
   tAVDT_SEP_INFO sep_info[BTA_AV_NUM_SEPS]; /* stream discovery results */
+  AvdtpSepConfig default_sep_cfg;           /* local default SEP configuration */
   AvdtpSepConfig cfg;                       /* local SEP configuration */
   alarm_t* avrc_ct_timer;                   /* delay timer for AVRC CT */
   alarm_t* link_signalling_timer;
@@ -527,6 +528,8 @@ public:
                                      successful, false if command fails */
   bool suspend_sup;               /* true if Suspend stream is supported, false if suspend command
                                      fails */
+  bool suspending;                /* true if outgoing Suspend is sent, else false if
+                                     confirmation is received */
   bool deregistering;             /* true if deregistering */
   bool sco_suspend;               /* true if SUSPEND is issued automatically for SCO */
   uint8_t coll_mask;              /* Mask to check incoming and outgoing collision */
@@ -647,22 +650,6 @@ typedef struct {
 // total attempts are half seconds
 constexpr uint32_t kEnablingAttemptsIntervalMs = 100;
 constexpr uint8_t kEnablingAttemptsCountMaximum = 5;
-
-// A2DP offload VSC parameters
-class tBT_A2DP_OFFLOAD {
-public:
-  uint32_t codec_type;                  /* codec types ex: SBC/AAC/LDAC/APTx */
-  uint16_t max_latency;                 /* maximum latency */
-  std::array<uint8_t, 2> scms_t_enable; /* SCMS-T enable */
-  uint32_t sample_rate;                 /* Sample rates ex: 44.1/48/88.2/96 Khz */
-  uint8_t bits_per_sample;              /* bits per sample ex: 16/24/32 */
-  uint8_t ch_mode;                      /* None:0 Left:1 Right:2 */
-  uint32_t encoded_audio_bitrate;       /* encoder audio bitrates */
-  uint16_t acl_hdl;                     /* connection handle */
-  uint16_t l2c_rcid;                    /* l2cap channel id */
-  uint16_t mtu;                         /* MTU size */
-  uint8_t codec_info[32];               /* Codec specific information */
-};
 
 /* Vendor OFFLOAD VSC */
 #define HCI_VSQC_CONTROLLER_A2DP_OPCODE 0x000A

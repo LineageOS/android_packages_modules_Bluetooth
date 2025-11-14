@@ -969,8 +969,8 @@ int register_com_android_bluetooth_hfpclient(JNIEnv* env) {
           {"sendATCmdNative", "([BIIILjava/lang/String;)Z", (void*)sendATCmdNative},
           {"sendAndroidAtNative", "([BLjava/lang/String;)Z", (void*)sendAndroidAtNative},
   };
-  const int result =
-          REGISTER_NATIVE_METHODS(env, "com/android/bluetooth/hfpclient/NativeInterface", methods);
+  const int result = REGISTER_NATIVE_METHODS(
+          env, "com/android/bluetooth/hfpclient/HeadsetClientNativeInterface", methods);
   if (result != 0) {
     return result;
   }
@@ -999,7 +999,8 @@ int register_com_android_bluetooth_hfpclient(JNIEnv* env) {
           {"onRingIndication", "([B)V", &method_onRingIndication},
           {"onUnknownEvent", "(Ljava/lang/String;[B)V", &method_onUnknownEvent},
   };
-  GET_JAVA_METHODS(env, "com/android/bluetooth/hfpclient/NativeInterface", javaMethods);
+  GET_JAVA_METHODS(env, "com/android/bluetooth/hfpclient/HeadsetClientNativeInterface",
+                   javaMethods);
 
   return 0;
 }

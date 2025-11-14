@@ -54,8 +54,7 @@ import java.util.List;
 public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
     private static final String TAG = BluetoothMap.class.getSimpleName();
 
-    private static final boolean DBG = true;
-    private static final boolean VDBG = false;
+    private static final boolean VDBG = Log.isLoggable("bluetooth", Log.VERBOSE);
 
     private final CloseGuard mCloseGuard;
 
@@ -95,7 +94,7 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
 
     /** Create a BluetoothMap proxy object. */
     /* package */ BluetoothMap(Context context, BluetoothAdapter adapter) {
-        if (DBG) Log.d(TAG, "Create BluetoothMap proxy object");
+        Log.d(TAG, "Create BluetoothMap proxy object");
         mAdapter = adapter;
         mAttributionSource = adapter.getAttributionSource();
         mService = null;
@@ -165,7 +164,7 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
         final IBluetoothMap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.getState(mAttributionSource);
@@ -190,7 +189,7 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
         final IBluetoothMap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return Attributable.setAttributionSource(
@@ -215,7 +214,7 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
         final IBluetoothMap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.isConnected(device, mAttributionSource);
@@ -233,7 +232,7 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
      */
     @RequiresNoPermission
     public boolean connect(BluetoothDevice device) {
-        if (DBG) log("connect(" + device + ")" + "not supported for MAPS");
+        log("connect(" + device + ")" + "not supported for MAPS");
         return false;
     }
 
@@ -248,11 +247,11 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean disconnect(BluetoothDevice device) {
-        if (DBG) log("disconnect(" + device + ")");
+        log("disconnect(" + device + ")");
         final IBluetoothMap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.disconnect(device, mAttributionSource);
@@ -273,15 +272,14 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
      */
     public static boolean doesClassMatchSink(BluetoothClass btClass) {
         // TODO optimize the rule
-        switch (btClass.getDeviceClass()) {
-            case BluetoothClass.Device.COMPUTER_DESKTOP:
-            case BluetoothClass.Device.COMPUTER_LAPTOP:
-            case BluetoothClass.Device.COMPUTER_SERVER:
-            case BluetoothClass.Device.COMPUTER_UNCATEGORIZED:
-                return true;
-            default:
-                return false;
-        }
+        return switch (btClass.getDeviceClass()) {
+            case BluetoothClass.Device.COMPUTER_DESKTOP,
+                    BluetoothClass.Device.COMPUTER_LAPTOP,
+                    BluetoothClass.Device.COMPUTER_SERVER,
+                    BluetoothClass.Device.COMPUTER_UNCATEGORIZED ->
+                    true;
+            default -> false;
+        };
     }
 
     /**
@@ -298,11 +296,11 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
                 BLUETOOTH_PRIVILEGED,
             })
     public @NonNull List<BluetoothDevice> getConnectedDevices() {
-        if (DBG) log("getConnectedDevices()");
+        log("getConnectedDevices()");
         final IBluetoothMap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return Attributable.setAttributionSource(
@@ -323,11 +321,11 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
-        if (DBG) log("getDevicesMatchingStates()");
+        log("getDevicesMatchingStates()");
         final IBluetoothMap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return Attributable.setAttributionSource(
@@ -383,12 +381,10 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
                             IBluetoothMap service = IBluetoothMap.Stub.asInterface(pairQuery.first);
                             AttributionSource source = pairQuery.second.first;
                             BluetoothDevice device = pairQuery.second.second;
-                            if (DBG) {
-                                log(
-                                        "getConnectionState("
-                                                + device.getAnonymizedAddress()
-                                                + ") uncached");
-                            }
+                            log(
+                                    "getConnectionState("
+                                            + device.getAnonymizedAddress()
+                                            + ") uncached");
                             try {
                                 return service.getConnectionState(device, source);
                             } catch (RemoteException e) {
@@ -414,11 +410,11 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SuppressLint("AndroidFrameworkRequiresPermission") // IpcDataCache prevent lint enforcement
     public int getConnectionState(BluetoothDevice device) {
-        if (DBG) log("getConnectionState(" + device + ")");
+        log("getConnectionState(" + device + ")");
         final IBluetoothMap service = getService();
         if (service == null) {
             Log.w(TAG, "BT not enabled. Cannot get connection state");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return sBluetoothConnectionCache.query(
@@ -431,27 +427,6 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
             }
         }
         return STATE_DISCONNECTED;
-    }
-
-    /**
-     * Set priority of the profile
-     *
-     * <p>The device should already be paired. Priority can be one of {@link #PRIORITY_ON} or {@link
-     * #PRIORITY_OFF},
-     *
-     * @param device Paired bluetooth device
-     * @return true if priority is set, false on error
-     * @hide
-     */
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(
-            allOf = {
-                BLUETOOTH_CONNECT,
-                BLUETOOTH_PRIVILEGED,
-            })
-    public boolean setPriority(BluetoothDevice device, int priority) {
-        if (DBG) log("setPriority(" + device + ", " + priority + ")");
-        return setConnectionPolicy(device, BluetoothAdapter.priorityToConnectionPolicy(priority));
     }
 
     /**
@@ -475,11 +450,11 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
             })
     public boolean setConnectionPolicy(
             @NonNull BluetoothDevice device, @ConnectionPolicy int connectionPolicy) {
-        if (DBG) log("setConnectionPolicy(" + device + ", " + connectionPolicy + ")");
+        log("setConnectionPolicy(" + device + ", " + connectionPolicy + ")");
         final IBluetoothMap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()
                 && isValidDevice(device)
                 && (connectionPolicy == CONNECTION_POLICY_FORBIDDEN
@@ -491,27 +466,6 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
             }
         }
         return false;
-    }
-
-    /**
-     * Get the priority of the profile.
-     *
-     * <p>The priority can be any of: {@link #PRIORITY_OFF}, {@link #PRIORITY_ON}, {@link
-     * #PRIORITY_UNDEFINED}
-     *
-     * @param device Bluetooth device
-     * @return priority of the device
-     * @hide
-     */
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(
-            allOf = {
-                BLUETOOTH_CONNECT,
-                BLUETOOTH_PRIVILEGED,
-            })
-    public int getPriority(BluetoothDevice device) {
-        if (VDBG) log("getPriority(" + device + ")");
-        return BluetoothAdapter.connectionPolicyToPriority(getConnectionPolicy(device));
     }
 
     /**
@@ -536,7 +490,7 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
         final IBluetoothMap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.getConnectionPolicy(device, mAttributionSource);

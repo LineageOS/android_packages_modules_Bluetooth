@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.a2dpsink;
 
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
@@ -27,12 +28,15 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothAudioConfig;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
-import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 
@@ -77,10 +81,10 @@ public class A2dpSinkServiceTest {
     public void setUp() throws Exception {
         BluetoothDevice[] bondedDevices = new BluetoothDevice[] {mDevice1, mDevice2};
 
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
         doReturn(1).when(mAdapterService).getMaxConnectedAudioDevices();
-        TestUtils.mockGetSystemService(mAdapterService, Context.AUDIO_SERVICE, AudioManager.class);
+        TestUtils.mockGetSystemService(mAdapterService, AudioManager.class);
 
         doReturn(true).when(mDatabaseManager).setProfileConnectionPolicy(any(), anyInt(), anyInt());
 

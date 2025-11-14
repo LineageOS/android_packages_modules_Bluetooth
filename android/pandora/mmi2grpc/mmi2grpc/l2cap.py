@@ -92,8 +92,8 @@ class L2CAPProxy(ProfileProxy):
             psm = 0xF3  # default TSPX_psm_authorization_required value
 
         try:
-            connect_response = self.l2cap.Connect(connection=self.connection,
-                                                  le_credit_based=CreditBasedChannelRequest(spsm=psm))
+            connect_response = self.l2cap.Connect(
+                connection=self.connection, le_credit_based=CreditBasedChannelRequest(spsm=psm))
             if connect_response.HasField('channel'):
                 self.channel = connect_response.channel
             else:
@@ -135,7 +135,8 @@ class L2CAPProxy(ProfileProxy):
         ]
 
         if test in tests_to_open_bluetooth_server_socket:
-            wait_connection_response = self.l2cap.WaitConnection(le_credit_based=CreditBasedChannelRequest(spsm=0))
+            wait_connection_response = self.l2cap.WaitConnection(
+                le_credit_based=CreditBasedChannelRequest(spsm=0))
             if wait_connection_response.HasField('channel'):
                 self.channel = wait_connection_response.channel
             else:
@@ -176,7 +177,8 @@ class L2CAPProxy(ProfileProxy):
         else:
             hex_LE_DATA_PACKET = self.LE_DATA_PACKET_LARGE.encode("utf-8").hex().upper()
         if sent_data != hex_LE_DATA_PACKET:
-            print(f"data not match, sent_data:{sent_data} and {hex_LE_DATA_PACKET}", file=sys.stderr)
+            print(f"data not match, sent_data:{sent_data} and {hex_LE_DATA_PACKET}",
+                  file=sys.stderr)
             raise Exception(f"data not match, sent_data:{sent_data} and {hex_LE_DATA_PACKET}")
         return "OK"
 
@@ -189,7 +191,9 @@ class L2CAPProxy(ProfileProxy):
         assert self.channel
         self.l2cap.Send(
             channel=self.channel,
-            data=b"this is a large data package with at least 4 frames: MMI_UPPER_TESTER_SEND_LE_DATA_PACKET_LARGE")
+            data=
+            b"this is a large data package with at least 4 frames: MMI_UPPER_TESTER_SEND_LE_DATA_PACKET_LARGE"
+        )
         return "OK"
 
     @assert_description
@@ -200,7 +204,9 @@ class L2CAPProxy(ProfileProxy):
         assert self.channel
         self.l2cap.Send(
             channel=self.channel,
-            data=b"this is a large data package with at least 4 frames: MMI_UPPER_TESTER_SEND_LE_DATA_PACKET_LARGE")
+            data=
+            b"this is a large data package with at least 4 frames: MMI_UPPER_TESTER_SEND_LE_DATA_PACKET_LARGE"
+        )
         return "OK"
 
     @assert_description
@@ -213,7 +219,8 @@ class L2CAPProxy(ProfileProxy):
         Lower Tester, the IUT inform the Upper Tester.
         """
         if self.test_status_map[test] != "OK":
-            print('error in MI_UPPER_TESTER_CONFIRM_RECEIVE_COMMAND_NOT_UNDERSTAOOD', file=sys.stderr)
+            print('error in MI_UPPER_TESTER_CONFIRM_RECEIVE_COMMAND_NOT_UNDERSTAOOD',
+                  file=sys.stderr)
             raise Exception("Unexpected RECEIVE_COMMAND")
         return "OK"
 
@@ -254,7 +261,8 @@ class L2CAPProxy(ProfileProxy):
         Lower Tester, the IUT informs the Upper Tester.
         """
         if self.test_status_map[test] != "OK":
-            print('error in MMI_UPPER_TESTER_CONFIRM_RECEIVE_REJECT_AUTHENTICATION', file=sys.stderr)
+            print('error in MMI_UPPER_TESTER_CONFIRM_RECEIVE_REJECT_AUTHENTICATION',
+                  file=sys.stderr)
             raise Exception("Unexpected RECEIVE_COMMAND")
         return "OK"
 
@@ -333,7 +341,8 @@ class L2CAPProxy(ProfileProxy):
         error from the Lower Tester, the IUT informs the Upper Tester.
         """
         if self.test_status_map[test] != "OK":
-            print('error in MMI_UPPER_TESTER_CONFIRM_RECEIVE_REJECT_ENCRYPTION_KEY_SIZE', file=sys.stderr)
+            print('error in MMI_UPPER_TESTER_CONFIRM_RECEIVE_REJECT_ENCRYPTION_KEY_SIZE',
+                  file=sys.stderr)
             raise Exception("Unexpected RECEIVE_COMMAND")
         return "OK"
 
@@ -349,12 +358,14 @@ class L2CAPProxy(ProfileProxy):
         Tester.
         """
         if self.test_status_map[test] != "OK":
-            print('error in MMI_UPPER_TESTER_CONFIRM_RECEIVE_REJECT_INVALID_SOURCE_CID', file=sys.stderr)
+            print('error in MMI_UPPER_TESTER_CONFIRM_RECEIVE_REJECT_INVALID_SOURCE_CID',
+                  file=sys.stderr)
             raise Exception("Unexpected RECEIVE_COMMAND")
         return "OK"
 
     @assert_description
-    def MMI_UPPER_TESTER_CONFIRM_RECEIVE_REJECT_SOURCE_CID_ALREADY_ALLOCATED(self, test: str, **kwargs):
+    def MMI_UPPER_TESTER_CONFIRM_RECEIVE_REJECT_SOURCE_CID_ALREADY_ALLOCATED(
+            self, test: str, **kwargs):
         """
         Did Implementation Under Test(IUT) receive Connection refused 'Source
         CID Already Allocated' 0x000A error? And did not send anything over
@@ -364,7 +375,8 @@ class L2CAPProxy(ProfileProxy):
         Tester, the IUT inform the Upper Tester.
         """
         if self.test_status_map[test] != "OK":
-            print('error in MMI_UPPER_TESTER_CONFIRM_RECEIVE_REJECT_SOURCE_CID_ALREADY_ALLOCATED', file=sys.stderr)
+            print('error in MMI_UPPER_TESTER_CONFIRM_RECEIVE_REJECT_SOURCE_CID_ALREADY_ALLOCATED',
+                  file=sys.stderr)
             raise Exception("Unexpected RECEIVE_COMMAND")
         return "OK"
 
@@ -379,7 +391,8 @@ class L2CAPProxy(ProfileProxy):
         Lower Tester, the IUT inform the Upper Tester.
         """
         if self.test_status_map[test] != "OK":
-            print('error in MMI_UPPER_TESTER_CONFIRM_RECEIVE_REJECT_UNACCEPTABLE_PARAMETERS', file=sys.stderr)
+            print('error in MMI_UPPER_TESTER_CONFIRM_RECEIVE_REJECT_UNACCEPTABLE_PARAMETERS',
+                  file=sys.stderr)
             raise Exception("Unexpected RECEIVE_COMMAND")
         return "OK"
 

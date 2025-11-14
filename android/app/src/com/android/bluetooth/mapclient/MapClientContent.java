@@ -40,6 +40,7 @@ import android.util.ArraySet;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.map.BluetoothMapbMessageMime;
 import com.android.bluetooth.map.BluetoothMapbMessageMime.MimePart;
 import com.android.vcard.VCardConstants;
@@ -114,8 +115,8 @@ class MapClientContent {
      * the interface to send outbound updates such as when a message is read locally device: the
      * associated Bluetooth device used for associating messages with a subscription
      */
-    MapClientContent(Context context, Callbacks callbacks, BluetoothDevice device) {
-        mContext = context;
+    MapClientContent(AdapterService adapterService, Callbacks callbacks, BluetoothDevice device) {
+        mContext = adapterService;
         mDevice = device;
         mCallbacks = callbacks;
         mResolver = mContext.getContentResolver();
@@ -123,7 +124,7 @@ class MapClientContent {
         mTelephonyManager = mContext.getSystemService(TelephonyManager.class);
         mSubscriptionManager.addSubscriptionInfoRecord(
                 mDevice.getAddress(),
-                Utils.getName(mDevice),
+                adapterService.getRemoteName(mDevice),
                 0,
                 SubscriptionManager.SUBSCRIPTION_TYPE_REMOTE_SIM);
         SubscriptionInfo info =
@@ -668,15 +669,20 @@ class MapClientContent {
     private List<MessageDumpElement> getRecentMessagesFromFolder(Folder folder) {
         final Uri smsUri;
         final Uri mmsUri;
-        if (folder == Folder.INBOX) {
-            smsUri = Sms.Inbox.CONTENT_URI;
-            mmsUri = Mms.Inbox.CONTENT_URI;
-        } else if (folder == Folder.SENT) {
-            smsUri = Sms.Sent.CONTENT_URI;
-            mmsUri = Mms.Sent.CONTENT_URI;
-        } else {
-            warn("getRecentMessagesFromFolder: Failed, unsupported folder=" + folder);
-            return null;
+
+        switch (folder) {
+            case Folder.INBOX -> {
+                smsUri = Sms.Inbox.CONTENT_URI;
+                mmsUri = Mms.Inbox.CONTENT_URI;
+            }
+            case Folder.SENT -> {
+                smsUri = Sms.Sent.CONTENT_URI;
+                mmsUri = Mms.Sent.CONTENT_URI;
+            }
+            default -> { // Folder.UNKNOWN
+                warn("getRecentMessagesFromFolder: Failed, unsupported folder=" + folder);
+                return null;
+            }
         }
 
         List<MessageDumpElement> messages = new ArrayList<>();

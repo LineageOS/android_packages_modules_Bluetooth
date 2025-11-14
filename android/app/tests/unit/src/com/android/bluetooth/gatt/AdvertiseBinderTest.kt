@@ -16,14 +16,14 @@
 
 package com.android.bluetooth.gatt
 
-import android.bluetooth.BluetoothManager
+import android.bluetooth.IBluetoothGattServerCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSetParameters
 import android.bluetooth.le.IAdvertisingSetCallback
 import android.bluetooth.le.PeriodicAdvertisingParameters
+import android.content.AttributionSource
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.TestUtils.MockitoRule
 import com.android.bluetooth.btservice.AdapterService
 import org.junit.Before
@@ -44,15 +44,9 @@ class AdvertiseBinderTest {
 
     @get:Rule val mockitoRule = MockitoRule()
 
+    @Mock private lateinit var attributionSource: AttributionSource
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var advertiseManager: AdvertiseManager
-
-    private val attributionSource =
-        InstrumentationRegistry.getInstrumentation()
-            .targetContext
-            .getSystemService(BluetoothManager::class.java)
-            .adapter
-            .attributionSource
 
     private lateinit var binder: AdvertiseBinder
 
@@ -76,7 +70,7 @@ class AdvertiseBinderTest {
         val periodicData = AdvertiseData.Builder().build()
         val duration = 1
         val maxExtAdvEvents = 2
-        val serverIf = 3
+        val serverCallback = mock(IBluetoothGattServerCallback::class.java)
         val callback = mock(IAdvertisingSetCallback::class.java)
 
         binder.startAdvertisingSet(
@@ -87,7 +81,7 @@ class AdvertiseBinderTest {
             periodicData,
             duration,
             maxExtAdvEvents,
-            serverIf,
+            serverCallback,
             callback,
             attributionSource,
         )
@@ -100,7 +94,7 @@ class AdvertiseBinderTest {
                 periodicData,
                 duration,
                 maxExtAdvEvents,
-                serverIf,
+                serverCallback,
                 callback,
                 attributionSource,
             )

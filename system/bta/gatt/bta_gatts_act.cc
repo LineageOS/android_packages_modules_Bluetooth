@@ -71,7 +71,7 @@ static tGATT_CBACK bta_gatts_cback = {
         .p_subrate_chg_cb = bta_gatts_subrate_chg_cback,
 };
 
-tGATT_APPL_INFO bta_gatts_nv_cback = {bta_gatts_nv_save_cback, bta_gatts_nv_srv_chg_cback};
+static tGATT_APPL_INFO bta_gatts_nv_cback = {bta_gatts_nv_save_cback, bta_gatts_nv_srv_chg_cback};
 
 /*******************************************************************************
  *
@@ -414,7 +414,7 @@ void bta_gatts_open(tBTA_GATTS_CB* /* p_cb */, tBTA_GATTS_DATA* p_msg) {
     /* should always get the connection ID */
     bool success = GATT_Connect(p_rcb->gatt_if, p_msg->api_open.remote_bda,
                                 p_msg->api_open.remote_addr_type, p_msg->api_open.connection_type,
-                                p_msg->api_open.transport, false, LE_PHY_1M, 0);
+                                p_msg->api_open.transport, false, LE_PHY_1M, 0, false);
 
     if (success) {
       status = GATT_SUCCESS;

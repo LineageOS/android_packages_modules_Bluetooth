@@ -52,7 +52,8 @@
 #include "btif/include/btif_util.h"
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager_t.h"
-#include "hci/controller_interface.h"
+#include "hardware/bluetooth.h"
+#include "hci/controller.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
@@ -60,8 +61,8 @@
 #include "stack/include/bt_octets.h"
 #include "stack/include/bt_uuid16.h"
 #include "storage/config_keys.h"
+#include "types/ble_address_with_type.h"
 #include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 /* This is a local property to add a device found */
 #define BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP 0xFF
@@ -108,9 +109,6 @@ static bool btif_has_ble_keys(const std::string& bdstr);
  ******************************************************************************/
 
 static int btif_storage_get_user_id() {
-  if (!com::android::bluetooth::flags::guest_mode_bond()) {
-    return BTIF_STORAGE_RESTRICTED_USER_ID_DEFAULT;
-  }
 #ifdef TARGET_FLOSS
   return BTIF_STORAGE_RESTRICTED_USER_ID_DEFAULT;
 #else
@@ -177,7 +175,10 @@ static bool prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
       std::string val;
       size_t cnt = (prop->len) / sizeof(Uuid);
       for (size_t i = 0; i < cnt; i++) {
-        val += (reinterpret_cast<Uuid*>(prop->val) + i)->ToString() + " ";
+        val += (reinterpret_cast<Uuid*>(prop->val) + i)->ToString();
+        if ((i + 1) < cnt) {
+          val += " ";
+        }
       }
       std::string key = (prop->type == BT_PROPERTY_UUIDS_LE) ? BTIF_STORAGE_KEY_REMOTE_SERVICE_LE
                                                              : BTIF_STORAGE_KEY_REMOTE_SERVICE;
@@ -258,16 +259,7 @@ static bool cfg2prop(const RawAddress* remote_bd_addr, bt_property_t* prop) {
         ret = btif_config_get_str(BTIF_STORAGE_SECTION_ADAPTER, BTIF_STORAGE_KEY_NAME,
                                   reinterpret_cast<char*>(prop->val), &len);
       }
-      if (com::android::bluetooth::flags::empty_names_are_invalid()) {
-        if (ret && len > 1 && len <= prop->len) {  // empty names have a len of 1
-          prop->len = len - 1;
-        } else {
-          prop->len = 0;
-          ret = false;
-        }
-        break;
-      }
-      if (ret && len && len <= prop->len) {
+      if (ret && len > 1 && len <= prop->len) {  // empty names have a len of 1
         prop->len = len - 1;
       } else {
         prop->len = 0;
@@ -489,8 +481,13 @@ static bt_status_t btif_in_fetch_bonded_devices(btif_bonded_devices_t* p_bonded_
           }
         }
         bt_linkkey_file_found = true;
+
+        int addr_type_int = BLE_ADDR_PUBLIC;
+        btif_config_get_int(name, BTIF_STORAGE_KEY_ADDR_TYPE, &addr_type_int);
+        tBLE_ADDR_TYPE addr_type = static_cast<tBLE_ADDR_TYPE>(addr_type_int);
+
         if (p_bonded_devices->num_devices < BTM_SEC_MAX_DEVICE_RECORDS) {
-          p_bonded_devices->devices[p_bonded_devices->num_devices++] = bd_addr;
+          p_bonded_devices->devices[p_bonded_devices->num_devices++] = {addr_type, bd_addr};
         } else {
           log::warn("Exceed the max number of bonded devices");
         }
@@ -620,8 +617,12 @@ bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
     log::verbose("BT_PROPERTY_ADAPTER_BONDED_DEVICES: Number of bonded devices={}",
                  bonded_devices.num_devices);
 
-    property->len = bonded_devices.num_devices * RawAddress::kLength;
-    memcpy(property->val, bonded_devices.devices, property->len);
+    std::vector<tBLE_BD_ADDR_SERIALIZED> bonded_devices_serialized;
+    for (uint32_t i = 0; i < bonded_devices.num_devices; ++i) {
+      bonded_devices_serialized.push_back(bonded_devices.devices[i].ToSerialized());
+    }
+    property->len = bonded_devices.num_devices * bonded_devices_serialized.size();
+    memcpy(property->val, bonded_devices_serialized.data(), property->len);
 
     /* if there are no bonded_devices, then length shall be 0 */
     return BT_STATUS_SUCCESS;
@@ -770,7 +771,10 @@ bt_status_t btif_storage_add_remote_device(const RawAddress* remote_bd_addr,
     if (properties[i].type == BT_PROPERTY_REMOTE_RSSI ||
         properties[i].type == BT_PROPERTY_REMOTE_IS_COORDINATED_SET_MEMBER ||
         properties[i].type == BT_PROPERTY_REMOTE_ASHA_CAPABILITY ||
-        properties[i].type == BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID) {
+        properties[i].type == BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID ||
+        properties[i].type == BT_PROPERTY_DISCOVERY_RESULT_TYPE ||
+        properties[i].type == BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE ||
+        properties[i].type == BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA) {
       continue;
     }
 
@@ -877,55 +881,56 @@ static void remove_devices_with_sample_ltk() {
 void btif_storage_load_le_devices(void) {
   btif_bonded_devices_t bonded_devices;
   btif_in_fetch_bonded_devices(&bonded_devices, 1);
+
   std::unordered_set<RawAddress> bonded_addresses;
   for (uint16_t i = 0; i < bonded_devices.num_devices; i++) {
-    bonded_addresses.insert(bonded_devices.devices[i]);
+    bonded_addresses.insert(bonded_devices.devices[i].bda);
   }
 
-  std::vector<std::tuple<RawAddress, RawAddress, tBLE_ADDR_TYPE>> consolidated_devices;
+  std::vector<std::pair<tBLE_BD_ADDR, tBLE_BD_ADDR>> consolidated_devices;
   for (uint16_t i = 0; i < bonded_devices.num_devices; i++) {
-    // RawAddress* p_remote_addr;
     tBTA_LE_KEY_VALUE key = {};
-    if (btif_storage_get_ble_bonding_key(bonded_devices.devices[i], BTM_LE_KEY_PID,
+    if (btif_storage_get_ble_bonding_key(bonded_devices.devices[i].bda, BTM_LE_KEY_PID,
                                          reinterpret_cast<uint8_t*>(&key),
                                          sizeof(tBTM_LE_PID_KEYS)) == BT_STATUS_SUCCESS) {
-      if (bonded_devices.devices[i] != key.pid_key.identity_addr) {
+      if (bonded_devices.devices[i].bda != key.pid_key.identity_addr) {
         log::info("Found device with a known identity address {} {}", bonded_devices.devices[i],
                   key.pid_key.identity_addr);
 
-        if (bonded_devices.devices[i].IsEmpty() || key.pid_key.identity_addr.IsEmpty()) {
+        if (bonded_devices.devices[i].bda.IsEmpty() || key.pid_key.identity_addr.IsEmpty()) {
           log::warn("Address is empty! Skip");
         } else {
-          consolidated_devices.emplace_back(bonded_devices.devices[i], key.pid_key.identity_addr,
-                                            key.pid_key.identity_addr_type);
+          tBLE_BD_ADDR identity_addr = {.type = key.pid_key.identity_addr_type,
+                                        .bda = key.pid_key.identity_addr};
+          consolidated_devices.emplace_back(bonded_devices.devices[i], identity_addr);
         }
       }
     }
   }
 
-  bt_property_t adapter_prop = {};
   /* Send the adapter_properties_cb with bonded consolidated device */
-  {
-    /* BONDED_DEVICES */
-    auto devices_list = std::make_unique<RawAddress[]>(consolidated_devices.size());
-    adapter_prop.type = BT_PROPERTY_ADAPTER_BONDED_DEVICES;
-    adapter_prop.len = consolidated_devices.size() * sizeof(RawAddress);
-    adapter_prop.val = devices_list.get();
-    for (uint16_t i = 0; i < consolidated_devices.size(); i++) {
-      devices_list[i] = std::get<0>(consolidated_devices[i]);
-    }
-    btif_adapter_properties_evt(BT_STATUS_SUCCESS, /* num_props */ 1, &adapter_prop);
+  std::vector<tBLE_BD_ADDR_SERIALIZED> serialized_bonded_devices;
+  for (const auto& device : consolidated_devices) {
+    serialized_bonded_devices.push_back(std::get<0>(device).ToSerialized());
   }
+  bt_property_t adapter_prop = {.type = BT_PROPERTY_ADAPTER_BONDED_DEVICES,
+                                .len = static_cast<int>(serialized_bonded_devices.size() *
+                                                        sizeof(tBLE_BD_ADDR_SERIALIZED)),
+                                .val = serialized_bonded_devices.data()};
+  btif_adapter_properties_evt(BT_STATUS_SUCCESS, /* num_props */ 1, &adapter_prop);
 
   for (const auto& device : consolidated_devices) {
-    if (bonded_addresses.find(std::get<1>(device)) != bonded_addresses.end()) {
+    const tBLE_BD_ADDR& pseudo_addr = std::get<0>(device);
+    const tBLE_BD_ADDR& identity_addr = std::get<1>(device);
+
+    if (bonded_addresses.find(identity_addr.bda) != bonded_addresses.end()) {
       // Invokes address consolidation for DuMo devices
-      GetInterfaceToProfiles()->events->invoke_address_consolidate_cb(std::get<0>(device),
-                                                                      std::get<1>(device));
+      GetInterfaceToProfiles()->events->invoke_address_consolidate_cb(pseudo_addr.bda,
+                                                                      identity_addr.bda);
     } else {
       // Associates RPA & identity address for LE-only devices
       GetInterfaceToProfiles()->events->invoke_le_address_associate_cb(
-              std::get<0>(device), std::get<1>(device), std::get<2>(device));
+              pseudo_addr.bda, identity_addr.bda, identity_addr.type);
     }
   }
 }
@@ -986,14 +991,14 @@ bt_status_t btif_storage_load_bonded_devices(void) {
     num_props++;
 
     /* BONDED_DEVICES */
-    RawAddress* devices_list = reinterpret_cast<RawAddress*>(
-            osi_malloc(sizeof(RawAddress) * bonded_devices.num_devices));
-    adapter_props[num_props].type = BT_PROPERTY_ADAPTER_BONDED_DEVICES;
-    adapter_props[num_props].len = bonded_devices.num_devices * sizeof(RawAddress);
-    adapter_props[num_props].val = devices_list;
-    for (i = 0; i < bonded_devices.num_devices; i++) {
-      devices_list[i] = bonded_devices.devices[i];
+    std::vector<tBLE_BD_ADDR_SERIALIZED> serialized_bonded_devices;
+    for (uint32_t i = 0; i < bonded_devices.num_devices; i++) {
+      serialized_bonded_devices.push_back(bonded_devices.devices[i].ToSerialized());
     }
+    adapter_props[num_props].type = BT_PROPERTY_ADAPTER_BONDED_DEVICES;
+    adapter_props[num_props].len =
+            serialized_bonded_devices.size() * sizeof(tBLE_BD_ADDR_SERIALIZED);
+    adapter_props[num_props].val = serialized_bonded_devices.data();
     num_props++;
 
     /* LOCAL UUIDs */
@@ -1002,8 +1007,6 @@ bt_status_t btif_storage_load_bonded_devices(void) {
     num_props++;
 
     btif_adapter_properties_evt(BT_STATUS_SUCCESS, num_props, adapter_props);
-
-    osi_free(devices_list);
   }
 
   log::verbose("Number of bonded devices found={}", bonded_devices.num_devices);
@@ -1019,7 +1022,7 @@ bt_status_t btif_storage_load_bonded_devices(void) {
       uint32_t devtype = 0;
 
       num_props = 0;
-      p_remote_addr = &bonded_devices.devices[i];
+      p_remote_addr = &bonded_devices.devices[i].bda;
       memset(remote_properties, 0, sizeof(remote_properties));
       btif_storage_get_remote_prop(p_remote_addr, BT_PROPERTY_BDNAME, &name, sizeof(name),
                                    &remote_properties[num_props]);
@@ -1063,21 +1066,19 @@ bt_status_t btif_storage_load_bonded_devices(void) {
                                        &remote_properties[num_props]) == BT_STATUS_SUCCESS) {
         num_props++;
       }
-
-      // Floss needs address type for diagnosis API
-      uint8_t addr_type;
-      if (btif_storage_get_remote_prop(p_remote_addr, BT_PROPERTY_REMOTE_ADDR_TYPE, &addr_type,
-                                       sizeof(addr_type),
-                                       &remote_properties[num_props]) == BT_STATUS_SUCCESS) {
-        num_props++;
-      }
 #endif
+
+      tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
+      btif_storage_get_remote_prop(p_remote_addr, BT_PROPERTY_REMOTE_ADDR_TYPE, &addr_type,
+                                   sizeof(addr_type), &remote_properties[num_props]);
+      num_props++;
 
       btif_storage_get_remote_prop(p_remote_addr, BT_PROPERTY_REMOTE_MODEL_NUM, &model_name,
                                    sizeof(model_name), &remote_properties[num_props]);
       num_props++;
 
-      btif_remote_properties_evt(BT_STATUS_SUCCESS, p_remote_addr, num_props, remote_properties);
+      btif_remote_properties_evt(BT_STATUS_SUCCESS, p_remote_addr, addr_type, num_props,
+                                 remote_properties);
     }
   }
   return BT_STATUS_SUCCESS;
@@ -1236,7 +1237,7 @@ bt_status_t btif_in_fetch_bonded_ble_device(const std::string& remote_bd_addr, i
     // Fill in the bonded devices
     if (device_added) {
       if (p_bonded_devices->num_devices < BTM_SEC_MAX_DEVICE_RECORDS) {
-        p_bonded_devices->devices[p_bonded_devices->num_devices++] = bd_addr;
+        p_bonded_devices->devices[p_bonded_devices->num_devices++] = {addr_type, bd_addr};
       } else {
         log::warn("Exceed the max number of bonded devices");
       }
@@ -1257,8 +1258,8 @@ static void btif_storage_invoke_addr_type_update(const RawAddress& remote_bd_add
   prop.type = BT_PROPERTY_REMOTE_ADDR_TYPE;
   prop.val = const_cast<tBLE_ADDR_TYPE*>(reinterpret_cast<const tBLE_ADDR_TYPE*>(&addr_type));
   prop.len = sizeof(tBLE_ADDR_TYPE);
-  GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(BT_STATUS_SUCCESS,
-                                                                       remote_bd_addr, 1, &prop);
+  GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
+          BT_STATUS_SUCCESS, remote_bd_addr, addr_type, 1, &prop);
 }
 #endif  // TARGET_FLOSS
 

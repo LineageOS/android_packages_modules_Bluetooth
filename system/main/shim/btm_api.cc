@@ -22,8 +22,6 @@
 
 #include "hci/acl_manager.h"
 #include "hci/controller.h"
-#include "hci/controller_interface.h"
-#include "hci/le_advertising_manager.h"
 #include "main/shim/acl.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
@@ -71,15 +69,15 @@ tBTM_STATUS bluetooth::shim::BTM_AllowWakeByHid(
   // Allow classic HID wake.
   auto controller = GetController();
   for (auto device : classic_hid_devices) {
-    controller->SetEventFilterConnectionSetupAddress(bluetooth::ToGdAddress(device),
-                                                     hci::AutoAcceptFlag::AUTO_ACCEPT_OFF);
+    controller->SetEventFilterConnectionSetupAddress(device, hci::AutoAcceptFlag::AUTO_ACCEPT_OFF);
   }
 
   // Allow BLE HID
   for (auto hid_address : le_hid_devices) {
     tBLE_BD_ADDR bdadr = BTM_Sec_GetAddressWithType(hid_address.first);
     bluetooth::shim::GetAclManager()->CreateLeConnection(ToAddressWithTypeFromLegacy(bdadr),
-                                                         /*is_direct=*/false);
+                                                         /*is_direct=*/false,
+                                                         /*prefer_relax_mode=*/false);
   }
 
   return tBTM_STATUS::BTM_SUCCESS;
@@ -95,7 +93,8 @@ tBTM_STATUS bluetooth::shim::BTM_RestoreFilterAcceptList(
   for (auto address_pair : le_devices) {
     tBLE_BD_ADDR bdadr = BTM_Sec_GetAddressWithType(address_pair.first);
     bluetooth::shim::GetAclManager()->CreateLeConnection(ToAddressWithTypeFromLegacy(bdadr),
-                                                         /*is_direct=*/false);
+                                                         /*is_direct=*/false,
+                                                         /*prefer_relax_mode=*/false);
   }
 
   return tBTM_STATUS::BTM_SUCCESS;

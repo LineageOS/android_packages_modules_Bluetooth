@@ -20,6 +20,7 @@
 #include <signal.h>
 #endif
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 
 #include <map>
 #include <utility>
@@ -31,9 +32,7 @@
 #include "hci/class_of_device.h"
 #include "hci/hci_metrics_logging.h"
 #include "hci/inquiry_interface.h"
-#include "main/shim/entry.h"
 #include "os/alarm.h"
-#include "os/metrics.h"
 #include "os/queue.h"
 #include "os/system_properties.h"
 #include "osi/include/stack_power_telemetry.h"
@@ -149,8 +148,10 @@ public:
 };
 
 struct HciLayer::impl {
-  impl(hal::HciHal* hal, HciLayer& module) : hal_(hal), module_(module) {
-    hci_timeout_alarm_ = new Alarm(module.GetHandler());
+  impl(os::Handler* handler, hal::HciHal* hal, storage::StorageModule* storage, HciLayer& module)
+      : hal_(hal), storage_(storage), module_(module) {
+    handler_ = handler;
+    hci_timeout_alarm_ = new Alarm(&handler->thread());
   }
 
   ~impl() {
@@ -240,7 +241,7 @@ struct HciLayer::impl {
     log::assert_that(waiting_command_ == op_code, "Waiting for {}, got {}",
                      OpCodeText(waiting_command_), OpCodeText(op_code));
 
-    bool is_vendor_specific = static_cast<int>(op_code) & (0x3f << 10);
+    bool is_vendor_specific = (static_cast<int>(op_code) & (0x3f << 10)) == (0x3f << 10);
     using WaitingFor = CommandQueueEntry::WaitingFor;
     WaitingFor waiting_for = command_queue_.front().waiting_for_;
     CommandStatusView status_view = CommandStatusView::Create(event);
@@ -319,7 +320,7 @@ struct HciLayer::impl {
     common::StopWatch::DumpStopWatchLog();
     log::error("Timed out waiting for {} for {}ms", OpCodeText(op_code), getHciTimeoutMs().count());
 
-    bluetooth::os::LogMetricHciTimeoutEvent(static_cast<uint32_t>(op_code));
+    bluetooth::metrics::LogMetricHciTimeoutEvent(static_cast<uint32_t>(op_code));
 
     log::error("Flushing {} waiting commands", command_queue_.size());
     // Clear any waiting commands (there is an abort coming anyway)
@@ -329,7 +330,7 @@ struct HciLayer::impl {
 
     // Ignore the response, since we don't know what might come back.
     enqueue_command(ControllerDebugInfoBuilder::Create(),
-                    module_.GetHandler()->BindOnce([](CommandCompleteView) {}));
+                    handler_->BindOnce([](CommandCompleteView) {}));
     // Don't time out for this one;
     if (hci_timeout_alarm_ != nullptr) {
       hci_timeout_alarm_->Cancel();
@@ -337,7 +338,7 @@ struct HciLayer::impl {
       hci_timeout_alarm_ = nullptr;
     }
     if (hci_abort_alarm_ == nullptr) {
-      hci_abort_alarm_ = new Alarm(module_.GetHandler());
+      hci_abort_alarm_ = new Alarm(&handler_->thread());
       hci_abort_alarm_->Schedule(BindOnce(&abort_after_time_out, op_code),
                                  getHciTimeoutRestartMs());
     } else {
@@ -428,7 +429,7 @@ struct HciLayer::impl {
   void handle_root_inflammation(uint8_t vse_error_reason) {
     log::error("Received a Root Inflammation Event vendor reason 0x{:02x}, scheduling an abort",
                vse_error_reason);
-    bluetooth::os::LogMetricBluetoothHalCrashReason(Address::kEmpty, 0, vse_error_reason);
+    bluetooth::metrics::LogMetricBluetoothHalCrashReason(Address::kEmpty, 0, vse_error_reason);
     // Add Logging for crash reason
     if (hci_timeout_alarm_ != nullptr) {
       hci_timeout_alarm_->Cancel();
@@ -436,7 +437,7 @@ struct HciLayer::impl {
       hci_timeout_alarm_ = nullptr;
     }
     if (hci_abort_alarm_ == nullptr) {
-      hci_abort_alarm_ = new Alarm(module_.GetHandler());
+      hci_abort_alarm_ = new Alarm(&handler_->thread());
       hci_abort_alarm_->Schedule(BindOnce(&abort_after_root_inflammation, vse_error_reason),
                                  getHciTimeoutRestartMs());
     } else {
@@ -469,9 +470,9 @@ struct HciLayer::impl {
                          EventCodeText(event_code), OpCodeText(op_code));
       }
       std::unique_ptr<CommandView> no_waiting_command{nullptr};
-      log_hci_event(no_waiting_command, event, shim::GetStorage());
+      log_hci_event(no_waiting_command, event, storage_);
     } else {
-      log_hci_event(command_queue_.front().command_view, event, shim::GetStorage());
+      log_hci_event(command_queue_.front().command_view, event, storage_);
     }
     power_telemetry::GetInstance().LogHciEvtDetail();
     EventCode event_code = event.GetEventCode();
@@ -552,7 +553,9 @@ struct HciLayer::impl {
     }
   }
 
+  os::Handler* handler_;
   hal::HciHal* hal_;
+  storage::StorageModule* storage_;
   HciLayer& module_;
 
   // Command Handling
@@ -593,7 +596,7 @@ struct HciLayer::hal_callbacks : public hal::HciHalCallbacks {
     auto packet = packet::PacketView<packet::kLittleEndian>(
             std::make_shared<std::vector<uint8_t>>(event_bytes));
     EventView event = EventView::Create(packet);
-    module_.CallOn(module_.impl_, &impl::on_hci_event, std::move(event));
+    module_.impl_->handler_->CallOn(module_.impl_, &impl::on_hci_event, std::move(event));
   }
 
   void aclDataReceived(hal::HciPacket data_bytes) override {
@@ -604,7 +607,7 @@ struct HciLayer::hal_callbacks : public hal::HciHalCallbacks {
     auto packet = packet::PacketView<packet::kLittleEndian>(
             std::make_shared<std::vector<uint8_t>>(std::move(data_bytes)));
     auto acl = std::make_unique<AclView>(AclView::Create(packet));
-    module_.impl_->incoming_acl_buffer_.Enqueue(std::move(acl), module_.GetHandler());
+    module_.impl_->incoming_acl_buffer_.Enqueue(std::move(acl), module_.impl_->handler_);
   }
 
   void scoDataReceived(hal::HciPacket data_bytes) override {
@@ -615,7 +618,7 @@ struct HciLayer::hal_callbacks : public hal::HciHalCallbacks {
     auto packet = packet::PacketView<packet::kLittleEndian>(
             std::make_shared<std::vector<uint8_t>>(std::move(data_bytes)));
     auto sco = std::make_unique<ScoView>(ScoView::Create(packet));
-    module_.impl_->incoming_sco_buffer_.Enqueue(std::move(sco), module_.GetHandler());
+    module_.impl_->incoming_sco_buffer_.Enqueue(std::move(sco), module_.impl_->handler_);
   }
 
   void isoDataReceived(hal::HciPacket data_bytes) override {
@@ -626,7 +629,7 @@ struct HciLayer::hal_callbacks : public hal::HciHalCallbacks {
     auto packet = packet::PacketView<packet::kLittleEndian>(
             std::make_shared<std::vector<uint8_t>>(std::move(data_bytes)));
     auto iso = std::make_unique<IsoView>(IsoView::Create(packet));
-    module_.impl_->incoming_iso_buffer_.Enqueue(std::move(iso), module_.GetHandler());
+    module_.impl_->incoming_iso_buffer_.Enqueue(std::move(iso), module_.impl_->handler_);
   }
 
 #ifdef TARGET_FLOSS
@@ -639,10 +642,6 @@ struct HciLayer::hal_callbacks : public hal::HciHalCallbacks {
 
   HciLayer& module_;
 };
-
-HciLayer::HciLayer() : impl_(nullptr), hal_callbacks_(nullptr) {}
-
-HciLayer::~HciLayer() {}
 
 common::BidiQueueEnd<AclBuilder, AclView>* HciLayer::GetAclQueueEnd() {
   return impl_->acl_queue_.GetUpEnd();
@@ -662,8 +661,8 @@ void HciLayer::EnqueueCommand(unique_ptr<CommandBuilder> command,
   if (life_cycle_stopped) {
     return;
   }
-  CallOn(impl_, &impl::enqueue_command<CommandCompleteView>, std::move(command),
-         std::move(on_complete));
+  impl_->handler_->CallOn(impl_, &impl::enqueue_command<CommandCompleteView>, std::move(command),
+                          std::move(on_complete));
 }
 
 void HciLayer::EnqueueCommand(unique_ptr<CommandBuilder> command,
@@ -672,15 +671,15 @@ void HciLayer::EnqueueCommand(unique_ptr<CommandBuilder> command,
   if (life_cycle_stopped) {
     return;
   }
-  CallOn(impl_, &impl::enqueue_command<CommandStatusView>, std::move(command),
-         std::move(on_status));
+  impl_->handler_->CallOn(impl_, &impl::enqueue_command<CommandStatusView>, std::move(command),
+                          std::move(on_status));
 }
 
 void HciLayer::EnqueueCommand(
         unique_ptr<CommandBuilder> command,
         ContextualOnceCallback<void(CommandStatusOrCompleteView)> on_status_or_complete) {
-  CallOn(impl_, &impl::enqueue_command<CommandStatusOrCompleteView>, std::move(command),
-         std::move(on_status_or_complete));
+  impl_->handler_->CallOn(impl_, &impl::enqueue_command<CommandStatusOrCompleteView>,
+                          std::move(command), std::move(on_status_or_complete));
 }
 
 void HciLayer::RegisterEventHandler(EventCode event, ContextualCallback<void(EventView)> handler) {
@@ -688,7 +687,7 @@ void HciLayer::RegisterEventHandler(EventCode event, ContextualCallback<void(Eve
   if (life_cycle_stopped) {
     return;
   }
-  CallOn(impl_, &impl::register_event, event, handler);
+  impl_->handler_->CallOn(impl_, &impl::register_event, event, handler);
 }
 
 void HciLayer::UnregisterEventHandler(EventCode event) {
@@ -696,7 +695,7 @@ void HciLayer::UnregisterEventHandler(EventCode event) {
   if (life_cycle_stopped) {
     return;
   }
-  CallOn(impl_, &impl::unregister_event, event);
+  impl_->handler_->CallOn(impl_, &impl::unregister_event, event);
 }
 
 void HciLayer::RegisterLeEventHandler(SubeventCode event,
@@ -705,7 +704,7 @@ void HciLayer::RegisterLeEventHandler(SubeventCode event,
   if (life_cycle_stopped) {
     return;
   }
-  CallOn(impl_, &impl::register_le_event, event, handler);
+  impl_->handler_->CallOn(impl_, &impl::register_le_event, event, handler);
 }
 
 void HciLayer::UnregisterLeEventHandler(SubeventCode event) {
@@ -713,7 +712,7 @@ void HciLayer::UnregisterLeEventHandler(SubeventCode event) {
   if (life_cycle_stopped) {
     return;
   }
-  CallOn(impl_, &impl::unregister_le_event, event);
+  impl_->handler_->CallOn(impl_, &impl::unregister_le_event, event);
 }
 
 void HciLayer::RegisterVendorSpecificEventHandler(
@@ -722,7 +721,7 @@ void HciLayer::RegisterVendorSpecificEventHandler(
   if (life_cycle_stopped) {
     return;
   }
-  CallOn(impl_, &impl::register_vs_event, event, handler);
+  impl_->handler_->CallOn(impl_, &impl::register_vs_event, event, handler);
 }
 
 void HciLayer::UnregisterVendorSpecificEventHandler(VseSubeventCode event) {
@@ -730,16 +729,16 @@ void HciLayer::UnregisterVendorSpecificEventHandler(VseSubeventCode event) {
   if (life_cycle_stopped) {
     return;
   }
-  CallOn(impl_, &impl::unregister_vs_event, event);
+  impl_->handler_->CallOn(impl_, &impl::unregister_vs_event, event);
 }
 
 void HciLayer::RegisterDefaultVendorSpecificEventHandler(
         ContextualCallback<void(VendorSpecificEventView)> handler) {
-  CallOn(impl_, &impl::register_vs_event_default, handler);
+  impl_->handler_->CallOn(impl_, &impl::register_vs_event_default, handler);
 }
 
 void HciLayer::UnregisterDefaultVendorSpecificEventHandler() {
-  CallOn(impl_, &impl::unregister_vs_event_default);
+  impl_->handler_->CallOn(impl_, &impl::unregister_vs_event_default);
 }
 
 void HciLayer::on_disconnection_complete(EventView event_view) {
@@ -938,18 +937,12 @@ std::unique_ptr<InquiryInterface> HciLayer::GetInquiryInterface(
   return std::make_unique<CommandInterfaceImpl<DiscoveryCommandBuilder>>(this, std::move(cleanup));
 }
 
-const ModuleFactory HciLayer::Factory = ModuleFactory([]() { return new HciLayer(); });
-
-void HciLayer::ListDependencies(ModuleList* list) const { list->add<hal::HciHal>(); }
-
-void HciLayer::Start() {
+HciLayer::HciLayer(Handler* handler, hal::HciHal* hal, storage::StorageModule* storage) {
   std::unique_lock<std::recursive_mutex> lock(life_cycle_guard);
-  auto hal = GetDependency<hal::HciHal>();
-  impl_ = new impl(hal, *this);
+  impl_ = new impl(handler, hal, storage, *this);
   hal_callbacks_ = new hal_callbacks(*this);
   life_cycle_stopped = false;
 
-  Handler* handler = GetHandler();
   impl_->acl_queue_.GetDownEnd()->RegisterDequeue(handler,
                                                   BindOn(impl_, &impl::on_outbound_acl_ready));
   impl_->sco_queue_.GetDownEnd()->RegisterDequeue(handler,
@@ -960,6 +953,8 @@ void HciLayer::Start() {
   hal->registerIncomingPacketCallback(hal_callbacks_);
   EnqueueCommand(ResetBuilder::Create(), handler->BindOnce(&fail_if_reset_complete_not_success));
 }
+
+HciLayer::HciLayer(Handler*) { impl_ = nullptr; }
 
 // Initialize event handlers that don't depend on the HAL
 void HciLayer::StartWithNoHalDependencies(Handler* handler) {
@@ -974,11 +969,14 @@ void HciLayer::StartWithNoHalDependencies(Handler* handler) {
                        handler->BindOn(this, &HciLayer::on_connection_request));
 }
 
-void HciLayer::Stop() {
+HciLayer::~HciLayer() {
   std::unique_lock<std::recursive_mutex> lock(life_cycle_guard);
   life_cycle_stopped = true;
-  auto hal = GetDependency<hal::HciHal>();
-  hal->unregisterIncomingPacketCallback();
+  if (!impl_) {
+    return;
+  }
+
+  impl_->hal_->unregisterIncomingPacketCallback();
   delete hal_callbacks_;
 
   impl_->acl_queue_.GetDownEnd()->UnregisterDequeue();

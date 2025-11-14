@@ -30,9 +30,10 @@
 #include <cstdint>
 
 #include "base/functional/bind.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "main/shim/entry.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/ble_hci_link_interface.h"
@@ -44,8 +45,6 @@
 #include "stack/include/hcimsgs.h"
 
 using namespace bluetooth;
-
-extern tBTM_CB btm_cb;
 
 /*******************************************************************************
  *

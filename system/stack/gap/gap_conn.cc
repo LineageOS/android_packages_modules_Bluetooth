@@ -22,7 +22,7 @@
 
 #include "gap_api.h"
 #include "gap_int.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"

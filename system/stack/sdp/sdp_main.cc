@@ -25,6 +25,7 @@
 #define LOG_TAG "stack::sdp"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
@@ -327,7 +328,8 @@ void sdp_disconnect(tCONN_CB* p_ccb, tSDP_REASON reason) {
       if (!stack::l2cap::get_interface().L2CA_DisconnectReq(ccb.connection_id)) {
         log::warn("Unable to disconnect L2CAP peer:{} cid:{}", ccb.device_address,
                   ccb.connection_id);
-      } else if (ccb.con_state == tSDP_STATE::CONN_PEND) {
+      } else if (com::android::bluetooth::flags::sdp_ccb_clean_up_after_l2cap_disc() &&
+                 ccb.con_state == tSDP_STATE::CONN_PEND) {
         /* If we successfully disconnect L2CAP, and there are no CCBs for that CID that are
          * connected, clean up all CCBs */
         tCONN_CB* o_ccb = sdpu_find_ccb_by_cid(ccb.connection_id);

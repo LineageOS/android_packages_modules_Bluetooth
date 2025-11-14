@@ -122,6 +122,7 @@ cc_library_static {
         "hh/bta_hh_utils.cc",
         "jv/bta_jv_act.cc",
         "jv/bta_jv_api.cc",
+        "le_audio/audio_context_type_manager.cc",
         "le_audio/audio_hal_client/audio_sink_hal_client.cc",
         "le_audio/audio_hal_client/audio_source_hal_client.cc",
         "le_audio/broadcaster/broadcast_configuration_provider.cc",
@@ -172,6 +173,7 @@ cc_library_static {
         "android.hardware.bluetooth.audio@2.0",
         "android.hardware.bluetooth.audio@2.1",
         "avrcp-target-service",
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib",
         "lib-bt-packets",
         "libaconfig_storage_read_api_cc",
@@ -180,19 +182,15 @@ cc_library_static {
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_metrics",
         "libbt-audio-asrc",
         "libbt-audio-hal-interface",
-        "libbt-platform-protos-lite",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libflatbuffers-cpp",
         "liblc3",
         "server_configurable_flags",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     shared_libs: [
-        "libbinder",
         "libcrypto",
     ],
     generated_headers: [
@@ -207,7 +205,7 @@ cc_library_static {
     },
     apex_available: ["com.android.bt"],
     host_supported: true,
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
 }
 
 cc_test {
@@ -268,6 +266,7 @@ cc_test {
         "libcutils",
         "libhidlbase",
         "liblog",
+        "libstatssocket",
         "libutils",
         "server_configurable_flags",
     ],
@@ -285,11 +284,12 @@ cc_test {
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_metrics_mock",
         "libbt-audio-hal-interface",
         "libbt-bta",
         "libbt-btu-main-thread",
         "libbt-common",
-        "libbt-platform-protos-lite",
+
         "libbtcore",
         "libbtdevice",
         "libchrome",
@@ -305,6 +305,7 @@ cc_test {
         ":audio_set_configurations_json",
         ":audio_set_scenarios_bfbs",
         ":audio_set_scenarios_json",
+        ":audio_set_scenarios_test_json",
     ],
     cflags: [
         "-Wno-macro-redefined",
@@ -341,6 +342,7 @@ cc_test {
         ":TestMockMainShim",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
+        ":TestMockStackA2dp",
         ":TestMockStackBtm",
         ":TestMockStackL2cap",
         "test/gatt/database_builder_sample_device_test.cc",
@@ -361,10 +363,11 @@ cc_test {
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_metrics_mock",
         "libbt-audio-hal-interface",
         "libbt-bta",
         "libbt-common",
-        "libbt-platform-protos-lite",
+
         "libbtcore",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
@@ -409,17 +412,17 @@ cc_test {
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_metrics_mock",
         "libbt-audio-hal-interface",
         "libbt-bta",
         "libbt-btu-main-thread",
         "libbt-common",
-        "libbt-platform-protos-lite",
+
         "libbtcore",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libgmock",
         "libosi",
-        "libstatslog_bt",
     ],
 }
 
@@ -441,6 +444,7 @@ cc_test {
         ":TestMockBtaRfcMetrics",
         ":TestMockBtaSys",
         ":TestMockBtif",
+        ":TestMockStackA2dp",
         ":TestMockStackBtm",
         ":TestMockStackGap",
         ":TestMockStackL2cap",
@@ -464,7 +468,7 @@ cc_test {
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbt-common",
-        "libbt-platform-protos-lite",
+
         "libbtcore",
         "libbtdevice",
         "libchrome",
@@ -506,6 +510,7 @@ cc_test {
         ":TestCommonMockFunctions",
         ":TestMockBtif",
         ":TestMockMainShimLeScanning",
+        ":TestMockStackA2dp",
         ":TestMockStackBtmInterface",
         "csis/csis_client.cc",
         "csis/csis_client_test.cc",
@@ -565,6 +570,7 @@ cc_test {
     srcs: [
         ":TestCommonMockFunctions",
         ":TestMockBtif",
+        ":TestMockStackA2dp",
         "groups/groups.cc",
         "groups/groups_test.cc",
     ],
@@ -622,22 +628,21 @@ cc_test {
         "test/common/bta_gatt_queue_mock.cc",
         "test/common/btm_api_mock.cc",
         "test/common/mock_csis_client.cc",
+        "test/common/mock_device_groups.cc",
         "vc/device.cc",
         "vc/devices_test.cc",
         "vc/vc.cc",
         "vc/vc_test.cc",
     ],
-    aidl: {
-        libs: ["bluetooth_constants"],
-    },
     shared_libs: [
         "libbase",
-        "libbinder",
         "libcrypto",
+        "libcutils",
         "liblog",
     ],
     static_libs: [
         "aics",
+        "bluetooth_constants-cpp",
         "bluetooth_flags_c_lib_for_test",
         "libaconfig_storage_read_api_cc",
         "libbluetooth-types",
@@ -645,9 +650,10 @@ cc_test {
         "libbluetooth_gd",
         "libbluetooth_log",
         "libbt-common",
-        "libbt-platform-protos-lite",
+
         "libchrome",
         "libgmock",
+        "libosi",
         "server_configurable_flags",
     ],
     sanitize: {
@@ -709,6 +715,13 @@ prebuilt_etc {
 prebuilt_etc {
     name: "audio_set_scenarios_json",
     src: "le_audio/audio_set_scenarios.json",
+    filename_from_src: true,
+    sub_dir: "bluetooth/le_audio",
+}
+
+prebuilt_etc {
+    name: "audio_set_scenarios_test_json",
+    src: "le_audio/audio_set_scenarios_test.json",
     filename_from_src: true,
     sub_dir: "bluetooth/le_audio",
 }
@@ -778,6 +791,7 @@ cc_test {
         ":audio_set_configurations_json",
         ":audio_set_scenarios_bfbs",
         ":audio_set_scenarios_json",
+        ":audio_set_scenarios_test_json",
     ],
     generated_headers: [
         "LeAudioSetConfigSchemas_h",
@@ -797,7 +811,7 @@ cc_test {
         "libbluetooth_gd",
         "libbluetooth_log",
         "libbt-common",
-        "libbt-platform-protos-lite",
+
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
@@ -852,6 +866,7 @@ cc_test {
         ":TestStubOsi",
         "gmap/gmap_client.cc",
         "gmap/gmap_server.cc",
+        "le_audio/audio_context_type_manager.cc",
         "le_audio/audio_hal_client/audio_hal_client_test.cc",
         "le_audio/audio_hal_client/audio_sink_hal_client.cc",
         "le_audio/audio_hal_client/audio_source_hal_client.cc",
@@ -888,6 +903,7 @@ cc_test {
         ":audio_set_configurations_json",
         ":audio_set_scenarios_bfbs",
         ":audio_set_scenarios_json",
+        ":audio_set_scenarios_test_json",
     ],
     generated_headers: [
         "LeAudioSetConfigSchemas_h",
@@ -906,9 +922,10 @@ cc_test {
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
+        "libbluetooth_metrics_mock",
         "libbt-audio-asrc",
         "libbt-common",
-        "libbt-platform-protos-lite",
+
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
@@ -955,6 +972,7 @@ cc_test {
         "gmap/gmap_client_test.cc",
         "gmap/gmap_server.cc",
         "gmap/gmap_server_test.cc",
+        "le_audio/audio_context_type_manager.cc",
         "le_audio/broadcaster/broadcast_configuration_provider.cc",
         "le_audio/broadcaster/broadcaster_types.cc",
         "le_audio/client.cc",
@@ -996,9 +1014,10 @@ cc_test {
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
+        "libbluetooth_metrics_mock",
         "libbt-audio-hal-interface",
         "libbt-common",
-        "libbt-platform-protos-lite",
+
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
@@ -1015,6 +1034,7 @@ cc_test {
         ":audio_set_configurations_json",
         ":audio_set_scenarios_bfbs",
         ":audio_set_scenarios_json",
+        ":audio_set_scenarios_test_json",
     ],
     generated_headers: [
         "LeAudioSetConfigSchemas_h",
@@ -1065,7 +1085,6 @@ cc_test {
         ":TestCommonMockFunctions",
         ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockStackBtm",
         ":TestMockStackBtmInterface",
         ":TestMockStackBtmIso",
         ":TestMockStackGatt",
@@ -1082,6 +1101,7 @@ cc_test {
         "test/common/bta_gatt_api_mock.cc",
         "test/common/bta_gatt_queue_mock.cc",
         "test/common/btif_storage_mock.cc",
+        "test/common/btm_api_mock.cc",
         "test/common/mock_device_groups.cc",
     ],
     shared_libs: [
@@ -1100,7 +1120,7 @@ cc_test {
         "libbluetooth_log",
         "libbt-audio-hal-interface",
         "libbt-common",
-        "libbt-platform-protos-lite",
+
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
@@ -1185,7 +1205,7 @@ cc_test {
         "libbluetooth_gd",
         "libbluetooth_log",
         "libbt-common",
-        "libbt-platform-protos-lite",
+
         "libchrome",
         "libflagtest",
         "libflatbuffers-cpp",
@@ -1260,7 +1280,7 @@ cc_test {
         "libbluetooth_log",
         "libbt-audio-hal-interface",
         "libbt-common",
-        "libbt-platform-protos-lite",
+
         "libchrome",
         "libevent",
         "libflagtest",
@@ -1395,7 +1415,7 @@ cc_test {
         "libbt-audio-asrc",
         "libbt-btu-main-thread",
         "libbt-common",
-        "libbt-platform-protos-lite",
+
         "libchrome",
         "libevent",
         "libg722codec",
@@ -1470,7 +1490,7 @@ cc_test {
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbt-common",
-        "libbt-platform-protos-lite",
+
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",
@@ -1539,7 +1559,7 @@ cc_test {
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbt-common",
-        "libbt-platform-protos-lite",
+
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libevent",

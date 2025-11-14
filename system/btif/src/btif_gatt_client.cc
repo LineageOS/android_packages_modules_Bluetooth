@@ -46,7 +46,7 @@
 #include "btif/include/btif_dm.h"
 #include "btif/include/btif_gatt.h"
 #include "btif/include/btif_gatt_util.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "internal_include/bte_appl.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"
@@ -63,7 +63,6 @@
 #include "types/raw_address.h"
 
 using base::Bind;
-using base::Owned;
 using bluetooth::Uuid;
 
 using namespace bluetooth;
@@ -135,6 +134,21 @@ tBT_TRANSPORT to_bt_transport(int val) {
   return BT_TRANSPORT_AUTO;
 }
 
+int to_java_transport(tBT_TRANSPORT transport) {
+  switch (transport) {
+    case BT_TRANSPORT_AUTO:
+      return 0;
+    case BT_TRANSPORT_BR_EDR:
+      return 1;
+    case BT_TRANSPORT_LE:
+      return 2;
+    default:
+      break;
+  }
+  log::warn("Passed unexpected transport value:{}", transport);
+  return 0;
+}
+
 uint8_t rssi_request_client_if;
 
 static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
@@ -185,9 +199,11 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
     }
 
     case BTA_GATTC_OPEN_EVT: {
-      log::debug("BTA_GATTC_OPEN_EVT {}", p_data->open.remote_bda);
+      log::debug("BTA_GATTC_OPEN_EVT connId={}, device={}, transport={}", p_data->open.conn_id,
+                 p_data->open.remote_bda, p_data->open.transport);
       HAL_CBACK(callbacks, client->open_cb, static_cast<int>(p_data->open.conn_id),
-                p_data->open.status, p_data->open.client_if, p_data->open.remote_bda);
+                p_data->open.status, p_data->open.client_if,
+                to_java_transport(p_data->open.transport), p_data->open.remote_bda);
 
       if (GATT_DEF_BLE_MTU_SIZE != p_data->open.mtu && p_data->open.mtu) {
         HAL_CBACK(callbacks, client->configure_mtu_cb, static_cast<int>(p_data->open.conn_id),
@@ -201,9 +217,11 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
     }
 
     case BTA_GATTC_CLOSE_EVT: {
-      log::debug("BTA_GATTC_CLOSE_EVT {}", p_data->close.remote_bda);
+      log::debug("BTA_GATTC_CLOSE_EVT connId={}, device={}, transport={}", p_data->close.conn_id,
+                 p_data->close.remote_bda, p_data->close.transport);
       HAL_CBACK(callbacks, client->close_cb, static_cast<int>(p_data->close.conn_id),
-                p_data->close.status, p_data->close.client_if, p_data->close.remote_bda);
+                p_data->close.status, p_data->close.client_if,
+                to_java_transport(p_data->close.transport), p_data->close.remote_bda);
       break;
     }
 
@@ -308,7 +326,7 @@ static bt_status_t btif_gattc_unregister_app(int client_if) {
 
 void btif_gattc_open_impl(int client_if, RawAddress address, tBLE_ADDR_TYPE addr_type,
                           bool is_direct, tBT_TRANSPORT transport, bool opportunistic,
-                          int initiating_phys, int preferred_mtu) {
+                          int initiating_phys, int preferred_mtu, bool prefer_relax_mode) {
   int device_type = BT_DEVICE_TYPE_UNKNOWN;
 
   if (addr_type == BLE_ADDR_RANDOM) {
@@ -323,6 +341,12 @@ void btif_gattc_open_impl(int client_if, RawAddress address, tBLE_ADDR_TYPE addr
     }
   }
 
+  // Determine transport
+  if (transport == BT_TRANSPORT_AUTO) {
+    // Prefer LE transport when LE is supported
+    transport = (device_type == BT_DEVICE_TYPE_BREDR) ? BT_TRANSPORT_BR_EDR : BT_TRANSPORT_LE;
+  }
+
   // Check for background connections
   if (!is_direct) {
     // Check for privacy 1.0 and 1.1 controller and do not start background
@@ -334,37 +358,9 @@ void btif_gattc_open_impl(int client_if, RawAddress address, tBLE_ADDR_TYPE addr
       BTM_BleGetVendorCapabilities(&vnd_capabilities);
       if (!vnd_capabilities.rpa_offloading) {
         auto callbacks = bt_gatt_callbacks;
-        HAL_CBACK(callbacks, client->open_cb, 0, BT_STATUS_UNSUPPORTED, client_if, address);
+        HAL_CBACK(callbacks, client->open_cb, to_java_transport(transport), 0,
+                  BT_STATUS_UNSUPPORTED, client_if, address);
         return;
-      }
-    }
-  }
-
-  // Determine transport
-  if (transport == BT_TRANSPORT_AUTO) {
-    if (com::android::bluetooth::flags::default_gatt_transport()) {
-      // Prefer LE transport when LE is supported
-      transport = (device_type == BT_DEVICE_TYPE_BREDR) ? BT_TRANSPORT_BR_EDR : BT_TRANSPORT_LE;
-    } else {
-      switch (device_type) {
-        case BT_DEVICE_TYPE_BREDR:
-          transport = BT_TRANSPORT_BR_EDR;
-          break;
-
-        case BT_DEVICE_TYPE_BLE:
-          transport = BT_TRANSPORT_LE;
-          break;
-
-        case BT_DEVICE_TYPE_DUMO:
-          transport = (addr_type == BLE_ADDR_RANDOM) ? BT_TRANSPORT_LE : BT_TRANSPORT_BR_EDR;
-          break;
-
-        default:
-          log::error("Unknown device type {}", DeviceTypeText(device_type));
-          // transport must not be AUTO for finding control blocks. Use LE for backward
-          // compatibility.
-          transport = BT_TRANSPORT_LE;
-          break;
       }
     }
   }
@@ -375,17 +371,17 @@ void btif_gattc_open_impl(int client_if, RawAddress address, tBLE_ADDR_TYPE addr
             address, addr_type, initiating_phys);
   tBTM_BLE_CONN_TYPE type = is_direct ? BTM_BLE_DIRECT_CONNECTION : BTM_BLE_BKG_CONNECT_ALLOW_LIST;
   BTA_GATTC_Open(client_if, address, addr_type, type, transport, opportunistic, initiating_phys,
-                 preferred_mtu);
+                 preferred_mtu, prefer_relax_mode);
 }
 
 static bt_status_t btif_gattc_open(int client_if, const RawAddress& bd_addr, uint8_t addr_type,
                                    bool is_direct, int transport, bool opportunistic,
-                                   int initiating_phys, int preferred_mtu) {
+                                   int initiating_phys, int preferred_mtu, bool prefer_relax_mode) {
   CHECK_BTGATT_INIT();
   // Closure will own this value and free it.
   return do_in_jni_thread(Bind(&btif_gattc_open_impl, client_if, bd_addr, addr_type, is_direct,
                                to_bt_transport(transport), opportunistic, initiating_phys,
-                               preferred_mtu));
+                               preferred_mtu, prefer_relax_mode));
 }
 
 void btif_gattc_close_impl(int client_if, RawAddress address, int conn_id) {

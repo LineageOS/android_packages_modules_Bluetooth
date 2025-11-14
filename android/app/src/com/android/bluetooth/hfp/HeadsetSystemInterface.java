@@ -16,22 +16,26 @@
 
 package com.android.bluetooth.hfp;
 
+import static android.media.audio.Flags.scoManagedByAudio;
+
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.media.AudioDeviceVolumeManager;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.PowerManager;
+import android.os.SystemProperties;
 import android.telecom.PhoneAccount;
 import android.telecom.PhoneAccountHandle;
 import android.telecom.TelecomManager;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.telephony.BluetoothInCallService;
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.List;
 
@@ -42,26 +46,36 @@ import java.util.List;
 class HeadsetSystemInterface {
     private static final String TAG = HeadsetSystemInterface.class.getSimpleName();
 
+    private final AdapterService mAdapterService;
     private final HeadsetService mHeadsetService;
     private final AudioManager mAudioManager;
+    private final AudioDeviceVolumeManager mAudioDeviceVolumeManager;
     private final HeadsetPhoneState mHeadsetPhoneState;
     private final PowerManager.WakeLock mVoiceRecognitionWakeLock;
     private final TelephonyManager mTelephonyManager;
     private final TelecomManager mTelecomManager;
 
-    HeadsetSystemInterface(HeadsetService headsetService) {
+    private static final String ENABLE_SCO_MANAGED_BY_AUDIO = "bluetooth.sco.managed_by_audio";
+
+    private boolean mIsScoManagedByAudioEnabled =
+            SystemProperties.getBoolean(ENABLE_SCO_MANAGED_BY_AUDIO, false);
+
+    HeadsetSystemInterface(AdapterService adapterService, HeadsetService headsetService) {
         if (headsetService == null) {
             Log.wtf(TAG, "HeadsetService parameter is null");
         }
+        mAdapterService = adapterService;
         mHeadsetService = headsetService;
-        mAudioManager = mHeadsetService.getSystemService(AudioManager.class);
-        PowerManager powerManager = mHeadsetService.getSystemService(PowerManager.class);
+        mAudioManager = mAdapterService.getSystemService(AudioManager.class);
+        mAudioDeviceVolumeManager =
+                mAdapterService.getSystemService(AudioDeviceVolumeManager.class);
+        PowerManager powerManager = mAdapterService.getSystemService(PowerManager.class);
         mVoiceRecognitionWakeLock =
                 powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG + ":VoiceRecognition");
         mVoiceRecognitionWakeLock.setReferenceCounted(false);
-        mHeadsetPhoneState = new com.android.bluetooth.hfp.HeadsetPhoneState(mHeadsetService);
-        mTelephonyManager = mHeadsetService.getSystemService(TelephonyManager.class);
-        mTelecomManager = mHeadsetService.getSystemService(TelecomManager.class);
+        mHeadsetPhoneState = new HeadsetPhoneState(mAdapterService, mHeadsetService);
+        mTelephonyManager = mAdapterService.getSystemService(TelephonyManager.class);
+        mTelecomManager = mAdapterService.getSystemService(TelecomManager.class);
     }
 
     private static BluetoothInCallService getBluetoothInCallServiceInstance() {
@@ -84,11 +98,19 @@ class HeadsetSystemInterface {
     }
 
     /**
+     * Get audio device volume manager.
+     *
+     * @return audio device volume manager for adjusting audio volume
+     */
+    public AudioDeviceVolumeManager getAudioDeviceVolumeManager() {
+        return mAudioDeviceVolumeManager;
+    }
+
+    /**
      * Get wake lock for voice recognition
      *
      * @return wake lock for voice recognition
      */
-    @VisibleForTesting
     public PowerManager.WakeLock getVoiceRecognitionWakeLock() {
         return mVoiceRecognitionWakeLock;
     }
@@ -98,7 +120,6 @@ class HeadsetSystemInterface {
      *
      * @return HeadsetPhoneState interface to interact with Telephony service
      */
-    @VisibleForTesting
     public HeadsetPhoneState getHeadsetPhoneState() {
         return mHeadsetPhoneState;
     }
@@ -108,7 +129,6 @@ class HeadsetSystemInterface {
      *
      * @param device the Bluetooth device used for answering this call
      */
-    @VisibleForTesting
     public void answerCall(BluetoothDevice device) {
         Log.d(TAG, "answerCall");
         if (device == null) {
@@ -134,7 +154,6 @@ class HeadsetSystemInterface {
      *
      * @param device the Bluetooth device used for hanging up this call
      */
-    @VisibleForTesting
     public void hangupCall(BluetoothDevice device) {
         if (device == null) {
             Log.w(TAG, "hangupCall device is null");
@@ -179,7 +198,6 @@ class HeadsetSystemInterface {
      *
      * @param chld index of the call to hold
      */
-    @VisibleForTesting
     public boolean processChld(HeadsetService headsetService, int chld) {
         BluetoothInCallService bluetoothInCallService = getBluetoothInCallServiceInstance();
         if (bluetoothInCallService != null) {
@@ -191,7 +209,6 @@ class HeadsetSystemInterface {
     }
 
     /** Check for HD codec for voice call */
-    @VisibleForTesting
     public boolean isHighDefCallInProgress() {
         BluetoothInCallService bluetoothInCallService = getBluetoothInCallServiceInstance();
         if (bluetoothInCallService != null) {
@@ -207,7 +224,6 @@ class HeadsetSystemInterface {
      *
      * @return null on error, empty string if not available
      */
-    @VisibleForTesting
     public String getNetworkOperator() {
         BluetoothInCallService bluetoothInCallService = getBluetoothInCallServiceInstance();
         if (bluetoothInCallService == null) {
@@ -258,7 +274,6 @@ class HeadsetSystemInterface {
      *
      * @return null if unavailable
      */
-    @VisibleForTesting
     public String getSubscriberNumber() {
         BluetoothInCallService bluetoothInCallService = getBluetoothInCallServiceInstance();
         if (bluetoothInCallService == null) {
@@ -273,7 +288,6 @@ class HeadsetSystemInterface {
      * Ask the Telecom service to list current list of calls through CLCC response {@link
      * BluetoothHeadset#clccResponse(int, int, int, int, boolean, String, int)}
      */
-    @VisibleForTesting
     public boolean listCurrentCalls(HeadsetService headsetService) {
         BluetoothInCallService bluetoothInCallService = getBluetoothInCallServiceInstance();
         if (bluetoothInCallService == null) {
@@ -287,7 +301,6 @@ class HeadsetSystemInterface {
      * Request Telecom service to send an update of the current call state to the headset service
      * through {@link BluetoothHeadset#phoneStateChanged(int, int, int, String, int)}
      */
-    @VisibleForTesting
     public void queryPhoneState(HeadsetService headsetService) {
         BluetoothInCallService bluetoothInCallService = getBluetoothInCallServiceInstance();
         if (bluetoothInCallService != null) {
@@ -315,7 +328,6 @@ class HeadsetSystemInterface {
      *
      * @return True iff there is an incoming call
      */
-    @VisibleForTesting
     public boolean isRinging() {
         return mHeadsetPhoneState.getCallState() == HeadsetHalConstants.CALL_STATE_INCOMING;
     }
@@ -325,7 +337,6 @@ class HeadsetSystemInterface {
      *
      * @return true if call state is neither ringing nor in call
      */
-    @VisibleForTesting
     public boolean isCallIdle() {
         return !isInCall() && !isRinging();
     }
@@ -338,7 +349,6 @@ class HeadsetSystemInterface {
      *     {@link HeadsetService#startVoiceRecognition(BluetoothDevice)}, false if failed to
      *     activate
      */
-    @VisibleForTesting
     public boolean activateVoiceRecognition() {
         Intent intent = new Intent(Intent.ACTION_VOICE_COMMAND);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -358,9 +368,26 @@ class HeadsetSystemInterface {
      *     BluetoothHeadset#stopVoiceRecognition(BluetoothDevice)} callback that will then trigger
      *     {@link HeadsetService#stopVoiceRecognition(BluetoothDevice)}, false if failed to activate
      */
-    @VisibleForTesting
     public boolean deactivateVoiceRecognition() {
         // TODO: need a method to deactivate voice recognition on Android
         return true;
+    }
+
+    /**
+     * Check if SCO managed by Audio is enabled. This is set via the system property
+     * bluetooth.sco.managed_by_audio.
+     *
+     * <p>When set to {@code false}, Bluetooth will managed the start and end of the SCO.
+     *
+     * <p>When set to {@code true}, Audio will manage the start and end of the SCO through HAL.
+     *
+     * @return true if SCO managed by Audio is enabled, false otherwise
+     */
+    public boolean isScoManagedByAudioEnabled() {
+        if (scoManagedByAudio()) {
+            Log.d(TAG, "isScoManagedByAudioEnabled state is: " + mIsScoManagedByAudioEnabled);
+            return mIsScoManagedByAudioEnabled;
+        }
+        return false;
     }
 }

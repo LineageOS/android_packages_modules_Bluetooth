@@ -35,13 +35,14 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -95,19 +96,19 @@ public class CsipSetCoordinatorServiceTest {
     @Mock private CsipSetCoordinatorNativeInterface mNativeInterface;
     @Mock private IBluetoothCsipSetCoordinatorLockCallback mCsipSetCoordinatorLockCallback;
 
-    private final BluetoothDevice mDevice = getTestDevice(0);
+    private final BluetoothDevice mDevice1 = getTestDevice(0);
     private final BluetoothDevice mDevice2 = getTestDevice(1);
     private final BluetoothDevice mDevice3 = getTestDevice(2);
 
     private CsipSetCoordinatorService mService;
     private InOrder mInOrder;
     private TestLooper mLooper;
-    private final CsipSetCoordinatorNativeInterface mNativeCallback =
-            new CsipSetCoordinatorNativeInterface();
+    private CsipSetCoordinatorNativeInterface mNativeCallback;
 
     @Before
     public void setUp() throws Exception {
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        mNativeCallback = new CsipSetCoordinatorNativeInterface(mAdapterService);
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(any());
         doReturn(new ParcelUuid[] {BluetoothUuid.COORDINATED_SET})
                 .when(mAdapterService)
@@ -131,6 +132,8 @@ public class CsipSetCoordinatorServiceTest {
                 new CsipSetCoordinatorService(
                         mAdapterService, mLooper.getLooper(), mNativeInterface, mServiceFactory);
         mService.setAvailable(true);
+
+        mockGetRemoteDevice(mAdapterService, mDevice1, mDevice2, mDevice3);
     }
 
     @After
@@ -152,7 +155,7 @@ public class CsipSetCoordinatorServiceTest {
                         CONNECTION_POLICY_FORBIDDEN,
                         CONNECTION_POLICY_ALLOWED)) {
             doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.getConnectionPolicy(mDevice)).isEqualTo(policy);
+            assertThat(mService.getConnectionPolicy(mDevice1)).isEqualTo(policy);
         }
     }
 
@@ -169,7 +172,7 @@ public class CsipSetCoordinatorServiceTest {
                             badPolicyValue)) {
                 doReturn(bondState).when(mAdapterService).getBondState(any());
                 doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
-                assertThat(mService.okToConnect(mDevice)).isEqualTo(false);
+                assertThat(mService.okToConnect(mDevice1)).isFalse();
             }
         }
     }
@@ -181,11 +184,11 @@ public class CsipSetCoordinatorServiceTest {
 
         for (int policy : List.of(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
             doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.okToConnect(mDevice)).isEqualTo(false);
+            assertThat(mService.okToConnect(mDevice1)).isFalse();
         }
         for (int policy : List.of(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
             doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.okToConnect(mDevice)).isEqualTo(true);
+            assertThat(mService.okToConnect(mDevice1)).isTrue();
         }
     }
 
@@ -198,7 +201,7 @@ public class CsipSetCoordinatorServiceTest {
         long uuidMsb = 0x01;
 
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice), group_id, group_size, 1, uuidLsb, uuidMsb);
+                getByteAddress(mDevice1), group_id, group_size, 1, uuidLsb, uuidMsb);
         assertThat(mService.isGroupLocked(group_id)).isFalse();
 
         UUID lock_uuid = mService.lockGroup(group_id, mCsipSetCoordinatorLockCallback);
@@ -232,7 +235,7 @@ public class CsipSetCoordinatorServiceTest {
         long uuidMsb = 0x01;
 
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice), group_id, group_size, 1, uuidLsb, uuidMsb);
+                getByteAddress(mDevice1), group_id, group_size, 1, uuidLsb, uuidMsb);
         assertThat(mService.isGroupLocked(group_id)).isFalse();
 
         UUID lock_uuid = mService.lockGroup(group_id, mCsipSetCoordinatorLockCallback);
@@ -255,7 +258,7 @@ public class CsipSetCoordinatorServiceTest {
                 .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
 
-        assertThat(mService.connect(mDevice)).isFalse();
+        assertThat(mService.connect(mDevice1)).isFalse();
     }
 
     @Test
@@ -264,12 +267,12 @@ public class CsipSetCoordinatorServiceTest {
                 .when(mDatabaseManager)
                 .getProfileConnectionPolicy(any(), anyInt());
 
-        assertThat(mService.connect(mDevice)).isFalse();
+        assertThat(mService.connect(mDevice1)).isFalse();
     }
 
     @Test
     public void outgoingConnect_whenTimeOut_isDisconnected() {
-        assertThat(mService.connect(mDevice)).isTrue();
+        assertThat(mService.connect(mDevice1)).isTrue();
         mLooper.dispatchAll();
 
         verifyConnectionStateIntent(STATE_CONNECTING, STATE_DISCONNECTED);
@@ -289,11 +292,11 @@ public class CsipSetCoordinatorServiceTest {
         UUID uuid = new UUID(uuidMsb, uuidLsb);
 
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice), group_id, group_size, 0x02, uuidLsb, uuidMsb);
+                getByteAddress(mDevice1), group_id, group_size, 0x02, uuidLsb, uuidMsb);
 
         verifyOrderedIntentSent(
                 hasAction(ACTION_CSIS_DEVICE_AVAILABLE),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice1),
                 hasExtra(BluetoothCsipSetCoordinator.EXTRA_CSIS_GROUP_ID, group_id),
                 hasExtra(BluetoothCsipSetCoordinator.EXTRA_CSIS_GROUP_SIZE, group_size),
                 hasExtra(BluetoothCsipSetCoordinator.EXTRA_CSIS_GROUP_TYPE_UUID, uuid));
@@ -319,7 +322,7 @@ public class CsipSetCoordinatorServiceTest {
                 hasExtra(BluetoothCsipSetCoordinator.EXTRA_CSIS_GROUP_TYPE_UUID, uuid));
 
         assertThat(mService.getGroupDevicesOrdered(group_id))
-                .containsExactly(mDevice2, mDevice, mDevice3)
+                .containsExactly(mDevice2, mDevice1, mDevice3)
                 .inOrder();
     }
 
@@ -332,12 +335,12 @@ public class CsipSetCoordinatorServiceTest {
         long uuidMsb = BluetoothUuid.CAP.getUuid().getMostSignificantBits();
 
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice), group_id, group_size, 0x02, uuidLsb, uuidMsb);
+                getByteAddress(mDevice1), group_id, group_size, 0x02, uuidLsb, uuidMsb);
 
-        mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice), STATE_CONNECTED);
+        mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice1), STATE_CONNECTED);
 
         // Comes from state machine
-        mService.connectionStateChanged(mDevice, STATE_CONNECTING, STATE_CONNECTED);
+        mService.connectionStateChanged(mDevice1, STATE_CONNECTING, STATE_CONNECTED);
 
         mNativeCallback.onSetMemberAvailable(getByteAddress(mDevice2), group_id);
 
@@ -356,10 +359,10 @@ public class CsipSetCoordinatorServiceTest {
         long uuidMsb = BluetoothUuid.CAP.getUuid().getMostSignificantBits();
 
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice), group_id, group_size, 0x02, uuidLsb, uuidMsb);
+                getByteAddress(mDevice1), group_id, group_size, 0x02, uuidLsb, uuidMsb);
         verifyOrderedIntentSent(hasAction(ACTION_CSIS_DEVICE_AVAILABLE));
 
-        mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice), STATE_CONNECTED);
+        mNativeCallback.onConnectionStateChanged(getByteAddress(mDevice1), STATE_CONNECTED);
         // verifyConnectionStateIntent(STATE_CONNECTED, STATE_DISCONNECTED);
 
         mNativeCallback.onSetMemberAvailable(getByteAddress(mDevice2), group_id);
@@ -367,7 +370,7 @@ public class CsipSetCoordinatorServiceTest {
         mInOrder.verify(mAdapterService, never()).sendOrderedBroadcast(any(), any());
 
         // Comes from state machine
-        mService.connectionStateChanged(mDevice, STATE_CONNECTING, STATE_CONNECTED);
+        mService.connectionStateChanged(mDevice1, STATE_CONNECTING, STATE_CONNECTED);
 
         verifyOrderedIntentSent(
                 hasAction(BluetoothCsipSetCoordinator.ACTION_CSIS_SET_MEMBER_AVAILABLE),
@@ -390,8 +393,8 @@ public class CsipSetCoordinatorServiceTest {
 
         // Make first set device available and connected
         mNativeCallback.onDeviceAvailable(
-                getByteAddress(mDevice), group_id, group_size, 0x02, uuidLsb, uuidMsb);
-        mService.connectionStateChanged(mDevice, STATE_CONNECTING, STATE_CONNECTED);
+                getByteAddress(mDevice1), group_id, group_size, 0x02, uuidLsb, uuidMsb);
+        mService.connectionStateChanged(mDevice1, STATE_CONNECTING, STATE_CONNECTED);
 
         // Another device with the highest rank
         mNativeCallback.onDeviceAvailable(
@@ -400,7 +403,7 @@ public class CsipSetCoordinatorServiceTest {
         // When LEA is FORBIDDEN, verify we don't disable CSIP until all set devices are available
         verify(mDatabaseManager, never())
                 .setProfileConnectionPolicy(
-                        mDevice,
+                        mDevice1,
                         BluetoothProfile.CSIP_SET_COORDINATOR,
                         CONNECTION_POLICY_FORBIDDEN);
         verify(mDatabaseManager, never())
@@ -415,7 +418,7 @@ public class CsipSetCoordinatorServiceTest {
         // When LEA is FORBIDDEN, verify we disable CSIP once all set devices are available
         verify(mDatabaseManager)
                 .setProfileConnectionPolicy(
-                        mDevice,
+                        mDevice1,
                         BluetoothProfile.CSIP_SET_COORDINATOR,
                         CONNECTION_POLICY_FORBIDDEN);
         verify(mDatabaseManager)
@@ -428,18 +431,17 @@ public class CsipSetCoordinatorServiceTest {
     @Test
     public void testDump_doesNotCrash() {
         // add state machines for testing dump()
-        mService.connect(mDevice);
-
+        mService.connect(mDevice1);
         mService.dump(new StringBuilder());
     }
 
     private void verifyConnectionStateIntent(int newState, int prevState) {
         verifyIntentSent(
                 hasAction(BluetoothCsipSetCoordinator.ACTION_CSIS_CONNECTION_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice1),
                 hasExtra(EXTRA_STATE, newState),
                 hasExtra(EXTRA_PREVIOUS_STATE, prevState));
-        assertThat(mService.getConnectionState(mDevice)).isEqualTo(newState);
+        assertThat(mService.getConnectionState(mDevice1)).isEqualTo(newState);
     }
 
     /** Helper function to get byte array for a device address */

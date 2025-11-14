@@ -34,6 +34,7 @@
 #include "main/shim/dumpsys.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/hidh_api.h"
 
 using namespace bluetooth;
 
@@ -88,6 +89,8 @@ static const char* bta_hh_evt_code(tBTA_HH_INT_EVT evt_code) {
       return "BTA_HH_START_ENC_EVT";
     case BTA_HH_ENC_CMPL_EVT:
       return "BTA_HH_ENC_CMPL_EVT";
+    case BTA_HH_GATT_ENC_CMPL_EVT:
+      return "BTA_HH_GATT_ENC_CMPL_EVT";
     default:
       return "unknown HID Host event code";
   }
@@ -161,14 +164,14 @@ static tBTA_HH_DEV_CB* bta_hh_find_cb_by_event(const BT_HDR_RIGID* p_msg) {
 void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, tBTA_HH_INT_EVT event, const tBTA_HH_DATA* p_data) {
   tBTA_HH_STATE in_state = p_cb->state;
   if (p_cb->state == BTA_HH_NULL_ST || p_cb->state >= BTA_HH_INVALID_ST) {
-    log::error("Invalid state State:{}, Event:{} for {}", bta_hh_state_code(in_state),
-               bta_hh_evt_code(event), p_cb->link_spec);
+    log::error("Invalid state State:{}({}), Event:{}({}) for {}", bta_hh_state_code(in_state),
+               (int)in_state, bta_hh_evt_code(event), (int)event, p_cb->link_spec);
     return;
   }
 
   bool unexpected_event = false;
-  log::verbose("State {}, Event {} for {}", bta_hh_state_code(in_state), bta_hh_evt_code(event),
-               p_cb->link_spec);
+  log::verbose("State {}({}), Event {}({}) for {}", bta_hh_state_code(in_state), (int)in_state,
+               bta_hh_evt_code(event), (int)event, p_cb->link_spec);
 
   switch (in_state) {
     case BTA_HH_IDLE_ST:
@@ -312,11 +315,12 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, tBTA_HH_INT_EVT event, const tBTA_H
   }
 
   if (unexpected_event) {
-    log::warn("Unexpected event event {} in state {} for {}", bta_hh_evt_code(event),
-              bta_hh_state_code(in_state), p_cb->link_spec);
+    log::warn("Unexpected event event {}({}) in state {}({}) for {}", bta_hh_evt_code(event),
+              (int)event, bta_hh_state_code(in_state), (int)in_state, p_cb->link_spec);
   } else if (in_state != p_cb->state) {
-    log::debug("State Change: [{}] -> [{}] after Event [{}]", bta_hh_state_code(in_state),
-               bta_hh_state_code(p_cb->state), bta_hh_evt_code(event));
+    log::debug("State Change: [{}]({}) -> [{}]({}) after Event [{}]({})",
+               bta_hh_state_code(in_state), (int)in_state, bta_hh_state_code(p_cb->state),
+               (int)p_cb->state, bta_hh_evt_code(event), (int)event);
   }
 }
 
@@ -436,5 +440,6 @@ void bta_hh_dump(int fd) {
                   bta_hh_state_code(dev.state), dev.sub_class);
     }
   }
+  HID_HostDump(fd);
 }
 #undef DUMPSYS_TAG

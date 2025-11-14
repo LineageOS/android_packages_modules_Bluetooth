@@ -71,10 +71,9 @@ public class BluetoothMapSmsPduTest {
     @Before
     public void setUp() throws Exception {
         PackageManager packageManager =
-                InstrumentationRegistry.getInstrumentation().getTargetContext().getPackageManager();
+                InstrumentationRegistry.getInstrumentation().getContext().getPackageManager();
         assumeTrue(packageManager.hasSystemFeature(FEATURE_TELEPHONY_MESSAGING));
-        mockGetSystemService(
-                mContext, Context.TELEPHONY_SERVICE, TelephonyManager.class, mTelephonyManager);
+        mockGetSystemService(mContext, TelephonyManager.class, mTelephonyManager);
 
         int[] ted = SmsMessage.calculateLength((CharSequence) TEST_TEXT, false);
         TEST_ENCODING = ted[3];

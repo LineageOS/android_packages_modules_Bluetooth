@@ -45,18 +45,17 @@ public class VolumeControlServiceBinderTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private VolumeControlService mService;
 
     private final BluetoothDevice mDevice = getTestDevice(25);
 
-    private AttributionSource mAttributionSource;
     private VolumeControlServiceBinder mBinder;
 
     @Before
     public void setUp() throws Exception {
         when(mService.isAvailable()).thenReturn(true);
         mBinder = new VolumeControlServiceBinder(mService);
-        mAttributionSource = new AttributionSource.Builder(1).build();
     }
 
     @Test

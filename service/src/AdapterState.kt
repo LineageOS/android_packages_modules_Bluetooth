@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.server.bluetooth
 
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothAdapter.STATE_OFF
 import android.bluetooth.IBluetoothManager.GET_SYSTEM_STATE_API
 import android.bluetooth.IBluetoothManager.IPC_CACHE_MODULE_SYSTEM
+import android.bluetooth.State
 import android.os.IpcDataCache
 import kotlin.time.Duration
 import kotlin.time.toKotlinDuration
@@ -34,19 +34,21 @@ class BluetoothAdapterState {
     private val _uiState = MutableSharedFlow<Int>(1 /* replay only most recent value*/)
 
     init {
-        set(STATE_OFF)
+        set(State.OFF)
     }
 
     fun set(s: Int) = runBlocking {
         _uiState.emit(s)
-        IpcDataCache.invalidateCache(IPC_CACHE_MODULE_SYSTEM, GET_SYSTEM_STATE_API)
+        if (!disableCacheForTesting) {
+            IpcDataCache.invalidateCache(IPC_CACHE_MODULE_SYSTEM, GET_SYSTEM_STATE_API)
+        }
     }
 
     fun get(): Int = _uiState.replayCache.get(0)
 
     fun oneOf(vararg states: Int): Boolean = states.contains(get())
 
-    override fun toString() = BluetoothAdapter.nameForState(get())
+    override fun toString() = State.`$`.toString(get())
 
     fun waitForState(timeout: java.time.Duration, vararg states: Int) = runBlocking {
         waitForState(timeout.toKotlinDuration(), *states)
@@ -54,4 +56,8 @@ class BluetoothAdapterState {
 
     suspend fun waitForState(timeout: Duration, vararg states: Int): Boolean =
         withTimeoutOrNull(timeout) { _uiState.filter { states.contains(it) }.first() } != null
+
+    companion object {
+        @JvmField var disableCacheForTesting = false
+    }
 }

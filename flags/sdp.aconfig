@@ -9,6 +9,16 @@ flag {
 }
 
 flag {
+    name: "sdp_ccb_clean_up_after_l2cap_disc"
+    namespace: "bluetooth"
+    description: "Clean up SDP CCBs if upper disconnects L2CAP"
+    bug: "413457570"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "call_sdp_free_in_main_thread"
     namespace: "bluetooth"
     description: "Free SDP service in main thread instead of management thread"

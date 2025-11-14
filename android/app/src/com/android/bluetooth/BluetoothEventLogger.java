@@ -61,6 +61,12 @@ public class BluetoothEventLogger {
         Log.d(tag, msg);
     }
 
+    /** Add the event record and log info message */
+    public synchronized void logi(String tag, String msg) {
+        add(msg);
+        Log.i(tag, msg);
+    }
+
     /** Add the event record and log warning message */
     public synchronized void logw(String tag, String msg) {
         add(msg);

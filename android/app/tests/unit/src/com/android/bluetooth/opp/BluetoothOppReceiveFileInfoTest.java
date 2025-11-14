@@ -44,17 +44,15 @@ import org.junit.runner.RunWith;
 /** Test cases for {@link BluetoothOppReceiveFileInfo}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppReceiveFileInfoTest {
-    Context mContext;
-    BluetoothMethodProxy mCallProxy;
 
-    MatrixCursor mCursor;
+    private Context mContext;
+    private BluetoothMethodProxy mCallProxy;
+    private MatrixCursor mCursor;
 
     @Before
     public void setUp() {
         mContext =
-                spy(
-                        new ContextWrapper(
-                                InstrumentationRegistry.getInstrumentation().getTargetContext()));
+                spy(new ContextWrapper(InstrumentationRegistry.getInstrumentation().getContext()));
 
         mCallProxy = spy(BluetoothMethodProxy.getInstance());
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
@@ -67,7 +65,7 @@ public class BluetoothOppReceiveFileInfoTest {
     @After
     public void tearDown() {
         BluetoothMethodProxy.setInstanceForTesting(null);
-        BluetoothOppManager.sInstance = null;
+        BluetoothOppManager.setInstanceForTesting(null);
     }
 
     @Test

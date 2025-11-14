@@ -20,6 +20,7 @@ from bumble.l2cap import ClassicChannelSpec
 
 from mobly.asserts import assert_equal
 
+
 class BREDRPairTestBase(PairTestBase):
 
     async def start_acl_connection(self):
@@ -39,8 +40,10 @@ class BREDRPairTestBase(PairTestBase):
         responder_acl_connection,
     ):
         init_res, resp_res = await asyncio.gather(
-            self.pairing_initiator.aio.security.Secure(connection=initiator_acl_connection, classic=LEVEL2),
-            self.pairing_responder.aio.security.WaitSecurity(connection=responder_acl_connection, classic=LEVEL2),
+            self.pairing_initiator.aio.security.Secure(connection=initiator_acl_connection,
+                                                       classic=LEVEL2),
+            self.pairing_responder.aio.security.WaitSecurity(connection=responder_acl_connection,
+                                                             classic=LEVEL2),
         )
 
         assert_equal(init_res.result_variant(), 'success')
@@ -56,14 +59,14 @@ class BREDRPairTestBase(PairTestBase):
         # Try accessing Android secure services from bumble
         # use bumble API to get the underlying ACL connection
         # as l2cap APIs in bumble are based on it
-        android_addr = Address.from_string_for_transport(str(self.dut.address), Address.PUBLIC_DEVICE_ADDRESS)
+        android_addr = Address.from_string_for_transport(str(self.dut.address),
+                                                         Address.PUBLIC_DEVICE_ADDRESS)
         bumble_raw_acl_connection = self.ref.device.find_connection_by_bd_addr(android_addr)
 
         # start accessing hid interrupt service
         # which is a secure l2cap service on Android
         hid_interrupt_psm = 0x13
-        channel = bumble_raw_acl_connection.create_l2cap_channel(
-            spec=ClassicChannelSpec(psm=hid_interrupt_psm)
-        )
+        channel = bumble_raw_acl_connection.create_l2cap_channel(spec=ClassicChannelSpec(
+            psm=hid_interrupt_psm))
 
         return await channel

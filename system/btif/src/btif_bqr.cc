@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
+#include "btif/include/btif_bqr.h"
+
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 #include <fcntl.h>
-#ifdef __ANDROID__
-#include <statslog_bt.h>
-#endif
 #include <sys/stat.h>
 
 #include <cerrno>
 #include <cstdint>
 
-#include "btif/include/btif_bqr.h"
 #include "btif/include/btif_common.h"
 #include "btif/include/btif_storage.h"
 #include "btif/include/core_callbacks.h"
@@ -67,7 +66,7 @@ static uint16_t LmpLlMessageTraceCounter = 0;
 static uint16_t BtSchedulingTraceCounter = 0;
 
 class BluetoothQualityReportInterfaceImpl;
-std::unique_ptr<BluetoothQualityReportInterface> bluetoothQualityReportInstance;
+static std::unique_ptr<BluetoothQualityReportInterface> bluetoothQualityReportInstance;
 
 namespace {
 static std::recursive_mutex life_cycle_guard_;
@@ -412,8 +411,8 @@ static std::string PacketTypeToString(uint8_t packet_type) {
   }
 }
 
-void register_vse();
-void unregister_vse();
+static void register_vse();
+static void unregister_vse();
 
 static void ConfigureBqr(const BqrConfiguration& bqr_config);
 
@@ -780,32 +779,8 @@ static void AddLinkQualityEventToQueue(uint8_t length, const uint8_t* p_link_qua
           p_bqr_event->bqr_link_quality_event_.no_rx_count,
           p_bqr_event->bqr_link_quality_event_.nak_count);
 
-#ifdef __ANDROID__
-  int ret = stats_write(
-          BLUETOOTH_QUALITY_REPORT_REPORTED, p_bqr_event->bqr_link_quality_event_.quality_report_id,
-          p_bqr_event->bqr_link_quality_event_.packet_types,
-          p_bqr_event->bqr_link_quality_event_.connection_handle,
-          p_bqr_event->bqr_link_quality_event_.connection_role,
-          p_bqr_event->bqr_link_quality_event_.tx_power_level,
-          p_bqr_event->bqr_link_quality_event_.rssi, p_bqr_event->bqr_link_quality_event_.snr,
-          p_bqr_event->bqr_link_quality_event_.unused_afh_channel_count,
-          p_bqr_event->bqr_link_quality_event_.afh_select_unideal_channel_count,
-          p_bqr_event->bqr_link_quality_event_.lsto,
-          p_bqr_event->bqr_link_quality_event_.connection_piconet_clock,
-          p_bqr_event->bqr_link_quality_event_.retransmission_count,
-          p_bqr_event->bqr_link_quality_event_.no_rx_count,
-          p_bqr_event->bqr_link_quality_event_.nak_count,
-          p_bqr_event->bqr_link_quality_event_.last_tx_ack_timestamp,
-          p_bqr_event->bqr_link_quality_event_.flow_off_count,
-          p_bqr_event->bqr_link_quality_event_.last_flow_on_timestamp,
-          p_bqr_event->bqr_link_quality_event_.buffer_overflow_bytes,
-          p_bqr_event->bqr_link_quality_event_.buffer_underflow_bytes);
-  if (ret < 0) {
-    log::warn("failed to log BQR event to statsd, error {}", ret);
-  }
-#else
-  // TODO(abps) Metrics for non-Android build
-#endif
+  metrics::LogMetricBluetoothQualityReport(p_bqr_event->bqr_link_quality_event_);
+
   BluetoothQualityReportInterface* bqrItf = getBluetoothQualityReportInterface();
 
   if (bqrItf != NULL) {
@@ -1110,12 +1085,12 @@ static void vendor_specific_event_callback(
   }
 }
 
-void register_vse() {
+static void register_vse() {
   bluetooth::shim::GetHciLayer()->RegisterVendorSpecificEventHandler(
           hci::VseSubeventCode::BQR_EVENT, to_bind_->Bind(vendor_specific_event_callback));
 }
 
-void unregister_vse() {
+static void unregister_vse() {
   bluetooth::shim::GetHciLayer()->UnregisterVendorSpecificEventHandler(
           hci::VseSubeventCode::BQR_EVENT);
 }

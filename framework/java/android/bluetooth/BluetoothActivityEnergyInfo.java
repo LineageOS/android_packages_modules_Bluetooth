@@ -92,20 +92,13 @@ public final class BluetoothActivityEnergyInfo implements Parcelable {
     @Override
     public String toString() {
         return "BluetoothActivityEnergyInfo{"
-                + " mTimestamp="
-                + mTimestamp
-                + " mBluetoothStackState="
-                + mBluetoothStackState
-                + " mControllerTxTimeMs="
-                + mControllerTxTimeMs
-                + " mControllerRxTimeMs="
-                + mControllerRxTimeMs
-                + " mControllerIdleTimeMs="
-                + mControllerIdleTimeMs
-                + " mControllerEnergyUsed="
-                + mControllerEnergyUsed
-                + " mUidTraffic="
-                + mUidTraffic
+                + (" mTimestamp=" + mTimestamp)
+                + (" mBluetoothStackState=" + mBluetoothStackState)
+                + (" mControllerTxTimeMs=" + mControllerTxTimeMs)
+                + (" mControllerRxTimeMs=" + mControllerRxTimeMs)
+                + (" mControllerIdleTimeMs=" + mControllerIdleTimeMs)
+                + (" mControllerEnergyUsed=" + mControllerEnergyUsed)
+                + (" mUidTraffic=" + mUidTraffic)
                 + " }";
     }
 

@@ -46,10 +46,10 @@ public class CsipSetCoordinatorServiceBinderTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private CsipSetCoordinatorService mService;
 
     private final BluetoothDevice mDevice = getTestDevice(45);
-    private final AttributionSource mAttributionSource = new AttributionSource.Builder(1).build();
 
     private CsipSetCoordinatorServiceBinder mBinder;
 

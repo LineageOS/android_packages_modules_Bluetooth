@@ -16,7 +16,7 @@
 
 package android.bluetooth.le;
 
-import android.annotation.SuppressLint;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 
 import java.util.List;
@@ -29,7 +29,6 @@ import java.util.List;
  */
 @Deprecated
 @SystemApi
-@SuppressLint("AndroidFrameworkBluetoothPermission")
 public final class TruncatedFilter {
     private final ScanFilter mFilter;
     private final List<ResultStorageDescriptor> mStorageDescriptors;
@@ -46,11 +45,13 @@ public final class TruncatedFilter {
     }
 
     /** Returns the scan filter. */
+    @RequiresNoPermission
     public ScanFilter getFilter() {
         return mFilter;
     }
 
     /** Returns a list of descriptor for scan result storage. */
+    @RequiresNoPermission
     public List<ResultStorageDescriptor> getStorageDescriptors() {
         return mStorageDescriptors;
     }

@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"‏אם חיבור ה-Bluetooth נשאר מופעל, המכשיר יזכור להשאיר אותו מופעל בפעם הבאה שהוא יועבר למצב טיסה"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"‏Bluetooth יישאר מופעל"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"‏חיבור ה-Bluetooth במכשיר יישאר מופעל במצב טיסה. אפשר להשבית את ה-Bluetooth אם לא רוצים שהוא יפעל."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"‏חיבור ה-Bluetooth ממשיך לפעול במצב טיסה כל עוד המכשיר מחובר למכשירים אחרים."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"‏חיבור ה-Bluetooth במכשיר ממשיך לפעול במצב טיסה כל עוד המכשיר מחובר לשעון."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"‏חיבור ה-Bluetooth ממשיך לפעול במצב טיסה כל עוד יש חיבור למכשיר מדיה."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"‏חיבורי ה-Wi‑Fi וה-Bluetooth יישארו מופעלים"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"‏חיבורי ה-Wi‑Fi וה-Bluetooth במכשיר יישארו מופעלים במצב טיסה. אפשר להשבית את ה-Wi-Fi וה-Bluetooth אם לא רוצים שהם יפעלו."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"‏ה-Bluetooth הופעל מחדש"</string>

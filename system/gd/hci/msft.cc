@@ -19,8 +19,6 @@
 #include <com_android_bluetooth_flags.h>
 #include <hardware/bt_common_types.h>
 
-#include "hal/hci_hal.h"
-#include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 
 namespace bluetooth {
@@ -37,17 +35,10 @@ struct Msft {
   std::vector<uint8_t> prefix;
 };
 
-const ModuleFactory MsftExtensionManager::Factory =
-        ModuleFactory([]() { return new MsftExtensionManager(); });
-
 struct MsftExtensionManager::impl {
-  impl(Module* module) : module_(module) {}
-
-  ~impl() {}
-
-  void start(os::Handler* handler, hal::HciHal* hal, hci::HciLayer* hci_layer) {
+  impl(os::Handler* handler, hal::HciHal* hal, hci::HciInterface* hci_layer) {
     log::info("MsftExtensionManager start()");
-    module_handler_ = handler;
+    handler_ = handler;
     hal_ = hal;
     hci_layer_ = hci_layer;
 
@@ -71,10 +62,10 @@ struct MsftExtensionManager::impl {
      */
     hci_layer_->EnqueueCommand(
             MsftReadSupportedFeaturesBuilder::Create(static_cast<OpCode>(msft_.opcode.value())),
-            module_handler_->BindOnceOn(this, &impl::on_msft_read_supported_features_complete));
+            handler_->BindOnceOn(this, &impl::on_msft_read_supported_features_complete));
   }
 
-  void stop() { log::info("MsftExtensionManager stop()"); }
+  ~impl() {}
 
   void handle_rssi_event(MsftRssiEventPayloadView /* view */) {
     log::warn("The Microsoft MSFT_RSSI_EVENT is not supported yet.");
@@ -148,7 +139,7 @@ struct MsftExtensionManager::impl {
                         static_cast<OpCode>(msft_.opcode.value()), monitor.rssi_threshold_high,
                         monitor.rssi_threshold_low, monitor.rssi_threshold_low_time_interval,
                         monitor.rssi_sampling_period, monitor.addr_info.addr_type, addr),
-                module_handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete));
+                handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete));
         return;
       }
     }
@@ -176,7 +167,7 @@ struct MsftExtensionManager::impl {
                     static_cast<OpCode>(msft_.opcode.value()), monitor.rssi_threshold_high,
                     monitor.rssi_threshold_low, monitor.rssi_threshold_low_time_interval,
                     monitor.rssi_sampling_period, patterns),
-            module_handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete));
+            handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_add_complete));
   }
 
   void msft_adv_monitor_remove(uint8_t monitor_handle, MsftAdvMonitorRemoveCallback cb) {
@@ -189,7 +180,7 @@ struct MsftExtensionManager::impl {
     hci_layer_->EnqueueCommand(
             MsftLeCancelMonitorAdvBuilder::Create(static_cast<OpCode>(msft_.opcode.value()),
                                                   monitor_handle),
-            module_handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_remove_complete));
+            handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_remove_complete));
   }
 
   void msft_adv_monitor_enable(bool enable, MsftAdvMonitorEnableCallback cb) {
@@ -202,7 +193,7 @@ struct MsftExtensionManager::impl {
     hci_layer_->EnqueueCommand(
             MsftLeSetAdvFilterEnableBuilder::Create(static_cast<OpCode>(msft_.opcode.value()),
                                                     enable),
-            module_handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_enable_complete));
+            handler_->BindOnceOn(this, &impl::on_msft_adv_monitor_enable_complete));
   }
 
   void set_scanning_callback(ScanningCallback* callbacks) { scanning_callbacks_ = callbacks; }
@@ -252,7 +243,7 @@ struct MsftExtensionManager::impl {
     //       is unique within the vendor's events.
     hci_layer_->RegisterVendorSpecificEventHandler(
             static_cast<VseSubeventCode>(msft_.prefix[0]),
-            module_handler_->BindOn(this, &impl::handle_msft_events));
+            handler_->BindOn(this, &impl::handle_msft_events));
   }
 
   void on_msft_adv_monitor_add_complete(CommandCompleteView view) {
@@ -300,10 +291,9 @@ struct MsftExtensionManager::impl {
     msft_adv_monitor_enable_cb_.Run(status_view.GetStatus());
   }
 
-  Module* module_;
-  os::Handler* module_handler_;
+  os::Handler* handler_;
   hal::HciHal* hal_;
-  hci::HciLayer* hci_layer_;
+  hci::HciInterface* hci_layer_;
   Msft msft_;
   MsftAdvMonitorAddCallback msft_adv_monitor_add_cb_;
   MsftAdvMonitorRemoveCallback msft_adv_monitor_remove_cb_;
@@ -311,42 +301,32 @@ struct MsftExtensionManager::impl {
   ScanningCallback* scanning_callbacks_;
 };
 
-MsftExtensionManager::MsftExtensionManager() {
+MsftExtensionManager::MsftExtensionManager(os::Handler* handler, hal::HciHal* hal,
+                                           hci::HciInterface* hci_layer) {
   log::info("MsftExtensionManager()");
-  pimpl_ = std::make_unique<impl>(this);
+  pimpl_ = std::make_unique<impl>(handler, hal, hci_layer);
 }
 
-void MsftExtensionManager::ListDependencies(ModuleList* list) const {
-  list->add<hal::HciHal>();
-  list->add<hci::HciLayer>();
-}
-
-void MsftExtensionManager::Start() {
-  pimpl_->start(GetHandler(), GetDependency<hal::HciHal>(), GetDependency<hci::HciLayer>());
-}
-
-void MsftExtensionManager::Stop() { pimpl_->stop(); }
-
-std::string MsftExtensionManager::ToString() const { return "Microsoft Extension Manager"; }
+MsftExtensionManager::~MsftExtensionManager() = default;
 
 bool MsftExtensionManager::SupportsMsftExtensions() { return pimpl_->supports_msft_extensions(); }
 
 void MsftExtensionManager::MsftAdvMonitorAdd(const MsftAdvMonitor& monitor,
                                              MsftAdvMonitorAddCallback cb) {
-  CallOn(pimpl_.get(), &impl::msft_adv_monitor_add, monitor, cb);
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::msft_adv_monitor_add, monitor, cb);
 }
 
 void MsftExtensionManager::MsftAdvMonitorRemove(uint8_t monitor_handle,
                                                 MsftAdvMonitorRemoveCallback cb) {
-  CallOn(pimpl_.get(), &impl::msft_adv_monitor_remove, monitor_handle, cb);
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::msft_adv_monitor_remove, monitor_handle, cb);
 }
 
 void MsftExtensionManager::MsftAdvMonitorEnable(bool enable, MsftAdvMonitorEnableCallback cb) {
-  CallOn(pimpl_.get(), &impl::msft_adv_monitor_enable, enable, cb);
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::msft_adv_monitor_enable, enable, cb);
 }
 
 void MsftExtensionManager::SetScanningCallback(ScanningCallback* callbacks) {
-  CallOn(pimpl_.get(), &impl::set_scanning_callback, callbacks);
+  pimpl_->handler_->CallOn(pimpl_.get(), &impl::set_scanning_callback, callbacks);
 }
 
 }  // namespace hci

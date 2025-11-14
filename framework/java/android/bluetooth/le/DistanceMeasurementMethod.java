@@ -27,6 +27,7 @@ import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -73,8 +74,7 @@ public final class DistanceMeasurementMethod implements Parcelable {
      *
      * @hide
      */
-    @SystemApi
-    public static final int DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING = 2;
+    @SystemApi public static final int DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING = 2;
 
     private DistanceMeasurementMethod(
             int id, boolean isAzimuthAngleSupported, boolean isAltitudeAngleSupported) {
@@ -217,15 +217,14 @@ public final class DistanceMeasurementMethod implements Parcelable {
          * @param id id of the method
          */
         public Builder(@DistanceMeasurementMethodId int id) {
-            switch (id) {
-                case DISTANCE_MEASUREMENT_METHOD_AUTO:
-                case DISTANCE_MEASUREMENT_METHOD_RSSI:
-                case DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING:
-                    mId = id;
-                    break;
-                default:
-                    throw new IllegalArgumentException("unknown method id " + id);
+            if (!List.of(
+                            DISTANCE_MEASUREMENT_METHOD_AUTO,
+                            DISTANCE_MEASUREMENT_METHOD_RSSI,
+                            DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING)
+                    .contains(id)) {
+                throw new IllegalArgumentException("unknown method id " + id);
             }
+            mId = id;
         }
 
         /**

@@ -62,7 +62,7 @@ RUN apt-get update && \
 # Next install the Rust toolchain. Download the toolchain to the local folder
 # using curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs
 ADD rustup/rustup.sh /tmp
-RUN /tmp/rustup.sh -y --default-toolchain 1.80.1
+RUN /tmp/rustup.sh -y --default-toolchain 1.84.1
 
 # Add .cargo/bin to $PATH
 ENV PATH="/root/.cargo/bin:${PATH}"
@@ -78,7 +78,7 @@ RUN cargo install --git https://android.googlesource.com/platform/build --rev 8f
 # Rename llvm packages. By default, they are named 11vm-ar-13, etc. which won't
 # work properly with the build.
 ADD llvm-rename.sh /tmp
-RUN /tmp/llvm-rename.sh 16
+RUN /tmp/llvm-rename.sh 19
 
 # At this point, the base container is ready. Now we need to build and install
 # both libchrome and modp-b64. If you ran this via `docker-build-image.py`, this

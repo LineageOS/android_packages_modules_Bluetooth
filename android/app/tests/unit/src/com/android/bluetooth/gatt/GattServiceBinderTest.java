@@ -19,10 +19,11 @@ package com.android.bluetooth.gatt;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getTestDevice;
 
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattService;
@@ -46,21 +47,21 @@ import java.util.UUID;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class GattServiceBinderTest {
-
-    private static final String REMOTE_DEVICE_ADDRESS = "00:00:00:00:00:00";
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
+    @Mock private IBluetoothGattServerCallback mGattServerCallback;
+    @Mock private IBluetoothGattCallback mGattCallback;
     @Mock private GattService mService;
 
-    private AttributionSource mAttributionSource;
+    private final BluetoothDevice mDevice = getTestDevice(109);
+
     private GattServiceBinder mBinder;
 
     @Before
     public void setUp() throws Exception {
-        when(mService.isAvailable()).thenReturn(true);
+        doReturn(true).when(mService).isAvailable();
         mBinder = new GattServiceBinder(mService);
-        mAttributionSource = new AttributionSource.Builder(1).build();
     }
 
     @Test
@@ -68,35 +69,33 @@ public class GattServiceBinderTest {
         int[] states = new int[] {STATE_CONNECTED};
 
         mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
-        verify(mService).getDevicesMatchingConnectionStates(states, mAttributionSource);
+        verify(mService).getDevicesMatchingConnectionStates(states);
     }
 
     @Test
     public void registerClient() {
         UUID uuid = UUID.randomUUID();
-        IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
         boolean eattSupport = true;
+        int transport = BluetoothDevice.TRANSPORT_LE;
 
-        mBinder.registerClient(new ParcelUuid(uuid), callback, eattSupport, mAttributionSource);
-        verify(mService).registerClient(uuid, callback, eattSupport, mAttributionSource);
+        mBinder.registerClient(
+                new ParcelUuid(uuid), mGattCallback, eattSupport, transport, mAttributionSource);
+        verify(mService)
+                .registerClient(uuid, mGattCallback, eattSupport, transport, mAttributionSource);
     }
 
     @Test
     public void unregisterClient() {
-        int clientIf = 3;
-
-        mBinder.unregisterClient(clientIf, mAttributionSource);
+        mBinder.unregisterClient(mGattCallback, mAttributionSource);
         verify(mService)
                 .unregisterClient(
-                        clientIf,
+                        mGattCallback,
                         mAttributionSource,
                         ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
     }
 
     @Test
     public void clientConnect() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
         int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
         boolean isDirect = true;
         int transport = 2;
@@ -104,8 +103,8 @@ public class GattServiceBinderTest {
         int phy = 3;
 
         mBinder.clientConnect(
-                clientIf,
-                address,
+                mGattCallback,
+                mDevice,
                 addressType,
                 isDirect,
                 transport,
@@ -114,8 +113,8 @@ public class GattServiceBinderTest {
                 mAttributionSource);
         verify(mService)
                 .clientConnect(
-                        clientIf,
-                        address,
+                        mGattCallback,
+                        mDevice,
                         addressType,
                         isDirect,
                         transport,
@@ -126,88 +125,68 @@ public class GattServiceBinderTest {
 
     @Test
     public void clientDisconnect() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
-
-        mBinder.clientDisconnect(clientIf, address, mAttributionSource);
-        verify(mService).clientDisconnect(clientIf, address, mAttributionSource);
+        mBinder.clientDisconnect(mGattCallback, mDevice, mAttributionSource);
+        verify(mService).clientDisconnect(mGattCallback, mDevice, mAttributionSource);
     }
 
     @Test
     public void clientSetPreferredPhy() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
         int txPhy = 2;
         int rxPhy = 1;
         int phyOptions = 3;
 
         mBinder.clientSetPreferredPhy(
-                clientIf, address, txPhy, rxPhy, phyOptions, mAttributionSource);
-        verify(mService)
-                .clientSetPreferredPhy(
-                        clientIf, address, txPhy, rxPhy, phyOptions, mAttributionSource);
+                mGattCallback, mDevice, txPhy, rxPhy, phyOptions, mAttributionSource);
+        verify(mService).clientSetPreferredPhy(mGattCallback, mDevice, txPhy, rxPhy, phyOptions);
     }
 
     @Test
     public void clientReadPhy() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
-
-        mBinder.clientReadPhy(clientIf, address, mAttributionSource);
-        verify(mService).clientReadPhy(clientIf, address, mAttributionSource);
+        mBinder.clientReadPhy(mGattCallback, mDevice, mAttributionSource);
+        verify(mService).clientReadPhy(mGattCallback, mDevice);
     }
 
     @Test
     public void refreshDevice() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
-
-        mBinder.refreshDevice(clientIf, address, mAttributionSource);
-        verify(mService).refreshDevice(clientIf, address, mAttributionSource);
+        mBinder.refreshDevice(mGattCallback, mDevice, mAttributionSource);
+        verify(mService).refreshDevice(mGattCallback, mDevice);
     }
 
     @Test
     public void discoverServices() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
-
-        mBinder.discoverServices(clientIf, address, mAttributionSource);
-        verify(mService).discoverServices(clientIf, address, mAttributionSource);
+        mBinder.discoverServices(mGattCallback, mDevice, mAttributionSource);
+        verify(mService).discoverServices(mGattCallback, mDevice);
     }
 
     @Test
     public void discoverServiceByUuid() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
         UUID uuid = UUID.randomUUID();
 
-        mBinder.discoverServiceByUuid(clientIf, address, new ParcelUuid(uuid), mAttributionSource);
-        verify(mService).discoverServiceByUuid(clientIf, address, uuid, mAttributionSource);
+        mBinder.discoverServiceByUuid(
+                mGattCallback, mDevice, new ParcelUuid(uuid), mAttributionSource);
+        verify(mService).discoverServiceByUuid(mGattCallback, mDevice, uuid);
     }
 
     @Test
     public void readCharacteristic() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
         int handle = 2;
         int authReq = 3;
 
-        mBinder.readCharacteristic(clientIf, address, handle, authReq, mAttributionSource);
-        verify(mService).readCharacteristic(clientIf, address, handle, authReq, mAttributionSource);
+        mBinder.readCharacteristic(mGattCallback, mDevice, handle, authReq, mAttributionSource);
+        verify(mService)
+                .readCharacteristic(mGattCallback, mDevice, handle, authReq, mAttributionSource);
     }
 
     @Test
     public void readUsingCharacteristicUuid() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
         UUID uuid = UUID.randomUUID();
         int startHandle = 2;
         int endHandle = 3;
         int authReq = 4;
 
         mBinder.readUsingCharacteristicUuid(
-                clientIf,
-                address,
+                mGattCallback,
+                mDevice,
                 new ParcelUuid(uuid),
                 startHandle,
                 endHandle,
@@ -215,122 +194,92 @@ public class GattServiceBinderTest {
                 mAttributionSource);
         verify(mService)
                 .readUsingCharacteristicUuid(
-                        clientIf,
-                        address,
-                        uuid,
-                        startHandle,
-                        endHandle,
-                        authReq,
-                        mAttributionSource);
+                        mGattCallback, mDevice, uuid, startHandle, endHandle, authReq);
     }
 
     @Test
     public void writeCharacteristic() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
         int handle = 2;
         int writeType = 3;
         int authReq = 4;
         byte[] value = new byte[] {5, 6};
 
         mBinder.writeCharacteristic(
-                clientIf, address, handle, writeType, authReq, value, mAttributionSource);
+                mGattCallback, mDevice, handle, writeType, authReq, value, mAttributionSource);
         verify(mService)
-                .writeCharacteristic(
-                        clientIf, address, handle, writeType, authReq, value, mAttributionSource);
+                .writeCharacteristic(mGattCallback, mDevice, handle, writeType, authReq, value);
     }
 
     @Test
     public void readDescriptor() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
         int handle = 2;
         int authReq = 3;
 
-        mBinder.readDescriptor(clientIf, address, handle, authReq, mAttributionSource);
-        verify(mService).readDescriptor(clientIf, address, handle, authReq, mAttributionSource);
+        mBinder.readDescriptor(mGattCallback, mDevice, handle, authReq, mAttributionSource);
+        verify(mService)
+                .readDescriptor(mGattCallback, mDevice, handle, authReq, mAttributionSource);
     }
 
     @Test
     public void writeDescriptor() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
         int handle = 2;
         int authReq = 3;
         byte[] value = new byte[] {4, 5};
 
-        mBinder.writeDescriptor(clientIf, address, handle, authReq, value, mAttributionSource);
-        verify(mService)
-                .writeDescriptor(clientIf, address, handle, authReq, value, mAttributionSource);
+        mBinder.writeDescriptor(mGattCallback, mDevice, handle, authReq, value, mAttributionSource);
+        verify(mService).writeDescriptor(mGattCallback, mDevice, handle, authReq, value);
     }
 
     @Test
     public void beginReliableWrite() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
-
-        mBinder.beginReliableWrite(clientIf, address, mAttributionSource);
-        verify(mService).beginReliableWrite(clientIf, address, mAttributionSource);
+        mBinder.beginReliableWrite(mDevice, mAttributionSource);
+        verify(mService).beginReliableWrite(mDevice);
     }
 
     @Test
     public void endReliableWrite() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
         boolean execute = true;
 
-        mBinder.endReliableWrite(clientIf, address, execute, mAttributionSource);
-        verify(mService).endReliableWrite(clientIf, address, execute, mAttributionSource);
+        mBinder.endReliableWrite(mGattCallback, mDevice, execute, mAttributionSource);
+        verify(mService).endReliableWrite(mGattCallback, mDevice, execute);
     }
 
     @Test
     public void registerForNotification() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
         int handle = 2;
         boolean enable = true;
 
-        mBinder.registerForNotification(clientIf, address, handle, enable, mAttributionSource);
+        mBinder.registerForNotification(mGattCallback, mDevice, handle, enable, mAttributionSource);
         verify(mService)
-                .registerForNotification(clientIf, address, handle, enable, mAttributionSource);
+                .registerForNotification(
+                        mGattCallback, mDevice, handle, enable, mAttributionSource);
     }
 
     @Test
     public void readRemoteRssi() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
-
-        mBinder.readRemoteRssi(clientIf, address, mAttributionSource);
-        verify(mService).readRemoteRssi(clientIf, address, mAttributionSource);
+        mBinder.readRemoteRssi(mGattCallback, mDevice, mAttributionSource);
+        verify(mService).readRemoteRssi(mGattCallback, mDevice);
     }
 
     @Test
     public void configureMTU() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
         int mtu = 2;
 
-        mBinder.configureMTU(clientIf, address, mtu, mAttributionSource);
-        verify(mService).configureMTU(clientIf, address, mtu, mAttributionSource);
+        mBinder.configureMTU(mGattCallback, mDevice, mtu, mAttributionSource);
+        verify(mService).configureMTU(mGattCallback, mDevice, mtu);
     }
 
     @Test
     public void connectionParameterUpdate() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
         int connectionPriority = 2;
 
         mBinder.connectionParameterUpdate(
-                clientIf, address, connectionPriority, mAttributionSource);
-        verify(mService)
-                .connectionParameterUpdate(
-                        clientIf, address, connectionPriority, mAttributionSource);
+                mGattCallback, mDevice, connectionPriority, mAttributionSource);
+        verify(mService).connectionParameterUpdate(mGattCallback, mDevice, connectionPriority);
     }
 
     @Test
     public void leConnectionUpdate() throws Exception {
-        int clientIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
         int minConnectionInterval = 3;
         int maxConnectionInterval = 4;
         int peripheralLatency = 5;
@@ -339,8 +288,8 @@ public class GattServiceBinderTest {
         int maxConnectionEventLen = 8;
 
         mBinder.leConnectionUpdate(
-                clientIf,
-                address,
+                mGattCallback,
+                mDevice,
                 minConnectionInterval,
                 maxConnectionInterval,
                 peripheralLatency,
@@ -350,136 +299,135 @@ public class GattServiceBinderTest {
                 mAttributionSource);
         verify(mService)
                 .leConnectionUpdate(
-                        clientIf,
-                        address,
+                        mGattCallback,
+                        mDevice,
                         minConnectionInterval,
                         maxConnectionInterval,
                         peripheralLatency,
                         supervisionTimeout,
                         minConnectionEventLen,
-                        maxConnectionEventLen,
-                        mAttributionSource);
+                        maxConnectionEventLen);
+    }
+
+    @Test
+    public void subrateModeRequest() throws Exception {
+        BluetoothDevice testDevice = getTestDevice(5);
+        int subrateMode = 0;
+
+        mBinder.subrateModeRequest(mGattCallback, testDevice, subrateMode, mAttributionSource);
+
+        verify(mService).subrateModeRequest(mGattCallback, testDevice, subrateMode);
     }
 
     @Test
     public void registerServer() {
         UUID uuid = UUID.randomUUID();
-        IBluetoothGattServerCallback callback = mock(IBluetoothGattServerCallback.class);
         boolean eattSupport = true;
+        int transport = BluetoothDevice.TRANSPORT_LE;
 
-        mBinder.registerServer(new ParcelUuid(uuid), callback, eattSupport, mAttributionSource);
-        verify(mService).registerServer(uuid, callback, eattSupport, mAttributionSource);
+        mBinder.registerServer(
+                new ParcelUuid(uuid),
+                mGattServerCallback,
+                eattSupport,
+                transport,
+                mAttributionSource);
+        verify(mService)
+                .registerServer(
+                        uuid, mGattServerCallback, eattSupport, transport, mAttributionSource);
     }
 
     @Test
     public void unregisterServer() {
-        int serverIf = 3;
-
-        mBinder.unregisterServer(serverIf, mAttributionSource);
-        verify(mService).unregisterServer(serverIf, mAttributionSource);
+        mBinder.unregisterServer(mGattServerCallback, mAttributionSource);
+        verify(mService).unregisterServer(mGattServerCallback);
     }
 
     @Test
     public void serverConnect() {
-        int serverIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
         int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
         boolean isDirect = true;
         int transport = 2;
 
         mBinder.serverConnect(
-                serverIf, address, addressType, isDirect, transport, mAttributionSource);
+                mGattServerCallback, mDevice, addressType, isDirect, transport, mAttributionSource);
         verify(mService)
                 .serverConnect(
-                        serverIf, address, addressType, isDirect, transport, mAttributionSource);
+                        mGattServerCallback,
+                        mDevice,
+                        addressType,
+                        isDirect,
+                        transport,
+                        mAttributionSource);
     }
 
     @Test
     public void serverDisconnect() {
-        int serverIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
-
-        mBinder.serverDisconnect(serverIf, address, mAttributionSource);
-        verify(mService).serverDisconnect(serverIf, address, mAttributionSource);
+        mBinder.serverDisconnect(mGattServerCallback, mDevice, mAttributionSource);
+        verify(mService).serverDisconnect(mGattServerCallback, mDevice);
     }
 
     @Test
     public void serverSetPreferredPhy() throws Exception {
-        int serverIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
         int txPhy = 2;
         int rxPhy = 1;
         int phyOptions = 3;
 
         mBinder.serverSetPreferredPhy(
-                serverIf, address, txPhy, rxPhy, phyOptions, mAttributionSource);
+                mGattServerCallback, mDevice, txPhy, rxPhy, phyOptions, mAttributionSource);
         verify(mService)
-                .serverSetPreferredPhy(
-                        serverIf, address, txPhy, rxPhy, phyOptions, mAttributionSource);
+                .serverSetPreferredPhy(mGattServerCallback, mDevice, txPhy, rxPhy, phyOptions);
     }
 
     @Test
     public void serverReadPhy() throws Exception {
-        int serverIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
-
-        mBinder.serverReadPhy(serverIf, address, mAttributionSource);
-        verify(mService).serverReadPhy(serverIf, address, mAttributionSource);
+        mBinder.serverReadPhy(mGattServerCallback, mDevice, mAttributionSource);
+        verify(mService).serverReadPhy(mGattServerCallback, mDevice);
     }
 
     @Test
     public void addService() {
-        int serverIf = 1;
         BluetoothGattService svc = mock(BluetoothGattService.class);
 
-        mBinder.addService(serverIf, svc, mAttributionSource);
-        verify(mService).addService(serverIf, svc, mAttributionSource);
+        mBinder.addService(mGattServerCallback, svc, mAttributionSource);
+        verify(mService).addService(mGattServerCallback, svc);
     }
 
     @Test
     public void removeService() {
-        int serverIf = 1;
         int handle = 2;
 
-        mBinder.removeService(serverIf, handle, mAttributionSource);
-        verify(mService).removeService(serverIf, handle, mAttributionSource);
+        mBinder.removeService(mGattServerCallback, handle, mAttributionSource);
+        verify(mService).removeService(mGattServerCallback, handle);
     }
 
     @Test
     public void clearServices() {
-        int serverIf = 1;
-
-        mBinder.clearServices(serverIf, mAttributionSource);
-        verify(mService).clearServices(serverIf, mAttributionSource);
+        mBinder.clearServices(mGattServerCallback, mAttributionSource);
+        verify(mService).clearServices(mGattServerCallback);
     }
 
     @Test
     public void sendResponse() throws Exception {
-        int serverIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
         int requestId = 2;
         int status = 3;
         int offset = 4;
         byte[] value = new byte[] {5, 6};
 
         mBinder.sendResponse(
-                serverIf, address, requestId, status, offset, value, mAttributionSource);
+                mGattServerCallback, mDevice, requestId, status, offset, value, mAttributionSource);
         verify(mService)
-                .sendResponse(
-                        serverIf, address, requestId, status, offset, value, mAttributionSource);
+                .sendResponse(mGattServerCallback, mDevice, requestId, status, offset, value);
     }
 
     @Test
     public void sendNotification() throws Exception {
-        int serverIf = 1;
-        String address = REMOTE_DEVICE_ADDRESS;
         int handle = 2;
         boolean confirm = true;
         byte[] value = new byte[] {5, 6};
 
-        mBinder.sendNotification(serverIf, address, handle, confirm, value, mAttributionSource);
-        verify(mService)
-                .sendNotification(serverIf, address, handle, confirm, value, mAttributionSource);
+        mBinder.sendNotification(
+                mGattServerCallback, mDevice, handle, confirm, value, mAttributionSource);
+        verify(mService).sendNotification(mGattServerCallback, mDevice, handle, confirm, value);
     }
 
     @Test

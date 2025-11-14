@@ -22,7 +22,7 @@
 #include "stack/include/acl_api.h"
 #include "stack/include/btm_ble_api.h"
 
-struct btm_client_interface_t btm_client_interface = {
+static struct btm_client_interface_t btm_client_interface = {
         .lifecycle =
                 {
                         .BTM_PmRegister = ::BTM_PmRegister,
@@ -40,6 +40,7 @@ struct btm_client_interface_t btm_client_interface = {
                 {
                         .BTM_IsAclConnectionUp = ::BTM_IsAclConnectionUp,
                         .BTM_ReadConnectedTransportAddress = ::BTM_ReadConnectedTransportAddress,
+                        .BTM_GetConnectedTransportAddress = ::BTM_GetConnectedTransportAddress,
                         .BTM_ReadRemoteFeatures = ::BTM_ReadRemoteFeatures,
                         .BTM_ReadDevInfo = ::BTM_ReadDevInfo,
                         .BTM_GetMaxPacketSize = ::BTM_GetMaxPacketSize,

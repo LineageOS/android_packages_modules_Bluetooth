@@ -45,10 +45,15 @@ import java.util.Date;
 public class RequestTest {
 
     private static final String SIMPLE_MMS_MESSAGE =
-            "BEGIN:BMSG\r\nVERSION:1.0\r\nSTATUS:READ\r\nTYPE:MMS\r\nFOLDER:null\r\nBEGIN:BENV\r\n"
-                    + "BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r\n"
-                    + "BEGIN:BBODY\r\nLENGTH:39\r\nBEGIN:MSG\r\nThis is a new msg\r\nEND:MSG\r\n"
-                    + "END:BBODY\r\nEND:BENV\r\nEND:BMSG\r\n";
+            """
+            BEGIN:BMSG\r
+            VERSION:1.0\r\nSTATUS:READ\r\nTYPE:MMS\r\nFOLDER:null\r
+            BEGIN:BENV\r
+            BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r
+            BEGIN:BBODY\r\nLENGTH:39\r\nBEGIN:MSG\r\nThis is a new msg\r\nEND:MSG\r\nEND:BBODY\r
+            END:BENV\r
+            END:BMSG\r
+            """;
 
     private static final String TYPE_GET_FOLDER_LISTING = "x-obex/folder-listing";
     private static final String TYPE_GET_MESSAGE_LISTING = "x-bt/MAP-msg-listing";
@@ -191,7 +196,7 @@ public class RequestTest {
                 HeaderSet request = op.getReceivedHeader();
                 String type = (String) request.getHeader(HeaderSet.TYPE);
                 switch (type) {
-                    case TYPE_GET_FOLDER_LISTING:
+                    case TYPE_GET_FOLDER_LISTING -> {
                         op.sendHeaders(replyHeaders);
                         outputStream = op.openOutputStream();
                         BluetoothMapFolderElement root =
@@ -200,21 +205,25 @@ public class RequestTest {
                         outputStream.write(root.encode(/*offset*/ 0, /*count*/ 1));
                         outputStream.close();
                         return ResponseCodes.OBEX_HTTP_OK;
+                    }
 
-                    case TYPE_MESSAGE:
+                    case TYPE_MESSAGE -> {
                         op.sendHeaders(replyHeaders);
                         outputStream = op.openOutputStream();
                         outputStream.write(SIMPLE_MMS_MESSAGE.getBytes());
                         outputStream.close();
                         return ResponseCodes.OBEX_HTTP_OK;
+                    }
 
-                    case TYPE_GET_MESSAGE_LISTING:
+                    case TYPE_GET_MESSAGE_LISTING -> {
                         outAppParams.setNewMessage(1);
                         outAppParams.setMseTime(TEST_TIME.getTime());
                         replyHeaders.setHeader(
                                 HeaderSet.APPLICATION_PARAMETER, outAppParams.encodeParams());
                         op.sendHeaders(replyHeaders);
                         return ResponseCodes.OBEX_HTTP_OK;
+                    }
+                    default -> {} // Nothing to do
                 }
             } catch (Exception e) {
                 return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
@@ -235,7 +244,7 @@ public class RequestTest {
                     return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
                 }
                 switch (type) {
-                    case TYPE_SET_MESSAGE_STATUS:
+                    case TYPE_SET_MESSAGE_STATUS -> {
                         if (appParams.getStatusIndicator() != TEST_STATUS_INDICATOR) {
                             return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
                         }
@@ -243,18 +252,22 @@ public class RequestTest {
                             return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
                         }
                         return ResponseCodes.OBEX_HTTP_OK;
+                    }
 
-                    case TYPE_SET_NOTIFICATION_REGISTRATION:
+                    case TYPE_SET_NOTIFICATION_REGISTRATION -> {
                         if (appParams.getNotificationStatus() != 1) {
                             return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
                         }
                         return ResponseCodes.OBEX_HTTP_OK;
+                    }
 
-                    case TYPE_MESSAGE:
+                    case TYPE_MESSAGE -> {
                         HeaderSet replyHeaders = new HeaderSet();
                         replyHeaders.setHeader(HeaderSet.NAME, HANDLE);
                         op.sendHeaders(replyHeaders);
                         return ResponseCodes.OBEX_HTTP_OK;
+                    }
+                    default -> {} // Nothing to do
                 }
             } catch (Exception e) {
                 return ResponseCodes.OBEX_HTTP_BAD_REQUEST;

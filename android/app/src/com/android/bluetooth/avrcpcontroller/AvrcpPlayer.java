@@ -116,21 +116,12 @@ class AvrcpPlayer {
         }
         mPlayStatus = playStatus;
         switch (mPlayStatus) {
-            case PlaybackStateCompat.STATE_STOPPED:
-                mPlaySpeed = 0;
-                break;
-            case PlaybackStateCompat.STATE_PLAYING:
-                mPlaySpeed = 1;
-                break;
-            case PlaybackStateCompat.STATE_PAUSED:
-                mPlaySpeed = 0;
-                break;
-            case PlaybackStateCompat.STATE_FAST_FORWARDING:
-                mPlaySpeed = 3;
-                break;
-            case PlaybackStateCompat.STATE_REWINDING:
-                mPlaySpeed = -3;
-                break;
+            case PlaybackStateCompat.STATE_STOPPED -> mPlaySpeed = 0;
+            case PlaybackStateCompat.STATE_PLAYING -> mPlaySpeed = 1;
+            case PlaybackStateCompat.STATE_PAUSED -> mPlaySpeed = 0;
+            case PlaybackStateCompat.STATE_FAST_FORWARDING -> mPlaySpeed = 3;
+            case PlaybackStateCompat.STATE_REWINDING -> mPlaySpeed = -3;
+            default -> {} // Nothing to do
         }
 
         mPlaybackStateCompat =

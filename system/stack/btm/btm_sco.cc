@@ -28,6 +28,7 @@
 #include "stack/btm/btm_sco.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 
 #include <cstdint>
 #include <cstring>
@@ -37,19 +38,19 @@
 #include "common/bidi_queue.h"
 #include "device/include/device_iot_config.h"
 #include "hci/class_of_device.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 #include "hci/include/hci_layer.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
-#include "main/shim/metrics_api.h"
 #include "osi/include/properties.h"
 #include "osi/include/stack_power_telemetry.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_api_types.h"
@@ -62,8 +63,6 @@
 #include "stack/include/sco_hci_link_interface.h"
 #include "stack/include/sdpdefs.h"
 #include "types/raw_address.h"
-
-extern tBTM_CB btm_cb;
 
 /* Default to allow enhanced connections where supported. */
 constexpr bool kDefaultDisableEnhancedConnection = false;
@@ -101,7 +100,7 @@ static void btm_route_sco_data(bluetooth::hci::ScoView valid_packet);
 static bool btm_sco_removed(uint16_t hci_handle, tHCI_REASON reason);
 
 namespace cpp {
-bluetooth::common::BidiQueueEnd<bluetooth::hci::ScoBuilder, bluetooth::hci::ScoView>*
+static bluetooth::common::BidiQueueEnd<bluetooth::hci::ScoBuilder, bluetooth::hci::ScoView>*
         hci_sco_queue_end = nullptr;
 static bluetooth::os::EnqueueBuffer<bluetooth::hci::ScoBuilder>* pending_sco_data = nullptr;
 
@@ -1298,8 +1297,8 @@ static void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason) {
       if (fill_plc_stats(&num_decoded_frames, &packet_loss_ratio)) {
         const int16_t codec_id = sco_codec_type_to_id(codec_type);
         const std::string codec = sco_codec_type_text(codec_type);
-        bluetooth::shim::LogMetricHfpPacketLossStats(bd_addr, num_decoded_frames, packet_loss_ratio,
-                                                     codec_id);
+        bluetooth::metrics::LogMetricHfpPacketLossStats(bd_addr, num_decoded_frames,
+                                                        packet_loss_ratio, codec_id);
         log::debug(
                 "Stopped SCO codec:{}, num_decoded_frames:{}, "
                 "packet_loss_ratio:{:f}",

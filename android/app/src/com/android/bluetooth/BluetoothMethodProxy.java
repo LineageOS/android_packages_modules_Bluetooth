@@ -31,10 +31,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
-import android.media.session.MediaController;
-import android.media.session.MediaSessionManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.Handler;
@@ -45,9 +42,6 @@ import android.os.ParcelFileDescriptor;
 import android.provider.Telephony;
 import android.util.Log;
 
-import androidx.annotation.RequiresApi;
-
-import com.android.bluetooth.bass_client.BassClientPeriodicAdvertisingManager;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.HeaderSet;
 
@@ -55,7 +49,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.List;
 import java.util.Set;
 
 /** Proxy class for method calls to help with unit testing */
@@ -161,13 +154,6 @@ public class BluetoothMethodProxy {
         return adapter.isEnabled();
     }
 
-    /**
-     * Proxies {@link BluetoothAdapter#getRemoteLeDevice(String, int)} on default Bluetooth Adapter.
-     */
-    public BluetoothDevice getDefaultAdapterRemoteLeDevice(String address, int addressType) {
-        return BluetoothAdapter.getDefaultAdapter().getRemoteLeDevice(address, addressType);
-    }
-
     /** Proxies {@link ContentResolver#openFileDescriptor(Uri, String)}. */
     public ParcelFileDescriptor contentResolverOpenFileDescriptor(
             ContentResolver contentResolver, final Uri uri, final String mode)
@@ -233,15 +219,6 @@ public class BluetoothMethodProxy {
     }
 
     /**
-     * Proxies {@link
-     * BassClientPeriodicAdvertisingManager#initializePeriodicAdvertisingManagerOnDefaultAdapter}.
-     */
-    public boolean initializePeriodicAdvertisingManagerOnDefaultAdapter() {
-        return BassClientPeriodicAdvertisingManager
-                .initializePeriodicAdvertisingManagerOnDefaultAdapter();
-    }
-
-    /**
      * Proxies {@link PeriodicAdvertisingManager#registerSync(ScanResult, int, int,
      * PeriodicAdvertisingCallback, Handler)}.
      */
@@ -294,14 +271,7 @@ public class BluetoothMethodProxy {
         return handlerThread.getLooper();
     }
 
-    /** Proxies {@link MediaSessionManager#getActiveSessions} */
-    public @NonNull List<MediaController> mediaSessionManagerGetActiveSessions(
-            MediaSessionManager manager) {
-        return manager.getActiveSessions(null);
-    }
-
     /** Proxies {@link ComponentCaller#checkContentUriPermission(Uri, int)}. } */
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     public int componentCallerCheckContentUriPermission(
             ComponentCaller caller, Uri uri, int modeFlags) {
         return caller.checkContentUriPermission(uri, modeFlags);

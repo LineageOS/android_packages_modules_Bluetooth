@@ -33,7 +33,7 @@ import java.util.List;
 /** MetadataDatabase is a Room database stores Bluetooth persistence data */
 @Database(
         entities = {Metadata.class},
-        version = 122)
+        version = 125)
 public abstract class MetadataDatabase extends RoomDatabase {
     /** The metadata database file name */
     public static final String DATABASE_NAME = "bluetooth_db";
@@ -72,6 +72,10 @@ public abstract class MetadataDatabase extends RoomDatabase {
                 .addMigrations(MIGRATION_119_120)
                 .addMigrations(MIGRATION_120_121)
                 .addMigrations(MIGRATION_121_122)
+                .addMigrations(MIGRATION_122_123)
+                .addMigrations(ROLLBACK_MIGRATION_123_122)
+                .addMigrations(MIGRATION_123_124)
+                .addMigrations(MIGRATION_124_125)
                 .allowMainThreadQueries()
                 .build();
     }
@@ -709,8 +713,90 @@ public abstract class MetadataDatabase extends RoomDatabase {
                     } catch (SQLException ex) {
                         // Check if user has new schema, but is just missing the version update
                         Cursor cursor = database.query("SELECT * FROM metadata");
+                        if (cursor == null || cursor.getColumnIndex("key_missing_count") == -1) {
+                            throw ex;
+                        }
+                    }
+                }
+            };
+
+    @VisibleForTesting
+    static final Migration MIGRATION_122_123 =
+            new Migration(122, 123) {
+                @Override
+                public void migrate(SupportSQLiteDatabase database) {
+                    try {
+                        database.execSQL("ALTER TABLE metadata DROP COLUMN migrated");
+                    } catch (SQLException ex) {
+                        // Check if user has new schema, but is just missing the version update
+                        Cursor cursor = database.query("SELECT * FROM metadata");
+                        if (cursor == null || cursor.getColumnIndex("migrated") != -1) {
+                            throw ex;
+                        }
+                    }
+                }
+            };
+
+    @VisibleForTesting
+    static final Migration ROLLBACK_MIGRATION_123_122 =
+            new Migration(123, 122) {
+                @Override
+                public void migrate(SupportSQLiteDatabase database) {
+                    try {
+                        database.execSQL(
+                                "ALTER TABLE metadata ADD COLUMN `migrated` INTEGER NOT NULL"
+                                        + " DEFAULT 0");
+                    } catch (SQLException ex) {
+                        // Check if user has new schema, but is just missing the version update
+                        Cursor cursor = database.query("SELECT * FROM metadata");
+                        if (cursor == null || cursor.getColumnIndex("migrated") == -1) {
+                            throw ex;
+                        }
+                    }
+                }
+            };
+
+    @VisibleForTesting
+    static final Migration MIGRATION_123_124 =
+            new Migration(123, 124) {
+                @Override
+                public void migrate(SupportSQLiteDatabase database) {
+                    try {
+                        database.execSQL("ALTER TABLE metadata ADD COLUMN `zoomed_in_icon` BLOB");
+                    } catch (SQLException ex) {
+                        // Check if user has new schema, but is just missing the version update
+                        Cursor cursor = database.query("SELECT * FROM metadata");
+                        if (cursor == null || cursor.getColumnIndex("zoomed_in_icon") == -1) {
+                            throw ex;
+                        }
+                    }
+                }
+            };
+
+    @VisibleForTesting
+    static final Migration MIGRATION_124_125 =
+            new Migration(124, 125) {
+                @Override
+                public void migrate(SupportSQLiteDatabase database) {
+                    try {
+                        database.execSQL(
+                                "ALTER TABLE metadata ADD COLUMN"
+                                    + " `le_audio_unicast_client_input_codec_config_preference_list`"
+                                    + " BLOB");
+                        database.execSQL(
+                                "ALTER TABLE metadata ADD COLUMN"
+                                    + " `le_audio_unicast_client_output_codec_config_preference_list`"
+                                    + " BLOB");
+                    } catch (SQLException ex) {
+                        // Check if user has new schema, but is just missing the version update
+                        Cursor cursor = database.query("SELECT * FROM metadata");
                         if (cursor == null
-                                || cursor.getColumnIndex("key_missing_count") == -1) {
+                                || (cursor.getColumnIndex(
+                                                "le_audio_unicast_client_input_codec_config_preference_list")
+                                        == -1)
+                                || (cursor.getColumnIndex(
+                                                "le_audio_unicast_client_output_codec_config_preference_list")
+                                        == -1)) {
                             throw ex;
                         }
                     }

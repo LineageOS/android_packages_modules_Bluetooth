@@ -90,18 +90,12 @@ void power_telemetry::PowerTelemetry::LogLinkDetails(uint16_t /* handle */,
                                                      bool /* is_acl_link */) {
   inc_func_call_count(__func__);
 }
-void power_telemetry::PowerTelemetry::LogAclTxPowerLevel(uint16_t /* handle */,
-                                                         uint8_t /* txPower */) {
-  inc_func_call_count(__func__);
-}
 void power_telemetry::PowerTelemetry::LogInqScanStarted() { inc_func_call_count(__func__); }
 void power_telemetry::PowerTelemetry::LogInqScanStopped() { inc_func_call_count(__func__); }
 void power_telemetry::PowerTelemetry::LogBleAdvStarted() { inc_func_call_count(__func__); }
 void power_telemetry::PowerTelemetry::LogBleAdvStopped() { inc_func_call_count(__func__); }
 void power_telemetry::PowerTelemetry::LogHciCmdDetail() { inc_func_call_count(__func__); }
 void power_telemetry::PowerTelemetry::LogHciEvtDetail() { inc_func_call_count(__func__); }
-void power_telemetry::PowerTelemetry::LogTxPower(void* /* res */) { inc_func_call_count(__func__); }
-void power_telemetry::PowerTelemetry::LogTrafficData() { inc_func_call_count(__func__); }
 void power_telemetry::PowerTelemetry::LogSniffStarted(uint16_t /* handle */,
                                                       const RawAddress& /* bdaddr */) {
   inc_func_call_count(__func__);

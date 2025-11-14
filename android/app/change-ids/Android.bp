@@ -18,10 +18,11 @@ package {
 
 java_library {
     name: "bluetooth.change-ids",
+    defaults: ["bluetooth_lint_rules"],
     srcs: ["com/android/bluetooth/ChangeIds.java"],
     libs: ["app-compat-annotations"],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     sdk_version: "module_current",
 }
 

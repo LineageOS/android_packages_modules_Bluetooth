@@ -1114,7 +1114,8 @@ impl IsoManager {
 
     pub fn hci_le_remove_iso_data_path(&mut self, packet: hci::LeRemoveIsoDataPath) {
         let connection_handle: u16 = packet.get_connection_handle();
-        let data_path_direction = packet.get_remove_data_path_direction();
+        let remove_input_data_path = packet.get_remove_input_data_path() != 0;
+        let remove_output_data_path = packet.get_remove_output_data_path() != 0;
 
         let command_complete = |status| hci::LeRemoveIsoDataPathCompleteBuilder {
             status,
@@ -1131,19 +1132,9 @@ impl IsoManager {
         };
 
         let (remove_c_to_p, remove_p_to_c) = if cis.role == hci::Role::Central {
-            (
-                data_path_direction == hci::RemoveDataPathDirection::Output
-                    || data_path_direction == hci::RemoveDataPathDirection::InputAndOutput,
-                data_path_direction == hci::RemoveDataPathDirection::Input
-                    || data_path_direction == hci::RemoveDataPathDirection::InputAndOutput,
-            )
+            (remove_output_data_path, remove_input_data_path)
         } else {
-            (
-                data_path_direction == hci::RemoveDataPathDirection::Input
-                    || data_path_direction == hci::RemoveDataPathDirection::InputAndOutput,
-                data_path_direction == hci::RemoveDataPathDirection::Output
-                    || data_path_direction == hci::RemoveDataPathDirection::InputAndOutput,
-            )
+            (remove_input_data_path, remove_output_data_path)
         };
 
         // If the Host issues this command for a data path that has not been set up (using

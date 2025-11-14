@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+
 package com.android.bluetooth.pbap;
 
 import android.bluetooth.BluetoothProfile;
@@ -89,7 +90,6 @@ public class BluetoothPbapCallLogComposer implements AutoCloseable {
     private static final String VCARD_PROPERTY_CALLTYPE_INCOMING = "RECEIVED";
     private static final String VCARD_PROPERTY_CALLTYPE_OUTGOING = "DIALED";
     private static final String VCARD_PROPERTY_CALLTYPE_MISSED = "MISSED";
-
 
     private final Context mContext;
     private Cursor mCursor;

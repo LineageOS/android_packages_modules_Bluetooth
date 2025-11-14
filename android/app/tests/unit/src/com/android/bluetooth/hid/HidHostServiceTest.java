@@ -28,8 +28,8 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doReturn;
 
 import android.bluetooth.BluetoothDevice;
@@ -40,7 +40,6 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;
 import org.junit.Before;
@@ -68,21 +67,19 @@ public class HidHostServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        HidHostNativeInterface.setInstance(mNativeInterface);
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
 
         if (Looper.myLooper() == null) {
             Looper.prepare();
         }
 
-        mService = new HidHostService(mAdapterService);
+        mService = new HidHostService(mAdapterService, mNativeInterface);
         mService.setAvailable(true);
     }
 
     @After
     public void tearDown() throws Exception {
         mService.cleanup();
-        HidHostNativeInterface.setInstance(null);
         mService = HidHostService.getHidHostService();
         assertThat(mService).isNull();
     }
@@ -99,7 +96,7 @@ public class HidHostServiceTest {
         doReturn(badBondState).when(mAdapterService).getBondState(any());
         for (int policy : List.of(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
             doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.okToConnect(mDevice)).isEqualTo(false);
+            assertThat(mService.okToConnect(mDevice)).isFalse();
         }
     }
 
@@ -110,8 +107,7 @@ public class HidHostServiceTest {
             doReturn(bondState).when(mAdapterService).getBondState(any());
             for (int policy : List.of(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
                 doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
-                assertThat(mService.okToConnect(mDevice))
-                        .isEqualTo(Flags.donotValidateBondStateFromProfiles());
+                assertThat(mService.okToConnect(mDevice)).isTrue();
             }
         }
     }
@@ -123,11 +119,11 @@ public class HidHostServiceTest {
 
         for (int policy : List.of(CONNECTION_POLICY_FORBIDDEN, badPolicyValue)) {
             doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.okToConnect(mDevice)).isEqualTo(false);
+            assertThat(mService.okToConnect(mDevice)).isFalse();
         }
         for (int policy : List.of(CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_ALLOWED)) {
             doReturn(policy).when(mDatabaseManager).getProfileConnectionPolicy(any(), anyInt());
-            assertThat(mService.okToConnect(mDevice)).isEqualTo(true);
+            assertThat(mService.okToConnect(mDevice)).isTrue();
         }
     }
 

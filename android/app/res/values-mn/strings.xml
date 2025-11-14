@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Хэрэв та Bluetooth-г асаалттай байлгавал таныг дараагийн удаа нислэгийн горимд байх үед төхөөрөмж тань үүнийг асаалттай байлгахыг санана"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetooth асаалттай хэвээр байна"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Таны төхөөрөмж Bluetooth-г нислэгийн горимд асаалттай байлгахыг санана. Хэрэв та асаалттай байлгахыг хүсэхгүй байвал Bluetooth-г унтраана уу."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Бусад төхөөрөмжтэй холбогдсон байхад нислэгийн горимд Bluetooth асаалттай үлдэнэ."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Таны төхөөрөмж цагтай тань холбогдсон байхад нислэгийн горимд Bluetooth-г асаалттай байлгана."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Медиа төхөөрөмжтэй холбогдсон байхад нислэгийн горимд Bluetooth асаалттай үлдэнэ."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi болон Bluetooth асаалттай хэвээр байна"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Таны төхөөрөмж Wi-Fi болон Bluetooth-г нислэгийн горимд асаалттай байлгахыг санана. Хэрэв та Wi-Fi болон Bluetooth-г асаалттай байлгахыг хүсэхгүй байвал тэдгээрийг унтраана уу."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth-г буцааж асаасан"</string>

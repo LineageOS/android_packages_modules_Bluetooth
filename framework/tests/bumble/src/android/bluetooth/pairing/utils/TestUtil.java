@@ -36,94 +36,91 @@ import org.mockito.ArgumentCaptor;
 import java.time.Duration;
 
 public class TestUtil {
-  private static final String TAG = TestUtil.class.getSimpleName();
+    private static final String TAG = TestUtil.class.getSimpleName();
 
-  private static final Duration BOND_INTENT_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration BOND_INTENT_TIMEOUT = Duration.ofSeconds(10);
 
-  private final Context mTargetContext;
-  private final BluetoothProfile.ServiceListener mProfileServiceListener;
-  private final BluetoothAdapter mAdapter;
-
-  private TestUtil(Builder builder) {
-    mTargetContext = builder.mTargetContext;
-    mProfileServiceListener = builder.mProfileServiceListener;
-    mAdapter = builder.mAdapter;
-  }
-
-  public static class Builder {
-    /* Target context is required for all the test functions */
     private final Context mTargetContext;
+    private final BluetoothProfile.ServiceListener mProfileServiceListener;
+    private final BluetoothAdapter mAdapter;
 
-    private BluetoothProfile.ServiceListener mProfileServiceListener;
-    private BluetoothAdapter mAdapter;
-
-    public Builder(@NonNull Context context) {
-      mTargetContext = context;
-      mProfileServiceListener = null;
-      mAdapter = null;
+    private TestUtil(Builder builder) {
+        mTargetContext = builder.mTargetContext;
+        mProfileServiceListener = builder.mProfileServiceListener;
+        mAdapter = builder.mAdapter;
     }
 
-    public Builder setProfileServiceListener(BluetoothProfile.ServiceListener
-        profileServiceListener) {
-      mProfileServiceListener = profileServiceListener;
-      return this;
+    public static class Builder {
+        /* Target context is required for all the test functions */
+        private final Context mTargetContext;
+
+        private BluetoothProfile.ServiceListener mProfileServiceListener;
+        private BluetoothAdapter mAdapter;
+
+        public Builder(@NonNull Context context) {
+            mTargetContext = context;
+            mProfileServiceListener = null;
+            mAdapter = null;
+        }
+
+        public Builder setProfileServiceListener(
+                BluetoothProfile.ServiceListener profileServiceListener) {
+            mProfileServiceListener = profileServiceListener;
+            return this;
+        }
+
+        public Builder setBluetoothAdapter(BluetoothAdapter adapter) {
+            mAdapter = adapter;
+            return this;
+        }
+
+        public TestUtil build() {
+            return new TestUtil(this);
+        }
     }
 
-    public Builder setBluetoothAdapter(BluetoothAdapter adapter) {
-      mAdapter = adapter;
-      return this;
+    /**
+     * Helper function to remove the bond for the given device
+     *
+     * @param parentIntentReceiver IntentReceiver instance from the parent test caller This should
+     *     be `null` if there is no parent IntentReceiver instance.
+     * @param device The device to remove the bond for
+     */
+    public void removeBond(IntentReceiver parentIntentReceiver, BluetoothDevice device) {
+        IntentReceiver intentReceiver =
+                IntentReceiver.update(
+                        parentIntentReceiver,
+                        new IntentReceiver.Builder(
+                                mTargetContext, BluetoothDevice.ACTION_BOND_STATE_CHANGED));
+
+        assertThat(device.removeBond()).isTrue();
+        intentReceiver.verifyReceivedOrdered(
+                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE));
+
+        intentReceiver.close();
     }
 
-    public TestUtil build() {
-      return new TestUtil(this);
+    /**
+     * Get the profile proxy for the given profile
+     *
+     * @param profile The profile to get the proxy for
+     * @throws RuntimeException if mProfileServiceListener || mAdapter is null (passed during
+     *     instance creation)
+     * @return The profile proxy
+     */
+    public BluetoothProfile getProfileProxy(int profile) {
+        if (mProfileServiceListener == null || mAdapter == null) {
+            throw new RuntimeException(
+                    "TestUtil: ServiceListener or BluetoothAdapter in getProfileProxy() is NULL");
+        }
+
+        mAdapter.getProfileProxy(mTargetContext, mProfileServiceListener, profile);
+        ArgumentCaptor<BluetoothProfile> proxyCaptor =
+                ArgumentCaptor.forClass(BluetoothProfile.class);
+        verify(mProfileServiceListener, timeout(BOND_INTENT_TIMEOUT.toMillis()))
+                .onServiceConnected(eq(profile), proxyCaptor.capture());
+        return proxyCaptor.getValue();
     }
-  }
-
-  /**
-   * Helper function to remove the bond for the given device
-   *
-   * @param parentIntentReceiver IntentReceiver instance from the parent test caller
-   *  This should be `null` if there is no parent IntentReceiver instance.
-   * @param device The device to remove the bond for
-   */
-  public void removeBond(IntentReceiver parentIntentReceiver,
-      BluetoothDevice device) {
-    IntentReceiver intentReceiver =
-        IntentReceiver.update(parentIntentReceiver,
-            new IntentReceiver.Builder(
-                mTargetContext,
-                BluetoothDevice.ACTION_BOND_STATE_CHANGED));
-
-    assertThat(device.removeBond()).isTrue();
-    intentReceiver.verifyReceivedOrdered(
-            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-            hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
-            hasExtra(BluetoothDevice.EXTRA_BOND_STATE,
-                BluetoothDevice.BOND_NONE));
-
-    intentReceiver.close();
-  }
-
-  /**
-   * Get the profile proxy for the given profile
-   *
-   * @param profile The profile to get the proxy for
-   * @throws RuntimeException if mProfileServiceListener || mAdapter is null
-   *      (passed during instance creation)
-   * @return The profile proxy
-   */
-  public BluetoothProfile getProfileProxy(int profile) {
-    if (mProfileServiceListener == null ||
-            mAdapter == null) {
-        throw new RuntimeException(
-            "TestUtil: ServiceListener or BluetoothAdapter in getProfileProxy() is NULL");
-    }
-
-    mAdapter.getProfileProxy(mTargetContext, mProfileServiceListener, profile);
-    ArgumentCaptor<BluetoothProfile> proxyCaptor =
-            ArgumentCaptor.forClass(BluetoothProfile.class);
-    verify(mProfileServiceListener, timeout(BOND_INTENT_TIMEOUT.toMillis()))
-            .onServiceConnected(eq(profile), proxyCaptor.capture());
-    return proxyCaptor.getValue();
-  }
 }

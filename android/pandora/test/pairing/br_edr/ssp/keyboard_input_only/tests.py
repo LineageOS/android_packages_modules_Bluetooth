@@ -20,6 +20,7 @@ from pairing.br_edr.ssp.test_base import BREDRSSPPairTestBase
 
 from pandora.security_pb2 import PairingEventAnswer
 
+
 class BREDRKeyboardOnlyTestClass(BREDRSSPPairTestBase):
 
     def _setup_devices(self) -> None:
@@ -50,14 +51,18 @@ class BREDRKeyboardOnlyTestClass(BREDRSSPPairTestBase):
         #       - fix bumble to allow this case to run
 
         init_ev = await anext(self.initiator_pairing_event_stream)
-        logging.debug(f'[{self.initiator_pairing_event_stream.device.name}] init_ev.method_variant():{init_ev.method_variant()}')
+        logging.debug(
+            f'[{self.initiator_pairing_event_stream.device.name}] init_ev.method_variant():{init_ev.method_variant()}'
+        )
 
         init_ev_ans = PairingEventAnswer(event=init_ev, confirm=True)
         self.initiator_pairing_event_stream.send_nowait(init_ev_ans)
 
         # responder receives just works
         responder_ev = await anext(self.responder_pairing_event_stream)
-        logging.debug(f'[{self.responder_pairing_event_stream.device.name}] responder_ev.method_variant():{responder_ev.method_variant()}')
+        logging.debug(
+            f'[{self.responder_pairing_event_stream.device.name}] responder_ev.method_variant():{responder_ev.method_variant()}'
+        )
 
         responder_ev_ans = PairingEventAnswer(event=responder_ev, confirm=True)
         self.responder_pairing_event_stream.send_nowait(responder_ev_ans)

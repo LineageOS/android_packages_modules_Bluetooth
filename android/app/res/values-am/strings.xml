@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"ብሉቱዝን አብርተው ካቆዩ በቀጣይ ጊዜ በአውሮፕላን ሁነታ ውስጥ ሲሆኑ መሣሪያዎ እሱን አብርቶ ማቆየቱን ያስታውሳል"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"ብሉቱዝ በርቶ ይቆያል"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"መሣሪያዎ ብሉቱዝን በአውሮፕላን ሁነታ ውስጥ አብርቶ ማቆየትን ያስታውሳል። በርቶ እንዲቆይ ካልፈለጉ ብሉቱዝን ያጥፉት።"</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"ከሌሎች መሣሪያዎች ጋር ሲገናኝ ብሉቱዝ በአውሮፕላን ሁነታ ላይ ይቆያል።"</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"የእርስዎ መሣሪያ ከእጅ ሰዓትዎ ጋር ሲገናኝ ብሉቱዝ በአውሮፕላን ሁነታ እንደበራ ያቆያል።"</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"ከማህደረ መረጃ መሣሪያ ጋር ሲገናኝ ብሉቱዝ በአውሮፕላን ሁነታ ላይ ይቆያል።"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi እና ብሉቱዝ በርተው ይቆያሉ"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"መሣሪያዎ Wi-Fiን እና ብሉቱዝን በአውሮፕላን ሁነታ ውስጥ አብርቶ ማቆየትን ያስታውሳል። በርተው እንዲቆዩ ካልፈለጉ Wi-Fi እና ብሉቱዝን ያጥፏቸው።"</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"ብሉቱዝ ተመልሶ በርቷል"</string>

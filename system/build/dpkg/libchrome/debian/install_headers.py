@@ -30,7 +30,8 @@ HEADER_TARGETS = [
 
 def gn_desc(target):
     """ Run gn desc on given target and return json output."""
-    return json.loads(subprocess.check_output(['gn', 'desc', '--format=json', 'out/Release', target]))
+    return json.loads(
+        subprocess.check_output(['gn', 'desc', '--format=json', 'out/Release', target]))
 
 
 def install_headers(target_dir):
@@ -52,7 +53,8 @@ def install_headers(target_dir):
         for source in sources:
             files = glob.glob(source, recursive=True)
             for file in files:
-                target_file = os.path.join(target_dir, install_path, os.path.relpath(file, relative_to))
+                target_file = os.path.join(target_dir, install_path,
+                                           os.path.relpath(file, relative_to))
                 # Create dirs before copying
                 os.makedirs(os.path.dirname(target_file), exist_ok=True)
                 shutil.copyfile(file, target_file)

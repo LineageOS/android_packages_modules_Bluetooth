@@ -245,7 +245,7 @@ typedef struct {
 extern tBTA_HH_CB bta_hh_cb;
 
 /* from bta_hh_cfg.c */
-extern tBTA_HH_CFG* p_bta_hh_cfg;
+extern const tBTA_HH_CFG* p_bta_hh_cfg;
 
 /*****************************************************************************
  *  Function prototypes

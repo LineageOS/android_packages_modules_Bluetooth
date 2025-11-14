@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"আপুনি যদি ব্লুটুথ অন কৰি ৰাখে, পৰৱৰ্তী সময়ত আপুনি এয়াৰপ্লেন ম’ড ব্যৱহাৰ কৰিলে আপোনাৰ ডিভাইচটোৱে এয়া অন কৰি ৰাখিবলৈ মনত ৰাখিব"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"ব্লুটুথ অন হৈ থাকে"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"আপোনাৰ ডিভাইচটোৱে এয়াৰপ্লেন ম’ডত ব্লুটুথ অন ৰাখিবলৈ মনত ৰাখে। আপুনি যদি ব্লুটুথ অন হৈ থকাটো নিবিচাৰে, তেন্তে ইয়াক অফ কৰক।"</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"অন্য ডিভাইচসমূহৰ সৈতে সংযুক্ত হৈ থকাৰ সময়ত এয়াৰপ্লেন ম\'ডত ব্লুটুথ অন হৈ থাকে।"</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"আপোনাৰ ডিভাইচটো আপোনাৰ ঘড়ীটোৰ সৈতে সংযুক্ত হৈ থকাৰ সময়ত এয়াৰপ্লেন ম’ডত ব্লুটুথ অন কৰি ৰাখিব।"</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"কোনো মিডিয়া ডিভাইচৰ সৈতে সংযুক্ত হৈ থকাৰ সময়ত এয়াৰপ্লেন ম’ডত ব্লুটুথ অন হৈ থাকে।"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"ৱাই-ফাই আৰু ব্লুটুথ অন হৈ থাকে"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"আপোনাৰ ডিভাইচটোৱে এয়াৰপ্লেন ম’ডত ৱাই-ফাই আৰু ব্লুটুথ অন ৰাখিবলৈ মনত ৰাখে। আপুনি ৱাই-ফাই আৰু ব্লুটুথ অন হৈ থকাটো নিবিচাৰিলে সেইবোৰ অফ কৰক।"</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"ব্লুটুথ পুনৰ অন কৰা হৈছে"</string>

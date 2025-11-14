@@ -28,7 +28,6 @@
 
 #include "hci/class_of_device.h"
 #include "stack/include/acl_api.h"
-#include "stack/include/acl_client_callbacks.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_ble_api.h"
@@ -66,8 +65,6 @@ struct acl_peer_supports_ble_connection_subrating_host
 struct acl_refresh_remote_address acl_refresh_remote_address;
 struct acl_set_peer_le_features_from_handle acl_set_peer_le_features_from_handle;
 struct btm_acl_for_bda btm_acl_for_bda;
-struct BTM_ReadFailedContactCounter BTM_ReadFailedContactCounter;
-struct BTM_ReadTxPower BTM_ReadTxPower;
 struct BTM_SetLinkSuperTout BTM_SetLinkSuperTout;
 struct btm_remove_acl btm_remove_acl;
 struct btm_get_acl_disc_reason_code btm_get_acl_disc_reason_code;
@@ -101,13 +98,11 @@ struct btm_acl_role_changed btm_acl_role_changed;
 struct btm_cont_rswitch_from_handle btm_cont_rswitch_from_handle;
 struct btm_establish_continue_from_address btm_establish_continue_from_address;
 struct btm_read_automatic_flush_timeout_complete btm_read_automatic_flush_timeout_complete;
-struct btm_read_failed_contact_counter_complete btm_read_failed_contact_counter_complete;
 struct btm_read_remote_ext_features_complete btm_read_remote_ext_features_complete;
 struct btm_read_remote_ext_features_complete_raw btm_read_remote_ext_features_complete_raw;
 struct btm_read_remote_ext_features_failed btm_read_remote_ext_features_failed;
 struct btm_read_remote_version_complete btm_read_remote_version_complete;
 struct btm_read_rssi_complete btm_read_rssi_complete;
-struct btm_read_tx_power_complete btm_read_tx_power_complete;
 struct btm_rejectlist_role_change_device btm_rejectlist_role_change_device;
 struct btm_set_packet_types_from_address btm_set_packet_types_from_address;
 struct on_acl_br_edr_connected on_acl_br_edr_connected;
@@ -204,15 +199,6 @@ tACL_CONN* btm_acl_for_bda(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
   return test::mock::stack_acl::btm_acl_for_bda(bd_addr, transport);
 }
-tBTM_STATUS BTM_ReadFailedContactCounter(const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_acl::BTM_ReadFailedContactCounter(remote_bda, p_cb);
-}
-tBTM_STATUS BTM_ReadTxPower(const RawAddress& remote_bda, tBT_TRANSPORT transport,
-                            tBTM_CMPL_CB* p_cb) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_acl::BTM_ReadTxPower(remote_bda, transport, p_cb);
-}
 tBTM_STATUS BTM_SetLinkSuperTout(const RawAddress& remote_bda, uint16_t timeout) {
   inc_func_call_count(__func__);
   return test::mock::stack_acl::BTM_SetLinkSuperTout(remote_bda, timeout);
@@ -299,10 +285,9 @@ void btm_acl_connected(const RawAddress& bda, uint16_t handle, tHCI_STATUS statu
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_acl_connected(bda, handle, status, enc_mode);
 }
-void btm_acl_created(const RawAddress& bda, uint16_t hci_handle, tHCI_ROLE link_role,
-                     tBT_TRANSPORT transport) {
+void btm_acl_created(const tAclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role) {
   inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_acl_created(bda, hci_handle, link_role, transport);
+  test::mock::stack_acl::btm_acl_created(link_spec, hci_handle, link_role);
 }
 void btm_acl_device_down(void) {
   inc_func_call_count(__func__);
@@ -348,10 +333,6 @@ void btm_read_automatic_flush_timeout_complete(uint8_t* p) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_read_automatic_flush_timeout_complete(p);
 }
-void btm_read_failed_contact_counter_complete(uint8_t* p) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_read_failed_contact_counter_complete(p);
-}
 void btm_read_remote_ext_features_complete(uint16_t handle, uint8_t page_num, uint8_t max_page,
                                            uint8_t* features) {
   inc_func_call_count(__func__);
@@ -375,10 +356,6 @@ void btm_read_remote_version_complete(tHCI_STATUS status, uint16_t handle, uint8
 void btm_read_rssi_complete(uint8_t* p, uint16_t evt_len) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_read_rssi_complete(p, evt_len);
-}
-void btm_read_tx_power_complete(uint8_t* p, uint16_t evt_len, bool is_ble) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_read_tx_power_complete(p, evt_len, is_ble);
 }
 void btm_rejectlist_role_change_device(const RawAddress& bd_addr, uint8_t hci_status) {
   inc_func_call_count(__func__);

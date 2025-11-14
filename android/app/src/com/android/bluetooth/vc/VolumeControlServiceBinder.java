@@ -483,7 +483,15 @@ class VolumeControlServiceBinder extends IBluetoothVolumeControl.Stub
     @Override
     public boolean setAudioInputGainSetting(
             AttributionSource source, BluetoothDevice device, int instanceId, int gainSetting) {
-        Log.d(TAG, "setAudioInputGainSetting(" + device + ", " + instanceId + ")");
+        Log.d(
+                TAG,
+                "setAudioInputGainSetting("
+                        + device
+                        + ", "
+                        + instanceId
+                        + ", "
+                        + gainSetting
+                        + ")");
         return aicsWrapper(source, device, i -> i.setGainSetting(instanceId, gainSetting), false);
     }
 

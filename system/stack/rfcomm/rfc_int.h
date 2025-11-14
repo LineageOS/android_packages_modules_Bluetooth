@@ -56,7 +56,7 @@ void RFCOMM_StartRsp(tRFC_MCB* p_mcb, uint16_t result);
 void RFCOMM_DlcEstablishReq(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu);
 void RFCOMM_DlcEstablishRsp(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu, uint16_t result);
 
-void RFCOMM_DataReq(tRFC_MCB* p_mcb, uint8_t dlci, BT_HDR* p_buf);
+tPORT_RESULT RFCOMM_DataReq(tRFC_MCB* p_mcb, uint8_t dlci, BT_HDR* p_buf);
 
 void RFCOMM_DlcReleaseReq(tRFC_MCB* p_mcb, uint8_t dlci);
 

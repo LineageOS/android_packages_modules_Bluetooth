@@ -27,12 +27,16 @@
 #include <cstdint>
 
 #include "device/include/esco_parameters.h"
+#include "stack/btm/btm_int_types.h"
 #include "stack/btm/neighbor_inquiry.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/rnr/remote_name_request.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
+
+/* Global BTM control block structure. */
+extern tBTM_CB btm_cb;
 
 void btm_init();
 void btm_free();

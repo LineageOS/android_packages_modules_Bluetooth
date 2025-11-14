@@ -20,9 +20,10 @@
 #include <gtest/gtest.h>
 #include <sys/socket.h>
 
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/l2cap_controller_interface.h"
 #include "stack/include/l2cap_hci_link_interface.h"
@@ -50,7 +51,7 @@ class StackL2capTest : public ::testing::Test {
 protected:
   void SetUp() override {
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+            std::make_unique<bluetooth::hci::testing::MockController>();
     ON_CALL(*bluetooth::hci::testing::mock_controller_, GetNumAclPacketBuffers)
             .WillByDefault(Return(kAclBufferCountClassic));
     bluetooth::hci::LeBufferSize le_sizes;
@@ -231,7 +232,6 @@ TEST_F(StackL2capTest, l2cap_result_code_text) {
                          "tL2CAP_CONN::L2CAP_CONN_CLIENT_SECURITY_CLEARANCE_FAILED(0xf002)"),
           std::make_pair(tL2CAP_CONN::L2CAP_CONN_NO_LINK,
                          "tL2CAP_CONN::L2CAP_CONN_NO_LINK(0xf003)"),
-          std::make_pair(tL2CAP_CONN::L2CAP_CONN_CANCEL, "tL2CAP_CONN::L2CAP_CONN_CANCEL(0xf004)"),
           std::make_pair(tL2CAP_CONN::L2CAP_CONN_INSUFFICIENT_AUTHENTICATION,
                          "tL2CAP_CONN::L2CAP_CONN_INSUFFICIENT_AUTHENTICATION(0xff05)"),
           std::make_pair(tL2CAP_CONN::L2CAP_CONN_INSUFFICIENT_AUTHORIZATION,

@@ -18,10 +18,10 @@
 #include "bta_rfcomm_metrics.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/rfcomm/enums.pb.h>
 
 #include "bta_sec_api.h"
-#include "main/shim/metrics_api.h"
 #include "stack/include/btm_sec_api_types.h"
 
 using namespace bluetooth;
@@ -46,7 +46,7 @@ void bta_collect_rfc_metrics_after_sdp_fail(tBTA_JV_STATUS sdp_status, RawAddres
   RfcommPortEvent last_event = RfcommPortEvent::PORT_EVENT_UNKNOWN;
   int open_duration_ms = 0;
 
-  shim::LogMetricRfcommConnectionAtClose(
+  metrics::LogMetricRfcommConnectionAtClose(
           addr, close_reason, toSecurity(security), last_event, state_prior, open_duration_ms,
           app_uid, toStatus(sdp_status), is_server, sdp_initiated, sdp_duration_ms);
 }
@@ -65,7 +65,7 @@ void bta_collect_rfc_metrics_after_port_fail(tPORT_RESULT port_result, bool sdp_
   RfcommPortEvent last_event = RfcommPortEvent::PORT_EVENT_UNKNOWN;
   int open_duration_ms = 0;
 
-  shim::LogMetricRfcommConnectionAtClose(
+  metrics::LogMetricRfcommConnectionAtClose(
           addr, toPortResult(port_result), toSecurity(security), last_event, state_prior,
           open_duration_ms, app_uid, reported_status, is_server, sdp_initiated, sdp_duration_ms);
 }

@@ -54,10 +54,6 @@ class HfpHandsfree(val context: Context) : HFPImplBase(), Closeable {
     private val bluetoothHfpClient =
         getProfileProxy<BluetoothHeadsetClient>(context, BluetoothProfile.HEADSET_CLIENT)
 
-    companion object {
-        @SuppressLint("StaticFieldLeak") private lateinit var inCallService: InCallService
-    }
-
     init {
         val intentFilter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
         flow = intentFlow(context, intentFilter, scope).shareIn(scope, SharingStarted.Eagerly)
@@ -211,5 +207,9 @@ class HfpHandsfree(val context: Context) : HFPImplBase(), Closeable {
             )
             SendDtmfFromHandsfreeResponse.getDefaultInstance()
         }
+    }
+
+    companion object {
+        @SuppressLint("StaticFieldLeak") private lateinit var inCallService: InCallService
     }
 }

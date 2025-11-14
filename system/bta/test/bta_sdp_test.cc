@@ -19,7 +19,7 @@
 
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/test/bta_test_fixtures.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "test/mock/mock_main_shim_entry.h"
 
 namespace {
@@ -31,7 +31,7 @@ protected:
   void SetUp() override {
     BtaWithHwOnTest::SetUp();
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+            std::make_unique<bluetooth::hci::testing::MockController>();
     ON_CALL(*bluetooth::hci::testing::mock_controller_, LeRand)
             .WillByDefault([](bluetooth::hci::LeRandCallback cb) { cb(0x1234); });
   }

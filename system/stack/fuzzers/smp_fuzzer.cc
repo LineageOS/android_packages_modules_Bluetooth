@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "common/message_loop_thread.h"
+#include "hci/controller_mock.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_status.h"
@@ -28,10 +29,15 @@
 #include "stack/smp/smp_int.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_btif_config.h"
+#include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_stack_acl.h"
 #include "test/mock/mock_stack_btm_dev.h"
 #include "test/mock/mock_stack_l2cap_api.h"
 #include "test/mock/mock_stack_l2cap_ble.h"
+#include "test/mock/mock_stack_l2cap_interface.h"
+
+using ::testing::NiceMock;
+using ::testing::Unused;
 
 bluetooth::common::MessageLoopThread* main_thread_ptr = nullptr;
 
@@ -59,6 +65,8 @@ tBTM_SEC_DEV_REC dev_rec;
 bool is_peripheral;
 
 class FakeBtStack {
+  NiceMock<bluetooth::testing::stack::l2cap::Mock> mock_l2cap_interface;
+
 public:
   FakeBtStack() {
     test::mock::stack_acl::BTM_ReadConnectionAddr.body =
@@ -80,21 +88,19 @@ public:
       return is_peripheral ? HCI_ROLE_PERIPHERAL : HCI_ROLE_CENTRAL;
     };
 
-    test::mock::stack_l2cap_api::L2CA_SetIdleTimeoutByBdAddr.body = [](const RawAddress&, uint16_t,
-                                                                       uint8_t) { return true; };
-    test::mock::stack_l2cap_api::L2CA_RemoveFixedChnl.body = [](uint16_t, const RawAddress&) {
-      return true;
-    };
-    test::mock::stack_l2cap_api::L2CA_ConnectFixedChnl.body = [](uint16_t, const RawAddress&) {
-      return true;
-    };
-    test::mock::stack_l2cap_api::L2CA_SendFixedChnlData.body =
-            [](uint16_t cid, const RawAddress& addr, BT_HDR* hdr) {
+    ON_CALL(mock_l2cap_interface, L2CA_SetIdleTimeoutByBdAddr)
+            .WillByDefault([](const RawAddress&, uint16_t, uint8_t) { return true; });
+    ON_CALL(mock_l2cap_interface, L2CA_RemoveFixedChnl)
+            .WillByDefault([](uint16_t, const RawAddress&) { return true; });
+    ON_CALL(mock_l2cap_interface, L2CA_ConnectFixedChnl)
+            .WillByDefault([](uint16_t, const RawAddress&) { return true; });
+    ON_CALL(mock_l2cap_interface, L2CA_SendFixedChnlData)
+            .WillByDefault([](uint16_t cid, const RawAddress& addr, BT_HDR* hdr) {
               osi_free(hdr);
               return tL2CAP_DW_RESULT::SUCCESS;
-            };
-    test::mock::stack_l2cap_api::L2CA_RegisterFixedChannel.body =
-            [](uint16_t fixed_cid, tL2CAP_FIXED_CHNL_REG* p_freg) {
+            });
+    ON_CALL(mock_l2cap_interface, L2CA_RegisterFixedChannel)
+            .WillByDefault([](uint16_t fixed_cid, tL2CAP_FIXED_CHNL_REG* p_freg) {
               if (fixed_cid == L2CAP_SMP_CID) {
                 fixed_chnl_reg = *p_freg;
               } else if (fixed_cid == L2CAP_SMP_BR_CID) {
@@ -103,12 +109,25 @@ public:
                 abort();
               }
               return true;
-            };
+            });
+    bluetooth::testing::stack::l2cap::set_interface(&mock_l2cap_interface);
+
+    bluetooth::hci::testing::mock_controller_ =
+            std::make_unique<bluetooth::hci::testing::MockController>();
+    ON_CALL(*bluetooth::hci::testing::mock_controller_, LeRand)
+            .WillByDefault([](bluetooth::hci::LeRandCallback cb) { cb(0x1234); });
+
     main_thread_ptr = new bluetooth::common::MessageLoopThread("smp_fuzz_main_thread");
     main_thread_ptr->StartUp();
   }
 
   ~FakeBtStack() {
+    // Shut down before deallocations to clear out any work to avoid use after frees.
+    main_thread_ptr->ShutDown();
+
+    delete main_thread_ptr;
+    main_thread_ptr = nullptr;
+
     test::mock::stack_acl::BTM_ReadConnectionAddr = {};
     test::mock::stack_acl::BTM_ReadRemoteConnectionAddr = {};
 
@@ -116,14 +135,9 @@ public:
 
     test::mock::stack_l2cap_ble::L2CA_GetBleConnRole = {};
 
-    test::mock::stack_l2cap_api::L2CA_SetIdleTimeoutByBdAddr = {};
-    test::mock::stack_l2cap_api::L2CA_RemoveFixedChnl = {};
-    test::mock::stack_l2cap_api::L2CA_ConnectFixedChnl = {};
-    test::mock::stack_l2cap_api::L2CA_SendFixedChnlData = {};
-    test::mock::stack_l2cap_api::L2CA_RegisterFixedChannel = {};
-    main_thread_ptr->ShutDown();
-    delete main_thread_ptr;
-    main_thread_ptr = nullptr;
+    bluetooth::testing::stack::l2cap::reset_interface();
+
+    bluetooth::hci::testing::mock_controller_.reset();
   }
 };
 

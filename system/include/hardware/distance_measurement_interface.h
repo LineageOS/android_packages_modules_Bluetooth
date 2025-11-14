@@ -43,8 +43,9 @@ class DistanceMeasurementInterface {
 public:
   virtual ~DistanceMeasurementInterface() = default;
   virtual void RegisterDistanceMeasurementCallbacks(DistanceMeasurementCallbacks* callbacks) = 0;
-  virtual void StartDistanceMeasurement(RawAddress raw_address, uint16_t interval,
-                                        uint8_t method) = 0;
+  virtual void StartDistanceMeasurement(int32_t app_uid, RawAddress raw_address, uint16_t interval,
+                                        uint8_t method, uint8_t sight_type,
+                                        uint8_t locationType) = 0;
   virtual void StopDistanceMeasurement(RawAddress raw_address, uint8_t method) = 0;
 };
 

@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.map;
 
 import android.bluetooth.BluetoothProfile;
@@ -43,10 +44,9 @@ import com.android.bluetooth.DeviceWorkArounds;
 import com.android.bluetooth.SignedLongLong;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+import com.android.bluetooth.map.BluetoothMapContract.ConversationColumns;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 import com.android.bluetooth.map.BluetoothMapbMessageMime.MimePart;
-import com.android.bluetooth.mapapi.BluetoothMapContract;
-import com.android.bluetooth.mapapi.BluetoothMapContract.ConversationColumns;
 import com.android.internal.annotations.VisibleForTesting;
 
 import com.google.android.mms.pdu.CharacterSets;
@@ -3536,19 +3536,14 @@ public class BluetoothMapContent {
             return BluetoothMapContract.FOLDER_NAME_DELETED;
         }
 
-        switch (type) {
-            case 1:
-                return BluetoothMapContract.FOLDER_NAME_INBOX;
-            case 2:
-                return BluetoothMapContract.FOLDER_NAME_SENT;
-            case 3:
-                return BluetoothMapContract.FOLDER_NAME_DRAFT;
-            case 4: // Just name outbox, failed and queued "outbox"
-            case 5:
-            case 6:
-                return BluetoothMapContract.FOLDER_NAME_OUTBOX;
-        }
-        return "";
+        return switch (type) {
+            case 1 -> BluetoothMapContract.FOLDER_NAME_INBOX;
+            case 2 -> BluetoothMapContract.FOLDER_NAME_SENT;
+            case 3 -> BluetoothMapContract.FOLDER_NAME_DRAFT;
+            // Just name outbox, failed and queued "outbox"
+            case 4, 5, 6 -> BluetoothMapContract.FOLDER_NAME_OUTBOX;
+            default -> "";
+        };
     }
 
     public byte[] getMessage(
@@ -3565,19 +3560,13 @@ public class BluetoothMapContent {
                     "FRACTION_REQUEST_NEXT does not make sense as"
                             + " we always return the full message.");
         }
-        switch (type) {
-            case SMS_GSM:
-            case SMS_CDMA:
-                return getSmsMessage(id, appParams.getCharset());
-            case MMS:
-                return getMmsMessage(id, appParams);
-            case EMAIL:
-                return getEmailMessage(id, appParams, folderElement);
-            case IM:
-                return getIMMessage(id, appParams, folderElement);
-            default:
-                throw new IllegalArgumentException("Invalid message handle.");
-        }
+        return switch (type) {
+            case SMS_GSM, SMS_CDMA -> getSmsMessage(id, appParams.getCharset());
+            case MMS -> getMmsMessage(id, appParams);
+            case EMAIL -> getEmailMessage(id, appParams, folderElement);
+            case IM -> getIMMessage(id, appParams, folderElement);
+            default -> throw new IllegalArgumentException("Invalid message handle.");
+        };
     }
 
     private String setVCardFromPhoneNumber(
@@ -3643,6 +3632,10 @@ public class BluetoothMapContent {
             } finally {
                 close(q);
             }
+        }
+
+        if (contactName == null) {
+            contactName = phone;
         }
 
         if (incoming) {
@@ -3752,24 +3745,23 @@ public class BluetoothMapContent {
                     }
                     Integer type = c.getInt(c.getColumnIndex(Mms.Addr.TYPE));
                     switch (type) {
-                        case MMS_FROM:
+                        case MMS_FROM -> {
                             contactName = setVCardFromPhoneNumber(message, address, true);
                             message.addFrom(contactName, address);
-                            break;
-                        case MMS_TO:
+                        }
+                        case MMS_TO -> {
                             contactName = setVCardFromPhoneNumber(message, address, false);
                             message.addTo(contactName, address);
-                            break;
-                        case MMS_CC:
+                        }
+                        case MMS_CC -> {
                             contactName = setVCardFromPhoneNumber(message, address, false);
                             message.addCc(contactName, address);
-                            break;
-                        case MMS_BCC:
+                        }
+                        case MMS_BCC -> {
                             contactName = setVCardFromPhoneNumber(message, address, false);
                             message.addBcc(contactName, address);
-                            break;
-                        default:
-                            break;
+                        }
+                        default -> {}
                     }
                 } while (c.moveToNext());
             }

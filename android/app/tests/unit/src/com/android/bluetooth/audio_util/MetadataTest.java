@@ -41,6 +41,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.tests.R;
 
 import org.junit.After;
 import org.junit.Before;
@@ -54,13 +55,11 @@ import java.io.InputStream;
 /** Test cases for {@link Metadata}. */
 @RunWith(AndroidJUnit4.class)
 public class MetadataTest {
-    private Context mTargetContext;
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    private @Mock Context mMockContext;
-    private Resources mTestResources;
-    private MockContentResolver mTestContentResolver;
+    @Mock private Context mMockContext;
+
+    private final Resources mTestResources = TestUtils.getTestApplicationResources();
 
     private static final String TEST_AUTHORITY = "com.android.bluetooth.avrcp.test";
     private static final Uri TEST_CONTENT_URI =
@@ -82,18 +81,16 @@ public class MetadataTest {
     private static final String SONG_NUM_TRACKS = "15";
     private static final String SONG_GENRE = "BT Music";
     private static final String SONG_DURATION = "5000";
-    private Image mSongImage = null; /* to be set to Image(mTestBitmap) once context is set */
 
+    private Context mTargetContext;
+    private MockContentResolver mTestContentResolver;
+    private Image mSongImage = null; /* to be set to Image(mTestBitmap) once context is set */
     private Bitmap mTestBitmap = null;
 
     @Before
     public void setUp() throws Exception {
-
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        mTestResources = TestUtils.getTestApplicationResources(mTargetContext);
-
-        mTestBitmap = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
-
+        mTestBitmap = loadImage(R.raw.image_200_200);
+        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
         mTestContentResolver = new MockContentResolver(mTargetContext);
         mTestContentResolver.addProvider(
                 TEST_AUTHORITY,
@@ -102,15 +99,14 @@ public class MetadataTest {
                     public AssetFileDescriptor openTypedAssetFile(
                             Uri url, String mimeType, Bundle opts) {
                         if (IMAGE_URI_1.equals(url)) {
-                            return mTestResources.openRawResourceFd(
-                                    com.android.bluetooth.tests.R.raw.image_200_200);
+                            return mTestResources.openRawResourceFd(R.raw.image_200_200);
                         }
                         return null;
                     }
                 });
 
         when(mMockContext.getContentResolver()).thenReturn(mTestContentResolver);
-        Util.sUriImagesSupport = true;
+        Util.UriImagesSupport.sValue = true;
 
         mSongImage = new Image(mMockContext, mTestBitmap);
     }
@@ -120,10 +116,9 @@ public class MetadataTest {
         mSongImage = null;
         mTestContentResolver = null;
         mTestBitmap = null;
-        mTestResources = null;
         mTargetContext = null;
         mMockContext = null;
-        Util.sUriImagesSupport = false;
+        Util.UriImagesSupport.sValue = false;
     }
 
     private Bitmap loadImage(int resId) {
@@ -426,7 +421,7 @@ public class MetadataTest {
      */
     @Test
     public void testBuildMetadataFromMediaMetadataWithUriAndUrisDisabled() {
-        Util.sUriImagesSupport = false;
+        Util.UriImagesSupport.sValue = false;
         MediaMetadata m = getMediaMetadataWithUri(MediaMetadata.METADATA_KEY_ART_URI, IMAGE_URI_1);
         Metadata metadata =
                 new Metadata.Builder().useContext(mMockContext).fromMediaMetadata(m).build();
@@ -736,7 +731,7 @@ public class MetadataTest {
      */
     @Test
     public void testBuildMetadataFromBundleWithUriAndUrisDisabled() {
-        Util.sUriImagesSupport = false;
+        Util.UriImagesSupport.sValue = false;
         Bundle bundle = getBundleWithUri(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI, IMAGE_URI_1);
         Metadata metadata =
                 new Metadata.Builder().useContext(mMockContext).fromBundle(bundle).build();
@@ -851,7 +846,7 @@ public class MetadataTest {
      */
     @Test
     public void testBuildMetadataFromMediaItemWithIconUriAndUrisDisabled() {
-        Util.sUriImagesSupport = false;
+        Util.UriImagesSupport.sValue = false;
         MediaDescription description = getMediaDescription(null, IMAGE_URI_1, null);
         MediaItem item = getMediaItem(description);
         Metadata metadata =
@@ -979,7 +974,7 @@ public class MetadataTest {
      */
     @Test
     public void testBuildMetadataFromQueueItemWithIconUriAndUrisDisabled() {
-        Util.sUriImagesSupport = false;
+        Util.UriImagesSupport.sValue = false;
         MediaDescription description = getMediaDescription(null, IMAGE_URI_1, null);
         QueueItem queueItem = getQueueItem(description);
         Metadata metadata =

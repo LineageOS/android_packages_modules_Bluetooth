@@ -21,6 +21,7 @@ import android.bluetooth.BluetoothHearingAid
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -32,6 +33,7 @@ import android.media.AudioTrack
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import com.google.protobuf.Empty
 import io.grpc.Status
 import io.grpc.stub.StreamObserver
 import java.io.Closeable
@@ -78,18 +80,52 @@ class Asha(val context: Context) : AshaImplBase(), Closeable {
         scope.cancel()
     }
 
-    override fun waitPeripheral(
-        request: WaitPeripheralRequest,
-        responseObserver: StreamObserver<WaitPeripheralResponse>,
-    ) {
-        grpcUnary<WaitPeripheralResponse>(scope, responseObserver) {
-            Log.i(TAG, "waitPeripheral")
-
+    override fun openSource(request: OpenSourceRequest, responseObserver: StreamObserver<Empty>) {
+        grpcUnary<Empty>(scope, responseObserver) {
             val device = request.connection.toBluetoothDevice(bluetoothAdapter)
-            Log.d(TAG, "connection address ${device.getAddress()}")
+            val currentState = bluetoothHearingAid.getConnectionState(device)
 
-            if (bluetoothHearingAid.getConnectionState(device) != STATE_CONNECTED) {
-                Log.d(TAG, "wait for bluetoothHearingAid profile connection")
+            Log.i(TAG, "openSource(${device.getAddress()})")
+
+            if (bluetoothHearingAid.getConnectionState(device) == STATE_CONNECTED) {
+                Log.d(TAG, "already connected to ${device.getAddress()}")
+            } else {
+                Log.d(TAG, "initiating connection to ${device.getAddress()}")
+                bluetoothHearingAid.connect(device)
+                val state =
+                    flow
+                        .filter {
+                            it.getAction() == BluetoothHearingAid.ACTION_CONNECTION_STATE_CHANGED
+                        }
+                        .filter { it.getBluetoothDeviceExtra() == device }
+                        .map {
+                            it.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR)
+                        }
+                        .filter { it == STATE_CONNECTED || it == STATE_DISCONNECTED }
+                        .first()
+
+                if (state == STATE_DISCONNECTED) {
+                    throw RuntimeException("openSource failed, Asha has been disconnected")
+                }
+
+                Log.d(TAG, "peripheral successfully connected ${device.getAddress()}")
+            }
+
+            Empty.getDefaultInstance()
+        }
+    }
+
+    override fun waitSource(request: WaitSourceRequest, responseObserver: StreamObserver<Empty>) {
+        grpcUnary<Empty>(scope, responseObserver) {
+            val device = request.connection.toBluetoothDevice(bluetoothAdapter)
+            val currentState = bluetoothHearingAid.getConnectionState(device)
+
+            Log.i(TAG, "waitSource(${device.getAddress()})")
+
+            if (bluetoothHearingAid.getConnectionState(device) == STATE_CONNECTED) {
+                Log.d(TAG, "already connected to ${device.getAddress()}")
+            } else {
+                Log.d(TAG, "waiting for connection of ${device.getAddress()}")
                 flow
                     .filter {
                         it.getAction() == BluetoothHearingAid.ACTION_CONNECTION_STATE_CHANGED
@@ -98,15 +134,39 @@ class Asha(val context: Context) : AshaImplBase(), Closeable {
                     .map { it.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR) }
                     .filter { it == STATE_CONNECTED }
                     .first()
+                Log.d(TAG, "peripheral successfully connected ${device.getAddress()}")
             }
 
-            WaitPeripheralResponse.getDefaultInstance()
+            Empty.getDefaultInstance()
+        }
+    }
+
+    override fun close(request: CloseRequest, responseObserver: StreamObserver<Empty>) {
+        grpcUnary<Empty>(scope, responseObserver) {
+            val device = request.connection.toBluetoothDevice(bluetoothAdapter)
+
+            Log.i(TAG, "close(${device.getAddress()})")
+
+            if (bluetoothHearingAid.getConnectionState(device) != STATE_CONNECTED) {
+                throw RuntimeException("Hearing aid device is not connected, cannot close")
+            }
+
+            Log.d(TAG, "waiting for disconnection of ${device.getAddress()}")
+            flow
+                .filter { it.getAction() == BluetoothHearingAid.ACTION_CONNECTION_STATE_CHANGED }
+                .filter { it.getBluetoothDeviceExtra() == device }
+                .map { it.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR) }
+                .filter { it == STATE_DISCONNECTED }
+                .first()
+            Log.d(TAG, "peripheral successfully disconnected ${device.getAddress()}")
+
+            Empty.getDefaultInstance()
         }
     }
 
     override fun start(request: StartRequest, responseObserver: StreamObserver<StartResponse>) {
         grpcUnary<StartResponse>(scope, responseObserver) {
-            Log.i(TAG, "play")
+            Log.i(TAG, "start")
 
             // wait until BluetoothHearingAid profile is connected
             val device = request.connection.toBluetoothDevice(bluetoothAdapter)

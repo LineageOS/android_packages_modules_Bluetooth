@@ -69,7 +69,7 @@ std::set<tAPP_ID> get_apps_connecting_to(const RawAddress& remote_bda);
  *
  * @return true if device added to the list, false otherwise */
 bool direct_connect_add(tAPP_ID app_id, const RawAddress& address,
-                        tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC);
+                        tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC, bool prefer_relax_mode = false);
 /* Remove a direct connection request.
  *
  * @return true if the request is removed, false otherwise.

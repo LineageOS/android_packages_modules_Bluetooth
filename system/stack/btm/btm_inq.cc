@@ -37,7 +37,7 @@
 
 #include "btif/include/btif_dm.h"
 #include "common/time_util.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/event_checkers.h"
 #include "hci/hci_interface.h"
 #include "internal_include/bt_target.h"
@@ -51,6 +51,7 @@
 #include "stack/btm/btm_ble_int.h"
 #include "stack/btm/btm_eir.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/btm/neighbor_inquiry.h"
 #include "stack/btm/security_device_record.h"
 #include "stack/include/acl_api_types.h"
@@ -114,8 +115,6 @@ uint16_t num_bd_entries_; /* Number of entries in database */
 uint16_t max_bd_entries_; /* Maximum number of entries that can be stored */
 
 }  // namespace
-
-extern tBTM_CB btm_cb;
 
 using namespace bluetooth;
 using bluetooth::Uuid;
@@ -1245,6 +1244,7 @@ static void btm_process_inq_results_standard(EventView event) {
       }
 
       p_cur->inq_result_type |= BT_DEVICE_TYPE_BREDR;
+      p_cur->last_inq_result_from_type = BT_DEVICE_TYPE_BREDR;
       if (p_i->inq_count != btm_cb.btm_inq_vars.inq_counter) {
         p_cur->device_type = BT_DEVICE_TYPE_BREDR;
         p_i->scan_rsp = false;
@@ -1388,6 +1388,7 @@ static void btm_process_inq_results_rssi(EventView event) {
       }
 
       p_cur->inq_result_type |= BT_DEVICE_TYPE_BREDR;
+      p_cur->last_inq_result_from_type = BT_DEVICE_TYPE_BREDR;
       if (p_i->inq_count != btm_cb.btm_inq_vars.inq_counter) {
         p_cur->device_type = BT_DEVICE_TYPE_BREDR;
         p_i->scan_rsp = false;
@@ -1537,6 +1538,7 @@ static void btm_process_inq_results_extended(EventView event) {
       }
 
       p_cur->inq_result_type |= BT_DEVICE_TYPE_BREDR;
+      p_cur->last_inq_result_from_type = BT_DEVICE_TYPE_BREDR;
       if (p_i->inq_count != btm_cb.btm_inq_vars.inq_counter) {
         p_cur->device_type = BT_DEVICE_TYPE_BREDR;
         p_i->scan_rsp = false;

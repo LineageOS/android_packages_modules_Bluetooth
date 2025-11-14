@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.server.bluetooth.test
 
 import com.android.server.bluetooth.Log
@@ -28,35 +29,32 @@ class LogTest {
     @Test
     fun log_verbose() {
         Log.v(TAG, "Logging verbose")
+        Log.v("Logging verbose")
     }
 
     @Test
     fun log_debug() {
         Log.d(TAG, "Logging debug")
+        Log.d("Logging debug")
     }
 
     @Test
     fun log_info() {
         Log.i(TAG, "Logging info")
+        Log.i("Logging info")
     }
 
     @Test
     fun log_warning() {
         Log.w(TAG, "Logging warning")
-    }
-
-    @Test
-    fun log_warningThrowable() {
+        Log.w("Logging warning")
         Log.w(TAG, "Logging warning", RuntimeException("With a Throwable"))
     }
 
     @Test
     fun log_error() {
         Log.e(TAG, "Logging error")
-    }
-
-    @Test
-    fun log_errorThrowable() {
+        Log.e("Logging error")
         Log.e(TAG, "Logging error... ", RuntimeException("With a Throwable"))
     }
 

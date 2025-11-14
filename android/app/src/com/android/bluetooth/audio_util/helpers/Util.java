@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 class Util {
-    public static String TAG = "audio_util.Util";
+    private static final String TAG = "audio_util." + Util.class.getSimpleName();
 
     private static final String VFS_COVER_ART_ENABLED_PROPERTY =
             "bluetooth.profile.avrcp.target.vfs_coverart.enabled";
@@ -38,13 +38,16 @@ class Util {
     private static final String MULTIPLE_PLAYERS_SUPPORT_ENABLED_PROPERTY =
             "bluetooth.profile.avrcp.target.multiple_players.enabled";
 
+    // See https://en.wikipedia.org/wiki/Initialization-on-demand_holder_idiom
     @VisibleForTesting
-    static Boolean sUriImagesSupport =
-            SystemProperties.getBoolean(VFS_COVER_ART_ENABLED_PROPERTY, false);
+    static class UriImagesSupport {
+        static boolean sValue = SystemProperties.getBoolean(VFS_COVER_ART_ENABLED_PROPERTY, false);
+    }
 
-    @VisibleForTesting
-    static Boolean sMultiPlayersSupport =
-            SystemProperties.getBoolean(MULTIPLE_PLAYERS_SUPPORT_ENABLED_PROPERTY, false);
+    private static class MultiPlayersSupport {
+        private static boolean sValue =
+                SystemProperties.getBoolean(MULTIPLE_PLAYERS_SUPPORT_ENABLED_PROPERTY, false);
+    }
 
     // TODO (apanicke): Remove this prefix later, for now it makes debugging easier.
     public static final String NOW_PLAYING_PREFIX = "NowPlayingId";
@@ -69,7 +72,7 @@ class Util {
      * <p>Note that creating URI images will dramatically increase memory usage.
      */
     public static boolean areUriImagesSupported() {
-        return sUriImagesSupport.booleanValue();
+        return UriImagesSupport.sValue;
     }
 
     /**
@@ -80,7 +83,7 @@ class Util {
      * media player to the remote device by default.
      */
     public static boolean areMultiplePlayersSupported() {
-        return sMultiPlayersSupport.booleanValue();
+        return MultiPlayersSupport.sValue;
     }
 
     /** Translate a MediaItem to audio_util's Metadata */

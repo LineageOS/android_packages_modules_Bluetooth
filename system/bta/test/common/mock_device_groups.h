@@ -27,13 +27,11 @@ public:
               (override));
   MOCK_METHOD((int), GetGroupId, (const RawAddress& addr, bluetooth::Uuid uuid), (const override));
   MOCK_METHOD((void), RemoveDevice, (const RawAddress& addr, int group_id), (override));
-  MOCK_METHOD((size_t), GetSerializedSize, (const RawAddress& addr), (const override));
-  MOCK_METHOD((bool), SerializeDeviceGroups,
-              (const RawAddress& addr, uint8_t* p_out, size_t buffer_size), (const override));
 
   /* Called from static methods */
   MOCK_METHOD((void), Initialize, (bluetooth::groups::DeviceGroupsCallbacks * callbacks));
   MOCK_METHOD((void), CleanUp, (bluetooth::groups::DeviceGroupsCallbacks * callbacks));
+  MOCK_METHOD((DeviceGroups*), Get, ());
 
   static void SetMockInstanceForTesting(MockDeviceGroups* machine);
 };

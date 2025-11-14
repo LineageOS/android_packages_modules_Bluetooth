@@ -24,13 +24,14 @@ import android.os.Binder;
 import android.os.Process;
 import android.util.Log;
 
+import androidx.test.runner.AndroidJUnit4;
+
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 import org.mockito.Mock;
 
 import java.io.IOException;
@@ -43,11 +44,9 @@ import java.util.List;
 import java.util.Map;
 
 /** Test cases for {@link BluetoothKeystoreService}. */
-@RunWith(JUnit4.class)
+@RunWith(AndroidJUnit4.class)
 public final class BluetoothKeystoreServiceTest {
     private static final String TAG = BluetoothKeystoreServiceTest.class.getSimpleName();
-
-    private BluetoothKeystoreService mBluetoothKeystoreService;
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
@@ -93,14 +92,17 @@ public final class BluetoothKeystoreServiceTest {
                     "LE_KEY_LCSRK = aec555555555555555555555555555555555555555555555",
                     "LE_KEY_LID =");
 
+    private final Map<String, String> mNameDecryptKeyResult = new HashMap<>();
+
     private List<String> mConfigData = new ArrayList<>();
 
-    private final Map<String, String> mNameDecryptKeyResult = new HashMap<>();
+    private BluetoothKeystoreService mBluetoothKeystoreService;
 
     @Before
     public void setUp() {
         Assume.assumeTrue("Ignore test when the user is not primary.", isPrimaryUser());
-        mBluetoothKeystoreService = new BluetoothKeystoreService(mMockNativeInterface, true);
+        mBluetoothKeystoreService = new BluetoothKeystoreService(mMockNativeInterface);
+        mBluetoothKeystoreService.init(true);
         // backup origin config data.
         try {
             mConfigData = Files.readAllLines(Paths.get(CONFIG_FILE_PATH));
@@ -251,8 +253,8 @@ public final class BluetoothKeystoreServiceTest {
         mBluetoothKeystoreService.cleanupForCommonCriteriaModeEnable();
 
         // new mBluetoothKeystoreService and the Common Criteria mode is false.
-        mBluetoothKeystoreService = new BluetoothKeystoreService(mMockNativeInterface, false);
-
+        mBluetoothKeystoreService = new BluetoothKeystoreService(mMockNativeInterface);
+        mBluetoothKeystoreService.init(false);
         mBluetoothKeystoreService.loadConfigData();
 
         // check encryption file clean up.
@@ -271,7 +273,8 @@ public final class BluetoothKeystoreServiceTest {
         mBluetoothKeystoreService.cleanupForCommonCriteriaModeDisable();
 
         // new mBluetoothKeystoreService and the Common Criteria mode is true.
-        mBluetoothKeystoreService = new BluetoothKeystoreService(mMockNativeInterface, true);
+        mBluetoothKeystoreService = new BluetoothKeystoreService(mMockNativeInterface);
+        mBluetoothKeystoreService.init(true);
         mBluetoothKeystoreService.loadConfigData();
 
         assertThat(mBluetoothKeystoreService.getCompareResult()).isEqualTo(0);

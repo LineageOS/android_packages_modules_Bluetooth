@@ -1,0 +1,342 @@
+little_endian_packets
+
+enum PacketType : 2 {
+    SINGLE_PACKET = 0,
+    START_PACKET = 1,
+    CONTINUE_PACKET = 2,
+    END_PACKET = 3,
+}
+
+enum MessageType : 2 {
+    COMMAND = 0,
+    GENERAL_REJECT = 1,
+    RESPONSE_ACCEPT = 2,
+    RESPONSE_REJECT = 3,
+}
+
+enum SignalIdentifier : 6 {
+    AVDTP_DISCOVER =  0x01,
+    AVDTP_GET_CAPABILITIES =  0x02,
+    AVDTP_SET_CONFIGURATION =  0x03,
+    AVDTP_GET_CONFIGURATION =  0x04,
+    AVDTP_RECONFIGURE =  0x05,
+    AVDTP_OPEN =  0x06,
+    AVDTP_START =  0x07,
+    AVDTP_CLOSE =  0x08,
+    AVDTP_SUSPEND =  0x09,
+    AVDTP_ABORT =  0x0A,
+    AVDTP_SECURITY_CONTROL =  0x0B,
+    AVDTP_GET_ALL_CAPABILITIES =  0x0C,
+    AVDTP_DELAYREPORT =  0x0D,
+}
+
+enum ErrorCode : 8 {
+    SUCCESS = 0,
+
+    // [AVDTP_1.3] 8.20.6.2 ERROR_CODE tables.
+    AVDTP_BAD_HEADER_FORMAT = 0x01,
+    AVDTP_BAD_LENGTH = 0x11,
+    AVDTP_BAD_ACP_SEID = 0x12,
+    AVDTP_SEP_IN_USE = 0x13,
+    AVDTP_SEP_NOT_IN_USE = 0x14,
+    AVDTP_BAD_SERV_CATEGORY = 0x17,
+    AVDTP_BAD_PAYLOAD_FORMAT = 0x18,
+    AVDTP_NOT_SUPPORTED_COMMAND = 0x19,
+    AVDTP_INVALID_CAPABILITIES = 0x1A,
+    AVDTP_BAD_RECOVERY_TYPE = 0x22,
+    AVDTP_BAD_MEDIA_TRANSPORT_FORMAT = 0x23,
+    AVDTP_BAD_RECOVERY_FORMAT = 0x25,
+    AVDTP_BAD_ROHC_FORMAT = 0x26,
+    AVDTP_BAD_CP_FORMAT = 0x27,
+    AVDTP_BAD_MULTIPLEXING_FORMAT = 0x28,
+    AVDTP_UNSUPPORTED_CONFIGURATION = 0x29,
+    AVDTP_BAD_STATE = 0x31,
+
+    // [GAVDTP_1.3] 3.3 Error codes.
+    GAVDTP_BAD_SERVICE = 0x80,
+    GAVDTP_INSUFFICIENT_RESOURCES = 0x81,
+
+    // [A2DP_1.3.2] 5.1.3 Error Codes.
+    A2DP_INVALID_CODEC_TYPE = 0xC1,
+    A2DP_NOT_SUPPORTED_CODEC_TYPE = 0xC2,
+    A2DP_INVALID_SAMPLING_FREQUENCY = 0xC3,
+    A2DP_NOT_SUPPORTED_SAMPLING_FREQUENCY = 0xC4,
+    A2DP_INVALID_CHANNEL_MODE = 0xC5,
+    A2DP_NOT_SUPPORTED_CHANNEL_MODE = 0xC6,
+    A2DP_INVALID_SUBBANDS = 0xC7,
+    A2DP_NOT_SUPPORTED_SUBBANDS = 0xC8,
+    A2DP_INVALID_ALLOCATION_METHOD = 0xC9,
+    A2DP_NOT_SUPPORTED_ALLOCATION_METHOD = 0xCA,
+    A2DP_INVALID_MINIMUM_BITPOOL_VALUE = 0xCB,
+    A2DP_NOT_SUPPORTED_MINIMUM_BITPOOL_VALUE = 0xCC,
+    A2DP_INVALID_MAXIMUM_BITPOOL_VALUE = 0xCD,
+    A2DP_NOT_SUPPORTED_MAXIMUM_BITPOOL_VALUE = 0xCE,
+    A2DP_INVALID_LAYER = 0xCF,
+    A2DP_NOT_SUPPORTED_LAYER = 0xD0,
+    A2DP_NOT_SUPPORTED_CRC = 0xD1,
+    A2DP_NOT_SUPPORTED_MPF = 0xD2,
+    A2DP_NOT_SUPPORTED_VBR = 0xD3,
+    A2DP_INVALID_BIT_RATE = 0xD4,
+    A2DP_NOT_SUPPORTED_BIT_RATE = 0xD5,
+    A2DP_INVALID_OBJECT_TYPE = 0xD6,
+    A2DP_NOT_SUPPORTED_OBJECT_TYPE = 0xD7,
+    A2DP_INVALID_CHANNELS = 0xD8,
+    A2DP_NOT_SUPPORTED_CHANNELS = 0xD9,
+    A2DP_INVALID_BLOCK_LENGTH = 0xDD,
+    A2DP_INVALID_CP_TYPE = 0xE0,
+    A2DP_INVALID_CP_FORMAT = 0xE1,
+    A2DP_INVALID_CODEC_PARAMETER = 0xE2,
+    A2DP_NOT_SUPPORTED_CODEC_PARAMETER = 0xE3,
+}
+
+enum Tsep : 1 {
+    SOURCE = 0,
+    SINK = 1,
+}
+
+enum ServiceCategory : 8 {
+    MEDIA_TRANSPORT = 0x1,
+    REPORTING = 0x2,
+    RECOVERY = 0x3,
+    CONTENT_PROTECTION = 0x4,
+    HEADER_COMPRESSION = 0x5,
+    MULTIPLEXING = 0x6,
+    MEDIA_CODEC = 0x7,
+    DELAY_REPORTING = 0x8,
+}
+
+struct SeidInformation {
+    _reserved_ : 1,
+    in_use : 1,
+    acp_seid : 6,
+    _reserved_ : 3,
+    tsep : Tsep,
+    media_type : 4,
+}
+
+struct ServiceCapability {
+    service_category : ServiceCategory,
+    _size_ (_payload_) : 8,
+    _payload_,
+}
+
+struct MediaTransportCapability : ServiceCapability (service_category = MEDIA_TRANSPORT) {
+}
+
+struct ReportingCapability : ServiceCapability (service_category = REPORTING) {
+}
+
+struct RecoveryCapability : ServiceCapability (service_category = RECOVERY) {
+    recovery_type : 8,
+    maximum_recovery_window_size : 8,
+    maximum_number_of_media_packets_in_parity_code : 8,
+}
+
+struct ContentProtectionCapability : ServiceCapability (service_category = CONTENT_PROTECTION) {
+    cp_type : 16, // Little endian
+    _payload_,
+}
+
+struct HeaderCompressionCapability : ServiceCapability (service_category = HEADER_COMPRESSION) {
+    _reserved_ : 5,
+    recovery : 1,
+    media : 1,
+    back_ch : 1,
+}
+
+struct MultiplexingCapability : ServiceCapability (service_category = MULTIPLEXING) {
+    _reserved_ : 7,
+    frag : 1,
+    _payload_,
+}
+
+struct MediaCodecCapability : ServiceCapability (service_category = MEDIA_CODEC) {
+    _reserved_ : 4,
+    media_type : 4,
+    media_codec_type : 8,
+    media_codec_specific_information_elements : 8[],
+}
+
+struct DelayReportingCapability : ServiceCapability (service_category = DELAY_REPORTING) {
+}
+
+packet SignalingPacket {
+    message_type : MessageType,
+    packet_type : PacketType,
+    transaction_label : 4,
+    signal_identifier : SignalIdentifier,
+    _reserved_ : 2,
+    _payload_,
+}
+
+packet DiscoverCommand : SignalingPacket (message_type = COMMAND, signal_identifier = AVDTP_DISCOVER) {
+}
+
+packet DiscoverResponse : SignalingPacket (message_type = RESPONSE_ACCEPT, signal_identifier = AVDTP_DISCOVER) {
+    seid_information : SeidInformation[]
+}
+
+packet DiscoverReject : SignalingPacket (message_type = RESPONSE_REJECT, signal_identifier = AVDTP_DISCOVER) {
+    error_code : ErrorCode,
+}
+
+packet GetCapabilitiesCommand : SignalingPacket (message_type = COMMAND, signal_identifier = AVDTP_GET_CAPABILITIES) {
+    _reserved_ : 2,
+    acp_seid : 6,
+}
+
+packet GetCapabilitiesResponse : SignalingPacket (message_type = RESPONSE_ACCEPT, signal_identifier = AVDTP_GET_CAPABILITIES) {
+    service_capabilities: ServiceCapability[],
+}
+
+packet GetCapabilitiesReject : SignalingPacket (message_type = RESPONSE_REJECT, signal_identifier = AVDTP_GET_CAPABILITIES) {
+    error_code: ErrorCode,
+}
+
+packet GetAllCapabilitiesCommand : SignalingPacket (message_type = COMMAND, signal_identifier = AVDTP_GET_ALL_CAPABILITIES) {
+    _reserved_ : 2,
+    acp_seid : 6,
+}
+
+packet GetAllCapabilitiesResponse : SignalingPacket (message_type = RESPONSE_ACCEPT, signal_identifier = AVDTP_GET_ALL_CAPABILITIES) {
+    service_capabilities: ServiceCapability[],
+}
+
+packet GetAllCapabilitiesReject : SignalingPacket (message_type = RESPONSE_REJECT, signal_identifier = AVDTP_GET_ALL_CAPABILITIES) {
+    error_code: ErrorCode,
+}
+
+packet SetConfigurationCommand : SignalingPacket (message_type = COMMAND, signal_identifier = AVDTP_SET_CONFIGURATION) {
+    _reserved_ : 2,
+    acp_seid : 6,
+    _reserved_ : 2,
+    int_seid : 6,
+    service_capabilities: ServiceCapability[],
+}
+
+packet SetConfigurationResponse : SignalingPacket (message_type = RESPONSE_ACCEPT, signal_identifier = AVDTP_SET_CONFIGURATION) {
+}
+
+packet SetConfigurationReject : SignalingPacket (message_type = RESPONSE_REJECT, signal_identifier = AVDTP_SET_CONFIGURATION) {
+    service_category: 8,
+    error_code: ErrorCode,
+}
+
+packet GetConfigurationCommand : SignalingPacket (message_type = COMMAND, signal_identifier = AVDTP_GET_CONFIGURATION) {
+    _reserved_ : 2,
+    acp_seid : 6,
+}
+
+packet GetConfigurationResponse : SignalingPacket (message_type = RESPONSE_ACCEPT, signal_identifier = AVDTP_GET_CONFIGURATION) {
+    service_capabilities: ServiceCapability[],
+}
+
+packet GetConfigurationReject : SignalingPacket (message_type = RESPONSE_REJECT, signal_identifier = AVDTP_GET_CONFIGURATION) {
+    error_code: ErrorCode,
+}
+
+packet ReconfigureCommand : SignalingPacket (message_type = COMMAND, signal_identifier = AVDTP_RECONFIGURE) {
+    _reserved_ : 2,
+    acp_seid : 6,
+    service_capabilities: ServiceCapability[],
+}
+
+packet ReconfigureResponse : SignalingPacket (message_type = RESPONSE_ACCEPT, signal_identifier = AVDTP_RECONFIGURE) {
+}
+
+packet ReconfigureReject : SignalingPacket (message_type = RESPONSE_REJECT, signal_identifier = AVDTP_RECONFIGURE) {
+    service_category: 8,
+    error_code: ErrorCode,
+}
+
+packet OpenCommand : SignalingPacket (message_type = COMMAND, signal_identifier = AVDTP_OPEN) {
+    _reserved_ : 2,
+    acp_seid : 6,
+}
+
+packet OpenResponse : SignalingPacket (message_type = RESPONSE_ACCEPT, signal_identifier = AVDTP_OPEN) {
+}
+
+packet OpenReject : SignalingPacket (message_type = RESPONSE_REJECT, signal_identifier = AVDTP_OPEN) {
+    error_code: ErrorCode,
+}
+
+packet StartCommand : SignalingPacket (message_type = COMMAND, signal_identifier = AVDTP_START) {
+    _reserved_ : 2,
+    acp_seid : 6,
+    // acp_seids: 8[],
+}
+
+packet StartResponse : SignalingPacket (message_type = RESPONSE_ACCEPT, signal_identifier = AVDTP_START) {
+}
+
+packet StartReject : SignalingPacket (message_type = RESPONSE_REJECT, signal_identifier = AVDTP_START) {
+    _reserved_ : 2,
+    acp_seid : 6,
+    error_code: ErrorCode,
+}
+
+packet CloseCommand : SignalingPacket (message_type = COMMAND, signal_identifier = AVDTP_CLOSE) {
+    acp_seid: 8,
+}
+
+packet CloseResponse : SignalingPacket (message_type = RESPONSE_ACCEPT, signal_identifier = AVDTP_CLOSE) {
+}
+
+packet CloseReject : SignalingPacket (message_type = RESPONSE_REJECT, signal_identifier = AVDTP_CLOSE) {
+    error_code: ErrorCode,
+}
+
+packet SuspendCommand : SignalingPacket (message_type = COMMAND, signal_identifier = AVDTP_SUSPEND) {
+    _reserved_ : 2,
+    acp_seid : 6,
+    // acp_seids: 8[],
+}
+
+packet SuspendResponse : SignalingPacket (message_type = RESPONSE_ACCEPT, signal_identifier = AVDTP_SUSPEND) {
+}
+
+packet SuspendReject : SignalingPacket (message_type = RESPONSE_REJECT, signal_identifier = AVDTP_SUSPEND) {
+    _reserved_ : 2,
+    acp_seid : 6,
+    error_code: ErrorCode,
+}
+
+packet AbortCommand : SignalingPacket (message_type = COMMAND, signal_identifier = AVDTP_ABORT) {
+    _reserved_ : 2,
+    acp_seid : 6,
+}
+
+packet AbortResponse : SignalingPacket (message_type = RESPONSE_ACCEPT, signal_identifier = AVDTP_ABORT) {
+}
+
+packet SecurityControlCommand : SignalingPacket (message_type = COMMAND, signal_identifier = AVDTP_SECURITY_CONTROL) {
+    _reserved_ : 2,
+    acp_seid : 6,
+    content_protection_data: 8[],
+}
+
+packet SecurityControlResponse : SignalingPacket (message_type = RESPONSE_ACCEPT, signal_identifier = AVDTP_SECURITY_CONTROL) {
+    content_protection_data: 8[],
+}
+
+packet SecurityControlReject : SignalingPacket (message_type = RESPONSE_REJECT, signal_identifier = AVDTP_SECURITY_CONTROL) {
+    error_code: ErrorCode,
+}
+
+packet GeneralReject : SignalingPacket (message_type = GENERAL_REJECT) {
+}
+
+packet DelayReportCommand : SignalingPacket (message_type = COMMAND, signal_identifier = AVDTP_DELAYREPORT) {
+    _reserved_ : 2,
+    acp_seid : 6,
+    delay_msb: 8,
+    delay_lsb: 8,
+}
+
+packet DelayReportResponse : SignalingPacket (message_type = RESPONSE_ACCEPT, signal_identifier = AVDTP_DELAYREPORT) {
+}
+
+packet DelayReportReject : SignalingPacket (message_type = RESPONSE_REJECT, signal_identifier = AVDTP_DELAYREPORT) {
+    error_code: ErrorCode,
+}

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.mapclient;
 
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
@@ -43,9 +44,9 @@ public class MapClientServiceBinderTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private MapClientService mService;
 
-    private final AttributionSource mAttributionSource = new AttributionSource.Builder(1).build();
     private final BluetoothDevice mDevice = getTestDevice(65);
 
     private MapClientServiceBinder mBinder;

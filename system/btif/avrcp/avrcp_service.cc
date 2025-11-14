@@ -68,7 +68,7 @@ namespace avrcp {
 AvrcpService* AvrcpService::instance_ = nullptr;
 AvrcpService::ServiceInterfaceImpl* AvrcpService::service_interface_ = nullptr;
 
-class A2dpInterfaceImpl : public A2dpInterface {
+static class A2dpInterfaceImpl : public A2dpInterface {
   RawAddress active_peer() override { return btif_av_source_active_peer(); }
 
   bool is_peer_in_silence_mode(const RawAddress& peer_address) override {
@@ -94,7 +94,7 @@ class A2dpInterfaceImpl : public A2dpInterface {
   }
 } a2dp_interface_;
 
-class AvrcpInterfaceImpl : public AvrcpInterface {
+static class AvrcpInterfaceImpl : public AvrcpInterface {
 public:
   uint16_t GetAvrcpControlVersion() { return AVRC_GetControlProfileVersion(); }
 
@@ -139,7 +139,7 @@ public:
   }
 } avrcp_interface_;
 
-class SdpInterfaceImpl : public SdpInterface {
+static class SdpInterfaceImpl : public SdpInterface {
 public:
   bool InitDiscoveryDb(tSDP_DISCOVERY_DB* a, uint32_t b, uint16_t c, const bluetooth::Uuid* d,
                        uint16_t e, uint16_t* f) override {
@@ -375,6 +375,7 @@ public:
 
   void SetPlayerSettings(std::vector<PlayerAttribute> attributes, std::vector<uint8_t> values,
                          SetPlayerSettingValueCallback cb) override {
+    log::info("");
     auto cb_lambda = [](const SetPlayerSettingValueCallback& cb, bool success) {
       do_in_main_thread(base::BindOnce(cb, success));
     };
@@ -488,11 +489,6 @@ void AvrcpService::UnregisterBipServer() {
 
   const std::shared_ptr<AvrcpSdpService>& avrcp_sdp_service = AvrcpSdpService::Get();
   avrcp_sdp_service->DisableCovertArt(UUID_SERVCLASS_AV_REM_CTRL_TARGET, target_sdp_request_id_);
-  avrcp_interface_.RemoveRecord(sdp_record_handle);
-  uint16_t supported_features = GetSupportedFeatures(profile_version);
-  sdp_record_handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
-  avrcp_interface_.AddRecord(UUID_SERVCLASS_AV_REM_CTRL_TARGET, "AV Remote Control Target", NULL,
-                             supported_features, sdp_record_handle, true, profile_version, 0);
 }
 
 AvrcpService* AvrcpService::Get() {

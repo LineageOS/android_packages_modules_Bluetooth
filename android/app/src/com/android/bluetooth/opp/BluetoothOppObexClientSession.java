@@ -49,7 +49,6 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -450,7 +449,6 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
                     boolean okToProceed = false;
                     long timestamp = 0;
                     long currentTime = 0;
-                    long prevTimestamp = SystemClock.elapsedRealtime();
                     int outputBufferSize = putOperation.getMaxPacketSize();
                     byte[] buffer = new byte[outputBufferSize];
                     BufferedInputStream a = new BufferedInputStream(fileInfo.mInputStream, 0x4000);
@@ -526,16 +524,13 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
                                             + (currentTime - timestamp)
                                             + " ms");
                             // Update the Progress Bar only if there is change in percentage
-                            // or once per a period to notify NFC of this transfer is still alive
                             percent = position * 100 / fileInfo.mLength;
-                            if (percent > prevPercent
-                                    || currentTime - prevTimestamp > Constants.NFC_ALIVE_CHECK_MS) {
+                            if (percent > prevPercent) {
                                 updateValues = new ContentValues();
                                 updateValues.put(BluetoothShare.CURRENT_BYTES, position);
                                 mContext.getContentResolver()
                                         .update(contentUri, updateValues, null, null);
                                 prevPercent = percent;
-                                prevTimestamp = currentTime;
                             }
                         }
                     }

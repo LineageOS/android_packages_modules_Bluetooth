@@ -32,7 +32,16 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothCodecConfig;
@@ -41,7 +50,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
 import android.companion.CompanionDeviceManager;
-import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.media.BluetoothProfileConnectionInfo;
@@ -124,14 +132,10 @@ public class A2dpServiceTest {
         mInOrder = inOrder(mAdapterService);
         mLooper = new TestLooper();
 
+        TestUtils.mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
         TestUtils.mockGetSystemService(
-                mAdapterService, Context.AUDIO_SERVICE, AudioManager.class, mAudioManager);
-        TestUtils.mockGetSystemService(
-                mAdapterService,
-                Context.COMPANION_DEVICE_SERVICE,
-                CompanionDeviceManager.class,
-                mCompanionDeviceManager);
-        doReturn(InstrumentationRegistry.getInstrumentation().getTargetContext().getResources())
+                mAdapterService, CompanionDeviceManager.class, mCompanionDeviceManager);
+        doReturn(InstrumentationRegistry.getInstrumentation().getContext().getResources())
                 .when(mAdapterService)
                 .getResources();
 
@@ -142,7 +146,7 @@ public class A2dpServiceTest {
         doReturn(true).when(mAdapterService).isA2dpOffloadEnabled();
         doReturn(MAX_CONNECTED_AUDIO_DEVICES).when(mAdapterService).getMaxConnectedAudioDevices();
         doReturn(false).when(mAdapterService).isQuietModeEnabled();
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
 
@@ -224,47 +228,23 @@ public class A2dpServiceTest {
     public void testOkToConnect() {
         int badPriorityValue = 1024;
         int badBondState = 42;
-        testOkToConnectCase(
-                mDevice,
-                BluetoothDevice.BOND_NONE,
-                CONNECTION_POLICY_UNKNOWN,
-                Flags.donotValidateBondStateFromProfiles());
+        testOkToConnectCase(mDevice, BluetoothDevice.BOND_NONE, CONNECTION_POLICY_UNKNOWN, true);
         testOkToConnectCase(mDevice, BluetoothDevice.BOND_NONE, CONNECTION_POLICY_FORBIDDEN, false);
-        testOkToConnectCase(
-                mDevice,
-                BluetoothDevice.BOND_NONE,
-                CONNECTION_POLICY_ALLOWED,
-                Flags.donotValidateBondStateFromProfiles());
+        testOkToConnectCase(mDevice, BluetoothDevice.BOND_NONE, CONNECTION_POLICY_ALLOWED, true);
         testOkToConnectCase(mDevice, BluetoothDevice.BOND_NONE, badPriorityValue, false);
-        testOkToConnectCase(
-                mDevice,
-                BluetoothDevice.BOND_BONDING,
-                CONNECTION_POLICY_UNKNOWN,
-                Flags.donotValidateBondStateFromProfiles());
+        testOkToConnectCase(mDevice, BluetoothDevice.BOND_BONDING, CONNECTION_POLICY_UNKNOWN, true);
         testOkToConnectCase(
                 mDevice, BluetoothDevice.BOND_BONDING, CONNECTION_POLICY_FORBIDDEN, false);
-        testOkToConnectCase(
-                mDevice,
-                BluetoothDevice.BOND_BONDING,
-                CONNECTION_POLICY_ALLOWED,
-                Flags.donotValidateBondStateFromProfiles());
+        testOkToConnectCase(mDevice, BluetoothDevice.BOND_BONDING, CONNECTION_POLICY_ALLOWED, true);
         testOkToConnectCase(mDevice, BluetoothDevice.BOND_BONDING, badPriorityValue, false);
         testOkToConnectCase(mDevice, BluetoothDevice.BOND_BONDED, CONNECTION_POLICY_UNKNOWN, true);
         testOkToConnectCase(
                 mDevice, BluetoothDevice.BOND_BONDED, CONNECTION_POLICY_FORBIDDEN, false);
         testOkToConnectCase(mDevice, BluetoothDevice.BOND_BONDED, CONNECTION_POLICY_ALLOWED, true);
         testOkToConnectCase(mDevice, BluetoothDevice.BOND_BONDED, badPriorityValue, false);
-        testOkToConnectCase(
-                mDevice,
-                badBondState,
-                CONNECTION_POLICY_UNKNOWN,
-                Flags.donotValidateBondStateFromProfiles());
+        testOkToConnectCase(mDevice, badBondState, CONNECTION_POLICY_UNKNOWN, true);
         testOkToConnectCase(mDevice, badBondState, CONNECTION_POLICY_FORBIDDEN, false);
-        testOkToConnectCase(
-                mDevice,
-                badBondState,
-                CONNECTION_POLICY_ALLOWED,
-                Flags.donotValidateBondStateFromProfiles());
+        testOkToConnectCase(mDevice, badBondState, CONNECTION_POLICY_ALLOWED, true);
         testOkToConnectCase(mDevice, badBondState, badPriorityValue, false);
     }
 

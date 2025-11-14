@@ -13,17 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 import android.annotation.IntRange;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothDevice.AddressType;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
@@ -33,14 +37,19 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.MessageQueue;
+import android.os.SystemProperties;
 import android.service.media.MediaBrowserService;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.uiautomator.UiDevice;
 
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
+import com.android.dx.mockito.inline.extended.StaticMockitoSession;
+import com.android.dx.mockito.inline.extended.StaticMockitoSessionBuilder;
 
 import org.junit.rules.MethodRule;
 import org.junit.rules.TestRule;
@@ -49,6 +58,7 @@ import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
+import org.mockito.quality.Strictness;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -56,58 +66,86 @@ import java.util.stream.IntStream;
 
 /** A set of methods useful in Bluetooth instrumentation tests */
 public class TestUtils {
-    private static final String TAG = Utils.TAG_PREFIX_BLUETOOTH + TestUtils.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + TestUtils.class.getSimpleName();
 
-    private static String sSystemScreenOffTimeout = "10000";
-
-    /**
-     * Set the return value of {@link AdapterService#getAdapterService()} to a test specified value
-     *
-     * @param adapterService the designated {@link AdapterService} in test, must not be null, can be
-     *     mocked or spied
-     */
-    public static void setAdapterService(AdapterService adapterService) {
-        assertWithMessage(
-                        "AdapterService.getAdapterService() must be null before setting another"
-                                + " AdapterService")
-                .that(AdapterService.getAdapterService())
-                .isNull();
-        assertThat(adapterService).isNotNull();
-        // We cannot mock AdapterService.getAdapterService() with Mockito.
-        // Hence we need to set AdapterService.sAdapterService field.
-        AdapterService.setAdapterService(adapterService);
+    private static Context getContext() {
+        return InstrumentationRegistry.getInstrumentation().getContext();
     }
 
-    /**
-     * Clear the return value of {@link AdapterService#getAdapterService()} to null
-     *
-     * @param adapterService the {@link AdapterService} used when calling {@link
-     *     TestUtils#setAdapterService(AdapterService)}
-     */
-    public static void clearAdapterService(AdapterService adapterService) {
-        assertWithMessage(
-                        "AdapterService.getAdapterService() must return the same object as the"
-                                + " supplied adapterService in this method")
-                .that(adapterService)
-                .isSameInstanceAs(AdapterService.getAdapterService());
-        assertThat(adapterService).isNotNull();
-        AdapterService.clearAdapterService(adapterService);
+    /** Returns the real {@link BluetoothManager} */
+    public static BluetoothManager getBluetoothManager() {
+        return getContext().getSystemService(BluetoothManager.class);
     }
 
-    /** Helper function to mock getSystemService calls */
-    public static <T> void mockGetSystemService(
-            Context ctx, String serviceName, Class<T> serviceClass, T mockService) {
-        doReturn(mockService).when(ctx).getSystemService(eq(serviceClass));
-        doReturn(mockService).when(ctx).getSystemService(eq(serviceName));
-        doReturn(serviceName).when(ctx).getSystemServiceName(eq(serviceClass));
-    }
-
-    /** Helper function to mock getSystemService calls */
-    public static <T> T mockGetSystemService(
-            Context ctx, String serviceName, Class<T> serviceClass) {
+    /** Mocks {@link Context#getSystemService(Class)} to return a mock instance of the service. */
+    public static <T> T mockGetSystemService(Context context, Class<T> serviceClass) {
         T mockedService = mock(serviceClass);
-        mockGetSystemService(ctx, serviceName, serviceClass, mockedService);
+        mockGetSystemService(context, serviceClass, mockedService);
         return mockedService;
+    }
+
+    /** Mocks {@link Context#getSystemService(Class)} to return a specific service instance. */
+    public static <T> void mockGetSystemService(Context context, Class<T> serviceClass, T service) {
+        doReturn(service).when(context).getSystemService(serviceClass);
+        final var serviceName = getContext().getSystemServiceName(serviceClass);
+        doReturn(service).when(context).getSystemService(serviceName);
+        doReturn(serviceName).when(context).getSystemServiceName(serviceClass);
+    }
+
+    /**
+     * Mocks {@code Context.getSystemService(BluetoothManager.class)} to return the real {@link
+     * BluetoothManager}.
+     */
+    public static void mockGetBluetoothManager(Context context) {
+        final var manager = getBluetoothManager();
+        assertThat(manager).isNotNull();
+        doReturn(manager).when(context).getSystemService(BluetoothManager.class);
+    }
+
+    /**
+     * Mocks {@link AdapterService#getRemoteDevice(String)} to return the same {@link
+     * BluetoothDevice} object for the same address.
+     */
+    public static void mockGetRemoteDevice(
+            AdapterService adapterService, BluetoothDevice... devices) {
+        for (BluetoothDevice device : devices) {
+            final String address = device.getAddress();
+            doReturn(device).when(adapterService).getRemoteDevice(address);
+        }
+    }
+
+    /**
+     * Make use of the ExtendedMockito framework to mock the return value of SystemProperty.get.
+     * This method require the test to use a {@link StaticMockitoRule}
+     */
+    public static void mockSystemPropertyGet(String key, boolean value) {
+        ExtendedMockito.doReturn(value)
+                .when(() -> SystemProperties.getBoolean(eq(key), anyBoolean()));
+    }
+
+    /**
+     * Create a mock BluetoothDevice.
+     *
+     * @param id the test device ID. It must be an integer in the interval [0, 0xFF].
+     * @return {@link BluetoothDevice} test device for the device ID
+     */
+    public static BluetoothDevice getTestDevice(@IntRange(from = 0x00, to = 0xFF) int id) {
+        assertThat(id).isAtMost(0xFF);
+        final String address = String.format("00:01:02:03:04:%02X", id);
+        return getTestDevice(address);
+    }
+
+    /**
+     * Create a mock BluetoothDevice.
+     *
+     * @param address the test device address string.
+     * @return {@link BluetoothDevice} test device for the device address.
+     */
+    public static BluetoothDevice getTestDevice(@NonNull String address) {
+        BluetoothDevice mockDevice = mock(BluetoothDevice.class);
+        doReturn(address).when(mockDevice).getAddress();
+        doReturn(address).when(mockDevice).toString();
+        return mockDevice;
     }
 
     /**
@@ -116,28 +154,51 @@ public class TestUtils {
      * @param id the test device ID. It must be an integer in the interval [0, 0xFF].
      * @return {@link BluetoothDevice} test device for the device ID
      */
-    public static BluetoothDevice getTestDevice(@IntRange(from = 0x00, to = 0xFF) int id) {
+    public static BluetoothDevice getRealDevice(@IntRange(from = 0x00, to = 0xFF) int id) {
         assertThat(id).isAtMost(0xFF);
+        final String address = String.format("00:01:02:03:04:%02X", id);
+        return getRealDevice(address);
+    }
+
+    /**
+     * Create a test device.
+     *
+     * @param address the test device address string.
+     * @return {@link BluetoothDevice} test device for the device address.
+     */
+    public static BluetoothDevice getRealDevice(@NonNull String address) {
+        return getDevice(address, BluetoothDevice.ADDRESS_TYPE_PUBLIC);
+    }
+
+    /**
+     * Create a test device.
+     *
+     * @param address the test device address string.
+     * @param type Bluetooth address type
+     * @return {@link BluetoothDevice} test device for the device address.
+     */
+    public static BluetoothDevice getRealDevice(@NonNull String address, @AddressType int type) {
+        return getDevice(address, type);
+    }
+
+    private static BluetoothDevice getDevice(String address, @AddressType int type) {
+        assertThat(BluetoothAdapter.checkBluetoothAddress(address)).isTrue();
         BluetoothDevice testDevice =
-                InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
-                        .getSystemService(BluetoothManager.class)
-                        .getAdapter()
-                        .getRemoteDevice(String.format("00:01:02:03:04:%02X", id));
+                getBluetoothManager().getAdapter().getRemoteLeDevice(address, type);
         assertThat(testDevice).isNotNull();
         return testDevice;
     }
 
-    public static Resources getTestApplicationResources(Context context) {
+    public static Resources getTestApplicationResources() {
         try {
-            return context.getPackageManager()
+            return getContext()
+                    .getPackageManager()
                     .getResourcesForApplication("com.android.bluetooth.tests");
         } catch (PackageManager.NameNotFoundException e) {
             assertWithMessage("Unable to get test application resources: " + e.toString()).fail();
             return null;
         }
     }
-
 
     /**
      * Wait for looper to finish its current task and all tasks schedule before this
@@ -150,6 +211,66 @@ public class TestUtils {
                 () -> {
                     // do nothing, just need to make sure looper finishes current task
                 });
+    }
+
+    /**
+     * Run synchronously a runnable action on a looper. The method will return after the action has
+     * been execution to completion.
+     *
+     * <p>Example:
+     *
+     * <pre>{@code
+     * TestUtils.runOnMainSync(new Runnable() {
+     *       public void run() {
+     *           assertThat(mA2dpService.stop()).isTrue();
+     *       }
+     *   });
+     * }</pre>
+     *
+     * @param looper the looper used to run the action
+     * @param action the action to run
+     */
+    private static void runOnLooperSync(Looper looper, Runnable action) {
+        if (Looper.myLooper() == looper) {
+            // requested thread is the same as the current thread. call directly.
+            action.run();
+        } else {
+            Handler handler = new Handler(looper);
+            SyncRunnable sr = new SyncRunnable(action);
+            handler.post(sr);
+            sr.waitForComplete();
+        }
+    }
+
+    /** Helper class used to run synchronously a runnable action on a looper. */
+    private static final class SyncRunnable implements Runnable {
+        private final Runnable mTarget;
+        private volatile boolean mComplete = false;
+
+        SyncRunnable(Runnable target) {
+            mTarget = target;
+        }
+
+        @Override
+        public void run() {
+            mTarget.run();
+            synchronized (this) {
+                mComplete = true;
+                notifyAll();
+            }
+        }
+
+        public void waitForComplete() {
+            synchronized (this) {
+                while (!mComplete) {
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                        Log.w(TAG, "waitForComplete got interrupted", e);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -211,47 +332,17 @@ public class TestUtils {
     }
 
     /**
-     * Run synchronously a runnable action on a looper. The method will return after the action has
-     * been execution to completion.
-     *
-     * <p>Example:
-     *
-     * <pre>{@code
-     * TestUtils.runOnMainSync(new Runnable() {
-     *       public void run() {
-     *           assertThat(mA2dpService.stop()).isTrue();
-     *       }
-     *   });
-     * }</pre>
-     *
-     * @param looper the looper used to run the action
-     * @param action the action to run
-     */
-    private static void runOnLooperSync(Looper looper, Runnable action) {
-        if (Looper.myLooper() == looper) {
-            // requested thread is the same as the current thread. call directly.
-            action.run();
-        } else {
-            Handler handler = new Handler(looper);
-            SyncRunnable sr = new SyncRunnable(action);
-            handler.post(sr);
-            sr.waitForComplete();
-        }
-    }
-
-    /**
      * Prepare the intent to start bluetooth browser media service.
      *
      * @return intent with the appropriate component & action set.
      */
     public static Intent prepareIntentToStartBluetoothBrowserMediaService() {
-        final Intent intent =
-                new Intent(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext(),
-                        BluetoothMediaBrowserService.class);
+        final Intent intent = new Intent(getContext(), BluetoothMediaBrowserService.class);
         intent.setAction(MediaBrowserService.SERVICE_INTERFACE);
         return intent;
     }
+
+    private static String sSystemScreenOffTimeout = "10000";
 
     public static void setUpUiTest() throws Exception {
         final UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
@@ -349,34 +440,52 @@ public class TestUtils {
         }
     }
 
-    /** Helper class used to run synchronously a runnable action on a looper. */
-    private static final class SyncRunnable implements Runnable {
-        private final Runnable mTarget;
-        private volatile boolean mComplete = false;
+    /** Similar to {@link MockitoRule}, but allows mocking static methods. */
+    public static class StaticMockitoRule implements MethodRule {
+        private final Class<?>[] mClasses;
 
-        SyncRunnable(Runnable target) {
-            mTarget = target;
+        public StaticMockitoRule(Class<?>... classes) {
+            mClasses = classes;
         }
 
         @Override
-        public void run() {
-            mTarget.run();
-            synchronized (this) {
-                mComplete = true;
-                notifyAll();
-            }
-        }
+        public Statement apply(Statement base, FrameworkMethod method, Object target) {
+            return new Statement() {
+                public void evaluate() throws Throwable {
+                    StaticMockitoSessionBuilder builder =
+                            ExtendedMockito.mockitoSession()
+                                    .name(
+                                            target.getClass().getSimpleName()
+                                                    + "."
+                                                    + method.getName())
+                                    .initMocks(target)
+                                    .strictness(Strictness.LENIENT);
 
-        public void waitForComplete() {
-            synchronized (this) {
-                while (!mComplete) {
+                    for (Class<?> clazz : mClasses) {
+                        builder.mockStatic(clazz);
+                    }
+
+                    StaticMockitoSession session = builder.startMocking();
+
+                    Throwable testFailure;
                     try {
-                        wait();
-                    } catch (InterruptedException e) {
-                        Log.w(TAG, "waitForComplete got interrupted", e);
+                        base.evaluate();
+                        testFailure = null;
+                    } catch (Throwable throwable) {
+                        testFailure = throwable;
+                    }
+
+                    session.finishMocking(testFailure);
+
+                    // Prevent OutOfMemory errors due to mock maker leaks.
+                    // See https://github.com/mockito/mockito/issues/1614, b/259280359, b/396177821
+                    Mockito.framework().clearInlineMocks();
+
+                    if (testFailure != null) {
+                        throw testFailure;
                     }
                 }
-            }
+            };
         }
     }
 

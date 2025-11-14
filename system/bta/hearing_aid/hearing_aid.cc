@@ -48,6 +48,7 @@
 #include "bta/include/bta_gatt_api.h"
 #include "bta/include/bta_gatt_queue.h"
 #include "bta/include/bta_hearing_aid_api.h"
+#include "btif/include/btif_profile_storage.h"
 #include "btm_api_types.h"
 #include "btm_ble_api_types.h"
 #include "btm_iso_api.h"
@@ -59,7 +60,7 @@
 #include "gattdefs.h"
 #include "hardware/bt_gatt_types.h"
 #include "hardware/bt_hearing_aid.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "internal_include/bt_trace.h"
 #include "l2cap_types.h"
 #include "main/shim/entry.h"
@@ -93,11 +94,6 @@ constexpr uint16_t MAX_CE_LEN_20MS_CI = 0x000C;
 constexpr uint16_t CE_LEN_20MS_CI_ISO_RUNNING = 0x0000;
 constexpr uint16_t CONNECTION_INTERVAL_10MS_PARAM = 0x0008;
 constexpr uint16_t CONNECTION_INTERVAL_20MS_PARAM = 0x0010;
-
-void btif_storage_add_hearing_aid(const HearingDevice& dev_info);
-bool btif_storage_get_hearing_aid_prop(const RawAddress& address, uint8_t* capabilities,
-                                       uint64_t* hi_sync_id, uint16_t* render_delay,
-                                       uint16_t* preparation_delay, uint16_t* codecs);
 
 constexpr uint8_t CODEC_G722_16KHZ = 0x01;
 constexpr uint8_t CODEC_G722_24KHZ = 0x02;
@@ -154,7 +150,7 @@ inline BT_HDR* malloc_l2cap_buf(uint16_t len) {
   return msg;
 }
 
-inline uint8_t* get_l2cap_sdu_start_ptr(BT_HDR* msg) {
+static uint8_t* get_l2cap_sdu_start_ptr(BT_HDR* msg) {
   return (uint8_t*)(msg) + BT_HDR_SIZE + L2CAP_MIN_OFFSET;
 }
 
@@ -553,9 +549,9 @@ public:
     }
 
     // Set data length
-    // TODO(jpawlowski: for 16khz only 87 is required, optimize
-    if (get_btm_client_interface().ble.BTM_SetBleDataLength(address, 167) !=
-        tBTM_STATUS::BTM_SUCCESS) {
+    // TODO(jpawlowski) for 16khz only 87 is required, optimize
+    if (get_btm_client_interface().ble.BTM_SetBleDataLength(
+                address, 167, /*is_privileged_client*/ true) != tBTM_STATUS::BTM_SUCCESS) {
       log::warn("Unable to set BLE data length peer:{} size:{}", address, 167);
     }
 
@@ -698,22 +694,27 @@ public:
     if (!success) {
       log::error("encryption failed: bd_addr={}", address);
       BTA_GATTC_Close(hearingDevice->conn_id);
-      if (hearingDevice->first_connection) {
+      if (hearingDevice->first_connection ||
+          com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
         callbacks->OnConnectionState(ConnectionState::DISCONNECTED, address);
       }
       return;
     }
 
     log::info("encryption successful: bd_addr={}", address);
-
-    if (hearingDevice->audio_control_point_handle && hearingDevice->audio_status_handle &&
-        hearingDevice->audio_status_ccc_handle && hearingDevice->volume_handle &&
-        hearingDevice->read_psm_handle) {
-      // Use cached data, jump to read PSM
-      ReadPSM(hearingDevice);
+    if (!com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
+      if (hearingDevice->audio_control_point_handle && hearingDevice->audio_status_handle &&
+          hearingDevice->audio_status_ccc_handle && hearingDevice->volume_handle &&
+          hearingDevice->read_psm_handle) {
+        // Use cached data, jump to read PSM
+        ReadPSM(hearingDevice);
+      } else {
+        log::info("starting service search request for ASHA: bd_addr={}", address);
+        hearingDevice->first_connection = true;
+        BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, HEARING_AID_UUID);
+      }
     } else {
       log::info("starting service search request for ASHA: bd_addr={}", address);
-      hearingDevice->first_connection = true;
       BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, HEARING_AID_UUID);
     }
   }
@@ -796,8 +797,9 @@ public:
       return;
     }
 
-    // Known device, nothing to do.
-    if (!hearingDevice->first_connection) {
+    if (!com::android::bluetooth::flags::continue_queued_command_after_discovery() &&
+        !hearingDevice->first_connection) {
+      // Known device, nothing to do.
       log::info("service discovery result ignored: bd_addr={}", hearingDevice->address);
       return;
     }
@@ -805,8 +807,8 @@ public:
     if (status != GATT_SUCCESS) {
       /* close connection and report service discovery complete with error */
       log::error("service discovery failed: bd_addr={} status={}", hearingDevice->address, status);
-
-      if (hearingDevice->first_connection) {
+      if (com::android::bluetooth::flags::continue_queued_command_after_discovery() ||
+          hearingDevice->first_connection) {
         callbacks->OnConnectionState(ConnectionState::DISCONNECTED, hearingDevice->address);
       }
       return;
@@ -876,6 +878,19 @@ public:
 
   void ReadPSM(HearingDevice* hearingDevice) {
     if (hearingDevice->read_psm_handle) {
+      /* This should not happen, as GAP is disconnected when service change is received.
+       * Just in case, log such occurrence, letting us know we may use the old handle.
+       */
+      if (hearingDevice->service_changed_rcvd) {
+        if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+          log::error("Service change received before PSM read. Read omitted.");
+          return;
+        } else {
+          log::error(
+                  "Service change received before PSM read."
+                  "Attempting to read PSM using old handle");
+        }
+      }
       log::info("bd_addr={} handle=0x{:x}", hearingDevice->address, hearingDevice->read_psm_handle);
       BtaGattQueue::ReadCharacteristic(hearingDevice->conn_id, hearingDevice->read_psm_handle,
                                        HearingAidImpl::OnPsmReadStatic, nullptr);
@@ -933,6 +948,10 @@ public:
       log::warn("invalid data length (expected 17+ bytes): bd_addr={} len={}",
                 hearingDevice->address, len);
       return;
+    }
+
+    if (com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
+      hearingDevice->first_connection = true;
     }
 
     uint8_t capabilities;
@@ -1132,6 +1151,19 @@ public:
     uint8_t* ptr = value.data();
     UINT16_TO_STREAM(ptr, GATT_CHAR_CLIENT_CONFIG_NOTIFICATION);
 
+    /* This should not happen, as GAP is disconnected when service change is received.
+     * Just in case, log such occurrence, letting us know we may use the old handle.
+     */
+    if (hearingDevice->service_changed_rcvd) {
+      if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+        log::error("Stream is starting, but service change received. Aborting.");
+        return;
+      } else {
+        log::error(
+                "Service change received, but stream is starting."
+                "Attempting to subscribe Audio Status using old handle");
+      }
+    }
     BtaGattQueue::WriteDescriptor(hearingDevice->conn_id, hearingDevice->audio_status_ccc_handle,
                                   std::move(value), GATT_WRITE, write_rpt_ctl_cfg_cb, nullptr);
 
@@ -1206,6 +1238,21 @@ public:
         log::info("send Stop cmd, bd_addr={}", device.address);
         device.playback_started = false;
         device.command_acked = false;
+
+        /* This should not happen, as GAP is disconnected when service change is received.
+         * Just in case, log such occurrence, letting us know we may use the old handle.
+         */
+        if (device.service_changed_rcvd) {
+          if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+            log::error(
+                    "Service change received during active stream."
+                    "Omit write to Audio Control Point");
+            return;
+          }
+          log::error(
+                  "Service change received, but stream is active."
+                  "Attempting to write using old Audio Control Point handle");
+        }
         BtaGattQueue::WriteCharacteristic(device.conn_id, device.audio_control_point_handle, stop,
                                           GATT_WRITE, nullptr, nullptr);
       }
@@ -1267,6 +1314,20 @@ public:
     uint8_t* ptr = value.data();
     UINT16_TO_STREAM(ptr, GATT_CHAR_CLIENT_CONFIG_INDICTION);
 
+    /* This should not happen, as GAP is disconnected when service change is received.
+     * Just in case, log such occurrence, letting us know we may use the old handle.
+     */
+    if (device->service_changed_rcvd) {
+      if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+        log::error(
+                "Service change received, but stream is starting."
+                "Omit write to Service Changed CCC");
+        return;
+      }
+      log::error(
+              "Service change received, but stream is starting."
+              "Attempting to subscribe Service Changed using old handle");
+    }
     BtaGattQueue::WriteDescriptor(device->conn_id, device->service_changed_ccc_handle,
                                   std::move(value), GATT_WRITE, nullptr, nullptr);
   }
@@ -1297,6 +1358,20 @@ public:
               "side streaming=0x{:x}",
               start[3], start[2], device->address, start[4]);
       device->command_acked = false;
+      /* This should not happen, as GAP is disconnected when service change is received.
+       * Just in case, log such occurrence, letting us know we may use the old handle.
+       */
+      if (device->service_changed_rcvd) {
+        if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+          log::error(
+                  "Service change received, but stream is starting."
+                  "Omit write using to Audio Control Point");
+          return;
+        }
+        log::error(
+                "Service change received, but stream is starting."
+                "Attempting to write using old Audio Control Point handle");
+      }
       BtaGattQueue::WriteCharacteristic(device->conn_id, device->audio_control_point_handle, start,
                                         GATT_WRITE, HearingAidImpl::StartAudioCtrlCallbackStatic,
                                         nullptr);
@@ -1638,7 +1713,7 @@ public:
         std::vector<uint8_t> buffer(bytes_to_read);
 
         uint16_t bytes_read = 0;
-        // TODO:GAP_ConnReadData should accept uint32_t for length!
+        // TODO GAP_ConnReadData should accept uint32_t for length!
         GAP_ConnReadData(gap_handle, buffer.data(), buffer.size(), &bytes_read);
 
         if (bytes_read < 4) {
@@ -1895,6 +1970,16 @@ public:
       }
 
       std::vector<uint8_t> volume_value({static_cast<unsigned char>(volume)});
+      if (device.volume_handle == 0 || device.service_changed_rcvd) {
+        if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+          log::error(
+                  "Volume handle not set or service changed received: bd_addr={}"
+                  "Write to Volume omitted",
+                  device.address);
+          return;
+        }
+        log::error("Volume handle not set or service changed received: bd_addr={}", device.address);
+      }
       BtaGattQueue::WriteCharacteristic(device.conn_id, device.volume_handle, volume_value,
                                         GATT_WRITE_NO_RSP, nullptr, nullptr);
     }

@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"ඔබ බ්ලූටූත් ක්‍රියාත්මක කර තබා ගන්නේ නම්, ඔබ අහස්යානා ආකාරයේ සිටින මීළඟ වතාවේ එය ක්‍රියාත්මක කිරීමට ඔබේ උපාංගයට මතක තිබෙනු ඇත."</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"බ්ලූටූත් ක්‍රියාත්මකව පවතී"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"ඔබේ උපාංගයට අහස්යානා ආකාරයේ බ්ලූටූත් ක්‍රියාත්මකව තබා ගැනීමට මතකයි. ඔබට බ්ලූටූත් ක්‍රියාත්මක වීමට අවශ්‍ය නොවේ නම් එය ක්‍රියාවිරහිත කරන්න."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"අනෙකුත් උපාංග සමග සම්බන්ධ වී සිටින විට බ්ලූටූත් අහස්යානා ආකාරයේ දී ක්‍රියාත්මකව පවතී."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"ඔබේ ඔරලෝසුවට සම්බන්ධ වී සිටින අතරේ ඔබේ උපාංගය අහස්යානා ආකාරයේ දී බ්ලූටූත් ක්‍රියාත්මකව තබා ගනී."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"මාධ්‍ය උපාංගයකට සම්බන්ධ වී සිටින අතරතුර බ්ලූටූත් අහස්යානා ආකාරයේදී ක්‍රියාත්මකව පවතී."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi සහ බ්ලූටූත් ක්‍රියාත්මකව පවතී"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"ඔබේ උපාංගයට අහස්යානා ආකාරයේ Wi-Fi සහ බ්ලූටූත් ක්‍රියාත්මකව තබා ගැනීමට මතකයි. Wi-Fi සහ බ්ලූටූත් ඒවා ක්‍රියාත්මක වීමට ඔබට අවශ්‍ය නැතිනම් ක්‍රියා විරහිත කරන්න."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"බ්ලූටූත් නැවත ක්‍රියාත්මක විය"</string>

@@ -49,11 +49,18 @@ enum class StartRequestState {
 constexpr uint8_t kChannelNumberMono = 1;
 constexpr uint8_t kChannelNumberStereo = 2;
 
+constexpr uint32_t kSampleRate384000 = 384000;
+constexpr uint32_t kSampleRate192000 = 192000;
+constexpr uint32_t kSampleRate176400 = 176400;
+constexpr uint32_t kSampleRate96000 = 96000;
+constexpr uint32_t kSampleRate88200 = 88200;
 constexpr uint32_t kSampleRate48000 = 48000;
 constexpr uint32_t kSampleRate44100 = 44100;
 constexpr uint32_t kSampleRate32000 = 32000;
 constexpr uint32_t kSampleRate24000 = 24000;
+constexpr uint32_t kSampleRate22050 = 22050;
 constexpr uint32_t kSampleRate16000 = 16000;
+constexpr uint32_t kSampleRate11025 = 11025;
 constexpr uint32_t kSampleRate8000 = 8000;
 
 constexpr uint8_t kBitsPerSample16 = 16;
@@ -95,6 +102,8 @@ private:
     virtual void ConfirmStreamingRequest() = 0;
     virtual void CancelStreamingRequest() = 0;
     virtual void UpdateAudioConfigToHal(const ::bluetooth::le_audio::stream_config& config) = 0;
+    virtual void SetCodecPriority(const ::bluetooth::le_audio::types::LeAudioCodecId& codecId,
+                                  int32_t priority) = 0;
     virtual void SuspendedForReconfiguration() = 0;
     virtual void ReconfigurationComplete() = 0;
   };
@@ -113,6 +122,8 @@ public:
     void ConfirmStreamingRequest() override;
     void CancelStreamingRequest() override;
     void UpdateAudioConfigToHal(const ::bluetooth::le_audio::stream_config& config) override;
+    void SetCodecPriority(const ::bluetooth::le_audio::types::LeAudioCodecId& codecId,
+                          int32_t priority) override;
     void UpdateBroadcastAudioConfigToHal(
             const ::bluetooth::le_audio::broadcast_offload_config& config);
     void SuspendedForReconfiguration() override;
@@ -144,6 +155,8 @@ public:
     void ConfirmStreamingRequest() override;
     void CancelStreamingRequest() override;
     void UpdateAudioConfigToHal(const ::bluetooth::le_audio::stream_config& config) override;
+    void SetCodecPriority(const ::bluetooth::le_audio::types::LeAudioCodecId& codecId,
+                          int32_t priority) override;
     void SuspendedForReconfiguration() override;
     void ReconfigurationComplete() override;
     // Source the given stream of bytes to be sinked into the upper layers

@@ -51,8 +51,8 @@ class JniCallbacks {
         mBondStateMachine.sspRequestCallback(address, pairingVariant, passkey);
     }
 
-    void devicePropertyChangedCallback(byte[] address, int[] types, byte[][] val) {
-        mRemoteDevices.devicePropertyChangedCallback(address, types, val);
+    void devicePropertyChangedCallback(byte[] address, int addressType, int[] types, byte[][] val) {
+        mRemoteDevices.devicePropertyChangedCallback(address, addressType, types, val);
     }
 
     void deviceFoundCallback(byte[] address) {
@@ -80,16 +80,17 @@ class JniCallbacks {
     void aclStateChangeCallback(
             int status,
             byte[] address,
+            int addressType,
+            int transport,
             int newState,
-            int transportLinkType,
             int hciReason,
             int handle) {
         mRemoteDevices.aclStateChangeCallback(
-                status, address, newState, transportLinkType, hciReason, handle);
+                status, address, addressType, transport, newState, hciReason, handle);
     }
 
-    void keyMissingCallback(byte[] address) {
-        mRemoteDevices.keyMissingCallback(address);
+    void keyMissingCallback(byte[] address, int reason) {
+        mRemoteDevices.keyMissingCallback(address, reason);
     }
 
     void encryptionChangeCallback(

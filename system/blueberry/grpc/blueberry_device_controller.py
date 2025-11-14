@@ -14,7 +14,6 @@ import grpc
 from blueberry.grpc import blueberry_device_controller_service
 from blueberry.grpc.proto import blueberry_device_controller_pb2_grpc
 
-
 _HOST = '[::]'
 
 FLAGS = flags.FLAGS
@@ -23,18 +22,15 @@ flags.DEFINE_integer('threads', 10, 'number of worker threads in thread pool')
 
 
 def main(unused_argv):
-  server = grpc.server(
-      futures.ThreadPoolExecutor(max_workers=FLAGS.threads),
-      ports=(FLAGS.port,))  # pytype: disable=wrong-keyword-args
-  servicer = (
-      blueberry_device_controller_service.BlueberryDeviceControllerServicer())
-  blueberry_device_controller_pb2_grpc.add_BlueberryDeviceControllerServicer_to_server(
-      servicer, server)
-  server_creds = loas2.loas2_server_credentials()
-  server.add_secure_port(f'{_HOST}:{FLAGS.port}', server_creds)
-  server.start()
-  server.wait_for_termination()
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=FLAGS.threads), ports=(FLAGS.port,))  # pytype: disable=wrong-keyword-args
+    servicer = (blueberry_device_controller_service.BlueberryDeviceControllerServicer())
+    blueberry_device_controller_pb2_grpc.add_BlueberryDeviceControllerServicer_to_server(
+        servicer, server)
+    server_creds = loas2.loas2_server_credentials()
+    server.add_secure_port(f'{_HOST}:{FLAGS.port}', server_creds)
+    server.start()
+    server.wait_for_termination()
 
 
 if __name__ == '__main__':
-  app.run(main)
+    app.run(main)

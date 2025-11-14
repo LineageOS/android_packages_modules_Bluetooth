@@ -19,7 +19,6 @@
 #include <complex>
 
 #include "hci/hci_packets.h"
-#include "module.h"
 
 namespace bluetooth {
 namespace hal {
@@ -275,7 +274,6 @@ struct ProcedureDataV2 {
   hci::ProcedureAbortReason remote_procedure_abort_reason_;
   uint8_t local_selected_tx_power_;
   uint8_t remote_selected_tx_power_;
-  // TODO(b/378942784): assign the sequence
   int procedure_sequence_;
 };
 
@@ -302,10 +300,8 @@ public:
   virtual void OnResult(uint16_t connection_handle, const RangingResult& ranging_result) = 0;
 };
 
-class RangingHal : public ::bluetooth::Module {
+class RangingHal {
 public:
-  static const ModuleFactory Factory;
-
   virtual ~RangingHal() = default;
   virtual bool IsBound() = 0;
   virtual RangingHalVersion GetRangingHalVersion() = 0;
@@ -313,7 +309,8 @@ public:
   virtual std::vector<VendorSpecificCharacteristic> GetVendorSpecificCharacteristics() = 0;
   virtual void OpenSession(
           uint16_t connection_handle, uint16_t att_handle,
-          const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_data) = 0;
+          const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_data,
+          uint8_t sight_type, uint8_t location_type) = 0;
   virtual void HandleVendorSpecificReply(
           uint16_t connection_handle,
           const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_reply) = 0;

@@ -443,7 +443,8 @@ static bool a2dp_opus_read_feeding(uint8_t* read_buffer, uint32_t* bytes_read) {
       return false;
     }
 
-    /* Fill the unfilled part of the read buffer with silence (0) */
+    // TODO(b/409124193): remove this logic after cleaning a2dp_fmq_read_exact
+    // Fill the unfilled part of the read buffer with silence (0)
     memset(((uint8_t*)read_buffer) + nb_byte_read, 0, read_size - nb_byte_read);
     nb_byte_read = read_size;
   }

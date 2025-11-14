@@ -232,13 +232,12 @@ extern struct set_remote_delay set_remote_delay;
 // Return: bool
 struct setup_codec {
   static bool return_value;
-  std::function<bool(A2dpCodecConfig* a2dp_config, uint16_t peer_mtu,
-                     int preferred_encoding_interval_us)>
-          body{[](A2dpCodecConfig* /* a2dp_config */, uint16_t /* peer_mtu */,
-                  int /* preferred_encoding_interval_us */) { return return_value; }};
-  bool operator()(A2dpCodecConfig* a2dp_config, uint16_t peer_mtu,
-                  int preferred_encoding_interval_us) {
-    return body(a2dp_config, peer_mtu, preferred_encoding_interval_us);
+  std::function<bool(const ::bluetooth::audio::a2dp::ahal_codec_configuration& config)> body{
+          [](const ::bluetooth::audio::a2dp::ahal_codec_configuration& /* config */) {
+            return return_value;
+          }};
+  bool operator()(const ::bluetooth::audio::a2dp::ahal_codec_configuration& config) {
+    return body(config);
   }
 };
 extern struct setup_codec setup_codec;

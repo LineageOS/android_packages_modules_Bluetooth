@@ -18,6 +18,7 @@ package com.android.bluetooth.avrcpcontroller;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -25,6 +26,7 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
+import android.content.Context;
 import android.net.Uri;
 
 import androidx.test.filters.SmallTest;
@@ -45,16 +47,19 @@ public class AvrcpCoverArtProviderTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private Uri mUri;
+    @Mock private Context mContext;
 
     private static final String TEST_MODE = "test_mode";
-
-    private final BluetoothDevice mTestDevice = getTestDevice(48);
+    private final BluetoothDevice mDevice = getTestDevice(48);
 
     private AvrcpCoverArtProvider mArtProvider;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
+        mockGetBluetoothManager(mContext);
+
         mArtProvider = new AvrcpCoverArtProvider();
+        mArtProvider.attachInfo(mContext, null);
     }
 
     @Test
@@ -85,7 +90,7 @@ public class AvrcpCoverArtProviderTest {
 
     @Test
     public void getImageUri_withEmptyImageUuid() {
-        assertThat(AvrcpCoverArtProvider.getImageUri(mTestDevice, "")).isNull();
+        assertThat(AvrcpCoverArtProvider.getImageUri(mDevice, "")).isNull();
     }
 
     @Test
@@ -94,11 +99,11 @@ public class AvrcpCoverArtProviderTest {
         Uri expectedUri =
                 AvrcpCoverArtProvider.CONTENT_URI
                         .buildUpon()
-                        .appendQueryParameter("device", mTestDevice.getAddress())
+                        .appendQueryParameter("device", mDevice.getAddress())
                         .appendQueryParameter("uuid", uuid)
                         .build();
 
-        assertThat(AvrcpCoverArtProvider.getImageUri(mTestDevice, uuid)).isEqualTo(expectedUri);
+        assertThat(AvrcpCoverArtProvider.getImageUri(mDevice, uuid)).isEqualTo(expectedUri);
     }
 
     @Test

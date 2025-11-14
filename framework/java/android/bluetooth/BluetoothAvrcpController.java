@@ -48,8 +48,8 @@ import java.util.List;
 public final class BluetoothAvrcpController implements BluetoothProfile {
     private static final String TAG = BluetoothAvrcpController.class.getSimpleName();
 
-    private static final boolean DBG = false;
-    private static final boolean VDBG = false;
+    private static final boolean DBG = Log.isLoggable("bluetooth", Log.DEBUG);
+    private static final boolean VDBG = Log.isLoggable("bluetooth", Log.VERBOSE);
 
     /**
      * Intent used to broadcast the change in connection state of the AVRCP Controller profile.
@@ -197,79 +197,6 @@ public final class BluetoothAvrcpController implements BluetoothProfile {
             }
         }
         return STATE_DISCONNECTED;
-    }
-
-    /**
-     * Gets the player application settings.
-     *
-     * @return the {@link BluetoothAvrcpPlayerSettings} or {@code null} if there is an error.
-     */
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    public BluetoothAvrcpPlayerSettings getPlayerSettings(BluetoothDevice device) {
-        if (DBG) Log.d(TAG, "getPlayerSettings");
-        final IBluetoothAvrcpController service = getService();
-        if (service == null) {
-            Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
-        } else if (isEnabled()) {
-            try {
-                return service.getPlayerSettings(device, mAttributionSource);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Sets the player app setting for current player. returns true in case setting is supported by
-     * remote, false otherwise
-     */
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    public boolean setPlayerApplicationSetting(BluetoothAvrcpPlayerSettings plAppSetting) {
-        if (DBG) Log.d(TAG, "setPlayerApplicationSetting");
-        final IBluetoothAvrcpController service = getService();
-        if (service == null) {
-            Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
-        } else if (isEnabled()) {
-            try {
-                service.setPlayerApplicationSetting(plAppSetting, mAttributionSource);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Send Group Navigation Command to Remote. possible keycode values: next_grp, previous_grp
-     * defined above
-     */
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    public void sendGroupNavigationCmd(BluetoothDevice device, int keyCode, int keyState) {
-        Log.d(
-                TAG,
-                "sendGroupNavigationCmd dev = "
-                        + device
-                        + " key "
-                        + keyCode
-                        + " State = "
-                        + keyState);
-        final IBluetoothAvrcpController service = getService();
-        if (service == null) {
-            Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
-        } else if (isEnabled()) {
-            try {
-                service.sendGroupNavigationCmd(device, keyCode, keyState, mAttributionSource);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            }
-        }
     }
 
     private boolean isEnabled() {

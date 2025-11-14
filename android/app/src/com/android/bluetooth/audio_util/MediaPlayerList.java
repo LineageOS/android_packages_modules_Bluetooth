@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.audio_util;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.NonNull;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -83,9 +85,10 @@ public class MediaPlayerList {
 
     private final Context mContext;
     private final Looper mLooper; // Thread all media player callbacks and timeouts happen on
+    private final AudioManager mAudioManager;
+
     private MediaSessionManager mMediaSessionManager;
     private MediaData mCurrMediaData = null;
-    private final AudioManager mAudioManager;
 
     private final BluetoothEventLogger mActivePlayerLogger =
             new BluetoothEventLogger(ACTIVE_PLAYER_LOGGER_SIZE, ACTIVE_PLAYER_LOGGER_TITLE);
@@ -106,6 +109,7 @@ public class MediaPlayerList {
     private int mAddressedPlayerId = NO_ACTIVE_PLAYER;
 
     private MediaUpdateCallback mCallback;
+
     private boolean mAudioPlaybackIsActive = false;
 
     private BrowsablePlayerConnector mBrowsablePlayerConnector;
@@ -132,11 +136,11 @@ public class MediaPlayerList {
         void onActivePlayerChanged(MediaPlayerWrapper player);
     }
 
-    public MediaPlayerList(Looper looper, Context context) {
+    public MediaPlayerList(@NonNull Context context, @NonNull Looper looper) {
         Log.v(TAG, "Creating MediaPlayerList");
 
-        mLooper = looper;
-        mContext = context;
+        mLooper = requireNonNull(looper);
+        mContext = requireNonNull(context);
 
         // Register for intents where available players might have changed
         IntentFilter pkgFilter = new IntentFilter();
@@ -146,14 +150,14 @@ public class MediaPlayerList {
         pkgFilter.addAction(Intent.ACTION_PACKAGE_ADDED);
         pkgFilter.addAction(Intent.ACTION_PACKAGE_CHANGED);
         pkgFilter.addDataScheme(PACKAGE_SCHEME);
-        context.registerReceiver(mPackageChangedBroadcastReceiver, pkgFilter);
+        mContext.registerReceiver(mPackageChangedBroadcastReceiver, pkgFilter);
 
-        mAudioManager = context.getSystemService(AudioManager.class);
+        mAudioManager = mContext.getSystemService(AudioManager.class);
         mAudioManager.registerAudioPlaybackCallback(mAudioPlaybackCallback, new Handler(mLooper));
 
-        mMediaSessionManager = context.getSystemService(MediaSessionManager.class);
+        mMediaSessionManager = mContext.getSystemService(MediaSessionManager.class);
         mMediaSessionManager.addOnActiveSessionsChangedListener(
-                mActiveSessionsChangedListener, null, new Handler(looper));
+                mActiveSessionsChangedListener, null, new Handler(mLooper));
         mMediaSessionManager.addOnMediaKeyEventSessionChangedListener(
                 mContext.getMainExecutor(), mMediaKeyEventSessionChangedListener);
     }
@@ -170,7 +174,9 @@ public class MediaPlayerList {
         // Construct the list of current players
         d("Initializing list of current media players");
         List<android.media.session.MediaController> controllers =
-                mMediaSessionManager.getActiveSessions(null);
+                (mMediaSessionManager != null)
+                        ? mMediaSessionManager.getActiveSessions(null)
+                        : Collections.emptyList();
 
         for (android.media.session.MediaController controller : controllers) {
             if ((controller.getFlags() & MediaSession.FLAG_EXCLUSIVE_GLOBAL_PRIORITY) != 0) {
@@ -185,7 +191,10 @@ public class MediaPlayerList {
         // If there were any active players and we don't already have one due to the Media
         // Framework Callbacks then set the highest priority one to active
         if (mActivePlayerId == 0 && mMediaPlayers.size() > 0) {
-            String packageName = mMediaSessionManager.getMediaKeyEventSessionPackageName();
+            String packageName =
+                    (mMediaSessionManager != null)
+                            ? mMediaSessionManager.getMediaKeyEventSessionPackageName()
+                            : "";
             if (!TextUtils.isEmpty(packageName) && haveMediaPlayer(packageName)) {
                 Log.i(TAG, "Set active player to MediaKeyEvent session = " + packageName);
                 setActivePlayer(mMediaPlayerIds.get(packageName));
@@ -291,7 +300,6 @@ public class MediaPlayerList {
     }
 
     public void cleanup() {
-        mCallback = null;
         mContext.unregisterReceiver(mPackageChangedBroadcastReceiver);
 
         mActivePlayerId = NO_ACTIVE_PLAYER;
@@ -547,9 +555,9 @@ public class MediaPlayerList {
      */
     public PlaybackState getCurrentPlayStatus() {
         final MediaPlayerWrapper player = getActivePlayer();
-        if (player == null) return null;
+        if (player == null && !mAudioPlaybackIsActive) return null;
 
-        PlaybackState state = player.getPlaybackState();
+        PlaybackState state = player == null ? null : player.getPlaybackState();
         if (mAudioPlaybackIsActive
                 && (state == null || state.getState() != PlaybackState.STATE_PLAYING)) {
             return new PlaybackState.Builder()
@@ -1059,13 +1067,14 @@ public class MediaPlayerList {
             mPlayerSettingsListener.onActivePlayerChanged(player);
         }
 
+        MediaData data = player.getMediaData();
+
         // Ensure that metadata is synced on the new player
-        if (!player.isMetadataSynced()) {
+        if (!player.isMetadataSynced(data)) {
             Log.w(TAG, "setActivePlayer(): Metadata not synced on new player");
             return;
         }
 
-        MediaData data = player.getCurrentMediaData();
         if (mAudioPlaybackIsActive) {
             data.state = mCurrMediaData.state;
             Log.d(TAG, "setActivePlayer mAudioPlaybackIsActive=true, state=" + data.state);
@@ -1312,10 +1321,13 @@ public class MediaPlayerList {
                     AudioPlaybackConfiguration activeConfig = null;
                     for (AudioPlaybackConfiguration config : configs) {
                         if (config.isActive()
-                                && (config.getAudioAttributes().getUsage()
-                                        == AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
-                                && (config.getAudioAttributes().getContentType()
-                                        == AudioAttributes.CONTENT_TYPE_SPEECH)) {
+                                && (((config.getAudioAttributes().getUsage()
+                                                        == AudioAttributes
+                                                                .USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+                                                && (config.getAudioAttributes().getContentType()
+                                                        == AudioAttributes.CONTENT_TYPE_SPEECH))
+                                        || config.getAudioAttributes().getUsage()
+                                                == AudioAttributes.USAGE_MEDIA)) {
                             activeConfig = config;
                             isActive = true;
                         }

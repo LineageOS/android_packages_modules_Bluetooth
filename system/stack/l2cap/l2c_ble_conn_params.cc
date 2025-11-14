@@ -29,7 +29,7 @@
 #include <com_android_bluetooth_flags.h>
 
 #include "common/le_conn_params.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/event_checkers.h"
 #include "hci/hci_interface.h"
 #include "hci/hci_packets.h"

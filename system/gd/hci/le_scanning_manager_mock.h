@@ -20,6 +20,7 @@
 #include <memory>
 
 #include "hci/address.h"
+#include "hci/le_scanning_callback.h"
 #include "hci/le_scanning_manager.h"
 #include "hci/uuid.h"
 
@@ -50,29 +51,39 @@ class MockScanningCallback : public ScanningCallback {
 
 class MockLeScanningManager : public LeScanningManager {
 public:
-  MOCK_METHOD(void, RegisterScanner, (const Uuid));
-  MOCK_METHOD(void, Unregister, (ScannerId));
-  MOCK_METHOD(void, Scan, (bool));
+  MOCK_METHOD(void, RegisterScanner, (const Uuid), (override));
+  MOCK_METHOD(void, Unregister, (ScannerId), (override));
+  MOCK_METHOD(void, Scan, (bool), (override));
   MOCK_METHOD(void, SetScanParameters,
-              (LeScanType, ScannerId, uint16_t, uint16_t, ScannerId, uint16_t, uint16_t, uint8_t));
-  MOCK_METHOD(void, ScanFilterEnable, (bool));
-  MOCK_METHOD(void, ScanFilterParameterSetup, (ApcfAction, uint8_t, AdvertisingFilterParameter));
-  MOCK_METHOD(void, ScanFilterAdd, (uint8_t, std::vector<AdvertisingPacketContentFilterCommand>));
-  MOCK_METHOD(void, BatchScanConifgStorage, (uint8_t, uint8_t, uint8_t, ScannerId));
-  MOCK_METHOD(void, BatchScanEnable, (BatchScanMode, uint32_t, uint32_t, BatchScanDiscardRule));
-  MOCK_METHOD(void, BatchScanDisable, ());
-  MOCK_METHOD(void, BatchScanReadReport, (ScannerId, BatchScanMode));
-  MOCK_METHOD(void, TrackAdvertiser, (uint8_t, ScannerId));
-  MOCK_METHOD(void, RegisterScanningCallback, (ScanningCallback*));
-  MOCK_METHOD(void, StartSync, (uint8_t, const AddressWithType&, uint16_t, uint16_t, int));
-  MOCK_METHOD(void, StopSync, (uint16_t));
-  MOCK_METHOD(void, CancelCreateSync, (uint8_t, const Address&));
+              (LeScanType, ScannerId, uint16_t, uint16_t, ScannerId, uint16_t, uint16_t, uint8_t),
+              (override));
+  MOCK_METHOD(void, SetScanFilterPolicy, (LeScanningFilterPolicy filter_policy), (override));
+  MOCK_METHOD(void, ScanFilterEnable, (bool), (override));
+  MOCK_METHOD(void, ScanFilterParameterSetup, (ApcfAction, uint8_t, AdvertisingFilterParameter),
+              (override));
+  MOCK_METHOD(void, ScanFilterAdd, (uint8_t, std::vector<AdvertisingPacketContentFilterCommand>),
+              (override));
+  MOCK_METHOD(void, BatchScanConifgStorage, (uint8_t, uint8_t, uint8_t, ScannerId), (override));
+  MOCK_METHOD(void, BatchScanEnable, (BatchScanMode, uint32_t, uint32_t, BatchScanDiscardRule),
+              (override));
+  MOCK_METHOD(void, BatchScanDisable, (), (override));
+  MOCK_METHOD(void, BatchScanReadReport, (ScannerId, BatchScanMode), (override));
+  MOCK_METHOD(void, TrackAdvertiser, (uint8_t, ScannerId), (override));
+  MOCK_METHOD(void, RegisterScanningCallback, (ScanningCallback*), (override));
+  MOCK_METHOD(void, StartSync, (uint8_t, const AddressWithType&, uint16_t, uint16_t, int),
+              (override));
+  MOCK_METHOD(void, StopSync, (uint16_t), (override));
+  MOCK_METHOD(void, CancelCreateSync, (uint8_t, const Address&), (override));
   MOCK_METHOD(void, TransferSync,
               (const Address&, uint16_t connection_handle, uint16_t service_data,
-               uint16_t sync_handle, int pa_source));
+               uint16_t sync_handle, int pa_source),
+              (override));
   MOCK_METHOD(void, TransferSetInfo,
-              (const Address&, uint16_t connection_handle, uint16_t service_data, uint8_t, int));
-  MOCK_METHOD(void, SyncTxParameters, (const Address&, uint8_t, uint16_t, uint16_t, int));
+              (const Address&, uint16_t connection_handle, uint16_t service_data, uint8_t, int),
+              (override));
+  MOCK_METHOD(void, SyncTxParameters, (const Address&, uint8_t, uint16_t, uint16_t, int),
+              (override));
+  MOCK_METHOD(bool, IsAdTypeFilterSupported, (), (const override));
 };
 
 }  // namespace testing

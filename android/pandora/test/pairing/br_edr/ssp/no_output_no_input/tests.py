@@ -46,7 +46,9 @@ class BREDRNoOutputNoInputTestClass(BREDRSSPPairTestBase):
 
         # responder receives just works
         responder_ev = await anext(self.responder_pairing_event_stream)
-        logging.debug(f'[{self.responder_pairing_event_stream.device.name}] responder_ev.method_variant():{responder_ev.method_variant()}')
+        logging.debug(
+            f'[{self.responder_pairing_event_stream.device.name}] responder_ev.method_variant():{responder_ev.method_variant()}'
+        )
 
         init_ev = await anext(self.initiator_pairing_event_stream)
         logging.debug(

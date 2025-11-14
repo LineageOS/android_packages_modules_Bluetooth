@@ -18,15 +18,15 @@ from mmi2grpc._helpers import assert_description, match_description
 from mmi2grpc._proxy import ProfileProxy
 from mmi2grpc._rootcanal import Dongle
 
-from pandora_experimental.vcp_grpc import VCP
-from pandora_experimental.gatt_grpc import GATT
+from pandora.vcp_grpc import VCP
+from pandora.gatt_grpc import GATT
 from pandora.security_grpc import Security, SecurityStorage
 from pandora.security_pb2 import LE_LEVEL3, PairingEventAnswer
 from pandora.host_grpc import Host
 from pandora.host_pb2 import PUBLIC, RANDOM
 from pandora.security_grpc import Security
 from pandora.security_pb2 import LE_LEVEL3, PairingEventAnswer
-from pandora_experimental.le_audio_grpc import LeAudio
+from pandora.le_audio_grpc import LeAudio
 
 from time import sleep
 

@@ -32,6 +32,7 @@
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/metric_id_api.h>
 
 #include <cstdint>
 #include <cstdlib>
@@ -98,7 +99,6 @@
 #include "hardware/bt_vc.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
-#include "main/shim/metric_id_api.h"
 #include "os/parameter_provider.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
@@ -133,11 +133,6 @@
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
-using bluetooth::csis::CsisClientInterface;
-using bluetooth::has::HasClientInterface;
-using bluetooth::le_audio::LeAudioBroadcasterInterface;
-using bluetooth::le_audio::LeAudioClientInterface;
-using bluetooth::vc::VolumeControlInterface;
 using namespace bluetooth;
 
 namespace {
@@ -353,7 +348,7 @@ static bluetooth::core::CoreInterface* CreateInterfaceToProfiles() {
   };
   static bluetooth::core::HACK_ProfileInterface profileInterface{
           // HID
-          .btif_hh_virtual_unplug = btif_hh_virtual_unplug,
+          .btif_hh_virtual_unplug = btif_hh_virtual_unplug_from_main,
           .bta_hh_read_ssr_param = bta_hh_read_ssr_param,
 
           // AVDTP
@@ -408,11 +403,14 @@ int GetAdapterIndex() { return 0; }  // Unsupported outside of FLOSS
 #endif  // TARGET_FLOSS
 
 static int init(bt_callbacks_t* callbacks, bool start_restricted, bool is_common_criteria_mode,
-                int config_compare_result, bool is_atv) {
+                int config_compare_result, bool is_atv, const char* hci_instance_name) {
+  log::assert_that(callbacks != nullptr, "assert failed: callbacks != nullptr");
+  log::assert_that(hci_instance_name != nullptr, "assert failed: hci_instance_name != nullptr");
+
   log::info(
           "start restricted = {} ; common criteria mode = {}, config compare "
-          "result = {}",
-          start_restricted, is_common_criteria_mode, config_compare_result);
+          "result = {} instance_name = {}",
+          start_restricted, is_common_criteria_mode, config_compare_result, hci_instance_name);
 
   if (interface_ready()) {
     return BT_STATUS_DONE;
@@ -430,6 +428,7 @@ static int init(bt_callbacks_t* callbacks, bool start_restricted, bool is_common
   } else {
     bluetooth::os::ParameterProvider::SetCommonCriteriaConfigCompareResult(CONFIG_COMPARE_ALL_PASS);
   }
+  bluetooth::os::ParameterProvider::SetHciInstanceName(hci_instance_name);
 
   is_local_device_atv = is_atv;
 
@@ -477,15 +476,6 @@ static int disable(void) {
 }
 
 static void cleanup(void) { stack_manager_get_interface()->clean_up_stack(&stop_profiles); }
-
-static void start_rust_module(void) {
-  std::promise<void> rust_up_promise;
-  auto rust_up_future = rust_up_promise.get_future();
-  stack_manager_get_interface()->start_up_rust_module_async(std::move(rust_up_promise));
-  rust_up_future.wait();
-}
-
-static void stop_rust_module(void) { stack_manager_get_interface()->shut_down_rust_module_async(); }
 
 bool is_restricted_mode() { return restricted_mode; }
 
@@ -1099,7 +1089,7 @@ static std::string obfuscate_address(const RawAddress& address) {
 }
 
 static int get_metric_id(const RawAddress& address) {
-  return bluetooth::shim::AllocateIdFromMetricIdAllocator(address);
+  return bluetooth::metrics::AllocateIdFromMetricIdAllocator(address);
 }
 
 static int set_dynamic_audio_buffer_size(int codec, int size) {
@@ -1212,8 +1202,6 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
         .enable = enable,
         .disable = disable,
         .cleanup = cleanup,
-        .start_rust_module = start_rust_module,
-        .stop_rust_module = stop_rust_module,
         .get_adapter_properties = get_adapter_properties,
         .get_adapter_property = get_adapter_property,
         .set_scan_mode = set_scan_mode,
@@ -1325,18 +1313,20 @@ void invoke_adapter_properties_cb(bt_status_t status, int num_properties,
           status, num_properties, property_deep_copy_array(num_properties, properties)));
 }
 
-void invoke_remote_device_properties_cb(bt_status_t status, RawAddress bd_addr, int num_properties,
+void invoke_remote_device_properties_cb(bt_status_t status, RawAddress bd_addr,
+                                        uint8_t address_type, int num_properties,
                                         bt_property_t* properties) {
   do_in_jni_thread(base::BindOnce(
-          [](bt_status_t status, RawAddress bd_addr, int num_properties,
+          [](bt_status_t status, RawAddress bd_addr, uint8_t address_type, int num_properties,
              bt_property_t* properties) {
-            HAL_CBACK(bt_hal_cbacks, remote_device_properties_cb, status, &bd_addr, num_properties,
-                      properties);
+            HAL_CBACK(bt_hal_cbacks, remote_device_properties_cb, status, &bd_addr, address_type,
+                      num_properties, properties);
             if (properties) {
               osi_free(properties);
             }
           },
-          status, bd_addr, num_properties, property_deep_copy_array(num_properties, properties)));
+          status, bd_addr, address_type, num_properties,
+          property_deep_copy_array(num_properties, properties)));
 }
 
 void invoke_device_found_cb(int num_properties, bt_property_t* properties) {
@@ -1450,16 +1440,16 @@ void invoke_le_address_associate_cb(RawAddress main_bd_addr, RawAddress secondar
           main_bd_addr, secondary_bd_addr, identity_address_type));
 }
 
-void invoke_acl_state_changed_cb(bt_status_t status, RawAddress bd_addr, bt_acl_state_t state,
-                                 int transport_link_type, bt_hci_error_code_t hci_reason,
-                                 bt_conn_direction_t direction, uint16_t acl_handle) {
+void invoke_acl_state_changed_cb(bt_status_t status, tAclLinkSpec& link_spec, bt_acl_state_t state,
+                                 bt_hci_error_code_t hci_reason, bt_conn_direction_t direction,
+                                 uint16_t acl_handle) {
   do_in_jni_thread(base::BindOnce(
-          [](bt_status_t status, RawAddress bd_addr, bt_acl_state_t state, int transport_link_type,
+          [](bt_status_t status, tAclLinkSpec link_spec, bt_acl_state_t state,
              bt_hci_error_code_t hci_reason, bt_conn_direction_t direction, uint16_t acl_handle) {
-            HAL_CBACK(bt_hal_cbacks, acl_state_changed_cb, status, &bd_addr, state,
-                      transport_link_type, hci_reason, direction, acl_handle);
+            HAL_CBACK(bt_hal_cbacks, acl_state_changed_cb, status, link_spec, state, hci_reason,
+                      direction, acl_handle);
           },
-          status, bd_addr, state, transport_link_type, hci_reason, direction, acl_handle));
+          status, link_spec, state, hci_reason, direction, acl_handle));
 }
 
 void invoke_thread_evt_cb(bt_cb_thread_evt event) {
@@ -1521,9 +1511,12 @@ void invoke_switch_codec_cb(bool is_low_latency_buffer_size) {
           is_low_latency_buffer_size));
 }
 
-void invoke_key_missing_cb(RawAddress bd_addr) {
+void invoke_key_missing_cb(tBTA_DM_KEY_MISSING key_missing) {
   do_in_jni_thread(base::BindOnce(
-          [](RawAddress bd_addr) { HAL_CBACK(bt_hal_cbacks, key_missing_cb, bd_addr); }, bd_addr));
+          [](tBTA_DM_KEY_MISSING key_missing) {
+            HAL_CBACK(bt_hal_cbacks, key_missing_cb, key_missing.bd_addr, key_missing.reason);
+          },
+          key_missing));
 }
 
 void invoke_encryption_change_cb(bt_encryption_change_evt encryption_change) {

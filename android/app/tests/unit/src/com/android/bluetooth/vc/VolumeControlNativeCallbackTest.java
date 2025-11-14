@@ -26,9 +26,9 @@ import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_EXT_AU
 import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_EXT_AUDIO_OUT_VOL_OFFSET_CHANGED;
 import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_VOLUME_STATE_CHANGED;
 
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verify;
 
 import androidx.test.runner.AndroidJUnit4;
@@ -110,10 +110,11 @@ public class VolumeControlNativeCallbackTest {
 
     @Test
     public void onDeviceAvailable() {
+        int groupId = 1;
         int numOfExternalOutputs = 3;
         int numOfExternalInputs = 0;
 
-        mNativeCallback.onDeviceAvailable(numOfExternalOutputs, numOfExternalInputs, null);
+        mNativeCallback.onDeviceAvailable(groupId, numOfExternalOutputs, numOfExternalInputs, null);
         verify(mService).messageFromNative(mEvent.capture());
         VolumeControlStackEvent event = mEvent.getValue();
 

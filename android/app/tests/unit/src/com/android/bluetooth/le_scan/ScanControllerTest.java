@@ -19,30 +19,31 @@ package com.android.bluetooth.le_scan;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 
-import static androidx.test.platform.app.InstrumentationRegistry.getInstrumentation;
-
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
+import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.argThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.IPeriodicAdvertisingCallback;
 import android.bluetooth.le.IScannerCallback;
+import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.AttributionSource;
@@ -52,16 +53,14 @@ import android.location.LocationManager;
 import android.os.Binder;
 import android.os.RemoteException;
 import android.os.WorkSource;
+import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.CompanionManager;
-import com.android.bluetooth.gatt.GattNativeInterface;
-import com.android.bluetooth.gatt.GattObjectsFactory;
+import com.android.bluetooth.flags.Flags;
 
 import com.google.protobuf.ByteString;
 import com.google.testing.junit.testparameterinjector.TestParameter;
@@ -79,6 +78,7 @@ import org.mockito.Mock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -86,14 +86,11 @@ import java.util.UUID;
 @SmallTest
 @RunWith(TestParameterInjector.class)
 public class ScanControllerTest {
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
-    @Mock private GattObjectsFactory mGattObjectsFactory;
-    @Mock private ScanObjectsFactory mScanObjectsFactory;
+    @Mock private AttributionSource mAttributionSource;
     @Mock private AdapterService mAdapterService;
-    @Mock private GattNativeInterface mNativeInterface;
     @Mock private PeriodicScanManager mPeriodicScanManager;
     @Mock private Resources mResources;
     @Mock private ScanManager mScanManager;
@@ -105,49 +102,39 @@ public class ScanControllerTest {
     private static final int TEST_ACTION = 1;
     private static final int TEST_CLIENT_IF = 2;
 
-    private final BluetoothAdapter mAdapter =
-            InstrumentationRegistry.getInstrumentation()
-                    .getTargetContext()
-                    .getSystemService(BluetoothManager.class)
-                    .getAdapter();
     private final BluetoothDevice mDevice = getTestDevice(89);
-    private final AttributionSource mAttributionSource = mAdapter.getAttributionSource();
-    private final Context mContext = getInstrumentation().getTargetContext();
 
-    private CompanionManager mBtCompanionManager;
     private ScanController mScanController;
 
     @Before
     public void setUp() throws Exception {
-        GattObjectsFactory.setInstanceForTesting(mGattObjectsFactory);
-        ScanObjectsFactory.setInstanceForTesting(mScanObjectsFactory);
-
-        doReturn(mNativeInterface).when(mGattObjectsFactory).getNativeInterface();
-        doReturn(mScanManager)
-                .when(mScanObjectsFactory)
-                .createScanManager(any(), any(), any(), any());
-        doReturn(mPeriodicScanManager).when(mScanObjectsFactory).createPeriodicScanManager();
+        doAnswer(
+                        invocation -> {
+                            ((Runnable) invocation.getArgument(0)).run();
+                            return null;
+                        })
+                .when(mPeriodicScanManager)
+                .doOnScanThread(any());
         doReturn(mResources).when(mAdapterService).getResources();
-        doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
-        doReturn(mContext.getSharedPreferences("ScanControllerTest", Context.MODE_PRIVATE))
+
+        final Context context = InstrumentationRegistry.getInstrumentation().getContext();
+        doReturn(context.getPackageManager()).when(mAdapterService).getPackageManager();
+        doReturn(context.getSharedPreferences("ScanControllerTest", Context.MODE_PRIVATE))
                 .when(mAdapterService)
                 .getSharedPreferences(anyString(), anyInt());
 
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.LOCATION_SERVICE, LocationManager.class);
+        mockGetRemoteDevice(mAdapterService, mDevice);
+        mockGetBluetoothManager(mAdapterService);
+        mockGetSystemService(mAdapterService, LocationManager.class);
 
-        mBtCompanionManager = new CompanionManager(mAdapterService, null);
-        doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
-
-        mScanController = new ScanController(mAdapterService);
-        mScanController.setScannerMap(mScannerMap);
+        mScanController =
+                new ScanController(
+                        mAdapterService, mScanManager, mPeriodicScanManager, mScannerMap);
     }
 
     @After
     public void tearDown() throws Exception {
         mScanController.cleanup();
-        GattObjectsFactory.setInstanceForTesting(null);
-        ScanObjectsFactory.setInstanceForTesting(null);
     }
 
     @Test
@@ -161,7 +148,8 @@ public class ScanControllerTest {
 
     @Test
     public void onScanResult_remoteException_clientDied() throws Exception {
-        int eventType = 0;
+        // scannable and scan response
+        int eventType = 0x0A;
         int addressType = 0;
         String address = "02:00:00:00:00:00";
         int primaryPhy = 0;
@@ -183,7 +171,7 @@ public class ScanControllerTest {
         IScannerCallback callback = mock(IScannerCallback.class);
         mApp.mCallback = callback;
         mApp.mAppScanStats = appScanStats;
-        scanClient.mStats = appScanStats;
+        scanClient.mStats = Optional.of(appScanStats);
         Set<ScanClient> scanClientSet = Collections.singleton(scanClient);
         doReturn(address).when(mAdapterService).getIdentityAddress(anyString());
         doReturn(scanClientSet).when(mScanManager).getRegularScanQueue();
@@ -286,6 +274,9 @@ public class ScanControllerTest {
                         0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x00, 0x00, 0x00, 0x00
                     };
         }
+
+        final BluetoothDevice device = getTestDevice("02:00:00:00:00:00");
+        mockGetRemoteDevice(mAdapterService, device);
 
         Set<ScanClient> scanClientSet = new HashSet<>();
         ScanClient scanClient = new ScanClient(TEST_SCANNER_ID);
@@ -449,7 +440,7 @@ public class ScanControllerTest {
 
     @Test
     public void unregisterScanner() {
-        mScanController.unregisterScanner(TEST_SCANNER_ID, mAttributionSource);
+        mScanController.unregisterScanner(TEST_SCANNER_ID);
 
         verify(mScannerMap).remove(TEST_SCANNER_ID);
         verify(mScanManager).unregisterScanner(TEST_SCANNER_ID);
@@ -501,7 +492,7 @@ public class ScanControllerTest {
 
     @Test
     public void flushPendingBatchResults() {
-        mScanController.flushPendingBatchResults(TEST_SCANNER_ID, mAttributionSource);
+        mScanController.flushPendingBatchResults(TEST_SCANNER_ID);
         verify(mScanManager).flushBatchScanResults(new ScanClient(TEST_SCANNER_ID));
     }
 
@@ -560,6 +551,26 @@ public class ScanControllerTest {
 
         assertThat(newScanSettingsFloor.getReportDelayMillis())
                 .isEqualTo(ScanController.DEFAULT_REPORT_DELAY_FLOOR);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_RSSI_SCAN_FILTER)
+    public void matchesFilters_rssiThreshold() {
+        final int rssiThreshold = -50;
+        final int rssiAboveThreshold = -40;
+        final int rssiBelowThreshold = -60;
+
+        ScanSettings settings = new ScanSettings.Builder().setRssiThreshold(rssiThreshold).build();
+        ScanClient client = new ScanClient(TEST_SCANNER_ID, settings, null);
+
+        ScanRecord mockScanRecord = mock(ScanRecord.class);
+        ScanResult resultAboveThreshold =
+                new ScanResult(mDevice, 0, 0, 0, 0, 0, rssiAboveThreshold, 0, mockScanRecord, 0);
+        assertThat(mScanController.matchesFilters(client, resultAboveThreshold)).isTrue();
+
+        ScanResult resultBelowThreshold =
+                new ScanResult(mDevice, 0, 0, 0, 0, 0, rssiBelowThreshold, 0, mockScanRecord, 0);
+        assertThat(mScanController.matchesFilters(client, resultBelowThreshold)).isFalse();
     }
 
     @Test

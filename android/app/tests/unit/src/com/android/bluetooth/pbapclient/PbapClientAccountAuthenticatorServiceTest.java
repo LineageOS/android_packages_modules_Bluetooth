@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.pbapclient;
 
 import static android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DEFAULT;
@@ -47,7 +48,7 @@ public class PbapClientAccountAuthenticatorServiceTest {
 
     @Before
     public void setUp() {
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
         enableService(true);
     }
 

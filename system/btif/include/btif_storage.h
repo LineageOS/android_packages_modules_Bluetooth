@@ -67,7 +67,7 @@ bt_status_t btif_in_fetch_bonded_device(const std::string& bdstr);
 
 typedef struct {
   uint32_t num_devices;
-  RawAddress devices[BTM_SEC_MAX_DEVICE_RECORDS];
+  tBLE_BD_ADDR devices[BTM_SEC_MAX_DEVICE_RECORDS];
 } btif_bonded_devices_t;
 
 bt_status_t btif_in_fetch_bonded_ble_device(const std::string& remote_bd_addr, int add,

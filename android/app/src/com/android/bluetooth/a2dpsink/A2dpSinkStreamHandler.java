@@ -134,51 +134,32 @@ public class A2dpSinkStreamHandler extends Handler {
     public void handleMessage(Message message) {
         Log.d(TAG, "process message: " + message.what + ", audioFocus=" + mAudioFocus);
         switch (message.what) {
-            case SRC_STR_START:
+            case SRC_STR_START -> {
                 mStreamAvailable = true;
                 if (isTvDevice() || shouldRequestFocus()) {
                     requestAudioFocusIfNone();
                 }
-                break;
-
-            case SRC_STR_STOP:
-                // Audio stream has stopped, maintain focus but stop avrcp updates.
-                break;
-
-            case SNK_PLAY:
-                // Local play command, gain focus and start avrcp updates.
-                requestAudioFocusIfNone();
-                break;
-
-            case SNK_PAUSE:
-                mStreamAvailable = false;
-                // Local pause command, maintain focus but stop avrcp updates.
-                break;
-
-            case SRC_PLAY:
+            }
+            // Audio stream has stopped, maintain focus but stop avrcp updates.
+            case SRC_STR_STOP -> {}
+            // Local play command, gain focus and start avrcp updates.
+            case SNK_PLAY -> requestAudioFocusIfNone();
+            // Local pause command, maintain focus but stop avrcp updates.
+            case SNK_PAUSE -> mStreamAvailable = false;
+            // Remote play command.
+            case SRC_PLAY -> {
                 mStreamAvailable = true;
-                // Remote play command.
                 if (isIotDevice() || isTvDevice() || shouldRequestFocus()) {
                     requestAudioFocusIfNone();
-                    break;
                 }
-                break;
+            }
+            // Remote pause command, stop avrcp updates.
+            case SRC_PAUSE -> mStreamAvailable = false;
+            case REQUEST_FOCUS -> requestAudioFocusIfNone();
+            // Remote device has disconnected, restore everything to default state.
+            case DISCONNECT -> mStreamAvailable = false;
 
-            case SRC_PAUSE:
-                mStreamAvailable = false;
-                // Remote pause command, stop avrcp updates.
-                break;
-
-            case REQUEST_FOCUS:
-                requestAudioFocusIfNone();
-                break;
-
-            case DISCONNECT:
-                // Remote device has disconnected, restore everything to default state.
-                mStreamAvailable = false;
-                break;
-
-            case AUDIO_FOCUS_CHANGE:
+            case AUDIO_FOCUS_CHANGE -> {
                 final int focusChangeCode = (int) message.obj;
                 Log.d(
                         TAG,
@@ -189,13 +170,11 @@ public class A2dpSinkStreamHandler extends Handler {
                 mAudioFocus = focusChangeCode;
                 // message.obj is the newly granted audio focus.
                 switch (mAudioFocus) {
-                    case AudioManager.AUDIOFOCUS_GAIN:
-                        // Begin playing audio
-                        startFluorideStreaming();
-                        break;
+                    // Begin playing audio
+                    case AudioManager.AUDIOFOCUS_GAIN -> startFluorideStreaming();
 
-                    case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                        // Make the volume duck.
+                    // Make the volume duck.
+                    case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                         int duckPercent =
                                 mContext.getResources()
                                         .getInteger(R.integer.a2dp_sink_duck_percent);
@@ -206,17 +185,13 @@ public class A2dpSinkStreamHandler extends Handler {
                         float duckRatio = (duckPercent / 100.0f);
                         Log.d(TAG, "Setting reduce gain on transient loss gain=" + duckRatio);
                         setFluorideAudioTrackGain(duckRatio);
-                        break;
+                    }
 
-                    case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
-                        // Temporary loss of focus. Set gain to zero.
-                        setFluorideAudioTrackGain(0);
-                        break;
-
-                    case AudioManager.AUDIOFOCUS_LOSS:
-                        // Permanent loss of focus probably due to another audio app, abandon focus
-                        abandonAudioFocus();
-                        break;
+                    // Temporary loss of focus. Set gain to zero.
+                    case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> setFluorideAudioTrackGain(0);
+                    // Permanent loss of focus probably due to another audio app, abandon focus
+                    case AudioManager.AUDIOFOCUS_LOSS -> abandonAudioFocus();
+                    default -> {} // Nothing to do
                 }
 
                 // Route new focus state to AVRCP Controller to handle media player states
@@ -227,10 +202,8 @@ public class A2dpSinkStreamHandler extends Handler {
                 } else {
                     Log.w(TAG, "AVRCP Controller Service not available to send focus events to.");
                 }
-                break;
-
-            default:
-                Log.w(TAG, "Received unexpected event: " + message.what);
+            }
+            default -> Log.w(TAG, "Received unexpected event: " + message.what);
         }
     }
 

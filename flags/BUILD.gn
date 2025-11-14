@@ -19,6 +19,7 @@ aconfig("bluetooth_flags_c_lib") {
     "hal.aconfig",
     "hap.aconfig",
     "hci.aconfig",
+    "hearing_aid.aconfig",
     "hfp.aconfig",
     "hfpclient.aconfig",
     "hid.aconfig",
@@ -28,6 +29,7 @@ aconfig("bluetooth_flags_c_lib") {
     "leaudio.aconfig",
     "mapclient.aconfig",
     "metric.aconfig",
+    "native.aconfig",
     "opp.aconfig",
     "pairing.aconfig",
     "pbapclient.aconfig",
@@ -40,9 +42,11 @@ aconfig("bluetooth_flags_c_lib") {
     "service_discovery.aconfig",
     "sockets.aconfig",
     "system_service.aconfig",
+    "threading.aconfig",
     "vcp.aconfig",
     "vsc.aconfig",
   ]
+
   # LINT.ThenChange(/flags/Android.bp)
   package = "com.android.bluetooth.flags"
   deps = [ "//bt/floss/libflags:libflags" ]

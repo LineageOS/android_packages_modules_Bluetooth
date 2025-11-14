@@ -38,7 +38,7 @@ class SnoopLogger;
 }
 
 namespace hci {
-class ControllerInterface;
+class Controller;
 class HciInterface;
 class AclManager;
 class RemoteNameRequestModule;
@@ -52,10 +52,6 @@ namespace lpp {
 class LppOffloadInterface;
 }
 
-namespace metrics {
-class CounterMetrics;
-}
-
 namespace storage {
 class StorageModule;
 }
@@ -66,7 +62,7 @@ namespace shim {
  * within the stack. */
 os::Handler* GetGdShimHandler();
 hci::LeAdvertisingManager* GetAdvertising();
-bluetooth::hci::ControllerInterface* GetController();
+bluetooth::hci::Controller* GetController();
 hci::HciInterface* GetHciLayer();
 hci::RemoteNameRequestModule* GetRemoteNameRequest();
 hci::DistanceMeasurementManager* GetDistanceMeasurementManager();
@@ -75,7 +71,6 @@ lpp::LppOffloadInterface* GetLppOffloadManager();
 hal::SnoopLogger* GetSnoopLogger();
 storage::StorageModule* GetStorage();
 hci::AclManager* GetAclManager();
-metrics::CounterMetrics* GetCounterMetrics();
 hci::MsftExtensionManager* GetMsftExtensionManager();
 
 }  // namespace shim

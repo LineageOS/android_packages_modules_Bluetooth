@@ -21,24 +21,17 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.verify;
-
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothHeadset;
-import android.bluetooth.BluetoothHidHost;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.PandoraDevice;
 import android.bluetooth.StreamObserverSpliterator;
-import android.bluetooth.test_utils.EnableBluetoothRule;
 import android.bluetooth.pairing.utils.IntentReceiver;
 import android.bluetooth.pairing.utils.TestUtil;
+import android.bluetooth.test_utils.EnableBluetoothRule;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.ParcelUuid;
 import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.CheckFlagsRule;
@@ -58,10 +51,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.hamcrest.MockitoHamcrest;
 
 import pandora.GattProto;
 import pandora.HostProto.AdvertiseRequest;
@@ -101,50 +92,44 @@ public class EncryptionChangeTest {
     public final EnableBluetoothRule mEnableBluetoothRule =
             new EnableBluetoothRule(false /* enableTestMode */, true /* toggleBluetooth */);
 
-    private final StreamObserverSpliterator<PairingEvent> mPairingEventStreamObserver =
+    private final StreamObserverSpliterator<Void, PairingEvent> mPairingEventStreamObserver =
             new StreamObserverSpliterator<>();
     @Mock private BluetoothProfile.ServiceListener mProfileServiceListener;
 
     /* Util instance for common test steps with current Context reference */
     private TestUtil mUtil;
     private BluetoothDevice mBumbleDevice;
-    private BluetoothHidHost mHidService;
-    private BluetoothHeadset mHfpService;
 
-   /**
-     * IntentListener for the received intents
-     * Note: This is added as a default listener for all the IntentReceiver
-     *  instances created in this test class. Please add your own listener if
-     *  required as per the test requirement.
+    /**
+     * IntentListener for the received intents Note: This is added as a default listener for all the
+     * IntentReceiver instances created in this test class. Please add your own listener if required
+     * as per the test requirement.
      */
-    private IntentReceiver.IntentListener intentListener = new IntentReceiver.IntentListener() {
-        @Override
-        public void onReceive(Intent intent) {
-            String action = intent.getAction();
-            if (BluetoothDevice.ACTION_UUID.equals(action)) {
-                    ParcelUuid[] uuids =
-                    intent.getParcelableArrayExtra(
-                            BluetoothDevice.EXTRA_UUID, ParcelUuid.class);
-                    Log.d(TAG, "onReceive(): UUID=" + Arrays.toString(uuids));
-            } else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
-                    int bondState =
-                    intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1);
-                    Log.d(TAG, "onReceive(): bondState=" + bondState);
-            }
-        }
-    };
+    private final IntentReceiver.IntentListener mIntentListener =
+            new IntentReceiver.IntentListener() {
+                @Override
+                public void onReceive(Intent intent) {
+                    String action = intent.getAction();
+                    if (BluetoothDevice.ACTION_UUID.equals(action)) {
+                        ParcelUuid[] uuids =
+                                intent.getParcelableArrayExtra(
+                                        BluetoothDevice.EXTRA_UUID, ParcelUuid.class);
+                        Log.d(TAG, "onReceive(): UUID=" + Arrays.toString(uuids));
+                    } else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
+                        int bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1);
+                        Log.d(TAG, "onReceive(): bondState=" + bondState);
+                    }
+                }
+            };
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-        mUtil = new TestUtil.Builder(sTargetContext)
-                .setProfileServiceListener(mProfileServiceListener)
-                .setBluetoothAdapter(sAdapter)
-                .build();
-
-        // Get profile proxies
-        mHidService = (BluetoothHidHost) mUtil.getProfileProxy(BluetoothProfile.HID_HOST);
-        mHfpService = (BluetoothHeadset) mUtil.getProfileProxy(BluetoothProfile.HEADSET);
+        mUtil =
+                new TestUtil.Builder(sTargetContext)
+                        .setProfileServiceListener(mProfileServiceListener)
+                        .setBluetoothAdapter(sAdapter)
+                        .build();
 
         mBumbleDevice = mBumble.getRemoteDevice();
         Set<BluetoothDevice> bondedDevices = sAdapter.getBondedDevices();
@@ -170,22 +155,22 @@ public class EncryptionChangeTest {
 
     /** All the test function goes here */
 
-    /**
-     * Process of writing a test function
-     *
-     * 1. Create an IntentReceiver object first with following way:
-     *      IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
-     *          BluetoothDevice.ACTION_1,
-     *          BluetoothDevice.ACTION_2)
-     *          .setIntentListener(--) // optional
-     *          .setIntentTimeout(--)  // optional
-     *          .build();
-     * 2. Use the intentReceiver instance for all Intent related verification, and pass
-     *     the same instance to all the helper/testStep functions which has similar Intent
-     *     requirements.
-     * 3. Once all the verification is done, call `intentReceiver.close()` before returning
-     *     from the function.
-     */
+    //
+    // Process of writing a test function
+    //
+    // 1. Create an IntentReceiver object first with following way:
+    //      IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
+    //          BluetoothDevice.ACTION_1,
+    //          BluetoothDevice.ACTION_2)
+    //          .setIntentListener(--) // optional
+    //          .setIntentTimeout(--)  // optional
+    //          .build();
+    // 2. Use the intentReceiver instance for all Intent related verification, and pass
+    //     the same instance to all the helper/testStep functions which has similar Intent
+    //     requirements.
+    // 3. Once all the verification is done, call `intentReceiver.close()` before returning
+    //     from the function.
+    //
 
     /**
      * Test Encryption change event on LE Secure link:
@@ -200,12 +185,14 @@ public class EncryptionChangeTest {
     @Test
     @RequiresFlagsEnabled({Flags.FLAG_ENCRYPTION_CHANGE_BROADCAST})
     public void encryptionChangeSecureLeLink() {
-        IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
-                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
-                BluetoothDevice.ACTION_ENCRYPTION_CHANGE,
-                BluetoothDevice.ACTION_PAIRING_REQUEST)
-                .setIntentListener(intentListener)
-                .build();
+        IntentReceiver intentReceiver =
+                new IntentReceiver.Builder(
+                                sTargetContext,
+                                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                                BluetoothDevice.ACTION_ENCRYPTION_CHANGE,
+                                BluetoothDevice.ACTION_PAIRING_REQUEST)
+                        .setIntentListener(mIntentListener)
+                        .build();
 
         mBumble.gattBlocking()
                 .registerService(
@@ -280,12 +267,14 @@ public class EncryptionChangeTest {
     @Test
     @RequiresFlagsEnabled({Flags.FLAG_ENCRYPTION_CHANGE_BROADCAST})
     public void encryptionChangeSecureClassicLink() {
-        IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
-                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
-                BluetoothDevice.ACTION_ENCRYPTION_CHANGE,
-                BluetoothDevice.ACTION_PAIRING_REQUEST)
-                .setIntentListener(intentListener)
-                .build();
+        IntentReceiver intentReceiver =
+                new IntentReceiver.Builder(
+                                sTargetContext,
+                                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                                BluetoothDevice.ACTION_ENCRYPTION_CHANGE,
+                                BluetoothDevice.ACTION_PAIRING_REQUEST)
+                        .setIntentListener(mIntentListener)
+                        .build();
 
         StreamObserver<PairingEventAnswer> pairingEventAnswerObserver =
                 mBumble.security()

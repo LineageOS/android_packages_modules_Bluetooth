@@ -227,6 +227,21 @@ bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda, tBT_TRANSPORT tra
 
 /*******************************************************************************
  *
+ * Function         BTM_GetConnectedTransportAddress
+ *
+ *
+ * Description      This function gets the pseudo and identity address of the
+ *                  remote device
+ *
+ * Parameter        remote_bda: remote device address
+ *
+ * Return           pseudo and identity address pair of the remote device
+ *
+ ******************************************************************************/
+std::pair<RawAddress, RawAddress> BTM_GetConnectedTransportAddress(RawAddress remote_bda);
+
+/*******************************************************************************
+ *
  * Function         BTM_BleReceiverTest
  *
  * Description      This function is called to start the LE Receiver test
@@ -306,10 +321,15 @@ tBTM_STATUS BTM_BleGetEnergyInfo(tBTM_BLE_ENERGY_INFO_CBACK* p_ener_cback);
  *
  * Description      Set the maximum BLE transmission packet size
  *
- * Returns          tBTM_STATUS::BTM_SUCCESS if success; otherwise failed.
+ * Parameters       bd_addr - BD address of the device
+ *                  tx_pdu_length - Required data length
+ *                  is_privileged_client - privileged client
+ *
+ * Returns          BTM_SUCCESS if success; otherwise failed.
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr, uint16_t tx_pdu_length);
+tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr, uint16_t tx_pdu_length,
+                                 bool is_privileged_client);
 
 /*******************************************************************************
  *

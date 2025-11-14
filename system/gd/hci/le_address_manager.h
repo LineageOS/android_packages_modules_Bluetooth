@@ -25,6 +25,7 @@
 #include "hci/controller.h"
 #include "hci/octets.h"
 #include "os/alarm.h"
+#include "os/handler.h"
 
 namespace bluetooth {
 namespace hci {

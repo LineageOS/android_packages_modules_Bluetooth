@@ -52,6 +52,7 @@
         <option name="profile" value="AVRCP" />
         <option name="profile" value="BNEP" />
         <option name="profile" value="GAP" />
+        <option name="profile" value="GMAP" />
         <option name="profile" value="GATT" />
         <option name="profile" value="HAP" />
         <option name="profile" value="HFP/AG" />

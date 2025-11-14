@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Dacă păstrezi Bluetooth activat, dispozitivul tău va reține să-l păstreze activat data viitoare când ești în modul Avion"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetooth rămâne activat"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Dispozitivul reține să păstreze Bluetooth activat în modul Avion. Dezactivează Bluetooth dacă nu vrei să rămână activat."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Bluetooth rămâne activat în modul Avion dacă te-ai conectat la alte dispozitive."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Dispozitivul va menține Bluetooth activat în modul Avion când este conectat la ceas."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Bluetooth rămâne activat în modul Avion când te conectezi la un dispozitiv media."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi și Bluetooth rămân activate"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Dispozitivul reține să păstreze funcțiile Wi-Fi și Bluetooth activate în modul Avion. Dezactivează Wi-Fi și Bluetooth dacă nu vrei să rămână activate."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"S-a reactivat Bluetooth"</string>

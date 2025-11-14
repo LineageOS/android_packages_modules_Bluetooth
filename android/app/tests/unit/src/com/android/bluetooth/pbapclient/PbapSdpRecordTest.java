@@ -28,14 +28,14 @@ import android.bluetooth.SdpPseRecord;
 
 import androidx.test.runner.AndroidJUnit4;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /** Test cases for {@link PbapSdpRecord}. */
 @RunWith(AndroidJUnit4.class)
 public class PbapSdpRecordTest {
-    private BluetoothDevice mTestDevice;
+
+    private final BluetoothDevice mDevice = getTestDevice(1);
 
     private static final String SERVICE_NAME = "PSE SERVICE NAME";
     private static final int L2CAP_PSM = 4101;
@@ -64,16 +64,11 @@ public class PbapSdpRecordTest {
     // For utility function testing-- -1 is FIELD_MISSING, and other negatives should be unknown
     private static final int UNRECOGNIZED = -2;
 
-    @Before
-    public void setUp() throws Exception {
-        mTestDevice = getTestDevice(1);
-    }
-
     @Test
     public void testMakeWithDevice() {
         PbapSdpRecord record =
                 makeSdpRecord(INVALID_L2CAP, INVALID_RFCOMM, PbapSdpRecord.VERSION_1_0, 0, 0);
-        assertThat(record.getDevice()).isEqualTo(mTestDevice);
+        assertThat(record.getDevice()).isEqualTo(mDevice);
     }
 
     @Test
@@ -380,7 +375,7 @@ public class PbapSdpRecordTest {
         assertThrows(
                 NullPointerException.class,
                 () -> {
-                    PbapSdpRecord record = new PbapSdpRecord(mTestDevice, null);
+                    PbapSdpRecord record = new PbapSdpRecord(mDevice, null);
                 });
     }
 
@@ -452,6 +447,6 @@ public class PbapSdpRecordTest {
         SdpPseRecord sdpRecord =
                 new SdpPseRecord(
                         l2capPsm, rfcommChnl, version, features, repositories, SERVICE_NAME);
-        return new PbapSdpRecord(mTestDevice, sdpRecord);
+        return new PbapSdpRecord(mDevice, sdpRecord);
     }
 }

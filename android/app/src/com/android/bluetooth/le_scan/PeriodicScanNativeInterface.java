@@ -96,38 +96,47 @@ public class PeriodicScanNativeInterface {
             String address,
             int phy,
             int interval,
-            int status)
-            throws Exception {
+            int status) {
         Log.d(
                 TAG,
                 "onSyncStarted(): "
                         + (" regId=" + regId)
                         + (" syncHandle=" + syncHandle)
                         + (" status=" + status));
-        mManager.onSyncStarted(regId, syncHandle, sid, addressType, address, phy, interval, status);
+        mManager.doOnScanThread(
+                () ->
+                        mManager.onSyncStarted(
+                                regId,
+                                syncHandle,
+                                sid,
+                                addressType,
+                                address,
+                                phy,
+                                interval,
+                                status));
     }
 
-    void onSyncReport(int syncHandle, int txPower, int rssi, int dataStatus, byte[] data)
-            throws Exception {
+    void onSyncReport(int syncHandle, int txPower, int rssi, int dataStatus, byte[] data) {
         Log.d(TAG, "onSyncReport(): syncHandle=" + syncHandle);
-        mManager.onSyncReport(syncHandle, txPower, rssi, dataStatus, data);
+        mManager.doOnScanThread(
+                () -> mManager.onSyncReport(syncHandle, txPower, rssi, dataStatus, data));
     }
 
-    void onSyncLost(int syncHandle) throws Exception {
+    void onSyncLost(int syncHandle) {
         Log.d(TAG, "onSyncLost(): syncHandle=" + syncHandle);
-        mManager.onSyncLost(syncHandle);
+        mManager.doOnScanThread(() -> mManager.onSyncLost(syncHandle));
     }
 
     void onSyncTransferredCallback(int paSource, int status, String bda) {
         Log.d(TAG, "onSyncTransferredCallback()");
-        mManager.onSyncTransferredCallback(paSource, status, bda);
+        mManager.doOnScanThread(() -> mManager.onSyncTransferredCallback(paSource, status, bda));
     }
 
-    void onBigInfoReport(int syncHandle, boolean encrypted) throws Exception {
+    void onBigInfoReport(int syncHandle, boolean encrypted) {
         Log.d(
                 TAG,
                 "onBigInfoReport():" + (" syncHandle=" + syncHandle) + (" encrypted=" + encrypted));
-        mManager.onBigInfoReport(syncHandle, encrypted);
+        mManager.doOnScanThread(() -> mManager.onBigInfoReport(syncHandle, encrypted));
     }
 
     /**********************************************************************************************/

@@ -29,7 +29,6 @@ import org.junit.runner.RunWith
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class ScanClientTest {
-
     private val scanClient = ScanClient(1)
 
     @Test
@@ -37,6 +36,12 @@ class ScanClientTest {
         val scanClientWithDefaultSettings = ScanClient(1)
         assertThat(scanClientWithDefaultSettings.mSettings.scanMode)
             .isEqualTo(ScanSettings.SCAN_MODE_LOW_LATENCY)
+    }
+
+    @Test
+    fun constructor_emptyFilters() {
+        val scanClientEmptyFilters = ScanClient(1)
+        assertThat(scanClientEmptyFilters.mFilters).isEmpty()
     }
 
     @Test

@@ -33,7 +33,7 @@
 #include "bta/le_audio/le_audio_types.h"
 #include "bta/le_audio/mock_codec_manager.h"
 #include "btif/include/btif_common.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "stack/include/btm_iso_api.h"
 #include "stack/include/main_thread.h"
 #include "test/common/mock_functions.h"
@@ -234,6 +234,9 @@ public:
   MOCK_METHOD((void), UpdateRemoteDelay, (uint16_t delay), (override));
   MOCK_METHOD((void), UpdateAudioConfigToHal, (const ::bluetooth::le_audio::stream_config&),
               (override));
+  MOCK_METHOD((void), SetCodecPriority,
+              (const ::bluetooth::le_audio::types::LeAudioCodecId& codecId, int32_t priority),
+              (override));
   MOCK_METHOD((std::optional<broadcaster::BroadcastConfiguration>), GetBroadcastConfig,
               ((const std::vector<std::pair<types::LeAudioContextType, uint8_t>>&),
                (const std::optional<std::vector<::bluetooth::le_audio::types::acs_ac_record>>&)),
@@ -289,7 +292,7 @@ protected:
     init_message_loop_thread();
 
     reset_mock_function_count_map();
-    mock_controller_ = std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+    mock_controller_ = std::make_unique<bluetooth::hci::testing::MockController>();
     ON_CALL(*mock_controller_, SupportsBleIsochronousBroadcaster).WillByDefault(Return(true));
 
     iso_manager_ = bluetooth::hci::IsoManager::GetInstance();
@@ -528,12 +531,8 @@ TEST_F(BroadcasterTest, SuspendAudioBroadcast) {
           .WillRepeatedly(Return(false));
   auto broadcast_id = InstantiateBroadcast();
 
-  if (com::android::bluetooth::flags::leaudio_big_depends_on_audio_state()) {
-    ASSERT_NE(audio_receiver, nullptr);
-    audio_receiver->OnAudioResume();
-  } else {
-    LeAudioBroadcaster::Get()->StartAudioBroadcast(broadcast_id);
-  }
+  ASSERT_NE(audio_receiver, nullptr);
+  audio_receiver->OnAudioResume();
 
   Mock::VerifyAndClearExpectations(mock_codec_manager_);
 
@@ -549,8 +548,6 @@ TEST_F(BroadcasterTest, SuspendAudioBroadcast) {
 }
 
 TEST_F(BroadcasterTest, StartAudioBroadcast) {
-  com::android::bluetooth::flags::provider_->leaudio_big_depends_on_audio_state(true);
-
   // Add Audio Actie State while broadcast created
   LeAudioSourceAudioHalClient::Callbacks* audio_receiver;
   EXPECT_CALL(*mock_audio_source_, Start)
@@ -598,8 +595,6 @@ TEST_F(BroadcasterTest, StartAudioBroadcast) {
 }
 
 TEST_F(BroadcasterTest, StartAudioBroadcastMedia) {
-  com::android::bluetooth::flags::provider_->leaudio_big_depends_on_audio_state(true);
-
   // Add Audio Actie State while broadcast created
   LeAudioSourceAudioHalClient::Callbacks* audio_receiver;
   EXPECT_CALL(*mock_audio_source_, Start)
@@ -658,12 +653,8 @@ TEST_F(BroadcasterTest, StopAudioBroadcast) {
           .WillRepeatedly(Return(false));
   auto broadcast_id = InstantiateBroadcast();
 
-  if (com::android::bluetooth::flags::leaudio_big_depends_on_audio_state()) {
-    ASSERT_NE(audio_receiver, nullptr);
-    audio_receiver->OnAudioResume();
-  } else {
-    LeAudioBroadcaster::Get()->StartAudioBroadcast(broadcast_id);
-  }
+  ASSERT_NE(audio_receiver, nullptr);
+  audio_receiver->OnAudioResume();
 
   // NOTICE: This is really an implementation specific part, we fake the BIG
   //         config as the mocked state machine does not even call the
@@ -685,11 +676,6 @@ TEST_F(BroadcasterTest, StopAudioBroadcast) {
   EXPECT_CALL(*mock_audio_source_, Stop).Times(AtLeast(1));
   LeAudioBroadcaster::Get()->StopAudioBroadcast(broadcast_id);
 
-  if (!com::android::bluetooth::flags::leaudio_big_depends_on_audio_state()) {
-    EXPECT_CALL(*mock_codec_manager_,
-                UpdateActiveBroadcastAudioHalClient(mock_audio_source_, false))
-            .Times(1);
-  }
   InjectBigTerminateComplete(big_cfg.big_id, 0x16);
   Mock::VerifyAndClearExpectations(mock_codec_manager_);
 }
@@ -787,11 +773,7 @@ TEST_F(BroadcasterTest, UpdateMetadata) {
   ASSERT_NE(0, std::count(ccid_list.begin(), ccid_list.end(), media_ccid));
   ASSERT_NE(0, std::count(ccid_list.begin(), ccid_list.end(), default_ccid));
   ASSERT_EQ(expected_broadcast_name, test_broadcast_name);
-  if (!com::android::bluetooth::flags::leaudio_big_depends_on_audio_state()) {
-    ASSERT_EQ(expected_public_meta, default_public_metadata);
-  } else {
-    ASSERT_EQ(expected_public_meta, public_metadata);
-  }
+  ASSERT_EQ(expected_public_meta, public_metadata);
 }
 
 static BasicAudioAnnouncementData prepareAnnouncement(
@@ -845,8 +827,6 @@ static BasicAudioAnnouncementData prepareAnnouncement(
 }
 
 TEST_F(BroadcasterTest, UpdateMetadataFromAudioTrackMetadata) {
-  com::android::bluetooth::flags::provider_->leaudio_big_depends_on_audio_state(true);
-
   // Add Audio Actie State while broadcast created
   LeAudioSourceAudioHalClient::Callbacks* audio_receiver;
   EXPECT_CALL(*mock_audio_source_, Start)
@@ -1194,8 +1174,6 @@ TEST_F(BroadcasterTest, VendorCodecConfig) {
 }
 
 TEST_F(BroadcasterTest, AudioActiveState) {
-  com::android::bluetooth::flags::provider_->leaudio_big_depends_on_audio_state(true);
-
   std::vector<uint8_t> updated_public_meta;
   PublicBroadcastAnnouncementData pb_announcement;
 
@@ -1273,8 +1251,6 @@ TEST_F(BroadcasterTest, AudioActiveState) {
 }
 
 TEST_F(BroadcasterTest, BigTerminationAndBroadcastStopWhenNoSoundFromTheBeginning) {
-  com::android::bluetooth::flags::provider_->leaudio_big_depends_on_audio_state(true);
-
   // Timers created
   ASSERT_TRUE(big_terminate_timer_ != nullptr);
   ASSERT_TRUE(broadcast_stop_timer_ != nullptr);
@@ -1295,8 +1271,6 @@ TEST_F(BroadcasterTest, BigTerminationAndBroadcastStopWhenNoSoundFromTheBeginnin
 }
 
 TEST_F(BroadcasterTest, BigTerminationAndBroadcastStopWhenNoSoundAfterSuspend) {
-  com::android::bluetooth::flags::provider_->leaudio_big_depends_on_audio_state(true);
-
   // Timers created
   ASSERT_TRUE(big_terminate_timer_ != nullptr);
   ASSERT_TRUE(broadcast_stop_timer_ != nullptr);
@@ -1352,8 +1326,6 @@ TEST_F(BroadcasterTest, BigTerminationAndBroadcastStopWhenNoSoundAfterSuspend) {
 }
 
 TEST_F(BroadcasterTest, BigCreationTerminationDependsOnAudioResumeSuspend) {
-  com::android::bluetooth::flags::provider_->leaudio_big_depends_on_audio_state(true);
-
   // Timers created
   ASSERT_TRUE(big_terminate_timer_ != nullptr);
   ASSERT_TRUE(broadcast_stop_timer_ != nullptr);
@@ -1412,8 +1384,6 @@ TEST_F(BroadcasterTest, BigCreationTerminationDependsOnAudioResumeSuspend) {
 }
 
 TEST_F(BroadcasterTest, AudioResumeWhileStreaming) {
-  com::android::bluetooth::flags::provider_->leaudio_big_depends_on_audio_state(true);
-
   EXPECT_CALL(*mock_codec_manager_, UpdateActiveBroadcastAudioHalClient(mock_audio_source_, true))
           .Times(1);
   LeAudioSourceAudioHalClient::Callbacks* audio_receiver;
@@ -1444,8 +1414,6 @@ TEST_F(BroadcasterTest, AudioResumeWhileStreaming) {
 }
 
 TEST_F(BroadcasterTest, AudioResumeAfterSuspend) {
-  com::android::bluetooth::flags::provider_->leaudio_big_depends_on_audio_state(true);
-
   EXPECT_CALL(*mock_codec_manager_, UpdateActiveBroadcastAudioHalClient(mock_audio_source_, true))
           .Times(1);
   LeAudioSourceAudioHalClient::Callbacks* audio_receiver;

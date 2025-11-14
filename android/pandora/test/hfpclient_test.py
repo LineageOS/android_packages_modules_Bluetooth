@@ -59,7 +59,6 @@ PROPERTY_HF_INDICATOR_ENHANCED_DRIVER_SAFETY = 'bluetooth.headset_client.indicat
 
 HFP_VERSION_1_7 = 0x0107
 
-
 # Stub for Audio Gateway implementation
 # TODO: b/296471045
 logger = logging.getLogger(__name__)
@@ -90,7 +89,7 @@ class HfpProtocol:
         self.buffer += data
         while (separator := self.buffer.find('\r')) >= 0:
             line = self.buffer[:separator].strip()
-            self.buffer = self.buffer[separator + 1 :]
+            self.buffer = self.buffer[separator + 1:]
             if len(line) > 0:
                 self.on_line(line)
 
@@ -146,7 +145,8 @@ class HfpClientTest(base_test.BaseTestClass):  # type: ignore[misc]
                 # Set HF features if not set yet
                 hf_feature_text = self.dut_adb.getprop(PROPERTY_HF_FEATURES)  # type: ignore
                 if len(hf_feature_text) == 0:
-                    self.dut_adb.shell(['setprop', PROPERTY_HF_FEATURES, HFP_HF_FEATURE_DEFAULT])  # type: ignore
+                    self.dut_adb.shell(['setprop', PROPERTY_HF_FEATURES,
+                                        HFP_HF_FEATURE_DEFAULT])  # type: ignore
                 break
 
     def teardown_class(self) -> None:
@@ -171,7 +171,8 @@ class HfpClientTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         return dut_ref.connection, ref_dut.connection
 
-    async def make_classic_bond(self, dut_ref: PandoraConnection, ref_dut: PandoraConnection) -> None:
+    async def make_classic_bond(self, dut_ref: PandoraConnection,
+                                ref_dut: PandoraConnection) -> None:
         dut_ref_sec, ref_dut_sec = await asyncio.gather(
             self.dut.aio.security.Secure(connection=dut_ref, classic=LEVEL2),
             self.ref.aio.security.WaitSecurity(connection=ref_dut, classic=LEVEL2),
@@ -190,7 +191,8 @@ class HfpClientTest(base_test.BaseTestClass):  # type: ignore[misc]
         channel_number = rfcomm_server.listen(on_dlc)  # type: ignore
 
         # Setup SDP records
-        self.ref.device.sdp_service_records = make_bumble_ag_sdp_records(HFP_VERSION_1_7, channel_number, 0)
+        self.ref.device.sdp_service_records = make_bumble_ag_sdp_records(
+            HFP_VERSION_1_7, channel_number, 0)
 
         # Connect and pair
         dut_ref, ref_dut = await self.make_classic_connection()
@@ -206,13 +208,16 @@ class HfpClientTest(base_test.BaseTestClass):  # type: ignore[misc]
     @avatar.asynchronous
     async def test_hf_indicator_setup(self, enhanced_driver_safety_enabled: bool) -> None:
         if enhanced_driver_safety_enabled:
-            self.dut_adb.shell(['setprop', PROPERTY_HF_INDICATOR_ENHANCED_DRIVER_SAFETY, 'true'])  # type: ignore
+            self.dut_adb.shell(['setprop', PROPERTY_HF_INDICATOR_ENHANCED_DRIVER_SAFETY,
+                                'true'])  # type: ignore
         else:
-            self.dut_adb.shell(['setprop', PROPERTY_HF_INDICATOR_ENHANCED_DRIVER_SAFETY, 'false'])  # type: ignore
+            self.dut_adb.shell(['setprop', PROPERTY_HF_INDICATOR_ENHANCED_DRIVER_SAFETY,
+                                'false'])  # type: ignore
 
         ref_dut_hfp_protocol = await self.make_hfp_connection()
 
         class TestAgServer(HfpAgServer):
+
             def on_brsf(self, hf_features: int) -> None:
                 # HF indicators should be enabled
                 assert_not_equal(hf_features & HFP_HF_FEATURE_HF_INDICATORS, 0)
@@ -229,9 +234,8 @@ class HfpClientTest(base_test.BaseTestClass):  # type: ignore[misc]
         await server.serve()
 
 
-def make_bumble_ag_sdp_records(
-    hfp_version: int, rfcomm_channel: int, ag_sdp_features: int
-) -> Dict[int, List[ServiceAttribute]]:
+def make_bumble_ag_sdp_records(hfp_version: int, rfcomm_channel: int,
+                               ag_sdp_features: int) -> Dict[int, List[ServiceAttribute]]:
     return {
         0x00010001: [
             ServiceAttribute(
@@ -240,39 +244,29 @@ def make_bumble_ag_sdp_records(
             ),
             ServiceAttribute(
                 SDP_SERVICE_CLASS_ID_LIST_ATTRIBUTE_ID,
-                DataElement.sequence(
-                    [
-                        DataElement.uuid(BT_HANDSFREE_AUDIO_GATEWAY_SERVICE),
-                        DataElement.uuid(BT_GENERIC_AUDIO_SERVICE),
-                    ]
-                ),
+                DataElement.sequence([
+                    DataElement.uuid(BT_HANDSFREE_AUDIO_GATEWAY_SERVICE),
+                    DataElement.uuid(BT_GENERIC_AUDIO_SERVICE),
+                ]),
             ),
             ServiceAttribute(
                 SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID,
-                DataElement.sequence(
-                    [
-                        DataElement.sequence([DataElement.uuid(BT_L2CAP_PROTOCOL_ID)]),
-                        DataElement.sequence(
-                            [
-                                DataElement.uuid(BT_RFCOMM_PROTOCOL_ID),
-                                DataElement.unsigned_integer_8(rfcomm_channel),
-                            ]
-                        ),
-                    ]
-                ),
+                DataElement.sequence([
+                    DataElement.sequence([DataElement.uuid(BT_L2CAP_PROTOCOL_ID)]),
+                    DataElement.sequence([
+                        DataElement.uuid(BT_RFCOMM_PROTOCOL_ID),
+                        DataElement.unsigned_integer_8(rfcomm_channel),
+                    ]),
+                ]),
             ),
             ServiceAttribute(
                 SDP_BLUETOOTH_PROFILE_DESCRIPTOR_LIST_ATTRIBUTE_ID,
-                DataElement.sequence(
-                    [
-                        DataElement.sequence(
-                            [
-                                DataElement.uuid(BT_HANDSFREE_AUDIO_GATEWAY_SERVICE),
-                                DataElement.unsigned_integer_16(hfp_version),
-                            ]
-                        )
-                    ]
-                ),
+                DataElement.sequence([
+                    DataElement.sequence([
+                        DataElement.uuid(BT_HANDSFREE_AUDIO_GATEWAY_SERVICE),
+                        DataElement.unsigned_integer_16(hfp_version),
+                    ])
+                ]),
             ),
             ServiceAttribute(
                 SDP_PROFILE_SUPPORTED_FEATURES_ID,
@@ -300,12 +294,12 @@ class HfpAgServer:
             line = await self.protocol.next_line()  # type: ignore
 
             if line.startswith('AT+BRSF='):
-                hf_features = int(line[len('AT+BRSF=') :])
+                hf_features = int(line[len('AT+BRSF='):])
                 self.on_brsf(hf_features)
             elif line.startswith('AT+BIND=?'):
                 self.on_bind_read_capabilities()
             elif line.startswith('AT+BIND='):
-                indicators = [int(i) for i in line[len('AT+BIND=') :].split(',')]
+                indicators = [int(i) for i in line[len('AT+BIND='):].split(',')]
                 self.on_bind_list(indicators)
             elif line.startswith('AT+BIND?'):
                 self.on_bind_read_configuration()
@@ -314,16 +308,14 @@ class HfpAgServer:
             elif line.startswith('AT+CIND?'):
                 self.on_cind_test()
             # TODO(b/286226902): Implement handlers for these commands
-            elif line.startswith(
-                (
+            elif line.startswith((
                     'AT+CLIP=',
                     'AT+VGS=',
                     'AT+BIA=',
                     'AT+CMER=',
                     'AT+XEVENT=',
                     'AT+XAPL=',
-                )
-            ):
+            )):
                 self.send_response_line('OK')
             else:
                 self.send_response_line('ERROR')
@@ -340,11 +332,9 @@ class HfpAgServer:
 
     # AT+CIND=?
     def on_cind_test(self) -> None:
-        self.send_response_line(
-            '+CIND: ("call",(0,1)),("callsetup",(0-3)),("service",(0-1)),'
-            '("signal",(0-5)),("roam",(0,1)),("battchg",(0-5)),'
-            '("callheld",(0-2))'
-        )
+        self.send_response_line('+CIND: ("call",(0,1)),("callsetup",(0-3)),("service",(0-1)),'
+                                '("signal",(0-5)),("roam",(0,1)),("battchg",(0-5)),'
+                                '("callheld",(0-2))')
         self.send_response_line('OK')
 
     # AT+BIND=

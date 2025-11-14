@@ -16,6 +16,7 @@
 
 #include "bta/le_audio/gmap_server.h"
 
+#include <android_bluetooth_sysprop.h>
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <base/strings/string_number_conversions.h>
@@ -58,10 +59,18 @@ bool GmapServer::IsGmapServerEnabled() {
   // for UGG, both GMAP Server and Client are needed. So server and client share the same flag.
   bool flag = com::android::bluetooth::flags::leaudio_gmap_client();
   bool system_prop = osi_property_get_bool("bluetooth.profile.gmap.enabled", false);
+  bool is_gmap_supported_in_software_datapath =
+          android::sysprop::bluetooth::LeAudio::is_gmap_supported_in_software_datapath().value_or(
+                  false);
 
-  bool result = flag && system_prop && is_offloader_support_gmap_;
-  log::info("GmapServerEnabled={}, flag={}, system_prop={}, offloader_support={}", result, flag,
-            system_prop, GmapServer::is_offloader_support_gmap_);
+  bool result = flag && system_prop &&
+                (is_gmap_supported_in_software_datapath || is_offloader_support_gmap_);
+  log::info(
+          "GmapServerEnabled={}, flag={}, system_prop={}, "
+          "is_gmap_supported_in_software_datapath={}, "
+          "offloader_support={}",
+          result, flag, system_prop, is_gmap_supported_in_software_datapath,
+          GmapServer::is_offloader_support_gmap_);
   return result;
 }
 
@@ -86,6 +95,16 @@ void GmapServer::Initialize(std::bitset<8> role, std::bitset<8> UGG_feature) {
 
 void GmapServer::Initialize(std::bitset<8> UGG_feature) {
   GmapServer::UGG_feature_ = UGG_feature;
+  bool is_gmap_supported_in_software_datapath =
+          android::sysprop::bluetooth::LeAudio::is_gmap_supported_in_software_datapath().value_or(
+                  false);
+  if (is_gmap_supported_in_software_datapath) {
+    // Enable UGG Features for testing only.
+    GmapServer::UGG_feature_ |=
+            static_cast<uint8_t>(bluetooth::gmap::UGGFeatureBitMask::MultiplexFeatureSupport) |
+            static_cast<uint8_t>(
+                    bluetooth::gmap::UGGFeatureBitMask::NinetySixKbpsSourceFeatureSupport);
+  }
   log::info("GmapServer initialized, role={}, UGG_feature={}", GmapServer::role_.to_string(),
             UGG_feature.to_string());
   characteristics_.clear();

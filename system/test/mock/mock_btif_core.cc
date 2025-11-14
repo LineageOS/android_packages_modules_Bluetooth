@@ -28,7 +28,7 @@
 #include "btif/include/btif_common.h"
 #include "include/hardware/bluetooth.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
+#include "types/ble_address_with_type.h"
 
 bool btif_is_dut_mode() {
   inc_func_call_count(__func__);
@@ -79,7 +79,8 @@ void btif_get_remote_device_property(RawAddress /* remote_addr */, bt_property_t
 }
 void btif_init_ok() { inc_func_call_count(__func__); }
 void btif_remote_properties_evt(bt_status_t /* status */, RawAddress* /* remote_addr */,
-                                uint32_t /* num_props */, bt_property_t* /* p_props */) {
+                                tBLE_ADDR_TYPE /* addr_type */, uint32_t /* num_props */,
+                                bt_property_t* /* p_props */) {
   inc_func_call_count(__func__);
 }
 void btif_set_adapter_property(bt_property_t* /* property */) { inc_func_call_count(__func__); }

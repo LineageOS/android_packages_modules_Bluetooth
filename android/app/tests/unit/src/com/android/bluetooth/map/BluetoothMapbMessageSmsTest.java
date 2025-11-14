@@ -47,7 +47,7 @@ public class BluetoothMapbMessageSmsTest {
     private static final String TEST_ADDRESS = "12";
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     private List<SmsPdu> TEST_SMS_BODY_PDUS;
 

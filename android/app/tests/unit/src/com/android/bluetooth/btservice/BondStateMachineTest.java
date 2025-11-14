@@ -13,33 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getRealDevice;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
-import android.content.Context;
+import android.companion.CompanionDeviceManager;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.HandlerThread;
 import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.UserHandle;
+import android.platform.test.flag.junit.FlagsParameterization;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;
 import org.junit.Before;
@@ -49,10 +61,22 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
+
+import java.util.List;
+
 /** Test cases for {@link BondStateMachine}. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
+@RunWith(ParameterizedAndroidJunit4.class)
 public class BondStateMachineTest {
+    @Rule public final SetFlagsRule mSetFlagsRule;
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private AdapterService mAdapterService;
+    @Mock private AdapterNativeInterface mNativeInterface;
+    @Mock private PackageManager mPackageManager;
+
     private static final int TEST_BOND_REASON = 0;
     private static final byte[] TEST_BT_ADDR_BYTES = {00, 11, 22, 33, 44, 55};
     private static final byte[] TEST_BT_ADDR_BYTES_2 = {00, 11, 22, 33, 44, 66};
@@ -69,11 +93,6 @@ public class BondStateMachineTest {
     private static final int BOND_BONDING = BluetoothDevice.BOND_BONDING;
     private static final int BOND_BONDED = BluetoothDevice.BOND_BONDED;
 
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
-    private final BluetoothManager mBluetoothManager =
-            mTargetContext.getSystemService(BluetoothManager.class);
-
     private AdapterProperties mAdapterProperties;
     private BluetoothDevice mDevice;
     private RemoteDevices mRemoteDevices;
@@ -82,38 +101,43 @@ public class BondStateMachineTest {
     private RemoteDevices.DeviceProperties mDeviceProperties;
     private int mVerifyCount = 0;
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Parameters(name = "{0}")
+    public static List<FlagsParameterization> getParams() {
+        return FlagsParameterization.progressionOf(Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE);
+    }
 
-    @Mock private AdapterService mAdapterService;
-    @Mock private AdapterNativeInterface mNativeInterface;
+    public BondStateMachineTest(FlagsParameterization flags) {
+        mSetFlagsRule = new SetFlagsRule(flags);
+    }
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
         doReturn(mNativeInterface).when(mAdapterService).getNative();
+        doReturn(mPackageManager).when(mAdapterService).getPackageManager();
         mHandlerThread = new HandlerThread("BondStateMachineTestHandlerThread");
         mHandlerThread.start();
 
-        mockGetSystemService(
-                mAdapterService,
-                Context.BLUETOOTH_SERVICE,
-                BluetoothManager.class,
-                mBluetoothManager);
-
+        mockGetBluetoothManager(mAdapterService);
+        mockGetSystemService(mAdapterService, CompanionDeviceManager.class);
         mRemoteDevices = new RemoteDevices(mAdapterService, mHandlerThread.getLooper());
         mRemoteDevices.reset();
-        when(mAdapterService.getResources()).thenReturn(mTargetContext.getResources());
+
+        final var context = InstrumentationRegistry.getInstrumentation().getContext();
+        when(mAdapterService.getResources()).thenReturn(context.getResources());
         mAdapterProperties =
                 new AdapterProperties(mAdapterService, mRemoteDevices, mHandlerThread.getLooper());
         mAdapterProperties.init();
         mBondStateMachine =
-                BondStateMachine.make(mAdapterService, mAdapterProperties, mRemoteDevices);
+                new BondStateMachine(
+                        mAdapterService,
+                        mHandlerThread.getLooper(),
+                        mAdapterProperties,
+                        mRemoteDevices);
     }
 
     @After
     public void tearDown() throws Exception {
         mHandlerThread.quit();
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test
@@ -179,21 +203,13 @@ public class BondStateMachineTest {
         mBondStateMachine.mPendingBondedDevices.clear();
 
         BluetoothDevice device1 =
-                InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
-                        .getSystemService(BluetoothManager.class)
-                        .getAdapter()
-                        .getRemoteLeDevice(
-                                Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES),
-                                BluetoothDevice.ADDRESS_TYPE_PUBLIC);
+                getRealDevice(
+                        Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES),
+                        BluetoothDevice.ADDRESS_TYPE_PUBLIC);
         BluetoothDevice device2 =
-                InstrumentationRegistry.getInstrumentation()
-                        .getTargetContext()
-                        .getSystemService(BluetoothManager.class)
-                        .getAdapter()
-                        .getRemoteLeDevice(
-                                Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES_2),
-                                BluetoothDevice.ADDRESS_TYPE_RANDOM);
+                getRealDevice(
+                        Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES_2),
+                        BluetoothDevice.ADDRESS_TYPE_RANDOM);
 
         // The createBond() request for two devices with different address types.
         Message createBondMsg1 = mBondStateMachine.obtainMessage(BondStateMachine.CREATE_BOND);

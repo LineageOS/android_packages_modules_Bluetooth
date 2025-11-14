@@ -120,8 +120,11 @@
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"連接藍牙"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"在飛航模式中保持藍牙開啟"</string>
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"如果你不關閉藍牙，下次裝置進入飛行模式時，藍牙將保持開啟"</string>
-    <string name="bluetooth_stays_on_title" msgid="39720820955212918">"保持藍牙連線"</string>
+    <string name="bluetooth_stays_on_title" msgid="39720820955212918">"藍牙保持開啟狀態"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"裝置會記得在飛行模式下保持藍牙開啟。如果你不希望保持開啟，請關閉藍牙。"</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"飛行模式下，藍牙會在連線至其他裝置時保持開啟。"</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"裝置與手錶連線時，藍牙在飛行模式下仍會保持開啟。"</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"飛行模式下，藍牙會在連線至媒體裝置時保持開啟。"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi 和藍牙保持開啟"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"裝置會記得在飛行模式下保持 Wi-Fi 及藍牙開啟。如果你不希望保持開啟，請關閉 Wi-Fi 及藍牙。"</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"已重新開啟藍牙"</string>

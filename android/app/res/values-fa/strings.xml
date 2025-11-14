@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"اگر بلوتوث را روشن نگه دارید، دستگاهتان به‌یاد خواهد داشت تا دفعه بعدی که در «حالت هواپیما» هستید آن را روشن نگه دارد"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"بلوتوث روشن بماند"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"دستگاهتان به‌یاد می‌آورد که بلوتوث را در «حالت هواپیما» روشن نگه دارد. اگر نمی‌خواهید بلوتوث روشن بماند، آن را خاموش کنید."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"مادامی‌که دستگاه به دستگاه‌های دیگر متصل است، بلوتوث در حالت هواپیما روشن می‌ماند."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"مادامی‌که دستگاه به ساعتتان متصل است، بلوتوث را در حالت هواپیما روشن نگه می‌دارد."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"مادامی‌که دستگاه به دستگاه رسانه‌ای متصل است، بلوتوث در حالت هواپیما روشن می‌ماند."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"‏‫Wi-Fi و بلوتوث روشن بماند"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"‏دستگاهتان به‌یاد می‌آورد که Wi-Fi و بلوتوث را در «حالت هواپیما» روشن نگه دارد. اگر نمی‌خواهید Wi-Fi و بلوتوث روشن بمانند، آن‌ها را خاموش کنید."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"«بلوتوث» دوباره روشن شد"</string>

@@ -55,9 +55,9 @@ namespace {
 constexpr char kBtmLogTag[] = "PAN";
 }
 
-extern std::string user_service_name; /* Service name for PANU role */
-extern std::string gn_service_name;   /* Service name for GN role */
-extern std::string nap_service_name;  /* Service name for NAP role */
+static std::string user_service_name; /* Service name for PANU role */
+static std::string gn_service_name;   /* Service name for GN role */
+static std::string nap_service_name;  /* Service name for NAP role */
 
 /*******************************************************************************
  *

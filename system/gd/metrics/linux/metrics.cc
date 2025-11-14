@@ -46,5 +46,8 @@ void LogMetricsSuspendIdState(uint32_t state) {}
 
 void LogMetricsLLPrivacyState(uint32_t llp_state, uint32_t rpa_state) {}
 
+void LogMetricMmcTranscodeRttStats(int /* maximum_rtt */, double /* mean_rtt */,
+                                   int /* num_requests */, int /* codec_type */) {}
+
 }  // namespace metrics
 }  // namespace bluetooth

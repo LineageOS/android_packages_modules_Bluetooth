@@ -15,34 +15,26 @@
 #
 
 static_library("types") {
-  cflags = [
-     "-fvisibility=default",
-  ]
+  cflags = [ "-fvisibility=default" ]
 
   sources = [
     "bluetooth/uuid.cc",
     "raw_address.cc",
   ]
 
-  include_dirs = [
-    "//bt/system/",
-  ]
+  include_dirs = [ "//bt/system/" ]
 
-  configs += [
-    "//bt/system:target_defaults",
-  ]
+  configs += [ "//bt/system:target_defaults" ]
 }
 
 if (use.test) {
   executable("net_test_types") {
     sources = [
-      "test/raw_address_unittest.cc",
       "test/bluetooth/uuid_unittest.cc",
+      "test/raw_address_unittest.cc",
     ]
 
-    include_dirs = [
-      "//bt/system/",
-    ]
+    include_dirs = [ "//bt/system/" ]
 
     libs = [
       "dl",
@@ -55,13 +47,9 @@ if (use.test) {
     # For some reason, this is required for host build. Otherwise, I get
     # a complaint from gmock:
     #   undefined reference to symbol 'pthread_getspecific@@GLIBC_2.2.5'
-    ldflags = [
-      "-lpthread"
-    ]
+    ldflags = [ "-lpthread" ]
 
-    deps = [
-      ":types",
-    ]
+    deps = [ ":types" ]
 
     configs += [
       "//bt/system:external_gmock_main",

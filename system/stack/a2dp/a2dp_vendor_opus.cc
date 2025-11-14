@@ -907,10 +907,6 @@ tA2DP_STATUS A2dpCodecConfigOpusBase::setCodecConfig(const uint8_t* p_peer_codec
       break;
     }
 
-    // Compute the common capability
-    if (sampleRate & A2DP_OPUS_SAMPLING_FREQ_48000) {
-    }
-
     // No user preference - try the codec audio config
     if (select_audio_sample_rate(&codec_audio_config_, sampleRate, &result_config_cie,
                                  &codec_config_)) {

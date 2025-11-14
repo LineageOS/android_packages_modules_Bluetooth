@@ -136,19 +136,15 @@ public class BluetoothPbapVcardManager {
 
     public final int getPhonebookSize(
             final int type, BluetoothPbapSimVcardManager vCardSimManager) {
-        int size;
-        switch (type) {
-            case BluetoothPbapObexServer.ContentType.PHONEBOOK:
-            case BluetoothPbapObexServer.ContentType.FAVORITES:
-                size = getContactsSize(type);
-                break;
-            case BluetoothPbapObexServer.ContentType.SIM_PHONEBOOK:
-                size = vCardSimManager.getSIMContactsSize();
-                break;
-            default:
-                size = getCallHistorySize(type);
-                break;
-        }
+        int size =
+                switch (type) {
+                    case BluetoothPbapObexServer.ContentType.PHONEBOOK,
+                            BluetoothPbapObexServer.ContentType.FAVORITES ->
+                            getContactsSize(type);
+                    case BluetoothPbapObexServer.ContentType.SIM_PHONEBOOK ->
+                            vCardSimManager.getSIMContactsSize();
+                    default -> getCallHistorySize(type);
+                };
         Log.v(TAG, "getPhonebookSize size = " + size + " type = " + type);
         return size;
     }
@@ -371,7 +367,8 @@ public class BluetoothPbapVcardManager {
                     public String onValueReceived(
                             String rawValue, int type, String label, boolean isPrimary) {
                         String numberWithControlSequence =
-                                rawValue.replace(PhoneNumberUtils.PAUSE, 'p')
+                                convertAndStrip(rawValue)
+                                        .replace(PhoneNumberUtils.PAUSE, 'p')
                                         .replace(PhoneNumberUtils.WAIT, 'w');
                         return numberWithControlSequence;
                     }
@@ -885,7 +882,8 @@ public class BluetoothPbapVcardManager {
                             // (see RFC 3601)
                             // so use those when exporting phone numbers via vCard.
                             String numberWithControlSequence =
-                                    rawValue.replace(PhoneNumberUtils.PAUSE, 'p')
+                                    convertAndStrip(rawValue)
+                                            .replace(PhoneNumberUtils.PAUSE, 'p')
                                             .replace(PhoneNumberUtils.WAIT, 'w');
                             return numberWithControlSequence;
                         }
@@ -1489,5 +1487,11 @@ public class BluetoothPbapVcardManager {
             }
         }
         return false;
+    }
+
+    // Copy from PhoneNumberUtils.convertAndStrip
+    private static String convertAndStrip(String phoneNumber) {
+        return PhoneNumberUtils.stripSeparators(
+                PhoneNumberUtils.convertKeypadLettersToDigits(phoneNumber));
     }
 }

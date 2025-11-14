@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.map;
 
 import android.bluetooth.BluetoothProfile;
@@ -36,7 +37,6 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.SignedLongLong;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
-import com.android.bluetooth.mapapi.BluetoothMapContract;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.HeaderSet;
 import com.android.obex.Operation;
@@ -103,10 +103,11 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
 
     private static final int MAS_INSTANCE_INFORMATION_LENGTH = 200;
 
+    private final Context mContext;
+
     private BluetoothMapFolderElement mCurrentFolder;
     private BluetoothMapContentObserver mObserver = null;
     private Handler mCallback = null;
-    private final Context mContext;
     private boolean mIsAborted = false;
     BluetoothMapContent mOutContent;
     private String mBaseUriString = null;
@@ -126,16 +127,16 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
     private ContentProviderClient mProviderClient = null;
 
     public BluetoothMapObexServer(
-            Handler callback,
             Context context,
+            Handler callback,
             BluetoothMapContentObserver observer,
             BluetoothMapMasInstance mas,
             BluetoothMapAccountItem account,
             boolean enableSmsMms)
             throws RemoteException {
         super();
-        mCallback = callback;
         mContext = context;
+        mCallback = callback;
         mObserver = observer;
         mEnableSmsMms = enableSmsMms;
         mAccount = account;

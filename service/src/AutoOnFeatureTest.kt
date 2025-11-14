@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.server.bluetooth.test
 
 import android.app.AlarmManager
@@ -20,6 +21,7 @@ import android.app.Application
 import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.content.Intent
+import android.os.IpcDataCache
 import android.os.Looper
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
@@ -30,6 +32,7 @@ import com.android.server.bluetooth.Timer
 import com.android.server.bluetooth.USER_SETTINGS_KEY
 import com.android.server.bluetooth.airplane.isOnOverrode as isAirplaneModeOn
 import com.android.server.bluetooth.airplane.test.ModeListenerTest as AirplaneListener
+import com.android.server.bluetooth.factoryResetAutoOn
 import com.android.server.bluetooth.isUserEnabled
 import com.android.server.bluetooth.isUserSupported
 import com.android.server.bluetooth.notifyBluetoothOn
@@ -45,7 +48,9 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import kotlin.test.assertFailsWith
 import org.junit.After
+import org.junit.AfterClass
 import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -56,6 +61,7 @@ import org.robolectric.Shadows.shadowOf
 @RunWith(RobolectricTestRunner::class)
 @kotlinx.coroutines.ExperimentalCoroutinesApi
 class AutoOnFeatureTest {
+
     @get:Rule val testName = TestName()
     @get:Rule val expect = Expect.create()
 
@@ -80,7 +86,7 @@ class AutoOnFeatureTest {
         callback_count = 0
         timer?.cancel()
         timer = null
-        restoreSavedTimer()
+        resetSavedTimer()
     }
 
     private fun setupTimer() {
@@ -106,7 +112,7 @@ class AutoOnFeatureTest {
         shadowOf(looper).idle()
     }
 
-    private fun restoreSavedTimer() {
+    private fun resetSavedTimer() {
         Settings.Secure.putString(resolver, Timer.STORAGE_KEY, null)
         shadowOf(looper).idle()
     }
@@ -397,7 +403,7 @@ class AutoOnFeatureTest {
     fun updateTimezone_whenTimerSchedule_isReScheduled() {
         setupTimer()
 
-        // Fake storaged time so when receiving the intent, the test think we jump in the futur
+        // Fake storage time so when receiving the intent, the test think we jump in the future
         val pastTime = timerTarget.minusDays(3)
         Settings.Secure.putString(resolver, Timer.STORAGE_KEY, pastTime.toString())
 
@@ -469,5 +475,50 @@ class AutoOnFeatureTest {
         expect.that(timer).isNotNull()
         expect.that(callback_count).isEqualTo(0)
         expectStorageTime()
+    }
+
+    @Test
+    fun factoryReset_whenTimerIsRunning_isCancelledAndOff() {
+        setupTimer()
+
+        factoryResetAutoOn(context)
+
+        expectNoStorageTime()
+        expect.that(timer).isNull()
+        expect.that(callback_count).isEqualTo(0)
+    }
+
+    @Test
+    fun factoryReset_whenNoTimer_isCancelledAndOff() {
+        factoryResetAutoOn(context)
+
+        expectNoStorageTime()
+        expect.that(timer).isNull()
+        expect.that(callback_count).isEqualTo(0)
+    }
+
+    @Test
+    fun factoryReset_whenTimerDisabled_isCancelledAndOff() {
+        disableUserSettings()
+        factoryResetAutoOn(context)
+
+        assertThat(isUserEnabled(context)).isFalse()
+        expectNoStorageTime()
+        expect.that(timer).isNull()
+        expect.that(callback_count).isEqualTo(0)
+    }
+
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun beforeClass() {
+            IpcDataCache.setTestMode(true)
+        }
+
+        @AfterClass
+        @JvmStatic
+        fun afterClass() {
+            IpcDataCache.setTestMode(false)
+        }
     }
 }

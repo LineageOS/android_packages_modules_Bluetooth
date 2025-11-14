@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package android.bluetooth.sockets.rfcomm
 
 import android.Manifest
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothA2dp
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothAdapter.nameForState
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothHeadset
 import android.bluetooth.BluetoothHidHost
@@ -140,6 +142,7 @@ class RfcommTest {
      */
     @Before
     fun setUp() {
+        Log.d(TAG, "start setUp")
         mRemoteDevice = mBumble.remoteDevice
         mHost = Host(mContext)
 
@@ -153,6 +156,7 @@ class RfcommTest {
         if (mRemoteDevice.isConnected) {
             mHost.disconnectAndVerify(mRemoteDevice)
         }
+        Log.d(TAG, "setUp completed")
     }
 
     /**
@@ -162,6 +166,7 @@ class RfcommTest {
      */
     @After
     fun tearDown() {
+        Log.d(TAG, "start tearDown. Bluetooth state is ${nameForState(mAdapter.leState)}")
         if (Settings.Global.getInt(mContext.contentResolver, BLE_SCAN_ALWAYS_AVAILABLE, 0) == 1) {
             // Recover BLE Scan always available setting
             Settings.Global.putInt(mContext.contentResolver, BLE_SCAN_ALWAYS_AVAILABLE, 0)
@@ -491,7 +496,6 @@ class RfcommTest {
      * - Enable page scan
      * - Create and connect to an RFCOMM socket - verify proper connection
      */
-    @RequiresFlagsEnabled(Flags.FLAG_RFCOMM_CANCEL_ONGOING_SDP_ON_CLOSE)
     @Test
     fun clientConnectToOpenServerSocketAfterPageTimeout() {
         updateSecurityConfig()
@@ -666,6 +670,9 @@ class RfcommTest {
             mAdapter.disable()
             waitingBluetoothLeStates(BluetoothAdapter.STATE_BLE_ON)
 
+            // Validate Bluetooth is in BLE_ON and didn't just "transition" out of it
+            Truth.assertThat(mAdapter.leState).isEqualTo(BluetoothAdapter.STATE_BLE_ON)
+
             // 1. In Bluetooth disabled state, under BLE_ON mode, it's impossible to determine the
             // device's connection status.
             // 2. Determine whether the Rfcomm Socket or ACL link has been disconnected based on
@@ -688,7 +695,7 @@ class RfcommTest {
             withTimeout(STATE_CHANGE_TIMEOUT.toMillis()) {
                 // wait for Bluetooth states
                 launch {
-                    Log.i(TAG, "Waiting for waitingBluetoothLeStates: " + state)
+                    Log.i(TAG, "Waiting for waitingBluetoothLeStates: ${nameForState(state)}")
                     mFlow
                         .filter { it.action == BluetoothAdapter.ACTION_BLE_STATE_CHANGED }
                         .filter { it.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1) == state }
@@ -898,7 +905,18 @@ class RfcommTest {
             val broadcastReceiver: BroadcastReceiver =
                 object : BroadcastReceiver() {
                     override fun onReceive(context: Context, intent: Intent) {
-                        Log.d(TAG, "intentFlow: onReceive: ${intent.action}")
+                        if (BluetoothAdapter.ACTION_BLE_STATE_CHANGED.equals(intent.action)) {
+                            val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1)
+                            Log.d(
+                                TAG,
+                                "onReceive: ${intent.action} with state ${nameForState(state)}",
+                            )
+                        } else if (BluetoothDevice.ACTION_PAIRING_REQUEST.equals(intent.action)) {
+                            val device = intent.getBluetoothDeviceExtra()
+                            Log.d(TAG, "onReceive: ${intent.action} with device $device")
+                        } else {
+                            throw IllegalStateException("Received invalid intent: ${intent.action}")
+                        }
                         scope.launch { trySendBlocking(intent) }
                     }
                 }

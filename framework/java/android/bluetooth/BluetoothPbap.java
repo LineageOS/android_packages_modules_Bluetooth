@@ -67,7 +67,7 @@ import java.util.List;
 public class BluetoothPbap implements BluetoothProfile {
     private static final String TAG = BluetoothPbap.class.getSimpleName();
 
-    private static final boolean DBG = false;
+    private static final boolean DBG = Log.isLoggable("bluetooth", Log.DEBUG);
 
     /**
      * Intent used to broadcast the change in connection state of the PBAP profile.

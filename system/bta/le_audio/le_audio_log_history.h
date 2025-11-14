@@ -50,6 +50,7 @@ static std::string kLogCisCreateOp("CIS_CREATE: ");
 static std::string kLogCisEstablishedOp("CIS_ESTABLISED: ");
 static std::string kLogCisDisconnectOp("CIS_DISCONNECT: ");
 static std::string kLogCisDisconnectedOp("CIS_DISCONNECTED: ");
+static std::string kLogSetIsoDataPathOp("SET_ISO_DATA_PATH: ");
 static std::string kLogSetDataPathOp("SET_DATA_PATH: ");
 static std::string kLogRemoveDataPathOp("REMOVE_DATA_PATH: ");
 static std::string kLogDataPathCompleteOp("DATA_PATH_COMPLETE: ");

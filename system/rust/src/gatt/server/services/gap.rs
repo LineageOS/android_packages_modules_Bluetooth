@@ -92,20 +92,21 @@ mod test {
     use super::*;
 
     use crate::core::shared_box::SharedBox;
-    use crate::gatt::server::att_database::AttDatabase;
     use crate::gatt::server::gatt_database::{
         GattDatabase, CHARACTERISTIC_UUID, PRIMARY_SERVICE_DECLARATION_UUID,
     };
+    use crate::gatt::server::AttClient;
     use crate::utils::task::block_on_locally;
 
     const TCB_IDX: TransportIndex = TransportIndex(1);
 
-    fn init_dbs() -> (SharedBox<GattDatabase>, impl AttDatabase) {
+    fn init_dbs() -> (SharedBox<GattDatabase>, SharedBox<AttClient>) {
         let mut gatt_database = GattDatabase::new();
         register_gap_service(&mut gatt_database).unwrap();
         let gatt_database = SharedBox::new(gatt_database);
-        let att_database = gatt_database.get_att_database(TCB_IDX);
-        (gatt_database, att_database)
+        let att_client =
+            AttClient::new_client_and_bearer(TCB_IDX, |_| unreachable!(), &gatt_database);
+        (gatt_database, att_client)
     }
 
     #[test]
@@ -136,10 +137,10 @@ mod test {
     #[test]
     fn test_read_device_name_not_discoverable() {
         // arrange
-        let (_gatt_db, att_db) = init_dbs();
+        let (_gatt_db, client) = init_dbs();
 
         // act: try to read the device name
-        let name = block_on_locally(att_db.read_attribute(DEVICE_NAME_HANDLE));
+        let name = block_on_locally(client.read_attribute(DEVICE_NAME_HANDLE));
 
         // assert: the name is not readable
         assert_eq!(name, Err(AttErrorCode::InsufficientAuthentication));
@@ -148,10 +149,10 @@ mod test {
     #[test]
     fn test_read_device_appearance() {
         // arrange
-        let (_gatt_db, att_db) = init_dbs();
+        let (_gatt_db, client) = init_dbs();
 
         // act: try to read the device name
-        let name = block_on_locally(att_db.read_attribute(DEVICE_APPEARANCE_HANDLE));
+        let name = block_on_locally(client.read_attribute(DEVICE_APPEARANCE_HANDLE));
 
         // assert: the name is not readable
         assert_eq!(name, Ok(vec![0x00, 0x00]));

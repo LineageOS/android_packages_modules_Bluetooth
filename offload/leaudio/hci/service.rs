@@ -1,4 +1,4 @@
-// Copyright 2024, The Android Open Source Project
+// Copyright (C) 2024, The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,9 +48,19 @@ impl Service {
         LazyLock::force(&SERVICE);
     }
 
-    pub(crate) fn reset(arbiter: Weak<Arbiter>) {
+    pub(crate) fn reset() {
         let mut state = SERVICE.state.lock().unwrap();
-        *state = State { arbiter, ..Default::default() }
+        if let Some(callbacks) = &state.callbacks {
+            for &handle in state.streams.keys() {
+                let _ = callbacks.stopStream(handle.into());
+            }
+        }
+        state.streams.clear();
+    }
+
+    pub(crate) fn set_arbiter(arbiter: Weak<Arbiter>) {
+        let mut state = SERVICE.state.lock().unwrap();
+        state.arbiter = arbiter;
     }
 
     pub(crate) fn start_stream(handle: u16, config: StreamConfiguration) {
@@ -69,6 +79,24 @@ impl Service {
         if let Some(callbacks) = &state.callbacks {
             let _ = callbacks.stopStream(handle.into());
         };
+    }
+
+    pub(crate) fn link_feedback(
+        handle: u16,
+        sequence_number: u16,
+        anchor_point_delay: u16,
+        sdu_input_status: u16,
+    ) {
+        let state = SERVICE.state.lock().unwrap();
+        let Some(callbacks) = &state.callbacks else {
+            return;
+        };
+        let _ = callbacks.linkFeedback(
+            handle.into(),
+            sequence_number.into(),
+            anchor_point_delay.into(),
+            sdu_input_status.into(),
+        );
     }
 }
 
@@ -103,7 +131,7 @@ impl IHciProxy for HciProxy {
         let seqnum: u16 = seqnum.try_into().map_err(|_| ExceptionCode::ILLEGAL_ARGUMENT)?;
 
         let state = self.state.lock().unwrap();
-        if let Some(arbiter) = state.arbiter.upgrade() {
+        if let (Some(arbiter), Some(_)) = (state.arbiter.upgrade(), state.streams.get(&handle)) {
             assert!(
                 data.len() <= arbiter.max_buf_len(),
                 "SDU Fragmentation over HCI is not supported"

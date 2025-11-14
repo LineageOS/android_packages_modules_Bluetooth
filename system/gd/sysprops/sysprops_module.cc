@@ -18,7 +18,6 @@
 
 #include <filesystem>
 
-#include "os/handler.h"
 #include "os/parameter_provider.h"
 #include "os/system_properties.h"
 #include "storage/legacy_config_file.h"
@@ -30,20 +29,7 @@ static const size_t kDefaultCapacity = 10000;
 static const char* kAflagSection = "Aflags";
 static const char* kAflagPrefix = "persist.device_config.aconfig_flags.bluetooth.";
 
-SyspropsModule::SyspropsModule() {}
-SyspropsModule::~SyspropsModule() { pimpl_.reset(); }
-
-const ModuleFactory SyspropsModule::Factory = ModuleFactory([]() { return new SyspropsModule(); });
-
-struct SyspropsModule::impl {
-  impl(os::Handler* sysprops_handler) : sysprops_handler_(sysprops_handler) {}
-
-  os::Handler* sysprops_handler_;
-};
-
-void SyspropsModule::ListDependencies(ModuleList* /* list */) const {}
-
-void SyspropsModule::Start() {
+SyspropsModule::SyspropsModule() {
   std::string file_path = os::ParameterProvider::SyspropsFilePath();
   if (!file_path.empty()) {
     parse_config(file_path);
@@ -55,13 +41,7 @@ void SyspropsModule::Start() {
       }
     }
   }
-
-  pimpl_ = std::make_unique<impl>(GetHandler());
 }
-
-void SyspropsModule::Stop() { pimpl_.reset(); }
-
-std::string SyspropsModule::ToString() const { return "Sysprops Module"; }
 
 void SyspropsModule::parse_config(std::string file_path) {
   const std::list<std::string> supported_sysprops = {

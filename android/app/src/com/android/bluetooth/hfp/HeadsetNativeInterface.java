@@ -16,15 +16,11 @@
 
 package com.android.bluetooth.hfp;
 
-import static java.util.Objects.requireNonNull;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.internal.annotations.GuardedBy;
 
 /**
  * Defines native calls that are used by state machine/service to either send or receive messages
@@ -34,100 +30,63 @@ import com.android.internal.annotations.GuardedBy;
 public class HeadsetNativeInterface {
     private static final String TAG = HeadsetNativeInterface.class.getSimpleName();
 
-    private final BluetoothAdapter mAdapter = BluetoothAdapter.getDefaultAdapter();
-
-    @GuardedBy("INSTANCE_LOCK")
-    private static HeadsetNativeInterface sInstance;
-
-    private static final Object INSTANCE_LOCK = new Object();
-
     private final AdapterService mAdapterService;
+    private final HeadsetService mService;
 
-    private HeadsetNativeInterface() {
-        mAdapterService = requireNonNull(AdapterService.getAdapterService());
-    }
-
-    /**
-     * This class is a singleton because native library should only be loaded once
-     *
-     * @return default instance
-     */
-    public static HeadsetNativeInterface getInstance() {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new HeadsetNativeInterface();
-            }
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    public static void setInstance(HeadsetNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
-    }
-
-    private static void sendMessageToService(HeadsetStackEvent event) {
-        HeadsetService service = HeadsetService.getHeadsetService();
-        if (service != null) {
-            service.messageFromNative(event);
-        } else {
-            // Service must call cleanup() when quitting and native stack shouldn't send any event
-            // after cleanup() -> cleanupNative() is called.
-            Log.w(TAG, "Stack sent event while service is not available: " + event);
-        }
+    HeadsetNativeInterface(AdapterService adapterService, HeadsetService service) {
+        mAdapterService = adapterService;
+        mService = service;
     }
 
     private BluetoothDevice getDevice(byte[] address) {
         return mAdapterService.getDeviceFromByte(address);
     }
 
-    private static byte[] getByteAddress(BluetoothDevice device) {
+    private byte[] getByteAddress(BluetoothDevice device) {
         if (device == null) {
             // Set bt_stack's active device to default if java layer set active device to null
             return Utils.getBytesFromAddress("00:00:00:00:00:00");
         }
-        return Utils.getByteBrEdrAddress(device);
+        return Utils.getByteBrEdrAddress(mAdapterService, device);
     }
 
-    void onConnectionStateChanged(int state, byte[] address) {
+    void onConnectionStateChanged(int state, byte[] address, int reason) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(
                         HeadsetStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED,
                         state,
                         getDevice(address));
-        sendMessageToService(event);
+        event.reason = reason;
+        mService.messageFromNative(event);
     }
 
     // Callbacks for native code
-
     private void onAudioStateChanged(int state, byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(
                         HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED,
                         state,
                         getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onVrStateChanged(int state, byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(
                         HeadsetStackEvent.EVENT_TYPE_VR_STATE_CHANGED, state, getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onAnswerCall(byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_ANSWER_CALL, getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onHangupCall(byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_HANGUP_CALL, getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onVolumeChanged(int type, int volume, byte[] address) {
@@ -137,21 +96,21 @@ public class HeadsetNativeInterface {
                         type,
                         volume,
                         getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onDialCall(String number, byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(
                         HeadsetStackEvent.EVENT_TYPE_DIAL_CALL, number, getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onSendDtmf(int dtmf, byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(
                         HeadsetStackEvent.EVENT_TYPE_SEND_DTMF, dtmf, getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onNoiseReductionEnable(boolean enable, byte[] address) {
@@ -160,79 +119,79 @@ public class HeadsetNativeInterface {
                         HeadsetStackEvent.EVENT_TYPE_NOISE_REDUCTION,
                         enable ? 1 : 0,
                         getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onWBS(int codec, byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_WBS, codec, getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onSWB(int codec, int swb, byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(
                         HeadsetStackEvent.EVENT_TYPE_SWB, codec, swb, getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onAtChld(int chld, byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(
                         HeadsetStackEvent.EVENT_TYPE_AT_CHLD, chld, getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onAtCnum(byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(
                         HeadsetStackEvent.EVENT_TYPE_SUBSCRIBER_NUMBER_REQUEST, getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onAtCind(byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_AT_CIND, getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onAtCops(byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_AT_COPS, getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onAtClcc(byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_AT_CLCC, getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onUnknownAt(String atString, byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(
                         HeadsetStackEvent.EVENT_TYPE_UNKNOWN_AT, atString, getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onKeyPressed(byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_KEY_PRESSED, getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onATBind(String atString, byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(
                         HeadsetStackEvent.EVENT_TYPE_BIND, atString, getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onATBiev(int indId, int indValue, byte[] address) {
         HeadsetStackEvent event =
                 new HeadsetStackEvent(
                         HeadsetStackEvent.EVENT_TYPE_BIEV, indId, indValue, getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
     }
 
     private void onAtBia(
@@ -244,7 +203,13 @@ public class HeadsetNativeInterface {
                         HeadsetStackEvent.EVENT_TYPE_BIA,
                         agIndicatorEnableState,
                         getDevice(address));
-        sendMessageToService(event);
+        mService.messageFromNative(event);
+    }
+
+    private void onAtBcc(byte[] address) {
+        HeadsetStackEvent event =
+                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_BCC, getDevice(address));
+        mService.messageFromNative(event);
     }
 
     // Native wrappers to help unit testing
@@ -536,6 +501,16 @@ public class HeadsetNativeInterface {
         return enableSwbNative(swbCodec, enable, getByteAddress(device));
     }
 
+    /**
+     * Set whether we will use the new SCO Management path based on the java flag value/sys prop
+     *
+     * @param value True to enable, False to disable
+     * @return True on success, False on failure
+     */
+    boolean setIsScoManagedByAudio(boolean value) {
+        return setIsScoManagedByAudioNative(value);
+    }
+
     /* Native methods */
     private native boolean atResponseCodeNative(int responseCode, int errorCode, byte[] address);
 
@@ -604,4 +579,6 @@ public class HeadsetNativeInterface {
     private native boolean setActiveDeviceNative(byte[] address);
 
     private native boolean enableSwbNative(int swbCodec, boolean enable, byte[] address);
+
+    private native boolean setIsScoManagedByAudioNative(boolean value);
 }

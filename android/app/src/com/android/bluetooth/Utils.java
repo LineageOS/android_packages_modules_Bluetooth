@@ -35,8 +35,6 @@ import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED;
 import static android.permission.PermissionManager.PERMISSION_HARD_DENIED;
 
-import static com.android.modules.utils.build.SdkLevel.isAtLeastV;
-
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
@@ -71,8 +69,6 @@ import android.provider.DeviceConfig;
 import android.provider.Telephony;
 import android.util.Log;
 
-import androidx.annotation.VisibleForTesting;
-
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -97,10 +93,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public final class Utils {
-    public static final String TAG_PREFIX_BLUETOOTH = "Bluetooth";
-    private static final String TAG = TAG_PREFIX_BLUETOOTH + Utils.class.getSimpleName();
+    public static final String BT_PREFIX = "Bluetooth";
+    private static final String TAG = BT_PREFIX + Utils.class.getSimpleName();
 
     public static final int BD_ADDR_LEN = 6; // bytes
+    public static final int TYPED_BD_ADDR_LEN = 7; // bytes
     private static final int BD_UUID_LEN = 16; // bytes
 
     /** Thread pool to handle background and outgoing blocking task */
@@ -112,13 +109,12 @@ public final class Utils {
     private static final String PTS_TEST_MODE_PROPERTY = "persist.bluetooth.pts";
 
     private static final String ENABLE_DUAL_MODE_AUDIO = "persist.bluetooth.enable_dual_mode_audio";
-    private static boolean sDualModeEnabled =
-            SystemProperties.getBoolean(ENABLE_DUAL_MODE_AUDIO, false);
 
-    private static final String ENABLE_SCO_MANAGED_BY_AUDIO = "bluetooth.sco.managed_by_audio";
-
-    private static boolean isScoManagedByAudioEnabled =
-            SystemProperties.getBoolean(ENABLE_SCO_MANAGED_BY_AUDIO, false);
+    // See https://en.wikipedia.org/wiki/Initialization-on-demand_holder_idiom
+    private static class DualModeAudioSetting {
+        private static boolean sEnabled =
+                SystemProperties.getBoolean(ENABLE_DUAL_MODE_AUDIO, false);
+    }
 
     private static final String KEY_TEMP_ALLOW_LIST_DURATION_MS = "temp_allow_list_duration_ms";
     private static final long DEFAULT_TEMP_ALLOW_LIST_DURATION_MS = 20_000;
@@ -133,10 +129,16 @@ public final class Utils {
     }
 
     public static int getForegroundUserId() {
+        if (Flags.limitUserSwitchPropagation()) {
+            throw new IllegalStateException("limitUserSwitchPropagation is enabled");
+        }
         return sForegroundUserId;
     }
 
     public static void setForegroundUserId(int userId) {
+        if (Flags.limitUserSwitchPropagation()) {
+            throw new IllegalStateException("limitUserSwitchPropagation is enabled");
+        }
         sForegroundUserId = userId;
     }
 
@@ -158,46 +160,16 @@ public final class Utils {
      * @return true if dual mode audio is enabled, false otherwise
      */
     public static boolean isDualModeAudioEnabled() {
-        Log.i(TAG, "Dual mode enable state is: " + sDualModeEnabled);
-        return sDualModeEnabled;
+        Log.i(TAG, "Dual mode enable state is: " + DualModeAudioSetting.sEnabled);
+        return DualModeAudioSetting.sEnabled;
     }
 
     /**
-     * Check if SCO managed by Audio is enabled. This is set via the system property
-     * bluetooth.sco.managed_by_audio.
+     * Checks CoD and metadata to determine if the remote device is a watch
      *
-     * <p>When set to {@code false}, Bluetooth will managed the start and end of the SCO.
-     *
-     * <p>When set to {@code true}, Audio will manage the start and end of the SCO through HAL.
-     *
-     * @return true if SCO managed by Audio is enabled, false otherwise
+     * @return whether it's a watch or not
      */
-    public static boolean isScoManagedByAudioEnabled() {
-        if (Flags.isScoManagedByAudio()) {
-            Log.d(TAG, "isScoManagedByAudioEnabled state is: " + isScoManagedByAudioEnabled);
-            if (isScoManagedByAudioEnabled && !isAtLeastV()) {
-                Log.e(TAG, "isScoManagedByAudio should not be enabled before Android V");
-                return false;
-            }
-            return isScoManagedByAudioEnabled;
-        }
-        return false;
-    }
-
-    @VisibleForTesting
-    public static void setIsScoManagedByAudioEnabled(boolean enabled) {
-        Log.i(TAG, "Updating isScoManagedByAudioEnabled for testing to: " + enabled);
-        isScoManagedByAudioEnabled = enabled;
-    }
-
-    /**
-     * Checks CoD and metadata to determine if the device is a watch
-     *
-     * @param service Adapter service
-     * @param device the remote device
-     * @return {@code true} if it's a watch, {@code false} otherwise
-     */
-    public static boolean isWatch(
+    public static boolean remoteDeviceIsWatch(
             @NonNull AdapterService service, @NonNull BluetoothDevice device) {
         // Check CoD
         BluetoothClass deviceClass = new BluetoothClass(service.getRemoteClass(device));
@@ -206,7 +178,7 @@ public final class Utils {
         }
 
         // Check metadata
-        DatabaseManager mDbManager = service.getDatabase();
+        DatabaseManager mDbManager = service.getDatabaseManager();
         byte[] deviceType = mDbManager.getCustomMeta(device, BluetoothDevice.METADATA_DEVICE_TYPE);
         if (deviceType == null) {
             return false;
@@ -225,16 +197,7 @@ public final class Utils {
      */
     public static void setDualModeAudioStateForTesting(boolean enabled) {
         Log.i(TAG, "Updating dual mode audio state for testing to: " + enabled);
-        sDualModeEnabled = enabled;
-    }
-
-    public static @Nullable String getName(@Nullable BluetoothDevice device) {
-        final AdapterService service = AdapterService.getAdapterService();
-        if (service != null && device != null) {
-            return service.getRemoteName(device);
-        } else {
-            return null;
-        }
+        DualModeAudioSetting.sEnabled = enabled;
     }
 
     public static String getLoggableAddress(@Nullable BluetoothDevice device) {
@@ -263,6 +226,34 @@ public final class Utils {
         return String.format("XX:XX:XX:XX:%02X:%02X", address[4], address[5]);
     }
 
+    public static String deviceTypeToString(int deviceType) {
+        return switch (deviceType) {
+            case BluetoothDevice.DEVICE_TYPE_UNKNOWN -> " ???? ";
+            case BluetoothDevice.DEVICE_TYPE_CLASSIC -> "BR/EDR";
+            case BluetoothDevice.DEVICE_TYPE_LE -> "  LE  ";
+            case BluetoothDevice.DEVICE_TYPE_DUAL -> " DUAL ";
+            default -> "Invalid device type: " + deviceType;
+        };
+    }
+
+    public static String addressTypeToString(int addressType) {
+        return switch (addressType) {
+            case BluetoothDevice.ADDRESS_TYPE_PUBLIC -> "Public ";
+            case BluetoothDevice.ADDRESS_TYPE_RANDOM -> "Random ";
+            default -> "Unknown";
+        };
+    }
+
+    /** Convert a BluetoothDevice transport constant to a string for printing in debug lines */
+    public static String transportToString(int transport) {
+        return switch (transport) {
+            case BluetoothDevice.TRANSPORT_AUTO -> "AUTO";
+            case BluetoothDevice.TRANSPORT_BREDR -> "BR/EDR";
+            case BluetoothDevice.TRANSPORT_LE -> "LE";
+            default -> "Unknown transport (" + transport + ")";
+        };
+    }
+
     /**
      * Returns the correct device address to be used for connections over BR/EDR transport.
      *
@@ -275,37 +266,9 @@ public final class Utils {
         return identity != null ? identity : address;
     }
 
-    /**
-     * Returns the correct device address to be used for connections over BR/EDR transport.
-     *
-     * @param device the device for which to obtain the connection address
-     * @return either identity address or device address in String format
-     */
-    public static String getBrEdrAddress(BluetoothDevice device) {
-        final AdapterService service = AdapterService.getAdapterService();
-        final String address = device.getAddress();
-        String identity = service != null ? service.getIdentityAddress(address) : null;
-        return identity != null ? identity : address;
-    }
-
-    /**
-     * Returns the correct device address to be used for connections over BR/EDR transport.
-     *
-     * @param device the device for which to obtain the connection address
-     * @param service the adapter service to make the identity address retrieval call
-     * @return either identity address or device address in String format
-     */
+    /** {@link #getBrEdrAddress(String, AdapterService)} */
     public static String getBrEdrAddress(BluetoothDevice device, AdapterService service) {
-        final String address = device.getAddress();
-        String identity = service.getIdentityAddress(address);
-        return identity != null ? identity : address;
-    }
-
-    /**
-     * @see #getByteBrEdrAddress(AdapterService, BluetoothDevice)
-     */
-    public static byte[] getByteBrEdrAddress(BluetoothDevice device) {
-        return getByteBrEdrAddress(AdapterService.getAdapterService(), device);
+        return getBrEdrAddress(device.getAddress(), service);
     }
 
     /**
@@ -743,6 +706,11 @@ public final class Utils {
         int callingUid = Binder.getCallingUid();
         UserHandle callingUser = UserHandle.getUserHandleForUid(callingUid);
 
+        if (Flags.limitUserSwitchPropagation()) {
+            return Process.myUserHandle().equals(callingUser)
+                    || (UserHandle.getAppId(sSystemUiUid) == UserHandle.getAppId(callingUid))
+                    || (UserHandle.getAppId(Process.SYSTEM_UID) == UserHandle.getAppId(callingUid));
+        }
         return (sForegroundUserId == callingUser.getIdentifier())
                 || (UserHandle.getAppId(sSystemUiUid) == UserHandle.getAppId(callingUid))
                 || (UserHandle.getAppId(Process.SYSTEM_UID) == UserHandle.getAppId(callingUid));
@@ -794,6 +762,14 @@ public final class Utils {
                     um.isHeadlessSystemUserMode() && callingUser.equals(UserHandle.SYSTEM);
 
             // Always allow SystemUI/System access.
+            if (Flags.limitUserSwitchPropagation()) {
+                return Process.myUserHandle().equals(callingUser)
+                        || Process.myUserHandle().equals(uh)
+                        || (UserHandle.getAppId(sSystemUiUid) == UserHandle.getAppId(callingUid))
+                        || (UserHandle.getAppId(Process.SYSTEM_UID)
+                                == UserHandle.getAppId(callingUid))
+                        || (isSystemUserInHsumMode);
+            }
             return (sForegroundUserId == callingUser.getIdentifier())
                     || (sForegroundUserId == parentUser)
                     || (UserHandle.getAppId(sSystemUiUid) == UserHandle.getAppId(callingUid))
@@ -1208,9 +1184,6 @@ public final class Utils {
     }
 
     /**
-     * Check if this is an automotive device
-     *
-     * @param context current device context
      * @return true if this Android device is an automotive device, false otherwise
      */
     public static boolean isAutomotive(Context context) {
@@ -1218,9 +1191,6 @@ public final class Utils {
     }
 
     /**
-     * Check if this is a watch device
-     *
-     * @param context current device context
      * @return true if this Android device is a watch device, false otherwise
      */
     public static boolean isWatch(Context context) {
@@ -1228,9 +1198,6 @@ public final class Utils {
     }
 
     /**
-     * Check if this is a TV device
-     *
-     * @param context current device context
      * @return true if this Android device is a TV device, false otherwise
      */
     public static boolean isTv(Context context) {

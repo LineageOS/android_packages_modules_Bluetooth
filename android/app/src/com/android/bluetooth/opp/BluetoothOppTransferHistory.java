@@ -35,6 +35,7 @@ package com.android.bluetooth.opp;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.content.DialogInterface;
@@ -376,7 +377,7 @@ public class BluetoothOppTransferHistory extends Activity
      * so need update manually.
      */
     private void updateNotificationWhenBtDisabled() {
-        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        BluetoothAdapter adapter = getSystemService(BluetoothManager.class).getAdapter();
         if (!adapter.isEnabled()) {
             Log.v(TAG, "Bluetooth is not enabled, update notification manually.");
             mNotifier.updateNotification();

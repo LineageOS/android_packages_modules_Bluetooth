@@ -20,7 +20,7 @@
 
 #include "btif/include/core_callbacks.h"
 #include "include/hardware/bluetooth.h"
-#include "types/raw_address.h"
+#include "types/ble_address_with_type.h"
 
 namespace bluetooth {
 namespace core {
@@ -32,9 +32,9 @@ EventCallbacks mock_event_callbacks = {
         .invoke_adapter_state_changed_cb = [](bt_state_t /* state */) {},
         .invoke_adapter_properties_cb = [](bt_status_t /* status */, int /* num_properties */,
                                            bt_property_t* /* properties */) {},
-        .invoke_remote_device_properties_cb = [](bt_status_t /* status */, RawAddress /* bd_addr */,
-                                                 int /* num_properties */,
-                                                 bt_property_t* /* properties */) {},
+        .invoke_remote_device_properties_cb =
+                [](bt_status_t /* status */, RawAddress /* bd_addr */, uint8_t /* address_type */,
+                   int /* num_properties */, bt_property_t* /* properties */) {},
         .invoke_device_found_cb = [](int /* num_properties */, bt_property_t* /* properties */) {},
         .invoke_discovery_state_changed_cb = [](bt_discovery_state_t /* state */) {},
         .invoke_pin_request_cb = [](RawAddress /* bd_addr */, bt_bdname_t /* bd_name */,
@@ -53,8 +53,8 @@ EventCallbacks mock_event_callbacks = {
                                              RawAddress /* secondary_bd_addr */,
                                              uint8_t /* identity_address_type */) {},
         .invoke_acl_state_changed_cb =
-                [](bt_status_t /* status */, RawAddress /* bd_addr */, bt_acl_state_t /* state */,
-                   int /* transport_link_type */, bt_hci_error_code_t /* hci_reason */,
+                [](bt_status_t /* status */, tAclLinkSpec& /* link_spec */,
+                   bt_acl_state_t /* state */, bt_hci_error_code_t /* hci_reason */,
                    bt_conn_direction_t /* direction */, uint16_t /* acl_handle */) {},
         .invoke_thread_evt_cb = [](bt_cb_thread_evt /* event */) {},
         .invoke_le_test_mode_cb = [](bt_status_t /* status */, uint16_t /* count */) {},
@@ -64,7 +64,7 @@ EventCallbacks mock_event_callbacks = {
                 [](uint64_t /* timestamp */, int /* report_id */, int /* rssi */, int /* snr */,
                    int /* retransmission_count */, int /* packets_not_receive_count */,
                    int /* negative_acknowledgement_count */) {},
-        .invoke_key_missing_cb = [](RawAddress /* bd_addr */) {},
+        .invoke_key_missing_cb = [](tBTA_DM_KEY_MISSING /* key_missing */) {},
         .invoke_encryption_change_cb = [](bt_encryption_change_evt /* encryption_change */) {},
 };
 

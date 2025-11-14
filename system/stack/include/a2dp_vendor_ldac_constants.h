@@ -58,4 +58,10 @@
 #define A2DP_LDAC_CHANNEL_MODE_DUAL 0x02
 #define A2DP_LDAC_CHANNEL_MODE_STEREO 0x01
 
+/* Index of Codec Specific Information Element
+   starting from configuration length.
+*/
+#define A2DP_LDAC_SAMPLING_FREQ_IDX 9
+#define A2DP_LDAC_CHANNEL_MODE_IDX 10
+
 #endif  // A2DP_VENDOR_LDAC_CONSTANTS_H

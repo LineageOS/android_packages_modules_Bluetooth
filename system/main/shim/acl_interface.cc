@@ -16,17 +16,13 @@
 
 #include "main/shim/acl_interface.h"
 
+#include "stack/gatt/gatt_int.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/ble_acl_interface.h"
 #include "stack/include/sec_hci_link_interface.h"
+#include "stack/l2cap/l2c_int.h"
 
 struct tBTM_ESCO_DATA;
-void gatt_notify_phy_updated(tHCI_STATUS status, uint16_t handle, uint8_t tx_phy, uint8_t rx_phy);
-void gatt_notify_subrate_change(uint16_t handle, uint16_t subrate_factor, uint16_t latency,
-                                uint16_t cont_num, uint16_t timeout, uint8_t status);
-void l2cble_process_subrate_change_evt(uint16_t handle, uint8_t status, uint16_t subrate_factor,
-                                       uint16_t peripheral_latency, uint16_t cont_num,
-                                       uint16_t timeout);
 
 static void on_le_subrate_change(uint16_t handle, uint16_t subrate_factor, uint16_t latency,
                                  uint16_t cont_num, uint16_t timeout, uint8_t status) {
@@ -65,7 +61,6 @@ const acl_interface_t& GetAclInterface() {
           .link.classic.on_sniff_subrating = btm_pm_on_sniff_subrating,
           .link.classic.on_read_clock_complete = nullptr,
           .link.classic.on_read_clock_offset_complete = nullptr,
-          .link.classic.on_read_failed_contact_counter_complete = nullptr,
           .link.classic.on_read_link_policy_settings_complete = nullptr,
           .link.classic.on_read_link_quality_complete = nullptr,
           .link.classic.on_read_link_supervision_timeout_complete = nullptr,

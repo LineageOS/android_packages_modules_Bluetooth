@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Kui hoiate Bluetoothi sisselülitatuna, jätab seade teie valiku meelde ja kasutab seda järgmisel korral lennukirežiimi aktiveerimisel."</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetooth jääb sisselülitatuks"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Teie seade hoiab Bluetoothi lennukirežiimis sisselülitatuna. Lülitage Bluetooth välja, kui te ei soovi, et see oleks sisse lülitatud."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Kui teie seade on teiste seadmetega ühendatud, jääb Bluetooth lennukirežiimis sisse lülitatuks."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Kui teie seade on kellaga ühendatud, hoiab see lennukirežiimis Bluetoothi sisse lülitatuna."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Meediaseadmega ühenduse loomisel jääb Bluetooth lennukirežiimis sisse lülitatuks."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"WiFi ja Bluetoothi jäävad sisselülitatuks"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Teie seade hoiab WiFi ja Bluetoothi lennukirežiimis sisselülitatuna. Lülitage WiFi ja Bluetooth välja, kui te ei soovi, et need oleksid sisse lülitatud."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth on uuesti sisse lülitatud"</string>

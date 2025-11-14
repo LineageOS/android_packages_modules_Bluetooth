@@ -22,7 +22,15 @@ import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 import android.content.ContentProviderClient;
@@ -50,9 +58,8 @@ import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.bluetooth.map.BluetoothMapContract.MessageColumns;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
-import com.android.bluetooth.mapapi.BluetoothMapContract;
-import com.android.bluetooth.mapapi.BluetoothMapContract.MessageColumns;
 import com.android.obex.ResponseCodes;
 
 import com.google.android.mms.pdu.PduHeaders;
@@ -185,9 +192,8 @@ public class BluetoothMapContentObserverTest {
         // Functions that get called when BluetoothMapContentObserver is created
         when(mUserService.isUserUnlocked()).thenReturn(true);
         when(mContext.getContentResolver()).thenReturn(mMockContentResolver);
-        mockGetSystemService(
-                mContext, Context.TELEPHONY_SERVICE, TelephonyManager.class, mTelephonyManager);
-        mockGetSystemService(mContext, Context.USER_SERVICE, UserManager.class, mUserService);
+        mockGetSystemService(mContext, TelephonyManager.class, mTelephonyManager);
+        mockGetSystemService(mContext, UserManager.class, mUserService);
         when(mInstance.getMasId()).thenReturn(TEST_ID);
 
         mObserver = new BluetoothMapContentObserver(mContext, mClient, mInstance, null, true);

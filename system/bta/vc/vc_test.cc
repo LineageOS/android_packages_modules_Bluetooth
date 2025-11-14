@@ -23,10 +23,12 @@
 #include <log/log.h>
 
 #include "bta/include/bta_vc_api.h"
+#include "bta/le_audio/le_audio_types.h"
 #include "bta/test/common/bta_gatt_api_mock.h"
 #include "bta/test/common/bta_gatt_queue_mock.h"
 #include "bta/test/common/btm_api_mock.h"
 #include "bta/test/common/mock_csis_client.h"
+#include "bta/test/common/mock_device_groups.h"
 #include "bta/vc/types.h"
 #include "gatt/database_builder.h"
 #include "hardware/bt_gatt_types.h"
@@ -87,7 +89,8 @@ public:
   MOCK_METHOD((void), OnConnectionState, (ConnectionState state, const RawAddress& address),
               (override));
   MOCK_METHOD((void), OnDeviceAvailable,
-              (const RawAddress& address, uint8_t num_offset, uint8_t num_inputs), (override));
+              (const RawAddress& address, int group_id, uint8_t num_offset, uint8_t num_inputs),
+              (override));
   MOCK_METHOD((void), OnVolumeStateChanged,
               (const RawAddress& address, uint8_t volume, bool mute, uint8_t flags,
                bool isAutonomous),
@@ -432,20 +435,29 @@ private:
 
 protected:
   bool do_not_respond_to_reads = false;
+  int group_id = 5;
 
   void SetUp(void) override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
 
     com::android::bluetooth::flags::provider_->leaudio_add_aics_support(true);
+    com::android::bluetooth::flags::provider_->vcp_handle_group_id_internally(true);
 
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
     MockCsisClient::SetMockInstanceForTesting(&mock_csis_client_module_);
+    MockDeviceGroups::SetMockInstanceForTesting(&mock_groups_module_);
     gatt::SetMockBtaGattInterface(&gatt_interface);
     gatt::SetMockBtaGattQueue(&gatt_queue);
     reset_mock_function_count_map();
 
     ON_CALL(btm_interface, IsDeviceBonded(_, _)).WillByDefault(DoAll(Return(true)));
+
+    // Store group callbacks so that we could inject grouping events
+    group_callbacks_ = nullptr;
+    ON_CALL(mock_groups_module_, Initialize(_)).WillByDefault(SaveArg<0>(&group_callbacks_));
+    ON_CALL(mock_groups_module_, Get()).WillByDefault(Return(&mock_groups_module_));
+    ON_CALL(mock_groups_module_, GetGroupId(_, _)).WillByDefault(Return(group_id));
 
     // default action for GetCharacteristic function call
     ON_CALL(gatt_interface, GetCharacteristic(_, _))
@@ -747,12 +759,14 @@ protected:
   NiceMock<MockVolumeControlCallbacks> callbacks;
   NiceMock<bluetooth::manager::MockBtmInterface> btm_interface;
   MockCsisClient mock_csis_client_module_;
+  NiceMock<MockDeviceGroups> mock_groups_module_;
   NiceMock<gatt::MockBtaGattInterface> gatt_interface;
   NiceMock<gatt::MockBtaGattQueue> gatt_queue;
 
   tBTA_GATTC_CBACK* gatt_callback;
   const uint8_t gatt_if = 0xff;
   std::map<uint16_t, std::list<gatt::Service>> services_map;
+  bluetooth::groups::DeviceGroupsCallbacks* group_callbacks_ = nullptr;
 };
 
 TEST_F(VolumeControlTest, test_get_uninitialized) { ASSERT_DEATH(VolumeControl::Get(), ""); }
@@ -836,7 +850,7 @@ TEST_F(VolumeControlTest, test_reconnect_after_interrupted_discovery) {
   TestAppRegister();
   TestConnect(test_address);
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
-  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, 2, _)).Times(0);
+  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, _, _, _)).Times(0);
   GetConnectedEvent(test_address, 1);
   Mock::VerifyAndClearExpectations(&callbacks);
 
@@ -855,12 +869,12 @@ TEST_F(VolumeControlTest, test_reconnect_after_interrupted_discovery) {
 
   // Remote is being connected by another GATT client
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
-  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, 2, _));
+  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, group_id, 2, _));
   GetConnectedEvent(test_address, 1);
   Mock::VerifyAndClearExpectations(&callbacks);
 
   // Request connect when the remote was already connected by another service
-  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, 2, _)).Times(0);
+  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, _, _, _)).Times(0);
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
   VolumeControl::Get()->Connect(test_address);
   // The GetConnectedEvent(test_address, 1); should not be triggered here, since
@@ -917,7 +931,7 @@ TEST_F(VolumeControlTest, test_reconnect_after_timeout) {
             }
           }));
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, address));
-  EXPECT_CALL(callbacks, OnDeviceAvailable(address, 2, _));
+  EXPECT_CALL(callbacks, OnDeviceAvailable(address, group_id, 2, _));
   GetConnectedEvent(address, 1);
   Mock::VerifyAndClearExpectations(&callbacks);
 
@@ -1063,7 +1077,7 @@ TEST_F(VolumeControlTest, test_discovery_vcs_found) {
   SetSampleDatabaseVCS(1);
   TestAppRegister();
   TestConnect(test_address);
-  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, _, _));
+  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, group_id, _, _));
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
   GetConnectedEvent(test_address, 1);
   GetSearchCompleteEvent(1);
@@ -1220,7 +1234,7 @@ TEST_F(VolumeControlTest, test_discovery_vocs_found) {
   TestAppRegister();
   TestConnect(test_address);
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
-  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, 2, _));
+  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, group_id, 2, _));
   GetConnectedEvent(test_address, 1);
   GetSearchCompleteEvent(1);
   Mock::VerifyAndClearExpectations(&callbacks);
@@ -1233,7 +1247,7 @@ TEST_F(VolumeControlTest, test_discovery_vocs_not_found) {
   TestAppRegister();
   TestConnect(test_address);
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
-  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, 0, _));
+  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, group_id, 0, _));
   GetConnectedEvent(test_address, 1);
   GetSearchCompleteEvent(1);
   Mock::VerifyAndClearExpectations(&callbacks);
@@ -1246,7 +1260,7 @@ TEST_F(VolumeControlTest, test_discovery_vocs_broken) {
   TestAppRegister();
   TestConnect(test_address);
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
-  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, 1, _));
+  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, group_id, 1, _));
   GetConnectedEvent(test_address, 1);
   GetSearchCompleteEvent(1);
   Mock::VerifyAndClearExpectations(&callbacks);
@@ -1328,12 +1342,17 @@ protected:
 
 TEST_F(VolumeControlCallbackTest, test_volume_state_changed_stress) {
   std::vector<uint8_t> value({0x03, 0x01, 0x02});
-  EXPECT_CALL(callbacks, OnVolumeStateChanged(test_address, 0x03, true, _, true));
+  if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+    EXPECT_CALL(callbacks, OnVolumeStateChanged(test_address, 0x03, true, _, true));
+  } else {
+    EXPECT_CALL(callbacks, OnGroupVolumeStateChanged(group_id, 0x03, true, true));
+  }
   GetNotificationEvent(0x0021, value);
 }
 
 TEST_F(VolumeControlCallbackTest, test_volume_state_changed_malformed) {
   EXPECT_CALL(callbacks, OnVolumeStateChanged(test_address, _, _, _, _)).Times(0);
+  EXPECT_CALL(callbacks, OnGroupVolumeStateChanged(group_id, _, _, _)).Times(0);
   std::vector<uint8_t> too_short({0x03, 0x01});
   GetNotificationEvent(0x0021, too_short);
   std::vector<uint8_t> too_long({0x03, 0x01, 0x02, 0x03});
@@ -1969,7 +1988,7 @@ TEST_F(VolumeControlValueSetTest, test_unmute_to_same_during_other_pending) {
   std::vector<uint8_t> ntf_value_x10({0x10, 0, 1});
   const std::vector<uint8_t> vol_x11({0x04, /*change_cnt*/ 1, 0x11});
   std::vector<uint8_t> ntf_value_x11({0x11, 0, 2});
-  const std::vector<uint8_t> unmute({0x05, /*change_cnt*/ 3});
+  const std::vector<uint8_t> unmute({0x05, /*change_cnt*/ 2});
 
   EXPECT_CALL(gatt_queue, WriteCharacteristic(conn_id, 0x0024, vol_x10, GATT_WRITE, _, _)).Times(1);
   VolumeControl::Get()->SetVolume(test_address, 0x10);
@@ -2288,7 +2307,7 @@ TEST_F(VolumeControlValueSetTest, test_set_ext_audio_in_gain_mute) {
   VolumeControl::Get()->SetExtAudioInMute(test_address, 1, Mute::NOT_MUTED);
 }
 
-class VolumeControlCsis : public VolumeControlTest {
+class VolumeControlGroupId : public VolumeControlTest {
 protected:
   const RawAddress test_address_1 = GetTestAddress(0);
   const RawAddress test_address_2 = GetTestAddress(1);
@@ -2296,19 +2315,20 @@ protected:
 
   uint16_t conn_id_1 = 22;
   uint16_t conn_id_2 = 33;
-  int group_id = 5;
 
   void SetUp(void) override {
     VolumeControlTest::SetUp();
 
-    ON_CALL(mock_csis_client_module_, Get()).WillByDefault(Return(&mock_csis_client_module_));
+  if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+      ON_CALL(mock_csis_client_module_, Get()).WillByDefault(Return(&mock_csis_client_module_));
 
-    // Report working CSIS
-    ON_CALL(mock_csis_client_module_, IsCsisClientRunning()).WillByDefault(Return(true));
+      // Report working CSIS
+      ON_CALL(mock_csis_client_module_, IsCsisClientRunning()).WillByDefault(Return(true));
 
-    ON_CALL(mock_csis_client_module_, GetDeviceList(_)).WillByDefault(Return(csis_group));
+      ON_CALL(mock_csis_client_module_, GetDeviceList(_)).WillByDefault(Return(csis_group));
 
-    ON_CALL(mock_csis_client_module_, GetGroupId(_, _)).WillByDefault(Return(group_id));
+      ON_CALL(mock_csis_client_module_, GetGroupId(_, _)).WillByDefault(Return(group_id));
+    }
 
     SetSampleDatabase(conn_id_1);
     SetSampleDatabase(conn_id_2);
@@ -2336,7 +2356,7 @@ protected:
   }
 };
 
-TEST_F(VolumeControlCsis, test_set_volume) {
+TEST_F(VolumeControlGroupId, test_set_volume) {
   TestConnect(test_address_1);
   GetConnectedEvent(test_address_1, conn_id_1);
   GetSearchCompleteEvent(conn_id_1);
@@ -2373,7 +2393,7 @@ TEST_F(VolumeControlCsis, test_set_volume) {
   GetNotificationEvent(conn_id_2, test_address_2, 0x0021, value2);
 }
 
-TEST_F(VolumeControlCsis, test_set_volume_device_not_ready) {
+TEST_F(VolumeControlGroupId, test_set_volume_device_not_ready_no_respond) {
   /* Make sure we did not get responds to the initial reads,
    * so that the device was not marked as ready yet.
    */
@@ -2393,7 +2413,61 @@ TEST_F(VolumeControlCsis, test_set_volume_device_not_ready) {
   VolumeControl::Get()->SetVolume(group_id, 10);
 }
 
-TEST_F(VolumeControlCsis, autonomus_test_set_volume) {
+TEST_F(VolumeControlGroupId, test_set_volume_device_not_ready_no_group) {
+  com::android::bluetooth::flags::provider_->vcp_handle_group_id_internally(true);
+
+  // Simulate late group adding
+  ON_CALL(mock_groups_module_, GetGroupId(_, _))
+          .WillByDefault(Return(bluetooth::groups::kGroupUnknown));
+
+  TestConnect(test_address_1);
+  GetConnectedEvent(test_address_1, conn_id_1);
+  GetSearchCompleteEvent(conn_id_1);
+  TestConnect(test_address_2);
+  GetConnectedEvent(test_address_2, conn_id_2);
+  GetSearchCompleteEvent(conn_id_2);
+
+  const std::vector<uint8_t> vol_x10({0x04, /*change_cnt*/ 0, 0x10});
+  std::vector<uint8_t> ntf_value_x10({0x10, 0, 1});
+  const std::vector<uint8_t> vol_x11({0x04, /*change_cnt*/ 1, 0x11});
+  std::vector<uint8_t> ntf_value_x11({0x11, 0, 2});
+  const std::vector<uint8_t> vol_x12({0x04, /*change_cnt*/ 2, 0x12});
+  std::vector<uint8_t> ntf_value_x12({0x12, 0, 3});
+
+  // Devices without group
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(conn_id_1, 0x0024, vol_x10, GATT_WRITE, _, _))
+          .Times(0);
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(conn_id_2, 0x0024, vol_x10, GATT_WRITE, _, _))
+          .Times(0);
+  VolumeControl::Get()->SetVolume(group_id, 0x10);
+  GetNotificationEvent(conn_id_1, test_address_1, 0x0021, ntf_value_x10);
+  GetNotificationEvent(conn_id_2, test_address_2, 0x0021, ntf_value_x10);
+
+  // First device added to group
+  group_callbacks_->OnGroupAdded(test_address_1, ::bluetooth::le_audio::uuid::kCapServiceUuid,
+                                 group_id);
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(conn_id_1, 0x0024, vol_x11, GATT_WRITE, _, _))
+          .Times(1);
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(conn_id_2, 0x0024, vol_x11, GATT_WRITE, _, _))
+          .Times(0);
+  VolumeControl::Get()->SetVolume(group_id, 0x11);
+  GetNotificationEvent(conn_id_1, test_address_1, 0x0021, ntf_value_x11);
+  GetNotificationEvent(conn_id_2, test_address_2, 0x0021, ntf_value_x11);
+
+  // Second device added to group
+  group_callbacks_->OnGroupMemberAdded(test_address_2, group_id);
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(conn_id_1, 0x0024, vol_x12, GATT_WRITE, _, _))
+          .Times(1);
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(conn_id_2, 0x0024, vol_x12, GATT_WRITE, _, _))
+          .Times(1);
+  VolumeControl::Get()->SetVolume(group_id, 0x12);
+  GetNotificationEvent(conn_id_1, test_address_1, 0x0021, ntf_value_x12);
+  GetNotificationEvent(conn_id_2, test_address_2, 0x0021, ntf_value_x12);
+
+  Mock::VerifyAndClearExpectations(&gatt_queue);
+}
+
+TEST_F(VolumeControlGroupId, autonomus_test_set_volume) {
   TestConnect(test_address_1);
   GetConnectedEvent(test_address_1, conn_id_1);
   GetSearchCompleteEvent(conn_id_1);
@@ -2409,7 +2483,7 @@ TEST_F(VolumeControlCsis, autonomus_test_set_volume) {
   GetNotificationEvent(conn_id_2, test_address_2, 0x0021, value);
 }
 
-TEST_F(VolumeControlCsis, autonomus_single_device_test_set_volume) {
+TEST_F(VolumeControlGroupId, autonomus_single_device_test_set_volume) {
   TestConnect(test_address_1);
   GetConnectedEvent(test_address_1, conn_id_1);
   GetSearchCompleteEvent(conn_id_1);

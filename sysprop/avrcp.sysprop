@@ -9,3 +9,12 @@ prop {
     prop_name: "bluetooth.avrcp.absolute_volume.enabled"
 }
 
+# Max remote volume (0 - 127) that can be saved between reconnection
+prop {
+    api_name: "target_safe_media_volume"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.avrcp.target.safe_media_volume.config"
+}
+

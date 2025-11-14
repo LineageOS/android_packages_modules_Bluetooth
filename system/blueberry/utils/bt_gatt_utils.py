@@ -51,8 +51,9 @@ def setup_gatt_connection(central: AndroidDevice,
                           timeout_seconds=default_timeout):
     gatt_callback = central.sl4a.gattCreateGattCallback()
     log.info("Gatt Connect to mac address {}.".format(mac_address))
-    bluetooth_gatt = central.sl4a.gattClientConnectGatt(gatt_callback, mac_address, autoconnect, transport,
-                                                        opportunistic, GattPhyMask.PHY_LE_1M_MASK)
+    bluetooth_gatt = central.sl4a.gattClientConnectGatt(gatt_callback, mac_address, autoconnect,
+                                                        transport, opportunistic,
+                                                        GattPhyMask.PHY_LE_1M_MASK)
     expected_event = GattCallbackString.GATT_CONN_CHANGE.format(gatt_callback)
     try:
         event = central.ed.pop_event(expected_event, timeout_seconds)
@@ -140,9 +141,12 @@ def run_continuous_write_descriptor(cen_droid: Sl4aClient,
                         discovered_services_index, i, characteristic))
                     log.info(descriptor_uuids)
                     for descriptor in descriptor_uuids:
-                        cen_droid.gattClientDescriptorSetValue(bluetooth_gatt, discovered_services_index, i,
-                                                               characteristic, descriptor, test_value)
-                        cen_droid.gattClientWriteDescriptor(bluetooth_gatt, discovered_services_index, i,
+                        cen_droid.gattClientDescriptorSetValue(bluetooth_gatt,
+                                                               discovered_services_index, i,
+                                                               characteristic, descriptor,
+                                                               test_value)
+                        cen_droid.gattClientWriteDescriptor(bluetooth_gatt,
+                                                            discovered_services_index, i,
                                                             characteristic, descriptor)
                         expected_event = \
                             GattCallbackString.DESC_WRITE_REQ.format(
@@ -155,9 +159,10 @@ def run_continuous_write_descriptor(cen_droid: Sl4aClient,
                         request_id = event['data']['requestId']
                         found_value = event['data']['value']
                         if found_value != test_value:
-                            log.error("Values didn't match. Found: {}, Expected: " "{}".format(found_value, test_value))
-                        per_droid.gattServerSendResponse(gatt_server, bt_device_id, request_id, status, offset,
-                                                         test_value_return)
+                            log.error("Values didn't match. Found: {}, Expected: "
+                                      "{}".format(found_value, test_value))
+                        per_droid.gattServerSendResponse(gatt_server, bt_device_id, request_id,
+                                                         status, offset, test_value_return)
                         expected_event = GattCallbackString.DESC_WRITE.format(bluetooth_gatt)
                         try:
                             cen_ed.pop_event(expected_event, default_timeout)
@@ -171,9 +176,12 @@ def run_continuous_write_descriptor(cen_droid: Sl4aClient,
 def setup_characteristics_and_descriptors_read_write(droid: Sl4aClient):
     characteristic_input = [
         {
-            'uuid': "aa7edd5a-4d1d-4f0e-883a-d145616a1630",
-            'property': GattCharacteristic.PROPERTY_WRITE | GattCharacteristic.PROPERTY_WRITE_NO_RESPONSE,
-            'permission': GattCharacteristic.PERMISSION_WRITE
+            'uuid':
+                "aa7edd5a-4d1d-4f0e-883a-d145616a1630",
+            'property':
+                GattCharacteristic.PROPERTY_WRITE | GattCharacteristic.PROPERTY_WRITE_NO_RESPONSE,
+            'permission':
+                GattCharacteristic.PERMISSION_WRITE
         },
         {
             'uuid': "21c0a0bf-ad51-4a2d-8124-b74003e4e8c8",
@@ -202,7 +210,8 @@ def setup_multiple_services(peripheral: AndroidDevice):
     per_droid, per_ed = peripheral.sl4a, peripheral.sl4a.ed
     gatt_server_callback = per_droid.gattServerCreateGattServerCallback()
     gatt_server = per_droid.gattServerOpenGattServer(gatt_server_callback)
-    characteristic_list, descriptor_list = (setup_characteristics_and_descriptors_read_write(per_droid))
+    characteristic_list, descriptor_list = (
+        setup_characteristics_and_descriptors_read_write(per_droid))
     per_droid.gattServerCharacteristicAddDescriptor(characteristic_list[1], descriptor_list[0])
     per_droid.gattServerCharacteristicAddDescriptor(characteristic_list[2], descriptor_list[1])
     gattService = per_droid.gattServerCreateService("00000000-0000-1000-8000-00805f9b34fb",
@@ -242,9 +251,12 @@ def setup_multiple_services(peripheral: AndroidDevice):
 def setup_characteristics_and_descriptors_notify_read(droid: Sl4aClient):
     characteristic_input = [
         {
-            'uuid': "aa7edd5a-4d1d-4f0e-883a-d145616a1630",
-            'property': GattCharacteristic.PROPERTY_WRITE | GattCharacteristic.PROPERTY_WRITE_NO_RESPONSE,
-            'permission': GattCharacteristic.PROPERTY_WRITE
+            'uuid':
+                "aa7edd5a-4d1d-4f0e-883a-d145616a1630",
+            'property':
+                GattCharacteristic.PROPERTY_WRITE | GattCharacteristic.PROPERTY_WRITE_NO_RESPONSE,
+            'permission':
+                GattCharacteristic.PROPERTY_WRITE
         },
         {
             'uuid': "21c0a0bf-ad51-4a2d-8124-b74003e4e8c8",
@@ -272,7 +284,8 @@ def setup_characteristics_and_descriptors_notify_read(droid: Sl4aClient):
 def setup_gatt_characteristics(droid: Sl4aClient, input):
     characteristic_list = []
     for item in input:
-        index = droid.gattServerCreateBluetoothGattCharacteristic(item['uuid'], item['property'], item['permission'])
+        index = droid.gattServerCreateBluetoothGattCharacteristic(item['uuid'], item['property'],
+                                                                  item['permission'])
         characteristic_list.append(index)
     return characteristic_list
 
@@ -324,19 +337,21 @@ def log_gatt_server_uuids(central: AndroidDevice, discovered_services_index, blu
     for i in range(services_count):
         service = central.sl4a.gattClientGetDiscoveredServiceUuid(discovered_services_index, i)
         log.info("Discovered service uuid {}".format(service))
-        characteristic_uuids = (central.sl4a.gattClientGetDiscoveredCharacteristicUuids(discovered_services_index, i))
+        characteristic_uuids = (central.sl4a.gattClientGetDiscoveredCharacteristicUuids(
+            discovered_services_index, i))
         for j in range(len(characteristic_uuids)):
             descriptor_uuids = (central.sl4a.gattClientGetDiscoveredDescriptorUuidsByIndex(
                 discovered_services_index, i, j))
             if bluetooth_gatt:
-                char_inst_id = central.sl4a.gattClientGetCharacteristicInstanceId(bluetooth_gatt,
-                                                                                  discovered_services_index, i, j)
+                char_inst_id = central.sl4a.gattClientGetCharacteristicInstanceId(
+                    bluetooth_gatt, discovered_services_index, i, j)
                 log.info("Discovered characteristic handle uuid: {} {}".format(
                     hex(char_inst_id), characteristic_uuids[j]))
                 for k in range(len(descriptor_uuids)):
-                    desc_inst_id = central.sl4a.gattClientGetDescriptorInstanceId(bluetooth_gatt,
-                                                                                  discovered_services_index, i, j, k)
-                    log.info("Discovered descriptor handle uuid: {} {}".format(hex(desc_inst_id), descriptor_uuids[k]))
+                    desc_inst_id = central.sl4a.gattClientGetDescriptorInstanceId(
+                        bluetooth_gatt, discovered_services_index, i, j, k)
+                    log.info("Discovered descriptor handle uuid: {} {}".format(
+                        hex(desc_inst_id), descriptor_uuids[k]))
             else:
                 log.info("Discovered characteristic uuid: {}".format(characteristic_uuids[j]))
                 for k in range(len(descriptor_uuids)):

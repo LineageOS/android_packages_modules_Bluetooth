@@ -20,6 +20,7 @@ from pairing.ble.test_base import BLEPairTestBaseWithGeneralAndDedicatedPairingT
 
 from pandora.security_pb2 import PairingEventAnswer
 
+
 class BLELegDisplayYesNoTestClass(BLEPairTestBaseWithGeneralAndDedicatedPairingTests):
 
     def _setup_devices(self) -> None:

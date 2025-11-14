@@ -20,12 +20,14 @@ package com.android.bluetooth.btservice;
 import android.bluetooth.BluetoothUtils;
 import android.util.Log;
 
+import com.android.bluetooth.Utils;
+
 /**
  * APIs of interoperability workaround utilities. These APIs will call stack layer's interop APIs of
  * interop.cc to do matching or entry adding/removing.
  */
 public class InteropUtil {
-    private static final String TAG = InteropUtil.class.getSimpleName();
+    private static final String TAG = Utils.BT_PREFIX + InteropUtil.class.getSimpleName();
 
     /**
      * Add interop feature from device/include/interop.h to below InteropFeature if this feature
@@ -45,69 +47,6 @@ public class InteropUtil {
     }
 
     /**
-     * Check if a given address matches a known interoperability workaround identified by the
-     * interop feature.
-     *
-     * @param feature a given interop feature defined in {@link InteropFeature}.
-     * @param address a given address to be matched.
-     * @return true if matched, false otherwise.
-     */
-    public static boolean interopMatchAddr(InteropFeature feature, String address) {
-        AdapterService adapterService = AdapterService.getAdapterService();
-        if (adapterService == null) {
-            Log.d(
-                    TAG,
-                    "interopMatchAddr: feature="
-                            + feature.name()
-                            + ", adapterService is null or vendor intf is not enabled");
-            return false;
-        }
-
-        Log.d(
-                TAG,
-                "interopMatchAddr: feature="
-                        + feature.name()
-                        + ", address="
-                        + BluetoothUtils.toAnonymizedAddress(address));
-        if (address == null) {
-            return false;
-        }
-
-        boolean matched = adapterService.interopMatchAddr(feature, address);
-        Log.d(TAG, "interopMatchAddr: matched=" + matched);
-        return matched;
-    }
-
-    /**
-     * Check if a given name matches a known interoperability workaround identified by the interop
-     * feature.
-     *
-     * @param feature a given interop feature defined in {@link InteropFeature}.
-     * @param name a given name to be matched.
-     * @return true if matched, false otherwise.
-     */
-    public static boolean interopMatchName(InteropFeature feature, String name) {
-        AdapterService adapterService = AdapterService.getAdapterService();
-        if (adapterService == null) {
-            Log.d(
-                    TAG,
-                    "interopMatchName: feature="
-                            + feature.name()
-                            + ", adapterService is null or vendor intf is not enabled");
-            return false;
-        }
-
-        Log.d(TAG, "interopMatchName: feature=" + feature.name() + ", name=" + name);
-        if (name == null) {
-            return false;
-        }
-
-        boolean matched = adapterService.interopMatchName(feature, name);
-        Log.d(TAG, "interopMatchName: matched=" + matched);
-        return matched;
-    }
-
-    /**
      * Check if a given address or remote device name matches a known interoperability workaround
      * identified by the interop feature. remote device name will be fetched internally based on the
      * given address at stack layer.
@@ -116,17 +55,8 @@ public class InteropUtil {
      * @param address a given address to be matched.
      * @return true if matched, false otherwise
      */
-    public static boolean interopMatchAddrOrName(InteropFeature feature, String address) {
-        AdapterService adapterService = AdapterService.getAdapterService();
-        if (adapterService == null) {
-            Log.d(
-                    TAG,
-                    "interopMatchAddrOrName: feature="
-                            + feature.name()
-                            + ", adapterService is null or vendor intf is not enabled");
-            return false;
-        }
-
+    public static boolean interopMatchAddrOrName(
+            AdapterService adapterService, InteropFeature feature, String address) {
         Log.d(
                 TAG,
                 "interopMatchAddrOrName: feature="
@@ -140,121 +70,5 @@ public class InteropUtil {
         boolean matched = adapterService.interopMatchAddrOrName(feature, address);
         Log.d(TAG, "interopMatchAddrOrName: matched=" + matched);
         return matched;
-    }
-
-    /**
-     * Add a dynamic address interop database entry identified by the interop feature for a device
-     * matching the first length bytes of addr.
-     *
-     * @param feature a given interop feature defined in {@link InteropFeature}.
-     * @param address a given address to be added.
-     * @param length the number of bytes of address to be stored, length must be in [1,6], and
-     *     usually it is 3.
-     */
-    public static void interopDatabaseAddAddr(InteropFeature feature, String address, int length) {
-        AdapterService adapterService = AdapterService.getAdapterService();
-        if (adapterService == null) {
-            Log.d(
-                    TAG,
-                    "interopDatabaseAddAddr: feature="
-                            + feature.name()
-                            + ", adapterService is null or vendor intf is not enabled");
-            return;
-        }
-
-        Log.d(
-                TAG,
-                "interopDatabaseAddAddr: feature="
-                        + feature.name()
-                        + ", address="
-                        + BluetoothUtils.toAnonymizedAddress(address)
-                        + ", length="
-                        + length);
-        if (address == null || (length <= 0 || length > 6)) {
-            return;
-        }
-
-        adapterService.interopDatabaseAddAddr(feature, address, length);
-    }
-
-    /**
-     * Remove a dynamic address interop database entry identified by the interop feature for a
-     * device matching the addr.
-     *
-     * @param feature a given interop feature defined in {@link InteropFeature}.
-     * @param address a given address to be removed.
-     */
-    public static void interopDatabaseRemoveAddr(InteropFeature feature, String address) {
-        AdapterService adapterService = AdapterService.getAdapterService();
-        if (adapterService == null) {
-            Log.d(
-                    TAG,
-                    "interopDatabaseRemoveAddr: feature="
-                            + feature.name()
-                            + ", adapterService is null or vendor intf is not enabled");
-            return;
-        }
-
-        Log.d(
-                TAG,
-                "interopDatabaseRemoveAddr: feature="
-                        + feature.name()
-                        + ", address="
-                        + BluetoothUtils.toAnonymizedAddress(address));
-        if (address == null) {
-            return;
-        }
-
-        adapterService.interopDatabaseRemoveAddr(feature, address);
-    }
-
-    /**
-     * Add a dynamic name interop database entry identified by the interop feature for the name.
-     *
-     * @param feature a given interop feature defined in {@link InteropFeature}.
-     * @param name a given name to be added.
-     */
-    public static void interopDatabaseAddName(InteropFeature feature, String name) {
-        AdapterService adapterService = AdapterService.getAdapterService();
-        if (adapterService == null) {
-            Log.d(
-                    TAG,
-                    "interopDatabaseAddName: feature="
-                            + feature.name()
-                            + ", adapterService is null or vendor intf is not enabled");
-            return;
-        }
-
-        Log.d(TAG, "interopDatabaseAddName: feature=" + feature.name() + ", name=" + name);
-        if (name == null) {
-            return;
-        }
-
-        adapterService.interopDatabaseAddName(feature, name);
-    }
-
-    /**
-     * Remove a dynamic name interop database entry identified by the interop feature for the name.
-     *
-     * @param feature a given interop feature defined in {@link InteropFeature}.
-     * @param name a given name to be removed.
-     */
-    public static void interopDatabaseRemoveName(InteropFeature feature, String name) {
-        AdapterService adapterService = AdapterService.getAdapterService();
-        if (adapterService == null) {
-            Log.d(
-                    TAG,
-                    "interopDatabaseRemoveName: feature="
-                            + feature.name()
-                            + ", adapterService is null or vendor intf is not enabled");
-            return;
-        }
-
-        Log.d(TAG, "interopDatabaseRemoveName: feature=" + feature.name() + ", name=" + name);
-        if (name == null) {
-            return;
-        }
-
-        adapterService.interopDatabaseRemoveName(feature, name);
     }
 }

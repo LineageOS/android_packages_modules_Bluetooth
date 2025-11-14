@@ -31,11 +31,11 @@ namespace hal {
 
 class SnoopLoggerSocket {
 public:
-  static constexpr int DEFAULT_LOCALHOST_ = 0x7F000001;
-  static constexpr int DEFAULT_LISTEN_PORT_ = 8872;
+  static constexpr int kLocalHost = 0x7F000001;
+  static constexpr int kDefaultPort = 8872;
 
-  SnoopLoggerSocket(SyscallWrapperInterface* syscall_if, int address = DEFAULT_LOCALHOST_,
-                    int port = DEFAULT_LISTEN_PORT_);
+  SnoopLoggerSocket(SyscallWrapperInterface* syscall_if, int address = kLocalHost,
+                    int port = kDefaultPort);
   SnoopLoggerSocket(const SnoopLoggerSocket&) = delete;
   SnoopLoggerSocket& operator=(const SnoopLoggerSocket&) = delete;
   virtual ~SnoopLoggerSocket();
@@ -56,6 +56,8 @@ public:
   void Write(int& client_socket, const void* data, size_t length);
 
   SyscallWrapperInterface* GetSyscallWrapperInterface() const;
+
+  int port() const { return socket_port_; }
 
 private:
   // Pointer to syscall interface

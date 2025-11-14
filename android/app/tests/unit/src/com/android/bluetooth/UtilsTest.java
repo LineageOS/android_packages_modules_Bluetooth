@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth;
 
 import static com.android.bluetooth.TestUtils.getTestDevice;
@@ -95,7 +96,7 @@ public class UtilsTest {
 
     @Test
     public void blockedByLocationOff() throws Exception {
-        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getContext();
         UserHandle userHandle = UserHandle.SYSTEM;
         LocationManager locationManager = context.getSystemService(LocationManager.class);
         boolean enableStatus = locationManager.isLocationEnabledForUser(userHandle);
@@ -109,7 +110,7 @@ public class UtilsTest {
 
     @Test
     public void checkCallerHasCoarseLocation_doesNotCrash() {
-        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getContext();
         UserHandle userHandle = UserHandle.SYSTEM;
         LocationManager locationManager = context.getSystemService(LocationManager.class);
         boolean enabledStatus = locationManager.isLocationEnabledForUser(userHandle);
@@ -129,7 +130,7 @@ public class UtilsTest {
 
     @Test
     public void checkCallerHasCoarseOrFineLocation_doesNotCrash() {
-        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getContext();
         UserHandle userHandle = UserHandle.SYSTEM;
         LocationManager locationManager = context.getSystemService(LocationManager.class);
         boolean enabledStatus = locationManager.isLocationEnabledForUser(userHandle);
@@ -150,7 +151,7 @@ public class UtilsTest {
 
     @Test
     public void checkPermissionMethod_doesNotCrash() {
-        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getContext();
         try {
             Utils.checkAdvertisePermissionForDataDelivery(context, null, "message");
             Utils.checkAdvertisePermissionForPreflight(context);
@@ -173,7 +174,7 @@ public class UtilsTest {
 
     @Test
     public void checkCallerIsSystemMethods_doesNotCrash() {
-        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Context context = InstrumentationRegistry.getInstrumentation().getContext();
         String tag = "test_tag";
 
         Utils.checkCallerIsSystemOrActiveOrManagedUser(context, tag);

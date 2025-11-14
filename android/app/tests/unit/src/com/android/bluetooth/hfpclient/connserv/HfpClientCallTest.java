@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.hfpclient;
 
+import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -343,9 +344,11 @@ public class HfpClientCallTest {
 
     @Test
     public void testParcelable() {
+        final BluetoothDevice device = getRealDevice("01:23:45:67:89:AB");
+
         HfpClientCall call =
                 new HfpClientCall(
-                        /* device= */ mDevice,
+                        /* device= */ device,
                         /* call id= */ TEST_ID,
                         /* call state= */ HfpClientCall.CALL_STATE_ACTIVE,
                         /* phone number= */ TEST_NUMBER,
@@ -354,7 +357,7 @@ public class HfpClientCallTest {
                         /* inBandRing= */ false);
 
         assertCall(
-                mDevice,
+                device,
                 TEST_ID,
                 HfpClientCall.CALL_STATE_ACTIVE,
                 TEST_NUMBER,
@@ -370,7 +373,7 @@ public class HfpClientCallTest {
         parcel.recycle();
 
         assertCall(
-                mDevice,
+                device,
                 TEST_ID,
                 HfpClientCall.CALL_STATE_ACTIVE,
                 TEST_NUMBER,

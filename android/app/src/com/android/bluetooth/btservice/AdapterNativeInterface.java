@@ -21,40 +21,17 @@ import android.bluetooth.OobData;
 import android.os.ParcelUuid;
 
 import com.android.bluetooth.Utils;
-import com.android.internal.annotations.GuardedBy;
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.FileDescriptor;
 
 /** Native interface to be used by AdapterService */
 public class AdapterNativeInterface {
-    private static final String TAG = AdapterNativeInterface.class.getSimpleName();
+    private static final String TAG =
+            Utils.BT_PREFIX + AdapterNativeInterface.class.getSimpleName();
 
     private JniCallbacks mJniCallbacks;
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static AdapterNativeInterface sInstance;
-
-    private static final Object INSTANCE_LOCK = new Object();
-
-    private AdapterNativeInterface() {}
-
-    static AdapterNativeInterface getInstance() {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new AdapterNativeInterface();
-            }
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    public static void setInstance(AdapterNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
-    }
+    AdapterNativeInterface() {}
 
     JniCallbacks getCallbacks() {
         return mJniCallbacks;
@@ -66,13 +43,15 @@ public class AdapterNativeInterface {
             boolean startRestricted,
             boolean isCommonCriteriaMode,
             int configCompareResult,
-            boolean isAtvDevice) {
+            boolean isAtvDevice,
+            String hciInstanceName) {
         mJniCallbacks = new JniCallbacks(service, adapterProperties);
         return initNative(
                 startRestricted,
                 isCommonCriteriaMode,
                 configCompareResult,
-                isAtvDevice);
+                isAtvDevice,
+                hciInstanceName);
     }
 
     void cleanup() {
@@ -255,25 +234,8 @@ public class AdapterNativeInterface {
         metadataChangedNative(Utils.getBytesFromAddress(device.getAddress()), key, value);
     }
 
-    boolean interopMatchAddr(String featureName, String address) {
-        return interopMatchAddrNative(featureName, address);
-    }
-
-    boolean interopMatchName(String featureName, String name) {
-        return interopMatchNameNative(featureName, name);
-    }
-
     boolean interopMatchAddrOrName(String featureName, String address) {
         return interopMatchAddrOrNameNative(featureName, address);
-    }
-
-    void interopDatabaseAddRemoveAddr(
-            boolean doAdd, String featureName, String address, int length) {
-        interopDatabaseAddRemoveAddrNative(doAdd, featureName, address, length);
-    }
-
-    void interopDatabaseAddRemoveName(boolean doAdd, String featureName, String name) {
-        interopDatabaseAddRemoveNameNative(doAdd, featureName, name);
     }
 
     int getRemotePbapPceVersion(String address) {
@@ -342,7 +304,8 @@ public class AdapterNativeInterface {
             boolean startRestricted,
             boolean isCommonCriteriaMode,
             int configCompareResult,
-            boolean isAtvDevice);
+            boolean isAtvDevice,
+            String hciInstanceName);
 
     private native void cleanupNative();
 
@@ -434,10 +397,6 @@ public class AdapterNativeInterface {
     private native boolean allowLowLatencyAudioNative(boolean allowed, byte[] address);
 
     private native void metadataChangedNative(byte[] address, int key, byte[] value);
-
-    private native boolean interopMatchAddrNative(String featureName, String address);
-
-    private native boolean interopMatchNameNative(String featureName, String name);
 
     private native boolean interopMatchAddrOrNameNative(String featureName, String address);
 

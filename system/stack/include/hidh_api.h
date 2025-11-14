@@ -201,4 +201,15 @@ tHID_STATUS HID_HostCloseDev(uint8_t dev_handle);
  ******************************************************************************/
 void HID_HostInit(void);
 
+/*******************************************************************************
+ *
+ * Function         HID_HostDump
+ *
+ * Description      Dump HID host control block
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void HID_HostDump(int fd);
+
 #endif /* HIDH_API_H */

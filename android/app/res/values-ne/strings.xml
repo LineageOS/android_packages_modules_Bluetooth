@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"तपाईंले ब्लुटुथ अन राखिराख्नुभयो भने तपाईंले आफ्नो डिभाइस अर्को पटक हवाइजहाज मोडमा लैजाँदा तपाईंको डिभाइसले ब्लुटुथ अन राख्नु पर्ने कुरा याद गर्छ"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"ब्लुटुथ अन रहन्छ"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"तपाईंको डिभाइस अर्को पटक हवाइजहाज मोडमा लैजाँदा तपाईंको फोनले ब्लुटुथ अन राख्नु पर्ने कुरा याद गर्छ। तपाईं ब्लुटुथ अन भइनरहोस् भन्ने चाहनुहुन्छ भने ब्लुटुथ अफ गर्नुहोस्।"</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"अन्य डिभाइसहरूमा कनेक्ट भएका बेला हवाइजहाज मोडमा ब्लुटुथ अन रहिरहन्छ।"</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"तपाईंको डिभाइस स्मार्ट वाचमा कनेक्ट भएका बेला हवाइजहाज मोडमा पनि ब्लुटुथ अन रहिरहने छ।"</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"कुनै मिडिया डिभाइसमा कनेक्ट भएका बेला हवाइजहाज मोडमा ब्लुटुथ अन रहिरहन्छ।"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi र ब्लुटुथ अन रहिरहने छन्"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"हवाइजहाज मोडमा पनि तपाईंको डिभाइसको Wi-Fi र ब्लुटुथ अन नै रहिरहने छन्। तपाईं Wi-Fi र ब्लुटुथ अन भइनरहोस् भन्ने चाहनुहुन्छ भने तिनलाई अफ गर्नुहोस्।"</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"ब्लुटुथ फेरि अन गरिएको छ"</string>

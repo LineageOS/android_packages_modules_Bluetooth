@@ -37,7 +37,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevicePicker;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
-import android.bluetooth.BluetoothUtils;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -50,7 +49,6 @@ import android.widget.Toast;
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 
 /**
@@ -76,11 +74,7 @@ public class BluetoothOppReceiver extends BroadcastReceiver {
                 return;
             }
 
-            Log.d(
-                    TAG,
-                    "Received BT device selected intent, bt device: "
-                            + BluetoothUtils.toAnonymizedAddress(
-                                    Utils.getBrEdrAddress(remoteDevice)));
+            Log.d(TAG, "Received BT device selected intent, bt device: " + remoteDevice);
 
             // Insert transfer session record to database
             mOppManager.startTransfer(remoteDevice);
@@ -221,41 +215,6 @@ public class BluetoothOppReceiver extends BroadcastReceiver {
                         BluetoothProtoEnums.BLUETOOTH_OPP_RECEIVER,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
                         1);
-                return;
-            }
-
-            if (transInfo.mHandoverInitiated) {
-                // Deal with handover-initiated transfers separately
-                Intent handoverIntent = new Intent(Constants.ACTION_BT_OPP_TRANSFER_DONE);
-                if (transInfo.mDirection == BluetoothShare.DIRECTION_INBOUND) {
-                    handoverIntent.putExtra(
-                            Constants.EXTRA_BT_OPP_TRANSFER_DIRECTION,
-                            Constants.DIRECTION_BLUETOOTH_INCOMING);
-                } else {
-                    handoverIntent.putExtra(
-                            Constants.EXTRA_BT_OPP_TRANSFER_DIRECTION,
-                            Constants.DIRECTION_BLUETOOTH_OUTGOING);
-                }
-                handoverIntent.putExtra(Constants.EXTRA_BT_OPP_TRANSFER_ID, transInfo.mID);
-                handoverIntent.putExtra(Constants.EXTRA_BT_OPP_ADDRESS, transInfo.mDestAddr);
-
-                if (BluetoothShare.isStatusSuccess(transInfo.mStatus)) {
-                    handoverIntent.putExtra(
-                            Constants.EXTRA_BT_OPP_TRANSFER_STATUS,
-                            Constants.HANDOVER_TRANSFER_STATUS_SUCCESS);
-                    handoverIntent.putExtra(
-                            Constants.EXTRA_BT_OPP_TRANSFER_URI, transInfo.mFileName);
-                    handoverIntent.putExtra(
-                            Constants.EXTRA_BT_OPP_TRANSFER_MIMETYPE, transInfo.mFileType);
-                } else {
-                    handoverIntent.putExtra(
-                            Constants.EXTRA_BT_OPP_TRANSFER_STATUS,
-                            Constants.HANDOVER_TRANSFER_STATUS_FAILURE);
-                }
-                context.sendBroadcast(
-                        handoverIntent,
-                        Constants.HANDOVER_STATUS_PERMISSION,
-                        Utils.getTempBroadcastOptions().toBundle());
                 return;
             }
 

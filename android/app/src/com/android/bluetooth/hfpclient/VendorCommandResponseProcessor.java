@@ -18,6 +18,7 @@
  * Defines utility interface that is used by state machine/service to either send vendor specific AT
  * command or receive vendor specific response from the native stack.
  */
+
 package com.android.bluetooth.hfpclient;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
@@ -36,9 +37,6 @@ import java.util.Objects;
 
 class VendorCommandResponseProcessor {
     private static final String TAG = VendorCommandResponseProcessor.class.getSimpleName();
-
-    private final HeadsetClientService mService;
-    private final NativeInterface mNativeInterface;
 
     // Keys are AT commands (without payload), and values are the company IDs.
     private static final Map<String, Integer> SUPPORTED_VENDOR_AT_COMMANDS;
@@ -61,12 +59,16 @@ class VendorCommandResponseProcessor {
         SUPPORTED_VENDOR_EVENTS.put("+ANDROID:", BluetoothAssignedNumbers.GOOGLE);
     }
 
-    VendorCommandResponseProcessor(HeadsetClientService context, NativeInterface nativeInterface) {
+    private final HeadsetClientService mService;
+    private final HeadsetClientNativeInterface mNativeInterface;
+
+    VendorCommandResponseProcessor(
+            HeadsetClientService context, HeadsetClientNativeInterface nativeInterface) {
         mService = context;
         mNativeInterface = nativeInterface;
     }
 
-    public boolean sendCommand(int vendorId, String atCommand, BluetoothDevice device) {
+    boolean sendCommand(int vendorId, String atCommand, BluetoothDevice device) {
         if (device == null) {
             Log.w(TAG, "processVendorCommand device is null");
             return false;
@@ -132,7 +134,7 @@ class VendorCommandResponseProcessor {
         return eventCode;
     }
 
-    public boolean isAndroidAtCommand(String atString) {
+    boolean isAndroidAtCommand(String atString) {
         String eventCode = getVendorIdFromAtCommand(atString);
         Integer vendorId = SUPPORTED_VENDOR_EVENTS.get(eventCode);
         if (vendorId == null) {
@@ -141,7 +143,7 @@ class VendorCommandResponseProcessor {
         return vendorId == BluetoothAssignedNumbers.GOOGLE;
     }
 
-    public boolean processEvent(String atString, BluetoothDevice device) {
+    boolean processEvent(String atString, BluetoothDevice device) {
         if (device == null) {
             Log.w(TAG, "processVendorEvent device is null");
             return false;

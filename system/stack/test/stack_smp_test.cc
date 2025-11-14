@@ -25,6 +25,7 @@
 #include "hci/include/packet_fragmenter.h"
 #include "internal_include/stack_config.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_ble_api.h"

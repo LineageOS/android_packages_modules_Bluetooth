@@ -20,7 +20,6 @@ import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothSocket;
 
-import com.android.bluetooth.Utils;
 import com.android.obex.ObexTransport;
 
 import java.io.DataInputStream;
@@ -96,14 +95,6 @@ public class PbapClientObexTransport implements ObexTransport {
             return PACKET_SIZE_UNSPECIFIED;
         }
         return mSocket.getMaxReceivePacketSize();
-    }
-
-    /** Get the remote device MAC address associated with the transport, as a string */
-    public String getRemoteAddress() {
-        String identityAddress = Utils.getBrEdrAddress(mSocket.getRemoteDevice());
-        return mSocket.getConnectionType() == BluetoothSocket.TYPE_RFCOMM
-                ? identityAddress
-                : mSocket.getRemoteDevice().getAddress();
     }
 
     @Override

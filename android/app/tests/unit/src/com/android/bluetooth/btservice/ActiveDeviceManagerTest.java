@@ -28,14 +28,14 @@ import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -46,7 +46,6 @@ import static org.mockito.Mockito.when;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
-import android.content.Context;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.platform.test.annotations.DisableFlags;
@@ -59,7 +58,6 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.TestLooper;
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -82,11 +80,28 @@ import org.mockito.Spy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /** Test cases for {@link ActiveDeviceManager}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class ActiveDeviceManagerTest {
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+
+    @Mock private AdapterService mAdapterService;
+    @Mock private ServiceFactory mServiceFactory; // TODO(b/422543753) Delete on flag cleanup
+    @Mock private A2dpService mA2dpService;
+    @Mock private HeadsetService mHeadsetService;
+    @Mock private HearingAidService mHearingAidService;
+    @Mock private LeAudioService mLeAudioService;
+    @Mock private AudioManager mAudioManager;
+
+    @Spy private BluetoothMethodProxy mMethodProxy = BluetoothMethodProxy.getInstance();
+    private static final int A2DP_HFP_SYNC_CONNECTION_TIMEOUT_MS =
+            ActiveDeviceManager.A2DP_HFP_SYNC_CONNECTION_TIMEOUT_MS + 2_000;
+    private static final long HEARING_AID_HI_SYNC_ID = 1010;
+
     private BluetoothDevice mA2dpDevice;
     private BluetoothDevice mHeadsetDevice;
     private BluetoothDevice mA2dpHeadsetDevice;
@@ -100,25 +115,10 @@ public class ActiveDeviceManagerTest {
     private ArrayList<BluetoothDevice> mDeviceConnectionStack;
     private BluetoothDevice mMostRecentDevice;
     private ActiveDeviceManager mActiveDeviceManager;
-    private static final long HEARING_AID_HI_SYNC_ID = 1010;
 
-    private static final int A2DP_HFP_SYNC_CONNECTION_TIMEOUT_MS =
-            ActiveDeviceManager.A2DP_HFP_SYNC_CONNECTION_TIMEOUT_MS + 2_000;
     private boolean mOriginalDualModeAudioState;
     private TestDatabaseManager mDatabaseManager;
     private TestLooper mTestLooper;
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
-
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
-    @Mock private AdapterService mAdapterService;
-    @Mock private ServiceFactory mServiceFactory;
-    @Mock private A2dpService mA2dpService;
-    @Mock private HeadsetService mHeadsetService;
-    @Mock private HearingAidService mHearingAidService;
-    @Mock private LeAudioService mLeAudioService;
-    @Mock private AudioManager mAudioManager;
-    @Spy private BluetoothMethodProxy mMethodProxy = BluetoothMethodProxy.getInstance();
 
     @Before
     public void setUp() throws Exception {
@@ -126,17 +126,22 @@ public class ActiveDeviceManagerTest {
         BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);
         doReturn(mTestLooper.getLooper()).when(mMethodProxy).handlerThreadGetLooper(any());
         doNothing().when(mMethodProxy).threadStart(any());
-        TestUtils.setAdapterService(mAdapterService);
 
         mDatabaseManager = new TestDatabaseManager(mAdapterService);
 
-        mockGetSystemService(
-                mAdapterService, Context.AUDIO_SERVICE, AudioManager.class, mAudioManager);
-        when(mAdapterService.getDatabase()).thenReturn(mDatabaseManager);
-        when(mServiceFactory.getA2dpService()).thenReturn(mA2dpService);
-        when(mServiceFactory.getHeadsetService()).thenReturn(mHeadsetService);
-        when(mServiceFactory.getHearingAidService()).thenReturn(mHearingAidService);
-        when(mServiceFactory.getLeAudioService()).thenReturn(mLeAudioService);
+        mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
+        when(mAdapterService.getDatabaseManager()).thenReturn(mDatabaseManager);
+        if (Flags.adapterServiceProfilesUseOptional()) {
+            doReturn(Optional.of(mA2dpService)).when(mAdapterService).getA2dpService();
+            doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
+            doReturn(Optional.of(mHearingAidService)).when(mAdapterService).getHearingAidService();
+            doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
+        } else {
+            when(mServiceFactory.getA2dpService()).thenReturn(mA2dpService);
+            when(mServiceFactory.getHeadsetService()).thenReturn(mHeadsetService);
+            when(mServiceFactory.getHearingAidService()).thenReturn(mHearingAidService);
+            when(mServiceFactory.getLeAudioService()).thenReturn(mLeAudioService);
+        }
 
         mActiveDeviceManager = new ActiveDeviceManager(mAdapterService, mServiceFactory);
         mActiveDeviceManager.start();
@@ -209,7 +214,6 @@ public class ActiveDeviceManagerTest {
         if (mActiveDeviceManager != null) {
             mActiveDeviceManager.cleanup();
         }
-        TestUtils.clearAdapterService(mAdapterService);
         Utils.setDualModeAudioStateForTesting(mOriginalDualModeAudioState);
         assertThat(mTestLooper.nextMessage()).isNull();
     }

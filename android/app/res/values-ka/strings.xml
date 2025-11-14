@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"თუ Bluetooth-ს ჩართულს დატოვებთ, თქვენი მოწყობილობა ამას დაიმახსოვრებს და ჩართულს დატოვებს მას, როდესაც შემდეგ ჯერზე თვითმფრინავის რეჟიმში იქნებით"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetooth რᲩება Ჩართული"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"თქვენს მოწყობილობას ახსოვს, რომ Bluetooth ჩართული დატოვოს თვითმფრინავის რეჟიმში. გამორთეთ Bluetooth, თუ არ გსურთ, რომ ის ჩართული იყოს."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"სხვა მოწყობილობებთან დაკავშირებისას თვითმფრინავის რეჟიმში Bluetooth ჩართული რჩება."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"თქვენი მოწყობილობა თქვენს საათთან დაკავშირებისას თვითმფრინავის რეჟიმში Bluetooth-ს ჩართულს შეინარჩუნებს."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"სხვა მედია მოწყობილობებთან დაკავშირებისას თვითმფრინავის რეჟიმში Bluetooth ჩართული რჩება."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi და Bluetooth ჩართული დარჩება"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"თქვენს მოწყობილობას ახსოვს, რომ Wi‑Fi და Bluetooth ჩართული დატოვოს თვითმფრინავის რეჟიმში. გამორთეთ Wi-Fi და Bluetooth, თუ არ გსურთ, რომ ისინი ჩართული იყოს."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth ისევ ჩაირთო"</string>

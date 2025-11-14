@@ -277,13 +277,12 @@ static tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB* p_clcb) {
   bool is_link_key_known = false;
   bool is_key_mitm = false;
   uint8_t key_type;
-  tBTM_BLE_SEC_REQ_ACT sec_act = BTM_BLE_SEC_REQ_ACT_NONE;
 
   if (auth_req == GATT_AUTH_REQ_NONE) {
     return act;
   }
 
-  btm_ble_link_sec_check(p_tcb->peer_bda, auth_req, &sec_act);
+  tBTM_BLE_SEC_REQ_ACT sec_act = btm_ble_link_sec_check(p_tcb->peer_bda, auth_req);
 
   /* if a encryption is pending, need to wait */
   if (sec_act == BTM_BLE_SEC_REQ_ACT_DISCARD && auth_req != GATT_AUTH_REQ_NONE) {

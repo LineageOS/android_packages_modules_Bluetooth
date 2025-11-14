@@ -372,6 +372,9 @@ typedef enum {
   // Some devices don't respond to LE appearance read request.
   INTEROP_DISABLE_READ_LE_APPEARANCE,
 
+  // Some devices need inband ringing disabled
+  INTEROP_INBAND_RINGTONE_SET_TO_FALSE,
+
   END_OF_INTEROP_LIST
 } interop_feature_t;
 

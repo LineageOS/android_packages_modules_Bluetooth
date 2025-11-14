@@ -39,7 +39,6 @@ import static com.android.bluetooth.hap.HapClientStateMachine.MESSAGE_STACK_EVEN
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
@@ -133,6 +132,20 @@ public class HapClientStateMachineTest {
         verifyConnectionStateIntent(STATE_DISCONNECTED, STATE_CONNECTING);
         assertThat(mStateMachine.getCurrentState())
                 .isInstanceOf(HapClientStateMachine.Disconnected.class);
+    }
+
+    @Test
+    public void connect_whenConnecting_connectionTimeout() {
+        sendAndDispatchMessage(MESSAGE_CONNECT);
+        verifyConnectionStateIntent(STATE_CONNECTING, STATE_DISCONNECTED);
+        assertThat(mStateMachine.getCurrentState())
+            .isInstanceOf(HapClientStateMachine.Connecting.class);
+
+        sendAndDispatchMessage(MESSAGE_CONNECT);
+        mLooper.moveTimeForward(CONNECT_TIMEOUT.toMillis());
+        mLooper.dispatchAll();
+
+        verifyConnectionStateIntent(STATE_DISCONNECTED, STATE_CONNECTING);
     }
 
     @Test

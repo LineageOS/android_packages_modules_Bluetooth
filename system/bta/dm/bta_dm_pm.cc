@@ -36,7 +36,7 @@
 #include "bta/sys/bta_sys.h"
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager_t.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "main/shim/dumpsys.h"
 #include "main/shim/entry.h"
 #include "osi/include/properties.h"

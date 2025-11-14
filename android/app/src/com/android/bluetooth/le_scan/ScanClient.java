@@ -21,8 +21,10 @@ import android.bluetooth.le.ScanSettings;
 import android.os.Binder;
 import android.os.UserHandle;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /** Helper class identifying a client that has requested LE scan results. */
 class ScanClient {
@@ -30,11 +32,11 @@ class ScanClient {
             new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
 
     final int mScannerId;
-    final int mAppUid;
+    final int mScanModeApp;
     final List<ScanFilter> mFilters;
+    final int mAppUid;
 
     ScanSettings mSettings;
-    int mScanModeApp;
     boolean mStarted = false;
     boolean mIsInternalClient = false;
     // App associated with the scan client died.
@@ -48,7 +50,7 @@ class ScanClient {
     boolean mHasScanWithoutLocationPermission;
     boolean mHasDisavowedLocation;
     List<String> mAssociatedDevices;
-    AppScanStats mStats = null;
+    Optional<AppScanStats> mStats = Optional.empty();
 
     ScanClient(int scannerId) {
         this(scannerId, DEFAULT_SCAN_SETTINGS, null);
@@ -62,7 +64,7 @@ class ScanClient {
         mScannerId = scannerId;
         mSettings = settings;
         mScanModeApp = settings.getScanMode();
-        mFilters = filters;
+        mFilters = (filters == null) ? Collections.emptyList() : filters;
         mAppUid = appUid;
     }
 
@@ -92,9 +94,12 @@ class ScanClient {
                 .append(" scannerId ")
                 .append(mScannerId);
 
-        if (mStats != null && mStats.mAppName != null) {
-            sb.append(" [appScanStats ").append(mStats.mAppName).append("]");
-        }
+        mStats.ifPresent(
+                stats -> {
+                    if (stats.mAppName != null) {
+                        sb.append(" [appScanStats ").append(stats.mAppName).append("]");
+                    }
+                });
 
         return sb.append("]").toString();
     }

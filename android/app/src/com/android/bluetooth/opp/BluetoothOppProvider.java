@@ -201,15 +201,11 @@ public final class BluetoothOppProvider extends ContentProvider {
 
     @Override
     public String getType(Uri uri) {
-        int match = sURIMatcher.match(uri);
-        switch (match) {
-            case SHARES:
-                return SHARE_LIST_TYPE;
-            case SHARES_ID:
-                return SHARE_TYPE;
-            default:
-                throw new IllegalArgumentException("Unknown URI in getType(): " + uri);
-        }
+        return switch (sURIMatcher.match(uri)) {
+            case SHARES -> SHARE_LIST_TYPE;
+            case SHARES_ID -> SHARE_TYPE;
+            default -> throw new IllegalArgumentException("Unknown URI in getType(): " + uri);
+        };
     }
 
     private static void copyString(String key, ContentValues from, ContentValues to) {

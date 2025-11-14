@@ -86,6 +86,10 @@ public class HapClientNativeInterface {
         getPresetInfoNative(getByteAddress(device), presetIndex);
     }
 
+    void getAllPresetInfo(BluetoothDevice device) {
+        getAllPresetInfoNative(getByteAddress(device));
+    }
+
     void setPresetName(BluetoothDevice device, int presetIndex, String name) {
         setPresetNameNative(getByteAddress(device), presetIndex, name);
     }
@@ -116,6 +120,8 @@ public class HapClientNativeInterface {
     private native void groupPreviousActivePresetNative(int groupId);
 
     private native void getPresetInfoNative(byte[] byteAddress, int presetIndex);
+
+    private native void getAllPresetInfoNative(byte[] byteAddress);
 
     private native void setPresetNameNative(byte[] byteAddress, int presetIndex, String name);
 

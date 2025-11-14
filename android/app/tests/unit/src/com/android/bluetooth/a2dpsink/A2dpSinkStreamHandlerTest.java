@@ -21,7 +21,13 @@ import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import android.content.Context;
 import android.content.Intent;
@@ -41,6 +47,7 @@ import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerService;
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.storage.DatabaseManager;
 
 import org.junit.After;
 import org.junit.Before;
@@ -62,13 +69,14 @@ public class A2dpSinkStreamHandlerTest {
     @Mock private AvrcpControllerNativeInterface mMockAvrcpControllerNativeInterface;
     @Mock private AudioManager mAudioManager;
     @Mock private Resources mResources;
-    @Mock private PackageManager mPackageManager;
     @Mock private AdapterService mAdapterService;
+    @Mock private DatabaseManager mDatabaseManager;
+    @Mock private PackageManager mPackageManager;
 
     private static final int DUCK_PERCENT = 75;
 
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     private HandlerThread mHandlerThread;
     private AvrcpControllerService mService;
@@ -86,10 +94,10 @@ public class A2dpSinkStreamHandlerTest {
                 .abandonAudioFocus(any());
 
         doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(mPackageManager).when(mAdapterService).getPackageManager();
         doReturn(mResources).when(mAdapterService).getResources();
-        mockGetSystemService(
-                mAdapterService, Context.AUDIO_SERVICE, AudioManager.class, mAudioManager);
+        mockGetSystemService(mAdapterService, AudioManager.class, mAudioManager);
 
         // Mock the looper
         if (Looper.myLooper() == null) {

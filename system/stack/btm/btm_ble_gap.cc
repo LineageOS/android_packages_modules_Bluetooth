@@ -29,6 +29,7 @@
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
+#include <hardware/ble_scanner.h>
 
 #include <bitset>
 #include <cstdint>
@@ -39,11 +40,13 @@
 
 #include "ble_appearance.h"
 #include "bta/include/bta_api.h"
+#include "btif/include/btif_gatt.h"
 #include "common/time_util.h"
 #include "hci/controller.h"
-#include "hci/controller_interface.h"
 #include "main/shim/acl_api.h"
+#include "main/shim/ble_scanner_interface_impl.h"
 #include "main/shim/entry.h"
+#include "main/shim/le_scanning_manager.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
 #include "osi/include/stack_power_telemetry.h"
@@ -53,6 +56,7 @@
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_cb.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/advertise_data_parser.h"
 #include "stack/include/ble_scanner.h"
@@ -74,8 +78,6 @@
 
 using namespace bluetooth;
 
-extern tBTM_CB btm_cb;
-
 #define BTM_EXT_BLE_RMT_NAME_TIMEOUT_MS (30 * 1000)
 #define MIN_ADV_LENGTH 2
 #define BTM_VSC_CHIP_CAPABILITY_RSP_LEN 9
@@ -87,6 +89,10 @@ extern tBTM_CB btm_cb;
 static const char kPropertyInquiryScanInterval[] = "bluetooth.core.le.inquiry_scan_interval";
 static const char kPropertyInquiryScanWindow[] = "bluetooth.core.le.inquiry_scan_window";
 
+/* Error codes for toggling MSFT-based scanning */
+const uint8_t MSFT_FILTER_ENABLE_SUCCESS = 0x00;
+const uint8_t MSFT_FILTER_ENABLE_CMD_DISALLOWED = 0x0C;
+
 #ifndef PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED
 #define PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED \
   "bluetooth.core.gap.le.privacy.own_address_type.enabled"
@@ -96,6 +102,8 @@ static void btm_ble_start_scan();
 static void btm_ble_stop_scan();
 static tBTM_STATUS btm_ble_stop_adv(void);
 static tBTM_STATUS btm_ble_start_adv(void);
+
+static ::BleScannerInterface* scanner = bluetooth::shim::get_ble_scanner_instance();
 
 using bluetooth::shim::GetController;
 
@@ -219,7 +227,7 @@ typedef enum {
   PERIODIC_SYNC_LOST,
 } tBTM_BLE_PERIODIC_SYNC_STATE;
 
-struct alarm_t* sync_timeout_alarm;
+static struct alarm_t* sync_timeout_alarm;
 typedef struct {
   uint8_t sid;
   RawAddress remote_bda;
@@ -263,8 +271,7 @@ typedef struct {
   tBTM_BLE_PERIODIC_SYNC p_sync[MAX_SYNC_TRANSACTION];
   tBTM_BLE_PERIODIC_SYNC_TRANSFER sync_transfer[MAX_SYNC_TRANSACTION];
 } tBTM_BLE_PA_SYNC_TX_CB;
-tBTM_BLE_PA_SYNC_TX_CB btm_ble_pa_sync_cb;
-StartSyncCb sync_rcvd_cb;
+static tBTM_BLE_PA_SYNC_TX_CB btm_ble_pa_sync_cb;
 static bool syncRcvdCbRegistered = false;
 static int btm_ble_get_psync_index(uint8_t adv_sid, RawAddress addr);
 static void btm_ble_start_sync_timeout(void* data);
@@ -458,7 +465,7 @@ const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX] = {
         }};
 
 /* check LE combo state supported */
-inline bool BTM_LE_STATES_SUPPORTED(const uint64_t x, uint8_t bit_num) {
+static bool BTM_LE_STATES_SUPPORTED(const uint64_t x, uint8_t bit_num) {
   uint64_t mask = 1 << bit_num;
   return (x)&mask;
 }
@@ -651,7 +658,7 @@ void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback) {
   log::verbose("BTM_BleReadControllerFeatures");
 
   btm_cb.cmn_ble_vsc_cb.values_read = true;
-  bluetooth::hci::ControllerInterface::VendorCapabilities vendor_capabilities =
+  bluetooth::hci::Controller::VendorCapabilities vendor_capabilities =
           GetController()->GetVendorCapabilities();
 
   btm_cb.cmn_ble_vsc_cb.adv_inst_max = vendor_capabilities.max_advt_instances_;
@@ -1483,15 +1490,55 @@ void btm_send_hci_set_scan_params(uint8_t scan_type, uint16_t scan_int_1m, uint1
   }
 }
 
+/* MSFT advertisement enable callback */
+static void msft_adv_mon_enable_cb(uint8_t status) {
+  if (status == MSFT_FILTER_ENABLE_SUCCESS) {
+    return;
+  }
+
+  if (status == MSFT_FILTER_ENABLE_CMD_DISALLOWED) {
+    log::warn("Toggling MSFT advertisement monitor failed because it's already enabled/disabled");
+  } else {
+    log::error("Toggling MSFT advertisement monitor failed with status: {}", status);
+  }
+}
+
+/* Update MSFT-based scan to align with active scan requirements */
+static void btm_ble_update_msft_scan(tBTM_BLE_SCAN_COND_OP action) {
+  if (!com::android::bluetooth::flags::le_scan_msft_support() ||
+      !osi_property_get_bool("bluetooth.core.le.use_msft_hci_ext", false) ||
+      !scanner->IsMsftSupported()) {
+    return;
+  }
+
+  switch (action) {
+    case BTM_BLE_SCAN_COND_ADD:
+      log::debug("Disabling MSFT advertisement monitor");
+      scanner->MsftAdvMonitorEnable(false, base::Bind(msft_adv_mon_enable_cb));
+      break;
+
+    case BTM_BLE_SCAN_COND_DELETE:
+      log::debug("Enabling MSFT advertisement monitor");
+      scanner->MsftAdvMonitorEnable(true, base::Bind(msft_adv_mon_enable_cb));
+      break;
+
+    default:
+      break;
+  }
+}
+
 /* Scan filter param config event */
 static void btm_ble_scan_filt_param_cfg_evt(uint8_t /* avbl_space */,
-                                            tBTM_BLE_SCAN_COND_OP /* action_type */,
+                                            tBTM_BLE_SCAN_COND_OP action_type,
                                             tBTM_STATUS btm_status) {
-  if (btm_status != tBTM_STATUS::BTM_SUCCESS) {
-    log::error("{}", btm_status_text(btm_status));
-  } else {
+  if (btm_status == tBTM_STATUS::BTM_SUCCESS) {
     log::verbose("");
+    return;
   }
+  log::warn("{}", btm_status_text(btm_status));
+
+  // If APCF-based scan filtering is not supported, try MSFT-based filtering
+  btm_ble_update_msft_scan(action_type);
 }
 
 /*******************************************************************************
@@ -1622,8 +1669,13 @@ tBTM_STATUS btm_ble_read_remote_name(const RawAddress& remote_bda, tBTM_NAME_CMP
 
   tINQ_DB_ENT* p_i = btm_inq_db_find(remote_bda);
   if (p_i && !ble_evt_type_is_connectable(p_i->inq_info.results.ble_evt_type)) {
-    log::verbose("name request to non-connectable device failed.");
-    return tBTM_STATUS::BTM_ERR_PROCESSING;
+    if (com::android::bluetooth::flags::ble_rnr_when_connected() &&
+        BTM_IsAclConnectionUp(remote_bda, BT_TRANSPORT_LE)) {
+      log::verbose("name request to non-connectable device, but already connected");
+    } else {
+      log::verbose("name request to non-connectable device failed.");
+      return tBTM_STATUS::BTM_ERR_PROCESSING;
+    }
   }
 
   /* read remote device name using GATT procedure */
@@ -1860,6 +1912,7 @@ static void btm_ble_update_inq_result(tINQ_DB_ENT* p_i, uint8_t addr_type,
 
   /* Save the info */
   p_cur->inq_result_type |= BT_DEVICE_TYPE_BLE;
+  p_cur->last_inq_result_from_type = BT_DEVICE_TYPE_BLE;
   p_cur->ble_addr_type = static_cast<tBLE_ADDR_TYPE>(addr_type);
   p_cur->rssi = rssi;
   p_cur->ble_primary_phy = primary_phy;
@@ -2161,6 +2214,7 @@ void btm_ble_process_adv_pkt_cont_for_inquiry(uint16_t evt_type, tBLE_ADDR_TYPE 
       update = false;
     } else {
       /* if yes, skip it */
+      log::debug("Address has already benn processed for this inquiry");
       return; /* assumption: one result per event */
     }
   }
@@ -2175,7 +2229,7 @@ void btm_ble_process_adv_pkt_cont_for_inquiry(uint16_t evt_type, tBLE_ADDR_TYPE 
       btm_cb.neighbor.le_inquiry.results++;
       btm_cb.neighbor.le_legacy_scan.results++;
     } else {
-      log::warn("Unable to allocate entry for inquiry result");
+      log::debug("Unable to allocate entry for inquiry result");
       return;
     }
   } else if (p_i->inq_count !=
@@ -2211,6 +2265,7 @@ void btm_ble_process_adv_pkt_cont_for_inquiry(uint16_t evt_type, tBLE_ADDR_TYPE 
 
   uint8_t result = btm_ble_is_discoverable(bda, advertising_data);
   if (result == 0) {
+    log::debug("BLE is not scanning");
     return;
   }
 

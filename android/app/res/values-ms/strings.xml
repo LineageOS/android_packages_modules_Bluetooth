@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Jika anda terus menghidupkan Bluetooth, peranti anda akan kekal menghidupkan Bluetooth pada kali seterusnya peranti anda dalam mod pesawat"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetooth kekal dihidupkan"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Peranti anda diingatkan untuk terus menghidupkan Bluetooth dalam mod pesawat. Matikan Bluetooth jika anda tidak mahu Bluetooth sentiasa hidup."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Bluetooth kekal dihidupkan dalam mod pesawat semasa disambungkan kepada peranti lain."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Peranti anda akan memastikan Bluetooth dihidupkan dalam mod pesawat semasa disambungkan kepada jam tangan anda."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Bluetooth kekal dihidupkan dalam mod pesawat semasa disambungkan kepada peranti media."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi dan Bluetooth kekal dihidupkan"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Peranti anda diingatkan untuk terus menghidupkan Wi-Fi dan Bluetooth dalam mod pesawat. Matikan Wi-Fi dan Bluetooth jika anda tidak mahu Wi-Fi dan Bluetooth sentiasa hidup."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth dihidupkan kembali"</string>

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.a2dpsink;
 
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;

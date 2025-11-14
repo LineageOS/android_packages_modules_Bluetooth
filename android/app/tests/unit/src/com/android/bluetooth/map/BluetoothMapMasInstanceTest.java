@@ -17,15 +17,19 @@
 package com.android.bluetooth.map;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import android.content.Context;
+import static org.mockito.Mockito.mock;
+
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
+
+import com.android.bluetooth.TestUtils.MockitoRule;
+import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -37,34 +41,33 @@ import org.mockito.Mock;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapMasInstanceTest {
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private AdapterService mAdapterService;
+    @Mock private BluetoothMapService mMapService;
+
     private static final int TEST_MAS_ID = 1;
     private static final boolean TEST_ENABLE_SMS_MMS = true;
     private static final String TEST_NAME = "test_name";
     private static final String TEST_PACKAGE_NAME = "test.package.name";
     private static final String TEST_ID = "1111";
     private static final String TEST_PROVIDER_AUTHORITY = "test.project.provider";
-    private static final Drawable TEST_DRAWABLE = new ColorDrawable();
     private static final BluetoothMapUtils.TYPE TEST_TYPE = BluetoothMapUtils.TYPE.EMAIL;
     private static final String TEST_UCI = "uci";
     private static final String TEST_UCI_PREFIX = "uci_prefix";
 
     private BluetoothMapAccountItem mAccountItem;
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
-    @Mock private Context mContext;
-    @Mock private BluetoothMapService mMapService;
-
     @Before
     public void setUp() {
-
+        ColorDrawable colorDrawable = mock(ColorDrawable.class);
         mAccountItem =
                 BluetoothMapAccountItem.create(
                         TEST_ID,
                         TEST_NAME,
                         TEST_PACKAGE_NAME,
                         TEST_PROVIDER_AUTHORITY,
-                        TEST_DRAWABLE,
+                        colorDrawable,
                         TEST_TYPE,
                         TEST_UCI,
                         TEST_UCI_PREFIX);
@@ -72,9 +75,15 @@ public class BluetoothMapMasInstanceTest {
 
     @Test
     public void toString_returnsInfo() {
+        mockGetBluetoothManager(mAdapterService);
+
         BluetoothMapMasInstance instance =
                 new BluetoothMapMasInstance(
-                        mMapService, mContext, mAccountItem, TEST_MAS_ID, TEST_ENABLE_SMS_MMS);
+                        mAdapterService,
+                        mMapService,
+                        mAccountItem,
+                        TEST_MAS_ID,
+                        TEST_ENABLE_SMS_MMS);
 
         String expected =
                 "MasId: "

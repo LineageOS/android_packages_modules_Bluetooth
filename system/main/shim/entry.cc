@@ -19,9 +19,8 @@
 #include "hal/snoop_logger.h"
 #include "hci/acl_manager.h"
 #include "hci/controller.h"
-#include "hci/controller_interface.h"
 #include "hci/distance_measurement_manager.h"
-#include "hci/hci_layer.h"
+#include "hci/hci_interface.h"
 #include "hci/le_advertising_manager.h"
 #include "hci/le_scanning_manager.h"
 #include "hci/msft.h"
@@ -29,7 +28,6 @@
 #include "lpp/lpp_offload_manager.h"
 #include "main/shim/shim.h"
 #include "main/shim/stack.h"
-#include "metrics/counter_metrics.h"
 #include "os/handler.h"
 #include "storage/storage_module.h"
 
@@ -39,41 +37,35 @@ namespace shim {
 os::Handler* GetGdShimHandler() { return Stack::GetInstance()->GetHandler(); }
 
 hci::LeAdvertisingManager* GetAdvertising() {
-  return Stack::GetInstance()->GetInstance<hci::LeAdvertisingManager>();
+  return Stack::GetInstance()->GetLeAdvertisingManager();
 }
 
-hci::ControllerInterface* GetController() {
-  return Stack::GetInstance()->GetInstance<hci::Controller>();
-}
+hci::Controller* GetController() { return Stack::GetInstance()->GetController(); }
 
-hci::HciInterface* GetHciLayer() { return Stack::GetInstance()->GetInstance<hci::HciLayer>(); }
+hci::HciInterface* GetHciLayer() { return Stack::GetInstance()->GetHciLayer(); }
 
 hci::RemoteNameRequestModule* GetRemoteNameRequest() {
-  return Stack::GetInstance()->GetInstance<hci::RemoteNameRequestModule>();
+  return Stack::GetInstance()->GetRemoteNameRequest();
 }
 
-hci::LeScanningManager* GetScanning() {
-  return Stack::GetInstance()->GetInstance<hci::LeScanningManager>();
-}
+hci::LeScanningManager* GetScanning() { return Stack::GetInstance()->GetLeScanningManager(); }
 
 hci::DistanceMeasurementManager* GetDistanceMeasurementManager() {
-  return Stack::GetInstance()->GetInstance<hci::DistanceMeasurementManager>();
+  return Stack::GetInstance()->GetDistanceMeasurementManager();
 }
 
 hal::SnoopLogger* GetSnoopLogger() { return Stack::GetInstance()->GetSnoopLogger(); }
 
 lpp::LppOffloadInterface* GetLppOffloadManager() {
-  return Stack::GetInstance()->GetInstance<lpp::LppOffloadManager>();
+  return Stack::GetInstance()->GetLppOffloadInterface();
 }
 
 storage::StorageModule* GetStorage() { return Stack::GetInstance()->GetStorage(); }
 
-hci::AclManager* GetAclManager() { return Stack::GetInstance()->GetInstance<hci::AclManager>(); }
-
-metrics::CounterMetrics* GetCounterMetrics() { return Stack::GetInstance()->GetCounterMetrics(); }
+hci::AclManager* GetAclManager() { return Stack::GetInstance()->GetAclManager(); }
 
 hci::MsftExtensionManager* GetMsftExtensionManager() {
-  return Stack::GetInstance()->GetInstance<hci::MsftExtensionManager>();
+  return Stack::GetInstance()->GetMsftExtensionManager();
 }
 
 bool is_gd_stack_started_up() { return Stack::GetInstance()->IsRunning(); }

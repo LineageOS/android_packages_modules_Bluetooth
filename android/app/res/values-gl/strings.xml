@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Se mantés o Bluetooth activado, o dispositivo lembrará que ten que deixalo nese estado a próxima vez que esteas no modo avión"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"O Bluetooth permanece activado"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"O teu dispositivo lembrará manter o Bluetooth activado no modo avión. Se non queres que permaneza nese estado, desactívao."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"O Bluetooth mantense activado en modo avión mentres está conectado a outros dispositivos."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"O teu dispositivo manterá o Bluetooth activado en modo avión mentres estea conectado ao reloxo."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"O Bluetooth permanecerá en modo avión mentres estea conectado a un dispositivo multimedia."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"A wifi e o Bluetooth permanecen activados"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"O teu dispositivo lembrará manter a wifi e o Bluetooth activados no modo avión. Se non queres que permanezan nese estado, desactívaos."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Volveuse activar o Bluetooth"</string>

@@ -18,11 +18,8 @@
 
 #include <stdint.h>
 
-#include <vector>
-
 #include "btm_api_types.h"
 #include "device/include/esco_parameters.h"
-#include "internal_include/bt_target.h"
 #include "types/raw_address.h"
 
 // Used by the Bluetooth stack to get WBS supported and codec, or notify SCO
@@ -40,12 +37,6 @@ enum codec : uint64_t {
 struct bt_codec {
   codec codec;
   uint8_t data_path;
-  std::vector<uint8_t> data;
-};
-
-struct bt_codecs {
-  bool offload_capable;
-  std::vector<bt_codec> codecs;
 };
 
 // Use default packet size for codec if this value is given.
@@ -78,12 +69,6 @@ bool get_wbs_supported();
 
 // Check if super wideband speech is supported on local device.
 bool get_swb_supported();
-
-// Checks the details of the codecs (specified as a bitmask of enum codec).
-bt_codecs get_codec_capabilities(uint64_t codecs);
-
-// Check if hardware offload is supported.
-bool get_offload_supported();
 
 // Check if hardware offload is enabled.
 bool get_offload_enabled();

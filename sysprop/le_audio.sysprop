@@ -1,0 +1,10 @@
+module: "android.sysprop.bluetooth.LeAudio"
+owner: Platform
+
+prop {
+    api_name: "is_gmap_supported_in_software_datapath"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.le_audio.gmap.software_datapath.enabled"
+}

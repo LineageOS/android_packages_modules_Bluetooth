@@ -17,16 +17,6 @@ flag {
 }
 
 flag {
-    name: "hap_connect_only_requested_device"
-    namespace: "bluetooth"
-    description: "On profile connection, connect only requested device, not whole group it belongs to"
-    bug: "370405555"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "settings_can_control_hap_preset"
     is_exported: true
     namespace: "bluetooth"
@@ -39,6 +29,16 @@ flag {
     namespace: "bluetooth"
     description: "Try to connect HAP when other profile is getting connected"
     bug: "379771539"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "synchronize_preset_can_timeout"
+    namespace: "bluetooth"
+    description: "Once a group preset operation timeout, we should be able to recover"
+    bug: "422249143"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

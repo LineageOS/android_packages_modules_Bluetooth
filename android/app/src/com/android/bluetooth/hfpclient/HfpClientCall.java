@@ -18,6 +18,7 @@ package com.android.bluetooth.hfpclient;
 
 import static android.bluetooth.BluetoothUtils.writeStringToParcel;
 
+import android.annotation.NonNull;
 import android.bluetooth.BluetoothDevice;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -273,7 +274,7 @@ public final class HfpClientCall implements Parcelable {
     }
 
     /** {@link Parcelable.Creator} interface implementation. */
-    public static final @android.annotation.NonNull Parcelable.Creator<HfpClientCall> CREATOR =
+    public static final @NonNull Parcelable.Creator<HfpClientCall> CREATOR =
             new Parcelable.Creator<HfpClientCall>() {
                 @Override
                 public HfpClientCall createFromParcel(Parcel in) {

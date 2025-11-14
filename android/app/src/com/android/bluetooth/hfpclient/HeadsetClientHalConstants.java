@@ -17,7 +17,7 @@
 
 package com.android.bluetooth.hfpclient;
 
-public final class HeadsetClientHalConstants {
+final class HeadsetClientHalConstants {
     // Do not modify without updating the HAL bt_hf_client.h files.
 
     // match up with bthf_client_connection_state_t enum of bt_hf_client.h

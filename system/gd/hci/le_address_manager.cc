@@ -21,7 +21,6 @@
 
 #include <ctime>
 
-#include "hci/controller.h"
 #include "hci/octets.h"
 #include "include/macros.h"
 #include "os/rand.h"
@@ -165,8 +164,8 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
                 min_seconds.count(), max_seconds.count());
         enqueue_command_.Run(std::move(packet));
       } else {
-        address_rotation_wake_alarm_ = std::make_unique<os::Alarm>(handler_, true);
-        address_rotation_non_wake_alarm_ = std::make_unique<os::Alarm>(handler_, false);
+        address_rotation_wake_alarm_ = std::make_unique<os::Alarm>(&handler_->thread(), true);
+        address_rotation_non_wake_alarm_ = std::make_unique<os::Alarm>(&handler_->thread(), false);
       }
       set_random_address();
       break;
@@ -225,8 +224,8 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddressForTest(
                 min_seconds.count(), max_seconds.count());
         enqueue_command_.Run(std::move(packet));
       } else {
-        address_rotation_wake_alarm_ = std::make_unique<os::Alarm>(handler_, true);
-        address_rotation_non_wake_alarm_ = std::make_unique<os::Alarm>(handler_, false);
+        address_rotation_wake_alarm_ = std::make_unique<os::Alarm>(&handler_->thread(), true);
+        address_rotation_non_wake_alarm_ = std::make_unique<os::Alarm>(&handler_->thread(), false);
         set_random_address();
       }
       break;

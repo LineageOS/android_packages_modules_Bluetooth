@@ -34,7 +34,7 @@
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager_t.h"
 #include "common/le_conn_params.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/hci_interface.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
@@ -44,6 +44,7 @@
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/connection_manager/connection_manager.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_psm_types.h"
@@ -66,8 +67,6 @@ using namespace bluetooth;
 namespace {
 constexpr char kBtmLogTag[] = "L2CAP";
 }
-
-extern tBTM_CB btm_cb;
 
 void l2cble_start_conn_update(tL2C_LCB* p_lcb);
 
@@ -791,7 +790,8 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       p_ccb = l2cu_allocate_ccb(p_lcb, 0, con_info.psm == BT_PSM_EATT /* is_eatt */);
       if (p_ccb == NULL) {
         log::error("L2CAP - unable to allocate CCB");
-        l2cu_reject_ble_connection(p_ccb, id, tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_NO_RESOURCES);
+        l2cu_reject_ble_coc_connection(p_lcb, id,
+                                       tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_NO_RESOURCES);
         break;
       }
 
@@ -964,7 +964,8 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
 /** This function is to initiate a direct connection. Returns true if connection
  * initiated, false otherwise. */
 bool l2cble_create_conn(tL2C_LCB* p_lcb) {
-  if (!connection_manager::direct_connect_add(CONN_MGR_ID_L2CAP, p_lcb->remote_bd_addr)) {
+  if (!connection_manager::direct_connect_add(CONN_MGR_ID_L2CAP, p_lcb->remote_bd_addr,
+                                              BLE_ADDR_PUBLIC, false)) {
     return false;
   }
 
@@ -1153,7 +1154,8 @@ void l2cble_update_data_length(tL2C_LCB* p_lcb) {
 
   /* update TX data length if changed */
   if (p_lcb->tx_data_len != tx_mtu) {
-    if (get_btm_client_interface().ble.BTM_SetBleDataLength(p_lcb->remote_bd_addr, tx_mtu) !=
+    if (get_btm_client_interface().ble.BTM_SetBleDataLength(p_lcb->remote_bd_addr, tx_mtu,
+                                                            /*is_privileged_client*/ false) !=
         tBTM_STATUS::BTM_SUCCESS) {
       log::warn("Unable to set BLE data length peer:{} mtu:{}", p_lcb->remote_bd_addr, tx_mtu);
     }

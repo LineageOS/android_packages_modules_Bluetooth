@@ -16,7 +16,10 @@
 
 package android.bluetooth;
 
-import io.grpc.stub.StreamObserver;
+import android.util.Log;
+
+import io.grpc.stub.ClientCallStreamObserver;
+import io.grpc.stub.ClientResponseObserver;
 
 import java.util.Iterator;
 import java.util.Spliterator;
@@ -25,9 +28,15 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
-public class StreamObserverSpliterator<T> implements Spliterator<T>, StreamObserver<T> {
-    private BlockingQueue<Object> mQueue = new LinkedBlockingQueue<>();
+public class StreamObserverSpliterator<ReqT, RespT>
+        implements Spliterator<RespT>, ClientResponseObserver<ReqT, RespT> {
+    private static final String TAG = StreamObserverSpliterator.class.getSimpleName();
     private static final Object COMPLETED_INDICATOR = new Object();
+    private static final long WAIT_TIME_FOR_CANCEL_MS = 100;
+
+    private final BlockingQueue<Object> mQueue = new LinkedBlockingQueue<>();
+
+    private ClientCallStreamObserver<ReqT> mRequestStream;
 
     /**
      * Creates and returns an iterator over the elements contained in the internal blocking queue.
@@ -42,8 +51,28 @@ public class StreamObserverSpliterator<T> implements Spliterator<T>, StreamObser
      *
      * @return an iterator over the elements contained in the internal blocking queue
      */
-    public Iterator<T> iterator() {
+    public Iterator<RespT> iterator() {
         return Spliterators.iterator(this);
+    }
+
+    /** Cancels the ongoing call. See {@link ClientCallStreamObserver#cancel(String, Throwable)}. */
+    public void cancel(String message) {
+        if (mRequestStream != null) {
+            mRequestStream.cancel(message, null);
+            try {
+                Thread.sleep(WAIT_TIME_FOR_CANCEL_MS);
+            } catch (Exception e) {
+                Log.e(TAG, "Exception happened while waiting for cancel", e);
+            }
+        } else {
+            throw new UnsupportedOperationException(
+                    "Canceling operation is not supported when request type is missing!");
+        }
+    }
+
+    @Override
+    public void beforeStart(ClientCallStreamObserver<ReqT> requestStream) {
+        mRequestStream = requestStream;
     }
 
     @Override
@@ -57,7 +86,7 @@ public class StreamObserverSpliterator<T> implements Spliterator<T>, StreamObser
     }
 
     @Override
-    public boolean tryAdvance(Consumer<? super T> action) {
+    public boolean tryAdvance(Consumer<? super RespT> action) {
         try {
             Object item = mQueue.take();
             if (item == COMPLETED_INDICATOR) {
@@ -66,7 +95,7 @@ public class StreamObserverSpliterator<T> implements Spliterator<T>, StreamObser
             if (item instanceof Throwable) {
                 throw new RuntimeException((Throwable) item);
             }
-            action.accept((T) item);
+            action.accept((RespT) item);
             return true;
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -74,12 +103,12 @@ public class StreamObserverSpliterator<T> implements Spliterator<T>, StreamObser
     }
 
     @Override
-    public Spliterator<T> trySplit() {
+    public Spliterator<RespT> trySplit() {
         return null;
     }
 
     @Override
-    public void onNext(T value) {
+    public void onNext(RespT value) {
         mQueue.add(value);
     }
 

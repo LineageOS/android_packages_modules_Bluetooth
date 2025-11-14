@@ -125,14 +125,16 @@ class SdpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # List all services in the root browse group
         self.ref.log.info(f'Search Services')
-        service_record_handles = await sdp_client.search_services([SDP_PUBLIC_BROWSE_ROOT])  # type: ignore
+        service_record_handles = await sdp_client.search_services([SDP_PUBLIC_BROWSE_ROOT]
+                                                                 )  # type: ignore
         assert bool(service_record_handles)  # type: ignore
         print(color('SERVICES:', 'yellow'), service_record_handles)  # type: ignore
 
         # For each service in the root browse group, get all its attributes
         for service_record_handle in service_record_handles:  # type: ignore
             attributes = await sdp_client.get_attributes(  # type: ignore
-                service_record_handle, [SDP_ALL_ATTRIBUTES_RANGE]  # type: ignore
+                service_record_handle,
+                [SDP_ALL_ATTRIBUTES_RANGE]  # type: ignore
             )
             print(color(f'SERVICE {service_record_handle:04X} attributes:', 'yellow'))
             for attribute in attributes:  # type: ignore
@@ -169,18 +171,21 @@ class SdpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # List all services in the root browse group
         self.ref.log.info(f'Search Services')
-        service_record_handles = await sdp_client.search_services([SDP_PUBLIC_BROWSE_ROOT])  # type: ignore
+        service_record_handles = await sdp_client.search_services([SDP_PUBLIC_BROWSE_ROOT]
+                                                                 )  # type: ignore
         assert bool(service_record_handles)  # type: ignore
 
         # Verify Audio Source service is present
         service_found = False
         for service_record_handle in service_record_handles:  # type: ignore
             attributes = await sdp_client.get_attributes(  # type: ignore
-                service_record_handle, [SDP_ALL_ATTRIBUTES_RANGE]  # type: ignore
+                service_record_handle,
+                [SDP_ALL_ATTRIBUTES_RANGE]  # type: ignore
             )
             for attribute in attributes:  # type: ignore
                 if attribute.id == SDP_SERVICE_CLASS_ID_LIST_ATTRIBUTE_ID:  # type: ignore
-                    if ServiceAttribute.is_uuid_in_value(BT_AUDIO_SOURCE_SERVICE, attribute.value):  # type: ignore
+                    if ServiceAttribute.is_uuid_in_value(BT_AUDIO_SOURCE_SERVICE,
+                                                         attribute.value):  # type: ignore
                         service_found = True
                         self.ref.log.info(f'Service found')
         assert service_found

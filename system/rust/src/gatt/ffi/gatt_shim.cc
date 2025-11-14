@@ -27,6 +27,7 @@
 #include "include/hardware/bt_gatt_client.h"
 #include "include/hardware/bt_gatt_server.h"
 #include "rust/cxx.h"
+#include "src/gatt/arbiter.rs.h"
 #include "stack/include/gatt_api.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
@@ -61,11 +62,11 @@ void GattServerCallbacks::OnServerRead(uint16_t conn_id, uint32_t trans_id, uint
 
   switch (attr_type) {
     case AttributeBackingType::CHARACTERISTIC:
-      do_in_jni_thread(base::BindOnce(callbacks.request_read_characteristic_cb, conn_id, trans_id,
+      do_in_jni_thread(base::BindOnce(callbacks_.request_read_characteristic_cb, conn_id, trans_id,
                                       addr.value(), attr_handle, offset, is_long));
       break;
     case AttributeBackingType::DESCRIPTOR:
-      do_in_jni_thread(base::BindOnce(callbacks.request_read_descriptor_cb, conn_id, trans_id,
+      do_in_jni_thread(base::BindOnce(callbacks_.request_read_descriptor_cb, conn_id, trans_id,
                                       addr.value(), attr_handle, offset, is_long));
       break;
     default:
@@ -94,13 +95,13 @@ void GattServerCallbacks::OnServerWrite(uint16_t conn_id, uint32_t trans_id, uin
   switch (attr_type) {
     case AttributeBackingType::CHARACTERISTIC:
       do_in_jni_thread(base::BindOnce(
-              request_write_with_vec, callbacks.request_write_characteristic_cb, conn_id, trans_id,
+              request_write_with_vec, callbacks_.request_write_characteristic_cb, conn_id, trans_id,
               addr.value(), attr_handle, offset, need_response, is_prepare, std::move(buf)));
       break;
     case AttributeBackingType::DESCRIPTOR:
-      do_in_jni_thread(base::BindOnce(request_write_with_vec, callbacks.request_write_descriptor_cb,
-                                      conn_id, trans_id, addr.value(), attr_handle, offset,
-                                      need_response, is_prepare, std::move(buf)));
+      do_in_jni_thread(base::BindOnce(
+              request_write_with_vec, callbacks_.request_write_descriptor_cb, conn_id, trans_id,
+              addr.value(), attr_handle, offset, need_response, is_prepare, std::move(buf)));
       break;
     default:
       log::fatal("Unexpected backing type {}", attr_type);
@@ -108,7 +109,7 @@ void GattServerCallbacks::OnServerWrite(uint16_t conn_id, uint32_t trans_id, uin
 }
 
 void GattServerCallbacks::OnIndicationSentConfirmation(uint16_t conn_id, int status) const {
-  do_in_jni_thread(base::BindOnce(callbacks.indication_sent_cb, conn_id, status));
+  do_in_jni_thread(base::BindOnce(callbacks_.indication_sent_cb, conn_id, status));
 }
 
 void GattServerCallbacks::OnExecute(uint16_t conn_id, uint32_t trans_id, bool execute) const {
@@ -118,9 +119,29 @@ void GattServerCallbacks::OnExecute(uint16_t conn_id, uint32_t trans_id, bool ex
     return;
   }
 
-  do_in_jni_thread(base::BindOnce(callbacks.request_exec_write_cb, conn_id, trans_id, addr.value(),
+  do_in_jni_thread(base::BindOnce(callbacks_.request_exec_write_cb, conn_id, trans_id, addr.value(),
                                   execute));
 }
 
 }  // namespace gatt
+
+namespace shim::arbiter {
+
+void ArbiterShim::OnLeConnect(uint8_t tcb_idx, uint16_t advertiser_id) {
+  arbiter_->OnLeConnect(tcb_idx, advertiser_id);
+}
+void ArbiterShim::OnLeDisconnect(uint8_t tcb_idx) { arbiter_->OnLeDisconnect(tcb_idx); }
+InterceptAction ArbiterShim::InterceptPacket(uint8_t tcb_idx, rust::Vec<uint8_t> buffer) {
+  return arbiter_->InterceptPacket(tcb_idx, buffer);
+}
+void ArbiterShim::OnOutgoingMtuReq(uint8_t tcb_idx) { arbiter_->OnOutgoingMtuReq(tcb_idx); }
+void ArbiterShim::OnIncomingMtuResp(uint8_t tcb_idx, size_t mtu) {
+  arbiter_->OnIncomingMtuResp(tcb_idx, mtu);
+}
+void ArbiterShim::OnIncomingMtuReq(uint8_t tcb_idx, size_t mtu) {
+  arbiter_->OnIncomingMtuReq(tcb_idx, mtu);
+}
+
+}  // namespace shim::arbiter
+
 }  // namespace bluetooth

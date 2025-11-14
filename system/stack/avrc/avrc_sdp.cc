@@ -37,6 +37,7 @@
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
+#include "stack/include/main_thread.h"
 #include "stack/include/sdp_api.h"
 #include "stack/include/sdpdefs.h"
 #include "stack/sdp/sdp_discovery_db.h"
@@ -80,7 +81,7 @@ static void avrc_sdp_cback(const RawAddress& bd_addr, tSDP_STATUS status) {
 
   /* return info from sdp record in app callback function */
   if (!avrc_cb.find_cback.is_null()) {
-    avrc_cb.find_cback.Run(status);
+    do_in_main_thread(base::BindOnce(avrc_cb.find_cback, status));
   } else {
     log::warn("Received SDP callback with NULL callback peer:{} status:{}", bd_addr,
               sdp_status_text(status));

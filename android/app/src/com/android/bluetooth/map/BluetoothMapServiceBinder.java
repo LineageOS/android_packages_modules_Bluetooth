@@ -220,6 +220,8 @@ class BluetoothMapServiceBinder extends IBluetoothMap.Stub implements IProfileSe
             if (service == null) {
                 return false;
             }
+
+            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
             return service.setConnectionPolicy(device, connectionPolicy);
         } catch (RuntimeException e) {
             ContentProfileErrorReportUtils.report(
@@ -238,6 +240,8 @@ class BluetoothMapServiceBinder extends IBluetoothMap.Stub implements IProfileSe
             if (service == null) {
                 return CONNECTION_POLICY_UNKNOWN;
             }
+
+            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
             return service.getConnectionPolicy(device);
         } catch (RuntimeException e) {
             ContentProfileErrorReportUtils.report(

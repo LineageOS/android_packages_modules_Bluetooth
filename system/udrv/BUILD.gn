@@ -15,9 +15,7 @@
 #
 
 source_set("udrv") {
-  sources = [
-    "ulinux/uipc.cc",
-  ]
+  sources = [ "ulinux/uipc.cc" ]
 
   include_dirs = [
     "include",
@@ -31,7 +29,5 @@ source_set("udrv") {
     "//bt/system/log:log_defaults",
   ]
 
-  deps = [
-    "//bt/system/gd:gd_default_deps"
-  ]
+  deps = [ "//bt/system/gd:gd_default_deps" ]
 }

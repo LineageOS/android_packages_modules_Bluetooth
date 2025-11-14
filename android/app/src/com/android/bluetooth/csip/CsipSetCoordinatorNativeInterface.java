@@ -19,11 +19,11 @@ package com.android.bluetooth.csip;
 
 import static java.util.Objects.requireNonNull;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.UUID;
@@ -32,10 +32,10 @@ import java.util.UUID;
 public class CsipSetCoordinatorNativeInterface {
     private static final String TAG = CsipSetCoordinatorNativeInterface.class.getSimpleName();
 
-    private final BluetoothAdapter mAdapter = BluetoothAdapter.getDefaultAdapter();
+    private final AdapterService mAdapterService;
 
-    CsipSetCoordinatorNativeInterface() {
-        requireNonNull(mAdapter);
+    CsipSetCoordinatorNativeInterface(AdapterService adapterService) {
+        mAdapterService = requireNonNull(adapterService);
     }
 
     void init() {
@@ -55,7 +55,7 @@ public class CsipSetCoordinatorNativeInterface {
     }
 
     BluetoothDevice getDevice(byte[] address) {
-        return mAdapter.getRemoteDevice(address);
+        return mAdapterService.getRemoteDevice(Utils.getAddressStringFromByte(address));
     }
 
     private static byte[] getByteAddress(BluetoothDevice device) {

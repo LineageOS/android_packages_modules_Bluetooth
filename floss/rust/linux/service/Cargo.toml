@@ -1,0 +1,28 @@
+[package]
+name = "btadapterd"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[dependencies]
+bt_topshim = { path = "../../topshim" }
+btstack = { path = "../stack" }
+clap = "2.33.3"
+dbus_projection = { path = "../dbus_projection" }
+dbus_macros = { path = "../dbus_projection/dbus_macros" }
+
+dbus = "0.9.2"
+dbus-crossroads = "0.4.0"
+dbus-tokio = "0.7.6"
+futures = "0.3.13"
+log = "0.4.14"
+nix = "0.23"
+num-traits = "0.2"
+tokio = { version = "1", features = ['bytes', 'fs', 'io-util', 'libc', 'macros', 'mio', 'net', 'rt', 'rt-multi-thread', 'sync', 'time', 'tokio-macros'] }
+
+[build-dependencies]
+pkg-config = "0.3.19"
+
+[[bin]]
+name = "btadapterd"
+path = "src/main.rs"

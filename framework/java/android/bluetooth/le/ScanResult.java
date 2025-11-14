@@ -191,8 +191,8 @@ public final class ScanResult implements Parcelable, Attributable {
     }
 
     /** @hide */
-    public void setAttributionSource(@NonNull AttributionSource attributionSource) {
-        Attributable.setAttributionSource(mDevice, attributionSource);
+    public void setAttributionSource(@NonNull AttributionSource source) {
+        Attributable.setAttributionSource(mDevice, source);
     }
 
     /**
@@ -348,7 +348,7 @@ public final class ScanResult implements Parcelable, Attributable {
                 + '}';
     }
 
-    public static final @android.annotation.NonNull Parcelable.Creator<ScanResult> CREATOR =
+    public static final @NonNull Parcelable.Creator<ScanResult> CREATOR =
             new Creator<ScanResult>() {
                 @Override
                 public ScanResult createFromParcel(Parcel source) {

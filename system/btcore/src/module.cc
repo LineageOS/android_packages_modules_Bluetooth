@@ -29,7 +29,6 @@
 
 #include "common/message_loop_thread.h"
 
-using bluetooth::common::MessageLoopThread;
 using namespace bluetooth;
 
 typedef enum {

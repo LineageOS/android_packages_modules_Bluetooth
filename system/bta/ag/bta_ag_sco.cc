@@ -24,6 +24,8 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstddef>
@@ -40,7 +42,7 @@
 #include "btm_status.h"
 #include "device/include/esco_parameters.h"
 #include "hardware/bt_hf.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/hci_packets.h"
 #include "hci_error_code.h"
 #include "hcidefs.h"
@@ -48,7 +50,6 @@
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
-#include "main/shim/metrics_api.h"
 #include "osi/include/alarm.h"
 #include "osi/include/properties.h"
 #include "stack/btm/btm_int_types.h"
@@ -58,8 +59,6 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/main_thread.h"
 #include "types/raw_address.h"
-
-extern tBTM_CB btm_cb;
 
 using HfpInterface = bluetooth::audio::hfp::HfpClientInterface;
 using namespace bluetooth;
@@ -82,6 +81,7 @@ static void updateCodecParametersFromProviderInfo(tBTA_AG_UUID_CODEC esco_codec,
                                                   enh_esco_params_t& params);
 
 static bool sco_allowed = true;
+static bool is_sco_managed_by_audio = false;
 static bool hfp_software_datapath_enabled = false;
 static RawAddress active_device_addr = {};
 static std::unique_ptr<HfpInterface> hfp_client_interface;
@@ -332,7 +332,7 @@ static bool bta_ag_remove_sco(tBTA_AG_SCB* p_scb, bool only_active) {
   if (p_scb->sco_idx != BTM_INVALID_SCO_INDEX) {
     if (!only_active || p_scb->sco_idx == bta_ag_cb.sco.cur_idx) {
       tBTM_STATUS status = get_btm_client_interface().sco.BTM_RemoveSco(p_scb->sco_idx);
-      LogMetricScoLinkRemoved(ToGdAddress(p_scb->peer_addr));
+      bluetooth::metrics::LogMetricScoLinkRemoved(p_scb->peer_addr);
       log::debug("Removed SCO index:0x{:04x} status:{}", p_scb->sco_idx, btm_status_text(status));
       if (status == tBTM_STATUS::BTM_CMD_STARTED) {
         /* SCO is connected; set current control block */
@@ -567,8 +567,8 @@ void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
       bta_ag_cb.sco.cur_idx = p_scb->sco_idx;
       /* Configure input/output data. */
       hfp_hal_interface::set_codec_datapath(esco_codec);
-      LogMetricScoLinkCreated(ToGdAddress(p_scb->peer_addr));
-      LogMetricScoCodec(ToGdAddress(p_scb->peer_addr), p_scb->sco_codec);
+      bluetooth::metrics::LogMetricScoLinkCreated(p_scb->peer_addr);
+      bluetooth::metrics::LogMetricScoCodec(p_scb->peer_addr, p_scb->sco_codec);
       log::verbose("initiated SCO connection");
     }
 
@@ -667,10 +667,7 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
   // In Skullcandy JIB case, which indicate WBS and codec negotiation support,
   // but no Transparent Synchronous Data support, using mSBC codec can result
   // SCO setup fail by Firmware reject.
-  if (!HCI_LMP_TRANSPNT_SUPPORTED(p_rem_feat) ||
-      !(sdp_wbs_support ||
-        (com::android::bluetooth::flags::choose_wrong_hfp_codec_in_specific_config() &&
-         sdp_swb_support)) ||
+  if (!HCI_LMP_TRANSPNT_SUPPORTED(p_rem_feat) || !(sdp_wbs_support || sdp_swb_support) ||
       !(p_scb->peer_features & BTA_AG_PEER_FEAT_CODEC)) {
     log::info("Assume CVSD by default due to mask mismatch");
     p_scb->sco_codec = BTM_SCO_CODEC_CVSD;
@@ -683,9 +680,11 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
                p_scb->is_aptx_swb_codec,
                (p_scb->peer_codecs & BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK) != 0);
 
+  // if remote supports codec negotiation or AptX voice codec
   if (((p_scb->codec_updated || p_scb->codec_fallback) && (p_scb->features & BTA_AG_FEAT_CODEC) &&
        (p_scb->peer_features & BTA_AG_PEER_FEAT_CODEC)) ||
-      (aptx_voice)) {
+      (aptx_voice && (com::android::bluetooth::flags::qc_aptx_codec_negotiation() &&
+                      (p_scb->peer_codecs & BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK)))) {
     log::info("Starting codec negotiation");
     /* Change the power mode to Active until SCO open is completed. */
     bta_sys_busy(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
@@ -701,7 +700,8 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
       /* Send +QCS to the peer */
       bta_ag_send_qcs(p_scb);
     } else {
-      if (aptx_voice) {
+      if (aptx_voice && (com::android::bluetooth::flags::qc_aptx_codec_negotiation() &&
+                         (p_scb->peer_codecs & BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK))) {
         p_scb->sco_codec = BTM_SCO_CODEC_MSBC;
         p_scb->is_aptx_swb_codec = false;
       }
@@ -824,8 +824,7 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
           /* If last SCO instance then finish shutting down */
           if (!bta_ag_other_scb_open(p_scb)) {
             p_sco->state = BTA_AG_SCO_SHUTDOWN_ST;
-          } else if (com::android::bluetooth::flags::
-                             update_sco_state_correctly_on_rfcomm_disconnect_during_codec_nego()) {
+          } else {
             /* just go back to listening */
             p_sco->state = BTA_AG_SCO_LISTEN_ST;
           }
@@ -1611,13 +1610,15 @@ void bta_ag_set_sco_allowed(bool value) {
   log::verbose("{}", sco_allowed ? "sco now allowed" : "sco now not allowed");
 }
 
+void bta_ag_set_is_sco_managed_by_audio(bool value) {
+  is_sco_managed_by_audio = value;
+  log::verbose("sco managed by audio {}", is_sco_managed_by_audio);
+}
+
 bool bta_ag_is_sco_managed_by_audio() {
-  bool value = false;
-  if (com::android::bluetooth::flags::is_sco_managed_by_audio()) {
-    value = osi_property_get_bool("bluetooth.sco.managed_by_audio", false);
-    log::verbose("is_sco_managed_by_audio enabled={}", value);
-  }
-  return value;
+  // sys property is checked in the java layer
+  log::verbose("is_sco_managed_by_audio enabled={}", is_sco_managed_by_audio);
+  return is_sco_managed_by_audio;
 }
 
 void bta_ag_stream_suspended() {

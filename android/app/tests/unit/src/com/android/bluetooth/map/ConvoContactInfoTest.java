@@ -23,8 +23,6 @@ import android.database.MatrixCursor;
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.mapapi.BluetoothMapContract;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

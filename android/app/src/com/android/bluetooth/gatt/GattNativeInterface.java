@@ -16,202 +16,187 @@
 
 package com.android.bluetooth.gatt;
 
+import android.bluetooth.BluetoothDevice;
 import android.os.RemoteException;
 
-import com.android.internal.annotations.GuardedBy;
-import com.android.internal.annotations.VisibleForTesting;
+import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.AdapterService;
 
 import java.util.List;
+import java.util.UUID;
 
 /** GATT Profile Native Interface to/from JNI. */
 public class GattNativeInterface {
     private static final String TAG = GattNativeInterface.class.getSimpleName();
 
-    private GattService mGattService;
+    private final AdapterService mAdapterService;
+    private final GattService mGattService;
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static GattNativeInterface sInstance;
-
-    private static final Object INSTANCE_LOCK = new Object();
-
-    private GattNativeInterface() {}
-
-    GattService getGattService() {
-        return mGattService;
+    GattNativeInterface(AdapterService adapterService, GattService gattService) {
+        mAdapterService = adapterService;
+        mGattService = gattService;
     }
 
-    /**
-     * This class is a singleton because native library should only be loaded once
-     *
-     * @return default instance
-     */
-    public static GattNativeInterface getInstance() {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new GattNativeInterface();
-            }
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    public static void setInstance(GattNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
+    private BluetoothDevice getDevice(String address) {
+        byte[] addressBytes = Utils.getBytesFromAddress(address);
+        return mAdapterService.getDeviceFromByte(addressBytes);
     }
 
     /* Callbacks */
 
     void onClientRegistered(int status, int clientIf, long uuidLsb, long uuidMsb)
             throws RemoteException {
-        getGattService().onClientRegistered(status, clientIf, uuidLsb, uuidMsb);
+        mGattService.onClientRegisteredFromNative(status, clientIf, new UUID(uuidMsb, uuidLsb));
     }
 
-    void onConnected(int clientIf, int connId, int status, String address) throws RemoteException {
-        getGattService().onConnected(clientIf, connId, status, address);
-    }
-
-    void onDisconnected(int clientIf, int connId, int status, String address)
+    void onConnected(int clientIf, int connId, int transport, int status, String address)
             throws RemoteException {
-        getGattService().onDisconnected(clientIf, connId, status, address);
+        mGattService.onConnectedFromNative(clientIf, connId, transport, status, getDevice(address));
+    }
+
+    void onDisconnected(int clientIf, int connId, int transport, int status, String address)
+            throws RemoteException {
+        mGattService.onDisconnectedFromNative(
+                clientIf, connId, transport, status, getDevice(address));
     }
 
     void onClientPhyUpdate(int connId, int txPhy, int rxPhy, int status) throws RemoteException {
-        getGattService().onClientPhyUpdate(connId, txPhy, rxPhy, status);
+        mGattService.onClientPhyUpdateFromNative(connId, txPhy, rxPhy, status);
     }
 
     void onClientPhyRead(int clientIf, String address, int txPhy, int rxPhy, int status)
             throws RemoteException {
-        getGattService().onClientPhyRead(clientIf, address, txPhy, rxPhy, status);
+        mGattService.onClientPhyReadFromNative(clientIf, getDevice(address), txPhy, rxPhy, status);
     }
 
     void onClientConnUpdate(int connId, int interval, int latency, int timeout, int status)
             throws RemoteException {
-        getGattService().onClientConnUpdate(connId, interval, latency, timeout, status);
+        mGattService.onClientConnUpdateFromNative(connId, interval, latency, timeout, status);
     }
 
     void onServiceChanged(int connId) throws RemoteException {
-        getGattService().onServiceChanged(connId);
+        mGattService.onServiceChangedFromNative(connId);
     }
 
     void onClientSubrateChange(
             int connId, int subrateFactor, int latency, int contNum, int timeout, int status)
             throws RemoteException {
-        getGattService()
-                .onClientSubrateChange(connId, subrateFactor, latency, contNum, timeout, status);
+        mGattService.onClientSubrateChangeFromNative(
+                connId, subrateFactor, latency, contNum, timeout, status);
     }
 
     void onServerPhyUpdate(int connId, int txPhy, int rxPhy, int status) throws RemoteException {
-        getGattService().onServerPhyUpdate(connId, txPhy, rxPhy, status);
+        mGattService.onServerPhyUpdateFromNative(connId, txPhy, rxPhy, status);
     }
 
     void onServerPhyRead(int serverIf, String address, int txPhy, int rxPhy, int status)
             throws RemoteException {
-        getGattService().onServerPhyRead(serverIf, address, txPhy, rxPhy, status);
+        mGattService.onServerPhyReadFromNative(serverIf, getDevice(address), txPhy, rxPhy, status);
     }
 
     void onServerConnUpdate(int connId, int interval, int latency, int timeout, int status)
             throws RemoteException {
-        getGattService().onServerConnUpdate(connId, interval, latency, timeout, status);
+        mGattService.onServerConnUpdateFromNative(connId, interval, latency, timeout, status);
     }
 
     void onServerSubrateChange(
             int connId, int subrateFactor, int latency, int contNum, int timeout, int status)
             throws RemoteException {
-        getGattService()
-                .onServerSubrateChange(connId, subrateFactor, latency, contNum, timeout, status);
+        mGattService.onServerSubrateChangeFromNative(
+                connId, subrateFactor, latency, contNum, timeout, status);
     }
 
     GattDbElement getSampleGattDbElement() {
-        return getGattService().getSampleGattDbElement();
+        return mGattService.getSampleGattDbElement();
     }
 
     void onGetGattDb(int connId, List<GattDbElement> db) throws RemoteException {
-        getGattService().onGetGattDb(connId, db);
+        mGattService.onGetGattDbFromNative(connId, db);
     }
 
     void onRegisterForNotifications(int connId, int status, int registered, int handle) {
-        getGattService().onRegisterForNotifications(connId, status, registered, handle);
+        mGattService.onRegisterForNotificationsFromNative(connId, status, registered, handle);
     }
 
     void onNotify(int connId, String address, int handle, boolean isNotify, byte[] data)
             throws RemoteException {
-        getGattService().onNotify(connId, address, handle, isNotify, data);
+        mGattService.onNotifyFromNative(connId, getDevice(address), handle, isNotify, data);
     }
 
     void onReadCharacteristic(int connId, int status, int handle, byte[] data)
             throws RemoteException {
-        getGattService().onReadCharacteristic(connId, status, handle, data);
+        mGattService.onReadCharacteristicFromNative(connId, status, handle, data);
     }
 
     void onWriteCharacteristic(int connId, int status, int handle, byte[] data)
             throws RemoteException {
-        getGattService().onWriteCharacteristic(connId, status, handle, data);
+        mGattService.onWriteCharacteristicFromNative(connId, status, handle, data);
     }
 
     void onExecuteCompleted(int connId, int status) throws RemoteException {
-        getGattService().onExecuteCompleted(connId, status);
+        mGattService.onExecuteCompletedFromNative(connId, status);
     }
 
     void onReadDescriptor(int connId, int status, int handle, byte[] data) throws RemoteException {
-        getGattService().onReadDescriptor(connId, status, handle, data);
+        mGattService.onReadDescriptorFromNative(connId, status, handle, data);
     }
 
     void onWriteDescriptor(int connId, int status, int handle, byte[] data) throws RemoteException {
-        getGattService().onWriteDescriptor(connId, status, handle, data);
+        mGattService.onWriteDescriptorFromNative(connId, status, handle, data);
     }
 
     void onReadRemoteRssi(int clientIf, String address, int rssi, int status)
             throws RemoteException {
-        getGattService().onReadRemoteRssi(clientIf, address, rssi, status);
+        mGattService.onReadRemoteRssiFromNative(clientIf, getDevice(address), rssi, status);
     }
 
     void onConfigureMTU(int connId, int status, int mtu) throws RemoteException {
-        getGattService().onConfigureMTU(connId, status, mtu);
+        mGattService.onConfigureMTUFromNative(connId, status, mtu);
     }
 
     void onClientCongestion(int connId, boolean congested) throws RemoteException {
-        getGattService().onClientCongestion(connId, congested);
+        mGattService.onClientCongestionFromNative(connId, congested);
     }
 
     /* Server callbacks */
 
     void onServerRegistered(int status, int serverIf, long uuidLsb, long uuidMsb)
             throws RemoteException {
-        getGattService().onServerRegistered(status, serverIf, uuidLsb, uuidMsb);
+        mGattService.onServerRegisteredFromNative(status, serverIf, new UUID(uuidMsb, uuidLsb));
     }
 
     void onServiceAdded(int status, int serverIf, List<GattDbElement> service)
             throws RemoteException {
-        getGattService().onServiceAdded(status, serverIf, service);
+        mGattService.onServiceAddedFromNative(status, serverIf, service);
     }
 
     void onServiceStopped(int status, int serverIf, int srvcHandle) throws RemoteException {
-        getGattService().onServiceStopped(status, serverIf, srvcHandle);
+        mGattService.onServiceStoppedFromNative(status, serverIf, srvcHandle);
     }
 
     void onServiceDeleted(int status, int serverIf, int srvcHandle) {
-        getGattService().onServiceDeleted(status, serverIf, srvcHandle);
+        mGattService.onServiceDeletedFromNative(status, serverIf, srvcHandle);
     }
 
-    void onClientConnected(String address, boolean connected, int connId, int serverIf)
+    void onClientConnected(
+            String address, int transport, boolean connected, int connId, int serverIf)
             throws RemoteException {
-        getGattService().onClientConnected(address, connected, connId, serverIf);
+        mGattService.onClientConnectedFromNative(
+                getDevice(address), transport, connected, connId, serverIf);
     }
 
     void onServerReadCharacteristic(
             String address, int connId, int transId, int handle, int offset, boolean isLong)
             throws RemoteException {
-        getGattService()
-                .onServerReadCharacteristic(address, connId, transId, handle, offset, isLong);
+        mGattService.onServerReadCharacteristicFromNative(
+                getDevice(address), connId, transId, handle, offset, isLong);
     }
 
     void onServerReadDescriptor(
             String address, int connId, int transId, int handle, int offset, boolean isLong)
             throws RemoteException {
-        getGattService().onServerReadDescriptor(address, connId, transId, handle, offset, isLong);
+        mGattService.onServerReadDescriptorFromNative(
+                getDevice(address), connId, transId, handle, offset, isLong);
     }
 
     void onServerWriteCharacteristic(
@@ -225,9 +210,8 @@ public class GattNativeInterface {
             boolean isPrep,
             byte[] data)
             throws RemoteException {
-        getGattService()
-                .onServerWriteCharacteristic(
-                        address, connId, transId, handle, offset, length, needRsp, isPrep, data);
+        mGattService.onServerWriteCharacteristicFromNative(
+                getDevice(address), connId, transId, handle, offset, length, needRsp, isPrep, data);
     }
 
     void onServerWriteDescriptor(
@@ -241,30 +225,29 @@ public class GattNativeInterface {
             boolean isPrep,
             byte[] data)
             throws RemoteException {
-        getGattService()
-                .onServerWriteDescriptor(
-                        address, connId, transId, handle, offset, length, needRsp, isPrep, data);
+        mGattService.onServerWriteDescriptorFromNative(
+                getDevice(address), connId, transId, handle, offset, length, needRsp, isPrep, data);
     }
 
     void onExecuteWrite(String address, int connId, int transId, int execWrite)
             throws RemoteException {
-        getGattService().onExecuteWrite(address, connId, transId, execWrite);
+        mGattService.onExecuteWriteFromNative(getDevice(address), connId, transId, execWrite);
     }
 
     void onResponseSendCompleted(int status, int attrHandle) {
-        getGattService().onResponseSendCompleted(status, attrHandle);
+        mGattService.onResponseSendCompletedFromNative(status, attrHandle);
     }
 
     void onNotificationSent(int connId, int status) throws RemoteException {
-        getGattService().onNotificationSent(connId, status);
+        mGattService.onNotificationSentFromNative(connId, status);
     }
 
     void onServerCongestion(int connId, boolean congested) throws RemoteException {
-        getGattService().onServerCongestion(connId, congested);
+        mGattService.onServerCongestionFromNative(connId, congested);
     }
 
     void onMtuChanged(int connId, int mtu) throws RemoteException {
-        getGattService().onMtuChanged(connId, mtu);
+        mGattService.onMtuChangedFromNative(connId, mtu);
     }
 
     /**********************************************************************************************/
@@ -290,7 +273,8 @@ public class GattNativeInterface {
             int transport,
             boolean opportunistic,
             int initiatingPhys,
-            int preferredMtu);
+            int preferredMtu,
+            boolean preferRelaxMode);
 
     private native void gattClientDisconnectNative(int clientIf, String address, int connId);
 
@@ -397,37 +381,31 @@ public class GattNativeInterface {
             int p5);
 
     /** Initialize the native interface and native components */
-    public void init(GattService gattService) {
-        mGattService = gattService;
+    void init() {
         initializeNative();
     }
 
     /** Clean up the native interface and native components */
-    public void cleanup() {
+    void cleanup() {
         cleanupNative();
-        mGattService = null;
     }
 
     /**
-     * Get the type of Bluetooth device
-     *
-     * @param address address of the Bluetooth device
      * @return type of Bluetooth device 0 for BR/EDR, 1 for BLE, 2 for DUAL mode (To be confirmed)
      */
-    public int gattClientGetDeviceType(String address) {
-        return gattClientGetDeviceTypeNative(address);
+    public int gattClientGetDeviceType(BluetoothDevice device) {
+        return gattClientGetDeviceTypeNative(device.getAddress());
     }
 
     /**
      * Register the given client It will invoke {@link #onClientRegistered(int, int, long, long)}.
      */
-    public void gattClientRegisterApp(
-            long appUuidLsb, long appUuidMsb, String name, boolean eattSupport) {
+    void gattClientRegisterApp(long appUuidLsb, long appUuidMsb, String name, boolean eattSupport) {
         gattClientRegisterAppNative(appUuidLsb, appUuidMsb, name, eattSupport);
     }
 
     /** Unregister the client */
-    public void gattClientUnregisterApp(int clientIf) {
+    void gattClientUnregisterApp(int clientIf) {
         gattClientUnregisterAppNative(clientIf);
     }
 
@@ -436,112 +414,113 @@ public class GattNativeInterface {
      *
      * @see BluetoothDevice#connectGatt for parameters.
      */
-    public void gattClientConnect(
+    void gattClientConnect(
             int clientIf,
-            String address,
+            BluetoothDevice device,
             int addressType,
             boolean isDirect,
             int transport,
             boolean opportunistic,
             int initiatingPhys,
-            int preferredMtu) {
+            int preferredMtu,
+            boolean preferRelaxMode) {
         gattClientConnectNative(
                 clientIf,
-                address,
+                device.getAddress(),
                 addressType,
                 isDirect,
                 transport,
                 opportunistic,
                 initiatingPhys,
-                preferredMtu);
+                preferredMtu,
+                preferRelaxMode);
     }
 
     /** Disconnect from the remote Gatt server */
-    public void gattClientDisconnect(int clientIf, String address, int connId) {
-        gattClientDisconnectNative(clientIf, address, connId);
+    void gattClientDisconnect(int clientIf, BluetoothDevice device, int connId) {
+        gattClientDisconnectNative(clientIf, device.getAddress(), connId);
     }
 
     /** Set the preferred connection PHY for the client */
-    public void gattClientSetPreferredPhy(
-            int clientIf, String address, int txPhy, int rxPhy, int phyOptions) {
-        gattClientSetPreferredPhyNative(clientIf, address, txPhy, rxPhy, phyOptions);
+    void gattClientSetPreferredPhy(
+            int clientIf, BluetoothDevice device, int txPhy, int rxPhy, int phyOptions) {
+        gattClientSetPreferredPhyNative(clientIf, device.getAddress(), txPhy, rxPhy, phyOptions);
     }
 
     /** Read the current transmitter PHY and receiver PHY of the client */
-    public void gattClientReadPhy(int clientIf, String address) {
-        gattClientReadPhyNative(clientIf, address);
+    void gattClientReadPhy(int clientIf, BluetoothDevice device) {
+        gattClientReadPhyNative(clientIf, device.getAddress());
     }
 
     /** Clear the internal cache and force a refresh of the services from the remote device */
-    public void gattClientRefresh(int clientIf, String address) {
-        gattClientRefreshNative(clientIf, address);
+    void gattClientRefresh(int clientIf, BluetoothDevice device) {
+        gattClientRefreshNative(clientIf, device.getAddress());
     }
 
     /** Discover GATT services */
-    public void gattClientSearchService(
+    void gattClientSearchService(
             int connId, boolean searchAll, long serviceUuidLsb, long serviceUuidMsb) {
         gattClientSearchServiceNative(connId, searchAll, serviceUuidLsb, serviceUuidMsb);
     }
 
     /** Discover the GATT service by the given UUID */
-    public void gattClientDiscoverServiceByUuid(
-            int connId, long serviceUuidLsb, long serviceUuidMsb) {
+    void gattClientDiscoverServiceByUuid(int connId, long serviceUuidLsb, long serviceUuidMsb) {
         gattClientDiscoverServiceByUuidNative(connId, serviceUuidLsb, serviceUuidMsb);
     }
 
     /** Read a characteristic by the given handle */
-    public void gattClientReadCharacteristic(int connId, int handle, int authReq) {
+    void gattClientReadCharacteristic(int connId, int handle, int authReq) {
         gattClientReadCharacteristicNative(connId, handle, authReq);
     }
 
     /** Read a characteristic by the given UUID */
-    public void gattClientReadUsingCharacteristicUuid(
+    void gattClientReadUsingCharacteristicUuid(
             int connId, long uuidMsb, long uuidLsb, int sHandle, int eHandle, int authReq) {
         gattClientReadUsingCharacteristicUuidNative(
                 connId, uuidMsb, uuidLsb, sHandle, eHandle, authReq);
     }
 
     /** Read a descriptor by the given handle */
-    public void gattClientReadDescriptor(int connId, int handle, int authReq) {
+    void gattClientReadDescriptor(int connId, int handle, int authReq) {
         gattClientReadDescriptorNative(connId, handle, authReq);
     }
 
     /** Write a characteristic by the given handle */
-    public void gattClientWriteCharacteristic(
+    void gattClientWriteCharacteristic(
             int connId, int handle, int writeType, int authReq, byte[] value) {
         gattClientWriteCharacteristicNative(connId, handle, writeType, authReq, value);
     }
 
     /** Write a descriptor by the given handle */
-    public void gattClientWriteDescriptor(int connId, int handle, int authReq, byte[] value) {
+    void gattClientWriteDescriptor(int connId, int handle, int authReq, byte[] value) {
         gattClientWriteDescriptorNative(connId, handle, authReq, value);
     }
 
     /** Execute a reliable write transaction */
-    public void gattClientExecuteWrite(int connId, boolean execute) {
+    void gattClientExecuteWrite(int connId, boolean execute) {
         gattClientExecuteWriteNative(connId, execute);
     }
 
     /** Register notification for the characteristic */
-    public void gattClientRegisterForNotifications(
-            int clientIf, String address, int handle, boolean enable) {
-        gattClientRegisterForNotificationsNative(clientIf, address, handle, enable);
+    void gattClientRegisterForNotifications(
+            int clientIf, BluetoothDevice device, int handle, boolean enable) {
+        gattClientRegisterForNotificationsNative(clientIf, device.getAddress(), handle, enable);
     }
 
     /** Read the RSSI for a connected remote device */
-    public void gattClientReadRemoteRssi(int clientIf, String address) {
-        gattClientReadRemoteRssiNative(clientIf, address);
+    void gattClientReadRemoteRssi(int clientIf, BluetoothDevice device) {
+        gattClientReadRemoteRssiNative(clientIf, device.getAddress());
     }
 
     /** Configure MTU size used for the connection */
-    public void gattClientConfigureMTU(int connId, int mtu) {
+    void gattClientConfigureMTU(int connId, int mtu) {
         gattClientConfigureMTUNative(connId, mtu);
     }
 
     /** Update connection parameter. */
-    public void gattConnectionParameterUpdate(
+    void gattConnectionParameterUpdate(
             int clientIf,
-            String address,
+            BluetoothDevice device,
             int minInterval,
             int maxInterval,
             int latency,
@@ -550,7 +529,7 @@ public class GattNativeInterface {
             int maxConnectionEventLen) {
         gattConnectionParameterUpdateNative(
                 clientIf,
-                address,
+                device.getAddress(),
                 minInterval,
                 maxInterval,
                 latency,
@@ -562,7 +541,7 @@ public class GattNativeInterface {
     /** Update connection parameter. */
     public int gattSubrateRequest(
             int clientIf,
-            String address,
+            BluetoothDevice device,
             int subrateMin,
             int subrateMax,
             int maxLatency,
@@ -570,7 +549,7 @@ public class GattNativeInterface {
             int supervisionTimeout) {
         return gattSubrateRequestNative(
                 clientIf,
-                address,
+                device.getAddress(),
                 subrateMin,
                 subrateMax,
                 maxLatency,
@@ -579,64 +558,68 @@ public class GattNativeInterface {
     }
 
     /** Register GATT server */
-    public void gattServerRegisterApp(long appUuidLsb, long appUuidMsb, boolean eattSupport) {
+    void gattServerRegisterApp(long appUuidLsb, long appUuidMsb, boolean eattSupport) {
         gattServerRegisterAppNative(appUuidLsb, appUuidMsb, eattSupport);
     }
 
     /** Unregister GATT server */
-    public void gattServerUnregisterApp(int serverIf) {
+    void gattServerUnregisterApp(int serverIf) {
         gattServerUnregisterAppNative(serverIf);
     }
 
     /** Connect to a remote device as a GATT server role */
-    public void gattServerConnect(
-            int serverIf, String address, int addressType, boolean isDirect, int transport) {
-        gattServerConnectNative(serverIf, address, addressType, isDirect, transport);
+    void gattServerConnect(
+            int serverIf,
+            BluetoothDevice device,
+            int addressType,
+            boolean isDirect,
+            int transport) {
+        gattServerConnectNative(serverIf, device.getAddress(), addressType, isDirect, transport);
     }
 
     /** Disconnects from a remote device as a GATT server role */
-    public void gattServerDisconnect(int serverIf, String address, int connId) {
-        gattServerDisconnectNative(serverIf, address, connId);
+    void gattServerDisconnect(int serverIf, BluetoothDevice device, int connId) {
+        gattServerDisconnectNative(serverIf, device.getAddress(), connId);
     }
 
     /** Set the preferred connection PHY as a GATT server role */
-    public void gattServerSetPreferredPhy(
-            int clientIf, String address, int txPhy, int rxPhy, int phyOptions) {
-        gattServerSetPreferredPhyNative(clientIf, address, txPhy, rxPhy, phyOptions);
+    void gattServerSetPreferredPhy(
+            int clientIf, BluetoothDevice device, int txPhy, int rxPhy, int phyOptions) {
+        gattServerSetPreferredPhyNative(clientIf, device.getAddress(), txPhy, rxPhy, phyOptions);
     }
 
     /** Read the current transmitter PHY and receiver PHY of the connection */
-    public void gattServerReadPhy(int clientIf, String address) {
-        gattServerReadPhyNative(clientIf, address);
+    void gattServerReadPhy(int clientIf, BluetoothDevice device) {
+        gattServerReadPhyNative(clientIf, device.getAddress());
     }
 
     /** Add a service to the list of services to be hosted. */
-    public void gattServerAddService(int serverIf, List<GattDbElement> service) {
+    void gattServerAddService(int serverIf, List<GattDbElement> service) {
         gattServerAddServiceNative(serverIf, service);
     }
 
     /** Stop a service */
-    public void gattServerStopService(int serverIf, int svcHandle) {
+    void gattServerStopService(int serverIf, int svcHandle) {
         gattServerStopServiceNative(serverIf, svcHandle);
     }
 
     /** Removes a service from the list of services to be provided */
-    public void gattServerDeleteService(int serverIf, int svcHandle) {
+    void gattServerDeleteService(int serverIf, int svcHandle) {
         gattServerDeleteServiceNative(serverIf, svcHandle);
     }
 
     /** Send an indication of the characteristic */
-    public void gattServerSendIndication(int serverIf, int attrHandle, int connId, byte[] val) {
+    void gattServerSendIndication(int serverIf, int attrHandle, int connId, byte[] val) {
         gattServerSendIndicationNative(serverIf, attrHandle, connId, val);
     }
 
     /** Send a notification of the characteristic */
-    public void gattServerSendNotification(int serverIf, int attrHandle, int connId, byte[] val) {
+    void gattServerSendNotification(int serverIf, int attrHandle, int connId, byte[] val) {
         gattServerSendNotificationNative(serverIf, attrHandle, connId, val);
     }
 
     /** Send a response as a GATT server role */
-    public void gattServerSendResponse(
+    void gattServerSendResponse(
             int serverIf,
             int connId,
             int transId,
@@ -650,7 +633,7 @@ public class GattNativeInterface {
     }
 
     /** Send a test command */
-    public void gattTest(
+    void gattTest(
             int command,
             long uuid1Lsb,
             long uuid1Msb,

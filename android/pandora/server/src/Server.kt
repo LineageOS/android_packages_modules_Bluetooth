@@ -87,6 +87,8 @@ class Server(context: Context) {
 
     fun shutdown() = grpcServer.shutdown()
 
+    fun shutdownNow() = grpcServer.shutdownNow()
+
     fun awaitTermination() = grpcServer.awaitTermination()
 
     fun deinit() = services.forEach { if (it is Closeable) it.close() }

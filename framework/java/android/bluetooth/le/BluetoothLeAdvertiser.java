@@ -18,6 +18,7 @@ package android.bluetooth.le;
 
 import static android.Manifest.permission.BLUETOOTH_ADVERTISE;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+import static android.bluetooth.BluetoothUtils.executeFromBinder;
 
 import static java.util.Objects.requireNonNull;
 
@@ -208,16 +209,16 @@ public final class BluetoothLeAdvertiser {
         }
     }
 
-    @SuppressLint({
-        "AndroidFrameworkBluetoothPermission",
-        "AndroidFrameworkRequiresPermission",
-    })
+    @RequiresBluetoothAdvertisePermission
+    @RequiresPermission(BLUETOOTH_ADVERTISE)
     AdvertisingSetCallback wrapOldCallback(AdvertiseCallback callback, AdvertiseSettings settings) {
         return new AdvertisingSetCallback() {
             @Override
+            @RequiresNoPermission // Callback to app
             public void onAdvertisingSetStarted(
                     AdvertisingSet advertisingSet, int txPower, int status) {
                 if (status != AdvertisingSetCallback.ADVERTISE_SUCCESS) {
+                    mLegacyAdvertisers.remove(callback);
                     postStartFailure(callback, status);
                     return;
                 }
@@ -227,6 +228,8 @@ public final class BluetoothLeAdvertiser {
 
             /* Legacy advertiser is disabled on timeout */
             @Override
+            @RequiresBluetoothAdvertisePermission
+            @RequiresPermission(BLUETOOTH_ADVERTISE)
             public void onAdvertisingEnabled(
                     AdvertisingSet advertisingSet, boolean enabled, int status) {
                 if (enabled) {
@@ -634,7 +637,7 @@ public final class BluetoothLeAdvertiser {
                     periodicData,
                     duration,
                     maxExtendedAdvertisingEvents,
-                    gattServer == null ? 0 : gattServer.getServerIf(),
+                    gattServer == null ? null : gattServer.getCallbackId(),
                     wrapped,
                     mAttributionSource);
         } catch (RemoteException e) {
@@ -760,17 +763,18 @@ public final class BluetoothLeAdvertiser {
         return array == null ? 0 : array.length;
     }
 
-    @SuppressLint("AndroidFrameworkBluetoothPermission")
     IAdvertisingSetCallback wrap(AdvertisingSetCallback callback, Handler handler) {
         return new IAdvertisingSetCallback.Stub() {
             @Override
+            @RequiresNoPermission // Callback to app
             public void onAdvertisingSetStarted(
                     IBinder advertiseBinder, int advertiserId, int txPower, int status) {
-                handler.post(
+                executeFromBinder(
+                        handler::post,
                         () -> {
                             if (status != AdvertisingSetCallback.ADVERTISE_SUCCESS) {
-                                callback.onAdvertisingSetStarted(null, 0, status);
                                 mCallbackWrappers.remove(callback);
+                                callback.onAdvertisingSetStarted(null, 0, status);
                                 return;
                             }
 
@@ -786,8 +790,10 @@ public final class BluetoothLeAdvertiser {
             }
 
             @Override
+            @RequiresNoPermission // Callback to app
             public void onOwnAddressRead(int advertiserId, int addressType, String address) {
-                handler.post(
+                executeFromBinder(
+                        handler::post,
                         () -> {
                             AdvertisingSet advertisingSet = mAdvertisingSets.get(advertiserId);
                             callback.onOwnAddressRead(advertisingSet, addressType, address);
@@ -795,8 +801,10 @@ public final class BluetoothLeAdvertiser {
             }
 
             @Override
+            @RequiresNoPermission // Callback to app
             public void onAdvertisingSetStopped(int advertiserId) {
-                handler.post(
+                executeFromBinder(
+                        handler::post,
                         () -> {
                             AdvertisingSet advertisingSet = mAdvertisingSets.get(advertiserId);
                             callback.onAdvertisingSetStopped(advertisingSet);
@@ -806,8 +814,10 @@ public final class BluetoothLeAdvertiser {
             }
 
             @Override
+            @RequiresNoPermission // Callback to app
             public void onAdvertisingEnabled(int advertiserId, boolean enabled, int status) {
-                handler.post(
+                executeFromBinder(
+                        handler::post,
                         () -> {
                             AdvertisingSet advertisingSet = mAdvertisingSets.get(advertiserId);
                             callback.onAdvertisingEnabled(advertisingSet, enabled, status);
@@ -815,8 +825,10 @@ public final class BluetoothLeAdvertiser {
             }
 
             @Override
+            @RequiresNoPermission // Callback to app
             public void onAdvertisingDataSet(int advertiserId, int status) {
-                handler.post(
+                executeFromBinder(
+                        handler::post,
                         () -> {
                             AdvertisingSet advertisingSet = mAdvertisingSets.get(advertiserId);
                             callback.onAdvertisingDataSet(advertisingSet, status);
@@ -824,8 +836,10 @@ public final class BluetoothLeAdvertiser {
             }
 
             @Override
+            @RequiresNoPermission // Callback to app
             public void onScanResponseDataSet(int advertiserId, int status) {
-                handler.post(
+                executeFromBinder(
+                        handler::post,
                         () -> {
                             AdvertisingSet advertisingSet = mAdvertisingSets.get(advertiserId);
                             callback.onScanResponseDataSet(advertisingSet, status);
@@ -833,8 +847,10 @@ public final class BluetoothLeAdvertiser {
             }
 
             @Override
+            @RequiresNoPermission // Callback to app
             public void onAdvertisingParametersUpdated(int advertiserId, int txPower, int status) {
-                handler.post(
+                executeFromBinder(
+                        handler::post,
                         () -> {
                             AdvertisingSet advertisingSet = mAdvertisingSets.get(advertiserId);
                             callback.onAdvertisingParametersUpdated(
@@ -843,8 +859,10 @@ public final class BluetoothLeAdvertiser {
             }
 
             @Override
+            @RequiresNoPermission // Callback to app
             public void onPeriodicAdvertisingParametersUpdated(int advertiserId, int status) {
-                handler.post(
+                executeFromBinder(
+                        handler::post,
                         () -> {
                             AdvertisingSet advertisingSet = mAdvertisingSets.get(advertiserId);
                             callback.onPeriodicAdvertisingParametersUpdated(advertisingSet, status);
@@ -852,8 +870,10 @@ public final class BluetoothLeAdvertiser {
             }
 
             @Override
+            @RequiresNoPermission // Callback to app
             public void onPeriodicAdvertisingDataSet(int advertiserId, int status) {
-                handler.post(
+                executeFromBinder(
+                        handler::post,
                         () -> {
                             AdvertisingSet advertisingSet = mAdvertisingSets.get(advertiserId);
                             callback.onPeriodicAdvertisingDataSet(advertisingSet, status);
@@ -861,8 +881,10 @@ public final class BluetoothLeAdvertiser {
             }
 
             @Override
+            @RequiresNoPermission // Callback to app
             public void onPeriodicAdvertisingEnabled(int advertiserId, boolean enable, int status) {
-                handler.post(
+                executeFromBinder(
+                        handler::post,
                         () -> {
                             AdvertisingSet advertisingSet = mAdvertisingSets.get(advertiserId);
                             callback.onPeriodicAdvertisingEnabled(advertisingSet, enable, status);
@@ -871,18 +893,15 @@ public final class BluetoothLeAdvertiser {
         };
     }
 
-    @SuppressLint("AndroidFrameworkBluetoothPermission")
     private static void postStartSetFailure(
             Handler handler, final AdvertisingSetCallback callback, final int error) {
         handler.post(() -> callback.onAdvertisingSetStarted(null, 0, error));
     }
 
-    @SuppressLint("AndroidFrameworkBluetoothPermission")
     private void postStartFailure(final AdvertiseCallback callback, final int error) {
         mHandler.post(() -> callback.onStartFailure(error));
     }
 
-    @SuppressLint("AndroidFrameworkBluetoothPermission")
     private void postStartSuccess(
             final AdvertiseCallback callback, final AdvertiseSettings settings) {
         mHandler.post(() -> callback.onStartSuccess(settings));

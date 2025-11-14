@@ -127,8 +127,31 @@ enum class UnicastMonitorModeStatus {
   STREAMING_REQUESTED_NO_CONTEXT_VALIDATE,
 };
 
+inline std::ostream& operator<<(std::ostream& os, const UnicastMonitorModeStatus& status) {
+  switch (status) {
+    case UnicastMonitorModeStatus::STREAMING_REQUESTED:
+      os << "STREAMING_REQUESTED";
+      break;
+    case UnicastMonitorModeStatus::STREAMING:
+      os << "STREAMING";
+      break;
+    case UnicastMonitorModeStatus::STREAMING_REQUESTED_NO_CONTEXT_VALIDATE:
+      os << "CONTEXT NOT AVAILABLE";
+      break;
+    case UnicastMonitorModeStatus::STREAMING_SUSPENDED:
+      os << "STREAMING_SUSPENDED";
+      break;
+    default:
+      os << "UNKNOWN";
+      break;
+  }
+  return os;
+}
+
 typedef enum {
   LE_AUDIO_CODEC_INDEX_SOURCE_LC3 = 0,
+  LE_AUDIO_CODEC_INDEX_SOURCE_OPUS = 1,
+  LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES = 2,
   LE_AUDIO_CODEC_INDEX_SOURCE_INVALID = 1000 * 1000,
 } btle_audio_codec_index_t;
 
@@ -167,7 +190,8 @@ typedef enum {
 typedef enum {
   LE_AUDIO_FRAME_DURATION_INDEX_NONE = 0,
   LE_AUDIO_FRAME_DURATION_INDEX_7500US = 0x01 << 0,
-  LE_AUDIO_FRAME_DURATION_INDEX_10000US = 0x01 << 1
+  LE_AUDIO_FRAME_DURATION_INDEX_10000US = 0x01 << 1,
+  LE_AUDIO_FRAME_DURATION_INDEX_20000US = 0x01 << 2
 } btle_audio_frame_duration_index_t;
 
 typedef struct btle_audio_codec_config {
@@ -218,6 +242,12 @@ typedef struct btle_audio_codec_config {
     switch (codec_type) {
       case LE_AUDIO_CODEC_INDEX_SOURCE_LC3:
         codec_name_str = "LC3";
+        break;
+      case LE_AUDIO_CODEC_INDEX_SOURCE_OPUS:
+        codec_name_str = "Opus";
+        break;
+      case LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES:
+        codec_name_str = "Opus Hi-Res";
         break;
       default:
         codec_name_str = "Unknown LE codec " + std::to_string(codec_type);
@@ -607,4 +637,6 @@ struct formatter<bluetooth::le_audio::btle_audio_frame_duration_index_t>
 template <>
 struct formatter<bluetooth::le_audio::GroupStreamStatus>
     : enum_formatter<bluetooth::le_audio::GroupStreamStatus> {};
+template <>
+struct formatter<bluetooth::le_audio::UnicastMonitorModeStatus> : ostream_formatter {};
 }  // namespace std

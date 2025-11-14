@@ -20,6 +20,7 @@ from mobly.asserts import fail
 
 from pairing.br_edr.test_base import BREDRPairTestBase
 
+
 class BREDRSSPPairTestBase(BREDRPairTestBase):
 
     @asynchronous
@@ -38,12 +39,12 @@ class BREDRSSPPairTestBase(BREDRPairTestBase):
         bumble_res, android_res = await self.start_acl_connection()
 
         service_access_task = asyncio.create_task(
-            self.start_service_access(bumble_res.connection, android_res.connection)
-        )
+            self.start_service_access(bumble_res.connection, android_res.connection))
 
         # at this point, android expects bumble to initiate pairing to compete the
         # service access
-        pairing_task = asyncio.create_task(self.start_pairing(bumble_res.connection, android_res.connection))
+        pairing_task = asyncio.create_task(
+            self.start_pairing(bumble_res.connection, android_res.connection))
 
         await self.accept_pairing()
 

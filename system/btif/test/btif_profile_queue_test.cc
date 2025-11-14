@@ -33,8 +33,7 @@ typedef void(tBTIF_COPY_CBACK)(uint16_t event, char* p_dest, const char* p_src);
 // NOTE: Local re-implementation of functions to avoid thread context switching
 static bool sStackRunning;
 static bool get_stack_is_running(void) { return sStackRunning; }
-static stack_manager_t sStackManager = {
-        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, get_stack_is_running};
+static stack_manager_t sStackManager = {nullptr, nullptr, nullptr, nullptr, get_stack_is_running};
 const stack_manager_t* stack_manager_get_interface() { return &sStackManager; }
 bt_status_t do_in_jni_thread(base::OnceClosure task) {
   std::move(task).Run();

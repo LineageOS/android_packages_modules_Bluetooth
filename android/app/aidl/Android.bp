@@ -12,6 +12,7 @@ filegroup {
     name: "Bluetooth-binder-aidl",
     srcs: [
         ":framework-bluetooth-updatable-exported-aidl-sources",
+        "android/bluetooth/IAdapter.aidl",
         "android/bluetooth/IAudioInputCallback.aidl",
         "android/bluetooth/IBluetooth.aidl",
         "android/bluetooth/IBluetoothA2dp.aidl",
@@ -45,7 +46,6 @@ filegroup {
         "android/bluetooth/IBluetoothLeCallControlCallback.aidl",
         "android/bluetooth/IBluetoothMap.aidl",
         "android/bluetooth/IBluetoothMapClient.aidl",
-        "android/bluetooth/IBluetoothMcpServiceManager.aidl",
         "android/bluetooth/IBluetoothMetadataListener.aidl",
         "android/bluetooth/IBluetoothOobDataCallback.aidl",
         "android/bluetooth/IBluetoothPan.aidl",
@@ -66,5 +66,14 @@ filegroup {
         "android/bluetooth/le/IDistanceMeasurementCallback.aidl",
         "android/bluetooth/le/IPeriodicAdvertisingCallback.aidl",
         "android/bluetooth/le/IScannerCallback.aidl",
+    ],
+}
+
+filegroup {
+    name: "Bluetooth-binder-aidl-for-service",
+    srcs: [
+        "android/bluetooth/IAdapter.aidl",
+        "android/bluetooth/IBluetoothCallback.aidl",
+        "android/bluetooth/State.aidl",
     ],
 }

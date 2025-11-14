@@ -55,7 +55,7 @@
 #endif
 
 #include "audio_hal_interface/a2dp_encoding.h"
-#include "bta/av/bta_av_int.h"
+#include "bta/include/bta_av_api.h"
 #include "osi/include/properties.h"
 #include "stack/include/bt_hdr.h"
 
@@ -69,7 +69,7 @@ std::optional<CodecId> ParseCodecId(uint8_t const media_codec_capabilities[]) {
   // The Media Codec Capabilities contain the Media Codec Type and
   // Media Type on 16-bits.
   if (length_of_service_capability < 2) {
-    return {};
+    return std::nullopt;
   }
   tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(media_codec_capabilities);
   switch (codec_type) {
@@ -81,7 +81,7 @@ std::optional<CodecId> ParseCodecId(uint8_t const media_codec_capabilities[]) {
       // The Vendor Codec Specific Information Elements contain
       // a 32-bit Vendor ID and 16-bit Vendor Specific Codec ID.
       if (length_of_service_capability < 8) {
-        return {};
+        return std::nullopt;
       }
       uint32_t vendor_id = A2DP_VendorCodecGetVendorId(media_codec_capabilities);
       uint16_t codec_id = A2DP_VendorCodecGetCodecId(media_codec_capabilities);
@@ -89,13 +89,38 @@ std::optional<CodecId> ParseCodecId(uint8_t const media_codec_capabilities[]) {
       // nonreserved 16-bit Company ID as defined in Bluetooth Assigned Numbers.
       // The upper 16 bits of the 32-bit Vendor ID shall be set to zero.
       if (vendor_id > UINT16_MAX) {
-        return {};
+        return std::nullopt;
       }
       return static_cast<CodecId>(VendorCodecId(static_cast<uint16_t>(vendor_id), codec_id));
     }
     default:
-      return {};
+      return std::nullopt;
   }
+}
+
+std::string CodecIdToString(CodecId codec_id) {
+  switch (codec_id) {
+    case CodecId::SBC:
+      return "SBC";
+    case CodecId::AAC:
+      return "AAC";
+    case CodecId::APTX:
+      return "APTX";
+    case CodecId::APTX_HD:
+      return "APTX_HD";
+    case CodecId::LDAC:
+      return "LDAC";
+    case CodecId::OPUS:
+      return "OPUS";
+    default:
+      if (static_cast<uint8_t>(codec_id) == A2DP_MEDIA_CT_NON_A2DP) {
+        return std::format("Codec ID: 0x{:04x}, Vendor ID: 0x{:04x}",
+                           static_cast<uint16_t>(static_cast<uint64_t>(codec_id) >> 24),
+                           static_cast<uint16_t>(static_cast<uint64_t>(codec_id) >> 8));
+      } else {
+        return std::format("Invalid CodecId: {}", static_cast<uint64_t>(codec_id));
+      }
+  };
 }
 
 }  // namespace bluetooth::a2dp
@@ -724,16 +749,6 @@ A2dpCodecConfig* A2dpCodecs::findSourceCodecConfig(const uint8_t* p_codec_info) 
   return iter->second;
 }
 
-A2dpCodecConfig* A2dpCodecs::findSourceCodecConfig(btav_a2dp_codec_index_t codec_index) {
-  std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
-
-  auto iter = indexed_codecs_.find(codec_index);
-  if (iter == indexed_codecs_.end()) {
-    return nullptr;
-  }
-  return iter->second;
-}
-
 A2dpCodecConfig* A2dpCodecs::findSinkCodecConfig(const uint8_t* p_codec_info) {
   std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
   btav_a2dp_codec_index_t codec_index = A2DP_SinkCodecIndex(p_codec_info);
@@ -954,24 +969,14 @@ tA2DP_STATUS A2dpCodecs::setCodecOtaConfig(const uint8_t* p_ota_codec_config,
   // Check whether the codec config for the same codec is explicitly configured
   // by user configuration. If yes, then the OTA codec configuration is
   // ignored.
-  codec_type = A2DP_SourceCodecIndex(p_ota_codec_config);
-  if (codec_type == BTAV_A2DP_CODEC_INDEX_MAX) {
-    log::warn("ignoring peer OTA codec configuration: invalid codec");
-    goto fail;  // Invalid codec
-  } else {
-    auto iter = indexed_codecs_.find(codec_type);
-    if (iter == indexed_codecs_.end()) {
-      log::warn("cannot find codec configuration for peer OTA codec {}",
-                A2DP_CodecName(p_ota_codec_config));
-      status = A2DP_NOT_SUPPORTED_CODEC_TYPE;
-      goto fail;
-    }
-    a2dp_codec_config = iter->second;
-  }
+  a2dp_codec_config = findSourceCodecConfig(p_ota_codec_config);
   if (a2dp_codec_config == nullptr) {
+    log::warn("cannot find codec configuration for peer OTA codec {}",
+              A2DP_CodecName(p_ota_codec_config));
     status = A2DP_NOT_SUPPORTED_CODEC_TYPE;
     goto fail;
   }
+
   codec_user_config = a2dp_codec_config->getCodecUserConfig();
   if (!A2dpCodecConfig::isCodecConfigEmpty(codec_user_config)) {
     log::warn(
@@ -1020,7 +1025,7 @@ bool A2dpCodecs::setPeerSinkCodecCapabilities(const uint8_t* p_peer_codec_capabi
   // the stack does not need to know about the peer capabilities,
   // since the validation and selection will be performed by the
   // bluetooth audio HAL for offloaded codecs.
-  if (!::bluetooth::audio::a2dp::provider::supports_codec(a2dp_codec_config->codecIndex()) &&
+  if (!a2dp_codec_config->isHardwareProviderCodec() &&
       !A2DP_IsPeerSinkCodecValid(p_peer_codec_capabilities)) {
     return false;
   }
@@ -1633,6 +1638,10 @@ bool A2DP_InitCodecConfig(btav_a2dp_codec_index_t codec_index, AvdtpSepConfig* p
 }
 
 std::string A2DP_CodecInfoString(const uint8_t* p_codec_info) {
+  if (std::all_of(p_codec_info, p_codec_info + AVDT_CODEC_SIZE,
+                  [](uint8_t byte) { return byte == 0; })) {
+    return "Codec info is empty";
+  }
   tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(p_codec_info);
 
   switch (codec_type) {

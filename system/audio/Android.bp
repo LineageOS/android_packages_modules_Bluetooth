@@ -40,7 +40,7 @@ cc_library_static {
         "libflatbuffers-cpp",
     ],
     host_supported: true,
-    min_sdk_version: "33",
+    min_sdk_version: "36",
     apex_available: ["com.android.bt"],
 }
 

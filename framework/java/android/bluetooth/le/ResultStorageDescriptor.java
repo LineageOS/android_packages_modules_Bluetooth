@@ -16,6 +16,7 @@
 
 package android.bluetooth.le;
 
+import android.annotation.NonNull;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -80,17 +81,16 @@ public final class ResultStorageDescriptor implements Parcelable {
         mLength = in.readInt();
     }
 
-    public static final @android.annotation.NonNull Parcelable.Creator<ResultStorageDescriptor>
-            CREATOR =
-                    new Creator<ResultStorageDescriptor>() {
-                        @Override
-                        public ResultStorageDescriptor createFromParcel(Parcel source) {
-                            return new ResultStorageDescriptor(source);
-                        }
+    public static final @NonNull Parcelable.Creator<ResultStorageDescriptor> CREATOR =
+            new Creator<ResultStorageDescriptor>() {
+                @Override
+                public ResultStorageDescriptor createFromParcel(Parcel source) {
+                    return new ResultStorageDescriptor(source);
+                }
 
-                        @Override
-                        public ResultStorageDescriptor[] newArray(int size) {
-                            return new ResultStorageDescriptor[size];
-                        }
-                    };
+                @Override
+                public ResultStorageDescriptor[] newArray(int size) {
+                    return new ResultStorageDescriptor[size];
+                }
+            };
 }

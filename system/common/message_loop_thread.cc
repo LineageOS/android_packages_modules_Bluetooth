@@ -127,12 +127,20 @@ std::string MessageLoopThread::GetName() const { return thread_name_; }
 
 std::string MessageLoopThread::ToString() const {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+#if defined(TARGET_FLOSS) && BASE_VER >= 1419016
+  return std::format("{}({})", thread_name_, thread_id_.raw());
+#else
   return std::format("{}({})", thread_name_, thread_id_);
+#endif // defined(TARGET_FLOSS) && BASE_VER >= 1419016
 }
 
 bool MessageLoopThread::IsRunning() const {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+#if defined(TARGET_FLOSS) && BASE_VER >= 1419016
+  return thread_id_.raw() != -1;
+#else
   return thread_id_ != -1;
+#endif // defined(TARGET_FLOSS) && BASE_VER >= 1419016
 }
 
 // Non API method, should not be protected by API mutex
@@ -187,7 +195,11 @@ void MessageLoopThread::Run(std::promise<void> start_up_promise) {
 
   {
     std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+  #if defined(TARGET_FLOSS) && BASE_VER >= 1419016
+    thread_id_ = base::PlatformThreadId(-1);
+  #else
     thread_id_ = -1;
+  #endif // defined(TARGET_FLOSS) && BASE_VER >= 1419016
     linux_tid_ = -1;
     delete message_loop_;
     message_loop_ = nullptr;

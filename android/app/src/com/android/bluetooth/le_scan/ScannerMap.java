@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.le_scan;
 
 import static com.android.bluetooth.Utils.getSystemClock;
@@ -114,7 +115,7 @@ public class ScannerMap {
                         appName,
                         appScanStats);
         mApps.add(app);
-        appScanStats.isRegistered = true;
+        appScanStats.mIsRegistered = true;
         return app;
     }
 
@@ -124,6 +125,21 @@ public class ScannerMap {
         while (i.hasNext()) {
             ScannerApp entry = i.next();
             if (entry.mId == id) {
+                entry.cleanup();
+                i.remove();
+                break;
+            }
+        }
+    }
+
+    /** Remove the context for a given UUID */
+    public void remove(UUID uuid) {
+        Log.d(TAG, "remove() - uuid: " + uuid);
+
+        Iterator<ScannerApp> i = mApps.iterator();
+        while (i.hasNext()) {
+            ScannerApp entry = i.next();
+            if (entry.mUuid.equals(uuid)) {
                 entry.cleanup();
                 i.remove();
                 break;
@@ -310,7 +326,7 @@ public class ScannerMap {
                     Log.e(TAG, "Unable to unlink deathRecipient for app id " + mId);
                 }
             }
-            mAppScanStats.isRegistered = false;
+            mAppScanStats.mIsRegistered = false;
         }
     }
 }

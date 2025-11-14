@@ -35,7 +35,7 @@
 #include "bta/hf_client/bta_hf_client_int.h"
 #include "bta/include/bta_api.h"
 #include "bta/test/bta_test_fixtures.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "hci/le_rand_callback.h"
 #include "stack/include/btm_status.h"
 #include "test/common/main_handler.h"
@@ -66,7 +66,7 @@ protected:
   void SetUp() override {
     BtaWithContextTest::SetUp();
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+            std::make_unique<bluetooth::hci::testing::MockController>();
     ON_CALL(*bluetooth::hci::testing::mock_controller_, LeRand)
             .WillByDefault([](bluetooth::hci::LeRandCallback cb) { cb(0x1234); });
 

@@ -2,10 +2,10 @@
 
 use std::ops::RangeInclusive;
 
-use crate::core::shared_box::{WeakBox, WeakBoxRef};
+use crate::core::shared_box::SharedBox;
 use crate::gatt::ids::{AttHandle, TransportIndex};
-use crate::gatt::server::att_server_bearer::AttServerBearer;
-use crate::gatt::server::gatt_database::{AttDatabaseImpl, GattDatabaseCallbacks};
+use crate::gatt::server::att_client::{AttClient, WeakAttClient};
+use crate::gatt::server::gatt_database::GattDatabaseCallbacks;
 use tokio::sync::mpsc::{self, unbounded_channel, UnboundedReceiver};
 
 /// Routes calls to GattDatabaseCallbacks into a channel of MockCallbackEvents
@@ -20,9 +20,11 @@ impl MockCallbacks {
 }
 
 /// Events representing calls to GattCallbacks
+#[allow(clippy::enum_variant_names)]
 pub enum MockCallbackEvents {
     /// GattDatabaseCallbacks#on_le_connect invoked
-    OnLeConnect(TransportIndex, WeakBox<AttServerBearer<AttDatabaseImpl>>),
+    #[allow(dead_code)]
+    OnLeConnect(WeakAttClient),
     /// GattDatabaseCallbacks#on_le_disconnect invoked
     OnLeDisconnect(TransportIndex),
     /// GattDatabaseCallbacks#on_service_change invoked
@@ -30,12 +32,8 @@ pub enum MockCallbackEvents {
 }
 
 impl GattDatabaseCallbacks for MockCallbacks {
-    fn on_le_connect(
-        &self,
-        tcb_idx: TransportIndex,
-        bearer: WeakBoxRef<AttServerBearer<AttDatabaseImpl>>,
-    ) {
-        self.0.send(MockCallbackEvents::OnLeConnect(tcb_idx, bearer.downgrade())).ok().unwrap();
+    fn on_le_connect(&self, client: &SharedBox<AttClient>) {
+        self.0.send(MockCallbackEvents::OnLeConnect(client.downgrade())).ok().unwrap();
     }
 
     fn on_le_disconnect(&self, tcb_idx: TransportIndex) {

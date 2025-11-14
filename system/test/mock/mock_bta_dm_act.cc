@@ -32,7 +32,7 @@
 #include "bta/include/bta_dm_acl.h"
 #include "bta/include/bta_dm_api.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
+#include "types/ble_address_with_type.h"
 
 // Mocked internal structures, if any
 
@@ -88,18 +88,17 @@ bool BTA_DmSetVisibility(bt_scan_mode_t mode) {
   inc_func_call_count(__func__);
   return test::mock::bta_dm_act::BTA_DmSetVisibility(mode);
 }
-void BTA_dm_acl_down(const RawAddress bd_addr, tBT_TRANSPORT transport) {
+void BTA_dm_acl_down(const tAclLinkSpec& link_spec) {
   inc_func_call_count(__func__);
-  test::mock::bta_dm_act::BTA_dm_acl_down(bd_addr, transport);
+  test::mock::bta_dm_act::BTA_dm_acl_down(link_spec);
 }
-void BTA_dm_acl_up(const RawAddress bd_addr, tBT_TRANSPORT transport, uint16_t acl_handle) {
+void BTA_dm_acl_up(const tAclLinkSpec& link_spec, uint16_t acl_handle) {
   inc_func_call_count(__func__);
-  test::mock::bta_dm_act::BTA_dm_acl_up(bd_addr, transport, acl_handle);
+  test::mock::bta_dm_act::BTA_dm_acl_up(link_spec, acl_handle);
 }
-void BTA_dm_acl_up_failed(const RawAddress bd_addr, tBT_TRANSPORT transport,
-                          tHCI_STATUS hci_status) {
+void BTA_dm_acl_up_failed(const tAclLinkSpec& link_spec, tHCI_STATUS hci_status) {
   inc_func_call_count(__func__);
-  test::mock::bta_dm_act::BTA_dm_acl_up_failed(bd_addr, transport, hci_status);
+  test::mock::bta_dm_act::BTA_dm_acl_up_failed(link_spec, hci_status);
 }
 void BTA_dm_notify_remote_features_complete(const RawAddress bd_addr) {
   inc_func_call_count(__func__);
@@ -228,9 +227,9 @@ void bta_dm_remove_device(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_remove_device(bd_addr);
 }
-void bta_dm_remote_key_missing(const RawAddress bd_addr) {
+void bta_dm_remote_key_missing(const RawAddress bd_addr, tBTM_KEY_MISSING_REASON reason) {
   inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_remote_key_missing(bd_addr);
+  test::mock::bta_dm_act::bta_dm_remote_key_missing(bd_addr, reason);
 }
 void bta_dm_on_encryption_change(bt_encryption_change_evt encryption_change) {
   inc_func_call_count(__func__);

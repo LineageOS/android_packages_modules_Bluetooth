@@ -17,6 +17,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 
 #include <future>  // NOLINT
 #include <map>
@@ -38,7 +39,7 @@
 #include "common/bind.h"
 #include "common/contextual_callback.h"
 #include "common/postable_context.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "hci/hci_layer_mock.h"
 #include "include/hardware/bluetooth.h"
 #include "include/hardware/bt_av.h"
@@ -54,16 +55,16 @@
 #include "test/mock/mock_osi_properties.h"
 #include "test/mock/mock_osi_thread.h"
 #include "test/mock/mock_stack_btm_sec.h"
+#include "types/ble_address_with_type.h"
 #include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 namespace bluetooth::testing {
 void set_hal_cbacks(bt_callbacks_t* callbacks);
 }  // namespace bluetooth::testing
 
 namespace bluetooth::legacy::testing {
-void bta_dm_acl_down(const RawAddress& bd_addr, tBT_TRANSPORT transport);
-void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport, uint16_t acl_handle);
+void bta_dm_acl_down(const tAclLinkSpec& link_spec);
+void bta_dm_acl_up(const tAclLinkSpec& acl_link_spec, uint16_t acl_handle);
 }  // namespace bluetooth::legacy::testing
 
 const tBTA_AG_RES_DATA tBTA_AG_RES_DATA::kEmpty = {};
@@ -108,11 +109,8 @@ using testing::Matcher;
 using testing::Return;
 using testing::SaveArg;
 
-module_t bt_utils_module;
-module_t gd_controller_module;
 module_t gd_shim_module;
 module_t osi_module;
-module_t rust_module;
 
 namespace {
 
@@ -137,7 +135,8 @@ void adapter_state_changed_callback(bt_state_t /* state */) {}
 void adapter_properties_callback(bt_status_t /* status */, int /* num_properties */,
                                  bt_property_t* /* properties */) {}
 void remote_device_properties_callback(bt_status_t /* status */, RawAddress* /* bd_addr */,
-                                       int /* num_properties */, bt_property_t* /* properties */) {}
+                                       uint8_t /* address_type */, int /* num_properties */,
+                                       bt_property_t* /* properties */) {}
 void device_found_callback(int /* num_properties */, bt_property_t* /* properties */) {}
 void discovery_state_changed_callback(bt_discovery_state_t /* state */) {}
 void pin_request_callback(RawAddress* /* remote_bd_addr */, bt_bdname_t* /* bd_name */,
@@ -151,9 +150,8 @@ void address_consolidate_callback(RawAddress* /* main_bd_addr */,
 void le_address_associate_callback(RawAddress* /* main_bd_addr */,
                                    RawAddress* /* secondary_bd_addr */,
                                    uint8_t /* identity_address_type */) {}
-void acl_state_changed_callback(bt_status_t /* status */, RawAddress* /* remote_bd_addr */,
-                                bt_acl_state_t /* state */, int /* transport_link_type */,
-                                bt_hci_error_code_t /* hci_reason */,
+void acl_state_changed_callback(bt_status_t /* status */, tAclLinkSpec& /* link_spec */,
+                                bt_acl_state_t /* state */, bt_hci_error_code_t /* hci_reason */,
                                 bt_conn_direction_t /* direction */, uint16_t /* acl_handle */) {}
 void link_quality_report_callback(uint64_t /* timestamp */, int /* report_id */, int /* rssi */,
                                   int /* snr */, int /* retransmission_count */,
@@ -171,7 +169,7 @@ void generate_local_oob_data_callback(tBT_TRANSPORT /* transport */, bt_oob_data
 void switch_buffer_size_callback(bool /* is_low_latency_buffer_size */) {}
 void switch_codec_callback(bool /* is_low_latency_buffer_size */) {}
 void le_rand_callback(uint64_t /* random */) {}
-void key_missing_callback(const RawAddress /* bd_addr */) {}
+void key_missing_callback(const RawAddress /* bd_addr */, uint8_t /* reason */) {}
 #undef TESTCB
 
 bt_callbacks_t callbacks = {
@@ -208,7 +206,7 @@ protected:
   void SetUp() override {
     callback_map_.clear();
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+            std::make_unique<bluetooth::hci::testing::MockController>();
     bluetooth::testing::set_hal_cbacks(&callbacks);
     auto promise = std::promise<void>();
     auto future = promise.get_future();
@@ -244,11 +242,15 @@ class BtifCoreWithConnectionTest : public BtifCoreWithControllerTest {
 protected:
   void SetUp() override {
     BtifCoreWithControllerTest::SetUp();
-    bluetooth::legacy::testing::bta_dm_acl_up(kRawAddress, BT_TRANSPORT_AUTO, kHciHandle);
+    tAclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = kRawAddress},
+                              .transport = BT_TRANSPORT_AUTO};
+    bluetooth::legacy::testing::bta_dm_acl_up(link_spec, kHciHandle);
   }
 
   void TearDown() override {
-    bluetooth::legacy::testing::bta_dm_acl_down(kRawAddress, BT_TRANSPORT_AUTO);
+    tAclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = kRawAddress},
+                              .transport = BT_TRANSPORT_AUTO};
+    bluetooth::legacy::testing::bta_dm_acl_down(link_spec);
     BtifCoreWithControllerTest::TearDown();
   }
 };
@@ -319,6 +321,11 @@ TEST_F(BtifUtilsTest, dump_property_type) {
           std::make_pair(BT_PROPERTY_ADAPTER_BONDED_DEVICES, "BT_PROPERTY_ADAPTER_BONDED_DEVICES"),
           std::make_pair(BT_PROPERTY_REMOTE_FRIENDLY_NAME, "BT_PROPERTY_REMOTE_FRIENDLY_NAME"),
           std::make_pair(BT_PROPERTY_UUIDS_LE, "BT_PROPERTY_UUIDS_LE"),
+          std::make_pair(BT_PROPERTY_DISCOVERY_RESULT_TYPE, "BT_PROPERTY_DISCOVERY_RESULT_TYPE"),
+          std::make_pair(BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE,
+                         "BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE"),
+          std::make_pair(BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA,
+                         "BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA"),
   };
   for (const auto& type : types) {
     EXPECT_TRUE(dump_property_type(type.first).starts_with(type.second));

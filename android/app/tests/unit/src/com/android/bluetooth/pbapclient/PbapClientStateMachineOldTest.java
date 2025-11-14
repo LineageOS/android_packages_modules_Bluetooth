@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.pbapclient;
 
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
@@ -25,15 +26,14 @@ import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 import android.app.BroadcastOptions;
 import android.bluetooth.BluetoothDevice;
-import android.content.Context;
 import android.content.Intent;
 import android.os.HandlerThread;
 import android.os.UserManager;
@@ -43,6 +43,7 @@ import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.After;
 import org.junit.Before;
@@ -61,6 +62,7 @@ public class PbapClientStateMachineOldTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AdapterService mAdapterService;
     @Mock private PbapClientService mMockPbapClientService;
     @Mock private PbapClientConnectionHandler mMockHandler;
 
@@ -74,7 +76,7 @@ public class PbapClientStateMachineOldTest {
 
     @Before
     public void setUp() {
-        mockGetSystemService(mMockPbapClientService, Context.USER_SERVICE, UserManager.class);
+        mockGetSystemService(mMockPbapClientService, UserManager.class);
 
         doCallRealMethod().when(mMockHandler).obtainMessage(anyInt(), any());
         doCallRealMethod().when(mMockHandler).obtainMessage(anyInt());
@@ -84,7 +86,11 @@ public class PbapClientStateMachineOldTest {
 
         mPbapClientStateMachine =
                 new PbapClientStateMachineOld(
-                        mMockPbapClientService, mDevice, mMockHandler, mHandlerThread);
+                        mAdapterService,
+                        mMockPbapClientService,
+                        mDevice,
+                        mMockHandler,
+                        mHandlerThread);
         mPbapClientStateMachine.start();
     }
 

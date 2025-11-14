@@ -24,13 +24,12 @@
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/btm/security_device_record.h"
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/btm_client_interface.h"
 
 using namespace bluetooth;
-
-extern tBTM_CB btm_cb;
 
 bool BTM_SecAddRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback) {
   int i;
@@ -356,8 +355,7 @@ void bluetooth::stack::rnr::Impl::btm_process_remote_name(const RawAddress* bda,
   ::btm_process_remote_name(bda, bdn, evt_len, hci_status);
 }
 
-bluetooth::stack::rnr::Impl default_interface;
-
-bluetooth::stack::rnr::Interface* interface_ = &default_interface;
+static bluetooth::stack::rnr::Impl default_interface;
+static bluetooth::stack::rnr::Interface* interface_ = &default_interface;
 
 bluetooth::stack::rnr::Interface& get_stack_rnr_interface() { return *interface_; }

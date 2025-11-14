@@ -44,6 +44,7 @@
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/l2cdefs.h"
 #include "types/raw_address.h"
 
@@ -683,6 +684,14 @@ static void on_l2cap_connect(tBTA_JV* p_data, uint32_t id) {
         on_srv_l2cap_psm_connect_offload_l(psm_open, sock);
       }
     }
+    // Update data length to get better throughput on CoC
+    if (com::android::bluetooth::flags::set_max_data_length_for_lecoc()) {
+      if (get_btm_client_interface().ble.BTM_SetBleDataLength(
+                  le_open->rem_bda, BTM_BLE_DATA_SIZE_MAX,
+                  /*is_privileged_client*/ false) != tBTM_STATUS::BTM_SUCCESS) {
+        log::info("Unable to set ble data length:{}", BTM_BLE_DATA_SIZE_MAX);
+      }
+    }
   } else {
     log::error("Unable to open socket after receiving connection socket_id:{}", sock->id);
     btsock_l2cap_free_l(sock, BTSOCK_ERROR_OPEN_FAILURE);
@@ -708,19 +717,14 @@ static void on_l2cap_close(tBTA_JV_L2CAP_CLOSE* p_close, uint32_t id) {
           SOCKET_CONNECTION_STATE_DISCONNECTING,
           sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->app_uid, sock->channel,
           0, 0, sock->name, 0, BTSOCK_ERROR_NONE, sock->data_path);
-  if (com::android::bluetooth::flags::donot_push_error_code_to_app_when_connected()) {
-    if (!sock->connected) {
-      if (!send_app_err_code(sock, p_close->reason)) {
-        log::error("Unable to send l2cap socket to application socket_id:{}", sock->id);
-      }
-    } else {
-      log::info("Don't push error for already connected socket:{}", sock->id);
-    }
-  } else {
+  if (!sock->connected) {
     if (!send_app_err_code(sock, p_close->reason)) {
       log::error("Unable to send l2cap socket to application socket_id:{}", sock->id);
     }
+  } else {
+    log::info("Don't push error for already connected socket:{}", sock->id);
   }
+
   // TODO: This does not seem to be called...
   // I'm not sure if this will be called for non-server sockets?
   if (sock->server) {
@@ -1079,7 +1083,7 @@ static bool flush_incoming_que_on_wr_signal_l(l2cap_socket* sock) {
   return false;
 }
 
-inline BT_HDR* malloc_l2cap_buf(uint16_t len) {
+static BT_HDR* malloc_l2cap_buf(uint16_t len) {
   // We need FCS only for L2CAP_FCR_ERTM_MODE, but it's just 2 bytes so it's ok
   BT_HDR* msg = (BT_HDR*)osi_malloc(BT_HDR_SIZE + L2CAP_MIN_OFFSET + len + L2CAP_FCS_LENGTH);
   msg->offset = L2CAP_MIN_OFFSET;
@@ -1087,7 +1091,7 @@ inline BT_HDR* malloc_l2cap_buf(uint16_t len) {
   return msg;
 }
 
-inline uint8_t* get_l2cap_sdu_start_ptr(BT_HDR* msg) {
+static uint8_t* get_l2cap_sdu_start_ptr(BT_HDR* msg) {
   return (uint8_t*)(msg) + BT_HDR_SIZE + msg->offset;
 }
 
@@ -1440,10 +1444,13 @@ static void on_cl_l2cap_psm_connect_offload_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_
   if (!bluetooth::shim::GetLppOffloadManager()->SocketOpened(socket_context)) {
     log::warn("L2CAP socket opened failed. Disconnect the incoming connection.");
     btsock_l2cap_free_l(sock, BTSOCK_ERROR_OFFLOAD_HAL_OPEN_FAILURE);
-  } else {
-    log::info(
-            "L2CAP socket opened successful. Will send connect signal in "
-            "on_btsocket_l2cap_opened_complete() asynchronously.");
+    return;
+  }
+  log::info(
+          "L2CAP socket opened successful. Will send connect signal in "
+          "on_btsocket_l2cap_opened_complete() asynchronously.");
+  if (com::android::bluetooth::flags::monitor_read_flag_on_offloaded_socket()) {
+    btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, sock->id);
   }
 }
 
@@ -1509,6 +1516,9 @@ static void on_srv_l2cap_psm_connect_offload_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap
     btsock_l2cap_free_l(accept_rs, BTSOCK_ERROR_OFFLOAD_HAL_OPEN_FAILURE);
   } else {
     log::info("L2CAP socket opened successful. Will send connect signal in async callback.");
+    if (com::android::bluetooth::flags::monitor_read_flag_on_offloaded_socket()) {
+      btsock_thread_add_fd(pth, accept_rs->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, accept_rs->id);
+    }
   }
   // start monitor the socket
   btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_EXCEPTION, sock->id);

@@ -61,7 +61,7 @@ public:
   virtual void OnGroupVolumeStateChanged(int group_id, uint8_t volume, bool mute,
                                          bool isAutonomous) = 0;
 
-  virtual void OnDeviceAvailable(const RawAddress& address, uint8_t num_offset,
+  virtual void OnDeviceAvailable(const RawAddress& address, int group_id, uint8_t num_offset,
                                  uint8_t num_input) = 0;
 
   /* Callbacks for Volume Offset Control Service (VOCS) - Extended Audio Outputs

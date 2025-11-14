@@ -31,6 +31,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSap;
 import android.bluetooth.BluetoothServerSocket;
@@ -52,7 +53,7 @@ import android.util.Log;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -60,7 +61,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SapService extends ProfileService implements AdapterService.BluetoothStateCallback {
+public class SapService extends ConnectableProfile
+        implements AdapterService.BluetoothStateCallback {
     private static final String TAG = SapService.class.getSimpleName();
 
     private static final String SDP_SAP_SERVICE_NAME = "SIM Access";
@@ -96,7 +98,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
             "com.android.bluetooth.sap.USER_CONFIRM_TIMEOUT";
     private static final int USER_CONFIRM_TIMEOUT_VALUE = 25000;
 
-    private final AdapterService mAdapterService;
+    private final BluetoothAdapter mAdapter;
 
     private PowerManager.WakeLock mWakeLock = null;
     private SocketAcceptThread mAcceptThread = null;
@@ -112,15 +114,13 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
     private boolean mRemoveTimeoutMsg = false;
     private boolean mIsWaitingAuthorization = false;
 
-    private static SapService sSapService;
-
     private static final ParcelUuid[] SAP_UUIDS = {
         BluetoothUuid.SAP,
     };
 
     public SapService(AdapterService adapterService) {
-        super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
+        super(BluetoothProfile.SAP, requireNonNull(adapterService));
+        mAdapter = obtainSystemService(BluetoothManager.class).getAdapter();
         BluetoothSap.invalidateBluetoothGetConnectionStateCache();
 
         IntentFilter filter = new IntentFilter();
@@ -133,7 +133,6 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
         mAdapterService.registerBluetoothStateCallback(getMainExecutor(), this);
         // start RFCOMM listener
         mSessionStatusHandler.sendMessage(mSessionStatusHandler.obtainMessage(START_LISTENER));
-        setSapService(this);
     }
 
     public static boolean isEnabled() {
@@ -189,11 +188,8 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
                 // TODO: Consider reusing the mServerSocket - it is indented to be reused
                 //       for multiple connections.
                 mServerSocket =
-                        BluetoothAdapter.getDefaultAdapter()
-                                .listenUsingRfcommOn(
-                                        BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP,
-                                        true,
-                                        true);
+                        mAdapter.listenUsingRfcommOn(
+                                BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP, true, true);
                 removeSdpRecord();
                 mSdpHandle =
                         SdpManagerNativeInterface.getInstance()
@@ -295,7 +291,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
 
         // acquire the wakeLock before start SAP transaction thread
         if (mWakeLock == null) {
-            PowerManager pm = getSystemService(PowerManager.class);
+            PowerManager pm = obtainSystemService(PowerManager.class);
             mWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "StartingSapTransaction");
             mWakeLock.setReferenceCounted(false);
             mWakeLock.acquire();
@@ -305,7 +301,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
         mSapServer =
                 new SapServer(
                         mSessionStatusHandler,
-                        this,
+                        mAdapterService,
                         mConnSocket.getInputStream(),
                         mConnSocket.getOutputStream());
         mSapServer.start();
@@ -386,7 +382,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
                         break;
                     }
 
-                    sRemoteDeviceName = Utils.getName(mRemoteDevice);
+                    sRemoteDeviceName = mAdapterService.getRemoteName(mRemoteDevice);
                     // In case getRemoteName failed and return null
                     if (TextUtils.isEmpty(sRemoteDeviceName)) {
                         sRemoteDeviceName = getString(R.string.defaultname);
@@ -488,7 +484,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
                         case MSG_ACQUIRE_WAKE_LOCK:
                             Log.v(TAG, "Acquire Wake Lock request message");
                             if (mWakeLock == null) {
-                                PowerManager pm = getSystemService(PowerManager.class);
+                                PowerManager pm = obtainSystemService(PowerManager.class);
                                 mWakeLock =
                                         pm.newWakeLock(
                                                 PowerManager.PARTIAL_WAKE_LOCK,
@@ -536,7 +532,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
             int prevState = mState;
             mState = state;
             mAdapterService.updateProfileConnectionAdapterProperties(
-                    mRemoteDevice, BluetoothProfile.SAP, mState, prevState);
+                    mRemoteDevice, mProfileId, mState, prevState);
 
             BluetoothSap.invalidateBluetoothGetConnectionStateCache();
             Intent intent = new Intent(BluetoothSap.ACTION_CONNECTION_STATE_CHANGED);
@@ -559,6 +555,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
         return sRemoteDeviceName;
     }
 
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         boolean result = false;
         synchronized (SapService.this) {
@@ -608,6 +605,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
         return deviceList;
     }
 
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         synchronized (this) {
             if (getState() == BluetoothSap.STATE_CONNECTED
@@ -634,36 +632,16 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
      * @return true if connectionPolicy is set, false on error
      */
     @RequiresPermission(BLUETOOTH_PRIVILEGED)
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         enforceCallingOrSelfPermission(
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
-        mAdapterService
-                .getDatabase()
-                .setProfileConnectionPolicy(device, BluetoothProfile.SAP, connectionPolicy);
+        mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
         if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
             disconnect(device);
         }
         return true;
-    }
-
-    /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    @RequiresPermission(BLUETOOTH_PRIVILEGED)
-    public int getConnectionPolicy(BluetoothDevice device) {
-        enforceCallingOrSelfPermission(
-                BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
-        return mAdapterService
-                .getDatabase()
-                .getProfileConnectionPolicy(device, BluetoothProfile.SAP);
     }
 
     @Override
@@ -673,9 +651,8 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup Sap Service");
+        Log.i(TAG, "cleanup()");
 
-        setSapService(null);
         unregisterReceiver(mSapReceiver);
         mAdapterService.unregisterBluetoothStateCallback(this);
         setState(BluetoothSap.STATE_DISCONNECTED, BluetoothSap.RESULT_CANCELED);
@@ -700,26 +677,6 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
         }
     }
 
-    /**
-     * @return current instance of {@link SapService}
-     */
-    public static synchronized SapService getSapService() {
-        if (sSapService == null) {
-            Log.w(TAG, "getSapService(): service is null");
-            return null;
-        }
-        if (!sSapService.isAvailable()) {
-            Log.w(TAG, "getSapService(): service is not available");
-            return null;
-        }
-        return sSapService;
-    }
-
-    private static synchronized void setSapService(SapService instance) {
-        Log.d(TAG, "setSapService(): set to: " + instance);
-        sSapService = instance;
-    }
-
     private void setUserTimeoutAlarm() {
         Log.d(TAG, "setUserTimeOutAlarm()");
         cancelUserTimeoutAlarm();
@@ -736,7 +693,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
     private void cancelUserTimeoutAlarm() {
         Log.d(TAG, "cancelUserTimeOutAlarm()");
         if (mAlarmManager == null) {
-            mAlarmManager = this.getSystemService(AlarmManager.class);
+            mAlarmManager = obtainSystemService(AlarmManager.class);
         }
         if (mRemoveTimeoutMsg) {
             Intent timeoutIntent = new Intent(USER_CONFIRM_TIMEOUT_ACTION);

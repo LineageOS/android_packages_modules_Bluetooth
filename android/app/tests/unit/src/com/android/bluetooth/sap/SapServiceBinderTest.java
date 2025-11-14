@@ -45,16 +45,15 @@ public class SapServiceBinderTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private SapService mService;
 
-    private AttributionSource mAttributionSource;
     private SapServiceBinder mBinder;
 
     @Before
     public void setUp() throws Exception {
         when(mService.isAvailable()).thenReturn(true);
         mBinder = new SapServiceBinder(mService);
-        mAttributionSource = new AttributionSource.Builder(1).build();
     }
 
     @Test

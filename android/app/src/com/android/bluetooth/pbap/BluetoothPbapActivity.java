@@ -18,7 +18,6 @@ package com.android.bluetooth.pbap;
 
 import static android.view.WindowManager.LayoutParams.SYSTEM_FLAG_HIDE_NON_SYSTEM_OVERLAY_WINDOWS;
 
-import android.bluetooth.AlertActivity;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
@@ -43,6 +42,7 @@ import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+import com.android.bluetooth.util.AlertActivity;
 import com.android.internal.annotations.VisibleForTesting;
 
 /**
@@ -137,18 +137,15 @@ public class BluetoothPbapActivity extends AlertActivity
     }
 
     private String createDisplayText(final int id) {
-        switch (id) {
-            case DIALOG_YES_NO_AUTH:
-                String mMessage2 = getString(R.string.pbap_session_key_dialog_title, mDevice);
-                return mMessage2;
-            default:
-                return null;
-        }
+        return switch (id) {
+            case DIALOG_YES_NO_AUTH -> getString(R.string.pbap_session_key_dialog_title, mDevice);
+            default -> null;
+        };
     }
 
     private View createView(final int id) {
-        switch (id) {
-            case DIALOG_YES_NO_AUTH:
+        return switch (id) {
+            case DIALOG_YES_NO_AUTH -> {
                 mView = getLayoutInflater().inflate(R.layout.auth, null);
                 mMessageView = (TextView) mView.findViewById(R.id.message);
                 mMessageView.setText(createDisplayText(id));
@@ -156,10 +153,10 @@ public class BluetoothPbapActivity extends AlertActivity
                 mKeyView.addTextChangedListener(this);
                 mKeyView.setFilters(
                         new InputFilter[] {new LengthFilter(BLUETOOTH_OBEX_AUTHKEY_MAX_LENGTH)});
-                return mView;
-            default:
-                return null;
-        }
+                yield mView;
+            }
+            default -> null;
+        };
     }
 
     @VisibleForTesting
@@ -198,7 +195,7 @@ public class BluetoothPbapActivity extends AlertActivity
         if (extraName != null) {
             intent.putExtra(extraName, extraValue);
         }
-        sendBroadcast(intent);
+        BluetoothMethodProxy.getInstance().contextSendBroadcast(this, intent);
     }
 
     @VisibleForTesting

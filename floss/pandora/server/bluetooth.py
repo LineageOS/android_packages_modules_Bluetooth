@@ -65,14 +65,17 @@ class Bluetooth(object):
         # DBUS clients
         self.manager_client = manager_client.FlossManagerClient(self.bus)
         self.adapter_client = adapter_client.FlossAdapterClient(self.bus, self.DEFAULT_ADAPTER)
-        self.advertising_client = advertising_client.FlossAdvertisingClient(self.bus, self.DEFAULT_ADAPTER)
+        self.advertising_client = advertising_client.FlossAdvertisingClient(
+            self.bus, self.DEFAULT_ADAPTER)
         self.scanner_client = scanner_client.FlossScannerClient(self.bus, self.DEFAULT_ADAPTER)
         self.qa_client = qa_client.FlossQAClient(self.bus, self.DEFAULT_ADAPTER)
         self.media_client = media_client.FlossMediaClient(self.bus, self.DEFAULT_ADAPTER)
         self.gatt_client = gatt_client.FlossGattClient(self.bus, self.DEFAULT_ADAPTER)
         self.gatt_server = gatt_server.FlossGattServer(self.bus, self.DEFAULT_ADAPTER)
-        self.socket_manager = socket_manager.FlossSocketManagerClient(self.bus, self.DEFAULT_ADAPTER)
-        self.telephony_client = telephony_client.FlossTelephonyClient(self.bus, self.DEFAULT_ADAPTER)
+        self.socket_manager = socket_manager.FlossSocketManagerClient(self.bus,
+                                                                      self.DEFAULT_ADAPTER)
+        self.telephony_client = telephony_client.FlossTelephonyClient(self.bus,
+                                                                      self.DEFAULT_ADAPTER)
 
     def __del__(self):
         if not self.is_clean:
@@ -96,7 +99,9 @@ class Bluetooth(object):
 
         self.mainloop_quit = threading.Event()
         self.mainloop_ready = threading.Event()
-        self.thread = threading.Thread(name=utils.GLIB_THREAD_NAME, target=Bluetooth.mainloop_thread, args=(self,))
+        self.thread = threading.Thread(name=utils.GLIB_THREAD_NAME,
+                                       target=Bluetooth.mainloop_thread,
+                                       args=(self,))
         self.thread.start()
 
         # Wait for mainloop to be ready
@@ -198,7 +203,8 @@ class Bluetooth(object):
             self.manager_client.start(default_adapter)
 
             self.adapter_client = adapter_client.FlossAdapterClient(self.bus, default_adapter)
-            self.advertising_client = advertising_client.FlossAdvertisingClient(self.bus, default_adapter)
+            self.advertising_client = advertising_client.FlossAdvertisingClient(
+                self.bus, default_adapter)
             self.scanner_client = scanner_client.FlossScannerClient(self.bus, default_adapter)
             self.qa_client = qa_client.FlossQAClient(self.bus, default_adapter)
             self.media_client = media_client.FlossMediaClient(self.bus, default_adapter)
@@ -208,11 +214,11 @@ class Bluetooth(object):
             self.telephony_client = telephony_client.FlossTelephonyClient(self.bus, default_adapter)
 
             try:
-                utils.poll_for_condition(
-                    condition=lambda: self.is_bluetoothd_proxy_valid() and self.adapter_client.get_address(),
-                    desc='Wait for adapter start',
-                    sleep_interval=self.ADAPTER_CLIENT_POLL_INTERVAL,
-                    timeout=self.ADAPTER_DAEMON_TIMEOUT_SEC)
+                utils.poll_for_condition(condition=lambda: self.is_bluetoothd_proxy_valid() and self
+                                         .adapter_client.get_address(),
+                                         desc='Wait for adapter start',
+                                         sleep_interval=self.ADAPTER_CLIENT_POLL_INTERVAL,
+                                         timeout=self.ADAPTER_DAEMON_TIMEOUT_SEC)
             except TimeoutError as e:
                 logging.error('timeout: error starting adapter daemon: %s', e)
                 logging.error(traceback.format_exc())
@@ -292,17 +298,20 @@ class Bluetooth(object):
             return True
         return self.adapter_client.stop_discovery()
 
-    def start_advertising_set(self, parameters, advertise_data, scan_response, periodic_parameters, periodic_data,
-                              duration, max_ext_adv_events):
+    def start_advertising_set(self, parameters, advertise_data, scan_response, periodic_parameters,
+                              periodic_data, duration, max_ext_adv_events):
         parameters = self.advertising_client.make_dbus_advertising_set_parameters(parameters)
         advertise_data = self.advertising_client.make_dbus_advertise_data(advertise_data)
-        scan_response = utils.make_kv_optional_value(self.advertising_client.make_dbus_advertise_data(scan_response))
+        scan_response = utils.make_kv_optional_value(
+            self.advertising_client.make_dbus_advertise_data(scan_response))
         periodic_parameters = utils.make_kv_optional_value(
             self.advertising_client.make_dbus_periodic_advertising_parameters(periodic_parameters))
-        periodic_data = utils.make_kv_optional_value(self.advertising_client.make_dbus_advertise_data(periodic_data))
+        periodic_data = utils.make_kv_optional_value(
+            self.advertising_client.make_dbus_advertise_data(periodic_data))
 
-        return self.advertising_client.start_advertising_set(parameters, advertise_data, scan_response,
-                                                             periodic_parameters, periodic_data, duration,
+        return self.advertising_client.start_advertising_set(parameters, advertise_data,
+                                                             scan_response, periodic_parameters,
+                                                             periodic_data, duration,
                                                              max_ext_adv_events)
 
     def stop_advertising_set(self, advertiser_id):
@@ -313,7 +322,8 @@ class Bluetooth(object):
 
     def start_scan(self, scanner_id, settings=None, scan_filter=None):
         if settings is None:
-            settings = self.scanner_client.make_dbus_scan_settings(self.SCANNER_INTERVAL, self.SCANNER_WINDOW,
+            settings = self.scanner_client.make_dbus_scan_settings(self.SCANNER_INTERVAL,
+                                                                   self.SCANNER_WINDOW,
                                                                    self.SCANNER_SCAN_TYPE)
         return self.scanner_client.start_scan(scanner_id, settings, scan_filter)
 
@@ -405,7 +415,8 @@ class Bluetooth(object):
         return self.qa_client.set_connectable(mode)
 
     def read_using_characteristic_uuid(self, address, uuid, start_handle, end_handle, auth_req):
-        return self.gatt_client.read_using_characteristic_uuid(address, uuid, start_handle, end_handle, auth_req)
+        return self.gatt_client.read_using_characteristic_uuid(address, uuid, start_handle,
+                                                               end_handle, auth_req)
 
     def register_for_notification(self, address, handle, enable):
         return self.gatt_client.register_for_notification(address, handle, enable)

@@ -23,8 +23,7 @@ import android.net.Uri;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
-import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -56,6 +55,7 @@ public class BrowseTree {
     @VisibleForTesting
     final HashMap<String, BrowseNode> mBrowseMap = new HashMap<String, BrowseNode>();
 
+    private final AdapterService mAdapterService;
     private BrowseNode mCurrentBrowseNode;
     private BrowseNode mCurrentBrowsedPlayer;
     private BrowseNode mCurrentAddressedPlayer;
@@ -68,7 +68,8 @@ public class BrowseTree {
     private final HashMap<String, ArrayList<String>> mCoverArtMap =
             new HashMap<String, ArrayList<String>>();
 
-    BrowseTree(BluetoothDevice device) {
+    BrowseTree(AdapterService adapterService, BluetoothDevice device) {
+        mAdapterService = adapterService;
         if (device == null) {
             mRootNode =
                     new BrowseNode(
@@ -87,7 +88,7 @@ public class BrowseTree {
                                             ROOT
                                                     + device.getAddress().toString()
                                                     + UUID.randomUUID().toString())
-                                    .setTitle(Utils.getName(device))
+                                    .setTitle(mAdapterService.getRemoteName(device))
                                     .setBrowsable(true)
                                     .build());
         }
@@ -177,8 +178,8 @@ public class BrowseTree {
             AvrcpItem.Builder aid = new AvrcpItem.Builder();
             aid.setDevice(device);
             aid.setUuid(ROOT + device.getAddress().toString() + UUID.randomUUID().toString());
-            aid.setDisplayableName(Utils.getName(device));
-            aid.setTitle(Utils.getName(device));
+            aid.setDisplayableName(mAdapterService.getRemoteName(device));
+            aid.setTitle(mAdapterService.getRemoteName(device));
             aid.setBrowsable(true);
             mItem = aid.build();
         }
@@ -297,9 +298,7 @@ public class BrowseTree {
             mCached = cached;
             if (!cached) {
                 for (BrowseNode child : mChildren) {
-                    if (Flags.uncachePlayerWhenBrowsedPlayerChanges()) {
-                        child.setCached(false);
-                    }
+                    child.setCached(false);
                     mBrowseMap.remove(child.getID());
                     indicateCoverArtUnused(child.getID(), child.getCoverArtUuid());
                 }

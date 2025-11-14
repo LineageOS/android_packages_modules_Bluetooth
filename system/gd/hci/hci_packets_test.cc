@@ -103,7 +103,7 @@ TEST(HciPacketsTest, testWriteExtendedInquiryResponse) {
   }
 }
 
-//  TODO: Revisit reflection tests for EIR
+// TODO: Revisit reflection tests for EIR
 // DEFINE_AND_INSTANTIATE_WriteExtendedInquiryResponseReflectionTest(pixel_3_xl_write_extended_inquiry_response,
 // pixel_3_xl_write_extended_inquiry_response_no_uuids);
 

@@ -34,7 +34,6 @@ struct formatter<audio_content_type_t> : enum_formatter<audio_content_type_t> {}
 
 namespace {
 
-using ::android::hardware::bluetooth::audio::V2_0::CodecType;
 using ::bluetooth::audio::hidl::AudioConfiguration;
 using ::bluetooth::audio::hidl::BitsPerSample;
 using ::bluetooth::audio::hidl::BluetoothAudioCtrlAck;

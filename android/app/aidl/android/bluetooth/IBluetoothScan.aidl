@@ -40,7 +40,7 @@ interface IBluetoothScan {
     void startScan(in int scannerId, in ScanSettings settings, in List<ScanFilter> filters,
                    in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
-    void startScanForIntent(in PendingIntent intent, in ScanSettings settings, in List<ScanFilter> filters,
+    void registerPiAndStartScan(in PendingIntent intent, in ScanSettings settings, in List<ScanFilter> filters,
                             in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
     void stopScan(in int scannerId, in AttributionSource attributionSource);

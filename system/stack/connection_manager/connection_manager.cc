@@ -22,18 +22,20 @@
 #include <base/functional/callback.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
+#include <bluetooth/metrics/os_metrics.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <map>
 #include <memory>
 #include <set>
 
 #include "gd/hci/acl_manager.h"
-#include "gd/hci/controller_interface.h"
+#include "gd/hci/controller.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/le_scanning_manager.h"
-#include "main/shim/metrics_api.h"
 #include "osi/include/alarm.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/include/advertise_data_parser.h"
@@ -73,11 +75,12 @@ static void alarm_set_closure(alarm_t* alarm, uint64_t interval_ms, base::OnceCl
 using unique_alarm_ptr = std::unique_ptr<alarm_t, decltype(&alarm_free)>;
 
 namespace {
-static void ACL_AcceptLeConnectionFrom(const tBLE_BD_ADDR& legacy_address_with_type,
-                                       bool is_direct) {
+static void ACL_AcceptLeConnectionFrom(const tBLE_BD_ADDR& legacy_address_with_type, bool is_direct,
+                                       bool prefer_relax_mode) {
   BTM_LogHistory(kBtmLogTagACL, legacy_address_with_type, "Allow connection from", "Le");
   bluetooth::shim::GetAclManager()->CreateLeConnection(
-          bluetooth::ToAddressWithTypeFromLegacy(legacy_address_with_type), is_direct);
+          bluetooth::ToAddressWithTypeFromLegacy(legacy_address_with_type), is_direct,
+          prefer_relax_mode);
 }
 
 static void ACL_IgnoreLeConnectionFrom(const tBLE_BD_ADDR& legacy_address_with_type) {
@@ -324,7 +327,7 @@ bool background_connect_add(uint8_t app_id, const RawAddress& address) {
         return false;
       }
 
-      ACL_AcceptLeConnectionFrom(BTM_Sec_GetAddressWithType(address), false);
+      ACL_AcceptLeConnectionFrom(BTM_Sec_GetAddressWithType(address), false, false);
 
       bgconn_dev[address].is_in_accept_list = true;
     }
@@ -386,7 +389,7 @@ bool background_connect_remove(uint8_t app_id, const RawAddress& address) {
         /* Keep using filtering */
         log::debug("Keep using target announcement filtering");
       } else if (!it->second.doing_bg_conn.empty()) {
-        ACL_AcceptLeConnectionFrom(BTM_Sec_GetAddressWithType(address), false);
+        ACL_AcceptLeConnectionFrom(BTM_Sec_GetAddressWithType(address), false, false);
         bgconn_dev[address].is_in_accept_list = true;
       }
     }
@@ -471,11 +474,12 @@ void reset(bool after_reset) {
 
 static void wl_direct_connect_timeout_cb(uint8_t app_id, const RawAddress& address) {
   log::debug("app_id={}, address={}", static_cast<int>(app_id), address);
-  on_connection_timed_out(app_id, address);
-
-  // TODO: this would free the timer, from within the timer callback, which is
-  // bad.
+  /* Clear internal direct connect state and make sure device is back on accept
+   * list if needed */
   direct_connect_remove(app_id, address, true);
+
+  // Notify others about timeout
+  on_connection_timed_out(app_id, address);
 }
 
 static void find_in_device_record(const RawAddress& bd_addr, tBLE_BD_ADDR* address_with_type) {
@@ -496,7 +500,8 @@ static void find_in_device_record(const RawAddress& bd_addr, tBLE_BD_ADDR* addre
   return;
 }
 
-bool direct_connect_add(uint8_t app_id, const RawAddress& address, tBLE_ADDR_TYPE addr_type) {
+bool direct_connect_add(uint8_t app_id, const RawAddress& address, tBLE_ADDR_TYPE addr_type,
+                        bool prefer_relax_mode) {
   tBLE_BD_ADDR address_with_type{
           .type = addr_type,
           .bda = address,
@@ -519,8 +524,12 @@ bool direct_connect_add(uint8_t app_id, const RawAddress& address, tBLE_ADDR_TYP
     // app already trying to connect to this particular device
     if (info.doing_direct_conn.count(app_id)) {
       log::info("attempt from app_id=0x{:x} to {} already in progress", app_id, address_with_type);
-      bluetooth::shim::LogMetricLeConnectionRejected(bluetooth::ToGdAddress(address));
-      return false;
+      if (com::android::bluetooth::flags::idempotent_direct_connect_add()) {
+        return true;
+      } else {
+        bluetooth::metrics::LogMetricLeConnectionRejected(address);
+        return false;
+      }
     }
 
     // This is to match existing GD connection manager behavior - if multiple apps try direct
@@ -546,12 +555,12 @@ bool direct_connect_add(uint8_t app_id, const RawAddress& address, tBLE_ADDR_TYP
       return false;
     }
 
-    ACL_AcceptLeConnectionFrom(address_with_type, true /* is_direct */);
+    ACL_AcceptLeConnectionFrom(address_with_type, true /* is_direct */, prefer_relax_mode);
     bgconn_dev[address].is_in_accept_list = true;
   } else {
     // if already in accept list, we should just bump parameters up for direct
     // connection. There is no API for that yet, so use API that's adding to accept list.
-    ACL_AcceptLeConnectionFrom(address_with_type, true /* is_direct */);
+    ACL_AcceptLeConnectionFrom(address_with_type, true /* is_direct */, prefer_relax_mode);
   }
 
   // Setup a timer
@@ -564,11 +573,12 @@ bool direct_connect_add(uint8_t app_id, const RawAddress& address, tBLE_ADDR_TYP
 }
 
 static void schedule_direct_connect_add(uint8_t app_id, const RawAddress& address) {
-  direct_connect_add(app_id, address);
+  direct_connect_add(app_id, address, false);
 }
 
 bool direct_connect_remove(uint8_t app_id, const RawAddress& address, bool connection_timeout) {
-  log::debug("app_id={}, address={}", static_cast<int>(app_id), address);
+  log::debug("app_id={}, address={}, connection_timeout={}", static_cast<int>(app_id), address,
+             connection_timeout);
   auto it = bgconn_dev.find(address);
   if (it == bgconn_dev.end()) {
     log::warn("unable to find entry to remove: {}", address);
@@ -588,14 +598,17 @@ bool direct_connect_remove(uint8_t app_id, const RawAddress& address, bool conne
   it->second.doing_direct_conn.erase(app_it);
 
   if (is_anyone_interested_to_use_accept_list(it)) {
+    log::debug("There is somebody interested in accept list for {}", address);
     if (connection_timeout) {
       /* In such case we need to add device back to allow list because, when connection timeout
        * out, the lower layer removes device from the allow list.
        */
-      ACL_AcceptLeConnectionFrom(BTM_Sec_GetAddressWithType(address), false /* is_direct */);
+      ACL_AcceptLeConnectionFrom(BTM_Sec_GetAddressWithType(address), false /* is_direct */, false);
     }
     return true;
   }
+
+  log::debug("Nobody interested to use accept list for {}", address);
 
   // no more apps interested - remove from acceptlist
   ACL_IgnoreLeConnectionFrom(BTM_Sec_GetAddressWithType(address));

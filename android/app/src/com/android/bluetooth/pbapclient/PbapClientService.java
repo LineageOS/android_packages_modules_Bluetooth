@@ -39,8 +39,8 @@ import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfpclient.HfpClientConnectionService;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
@@ -52,7 +52,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Provides Bluetooth Phone Book Access Profile Client profile. */
-public class PbapClientService extends ProfileService {
+public class PbapClientService extends ConnectableProfile {
     private static final String TAG = PbapClientService.class.getSimpleName();
 
     private static final String SERVICE_NAME = "Phonebook Access PCE";
@@ -64,16 +64,17 @@ public class PbapClientService extends ProfileService {
     // MAXIMUM_DEVICES set to 10 to prevent an excessive number of simultaneous devices.
     private static final int MAXIMUM_DEVICES = 10;
 
+    private static PbapClientService sPbapClientService;
+
     @VisibleForTesting
     final Map<BluetoothDevice, PbapClientStateMachineOld> mPbapClientStateMachineOldMap =
             new ConcurrentHashMap<>();
 
-    private static PbapClientService sPbapClientService;
     private final PbapClientContactsStorage mPbapClientContactsStorage;
     private final PbapClientAccountManager mPbapClientAccountManager;
-    private final DatabaseManager mDatabaseManager;
     private final Map<BluetoothDevice, PbapClientStateMachine> mPbapClientStateMachineMap;
     private final Handler mHandler;
+    private final Looper mStateMachinesLooper;
 
     private int mSdpHandle = -1;
 
@@ -114,19 +115,19 @@ public class PbapClientService extends ProfileService {
     }
 
     public PbapClientService(AdapterService adapterService) {
-        super(requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(adapterService.getDatabase());
+        super(BluetoothProfile.PBAP_CLIENT, requireNonNull(adapterService));
         mHandler = new Handler(Looper.getMainLooper());
+        mStateMachinesLooper = null;
 
         if (Flags.pbapClientStorageRefactor()) {
-            mPbapClientContactsStorage = new PbapClientContactsStorage(adapterService);
+            mPbapClientContactsStorage = new PbapClientContactsStorage(mAdapterService);
             mPbapClientAccountManager = null;
             mPbapClientStateMachineMap = new ConcurrentHashMap<>();
             mPbapClientContactsStorage.start();
         } else {
             mPbapClientAccountManager =
                     new PbapClientAccountManager(
-                            adapterService, new PbapClientAccountManagerCallback());
+                            mAdapterService, new PbapClientAccountManagerCallback());
             mPbapClientContactsStorage = null;
             mPbapClientStateMachineMap = null;
             mPbapClientAccountManager.start();
@@ -142,10 +143,13 @@ public class PbapClientService extends ProfileService {
     PbapClientService(
             AdapterService adapterService,
             PbapClientContactsStorage storage,
-            Map<BluetoothDevice, PbapClientStateMachine> deviceMap) {
-        super(requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(adapterService.getDatabase());
-        mHandler = new Handler(Looper.getMainLooper());
+            Map<BluetoothDevice, PbapClientStateMachine> deviceMap,
+            Looper looper) {
+        super(BluetoothProfile.PBAP_CLIENT, requireNonNull(adapterService));
+
+        // This is an override unique to this constructor which belongs to tests only
+        mHandler = new Handler(looper);
+        mStateMachinesLooper = looper;
 
         mPbapClientContactsStorage = storage;
         mPbapClientStateMachineMap = deviceMap;
@@ -153,7 +157,7 @@ public class PbapClientService extends ProfileService {
         // For compatibility with tests while we phase the old state machine out
         mPbapClientAccountManager =
                 new PbapClientAccountManager(
-                        adapterService, new PbapClientAccountManagerCallback());
+                        mAdapterService, new PbapClientAccountManagerCallback());
 
         setComponentAvailable(AUTHENTICATOR_SERVICE, true);
 
@@ -178,7 +182,7 @@ public class PbapClientService extends ProfileService {
 
     @Override
     public void cleanup() {
-        Log.i(TAG, "Cleanup PbapClient Service");
+        Log.i(TAG, "cleanup()");
 
         setPbapClientService(null);
         cleanUpSdpRecord();
@@ -270,12 +274,21 @@ public class PbapClientService extends ProfileService {
                     Log.w(TAG, "Cannot connect " + device + ", too many devices connected already");
                     return false;
                 }
+                var looper = mStateMachinesLooper;
+                if (looper == null) {
+                    final var stateMachineThread = new HandlerThread("PbapClientStateMachine");
+                    stateMachineThread.start();
+                    looper = stateMachineThread.getLooper();
+                }
                 stateMachine =
                         new PbapClientStateMachine(
+                                mAdapterService,
                                 device,
                                 mPbapClientContactsStorage,
                                 this,
-                                new PbapClientStateMachineCallback(device));
+                                looper,
+                                new PbapClientStateMachineCallback(device),
+                                null);
                 stateMachine.start();
                 stateMachine.connect();
                 mPbapClientStateMachineMap.put(device, stateMachine);
@@ -524,6 +537,7 @@ public class PbapClientService extends ProfileService {
      * @param device is the device with which we will connect to
      * @return true if we successfully begin the connection process, false otherwise
      */
+    @Override
     public boolean connect(BluetoothDevice device) {
         if (device == null) {
             throw new IllegalArgumentException("Null device");
@@ -542,7 +556,7 @@ public class PbapClientService extends ProfileService {
                     HandlerThread smThread = new HandlerThread("PbapClientStateMachineOld");
                     smThread.start();
 
-                    smOld = new PbapClientStateMachineOld(this, device, smThread);
+                    smOld = new PbapClientStateMachineOld(mAdapterService, this, device, smThread);
                     smOld.start();
                     mPbapClientStateMachineOldMap.put(device, smOld);
                     return true;
@@ -560,6 +574,7 @@ public class PbapClientService extends ProfileService {
      * @param device is the device with which we will disconnect the pbap client profile
      * @return true if we disconnected the pbap client profile, false otherwise
      */
+    @Override
     public boolean disconnect(BluetoothDevice device) {
         if (device == null) {
             throw new IllegalArgumentException("Null device");
@@ -642,6 +657,7 @@ public class PbapClientService extends ProfileService {
      *     BluetoothProfile#STATE_CONNECTED} if this profile is connected, or {@link
      *     BluetoothProfile#STATE_DISCONNECTING} if this profile is being disconnected
      */
+    @Override
     public int getConnectionState(BluetoothDevice device) {
         if (device == null) {
             throw new IllegalArgumentException("Null device");
@@ -678,14 +694,14 @@ public class PbapClientService extends ProfileService {
      * @param connectionPolicy is the connection policy to set to for this profile
      * @return true if connectionPolicy is set, false on error
      */
+    @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         if (device == null) {
             throw new IllegalArgumentException("Null device");
         }
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(
-                device, BluetoothProfile.PBAP_CLIENT, connectionPolicy)) {
+        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -696,32 +712,15 @@ public class PbapClientService extends ProfileService {
         return true;
     }
 
-    /**
-     * Get the connection policy of the profile.
-     *
-     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
-     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
-     *
-     * @param device Bluetooth device
-     * @return connection policy of the device
-     */
-    public int getConnectionPolicy(BluetoothDevice device) {
-        if (device == null) {
-            throw new IllegalArgumentException("Null device");
-        }
-        return mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.PBAP_CLIENT);
-    }
-
     // *********************************************************************************************
     // * Pre-Refactor Methods
     // *********************************************************************************************
 
     @VisibleForTesting
     PbapClientService(AdapterService adapterService, PbapClientAccountManager accountManager) {
-        super(requireNonNull(adapterService));
-        mDatabaseManager = requireNonNull(adapterService.getDatabase());
+        super(BluetoothProfile.PBAP_CLIENT, requireNonNull(adapterService));
         mHandler = new Handler(Looper.getMainLooper());
+        mStateMachinesLooper = null;
 
         if (Flags.pbapClientStorageRefactor()) {
             throw new IllegalStateException("pbapClientStorageRefactor: Invalid constructor call");

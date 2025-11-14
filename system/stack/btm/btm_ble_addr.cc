@@ -34,9 +34,10 @@
 #include "btm_dev.h"
 #include "btm_sec_cb.h"
 #include "crypto_toolbox/crypto_toolbox.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "main/shim/entry.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_ble_privacy.h"
@@ -44,8 +45,6 @@
 #include "types/raw_address.h"
 
 using namespace bluetooth;
-
-extern tBTM_CB btm_cb;
 
 /*******************************************************************************
  *  Utility functions for Random address resolving
@@ -98,7 +97,8 @@ static bool rpa_matches_irk(const RawAddress& rpa, const Octet16& irk) {
  *  Returns true is resolvable; false otherwise.
  */
 bool btm_ble_addr_resolvable(const RawAddress& rpa, tBTM_SEC_DEV_REC* p_dev_rec) {
-  if (!BTM_BLE_IS_RESOLVE_BDA(rpa)) {
+  if (p_dev_rec->ble.AddressType() == BLE_ADDR_PUBLIC ||
+      !BTM_BLE_IS_RESOLVE_BDA(rpa)) {
     return false;
   }
 

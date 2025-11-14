@@ -120,8 +120,11 @@
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"Koble til Bluetooth"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"Bluetooth er på i flymodus"</string>
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Hvis du lar Bluetooth være på, husker enheten dette til neste gang du bruker flymodus"</string>
-    <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetooth blir værende på"</string>
+    <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetooth er på"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Enheten husker at Bluetooth skal være på i flymodus. Slå av Bluetooth hvis du ikke vil at det skal være på."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Bluetooth forblir på i flymodus mens enheten er koblet til andre enheter."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Enheten har Bluetooth på i flymodus mens den er koblet til klokken."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Bluetooth beholdes på i flymodus mens du er koblet til en medieenhet."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wifi og Bluetooth holdes påslått"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Enheten husker at wifi og Bluetooth skal være på i flymodus. Slå av wifi og Bluetooth hvis du ikke vil at de skal være på."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth er slått på igjen"</string>

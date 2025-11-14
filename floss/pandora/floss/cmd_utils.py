@@ -220,7 +220,12 @@ def popen(args, stdin=None, stdout=TEE_TO_LOGS, stderr=TEE_TO_LOGS, env=None, ru
 
     # The lock is required for http://crbug.com/323843.
     with _popen_lock:
-        ps = subprocess.Popen(args, stdin=stdin, stdout=stdout, stderr=stderr, env=env, preexec_fn=preexec_fn)
+        ps = subprocess.Popen(args,
+                              stdin=stdin,
+                              stdout=stdout,
+                              stderr=stderr,
+                              env=env,
+                              preexec_fn=preexec_fn)
 
     logging.info('%spid is %d', prefix, ps.pid)
     ps.command_id = command_id

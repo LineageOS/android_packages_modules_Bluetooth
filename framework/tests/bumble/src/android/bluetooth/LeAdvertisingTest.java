@@ -57,12 +57,16 @@ public class LeAdvertisingTest {
     @Rule public final PandoraDevice mBumble = new PandoraDevice();
 
     @Test
-    @Ignore("b/343525982: Remove hidden api's dependencies to enable the test.")
+    @Ignore("b/343749428: Remove hidden api's dependencies to enable the test.")
     public void advertisingSet() throws Exception {
         Pair<String, Integer> addressPair = startAdvertising().join();
         ScanningResponse response = scanWithBumble(addressPair);
 
         Log.i(TAG, "scan response: " + response);
+        assertThat(response).isNotNull();
+
+        response = scanWithBumble(addressPair);
+        Log.i(TAG, "second scan response: " + response);
         assertThat(response).isNotNull();
     }
 
@@ -71,7 +75,7 @@ public class LeAdvertisingTest {
         String address = addressPair.first;
         int addressType = addressPair.second;
 
-        StreamObserverSpliterator<ScanningResponse> responseObserver =
+        StreamObserverSpliterator<ScanRequest, ScanningResponse> responseObserver =
                 new StreamObserverSpliterator<>();
         Deadline deadline = Deadline.after(TIMEOUT_ADVERTISING_MS, TimeUnit.MILLISECONDS);
         mBumble.host()
@@ -87,12 +91,13 @@ public class LeAdvertisingTest {
                                     : scanningResponse.getRandom());
 
             if (addr.equals(address)) {
+                responseObserver.cancel("Cancelling scan request");
                 return scanningResponse;
             }
         }
     }
 
-    private CompletableFuture<Pair<String, Integer>> startAdvertising() {
+    private static CompletableFuture<Pair<String, Integer>> startAdvertising() {
         CompletableFuture<Pair<String, Integer>> future =
                 new CompletableFuture<Pair<String, Integer>>();
 

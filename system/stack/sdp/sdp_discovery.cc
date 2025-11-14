@@ -648,6 +648,7 @@ static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
               "Attempted continuation or first time request with invalid discovery "
               "database");
       sdp_disconnect(p_ccb, tSDP_STATUS::SDP_INVALID_CONT_STATE);
+      osi_free(p_msg);
       return;
     }
 
@@ -673,6 +674,7 @@ static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
 
     if (base_bytes > bytes_left) {
       sdp_disconnect(p_ccb, tSDP_STATUS::SDP_INVALID_CONT_STATE);
+      osi_free(p_msg);
       return;
     }
 

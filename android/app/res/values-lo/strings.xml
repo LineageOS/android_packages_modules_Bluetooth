@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"ຫາກທ່ານເປີດ Bluetooth ປະໄວ້, ອຸປະກອນຂອງທ່ານຈະຈື່ວ່າຕ້ອງເປີດມັນໃນເທື່ອຕໍ່ໄປທີ່ທ່ານຢູ່ໃນໂໝດຢູ່ໃນຍົນ"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetooth ເປີດຢູ່"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"ອຸປະກອນຂອງທ່ານຈື່ວ່າຈະຕ້ອງເປີດ Bluetooth ປະໄວ້ໃນໂໝດຢູ່ໃນຍົນ. ປິດ Bluetooth ຫາກທ່ານບໍ່ຕ້ອງການໃຫ້ເປີດປະໄວ້."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Bluetooth ຈະເປີດໃນໂໝດຢູ່ໃນຍົນໃນລະຫວ່າງທີ່ເຊື່ອມຕໍ່ກັບອຸປະກອນອື່ນໆ."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"ອຸປະກອນຂອງທ່ານຈະເປີດ Bluetooth ໄວ້ໃນໂໝດຢູ່ໃນຍົນໃນລະຫວ່າງທີ່ເຊື່ອມຕໍ່ກັບໂມງຂອງທ່ານ."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Bluetooth ເປີດຢູ່ໃນໂໝດຢູ່ໃນຍົນໃນຂະນະທີ່ເຊື່ອມຕໍ່ກັບອຸ​ປະ​ກອນ​ມີເດຍ."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi ແລະ Bluetooth ຈະເປີດປະໄວ້"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"ອຸປະກອນຂອງທ່ານຈື່ວ່າຈະຕ້ອງເປີດ Wi-Fi ແລະ Bluetooth ປະໄວ້ໃນໂໝດຢູ່ໃນຍົນ. ປິດ Wi-Fi ແລະ Bluetooth ຫາກທ່ານບໍ່ຕ້ອງການໃຫ້ເປີດປະໄວ້."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"ເປີດ Bluetooth ໃໝ່ແລ້ວ"</string>

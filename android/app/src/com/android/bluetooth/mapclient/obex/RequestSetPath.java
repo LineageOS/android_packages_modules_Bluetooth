@@ -26,8 +26,6 @@ import java.io.IOException;
 class RequestSetPath extends Request {
 
     SetPathDir mDir;
-
-    ;
     String mName;
 
     RequestSetPath(String name) {
@@ -48,18 +46,13 @@ class RequestSetPath extends Request {
 
     @Override
     public void execute(ClientSession session) {
-        HeaderSet hs = null;
 
         try {
-            switch (mDir) {
-                case ROOT:
-                case DOWN:
-                    hs = session.setPath(mHeaderSet, false, false);
-                    break;
-                case UP:
-                    hs = session.setPath(mHeaderSet, true, false);
-                    break;
-            }
+            HeaderSet hs =
+                    switch (mDir) {
+                        case UP -> session.setPath(mHeaderSet, true, false);
+                        case ROOT, DOWN -> session.setPath(mHeaderSet, false, false);
+                    };
 
             mResponseCode = hs.getResponseCode();
         } catch (IOException e) {

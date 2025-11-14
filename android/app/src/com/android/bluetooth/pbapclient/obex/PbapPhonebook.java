@@ -59,12 +59,17 @@ public class PbapPhonebook {
     private final int mListStartOffset;
     private final List<VCardEntry> mCards = new ArrayList<VCardEntry>();
 
+    private int mNumContactsWithPhotoData = 0;
+
     class CardEntryHandler implements VCardEntryHandler {
         @Override
         public void onStart() {}
 
         @Override
         public void onEntryCreated(VCardEntry entry) {
+            if (entry.getPhotoList() != null && !entry.getPhotoList().isEmpty()) {
+                mNumContactsWithPhotoData += 1;
+            }
             mCards.add(entry);
         }
 
@@ -77,11 +82,7 @@ public class PbapPhonebook {
         mListStartOffset = 0;
     }
 
-    PbapPhonebook(
-            String phonebook,
-            byte format,
-            int listStartOffset,
-            InputStream inputStream)
+    PbapPhonebook(String phonebook, byte format, int listStartOffset, InputStream inputStream)
             throws IOException {
         if (format != FORMAT_VCARD_21 && format != FORMAT_VCARD_30) {
             throw new IllegalArgumentException("Unsupported vCard version.");
@@ -185,6 +186,15 @@ public class PbapPhonebook {
      */
     public int getCount() {
         return mCards.size();
+    }
+
+    /**
+     * Get the total number of contacts using photos in this phonebook
+     *
+     * @return an int representing the number of contacts using photos
+     */
+    public int getCountWithPhotoData() {
+        return mNumContactsWithPhotoData;
     }
 
     /**

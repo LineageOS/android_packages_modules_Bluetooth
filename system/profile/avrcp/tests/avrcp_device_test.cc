@@ -521,7 +521,7 @@ TEST_F(AvrcpDeviceTest, addressPlayerChangedBeforeInterim) {
   // we don't try to reject notifications that aren't registered.
   auto rejected_response = RejectBuilder::MakeBuilder(CommandPdu::REGISTER_NOTIFICATION,
                                                       Status::ADDRESSED_PLAYER_CHANGED);
-  EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(rejected_response)))).Times(4);
+  EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(rejected_response)))).Times(5);
 
   // Send the registration packet
   auto request =

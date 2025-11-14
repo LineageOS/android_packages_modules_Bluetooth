@@ -22,6 +22,8 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.NonNull;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -86,6 +88,7 @@ public class PbapStateMachine extends StateMachine {
     private static final int PBAP_OBEX_MAXIMUM_PACKET_SIZE = 8192;
 
     private final BluetoothPbapService mService;
+    private final AdapterService mAdapterService;
 
     private final WaitingForAuth mWaitingForAuth = new WaitingForAuth();
     private final Finished mFinished = new Finished();
@@ -99,9 +102,10 @@ public class PbapStateMachine extends StateMachine {
     private ServerSession mServerSession;
     private final int mNotificationId;
 
-    private PbapStateMachine(
+    PbapStateMachine(
             @NonNull BluetoothPbapService service,
             Looper looper,
+            AdapterService adapterService,
             @NonNull BluetoothDevice device,
             @NonNull BluetoothSocket connSocket,
             Handler pbapHandler,
@@ -113,6 +117,7 @@ public class PbapStateMachine extends StateMachine {
         setDbg(true);
 
         mService = service;
+        mAdapterService = requireNonNull(adapterService);
         mRemoteDevice = device;
         mServiceHandler = pbapHandler;
         mConnSocket = connSocket;
@@ -122,20 +127,8 @@ public class PbapStateMachine extends StateMachine {
         addState(mWaitingForAuth);
         addState(mConnected);
         setInitialState(mWaitingForAuth);
-    }
 
-    static PbapStateMachine make(
-            BluetoothPbapService service,
-            Looper looper,
-            BluetoothDevice device,
-            BluetoothSocket connSocket,
-            Handler pbapHandler,
-            int notificationId) {
-        PbapStateMachine stateMachine =
-                new PbapStateMachine(
-                        service, looper, device, connSocket, pbapHandler, notificationId);
-        stateMachine.start();
-        return stateMachine;
+        start();
     }
 
     BluetoothDevice getRemoteDevice() {
@@ -170,11 +163,8 @@ public class PbapStateMachine extends StateMachine {
         // Should not be called from enter() method
         private void broadcastConnectionState(BluetoothDevice device, int fromState, int toState) {
             stateLogD("broadcastConnectionState " + device + ": " + fromState + "->" + toState);
-            AdapterService adapterService = AdapterService.getAdapterService();
-            if (adapterService != null) {
-                adapterService.updateProfileConnectionAdapterProperties(
-                        device, BluetoothProfile.PBAP, toState, fromState);
-            }
+            mAdapterService.updateProfileConnectionAdapterProperties(
+                    device, BluetoothProfile.PBAP, toState, fromState);
 
             Intent intent = new Intent(BluetoothPbap.ACTION_CONNECTION_STATE_CHANGED);
             intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, fromState);
@@ -253,24 +243,22 @@ public class PbapStateMachine extends StateMachine {
         @Override
         public boolean processMessage(Message message) {
             switch (message.what) {
-                case REQUEST_PERMISSION:
-                    mService.checkOrGetPhonebookPermission(PbapStateMachine.this);
-                    break;
-                case AUTHORIZED:
-                    transitionTo(mConnected);
-                    break;
-                case REJECTED:
+                case REQUEST_PERMISSION ->
+                        mService.checkOrGetPhonebookPermission(PbapStateMachine.this);
+                case AUTHORIZED -> transitionTo(mConnected);
+                case REJECTED -> {
                     rejectConnection();
                     transitionTo(mFinished);
-                    break;
-                case DISCONNECT:
+                }
+                case DISCONNECT -> {
                     mServiceHandler.removeMessages(
                             BluetoothPbapService.USER_TIMEOUT, PbapStateMachine.this);
                     mServiceHandler
                             .obtainMessage(BluetoothPbapService.USER_TIMEOUT, PbapStateMachine.this)
                             .sendToTarget();
                     transitionTo(mFinished);
-                    break;
+                }
+                default -> {} // Nothing to do
             }
             return HANDLED;
         }
@@ -280,6 +268,7 @@ public class PbapStateMachine extends StateMachine {
                     new BluetoothPbapObexServer(mServiceHandler, mService, PbapStateMachine.this);
             BluetoothObexTransport transport =
                     new BluetoothObexTransport(
+                            mAdapterService,
                             mConnSocket,
                             PBAP_OBEX_MAXIMUM_PACKET_SIZE,
                             BluetoothObexTransport.PACKET_SIZE_UNSPECIFIED);
@@ -359,25 +348,20 @@ public class PbapStateMachine extends StateMachine {
         @Override
         public boolean processMessage(Message message) {
             switch (message.what) {
-                case DISCONNECT:
-                    stopObexServerSession();
-                    break;
-                case CREATE_NOTIFICATION:
-                    createPbapNotification();
-                    break;
-                case REMOVE_NOTIFICATION:
+                case DISCONNECT -> stopObexServerSession();
+                case CREATE_NOTIFICATION -> createPbapNotification();
+                case REMOVE_NOTIFICATION -> {
                     Intent i = new Intent(BluetoothPbapService.USER_CONFIRM_TIMEOUT_ACTION);
                     mService.sendBroadcast(i);
                     notifyAuthCancelled();
                     removePbapNotification(mNotificationId);
-                    break;
-                case AUTH_KEY_INPUT:
+                }
+                case AUTH_KEY_INPUT -> {
                     String key = (String) message.obj;
                     notifyAuthKeyInput(key);
-                    break;
-                case AUTH_CANCELLED:
-                    notifyAuthCancelled();
-                    break;
+                }
+                case AUTH_CANCELLED -> notifyAuthCancelled();
+                default -> {} // Nothing to do
             }
             return HANDLED;
         }
@@ -397,6 +381,7 @@ public class PbapStateMachine extends StateMachine {
             }
             BluetoothObexTransport transport =
                     new BluetoothObexTransport(
+                            mAdapterService,
                             mConnSocket,
                             PBAP_OBEX_MAXIMUM_PACKET_SIZE,
                             BluetoothObexTransport.PACKET_SIZE_UNSPECIFIED);
@@ -432,7 +417,7 @@ public class PbapStateMachine extends StateMachine {
             deleteIntent.setClass(mService, BluetoothPbapService.class);
             deleteIntent.setAction(BluetoothPbapService.AUTH_CANCELLED_ACTION);
 
-            String name = Utils.getName(mRemoteDevice);
+            String name = mAdapterService.getRemoteName(mRemoteDevice);
 
             Notification notification =
                     new Notification.Builder(mService, PBAP_OBEX_NOTIFICATION_CHANNEL)

@@ -35,9 +35,23 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 import android.app.BroadcastOptions;
@@ -146,7 +160,7 @@ public class MapClientStateMachineTest {
 
     private final BluetoothDevice mDevice = getTestDevice(74);
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     private Bmessage mTestIncomingSmsBmessage;
     private Bmessage mTestIncomingMmsBmessage;
@@ -221,8 +235,7 @@ public class MapClientStateMachineTest {
                         mMasClient,
                         mDatabase);
         mLooper.dispatchAll();
-        verifyStateTransitionAndIntent(
-                STATE_DISCONNECTED, STATE_CONNECTING);
+        verifyStateTransitionAndIntent(STATE_DISCONNECTED, STATE_CONNECTING);
 
         when(mRequestOwnNumberCompletedWithNumber.isSearchCompleted()).thenReturn(true);
         when(mRequestOwnNumberCompletedWithNumber.getOwnNumber()).thenReturn(TEST_OWN_PHONE_NUMBER);
@@ -319,8 +332,7 @@ public class MapClientStateMachineTest {
 
         verify(mMasClient).shutdown();
         sendAndDispatchMessage(MceStateMachine.MSG_MAS_DISCONNECTED);
-        verifyStateTransitionAndIntent(
-                STATE_DISCONNECTING, STATE_DISCONNECTED);
+        verifyStateTransitionAndIntent(STATE_DISCONNECTING, STATE_DISCONNECTED);
     }
 
     /** Test disconnect timeout */

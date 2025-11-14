@@ -72,16 +72,6 @@ public:
 
   void InjectEvent(std::unique_ptr<packet::BasePacketBuilder> event);
 
-  void Start() {}
-
-  void Stop() {}
-
-  void ListDependencies(ModuleList* /* list */) const {}
-
-  std::string ToString() const override { return std::string("TestHciHal"); }
-
-  static const ModuleFactory Factory;
-
 private:
   common::BlockingQueue<hal::HciPacket> outgoing_commands_;
   common::BlockingQueue<hal::HciPacket> outgoing_acl_;

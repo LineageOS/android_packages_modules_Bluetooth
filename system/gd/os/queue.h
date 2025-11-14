@@ -214,7 +214,10 @@ void Queue<T>::UnregisterEnqueue() {
   }
   reactor->Unregister(to_unregister);
   if (wait_for_unregister) {
-    reactor->WaitForUnregisteredReactable(std::chrono::milliseconds(1000));
+    if (!reactor->WaitForUnregisteredReactable(kReactableUnregistrationTimeout)) {
+      log::warn("reactor->WaitForUnregisteredReactable {}ms failed",
+                kReactableUnregistrationTimeout.count());
+    }
   }
 }
 
@@ -245,7 +248,10 @@ void Queue<T>::UnregisterDequeue() {
   }
   reactor->Unregister(to_unregister);
   if (wait_for_unregister) {
-    reactor->WaitForUnregisteredReactable(std::chrono::milliseconds(1000));
+    if (!reactor->WaitForUnregisteredReactable(kReactableUnregistrationTimeout)) {
+      log::warn("reactor->WaitForUnregisteredReactable {}ms failed",
+                kReactableUnregistrationTimeout.count());
+    }
   }
 }
 

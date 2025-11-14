@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <base/thread_annotations.h>
+
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -26,6 +28,10 @@
 #include "os/thread.h"
 
 namespace bluetooth {
+
+// Timeout for waiting for a handler to stop, used in Handler::WaitUntilStopped()
+constexpr std::chrono::milliseconds kHandlerStopTimeout = std::chrono::milliseconds(2000);
+
 namespace os {
 
 // A message-queue style handler for reactor-based thread to handle incoming events from different
@@ -46,7 +52,7 @@ public:
   // Enqueue a closure to the queue of this handler
   virtual void Post(common::OnceClosure closure) override;
 
-  // Remove all pending events from the queue of this handler
+  // Remove all pending events from the queue of this handler, and asynchronously stop the handler.
   void Clear();
 
   // Die if the current reactable doesn't stop before the timeout.  Must be called after Clear()
@@ -63,6 +69,22 @@ public:
                           std::forward<Args>(args)...));
   }
 
+  Thread& thread() const { return *thread_; }
+
+  // Returns true if `Clear` has been called, but the handler could still be running (see
+  // WaitUntilStopped).
+  bool IsCleared() const LOCKS_EXCLUDED(mutex_) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return reactable_ == nullptr;
+  }
+
+  bool Synchronize(std::chrono::milliseconds timeout) {
+    std::promise<void> promise;
+    auto future = promise.get_future();
+    Post(common::BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)));
+    return future.wait_for(timeout) == std::future_status::ready;
+  }
+
   template <typename T>
   friend class Queue;
 
@@ -71,11 +93,11 @@ public:
   friend class RepeatingAlarm;
 
 private:
-  inline bool was_cleared() const { return tasks_ == nullptr; }
-  std::queue<common::OnceClosure>* tasks_;
+  inline bool was_cleared() const EXCLUSIVE_LOCKS_REQUIRED(mutex_) { return tasks_ == nullptr; }
+  std::queue<common::OnceClosure>* tasks_ GUARDED_BY(mutex_);
   Thread* thread_;
   std::unique_ptr<Reactor::Event> event_;
-  Reactor::Reactable* reactable_;
+  Reactor::Reactable* reactable_ GUARDED_BY(mutex_);
   mutable std::mutex mutex_;
   void handle_next_event();
 };

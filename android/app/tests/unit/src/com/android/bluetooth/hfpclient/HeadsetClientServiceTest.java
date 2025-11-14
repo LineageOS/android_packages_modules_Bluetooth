@@ -20,22 +20,22 @@ import static android.content.pm.PackageManager.FEATURE_WATCH;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.hfpclient.HeadsetClientService.MAX_HFP_SCO_VOICE_CALL_VOLUME;
 import static com.android.bluetooth.hfpclient.HeadsetClientService.MIN_HFP_SCO_VOICE_CALL_VOLUME;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSinkAudioPolicy;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
@@ -44,7 +44,6 @@ import android.os.BatteryManager;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -70,7 +69,7 @@ public class HeadsetClientServiceTest {
 
     @Mock private AdapterService mAdapterService;
     @Mock private HeadsetClientStateMachine mStateMachine;
-    @Mock private NativeInterface mNativeInterface;
+    @Mock private HeadsetClientNativeInterface mNativeInterface;
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private RemoteDevices mRemoteDevices;
 
@@ -82,22 +81,16 @@ public class HeadsetClientServiceTest {
 
     private AudioManager mMockAudioManager;
 
-    <T> T mockGetSystemService(String serviceName, Class<T> serviceClass) {
-        return TestUtils.mockGetSystemService(mAdapterService, serviceName, serviceClass);
-    }
-
     @Before
     public void setUp() throws Exception {
-        mMockAudioManager = mockGetSystemService(Context.AUDIO_SERVICE, AudioManager.class);
-        mockGetSystemService(Context.BATTERY_SERVICE, BatteryManager.class);
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        mMockAudioManager = mockGetSystemService(mAdapterService, AudioManager.class);
+        mockGetSystemService(mAdapterService, BatteryManager.class);
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
-        NativeInterface.setInstance(mNativeInterface);
     }
 
     @After
     public void tearDown() throws Exception {
-        NativeInterface.setInstance(null);
         stopServiceIfStarted();
     }
 
@@ -175,7 +168,7 @@ public class HeadsetClientServiceTest {
         doReturn(false).when(packageManager).hasSystemFeature(FEATURE_WATCH);
         doReturn(packageManager).when(mAdapterService).getPackageManager();
 
-        HeadsetClientService service = new HeadsetClientService(mAdapterService);
+        HeadsetClientService service = new HeadsetClientService(mAdapterService, mNativeInterface);
 
         verify(mAdapterService).startService(any(Intent.class));
 
@@ -189,7 +182,7 @@ public class HeadsetClientServiceTest {
         doReturn(true).when(packageManager).hasSystemFeature(FEATURE_WATCH);
         doReturn(packageManager).when(mAdapterService).getPackageManager();
 
-        HeadsetClientService service = new HeadsetClientService(mAdapterService);
+        HeadsetClientService service = new HeadsetClientService(mAdapterService, mNativeInterface);
 
         verify(mAdapterService, never()).startService(any(Intent.class));
 
@@ -212,7 +205,7 @@ public class HeadsetClientServiceTest {
         doReturn(amMax).when(mMockAudioManager).getStreamMaxVolume(anyInt());
         doReturn(amMin).when(mMockAudioManager).getStreamMinVolume(anyInt());
 
-        HeadsetClientService service = new HeadsetClientService(mAdapterService);
+        HeadsetClientService service = new HeadsetClientService(mAdapterService, mNativeInterface);
 
         for (int i = amMin; i <= amMax; i++) {
             // Collect AM to HF conversion
@@ -241,7 +234,7 @@ public class HeadsetClientServiceTest {
         doReturn(amMax).when(mMockAudioManager).getStreamMaxVolume(anyInt());
         doReturn(amMin).when(mMockAudioManager).getStreamMinVolume(anyInt());
 
-        HeadsetClientService service = new HeadsetClientService(mAdapterService);
+        HeadsetClientService service = new HeadsetClientService(mAdapterService, mNativeInterface);
 
         for (int i = MIN_HFP_SCO_VOICE_CALL_VOLUME; i <= MAX_HFP_SCO_VOICE_CALL_VOLUME; i++) {
             // Collect HF to AM conversion
@@ -255,7 +248,7 @@ public class HeadsetClientServiceTest {
     }
 
     private void startService() throws Exception {
-        mService = new HeadsetClientService(mAdapterService);
+        mService = new HeadsetClientService(mAdapterService, mNativeInterface);
         mService.setAvailable(true);
         mIsHeadsetClientServiceStarted = true;
     }

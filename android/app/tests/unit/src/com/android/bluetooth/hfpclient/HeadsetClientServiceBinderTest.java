@@ -42,9 +42,9 @@ import org.mockito.Mock;
 public class HeadsetClientServiceBinderTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private HeadsetClientService mService;
 
-    private final AttributionSource mAttributionSource = new AttributionSource.Builder(1).build();
     private final BluetoothDevice mDevice = getTestDevice(54);
 
     private HeadsetClientServiceBinder mBinder;

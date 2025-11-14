@@ -69,7 +69,7 @@ public class BluetoothMapConvoListingTest {
         assertThat(listing.getCount()).isEqualTo(0);
         listing.add(mListingElementLatestWithReadTrue);
         assertThat(listing.getCount()).isEqualTo(1);
-        assertThat(listing.hasUnread()).isEqualTo(true);
+        assertThat(listing.hasUnread()).isTrue();
     }
 
     @Test
@@ -100,24 +100,24 @@ public class BluetoothMapConvoListingTest {
 
     @Test
     public void equals_withSameObject_returnsTrue() {
-        assertThat(mListing.equals(mListing)).isEqualTo(true);
+        assertThat(mListing.equals(mListing)).isTrue();
     }
 
     @Test
     public void equals_withNull_returnsFalse() {
-        assertThat(mListing.equals(null)).isEqualTo(false);
+        assertThat(mListing.equals(null)).isFalse();
     }
 
     @Test
     @SuppressLint("EqualsIncompatibleType") // That the point of this test
     public void equals_withDifferentClass_returnsFalse() {
-        assertThat(mListing.equals(mListingElementEarliestWithReadFalse)).isEqualTo(false);
+        assertThat(mListing.equals(mListingElementEarliestWithReadFalse)).isFalse();
     }
 
     @Test
     public void equals_withDifferentRead_returnsFalse() {
         final BluetoothMapConvoListing listingWithDifferentRead = new BluetoothMapConvoListing();
-        assertThat(mListing.equals(listingWithDifferentRead)).isEqualTo(false);
+        assertThat(mListing.equals(listingWithDifferentRead)).isFalse();
     }
 
     @Test
@@ -126,7 +126,7 @@ public class BluetoothMapConvoListingTest {
         final BluetoothMapConvoListing listingWithNonNullList = new BluetoothMapConvoListing();
         listingWithNonNullList.add(mListingElementEarliestWithReadFalse);
 
-        assertThat(listingWithNullList.equals(listingWithNonNullList)).isEqualTo(false);
+        assertThat(listingWithNullList.equals(listingWithNonNullList)).isFalse();
     }
 
     @Test
@@ -138,7 +138,7 @@ public class BluetoothMapConvoListingTest {
         listingWithListSizeTwo.add(mListingElementEarliestWithReadFalse);
         listingWithListSizeTwo.add(mListingElementMiddleWithReadFalse);
 
-        assertThat(listingWithListSizeOne.equals(listingWithListSizeTwo)).isEqualTo(false);
+        assertThat(listingWithListSizeOne.equals(listingWithListSizeTwo)).isFalse();
     }
 
     @Test
@@ -147,7 +147,7 @@ public class BluetoothMapConvoListingTest {
         final BluetoothMapConvoListing listingEqual = new BluetoothMapConvoListing();
         listing.add(mListingElementEarliestWithReadFalse);
         listingEqual.add(mListingElementEarliestWithReadFalse);
-        assertThat(listing.equals(listingEqual)).isEqualTo(true);
+        assertThat(listing.equals(listingEqual)).isTrue();
     }
 
     @Test

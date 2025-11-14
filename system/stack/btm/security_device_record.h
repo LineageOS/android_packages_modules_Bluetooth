@@ -31,7 +31,6 @@
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/hci_error_code.h"
 #include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 #include "types/remote_version_type.h"
 
 typedef struct {
@@ -284,6 +283,8 @@ public:
   bool is_bond_type_persistent() const { return bond_type == BOND_TYPE_PERSISTENT; }
   bool is_bond_type_temporary() const { return bond_type == BOND_TYPE_TEMPORARY; }
 
+  bool is_bonded(tBT_TRANSPORT transport = BT_TRANSPORT_AUTO) const;
+
   uint8_t get_encryption_key_size() const { return enc_key_size; }
 
   void increment_sign_counter(bool local);
@@ -325,10 +326,11 @@ public:
   std::string ToString() const {
     return std::format(
             "{} {:6s} cod:{} remote_info:{:<14s} sm4:0x{:02x} SecureConn:{:c} "
-            "name:\"{}\" sec_prop:{}",
+            "name:\"{}\" sec_prop:{}, in_resolving_list: {}",
             bd_addr, DeviceTypeText(device_type), dev_class_text(dev_class),
             remote_version_info.ToString(), sm4, remote_supports_secure_connections ? 'T' : 'F',
-            reinterpret_cast<char const*>(sec_bd_name), sec_rec.ToString());
+            reinterpret_cast<char const*>(sec_bd_name), sec_rec.ToString(),
+            (ble.in_controller_list & BTM_RESOLVING_LIST_BIT) ? 'T' : 'F');
   }
 
 public:
@@ -343,9 +345,9 @@ public:
   uint16_t hci_handle;     /* Handle to BR/EDR ACL connection when exists */
   uint16_t ble_hci_handle; /* use in DUMO connection */
 
-  uint16_t suggested_tx_octets; /* Recently suggested tx octets for data length extension */
-  uint16_t clock_offset;        /* Latest known clock offset */
-
+  uint16_t suggested_tx_octets; /* Recently suggested tx octets for data length
+                                   extension */
+  uint16_t clock_offset;        /* Latest known clock offset          */
   // whether the peer device can read GAP characteristics only visible in
   // "discoverable" mode
   bool can_read_discoverable{true};

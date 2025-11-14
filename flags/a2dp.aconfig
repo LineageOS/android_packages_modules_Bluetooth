@@ -2,37 +2,10 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "bta_av_use_peer_codec"
-    namespace: "bluetooth"
-    description: "Deprecate bta av codec state"
-    bug: "339264791"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "a2dp_ignore_started_when_responder"
     namespace: "bluetooth"
     description: "Ignore the event BTA_AV_START_EVT when source and responder"
     bug : "341178856"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "a2dp_variable_aac_capability"
-    namespace: "bluetooth"
-    description: "Enable AAC 48 kHz sampling rate for sink devices in the allow list"
-    bug: "38443632"
-}
-
-flag {
-    name: "av_stream_reconfigure_fix"
-    namespace: "bluetooth"
-    description: "Handle AVDT stream reconfiguration in an event"
-    bug: "348351688"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -121,6 +94,43 @@ flag {
     namespace: "bluetooth"
     description: "Add state to prevent sending multiple AVDTP Suspend command in a row"
     bug: "402241316"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_fmq_read_exact"
+    namespace: "bluetooth"
+    description: "Modify BluetoothAudioClientInterface::ReadAudioData to return the exact number bytes requested"
+    bug: "409124193"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_disconnect_reason_api"
+    namespace: "bluetooth"
+    description: "Define the extra parameter DISCONNECTED_REASON for a2dp.CONNECTION_STATE_CHANGED intent"
+    bug: "416778270"
+}
+
+flag {
+    name: "a2dp_sbc_underflow_recovery"
+    namespace: "bluetooth"
+    description: "Reset the SBC feeding counter to the limiting size"
+    bug: "417543022"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "delay_sniff_subrating"
+    namespace: "bluetooth"
+    description: "Delay Sniff Subrating as in some remote's timing issues were observed"
+    bug: "419205731"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

@@ -692,9 +692,9 @@ void BluetoothAudioClientInterface::FlushAudioData() {
     return;
   }
 
-  uint8_t p_buf[size];
+  std::vector<uint8_t> p_buf(size);
 
-  if (mDataMQ->read(p_buf, size) != size) {
+  if (mDataMQ->read(p_buf.data(), size) != size) {
     log::warn("failed to flush data queue!");
   }
 }

@@ -286,6 +286,64 @@ void ParentDef::GenMembers(std::ostream& s) const {
   }
 }
 
+Size ParentDef::HeaderAndFooterSizeIfStatic() const {
+  auto header_fields = fields_.GetFieldsBeforePayloadOrBody();
+  auto footer_fields = fields_.GetFieldsAfterPayloadOrBody();
+
+  Size padded_size;
+  const PacketField* padded_field = nullptr;
+  const PacketField* last_field = nullptr;
+  for (const auto& field : fields_) {
+    if (field->GetFieldType() == PaddingField::kFieldType) {
+      if (!padded_size.empty()) {
+        ERROR() << "Only one padding field is allowed.  Second field: " << field->GetName();
+      }
+      padded_field = last_field;
+      padded_size = field->GetSize();
+    }
+    last_field = field;
+  }
+  const Size INVALID{};
+  Size result{0};
+  for (const auto& field : header_fields) {
+    if (field == padded_field) {
+      result += padded_size;
+    } else {
+      result += field->GetBuilderSize();
+    }
+  }
+
+  if (result.has_dynamic()) {
+    return INVALID;
+  }
+
+  for (const auto& field : footer_fields) {
+    if (field == padded_field) {
+      result += padded_size;
+    } else {
+      result += field->GetBuilderSize();
+    }
+  }
+
+  if (result.has_dynamic()) {
+    return INVALID;
+  }
+
+  if (parent_ != nullptr) {
+    if (parent_->GetDefinitionType() == Type::PACKET) {
+      result += parent_->HeaderAndFooterSizeIfStatic();
+    } else {
+      return INVALID;
+    }
+  }
+
+  if (result.has_dynamic()) {
+    return INVALID;
+  }
+
+  return result;
+}
+
 void ParentDef::GenSize(std::ostream& s) const {
   auto header_fields = fields_.GetFieldsBeforePayloadOrBody();
   auto footer_fields = fields_.GetFieldsAfterPayloadOrBody();
@@ -305,58 +363,71 @@ void ParentDef::GenSize(std::ostream& s) const {
   }
 
   s << "protected:";
-  s << "size_t BitsOfHeader() const {";
-  s << "return 0";
+  auto size_if_static = HeaderAndFooterSizeIfStatic();
 
-  if (parent_ != nullptr) {
-    if (parent_->GetDefinitionType() == Type::PACKET) {
-      s << " + " << parent_->name_ << "Builder::BitsOfHeader() ";
-    } else {
-      s << " + " << parent_->name_ << "::BitsOfHeader() ";
+  if (size_if_static.empty()) {
+    s << "size_t BitsOfHeaderAndFooter() const {";
+    s << "return 0";
+    if (parent_ != nullptr) {
+      if (parent_->GetDefinitionType() == Type::PACKET) {
+        auto parent_size_if_static = parent_->HeaderAndFooterSizeIfStatic();
+        if (parent_size_if_static.empty()) {
+          s << " + " << parent_->name_ << "Builder::BitsOfHeaderAndFooter() ";
+        } else {
+          s << " + " << parent_size_if_static.bits();
+        }
+      } else {
+        auto parent_size_if_static = parent_->HeaderAndFooterSizeIfStatic();
+        if (parent_size_if_static.empty()) {
+          s << " + " << parent_->name_ << "::BitsOfHeaderAndFooter() ";
+        } else {
+          s << " + " << parent_size_if_static.bits();
+        }
+      }
     }
-  }
 
-  for (const auto& field : header_fields) {
-    if (field == padded_field) {
-      s << " + " << padded_size;
-    } else {
-      s << " + " << field->GetBuilderSize();
+    for (const auto& field : header_fields) {
+      if (field == padded_field) {
+        s << " + " << padded_size;
+      } else {
+        s << " + " << field->GetBuilderSize();
+      }
     }
-  }
-  s << ";";
 
-  s << "}\n\n";
-
-  s << "size_t BitsOfFooter() const {";
-  s << "return 0";
-  for (const auto& field : footer_fields) {
-    if (field == padded_field) {
-      s << " + " << padded_size;
-    } else {
-      s << " + " << field->GetBuilderSize();
+    for (const auto& field : footer_fields) {
+      if (field == padded_field) {
+        s << " + " << padded_size;
+      } else {
+        s << " + " << field->GetBuilderSize();
+      }
     }
+    s << ";";
+    s << "}\n\n";
   }
-
-  if (parent_ != nullptr) {
-    if (parent_->GetDefinitionType() == Type::PACKET) {
-      s << " + " << parent_->name_ << "Builder::BitsOfFooter() ";
-    } else {
-      s << " + " << parent_->name_ << "::BitsOfFooter() ";
-    }
-  }
-  s << ";";
-  s << "}\n\n";
 
   if (fields_.HasPayload()) {
     s << "size_t GetPayloadSize() const {";
     s << "if (payload_ != nullptr) {return payload_->size();}";
-    s << "else { return size() - (BitsOfHeader() + BitsOfFooter()) / 8;}";
+
+    s << "else { return size() - ";
+
+    if (size_if_static.empty()) {
+      s << "(BitsOfHeaderAndFooter()) / 8;}";
+    } else {
+      s << size_if_static.bits() / 8 << ";}";
+    }
+
     s << ";}\n\n";
   }
 
   s << "public:";
   s << "virtual size_t size() const override {";
-  s << "return (BitsOfHeader() / 8)";
+
+  if (size_if_static.empty()) {
+    s << "return (BitsOfHeaderAndFooter() / 8)";
+  } else {
+    s << "return " << size_if_static.bits() / 8;
+  }
   if (fields_.HasPayload()) {
     s << "+ payload_->size()";
   }
@@ -370,8 +441,7 @@ void ParentDef::GenSize(std::ostream& s) const {
       }
     }
   }
-  s << " + (BitsOfFooter() / 8);";
-  s << "}\n";
+  s << ";}";
 }
 
 void ParentDef::GenSerialize(std::ostream& s) const {

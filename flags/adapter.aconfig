@@ -19,11 +19,86 @@ flag {
 }
 
 flag {
-    name: "empty_names_are_invalid"
+    name: "factory_reset_at_bluetooth_start"
     namespace: "bluetooth"
-    description: "Make sure the names used in the stack are valid"
-    bug: "395178934"
+    description: "Regroup all data deletion to happen when Bluetooth start instead of sometimes at start and sometimes with a direct call"
+    bug: "406868063"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
+}
+
+flag {
+    name: "factory_reset_clear_additional_data"
+    namespace: "bluetooth"
+    description: "Factory reset will now clear the notification history and reset snoop log mode"
+    bug: "416520754"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "remove_legacy_management_thread"
+    namespace: "bluetooth"
+    description: "Remove non-necessary management_thread"
+    bug: "406345320"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "do_not_dump_devices_from_adapter_properties"
+    namespace: "bluetooth"
+    description: "Do not dump the bonded devices from the adapter properties"
+    bug: "406319687"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "ref_counted_native_wakelock"
+    namespace: "bluetooth"
+    description: "Make native wakelock reference counted"
+    bug: "409059723"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "return_correct_ble_state"
+    namespace: "bluetooth"
+    description: "Return correct BLE state from bluetooth adapter"
+    bug: "412811035"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "shutdown_main_thread_before_cleanup"
+    namespace: "bluetooth"
+    description: "Shutdown the legacy main thread before module cleanup"
+    bug: "420748721"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "prioritized_in_ear_routing"
+    namespace: "bluetooth"
+    description: "Prioritized routing by checking in-ear state when multiple devices connected"
+    bug: "420509925"
+    is_exported: true
+}
+
+flag {
+    name: "adapter_service_profiles_use_optional"
+    namespace: "bluetooth"
+    description: "Add optional getters for all profiles in [Bluetooth]AdapterService"
+    bug: "422543753"
 }

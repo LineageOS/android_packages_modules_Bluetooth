@@ -76,13 +76,13 @@ hci::DistanceMeasurementInterface* FuzzHciLayer::GetDistanceMeasurementInterface
   return &distance_measurement_interface_;
 }
 
-void FuzzHciLayer::Start() {
-  acl_dev_null_ = new os::fuzz::DevNullQueue<AclBuilder>(acl_queue_.GetDownEnd(), GetHandler());
+FuzzHciLayer::FuzzHciLayer(os::Handler* handler) : HciLayer(handler) {
+  acl_dev_null_ = new os::fuzz::DevNullQueue<AclBuilder>(acl_queue_.GetDownEnd(), handler);
   acl_dev_null_->Start();
-  acl_inject_ = new os::fuzz::FuzzInjectQueue<AclView>(acl_queue_.GetDownEnd(), GetHandler());
+  acl_inject_ = new os::fuzz::FuzzInjectQueue<AclView>(acl_queue_.GetDownEnd(), handler);
 }
 
-void FuzzHciLayer::Stop() {
+FuzzHciLayer::~FuzzHciLayer() {
   acl_dev_null_->Stop();
   delete acl_dev_null_;
   delete acl_inject_;
@@ -202,8 +202,6 @@ void FuzzHciLayer::injectLeScanningEvent(std::vector<uint8_t> data) {
 void FuzzHciLayer::injectLeIsoEvent(std::vector<uint8_t> data) {
   InvokeIfValid<LeMetaEventView>(le_iso_event_handler_, data);
 }
-
-const ModuleFactory FuzzHciLayer::Factory = ModuleFactory([]() { return new FuzzHciLayer(); });
 
 }  // namespace fuzz
 }  // namespace hci

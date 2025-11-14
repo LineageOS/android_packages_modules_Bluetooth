@@ -41,7 +41,6 @@ cc_defaults {
         "libbinder_ndk",
         "libcrypto",
         "libfmq",
-        "libstatslog",
         "libstatssocket",
         "libz",
         "server_configurable_flags",
@@ -64,6 +63,7 @@ cc_defaults {
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
+        "libbluetooth_metrics_mock",
         "libbt-audio-hal-interface",
         "libbt-bta",
         "libbt-btu-main-thread",
@@ -81,9 +81,10 @@ cc_defaults {
         "libcom.android.sysprop.bluetooth.wrapped",
         "libcutils",
         "libevent",
-        "libexpresslog",
         "libflags_rust_cpp_bridge",
         "libg722codec",
+        "libgmock",
+        "libgtest",
         "libhidlbase",
         "libjsoncpp",
         "liblc3",
@@ -91,9 +92,6 @@ cc_defaults {
         "libopus",
         "libosi",
         "libprotobuf-cpp-lite",
-        "libstatslog_bt",
-        "libstatslog_express",
-        "libtextclassifier_hash_static",
         "libudrv-uipc",
         "libutils",
         "libvndksupport",
@@ -159,15 +157,5 @@ cc_fuzz {
     ],
     shared_libs: [
         "libbinder",
-    ],
-}
-
-cc_fuzz {
-    name: "libbt_audio_hal_client_interface_fuzzer",
-    defaults: [
-        "libbt_audio_hal_interface_fuzz_defaults",
-    ],
-    srcs: [
-        "libbt_audio_hal_client_interface_fuzzer.cpp",
     ],
 }

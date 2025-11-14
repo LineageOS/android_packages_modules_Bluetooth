@@ -74,17 +74,13 @@ using ::testing::DoAll;
 using ::testing::DoDefault;
 using ::testing::Invoke;
 using ::testing::Mock;
+using ::testing::NiceMock;
 using ::testing::NotNull;
 using ::testing::Return;
 using ::testing::SaveArg;
 using ::testing::Sequence;
 using ::testing::SetArgPointee;
 using ::testing::WithArg;
-
-// Disables most likely false-positives from base::SplitString()
-// extern "C" const char* __asan_default_options() {
-//   return "detect_container_overflow=0";
-// }
 
 RawAddress GetTestAddress(int index) {
   EXPECT_LT(index, UINT8_MAX);
@@ -108,8 +104,10 @@ public:
               (override));
   MOCK_METHOD((void), OnDeviceAvailable, (const RawAddress& address, uint8_t features), (override));
   MOCK_METHOD((void), OnFeaturesUpdate, (const RawAddress& address, uint8_t features), (override));
-  MOCK_METHOD((void), OnActivePresetSelected,
-              ((std::variant<RawAddress, int> addr_or_group_id), uint8_t preset_index), (override));
+  MOCK_METHOD((void), OnActivePresetSelected, (const RawAddress& address, uint8_t preset_index),
+              (override));
+  MOCK_METHOD((void), OnActivePresetSelectedForGroup, (int group_id, uint8_t preset_index),
+              (override));
   MOCK_METHOD((void), OnActivePresetSelectError,
               ((std::variant<RawAddress, int> addr_or_group_id), ErrorCode result), (override));
   MOCK_METHOD((void), OnPresetInfo,
@@ -629,7 +627,6 @@ protected:
     bluetooth::storage::SetMockBtifStorageInterface(&btif_storage_interface_);
     gatt::SetMockBtaGattInterface(&gatt_interface);
     gatt::SetMockBtaGattQueue(&gatt_queue);
-    callbacks.reset(new MockHasCallbacks());
 
     encryption_result = true;
 
@@ -724,7 +721,6 @@ protected:
     gatt::SetMockBtaGattInterface(nullptr);
     bluetooth::storage::SetMockBtifStorageInterface(nullptr);
     bluetooth::manager::SetMockBtmInterface(nullptr);
-    callbacks.reset();
 
     current_peer_active_preset_idx_.clear();
     current_peer_features_val_.clear();
@@ -734,7 +730,7 @@ protected:
     BtaAppRegisterCallback app_register_callback;
     EXPECT_CALL(gatt_interface, AppRegister(_, _, _, _))
             .WillOnce(DoAll(SaveArg<1>(&gatt_callback), SaveArg<2>(&app_register_callback)));
-    HasClient::Initialize(callbacks.get(), base::DoNothing());
+    HasClient::Initialize(&callbacks, base::DoNothing());
     ASSERT_TRUE(gatt_callback);
     ASSERT_TRUE(app_register_callback);
     app_register_callback.Run(gatt_if, GATT_SUCCESS);
@@ -756,7 +752,7 @@ protected:
     EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, _));
     HasClient::Get()->Connect(address);
 
-    Mock::VerifyAndClearExpectations(&*callbacks);
+    Mock::VerifyAndClearExpectations(&callbacks);
     Mock::VerifyAndClearExpectations(&gatt_queue);
     Mock::VerifyAndClearExpectations(&gatt_interface);
     Mock::VerifyAndClearExpectations(&btm_interface);
@@ -1112,12 +1108,12 @@ protected:
     set_sample_database(address, builder, features, std::nullopt);
   }
 
-  std::unique_ptr<MockHasCallbacks> callbacks;
-  bluetooth::manager::MockBtmInterface btm_interface;
-  bluetooth::storage::MockBtifStorageInterface btif_storage_interface_;
-  gatt::MockBtaGattInterface gatt_interface;
-  gatt::MockBtaGattQueue gatt_queue;
-  MockCsisClient mock_csis_client_module_;
+  NiceMock<MockHasCallbacks> callbacks;
+  NiceMock<bluetooth::manager::MockBtmInterface> btm_interface;
+  NiceMock<bluetooth::storage::MockBtifStorageInterface> btif_storage_interface_;
+  NiceMock<gatt::MockBtaGattInterface> gatt_interface;
+  NiceMock<gatt::MockBtaGattQueue> gatt_queue;
+  NiceMock<MockCsisClient> mock_csis_client_module_;
   tBTA_GATTC_CBACK* gatt_callback;
   const uint8_t gatt_if = 0xfe;
   std::map<uint8_t, RawAddress> connected_devices;
@@ -1140,21 +1136,21 @@ class HasClientTest : public HasClientTestBase {
 TEST_F(HasClientTestBase, test_get_uninitialized) { ASSERT_DEATH(HasClient::Get(), ""); }
 
 TEST_F(HasClientTestBase, test_initialize) {
-  HasClient::Initialize(callbacks.get(), base::DoNothing());
+  HasClient::Initialize(&callbacks, base::DoNothing());
   ASSERT_TRUE(HasClient::IsHasClientRunning());
   HasClient::CleanUp();
 }
 
 TEST_F(HasClientTestBase, test_initialize_twice) {
-  HasClient::Initialize(callbacks.get(), base::DoNothing());
+  HasClient::Initialize(&callbacks, base::DoNothing());
   HasClient* has_p = HasClient::Get();
-  HasClient::Initialize(callbacks.get(), base::DoNothing());
+  HasClient::Initialize(&callbacks, base::DoNothing());
   ASSERT_EQ(has_p, HasClient::Get());
   HasClient::CleanUp();
 }
 
 TEST_F(HasClientTestBase, test_cleanup_initialized) {
-  HasClient::Initialize(callbacks.get(), base::DoNothing());
+  HasClient::Initialize(&callbacks, base::DoNothing());
   HasClient::CleanUp();
   ASSERT_FALSE(HasClient::IsHasClientRunning());
 }
@@ -1186,7 +1182,7 @@ TEST_F(HasClientTest, test_connect_after_remove) {
   TestDisconnect(test_address, GATT_INVALID_CONN_ID);
   Mock::VerifyAndClearExpectations(&gatt_interface);
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address));
 
   // Device has no Link Key
   ON_CALL(btm_interface, IsDeviceBonded(test_address, _)).WillByDefault(DoAll(Return(true)));
@@ -1194,20 +1190,7 @@ TEST_F(HasClientTest, test_connect_after_remove) {
   Mock::VerifyAndClearExpectations(&callbacks);
 }
 
-TEST_F(HasClientTest,
-       test_disconnect_non_connected_without_hap_connect_only_requested_device_flag) {
-  com::android::bluetooth::flags::provider_->hap_connect_only_requested_device(false);
-  const RawAddress test_address = GetTestAddress(1);
-
-  /* Override the default action to prevent us sendind the connected event */
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION, _))
-          .WillOnce(Return());
-  HasClient::Get()->Connect(test_address);
-  TestDisconnect(test_address, GATT_INVALID_CONN_ID);
-}
-
 TEST_F(HasClientTest, test_disconnect_non_connected) {
-  com::android::bluetooth::flags::provider_->hap_connect_only_requested_device(true);
   const RawAddress test_address = GetTestAddress(1);
 
   /* Override the default action to prevent us sendind the connected event */
@@ -1223,39 +1206,22 @@ TEST_F(HasClientTest, test_has_connected) {
   SetSampleDatabaseHasNoPresetChange(test_address,
                                      bluetooth::has::kFeatureBitHearingAidTypeBinaural);
 
-  EXPECT_CALL(*callbacks,
+  EXPECT_CALL(callbacks,
               OnDeviceAvailable(test_address, bluetooth::has::kFeatureBitHearingAidTypeBinaural));
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
   TestConnect(test_address);
-}
-
-TEST_F(HasClientTest, test_disconnect_connected_without_hap_connect_only_requested_device_flag) {
-  /* TODO: this test shall be removed b/370405555 */
-  com::android::bluetooth::flags::provider_->hap_connect_only_requested_device(false);
-  const RawAddress test_address = GetTestAddress(1);
-  /* Minimal possible HA device (only feature flags) */
-  SetSampleDatabaseHasNoPresetChange(test_address,
-                                     bluetooth::has::kFeatureBitHearingAidTypeBinaural);
-
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
-  TestConnect(test_address);
-
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(1);
-  EXPECT_CALL(gatt_queue, Clean(1)).Times(AtLeast(1));
-  TestDisconnect(test_address, 1);
 }
 
 TEST_F(HasClientTest, test_disconnect_connected) {
-  com::android::bluetooth::flags::provider_->hap_connect_only_requested_device(true);
   const RawAddress test_address = GetTestAddress(1);
   /* Minimal possible HA device (only feature flags) */
   SetSampleDatabaseHasNoPresetChange(test_address,
                                      bluetooth::has::kFeatureBitHearingAidTypeBinaural);
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
   TestConnect(test_address);
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(1);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(1);
   EXPECT_CALL(gatt_queue, Clean(1)).Times(AtLeast(1));
   TestDisconnect(test_address, 1);
 }
@@ -1264,7 +1230,7 @@ TEST_F(HasClientTest, test_disconnected_while_autoconnect) {
   const RawAddress test_address = GetTestAddress(1);
   TestAddFromStorage(test_address, bluetooth::has::kFeatureBitHearingAidTypeBinaural, true);
   /* autoconnect - don't indicate disconnection */
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(0);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(0);
   /* Verify that the device still can connect in te background */
   InjectDisconnectedEvent(1, GATT_CONN_TERMINATE_PEER_USER, true);
 }
@@ -1273,8 +1239,8 @@ TEST_F(HasClientTest, test_encryption_failed) {
   const RawAddress test_address = GetTestAddress(1);
   SetSampleDatabaseHasNoPresetChange(test_address,
                                      bluetooth::has::kFeatureBitHearingAidTypeBinaural);
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(1);
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(1);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
   SetEncryptionResult(test_address, false);
   TestConnect(test_address);
 }
@@ -1283,8 +1249,8 @@ TEST_F(HasClientTest, test_service_discovery_complete_before_encryption) {
   const RawAddress test_address = GetTestAddress(1);
   SetSampleDatabaseHasPresetsNtf(test_address, bluetooth::has::kFeatureBitHearingAidTypeBinaural);
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(0);
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(0);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
 
   SetEncryptionResult(test_address, false);
   ON_CALL(btm_interface, SetEncryption(_, _, _, _, _))
@@ -1294,21 +1260,21 @@ TEST_F(HasClientTest, test_service_discovery_complete_before_encryption) {
   auto test_conn_id = GetTestConnId(test_address);
   InjectSearchCompleteEvent(test_conn_id);
 
-  Mock::VerifyAndClearExpectations(callbacks.get());
+  Mock::VerifyAndClearExpectations(&callbacks);
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
 
   SetEncryptionResult(test_address, true);
   InjectEncryptionEvent(test_address);
-  Mock::VerifyAndClearExpectations(callbacks.get());
+  Mock::VerifyAndClearExpectations(&callbacks);
 }
 
 TEST_F(HasClientTest, test_disconnect_when_link_key_is_gone) {
   const RawAddress test_address = GetTestAddress(1);
   SetSampleDatabaseHasPresetsNtf(test_address, bluetooth::has::kFeatureBitHearingAidTypeBinaural);
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(0);
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(0);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
 
   ON_CALL(btm_interface, BTM_IsEncrypted(test_address, _)).WillByDefault(DoAll(Return(false)));
   ON_CALL(btm_interface, SetEncryption(test_address, _, _, _, _))
@@ -1318,19 +1284,19 @@ TEST_F(HasClientTest, test_disconnect_when_link_key_is_gone) {
   EXPECT_CALL(gatt_interface, Close(test_conn_id)).Times(1);
   InjectConnectedEvent(test_address, GetTestConnId(test_address));
 
-  Mock::VerifyAndClearExpectations(callbacks.get());
+  Mock::VerifyAndClearExpectations(&callbacks);
 }
 
 TEST_F(HasClientTest, test_reconnect_after_encryption_failed) {
   const RawAddress test_address = GetTestAddress(1);
   SetSampleDatabaseHasNoPresetChange(test_address,
                                      bluetooth::has::kFeatureBitHearingAidTypeBinaural);
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(1);
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(1);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
   SetEncryptionResult(test_address, false);
   TestConnect(test_address);
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
   SetEncryptionResult(test_address, true);
   InjectConnectedEvent(test_address, GetTestConnId(test_address));
 }
@@ -1343,7 +1309,7 @@ TEST_F(HasClientTest, test_reconnect_after_encryption_failed_from_storage) {
   SetEncryptionResult(test_address, false);
   TestAddFromStorage(test_address, 0, true);
   /* autoconnect - don't indicate disconnection */
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(0);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(0);
   Mock::VerifyAndClearExpectations(&btm_interface);
 
   /* Fake no persistent storage data */
@@ -1351,7 +1317,7 @@ TEST_F(HasClientTest, test_reconnect_after_encryption_failed_from_storage) {
     return false;
   });
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
   SetEncryptionResult(test_address, true);
   InjectConnectedEvent(test_address, GetTestConnId(test_address));
 }
@@ -1388,19 +1354,19 @@ TEST_F(HasClientTest, test_load_from_storage_and_connect) {
                  + 1    // active preset
                  + 1);  // features
 
-  EXPECT_CALL(*callbacks,
-              OnDeviceAvailable(test_address, (kFeatureBitWritablePresets |
-                                               kFeatureBitPresetSynchronizationSupported |
-                                               kFeatureBitHearingAidTypeBanded)));
+  EXPECT_CALL(callbacks,
+              OnDeviceAvailable(test_address, kFeatureBitWritablePresets |
+                                                      kFeatureBitPresetSynchronizationSupported |
+                                                      kFeatureBitHearingAidTypeBanded));
 
   std::vector<PresetInfo> loaded_preset_details;
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .WillOnce(SaveArg<2>(&loaded_preset_details));
 
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address), 55));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address, 55));
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
 
   /* Expect no read or write operations when loading from storage */
   EXPECT_CALL(gatt_queue, ReadCharacteristic(1, _, _, _)).Times(0);
@@ -1453,14 +1419,14 @@ TEST_F(HasClientTest, test_load_from_storage) {
 
   EXPECT_CALL(gatt_interface, RegisterForNotifications(gatt_if, _, _)).Times(0);  // features
 
-  EXPECT_CALL(*callbacks,
-              OnDeviceAvailable(test_address, (kFeatureBitWritablePresets |
-                                               kFeatureBitPresetSynchronizationSupported |
-                                               kFeatureBitHearingAidTypeBanded)));
+  EXPECT_CALL(callbacks,
+              OnDeviceAvailable(test_address, kFeatureBitWritablePresets |
+                                                      kFeatureBitPresetSynchronizationSupported |
+                                                      kFeatureBitHearingAidTypeBanded));
 
   std::vector<PresetInfo> loaded_preset_details;
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .Times(0);
 
   /* Expect no read or write operations when loading from storage */
@@ -1527,11 +1493,11 @@ TEST_F(HasClientTest, test_discovery_basic_has_no_opt_ntf) {
   uint8_t active_preset_index;
   uint8_t has_features;
 
-  EXPECT_CALL(*callbacks, OnDeviceAvailable(test_address, _)).WillOnce(SaveArg<1>(&has_features));
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
-  EXPECT_CALL(*callbacks, OnPresetInfo(_, PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, _)).WillOnce(SaveArg<1>(&has_features));
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnPresetInfo(_, PresetInfoReason::ALL_PRESET_INFO, _))
           .WillOnce(DoAll(SaveArg<0>(&addr_or_group), SaveArg<2>(&preset_details)));
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(_, _))
+  EXPECT_CALL(callbacks, OnActivePresetSelected(_, _))
           .WillOnce(DoAll(SaveArg<0>(&addr_or_group), SaveArg<1>(&active_preset_index)));
   TestConnect(test_address);
 
@@ -1569,10 +1535,10 @@ TEST_F(HasClientTest, test_discovery_has_not_found) {
   const RawAddress test_address = GetTestAddress(1);
   SetSampleDatabaseNoHas(test_address);
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
-  EXPECT_CALL(*callbacks, OnDeviceAvailable(test_address, _)).Times(0);
-  EXPECT_CALL(*callbacks, OnFeaturesUpdate(test_address, _)).Times(0);
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
+  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, _)).Times(0);
+  EXPECT_CALL(callbacks, OnFeaturesUpdate(test_address, _)).Times(0);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address));
 
   TestConnect(test_address);
 }
@@ -1581,10 +1547,10 @@ TEST_F(HasClientTest, test_discovery_has_broken_no_active_preset) {
   const RawAddress test_address = GetTestAddress(1);
   SetSampleDatabaseHasBrokenNoActivePreset(test_address);
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
-  EXPECT_CALL(*callbacks, OnDeviceAvailable(test_address, _)).Times(0);
-  EXPECT_CALL(*callbacks, OnFeaturesUpdate(test_address, _)).Times(0);
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
+  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, _)).Times(0);
+  EXPECT_CALL(callbacks, OnFeaturesUpdate(test_address, _)).Times(0);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address));
 
   TestConnect(test_address);
 }
@@ -1593,10 +1559,10 @@ TEST_F(HasClientTest, test_discovery_has_broken_no_active_preset_ntf) {
   const RawAddress test_address = GetTestAddress(1);
   SetSampleDatabaseHasBrokenNoActivePresetNtf(test_address);
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
-  EXPECT_CALL(*callbacks, OnDeviceAvailable(test_address, _)).Times(0);
-  EXPECT_CALL(*callbacks, OnFeaturesUpdate(test_address, _)).Times(0);
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(0);
+  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, _)).Times(0);
+  EXPECT_CALL(callbacks, OnFeaturesUpdate(test_address, _)).Times(0);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address));
 
   TestConnect(test_address);
 }
@@ -1627,7 +1593,7 @@ TEST_F(HasClientTest, test_cp_not_usable_read_all_presets) {
             }
           }));
 
-  EXPECT_CALL(*callbacks,
+  EXPECT_CALL(callbacks,
               OnDeviceAvailable(test_address, bluetooth::has::kFeatureBitHearingAidTypeBanded |
                                                       bluetooth::has::kFeatureBitWritablePresets |
                                                       bluetooth::has::kFeatureBitDynamicPresets));
@@ -1644,8 +1610,8 @@ TEST_F(HasClientTest, test_discovery_has_features_ntf) {
   SetSampleDatabaseHasOnlyFeaturesNtf(test_address,
                                       bluetooth::has::kFeatureBitHearingAidTypeBanded);
 
-  EXPECT_CALL(*callbacks, OnDeviceAvailable(test_address, _)).WillOnce(SaveArg<1>(&has_features));
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
+  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, _)).WillOnce(SaveArg<1>(&has_features));
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
 
   /* Verify subscription to features */
   EXPECT_CALL(gatt_interface, RegisterForNotifications(gatt_if, _, _)).Times(AnyNumber());
@@ -1664,7 +1630,7 @@ TEST_F(HasClientTest, test_discovery_has_features_ntf) {
   uint8_t new_features;
 
   /* Verify peer features change notification */
-  EXPECT_CALL(*callbacks, OnFeaturesUpdate(test_address, _)).WillOnce(SaveArg<1>(&new_features));
+  EXPECT_CALL(callbacks, OnFeaturesUpdate(test_address, _)).WillOnce(SaveArg<1>(&new_features));
   InjectNotificationEvent(test_address, test_conn_id, HasDbBuilder::kFeaturesValHdl,
                           std::vector<uint8_t>({0x00}));
   ASSERT_NE(has_features, new_features);
@@ -1678,8 +1644,8 @@ TEST_F(HasClientTest, test_discovery_has_features_no_ntf) {
   SetSampleDatabaseHasOnlyFeaturesNoNtf(test_address,
                                         bluetooth::has::kFeatureBitHearingAidTypeBanded);
 
-  EXPECT_CALL(*callbacks, OnDeviceAvailable(test_address, _)).WillOnce(SaveArg<1>(&has_features));
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
+  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, _)).WillOnce(SaveArg<1>(&has_features));
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
 
   /* Verify no subscription to features */
   EXPECT_CALL(gatt_interface, RegisterForNotifications(gatt_if, _, _)).Times(AnyNumber());
@@ -1707,11 +1673,11 @@ TEST_F(HasClientTest, test_discovery_has_multiple_presets_ntf) {
   uint8_t active_preset_index;
   uint8_t has_features;
 
-  EXPECT_CALL(*callbacks, OnDeviceAvailable(test_address, _)).WillOnce(SaveArg<1>(&has_features));
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
-  EXPECT_CALL(*callbacks, OnPresetInfo(_, PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, _)).WillOnce(SaveArg<1>(&has_features));
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnPresetInfo(_, PresetInfoReason::ALL_PRESET_INFO, _))
           .WillOnce(DoAll(SaveArg<0>(&addr_or_group), SaveArg<2>(&preset_details)));
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(_, _))
+  EXPECT_CALL(callbacks, OnActivePresetSelected(_, _))
           .WillOnce(DoAll(SaveArg<0>(&addr_or_group), SaveArg<1>(&active_preset_index)));
 
   /* Verify subscription to control point */
@@ -1736,14 +1702,14 @@ TEST_F(HasClientTest, test_active_preset_change) {
   SetSampleDatabaseHasNoOptionalNtf(test_address);
 
   uint8_t active_preset_index;
-  EXPECT_CALL(*callbacks, OnDeviceAvailable(test_address, _));
-  EXPECT_CALL(*callbacks, OnPresetInfo(_, PresetInfoReason::ALL_PRESET_INFO, _));
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(_, _)).WillOnce(SaveArg<1>(&active_preset_index));
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, _));
+  EXPECT_CALL(callbacks, OnPresetInfo(_, PresetInfoReason::ALL_PRESET_INFO, _));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(_, _)).WillOnce(SaveArg<1>(&active_preset_index));
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
   TestConnect(test_address);
 
   uint8_t new_active_preset;
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address), _))
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address, _))
           .WillOnce(SaveArg<1>(&new_active_preset));
   InjectNotificationEvent(test_address, test_conn_id, HasDbBuilder::kActivePresetIndexValHdl,
                           std::vector<uint8_t>({0x00}));
@@ -1764,8 +1730,8 @@ TEST_F(HasClientTest, test_duplicate_presets) {
             HasPreset(5, HasPreset::kPropertyAvailable | HasPreset::kPropertyWritable,
                       "YourWritablePreset5")}});
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
-  EXPECT_CALL(*callbacks, OnPresetInfo(_, PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnPresetInfo(_, PresetInfoReason::ALL_PRESET_INFO, _))
           .WillOnce(SaveArg<2>(&preset_details));
   TestConnect(test_address);
 
@@ -1784,8 +1750,8 @@ TEST_F(HasClientTest, test_preset_set_name_invalid_index) {
   SetSampleDatabaseHasPresetsNtf(test_address);
   TestConnect(test_address);
 
-  EXPECT_CALL(*callbacks, OnSetPresetNameError(std::variant<RawAddress, int>(test_address), 0x40,
-                                               ErrorCode::INVALID_PRESET_INDEX))
+  EXPECT_CALL(callbacks, OnSetPresetNameError(std::variant<RawAddress, int>(test_address), 0x40,
+                                              ErrorCode::INVALID_PRESET_INDEX))
           .Times(1);
   EXPECT_CALL(gatt_queue,
               WriteCharacteristic(1, HasDbBuilder::kPresetsCtpValHdl, _, GATT_WRITE, _, _))
@@ -1807,7 +1773,7 @@ TEST_F(HasClientTest, test_preset_set_name_non_writable) {
           }});
   TestConnect(test_address);
 
-  EXPECT_CALL(*callbacks, OnSetPresetNameError(_, _, ErrorCode::SET_NAME_NOT_ALLOWED)).Times(1);
+  EXPECT_CALL(callbacks, OnSetPresetNameError(_, _, ErrorCode::SET_NAME_NOT_ALLOWED)).Times(1);
   EXPECT_CALL(gatt_queue,
               WriteCharacteristic(1, HasDbBuilder::kPresetsCtpValHdl, _, GATT_WRITE, _, _))
           .Times(0);
@@ -1827,7 +1793,7 @@ TEST_F(HasClientTest, test_preset_set_name_to_long) {
                       "YourWritablePreset")}});
   TestConnect(test_address);
 
-  EXPECT_CALL(*callbacks, OnSetPresetNameError(_, _, ErrorCode::INVALID_PRESET_NAME_LENGTH))
+  EXPECT_CALL(callbacks, OnSetPresetNameError(_, _, ErrorCode::INVALID_PRESET_NAME_LENGTH))
           .Times(1);
   EXPECT_CALL(gatt_queue, WriteCharacteristic(test_conn_id, HasDbBuilder::kPresetsCtpValHdl, _,
                                               GATT_WRITE, _, _))
@@ -1848,13 +1814,13 @@ TEST_F(HasClientTest, test_preset_set_name) {
   TestConnect(test_address);
 
   std::vector<uint8_t> value;
-  EXPECT_CALL(*callbacks, OnSetPresetNameError(_, _, _)).Times(0);
+  EXPECT_CALL(callbacks, OnSetPresetNameError(_, _, _)).Times(0);
   EXPECT_CALL(gatt_queue, WriteCharacteristic(test_conn_id, HasDbBuilder::kPresetsCtpValHdl, _,
                                               GATT_WRITE, _, _));
 
   std::vector<PresetInfo> updated_preset_details;
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::PRESET_INFO_UPDATE, _))
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::PRESET_INFO_UPDATE, _))
           .WillOnce(SaveArg<2>(&updated_preset_details));
   HasClient::Get()->SetPresetName(test_address, 5, "new preset name");
 
@@ -1887,14 +1853,12 @@ TEST_F(HasClientTest, test_preset_group_set_name) {
           .WillByDefault(Return(not_synced_group));
 
   std::vector<PresetInfo> preset_details;
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address1), 55))
-          .Times(0);
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address2), 55))
-          .Times(0);
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, 55)).Times(0);
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, 55)).Times(0);
 
   /* This should be a group callback */
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(not_synced_group),
-                                       PresetInfoReason::PRESET_INFO_UPDATE, _))
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(not_synced_group),
+                                      PresetInfoReason::PRESET_INFO_UPDATE, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details));
 
@@ -1925,9 +1889,9 @@ TEST_F(HasClientTest, test_multiple_presets_get_name) {
 
   std::vector<PresetInfo> preset_details;
 
-  EXPECT_CALL(*callbacks, OnDeviceAvailable(test_address, _));
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
-  EXPECT_CALL(*callbacks, OnPresetInfo(_, PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, _));
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnPresetInfo(_, PresetInfoReason::ALL_PRESET_INFO, _))
           .WillOnce(SaveArg<2>(&preset_details));
   TestConnect(test_address);
 
@@ -1935,13 +1899,13 @@ TEST_F(HasClientTest, test_multiple_presets_get_name) {
   for (auto const& preset : preset_details) {
     std::vector<PresetInfo> new_preset_details;
 
-    EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                         PresetInfoReason::PRESET_INFO_REQUEST_RESPONSE, _))
+    EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                        PresetInfoReason::PRESET_INFO_REQUEST_RESPONSE, _))
             .Times(1)
             .WillOnce(SaveArg<2>(&new_preset_details));
     HasClient::Get()->GetPresetInfo(test_address, preset.preset_index);
 
-    Mock::VerifyAndClearExpectations(&*callbacks);
+    Mock::VerifyAndClearExpectations(&callbacks);
     ASSERT_EQ(1u, new_preset_details.size());
     ASSERT_EQ(preset.preset_index, new_preset_details[0].preset_index);
     ASSERT_EQ(preset.preset_name, new_preset_details[0].preset_name);
@@ -1955,12 +1919,12 @@ TEST_F(HasClientTest, test_presets_get_name_invalid_index) {
   SetSampleDatabaseHasPresetsNtf(test_address);
   TestConnect(test_address);
 
-  EXPECT_CALL(*callbacks, OnPresetInfoError(std::variant<RawAddress, int>(test_address), 128,
-                                            ErrorCode::INVALID_PRESET_INDEX));
+  EXPECT_CALL(callbacks, OnPresetInfoError(std::variant<RawAddress, int>(test_address), 128,
+                                           ErrorCode::INVALID_PRESET_INDEX));
   HasClient::Get()->GetPresetInfo(test_address, 128);
 
-  EXPECT_CALL(*callbacks, OnPresetInfoError(std::variant<RawAddress, int>(test_address), 0,
-                                            ErrorCode::INVALID_PRESET_INDEX));
+  EXPECT_CALL(callbacks, OnPresetInfoError(std::variant<RawAddress, int>(test_address), 0,
+                                           ErrorCode::INVALID_PRESET_INDEX));
   HasClient::Get()->GetPresetInfo(test_address, 0);
 }
 
@@ -1980,12 +1944,12 @@ TEST_F(HasClientTest, test_presets_changed_generic_update_no_add_or_delete) {
                                          bluetooth::has::kFeatureBitWritablePresets,
                                  presets);
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
   TestConnect(test_address);
 
   std::vector<PresetInfo> preset_details;
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::PRESET_INFO_UPDATE, _))
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::PRESET_INFO_UPDATE, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details));
 
@@ -2023,24 +1987,24 @@ TEST_F(HasClientTest, test_presets_changed_generic_update_add_and_delete) {
                                  presets);
 
   std::vector<PresetInfo> preset_details;
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details));
   TestConnect(test_address);
 
   /* Expect more OnPresetInfo call */
   std::vector<PresetInfo> updated_preset_details;
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::PRESET_INFO_UPDATE, _))
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::PRESET_INFO_UPDATE, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&updated_preset_details));
 
   /* Expect more OnPresetInfo call */
   std::vector<PresetInfo> deleted_preset_details;
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::PRESET_DELETED, _))
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::PRESET_DELETED, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&deleted_preset_details));
 
@@ -2099,17 +2063,17 @@ TEST_F(HasClientTest, test_presets_changed_deleted) {
                                  presets);
 
   std::vector<PresetInfo> preset_details;
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details));
   TestConnect(test_address);
 
   /* Expect second OnPresetInfo call */
   std::vector<PresetInfo> deleted_preset_details;
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::PRESET_DELETED, _))
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::PRESET_DELETED, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&deleted_preset_details));
 
@@ -2142,17 +2106,17 @@ TEST_F(HasClientTest, test_presets_changed_available) {
                                  presets);
 
   std::vector<PresetInfo> preset_details;
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details));
   TestConnect(test_address);
 
   /* Expect second OnPresetInfo call */
   std::vector<PresetInfo> changed_preset_details;
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::PRESET_AVAILABILITY_CHANGED, _))
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::PRESET_AVAILABILITY_CHANGED, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&changed_preset_details));
 
@@ -2187,17 +2151,17 @@ TEST_F(HasClientTest, test_presets_changed_unavailable) {
                                  presets);
 
   std::vector<PresetInfo> preset_details;
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details));
   TestConnect(test_address);
 
   /* Expect second OnPresetInfo call */
   std::vector<PresetInfo> changed_preset_details;
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::PRESET_AVAILABILITY_CHANGED, _))
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::PRESET_AVAILABILITY_CHANGED, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&changed_preset_details));
 
@@ -2224,23 +2188,23 @@ TEST_F(HasClientTest, test_select_preset_valid) {
   uint8_t active_preset_index = 0;
   std::vector<PresetInfo> preset_details;
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details));
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(_, _)).WillOnce(SaveArg<1>(&active_preset_index));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(_, _)).WillOnce(SaveArg<1>(&active_preset_index));
   TestConnect(test_address);
 
   ASSERT_GT(preset_details.size(), 1u);
   ASSERT_EQ(preset_details.front().preset_index, active_preset_index);
 
   uint8_t new_active_preset_index = 0;
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(_, _))
+  EXPECT_CALL(callbacks, OnActivePresetSelected(_, _))
           .WillOnce(SaveArg<1>(&new_active_preset_index));
 
   HasClient::Get()->SelectActivePreset(test_address, preset_details.back().preset_index);
-  Mock::VerifyAndClearExpectations(&*callbacks);
+  Mock::VerifyAndClearExpectations(&callbacks);
 
   ASSERT_NE(active_preset_index, new_active_preset_index);
   ASSERT_EQ(preset_details.back().preset_index, new_active_preset_index);
@@ -2261,8 +2225,8 @@ TEST_F(HasClientTest, test_select_group_preset_invalid_group) {
   ON_CALL(mock_csis_client_module_, GetDeviceList(unlucky_group))
           .WillByDefault(Return(std::vector<RawAddress>()));
 
-  EXPECT_CALL(*callbacks, OnActivePresetSelectError(std::variant<RawAddress, int>(unlucky_group),
-                                                    ErrorCode::OPERATION_NOT_POSSIBLE))
+  EXPECT_CALL(callbacks, OnActivePresetSelectError(std::variant<RawAddress, int>(unlucky_group),
+                                                   ErrorCode::OPERATION_NOT_POSSIBLE))
           .Times(1);
 
   HasClient::Get()->SelectActivePreset(unlucky_group, 6);
@@ -2294,21 +2258,21 @@ TEST_F(HasClientTest, test_select_preset_not_available) {
   uint8_t active_preset_index = 0;
   std::vector<PresetInfo> preset_details;
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details));
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(_, _)).WillOnce(SaveArg<1>(&active_preset_index));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(_, _)).WillOnce(SaveArg<1>(&active_preset_index));
   TestConnect(test_address);
 
   ASSERT_GT(preset_details.size(), 1u);
   ASSERT_EQ(preset_details.front().preset_index, active_preset_index);
 
-  EXPECT_CALL(*callbacks, OnActivePresetSelectError(std::variant<RawAddress, int>(test_address),
-                                                    ErrorCode::OPERATION_NOT_POSSIBLE))
+  EXPECT_CALL(callbacks, OnActivePresetSelectError(std::variant<RawAddress, int>(test_address),
+                                                   ErrorCode::OPERATION_NOT_POSSIBLE))
           .Times(1);
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(_, _)).Times(0);
+  EXPECT_CALL(callbacks, OnActivePresetSelected(_, _)).Times(0);
 
   HasClient::Get()->SelectActivePreset(test_address, preset_details[1].preset_index);
 }
@@ -2348,22 +2312,22 @@ TEST_F(HasClientTest, test_select_group_preset_not_available) {
   std::vector<PresetInfo> preset_details1;
   std::vector<PresetInfo> preset_details2;
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address1));
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address1),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address1));
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address1),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details1));
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address1), _))
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, _))
           .WillOnce(SaveArg<1>(&active_preset_index1));
 
   TestConnect(test_address1);
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address2));
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address2),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address2));
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address2),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details2));
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address2), _))
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, _))
           .WillOnce(SaveArg<1>(&active_preset_index2));
 
   TestConnect(test_address2);
@@ -2383,8 +2347,8 @@ TEST_F(HasClientTest, test_select_group_preset_not_available) {
   ASSERT_EQ(preset_details1.front().preset_index, active_preset_index1);
   ASSERT_EQ(preset_details2.front().preset_index, active_preset_index2);
 
-  EXPECT_CALL(*callbacks, OnActivePresetSelectError(_, ErrorCode::OPERATION_NOT_POSSIBLE)).Times(1);
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(_, _)).Times(0);
+  EXPECT_CALL(callbacks, OnActivePresetSelectError(_, ErrorCode::OPERATION_NOT_POSSIBLE)).Times(1);
+  EXPECT_CALL(callbacks, OnActivePresetSelected(_, _)).Times(0);
 
   HasClient::Get()->SelectActivePreset(group_id, preset_details1[1].preset_index);
 }
@@ -2434,22 +2398,22 @@ TEST_F(HasClientTest, test_select_group_preset_not_available_binaural) {
   std::vector<PresetInfo> preset_details1;
   std::vector<PresetInfo> preset_details2;
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address1));
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address1),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address1));
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address1),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details1));
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address1), _))
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, _))
           .WillOnce(SaveArg<1>(&active_preset_index1));
 
   TestConnect(test_address1);
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address2));
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address2),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address2));
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address2),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details2));
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address2), _))
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, _))
           .WillOnce(SaveArg<1>(&active_preset_index2));
 
   TestConnect(test_address2);
@@ -2469,8 +2433,8 @@ TEST_F(HasClientTest, test_select_group_preset_not_available_binaural) {
   ASSERT_EQ(preset_details1.front().preset_index, active_preset_index1);
   ASSERT_EQ(preset_details2.front().preset_index, active_preset_index2);
 
-  EXPECT_CALL(*callbacks, OnActivePresetSelectError(_, ErrorCode::OPERATION_NOT_POSSIBLE)).Times(1);
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(_, _)).Times(0);
+  EXPECT_CALL(callbacks, OnActivePresetSelectError(_, ErrorCode::OPERATION_NOT_POSSIBLE)).Times(1);
+  EXPECT_CALL(callbacks, OnActivePresetSelected(_, _)).Times(0);
 
   HasClient::Get()->SelectActivePreset(group_id, preset_details1[1].preset_index);
 }
@@ -2522,22 +2486,22 @@ TEST_F(HasClientTest, test_select_group_preset_not_available_binaural_independen
   std::vector<PresetInfo> preset_details1;
   std::vector<PresetInfo> preset_details2;
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address1));
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address1),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address1));
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address1),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details1));
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address1), _))
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, _))
           .WillOnce(SaveArg<1>(&active_preset_index1));
 
   TestConnect(test_address1);
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address2));
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address2),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address2));
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address2),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details2));
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address2), _))
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, _))
           .WillOnce(SaveArg<1>(&active_preset_index2));
 
   TestConnect(test_address2);
@@ -2552,12 +2516,12 @@ TEST_F(HasClientTest, test_select_group_preset_not_available_binaural_independen
   ON_CALL(mock_csis_client_module_, GetDeviceList(group_id))
           .WillByDefault(Return(std::vector<RawAddress>({{test_address1, test_address2}})));
 
-  ASSERT_GT(preset_details1.size(), 1u);
-  ASSERT_GT(preset_details2.size(), 1u);
+  ASSERT_EQ(preset_details1.size(), 2u);
+  ASSERT_EQ(preset_details2.size(), 2u);
   ASSERT_EQ(preset_details1.front().preset_index, active_preset_index1);
   ASSERT_EQ(preset_details2.front().preset_index, active_preset_index2);
 
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(_, _)).Times(1);
+  EXPECT_CALL(callbacks, OnActivePresetSelectedForGroup(_, _)).Times(1);
 
   HasClient::Get()->SelectActivePreset(group_id, preset_details1[1].preset_index);
 }
@@ -2585,12 +2549,9 @@ TEST_F(HasClientTest, test_select_group_preset_valid_no_preset_sync_supported) {
           .WillByDefault(Return(not_synced_group));
 
   uint8_t group_active_preset_index = 0;
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address1), 55))
-          .Times(0);
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address2), 55))
-          .Times(0);
-  EXPECT_CALL(*callbacks,
-              OnActivePresetSelected(std::variant<RawAddress, int>(not_synced_group), _))
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, 55)).Times(0);
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, 55)).Times(0);
+  EXPECT_CALL(callbacks, OnActivePresetSelectedForGroup(not_synced_group, _))
           .WillOnce(SaveArg<1>(&group_active_preset_index));
 
   /* No locally synced opcodes support so expect both devices getting writes */
@@ -2617,15 +2578,10 @@ TEST_F(HasClientTest, test_select_group_preset_valid_preset_sync_supported) {
                                  bluetooth::has::kFeatureBitHearingAidTypeBinaural |
                                          bluetooth::has::kFeatureBitPresetSynchronizationSupported);
 
-  uint8_t active_preset_index1 = 0;
-  uint8_t active_preset_index2 = 0;
-
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address1), _))
-          .WillOnce(SaveArg<1>(&active_preset_index1));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, _));
   TestConnect(test_address1);
 
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address2), _))
-          .WillOnce(SaveArg<1>(&active_preset_index2));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, _));
   TestConnect(test_address2);
 
   /* Mock the csis group with two devices */
@@ -2639,16 +2595,14 @@ TEST_F(HasClientTest, test_select_group_preset_valid_preset_sync_supported) {
           GetGroupId(test_address2, ::bluetooth::le_audio::uuid::kCapServiceUuid))
           .WillByDefault(Return(synced_group));
 
-  EXPECT_CALL(*callbacks, OnActivePresetSelectError(_, ErrorCode::GROUP_OPERATION_NOT_SUPPORTED))
+  EXPECT_CALL(callbacks, OnActivePresetSelectError(_, ErrorCode::GROUP_OPERATION_NOT_SUPPORTED))
           .Times(0);
 
   /* Expect callback from the group but not from the devices */
   uint8_t group_active_preset_index = 0;
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address1), _))
-          .Times(0);
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address2), _))
-          .Times(0);
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(synced_group), _))
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, _)).Times(0);
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, _)).Times(0);
+  EXPECT_CALL(callbacks, OnActivePresetSelectedForGroup(synced_group, _))
           .WillOnce(SaveArg<1>(&group_active_preset_index));
 
   /* Expect Ctp write on on this device which forwards operation to the other */
@@ -2680,12 +2634,12 @@ TEST_F(HasClientTest, test_select_preset_invalid) {
   uint8_t active_preset_index = 0;
   std::vector<PresetInfo> preset_details;
 
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details));
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(_, _)).WillOnce(SaveArg<1>(&active_preset_index));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(_, _)).WillOnce(SaveArg<1>(&active_preset_index));
   TestConnect(test_address);
 
   ASSERT_GT(preset_details.size(), 1u);
@@ -2697,8 +2651,8 @@ TEST_F(HasClientTest, test_select_preset_invalid) {
           test_conn_id, test_address, false, *presets.find(deleted_index), 0 /* prev_index */,
           ::bluetooth::le_audio::has::PresetCtpChangeId::PRESET_DELETED, true /* is_last */);
 
-  EXPECT_CALL(*callbacks, OnActivePresetSelectError(std::variant<RawAddress, int>(test_address),
-                                                    ErrorCode::INVALID_PRESET_INDEX))
+  EXPECT_CALL(callbacks, OnActivePresetSelectError(std::variant<RawAddress, int>(test_address),
+                                                   ErrorCode::INVALID_PRESET_INDEX))
           .Times(1);
 
   /* Check if preset was actually deleted - try setting it as an active one */
@@ -2721,18 +2675,18 @@ TEST_F(HasClientTest, test_select_preset_next) {
   uint8_t active_preset_index = 0;
   std::vector<PresetInfo> preset_details;
 
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details));
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(_, _)).WillOnce(SaveArg<1>(&active_preset_index));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(_, _)).WillOnce(SaveArg<1>(&active_preset_index));
   TestConnect(test_address);
 
   ASSERT_GT(preset_details.size(), 1u);
   ASSERT_EQ(1, active_preset_index);
 
   /* Verify active preset change */
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address), 2));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address, 2));
   HasClient::Get()->NextActivePreset(test_address);
 }
 
@@ -2759,12 +2713,9 @@ TEST_F(HasClientTest, test_select_group_preset_next_no_preset_sync_supported) {
           .WillByDefault(Return(not_synced_group));
 
   uint8_t group_active_preset_index = 0;
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address1), 55))
-          .Times(0);
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address2), 55))
-          .Times(0);
-  EXPECT_CALL(*callbacks,
-              OnActivePresetSelected(std::variant<RawAddress, int>(not_synced_group), _))
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, 55)).Times(0);
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, 55)).Times(0);
+  EXPECT_CALL(callbacks, OnActivePresetSelectedForGroup(not_synced_group, _))
           .WillOnce(SaveArg<1>(&group_active_preset_index));
 
   /* No locally synced opcodes support so expect both devices getting writes */
@@ -2791,15 +2742,10 @@ TEST_F(HasClientTest, test_select_group_preset_next_preset_sync_supported) {
                                  bluetooth::has::kFeatureBitHearingAidTypeBinaural |
                                          bluetooth::has::kFeatureBitPresetSynchronizationSupported);
 
-  uint8_t active_preset_index1 = 0;
-  uint8_t active_preset_index2 = 0;
-
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address1), _))
-          .WillOnce(SaveArg<1>(&active_preset_index1));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, _));
   TestConnect(test_address1);
 
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address2), _))
-          .WillOnce(SaveArg<1>(&active_preset_index2));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, _));
   TestConnect(test_address2);
 
   /* Mock the csis group with two devices */
@@ -2813,16 +2759,14 @@ TEST_F(HasClientTest, test_select_group_preset_next_preset_sync_supported) {
           GetGroupId(test_address2, ::bluetooth::le_audio::uuid::kCapServiceUuid))
           .WillByDefault(Return(synced_group));
 
-  EXPECT_CALL(*callbacks, OnActivePresetSelectError(_, ErrorCode::GROUP_OPERATION_NOT_SUPPORTED))
+  EXPECT_CALL(callbacks, OnActivePresetSelectError(_, ErrorCode::GROUP_OPERATION_NOT_SUPPORTED))
           .Times(0);
 
   /* Expect callback from the group but not from the devices */
   uint8_t group_active_preset_index = 0;
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address1), _))
-          .Times(0);
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address2), _))
-          .Times(0);
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(synced_group), _))
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, _)).Times(0);
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, _)).Times(0);
+  EXPECT_CALL(callbacks, OnActivePresetSelectedForGroup(synced_group, _))
           .WillOnce(SaveArg<1>(&group_active_preset_index));
 
   /* Expect Ctp write on on this device which forwards operation to the other */
@@ -2853,11 +2797,11 @@ TEST_F(HasClientTest, test_select_preset_prev) {
   uint8_t active_preset_index = 0;
   std::vector<PresetInfo> preset_details;
 
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details));
-  ON_CALL(*callbacks, OnActivePresetSelected(_, _)).WillByDefault(SaveArg<1>(&active_preset_index));
+  ON_CALL(callbacks, OnActivePresetSelected(_, _)).WillByDefault(SaveArg<1>(&active_preset_index));
   TestConnect(test_address);
 
   HasClient::Get()->SelectActivePreset(test_address, 2);
@@ -2865,7 +2809,7 @@ TEST_F(HasClientTest, test_select_preset_prev) {
   ASSERT_EQ(2, active_preset_index);
 
   /* Verify active preset change */
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address), 1));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address, 1));
   HasClient::Get()->PreviousActivePreset(test_address);
 }
 
@@ -2892,12 +2836,9 @@ TEST_F(HasClientTest, test_select_group_preset_prev_no_preset_sync_supported) {
           .WillByDefault(Return(not_synced_group));
 
   uint8_t group_active_preset_index = 0;
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address1), 55))
-          .Times(0);
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address2), 55))
-          .Times(0);
-  EXPECT_CALL(*callbacks,
-              OnActivePresetSelected(std::variant<RawAddress, int>(not_synced_group), _))
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, 55)).Times(0);
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, 55)).Times(0);
+  EXPECT_CALL(callbacks, OnActivePresetSelectedForGroup(not_synced_group, _))
           .WillOnce(SaveArg<1>(&group_active_preset_index));
 
   /* No locally synced opcodes support so expect both devices getting writes */
@@ -2924,15 +2865,10 @@ TEST_F(HasClientTest, test_select_group_preset_prev_preset_sync_supported) {
                                  bluetooth::has::kFeatureBitHearingAidTypeBinaural |
                                          bluetooth::has::kFeatureBitPresetSynchronizationSupported);
 
-  uint8_t active_preset_index1 = 0;
-  uint8_t active_preset_index2 = 0;
-
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address1), _))
-          .WillOnce(SaveArg<1>(&active_preset_index1));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, _));
   TestConnect(test_address1);
 
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address2), _))
-          .WillOnce(SaveArg<1>(&active_preset_index2));
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, _));
   TestConnect(test_address2);
 
   /* Mock the csis group with two devices */
@@ -2946,16 +2882,14 @@ TEST_F(HasClientTest, test_select_group_preset_prev_preset_sync_supported) {
           GetGroupId(test_address2, ::bluetooth::le_audio::uuid::kCapServiceUuid))
           .WillByDefault(Return(synced_group));
 
-  EXPECT_CALL(*callbacks, OnActivePresetSelectError(_, ErrorCode::GROUP_OPERATION_NOT_SUPPORTED))
+  EXPECT_CALL(callbacks, OnActivePresetSelectError(_, ErrorCode::GROUP_OPERATION_NOT_SUPPORTED))
           .Times(0);
 
   /* Expect callback from the group but not from the devices */
   uint8_t group_active_preset_index = 0;
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address1), _))
-          .Times(0);
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(test_address2), _))
-          .Times(0);
-  EXPECT_CALL(*callbacks, OnActivePresetSelected(std::variant<RawAddress, int>(synced_group), _))
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address1, _)).Times(0);
+  EXPECT_CALL(callbacks, OnActivePresetSelected(test_address2, _)).Times(0);
+  EXPECT_CALL(callbacks, OnActivePresetSelectedForGroup(synced_group, _))
           .WillOnce(SaveArg<1>(&group_active_preset_index));
 
   /* Expect Ctp write on on this device which forwards operation to the other */
@@ -2974,13 +2908,12 @@ TEST_F(HasClientTest, test_select_has_no_presets) {
   const RawAddress test_address = GetTestAddress(1);
   SetSampleDatabaseHasNoPresetsFlagsOnly(test_address);
 
-  EXPECT_CALL(*callbacks, OnDeviceAvailable(test_address, _)).Times(1);
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
+  EXPECT_CALL(callbacks, OnDeviceAvailable(test_address, _)).Times(1);
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
   TestConnect(test_address);
 
   /* Test this not so useful service */
-  EXPECT_CALL(*callbacks, OnActivePresetSelectError(_, ErrorCode::OPERATION_NOT_SUPPORTED))
-          .Times(3);
+  EXPECT_CALL(callbacks, OnActivePresetSelectError(_, ErrorCode::OPERATION_NOT_SUPPORTED)).Times(3);
 
   HasClient::Get()->SelectActivePreset(test_address, 0x01);
   HasClient::Get()->NextActivePreset(test_address);
@@ -3052,11 +2985,11 @@ TEST_F(HasClientTest, test_dumpsys) {
   uint8_t active_preset_index = 0;
   std::vector<PresetInfo> preset_details;
 
-  EXPECT_CALL(*callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
-                                       PresetInfoReason::ALL_PRESET_INFO, _))
+  EXPECT_CALL(callbacks, OnPresetInfo(std::variant<RawAddress, int>(test_address),
+                                      PresetInfoReason::ALL_PRESET_INFO, _))
           .Times(1)
           .WillOnce(SaveArg<2>(&preset_details));
-  ON_CALL(*callbacks, OnActivePresetSelected(_, _)).WillByDefault(SaveArg<1>(&active_preset_index));
+  ON_CALL(callbacks, OnActivePresetSelected(_, _)).WillByDefault(SaveArg<1>(&active_preset_index));
   TestConnect(test_address);
 
   int sv[2];
@@ -3083,11 +3016,11 @@ TEST_F(HasClientTest, test_connect_database_out_of_sync) {
                                          bluetooth::has::kFeatureBitDynamicPresets,
                                  has_presets);
 
-  EXPECT_CALL(*callbacks,
+  EXPECT_CALL(callbacks,
               OnDeviceAvailable(test_address, bluetooth::has::kFeatureBitHearingAidTypeBanded |
                                                       bluetooth::has::kFeatureBitWritablePresets |
                                                       bluetooth::has::kFeatureBitDynamicPresets));
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address));
   TestConnect(test_address);
 
   ON_CALL(gatt_queue, WriteCharacteristic(_, _, _, _, _, _))

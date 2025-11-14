@@ -18,6 +18,7 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
+#include <map>
 #include <vector>
 
 #include "fuzz/helpers.h"
@@ -51,6 +52,9 @@ public:
 
 class FuzzHciLayer : public HciLayer {
 public:
+  FuzzHciLayer(os::Handler* handler);
+  ~FuzzHciLayer();
+
   void TurnOnAutoReply(FuzzedDataProvider* fdp) { auto_reply_fdp = fdp; }
 
   void TurnOffAutoReply() { auto_reply_fdp = nullptr; }
@@ -147,15 +151,7 @@ public:
 
   void injectArbitrary(FuzzedDataProvider& fdp);
 
-  std::string ToString() const override { return "FuzzHciLayer"; }
-
-  static const ModuleFactory Factory;
-
 protected:
-  void ListDependencies(ModuleList* /* list */) const override {}
-  void Start() override;
-  void Stop() override;
-
 private:
   void injectAclData(std::vector<uint8_t> data);
 

@@ -20,16 +20,17 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 
+import androidx.test.runner.AndroidJUnit4;
+
 import com.google.common.primitives.Bytes;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 import java.util.Random;
 
 /** Test cases for {@link PublicBroadcastData}. */
-@RunWith(JUnit4.class)
+@RunWith(AndroidJUnit4.class)
 public class PublicBroadcastDataTest {
 
     @Test

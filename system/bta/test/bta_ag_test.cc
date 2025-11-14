@@ -28,7 +28,7 @@
 
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_ag_swb_aptx.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "stack/include/btm_status.h"
 #include "test/common/main_handler.h"
 #include "test/common/mock_functions.h"
@@ -66,7 +66,7 @@ protected:
     reset_mock_function_count_map();
     fake_osi_ = std::make_unique<test::fake::FakeOsi>();
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+            std::make_unique<bluetooth::hci::testing::MockController>();
 
     main_thread_start_up();
     post_on_bt_main([]() { log::info("Main thread started up"); });
@@ -177,6 +177,23 @@ TEST_F(BtaAgActTest, set_codec_q1_fail_unsupported) {
 
   bta_ag_setcodec(p_scb, data);
   ASSERT_TRUE(enable_aptx_voice_property(false));
+}
+
+TEST_F_WITH_FLAGS(BtaAgActTest, rfc_fail_releases_rfcomm_port,
+  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(
+          TEST_BT, release_port_in_bta_ag_rfc_fail_before_reset_context))) {
+  tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
+  p_scb->serv_handle[0] = 12;
+  p_scb->serv_handle[1] = 18;
+  p_scb->state = BTA_AG_OPENING_ST;
+  p_scb->reg_services |= (1 << BTA_HSP_SERVICE_ID) | (1 << BTA_HFP_SERVICE_ID);
+
+  bta_ag_rfc_fail(p_scb, tBTA_AG_DATA::kEmpty);
+
+  ASSERT_EQ(2, get_func_call_count("RFCOMM_RemoveServer"));
+  ASSERT_EQ(2, get_func_call_count("RFCOMM_CreateConnectionWithSecurity"));
+
+  ASSERT_EQ(p_scb->state, BTA_AG_INIT_ST);
 }
 
 class BtaAgCmdTest : public BtaAgTest {
@@ -339,7 +356,8 @@ protected:
   }
 };
 
-TEST_F(BtaAgScoTest, codec_negotiate__aptx_state_on) {
+TEST_F_WITH_FLAGS(BtaAgScoTest, codec_negotiate__aptx_state_on,
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT, qc_aptx_codec_negotiation))) {
   tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
   p_scb->app_id = 0;
   p_scb->peer_addr = addr;
@@ -358,7 +376,8 @@ TEST_F(BtaAgScoTest, codec_negotiate__aptx_state_on) {
   ASSERT_TRUE(enable_aptx_voice_property(false));
 }
 
-TEST_F(BtaAgScoTest, codec_negotiate__aptx_state_off) {
+TEST_F_WITH_FLAGS(BtaAgScoTest, codec_negotiate__aptx_state_off,
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT, qc_aptx_codec_negotiation))) {
   tBTA_AG_SCB* p_scb = &bta_ag_cb.scb[0];
   p_scb->app_id = 0;
   p_scb->peer_addr = addr;

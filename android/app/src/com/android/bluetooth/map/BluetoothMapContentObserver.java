@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.map;
 
 import android.app.Activity;
@@ -57,10 +58,9 @@ import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+import com.android.bluetooth.map.BluetoothMapContract.MessageColumns;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 import com.android.bluetooth.map.BluetoothMapbMessageMime.MimePart;
-import com.android.bluetooth.mapapi.BluetoothMapContract;
-import com.android.bluetooth.mapapi.BluetoothMapContract.MessageColumns;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ResponseCodes;
 
@@ -2012,8 +2012,8 @@ public class BluetoothMapContentObserver {
                         long id =
                                 c.getLong(
                                         c.getColumnIndex(BluetoothMapContract.MessageColumns._ID));
-                        int folderId =
-                                c.getInt(
+                        long folderId =
+                                c.getLong(
                                         c.getColumnIndex(
                                                 BluetoothMapContract.MessageColumns.FOLDER_ID));
                         int readFlag =
@@ -2034,7 +2034,7 @@ public class BluetoothMapContentObserver {
                         if (msg == null) {
                             listChanged = true;
                             /* New message - created with message unread */
-                            msg = new Msg(id, folderId, 0, readFlag);
+                            msg = new Msg(id, (int) folderId, 0, readFlag);
                             msgList.put(id, msg);
                             Event evt;
                             /* Incoming message from the network */
@@ -2872,7 +2872,6 @@ public class BluetoothMapContentObserver {
             BluetoothMapFolderElement mCurrentFolder,
             String uriStr,
             int statusValue) {
-        boolean res = false;
         Log.d(
                 TAG,
                 "setMessageStatusDeleted: handle "
@@ -2882,27 +2881,34 @@ public class BluetoothMapContentObserver {
                         + " value "
                         + statusValue);
 
-        if (type == TYPE.EMAIL) {
-            res = setEmailMessageStatusDelete(mCurrentFolder, uriStr, handle, statusValue);
-        } else if (type == TYPE.IM) {
+        return switch (type) {
+            case TYPE.EMAIL ->
+                    setEmailMessageStatusDelete(mCurrentFolder, uriStr, handle, statusValue);
             // TODO: to do when deleting IM message
-            Log.d(TAG, "setMessageStatusDeleted: IM not handled");
-        } else {
-            if (statusValue == BluetoothMapAppParams.STATUS_VALUE_YES) {
-                if (type == TYPE.SMS_GSM || type == TYPE.SMS_CDMA) {
-                    res = deleteMessageSms(handle);
-                } else if (type == TYPE.MMS) {
-                    res = deleteMessageMms(handle);
-                }
-            } else if (statusValue == BluetoothMapAppParams.STATUS_VALUE_NO) {
-                if (type == TYPE.SMS_GSM || type == TYPE.SMS_CDMA) {
-                    res = unDeleteMessageSms(handle);
-                } else if (type == TYPE.MMS) {
-                    res = unDeleteMessageMms(handle);
+            case TYPE.IM -> {
+                Log.d(TAG, "setMessageStatusDeleted: IM not handled");
+                yield false;
+            }
+            case TYPE.SMS_GSM, TYPE.SMS_CDMA -> {
+                if (statusValue == BluetoothMapAppParams.STATUS_VALUE_YES) {
+                    yield deleteMessageSms(handle);
+                } else if (statusValue == BluetoothMapAppParams.STATUS_VALUE_NO) {
+                    yield unDeleteMessageSms(handle);
+                } else {
+                    yield false;
                 }
             }
-        }
-        return res;
+            case TYPE.MMS -> {
+                if (statusValue == BluetoothMapAppParams.STATUS_VALUE_YES) {
+                    yield deleteMessageMms(handle);
+                } else if (statusValue == BluetoothMapAppParams.STATUS_VALUE_NO) {
+                    yield unDeleteMessageMms(handle);
+                } else {
+                    yield false;
+                }
+            }
+            case TYPE.NONE -> false;
+        };
     }
 
     /**
@@ -4214,6 +4220,7 @@ public class BluetoothMapContentObserver {
         try {
             /* Remove messages from virtual "deleted" folder (thread_id -1) */
             mResolver.delete(Sms.CONTENT_URI, "thread_id = " + DELETED_THREAD_ID, null);
+            mResolver.delete(Mms.CONTENT_URI, "thread_id = " + DELETED_THREAD_ID, null);
         } catch (SQLiteException e) {
             ContentProfileErrorReportUtils.report(
                     BluetoothProfile.MAP,

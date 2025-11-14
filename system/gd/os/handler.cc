@@ -55,21 +55,25 @@ void Handler::Post(OnceClosure closure) {
 
 void Handler::Clear() {
   std::queue<OnceClosure>* tmp = nullptr;
+  Reactor::Reactable* reactable = nullptr;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     log::assert_that(!was_cleared(), "Handlers must only be cleared once");
     std::swap(tasks_, tmp);
+    std::swap(reactable_, reactable);
   }
   delete tmp;
 
   event_->Clear();
 
-  thread_->GetReactor()->Unregister(reactable_);
-  reactable_ = nullptr;
+  thread_->GetReactor()->Unregister(reactable);
 }
 
 void Handler::WaitUntilStopped(std::chrono::milliseconds timeout) {
-  log::assert_that(reactable_ == nullptr, "assert failed: reactable_ == nullptr");
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    log::assert_that(reactable_ == nullptr, "assert failed: reactable_ == nullptr");
+  }
   log::assert_that(thread_->GetReactor()->WaitForUnregisteredReactable(timeout),
                    "assert failed: thread_->GetReactor()->WaitForUnregisteredReactable(timeout)");
 }

@@ -2,30 +2,10 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "rfcomm_always_disc_initiator_in_disc_wait_ua"
-    namespace: "bluetooth"
-    description: "Always be the DISC initiator in the DISC_WAIT_UA state to avoid unnecessary hang"
-    bug: "350839022"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "allow_free_last_scn"
     namespace: "bluetooth"
     description: "Allow SCN 30 to be freed"
     bug: "372923869"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "rfcomm_cancel_ongoing_sdp_on_close"
-    namespace: "bluetooth"
-    description: "Make sure the ongoing SDP is cleaned up when the socket is closed"
-    bug: "370916753"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -46,6 +26,36 @@ flag {
     namespace: "bluetooth"
     description: "Properly handle incoming connections while connecting"
     bug: "399420482"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "donot_collide_with_closed_port"
+    namespace: "bluetooth"
+    description: "Modify PORT_isCollisionDetected to report false when found port is CLOSED"
+    bug: "406250389"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "rfcomm_fix_bta_ag_rfc_acp_open_error"
+    namespace: "bluetooth"
+    description: "Properly handle bta_ag_rfc_acp_open when check connection fail"
+    bug: "417997444"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "release_port_in_bta_ag_rfc_fail_before_reset_context"
+    namespace: "bluetooth"
+    description: "relase rfcomm port before reset context"
+    bug: "419817851"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

@@ -24,6 +24,10 @@ import unittest
 DOCSTRING_WIDTH = 80 - 8  # 80 cols - 8 indentation spaces
 
 
+def normalize(desc):
+    return re.sub('\s+', ' ', desc).strip()
+
+
 def assert_description(f):
     """Decorator which verifies the description of a PTS MMI implementation.
 
@@ -40,9 +44,8 @@ def assert_description(f):
 
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
-        description = textwrap.fill(kwargs['description'], DOCSTRING_WIDTH, replace_whitespace=False)
-        description = ('\n'.join(map(lambda line: line.rstrip(), description.split('\n')))).strip()
-        docstring = textwrap.dedent(f.__doc__ or '').strip()
+        docstring = normalize(textwrap.dedent(f.__doc__))
+        description = normalize(kwargs['description'])
 
         if docstring != description:
             print(f'Expected description of {f.__name__}:')
@@ -51,8 +54,9 @@ def assert_description(f):
             # Generate AssertionError.
             test = unittest.TestCase()
             test.maxDiff = None
-            test.assertMultiLineEqual(docstring, description, f'description does not match with function docstring of'
-                                      f' {f.__name__}')
+            test.assertMultiLineEqual(
+                docstring, description, f'description does not match with function docstring of'
+                f' {f.__name__}')
 
         return f(*args, **kwargs)
 
@@ -73,9 +77,6 @@ def match_description(f):
             description.
     """
 
-    def normalize(desc):
-        return re.sub('\s+', ' ', desc).strip()
-
     docstring = normalize(textwrap.dedent(f.__doc__))
     regex = re.compile(docstring)
 
@@ -94,7 +95,8 @@ def match_description(f):
 def format_function(mmi_name, mmi_description):
     """Returns the base format of a function implementing a PTS MMI."""
     wrapped_description = textwrap.fill(mmi_description, DOCSTRING_WIDTH, replace_whitespace=False)
-    wrapped_description = '\n'.join(map(lambda line: line.rstrip(), wrapped_description.split('\n')))
+    wrapped_description = '\n'.join(map(lambda line: line.rstrip(),
+                                        wrapped_description.split('\n')))
     return (f'@assert_description\n'
             f'def {mmi_name}(self, **kwargs):\n'
             f'    """\n'
@@ -110,7 +112,7 @@ def format_proxy(profile, mmi_name, mmi_description):
     return (f'from mmi2grpc._helpers import assert_description\n'
             f'from mmi2grpc._proxy import ProfileProxy\n'
             f'\n'
-            f'from pandora_experimental.{profile.lower()}_grpc import {profile}\n'
+            f'from pandora.{profile.lower()}_grpc import {profile}\n'
             f'\n'
             f'\n'
             f'class {profile}Proxy(ProfileProxy):\n'

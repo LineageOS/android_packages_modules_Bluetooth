@@ -83,14 +83,14 @@ public final class DistanceMeasurementSession {
             ParcelUuid uuid,
             DistanceMeasurementParams params,
             Executor executor,
-            AttributionSource attributionSource,
+            AttributionSource source,
             Callback callback) {
         mDistanceMeasurement = requireNonNull(distanceMeasurement);
         mDistanceMeasurementParams = requireNonNull(params);
         mExecutor = requireNonNull(executor);
         mCallback = requireNonNull(callback);
         mUuid = uuid;
-        mAttributionSource = attributionSource;
+        mAttributionSource = source;
     }
 
     /**

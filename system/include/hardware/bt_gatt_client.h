@@ -94,10 +94,12 @@ typedef void (*register_client_callback)(int status, int client_if,
                                          const bluetooth::Uuid& app_uuid);
 
 /** GATT open callback invoked in response to open */
-typedef void (*connect_callback)(int conn_id, int status, int client_if, const RawAddress& bda);
+typedef void (*connect_callback)(int conn_id, int status, int client_if, int transport,
+                                 const RawAddress& bda);
 
 /** Callback invoked in response to close */
-typedef void (*disconnect_callback)(int conn_id, int status, int client_if, const RawAddress& bda);
+typedef void (*disconnect_callback)(int conn_id, int status, int client_if, int transport,
+                                    const RawAddress& bda);
 
 /** Callback invoked in response to (de)register_for_notification */
 typedef void (*register_for_notification_callback)(int conn_id, int registered, int status,
@@ -204,7 +206,7 @@ typedef struct {
   /** Create a connection to a remote LE or dual-mode device */
   bt_status_t (*connect)(int client_if, const RawAddress& bd_addr, uint8_t addr_type,
                          bool is_direct, int transport, bool opportunistic, int initiating_phys,
-                         int preferred_mtu);
+                         int preferred_mtu, bool prefer_relax_mode);
 
   /** Disconnect a remote device or cancel a pending connection */
   bt_status_t (*disconnect)(int client_if, const RawAddress& bd_addr, int conn_id);

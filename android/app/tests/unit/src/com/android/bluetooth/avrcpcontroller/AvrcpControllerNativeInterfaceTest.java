@@ -13,24 +13,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.avrcpcontroller;
+
+import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import android.bluetooth.BluetoothDevice;
 import android.support.v4.media.session.PlaybackStateCompat;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.bluetooth.btservice.AdapterService;
+
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 
 /** Test cases for {@link AvrcpControllerNativeInterface}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class AvrcpControllerNativeInterfaceTest {
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private AdapterService mAdapterService;
+    @Mock private AvrcpControllerService mAvrcpController;
+
     private static final String REMOTE_DEVICE_ADDRESS = "00:00:00:00:00:00";
     private static final byte[] REMOTE_DEVICE_ADDRESS_AS_ARRAY = new byte[] {0, 0, 0, 0, 0, 0};
+
+    private AvrcpControllerNativeInterface mNativeInterface;
+
+    @Before
+    public void setUp() {
+        final BluetoothDevice device = getTestDevice(REMOTE_DEVICE_ADDRESS);
+        mockGetRemoteDevice(mAdapterService, device);
+        mNativeInterface = new AvrcpControllerNativeInterface(mAdapterService, mAvrcpController);
+    }
 
     @Test
     public void createFromNativeMediaItem() {
@@ -40,7 +65,7 @@ public class AvrcpControllerNativeInterfaceTest {
         String[] attrVals = new String[] {"test_title"};
 
         AvrcpItem item =
-                AvrcpControllerNativeInterface.createFromNativeMediaItem(
+                mNativeInterface.createFromNativeMediaItem(
                         REMOTE_DEVICE_ADDRESS_AS_ARRAY,
                         uid,
                         type,
@@ -65,7 +90,7 @@ public class AvrcpControllerNativeInterfaceTest {
         int playable = 0x01; // Playable folder
 
         AvrcpItem item =
-                AvrcpControllerNativeInterface.createFromNativeFolderItem(
+                mNativeInterface.createFromNativeFolderItem(
                         REMOTE_DEVICE_ADDRESS_AS_ARRAY, uid, type, folderName, playable);
 
         assertThat(item.getDevice().getAddress()).isEqualTo(REMOTE_DEVICE_ADDRESS);
@@ -86,7 +111,7 @@ public class AvrcpControllerNativeInterfaceTest {
         int playerType = AvrcpPlayer.TYPE_AUDIO; // No getter exists
 
         AvrcpPlayer player =
-                AvrcpControllerNativeInterface.createFromNativePlayerItem(
+                mNativeInterface.createFromNativePlayerItem(
                         REMOTE_DEVICE_ADDRESS_AS_ARRAY,
                         playerId,
                         name,

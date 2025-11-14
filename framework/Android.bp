@@ -18,12 +18,15 @@ filegroup {
 // `framework-bluetooth-pre-jarjar`
 java_defaults {
     name: "framework-bluetooth-defaults",
+    defaults: [
+        "bluetooth_errorprone_rules",
+        "bluetooth_lint_rules",
+    ],
     static_libs: [
         "PlatformProperties",
-        "bluetooth_constants_java",
+        "bluetooth_constants-java",
         "bluetooth_flags_java_lib",
         "modules-utils-build",
-        "modules-utils-expresslog",
         "service-bluetooth-binder-aidl",
     ],
     libs: [
@@ -40,7 +43,7 @@ java_defaults {
         ":Bluetooth-binder-aidl",
         ":framework-bluetooth-sources",
     ],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
 }
 
 // bluetooth-service needs pre-jarjared version of framework-bluetooth so it can reference copied utility
@@ -136,6 +139,7 @@ java_sdk_library {
 // defaults for tests that need to build against framework-bluetooths's @hide APIs
 java_defaults {
     name: "framework-bluetooth-tests-defaults",
+    defaults: ["bluetooth_errorprone_rules"],
     sdk_version: "core_platform",
     libs: [
         // order matters: classes in framework-bluetooth are resolved before framework, meaning

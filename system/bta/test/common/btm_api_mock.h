@@ -57,6 +57,9 @@ public:
   virtual bool BTM_IsBonded(const RawAddress& bd_addr, tBT_TRANSPORT transport) = 0;
   virtual std::optional<tBLE_BD_ADDR> BTM_BleGetIdentityAddress(const RawAddress address) = 0;
   virtual bool BTM_IsAclConnectionUp(const RawAddress& remote_bda, tBT_TRANSPORT transport) = 0;
+  virtual bool MaybeResolveAddress(RawAddress* bda, tBLE_ADDR_TYPE* bda_type) = 0;
+  virtual bool BTM_RandomPseudoToIdentityAddr(RawAddress* random_pseudo,
+                                              uint8_t* p_static_addr_type) = 0;
 
   virtual ~BtmInterface() = default;
 };
@@ -99,6 +102,9 @@ public:
               (override));
   MOCK_METHOD((bool), BTM_IsAclConnectionUp,
               (const RawAddress& remote_bda, tBT_TRANSPORT transport), (override));
+  MOCK_METHOD((bool), MaybeResolveAddress, (RawAddress* bda, tBLE_ADDR_TYPE* bda_type), (override));
+  MOCK_METHOD((bool), BTM_RandomPseudoToIdentityAddr,
+              (RawAddress* random_pseudo, uint8_t* p_static_addr_type), (override));
 };
 
 /**

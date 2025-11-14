@@ -454,16 +454,102 @@ int BluetoothAudioClientInterface::EndSession() {
   return 0;
 }
 
-size_t BluetoothAudioClientInterface::ReadAudioData(uint8_t* p_buf, uint32_t len) {
+size_t BluetoothAudioClientInterface::ReadAudioDataExact(uint8_t* buf, size_t len) {
+  // The size of the FMQ for receiving data from the Bluetooth Audio HAL
+  // is entirely determined by the Bluetooth Audio HAL. The default
+  // implementation sets this size at 2 x (4 x 96 x 10) = 7680 octets
+  // (tailored for SBC configuration).
+  //
+  // This severely limits the implementation for ReadAudioData: nothing
+  // guarantees that the FMQ size is larger than the requested data,
+  // and the FMQ blocking read API cannot be used.
+  //
+  // To ensure that audio PCM are read exactly (always returns the required
+  // length or 0), while keeping a read timeout, it is necessary to buffer
+  // the PCM data.
+  //
+  // Set the default capacity for reading a frame (20ms) of
+  // 32-bit stereo PCM samples at 96KHz sampling rate:
+  //     2 x 4 x (20 x 96) = 15360 octets
+
+  log::assert_that(len <= kFmqBufferCapacity, "unsupported frame size {}", len);
+
+  if (!data_mq_ || !data_mq_->isValid() || !buf || len == 0) {
+    return 0;
+  }
+
+  if (fmq_buffer_size_ >= len) {
+    // If the buffer already contains enough data, return immediately.
+    // This is unexpected; that would mean that the frame size has reduced
+    // compared to previous encoding intervals.
+    log::warn("FMQ buffer size exceeds frame size : {} >= {}, this is unexpected", fmq_buffer_size_,
+              len);
+
+    memcpy(buf, fmq_buffer_, len);
+    memmove(fmq_buffer_, fmq_buffer_ + len, fmq_buffer_size_ - len);
+    fmq_buffer_size_ -= len;
+    return len;
+  }
+
+  size_t available = data_mq_->availableToRead();
+
+  if (fmq_buffer_size_ + available <= len) {
+    // Reading from the FMQ does not yield enough data to return a complete
+    // frame. Read into the temporary buffer instead.
+    bool status = data_mq_->read(reinterpret_cast<MqDataType*>(fmq_buffer_) + fmq_buffer_size_,
+                                 available);
+    if (!status) {
+      log::error("failed to read {} bytes from FMQ", available);
+      return 0;
+    }
+
+    fmq_buffer_size_ += available;
+    return 0;
+  }
+
+  // Reading from the FMQ does yield enough data to return a complete frame.
+  // Empty the temporary buffer and read the complementary data from the FMQ.
+  bool status = data_mq_->read(reinterpret_cast<MqDataType*>(buf) + fmq_buffer_size_,
+                               len - fmq_buffer_size_);
+  if (!status) {
+    log::error("failed to read {} bytes from FMQ", len - fmq_buffer_size_);
+    return 0;
+  }
+
+  // Only empty the buffer if the FMQ read was successful.
+  memcpy(buf, fmq_buffer_, fmq_buffer_size_);
+  fmq_buffer_size_ = 0;
+  return len;
+}
+
+size_t BluetoothAudioClientInterface::ReadAudioData(uint8_t* p_buf, size_t len) {
   if (!IsValid()) {
     log::error("BluetoothAudioHal is not valid");
     return 0;
   }
+
   if (p_buf == nullptr || len == 0) {
     return 0;
   }
 
   std::lock_guard<std::mutex> guard(internal_mutex_);
+
+  if (com::android::bluetooth::flags::a2dp_fmq_read_exact()) {
+    for (int n = 0; n < 10; n++) {
+      if (n > 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(kDefaultDataReadPollIntervalMs));
+      }
+
+      size_t result = ReadAudioDataExact(p_buf, len);
+      if (result > 0) {
+        transport_->LogBytesRead(result);
+        return result;
+      }
+    }
+
+    log::warn("read underflow: buffer={} expected={}", fmq_buffer_size_, len);
+    return 0;
+  }
 
   size_t total_read = 0;
   int timeout_ms = kDefaultDataReadTimeoutMs;

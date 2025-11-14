@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"اگر آپ بلوٹوتھ کو آن رکھتے ہیں تو آپ کا آلہ آپ کے اگلی مرتبہ ہوائی جہاز وضع میں ہونے پر اسے آن رکھنا یاد رکھے گا"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"بلوٹوتھ آن رہتا ہے"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"آپ کا آلہ ہوائی جہاز وضع میں بلوٹوتھ کو آن رکھنا یاد رکھتا ہے۔ اگر آپ نہیں چاہتے ہیں کہ بلوٹوتھ آن رہے تو اسے آف کریں۔"</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"بلوٹوتھ دیگر آلات سے منسلک ہونے کے دوران ہوائی جہاز وضع میں آن رہتا ہے۔"</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"آپ کی گھڑی سے منسلک ہونے پر آپ کا آلہ ہوائی جہاز وضع میں بلوٹوتھ کو آن رکھے گا۔"</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"بلوٹوتھ میڈیا آلہ سے منسلک ہونے کے دوران ہوائی جہاز وضع میں آن رہتا ہے۔"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"‏Wi-Fi اور بلوٹوتھ آن رہنے دیں"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"‏آپ کا آلہ ہوائی جہاز وضع میں Wi-Fi اور بلوٹوتھ کو آن رکھنا یاد رکھتا ہے۔ اگر آپ نہیں چاہتے ہیں کہ Wi-Fi اور بلوٹوتھ آن رہیں تو انہیں آف کریں۔"</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"بلوٹوتھ دوبارہ آن کر دیا گیا"</string>

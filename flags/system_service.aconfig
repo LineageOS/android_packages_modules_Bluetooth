@@ -12,6 +12,26 @@ flag {
 }
 
 flag {
+    name: "ble_death_recipient_thread"
+    namespace: "bluetooth"
+    description: "Fix a race between death recipient and ble count"
+    bug: "414678172"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "factory_reset_from_the_system_server"
+    namespace: "bluetooth"
+    description: "make possible to factoryReset the Bluetooth when it is off"
+    bug: "406310419"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "kill_instead_of_exit"
     namespace: "bluetooth"
     description: "There is no value in pretending we are exiting properly. This is a kill and we should express it this way when finishing the process"
@@ -19,6 +39,56 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
     bug: "339553092"
+}
+
+flag {
+    name: "limit_user_switch_propagation"
+    namespace: "bluetooth"
+    description: "Do not change the foreground user without restarting the stack"
+    bug: "416313818"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "user_switch_during_ble_on"
+    namespace: "bluetooth"
+    description: "Clean user switch code to properly restart even during BLE_ON"
+    bug: "419104737"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "oneway_media_profile"
+    namespace: "bluetooth"
+    description: "remove non-oneway call to check if media profile are connected"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+    bug: "416087818"
+}
+
+flag {
+    name: "publish_binder_on_start"
+    namespace: "bluetooth"
+    description: "As mentioned in SystemService.java, binder should be published during onStart"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+    bug: "407096751"
+}
+
+flag {
+    name: "cleanup_starting_user"
+    namespace: "bluetooth"
+    description: "Allow the system server to initialize and start the stack when a foreground user start, without waiting on user switch"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+    bug: "418828239"
 }
 
 flag {
@@ -36,4 +106,21 @@ flag {
     metadata {
         purpose: PURPOSE_BUGFIX
     }
+}
+
+flag {
+    name: "wait_stack_role_before_starting"
+    namespace: "bluetooth"
+    description: "RoleManager is racing to give the SYSTEM_BLUETOOTH_STACK role prior to Bluetooth being started."
+    bug: "408242259"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "watch_device_override_airplane_mode"
+    namespace: "bluetooth"
+    description: "If there is a watch connected, keep Bluetooth on"
+    bug: "416092966"
 }

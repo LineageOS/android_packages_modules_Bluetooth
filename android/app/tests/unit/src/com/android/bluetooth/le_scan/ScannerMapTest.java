@@ -20,12 +20,13 @@ import static com.android.bluetooth.TestUtils.MockitoRule;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.anyInt;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doReturn;
 
 import android.app.PendingIntent;
 import android.bluetooth.le.IScannerCallback;
 import android.content.AttributionSource;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Binder;
@@ -35,7 +36,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 
@@ -53,25 +53,23 @@ import java.util.UUID;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class ScannerMapTest {
-    private static final String APP_NAME = "com.android.what.a.name";
-    private static final int UID = 12345;
-    private static final int SCANNER_ID = 321;
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private AdapterService mAdapterService;
     @Mock private PackageManager mMockPackageManager;
     @Mock private ScanController mMockScanController;
     @Mock private IScannerCallback mMockScannerCallback;
-    private final AttributionSource mAttributionSource =
-            InstrumentationRegistry.getInstrumentation().getTargetContext().getAttributionSource();
 
     @Spy private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
+
+    private static final String APP_NAME = "com.android.what.a.name";
+    private static final int UID = 12345;
+    private static final int SCANNER_ID = 321;
 
     @Before
     public void setUp() throws Exception {
         BluetoothMethodProxy.setInstanceForTesting(mMapMethodProxy);
-        TestUtils.setAdapterService(mAdapterService);
         doReturn(mMockPackageManager).when(mAdapterService).getPackageManager();
         doReturn(APP_NAME).when(mMockPackageManager).getNameForUid(anyInt());
     }
@@ -79,18 +77,14 @@ public class ScannerMapTest {
     @After
     public void tearDown() throws Exception {
         BluetoothMethodProxy.setInstanceForTesting(null);
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     @Test
     public void getByMethodsWithPii() {
         ScannerMap scannerMap = new ScannerMap();
+        final Context context = InstrumentationRegistry.getInstrumentation().getContext();
         PendingIntent intent =
-                PendingIntent.getBroadcast(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext(),
-                        0,
-                        new Intent(),
-                        PendingIntent.FLAG_IMMUTABLE);
+                PendingIntent.getBroadcast(context, 0, new Intent(), PendingIntent.FLAG_IMMUTABLE);
         ScanController.PendingIntentInfo info =
                 new ScanController.PendingIntentInfo(intent, null, null, APP_NAME, UID);
         UUID uuid = UUID.randomUUID();

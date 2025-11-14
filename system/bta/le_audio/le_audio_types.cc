@@ -149,21 +149,41 @@ std::ostream& operator<<(std::ostream& os, const CodecConfigSetting& config) {
 /* Helper map for matching various frequency notations */
 const std::map<uint8_t, uint32_t> LeAudioCoreCodecConfig::sampling_freq_map = {
         {codec_spec_conf::kLeAudioSamplingFreq8000Hz, LeAudioCodecConfiguration::kSampleRate8000},
+        {codec_spec_conf::kLeAudioSamplingFreq11025Hz, LeAudioCodecConfiguration::kSampleRate11025},
         {codec_spec_conf::kLeAudioSamplingFreq16000Hz, LeAudioCodecConfiguration::kSampleRate16000},
+        {codec_spec_conf::kLeAudioSamplingFreq22050Hz, LeAudioCodecConfiguration::kSampleRate22050},
         {codec_spec_conf::kLeAudioSamplingFreq24000Hz, LeAudioCodecConfiguration::kSampleRate24000},
         {codec_spec_conf::kLeAudioSamplingFreq32000Hz, LeAudioCodecConfiguration::kSampleRate32000},
         {codec_spec_conf::kLeAudioSamplingFreq44100Hz, LeAudioCodecConfiguration::kSampleRate44100},
-        {codec_spec_conf::kLeAudioSamplingFreq48000Hz,
-         LeAudioCodecConfiguration::kSampleRate48000}};
+        {codec_spec_conf::kLeAudioSamplingFreq48000Hz, LeAudioCodecConfiguration::kSampleRate48000},
+        {codec_spec_conf::kLeAudioSamplingFreq88200Hz, LeAudioCodecConfiguration::kSampleRate88200},
+        {codec_spec_conf::kLeAudioSamplingFreq96000Hz, LeAudioCodecConfiguration::kSampleRate96000},
+        {codec_spec_conf::kLeAudioSamplingFreq176400Hz,
+         LeAudioCodecConfiguration::kSampleRate176400},
+        {codec_spec_conf::kLeAudioSamplingFreq192000Hz,
+         LeAudioCodecConfiguration::kSampleRate192000},
+        {codec_spec_conf::kLeAudioSamplingFreq384000Hz,
+         LeAudioCodecConfiguration::kSampleRate384000},
+};
 
 /* Helper map for matching various frequency notations */
 const std::map<uint32_t, uint8_t> LeAudioCoreCodecConfig::sample_rate_map = {
         {LeAudioCodecConfiguration::kSampleRate8000, codec_spec_conf::kLeAudioSamplingFreq8000Hz},
+        {LeAudioCodecConfiguration::kSampleRate11025, codec_spec_conf::kLeAudioSamplingFreq11025Hz},
         {LeAudioCodecConfiguration::kSampleRate16000, codec_spec_conf::kLeAudioSamplingFreq16000Hz},
+        {LeAudioCodecConfiguration::kSampleRate22050, codec_spec_conf::kLeAudioSamplingFreq22050Hz},
         {LeAudioCodecConfiguration::kSampleRate24000, codec_spec_conf::kLeAudioSamplingFreq24000Hz},
         {LeAudioCodecConfiguration::kSampleRate32000, codec_spec_conf::kLeAudioSamplingFreq32000Hz},
         {LeAudioCodecConfiguration::kSampleRate44100, codec_spec_conf::kLeAudioSamplingFreq44100Hz},
         {LeAudioCodecConfiguration::kSampleRate48000, codec_spec_conf::kLeAudioSamplingFreq48000Hz},
+        {LeAudioCodecConfiguration::kSampleRate88200, codec_spec_conf::kLeAudioSamplingFreq88200Hz},
+        {LeAudioCodecConfiguration::kSampleRate96000, codec_spec_conf::kLeAudioSamplingFreq96000Hz},
+        {LeAudioCodecConfiguration::kSampleRate176400,
+         codec_spec_conf::kLeAudioSamplingFreq176400Hz},
+        {LeAudioCodecConfiguration::kSampleRate192000,
+         codec_spec_conf::kLeAudioSamplingFreq192000Hz},
+        {LeAudioCodecConfiguration::kSampleRate384000,
+         codec_spec_conf::kLeAudioSamplingFreq384000Hz},
 };
 
 /* Helper map for matching various frame durations notations */
@@ -573,7 +593,8 @@ std::ostream& operator<<(std::ostream& os, const DataPathState& state) {
   return os;
 }
 std::ostream& operator<<(std::ostream& os, const types::CigState& state) {
-  static const char* char_value_[5] = {"NONE", "CREATING", "CREATED", "REMOVING", "RECOVERING"};
+  static const char* char_value_[6] = {"NONE",     "CREATING",   "CREATED",
+                                       "REMOVING", "RECOVERING", "RECONFIGURING"};
 
   os << char_value_[static_cast<uint8_t>(state)] << " (" << "0x" << std::setfill('0')
      << std::setw(2) << static_cast<int>(state) << ")";
@@ -609,31 +630,31 @@ std::ostream& operator<<(std::ostream& os, const types::LeAudioCoreCodecConfig& 
 std::string contextTypeToStr(const LeAudioContextType& context) {
   switch (context) {
     case LeAudioContextType::UNINITIALIZED:
-      return "UNINITIALIZED";
+      return "UNINIT";
     case LeAudioContextType::UNSPECIFIED:
-      return "UNSPECIFIED";
+      return "UNSPEC";
     case LeAudioContextType::CONVERSATIONAL:
-      return "CONVERSATIONAL";
+      return "CONV";
     case LeAudioContextType::MEDIA:
       return "MEDIA";
     case LeAudioContextType::GAME:
       return "GAME";
     case LeAudioContextType::INSTRUCTIONAL:
-      return "INSTRUCTIONAL";
+      return "INSTR";
     case LeAudioContextType::VOICEASSISTANTS:
-      return "VOICEASSISTANTS";
+      return "VOICEA";
     case LeAudioContextType::LIVE:
       return "LIVE";
     case LeAudioContextType::SOUNDEFFECTS:
-      return "SOUNDEFFECTS";
+      return "SFX";
     case LeAudioContextType::NOTIFICATIONS:
-      return "NOTIFICATIONS";
+      return "NOTIF";
     case LeAudioContextType::RINGTONE:
-      return "RINGTONE";
+      return "RING";
     case LeAudioContextType::ALERTS:
       return "ALERTS";
     case LeAudioContextType::EMERGENCYALARM:
-      return "EMERGENCYALARM";
+      return "EMERG";
     default:
       return "UNKNOWN";
   }
@@ -674,7 +695,7 @@ std::string AudioContexts::to_string() const {
     for (auto ctx : bluetooth::le_audio::types::kLeAudioContextAllTypesArray) {
       if (test(ctx)) {
         if (s.tellp() != initial_pos) {
-          s << " | ";
+          s << "|";
         }
         s << ctx;
       }
@@ -775,4 +796,26 @@ std::ostream& operator<<(std::ostream& os, const LeAudioMetadata& config) {
 }
 
 }  // namespace types
+
+std::ostream& operator<<(std::ostream& os, const DsaMode& mode) {
+  switch (mode) {
+    case DsaMode::DISABLED:
+      os << "DISABLED";
+      break;
+    case DsaMode::ACL:
+      os << "ACL";
+      break;
+    case DsaMode::ISO_SW:
+      os << "ISO_SW";
+      break;
+    case DsaMode::ISO_HW:
+      os << "ISO_HW";
+      break;
+    default:
+      os << "INVALID";
+      break;
+  }
+  return os;
+}
+
 }  // namespace bluetooth::le_audio

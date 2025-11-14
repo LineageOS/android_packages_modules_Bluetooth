@@ -19,6 +19,7 @@
 #define LOG_TAG "BTAudioClientHfpStub"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
 
 #include "aidl/client_interface_aidl.h"
 #include "aidl/hfp_client_interface_aidl.h"
@@ -37,6 +38,8 @@ using ::aidl::android::hardware::bluetooth::audio::PcmConfiguration;
 namespace bluetooth {
 namespace audio {
 namespace hfp {
+
+using namespace metrics;
 
 static aidl::BluetoothAudioSourceClientInterface* get_decode_client_interface() {
   return HfpDecodingTransport::active_hal_interface;
@@ -532,6 +535,7 @@ void HfpClientInterface::Offload::ConfirmStreamingRequest() {
       aidl::hfp::HfpEncodingTransport::offloading_hal_interface->StreamStarted(
               aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
       instance->ResetPendingCmd();
+      LogMetricHfpStreamStarted(bta_ag_get_active_device());
       return;
     case aidl::hfp::HFP_CTRL_CMD_NONE:
       log::warn("no pending start stream request");

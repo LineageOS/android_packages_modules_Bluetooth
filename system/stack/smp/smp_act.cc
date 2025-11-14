@@ -23,7 +23,6 @@
 
 #include <cstring>
 
-#include "bta/dm/bta_dm_sec_int.h"
 #include "btif/include/btif_common.h"
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager_t.h"
@@ -35,7 +34,6 @@
 #include "stack/btm/btm_ble_sec.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
-#include "stack/include/acl_api.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_client_interface.h"
@@ -256,7 +254,8 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   if (!p_cb->cb_evt && p_cb->discard_sec_req) {
     p_cb->discard_sec_req = false;
-    smp_sm_event(p_cb, SMP_DISCARD_SEC_REQ_EVT, NULL);
+    tSMP_INT_DATA data = {.p_bda = p_cb->pairing_bda};
+    smp_sm_event(p_cb, SMP_DISCARD_SEC_REQ_EVT, &data);
   }
 }
 
@@ -461,19 +460,13 @@ void smp_proc_sec_req(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   }
 
   tBTM_LE_AUTH_REQ auth_req = *(tBTM_LE_AUTH_REQ*)p_data->p_data;
-  tBTM_BLE_SEC_REQ_ACT sec_req_act;
-
-  log::verbose("auth_req=0x{:x}", auth_req);
+  tBTM_BLE_SEC_REQ_ACT sec_req_act = btm_ble_link_sec_check(p_cb->pairing_bda, auth_req);
 
   p_cb->cb_evt = SMP_EVT_NONE;
-
-  btm_ble_link_sec_check(p_cb->pairing_bda, auth_req, &sec_req_act);
-
-  log::verbose("sec_req_act={}", sec_req_act);
+  log::verbose("auth_req={:#x} sec_req_act={}", auth_req, sec_req_act);
 
   switch (sec_req_act) {
     case BTM_BLE_SEC_REQ_ACT_ENCRYPT:
-      log::verbose("BTM_BLE_SEC_REQ_ACT_ENCRYPT");
       smp_sm_event(p_cb, SMP_ENC_REQ_EVT, NULL);
       break;
 
@@ -551,17 +544,14 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   /* erase all keys if it is peripheral proc pairing req */
   if (p_dev_rec && (p_cb->role == HCI_ROLE_PERIPHERAL)) {
     if (com::android::bluetooth::flags::key_missing_ble_peripheral()) {
-      tBTM_SEC_DEV_REC* p_rec = btm_find_dev(p_cb->pairing_bda);
       /* If we bonded, but not encrypted, it's a key missing - disconnect.
        * If we are bonded, its key upgrade and ok to continue.
        * If we are not bonded, its new device pairing and ok.
        */
-      if (p_rec != NULL && p_rec->sec_rec.is_le_link_key_known() &&
-          !p_rec->sec_rec.is_le_device_encrypted()) {
-        log::warn("bonded unencrypted central wants to pair {}", p_cb->pairing_bda);
-        bta_dm_remote_key_missing(p_cb->pairing_bda);
-        acl_disconnect_from_handle(p_rec->ble_hci_handle, HCI_ERR_AUTH_FAILURE,
-                                   "bonded unencrypted central wants to pair");
+      if (BTM_IsBonded(p_cb->pairing_bda, BT_TRANSPORT_LE) &&
+          !BTM_IsEncrypted(p_cb->pairing_bda, BT_TRANSPORT_LE)) {
+        get_btm_client_interface().security.BTM_SecReportBondLoss(p_cb->pairing_bda,
+                                                                  BT_TRANSPORT_LE);
         return;
       }
     }
@@ -1099,9 +1089,7 @@ void smp_proc_srk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   smp_update_key_mask(p_cb, SMP_SEC_KEY_TYPE_CSRK, true);
 
-  if (com::android::bluetooth::flags::save_peer_csrk_after_ltk_gen()) {
-    smp_key_distribution_by_transport(p_cb, NULL);
-  }
+  smp_key_distribution_by_transport(p_cb, NULL);
 
   /* save CSRK to security record */
   tBTM_LE_KEY_VALUE le_key = {
@@ -1119,10 +1107,6 @@ void smp_proc_srk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND)) {
     btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PCSRK, &le_key, true);
-  }
-
-  if (!com::android::bluetooth::flags::save_peer_csrk_after_ltk_gen()) {
-    smp_key_distribution_by_transport(p_cb, NULL);
   }
 }
 
@@ -1201,7 +1185,21 @@ void smp_start_enc(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Function     smp_proc_discard
  * Description   processing for discard security request
  ******************************************************************************/
-void smp_proc_discard(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
+void smp_proc_discard(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+  if (com::android::bluetooth::flags::unrelated_device_smp_cancellation()) {
+    if (p_data == nullptr) {
+      log::warn("Invalid data for discard request");
+      return;
+    }
+
+    RawAddress bda = p_data->p_bda;
+    if (bda != RawAddress::kEmpty && bda != p_cb->pairing_bda) {
+      log::warn("Discard requested for wrong device {} while pairing with {}", bda,
+                p_cb->pairing_bda);
+      return;
+    }
+  }
+
   log::verbose("addr:{}", p_cb->pairing_bda);
   if (!(p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD)) {
     smp_reset_control_value(p_cb);
@@ -1535,9 +1533,6 @@ void smp_process_io_response(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
       switch (p_cb->loc_oob_flag) {
         case SMP_OOB_NONE:
           log::info("SMP_MODEL_SEC_CONN_OOB with SMP_OOB_NONE");
-          if (!com::android::bluetooth::flags::remove_dup_pairing_response_in_oob_pairing()) {
-            smp_send_pair_rsp(p_cb, NULL);
-          }
           break;
         case SMP_OOB_PRESENT:
           log::info("SMP_MODEL_SEC_CONN_OOB with SMP_OOB_PRESENT");
@@ -2093,9 +2088,10 @@ void smp_link_encrypted(const RawAddress& bda, uint8_t encr_enable) {
   }
 }
 
-void smp_cancel_start_encryption_attempt() {
+void smp_cancel_start_encryption_attempt(const RawAddress& bda) {
   log::error("Encryption request cancelled");
-  smp_sm_event(&smp_cb, SMP_DISCARD_SEC_REQ_EVT, NULL);
+  tSMP_INT_DATA data = {.p_bda = bda};
+  smp_sm_event(&smp_cb, SMP_DISCARD_SEC_REQ_EVT, &data);
 }
 
 /*******************************************************************************

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.btservice;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
@@ -32,8 +33,8 @@ import android.bluetooth.BluetoothDevice;
 import android.content.ContentResolver;
 import android.provider.Settings;
 
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.MediumTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMetricsProto.BluetoothRemoteDeviceInformation;
@@ -257,7 +258,7 @@ public class MetricsLoggerTest {
         int day = BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__DAY;
         int week = BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__WEEK;
         int month = BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__MONTH;
-        doReturn(ApplicationProvider.getApplicationContext().getContentResolver())
+        doReturn(InstrumentationRegistry.getInstrumentation().getContext().getContentResolver())
                 .when(mAdapterService)
                 .getContentResolver();
 
@@ -288,7 +289,7 @@ public class MetricsLoggerTest {
 
     private static void prepareLastActiveTimeDaysAgo(int days) {
         final ContentResolver contentResolver =
-                ApplicationProvider.getApplicationContext().getContentResolver();
+                InstrumentationRegistry.getInstrumentation().getContext().getContentResolver();
         final LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
         final String lastActive = now.minusDays(days).toString();
         Settings.Secure.putString(contentResolver, "last_active_day", lastActive);

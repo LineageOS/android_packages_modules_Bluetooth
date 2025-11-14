@@ -20,11 +20,11 @@ import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
+import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
-import android.annotation.SuppressLint;
 import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
 import android.bluetooth.annotations.RequiresLegacyBluetoothPermission;
 import android.content.AttributionSource;
@@ -32,6 +32,8 @@ import android.os.IBinder;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
 import android.util.Log;
+
+import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -51,8 +53,7 @@ import java.util.UUID;
 public final class BluetoothGattServer implements BluetoothProfile {
     private static final String TAG = BluetoothGattServer.class.getSimpleName();
 
-    private static final boolean DBG = true;
-    private static final boolean VDBG = false;
+    private static final boolean VDBG = Log.isLoggable("bluetooth", Log.VERBOSE);
 
     private final IBluetoothGatt mService;
     private final BluetoothAdapter mAdapter;
@@ -61,7 +62,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
     private BluetoothGattServerCallback mCallback;
 
     private final Object mServerIfLock = new Object();
-    private int mServerIf;
+    private boolean mServerRegistered;
     private final int mTransport;
     private BluetoothGattService mPendingService;
     private final List<BluetoothGattService> mServices;
@@ -71,7 +72,6 @@ public final class BluetoothGattServer implements BluetoothProfile {
     private static final int GATT_MAX_ATTR_LEN = 512;
 
     /** Bluetooth GATT interface callbacks */
-    @SuppressLint("AndroidFrameworkBluetoothPermission")
     private final IBluetoothGattServerCallback mBluetoothGattServerCallback =
             new IBluetoothGattServerCallback.Stub() {
                 /**
@@ -80,18 +80,12 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
-                public void onServerRegistered(int status, int serverIf) {
-                    if (DBG) {
-                        Log.d(
-                                TAG,
-                                "onServerRegistered() - status="
-                                        + status
-                                        + " serverIf="
-                                        + serverIf);
-                    }
+                @RequiresNoPermission // Callback to app
+                public void onServerRegistered(int status) {
+                    Log.d(TAG, "onServerRegistered(" + status + ")");
                     synchronized (mServerIfLock) {
                         if (mCallback != null) {
-                            mServerIf = serverIf;
+                            mServerRegistered = true;
                             mServerIfLock.notify();
                         } else {
                             // registration timeout
@@ -106,25 +100,22 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onServerConnectionState(
-                        int status, int serverIf, boolean connected, String address) {
-                    if (DBG) {
-                        Log.d(
-                                TAG,
-                                "onServerConnectionState() - status="
-                                        + status
-                                        + " serverIf="
-                                        + serverIf
-                                        + " connected="
-                                        + connected
-                                        + " device="
-                                        + BluetoothUtils.toAnonymizedAddress(address));
-                    }
+                        int status, boolean connected, BluetoothDevice device) {
+                    Log.d(
+                            TAG,
+                            "onServerConnectionState() - status="
+                                    + status
+                                    + " connected="
+                                    + connected
+                                    + " device="
+                                    + device);
+
+                    Attributable.setAttributionSource(device, mAttributionSource);
                     try {
                         mCallback.onConnectionStateChange(
-                                mAdapter.getRemoteDevice(address),
-                                status,
-                                connected ? STATE_CONNECTED : STATE_DISCONNECTED);
+                                device, status, connected ? STATE_CONNECTED : STATE_DISCONNECTED);
                     } catch (Exception ex) {
                         Log.w(TAG, "Unhandled exception in callback", ex);
                     }
@@ -136,17 +127,16 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onServiceAdded(int status, BluetoothGattService service) {
-                    if (DBG) {
-                        Log.d(
-                                TAG,
-                                "onServiceAdded() - handle="
-                                        + service.getInstanceId()
-                                        + " uuid="
-                                        + service.getUuid()
-                                        + " status="
-                                        + status);
-                    }
+                    Log.d(
+                            TAG,
+                            "onServiceAdded() - handle="
+                                    + service.getInstanceId()
+                                    + " uuid="
+                                    + service.getUuid()
+                                    + " status="
+                                    + status);
 
                     if (mPendingService == null) {
                         return;
@@ -187,17 +177,22 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onCharacteristicReadRequest(
-                        String address, int transId, int offset, boolean isLong, int handle) {
+                        BluetoothDevice device,
+                        int transId,
+                        int offset,
+                        boolean isLong,
+                        int handle) {
                     if (VDBG) Log.d(TAG, "onCharacteristicReadRequest() - handle=" + handle);
 
-                    BluetoothDevice device = mAdapter.getRemoteDevice(address);
                     BluetoothGattCharacteristic characteristic = getCharacteristicByHandle(handle);
                     if (characteristic == null) {
                         Log.w(TAG, "onCharacteristicReadRequest() no char for handle " + handle);
                         return;
                     }
 
+                    Attributable.setAttributionSource(device, mAttributionSource);
                     try {
                         mCallback.onCharacteristicReadRequest(
                                 device, transId, offset, characteristic);
@@ -212,17 +207,22 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onDescriptorReadRequest(
-                        String address, int transId, int offset, boolean isLong, int handle) {
+                        BluetoothDevice device,
+                        int transId,
+                        int offset,
+                        boolean isLong,
+                        int handle) {
                     if (VDBG) Log.d(TAG, "onCharacteristicReadRequest() - handle=" + handle);
 
-                    BluetoothDevice device = mAdapter.getRemoteDevice(address);
                     BluetoothGattDescriptor descriptor = getDescriptorByHandle(handle);
                     if (descriptor == null) {
                         Log.w(TAG, "onDescriptorReadRequest() no desc for handle " + handle);
                         return;
                     }
 
+                    Attributable.setAttributionSource(device, mAttributionSource);
                     try {
                         mCallback.onDescriptorReadRequest(device, transId, offset, descriptor);
                     } catch (Exception ex) {
@@ -236,8 +236,9 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onCharacteristicWriteRequest(
-                        String address,
+                        BluetoothDevice device,
                         int transId,
                         int offset,
                         int length,
@@ -247,13 +248,13 @@ public final class BluetoothGattServer implements BluetoothProfile {
                         byte[] value) {
                     if (VDBG) Log.d(TAG, "onCharacteristicWriteRequest() - handle=" + handle);
 
-                    BluetoothDevice device = mAdapter.getRemoteDevice(address);
                     BluetoothGattCharacteristic characteristic = getCharacteristicByHandle(handle);
                     if (characteristic == null) {
                         Log.w(TAG, "onCharacteristicWriteRequest() no char for handle " + handle);
                         return;
                     }
 
+                    Attributable.setAttributionSource(device, mAttributionSource);
                     try {
                         mCallback.onCharacteristicWriteRequest(
                                 device, transId, characteristic, isPrep, needRsp, offset, value);
@@ -268,8 +269,9 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onDescriptorWriteRequest(
-                        String address,
+                        BluetoothDevice device,
                         int transId,
                         int offset,
                         int length,
@@ -279,13 +281,13 @@ public final class BluetoothGattServer implements BluetoothProfile {
                         byte[] value) {
                     if (VDBG) Log.d(TAG, "onDescriptorWriteRequest() - handle=" + handle);
 
-                    BluetoothDevice device = mAdapter.getRemoteDevice(address);
                     BluetoothGattDescriptor descriptor = getDescriptorByHandle(handle);
                     if (descriptor == null) {
                         Log.w(TAG, "onDescriptorWriteRequest() no desc for handle " + handle);
                         return;
                     }
 
+                    Attributable.setAttributionSource(device, mAttributionSource);
                     try {
                         mCallback.onDescriptorWriteRequest(
                                 device, transId, descriptor, isPrep, needRsp, offset, value);
@@ -300,22 +302,19 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
-                public void onExecuteWrite(String address, int transId, boolean execWrite) {
-                    if (DBG) {
-                        Log.d(
-                                TAG,
-                                "onExecuteWrite() - "
-                                        + "device="
-                                        + BluetoothUtils.toAnonymizedAddress(address)
-                                        + ", transId="
-                                        + transId
-                                        + "execWrite="
-                                        + execWrite);
-                    }
+                @RequiresNoPermission // Callback to app
+                public void onExecuteWrite(BluetoothDevice device, int transId, boolean execWrite) {
+                    Log.d(
+                            TAG,
+                            "onExecuteWrite() - "
+                                    + "device="
+                                    + device
+                                    + ", transId="
+                                    + transId
+                                    + "execWrite="
+                                    + execWrite);
 
-                    BluetoothDevice device = mAdapter.getRemoteDevice(address);
-                    if (device == null) return;
-
+                    Attributable.setAttributionSource(device, mAttributionSource);
                     try {
                         mCallback.onExecuteWrite(device, transId, execWrite);
                     } catch (Exception ex) {
@@ -329,20 +328,19 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
-                public void onNotificationSent(String address, int status) {
+                @RequiresNoPermission // Callback to app
+                public void onNotificationSent(BluetoothDevice device, int status) {
                     if (VDBG) {
                         Log.d(
                                 TAG,
                                 "onNotificationSent() - "
                                         + "device="
-                                        + BluetoothUtils.toAnonymizedAddress(address)
+                                        + device
                                         + ", status="
                                         + status);
                     }
 
-                    BluetoothDevice device = mAdapter.getRemoteDevice(address);
-                    if (device == null) return;
-
+                    Attributable.setAttributionSource(device, mAttributionSource);
                     try {
                         mCallback.onNotificationSent(device, status);
                     } catch (Exception ex) {
@@ -356,20 +354,11 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
-                public void onMtuChanged(String address, int mtu) {
-                    if (DBG) {
-                        Log.d(
-                                TAG,
-                                "onMtuChanged() - "
-                                        + "device="
-                                        + BluetoothUtils.toAnonymizedAddress(address)
-                                        + ", mtu="
-                                        + mtu);
-                    }
+                @RequiresNoPermission // Callback to app
+                public void onMtuChanged(BluetoothDevice device, int mtu) {
+                    Log.d(TAG, "onMtuChanged() - " + "device=" + device + ", mtu=" + mtu);
 
-                    BluetoothDevice device = mAdapter.getRemoteDevice(address);
-                    if (device == null) return;
-
+                    Attributable.setAttributionSource(device, mAttributionSource);
                     try {
                         mCallback.onMtuChanged(device, mtu);
                     } catch (Exception ex) {
@@ -383,22 +372,19 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
-                public void onPhyUpdate(String address, int txPhy, int rxPhy, int status) {
-                    if (DBG) {
-                        Log.d(
-                                TAG,
-                                "onPhyUpdate() - "
-                                        + "device="
-                                        + BluetoothUtils.toAnonymizedAddress(address)
-                                        + ", txPHy="
-                                        + txPhy
-                                        + ", rxPHy="
-                                        + rxPhy);
-                    }
+                @RequiresNoPermission // Callback to app
+                public void onPhyUpdate(BluetoothDevice device, int txPhy, int rxPhy, int status) {
+                    Log.d(
+                            TAG,
+                            "onPhyUpdate() - "
+                                    + "device="
+                                    + device
+                                    + ", txPHy="
+                                    + txPhy
+                                    + ", rxPHy="
+                                    + rxPhy);
 
-                    BluetoothDevice device = mAdapter.getRemoteDevice(address);
-                    if (device == null) return;
-
+                    Attributable.setAttributionSource(device, mAttributionSource);
                     try {
                         mCallback.onPhyUpdate(device, txPhy, rxPhy, status);
                     } catch (Exception ex) {
@@ -412,22 +398,19 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
-                public void onPhyRead(String address, int txPhy, int rxPhy, int status) {
-                    if (DBG) {
-                        Log.d(
-                                TAG,
-                                "onPhyUpdate() - "
-                                        + "device="
-                                        + BluetoothUtils.toAnonymizedAddress(address)
-                                        + ", txPHy="
-                                        + txPhy
-                                        + ", rxPHy="
-                                        + rxPhy);
-                    }
+                @RequiresNoPermission // Callback to app
+                public void onPhyRead(BluetoothDevice device, int txPhy, int rxPhy, int status) {
+                    Log.d(
+                            TAG,
+                            "onPhyUpdate() - "
+                                    + "device="
+                                    + device
+                                    + ", txPHy="
+                                    + txPhy
+                                    + ", rxPHy="
+                                    + rxPhy);
 
-                    BluetoothDevice device = mAdapter.getRemoteDevice(address);
-                    if (device == null) return;
-
+                    Attributable.setAttributionSource(device, mAttributionSource);
                     try {
                         mCallback.onPhyRead(device, txPhy, rxPhy, status);
                     } catch (Exception ex) {
@@ -441,25 +424,27 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  * @hide
                  */
                 @Override
+                @RequiresNoPermission // Callback to app
                 public void onConnectionUpdated(
-                        String address, int interval, int latency, int timeout, int status) {
-                    if (DBG) {
-                        Log.d(
-                                TAG,
-                                "onConnectionUpdated() - Device="
-                                        + BluetoothUtils.toAnonymizedAddress(address)
-                                        + " interval="
-                                        + interval
-                                        + " latency="
-                                        + latency
-                                        + " timeout="
-                                        + timeout
-                                        + " status="
-                                        + status);
-                    }
-                    BluetoothDevice device = mAdapter.getRemoteDevice(address);
-                    if (device == null) return;
+                        BluetoothDevice device,
+                        int interval,
+                        int latency,
+                        int timeout,
+                        int status) {
+                    Log.d(
+                            TAG,
+                            "onConnectionUpdated() - device="
+                                    + device
+                                    + " interval="
+                                    + interval
+                                    + " latency="
+                                    + latency
+                                    + " timeout="
+                                    + timeout
+                                    + " status="
+                                    + status);
 
+                    Attributable.setAttributionSource(device, mAttributionSource);
                     try {
                         mCallback.onConnectionUpdated(device, interval, latency, timeout, status);
                     } catch (Exception ex) {
@@ -468,43 +453,27 @@ public final class BluetoothGattServer implements BluetoothProfile {
                 }
 
                 /**
-                 * Callback invoked when the given connection's subrate parameters are changed
+                 * Callback invoked when the given connection's subrating is changed
                  *
                  * @hide
                  */
                 @Override
-                public void onSubrateChange(
-                        String address,
-                        int subrateFactor,
-                        int latency,
-                        int contNum,
-                        int timeout,
-                        int status) {
-                    if (DBG) {
-                        Log.d(
-                                TAG,
-                                "onSubrateChange() - "
-                                        + "Device="
-                                        + BluetoothUtils.toAnonymizedAddress(address)
-                                        + ", subrateFactor="
-                                        + subrateFactor
-                                        + ", latency="
-                                        + latency
-                                        + ", contNum="
-                                        + contNum
-                                        + ", timeout="
-                                        + timeout
-                                        + ", status="
-                                        + status);
-                    }
-                    BluetoothDevice device = mAdapter.getRemoteDevice(address);
-                    if (device == null) {
-                        return;
-                    }
+                @RequiresNoPermission // Callback to app
+                @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
+                public void onSubrateChange(BluetoothDevice device, int subrateMode, int status) {
+                    Log.d(
+                            TAG,
+                            "onSubrateChange() - "
+                                    + "device="
+                                    + device
+                                    + ", subrateMode="
+                                    + subrateMode
+                                    + ", status="
+                                    + status);
 
+                    Attributable.setAttributionSource(device, mAttributionSource);
                     try {
-                        mCallback.onSubrateChange(
-                                device, subrateFactor, latency, contNum, timeout, status);
+                        mCallback.onSubrateChange(device, subrateMode, status);
                     } catch (Exception ex) {
                         Log.w(TAG, "Unhandled exception: " + ex);
                     }
@@ -518,19 +487,18 @@ public final class BluetoothGattServer implements BluetoothProfile {
         mAdapter = adapter;
         mAttributionSource = adapter.getAttributionSource();
         mCallback = null;
-        mServerIf = 0;
         mTransport = transport;
         mServices = new ArrayList<BluetoothGattService>();
     }
 
     /**
-     * Get the identifier of the BluetoothGattServer, or 0 if it is closed
+     * Get the identifier of the BluetoothGattServer
      *
      * @hide
      */
     @RequiresNoPermission
-    public int getServerIf() {
-        return mServerIf;
+    public IBluetoothGattServerCallback getCallbackId() {
+        return mBluetoothGattServerCallback;
     }
 
     /**
@@ -593,7 +561,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public void close() {
-        if (DBG) Log.d(TAG, "close()");
+        Log.d(TAG, "close()");
         unregisterCallback();
     }
 
@@ -632,13 +600,13 @@ public final class BluetoothGattServer implements BluetoothProfile {
     @SuppressWarnings("WaitNotInLoop") // TODO(b/314811467)
     /*package*/ boolean registerCallback(
             BluetoothGattServerCallback callback, boolean eattSupport) {
-        if (DBG) Log.d(TAG, "registerCallback()");
+        Log.d(TAG, "registerCallback()");
         if (mService == null) {
             Log.e(TAG, "GATT service not available");
             return false;
         }
         UUID uuid = UUID.randomUUID();
-        if (DBG) Log.d(TAG, "registerCallback() - UUID=" + uuid);
+        Log.d(TAG, "registerCallback() - UUID=" + uuid);
 
         synchronized (mServerIfLock) {
             if (mCallback != null) {
@@ -652,6 +620,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                         new ParcelUuid(uuid),
                         mBluetoothGattServerCallback,
                         eattSupport,
+                        mTransport,
                         mAttributionSource);
             } catch (RemoteException e) {
                 Log.e(TAG, "", e);
@@ -666,7 +635,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                 mCallback = null;
             }
 
-            if (mServerIf == 0) {
+            if (!mServerRegistered) {
                 mCallback = null;
                 return false;
             } else {
@@ -679,13 +648,13 @@ public final class BluetoothGattServer implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     private void unregisterCallback() {
-        if (DBG) Log.d(TAG, "unregisterCallback() - mServerIf=" + mServerIf);
-        if (mService == null || mServerIf == 0) return;
+        Log.d(TAG, "unregisterCallback()");
+        if (mService == null || !mServerRegistered) return;
 
         try {
             mCallback = null;
-            mService.unregisterServer(mServerIf, mAttributionSource);
-            mServerIf = 0;
+            mService.unregisterServer(mBluetoothGattServerCallback, mAttributionSource);
+            mServerRegistered = false;
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
         }
@@ -728,16 +697,14 @@ public final class BluetoothGattServer implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean connect(BluetoothDevice device, boolean autoConnect) {
-        if (DBG) {
-            Log.d(TAG, "connect() - device: " + device + ", auto: " + autoConnect);
-        }
-        if (mService == null || mServerIf == 0) return false;
+        Log.d(TAG, "connect() - device: " + device + ", auto: " + autoConnect);
+        if (mService == null || !mServerRegistered) return false;
 
         try {
             // autoConnect is inverse of "isDirect"
             mService.serverConnect(
-                    mServerIf,
-                    device.getAddress(),
+                    mBluetoothGattServerCallback,
+                    device,
                     device.getAddressType(),
                     !autoConnect,
                     mTransport,
@@ -759,11 +726,11 @@ public final class BluetoothGattServer implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public void cancelConnection(BluetoothDevice device) {
-        if (DBG) Log.d(TAG, "cancelConnection() - device: " + device);
-        if (mService == null || mServerIf == 0) return;
+        Log.d(TAG, "cancelConnection() - device: " + device);
+        if (mService == null || !mServerRegistered) return;
 
         try {
-            mService.serverDisconnect(mServerIf, device.getAddress(), mAttributionSource);
+            mService.serverDisconnect(mBluetoothGattServerCallback, device, mAttributionSource);
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
         }
@@ -793,7 +760,12 @@ public final class BluetoothGattServer implements BluetoothProfile {
     public void setPreferredPhy(BluetoothDevice device, int txPhy, int rxPhy, int phyOptions) {
         try {
             mService.serverSetPreferredPhy(
-                    mServerIf, device.getAddress(), txPhy, rxPhy, phyOptions, mAttributionSource);
+                    mBluetoothGattServerCallback,
+                    device,
+                    txPhy,
+                    rxPhy,
+                    phyOptions,
+                    mAttributionSource);
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
         }
@@ -809,7 +781,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public void readPhy(BluetoothDevice device) {
         try {
-            mService.serverReadPhy(mServerIf, device.getAddress(), mAttributionSource);
+            mService.serverReadPhy(mBluetoothGattServerCallback, device, mAttributionSource);
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
         }
@@ -840,12 +812,12 @@ public final class BluetoothGattServer implements BluetoothProfile {
     public boolean sendResponse(
             BluetoothDevice device, int requestId, int status, int offset, byte[] value) {
         if (VDBG) Log.d(TAG, "sendResponse() - device: " + device);
-        if (mService == null || mServerIf == 0) return false;
+        if (mService == null || !mServerRegistered) return false;
 
         try {
             mService.sendResponse(
-                    mServerIf,
-                    device.getAddress(),
+                    mBluetoothGattServerCallback,
+                    device,
                     requestId,
                     status,
                     offset,
@@ -924,7 +896,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
             boolean confirm,
             @NonNull byte[] value) {
         if (VDBG) Log.d(TAG, "notifyCharacteristicChanged() - device: " + device);
-        if (mService == null || mServerIf == 0) {
+        if (mService == null || !mServerRegistered) {
             return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
         }
 
@@ -948,8 +920,8 @@ public final class BluetoothGattServer implements BluetoothProfile {
 
         try {
             return mService.sendNotification(
-                    mServerIf,
-                    device.getAddress(),
+                    mBluetoothGattServerCallback,
+                    device,
                     characteristic.getInstanceId(),
                     confirm,
                     value,
@@ -979,13 +951,13 @@ public final class BluetoothGattServer implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean addService(BluetoothGattService service) {
-        if (DBG) Log.d(TAG, "addService() - service: " + service.getUuid());
-        if (mService == null || mServerIf == 0) return false;
+        Log.d(TAG, "addService() - service: " + service.getUuid());
+        if (mService == null || !mServerRegistered) return false;
 
         mPendingService = service;
 
         try {
-            mService.addService(mServerIf, service, mAttributionSource);
+            mService.addService(mBluetoothGattServerCallback, service, mAttributionSource);
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
             return false;
@@ -1004,15 +976,16 @@ public final class BluetoothGattServer implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean removeService(BluetoothGattService service) {
-        if (DBG) Log.d(TAG, "removeService() - service: " + service.getUuid());
-        if (mService == null || mServerIf == 0) return false;
+        Log.d(TAG, "removeService() - service: " + service.getUuid());
+        if (mService == null || !mServerRegistered) return false;
 
         BluetoothGattService intService =
                 getService(service.getUuid(), service.getInstanceId(), service.getType());
         if (intService == null) return false;
 
         try {
-            mService.removeService(mServerIf, service.getInstanceId(), mAttributionSource);
+            mService.removeService(
+                    mBluetoothGattServerCallback, service.getInstanceId(), mAttributionSource);
             mServices.remove(intService);
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
@@ -1027,11 +1000,11 @@ public final class BluetoothGattServer implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public void clearServices() {
-        if (DBG) Log.d(TAG, "clearServices()");
-        if (mService == null || mServerIf == 0) return;
+        Log.d(TAG, "clearServices()");
+        if (mService == null || !mServerRegistered) return;
 
         try {
-            mService.clearServices(mServerIf, mAttributionSource);
+            mService.clearServices(mBluetoothGattServerCallback, mAttributionSource);
             mServices.clear();
         } catch (RemoteException e) {
             Log.e(TAG, "", e);

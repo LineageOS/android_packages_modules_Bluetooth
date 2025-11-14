@@ -23,10 +23,6 @@
 #include "stack/include/a2dp_codec_api.h"
 #include "types/raw_address.h"
 
-// Sets the active peer to |peer_addr|.
-// Returns true on success, otherwise false.
-bool bta_av_co_set_active_peer(const RawAddress& peer_addr);
-
 /**
  * Sets the active peer within the sink profile of the bta av co instance.
  * @param peer_address peer address of the remote device.

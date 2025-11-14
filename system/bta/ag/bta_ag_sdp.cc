@@ -26,6 +26,8 @@
 #include <base/functional/bind.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
+#include <bluetooth/metrics/os_metrics.h>
 
 #include <cstdint>
 #include <cstring>
@@ -44,7 +46,6 @@
 #include "device/include/interop_config.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/helpers.h"
-#include "main/shim/metrics_api.h"
 #include "osi/include/allocator.h"
 #include "sdp_callback.h"
 #include "sdp_status.h"
@@ -61,7 +62,6 @@
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
-using namespace bluetooth::shim;
 using bluetooth::Uuid;
 
 /* Number of protocol elements in protocol element list. */
@@ -76,18 +76,18 @@ using bluetooth::Uuid;
 #endif
 
 /* declare sdp callback functions */
-void bta_ag_sdp_cback_1(const RawAddress& bd_addr, tSDP_RESULT);
-void bta_ag_sdp_cback_2(const RawAddress& bd_addr, tSDP_RESULT);
-void bta_ag_sdp_cback_3(const RawAddress& bd_addr, tSDP_RESULT);
-void bta_ag_sdp_cback_4(const RawAddress& bd_addr, tSDP_RESULT);
-void bta_ag_sdp_cback_5(const RawAddress& bd_addr, tSDP_RESULT);
-void bta_ag_sdp_cback_6(const RawAddress& bd_addr, tSDP_RESULT);
+static void bta_ag_sdp_cback_1(const RawAddress& bd_addr, tSDP_RESULT);
+static void bta_ag_sdp_cback_2(const RawAddress& bd_addr, tSDP_RESULT);
+static void bta_ag_sdp_cback_3(const RawAddress& bd_addr, tSDP_RESULT);
+static void bta_ag_sdp_cback_4(const RawAddress& bd_addr, tSDP_RESULT);
+static void bta_ag_sdp_cback_5(const RawAddress& bd_addr, tSDP_RESULT);
+static void bta_ag_sdp_cback_6(const RawAddress& bd_addr, tSDP_RESULT);
 
 /* SDP callback function table */
 typedef tSDP_DISC_CMPL_CB* tBTA_AG_SDP_CBACK;
-const tBTA_AG_SDP_CBACK bta_ag_sdp_cback_tbl[] = {bta_ag_sdp_cback_1, bta_ag_sdp_cback_2,
-                                                  bta_ag_sdp_cback_3, bta_ag_sdp_cback_4,
-                                                  bta_ag_sdp_cback_5, bta_ag_sdp_cback_6};
+static const tBTA_AG_SDP_CBACK bta_ag_sdp_cback_tbl[] = {bta_ag_sdp_cback_1, bta_ag_sdp_cback_2,
+                                                         bta_ag_sdp_cback_3, bta_ag_sdp_cback_4,
+                                                         bta_ag_sdp_cback_5, bta_ag_sdp_cback_6};
 
 /*******************************************************************************
  *
@@ -130,22 +130,22 @@ static void bta_ag_sdp_cback(tSDP_STATUS status, uint8_t idx) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_sdp_cback_1(const RawAddress& /* bd_addr */, tSDP_STATUS status) {
+static void bta_ag_sdp_cback_1(const RawAddress& /* bd_addr */, tSDP_STATUS status) {
   bta_ag_sdp_cback(status, 1);
 }
-void bta_ag_sdp_cback_2(const RawAddress& /* bd_addr */, tSDP_STATUS status) {
+static void bta_ag_sdp_cback_2(const RawAddress& /* bd_addr */, tSDP_STATUS status) {
   bta_ag_sdp_cback(status, 2);
 }
-void bta_ag_sdp_cback_3(const RawAddress& /* bd_addr */, tSDP_STATUS status) {
+static void bta_ag_sdp_cback_3(const RawAddress& /* bd_addr */, tSDP_STATUS status) {
   bta_ag_sdp_cback(status, 3);
 }
-void bta_ag_sdp_cback_4(const RawAddress& /* bd_addr */, tSDP_STATUS status) {
+static void bta_ag_sdp_cback_4(const RawAddress& /* bd_addr */, tSDP_STATUS status) {
   bta_ag_sdp_cback(status, 4);
 }
-void bta_ag_sdp_cback_5(const RawAddress& /* bd_addr */, tSDP_STATUS status) {
+static void bta_ag_sdp_cback_5(const RawAddress& /* bd_addr */, tSDP_STATUS status) {
   bta_ag_sdp_cback(status, 5);
 }
-void bta_ag_sdp_cback_6(const RawAddress& /* bd_addr */, tSDP_STATUS status) {
+static void bta_ag_sdp_cback_6(const RawAddress& /* bd_addr */, tSDP_STATUS status) {
   bta_ag_sdp_cback(status, 6);
 }
 
@@ -391,7 +391,7 @@ bool bta_ag_sdp_find_attr(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
       peer_version = p_scb->peer_version;
     }
 
-    LogMetricHfpHfVersion(ToGdAddress(p_scb->peer_addr), p_scb->peer_version);
+    bluetooth::metrics::LogMetricHfpHfVersion(p_scb->peer_addr, p_scb->peer_version);
 
     if (service & BTA_HFP_SERVICE_MASK) {
       /* Update cached peer version if the new one is different */

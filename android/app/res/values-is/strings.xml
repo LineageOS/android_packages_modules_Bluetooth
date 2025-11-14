@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Ef þú hefur kveikt á Bluetooth mun tækið muna að hafa kveikt á því næst þegar þú stillir á flugstillingu"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Áfram kveikt á Bluetooth"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Tækið man að hafa kveikt á Bluetooth í flugstillingu. Slökktu á Bluetooth ef þú vilt ekki hafa kveikt á því."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Ekki er slökkt á Bluetooth í flugstillingu þegar það er tengt við önnur tæki."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Tækið verður stillt á að hafa kveikt á Bluetooth í flugstillingu þegar það er tengt við úrið þitt."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Bluetooth verður áfram í flugstillingu á meðan það er tengt við geymslumiðil."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Áfram verður kveikt á Wi-Fi og Bluetooth"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Tæki man að hafa kveikt á Wi-Fi og Bluetooth í flugstillingu. Slökktu á Wi-Fi og Bluetooth ef þú vilt ekki hafa kveikt á þessu."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Búið er að kveikja aftur á Bluetooth"</string>

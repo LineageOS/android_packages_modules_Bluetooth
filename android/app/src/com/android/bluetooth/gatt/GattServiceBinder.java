@@ -16,11 +16,16 @@
 
 package com.android.bluetooth.gatt;
 
+import static android.Manifest.permission.BLUETOOTH_CONNECT;
+import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+
 import static com.android.bluetooth.Utils.callerIsSystemOrActiveOrManagedUser;
+import static com.android.bluetooth.Utils.checkCallerTargetSdk;
 import static com.android.bluetooth.Utils.checkConnectPermissionForDataDelivery;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -30,7 +35,9 @@ import android.bluetooth.IBluetoothGatt;
 import android.bluetooth.IBluetoothGattCallback;
 import android.bluetooth.IBluetoothGattServerCallback;
 import android.content.AttributionSource;
+import android.os.Build;
 import android.os.ParcelUuid;
+import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ProfileService.IProfileServiceBinder;
@@ -38,7 +45,6 @@ import com.android.bluetooth.btservice.ProfileService.IProfileServiceBinder;
 import java.util.Collections;
 import java.util.List;
 
-/** Handlers for incoming service calls */
 class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBinder {
     private static final String TAG =
             GattServiceConfig.TAG_PREFIX + GattServiceBinder.class.getSimpleName();
@@ -64,14 +70,26 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         return service;
     }
 
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    private GattService getServiceAndEnforceConnect(AttributionSource source) {
+        GattService service = mService;
+
+        if (!Utils.checkServiceAvailable(service, TAG)
+                || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
+            return null;
+        }
+
+        return service;
+    }
+
     @Override
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(
             int[] states, AttributionSource source) {
-        GattService service = getService();
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return Collections.emptyList();
         }
-        return service.getDevicesMatchingConnectionStates(states, source);
+        return service.getDevicesMatchingConnectionStates(states);
     }
 
     @Override
@@ -79,233 +97,317 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             ParcelUuid uuid,
             IBluetoothGattCallback callback,
             boolean eattSupport,
+            int transport,
             AttributionSource source) {
-        GattService service = getService();
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.registerClient(uuid.getUuid(), callback, eattSupport, source);
+        service.registerClient(uuid.getUuid(), callback, eattSupport, transport, source);
     }
 
     @Override
-    public void unregisterClient(int clientIf, AttributionSource source) {
-        GattService service = getService();
+    public void unregisterClient(IBluetoothGattCallback callback, AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
         service.unregisterClient(
-                clientIf, source, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
+                callback, source, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
     }
 
     @Override
     public void clientConnect(
-            int clientIf,
-            String address,
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
             int addressType,
             boolean isDirect,
             int transport,
             boolean opportunistic,
             int phy,
             AttributionSource source) {
-        GattService service = getService();
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
         service.clientConnect(
-                clientIf, address, addressType, isDirect, transport, opportunistic, phy, source);
+                callback, device, addressType, isDirect, transport, opportunistic, phy, source);
     }
 
     @Override
-    public void clientDisconnect(int clientIf, String address, AttributionSource source) {
-        GattService service = getService();
+    public void clientDisconnect(
+            IBluetoothGattCallback callback, BluetoothDevice device, AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.clientDisconnect(clientIf, address, source);
+        service.clientDisconnect(callback, device, source);
     }
 
     @Override
     public void clientSetPreferredPhy(
-            int clientIf,
-            String address,
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
             int txPhy,
             int rxPhy,
             int phyOptions,
             AttributionSource source) {
-        GattService service = getService();
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.clientSetPreferredPhy(clientIf, address, txPhy, rxPhy, phyOptions, source);
+        service.clientSetPreferredPhy(callback, device, txPhy, rxPhy, phyOptions);
     }
 
     @Override
-    public void clientReadPhy(int clientIf, String address, AttributionSource source) {
-        GattService service = getService();
+    public void clientReadPhy(
+            IBluetoothGattCallback callback, BluetoothDevice device, AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.clientReadPhy(clientIf, address, source);
+        service.clientReadPhy(callback, device);
     }
 
     @Override
-    public void refreshDevice(int clientIf, String address, AttributionSource source) {
-        GattService service = getService();
+    public void refreshDevice(
+            IBluetoothGattCallback callback, BluetoothDevice device, AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.refreshDevice(clientIf, address, source);
+        service.refreshDevice(callback, device);
     }
 
     @Override
-    public void discoverServices(int clientIf, String address, AttributionSource source) {
-        GattService service = getService();
+    public void discoverServices(
+            IBluetoothGattCallback callback, BluetoothDevice device, AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.discoverServices(clientIf, address, source);
+        service.discoverServices(callback, device);
     }
 
     @Override
     public void discoverServiceByUuid(
-            int clientIf, String address, ParcelUuid uuid, AttributionSource source) {
-        GattService service = getService();
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
+            ParcelUuid uuid,
+            AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.discoverServiceByUuid(clientIf, address, uuid.getUuid(), source);
+        service.discoverServiceByUuid(callback, device, uuid.getUuid());
     }
 
     @Override
     public void readCharacteristic(
-            int clientIf, String address, int handle, int authReq, AttributionSource source) {
-        GattService service = getService();
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
+            int handle,
+            int authReq,
+            AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.readCharacteristic(clientIf, address, handle, authReq, source);
+
+        try {
+            service.permissionCheck(callback, device, handle);
+        } catch (SecurityException ex) {
+            String callingPackage = source.getPackageName();
+            // Only throws on apps with target SDK T+ as this old API did not throw prior to T
+            if (checkCallerTargetSdk(service, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
+                throw ex;
+            }
+            Log.w(TAG, "readCharacteristic() - permission check failed!");
+            return;
+        }
+
+        service.readCharacteristic(callback, device, handle, authReq, source);
     }
 
     @Override
     public void readUsingCharacteristicUuid(
-            int clientIf,
-            String address,
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
             ParcelUuid uuid,
             int startHandle,
             int endHandle,
             int authReq,
             AttributionSource source) {
-        GattService service = getService();
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
+
+        try {
+            if (service.isHidCharUuid(uuid.getUuid())) {
+                service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+            }
+        } catch (SecurityException ex) {
+            String callingPackage = source.getPackageName();
+            // Only throws on apps with target SDK T+ as this old API did not throw prior to T
+            if (checkCallerTargetSdk(service, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
+                throw ex;
+            }
+            Log.w(TAG, "readUsingCharacteristicUuid() - permission check failed!");
+            return;
+        }
         service.readUsingCharacteristicUuid(
-                clientIf, address, uuid.getUuid(), startHandle, endHandle, authReq, source);
+                callback, device, uuid.getUuid(), startHandle, endHandle, authReq);
     }
 
     @Override
     public int writeCharacteristic(
-            int clientIf,
-            String address,
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
             int handle,
             int writeType,
             int authReq,
             byte[] value,
             AttributionSource source) {
-        GattService service = getService();
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
         }
-        return service.writeCharacteristic(
-                clientIf, address, handle, writeType, authReq, value, source);
+        service.permissionCheck(callback, device, handle);
+        return service.writeCharacteristic(callback, device, handle, writeType, authReq, value);
     }
 
     @Override
     public void readDescriptor(
-            int clientIf, String address, int handle, int authReq, AttributionSource source) {
-        GattService service = getService();
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
+            int handle,
+            int authReq,
+            AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.readDescriptor(clientIf, address, handle, authReq, source);
+
+        try {
+            service.permissionCheck(callback, device, handle);
+        } catch (SecurityException ex) {
+            String callingPackage = source.getPackageName();
+            // Only throws on apps with target SDK T+ as this old API did not throw prior to T
+            if (checkCallerTargetSdk(service, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
+                throw ex;
+            }
+            Log.w(TAG, "readDescriptor() - permission check failed!");
+            return;
+        }
+
+        service.readDescriptor(callback, device, handle, authReq, source);
     }
 
     @Override
     public int writeDescriptor(
-            int clientIf,
-            String address,
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
             int handle,
             int authReq,
             byte[] value,
             AttributionSource source) {
-        GattService service = getService();
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
         }
-        return service.writeDescriptor(clientIf, address, handle, authReq, value, source);
+        service.permissionCheck(callback, device, handle);
+        return service.writeDescriptor(callback, device, handle, authReq, value);
     }
 
     @Override
-    public void beginReliableWrite(int clientIf, String address, AttributionSource source) {
-        GattService service = getService();
+    public void beginReliableWrite(BluetoothDevice device, AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.beginReliableWrite(clientIf, address, source);
+        service.beginReliableWrite(device);
     }
 
     @Override
     public void endReliableWrite(
-            int clientIf, String address, boolean execute, AttributionSource source) {
-        GattService service = getService();
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
+            boolean execute,
+            AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.endReliableWrite(clientIf, address, execute, source);
+        service.endReliableWrite(callback, device, execute);
     }
 
     @Override
     public void registerForNotification(
-            int clientIf, String address, int handle, boolean enable, AttributionSource source) {
-        GattService service = getService();
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
+            int handle,
+            boolean enable,
+            AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.registerForNotification(clientIf, address, handle, enable, source);
+        try {
+            service.permissionCheck(callback, device, handle);
+        } catch (SecurityException ex) {
+            String callingPackage = source.getPackageName();
+            // Only throws on apps with target SDK T+ as this old API did not throw prior to T
+            if (checkCallerTargetSdk(service, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
+                throw ex;
+            }
+            Log.w(TAG, "registerForNotification() - permission check failed!");
+            return;
+        }
+
+        service.registerForNotification(callback, device, handle, enable, source);
     }
 
     @Override
-    public void readRemoteRssi(int clientIf, String address, AttributionSource source) {
-        GattService service = getService();
+    public void readRemoteRssi(
+            IBluetoothGattCallback callback, BluetoothDevice device, AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.readRemoteRssi(clientIf, address, source);
+        service.readRemoteRssi(callback, device);
     }
 
     @Override
-    public void configureMTU(int clientIf, String address, int mtu, AttributionSource source) {
-        GattService service = getService();
+    public void configureMTU(
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
+            int mtu,
+            AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.configureMTU(clientIf, address, mtu, source);
+        service.configureMTU(callback, device, mtu);
     }
 
     @Override
     public void connectionParameterUpdate(
-            int clientIf, String address, int connectionPriority, AttributionSource source) {
-        GattService service = getService();
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
+            int connectionPriority,
+            AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.connectionParameterUpdate(clientIf, address, connectionPriority, source);
+        service.connectionParameterUpdate(callback, device, connectionPriority);
     }
 
     @Override
     public void leConnectionUpdate(
-            int clientIf,
-            String address,
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
             int minConnectionInterval,
             int maxConnectionInterval,
             int peripheralLatency,
@@ -313,25 +415,27 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             int minConnectionEventLen,
             int maxConnectionEventLen,
             AttributionSource source) {
-        GattService service = getService();
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
         service.leConnectionUpdate(
-                clientIf,
-                address,
+                callback,
+                device,
                 minConnectionInterval,
                 maxConnectionInterval,
                 peripheralLatency,
                 supervisionTimeout,
                 minConnectionEventLen,
-                maxConnectionEventLen,
-                source);
+                maxConnectionEventLen);
     }
 
     @Override
     public int subrateModeRequest(
-            int clientIf, BluetoothDevice device, int subrateMode, AttributionSource source) {
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
+            int subrateMode,
+            AttributionSource source) {
         GattService service = getService();
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
@@ -346,18 +450,17 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         Utils.enforceCdmAssociationIfNotBluetoothPrivileged(
                 service, service.getCompanionDeviceManager(), source, device);
 
-        if (subrateMode < BluetoothGatt.SUBRATE_REQUEST_MODE_BALANCED
-                || subrateMode > BluetoothGatt.SUBRATE_REQUEST_MODE_LOW_POWER) {
+        if (subrateMode < BluetoothGatt.SUBRATE_MODE_OFF
+                || subrateMode > BluetoothGatt.SUBRATE_MODE_HIGH) {
             throw new IllegalArgumentException("Subrate Mode not within valid range");
         }
 
         requireNonNull(device);
-        String address = device.getAddress();
-        if (!BluetoothAdapter.checkBluetoothAddress(address)) {
-            throw new IllegalArgumentException("Invalid device address: " + address);
+        if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
+            throw new IllegalArgumentException("Invalid device address: " + device.getAddress());
         }
 
-        return service.subrateModeRequest(clientIf, device, subrateMode);
+        return service.subrateModeRequest(callback, device, subrateMode);
     }
 
     @Override
@@ -365,132 +468,143 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             ParcelUuid uuid,
             IBluetoothGattServerCallback callback,
             boolean eattSupport,
+            int transport,
             AttributionSource source) {
-        GattService service = getService();
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.registerServer(uuid.getUuid(), callback, eattSupport, source);
+        service.registerServer(uuid.getUuid(), callback, eattSupport, transport, source);
     }
 
     @Override
-    public void unregisterServer(int serverIf, AttributionSource source) {
-        GattService service = getService();
+    public void unregisterServer(IBluetoothGattServerCallback callback, AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.unregisterServer(serverIf, source);
+        service.unregisterServer(callback);
     }
 
     @Override
     public void serverConnect(
-            int serverIf,
-            String address,
+            IBluetoothGattServerCallback callback,
+            BluetoothDevice device,
             int addressType,
             boolean isDirect,
             int transport,
             AttributionSource source) {
-        GattService service = getService();
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.serverConnect(serverIf, address, addressType, isDirect, transport, source);
+        service.serverConnect(callback, device, addressType, isDirect, transport, source);
     }
 
     @Override
-    public void serverDisconnect(int serverIf, String address, AttributionSource source) {
-        GattService service = getService();
+    public void serverDisconnect(
+            IBluetoothGattServerCallback callback,
+            BluetoothDevice device,
+            AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.serverDisconnect(serverIf, address, source);
+        service.serverDisconnect(callback, device);
     }
 
     @Override
     public void serverSetPreferredPhy(
-            int serverIf,
-            String address,
+            IBluetoothGattServerCallback callback,
+            BluetoothDevice device,
             int txPhy,
             int rxPhy,
             int phyOptions,
             AttributionSource source) {
-        GattService service = getService();
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.serverSetPreferredPhy(serverIf, address, txPhy, rxPhy, phyOptions, source);
+        service.serverSetPreferredPhy(callback, device, txPhy, rxPhy, phyOptions);
     }
 
     @Override
-    public void serverReadPhy(int clientIf, String address, AttributionSource source) {
-        GattService service = getService();
+    public void serverReadPhy(
+            IBluetoothGattServerCallback callback,
+            BluetoothDevice device,
+            AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.serverReadPhy(clientIf, address, source);
+        service.serverReadPhy(callback, device);
     }
 
     @Override
-    public void addService(int serverIf, BluetoothGattService svc, AttributionSource source) {
-        GattService service = getService();
+    public void addService(
+            IBluetoothGattServerCallback callback,
+            BluetoothGattService svc,
+            AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.addService(serverIf, svc, source);
+        service.addService(callback, svc);
     }
 
     @Override
-    public void removeService(int serverIf, int handle, AttributionSource source) {
-        GattService service = getService();
+    public void removeService(
+            IBluetoothGattServerCallback callback, int handle, AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.removeService(serverIf, handle, source);
+        service.removeService(callback, handle);
     }
 
     @Override
-    public void clearServices(int serverIf, AttributionSource source) {
-        GattService service = getService();
+    public void clearServices(IBluetoothGattServerCallback callback, AttributionSource source) {
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.clearServices(serverIf, source);
+        service.clearServices(callback);
     }
 
     @Override
     public void sendResponse(
-            int serverIf,
-            String address,
+            IBluetoothGattServerCallback callback,
+            BluetoothDevice device,
             int requestId,
             int status,
             int offset,
             byte[] value,
             AttributionSource source) {
-        GattService service = getService();
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }
-        service.sendResponse(serverIf, address, requestId, status, offset, value, source);
+        service.sendResponse(callback, device, requestId, status, offset, value);
     }
 
     @Override
     public int sendNotification(
-            int serverIf,
-            String address,
+            IBluetoothGattServerCallback callback,
+            BluetoothDevice device,
             int handle,
             boolean confirm,
             byte[] value,
             AttributionSource source) {
-        GattService service = getService();
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
         }
-        return service.sendNotification(serverIf, address, handle, confirm, value, source);
+        return service.sendNotification(callback, device, handle, confirm, value);
     }
 
     @Override
     public void disconnectAll(AttributionSource source) {
-        GattService service = getService();
+        GattService service = getServiceAndEnforceConnect(source);
         if (service == null) {
             return;
         }

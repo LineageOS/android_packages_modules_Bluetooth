@@ -69,4 +69,15 @@
 #define A2DP_SBC_HDR_L_MSK 0x20
 #define A2DP_SBC_HDR_NUM_MSK 0x0F
 
+/* Index of Codec Specific Information Element
+   starting from configuration length.
+*/
+#define A2DP_SBC_IE_SAMP_FREQ_IDX 3
+#define A2DP_SBC_IE_CH_MD_IDX A2DP_SBC_IE_SAMP_FREQ_IDX
+#define A2DP_SBC_IE_BLOCKS_IDX 4
+#define A2DP_SBC_IE_SUBBAND_IDX A2DP_SBC_IE_BLOCKS_IDX
+#define A2DP_SBC_IE_ALLOC_MD_IDX A2DP_SBC_IE_BLOCKS_IDX
+#define A2DP_SBC_IE_MIN_BITPOOL_IDX 5
+#define A2DP_SBC_IE_MAX_BITPOOL_IDX 6
+
 #endif  // A2DP_SBC_CONSTANTS_H

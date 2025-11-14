@@ -26,13 +26,16 @@ class Modem:
 
     def close(self):
         for phone_number in self.active_calls:
-            self.socket.sendall(b'REM0\r\nAT+REMOTECALL=6,0,0,"' + str(phone_number).encode("utf-8") + b'",0\r\n')
+            self.socket.sendall(b'REM0\r\nAT+REMOTECALL=6,0,0,"' +
+                                str(phone_number).encode("utf-8") + b'",0\r\n')
         self.socket.close()
 
     def call(self, phone_number):
         self.active_calls.append(phone_number)
-        self.socket.sendall(b'REM0\r\nAT+REMOTECALL=4,0,0,"' + str(phone_number).encode("utf-8") + b'",129\r\n')
+        self.socket.sendall(b'REM0\r\nAT+REMOTECALL=4,0,0,"' + str(phone_number).encode("utf-8") +
+                            b'",129\r\n')
 
     def answer_outgoing_call(self, phone_number):
         self.active_calls.append(phone_number)
-        self.socket.sendall(b'REM0\r\nAT+REMOTECALL=0,0,0,"' + str(phone_number).encode("utf-8") + b'",129\r\n')
+        self.socket.sendall(b'REM0\r\nAT+REMOTECALL=0,0,0,"' + str(phone_number).encode("utf-8") +
+                            b'",129\r\n')

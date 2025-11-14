@@ -99,7 +99,7 @@ public class BluetoothCodecConfigTest {
                     * sCodecSpecific3Array.length
                     * sCodecSpecific4Array.length;
 
-    private int selectCodecType(int configId) {
+    private static int selectCodecType(int configId) {
         int left = sCodecTypeArray.length;
         int right = sTotalConfigs / left;
         int index = configId / right;
@@ -107,7 +107,7 @@ public class BluetoothCodecConfigTest {
         return sCodecTypeArray[index];
     }
 
-    private int selectCodecPriority(int configId) {
+    private static int selectCodecPriority(int configId) {
         int left = sCodecTypeArray.length * sCodecPriorityArray.length;
         int right = sTotalConfigs / left;
         int index = configId / right;
@@ -115,7 +115,7 @@ public class BluetoothCodecConfigTest {
         return sCodecPriorityArray[index];
     }
 
-    private int selectSampleRate(int configId) {
+    private static int selectSampleRate(int configId) {
         int left = sCodecTypeArray.length * sCodecPriorityArray.length * sSampleRateArray.length;
         int right = sTotalConfigs / left;
         int index = configId / right;
@@ -123,7 +123,7 @@ public class BluetoothCodecConfigTest {
         return sSampleRateArray[index];
     }
 
-    private int selectBitsPerSample(int configId) {
+    private static int selectBitsPerSample(int configId) {
         int left =
                 sCodecTypeArray.length
                         * sCodecPriorityArray.length
@@ -135,7 +135,7 @@ public class BluetoothCodecConfigTest {
         return sBitsPerSampleArray[index];
     }
 
-    private int selectChannelMode(int configId) {
+    private static int selectChannelMode(int configId) {
         int left =
                 sCodecTypeArray.length
                         * sCodecPriorityArray.length
@@ -148,7 +148,7 @@ public class BluetoothCodecConfigTest {
         return sChannelModeArray[index];
     }
 
-    private long selectCodecSpecific1(int configId) {
+    private static long selectCodecSpecific1(int configId) {
         int left =
                 sCodecTypeArray.length
                         * sCodecPriorityArray.length
@@ -162,7 +162,7 @@ public class BluetoothCodecConfigTest {
         return sCodecSpecific1Array[index];
     }
 
-    private long selectCodecSpecific2(int configId) {
+    private static long selectCodecSpecific2(int configId) {
         int left =
                 sCodecTypeArray.length
                         * sCodecPriorityArray.length
@@ -177,7 +177,7 @@ public class BluetoothCodecConfigTest {
         return sCodecSpecific2Array[index];
     }
 
-    private long selectCodecSpecific3(int configId) {
+    private static long selectCodecSpecific3(int configId) {
         int left =
                 sCodecTypeArray.length
                         * sCodecPriorityArray.length
@@ -193,7 +193,7 @@ public class BluetoothCodecConfigTest {
         return sCodecSpecific3Array[index];
     }
 
-    private long selectCodecSpecific4(int configId) {
+    private static long selectCodecSpecific4(int configId) {
         int left =
                 sCodecTypeArray.length
                         * sCodecPriorityArray.length
@@ -556,7 +556,7 @@ public class BluetoothCodecConfigTest {
         assertThat(bcc11_codec_specific4).isNotEqualTo(bcc1);
     }
 
-    private BluetoothCodecConfig buildBluetoothCodecConfig(
+    private static BluetoothCodecConfig buildBluetoothCodecConfig(
             int sourceCodecType,
             int codecPriority,
             int sampleRate,

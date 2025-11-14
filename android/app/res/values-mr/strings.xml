@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"तुम्ही ब्लूटूथ सुरू ठेवल्यास, पुढील वेळी विमान मोडमध्ये असाल, तेव्हा तुमचे डिव्हाइस ते सुरू ठेवण्याचे लक्षात ठेवेल"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"ब्लूटूथ सुरू राहते"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"तुमचे डिव्हाइस विमान मोडमध्ये ब्लूटूथ सुरू ठेवण्याचे लक्षात ठेवते. तुम्हाला ब्लूटूथ सुरू ठेवायचे नसल्यास ते बंद करा."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"इतर डिव्हाइसशी कनेक्ट केलेले असताना विमान मोडमध्ये ब्लूटूथ सुरू राहते."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"तुमच्या घड्याळाशी कनेक्ट केलेले असताना तुमचे डिव्हाइस विमान मोडमध्ये ब्लूटूथ सुरू ठेवेल."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"मीडिया डिव्हाइसशी कनेक्ट केलेले असताना विमान मोडमध्ये ब्लूटूथ सुरू राहते."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"वाय-फाय आणि ब्लूटूथ सुरू राहते"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"तुमचे डिव्हाइस विमान मोडमध्ये वाय-फाय आणि ब्लूटूथ सुरू ठेवण्याचे लक्षात ठेवते. तुम्हाला वाय-फाय आणि ब्लूटूथ सुरू ठेवायचे नसल्यास ते बंद करा."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"ब्लूटूथ पुन्हा सुरू केले आहे"</string>

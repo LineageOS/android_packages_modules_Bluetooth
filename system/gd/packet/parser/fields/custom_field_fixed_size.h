@@ -34,6 +34,8 @@ public:
 
   virtual void GenExtractor(std::ostream& s, int num_leading_bits, bool for_struct) const override;
 
+  virtual void GenGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
+
   virtual bool HasParameterValidator() const override;
 
   virtual void GenParameterValidator(std::ostream&) const override;

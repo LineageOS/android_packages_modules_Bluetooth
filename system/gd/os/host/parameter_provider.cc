@@ -28,20 +28,12 @@ namespace os {
 
 namespace {
 std::mutex parameter_mutex;
-std::string config_file_path;
-std::string snoop_log_file_path;
-std::string snooz_log_file_path;
+std::string hci_instance_name;
 std::string sysprops_file_path;
 }  // namespace
 
 // Write to $PWD/bt_stack.conf if $PWD can be found, otherwise, write to $HOME/bt_stack.conf
 std::string ParameterProvider::ConfigFilePath() {
-  {
-    std::lock_guard<std::mutex> lock(parameter_mutex);
-    if (!config_file_path.empty()) {
-      return config_file_path;
-    }
-  }
   char cwd[PATH_MAX] = {};
   if (getcwd(cwd, sizeof(cwd)) == nullptr) {
     log::error("Failed to get current working directory due to \"{}\", returning default",
@@ -51,18 +43,7 @@ std::string ParameterProvider::ConfigFilePath() {
   return std::string(cwd) + "/bt_config.conf";
 }
 
-void ParameterProvider::OverrideConfigFilePath(const std::string& path) {
-  std::lock_guard<std::mutex> lock(parameter_mutex);
-  config_file_path = path;
-}
-
 std::string ParameterProvider::SnoopLogFilePath() {
-  {
-    std::lock_guard<std::mutex> lock(parameter_mutex);
-    if (!snoop_log_file_path.empty()) {
-      return snoop_log_file_path;
-    }
-  }
   char cwd[PATH_MAX] = {};
   if (getcwd(cwd, sizeof(cwd)) == nullptr) {
     log::error("Failed to get current working directory due to \"{}\", returning default",
@@ -72,31 +53,15 @@ std::string ParameterProvider::SnoopLogFilePath() {
   return std::string(cwd) + "/btsnoop_hci.log";
 }
 
-void ParameterProvider::OverrideSnoopLogFilePath(const std::string& path) {
-  std::lock_guard<std::mutex> lock(parameter_mutex);
-  snoop_log_file_path = path;
-}
-
 // Return the path to the default snooz log file location
 std::string ParameterProvider::SnoozLogFilePath() {
-  {
-    std::lock_guard<std::mutex> lock(parameter_mutex);
-    if (!snooz_log_file_path.empty()) {
-      return snooz_log_file_path;
-    }
-  }
   char cwd[PATH_MAX] = {};
   if (getcwd(cwd, sizeof(cwd)) == nullptr) {
     log::error("Failed to get current working directory due to \"{}\", returning default",
                strerror(errno));
-    return "bt_config.conf";
+    return "btsnooz_hci.log";
   }
   return std::string(cwd) + "/btsnooz_hci.log";
-}
-
-void ParameterProvider::OverrideSnoozLogFilePath(const std::string& path) {
-  std::lock_guard<std::mutex> lock(parameter_mutex);
-  snooz_log_file_path = path;
 }
 
 std::string ParameterProvider::SyspropsFilePath() {
@@ -123,6 +88,15 @@ void ParameterProvider::SetCommonCriteriaMode(bool /* enable */) {}
 int ParameterProvider::GetCommonCriteriaConfigCompareResult() { return 0b11; }
 
 void ParameterProvider::SetCommonCriteriaConfigCompareResult(int /* result */) {}
+
+void ParameterProvider::SetHciInstanceName(const std::string& name) { hci_instance_name = name; }
+
+std::string ParameterProvider::GetHciInstanceName() {
+  if (!hci_instance_name.empty()) {
+    return hci_instance_name;
+  }
+  return "default";
+}
 
 }  // namespace os
 }  // namespace bluetooth

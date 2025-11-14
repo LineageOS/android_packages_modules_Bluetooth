@@ -32,6 +32,7 @@
 #include <utility>
 #include <vector>
 
+#include "audio_context_type_manager.h"
 #include "audio_hal_client/audio_hal_client.h"
 #include "bta/include/bta_gatt_api.h"
 #include "bta/le_audio/gmap_server.h"
@@ -46,7 +47,7 @@
 #include "common/strings.h"
 #include "gatt_api.h"
 #include "hardware/bt_le_audio.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci_error_code.h"
 #include "internal_include/bt_trace.h"
 #include "le_audio/codec_manager.h"
@@ -65,6 +66,7 @@ using types::AseState;
 using types::AudioContexts;
 using types::AudioLocations;
 using types::BidirectionalPair;
+using types::CigState;
 using types::CisState;
 using types::CisType;
 using types::DataPathState;
@@ -381,6 +383,23 @@ bool LeAudioDeviceGroup::IsGroupReadyToSuspendStream(void) const {
   return iter == leAudioDevices_.end();
 }
 
+bool LeAudioDeviceGroup::IsDirectionAvailableForConfiguration(
+        LeAudioContextType configuration_context_type, uint8_t remote_direction) const {
+  auto current_config = IsUsingPreferredAudioSetConfiguration(configuration_context_type)
+                                ? GetCachedPreferredConfiguration(configuration_context_type)
+                                : GetCachedConfiguration(configuration_context_type);
+  log::debug("configuration_context_type_ = {}, group_id: {}, remote_direction: {}",
+             common::ToString(configuration_context_type), group_id_,
+             remote_direction == types::kLeAudioDirectionSink ? "Sink" : "Source");
+  if (current_config) {
+    log::debug("name: {}, size: {}", current_config->name,
+               current_config->confs.get(remote_direction).size());
+    return current_config->confs.get(remote_direction).size() != 0;
+  }
+  log::debug("no cached configuration");
+  return false;
+}
+
 bool LeAudioDeviceGroup::HaveAnyActiveDeviceInStreamingState() const {
   auto iter = std::find_if(leAudioDevices_.begin(), leAudioDevices_.end(), [](auto& d) {
     if (d.expired()) {
@@ -403,6 +422,46 @@ bool LeAudioDeviceGroup::HaveAnyActiveDeviceInUnconfiguredState() const {
   });
 
   return iter != leAudioDevices_.end();
+}
+
+uint8_t LeAudioDeviceGroup::GetActiveQoSConfiguredDirections(void) {
+  if (in_transition_ || GetTargetState() != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+    log::debug("group_id: {} is not in Streaming state", group_id_);
+    return 0;
+  }
+
+  uint8_t enabled_remote_directions = 0;
+  for (const auto dev : leAudioDevices_) {
+    auto device = dev.lock();
+    if (device == nullptr) {
+      continue;
+    }
+    enabled_remote_directions |= device->GetActiveQoSConfiguredDirections();
+  }
+  log::debug("group_id: {}, enabled_remote_directions: {}", group_id_, enabled_remote_directions);
+  return enabled_remote_directions;
+}
+
+uint8_t LeAudioDeviceGroup::GetActiveEnabledDirections(void) {
+  uint8_t enabled_remote_directions = 0;
+  for (const auto dev : leAudioDevices_) {
+    auto device = dev.lock();
+    if (device == nullptr) {
+      continue;
+    }
+    enabled_remote_directions |= device->GetActiveEnabledDirections();
+  }
+  log::debug("group_id: {}, enabled_remote_directions: {}", group_id_, enabled_remote_directions);
+  return enabled_remote_directions;
+}
+
+bool LeAudioDeviceGroup::HasAllRequiredStreamingAses(void) const {
+  for (auto dev = GetFirstActiveDevice(); dev; dev = GetNextActiveDevice(dev)) {
+    if (!dev->HasAllRequiredStreamingAses()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool LeAudioDeviceGroup::HaveAllActiveDevicesAsesTheSameState(AseState state) const {
@@ -824,6 +883,53 @@ uint16_t LeAudioDeviceGroup::GetRemoteDelay(uint8_t direction) const {
   return remote_delay_ms;
 }
 
+BidirectionalPair<bool> LeAudioDeviceGroup::GetDirectionSupport(
+        types::LeAudioContextType ctx_type) const {
+  if (!com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+    BidirectionalPair<bool> remote_directions = {true, true};
+    // Remove the Source support if Sink only scenario is used
+    // Note: With the RINGTONE we should already prepare for a call.
+    if ((types::kLeAudioContextAllRemoteSinkOnly.test(ctx_type) &&
+         (ctx_type != types::LeAudioContextType::RINGTONE)) ||
+        ctx_type == types::LeAudioContextType::UNSPECIFIED) {
+      log::debug("Remote source not supported for {}", common::ToString(ctx_type));
+      remote_directions.source = false;
+    }
+    return remote_directions;
+  }
+
+  auto audio_context_type_manager = AudioContextTypeManager::Get();
+  if (audio_context_type_manager == nullptr) {
+    log::warn("audio_context_type_manager is nullptr");
+    return {false, false};
+  }
+
+  if (audio_context_type_manager->IsAnyMetadataSet()) {
+    /* If current configuration according to context type manager is different then provided ctx type
+     * as a parameter, it means, this functions is called to build a cache which should not depend
+     * on current context configuration
+     */
+    auto [config_context, remote_contexts] =
+            audio_context_type_manager->GetAudioContextsForTheGroup(this);
+    if (config_context == ctx_type) {
+      return {.sink = remote_contexts.sink.any(), .source = remote_contexts.source.any()};
+    }
+  }
+
+  return audio_context_type_manager->GetDirectionsForGivenContext(ctx_type, this);
+}
+
+BidirectionalPair<bool> LeAudioDeviceGroup::GetConfiguredDirections(void) {
+  if (stream_conf.conf == nullptr) {
+    log::info("group_id: {} is not configured", group_id_);
+    return {false, false};
+  }
+
+  auto directions = stream_conf.conf->getDirections();
+  log::info("group_id: {}, sink: {}, source: {}", group_id_, directions.sink, directions.source);
+  return directions;
+}
+
 CodecManager::UnicastConfigurationRequirements
 LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextType ctx_type) const {
   auto new_req = CodecManager::UnicastConfigurationRequirements{
@@ -838,53 +944,57 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
   // determine the number of ASEs to activate.
   for (auto const& weak_dev_ptr : leAudioDevices_) {
     auto device = weak_dev_ptr.lock();
+    if (!device) {
+      log::warn("Device is not reachable");
+      continue;
+    }
     BidirectionalPair<bool> has_location = {false, false};
+    BidirectionalPair<bool> has_direction = GetDirectionSupport(ctx_type);
 
-    for (auto direction : {types::kLeAudioDirectionSink, types::kLeAudioDirectionSource}) {
-      if (!device->audio_locations_.get(direction)) {
+    for (auto remote_direction : {types::kLeAudioDirectionSink, types::kLeAudioDirectionSource}) {
+      if (!device->audio_locations_.get(remote_direction)) {
         log::debug("Device {} has no audio allocation for direction: {}", device->address_,
-                   (int)direction);
+                   (int)remote_direction);
         continue;
       }
 
-      // Do not put any requirements on the Source if Sink only scenario is used
-      // Note: With the RINGTONE we should already prepare for a call.
-      if ((direction == types::kLeAudioDirectionSource) &&
-          ((types::kLeAudioContextAllRemoteSinkOnly.test(ctx_type) &&
-            (ctx_type != types::LeAudioContextType::RINGTONE)) ||
-           ctx_type == types::LeAudioContextType::UNSPECIFIED)) {
-        log::debug("Skipping the remote source requirements.");
+      if (!has_direction.get(remote_direction)) {
+        log::info("Skipping {} direction",
+                  remote_direction == types::kLeAudioDirectionSource ? "Decoding" : "Encoding");
         continue;
       }
 
-      if (device->GetAseCount(direction) == 0) {
-        log::warn("Device {} has no ASEs for direction: {}", device->address_, (int)direction);
+      if (device->GetAseCount(remote_direction) == 0) {
+        log::warn("Device {} has no ASEs for direction: {}", device->address_,
+                  (int)remote_direction);
         continue;
       }
 
-      if (ctx_type == types::LeAudioContextType::VOICEASSISTANTS ||
-          ctx_type == types::LeAudioContextType::GAME) {
-        // For GAME and VOICE ASSISTANT, ignore direction if it is not supported only on a single
-        // direction.
-        auto group_contexts = GetSupportedContexts(types::kLeAudioDirectionBoth);
-        if (group_contexts.test(ctx_type)) {
-          auto direction_contexs = device->GetSupportedContexts(direction);
-          if (!direction_contexs.test(ctx_type)) {
-            log::warn("Device {} has no {} context support", device->address_,
-                      common::ToString(ctx_type));
-            continue;
+      if (!com::android::bluetooth::flags::leaudio_use_context_type_manager()) {
+        if (ctx_type == types::LeAudioContextType::VOICEASSISTANTS ||
+            ctx_type == types::LeAudioContextType::GAME) {
+          // For GAME and VOICE ASSISTANT, ignore direction if it is not supported only on a single
+          // direction.
+          auto group_contexts = GetSupportedContexts(types::kLeAudioDirectionBoth);
+          if (group_contexts.test(ctx_type)) {
+            auto direction_contexs = device->GetSupportedContexts(remote_direction);
+            if (!direction_contexs.test(ctx_type)) {
+              log::warn("Device {} has no {} context support", device->address_,
+                        common::ToString(ctx_type));
+              continue;
+            }
           }
         }
       }
 
-      auto const& dev_locations = device->audio_locations_.get(direction);
+      auto const& dev_locations = device->audio_locations_.get(remote_direction);
       if (dev_locations == std::nullopt) {
         log::warn("Device {} has no specified locations for direction: {}", device->address_,
-                  (int)direction);
+                  (int)remote_direction);
       }
 
-      has_location.get(direction) = true;
-      auto& direction_req = (direction == types::kLeAudioDirectionSink)
+      has_location.get(remote_direction) = true;
+      auto& direction_req = (remote_direction == types::kLeAudioDirectionSink)
                                     ? new_req.sink_requirements
                                     : new_req.source_requirements;
       if (!direction_req) {
@@ -899,23 +1009,31 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
       CodecManager::UnicastConfigurationRequirements::DeviceDirectionRequirements config_req;
       config_req.params.Add(codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
                             (uint32_t)locations);
-      if (preferred_config_.get(direction) &&
-          preferred_config_.get(direction)->codec_priority != -1) {
-        config_req.params.Add(
-                codec_spec_conf::kLeAudioLtvTypeSamplingFreq,
-                UINT8_TO_VEC_UINT8(codec_spec_conf::SingleSamplingFreqCapability2Config(
-                        preferred_config_.get(direction)->sample_rate)));
-        config_req.params.Add(
-                codec_spec_conf::kLeAudioLtvTypeFrameDuration,
-                UINT8_TO_VEC_UINT8(codec_spec_conf::SingleFrameDurationCapability2Config(
-                        preferred_config_.get(direction)->frame_duration)));
-        config_req.params.Add(
-                codec_spec_conf::kLeAudioLtvTypeOctetsPerCodecFrame,
-                UINT16_TO_VEC_UINT8(preferred_config_.get(direction)->octets_per_frame));
+      if (preferred_config_.get(remote_direction) &&
+          preferred_config_.get(remote_direction)->codec_priority != -1) {
+        if (preferred_config_.get(remote_direction)->sample_rate !=
+            LE_AUDIO_SAMPLE_RATE_INDEX_NONE) {
+          config_req.params.Add(
+                  codec_spec_conf::kLeAudioLtvTypeSamplingFreq,
+                  UINT8_TO_VEC_UINT8(codec_spec_conf::SingleSamplingFreqCapability2Config(
+                          preferred_config_.get(remote_direction)->sample_rate)));
+        }
+        if (preferred_config_.get(remote_direction)->frame_duration !=
+            LE_AUDIO_FRAME_DURATION_INDEX_NONE) {
+          config_req.params.Add(
+                  codec_spec_conf::kLeAudioLtvTypeFrameDuration,
+                  UINT8_TO_VEC_UINT8(codec_spec_conf::SingleFrameDurationCapability2Config(
+                          preferred_config_.get(remote_direction)->frame_duration)));
+        }
+        if (preferred_config_.get(remote_direction)->octets_per_frame != 0) {
+          config_req.params.Add(
+                  codec_spec_conf::kLeAudioLtvTypeOctetsPerCodecFrame,
+                  UINT16_TO_VEC_UINT8(preferred_config_.get(remote_direction)->octets_per_frame));
+        }
       }
       config_req.target_latency = utils::GetTargetLatencyForAudioContext(ctx_type);
       log::warn("Device {} pushes requirement, location: {}, direction: {}", device->address_,
-                (int)locations, (int)direction);
+                (int)locations, (int)remote_direction);
       direction_req->push_back(std::move(config_req));
     }
 
@@ -948,19 +1066,57 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
     }
   }
 
-  if ((ctx_type == ::bluetooth::le_audio::types::LeAudioContextType::GAME) &&
-      GmapClient::IsGmapClientEnabled() && GmapServer::IsGmapServerEnabled() && remote_has_gmap) {
-    // Allow asymmetric configurations for the low latency GAME scenarios
-    new_req.flags = CodecManager::Flags(CodecManager::Flags::ALLOW_ASYMMETRIC |
-                                        CodecManager::Flags::LOW_LATENCY);
-    log::debug(
-            "GMAP is enabled. Set asymmetric flag for the GAME audio context configuration "
-            "requests.");
-  } else {
-    log::debug(
-            "GMAP is disabled, remote_has_gmap: {}, gmap_client_enabled: {}, gmap_server_enabled: "
-            "{}",
-            remote_has_gmap, GmapClient::IsGmapClientEnabled(), GmapServer::IsGmapServerEnabled());
+  switch (ctx_type) {
+    case ::bluetooth::le_audio::types::LeAudioContextType::GAME:
+      if (GmapClient::IsGmapClientEnabled() && GmapServer::IsGmapServerEnabled() &&
+          remote_has_gmap) {
+        // Allow asymmetric configurations for the low latency GAME scenarios
+        new_req.flags = CodecManager::Flags(new_req.flags | CodecManager::Flags::ALLOW_ASYMMETRIC |
+                                            CodecManager::Flags::LOW_LATENCY);
+        log::debug(
+                "GMAP is enabled. Set asymmetric flag for the GAME audio context configuration "
+                "requests.");
+      } else {
+        log::debug(
+                "GMAP is disabled, remote_has_gmap: {}, gmap_client_enabled: {}, "
+                "gmap_server_enabled: "
+                "{}",
+                remote_has_gmap, GmapClient::IsGmapClientEnabled(),
+                GmapServer::IsGmapServerEnabled());
+      }
+      break;
+    case ::bluetooth::le_audio::types::LeAudioContextType::MEDIA:
+      if (com::android::bluetooth::flags::dsa_use_codec_extensibility() &&
+          (dsa_.mode == DsaMode::ISO_SW || dsa_.mode == DsaMode::ISO_HW)) {
+        log::debug("Setting the DSA flag for mode: {}", common::ToString(dsa_.mode));
+        // Set the DSA flags
+        new_req.flags = CodecManager::Flags(new_req.flags | CodecManager::Flags::SPATIAL_AUDIO);
+      }
+      break;
+    default:
+      break;
+  }
+
+  // Make sure to provide Headtracking PAC records if DSA back channel is expected
+  if ((new_req.flags & CodecManager::Flags::SPATIAL_AUDIO) && !new_req.source_pacs.has_value()) {
+    for (auto const& weak_dev_ptr : leAudioDevices_) {
+      auto device = weak_dev_ptr.lock();
+      if (!device) {
+        log::warn("Device is not reachable");
+        continue;
+      }
+
+      if (!device->src_pacs_.empty()) {
+        if (!new_req.source_pacs) {
+          new_req.source_pacs = std::vector<types::acs_ac_record>{};
+        }
+        for (auto& [_, pac_char] : device->src_pacs_) {
+          for (auto const& pac_record : pac_char) {
+            new_req.source_pacs->push_back(pac_record);
+          }
+        }
+      }
+    }
   }
 
   return new_req;
@@ -969,6 +1125,12 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
 bool LeAudioDeviceGroup::UpdateAudioSetConfigurationCache(LeAudioContextType ctx_type,
                                                           bool use_preference) const {
   auto requirements = GetAudioSetConfigurationRequirements(ctx_type);
+  if (com::android::bluetooth::flags::leaudio_use_context_type_manager() &&
+      !requirements.sink_pacs && !requirements.source_pacs) {
+    log::debug("No requirements for context type: {}", common::ToString(ctx_type));
+    return false;
+  }
+
   auto new_conf = CodecManager::GetInstance()->GetCodecConfig(
           requirements, std::bind(&LeAudioDeviceGroup::FindFirstSupportedConfiguration, this,
                                   std::placeholders::_1, std::placeholders::_2, use_preference));
@@ -988,8 +1150,8 @@ bool LeAudioDeviceGroup::UpdateAudioSetConfigurationCache(LeAudioContextType ctx
   }
 
   if (update_config) {
-    log::info("config: {} -> {}, use_preference: {}", ToHexString(ctx_type),
-              (new_conf ? new_conf->name.c_str() : "(none)"), use_preference);
+    log::info("config: {} -> {}, use_preference: {}", common::ToString(ctx_type),
+              new_conf ? new_conf->name.c_str() : "(none)", use_preference);
     cached_map.erase(ctx_type);
     if (new_conf) {
       cached_map.insert(std::make_pair(ctx_type, std::make_pair(true, std::move(new_conf))));
@@ -1047,6 +1209,12 @@ void LeAudioDeviceGroup::InvalidateCachedConfigurations(void) {
   log::info("Group id: {}", group_id_);
   context_to_configuration_cache_map_.clear();
   context_to_preferred_configuration_cache_map_.clear();
+}
+
+void LeAudioDeviceGroup::InvalidateCachedConfigurations(LeAudioContextType context_type) {
+  log::info("Group id: {} context_type: {}", group_id_, common::ToString(context_type));
+  context_to_configuration_cache_map_.erase(context_type);
+  context_to_preferred_configuration_cache_map_.erase(context_type);
 }
 
 types::BidirectionalPair<AudioContexts> LeAudioDeviceGroup::GetLatestAvailableContexts() const {
@@ -1277,6 +1445,74 @@ types::LeAudioConfigurationStrategy LeAudioDeviceGroup::GetGroupSinkStrategy() c
   return *strategy_;
 }
 
+types::LeAudioConfigurationStrategy LeAudioDeviceGroup::FindGroupStrategyForConfig(
+        const types::AudioSetConfiguration* audio_set_conf) const {
+  auto strategy_selector = [&, this](uint8_t direction) {
+    int expected_group_size = Size();
+
+    if (!audio_locations_.get(direction)) {
+      log::error("No audio locations for direction: {} available in the group {}", +direction,
+                 group_id_);
+      return types::LeAudioConfigurationStrategy::RFU;
+    }
+
+    /* Simple strategy picker */
+    log::debug("Group {} size {}", group_id_, expected_group_size);
+    if (expected_group_size > 1) {
+      return types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE;
+    }
+
+    /* Check supported audio locations */
+    auto const& locations = audio_locations_.get(direction).value();
+
+    log::verbose("audio location 0x{:04x}", locations.to_ulong());
+    if (!(locations.to_ulong() & codec_spec_conf::kLeAudioLocationAnyLeft) ||
+        !(locations.to_ulong() & codec_spec_conf::kLeAudioLocationAnyRight) || locations.none()) {
+      return types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE;
+    }
+
+    // Get the channel count from the provided configuration
+    auto const& configs = audio_set_conf->confs.get(direction);
+    auto config_element = std::max_element(
+            configs.begin(), configs.end(),
+            [](types::AseConfiguration const& a, types::AseConfiguration const& b) {
+              return a.codec.GetChannelCountPerIsoStream() < b.codec.GetChannelCountPerIsoStream();
+            });
+    auto max_channel_count = (config_element != configs.end())
+                                     ? config_element->codec.GetChannelCountPerIsoStream()
+                                     : 1;
+    if (max_channel_count == 1) {
+      return types::LeAudioConfigurationStrategy::STEREO_TWO_CISES_PER_DEVICE;
+    }
+
+    return types::LeAudioConfigurationStrategy::STEREO_ONE_CIS_PER_DEVICE;
+  };
+
+  auto strategy = strategy_selector(types::kLeAudioDirectionSink);
+  if (strategy == types::LeAudioConfigurationStrategy::RFU) {
+    log::warn(
+            "Unable to find the proper remote sink strategy for group {}. Trying source direction "
+            "instead",
+            group_id_);
+    strategy = strategy_selector(types::kLeAudioDirectionSource);
+  }
+
+  log::info("Group strategy set to: {}", [](types::LeAudioConfigurationStrategy strategy) {
+    switch (strategy) {
+      case types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE:
+        return "MONO_ONE_CIS_PER_DEVICE";
+      case types::LeAudioConfigurationStrategy::STEREO_TWO_CISES_PER_DEVICE:
+        return "STEREO_TWO_CISES_PER_DEVICE";
+      case types::LeAudioConfigurationStrategy::STEREO_ONE_CIS_PER_DEVICE:
+        return "STEREO_ONE_CIS_PER_DEVICE";
+      default:
+        return "RFU";
+    }
+  }(strategy));
+
+  return strategy;
+}
+
 int LeAudioDeviceGroup::GetAseCount(uint8_t direction) const {
   int result = 0;
   for (const auto& device_iter : leAudioDevices_) {
@@ -1284,6 +1520,25 @@ int LeAudioDeviceGroup::GetAseCount(uint8_t direction) const {
   }
 
   return result;
+}
+
+void LeAudioDeviceGroup::CigConfiguration::SetState(CigState state) {
+  log::verbose("{} -> {}", bluetooth::common::ToString(state_), bluetooth::common::ToString(state));
+  state_ = state;
+
+  if (state_ != CigState::NONE) {
+    return;
+  }
+
+  auto leAudioDevice = group_->GetFirstDevice();
+  while (leAudioDevice != nullptr) {
+    leAudioDevice->FreeLinkQualityReports();
+    for (auto& ase : leAudioDevice->ases_) {
+      ase.cis_state = CisState::IDLE;
+      ase.data_path_state = DataPathState::IDLE;
+    }
+    leAudioDevice = group_->GetNextDevice(leAudioDevice);
+  }
 }
 
 /* Calculate the total number of sink, source and bidirectional CISes required by the CIG,
@@ -1296,12 +1551,24 @@ void LeAudioDeviceGroup::CigConfiguration::GetCisCount(LeAudioContextType contex
   auto expected_device_cnt = group_->DesiredSize();
   auto avail_group_ase_snk_cnt = group_->GetAseCount(types::kLeAudioDirectionSink);
   auto avail_group_ase_src_count = group_->GetAseCount(types::kLeAudioDirectionSource);
-  auto strategy = group_->GetGroupSinkStrategy();
 
-  bool is_bidirectional = group_->GetAllSupportedBidirectionalContextTypes().test(context_type);
-  bool is_source_only = !is_bidirectional && group_->GetAllSupportedSingleDirectionOnlyContextTypes(
-                                                           types::kLeAudioDirectionSource)
-                                                     .test(context_type);
+  auto directions = group_->GetDirectionSupport(context_type);
+  bool is_bidirectional = directions.sink && directions.source;
+  bool is_source_only = !directions.sink && directions.source;
+
+  auto current_config = group_->IsUsingPreferredAudioSetConfiguration(context_type)
+                                ? group_->GetCachedPreferredConfiguration(context_type)
+                                : group_->GetCachedConfiguration(context_type);
+  if (!current_config) {
+    log::warn("No valid group configuration is currently available, looking into PAC records.");
+  }
+
+  // For non-LC3 codecs like Opus, we should base the strategy calcualation based on the config
+  const bool derive_strategy_from_config =
+          current_config && com::android::bluetooth::flags::leaudio_add_opus_hi_res_codec_type();
+  auto strategy = derive_strategy_from_config
+                          ? group_->FindGroupStrategyForConfig(current_config.get())
+                          : group_->GetGroupSinkStrategy();
   log::debug(
           "{} {}, strategy {}, group avail sink ases: {}, "
           "group avail source ases {} "
@@ -1740,7 +2007,7 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
     auto const strategy = utils::GetStrategyForAseConfig(ase_confs, device_cnt);
 
     log::debug(
-            "Number of devices: {}, number of ASEs: {},  Max ASE per device: {} "
+            "Number of devices: {}, number of cfg ASEs: {},  Max req ASE per device: {} "
             "config strategy: {}, group strategy: {}",
             device_cnt, ase_cnt, max_required_ase_per_dev, static_cast<int>(strategy),
             (int)required_snk_strategy);
@@ -1859,7 +2126,21 @@ bool LeAudioDeviceGroup::ConfigureAses(
     auto direction_str = (direction == types::kLeAudioDirectionSink ? "Sink" : "Source");
     log::debug("{}: Looking for requirements: {}", direction_str, audio_set_conf->name);
 
-    if (audio_set_conf->confs.get(direction).empty()) {
+    // Skip this direction if we have no configurations for it
+    auto should_skip = audio_set_conf->confs.get(direction).empty();
+
+    // Even if we have configurations for this direction, we might still want to skip
+    // configuring these ASEs if the only configurations on this direction are the vendor specific
+    // spatial audio channel (DSA) configurations - for these, we want to create the CISes, but no
+    // ASES will be configured.
+    if (!should_skip && direction == types::kLeAudioDirectionSource) {
+      if (audio_set_conf->countNonDsaBackChannels() == 0) {
+        log::debug("Skip configuring DSA data channel ASEs for group {}", group_id_);
+        should_skip = true;
+      }
+    }
+
+    if (should_skip) {
       log::warn("No {} configuration available.", direction_str);
       continue;
     }
@@ -1946,7 +2227,7 @@ bool LeAudioDeviceGroup::ConfigureAses(
   log::info("Choosed ASE Configuration for group: {}, configuration: {}", group_id_,
             audio_set_conf->name);
 
-  configuration_context_type_ = context_type;
+  SetConfigurationContextType(context_type);
   SetMetadataContexts(metadata_context_types);
   return true;
 }
@@ -1954,8 +2235,11 @@ bool LeAudioDeviceGroup::ConfigureAses(
 std::shared_ptr<const types::AudioSetConfiguration> LeAudioDeviceGroup::GetCachedConfiguration(
         LeAudioContextType context_type) const {
   if (context_to_configuration_cache_map_.count(context_type) != 0) {
+    log::verbose("group_id: {} found configuration for {}", group_id_,
+                 common::ToString(context_type));
     return context_to_configuration_cache_map_.at(context_type).second;
   }
+  log::verbose("group_id:  {} NO configuration for {}", group_id_, common::ToString(context_type));
   return nullptr;
 }
 
@@ -1977,6 +2261,7 @@ std::shared_ptr<const types::AudioSetConfiguration> LeAudioDeviceGroup::GetActiv
 std::shared_ptr<const types::AudioSetConfiguration> LeAudioDeviceGroup::GetConfiguration(
         LeAudioContextType context_type) const {
   if (context_type == LeAudioContextType::UNINITIALIZED) {
+    log::warn("group_id: {}, called with UNINITIALIZED", group_id_);
     return nullptr;
   }
 
@@ -1995,6 +2280,8 @@ std::shared_ptr<const types::AudioSetConfiguration> LeAudioDeviceGroup::GetConfi
     conf = valid_config_pair.second.get();
   }
   if (!is_valid || (conf == nullptr)) {
+    log::verbose("group_id: {}, {} - need to update configuration cache.", group_id_,
+                 common::ToString(context_type));
     UpdateAudioSetConfigurationCache(context_type);
   }
 
@@ -2307,6 +2594,7 @@ bool LeAudioDeviceGroup::Configure(
    * It might happen it will get unavailable in some point of time
    */
   stream_conf.conf = conf;
+  stream_conf.configuration_hash = utils::GetConfigurationHash(*conf);
   return true;
 }
 
@@ -2328,7 +2616,7 @@ void LeAudioDeviceGroup::PrintDebugState(void) const {
             << bluetooth::common::ToString(GetAllowedContextMask())
             << ", \n configuration context type: "
             << bluetooth::common::ToString(GetConfigurationContextType())
-            << ", \n active configuration name: " << (active_conf ? active_conf->name : " not set");
+            << ", \n active config: \"" << (active_conf ? active_conf->name : " not set") << "\"";
 
   if (cig.cises.size() > 0) {
     log::info("\n Allocated CISes: {}", static_cast<int>(cig.cises.size()));
@@ -2369,38 +2657,52 @@ void LeAudioDeviceGroup::Dump(std::stringstream& stream, int active_group_id) co
   bool is_active = (group_id_ == active_group_id);
   auto active_conf = GetActiveConfiguration();
 
-  stream << "    ■ Group id: " << group_id_ << ", " << (is_enabled_ ? "Enabled" : "Disabled")
+  stream << "    ■ Group (gID): " << group_id_ << ", " << (is_enabled_ ? "Enabled" : "Disabled")
          << ", " << (is_active ? "Active\n" : "Inactive\n") << "      Current state: " << GetState()
          << ",\ttarget state: " << GetTargetState() << ",\tcig state: " << cig.GetState() << "\n"
-         << "      Group supported contexts: " << GetSupportedContexts() << "\n"
-         << "      Group available contexts: " << GetAvailableContexts() << "\n"
-         << "      Group user allowed contexts: " << GetAllowedContextMask() << "\n"
-         << "      Configuration context type: "
-         << bluetooth::common::ToString(GetConfigurationContextType()).c_str() << "\n"
-         << "      Active configuration name:\t" << (active_conf ? active_conf->name : "Not set")
-         << "\n"
-         << "      Stream configuration:\t\t"
-         << (stream_conf.conf != nullptr ? stream_conf.conf->name : "Not set ") << "\n"
-         << "      Codec ID: " << +(stream_conf.codec_id.coding_format)
-         << ",\tpending reconfiguration: " << stream_conf.pending_configuration << "\n"
          << "      Num of devices:\t" << Size() << " (" << NumOfConnected() << " connected)\n"
          << "      Num of sinks:\t" << stream_conf.stream_params.sink.num_of_devices << " ("
          << stream_conf.stream_params.sink.stream_config.stream_map.size() << " connected)\n"
          << "      Num of sources:\t" << stream_conf.stream_params.source.num_of_devices << " ("
-         << stream_conf.stream_params.source.stream_config.stream_map.size() << " connected)";
+         << stream_conf.stream_params.source.stream_config.stream_map.size() << " connected)\n"
+         << "      Group sink supported contexts:      "
+         << GetSupportedContexts(types::kLeAudioDirectionSink) << "\n"
+         << "      Group sink available contexts:      "
+         << GetAvailableContexts(types::kLeAudioDirectionSink) << "\n"
+         << "      Group sink user allowed contexts:   "
+         << GetAllowedContextMask(types::kLeAudioDirectionSink) << "\n"
+         << "      Group source supported contexts:    "
+         << GetSupportedContexts(types::kLeAudioDirectionSource) << "\n"
+         << "      Group source available contexts:    "
+         << GetAvailableContexts(types::kLeAudioDirectionSource) << "\n"
+         << "      Group source user allowed contexts: "
+         << GetAllowedContextMask(types::kLeAudioDirectionSource) << "\n"
+         << "      Configuration context type: "
+         << bluetooth::common::ToString(GetConfigurationContextType()).c_str() << "\n"
+         << "      Current Codec ID: " << +(stream_conf.codec_id.coding_format)
+         << ",\tpending reconfiguration: " << stream_conf.pending_configuration << "\n"
+         << "      Active config: \"" << (active_conf ? active_conf->name : "Not set") << "\"\n"
+         << "      Stream config: \""
+         << (stream_conf.conf != nullptr ? stream_conf.conf->name : "Not set") << "\"\n";
 
   if (GetFirstActiveDevice() != nullptr) {
     uint32_t sink_delay;
     if (GetPresentationDelay(&sink_delay, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
-      stream << "\n      presentation_delay for sink (speaker): " << sink_delay << " us";
+      stream << "      Presentation delay for playback (sink): " << sink_delay << " us\n";
     }
 
     uint32_t source_delay;
     if (GetPresentationDelay(&source_delay, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
-      stream << "\n      presentation_delay for source (microphone): " << source_delay << " us";
+      stream << "      Presentation delay for recording (source): " << source_delay << " us\n";
     }
   }
-  stream << "\n";
+
+  stream << std::format("      DSA mode: {}{}, is_active: {}\n", common::ToString(dsa_.mode),
+                        (dsa_.mode == DsaMode::DISABLED) ? ""
+                        : com::android::bluetooth::flags::dsa_use_codec_extensibility()
+                                ? " (codec extensibility)"
+                                : " (static)",
+                        dsa_.active);
 
   stream << "      == CISes (" << static_cast<int>(cig.cises.size()) << "):";
   if (cig.cises.size() > 0) {

@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Wenn du Bluetooth nicht ausschaltest, bleibt es eingeschaltet, wenn du das nächste Mal in den Flugmodus wechselst"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetooth bleibt aktiviert"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Auf deinem Gerät bleibt Bluetooth im Flugmodus eingeschaltet. Schalte Bluetooth aus, wenn du das nicht möchtest."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Bluetooth bleibt im Flugmodus aktiviert, wenn eine Verbindung zu anderen Geräten besteht."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Dein Gerät lässt Bluetooth im Flugmodus aktiviert, wenn es mit deiner Smartwatch verbunden ist."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Bluetooth bleibt im Flugmodus eingeschaltet, wenn eine Verbindung mit einem Mediengerät besteht."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"WLAN und Bluetooth bleiben eingeschaltet"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Auf deinem Gerät bleiben WLAN und Bluetooth im Flugmodus eingeschaltet. Schalte sie aus, wenn du das nicht möchtest."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth wieder aktiviert"</string>

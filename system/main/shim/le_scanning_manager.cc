@@ -16,7 +16,7 @@
 
 #define LOG_TAG "bt_shim_scanner"
 
-#include "le_scanning_manager.h"
+#include "main/shim/le_scanning_manager.h"
 
 #include <base/functional/bind.h>
 #include <base/threading/thread.h>
@@ -33,13 +33,15 @@
 #include "main/shim/ble_scanner_interface_impl.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
-#include "main/shim/le_scanning_manager.h"
 #include "main/shim/shim.h"
 #include "main_thread.h"
+#include "stack/acl/acl.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/advertise_data_parser.h"
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/bt_dev_class.h"
+#include "stack/include/btm_ble_addr.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_status.h"
@@ -51,8 +53,6 @@
 #include "types/raw_address.h"
 
 using namespace bluetooth;
-
-extern tBTM_CB btm_cb;
 
 namespace {
 constexpr char kBtmLogTag[] = "SCAN";
@@ -66,6 +66,8 @@ constexpr uint16_t kAllowAllFilter = 0x00;
 constexpr uint16_t kListLogicOr = 0x01;
 constexpr uint8_t k1mPhyMask = 1;
 constexpr uint8_t kCodedPhyMask = 1 << 2;
+
+constexpr uint16_t kScanResponseMask = 1 << 3;
 
 class DefaultScanningCallback : public ::ScanningCallbacks {
   void OnScannerRegistered(const bluetooth::Uuid /* app_uuid */, uint8_t /* scanner_id */,
@@ -310,6 +312,8 @@ void BleScannerInterfaceImpl::SetScanParameters(uint8_t scan_type, int scanner_i
                                                 int scan_window_coded, int scan_phy) {
   log::info("in shim layer, scannerId1m={}, scannerIdCoded={}", scanner_id_1m, scanner_id_coded);
   bool validated = true;
+  // clear out any scan_phy bits that aren't valid
+  scan_phy = scan_phy & (k1mPhyMask | kCodedPhyMask);
   if ((scan_phy & k1mPhyMask) != 0) {
     validated =
             BTM_BLE_ISVALID_PARAM(scan_interval_1m, BTM_BLE_SCAN_INT_MIN,
@@ -373,14 +377,6 @@ void BleScannerInterfaceImpl::BatchscanReadReports(int client_if, int scan_mode)
   bluetooth::shim::GetScanning()->BatchScanReadReport(scanner_id, batch_scan_mode);
 }
 
-bool btm_random_pseudo_to_identity_addr(RawAddress* random_pseudo,
-                                        tBLE_ADDR_TYPE* p_identity_addr_type);
-
-bool btm_identity_addr_to_random_pseudo(RawAddress* bd_addr, tBLE_ADDR_TYPE* p_addr_type,
-                                        bool refresh);
-
-extern tACL_CONN* btm_acl_for_bda(const RawAddress& bd_addr, tBT_TRANSPORT transport);
-
 void BleScannerInterfaceImpl::StartSync(uint8_t sid, RawAddress address, uint16_t skip,
                                         uint16_t timeout, int reg_id) {
   log::info("in shim layer");
@@ -402,7 +398,7 @@ void BleScannerInterfaceImpl::StopSync(uint16_t handle) {
 
 void BleScannerInterfaceImpl::CancelCreateSync(uint8_t sid, RawAddress address) {
   log::info("in shim layer");
-  bluetooth::shim::GetScanning()->CancelCreateSync(sid, ToGdAddress(address));
+  bluetooth::shim::GetScanning()->CancelCreateSync(sid, address);
 }
 
 void BleScannerInterfaceImpl::TransferSync(RawAddress address, uint16_t service_data,
@@ -417,8 +413,8 @@ void BleScannerInterfaceImpl::TransferSync(RawAddress address, uint16_t service_
     return;
   }
 
-  bluetooth::shim::GetScanning()->TransferSync(ToGdAddress(address), p_acl->Handle(), service_data,
-                                               sync_handle, pa_source);
+  bluetooth::shim::GetScanning()->TransferSync(address, p_acl->Handle(), service_data, sync_handle,
+                                               pa_source);
 }
 
 void BleScannerInterfaceImpl::TransferSetInfo(RawAddress address, uint16_t service_data,
@@ -433,14 +429,14 @@ void BleScannerInterfaceImpl::TransferSetInfo(RawAddress address, uint16_t servi
     return;
   }
 
-  bluetooth::shim::GetScanning()->TransferSetInfo(ToGdAddress(address), p_acl->Handle(),
-                                                  service_data, adv_handle, pa_source);
+  bluetooth::shim::GetScanning()->TransferSetInfo(address, p_acl->Handle(), service_data,
+                                                  adv_handle, pa_source);
 }
 
 void BleScannerInterfaceImpl::SyncTxParameters(RawAddress addr, uint8_t mode, uint16_t skip,
                                                uint16_t timeout, int reg_id) {
   log::info("in shim layer");
-  bluetooth::shim::GetScanning()->SyncTxParameters(ToGdAddress(addr), mode, skip, timeout, reg_id);
+  bluetooth::shim::GetScanning()->SyncTxParameters(addr, mode, skip, timeout, reg_id);
 }
 
 void BleScannerInterfaceImpl::RegisterCallbacks(ScanningCallbacks* callbacks) {
@@ -477,8 +473,7 @@ void BleScannerInterfaceImpl::on_scan_result(uint16_t event_type, uint8_t addres
   }
 
   // Do not update device properties of already bonded devices.
-  if (!com::android::bluetooth::flags::guard_bonded_device_properties() ||
-      !btm_sec_is_a_bonded_dev(raw_address)) {
+  if (!BTM_IsBonded(raw_address)) {
     do_in_jni_thread(base::BindOnce(&BleScannerInterfaceImpl::handle_remote_properties,
                                     base::Unretained(this), raw_address, ble_addr_type,
                                     advertising_data));
@@ -490,9 +485,12 @@ void BleScannerInterfaceImpl::on_scan_result(uint16_t event_type, uint8_t addres
           advertising_sid, tx_power, rssi, periodic_advertising_interval, advertising_data));
 
   // TODO: Remove when StartInquiry in GD part implemented
-  btm_ble_process_adv_pkt_cont_for_inquiry(event_type, ble_addr_type, raw_address, primary_phy,
-                                           secondary_phy, advertising_sid, tx_power, rssi,
-                                           periodic_advertising_interval, advertising_data);
+  if (!com::android::bluetooth::flags::support_passive_scanning() ||
+      (event_type & kScanResponseMask)) {
+    btm_ble_process_adv_pkt_cont_for_inquiry(event_type, ble_addr_type, raw_address, primary_phy,
+                                             secondary_phy, advertising_sid, tx_power, rssi,
+                                             periodic_advertising_interval, advertising_data);
+  }
 }
 
 void BleScannerInterfaceImpl::OnScanResult(uint16_t event_type, uint8_t address_type,
@@ -618,7 +616,7 @@ bool BleScannerInterfaceImpl::parse_filter_command(
         ApcfCommand apcf_command) {
   advertising_packet_content_filter_command.filter_type =
           static_cast<bluetooth::hci::ApcfFilterType>(apcf_command.type);
-  bluetooth::hci::Address address = ToGdAddress(apcf_command.address);
+  bluetooth::hci::Address address = apcf_command.address;
   advertising_packet_content_filter_command.address = address;
   advertising_packet_content_filter_command.application_address_type =
           static_cast<bluetooth::hci::ApcfApplicationAddressType>(apcf_command.addr_type);
@@ -744,7 +742,7 @@ void BleScannerInterfaceImpl::handle_remote_properties(RawAddress bd_addr, tBLE_
   }
 
   auto* storage_module = bluetooth::shim::GetStorage();
-  bluetooth::hci::Address address = ToGdAddress(bd_addr);
+  bluetooth::hci::Address address = bd_addr;
 
   // update device type
   auto mutation = storage_module->Modify();
@@ -779,9 +777,8 @@ void BleScannerInterfaceImpl::AddressCache::init(void) {
   remote_bdaddr_cache_ordered_ = {};
 }
 
-BleScannerInterfaceImpl* bt_le_scanner_instance = nullptr;
-
 BleScannerInterface* bluetooth::shim::get_ble_scanner_instance() {
+  static BleScannerInterfaceImpl* bt_le_scanner_instance = nullptr;
   if (bt_le_scanner_instance == nullptr) {
     bt_le_scanner_instance = new BleScannerInterfaceImpl();
   }
@@ -859,13 +856,13 @@ void bluetooth::shim::set_target_announcements_filter(bool enable) {
   bluetooth::hci::AdvertisingPacketContentFilterCommand cap_filter{};
   cap_filter.filter_type = bluetooth::hci::ApcfFilterType::SERVICE_DATA;
   cap_filter.data = {0x53, 0x18, 0x01};
-  cap_filter.data_mask = {0x53, 0x18, 0xFF};
+  cap_filter.data_mask = {0xFF, 0xFF, 0xFF};
   cap_bap_filter.push_back(cap_filter);
 
   bluetooth::hci::AdvertisingPacketContentFilterCommand bap_filter{};
   bap_filter.filter_type = bluetooth::hci::ApcfFilterType::SERVICE_DATA;
   bap_filter.data = {0x4e, 0x18, 0x01};
-  bap_filter.data_mask = {0x4e, 0x18, 0xFF};
+  bap_filter.data_mask = {0xFF, 0xFF, 0xFF};
 
   cap_bap_filter.push_back(bap_filter);
   bluetooth::shim::GetScanning()->ScanFilterAdd(filter_index, cap_bap_filter);

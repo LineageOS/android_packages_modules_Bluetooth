@@ -33,6 +33,7 @@ import org.junit.rules.ExternalResource;
 import pandora.BumbleConfigGrpc;
 import pandora.DckGrpc;
 import pandora.GATTGrpc;
+import pandora.HFPGrpc;
 import pandora.HIDGrpc;
 import pandora.HostGrpc;
 import pandora.HostProto;
@@ -42,6 +43,7 @@ import pandora.OOBGrpc;
 import pandora.OppGrpc;
 import pandora.RFCOMMGrpc;
 import pandora.SecurityGrpc;
+import pandora.SecurityStorageGrpc;
 import pandora.l2cap.L2CAPGrpc;
 
 import java.util.UUID;
@@ -76,7 +78,7 @@ public final class PandoraDevice extends ExternalResource {
         try {
             stub.factoryReset(Empty.getDefaultInstance());
         } catch (StatusRuntimeException e) {
-            if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
+            if (e.getStatus().getCode() == Status.Code.CANCELLED) {
                 // Server is shutting down, the call might be canceled with an UNAVAILABLE status
                 // because the stream is closed.
             } else {
@@ -92,9 +94,12 @@ public final class PandoraDevice extends ExternalResource {
         mChannel = OkHttpChannelBuilder.forAddress(mNetworkAddress, mPort).usePlaintext().build();
         stub = HostGrpc.newBlockingStub(mChannel);
         HostProto.ReadLocalAddressResponse readLocalAddressResponse =
-                stub.withWaitForReady().readLocalAddress(Empty.getDefaultInstance());
+                stub.withWaitForReady()
+                        .withDeadlineAfter(10, TimeUnit.SECONDS)
+                        .readLocalAddress(Empty.getDefaultInstance());
         mPublicBluetoothAddress =
                 Utils.addressStringFromByteString(readLocalAddressResponse.getAddress());
+        Log.i(TAG, "factoryReset complete");
     }
 
     @Override
@@ -213,6 +218,11 @@ public final class PandoraDevice extends ExternalResource {
         return SecurityGrpc.newStub(mChannel);
     }
 
+    /** Get Pandora Security Storage blocking service */
+    public SecurityStorageGrpc.SecurityStorageBlockingStub securityStorageBlocking() {
+        return SecurityStorageGrpc.newBlockingStub(mChannel);
+    }
+
     /** Get Pandora OOB blocking service */
     public OOBGrpc.OOBBlockingStub oobBlocking() {
         return OOBGrpc.newBlockingStub(mChannel);
@@ -256,5 +266,15 @@ public final class PandoraDevice extends ExternalResource {
     /** Get Pandora OPP blocking service */
     public OppGrpc.OppBlockingStub oppBlocking() {
         return OppGrpc.newBlockingStub(mChannel);
+    }
+
+    /** Get Pandora HFP service */
+    public HFPGrpc.HFPStub hf() {
+        return HFPGrpc.newStub(mChannel);
+    }
+
+    /** Get Pandora HFP blocking service */
+    public HFPGrpc.HFPBlockingStub hfBlocking() {
+        return HFPGrpc.newBlockingStub(mChannel);
     }
 }

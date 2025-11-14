@@ -24,19 +24,19 @@
 #define LOG_TAG "smp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <cstring>
 
 #include "crypto_toolbox/crypto_toolbox.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/stack_config.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
-#include "main/shim/metrics_api.h"
-#include "metrics/bluetooth_event.h"
 #include "osi/include/allocator.h"
 #include "p_256_ecc_pp.h"
 #include "smp_int.h"
@@ -320,7 +320,7 @@ void smp_log_metrics(const RawAddress& bd_addr, bool is_outgoing, const uint8_t*
   uint8_t failure_reason = 0;
   if (raw_cmd == SMP_OPCODE_PAIRING_FAILED && buf_len >= 1) {
     STREAM_TO_UINT8(failure_reason, p_buf);
-    bluetooth::shim::LogMetricLePairingFail(bd_addr, failure_reason, is_outgoing);
+    bluetooth::metrics::LogLePairingFail(bd_addr, failure_reason, is_outgoing);
   }
   if (smp_cb.is_pair_cancel) {
     failure_reason = SMP_USER_CANCELLED;  // Tracking pairing cancellations
@@ -330,8 +330,8 @@ void smp_log_metrics(const RawAddress& bd_addr, bool is_outgoing, const uint8_t*
   android::bluetooth::DirectionEnum direction =
           is_outgoing ? android::bluetooth::DirectionEnum::DIRECTION_OUTGOING
                       : android::bluetooth::DirectionEnum::DIRECTION_INCOMING;
-  bluetooth::shim::LogMetricSmpPairingEvent(bd_addr, metric_cmd, direction,
-                                            static_cast<uint16_t>(failure_reason));
+  bluetooth::metrics::LogMetricSmpPairingEvent(bd_addr, metric_cmd, direction,
+                                               static_cast<uint16_t>(failure_reason));
 }
 
 /*******************************************************************************
@@ -903,6 +903,13 @@ void tSMP_CB::reset() {
   this->init_security_mode = init_security_mode;
   this->smp_rsp_timer_ent = smp_rsp_timer_ent;
   this->delayed_auth_timer_ent = delayed_auth_timer_ent;
+
+  /* Initialize failure case for certification */
+  smp_cb.cert_failure =
+          static_cast<tSMP_STATUS>(stack_config_get_interface()->get_pts_smp_failure_case());
+  if (smp_cb.cert_failure) {
+    log::error("PTS FAILURE MODE IN EFFECT (CASE {})", smp_cb.cert_failure);
+  }
 }
 
 /*******************************************************************************
@@ -1012,8 +1019,8 @@ void smp_proc_pairing_cmpl(tSMP_CB* p_cb) {
     if (metric_status > SMP_MAX_FAIL_RSN_PER_SPEC) {
       metric_status |= SMP_METRIC_STATUS_INTERNAL_FLAG;
     }
-    bluetooth::shim::LogMetricSmpPairingEvent(p_cb->pairing_bda, metric_cmd, direction,
-                                              metric_status);
+    bluetooth::metrics::LogMetricSmpPairingEvent(p_cb->pairing_bda, metric_cmd, direction,
+                                                 metric_status);
   }
 
   if (p_cb->status == SMP_SUCCESS && p_cb->smp_over_br) {

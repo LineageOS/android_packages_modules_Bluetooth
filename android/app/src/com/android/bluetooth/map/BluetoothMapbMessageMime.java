@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.map;
 
 import android.bluetooth.BluetoothProfile;
@@ -156,6 +157,8 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
                 /* Not a text part, just print the filename or part name if they exist. */
                 if (mPartName != null) {
                     sb.append("<").append(mPartName).append(">\r\n");
+                } else if (mContentLocation != null) {
+                    sb.append("<").append(mContentLocation).append(">\r\n");
                 } else {
                     sb.append("<").append("attachment").append(">\r\n");
                 }

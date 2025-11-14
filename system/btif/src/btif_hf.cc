@@ -33,6 +33,8 @@
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 
@@ -62,7 +64,6 @@
 #include "include/hardware/bt_hf.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/helpers.h"
-#include "main/shim/metrics_api.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_client_interface.h"
@@ -75,7 +76,6 @@
                   (number.size() > 2) ? number.size() - 2 : 0, '*') \
            .c_str())
 
-using namespace bluetooth::shim;
 namespace {
 constexpr char kBtmLogTag[] = "HFP";
 }
@@ -321,6 +321,31 @@ static bool IsSlcConnected(RawAddress* bd_addr) {
   return btif_hf_cb[idx].state == BTHF_CONNECTION_STATE_SLC_CONNECTED;
 }
 
+/**
+ * Check if other HFP connection is active for bd_addr
+ *
+ * @param bd_addr remote device address
+ * @return true if other side HFP connection is active for bd_addr
+ */
+static bool is_other_hfp_connection_active(int current_idx, const RawAddress& bd_addr) {
+  for (int i = 0; i < BTA_AG_MAX_NUM_CLIENTS; i++) {
+    if (i == current_idx) {
+      continue;  // Skip self
+    }
+    // Check if another slot for the SAME device is already CONNECTED or CONNECTING
+    if ((btif_hf_cb[i].state == BTHF_CONNECTION_STATE_CONNECTED ||
+         btif_hf_cb[i].state == BTHF_CONNECTION_STATE_SLC_CONNECTED ||
+         btif_hf_cb[i].state == BTHF_CONNECTION_STATE_CONNECTING) &&
+        btif_hf_cb[i].connected_bda == bd_addr) {
+      log::info("Found other active HFP instance for {} at index {} with state {}", bd_addr, i,
+                btif_hf_cb[i].state);
+      return true;
+    }
+  }
+  log::info("No other active HFP instance found for {}", bd_addr);
+  return false;
+}
+
 /*******************************************************************************
  *
  * Function         btif_hf_upstreams_evt
@@ -361,8 +386,32 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
       break;
     // RFCOMM connected or failed to connect
     case BTA_AG_OPEN_EVT:
+      if (com::android::bluetooth::flags::fix_hfp_rfcomm_collision_state_machine_error() &&
+          p_data->open.status != BTA_AG_SUCCESS) {
+        RawAddress current_bda = p_data->open.bd_addr;  // Get address from event data
+
+        // Check if another connection to the same device is already established, both sides may
+        // initiate the HFP connection.
+        if (is_other_hfp_connection_active(idx, current_bda)) {
+          log::warn(
+                  "Ignoring self-initiated AG open failure event for {} "
+                  "because another connection is active.",
+                  current_bda);
+
+          // Clean up ONLY the state associated with THIS failed outgoing attempt.
+          reset_control_block(&btif_hf_cb[idx]);
+          btif_queue_advance();  // Advance the connection queue if needed
+
+          break;
+        }
+        log::info(
+                "No other active connection found for {}. Processing "
+                "failure event.",
+                current_bda);
+      }
+
       bt_hf_callbacks->ConnectionStateCallback(BTHF_CONNECTION_STATE_CONNECTING,
-                                               &(p_data->open.bd_addr));
+                                               &(p_data->open.bd_addr), BTA_AG_SUCCESS);
       // Check if an outgoing connection is pending
       if (btif_hf_cb[idx].is_initiator) {
         // There is an outgoing connection.
@@ -373,14 +422,14 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
           // Check if the incoming open event and the outgoing connection are
           // for the same device.
           if (p_data->open.bd_addr == btif_hf_cb[idx].connected_bda) {
-            LogMetricHfpRfcommChannelFail(ToGdAddress(p_data->open.bd_addr));
+            bluetooth::metrics::LogMetricHfpRfcommChannelFail(p_data->open.bd_addr);
             log::warn(
                     "btif_hf_cb state[{}] is not expected, possible connection "
                     "collision, ignoring AG open failure event for the same device "
                     "{}",
                     p_data->open.status, p_data->open.bd_addr);
           } else {
-            LogMetricHfpRfcommCollisionFail(ToGdAddress(p_data->open.bd_addr));
+            bluetooth::metrics::LogMetricHfpRfcommCollisionFail(p_data->open.bd_addr);
             log::warn(
                     "btif_hf_cb state[{}] is not expected, possible connection "
                     "collision, ignoring AG open failure event for the different "
@@ -388,9 +437,8 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                     "state for p_data bda.",
                     p_data->open.status, btif_hf_cb[idx].connected_bda, p_data->open.bd_addr);
             bt_hf_callbacks->ConnectionStateCallback(BTHF_CONNECTION_STATE_DISCONNECTED,
-                                                     &(p_data->open.bd_addr));
-            bluetooth::shim::CountCounterMetrics(
-                    android::bluetooth::CodePathCounterKeyEnum::HFP_COLLISON_AT_AG_OPEN, 1);
+                                                     &(p_data->open.bd_addr), p_data->open.status);
+            bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::HFP_COLLISON_AT_AG_OPEN);
           }
           break;
         }
@@ -410,9 +458,9 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                   "report disconnect state for btif_hf_cb bda.",
                   btif_hf_cb[idx].connected_bda, p_data->open.bd_addr);
           bt_hf_callbacks->ConnectionStateCallback(BTHF_CONNECTION_STATE_DISCONNECTED,
-                                                   &(btif_hf_cb[idx].connected_bda));
-          bluetooth::shim::CountCounterMetrics(
-                  android::bluetooth::CodePathCounterKeyEnum::HFP_COLLISON_AT_CONNECTING, 1);
+                                                   &(btif_hf_cb[idx].connected_bda),
+                                                   p_data->open.status);
+          bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::HFP_COLLISON_AT_CONNECTING);
           reset_control_block(&btif_hf_cb[idx]);
           btif_queue_advance();
         }
@@ -432,8 +480,8 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
         btif_hf_cb[idx].state = BTHF_CONNECTION_STATE_CONNECTED;
         btif_hf_cb[idx].peer_feat = 0;
         clear_phone_state_multihf(&btif_hf_cb[idx]);
-        bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state,
-                                                 &btif_hf_cb[idx].connected_bda);
+        bt_hf_callbacks->ConnectionStateCallback(
+                btif_hf_cb[idx].state, &btif_hf_cb[idx].connected_bda, p_data->open.status);
       } else {
         if (!btif_hf_cb[idx].is_initiator) {
           // Ignore remote initiated open failures
@@ -441,7 +489,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                     p_data->open.bd_addr);
           break;
         }
-        LogMetricHfpRfcommAgOpenFail(ToGdAddress(p_data->open.bd_addr));
+        bluetooth::metrics::LogMetricHfpRfcommAgOpenFail(p_data->open.bd_addr);
         log::error("self initiated AG open failed for {}, status {}", btif_hf_cb[idx].connected_bda,
                    p_data->open.status);
         RawAddress connected_bda = btif_hf_cb[idx].connected_bda;
@@ -465,16 +513,17 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
           }
 
           if (notify_required) {
-            bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state, &connected_bda);
+            bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state, &connected_bda,
+                                                     p_data->open.status);
           }
         } else {
-          bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state, &connected_bda);
+          bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state, &connected_bda,
+                                                   p_data->open.status);
         }
 
-        bluetooth::shim::CountCounterMetrics(
-                android::bluetooth::CodePathCounterKeyEnum::HFP_SELF_INITIATED_AG_FAILED, 1);
+        bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::HFP_SELF_INITIATED_AG_FAILED);
         btif_queue_advance();
-        if (btm_sec_is_a_bonded_dev(connected_bda)) {
+        if (BTM_IsBonded(connected_bda)) {
           DEVICE_IOT_CONFIG_ADDR_INT_ADD_ONE(connected_bda, IOT_CONF_KEY_HFP_SLC_CONN_FAIL_COUNT);
         }
       }
@@ -485,20 +534,21 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
               "btif_hf_cb.handle:{}",
               dump_hf_event(event), idx, btif_hf_cb[idx].handle);
       RawAddress connected_bda = btif_hf_cb[idx].connected_bda;
-      bt_hf_callbacks->ConnectionStateCallback(BTHF_CONNECTION_STATE_DISCONNECTING, &connected_bda);
+      bt_hf_callbacks->ConnectionStateCallback(BTHF_CONNECTION_STATE_DISCONNECTING, &connected_bda,
+                                               BTA_AG_SUCCESS);
       // If AG_OPEN was received but SLC was not connected in time, then
       // AG_CLOSE may be received. We need to advance the queue here.
       bool failed_to_setup_slc = (btif_hf_cb[idx].state != BTHF_CONNECTION_STATE_SLC_CONNECTED) &&
                                  btif_hf_cb[idx].is_initiator;
 
       reset_control_block(&btif_hf_cb[idx]);
-      bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state, &connected_bda);
+      bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state, &connected_bda,
+                                               BTA_AG_SUCCESS);
       if (failed_to_setup_slc) {
         log::error("failed to setup SLC for {}", connected_bda);
-        bluetooth::shim::CountCounterMetrics(
-                android::bluetooth::CodePathCounterKeyEnum::HFP_SLC_SETUP_FAILED, 1);
+        bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::HFP_SLC_SETUP_FAILED);
         btif_queue_advance();
-        LogMetricHfpSlcFail(ToGdAddress(p_data->open.bd_addr));
+        bluetooth::metrics::LogMetricHfpSlcFail(p_data->open.bd_addr);
         DEVICE_IOT_CONFIG_ADDR_INT_ADD_ONE(btif_hf_cb[idx].connected_bda,
                                            IOT_CONF_KEY_HFP_SLC_CONN_FAIL_COUNT);
       }
@@ -517,7 +567,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
       btif_hf_cb[idx].peer_feat = p_data->conn.peer_feat;
       btif_hf_cb[idx].state = BTHF_CONNECTION_STATE_SLC_CONNECTED;
       bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state,
-                                               &btif_hf_cb[idx].connected_bda);
+                                               &btif_hf_cb[idx].connected_bda, BTA_AG_SUCCESS);
       if (btif_hf_cb[idx].is_initiator) {
         btif_queue_advance();
       }
@@ -723,6 +773,10 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
               p_data->val.num <= BTA_AG_SCO_APTX_SWB_SETTINGS_Q3 ? BTHF_SWB_YES : BTHF_SWB_NO,
               &btif_hf_cb[idx].connected_bda);
       break;
+    case BTA_AG_AT_BCC_EVT:
+      log::info("Calling AtBccCallback for {}", btif_hf_cb[idx].connected_bda);
+      bt_hf_callbacks->AtBccCallback(&btif_hf_cb[idx].connected_bda);
+      break;
 
     default:
       log::warn("unhandled event {}", event);
@@ -906,6 +960,7 @@ public:
   bt_status_t SetScoAllowed(bool value) override;
   bt_status_t SendBsir(bool value, RawAddress* bd_addr) override;
   bt_status_t SetActiveDevice(RawAddress* active_device_addr) override;
+  bt_status_t SetIsScoManagedByAudio(bool value) override;
   bt_status_t DebugDump() override;
 };
 
@@ -1592,6 +1647,12 @@ bt_status_t HeadsetInterface::DebugDump() {
           debug_dump.pkt_loss_ratio, debug_dump.latest_data.begin_ts_raw_us,
           debug_dump.latest_data.end_ts_raw_us, debug_dump.latest_data.status_in_hex.c_str(),
           debug_dump.latest_data.status_in_binary.c_str());
+  return BT_STATUS_SUCCESS;
+}
+
+bt_status_t HeadsetInterface::SetIsScoManagedByAudio(bool value) {
+  CHECK_BTHF_INIT();
+  BTA_AgSetIsScoManagedByAudio(value);
   return BT_STATUS_SUCCESS;
 }
 

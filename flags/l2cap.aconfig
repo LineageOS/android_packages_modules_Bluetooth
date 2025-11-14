@@ -17,3 +17,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "delay_offload_le_coc_connection_ind"
+    namespace: "bluetooth"
+    description: "Delay LE CoC connection indication callback if controller Tx window is full"
+    bug: "408478753"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

@@ -18,7 +18,11 @@ package com.android.bluetooth.pbapclient;
 
 import android.accounts.Account;
 import android.bluetooth.BluetoothDevice;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.util.Base64;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -43,6 +47,9 @@ public class Utils {
     private static final String CALL_HISTORY = "X-IRMC-CALL-DATETIME";
 
     public static final String ACCOUNT_TYPE = "com.android.bluetooth.pbapclient";
+
+    public static final boolean DONT_USE_CONTACT_PHOTO = false;
+    public static final boolean USE_CONTACT_PHOTO = true;
 
     public static Account getAccountForDevice(BluetoothDevice device) {
         return new Account(device.getAddress(), ACCOUNT_TYPE);
@@ -74,10 +81,17 @@ public class Utils {
      * @param phone the phone number of the VCard you want to create
      * @param addr the address of the VCard you want to create
      * @param email the email of the VCard you want to create
+     * @param photo whether to include a dummy image or not
      * @return a VCard string, built with the information provided
      */
     public static String createVcard(
-            String version, String first, String last, String phone, String addr, String email) {
+            String version,
+            String first,
+            String last,
+            String phone,
+            String addr,
+            String email,
+            boolean photo) {
         StringBuilder sb = new StringBuilder();
         sb.append("BEGIN:VCARD\n");
         sb.append("VERSION:").append(version).append("\n");
@@ -100,9 +114,34 @@ public class Utils {
             sb.append(EMAIL).append(":").append(email).append("\n");
         }
 
+        if (photo) {
+            sb.append("PHOTO;ENCODING=B;TYPE=JPEG:");
+            sb.append(createB64ImageAsString());
+            sb.append("\n");
+        }
+
         sb.append("END:VCARD");
 
         return sb.toString();
+    }
+
+    /**
+     * Create a VCard string fit for parsing
+     *
+     * <p>A null value in any field outside of name fields will cause it to be dropped from the
+     * entry.
+     *
+     * @param version the version of the VCard you want to create
+     * @param first the first name of the VCard you want to create
+     * @param last the last name of the VCard you want to create
+     * @param phone the phone number of the VCard you want to create
+     * @param addr the address of the VCard you want to create
+     * @param email the email of the VCard you want to create
+     * @return a VCard string, built with the information provided
+     */
+    public static String createVcard(
+            String version, String first, String last, String phone, String addr, String email) {
+        return createVcard(version, first, last, phone, addr, email, DONT_USE_CONTACT_PHOTO);
     }
 
     /**
@@ -147,6 +186,21 @@ public class Utils {
         sb.append("END:VCARD");
 
         return sb.toString();
+    }
+
+    private static String createB64ImageAsString() {
+        Bitmap bitmap = Bitmap.createBitmap(50, 50, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        canvas.drawColor(/* arbitrary, as the color doesn't matter */ 0xFF000000);
+
+        // Spec requires JPEG, no bigger than 300 by 300, less than 50kb, encoded in b64
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        boolean success = bitmap.compress(Bitmap.CompressFormat.JPEG, 95, outputStream);
+        if (!success) {
+            return "";
+        }
+
+        return Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP);
     }
 
     public static byte[] shortToByteArray(short s) {

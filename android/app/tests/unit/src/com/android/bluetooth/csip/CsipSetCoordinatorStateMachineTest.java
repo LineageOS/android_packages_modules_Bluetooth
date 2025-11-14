@@ -30,7 +30,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.after;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
@@ -42,7 +46,6 @@ import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
-import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.*;
 import org.junit.Rule;
@@ -57,7 +60,6 @@ import org.mockito.Mockito;
 public class CsipSetCoordinatorStateMachineTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private AdapterService mAdapterService;
     @Mock private CsipSetCoordinatorService mService;
     @Mock private CsipSetCoordinatorNativeInterface mNativeInterface;
 
@@ -70,8 +72,6 @@ public class CsipSetCoordinatorStateMachineTest {
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
-
         // Set up thread and looper
         mHandlerThread = new HandlerThread("CsipSetCoordinatorServiceTestHandlerThread");
         mHandlerThread.start();
@@ -89,7 +89,6 @@ public class CsipSetCoordinatorStateMachineTest {
     public void tearDown() throws Exception {
         mStateMachine.doQuit();
         mHandlerThread.quit();
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     /** Test that default state is disconnected */

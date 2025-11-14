@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"If you keep Bluetooth on, your device will remember to keep it on the next time you\'re in airplane mode"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetooth stays on"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Your device remembers to keep Bluetooth on in airplane mode. Turn off Bluetooth if you don\'t want it to stay on."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Bluetooth stays on in airplane mode while connected to other devices."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Your device will keep bluetooth on in airplane mode while connected to your watch."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Bluetooth stays on in airplane mode while connected to a media device."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi and Bluetooth stay on"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Your device remembers to keep Wi-Fi and Bluetooth on in airplane mode. Turn off Wi-Fi and Bluetooth if you don\'t want them to stay on."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth turned back on"</string>

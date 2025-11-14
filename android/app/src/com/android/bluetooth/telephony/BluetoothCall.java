@@ -25,8 +25,6 @@ import android.telecom.GatewayInfo;
 import android.telecom.InCallService;
 import android.telecom.PhoneAccountHandle;
 
-import com.android.bluetooth.apishim.BluetoothCallShimImpl;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -288,8 +286,10 @@ class BluetoothCall {
 
     // helper functions
     public boolean isSilentRingingRequested() {
-        return BluetoothCallShimImpl.newInstance()
-                .isSilentRingingRequested(getDetails().getExtras());
+        Bundle extras = getDetails().getExtras();
+        return extras != null
+                && (extras.getBoolean(Call.EXTRA_SILENT_RINGING_REQUESTED)
+                        || extras.getBoolean(Call.EXTRA_IS_SUPPRESSED_BY_DO_NOT_DISTURB));
     }
 
     public boolean isConference() {

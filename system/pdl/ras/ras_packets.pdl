@@ -2,11 +2,6 @@ little_endian_packets
 
 // Ranging Service
 
-enum PctFormat : 2 {
-  IQ = 0,
-  PHASE = 1,
-}
-
 enum RangingDoneStatus : 4 {
   ALL_RESULTS_COMPLETE = 0x0,
   PARTIAL_RESULTS = 0x1,
@@ -61,8 +56,7 @@ struct RangingHeader {
   configuration_id : 4,
   selected_tx_power : 8,
   antenna_paths_mask : 4,
-  _reserved_ : 2,
-  pct_format : PctFormat,
+  _reserved_ : 4,
 }
 
 struct SegmentationHeader {

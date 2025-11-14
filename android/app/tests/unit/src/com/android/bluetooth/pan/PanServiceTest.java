@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.pan;
 
 import static android.bluetooth.BluetoothPan.PAN_ROLE_NONE;
@@ -76,7 +77,7 @@ public class PanServiceTest {
 
     private final BluetoothDevice mRemoteDevice = getTestDevice(0);
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     private PanService mService;
     private TestLooper mTestLooper;
@@ -84,10 +85,9 @@ public class PanServiceTest {
     @Before
     public void setUp() {
         doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        mockGetSystemService(
-                mAdapterService, Context.USER_SERVICE, UserManager.class, mMockUserManager);
-        mockGetSystemService(mAdapterService, Context.TETHERING_SERVICE, TetheringManager.class);
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
+        mockGetSystemService(mAdapterService, UserManager.class, mMockUserManager);
+        mockGetSystemService(mAdapterService, TetheringManager.class);
 
         mTestLooper = new TestLooper();
         mService = new PanService(mAdapterService, mNativeInterface, mTestLooper.getLooper());

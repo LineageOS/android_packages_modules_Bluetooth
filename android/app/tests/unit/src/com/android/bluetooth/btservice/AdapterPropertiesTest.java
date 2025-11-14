@@ -13,29 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.btservice;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
-import android.content.Context;
+import android.companion.CompanionDeviceManager;
+import android.content.pm.PackageManager;
 import android.os.HandlerThread;
+import android.platform.test.flag.junit.FlagsParameterization;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.flags.Flags;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -44,26 +49,37 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
+
+import java.util.List;
+
 /** Test cases for {@link AdapterProperties}. */
 @MediumTest
-@RunWith(AndroidJUnit4.class)
+@RunWith(ParameterizedAndroidJunit4.class)
 public class AdapterPropertiesTest {
     private static final byte[] TEST_BT_ADDR_BYTES = {00, 11, 22, 33, 44, 55};
     private static final byte[] TEST_BT_ADDR_BYTES_2 = {00, 11, 22, 33, 44, 66};
 
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
-    private final BluetoothManager mBluetoothManager =
-            mTargetContext.getSystemService(BluetoothManager.class);
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule public final SetFlagsRule mSetFlagsRule;
+
+    @Mock private AdapterService mAdapterService;
+    @Mock private PackageManager mPackageManager;
+    @Mock private AdapterNativeInterface mNativeInterface;
 
     private AdapterProperties mAdapterProperties;
     private RemoteDevices mRemoteDevices;
     private HandlerThread mHandlerThread;
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Parameters(name = "{0}")
+    public static List<FlagsParameterization> getParams() {
+        return FlagsParameterization.progressionOf(Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE);
+    }
 
-    @Mock private AdapterService mAdapterService;
-    @Mock private AdapterNativeInterface mNativeInterface;
+    public AdapterPropertiesTest(FlagsParameterization flags) {
+        mSetFlagsRule = new SetFlagsRule(flags);
+    }
 
     @Before
     public void setUp() throws Exception {
@@ -71,12 +87,9 @@ public class AdapterPropertiesTest {
         mHandlerThread = new HandlerThread("RemoteDevicesTestHandlerThread");
         mHandlerThread.start();
 
-        mockGetSystemService(
-                mAdapterService,
-                Context.BLUETOOTH_SERVICE,
-                BluetoothManager.class,
-                mBluetoothManager);
-
+        mockGetBluetoothManager(mAdapterService);
+        mockGetSystemService(mAdapterService, CompanionDeviceManager.class);
+        doReturn(mPackageManager).when(mAdapterService).getPackageManager();
         when(mAdapterService.getIdentityAddress(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES)))
                 .thenReturn(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES));
         when(mAdapterService.getIdentityAddress(
@@ -92,9 +105,7 @@ public class AdapterPropertiesTest {
         doReturn(mHandlerThread.getLooper()).when(mAdapterService).getMainLooper();
         when(mAdapterService.getResources())
                 .thenReturn(
-                        InstrumentationRegistry.getInstrumentation()
-                                .getTargetContext()
-                                .getResources());
+                        InstrumentationRegistry.getInstrumentation().getContext().getResources());
 
         // Must be called to initialize services
         mAdapterProperties =

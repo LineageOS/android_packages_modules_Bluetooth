@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"블루투스를 켜진 상태로 유지하면 다음에 비행기 모드를 사용할 때도 블루투스 연결이 유지됩니다."</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"블루투스가 켜진 상태로 유지됨"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"비행기 모드에서 기기의 블루투스가 켜진 상태로 유지됩니다. 유지하지 않으려면 블루투스를 사용 중지하세요."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"다른 기기에 연결되어 있을 때는 비행기 모드에서도 블루투스가 켜진 상태로 유지됩니다."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"워치에 연결되어 있을 때는 비행기 모드에서도 기기의 블루투스가 켜진 상태로 유지됩니다."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"미디어 기기에 연결되어 있는 동안에는 비행기 모드에서도 블루투스가 켜진 상태로 유지됩니다."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi 및 블루투스 계속 사용"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"비행기 모드에서 기기의 Wi-Fi 및 블루투스가 켜진 상태로 유지됩니다. 유지하지 않으려면 Wi-Fi와 블루투스를 사용 중지하세요."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"블루투스가 다시 켜졌습니다"</string>

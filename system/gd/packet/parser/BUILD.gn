@@ -14,8 +14,8 @@
 #  limitations under the License.
 #
 
-import("flex.gni")
 import("bison.gni")
+import("flex.gni")
 
 config("pktgen_configs") {
   include_dirs = [ "//bt/system/gd/packet/parser" ]
@@ -23,7 +23,6 @@ config("pktgen_configs") {
   cflags = [ "-fPIC" ]
 
   cflags_cc = [
-    "-std=c++17",
     "-Wno-inconsistent-missing-override",
     "-Wno-implicit-fallthrough",
     "-Wno-poison-system-directories",
@@ -79,9 +78,7 @@ executable("bluetooth_packetgen") {
 flex_source("pktlexer") {
   sources = [ "language_l.ll" ]
 
-  deps = [
-    ":pktparser",
-  ]
+  deps = [ ":pktparser" ]
   configs = [ ":pktgen_configs" ]
 }
 

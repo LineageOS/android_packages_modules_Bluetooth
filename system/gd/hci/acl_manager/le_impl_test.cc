@@ -30,10 +30,11 @@
 #include "hci/acl_manager/le_connection_callbacks.h"
 #include "hci/acl_manager/le_connection_management_callbacks_mock.h"
 #include "hci/address_with_type.h"
-#include "hci/controller.h"
+#include "hci/controller_mock.h"
 #include "hci/hci_layer_fake.h"
 #include "hci/hci_packets.h"
 #include "hci/octets.h"
+#include "hci/remote_name_request_mock.h"
 #include "os/handler.h"
 #include "packet/bit_inserter.h"
 #include "packet/raw_builder.h"
@@ -172,7 +173,7 @@ namespace acl_manager {
 
 namespace {
 
-class TestController : public Controller {
+class TestController : public testing::MockController {
 public:
   bool IsSupported(OpCode op_code) const override {
     log::info("IsSupported");
@@ -230,31 +231,29 @@ public:
               (override));
 };
 
-class MockLeAcceptlistCallbacks : public LeAcceptlistCallbacks {
-public:
-  MOCK_METHOD(void, OnLeConnectSuccess, (AddressWithType address), (override));
-  MOCK_METHOD(void, OnLeConnectFail, (AddressWithType address, ErrorCode reason), (override));
-  MOCK_METHOD(void, OnLeDisconnection, (AddressWithType address), (override));
-  MOCK_METHOD(void, OnResolvingListChange, (), (override));
-};
-
 class LeImplTest : public ::testing::Test {
 protected:
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     thread_ = new Thread("thread", Thread::Priority::NORMAL);
     handler_ = new Handler(thread_);
-    controller_ = new TestController();
-    hci_layer_ = new HciLayerFake();
 
-    round_robin_scheduler_ = new RoundRobinScheduler(handler_, controller_, hci_queue_.GetUpEnd());
+    hci_layer_ = std::make_unique<HciLayerFake>(handler_);
+    controller_ = std::make_unique<TestController>();
+    round_robin_scheduler_ =
+            std::make_unique<RoundRobinScheduler>(handler_, *controller_, hci_queue_.GetUpEnd());
+    test_storage_ = std::make_unique<storage::StorageModule>(handler_);
+    test_rnr_ = std::make_unique<RemoteNameRequestModuleMock>();
+    test_acl_scheduler_ = std::make_unique<AclScheduler>(handler_);
+
     hci_queue_.GetDownEnd()->RegisterDequeue(
             handler_, common::Bind(&LeImplTest::HciDownEndDequeue, common::Unretained(this)));
 
-    classic_impl_ = new classic_impl(hci_layer_, controller_, handler_, round_robin_scheduler_,
-                                     false, nullptr, nullptr);
-    le_impl_ = new le_impl(hci_layer_, controller_, handler_, round_robin_scheduler_,
-                           kCrashOnUnknownHandle, classic_impl_);
+    classic_impl_ = std::make_unique<classic_impl>(*hci_layer_, handler_, *round_robin_scheduler_,
+                                                   false, *test_acl_scheduler_, *test_rnr_);
+    le_impl_ =
+            std::make_unique<le_impl>(*hci_layer_, *controller_, handler_, *round_robin_scheduler_,
+                                      *test_storage_, kCrashOnUnknownHandle, classic_impl_.get());
     le_impl_->handle_register_le_callbacks(&mock_le_connection_callbacks_, handler_);
 
     Address address;
@@ -292,7 +291,7 @@ protected:
     hci::Address remote_address;
     Address::FromString(remote_address_string, remote_address);
     hci::AddressWithType address_with_type(remote_address, hci::AddressType::PUBLIC_DEVICE_ADDRESS);
-    le_impl_->create_le_connection(address_with_type, true, false);
+    le_impl_->create_le_connection(address_with_type, true, false, false);
     sync_handler();
 
     hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
@@ -336,7 +335,7 @@ protected:
     hci::AddressWithType address_with_type(remote_address, hci::AddressType::PUBLIC_DEVICE_ADDRESS);
 
     // Create connection
-    le_impl_->create_le_connection(address_with_type, true, false);
+    le_impl_->create_le_connection(address_with_type, true, false, false);
 
     hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
     hci_layer_->IncomingEvent(
@@ -359,14 +358,18 @@ protected:
     }
 
     sync_handler();
-    delete le_impl_;
-    delete classic_impl_;
+    le_impl_.reset();
+    classic_impl_.reset();
 
     hci_queue_.GetDownEnd()->UnregisterDequeue();
 
-    delete hci_layer_;
-    delete round_robin_scheduler_;
-    delete controller_;
+    hci_layer_.reset();
+    round_robin_scheduler_.reset();
+    controller_.reset();
+
+    test_acl_scheduler_.reset();
+    test_rnr_.reset();
+    test_storage_.reset();
 
     handler_->Clear();
     delete handler_;
@@ -421,15 +424,18 @@ protected:
 
   Thread* thread_;
   Handler* handler_;
-  HciLayerFake* hci_layer_{nullptr};
-  classic_impl* classic_impl_;
-  TestController* controller_;
-  RoundRobinScheduler* round_robin_scheduler_{nullptr};
+  std::unique_ptr<HciLayerFake> hci_layer_;
+  std::unique_ptr<classic_impl> classic_impl_;
+  std::unique_ptr<TestController> controller_;
+  std::unique_ptr<RoundRobinScheduler> round_robin_scheduler_{nullptr};
+  std::unique_ptr<RemoteNameRequestModuleMock> test_rnr_ = nullptr;
+  std::unique_ptr<AclScheduler> test_acl_scheduler_ = nullptr;
+  std::unique_ptr<storage::StorageModule> test_storage_ = nullptr;
 
   MockLeConnectionCallbacks mock_le_connection_callbacks_;
   MockLeConnectionManagementCallbacks connection_management_callbacks_;
 
-  struct le_impl* le_impl_;
+  std::unique_ptr<struct le_impl> le_impl_;
 };
 
 class LeImplRegisteredWithAddressManagerTest : public LeImplTest {
@@ -539,7 +545,8 @@ TEST_F(LeImplTest, connection_complete_with_periperal_role) {
 
   // Create connection
   le_impl_->create_le_connection(
-          {{0x21, 0x22, 0x23, 0x24, 0x25, 0x26}, AddressType::PUBLIC_DEVICE_ADDRESS}, true, false);
+          {{0x21, 0x22, 0x23, 0x24, 0x25, 0x26}, AddressType::PUBLIC_DEVICE_ADDRESS}, true, false,
+          false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   hci_layer_->IncomingEvent(
           LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
@@ -570,7 +577,8 @@ TEST_F(LeImplTest, enhanced_connection_complete_with_periperal_role) {
   controller_->AddSupported(OpCode::LE_EXTENDED_CREATE_CONNECTION);
   // Create connection
   le_impl_->create_le_connection(
-          {{0x21, 0x22, 0x23, 0x24, 0x25, 0x26}, AddressType::PUBLIC_DEVICE_ADDRESS}, true, false);
+          {{0x21, 0x22, 0x23, 0x24, 0x25, 0x26}, AddressType::PUBLIC_DEVICE_ADDRESS}, true, false,
+          false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   hci_layer_->IncomingEvent(
           LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
@@ -604,7 +612,7 @@ TEST_F(LeImplTest, connection_complete_with_central_role) {
   Address::FromString("D0:05:04:03:02:01", remote_address);
   hci::AddressWithType address_with_type(remote_address, hci::AddressType::PUBLIC_DEVICE_ADDRESS);
   // Create connection
-  le_impl_->create_le_connection(address_with_type, true, false);
+  le_impl_->create_le_connection(address_with_type, true, false, false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   hci_layer_->IncomingEvent(
           LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
@@ -634,7 +642,7 @@ TEST_F(LeImplTest, enhanced_connection_complete_with_central_role) {
   Address::FromString("D0:05:04:03:02:01", remote_address);
   hci::AddressWithType address_with_type(remote_address, hci::AddressType::PUBLIC_DEVICE_ADDRESS);
   // Create connection
-  le_impl_->create_le_connection(address_with_type, true, false);
+  le_impl_->create_le_connection(address_with_type, true, false, false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   hci_layer_->IncomingEvent(
           LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
@@ -702,6 +710,32 @@ TEST_F(LeImplTest, aggressive_connection_mode_selected_when_few_le_connections_e
             LeConnectionParameters::GetMaxConnIntervalAggressive());
 }
 
+TEST_F(LeImplTest,
+       le_iso_aggressive_connection_mode_not_selected_when_no_lea_device_found_in_accept_list) {
+  if (LeConnectionParameters::GetLeIsoAggressiveConnThreshold() == 0) {
+    GTEST_SKIP() << "Skipping test because the threshold is zero";
+  }
+
+  com::android::bluetooth::flags::provider_->initial_conn_params_p1(true);
+  com::android::bluetooth::flags::provider_->leaudio_use_aggressive_params(true);
+
+  std::vector<AddressWithType> accept_list;
+  Address test_non_le_audio_device_address = Address::FromString("00:11:22:33:44:55").value();
+  accept_list.push_back(
+          AddressWithType{test_non_le_audio_device_address, AddressType::PUBLIC_DEVICE_ADDRESS});
+
+  set_random_device_address_policy();
+  controller_->AddSupported(OpCode::LE_EXTENDED_CREATE_CONNECTION);
+
+  LeExtendedCreateConnectionView view = get_view_from_creating_connection("FF:EE:DD:CC:BB:AA");
+
+  ASSERT_TRUE(view.IsValid());
+  ASSERT_EQ(view.GetPhyScanParameters()[0].conn_interval_min_,
+            LeConnectionParameters::GetMinConnIntervalAggressive());
+  ASSERT_EQ(view.GetPhyScanParameters()[0].conn_interval_max_,
+            LeConnectionParameters::GetMaxConnIntervalAggressive());
+}
+
 TEST_F(LeImplTest, relaxed_connection_mode_selected_when_enough_le_connections_exist) {
   com::android::bluetooth::flags::provider_->initial_conn_params_p1(true);
   set_random_device_address_policy();
@@ -734,7 +768,7 @@ TEST_F(LeImplTest, DISABLED_register_with_address_manager__AddressPolicyNotSet) 
             handler->Post(common::BindOnce([](std::promise<void> promise) { promise.set_value(); },
                                            std::move(promise)));
           },
-          le_impl_, handler_, std::move(promise)));
+          le_impl_.get(), handler_, std::move(promise)));
 
   // Let |LeAddressManager::register_client| execute on handler
   auto status = future.wait_for(2s);
@@ -745,7 +779,7 @@ TEST_F(LeImplTest, DISABLED_register_with_address_manager__AddressPolicyNotSet) 
             ASSERT_TRUE(le_impl->address_manager_registered);
             ASSERT_TRUE(le_impl->pause_connection);
           },
-          le_impl_));
+          le_impl_.get()));
 
   std::promise<void> promise2;
   auto future2 = promise2.get_future();
@@ -758,7 +792,7 @@ TEST_F(LeImplTest, DISABLED_register_with_address_manager__AddressPolicyNotSet) 
             handler->Post(common::BindOnce([](std::promise<void> promise) { promise.set_value(); },
                                            std::move(promise)));
           },
-          le_impl_, handler_, std::move(promise2)));
+          le_impl_.get(), handler_, std::move(promise2)));
 
   // Let |LeAddressManager::unregister_client| execute on handler
   auto status2 = future2.wait_for(2s);
@@ -940,7 +974,7 @@ TEST_F(LeImplTest, DISABLED_add_device_to_resolving_list) {
   ASSERT_TRUE(le_impl_->address_manager_registered);
   ASSERT_TRUE(le_impl_->pause_connection);
 
-  le_impl_->le_address_manager_->AckPause(le_impl_);
+  le_impl_->le_address_manager_->AckPause(le_impl_.get());
   sync_handler();  // Allow |LeAddressManager::ack_pause| to complete
 
   {
@@ -1014,7 +1048,7 @@ TEST_F(LeImplTest, add_device_to_resolving_list__SupportsBlePrivacy) {
   ASSERT_TRUE(le_impl_->address_manager_registered);
   ASSERT_TRUE(le_impl_->pause_connection);
 
-  le_impl_->le_address_manager_->AckPause(le_impl_);
+  le_impl_->le_address_manager_->AckPause(le_impl_.get());
   sync_handler();  // Allow |LeAddressManager::ack_pause| to complete
 
   {
@@ -1294,7 +1328,7 @@ TEST_F(LeImplTest, on_create_connection_timeout) {
           std::piecewise_construct,
           std::forward_as_tuple(remote_public_address_with_type_.GetAddress(),
                                 remote_public_address_with_type_.GetAddressType()),
-          std::forward_as_tuple(handler_));
+          std::forward_as_tuple(&handler_->thread()));
   le_impl_->on_create_connection_timeout(remote_public_address_with_type_);
   sync_handler();
   ASSERT_TRUE(le_impl_->create_connection_timeout_alarms_.empty());
@@ -1311,7 +1345,7 @@ TEST_F(LeImplTest, cancel_connect) {
           std::piecewise_construct,
           std::forward_as_tuple(remote_public_address_with_type_.GetAddress(),
                                 remote_public_address_with_type_.GetAddressType()),
-          std::forward_as_tuple(handler_));
+          std::forward_as_tuple(&handler_->thread()));
   le_impl_->cancel_connect(remote_public_address_with_type_);
   sync_handler();
   ASSERT_TRUE(le_impl_->create_connection_timeout_alarms_.empty());
@@ -1424,116 +1458,6 @@ TEST_P(LeImplTestParameterizedByDiscoverability, ConnectionCompleteAsDiscoverabl
 INSTANTIATE_TEST_SUITE_P(LeImplTestParameterizedByDiscoverability,
                          LeImplTestParameterizedByDiscoverability, ::testing::Values(false, true));
 
-TEST_F(LeImplTest, ConnectionCompleteAcceptlistCallback) {
-  // arrange
-  MockLeAcceptlistCallbacks callbacks;
-  le_impl_->handle_register_le_acceptlist_callbacks(&callbacks);
-  set_random_device_address_policy();
-
-  // expect
-  AddressWithType remote_address;
-  EXPECT_CALL(callbacks, OnLeConnectSuccess(_)).WillOnce([&](AddressWithType addr) {
-    remote_address = addr;
-  });
-
-  // act
-  auto command = LeEnhancedConnectionCompleteBuilder::Create(
-          ErrorCode::SUCCESS, kHciHandle, Role::PERIPHERAL, AddressType::PUBLIC_DEVICE_ADDRESS,
-          remote_address_, local_rpa_, remote_rpa_, 0x0024, 0x0000, 0x0011, ClockAccuracy::PPM_30);
-  auto bytes = Serialize<LeEnhancedConnectionCompleteBuilder>(std::move(command));
-  auto view = CreateLeEventView<hci::LeEnhancedConnectionCompleteView>(bytes);
-  ASSERT_TRUE(view.IsValid());
-  le_impl_->on_le_event(view);
-  sync_handler();
-
-  // assert
-  ASSERT_EQ(remote_public_address_with_type_, remote_address);
-}
-
-TEST_F(LeImplTest, ResolvingListCallback) {
-  // arrange
-  MockLeAcceptlistCallbacks callbacks;
-  le_impl_->handle_register_le_acceptlist_callbacks(&callbacks);
-
-  // expect
-  AddressWithType remote_address;
-  EXPECT_CALL(callbacks, OnResolvingListChange()).Times(1);
-
-  // act
-  le_impl_->add_device_to_resolving_list(remote_public_address_with_type_,
-                                         kPeerIdentityResolvingKey, kLocalIdentityResolvingKey);
-
-  // assert
-  Mock::VerifyAndClearExpectations(&callbacks);
-}
-
-TEST_F(LeImplTest, ConnectionFailedAcceptlistCallback) {
-  // arrange
-  MockLeAcceptlistCallbacks callbacks;
-  le_impl_->handle_register_le_acceptlist_callbacks(&callbacks);
-  set_random_device_address_policy();
-
-  // expect
-  AddressWithType remote_address;
-  ErrorCode reason;
-  EXPECT_CALL(callbacks, OnLeConnectFail(_, _))
-          .WillOnce([&](AddressWithType addr, ErrorCode error) {
-            remote_address = addr;
-            reason = error;
-          });
-
-  // act
-  auto command = LeEnhancedConnectionCompleteBuilder::Create(
-          ErrorCode::CONTROLLER_BUSY, kHciHandle, Role::PERIPHERAL,
-          AddressType::PUBLIC_DEVICE_ADDRESS, remote_address_, local_rpa_, remote_rpa_, 0x0024,
-          0x0000, 0x0011, ClockAccuracy::PPM_30);
-  auto bytes = Serialize<LeEnhancedConnectionCompleteBuilder>(std::move(command));
-  auto view = CreateLeEventView<hci::LeEnhancedConnectionCompleteView>(bytes);
-  ASSERT_TRUE(view.IsValid());
-  le_impl_->on_le_event(view);
-  sync_handler();
-
-  // assert
-  EXPECT_EQ(remote_address, remote_public_address_with_type_);
-  EXPECT_EQ(reason, ErrorCode::CONTROLLER_BUSY);
-}
-
-TEST_F(LeImplTest, DisconnectionAcceptlistCallback) {
-  // expect
-  MockLeAcceptlistCallbacks callbacks;
-  AddressWithType remote_address;
-  EXPECT_CALL(callbacks, OnLeDisconnection(_)).WillOnce([&](AddressWithType addr) {
-    remote_address = addr;
-  });
-  // we need to capture the LeAclConnection so it is not immediately dropped => disconnected
-  std::unique_ptr<LeAclConnection> connection;
-  EXPECT_CALL(mock_le_connection_callbacks_, OnLeConnectSuccess(_, _))
-          .WillOnce([&](AddressWithType, std::unique_ptr<LeAclConnection> conn) {
-            connection = std::move(conn);
-            connection->RegisterCallbacks(&connection_management_callbacks_, handler_);
-          });
-
-  // arrange: an active connection to a peer
-  le_impl_->handle_register_le_acceptlist_callbacks(&callbacks);
-  set_random_device_address_policy();
-  auto command = LeEnhancedConnectionCompleteBuilder::Create(
-          ErrorCode::SUCCESS, kHciHandle, Role::PERIPHERAL, AddressType::PUBLIC_DEVICE_ADDRESS,
-          remote_address_, local_rpa_, remote_rpa_, 0x0024, 0x0000, 0x0011, ClockAccuracy::PPM_30);
-  auto bytes = Serialize<LeEnhancedConnectionCompleteBuilder>(std::move(command));
-  auto view = CreateLeEventView<hci::LeEnhancedConnectionCompleteView>(bytes);
-  ASSERT_TRUE(view.IsValid());
-  le_impl_->on_le_event(view);
-  sync_handler();
-
-  // act
-  le_impl_->on_le_disconnect(kHciHandle, ErrorCode::REMOTE_USER_TERMINATED_CONNECTION);
-  sync_handler();
-
-  // assert
-  EXPECT_EQ(remote_public_address_with_type_, remote_address);
-  Mock::VerifyAndClearExpectations(&callbacks);
-}
-
 TEST_F(LeImplTest, direct_connection_after_background_connection) {
   set_random_device_address_policy();
 
@@ -1542,7 +1466,8 @@ TEST_F(LeImplTest, direct_connection_after_background_connection) {
 
   // arrange: Create background connection. Remember that acl_manager adds device background list
   le_impl_->add_device_to_background_connection_list(address);
-  le_impl_->create_le_connection(address, true, /* is_direct */ false);
+  le_impl_->create_le_connection(address, true, /* is_direct */ false,
+                                 /* prefer_relax_mode */ false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   hci_layer_->IncomingEvent(
           LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
@@ -1551,7 +1476,8 @@ TEST_F(LeImplTest, direct_connection_after_background_connection) {
   sync_handler();
 
   // act: Create direct connection
-  le_impl_->create_le_connection(address, true, /* is_direct */ true);
+  le_impl_->create_le_connection(address, true, /* is_direct */ true,
+                                 /* prefer_relax_mode */ false);
   auto cancel_connection = hci_layer_->GetCommand(OpCode::LE_CREATE_CONNECTION_CANCEL);
   if (cancel_connection.IsValid()) {
     hci_layer_->IncomingEvent(
@@ -1616,7 +1542,8 @@ TEST_F(LeImplTest, direct_connection_after_direct_connection) {
                                AddressType::PUBLIC_DEVICE_ADDRESS);
 
   // Create first direct connection
-  le_impl_->create_le_connection(address, true, /* is_direct */ true);
+  le_impl_->create_le_connection(address, true, /* is_direct */ true,
+                                 /* prefer_relax_mode */ false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   hci_layer_->IncomingEvent(
           LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
@@ -1636,7 +1563,8 @@ TEST_F(LeImplTest, direct_connection_after_direct_connection) {
   log::info("Second direct connect to the same device");
 
   // Create second direct connection
-  le_impl_->create_le_connection(address, true, /* is_direct */ true);
+  le_impl_->create_le_connection(address, true, /* is_direct */ true,
+                                 /* prefer_relax_mode */ false);
   sync_handler();
 
   CommandView cancel_connection = CommandView::Create(
@@ -1679,7 +1607,8 @@ TEST_F(LeImplTest, direct_connection_cancel_but_connected) {
                                AddressType::PUBLIC_DEVICE_ADDRESS);
 
   // Create first direct connection
-  le_impl_->create_le_connection(address, true, /* is_direct */ true);
+  le_impl_->create_le_connection(address, true, /* is_direct */ true,
+                                 /* prefer_relax_mode */ false);
   hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
   hci_layer_->IncomingEvent(
           LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
@@ -1708,7 +1637,8 @@ TEST_F(LeImplTest, direct_connection_cancel_but_connected) {
   le_impl_->on_le_disconnect(kHciHandle, ErrorCode::REMOTE_USER_TERMINATED_CONNECTION);
   sync_handler();
 
-  le_impl_->create_le_connection(address, true, /* is_direct */ true);
+  le_impl_->create_le_connection(address, true, /* is_direct */ true,
+                                 /* prefer_relax_mode */ false);
   ASSERT_TRUE(le_impl_->accept_list.contains(address));
   sync_handler();
 

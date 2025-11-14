@@ -592,6 +592,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
 
     /* keep the configuration in the stream control block */
     p_scb->cfg = avdtp_stream_config.cfg;
+    p_scb->default_sep_cfg = avdtp_stream_config.cfg;
     for (int i = codec_index_min; i < codec_index_max; i++) {
       btav_a2dp_codec_index_t codec_index = static_cast<btav_a2dp_codec_index_t>(i);
       if (!bta_av_co_is_supported_codec(codec_index)) {

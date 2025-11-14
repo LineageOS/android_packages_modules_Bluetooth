@@ -73,6 +73,7 @@ static SecurityClientInterface security = {
 
         .BTM_SecReadDevName = BTM_SecReadDevName,
         .BTM_SecReadDevClass = BTM_SecReadDevClass,
+        .BTM_SecReportBondLoss = BTM_SecReportBondLoss,
 };
 
 const SecurityClientInterface& get_security_client_interface() { return security; }

@@ -280,7 +280,7 @@ TEST_F(BtaGattTest, bta_gattc_op_cmpl_read_interrupted) {
 
   // Create interrupt condition
   client_channel_control_block.auto_update = BTA_GATTC_DISC_WAITING;
-  client_channel_control_block.p_srcb->srvc_hdl_chg = 1;
+  client_channel_control_block.p_srcb->srvc_hdl_chg = true;
 
   tBTA_GATTC_DATA data = {
           .op_cmpl =

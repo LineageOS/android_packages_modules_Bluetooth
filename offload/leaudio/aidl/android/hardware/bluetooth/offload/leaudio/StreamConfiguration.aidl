@@ -40,4 +40,9 @@ parcelable StreamConfiguration {
      * How many consecutive Isochronous Intervals can be used to transmit an SDU
      */
     int flushTimeout;
+
+    /**
+     * Indicates support of Link Feedback
+     */
+    boolean linkFeedbackSupported;
 }

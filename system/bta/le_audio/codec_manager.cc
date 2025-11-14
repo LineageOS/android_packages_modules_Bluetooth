@@ -40,14 +40,16 @@
 #include "broadcaster/broadcaster_types.h"
 #include "bta_le_audio_api.h"
 #include "btm_iso_api_types.h"
+#include "common/strings.h"
 #include "gmap_client.h"
 #include "gmap_server.h"
 #include "hardware/bt_le_audio.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "hci/hci_packets.h"
 #include "le_audio/le_audio_types.h"
 #include "le_audio_set_configuration_provider.h"
 #include "le_audio_utils.h"
+#include "le_audio_vendor_codec.h"
 #include "main/shim/entry.h"
 #include "osi/include/properties.h"
 #include "stack/include/hcimsgs.h"
@@ -122,19 +124,42 @@ public:
       return;
     }
 
+    log::info("LeAudioCodecManagerImpl: configure_data_path for encode");
+    ConfigureDataPath(hci_data_direction_t::HOST_TO_CONTROLLER, kIsoDataPathPlatformDefault, {});
+
+    log::info("LeAudioCodecManagerImpl: configure_data_path for decode");
+    ConfigureDataPath(hci_data_direction_t::CONTROLLER_TO_HOST, kIsoDataPathPlatformDefault, {});
+
+    SetCodecLocation(CodecLocation::ADSP);
+  }
+
+  void ConfigureDataPath(hci_data_direction_t direction, uint8_t dataPathId,
+                         std::vector<uint8_t> dataPathConfig) const {
     if (!bluetooth::shim::GetController()->IsSupported(
                 bluetooth::hci::OpCode::CONFIGURE_DATA_PATH)) {
       log::warn("Controller does not support config data path command");
       return;
     }
 
-    log::info("LeAudioCodecManagerImpl: configure_data_path for encode");
-    GetInterface().ConfigureDataPath(hci_data_direction_t::HOST_TO_CONTROLLER,
-                                     kIsoDataPathPlatformDefault, {});
-    GetInterface().ConfigureDataPath(hci_data_direction_t::CONTROLLER_TO_HOST,
-                                     kIsoDataPathPlatformDefault, {});
-    SetCodecLocation(CodecLocation::ADSP);
+    log::debug("direction: {}, dataPathId: {}, dataPathConfig: {}", static_cast<int>(direction),
+               +dataPathId, bluetooth::common::ToHexString(dataPathConfig));
+
+    // Avoid reconfiguring to the same data path
+    static std::map<hci_data_direction_t, std::pair<uint8_t, std::vector<uint8_t>>>
+            configured_data_path = {};
+    if (configured_data_path.count(direction)) {
+      auto& dataPath = configured_data_path.at(direction);
+      if ((dataPath.first == dataPathId) && (dataPath.second == dataPathConfig)) {
+        log::debug("Data path for direction {} already configured to {}",
+                   static_cast<int>(direction), +dataPathId);
+        return;
+      }
+    }
+
+    GetInterface().ConfigureDataPath(direction, dataPathId, dataPathConfig);
+    configured_data_path[direction] = std::make_pair<>(dataPathId, dataPathConfig);
   }
+
   void start(const std::vector<btle_audio_codec_config_t>& offloading_preference) {
     dual_bidirection_swb_supported_ =
             osi_property_get_bool("bluetooth.leaudio.dual_bidirection_swb.supported", false);
@@ -156,10 +181,8 @@ public:
   }
   ~codec_manager_impl() {
     if (GetCodecLocation() != CodecLocation::HOST) {
-      GetInterface().ConfigureDataPath(hci_data_direction_t::HOST_TO_CONTROLLER, kIsoDataPathHci,
-                                       {});
-      GetInterface().ConfigureDataPath(hci_data_direction_t::CONTROLLER_TO_HOST, kIsoDataPathHci,
-                                       {});
+      ConfigureDataPath(hci_data_direction_t::HOST_TO_CONTROLLER, kIsoDataPathHci, {});
+      ConfigureDataPath(hci_data_direction_t::CONTROLLER_TO_HOST, kIsoDataPathHci, {});
     }
     bluetooth::le_audio::AudioSetConfigurationProvider::Cleanup();
   }
@@ -187,6 +210,101 @@ public:
 
   std::vector<bluetooth::le_audio::btle_audio_codec_config_t> GetLocalAudioInputCodecCapa() {
     return codec_input_capa;
+  }
+
+  static bool IsKnownCodec(const types::LeAudioCodecId& codec_id) {
+    switch (codec_id.coding_format) {
+      case types::kLeAudioCodingFormatLC3:
+        return true;
+      case types::kLeAudioCodingFormatVendorSpecific:
+        return vendor::IsKnownCodec(codec_id);
+    }
+    return false;
+  }
+
+  static void FillRemoteCoreCapabilityToBtLeAudioCodecConfigs(
+          const struct types::acs_ac_record& record,
+          std::vector<bluetooth::le_audio::btle_audio_codec_config_t>& vec) {
+    // handle the non-vendor codecs with Ltv formatted capabilities
+    if (!utils::IsCodecUsingLtvFormat(record.codec_id)) {
+      log::warn(
+              "Unknown codec capability format. Unable to report known codec "
+              "parameters.");
+      return;
+    }
+    log::assert_that(!record.codec_spec_caps.IsEmpty(),
+                     "Codec specific capabilities are not parsed appropriately.");
+
+    const struct types::LeAudioCoreCodecCapabilities capa =
+            record.codec_spec_caps.GetAsCoreCodecCapabilities();
+    for (uint8_t freq_bit = codec_spec_conf::kLeAudioSamplingFreq8000Hz;
+         freq_bit <= codec_spec_conf::kLeAudioSamplingFreq384000Hz; freq_bit++) {
+      if (!capa.IsSamplingFrequencyConfigSupported(freq_bit)) {
+        continue;
+      }
+      for (uint8_t fd_bit = codec_spec_conf::kLeAudioCodecFrameDur7500us;
+           fd_bit <= codec_spec_conf::kLeAudioCodecFrameDur10000us; fd_bit++) {
+        if (!capa.IsFrameDurationConfigSupported(fd_bit)) {
+          continue;
+        }
+        if (!capa.HasSupportedAudioChannelCounts()) {
+          bluetooth::le_audio::btle_audio_codec_config_t config = {
+                  .codec_type = utils::translateLeAudioCodecIdToCodecType(
+                          record.codec_id,
+                          types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
+                  .sample_rate = utils::translateToBtLeAudioCodecConfigSampleRate(
+                          types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
+                  .bits_per_sample = utils::translateToBtLeAudioCodecConfigBitPerSample(16),
+                  .channel_count = utils::translateToBtLeAudioCodecConfigChannelCount(1),
+                  .frame_duration = utils::translateToBtLeAudioCodecConfigFrameDuration(
+                          types::LeAudioCoreCodecConfig::GetFrameDurationUs(fd_bit)),
+          };
+          vec.push_back(config);
+        } else {
+          for (int chan_bit = 1; chan_bit <= 2; chan_bit++) {
+            if (!capa.IsAudioChannelCountsSupported(chan_bit)) {
+              continue;
+            }
+
+            bluetooth::le_audio::btle_audio_codec_config_t config = {
+                    .codec_type = utils::translateLeAudioCodecIdToCodecType(
+                            record.codec_id,
+                            types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
+                    .sample_rate = utils::translateToBtLeAudioCodecConfigSampleRate(
+                            types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(freq_bit)),
+                    .bits_per_sample = utils::translateToBtLeAudioCodecConfigBitPerSample(16),
+                    .channel_count = utils::translateToBtLeAudioCodecConfigChannelCount(chan_bit),
+                    .frame_duration = utils::translateToBtLeAudioCodecConfigFrameDuration(
+                            types::LeAudioCoreCodecConfig::GetFrameDurationUs(fd_bit)),
+            };
+            vec.push_back(config);
+          }
+        }
+      }
+    }
+  }
+
+  std::vector<bluetooth::le_audio::btle_audio_codec_config_t> GetRemoteAudioCodecCapa(
+          const bluetooth::le_audio::types::PublishedAudioCapabilities& pacs) const {
+    std::vector<bluetooth::le_audio::btle_audio_codec_config_t> vec;
+    for (auto& [_, pacs_record] : pacs) {
+      for (auto& pac : pacs_record) {
+        if (!IsKnownCodec(pac.codec_id)) {
+          log::warn("Unknown PAC records format for codec: {}", common::ToString(pac.codec_id));
+          continue;
+        }
+
+        if (pac.codec_id.coding_format == types::kLeAudioCodingFormatVendorSpecific) {
+          // TODO(b/416662050): Ask BT Audio HAL about the vendor codec details instead of trying to
+          // parse the vendor buffers in the BT stack.
+          vendor::FillRemoteCapabilityToBtLeAudioCodecConfigs(pac.codec_id, pac.codec_spec_caps_raw,
+                                                              vec);
+        } else {
+          FillRemoteCoreCapabilityToBtLeAudioCodecConfigs(pac, vec);
+        }
+      }
+    }
+    return vec;
   }
 
   void UpdateActiveAudioConfig(
@@ -222,6 +340,66 @@ public:
                       : stream_map.streams_map_current;
       update_receiver(unicast_cfg, direction);
       stream_map.is_initial = false;
+    }
+  }
+
+  void UpdateAudioConfigToHal(const ::bluetooth::le_audio::stream_config& config,
+                              uint8_t remote_direction) const {
+    if ((remote_direction & bluetooth::le_audio::types::kLeAudioDirectionSink) &&
+        unicast_local_source_hal_client) {
+      unicast_local_source_hal_client->UpdateAudioConfigToHal(config);
+    }
+    if ((remote_direction & bluetooth::le_audio::types::kLeAudioDirectionSource) &&
+        unicast_local_sink_hal_client) {
+      unicast_local_sink_hal_client->UpdateAudioConfigToHal(config);
+    }
+  }
+
+  void UpdateSelectedCodecConfig(
+          const ::bluetooth::le_audio::types::AudioSetConfiguration& audio_set_conf) const {
+    if (GetCodecLocation() != bluetooth::le_audio::types::CodecLocation::ADSP) {
+      return;
+    }
+
+    log::debug("isMulticodecSupported: {}", codec_provider_info_->isMulticodecSupported);
+
+    if (!codec_provider_info_->isMulticodecSupported) {
+      log::debug("UpdateSelectedCodecConfig is not supported by the HAL");
+      return;
+    }
+
+    if (!com::android::bluetooth::flags::leaudio_add_opus_hi_res_codec_type()) {
+      log::verbose("Skipped due to disabled `leaudio_add_opus_hi_res_codec_type` flag.");
+      return;
+    }
+
+    // Since `offloader_stream_maps` may not be populated yet due to CISes not yet being allocated
+    // for the audio channels, we can send only the codec information now and update the stream map
+    // later, when the CISes are
+    for (auto remote_direction : {bluetooth::le_audio::types::kLeAudioDirectionSink,
+                                  bluetooth::le_audio::types::kLeAudioDirectionSource}) {
+      auto const& configs = audio_set_conf.confs.get(remote_direction);
+      if (configs.empty()) {
+        continue;
+      }
+
+      bluetooth::le_audio::stream_config config;
+      for (auto const& ase_cfg : configs) {
+        log::debug("Update before session resumes. Freq:{}",
+                   ase_cfg.codec.GetSamplingFrequencyHz());
+
+        // Currently there is no CISes bound to the channels yet - send only the codec information
+        const uint8_t stream_handle = 0;
+        const auto channel_allocation =
+                AdjustAllocationForOffloader(ase_cfg.codec.GetAudioChannelAllocation());
+        bluetooth::le_audio::stream_map_info map_info(stream_handle, channel_allocation, false);
+
+        map_info.codec_config = ase_cfg.codec;
+        config.stream_map.push_back(map_info);
+        config.sampling_frequency_hz = ase_cfg.codec.GetSamplingFrequencyHz();
+      }
+
+      UpdateAudioConfigToHal(config, remote_direction);
     }
   }
 
@@ -991,6 +1169,8 @@ private:
           log::error("{}: ADSP config size mismatches the software: {} != {}",
                      direction == types::kLeAudioDirectionSink ? "Sink" : "Source",
                      adsp_set_ase_confs.size(), software_set_ase_confs.size());
+          log::error("software: {}, adsp: {}", software_audio_set_conf->name,
+                     adsp_audio_set_conf.name);
           continue;
         }
 
@@ -1316,6 +1496,14 @@ CodecManager::GetLocalAudioInputCodecCapa() {
   return empty;
 }
 
+std::vector<bluetooth::le_audio::btle_audio_codec_config_t> CodecManager::GetRemoteAudioCodecCapa(
+        const bluetooth::le_audio::types::PublishedAudioCapabilities& pac) const {
+  if (pimpl_->IsRunning()) {
+    return pimpl_->codec_manager_impl_->GetRemoteAudioCodecCapa(pac);
+  }
+  return std::vector<bluetooth::le_audio::btle_audio_codec_config_t>{};
+}
+
 void CodecManager::UpdateActiveAudioConfig(
         const types::BidirectionalPair<stream_parameters>& stream_params,
         std::function<void(const stream_config& config, uint8_t direction)> update_receiver,
@@ -1353,6 +1541,13 @@ std::unique_ptr<AudioSetConfiguration> CodecManager::GetCodecConfig(
   }
 
   return nullptr;
+}
+
+void CodecManager::UpdateSelectedCodecConfig(
+        const ::bluetooth::le_audio::types::AudioSetConfiguration& config) const {
+  if (pimpl_->IsRunning()) {
+    pimpl_->codec_manager_impl_->UpdateSelectedCodecConfig(config);
+  }
 }
 
 bool CodecManager::CheckCodecConfigIsBiDirSwb(const types::AudioSetConfiguration& config) const {
@@ -1408,6 +1603,13 @@ bool CodecManager::IsUsingCodecExtensibility() const {
     return pimpl_->codec_manager_impl_->IsUsingCodecExtensibility();
   }
   return false;
+}
+
+void CodecManager::ConfigureDataPath(hci_data_direction_t direction, uint8_t dataPathId,
+                                     std::vector<uint8_t> dataPathConfig) const {
+  if (pimpl_->IsRunning()) {
+    pimpl_->codec_manager_impl_->ConfigureDataPath(direction, dataPathId, dataPathConfig);
+  }
 }
 
 }  // namespace bluetooth::le_audio

@@ -30,16 +30,6 @@ flag {
 }
 
 flag {
-    name: "remove_pending_hid_connection"
-    namespace: "bluetooth"
-    description: "Remove the pending BTA HH connection instance when the device is removed"
-    bug: "377705101"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "hogp_reconnection"
     namespace: "bluetooth"
     description: "Allow reconnection from HOGP device irrespective of disconnection reason"
@@ -114,6 +104,36 @@ flag {
     namespace: "bluetooth"
     description: "Simplify native HID host connection policy enforcement"
     bug: "404590499"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "hogp_encryption_collision"
+    namespace: "bluetooth"
+    description: "HOGP host may not be able to proceed with connection if the link is getting encrypted"
+    bug: "405437978"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "reconnect_on_hogp_connection_failure"
+    namespace: "bluetooth"
+    description: "Put the added HOGP device in the background connection list if the connection attempt failed"
+    bug: "406399172"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "wait_hid_disconnect_before_marking_unused"
+    namespace: "bluetooth"
+    description: "Mark device unused only after it's properly disconnected"
+    bug: "412876005"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

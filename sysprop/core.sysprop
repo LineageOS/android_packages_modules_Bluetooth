@@ -1,0 +1,180 @@
+module: "android.sysprop.bluetooth.Core"
+owner: Platform
+
+prop {
+    api_name: "getLeVendorCapabilitiesEnabled"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.vendor_capabilities.enabled"
+}
+
+prop {
+    api_name: "le_rpa_offload"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.rpa_offload"
+}
+
+prop {
+    api_name: "isMsftHciExtEnabled"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.use_msft_hci_ext"
+}
+
+prop {
+    api_name: "getLeDirectConnectionTimeout"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.direct_connection_timeout"
+}
+
+prop {
+    api_name: "getLeConnectionScanIntervalFast"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.connection_scan_interval_fast"
+}
+
+prop {
+    api_name: "getLeConnectionScanWindowFast"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.connection_scan_window_fast"
+}
+
+prop {
+    api_name: "getLeConnectionScanWindow2mFast"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.connection_scan_window_2m_fast"
+}
+
+prop {
+    api_name: "getLeConnectionScanWindowCodedFast"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.connection_scan_window_coded_fast"
+}
+
+prop {
+    api_name: "getLeConnectionScanIntervalSlow"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.connection_scan_interval_slow"
+}
+
+prop {
+    api_name: "getLeConnectionScanWindowSlow"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.connection_scan_window_slow"
+}
+
+prop {
+    api_name: "getLeInquiryScanInterval"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.inquiry_scan_interval"
+}
+
+prop {
+    api_name: "getLeInquiryScanWindow"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.le.inquiry_scan_window"
+}
+
+# Whether LE Connection with initiating with only LE 1M PHY.
+# Set by vendors overlay, read at Bluetooth initialization
+prop {
+    api_name: "isGapLeConnOnlyInit1mPhyEnabled"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.gap.le.conn.only_init_1m_phy.enabled"
+}
+
+# ACL Link supervision timeout
+prop {
+    api_name: "getLinkSupervisionTimeout"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.acl.link_supervision_timeout"
+}
+
+# The following values are used to load default adapter parameters for BR/EDR.
+# The Bluetooth Core Specification should be consulted for the meaning and valid
+# domain of each of these values.
+
+# BR/EDR Page scan activity configuration
+prop {
+    api_name: "getClassicPageScanType"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.classic.page_scan_type"
+}
+
+prop {
+    api_name: "getClassicPageScanInterval"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.classic.page_scan_interval"
+}
+
+prop {
+    api_name: "getClassicPageScanWindow"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.classic.page_scan_window"
+}
+
+# BR/EDR Inquiry scan activity configuration
+prop {
+    api_name: "getClassicInquiryScanType"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.classic.inq_scan_type"
+}
+
+prop {
+    api_name: "getClassicInquiryScanInterval"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.classic.inq_scan_interval"
+}
+
+prop {
+    api_name: "getClassicInquiryScanWindow"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.classic.inq_scan_window"
+}
+
+# BR/EDR Page Timeout
+prop {
+    api_name: "getClassicPageTimeout"
+    type: UInt
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.core.classic.page_timeout"
+}

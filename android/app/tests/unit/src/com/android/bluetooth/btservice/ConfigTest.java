@@ -20,14 +20,15 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.bluetooth.BluetoothProfile;
 
+import androidx.test.runner.AndroidJUnit4;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
 import java.util.Arrays;
 
 /** Test cases for {@link Config}. */
-@RunWith(JUnit4.class)
+@RunWith(AndroidJUnit4.class)
 public final class ConfigTest {
     @Test
     public void setProfileEnabled() {

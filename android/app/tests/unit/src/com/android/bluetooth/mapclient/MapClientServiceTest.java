@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.mapclient;
 
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
@@ -23,14 +24,15 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getBluetoothManager;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -38,15 +40,12 @@ import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.SdpMasRecord;
-import android.content.Context;
 import android.telephony.SubscriptionManager;
 
 import androidx.test.filters.MediumTest;
-import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
@@ -74,11 +73,7 @@ public class MapClientServiceTest {
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private MnsService mMnsService;
 
-    private final BluetoothAdapter mAdapter =
-            InstrumentationRegistry.getInstrumentation()
-                    .getTargetContext()
-                    .getSystemService(BluetoothManager.class)
-                    .getAdapter();
+    private final BluetoothAdapter mAdapter = getBluetoothManager().getAdapter();
     private final BluetoothDevice mRemoteDevice = getTestDevice(0);
 
     private MapClientService mService;
@@ -90,9 +85,8 @@ public class MapClientServiceTest {
                 .when(mDatabaseManager)
                 .getProfileConnectionPolicy(any(), anyInt());
 
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        TestUtils.mockGetSystemService(
-                mAdapterService, Context.TELEPHONY_SUBSCRIPTION_SERVICE, SubscriptionManager.class);
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
+        TestUtils.mockGetSystemService(mAdapterService, SubscriptionManager.class);
 
         mTestLooper = new TestLooper();
 
@@ -106,19 +100,6 @@ public class MapClientServiceTest {
     @After
     public void tearDown() throws Exception {
         mService.cleanup();
-        assertThat(MapClientService.getMapClientService()).isNull();
-    }
-
-    @Test
-    public void initialize() {
-        assertThat(MapClientService.getMapClientService()).isNotNull();
-    }
-
-    @Test
-    public void setMapClientService_withNull() {
-        MapClientService.setMapClientService(null);
-
-        assertThat(MapClientService.getMapClientService()).isNull();
     }
 
     @Test

@@ -47,7 +47,8 @@ class SecurityService(security_grpc_aio.SecurityServicer):
         class PairingObserver(adapter_client.BluetoothCallbacks):
             """Observer to observe pairing events."""
 
-            def __init__(self, client: adapter_client, security: security_grpc_aio.SecurityServicer):
+            def __init__(self, client: adapter_client,
+                         security: security_grpc_aio.SecurityServicer):
                 self.client = client
                 self.security = security
 
@@ -59,15 +60,16 @@ class SecurityService(security_grpc_aio.SecurityServicer):
                 logging.info("Security: on_ssp_request variant: %s passkey: %s", variant, passkey)
                 address, _ = remote_device
 
-                if variant in (floss_enums.PairingVariant.CONSENT, floss_enums.PairingVariant.PASSKEY_CONFIRMATION):
-                    self.client.set_pairing_confirmation(address,
-                                                         True,
-                                                         method_callback=self.on_set_pairing_confirmation)
+                if variant in (floss_enums.PairingVariant.CONSENT,
+                               floss_enums.PairingVariant.PASSKEY_CONFIRMATION):
+                    self.client.set_pairing_confirmation(
+                        address, True, method_callback=self.on_set_pairing_confirmation)
 
             @utils.glib_callback()
             def on_set_pairing_confirmation(self, err, result):
                 if err or not result:
-                    logging.info('Security: on_set_pairing_confirmation failed. err: %s result: %s', err, result)
+                    logging.info('Security: on_set_pairing_confirmation failed. err: %s result: %s',
+                                 err, result)
 
         observer = PairingObserver(self.bluetooth.adapter_client, self)
         name = utils.create_observer_name(observer)
@@ -89,14 +91,15 @@ class SecurityService(security_grpc_aio.SecurityServicer):
 
                 future = self.task['wait_bond']
                 if status != floss_enums.BtStatus.SUCCESS:
-                    future.get_loop().call_soon_threadsafe(future.set_result, (False, f'Status: {status}'))
+                    future.get_loop().call_soon_threadsafe(future.set_result,
+                                                           (False, f'Status: {status}'))
                     return
 
                 if state == floss_enums.BondState.BONDED:
                     future.get_loop().call_soon_threadsafe(future.set_result, (True, None))
                 elif state == floss_enums.BondState.NOT_BONDED:
-                    future.get_loop().call_soon_threadsafe(future.set_result,
-                                                           (False, f'Status: {status}, State: {state}'))
+                    future.get_loop().call_soon_threadsafe(
+                        future.set_result, (False, f'Status: {status}, State: {state}'))
 
         if level == security_pb2.LE_LEVEL1:
             return True
@@ -142,14 +145,15 @@ class SecurityService(security_grpc_aio.SecurityServicer):
 
                 future = self.task['wait_bond']
                 if status != floss_enums.BtStatus.SUCCESS:
-                    future.get_loop().call_soon_threadsafe(future.set_result, (False, f'Status: {status}'))
+                    future.get_loop().call_soon_threadsafe(future.set_result,
+                                                           (False, f'Status: {status}'))
                     return
 
                 if state == floss_enums.BondState.BONDED:
                     future.get_loop().call_soon_threadsafe(future.set_result, (True, None))
                 elif state == floss_enums.BondState.NOT_BONDED:
-                    future.get_loop().call_soon_threadsafe(future.set_result,
-                                                           (False, f'Status: {status}, State: {state}'))
+                    future.get_loop().call_soon_threadsafe(
+                        future.set_result, (False, f'Status: {status}, State: {state}'))
 
         if level == security_pb2.LEVEL0:
             return True
@@ -178,8 +182,9 @@ class SecurityService(security_grpc_aio.SecurityServicer):
             return is_encrypted and is_bonded
         return False
 
-    async def OnPairing(self, request: AsyncIterator[security_pb2.PairingEventAnswer],
-                        context: grpc.ServicerContext) -> AsyncGenerator[security_pb2.PairingEvent, None]:
+    async def OnPairing(
+            self, request: AsyncIterator[security_pb2.PairingEventAnswer],
+            context: grpc.ServicerContext) -> AsyncGenerator[security_pb2.PairingEvent, None]:
         logging.info('OnPairing')
         on_pairing_id = self.on_pairing_count
         self.on_pairing_count = self.on_pairing_count + 1
@@ -229,12 +234,14 @@ class SecurityService(security_grpc_aio.SecurityServicer):
 
                 answer = pairing_answer.WhichOneof('answer')
                 address = utils.address_from(pairing_answer.event.address)
-                logging.info('OnPairing[%s]: Pairing answer: %s address: %s', on_pairing_id, answer, address)
+                logging.info('OnPairing[%s]: Pairing answer: %s address: %s', on_pairing_id, answer,
+                             address)
 
                 if answer == 'confirm':
                     self.bluetooth.set_pairing_confirmation(address, True)
                 elif answer == 'passkey':
-                    self.bluetooth.set_pin(address, True, list(str(answer.passkey).zfill(6).encode()))
+                    self.bluetooth.set_pin(address, True,
+                                           list(str(answer.passkey).zfill(6).encode()))
                 elif answer == 'pin':
                     self.bluetooth.set_pin(address, True, list(answer.pin))
 
@@ -243,7 +250,8 @@ class SecurityService(security_grpc_aio.SecurityServicer):
             self.manually_confirm = True
 
             pairing_events = asyncio.Queue()
-            observer = PairingObserver(asyncio.get_running_loop(), {'pairing_events': pairing_events})
+            observer = PairingObserver(asyncio.get_running_loop(),
+                                       {'pairing_events': pairing_events})
             name = utils.create_observer_name(observer)
             self.bluetooth.adapter_client.register_callback_observer(name, observer)
             observers.append((name, observer))
@@ -253,8 +261,9 @@ class SecurityService(security_grpc_aio.SecurityServicer):
             while True:
                 logging.info('OnPairing[%s]: Wait for pairing events...', on_pairing_id)
                 address, name, variant, *variables = await pairing_events.get()
-                logging.info('OnPairing[%s]: Pairing event: address: %s, name: %s, variant: %s, variables: %s',
-                             on_pairing_id, address, name, variant, variables)
+                logging.info(
+                    'OnPairing[%s]: Pairing event: address: %s, name: %s, variant: %s, variables: %s',
+                    on_pairing_id, address, name, variant, variables)
 
                 event = security_pb2.PairingEvent()
                 event.address = utils.address_to(address)
@@ -315,18 +324,21 @@ class SecurityService(security_grpc_aio.SecurityServicer):
 
         if transport == floss_enums.BtTransport.LE:
             if not request.HasField('le'):
-                await context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Request le field must be set.')
+                await context.abort(grpc.StatusCode.INVALID_ARGUMENT,
+                                    'Request le field must be set.')
             if request.le == security_pb2.LE_LEVEL1:
                 security_level_reached = True
             elif request.le == security_pb2.LE_LEVEL4:
-                await context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Low-energy security level 4 is not supported.')
+                await context.abort(grpc.StatusCode.INVALID_ARGUMENT,
+                                    'Low-energy security level 4 is not supported.')
             else:
                 if not self.bluetooth.is_bonded(address):
                     self.bluetooth.create_bond(address, transport)
                 security_level_reached = await self.wait_le_security_level(request.le, address)
         elif transport == floss_enums.BtTransport.BREDR:
             if not request.HasField('classic'):
-                await context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Request classic field must be set.')
+                await context.abort(grpc.StatusCode.INVALID_ARGUMENT,
+                                    'Request classic field must be set.')
             if request.classic == security_pb2.LEVEL0:
                 security_level_reached = True
             elif request.classic >= security_pb2.LEVEL3:
@@ -335,9 +347,11 @@ class SecurityService(security_grpc_aio.SecurityServicer):
             else:
                 if not self.bluetooth.is_bonded(address):
                     self.bluetooth.create_bond(address, transport)
-                security_level_reached = await self.wait_classic_security_level(request.classic, address)
+                security_level_reached = await self.wait_classic_security_level(
+                    request.classic, address)
         else:
-            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, f'Invalid bluetooth transport type: {transport}.')
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT,
+                                f'Invalid bluetooth transport type: {transport}.')
 
         secure_response = security_pb2.SecureResponse()
         if security_level_reached:
@@ -349,14 +363,17 @@ class SecurityService(security_grpc_aio.SecurityServicer):
     async def WaitSecurity(self, request: security_pb2.WaitSecurityRequest,
                            context: grpc.ServicerContext) -> security_pb2.WaitSecurityResponse:
         address = utils.connection_from(request.connection).address
-        transport = floss_enums.BtTransport.BREDR if request.HasField('classic') else floss_enums.BtTransport.LE
+        transport = floss_enums.BtTransport.BREDR if request.HasField(
+            'classic') else floss_enums.BtTransport.LE
 
         if transport == floss_enums.BtTransport.LE:
             security_level_reached = await self.wait_le_security_level(request.le, address)
         elif transport == floss_enums.BtTransport.BREDR:
-            security_level_reached = await self.wait_classic_security_level(request.classic, address)
+            security_level_reached = await self.wait_classic_security_level(
+                request.classic, address)
         else:
-            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, f'Invalid bluetooth transport type: {transport}.')
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT,
+                                f'Invalid bluetooth transport type: {transport}.')
 
         wait_security_response = security_pb2.WaitSecurityResponse()
         if security_level_reached:
@@ -402,17 +419,19 @@ class SecurityStorageService(security_grpc_aio.SecurityStorageServicer):
 
                 future = self.task['remove_bond']
                 if status != 0:
-                    future.get_loop().call_soon_threadsafe(future.set_result,
-                                                           (False, f'{address} failed to remove bond. Status: {status},'
-                                                            f' State: {state}'))
+                    future.get_loop().call_soon_threadsafe(
+                        future.set_result,
+                        (False, f'{address} failed to remove bond. Status: {status},'
+                         f' State: {state}'))
                     return
 
                 if state == floss_enums.BondState.NOT_BONDED:
                     future.get_loop().call_soon_threadsafe(future.set_result, (True, None))
                 else:
                     future.get_loop().call_soon_threadsafe(
-                        future.set_result, (False, f'{address} failed on remove_bond, got bond state {state},'
-                                            f' want {floss_enums.BondState.NOT_BONDED}'))
+                        future.set_result,
+                        (False, f'{address} failed on remove_bond, got bond state {state},'
+                         f' want {floss_enums.BondState.NOT_BONDED}'))
 
         address = utils.address_from(request.address)
         if not self.bluetooth.is_bonded(address):
@@ -425,8 +444,9 @@ class SecurityStorageService(security_grpc_aio.SecurityStorageServicer):
             self.bluetooth.remove_bond(address)
             success, reason = await remove_bond
             if not success:
-                await context.abort(grpc.StatusCode.INVALID_ARGUMENT,
-                                    f'Failed to remove bond of address: {address}. Reason: {reason}.')
+                await context.abort(
+                    grpc.StatusCode.INVALID_ARGUMENT,
+                    f'Failed to remove bond of address: {address}. Reason: {reason}.')
         finally:
             self.bluetooth.adapter_client.unregister_callback_observer(name, observer)
         return empty_pb2.Empty()

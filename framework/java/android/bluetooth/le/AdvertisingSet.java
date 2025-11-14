@@ -51,9 +51,9 @@ public final class AdvertisingSet {
             IBluetoothAdvertise advertise,
             int advertiserId,
             BluetoothAdapter bluetoothAdapter,
-            AttributionSource attributionSource) {
+            AttributionSource source) {
         mAdvertiserId = advertiserId;
-        mAttributionSource = attributionSource;
+        mAttributionSource = source;
         mAdvertise = requireNonNull(advertise);
     }
 

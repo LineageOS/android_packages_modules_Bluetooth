@@ -20,11 +20,9 @@ import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import android.annotation.RequiresPermission;
-import android.bluetooth.BluetoothAvrcpPlayerSettings;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.IBluetoothAvrcpController;
 import android.content.AttributionSource;
-import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ProfileService.IProfileServiceBinder;
@@ -90,27 +88,5 @@ class AvrcpControllerServiceBinder extends IBluetoothAvrcpController.Stub
             return STATE_DISCONNECTED;
         }
         return service.getConnectionState(device);
-    }
-
-    @Override
-    public void sendGroupNavigationCmd(
-            BluetoothDevice device, int keyCode, int keyState, AttributionSource source) {
-        getService(source);
-        Log.w(TAG, "sendGroupNavigationCmd not implemented");
-    }
-
-    @Override
-    public void setPlayerApplicationSetting(
-            BluetoothAvrcpPlayerSettings settings, AttributionSource source) {
-        getService(source);
-        Log.w(TAG, "setPlayerApplicationSetting not implemented");
-    }
-
-    @Override
-    public BluetoothAvrcpPlayerSettings getPlayerSettings(
-            BluetoothDevice device, AttributionSource source) {
-        getService(source);
-        Log.w(TAG, "getPlayerSettings not implemented");
-        return null;
     }
 }

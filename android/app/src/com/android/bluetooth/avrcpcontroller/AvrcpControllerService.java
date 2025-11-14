@@ -21,9 +21,11 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothProfile;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
@@ -36,6 +38,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService.BrowseResult;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -47,7 +50,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Provides Bluetooth AVRCP Controller profile, as a service in the Bluetooth application. */
-public class AvrcpControllerService extends ProfileService {
+public class AvrcpControllerService extends ConnectableProfile {
     private static final String TAG = AvrcpControllerService.class.getSimpleName();
 
     static final int MAXIMUM_CONNECTED_DEVICES = 5;
@@ -97,7 +100,6 @@ public class AvrcpControllerService extends ProfileService {
 
     private final Object mActiveDeviceLock = new Object();
 
-    private final AdapterService mAdapterService;
     private final AvrcpControllerNativeInterface mNativeInterface;
     private final AvrcpCoverArtManager mCoverArtManager;
     private final boolean mCoverArtEnabled;
@@ -134,27 +136,30 @@ public class AvrcpControllerService extends ProfileService {
     }
 
     public AvrcpControllerService(AdapterService adapterService) {
-        this(adapterService, AvrcpControllerNativeInterface.getInstance());
+        this(adapterService, null);
     }
 
     @VisibleForTesting
     public AvrcpControllerService(
             AdapterService adapterService, AvrcpControllerNativeInterface nativeInterface) {
-        super(requireNonNull(adapterService));
-        mAdapterService = adapterService;
-        mNativeInterface = requireNonNull(nativeInterface);
-        mNativeInterface.init(this);
+        super(BluetoothProfile.AVRCP_CONTROLLER, requireNonNull(adapterService));
+        mNativeInterface =
+                requireNonNullElseGet(
+                        nativeInterface,
+                        () -> new AvrcpControllerNativeInterface(mAdapterService, this));
+        mNativeInterface.init();
 
         setComponentAvailable(ON_ERROR_SETTINGS_ACTIVITY, true);
         mCoverArtEnabled = getResources().getBoolean(R.bool.avrcp_controller_enable_cover_art);
         if (mCoverArtEnabled) {
             setComponentAvailable(COVER_ART_PROVIDER, true);
-            mCoverArtManager = new AvrcpCoverArtManager(this, new ImageDownloadCallback());
+            mCoverArtManager =
+                    new AvrcpCoverArtManager(mAdapterService, this, new ImageDownloadCallback());
         } else {
             mCoverArtManager = null;
         }
 
-        mBrowseTree = new BrowseTree(null);
+        mBrowseTree = new BrowseTree(mAdapterService, null);
         setAvrcpControllerService(this);
 
         // Start the media browser service.
@@ -168,7 +173,7 @@ public class AvrcpControllerService extends ProfileService {
 
     @Override
     public synchronized void cleanup() {
-        Log.i(TAG, "Cleanup AVRCP Controller Service");
+        Log.i(TAG, "cleanup()");
 
         setActiveDevice(null);
         Intent stopIntent = new Intent(this, BluetoothMediaBrowserService.class);
@@ -423,12 +428,9 @@ public class AvrcpControllerService extends ProfileService {
         // commands get routed to the correct device
         synchronized (mActiveDeviceLock) {
             switch (state) {
-                case AudioManager.AUDIOFOCUS_GAIN:
-                    BluetoothMediaBrowserService.setActive(true);
-                    break;
-                case AudioManager.AUDIOFOCUS_LOSS:
-                    BluetoothMediaBrowserService.setActive(false);
-                    break;
+                case AudioManager.AUDIOFOCUS_GAIN -> BluetoothMediaBrowserService.setActive(true);
+                case AudioManager.AUDIOFOCUS_LOSS -> BluetoothMediaBrowserService.setActive(false);
+                default -> {} // Nothing to do
             }
             BluetoothDevice device = getActiveDevice();
             if (device == null) {
@@ -609,6 +611,7 @@ public class AvrcpControllerService extends ProfileService {
      *
      * @return true if disconnect is successful, false otherwise.
      */
+    @Override
     public synchronized boolean disconnect(BluetoothDevice device) {
         Log.d(TAG, "disconnect(device=" + device + ")");
         AvrcpControllerStateMachine stateMachine = mDeviceStateMap.get(device);
@@ -699,7 +702,8 @@ public class AvrcpControllerService extends ProfileService {
         return deviceList;
     }
 
-    synchronized int getConnectionState(BluetoothDevice device) {
+    @Override
+    public synchronized int getConnectionState(BluetoothDevice device) {
         AvrcpControllerStateMachine stateMachine = mDeviceStateMap.get(device);
         return (stateMachine == null) ? STATE_DISCONNECTED : stateMachine.getState();
     }

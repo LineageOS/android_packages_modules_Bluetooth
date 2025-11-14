@@ -50,7 +50,6 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.R;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -175,11 +174,6 @@ class BluetoothOppNotification {
         public long timeStamp = 0; // Database time stamp. Used for sorting ongoing transfers.
 
         public String description; // the text above progress bar
-
-        public boolean handoverInitiated = false;
-        // transfer initiated by connection handover (eg NFC)
-
-        public String destination; // destination associated with this transfer
     }
 
     /**
@@ -229,7 +223,7 @@ class BluetoothOppNotification {
                 @Override
                 public void handleMessage(Message msg) {
                     switch (msg.what) {
-                        case NOTIFY:
+                        case NOTIFY -> {
                             synchronized (BluetoothOppNotification.this) {
                                 if (mPendingUpdate > 0 && mUpdateNotificationThread == null) {
                                     Log.v(TAG, "new notify thread!");
@@ -243,8 +237,9 @@ class BluetoothOppNotification {
                                     mHandler.sendMessageDelayed(
                                             mHandler.obtainMessage(NOTIFY), 1000);
                                 }
-                                break;
                             }
+                        }
+                        default -> {} // Nothing to do
                     }
                 }
             };
@@ -307,8 +302,6 @@ class BluetoothOppNotification {
         final int currentBytesIndex = cursor.getColumnIndexOrThrow(BluetoothShare.CURRENT_BYTES);
         final int dataIndex = cursor.getColumnIndexOrThrow(BluetoothShare._DATA);
         final int filenameHintIndex = cursor.getColumnIndexOrThrow(BluetoothShare.FILENAME_HINT);
-        final int confirmIndex = cursor.getColumnIndexOrThrow(BluetoothShare.USER_CONFIRMATION);
-        final int destinationIndex = cursor.getColumnIndexOrThrow(BluetoothShare.DESTINATION);
 
         mNotifications.clear();
         for (cursor.moveToFirst(); !cursor.isAfterLast(); cursor.moveToNext()) {
@@ -317,9 +310,7 @@ class BluetoothOppNotification {
             int id = cursor.getInt(idIndex);
             long total = cursor.getLong(totalBytesIndex);
             long current = cursor.getLong(currentBytesIndex);
-            int confirmation = cursor.getInt(confirmIndex);
 
-            String destination = cursor.getString(destinationIndex);
             String fileName = cursor.getString(dataIndex);
             if (fileName == null) {
                 fileName = cursor.getString(filenameHintIndex);
@@ -349,9 +340,6 @@ class BluetoothOppNotification {
                 }
                 item.totalCurrent = current;
                 item.totalTotal = total;
-                item.handoverInitiated =
-                        confirmation == BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED;
-                item.destination = destination;
                 mNotifications.put(batchID, item);
 
                 Log.v(
@@ -370,34 +358,6 @@ class BluetoothOppNotification {
 
         // Add the notifications
         for (NotificationItem item : mNotifications.values()) {
-            if (item.handoverInitiated) {
-                float progress = 0;
-                if (item.totalTotal == -1) {
-                    progress = -1;
-                } else {
-                    progress = (float) item.totalCurrent / item.totalTotal;
-                }
-
-                // Let NFC service deal with notifications for this transfer
-                Intent intent = new Intent(Constants.ACTION_BT_OPP_TRANSFER_PROGRESS);
-                if (item.direction == BluetoothShare.DIRECTION_INBOUND) {
-                    intent.putExtra(
-                            Constants.EXTRA_BT_OPP_TRANSFER_DIRECTION,
-                            Constants.DIRECTION_BLUETOOTH_INCOMING);
-                } else {
-                    intent.putExtra(
-                            Constants.EXTRA_BT_OPP_TRANSFER_DIRECTION,
-                            Constants.DIRECTION_BLUETOOTH_OUTGOING);
-                }
-                intent.putExtra(Constants.EXTRA_BT_OPP_TRANSFER_ID, item.id);
-                intent.putExtra(Constants.EXTRA_BT_OPP_TRANSFER_PROGRESS, progress);
-                intent.putExtra(Constants.EXTRA_BT_OPP_ADDRESS, item.destination);
-                mContext.sendBroadcast(
-                        intent,
-                        Constants.HANDOVER_STATUS_PERMISSION,
-                        Utils.getTempBroadcastOptions().toBundle());
-                continue;
-            }
             // Build the notification object
             // TODO: split description into two rows with filename in second row
             Notification.Builder b = new Notification.Builder(mContext, OPP_NOTIFICATION_CHANNEL);

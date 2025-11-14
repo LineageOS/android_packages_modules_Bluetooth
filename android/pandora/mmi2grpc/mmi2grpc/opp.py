@@ -19,7 +19,7 @@ from mmi2grpc._helpers import assert_description
 from mmi2grpc._proxy import ProfileProxy
 from pandora.host_grpc import Host
 from pandora.host_pb2 import Connection
-from pandora_experimental.opp_grpc import Opp
+from pandora.opp_grpc import Opp
 
 
 class OPPProxy(ProfileProxy):
@@ -188,5 +188,33 @@ class OPPProxy(ProfileProxy):
         """
         Take action to initiate an OBEX DISCONNECT REQ.
         """
+
+        return "OK"
+
+    @assert_description
+    def TSC_OBEX_MMI_iut_delete_paring(self, **kwargs):
+        """
+         Please remove pairing from the Implementation Under Test (IUT), then
+        click Ok
+        """
+
+        return "OK"
+
+    @assert_description
+    def _mmi_90(self, **kwargs):
+        """
+        Is the IUT capable of establishing connection to an unpaired device?
+        """
+
+        return "OK"
+
+    @assert_description
+    def TSC_OBEX_MMI_iut_initiate_slc_connect(self, pts_addr: bytes, **kwargs):
+        """
+         Take action to create an l2cap channel or rfcomm channel for an OBEX
+        connection.
+        """
+
+        self.opp.OpenL2capChannel(address=pts_addr)
 
         return "OK"

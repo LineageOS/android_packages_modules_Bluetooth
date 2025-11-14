@@ -68,7 +68,7 @@ public class BatchScanThrottlerTest {
             @TestParameter boolean isFiltered, @TestParameter boolean isScreenOn) {
         BatchScanThrottler throttler = new BatchScanThrottler(mTimeProvider, isScreenOn);
         if (!isScreenOn) {
-            advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_MS);
+            advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_DEFAULT);
         }
         Set<ScanClient> clients =
                 Collections.singleton(
@@ -77,7 +77,7 @@ public class BatchScanThrottlerTest {
                 getBackoffIntervals(
                         isScreenOn
                                 ? DEFAULT_REPORT_DELAY_FLOOR
-                                : BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_MS);
+                                : BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT);
         for (long x : backoffIntervals) {
             long expected = adjustExpectedInterval(x, isFiltered, isScreenOn);
             assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(expected);
@@ -99,13 +99,13 @@ public class BatchScanThrottlerTest {
         Set<ScanClient> clients =
                 Collections.singleton(createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR, true));
         long[] backoffIntervals = getBackoffIntervals(DEFAULT_REPORT_DELAY_FLOOR);
-        advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_MS - 1);
+        advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_DEFAULT - 1);
         for (long x : backoffIntervals) {
             assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x);
         }
 
         backoffIntervals =
-                getBackoffIntervals(BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_MS);
+                getBackoffIntervals(BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT);
         advanceTime(1);
         for (long x : backoffIntervals) {
             assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x);
@@ -117,11 +117,11 @@ public class BatchScanThrottlerTest {
     @Test
     public void testScreenOnReset() {
         BatchScanThrottler throttler = new BatchScanThrottler(mTimeProvider, false);
-        advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_MS);
+        advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_DEFAULT);
         Set<ScanClient> clients =
                 Collections.singleton(createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR, true));
         long[] backoffIntervals =
-                getBackoffIntervals(BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_MS);
+                getBackoffIntervals(BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT);
         for (long x : backoffIntervals) {
             assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x);
         }
@@ -141,7 +141,7 @@ public class BatchScanThrottlerTest {
         if (!isScreenOn) {
             // Advance the time before we start the test to when the screen-off intervals should be
             // used
-            advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_MS);
+            advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_DEFAULT);
         }
         Set<ScanClient> clients =
                 Collections.singleton(createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR, true));
@@ -149,7 +149,7 @@ public class BatchScanThrottlerTest {
                 getBackoffIntervals(
                         isScreenOn
                                 ? DEFAULT_REPORT_DELAY_FLOOR
-                                : BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_MS);
+                                : BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT);
         for (long x : backoffIntervals) {
             assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x);
         }
@@ -171,8 +171,8 @@ public class BatchScanThrottlerTest {
         }
         long threshold =
                 isScreenOn
-                        ? BatchScanThrottler.UNFILTERED_DELAY_FLOOR_MS
-                        : BatchScanThrottler.UNFILTERED_SCREEN_OFF_DELAY_FLOOR_MS;
+                        ? BatchScanThrottler.UNFILTERED_DELAY_FLOOR_DEFAULT
+                        : BatchScanThrottler.UNFILTERED_SCREEN_OFF_DELAY_FLOOR_DEFAULT;
         return Math.max(interval, threshold);
     }
 
@@ -200,3 +200,4 @@ public class BatchScanThrottlerTest {
         return scanFilterList;
     }
 }
+

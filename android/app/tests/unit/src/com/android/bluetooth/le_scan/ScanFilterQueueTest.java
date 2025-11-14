@@ -90,37 +90,34 @@ public class ScanFilterQueueTest {
 
         for (ScanFilterQueue.Entry entry : entries) {
             switch (entry.type) {
-                case ScanFilterQueue.TYPE_DEVICE_ADDRESS:
+                case ScanFilterQueue.TYPE_DEVICE_ADDRESS -> {
                     assertThat(entry.address).isEqualTo(address);
                     assertThat(entry.addr_type).isEqualTo(type);
                     assertThat(entry.irk).isEqualTo(irk);
-                    break;
-                case ScanFilterQueue.TYPE_SERVICE_DATA_CHANGED:
+                }
+                case ScanFilterQueue.TYPE_SERVICE_DATA_CHANGED -> {
                     assertThat(entry).isNotNull();
-                    break;
-                case ScanFilterQueue.TYPE_SERVICE_UUID:
-                    assertThat(entry.uuid).isEqualTo(uuid);
-                    break;
-                case ScanFilterQueue.TYPE_SOLICIT_UUID:
+                }
+                case ScanFilterQueue.TYPE_SERVICE_UUID -> assertThat(entry.uuid).isEqualTo(uuid);
+                case ScanFilterQueue.TYPE_SOLICIT_UUID -> {
                     assertThat(entry.uuid).isEqualTo(solicitUuid);
                     assertThat(entry.uuid_mask).isEqualTo(solicitUuidMask);
-                    break;
-                case ScanFilterQueue.TYPE_LOCAL_NAME:
-                    assertThat(entry.name).isEqualTo(name);
-                    break;
-                case ScanFilterQueue.TYPE_MANUFACTURER_DATA:
+                }
+                case ScanFilterQueue.TYPE_LOCAL_NAME -> assertThat(entry.name).isEqualTo(name);
+                case ScanFilterQueue.TYPE_MANUFACTURER_DATA -> {
                     assertThat(entry.company).isEqualTo(company);
                     assertThat(entry.data).isEqualTo(data);
-                    break;
-                case ScanFilterQueue.TYPE_SERVICE_DATA:
+                }
+                case ScanFilterQueue.TYPE_SERVICE_DATA -> {
                     assertThat(entry.data).isEqualTo(serviceData);
                     assertThat(entry.data_mask).isEqualTo(serviceDataMask);
-                    break;
-                case ScanFilterQueue.TYPE_ADVERTISING_DATA_TYPE:
+                }
+                case ScanFilterQueue.TYPE_ADVERTISING_DATA_TYPE -> {
                     assertThat(entry.ad_type).isEqualTo(adType);
                     assertThat(entry.data).isEqualTo(adData);
                     assertThat(entry.data_mask).isEqualTo(adDataMask);
-                    break;
+                }
+                default -> {} // Nothing to do
             }
         }
     }

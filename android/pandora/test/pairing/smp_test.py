@@ -75,21 +75,24 @@ class SmpTest(base_test.BaseTestClass):  # type: ignore[misc]
                     )
                     ref_pairing_stream.send_nowait(ref_ev_answer)
                 else:
-                    dut_pairing_stream.send_nowait(PairingEventAnswer(
-                        event=dut_pairing_event,
-                        confirm=True,
-                    ))
+                    dut_pairing_stream.send_nowait(
+                        PairingEventAnswer(
+                            event=dut_pairing_event,
+                            confirm=True,
+                        ))
                     ref_pairing_event = await anext(ref_pairing_stream)
 
-                    ref_pairing_stream.send_nowait(PairingEventAnswer(
-                        event=ref_pairing_event,
-                        confirm=True,
-                    ))
+                    ref_pairing_stream.send_nowait(
+                        PairingEventAnswer(
+                            event=ref_pairing_event,
+                            confirm=True,
+                        ))
 
         finally:
             dut_pairing_stream.cancel()
 
-    async def dut_pair(self, dut_address_type: OwnAddressType, ref_address_type: OwnAddressType) -> ScanningResponse:
+    async def dut_pair(self, dut_address_type: OwnAddressType,
+                       ref_address_type: OwnAddressType) -> ScanningResponse:
         advertisement = self.ref.aio.host.Advertise(
             legacy=True,
             connectable=True,
@@ -98,7 +101,8 @@ class SmpTest(base_test.BaseTestClass):  # type: ignore[misc]
         )
 
         scan = self.dut.aio.host.Scan(own_address_type=dut_address_type)
-        ref = await anext((x async for x in scan if b'pause cafe' in x.data.manufacturer_specific_data))
+        ref = await anext(
+            (x async for x in scan if b'pause cafe' in x.data.manufacturer_specific_data))
         scan.cancel()
 
         pairing = asyncio.create_task(self.handle_pairing_events())
@@ -184,7 +188,8 @@ class SmpTest(base_test.BaseTestClass):  # type: ignore[misc]
         )
 
         scan = self.dut.aio.host.Scan(own_address_type=RANDOM)
-        ref = await anext((x async for x in scan if b'pause cafe' in x.data.manufacturer_specific_data))
+        ref = await anext(
+            (x async for x in scan if b'pause cafe' in x.data.manufacturer_specific_data))
         scan.cancel()
 
         asyncio.create_task(self.handle_pairing_events())
@@ -221,7 +226,8 @@ class SmpTest(base_test.BaseTestClass):  # type: ignore[misc]
         )
 
         scan = self.dut.aio.host.Scan(own_address_type=RANDOM)
-        ref = await anext((x async for x in scan if b'pause cafe' in x.data.manufacturer_specific_data))
+        ref = await anext(
+            (x async for x in scan if b'pause cafe' in x.data.manufacturer_specific_data))
         scan.cancel()
 
         (dut_ref_res, ref_dut_res) = await asyncio.gather(
@@ -248,7 +254,8 @@ class SmpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         class Session(smp.Session):
 
-            def on_smp_pairing_request_command(self, command: smp.SMP_Pairing_Request_Command) -> None:
+            def on_smp_pairing_request_command(self,
+                                               command: smp.SMP_Pairing_Request_Command) -> None:
                 nonlocal fut
                 fut.set_result(False)
 

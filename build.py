@@ -211,8 +211,9 @@ class HostBuild():
         self.libdir = self.args.libdir
         self.install_dir = os.path.join(self.output_dir, 'install')
 
-        assert os.path.samefile(self.bt_dir,
-                                os.path.dirname(__file__)), "Please rerun bootstrap for the current project!"
+        assert os.path.samefile(
+            self.bt_dir,
+            os.path.dirname(__file__)), "Please rerun bootstrap for the current project!"
 
         # If default target isn't set, build everything
         self.target = 'all'
@@ -229,7 +230,8 @@ class HostBuild():
 
         # Validate platform directory
         assert os.path.isdir(self.platform_dir), 'Platform dir does not exist'
-        assert os.path.isfile(os.path.join(self.platform_dir, '.gn')), 'Platform dir does not have .gn at root'
+        assert os.path.isfile(os.path.join(self.platform_dir,
+                                           '.gn')), 'Platform dir does not have .gn at root'
 
         # Make sure output directory exists (or create it)
         os.makedirs(self.output_dir, exist_ok=True)
@@ -385,7 +387,10 @@ class HostBuild():
         if clang:
             # Make sure to mark the clang use flag as true
             self.use.set_flag('clang', True)
-            gn_args['external_cxxflags'] += ['-I/usr/include/']
+            gn_args['external_cxxflags'] += [
+                '-I/usr/include/',
+                '-Wno-vla-cxx-extension',
+            ]
 
         gn_args_args = list(to_gn_args_args(gn_args))
         use_args = ['%s=%s' % (k, str(v).lower()) for k, v in self.use.flags.items()]
@@ -438,7 +443,7 @@ class HostBuild():
 
         if not self.args.no_vendored_rust:
             contents = template.format(self.platform_dir)
-            with open(os.path.join(self.env['CARGO_HOME'], 'config'), 'w') as f:
+            with open(os.path.join(self.env['CARGO_HOME'], 'config.toml'), 'w') as f:
                 f.write(contents)
 
     def _rust_build(self):
@@ -470,7 +475,9 @@ class HostBuild():
 
     def _target_docs(self):
         """Build the Rust docs."""
-        self.run_command('docs', ['cargo', 'doc'], cwd=os.path.join(self.platform_dir, 'bt'), env=self.env)
+        self.run_command('docs', ['cargo', 'doc'],
+                         cwd=os.path.join(self.platform_dir, 'bt'),
+                         env=self.env)
 
     def _target_rust(self):
         """ Build rust artifacts in an already prepared environment.
@@ -491,9 +498,14 @@ class HostBuild():
             rust_test_cmd.append('--release')
 
         if self.args.test_name:
-            rust_test_cmd = rust_test_cmd + [self.args.test_name, "--", "--test-threads=1", "--nocapture"]
+            rust_test_cmd = rust_test_cmd + [
+                self.args.test_name, "--", "--test-threads=1", "--nocapture"
+            ]
 
-        self.run_command('test', rust_test_cmd, cwd=os.path.join(self.platform_dir, 'bt'), env=self.env)
+        self.run_command('test',
+                         rust_test_cmd,
+                         cwd=os.path.join(self.platform_dir, 'bt'),
+                         env=self.env)
 
         # Host tests second based on host test list
         for t in HOST_TESTS:
@@ -576,12 +588,14 @@ class HostBuild():
         """Run cargo bloat on workspace.
         """
         crate_paths = [
-            os.path.join(self.platform_dir, 'bt', 'system', 'gd', 'rust', 'linux', 'mgmt'),
-            os.path.join(self.platform_dir, 'bt', 'system', 'gd', 'rust', 'linux', 'service'),
-            os.path.join(self.platform_dir, 'bt', 'system', 'gd', 'rust', 'linux', 'client')
+            os.path.join(self.platform_dir, 'bt', 'floss', 'rust', 'linux', 'mgmt'),
+            os.path.join(self.platform_dir, 'bt', 'floss', 'rust', 'linux', 'service'),
+            os.path.join(self.platform_dir, 'bt', 'floss', 'rust', 'linux', 'client')
         ]
         for crate in crate_paths:
-            self.run_command('bloat', ['cargo', 'bloat', '--release', '--crates', '--wide'], cwd=crate, env=self.env)
+            self.run_command('bloat', ['cargo', 'bloat', '--release', '--crates', '--wide'],
+                             cwd=crate,
+                             env=self.env)
 
     def _target_clean(self):
         """ Delete the output directory entirely.
@@ -649,17 +663,21 @@ GIT_TIMEOUT_SEC = 600
 
 class Bootstrap():
 
-    def __init__(self, base_dir, bt_dir, partial_staging, clone_timeout):
+    def __init__(self, base_dir, bt_dir, proto_logging_dir, partial_staging, clone_timeout):
         """ Construct bootstrapper.
 
         Args:
             base_dir: Where to stage everything.
             bt_dir: Where bluetooth source is kept (will be symlinked)
+            proto_logging_dir: Root directory for proto_logging. Build Floss
+                               with this if it's non-empty, otherwise the AOSP
+                               clone is used.
             partial_staging: Whether to do a partial clone for staging.
             clone_timeout: Timeout for clone operations.
         """
         self.base_dir = os.path.abspath(base_dir)
         self.bt_dir = os.path.abspath(bt_dir)
+        self.proto_logging_dir = proto_logging_dir
         self.partial_staging = partial_staging
         self.clone_timeout = clone_timeout
 
@@ -668,6 +686,8 @@ class Bootstrap():
 
         if not os.path.isdir(self.bt_dir):
             raise Exception('{} is not a valid directory'.format(self.bt_dir))
+        if self.proto_logging_dir and not os.path.isdir(self.proto_logging_dir):
+            raise Exception('{} is not a valid directory'.format(self.proto_logging_dir))
 
         self.git_dir = os.path.join(self.base_dir, 'repos')
         self.staging_dir = os.path.join(self.base_dir, 'staging')
@@ -754,16 +774,20 @@ class Bootstrap():
 
                 # Pin to commit.
                 if commit is not None:
-                    subprocess.check_call(['git', 'checkout', commit], cwd=os.path.join(self.git_dir, project))
+                    subprocess.check_call(['git', 'checkout', commit],
+                                          cwd=os.path.join(self.git_dir, project))
 
         # Symlink things
         symlinks = [
-            (os.path.join(self.git_dir, 'platform2', 'common-mk'), os.path.join(self.staging_dir, 'common-mk')),
-            (os.path.join(self.git_dir, 'platform2', 'system_api'), os.path.join(self.staging_dir, 'system_api')),
+            (os.path.join(self.git_dir, 'platform2',
+                          'common-mk'), os.path.join(self.staging_dir, 'common-mk')),
+            (os.path.join(self.git_dir, 'platform2',
+                          'system_api'), os.path.join(self.staging_dir, 'system_api')),
             (os.path.join(self.git_dir, 'platform2', '.gn'), os.path.join(self.staging_dir, '.gn')),
             (os.path.join(self.bt_dir), os.path.join(self.staging_dir, 'bt')),
             (os.path.join(self.git_dir, 'rust_crates'), os.path.join(self.external_dir, 'rust')),
-            (os.path.join(self.git_dir, 'proto_logging'), os.path.join(self.external_dir, 'proto_logging')),
+            (self.proto_logging_dir if self.proto_logging_dir else os.path.join(
+                self.git_dir, 'proto_logging'), os.path.join(self.external_dir, 'proto_logging')),
         ]
 
         # Create symlinks
@@ -937,13 +961,19 @@ if __name__ == '__main__':
                         help='Print environment variables used for build.',
                         default=False,
                         action='store_true')
-    parser.add_argument('--no-clang', help='Don\'t use clang compiler.', default=False, action='store_true')
+    parser.add_argument('--no-clang',
+                        help='Don\'t use clang compiler.',
+                        default=False,
+                        action='store_true')
     parser.add_argument('--no-strip',
                         help='Skip stripping binaries during install.',
                         default=False,
                         action='store_true')
     parser.add_argument('--use', help='Set a specific use flag.')
-    parser.add_argument('--notest', help='Don\'t compile test code.', default=False, action='store_true')
+    parser.add_argument('--notest',
+                        help='Don\'t compile test code.',
+                        default=False,
+                        action='store_true')
     parser.add_argument('--test-name', help='Run test with this string in the name.', default=None)
     parser.add_argument('--target', help='Run specific build target')
     parser.add_argument('--sysroot', help='Set a specific sysroot path', default='/')
@@ -954,16 +984,26 @@ if __name__ == '__main__':
                         default=False,
                         action='store_true')
     parser.add_argument('--verbose', help='Verbose logs for build.')
-    parser.add_argument('--rust-debug', help='Build Rust code as debug.', default=False, action='store_true')
+    parser.add_argument('--rust-debug',
+                        help='Build Rust code as debug.',
+                        default=False,
+                        action='store_true')
     parser.add_argument(
         '--partial-staging',
-        help='Bootstrap git repositories with partial clones. Use to speed up initial git clone for automated builds.',
+        help=
+        'Bootstrap git repositories with partial clones. Use to speed up initial git clone for automated builds.',
         default=False,
         action='store_true')
     parser.add_argument('--clone-timeout',
                         help='Timeout for repository cloning during bootstrap.',
                         default=GIT_TIMEOUT_SEC,
                         type=int)
+    parser.add_argument('--proto-logging-dir',
+                        help=('Bootstrap creates the proto_logging symlink '
+                              'to the given path rather than the default '
+                              'AOSP clone.'),
+                        default='',
+                        type=str)
     args = parser.parse_args()
 
     # Make sure we get absolute path + expanded path for bootstrap directory
@@ -975,7 +1015,8 @@ if __name__ == '__main__':
         raise Exception("Only x86_64 machines are currently supported by this build script.")
 
     if args.run_bootstrap:
-        bootstrap = Bootstrap(args.bootstrap_dir, os.path.dirname(__file__), args.partial_staging, args.clone_timeout)
+        bootstrap = Bootstrap(args.bootstrap_dir, os.path.dirname(__file__), args.proto_logging_dir,
+                              args.partial_staging, args.clone_timeout)
         bootstrap.bootstrap()
     elif args.print_env:
         build = HostBuild(args)

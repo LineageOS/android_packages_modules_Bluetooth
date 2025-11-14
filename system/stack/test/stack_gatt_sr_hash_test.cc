@@ -25,10 +25,10 @@ using bluetooth::Uuid;
 
 tGATT_CB gatt_cb;
 
-static void add_item_to_list(std::list<tGATT_SRV_LIST_ELEM>& srv_list_info, tGATT_SVC_DB* db,
-                             bool is_primary) {
-  srv_list_info.emplace_back();
-  tGATT_SRV_LIST_ELEM& elem = srv_list_info.back();
+static void add_item_to_list(std::shared_ptr<std::list<tGATT_SRV_LIST_ELEM>> srv_list_info,
+                             tGATT_SVC_DB* db, bool is_primary) {
+  srv_list_info->emplace_back();
+  tGATT_SRV_LIST_ELEM& elem = srv_list_info->back();
   elem.p_db = db;
   elem.is_primary = is_primary;
 }
@@ -39,7 +39,7 @@ TEST(GattDatabaseTest, matchExampleInBtSpecV52) {
   for (int i = 0; i < 4; i++) {
     local_db[i] = tGATT_SVC_DB();
   }
-  std::list<tGATT_SRV_LIST_ELEM> srv_list_info;
+  auto srv_list_info = std::make_shared<std::list<tGATT_SRV_LIST_ELEM>>();
 
   // 0x1800
   add_item_to_list(srv_list_info, &local_db[0], true);
@@ -79,7 +79,7 @@ TEST(GattDatabaseTest, matchExampleInBtSpecV52) {
                         0x8A, 0x88, 0x30, 0xBB, 0xB9, 0xFB, 0xA9, 0x90};
   std::reverse(expected_hash.begin(), expected_hash.end());
 
-  Octet16 result_hash = gatts_calculate_database_hash(&srv_list_info);
+  Octet16 result_hash = gatts_calculate_database_hash(srv_list_info);
 
   ASSERT_EQ(result_hash, expected_hash);
 }

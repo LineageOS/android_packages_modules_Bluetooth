@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.map;
 
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
@@ -52,7 +53,7 @@ public class BluetoothMapServiceTest {
     private BluetoothMapService mService = null;
     private final BluetoothDevice mDevice = getTestDevice(32);
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
@@ -65,10 +66,10 @@ public class BluetoothMapServiceTest {
         doReturn(mTargetContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();
 
-        mockGetSystemService(mAdapterService, Context.TELEPHONY_SERVICE, TelephonyManager.class);
-        mockGetSystemService(mAdapterService, Context.ALARM_SERVICE, AlarmManager.class);
+        mockGetSystemService(mAdapterService, TelephonyManager.class);
+        mockGetSystemService(mAdapterService, AlarmManager.class);
 
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         mService = new BluetoothMapService(mAdapterService);
         mService.setAvailable(true);
     }

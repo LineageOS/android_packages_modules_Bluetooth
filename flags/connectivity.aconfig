@@ -8,3 +8,12 @@ flag {
     bug: "389274300"
 }
 
+flag {
+    name: "idempotent_direct_connect_add"
+    namespace: "bluetooth"
+    description: "Make direct_connect_add idempotent"
+    bug: "409239278"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

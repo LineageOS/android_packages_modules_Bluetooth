@@ -41,6 +41,7 @@ public:
 class HciBackend {
 public:
   static std::shared_ptr<HciBackend> CreateAidl();
+  static std::shared_ptr<HciBackend> CreateAidl(const std::string& hci_instance_name);
   static std::shared_ptr<HciBackend> CreateHidl(::bluetooth::os::Handler*);
 
   virtual ~HciBackend() = default;

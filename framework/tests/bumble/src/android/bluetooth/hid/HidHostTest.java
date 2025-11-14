@@ -46,7 +46,9 @@ import android.bluetooth.BluetoothHidDevice;
 import android.bluetooth.BluetoothHidHost;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.PandoraDevice;
+import android.bluetooth.Utils;
 import android.bluetooth.VirtualOnly;
 import android.bluetooth.cts.EnableBluetoothRule;
 import android.content.BroadcastReceiver;
@@ -62,6 +64,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.compatibility.common.util.AdoptShellPermissionsRule;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 
 import org.hamcrest.Matcher;
@@ -84,6 +87,7 @@ import pandora.HidProto.HidServiceType;
 import pandora.HidProto.ProtocolModeEvent;
 import pandora.HidProto.ReportEvent;
 import pandora.HidProto.ServiceRequest;
+import pandora.SecurityProto.DeleteBondRequest;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -100,14 +104,11 @@ public class HidHostTest {
     private static final Duration INTENT_TIMEOUT = Duration.ofSeconds(10);
     private BluetoothDevice mDevice;
     private BluetoothHidHost mHidService;
-    private BluetoothHeadset mHfpService;
-    private BluetoothA2dp mA2dpService;
     private final Context mContext =
             InstrumentationRegistry.getInstrumentation().getTargetContext();
     private final BluetoothAdapter mAdapter =
             mContext.getSystemService(BluetoothManager.class).getAdapter();
     private HIDGrpc.HIDBlockingStub mHidBlockingStub;
-    private byte mReportId;
     private static final int KEYBD_RPT_ID = 1;
     private static final int KEYBD_RPT_SIZE = 9;
     private static final int MOUSE_RPT_ID = 2;
@@ -297,6 +298,7 @@ public class HidHostTest {
                 ServiceRequest.newBuilder()
                         .setServiceType(HidServiceType.SERVICE_TYPE_HID)
                         .build());
+
         mDevice = mBumble.getRemoteDevice();
         // Remove bond if the device is already bonded
         if (mDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
@@ -323,6 +325,7 @@ public class HidHostTest {
             assertThat(hfpService.setConnectionPolicy(mDevice, CONNECTION_POLICY_FORBIDDEN))
                     .isTrue();
         }
+        assertThat(mDevice.connect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
         verifyConnectionState(mDevice, equalTo(TRANSPORT_BREDR), equalTo(STATE_CONNECTING));
         verifyConnectionState(mDevice, equalTo(TRANSPORT_BREDR), equalTo(STATE_CONNECTED));
         assertThat(mHidService.getPreferredTransport(mDevice)).isEqualTo(TRANSPORT_BREDR);
@@ -480,6 +483,14 @@ public class HidHostTest {
                 hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice),
                 hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE));
+
+        // Remove the bond on the Bumble device as well.
+        // Not doing so will cause authentication failures because of the
+        // incorrect link key.
+        ByteString localAddress =
+                ByteString.copyFrom(Utils.addressBytesFromString(mAdapter.getAddress()));
+        mBumble.securityStorageBlocking()
+                .deleteBond(DeleteBondRequest.newBuilder().setPublic(localAddress).build());
 
         reconnectionFromRemoteAndVerifyDisconnectedState();
     }
@@ -779,12 +790,6 @@ public class HidHostTest {
     @SafeVarargs
     private void verifyIntentReceived(Matcher<Intent>... matchers) {
         mInOrder.verify(mReceiver, timeout(INTENT_TIMEOUT.toMillis()))
-                .onReceive(any(Context.class), MockitoHamcrest.argThat(AllOf.allOf(matchers)));
-    }
-
-    @SafeVarargs
-    private void verifyIntentReceivedAtLeast(int atLeast, Matcher<Intent>... matchers) {
-        mInOrder.verify(mReceiver, timeout(INTENT_TIMEOUT.toMillis()).atLeast(atLeast))
                 .onReceive(any(Context.class), MockitoHamcrest.argThat(AllOf.allOf(matchers)));
     }
 

@@ -20,7 +20,7 @@
 #include "bta/include/bta_hh_api.h"
 #include "include/hardware/bluetooth.h"
 #include "stack/include/btm_ble_api_types.h"
-#include "types/raw_address.h"
+#include "types/ble_address_with_type.h"
 
 namespace bluetooth {
 namespace core {
@@ -32,7 +32,8 @@ struct EventCallbacks {
   void (*invoke_adapter_properties_cb)(bt_status_t status, int num_properties,
                                        bt_property_t* properties);
   void (*invoke_remote_device_properties_cb)(bt_status_t status, RawAddress bd_addr,
-                                             int num_properties, bt_property_t* properties);
+                                             uint8_t address_type, int num_properties,
+                                             bt_property_t* properties);
   void (*invoke_device_found_cb)(int num_properties, bt_property_t* properties);
   void (*invoke_discovery_state_changed_cb)(bt_discovery_state_t state);
   void (*invoke_pin_request_cb)(RawAddress bd_addr, bt_bdname_t bd_name, uint32_t cod,
@@ -46,8 +47,8 @@ struct EventCallbacks {
   void (*invoke_address_consolidate_cb)(RawAddress main_bd_addr, RawAddress secondary_bd_addr);
   void (*invoke_le_address_associate_cb)(RawAddress main_bd_addr, RawAddress secondary_bd_addr,
                                          uint8_t identity_address_type);
-  void (*invoke_acl_state_changed_cb)(bt_status_t status, RawAddress bd_addr, bt_acl_state_t state,
-                                      int transport_link_type, bt_hci_error_code_t hci_reason,
+  void (*invoke_acl_state_changed_cb)(bt_status_t status, tAclLinkSpec& link_spec,
+                                      bt_acl_state_t state, bt_hci_error_code_t hci_reason,
                                       bt_conn_direction_t direction, uint16_t acl_handle);
   void (*invoke_thread_evt_cb)(bt_cb_thread_evt event);
   void (*invoke_le_test_mode_cb)(bt_status_t status, uint16_t count);
@@ -55,7 +56,7 @@ struct EventCallbacks {
   void (*invoke_link_quality_report_cb)(uint64_t timestamp, int report_id, int rssi, int snr,
                                         int retransmission_count, int packets_not_receive_count,
                                         int negative_acknowledgement_count);
-  void (*invoke_key_missing_cb)(RawAddress bd_addr);
+  void (*invoke_key_missing_cb)(tBTA_DM_KEY_MISSING key_missing);
   void (*invoke_encryption_change_cb)(bt_encryption_change_evt encryption_change);
 
   EventCallbacks& operator=(const EventCallbacks&) = delete;

@@ -27,3 +27,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "sniff_offload_with_vsc_based_control"
+    namespace: "bluetooth"
+    description: "Feature to enable sniff offload with VSC based control"
+    bug: "416419075"
+}

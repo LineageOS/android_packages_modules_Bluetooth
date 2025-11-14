@@ -43,9 +43,9 @@ public class BluetoothPbapServiceBinderTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private BluetoothPbapService mService;
 
-    private final AttributionSource mAttributionSource = new AttributionSource.Builder(1).build();
     private final BluetoothDevice mDevice = getTestDevice(60);
 
     private BluetoothPbapServiceBinder mBinder;

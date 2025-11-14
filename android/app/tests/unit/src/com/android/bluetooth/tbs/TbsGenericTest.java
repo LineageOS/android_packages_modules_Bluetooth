@@ -23,8 +23,18 @@ import static com.android.bluetooth.telephony.BluetoothInCallService.Result;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.AdditionalMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.AdditionalMatchers.eq;
+import static org.mockito.AdditionalMatchers.not;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
 
 import android.bluetooth.*;
 import android.bluetooth.IBluetoothLeCallControlCallback;
@@ -70,7 +80,7 @@ public class TbsGenericTest {
     @Captor private ArgumentCaptor<Integer> mDefaultGtbsTechnologyCaptor;
     @Captor private ArgumentCaptor<TbsGatt.Callback> mTbsGattCallback;
 
-    private final Context mContext = getInstrumentation().getTargetContext();
+    private final Context mContext = getInstrumentation().getContext();
     private final BluetoothDevice mDevice = getTestDevice(32);
 
     private TbsGeneric mTbsGeneric;
@@ -654,7 +664,7 @@ public class TbsGenericTest {
         List<ParcelUuid> callParcelUuids = callUuidCaptor.getValue();
         assertThat(callParcelUuids).hasSize(2);
         for (ParcelUuid callParcelUuid : callParcelUuids) {
-            assertThat(callUuids.contains(callParcelUuid.getUuid())).isEqualTo(true);
+            assertThat(callUuids.contains(callParcelUuid.getUuid())).isTrue();
         }
 
         // // Respond with requestComplete...
@@ -708,8 +718,7 @@ public class TbsGenericTest {
         args[0] = (byte) (callIndex & 0xFF);
         mTbsGattCallback
                 .getValue()
-                .onCallControlPointRequest(
-                        mDevice, TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT, args);
+                .onCallControlPointRequest(mDevice, TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT, args);
 
         // Active device should not be changed
         verify(leAudioService, never()).setActiveDevice(mDevice);

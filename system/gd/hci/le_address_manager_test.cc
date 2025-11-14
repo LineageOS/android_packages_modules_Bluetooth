@@ -18,7 +18,7 @@
 
 #include <gtest/gtest.h>
 
-#include "hci/controller.h"
+#include "hci/controller_mock.h"
 #include "hci/hci_layer_fake.h"
 #include "hci/octets.h"
 #include "packet/raw_builder.h"
@@ -35,7 +35,7 @@ using packet::kLittleEndian;
 using packet::PacketView;
 using packet::RawBuilder;
 
-class TestController : public Controller {
+class TestController : public testing::MockController {
 public:
   bool IsSupported(OpCode op_code) const override { return supported_opcodes_.count(op_code) == 1; }
 
@@ -57,11 +57,6 @@ public:
 
   uint8_t num_advertisers_{0};
   VendorCapabilities vendor_capabilities_;
-
-protected:
-  void Start() override {}
-  void Stop() override {}
-  void ListDependencies(ModuleList* /* list */) const {}
 
 private:
   std::set<OpCode> supported_opcodes_{};
@@ -108,12 +103,12 @@ public:
   void SetUp() override {
     thread_ = new Thread("thread", Thread::Priority::NORMAL);
     handler_ = new Handler(thread_);
-    hci_layer_ = new HciLayerFake();
+    hci_layer_ = std::make_unique<HciLayerFake>(handler_);
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
-    controller_ = new TestController;
+    controller_ = std::make_unique<TestController>();
     le_address_manager_ = new LeAddressManager(
             common::Bind(&LeAddressManagerTest::enqueue_command, common::Unretained(this)),
-            handler_, address, 0x3F, 0x3F, controller_);
+            handler_, address, 0x3F, 0x3F, controller_.get());
     AllocateClients(1);
   }
 
@@ -128,7 +123,7 @@ public:
   void TearDown() override {
     sync_handler(handler_);
     delete le_address_manager_;
-    delete hci_layer_;
+    hci_layer_.reset();
     handler_->Clear();
     delete handler_;
     delete thread_;
@@ -149,8 +144,8 @@ public:
 
   Thread* thread_;
   Handler* handler_;
-  HciLayerFake* hci_layer_ = nullptr;
-  TestController* controller_ = nullptr;
+  std::unique_ptr<HciLayerFake> hci_layer_ = nullptr;
+  std::unique_ptr<TestController> controller_;
   LeAddressManager* le_address_manager_;
   std::vector<std::unique_ptr<RotatorClient>> clients;
 };
@@ -228,13 +223,13 @@ public:
   void SetUp() override {
     thread_ = new Thread("thread", Thread::Priority::NORMAL);
     handler_ = new Handler(thread_);
-    hci_layer_ = new HciLayerFake();
+    hci_layer_ = std::make_unique<HciLayerFake>(handler_);
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
-    controller_ = new TestController;
+    controller_ = std::make_unique<TestController>();
     le_address_manager_ = new LeAddressManager(
             common::Bind(&LeAddressManagerWithSingleClientTest::enqueue_command,
                          common::Unretained(this)),
-            handler_, address, 0x3F, 0x3F, controller_);
+            handler_, address, 0x3F, 0x3F, controller_.get());
     AllocateClients(1);
 
     Octet16 irk = {0xec, 0x02, 0x34, 0xa3, 0x57, 0xc8, 0xad, 0x05,
@@ -262,7 +257,7 @@ public:
     le_address_manager_->Unregister(clients[0].get());
     sync_handler(handler_);
     delete le_address_manager_;
-    delete hci_layer_;
+    hci_layer_.reset();
     handler_->Clear();
     delete handler_;
     delete thread_;

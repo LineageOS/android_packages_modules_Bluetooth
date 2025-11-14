@@ -291,3 +291,20 @@ void BTA_DmSirkConfirmDeviceReply(const RawAddress& bd_addr, bool accept) {
   log::debug("");
   bta_dm_ble_sirk_confirm_device_reply(bd_addr, accept);
 }
+
+/*******************************************************************************
+ *
+ * Function         BTA_DmBleAuthCmplCbRegister
+ *
+ * Description      This procedure registers in requested a callback for
+ *                  authentication complete event.
+ *
+ * Parameters       p_cback     - callback to be called
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void BTA_DmBleAuthCmplCbRegister(tBTA_DM_SEC_CBACK* p_cback) {
+  log::debug("");
+  bta_dm_ble_auth_cmpl_cb_register(p_cback);
+}

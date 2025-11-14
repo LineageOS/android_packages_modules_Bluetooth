@@ -26,15 +26,15 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyList;
-import static org.mockito.Mockito.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -50,6 +50,7 @@ import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.obex.ResponseCodes;
 import com.android.vcard.VCardEntry;
 
@@ -67,6 +68,7 @@ import java.util.List;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class PbapClientStateMachineTest {
+
     private static final int L2CAP_PSM = 4101;
     private static final int RFCOMM_CHANNEL = 5;
     private static final int INVALID_L2CAP = -1;
@@ -89,8 +91,9 @@ public class PbapClientStateMachineTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    private BluetoothDevice mTestDevice;
+    private final BluetoothDevice mDevice = getTestDevice(1);
 
+    @Mock private AdapterService mAdapterService;
     @Mock private Context mMockContext;
     private TestLooper mTestLooper;
 
@@ -101,7 +104,6 @@ public class PbapClientStateMachineTest {
     private final List<Account> mMockedAccounts = new ArrayList<>();
 
     @Mock private PbapClientObexClient mMockObexClient;
-
     @Mock private PbapClientStateMachine.Callback mMockCallback;
 
     private PbapClientStateMachine mPbapClientStateMachine = null;
@@ -109,8 +111,6 @@ public class PbapClientStateMachineTest {
 
     @Before
     public void setUp() throws Exception {
-        mTestDevice = getTestDevice(1);
-
         doNothing().when(mMockObexClient).connectL2cap(anyInt());
         doNothing().when(mMockObexClient).connectRfcomm(anyInt());
 
@@ -154,7 +154,8 @@ public class PbapClientStateMachineTest {
 
         mPbapClientStateMachine =
                 new PbapClientStateMachine(
-                        mTestDevice,
+                        mAdapterService,
+                        mDevice,
                         mMockStorage,
                         mMockContext,
                         mTestLooper.getLooper(),
@@ -355,7 +356,7 @@ public class PbapClientStateMachineTest {
         mStorageCallback.onStorageReady();
         mTestLooper.dispatchAll();
 
-        verify(mMockStorage).addAccount(eq(getAccountForDevice(mTestDevice)));
+        verify(mMockStorage).addAccount(eq(getAccountForDevice(mDevice)));
     }
 
     @Test
@@ -366,12 +367,12 @@ public class PbapClientStateMachineTest {
         mStorageCallback = mCaptor.getValue();
         mTestLooper.dispatchAll();
 
-        verify(mMockStorage).addAccount(eq(getAccountForDevice(mTestDevice)));
+        verify(mMockStorage).addAccount(eq(getAccountForDevice(mDevice)));
     }
 
     @Test
     public void testConnected_storageReadyImmediatelyWithAccountReady_downloadStarted() {
-        mMockedAccounts.add(getAccountForDevice(mTestDevice));
+        mMockedAccounts.add(getAccountForDevice(mDevice));
         doReturn(true).when(mMockStorage).isStorageReady();
         testConnecting_receivedObexConnection_transitionToConnected();
         verify(mMockStorage, times(1)).registerCallback(mCaptor.capture());
@@ -438,7 +439,7 @@ public class PbapClientStateMachineTest {
 
     @Test
     public void testDownloading_multiplePhonebooksSupported_allPhonebooksDownloaded() {
-        mMockedAccounts.add(getAccountForDevice(mTestDevice));
+        mMockedAccounts.add(getAccountForDevice(mDevice));
         doReturn(true).when(mMockStorage).isStorageReady();
         mockRemoteContacts(PbapPhonebook.FAVORITES_PATH, "0", "0", "0", 5);
         mockRemoteContacts(PbapPhonebook.LOCAL_PHONEBOOK_PATH, "0", "0", "0", 5);
@@ -463,7 +464,7 @@ public class PbapClientStateMachineTest {
 
     @Test
     public void testDownloading_onlyFavoritesSupported_favoritesDownloaded() {
-        mMockedAccounts.add(getAccountForDevice(mTestDevice));
+        mMockedAccounts.add(getAccountForDevice(mDevice));
         doReturn(true).when(mMockStorage).isStorageReady();
         mockRemoteContacts(PbapPhonebook.FAVORITES_PATH, "0", "0", "0", 5);
 
@@ -484,7 +485,7 @@ public class PbapClientStateMachineTest {
 
     @Test
     public void testDownloading_onlyLocalPhonebookSupported_localPhonebooksDownloaded() {
-        mMockedAccounts.add(getAccountForDevice(mTestDevice));
+        mMockedAccounts.add(getAccountForDevice(mDevice));
         doReturn(true).when(mMockStorage).isStorageReady();
         mockRemoteContacts(PbapPhonebook.LOCAL_PHONEBOOK_PATH, "0", "0", "0", 5);
 
@@ -509,7 +510,7 @@ public class PbapClientStateMachineTest {
 
     @Test
     public void testDownloading_onlyCallHistorySupported_callHistoryDownloaded() {
-        mMockedAccounts.add(getAccountForDevice(mTestDevice));
+        mMockedAccounts.add(getAccountForDevice(mDevice));
         doReturn(true).when(mMockStorage).isStorageReady();
         mockRemoteContacts(PbapPhonebook.ICH_PATH, "0", "0", "0", 5);
         mockRemoteContacts(PbapPhonebook.OCH_PATH, "0", "0", "0", 5);
@@ -537,7 +538,7 @@ public class PbapClientStateMachineTest {
 
     @Test
     public void testDownloading_onlySimPhonebookSupported_simPhonebooksDownloaded() {
-        mMockedAccounts.add(getAccountForDevice(mTestDevice));
+        mMockedAccounts.add(getAccountForDevice(mDevice));
         doReturn(true).when(mMockStorage).isStorageReady();
         mockRemoteContacts(PbapPhonebook.SIM_PHONEBOOK_PATH, "0", "0", "0", 5);
 
@@ -562,7 +563,7 @@ public class PbapClientStateMachineTest {
 
     @Test
     public void testDownloading_onlySimCallHistorySupported_simCallHistoryDownloaded() {
-        mMockedAccounts.add(getAccountForDevice(mTestDevice));
+        mMockedAccounts.add(getAccountForDevice(mDevice));
         doReturn(true).when(mMockStorage).isStorageReady();
         mockRemoteContacts(PbapPhonebook.SIM_ICH_PATH, "0", "0", "0", 5);
         mockRemoteContacts(PbapPhonebook.SIM_OCH_PATH, "0", "0", "0", 5);
@@ -589,7 +590,7 @@ public class PbapClientStateMachineTest {
 
     @Test
     public void testDownloading_onlyLargeBatchOfFavoritesSupported_favoritesDownloaded() {
-        mMockedAccounts.add(getAccountForDevice(mTestDevice));
+        mMockedAccounts.add(getAccountForDevice(mDevice));
         doReturn(true).when(mMockStorage).isStorageReady();
         mockRemoteContacts(PbapPhonebook.FAVORITES_PATH, "0", "0", "0", 1000);
 
@@ -613,7 +614,7 @@ public class PbapClientStateMachineTest {
         testDisconnected_receivedConnect_connectionStateChangesToConnecting();
 
         // Make storage ready, add the account, send an SDP record with no supported repositories
-        mMockedAccounts.add(getAccountForDevice(mTestDevice));
+        mMockedAccounts.add(getAccountForDevice(mDevice));
         doReturn(true).when(mMockStorage).isStorageReady();
         mPbapClientStateMachine.onSdpResultReceived(
                 SDP_SUCCESS,
@@ -661,7 +662,7 @@ public class PbapClientStateMachineTest {
         mTestLooper.dispatchAll();
 
         // Issue storage Ready and wait for download
-        verify(mMockStorage).addAccount(eq(getAccountForDevice(mTestDevice)));
+        verify(mMockStorage).addAccount(eq(getAccountForDevice(mDevice)));
         mStorageCallback.onStorageAccountsChanged(new ArrayList<Account>(), mMockedAccounts);
         mTestLooper.dispatchAll();
 
@@ -754,7 +755,7 @@ public class PbapClientStateMachineTest {
     private PbapSdpRecord makeSdpRecord(int l2capPsm, int rfcommChnl, int feats, int repositories) {
         SdpPseRecord sdpRecord =
                 new SdpPseRecord(l2capPsm, rfcommChnl, 0x0102, feats, repositories, null);
-        return new PbapSdpRecord(mTestDevice, sdpRecord);
+        return new PbapSdpRecord(mDevice, sdpRecord);
     }
 
     private static Account getAccountForDevice(BluetoothDevice device) {

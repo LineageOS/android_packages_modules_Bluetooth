@@ -32,8 +32,11 @@
 #include "test/mock/mock_stack_btm_dev.h"
 #include "test/mock/mock_stack_l2cap_api.h"
 #include "test/mock/mock_stack_l2cap_ble.h"
+#include "test/mock/mock_stack_l2cap_interface.h"
 
 using bluetooth::Uuid;
+using ::testing::NiceMock;
+using ::testing::Unused;
 
 bt_status_t do_in_main_thread(base::OnceCallback<void()>) {
   // this is not properly mocked, so we use abort to catch if this is used in
@@ -66,6 +69,8 @@ tL2CAP_APPL_INFO appl_info;
 tBTM_SEC_DEV_REC btm_sec_dev_rec;
 
 class FakeBtStack {
+  NiceMock<bluetooth::testing::stack::l2cap::Mock> mock_l2cap_interface;
+
 public:
   FakeBtStack() {
     test::mock::stack_btm_dev::btm_find_dev.body = [](const RawAddress&) {
@@ -76,46 +81,45 @@ public:
       return HCI_ROLE_CENTRAL;
     };
 
-    test::mock::stack_l2cap_api::L2CA_SetIdleTimeoutByBdAddr.body = [](const RawAddress&, uint16_t,
-                                                                       uint8_t) { return true; };
-    test::mock::stack_l2cap_api::L2CA_RemoveFixedChnl.body = [](uint16_t lcid, const RawAddress&) {
+    ON_CALL(mock_l2cap_interface, L2CA_SetIdleTimeoutByBdAddr)
+            .WillByDefault([](Unused, Unused, Unused) { return true; });
+    ON_CALL(mock_l2cap_interface, L2CA_RemoveFixedChnl).WillByDefault([](uint16_t lcid, Unused) {
       bluetooth::log::assert_that(lcid == L2CAP_ATT_CID, "assert failed: lcid == L2CAP_ATT_CID");
       return true;
-    };
-    test::mock::stack_l2cap_api::L2CA_ConnectFixedChnl.body = [](uint16_t, const RawAddress&) {
+    });
+    ON_CALL(mock_l2cap_interface, L2CA_ConnectFixedChnl).WillByDefault([](Unused, Unused) {
       return true;
-    };
-    test::mock::stack_l2cap_api::L2CA_DataWrite.body = [](uint16_t lcid, BT_HDR* hdr) {
+    });
+    ON_CALL(mock_l2cap_interface, L2CA_DataWrite).WillByDefault([](Unused, BT_HDR* hdr) {
       osi_free(hdr);
       return tL2CAP_DW_RESULT::SUCCESS;
-    };
-    test::mock::stack_l2cap_api::L2CA_DisconnectReq.body = [](uint16_t) { return true; };
-    test::mock::stack_l2cap_api::L2CA_SendFixedChnlData.body =
-            [](uint16_t cid, const RawAddress& addr, BT_HDR* hdr) {
+    });
+    ON_CALL(mock_l2cap_interface, L2CA_DisconnectReq).WillByDefault([](Unused) { return true; });
+    ON_CALL(mock_l2cap_interface, L2CA_SendFixedChnlData)
+            .WillByDefault([](Unused, Unused, BT_HDR* hdr) {
               osi_free(hdr);
               return tL2CAP_DW_RESULT::SUCCESS;
-            };
-    test::mock::stack_l2cap_api::L2CA_RegisterFixedChannel.body =
-            [](uint16_t fixed_cid, tL2CAP_FIXED_CHNL_REG* p_freg) {
+            });
+    ON_CALL(mock_l2cap_interface, L2CA_RegisterFixedChannel)
+            .WillByDefault([](Unused, tL2CAP_FIXED_CHNL_REG* p_freg) {
               fixed_chnl_reg = *p_freg;
               return true;
-            };
-    test::mock::stack_l2cap_api::L2CA_RegisterWithSecurity.body =
-            [](uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info, bool enable_snoop,
-               tL2CAP_ERTM_INFO* p_ertm_info, uint16_t my_mtu, uint16_t required_remote_mtu,
-               uint16_t sec_level) {
+            });
+    ON_CALL(mock_l2cap_interface, L2CA_RegisterWithSecurity)
+            .WillByDefault([](uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info, Unused, Unused,
+                              Unused, Unused, Unused) {
               appl_info = p_cb_info;
               return psm;
-            };
-    test::mock::stack_l2cap_api::L2CA_RegisterLECoc.body =
-            [](uint16_t psm, const tL2CAP_APPL_INFO& p_fixed_chnl_reg, uint16_t sec_level,
-               tL2CAP_LE_CFG_INFO cfg) { return psm; };
+            });
+    ON_CALL(mock_l2cap_interface, L2CA_RegisterLECoc)
+            .WillByDefault([](uint16_t psm, Unused, Unused, Unused) { return psm; });
 
-    test::mock::stack_l2cap_api::L2CA_SetIdleTimeoutByBdAddr.body = [](const RawAddress&, uint16_t,
-                                                                       uint8_t) { return true; };
-    test::mock::stack_l2cap_api::L2CA_SetLeGattTimeout.body = [](const RawAddress&, uint16_t) {
+    ON_CALL(mock_l2cap_interface, L2CA_SetIdleTimeoutByBdAddr)
+            .WillByDefault([](Unused, Unused, Unused) { return true; });
+    ON_CALL(mock_l2cap_interface, L2CA_SetLeGattTimeout).WillByDefault([](Unused, Unused) {
       return true;
-    };
+    });
+    bluetooth::testing::stack::l2cap::set_interface(&mock_l2cap_interface);
   }
 
   ~FakeBtStack() {
@@ -123,16 +127,7 @@ public:
 
     test::mock::stack_l2cap_ble::L2CA_GetBleConnRole = {};
 
-    test::mock::stack_l2cap_api::L2CA_SetIdleTimeoutByBdAddr = {};
-    test::mock::stack_l2cap_api::L2CA_RemoveFixedChnl = {};
-    test::mock::stack_l2cap_api::L2CA_ConnectFixedChnl = {};
-    test::mock::stack_l2cap_api::L2CA_DisconnectReq = {};
-    test::mock::stack_l2cap_api::L2CA_SendFixedChnlData = {};
-    test::mock::stack_l2cap_api::L2CA_RegisterFixedChannel = {};
-    test::mock::stack_l2cap_api::L2CA_RegisterWithSecurity = {};
-    test::mock::stack_l2cap_api::L2CA_RegisterLECoc = {};
-    test::mock::stack_l2cap_api::L2CA_SetIdleTimeoutByBdAddr = {};
-    test::mock::stack_l2cap_api::L2CA_SetLeGattTimeout = {};
+    bluetooth::testing::stack::l2cap::reset_interface();
   }
 };
 

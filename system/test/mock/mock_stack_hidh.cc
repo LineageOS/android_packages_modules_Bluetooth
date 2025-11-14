@@ -67,3 +67,5 @@ tHID_STATUS HID_HostWriteDev(uint8_t /* dev_handle */, uint8_t /* t_type */, uin
   return HID_SUCCESS;
 }
 void HID_HostInit(void) { inc_func_call_count(__func__); }
+
+void HID_HostDump(int /* fd */) { inc_func_call_count(__func__); }

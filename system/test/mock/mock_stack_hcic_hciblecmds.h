@@ -210,15 +210,6 @@ struct btsnd_hcic_ble_rand {
 };
 extern struct btsnd_hcic_ble_rand btsnd_hcic_ble_rand;
 
-// Name: btsnd_hcic_ble_read_adv_chnl_tx_power
-// Params: void
-// Return: void
-struct btsnd_hcic_ble_read_adv_chnl_tx_power {
-  std::function<void(void)> body{[](void) {}};
-  void operator()(void) { body(); }
-};
-extern struct btsnd_hcic_ble_read_adv_chnl_tx_power btsnd_hcic_ble_read_adv_chnl_tx_power;
-
 // Name: btsnd_hcic_ble_read_remote_feat
 // Params: uint16_t handle
 // Return: void

@@ -68,13 +68,13 @@ public class BluetoothDeviceTest {
         doAssertBluetoothAddress(bluetoothAddressOut, address, addressType);
     }
 
-    private void doTestAddressWithType(String address, @AddressType int addressType) {
+    private static void doTestAddressWithType(String address, @AddressType int addressType) {
         BluetoothAddress bluetoothAddress = new BluetoothAddress(address, addressType);
 
         doAssertBluetoothAddress(bluetoothAddress, address, addressType);
     }
 
-    private void doAssertBluetoothAddress(
+    private static void doAssertBluetoothAddress(
             BluetoothAddress bluetoothAddress, String address, @AddressType int addressType) {
         assertThat(bluetoothAddress.getAddress()).isEqualTo(address);
         assertThat(bluetoothAddress.getAddressType())

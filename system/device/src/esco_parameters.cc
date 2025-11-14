@@ -21,7 +21,7 @@
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "main/shim/entry.h"
 
 using namespace bluetooth;

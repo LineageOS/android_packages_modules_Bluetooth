@@ -50,7 +50,6 @@ public final class BluetoothDatabaseMigration {
 
                 Metadata metadata = new Metadata(primaryKey);
 
-                metadata.migrated = fetchInt(cursor, "migrated") > 0;
                 migrate_a2dpSupportsOptionalCodecs(cursor, logKey, metadata);
                 migrate_a2dpOptionalCodecsEnabled(cursor, logKey, metadata);
                 metadata.last_active_time = fetchInt(cursor, "last_active_time");

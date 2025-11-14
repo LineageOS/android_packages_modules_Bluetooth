@@ -42,7 +42,7 @@ typedef struct {
   uint8_t div;
 } tA2DP_SBC_UPS_CB;
 
-tA2DP_SBC_UPS_CB a2dp_sbc_ups_cb;
+static tA2DP_SBC_UPS_CB a2dp_sbc_ups_cb;
 
 /*******************************************************************************
  *

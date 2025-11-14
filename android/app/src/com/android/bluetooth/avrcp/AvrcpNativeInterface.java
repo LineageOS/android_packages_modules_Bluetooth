@@ -28,8 +28,6 @@ import com.android.bluetooth.audio_util.PlayStatus;
 import com.android.bluetooth.audio_util.PlayerInfo;
 import com.android.bluetooth.audio_util.PlayerSettingsManager.PlayerSettingsValues;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.internal.annotations.GuardedBy;
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.List;
 
@@ -39,45 +37,21 @@ import java.util.List;
 public class AvrcpNativeInterface {
     private static final String TAG = AvrcpNativeInterface.class.getSimpleName();
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static AvrcpNativeInterface sInstance;
-
-    private static final Object INSTANCE_LOCK = new Object();
-
-    private AvrcpTargetService mAvrcpService;
     private final AdapterService mAdapterService;
+    private final AvrcpTargetService mAvrcpService;
 
-    private AvrcpNativeInterface() {
-        mAdapterService = requireNonNull(AdapterService.getAdapterService());
+    AvrcpNativeInterface(AdapterService adapterService, AvrcpTargetService service) {
+        mAdapterService = requireNonNull(adapterService);
+        mAvrcpService = requireNonNull(service);
     }
 
-    static AvrcpNativeInterface getInstance() {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new AvrcpNativeInterface();
-            }
-
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    public static void setInstance(AvrcpNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
-    }
-
-    void init(AvrcpTargetService service) {
+    void init() {
         d("Init AvrcpNativeInterface");
-        mAvrcpService = service;
         initNative();
     }
 
     void cleanup() {
         d("Cleanup AvrcpNativeInterface");
-        mAvrcpService = null;
         cleanupNative();
     }
 
@@ -92,77 +66,42 @@ public class AvrcpNativeInterface {
     }
 
     void setBipClientStatus(BluetoothDevice device, boolean connected) {
-        String identityAddress = Utils.getBrEdrAddress(device);
+        String identityAddress = Utils.getBrEdrAddress(device, mAdapterService);
         setBipClientStatusNative(identityAddress, connected);
     }
 
     Metadata getCurrentSongInfo() {
         d("getCurrentSongInfo");
-        if (mAvrcpService == null) {
-            Log.w(TAG, "getCurrentSongInfo(): AvrcpTargetService is null");
-            return null;
-        }
-
         return mAvrcpService.getCurrentSongInfo();
     }
 
     PlayStatus getPlayStatus() {
         d("getPlayStatus");
-        if (mAvrcpService == null) {
-            Log.w(TAG, "getPlayStatus(): AvrcpTargetService is null");
-            return null;
-        }
-
         return mAvrcpService.getPlayState();
     }
 
     void sendMediaKeyEvent(int keyEvent, boolean pushed) {
         d("sendMediaKeyEvent: keyEvent=" + keyEvent + " pushed=" + pushed);
-        if (mAvrcpService == null) {
-            Log.w(TAG, "sendMediaKeyEvent(): AvrcpTargetService is null");
-            return;
-        }
-
         mAvrcpService.sendMediaKeyEvent(keyEvent, pushed);
     }
 
     String getCurrentMediaId() {
         d("getCurrentMediaId");
-        if (mAvrcpService == null) {
-            Log.w(TAG, "getMediaPlayerList(): AvrcpTargetService is null");
-            return "";
-        }
-
         return mAvrcpService.getCurrentMediaId();
     }
 
     List<Metadata> getNowPlayingList() {
         d("getNowPlayingList");
-        if (mAvrcpService == null) {
-            Log.w(TAG, "getMediaPlayerList(): AvrcpTargetService is null");
-            return null;
-        }
-
         return mAvrcpService.getNowPlayingList();
     }
 
     int getCurrentPlayerId() {
         d("getCurrentPlayerId");
-        if (mAvrcpService == null) {
-            Log.w(TAG, "getMediaPlayerList(): AvrcpTargetService is null");
-            return -1;
-        }
-
         return mAvrcpService.getCurrentPlayerId();
     }
 
     List<PlayerInfo> getMediaPlayerList() {
         d("getMediaPlayerList");
-        if (mAvrcpService == null) {
-            Log.w(TAG, "getMediaPlayerList(): AvrcpTargetService is null");
-            return null;
-        }
-
         return mAvrcpService.getMediaPlayerList();
     }
 
@@ -224,16 +163,11 @@ public class AvrcpNativeInterface {
 
     void playItem(int playerId, boolean nowPlaying, String mediaId) {
         d("playItem: playerId=" + playerId + " nowPlaying=" + nowPlaying + " mediaId=" + mediaId);
-        if (mAvrcpService == null) {
-            Log.d(TAG, "playItem: AvrcpTargetService is null");
-            return;
-        }
-
         mAvrcpService.playItem(playerId, nowPlaying, mediaId);
     }
 
     boolean disconnectDevice(BluetoothDevice device) {
-        String identityAddress = Utils.getBrEdrAddress(device);
+        String identityAddress = Utils.getBrEdrAddress(device, mAdapterService);
         d("disconnectDevice: identityAddress=" + identityAddress);
         return disconnectDeviceNative(identityAddress);
     }
@@ -249,11 +183,6 @@ public class AvrcpNativeInterface {
         BluetoothDevice device =
                 mAdapterService.getDeviceFromByte(Utils.getBytesFromAddress(bdaddr));
         d("deviceConnected: device=" + device + " absoluteVolume=" + absoluteVolume);
-        if (mAvrcpService == null) {
-            Log.w(TAG, "deviceConnected: AvrcpTargetService is null");
-            return;
-        }
-
         mAvrcpService.deviceConnected(device, absoluteVolume);
     }
 
@@ -261,27 +190,17 @@ public class AvrcpNativeInterface {
         BluetoothDevice device =
                 mAdapterService.getDeviceFromByte(Utils.getBytesFromAddress(bdaddr));
         d("deviceDisconnected: device=" + device);
-        if (mAvrcpService == null) {
-            Log.w(TAG, "deviceDisconnected: AvrcpTargetService is null");
-            return;
-        }
-
         mAvrcpService.deviceDisconnected(device);
     }
 
     void sendVolumeChanged(BluetoothDevice device, int volume) {
         d("sendVolumeChanged: volume=" + volume);
-        String identityAddress = Utils.getBrEdrAddress(device);
+        String identityAddress = Utils.getBrEdrAddress(device, mAdapterService);
         sendVolumeChangedNative(identityAddress, volume);
     }
 
     void setVolume(int volume) {
         d("setVolume: volume=" + volume);
-        if (mAvrcpService == null) {
-            Log.w(TAG, "setVolume: AvrcpTargetService is null");
-            return;
-        }
-
         mAvrcpService.setVolume(volume);
     }
 

@@ -28,12 +28,12 @@ import static com.android.bluetooth.le_audio.LeAudioStateMachine.DISCONNECT;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.after;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
@@ -48,7 +48,6 @@ import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
-import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;
@@ -70,21 +69,18 @@ public class LeAudioStateMachineTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
-    @Mock private AdapterService mAdapterService;
     @Mock private LeAudioService mLeAudioService;
     @Mock private LeAudioNativeInterface mLeAudioNativeInterface;
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
-
         // Set up thread and looper
         mHandlerThread = new HandlerThread("LeAudioStateMachineTestHandlerThread");
         mHandlerThread.start();
         // Override the timeout value to speed up the test
         LeAudioStateMachine.sConnectTimeoutMs = 1000; // 1s
         mLeAudioStateMachine =
-                LeAudioStateMachine.make(
+                new LeAudioStateMachine(
                         mDevice,
                         mLeAudioService,
                         mLeAudioNativeInterface,
@@ -95,7 +91,6 @@ public class LeAudioStateMachineTest {
     public void tearDown() throws Exception {
         mLeAudioStateMachine.doQuit();
         mHandlerThread.quit();
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     /** Test that default state is disconnected */

@@ -23,9 +23,8 @@
 #include <vector>
 
 #include "hci/fuzz/status_vs_complete_commands.h"
-#include "hci/hci_layer.h"
+#include "hci/hci_interface.h"
 #include "hci/hci_packets.h"
-#include "module.h"
 #include "os/fuzz/dev_null_queue.h"
 #include "os/fuzz/fuzz_inject_queue.h"
 
@@ -33,20 +32,12 @@ namespace bluetooth {
 namespace hci {
 namespace fuzz {
 
-class HciLayerFuzzClient : public Module {
+class HciLayerFuzzClient {
 public:
-  HciLayerFuzzClient() : Module() {}
-
-  void Start() override;
-  void Stop() override;
+  HciLayerFuzzClient(os::Handler* handler, HciInterface* hci);
+  ~HciLayerFuzzClient();
 
   void injectArbitrary(FuzzedDataProvider& fdp);
-
-  void ListDependencies(ModuleList* list) const override { list->add<hci::HciLayer>(); }
-
-  static const ModuleFactory Factory;
-
-  std::string ToString() const override { return "DevNullHci"; }
 
 private:
   void injectAclData(std::vector<uint8_t> data);
@@ -68,17 +59,18 @@ private:
     if (uses_command_status_or_complete(commandPacket.GetOpCode())) {
       interface->EnqueueCommand(
               TBUILDER::FromView(commandPacket),
-              GetHandler()->BindOnce([](CommandStatusOrCompleteView /* status */) {}));
+              handler_->BindOnce([](CommandStatusOrCompleteView /* status */) {}));
     } else if (uses_command_status(commandPacket.GetOpCode())) {
       interface->EnqueueCommand(TBUILDER::FromView(commandPacket),
-                                GetHandler()->BindOnce([](CommandStatusView /* status */) {}));
+                                handler_->BindOnce([](CommandStatusView /* status */) {}));
     } else {
       interface->EnqueueCommand(TBUILDER::FromView(commandPacket),
-                                GetHandler()->BindOnce([](CommandCompleteView /* status */) {}));
+                                handler_->BindOnce([](CommandCompleteView /* status */) {}));
     }
   }
 
-  hci::HciLayer* hci_ = nullptr;
+  os::Handler* handler_ = nullptr;
+  hci::HciInterface* hci_ = nullptr;
   os::fuzz::DevNullQueue<AclView>* aclDevNull_;
   os::fuzz::FuzzInjectQueue<AclBuilder>* aclInject_;
 

@@ -20,7 +20,15 @@ import static com.android.bluetooth.TestUtils.MockitoRule;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.description;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.content.ContentResolver;
 import android.content.Context;
@@ -43,6 +51,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.tests.R;
 
 import org.junit.After;
 import org.junit.Before;
@@ -76,7 +85,7 @@ public class BrowserPlayerWrapperTest {
 
     @Mock Context mMockContext;
     private Context mTargetContext;
-    private Resources mTestResources;
+    private final Resources mTestResources = TestUtils.getTestApplicationResources();
     private MockContentResolver mTestContentResolver;
 
     private static final String TEST_AUTHORITY = "com.android.bluetooth.avrcp.test";
@@ -93,12 +102,8 @@ public class BrowserPlayerWrapperTest {
 
     @Before
     public void setUp() {
-
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        mTestResources = TestUtils.getTestApplicationResources(mTargetContext);
-
-        mTestBitmap = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
-
+        mTestBitmap = loadImage(R.raw.image_200_200);
+        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
         mTestContentResolver = new MockContentResolver(mTargetContext);
         mTestContentResolver.addProvider(
                 TEST_AUTHORITY,
@@ -107,15 +112,14 @@ public class BrowserPlayerWrapperTest {
                     public AssetFileDescriptor openTypedAssetFile(
                             Uri url, String mimeType, Bundle opts) {
                         if (IMAGE_URI_1.equals(url)) {
-                            return mTestResources.openRawResourceFd(
-                                    com.android.bluetooth.tests.R.raw.image_200_200);
+                            return mTestResources.openRawResourceFd(R.raw.image_200_200);
                         }
                         return null;
                     }
                 });
 
         when(mMockContext.getContentResolver()).thenReturn(mTestContentResolver);
-        Util.sUriImagesSupport = true;
+        Util.UriImagesSupport.sValue = true;
 
         // Set up Looper thread for the timeout handler
         mThread = new HandlerThread("MediaPlayerWrapperTestThread");
@@ -134,9 +138,8 @@ public class BrowserPlayerWrapperTest {
         mThread = null;
         mTestContentResolver = null;
         mTestBitmap = null;
-        mTestResources = null;
         mTargetContext = null;
-        Util.sUriImagesSupport = false;
+        Util.UriImagesSupport.sValue = false;
     }
 
     private Bitmap loadImage(int resId) {

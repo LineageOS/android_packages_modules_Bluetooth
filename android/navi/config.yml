@@ -1,0 +1,9 @@
+---
+
+TestBeds:
+- Name: cuttlefish
+  Controllers:
+    AndroidDevice: '*'
+  TestParams:
+    crown_driver: cf_rootcanal
+    max_retry_count: 2

@@ -47,6 +47,7 @@ static jmethodID method_onSendDtmf;
 static jmethodID method_onNoiseReductionEnable;
 static jmethodID method_onWBS;
 static jmethodID method_onSWB;
+static jmethodID method_onAtBcc;
 static jmethodID method_onAtChld;
 static jmethodID method_onAtCnum;
 static jmethodID method_onAtCind;
@@ -87,7 +88,7 @@ public:
   }
 
   void ConnectionStateCallback(bluetooth::headset::bthf_connection_state_t state,
-                               RawAddress* bd_addr) override {
+                               RawAddress* bd_addr, uint8_t reason) override {
     log::info("{} for {}", state, *bd_addr);
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
@@ -102,7 +103,7 @@ public:
     }
 
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectionStateChanged, (jint)state,
-                                 addr.get());
+                                 addr.get(), (jint)reason);
   }
 
   void AudioStateCallback(bluetooth::headset::bthf_audio_state_t state,
@@ -454,6 +455,21 @@ public:
 
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtBia, service, roam, signal, battery,
                                  addr.get());
+  }
+
+  void AtBccCallback(RawAddress* bd_addr) override {
+    std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
+    CallbackEnv sCallbackEnv(__func__);
+    if (!sCallbackEnv.valid() || !mCallbacksObj) {
+      return;
+    }
+
+    ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
+    if (addr.get() == nullptr) {
+      return;
+    }
+
+    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtBcc, addr.get());
   }
 
   void DebugDumpCallback(bool /* active */, uint16_t /* codec_id */,
@@ -977,6 +993,20 @@ static jboolean enableSwbNative(JNIEnv* env, jobject /* object */, jint swbCodec
   return JNI_TRUE;
 }
 
+static jboolean setIsScoManagedByAudioNative(JNIEnv* /* env */, jobject /* object */,
+                                             jboolean value) {
+  std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
+  if (!sBluetoothHfpInterface) {
+    log::warn("sBluetoothHfpInterface is null");
+    return JNI_FALSE;
+  }
+  bt_status_t status = sBluetoothHfpInterface->SetIsScoManagedByAudio(value == JNI_TRUE);
+  if (status != BT_STATUS_SUCCESS) {
+    log::error("Failed HF set is sco managed by audio, status: {}", bt_status_text(status));
+  }
+  return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
+}
+
 int register_com_android_bluetooth_hfp(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initializeNative", "(IZ)V", (void*)initializeNative},
@@ -1002,6 +1032,7 @@ int register_com_android_bluetooth_hfp(JNIEnv* env) {
           {"sendBsirNative", "(Z[B)Z", (void*)sendBsirNative},
           {"setActiveDeviceNative", "([B)Z", (void*)setActiveDeviceNative},
           {"enableSwbNative", "(IZ[B)Z", (void*)enableSwbNative},
+          {"setIsScoManagedByAudioNative", "(Z)Z", (void*)setIsScoManagedByAudioNative},
   };
   const int result =
           REGISTER_NATIVE_METHODS(env, "com/android/bluetooth/hfp/HeadsetNativeInterface", methods);
@@ -1010,7 +1041,7 @@ int register_com_android_bluetooth_hfp(JNIEnv* env) {
   }
 
   const JNIJavaMethod javaMethods[] = {
-          {"onConnectionStateChanged", "(I[B)V", &method_onConnectionStateChanged},
+          {"onConnectionStateChanged", "(I[BI)V", &method_onConnectionStateChanged},
           {"onAudioStateChanged", "(I[B)V", &method_onAudioStateChanged},
           {"onVrStateChanged", "(I[B)V", &method_onVrStateChanged},
           {"onAnswerCall", "([B)V", &method_onAnswerCall},
@@ -1021,6 +1052,7 @@ int register_com_android_bluetooth_hfp(JNIEnv* env) {
           {"onNoiseReductionEnable", "(Z[B)V", &method_onNoiseReductionEnable},
           {"onWBS", "(I[B)V", &method_onWBS},
           {"onSWB", "(II[B)V", &method_onSWB},
+          {"onAtBcc", "([B)V", &method_onAtBcc},
           {"onAtChld", "(I[B)V", &method_onAtChld},
           {"onAtCnum", "([B)V", &method_onAtCnum},
           {"onAtCind", "([B)V", &method_onAtCind},
@@ -1036,5 +1068,4 @@ int register_com_android_bluetooth_hfp(JNIEnv* env) {
 
   return 0;
 }
-
-} /* namespace android */
+}  // namespace android

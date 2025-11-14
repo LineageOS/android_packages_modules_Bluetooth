@@ -44,18 +44,13 @@ final class AvrcpVersion {
                 Flags.avrcp16Default() ? AVRCP_VERSION_1_6_STRING : AVRCP_VERSION_1_5_STRING;
         String version = SystemProperties.get(AVRCP_VERSION_PROPERTY, defaultVersion);
 
-        switch (version) {
-            case AVRCP_VERSION_1_3_STRING:
-                return AVRCP_VERSION_1_3;
-            case AVRCP_VERSION_1_4_STRING:
-                return AVRCP_VERSION_1_4;
-            case AVRCP_VERSION_1_5_STRING:
-                return AVRCP_VERSION_1_5;
-            case AVRCP_VERSION_1_6_STRING:
-                return AVRCP_VERSION_1_6;
-            default:
-                return new AvrcpVersion(-1, -1);
-        }
+        return switch (version) {
+            case AVRCP_VERSION_1_3_STRING -> AVRCP_VERSION_1_3;
+            case AVRCP_VERSION_1_4_STRING -> AVRCP_VERSION_1_4;
+            case AVRCP_VERSION_1_5_STRING -> AVRCP_VERSION_1_5;
+            case AVRCP_VERSION_1_6_STRING -> AVRCP_VERSION_1_6;
+            default -> new AvrcpVersion(-1, -1);
+        };
     }
 
     public boolean isAtLeastVersion(AvrcpVersion version) {

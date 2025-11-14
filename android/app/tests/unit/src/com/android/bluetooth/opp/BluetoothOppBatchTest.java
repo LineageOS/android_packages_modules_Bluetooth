@@ -17,10 +17,13 @@
 package com.android.bluetooth.opp;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
@@ -31,6 +34,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.bluetooth.btservice.AdapterService;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -43,10 +47,10 @@ import org.mockito.Mock;
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppBatchTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-    @Mock private Context mContext;
 
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+    @Mock private AdapterService mAdapterService;
+
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
     private final BluetoothOppShareInfo mInitShareInfo =
             new BluetoothOppShareInfo(
                     0,
@@ -67,8 +71,15 @@ public class BluetoothOppBatchTest {
 
     @Before
     public void setUp() throws Exception {
-        doReturn(mTargetContext.getContentResolver()).when(mContext).getContentResolver();
-        mBluetoothOppBatch = new BluetoothOppBatch(mContext, mInitShareInfo);
+        doAnswer(
+                        invocation -> {
+                            String address = invocation.getArgument(0);
+                            return getTestDevice(address);
+                        })
+                .when(mAdapterService)
+                .getRemoteDevice(anyString());
+        doReturn(mContext.getContentResolver()).when(mAdapterService).getContentResolver();
+        mBluetoothOppBatch = new BluetoothOppBatch(mAdapterService, mInitShareInfo);
     }
 
     @Test
@@ -125,7 +136,6 @@ public class BluetoothOppBatchTest {
 
     @Test
     public void cancelBatch_cancelSuccessfully() {
-
         BluetoothMethodProxy proxy = spy(BluetoothMethodProxy.getInstance());
         BluetoothMethodProxy.setInstanceForTesting(proxy);
         doReturn(0).when(proxy).contentResolverDelete(any(), any(), any(), any());

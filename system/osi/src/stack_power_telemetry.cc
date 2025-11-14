@@ -376,31 +376,6 @@ void power_telemetry::PowerTelemetry::LogBleAdvStopped() {
   ldc.adv_list.back().active.end = current_time;
 }
 
-void power_telemetry::PowerTelemetry::LogTxPower(void* res) {
-  if (!power_telemerty_enabled_) {
-    return;
-  }
-
-  std::lock_guard<std::mutex> lock(pimpl_->dumpsys_mutex_);
-  tBTM_TX_POWER_RESULT* result = (tBTM_TX_POWER_RESULT*)res;
-  LogDataContainer& ldc = pimpl_->GetCurrentLogDataContainer();
-
-  if (result->status != tBTM_STATUS::BTM_SUCCESS) {
-    return;
-  }
-
-  for (auto it : ldc.acl.link_details_map) {
-    uint16_t handle = it.first;
-    LinkDetails lds = it.second;
-    if (lds.bd_addr == result->rem_bda) {
-      lds.tx_power_level = result->tx_power;
-      ldc.acl.link_details_map[handle] = lds;
-      break;
-    }
-  }
-  pimpl_->maybe_log_data();
-}
-
 void power_telemetry::PowerTelemetry::LogLinkDetails(uint16_t handle, const RawAddress& bd_addr,
                                                      bool is_connected, bool is_acl_link) {
   if (!power_telemerty_enabled_) {

@@ -8,11 +8,11 @@ use crate::gatt::server::att_database::AttAttribute;
 /// Filter a (sorted) iterator of attributes to those that lie within
 /// the specified range. If the range is invalid (start = 0, or start > end),
 /// return None.
-pub fn filter_to_range(
+pub fn filter_to_range<'a>(
     start_handle: AttHandle,
     end_handle: AttHandle,
-    attrs: impl Iterator<Item = AttAttribute> + Clone,
-) -> Option<impl Iterator<Item = AttAttribute> + Clone> {
+    attrs: impl Iterator<Item = &'a AttAttribute> + Clone,
+) -> Option<impl Iterator<Item = &'a AttAttribute> + Clone> {
     if start_handle.0 == 0 || end_handle < start_handle {
         return None;
     }
@@ -56,22 +56,17 @@ mod test {
     fn test_trivial_range() {
         // call with a range where start == end, make sure it gets the relevant
         // attribute
-        let res =
-            filter_to_range(AttHandle(3), AttHandle(3), [attr(2), attr(3), attr(4)].into_iter())
-                .unwrap();
+        let attrs = [attr(2), attr(3), attr(4)];
+        let res = filter_to_range(AttHandle(3), AttHandle(3), attrs.iter()).unwrap();
 
-        assert_eq!(res.collect::<Vec<_>>(), vec![attr(3)])
+        assert_eq!(res.cloned().collect::<Vec<_>>(), vec![attr(3)])
     }
 
     #[test]
     fn test_nontrivial_range() {
-        let res = filter_to_range(
-            AttHandle(3),
-            AttHandle(4),
-            [attr(2), attr(3), attr(4), attr(5)].into_iter(),
-        )
-        .unwrap();
+        let attrs = [attr(2), attr(3), attr(4), attr(5)];
+        let res = filter_to_range(AttHandle(3), AttHandle(4), attrs.iter()).unwrap();
 
-        assert_eq!(res.collect::<Vec<_>>(), vec![attr(3), attr(4)])
+        assert_eq!(res.cloned().collect::<Vec<_>>(), vec![attr(3), attr(4)])
     }
 }

@@ -44,7 +44,7 @@ std::string EpochMillisToString(uint64_t time_ms) {
 }
 }  // namespace
 
-gatt_interface_t default_gatt_interface = {
+static gatt_interface_t default_gatt_interface = {
         .BTA_GATTC_CancelOpen =
                 [](tGATT_IF client_if, const RawAddress& remote_bda, bool is_direct) {
                   gatt_history_.Push(std::format("{:<32s} bd_addr:{} client_if:{} is_direct:{:c}",
@@ -90,17 +90,19 @@ gatt_interface_t default_gatt_interface = {
                 },
         .BTA_GATTC_Open =
                 [](tGATT_IF client_if, const RawAddress& remote_bda,
-                   tBTM_BLE_CONN_TYPE connection_type, bool opportunistic, uint16_t preferred_mtu) {
+                   tBTM_BLE_CONN_TYPE connection_type, bool opportunistic, uint16_t preferred_mtu,
+                   bool prefer_relax_mode) {
                   gatt_history_.Push(std::format(
                           "{:<32s} bd_addr:{} client_if:{} type:0x{:x} opportunistic:{:c}",
                           "GATTC_Open", remote_bda, client_if, connection_type,
                           opportunistic ? 'T' : 'F'));
                   BTA_GATTC_Open(client_if, remote_bda, BLE_ADDR_PUBLIC, connection_type,
-                                 BT_TRANSPORT_LE, opportunistic, LE_PHY_1M, preferred_mtu);
+                                 BT_TRANSPORT_LE, opportunistic, LE_PHY_1M, preferred_mtu,
+                                 prefer_relax_mode);
                 },
 };
 
-gatt_interface_t* gatt_interface = &default_gatt_interface;
+static gatt_interface_t* gatt_interface = &default_gatt_interface;
 
 gatt_interface_t& get_gatt_interface() { return *gatt_interface; }
 

@@ -26,7 +26,7 @@
 #include "btm_api_mock.h"
 #include "device_groups.h"
 #include "hardware/bt_le_audio.h"
-#include "hci/controller_interface_mock.h"
+#include "hci/controller_mock.h"
 #include "le_audio/le_audio_utils.h"
 #include "le_audio_set_configuration_provider.h"
 #include "le_audio_types.h"
@@ -34,6 +34,8 @@
 #include "mock_csis_client.h"
 #include "stack/btm/btm_int_types.h"
 #include "test/mock/mock_main_shim_entry.h"
+
+using bluetooth::le_audio::utils::GetConfigurationHash;
 
 const tBLE_BD_ADDR BTM_Sec_GetAddressWithType(const RawAddress& bd_addr) {
   return tBLE_BD_ADDR{.type = BLE_ADDR_PUBLIC, .bda = bd_addr};
@@ -288,8 +290,8 @@ bool IsLc3SettingSupported(LeAudioContextType context_type, Lc3SettingId id) {
     case LeAudioContextType::UNSPECIFIED:
       if (id == Lc3SettingId::LC3_16_1 || id == Lc3SettingId::LC3_16_2 ||
           id == Lc3SettingId::LC3_48_4 || id == Lc3SettingId::LC3_48_1 ||
-          id == Lc3SettingId::LC3_48_2 || id == Lc3SettingId::LC3_VND_1 ||
-          id == Lc3SettingId::LC3_24_2) {
+          id == Lc3SettingId::LC3_48_2 || id == Lc3SettingId::LC3_48_3 ||
+          id == Lc3SettingId::LC3_VND_1 || id == Lc3SettingId::LC3_24_2) {
         return true;
       }
 
@@ -516,7 +518,7 @@ protected:
     bluetooth::manager::SetMockBtmInterface(&btm_interface_);
 
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<NiceMock<bluetooth::hci::testing::MockControllerInterface>>();
+            std::make_unique<NiceMock<bluetooth::hci::testing::MockController>>();
 
     auto codec_location = ::bluetooth::le_audio::types::CodecLocation::HOST;
     bluetooth::le_audio::AudioSetConfigurationProvider::Initialize(codec_location);
@@ -1425,6 +1427,49 @@ protected:
   bluetooth::le_audio::CodecManager* codec_manager_;
   MockCodecManager* mock_codec_manager_;
 };
+
+TEST_P(LeAudioAseConfigurationTest, test_get_codec_config_call) {
+  LeAudioDevice* left = AddTestDevice({{1, codec_spec_conf::kLeAudioLocationFrontLeft}},
+                                      {{1, codec_spec_conf::kLeAudioLocationFrontLeft}});
+  LeAudioDevice* right = AddTestDevice({{1, codec_spec_conf::kLeAudioLocationFrontRight}},
+                                       {{1, codec_spec_conf::kLeAudioLocationFrontRight}});
+
+  left->SetAvailableContexts({AudioContexts(), AudioContexts()});
+  right->SetAvailableContexts({AudioContexts(), AudioContexts()});
+
+  EXPECT_CALL(*mock_codec_manager_, GetCodecConfig(_, _)).Times(0);
+  group_->GetConfiguration(LeAudioContextType::MEDIA);
+  testing::Mock::VerifyAndClearExpectations(mock_codec_manager_);
+}
+
+TEST_P(LeAudioAseConfigurationTest, test_hash_function) {
+  auto full_set_configuration = getSpecificConfiguration(
+          "Two-OneChan-SnkAse-Lc3_16_2-One-OneChan-SrcAse-Lc3_16_2_Low_Latency",
+          LeAudioContextType::CONVERSATIONAL);
+  auto single_set_configuration = getSpecificConfiguration(
+          "One-OneChan-SnkAse-Lc3_16_2-One-OneChan-SrcAse-Lc3_16_2_Low_Latency",
+          LeAudioContextType::CONVERSATIONAL);
+  auto full_set_configuration_32 = getSpecificConfiguration(
+          "Two-OneChan-SnkAse-Lc3_32_2-One-OneChan-SrcAse-Lc3_32_2_Low_Latency",
+          LeAudioContextType::CONVERSATIONAL);
+  auto single_set_configuration_32 = getSpecificConfiguration(
+          "One-OneChan-SnkAse-Lc3_32_2-One-OneChan-SrcAse-Lc3_32_2_Low_Latency",
+          LeAudioContextType::CONVERSATIONAL);
+
+  auto full_set_configuration_media = getSpecificConfiguration(
+          "Two-OneChan-SnkAse-Lc3_16_2_Balanced_Reliability", LeAudioContextType::MEDIA);
+
+  ASSERT_EQ(utils::GetConfigurationHash(*full_set_configuration),
+            utils::GetConfigurationHash(*single_set_configuration));
+  ASSERT_EQ(utils::GetConfigurationHash(*full_set_configuration_32),
+            utils::GetConfigurationHash(*single_set_configuration_32));
+  ASSERT_NE(utils::GetConfigurationHash(*full_set_configuration_32),
+            utils::GetConfigurationHash(*single_set_configuration));
+  ASSERT_NE(utils::GetConfigurationHash(*full_set_configuration),
+            utils::GetConfigurationHash(*single_set_configuration_32));
+  ASSERT_NE(utils::GetConfigurationHash(*full_set_configuration),
+            utils::GetConfigurationHash(*full_set_configuration_media));
+}
 
 TEST_P(LeAudioAseConfigurationTest, test_context_update) {
   LeAudioDevice* left = AddTestDevice({{1, codec_spec_conf::kLeAudioLocationFrontLeft}},
@@ -2592,6 +2637,57 @@ TEST_P(LeAudioAseConfigurationTest, test_get_metadata_no_ccid) {
   ASSERT_EQ(metadata.Find(bluetooth::le_audio::types::kLeAudioMetadataTypeStreamingAudioContext)
                     .value()[1],
             uint8_t((uint16_t)LeAudioContextType::MEDIA >> 8));
+}
+
+TEST_P(LeAudioAseConfigurationTest, test_get_group_config_requirements) {
+  if (codec_coding_format_ != kLeAudioCodingFormatVendorSpecific) {
+    GTEST_SKIP();
+  }
+
+  // A group of two earbuds
+  LeAudioDevice* left = AddTestDevice({{2, codec_spec_conf::kLeAudioLocationFrontLeft}},
+                                      {{1, codec_spec_conf::kLeAudioLocationFrontLeft}});
+  LeAudioDevice* right = AddTestDevice({{2, codec_spec_conf::kLeAudioLocationFrontRight}},
+                                       {{1, codec_spec_conf::kLeAudioLocationFrontRight}});
+  const LeAudioCodecId OpusCodecId = {
+          .coding_format = kLeAudioCodingFormatVendorSpecific,
+          .vendor_company_id = types::kLeAudioVendorCompanyIdGoogle,
+          .vendor_codec_id = types::kLeAudioVendorCodecIdOpus,
+  };
+
+  PublishedAudioCapabilitiesBuilder pac_builder;
+  pac_builder.Add(OpusCodecId, GetSamplingFrequency(Lc3SettingId::LC3_16_2),
+                  GetFrameDuration(Lc3SettingId::LC3_16_2), kLeAudioCodecChannelCountSingleChannel,
+                  GetOctetsPerCodecFrame(Lc3SettingId::LC3_16_2));
+  left->snk_pacs_ = pac_builder.Get();
+  right->snk_pacs_ = pac_builder.Get();
+
+  ASSERT_EQ(2, group_->NumOfConnected());
+
+  // Set the preference to Hi Res codec
+  btle_audio_codec_config_t preferred_codec_config_during_media = {
+          .codec_type = LE_AUDIO_CODEC_INDEX_SOURCE_OPUS_HI_RES,
+          .sample_rate = LE_AUDIO_SAMPLE_RATE_INDEX_96000HZ,
+  };
+  group_->SetPreferredAudioSetConfiguration(preferred_codec_config_during_media,
+                                            preferred_codec_config_during_media);
+
+  TestGroupAseConfigurationData data[] = {{left, kLeAudioCodecChannelCountSingleChannel,
+                                           kLeAudioCodecChannelCountSingleChannel, 1, 0},
+                                          {right, kLeAudioCodecChannelCountSingleChannel,
+                                           kLeAudioCodecChannelCountSingleChannel, 1, 0}};
+  TestGroupAseConfiguration(LeAudioContextType::MEDIA, data, 2, kLeAudioDirectionSink);
+
+  auto requirements = group_->GetAudioSetConfigurationRequirements(LeAudioContextType::MEDIA);
+  ASSERT_EQ(requirements.audio_context_type, LeAudioContextType::MEDIA);
+
+  // Test for OPUS Hirez sampling frequency
+  ASSERT_TRUE(requirements.sink_requirements.has_value());
+  ASSERT_NE(requirements.sink_requirements->size(), 0lu);
+  ASSERT_EQ(requirements.sink_requirements->at(0)
+                    .params.GetAsCoreCodecConfig()
+                    .GetSamplingFrequencyHz(),
+            96000lu);
 }
 
 INSTANTIATE_TEST_CASE_P(Test, LeAudioAseConfigurationTest,

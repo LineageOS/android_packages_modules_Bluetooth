@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Jeśli pozostawisz włączony Bluetooth, urządzenie zachowa się podobnie przy kolejnym przejściu w tryb samolotowy"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetooth pozostanie włączony"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Bluetooth na urządzeniu pozostaje włączony w trybie samolotowym. Wyłącz Bluetooth, jeśli nie chcesz, żeby pozostawał włączony."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Bluetooth pozostaje włączony w trybie samolotowym, gdy urządzenie jest połączone z innymi urządzeniami."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Bluetooth na urządzeniu pozostanie włączony w trybie samolotowym, gdy będzie ono połączone z zegarkiem."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Bluetooth pozostaje włączony w trybie samolotowym, gdy urządzenie jest połączone z urządzeniem multimedialnym."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi i Bluetooth pozostają włączone"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Wi-Fi i Bluetooth na urządzeniu pozostają włączone w trybie samolotowym. Wyłącz Wi-Fi i Bluetooth, jeśli nie chcesz, żeby funkcje te pozostawały włączone."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Ponownie włączono Bluetooth"</string>

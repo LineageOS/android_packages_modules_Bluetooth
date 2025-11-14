@@ -204,6 +204,8 @@ public:
           });
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(ServiceUuids, std::vector<hci::Uuid>,
                                           BTIF_STORAGE_KEY_REMOTE_SERVICE);
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(ServiceUuidsLe, std::vector<hci::Uuid>,
+                                          BTIF_STORAGE_KEY_REMOTE_SERVICE_LE);
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(ManufacturerCode, uint16_t, "Manufacturer");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(LmpVersion, uint8_t, "LmpVer");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(LmpSubVersion, uint16_t, "LmpSubVer");

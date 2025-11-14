@@ -41,7 +41,6 @@ import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
-import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelUuid;
@@ -143,24 +142,23 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                     | Request.SupportedOpcodes.NEXT_TRACK
                     | Request.SupportedOpcodes.PREVIOUS_TRACK;
 
-    private final int mCcid;
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
     private final Map<String, Map<UUID, Short>> mCccDescriptorValues = new HashMap<>();
+    private final Map<Integer, BluetoothGattCharacteristic> mCharacteristics = new HashMap<>();
+    private final Map<BluetoothDevice, List<GattOpContext>> mPendingGattOperations =
+            new HashMap<>();
+
+    private final int mCcid;
+    private final AdapterService mAdapterService;
+    private final McpService mMcpService;
+    private final BluetoothEventLogger mEventLogger;
+
     private long mFeatures;
-    private final Context mContext;
     private MediaControlServiceCallbacks mCallbacks;
     private BluetoothGattServerProxy mBluetoothGattServer;
     private BluetoothGattService mGattService = null;
-    private final Handler mHandler = new Handler(Looper.getMainLooper());
-    private final Map<Integer, BluetoothGattCharacteristic> mCharacteristics = new HashMap<>();
     private MediaState mCurrentMediaState = MediaState.INACTIVE;
-    private final Map<BluetoothDevice, List<GattOpContext>> mPendingGattOperations =
-            new HashMap<>();
-    private McpService mMcpService;
     private LeAudioService mLeAudioService;
-    private final AdapterService mAdapterService;
-
-    private static final int LOG_NB_EVENTS = 200;
-    private final BluetoothEventLogger mEventLogger;
 
     private static String mcsUuidToString(UUID uuid) {
         if (uuid.equals(UUID_PLAYER_NAME)) {
@@ -535,8 +533,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                         + (charUuid != null ? mcsUuidToString(charUuid) : "UNKNOWN"));
 
         switch (op.operation()) {
-                /* Allow not yet authorized devices to subscribe for notifications */
-            case READ_DESCRIPTOR:
+            /* Allow not yet authorized devices to subscribe for notifications */
+            case READ_DESCRIPTOR -> {
                 if (op.offset() > 1) {
                     mBluetoothGattServer.sendResponse(
                             device,
@@ -557,8 +555,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                 value = Arrays.copyOfRange(value, op.offset(), value.length);
                 mBluetoothGattServer.sendResponse(
                         device, op.requestId(), BluetoothGatt.GATT_SUCCESS, op.offset(), value);
-                return;
-            case WRITE_DESCRIPTOR:
+            }
+            case WRITE_DESCRIPTOR -> {
                 int status = BluetoothGatt.GATT_SUCCESS;
                 if (op.preparedWrite()) {
                     status = BluetoothGatt.GATT_FAILURE;
@@ -578,28 +576,24 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                     mBluetoothGattServer.sendResponse(
                             device, op.requestId(), status, op.offset(), op.value().toByteArray());
                 }
-                return;
-            case READ_CHARACTERISTIC:
-                onUnauthorizedCharRead(device, op);
-                return;
-            case WRITE_CHARACTERISTIC:
-                // store as pending operation
-                break;
-            default:
-                break;
-        }
-
-        synchronized (mPendingGattOperations) {
-            List<GattOpContext> operations = mPendingGattOperations.get(device);
-            if (operations == null) {
-                operations = new ArrayList<>();
-                mPendingGattOperations.put(device, operations);
             }
+            case READ_CHARACTERISTIC -> {
+                onUnauthorizedCharRead(device, op);
+            }
+            case WRITE_CHARACTERISTIC -> {
+                synchronized (mPendingGattOperations) {
+                    List<GattOpContext> operations = mPendingGattOperations.get(device);
+                    if (operations == null) {
+                        operations = new ArrayList<>();
+                        mPendingGattOperations.put(device, operations);
+                    }
 
-            operations.add(op);
-            // Send authorization request for each device only for it's first GATT request
-            if (operations.size() == 1) {
-                mMcpService.onDeviceUnauthorized(device);
+                    operations.add(op);
+                    // Send authorization request for each device only for it's first GATT request
+                    if (operations.size() == 1) {
+                        mMcpService.onDeviceUnauthorized(device);
+                    }
+                }
             }
         }
     }
@@ -623,7 +617,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         int status = BluetoothGatt.GATT_SUCCESS;
 
         switch (op.operation()) {
-            case READ_CHARACTERISTIC:
+            case READ_CHARACTERISTIC -> {
                 // Always ask for the latest position
                 if (op.characteristic()
                         .getUuid()
@@ -677,9 +671,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                             op.offset(),
                             new byte[] {});
                 }
-                break;
-
-            case WRITE_CHARACTERISTIC:
+            }
+            case WRITE_CHARACTERISTIC -> {
                 if (op.preparedWrite()) {
                     status = BluetoothGatt.GATT_FAILURE;
                 } else if (op.offset() > 0) {
@@ -702,9 +695,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                     mBluetoothGattServer.sendResponse(
                             device, op.requestId(), status, op.offset(), op.value().toByteArray());
                 }
-                break;
-
-            case READ_DESCRIPTOR:
+            }
+            case READ_DESCRIPTOR -> {
                 if (op.offset() > 1) {
                     mBluetoothGattServer.sendResponse(
                             device,
@@ -725,9 +717,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                 value = Arrays.copyOfRange(value, op.offset(), value.length);
                 mBluetoothGattServer.sendResponse(
                         device, op.requestId(), BluetoothGatt.GATT_SUCCESS, op.offset(), value);
-                break;
-
-            case WRITE_DESCRIPTOR:
+            }
+            case WRITE_DESCRIPTOR -> {
                 if (op.preparedWrite()) {
                     status = BluetoothGatt.GATT_FAILURE;
                 } else if (op.offset() > 0) {
@@ -746,10 +737,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                     mBluetoothGattServer.sendResponse(
                             device, op.requestId(), status, op.offset(), op.value().toByteArray());
                 }
-                break;
-
-            default:
-                break;
+            }
         }
     }
 
@@ -770,16 +758,15 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                         + (charUuid != null ? mcsUuidToString(charUuid) : "UNKNOWN"));
 
         switch (op.operation()) {
-            case READ_CHARACTERISTIC:
-            case READ_DESCRIPTOR:
+            case READ_CHARACTERISTIC, READ_DESCRIPTOR -> {
                 mBluetoothGattServer.sendResponse(
                         device,
                         op.requestId(),
                         BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION,
                         op.offset(),
                         null);
-                break;
-            case WRITE_CHARACTERISTIC:
+            }
+            case WRITE_CHARACTERISTIC -> {
                 if (op.responseNeeded()) {
                     mBluetoothGattServer.sendResponse(
                             device,
@@ -797,8 +784,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                         setSearchRequestResult(null, SearchRequest.Results.FAILURE, 0);
                     }
                 }
-                break;
-            case WRITE_DESCRIPTOR:
+            }
+            case WRITE_DESCRIPTOR -> {
                 if (op.responseNeeded()) {
                     mBluetoothGattServer.sendResponse(
                             device,
@@ -807,10 +794,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                             op.offset(),
                             null);
                 }
-                break;
-
-            default:
-                break;
+            }
         }
     }
 
@@ -1216,23 +1200,19 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     }
 
     protected MediaControlGattService(
-            McpService mcpService, @NonNull MediaControlServiceCallbacks callbacks, int ccid) {
-        mContext = mcpService;
-        mCallbacks = callbacks;
+            AdapterService adapterService,
+            McpService mcpService,
+            @NonNull MediaControlServiceCallbacks callbacks,
+            int ccid) {
+        mAdapterService = requireNonNull(adapterService);
+        mMcpService = requireNonNull(mcpService);
+        mCallbacks = requireNonNull(callbacks);
         mCcid = ccid;
 
-        mMcpService = mcpService;
-        mAdapterService =
-                requireNonNull(
-                        AdapterService.getAdapterService(),
-                        "AdapterService shouldn't be null when creating MediaControlCattService");
-
         mAdapterService.registerBluetoothStateCallback(
-                mContext.getMainExecutor(), mBluetoothStateChangeCallback);
+                mAdapterService.getMainExecutor(), mBluetoothStateChangeCallback);
 
-        mEventLogger =
-                new BluetoothEventLogger(
-                        LOG_NB_EVENTS, TAG + " instance (CCID= " + ccid + ") event log");
+        mEventLogger = new BluetoothEventLogger(200, TAG + " instance (CCID=" + ccid + "): ");
     }
 
     protected boolean init(UUID scvUuid) {
@@ -1277,15 +1257,14 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     }
 
     private static int getMediaControlPointRequestPayloadLength(int opcode) {
-        switch (opcode) {
-            case Request.Opcodes.MOVE_RELATIVE:
-            case Request.Opcodes.GOTO_SEGMENT:
-            case Request.Opcodes.GOTO_TRACK:
-            case Request.Opcodes.GOTO_GROUP:
-                return 4;
-            default:
-                return 0;
-        }
+        return switch (opcode) {
+            case Request.Opcodes.MOVE_RELATIVE,
+                    Request.Opcodes.GOTO_SEGMENT,
+                    Request.Opcodes.GOTO_TRACK,
+                    Request.Opcodes.GOTO_GROUP ->
+                    4;
+            default -> 0;
+        };
     }
 
     @VisibleForTesting
@@ -1366,11 +1345,6 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     }
 
     @VisibleForTesting
-    protected void setServiceManagerForTesting(McpService manager) {
-        mMcpService = manager;
-    }
-
-    @VisibleForTesting
     void setBluetoothGattServerForTesting(BluetoothGattServerProxy proxy) {
         mBluetoothGattServer = proxy;
     }
@@ -1385,8 +1359,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         mEventLogger.logd(TAG, "initGattService: uuid= " + serviceUuid);
 
         if (mBluetoothGattServer == null) {
-            BluetoothManager manager = mContext.getSystemService(BluetoothManager.class);
-            BluetoothGattServer server = manager.openGattServer(mContext, mServerCallback);
+            BluetoothManager manager = mAdapterService.getSystemService(BluetoothManager.class);
+            BluetoothGattServer server = manager.openGattServer(mAdapterService, mServerCallback);
             if (server == null) {
                 Log.e(TAG, "Failed to start BluetoothGattServer for MCP");
                 // TODO: This now effectively makes MCP unusable, but fixes tests
@@ -2451,7 +2425,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     public void dump(StringBuilder sb) {
         sb.append("\tMediaControlService instance current state:");
         sb.append("\n\t\tCcid = ").append(mCcid);
-        sb.append("\n\t\tFeatures:").append(ServiceFeature.featuresToString(mFeatures, "\n\t\t\t"));
+        sb.append("\n\t\tFeatures:").append(ServiceFeature.featuresToString(mFeatures));
 
         BluetoothGattCharacteristic characteristic = mCharacteristics.get(CharId.PLAYER_NAME);
         if (characteristic == null) {

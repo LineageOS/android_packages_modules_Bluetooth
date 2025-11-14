@@ -811,7 +811,7 @@ public final class BluetoothCodecConfig implements Parcelable {
                 if (mCodecSpecific1 != other.mCodecSpecific1) {
                     return false;
                 }
-                // fall through
+            // fall through
             default:
                 return true;
         }

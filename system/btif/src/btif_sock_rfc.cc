@@ -21,6 +21,7 @@
 #include "btif_sock_rfc.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -44,7 +45,6 @@
 #include "include/hardware/bt_sock.h"
 #include "lpp/lpp_offload_interface.h"
 #include "main/shim/entry.h"
-#include "main/shim/metrics_api.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
 #include "osi/include/list.h"
@@ -696,6 +696,9 @@ static uint32_t on_srv_rfc_connect_offload(tBTA_JV_RFCOMM_SRV_OPEN* p_open, rfc_
     cleanup_rfc_slot(accept_rs, BTSOCK_ERROR_OFFLOAD_HAL_OPEN_FAILURE);
   } else {
     log::info("RFCOMM socket opened successful. Will send connect signal in async callback.");
+    if (com::android::bluetooth::flags::monitor_read_flag_on_offloaded_socket()) {
+      btsock_thread_add_fd(pth, accept_rs->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_RD, accept_rs->id);
+    }
   }
 
   // Start monitoring the socket.
@@ -909,7 +912,7 @@ static void on_rfc_close(tBTA_JV_RFCOMM_CLOSE* /* p_close */, uint32_t id) {
     log::warn("RFCOMM slot with id {} not found.", id);
     return;
   }
-  bluetooth::shim::LogMetricSocketConnectionState(
+  bluetooth::metrics::LogMetricSocketConnectionState(
           slot->addr, slot->id, BTSOCK_RFCOMM,
           android::bluetooth::SOCKET_CONNECTION_STATE_DISCONNECTING, 0, 0, slot->app_uid, slot->scn,
           slot->f.server ? android::bluetooth::SOCKET_ROLE_LISTEN
@@ -920,7 +923,7 @@ static void on_rfc_close(tBTA_JV_RFCOMM_CLOSE* /* p_close */, uint32_t id) {
 
 static void on_rfc_write_done(tBTA_JV_RFCOMM_WRITE* p, uint32_t id) {
   if (p->status != tBTA_JV_STATUS::SUCCESS) {
-    log::error("error writing to RFCOMM socket, req_id:{}.", p->req_id);
+    log::error("error writing to RFCOMM socket, slot_id:{}.", p->req_id);
     return;
   }
 
@@ -1327,8 +1330,7 @@ static void btsock_rfc_signaled_flagged(int fd, int flags, uint32_t id) {
     // Clean up if there's no data pending.
     int size = 0;
     if (need_close || ioctl(slot->fd, FIONREAD, &size) != 0 || !size) {
-      if (com::android::bluetooth::flags::rfcomm_cancel_ongoing_sdp_on_close() &&
-          slot->f.doing_sdp_request) {
+      if (slot->f.doing_sdp_request) {
         BTA_JvCancelDiscovery(slot->id);
       }
       cleanup_rfc_slot(slot, error_code);
@@ -1382,8 +1384,7 @@ void btsock_rfc_signaled(int fd, int flags, uint32_t id) {
     // Clean up if there's no data pending.
     int size = 0;
     if (need_close || ioctl(slot->fd, FIONREAD, &size) != 0 || !size) {
-      if (com::android::bluetooth::flags::rfcomm_cancel_ongoing_sdp_on_close() &&
-          slot->f.doing_sdp_request) {
+      if (slot->f.doing_sdp_request) {
         BTA_JvCancelDiscovery(slot->id);
       }
       cleanup_rfc_slot(slot, error_code);

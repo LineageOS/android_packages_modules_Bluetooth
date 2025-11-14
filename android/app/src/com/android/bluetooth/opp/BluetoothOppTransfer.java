@@ -36,12 +36,10 @@ import static java.util.Objects.requireNonNull;
 
 import android.annotation.SuppressLint;
 import android.app.NotificationManager;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSocket;
-import android.bluetooth.BluetoothUtils;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.SdpOppOpsRecord;
 import android.content.BroadcastReceiver;
@@ -62,6 +60,7 @@ import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothObexTransport;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ObexTransport;
@@ -83,8 +82,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
     private static final Object INSTANCE_LOCK = new Object();
 
     private final Context mContext;
-    private final BluetoothAdapter mAdapter;
     private final BluetoothOppBatch mBatch;
+    private final AdapterService mAdapterService;
 
     @VisibleForTesting BluetoothDevice mDevice;
     private BluetoothOppObexSession mSession;
@@ -115,8 +114,7 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                     Log.e(
                             TAG,
                             "device : "
-                                    + BluetoothUtils.toAnonymizedAddress(
-                                            Utils.getBrEdrAddress(device))
+                                    + device
                                     + " mBatch :"
                                     + mBatch
                                     + " mCurrentShare :"
@@ -133,8 +131,7 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                     Log.v(
                             TAG,
                             "Device :"
-                                    + BluetoothUtils.toAnonymizedAddress(
-                                            Utils.getBrEdrAddress(device))
+                                    + device
                                     + "- OPP device: "
                                     + mBatch.mDestination
                                     + " \n mCurrentShare.mConfirm == "
@@ -181,8 +178,9 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                                 3);
                         return;
                     }
-                    String deviceIdentityAddress = Utils.getBrEdrAddress(device);
-                    String transferDeviceIdentityAddress = Utils.getBrEdrAddress(mDevice);
+                    String deviceIdentityAddress = Utils.getBrEdrAddress(device, mAdapterService);
+                    String transferDeviceIdentityAddress =
+                            Utils.getBrEdrAddress(mDevice, mAdapterService);
                     if (deviceIdentityAddress == null
                             || transferDeviceIdentityAddress == null
                             || !deviceIdentityAddress.equalsIgnoreCase(
@@ -222,20 +220,21 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
 
     private OppConnectionReceiver mBluetoothReceiver;
 
-    public BluetoothOppTransfer(
-            Context context, BluetoothOppBatch batch, BluetoothOppObexSession session) {
+    public BluetoothOppTransfer(AdapterService adapterService, BluetoothOppBatch batch) {
+        this(adapterService, batch, null);
+    }
 
-        mContext = context;
+    public BluetoothOppTransfer(
+            AdapterService adapterService,
+            BluetoothOppBatch batch,
+            BluetoothOppObexSession session) {
+        mAdapterService = requireNonNull(adapterService);
+        mContext = adapterService;
         mBatch = requireNonNull(batch);
         mSession = session;
-
         mBatch.registerListener(this);
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
     }
 
-    public BluetoothOppTransfer(Context context, BluetoothOppBatch batch) {
-        this(context, batch, null);
-    }
 
     public int getBatchId() {
         return mBatch.mId;
@@ -253,14 +252,14 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case SOCKET_ERROR_RETRY:
+                case SOCKET_ERROR_RETRY -> {
                     BluetoothDevice device = (BluetoothDevice) msg.obj;
                     synchronized (INSTANCE_LOCK) {
                         mConnectThread = new SocketConnectThread(device, true);
                         mConnectThread.start();
                     }
-                    break;
-                case TRANSPORT_ERROR:
+                }
+                case TRANSPORT_ERROR -> {
                     /*
                      * RFCOMM connect fail is for outbound share only! Mark batch
                      * failed, and all shares in batch failed
@@ -271,9 +270,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                     }
                     markBatchFailed(BluetoothShare.STATUS_CONNECTION_ERROR);
                     mBatch.mStatus = Constants.BATCH_STATUS_FAILED;
-
-                    break;
-                case TRANSPORT_CONNECTED:
+                }
+                case TRANSPORT_CONNECTED -> {
                     /*
                      * RFCOMM connected is for outbound share only! Create
                      * BluetoothOppObexClientSession and start it
@@ -284,9 +282,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                     }
                     mTransport = (ObexTransport) msg.obj;
                     startObexSession();
-
-                    break;
-                case BluetoothOppObexSession.MSG_SHARE_COMPLETE:
+                }
+                case BluetoothOppObexSession.MSG_SHARE_COMPLETE -> {
                     /*
                      * Put next share if available,or finish the transfer.
                      * For outbound session, call session.addShare() to send next file,
@@ -314,8 +311,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                             mSession.stop();
                         }
                     }
-                    break;
-                case BluetoothOppObexSession.MSG_SESSION_COMPLETE:
+                }
+                case BluetoothOppObexSession.MSG_SESSION_COMPLETE -> {
                     /*
                      * Handle session completed status Set batch status to
                      * finished
@@ -328,9 +325,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                      * trigger content provider again to know batch status change
                      */
                     tickShareStatus(info1);
-                    break;
-
-                case BluetoothOppObexSession.MSG_SESSION_ERROR:
+                }
+                case BluetoothOppObexSession.MSG_SESSION_ERROR -> {
                     /* Handle the error state of an Obex session */
                     Log.v(TAG, "receive MSG_SESSION_ERROR for batch " + mBatch.mId);
                     cleanUp();
@@ -351,9 +347,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                                 6);
                         Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                     }
-                    break;
-
-                case BluetoothOppObexSession.MSG_SHARE_INTERRUPTED:
+                }
+                case BluetoothOppObexSession.MSG_SHARE_INTERRUPTED -> {
                     Log.v(TAG, "receive MSG_SHARE_INTERRUPTED for batch " + mBatch.mId);
                     BluetoothOppShareInfo info3 = (BluetoothOppShareInfo) msg.obj;
                     if (mBatch.mDirection == BluetoothShare.DIRECTION_OUTBOUND) {
@@ -381,9 +376,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                         }
                         tickShareStatus(mCurrentShare);
                     }
-                    break;
-
-                case BluetoothOppObexSession.MSG_CONNECT_TIMEOUT:
+                }
+                case BluetoothOppObexSession.MSG_CONNECT_TIMEOUT -> {
                     Log.v(TAG, "receive MSG_CONNECT_TIMEOUT for batch " + mBatch.mId);
                     /* for outbound transfer, the block point is BluetoothSocket.write()
                      * The only way to unblock is to tear down lower transport
@@ -421,7 +415,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
 
                         markShareTimeout(mCurrentShare);
                     }
-                    break;
+                }
+                default -> {} // Nothing to do
             }
         }
     }
@@ -525,22 +520,6 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
 
     /** Start the transfer */
     public void start() {
-        /* check Bluetooth enable status */
-        /*
-         * normally it's impossible to reach here if BT is disabled. Just check
-         * for safety
-         */
-        if (!BluetoothMethodProxy.getInstance().bluetoothAdapterIsEnabled(mAdapter)) {
-            Log.e(TAG, "Can't start transfer when Bluetooth is disabled for " + mBatch.mId);
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.OPP,
-                    BluetoothProtoEnums.BLUETOOTH_OPP_TRANSFER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                    10);
-            markBatchFailed(BluetoothShare.STATUS_UNKNOWN_ERROR);
-            mBatch.mStatus = Constants.BATCH_STATUS_FAILED;
-            return;
-        }
         registerConnectionReceiver();
         if (mHandlerThread == null) {
             Log.v(TAG, "Create handler thread for batch " + mBatch.mId);
@@ -795,13 +774,10 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                                 + (System.currentTimeMillis() - mTimestamp)
                                 + " ms");
                 BluetoothObexTransport transport;
-                transport = new BluetoothObexTransport(mBtSocket);
-
-                BluetoothOppPreference.getInstance(mContext)
-                        .setName(mDevice, Utils.getName(mDevice));
-
+                transport = new BluetoothObexTransport(mAdapterService, mBtSocket);
+                BluetoothOppPreference.getInstance(mAdapterService)
+                        .setName(mDevice, mAdapterService.getRemoteName(mDevice));
                 Log.v(TAG, "Send transport message " + transport.toString());
-
                 mSessionHandler.obtainMessage(TRANSPORT_CONNECTED, transport).sendToTarget();
             } catch (IOException e) {
                 ContentProfileErrorReportUtils.report(
@@ -876,9 +852,9 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                                 + (System.currentTimeMillis() - mTimestamp)
                                 + " ms");
                 BluetoothObexTransport transport;
-                transport = new BluetoothObexTransport(mBtSocket);
-                BluetoothOppPreference.getInstance(mContext)
-                        .setName(mDevice, Utils.getName(mDevice));
+                transport = new BluetoothObexTransport(mAdapterService, mBtSocket);
+                BluetoothOppPreference.getInstance(mAdapterService)
+                        .setName(mDevice, mAdapterService.getRemoteName(mDevice));
                 Log.v(TAG, "Send transport message " + transport.toString());
                 mSessionHandler.obtainMessage(TRANSPORT_CONNECTED, transport).sendToTarget();
             } catch (IOException e) {

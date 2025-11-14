@@ -100,6 +100,9 @@ enum class CodecId : uint64_t {
 ///    bit Vendor ID shall be set to zero)
 std::optional<CodecId> ParseCodecId(uint8_t const media_codec_capabilities[]);
 
+// Returns codec and vendor IDs as string.
+std::string CodecIdToString(CodecId codec_id);
+
 }  // namespace bluetooth::a2dp
 
 // Error codes returned in AVDTP reject signalling messages.

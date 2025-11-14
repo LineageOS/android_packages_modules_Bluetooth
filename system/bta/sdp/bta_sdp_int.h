@@ -47,7 +47,7 @@ typedef struct {
 extern tBTA_SDP_CB bta_sdp_cb;
 
 /* config struct */
-extern tBTA_SDP_CFG* p_bta_sdp_cfg;
+extern const tBTA_SDP_CFG* p_bta_sdp_cfg;
 
 void bta_sdp_enable(tBTA_SDP_DM_CBACK* p_cback);
 void bta_sdp_search(const RawAddress bd_addr, const bluetooth::Uuid uuid);

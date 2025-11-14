@@ -107,7 +107,6 @@ private:
 
   uint16_t target_sdp_request_id_ = UNASSIGNED_REQUEST_ID;
   uint16_t control_sdp_request_id_ = UNASSIGNED_REQUEST_ID;
-  uint32_t sdp_record_handle = -1;
   uint16_t profile_version = -1;
 
   MediaInterface* media_interface_ = nullptr;

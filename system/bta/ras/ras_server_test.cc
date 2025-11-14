@@ -20,6 +20,7 @@
 #include "bta/include/bta_ras_api.h"
 #include "bta/ras/ras_types.h"
 #include "bta/test/common/bta_gatt_api_mock.h"
+#include "btm_api_mock.h"
 #include "include/hardware/bluetooth.h"
 #include "internal_include/stack_config.h"
 #include "log/include/bluetooth/log.h"
@@ -124,6 +125,7 @@ protected:
   void SetUp() override {
     // Init test data
     gatt::SetMockBtaGattServerInterface(&mock_gatt_server_interface_);
+    bluetooth::manager::SetMockBtmInterface(&btm_interface_);
     RawAddress::FromString("11:22:33:44:55:66", test_address_);
     VendorSpecificCharacteristic vendor_specific_characteristic1, vendor_specific_characteristic2;
     vendor_specific_characteristic1.characteristicUuid_ = kVendorSpecificCharacteristic1;
@@ -134,11 +136,17 @@ protected:
     vendor_specific_characteristics_.push_back(vendor_specific_characteristic2);
   }
 
+  void TearDown() override {
+    gatt::SetMockBtaGattInterface(nullptr);
+    bluetooth::manager::SetMockBtmInterface(nullptr);
+  }
+
   std::vector<VendorSpecificCharacteristic> vendor_specific_characteristics_;
   RawAddress test_address_;
   uint16_t test_conn_id_ = 0x0001;
   tBTA_GATTS_CBACK* captured_gatt_callback_ = nullptr;
   gatt::MockBtaGattServerInterface mock_gatt_server_interface_;
+  NiceMock<bluetooth::manager::MockBtmInterface> btm_interface_;
   MockRasServerCallbacks mock_ras_server_callbacks_;
 };
 
@@ -190,6 +198,7 @@ protected:
     p_data.conn.remote_bda = test_address_;
     p_data.conn.conn_id = test_conn_id_;
     captured_gatt_callback_(BTA_GATTS_DISCONNECT_EVT, &p_data);
+    RasServerTestNoInit::TearDown();
   }
 };
 

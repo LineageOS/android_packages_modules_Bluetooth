@@ -49,17 +49,6 @@ struct enable_offload {
 };
 extern struct enable_offload enable_offload;
 
-// Name: get_codec_capabilities
-// Params: uint64_t codecs
-// Return: bt_codecs
-struct get_codec_capabilities {
-  static hfp_hal_interface::bt_codecs return_value;
-  std::function<hfp_hal_interface::bt_codecs(uint64_t codecs)> body{
-          [](uint64_t /* codecs */) { return return_value; }};
-  hfp_hal_interface::bt_codecs operator()(uint64_t codecs) { return body(codecs); }
-};
-extern struct get_codec_capabilities get_codec_capabilities;
-
 // Name: get_offload_enabled
 // Params:
 // Return: bool
@@ -69,16 +58,6 @@ struct get_offload_enabled {
   bool operator()() { return body(); }
 };
 extern struct get_offload_enabled get_offload_enabled;
-
-// Name: get_offload_supported
-// Params:
-// Return: bool
-struct get_offload_supported {
-  static bool return_value;
-  std::function<bool()> body{[]() { return return_value; }};
-  bool operator()() { return body(); }
-};
-extern struct get_offload_supported get_offload_supported;
 
 // Name: get_packet_size
 // Params: int codec

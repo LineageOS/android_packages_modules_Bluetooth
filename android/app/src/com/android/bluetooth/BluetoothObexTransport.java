@@ -15,9 +15,12 @@
 
 package com.android.bluetooth;
 
-import android.annotation.SuppressLint;
+import static java.util.Objects.requireNonNull;
+
+import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.obex.ObexTransport;
 
 import java.io.DataInputStream;
@@ -28,24 +31,30 @@ import java.io.OutputStream;
 
 /** Generic Obex Transport class, to be used in OBEX based Bluetooth Profiles. */
 public class BluetoothObexTransport implements ObexTransport {
-    private BluetoothSocket mSocket = null;
-
     /** Will default at the maximum packet length. */
     public static final int PACKET_SIZE_UNSPECIFIED = -1;
+
+    private final BluetoothSocket mSocket;
+    private final AdapterService mAdapterService;
 
     private int mMaxTransmitPacketSize = PACKET_SIZE_UNSPECIFIED;
     private int mMaxReceivePacketSize = PACKET_SIZE_UNSPECIFIED;
 
     private boolean mIsCoverArt = false;
 
-    public BluetoothObexTransport(BluetoothSocket socket) {
-        this.mSocket = socket;
+    public BluetoothObexTransport(AdapterService adapterService, BluetoothSocket socket) {
+        mAdapterService = requireNonNull(adapterService);
+        mSocket = socket;
     }
 
-    public BluetoothObexTransport(BluetoothSocket socket, int transmitSize, int receiveSize) {
-        this.mSocket = socket;
-        this.mMaxTransmitPacketSize = transmitSize;
-        this.mMaxReceivePacketSize = receiveSize;
+    public BluetoothObexTransport(
+            AdapterService adapterService,
+            BluetoothSocket socket,
+            int transmitSize,
+            int receiveSize) {
+        this(adapterService, socket);
+        mMaxTransmitPacketSize = transmitSize;
+        mMaxReceivePacketSize = receiveSize;
     }
 
     @Override
@@ -106,23 +115,28 @@ public class BluetoothObexTransport implements ObexTransport {
         return mSocket.getMaxReceivePacketSize();
     }
 
-    @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786
+    public BluetoothDevice getRemoteDevice() {
+        if (mSocket == null) {
+            return null;
+        }
+
+        return mSocket.getRemoteDevice();
+    }
+
     public String getRemoteAddress() {
         if (mSocket == null) {
             return null;
         }
-        String identityAddress = Utils.getBrEdrAddress(mSocket.getRemoteDevice());
-        return mSocket.getConnectionType() == BluetoothSocket.TYPE_RFCOMM
-                ? identityAddress
-                : mSocket.getRemoteDevice().getAddress();
+
+        if (mSocket.getConnectionType() == BluetoothSocket.TYPE_RFCOMM) {
+            return Utils.getBrEdrAddress(mSocket.getRemoteDevice(), mAdapterService);
+        }
+        return mSocket.getRemoteDevice().getAddress();
     }
 
     @Override
     public boolean isSrmSupported() {
-        if (mSocket.getConnectionType() == BluetoothSocket.TYPE_L2CAP) {
-            return true;
-        }
-        return false;
+        return mSocket.getConnectionType() == BluetoothSocket.TYPE_L2CAP;
     }
 
     public void setConnectionForCoverArt(boolean isCoverArt) {

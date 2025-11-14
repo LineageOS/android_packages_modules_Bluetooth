@@ -47,11 +47,12 @@ class A2dpNativeCallback {
     }
 
     @VisibleForTesting
-    void onConnectionStateChanged(byte[] address, int state) {
+    void onConnectionStateChanged(byte[] address, int state, int reason) {
         A2dpStackEvent event =
                 new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.device = getDevice(address);
         event.valueInt = state;
+        event.reason = reason;
 
         Log.d(TAG, "onConnectionStateChanged: " + event);
         mA2dpService.messageFromNative(event);

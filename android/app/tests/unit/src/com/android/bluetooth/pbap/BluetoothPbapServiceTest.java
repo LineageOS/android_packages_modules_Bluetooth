@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.pbap;
 
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeNotNull;
 import static org.junit.Assume.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -37,7 +38,6 @@ import static org.mockito.Mockito.when;
 
 import android.app.NotificationManager;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -83,7 +83,7 @@ public class BluetoothPbapServiceTest {
 
     private final BluetoothDevice mRemoteDevice = getTestDevice(42);
     private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getTargetContext();
+            InstrumentationRegistry.getInstrumentation().getContext();
     private final MockContentResolver mMockContentResolver =
             new MockContentResolver(mTargetContext);
 
@@ -98,9 +98,7 @@ public class BluetoothPbapServiceTest {
         doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
         doReturn(mTargetContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mMockContentResolver).when(mAdapterService).getContentResolver();
-        UserManager manager =
-                TestUtils.mockGetSystemService(
-                        mAdapterService, Context.USER_SERVICE, UserManager.class);
+        UserManager manager = TestUtils.mockGetSystemService(mAdapterService, UserManager.class);
         doReturn(List.of()).when(manager).getAllProfiles();
 
         mTestLooper = new TestLooper();
@@ -109,7 +107,8 @@ public class BluetoothPbapServiceTest {
         doReturn(mTestLooper.getLooper()).when(mMethodProxy).handlerThreadGetLooper(any());
         doNothing().when(mMethodProxy).threadStart(any());
         mTestLooper.startAutoDispatch();
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
+        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
+        mockGetBluetoothManager(mAdapterService);
         mService = new BluetoothPbapService(mAdapterService, mNotificationManager);
         mService.setAvailable(true);
 
@@ -124,12 +123,6 @@ public class BluetoothPbapServiceTest {
         BluetoothMethodProxy.setInstanceForTesting(null);
         SdpManagerNativeInterface.setInstance(null);
         mService.cleanup();
-        assertThat(BluetoothPbapService.getBluetoothPbapService()).isNull();
-    }
-
-    @Test
-    public void initialize() {
-        assertThat(BluetoothPbapService.getBluetoothPbapService()).isNotNull();
     }
 
     @Test
@@ -148,18 +141,6 @@ public class BluetoothPbapServiceTest {
         mService.mPbapStateMachineMap.put(mRemoteDevice, sm);
 
         assertThat(mService.getConnectedDevices()).contains(mRemoteDevice);
-    }
-
-    @Test
-    public void getConnectionPolicy_withDeviceIsNull_throwsNPE() {
-        assertThrows(IllegalArgumentException.class, () -> mService.getConnectionPolicy(null));
-    }
-
-    @Test
-    public void getConnectionPolicy() {
-        mService.getConnectionPolicy(mRemoteDevice);
-
-        verify(mDatabaseManager).getProfileConnectionPolicy(mRemoteDevice, BluetoothProfile.PBAP);
     }
 
     @Test

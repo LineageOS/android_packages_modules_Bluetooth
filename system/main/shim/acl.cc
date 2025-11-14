@@ -18,6 +18,7 @@
 
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
 #include <com_android_bluetooth_flags.h>
 #include <time.h>
 
@@ -47,13 +48,12 @@
 #include "hci/address.h"
 #include "hci/address_with_type.h"
 #include "hci/class_of_device.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/stack.h"
-#include "metrics/bluetooth_event.h"
 #include "os/handler.h"
 #include "os/wakelock_manager.h"
 #include "osi/include/alarm.h"
@@ -61,13 +61,13 @@
 #include "osi/include/properties.h"
 #include "stack/acl/acl.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/internal/btm_api.h"
+#include "stack/connection_manager/connection_manager.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/main_thread.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
-
-extern tBTM_CB btm_cb;
 
 using namespace bluetooth;
 using ::bluetooth::os::WakelockManager;
@@ -201,50 +201,6 @@ std::string EpochMillisToString(long long time_ms) {
   std::string s = common::StringFormatTime(kConnectionDescriptorTimeFormat, tm);
   return std::format("{}.{:03}", s, time_ms % MillisPerSecond);
 }
-
-class ShadowAddressResolutionList {
-public:
-  explicit ShadowAddressResolutionList(uint8_t max_address_resolution_size)
-      : max_address_resolution_size_(max_address_resolution_size) {}
-
-  bool Add(const hci::AddressWithType& address_with_type) {
-    if (address_resolution_set_.size() == max_address_resolution_size_) {
-      log::error("Address Resolution is full size:{}", address_resolution_set_.size());
-      return false;
-    }
-    if (!address_resolution_set_.insert(address_with_type).second) {
-      log::warn("Attempted to add duplicate le address to address_resolution:{}",
-                address_with_type);
-    }
-    return true;
-  }
-
-  bool Remove(const hci::AddressWithType& address_with_type) {
-    auto iter = address_resolution_set_.find(address_with_type);
-    if (iter == address_resolution_set_.end()) {
-      log::warn("Unknown device being removed from address_resolution:{}", address_with_type);
-      return false;
-    }
-    address_resolution_set_.erase(iter);
-    return true;
-  }
-
-  std::unordered_set<hci::AddressWithType> GetCopy() const { return address_resolution_set_; }
-
-  bool IsFull() const {
-    return address_resolution_set_.size() == static_cast<size_t>(max_address_resolution_size_);
-  }
-
-  size_t Size() const { return address_resolution_set_.size(); }
-
-  void Clear() { address_resolution_set_.clear(); }
-
-  uint8_t GetMaxSize() const { return max_address_resolution_size_; }
-
-private:
-  uint8_t max_address_resolution_size_{0};
-  std::unordered_set<hci::AddressWithType> address_resolution_set_;
-};
 
 struct ConnectionDescriptor {
   CreationTime creation_time_;
@@ -813,8 +769,7 @@ private:
 };
 
 struct shim::Acl::impl {
-  impl(uint8_t max_address_resolution_size)
-      : shadow_address_resolution_list_(ShadowAddressResolutionList(max_address_resolution_size)) {}
+  impl() {}
 
   std::map<HciHandle, std::unique_ptr<ClassicShimAclConnection>> handle_to_classic_connection_map_;
   std::map<HciHandle, std::unique_ptr<LeShimAclConnection>> handle_to_le_connection_map_;
@@ -824,8 +779,6 @@ struct shim::Acl::impl {
 
   FixedQueue<std::unique_ptr<ConnectionDescriptor>> connection_history_ =
           FixedQueue<std::unique_ptr<ConnectionDescriptor>>(kConnectionHistorySize);
-
-  ShadowAddressResolutionList shadow_address_resolution_list_;
 
   struct timed_wakelock wakeup_wakelock_;
   bool system_suspend_ = false;
@@ -984,7 +937,7 @@ struct shim::Acl::impl {
     handle_to_classic_connection_map_[handle]->SetConnectionEncryption(enable);
   }
 
-  void disconnect_classic(uint16_t handle, tHCI_STATUS reason, std::string comment) {
+  void disconnect_classic(uint16_t handle, tHCI_STATUS reason, const std::string& comment) {
     auto connection = handle_to_classic_connection_map_.find(handle);
     if (connection != handle_to_classic_connection_map_.end()) {
       auto remote_address = connection->second->GetRemoteAddress();
@@ -999,21 +952,25 @@ struct shim::Acl::impl {
     }
   }
 
-  void disconnect_le(uint16_t handle, tHCI_STATUS reason, std::string comment) {
+  void disconnect_le(uint16_t handle, tHCI_STATUS reason, const std::string& comment) {
     auto connection = handle_to_le_connection_map_.find(handle);
-    if (connection != handle_to_le_connection_map_.end()) {
-      auto remote_address_with_type = connection->second->GetRemoteAddressWithType();
-      GetAclManager()->RemoveFromBackgroundList(remote_address_with_type);
-      connection->second->InitiateDisconnect(ToDisconnectReasonFromLegacy(reason));
-      log::debug("Disconnection initiated le remote:{} handle:{}", remote_address_with_type,
-                 handle);
-      BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(remote_address_with_type),
-                     "Disconnection initiated",
-                     std::format("Le reason:{} comment:{}", hci_status_code_text(reason), comment));
-      le_acl_disconnect_reason_.Put(comment);
-    } else {
+    if (connection == handle_to_le_connection_map_.end()) {
       log::warn("Unable to disconnect unknown le connection handle:0x{:04x}", handle);
+      return;
     }
+
+    auto remote_address_with_type = connection->second->GetRemoteAddressWithType();
+    if (com::android::bluetooth::flags::remove_device_with_connection_manager()) {
+      connection_manager::remove_unconditional(ToRawAddress(remote_address_with_type.GetAddress()));
+    } else {
+      GetAclManager()->RemoveFromBackgroundList(remote_address_with_type);
+    }
+    connection->second->InitiateDisconnect(ToDisconnectReasonFromLegacy(reason));
+    log::debug("Disconnection initiated le remote:{} handle:{}", remote_address_with_type, handle);
+    BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(remote_address_with_type),
+                   "Disconnection initiated",
+                   std::format("Le reason:{} comment:{}", hci_status_code_text(reason), comment));
+    le_acl_disconnect_reason_.Put(comment);
   }
 
   void update_connection_parameters(uint16_t handle, uint16_t conn_int_min, uint16_t conn_int_max,
@@ -1073,7 +1030,7 @@ struct shim::Acl::impl {
   void get_advertising_set_connected_to(const RawAddress& remote_bda,
                                         std::promise<std::optional<uint8_t>> promise) {
     log::debug("get_advertising_set_connected_to {}", remote_bda);
-    auto remote_address = ToGdAddress(remote_bda);
+    bluetooth::hci::Address remote_address = remote_bda;
     for (auto& [handle, connection] : handle_to_le_connection_map_) {
       if (connection->GetRemoteAddressWithType().GetAddress() == remote_address) {
         promise.set_value(connection->GetAdvertisingSetConnectedTo());
@@ -1086,33 +1043,6 @@ struct shim::Acl::impl {
   }
 
   void clear_acceptlist() { GetAclManager()->ClearFilterAcceptList(); }
-
-  void AddToAddressResolution(const hci::AddressWithType& address_with_type,
-                              const std::array<uint8_t, 16>& peer_irk,
-                              const std::array<uint8_t, 16>& local_irk) {
-    if (shadow_address_resolution_list_.IsFull()) {
-      log::warn("Le Address Resolution list is full size:{}",
-                shadow_address_resolution_list_.Size());
-      return;
-    }
-    // TODO This should really be added upon successful completion
-    shadow_address_resolution_list_.Add(address_with_type);
-    GetAclManager()->AddDeviceToResolvingList(address_with_type, peer_irk, local_irk);
-  }
-
-  void RemoveFromAddressResolution(const hci::AddressWithType& address_with_type) {
-    // TODO This should really be removed upon successful removal
-    if (!shadow_address_resolution_list_.Remove(address_with_type)) {
-      log::warn("Unable to remove from Le Address Resolution list device:{}", address_with_type);
-    }
-    GetAclManager()->RemoveDeviceFromResolvingList(address_with_type);
-  }
-
-  void ClearResolvingList() {
-    GetAclManager()->ClearResolvingList();
-    // TODO This should really be cleared after successful clear status
-    shadow_address_resolution_list_.Clear();
-  }
 
   void SetSystemSuspendState(bool suspended) { GetAclManager()->SetSystemSuspendState(suspended); }
 
@@ -1141,16 +1071,6 @@ struct shim::Acl::impl {
         LOG_DUMPSYS(fd, "  %s:%zu", item.item.c_str(), item.count);
       }
     }
-
-    auto address_resolution_list = shadow_address_resolution_list_.GetCopy();
-    LOG_DUMPSYS(fd,
-                "Shadow le address resolution list  size:%-3zu "
-                "controller_max_size:%hhu",
-                address_resolution_list.size(), shadow_address_resolution_list_.GetMaxSize());
-    unsigned cnt = 0;
-    for (auto& entry : address_resolution_list) {
-      LOG_DUMPSYS(fd, "  %03u %s", ++cnt, entry.ToRedactedStringForLogging().c_str());
-    }
   }
 #undef DUMPSYS_TAG
 };
@@ -1171,9 +1091,8 @@ void DumpsysAcl(int fd) {
       continue;
     }
 
-    LOG_DUMPSYS(fd, "remote_addr:%s handle:0x%04x transport:%s",
-                link.remote_addr.ToRedactedStringForLogging().c_str(), link.hci_handle,
-                bt_transport_text(link.transport).c_str());
+    LOG_DUMPSYS(fd, "remote_addr:%s handle:0x%04x",
+                link.link_spec.ToRedactedStringForLogging().c_str(), link.hci_handle);
     LOG_DUMPSYS(fd, "    link_up_issued:%5s", (link.link_up_issued) ? "true" : "false");
     LOG_DUMPSYS(fd, "    flush_timeout:0x%04x", link.flush_timeout_in_ticks);
     LOG_DUMPSYS(fd, "    link_supervision_timeout:%.3f sec",
@@ -1202,9 +1121,8 @@ void DumpsysAcl(int fd) {
                   common::ToString(link.peer_le_features_valid).c_str(),
                   bd_features_text(link.peer_le_features).c_str());
 
-      LOG_DUMPSYS(fd, "    [le] active_remote_addr:%s[%s]",
-                  link.active_remote_addr.ToRedactedStringForLogging().c_str(),
-                  AddressTypeText(link.active_remote_addr_type).c_str());
+      LOG_DUMPSYS(fd, "    [le] active_addrt:%s",
+                  link.active_addrt.ToRedactedStringForLogging().c_str());
     }
   }
 }
@@ -1253,12 +1171,11 @@ void shim::Acl::Dump(int fd) const {
   DumpsysAcl(fd);
 }
 
-shim::Acl::Acl(os::Handler* handler, const acl_interface_t& acl_interface,
-               uint8_t max_address_resolution_size)
+shim::Acl::Acl(os::Handler* handler, const acl_interface_t& acl_interface)
     : handler_(handler), acl_interface_(acl_interface) {
   log::assert_that(handler_ != nullptr, "assert failed: handler_ != nullptr");
   ValidateAclInterface(acl_interface_);
-  pimpl_ = std::make_unique<Acl::impl>(max_address_resolution_size);
+  pimpl_ = std::make_unique<Acl::impl>();
   GetAclManager()->RegisterCallbacks(this, handler_);
   GetAclManager()->RegisterLeCallbacks(this, handler_);
   GetController()->RegisterCompletedMonitorAclPacketsCallback(
@@ -1552,11 +1469,11 @@ void shim::Acl::OnLeConnectFail(hci::AddressWithType address_with_type, hci::Err
                  std::format("le reason:{}", hci::ErrorCodeText(reason)));
 }
 
-void shim::Acl::DisconnectClassic(uint16_t handle, tHCI_STATUS reason, std::string comment) {
+void shim::Acl::DisconnectClassic(uint16_t handle, tHCI_STATUS reason, const std::string& comment) {
   handler_->CallOn(pimpl_.get(), &Acl::impl::disconnect_classic, handle, reason, comment);
 }
 
-void shim::Acl::DisconnectLe(uint16_t handle, tHCI_STATUS reason, std::string comment) {
+void shim::Acl::DisconnectLe(uint16_t handle, tHCI_STATUS reason, const std::string& comment) {
   handler_->CallOn(pimpl_.get(), &Acl::impl::disconnect_le, handle, reason, comment);
 }
 
@@ -1635,21 +1552,6 @@ void shim::Acl::FinalShutdown() {
 
 void shim::Acl::ClearFilterAcceptList() {
   handler_->CallOn(pimpl_.get(), &Acl::impl::clear_acceptlist);
-}
-
-void shim::Acl::AddToAddressResolution(const hci::AddressWithType& address_with_type,
-                                       const std::array<uint8_t, 16>& peer_irk,
-                                       const std::array<uint8_t, 16>& local_irk) {
-  handler_->CallOn(pimpl_.get(), &Acl::impl::AddToAddressResolution, address_with_type, peer_irk,
-                   local_irk);
-}
-
-void shim::Acl::RemoveFromAddressResolution(const hci::AddressWithType& address_with_type) {
-  handler_->CallOn(pimpl_.get(), &Acl::impl::RemoveFromAddressResolution, address_with_type);
-}
-
-void shim::Acl::ClearAddressResolution() {
-  handler_->CallOn(pimpl_.get(), &Acl::impl::ClearResolvingList);
 }
 
 void shim::Acl::SetSystemSuspendState(bool suspended) {

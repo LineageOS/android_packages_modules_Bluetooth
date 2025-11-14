@@ -20,9 +20,9 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -73,7 +73,7 @@ public class GattServerConnectWithScanTest {
     private final BluetoothLeScanner mLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
 
     @Test
-    @Ignore("b/343525982: Remove hidden api's dependencies to enable the test.")
+    @Ignore("b/343749428: Remove hidden api's dependencies to enable the test.")
     public void serverConnectToRandomAddress_withTransportAuto() throws Exception {
         advertiseWithBumble(OwnAddressType.RANDOM);
         assertThat(scanBumbleDevice(Utils.BUMBLE_RANDOM_ADDRESS)).isNotNull();
@@ -100,7 +100,7 @@ public class GattServerConnectWithScanTest {
     }
 
     @Test
-    @Ignore("b/343525982: Remove hidden api's dependencies to enable the test.")
+    @Ignore("b/343749428: Remove hidden api's dependencies to enable the test.")
     public void serverConnectToRandomAddress_withTransportLE() throws Exception {
         advertiseWithBumble(OwnAddressType.RANDOM);
         assertThat(scanBumbleDevice(Utils.BUMBLE_RANDOM_ADDRESS)).isNotNull();

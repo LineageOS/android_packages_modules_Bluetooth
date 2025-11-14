@@ -432,9 +432,9 @@ static void btavrcp_get_folder_items_callback(const RawAddress& bd_addr, btrc_st
 
         ScopedLocalRef<jobject> mediaObj(
                 sCallbackEnv.get(),
-                (jobject)sCallbackEnv->CallStaticObjectMethod(
-                        class_AvrcpControllerNativeInterface, method_createFromNativeMediaItem,
-                        addr.get(), uid, (jint)item->media.type, mediaName.get(), attrIdArray.get(),
+                (jobject)sCallbackEnv->CallObjectMethod(
+                        sCallbacksObj, method_createFromNativeMediaItem, addr.get(), uid,
+                        (jint)item->media.type, mediaName.get(), attrIdArray.get(),
                         attrValArray.get()));
         if (!mediaObj.get()) {
           log::error("failed to create AvrcpItem for type ITEM_MEDIA");
@@ -456,10 +456,9 @@ static void btavrcp_get_folder_items_callback(const RawAddress& bd_addr, btrc_st
         long long uid = *(long long*)item->folder.uid;
         ScopedLocalRef<jobject> folderObj(
                 sCallbackEnv.get(),
-                (jobject)sCallbackEnv->CallStaticObjectMethod(
-                        class_AvrcpControllerNativeInterface, method_createFromNativeFolderItem,
-                        addr.get(), uid, (jint)item->folder.type, folderName.get(),
-                        (jint)item->folder.playable));
+                (jobject)sCallbackEnv->CallObjectMethod(
+                        sCallbacksObj, method_createFromNativeFolderItem, addr.get(), uid,
+                        (jint)item->folder.type, folderName.get(), (jint)item->folder.playable));
         if (!folderObj.get()) {
           log::error("failed to create AvrcpItem for type ITEM_FOLDER");
           return;
@@ -492,10 +491,9 @@ static void btavrcp_get_folder_items_callback(const RawAddress& bd_addr, btrc_st
         }
         ScopedLocalRef<jobject> playerObj(
                 sCallbackEnv.get(),
-                (jobject)sCallbackEnv->CallStaticObjectMethod(
-                        class_AvrcpControllerNativeInterface, method_createFromNativePlayerItem,
-                        addr.get(), id, playerName.get(), featureBitArray.get(), playStatus,
-                        playerType));
+                (jobject)sCallbackEnv->CallObjectMethod(
+                        sCallbacksObj, method_createFromNativePlayerItem, addr.get(), id,
+                        playerName.get(), featureBitArray.get(), playStatus, playerType));
         if (!playerObj.get()) {
           log::error("failed to create AvrcpPlayer from ITEM_PLAYER");
           return;
@@ -1173,15 +1171,15 @@ int register_com_android_bluetooth_avrcp_controller(JNIEnv* env) {
           {"createFromNativeMediaItem",
            "([BJILjava/lang/String;[I[Ljava/lang/String;)"
            "Lcom/android/bluetooth/avrcpcontroller/AvrcpItem;",
-           &method_createFromNativeMediaItem, true},
+           &method_createFromNativeMediaItem},
           {"createFromNativeFolderItem",
            "([BJILjava/lang/String;I)"
            "Lcom/android/bluetooth/avrcpcontroller/AvrcpItem;",
-           &method_createFromNativeFolderItem, true},
+           &method_createFromNativeFolderItem},
           {"createFromNativePlayerItem",
            "([BILjava/lang/String;[BII)"
            "Lcom/android/bluetooth/avrcpcontroller/AvrcpPlayer;",
-           &method_createFromNativePlayerItem, true},
+           &method_createFromNativePlayerItem},
   };
   GET_JAVA_METHODS(env, "com/android/bluetooth/avrcpcontroller/AvrcpControllerNativeInterface",
                    javaMethods);

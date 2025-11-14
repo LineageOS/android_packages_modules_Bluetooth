@@ -1,5 +1,5 @@
 use crate::core::uuid::Uuid;
-use crate::gatt::server::att_database::StableAttDatabase;
+use crate::gatt::server::att_client::WeakAttClient;
 use crate::gatt::server::gatt_database::{
     PRIMARY_SERVICE_DECLARATION_UUID, SECONDARY_SERVICE_DECLARATION_UUID,
 };
@@ -16,7 +16,7 @@ use super::helpers::payload_accumulator::PayloadAccumulator;
 pub async fn handle_read_by_group_type_request(
     request: att::AttReadByGroupTypeRequest,
     mtu: usize,
-    db: &impl StableAttDatabase,
+    client: &WeakAttClient,
 ) -> Result<att::Att, EncodeError> {
     // As per spec (5.3 Vol 3F 3.4.4.9)
     // > If an attribute in the set of requested attributes would cause an
@@ -38,10 +38,11 @@ pub async fn handle_read_by_group_type_request(
         return failure_response.try_into();
     };
 
-    let Some(attrs) = filter_to_range(
+    let all_attrs = client.list_attributes();
+    let Some(filtered) = filter_to_range(
         request.starting_handle.into(),
         request.ending_handle.into(),
-        db.list_attributes().into_iter(),
+        all_attrs.iter(),
     ) else {
         failure_response.error_code = AttErrorCode::InvalidHandle;
         return failure_response.try_into();
@@ -60,12 +61,12 @@ pub async fn handle_read_by_group_type_request(
     let mut matches = PayloadAccumulator::new(mtu - 2);
 
     // MTU-6 limit comes from Core Spec 5.3 Vol 3F 3.4.4.9
-    match filter_read_attributes_by_size_type(db, attrs, group_type, mtu - 6).await {
+    match filter_read_attributes_by_size_type(client, filtered, group_type, mtu - 6).await {
         Ok(attrs) => {
             for AttributeWithValue { attr, value } in attrs {
                 if !matches.push(att::AttReadByGroupTypeDataElement {
                     handle: attr.handle.into(),
-                    end_group_handle: find_group_end(db, attr)
+                    end_group_handle: find_group_end(&all_attrs, &attr)
                         .expect("should never be None, since grouping UUID was validated earlier")
                         .handle
                         .into(),
@@ -90,18 +91,20 @@ pub async fn handle_read_by_group_type_request(
 
 #[cfg(test)]
 mod test {
-    use crate::gatt::ids::AttHandle;
+    use crate::gatt::ids::{AttHandle, TransportIndex};
+    use crate::gatt::server::att_client::AttClient;
     use crate::gatt::server::att_database::AttAttribute;
     use crate::gatt::server::gatt_database::{AttPermissions, CHARACTERISTIC_UUID};
-    use crate::gatt::server::test::test_att_db::TestAttDatabase;
+    use crate::gatt::server::test::test_att_db::new_test_database;
     use crate::packets::att;
 
     use super::*;
+    const TCB_IDX: TransportIndex = TransportIndex(1);
 
     #[test]
     fn test_simple_grouping() {
         // arrange: one service with a child attribute, another service with no children
-        let db = TestAttDatabase::new(vec![
+        let db = new_test_database(vec![
             (
                 AttAttribute {
                     handle: AttHandle(3),
@@ -127,6 +130,7 @@ mod test {
                 vec![6, 7],
             ),
         ]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act
         let att_view = att::AttReadByGroupTypeRequest {
@@ -134,7 +138,11 @@ mod test {
             ending_handle: AttHandle(6).into(),
             attribute_group_type: PRIMARY_SERVICE_DECLARATION_UUID.into(),
         };
-        let response = tokio_test::block_on(handle_read_by_group_type_request(att_view, 31, &db));
+        let response = tokio_test::block_on(handle_read_by_group_type_request(
+            att_view,
+            31,
+            &client.downgrade(),
+        ));
 
         // assert: we identified both service groups
         assert_eq!(
@@ -160,7 +168,8 @@ mod test {
     #[test]
     fn test_invalid_group_type() {
         // arrange
-        let db = TestAttDatabase::new(vec![]);
+        let db = new_test_database(vec![]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act: try using an unsupported group type
         let att_view = att::AttReadByGroupTypeRequest {
@@ -168,7 +177,11 @@ mod test {
             ending_handle: AttHandle(6).into(),
             attribute_group_type: CHARACTERISTIC_UUID.into(),
         };
-        let response = tokio_test::block_on(handle_read_by_group_type_request(att_view, 31, &db));
+        let response = tokio_test::block_on(handle_read_by_group_type_request(
+            att_view,
+            31,
+            &client.downgrade(),
+        ));
 
         // assert: got UNSUPPORTED_GROUP_TYPE
         assert_eq!(
@@ -185,7 +198,8 @@ mod test {
     #[test]
     fn test_range_validation() {
         // arrange: an empty (irrelevant) db
-        let db = TestAttDatabase::new(vec![]);
+        let db = new_test_database(vec![]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act: query with an invalid attribute range
         let att_view = att::AttReadByGroupTypeRequest {
@@ -193,7 +207,11 @@ mod test {
             ending_handle: AttHandle(2).into(),
             attribute_group_type: PRIMARY_SERVICE_DECLARATION_UUID.into(),
         };
-        let response = tokio_test::block_on(handle_read_by_group_type_request(att_view, 31, &db));
+        let response = tokio_test::block_on(handle_read_by_group_type_request(
+            att_view,
+            31,
+            &client.downgrade(),
+        ));
 
         // assert: we return an INVALID_HANDLE error
         assert_eq!(
@@ -210,7 +228,7 @@ mod test {
     #[test]
     fn test_attribute_truncation() {
         // arrange: one service with a value of length 5
-        let db = TestAttDatabase::new(vec![(
+        let db = new_test_database(vec![(
             AttAttribute {
                 handle: AttHandle(3),
                 type_: PRIMARY_SERVICE_DECLARATION_UUID,
@@ -218,6 +236,7 @@ mod test {
             },
             vec![1, 2, 3, 4, 5],
         )]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act: read the service value with MTU = 7, so the value is truncated to MTU-6
         // = 1
@@ -226,7 +245,11 @@ mod test {
             ending_handle: AttHandle(6).into(),
             attribute_group_type: PRIMARY_SERVICE_DECLARATION_UUID.into(),
         };
-        let response = tokio_test::block_on(handle_read_by_group_type_request(att_view, 7, &db));
+        let response = tokio_test::block_on(handle_read_by_group_type_request(
+            att_view,
+            7,
+            &client.downgrade(),
+        ));
 
         // assert: we identified both service groups
         assert_eq!(
@@ -245,7 +268,7 @@ mod test {
     #[test]
     fn test_limit_total_size() {
         // arrange
-        let db = TestAttDatabase::new(vec![
+        let db = new_test_database(vec![
             (
                 AttAttribute {
                     handle: AttHandle(3),
@@ -263,6 +286,7 @@ mod test {
                 vec![5, 6, 7],
             ),
         ]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act: read with MTU = 9, so we can only fit the first attribute (untruncated)
         let att_view = att::AttReadByGroupTypeRequest {
@@ -270,7 +294,11 @@ mod test {
             ending_handle: AttHandle(6).into(),
             attribute_group_type: PRIMARY_SERVICE_DECLARATION_UUID.into(),
         };
-        let response = tokio_test::block_on(handle_read_by_group_type_request(att_view, 9, &db));
+        let response = tokio_test::block_on(handle_read_by_group_type_request(
+            att_view,
+            9,
+            &client.downgrade(),
+        ));
 
         // assert: we return only the first attribute
         assert_eq!(
@@ -289,7 +317,7 @@ mod test {
     #[test]
     fn test_group_end_outside_range() {
         // arrange: one service with a child attribute
-        let db = TestAttDatabase::new(vec![
+        let db = new_test_database(vec![
             (
                 AttAttribute {
                     handle: AttHandle(3),
@@ -307,6 +335,7 @@ mod test {
                 vec![5, 6],
             ),
         ]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act: search in an interval that includes the service but not its child
         let att_view = att::AttReadByGroupTypeRequest {
@@ -314,7 +343,11 @@ mod test {
             ending_handle: AttHandle(3).into(),
             attribute_group_type: PRIMARY_SERVICE_DECLARATION_UUID.into(),
         };
-        let response = tokio_test::block_on(handle_read_by_group_type_request(att_view, 31, &db));
+        let response = tokio_test::block_on(handle_read_by_group_type_request(
+            att_view,
+            31,
+            &client.downgrade(),
+        ));
 
         // assert: the end_group_handle is correct, even though it exceeds the query
         // interval
@@ -334,7 +367,7 @@ mod test {
     #[test]
     fn test_no_results() {
         // arrange: read out of the bounds where attributes of interest exist
-        let db = TestAttDatabase::new(vec![
+        let db = new_test_database(vec![
             (
                 AttAttribute {
                     handle: AttHandle(3),
@@ -352,6 +385,7 @@ mod test {
                 vec![4, 5, 6],
             ),
         ]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act
         let att_view = att::AttReadByGroupTypeRequest {
@@ -359,7 +393,11 @@ mod test {
             ending_handle: AttHandle(6).into(),
             attribute_group_type: PRIMARY_SERVICE_DECLARATION_UUID.into(),
         };
-        let response = tokio_test::block_on(handle_read_by_group_type_request(att_view, 31, &db));
+        let response = tokio_test::block_on(handle_read_by_group_type_request(
+            att_view,
+            31,
+            &client.downgrade(),
+        ));
 
         // assert: we return ATTRIBUTE_NOT_FOUND
         assert_eq!(

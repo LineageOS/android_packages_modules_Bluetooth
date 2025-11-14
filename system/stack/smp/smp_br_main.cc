@@ -44,8 +44,8 @@ const char* const smp_br_event_name[SMP_BR_MAX_EVT] = {
         "BR_ENC_REQ_EVT",         "BR_BOND_REQ_EVT",
         "BR_DISCARD_SEC_REQ_EVT", "BR_OUT_OF_RANGE_EVT"};
 
-const char* smp_get_br_event_name(tSMP_BR_EVENT event);
-const char* smp_get_br_state_name(tSMP_BR_STATE state);
+static const char* smp_get_br_event_name(tSMP_BR_EVENT event);
+static const char* smp_get_br_state_name(tSMP_BR_STATE state);
 
 #define SMP_BR_SM_IGNORE 0
 #define SMP_BR_NUM_ACTIONS 2
@@ -258,7 +258,7 @@ tSMP_BR_STATE smp_get_br_state(void) { return smp_cb.br_state; }
  * Function     smp_get_br_state_name
  * Returns      The smp_br state name.
  ******************************************************************************/
-const char* smp_get_br_state_name(tSMP_BR_STATE br_state) {
+static const char* smp_get_br_state_name(tSMP_BR_STATE br_state) {
   const char* p_str = smp_br_state_name[SMP_BR_STATE_MAX];
 
   if (br_state < SMP_BR_STATE_MAX) {
@@ -271,7 +271,7 @@ const char* smp_get_br_state_name(tSMP_BR_STATE br_state) {
  * Function     smp_get_br_event_name
  * Returns      The smp_br event name.
  ******************************************************************************/
-const char* smp_get_br_event_name(tSMP_BR_EVENT event) {
+static const char* smp_get_br_event_name(tSMP_BR_EVENT event) {
   const char* p_str = smp_br_event_name[SMP_BR_MAX_EVT - 1];
 
   if (event < SMP_BR_MAX_EVT) {

@@ -585,11 +585,11 @@ struct smp_link_encrypted {
 };
 extern struct smp_link_encrypted smp_link_encrypted;
 // Name: smp_cancel_start_encryption_attempt
-// Params:
+// Params: const RawAddress& bda
 // Returns: void
 struct smp_cancel_start_encryption_attempt {
-  std::function<void()> body{[]() {}};
-  void operator()() { body(); }
+  std::function<void(const RawAddress& bda)> body{[](const RawAddress& /* bda */) {}};
+  void operator()(const RawAddress& bda) { body(bda); }
 };
 extern struct smp_cancel_start_encryption_attempt smp_cancel_start_encryption_attempt;
 // Name: smp_proc_ltk_request

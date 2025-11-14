@@ -16,7 +16,7 @@ java_library {
     ],
     libs: ["framework-annotations-lib"],
     sdk_version: "module_current",
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     apex_available: ["com.android.bt"],
     visibility: ["//packages/modules/Bluetooth:__subpackages__"],
 }

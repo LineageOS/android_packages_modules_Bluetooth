@@ -114,6 +114,7 @@ public:
   uint16_t link_quality_timer_data;
 
   uint8_t last_ase_ctp_command_sent;
+  alarm_t* update_to_relaxed_conn_interval_timer;
 
   LeAudioDevice(const RawAddress& address, DeviceConnectState state,
                 int group_id = bluetooth::groups::kGroupUnknown)
@@ -136,6 +137,10 @@ public:
         acl_phy_update_done_(false),
         link_quality_timer(nullptr),
         last_ase_ctp_command_sent(0x00),
+        update_to_relaxed_conn_interval_timer(alarm_new(
+          (std::string("update_to_relaxed_conn_interval_timer_") +
+           address.ToString().substr(10, 4)).c_str()
+        )),
         dsa_({{DsaMode::DISABLED},
               types::DataPathState::IDLE,
               LE_AUDIO_INVALID_CIS_HANDLE,
@@ -162,7 +167,10 @@ public:
   struct types::ase* GetAseToMatchBidirectionCis(struct types::ase* ase);
   types::BidirectionalPair<struct types::ase*> GetAsesByCisConnHdl(uint16_t conn_hdl);
   types::BidirectionalPair<struct types::ase*> GetAsesByCisId(uint8_t cis_id);
+  uint8_t GetActiveEnabledDirections(void);
+  uint8_t GetActiveQoSConfiguredDirections(void);
   bool HaveActiveAse(void);
+  bool HasAllRequiredStreamingAses(void);
   bool HaveAllActiveAsesSameState(types::AseState state);
   bool HaveAllActiveAsesSameDataPathState(types::DataPathState state) const;
   bool HaveAnyUnconfiguredAses(void);
@@ -241,6 +249,16 @@ public:
   uint16_t GetDsaCisHandle(void);
   void SetDsaCisHandle(uint16_t cis_handle);
 
+  bool IsGmapEnabled() const {
+    if (!gmap_client_) {
+      return false;
+    }
+    return gmap_client_->IsGmapClientEnabled();
+  }
+
+  void StartLinkQualityReports(uint16_t cis_handle);
+  void FreeLinkQualityReports(void);
+
 private:
   types::BidirectionalPair<types::AudioContexts> avail_contexts_;
   types::BidirectionalPair<types::AudioContexts> supp_contexts_;
@@ -251,6 +269,7 @@ private:
     bool reduced_sdu;  // TODO: Remove when earbud implementations move to approved DSA 2.0 standard
   } dsa_;
 
+  static constexpr int linkQualityCheckInterval = 4000;
   static constexpr char kLeAudioDeviceAllowListProp[] = "persist.bluetooth.leaudio.allow_list";
 
   void DumpPacsDebugState(std::stringstream& stream, types::PublishedAudioCapabilities pacs);

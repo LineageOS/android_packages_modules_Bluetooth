@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.hfp;
 
 /** A blob of data representing AG's device state in response to an AT+CIND command from HF */

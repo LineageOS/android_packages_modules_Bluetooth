@@ -42,9 +42,9 @@ public class AvrcpControllerServiceBinderTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private AvrcpControllerService mService;
 
-    private final AttributionSource mAttributionSource = new AttributionSource.Builder(1).build();
     private final BluetoothDevice mDevice = getTestDevice(49);
 
     private AvrcpControllerServiceBinder mBinder;
@@ -72,16 +72,6 @@ public class AvrcpControllerServiceBinderTest {
     public void getConnectionState_callsServiceMethod() {
         mBinder.getConnectionState(mDevice, mAttributionSource);
         verify(mService).getConnectionState(mDevice);
-    }
-
-    @Test
-    public void sendGroupNavigationCmd_notImplemented_doesNothing() {
-        mBinder.sendGroupNavigationCmd(mDevice, 1, 2, mAttributionSource);
-    }
-
-    @Test
-    public void getPlayerSettings_notImplemented_doesNothing() {
-        mBinder.getPlayerSettings(mDevice, mAttributionSource);
     }
 
     @Test

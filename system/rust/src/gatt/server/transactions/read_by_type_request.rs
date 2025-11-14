@@ -1,5 +1,5 @@
 use crate::core::uuid::Uuid;
-use crate::gatt::server::att_database::StableAttDatabase;
+use crate::gatt::server::att_client::WeakAttClient;
 use crate::packets::att::{self, AttErrorCode};
 use pdl_runtime::EncodeError;
 
@@ -12,7 +12,7 @@ use super::helpers::payload_accumulator::PayloadAccumulator;
 pub async fn handle_read_by_type_request(
     request: att::AttReadByTypeRequest,
     mtu: usize,
-    db: &impl StableAttDatabase,
+    client: &WeakAttClient,
 ) -> Result<att::Att, EncodeError> {
     // As per spec (5.3 Vol 3F 3.4.4.1)
     // > If an attribute in the set of requested attributes would cause an
@@ -34,10 +34,11 @@ pub async fn handle_read_by_type_request(
         return failure_response.try_into();
     };
 
+    let all_attrs = client.list_attributes();
     let Some(attrs) = filter_to_range(
         request.starting_handle.into(),
         request.ending_handle.into(),
-        db.list_attributes().into_iter(),
+        all_attrs.iter(),
     ) else {
         failure_response.error_code = AttErrorCode::InvalidHandle;
         return failure_response.try_into();
@@ -47,7 +48,7 @@ pub async fn handle_read_by_type_request(
     let mut out = PayloadAccumulator::new(mtu - 2);
 
     // MTU-4 limit comes from Core Spec 5.3 Vol 3F 3.4.4.1
-    match filter_read_attributes_by_size_type(db, attrs, request_type, mtu - 4).await {
+    match filter_read_attributes_by_size_type(client, attrs, request_type, mtu - 4).await {
         Ok(attrs) => {
             for AttributeWithValue { attr, value } in attrs {
                 if !out.push(att::AttReadByTypeDataElement { handle: attr.handle.into(), value }) {
@@ -73,19 +74,21 @@ mod test {
     use super::*;
 
     use crate::core::uuid::Uuid;
-    use crate::gatt::ids::AttHandle;
+    use crate::gatt::ids::{AttHandle, TransportIndex};
+    use crate::gatt::server::att_client::AttClient;
     use crate::gatt::server::att_database::AttAttribute;
     use crate::gatt::server::gatt_database::AttPermissions;
-    use crate::gatt::server::test::test_att_db::TestAttDatabase;
+    use crate::gatt::server::test::test_att_db::new_test_database;
     use crate::packets::att;
 
     const UUID: Uuid = Uuid::new(1234);
     const ANOTHER_UUID: Uuid = Uuid::new(2345);
+    const TCB_IDX: TransportIndex = TransportIndex(1);
 
     #[test]
     fn test_single_matching_attr() {
         // arrange
-        let db = TestAttDatabase::new(vec![(
+        let db = new_test_database(vec![(
             AttAttribute {
                 handle: AttHandle(3),
                 type_: UUID,
@@ -93,6 +96,7 @@ mod test {
             },
             vec![4, 5],
         )]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act
         let att_view = att::AttReadByTypeRequest {
@@ -100,7 +104,8 @@ mod test {
             ending_handle: AttHandle(6).into(),
             attribute_type: UUID.into(),
         };
-        let response = tokio_test::block_on(handle_read_by_type_request(att_view, 31, &db));
+        let response =
+            tokio_test::block_on(handle_read_by_type_request(att_view, 31, &client.downgrade()));
 
         // assert
         assert_eq!(
@@ -118,7 +123,7 @@ mod test {
     #[test]
     fn test_type_filtering() {
         // arrange
-        let db = TestAttDatabase::new(vec![
+        let db = new_test_database(vec![
             (
                 AttAttribute {
                     handle: AttHandle(3),
@@ -144,6 +149,7 @@ mod test {
                 vec![6, 7],
             ),
         ]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act
         let att_view = att::AttReadByTypeRequest {
@@ -151,7 +157,8 @@ mod test {
             ending_handle: AttHandle(6).into(),
             attribute_type: UUID.into(),
         };
-        let response = tokio_test::block_on(handle_read_by_type_request(att_view, 31, &db));
+        let response =
+            tokio_test::block_on(handle_read_by_type_request(att_view, 31, &client.downgrade()));
 
         // assert: we correctly filtered by type (so we are using the filter_by_type
         // utility)
@@ -176,7 +183,7 @@ mod test {
     #[test]
     fn test_limit_total_size() {
         // arrange
-        let db = TestAttDatabase::new(vec![
+        let db = new_test_database(vec![
             (
                 AttAttribute {
                     handle: AttHandle(3),
@@ -194,6 +201,7 @@ mod test {
                 vec![5, 6, 7],
             ),
         ]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act: read with MTU = 8, so we can only fit the first attribute (untruncated)
         let att_view = att::AttReadByTypeRequest {
@@ -201,7 +209,8 @@ mod test {
             ending_handle: AttHandle(6).into(),
             attribute_type: UUID.into(),
         };
-        let response = tokio_test::block_on(handle_read_by_type_request(att_view, 8, &db));
+        let response =
+            tokio_test::block_on(handle_read_by_type_request(att_view, 8, &client.downgrade()));
 
         // assert: we return only the first attribute
         assert_eq!(
@@ -219,7 +228,7 @@ mod test {
     #[test]
     fn test_no_results() {
         // arrange: read out of the bounds where attributes of interest exist
-        let db = TestAttDatabase::new(vec![
+        let db = new_test_database(vec![
             (
                 AttAttribute {
                     handle: AttHandle(3),
@@ -237,6 +246,7 @@ mod test {
                 vec![4, 5, 6],
             ),
         ]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act
         let att_view = att::AttReadByTypeRequest {
@@ -244,7 +254,8 @@ mod test {
             ending_handle: AttHandle(6).into(),
             attribute_type: UUID.into(),
         };
-        let response = tokio_test::block_on(handle_read_by_type_request(att_view, 31, &db));
+        let response =
+            tokio_test::block_on(handle_read_by_type_request(att_view, 31, &client.downgrade()));
 
         // assert: we return ATTRIBUTE_NOT_FOUND
         assert_eq!(
@@ -261,7 +272,8 @@ mod test {
     #[test]
     fn test_range_validation() {
         // arrange: put a non-readable attribute in the db with the right type
-        let db = TestAttDatabase::new(vec![]);
+        let db = new_test_database(vec![]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act
         let att_view = att::AttReadByTypeRequest {
@@ -269,7 +281,8 @@ mod test {
             ending_handle: AttHandle(6).into(),
             attribute_type: UUID.into(),
         };
-        let response = tokio_test::block_on(handle_read_by_type_request(att_view, 31, &db));
+        let response =
+            tokio_test::block_on(handle_read_by_type_request(att_view, 31, &client.downgrade()));
 
         // assert: we return an INVALID_HANDLE error
         assert_eq!(

@@ -248,10 +248,10 @@ bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event, const tBTA_GA
   tBTA_GATTC_STATE in_state = p_clcb->state;
   uint16_t in_event = event;
 #if (BTA_GATT_DEBUG == TRUE)
-  log::verbose("State 0x{:02x} [{}], Event 0x{:x}[{}]", in_state, gattc_state_code(in_state),
-               in_event, gattc_evt_code(in_event));
+  log::verbose("State 0x{:02x} [{}], Event 0x{:x}[{}], Addr {}", in_state,
+               gattc_state_code(in_state), in_event, gattc_evt_code(in_event), p_clcb->bda);
 #else
-  log::verbose("State 0x{:02x}, Event 0x{:x}", in_state, in_event);
+  log::verbose("State 0x{:02x}, Event 0x{:x}, Addr {}", in_state, in_event, p_clcb->bda);
 #endif
 
   /* look up the state table for the current state */
@@ -280,12 +280,13 @@ bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event, const tBTA_GA
 
 #if (BTA_GATT_DEBUG == TRUE)
   if (in_state != p_clcb->state) {
-    log::verbose("GATTC State Change: [{}] -> [{}] after Event [{}]", gattc_state_code(in_state),
-                 gattc_state_code(p_clcb->state), gattc_evt_code(in_event));
+    log::verbose("GATTC State Change: [{}] -> [{}] after Event [{}], Addr {}",
+                 gattc_state_code(in_state), gattc_state_code(p_clcb->state),
+                 gattc_evt_code(in_event), p_clcb->bda);
   }
 #else
-  log::verbose("GATTC State Change: 0x{:02x} -> 0x{:02x} after Event 0x{:x}", in_state,
-               p_clcb->state, in_event);
+  log::verbose("GATTC State Change: 0x{:02x} -> 0x{:02x} after Event 0x{:x}, Addr {}", in_state,
+               p_clcb->state, in_event, p_clcb->bda);
 #endif
   return rt;
 }

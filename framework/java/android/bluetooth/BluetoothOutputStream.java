@@ -16,7 +16,7 @@
 
 package android.bluetooth;
 
-import android.annotation.SuppressLint;
+import android.annotation.RequiresNoPermission;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -28,8 +28,7 @@ import java.io.OutputStream;
  *
  * @hide
  */
-@SuppressLint("AndroidFrameworkBluetoothPermission")
-/*package*/ final class BluetoothOutputStream extends OutputStream {
+final class BluetoothOutputStream extends OutputStream {
     private final BluetoothSocket mSocket;
 
     /*package*/ BluetoothOutputStream(BluetoothSocket s) {
@@ -49,6 +48,7 @@ import java.io.OutputStream;
      * @throws IOException if an error occurs while writing to this stream.
      * @since Android 1.0
      */
+    @RequiresNoPermission // Permission is checked when creating the stream
     public void write(int oneByte) throws IOException {
         byte[] b = new byte[1];
         b[0] = (byte) oneByte;
@@ -67,6 +67,7 @@ import java.io.OutputStream;
      *     offset + count} is bigger than the length of {@code buffer}.
      * @since Android 1.0
      */
+    @RequiresNoPermission // Permission is checked when creating the stream
     public void write(byte[] b, int offset, int count) throws IOException {
         if (b == null) {
             throw new NullPointerException("buffer is null");

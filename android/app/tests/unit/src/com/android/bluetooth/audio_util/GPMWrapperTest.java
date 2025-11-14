@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.audio_util;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -47,7 +48,7 @@ public class GPMWrapperTest {
 
     @Before
     public void setUp() throws Exception {
-        mContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        mContext = InstrumentationRegistry.getInstrumentation().getContext();
         mMediaController = mock(MediaController.class);
     }
 

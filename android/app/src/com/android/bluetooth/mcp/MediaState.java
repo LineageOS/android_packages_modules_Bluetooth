@@ -38,17 +38,12 @@ public enum MediaState {
 
     /** Converts the state to string. */
     public static String toString(int value) {
-        switch (value) {
-            case 0x00:
-                return "INACTIVE(0x00)";
-            case 0x01:
-                return "PLAYING(0x01)";
-            case 0x02:
-                return "PAUSED(0x02)";
-            case 0x03:
-                return "SEEKING(0x03)";
-            default:
-                return "UNKNOWN(0x" + Integer.toHexString(value) + ")";
-        }
+        return switch (value) {
+            case 0x00 -> "INACTIVE(0x00)";
+            case 0x01 -> "PLAYING(0x01)";
+            case 0x02 -> "PAUSED(0x02)";
+            case 0x03 -> "SEEKING(0x03)";
+            default -> "UNKNOWN(0x" + Integer.toHexString(value) + ")";
+        };
     }
 }

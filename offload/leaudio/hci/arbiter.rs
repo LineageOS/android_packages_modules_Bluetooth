@@ -1,4 +1,4 @@
-// Copyright 2024, The Android Open Source Project
+// Copyright (C) 2024, The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -88,7 +88,10 @@ impl Arbiter {
     pub fn set_completed(&self, handle: u16, num: usize) {
         let (state, cvar) = &*self.state_cvar;
         if let Some(buf_usage) = state.lock().unwrap().in_transit.get_mut(&handle) {
-            *buf_usage -= num;
+            if num > *buf_usage {
+                log::error!("More completed packets than sent reported {} / {}", num, *buf_usage);
+            }
+            *buf_usage = buf_usage.saturating_sub(num);
             cvar.notify_one();
         }
     }

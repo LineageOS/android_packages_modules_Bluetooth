@@ -4,15 +4,22 @@ package {
 
 android_test {
     name: "FrameworkBluetoothTests",
+    defaults: [
+        "bluetooth_errorprone_rules",
+        "bluetooth_lint_rules",
+    ],
 
     sdk_version: "module_current",
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     target_sdk_version: "current",
 
     // Include all test java files.
     srcs: ["src/**/*.java"],
     jacoco: {
-        include_filter: ["android.bluetooth.*"],
+        include_filter: [
+            "android.bluetooth.**",
+            "com.android.bluetooth.**",
+        ],
         exclude_filter: [],
     },
     libs: [
@@ -26,7 +33,6 @@ android_test {
         "androidx.test.rules",
         "flag-junit",
         "framework-bluetooth-pre-jarjar",
-        "frameworks-base-testutils",
         "junit",
         "mockito-target",
         "modules-utils-bytesmatcher",

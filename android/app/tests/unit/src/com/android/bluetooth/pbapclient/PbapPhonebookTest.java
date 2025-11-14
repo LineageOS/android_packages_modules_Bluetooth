@@ -49,6 +49,7 @@ public class PbapPhonebookTest {
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.FAVORITES_PATH);
         assertThat(phonebook.getOffset()).isEqualTo(0);
         assertThat(phonebook.getCount()).isEqualTo(0);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
         assertThat(phonebook.getList()).isEmpty();
     }
 
@@ -59,6 +60,7 @@ public class PbapPhonebookTest {
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.LOCAL_PHONEBOOK_PATH);
         assertThat(phonebook.getOffset()).isEqualTo(0);
         assertThat(phonebook.getCount()).isEqualTo(0);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
         assertThat(phonebook.getList()).isEmpty();
     }
 
@@ -69,6 +71,7 @@ public class PbapPhonebookTest {
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.ICH_PATH);
         assertThat(phonebook.getOffset()).isEqualTo(0);
         assertThat(phonebook.getCount()).isEqualTo(0);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
         assertThat(phonebook.getList()).isEmpty();
     }
 
@@ -79,6 +82,7 @@ public class PbapPhonebookTest {
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.OCH_PATH);
         assertThat(phonebook.getOffset()).isEqualTo(0);
         assertThat(phonebook.getCount()).isEqualTo(0);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
         assertThat(phonebook.getList()).isEmpty();
     }
 
@@ -89,6 +93,7 @@ public class PbapPhonebookTest {
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.MCH_PATH);
         assertThat(phonebook.getOffset()).isEqualTo(0);
         assertThat(phonebook.getCount()).isEqualTo(0);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
         assertThat(phonebook.getList()).isEmpty();
     }
 
@@ -99,6 +104,7 @@ public class PbapPhonebookTest {
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.SIM_ICH_PATH);
         assertThat(phonebook.getOffset()).isEqualTo(0);
         assertThat(phonebook.getCount()).isEqualTo(0);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
         assertThat(phonebook.getList()).isEmpty();
     }
 
@@ -109,6 +115,7 @@ public class PbapPhonebookTest {
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.SIM_OCH_PATH);
         assertThat(phonebook.getOffset()).isEqualTo(0);
         assertThat(phonebook.getCount()).isEqualTo(0);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
         assertThat(phonebook.getList()).isEmpty();
     }
 
@@ -119,6 +126,7 @@ public class PbapPhonebookTest {
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.SIM_MCH_PATH);
         assertThat(phonebook.getOffset()).isEqualTo(0);
         assertThat(phonebook.getCount()).isEqualTo(0);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
         assertThat(phonebook.getList()).isEmpty();
     }
 
@@ -150,13 +158,11 @@ public class PbapPhonebookTest {
         InputStream stream = toUtf8Stream(phonebookString);
         PbapPhonebook phonebook =
                 new PbapPhonebook(
-                        PbapPhonebook.FAVORITES_PATH,
-                        PbapPhonebook.FORMAT_VCARD_21,
-                        0,
-                        stream);
+                        PbapPhonebook.FAVORITES_PATH, PbapPhonebook.FORMAT_VCARD_21, 0, stream);
 
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.FAVORITES_PATH);
         assertThat(phonebook.getCount()).isEqualTo(2);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
     }
 
     @Test
@@ -190,6 +196,7 @@ public class PbapPhonebookTest {
 
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.LOCAL_PHONEBOOK_PATH);
         assertThat(phonebook.getCount()).isEqualTo(2);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
     }
 
     @Test
@@ -216,13 +223,47 @@ public class PbapPhonebookTest {
         InputStream stream = toUtf8Stream(phonebookString);
         PbapPhonebook phonebook =
                 new PbapPhonebook(
-                        PbapPhonebook.SIM_PHONEBOOK_PATH,
+                        PbapPhonebook.SIM_PHONEBOOK_PATH, PbapPhonebook.FORMAT_VCARD_21, 0, stream);
+
+        assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.SIM_PHONEBOOK_PATH);
+        assertThat(phonebook.getCount()).isEqualTo(2);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
+    }
+
+    @Test
+    public void testParsePhonebookWithPhotos_forLocalPhonebook_localPhonebookParsedWithPhotos()
+            throws IOException {
+        String vcard1 =
+                Utils.createVcard(
+                        Utils.VERSION_21,
+                        "Foo",
+                        "Bar",
+                        "+12345678901",
+                        "111 Test Street;Test Town;CA;90210;USA",
+                        "Foo@email.com",
+                        Utils.USE_CONTACT_PHOTO);
+        String vcard2 =
+                Utils.createVcard(
+                        Utils.VERSION_21,
+                        "Baz",
+                        "Bar",
+                        "+12345678902",
+                        "112 Test Street;Test Town;CA;90210;USA",
+                        "Baz@email.com");
+        String phonebookString =
+                Utils.createPhonebook(Arrays.asList(new String[] {vcard1, vcard2}));
+
+        InputStream stream = toUtf8Stream(phonebookString);
+        PbapPhonebook phonebook =
+                new PbapPhonebook(
+                        PbapPhonebook.LOCAL_PHONEBOOK_PATH,
                         PbapPhonebook.FORMAT_VCARD_21,
                         0,
                         stream);
 
-        assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.SIM_PHONEBOOK_PATH);
+        assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.LOCAL_PHONEBOOK_PATH);
         assertThat(phonebook.getCount()).isEqualTo(2);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(1);
     }
 
     // *********************************************************************************************
@@ -252,14 +293,11 @@ public class PbapPhonebookTest {
 
         InputStream stream = toUtf8Stream(historyString);
         PbapPhonebook phonebook =
-                new PbapPhonebook(
-                        PbapPhonebook.ICH_PATH,
-                        PbapPhonebook.FORMAT_VCARD_21,
-                        0,
-                        stream);
+                new PbapPhonebook(PbapPhonebook.ICH_PATH, PbapPhonebook.FORMAT_VCARD_21, 0, stream);
 
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.ICH_PATH);
         assertThat(phonebook.getCount()).isEqualTo(2);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
     }
 
     @Test
@@ -285,14 +323,11 @@ public class PbapPhonebookTest {
 
         InputStream stream = toUtf8Stream(historyString);
         PbapPhonebook phonebook =
-                new PbapPhonebook(
-                        PbapPhonebook.OCH_PATH,
-                        PbapPhonebook.FORMAT_VCARD_21,
-                        0,
-                        stream);
+                new PbapPhonebook(PbapPhonebook.OCH_PATH, PbapPhonebook.FORMAT_VCARD_21, 0, stream);
 
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.OCH_PATH);
         assertThat(phonebook.getCount()).isEqualTo(2);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
     }
 
     @Test
@@ -318,14 +353,11 @@ public class PbapPhonebookTest {
 
         InputStream stream = toUtf8Stream(historyString);
         PbapPhonebook phonebook =
-                new PbapPhonebook(
-                        PbapPhonebook.MCH_PATH,
-                        PbapPhonebook.FORMAT_VCARD_21,
-                        0,
-                        stream);
+                new PbapPhonebook(PbapPhonebook.MCH_PATH, PbapPhonebook.FORMAT_VCARD_21, 0, stream);
 
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.MCH_PATH);
         assertThat(phonebook.getCount()).isEqualTo(2);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
     }
 
     @Test
@@ -352,13 +384,11 @@ public class PbapPhonebookTest {
         InputStream stream = toUtf8Stream(historyString);
         PbapPhonebook phonebook =
                 new PbapPhonebook(
-                        PbapPhonebook.SIM_ICH_PATH,
-                        PbapPhonebook.FORMAT_VCARD_21,
-                        0,
-                        stream);
+                        PbapPhonebook.SIM_ICH_PATH, PbapPhonebook.FORMAT_VCARD_21, 0, stream);
 
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.SIM_ICH_PATH);
         assertThat(phonebook.getCount()).isEqualTo(2);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
     }
 
     @Test
@@ -385,13 +415,11 @@ public class PbapPhonebookTest {
         InputStream stream = toUtf8Stream(historyString);
         PbapPhonebook phonebook =
                 new PbapPhonebook(
-                        PbapPhonebook.SIM_OCH_PATH,
-                        PbapPhonebook.FORMAT_VCARD_21,
-                        0,
-                        stream);
+                        PbapPhonebook.SIM_OCH_PATH, PbapPhonebook.FORMAT_VCARD_21, 0, stream);
 
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.SIM_OCH_PATH);
         assertThat(phonebook.getCount()).isEqualTo(2);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
     }
 
     @Test
@@ -418,13 +446,11 @@ public class PbapPhonebookTest {
         InputStream stream = toUtf8Stream(historyString);
         PbapPhonebook phonebook =
                 new PbapPhonebook(
-                        PbapPhonebook.SIM_MCH_PATH,
-                        PbapPhonebook.FORMAT_VCARD_21,
-                        0,
-                        stream);
+                        PbapPhonebook.SIM_MCH_PATH, PbapPhonebook.FORMAT_VCARD_21, 0, stream);
 
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.SIM_MCH_PATH);
         assertThat(phonebook.getCount()).isEqualTo(2);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
     }
 
     // *********************************************************************************************
@@ -455,13 +481,11 @@ public class PbapPhonebookTest {
         InputStream stream = toUtf8Stream(phonebookString);
         PbapPhonebook phonebook =
                 new PbapPhonebook(
-                        PbapPhonebook.SIM_PHONEBOOK_PATH,
-                        PbapPhonebook.FORMAT_VCARD_30,
-                        0,
-                        stream);
+                        PbapPhonebook.SIM_PHONEBOOK_PATH, PbapPhonebook.FORMAT_VCARD_30, 0, stream);
 
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.SIM_PHONEBOOK_PATH);
         assertThat(phonebook.getCount()).isEqualTo(2);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
     }
 
     @Test
@@ -488,13 +512,11 @@ public class PbapPhonebookTest {
         InputStream stream = toUtf8Stream(phonebookString);
         PbapPhonebook phonebook =
                 new PbapPhonebook(
-                        PbapPhonebook.SIM_PHONEBOOK_PATH,
-                        PbapPhonebook.FORMAT_VCARD_21,
-                        0,
-                        stream);
+                        PbapPhonebook.SIM_PHONEBOOK_PATH, PbapPhonebook.FORMAT_VCARD_21, 0, stream);
 
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.SIM_PHONEBOOK_PATH);
         assertThat(phonebook.getCount()).isEqualTo(2);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
     }
 
     @Test
@@ -521,14 +543,12 @@ public class PbapPhonebookTest {
         InputStream stream = toUtf8Stream(phonebookString);
         PbapPhonebook phonebook =
                 new PbapPhonebook(
-                        PbapPhonebook.SIM_PHONEBOOK_PATH,
-                        PbapPhonebook.FORMAT_VCARD_21,
-                        0,
-                        stream);
+                        PbapPhonebook.SIM_PHONEBOOK_PATH, PbapPhonebook.FORMAT_VCARD_21, 0, stream);
 
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.SIM_PHONEBOOK_PATH);
         assertThat(phonebook.getOffset()).isEqualTo(0);
         assertThat(phonebook.getCount()).isEqualTo(0);
+        assertThat(phonebook.getCountWithPhotoData()).isEqualTo(0);
         assertThat(phonebook.getList()).isNotNull();
         assertThat(phonebook.getList()).isEmpty();
     }

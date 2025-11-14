@@ -58,7 +58,7 @@ public class DeviceDiscoveryTest {
 
     private ArrayList<Intent> mDeviceFoundData;
 
-    private BroadcastReceiver mConnectionStateReceiver =
+    private final BroadcastReceiver mConnectionStateReceiver =
             new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {

@@ -20,7 +20,7 @@ cc_library_headers {
         "com.android.media.swcodec",
     ],
     // As part of updatable mainline modules(media, swcodec), it should support at least 29(Q)
-    min_sdk_version: "29",
+    min_sdk_version: "36",
     target: {
         windows: {
             enabled: true,
@@ -47,7 +47,7 @@ cc_library_static {
         "//apex_available:platform",
         "com.android.bt",
     ],
-    min_sdk_version: "29",
+    min_sdk_version: "36",
 }
 
 cc_test {

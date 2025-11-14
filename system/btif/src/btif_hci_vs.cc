@@ -33,7 +33,7 @@ using hci::CommandStatusView;
 using hci::OpCode;
 using hci::VendorSpecificEventView;
 
-std::unique_ptr<BluetoothHciVendorSpecificInterface> hciVendorSpecificInterface;
+static std::unique_ptr<BluetoothHciVendorSpecificInterface> hciVendorSpecificInterface;
 
 static void CommandStatusOrCompleteCallback(BluetoothHciVendorSpecificCallbacks* callbacks,
                                             Cookie cookie,

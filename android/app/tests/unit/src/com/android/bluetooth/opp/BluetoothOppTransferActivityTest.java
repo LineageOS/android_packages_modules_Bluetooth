@@ -27,9 +27,9 @@ import static com.android.bluetooth.opp.BluetoothOppTransferActivity.DIALOG_SEND
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.eq;
 
 import android.content.Context;
 import android.content.Intent;
@@ -61,18 +61,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class BluetoothOppTransferActivityTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock Cursor mCursor;
-    @Spy BluetoothMethodProxy mBluetoothMethodProxy;
-
-    List<CursorMockData> mCursorMockDataList;
-
-    Intent mIntent;
-    Context mTargetContext;
-
     // Activity tests can sometimes flaky because of external factors like system dialog, etc.
     // making the expected Espresso's root not focused or the activity doesn't show up.
     // Add retry rule to resolve this problem.
     @Rule public TestUtils.RetryTestRule mRetryTestRule = new TestUtils.RetryTestRule();
+
+    @Spy BluetoothMethodProxy mBluetoothMethodProxy;
+
+    @Mock Cursor mCursor;
+
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+
+    private List<CursorMockData> mCursorMockDataList;
+    private Intent mIntent;
 
     @Before
     public void setUp() throws Exception {
@@ -80,10 +81,9 @@ public class BluetoothOppTransferActivityTest {
         BluetoothMethodProxy.setInstanceForTesting(mBluetoothMethodProxy);
 
         Uri dataUrl = Uri.parse("content://com.android.bluetooth.opp.test/random");
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
         mIntent = new Intent();
-        mIntent.setClass(mTargetContext, BluetoothOppTransferActivity.class);
+        mIntent.setClass(mContext, BluetoothOppTransferActivity.class);
         mIntent.setData(dataUrl);
 
         doReturn(mCursor)
@@ -114,8 +114,7 @@ public class BluetoothOppTransferActivityTest {
                                         BluetoothShare.USER_CONFIRMATION,
                                         11,
                                         BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED)));
-        BluetoothOppTestUtils.enableActivity(
-                BluetoothOppTransferActivity.class, true, mTargetContext);
+        BluetoothOppTestUtils.enableActivity(BluetoothOppTransferActivity.class, true, mContext);
         TestUtils.setUpUiTest();
     }
 
@@ -124,8 +123,7 @@ public class BluetoothOppTransferActivityTest {
         TestUtils.tearDownUiTest();
 
         BluetoothMethodProxy.setInstanceForTesting(null);
-        BluetoothOppTestUtils.enableActivity(
-                BluetoothOppTransferActivity.class, false, mTargetContext);
+        BluetoothOppTestUtils.enableActivity(BluetoothOppTransferActivity.class, false, mContext);
     }
 
     @Test

@@ -84,6 +84,10 @@ void bta_dm_ble_sirk_confirm_device_reply(const RawAddress& bd_addr, bool accept
           bd_addr, accept ? tBTM_STATUS::BTM_SUCCESS : tBTM_STATUS::BTM_NOT_AUTHORIZED);
 }
 
+void bta_dm_ble_auth_cmpl_cb_register(tBTA_DM_SEC_CBACK* p_cback) {
+  bta_dm_sec_cb.p_ble_auth_cmpl_cback = p_cback;
+}
+
 void bta_dm_consolidate(const RawAddress& identity_addr, const RawAddress& rpa) {
   for (auto i = 0; i < bta_dm_cb.device_list.count; i++) {
     if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr != rpa) {
@@ -115,10 +119,11 @@ void bta_dm_on_encryption_change(bt_encryption_change_evt encryption_change) {
   }
 }
 
-void bta_dm_remote_key_missing(const RawAddress bd_addr) {
+void bta_dm_remote_key_missing(const RawAddress bd_addr, tBTM_KEY_MISSING_REASON reason) {
   if (bta_dm_sec_cb.p_sec_cback) {
     tBTA_DM_SEC sec_event;
     sec_event.key_missing.bd_addr = bd_addr;
+    sec_event.key_missing.reason = reason;
     bta_dm_sec_cb.p_sec_cback(BTA_DM_KEY_MISSING_EVT, &sec_event);
   }
 }
@@ -675,9 +680,6 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
   }
 
   DEV_CLASS dev_class = get_btm_client_interface().security.BTM_SecReadDevClass(bda);
-  if (!com::android::bluetooth::flags::read_le_appearance()) {
-    dev_class = kDevClassEmpty;
-  }
 
   switch (event) {
     case BTM_LE_IO_REQ_EVT:
@@ -769,7 +771,7 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
         sec_event.auth_cmpl.fail_reason = static_cast<tHCI_STATUS>(
                 BTA_DM_AUTH_CONVERT_SMP_CODE(static_cast<uint8_t>(p_data->complt.reason)));
 
-        if (btm_sec_is_a_bonded_dev(bda) && p_data->complt.reason == SMP_CONN_TOUT &&
+        if (BTM_IsBonded(bda) && p_data->complt.reason == SMP_CONN_TOUT &&
             !p_data->complt.smp_over_br) {
           // Bonded device failed to encrypt - to test this remove battery from
           // HID device right after connection, but before encryption is
@@ -791,6 +793,11 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
         // bta_dm_sec_cb.p_sec_cback(BTA_DM_AUTH_CMPL_EVT, &sec_event);
         bta_dm_sec_cb.p_sec_cback(BTA_DM_BLE_AUTH_CMPL_EVT, &sec_event);
       }
+
+      if (bta_dm_sec_cb.p_ble_auth_cmpl_cback) {
+        bta_dm_sec_cb.p_ble_auth_cmpl_cback(BTA_DM_BLE_AUTH_CMPL_EVT, &sec_event);
+      }
+
       break;
 
     case BTM_LE_ADDR_ASSOC_EVT:

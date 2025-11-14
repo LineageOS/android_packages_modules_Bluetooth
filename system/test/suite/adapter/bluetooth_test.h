@@ -123,7 +123,8 @@ protected:
 
   // A callback that is called when the remote device's property changes
   friend void RemoteDevicePropertiesCallback(bt_status_t status, RawAddress* remote_bd_addr,
-                                             int num_properties, bt_property_t* properties);
+                                             uint8_t address_type, int num_properties,
+                                             bt_property_t* properties);
 
   // A callback that is called when the adapter state changes
   friend void AdapterStateChangedCallback(bt_state_t state);

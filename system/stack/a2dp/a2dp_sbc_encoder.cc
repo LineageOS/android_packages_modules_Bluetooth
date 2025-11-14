@@ -22,6 +22,7 @@
 #include "a2dp_sbc_encoder.h"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
@@ -395,6 +396,9 @@ static void a2dp_sbc_get_num_frame_iteration(uint8_t* num_of_iterations, uint8_t
     a2dp_sbc_encoder_cb.stats.media_read_total_dropped_frames += delta;
 
     projected_nof = MAX_PCM_FRAME_NUM_PER_TICK;
+    if (com::android::bluetooth::flags::a2dp_sbc_underflow_recovery()) {
+      a2dp_sbc_encoder_cb.feeding_state.counter = projected_nof * pcm_bytes_per_frame;
+    }
   }
 
   log::verbose("frames for available PCM data {}", projected_nof);
@@ -632,10 +636,12 @@ static bool a2dp_sbc_read_feeding(uint32_t* bytes_read) {
       return false;
     }
 
-    /* Fill the unfilled part of the read buffer with silence (0) */
+    // TODO(b/409124193): remove this logic after cleaning a2dp_fmq_read_exact
+    // Fill the unfilled part of the read buffer with silence (0)
     memset(((uint8_t*)read_buffer) + nb_byte_read, 0, read_size - nb_byte_read);
     nb_byte_read = read_size;
   }
+
   a2dp_sbc_encoder_cb.stats.media_read_total_actual_reads_count++;
 
   /* Initialize PCM up-sampling engine */

@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Hvis du holder Bluetooth aktiveret, sørger din enhed for, at Bluetooth forbliver aktiveret, næste gang du slår flytilstand til"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetooth forbliver aktiveret"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Din enhed beholder Bluetooth aktiveret i flytilstand. Deaktiver Bluetooth, hvis du ikke vil have, at det forbliver aktiveret."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Når enheden er forbundet til andre enheder, forbliver Bluetooth aktiveret i flytilstand."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Når enheden er forbundet til dit ur, forbliver Bluetooth aktiveret i flytilstand."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Bluetooth forbliver aktiveret i flytilstand, når enheden er forbundet til en medieenhed."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi og Bluetooth forbliver aktiveret"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Din enhed beholder Wi-Fi og Bluetooth aktiveret i flytilstand. Deaktiver Wi-Fi og Bluetooth, hvis du ikke vil have, at de forbliver aktiveret."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth er aktiveret igen"</string>

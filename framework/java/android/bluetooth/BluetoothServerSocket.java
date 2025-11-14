@@ -17,7 +17,7 @@
 package android.bluetooth;
 
 import android.annotation.NonNull;
-import android.annotation.SuppressLint;
+import android.annotation.RequiresNoPermission;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.os.ParcelUuid;
 import android.util.Log;
@@ -69,11 +69,10 @@ import java.io.IOException;
  *
  * @see BluetoothSocket
  */
-@SuppressLint("AndroidFrameworkBluetoothPermission")
 public final class BluetoothServerSocket implements Closeable {
     private static final String TAG = BluetoothServerSocket.class.getSimpleName();
 
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
+    private static final boolean DBG = Log.isLoggable("bluetooth", Log.DEBUG);
 
     @UnsupportedAppUsage(
             publicAlternatives = "Use public {@link BluetoothServerSocket} API " + "instead.")
@@ -217,6 +216,7 @@ public final class BluetoothServerSocket implements Closeable {
      * @return a connected {@link BluetoothSocket}
      * @throws IOException on error, for example this call was aborted, or timeout
      */
+    @RequiresNoPermission // Permission is checked when creating the socket
     public BluetoothSocket accept() throws IOException {
         return accept(-1);
     }
@@ -233,6 +233,7 @@ public final class BluetoothServerSocket implements Closeable {
      * @return a connected {@link BluetoothSocket}
      * @throws IOException on error, for example this call was aborted, or timeout
      */
+    @RequiresNoPermission // Permission is checked when creating the socket
     public BluetoothSocket accept(int timeout) throws IOException {
         long socketConnectionTime = System.currentTimeMillis();
         BluetoothSocket acceptedSocket = null;
@@ -286,6 +287,7 @@ public final class BluetoothServerSocket implements Closeable {
      *
      * @hide
      */
+    @RequiresNoPermission // Permission is checked when creating the socket
     public int getChannel() {
         return mChannel;
     }
@@ -299,6 +301,7 @@ public final class BluetoothServerSocket implements Closeable {
      *
      * @return the assigned PSM or LE_PSM value depending on transport
      */
+    @RequiresNoPermission // Permission is checked when creating the socket
     public int getPsm() {
         return mChannel;
     }
@@ -330,26 +333,11 @@ public final class BluetoothServerSocket implements Closeable {
         StringBuilder sb = new StringBuilder();
         sb.append("ServerSocket: Type: ");
         switch (mSocket.getConnectionType()) {
-            case BluetoothSocket.TYPE_RFCOMM:
-                {
-                    sb.append("TYPE_RFCOMM");
-                    break;
-                }
-            case BluetoothSocket.TYPE_L2CAP:
-                {
-                    sb.append("TYPE_L2CAP");
-                    break;
-                }
-            case BluetoothSocket.TYPE_L2CAP_LE:
-                {
-                    sb.append("TYPE_L2CAP_LE");
-                    break;
-                }
-            case BluetoothSocket.TYPE_SCO:
-                {
-                    sb.append("TYPE_SCO");
-                    break;
-                }
+            case BluetoothSocket.TYPE_RFCOMM -> sb.append("TYPE_RFCOMM");
+            case BluetoothSocket.TYPE_L2CAP -> sb.append("TYPE_L2CAP");
+            case BluetoothSocket.TYPE_L2CAP_LE -> sb.append("TYPE_L2CAP_LE");
+            case BluetoothSocket.TYPE_SCO -> sb.append("TYPE_SCO");
+            default -> {} // Nothing to do
         }
         sb.append(" Channel: ").append(mChannel);
         return sb.toString();

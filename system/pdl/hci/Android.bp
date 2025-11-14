@@ -20,7 +20,7 @@ cc_library_headers {
     ],
     host_supported: true,
     apex_available: ["com.android.bt"],
-    min_sdk_version: "33",
+    min_sdk_version: "36",
 }
 
 cc_library_static {
@@ -39,6 +39,7 @@ cc_library_static {
     // TODO remove this
     // Directly add the common library + the os library as a dependency that export their header_libs
     include_dirs: [
+        "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
     ],
     host_supported: true,
@@ -47,5 +48,5 @@ cc_library_static {
         "//packages/modules/Bluetooth/system:__subpackages__",
     ],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "33",
+    min_sdk_version: "36",
 }

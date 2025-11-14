@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Kung papanatilihin mong naka-on ang Bluetooth, tatandaan ng iyong device na panatilihin itong naka-on sa susunod na nasa airplane mode ka"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Mananatiling naka-on ang Bluetooth"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Tinatandaan ng iyong device na panatilihing naka-on ang Bluetooth habang nasa airplane mode. I-off ang Bluetooth kung ayaw mo itong manatiling naka-on."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Mananatiling naka-on ang bluetooth sa airplane mode habang nakakonekta sa iba pang device."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Papanatilihin ng iyong device na naka-on ang bluetooth sa airplane mode habang nakakonekta sa relo mo."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Mananatiling naka-on ang bluetooth sa airplane mode habang nakakonekta sa isang media device."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Mananatiling naka-on ang Wi-Fi at Bluetooth"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Tinatandaan ng iyong device na panatilihing naka-on ang Wi-Fi at Bluetooth habang nasa airplane mode. I-off ang Wi-Fi at Bluetooth kung ayaw mong manatiling naka-on ang mga ito."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Nag-on ulit ang Bluetooth"</string>

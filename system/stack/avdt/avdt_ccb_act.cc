@@ -766,9 +766,7 @@ void avdt_ccb_ret_cmd(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data) {
     tAVDT_CCB_EVT avdt_ccb_evt;
     avdt_ccb_evt.err_code = AVDT_ERR_TIMEOUT;
     avdt_ccb_cmd_fail(p_ccb, &avdt_ccb_evt);
-
-    /* go to next queued command */
-    avdt_ccb_snd_cmd(p_ccb, p_data);
+    avdt_ccb_do_disconn(p_ccb, p_data);
   } else {
     /* if command pending and we're not congested and not sending a fragment */
     if ((!p_ccb->cong) && (p_ccb->p_curr_msg == NULL) && (p_ccb->p_curr_cmd != NULL)) {

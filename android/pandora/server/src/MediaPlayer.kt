@@ -127,7 +127,7 @@ class MediaPlayer(val context: Context) : MediaPlayerImplBase(), Closeable {
 
     override fun getShuffleMode(
         request: Empty,
-        responseObserver: StreamObserver<GetShuffleModeResponse>
+        responseObserver: StreamObserver<GetShuffleModeResponse>,
     ) {
         grpcUnary(scope, responseObserver) {
             val mode: Int = MediaPlayerBrowserService.instance.getShuffleMode()
@@ -144,7 +144,7 @@ class MediaPlayer(val context: Context) : MediaPlayerImplBase(), Closeable {
 
     override fun setShuffleMode(
         request: SetShuffleModeRequest,
-        responseObserver: StreamObserver<Empty>
+        responseObserver: StreamObserver<Empty>,
     ) {
         grpcUnary(scope, responseObserver) {
             when (request.mode!!) {

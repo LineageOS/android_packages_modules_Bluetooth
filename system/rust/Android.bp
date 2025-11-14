@@ -9,7 +9,7 @@ package {
 
 rust_defaults {
     name: "libbluetooth_core_rs_defaults",
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     dylib: {
         enabled: false,
     },
@@ -52,7 +52,6 @@ rust_defaults {
                 "libbinder_ndk",
                 "libcutils",
                 "libhidlbase",
-                "libstatslog_bt",
                 "libutils",
             ],
             rustlibs: [
@@ -125,7 +124,6 @@ cc_library_static {
         "-Wno-missing-prototypes",
     ],
     srcs: [
-        "src/core/ffi/module.cc",
         "src/gatt/ffi/gatt_shim.cc",
     ],
     include_dirs: [
@@ -152,7 +150,7 @@ cc_library_static {
     host_supported: true,
     generated_sources: ["libbluetooth_core_rs_bridge_codegen"],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     // Bug: 286537287 this library gets linked with Rust objects but cross-language LTO
     // isn't supported yet.
     lto: {
@@ -166,7 +164,7 @@ cc_library_static {
 /// libbluetooth_core_rs and depends on libbluetooth_core. libbluetooth
 /// depends on libbluetooth_core_rs.
 /// i.e.
-/// libbluetooth -> {libbluetooth_core_rs, libbluetooth_core_rs_bridge} -> libbluetooth_core
+/// libbluetooth -> {libbluetooth_core_rs, libbluetooth_core_rs_bridge} -> libbluetooth-core
 ///
 /// Thus, FFI can be either:
 ///  * Rust to GD
@@ -182,6 +180,7 @@ filegroup {
     name: "libbluetooth_core_rs_ffi",
     srcs: [
         "src/core/ffi.rs",
+        "src/gatt/arbiter.rs",
         "src/gatt/ffi.rs",
     ],
 }

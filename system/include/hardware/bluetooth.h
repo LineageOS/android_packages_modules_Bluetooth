@@ -26,9 +26,8 @@
 #include <vector>
 
 #include "avrcp/avrcp.h"
+#include "types/ble_address_with_type.h"
 #include "types/bluetooth/uuid.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 /**
  * The Bluetooth Hardware Module ID
@@ -434,6 +433,29 @@ typedef enum {
    */
   BT_PROPERTY_UUIDS_LE,
 
+  /**
+   * Description - Bluetooth discovery result type (i.e. inquiry result type)
+   * Access mode - Only GET.
+   * Data type   - uint8_t
+   */
+  BT_PROPERTY_DISCOVERY_RESULT_TYPE,
+
+  /**
+   * Description - Bluetooth Service 128-bit UUIDs in Extended inquiry result (EIR).
+   * Access mode - Only GET.
+   * Data type   - Array of bluetooth::Uuid (Array size inferred from property
+   *               length).
+   */
+  BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE,
+
+  /**
+   * Description - Bluetooth Service 128-bit UUIDs in LE Advertising data (AD)
+   * Access mode - Only GET.
+   * Data type   - Array of bluetooth::Uuid (Array size inferred from property
+   *               length).
+   */
+  BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA,
+
   BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP = 0xFF,
 } bt_property_type_t;
 
@@ -529,7 +551,8 @@ typedef void (*adapter_properties_callback)(bt_status_t status, int num_properti
  * multiple properties - num_properties shall be 1
  */
 typedef void (*remote_device_properties_callback)(bt_status_t status, RawAddress* bd_addr,
-                                                  int num_properties, bt_property_t* properties);
+                                                  uint8_t address_type, int num_properties,
+                                                  bt_property_t* properties);
 
 /** New device discovered callback */
 /** If EIR data is not present, then BD_NAME and RSSI shall be NULL and -1
@@ -570,9 +593,8 @@ typedef void (*le_address_associate_callback)(RawAddress* main_bd_addr,
                                               uint8_t identity_address_type);
 
 /** Bluetooth ACL connection state changed callback */
-typedef void (*acl_state_changed_callback)(bt_status_t status, RawAddress* remote_bd_addr,
-                                           bt_acl_state_t state, int transport_link_type,
-                                           bt_hci_error_code_t hci_reason,
+typedef void (*acl_state_changed_callback)(bt_status_t status, tAclLinkSpec& link_spec,
+                                           bt_acl_state_t state, bt_hci_error_code_t hci_reason,
                                            bt_conn_direction_t direction, uint16_t acl_handle);
 
 /** Bluetooth link quality report callback */
@@ -621,7 +643,7 @@ typedef void (*energy_info_callback)(bt_activity_energy_info* energy_info,
 /** Callback invoked when OOB data is returned from the controller */
 typedef void (*generate_local_oob_data_callback)(tBT_TRANSPORT transport, bt_oob_data_t oob_data);
 
-typedef void (*key_missing_callback)(const RawAddress bd_addr);
+typedef void (*key_missing_callback)(const RawAddress bd_addr, uint8_t reason);
 
 typedef void (*encryption_change_callback)(const bt_encryption_change_evt encryption_change);
 
@@ -711,7 +733,7 @@ typedef struct {
    * the local device is an Android TV
    */
   int (*init)(bt_callbacks_t* callbacks, bool guest_mode, bool is_common_criteria_mode,
-              int config_compare_result, bool is_atv);
+              int config_compare_result, bool is_atv, const char* hci_instance_name);
 
   /** Enable Bluetooth. */
   int (*enable)();
@@ -721,12 +743,6 @@ typedef struct {
 
   /** Closes the interface. */
   void (*cleanup)(void);
-
-  /** Start Rust Module */
-  void (*start_rust_module)(void);
-
-  /** Stop Rust Module */
-  void (*stop_rust_module)(void);
 
   /** Get all Bluetooth Adapter properties at init */
   int (*get_adapter_properties)(void);

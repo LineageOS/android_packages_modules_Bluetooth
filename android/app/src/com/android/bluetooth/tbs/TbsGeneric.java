@@ -17,6 +17,7 @@
 
 package com.android.bluetooth.tbs;
 
+import static com.android.bluetooth.telephony.BluetoothInCallService.BEARER_TECHNOLOGY_GSM;
 import static com.android.bluetooth.telephony.BluetoothInCallService.Capability;
 import static com.android.bluetooth.telephony.BluetoothInCallService.Result;
 
@@ -61,8 +62,7 @@ public class TbsGeneric {
     /* Use GSM as default technology value. It is used only
      * when bearer is not registered. It will be updated on the phone call
      */
-    private static final int DEFAULT_BEARER_TECHNOLOGY =
-            BluetoothLeCallControlProxy.BEARER_TECHNOLOGY_GSM;
+    private static final int DEFAULT_BEARER_TECHNOLOGY = BEARER_TECHNOLOGY_GSM;
     private static final String UNKNOWN_FRIENDLY_NAME = "unknown";
 
     /** Class representing the pending request sent to the application */
@@ -977,18 +977,13 @@ public class TbsGeneric {
             };
 
     private static String callControlRequestOpcodeStr(int opcode) {
-        switch (opcode) {
-            case TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT:
-                return "ACCEPT";
-            case TbsGatt.CALL_CONTROL_POINT_OPCODE_TERMINATE:
-                return "TERMINATE";
-            case TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_HOLD:
-                return "LOCAL_HOLD";
-            case TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_RETRIEVE:
-                return "LOCAL_RETRIEVE";
-            default:
-                return "UNKNOWN";
-        }
+        return switch (opcode) {
+            case TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT -> "ACCEPT";
+            case TbsGatt.CALL_CONTROL_POINT_OPCODE_TERMINATE -> "TERMINATE";
+            case TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_HOLD -> "LOCAL_HOLD";
+            case TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_RETRIEVE -> "LOCAL_RETRIEVE";
+            default -> "UNKNOWN";
+        };
     }
 
     private static boolean isCcidValid(int ccid) {

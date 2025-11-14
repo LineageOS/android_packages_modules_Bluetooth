@@ -108,11 +108,13 @@ class VolumeControlNativeCallback {
     }
 
     @VisibleForTesting
-    void onDeviceAvailable(int numOfExternalOutputs, int numOfExternalInputs, byte[] address) {
+    void onDeviceAvailable(
+            int groupId, int numOfExternalOutputs, int numOfExternalInputs, byte[] address) {
         VolumeControlStackEvent event = new VolumeControlStackEvent(EVENT_TYPE_DEVICE_AVAILABLE);
         event.device = getDevice(address);
-        event.valueInt1 = numOfExternalOutputs;
-        event.valueInt2 = numOfExternalInputs;
+        event.valueInt1 = groupId;
+        event.valueInt2 = numOfExternalOutputs;
+        event.valueInt3 = numOfExternalInputs;
 
         Log.d(TAG, "onDeviceAvailable: " + event);
         mVolumeControlService.messageFromNative(event);

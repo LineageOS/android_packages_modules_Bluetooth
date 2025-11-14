@@ -43,17 +43,6 @@ typedef struct {
   int8_t rssi;
 } tBTM_RSSI_RESULT;
 
-/* Structure returned with read failed contact counter event
- * (in tBTM_CMPL_CB callback function) in response to
- * BTM_ReadFailedContactCounter call.
- */
-typedef struct {
-  tBTM_STATUS status;
-  uint8_t hci_status;
-  RawAddress rem_bda;
-  uint16_t failed_contact_counter;
-} tBTM_FAILED_CONTACT_COUNTER_RESULT;
-
 /* Structure returned with read automatic flush timeout event
  * (in tBTM_CMPL_CB callback function) in response to
  * BTM_ReadAutomaticFlushTimeout call.
@@ -64,16 +53,6 @@ typedef struct {
   RawAddress rem_bda;
   uint16_t automatic_flush_timeout;
 } tBTM_AUTOMATIC_FLUSH_TIMEOUT_RESULT;
-
-/* Structure returned with read current TX power event (in tBTM_CMPL_CB callback
- * function) in response to BTM_ReadTxPower call.
- */
-typedef struct {
-  tBTM_STATUS status;
-  uint8_t hci_status;
-  RawAddress rem_bda;
-  int8_t tx_power;
-} tBTM_TX_POWER_RESULT;
 
 /* Structure returned with read link quality event (in tBTM_CMPL_CB callback
  * function) in response to BTM_ReadLinkQuality call.

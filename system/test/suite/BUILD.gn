@@ -29,10 +29,10 @@ if (defined(use.android) && use.android) {
     deps = [
       "//bt/system/btcore",
       "//bt/system/main:bluetooth",
+      "//bt/system/osi",
       "//bt/system/service:service",
       "//bt/system/service:service_unittests",
       "//bt/system/types:types_unittests",
-      "//bt/system/osi",
     ]
 
     configs += [

@@ -49,3 +49,12 @@ prop {
     access: Readonly
     prop_name: "bluetooth.hfp.swb.aptx.power_management.enabled"
 }
+
+# Used to enable/disable video during calls
+prop {
+    api_name: "answer_call_with_video"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.hfp.answer_call_with_video.enabled"
+}

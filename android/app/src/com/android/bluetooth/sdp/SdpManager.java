@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.sdp;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
@@ -181,13 +182,14 @@ public class SdpManager {
                     @Override
                     public void handleMessage(Message msg) {
                         switch (msg.what) {
-                            case MESSAGE_SDP_INTENT:
+                            case MESSAGE_SDP_INTENT -> {
                                 SdpSearchInstance msgObj = (SdpSearchInstance) msg.obj;
                                 Log.w(TAG, "Search timed out for UUID " + msgObj.getUuid());
                                 synchronized (TRACKER_LOCK) {
                                     sendSdpIntent(msgObj, null, false);
                                 }
-                                break;
+                            }
+                            default -> {} // Nothing to do
                         }
                     }
                 };
@@ -460,7 +462,7 @@ public class SdpManager {
             inst.startSearch(); // Trigger timeout message
 
             mNativeInterface.sdpSearch(
-                    Utils.getByteBrEdrAddress(inst.getDevice()),
+                    Utils.getByteBrEdrAddress(mAdapterService, inst.getDevice()),
                     Utils.uuidToByteArray(inst.getUuid()));
         } else { // Else queue is empty.
             Log.d(

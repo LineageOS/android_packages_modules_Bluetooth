@@ -165,22 +165,19 @@ typedef enum : uint8_t {
 
 /* Structure associated with BTA_DM_LINK_UP_EVT */
 typedef struct {
-  RawAddress bd_addr; /* BD address peer device. */
-  tBT_TRANSPORT transport_link_type;
+  tAclLinkSpec link_spec;
   uint16_t acl_handle;
 } tBTA_DM_LINK_UP;
 
 /* Structure associated with BTA_DM_LINK_UP_FAILED_EVT */
 typedef struct {
-  RawAddress bd_addr; /* BD address peer device. */
-  tBT_TRANSPORT transport_link_type;
+  tAclLinkSpec link_spec;
   tHCI_STATUS status; /* The HCI error code associated with this event */
 } tBTA_DM_LINK_UP_FAILED;
 
 /* Structure associated with BTA_DM_LINK_DOWN_EVT */
 typedef struct {
-  RawAddress bd_addr; /* BD address peer device. */
-  tBT_TRANSPORT transport_link_type;
+  tAclLinkSpec link_spec;
   tHCI_STATUS status;
 } tBTA_DM_LINK_DOWN;
 
@@ -233,6 +230,7 @@ typedef struct {
   const uint8_t* p_eir; /* received EIR */
   uint16_t eir_len;     /* received EIR length */
   uint8_t inq_result_type;
+  uint8_t last_inq_result_from_type; /* Whether the last inquiry is from LE or BR/EDR */
   tBLE_ADDR_TYPE ble_addr_type;
   uint16_t ble_evt_type;
   uint8_t ble_primary_phy;

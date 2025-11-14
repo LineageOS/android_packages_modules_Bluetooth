@@ -32,6 +32,7 @@
 #include <base/functional/bind.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -39,8 +40,6 @@
 #include "btm_iso_api.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/hci_layer.h"
-#include "main/shim/metrics_api.h"
-#include "os/metrics.h"
 #include "osi/include/allocator.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"
@@ -110,7 +109,7 @@ static void btu_hcif_log_event_metrics(uint8_t evt_code, const uint8_t* p_event)
   uint32_t cmd = android::bluetooth::hci::CMD_UNKNOWN;
   uint16_t status = android::bluetooth::hci::STATUS_UNKNOWN;
   uint16_t reason = android::bluetooth::hci::STATUS_UNKNOWN;
-  uint16_t handle = bluetooth::os::kUnknownConnectionHandle;
+  uint16_t handle = bluetooth::metrics::kUnknownConnectionHandle;
   int64_t value = 0;
 
   RawAddress bda = RawAddress::kEmpty;
@@ -125,29 +124,29 @@ static void btu_hcif_log_event_metrics(uint8_t evt_code, const uint8_t* p_event)
     case HCI_KEYPRESS_NOTIFY_EVT:
     case HCI_REMOTE_OOB_DATA_REQUEST_EVT:
       STREAM_TO_BDADDR(bda, p_event);
-      bluetooth::shim::LogMetricClassicPairingEvent(bda, handle, cmd, evt_code, status, reason,
-                                                    value);
+      bluetooth::metrics::LogMetricClassicPairingEvent(bda, handle, cmd, evt_code, status, reason,
+                                                       value);
       break;
     case HCI_SIMPLE_PAIRING_COMPLETE_EVT:
       STREAM_TO_UINT8(status, p_event);
       STREAM_TO_BDADDR(bda, p_event);
-      bluetooth::shim::LogMetricClassicPairingEvent(bda, handle, cmd, evt_code, status, reason,
-                                                    value);
+      bluetooth::metrics::LogMetricClassicPairingEvent(bda, handle, cmd, evt_code, status, reason,
+                                                       value);
       break;
     case HCI_AUTHENTICATION_COMP_EVT:
       STREAM_TO_UINT8(status, p_event);
       STREAM_TO_UINT16(handle, p_event);
       handle = HCID_GET_HANDLE(handle);
-      bluetooth::shim::LogMetricClassicPairingEvent(bda, handle, cmd, evt_code, status, reason,
-                                                    value);
+      bluetooth::metrics::LogMetricClassicPairingEvent(bda, handle, cmd, evt_code, status, reason,
+                                                       value);
       break;
     case HCI_ENCRYPTION_CHANGE_EVT: {
       uint8_t encryption_enabled;
       STREAM_TO_UINT8(status, p_event);
       STREAM_TO_UINT16(handle, p_event);
       STREAM_TO_UINT8(encryption_enabled, p_event);
-      bluetooth::shim::LogMetricClassicPairingEvent(bda, handle, cmd, evt_code, status, reason,
-                                                    encryption_enabled);
+      bluetooth::metrics::LogMetricClassicPairingEvent(bda, handle, cmd, evt_code, status, reason,
+                                                       encryption_enabled);
       break;
     }
     case HCI_ENCRYPTION_CHANGE_EVT_V2: {
@@ -157,8 +156,8 @@ static void btu_hcif_log_event_metrics(uint8_t evt_code, const uint8_t* p_event)
       STREAM_TO_UINT16(handle, p_event);
       STREAM_TO_UINT8(encryption_enabled, p_event);
       STREAM_TO_UINT8(key_size, p_event);
-      bluetooth::shim::LogMetricClassicPairingEvent(bda, handle, cmd, evt_code, status, reason,
-                                                    encryption_enabled);
+      bluetooth::metrics::LogMetricClassicPairingEvent(bda, handle, cmd, evt_code, status, reason,
+                                                       encryption_enabled);
       break;
     }
     case HCI_ESCO_CONNECTION_COMP_EVT: {
@@ -168,8 +167,8 @@ static void btu_hcif_log_event_metrics(uint8_t evt_code, const uint8_t* p_event)
       STREAM_TO_BDADDR(bda, p_event);
       STREAM_TO_UINT8(link_type, p_event);
       handle = HCID_GET_HANDLE(handle);
-      bluetooth::shim::LogMetricLinkLayerConnectionEvent(
-              &bda, handle, android::bluetooth::DIRECTION_UNKNOWN, link_type, cmd, evt_code,
+      bluetooth::metrics::LogMetricLinkLayerConnectionEvent(
+              bda, handle, android::bluetooth::DIRECTION_UNKNOWN, link_type, cmd, evt_code,
               android::bluetooth::hci::BLE_EVT_UNKNOWN, status, reason);
       break;
     }
@@ -177,8 +176,8 @@ static void btu_hcif_log_event_metrics(uint8_t evt_code, const uint8_t* p_event)
       STREAM_TO_UINT8(status, p_event);
       STREAM_TO_UINT16(handle, p_event);
       handle = HCID_GET_HANDLE(handle);
-      bluetooth::shim::LogMetricLinkLayerConnectionEvent(
-              nullptr, handle, android::bluetooth::DIRECTION_UNKNOWN,
+      bluetooth::metrics::LogMetricLinkLayerConnectionEvent(
+              RawAddress::kEmpty, handle, android::bluetooth::DIRECTION_UNKNOWN,
               android::bluetooth::LINK_TYPE_UNKNOWN, cmd, evt_code,
               android::bluetooth::hci::BLE_EVT_UNKNOWN, status, reason);
       break;
@@ -366,7 +365,7 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, const uint8_t* p_cmd, 
     cmd_status = android::bluetooth::hci::STATUS_UNKNOWN;
   }
 
-  RawAddress bd_addr;
+  RawAddress bd_addr = RawAddress::kEmpty;
   uint16_t handle;
   uint8_t reason;
 
@@ -374,24 +373,24 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, const uint8_t* p_cmd, 
     case HCI_CREATE_CONNECTION:
     case HCI_CREATE_CONNECTION_CANCEL:
       STREAM_TO_BDADDR(bd_addr, p_cmd);
-      bluetooth::shim::LogMetricLinkLayerConnectionEvent(
-              &bd_addr, bluetooth::os::kUnknownConnectionHandle,
+      bluetooth::metrics::LogMetricLinkLayerConnectionEvent(
+              bd_addr, bluetooth::metrics::kUnknownConnectionHandle,
               android::bluetooth::DIRECTION_OUTGOING, android::bluetooth::LINK_TYPE_ACL, opcode,
               hci_event, kUnknownBleEvt, cmd_status, android::bluetooth::hci::STATUS_UNKNOWN);
       break;
     case HCI_DISCONNECT:
       STREAM_TO_UINT16(handle, p_cmd);
       STREAM_TO_UINT8(reason, p_cmd);
-      bluetooth::shim::LogMetricLinkLayerConnectionEvent(
-              nullptr, handle, android::bluetooth::DIRECTION_UNKNOWN,
+      bluetooth::metrics::LogMetricLinkLayerConnectionEvent(
+              RawAddress::kEmpty, handle, android::bluetooth::DIRECTION_UNKNOWN,
               android::bluetooth::LINK_TYPE_UNKNOWN, opcode, hci_event, kUnknownBleEvt, cmd_status,
               reason);
       break;
     case HCI_SETUP_ESCO_CONNECTION:
     case HCI_ENH_SETUP_ESCO_CONNECTION:
       STREAM_TO_UINT16(handle, p_cmd);
-      bluetooth::shim::LogMetricLinkLayerConnectionEvent(
-              nullptr, handle, android::bluetooth::DIRECTION_OUTGOING,
+      bluetooth::metrics::LogMetricLinkLayerConnectionEvent(
+              RawAddress::kEmpty, handle, android::bluetooth::DIRECTION_OUTGOING,
               android::bluetooth::LINK_TYPE_UNKNOWN, opcode, hci_event, kUnknownBleEvt, cmd_status,
               android::bluetooth::hci::STATUS_UNKNOWN);
       break;
@@ -399,8 +398,8 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, const uint8_t* p_cmd, 
     case HCI_ACCEPT_ESCO_CONNECTION:
     case HCI_ENH_ACCEPT_ESCO_CONNECTION:
       STREAM_TO_BDADDR(bd_addr, p_cmd);
-      bluetooth::shim::LogMetricLinkLayerConnectionEvent(
-              &bd_addr, bluetooth::os::kUnknownConnectionHandle,
+      bluetooth::metrics::LogMetricLinkLayerConnectionEvent(
+              bd_addr, bluetooth::metrics::kUnknownConnectionHandle,
               android::bluetooth::DIRECTION_INCOMING, android::bluetooth::LINK_TYPE_UNKNOWN, opcode,
               hci_event, kUnknownBleEvt, cmd_status, android::bluetooth::hci::STATUS_UNKNOWN);
       break;
@@ -408,8 +407,8 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, const uint8_t* p_cmd, 
     case HCI_REJECT_ESCO_CONNECTION:
       STREAM_TO_BDADDR(bd_addr, p_cmd);
       STREAM_TO_UINT8(reason, p_cmd);
-      bluetooth::shim::LogMetricLinkLayerConnectionEvent(
-              &bd_addr, bluetooth::os::kUnknownConnectionHandle,
+      bluetooth::metrics::LogMetricLinkLayerConnectionEvent(
+              bd_addr, bluetooth::metrics::kUnknownConnectionHandle,
               android::bluetooth::DIRECTION_INCOMING, android::bluetooth::LINK_TYPE_UNKNOWN, opcode,
               hci_event, kUnknownBleEvt, cmd_status, reason);
       break;
@@ -424,13 +423,11 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, const uint8_t* p_cmd, 
       STREAM_TO_UINT8(peer_address_type, p_cmd);
       STREAM_TO_BDADDR(bd_addr, p_cmd);
       // Peer address should not be used if initiator filter policy is not 0x00
-      const RawAddress* bd_addr_p = nullptr;
       if (initiator_filter_policy == 0x00) {
-        bd_addr_p = &bd_addr;
         if (peer_address_type == BLE_ADDR_PUBLIC_ID || peer_address_type == BLE_ADDR_RANDOM_ID) {
           // if identity address is not matched, this address is invalid
           if (!btm_identity_addr_to_random_pseudo(&bd_addr, &peer_address_type, false)) {
-            bd_addr_p = nullptr;
+            bd_addr = RawAddress::kEmpty;
           }
         }
       }
@@ -438,8 +435,8 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, const uint8_t* p_cmd, 
         // Selectively log to avoid log spam due to acceptlist connections:
         // - When doing non-acceptlist connection
         // - When there is an error in command status
-        bluetooth::shim::LogMetricLinkLayerConnectionEvent(
-                bd_addr_p, bluetooth::os::kUnknownConnectionHandle,
+        bluetooth::metrics::LogMetricLinkLayerConnectionEvent(
+                bd_addr, bluetooth::metrics::kUnknownConnectionHandle,
                 android::bluetooth::DIRECTION_OUTGOING, android::bluetooth::LINK_TYPE_ACL, opcode,
                 hci_event, kUnknownBleEvt, cmd_status, android::bluetooth::hci::STATUS_UNKNOWN);
       }
@@ -453,9 +450,7 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, const uint8_t* p_cmd, 
       STREAM_TO_UINT8(peer_addr_type, p_cmd);
       STREAM_TO_BDADDR(bd_addr, p_cmd);
       // Peer address should not be used if initiator filter policy is not 0x00
-      const RawAddress* bd_addr_p = nullptr;
       if (initiator_filter_policy == 0x00) {
-        bd_addr_p = &bd_addr;
         // if identity address is not matched, this should be a static address
         btm_identity_addr_to_random_pseudo(&bd_addr, &peer_addr_type, false);
       }
@@ -463,8 +458,8 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, const uint8_t* p_cmd, 
         // Selectively log to avoid log spam due to acceptlist connections:
         // - When doing non-acceptlist connection
         // - When there is an error in command status
-        bluetooth::shim::LogMetricLinkLayerConnectionEvent(
-                bd_addr_p, bluetooth::os::kUnknownConnectionHandle,
+        bluetooth::metrics::LogMetricLinkLayerConnectionEvent(
+                bd_addr, bluetooth::metrics::kUnknownConnectionHandle,
                 android::bluetooth::DIRECTION_OUTGOING, android::bluetooth::LINK_TYPE_ACL, opcode,
                 hci_event, kUnknownBleEvt, cmd_status, android::bluetooth::hci::STATUS_UNKNOWN);
       }
@@ -473,45 +468,45 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, const uint8_t* p_cmd, 
     case HCI_BLE_CREATE_CONN_CANCEL:
       if (cmd_status != HCI_SUCCESS && !is_cmd_status) {
         // Only log errors to prevent log spam due to acceptlist connections
-        bluetooth::shim::LogMetricLinkLayerConnectionEvent(
-                nullptr, bluetooth::os::kUnknownConnectionHandle,
+        bluetooth::metrics::LogMetricLinkLayerConnectionEvent(
+                RawAddress::kEmpty, bluetooth::metrics::kUnknownConnectionHandle,
                 android::bluetooth::DIRECTION_OUTGOING, android::bluetooth::LINK_TYPE_ACL, opcode,
                 hci_event, kUnknownBleEvt, cmd_status, android::bluetooth::hci::STATUS_UNKNOWN);
       }
       break;
     case HCI_READ_LOCAL_OOB_DATA:
     case HCI_READ_LOCAL_OOB_EXTENDED_DATA:
-      bluetooth::shim::LogMetricClassicPairingEvent(
-              RawAddress::kEmpty, bluetooth::os::kUnknownConnectionHandle, opcode, hci_event,
+      bluetooth::metrics::LogMetricClassicPairingEvent(
+              RawAddress::kEmpty, bluetooth::metrics::kUnknownConnectionHandle, opcode, hci_event,
               cmd_status, android::bluetooth::hci::STATUS_UNKNOWN, 0);
       break;
     case HCI_WRITE_SIMPLE_PAIRING_MODE: {
       uint8_t simple_pairing_mode;
       STREAM_TO_UINT8(simple_pairing_mode, p_cmd);
-      bluetooth::shim::LogMetricClassicPairingEvent(
-              RawAddress::kEmpty, bluetooth::os::kUnknownConnectionHandle, opcode, hci_event,
+      bluetooth::metrics::LogMetricClassicPairingEvent(
+              RawAddress::kEmpty, bluetooth::metrics::kUnknownConnectionHandle, opcode, hci_event,
               cmd_status, android::bluetooth::hci::STATUS_UNKNOWN, simple_pairing_mode);
       break;
     }
     case HCI_WRITE_SECURE_CONNS_SUPPORT: {
       uint8_t secure_conn_host_support;
       STREAM_TO_UINT8(secure_conn_host_support, p_cmd);
-      bluetooth::shim::LogMetricClassicPairingEvent(
-              RawAddress::kEmpty, bluetooth::os::kUnknownConnectionHandle, opcode, hci_event,
+      bluetooth::metrics::LogMetricClassicPairingEvent(
+              RawAddress::kEmpty, bluetooth::metrics::kUnknownConnectionHandle, opcode, hci_event,
               cmd_status, android::bluetooth::hci::STATUS_UNKNOWN, secure_conn_host_support);
       break;
     }
     case HCI_AUTHENTICATION_REQUESTED:
       STREAM_TO_UINT16(handle, p_cmd);
-      bluetooth::shim::LogMetricClassicPairingEvent(RawAddress::kEmpty, handle, opcode, hci_event,
-                                                    cmd_status,
-                                                    android::bluetooth::hci::STATUS_UNKNOWN, 0);
+      bluetooth::metrics::LogMetricClassicPairingEvent(RawAddress::kEmpty, handle, opcode,
+                                                       hci_event, cmd_status,
+                                                       android::bluetooth::hci::STATUS_UNKNOWN, 0);
       break;
     case HCI_SET_CONN_ENCRYPTION: {
       STREAM_TO_UINT16(handle, p_cmd);
       uint8_t encryption_enable;
       STREAM_TO_UINT8(encryption_enable, p_cmd);
-      bluetooth::shim::LogMetricClassicPairingEvent(
+      bluetooth::metrics::LogMetricClassicPairingEvent(
               RawAddress::kEmpty, handle, opcode, hci_event, cmd_status,
               android::bluetooth::hci::STATUS_UNKNOWN, encryption_enable);
       break;
@@ -520,8 +515,8 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, const uint8_t* p_cmd, 
       uint8_t delete_all_flag;
       STREAM_TO_BDADDR(bd_addr, p_cmd);
       STREAM_TO_UINT8(delete_all_flag, p_cmd);
-      bluetooth::shim::LogMetricClassicPairingEvent(
-              bd_addr, bluetooth::os::kUnknownConnectionHandle, opcode, hci_event, cmd_status,
+      bluetooth::metrics::LogMetricClassicPairingEvent(
+              bd_addr, bluetooth::metrics::kUnknownConnectionHandle, opcode, hci_event, cmd_status,
               android::bluetooth::hci::STATUS_UNKNOWN, delete_all_flag);
       break;
     }
@@ -537,16 +532,16 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, const uint8_t* p_cmd, 
     case HCI_REM_OOB_DATA_REQ_REPLY:
     case HCI_REM_OOB_DATA_REQ_NEG_REPLY:
       STREAM_TO_BDADDR(bd_addr, p_cmd);
-      bluetooth::shim::LogMetricClassicPairingEvent(
-              bd_addr, bluetooth::os::kUnknownConnectionHandle, opcode, hci_event, cmd_status,
+      bluetooth::metrics::LogMetricClassicPairingEvent(
+              bd_addr, bluetooth::metrics::kUnknownConnectionHandle, opcode, hci_event, cmd_status,
               android::bluetooth::hci::STATUS_UNKNOWN, 0);
       break;
     case HCI_IO_CAP_REQ_NEG_REPLY:
       STREAM_TO_BDADDR(bd_addr, p_cmd);
       STREAM_TO_UINT8(reason, p_cmd);
-      bluetooth::shim::LogMetricClassicPairingEvent(bd_addr,
-                                                    bluetooth::os::kUnknownConnectionHandle, opcode,
-                                                    hci_event, cmd_status, reason, 0);
+      bluetooth::metrics::LogMetricClassicPairingEvent(bd_addr,
+                                                       bluetooth::metrics::kUnknownConnectionHandle,
+                                                       opcode, hci_event, cmd_status, reason, 0);
       break;
   }
 }
@@ -610,9 +605,9 @@ static void btu_hcif_log_command_complete_metrics(uint16_t opcode, const uint8_t
     case HCI_WRITE_SIMPLE_PAIRING_MODE:
     case HCI_WRITE_SECURE_CONNS_SUPPORT:
       STREAM_TO_UINT8(status, p_return_params);
-      bluetooth::shim::LogMetricClassicPairingEvent(RawAddress::kEmpty,
-                                                    bluetooth::os::kUnknownConnectionHandle, opcode,
-                                                    hci_event, status, reason, 0);
+      bluetooth::metrics::LogMetricClassicPairingEvent(RawAddress::kEmpty,
+                                                       bluetooth::metrics::kUnknownConnectionHandle,
+                                                       opcode, hci_event, status, reason, 0);
       break;
     case HCI_READ_ENCR_KEY_SIZE: {
       uint16_t handle;
@@ -620,8 +615,8 @@ static void btu_hcif_log_command_complete_metrics(uint16_t opcode, const uint8_t
       STREAM_TO_UINT8(status, p_return_params);
       STREAM_TO_UINT16(handle, p_return_params);
       STREAM_TO_UINT8(key_size, p_return_params);
-      bluetooth::shim::LogMetricClassicPairingEvent(RawAddress::kEmpty, handle, opcode, hci_event,
-                                                    status, reason, key_size);
+      bluetooth::metrics::LogMetricClassicPairingEvent(RawAddress::kEmpty, handle, opcode,
+                                                       hci_event, status, reason, key_size);
       break;
     }
     case HCI_LINK_KEY_REQUEST_REPLY:
@@ -636,9 +631,9 @@ static void btu_hcif_log_command_complete_metrics(uint16_t opcode, const uint8_t
     case HCI_REM_OOB_DATA_REQ_NEG_REPLY:
       STREAM_TO_UINT8(status, p_return_params);
       STREAM_TO_BDADDR(bd_addr, p_return_params);
-      bluetooth::shim::LogMetricClassicPairingEvent(bd_addr,
-                                                    bluetooth::os::kUnknownConnectionHandle, opcode,
-                                                    hci_event, status, reason, 0);
+      bluetooth::metrics::LogMetricClassicPairingEvent(bd_addr,
+                                                       bluetooth::metrics::kUnknownConnectionHandle,
+                                                       opcode, hci_event, status, reason, 0);
       break;
   }
 }
@@ -905,16 +900,8 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p, uint16_t 
       btm_read_rssi_complete(p, evt_len);
       break;
 
-    case HCI_READ_FAILED_CONTACT_COUNTER:
-      btm_read_failed_contact_counter_complete(p);
-      break;
-
     case HCI_READ_AUTOMATIC_FLUSH_TIMEOUT:
       btm_read_automatic_flush_timeout_complete(p);
-      break;
-
-    case HCI_READ_TRANSMIT_POWER_LEVEL:
-      btm_read_tx_power_complete(p, evt_len, false);
       break;
 
     case HCI_CREATE_CONNECTION_CANCEL:
@@ -930,10 +917,6 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p, uint16_t 
       break;
 
     case HCI_READ_INQ_TX_POWER_LEVEL:
-      break;
-
-    case HCI_BLE_READ_ADV_CHNL_TX_POWER:
-      btm_read_tx_power_complete(p, evt_len, true);
       break;
 
     case HCI_BLE_WRITE_ADV_ENABLE:
@@ -1093,7 +1076,7 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status, const u
       // "LE Encrypt", controller responds with no connection, we should
       // cancel the encryption attempt, rather than unpair the device.
       if (status == HCI_ERR_NO_CONNECTION) {
-        smp_cancel_start_encryption_attempt();
+        smp_cancel_start_encryption_attempt(RawAddress::kEmpty);
       }
       break;
 

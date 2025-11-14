@@ -1,9 +1,8 @@
-use async_trait::async_trait;
 use bitflags::bitflags;
 
 use crate::core::uuid::Uuid;
 use crate::gatt::ids::AttHandle;
-use crate::packets::att::{self, AttErrorCode};
+use crate::packets::att;
 
 impl From<att::AttHandle> for AttHandle {
     fn from(value: att::AttHandle) -> Self {
@@ -61,66 +60,3 @@ impl AttPermissions {
         self.contains(AttPermissions::INDICATE)
     }
 }
-
-#[async_trait(?Send)]
-pub trait AttDatabase {
-    /// Read an attribute by handle
-    async fn read_attribute(&self, handle: AttHandle) -> Result<Vec<u8>, AttErrorCode>;
-
-    /// Write to an attribute by handle
-    async fn write_attribute(&self, handle: AttHandle, data: &[u8]) -> Result<(), AttErrorCode>;
-
-    /// Write to an attribute by handle
-    fn write_no_response_attribute(&self, handle: AttHandle, data: &[u8]);
-
-    /// List all the attributes in this database.
-    ///
-    /// Expected to return them in sorted order.
-    fn list_attributes(&self) -> Vec<AttAttribute>;
-
-    /// Produce an implementation of StableAttDatabase
-    fn snapshot(&self) -> SnapshottedAttDatabase<'_>
-    where
-        Self: Sized,
-    {
-        SnapshottedAttDatabase { attributes: self.list_attributes(), backing: self }
-    }
-}
-
-/// Marker trait indicating that the backing attribute list of this
-/// database is guaranteed to remain unchanged across async points.
-///
-/// Useful if we want to call list_attributes() multiple times, rather than
-/// caching its result the first time.
-pub trait StableAttDatabase: AttDatabase {
-    fn find_attribute(&self, handle: AttHandle) -> Option<AttAttribute> {
-        self.list_attributes().into_iter().find(|attr| attr.handle == handle)
-    }
-}
-
-/// A snapshot of an AttDatabase implementing StableAttDatabase.
-pub struct SnapshottedAttDatabase<'a> {
-    attributes: Vec<AttAttribute>,
-    backing: &'a (dyn AttDatabase),
-}
-
-#[async_trait(?Send)]
-impl AttDatabase for SnapshottedAttDatabase<'_> {
-    async fn read_attribute(&self, handle: AttHandle) -> Result<Vec<u8>, AttErrorCode> {
-        self.backing.read_attribute(handle).await
-    }
-
-    async fn write_attribute(&self, handle: AttHandle, data: &[u8]) -> Result<(), AttErrorCode> {
-        self.backing.write_attribute(handle, data).await
-    }
-
-    fn write_no_response_attribute(&self, handle: AttHandle, data: &[u8]) {
-        self.backing.write_no_response_attribute(handle, data);
-    }
-
-    fn list_attributes(&self) -> Vec<AttAttribute> {
-        self.attributes.clone()
-    }
-}
-
-impl StableAttDatabase for SnapshottedAttDatabase<'_> {}

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.bluetooth.a2dpsink;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
@@ -35,7 +36,6 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
@@ -139,8 +139,7 @@ class A2dpSinkStateMachine extends StateMachine {
      * @param sb output string
      */
     public void dump(StringBuilder sb) {
-        ProfileService.println(
-                sb, "mDevice: " + mDevice + "(" + Utils.getName(mDevice) + ") " + this.toString());
+        ProfileService.println(sb, "mDevice: " + mDevice + " " + this.toString());
     }
 
     @Override
@@ -203,6 +202,7 @@ class A2dpSinkStateMachine extends StateMachine {
                 }
                 case STATE_CONNECTED -> transitionTo(mConnected);
                 case STATE_DISCONNECTED -> sendMessage(CLEANUP);
+                default -> {} // Nothing to do
             }
         }
     }
@@ -251,6 +251,7 @@ class A2dpSinkStateMachine extends StateMachine {
             switch (event.mState) {
                 case STATE_CONNECTED -> transitionTo(mConnected);
                 case STATE_DISCONNECTED -> transitionTo(mDisconnected);
+                default -> {} // Nothing to do
             }
         }
 
@@ -289,6 +290,7 @@ class A2dpSinkStateMachine extends StateMachine {
                     switch (event.mState) {
                         case STATE_DISCONNECTING -> transitionTo(mDisconnecting);
                         case STATE_DISCONNECTED -> transitionTo(mDisconnected);
+                        default -> {} // Nothing to do
                     }
                 }
                 case StackEvent.EVENT_TYPE_AUDIO_CONFIG_CHANGED -> {
@@ -298,6 +300,7 @@ class A2dpSinkStateMachine extends StateMachine {
                                     event.mChannelCount,
                                     AudioFormat.ENCODING_PCM_16BIT);
                 }
+                default -> {} // Nothing to do
             }
         }
     }

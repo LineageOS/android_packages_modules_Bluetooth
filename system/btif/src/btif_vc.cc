@@ -81,10 +81,10 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface, public VolumeC
                           Unretained(callbacks_), group_id, volume, mute, isAutonomous));
   }
 
-  void OnDeviceAvailable(const RawAddress& address, uint8_t num_offset,
+  void OnDeviceAvailable(const RawAddress& address, int group_id, uint8_t num_offset,
                          uint8_t num_inputs) override {
     do_in_jni_thread(Bind(&VolumeControlCallbacks::OnDeviceAvailable, Unretained(callbacks_),
-                          address, num_offset, num_inputs));
+                          address, group_id, num_offset, num_inputs));
   }
 
   /* Callbacks for Volume Offset Control Service (VOCS) - Extended Audio Outputs

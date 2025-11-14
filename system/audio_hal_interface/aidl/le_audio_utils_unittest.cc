@@ -1423,5 +1423,55 @@ TEST(BluetoothAudioClientInterfaceAidlTest,
   }
 }
 
+TEST(BluetoothAudioClientInterfaceAidlTest, testAidlConfigurationFlagsTypeTranslation) {
+  auto [aidl_req_l, stack_req_l] = test_utils::PrepareReferenceDirectionRequirements(
+          ::aidl::android::hardware::bluetooth::audio::CodecSpecificConfigurationLtv::
+                  AudioChannelAllocation::FRONT_LEFT,
+          le_audio::codec_spec_conf::kLeAudioLocationFrontLeft);
+
+  auto [aidl_req_r, stack_req_r] = test_utils::PrepareReferenceDirectionRequirements(
+          ::aidl::android::hardware::bluetooth::audio::CodecSpecificConfigurationLtv::
+                  AudioChannelAllocation::FRONT_RIGHT,
+          le_audio::codec_spec_conf::kLeAudioLocationFrontRight);
+
+  auto stack_context = le_audio::types::LeAudioContextType::MEDIA;
+  auto aidl_context = ::aidl::android::hardware::bluetooth::audio::AudioContext{
+          .bitmask = ::aidl::android::hardware::bluetooth::audio::AudioContext::MEDIA,
+  };
+
+  // For this case lets make the sink and source requirements symmetric
+  ::aidl::android::hardware::bluetooth::audio::IBluetoothAudioProvider::
+          LeAudioConfigurationRequirement reference_aidl_requirements;
+  reference_aidl_requirements.audioContext = aidl_context;
+
+  std::vector<::bluetooth::le_audio::CodecManager::UnicastConfigurationRequirements::
+                      DeviceDirectionRequirements>
+          stack_sink_reqs = {stack_req_l, stack_req_r};
+  auto stack_source_reqs = stack_sink_reqs;
+  reference_aidl_requirements.sinkAseRequirement = std::vector<
+          std::optional<::aidl::android::hardware::bluetooth::audio::IBluetoothAudioProvider::
+                                LeAudioConfigurationRequirement::AseDirectionRequirement>>{
+          aidl_req_l, aidl_req_r};
+  reference_aidl_requirements.sourceAseRequirement = reference_aidl_requirements.sinkAseRequirement;
+
+  // Verify the correct flags translation
+  std::map<::bluetooth::le_audio::CodecManager::Flags, int32_t> reference_flag_mapping = {
+          {::bluetooth::le_audio::CodecManager::Flags::LOW_LATENCY,
+           ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::LOW_LATENCY},
+          {::bluetooth::le_audio::CodecManager::Flags::ALLOW_ASYMMETRIC,
+           ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::
+                   ALLOW_ASYMMETRIC_CONFIGURATIONS},
+          {::bluetooth::le_audio::CodecManager::Flags::SPATIAL_AUDIO,
+           ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::SPATIAL_AUDIO},
+  };
+
+  for (auto const& [stack_flag, aidl_flag] : reference_flag_mapping) {
+    auto aidl_requirements = GetAidlLeAudioUnicastConfigurationRequirementsFromStackFormat(
+            stack_context, stack_sink_reqs, stack_source_reqs, stack_flag);
+    ASSERT_TRUE(aidl_requirements.flags.has_value());
+    ASSERT_EQ(aidl_requirements.flags->bitmask, aidl_flag);
+  }
+}
+
 }  // namespace
 }  // namespace bluetooth

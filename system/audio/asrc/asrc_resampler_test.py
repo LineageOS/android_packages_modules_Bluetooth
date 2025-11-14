@@ -51,11 +51,13 @@ class CResampler:
         ys_int = np.empty(int(np.ceil(len(xs) / ratio)), dtype=xs_int.dtype)
 
         if bitdepth <= 16:
-            lib.resample_i16(c_int(channels), c_int(bitdepth), c_double(ratio), xs_int.ctypes.data_as(c_int16_p),
-                             c_size_t(len(xs_int)), ys_int.ctypes.data_as(c_int16_p), c_size_t(len(ys_int)))
+            lib.resample_i16(c_int(channels), c_int(bitdepth), c_double(ratio),
+                             xs_int.ctypes.data_as(c_int16_p), c_size_t(len(xs_int)),
+                             ys_int.ctypes.data_as(c_int16_p), c_size_t(len(ys_int)))
         else:
-            lib.resample_i32(c_int(channels), c_int(bitdepth), c_double(ratio), xs_int.ctypes.data_as(c_int32_p),
-                             c_size_t(len(xs_int)), ys_int.ctypes.data_as(c_int32_p), c_size_t(len(ys_int)))
+            lib.resample_i32(c_int(channels), c_int(bitdepth), c_double(ratio),
+                             xs_int.ctypes.data_as(c_int32_p), c_size_t(len(xs_int)),
+                             ys_int.ctypes.data_as(c_int32_p), c_size_t(len(ys_int)))
 
         return np.ldexp(ys_int, 1 - bitdepth)
 

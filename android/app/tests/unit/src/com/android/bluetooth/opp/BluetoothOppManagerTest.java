@@ -20,16 +20,17 @@ import static androidx.test.espresso.intent.Intents.intended;
 import static androidx.test.espresso.intent.Intents.intending;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.anyIntent;
 
+import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.opp.BluetoothOppManager.ALLOWED_INSERT_SHARE_THREAD_NUMBER;
 import static com.android.bluetooth.opp.BluetoothOppManager.OPP_PREFERENCE_FILE;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.nullable;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
@@ -45,12 +46,16 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.bluetooth.btservice.AdapterService;
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,16 +64,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /** Test cases for {@link BluetoothOppManager}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppManagerTest {
-    Context mContext;
+    @Rule public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(AdapterService.class);
+    @Mock private AdapterService mAdapterService;
 
-    BluetoothMethodProxy mCallProxy;
+    private Context mContext;
+    private BluetoothMethodProxy mCallProxy;
 
     @Before
     public void setUp() {
+        ExtendedMockito.doReturn(mAdapterService)
+                .when(() -> AdapterService.deprecatedGetAdapterService());
         mContext =
-                spy(
-                        new ContextWrapper(
-                                InstrumentationRegistry.getInstrumentation().getTargetContext()));
+                spy(new ContextWrapper(InstrumentationRegistry.getInstrumentation().getContext()));
 
         mCallProxy = spy(BluetoothMethodProxy.getInstance());
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
@@ -85,7 +92,7 @@ public class BluetoothOppManagerTest {
         BluetoothMethodProxy.setInstanceForTesting(null);
         BluetoothOppUtility.sSendFileMap.clear();
         mContext.getSharedPreferences(OPP_PREFERENCE_FILE, 0).edit().clear().apply();
-        BluetoothOppManager.sInstance = null;
+        BluetoothOppManager.setInstanceForTesting(null);
 
         Intents.release();
     }
@@ -98,7 +105,7 @@ public class BluetoothOppManagerTest {
         bluetoothOppManager.saveSendingFileInfo(
                 "text/plain", "content:///abc/xyz.txt", false, true);
 
-        BluetoothOppManager.sInstance = null;
+        BluetoothOppManager.setInstanceForTesting(null);
         BluetoothOppManager restartedBluetoothOppManager =
                 BluetoothOppManager.getInstance(mContext);
         assertThat(bluetoothOppManager.mSendingFlag)
@@ -129,7 +136,7 @@ public class BluetoothOppManagerTest {
                 false,
                 true);
 
-        BluetoothOppManager.sInstance = null;
+        BluetoothOppManager.setInstanceForTesting(null);
         BluetoothOppManager restartedBluetoothOppManager =
                 BluetoothOppManager.getInstance(mContext);
         assertThat(bluetoothOppManager.mSendingFlag)
@@ -144,29 +151,6 @@ public class BluetoothOppManagerTest {
                 .isEqualTo(restartedBluetoothOppManager.mMimeTypeOfSendingFile);
         assertThat(bluetoothOppManager.mMimeTypeOfSendingFiles)
                 .isEqualTo(restartedBluetoothOppManager.mMimeTypeOfSendingFiles);
-    }
-
-    @Test
-    public void isAcceptedList_inAcceptList_returnsTrue() {
-        BluetoothOppManager bluetoothOppManager = BluetoothOppManager.getInstance(mContext);
-        String address1 = "AA:BB:CC:DD:EE:FF";
-        String address2 = "00:11:22:33:44:55";
-
-        bluetoothOppManager.addToAcceptlist(address1);
-        bluetoothOppManager.addToAcceptlist(address2);
-        assertThat(bluetoothOppManager.isAcceptListed(address1)).isTrue();
-        assertThat(bluetoothOppManager.isAcceptListed(address2)).isTrue();
-    }
-
-    @Test
-    public void isAcceptedList_notInAcceptList_returnsFalse() {
-        BluetoothOppManager bluetoothOppManager = BluetoothOppManager.getInstance(mContext);
-        String address = "01:23:45:67:89:AB";
-
-        assertThat(bluetoothOppManager.isAcceptListed(address)).isFalse();
-
-        bluetoothOppManager.addToAcceptlist(address);
-        assertThat(bluetoothOppManager.isAcceptListed(address)).isTrue();
     }
 
     @Test
@@ -195,7 +179,7 @@ public class BluetoothOppManagerTest {
                 "text/plain", "content:///abc/xyz.txt", false, true);
         BluetoothDevice device = getTestDevice(34);
         bluetoothOppManager.startTransfer(device);
-        verify(mCallProxy, timeout(5_000).times(1))
+        verify(mCallProxy, timeout(5_000))
                 .contentResolverInsert(any(), nullable(Uri.class), nullable(ContentValues.class));
     }
 

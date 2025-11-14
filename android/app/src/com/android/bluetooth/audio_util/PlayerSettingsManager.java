@@ -120,22 +120,20 @@ public class PlayerSettingsManager {
             return false;
         }
         switch (repeatMode) {
-            case PlayerSettingsValues.STATE_REPEAT_OFF:
-                controls.setRepeatMode(PlaybackStateCompat.REPEAT_MODE_NONE);
-                return true;
-            case PlayerSettingsValues.STATE_REPEAT_SINGLE_TRACK:
-                controls.setRepeatMode(PlaybackStateCompat.REPEAT_MODE_ONE);
-                return true;
-            case PlayerSettingsValues.STATE_REPEAT_GROUP:
-                controls.setRepeatMode(PlaybackStateCompat.REPEAT_MODE_GROUP);
-                return true;
-            case PlayerSettingsValues.STATE_REPEAT_ALL_TRACK:
-                controls.setRepeatMode(PlaybackStateCompat.REPEAT_MODE_ALL);
-                return true;
-            default:
+            case PlayerSettingsValues.STATE_REPEAT_OFF ->
+                    controls.setRepeatMode(PlaybackStateCompat.REPEAT_MODE_NONE);
+            case PlayerSettingsValues.STATE_REPEAT_SINGLE_TRACK ->
+                    controls.setRepeatMode(PlaybackStateCompat.REPEAT_MODE_ONE);
+            case PlayerSettingsValues.STATE_REPEAT_GROUP ->
+                    controls.setRepeatMode(PlaybackStateCompat.REPEAT_MODE_GROUP);
+            case PlayerSettingsValues.STATE_REPEAT_ALL_TRACK ->
+                    controls.setRepeatMode(PlaybackStateCompat.REPEAT_MODE_ALL);
+            default -> {
                 controls.setRepeatMode(PlaybackStateCompat.REPEAT_MODE_NONE);
                 return false;
+            }
         }
+        return true;
     }
 
     /** Called from remote device to set the active player shuffle mode. */
@@ -152,19 +150,18 @@ public class PlayerSettingsManager {
             return false;
         }
         switch (shuffleMode) {
-            case PlayerSettingsValues.STATE_SHUFFLE_OFF:
-                controls.setShuffleMode(PlaybackStateCompat.SHUFFLE_MODE_NONE);
-                return true;
-            case PlayerSettingsValues.STATE_SHUFFLE_GROUP:
-                controls.setShuffleMode(PlaybackStateCompat.SHUFFLE_MODE_GROUP);
-                return true;
-            case PlayerSettingsValues.STATE_SHUFFLE_ALL_TRACK:
-                controls.setShuffleMode(PlaybackStateCompat.SHUFFLE_MODE_ALL);
-                return true;
-            default:
+            case PlayerSettingsValues.STATE_SHUFFLE_OFF ->
+                    controls.setShuffleMode(PlaybackStateCompat.SHUFFLE_MODE_NONE);
+            case PlayerSettingsValues.STATE_SHUFFLE_GROUP ->
+                    controls.setShuffleMode(PlaybackStateCompat.SHUFFLE_MODE_GROUP);
+            case PlayerSettingsValues.STATE_SHUFFLE_ALL_TRACK ->
+                    controls.setShuffleMode(PlaybackStateCompat.SHUFFLE_MODE_ALL);
+            default -> {
                 controls.setShuffleMode(PlaybackStateCompat.SHUFFLE_MODE_NONE);
                 return false;
+            }
         }
+        return true;
     }
 
     /**
@@ -182,20 +179,15 @@ public class PlayerSettingsManager {
             Log.e(TAG, e.toString());
             return PlayerSettingsValues.STATE_REPEAT_OFF;
         }
-        switch (mediaFwkMode) {
-            case PlaybackStateCompat.REPEAT_MODE_NONE:
-                return PlayerSettingsValues.STATE_REPEAT_OFF;
-            case PlaybackStateCompat.REPEAT_MODE_ONE:
-                return PlayerSettingsValues.STATE_REPEAT_SINGLE_TRACK;
-            case PlaybackStateCompat.REPEAT_MODE_GROUP:
-                return PlayerSettingsValues.STATE_REPEAT_GROUP;
-            case PlaybackStateCompat.REPEAT_MODE_ALL:
-                return PlayerSettingsValues.STATE_REPEAT_ALL_TRACK;
-            case PlaybackStateCompat.REPEAT_MODE_INVALID:
-                return PlayerSettingsValues.STATE_REPEAT_OFF;
-            default:
-                return PlayerSettingsValues.STATE_REPEAT_OFF;
-        }
+        return switch (mediaFwkMode) {
+            case PlaybackStateCompat.REPEAT_MODE_NONE -> PlayerSettingsValues.STATE_REPEAT_OFF;
+            case PlaybackStateCompat.REPEAT_MODE_ONE ->
+                    PlayerSettingsValues.STATE_REPEAT_SINGLE_TRACK;
+            case PlaybackStateCompat.REPEAT_MODE_GROUP -> PlayerSettingsValues.STATE_REPEAT_GROUP;
+            case PlaybackStateCompat.REPEAT_MODE_ALL -> PlayerSettingsValues.STATE_REPEAT_ALL_TRACK;
+            case PlaybackStateCompat.REPEAT_MODE_INVALID -> PlayerSettingsValues.STATE_REPEAT_OFF;
+            default -> PlayerSettingsValues.STATE_REPEAT_OFF;
+        };
     }
 
     /**
@@ -213,18 +205,14 @@ public class PlayerSettingsManager {
             Log.e(TAG, e.toString());
             return PlayerSettingsValues.STATE_SHUFFLE_OFF;
         }
-        switch (mediaFwkMode) {
-            case PlaybackStateCompat.SHUFFLE_MODE_NONE:
-                return PlayerSettingsValues.STATE_SHUFFLE_OFF;
-            case PlaybackStateCompat.SHUFFLE_MODE_GROUP:
-                return PlayerSettingsValues.STATE_SHUFFLE_GROUP;
-            case PlaybackStateCompat.SHUFFLE_MODE_ALL:
-                return PlayerSettingsValues.STATE_SHUFFLE_ALL_TRACK;
-            case PlaybackStateCompat.SHUFFLE_MODE_INVALID:
-                return PlayerSettingsValues.STATE_SHUFFLE_OFF;
-            default:
-                return PlayerSettingsValues.STATE_SHUFFLE_OFF;
-        }
+        return switch (mediaFwkMode) {
+            case PlaybackStateCompat.SHUFFLE_MODE_NONE -> PlayerSettingsValues.STATE_SHUFFLE_OFF;
+            case PlaybackStateCompat.SHUFFLE_MODE_GROUP -> PlayerSettingsValues.STATE_SHUFFLE_GROUP;
+            case PlaybackStateCompat.SHUFFLE_MODE_ALL ->
+                    PlayerSettingsValues.STATE_SHUFFLE_ALL_TRACK;
+            case PlaybackStateCompat.SHUFFLE_MODE_INVALID -> PlayerSettingsValues.STATE_SHUFFLE_OFF;
+            default -> PlayerSettingsValues.STATE_SHUFFLE_OFF;
+        };
     }
 
     /**
@@ -309,30 +297,21 @@ public class PlayerSettingsManager {
     }
 
     private static String getRepeatModeStringValue(int repeatMode) {
-        switch (repeatMode) {
-            case PlayerSettingsValues.STATE_REPEAT_OFF:
-                return "STATE_REPEAT_OFF";
-            case PlayerSettingsValues.STATE_REPEAT_SINGLE_TRACK:
-                return "STATE_REPEAT_SINGLE_TRACK";
-            case PlayerSettingsValues.STATE_REPEAT_ALL_TRACK:
-                return "STATE_REPEAT_ALL_TRACK";
-            case PlayerSettingsValues.STATE_REPEAT_GROUP:
-                return "STATE_REPEAT_GROUP";
-            default:
-                return "STATE_DEFAULT_OFF";
-        }
+        return switch (repeatMode) {
+            case PlayerSettingsValues.STATE_REPEAT_OFF -> "STATE_REPEAT_OFF";
+            case PlayerSettingsValues.STATE_REPEAT_SINGLE_TRACK -> "STATE_REPEAT_SINGLE_TRACK";
+            case PlayerSettingsValues.STATE_REPEAT_ALL_TRACK -> "STATE_REPEAT_ALL_TRACK";
+            case PlayerSettingsValues.STATE_REPEAT_GROUP -> "STATE_REPEAT_GROUP";
+            default -> "STATE_DEFAULT_OFF";
+        };
     }
 
     private static String getShuffleModeStringValue(int shuffleMode) {
-        switch (shuffleMode) {
-            case PlayerSettingsValues.STATE_SHUFFLE_OFF:
-                return "STATE_SHUFFLE_OFF";
-            case PlayerSettingsValues.STATE_SHUFFLE_ALL_TRACK:
-                return "STATE_SHUFFLE_ALL_TRACK";
-            case PlayerSettingsValues.STATE_SHUFFLE_GROUP:
-                return "STATE_SHUFFLE_GROUP";
-            default:
-                return "STATE_DEFAULT_OFF";
-        }
+        return switch (shuffleMode) {
+            case PlayerSettingsValues.STATE_SHUFFLE_OFF -> "STATE_SHUFFLE_OFF";
+            case PlayerSettingsValues.STATE_SHUFFLE_ALL_TRACK -> "STATE_SHUFFLE_ALL_TRACK";
+            case PlayerSettingsValues.STATE_SHUFFLE_GROUP -> "STATE_SHUFFLE_GROUP";
+            default -> "STATE_DEFAULT_OFF";
+        };
     }
 }

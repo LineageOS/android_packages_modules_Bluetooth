@@ -25,17 +25,14 @@
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_ble_int.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/btu_hcif.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
-extern tBTM_CB btm_cb;
-
 using namespace bluetooth;
-using base::Bind;
-using bluetooth::Uuid;
 
 #define BTM_BLE_ADV_FILT_META_HDR_LENGTH 3
 #define BTM_BLE_ADV_FILT_FEAT_SELN_LEN 13
@@ -53,8 +50,8 @@ using bluetooth::Uuid;
 
 #define BTM_BLE_PF_BIT_TO_MASK(x) (uint16_t)(1 << (x))
 
-tBTM_BLE_ADV_FILTER_CB btm_ble_adv_filt_cb;
-tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
+static tBTM_BLE_ADV_FILTER_CB btm_ble_adv_filt_cb;
+static tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
 
 static uint8_t btm_ble_cs_update_pf_counter(tBTM_BLE_SCAN_COND_OP action, uint8_t cond_type,
                                             tBLE_BD_ADDR* p_bd_addr, uint8_t num_available);
@@ -325,7 +322,7 @@ void BTM_BleAdvFilterParamSetup(tBTM_BLE_SCAN_COND_OP action, tBTM_BLE_PF_FILT_I
   uint8_t param[len], *p;
 
   if (!is_filtering_supported()) {
-    cb.Run(0, BTM_BLE_PF_ENABLE, tBTM_STATUS::BTM_MODE_UNSUPPORTED);
+    cb.Run(0, action, tBTM_STATUS::BTM_MODE_UNSUPPORTED);
     return;
   }
 

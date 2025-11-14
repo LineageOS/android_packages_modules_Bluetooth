@@ -57,6 +57,13 @@ enum tBTM_PAIRING_STATE : uint8_t {
   BTM_PAIR_STATE_WAIT_DISCONNECT       /* Waiting to disconnect the ACL */
 };
 
+enum tBTM_KEY_MISSING_REASON : uint8_t {
+  BTM_KEY_MISSING_BREDR_AUTH_FAILURE,
+  BTM_KEY_MISSING_BREDR_INCOMING_PAIRING,
+  BTM_KEY_MISSING_LE_ENCRYPT_FAILURE,
+  BTM_KEY_MISSING_LE_INCOMING_PAIRING
+};
+
 #define BTM_PAIR_FLAGS_WE_STARTED_DD 0x01    /* We want to do dedicated bonding              */
 #define BTM_PAIR_FLAGS_PEER_STARTED_DD 0x02  /* Peer initiated dedicated bonding             */
 #define BTM_PAIR_FLAGS_DISC_WHEN_DONE 0x04   /* Disconnect when done     */
@@ -66,6 +73,7 @@ enum tBTM_PAIRING_STATE : uint8_t {
 #define BTM_PAIR_FLAGS_WE_CANCEL_DD 0x40     /* set this bit when cancelling a bonding procedure */
 #define BTM_PAIR_FLAGS_LE_ACTIVE 0x80        /* use this bit when SMP pairing is active */
 
+// Todo(b/405594028): Remove when separate_encryption_queue is released
 typedef struct {
   bool is_mux;
   RawAddress bd_addr;
@@ -78,6 +86,25 @@ typedef struct {
   tBT_TRANSPORT transport;
   tBTM_BLE_SEC_ACT sec_act;
 } tBTM_SEC_QUEUE_ENTRY;
+
+// Pending service access request
+typedef struct {
+  RawAddress bd_addr;
+  uint16_t psm;
+  bool is_orig;
+  uint16_t rfcomm_security_requirement;
+  tBTM_SEC_CALLBACK* callback;
+  void* ref;
+} tBTM_SERVICE_ACCESS_REQ;
+
+// Pending security request
+typedef struct {
+  RawAddress bd_addr;
+  tBT_TRANSPORT transport;
+  tBTM_BLE_SEC_ACT sec_act;
+  tBTM_SEC_CALLBACK* callback;
+  void* ref;
+} tBTM_SEC_REQ;
 
 /* Define the Device Management control structure
  */

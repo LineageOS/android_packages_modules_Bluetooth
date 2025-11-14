@@ -504,6 +504,16 @@ void bta_ag_send_qcs(tBTA_AG_SCB* p_scb);
  * @return true if SCO managed by Audio is enabled, false otherwise
  */
 bool bta_ag_is_sco_managed_by_audio();
+
+/**
+ * Retrieves from the java layer the value of the is_sco_managed_by_audio flag
+ * <p>When set to false, Bluetooth will manage the start and end of the SCO.
+ * <p>When set to true, Audio will manage the start and end of the SCO through
+ * HAL.
+ *
+ */
+void bta_ag_set_is_sco_managed_by_audio(bool value);
+
 /**
  * Respond to Audio HAL's SuspendStream request when SCO is disconnected
  */

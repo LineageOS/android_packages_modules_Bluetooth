@@ -7,9 +7,8 @@ from mobly import signals
 
 
 @contextlib.contextmanager
-def assert_not_raises(
-    exception: Type[Exception] = Exception) -> Iterator[None]:
-  """Asserts that the exception is not raised.
+def assert_not_raises(exception: Type[Exception] = Exception) -> Iterator[None]:
+    """Asserts that the exception is not raised.
 
   This assertion function is used to catch a specified exception
   (or any exceptions) and raise signal.TestFailure instead.
@@ -31,7 +30,7 @@ def assert_not_raises(
     signals.TestFailure: raised when the exception is catched in the context.
   """
 
-  try:
-    yield
-  except exception as e:  # pylint: disable=broad-except
-    raise signals.TestFailure(e)
+    try:
+        yield
+    except exception as e:  # pylint: disable=broad-except
+        raise signals.TestFailure(e)

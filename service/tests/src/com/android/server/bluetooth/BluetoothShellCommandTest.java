@@ -19,10 +19,10 @@ package com.android.server.bluetooth;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -30,7 +30,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import android.annotation.SuppressLint;
-import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.State;
 import android.os.Binder;
 import android.os.RemoteException;
 
@@ -139,7 +139,7 @@ public class BluetoothShellCommandTest {
         }
 
         expect.that(waitCmd.isPrivileged()).isFalse();
-        when(mManagerService.waitForManagerState(eq(BluetoothAdapter.STATE_OFF))).thenReturn(true);
+        when(mManagerService.waitForManagerState(eq(State.OFF))).thenReturn(true);
 
         expect.that(waitCmd.exec(validCmd[0])).isEqualTo(0);
     }

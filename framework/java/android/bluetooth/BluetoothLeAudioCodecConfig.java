@@ -44,14 +44,31 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
     /** @hide */
     @IntDef(
             prefix = "SOURCE_CODEC_TYPE_",
-            value = {SOURCE_CODEC_TYPE_LC3, SOURCE_CODEC_TYPE_OPUS, SOURCE_CODEC_TYPE_INVALID})
+            value = {
+                SOURCE_CODEC_TYPE_LC3,
+                SOURCE_CODEC_TYPE_OPUS,
+                SOURCE_CODEC_TYPE_OPUS_HI_RES,
+                SOURCE_CODEC_TYPE_INVALID
+            })
     @Retention(RetentionPolicy.SOURCE)
     public @interface SourceCodecType {};
 
+    /**
+     * Source codec type for LC3.
+     */
     public static final int SOURCE_CODEC_TYPE_LC3 = 0;
 
+    /**
+     * Source codec type for Opus.
+     */
     @FlaggedApi(Flags.FLAG_LEAUDIO_ADD_OPUS_CODEC_TYPE)
     public static final int SOURCE_CODEC_TYPE_OPUS = 1;
+
+    /**
+     * Source codec type for Opus High Resolution.
+     */
+    @FlaggedApi(Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API)
+    public static final int SOURCE_CODEC_TYPE_OPUS_HI_RES = 2;
 
     public static final int SOURCE_CODEC_TYPE_INVALID = 1000 * 1000;
 
@@ -190,15 +207,21 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
     public static final int CHANNEL_COUNT_2 = 0x01 << 1;
 
     /**
-     * Values are the bit mask as defined in the Bluetooth Assigned Numbers, Generic Audio,
-     * Supported_Frame_Durations table
+     * These values do not follow strictly the bit mask defined in the Bluetooth Assigned Numbers,
+     * Generic Audio, Supported_Frame_Durations table, and may deviate or extend beyond what was
+     * defined there.
      *
      * @hide
      */
     @IntDef(
             flag = true,
             prefix = "FRAME_DURATION_",
-            value = {FRAME_DURATION_NONE, FRAME_DURATION_7500, FRAME_DURATION_10000})
+            value = {
+                FRAME_DURATION_NONE,
+                FRAME_DURATION_7500,
+                FRAME_DURATION_10000,
+                FRAME_DURATION_20000
+            })
     @Retention(RetentionPolicy.SOURCE)
     public @interface FrameDuration {}
 
@@ -210,6 +233,10 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
 
     /** Frame duration 10000 us. */
     public static final int FRAME_DURATION_10000 = 0x01 << 1;
+
+    /** Frame duration 20000 us. */
+    /** @hide */
+    public static final int FRAME_DURATION_20000 = 0x01 << 2;
 
     private final @SourceCodecType int mCodecType;
     private final @CodecPriority int mCodecPriority;
@@ -261,35 +288,34 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
     }
 
     /** {@link Parcelable.Creator} interface implementation. */
-    public static final @android.annotation.NonNull Parcelable.Creator<BluetoothLeAudioCodecConfig>
-            CREATOR =
-                    new Parcelable.Creator<BluetoothLeAudioCodecConfig>() {
-                        public BluetoothLeAudioCodecConfig createFromParcel(Parcel in) {
-                            int codecType = in.readInt();
-                            int codecPriority = in.readInt();
-                            int sampleRate = in.readInt();
-                            int bitsPerSample = in.readInt();
-                            int channelCount = in.readInt();
-                            int frameDuration = in.readInt();
-                            int octetsPerFrame = in.readInt();
-                            int minOctetsPerFrame = in.readInt();
-                            int maxOctetsPerFrame = in.readInt();
-                            return new BluetoothLeAudioCodecConfig(
-                                    codecType,
-                                    codecPriority,
-                                    sampleRate,
-                                    bitsPerSample,
-                                    channelCount,
-                                    frameDuration,
-                                    octetsPerFrame,
-                                    minOctetsPerFrame,
-                                    maxOctetsPerFrame);
-                        }
+    public static final @NonNull Parcelable.Creator<BluetoothLeAudioCodecConfig> CREATOR =
+            new Parcelable.Creator<BluetoothLeAudioCodecConfig>() {
+                public BluetoothLeAudioCodecConfig createFromParcel(Parcel in) {
+                    int codecType = in.readInt();
+                    int codecPriority = in.readInt();
+                    int sampleRate = in.readInt();
+                    int bitsPerSample = in.readInt();
+                    int channelCount = in.readInt();
+                    int frameDuration = in.readInt();
+                    int octetsPerFrame = in.readInt();
+                    int minOctetsPerFrame = in.readInt();
+                    int maxOctetsPerFrame = in.readInt();
+                    return new BluetoothLeAudioCodecConfig(
+                            codecType,
+                            codecPriority,
+                            sampleRate,
+                            bitsPerSample,
+                            channelCount,
+                            frameDuration,
+                            octetsPerFrame,
+                            minOctetsPerFrame,
+                            maxOctetsPerFrame);
+                }
 
-                        public BluetoothLeAudioCodecConfig[] newArray(int size) {
-                            return new BluetoothLeAudioCodecConfig[size];
-                        }
-                    };
+                public BluetoothLeAudioCodecConfig[] newArray(int size) {
+                    return new BluetoothLeAudioCodecConfig[size];
+                }
+            };
 
     @Override
     public void writeToParcel(@NonNull Parcel out, int flags) {
@@ -305,51 +331,33 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
     }
 
     private static String sampleRateToString(@SampleRate int sampleRateBit) {
-        switch (sampleRateBit) {
-            case SAMPLE_RATE_NONE:
-                return "None";
-            case SAMPLE_RATE_8000:
-                return "8 kHz";
-            case SAMPLE_RATE_11025:
-                return "11.025 kHz";
-            case SAMPLE_RATE_16000:
-                return "16 kHz";
-            case SAMPLE_RATE_22050:
-                return "22.05 kHz";
-            case SAMPLE_RATE_24000:
-                return "24 kHz";
-            case SAMPLE_RATE_32000:
-                return "32 kHz";
-            case SAMPLE_RATE_44100:
-                return "44.1 kHz";
-            case SAMPLE_RATE_48000:
-                return "48 kHz";
-            case SAMPLE_RATE_88200:
-                return "88.2 kHz";
-            case SAMPLE_RATE_96000:
-                return "96 kHz";
-            case SAMPLE_RATE_176400:
-                return "176.4 kHz";
-            case SAMPLE_RATE_192000:
-                return "192 kHz";
-            case SAMPLE_RATE_384000:
-                return "384 kHz";
-            default:
-                return "Unknown bit " + sampleRateBit;
-        }
+        return switch (sampleRateBit) {
+            case SAMPLE_RATE_NONE -> "None";
+            case SAMPLE_RATE_8000 -> "8 kHz";
+            case SAMPLE_RATE_11025 -> "11.025 kHz";
+            case SAMPLE_RATE_16000 -> "16 kHz";
+            case SAMPLE_RATE_22050 -> "22.05 kHz";
+            case SAMPLE_RATE_24000 -> "24 kHz";
+            case SAMPLE_RATE_32000 -> "32 kHz";
+            case SAMPLE_RATE_44100 -> "44.1 kHz";
+            case SAMPLE_RATE_48000 -> "48 kHz";
+            case SAMPLE_RATE_88200 -> "88.2 kHz";
+            case SAMPLE_RATE_96000 -> "96 kHz";
+            case SAMPLE_RATE_176400 -> "176.4 kHz";
+            case SAMPLE_RATE_192000 -> "192 kHz";
+            case SAMPLE_RATE_384000 -> "384 kHz";
+            default -> "Unknown bit " + sampleRateBit;
+        };
     }
 
     private static String frameDurationToString(@FrameDuration int frameDurationBit) {
-        switch (frameDurationBit) {
-            case FRAME_DURATION_NONE:
-                return "None";
-            case FRAME_DURATION_7500:
-                return "7.5 ms";
-            case FRAME_DURATION_10000:
-                return "10 ms";
-            default:
-                return "Unknown bit " + frameDurationBit;
-        }
+        return switch (frameDurationBit) {
+            case FRAME_DURATION_NONE -> "None";
+            case FRAME_DURATION_7500 -> "7.5 ms";
+            case FRAME_DURATION_10000 -> "10 ms";
+            case FRAME_DURATION_20000 -> "20 ms";
+            default -> "Unknown bit " + frameDurationBit;
+        };
     }
 
     @Override
@@ -403,7 +411,11 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
                         return "Opus";
                     }
                 }
-                break;
+                if (Flags.leaudioAddOpusHiResCodecTypeApi()) {
+                    if (mCodecType == SOURCE_CODEC_TYPE_OPUS_HI_RES) {
+                        return "Opus Hi-Res";
+                    }
+                }
         }
         return "UNKNOWN CODEC(" + mCodecType + ")";
     }

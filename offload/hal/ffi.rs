@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core::ffi::c_void;
+use crate::{HciHal, HciHalStatus, HciProxyCallbacks};
+
+use core::ffi::{c_int, c_void, CStr};
 use core::slice;
+use std::fs::File;
+use std::io::Write;
+use std::os::fd::AsRawFd;
 use std::sync::{Mutex, RwLock};
 
 /// Callbacks from C to Rust
@@ -46,7 +51,8 @@ pub struct CInterface {
     send_acl: unsafe extern "C" fn(handle: *mut c_void, data: *const u8, len: usize),
     send_sco: unsafe extern "C" fn(handle: *mut c_void, data: *const u8, len: usize),
     send_iso: unsafe extern "C" fn(handle: *mut c_void, data: *const u8, len: usize),
-    client_died: unsafe extern "C" fn(handle: *mut c_void),
+    client_died: Option<unsafe extern "C" fn(handle: *mut c_void)>,
+    dump: Option<unsafe extern "C" fn(handle: *mut c_void, fd: c_int)>,
 }
 
 //SAFETY: CInterface is safe to send between threads because we require the C code
@@ -65,28 +71,27 @@ pub(crate) enum CStatus {
     Unknown,
 }
 
-pub(crate) trait Callbacks: DataCallbacks {
-    fn initialization_complete(&self, status: CStatus);
-}
-
-pub(crate) trait DataCallbacks: Send + Sync {
-    fn event_received(&self, data: &[u8]);
-    fn acl_received(&self, data: &[u8]);
-    fn sco_received(&self, data: &[u8]);
-    fn iso_received(&self, data: &[u8]);
-}
-
-pub(crate) struct Ffi<T: Callbacks> {
+pub(crate) struct Ffi {
     intf: Mutex<CInterface>,
-    wrapper: RwLock<Option<T>>,
+    wrapper: RwLock<Option<HciProxyCallbacks>>,
 }
 
-impl<T: Callbacks> Ffi<T> {
+impl Ffi {
     pub(crate) fn new(intf: CInterface) -> Self {
         Self { intf: Mutex::new(intf), wrapper: RwLock::new(None) }
     }
 
-    pub(crate) fn initialize(&self, client: T) {
+    fn set_client(&self, client: HciProxyCallbacks) {
+        *self.wrapper.write().unwrap() = Some(client);
+    }
+
+    fn remove_client(&self) {
+        *self.wrapper.write().unwrap() = None;
+    }
+}
+
+impl HciHal for Ffi {
+    fn initialize(&self, client: HciProxyCallbacks) {
         let intf = self.intf.lock().unwrap();
         self.set_client(client);
 
@@ -97,7 +102,7 @@ impl<T: Callbacks> Ffi<T> {
         }
     }
 
-    pub(crate) fn send_command(&self, data: &[u8]) {
+    fn send_command(&self, data: &[u8]) {
         let intf = self.intf.lock().unwrap();
 
         // SAFETY: The C Code has initialized the `CInterface` with a valid
@@ -107,7 +112,7 @@ impl<T: Callbacks> Ffi<T> {
         }
     }
 
-    pub(crate) fn send_acl(&self, data: &[u8]) {
+    fn send_acl(&self, data: &[u8]) {
         let intf = self.intf.lock().unwrap();
 
         // SAFETY: The C Code has initialized the `CInterface` with a valid
@@ -117,7 +122,7 @@ impl<T: Callbacks> Ffi<T> {
         }
     }
 
-    pub(crate) fn send_iso(&self, data: &[u8]) {
+    fn send_iso(&self, data: &[u8]) {
         let intf = self.intf.lock().unwrap();
 
         // SAFETY: The C Code has initialized the `CInterface` with a valid
@@ -127,7 +132,7 @@ impl<T: Callbacks> Ffi<T> {
         }
     }
 
-    pub(crate) fn send_sco(&self, data: &[u8]) {
+    fn send_sco(&self, data: &[u8]) {
         let intf = self.intf.lock().unwrap();
 
         // SAFETY: The C Code has initialized the `CInterface` with a valid
@@ -137,7 +142,7 @@ impl<T: Callbacks> Ffi<T> {
         }
     }
 
-    pub(crate) fn close(&self) {
+    fn close(&self) {
         let intf = self.intf.lock().unwrap();
 
         // SAFETY: The C Code has initialized the `CInterface` with a valid
@@ -148,35 +153,49 @@ impl<T: Callbacks> Ffi<T> {
         self.remove_client();
     }
 
-    pub(crate) fn client_died(&self) {
+    fn client_died(&self) {
         let intf = self.intf.lock().unwrap();
 
-        // SAFETY: The C Code has initialized the `CInterface` with a valid
-        //         function pointer and an initialized `handle`.
-        unsafe {
-            (intf.client_died)(intf.handle);
+        if let Some(client_died) = intf.client_died {
+            // SAFETY: The C Code has initialized the `CInterface` with a valid
+            //         or null function pointer and an initialized `handle`.
+            unsafe {
+                client_died(intf.handle);
+            }
         }
         self.remove_client();
     }
 
-    fn set_client(&self, client: T) {
-        *self.wrapper.write().unwrap() = Some(client);
-    }
+    /// # Safety
+    ///
+    /// The `writer` must be a concrete `File` type, as it will be casted to a
+    /// `File` pointer to extract the raw file descriptor.
+    unsafe fn dump(&self, writer: &mut dyn Write, _args: &[&CStr]) {
+        let intf = self.intf.lock().unwrap();
 
-    fn remove_client(&self) {
-        *self.wrapper.write().unwrap() = None;
+        // SAFETY: The `writer` is guaranteed to be supported by a concrete `File` type,
+        //         by the safety restriction of the function signature.
+        let fd = unsafe { &*(writer as *mut _ as *mut File) }.as_raw_fd();
+
+        if let Some(dump) = intf.dump {
+            // SAFETY: The C code has initialized the `CInterface` with a valid
+            //         or null function pointer and an initialized `handle`.
+            unsafe {
+                dump(intf.handle, fd);
+            }
+        }
     }
 }
 
 impl CCallbacks {
-    fn new<T: Callbacks>(wrapper: &RwLock<Option<T>>) -> Self {
+    fn new(wrapper: &RwLock<Option<HciProxyCallbacks>>) -> Self {
         Self {
-            handle: (wrapper as *const RwLock<Option<T>>).cast(),
-            initialization_complete: Self::initialization_complete::<T>,
-            event_received: Self::event_received::<T>,
-            acl_received: Self::acl_received::<T>,
-            sco_received: Self::sco_received::<T>,
-            iso_received: Self::iso_received::<T>,
+            handle: (wrapper as *const RwLock<Option<HciProxyCallbacks>>).cast(),
+            initialization_complete: Self::initialization_complete,
+            event_received: Self::event_received,
+            acl_received: Self::acl_received,
+            sco_received: Self::sco_received,
+            iso_received: Self::iso_received,
         }
     }
 
@@ -184,8 +203,8 @@ impl CCallbacks {
     ///
     /// `handle` must be a valid pointer previously passed to the corresponding `initialize()`,
     /// and not yet destroyed (this is in fact an `RwLock<Option<T>>`).
-    unsafe fn unwrap_client<T: Callbacks, F: FnOnce(&T)>(handle: *mut c_void, f: F) {
-        let wrapper: *const RwLock<Option<T>> = handle.cast();
+    unsafe fn unwrap_client<F: FnOnce(&HciProxyCallbacks)>(handle: *mut c_void, f: F) {
+        let wrapper: *const RwLock<Option<HciProxyCallbacks>> = handle.cast();
 
         // SAFETY: The `handle` points the `RwLock<Option<T>>` wrapper object; it was allocated
         //         at the creation of the `Ffi` object and remain alive until its destruction.
@@ -199,14 +218,13 @@ impl CCallbacks {
     /// #Safety
     ///
     /// The C Interface requires that `handle` is a copy of the value given in `CCallbacks.handle`
-    unsafe extern "C" fn initialization_complete<T: Callbacks>(
-        handle: *mut c_void,
-        status: CStatus,
-    ) {
+    unsafe extern "C" fn initialization_complete(handle: *mut c_void, status: CStatus) {
         // SAFETY: The vendor HAL returns `handle` pointing `wrapper` object which has
         //         the same lifetime as the base `Ffi` instance.
         unsafe {
-            Self::unwrap_client(handle, |client: &T| client.initialization_complete(status));
+            Self::unwrap_client(handle, |client: &HciProxyCallbacks| {
+                client.initialization_complete(status.into())
+            });
         }
     }
 
@@ -215,16 +233,12 @@ impl CCallbacks {
     /// The C Interface requires that `handle` is a copy of the value given in `CCallbacks.handle`.
     /// `data` must be a valid pointer to at least `len` bytes of memory, which remains valid and
     /// is not mutated for the duration of this call.
-    unsafe extern "C" fn event_received<T: Callbacks>(
-        handle: *mut c_void,
-        data: *const u8,
-        len: usize,
-    ) {
+    unsafe extern "C" fn event_received(handle: *mut c_void, data: *const u8, len: usize) {
         // SAFETY: The C code returns `handle` pointing `wrapper` object which has
         //         the same lifetime as the base `Ffi` instance. `data` points to a buffer
         //         of `len` bytes valid until the function returns.
         unsafe {
-            Self::unwrap_client(handle, |client: &T| {
+            Self::unwrap_client(handle, |client: &HciProxyCallbacks| {
                 client.event_received(slice::from_raw_parts(data, len))
             });
         }
@@ -235,16 +249,12 @@ impl CCallbacks {
     /// The C Interface requires that `handle` is a copy of the value given in `CCallbacks.handle`.
     /// `data` must be a valid pointer to at least `len` bytes of memory, which remains valid and
     /// is not mutated for the duration of this call.
-    unsafe extern "C" fn acl_received<T: Callbacks>(
-        handle: *mut c_void,
-        data: *const u8,
-        len: usize,
-    ) {
+    unsafe extern "C" fn acl_received(handle: *mut c_void, data: *const u8, len: usize) {
         // SAFETY: The C code returns `handle` pointing `wrapper` object which has
         //         the same lifetime as the base `Ffi` instance. `data` points to a buffer
         //         of `len` bytes valid until the function returns.
         unsafe {
-            Self::unwrap_client(handle, |client: &T| {
+            Self::unwrap_client(handle, |client: &HciProxyCallbacks| {
                 client.acl_received(slice::from_raw_parts(data, len))
             });
         }
@@ -255,16 +265,12 @@ impl CCallbacks {
     /// The C Interface requires that `handle` is a copy of the value given in `CCallbacks.handle`.
     /// `data` must be a valid pointer to at least `len` bytes of memory, which remains valid and
     /// is not mutated for the duration of this call.
-    unsafe extern "C" fn sco_received<T: Callbacks>(
-        handle: *mut c_void,
-        data: *const u8,
-        len: usize,
-    ) {
+    unsafe extern "C" fn sco_received(handle: *mut c_void, data: *const u8, len: usize) {
         // SAFETY: The C code returns `handle` pointing `wrapper` object which has
         //         the same lifetime as the base `Ffi` instance. `data` points to a buffer
         //         of `len` bytes valid until the function returns.
         unsafe {
-            Self::unwrap_client(handle, |client: &T| {
+            Self::unwrap_client(handle, |client: &HciProxyCallbacks| {
                 client.sco_received(slice::from_raw_parts(data, len))
             });
         }
@@ -275,18 +281,26 @@ impl CCallbacks {
     /// The C Interface requires that `handle` is a copy of the value given in `CCallbacks.handle`.
     /// `data` must be a valid pointer to at least `len` bytes of memory, which remains valid and
     /// is not mutated for the duration of this call.
-    unsafe extern "C" fn iso_received<T: Callbacks>(
-        handle: *mut c_void,
-        data: *const u8,
-        len: usize,
-    ) {
+    unsafe extern "C" fn iso_received(handle: *mut c_void, data: *const u8, len: usize) {
         // SAFETY: The C code returns `handle` pointing `wrapper` object which has
         //         the same lifetime as the base `Ffi` instance. `data` points to a buffer
         //         of `len` bytes valid until the function returns.
         unsafe {
-            Self::unwrap_client(handle, |client: &T| {
+            Self::unwrap_client(handle, |client: &HciProxyCallbacks| {
                 client.iso_received(slice::from_raw_parts(data, len))
             });
+        }
+    }
+}
+
+impl From<CStatus> for HciHalStatus {
+    fn from(value: CStatus) -> Self {
+        match value {
+            CStatus::Success => HciHalStatus::Success,
+            CStatus::AlreadyInitialized => HciHalStatus::AlreadyInitialized,
+            CStatus::UnableToOpenInterface => HciHalStatus::UnableToOpenInterface,
+            CStatus::HardwareInitializationError => HciHalStatus::HardwareInitializationError,
+            CStatus::Unknown => HciHalStatus::Unknown,
         }
     }
 }

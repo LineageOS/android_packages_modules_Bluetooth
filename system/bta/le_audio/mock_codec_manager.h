@@ -51,6 +51,9 @@ public:
               (::bluetooth::le_audio::LeAudioSourceAudioHalClient * source_broadcast_client,
                bool is_active));
 
+  MOCK_METHOD((void), UpdateSelectedCodecConfig,
+              (const ::bluetooth::le_audio::types::AudioSetConfiguration& config), (const));
+
   MOCK_METHOD((void), UpdateActiveAudioConfig,
               (const bluetooth::le_audio::types::BidirectionalPair<
                        bluetooth::le_audio::stream_parameters>& stream_params,
@@ -75,6 +78,9 @@ public:
               GetLocalAudioOutputCodecCapa, ());
   MOCK_METHOD((std::vector<bluetooth::le_audio::btle_audio_codec_config_t>),
               GetLocalAudioInputCodecCapa, ());
+  MOCK_METHOD((std::vector<bluetooth::le_audio::btle_audio_codec_config_t>),
+               GetRemoteAudioCodecCapa,
+              (const bluetooth::le_audio::types::PublishedAudioCapabilities& pacs), (const));
   MOCK_METHOD((void), UpdateBroadcastConnHandle,
               (const std::vector<uint16_t>& conn_handle,
                std::function<void(const ::bluetooth::le_audio::broadcast_offload_config& config)>
@@ -88,4 +94,9 @@ public:
 
   MOCK_METHOD((void), Start, ());
   MOCK_METHOD((void), Stop, ());
+
+  MOCK_METHOD((void), ConfigureDataPath,
+              (hci_data_direction_t direction, uint8_t dataPathId,
+               std::vector<uint8_t> dataPathConfig),
+              (const));
 };

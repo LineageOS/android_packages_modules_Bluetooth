@@ -70,7 +70,6 @@ class PbapClientServiceBinder extends IBluetoothPbapClient.Stub implements IProf
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-
         return service;
     }
 

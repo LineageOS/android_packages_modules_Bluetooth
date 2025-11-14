@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Uma ugcina i-Wi‑Fi ivuliwe, idivayisi yakho izokhumbula ukuyigcina ivuliwe ngesikhathi esilandelayo uma ukumodi yendiza"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"I-Bluetooth ihlala ivuliwe"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Idivayisi yakho ikhumbula ukugcina i-Bluetooth ivuliwe kumodi yendiza. Vala i-Bluetooth uma ungafuni ukuthi ihlale ivuliwe."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"IBluetooth ihlala ivuliwe kumodi yendiza ngenkathi ixhumeke kwamanye amadivayisi."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Idivayisi yakho izogcina i-bluetooth ivuliwe kumodi yendiza ngenkathi ixhumeke ewashini lakho."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"IBluetooth iba kumodi yendiza ngesikhathi kuxhunywe idivayisi yemidiya."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"I-Wi-Fi ne-Bluetooth kuhlala kuvuliwe"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Ifoni yakho ikhumbula ukugcina i-Wi-Fi ne-Bluetooth kuvuliwe kumodi yendiza. Vala i-Wi-Fi ne-Bluetooth uma ungafuni ukuthi ihlale ivuliwe."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"IBluetooth iphinde yavulwa"</string>

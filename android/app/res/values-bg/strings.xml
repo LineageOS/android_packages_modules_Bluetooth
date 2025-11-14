@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Ако не изключите функцията за Bluetooth, устройството ви ще я остави активна следващия път, когато използвате самолетния режим"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Функцията за Bluetooth няма да се изключи"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Функцията за Bluetooth ще бъде включена, докато устройството ви е в самолетен режим. Ако не искате това, изключете я."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Функцията за Bluetooth ще остава включена в самолетния режим при активна връзка с други устройства."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Функцията за Bluetooth на устройството ви ще остава включена в самолетния режим, докато то е свързано с часовника ви."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Функцията за Bluetooth ще остава включена в самолетния режим при активна връзка с носител."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Функциите за Wi-Fi и Bluetooth няма да бъдат изключени"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Функциите за Wi‑Fi и Bluetooth ще бъдат включени, докато устройството ви е в самолетен режим. Ако не искате това, изключете ги."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Функцията за Bluetooth се включи отново"</string>

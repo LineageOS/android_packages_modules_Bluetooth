@@ -104,8 +104,6 @@ static bool is_connected(const btif_hf_client_cb_t* cb);
  ******************************************************************************/
 static bthf_client_callbacks_t* bt_hf_client_callbacks = NULL;
 
-char btif_hf_client_version[PROPERTY_VALUE_MAX];
-
 static const char* dump_hf_client_conn_state(uint16_t event) {
   switch (event) {
     CASE_RETURN_STR(BTHF_CLIENT_CONNECTION_STATE_DISCONNECTED)
@@ -313,7 +311,6 @@ static bt_status_t connect_int(RawAddress* bd_addr, uint16_t /*uuid*/) {
 }
 
 static bt_status_t connect(const RawAddress* bd_addr) {
-  log::verbose("HFP Client version is  {}", btif_hf_client_version);
   CHECK_BTHF_CLIENT_INIT();
   return btif_queue_connect(UUID_SERVCLASS_HF_HANDSFREE, bd_addr, connect_int);
 }

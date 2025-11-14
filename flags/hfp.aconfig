@@ -9,12 +9,11 @@ flag {
 }
 
 flag {
-    name: "is_sco_managed_by_audio"
+    name: "sco_managed_by_audio_remove_hfp_hal"
     namespace: "bluetooth"
-    description: "start and stop of the SCO is managed by Audio instead of Bluetooth"
-    bug: "315234036"
+    description: "Deprecate the btm_sco_hfp_hal and migrate to IBluetoothAudio"
+    bug: "417621867"
 }
-
 
 flag {
     name: "hfp_software_datapath"
@@ -58,26 +57,6 @@ flag {
     namespace: "bluetooth"
     description: "Flag to ignore connect state notification from Native to Java layer when already connected"
     bug: "346679106"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "update_sco_state_correctly_on_rfcomm_disconnect_during_codec_nego"
-    namespace: "bluetooth"
-    description: "Flag to set the SCO state correctly on RFCOMM disconnection during Codec Negotiation"
-    bug: "351778741"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "choose_wrong_hfp_codec_in_specific_config"
-    namespace: "bluetooth"
-    description: "Flag to fix codec selection in nego when the peer device only support NB and SWB."
-    bug: "354070098"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -132,3 +111,79 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "qc_prioritize_lc3_codec"
+    namespace: "bluetooth"
+    description: "QC patch to prioritize lc3 codec over aptx"
+    bug: "409604300"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "qc_send_error_at_bcc_ibr_disabled"
+    namespace: "bluetooth"
+    description: "QC patch to send an error when HF sends AT+BCC when IBR is disabled"
+    bug: "409845355"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "fix_hfp_rfcomm_collision_state_machine_error"
+    namespace: "bluetooth"
+    description: "fix hfp state machine error when both side initiate rfcomm connection"
+    bug: "409798631"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "qc_aptx_codec_negotiation"
+    namespace: "bluetooth"
+    description: "QC patch to not do codec negotiation with aptx"
+    bug: "410921017"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "voice_recognition_fixes"
+    namespace: "bluetooth"
+    description: "Fix issues with starting/stopping voice recognition"
+    bug: "415376528"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "support_zoomed_in_icon_metadata"
+    namespace: "bluetooth"
+    is_exported: true
+    description: "Add api support for a zoomed in icon metadata"
+    bug: "417245933"
+}
+
+flag {
+    name: "hfp_connection_failures_api"
+    namespace: "bluetooth"
+    description: "Add api support for api to collect hfp connection failures"
+    bug: "418829893"
+}
+
+flag {
+    name: "send_ok_clcc_before_slc"
+    namespace: "bluetooth"
+    description: "Send clcc response ok before slc is completed to avoid remote issues"
+    bug: "421323693"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+

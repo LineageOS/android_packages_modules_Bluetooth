@@ -111,7 +111,8 @@ def decode_snooz_v1(decompressed, last_timestamp_ms):
         offset += 7
         sys.stdout.buffer.write(struct.pack('>II', length, length))
         sys.stdout.buffer.write(struct.pack('>II', type_to_direction(type), 0))
-        sys.stdout.buffer.write(struct.pack('>II', (first_timestamp_ms >> 32), (first_timestamp_ms & 0xFFFFFFFF)))
+        sys.stdout.buffer.write(
+            struct.pack('>II', (first_timestamp_ms >> 32), (first_timestamp_ms & 0xFFFFFFFF)))
         sys.stdout.buffer.write(type_to_hci(type))
         sys.stdout.buffer.write(decompressed[offset:offset + length - 1])
         offset += length - 1
@@ -126,19 +127,22 @@ def decode_snooz_v2(decompressed, last_timestamp_ms):
     first_timestamp_ms = last_timestamp_ms + 0x00dcddb30f2f8000
     offset = 0
     while offset < len(decompressed):
-        length, packet_length, delta_time_ms, snooz_type = struct.unpack_from('=HHIb', decompressed, offset)
+        length, packet_length, delta_time_ms, snooz_type = struct.unpack_from(
+            '=HHIb', decompressed, offset)
         offset += 9 + length - 1
         first_timestamp_ms -= delta_time_ms
 
     # Second pass does the actual writing out to stdout.
     offset = 0
     while offset < len(decompressed):
-        length, packet_length, delta_time_ms, snooz_type = struct.unpack_from('=HHIb', decompressed, offset)
+        length, packet_length, delta_time_ms, snooz_type = struct.unpack_from(
+            '=HHIb', decompressed, offset)
         first_timestamp_ms += delta_time_ms
         offset += 9
         sys.stdout.buffer.write(struct.pack('>II', packet_length, length))
         sys.stdout.buffer.write(struct.pack('>II', type_to_direction(snooz_type), 0))
-        sys.stdout.buffer.write(struct.pack('>II', (first_timestamp_ms >> 32), (first_timestamp_ms & 0xFFFFFFFF)))
+        sys.stdout.buffer.write(
+            struct.pack('>II', (first_timestamp_ms >> 32), (first_timestamp_ms & 0xFFFFFFFF)))
         sys.stdout.buffer.write(type_to_hci(snooz_type))
         sys.stdout.buffer.write(decompressed[offset:offset + length - 1])
         offset += length - 1
@@ -179,14 +183,17 @@ def main():
 
     except UnicodeDecodeError:
         ## Check if there is a BTSNOOP log uuencoded in the bugreport
-        p = subprocess.Popen(["egrep", "-a", "BTSNOOP_LOG_SUMMARY", sys.argv[1]], stdout=subprocess.PIPE)
+        p = subprocess.Popen(["egrep", "-a", "BTSNOOP_LOG_SUMMARY", sys.argv[1]],
+                             stdout=subprocess.PIPE)
         p.wait()
 
         if (p.returncode == 0):
             sys.stderr.write('Failed to parse uuencoded btsnooz data from bugreport.\n')
             sys.stderr.write(' Try:\n')
-            sys.stderr.write('LC_CTYPE=C sed -n "/BEGIN:BTSNOOP_LOG_SUMMARY/,/END:BTSNOOP_LOG_SUMMARY/p " ' +
-                             sys.argv[1] + ' | egrep -av "BTSNOOP_LOG_SUMMARY" | ' + sys.argv[0] + ' > hci.log\n')
+            sys.stderr.write(
+                'LC_CTYPE=C sed -n "/BEGIN:BTSNOOP_LOG_SUMMARY/,/END:BTSNOOP_LOG_SUMMARY/p " ' +
+                sys.argv[1] + ' | egrep -av "BTSNOOP_LOG_SUMMARY" | ' + sys.argv[0] +
+                ' > hci.log\n')
             sys.exit(1)
 
     if not found:

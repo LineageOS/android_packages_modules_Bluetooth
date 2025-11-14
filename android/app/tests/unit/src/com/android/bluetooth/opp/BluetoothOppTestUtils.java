@@ -140,20 +140,18 @@ public class BluetoothOppTestUtils {
      *
      * @param activityClass the activity class to enable/disable
      * @param enable true to enable, false to disable
-     * @param mTargetContext target context
+     * @param context context
      */
-    public static void enableActivity(Class activityClass, boolean enable, Context mTargetContext) {
+    public static void enableActivity(Class activityClass, boolean enable, Context context) {
         int enabledState =
                 enable ? COMPONENT_ENABLED_STATE_ENABLED : COMPONENT_ENABLED_STATE_DEFAULT;
 
-        mTargetContext
-                .getPackageManager()
+        context.getPackageManager()
                 .setApplicationEnabledSetting(
-                        mTargetContext.getPackageName(), enabledState, DONT_KILL_APP);
+                        context.getPackageName(), enabledState, DONT_KILL_APP);
 
-        ComponentName activityName = new ComponentName(mTargetContext, activityClass);
-        mTargetContext
-                .getPackageManager()
+        ComponentName activityName = new ComponentName(context, activityClass);
+        context.getPackageManager()
                 .setComponentEnabledSetting(activityName, enabledState, DONT_KILL_APP);
     }
 }

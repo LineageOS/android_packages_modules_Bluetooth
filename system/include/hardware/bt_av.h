@@ -24,6 +24,7 @@
 #include <sstream>
 #include <vector>
 
+#include "stack/include/a2dp_constants.h"
 #include "types/raw_address.h"
 
 __BEGIN_DECLS
@@ -88,12 +89,6 @@ typedef enum {
   BTAV_A2DP_CODEC_INDEX_MIN = BTAV_A2DP_CODEC_INDEX_SOURCE_MIN,
   BTAV_A2DP_CODEC_INDEX_MAX = BTAV_A2DP_CODEC_INDEX_SINK_EXT_MAX
 } btav_a2dp_codec_index_t;
-
-typedef struct {
-  btav_a2dp_codec_index_t codec_type;
-  uint64_t codec_id;
-  std::string codec_name;
-} btav_a2dp_codec_info_t;
 
 typedef enum {
   // Disable the codec.
@@ -270,6 +265,16 @@ typedef struct {
   uint8_t error_code;
   std::optional<std::string> error_msg;
 } btav_error_t;
+
+typedef struct {
+  ::bluetooth::a2dp::CodecId codec_id;
+  std::string name;
+  uint8_t media_codec_capabilites[20];
+  btav_a2dp_codec_config_t codec_capabilities;
+  bool lossless;
+
+  std::string ToString() const;
+} btav_a2dp_codec_info_t;
 
 /**
  * NOTE:

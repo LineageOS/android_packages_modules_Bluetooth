@@ -4,7 +4,7 @@
 
 use crate::core::uuid::Uuid;
 
-use crate::gatt::server::att_database::{AttAttribute, StableAttDatabase};
+use crate::gatt::server::att_database::AttAttribute;
 use crate::gatt::server::gatt_database::{
     CHARACTERISTIC_UUID, PRIMARY_SERVICE_DECLARATION_UUID, SECONDARY_SERVICE_DECLARATION_UUID,
 };
@@ -29,16 +29,16 @@ fn get_grouping_level(uuid: Uuid) -> usize {
 /// Expects `attrs` to be in sorted order by attribute handle.
 ///
 /// Attribute grouping is defined in 5.3 Vol 3G Sec 2.5.3 Attribute Grouping
-pub fn find_group_end(
-    db: &impl StableAttDatabase,
-    group_start: AttAttribute,
-) -> Option<AttAttribute> {
+pub fn find_group_end<'a>(
+    attributes: impl IntoIterator<Item = &'a AttAttribute>,
+    group_start: &'a AttAttribute,
+) -> Option<&'a AttAttribute> {
     if !GROUPING_ATTRIBUTES.contains(&group_start.type_) {
         return None; // invalid / unsupported grouping attribute
     }
 
     Some(
-        db.list_attributes()
+        attributes
             .into_iter()
             // ignore attributes at or before the current position
             .skip_while(|attr| attr.handle <= group_start.handle)
@@ -54,16 +54,17 @@ pub fn find_group_end(
 
 #[cfg(test)]
 mod test {
+    use crate::core::shared_box::SharedBox;
     use crate::gatt::ids::AttHandle;
-    use crate::gatt::server::gatt_database::AttPermissions;
-    use crate::gatt::server::test::test_att_db::TestAttDatabase;
+    use crate::gatt::server::gatt_database::{AttPermissions, GattDatabase};
+    use crate::gatt::server::test::test_att_db::new_test_database;
 
     use super::*;
 
     const OTHER_UUID: Uuid = Uuid::new(1234);
 
-    fn db_from_attrs(attrs: impl IntoIterator<Item = AttAttribute>) -> TestAttDatabase {
-        TestAttDatabase::new(attrs.into_iter().map(|attr| (attr, vec![])).collect())
+    fn db_from_attrs(attrs: impl IntoIterator<Item = AttAttribute>) -> SharedBox<GattDatabase> {
+        new_test_database(attrs.into_iter().map(|attr| (attr, vec![])).collect())
     }
 
     fn attr(handle: AttHandle, type_: Uuid) -> AttAttribute {
@@ -80,7 +81,9 @@ mod test {
             attr(AttHandle(40), PRIMARY_SERVICE_DECLARATION_UUID),
         ]);
 
-        let group_end = find_group_end(&db, attr(AttHandle(10), PRIMARY_SERVICE_DECLARATION_UUID));
+        let attrs = db.list_attributes();
+        let group_start = attr(AttHandle(10), PRIMARY_SERVICE_DECLARATION_UUID);
+        let group_end = find_group_end(&attrs, &group_start);
 
         assert_eq!(group_end.unwrap().handle, AttHandle(30))
     }
@@ -94,7 +97,9 @@ mod test {
             attr(AttHandle(40), SECONDARY_SERVICE_DECLARATION_UUID),
         ]);
 
-        let group_end = find_group_end(&db, attr(AttHandle(10), PRIMARY_SERVICE_DECLARATION_UUID));
+        let attrs = db.list_attributes();
+        let group_start = attr(AttHandle(10), PRIMARY_SERVICE_DECLARATION_UUID);
+        let group_end = find_group_end(&attrs, &group_start);
 
         assert_eq!(group_end.unwrap().handle, AttHandle(30))
     }
@@ -109,8 +114,9 @@ mod test {
             attr(AttHandle(50), PRIMARY_SERVICE_DECLARATION_UUID),
         ]);
 
-        let group_end =
-            find_group_end(&db, attr(AttHandle(10), SECONDARY_SERVICE_DECLARATION_UUID));
+        let attrs = db.list_attributes();
+        let group_start = attr(AttHandle(10), SECONDARY_SERVICE_DECLARATION_UUID);
+        let group_end = find_group_end(&attrs, &group_start);
 
         assert_eq!(group_end.unwrap().handle, AttHandle(40))
     }
@@ -125,8 +131,9 @@ mod test {
             attr(AttHandle(50), SECONDARY_SERVICE_DECLARATION_UUID),
         ]);
 
-        let group_end =
-            find_group_end(&db, attr(AttHandle(10), SECONDARY_SERVICE_DECLARATION_UUID));
+        let attrs = db.list_attributes();
+        let group_start = attr(AttHandle(10), SECONDARY_SERVICE_DECLARATION_UUID);
+        let group_end = find_group_end(&attrs, &group_start);
 
         assert_eq!(group_end.unwrap().handle, AttHandle(40))
     }
@@ -139,7 +146,9 @@ mod test {
             attr(AttHandle(30), SECONDARY_SERVICE_DECLARATION_UUID),
         ]);
 
-        let group_end = find_group_end(&db, attr(AttHandle(10), CHARACTERISTIC_UUID));
+        let attrs = db.list_attributes();
+        let group_start = attr(AttHandle(10), CHARACTERISTIC_UUID);
+        let group_end = find_group_end(&attrs, &group_start);
 
         assert_eq!(group_end.unwrap().handle, AttHandle(20))
     }
@@ -152,7 +161,9 @@ mod test {
             attr(AttHandle(30), CHARACTERISTIC_UUID),
         ]);
 
-        let group_end = find_group_end(&db, attr(AttHandle(10), CHARACTERISTIC_UUID));
+        let attrs = db.list_attributes();
+        let group_start = attr(AttHandle(10), CHARACTERISTIC_UUID);
+        let group_end = find_group_end(&attrs, &group_start);
 
         assert_eq!(group_end.unwrap().handle, AttHandle(20))
     }
@@ -165,7 +176,9 @@ mod test {
             attr(AttHandle(30), OTHER_UUID),
         ]);
 
-        let group_end = find_group_end(&db, attr(AttHandle(10), PRIMARY_SERVICE_DECLARATION_UUID));
+        let attrs = db.list_attributes();
+        let group_start = attr(AttHandle(10), PRIMARY_SERVICE_DECLARATION_UUID);
+        let group_end = find_group_end(&attrs, &group_start);
 
         assert_eq!(group_end.unwrap().handle, AttHandle(30))
     }
@@ -174,7 +187,9 @@ mod test {
     fn test_empty_non_terminated_group() {
         let db = db_from_attrs([attr(AttHandle(10), CHARACTERISTIC_UUID)]);
 
-        let group_end = find_group_end(&db, attr(AttHandle(10), CHARACTERISTIC_UUID));
+        let attrs = db.list_attributes();
+        let group_start = attr(AttHandle(10), CHARACTERISTIC_UUID);
+        let group_end = find_group_end(&attrs, &group_start);
 
         assert_eq!(group_end.unwrap().handle, AttHandle(10))
     }
@@ -186,7 +201,9 @@ mod test {
             attr(AttHandle(20), SECONDARY_SERVICE_DECLARATION_UUID),
         ]);
 
-        let group_end = find_group_end(&db, attr(AttHandle(10), CHARACTERISTIC_UUID));
+        let attrs = db.list_attributes();
+        let group_start = attr(AttHandle(10), CHARACTERISTIC_UUID);
+        let group_end = find_group_end(&attrs, &group_start);
 
         assert_eq!(group_end.unwrap().handle, AttHandle(10))
     }
@@ -198,7 +215,9 @@ mod test {
             attr(AttHandle(20), SECONDARY_SERVICE_DECLARATION_UUID),
         ]);
 
-        let group_end = find_group_end(&db, attr(AttHandle(10), OTHER_UUID));
+        let attrs = db.list_attributes();
+        let group_start = attr(AttHandle(10), OTHER_UUID);
+        let group_end = find_group_end(&attrs, &group_start);
 
         assert_eq!(group_end, None)
     }

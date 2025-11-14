@@ -36,6 +36,7 @@
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sco.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/bt_hdr.h"
@@ -51,8 +52,6 @@
 #include "types/raw_address.h"
 
 using namespace bluetooth;
-
-extern tBTM_CB btm_cb;
 
 static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf, tL2C_TX_COMPLETE_CB_INFO* p_cbi);
 static BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb, tL2C_TX_COMPLETE_CB_INFO* p_cbi);
@@ -158,7 +157,9 @@ void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle, const RawAddres
       l2cu_release_lcb(p_lcb);
     } else /* there are any CCBs remaining */
     {
-      if (ci.hci_status == HCI_ERR_CONNECTION_EXISTS) {
+      if ((ci.hci_status == HCI_ERR_CONNECTION_EXISTS) ||
+          (com::android::bluetooth::flags::flag_handle_hci_error_controller_busy() &&
+           ci.hci_status == HCI_ERR_CONTROLLER_BUSY)) {
         /* we are in collision situation, wait for connecttion request from
          * controller */
         p_lcb->link_state = LST_CONNECTING;
@@ -1021,7 +1022,7 @@ void l2c_packets_completed(uint16_t handle, uint16_t num_sent) {
   if (p_lcb == nullptr) {
     return;
   }
-  p_lcb->update_outstanding_packets(num_sent);
+  l2cu_update_outstanding_packets_lcb(p_lcb, num_sent);
 
   switch (p_lcb->transport) {
     case BT_TRANSPORT_BR_EDR:

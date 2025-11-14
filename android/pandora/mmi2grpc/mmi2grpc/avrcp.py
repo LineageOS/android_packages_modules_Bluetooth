@@ -24,9 +24,9 @@ from pandora.a2dp_grpc import A2DP
 from pandora.a2dp_pb2 import Sink, Source
 from pandora.host_grpc import Host
 from pandora.host_pb2 import Connection
-from pandora_experimental.avrcp_grpc import AVRCP
-from pandora_experimental.mediaplayer_grpc import MediaPlayer
-from pandora_experimental.mediaplayer_pb2 import ALL, GROUP, NONE
+from pandora.avrcp_grpc import AVRCP
+from pandora.mediaplayer_grpc import MediaPlayer
+from pandora.mediaplayer_pb2 import ALL, GROUP, NONE
 
 
 class AVRCPProxy(ProfileProxy):
@@ -618,7 +618,8 @@ class AVRCPProxy(ProfileProxy):
         return "OK"
 
     @assert_description
-    def TSC_AVRCP_mmi_iut_reject_list_player_application_setting_values_invalid_attribute(self, **kwargs):
+    def TSC_AVRCP_mmi_iut_reject_list_player_application_setting_values_invalid_attribute(
+            self, **kwargs):
         """
         PTS has sent a List Player Application Setting Values command with an
         invalid Attribute Id.  The IUT must respond with the error code: Invalid
@@ -646,7 +647,8 @@ class AVRCPProxy(ProfileProxy):
         return "OK"
 
     @assert_description
-    def TSC_AVRCP_mmi_iut_reject_get_current_player_application_setting_value_invalid_attribute(self, **kwargs):
+    def TSC_AVRCP_mmi_iut_reject_get_current_player_application_setting_value_invalid_attribute(
+            self, **kwargs):
         """
         PTS has sent a Get Current Player Application Setting Value command with
         an invalid Attribute.  The IUT must respond with the error code: Invalid
@@ -698,7 +700,8 @@ class AVRCPProxy(ProfileProxy):
         return "OK"
 
     @assert_description
-    def TSC_AVRCP_mmi_iut_initiate_register_notification_changed_player_application_setting_changed(self, **kwargs):
+    def TSC_AVRCP_mmi_iut_initiate_register_notification_changed_player_application_setting_changed(
+            self, **kwargs):
         """
         Take action to trigger a [Register Notification, Changed] response for
         <Player Application Setting Changed> to the PTS from the IUT.  This can
@@ -905,7 +908,8 @@ class AVRCPProxy(ProfileProxy):
         return "OK"
 
     @assert_description
-    def TSC_AVRCP_mmi_iut_initiate_register_notification_changed_now_playing_content_changed(self, **kwargs):
+    def TSC_AVRCP_mmi_iut_initiate_register_notification_changed_now_playing_content_changed(
+            self, **kwargs):
         """
         Take action to trigger a [Register Notification, Changed] response for
         <Now Playing Content Changed> to the PTS from the IUT.  This can be
@@ -1097,7 +1101,6 @@ class AVRCPProxy(ProfileProxy):
         """
 
         return "OK"
-
 
     @assert_description
     def TSC_AVRCP_mmi_user_queue_cover_art_element(self, **kwargs):

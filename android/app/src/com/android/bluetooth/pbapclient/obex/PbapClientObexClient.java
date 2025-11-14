@@ -373,7 +373,7 @@ class PbapClientObexClient {
         public void handleMessage(Message msg) {
             debug("Handling Message, type=" + messageToString(msg.what));
             switch (msg.what) {
-                case MSG_CONNECT:
+                case MSG_CONNECT -> {
                     if (getConnectionState() != STATE_DISCONNECTED) {
                         warn("Cannot connect, device not disconnected");
                         return;
@@ -427,9 +427,8 @@ class PbapClientObexClient {
                     }
 
                     setConnectionState(STATE_CONNECTED);
-                    break;
-
-                case MSG_DISCONNECT:
+                }
+                case MSG_DISCONNECT -> {
                     removeCallbacksAndMessages(null);
 
                     if (getConnectionState() != STATE_CONNECTED) {
@@ -454,18 +453,15 @@ class PbapClientObexClient {
                     mChannelId.set(RFCOMM_INVALID_CHANNEL_ID);
 
                     setConnectionState(STATE_DISCONNECTED);
-                    break;
-
-                case MSG_REQUEST:
+                }
+                case MSG_REQUEST -> {
                     if (isConnected()) {
                         executeRequest((PbapClientRequest) msg.obj, mObexSession);
                     } else {
                         warn("Cannot issue request. Not connected");
                     }
-                    break;
-
-                default:
-                    warn("Received unexpected message, id=" + messageToString(msg.what));
+                }
+                default -> warn("Received unexpected message, id=" + messageToString(msg.what));
             }
         }
     }
@@ -570,18 +566,18 @@ class PbapClientObexClient {
 
         debug("Notifying caller of request result - " + request.toString());
         switch (type) {
-            case PbapClientRequest.TYPE_PULL_PHONEBOOK_METADATA:
+            case PbapClientRequest.TYPE_PULL_PHONEBOOK_METADATA -> {
                 phonebook = ((RequestPullPhonebookMetadata) request).getPhonebook();
                 PbapPhonebookMetadata metadata =
                         ((RequestPullPhonebookMetadata) request).getMetadata();
                 mCallback.onGetPhonebookMetadataComplete(responseCode, phonebook, metadata);
-                break;
-
-            case PbapClientRequest.TYPE_PULL_PHONEBOOK:
+            }
+            case PbapClientRequest.TYPE_PULL_PHONEBOOK -> {
                 phonebook = ((RequestPullPhonebook) request).getPhonebook();
                 PbapPhonebook contacts = ((RequestPullPhonebook) request).getContacts();
                 mCallback.onPhonebookContactsDownloaded(responseCode, phonebook, contacts);
-                break;
+            }
+            default -> {} // Nothing to do
         }
     }
 
@@ -633,29 +629,21 @@ class PbapClientObexClient {
     }
 
     public static String transportToString(int transport) {
-        switch (transport) {
-            case TRANSPORT_NONE:
-                return "TRANSPORT_NONE";
-            case TRANSPORT_RFCOMM:
-                return "TRANSPORT_RFCOMM";
-            case TRANSPORT_L2CAP:
-                return "TRANSPORT_L2CAP";
-            default:
-                return "TRANSPORT_RESERVED (" + transport + ")";
-        }
+        return switch (transport) {
+            case TRANSPORT_NONE -> "TRANSPORT_NONE";
+            case TRANSPORT_RFCOMM -> "TRANSPORT_RFCOMM";
+            case TRANSPORT_L2CAP -> "TRANSPORT_L2CAP";
+            default -> "TRANSPORT_RESERVED (" + transport + ")";
+        };
     }
 
     private static String messageToString(int msg) {
-        switch (msg) {
-            case MSG_CONNECT:
-                return "MSG_CONNECT";
-            case MSG_DISCONNECT:
-                return "MSG_DISCONNECT";
-            case MSG_REQUEST:
-                return "MSG_REQUEST";
-            default:
-                return "MSG_RESERVED (" + msg + ")";
-        }
+        return switch (msg) {
+            case MSG_CONNECT -> "MSG_CONNECT";
+            case MSG_DISCONNECT -> "MSG_DISCONNECT";
+            case MSG_REQUEST -> "MSG_REQUEST";
+            default -> "MSG_RESERVED (" + msg + ")";
+        };
     }
 
     private void debug(String message) {

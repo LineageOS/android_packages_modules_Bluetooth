@@ -1616,7 +1616,7 @@ void bta_av_sig_chg(tBTA_AV_DATA* p_data) {
     log::verbose("bta_av_cb.conn_lcb=0x{:x}", bta_av_cb.conn_lcb);
 
     p_lcb = bta_av_find_lcb(p_data->str_msg.bd_addr, BTA_AV_LCB_FREE);
-    if (p_lcb && (p_lcb->conn_msk || bta_av_cb.conn_lcb)) {
+    if (p_lcb) {
       log::verbose("conn_msk: 0x{:x}", p_lcb->conn_msk);
       /* clean up ssm  */
       for (xx = 0; xx < BTA_AV_NUM_STRS; xx++) {
@@ -1631,8 +1631,7 @@ void bta_av_sig_chg(tBTA_AV_DATA* p_data) {
           bta_sys_conn_close(BTA_ID_AV, p_cb->p_scb[xx]->app_id, p_cb->p_scb[xx]->PeerAddress());
         }
         mask = 1 << (xx + 1);
-        if (((mask & p_lcb->conn_msk) || bta_av_cb.conn_lcb) && p_cb->p_scb[xx] &&
-            p_cb->p_scb[xx]->PeerAddress() == p_data->str_msg.bd_addr) {
+        if (p_cb->p_scb[xx] && p_cb->p_scb[xx]->PeerAddress() == p_data->str_msg.bd_addr) {
           log::warn("Sending AVDT_DISCONNECT_EVT peer_addr={}", p_cb->p_scb[xx]->PeerAddress());
           bta_av_ssm_execute(p_cb->p_scb[xx], BTA_AV_AVDT_DISCONNECT_EVT, NULL);
         }

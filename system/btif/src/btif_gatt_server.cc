@@ -70,6 +70,21 @@ tBT_TRANSPORT to_bt_transport(int val) {
   log::warn("Passed unexpected transport value:{}", val);
   return BT_TRANSPORT_AUTO;
 }
+
+int to_java_transport(tBT_TRANSPORT transport) {
+  switch (transport) {
+    case BT_TRANSPORT_AUTO:
+      return 0;
+    case BT_TRANSPORT_BR_EDR:
+      return 1;
+    case BT_TRANSPORT_LE:
+      return 2;
+    default:
+      break;
+  }
+  log::warn("Passed unexpected transport value:{}", transport);
+  return 0;
+}
 }  // namespace
 
 /*******************************************************************************
@@ -161,13 +176,15 @@ static void btapp_gatts_handle_cback(uint16_t event, char* p_param) {
       btif_gatt_check_encrypted_link(p_data->conn.remote_bda, p_data->conn.transport);
 
       HAL_CBACK(callbacks, server->connection_cb, static_cast<int>(p_data->conn.conn_id),
-                p_data->conn.server_if, true, p_data->conn.remote_bda);
+                p_data->conn.server_if, to_java_transport(p_data->conn.transport), true,
+                p_data->conn.remote_bda);
       break;
     }
 
     case BTA_GATTS_DISCONNECT_EVT: {
       HAL_CBACK(callbacks, server->connection_cb, static_cast<int>(p_data->conn.conn_id),
-                p_data->conn.server_if, false, p_data->conn.remote_bda);
+                p_data->conn.server_if, to_java_transport(p_data->conn.transport), false,
+                p_data->conn.remote_bda);
       break;
     }
 

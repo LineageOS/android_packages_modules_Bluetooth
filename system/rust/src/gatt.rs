@@ -1,16 +1,13 @@
 //! This module is a simple GATT server that shares the ATT channel with the
 //! existing C++ GATT client. See go/private-gatt-in-platform for the design.
 
-pub mod arbiter;
-pub mod callbacks;
-pub mod channel;
-pub mod ffi;
-pub mod ids;
-pub mod mocks;
+mod arbiter;
+mod callbacks;
+mod channel;
+mod ffi;
+mod ids;
+#[cfg(test)]
+mod mocks;
 mod mtu;
-pub mod opcode_types;
-pub mod server;
-
-pub use self::callbacks::GattCallbacks;
-
-pub use ffi::GattServerCallbacks;
+mod opcode_types;
+mod server;

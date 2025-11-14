@@ -483,6 +483,20 @@ void BTA_DmSirkSecCbRegister(tBTA_DM_SEC_CBACK* p_cback);
  ******************************************************************************/
 void BTA_DmSirkConfirmDeviceReply(const RawAddress& bd_addr, bool accept);
 
+/*******************************************************************************
+ *
+ * Function         BTA_DmAuthCmplCbRegister
+ *
+ * Description      This procedure registers in requested a callback for
+ *                  authentication complete event.
+ *
+ * Parameters       p_cback     - callback to be called
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void BTA_DmBleAuthCmplCbRegister(tBTA_DM_SEC_CBACK* p_cback);
+
 namespace std {
 template <>
 struct formatter<tBTA_DM_SEC_EVT> : enum_formatter<tBTA_DM_SEC_EVT> {};

@@ -137,6 +137,9 @@ public:
   // Returns true if |codec_config| is empty, otherwise false.
   static bool isCodecConfigEmpty(const btav_a2dp_codec_config_t& codec_config);
 
+  // Checks whether the A2DP Codec Configuration is supported by Codec Extensibility.
+  virtual bool isHardwareProviderCodec() const { return false; }
+
 protected:
   // Sets the current priority of the codec to |codec_priority|.
   // If |codec_priority| is BTAV_A2DP_CODEC_PRIORITY_DEFAULT, the priority is
@@ -273,10 +276,6 @@ public:
   // |p_codec_info| information.
   // Returns the Source codec if found, otherwise nullptr.
   A2dpCodecConfig* findSourceCodecConfig(const uint8_t* p_codec_info);
-
-  // Finds the Source codec that corresponds to the A2DP codec index.
-  // Returns the Source codec if found, otherwise nullptr.
-  A2dpCodecConfig* findSourceCodecConfig(btav_a2dp_codec_index_t codec_index);
 
   // Finds the Sink codec that corresponds to the A2DP over-the-air
   // |p_codec_info| information.

@@ -37,11 +37,8 @@ void set_hal_cbacks(bt_callbacks_t* callbacks);
 }  // namespace bluetooth::testing
 
 // Used the legacy stack manager
-module_t bt_utils_module;
-module_t gd_controller_module;
 module_t gd_shim_module;
 module_t osi_module;
-module_t rust_module;
 
 const tBTA_AG_RES_DATA tBTA_AG_RES_DATA::kEmpty = {};
 

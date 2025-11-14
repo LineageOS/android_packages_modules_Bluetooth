@@ -17,8 +17,8 @@
 package com.android.bluetooth.btservice;
 
 import android.annotation.SuppressLint;
+import android.bluetooth.BluetoothProfile;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
 import android.os.IBinder;
@@ -26,20 +26,44 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 
-/** Base class for a background service that runs a Bluetooth profile */
+import java.util.Optional;
+
+/** Base class for a Bluetooth profile. */
 public abstract class ProfileService extends ContextWrapper {
 
     public interface IProfileServiceBinder extends IBinder {
         void cleanup();
     }
 
-    private final IProfileServiceBinder mBinder;
-    private final String mName;
-    private boolean mAvailable = false;
-    private volatile boolean mTestModeEnabled = false;
+    protected final int mProfileId;
+    protected final AdapterService mAdapterService;
+    protected final String mName;
+    private final Optional<IProfileServiceBinder> mBinder;
 
-    public String getName() {
-        return getClass().getSimpleName();
+    private boolean mAvailable = false;
+
+    protected ProfileService(int id, AdapterService adapterService) {
+        super(adapterService);
+        mProfileId = id;
+        mAdapterService = adapterService;
+        mName = getClass().getSimpleName();
+        Log.d(mName, "Service created");
+        mBinder = Optional.ofNullable(initBinder());
+    }
+
+    @Override
+    public String toString() {
+        return mName;
+    }
+
+    /** The id of this Profile. see {@link BluetoothProfile} */
+    public final int getProfileId() {
+        return mProfileId;
+    }
+
+    /** Return the binder of the profile */
+    public Optional<IProfileServiceBinder> getBinder() {
+        return mBinder;
     }
 
     public boolean isAvailable() {
@@ -48,10 +72,6 @@ public abstract class ProfileService extends ContextWrapper {
 
     public void setAvailable(boolean available) {
         mAvailable = available;
-    }
-
-    protected boolean isTestModeEnabled() {
-        return mTestModeEnabled;
     }
 
     /**
@@ -64,23 +84,8 @@ public abstract class ProfileService extends ContextWrapper {
     /** Called when this object is no longer needed and is being discarded. */
     public abstract void cleanup();
 
-    /**
-     * @param testModeEnabled if the profile should enter or exit a testing mode
-     */
-    protected void setTestModeEnabled(boolean testModeEnabled) {
-        mTestModeEnabled = testModeEnabled;
-    }
-
-    protected ProfileService(Context ctx) {
-        super(ctx);
-        mName = getName();
-        Log.d(mName, "Service created");
-        mBinder = initBinder();
-    }
-
-    /** return the binder of the profile */
-    public IProfileServiceBinder getBinder() {
-        return mBinder;
+    protected <T> T obtainSystemService(Class<T> serviceClass) {
+        return mAdapterService.getSystemService(serviceClass);
     }
 
     /**

@@ -63,7 +63,7 @@ object BleScanSettingListener {
                         callback()
                     }
                 }
-            }
+            },
         )
         isScanAllowed = getScanSettingValue(resolver)
     }

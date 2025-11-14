@@ -34,16 +34,6 @@ flag {
 }
 
 flag {
-    name: "run_ble_audio_ticks_in_worker_thread"
-    namespace: "bluetooth"
-    description: "Fix thread ownership issue in ble_audio_ticks"
-    bug: "325984257"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_allow_leaudio_only_devices"
     namespace: "bluetooth"
     description: "Enable Le Audio for LeAudio only devices"
@@ -59,20 +49,10 @@ flag {
 }
 
 flag {
-    name: "run_clock_recovery_in_worker_thread"
+    name: "leaudio_dynamic_direction_opening"
     namespace: "bluetooth"
-    description: "Fix thread ownership issue in clock_recovery"
-    bug: "333657963"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_big_depends_on_audio_state"
-    namespace: "bluetooth"
-    description: "BIG creation/termination depends on audio resume/pause"
-    bug: "347204335"
+    description: "Enable direction only when needed"
+    bug: "412540131"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -107,26 +87,6 @@ flag {
     namespace: "bluetooth"
     description: "enable Gaming Audio Profile"
     bug: "353978074"
-}
-
-flag {
-    name: "leaudio_broadcast_resync_helper"
-    namespace: "bluetooth"
-    description: "Helps sinks to resync to external broadcast when BIS or PA unsynced"
-    bug: "363168099"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_sort_scans_to_sync_by_fails"
-    namespace: "bluetooth"
-    description: "Sort scan results for source sync by fails counter"
-    bug: "370639684"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
 }
 
 flag {
@@ -293,6 +253,142 @@ flag {
     namespace: "bluetooth"
     description: "use aggressive parameters for LE Audio device"
     bug: "400607635"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_broadcast_remove_sink_metadata_on_switch_to_local"
+    namespace: "bluetooth"
+    description: "Allow to remove sink metadata while switching to local broadcast"
+    bug: "404752913"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_broadcast_allow_monitoring_on_resume"
+    namespace: "bluetooth"
+    description: "Allow broadcast monitoring on resume from suspend"
+    bug: "404797794"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_fix_stop_reconfiguration_timeout"
+    namespace: "bluetooth"
+    description: "Fix for stop the reconfiguration timeout"
+    bug: "406570963"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_use_context_type_manager"
+    namespace: "bluetooth"
+    description: "Use brand new context type manager supporting bidirectional GAME use cases"
+    bug: "406589272"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+
+flag {
+    name: "dsa_use_codec_extensibility"
+    namespace: "bluetooth"
+    description: "Use the codec extensibility API for passing DSA parameters"
+    bug: "406747076"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_bis_sync_control"
+    namespace: "bluetooth"
+    description: "Allow to control BIS sync state from BASS service level"
+    bug: "407928525"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "le_audio_update_config_preference_to_hal"
+    namespace: "bluetooth"
+    description: "Send user set config preference to BT Audio HAL"
+    bug: "413225593"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_add_opus_hi_res_codec_type"
+    namespace: "bluetooth"
+    description: "Add OPUS codec type to LE Audio"
+    bug: "410516242"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_add_opus_hi_res_codec_type_api"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Add OPUS codec type to LE Audio API"
+    bug: "419699224"
+}
+
+flag {
+    name: "leaudio_dynamic_data_path_change"
+    namespace: "bluetooth"
+    description: "Change the data path dynamically"
+    bug: "414773442"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_do_not_set_autoconnecting_on_connected_device"
+    namespace: "bluetooth"
+    description: "When `autoConnect` triggers, do not set CONNECTING_AUTOCONNECT for device that is already in CONNECTED state."
+    bug: "407958032"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "dsa_configure_first_cis"
+    namespace: "bluetooth"
+    description: "Configure only the first CIS for DSA"
+    bug: "417561299"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_broadcast_source_channel_map_classification"
+    namespace: "bluetooth"
+    description: "Uses channel classification from buds who synced with the phone's broadcast stream to determine the BIG channel map"
+    bug: "417110361"
+}
+
+flag {
+    name: "leaudio_check_ecosystem_base_interval_support"
+    namespace: "bluetooth"
+    description: "Before sending Set Ecosystem Base Interval command, check that the controller actually supports it"
+    bug: "422626923"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

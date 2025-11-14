@@ -16,19 +16,18 @@
 
 package com.android.bluetooth.avrcpcontroller;
 
+import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import android.bluetooth.BluetoothDevice;
-import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.avrcpcontroller.BrowseTree.BrowseNode;
-import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.btservice.AdapterService;
 
 import com.google.common.testing.EqualsTester;
 
@@ -36,6 +35,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +44,9 @@ import java.util.List;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BrowseNodeTest {
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private AdapterService mAdapterService;
 
     private static final int TEST_PLAYER_ID = 1;
     private static final String TEST_UUID = "1111";
@@ -57,7 +59,7 @@ public class BrowseNodeTest {
 
     @Before
     public void setUp() {
-        mBrowseTree = new BrowseTree(null);
+        mBrowseTree = new BrowseTree(mAdapterService, null);
         mRootNode = mBrowseTree.mRootNode;
     }
 
@@ -172,7 +174,6 @@ public class BrowseNodeTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_UNCACHE_PLAYER_WHEN_BROWSED_PLAYER_CHANGES)
     public void setUncached_whenNodeHasChildrenNodes() {
         BrowseNode deviceNode = mBrowseTree.new BrowseNode(mDevice);
         mRootNode.addChild(deviceNode);
@@ -251,10 +252,12 @@ public class BrowseNodeTest {
     @Test
     public void toTreeString_returnFormattedString() {
         final String expected =
-                "  [id=1111, name=item, cached=false, size=2]\n"
-                        + "    [id=child1, name=child1, cached=false, size=1]\n"
-                        + "      [id=child3, name=child3, cached=false, size=0]\n"
-                        + "    [id=child2, name=child2, cached=false, size=0]\n";
+                """
+                  [id=1111, name=item, cached=false, size=2]
+                    [id=child1, name=child1, cached=false, size=1]
+                      [id=child3, name=child3, cached=false, size=0]
+                    [id=child2, name=child2, cached=false, size=0]
+                """;
 
         BrowseNode browseNode =
                 mBrowseTree

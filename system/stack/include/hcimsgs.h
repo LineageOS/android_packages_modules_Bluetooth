@@ -157,9 +157,6 @@ void btsnd_hcic_rem_oob_reply(const RawAddress& bd_addr, const Octet16& c, const
 /* Remote OOB Data Request Negative Reply */
 void btsnd_hcic_rem_oob_neg_reply(const RawAddress& bd_addr);
 
-/* Read Default Erroneous Data Reporting */
-void btsnd_hcic_read_default_erroneous_data_rpt(void);
-
 /**** end of Simple Pairing Commands ****/
 
 extern void btsnd_hcic_set_event_filter(uint8_t filt_type, uint8_t filt_cond_type,
@@ -177,8 +174,6 @@ void btsnd_hcic_delete_stored_key(const RawAddress& bd_addr, bool delete_all_fla
 #define HCIC_PARAM_SIZE_WRITE_PARAM3 3
 
 void btsnd_hcic_write_pin_type(uint8_t type);      /* Write PIN Type */
-void btsnd_hcic_write_auto_accept(uint8_t flag);   /* Write Auto Accept */
-void btsnd_hcic_read_name(void);                   /* Read Local Name */
 void btsnd_hcic_write_page_tout(uint16_t timeout); /* Write Page Timeout */
 void btsnd_hcic_write_scan_enable(uint8_t flag);   /* Write Scan Enable */
 void btsnd_hcic_write_pagescan_cfg(uint16_t interval,
@@ -196,8 +191,6 @@ void btsnd_hcic_write_voice_settings(uint16_t flags); /* Write Voice Settings */
 void btsnd_hcic_write_auto_flush_tout(uint16_t handle,
                                       uint16_t timeout); /* Write Retransmit Timeout */
 
-void btsnd_hcic_read_tx_power(uint16_t handle, uint8_t type); /* Read Tx Power */
-
 /* Write Link Supervision Timeout */
 void btsnd_hcic_write_link_super_tout(uint16_t handle, uint16_t timeout);
 /* Write Link Supervision Timeout */
@@ -209,7 +202,6 @@ void btsnd_hcic_write_cur_iac_lap(uint8_t num_cur_iac,
 void btsnd_hcic_read_rssi(uint16_t handle); /* Read RSSI */
 using ReadEncKeySizeCb = base::OnceCallback<void(uint8_t, uint16_t, uint8_t)>;
 void btsnd_hcic_read_encryption_key_size(uint16_t handle, ReadEncKeySizeCb cb);
-void btsnd_hcic_read_failed_contact_counter(uint16_t handle);
 void btsnd_hcic_enable_test_mode(void);            /* Enable Device Under Test Mode */
 void btsnd_hcic_write_pagescan_type(uint8_t type); /* Write Page Scan Type */
 void btsnd_hcic_write_inqscan_type(uint8_t type);  /* Write Inquiry Scan Type */
@@ -258,8 +250,6 @@ void btsnd_hcic_ble_write_adv_params(uint16_t adv_int_min, uint16_t adv_int_max,
                                      tBLE_ADDR_TYPE addr_type_own, tBLE_ADDR_TYPE addr_type_dir,
                                      const RawAddress& direct_bda, uint8_t channel_map,
                                      uint8_t adv_filter_policy);
-
-void btsnd_hcic_ble_read_adv_chnl_tx_power(void);
 
 void btsnd_hcic_ble_set_adv_data(uint8_t data_len, uint8_t* p_data);
 

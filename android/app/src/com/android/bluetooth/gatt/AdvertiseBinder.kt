@@ -20,6 +20,7 @@ import android.Manifest.permission.BLUETOOTH_ADVERTISE
 import android.Manifest.permission.BLUETOOTH_PRIVILEGED
 import android.annotation.RequiresPermission
 import android.bluetooth.IBluetoothAdvertise
+import android.bluetooth.IBluetoothGattServerCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSetParameters
 import android.bluetooth.le.IAdvertisingSetCallback
@@ -28,22 +29,25 @@ import android.content.AttributionSource
 import android.content.Context
 import com.android.bluetooth.Utils
 
+private val TAG: String = AdvertiseBinder::class.java.simpleName
+
 class AdvertiseBinder(
-    private val mContext: Context,
-    private val mAdvertiseManager: AdvertiseManager,
+    private val context: Context,
+    private val advertiseManager: AdvertiseManager,
 ) : IBluetoothAdvertise.Stub() {
-    @Volatile private var mIsAvailable = true
+
+    @Volatile private var isAvailable = true
 
     fun cleanup() {
-        mIsAvailable = false
+        isAvailable = false
     }
 
     @RequiresPermission(BLUETOOTH_ADVERTISE)
     private fun getManager(source: AttributionSource): AdvertiseManager? {
-        if (!Utils.checkAdvertisePermissionForDataDelivery(mContext, source, "AdvertiseManager")) {
+        if (!isAvailable || !Utils.checkAdvertisePermissionForDataDelivery(context, source, TAG)) {
             return null
         }
-        return if (mIsAvailable) mAdvertiseManager else null
+        return advertiseManager
     }
 
     override fun startAdvertisingSet(
@@ -54,16 +58,16 @@ class AdvertiseBinder(
         periodicData: AdvertiseData?,
         duration: Int,
         maxExtAdvEvents: Int,
-        serverIf: Int,
+        gattServerCallback: IBluetoothGattServerCallback?,
         callback: IAdvertisingSetCallback,
         source: AttributionSource,
     ) {
         if (
             parameters.ownAddressType != AdvertisingSetParameters.ADDRESS_TYPE_DEFAULT ||
-                serverIf != 0 ||
+                gattServerCallback != null ||
                 parameters.isDirected
         ) {
-            mContext.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+            context.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
         }
 
         getManager(source)?.let { manager ->
@@ -76,7 +80,7 @@ class AdvertiseBinder(
                     periodicData,
                     duration,
                     maxExtAdvEvents,
-                    serverIf,
+                    gattServerCallback,
                     callback,
                     source,
                 )
@@ -91,7 +95,7 @@ class AdvertiseBinder(
     }
 
     override fun getOwnAddress(advertiserId: Int, source: AttributionSource) {
-        mContext.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+        context.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
         getManager(source)?.let { manager ->
             manager.doOnAdvertiseThread { manager.getOwnAddress(advertiserId) }
         }
@@ -140,7 +144,7 @@ class AdvertiseBinder(
             parameters.ownAddressType != AdvertisingSetParameters.ADDRESS_TYPE_DEFAULT ||
                 parameters.isDirected
         ) {
-            mContext.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+            context.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
         }
         getManager(source)?.let { manager ->
             manager.doOnAdvertiseThread {

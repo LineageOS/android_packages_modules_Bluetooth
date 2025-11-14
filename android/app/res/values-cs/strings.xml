@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Pokud Bluetooth necháte zapnutý, zařízení si zapamatuje, že ho má příště v režimu Letadlo ponechat zapnutý"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetooth zůstane zapnutý"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Zařízení si pamatuje, že má v režimu Letadlo ponechat zapnutý Bluetooth. Pokud nechcete, aby Bluetooth zůstal zapnutý, vypněte ho."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Při připojení k jiným zařízením zůstává v režimu Letadlo zapnuté rozhraní Bluetooth."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Při připojení k hodinkám nechá zařízení v režimu Letadlo zapnuté rozhraní Bluetooth."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Při připojení k multimediálnímu zařízení zůstává rozhraní Bluetooth v režimu Letadlo zapnuté."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi a Bluetooth zůstávají zapnuté"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Zařízení si pamatuje, že má v režimu Letadlo ponechat zapnutou Wi-Fi a Bluetooth. Pokud nechcete, aby Wi-Fi a Bluetooth zůstaly zapnuté, vypněte je."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth se znovu zapnul"</string>

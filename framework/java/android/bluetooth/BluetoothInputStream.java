@@ -16,7 +16,7 @@
 
 package android.bluetooth;
 
-import android.annotation.SuppressLint;
+import android.annotation.RequiresNoPermission;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,8 +28,7 @@ import java.io.InputStream;
  *
  * @hide
  */
-@SuppressLint("AndroidFrameworkBluetoothPermission")
-/*package*/ final class BluetoothInputStream extends InputStream {
+final class BluetoothInputStream extends InputStream {
     private final BluetoothSocket mSocket;
 
     /*package*/ BluetoothInputStream(BluetoothSocket s) {
@@ -37,6 +36,7 @@ import java.io.InputStream;
     }
 
     /** Return number of bytes available before this stream will block. */
+    @RequiresNoPermission // Permission is checked when creating the stream
     public int available() throws IOException {
         return mSocket.available();
     }
@@ -54,6 +54,7 @@ import java.io.InputStream;
      * @throws IOException if the stream is closed or another IOException occurs.
      * @since Android 1.5
      */
+    @RequiresNoPermission // Permission is checked when creating the stream
     public int read() throws IOException {
         byte[] b = new byte[1];
         int ret = mSocket.read(b, 0, 1);
@@ -78,6 +79,7 @@ import java.io.InputStream;
      * @throws IOException if the stream is closed or another IOException occurs.
      * @since Android 1.5
      */
+    @RequiresNoPermission // Permission is checked when creating the stream
     public int read(byte[] b, int offset, int length) throws IOException {
         if (b == null) {
             throw new NullPointerException("byte array is null");

@@ -47,16 +47,15 @@ public class TbsServiceBinderTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
+    @Mock private AttributionSource mAttributionSource;
     @Mock private TbsService mService;
 
-    private AttributionSource mAttributionSource;
     private TbsServiceBinder mBinder;
 
     @Before
     public void setUp() throws Exception {
         when(mService.isAvailable()).thenReturn(true);
         mBinder = new TbsServiceBinder(mService);
-        mAttributionSource = new AttributionSource.Builder(1).build();
     }
 
     @Test

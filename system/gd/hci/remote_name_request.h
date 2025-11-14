@@ -17,12 +17,9 @@
 #pragma once
 
 #include <memory>
-#include <string>
-#include <utility>
 
 #include "common/contextual_callback.h"
 #include "hci/hci_packets.h"
-#include "module.h"
 
 namespace bluetooth {
 namespace hci {
@@ -39,37 +36,24 @@ using RemoteNameCallback =
 // Name Requests can interoperate with the GD ACL scheduler. Thus, we intentionally do not merge
 // identical requests, cache responses, or handle request timeouts - we leave this to our callers.
 // When GD clients start to use this module, richer functionality should be added.
-class RemoteNameRequestModule : public bluetooth::Module {
+class RemoteNameRequestModule {
 public:
+  virtual ~RemoteNameRequestModule() = default;
+
   // Dispatch a Remote Name Request
-  void StartRemoteNameRequest(
+  virtual void StartRemoteNameRequest(
           Address address, std::unique_ptr<RemoteNameRequestBuilder> request,
           CompletionCallback on_completion,
           RemoteHostSupportedFeaturesCallback on_remote_host_supported_features_notification,
-          RemoteNameCallback on_remote_name_complete);
+          RemoteNameCallback on_remote_name_complete) = 0;
 
   // Cancel a Remote Name Request
-  void CancelRemoteNameRequest(Address address);
+  virtual void CancelRemoteNameRequest(Address address) = 0;
 
   // Due to controller bugs (b/184239841), an ACL connection completion is sometimes reported in
   // place of an RNR completion This method lets the ACL manager inform the RNR module if this
   // happens, since we don't get the appropriate HCI event.
-  void ReportRemoteNameRequestCancellation(Address address);
-
-private:
-  struct impl;
-  std::unique_ptr<impl> pimpl_;
-
-protected:
-  void ListDependencies(ModuleList* list) const override;
-  void Start() override;
-  void Stop() override;
-  std::string ToString() const override { return std::string("RemoteNameRequestModule"); }
-
-public:
-  static const ModuleFactory Factory;
-  RemoteNameRequestModule();
-  ~RemoteNameRequestModule();
+  virtual void ReportRemoteNameRequestCancellation(Address address) = 0;
 };
 
 }  // namespace hci

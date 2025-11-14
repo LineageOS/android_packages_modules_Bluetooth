@@ -35,6 +35,7 @@ package com.android.bluetooth.opp;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.content.ContentResolver;
@@ -44,20 +45,19 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Process;
-import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
-import android.util.Pair;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -69,134 +69,61 @@ import java.util.List;
 public class BluetoothOppManager {
     private static final String TAG = BluetoothOppManager.class.getSimpleName();
 
-    @VisibleForTesting static BluetoothOppManager sInstance;
-
-    /** Used when obtaining a reference to the singleton instance. */
-    private static final Object INSTANCE_LOCK = new Object();
-
-    private boolean mInitialized;
-
-    private Context mContext;
-
-    private BluetoothAdapter mAdapter;
-
-    @VisibleForTesting String mMimeTypeOfSendingFile;
-
-    @VisibleForTesting String mUriOfSendingFile;
-
-    @VisibleForTesting String mMimeTypeOfSendingFiles;
-
-    @VisibleForTesting List<Uri> mUrisOfSendingFiles;
-
-    private boolean mIsHandoverInitiated;
-
     @VisibleForTesting static final String OPP_PREFERENCE_FILE = "OPPMGR";
 
     private static final String SENDING_FLAG = "SENDINGFLAG";
-
     private static final String MIME_TYPE = "MIMETYPE";
-
     private static final String FILE_URI = "FILE_URI";
-
     private static final String MIME_TYPE_MULTIPLE = "MIMETYPE_MULTIPLE";
-
     private static final String FILE_URIS = "FILE_URIS";
-
     private static final String MULTIPLE_FLAG = "MULTIPLE_FLAG";
-
     private static final String ARRAYLIST_ITEM_SEPARATOR = ";";
 
     @VisibleForTesting static final int ALLOWED_INSERT_SHARE_THREAD_NUMBER = 3;
 
-    // used to judge if need continue sending process after received a
-    // ENABLED_ACTION
-    public boolean mSendingFlag;
+    private static final Object INSTANCE_LOCK = new Object();
 
+    @GuardedBy("INSTANCE_LOCK")
+    private static BluetoothOppManager sInstance;
+
+    private final Context mContext;
+    private final BluetoothAdapter mAdapter;
+
+    public boolean mSendingFlag; // used to continue sending process after received a ENABLED_ACTION
     public boolean mMultipleFlag;
 
-    private int mFileNumInBatch;
+    @VisibleForTesting String mMimeTypeOfSendingFile;
+    @VisibleForTesting String mUriOfSendingFile;
+    @VisibleForTesting String mMimeTypeOfSendingFiles;
+    @VisibleForTesting List<Uri> mUrisOfSendingFiles;
 
     private int mInsertShareThreadNum = 0;
-
-    // A list of devices that may send files over OPP to this device
-    // without user confirmation. Used for connection handover from forex NFC.
-    private final List<Pair<String, Long>> mAcceptlist = new ArrayList<Pair<String, Long>>();
-
-    // The time for which the acceptlist entries remain valid.
-    private static final int ACCEPTLIST_DURATION_MS = 15000;
+    private boolean mIsHandoverInitiated;
+    private int mFileNumInBatch;
 
     /** Get singleton instance. */
     public static BluetoothOppManager getInstance(Context context) {
         synchronized (INSTANCE_LOCK) {
             if (sInstance == null) {
-                sInstance = new BluetoothOppManager();
+                sInstance = new BluetoothOppManager(context);
             }
-            sInstance.init(context);
-
             return sInstance;
         }
     }
 
     /** Set Singleton instance. Intended for testing purpose */
     @VisibleForTesting
-    static void setInstance(BluetoothOppManager instance) {
-        sInstance = instance;
+    static void setInstanceForTesting(BluetoothOppManager instance) {
+        synchronized (INSTANCE_LOCK) {
+            sInstance = instance;
+        }
     }
 
-    /** init */
-    private boolean init(Context context) {
-        if (mInitialized) {
-            return true;
-        }
-        mInitialized = true;
-
+    BluetoothOppManager(Context context) {
         mContext = context;
+        mAdapter = mContext.getSystemService(BluetoothManager.class).getAdapter();
 
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (mAdapter == null) {
-            Log.v(TAG, "BLUETOOTH_SERVICE is not started! ");
-        }
-
-        // Restore data from preference
-        restoreApplicationData();
-
-        return true;
-    }
-
-    private void cleanupAcceptlist() {
-        // Removes expired entries
-        long curTime = SystemClock.elapsedRealtime();
-        for (Iterator<Pair<String, Long>> iter = mAcceptlist.iterator(); iter.hasNext(); ) {
-            Pair<String, Long> entry = iter.next();
-            if (curTime - entry.second > ACCEPTLIST_DURATION_MS) {
-                Log.v(TAG, "Cleaning out acceptlist entry " + entry.first);
-                iter.remove();
-            }
-        }
-    }
-
-    public synchronized void addToAcceptlist(String address) {
-        if (address == null) {
-            return;
-        }
-        // Remove any existing entries
-        for (Iterator<Pair<String, Long>> iter = mAcceptlist.iterator(); iter.hasNext(); ) {
-            Pair<String, Long> entry = iter.next();
-            if (entry.first.equals(address)) {
-                iter.remove();
-            }
-        }
-        mAcceptlist.add(new Pair<String, Long>(address, SystemClock.elapsedRealtime()));
-    }
-
-    public synchronized boolean isAcceptListed(String address) {
-        cleanupAcceptlist();
-        for (Pair<String, Long> entry : mAcceptlist) {
-            if (entry.first.equals(address)) {
-                return true;
-            }
-        }
-        return false;
+        restoreApplicationData(); // Restore data from preference
     }
 
     /** Restore data from preference */
@@ -337,7 +264,7 @@ public class BluetoothOppManager {
         if (device != null) {
             deviceName = device.getAlias();
             if (deviceName == null) {
-                deviceName = BluetoothOppPreference.getInstance(mContext).getName(device);
+                deviceName = device.getName();
             }
         }
 
@@ -451,10 +378,11 @@ public class BluetoothOppManager {
                         1);
                 return;
             }
+            final var adapterService = AdapterService.deprecatedGetAdapterService();
             if (mIsMultiple) {
-                insertMultipleShare();
+                insertMultipleShare(adapterService);
             } else {
-                insertSingleShare();
+                insertSingleShare(adapterService);
             }
             synchronized (BluetoothOppManager.this) {
                 mInsertShareThreadNum--;
@@ -462,8 +390,7 @@ public class BluetoothOppManager {
         }
 
         /** Insert multiple sending sessions to db, only used by Opp application. */
-        @SuppressLint("AndroidFrameworkRequiresPermission") // re-entrant call
-        private void insertMultipleShare() {
+        private void insertMultipleShare(AdapterService adapterService) {
             int count = mUris.size();
             Long ts = System.currentTimeMillis();
             for (int i = 0; i < count; i++) {
@@ -479,7 +406,9 @@ public class BluetoothOppManager {
                 }
 
                 values.put(BluetoothShare.MIMETYPE, contentType);
-                values.put(BluetoothShare.DESTINATION, Utils.getBrEdrAddress(mRemoteDevice));
+                values.put(
+                        BluetoothShare.DESTINATION,
+                        Utils.getBrEdrAddress(mRemoteDevice, adapterService));
                 values.put(BluetoothShare.TIMESTAMP, ts);
                 if (mIsHandoverInitiated) {
                     values.put(
@@ -502,12 +431,13 @@ public class BluetoothOppManager {
         }
 
         /** Insert single sending session to db, only used by Opp application. */
-        @SuppressLint("AndroidFrameworkRequiresPermission") // re-entrant call
-        private void insertSingleShare() {
+        private void insertSingleShare(AdapterService adapterService) {
             ContentValues values = new ContentValues();
             values.put(BluetoothShare.URI, mUri);
             values.put(BluetoothShare.MIMETYPE, mTypeOfSingleFile);
-            values.put(BluetoothShare.DESTINATION, Utils.getBrEdrAddress(mRemoteDevice));
+            values.put(
+                    BluetoothShare.DESTINATION,
+                    Utils.getBrEdrAddress(mRemoteDevice, adapterService));
             if (mIsHandoverInitiated) {
                 values.put(
                         BluetoothShare.USER_CONFIRMATION,

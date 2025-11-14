@@ -66,26 +66,6 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
     private var mGattInstanceValueWrote =
         GattInstanceValueWrote(null, 0, AttStatusCode.UNKNOWN_ERROR)
 
-    companion object GattManager {
-        val gattInstances: MutableMap<String, GattInstance> = mutableMapOf<String, GattInstance>()
-
-        fun get(address: String): GattInstance {
-            val instance = gattInstances.get(address)
-            requireNotNull(instance) { "Unable to find GATT instance for $address" }
-            return instance
-        }
-
-        fun get(address: ByteString): GattInstance {
-            val instance = gattInstances.get(address.toByteArray().decodeToString())
-            requireNotNull(instance) { "Unable to find GATT instance for $address" }
-            return instance
-        }
-
-        fun clearAllInstances() {
-            gattInstances.clear()
-        }
-    }
-
     private val mCallback =
         object : BluetoothGattCallback() {
             override fun onConnectionStateChange(
@@ -392,5 +372,25 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
 
     override fun toString(): String {
         return "GattInstance($mDevice)"
+    }
+
+    companion object {
+        val gattInstances: MutableMap<String, GattInstance> = mutableMapOf<String, GattInstance>()
+
+        fun get(address: String): GattInstance {
+            val instance = gattInstances.get(address)
+            requireNotNull(instance) { "Unable to find GATT instance for $address" }
+            return instance
+        }
+
+        fun get(address: ByteString): GattInstance {
+            val instance = gattInstances.get(address.toByteArray().decodeToString())
+            requireNotNull(instance) { "Unable to find GATT instance for $address" }
+            return instance
+        }
+
+        fun clearAllInstances() {
+            gattInstances.clear()
+        }
     }
 }

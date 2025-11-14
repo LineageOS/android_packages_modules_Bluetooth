@@ -332,14 +332,11 @@ class PbapClientAccountManager {
         }
 
         private static String messageToString(int msg) {
-            switch (msg) {
-                case MSG_USER_UNLOCKED:
-                    return "MSG_USER_UNLOCKED";
-                case MSG_ACCOUNT_CHECK:
-                    return "MSG_ACCOUNT_CHECK";
-                default:
-                    return "MSG_RESERVED_" + msg;
-            }
+            return switch (msg) {
+                case MSG_USER_UNLOCKED -> "MSG_USER_UNLOCKED";
+                case MSG_ACCOUNT_CHECK -> "MSG_ACCOUNT_CHECK";
+                default -> "MSG_RESERVED_" + msg;
+            };
         }
     }
 

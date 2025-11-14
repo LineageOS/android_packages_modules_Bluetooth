@@ -6,10 +6,11 @@ java_defaults {
     name: "BluetoothInstrumentationTestsDefaults",
     defaults: [
         "bluetooth_errorprone_rules",
+        "bluetooth_lint_rules",
     ],
 
     sdk_version: "module_current",
-    min_sdk_version: "Tiramisu",
+    min_sdk_version: "36",
     target_sdk_version: "current",
     libs: [
         "android.test.base.stubs",
@@ -58,7 +59,10 @@ java_defaults {
         ":bluetooth_test_looper",
     ],
     jacoco: {
-        include_filter: ["android.bluetooth.*"],
+        include_filter: [
+            "android.bluetooth.**",
+            "com.android.bluetooth.**",
+        ],
         exclude_filter: [],
     },
 
@@ -75,6 +79,9 @@ java_defaults {
 android_test {
     name: "BluetoothInstrumentationTests",
     defaults: ["BluetoothInstrumentationTestsDefaults"],
+    visibility: [
+        "//platform_testing:__subpackages__",
+    ],
 }
 
 android_test {
@@ -82,4 +89,7 @@ android_test {
     defaults: ["BluetoothInstrumentationTestsDefaults"],
     test_config: "GoogleAndroidTest.xml",
     instrumentation_target_package: "com.google.android.bluetooth",
+    visibility: [
+        "//platform_testing:__subpackages__",
+    ],
 }

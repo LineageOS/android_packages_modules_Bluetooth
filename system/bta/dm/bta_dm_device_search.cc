@@ -179,7 +179,7 @@ static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, const uint8_t* p_eir,
 
   result.inq_res.bd_addr = p_inq->remote_bd_addr;
 
-  // Pass the original address to GattService#onScanResult
+  // Pass the original address to ScanController#onScanResult
   result.inq_res.original_bda = p_inq->original_bda;
 
   result.inq_res.dev_class = p_inq->dev_class;
@@ -189,6 +189,7 @@ static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, const uint8_t* p_eir,
 
   result.inq_res.ble_addr_type = p_inq->ble_addr_type;
   result.inq_res.inq_result_type = p_inq->inq_result_type;
+  result.inq_res.last_inq_result_from_type = p_inq->last_inq_result_from_type;
   result.inq_res.device_type = p_inq->device_type;
   result.inq_res.flag = p_inq->flag;
   result.inq_res.include_rsi = p_inq->include_rsi;
@@ -208,6 +209,8 @@ static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, const uint8_t* p_eir,
   }
 
   if (bta_dm_search_cb.p_device_search_cback) {
+    log::debug("Inquiry results callback from BTM, bda={}, original_bda={}", result.inq_res.bd_addr,
+               result.inq_res.original_bda);
     bta_dm_search_cb.p_device_search_cback(BTA_DM_INQ_RES_EVT, &result);
   }
 
@@ -234,7 +237,7 @@ static void bta_dm_remname_cback(const tBTM_REMOTE_DEV_NAME* p_remote_name) {
 
   log::info(
           "Remote name request complete peer:{} btm_status:{} hci_status:{} "
-          "name[0]:{:c} length:{}",
+          "name[0]:0x{:x} length:{}",
           p_remote_name->bd_addr, btm_status_text(p_remote_name->btm_status),
           hci_error_code_text(p_remote_name->hci_status), p_remote_name->remote_bd_name[0],
           strnlen((const char*)p_remote_name->remote_bd_name, BD_NAME_LEN));
@@ -587,6 +590,7 @@ static void bta_dm_observe_results_cb(tBTM_INQ_RESULTS* p_inq, const uint8_t* p_
   result.inq_res.rssi = p_inq->rssi;
   result.inq_res.ble_addr_type = p_inq->ble_addr_type;
   result.inq_res.inq_result_type = p_inq->inq_result_type;
+  result.inq_res.last_inq_result_from_type = p_inq->last_inq_result_from_type;
   result.inq_res.device_type = p_inq->device_type;
   result.inq_res.flag = p_inq->flag;
   result.inq_res.ble_evt_type = p_inq->ble_evt_type;
@@ -635,6 +639,7 @@ static void bta_dm_opportunistic_observe_results_cb(tBTM_INQ_RESULTS* p_inq, con
   result.inq_res.rssi = p_inq->rssi;
   result.inq_res.ble_addr_type = p_inq->ble_addr_type;
   result.inq_res.inq_result_type = p_inq->inq_result_type;
+  result.inq_res.last_inq_result_from_type = p_inq->last_inq_result_from_type;
   result.inq_res.device_type = p_inq->device_type;
   result.inq_res.flag = p_inq->flag;
   result.inq_res.ble_evt_type = p_inq->ble_evt_type;
@@ -762,7 +767,7 @@ struct tSEARCH_STATE_HISTORY {
   }
 };
 
-bluetooth::common::TimestampedCircularBuffer<tSEARCH_STATE_HISTORY> search_state_history_(
+static bluetooth::common::TimestampedCircularBuffer<tSEARCH_STATE_HISTORY> search_state_history_(
         kSearchStateHistorySize);
 
 /*******************************************************************************

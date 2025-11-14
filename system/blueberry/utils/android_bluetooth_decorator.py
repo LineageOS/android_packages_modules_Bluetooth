@@ -89,8 +89,9 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
             raise TypeError('Must apply AndroidBluetoothDecorator to an '
                             'AndroidDevice')
         self.ble_advertise_callback = None
-        self.regex_logcat_time = re.compile(r'(?P<datetime>[\d]{2}-[\d]{2} [\d]{2}:[\d]{2}:[\d]{2}.[\d]{3})'
-                                            r'[ ]+\d+.*')
+        self.regex_logcat_time = re.compile(
+            r'(?P<datetime>[\d]{2}-[\d]{2} [\d]{2}:[\d]{2}:[\d]{2}.[\d]{3})'
+            r'[ ]+\d+.*')
         self._regex_bt_crash = re.compile(r'Bluetooth crashed (?P<num_bt_crashes>\d+) times')
 
     def __getattr__(self, name: Any) -> Any:
@@ -159,8 +160,8 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
                     if state in all_states[-threshold:]:
                         return True
             time.sleep(0.5)
-        logging.error('Bluetooth state fails to normalize'
-                      if state is None else 'Failed to match bluetooth state, current state {} expected state {}'.
+        logging.error('Bluetooth state fails to normalize' if state is None else
+                      'Failed to match bluetooth state, current state {} expected state {}'.
                       format(self._get_bluetooth_le_state(), state))
         return False
 
@@ -246,10 +247,11 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
         logging.info('establishing RFCOMM connection')
         return self.orchestrate_rfcomm_connection(other_ad)
 
-    def orchestrate_rfcomm_connection(self,
-                                      other_ad: android_device.AndroidDevice,
-                                      accept_timeout_ms: int = bt_constants.DEFAULT_RFCOMM_TIMEOUT_MS,
-                                      uuid: Optional[Text] = None) -> bool:
+    def orchestrate_rfcomm_connection(
+            self,
+            other_ad: android_device.AndroidDevice,
+            accept_timeout_ms: int = bt_constants.DEFAULT_RFCOMM_TIMEOUT_MS,
+            uuid: Optional[Text] = None) -> bool:
         """Sets up the RFCOMM connection to another android device.
 
     It sets up the connection with a Bluetooth Socket connection with other
@@ -268,7 +270,8 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
         other_ad.sl4a.bluetoothStartPairingHelper()
         self._ad.sl4a.bluetoothStartPairingHelper()
         other_ad.sl4a.bluetoothSocketConnBeginAcceptThreadUuid(uuid, accept_timeout_ms)
-        self._ad.sl4a.bluetoothSocketConnBeginConnectThreadUuid(other_ad.sl4a.bluetoothGetLocalAddress(), uuid)
+        self._ad.sl4a.bluetoothSocketConnBeginConnectThreadUuid(
+            other_ad.sl4a.bluetoothGetLocalAddress(), uuid)
 
         end_time = time.time() + bt_constants.BT_DEFAULT_TIMEOUT_SECONDS
         test_result = True
@@ -312,9 +315,11 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
         except queue.Empty:
             # TODO(user): Remove this check when this bug is fixed.
             if self.logcat_filter(device_start_time, event_name):
-                self._ad.log.info('Actually the event "%s" was posted within %d seconds.', event_name, timeout)
+                self._ad.log.info('Actually the event "%s" was posted within %d seconds.',
+                                  event_name, timeout)
                 return timeout
-            raise DiscoveryError('Failed to discover device %s after %d seconds' % (mac_address, timeout))
+            raise DiscoveryError('Failed to discover device %s after %d seconds' %
+                                 (mac_address, timeout))
 
     def wait_for_pairing_success(self, mac_address: str, timeout: float = 30) -> float:
         """Waits for a device to pair with the AndroidDevice.
@@ -331,12 +336,14 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
     """
         start_time = time.time()
         try:
-            self._ad.ed.wait_for_event('Bond%s' % mac_address, lambda x: x['data']['Status'], timeout)
+            self._ad.ed.wait_for_event('Bond%s' % mac_address, lambda x: x['data']['Status'],
+                                       timeout)
             pairing_time = time.time() - start_time
             return pairing_time
 
         except queue.Empty:
-            raise signals.ControllerError('Failed to bond with device %s after %d seconds' % (mac_address, timeout))
+            raise signals.ControllerError('Failed to bond with device %s after %d seconds' %
+                                          (mac_address, timeout))
 
     def wait_for_connection_success(self, mac_address: str, timeout: int = 30) -> float:
         """Waits for a device to connect with the AndroidDevice.
@@ -446,14 +453,16 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
                 break
             except DiscoveryError:
                 if i + 1 < attempts:
-                    logging.error('Failed to find the device "%s" on Attempt %d. '
-                                  'Retrying discovery...', mac_address, i + 1)
+                    logging.error(
+                        'Failed to find the device "%s" on Attempt %d. '
+                        'Retrying discovery...', mac_address, i + 1)
                     continue
                 raise DiscoveryError('Failed to find the device "%s".' % mac_address)
             except signals.ControllerError:
                 if i + 1 < attempts and enable_pairing_retry:
-                    logging.error('Failed to bond the device "%s" on Attempt %d. '
-                                  'Retrying pairing...', mac_address, i + 1)
+                    logging.error(
+                        'Failed to bond the device "%s" on Attempt %d. '
+                        'Retrying pairing...', mac_address, i + 1)
                     continue
                 raise signals.ControllerError('Failed to bond the device "%s".' % mac_address)
 
@@ -525,14 +534,17 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
         self.ble_advertise_callback = self._ad.sl4a.bleGenBleAdvertiseCallback()
         self._ad.sl4a.bleSetAdvertiseDataIncludeDeviceName(True)
         # Sets advertise mode to low latency.
-        self._ad.sl4a.bleSetAdvertiseSettingsAdvertiseMode(ble_scan_adv_constants.BleAdvertiseSettingsMode.LOW_LATENCY)
+        self._ad.sl4a.bleSetAdvertiseSettingsAdvertiseMode(
+            ble_scan_adv_constants.BleAdvertiseSettingsMode.LOW_LATENCY)
         self._ad.sl4a.bleSetAdvertiseSettingsIsConnectable(True)
         # Sets TX power level to High.
-        self._ad.sl4a.bleSetAdvertiseSettingsTxPowerLevel(ble_scan_adv_constants.BleAdvertiseSettingsTxPower.HIGH)
+        self._ad.sl4a.bleSetAdvertiseSettingsTxPowerLevel(
+            ble_scan_adv_constants.BleAdvertiseSettingsTxPower.HIGH)
         advertise_data = self._ad.sl4a.bleBuildAdvertiseData()
         advertise_settings = self._ad.sl4a.bleBuildAdvertiseSettings()
         logging.info('Activating BLE pairing mode on AndroidDevice.')
-        self._ad.sl4a.bleStartBleAdvertising(self.ble_advertise_callback, advertise_data, advertise_settings)
+        self._ad.sl4a.bleStartBleAdvertising(self.ble_advertise_callback, advertise_data,
+                                             advertise_settings)
 
     def deactivate_ble_pairing_mode(self) -> None:
         """Deactivates BLE pairing mode on an AndroidDevice."""
@@ -572,8 +584,9 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
         try:
             event = self._ad.ed.pop_event('BleScan%sonScanResults' % scan_callback, timeout_sec)
         except queue.Empty:
-            raise signals.ControllerError('Timed out %ds after waiting for phone finding BLE device: %s.' %
-                                          (timeout_sec, device_name))
+            raise signals.ControllerError(
+                'Timed out %ds after waiting for phone finding BLE device: %s.' %
+                (timeout_sec, device_name))
         finally:
             self._ad.sl4a.bleStopBleScan(scan_callback)
         return event['data']['Result']['deviceInfo']['address']
@@ -593,7 +606,8 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
             get_status = get_status.decode()
         return 'true' in get_status
 
-    def connect_with_profile(self, snd_ad_mac_address: str, profile: bt_constants.BluetoothProfile) -> bool:
+    def connect_with_profile(self, snd_ad_mac_address: str,
+                             profile: bt_constants.BluetoothProfile) -> bool:
         """Connects with the profile.
 
     The connection can only be completed after the bluetooth devices are paired.
@@ -612,19 +626,22 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
         if profile == bt_constants.BluetoothProfile.MAP_MCE:
             self._ad.sl4a.bluetoothMapClientConnect(snd_ad_mac_address)
         elif profile == bt_constants.BluetoothProfile.PBAP_CLIENT:
-            self.set_profile_policy(snd_ad_mac_address, profile,
-                                    bt_constants.BluetoothConnectionPolicy.CONNECTION_POLICY_ALLOWED)
+            self.set_profile_policy(
+                snd_ad_mac_address, profile,
+                bt_constants.BluetoothConnectionPolicy.CONNECTION_POLICY_ALLOWED)
             self._ad.sl4a.bluetoothPbapClientConnect(snd_ad_mac_address)
         else:
-            self.set_profile_policy(snd_ad_mac_address, profile,
-                                    bt_constants.BluetoothConnectionPolicy.CONNECTION_POLICY_FORBIDDEN)
-            self.set_profile_policy(snd_ad_mac_address, profile,
-                                    bt_constants.BluetoothConnectionPolicy.CONNECTION_POLICY_ALLOWED)
+            self.set_profile_policy(
+                snd_ad_mac_address, profile,
+                bt_constants.BluetoothConnectionPolicy.CONNECTION_POLICY_FORBIDDEN)
+            self.set_profile_policy(
+                snd_ad_mac_address, profile,
+                bt_constants.BluetoothConnectionPolicy.CONNECTION_POLICY_ALLOWED)
             self._ad.sl4a.bluetoothConnectBonded(snd_ad_mac_address)
         time.sleep(BT_CONNECTION_WAITING_TIME_SECONDS)
         is_connected = self._is_profile_connected(snd_ad_mac_address, profile)
-        self.log.info('The connection between %s and %s for profile %s succeed: %s', self.serial, snd_ad_mac_address,
-                      profile, is_connected)
+        self.log.info('The connection between %s and %s for profile %s succeed: %s', self.serial,
+                      snd_ad_mac_address, profile, is_connected)
         return is_connected
 
     def connect_to_snd_with_profile(self,
@@ -645,14 +662,16 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
         curr_attempts = 0
         snd_ad_mac_address = snd_ad.sl4a.bluetoothGetLocalAddress()
         if not self.is_bt_paired(snd_ad_mac_address):
-            self.log.error('Devices %s and %s not paired before connecting', self.serial, snd_ad.serial)
+            self.log.error('Devices %s and %s not paired before connecting', self.serial,
+                           snd_ad.serial)
             return False
         while curr_attempts < attempts:
             curr_attempts += 1
-            self.log.info('Connection of profile %s at curr attempt %d (total %d)', profile, curr_attempts, attempts)
+            self.log.info('Connection of profile %s at curr attempt %d (total %d)', profile,
+                          curr_attempts, attempts)
             if self.connect_with_profile(snd_ad_mac_address, profile):
-                self.log.info('Connection between devices %s and %s succeeds at %d try', pri_ad.serial, snd_ad.serial,
-                              curr_attempts)
+                self.log.info('Connection between devices %s and %s succeeds at %d try',
+                              pri_ad.serial, snd_ad.serial, curr_attempts)
                 return True
         self.log.error('Connection of profile %s failed after %d attempts', profile, attempts)
         return False
@@ -733,10 +752,11 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
       True if the device is disconnected else False.
     """
         self._ad.sl4a.bluetoothMapClientDisconnect(bluetooth_address)
-        return bt_test_utils.wait_until(timeout_sec=COMMON_TIMEOUT_SECONDS,
-                                        condition_func=self._is_profile_connected,
-                                        func_args=[bluetooth_address, bt_constants.BluetoothProfile.MAP_MCE],
-                                        expected_value=False)
+        return bt_test_utils.wait_until(
+            timeout_sec=COMMON_TIMEOUT_SECONDS,
+            condition_func=self._is_profile_connected,
+            func_args=[bluetooth_address, bt_constants.BluetoothProfile.MAP_MCE],
+            expected_value=False)
 
     def pbap_connect(self, pbap_ad: android_device.AndroidDevice) -> bool:
         """Connects primary device to secondary device via PBAP client profile.
@@ -760,18 +780,20 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
           else disable.
     """
         if self._ad.sl4a.bluetoothPanIsTetheringOn() == status_enabled:
-            self._ad.log.info('Already %s Bluetooth tethering.' % ('enabled' if status_enabled else 'disabled'))
+            self._ad.log.info('Already %s Bluetooth tethering.' %
+                              ('enabled' if status_enabled else 'disabled'))
             return
 
         self._ad.log.info('%s Bluetooth tethering.' % ('Enable' if status_enabled else 'Disable'))
         self._ad.sl4a.bluetoothPanSetBluetoothTethering(status_enabled)
 
-        bt_test_utils.wait_until(timeout_sec=COMMON_TIMEOUT_SECONDS,
-                                 condition_func=self._ad.sl4a.bluetoothPanIsTetheringOn,
-                                 func_args=[],
-                                 expected_value=status_enabled,
-                                 exception=signals.ControllerError('Failed to %s Bluetooth tethering.' %
-                                                                   ('enable' if status_enabled else 'disable')))
+        bt_test_utils.wait_until(
+            timeout_sec=COMMON_TIMEOUT_SECONDS,
+            condition_func=self._ad.sl4a.bluetoothPanIsTetheringOn,
+            func_args=[],
+            expected_value=status_enabled,
+            exception=signals.ControllerError('Failed to %s Bluetooth tethering.' %
+                                              ('enable' if status_enabled else 'disable')))
 
     def set_profile_policy(self, snd_ad_mac_address: str, profile: bt_constants.BluetoothProfile,
                            policy: bt_constants.BluetoothConnectionPolicy) -> None:
@@ -787,8 +809,8 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
     """
         pri_ad = self._ad
         pri_ad_local_name = pri_ad.sl4a.bluetoothGetLocalName()
-        pri_ad.log.info('Sets profile %s on %s for %s to policy %s', profile, pri_ad_local_name, snd_ad_mac_address,
-                        policy)
+        pri_ad.log.info('Sets profile %s on %s for %s to policy %s', profile, pri_ad_local_name,
+                        snd_ad_mac_address, policy)
         if profile == bt_constants.BluetoothProfile.A2DP:
             pri_ad.sl4a.bluetoothA2dpSetPriority(snd_ad_mac_address, policy.value)
         elif profile == bt_constants.BluetoothProfile.A2DP_SINK:
@@ -902,7 +924,9 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
             raise Error(f'Pattern "{pattern}" search failed, dump output: {out}')
         return int(result.group())
 
-    def make_phone_call(self, callee: android_device.AndroidDevice, timeout_sec: float = 30) -> None:
+    def make_phone_call(self,
+                        callee: android_device.AndroidDevice,
+                        timeout_sec: float = 30) -> None:
         """Make a phone call to callee and check if callee is ringing.
 
     Args:
@@ -915,7 +939,8 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
         self._ad.sl4a.telecomCallNumber(callee.dimensions['phone_number'])
         is_ringing = callee.wait_for_call_state(bt_constants.CALL_STATE_RINGING, timeout_sec)
         if not is_ringing:
-            raise signals.TestError('Timed out after %ds waiting for call state: RINGING' % timeout_sec)
+            raise signals.TestError('Timed out after %ds waiting for call state: RINGING' %
+                                    timeout_sec)
 
     def wait_for_disconnection_success(self, mac_address: str, timeout: float = 30) -> float:
         """Waits for a device to connect with the AndroidDevice.
@@ -935,7 +960,8 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
         while time.time() < end_time:
             if not self._ad.sl4a.bluetoothIsDeviceConnected(mac_address):
                 disconnection_time = (time.time() - start_time)
-                logging.info('Disconnected device %s in %d seconds', mac_address, disconnection_time)
+                logging.info('Disconnected device %s in %d seconds', mac_address,
+                             disconnection_time)
                 return disconnection_time
 
         raise signals.ControllerError('Failed to disconnect device within %d seconds.' % timeout)
@@ -994,7 +1020,8 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
             for line in logcat_file:
                 match = self.regex_logcat_time.match(line)
                 if match:
-                    if (datetime.datetime.strptime(match.group('datetime'), _DATETIME_FMT) >= start_time_conv):
+                    if (datetime.datetime.strptime(match.group('datetime'), _DATETIME_FMT)
+                            >= start_time_conv):
                         post_start_time = True
                     if post_start_time and line.find(text_filter) >= 0:
                         logcat_response += line
@@ -1017,9 +1044,10 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
     """
         return self.logcat_filter(current_time, text)
 
-    def send_media_passthrough_cmd(self,
-                                   command: str,
-                                   event_receiver: Optional[android_device.AndroidDevice] = None) -> None:
+    def send_media_passthrough_cmd(
+            self,
+            command: str,
+            event_receiver: Optional[android_device.AndroidDevice] = None) -> None:
         """Sends a media passthrough command.
 
     Args:
@@ -1067,7 +1095,9 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
         """Returns Integer representing the current playback state."""
         return self._ad.sl4a.bluetoothMediaGetCurrentPlaybackState()['state']
 
-    def verify_playback_state_changed(self, expected_state: str, exception: Optional[Exception] = None) -> bool:
+    def verify_playback_state_changed(self,
+                                      expected_state: str,
+                                      exception: Optional[Exception] = None) -> bool:
         """Verifies the playback state is changed to be the expected state.
 
     Args:
@@ -1081,7 +1111,9 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
                                  exception=exception,
                                  interval_sec=1)
 
-    def verify_current_track_changed(self, expected_track: str, exception: Optional[Exception] = None) -> bool:
+    def verify_current_track_changed(self,
+                                     expected_track: str,
+                                     exception: Optional[Exception] = None) -> bool:
         """Verifies the Now playing track is changed to be the expected track.
 
     Args:
@@ -1095,7 +1127,10 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
                                  exception=exception,
                                  interval_sec=1)
 
-    def verify_avrcp_event(self, event_name: bt_constants.AvrcpEvent, check_time: str, timeout_sec: float = 20) -> bool:
+    def verify_avrcp_event(self,
+                           event_name: bt_constants.AvrcpEvent,
+                           check_time: str,
+                           timeout_sec: float = 20) -> bool:
         """Verifies that an AVRCP event was received by an AndroidDevice.
 
     Checks logcat to verify that an AVRCP event was received after a given
@@ -1118,8 +1153,8 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
       True if the event was received.
     """
         avrcp_events = [
-            'State:NOT_PLAYING->PLAYING', 'State:PLAYING->NOT_PLAYING', 'sendMediaKeyEvent: keyEvent=76',
-            'sendMediaKeyEvent: keyEvent=75'
+            'State:NOT_PLAYING->PLAYING', 'State:PLAYING->NOT_PLAYING',
+            'sendMediaKeyEvent: keyEvent=76', 'sendMediaKeyEvent: keyEvent=75'
         ]
         if event_name.value not in avrcp_events:
             raise signals.TestError('An unexpected AVRCP event is specified.')
@@ -1147,11 +1182,11 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
       TestError
     """
         for _ in range(retries):
-            output = self._ad.adb.shell(
-                'am instrument -w -e account "%s" -e password '
-                '"%s" -e sync true -e wait-for-checkin false '
-                'com.google.android.tradefed.account/.AddAccount' %
-                (self._ad.dimensions['google_account'], self._ad.dimensions['google_account_password'])).decode()
+            output = self._ad.adb.shell('am instrument -w -e account "%s" -e password '
+                                        '"%s" -e sync true -e wait-for-checkin false '
+                                        'com.google.android.tradefed.account/.AddAccount' %
+                                        (self._ad.dimensions['google_account'],
+                                         self._ad.dimensions['google_account_password'])).decode()
             if 'result=SUCCESS' in output:
                 logging.info('Google account is added successfully')
                 time.sleep(3)  # Wait for account to steady state
@@ -1171,7 +1206,8 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
       TestError
     """
         for _ in range(retries):
-            output = self._ad.adb.shell('am instrument -w com.google.android.tradefed.account/.RemoveAccounts').decode()
+            output = self._ad.adb.shell(
+                'am instrument -w com.google.android.tradefed.account/.RemoveAccounts').decode()
             if 'result=SUCCESS' in output:
                 logging.info('Google account is removed successfully')
                 return True
@@ -1243,13 +1279,16 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
             expected_state = bt_constants.BluetoothConnectionStatus.STATE_CONNECTED
         msg = ('Failed to %s the device "%s" within %d seconds via HSP.' %
                ('connect' if connected else 'disconnect', mac_address, timeout_sec))
-        return bt_test_utils.wait_until(timeout_sec=timeout_sec,
-                                        condition_func=self._ad.sl4a.bluetoothHspGetConnectionStatus,
-                                        func_args=[mac_address],
-                                        expected_value=expected_state,
-                                        exception=signals.TestError(msg) if raise_error else None)
+        return bt_test_utils.wait_until(
+            timeout_sec=timeout_sec,
+            condition_func=self._ad.sl4a.bluetoothHspGetConnectionStatus,
+            func_args=[mac_address],
+            expected_value=expected_state,
+            exception=signals.TestError(msg) if raise_error else None)
 
-    def wait_for_bluetooth_toggle_state(self, enabled: bool = True, timeout_sec: float = 30) -> bool:
+    def wait_for_bluetooth_toggle_state(self,
+                                        enabled: bool = True,
+                                        timeout_sec: float = 30) -> bool:
         """Waits for Bluetooth to be in an expected state.
 
     Args:
@@ -1262,8 +1301,9 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
             condition_func=self._ad.mbs.btIsEnabled,
             func_args=[],
             expected_value=enabled,
-            exception=signals.TestError('Bluetooth is not %s within %d seconds on the device "%s".' %
-                                        ('enabled' if enabled else 'disabled', timeout_sec, self._ad.serial)))
+            exception=signals.TestError(
+                'Bluetooth is not %s within %d seconds on the device "%s".' %
+                ('enabled' if enabled else 'disabled', timeout_sec, self._ad.serial)))
 
     def wait_for_a2dp_connection_state(self,
                                        mac_address: str,
@@ -1339,7 +1379,8 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
     Raises:
       exception: Raised if internet is not in expected state.
     """
-        self._ad.log.info('Verify that internet %s be used.' % ('can' if allow_access else 'can not'))
+        self._ad.log.info('Verify that internet %s be used.' %
+                          ('can' if allow_access else 'can not'))
 
         def http_ping():
             """Returns True if http ping success else False."""
@@ -1380,9 +1421,14 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
     """
         pattern_headset = (r'\sm\w+e:\sC\w+d')
         pattern_a2dp = (r'StateMachine:.*state=Connected')
-        output_headset = self._ad.adb.shell('dumpsys bluetooth_manager | egrep -A20 "Profile: HeadsetService"').decode()
-        output_a2dp = self._ad.adb.shell('dumpsys bluetooth_manager | egrep -A30 "Profile: A2dpService"').decode()
-        service_type = {'a2dp': ((pattern_a2dp), (output_a2dp)), 'headset': ((pattern_headset), (output_headset))}
+        output_headset = self._ad.adb.shell(
+            'dumpsys bluetooth_manager | egrep -A20 "Profile: HeadsetService"').decode()
+        output_a2dp = self._ad.adb.shell(
+            'dumpsys bluetooth_manager | egrep -A30 "Profile: A2dpService"').decode()
+        service_type = {
+            'a2dp': ((pattern_a2dp), (output_a2dp)),
+            'headset': ((pattern_headset), (output_headset))
+        }
         start_time = time.time()
         end_time = start_time + timeout_sec
         while start_time < end_time:
@@ -1395,7 +1441,8 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
             time.sleep(ADB_WAITING_TIME_SECONDS)
         return False
 
-    def connect_wifi_from_other_device_hotspot(self, wifi_hotspot_device: android_device.AndroidDevice) -> None:
+    def connect_wifi_from_other_device_hotspot(
+            self, wifi_hotspot_device: android_device.AndroidDevice) -> None:
         """Turns on 2.4G Wifi hotspot from the other android device and connect on the android device.
 
     Args:
@@ -1409,7 +1456,8 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
         wifi_hotspot_device.sl4a.connectivityStartTethering(0, False)
         # Connect the 2.4G Wifi on the primary phone.
         self._ad.mbs.wifiEnable()
-        self._ad.mbs.wifiConnectSimple(wifi_hotspot_2_4g_config['SSID'], wifi_hotspot_2_4g_config['password'])
+        self._ad.mbs.wifiConnectSimple(wifi_hotspot_2_4g_config['SSID'],
+                                       wifi_hotspot_2_4g_config['password'])
 
     def get_paired_device_supported_codecs(self, mac_address: str) -> List[str]:
         """Gets the supported A2DP codecs of the paired Bluetooth device.
@@ -1474,7 +1522,8 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
                            f'{bt_constants.TRUE if enabled else bt_constants.FALSE}')
         return enabled == self.is_variable_bit_rate_enabled()
 
-    def pair_and_connect_ble_device(self, peripheral_ble_device: android_device.AndroidDevice) -> None:
+    def pair_and_connect_ble_device(self,
+                                    peripheral_ble_device: android_device.AndroidDevice) -> None:
         """Pairs Android phone with BLE device.
 
     Initiates pairing from the phone and checks if it is bonded and connected to
@@ -1511,7 +1560,9 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
         None
     """
         self._ad.adb.shell(['settings', 'put', 'global', 'airplane_mode_on', '1'])
-        self._ad.adb.shell(['am', 'broadcast', '-a', 'android.intent.action.AIRPLANE_MODE', '--ez', 'state', 'true'])
+        self._ad.adb.shell([
+            'am', 'broadcast', '-a', 'android.intent.action.AIRPLANE_MODE', '--ez', 'state', 'true'
+        ])
         time.sleep(wait_secs)
 
     def disable_airplane_mode(self, wait_secs=1) -> None:
@@ -1524,7 +1575,9 @@ class AndroidBluetoothDecorator(android_device.AndroidDevice):
         None
     """
         self._ad.adb.shell(['settings', 'put', 'global', 'airplane_mode_on', '0'])
-        self._ad.adb.shell(['am', 'broadcast', '-a', 'android.intent.action.AIRPLANE_MODE', '--ez', 'state', 'false'])
+        self._ad.adb.shell([
+            'am', 'broadcast', '-a', 'android.intent.action.AIRPLANE_MODE', '--ez', 'state', 'false'
+        ])
         time.sleep(wait_secs)
 
     def disable_verity_check(self) -> None:

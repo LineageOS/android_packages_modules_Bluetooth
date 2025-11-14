@@ -122,6 +122,9 @@
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Nếu bạn không tắt Bluetooth, thiết bị sẽ luôn bật Bluetooth vào lần tiếp theo bạn dùng chế độ trên máy bay"</string>
     <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetooth luôn bật"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Thiết bị của bạn sẽ luôn bật Bluetooth ở chế độ trên máy bay. Nếu không muốn như vậy thì bạn có thể tắt Bluetooth."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Ở chế độ trên máy bay, Bluetooth vẫn bật khi được kết nối với các thiết bị khác."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Ở chế độ trên máy bay, thiết bị của bạn sẽ luôn bật Bluetooth khi kết nối với đồng hồ."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Ở chế độ trên máy bay, Bluetooth sẽ luôn bật khi được kết nối với một thiết bị truyền thông."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi và Bluetooth vẫn đang bật"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Thiết bị của bạn sẽ luôn bật Wi-Fi và Bluetooth ở chế độ trên máy bay. Nếu không muốn như vậy thì bạn có thể tắt Wi-Fi và Bluetooth."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Đã bật lại Bluetooth"</string>

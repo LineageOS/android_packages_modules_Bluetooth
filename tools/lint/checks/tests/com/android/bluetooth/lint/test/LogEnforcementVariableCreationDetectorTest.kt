@@ -56,7 +56,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -88,7 +88,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -120,7 +120,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -152,7 +152,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -184,7 +184,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -216,7 +216,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -248,7 +248,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -280,7 +280,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -314,7 +314,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -346,7 +346,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -378,7 +378,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -410,7 +410,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -443,7 +443,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -479,7 +479,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -491,7 +491,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 createFixDiff(
                     8,
                     """    private static final boolean SHOULD_LOG =
-            false || FooConstants.DBG;"""
+            false || FooConstants.DBG;""",
                 )
             )
     }
@@ -517,7 +517,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -528,7 +528,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
             .expectFixDiffs(
                 createFixDiff(
                     7,
-                    "    private static final boolean SHOULD_LOG = Log.isLoggable(TAG, Log.DEBUG);"
+                    "    private static final boolean SHOULD_LOG = Log.isLoggable(TAG, Log.DEBUG);",
                 )
             )
     }
@@ -554,7 +554,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -565,7 +565,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
             .expectFixDiffs(
                 createFixDiff(
                     7,
-                    "    private static final boolean SHOULD_LOG = !Log.isLoggable(TAG, Log.DEBUG);"
+                    "    private static final boolean SHOULD_LOG = !Log.isLoggable(TAG, Log.DEBUG);",
                 )
             )
     }
@@ -591,7 +591,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -602,7 +602,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
             .expectFixDiffs(
                 createFixDiff(
                     7,
-                    "    private static final boolean SHOULD_LOG = Log.isLoggable(TAG, Log.DEBUG) || true;"
+                    "    private static final boolean SHOULD_LOG = Log.isLoggable(TAG, Log.DEBUG) || true;",
                 )
             )
     }
@@ -629,7 +629,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -641,7 +641,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 createFixDiff(
                     7,
                     """    private static final boolean SHOULD_LOG =
-            Log.isLoggable(TAG, Log.DEBUG) || Log.isLoggable(TAG, Log.VERBOSE);"""
+            Log.isLoggable(TAG, Log.DEBUG) || Log.isLoggable(TAG, Log.VERBOSE);""",
                 )
             )
     }
@@ -668,7 +668,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -680,7 +680,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 createFixDiff(
                     7,
                     """    private static final boolean SHOULD_LOG =
-            false || Log.isLoggable(TAG, Log.DEBUG) || true;"""
+            false || Log.isLoggable(TAG, Log.DEBUG) || true;""",
                 )
             )
     }
@@ -707,7 +707,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -719,7 +719,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 createFixDiff(
                     7,
                     """    private static final boolean SHOULD_LOG =
-            (Log.isLoggable(TAG, Log.DEBUG) || Log.isLoggable(TAG, Log.VERBOSE));"""
+            (Log.isLoggable(TAG, Log.DEBUG) || Log.isLoggable(TAG, Log.VERBOSE));""",
                 )
             )
     }
@@ -744,7 +744,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -772,7 +772,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()
@@ -800,7 +800,7 @@ class LogEnforcementVariableCreationDetectorTest : LintDetectorTest() {
                 """
                     )
                     .indented(),
-                *stubs
+                *stubs,
             )
             .issues(LogEnforcementVariableCreationDetector.ISSUE)
             .run()

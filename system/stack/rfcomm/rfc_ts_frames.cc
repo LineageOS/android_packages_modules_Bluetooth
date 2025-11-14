@@ -411,7 +411,7 @@ void rfc_send_rpn(tRFC_MCB* p_mcb, uint8_t dlci, bool is_command, PortSettings* 
 
   *p_data++ = RFCOMM_EA | RFCOMM_I_CR(is_command) | RFCOMM_MX_RPN;
 
-  if (!p_settings) {
+  if (p_settings == nullptr) {
     *p_data++ = RFCOMM_EA | (RFCOMM_MX_RPN_REQ_LEN << 1);
 
     *p_data++ = RFCOMM_EA | RFCOMM_CR_MASK | (dlci << RFCOMM_SHIFT_DLCI);

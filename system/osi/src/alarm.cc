@@ -23,6 +23,7 @@
 #include <android_bluetooth_sysprop.h>
 #include <base/cancelable_callback.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <fcntl.h>
 #include <hardware/bluetooth.h>
 #include <malloc.h>
@@ -244,6 +245,9 @@ void alarm_cancel(alarm_t* alarm) {
   {
     std::lock_guard<std::mutex> lock(alarms_mutex);
     local_mutex_ref = alarm->callback_mutex;
+    if (com::android::bluetooth::flags::set_ptr_null_after_free()) {
+      log::assert_that(local_mutex_ref != nullptr, "assert failed: local_mutex_ref != nullptr");
+    }
     alarm_cancel_internal(alarm);
   }
 

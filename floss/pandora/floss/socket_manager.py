@@ -132,9 +132,16 @@ class FlossSocketManagerClient(SocketManagerCallbacks):
         def OnHandleIncomingConnection(self, listener_id, connection, *, dbus_unix_fd_list=None):
             """Handles incoming socket connection callback."""
             for observer in self.observers.values():
-                observer.on_handle_incoming_connection(listener_id, connection, dbus_unix_fd_list=dbus_unix_fd_list)
+                observer.on_handle_incoming_connection(listener_id,
+                                                       connection,
+                                                       dbus_unix_fd_list=dbus_unix_fd_list)
 
-        def OnOutgoingConnectionResult(self, connecting_id, result, socket, *, dbus_unix_fd_list=None):
+        def OnOutgoingConnectionResult(self,
+                                       connecting_id,
+                                       result,
+                                       socket,
+                                       *,
+                                       dbus_unix_fd_list=None):
             """Handles outgoing socket connection callback."""
             for observer in self.observers.values():
                 observer.on_outgoing_connection_result(connecting_id,
@@ -166,13 +173,19 @@ class FlossSocketManagerClient(SocketManagerCallbacks):
     @utils.glib_callback()
     def on_handle_incoming_connection(self, listener_id, connection, *, dbus_unix_fd_list=None):
         """Handles incoming socket connection callback."""
-        logging.debug('on_handle_incoming_connection: listener_id: %s, connection: %s', listener_id, connection)
+        logging.debug('on_handle_incoming_connection: listener_id: %s, connection: %s', listener_id,
+                      connection)
 
     @utils.glib_callback()
-    def on_outgoing_connection_result(self, connecting_id, result, socket, *, dbus_unix_fd_list=None):
+    def on_outgoing_connection_result(self,
+                                      connecting_id,
+                                      result,
+                                      socket,
+                                      *,
+                                      dbus_unix_fd_list=None):
         """Handles outgoing socket connection callback."""
-        logging.debug('on_outgoing_connection_result: connecting_id: %s, result: %s, socket: %s', connecting_id, result,
-                      socket)
+        logging.debug('on_outgoing_connection_result: connecting_id: %s, result: %s, socket: %s',
+                      connecting_id, result, socket)
 
     def make_dbus_device(self, address, name):
         return {'address': GLib.Variant('s', address), 'name': GLib.Variant('s', name)}
@@ -312,7 +325,8 @@ class FlossSocketManagerClient(SocketManagerCallbacks):
         Returns:
             SocketResult as {status:BtStatus, id:int} on success, None otherwise.
         """
-        return self.proxy().CreateInsecureRfcommSocketToServiceRecord(self.callback_id, device, uuid)
+        return self.proxy().CreateInsecureRfcommSocketToServiceRecord(self.callback_id, device,
+                                                                      uuid)
 
     @utils.glib_call(None)
     def create_rfcomm_socket_to_service_record(self, device, uuid):

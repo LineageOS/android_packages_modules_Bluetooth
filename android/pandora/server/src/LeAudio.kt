@@ -25,13 +25,16 @@ import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.media.AudioTrack
+import android.media.AudioAttributes
 import android.media.AudioManager
+import android.media.AudioTrack
 import android.util.Log
 import com.google.protobuf.Empty
 import io.grpc.Status
 import io.grpc.stub.StreamObserver
 import java.io.Closeable
+import java.io.PrintWriter
+import java.io.StringWriter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -43,8 +46,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import pandora.LeAudioGrpc.LeAudioImplBase
 import pandora.LeAudioProto.*
-import java.io.PrintWriter
-import java.io.StringWriter
 
 @kotlinx.coroutines.ExperimentalCoroutinesApi
 class LeAudio(val context: Context) : LeAudioImplBase(), Closeable {
@@ -69,6 +70,37 @@ class LeAudio(val context: Context) : LeAudioImplBase(), Closeable {
         intentFilter.addAction(BluetoothLeAudio.ACTION_LE_AUDIO_CONNECTION_STATE_CHANGED)
 
         flow = intentFlow(context, intentFilter, scope).shareIn(scope, SharingStarted.Eagerly)
+    }
+
+    fun mapAudioUsage(audioUsage: AudioUsage): Int {
+        return when (audioUsage) {
+            AudioUsage.AUDIO_USAGE_MEDIA -> AudioAttributes.USAGE_MEDIA
+            AudioUsage.AUDIO_USAGE_VOICE_COMMUNICATION -> AudioAttributes.USAGE_VOICE_COMMUNICATION
+            AudioUsage.AUDIO_USAGE_VOICE_COMMUNICATION_SIGNALLING ->
+                AudioAttributes.USAGE_VOICE_COMMUNICATION_SIGNALLING
+            AudioUsage.AUDIO_USAGE_ALARM -> AudioAttributes.USAGE_ALARM
+            AudioUsage.AUDIO_USAGE_NOTIFICATION -> AudioAttributes.USAGE_NOTIFICATION
+            AudioUsage.AUDIO_USAGE_NOTIFICATION_RINGTONE ->
+                AudioAttributes.USAGE_NOTIFICATION_RINGTONE
+            AudioUsage.AUDIO_USAGE_NOTIFICATION_COMMUNICATION_REQUEST ->
+                AudioAttributes.USAGE_NOTIFICATION
+            AudioUsage.AUDIO_USAGE_NOTIFICATION_COMMUNICATION_INSTANT ->
+                AudioAttributes.USAGE_NOTIFICATION
+            AudioUsage.AUDIO_USAGE_NOTIFICATION_COMMUNICATION_DELAYED ->
+                AudioAttributes.USAGE_NOTIFICATION
+            AudioUsage.AUDIO_USAGE_NOTIFICATION_EVENT -> AudioAttributes.USAGE_NOTIFICATION_EVENT
+            AudioUsage.AUDIO_USAGE_ASSISTANCE_ACCESSIBILITY ->
+                AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY
+            AudioUsage.AUDIO_USAGE_ASSISTANCE_NAVIGATION_GUIDANCE ->
+                AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE
+            AudioUsage.AUDIO_USAGE_ASSISTANCE_SONIFICATION ->
+                AudioAttributes.USAGE_ASSISTANCE_SONIFICATION
+            AudioUsage.AUDIO_USAGE_GAME -> AudioAttributes.USAGE_GAME
+            AudioUsage.AUDIO_USAGE_VIRTUAL_SOURCE -> AudioAttributes.USAGE_VIRTUAL_SOURCE
+            AudioUsage.AUDIO_USAGE_ASSISTANT -> AudioAttributes.USAGE_ASSISTANT
+            AudioUsage.AUDIO_USAGE_CALL_ASSISTANT -> AudioAttributes.USAGE_CALL_ASSISTANT
+            else -> AudioAttributes.USAGE_UNKNOWN
+        }
     }
 
     override fun close() {
@@ -105,10 +137,14 @@ class LeAudio(val context: Context) : LeAudioImplBase(), Closeable {
         }
     }
 
-    override fun leAudioStart(request: LeAudioStartRequest, responseObserver: StreamObserver<Empty>) {
+    override fun leAudioStart(
+        request: LeAudioStartRequest,
+        responseObserver: StreamObserver<Empty>,
+    ) {
+        val audioUsage: AudioUsage = request.audioUsage
         grpcUnary<Empty>(scope, responseObserver) {
             if (audioTrack == null) {
-                audioTrack = buildAudioTrack()
+                audioTrack = buildAudioTrack(audioUsage = mapAudioUsage(audioUsage))
             }
             val device = request.connection.toBluetoothDevice(bluetoothAdapter)
             Log.i(TAG, "start: device=$device")

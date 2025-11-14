@@ -26,9 +26,8 @@
 #include "stack/btm/power_mode.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hcimsgs.h"
-#include "types/bt_transport.h"
+#include "types/ble_address_with_type.h"
 #include "types/hci_role.h"
-#include "types/raw_address.h"
 #include "types/remote_version_type.h"
 
 enum btm_acl_encrypt_state_t {
@@ -168,6 +167,11 @@ struct tBTM_PM_MCB {
 };
 
 struct tACL_CONN {
+  tAclLinkSpec link_spec;
+  tBLE_BD_ADDR active_addrt;
+
+  bool in_use{false};
+
   BD_FEATURES peer_le_features;
   bool peer_le_features_valid;
   BD_FEATURES peer_lmp_feature_pages[HCI_EXT_FEATURES_PAGE_MAX + 1];
@@ -176,20 +180,13 @@ struct tACL_CONN {
   /* Whether "Read Remote Version Information Complete" was received */
   bool remote_version_received{false};
 
-  RawAddress active_remote_addr;
-  tBLE_ADDR_TYPE active_remote_addr_type;
-
-  RawAddress remote_addr;
-  bool in_use{false};
-
 public:
   bool InUse() const { return in_use; }
-  const RawAddress RemoteAddress() const { return remote_addr; }
+  const RawAddress RemoteAddress() const { return link_spec.addrt.bda; }
 
   bool link_up_issued;
-  tBT_TRANSPORT transport;
-  bool is_transport_br_edr() const { return transport == BT_TRANSPORT_BR_EDR; }
-  bool is_transport_ble() const { return transport == BT_TRANSPORT_LE; }
+  bool is_transport_br_edr() const { return link_spec.transport == BT_TRANSPORT_BR_EDR; }
+  bool is_transport_ble() const { return link_spec.transport == BT_TRANSPORT_LE; }
   bool is_transport_valid() const { return is_transport_ble() || is_transport_br_edr(); }
 
   uint16_t flush_timeout_in_ticks;

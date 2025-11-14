@@ -30,12 +30,12 @@ import grpc
 from pandora import a2dp_grpc_aio
 from pandora import host_grpc_aio
 from pandora import security_grpc_aio
-from pandora_experimental import gatt_grpc_aio
-from pandora_experimental import hfp_grpc_aio
-from pandora_experimental import hid_grpc_aio
-from pandora_experimental import l2cap_grpc_aio
-from pandora_experimental import modem_grpc_aio
-from pandora_experimental import rfcomm_grpc_aio
+from pandora import gatt_grpc_aio
+from pandora import hfp_grpc_aio
+from pandora import hid_grpc_aio
+from pandora import l2cap_grpc_aio
+from pandora import modem_grpc_aio
+from pandora import rfcomm_grpc_aio
 
 
 async def serve(port):
@@ -57,7 +57,8 @@ async def serve(port):
             host_grpc_aio.add_HostServicer_to_server(host_service, server)
 
             security_storage_service = security.SecurityStorageService(bluetooth)
-            security_grpc_aio.add_SecurityStorageServicer_to_server(security_storage_service, server)
+            security_grpc_aio.add_SecurityStorageServicer_to_server(security_storage_service,
+                                                                    server)
 
             gatt_service = gatt.GATTService(bluetooth)
             gatt_grpc_aio.add_GATTServicer_to_server(gatt_service, server)

@@ -1,0 +1,107 @@
+// Copyright (C) 2024 The Android Open Source Project
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package pandora;
+
+import "pandora/host.proto";
+option java_outer_classname = "HapProto";
+import "google/protobuf/empty.proto";
+
+service HAP {
+  rpc GetFeatures(GetFeaturesRequest) returns (GetFeaturesResponse);
+  rpc SetActivePreset(SetActivePresetRequest) returns (google.protobuf.Empty);
+  rpc SetActivePresetForGroup(SetActivePresetForGroupRequest) returns (google.protobuf.Empty);
+  rpc GetActivePreset(GetActivePresetRequest) returns (GetActivePresetResponse);
+  rpc SetNextPreset(SetNextPresetRequest) returns (google.protobuf.Empty);
+  rpc SetPreviousPreset(SetPreviousPresetRequest) returns (google.protobuf.Empty);
+  rpc WritePresetName(WritePresetNameRequest) returns (google.protobuf.Empty);
+  rpc GetPreset(GetPresetRequest) returns (GetPresetResponse);
+  rpc GetAllPresets(GetAllPresetsRequest) returns (GetAllPresetsResponse);
+  rpc WaitPresetChanged(google.protobuf.Empty) returns (WaitPresetChangedResponse);
+  rpc WaitPeripheral(WaitPeripheralRequest) returns (google.protobuf.Empty);
+}
+
+message GetFeaturesRequest{
+  Connection connection = 1;
+}
+
+message GetFeaturesResponse{
+    int32 features = 1;
+}
+
+message SetActivePresetRequest {
+    Connection connection = 1;
+    uint32 index = 2;
+}
+
+message SetActivePresetForGroupRequest {
+    Connection connection = 1;
+    uint32 index = 2;
+}
+
+message GetActivePresetRequest {
+    Connection connection = 1;
+}
+
+message GetActivePresetResponse {
+    PresetRecord preset_record = 1;
+}
+
+message SetNextPresetRequest {
+    Connection connection = 1;
+}
+
+message SetPreviousPresetRequest {
+    Connection connection = 1;
+}
+
+message GetPresetRequest {
+    Connection connection = 1;
+    uint32 index = 2;
+}
+
+message PresetRecord {
+  uint32 index = 1;
+  string name = 2;
+  bool isWritable = 3;
+  bool isAvailable = 4;
+}
+
+message GetPresetResponse {
+    PresetRecord preset_record = 1;
+}
+
+message GetAllPresetsRequest {
+    Connection connection = 1;
+}
+
+message GetAllPresetsResponse {
+    repeated PresetRecord preset_record_list = 1;
+}
+
+message WritePresetNameRequest {
+  Connection connection = 1;
+  uint32 index = 2;
+  string name = 3;
+}
+
+message WaitPresetChangedResponse {
+  Connection connection = 1;
+  repeated PresetRecord preset_record_list = 2;
+  uint32 reason = 3;
+}
+
+message WaitPeripheralRequest {
+  Connection connection = 1;
+}
+

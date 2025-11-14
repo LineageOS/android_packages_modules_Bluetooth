@@ -115,7 +115,11 @@ public:
 
   std::string ToString() const {
     std::stringstream str;
-    str << "/* Bits: */ " << bits_ << " + /* Dynamic: */ " << dynamic_string();
+    if (dynamic_.empty()) {
+      str << bits_;
+    } else {
+      str << "/* Bits: */ " << bits_ << " + /* Dynamic: */ " << dynamic_string();
+    }
     if (!is_valid_) {
       str << " (invalid) ";
     }

@@ -178,20 +178,18 @@ public final class BluetoothSinkAudioPolicy implements Parcelable {
     }
 
     /** {@link Parcelable.Creator} interface implementation. */
-    public static final @android.annotation.NonNull Parcelable.Creator<BluetoothSinkAudioPolicy>
-            CREATOR =
-                    new Parcelable.Creator<BluetoothSinkAudioPolicy>() {
-                        @Override
-                        public BluetoothSinkAudioPolicy createFromParcel(@NonNull Parcel in) {
-                            return new BluetoothSinkAudioPolicy(
-                                    in.readInt(), in.readInt(), in.readInt());
-                        }
+    public static final @NonNull Parcelable.Creator<BluetoothSinkAudioPolicy> CREATOR =
+            new Parcelable.Creator<BluetoothSinkAudioPolicy>() {
+                @Override
+                public BluetoothSinkAudioPolicy createFromParcel(@NonNull Parcel in) {
+                    return new BluetoothSinkAudioPolicy(in.readInt(), in.readInt(), in.readInt());
+                }
 
-                        @Override
-                        public BluetoothSinkAudioPolicy[] newArray(int size) {
-                            return new BluetoothSinkAudioPolicy[size];
-                        }
-                    };
+                @Override
+                public BluetoothSinkAudioPolicy[] newArray(int size) {
+                    return new BluetoothSinkAudioPolicy[size];
+                }
+            };
 
     @Override
     public void writeToParcel(@NonNull Parcel out, int flags) {

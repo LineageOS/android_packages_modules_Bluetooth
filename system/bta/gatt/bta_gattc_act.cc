@@ -33,7 +33,7 @@
 #include "bta/include/bta_api.h"
 #include "btif/include/btif_debug_conn.h"
 #include "hardware/bt_gatt_types.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
@@ -372,7 +372,8 @@ void bta_gattc_open(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   if (!GATT_Connect(p_clcb->p_rcb->client_if, p_data->api_conn.remote_bda,
                     p_data->api_conn.remote_addr_type, BTM_BLE_DIRECT_CONNECTION,
                     p_data->api_conn.transport, p_data->api_conn.opportunistic,
-                    p_data->api_conn.initiating_phys, p_data->api_conn.preferred_mtu)) {
+                    p_data->api_conn.initiating_phys, p_data->api_conn.preferred_mtu,
+                    p_data->api_conn.prefer_relax_mode)) {
     log::error("Connection open failure");
     bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_OPEN_FAIL_EVT, p_data);
     return;
@@ -408,7 +409,8 @@ static void bta_gattc_init_bk_conn(const tBTA_GATTC_API_OPEN* p_data, tBTA_GATTC
 
   /* always call open to hold a connection */
   if (!GATT_Connect(p_data->client_if, p_data->remote_bda, BLE_ADDR_PUBLIC, p_data->connection_type,
-                    p_data->transport, false, LE_PHY_1M, p_data->preferred_mtu)) {
+                    p_data->transport, false, LE_PHY_1M, p_data->preferred_mtu,
+                    p_data->prefer_relax_mode)) {
     log::error("Unable to connect to remote bd_addr={}", p_data->remote_bda);
     bta_gattc_send_open_cback(p_clreg, GATT_ILLEGAL_PARAMETER, p_data->remote_bda,
                               GATT_INVALID_CONN_ID, BT_TRANSPORT_LE, 0);
@@ -528,32 +530,55 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
 
       // Only load the database if we are bonded, since the device cache is
       // meaningless otherwise (as we need to do rediscovery regardless)
-      gatt::Database db = btm_sec_is_a_bonded_dev(p_clcb->bda)
+      gatt::Database db = BTM_IsBonded(p_clcb->bda)
                                   ? bta_gattc_cache_load(p_clcb->p_srcb->server_bda)
                                   : gatt::Database();
       auto robust_caching_support = GetRobustCachingSupport(p_clcb, db);
-      log::info("Connected to {}, robust caching support is {}",
-                p_clcb->bda.ToRedactedStringForLogging(), robust_caching_support);
+      log::info("Connected to {}, robust caching support is {}", p_clcb->bda,
+                robust_caching_support);
 
+      bool discovery_already_in_progress = false;
       if (!db.IsEmpty()) {
-        p_clcb->p_srcb->gatt_database = db;
+        if (!com::android::bluetooth::flags::service_rediscovery_fix()) {
+          p_clcb->p_srcb->gatt_database = db;
+        } else {
+          if (p_clcb->p_srcb->srvc_hdl_chg == false) {
+            log::info("{} conn_id=0x{:x} Will load gatt_database", p_clcb->bda,
+                      p_clcb->bta_conn_id);
+            p_clcb->p_srcb->gatt_database = db;
+          } else {
+            discovery_already_in_progress = true;
+            log::info("{} conn_id=0x{:x} Service discovery in progress, will not load database.",
+                      p_clcb->bda, p_clcb->bta_conn_id);
+            p_clcb->p_srcb->state = BTA_GATTC_SERV_IDLE;
+            p_clcb->state = BTA_GATTC_DISCOVER_ST;
+          }
+        }
       }
 
-      if (db.IsEmpty() || robust_caching_support != RobustCachingSupport::UNSUPPORTED) {
-        // If the peer device is expected to support robust caching, or if we
-        // don't know its services yet, then we should do discovery (which may
-        // short-circuit through a hash match, but might also do the full
-        // discovery).
-        p_clcb->p_srcb->state = BTA_GATTC_SERV_DISC;
+      if (!discovery_already_in_progress) {
+        if (db.IsEmpty() || robust_caching_support != RobustCachingSupport::UNSUPPORTED) {
+          // If the peer device is expected to support robust caching, or if we
+          // don't know its services yet, then we should do discovery (which may
+          // short-circuit through a hash match, but might also do the full
+          // discovery).
+          p_clcb->p_srcb->state = BTA_GATTC_SERV_DISC;
 
-        /* set true to read database hash before service discovery */
-        p_clcb->p_srcb->srvc_hdl_db_hash = true;
+          /* set true to read database hash before service discovery */
+          p_clcb->p_srcb->srvc_hdl_db_hash = true;
 
-        /* cache load failure, start discovery */
-        bta_gattc_start_discover(p_clcb, NULL);
-      } else {
-        p_clcb->p_srcb->state = BTA_GATTC_SERV_IDLE;
-        bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_SUCCESS);
+          /* cache load failure, start discovery */
+          bta_gattc_start_discover(p_clcb, NULL);
+        } else {
+          if (com::android::bluetooth::flags::initial_conn_params_p1() &&
+              p_clcb->transport == BT_TRANSPORT_LE) {
+            log::info("Using cached database without robust caching.");
+            bluetooth::stack::l2cap::get_interface().L2CA_LockBleConnParamsForServiceDiscovery(
+                    p_clcb->p_srcb->server_bda, false);
+          }
+          p_clcb->p_srcb->state = BTA_GATTC_SERV_IDLE;
+          bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_SUCCESS);
+        }
       }
     } else { /* cache is building */
       p_clcb->state = BTA_GATTC_DISCOVER_ST;
@@ -591,6 +616,7 @@ void bta_gattc_close_fail(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data
     cb_data.close.client_if = p_clcb->p_rcb->client_if;
     cb_data.close.conn_id = static_cast<tCONN_ID>(p_data->hdr.layer_specific);
     cb_data.close.remote_bda = p_clcb->bda;
+    cb_data.close.transport = p_clcb->transport;
     cb_data.close.reason = BTA_GATT_CONN_NONE;
     cb_data.close.status = GATT_ERROR;
 
@@ -611,6 +637,7 @@ void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
                           .status = GATT_SUCCESS,
                           .client_if = p_clcb->p_rcb->client_if,
                           .remote_bda = p_clcb->bda,
+                          .transport = p_clcb->transport,
                           .reason = GATT_CONN_OK,
                   },
   };
@@ -702,6 +729,11 @@ static void bta_gattc_set_discover_st(tBTA_GATTC_SERV* p_srcb) {
   for (auto& p_clcb : bta_gattc_cb.clcb_set) {
     if (p_clcb->p_srcb != p_srcb) {
       continue;
+    }
+    if (com::android::bluetooth::flags::gatt_reuse_discovering_client() &&
+        p_clcb->state == BTA_GATTC_DISCOVER_ST) {
+      /* do not reset state if already discovering */
+      break;
     }
     p_clcb->status = GATT_SUCCESS;
     p_clcb->state = BTA_GATTC_DISCOVER_ST;
@@ -938,7 +970,11 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* /* p_da
     if (!bta_gattc_is_data_queued(p_clcb, p_q_cmd)) {
       osi_free_and_reset((void**)&p_q_cmd);
     }
-  } else {
+  } else if (!com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
+    bta_gattc_continue(p_clcb);
+  }
+  if (com::android::bluetooth::flags::continue_queued_command_after_discovery() &&
+      p_clcb->p_q_cmd == nullptr) {
     bta_gattc_continue(p_clcb);
   }
 
@@ -1299,12 +1335,28 @@ void bta_gattc_op_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
 void bta_gattc_search(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   tGATT_STATUS status = GATT_INTERNAL_ERROR;
   tBTA_GATTC cb_data;
-  log::verbose("conn_id=0x{:x}", p_clcb->bta_conn_id);
+  log::verbose("conn_id=0x{:x} {}", p_clcb->bta_conn_id, p_clcb->p_srcb->server_bda);
   if (p_clcb->p_srcb && !p_clcb->p_srcb->gatt_database.IsEmpty()) {
     status = GATT_SUCCESS;
     /* search the local cache of a server device */
     bta_gattc_search_service(p_clcb, p_data->api_search.p_srvc_uuid);
   }
+
+  if (p_clcb->p_srcb && p_clcb->p_srcb->gatt_database.IsEmpty() &&
+      com::android::bluetooth::flags::service_rediscovery_fix() &&
+      (p_clcb->p_srcb->srvc_hdl_chg == true || p_clcb->p_srcb->state == BTA_GATTC_SERV_DISC ||
+       p_clcb->p_srcb->state == BTA_GATTC_SERV_DISC_ACT)) {
+    /* Service discovery to device is scheduled. Do not return failure. Client will be notified when
+     * the service discovery finishes, and should retry service search then */
+    log::info(
+            "conn_id=0x{:x} {} service discovery scheduled or in progress. Not sending search "
+            "callback yet",
+            p_clcb->bta_conn_id, p_clcb->p_srcb->server_bda);
+    bta_gattc_enqueue(p_clcb, p_data);
+    p_clcb->state = BTA_GATTC_DISCOVER_ST;
+    return;
+  }
+
   cb_data.search_cmpl.status = status;
   cb_data.search_cmpl.conn_id = p_clcb->bta_conn_id;
 
@@ -1426,7 +1478,8 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
   Uuid gattp_uuid = Uuid::From16Bit(UUID_SERVCLASS_GATT_SERVER);
   Uuid srvc_chg_uuid = Uuid::From16Bit(GATT_UUID_GATT_SRV_CHGD);
 
-  if (p_srcb->gatt_database.IsEmpty() && p_srcb->state == BTA_GATTC_SERV_IDLE) {
+  if (p_srcb->gatt_database.IsEmpty() && p_srcb->state == BTA_GATTC_SERV_IDLE &&
+      (!com::android::bluetooth::flags::service_rediscovery_fix() || p_srcb->update_count == 0)) {
     gatt::Database db = bta_gattc_cache_load(p_srcb->server_bda);
     if (!db.IsEmpty()) {
       p_srcb->gatt_database = db;
@@ -1451,7 +1504,8 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
   uint16_t s_handle = ((uint16_t)(*(p)) + (((uint16_t)(*(p + 1))) << 8));
   uint16_t e_handle = ((uint16_t)(*(p + 2)) + (((uint16_t)(*(p + 3))) << 8));
 
-  log::error("service changed s_handle=0x{:x}, e_handle=0x{:x}", s_handle, e_handle);
+  log::info("{} service changed s_handle=0x{:x}, e_handle=0x{:x}", p_srcb->server_bda, s_handle,
+            e_handle);
 
   /* mark service handle change pending */
   p_srcb->srvc_hdl_chg = true;
@@ -1460,12 +1514,25 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
   /* service change indication all received, do discovery update */
   if (++p_srcb->update_count == bta_gattc_num_reg_app()) {
     /* not an opened connection; or connection busy */
+    /**
+     * if com::android::bluetooth::flags::gatt_reuse_discovering_client() is true,
+     * iterate through all clcbs in order to find and reuse a discovering client.
+     * If a discovering client is not found, an available clcb will be used to start
+     * discovery.
+     */
     /* search for first available clcb and start discovery */
     if (p_clcb == NULL || (p_clcb && p_clcb->p_q_cmd != NULL)) {
       for (auto& p_clcb_i : bta_gattc_cb.clcb_set) {
         if (p_clcb_i->in_use && p_clcb_i->p_srcb == p_srcb && p_clcb_i->p_q_cmd == NULL) {
           p_clcb = p_clcb_i.get();
-          break;
+          if (com::android::bluetooth::flags::gatt_reuse_discovering_client()) {
+            if (p_clcb_i->disc_active) {
+              log::info("will reuse disc_active client to ", p_srcb->server_bda);
+              break;
+            }
+          } else {
+            break;
+          }
         }
       }
     }
@@ -1473,7 +1540,11 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
     if (com::android::bluetooth::flags::start_discover_service_changed() && p_clcb == NULL) {
       for (auto& p_clcb_i : bta_gattc_cb.clcb_set) {
         if (p_clcb_i->in_use && p_clcb_i->p_srcb == p_srcb) {
+          log::info("will use busy client to {}", p_srcb->server_bda);
           p_clcb = p_clcb_i.get();
+          if (com::android::bluetooth::flags::service_rediscovery_fix()) {
+            bta_gattc_init_cache(p_clcb->p_srcb);
+          }
           break;
         }
       }
@@ -1495,7 +1566,7 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
     }
   }
 
-  /* notify applicationf or service change */
+  /* notify application or service change */
   if (p_clrcb->p_cback) {
     tBTA_GATTC bta_gattc = {.service_changed = {
                                     .remote_bda = p_srcb->server_bda,

@@ -20,8 +20,6 @@ import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
-import static com.android.modules.utils.build.SdkLevel.isAtLeastU;
-
 import android.annotation.RequiresFeature;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
@@ -62,14 +60,10 @@ public final class BluetoothManager {
 
     /** @hide */
     public BluetoothManager(Context context) {
-        if (isAtLeastU()) {
-            // Pin the context DeviceId prevent the associated attribution source to be obsolete
-            // TODO: b/343739429 -- pass the context to BluetoothAdapter constructor instead
-            mContext = context.createDeviceContext(Context.DEVICE_ID_DEFAULT);
-        } else {
-            mContext = context;
-        }
-        mAdapter = BluetoothAdapter.createAdapter(mContext.getAttributionSource());
+        // Pin the context DeviceId prevent the associated attribution source to be obsolete
+        // TODO: b/343739429 -- pass the context to BluetoothAdapter constructor instead
+        mContext = context.createDeviceContext(Context.DEVICE_ID_DEFAULT);
+        mAdapter = BluetoothAdapter.createAdapter(mContext);
     }
 
     /**

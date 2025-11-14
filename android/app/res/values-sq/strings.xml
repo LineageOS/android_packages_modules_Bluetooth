@@ -120,8 +120,11 @@
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"Lidhu me Bluetooth"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"Bluetooth-i aktiv në modalitetin e aeroplanit"</string>
     <string name="bluetooth_enabled_apm_message" msgid="6168686193308136881">"Nëse e mban Bluetooth-in të aktivizuar, pajisja jote do të kujtohet ta mbajë të aktivizuar herën tjetër kur të jesh në modalitetin e aeroplanit"</string>
-    <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetooth qëndron i aktivizuar"</string>
+    <string name="bluetooth_stays_on_title" msgid="39720820955212918">"Bluetooth-i qëndron aktiv"</string>
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Pajisja jote kujtohet që ta mbajë Bluetooth-in të aktivizuar në modalitetin e aeroplanit. Çaktivizo Bluetooth-in nëse nuk dëshiron që të qëndrojë i aktivizuar."</string>
+    <string name="bluetooth_stays_on_message_on_watch" msgid="22414923033382368">"Bluetooth-i qëndron aktiv në modalitetin e aeroplanit ndërkohë që është i lidhur me pajisje të tjera."</string>
+    <string name="bluetooth_stays_on_message_due_to_watch" msgid="6174290516042701934">"Pajisja jote do ta mbajë Bluetooth-in aktiv në modalitetin e aeroplanit ndërkohë që është i lidhur me orën tënde."</string>
+    <string name="bluetooth_stays_on_message_due_to_media" msgid="2627984855508391911">"Bluetooth-i qëndron aktiv në modalitetin e aeroplanit ndërkohë që është i lidhur me pajisje për media."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi dhe Bluetooth-i qëndrojnë aktivë"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Pajisja jote kujtohet që ta mbajë Wi-Fi dhe Bluetooth-in të aktivizuar në modalitetin e aeroplanit. Çaktivizo Wi-Fi dhe Bluetooth-in nëse nuk dëshiron që të qëndrojnë aktivë."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth-i u aktivizua përsëri"</string>

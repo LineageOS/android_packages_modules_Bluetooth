@@ -39,7 +39,6 @@ namespace bluetooth::audio::aidl::a2dp {
 using ::aidl::android::hardware::bluetooth::audio::ChannelMode;
 using ::aidl::android::hardware::bluetooth::audio::CodecId;
 using ::aidl::android::hardware::bluetooth::audio::CodecInfo;
-using ::aidl::android::hardware::bluetooth::audio::IBluetoothAudioProviderFactory;
 using ::aidl::android::hardware::bluetooth::audio::SessionType;
 
 /***

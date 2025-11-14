@@ -18,7 +18,6 @@ package com.android.bluetooth.btservice;
 
 import static java.util.Objects.requireNonNull;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothQualityReport;
@@ -26,40 +25,15 @@ import android.bluetooth.BluetoothStatusCodes;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
-import com.android.internal.annotations.GuardedBy;
-import com.android.internal.annotations.VisibleForTesting;
 
 /** Native interface to BQR */
 public class BluetoothQualityReportNativeInterface {
     private static final String TAG = BluetoothQualityReportNativeInterface.class.getSimpleName();
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static BluetoothQualityReportNativeInterface sInstance;
-
-    private static final Object INSTANCE_LOCK = new Object();
-
     private final AdapterService mAdapterService;
 
-    private BluetoothQualityReportNativeInterface() {
-        mAdapterService = requireNonNull(AdapterService.getAdapterService());
-    }
-
-    /** Get singleton instance. */
-    public static BluetoothQualityReportNativeInterface getInstance() {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new BluetoothQualityReportNativeInterface();
-            }
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    static void setInstance(BluetoothQualityReportNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
+    BluetoothQualityReportNativeInterface(AdapterService adapterService) {
+        mAdapterService = requireNonNull(adapterService);
     }
 
     /**
@@ -67,12 +41,12 @@ public class BluetoothQualityReportNativeInterface {
      *
      * <p>priorities to configure.
      */
-    public void init() {
+    void init() {
         initNative();
     }
 
     /** Cleanup the native interface. */
-    public void cleanup() {
+    void cleanup() {
         cleanupNative();
     }
 
@@ -85,13 +59,8 @@ public class BluetoothQualityReportNativeInterface {
             Log.e(TAG, "bqrDeliver failed: remoteAddress is null");
             return;
         }
-        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-        if (adapter == null) {
-            Log.e(TAG, "bqrDeliver failed: adapter is null");
-            return;
-        }
 
-        BluetoothDevice device = adapter.getRemoteDevice(remoteAddress);
+        BluetoothDevice device = mAdapterService.getRemoteDevice(remoteAddress);
         BluetoothClass remoteClass = new BluetoothClass(mAdapterService.getRemoteClass(device));
         BluetoothQualityReport bqr;
         try {

@@ -22,14 +22,13 @@
 
 using namespace bluetooth;
 
-std::mutex lock1;
-
 namespace {
 
 class BleScanningManagerImpl;
 
-BleScanningManager* instance;
-base::WeakPtr<BleScanningManagerImpl> instance_weakptr;
+static std::mutex lock1;
+static BleScanningManager* instance;
+static base::WeakPtr<BleScanningManagerImpl> instance_weakptr;
 
 static void status_callback(uint8_t status) {
   log::verbose("Received status_cb with status:{}", status);

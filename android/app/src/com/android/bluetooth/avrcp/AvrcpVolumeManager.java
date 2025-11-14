@@ -18,7 +18,6 @@ package com.android.bluetooth.avrcp;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -26,6 +25,7 @@ import android.media.AudioDeviceAttributes;
 import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
+import android.os.SystemProperties;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothEventLogger;
@@ -61,9 +61,13 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
     private static final String VOLUME_MAP = "bluetooth_volume_map";
     private static final String VOLUME_CHANGE_LOG_TITLE = "BTAudio Volume Events";
 
+    private static final String CONFIG_SAFE_MEDIA_VOLUME_PROP =
+            "bluetooth.avrcp.target.safe_media_volume.config";
+
     @VisibleForTesting static final int AVRCP_MAX_VOL = 127;
     private static final int STREAM_MUSIC = AudioManager.STREAM_MUSIC;
     private static final int VOLUME_CHANGE_LOGGER_SIZE = 30;
+    private final int mSafeMediaVolume;
     private final int mDeviceMaxVolume;
     private final int mNewDeviceVolume;
     private final BluetoothEventLogger mVolumeEventLogger =
@@ -171,14 +175,13 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
      * <p>Fills {@code mVolumeMap} with content from {@link #getVolumeMap}, removing unbonded
      * devices if necessary.
      */
-    AvrcpVolumeManager(
-            AdapterService adapterService,
-            AudioManager audioManager,
-            AvrcpNativeInterface nativeInterface) {
+    AvrcpVolumeManager(AdapterService adapterService, AvrcpNativeInterface nativeInterface) {
         mAdapterService = adapterService;
-        mAudioManager = audioManager;
+        mAudioManager = mAdapterService.getSystemService(AudioManager.class);
         mNativeInterface = nativeInterface;
         mDeviceMaxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        mSafeMediaVolume = SystemProperties.getInt(CONFIG_SAFE_MEDIA_VOLUME_PROP, -1);
+
         mNewDeviceVolume = mDeviceMaxVolume / 2;
 
         mAudioManager.registerAudioDeviceCallback(this, null);
@@ -191,7 +194,7 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         for (Map.Entry<String, ?> entry : allKeys.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
-            BluetoothDevice d = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(key);
+            BluetoothDevice d = mAdapterService.getRemoteDevice(key);
 
             if (value instanceof Integer
                     && mAdapterService.getBondState(d) == BluetoothDevice.BOND_BONDED) {
@@ -208,22 +211,22 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
      * Stores system volume (0 - {@code mDeviceMaxVolume}) for device in {@code mVolumeMap} and
      * writes the map in the {@link SharedPreferences}.
      */
-    synchronized void storeVolumeForDevice(@NonNull BluetoothDevice device, int storeVolume) {
+    synchronized void storeVolumeForDevice(@NonNull BluetoothDevice device, int newVolume) {
+        String logHeader = "storeVolumeForDevice(" + device + ", " + newVolume + "): ";
+
         if (mAdapterService.getBondState(device) != BluetoothDevice.BOND_BONDED) {
             return;
         }
-        SharedPreferences.Editor pref = getVolumeMap().edit();
-        mVolumeEventLogger.logd(
-                TAG,
-                "storeVolume: Storing stream volume level for device "
-                        + device
-                        + " : "
-                        + storeVolume);
-        mVolumeMap.put(device, storeVolume);
-        pref.putInt(device.getAddress(), storeVolume);
+
+        if (mSafeMediaVolume != -1 && newVolume > mSafeMediaVolume) {
+            newVolume = mSafeMediaVolume;
+            Log.w(TAG, logHeader + "Saved volume overrode to safe volume" + newVolume);
+        }
+        mVolumeMap.put(device, newVolume);
+        mVolumeEventLogger.logd(TAG, logHeader + "Final volume stored is " + newVolume);
         // Always use apply() since it is asynchronous, otherwise the call can hang waiting for
         // storage to be written.
-        pref.apply();
+        getVolumeMap().edit().putInt(device.getAddress(), newVolume).apply();
     }
 
     /**
@@ -441,9 +444,7 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
         Map<String, ?> allKeys = getVolumeMap().getAll();
         for (Map.Entry<String, ?> entry : allKeys.entrySet()) {
             Object value = entry.getValue();
-            BluetoothDevice d =
-                    BluetoothAdapter.getDefaultAdapter().getRemoteDevice(entry.getKey());
-
+            BluetoothDevice d = mAdapterService.getRemoteDevice(entry.getKey());
             String deviceName = mAdapterService.getRemoteName(d);
             if (deviceName == null) {
                 deviceName = "";

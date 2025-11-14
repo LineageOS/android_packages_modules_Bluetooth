@@ -3,7 +3,8 @@ use pdl_runtime::EncodeError;
 
 use crate::core::uuid::Uuid;
 use crate::gatt::ids::AttHandle;
-use crate::gatt::server::att_database::{AttAttribute, StableAttDatabase};
+use crate::gatt::server::att_client::WeakAttClient;
+use crate::gatt::server::att_database::AttAttribute;
 use crate::packets::att::{self, AttErrorCode};
 
 use super::helpers::att_grouping::find_group_end;
@@ -13,12 +14,13 @@ use super::helpers::payload_accumulator::PayloadAccumulator;
 pub async fn handle_find_by_type_value_request(
     request: att::AttFindByTypeValueRequest,
     mtu: usize,
-    db: &impl StableAttDatabase,
+    client: &WeakAttClient,
 ) -> Result<att::Att, EncodeError> {
-    let Some(attrs) = filter_to_range(
+    let attrs = client.list_attributes();
+    let Some(filtered) = filter_to_range(
         request.starting_handle.clone().into(),
         request.ending_handle.into(),
-        db.list_attributes().into_iter(),
+        attrs.iter(),
     ) else {
         return att::AttErrorResponse {
             opcode_in_error: att::AttOpcode::FindByTypeValueRequest,
@@ -31,18 +33,18 @@ pub async fn handle_find_by_type_value_request(
     // ATT_MTU-1 limit comes from Spec 5.3 Vol 3F Sec 3.4.3.4
     let mut matches = PayloadAccumulator::new(mtu - 1);
 
-    for attr @ AttAttribute { handle, type_, .. } in attrs {
-        if Uuid::from(request.attribute_type.clone()) != type_ {
+    for attr @ AttAttribute { handle, type_, .. } in filtered {
+        if &Uuid::from(request.attribute_type.clone()) != type_ {
             continue;
         }
-        if let Ok(value) = db.read_attribute(handle).await {
+        if let Ok(value) = client.read_attribute(*handle).await {
             if value == request.attribute_value {
                 // match found
                 if !matches.push(att::AttributeHandleRange {
-                    found_attribute_handle: handle.into(),
-                    group_end_handle: find_group_end(db, attr)
+                    found_attribute_handle: (*handle).into(),
+                    group_end_handle: find_group_end(&attrs, attr)
                         .map(|attr| attr.handle)
-                        .unwrap_or(handle)
+                        .unwrap_or(*handle)
                         .into(),
                 }) {
                     break;
@@ -68,10 +70,12 @@ pub async fn handle_find_by_type_value_request(
 #[cfg(test)]
 mod test {
     use crate::gatt::ffi::Uuid;
+    use crate::gatt::ids::TransportIndex;
+    use crate::gatt::server::att_client::AttClient;
     use crate::gatt::server::gatt_database::{
         AttPermissions, CHARACTERISTIC_UUID, PRIMARY_SERVICE_DECLARATION_UUID,
     };
-    use crate::gatt::server::test::test_att_db::TestAttDatabase;
+    use crate::gatt::server::test::test_att_db::new_test_database;
     use crate::packets::att;
 
     use super::*;
@@ -81,11 +85,12 @@ mod test {
 
     const VALUE: [u8; 2] = [1, 2];
     const ANOTHER_VALUE: [u8; 2] = [3, 4];
+    const TCB_IDX: TransportIndex = TransportIndex(1);
 
     #[test]
     fn test_uuid_match() {
         // arrange: db all with same value, but some with different UUID
-        let db = TestAttDatabase::new(vec![
+        let db = new_test_database(vec![
             (
                 AttAttribute {
                     handle: AttHandle(3),
@@ -111,6 +116,7 @@ mod test {
                 VALUE.into(),
             ),
         ]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act
         let att_view = att::AttFindByTypeValueRequest {
@@ -119,7 +125,11 @@ mod test {
             attribute_type: UUID.try_into().unwrap(),
             attribute_value: VALUE.to_vec(),
         };
-        let response = tokio_test::block_on(handle_find_by_type_value_request(att_view, 128, &db));
+        let response = tokio_test::block_on(handle_find_by_type_value_request(
+            att_view,
+            128,
+            &client.downgrade(),
+        ));
 
         // assert: we only matched the ones with the correct UUID
         assert_eq!(
@@ -143,7 +153,7 @@ mod test {
     #[test]
     fn test_value_match() {
         // arrange: db all with same type, but some with different value
-        let db = TestAttDatabase::new(vec![
+        let db = new_test_database(vec![
             (
                 AttAttribute {
                     handle: AttHandle(3),
@@ -169,6 +179,7 @@ mod test {
                 VALUE.into(),
             ),
         ]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act
         let att_view = att::AttFindByTypeValueRequest {
@@ -177,7 +188,11 @@ mod test {
             attribute_type: UUID.try_into().unwrap(),
             attribute_value: VALUE.to_vec(),
         };
-        let response = tokio_test::block_on(handle_find_by_type_value_request(att_view, 128, &db));
+        let response = tokio_test::block_on(handle_find_by_type_value_request(
+            att_view,
+            128,
+            &client.downgrade(),
+        ));
 
         // assert
         assert_eq!(
@@ -201,7 +216,8 @@ mod test {
     #[test]
     fn test_range_check() {
         // arrange: empty db
-        let db = TestAttDatabase::new(vec![]);
+        let db = new_test_database(vec![]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act: provide an invalid handle range
         let att_view = att::AttFindByTypeValueRequest {
@@ -210,7 +226,11 @@ mod test {
             attribute_type: UUID.try_into().unwrap(),
             attribute_value: VALUE.to_vec(),
         };
-        let response = tokio_test::block_on(handle_find_by_type_value_request(att_view, 128, &db));
+        let response = tokio_test::block_on(handle_find_by_type_value_request(
+            att_view,
+            128,
+            &client.downgrade(),
+        ));
 
         // assert
         assert_eq!(
@@ -227,7 +247,7 @@ mod test {
     #[test]
     fn test_empty_response() {
         // arrange
-        let db = TestAttDatabase::new(vec![(
+        let db = new_test_database(vec![(
             AttAttribute {
                 handle: AttHandle(3),
                 type_: UUID,
@@ -235,6 +255,7 @@ mod test {
             },
             VALUE.into(),
         )]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act: query using a range that does not overlap with matching attributes
         let att_view = att::AttFindByTypeValueRequest {
@@ -243,7 +264,11 @@ mod test {
             attribute_type: UUID.try_into().unwrap(),
             attribute_value: VALUE.to_vec(),
         };
-        let response = tokio_test::block_on(handle_find_by_type_value_request(att_view, 128, &db));
+        let response = tokio_test::block_on(handle_find_by_type_value_request(
+            att_view,
+            128,
+            &client.downgrade(),
+        ));
 
         // assert: got ATTRIBUTE_NOT_FOUND error
         assert_eq!(
@@ -260,7 +285,7 @@ mod test {
     #[test]
     fn test_grouping_uuid() {
         // arrange
-        let db = TestAttDatabase::new(vec![
+        let db = new_test_database(vec![
             (
                 AttAttribute {
                     handle: AttHandle(3),
@@ -286,6 +311,7 @@ mod test {
                 VALUE.into(),
             ),
         ]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act: look for a particular characteristic declaration
         let att_view = att::AttFindByTypeValueRequest {
@@ -294,7 +320,11 @@ mod test {
             attribute_type: CHARACTERISTIC_UUID.try_into().unwrap(),
             attribute_value: VALUE.to_vec(),
         };
-        let response = tokio_test::block_on(handle_find_by_type_value_request(att_view, 128, &db));
+        let response = tokio_test::block_on(handle_find_by_type_value_request(
+            att_view,
+            128,
+            &client.downgrade(),
+        ));
 
         // assert
         assert_eq!(
@@ -312,7 +342,7 @@ mod test {
     #[test]
     fn test_limit_total_size() {
         // arrange
-        let db = TestAttDatabase::new(vec![
+        let db = new_test_database(vec![
             (
                 AttAttribute {
                     handle: AttHandle(3),
@@ -330,6 +360,7 @@ mod test {
                 VALUE.into(),
             ),
         ]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
 
         // act: use MTU = 5, so we can only fit one element in the output
         let att_view = att::AttFindByTypeValueRequest {
@@ -338,7 +369,11 @@ mod test {
             attribute_type: UUID.try_into().unwrap(),
             attribute_value: VALUE.to_vec(),
         };
-        let response = tokio_test::block_on(handle_find_by_type_value_request(att_view, 5, &db));
+        let response = tokio_test::block_on(handle_find_by_type_value_request(
+            att_view,
+            5,
+            &client.downgrade(),
+        ));
 
         // assert: only one of the two matches produced
         assert_eq!(

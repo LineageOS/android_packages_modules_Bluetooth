@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppShareInfoTest {
+
     private BluetoothOppShareInfo mBluetoothOppShareInfo;
 
     @Before
@@ -68,7 +69,7 @@ public class BluetoothOppShareInfoTest {
         assertThat(mBluetoothOppShareInfo.mTotalBytes).isEqualTo(1023);
         assertThat(mBluetoothOppShareInfo.mCurrentBytes).isEqualTo(42);
         assertThat(mBluetoothOppShareInfo.mTimestamp).isEqualTo(123456789);
-        assertThat(mBluetoothOppShareInfo.mMediaScanned).isEqualTo(false);
+        assertThat(mBluetoothOppShareInfo.mMediaScanned).isFalse();
     }
 
     @Test

@@ -17,7 +17,6 @@
 #pragma once
 
 #include <gmock/gmock.h>
-#include <string>
 
 #include "hal/ranging_hal.h"
 
@@ -31,7 +30,8 @@ public:
   MOCK_METHOD(std::vector<VendorSpecificCharacteristic>, GetVendorSpecificCharacteristics, ());
   MOCK_METHOD(void, OpenSession,
               (uint16_t connection_handle, uint16_t att_handle,
-               const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_data));
+               const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_data,
+               uint8_t sight_type, uint8_t location_type));
   MOCK_METHOD(void, HandleVendorSpecificReply,
               (uint16_t connection_handle,
                const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_reply));
@@ -53,11 +53,6 @@ public:
 
   void RegisterCallback(RangingHalCallback* callback) override { ranging_hal_callback_ = callback; }
   RangingHalCallback* GetRangingHalCallback() { return ranging_hal_callback_; }
-
-  void Start() override {}
-  void Stop() override {}
-  void ListDependencies(ModuleList* /*list*/) const override {}
-  std::string ToString() const override { return std::string("mock ranging hal"); }
 
 private:
   RangingHalCallback* ranging_hal_callback_ = nullptr;

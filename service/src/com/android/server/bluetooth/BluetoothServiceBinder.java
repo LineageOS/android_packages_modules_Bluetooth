@@ -29,20 +29,14 @@ import static java.util.Objects.requireNonNull;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.AppOpsManager;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.IBluetooth;
 import android.bluetooth.IBluetoothManager;
 import android.bluetooth.IBluetoothManagerCallback;
 import android.content.AttributionSource;
 import android.content.Context;
-import android.os.Build;
 import android.os.IBinder;
-import android.os.Looper;
 import android.os.ParcelFileDescriptor;
 import android.os.UserManager;
 import android.permission.PermissionManager;
-
-import androidx.annotation.RequiresApi;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -56,12 +50,9 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     private final AppOpsManager mAppOpsManager;
     private final PermissionManager mPermissionManager;
     private final BtPermissionUtils mPermissionUtils;
-    private final Looper unusedmLooper;
 
-    BluetoothServiceBinder(
-            BluetoothManagerService bms, Looper looper, Context ctx, UserManager userManager) {
+    BluetoothServiceBinder(BluetoothManagerService bms, Context ctx, UserManager userManager) {
         mBluetoothManagerService = bms;
-        unusedmLooper = looper;
         mContext = ctx;
         mUserManager = userManager;
         mAppOpsManager =
@@ -79,11 +70,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     @Nullable
     public IBinder registerAdapter(@NonNull IBluetoothManagerCallback callback) {
         requireNonNull(callback, "Callback cannot be null in registerAdapter");
-        IBluetooth bluetooth = mBluetoothManagerService.registerAdapter(callback);
-        if (bluetooth == null) {
-            return null;
-        }
-        return bluetooth.asBinder();
+        return mBluetoothManagerService.registerAdapter(callback);
     }
 
     @Override
@@ -189,7 +176,7 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
         if (mContext.checkCallingOrSelfPermission(LOCAL_MAC_ADDRESS) != PERMISSION_GRANTED) {
             // TODO(b/280890575): Throws a SecurityException instead
             Log.w(TAG, "getAddress(): Client does not have LOCAL_MAC_ADDRESS permission");
-            return BluetoothAdapter.DEFAULT_MAC_ADDRESS;
+            return IBluetoothManager.DEFAULT_MAC_ADDRESS;
         }
 
         return mBluetoothManagerService.getAddress();
@@ -211,6 +198,20 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
 
         return mBluetoothManagerService.getName();
+    }
+
+    @Override
+    public boolean factoryReset(AttributionSource source) {
+        requireNonNull(source);
+
+        BtPermissionUtils.enforcePrivileged(mContext);
+
+        if (!checkConnectPermissionForDataDelivery(
+                mContext, mPermissionManager, source, "factoryReset")) {
+            return false;
+        }
+
+        return mBluetoothManagerService.factoryResetFromBinder();
     }
 
     @Override
@@ -325,7 +326,6 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     }
 
     @Override
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     public void setAutoOnEnabled(boolean status) {
         BtPermissionUtils.enforcePrivileged(mContext);
         mBluetoothManagerService.setAutoOnEnabled(status);

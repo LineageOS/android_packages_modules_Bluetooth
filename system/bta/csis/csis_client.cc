@@ -170,6 +170,17 @@ public:
       instance->VerifySetMember(p_data->ble_req.bd_addr);
     });
 
+    BTA_DmBleAuthCmplCbRegister([](tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
+      if (event != BTA_DM_BLE_AUTH_CMPL_EVT) {
+        log::error("Invalid event received by CSIP: {}", static_cast<int>(event));
+        return;
+      }
+
+      if (!p_data->auth_cmpl.success && !BTM_IsBonded(p_data->auth_cmpl.bd_addr, BT_TRANSPORT_LE)) {
+        instance->BondingFailed(p_data->auth_cmpl.bd_addr);
+      }
+    });
+
     log::debug("Background scan enabled");
     CsisObserverSetBackground(true);
   }
@@ -264,6 +275,20 @@ public:
 
     callbacks_->OnDeviceAvailable(device->addr, csis_group->GetGroupId(),
                                   csis_group->GetDesiredSize(), rank, uuid);
+  }
+
+  void BondingFailed(const RawAddress& addr) {
+    auto device = FindDeviceByAddress(addr);
+    if (device == nullptr) {
+      return;
+    }
+
+    if (device->GetExpectedGroupIdMember() != bluetooth::groups::kGroupUnknown) {
+      log::info("Bonding failed for {}, remove device", addr);
+      RemoveCsisDevice(device);
+    } else {
+      log::warn("{} bonded already", addr);
+    }
   }
 
   void Connect(const RawAddress& address) override {
@@ -2097,7 +2122,8 @@ private:
     }
   }
 
-  void ClearDeviceInformationAndStartSearch(std::shared_ptr<CsisDevice> device) {
+  void ClearDeviceInformationAndStartSearch(std::shared_ptr<CsisDevice> device,
+                                            bool search_request = true) {
     log::info("{}", device->addr);
     if (device->is_gatt_service_valid == false) {
       log::debug("Device database already invalidated.");
@@ -2108,7 +2134,9 @@ private:
     BtaGattQueue::Clean(device->conn_id);
     DeregisterNotifications(device);
     device->ClearSvcData();
-    BTA_GATTC_ServiceSearchRequest(device->conn_id, kCsisServiceUuid);
+    if (search_request) {
+      BTA_GATTC_ServiceSearchRequest(device->conn_id, kCsisServiceUuid);
+    }
   }
 
   void OnGattServiceChangeEvent(const RawAddress& address) {
@@ -2119,7 +2147,7 @@ private:
     }
 
     log::info("{}", address);
-    ClearDeviceInformationAndStartSearch(device);
+    ClearDeviceInformationAndStartSearch(device, false /* search_request */);
   }
 
   void OnGattServiceDiscoveryDoneEvent(const RawAddress& address) {
@@ -2381,6 +2409,7 @@ bool CsisClient::GetForStorage(const RawAddress& addr, std::vector<uint8_t>& out
 void CsisClient::CleanUp() {
   std::scoped_lock<std::mutex> lock(instance_mutex);
   BTA_DmSirkSecCbRegister(nullptr);
+  BTA_DmBleAuthCmplCbRegister(nullptr);
   CsisClientImpl* ptr = instance;
   instance = nullptr;
 

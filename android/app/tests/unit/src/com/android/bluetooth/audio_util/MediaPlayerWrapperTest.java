@@ -20,7 +20,13 @@ import static com.android.bluetooth.TestUtils.MockitoRule;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -38,6 +44,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.tests.R;
 
 import org.junit.After;
 import org.junit.Before;
@@ -60,7 +67,8 @@ import java.util.List;
 public class MediaPlayerWrapperTest {
     private static final int MSG_TIMEOUT = 0;
 
-    private Resources mTestResources;
+    private final Resources mTestResources = TestUtils.getTestApplicationResources();
+
     private HandlerThread mThread;
     private MediaMetadata.Builder mTestMetadata;
     private ArrayList<MediaDescription.Builder> mTestQueue;
@@ -90,13 +98,8 @@ public class MediaPlayerWrapperTest {
 
     @Before
     public void setUp() {
-
-        mTestResources =
-                TestUtils.getTestApplicationResources(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext());
-        mTestBitmap = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
-
-        Util.sUriImagesSupport = true;
+        mTestBitmap = loadImage(R.raw.image_200_200);
+        Util.UriImagesSupport.sValue = true;
 
         // Set up Looper thread for the timeout handler
         mThread = new HandlerThread("MediaPlayerWrapperTestThread");
@@ -148,10 +151,6 @@ public class MediaPlayerWrapperTest {
         doReturn(mTestMetadata.build()).when(mMockController).getMetadata();
         doReturn(mTestState.build()).when(mMockController).getPlaybackState();
         doReturn(getQueueFromDescriptions(mTestQueue)).when(mMockController).getQueue();
-
-        // Enable testing flag which enables Log.wtf statements. Some tests test against improper
-        // behaviour and the TerribleFailureListener is a good way to ensure that the error occurred
-        MediaPlayerWrapper.sTesting = true;
     }
 
     @After
@@ -159,7 +158,7 @@ public class MediaPlayerWrapperTest {
         if (mThread != null) {
             mThread.quitSafely();
         }
-        Util.sUriImagesSupport = false;
+        Util.UriImagesSupport.sValue = false;
     }
 
     private Bitmap loadImage(int resId) {
@@ -205,6 +204,76 @@ public class MediaPlayerWrapperTest {
         // Restore the old metadata
         doReturn(mTestMetadata.build()).when(mMockController).getMetadata();
         assertThat(wrapper.isMetadataReady()).isTrue();
+    }
+
+    /*
+     * Test to make sure that isMetadataSynced() or isMetadataSynced(MediaData) returns true
+     * if the current playing song in queue matches current Metadata
+     */
+    @Test
+    public void testIsSynced() {
+        MediaPlayerWrapper wrapper =
+                MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
+        assertThat(wrapper.isPlaybackStateReady()).isTrue();
+        assertThat(wrapper.isMetadataReady()).isTrue();
+
+        // Test isMetadataSynced() is true when using default test data
+        assertThat(wrapper.isMetadataSynced()).isTrue();
+        assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isTrue();
+
+        // Test isMetadataSynced() is true when queue is null
+        doReturn(null).when(mMockController).getQueue();
+        assertThat(wrapper.isMetadataSynced()).isTrue();
+        assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isTrue();
+        doReturn(getQueueFromDescriptions(mTestQueue)).when(mMockController).getQueue();
+
+        // Test isMetadataSynced() is true when the playback state is null
+        doReturn(null).when(mMockController).getPlaybackState();
+        assertThat(wrapper.isMetadataSynced()).isTrue();
+        assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isTrue();
+        doReturn(mTestState.build()).when(mMockController).getPlaybackState();
+
+        // Test isMetadataSynced() is false when the playback state points
+        // to a song that's not in the queue
+        doReturn(
+                        new PlaybackState.Builder()
+                                .setActiveQueueItemId(200)
+                                .setState(PlaybackState.STATE_PAUSED, 0, 1.0f)
+                                .build())
+                .when(mMockController)
+                .getPlaybackState();
+        assertThat(wrapper.isMetadataSynced()).isFalse();
+        assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isFalse();
+        doReturn(mTestState.build()).when(mMockController).getPlaybackState();
+
+        // Test isMetadataSynced() is false when the current metadata is null
+        doReturn(null).when(mMockController).getMetadata();
+        assertThat(wrapper.isMetadataSynced()).isFalse();
+        assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isFalse();
+
+        // Test isMetadataSynced() is false when the Queue item pointed to
+        // by playback state doesn't match the current metadata
+        doReturn(
+                        new MediaMetadata.Builder()
+                                .putString(MediaMetadata.METADATA_KEY_TITLE, "BT Test Song2")
+                                .putString(MediaMetadata.METADATA_KEY_ARTIST, "BT Test Artist")
+                                .putString(MediaMetadata.METADATA_KEY_ALBUM, "BT Test Album")
+                                .putLong(MediaMetadata.METADATA_KEY_DURATION, 5000L)
+                                .build())
+                .when(mMockController)
+                .getMetadata();
+        assertThat(wrapper.isMetadataSynced()).isFalse();
+        assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isFalse();
+
+        // Test isMetadataReady() is false when the metadata is null
+        doReturn(null).when(mMockController).getMetadata();
+        assertThat(wrapper.isMetadataReady()).isFalse();
+        assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isFalse();
+
+        // Restore the old metadata
+        doReturn(mTestMetadata.build()).when(mMockController).getMetadata();
+        assertThat(wrapper.isMetadataReady()).isTrue();
+        assertThat(wrapper.isMetadataSynced(wrapper.getCurrentMediaData())).isTrue();
     }
 
     /*
@@ -678,18 +747,22 @@ public class MediaPlayerWrapperTest {
             Collections.shuffle(callbackOrder);
             for (int j = 0; j < 3; j++) {
                 switch (callbackOrder.get(j)) {
-                    case 0: // Update Metadata
+                    // Update Metadata
+                    case 0 -> {
                         doReturn(m.build()).when(mMockController).getMetadata();
                         controllerCallbacks.onMetadataChanged(m.build());
-                        break;
-                    case 1: // Update PlaybackState
+                    }
+                    // Update PlaybackState
+                    case 1 -> {
                         doReturn(s.build()).when(mMockController).getPlaybackState();
                         controllerCallbacks.onPlaybackStateChanged(s.build());
-                        break;
-                    case 2: // Update Queue
+                    }
+                    // Update Queue
+                    case 2 -> {
                         doReturn(q).when(mMockController).getQueue();
                         controllerCallbacks.onQueueChanged(q);
-                        break;
+                    }
+                    default -> {} // Nothing to do
                 }
             }
 

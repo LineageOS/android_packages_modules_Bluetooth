@@ -33,6 +33,8 @@ pub enum Command {
     LeSetupIsoDataPath(LeSetupIsoDataPath),
     /// 7.8.110 LE Remove ISO Data Path
     LeRemoveIsoDataPath(LeRemoveIsoDataPath),
+    /// Vendor-specific LE Get Vendor Capabilities
+    LeGetVendorCapabilities(LeGetVendorCapabilities),
     /// Unknown command
     Unknown(OpCode),
 }
@@ -54,6 +56,8 @@ pub enum ReturnParameters {
     LeSetupIsoDataPath(LeIsoDataPathComplete),
     /// 7.8.110 LE Remove ISO Data Path
     LeRemoveIsoDataPath(LeIsoDataPathComplete),
+    /// Vendor-specific LE Get Vendor Capabilities
+    LeGetVendorCapabilities(LeGetVendorCapabilitiesComplete),
     /// Unknown command
     Unknown(OpCode),
 }
@@ -83,6 +87,7 @@ impl Command {
             LeCreateBig::OPCODE => Self::LeCreateBig(r.read()?),
             LeSetupIsoDataPath::OPCODE => Self::LeSetupIsoDataPath(r.read()?),
             LeRemoveIsoDataPath::OPCODE => Self::LeRemoveIsoDataPath(r.read()?),
+            LeGetVendorCapabilities::OPCODE => Self::LeGetVendorCapabilities(r.read()?),
             opcode => Self::Unknown(opcode),
         })
     }
@@ -539,6 +544,121 @@ fn test_le_remove_iso_data_path() {
     assert_eq!(c.connection_handle, 0x60);
     assert_eq!(c.data_path_direction, 0x01);
     assert_eq!(c.to_bytes(), &dump[..]);
+}
+
+
+// Vendor-specific LE Get Vendor Capabilities
+
+impl CommandOpCode for LeGetVendorCapabilities {
+    const OPCODE: OpCode = OpCode::from(0x3f, 0x153);
+}
+
+#[derive(Debug, Read, Write, CommandToBytes)]
+pub struct LeGetVendorCapabilities {}
+
+#[derive(Debug)]
+pub struct LeGetVendorCapabilitiesComplete {
+    pub status: Status,
+    pub max_advt_instances: u8,
+    pub offloaded_resolution_of_private_address: u8,
+    pub total_scan_results_storage: u16,
+    pub max_irk_list_sz: u8,
+    pub filtering_support: u8,
+    pub max_filter: u8,
+    pub activity_energy_info_support: u8,
+    pub version_supported: Option<u16>,
+    pub total_num_of_advt_tracked: Option<u16>,
+    pub extended_scan_support: Option<u8>,
+    pub debug_logging_supported: Option<u8>,
+    pub le_address_generation_offloading_support: Option<u8>,
+    pub a2dp_source_offload_capability_mask: Option<u32>,
+    pub bluetooth_quality_report_support: Option<u8>,
+    pub dynamic_audio_buffer_support: Option<u32>,
+    pub a2dp_offload_v2_support: Option<u8>,
+    pub iso_link_feedback_support: Option<u8>,
+}
+
+impl Read for LeGetVendorCapabilitiesComplete {
+    fn read(r: &mut Reader) -> Option<Self> {
+        Some(Self {
+            status: r.read()?,
+            max_advt_instances: r.read_u8()?,
+            offloaded_resolution_of_private_address: r.read_u8()?,
+            total_scan_results_storage: r.read_u16()?,
+            max_irk_list_sz: r.read_u8()?,
+            filtering_support: r.read_u8()?,
+            max_filter: r.read_u8()?,
+            activity_energy_info_support: r.read_u8()?,
+            version_supported: r.read_u16(),
+            total_num_of_advt_tracked: r.read_u16(),
+            extended_scan_support: r.read_u8(),
+            debug_logging_supported: r.read_u8(),
+            le_address_generation_offloading_support: r.read_u8(),
+            a2dp_source_offload_capability_mask: r.read_u32::<4>(),
+            bluetooth_quality_report_support: r.read_u8(),
+            dynamic_audio_buffer_support: r.read_u32::<4>(),
+            a2dp_offload_v2_support: r.read_u8(),
+            iso_link_feedback_support: r.read_u8(),
+        })
+    }
+}
+
+impl Write for LeGetVendorCapabilitiesComplete {
+    fn write(&self, w: &mut Writer) {
+        w.write(&self.status);
+        w.write_u8(self.max_advt_instances);
+        w.write_u8(self.offloaded_resolution_of_private_address);
+        w.write_u16(self.total_scan_results_storage);
+        w.write_u8(self.max_irk_list_sz);
+        w.write_u8(self.filtering_support);
+        w.write_u8(self.max_filter);
+        w.write_u8(self.activity_energy_info_support);
+        w.write_u16(self.version_supported.unwrap_or(0x0105));
+        w.write_u16(self.total_num_of_advt_tracked.unwrap_or(0));
+        w.write_u8(self.extended_scan_support.unwrap_or(0));
+        w.write_u8(self.debug_logging_supported.unwrap_or(0));
+        w.write_u8(self.le_address_generation_offloading_support.unwrap_or(0));
+        w.write_u32::<4>(self.a2dp_source_offload_capability_mask.unwrap_or(0));
+        w.write_u8(self.bluetooth_quality_report_support.unwrap_or(0));
+        w.write_u32::<4>(self.dynamic_audio_buffer_support.unwrap_or(0));
+        w.write_u8(self.a2dp_offload_v2_support.unwrap_or(0));
+        w.write_u8(self.iso_link_feedback_support.unwrap_or(0));
+    }
+}
+
+#[test]
+fn test_le_get_vendor_capabilities() {
+    let dump = [0x53, 0xfd, 0x00];
+    let Ok(Command::LeGetVendorCapabilities(c)) = Command::from_bytes(&dump) else { panic!() };
+    assert_eq!(c.to_bytes(), &dump[..]);
+}
+
+#[test]
+fn test_le_get_vendor_capabilities_complete() {
+    let dump = [
+        0x0e, 0x1e, 0x01, 0x53, 0xfd, 0x00, 0x01, 0x01, 0x00, 0x28, 0x00, 0x01, 0x39, 0x01, 0x05, 0x01,
+        0x14, 0x00, 0x01, 0x01, 0x00, 0x23, 0x00, 0x00, 0x00, 0x01, 0x23, 0x00, 0x00, 0x00, 0x00, 0x01,
+    ];
+    let Ok(Event::CommandComplete(e)) = Event::from_bytes(&dump) else { panic!() };
+    let ReturnParameters::LeGetVendorCapabilities(ref p) = e.return_parameters else { panic!() };
+    assert_eq!(p.max_advt_instances, 1);
+    assert_eq!(p.offloaded_resolution_of_private_address, 1);
+    assert_eq!(p.total_scan_results_storage, 10240);
+    assert_eq!(p.max_irk_list_sz, 0);
+    assert_eq!(p.filtering_support, 1);
+    assert_eq!(p.max_filter, 57);
+    assert_eq!(p.activity_energy_info_support, 1);
+    assert_eq!(p.version_supported, Some(0x0105));
+    assert_eq!(p.total_num_of_advt_tracked, Some(20));
+    assert_eq!(p.extended_scan_support, Some(1));
+    assert_eq!(p.debug_logging_supported, Some(1));
+    assert_eq!(p.le_address_generation_offloading_support, Some(0));
+    assert_eq!(p.a2dp_source_offload_capability_mask, Some(0x23));
+    assert_eq!(p.bluetooth_quality_report_support, Some(1));
+    assert_eq!(p.dynamic_audio_buffer_support, Some(0x23));
+    assert_eq!(p.a2dp_offload_v2_support, Some(0));
+    assert_eq!(p.iso_link_feedback_support, Some(1));
+    assert_eq!(e.to_bytes(), &dump[..]);
 }
 
 }

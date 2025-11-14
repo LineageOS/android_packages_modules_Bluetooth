@@ -17,7 +17,6 @@
 #pragma once
 
 #include "hci_hal.h"
-#include "module.h"
 
 namespace bluetooth::hal {
 
@@ -32,23 +31,12 @@ public:
   virtual void OnEvent(uint32_t timestamp, uint32_t bt_clock) = 0;
 };
 
-class LinkClocker : public ::bluetooth::Module {
+class LinkClocker {
 public:
-  static const ModuleFactory Factory;
-
   void OnHciEvent(const HciPacket& packet);
 
   static void Register(ReadClockHandler*);
   static void Unregister();
-
-protected:
-  LinkClocker() = default;
-
-  void ListDependencies(ModuleList*) const override {}
-  void Start() override {}
-  void Stop() override {}
-
-  std::string ToString() const override { return std::string("LinkClocker"); }
 };
 
 }  // namespace bluetooth::hal

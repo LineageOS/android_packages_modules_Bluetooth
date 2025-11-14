@@ -34,7 +34,6 @@ import androidx.media.MediaBrowserServiceCompat;
 
 import com.android.bluetooth.BluetoothPrefs;
 import com.android.bluetooth.R;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -195,20 +194,14 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
         public static final byte ERROR_NO_AVRCP_SERVICE = 0x04;
 
         String getStatusString() {
-            switch (status) {
-                case DOWNLOAD_PENDING:
-                    return "DOWNLOAD_PENDING";
-                case SUCCESS:
-                    return "SUCCESS";
-                case NO_DEVICE_CONNECTED:
-                    return "NO_DEVICE_CONNECTED";
-                case ERROR_MEDIA_ID_INVALID:
-                    return "ERROR_MEDIA_ID_INVALID";
-                case ERROR_NO_AVRCP_SERVICE:
-                    return "ERROR_NO_AVRCP_SERVICE";
-                default:
-                    return "UNDEFINED_ERROR_CASE";
-            }
+            return switch (status) {
+                case DOWNLOAD_PENDING -> "DOWNLOAD_PENDING";
+                case SUCCESS -> "SUCCESS";
+                case NO_DEVICE_CONNECTED -> "NO_DEVICE_CONNECTED";
+                case ERROR_MEDIA_ID_INVALID -> "ERROR_MEDIA_ID_INVALID";
+                case ERROR_NO_AVRCP_SERVICE -> "ERROR_NO_AVRCP_SERVICE";
+                default -> "UNDEFINED_ERROR_CASE";
+            };
         }
     }
 
@@ -403,11 +396,6 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
      * in the UI while we wait on the remote device to accept our playback command.
      */
     static synchronized void onAudioFocusStateChanged(int state) {
-        if (!Flags.signalConnectingOnFocusGain()) {
-            Log.w(TAG, "Feature 'signal_connecting_on_focus_gain' not enabled. Skip");
-            return;
-        }
-
         if (state != AudioManager.AUDIOFOCUS_GAIN) {
             return;
         }

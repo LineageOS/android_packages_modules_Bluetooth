@@ -44,13 +44,13 @@
 using namespace bluetooth;
 
 /* callback function declarations */
-void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid, uint16_t psm, uint8_t id);
-void avdt_l2c_connect_cfm_cback(uint16_t lcid, tL2CAP_CONN result);
-void avdt_l2c_config_cfm_cback(uint16_t lcid, uint16_t result, tL2CAP_CFG_INFO* p_cfg);
-void avdt_l2c_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
-void avdt_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed);
-void avdt_l2c_congestion_ind_cback(uint16_t lcid, bool is_congested);
-void avdt_l2c_data_ind_cback(uint16_t lcid, BT_HDR* p_buf);
+static void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid, uint16_t psm, uint8_t id);
+static void avdt_l2c_connect_cfm_cback(uint16_t lcid, tL2CAP_CONN result);
+static void avdt_l2c_config_cfm_cback(uint16_t lcid, uint16_t result, tL2CAP_CFG_INFO* p_cfg);
+static void avdt_l2c_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
+static void avdt_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed);
+static void avdt_l2c_congestion_ind_cback(uint16_t lcid, bool is_congested);
+static void avdt_l2c_data_ind_cback(uint16_t lcid, BT_HDR* p_buf);
 static void avdt_on_l2cap_error(uint16_t lcid, uint16_t result);
 
 /* L2CAP callback function structure */
@@ -79,7 +79,7 @@ const tL2CAP_APPL_INFO avdt_l2c_appl = {avdt_l2c_connect_ind_cback,
  * Returns          void
  *
  ******************************************************************************/
-void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid, uint16_t /* psm */,
+static void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid, uint16_t /* psm */,
                                 uint8_t /* id */) {
   AvdtpCcb* p_ccb;
   AvdtpTransportChannel* p_tbl = NULL;
@@ -198,7 +198,7 @@ static void avdt_on_l2cap_error(uint16_t lcid, uint16_t result) {
  * Returns          void
  *
  ******************************************************************************/
-void avdt_l2c_connect_cfm_cback(uint16_t lcid, tL2CAP_CONN result) {
+static void avdt_l2c_connect_cfm_cback(uint16_t lcid, tL2CAP_CONN result) {
   AvdtpTransportChannel* p_tbl;
   AvdtpCcb* p_ccb;
 
@@ -252,7 +252,7 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, tL2CAP_CONN result) {
  * Returns          void
  *
  ******************************************************************************/
-void avdt_l2c_config_cfm_cback(uint16_t lcid, uint16_t initiator, tL2CAP_CFG_INFO* p_cfg) {
+static void avdt_l2c_config_cfm_cback(uint16_t lcid, uint16_t initiator, tL2CAP_CFG_INFO* p_cfg) {
   AvdtpTransportChannel* p_tbl;
 
   /* look up info for this channel */
@@ -286,7 +286,7 @@ void avdt_l2c_config_cfm_cback(uint16_t lcid, uint16_t initiator, tL2CAP_CFG_INF
  * Returns          void
  *
  ******************************************************************************/
-void avdt_l2c_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
+static void avdt_l2c_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
   AvdtpTransportChannel* p_tbl;
 
   /* look up info for this channel */
@@ -315,7 +315,7 @@ void avdt_l2c_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
  * Returns          void
  *
  ******************************************************************************/
-void avdt_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
+static void avdt_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
   AvdtpTransportChannel* p_tbl;
 
   log::verbose("lcid: 0x{:04x}, ack_needed: {}", lcid, ack_needed);
@@ -338,7 +338,7 @@ void avdt_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
  * Returns          void
  *
  ******************************************************************************/
-void avdt_l2c_congestion_ind_cback(uint16_t lcid, bool is_congested) {
+static void avdt_l2c_congestion_ind_cback(uint16_t lcid, bool is_congested) {
   AvdtpTransportChannel* p_tbl;
 
   log::verbose("lcid: 0x{:04x}, is_congested: {}", lcid, is_congested);
@@ -361,7 +361,7 @@ void avdt_l2c_congestion_ind_cback(uint16_t lcid, bool is_congested) {
  * Returns          void
  *
  ******************************************************************************/
-void avdt_l2c_data_ind_cback(uint16_t lcid, BT_HDR* p_buf) {
+static void avdt_l2c_data_ind_cback(uint16_t lcid, BT_HDR* p_buf) {
   AvdtpTransportChannel* p_tbl;
 
   /* look up info for this channel */

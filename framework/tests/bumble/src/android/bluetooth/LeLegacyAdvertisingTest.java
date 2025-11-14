@@ -146,7 +146,7 @@ public class LeLegacyAdvertisingTest {
         }
     }
 
-    private AdvertiseData createAdvertiseData(int length) {
+    private static AdvertiseData createAdvertiseData(int length) {
         if (length <= 4) {
             return null;
         }

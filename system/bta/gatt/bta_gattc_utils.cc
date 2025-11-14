@@ -29,7 +29,7 @@
 #include <cstdint>
 
 #include "bta/gatt/bta_gattc_int.h"
-#include "hci/controller_interface.h"
+#include "hci/controller.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
 #include "main/shim/entry.h"
