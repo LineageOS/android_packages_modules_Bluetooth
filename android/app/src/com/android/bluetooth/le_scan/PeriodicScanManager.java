@@ -59,32 +59,19 @@ public class PeriodicScanManager {
     private final AdapterService mAdapterService;
     private final BluetoothAdapter mAdapter;
     private final ScanController mScanController;
-    private final PeriodicScanNativeCallback mNativeCallback;
     private final PeriodicScanNativeInterface mNativeInterface;
 
     PeriodicScanManager(
             AdapterService service,
             ScanController scanController,
             PeriodicScanNativeInterface nativeInterface) {
-        this(service, scanController, null, nativeInterface);
-    }
-
-    @VisibleForTesting
-    PeriodicScanManager(
-            AdapterService service,
-            ScanController scanController,
-            PeriodicScanNativeCallback nativeCallback,
-            PeriodicScanNativeInterface nativeInterface) {
         mAdapterService = requireNonNull(service);
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mScanController = scanController;
-        mNativeCallback =
-                requireNonNullElseGet(
-                        nativeCallback,
-                        () -> new PeriodicScanNativeCallback(mAdapterService, this));
+        var nativeCallback = new PeriodicScanNativeCallback(mAdapterService, this);
         mNativeInterface =
                 requireNonNullElseGet(
-                        nativeInterface, () -> new PeriodicScanNativeInterface(mNativeCallback));
+                        nativeInterface, () -> new PeriodicScanNativeInterface(nativeCallback));
         mNativeInterface.init();
     }
 
