@@ -3950,6 +3950,22 @@ public class BassClientService extends ConnectableProfile {
         }
     }
 
+    private void removeSinkMetadataForRemovedBroadcasts(BluetoothDevice device) {
+        Map<Integer, BluetoothLeBroadcastMetadata> entry = mBroadcastMetadataMap.get(device);
+        if (entry == null) {
+            return;
+        }
+        Set<Integer> currentBroadcastIds =
+                getAllSources(device).stream()
+                        .map(BluetoothLeBroadcastReceiveState::getBroadcastId)
+                        .collect(Collectors.toUnmodifiableSet());
+        entry.keySet().stream()
+                .filter(broadcastId -> !currentBroadcastIds.contains(broadcastId))
+                .collect(Collectors.toList()) // Collect to avoid ConcurrentModificationException
+                .forEach(staleBroadcastId -> removeSinkMetadata(device, staleBroadcastId));
+    }
+
+    // TODO Delete it on leaudioBroadcastTreatEmptyRsExplicitly flag cleanup
     private void checkIfBroadcastIsSuspendedBySourceRemovalAndClearData(
             BluetoothDevice device, BassClientStateMachine stateMachine, int broadcastId) {
         if (!mPausedBroadcastSinks.contains(device)) {
@@ -4183,11 +4199,13 @@ public class BassClientService extends ConnectableProfile {
                 continue;
             }
 
-            // Even if there is a room for broadcast, it could happen that all broadcasts were
-            // suspended via removing source. In that case, we have to found such broadcast and
-            // remove it from metadata.
-            checkIfBroadcastIsSuspendedBySourceRemovalAndClearData(
-                    device, stateMachine, broadcastId);
+            if (!Flags.leaudioBroadcastTreatEmptyRsExplicitly()) {
+                // Even if there is a room for broadcast, it could happen that all broadcasts were
+                // suspended via removing source. In that case, we have to found such broadcast and
+                // remove it from metadata.
+                checkIfBroadcastIsSuspendedBySourceRemovalAndClearData(
+                        device, stateMachine, broadcastId);
+            }
 
             /* Store metadata for sink device */
             storeSinkMetadata(device, broadcastId, sourceMetadata);
@@ -5275,6 +5293,12 @@ public class BassClientService extends ConnectableProfile {
                 synchronized (mSinksWaitingForPast) {
                     mSinksWaitingForPast.remove(sink);
                 }
+            }
+            if (Flags.leaudioBroadcastTreatEmptyRsExplicitly()) {
+                mPausedBroadcastSinks.remove(sink);
+                mSinksToRestoreFromPeer.remove(sink);
+                removeSinkMetadataForRemovedBroadcasts(sink);
+                logPausedBroadcastsAndSinks();
             }
             synchronized (mSinksWaitingForMetadata) {
                 Integer broadcastIdForMetadata = mSinksWaitingForMetadata.remove(sink);
