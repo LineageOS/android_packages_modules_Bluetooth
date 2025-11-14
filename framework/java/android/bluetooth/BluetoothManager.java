@@ -25,7 +25,6 @@ import android.annotation.RequiresFeature;
 import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
 import android.annotation.SystemService;
-import android.annotation.UserHandleAware;
 import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
 import android.bluetooth.annotations.RequiresLegacyBluetoothPermission;
 import android.content.Context;
@@ -53,7 +52,6 @@ import java.util.List;
  * @see BluetoothAdapter#getDefaultAdapter()
  */
 @SystemService(Context.BLUETOOTH_SERVICE)
-@UserHandleAware
 @RequiresFeature(PackageManager.FEATURE_BLUETOOTH)
 public final class BluetoothManager {
     private static final String TAG = BluetoothManager.class.getSimpleName();
@@ -64,6 +62,7 @@ public final class BluetoothManager {
     @Hide
     public BluetoothManager(Context context) {
         // Pin the context DeviceId prevent the associated attribution source to be obsolete
+        // TODO: b/343739429 -- pass the context to BluetoothAdapter constructor instead
         mContext = context.createDeviceContext(Context.DEVICE_ID_DEFAULT);
         mAdapter = BluetoothAdapter.createAdapter(mContext);
     }
