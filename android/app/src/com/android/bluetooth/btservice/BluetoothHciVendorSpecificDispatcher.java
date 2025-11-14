@@ -38,11 +38,14 @@ class BluetoothHciVendorSpecificDispatcher {
     private final class Registration implements IBinder.DeathRecipient {
         final IBluetoothHciVendorSpecificCallback mCallback;
         final Set<Integer> mEventCodes;
+        final Set<Integer> mAclHandles;
         final UUID mUuid;
 
-        Registration(IBluetoothHciVendorSpecificCallback callback, Set<Integer> eventCodes) {
+        Registration(IBluetoothHciVendorSpecificCallback callback, Set<Integer> eventCodes,
+        Set<Integer> aclHandles) {
             mCallback = callback;
             mEventCodes = eventCodes;
+            mAclHandles = aclHandles;
             mUuid = UUID.randomUUID();
         }
 
@@ -68,7 +71,8 @@ class BluetoothHciVendorSpecificDispatcher {
         }
     }
 
-    void register(IBluetoothHciVendorSpecificCallback callback, Set<Integer> eventCodes) {
+    void register(IBluetoothHciVendorSpecificCallback callback, Set<Integer> eventCodes,
+            Set<Integer> aclHandles) {
         IBinder binder = callback.asBinder();
         synchronized (mRegistrations) {
             if (mRegistrations.containsKey(binder)) {
@@ -76,7 +80,7 @@ class BluetoothHciVendorSpecificDispatcher {
             }
 
             try {
-                Registration registration = new Registration(callback, eventCodes);
+                Registration registration = new Registration(callback, eventCodes, aclHandles);
                 binder.linkToDeath(registration, 0);
                 mRegistrations.put(binder, registration);
             } catch (RemoteException e) {
@@ -125,6 +129,16 @@ class BluetoothHciVendorSpecificDispatcher {
             mRegistrations.values().stream()
                     .filter((r) -> r.mEventCodes.contains(eventCode))
                     .forEach((r) -> action.accept(r.mCallback));
+        }
+    }
+
+     void broadcastAclEvent(
+            int handle,
+            RemoteExceptionIgnoringConsumer<IBluetoothHciVendorSpecificCallback> action) {
+        synchronized (mRegistrations) {
+            mRegistrations.values().stream()
+            .filter((r) -> r.mAclHandles.contains(handle))
+            .forEach((r) -> action.accept(r.mCallback));
         }
     }
 }

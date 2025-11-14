@@ -1826,7 +1826,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public void registerHciVendorSpecificCallback(
-            IBluetoothHciVendorSpecificCallback callback, int[] eventCodes) {
+            IBluetoothHciVendorSpecificCallback callback, int[] eventCodes, int[] aclHandles) {
         AdapterService service = getService();
         if (service == null) {
             return;
@@ -1838,14 +1838,21 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         requireNonNull(callback);
         requireNonNull(eventCodes);
+        requireNonNull(aclHandles);
 
         Set<Integer> eventCodesSet = Arrays.stream(eventCodes).boxed().collect(Collectors.toSet());
+        Set<Integer> aclHandlesSet = Arrays.stream(aclHandles).boxed().collect(Collectors.toSet());
         if (eventCodesSet.stream()
                 .anyMatch((n) -> (n < 0) || (n >= 0x52 && n < 0x60) || (n > 0xff))) {
             throw new IllegalArgumentException("invalid vendor-specific event code");
         }
 
-        service.getBluetoothHciVendorSpecificDispatcher().register(callback, eventCodesSet);
+        if (aclHandlesSet.stream().anyMatch((n) -> (n <= 0) || (n > 0xfff))) {
+            throw new IllegalArgumentException("invalid acl handle");
+        }
+
+        service.getBluetoothHciVendorSpecificDispatcher()
+                .register(callback, eventCodesSet, aclHandlesSet);
     }
 
     @Override
