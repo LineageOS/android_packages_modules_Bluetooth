@@ -72,7 +72,7 @@ class LeScanningTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val leScanner =
-        context.getSystemService(BluetoothManager::class.java).adapter.bluetoothLeScanner
+        context.getSystemService(BluetoothManager::class.java).adapter.bluetoothLeScanner!!
 
     @Test
     fun startBleScan_withCallbackTypeAllMatches() {
@@ -122,9 +122,9 @@ class LeScanningTest {
                 .build()
         val mockScanCallback = mock(ScanCallback::class.java)
 
-        leScanner?.startScan(listOf(scanFilter), scanSettings, mockScanCallback)
+        leScanner.startScan(listOf(scanFilter), scanSettings, mockScanCallback)
         verify(mockScanCallback, after(TIMEOUT_SCANNING_MS).never()).onScanFailed(anyInt())
-        leScanner?.stopScan(mockScanCallback)
+        leScanner.stopScan(mockScanCallback)
     }
 
     @Test
@@ -140,9 +140,9 @@ class LeScanningTest {
                 .build()
         val mockScanCallback = mock(ScanCallback::class.java)
 
-        leScanner?.startScan(listOf(scanFilter), scanSettings, mockScanCallback)
+        leScanner.startScan(listOf(scanFilter), scanSettings, mockScanCallback)
         verify(mockScanCallback, after(TIMEOUT_SCANNING_MS).never()).onScanFailed(anyInt())
-        leScanner?.stopScan(mockScanCallback)
+        leScanner.stopScan(mockScanCallback)
     }
 
     @Test
@@ -172,12 +172,12 @@ class LeScanningTest {
                     PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT,
             )
 
-        leScanner?.startScan(listOf(scanFilter), scanSettings, pendingIntent)
+        leScanner.startScan(listOf(scanFilter), scanSettings, pendingIntent)
 
         val intent = ArgumentCaptor.forClass(Intent::class.java)
         verify(mockReceiver, timeout(TIMEOUT_SCANNING_MS)).onReceive(any(), intent.capture())
 
-        leScanner?.stopScan(pendingIntent)
+        leScanner.stopScan(pendingIntent)
         context.unregisterReceiver(mockReceiver)
 
         assertThat(intent.value.action).isEqualTo(ACTION_DYNAMIC_RECEIVER_SCAN_RESULT)
@@ -210,12 +210,12 @@ class LeScanningTest {
                 .build()
         val pendingIntent = PendingIntentScanReceiver.newBroadcastPendingIntent(context, 0)
 
-        leScanner?.startScan(listOf(scanFilter), scanSettings, pendingIntent)
+        leScanner.startScan(listOf(scanFilter), scanSettings, pendingIntent)
         val results =
             PendingIntentScanReceiver.nextScanResult()
                 .completeOnTimeout(null, TIMEOUT_SCANNING_MS, TimeUnit.MILLISECONDS)
                 .join()
-        leScanner?.stopScan(pendingIntent)
+        leScanner.stopScan(pendingIntent)
         PendingIntentScanReceiver.resetNextScanResultFuture()
 
         assertThat(results).isNotEmpty()
@@ -240,24 +240,24 @@ class LeScanningTest {
         val scanCallbacks =
             (1..maxNumScans).map {
                 val mockScanCallback = mock(ScanCallback::class.java)
-                leScanner?.startScan(scanFilters, scanSettings, mockScanCallback)
+                leScanner.startScan(scanFilters, scanSettings, mockScanCallback)
                 mockScanCallback
             }
 
         // This last scan should fail
         val lastMockScanCallback = mock(ScanCallback::class.java)
-        leScanner?.startScan(scanFilters, scanSettings, lastMockScanCallback)
+        leScanner.startScan(scanFilters, scanSettings, lastMockScanCallback)
 
         // We expect an error only for the last scan, which was over the maximum active scans limit.
         for (mockScanCallback in scanCallbacks) {
             verify(mockScanCallback, timeout(TIMEOUT_SCANNING_MS).atLeast(1))
                 .onScanResult(eq(CALLBACK_TYPE_ALL_MATCHES), any())
             verify(mockScanCallback, never()).onScanFailed(anyInt())
-            leScanner?.stopScan(mockScanCallback)
+            leScanner.stopScan(mockScanCallback)
         }
         verify(lastMockScanCallback, timeout(TIMEOUT_SCANNING_MS))
             .onScanFailed(eq(ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED))
-        leScanner?.stopScan(lastMockScanCallback)
+        leScanner.stopScan(lastMockScanCallback)
     }
 
     @Test
@@ -561,10 +561,10 @@ class LeScanningTest {
                 }
             }
 
-        leScanner?.startScan(listOf(scanFilter), scanSettings, scanCallback)
+        leScanner.startScan(listOf(scanFilter), scanSettings, scanCallback)
         val result =
             future.completeOnTimeout(null, TIMEOUT_SCANNING_MS, TimeUnit.MILLISECONDS).join()
-        leScanner?.stopScan(scanCallback)
+        leScanner.stopScan(scanCallback)
 
         return result
     }

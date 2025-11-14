@@ -20,7 +20,6 @@ import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSet
 import android.bluetooth.le.AdvertisingSetCallback
 import android.bluetooth.le.AdvertisingSetParameters
-import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
@@ -69,14 +68,13 @@ class PrivateGattAdvertisingTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)
-    private val bluetoothAdapter = bluetoothManager.adapter
-    private val leAdvertiser: BluetoothLeAdvertiser? = bluetoothAdapter.bluetoothLeAdvertiser
+    private val leAdvertiser = bluetoothManager.adapter.bluetoothLeAdvertiser!!
     private val advertisingSetCallbacksToClear = mutableListOf<AdvertisingSetCallback>()
 
     @After
     fun tearDown() {
         for (callback in advertisingSetCallbacksToClear) {
-            leAdvertiser?.stopAdvertisingSet(callback)
+            leAdvertiser.stopAdvertisingSet(callback)
         }
     }
 
@@ -333,7 +331,7 @@ class PrivateGattAdvertisingTest {
                 }
             }
 
-        leAdvertiser?.startAdvertisingSet(
+        leAdvertiser.startAdvertisingSet(
             parameters,
             advertiseData,
             null,

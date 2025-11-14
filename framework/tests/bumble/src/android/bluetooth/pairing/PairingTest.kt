@@ -2006,7 +2006,6 @@ class PairingTest {
             if (ownAddressType == OwnAddressType.RANDOM)
                 AdvertisingSetParameters.ADDRESS_TYPE_RANDOM
             else AdvertisingSetParameters.ADDRESS_TYPE_PUBLIC
-        val leAdvertiser = adapter.bluetoothLeAdvertiser
         val parameters =
             AdvertisingSetParameters.Builder()
                 .setOwnAddressType(addrType)
@@ -2038,6 +2037,8 @@ class PairingTest {
 
         private val context = ApplicationProvider.getApplicationContext<Context>()
         private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
+        private val leAdvertiser = adapter.bluetoothLeAdvertiser!!
+
         private lateinit var deviceName: String
         private var toggleDevice = true
     }

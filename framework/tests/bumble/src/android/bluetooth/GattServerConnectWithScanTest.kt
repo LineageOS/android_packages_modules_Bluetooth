@@ -17,7 +17,6 @@
 package android.bluetooth
 
 import android.bluetooth.BluetoothProfile.STATE_CONNECTED
-import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
@@ -52,7 +51,7 @@ class GattServerConnectWithScanTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)
     private val bluetoothAdapter = bluetoothManager.adapter
-    private val leScanner: BluetoothLeScanner? = bluetoothAdapter.bluetoothLeScanner
+    private val leScanner = bluetoothAdapter.bluetoothLeScanner!!
 
     @Test
     @Ignore("b/343749428: Remove hidden api's dependencies to enable the test.")
@@ -201,12 +200,12 @@ class GattServerConnectWithScanTest {
                 }
             }
 
-        leScanner?.startScan(listOf(scanFilter), scanSettings, scanCallback)
+        leScanner.startScan(listOf(scanFilter), scanSettings, scanCallback)
 
         val result =
             future.completeOnTimeout(null, TIMEOUT_SCANNING_MS, TimeUnit.MILLISECONDS).join()
 
-        leScanner?.stopScan(scanCallback)
+        leScanner.stopScan(scanCallback)
         return result
     }
 

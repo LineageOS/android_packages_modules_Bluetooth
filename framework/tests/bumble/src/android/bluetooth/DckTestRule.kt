@@ -59,7 +59,7 @@ class DckTestRule(
 ) : TestRule {
 
     private val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
-    private val leScanner = bluetoothAdapter.bluetoothLeScanner
+    private val leScanner = bluetoothAdapter.bluetoothLeScanner!!
 
     private val scope = CoroutineScope(Dispatchers.Default)
     private val ioScope = CoroutineScope(Dispatchers.IO)
