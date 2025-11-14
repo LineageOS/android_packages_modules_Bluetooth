@@ -49,6 +49,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothStatusCodes;
+import android.bluetooth.BondStatus;
 import android.bluetooth.EncryptionStatus;
 import android.bluetooth.GattOffloadCapabilities;
 import android.bluetooth.IBluetooth;
@@ -2236,5 +2237,20 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         }
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         return service.getSupportedGattOffloadCapabilities();
+    }
+
+    @Override
+    public BondStatus.InnerParcel getBondStatus(
+            BluetoothDevice device, AttributionSource source, int transport) {
+        requireNonNull(device);
+        AdapterService service = getService();
+        if (service == null) {
+            return null;
+        }
+        if (!enforceConnectPermissionForDataDelivery(service, source, TAG, "getBondStatus")) {
+            return null;
+        }
+        BondStatus bondStatus = service.getBondStatus(device, transport);
+        return bondStatus != null ? bondStatus.getParcel() : null;
     }
 }

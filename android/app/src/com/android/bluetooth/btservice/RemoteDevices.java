@@ -43,6 +43,7 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSinkAudioPolicy;
+import android.bluetooth.BondStatus;
 import android.bluetooth.EncryptionStatus;
 import android.bluetooth.IBluetoothConnectionCallback;
 import android.content.Intent;
@@ -393,8 +394,6 @@ public class RemoteDevices {
         @VisibleForTesting boolean mHfpBatteryIndicator = false;
         private BluetoothSinkAudioPolicy mAudioPolicy;
         private Optional<Integer> mLastBondLossReason;
-
-        private record BondStatus(int pairingAlgorithm, int pairingVariant) {}
 
         private BondStatus mBredrBond;
         private BondStatus mLeBond;
@@ -2450,9 +2449,8 @@ public class RemoteDevices {
                             : "XX:XX:XX:XX:XX:XX";
             int identityAddressType = deviceProperties.getIdentityAddress().getAddressType();
 
-            DeviceProperties.BondStatus bredrBondStatus =
-                    deviceProperties.getBondStatus(TRANSPORT_BREDR);
-            DeviceProperties.BondStatus leBondStatus = deviceProperties.getBondStatus(TRANSPORT_LE);
+            BondStatus bredrBondStatus = deviceProperties.getBondStatus(TRANSPORT_BREDR);
+            BondStatus leBondStatus = deviceProperties.getBondStatus(TRANSPORT_LE);
             boolean connectedBrEdr =
                     deviceProperties.getConnectionHandle(TRANSPORT_BREDR) != BluetoothDevice.ERROR;
             boolean connectedLe =
@@ -2474,9 +2472,9 @@ public class RemoteDevices {
                     .append("] [0x")
                     .append(String.format("%06X", deviceProperties.getBluetoothClass()))
                     .append("] [Pairing Algorithm BR/EDR: ")
-                    .append(bredrBondStatus == null ? "N/A" : bredrBondStatus.pairingAlgorithm)
+                    .append(bredrBondStatus == null ? "N/A" : bredrBondStatus.getPairingAlgorithm())
                     .append(" LE: ")
-                    .append(leBondStatus == null ? "N/A" : leBondStatus.pairingAlgorithm)
+                    .append(leBondStatus == null ? "N/A" : leBondStatus.getPairingAlgorithm())
                     .append("] [ACL BR/EDR:")
                     .append(connectedBrEdr ? "Y" : "N")
                     .append(" LE:")

@@ -548,6 +548,7 @@ package android.bluetooth {
     method @Nullable @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public String getAlias();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothClass getBluetoothClass();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public int getBondState();
+    method @FlaggedApi("com.android.bluetooth.flags.enable_get_bond_status") @Nullable @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BondStatus getBondStatus(int);
     method @FlaggedApi("com.android.bluetooth.flags.link_status_api") @Nullable @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.EncryptionStatus getEncryptionStatus(int);
     method @NonNull @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public android.bluetooth.BluetoothDevice.BluetoothAddress getIdentityAddressWithType();
     method @FlaggedApi("com.android.bluetooth.flags.key_missing_count_api") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public int getKeyMissingCount();
@@ -1235,6 +1236,12 @@ package android.bluetooth {
     field public static final int FEATURE_NOT_SUPPORTED = 11; // 0xb
     field public static final int FEATURE_SUPPORTED = 10; // 0xa
     field public static final int SUCCESS = 0; // 0x0
+  }
+
+  @FlaggedApi("com.android.bluetooth.flags.enable_get_bond_status") public final class BondStatus {
+    ctor public BondStatus(int, int);
+    method public int getPairingAlgorithm();
+    method public int getPairingVariant();
   }
 
   @FlaggedApi("com.android.bluetooth.flags.link_status_api") public final class EncryptionStatus {

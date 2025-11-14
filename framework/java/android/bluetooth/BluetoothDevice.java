@@ -1175,6 +1175,23 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     /** An existing bond was explicitly revoked */
     @Hide @SystemApi public static final int UNBOND_REASON_REMOVED = 9;
 
+    /** Indicates the pairing variant used. */
+    @Hide
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(
+            prefix = "PAIRING_VARIANT_",
+            value = {
+                PAIRING_VARIANT_PIN,
+                PAIRING_VARIANT_PASSKEY,
+                PAIRING_VARIANT_PASSKEY_CONFIRMATION,
+                PAIRING_VARIANT_CONSENT,
+                PAIRING_VARIANT_DISPLAY_PASSKEY,
+                PAIRING_VARIANT_DISPLAY_PIN,
+                PAIRING_VARIANT_OOB_CONSENT,
+                PAIRING_VARIANT_PIN_16_DIGITS,
+            })
+    public @interface PairingVariant {}
+
     /** The user will be prompted to enter a pin or an app will enter a pin for user. */
     public static final int PAIRING_VARIANT_PIN = 0;
 
@@ -4094,6 +4111,32 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             }
         }
         return false;
+    }
+
+    /**
+     * Returns the bond status of this device.
+     *
+     * @param transport the transport to get the bond status for.
+     * @return The bond status of this device, or null if the device is not bonded.
+     */
+    @FlaggedApi(Flags.FLAG_ENABLE_GET_BOND_STATUS)
+    @RequiresBluetoothConnectPermission
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    public @Nullable BondStatus getBondStatus(@SupportedTransport int transport) {
+        final IBluetooth service = getService();
+        if (service == null || !isBluetoothEnabled()) {
+            Log.e(TAG, "Bluetooth is not enabled. Cannot get bond status.");
+            if (DBG) log(Log.getStackTraceString(new Throwable()));
+        } else {
+            try {
+                BondStatus.InnerParcel parcel =
+                        service.getBondStatus(this, mAttributionSource, transport);
+                return (parcel != null) ? parcel.toBondStatus() : null;
+            } catch (RemoteException e) {
+                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+            }
+        }
+        return null;
     }
 
     private static void log(String msg) {
