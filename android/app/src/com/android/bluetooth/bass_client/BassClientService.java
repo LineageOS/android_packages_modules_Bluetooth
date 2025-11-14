@@ -3439,8 +3439,13 @@ public class BassClientService extends ConnectableProfile {
             } else {
                 if (mPeriodicAdvCallbacksMapObsolete.containsKey(syncHandle)) {
                     try {
-                        mPeriodicAdvertisingManager.unregisterSync(
-                                mPeriodicAdvCallbacksMapObsolete.get(syncHandle));
+                        var callback = mPeriodicAdvCallbacksMapObsolete.get(syncHandle);
+                        if (mScanController.isOnScanThread()) {
+                            mPeriodicAdvertisingManager.unregisterSync(callback);
+                        } else {
+                            mScanController.doOnScanThread(
+                                    () -> mPeriodicAdvertisingManager.unregisterSync(callback));
+                        }
                     } catch (IllegalArgumentException ex) {
                         Log.e(TAG, "unregisterSync:IllegalArgumentException");
                         return false;
@@ -3756,8 +3761,20 @@ public class BassClientService extends ConnectableProfile {
                 }
             } else {
                 try {
-                    mPeriodicAdvertisingManager.registerSync(
-                            scanRes, 0, BassConstants.PSYNC_TIMEOUT, paCbObsolete, null);
+                    if (mScanController.isOnScanThread()) {
+                        mPeriodicAdvertisingManager.registerSync(
+                                scanRes, 0, BassConstants.PSYNC_TIMEOUT, paCbObsolete, null);
+                    } else {
+                        var scanResFinal = scanRes;
+                        mScanController.doOnScanThread(
+                                () ->
+                                        mPeriodicAdvertisingManager.registerSync(
+                                                scanResFinal,
+                                                0,
+                                                BassConstants.PSYNC_TIMEOUT,
+                                                paCbObsolete,
+                                                null));
+                    }
                 } catch (IllegalArgumentException ex) {
                     Log.e(TAG, "registerSync:IllegalArgumentException");
                     clearAllDataForSyncHandle(BassConstants.PENDING_SYNC_HANDLE);
