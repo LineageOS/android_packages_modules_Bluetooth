@@ -833,14 +833,16 @@ public class HeadsetService extends ConnectableProfile {
             // Audio should not be on when no audio mode is active
             if (isAudioOn()) {
                 // Disconnect audio so that API user can try later
-                int status = disconnectAudio();
-                Log.w(
-                        TAG,
-                        "startVoiceRecognition: audio is still active, please wait for audio to"
-                                + " be disconnected, disconnectAudio() returned "
-                                + status
-                                + ", active device is "
-                                + mActiveDevice);
+                if (!mSystemInterface.isScoManagedByAudioEnabled()) {
+                    int status = disconnectAudio();
+                    Log.w(
+                            TAG,
+                            "startVoiceRecognition: audio is still active, please wait for audio to"
+                                    + " be disconnected, disconnectAudio() returned "
+                                    + status
+                                    + ", active device is "
+                                    + mActiveDevice);
+                }
                 return false;
             }
             boolean pendingRequestByHeadset = false;
@@ -1098,7 +1100,8 @@ public class HeadsetService extends ConnectableProfile {
                                     + mActiveDevice);
                 }
             }
-            if (getAudioState(mActiveDevice) != BluetoothHeadset.STATE_AUDIO_DISCONNECTED) {
+            if (!mSystemInterface.isScoManagedByAudioEnabled()
+                    && getAudioState(mActiveDevice) != BluetoothHeadset.STATE_AUDIO_DISCONNECTED) {
                 int disconnectStatus = disconnectAudio(mActiveDevice);
                 if (disconnectStatus != BluetoothStatusCodes.SUCCESS) {
                     Log.w(
@@ -1182,7 +1185,9 @@ public class HeadsetService extends ConnectableProfile {
                                 });
             }
 
-            if (getAudioState(previousActiveDevice) != BluetoothHeadset.STATE_AUDIO_DISCONNECTED) {
+            if (!mSystemInterface.isScoManagedByAudioEnabled()
+                    && getAudioState(previousActiveDevice)
+                            != BluetoothHeadset.STATE_AUDIO_DISCONNECTED) {
                 int disconnectStatus = disconnectAudio(previousActiveDevice);
                 if (disconnectStatus != BluetoothStatusCodes.SUCCESS) {
                     Log.e(
@@ -1290,6 +1295,10 @@ public class HeadsetService extends ConnectableProfile {
 
     int connectAudio(BluetoothDevice device) {
         Log.i(TAG, "connectAudio: device=" + device + ", " + Utils.getUidPidString());
+        if (mSystemInterface.isScoManagedByAudioEnabled()) {
+            Log.i(TAG, "Audio is managing sco connections");
+            return BluetoothStatusCodes.SUCCESS;
+        }
         synchronized (mStateMachines) {
             final HeadsetStateMachine stateMachine = mStateMachines.get(device);
             if (stateMachine == null) {
@@ -1388,8 +1397,6 @@ public class HeadsetService extends ConnectableProfile {
                         BluetoothStatsLog
                                 .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__SCO_DISCONNECT_AUDIO_END,
                         Binder.getCallingUid());
-            } else {
-                clearCommunicationDevice(device);
             }
         }
         return BluetoothStatusCodes.SUCCESS;
@@ -1440,15 +1447,17 @@ public class HeadsetService extends ConnectableProfile {
             }
             // Audio should not be on when no audio mode is active
             if (isAudioOn()) {
-                // Disconnect audio so that API user can try later
-                int status = disconnectAudio();
-                Log.w(
-                        TAG,
-                        "startScoUsingVirtualVoiceCall: audio is still active, please wait for "
-                                + "audio to be disconnected, disconnectAudio() returned "
-                                + status
-                                + ", active device is "
-                                + mActiveDevice);
+                if (!mSystemInterface.isScoManagedByAudioEnabled()) {
+                    // Disconnect audio so that API user can try later
+                    int status = disconnectAudio();
+                    Log.w(
+                            TAG,
+                            "startScoUsingVirtualVoiceCall: audio is still active, please wait for "
+                                    + "audio to be disconnected, disconnectAudio() returned "
+                                    + status
+                                    + ", active device is "
+                                    + mActiveDevice);
+                }
                 return false;
             }
             if (mActiveDevice == null) {
@@ -1663,15 +1672,17 @@ public class HeadsetService extends ConnectableProfile {
             }
             // Audio should not be on when no audio mode is active
             if (isAudioOn()) {
-                // Disconnect audio so that user can try later
-                int status = disconnectAudio();
-                Log.w(
-                        TAG,
-                        "startVoiceRecognitionByHeadset: audio is still active, please wait for"
-                                + " audio to be disconnected, disconnectAudio() returned "
-                                + status
-                                + ", active device is "
-                                + mActiveDevice);
+                if (!mSystemInterface.isScoManagedByAudioEnabled()) {
+                    // Disconnect audio so that user can try later
+                    int status = disconnectAudio();
+                    Log.w(
+                            TAG,
+                            "startVoiceRecognitionByHeadset: audio is still active, please wait for"
+                                    + " audio to be disconnected, disconnectAudio() returned "
+                                    + status
+                                    + ", active device is "
+                                    + mActiveDevice);
+                }
                 return false;
             }
             // Do not start new request until the current one is finished or timeout
@@ -1750,17 +1761,18 @@ public class HeadsetService extends ConnectableProfile {
                 mVoiceRecognitionTimeoutEvent = null;
             }
             if (mVoiceRecognitionStarted) {
-                int disconnectStatus = disconnectAudio();
-                if (disconnectStatus != BluetoothStatusCodes.SUCCESS) {
-                    Log.w(
-                            TAG,
-                            "stopVoiceRecognitionByHeadset: failed to disconnect audio from "
-                                    + fromDevice
-                                    + " with status code "
-                                    + disconnectStatus);
-                    if (mSystemInterface.isScoManagedByAudioEnabled()) {
-                        clearCommunicationDevice(fromDevice);
+                if (!mSystemInterface.isScoManagedByAudioEnabled()) {
+                    int disconnectStatus = disconnectAudio();
+                    if (disconnectStatus != BluetoothStatusCodes.SUCCESS) {
+                        Log.w(
+                                TAG,
+                                "stopVoiceRecognitionByHeadset: failed to disconnect audio from "
+                                        + fromDevice
+                                        + " with status code "
+                                        + disconnectStatus);
                     }
+                } else {
+                    clearCommunicationDevice(fromDevice);
                 }
                 mVoiceRecognitionStarted = false;
             }
@@ -2150,25 +2162,21 @@ public class HeadsetService extends ConnectableProfile {
                 if (fromState != BluetoothHeadset.STATE_AUDIO_DISCONNECTED) {
                     if (mActiveDevice != null
                             && !mActiveDevice.equals(device)
-                            && shouldPersistAudio()) {
-                        if (mSystemInterface.isScoManagedByAudioEnabled()) {
-                            Log.d(TAG, "request bluetooth audio change");
-                            mSystemInterface.requestBluetoothAudio(mActiveDevice);
-                        } else {
-                            int connectStatus = connectAudio(mActiveDevice);
-                            if (connectStatus != BluetoothStatusCodes.SUCCESS) {
-                                Log.w(
-                                        TAG,
-                                        "onAudioStateChangedFromStateMachine, failed to connect"
-                                                + " audio to new "
-                                                + "active device "
-                                                + mActiveDevice
-                                                + ", after "
-                                                + device
-                                                + " is disconnected from SCO due to"
-                                                + " status code "
-                                                + connectStatus);
-                            }
+                            && shouldPersistAudio()
+                            && !mSystemInterface.isScoManagedByAudioEnabled()) {
+                        int connectStatus = connectAudio(mActiveDevice);
+                        if (connectStatus != BluetoothStatusCodes.SUCCESS) {
+                            Log.w(
+                                    TAG,
+                                    "onAudioStateChangedFromStateMachine, failed to connect"
+                                            + " audio to new "
+                                            + "active device "
+                                            + mActiveDevice
+                                            + ", after "
+                                            + device
+                                            + " is disconnected from SCO due to"
+                                            + " status code "
+                                            + connectStatus);
                         }
                     }
                 }
