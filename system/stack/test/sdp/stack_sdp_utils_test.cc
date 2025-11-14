@@ -19,6 +19,7 @@
 
 #include <cstddef>
 
+#include "bt_status.h"
 #include "btif/include/btif_storage.h"
 #include "btif/include/stack_manager_t.h"
 #include "device/include/interop.h"
@@ -70,7 +71,7 @@ public:
   MOCK_METHOD(void, InteropDatabaseClear, ());
   MOCK_METHOD(bool, InteropMatchAddrOrName,
               (const interop_feature_t, const RawAddress*,
-               bt_status_t (*)(const RawAddress*, bt_property_t*)));
+               BtStatus (*)(const RawAddress*, bt_property_t*)));
   MOCK_METHOD(bool, InteropMatchManufacturer, (const interop_feature_t, uint16_t));
   MOCK_METHOD(bool, InteropMatchVendorProductIds, (const interop_feature_t, uint16_t, uint16_t));
   MOCK_METHOD(bool, InteropDatabaseMatchVersion, (const interop_feature_t, uint16_t));
@@ -102,8 +103,8 @@ void interop_database_add(uint16_t feature, const RawAddress* addr, size_t lengt
 void interop_database_clear() { localIopMock->InteropDatabaseClear(); }
 
 bool interop_match_addr_or_name(const interop_feature_t feature, const RawAddress* addr,
-                                bt_status_t (*get_remote_device_property)(const RawAddress*,
-                                                                          bt_property_t*)) {
+                                BtStatus (*get_remote_device_property)(const RawAddress*,
+                                                                       bt_property_t*)) {
   return localIopMock->InteropMatchAddrOrName(feature, addr, get_remote_device_property);
 }
 

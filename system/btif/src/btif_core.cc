@@ -51,6 +51,7 @@
 #include "btif/include/btif_storage.h"
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager_t.h"
+#include "btif_status.h"
 #include "common/message_loop_thread.h"
 #include "device/include/device_iot_config.h"
 #include "hci/controller.h"
@@ -238,14 +239,13 @@ static bt_status_t btif_in_get_adapter_properties(void) {
   uint32_t disc_timeout;
   tBLE_BD_ADDR_SERIALIZED serialized_bonded_devices[BTM_SEC_MAX_DEVICE_RECORDS];
   Uuid local_uuids[BT_MAX_NUM_UUIDS];
-  bt_status_t status;
 
   /* RawAddress */
   BTIF_STORAGE_FILL_PROPERTY(&properties[num_props], BT_PROPERTY_BDADDR, sizeof(addr), &addr);
-  status = btif_storage_get_adapter_property(&properties[num_props]);
+  BtStatus status = btif_storage_get_adapter_property(&properties[num_props]);
   // Add BT_PROPERTY_BDADDR property into list only when successful.
   // Otherwise, skip this property entry.
-  if (status == BT_STATUS_SUCCESS) {
+  if (status) {
     num_props++;
   }
 
@@ -331,8 +331,9 @@ static bt_status_t btif_in_get_remote_device_properties(RawAddress* bd_addr) {
 
 static void btif_core_storage_adapter_write(bt_property_t* prop) {
   log::verbose("type: {}, len {}, {}", prop->type, prop->len, std::format_ptr(prop->val));
-  bt_status_t status = btif_storage_set_adapter_property(prop);
-  GetInterfaceToProfiles()->events->invoke_adapter_properties_cb(status, 1, prop);
+  BtStatus status = btif_storage_set_adapter_property(prop);
+  GetInterfaceToProfiles()->events->invoke_adapter_properties_cb(
+          static_cast<bt_status_t>(status.code()), 1, prop);
 }
 
 void btif_adapter_properties_evt(bt_status_t status, uint32_t num_props, bt_property_t* p_props) {
@@ -371,7 +372,7 @@ void btif_get_adapter_properties(void) {
 void btif_get_adapter_property(bt_property_type_t type) {
   log::verbose("{}", type);
 
-  bt_status_t status = BT_STATUS_SUCCESS;
+  BtStatus status = BtifStatus();
   char buf[512];
   bt_property_t prop{
           .type = type,
@@ -487,7 +488,8 @@ void btif_get_adapter_property(bt_property_type_t type) {
   } else {
     status = btif_storage_get_adapter_property(&prop);
   }
-  GetInterfaceToProfiles()->events->invoke_adapter_properties_cb(status, 1, &prop);
+  GetInterfaceToProfiles()->events->invoke_adapter_properties_cb(
+          static_cast<bt_status_t>(status.code()), 1, &prop);
 }
 
 bt_property_t* property_deep_copy(const bt_property_t* prop) {
@@ -565,14 +567,14 @@ void btif_get_remote_device_property(RawAddress remote_addr, bt_property_type_t 
   prop.val = (void*)buf;
   prop.len = sizeof(buf);
 
-  bt_status_t status = btif_storage_get_remote_device_property(&remote_addr, &prop);
+  BtStatus status = btif_storage_get_remote_device_property(&remote_addr, &prop);
 
   tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
   bt_property_t addr_type_prop = {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type};
   btif_storage_get_remote_device_property(&remote_addr, &addr_type_prop);
 
-  GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(status, remote_addr,
-                                                                       addr_type, 1, &prop);
+  GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
+          static_cast<bt_status_t>(status.code()), remote_addr, addr_type, 1, &prop);
 }
 
 /*******************************************************************************

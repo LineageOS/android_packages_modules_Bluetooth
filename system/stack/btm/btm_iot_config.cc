@@ -55,8 +55,7 @@ void btm_iot_save_remote_properties(tACL_CONN* p_acl_cb) {
 
   /* Try to retrieve cod from storage */
   BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_CLASS_OF_DEVICE, sizeof(cod), &cod);
-  if (btif_storage_get_remote_device_property(&p_acl_cb->link_spec.addrt.bda, &prop_name) ==
-      BT_STATUS_SUCCESS) {
+  if (btif_storage_get_remote_device_property(&p_acl_cb->link_spec.addrt.bda, &prop_name)) {
     log::verbose("cod retrieved from storage is 0x{:06x}", cod);
   }
   if (cod == 0) {

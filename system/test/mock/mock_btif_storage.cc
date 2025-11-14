@@ -27,6 +27,7 @@
 
 #include "btif/include/btif_api.h"
 #include "btif/include/btif_storage.h"
+#include "btif_status.h"
 #include "test/common/mock_functions.h"
 
 // Original usings
@@ -81,29 +82,29 @@ namespace test {
 namespace mock {
 namespace btif_storage {
 
-bt_status_t btif_in_fetch_bonded_ble_device::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_in_fetch_bonded_device::return_value = BT_STATUS_SUCCESS;
+BtStatus btif_in_fetch_bonded_ble_device::return_value = BtifStatus();
+BtStatus btif_in_fetch_bonded_device::return_value = BtifStatus();
 size_t btif_split_uuids_string::return_value = 0;
-bt_status_t btif_storage_add_ble_bonding_key::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_storage_add_ble_local_key::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_storage_add_bonded_device::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_storage_add_remote_device::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_storage_get_adapter_property::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_storage_get_ble_bonding_key::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_storage_get_ble_local_key::return_value = BT_STATUS_SUCCESS;
+BtStatus btif_storage_add_ble_bonding_key::return_value = BtifStatus();
+BtStatus btif_storage_add_ble_local_key::return_value = BtifStatus();
+BtStatus btif_storage_add_bonded_device::return_value = BtifStatus();
+BtStatus btif_storage_add_remote_device::return_value = BtifStatus();
+BtStatus btif_storage_get_adapter_property::return_value = BtifStatus();
+BtStatus btif_storage_get_ble_bonding_key::return_value = BtifStatus();
+BtStatus btif_storage_get_ble_local_key::return_value = BtifStatus();
 Octet16 btif_storage_get_gatt_cl_db_hash::return_value = {};
 uint8_t btif_storage_get_gatt_cl_supp_feat::return_value = 0;
-bt_status_t btif_storage_get_remote_addr_type::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_storage_get_remote_device_property::return_value = BT_STATUS_SUCCESS;
+BtStatus btif_storage_get_remote_addr_type::return_value = BtifStatus();
+BtStatus btif_storage_get_remote_device_property::return_value = BtifStatus();
 uint8_t btif_storage_get_sr_supp_feat::return_value = 0;
 bool btif_storage_get_stored_remote_name::return_value = false;
 bool btif_storage_get_cod::return_value = false;
 bool btif_storage_is_restricted_device::return_value = false;
-bt_status_t btif_storage_load_bonded_devices::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_storage_remove_ble_bonding_keys::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_storage_remove_bonded_device::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_storage_set_adapter_property::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_storage_set_remote_device_property::return_value = BT_STATUS_SUCCESS;
+BtStatus btif_storage_load_bonded_devices::return_value = BtifStatus();
+BtStatus btif_storage_remove_ble_bonding_keys::return_value = BtifStatus();
+BtStatus btif_storage_remove_bonded_device::return_value = BtifStatus();
+BtStatus btif_storage_set_adapter_property::return_value = BtifStatus();
+BtStatus btif_storage_set_remote_device_property::return_value = BtifStatus();
 std::vector<bluetooth::Uuid> btif_storage_get_services::return_value =
         std::vector<bluetooth::Uuid>();
 
@@ -116,13 +117,13 @@ void btif_debug_linkkey_type_dump(int fd) {
   inc_func_call_count(__func__);
   test::mock::btif_storage::btif_debug_linkkey_type_dump(fd);
 }
-bt_status_t btif_in_fetch_bonded_ble_device(const std::string& remote_bd_addr, int add,
-                                            btif_bonded_devices_t* p_bonded_devices) {
+BtStatus btif_in_fetch_bonded_ble_device(const std::string& remote_bd_addr, int add,
+                                         btif_bonded_devices_t* p_bonded_devices) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_in_fetch_bonded_ble_device(remote_bd_addr, add,
                                                                    p_bonded_devices);
 }
-bt_status_t btif_in_fetch_bonded_device(const std::string& bdstr) {
+BtStatus btif_in_fetch_bonded_device(const std::string& bdstr) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_in_fetch_bonded_device(bdstr);
 }
@@ -130,39 +131,39 @@ size_t btif_split_uuids_string(const char* str, bluetooth::Uuid* p_uuid, size_t 
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_split_uuids_string(str, p_uuid, max_uuids);
 }
-bt_status_t btif_storage_add_ble_bonding_key(RawAddress* remote_bd_addr, const uint8_t* key_value,
-                                             uint8_t key_type, uint8_t key_length) {
+BtStatus btif_storage_add_ble_bonding_key(RawAddress* remote_bd_addr, const uint8_t* key_value,
+                                          uint8_t key_type, uint8_t key_length) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_add_ble_bonding_key(remote_bd_addr, key_value,
                                                                     key_type, key_length);
 }
-bt_status_t btif_storage_add_ble_local_key(const Octet16& key_value, uint8_t key_type) {
+BtStatus btif_storage_add_ble_local_key(const Octet16& key_value, uint8_t key_type) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_add_ble_local_key(key_value, key_type);
 }
-bt_status_t btif_storage_add_bonded_device(RawAddress* remote_bd_addr, LinkKey link_key,
-                                           uint8_t key_type, uint8_t pin_length) {
+BtStatus btif_storage_add_bonded_device(RawAddress* remote_bd_addr, LinkKey link_key,
+                                        uint8_t key_type, uint8_t pin_length) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_add_bonded_device(remote_bd_addr, link_key,
                                                                   key_type, pin_length);
 }
-bt_status_t btif_storage_add_remote_device(const RawAddress* remote_bd_addr,
-                                           uint32_t num_properties, bt_property_t* properties) {
+BtStatus btif_storage_add_remote_device(const RawAddress* remote_bd_addr, uint32_t num_properties,
+                                        bt_property_t* properties) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_add_remote_device(remote_bd_addr, num_properties,
                                                                   properties);
 }
-bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
+BtStatus btif_storage_get_adapter_property(bt_property_t* property) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_get_adapter_property(property);
 }
-bt_status_t btif_storage_get_ble_bonding_key(const RawAddress& remote_bd_addr, uint8_t key_type,
-                                             uint8_t* key_value, int key_length) {
+BtStatus btif_storage_get_ble_bonding_key(const RawAddress& remote_bd_addr, uint8_t key_type,
+                                          uint8_t* key_value, int key_length) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_get_ble_bonding_key(remote_bd_addr, key_type,
                                                                     key_value, key_length);
 }
-bt_status_t btif_storage_get_ble_local_key(uint8_t key_type, Octet16* key_value) {
+BtStatus btif_storage_get_ble_local_key(uint8_t key_type, Octet16* key_value) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_get_ble_local_key(key_type, key_value);
 }
@@ -174,13 +175,13 @@ uint8_t btif_storage_get_gatt_cl_supp_feat(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_get_gatt_cl_supp_feat(bd_addr);
 }
-bt_status_t btif_storage_get_remote_addr_type(const RawAddress* remote_bd_addr,
-                                              tBLE_ADDR_TYPE* addr_type) {
+BtStatus btif_storage_get_remote_addr_type(const RawAddress* remote_bd_addr,
+                                           tBLE_ADDR_TYPE* addr_type) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_get_remote_addr_type(remote_bd_addr, addr_type);
 }
-bt_status_t btif_storage_get_remote_device_property(const RawAddress* remote_bd_addr,
-                                                    bt_property_t* property) {
+BtStatus btif_storage_get_remote_device_property(const RawAddress* remote_bd_addr,
+                                                 bt_property_t* property) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_get_remote_device_property(remote_bd_addr,
                                                                            property);
@@ -201,7 +202,7 @@ bool btif_storage_is_restricted_device(const RawAddress remote_bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_is_restricted_device(remote_bd_addr);
 }
-bt_status_t btif_storage_load_bonded_devices(void) {
+BtStatus btif_storage_load_bonded_devices(void) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_load_bonded_devices();
 }
@@ -209,11 +210,11 @@ void btif_storage_load_le_devices(void) {
   inc_func_call_count(__func__);
   test::mock::btif_storage::btif_storage_load_le_devices();
 }
-bt_status_t btif_storage_remove_ble_bonding_keys(const RawAddress* remote_bd_addr) {
+BtStatus btif_storage_remove_ble_bonding_keys(const RawAddress* remote_bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_remove_ble_bonding_keys(remote_bd_addr);
 }
-bt_status_t btif_storage_remove_bonded_device(const RawAddress* remote_bd_addr) {
+BtStatus btif_storage_remove_bonded_device(const RawAddress* remote_bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_remove_bonded_device(remote_bd_addr);
 }
@@ -225,7 +226,7 @@ void btif_storage_remove_gatt_cl_supp_feat(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
   test::mock::btif_storage::btif_storage_remove_gatt_cl_supp_feat(bd_addr);
 }
-bt_status_t btif_storage_set_adapter_property(bt_property_t* property) {
+BtStatus btif_storage_set_adapter_property(bt_property_t* property) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_set_adapter_property(property);
 }
@@ -241,13 +242,13 @@ void btif_storage_set_gatt_sr_supp_feat(const RawAddress& addr, uint8_t feat) {
   inc_func_call_count(__func__);
   test::mock::btif_storage::btif_storage_set_gatt_sr_supp_feat(addr, feat);
 }
-bt_status_t btif_storage_set_remote_addr_type(const RawAddress* remote_bd_addr,
-                                              const tBLE_ADDR_TYPE addr_type) {
+BtStatus btif_storage_set_remote_addr_type(const RawAddress* remote_bd_addr,
+                                           const tBLE_ADDR_TYPE addr_type) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_set_remote_addr_type(remote_bd_addr, addr_type);
 }
-bt_status_t btif_storage_set_remote_device_property(const RawAddress* remote_bd_addr,
-                                                    bt_property_t* property) {
+BtStatus btif_storage_set_remote_device_property(const RawAddress* remote_bd_addr,
+                                                 bt_property_t* property) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_set_remote_device_property(remote_bd_addr,
                                                                            property);

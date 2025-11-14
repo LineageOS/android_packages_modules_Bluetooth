@@ -104,8 +104,7 @@ void btif_iot_update_remote_info(tBTA_DM_AUTH_CMPL* p_auth_cmpl, bool is_ble, bo
   // Try to retrieve cod from storage
   BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties], BT_PROPERTY_CLASS_OF_DEVICE, sizeof(cod),
                              &cod);
-  if (btif_storage_get_remote_device_property(&p_auth_cmpl->bd_addr, &properties[num_properties]) ==
-      BT_STATUS_SUCCESS) {
+  if (btif_storage_get_remote_device_property(&p_auth_cmpl->bd_addr, &properties[num_properties])) {
     log::verbose("cod retrieved from storage is 0x{:06x}", cod);
   }
   if (cod == 0) {
@@ -120,8 +119,7 @@ void btif_iot_update_remote_info(tBTA_DM_AUTH_CMPL* p_auth_cmpl, bool is_ble, bo
   uint32_t remote_dev_type;
   BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties], BT_PROPERTY_TYPE_OF_DEVICE,
                              sizeof(uint32_t), &remote_dev_type);
-  if (btif_storage_get_remote_device_property(&p_auth_cmpl->bd_addr, &properties[num_properties]) ==
-      BT_STATUS_SUCCESS) {
+  if (btif_storage_get_remote_device_property(&p_auth_cmpl->bd_addr, &properties[num_properties])) {
     log::verbose("retrieve dev type from storage");
     dev_type = (bt_device_type_t)(remote_dev_type | p_auth_cmpl->dev_type);
   } else {
