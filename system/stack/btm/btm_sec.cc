@@ -288,6 +288,7 @@ bool BTM_IsAuthenticated(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
  * Returns          void
  *
  ******************************************************************************/
+// TODO : Remove when the flag local_pin_key_type is shipped
 void BTM_SetPinType(uint8_t pin_type, PinCode pin_code, uint8_t pin_code_len) {
   log::verbose("BTM_SetPinType: pin type {} [variable-0, fixed-1], code {}, length {}", pin_type,
                (char*)pin_code.data(), pin_code_len);
@@ -563,7 +564,8 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
             BTM_SEC_ROLE_SWITCHED | BTM_SEC_LINK_KEY_AUTHED);
 
   log::verbose("after update sec_flags=0x{:x}", p_device->sec_rec.sec_flags);
-  if (!bluetooth::shim::GetController()->SupportsSimplePairing()) {
+  if (!com_android_bluetooth_flags_local_pin_key_type() &&
+      !bluetooth::shim::GetController()->SupportsSimplePairing()) {
     /* The special case when we authenticate keyboard.  Set pin type to fixed */
     /* It would be probably better to do it from the application, but it is */
     /* complicated */
@@ -4410,7 +4412,8 @@ void btm_sec_pin_code_request(const RawAddress p_bda) {
     btm_sec_cb.pairing_flags = BTM_PAIR_FLAGS_PEER_STARTED_DD;
   }
 
-  if (!p_cb->pairing_disabled && (p_cb->cfg.pin_type == HCI_PIN_TYPE_FIXED)) {
+  if (!com_android_bluetooth_flags_local_pin_key_type() && !p_cb->pairing_disabled &&
+      (p_cb->cfg.pin_type == HCI_PIN_TYPE_FIXED)) {
     log::verbose("btm_sec_pin_code_request fixed pin replying");
     btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
     btsnd_hcic_pin_code_req_reply(p_bda, p_cb->cfg.pin_code_len, p_cb->cfg.pin_code);
@@ -4809,7 +4812,7 @@ static void btm_restore_mode(void) {
     btsnd_hcic_write_auth_enable(false);
   }
 
-  if (btm_sec_cb.pin_type_changed) {
+  if (!com_android_bluetooth_flags_local_pin_key_type() && btm_sec_cb.pin_type_changed) {
     btm_sec_cb.pin_type_changed = false;
     btsnd_hcic_write_pin_type(btm_sec_cb.cfg.pin_type);
   }

@@ -173,7 +173,9 @@ void BTM_reset_complete() {
             bluetooth::shim::GetController()->GetLeBufferSize().total_num_le_packets_);
   }
 
-  BTM_SetPinType(btm_sec_cb.cfg.pin_type, btm_sec_cb.cfg.pin_code, btm_sec_cb.cfg.pin_code_len);
+  if (!com_android_bluetooth_flags_local_pin_key_type()) {
+    BTM_SetPinType(btm_sec_cb.cfg.pin_type, btm_sec_cb.cfg.pin_code, btm_sec_cb.cfg.pin_code_len);
+  }
 
   decode_controller_support();
 }
