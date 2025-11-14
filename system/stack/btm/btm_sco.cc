@@ -54,7 +54,6 @@
 #include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_dev_class.h"
-#include "stack/include/btm_api_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/btm_status.h"
@@ -682,7 +681,8 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle, enh_esco_params
  *
  ******************************************************************************/
 tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig, uint16_t pkt_types,
-                          uint16_t* p_sco_inx, tBTM_SCO_CB* p_conn_cb, tBTM_SCO_CB* p_disc_cb) {
+                          uint16_t* p_sco_inx, tBTM_SCO_CB* p_conn_cb,
+                          tBTM_SCO_WITH_REASON_CB* p_disc_cb) {
   enh_esco_params_t* p_setup;
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[0];
   uint16_t xx;
@@ -1070,7 +1070,7 @@ void btm_sco_create_command_status_failed(tHCI_STATUS hci_status) {
     if (p->state == SCO_ST_CONNECTING && p->is_orig) {
       log::info("SCO Connection failed to {}, reason: {}", p->esco.data.bd_addr, hci_status);
       p->state = SCO_ST_UNUSED;
-      (*p->p_disc_cb)(idx);
+      (*p->p_disc_cb)(idx, INTERNAL_ERROR);
 
       BTM_LogHistory(kBtmLogTag, p->esco.data.bd_addr, "Connection failed",
                      std::format("locally_initiated reason:{}",
@@ -1121,7 +1121,7 @@ void btm_sco_connection_failed(tHCI_STATUS hci_status, const RawAddress& bda, ui
             break;
           default: /* Notify client about SCO failure */
             p->state = SCO_ST_UNUSED;
-            (*p->p_disc_cb)(xx);
+            (*p->p_disc_cb)(xx, INTERNAL_ERROR);
         }
         BTM_LogHistory(kBtmLogTag, bda, "Connection failed",
                        std::format("locally_initiated reason:{}",
@@ -1131,7 +1131,7 @@ void btm_sco_connection_failed(tHCI_STATUS hci_status, const RawAddress& bda, ui
                    hci_error_code_text(hci_status));
         if (p->state == SCO_ST_CONNECTING) {
           p->state = SCO_ST_UNUSED;
-          (*p->p_disc_cb)(xx);
+          (*p->p_disc_cb)(xx, INTERNAL_ERROR);
         } else {
           p->state = SCO_ST_LISTENING;
           if (bda != RawAddress::kEmpty) {
@@ -1234,7 +1234,7 @@ static bool btm_sco_removed(uint16_t hci_handle, tHCI_REASON reason) {
       p->hci_handle = HCI_INVALID_HANDLE;
       p->rem_bd_known = false;
       p->esco.p_esco_cback = NULL; /* Deregister eSCO callback */
-      (*p->p_disc_cb)(xx);
+      (*p->p_disc_cb)(xx, NO_FAILURE);
 
       hfp_hal_interface::notify_sco_connection_change(
               bda, /*is_connected=*/false,
@@ -1274,7 +1274,12 @@ static void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason) {
   p_sco->hci_handle = HCI_INVALID_HANDLE;
   p_sco->rem_bd_known = false;
   p_sco->esco.p_esco_cback = NULL; /* Deregister eSCO callback */
-  (*p_sco->p_disc_cb)(btm_cb.sco_cb.get_index(p_sco));
+  SCO_CONNECTION_FAILURES failureReason =
+          (reason == tHCI_REASON::HCI_ERR_PEER_USER ||
+           reason == tHCI_REASON::HCI_ERR_REMOTE_POWER_OFF)
+                  ? SCO_CONNECTION_FAILURES::REMOTE_INITIATED_DISCONNECT
+                  : SCO_CONNECTION_FAILURES::NO_FAILURE;
+  (*p_sco->p_disc_cb)(btm_cb.sco_cb.get_index(p_sco), failureReason);
   log::debug("Disconnected SCO link handle:{} reason:{}", hci_handle, hci_reason_code_text(reason));
   BTM_LogHistory(
           kBtmLogTag, bd_addr, "Disconnected",
@@ -1339,7 +1344,7 @@ void btm_sco_acl_removed(const RawAddress* bda) {
       if ((!bda) || (p->esco.data.bd_addr == *bda && p->rem_bd_known)) {
         p->state = SCO_ST_UNUSED;
         p->esco.p_esco_cback = NULL; /* Deregister eSCO callback */
-        (*p->p_disc_cb)(xx);
+        (*p->p_disc_cb)(xx, NO_FAILURE);
       }
     }
   }

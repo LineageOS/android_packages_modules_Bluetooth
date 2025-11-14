@@ -560,7 +560,7 @@ void bta_ag_api_result(uint16_t handle, tBTA_AG_RES result, const tBTA_AG_RES_DA
 }
 
 static void bta_ag_better_state_machine(tBTA_AG_SCB* p_scb, uint16_t event,
-                                        const tBTA_AG_DATA& data) {
+                                        const tBTA_AG_DATA& data, SCO_CONNECTION_FAILURES reason) {
   switch (p_scb->state) {
     case BTA_AG_INIT_ST:
       switch (event) {
@@ -682,7 +682,7 @@ static void bta_ag_better_state_machine(tBTA_AG_SCB* p_scb, uint16_t event,
           bta_ag_post_sco_open(p_scb, data);
           break;
         case BTA_AG_SCO_CLOSE_EVT:
-          bta_ag_sco_conn_close(p_scb, data);
+          bta_ag_sco_conn_close(p_scb, data, reason);
           bta_ag_post_sco_close(p_scb, data);
           break;
         case BTA_AG_DISC_ACP_RES_EVT:
@@ -745,7 +745,8 @@ static void bta_ag_better_state_machine(tBTA_AG_SCB* p_scb, uint16_t event,
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event, const tBTA_AG_DATA& data) {
+void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event, const tBTA_AG_DATA& data,
+                       SCO_CONNECTION_FAILURES reason) {
   uint16_t previous_event = event;
   tBTA_AG_STATE previous_state = p_scb->state;
 
@@ -756,7 +757,7 @@ void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event, const tBTA_AG_DATA& d
           static_cast<uint64_t>(p_scb->state), bta_ag_evt_str(event), event,
           bta_ag_res_str(data.api_result.result), data.api_result.result);
 
-  bta_ag_better_state_machine(p_scb, event, data);
+  bta_ag_better_state_machine(p_scb, event, data, reason);
 
   if (p_scb->state != previous_state) {
     log::debug(
@@ -770,12 +771,13 @@ void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event, const tBTA_AG_DATA& d
   }
 }
 
-void bta_ag_sm_execute_by_handle(uint16_t handle, uint16_t event, const tBTA_AG_DATA& data) {
+void bta_ag_sm_execute_by_handle(uint16_t handle, uint16_t event, const tBTA_AG_DATA& data,
+                                 SCO_CONNECTION_FAILURES reason) {
   tBTA_AG_SCB* p_scb = bta_ag_scb_by_idx(handle);
   if (p_scb) {
     log::debug("AG state machine event:{}[0x{:04x}] handle:0x{:04x}", bta_ag_evt_str(event), event,
                handle);
-    bta_ag_sm_execute(p_scb, event, data);
+    bta_ag_sm_execute(p_scb, event, data, reason);
   }
 }
 

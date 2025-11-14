@@ -72,7 +72,7 @@ static void sco_socket_free_locked(sco_socket_t* socket);
 static sco_socket_t* sco_socket_find_locked(uint16_t sco_handle);
 static void connection_request_cb(tBTM_ESCO_EVT event, tBTM_ESCO_EVT_DATA* data);
 static void connect_completed_cb(uint16_t sco_handle);
-static void disconnect_completed_cb(uint16_t sco_handle);
+static void disconnect_completed_cb(uint16_t sco_handle, SCO_CONNECTION_FAILURES reason);
 static void socket_read_ready_cb(socket_t* socket, void* context);
 
 // |sco_lock| protects all of the static variables below and
@@ -326,7 +326,8 @@ static void connect_completed_cb(uint16_t sco_handle) {
   sco_socket->connect_completed = true;
 }
 
-static void disconnect_completed_cb(uint16_t sco_handle) {
+static void disconnect_completed_cb(uint16_t sco_handle,
+                                    [[maybe_unused]] SCO_CONNECTION_FAILURES reason) {
   std::unique_lock<std::mutex> lock(sco_lock);
 
   sco_socket_t* sco_socket = sco_socket_find_locked(sco_handle);

@@ -105,10 +105,19 @@ enum class tBTA_AG_UUID_CODEC : uint16_t {
 
 typedef uint16_t tBTM_SCO_CODEC_TYPE;
 
+typedef enum : uint8_t {
+  NO_FAILURE = 0,
+  CODEC_NEGOTIATION_FAIL = 1,
+  REMOTE_INITIATED_DISCONNECT = 2,
+  PRECONDITION_FAIL = 3,
+  INTERNAL_ERROR = 4,
+} SCO_CONNECTION_FAILURES;
+
 /***************************
  *  SCO Callback Functions
  ***************************/
 typedef void(tBTM_SCO_CB)(uint16_t sco_inx);
+typedef void(tBTM_SCO_WITH_REASON_CB)(uint16_t sco_inx, SCO_CONNECTION_FAILURES reason);
 
 /***************
  *  eSCO Types
