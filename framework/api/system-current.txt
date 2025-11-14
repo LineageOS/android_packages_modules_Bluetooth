@@ -961,6 +961,7 @@ package android.bluetooth {
     field public static final int QUALITY_REPORT_ID_APPROACH_LSTO = 2; // 0x2
     field public static final int QUALITY_REPORT_ID_CONN_FAIL = 8; // 0x8
     field public static final int QUALITY_REPORT_ID_ENERGY_MONITOR = 6; // 0x6
+    field @FlaggedApi("com.android.bluetooth.flags.bluetooth_quality_report_v8") public static final int QUALITY_REPORT_ID_LEA_CHOPPY = 7; // 0x7
     field public static final int QUALITY_REPORT_ID_MONITOR = 1; // 0x1
     field public static final int QUALITY_REPORT_ID_RF_STATS = 9; // 0x9
     field public static final int QUALITY_REPORT_ID_SCO_CHOPPY = 4; // 0x4
