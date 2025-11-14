@@ -888,7 +888,8 @@ static void hh_vc_unplug_handler(tBTA_HH_CBDATA& dev_status) {
 
   // Remove the HID device
   btif_hh_remove_device(p_dev->link_spec);
-  if (p_dev->local_vup || btif_check_cod_hid(p_dev->link_spec.addrt.bda)) {
+  if (com::android::bluetooth::flags::hid_always_unbond_on_virtual_unplug() || p_dev->local_vup ||
+      btif_check_cod_hid(p_dev->link_spec.addrt.bda)) {
     // Remove the bond if locally initiated or remote device has major class HID
     p_dev->local_vup = false;
     BTA_DmRemoveDevice(p_dev->link_spec.addrt.bda);
