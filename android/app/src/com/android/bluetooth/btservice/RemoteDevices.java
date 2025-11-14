@@ -393,7 +393,7 @@ public class RemoteDevices {
         @VisibleForTesting int mDiscoveryResultType = BluetoothDevice.DEVICE_TYPE_UNKNOWN;
         @VisibleForTesting boolean mHfpBatteryIndicator = false;
         private BluetoothSinkAudioPolicy mAudioPolicy;
-        private Optional<Integer> mLastBondLossReason;
+        private Optional<Integer> mLastBondLossReason = Optional.empty();
 
         private BondStatus mBredrBond;
         private BondStatus mLeBond;
