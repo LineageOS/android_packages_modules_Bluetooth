@@ -124,6 +124,11 @@ object Util {
     fun isWatch(context: Context) =
         context.packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH)
 
+    /** @return `true` if this Android device is an XR device, `false` otherwise */
+    @JvmStatic
+    fun isXrDevice(context: Context) =
+        context.packageManager.hasSystemFeature(PackageManager.FEATURE_XR_PERIPHERAL)
+
     /**
      * Checks CoD and metadata to determine if the remote device is a watch
      *
