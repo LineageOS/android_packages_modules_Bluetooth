@@ -2361,6 +2361,26 @@ std::shared_ptr<const types::AudioSetConfiguration> LeAudioDeviceGroup::GetPrefe
   return GetCachedPreferredConfiguration(context_type);
 }
 
+void LeAudioDeviceGroup::UpdateMetadataForActiveAndNotStreamingAses(
+        const types::BidirectionalPair<std::vector<uint8_t>>& ccid_lists) {
+  /* Set metadata to all the active ASEs if not in STREAMING State. */
+  log::info("group_id: {}", group_id_);
+
+  for (auto& leAudioDevice : leAudioDevices_) {
+    if (leAudioDevice.expired()) {
+      continue;
+    }
+    for (auto& ase : leAudioDevice.lock()->ases_) {
+      if (!ase.active || ase.state == types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+        continue;
+      }
+      auto contexts = metadata_context_type_.get(ase.direction);
+      leAudioDevice.lock()->SetMetadataToAse(&ase, types::LeAudioLtvMap(), contexts,
+                                             ccid_lists.get(ase.direction));
+    }
+  }
+}
+
 LeAudioCodecConfiguration LeAudioDeviceGroup::GetAudioSessionCodecConfigForDirection(
         LeAudioContextType context_type, uint8_t direction) const {
   auto audio_set_conf = GetConfiguration(context_type);

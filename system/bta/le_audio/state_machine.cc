@@ -317,6 +317,7 @@ public:
 
         // Even stream is already configured for the context, update the metadata.
         group->SetMetadataContexts(metadata_context_types);
+        group->UpdateMetadataForActiveAndNotStreamingAses(ccid_lists);
 
         if (wait_for_cig_removal) {
           log::debug("Continue after CIG is removed");
