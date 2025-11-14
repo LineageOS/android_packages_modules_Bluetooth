@@ -320,6 +320,11 @@ void A2dpCodecConfigExt::setCodecConfig(
 
 namespace bluetooth::a2dp {
 
+std::optional<CodecId> ParseCodecId([[maybe_unused]] uint8_t const media_codec_capabilities[]) {
+  inc_func_call_count(__func__);
+  return std::nullopt;
+}
+
 std::string CodecIdToString(CodecId codec_id) {
   switch (codec_id) {
     case CodecId::SBC:
