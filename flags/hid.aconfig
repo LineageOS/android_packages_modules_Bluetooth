@@ -130,3 +130,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "le_hid_connection_policy_suspend"
+    namespace: "bluetooth"
+    description: "Change connection policy for LE hid to forbid reconnect and restore the policy after resume"
+    bug: "459908685"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
