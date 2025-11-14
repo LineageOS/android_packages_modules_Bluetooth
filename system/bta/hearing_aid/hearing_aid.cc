@@ -481,7 +481,13 @@ public:
     log::info("bd_addr={} hi_sync_id=0x{:x} is_acceptlisted={}", dev_info.address,
               dev_info.hi_sync_id, is_acceptlisted);
     if (is_acceptlisted) {
-      hearingDevices.Add(dev_info);
+      if (com_android_bluetooth_flags_asha_retry_reconnect_when_in_set()) {
+        HearingDevice device_to_add = dev_info;
+        device_to_add.conn_id = INVALID_CONN_ID;
+        hearingDevices.Add(device_to_add);
+      } else {
+        hearingDevices.Add(dev_info);
+      }
 
       // TODO: we should increase the scanning window for few seconds, to get
       // faster initial connection, same after hearing aid disconnects, i.e.
