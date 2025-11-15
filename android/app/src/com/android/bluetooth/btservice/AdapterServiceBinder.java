@@ -18,6 +18,7 @@ package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+import static android.Manifest.permission.BLUETOOTH_SCAN;
 import static android.Manifest.permission.DUMP;
 import static android.Manifest.permission.MODIFY_PHONE_STATE;
 import static android.bluetooth.BluetoothAdapter.SCAN_MODE_NONE;
@@ -29,7 +30,6 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static com.android.bluetooth.ChangeIds.BONDING_APIS_REQUIRE_PRIVILEGED_PERMISSION;
 import static com.android.bluetooth.ChangeIds.ENFORCE_CONNECT;
 import static com.android.bluetooth.Util.enforceConnectPermissionForDataDelivery;
-import static com.android.bluetooth.Util.enforceScanPermissionForDataDelivery;
 import static com.android.bluetooth.Util.getUidPidString;
 import static com.android.bluetooth.Utils.callerIsSystem;
 import static com.android.bluetooth.Utils.callerIsSystemOrActiveOrManagedUser;
@@ -140,6 +140,18 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         return service;
     }
 
+    @RequiresPermission(BLUETOOTH_SCAN)
+    private AdapterService getServiceAndEnforceCallerUserAndScan(
+            AttributionSource source, String method) {
+        var service = getService();
+        if (service == null
+                || !callerIsSystemOrActiveOrManagedUser(service, TAG, method)
+                || !Util.enforceScanPermissionForDataDelivery(service, source, TAG, method)) {
+            return null;
+        }
+        return service;
+    }
+
     @Override
     public List<ParcelUuid> getUuids(AttributionSource source) {
         var service = getServiceAndEnforceCallerUserAndConnect(source, "getUuids");
@@ -224,10 +236,8 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public int getScanMode(AttributionSource source) {
-        AdapterService service = getService();
-        if (service == null
-                || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getScanMode")
-                || !enforceScanPermissionForDataDelivery(service, source, TAG, "getScanMode")) {
+        var service = getServiceAndEnforceCallerUserAndScan(source, "getScanMode");
+        if (service == null) {
             return SCAN_MODE_NONE;
         }
 
@@ -236,10 +246,8 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public int setScanMode(int mode, AttributionSource source) {
-        AdapterService service = getService();
-        if (service == null
-                || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setScanMode")
-                || !enforceScanPermissionForDataDelivery(service, source, TAG, "setScanMode")) {
+        var service = getServiceAndEnforceCallerUserAndScan(source, "setScanMode");
+        if (service == null) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_SCAN_PERMISSION;
         }
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
@@ -257,11 +265,8 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public long getDiscoverableTimeout(AttributionSource source) {
-        AdapterService service = getService();
-        if (service == null
-                || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getDiscoverableTimeout")
-                || !enforceScanPermissionForDataDelivery(
-                        service, source, TAG, "getDiscoverableTimeout")) {
+        var service = getServiceAndEnforceCallerUserAndScan(source, "getDiscoverableTimeout");
+        if (service == null) {
             return -1;
         }
 
@@ -270,11 +275,8 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public int setDiscoverableTimeout(long timeout, AttributionSource source) {
-        AdapterService service = getService();
-        if (service == null
-                || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setDiscoverableTimeout")
-                || !enforceScanPermissionForDataDelivery(
-                        service, source, TAG, "setDiscoverableTimeout")) {
+        var service = getServiceAndEnforceCallerUserAndScan(source, "setDiscoverableTimeout");
+        if (service == null) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_SCAN_PERMISSION;
         }
 
@@ -286,10 +288,8 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public boolean startDiscovery(AttributionSource source) {
-        AdapterService service = getService();
-        if (service == null
-                || !callerIsSystemOrActiveOrManagedUser(service, TAG, "startDiscovery")
-                || !enforceScanPermissionForDataDelivery(service, source, TAG, "startDiscovery")) {
+        var service = getServiceAndEnforceCallerUserAndScan(source, "startDiscovery");
+        if (service == null) {
             return false;
         }
 
@@ -299,10 +299,8 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public boolean cancelDiscovery(AttributionSource source) {
-        AdapterService service = getService();
-        if (service == null
-                || !callerIsSystemOrActiveOrManagedUser(service, TAG, "cancelDiscovery")
-                || !enforceScanPermissionForDataDelivery(service, source, TAG, "cancelDiscovery")) {
+        var service = getServiceAndEnforceCallerUserAndScan(source, "cancelDiscovery");
+        if (service == null) {
             return false;
         }
 
@@ -312,10 +310,8 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public boolean isDiscovering(AttributionSource source) {
-        AdapterService service = getService();
-        if (service == null
-                || !callerIsSystemOrActiveOrManagedUser(service, TAG, "isDiscovering")
-                || !enforceScanPermissionForDataDelivery(service, source, TAG, "isDiscovering")) {
+        var service = getServiceAndEnforceCallerUserAndScan(source, "isDiscovering");
+        if (service == null) {
             return false;
         }
 
@@ -1802,12 +1798,9 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     public int getOffloadedTransportDiscoveryDataScanSupported(AttributionSource source) {
-        AdapterService service = getService();
-        if (service == null
-                || !callerIsSystemOrActiveOrManagedUser(
-                        service, TAG, "getOffloadedTransportDiscoveryDataScanSupported")
-                || !enforceScanPermissionForDataDelivery(
-                        service, source, TAG, "getOffloadedTransportDiscoveryDataScanSupported")) {
+        var method = "getOffloadedTransportDiscoveryDataScanSupported";
+        var service = getServiceAndEnforceCallerUserAndScan(source, method);
+        if (service == null) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_SCAN_PERMISSION;
         }
 
