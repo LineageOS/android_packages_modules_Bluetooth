@@ -301,14 +301,11 @@ object ScanUtil {
 
     @JvmStatic
     fun requiresScreenOn(client: ScanClient) =
-        !isOpportunisticScanClient(client) && !isFilteredScan(client)
+        !isOpportunisticScanClient(client) && !client.hasNonEmptyFilters
 
     @JvmStatic
     fun requiresLocationOn(client: ScanClient) =
-        !client.hasDisavowedLocation && !isFilteredScan(client)
-
-    // A valid filter need at least one field not empty
-    private fun isFilteredScan(client: ScanClient) = client.filters.any { !it.isAllFieldsEmpty }
+        !client.hasDisavowedLocation && !client.hasNonEmptyFilters
 
     fun isBackgroundScan(settings: ScanSettings) =
         (settings.callbackType and ScanSettings.CALLBACK_TYPE_FIRST_MATCH) != 0

@@ -43,6 +43,9 @@ private constructor(
 ) {
     val isFiltered = filters.isNotEmpty()
 
+    // A valid filter need at least one field not empty
+    val hasNonEmptyFilters = filters.any { !it.isAllFieldsEmpty }
+
     var started = false
     var appDied = false
     var appScanStats: AppScanStats? = null
