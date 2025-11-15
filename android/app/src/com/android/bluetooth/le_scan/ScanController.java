@@ -400,8 +400,8 @@ public class ScanController {
             String originalAddress) {
         Log.v(
                 TAG,
-                "onScanResult() -"
-                        + (" eventType=0x" + Integer.toHexString(eventType))
+                "onScanResult(): "
+                        + ("eventType=0x" + Integer.toHexString(eventType))
                         + (", addressType=" + addressType)
                         + (", address=" + BluetoothUtils.toAnonymizedAddress(address))
                         + (", primaryPhy=" + primaryPhy)
@@ -796,8 +796,8 @@ public class ScanController {
         enforceScanThread();
         Log.d(
                 TAG,
-                "onTrackAdvFoundLost() -"
-                        + (" scannerId=" + trackingInfo.scannerId())
+                "onTrackAdvFoundLost(): "
+                        + ("scannerId=" + trackingInfo.scannerId())
                         + (", address=" + trackingInfo.address())
                         + (", addressType=" + trackingInfo.addressType())
                         + (", adv_state=" + trackingInfo.advState()));
@@ -860,7 +860,7 @@ public class ScanController {
     /** Callback method for configuration of scan parameters. */
     void onScanParamSetupCompleted(int status, int scannerId) {
         enforceScanThread();
-        Log.d(TAG, "onScanParamSetupCompleted() - scannerId=" + scannerId + ", status=" + status);
+        Log.d(TAG, "onScanParamSetupCompleted(): scannerId=" + scannerId + ", status=" + status);
         var app = mScannerMap.getById(scannerId);
         if (app == null || app.getCallback() == null) {
             Log.e(TAG, "Advertise app or callback is null");

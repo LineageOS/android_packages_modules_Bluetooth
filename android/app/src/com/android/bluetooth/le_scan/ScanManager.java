@@ -806,7 +806,7 @@ class ScanManager {
     @VisibleForTesting
     void handleClearConnectingState() {
         if (!mIsConnecting) {
-            Log.e(TAG, "handleClearConnectingState() - not connecting state");
+            Log.e(TAG, "handleClearConnectingState(): Not connecting state");
             return;
         }
         Log.d(TAG, "handleClearConnectingState()");
@@ -917,10 +917,8 @@ class ScanManager {
         final var updatedScanModeString = scanModeToString(updatedScanMode);
         Log.d(
                 TAG,
-                "updateScanModeScreenOff(): "
-                        + ("for=" + client)
-                        + (" from=" + scanModeString)
-                        + (" to=" + updatedScanModeString));
+                ("updateScanModeScreenOff(): for " + client)
+                        + (" from=" + scanModeString + " to=" + updatedScanModeString));
         return client.updateScanMode(updatedScanMode);
     }
 
@@ -982,11 +980,7 @@ class ScanManager {
                         msg, mAdapterService.getScanUpgradeDuration().toMillis());
             }
             final var scanModeString = scanModeToString(client.getSettings().getScanMode());
-            Log.d(
-                    TAG,
-                    "upgradeScanModeBeforeStart(): "
-                            + ("for=" + client)
-                            + (" to=" + scanModeString));
+            Log.d(TAG, "upgradeScanModeBeforeStart(): for " + client + " to=" + scanModeString);
             return true;
         }
         return false;
@@ -999,11 +993,8 @@ class ScanManager {
             return;
         }
         if (client.updateScanMode(scanModeApp)) {
-            Log.d(
-                    TAG,
-                    "handleRevertScanModeUpgrade(): "
-                            + ("for=" + client)
-                            + (" to=" + scanModeToString(scanModeApp)));
+            var header = "handleRevertScanModeUpgrade(): ";
+            Log.d(TAG, header + "for " + client + " to=" + scanModeToString(scanModeApp));
             configureRegularScanParams();
         }
     }
@@ -1046,9 +1037,7 @@ class ScanManager {
             Log.d(
                     TAG,
                     "handleImportanceChange(): "
-                            + ("for=" + client)
-                            + (" uid=" + uid)
-                            + (" isForeground=" + isForeground)
+                            + ("for " + client + " uid=" + uid + " isForeground=" + isForeground)
                             + (" scanMode=" + scanModeToString(scanSettings.getScanMode())));
         }
 
@@ -1067,8 +1056,7 @@ class ScanManager {
                 isForceDowngradedScanClient(client) ? SCAN_MODE_FORCE_DOWNGRADED : scanMode;
         Log.d(
                 TAG,
-                "updateScanModeScreenOn(): "
-                        + ("for=" + client)
+                ("updateScanModeScreenOn(): for " + client)
                         + (" from=" + scanModeToString(scanModeApp))
                         + (" to=" + scanModeToString(minScanMode(scanMode, maxScanMode))));
         return client.updateScanMode(minScanMode(scanMode, maxScanMode));
@@ -1086,8 +1074,7 @@ class ScanManager {
             Log.d(
                     TAG,
                     "downgradeScanModeFromMaxDuty(): "
-                            + ("for=" + client)
-                            + (" to=" + scanModeToString(updatedScanMode)));
+                            + ("for " + client + " to=" + scanModeToString(updatedScanMode)));
             return true;
         }
         return false;
