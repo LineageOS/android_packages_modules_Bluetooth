@@ -4719,9 +4719,9 @@ static void btm_sec_wait_and_start_authentication(BtmDevice* p_device) {
     delay_auth = BTM_SEC_START_AUTH_DELAY;
   }
 
-  bt_status_t status = do_in_main_thread_delayed(base::BindOnce(&btm_sec_auth_timer_timeout, addr),
-                                                 std::chrono::milliseconds(delay_auth));
-  if (status != BT_STATUS_SUCCESS) {
+  BtStatus status = do_in_main_thread_delayed(base::BindOnce(&btm_sec_auth_timer_timeout, addr),
+                                              std::chrono::milliseconds(delay_auth));
+  if (!status) {
     log::error("do_in_main_thread_delayed failed. directly calling");
     btm_sec_auth_timer_timeout(addr);
   }

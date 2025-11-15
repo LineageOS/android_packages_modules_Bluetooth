@@ -114,7 +114,7 @@ static void sco_data_callback() {
     log::info("Dropping invalid packet of size {}", packet->size());
     return;
   }
-  if (do_in_main_thread(base::BindOnce(&btm_route_sco_data, *packet)) != BT_STATUS_SUCCESS) {
+  if (!do_in_main_thread(base::BindOnce(&btm_route_sco_data, *packet))) {
     log::error("do_in_main_thread failed from sco_data_callback");
   }
 }

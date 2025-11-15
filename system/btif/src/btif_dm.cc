@@ -929,7 +929,7 @@ uint16_t btif_dm_get_connection_state_sync(const RawAddress& bd_addr) {
             promise.set_value(state);
           },
           bd_addr, std::move(promise)));
-  log::assert_that(BT_STATUS_SUCCESS == status, "assert failed: BT_STATUS_SUCCESS == status");
+  log::assert_that(status, "assert failed: status is success");
   return future.get();
 }
 

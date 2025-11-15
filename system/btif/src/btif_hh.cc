@@ -1487,8 +1487,8 @@ static void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH* p_data) {
   }
   /* switch context to btif task context (copy full union size for convenience)
    */
-  status = BtifStatus(static_cast<BtifStatusCode>(btif_transfer_context(btif_hh_upstreams_evt, (uint16_t)event, (char*)p_data, param_len,
-                                 p_copy_cback)));
+  status = btif_transfer_context(btif_hh_upstreams_evt, (uint16_t)event, (char*)p_data, param_len,
+                                 p_copy_cback);
 
   /* catch any failed context transfers */
   ASSERTC(status, "context transfer failed", status);
@@ -1696,9 +1696,8 @@ static BtStatus connect(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSP
     btif_hh_transport_select(link_spec);
   }
 
-  return BtifStatus(static_cast<BtifStatusCode>(
-          btif_transfer_context(btif_hh_handle_evt, BTIF_HH_CONNECT_REQ_EVT, (char*)&link_spec,
-                                sizeof(AclLinkSpec), NULL)));
+  return btif_transfer_context(btif_hh_handle_evt, BTIF_HH_CONNECT_REQ_EVT, (char*)&link_spec,
+                               sizeof(AclLinkSpec), NULL);
 }
 
 /*******************************************************************************
@@ -1761,9 +1760,8 @@ static BtStatus disconnect(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type, tBT_TRA
     return BtifStatus(UNHANDLED);
   }
 
-  return BtifStatus(static_cast<BtifStatusCode>(
-          btif_transfer_context(btif_hh_handle_evt, BTIF_HH_DISCONNECT_REQ_EVT,
-                                (char*)&p_dev->link_spec, sizeof(AclLinkSpec), NULL)));
+  return btif_transfer_context(btif_hh_handle_evt, BTIF_HH_DISCONNECT_REQ_EVT,
+                               (char*)&p_dev->link_spec, sizeof(AclLinkSpec), NULL);
 }
 
 /*******************************************************************************

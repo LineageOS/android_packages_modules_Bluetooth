@@ -20,6 +20,7 @@
 #include "bta/include/bta_ras_api.h"
 #include "bta/ras/ras_types.h"
 #include "bta/test/common/bta_gatt_api_mock.h"
+#include "btif_status.h"
 #include "btm_api_mock.h"
 #include "include/hardware/bluetooth.h"
 #include "internal_include/stack_config.h"
@@ -98,13 +99,13 @@ static void UpdateTestServiceHandle(std::vector<btgatt_db_element_t>& service) {
   }
 }
 
-bt_status_t do_in_main_thread(base::OnceClosure task) {
+BtStatus do_in_main_thread(base::OnceClosure task) {
   if (task.is_null()) {
     bluetooth::log::error("Task is null!");
-    return BT_STATUS_FAIL;
+    return BtifStatus(FAIL);
   }
   std::move(task).Run();
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 namespace bluetooth::ras {
