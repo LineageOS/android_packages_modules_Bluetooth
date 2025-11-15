@@ -3867,7 +3867,7 @@ public class AdapterService extends Service {
      * @return the Android disconnect reason for apps.
      */
     @SuppressWarnings("StatementSwitchToExpressionSwitch") // Code will be unclear either way
-    static @BluetoothAdapter.BluetoothConnectionCallback.DisconnectReason int
+    public static @BluetoothAdapter.BluetoothConnectionCallback.DisconnectReason int
             hciToAndroidDisconnectReason(int hciReason) {
         switch (hciReason) {
             case /*HCI_SUCCESS*/ 0x00:
