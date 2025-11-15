@@ -590,7 +590,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
         val appScanStats = mock(AppScanStats::class.java)
         doReturn(appScanStats).whenever(scannerMap).getAppScanStatsByUid(Binder.getCallingUid())
 
-        scanController.registerScanner(callback, workSource, source)
+        scanController.registerScanner(callback, workSource, source, false)
         verify(scannerMap)
             .addWithCallback(
                 any<Int>(),

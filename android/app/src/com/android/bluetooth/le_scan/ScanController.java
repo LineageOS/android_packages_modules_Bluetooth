@@ -937,13 +937,16 @@ public class ScanController {
 
     // TODO(b/455057044) Delete on flag cleanup
     void registerScanner(
-            IScannerCallback callback, WorkSource workSource, AttributionSource source) {
+            IScannerCallback callback,
+            WorkSource workSource,
+            AttributionSource source,
+            boolean hasPrivilegedPermission) {
         enforceScanThread();
         var uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
         var appScanStats = mScannerMap.getAppScanStatsByUid(uid);
         if (appScanStats != null
                 && appScanStats.isScanningTooFrequently()
-                && !Util.checkCallerHasPrivilegedPermission(mAdapterService)) {
+                && !hasPrivilegedPermission) {
             Log.e(TAG, "registerScanner(): " + appScanStats + " is scanning too frequently");
             try {
                 callback.onScannerRegistered(ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY, -1);
@@ -959,6 +962,7 @@ public class ScanController {
             IScannerCallback callback,
             WorkSource workSource,
             AttributionSource source,
+            boolean hasPrivilegedPermission,
             ScanSettings settings,
             List<ScanFilter> filters) {
         enforceScanThread();
@@ -966,7 +970,7 @@ public class ScanController {
         var appScanStats = mScannerMap.getAppScanStatsByUid(uid);
         if (appScanStats != null
                 && appScanStats.isScanningTooFrequently()
-                && !Util.checkCallerHasPrivilegedPermission(mAdapterService)) {
+                && !hasPrivilegedPermission) {
             Log.e(TAG, "registerAndStartScan(): " + appScanStats + " is scanning too frequently");
             try {
                 callback.onScannerRegistered(ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY, -1);

@@ -45,6 +45,7 @@ import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 
 /** Test cases for [ScanBinder]. */
@@ -88,7 +89,7 @@ class ScanBinderTest {
         val workSource = mock(WorkSource::class.java)
 
         binder.registerScanner(callback, settings, filters, workSource, source)
-        verify(scanController).registerScanner(callback, workSource, source)
+        verify(scanController).registerScanner(callback, workSource, source, true)
     }
 
     @Test
@@ -103,7 +104,8 @@ class ScanBinderTest {
         binder.registerAndStartScan(callback, settings, filters, workSource, source)
 
         // Verification: Ensure the call is forwarded to the scanController
-        verify(scanController).registerAndStartScan(callback, workSource, source, settings, filters)
+        verify(scanController)
+            .registerAndStartScan(callback, workSource, source, true, settings, filters)
         // The callback should not be invoked directly by the binder in the success path
         verify(callback, never()).onScannerRegistered(any(Int::class.java), any(Int::class.java))
     }
@@ -121,7 +123,8 @@ class ScanBinderTest {
         binder.registerAndStartScan(callback, settings, filters, workSource, source)
 
         // Verification: Ensure the scanController is not called
-        verify(scanController, never()).registerAndStartScan(any(), any(), any(), any(), any())
+        verify(scanController, never())
+            .registerAndStartScan(any(), any(), any(), eq(true), any(), any())
         // Verification: Ensure the failure callback is invoked with the correct error code
         verify(callback).onScannerRegistered(SCAN_FAILED_APPLICATION_REGISTRATION_FAILED, -1)
     }
