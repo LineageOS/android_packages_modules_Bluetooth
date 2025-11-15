@@ -44,6 +44,7 @@
 #include "btif_common.h"
 #include "btif_sdp.h"
 #include "btif_sock_sdp.h"
+#include "btif_status.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
@@ -124,10 +125,10 @@ static void init_sdp_slots() {
   }
 }
 
-bt_status_t sdp_server_init() {
+BtStatus sdp_server_init() {
   log::verbose("Sdp Server Init");
   init_sdp_slots();
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 static void cleanup_in_main_thread() {
@@ -337,26 +338,24 @@ static void set_sdp_handle(int id, int handle) {
   }
 }
 
-
-static bt_status_t create_sdp_record_in_main_thread(bluetooth_sdp_record* record,
-                                                    int* record_handle) {
+static BtStatus create_sdp_record_in_main_thread(bluetooth_sdp_record* record, int* record_handle) {
   int handle;
 
   handle = alloc_sdp_slot(record);
   log::verbose("handle = 0x{:08x}", handle);
 
   if (handle < 0) {
-    return BT_STATUS_NOMEM;
+    return BtifStatus(NOMEM);
   }
 
   BTA_SdpCreateRecordByUser(INT_TO_PTR(handle));
 
   *record_handle = handle;
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
-bt_status_t create_sdp_record(bluetooth_sdp_record* record, int* record_handle) {
+BtStatus create_sdp_record(bluetooth_sdp_record* record, int* record_handle) {
   if (com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
       return get_main_thread()->DoInThreadSynchronously(&create_sdp_record_in_main_thread,
                                                       record, record_handle);
@@ -365,11 +364,11 @@ bt_status_t create_sdp_record(bluetooth_sdp_record* record, int* record_handle) 
   return create_sdp_record_in_main_thread(record, record_handle);
 }
 
-static bt_status_t remove_sdp_record_in_main_thread(int record_id) {
+static BtStatus remove_sdp_record_in_main_thread(int record_id) {
   int handle;
 
   if (record_id >= MAX_SDP_SLOTS) {
-    return BT_STATUS_PARM_INVALID;
+    return BtifStatus(PARM_INVALID);
   }
 
   bluetooth_sdp_record* record;
@@ -415,13 +414,13 @@ static bt_status_t remove_sdp_record_in_main_thread(int record_id) {
   /* Pass the actual record handle */
   if (handle > 0) {
     BTA_SdpRemoveRecordByUser(INT_TO_PTR(handle));
-    return BT_STATUS_SUCCESS;
+    return BtifStatus();
   }
   log::verbose("Sdp Server - record already removed - or never created");
-  return BT_STATUS_DONE;
+  return BtifStatus(DONE);
 }
 
-bt_status_t remove_sdp_record(int record_id) {
+BtStatus remove_sdp_record(int record_id) {
   if (com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
       return get_main_thread()->DoInThreadSynchronously(&remove_sdp_record_in_main_thread,
                                                       record_id);
