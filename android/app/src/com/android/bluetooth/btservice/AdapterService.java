@@ -2948,6 +2948,38 @@ public class AdapterService extends Service {
         return device;
     }
 
+    /** {@link #getBrEdrAddress(String)} */
+    public String getBrEdrAddress(BluetoothDevice device) {
+        return getBrEdrAddress(device.getAddress());
+    }
+
+    /**
+     * Returns the correct device address to be used for connections over BR/EDR transport.
+     *
+     * @param address the device address for which to obtain the connection address
+     * @return either identity address or device address in String format
+     */
+    public String getBrEdrAddress(String address) {
+        String identity = getIdentityAddress(address);
+        return identity != null ? identity : address;
+    }
+
+    /**
+     * Returns the correct device address to be used for connections over BR/EDR transport.
+     *
+     * @param device the device for which to obtain the connection address
+     * @return either identity address or device address as a byte array
+     */
+    public byte[] getByteBrEdrAddress(BluetoothDevice device) {
+        // If dual mode device bonded over BLE first, BR/EDR address will be identity address
+        // Otherwise, BR/EDR address will be same address as in BluetoothDevice#getAddress
+        byte[] address = getByteIdentityAddress(device);
+        if (address == null) {
+            address = Utils.getByteAddress(device);
+        }
+        return address;
+    }
+
     public String getIdentityAddress(String address) {
         return getIdentityAddressWithType(address).getAddress();
     }

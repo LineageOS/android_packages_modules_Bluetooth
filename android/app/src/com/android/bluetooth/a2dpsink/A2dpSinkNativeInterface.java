@@ -59,7 +59,7 @@ public class A2dpSinkNativeInterface extends NativeInterface<A2dpSinkNativeCallb
      * @return true on success, otherwise false.
      */
     public boolean connectA2dpSink(BluetoothDevice device) {
-        return connectA2dpNative(Utils.getByteBrEdrAddress(mAdapterService, device));
+        return connectA2dpNative(mAdapterService.getByteBrEdrAddress(device));
     }
 
     /**
@@ -69,7 +69,7 @@ public class A2dpSinkNativeInterface extends NativeInterface<A2dpSinkNativeCallb
      * @return true on success, otherwise false.
      */
     public boolean disconnectA2dpSink(BluetoothDevice device) {
-        return disconnectA2dpNative(Utils.getByteBrEdrAddress(mAdapterService, device));
+        return disconnectA2dpNative(mAdapterService.getByteBrEdrAddress(device));
     }
 
     /**
@@ -86,7 +86,7 @@ public class A2dpSinkNativeInterface extends NativeInterface<A2dpSinkNativeCallb
         // Translate to byte address for JNI. Use an all 0 MAC for no active device
         byte[] address = null;
         if (device != null) {
-            address = Utils.getByteBrEdrAddress(mAdapterService, device);
+            address = mAdapterService.getByteBrEdrAddress(device);
         } else {
             address = Utils.getBytesFromAddress("00:00:00:00:00:00");
         }

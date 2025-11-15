@@ -26,7 +26,6 @@ import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothDevice;
 
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.profile.NativeInterface;
 
@@ -120,7 +119,7 @@ public class HidDeviceNativeInterface extends NativeInterface<HidDeviceNativeCal
      * @return the result of the native call
      */
     boolean connect(BluetoothDevice device) {
-        return connectNative(Utils.getByteBrEdrAddress(mAdapterService, device));
+        return connectNative(mAdapterService.getByteBrEdrAddress(device));
     }
 
     /**

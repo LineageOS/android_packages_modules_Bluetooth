@@ -39,7 +39,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -94,13 +93,11 @@ public class BluetoothOppPreference {
     }
 
     private String getChannelKey(BluetoothDevice remoteDevice, int uuid) {
-        return Utils.getBrEdrAddress(remoteDevice, mAdapterService)
-                + "_"
-                + Integer.toHexString(uuid);
+        return mAdapterService.getBrEdrAddress(remoteDevice) + "_" + Integer.toHexString(uuid);
     }
 
     public String getName(BluetoothDevice remoteDevice) {
-        String identityAddress = Utils.getBrEdrAddress(remoteDevice, mAdapterService);
+        String identityAddress = mAdapterService.getBrEdrAddress(remoteDevice);
         if (identityAddress != null && identityAddress.equals("FF:FF:FF:00:00:00")) {
             return "localhost";
         }
@@ -132,7 +129,7 @@ public class BluetoothOppPreference {
     }
 
     public void setName(BluetoothDevice remoteDevice, String name) {
-        String brEdrAddress = Utils.getBrEdrAddress(remoteDevice, mAdapterService);
+        String brEdrAddress = mAdapterService.getBrEdrAddress(remoteDevice);
         Log.v(TAG, "setName for " + remoteDevice + " to " + name);
         if (name != null && !name.equals(getName(remoteDevice))) {
             mNamePreference.edit().putString(brEdrAddress, name).apply();
@@ -163,7 +160,7 @@ public class BluetoothOppPreference {
     }
 
     public void removeName(BluetoothDevice remoteDevice) {
-        String key = Utils.getBrEdrAddress(remoteDevice, mAdapterService);
+        String key = mAdapterService.getBrEdrAddress(remoteDevice);
         mNamePreference.edit().remove(key).apply();
         mNames.remove(key);
     }

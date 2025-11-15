@@ -413,7 +413,7 @@ public class ScanController {
                         + (", originalAddress=" + originalAddress));
 
         // Retain the original behavior of returning bluetoothAddress when identityAddress is null
-        String identityAddress = Utils.getBrEdrAddress(address, mAdapterService);
+        String identityAddress = mAdapterService.getBrEdrAddress(address);
 
         if (!address.equals(identityAddress)) {
             Log.v(
