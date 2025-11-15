@@ -41,6 +41,8 @@ private constructor(
     val hasDisavowedLocation: Boolean = false,
     val associatedDevices: List<String> = emptyList(),
 ) {
+    val isFiltered = filters.isNotEmpty()
+
     var started = false
     var appDied = false
     var appScanStats: AppScanStats? = null

@@ -1472,7 +1472,7 @@ class ScanManager {
         var isScanningTooLong = appScanStats == null || appScanStats.isScanningTooLong();
         if (!isExemptFromScanTimeout(client) && isScanningTooLong) {
             Log.d(TAG, header + "Scan time was too long");
-            if (client.getFilters().isEmpty()) {
+            if (!client.isFiltered()) {
                 Log.w(TAG, header + "Moving unfiltered scan to opportunistic scan");
                 setOpportunisticScanClient(client);
                 removeScanFilters(client.getScannerId());
@@ -1640,7 +1640,7 @@ class ScanManager {
         if (client == null) {
             return true;
         }
-        if (client.getFilters().isEmpty()) {
+        if (!client.isFiltered()) {
             return true;
         }
         if (client.getFilters().size() > mFilterIndexStack.size()) {
@@ -1785,7 +1785,7 @@ class ScanManager {
         }
 
         if (client == null
-                || client.getFilters().isEmpty()
+                || !client.isFiltered()
                 || client.getFilters().size() > mFilterIndexStack.size()) {
             // Use all-pass filter
             updateScanMsft();

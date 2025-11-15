@@ -631,7 +631,7 @@ public class ScanController {
                 return false;
             }
         }
-        if (client.getFilters().isEmpty()) {
+        if (!client.isFiltered()) {
             // TODO: Do we really wanna return true here?
             return true;
         }
@@ -745,7 +745,7 @@ public class ScanController {
         }
 
         List<ScanResult> permittedResults = permittedResults(mAdapterService, client, allResults);
-        if (client.getFilters().isEmpty()) {
+        if (!client.isFiltered()) {
             sendBatchScanResults(app, client, permittedResults);
             return;
         }
@@ -1142,9 +1142,7 @@ public class ScanController {
         if (appScanStats != null) {
             client.setAppScanStats(appScanStats);
             mScanManager.fetchAppForegroundState(client);
-            boolean isFilteredScan = !client.getFilters().isEmpty();
             boolean isCallbackScan = false;
-
             var app = mScannerMap.getById(client.getScannerId());
             if (app != null) {
                 isCallbackScan = app.getCallback() != null;
@@ -1152,7 +1150,7 @@ public class ScanController {
             appScanStats.recordScanStart(
                     client.getSettings(),
                     client.getFilters(),
-                    isFilteredScan,
+                    client.isFiltered(),
                     isCallbackScan,
                     client.getScannerId(),
                     app == null ? null : app.getAttributionTag());
@@ -1243,11 +1241,10 @@ public class ScanController {
         if (appScanStats != null) {
             client.setAppScanStats(appScanStats);
             mScanManager.fetchAppForegroundState(client);
-            boolean isFilteredScan = !piInfo.filters.isEmpty();
             appScanStats.recordScanStart(
                     piInfo.settings,
                     piInfo.filters,
-                    isFilteredScan,
+                    client.isFiltered(),
                     false,
                     scannerId,
                     app.getAttributionTag());
