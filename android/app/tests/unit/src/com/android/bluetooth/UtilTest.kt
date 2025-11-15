@@ -125,10 +125,10 @@ class UtilTest {
             )
 
         params.forEach { (hci, expected) ->
-            assertThat(AdapterService.hciToAndroidDisconnectReason(hci)).isEqualTo(expected)
+            assertThat(Util.hciToAndroidDisconnectReason(hci)).isEqualTo(expected)
         }
 
-        assertThat(AdapterService.hciToAndroidDisconnectReason(0x9999))
+        assertThat(Util.hciToAndroidDisconnectReason(0x9999))
             .isEqualTo(BluetoothStatusCodes.ERROR_UNKNOWN)
     }
 }
