@@ -38,6 +38,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
+import libcore.util.HexEncoding
 
 private const val TAG = ScanUtil.TAG_PREFIX + "ScanUtil"
 
@@ -541,5 +542,35 @@ value class ScanMode(val value: Int) {
             SCAN_MODE_SCREEN_OFF -> "SCREEN_OFF"
             SCAN_MODE_SCREEN_OFF_BALANCED -> "SCREEN_OFF_BALANCED"
             else -> "UNKNOWN($value)"
+        }
+}
+
+object ScanTestUtil {
+    /** Example raw beacons captured from a Blue Charm BC011 */
+    private val TEST_MODE_BEACONS =
+        arrayOf(
+            "020106",
+            "0201060303AAFE1716AAFE10EE01626C7565636861726D626561636F6E730009168020691E0EFE13551109426C7565436861726D5F313639363835000000",
+            "0201060303AAFE1716AAFE00EE626C7565636861726D31000000000001000009168020691E0EFE13551109426C7565436861726D5F313639363835000000",
+            "0201060303AAFE1116AAFE20000BF017000008874803FB93540916802069080EFE13551109426C7565436861726D5F313639363835000000000000000000",
+            "0201061AFF4C000215426C7565436861726D426561636F6E730EFE1355C509168020691E0EFE13551109426C7565436861726D5F31363936383500000000",
+        )
+
+    @JvmStatic
+    fun ScanController.runTestCycle() =
+        TEST_MODE_BEACONS.forEach { test ->
+            onScanResultInternal(
+                0x1b,
+                0x1,
+                "DD:34:02:05:5C:4D",
+                1,
+                0,
+                0xff,
+                127,
+                -54,
+                0x0,
+                HexEncoding.decode(test),
+                "DD:34:02:05:5C:4E",
+            )
         }
 }

@@ -66,8 +66,6 @@ import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.util.TimeProvider;
 import com.android.internal.annotations.VisibleForTesting;
 
-import libcore.util.HexEncoding;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -264,16 +262,6 @@ public class ScanController {
         return mScanRadioStats;
     }
 
-    /** Example raw beacons captured from a Blue Charm BC011 */
-    private static final String[] TEST_MODE_BEACONS =
-            new String[] {
-                "020106",
-                "0201060303AAFE1716AAFE10EE01626C7565636861726D626561636F6E730009168020691E0EFE13551109426C7565436861726D5F313639363835000000",
-                "0201060303AAFE1716AAFE00EE626C7565636861726D31000000000001000009168020691E0EFE13551109426C7565436861726D5F313639363835000000",
-                "0201060303AAFE1116AAFE20000BF017000008874803FB93540916802069080EFE13551109426C7565436861726D5F313639363835000000000000000000",
-                "0201061AFF4C000215426C7565436861726D426561636F6E730EFE1355C509168020691E0EFE13551109426C7565436861726D5F31363936383500000000",
-            };
-
     /** onDisplayChanged notifies ScanManager when the screen status changes. */
     public void onDisplayChanged(boolean screenOn) {
         enforceScanThread();
@@ -303,20 +291,7 @@ public class ScanController {
                                     if (!mTestModeEnabled) {
                                         return;
                                     }
-                                    for (String test : TEST_MODE_BEACONS) {
-                                        onScanResultInternal(
-                                                0x1b,
-                                                0x1,
-                                                "DD:34:02:05:5C:4D",
-                                                1,
-                                                0,
-                                                0xff,
-                                                127,
-                                                -54,
-                                                0x0,
-                                                HexEncoding.decode(test),
-                                                "DD:34:02:05:5C:4E");
-                                    }
+                                    ScanTestUtil.runTestCycle(ScanController.this);
                                     sendEmptyMessageDelayed(0, DateUtils.SECOND_IN_MILLIS);
                                 }
                             }
@@ -386,7 +361,7 @@ public class ScanController {
                 originalAddress);
     }
 
-    private void onScanResultInternal(
+    void onScanResultInternal(
             int eventType,
             int addressType,
             String address,
