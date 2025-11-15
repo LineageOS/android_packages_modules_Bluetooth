@@ -55,7 +55,6 @@ class PeriodicScanManagerTest {
 
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var scanController: ScanController
-    @Mock private lateinit var nativeCallback: PeriodicScanNativeCallback
     @Mock private lateinit var nativeInterface: PeriodicScanNativeInterface
     @Mock private lateinit var callback: IPeriodicAdvertisingCallback
     @Mock private lateinit var binder: IBinder
@@ -74,8 +73,7 @@ class PeriodicScanManagerTest {
     fun setUp() {
         mockGetBluetoothManager(adapterService)
 
-        periodicScanManager =
-            PeriodicScanManager(adapterService, scanController, nativeCallback, nativeInterface)
+        periodicScanManager = PeriodicScanManager(adapterService, scanController, nativeInterface)
         scanResult = ScanResult(device, 0, 0, 0, sid, 0, 0, 0, null, 0)
 
         doReturn(binder).whenever(callback).asBinder()
