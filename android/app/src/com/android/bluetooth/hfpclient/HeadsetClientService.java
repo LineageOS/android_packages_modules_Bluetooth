@@ -44,7 +44,7 @@ import android.os.SystemProperties;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.profile.ConnectableProfile;
 import com.android.internal.annotations.GuardedBy;
@@ -446,7 +446,7 @@ public class HeadsetClientService extends ConnectableProfile {
                         + ", allowed="
                         + allowed
                         + ", "
-                        + Utils.getUidPidString());
+                        + Util.getUidPidString());
         synchronized (mStateMachineMap) {
             HeadsetClientStateMachine sm = mStateMachineMap.get(device);
             if (sm != null) {
@@ -480,7 +480,7 @@ public class HeadsetClientService extends ConnectableProfile {
                         + ", "
                         + policies.toString()
                         + ", "
-                        + Utils.getUidPidString());
+                        + Util.getUidPidString());
         HeadsetClientStateMachine sm = getStateMachine(device);
         if (sm != null) {
             sm.setAudioPolicy(policies);
@@ -502,7 +502,7 @@ public class HeadsetClientService extends ConnectableProfile {
     }
 
     boolean connectAudio(BluetoothDevice device) {
-        Log.i(TAG, "connectAudio: device=" + device + ", " + Utils.getUidPidString());
+        Log.i(TAG, "connectAudio: device=" + device + ", " + Util.getUidPidString());
         HeadsetClientStateMachine sm = getStateMachine(device);
         if (sm == null) {
             Log.e(TAG, "SM does not exist for device " + device);

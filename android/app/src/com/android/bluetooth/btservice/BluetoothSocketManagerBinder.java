@@ -76,7 +76,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
                         + ", port="
                         + port
                         + ", from "
-                        + Utils.getUidPidString());
+                        + Util.getUidPidString());
 
         return marshalFd(
                 mService.getNative()
@@ -131,7 +131,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
                         + (" type=" + type)
                         + (" uuid=" + uuid)
                         + (" port=" + port)
-                        + (" from " + Utils.getUidPidString())
+                        + (" from " + Util.getUidPidString())
                         + (" dataPath=" + dataPath)
                         + (" socketName=" + socketName)
                         + (" hubId=" + hubId)
@@ -190,7 +190,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
                         + ", port="
                         + port
                         + ", from "
-                        + Utils.getUidPidString());
+                        + Util.getUidPidString());
 
         return marshalFd(
                 mService.getNative()
@@ -244,7 +244,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
                         + ", port="
                         + port
                         + ", from "
-                        + Utils.getUidPidString()
+                        + Util.getUidPidString()
                         + ", dataPath="
                         + dataPath
                         + ", socketName="

@@ -34,6 +34,7 @@ import android.bluetooth.BluetoothUtils
 import android.content.AttributionSource
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Binder
 import android.os.IBinder
 import android.os.RemoteException
 import android.permission.PermissionManager
@@ -60,6 +61,13 @@ object Util {
         }
         return true
     }
+
+    /**
+     * Get uid/pid string in a binder call
+     *
+     * @return "uid/pid=xxxx/yyyy"
+     */
+    @JvmStatic fun getUidPidString() = "uid/pid=${Binder.getCallingUid()}/${Binder.getCallingPid()}"
 
     @JvmStatic
     fun AdapterService.appNameOrUnknown(uid: Int) =
