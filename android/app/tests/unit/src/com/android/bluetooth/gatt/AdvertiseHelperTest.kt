@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,65 +14,58 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.gatt;
+package com.android.bluetooth.gatt
 
-import static com.google.common.truth.Truth.assertThat;
+import android.bluetooth.le.AdvertiseData
+import android.bluetooth.le.TransportDiscoveryData
+import android.os.ParcelUuid
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.google.common.truth.Truth.assertThat
+import java.util.UUID
+import org.junit.Test
+import org.junit.runner.RunWith
 
-import static org.junit.Assert.assertThrows;
-
-import android.bluetooth.le.AdvertiseData;
-import android.bluetooth.le.TransportDiscoveryData;
-import android.os.ParcelUuid;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import java.util.UUID;
-
-/** Test cases for {@link AdvertiseHelper}. */
+/** Test cases for [AdvertiseHelper]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class AdvertiseHelperTest {
+@RunWith(AndroidJUnit4::class)
+class AdvertiseHelperTest {
 
     @Test
-    public void advertiseDataToBytes() throws Exception {
-        byte[] emptyBytes = AdvertiseHelper.advertiseDataToBytes(null, "");
-        assertThat(emptyBytes.length).isEqualTo(0);
+    fun advertiseDataToBytes() {
+        val emptyBytes = AdvertiseHelper.advertiseDataToBytes(null, "")
+        assertThat(emptyBytes.size).isEqualTo(0)
 
-        int manufacturerId = 1;
-        byte[] manufacturerData = new byte[] {0x30, 0x31, 0x32, 0x34};
-        byte[] serviceData = new byte[] {0x10, 0x12, 0x14};
-        byte[] transportDiscoveryData = new byte[] {0x40, 0x44, 0x48};
-        AdvertiseData advertiseData =
-                new AdvertiseData.Builder()
-                        .setIncludeDeviceName(true)
-                        .addManufacturerData(manufacturerId, manufacturerData)
-                        .setIncludeTxPowerLevel(true)
-                        .addServiceUuid(new ParcelUuid(UUID.randomUUID()))
-                        .addServiceData(new ParcelUuid(UUID.randomUUID()), serviceData)
-                        .addServiceSolicitationUuid(new ParcelUuid(UUID.randomUUID()))
-                        .addTransportDiscoveryData(
-                                new TransportDiscoveryData(transportDiscoveryData))
-                        .build();
-        String deviceName = "TestDeviceName";
-        int expectedAdvDataBytesLength = 86;
+        val manufacturerId = 1
+        val manufacturerData = byteArrayOf(0x30, 0x31, 0x32, 0x34)
+        val serviceData = byteArrayOf(0x10, 0x12, 0x14)
+        val transportDiscoveryData = byteArrayOf(0x40, 0x44, 0x48)
+        val advertiseData =
+            AdvertiseData.Builder()
+                .setIncludeDeviceName(true)
+                .addManufacturerData(manufacturerId, manufacturerData)
+                .setIncludeTxPowerLevel(true)
+                .addServiceUuid(ParcelUuid(UUID.randomUUID()))
+                .addServiceData(ParcelUuid(UUID.randomUUID()), serviceData)
+                .addServiceSolicitationUuid(ParcelUuid(UUID.randomUUID()))
+                .addTransportDiscoveryData(TransportDiscoveryData(transportDiscoveryData))
+                .build()
+        val deviceName = "TestDeviceName"
+        val expectedAdvDataBytesLength = 86
 
-        byte[] advDataBytes = AdvertiseHelper.advertiseDataToBytes(advertiseData, deviceName);
-        assertThat(advDataBytes.length).isEqualTo(expectedAdvDataBytesLength);
+        val advDataBytes = AdvertiseHelper.advertiseDataToBytes(advertiseData, deviceName)
+        assertThat(advDataBytes.size).isEqualTo(expectedAdvDataBytesLength)
 
-        String deviceNameLong = "TestDeviceNameLongTestDeviceName";
-        int expectedAdvDataBytesLongNameLength = 98;
+        val deviceNameLong = "TestDeviceNameLongTestDeviceName"
+        val expectedAdvDataBytesLongNameLength = 98
 
-        byte[] advDataBytesLongName =
-                AdvertiseHelper.advertiseDataToBytes(advertiseData, deviceNameLong);
-        assertThat(advDataBytesLongName.length).isEqualTo(expectedAdvDataBytesLongNameLength);
+        val advDataBytesLongName =
+            AdvertiseHelper.advertiseDataToBytes(advertiseData, deviceNameLong)
+        assertThat(advDataBytesLongName.size).isEqualTo(expectedAdvDataBytesLongNameLength)
     }
 
-    @Test
-    public void checkLength_withGT255_throwsException() {
-        assertThrows(IllegalArgumentException.class, () -> AdvertiseHelper.check_length(0X00, 256));
+    @Test(expected = IllegalArgumentException::class)
+    fun checkLength_withGT255_throwsException() {
+        AdvertiseHelper.check_length(0X00, 256)
     }
 }
