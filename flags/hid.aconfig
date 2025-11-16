@@ -140,3 +140,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "hid_always_unbond_on_virtual_unplug"
+    namespace: "bluetooth"
+    description: "Don't do additional checks of whether CoD is HID device when unbonding from VUP"
+    bug: "460703858"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
