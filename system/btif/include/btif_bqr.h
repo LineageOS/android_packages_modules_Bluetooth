@@ -76,25 +76,64 @@ namespace bqr {
 //     at all(most likely remote is powered off or out of range), controller
 //     will not report this event.
 
+// BQR Event Mask
+enum BqrEventMask : uint8_t {
+  BQR_EVENT_MASK_MONITOR_MODE = 0x00,
+  BQR_EVENT_MASK_APPROACH_LSTO = 0x01,
+  BQR_EVENT_MASK_A2DP_AUDIO_CHOPPY = 0x02,
+  BQR_EVENT_MASK_SCO_VOICE_CHOPPY = 0x03,
+  BQR_EVENT_MASK_ROOT_INFLAMMATION = 0x04,
+  BQR_EVENT_MASK_ENERGY_MONITOR = 0x05,
+  BQR_EVENT_MASK_LE_AUDIO_CHOPPY = 0x06,
+  BQR_EVENT_MASK_CONNECT_FAIL = 0x07,
+  BQR_EVENT_MASK_RF_STATS_EVENT = 0x08,
+  BQR_EVENT_MASK_RF_STATS_MONITOR = 0x09,
+  BQR_EVENT_MASK_CONTROLLER_HEALTH_EVENT = 0x0A,
+  BQR_EVENT_MASK_CONTROLLER_HEALTH_MONITOR = 0x0B,
+  BQR_EVENT_MASK_LEA_BROADCAST_SOURCE_EVENT = 0x0C,
+  BQR_EVENT_MASK_LEA_BROADCAST_SOURCE_MONITOR = 0xD,
+  BQR_EVENT_MASK_CHANNEL_SOUNDING = 0x0E,
+  BQR_EVENT_MASK_VENDOR_SPECIFIC_QUALITY = 0x0F,
+  BQR_EVENT_MASK_LMP_LL_MESSAGE_TRACE = 0x10,
+  BQR_EVENT_MASK_BT_SCHEDULING_TRACE = 0x11,
+  BQR_EVENT_MASK_CONTROLLER_DBG_INFO = 0x12,
+  BQR_EVENT_MASK_VENDOR_SPECIFIC_TRACE = 0x1F,
+};
+
 // Bit masks for the selected quality event reporting.
 static constexpr uint32_t kQualityEventMaskAllOff = 0;
-static constexpr uint32_t kQualityEventMaskMonitorMode = 0x1 << 0;
-static constexpr uint32_t kQualityEventMaskApproachLsto = 0x1 << 1;
-static constexpr uint32_t kQualityEventMaskA2dpAudioChoppy = 0x1 << 2;
-static constexpr uint32_t kQualityEventMaskScoVoiceChoppy = 0x1 << 3;
-static constexpr uint32_t kQualityEventMaskRootInflammation = 0x1 << 4;
-static constexpr uint32_t kQualityEventMaskEnergyMonitoring = 0x1 << 5;
-static constexpr uint32_t kQualityEventMaskLeAudioChoppy = 0x1 << 6;
-static constexpr uint32_t kQualityEventMaskConnectFail = 0x1 << 7;
-static constexpr uint32_t kQualityEventMaskAdvRFStatsEvent = 0x1 << 8;
-static constexpr uint32_t kQualityEventMaskAdvRFStatsMonitor = 0x1 << 9;
-static constexpr uint32_t kQualityEventMaskHealthMonitorStatsEvent = 0x1 << 10;
-static constexpr uint32_t kQualityEventMaskControllerHealthMonitor = 0x1 << 11;
-static constexpr uint32_t kQualityEventMaskVendorSpecificQuality = 0x1 << 15;
-static constexpr uint32_t kQualityEventMaskLmpMessageTrace = 0x1 << 16;
-static constexpr uint32_t kQualityEventMaskBtSchedulingTrace = 0x1 << 17;
-static constexpr uint32_t kQualityEventMaskControllerDbgInfo = 0x1 << 18;
-static constexpr uint32_t kQualityEventMaskVendorSpecificTrace = 0x1 << 31;
+static constexpr uint32_t kQualityEventMaskMonitorMode = 0x1 << BQR_EVENT_MASK_MONITOR_MODE;
+static constexpr uint32_t kQualityEventMaskApproachLsto = 0x1 << BQR_EVENT_MASK_APPROACH_LSTO;
+static constexpr uint32_t kQualityEventMaskA2dpAudioChoppy = 0x1
+                                                             << BQR_EVENT_MASK_A2DP_AUDIO_CHOPPY;
+static constexpr uint32_t kQualityEventMaskScoVoiceChoppy = 0x1 << BQR_EVENT_MASK_SCO_VOICE_CHOPPY;
+static constexpr uint32_t kQualityEventMaskRootInflammation = 0x1
+                                                              << BQR_EVENT_MASK_ROOT_INFLAMMATION;
+static constexpr uint32_t kQualityEventMaskEnergyMonitoring = 0x1 << BQR_EVENT_MASK_ENERGY_MONITOR;
+static constexpr uint32_t kQualityEventMaskLeAudioChoppy = 0x1 << BQR_EVENT_MASK_LE_AUDIO_CHOPPY;
+static constexpr uint32_t kQualityEventMaskConnectFail = 0x1 << BQR_EVENT_MASK_CONNECT_FAIL;
+static constexpr uint32_t kQualityEventMaskAdvRFStatsEvent = 0x1 << BQR_EVENT_MASK_RF_STATS_EVENT;
+static constexpr uint32_t kQualityEventMaskAdvRFStatsMonitor = 0x1
+                                                               << BQR_EVENT_MASK_RF_STATS_MONITOR;
+static constexpr uint32_t kQualityEventMaskHealthMonitorStatsEvent =
+        0x1 << BQR_EVENT_MASK_CONTROLLER_HEALTH_EVENT;
+static constexpr uint32_t kQualityEventMaskControllerHealthMonitor =
+        0x1 << BQR_EVENT_MASK_CONTROLLER_HEALTH_MONITOR;
+static constexpr uint32_t kQualityEventMaskLeaBroadcastSourceEvent =
+        0x1 << BQR_EVENT_MASK_LEA_BROADCAST_SOURCE_EVENT;
+static constexpr uint32_t kQualityEventMaskLeaBroadcastSourceMonitor =
+        0x1 << BQR_EVENT_MASK_LEA_BROADCAST_SOURCE_MONITOR;
+static constexpr uint32_t kQualityEventMaskChannelSounding = 0x1 << BQR_EVENT_MASK_CHANNEL_SOUNDING;
+static constexpr uint32_t kQualityEventMaskVendorSpecificQuality =
+        0x1 << BQR_EVENT_MASK_VENDOR_SPECIFIC_QUALITY;
+static constexpr uint32_t kQualityEventMaskLmpMessageTrace = 0x1
+                                                             << BQR_EVENT_MASK_LMP_LL_MESSAGE_TRACE;
+static constexpr uint32_t kQualityEventMaskBtSchedulingTrace =
+        0x1 << BQR_EVENT_MASK_BT_SCHEDULING_TRACE;
+static constexpr uint32_t kQualityEventMaskControllerDbgInfo =
+        0x1 << BQR_EVENT_MASK_CONTROLLER_DBG_INFO;
+static constexpr uint32_t kQualityEventMaskVendorSpecificTrace =
+        0x1 << BQR_EVENT_MASK_VENDOR_SPECIFIC_TRACE;
 static constexpr uint32_t kQualityEventMaskAll =
         kQualityEventMaskMonitorMode | kQualityEventMaskApproachLsto |
         kQualityEventMaskA2dpAudioChoppy | kQualityEventMaskScoVoiceChoppy |
@@ -104,7 +143,8 @@ static constexpr uint32_t kQualityEventMaskAll =
         kQualityEventMaskHealthMonitorStatsEvent | kQualityEventMaskControllerHealthMonitor |
         kQualityEventMaskVendorSpecificQuality | kQualityEventMaskLmpMessageTrace |
         kQualityEventMaskBtSchedulingTrace | kQualityEventMaskControllerDbgInfo |
-        kQualityEventMaskVendorSpecificTrace;
+        kQualityEventMaskLeaBroadcastSourceEvent | kQualityEventMaskLeaBroadcastSourceMonitor |
+        kQualityEventMaskChannelSounding | kQualityEventMaskVendorSpecificTrace;
 // Define the minimum time interval (in ms) of quality event reporting for the
 // selected quality event(s). Controller Firmware should not report the next
 // event within the defined Minimum Report Interval * Report Interval
@@ -180,7 +220,10 @@ static constexpr uint16_t kBqrVndLogVersion = 0x102;
 static constexpr uint16_t kBqrVersion5_0 = 0x103;
 // The REPORT_ACTION_QUERY and BQR_Report_interval starting v1.04(260)
 static constexpr uint16_t kBqrVersion6_0 = 0x104;
+// The Health MonitorStatsEvent was introduced in v1.05(261)
 static constexpr uint16_t kBqrVersion7_0 = 0x105;
+// The features LeaBroadcastSource and ChannelSounding were introduced in v1.07(262)
+static constexpr uint16_t kBqrVersion8_0 = 0x106;
 // Action definition
 //
 // Action to Add, Delete or Clear the reporting of quality event(s).
@@ -208,6 +251,8 @@ enum BqrQualityReportId : uint8_t {
   QUALITY_REPORT_ID_LMP_LL_MESSAGE_TRACE = 0x11,
   QUALITY_REPORT_ID_BT_SCHEDULING_TRACE = 0x12,
   QUALITY_REPORT_ID_CONTROLLER_DBG_INFO = 0x13,
+  QUALITY_REPORT_ID_LEA_BROADCAST_SOURCE = 0x16,
+  QUALITY_REPORT_ID_CHANNEL_SOUNDING = 0x17,
   QUALITY_REPORT_ID_VENDOR_SPECIFIC_TRACE = 0x20,
 };
 
@@ -437,6 +482,124 @@ typedef struct {
 
 // Total length of all parameters of the RF Stats event
 static constexpr uint8_t kRFStatsParamTotalLen = sizeof(BqrRFStatsEvent);
+
+// LEA broadcast source BQR event
+typedef struct {
+  // Quality Report ID for the LEA broadcast source event. Should be 0x22.
+  uint8_t quality_report_id;
+  // The BIG handle allocated by the host.
+  uint8_t big_handle;
+  // The BD_ADDR type of the broadcast source sent over the air.
+  uint8_t broadcast_source_bd_addr_type;
+  // The BD_ADDR of the broadcast source sent over the air.
+  uint8_t broadcast_source_bd_addr[6];
+  // The BIG channel map that the controller prefers based on channel classification.
+  uint8_t big_source_prefer_channel_map[5];
+  // The BIG channel map that the controller actually used.
+  uint8_t big_source_used_channel_map[5];
+  // The current TX power used in the Broadcast ID.
+  uint8_t big_tx_power;
+  // Timestamp for the specified BIG Handle, based on the Piconet Clock.
+  uint32_t timestamp;
+  // The subscribed Broadcast ID of the client device.
+  uint8_t broadcast_id_of_receiver_subscribed[3];
+  // The BD_ADDR type of the broadcast receiver.
+  uint8_t broadcast_receiver_bd_addr_type;
+  // The BD_ADDR of the broadcast receiver.
+  uint8_t broadcast_receiver_bd_addr[6];
+  // The time duration to collect performance information, in milliseconds.
+  uint32_t time_duration;
+  // BIS choppy count within the time duration.
+  uint32_t bis_choppy_count;
+  // Packet Error Rate within the time duration.
+  uint32_t per;
+  // Number of times the receiver is out of sync.
+  uint32_t no_sync_count;
+  // Indicates the channel map of the broadcast receiver.
+  uint8_t receiver_prefer_channel_map[5];
+  // The power level at which a packet containing data is transmitted from the broadcast receiver.
+  uint8_t receiver_tx_power;
+  // The RSSI of the received packets from the broadcast receiver.
+  uint8_t rssi;
+  // Reserved for future use.
+  uint8_t reserved[4];
+} __attribute__((__packed__)) BqrLeaBroadcastSourceEvent;
+
+// Total length of all parameters of the RF Stats event
+static constexpr uint8_t kLeaBisSourceParamTotalLen = sizeof(BqrLeaBroadcastSourceEvent);
+
+// Channel Sounding BQR event
+// Corresponds to the "AGC Gain Settings" in the document.
+struct AgcGainSettings {
+  // AGC gain for core 0.
+  uint8_t agc_gain_core0;
+  // AGC gain for core 1.
+  uint8_t agc_gain_core1;
+  // TX power index for core 0.
+  uint8_t tx_power_idx_core0;
+  // TX power index for core 1.
+  uint8_t tx_power_idx_core1;
+  // Whether ePA is on for core 0.
+  uint8_t is_epa_on_core0;
+  // Whether ePA is on for core 1.
+  uint8_t is_epa_on_core1;
+};
+
+// Corresponds to the "Tone Quality Indicator (TQI) Count" in the document.
+struct TqiCount {
+  // Counter for TQI = 0x0.
+  uint8_t tqi_0;
+  // Counter for TQI = 0x1.
+  uint8_t tqi_1;
+  // Counter for TQI = 0x2.
+  uint8_t tqi_2;
+  // Counter for TQI = 0x3.
+  uint8_t tqi_3;
+};
+
+typedef struct {
+  // Quality Report ID for the CS BQR event.
+  uint8_t quality_report_id;
+  // The CS handle allocated by host.
+  uint16_t connection_handle;
+  // CS config ID. Range 0 to 3.
+  uint8_t cs_config_id;
+  // CS procedure count since completion of the Channel Sounding Security Start procedure.
+  uint16_t procedure_counter;
+  // Frequency compensation value in units of 0.01 ppm.
+  int16_t frequency_compensation;
+  // Reference power level in dBm.
+  uint8_t reference_power_level;
+  // Selected TX power in dBm.
+  uint8_t selected_tx_power;
+  // AGC Gain settings.
+  AgcGainSettings agc_gain_settings;
+  // Duration for each CS subevent in microseconds.
+  uint8_t subevent_len[3];
+  // Number of ACL connection events between consecutive CS procedure anchor points.
+  uint16_t procedure_interval;
+  // CS procedure done status.
+  uint8_t cs_procedure_done_status;
+  // CS subevent done status.
+  uint8_t cs_subevent_done_status;
+  // CS abort reason.
+  uint8_t cs_abort_reason;
+  // Packet Quality for mode-0.
+  uint8_t packet_quality_mode_0[3];
+  // Packet RSSI for mode-0 in dBm.
+  uint8_t packet_rssi_mode_0[3];
+  // Packet Antenna for mode-0.
+  uint8_t packet_antenna_mode_0[3];
+  // Tone Quality Indicator (TQI) Count.
+  TqiCount tqi_count[4];
+  // Counter for non-mode-0 Packet_Quality.
+  uint8_t packet_quality_count[3];
+  // Counter for NADM > 0xX.
+  uint8_t packet_nadm_count;
+} __attribute__((__packed__)) BqrChannelSoundingEvent;
+
+// Total length of all parameters of the Channel Sounding event
+static constexpr uint8_t kCSParamTotalLen = sizeof(BqrChannelSoundingEvent);
 
 // Log dump related BQR event
 typedef struct {
