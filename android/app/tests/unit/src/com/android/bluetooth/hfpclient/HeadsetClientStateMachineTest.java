@@ -127,7 +127,7 @@ public class HeadsetClientStateMachineTest {
 
         doReturn(mAudioManager).when(mHeadsetClientService).getAudioManager();
         doReturn(mMockHfpResources).when(mHeadsetClientService).getResources();
-        doReturn(mPackageManager).when(mHeadsetClientService).getPackageManager();
+        doReturn(mPackageManager).when(mAdapterService).getPackageManager();
         doReturn(CONNECTION_POLICY_ALLOWED).when(mHeadsetClientService).getConnectionPolicy(any());
 
         doReturn(true).when(mMockHfpResources).getBoolean(eq(R.bool.hfp_clcc_poll_during_call));

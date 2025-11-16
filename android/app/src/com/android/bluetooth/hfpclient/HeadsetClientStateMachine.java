@@ -39,7 +39,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
-import static android.content.pm.PackageManager.FEATURE_WATCH;
 
 import static java.util.Objects.requireNonNull;
 
@@ -65,6 +64,7 @@ import android.util.Pair;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
@@ -350,7 +350,7 @@ public class HeadsetClientStateMachine extends StateMachine {
         Intent intent = new Intent(BluetoothHeadsetClient.ACTION_CALL_CHANGED);
         intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
 
-        if (mService.getPackageManager().hasSystemFeature(FEATURE_WATCH)) {
+        if (Util.isWatch(mAdapterService)) {
             debug("Send legacy call");
             intent.putExtra(
                     BluetoothHeadsetClient.EXTRA_CALL, HeadsetClientService.toLegacyCall(c));
