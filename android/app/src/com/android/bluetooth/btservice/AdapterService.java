@@ -2812,7 +2812,7 @@ public class AdapterService extends Service {
         Log.d(TAG, "startDiscovery");
         String callingPackage = source.getPackageName();
         mAppOps.checkPackage(Binder.getCallingUid(), callingPackage);
-        boolean isQApp = Utils.checkCallerTargetSdk(this, callingPackage, Build.VERSION_CODES.Q);
+        boolean isQApp = Util.checkCallerTargetSdk(this, callingPackage, Build.VERSION_CODES.Q);
         boolean hasDisavowedLocation =
                 Utils.hasDisavowedLocationForScan(this, source, mTestModeEnabled);
         String permission = null;

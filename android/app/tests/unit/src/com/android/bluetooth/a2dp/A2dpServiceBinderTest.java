@@ -37,6 +37,7 @@ import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -66,8 +67,10 @@ public class A2dpServiceBinderTest {
 
     @Before
     public void setUp() throws Exception {
+        final var context = InstrumentationRegistry.getInstrumentation().getContext();
+        doReturn(context.getPackageName()).when(mAttributionSource).getPackageName();
         doReturn(mPackageManager).when(mA2dpService).getPackageManager();
-        ApplicationInfo appInfo = new ApplicationInfo();
+        var appInfo = new ApplicationInfo();
         appInfo.targetSdkVersion = android.os.Build.VERSION_CODES.CUR_DEVELOPMENT;
         doReturn(appInfo).when(mPackageManager).getApplicationInfo(any(), anyInt());
 

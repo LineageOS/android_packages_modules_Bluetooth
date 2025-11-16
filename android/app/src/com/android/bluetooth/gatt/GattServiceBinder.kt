@@ -209,9 +209,9 @@ class GattServiceBinder(private var gattService: GattService?) :
                 readCharacteristic(callback, device, handle, authReq)
             }
         } catch (ex: SecurityException) {
-            val callingPackage = source.packageName
+            val callingPackage = source.packageName!!
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (Utils.checkCallerTargetSdk(gatt, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
+            if (Util.checkCallerTargetSdk(gatt, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
                 throw ex
             }
             Log.w(TAG, "readCharacteristic(): Permission check failed!")
@@ -233,9 +233,9 @@ class GattServiceBinder(private var gattService: GattService?) :
                 gatt.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
             }
         } catch (ex: SecurityException) {
-            val callingPackage = source.packageName
+            val callingPackage = source.packageName!!
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (Utils.checkCallerTargetSdk(gatt, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
+            if (Util.checkCallerTargetSdk(gatt, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
                 throw ex
             }
             Log.w(TAG, "readUsingCharacteristicUuid() - permission check failed!")
@@ -293,9 +293,9 @@ class GattServiceBinder(private var gattService: GattService?) :
                 readDescriptor(callback, device, handle, authReq)
             }
         } catch (ex: SecurityException) {
-            val callingPackage = source.packageName
+            val callingPackage = source.packageName!!
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (Utils.checkCallerTargetSdk(gatt, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
+            if (Util.checkCallerTargetSdk(gatt, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
                 throw ex
             }
             Log.w(TAG, "readDescriptor(): Permission check failed!")
@@ -354,9 +354,9 @@ class GattServiceBinder(private var gattService: GattService?) :
                 registerForNotification(callback, device, handle, enable)
             }
         } catch (ex: SecurityException) {
-            val callingPackage = source.packageName
+            val callingPackage = source.packageName!!
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
-            if (Utils.checkCallerTargetSdk(gatt, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
+            if (Util.checkCallerTargetSdk(gatt, callingPackage, Build.VERSION_CODES.TIRAMISU)) {
                 throw ex
             }
             Log.w(TAG, "registerForNotification(): Permission check failed!")

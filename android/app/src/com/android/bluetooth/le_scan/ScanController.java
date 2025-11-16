@@ -16,8 +16,8 @@
 
 package com.android.bluetooth.le_scan;
 
+import static com.android.bluetooth.Util.checkCallerTargetSdk;
 import static com.android.bluetooth.Utils.callbackToApp;
-import static com.android.bluetooth.Utils.checkCallerTargetSdk;
 import static com.android.bluetooth.le_scan.BatchScanUtil.permittedResults;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_TRUNCATED;
 

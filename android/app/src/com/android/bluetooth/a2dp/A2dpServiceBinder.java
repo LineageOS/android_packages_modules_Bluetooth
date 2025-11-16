@@ -21,7 +21,7 @@ import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
-import static com.android.bluetooth.Utils.checkCallerTargetSdk;
+import static com.android.bluetooth.Util.checkCallerTargetSdk;
 
 import static java.util.Objects.requireNonNull;
 
