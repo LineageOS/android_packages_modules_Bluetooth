@@ -1089,7 +1089,7 @@ public class ScanController {
         mAppOps.checkPackage(uid, callingPackage);
         var hasDisavowedLocation =
                 Utils.hasDisavowedLocationForScan(mAdapterService, source, mTestModeEnabled);
-        var isQApp = checkCallerTargetSdk(mAdapterService, callingPackage, Build.VERSION_CODES.Q);
+        var isQApp = checkCallerTargetSdk(mAdapterService, source, Build.VERSION_CODES.Q);
         var userHandle = Binder.getCallingUserHandle();
         var hasLocationPermission = false; // Unacted upon if `hasDisavowedLocation` is true
         if (!hasDisavowedLocation) {
@@ -1203,7 +1203,7 @@ public class ScanController {
                 Utils.hasDisavowedLocationForScan(mAdapterService, source, mTestModeEnabled));
         if (!app.getHasDisavowedLocation()) {
             try {
-                if (checkCallerTargetSdk(mAdapterService, callingPackage, Build.VERSION_CODES.Q)) {
+                if (checkCallerTargetSdk(mAdapterService, source, Build.VERSION_CODES.Q)) {
                     app.setHasLocationPermission(
                             Utils.checkCallerHasFineLocation(
                                     mAdapterService, source, app.getUserHandle()));

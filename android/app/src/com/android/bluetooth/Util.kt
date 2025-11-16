@@ -168,16 +168,15 @@ object Util {
      * For example, if the calling app has target SDK [Build.VERSION_CODES.S] and we pass in the
      * targetSdk [Build.VERSION_CODES.R], the API will return true because S >= R.
      *
-     * @param context Bluetooth service context
-     * @param packageName caller's package name
+     * @param source caller's [AttributionSource]
      * @param expectedMinimumTargetSdk one of the values from [Build.VERSION_CODES]
      * @return `true` if the caller's target sdk is greater than or equal to
      *   expectedMinimumTargetSdk, `false` otherwise
      */
     @JvmStatic
-    fun checkCallerTargetSdk(context: Context, packageName: String, expectedMinimumTargetSdk: Int) =
+    fun Context.checkCallerTargetSdk(source: AttributionSource, expectedMinimumTargetSdk: Int) =
         try {
-            context.packageManager.getApplicationInfo(packageName, 0).targetSdkVersion >=
+            packageManager.getApplicationInfo(source.packageName!!, 0).targetSdkVersion >=
                 expectedMinimumTargetSdk
         } catch (e: PackageManager.NameNotFoundException) {
             // In case of exception, assume true
