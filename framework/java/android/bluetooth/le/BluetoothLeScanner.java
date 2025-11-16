@@ -480,6 +480,7 @@ public final class BluetoothLeScanner {
         private final ScanCallback mCallback;
 
         // 0: not registered
+        // TODO(b/455057044) Delete -2 and -1 on flag cleanup
         // -2: registration failed because app is scanning to frequently
         // -1: scan stopped or registration failed
         // > 0: registered and scan started
@@ -604,7 +605,7 @@ public final class BluetoothLeScanner {
                         mScannerId = scannerId;
                     } else {
                         // If scanning too frequently, don't report anything to the app.
-                        if (scannerId == -2) {
+                        if (status == ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY) {
                             Log.e(TAG, header + "Failed. App is scanning too frequently");
                         } else {
                             postCallbackError(
