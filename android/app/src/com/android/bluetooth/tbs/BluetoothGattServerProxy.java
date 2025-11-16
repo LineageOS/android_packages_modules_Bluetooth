@@ -37,6 +37,8 @@ import java.util.UUID;
  * test the correct functioning of the TbsService class, the final class must be put into a
  * container that can be mocked correctly.
  */
+// TODO(b/460558297) TbsGatt to use internal GattService instead of framework APIs
+@SuppressWarnings("IncorrectRequiresPermissionPropagation")
 public class BluetoothGattServerProxy {
 
     private final Context mContext;
