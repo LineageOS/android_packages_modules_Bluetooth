@@ -542,6 +542,38 @@ value class CallbackType(val value: Int) {
 }
 
 @JvmInline
+value class MatchMode(val value: Int) {
+    override fun toString() =
+        when (value) {
+            ScanSettings.MATCH_MODE_AGGRESSIVE -> "AGGRESSIVE"
+            ScanSettings.MATCH_MODE_STICKY -> "STICKY"
+            else -> "UNKNOWN($value)"
+        }
+}
+
+@JvmInline
+value class NumberOfMatches(val value: Int) {
+    override fun toString() =
+        when (value) {
+            ScanSettings.MATCH_NUM_ONE_ADVERTISEMENT -> "ONE"
+            ScanSettings.MATCH_NUM_FEW_ADVERTISEMENT -> "FEW"
+            ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT -> "MAX"
+            else -> "UNKNOWN($value)"
+        }
+}
+
+@JvmInline
+value class Phy(val value: Int) {
+    override fun toString() =
+        when (value) {
+            ScanSettings.PHY_LE_ALL_SUPPORTED -> "ALL"
+            BluetoothDevice.PHY_LE_1M -> "1M"
+            BluetoothDevice.PHY_LE_CODED -> "CODED"
+            else -> "UNKNOWN($value)"
+        }
+}
+
+@JvmInline
 value class ResultType(val value: Int) {
     override fun toString() =
         when (value) {
@@ -562,6 +594,17 @@ value class ScanMode(val value: Int) {
             SCAN_MODE_AMBIENT_DISCOVERY -> "AMBIENT_DISCOVERY"
             SCAN_MODE_SCREEN_OFF -> "SCREEN_OFF"
             SCAN_MODE_SCREEN_OFF_BALANCED -> "SCREEN_OFF_BALANCED"
+            else -> "UNKNOWN($value)"
+        }
+}
+
+@JvmInline
+value class Type(val value: Int) {
+    override fun toString() =
+        when (value) {
+            ScanSettings.SCAN_TYPE_UNKNOWN -> "UNKNOWN"
+            ScanSettings.SCAN_TYPE_PASSIVE -> "PASSIVE"
+            ScanSettings.SCAN_TYPE_ACTIVE -> "ACTIVE"
             else -> "UNKNOWN($value)"
         }
 }

@@ -36,9 +36,11 @@ import com.android.bluetooth.le_scan.ScanUtil.isBackgroundScan
 import com.android.bluetooth.le_scan.ScanUtil.isBatchScan
 import com.android.bluetooth.le_scan.ScanUtil.isOpportunisticScan
 import com.android.bluetooth.le_scan.ScanUtil.toStringWithoutNullParam
+import com.android.bluetooth.util.Column
 import com.android.bluetooth.util.TimeProvider
 import com.android.bluetooth.util.WorkSourceUtil
 import com.android.bluetooth.util.indent
+import com.android.bluetooth.util.toTable
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -73,6 +75,7 @@ class AppScanStats(
         internal val startTimestamp: Long,
         internal var endTimestamp: Long = 0,
         internal val scannerId: Int,
+        internal val settings: ScanSettings,
         internal val scanMode: ScanMode,
         internal val callbackType: CallbackType,
         internal val reportDelayMillis: Long,
@@ -178,6 +181,7 @@ class AppScanStats(
             LastScan(
                 startTimestamp = startTimestamp,
                 scannerId = scannerId,
+                settings = settings,
                 scanMode = ScanMode(settings.scanMode),
                 callbackType = CallbackType(settings.callbackType),
                 reportDelayMillis = settings.reportDelayMillis,
@@ -506,7 +510,21 @@ class AppScanStats(
             appendLine("  └ Active Time: ${activeDuration}ms, Suspended Time: ${suspendDuration}ms")
         }
 
-        appendLine("  └ Config: [ScanMode=$scanMode, callbackType=$callbackType]")
+        val settingsTable =
+            listOf(settings)
+                .toTable(
+                    Column("SCAN_MODE") { ScanMode(it.scanMode) },
+                    Column("CALLBACK_TYPE") { CallbackType(it.callbackType) },
+                    Column("RESULT_TYPE") { ResultType(it.scanResultType) },
+                    Column("DELAY_MS") { it.reportDelayMillis },
+                    Column("MATCH_MODE") { MatchMode(it.matchMode) },
+                    Column("NUM_MATCHES") { NumberOfMatches(it.numOfMatches) },
+                    Column("LEGACY") { it.legacy },
+                    Column("PHY") { Phy(it.phy) },
+                    Column("RSSI") { it.rssiThreshold },
+                    Column("SCAN_TYPE") { Type(it.scanType) },
+                )
+        appendLine(settingsTable.indent("    "))
 
         if (isFilterScan) append(filterStringBuilder.toString().indent("  └ "))
     }
