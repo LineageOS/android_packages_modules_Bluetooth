@@ -21,7 +21,7 @@ import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
-import static com.android.bluetooth.Utils.checkCallerTargetSdk;
+import static com.android.bluetooth.Util.checkCallerTargetSdk;
 
 import static java.util.Objects.requireNonNull;
 
@@ -246,7 +246,7 @@ class A2dpServiceBinder extends IBluetoothA2dp.Stub implements IProfileServiceBi
             return;
         }
 
-        if (checkCallerTargetSdk(mService, source.getPackageName(), Build.VERSION_CODES.TIRAMISU)) {
+        if (checkCallerTargetSdk(mService, source, Build.VERSION_CODES.TIRAMISU)) {
             service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         }
         service.enableOptionalCodecs(device);
@@ -259,7 +259,7 @@ class A2dpServiceBinder extends IBluetoothA2dp.Stub implements IProfileServiceBi
             return;
         }
 
-        if (checkCallerTargetSdk(mService, source.getPackageName(), Build.VERSION_CODES.TIRAMISU)) {
+        if (checkCallerTargetSdk(mService, source, Build.VERSION_CODES.TIRAMISU)) {
             service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         }
         service.disableOptionalCodecs(device);
@@ -272,7 +272,7 @@ class A2dpServiceBinder extends IBluetoothA2dp.Stub implements IProfileServiceBi
             return BluetoothA2dp.OPTIONAL_CODECS_SUPPORT_UNKNOWN;
         }
 
-        if (checkCallerTargetSdk(mService, source.getPackageName(), Build.VERSION_CODES.TIRAMISU)) {
+        if (checkCallerTargetSdk(mService, source, Build.VERSION_CODES.TIRAMISU)) {
             service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         }
         return service.getSupportsOptionalCodecs(device);
@@ -285,7 +285,7 @@ class A2dpServiceBinder extends IBluetoothA2dp.Stub implements IProfileServiceBi
             return BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN;
         }
 
-        if (checkCallerTargetSdk(mService, source.getPackageName(), Build.VERSION_CODES.TIRAMISU)) {
+        if (checkCallerTargetSdk(mService, source, Build.VERSION_CODES.TIRAMISU)) {
             service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         }
         return service.getOptionalCodecsEnabled(device);
@@ -299,7 +299,7 @@ class A2dpServiceBinder extends IBluetoothA2dp.Stub implements IProfileServiceBi
             return;
         }
 
-        if (checkCallerTargetSdk(mService, source.getPackageName(), Build.VERSION_CODES.TIRAMISU)) {
+        if (checkCallerTargetSdk(mService, source, Build.VERSION_CODES.TIRAMISU)) {
             service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         }
         service.setOptionalCodecsEnabled(device, value);

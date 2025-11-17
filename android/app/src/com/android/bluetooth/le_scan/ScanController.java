@@ -16,8 +16,8 @@
 
 package com.android.bluetooth.le_scan;
 
+import static com.android.bluetooth.Util.checkCallerTargetSdk;
 import static com.android.bluetooth.Utils.callbackToApp;
-import static com.android.bluetooth.Utils.checkCallerTargetSdk;
 import static com.android.bluetooth.le_scan.BatchScanUtil.permittedResults;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_TRUNCATED;
 
@@ -1089,7 +1089,7 @@ public class ScanController {
         mAppOps.checkPackage(uid, callingPackage);
         var hasDisavowedLocation =
                 Utils.hasDisavowedLocationForScan(mAdapterService, source, mTestModeEnabled);
-        var isQApp = checkCallerTargetSdk(mAdapterService, callingPackage, Build.VERSION_CODES.Q);
+        var isQApp = checkCallerTargetSdk(mAdapterService, source, Build.VERSION_CODES.Q);
         var userHandle = Binder.getCallingUserHandle();
         var hasLocationPermission = false; // Unacted upon if `hasDisavowedLocation` is true
         if (!hasDisavowedLocation) {
@@ -1203,7 +1203,7 @@ public class ScanController {
                 Utils.hasDisavowedLocationForScan(mAdapterService, source, mTestModeEnabled));
         if (!app.getHasDisavowedLocation()) {
             try {
-                if (checkCallerTargetSdk(mAdapterService, callingPackage, Build.VERSION_CODES.Q)) {
+                if (checkCallerTargetSdk(mAdapterService, source, Build.VERSION_CODES.Q)) {
                     app.setHasLocationPermission(
                             Utils.checkCallerHasFineLocation(
                                     mAdapterService, source, app.getUserHandle()));
