@@ -2531,7 +2531,6 @@ public class RemoteDevices {
         writer.println(sbBonded);
         writer.println("  Other devices: " + knownCount);
         writer.println(sbKnown);
-        writer.println();
     }
 
     // TODO: Remove this when use_autonomous_repairing flag is removed.
