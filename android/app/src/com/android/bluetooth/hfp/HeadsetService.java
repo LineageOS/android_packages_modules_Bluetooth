@@ -164,6 +164,22 @@ public class HeadsetService extends ConnectableProfile {
     @VisibleForTesting boolean mIsAptXSwbEnabled = false;
     @VisibleForTesting boolean mIsAptXSwbPmEnabled = false;
 
+    // Mirrored from bta_ag_api.h in native
+    public enum ScoConnectionFailures {
+        NO_FAILURE(0),
+        CODEC_NEGOTIATION_FAIL(1);
+
+        private final int mReason;
+
+        ScoConnectionFailures(int reason) {
+            this.mReason = reason;
+        }
+
+        public int getReason() {
+            return mReason;
+        }
+    }
+
     public HeadsetService(
             AdapterService adapterService,
             BluetoothStorageManager storage,
@@ -2499,9 +2515,7 @@ public class HeadsetService extends ConnectableProfile {
                 Log.w(TAG, "isScoAcceptable: rejected SCO since audio route is not allowed");
                 return BluetoothStatusCodes.ERROR_AUDIO_ROUTE_BLOCKED;
             }
-            if (mVoiceRecognitionStarted
-                    || mVirtualCallStarted
-                    || mSystemInterface.isScoManagedByAudioEnabled()) {
+            if (mVoiceRecognitionStarted || mVirtualCallStarted) {
                 return BluetoothStatusCodes.SUCCESS;
             }
             if (shouldCallAudioBeActive()) {

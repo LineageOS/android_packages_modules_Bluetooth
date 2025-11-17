@@ -400,10 +400,12 @@ static void bta_ag_esco_connreq_cback(tBTM_ESCO_EVT event, tBTM_ESCO_EVT_DATA* p
  * Returns          void
  *
  ******************************************************************************/
-static void bta_ag_cback_sco(tBTA_AG_SCB* p_scb, tBTA_AG_EVT event) {
+static void bta_ag_cback_sco(tBTA_AG_SCB* p_scb, tBTA_AG_EVT event,
+                             SCO_CONNECTION_FAILURES reason = NO_FAILURE) {
   tBTA_AG_HDR sco = {};
   sco.handle = bta_ag_scb_to_idx(p_scb);
   sco.app_id = p_scb->app_id;
+  sco.reason = reason;
   /* call close cback */
   (*bta_ag_cb.p_cback)(static_cast<tBTA_AG_EVT>(event), (tBTA_AG*)&sco);
 }
@@ -641,7 +643,7 @@ static void bta_ag_codec_negotiation_timer_cback(void* data) {
   }
 
   /* call app callback */
-  bta_ag_cback_sco(p_scb, BTA_AG_AUDIO_CLOSE_EVT);
+  bta_ag_cback_sco(p_scb, BTA_AG_AUDIO_CLOSE_EVT, CODEC_NEGOTIATION_FAIL);
 }
 
 /*******************************************************************************

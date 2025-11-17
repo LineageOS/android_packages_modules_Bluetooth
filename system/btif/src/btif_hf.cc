@@ -565,7 +565,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
     case BTA_AG_AUDIO_OPEN_EVT:
       log::debug("Audio open event:{}", dump_hf_event(event));
       bt_hf_callbacks->AudioStateCallback(BTHF_AUDIO_STATE_CONNECTED,
-                                          &btif_hf_cb[idx].connected_bda);
+                                          &btif_hf_cb[idx].connected_bda, p_data->hdr.reason);
       break;
 
     case BTA_AG_AUDIO_CLOSE_EVT:
@@ -575,7 +575,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                                          IOT_CONF_KEY_HFP_SCO_CONN_FAIL_COUNT);
 
       bt_hf_callbacks->AudioStateCallback(BTHF_AUDIO_STATE_DISCONNECTED,
-                                          &btif_hf_cb[idx].connected_bda);
+                                          &btif_hf_cb[idx].connected_bda, p_data->hdr.reason);
       break;
 
     case BTA_AG_SPK_EVT:
@@ -776,7 +776,6 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
       log::info("Calling AtBccCallback for {}", btif_hf_cb[idx].connected_bda);
       bt_hf_callbacks->AtBccCallback(&btif_hf_cb[idx].connected_bda);
       break;
-
     default:
       log::warn("unhandled event {}", event);
       break;
@@ -1024,7 +1023,7 @@ BtStatus HeadsetInterface::ConnectAudio(const RawAddress bd_addr, int disabled_c
   do_in_jni_thread(base::BindOnce(&Callbacks::AudioStateCallback,
                                   // Manual pointer management for now
                                   base::Unretained(bt_hf_callbacks), BTHF_AUDIO_STATE_CONNECTING,
-                                  &btif_hf_cb[idx].connected_bda));
+                                  &btif_hf_cb[idx].connected_bda, NO_FAILURE));
   BTA_AgAudioOpen(btif_hf_cb[idx].handle, disabled_codecs);
 
   DEVICE_IOT_CONFIG_ADDR_INT_ADD_ONE(bd_addr, IOT_CONF_KEY_HFP_SCO_CONN_COUNT);

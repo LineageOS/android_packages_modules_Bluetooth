@@ -33,13 +33,14 @@ class HeadsetNativeCallback(adapterService: AdapterService, private val service:
         service.messageFromNative(event)
     }
 
-    private fun onAudioStateChanged(state: Int, address: ByteArray) {
+    private fun onAudioStateChanged(state: Int, address: ByteArray, reason: Int) {
         val event =
             HeadsetStackEvent(
                 HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED,
                 state,
                 getDevice(address),
             )
+        event.reason = reason
         service.messageFromNative(event)
     }
 
