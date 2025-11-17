@@ -1687,7 +1687,7 @@ public class RemoteDevices {
                     SecurityLog.TAG_BLUETOOTH_DISCONNECTION,
                     Utils.getLoggableAddress(device),
                     BluetoothAdapter.BluetoothConnectionCallback.disconnectReasonToString(
-                            AdapterService.hciToAndroidDisconnectReason(hciReason)));
+                            Util.hciToAndroidDisconnectReason(hciReason)));
         }
 
         int connectionState =
@@ -1761,8 +1761,7 @@ public class RemoteDevices {
             connectionChangeConsumer =
                     cb ->
                             cb.onDeviceDisconnected(
-                                    device,
-                                    AdapterService.hciToAndroidDisconnectReason(disconnectReason));
+                                    device, Util.hciToAndroidDisconnectReason(disconnectReason));
             mHandler.post(
                     () -> mWatchConnectionStateListener.onDeviceDisconnected(device, transport));
         }

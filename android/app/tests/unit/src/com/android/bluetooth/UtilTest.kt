@@ -18,6 +18,7 @@ package com.android.bluetooth
 
 import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothStatusCodes
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.android.bluetooth.TestUtils.getTestDevice
@@ -76,5 +77,58 @@ class UtilTest {
             .getMetadata(device, BluetoothDevice.METADATA_DEVICE_TYPE)
 
         assertThat(Util.remoteDeviceIsWatch(adapterService, device)).isTrue()
+    }
+
+    @Test
+    fun hciToAndroidDisconnectReason() {
+        val params =
+            mapOf(
+                0x00 to BluetoothStatusCodes.ERROR_UNKNOWN,
+                0x1F to BluetoothStatusCodes.ERROR_UNKNOWN,
+                0xff to BluetoothStatusCodes.ERROR_UNKNOWN,
+                0x01 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL,
+                0x02 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL,
+                0x03 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL,
+                0x2A to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL,
+                0x32 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL,
+                0x35 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL,
+                0x04 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_TIMEOUT,
+                0x08 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_TIMEOUT,
+                0x10 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_TIMEOUT,
+                0x22 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_TIMEOUT,
+                0x3C to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_TIMEOUT,
+                0x3E to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_TIMEOUT,
+                0x05 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SECURITY,
+                0x06 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SECURITY,
+                0x0E to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SECURITY,
+                0x17 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SECURITY,
+                0x18 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SECURITY,
+                0x25 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SECURITY,
+                0x26 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SECURITY,
+                0x29 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SECURITY,
+                0x2F to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SECURITY,
+                0x38 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SECURITY,
+                0x07 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_RESOURCE_LIMIT_REACHED,
+                0x09 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_RESOURCE_LIMIT_REACHED,
+                0x0A to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_RESOURCE_LIMIT_REACHED,
+                0x0C to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_RESOURCE_LIMIT_REACHED,
+                0x0D to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_RESOURCE_LIMIT_REACHED,
+                0x43 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_RESOURCE_LIMIT_REACHED,
+                0x0B to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_CONNECTION_ALREADY_EXISTS,
+                0x0F to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SYSTEM_POLICY,
+                0x12 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_BAD_PARAMETERS,
+                0x13 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_REMOTE_REQUEST,
+                0x15 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_REMOTE_REQUEST,
+                0x16 to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL_REQUEST,
+                0x1A to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_REMOTE,
+                0x3B to BluetoothStatusCodes.ERROR_DISCONNECT_REASON_BAD_PARAMETERS,
+            )
+
+        params.forEach { (hci, expected) ->
+            assertThat(Util.hciToAndroidDisconnectReason(hci)).isEqualTo(expected)
+        }
+
+        assertThat(Util.hciToAndroidDisconnectReason(0x9999))
+            .isEqualTo(BluetoothStatusCodes.ERROR_UNKNOWN)
     }
 }

@@ -27,9 +27,11 @@ import android.Manifest.permission.WRITE_SMS
 import android.annotation.PermissionMethod
 import android.annotation.PermissionName
 import android.annotation.RequiresPermission
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothDevice.METADATA_DEVICE_TYPE
+import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.BluetoothUtils
 import android.content.AttributionSource
 import android.content.Context
@@ -104,6 +106,80 @@ object Util {
             BluetoothDevice.TRANSPORT_BREDR -> "BR/EDR"
             BluetoothDevice.TRANSPORT_LE -> "LE"
             else -> "Unknown transport ($transport)"
+        }
+
+    /**
+     * Converts HCI disconnect reasons to Android disconnect reasons.
+     *
+     * The HCI Error Codes used for ACL disconnect reasons propagated up from native code were
+     * copied from: packages/modules/Bluetooth/system/stack/include/hci_error_code.h
+     *
+     * These error codes are specified and described in Bluetooth Core Spec v5.1, Vol 2, Part D.
+     *
+     * @param hciReason is the raw HCI disconnect reason from native.
+     * @return the Android disconnect reason for apps.
+     */
+    @JvmStatic
+    @BluetoothAdapter.BluetoothConnectionCallback.DisconnectReason
+    fun hciToAndroidDisconnectReason(hciReason: Int) =
+        when (hciReason) {
+            0x00 /* HCI_SUCCESS */,
+            0x1F /* HCI_ERR_UNSPECIFIED */,
+            0xff /* HCI_ERR_UNDEFINED */ -> {
+                BluetoothStatusCodes.ERROR_UNKNOWN
+            }
+            0x01 /* HCI_ERR_ILLEGAL_COMMAND */,
+            0x02 /* HCI_ERR_NO_CONNECTION */,
+            0x03 /* HCI_ERR_HW_FAILURE */,
+            0x2A /* HCI_ERR_DIFF_TRANSACTION_COLLISION */,
+            0x32 /* HCI_ERR_ROLE_SWITCH_PENDING */,
+            0x35 /* HCI_ERR_ROLE_SWITCH_FAILED */ ->
+                BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL
+            0x04 /* HCI_ERR_PAGE_TIMEOUT */,
+            0x08 /* HCI_ERR_CONNECTION_TOUT */,
+            0x10 /* HCI_ERR_HOST_TIMEOUT */,
+            0x22 /* HCI_ERR_LMP_RESPONSE_TIMEOUT */,
+            0x3C /* HCI_ERR_ADVERTISING_TIMEOUT */,
+            0x3E /* HCI_ERR_CONN_FAILED_ESTABLISHMENT */ ->
+                BluetoothStatusCodes.ERROR_DISCONNECT_REASON_TIMEOUT
+            0x05 /* HCI_ERR_AUTH_FAILURE */,
+            0x06 /* HCI_ERR_KEY_MISSING */,
+            0x0E /* HCI_ERR_HOST_REJECT_SECURITY */,
+            0x17 /* HCI_ERR_REPEATED_ATTEMPTS */,
+            0x18 /* HCI_ERR_PAIRING_NOT_ALLOWED */,
+            0x25 /* HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE */,
+            0x26 /* HCI_ERR_UNIT_KEY_USED */,
+            0x29 /* HCI_ERR_PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED */,
+            0x2F /* HCI_ERR_INSUFFICIENT_SECURITY */,
+            0x38 /* HCI_ERR_HOST_BUSY_PAIRING */ ->
+                BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SECURITY
+            0x07 /* HCI_ERR_MEMORY_FULL */,
+            0x09 /* HCI_ERR_MAX_NUM_OF_CONNECTIONS */,
+            0x0A /* HCI_ERR_MAX_NUM_OF_SCOS */,
+            0x0C /* HCI_ERR_COMMAND_DISALLOWED */,
+            0x0D /* HCI_ERR_HOST_REJECT_RESOURCES */,
+            0x43 /* HCI_ERR_LIMIT_REACHED */ ->
+                BluetoothStatusCodes.ERROR_DISCONNECT_REASON_RESOURCE_LIMIT_REACHED
+            0x0B /*HCI_ERR_CONNECTION_EXISTS*/ ->
+                BluetoothStatusCodes.ERROR_DISCONNECT_REASON_CONNECTION_ALREADY_EXISTS
+            0x0F /*HCI_ERR_HOST_REJECT_DEVICE*/ ->
+                BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SYSTEM_POLICY
+            0x12 /*HCI_ERR_ILLEGAL_PARAMETER_FMT*/ ->
+                BluetoothStatusCodes.ERROR_DISCONNECT_REASON_BAD_PARAMETERS
+            0x13 /*HCI_ERR_PEER_USER*/ ->
+                BluetoothStatusCodes.ERROR_DISCONNECT_REASON_REMOTE_REQUEST
+            0x15 /*HCI_ERR_REMOTE_POWER_OFF*/ ->
+                BluetoothStatusCodes.ERROR_DISCONNECT_REASON_REMOTE_REQUEST
+            0x16 /*HCI_ERR_CONN_CAUSE_LOCAL_HOST*/ ->
+                BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL_REQUEST
+            0x1A /*HCI_ERR_UNSUPPORTED_REM_FEATURE*/ ->
+                BluetoothStatusCodes.ERROR_DISCONNECT_REASON_REMOTE
+            0x3B /*HCI_ERR_UNACCEPT_CONN_INTERVAL*/ ->
+                BluetoothStatusCodes.ERROR_DISCONNECT_REASON_BAD_PARAMETERS
+            else -> {
+                Log.e(TAG, "Invalid HCI disconnect reason: $hciReason")
+                BluetoothStatusCodes.ERROR_UNKNOWN
+            }
         }
 
     /**
