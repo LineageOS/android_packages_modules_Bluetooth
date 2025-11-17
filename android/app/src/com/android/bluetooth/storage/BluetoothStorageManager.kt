@@ -39,6 +39,7 @@ import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.storage.ActiveAudioPolicy.Type as ActiveAudioPolicy
 import com.android.bluetooth.storage.MediaProfile.Type as MediaProfile
 import com.android.bluetooth.storage.VoiceProfile.Type as VoiceProfile
+import com.android.bluetooth.util.indent
 import com.google.protobuf.ByteString
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
@@ -158,7 +159,7 @@ constructor(
     fun dump(sb: StringBuilder) {
         eventLog.dump(sb)
 
-        sb.append(
+        sb.appendLine(
             currentStorage
                 .toString()
                 .replace(PATTERN_DELETE_MUTABLE, "")
@@ -169,6 +170,7 @@ constructor(
                 .joinToString("\n")
                 .anonymizeAddress()
                 .replace("a2_dp", "a2dp") // Fix proto parsing of letter after a digit
+                .indent("  ")
         )
     }
 
