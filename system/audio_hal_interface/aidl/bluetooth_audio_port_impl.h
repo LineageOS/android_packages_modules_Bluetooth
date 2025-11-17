@@ -50,6 +50,8 @@ public:
 
   ndk::ScopedAStatus setLatencyMode(LatencyMode latency_mode) override;
 
+  ndk::ScopedAStatus updateSinkLatency(int64_t in_latency_ms) override;
+
 protected:
   virtual ~BluetoothAudioPortImpl();
 

@@ -72,6 +72,10 @@ public:
     log::error("unimplemented");
     return Status::FAILURE;
   }
+  virtual Status UpdateSinkLatency(int64_t /* latency_ms */) const {
+    log::error("unimplemented");
+    return Status::FAILURE;
+  }
 };
 
 struct ahal_codec_configuration {

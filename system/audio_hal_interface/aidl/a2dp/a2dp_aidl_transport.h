@@ -71,6 +71,8 @@ public:
 
   void SetLatencyMode(LatencyMode latency_mode);
 
+  void UpdateSinkLatency(int64_t latency_ms);
+
   bool GetPresentationPosition(uint64_t* remote_delay_report_ns, uint64_t* total_bytes_read,
                                timespec* data_position);
 

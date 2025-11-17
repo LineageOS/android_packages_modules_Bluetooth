@@ -44,6 +44,7 @@ public:
   ndk::ScopedAStatus updateSourceMetadata(const SourceMetadata& source_metadata) override;
   ndk::ScopedAStatus updateSinkMetadata(const SinkMetadata& sink_metadata) override;
   ndk::ScopedAStatus setLatencyMode(LatencyMode latency_mode) override;
+  ndk::ScopedAStatus updateSinkLatency(int64_t in_latency_ms) override;
 
 protected:
   virtual ~BluetoothAudioPortImpl();

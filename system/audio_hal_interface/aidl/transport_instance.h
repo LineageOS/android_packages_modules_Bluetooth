@@ -91,6 +91,8 @@ public:
    ***/
   virtual void ResetPresentationPosition() = 0;
 
+  virtual void UpdateSinkLatency([[maybe_unused]] int64_t latency_ms) {}
+
 private:
   const SessionType session_type_;
   AudioConfiguration audio_config_;
