@@ -87,11 +87,9 @@ class GattServiceBinder(private var gattService: GattService?) :
         source: AttributionSource,
     ): List<BluetoothDevice> {
         val gatt = gattEnforceConnect(source) ?: return emptyList()
-        return gatt.runOrFetchOnGattThread(
-            gatt,
-            { getDevicesMatchingConnectionStates(states) },
-            emptyList(),
-        )
+        return gatt.runOrFetchOnGattThread(gatt, emptyList()) {
+            getDevicesMatchingConnectionStates(states)
+        }
     }
 
     override fun registerClient(
@@ -444,11 +442,9 @@ class GattServiceBinder(private var gattService: GattService?) :
             throw IllegalArgumentException("Subrate Mode not within valid range")
         }
 
-        return gatt.runOrFetchOnGattThread(
-            gatt,
-            { subrateModeRequest(callback, device, subrateMode) },
-            BluetoothStatusCodes.ERROR_UNKNOWN,
-        )
+        return gatt.runOrFetchOnGattThread(gatt, BluetoothStatusCodes.ERROR_UNKNOWN) {
+            subrateModeRequest(callback, device, subrateMode)
+        }
     }
 
     override fun disconnectAll(source: AttributionSource) {
@@ -559,11 +555,9 @@ class GattServiceBinder(private var gattService: GattService?) :
         source: AttributionSource,
     ): Int {
         val gatt = gattEnforceConnect(source) ?: return ERROR_PROFILE_SERVICE_NOT_BOUND
-        return gatt.runOrFetchOnGattThread(
-            gatt.serverManager,
-            { sendNotification(callback, device, handle, confirm, value) },
-            BluetoothStatusCodes.ERROR_UNKNOWN,
-        )
+        return gatt.runOrFetchOnGattThread(gatt.serverManager, BluetoothStatusCodes.ERROR_UNKNOWN) {
+            sendNotification(callback, device, handle, confirm, value)
+        }
     }
 
     override fun offloadClientCharacteristics(
@@ -577,20 +571,16 @@ class GattServiceBinder(private var gattService: GattService?) :
     ): GattOffloadSession.InnerParcel {
         val gatt = gattEnforceConnectAndPrivileged(source) ?: throw gattUnavailableException
         val result: GattOffloadSession.InnerParcel? =
-            gatt.runOrFetchOnGattThread(
-                gatt.serverManager,
-                {
-                    offloadClientCharacteristics(
-                        callback,
-                        device,
-                        gattService,
-                        characteristics,
-                        endpointId,
-                        hubId,
-                    )
-                },
-                null,
-            )
+            gatt.runOrFetchOnGattThread(gatt.serverManager, null) {
+                offloadClientCharacteristics(
+                    callback,
+                    device,
+                    gattService,
+                    characteristics,
+                    endpointId,
+                    hubId,
+                )
+            }
         val message = "Failed to complete offloadClientCharacteristics synchronously on GATT thread"
         return result ?: throw IllegalStateException(message)
     }
@@ -618,20 +608,16 @@ class GattServiceBinder(private var gattService: GattService?) :
     ): GattOffloadSession.InnerParcel {
         val gatt = gattEnforceConnectAndPrivileged(source) ?: throw gattUnavailableException
         val result: GattOffloadSession.InnerParcel? =
-            gatt.runOrFetchOnGattThread(
-                gatt.serverManager,
-                {
-                    offloadServerCharacteristics(
-                        callback,
-                        device,
-                        gattService,
-                        characteristics,
-                        endpointId,
-                        hubId,
-                    )
-                },
-                null,
-            )
+            gatt.runOrFetchOnGattThread(gatt.serverManager, null) {
+                offloadServerCharacteristics(
+                    callback,
+                    device,
+                    gattService,
+                    characteristics,
+                    endpointId,
+                    hubId,
+                )
+            }
         val message = "Failed to complete offloadServerCharacteristics synchronously on GATT thread"
         return result ?: throw IllegalStateException(message)
     }
@@ -675,32 +661,28 @@ class GattServiceBinder(private var gattService: GattService?) :
         val header = "onGattThreadAndEnforcePrivilegedOnBinderIfNeeded($callback, $device):"
 
         val (result, isRestricted) =
-            gatt.runOrFetchOnGattThread(
-                gatt,
-                {
-                    val clientApp = gatt.clientMap.getByCallbackId(callback)
-                    if (clientApp == null) {
-                        Log.w(TAG, "$header App not registered")
-                        return@runOrFetchOnGattThread defaultValue to false
-                    }
+            gatt.runOrFetchOnGattThread(gatt, defaultValue to false) {
+                val clientApp = gatt.clientMap.getByCallbackId(callback)
+                if (clientApp == null) {
+                    Log.w(TAG, "$header App not registered")
+                    return@runOrFetchOnGattThread defaultValue to false
+                }
 
-                    val connId = gatt.getFirstConnectionIdForDevice(clientApp.id, device)
-                    if (connId == null) {
-                        Log.e(TAG, "$header No connection")
-                        return@runOrFetchOnGattThread defaultValue to false
-                    }
+                val connId = gatt.getFirstConnectionIdForDevice(clientApp.id, device)
+                if (connId == null) {
+                    Log.e(TAG, "$header No connection")
+                    return@runOrFetchOnGattThread defaultValue to false
+                }
 
-                    val isRestricted = gatt.restrictedHandles[connId]?.contains(handle) == true
-                    if (isRestricted && !hasPrivilegedPermission) {
-                        // Restricted handle requires BLUETOOTH_PRIVILEGED but caller lacks it
-                        // Return `defaultValue` and exception will be thrown during enforcement
-                        defaultValue to true
-                    } else {
-                        gatt.block() to isRestricted
-                    }
-                },
-                defaultValue to false,
-            )
+                val isRestricted = gatt.restrictedHandles[connId]?.contains(handle) == true
+                if (isRestricted && !hasPrivilegedPermission) {
+                    // Restricted handle requires BLUETOOTH_PRIVILEGED but caller lacks it
+                    // Return `defaultValue` and exception will be thrown during enforcement
+                    defaultValue to true
+                } else {
+                    gatt.block() to isRestricted
+                }
+            }
 
         if (isRestricted) {
             gatt.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
@@ -723,8 +705,8 @@ class GattServiceBinder(private var gattService: GattService?) :
     // TODO(b/377424060) Remove when "use internal APIs instead of framework APIs" is fixed
     private fun <T, R> GattService.runOrFetchOnGattThread(
         target: T,
-        block: T.() -> R,
         defaultValue: R,
+        block: T.() -> R,
     ): R {
         return if (isOnGattThread) {
             target.block()
