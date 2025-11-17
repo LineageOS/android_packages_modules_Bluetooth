@@ -54,7 +54,9 @@ private const val TAG = "MainActivity"
 class MainActivity : AppCompatActivity() {
 
     private val bluetoothLeScanner: BluetoothLeScanner by lazy {
-        getSystemService(BluetoothManager::class.java).adapter.bluetoothLeScanner
+        val attributionContext = createAttributionContext(getString(R.string.attribution_tag))
+        val bluetoothManager = attributionContext.getSystemService(BluetoothManager::class.java)
+        bluetoothManager.adapter.bluetoothLeScanner!!
     }
 
     private val REQUIRED_PERMISSIONS =
