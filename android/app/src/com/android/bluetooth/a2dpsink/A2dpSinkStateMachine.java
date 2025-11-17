@@ -52,7 +52,8 @@ class A2dpSinkStateMachine extends StateMachine {
 
     // 200->299 Events from Native
     static final int MESSAGE_CONNECTION_STATE_CHANGED = 200;
-    static final int MESSAGE_AUDIO_CONFIG_CHANGED = 201;
+    static final int MESSAGE_AUDIO_STATE_CHANGED = 201;
+    static final int MESSAGE_AUDIO_CONFIG_CHANGED = 202;
 
     static final int CONNECT_TIMEOUT_MS = 10000;
 
@@ -156,6 +157,10 @@ class A2dpSinkStateMachine extends StateMachine {
 
     final void onConnectionStateChanged(int state) {
         dispatchMessage(MESSAGE_CONNECTION_STATE_CHANGED, state);
+    }
+
+    final void onAudioStateChanged(int state) {
+        sendMessage(MESSAGE_AUDIO_STATE_CHANGED, state);
     }
 
     final void onAudioConfigChanged(int sampleRate, int channelCount) {
@@ -275,6 +280,7 @@ class A2dpSinkStateMachine extends StateMachine {
                     transitionTo(mDisconnecting);
                     mNativeInterface.disconnectA2dpSink(mDevice);
                 }
+                case MESSAGE_AUDIO_STATE_CHANGED -> processAudioStateEvent(msg.arg1);
                 case MESSAGE_AUDIO_CONFIG_CHANGED -> {
                     mAudioConfig =
                             new BluetoothAudioConfig(
@@ -295,6 +301,10 @@ class A2dpSinkStateMachine extends StateMachine {
                 case STATE_DISCONNECTED -> transitionTo(mDisconnected);
                 default -> {} // Nothing to do
             }
+        }
+
+        void processAudioStateEvent(int event) {
+            debug("Audio state changed, event=" + event);
         }
     }
 
@@ -332,6 +342,7 @@ class A2dpSinkStateMachine extends StateMachine {
             case MESSAGE_DISCONNECT -> "MESSAGE_DISCONNECT";
             case MESSAGE_CONNECT_TIMEOUT -> "MESSAGE_CONNECT_TIMEOUT";
             case MESSAGE_CONNECTION_STATE_CHANGED -> "MESSAGE_CONNECTION_STATE_CHANGED";
+            case MESSAGE_AUDIO_STATE_CHANGED -> "MESSAGE_AUDIO_STATE_CHANGED";
             case MESSAGE_AUDIO_CONFIG_CHANGED -> "MESSAGE_AUDIO_CONFIG_CHANGED";
             default -> "MESSAGE_UNKNOWN_" + what;
         };
