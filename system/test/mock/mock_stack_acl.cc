@@ -98,9 +98,6 @@ struct btm_acl_role_changed btm_acl_role_changed;
 struct btm_cont_rswitch_from_handle btm_cont_rswitch_from_handle;
 struct btm_establish_continue_from_address btm_establish_continue_from_address;
 struct btm_read_automatic_flush_timeout_complete btm_read_automatic_flush_timeout_complete;
-struct btm_read_remote_ext_features_complete btm_read_remote_ext_features_complete;
-struct btm_read_remote_ext_features_complete_raw btm_read_remote_ext_features_complete_raw;
-struct btm_read_remote_ext_features_failed btm_read_remote_ext_features_failed;
 struct btm_read_remote_version_complete btm_read_remote_version_complete;
 struct btm_read_rssi_complete btm_read_rssi_complete;
 struct btm_rejectlist_role_change_device btm_rejectlist_role_change_device;
@@ -327,20 +324,6 @@ void btm_establish_continue_from_address(const RawAddress& bda, tBT_TRANSPORT tr
 void btm_read_automatic_flush_timeout_complete(uint8_t* p) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_read_automatic_flush_timeout_complete(p);
-}
-void btm_read_remote_ext_features_complete(uint16_t handle, uint8_t page_num, uint8_t max_page,
-                                           uint8_t* features) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_read_remote_ext_features_complete(handle, page_num, max_page,
-                                                               features);
-}
-void btm_read_remote_ext_features_complete_raw(uint8_t* p, uint8_t evt_len) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_read_remote_ext_features_complete_raw(p, evt_len);
-}
-void btm_read_remote_ext_features_failed(uint8_t status, uint16_t handle) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_read_remote_ext_features_failed(status, handle);
 }
 void btm_read_remote_version_complete(tHCI_STATUS status, uint16_t handle, uint8_t lmp_version,
                                       uint16_t manufacturer, uint16_t lmp_subversion) {

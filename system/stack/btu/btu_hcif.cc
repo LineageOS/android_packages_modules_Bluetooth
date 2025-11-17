@@ -52,7 +52,6 @@
 #include "stack/include/btm_iso_api.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
-#include "stack/include/btu_hcif.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hci_evt_length.h"
 #include "stack/include/inq_hci_link_interface.h"
@@ -70,7 +69,6 @@ using bluetooth::hci::IsoManager;
 static void btu_hcif_authentication_comp_evt(uint8_t* p);
 static void btu_hcif_encryption_change_evt(uint8_t* p);
 static void btu_hcif_encryption_change_evt_v2(uint8_t* p);
-static void btu_hcif_read_rmt_ext_features_comp_evt(uint8_t* p, uint8_t evt_len);
 static void btu_hcif_command_complete_evt(BT_HDR* response, void* context);
 static void btu_hcif_command_status_evt(uint8_t status, BT_HDR* command, void* context);
 static void btu_hcif_mode_change_evt(uint8_t* p);
@@ -237,9 +235,6 @@ static void btu_hcif_process_event(uint8_t /* controller_id */, const BT_HDR* p_
       break;
     case HCI_ENCRYPTION_KEY_REFRESH_COMP_EVT:
       btu_hcif_encryption_key_refresh_cmpl_evt(p);
-      break;
-    case HCI_READ_RMT_EXT_FEATURES_COMP_EVT:
-      btu_hcif_read_rmt_ext_features_comp_evt(p, hci_evt_len);
       break;
     case HCI_COMMAND_COMPLETE_EVT:
       log::error(
@@ -788,30 +783,6 @@ static void btu_hcif_encryption_change_evt_v2(uint8_t* p) {
 
 /*******************************************************************************
  *
- * Function         btu_hcif_read_rmt_ext_features_comp_evt
- *
- * Description      Process event HCI_READ_RMT_EXT_FEATURES_COMP_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_read_rmt_ext_features_comp_evt(uint8_t* p, uint8_t evt_len) {
-  uint8_t* p_cur = p;
-  uint8_t status;
-  uint16_t handle;
-
-  STREAM_TO_UINT8(status, p_cur);
-
-  if (status == HCI_SUCCESS) {
-    btm_read_remote_ext_features_complete_raw(p, evt_len);
-  } else {
-    STREAM_TO_UINT16(handle, p_cur);
-    btm_read_remote_ext_features_failed(status, handle);
-  }
-}
-
-/*******************************************************************************
- *
  * Function         btu_hcif_esco_connection_comp_evt
  *
  * Description      Process event HCI_ESCO_CONNECTION_COMP_EVT
@@ -1042,12 +1013,6 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status, const u
         // Device refused to start encryption
         // This is treated as an encryption failure
         btm_sec_encrypt_change(HCI_INVALID_HANDLE, hci_status, false, 0);
-      }
-      break;
-    case HCI_READ_RMT_EXT_FEATURES:
-      if (status != HCI_SUCCESS) {
-        STREAM_TO_UINT16(handle, p_cmd);
-        btm_read_remote_ext_features_failed(status, handle);
       }
       break;
     case HCI_SETUP_ESCO_CONNECTION:
