@@ -482,7 +482,7 @@ object ScanUtil {
     fun ScanSettings.toStringShort() =
         "ScanSettings(mode=${ScanMode(scanMode)}" +
             ", reportDelayMs=$reportDelayMillis" +
-            ", callbackType=${CallbackType(callbackType)})" +
+            ", callbackType=${CallbackType(callbackType)}" +
             ", resultType=${ResultType(scanResultType)})"
 
     fun ScanFilter.toStringWithoutNullParam() = buildString {
