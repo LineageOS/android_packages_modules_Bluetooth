@@ -429,6 +429,77 @@ public class BassClientStateMachineTest {
     }
 
     @Test
+    public void acquireAllBassChars_noCharacteristics() {
+        BassClientStateMachine.BluetoothGattTestableWrapper btGatt =
+                Mockito.mock(BassClientStateMachine.BluetoothGattTestableWrapper.class);
+        mStateMachine.mBluetoothGatt = btGatt;
+        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
+        when(btGatt.getService(BassConstants.BASS_UUID)).thenReturn(gattService);
+        List<BluetoothGattCharacteristic> characteristics = new ArrayList<>();
+        when(gattService.getCharacteristics()).thenReturn(characteristics);
+
+        mStateMachine.acquireAllBassChars();
+
+        assertThat(mStateMachine.mBroadcastScanControlPoint).isNull();
+        assertThat(mStateMachine.mBroadcastCharacteristics).isEmpty();
+        // numOfChars is 0, so mNumOfBroadcastReceiverStates becomes 0 - 1 = -1
+        assertThat(mStateMachine.mNumOfBroadcastReceiverStates).isEqualTo(-1);
+    }
+
+    @Test
+    public void acquireAllBassChars_onlyControlPoint() {
+        BassClientStateMachine.BluetoothGattTestableWrapper btGatt =
+                Mockito.mock(BassClientStateMachine.BluetoothGattTestableWrapper.class);
+        mStateMachine.mBluetoothGatt = btGatt;
+        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
+        when(btGatt.getService(BassConstants.BASS_UUID)).thenReturn(gattService);
+
+        List<BluetoothGattCharacteristic> characteristics = new ArrayList<>();
+        BluetoothGattCharacteristic scanControlPoint =
+                new BluetoothGattCharacteristic(
+                        BassConstants.BASS_BCAST_AUDIO_SCAN_CTRL_POINT,
+                        BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE
+                                | BluetoothGattCharacteristic.PROPERTY_WRITE,
+                        BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED);
+        characteristics.add(scanControlPoint);
+
+        when(gattService.getCharacteristics()).thenReturn(characteristics);
+        mStateMachine.acquireAllBassChars();
+        assertThat(mStateMachine.mBroadcastScanControlPoint).isEqualTo(scanControlPoint);
+        assertThat(mStateMachine.mBroadcastCharacteristics).isEmpty();
+        // numOfChars is 1, so mNumOfBroadcastReceiverStates becomes 1 - 1 = 0
+        assertThat(mStateMachine.mNumOfBroadcastReceiverStates).isEqualTo(0);
+    }
+
+    @Test
+    public void acquireAllBassChars_controlPointWithInvalidProperties() {
+        BassClientStateMachine.BluetoothGattTestableWrapper btGatt =
+                Mockito.mock(BassClientStateMachine.BluetoothGattTestableWrapper.class);
+        mStateMachine.mBluetoothGatt = btGatt;
+        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
+        when(btGatt.getService(BassConstants.BASS_UUID)).thenReturn(gattService);
+
+        List<BluetoothGattCharacteristic> characteristics = new ArrayList<>();
+        // Invalid properties (e.g., missing PROPERTY_WRITE)
+        BluetoothGattCharacteristic scanControlPoint =
+                new BluetoothGattCharacteristic(
+                        BassConstants.BASS_BCAST_AUDIO_SCAN_CTRL_POINT,
+                        BluetoothGattCharacteristic.PROPERTY_READ,
+                        BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED);
+        characteristics.add(scanControlPoint);
+
+        when(gattService.getCharacteristics()).thenReturn(characteristics);
+        mStateMachine.acquireAllBassChars();
+
+        // Control point should not be set due to invalid properties
+        assertThat(mStateMachine.mBroadcastScanControlPoint).isNull();
+        // The characteristic is not added to the broadcast characteristics list either
+        assertThat(mStateMachine.mBroadcastCharacteristics).isEmpty();
+        // numOfChars is 1, so mNumOfBroadcastReceiverStates becomes 1 - 1 = 0
+        assertThat(mStateMachine.mNumOfBroadcastReceiverStates).isEqualTo(0);
+    }
+
+    @Test
     public void simpleMethods() {
         // dump() shouldn't crash
         StringBuilder sb = new StringBuilder();
