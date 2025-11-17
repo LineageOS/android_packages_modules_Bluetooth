@@ -531,8 +531,6 @@ public final class Utils {
                 new AttributionSource.Builder(context.getAttributionSource())
                         .setNext(requireNonNull(source))
                         .build();
-        // STOPSHIP(b/188391719): enable this security enforcement
-        // source.enforceCallingUid();
         PermissionManager pm = context.getSystemService(PermissionManager.class);
         if (pm == null) {
             return false;
@@ -562,8 +560,6 @@ public final class Utils {
                 new AttributionSource.Builder(context.getAttributionSource())
                         .setNext(requireNonNull(source))
                         .build();
-        // STOPSHIP(b/188391719): enable this security enforcement
-        // source.enforceCallingUid();
         PermissionManager pm = context.getSystemService(PermissionManager.class);
         if (pm == null) {
             return false;
@@ -599,8 +595,6 @@ public final class Utils {
                 new AttributionSource.Builder(context.getAttributionSource())
                         .setNext(requireNonNull(source))
                         .build();
-        // STOPSHIP(b/188391719): enable this security enforcement
-        // source.enforceCallingUid();
         PermissionManager pm = context.getSystemService(PermissionManager.class);
         if (pm == null) {
             return false;
