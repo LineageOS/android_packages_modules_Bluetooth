@@ -352,7 +352,31 @@ object ScanUtil {
         client.appScanStats?.isAutoBatchScan(client.scannerId) ?: false
 
     @JvmStatic
-    fun isPhyConfigured(client: ScanClient, use1mPhy: Boolean) =
+    fun getAggressiveClient(
+        clients: Set<ScanClient>,
+        use1mPhy: Boolean,
+        isBatch: Boolean,
+    ): ScanClient? {
+        var result: ScanClient? = null
+        var currentScanModePriority = Int.MIN_VALUE
+        for (client in clients) {
+            // Batch is only done on the 1M PHY and the client PHY setting is ignored
+            if (!isBatch && !isPhyConfigured(client, use1mPhy)) {
+                continue
+            }
+            if (isOpportunisticScanClient(client)) {
+                continue
+            }
+            val priority = priorityForScanMode(client.settings.scanMode)
+            if (priority > currentScanModePriority) {
+                result = client
+                currentScanModePriority = priority
+            }
+        }
+        return result
+    }
+
+    private fun isPhyConfigured(client: ScanClient, use1mPhy: Boolean) =
         client.settings.phy == ScanSettings.PHY_LE_ALL_SUPPORTED ||
             client.settings.phy ==
                 if (use1mPhy) BluetoothDevice.PHY_LE_1M else BluetoothDevice.PHY_LE_CODED

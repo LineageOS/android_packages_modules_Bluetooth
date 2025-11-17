@@ -26,6 +26,7 @@ import static com.android.bluetooth.le_scan.BatchScanUtil.ACTION_REFRESH_BATCHED
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_FULL;
 import static com.android.bluetooth.le_scan.ScanUtil.SCAN_RESULT_TYPE_TRUNCATED;
 import static com.android.bluetooth.le_scan.ScanUtil.clearAutoBatchScanClient;
+import static com.android.bluetooth.le_scan.ScanUtil.getAggressiveClient;
 import static com.android.bluetooth.le_scan.ScanUtil.isAutoBatchScanClientEnabled;
 import static com.android.bluetooth.le_scan.ScanUtil.isBatchClient;
 import static com.android.bluetooth.le_scan.ScanUtil.isDowngradedScanClient;
@@ -33,7 +34,6 @@ import static com.android.bluetooth.le_scan.ScanUtil.isExemptFromAutoBatchScanUp
 import static com.android.bluetooth.le_scan.ScanUtil.isExemptFromScanTimeout;
 import static com.android.bluetooth.le_scan.ScanUtil.isForceDowngradedScanClient;
 import static com.android.bluetooth.le_scan.ScanUtil.isOpportunisticScanClient;
-import static com.android.bluetooth.le_scan.ScanUtil.isPhyConfigured;
 import static com.android.bluetooth.le_scan.ScanUtil.minScanMode;
 import static com.android.bluetooth.le_scan.ScanUtil.priorityForScanMode;
 import static com.android.bluetooth.le_scan.ScanUtil.requiresLocationOn;
@@ -1224,27 +1224,6 @@ class ScanManager {
         }
         mLastConfiguredScanSetting1m = newScanSetting1m;
         mLastConfiguredScanSettingCoded = newScanSettingCoded;
-    }
-
-    private static ScanClient getAggressiveClient(
-            Set<ScanClient> cList, boolean use1mPhy, boolean isBatch) {
-        ScanClient result = null;
-        int currentScanModePriority = Integer.MIN_VALUE;
-        for (ScanClient client : cList) {
-            // Batch is only done on the 1M PHY and the client PHY setting is ignored
-            if (!isBatch && !isPhyConfigured(client, use1mPhy)) {
-                continue;
-            }
-            if (isOpportunisticScanClient(client)) {
-                continue;
-            }
-            final int priority = priorityForScanMode(client.getSettings().getScanMode());
-            if (priority > currentScanModePriority) {
-                result = client;
-                currentScanModePriority = priority;
-            }
-        }
-        return result;
     }
 
     private void recordScanRadioStart(
