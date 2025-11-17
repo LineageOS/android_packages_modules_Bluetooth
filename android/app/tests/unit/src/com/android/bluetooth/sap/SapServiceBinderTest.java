@@ -45,7 +45,7 @@ public class SapServiceBinderTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private AttributionSource mAttributionSource;
+    @Mock private AttributionSource mSource;
     @Mock private SapService mService;
 
     private SapServiceBinder mBinder;
@@ -58,13 +58,13 @@ public class SapServiceBinderTest {
 
     @Test
     public void getState() {
-        mBinder.getState(mAttributionSource);
+        mBinder.getState(mSource);
         verify(mService).getState();
     }
 
     @Test
     public void getClient() {
-        mBinder.getClient(mAttributionSource);
+        mBinder.getClient(mSource);
         // times(2) due to the Log
         verify(mService, times(2)).getRemoteDevice();
     }
@@ -73,7 +73,7 @@ public class SapServiceBinderTest {
     public void isConnected() {
         BluetoothDevice device = mock(BluetoothDevice.class);
 
-        mBinder.isConnected(device, mAttributionSource);
+        mBinder.isConnected(device, mSource);
         verify(mService).getConnectionState(device);
     }
 
@@ -81,13 +81,13 @@ public class SapServiceBinderTest {
     public void disconnect() {
         BluetoothDevice device = mock(BluetoothDevice.class);
 
-        mBinder.disconnect(device, mAttributionSource);
+        mBinder.disconnect(device, mSource);
         verify(mService).disconnect(device);
     }
 
     @Test
     public void getConnectedDevices() {
-        mBinder.getConnectedDevices(mAttributionSource);
+        mBinder.getConnectedDevices(mSource);
         verify(mService).getConnectedDevices();
     }
 
@@ -95,7 +95,7 @@ public class SapServiceBinderTest {
     public void getDevicesMatchingConnectionStates() {
         int[] states = new int[] {STATE_CONNECTED, STATE_DISCONNECTED};
 
-        mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
+        mBinder.getDevicesMatchingConnectionStates(states, mSource);
         verify(mService).getDevicesMatchingConnectionStates(states);
     }
 
@@ -103,7 +103,7 @@ public class SapServiceBinderTest {
     public void getConnectionState() {
         BluetoothDevice device = mock(BluetoothDevice.class);
 
-        mBinder.getConnectionState(device, mAttributionSource);
+        mBinder.getConnectionState(device, mSource);
         verify(mService).getConnectionState(device);
     }
 
@@ -112,7 +112,7 @@ public class SapServiceBinderTest {
         BluetoothDevice device = mock(BluetoothDevice.class);
         int connectionPolicy = 1;
 
-        mBinder.setConnectionPolicy(device, connectionPolicy, mAttributionSource);
+        mBinder.setConnectionPolicy(device, connectionPolicy, mSource);
         verify(mService).setConnectionPolicy(device, connectionPolicy);
     }
 
@@ -120,7 +120,7 @@ public class SapServiceBinderTest {
     public void getConnectionPolicy() {
         BluetoothDevice device = mock(BluetoothDevice.class);
 
-        mBinder.getConnectionPolicy(device, mAttributionSource);
+        mBinder.getConnectionPolicy(device, mSource);
         verify(mService).getConnectionPolicy(device);
     }
 

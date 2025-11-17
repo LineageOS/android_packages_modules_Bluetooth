@@ -60,7 +60,7 @@ public class HapClientServiceBinderTest {
     @Rule public final SetFlagsRule mSetFlagsRule;
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private AttributionSource mAttributionSource;
+    @Mock private AttributionSource mSource;
     @Mock private HapClientService mService;
 
     private final BluetoothDevice mDevice = getTestDevice(0);
@@ -98,7 +98,7 @@ public class HapClientServiceBinderTest {
     @Test
     public void getConnectedDevices() {
         assertThrows(NullPointerException.class, () -> mBinder.getConnectedDevices(null));
-        mBinder.getConnectedDevices(mAttributionSource);
+        mBinder.getConnectedDevices(mSource);
         verify(mService).getConnectedDevices();
     }
 
@@ -107,18 +107,16 @@ public class HapClientServiceBinderTest {
         assertThrows(
                 NullPointerException.class,
                 () -> mBinder.getDevicesMatchingConnectionStates(null, null));
-        mBinder.getDevicesMatchingConnectionStates(null, mAttributionSource);
+        mBinder.getDevicesMatchingConnectionStates(null, mSource);
         verify(mService).getDevicesMatchingConnectionStates(any());
     }
 
     @Test
     public void getConnectionState() {
         assertThrows(NullPointerException.class, () -> mBinder.getConnectionState(mDevice, null));
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.getConnectionState(null, mAttributionSource));
+        assertThrows(NullPointerException.class, () -> mBinder.getConnectionState(null, mSource));
 
-        mBinder.getConnectionState(mDevice, mAttributionSource);
+        mBinder.getConnectionState(mDevice, mSource);
         verify(mService).getConnectionState(eq(mDevice));
     }
 
@@ -129,55 +127,44 @@ public class HapClientServiceBinderTest {
                 () -> mBinder.setConnectionPolicy(mDevice, CONNECTION_POLICY_ALLOWED, null));
         assertThrows(
                 NullPointerException.class,
-                () ->
-                        mBinder.setConnectionPolicy(
-                                null, CONNECTION_POLICY_ALLOWED, mAttributionSource));
+                () -> mBinder.setConnectionPolicy(null, CONNECTION_POLICY_ALLOWED, mSource));
         assertThrows(
                 IllegalArgumentException.class,
-                () ->
-                        mBinder.setConnectionPolicy(
-                                mDevice, CONNECTION_POLICY_UNKNOWN, mAttributionSource));
+                () -> mBinder.setConnectionPolicy(mDevice, CONNECTION_POLICY_UNKNOWN, mSource));
 
-        mBinder.setConnectionPolicy(mDevice, CONNECTION_POLICY_ALLOWED, mAttributionSource);
+        mBinder.setConnectionPolicy(mDevice, CONNECTION_POLICY_ALLOWED, mSource);
         verify(mService).setConnectionPolicy(eq(mDevice), eq(CONNECTION_POLICY_ALLOWED));
     }
 
     @Test
     public void getConnectionPolicy() {
         assertThrows(NullPointerException.class, () -> mBinder.getConnectionPolicy(mDevice, null));
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.getConnectionPolicy(null, mAttributionSource));
-        mBinder.getConnectionPolicy(mDevice, mAttributionSource);
+        assertThrows(NullPointerException.class, () -> mBinder.getConnectionPolicy(null, mSource));
+        mBinder.getConnectionPolicy(mDevice, mSource);
         verify(mService).getConnectionPolicy(eq(mDevice));
     }
 
     @Test
     public void getActivePresetIndex() {
         assertThrows(NullPointerException.class, () -> mBinder.getActivePresetIndex(mDevice, null));
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.getActivePresetIndex(null, mAttributionSource));
-        mBinder.getActivePresetIndex(mDevice, mAttributionSource);
+        assertThrows(NullPointerException.class, () -> mBinder.getActivePresetIndex(null, mSource));
+        mBinder.getActivePresetIndex(mDevice, mSource);
         verify(mService).getActivePresetIndex(eq(mDevice));
     }
 
     @Test
     public void getActivePresetInfo() {
         assertThrows(NullPointerException.class, () -> mBinder.getActivePresetInfo(mDevice, null));
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.getActivePresetInfo(null, mAttributionSource));
-        mBinder.getActivePresetInfo(mDevice, mAttributionSource);
+        assertThrows(NullPointerException.class, () -> mBinder.getActivePresetInfo(null, mSource));
+        mBinder.getActivePresetInfo(mDevice, mSource);
         verify(mService).getActivePresetInfo(eq(mDevice));
     }
 
     @Test
     public void getHapGroup() {
         assertThrows(NullPointerException.class, () -> mBinder.getHapGroup(mDevice, null));
-        assertThrows(
-                NullPointerException.class, () -> mBinder.getHapGroup(null, mAttributionSource));
-        mBinder.getHapGroup(mDevice, mAttributionSource);
+        assertThrows(NullPointerException.class, () -> mBinder.getHapGroup(null, mSource));
+        mBinder.getHapGroup(mDevice, mSource);
         verify(mService).getHapGroup(eq(mDevice));
     }
 
@@ -185,10 +172,8 @@ public class HapClientServiceBinderTest {
     public void selectPreset() {
         int index = 42;
         assertThrows(NullPointerException.class, () -> mBinder.selectPreset(mDevice, index, null));
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.selectPreset(null, index, mAttributionSource));
-        mBinder.selectPreset(mDevice, index, mAttributionSource);
+        assertThrows(NullPointerException.class, () -> mBinder.selectPreset(null, index, mSource));
+        mBinder.selectPreset(mDevice, index, mSource);
         verify(mService).selectPreset(eq(mDevice), eq(index));
     }
 
@@ -199,17 +184,15 @@ public class HapClientServiceBinderTest {
         assertThrows(
                 NullPointerException.class,
                 () -> mBinder.selectPresetForGroup(groupId, index, null));
-        mBinder.selectPresetForGroup(groupId, index, mAttributionSource);
+        mBinder.selectPresetForGroup(groupId, index, mSource);
         verify(mService).selectPresetForGroup(eq(groupId), eq(index));
     }
 
     @Test
     public void switchToNextPreset() {
         assertThrows(NullPointerException.class, () -> mBinder.switchToNextPreset(mDevice, null));
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.switchToNextPreset(null, mAttributionSource));
-        mBinder.switchToNextPreset(mDevice, mAttributionSource);
+        assertThrows(NullPointerException.class, () -> mBinder.switchToNextPreset(null, mSource));
+        mBinder.switchToNextPreset(mDevice, mSource);
         verify(mService).switchToNextPreset(eq(mDevice));
     }
 
@@ -219,7 +202,7 @@ public class HapClientServiceBinderTest {
         assertThrows(
                 NullPointerException.class,
                 () -> mBinder.switchToNextPresetForGroup(groupId, null));
-        mBinder.switchToNextPresetForGroup(groupId, mAttributionSource);
+        mBinder.switchToNextPresetForGroup(groupId, mSource);
         verify(mService).switchToNextPresetForGroup(eq(groupId));
     }
 
@@ -228,9 +211,8 @@ public class HapClientServiceBinderTest {
         assertThrows(
                 NullPointerException.class, () -> mBinder.switchToPreviousPreset(mDevice, null));
         assertThrows(
-                NullPointerException.class,
-                () -> mBinder.switchToPreviousPreset(null, mAttributionSource));
-        mBinder.switchToPreviousPreset(mDevice, mAttributionSource);
+                NullPointerException.class, () -> mBinder.switchToPreviousPreset(null, mSource));
+        mBinder.switchToPreviousPreset(mDevice, mSource);
         verify(mService).switchToPreviousPreset(eq(mDevice));
     }
 
@@ -240,7 +222,7 @@ public class HapClientServiceBinderTest {
         assertThrows(
                 NullPointerException.class,
                 () -> mBinder.switchToPreviousPresetForGroup(groupId, null));
-        mBinder.switchToPreviousPresetForGroup(groupId, mAttributionSource);
+        mBinder.switchToPreviousPresetForGroup(groupId, mSource);
         verify(mService).switchToPreviousPresetForGroup(eq(groupId));
     }
 
@@ -248,29 +230,24 @@ public class HapClientServiceBinderTest {
     public void getPresetInfo() {
         int index = 42;
         assertThrows(NullPointerException.class, () -> mBinder.getPresetInfo(mDevice, index, null));
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.getPresetInfo(null, index, mAttributionSource));
-        mBinder.getPresetInfo(mDevice, index, mAttributionSource);
+        assertThrows(NullPointerException.class, () -> mBinder.getPresetInfo(null, index, mSource));
+        mBinder.getPresetInfo(mDevice, index, mSource);
         verify(mService).getPresetInfo(eq(mDevice), eq(index));
     }
 
     @Test
     public void getAllPresetInfo() {
         assertThrows(NullPointerException.class, () -> mBinder.getAllPresetInfo(mDevice, null));
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.getAllPresetInfo(null, mAttributionSource));
-        mBinder.getAllPresetInfo(mDevice, mAttributionSource);
+        assertThrows(NullPointerException.class, () -> mBinder.getAllPresetInfo(null, mSource));
+        mBinder.getAllPresetInfo(mDevice, mSource);
         verify(mService).getAllPresetInfo(eq(mDevice));
     }
 
     @Test
     public void getFeatures() {
         assertThrows(NullPointerException.class, () -> mBinder.getFeatures(mDevice, null));
-        assertThrows(
-                NullPointerException.class, () -> mBinder.getFeatures(null, mAttributionSource));
-        mBinder.getFeatures(mDevice, mAttributionSource);
+        assertThrows(NullPointerException.class, () -> mBinder.getFeatures(null, mSource));
+        mBinder.getFeatures(mDevice, mSource);
         verify(mService).getFeatures(eq(mDevice));
     }
 
@@ -280,14 +257,14 @@ public class HapClientServiceBinderTest {
         int index = 42;
         assertThrows(
                 NullPointerException.class,
-                () -> mBinder.setPresetName(null, index, name, mAttributionSource));
+                () -> mBinder.setPresetName(null, index, name, mSource));
         assertThrows(
                 NullPointerException.class,
-                () -> mBinder.setPresetName(mDevice, index, null, mAttributionSource));
+                () -> mBinder.setPresetName(mDevice, index, null, mSource));
         assertThrows(
                 NullPointerException.class,
                 () -> mBinder.setPresetName(mDevice, index, name, null));
-        mBinder.setPresetName(mDevice, index, name, mAttributionSource);
+        mBinder.setPresetName(mDevice, index, name, mSource);
         verify(mService).setPresetName(eq(mDevice), eq(index), eq(name));
     }
 
@@ -298,33 +275,29 @@ public class HapClientServiceBinderTest {
         int groupId = 4242;
         assertThrows(
                 NullPointerException.class,
-                () -> mBinder.setPresetNameForGroup(groupId, index, null, mAttributionSource));
+                () -> mBinder.setPresetNameForGroup(groupId, index, null, mSource));
         assertThrows(
                 NullPointerException.class,
                 () -> mBinder.setPresetNameForGroup(groupId, index, name, null));
-        mBinder.setPresetNameForGroup(groupId, index, name, mAttributionSource);
+        mBinder.setPresetNameForGroup(groupId, index, name, mSource);
         verify(mService).setPresetNameForGroup(eq(groupId), eq(index), eq(name));
     }
 
     @Test
     public void registerCallback() {
         IBluetoothHapClientCallback callback = Mockito.mock(IBluetoothHapClientCallback.class);
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.registerCallback(null, mAttributionSource));
+        assertThrows(NullPointerException.class, () -> mBinder.registerCallback(null, mSource));
         assertThrows(NullPointerException.class, () -> mBinder.registerCallback(callback, null));
-        mBinder.registerCallback(callback, mAttributionSource);
+        mBinder.registerCallback(callback, mSource);
         verify(mService).registerCallback(eq(callback));
     }
 
     @Test
     public void unregisterCallback() {
         IBluetoothHapClientCallback callback = Mockito.mock(IBluetoothHapClientCallback.class);
-        assertThrows(
-                NullPointerException.class,
-                () -> mBinder.unregisterCallback(null, mAttributionSource));
+        assertThrows(NullPointerException.class, () -> mBinder.unregisterCallback(null, mSource));
         assertThrows(NullPointerException.class, () -> mBinder.unregisterCallback(callback, null));
-        mBinder.unregisterCallback(callback, mAttributionSource);
+        mBinder.unregisterCallback(callback, mSource);
         verify(mService).unregisterCallback(eq(callback));
     }
 }
