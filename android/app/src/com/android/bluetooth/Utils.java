@@ -373,16 +373,6 @@ public final class Utils {
         return true;
     }
 
-    public static AttributionSource getCallingAttributionSource(Context context) {
-        int callingUid = Binder.getCallingUid();
-        if (callingUid == android.os.Process.ROOT_UID) {
-            callingUid = android.os.Process.SYSTEM_UID;
-        }
-        return new AttributionSource.Builder(callingUid)
-                .setPackageName(context.getPackageManager().getPackagesForUid(callingUid)[0])
-                .build();
-    }
-
     /**
      * Returns true if the specified package has disavowed the use of bluetooth scans for location,
      * that is, if they have specified the {@code neverForLocation} flag on the BLUETOOTH_SCAN
