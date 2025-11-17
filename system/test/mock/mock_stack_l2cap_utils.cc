@@ -23,12 +23,23 @@
 
 #include <cstdint>
 
+#include "test/mock/mock_stack_l2cap_utils.h"
+
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2cap_controller_interface.h"
 #include "stack/include/l2cap_hci_link_interface.h"
 #include "stack/include/l2cap_security_interface.h"
 #include "stack/l2cap/l2c_int.h"
 #include "test/common/mock_functions.h"
+
+namespace test {
+namespace mock {
+namespace stack_l2cap_utils {
+struct l2cu_find_lcb_by_bd_addr l2cu_find_lcb_by_bd_addr;
+}  // namespace stack_l2cap_utils
+}  // namespace mock
+}  // namespace test
+
 
 bool l2c_is_cmd_rejected(uint8_t /* cmd_code */, uint8_t /* signal_id */, tL2C_LCB* /* p_lcb */) {
   inc_func_call_count(__func__);
@@ -76,10 +87,10 @@ tL2C_LCB* l2cu_allocate_lcb(const RawAddress& /* p_bd_addr */, bool /* is_bondin
   inc_func_call_count(__func__);
   return nullptr;
 }
-tL2C_LCB* l2cu_find_lcb_by_bd_addr(const RawAddress& /* p_bd_addr */,
-                                   tBT_TRANSPORT /* transport */) {
+tL2C_LCB* l2cu_find_lcb_by_bd_addr(const RawAddress& p_bd_addr,
+                                   tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
-  return nullptr;
+  return test::mock::stack_l2cap_utils::l2cu_find_lcb_by_bd_addr(p_bd_addr, transport);
 }
 tL2C_LCB* l2cu_find_lcb_by_handle(uint16_t /* handle */) {
   inc_func_call_count(__func__);

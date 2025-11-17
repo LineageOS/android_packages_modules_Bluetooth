@@ -58,9 +58,8 @@ class DckTestRule(
     private val isGattConnected: Boolean = false,
 ) : TestRule {
 
-    private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)!!
-    private val bluetoothAdapter = bluetoothManager.adapter
-    private val leScanner = bluetoothAdapter.bluetoothLeScanner
+    private val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
+    private val leScanner = bluetoothAdapter.bluetoothLeScanner!!
 
     private val scope = CoroutineScope(Dispatchers.Default)
     private val ioScope = CoroutineScope(Dispatchers.IO)

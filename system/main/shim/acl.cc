@@ -372,7 +372,7 @@ public:
     if (send_data_upwards_ == nullptr) {
       log::warn("Dropping ACL data with no callback");
       osi_free(p_buf);
-    } else if (do_in_main_thread(base::BindOnce(send_data_upwards_, p_buf)) != BT_STATUS_SUCCESS) {
+    } else if (!do_in_main_thread(base::BindOnce(send_data_upwards_, p_buf))) {
       osi_free(p_buf);
     }
   }

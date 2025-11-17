@@ -34,7 +34,6 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
-import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import com.google.testing.junit.testparameterinjector.TestParameter
@@ -136,7 +135,7 @@ class OppSendFileTest {
 
     @Test
     @Throws(Exception::class)
-    @RequiresFlagsEnabled(Flags.FLAG_OPP_CHECK_CONTENT_URI_PERMISSIONS)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.opp_check_content_uri_permissions")
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
     fun sendViaBluetoothShare(
         @TestParameter crossUser: Boolean,
@@ -161,7 +160,7 @@ class OppSendFileTest {
 
     @Test
     @Throws(Exception::class)
-    @RequiresFlagsEnabled(Flags.FLAG_OPP_CHECK_CONTENT_URI_PERMISSIONS)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.opp_check_content_uri_permissions")
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
     fun sendMultipleViaBluetoothShare(
         @TestParameter crossUser: Boolean,
@@ -182,7 +181,7 @@ class OppSendFileTest {
 
     @Test
     @Throws(Exception::class)
-    @RequiresFlagsEnabled(Flags.FLAG_OPP_CHECK_CONTENT_URI_PERMISSIONS)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.opp_check_content_uri_permissions")
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
     fun sendMultipleViaBluetoothShare_oneAlwaysAllowed(
         @TestParameter crossUser: Boolean,

@@ -1002,7 +1002,8 @@ void stack_debug_avdtp_api_dump(int fd) {
       dprintf(fd, "      SEP codec: %s\n", A2DP_CodecName(scb.stream_config.cfg.codec_info));
       dprintf(fd, "      SEP protocol service capabilities: 0x%x\n",
               scb.stream_config.cfg.psc_mask);
-      dprintf(fd, "      SEP type: 0x%x\n", scb.stream_config.tsep);
+      dprintf(fd, "      SEP type: %d [%s]\n", scb.stream_config.tsep,
+              peer_stream_endpoint_text(scb.stream_config.tsep).c_str());
       dprintf(fd, "      Media type: 0x%x\n", scb.stream_config.media_type);
       dprintf(fd, "      MTU: %d\n", scb.stream_config.mtu);
       dprintf(fd, "      AVDT SCB handle: %d\n", scb.ScbHandle());

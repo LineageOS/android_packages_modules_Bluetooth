@@ -60,8 +60,6 @@ void ReleasePacs(std::shared_ptr<Pacs> shared_instance) {
 
 // Implementation
 struct Pacs::service_impl {
-  base::WeakPtrFactory<Pacs::service_impl> weak_factory_{this};
-
   int server_if_ = 0;
   uint16_t service_handle_ = 0;
   Pacs::Callbacks* callbacks_ = nullptr;
@@ -98,6 +96,11 @@ struct Pacs::service_impl {
 
   // Control point operation data
   std::map<RawAddress, bool> pending_request_by_address_;
+
+  // Member variables should appear before the WeakPtrFactory, to ensure
+  // that any WeakPtrs are invalidated before its members
+  // variable's destructors are executed, rendering them invalid.
+  base::WeakPtrFactory<Pacs::service_impl> weak_factory_{this};
 
   service_impl() = default;
   ~service_impl() {
@@ -411,7 +414,7 @@ struct Pacs::service_impl {
     BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id, status, &p_msg);
   }
 
-  void static OnReadAudioLocationCharacteristic(tBTA_GATTS* p_data,
+  static void OnReadAudioLocationCharacteristic(tBTA_GATTS* p_data,
                                                 const AudioLocations& locations) {
     auto const& read_req = p_data->req_data.p_data->read_req;
 
@@ -747,7 +750,7 @@ struct Pacs::service_impl {
   uint16_t GetConnectionId(const RawAddress& pseudo_addr) const {
     return device_tracker_.FindConnectionId(pseudo_addr);
   }
-};  // namespace bluetooth
+};
 
 // Interface implementation
 Pacs::Pacs() : service_impl_(std::make_unique<service_impl>()) {}

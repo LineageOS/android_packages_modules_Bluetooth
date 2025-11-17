@@ -92,6 +92,7 @@ public final class BluetoothGatt implements BluetoothProfile {
 
     private final boolean mOpportunistic;
     private final AttributionSource mAttributionSource;
+    private final BluetoothGattConnectionSettings mGattConnectionSettings;
     private static final int AUTH_RETRY_STATE_IDLE = 0;
     private static final int AUTH_RETRY_STATE_MITM = 2;
 
@@ -291,6 +292,10 @@ public final class BluetoothGatt implements BluetoothProfile {
             }
             try {
                 // autoConnect is inverse of "isDirect"
+                boolean isAutoMtuEnabled = false;
+                if (Flags.gattConnSettings()) {
+                    isAutoMtuEnabled = mGattConnectionSettings.isAutomaticMtuEnabled();
+                }
                 mService.clientConnect(
                         mBluetoothGattCallback,
                         mDevice,
@@ -298,6 +303,7 @@ public final class BluetoothGatt implements BluetoothProfile {
                         !mAutoConnect,
                         mTransport,
                         mOpportunistic,
+                        isAutoMtuEnabled,
                         mAttributionSource);
             } catch (RemoteException e) {
                 Log.e(TAG, "", e);
@@ -922,6 +928,7 @@ public final class BluetoothGatt implements BluetoothProfile {
         mAttributionSource = source;
         mCallback = gattConnectionSettings.getBluetoothGattCallback();
         mExecutor = gattConnectionSettings.getBluetoothGattCallbackExecutor();
+        mGattConnectionSettings = requireNonNull(gattConnectionSettings);
         UUID uuid = UUID.randomUUID();
         Log.d(TAG, "BluetoothGatt() UUID=" + uuid);
         try {
@@ -1097,6 +1104,10 @@ public final class BluetoothGatt implements BluetoothProfile {
             Log.d(TAG, "connect(void) - device: " + mDevice + ", auto=" + mAutoConnect);
 
             // autoConnect is inverse of "isDirect"
+            boolean isAutoMtuEnabled = false;
+            if (Flags.gattConnSettings()) {
+                isAutoMtuEnabled = mGattConnectionSettings.isAutomaticMtuEnabled();
+            }
             mService.clientConnect(
                     mBluetoothGattCallback,
                     mDevice,
@@ -1104,6 +1115,7 @@ public final class BluetoothGatt implements BluetoothProfile {
                     !mAutoConnect,
                     mTransport,
                     mOpportunistic,
+                    isAutoMtuEnabled,
                     mAttributionSource);
             return true;
         } catch (RemoteException e) {

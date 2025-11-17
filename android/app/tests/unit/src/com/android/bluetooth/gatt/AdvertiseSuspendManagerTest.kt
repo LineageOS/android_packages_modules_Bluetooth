@@ -32,15 +32,13 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.anyBoolean
-import org.mockito.ArgumentMatchers.anyInt
-import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mock
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.whenever
 
 /** Test cases for [AdvertiseSuspendManager]. */
@@ -89,7 +87,7 @@ class AdvertiseSuspendManagerTest {
         // On suspend, verify we disable the advertisement
         advertiseSuspendManager.enterSuspend()
         verify(advertiseManager)
-            .enableAdvertisingSet(eq(ADVERTISER_ID1), eq(false), anyInt(), anyInt(), eq(source))
+            .enableAdvertisingSet(eq(ADVERTISER_ID1), eq(false), any<Int>(), any<Int>(), eq(source))
         verify(adapterSuspend, never()).advertiseSuspendReady()
 
         advertiseSuspendManager.onAdvertisingEnabled(ADVERTISER_ID1, false, STATUS_OK)
@@ -131,7 +129,7 @@ class AdvertiseSuspendManagerTest {
         // Verify we never enable/disable any advertisements
         advertiseSuspendManager.exitSuspend()
         verify(advertiseManager, never())
-            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt(), eq(source))
+            .enableAdvertisingSet(any<Int>(), any<Boolean>(), any<Int>(), any<Int>(), eq(source))
     }
 
     @Test
@@ -158,14 +156,14 @@ class AdvertiseSuspendManagerTest {
         advertiseSuspendManager.enterSuspend()
         order
             .verify(advertiseManager, never())
-            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt(), eq(source))
+            .enableAdvertisingSet(any<Int>(), any<Boolean>(), any<Int>(), any<Int>(), eq(source))
         verify(adapterSuspend, never()).advertiseSuspendReady()
 
         // The native layer registered advertisement A. We still wait.
         advertiseSuspendManager.onAdvertisingSetStarted(REG_ID1, ADVERTISER_ID1, STATUS_OK)
         order
             .verify(advertiseManager, never())
-            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt(), eq(source))
+            .enableAdvertisingSet(any<Int>(), any<Boolean>(), any<Int>(), any<Int>(), eq(source))
         verify(adapterSuspend, never()).advertiseSuspendReady()
 
         // The native layer registered advertisement B with failure.
@@ -173,17 +171,17 @@ class AdvertiseSuspendManagerTest {
         advertiseSuspendManager.onAdvertisingSetStarted(REG_ID2, ADVERTISER_ID2, STATUS_FAIL)
         order
             .verify(advertiseManager)
-            .enableAdvertisingSet(eq(ADVERTISER_ID1), eq(false), anyInt(), anyInt(), eq(source))
+            .enableAdvertisingSet(eq(ADVERTISER_ID1), eq(false), any<Int>(), any<Int>(), eq(source))
         order
             .verify(advertiseManager, never())
-            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt(), eq(source))
+            .enableAdvertisingSet(any<Int>(), any<Boolean>(), any<Int>(), any<Int>(), eq(source))
         verify(adapterSuspend, never()).advertiseSuspendReady()
 
         // Advertisement A is disabled. We should move to suspend step.
         advertiseSuspendManager.onAdvertisingEnabled(ADVERTISER_ID1, false, STATUS_OK)
         order
             .verify(advertiseManager, never())
-            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt(), eq(source))
+            .enableAdvertisingSet(any<Int>(), any<Boolean>(), any<Int>(), any<Int>(), eq(source))
         verify(adapterSuspend).advertiseSuspendReady()
 
         // On resume, verify we reenable advertising A only.
@@ -200,7 +198,7 @@ class AdvertiseSuspendManagerTest {
         advertiseSuspendManager.onAdvertisingEnabled(ADVERTISER_ID1, true, STATUS_OK)
         order
             .verify(advertiseManager, never())
-            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt(), eq(source))
+            .enableAdvertisingSet(any<Int>(), any<Boolean>(), any<Int>(), any<Int>(), eq(source))
     }
 
     @Test
@@ -230,13 +228,13 @@ class AdvertiseSuspendManagerTest {
         verify(adapterSuspend).advertiseSuspendReady()
         order
             .verify(advertiseManager, never())
-            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt(), eq(source))
+            .enableAdvertisingSet(any<Int>(), any<Boolean>(), any<Int>(), any<Int>(), eq(source))
 
         // On resume, verify we don't reenable the advertisement.
         advertiseSuspendManager.exitSuspend()
         order
             .verify(advertiseManager, never())
-            .enableAdvertisingSet(anyInt(), anyBoolean(), anyInt(), anyInt(), eq(source))
+            .enableAdvertisingSet(any<Int>(), any<Boolean>(), any<Int>(), any<Int>(), eq(source))
     }
 
     @Test
@@ -271,21 +269,21 @@ class AdvertiseSuspendManagerTest {
         advertiseSuspendManager.queueSetAdvertisingData(ADVERTISER_ID1, advertiseData)
         val scanResponse = AdvertiseData.Builder().build()
         advertiseSuspendManager.queueSetScanResponseData(ADVERTISER_ID1, scanResponse)
-        order.verify(advertiseManager, never()).setAdvertisingData(anyInt(), any())
-        order.verify(advertiseManager, never()).setScanResponseData(anyInt(), any())
+        order.verify(advertiseManager, never()).setAdvertisingData(any<Int>(), any())
+        order.verify(advertiseManager, never()).setScanResponseData(any<Int>(), any())
 
         // Native layer is done (with failure). We should proceed to disable advertisement 1.
         advertiseSuspendManager.onAdvertisingSetStarted(REG_ID2, ADVERTISER_ID2, STATUS_FAIL)
         order
             .verify(advertiseManager)
-            .enableAdvertisingSet(eq(ADVERTISER_ID1), eq(false), anyInt(), anyInt(), eq(source))
+            .enableAdvertisingSet(eq(ADVERTISER_ID1), eq(false), any<Int>(), any<Int>(), eq(source))
         advertiseSuspendManager.onEnableAdvertisingSet(ADVERTISER_ID1)
         advertiseSuspendManager.onAdvertisingEnabled(ADVERTISER_ID1, false, STATUS_OK)
 
         // At this time suspend is ready. Verify we haven't process the queue.
         verify(adapterSuspend).advertiseSuspendReady()
-        order.verify(advertiseManager, never()).setAdvertisingData(anyInt(), any())
-        order.verify(advertiseManager, never()).setScanResponseData(anyInt(), any())
+        order.verify(advertiseManager, never()).setAdvertisingData(any<Int>(), any())
+        order.verify(advertiseManager, never()).setScanResponseData(any<Int>(), any())
 
         // On resume, we first reenable advertisement 1. Verify we haven't process the queue.
         advertiseSuspendManager.exitSuspend()
@@ -298,14 +296,14 @@ class AdvertiseSuspendManagerTest {
                 eq(MAX_EXT_ADV_EVENTS1),
                 eq(source),
             )
-        order.verify(advertiseManager, never()).setAdvertisingData(anyInt(), any())
-        order.verify(advertiseManager, never()).setScanResponseData(anyInt(), any())
+        order.verify(advertiseManager, never()).setAdvertisingData(any<Int>(), any())
+        order.verify(advertiseManager, never()).setScanResponseData(any<Int>(), any())
 
         // If at this time the app sends another request, it too shall be queued.
         assertThat(advertiseSuspendManager.shouldQueueCommand()).isTrue()
         val parameters = AdvertisingSetParameters.Builder().build()
         advertiseSuspendManager.queueSetAdvertisingParameters(ADVERTISER_ID1, parameters)
-        order.verify(advertiseManager, never()).setAdvertisingParameters(anyInt(), any())
+        order.verify(advertiseManager, never()).setAdvertisingParameters(any<Int>(), any())
 
         // Only when we finish re-enabling can we process the queue.
         advertiseSuspendManager.onAdvertisingEnabled(ADVERTISER_ID1, true, STATUS_OK)

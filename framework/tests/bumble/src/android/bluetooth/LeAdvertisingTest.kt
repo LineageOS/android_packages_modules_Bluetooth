@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package android.bluetooth
 
 import android.bluetooth.le.AdvertiseData
@@ -59,6 +60,62 @@ class LeAdvertisingTest {
         assertThat(response).isNotNull()
     }
 
+    private fun startAdvertising(): CompletableFuture<Pair<String, Int>> {
+        val future = CompletableFuture<Pair<String, Int>>()
+        val context = ApplicationProvider.getApplicationContext<Context>()
+
+        // Start advertising
+        val leAdvertiser =
+            context.getSystemService(BluetoothManager::class.java).adapter.bluetoothLeAdvertiser!!
+        val parameters =
+            AdvertisingSetParameters.Builder()
+                .setOwnAddressType(AdvertisingSetParameters.ADDRESS_TYPE_RANDOM)
+                .build()
+        val advertiseData = AdvertiseData.Builder().build()
+        val scanResponse = AdvertiseData.Builder().build()
+        val advertisingSetCallback =
+            object : AdvertisingSetCallback() {
+                override fun onAdvertisingSetStarted(
+                    advertisingSet: AdvertisingSet,
+                    txPower: Int,
+                    status: Int,
+                ) {
+                    Log.i(TAG, "onAdvertisingSetStarted  txPower:$txPower status:$status")
+                    advertisingSet.enableAdvertising(true, TIMEOUT_ADVERTISING_MS.toInt(), 0)
+                }
+
+                override fun onOwnAddressRead(
+                    advertisingSet: AdvertisingSet,
+                    addressType: Int,
+                    address: String,
+                ) {
+                    Log.i(TAG, "onOwnAddressRead  addressType:$addressType address:$address")
+                    future.complete(Pair(address, addressType))
+                }
+
+                override fun onAdvertisingEnabled(
+                    advertisingSet: AdvertisingSet,
+                    enabled: Boolean,
+                    status: Int,
+                ) {
+                    Log.i(TAG, "onAdvertisingEnabled  enabled:$enabled status:$status")
+                    advertisingSet.getOwnAddress()
+                }
+            }
+        leAdvertiser.startAdvertisingSet(
+            parameters,
+            advertiseData,
+            scanResponse,
+            null,
+            null,
+            0,
+            0,
+            advertisingSetCallback,
+        )
+
+        return future
+    }
+
     private fun scanWithBumble(addressPair: Pair<String, Int>): ScanningResponse? {
         Log.d(TAG, "scanWithBumble")
         val address = addressPair.first
@@ -73,13 +130,11 @@ class LeAdvertisingTest {
         val responseObserverIterator = responseObserver.iterator()
         while (true) {
             val scanningResponse = responseObserverIterator.next()
-            val addr =
-                Utils.addressStringFromByteString(
-                    if (addressType == AdvertisingSetParameters.ADDRESS_TYPE_PUBLIC)
-                        scanningResponse.public
-                    else scanningResponse.random
-                )
-
+            val scanningResponseBytes =
+                if (addressType == AdvertisingSetParameters.ADDRESS_TYPE_PUBLIC)
+                    scanningResponse.public
+                else scanningResponse.random
+            val addr = scanningResponseBytes.toAddressString()
             if (addr == address) {
                 responseObserver.cancel("Cancelling scan request")
                 return scanningResponse
@@ -89,63 +144,5 @@ class LeAdvertisingTest {
 
     companion object {
         private const val TIMEOUT_ADVERTISING_MS = 1000L
-
-        private fun startAdvertising(): CompletableFuture<Pair<String, Int>> {
-            val future = CompletableFuture<Pair<String, Int>>()
-
-            val context = ApplicationProvider.getApplicationContext<Context>()
-            val bluetoothManager = context.getSystemService(BluetoothManager::class.java)
-            val bluetoothAdapter = bluetoothManager.adapter
-
-            // Start advertising
-            val leAdvertiser = bluetoothAdapter.bluetoothLeAdvertiser
-            val parameters =
-                AdvertisingSetParameters.Builder()
-                    .setOwnAddressType(AdvertisingSetParameters.ADDRESS_TYPE_RANDOM)
-                    .build()
-            val advertiseData = AdvertiseData.Builder().build()
-            val scanResponse = AdvertiseData.Builder().build()
-            val advertisingSetCallback =
-                object : AdvertisingSetCallback() {
-                    override fun onAdvertisingSetStarted(
-                        advertisingSet: AdvertisingSet,
-                        txPower: Int,
-                        status: Int,
-                    ) {
-                        Log.i(TAG, "onAdvertisingSetStarted  txPower:$txPower status:$status")
-                        advertisingSet.enableAdvertising(true, TIMEOUT_ADVERTISING_MS.toInt(), 0)
-                    }
-
-                    override fun onOwnAddressRead(
-                        advertisingSet: AdvertisingSet,
-                        addressType: Int,
-                        address: String,
-                    ) {
-                        Log.i(TAG, "onOwnAddressRead  addressType:$addressType address:$address")
-                        future.complete(Pair(address, addressType))
-                    }
-
-                    override fun onAdvertisingEnabled(
-                        advertisingSet: AdvertisingSet,
-                        enabled: Boolean,
-                        status: Int,
-                    ) {
-                        Log.i(TAG, "onAdvertisingEnabled  enabled:$enabled status:$status")
-                        advertisingSet.getOwnAddress()
-                    }
-                }
-            leAdvertiser.startAdvertisingSet(
-                parameters,
-                advertiseData,
-                scanResponse,
-                null,
-                null,
-                0,
-                0,
-                advertisingSetCallback,
-            )
-
-            return future
-        }
     }
 }

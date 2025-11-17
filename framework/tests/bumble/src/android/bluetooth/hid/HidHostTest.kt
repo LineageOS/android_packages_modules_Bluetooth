@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package android.bluetooth.hid
 
 import android.annotation.SuppressLint
@@ -44,9 +45,9 @@ import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.bluetooth.BluetoothProfile.STATE_DISCONNECTING
 import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.PandoraDevice
-import android.bluetooth.Utils
 import android.bluetooth.VirtualOnly
 import android.bluetooth.cts.EnableBluetoothRule
+import android.bluetooth.toAddressBytes
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -57,7 +58,6 @@ import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
-import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
@@ -421,7 +421,7 @@ class HidHostTest {
         // Remove the bond on the Bumble device as well.
         // Not doing so will cause authentication failures because of the
         // incorrect link key.
-        val localAddress = ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
+        val localAddress = ByteString.copyFrom(adapter.address.toAddressBytes())
         bumble
             .securityStorageBlocking()
             .deleteBond(
@@ -700,7 +700,9 @@ class HidHostTest {
      * Expectation: HID profile should connect successful after repairing.
      */
     @SuppressLint("MissingPermission")
-    @RequiresFlagsEnabled(Flags.FLAG_RESET_STATE_WHEN_REMOVING_NON_CONNECTED_HID_DEVICE)
+    @RequiresFlagsEnabled(
+        "com.android.bluetooth.flags.reset_state_when_removing_non_connected_hid_device"
+    )
     @Test
     fun hidRemoveBondWhenConnectionPendingTest(@TestParameter repair: Boolean) {
         assertThat(device.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS)

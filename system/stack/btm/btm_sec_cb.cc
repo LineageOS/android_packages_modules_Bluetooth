@@ -125,7 +125,7 @@ tBTM_SEC_SERV_REC* tBTM_SEC_CB::find_first_serv_rec(bool outgoing, uint16_t psm)
 }
 
 BtmSecurityRecord* tBTM_SEC_CB::getSecRec(const RawAddress bd_addr) {
-  BtmDevice* p_device = btm_find_dev(bd_addr);
+  BtmDevice* p_device = btm_get_dev(bd_addr);
   if (p_device != nullptr) {
     return &p_device->sec_rec;
   }

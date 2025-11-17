@@ -200,7 +200,7 @@ static uint8_t btm_ble_find_irk_index(void) {
  *
  ******************************************************************************/
 static void btm_ble_update_resolving_list(const RawAddress& pseudo_bda, bool add) {
-  BtmDevice* p_device = btm_find_dev(pseudo_bda);
+  BtmDevice* p_device = btm_get_dev(pseudo_bda);
   if (p_device == NULL) {
     return;
   }

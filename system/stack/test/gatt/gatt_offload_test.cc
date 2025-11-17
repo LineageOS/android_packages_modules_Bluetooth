@@ -23,6 +23,7 @@
 #include <thread>
 
 #include "avrcp.h"
+#include "btif_status.h"
 #include "common/message_loop_thread.h"
 #include "gmock/gmock.h"
 #include "hal/gatt_hal.h"
@@ -72,17 +73,17 @@ void SyncOnMainLoop() {
 }
 }  // namespace
 
-bt_status_t do_in_main_thread(base::OnceClosure task) {
+BtStatus do_in_main_thread(base::OnceClosure task) {
   if (!message_loop_thread.DoInThread(base::BindOnce(
               [](base::OnceClosure task, std::atomic<int>& num_async_tasks) {
                 std::move(task).Run();
                 num_async_tasks--;
               },
               std::move(task), std::ref(num_async_tasks)))) {
-    return BT_STATUS_FAIL;
+    return BtifStatus(FAIL);
   }
   num_async_tasks++;
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 bluetooth::common::MessageLoopThread* get_main_thread() { return &message_loop_thread; }
@@ -91,7 +92,7 @@ bluetooth::common::PostableContext* get_main() { return message_loop_thread.Post
 
 bool is_main_thread() { return message_loop_thread.IsRunningOnSameThread(); }
 
-bt_status_t do_in_main_thread_delayed(base::OnceClosure task, std::chrono::microseconds /*delay*/) {
+BtStatus do_in_main_thread_delayed(base::OnceClosure task, std::chrono::microseconds /*delay*/) {
   return do_in_main_thread(std::move(task));
 }
 

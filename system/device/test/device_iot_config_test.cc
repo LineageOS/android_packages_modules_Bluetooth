@@ -24,6 +24,7 @@
 
 #include "btcore/include/module.h"
 #include "btif/include/btif_common.h"
+#include "btif_status.h"
 #include "device/src/device_iot_config_int.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_osi_alarm.h"
@@ -37,10 +38,10 @@ using namespace testing;
 
 extern module_t device_iot_config_module;
 
-bt_status_t btif_transfer_context(tBTIF_CBACK* /*p_cback*/, uint16_t /*event*/, char* /*p_params*/,
-                                  int /*param_len*/, tBTIF_COPY_CBACK* /*p_copy_cback*/) {
+BtStatus btif_transfer_context(tBTIF_CBACK* /*p_cback*/, uint16_t /*event*/, char* /*p_params*/,
+                               int /*param_len*/, tBTIF_COPY_CBACK* /*p_copy_cback*/) {
   inc_func_call_count(__func__);
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 struct alarm_t {

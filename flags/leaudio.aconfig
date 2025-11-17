@@ -469,3 +469,13 @@ flag {
     description: "Configure LE Audio over HDT PHY API"
     bug: "455581672"
 }
+
+flag {
+    name: "leaudio_cancel_open_with_direct_flag_when_connecting"
+    namespace: "bluetooth"
+    description: "Close gatt channel while it is connecting"
+    bug: "459264847"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

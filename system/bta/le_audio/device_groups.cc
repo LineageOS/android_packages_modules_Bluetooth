@@ -1991,6 +1991,11 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
                direction == types::kLeAudioDirectionSink ? "Sink" : "Source");
     auto const& ase_confs = audio_set_conf->confs.get(direction);
     if (ase_confs.empty()) {
+      if (direction == types::kLeAudioDirectionSource &&
+          requirements.source_requirements->size() > 0) {
+        log::debug("No configurations for Source direction but the requirement was found.");
+        return false;
+      }
       log::debug("No configurations for direction {}, skip it.", (int)direction);
       continue;
     }
@@ -2615,6 +2620,7 @@ std::unique_ptr<types::AudioSetConfiguration> LeAudioDeviceGroup::FindFirstSuppo
     }
   }
 
+  log::error("no supported configuration was found");
   return nullptr;
 }
 

@@ -94,7 +94,7 @@ public class PanService extends ConnectableProfile {
                         Log.e(TAG, "Error setting up tether interface: " + error);
                         for (BluetoothDevice device : mPanDevices.keySet()) {
                             mNativeInterface.disconnect(
-                                    Utils.getByteBrEdrAddress(getAdapterService(), device));
+                                    getAdapterService().getByteBrEdrAddress(device));
                         }
                         mPanDevices.clear();
                         mIsTethering = false;
@@ -114,7 +114,9 @@ public class PanService extends ConnectableProfile {
             UserManager userManager,
             Looper looper) {
         super(BluetoothProfile.PAN, adapterService);
-        mNativeCallback = requireNonNullElseGet(nativeCallback, () -> new PanNativeCallback(this));
+        mNativeCallback =
+                requireNonNullElseGet(
+                        nativeCallback, () -> new PanNativeCallback(getAdapterService(), this));
         mNativeInterface =
                 requireNonNullElseGet(
                         nativeInterface, () -> new PanNativeInterface(mNativeCallback));
@@ -190,7 +192,7 @@ public class PanService extends ConnectableProfile {
                 case MESSAGE_CONNECT -> {
                     BluetoothDevice connectDevice = (BluetoothDevice) msg.obj;
                     if (!mNativeInterface.connect(
-                            Utils.getByteBrEdrAddress(getAdapterService(), connectDevice))) {
+                            getAdapterService().getByteBrEdrAddress(connectDevice))) {
                         handlePanDeviceStateChange(
                                 connectDevice,
                                 null,
@@ -208,7 +210,7 @@ public class PanService extends ConnectableProfile {
                 case MESSAGE_DISCONNECT -> {
                     BluetoothDevice disconnectDevice = (BluetoothDevice) msg.obj;
                     if (!mNativeInterface.disconnect(
-                            Utils.getByteBrEdrAddress(getAdapterService(), disconnectDevice))) {
+                            getAdapterService().getByteBrEdrAddress(disconnectDevice))) {
                         handlePanDeviceStateChange(
                                 disconnectDevice,
                                 mPanIfName,
@@ -467,8 +469,7 @@ public class PanService extends ConnectableProfile {
                             "handlePanDeviceStateChange BT tethering is off/Local role"
                                     + " is PANU drop the connection");
                     mPanDevices.remove(device);
-                    mNativeInterface.disconnect(
-                            Utils.getByteBrEdrAddress(getAdapterService(), device));
+                    mNativeInterface.disconnect(getAdapterService().getByteBrEdrAddress(device));
                     return;
                 }
                 Log.d(TAG, "handlePanDeviceStateChange LOCAL_NAP_ROLE:REMOTE_PANU_ROLE");

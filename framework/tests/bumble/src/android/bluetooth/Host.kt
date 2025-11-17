@@ -45,7 +45,7 @@ private const val TAG = "PandoraHost"
 
 @SuppressLint("MissingPermission")
 @kotlinx.coroutines.ExperimentalCoroutinesApi
-public class Host(context: Context) : Closeable {
+class Host(context: Context) : Closeable {
 
     private val flow: Flow<Intent>
     private val scope: CoroutineScope

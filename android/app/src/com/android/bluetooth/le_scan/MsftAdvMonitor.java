@@ -27,7 +27,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /** Helper class used to manage MSFT Advertisement Monitors. */
-class MsftAdvMonitor {
+public class MsftAdvMonitor {
     /* IRK filtering is not yet supported */
     public static final int MSFT_CONDITION_TYPE_INVALID = 0x00;
     public static final int MSFT_CONDITION_TYPE_PATTERNS = 0x01;
@@ -42,7 +42,7 @@ class MsftAdvMonitor {
     private static final byte RSSI_SAMPLING_PERIOD = (byte) 0x05; // 500ms
     private static final byte FILTER_PATTERN_START_POSITION = (byte) 0x00;
 
-    static class Monitor {
+    public static class Monitor {
         public byte rssi_threshold_high;
         public byte rssi_threshold_low;
         public byte rssi_threshold_low_time_interval;
@@ -50,7 +50,7 @@ class MsftAdvMonitor {
         public byte condition_type;
     }
 
-    static class Pattern {
+    public static class Pattern {
         public byte ad_type;
         public byte start_byte;
         public byte[] pattern;
@@ -75,11 +75,11 @@ class MsftAdvMonitor {
         }
     }
 
-    static class Uuid {
+    public static class Uuid {
         public byte[] uuid;
     }
 
-    static class Address {
+    public static class Address {
         byte addr_type;
         String bd_addr;
     }

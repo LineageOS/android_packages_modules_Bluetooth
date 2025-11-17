@@ -35,6 +35,7 @@ import android.bluetooth.pairing.utils.IntentReceiver
 import android.bluetooth.pairing.utils.TestUtil
 import android.bluetooth.test_utils.BlockingBluetoothAdapter
 import android.bluetooth.test_utils.EnableBluetoothRule
+import android.bluetooth.toAddressBytes
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -47,7 +48,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
@@ -62,7 +62,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.any
 import org.mockito.InOrder
 import org.mockito.Mock
 import org.mockito.Mockito.doAnswer
@@ -70,6 +69,7 @@ import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.timeout
 import org.mockito.MockitoAnnotations
 import org.mockito.hamcrest.MockitoHamcrest
+import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import org.mockito.stubbing.Answer
 import pandora.BumbleConfigProto
@@ -104,7 +104,8 @@ class PairingWithDiscoveryTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
     private val actionRegistrationCounts = HashMap<String, Int>()
-    private val leScanner = adapter.bluetoothLeScanner
+    private val leAdvertiser = adapter.bluetoothLeAdvertiser!!
+    private val leScanner = adapter.bluetoothLeScanner!!
 
     private var bumbleDevice: BluetoothDevice? = null
     private lateinit var remoteLeDevice: BluetoothDevice
@@ -343,7 +344,7 @@ class PairingWithDiscoveryTest {
      * Expectation: The address type of the connected device is BluetoothDevice.ADDRESS_TYPE_PUBLIC.
      */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_RETAIN_ADDRESS_TYPE)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.retain_address_type")
     @Throws(Exception::class)
     fun testAddressType_AtConnectionFromRemote_typePublic() {
         registerIntentActions(
@@ -356,9 +357,7 @@ class PairingWithDiscoveryTest {
                 .hostBlocking()
                 .connect(
                     HostProto.ConnectRequest.newBuilder()
-                        .apply {
-                            setAddress(copyFrom(Utils.addressBytesFromString(adapter.address)))
-                        }
+                        .setAddress(copyFrom(adapter.address.toAddressBytes()))
                         .build()
                 )
         assertThat(conn.hasConnection()).isTrue()
@@ -375,9 +374,7 @@ class PairingWithDiscoveryTest {
         bumble
             .hostBlocking()
             .disconnect(
-                HostProto.DisconnectRequest.newBuilder()
-                    .apply { setConnection(conn.connection) }
-                    .build()
+                HostProto.DisconnectRequest.newBuilder().setConnection(conn.connection).build()
             )
 
         // Verify ACL disconnection
@@ -409,7 +406,7 @@ class PairingWithDiscoveryTest {
      * Expectation: The address type of the connected device is BluetoothDevice.ADDRESS_TYPE_RANDOM.
      */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_RETAIN_ADDRESS_TYPE)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.retain_address_type")
     @Throws(Exception::class)
     fun testAddressType_AtConnectionFromRemote_typeRandom() {
         registerIntentActions(
@@ -496,7 +493,7 @@ class PairingWithDiscoveryTest {
      * 2. The address type of the bonded Bumble device is BluetoothDevice.ADDRESS_TYPE_PUBLIC.
      */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_RETAIN_ADDRESS_TYPE)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.retain_address_type")
     @Throws(Exception::class)
     fun testAddressType_onBluetoothOnOff_typePublic() {
         val intentReceiver =
@@ -539,7 +536,7 @@ class PairingWithDiscoveryTest {
      * BluetoothDevice.ADDRESS_TYPE_RANDOM.
      */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_RETAIN_ADDRESS_TYPE)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.retain_address_type")
     @Throws(Exception::class)
     fun testAddressType_onBluetoothOnOff_typeRandom() {
         val intentReceiver =
@@ -943,7 +940,6 @@ class PairingWithDiscoveryTest {
             if (ownAddressType == OwnAddressType.RANDOM)
                 AdvertisingSetParameters.ADDRESS_TYPE_RANDOM
             else AdvertisingSetParameters.ADDRESS_TYPE_PUBLIC
-        val leAdvertiser = adapter.bluetoothLeAdvertiser
         val parameters =
             AdvertisingSetParameters.Builder()
                 .setOwnAddressType(addrType)
@@ -989,7 +985,7 @@ class PairingWithDiscoveryTest {
                         setConnectable(true)
                         setOwnAddressType(OwnAddressType.RESOLVABLE_OR_RANDOM)
                         setData(dataTypeBuilder.build())
-                        setRandomAddress(copyFrom(Utils.addressBytesFromString(rpa)))
+                        setRandomAddress(copyFrom(rpa.toAddressBytes()))
                     }
                     .build()
             )
@@ -1101,13 +1097,13 @@ class PairingWithDiscoveryTest {
     private fun verifyIntentReceived(vararg matchers: Matcher<Intent>) {
         inOrder
             .verify(receiver, timeout(BOND_INTENT_TIMEOUT.toMillis()))
-            .onReceive(any(Context::class.java), MockitoHamcrest.argThat(AllOf.allOf(*matchers)))
+            .onReceive(any<Context>(), MockitoHamcrest.argThat(AllOf.allOf(*matchers)))
     }
 
     private fun verifyIntentReceivedUnordered(num: Int, vararg matchers: Matcher<Intent>) {
         inOrder
             .verify(receiver, timeout(BOND_INTENT_TIMEOUT.toMillis()).times(num))
-            .onReceive(any(Context::class.java), MockitoHamcrest.argThat(AllOf.allOf(*matchers)))
+            .onReceive(any<Context>(), MockitoHamcrest.argThat(AllOf.allOf(*matchers)))
     }
 
     private fun verifyIntentReceivedUnordered(vararg matchers: Matcher<Intent>) {

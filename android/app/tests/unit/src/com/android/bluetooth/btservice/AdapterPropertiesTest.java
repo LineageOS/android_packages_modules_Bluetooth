@@ -23,13 +23,17 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.companion.CompanionDeviceManager;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.HandlerThread;
 import android.platform.test.annotations.DisableFlags;
@@ -91,6 +95,8 @@ public class AdapterPropertiesTest {
         mockGetBluetoothManager(mAdapterService);
         mockGetSystemService(mAdapterService, CompanionDeviceManager.class);
         doReturn(mPackageManager).when(mAdapterService).getPackageManager();
+        doCallRealMethod().when(mAdapterService).getBrEdrAddress(any(BluetoothDevice.class));
+        doCallRealMethod().when(mAdapterService).getBrEdrAddress(any(String.class));
         when(mAdapterService.getIdentityAddress(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES)))
                 .thenReturn(Utils.getAddressStringFromByte(TEST_BT_ADDR_BYTES));
         when(mAdapterService.getIdentityAddress(
@@ -183,5 +189,62 @@ public class AdapterPropertiesTest {
         assertThat(name.length).isLessThan(initial.getBytes().length);
 
         assertThat(initial).startsWith(new String(name));
+    }
+
+    @Test
+    public void isNativeDiscovering_initialValueIsFalse() {
+        // Verifies that the default discovery state is false.
+        assertThat(mAdapterProperties.isNativeDiscovering()).isFalse();
+    }
+
+    @Test
+    public void discoveryStateChangeCallback_Started_setsNativeDiscoveringTrue() {
+        // Verifies that starting discovery updates the state and broadcasts the correct intent.
+        assertThat(mAdapterProperties.isNativeDiscovering()).isFalse();
+
+        // Trigger discovery started callback.
+        mAdapterProperties.discoveryStateChangeCallback(AbstractionLayer.BT_DISCOVERY_STARTED);
+
+        // Assert that native discovering is now true.
+        assertThat(mAdapterProperties.isNativeDiscovering()).isTrue();
+
+        // Verify that an ACTION_DISCOVERY_STARTED intent was broadcast.
+        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(mAdapterService)
+                .sendBroadcast(
+                        intentCaptor.capture(),
+                        eq(android.Manifest.permission.BLUETOOTH_SCAN),
+                        any());
+        assertThat(intentCaptor.getValue().getAction())
+                .isEqualTo(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+    }
+
+    @Test
+    public void discoveryStateChangeCallback_Stopped_setsNativeDiscoveringFalse() {
+        // Verifies that stopping discovery updates the state and broadcasts the correct intent.
+        // Start discovery first to ensure the state changes.
+        mAdapterProperties.discoveryStateChangeCallback(AbstractionLayer.BT_DISCOVERY_STARTED);
+        assertThat(mAdapterProperties.isNativeDiscovering()).isTrue();
+        // Clear invocations on the mock from the setup call to isolate verification.
+        clearInvocations(mAdapterService);
+
+        // Trigger discovery stopped callback.
+        mAdapterProperties.discoveryStateChangeCallback(AbstractionLayer.BT_DISCOVERY_STOPPED);
+
+        // Assert that native discovering is now false.
+        assertThat(mAdapterProperties.isNativeDiscovering()).isFalse();
+
+        // Verify that clearDiscoveryData is called.
+        verify(mAdapterService).clearDiscoveryData();
+
+        // Verify that an ACTION_DISCOVERY_FINISHED intent was broadcast.
+        final ArgumentCaptor<Intent> intentCaptor = ArgumentCaptor.forClass(Intent.class);
+        verify(mAdapterService)
+                .sendBroadcast(
+                        intentCaptor.capture(),
+                        eq(android.Manifest.permission.BLUETOOTH_SCAN),
+                        any());
+        assertThat(intentCaptor.getValue().getAction())
+                .isEqualTo(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
     }
 }

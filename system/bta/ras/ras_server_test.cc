@@ -20,6 +20,7 @@
 #include "bta/include/bta_ras_api.h"
 #include "bta/ras/ras_types.h"
 #include "bta/test/common/bta_gatt_api_mock.h"
+#include "btif_status.h"
 #include "btm_api_mock.h"
 #include "include/hardware/bluetooth.h"
 #include "internal_include/stack_config.h"
@@ -98,13 +99,13 @@ static void UpdateTestServiceHandle(std::vector<btgatt_db_element_t>& service) {
   }
 }
 
-bt_status_t do_in_main_thread(base::OnceClosure task) {
+BtStatus do_in_main_thread(base::OnceClosure task) {
   if (task.is_null()) {
     bluetooth::log::error("Task is null!");
-    return BT_STATUS_FAIL;
+    return BtifStatus(FAIL);
   }
   std::move(task).Run();
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 namespace bluetooth::ras {
@@ -169,9 +170,10 @@ protected:
     std::vector<btgatt_db_element_t> captured_service;
     BTA_GATTS_AddServiceCb captured_cb;
     EXPECT_CALL(mock_gatt_server_interface_, AddService(_, _, _))
-            .WillOnce(testing::DoAll(testing::SaveArg<0>(&captured_server_if),
-                                     testing::SaveArg<1>(&captured_service),
-                                     testing::SaveArg<2>(&captured_cb), testing::Return()));
+            .WillOnce(testing::DoAll(
+                    testing::SaveArg<0>(&captured_server_if),
+                    testing::SaveArg<1>(&captured_service),
+                    testing::WithArg<2>([&](auto arg) { captured_cb = std::move(arg); })));
 
     // Mock BTA_GATTS_REG_EVT
     tBTA_GATTS gatts_cb_data;
@@ -182,7 +184,7 @@ protected:
     UpdateTestServiceHandle(captured_service);
 
     // Run BTA_GATTS_AddServiceCb
-    captured_cb.Run(GATT_SUCCESS, captured_server_if, std::move(captured_service));
+    std::move(captured_cb).Run(GATT_SUCCESS, captured_server_if, std::move(captured_service));
 
     // OnRasServerConnected should be triggered after receiving BTA_GATTS_CONNECT_EVT
     EXPECT_CALL(mock_ras_server_callbacks_, OnRasServerConnected(test_address_)).Times(1);
@@ -215,9 +217,9 @@ TEST_F(RasServerTestNoInit, InitializationSuccessful) {
   std::vector<btgatt_db_element_t> captured_service;
   BTA_GATTS_AddServiceCb captured_cb;
   EXPECT_CALL(mock_gatt_server_interface_, AddService(_, _, _))
-          .WillOnce(testing::DoAll(testing::SaveArg<0>(&captured_server_if),
-                                   testing::SaveArg<1>(&captured_service),
-                                   testing::SaveArg<2>(&captured_cb), testing::Return()));
+          .WillOnce(testing::DoAll(
+                  testing::SaveArg<0>(&captured_server_if), testing::SaveArg<1>(&captured_service),
+                  testing::WithArg<2>([&](auto arg) { captured_cb = std::move(arg); })));
 
   // Mock BTA_GATTS_REG_EVT
   tBTA_GATTS gatts_cb_data;
@@ -225,7 +227,7 @@ TEST_F(RasServerTestNoInit, InitializationSuccessful) {
   captured_gatt_callback_(BTA_GATTS_REG_EVT, &gatts_cb_data);
 
   // Run BTA_GATTS_AddServiceCb
-  captured_cb.Run(GATT_SUCCESS, captured_server_if, std::move(captured_service));
+  std::move(captured_cb).Run(GATT_SUCCESS, captured_server_if, std::move(captured_service));
 }
 
 TEST_F(RasServerTestNoInit, ConnectAndDisconnect) {

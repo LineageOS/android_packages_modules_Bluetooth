@@ -208,14 +208,14 @@ static bool ble_vnd_is_included() {
 }
 
 /**********PAST & PS *******************/
-using StartSyncCb = base::Callback<void(
+using StartSyncCb = base::RepeatingCallback<void(
         uint8_t /*status*/, uint16_t /*sync_handle*/, uint8_t /*advertising_sid*/,
         uint8_t /*address_type*/, RawAddress /*address*/, uint8_t /*phy*/, uint16_t /*interval*/)>;
 using SyncReportCb =
-        base::Callback<void(uint16_t /*sync_handle*/, int8_t /*tx_power*/, int8_t /*rssi*/,
-                            uint8_t /*status*/, std::vector<uint8_t> /*data*/)>;
-using SyncLostCb = base::Callback<void(uint16_t /*sync_handle*/)>;
-using SyncTransferCb = base::Callback<void(uint8_t /*status*/, RawAddress)>;
+        base::RepeatingCallback<void(uint16_t /*sync_handle*/, int8_t /*tx_power*/, int8_t /*rssi*/,
+                                     uint8_t /*status*/, std::vector<uint8_t> /*data*/)>;
+using SyncLostCb = base::RepeatingCallback<void(uint16_t /*sync_handle*/)>;
+using SyncTransferCb = base::RepeatingCallback<void(uint8_t /*status*/, RawAddress)>;
 #define MAX_SYNC_TRANSACTION 16
 #define SYNC_TIMEOUT (30 * 1000)
 #define ADV_SYNC_ESTB_EVT_LEN 16
@@ -408,14 +408,13 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration, tBTM_INQ_RESULTS_CB* p_
               (btm_cb.ble_ctr_cb.inq_var.scan_type == BTM_BLE_SCAN_MODE_NONE)
                       ? BTM_BLE_SCAN_MODE_ACTI
                       : btm_cb.ble_ctr_cb.inq_var.scan_type;
-      uint8_t scan_filter_policy = use_msft_filtering() ? SP_ACCEPT_LIST_ONLY : BTM_BLE_DEFAULT_SFP;
       btm_send_hci_set_scan_params(
               btm_cb.ble_ctr_cb.inq_var.scan_type, (uint16_t)ll_scan_interval,
               (uint8_t)ll_scan_window, btm_cb.ble_ctr_cb.inq_var.scan_interval_coded,
               btm_cb.ble_ctr_cb.inq_var.scan_window_coded, (uint16_t)scan_phy,
-              btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type, scan_filter_policy);
+              btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type, BTM_BLE_DEFAULT_SFP);
       if (use_msft_filtering()) {
-        btm_ble_msft_adv_mon_enable(/*enable=*/true, /*restart_scan=*/true);
+        btm_ble_msft_adv_mon_enable(/*enable=*/false, /*restart_scan=*/true);
       } else {
         btm_ble_start_scan();
       }
@@ -981,14 +980,13 @@ static bool use_msft_filtering() {
 static void msft_adv_mon_enable_cb(bool restart_scan, bool enable, uint8_t status) {
   if (status == MSFT_FILTER_ENABLE_CMD_DISALLOWED) {
     log::warn("MSFT: Advertisement monitor is already {}", enable ? "enabled" : "disabled");
-    return;
-  }
-  if (status != MSFT_FILTER_ENABLE_SUCCESS) {
+  } else if (status != MSFT_FILTER_ENABLE_SUCCESS) {
     log::error("MSFT: {} advertisement monitor failed with status: {}",
                enable ? "Enabling" : "Disabling", status);
     return;
+  } else {
+    log::debug("MSFT: Advertisement monitor {}", enable ? "enabled" : "disabled");
   }
-  log::debug("MSFT: Advertisement monitor {}", enable ? "enabled" : "disabled");
 
   // To retain the correct command sequencing, only re-enable LE scanning now
   // that we know MSFT filtered scanning has been re-enabled.
@@ -1213,7 +1211,7 @@ static void btm_ble_read_remote_appearance_cmpl(bool status, const RawAddress& b
   log::info("Appearance 0x{:04x}, Class of Device {} found for {}", appearance, dev_class_text(cod),
             bda);
 
-  BtmDevice* p_device = btm_find_dev(bda);
+  BtmDevice* p_device = btm_get_dev(bda);
   if (p_device != nullptr) {
     p_device->dev_class = cod;
   }

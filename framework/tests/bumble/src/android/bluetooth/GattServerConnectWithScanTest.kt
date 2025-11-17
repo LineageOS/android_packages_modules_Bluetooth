@@ -17,7 +17,6 @@
 package android.bluetooth
 
 import android.bluetooth.BluetoothProfile.STATE_CONNECTED
-import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
@@ -34,12 +33,11 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.anyInt
-import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.OwnAddressType
 
@@ -53,7 +51,7 @@ class GattServerConnectWithScanTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)
     private val bluetoothAdapter = bluetoothManager.adapter
-    private val leScanner: BluetoothLeScanner? = bluetoothAdapter.bluetoothLeScanner
+    private val leScanner = bluetoothAdapter.bluetoothLeScanner!!
 
     @Test
     @Ignore("b/343749428: Remove hidden api's dependencies to enable the test.")
@@ -80,7 +78,7 @@ class GattServerConnectWithScanTest {
 
             gattServer.connect(device, false)
             verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
-                .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED))
+                .onConnectionStateChange(any(), any<Int>(), eq(STATE_CONNECTED))
         } finally {
             gattServer.close()
         }
@@ -111,7 +109,7 @@ class GattServerConnectWithScanTest {
 
             gattServer.connect(device, false)
             verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
-                .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED))
+                .onConnectionStateChange(any(), any<Int>(), eq(STATE_CONNECTED))
         } finally {
             gattServer.close()
         }
@@ -137,7 +135,7 @@ class GattServerConnectWithScanTest {
         try {
             gattServer.connect(bumble.remoteDevice, false)
             verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
-                .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED))
+                .onConnectionStateChange(any(), any<Int>(), eq(STATE_CONNECTED))
         } finally {
             gattServer.close()
         }
@@ -163,7 +161,7 @@ class GattServerConnectWithScanTest {
         try {
             gattServer.connect(bumble.remoteDevice, false)
             verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
-                .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED))
+                .onConnectionStateChange(any(), any<Int>(), eq(STATE_CONNECTED))
         } finally {
             gattServer.close()
         }
@@ -202,12 +200,12 @@ class GattServerConnectWithScanTest {
                 }
             }
 
-        leScanner?.startScan(listOf(scanFilter), scanSettings, scanCallback)
+        leScanner.startScan(listOf(scanFilter), scanSettings, scanCallback)
 
         val result =
             future.completeOnTimeout(null, TIMEOUT_SCANNING_MS, TimeUnit.MILLISECONDS).join()
 
-        leScanner?.stopScan(scanCallback)
+        leScanner.stopScan(scanCallback)
         return result
     }
 

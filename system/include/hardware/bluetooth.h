@@ -589,6 +589,31 @@ static inline std::string pairing_algorithm_text(const PairingAlgorithm& pairing
   }
 }
 
+enum LegacyPairingVariant : uint8_t {
+  PIN,
+  PIN_16,
+};
+
+static inline std::string bredr_legacy_pairing_variant_text(const LegacyPairingVariant& variant) {
+  switch (variant) {
+    CASE_RETURN_STRING(LegacyPairingVariant::PIN);
+    CASE_RETURN_STRING(LegacyPairingVariant::PIN_16);
+    default:
+      RETURN_UNKNOWN_TYPE_STRING(BredrLegacyPairingVariant, variant);
+  }
+}
+
+struct PairingType {
+  PairingAlgorithm algorithm;
+  union {
+    bt_ssp_variant_t variant;
+    LegacyPairingVariant legacy_variant;
+  };
+};
+
+constexpr PairingType kPairingTypeNone = {.algorithm = PairingAlgorithm::NONE,
+                                          .legacy_variant = LegacyPairingVariant::PIN};
+
 /** Bluetooth Interface callbacks */
 
 /** Bluetooth Enable/Disable Callback. */
@@ -637,7 +662,8 @@ typedef void (*ssp_request_callback)(RawAddress* remote_bd_addr, bt_ssp_variant_
 /** Bluetooth Bond state changed callback */
 /* Invoked in response to create_bond, cancel_bond or remove_bond */
 typedef void (*bond_state_changed_callback)(bt_status_t status, RawAddress* remote_bd_addr,
-                                            bt_bond_state_t state, int fail_reason);
+                                            tBT_TRANSPORT transport, bt_bond_state_t state,
+                                            PairingType pairing_type, int fail_reason);
 
 /** Bluetooth Address consolidate callback */
 /* Callback to inform upper layer that these two addresses come from same
@@ -1104,6 +1130,8 @@ struct formatter<BtIoCap> : formatter<std::string> {
 };
 template <>
 struct formatter<PairingAlgorithm> : string_formatter<PairingAlgorithm, &pairing_algorithm_text> {};
+template <>
+struct formatter<LegacyPairingVariant> : enum_formatter<LegacyPairingVariant> {};
 }  // namespace std
 
 #endif  // __has_include(<bluetooth/log.h>)

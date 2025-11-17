@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package android.bluetooth.hfp
 
 import android.bluetooth.BluetoothA2dp
@@ -46,6 +47,7 @@ import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.PandoraDevice
 import android.bluetooth.Utils
 import android.bluetooth.test_utils.EnableBluetoothRule
+import android.bluetooth.toAddressBytes
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -200,7 +202,7 @@ class HfpTest {
         prepareBumbleDeviceAsBondedAndDisconnected()
 
         // Obtain the connection which will be used for EnableSlc
-        val address = ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
+        val address = ByteString.copyFrom(adapter.address.toAddressBytes())
         val connectRequest = HostProto.ConnectRequest.newBuilder().setAddress(address).build()
         val response = bumble.hostBlocking().connect(connectRequest)
 
@@ -519,7 +521,7 @@ class HfpTest {
             )
         }
         // Remove the bond on the Bumble device as well.
-        val localAddress = ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
+        val localAddress = ByteString.copyFrom(adapter.address.toAddressBytes())
         bumble
             .securityStorageBlocking()
             .deleteBond(

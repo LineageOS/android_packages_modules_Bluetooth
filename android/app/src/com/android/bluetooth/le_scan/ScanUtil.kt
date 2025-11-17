@@ -297,30 +297,7 @@ object ScanUtil {
             else -> "UNKNOWN($status)"
         }
 
-    @JvmStatic
-    fun scanModeToString(scanMode: Int) =
-        when (scanMode) {
-            SCAN_MODE_OPPORTUNISTIC -> "OPPORTUNISTIC"
-            SCAN_MODE_LOW_POWER -> "LOW_POWER"
-            SCAN_MODE_BALANCED -> "BALANCED"
-            SCAN_MODE_LOW_LATENCY -> "LOW_LATENCY"
-            SCAN_MODE_AMBIENT_DISCOVERY -> "AMBIENT_DISCOVERY"
-            SCAN_MODE_SCREEN_OFF -> "SCREEN_OFF"
-            SCAN_MODE_SCREEN_OFF_BALANCED -> "SCREEN_OFF_BALANCED"
-            else -> "UNKNOWN($scanMode)"
-        }
-
-    @JvmStatic
-    fun callbackTypeToString(callbackType: Int) =
-        when (callbackType) {
-            ScanSettings.CALLBACK_TYPE_ALL_MATCHES -> "ALL_MATCHES"
-            ScanSettings.CALLBACK_TYPE_FIRST_MATCH -> "FIRST_MATCH"
-            ScanSettings.CALLBACK_TYPE_MATCH_LOST -> "LOST"
-            ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH -> "ALL_MATCHES_AUTO_BATCH"
-            ScanSettings.CALLBACK_TYPE_FIRST_MATCH or ScanSettings.CALLBACK_TYPE_MATCH_LOST ->
-                "[FIRST_MATCH | LOST]"
-            else -> "UNKNOWN($callbackType)"
-        }
+    @JvmStatic fun scanModeToString(scanMode: Int) = ScanMode(scanMode).toString()
 
     @JvmStatic
     fun requiresScreenOn(client: ScanClient) =
@@ -333,16 +310,13 @@ object ScanUtil {
     // A valid filter need at least one field not empty
     private fun isFilteredScan(client: ScanClient) = client.filters.any { !it.isAllFieldsEmpty }
 
-    @JvmStatic
     fun isBackgroundScan(settings: ScanSettings) =
         (settings.callbackType and ScanSettings.CALLBACK_TYPE_FIRST_MATCH) != 0
 
-    @JvmStatic
     fun isBatchScan(settings: ScanSettings) =
         settings.callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES &&
             settings.reportDelayMillis != 0L
 
-    @JvmStatic
     fun isOpportunisticScan(settings: ScanSettings) = settings.scanMode == SCAN_MODE_OPPORTUNISTIC
 
     @JvmStatic
@@ -359,7 +333,6 @@ object ScanUtil {
     private fun isFirstMatchScanClient(client: ScanClient) =
         (client.settings.callbackType and ScanSettings.CALLBACK_TYPE_FIRST_MATCH) != 0
 
-    @JvmStatic
     fun isAllMatchesAutoBatchScanClient(client: ScanClient) =
         client.settings.callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH
 
@@ -404,15 +377,7 @@ object ScanUtil {
 
     @JvmStatic
     fun setOpportunisticScanClient(client: ScanClient) {
-        val existingSettings = client.settings
-        client.settings =
-            ScanSettings.Builder()
-                .setScanMode(SCAN_MODE_OPPORTUNISTIC)
-                .setCallbackType(existingSettings.callbackType)
-                .setScanResultType(existingSettings.scanResultType)
-                .setReportDelay(existingSettings.reportDelayMillis)
-                .setNumOfMatches(existingSettings.numOfMatches)
-                .build()
+        client.settings = client.settings.toBuilder().setScanMode(SCAN_MODE_OPPORTUNISTIC).build()
     }
 
     @JvmStatic
@@ -420,9 +385,9 @@ object ScanUtil {
         if (isAutoBatchScanClientEnabled(client)) {
             return
         }
+        val scanMode = ScanMode(SCAN_MODE_SCREEN_OFF)
+        Log.d(TAG, "setAutoBatchScanClient($client): Update scan mode to $scanMode")
         client.updateScanMode(SCAN_MODE_SCREEN_OFF)
-        val scanModeString = scanModeToString(client.scanModeApp)
-        Log.d(TAG, "Scan mode update during setAutoBatchScanClient() to $scanModeString")
         client.appScanStats?.setAutoBatchScan(client.scannerId, true)
     }
 
@@ -431,9 +396,9 @@ object ScanUtil {
         if (!isAutoBatchScanClientEnabled(client)) {
             return
         }
+        val scanMode = ScanMode(client.scanModeApp)
+        Log.d(TAG, "clearAutoBatchScanClient($client): Update scan mode to $scanMode")
         client.updateScanMode(client.scanModeApp)
-        val scanModeString = scanModeToString(client.scanModeApp)
-        Log.d(TAG, "Scan mode update during clearAutoBatchScanClient() to $scanModeString")
         client.appScanStats?.setAutoBatchScan(client.scannerId, false)
     }
 
@@ -500,10 +465,25 @@ object ScanUtil {
         return true
     }
 
+    fun ScanSettings.toBuilder() =
+        ScanSettings.Builder()
+            .setScanMode(scanMode)
+            .setCallbackType(callbackType)
+            .setScanResultType(scanResultType)
+            .setReportDelay(reportDelayMillis)
+            .setMatchMode(matchMode)
+            .setNumOfMatches(numOfMatches)
+            .setLegacy(legacy)
+            .setPhy(phy)
+            .setRssiThreshold(rssiThreshold)
+            .setScanType(scanType)
+
     @JvmStatic
     fun ScanSettings.toStringShort() =
-        "ScanSettings(mode=${scanModeToString(scanMode)}, reportDelayMs=$reportDelayMillis" +
-            ", resultType=${callbackTypeToString(scanResultType)})"
+        "ScanSettings(mode=${ScanMode(scanMode)}" +
+            ", reportDelayMs=$reportDelayMillis" +
+            ", callbackType=${CallbackType(callbackType)})" +
+            ", resultType=${ResultType(scanResultType)})"
 
     fun ScanFilter.toStringWithoutNullParam() = buildString {
         append("Filter: [")
@@ -523,4 +503,43 @@ object ScanUtil {
         manufacturerDataMask?.let { append(" ManufacturerDataMask=").append(it.contentToString()) }
         append(" ]")
     }
+}
+
+@JvmInline
+value class CallbackType(val value: Int) {
+    override fun toString() =
+        when (value) {
+            ScanSettings.CALLBACK_TYPE_ALL_MATCHES -> "ALL_MATCHES"
+            ScanSettings.CALLBACK_TYPE_FIRST_MATCH -> "FIRST_MATCH"
+            ScanSettings.CALLBACK_TYPE_MATCH_LOST -> "LOST"
+            ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH -> "ALL_MATCHES_AUTO_BATCH"
+            ScanSettings.CALLBACK_TYPE_FIRST_MATCH or ScanSettings.CALLBACK_TYPE_MATCH_LOST ->
+                "[FIRST_MATCH | LOST]"
+            else -> "UNKNOWN($value)"
+        }
+}
+
+@JvmInline
+value class ResultType(val value: Int) {
+    override fun toString() =
+        when (value) {
+            ScanSettings.SCAN_RESULT_TYPE_FULL -> "FULL"
+            ScanSettings.SCAN_RESULT_TYPE_ABBREVIATED -> "ABBREVIATED"
+            else -> "UNKNOWN($value)"
+        }
+}
+
+@JvmInline
+value class ScanMode(val value: Int) {
+    override fun toString() =
+        when (value) {
+            SCAN_MODE_OPPORTUNISTIC -> "OPPORTUNISTIC"
+            SCAN_MODE_LOW_POWER -> "LOW_POWER"
+            SCAN_MODE_BALANCED -> "BALANCED"
+            SCAN_MODE_LOW_LATENCY -> "LOW_LATENCY"
+            SCAN_MODE_AMBIENT_DISCOVERY -> "AMBIENT_DISCOVERY"
+            SCAN_MODE_SCREEN_OFF -> "SCREEN_OFF"
+            SCAN_MODE_SCREEN_OFF_BALANCED -> "SCREEN_OFF_BALANCED"
+            else -> "UNKNOWN($value)"
+        }
 }

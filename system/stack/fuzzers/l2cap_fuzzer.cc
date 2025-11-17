@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "bt_status.h"
 #include "btif/include/stack_manager_t.h"
 #include "common/message_loop_thread.h"
 #include "hal/snoop_logger.h"
@@ -57,12 +58,12 @@ static void ConsumeData(const uint8_t* data, size_t size) {
 
 tBTM_CB btm_cb;
 
-bt_status_t do_in_main_thread(base::OnceCallback<void()>) {
+BtStatus do_in_main_thread(base::OnceCallback<void()>) {
   // this is not properly mocked, so we use abort to catch if this is used in
   // any test cases
   abort();
 }
-bt_status_t do_in_main_thread_delayed(base::OnceCallback<void()>, std::chrono::microseconds) {
+BtStatus do_in_main_thread_delayed(base::OnceCallback<void()>, std::chrono::microseconds) {
   // this is not properly mocked, so we use abort to catch if this is used in
   // any test cases
   abort();

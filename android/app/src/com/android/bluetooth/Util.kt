@@ -27,11 +27,14 @@ import android.Manifest.permission.WRITE_SMS
 import android.annotation.PermissionMethod
 import android.annotation.PermissionName
 import android.annotation.RequiresPermission
+import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.METADATA_DEVICE_TYPE
 import android.bluetooth.BluetoothUtils
 import android.content.AttributionSource
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Binder
 import android.os.IBinder
 import android.os.RemoteException
 import android.permission.PermissionManager
@@ -58,6 +61,13 @@ object Util {
         }
         return true
     }
+
+    /**
+     * Get uid/pid string in a binder call
+     *
+     * @return "uid/pid=xxxx/yyyy"
+     */
+    @JvmStatic fun getUidPidString() = "uid/pid=${Binder.getCallingUid()}/${Binder.getCallingPid()}"
 
     @JvmStatic
     fun AdapterService.appNameOrUnknown(uid: Int) =
@@ -110,7 +120,13 @@ object Util {
     fun isAutomotive(context: Context) =
         context.packageManager.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
 
+    /** @return `true` if this Android device is an IoT device, `false` otherwise */
+    @JvmStatic
+    fun isIotDevice(context: Context) =
+        context.packageManager.hasSystemFeature(PackageManager.FEATURE_EMBEDDED)
+
     /** @return `true` if this Android device is a TV device, `false` otherwise */
+    @Suppress("DEPRECATION") // Checking deprecated PackageManager.FEATURE_TELEVISION
     @JvmStatic
     fun isTv(context: Context) =
         context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION) ||
@@ -120,6 +136,29 @@ object Util {
     @JvmStatic
     fun isWatch(context: Context) =
         context.packageManager.hasSystemFeature(PackageManager.FEATURE_WATCH)
+
+    /** @return `true` if this Android device is an XR device, `false` otherwise */
+    @JvmStatic
+    fun isXrDevice(context: Context) =
+        context.packageManager.hasSystemFeature(PackageManager.FEATURE_XR_PERIPHERAL)
+
+    /**
+     * Checks CoD and metadata to determine if the remote device is a watch
+     *
+     * @return whether it's a watch or not
+     */
+    @JvmStatic
+    fun remoteDeviceIsWatch(adapterService: AdapterService, device: BluetoothDevice): Boolean {
+        // Check CoD
+        val deviceClass = BluetoothClass(adapterService.getRemoteClass(device))
+        if (deviceClass.deviceClass == BluetoothClass.Device.WEARABLE_WRIST_WATCH) {
+            return true
+        }
+
+        // Check metadata
+        val deviceType = adapterService.getMetadata(device, METADATA_DEVICE_TYPE) ?: return false
+        return String(deviceType) == BluetoothDevice.DEVICE_TYPE_WATCH
+    }
 
     /** Returns `true` if the caller holds [NETWORK_SETTINGS] */
     @JvmStatic

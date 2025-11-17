@@ -18,6 +18,7 @@ package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+import static android.bluetooth.BluetoothUtils.enforcePermissionInFramework;
 
 import static java.util.Objects.requireNonNull;
 
@@ -33,7 +34,6 @@ import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
 import android.content.AttributionSource;
 import android.content.Context;
 import android.os.IBinder;
-import android.os.Process;
 import android.os.RemoteException;
 import android.util.CloseGuard;
 import android.util.Log;
@@ -327,15 +327,7 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
         requireNonNull(executor);
         requireNonNull(callback);
         Log.d(TAG, "registerCallback");
-
-        // Enforcing permission in the framework is useless from security point of view.
-        // This is being done to help normal app developer to catch the missing permission, since
-        // the call to the service is oneway and the SecurityException will just be logged
-        final int pid = Process.myPid();
-        final int uid = Process.myUid();
-        mContext.enforcePermission(BLUETOOTH_CONNECT, pid, uid, null);
-        mContext.enforcePermission(BLUETOOTH_PRIVILEGED, pid, uid, null);
-
+        enforcePermissionInFramework(mContext, BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
         mCallbackWrapper.registerCallback(getService(), callback, executor);
     }
 
@@ -358,15 +350,7 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
     public void unregisterCallback(@NonNull Callback callback) {
         requireNonNull(callback);
         Log.d(TAG, "unregisterCallback");
-
-        // Enforcing permission in the framework is useless from security point of view.
-        // This is being done to help normal app developer to catch the missing permission, since
-        // the call to the service is oneway and the SecurityException will just be logged
-        final int pid = Process.myPid();
-        final int uid = Process.myUid();
-        mContext.enforcePermission(BLUETOOTH_CONNECT, pid, uid, null);
-        mContext.enforcePermission(BLUETOOTH_PRIVILEGED, pid, uid, null);
-
+        enforcePermissionInFramework(mContext, BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
         mCallbackWrapper.unregisterCallback(getService(), callback);
     }
 

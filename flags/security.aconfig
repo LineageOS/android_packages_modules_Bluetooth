@@ -90,3 +90,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "prevent_jw_auto_accept"
+    namespace: "bluetooth"
+    description: "LE Just Works pairing must not be auto-approved even if the local IO capabilities are limited"
+    bug: "459944706"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

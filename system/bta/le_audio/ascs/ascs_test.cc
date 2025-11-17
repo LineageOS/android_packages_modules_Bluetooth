@@ -214,7 +214,7 @@ public:
                               }
                               auto status = service.empty() ? tGATT_STATUS::GATT_ERROR
                                                             : tGATT_STATUS::GATT_SUCCESS;
-                              cb.Run(status, server_if, service_db_);
+                              std::move(cb).Run(status, server_if, service_db_);
                             }));
 
     // Register GATT service instance providing the service descriptor

@@ -24,8 +24,8 @@
 
 #include "btm_ble_api.h"
 
-using status_cb = base::Callback<void(uint8_t /* status */)>;
-using handle_cb = base::Callback<void(uint8_t /* status */, uint16_t /* adv_handle */)>;
+using status_cb = base::OnceCallback<void(uint8_t /* status */)>;
+using handle_cb = base::OnceCallback<void(uint8_t /* status */, uint16_t /* adv_handle */)>;
 
 // methods we expose to c code:
 void btm_ble_scanner_cleanup(void);

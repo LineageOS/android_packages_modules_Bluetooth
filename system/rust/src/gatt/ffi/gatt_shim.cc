@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <optional>
 
+#include "bt_status.h"
 #include "include/hardware/bluetooth.h"
 #include "include/hardware/bt_common_types.h"
 #include "include/hardware/bt_gatt_client.h"
@@ -32,7 +33,7 @@
 #include "src/gatt/arbiter.rs.h"
 #include "stack/include/gatt_api.h"
 
-bt_status_t do_in_jni_thread(base::OnceClosure task);
+BtStatus do_in_jni_thread(base::OnceClosure task);
 
 namespace {
 std::optional<RawAddress> AddressOfConnection(uint16_t conn_id) {

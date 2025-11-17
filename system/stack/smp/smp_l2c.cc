@@ -274,7 +274,7 @@ static void smp_br_connect_callback(uint16_t /* channel */, const RawAddress& bd
   log::info("BDA:{} pairing_bda:{}, connected:{}", bd_addr, p_cb->pairing_bda, connected);
 
   if (bd_addr != p_cb->pairing_bda) {
-    BtmDevice* p_device = btm_find_dev(bd_addr);
+    const BtmDevice* p_device = btm_find_dev(bd_addr);
     /* When pairing was initiated to RPA, and connection was on LE transport first using RPA, then
      * we must check record pseudo address, it might be same device */
     if (p_device == nullptr || p_device->RemoteAddress() != p_cb->pairing_bda) {
@@ -286,7 +286,7 @@ static void smp_br_connect_callback(uint16_t /* channel */, const RawAddress& bd
    * check if other side returns some errors. Connection/disconnection on
    * Classic transport shouldn't impact that.
    */
-  BtmDevice* p_device = btm_find_dev(p_cb->pairing_bda);
+  const BtmDevice* p_device = btm_find_dev(p_cb->pairing_bda);
   if ((smp_get_state() == SMP_STATE_BOND_PENDING || smp_get_state() == SMP_STATE_IDLE) &&
       (p_device && p_device->sec_rec.is_link_key_known()) &&
       alarm_is_scheduled(p_cb->delayed_auth_timer_ent)) {

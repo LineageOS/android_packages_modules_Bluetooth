@@ -45,7 +45,8 @@ struct EventCallbacks {
   void (*invoke_oob_data_request_cb)(tBT_TRANSPORT t, bool valid, Octet16 c, Octet16 r,
                                      RawAddress raw_address, uint8_t address_type);
   void (*invoke_bond_state_changed_cb)(bt_status_t status, RawAddress bd_addr,
-                                       bt_bond_state_t state, int fail_reason);
+                                       tBT_TRANSPORT transport, bt_bond_state_t state,
+                                       PairingType pairing_type, int fail_reason);
   void (*invoke_address_consolidate_cb)(RawAddress main_bd_addr, RawAddress secondary_bd_addr);
   void (*invoke_le_address_associate_cb)(RawAddress main_bd_addr, RawAddress secondary_bd_addr,
                                          uint8_t identity_address_type);

@@ -17,7 +17,6 @@
 package com.android.bluetooth.le_scan;
 
 import static com.android.bluetooth.Utils.callbackToApp;
-import static com.android.bluetooth.flags.Flags.leaudioBroadcastImproveSourceOperations;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -35,6 +34,7 @@ import android.util.Log;
 
 import com.android.bluetooth.ActionOnDeathRecipient;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Collections;
@@ -59,30 +59,19 @@ public class PeriodicScanManager {
     private final AdapterService mAdapterService;
     private final BluetoothAdapter mAdapter;
     private final ScanController mScanController;
-    private final PeriodicScanNativeCallback mNativeCallback;
     private final PeriodicScanNativeInterface mNativeInterface;
 
     PeriodicScanManager(
             AdapterService service,
             ScanController scanController,
             PeriodicScanNativeInterface nativeInterface) {
-        this(service, scanController, null, nativeInterface);
-    }
-
-    @VisibleForTesting
-    PeriodicScanManager(
-            AdapterService service,
-            ScanController scanController,
-            PeriodicScanNativeCallback nativeCallback,
-            PeriodicScanNativeInterface nativeInterface) {
         mAdapterService = requireNonNull(service);
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mScanController = scanController;
-        mNativeCallback =
-                requireNonNullElseGet(nativeCallback, () -> new PeriodicScanNativeCallback(this));
+        var nativeCallback = new PeriodicScanNativeCallback(mAdapterService, this);
         mNativeInterface =
                 requireNonNullElseGet(
-                        nativeInterface, () -> new PeriodicScanNativeInterface(mNativeCallback));
+                        nativeInterface, () -> new PeriodicScanNativeInterface(nativeCallback));
         mNativeInterface.init();
     }
 
@@ -181,7 +170,7 @@ public class PeriodicScanManager {
                                             status));
 
                 } else {
-                    if (leaudioBroadcastImproveSourceOperations()) {
+                    if (Flags.leaudioBroadcastImproveSourceOperations()) {
                         it.remove();
                     }
                     callbackToApp(
@@ -195,7 +184,7 @@ public class PeriodicScanManager {
                                             status));
                     IBinder binder = e.getKey();
                     binder.unlinkToDeath(e.getValue().deathRecipient, 0);
-                    if (!leaudioBroadcastImproveSourceOperations()) {
+                    if (!Flags.leaudioBroadcastImproveSourceOperations()) {
                         it.remove();
                     }
                 }

@@ -292,7 +292,7 @@ void smp_send_pair_fail(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Description  actions related to sending pairing request
  ******************************************************************************/
 void smp_send_pair_req(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
-  BtmDevice* p_device = btm_find_dev(p_cb->pairing_bda);
+  BtmDevice* p_device = btm_get_dev(p_cb->pairing_bda);
   log::verbose("addr:{}", p_cb->pairing_bda);
 
   /* erase all keys when central sends pairing req*/
@@ -548,7 +548,7 @@ void smp_proc_pair_fail(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  ******************************************************************************/
 void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   uint8_t* p = p_data->p_data;
-  BtmDevice* p_device = btm_find_dev(p_cb->pairing_bda);
+  BtmDevice* p_device = btm_get_dev(p_cb->pairing_bda);
 
   log::verbose("pairing_bda={}", p_cb->pairing_bda);
 
@@ -561,7 +561,7 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     if (BTM_IsBonded(p_cb->pairing_bda, BT_TRANSPORT_LE) &&
         !BTM_IsEncrypted(p_cb->pairing_bda, BT_TRANSPORT_LE)) {
       get_btm_client_interface().security.BTM_SecReportBondLoss(p_cb->pairing_bda, BT_TRANSPORT_LE);
-      if (!com::android::bluetooth::flags::enable_autonomous_repairing() ||
+      if (!com::android::bluetooth::flags::autonomous_repairing_initiation() ||
           !p_device->bond_lost) {
         // continue with pairing if it's a bond loss scenario.
         return;
@@ -845,9 +845,15 @@ void smp_process_keypress_notification(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  ******************************************************************************/
 void smp_br_process_pairing_command(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   uint8_t* p = p_data->p_data;
-  BtmDevice* p_device = btm_find_dev(p_cb->pairing_bda);
+  BtmDevice* p_device = btm_get_dev(p_cb->pairing_bda);
 
   log::verbose("addr:{}", p_cb->pairing_bda);
+
+  if (p_device == nullptr) {
+    log::error("Device not found for bd_addr: {}", p_cb->pairing_bda);
+    return;
+  }
+
   /* rejecting BR pairing request over non-SC BR link */
   if (!p_device->sec_rec.new_encryption_key_is_p256 && p_cb->role == HCI_ROLE_PERIPHERAL) {
     tSMP_INT_DATA smp_int_data;
@@ -1375,7 +1381,12 @@ void smp_key_distribution(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     /* state check to prevent re-entrant */
     if (smp_get_state() == SMP_STATE_BOND_PENDING) {
       if (p_cb->derive_lk) {
-        BtmDevice* p_device = btm_find_dev(p_cb->pairing_bda);
+        const BtmDevice* p_device = btm_find_dev(p_cb->pairing_bda);
+        if (p_device == nullptr) {
+          log::error("Device record not found for bd_addr: {}", p_cb->pairing_bda);
+          return;
+        }
+
         if (!(p_device->sec_rec.sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED) &&
             (p_device->sec_rec.sec_flags & BTM_SEC_LINK_KEY_AUTHED)) {
           log::verbose("BR key is higher security than existing LE keys, don't derive LK from LTK");
@@ -1431,7 +1442,8 @@ void smp_decide_association_model(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
         int_evt = SMP_AUTH_CMPL_EVT;
       } else {
         if (!GetInterfaceToProfiles()->config->isAndroidTVDevice() &&
-            (p_cb->local_io_capability == BtIoCap::DISPLAY_YES_NO ||
+            (com_android_bluetooth_flags_prevent_jw_auto_accept() ||
+             p_cb->local_io_capability == BtIoCap::DISPLAY_YES_NO ||
              p_cb->local_io_capability == BtIoCap::KEYBOARD_DISPLAY)) {
           /* display consent dialog if this device has a display */
           log::verbose("ENCRYPTION_ONLY showing Consent Dialog");
@@ -1820,7 +1832,8 @@ void smp_process_peer_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
 
       if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS) {
         if (!GetInterfaceToProfiles()->config->isAndroidTVDevice() &&
-            (p_cb->local_io_capability == BtIoCap::DISPLAY_YES_NO ||
+            (com_android_bluetooth_flags_prevent_jw_auto_accept() ||
+             p_cb->local_io_capability == BtIoCap::DISPLAY_YES_NO ||
              p_cb->local_io_capability == BtIoCap::KEYBOARD_DISPLAY)) {
           /* display consent dialog */
           log::verbose("JUST WORKS showing Consent Dialog");
@@ -2135,7 +2148,7 @@ bool smp_proc_ltk_request(const RawAddress& bda) {
   if (bda == smp_cb.pairing_bda) {
     match = true;
   } else {
-    BtmDevice* p_device = btm_find_dev(bda);
+    const BtmDevice* p_device = btm_find_dev(bda);
     if (p_device != NULL && p_device->ble.pseudo_addr == smp_cb.pairing_bda &&
         p_device->ble.pseudo_addr != RawAddress::kEmpty) {
       match = true;
@@ -2234,7 +2247,7 @@ void smp_br_process_link_key(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
     return;
   }
 
-  BtmDevice* p_device = btm_find_dev(p_cb->pairing_bda);
+  BtmDevice* p_device = btm_get_dev(p_cb->pairing_bda);
   if (p_device) {
     log::verbose("dev_type={}", p_device->device_type);
     p_device->device_type |= BT_DEVICE_TYPE_BLE;

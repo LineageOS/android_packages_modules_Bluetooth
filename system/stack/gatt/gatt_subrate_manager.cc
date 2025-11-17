@@ -220,7 +220,7 @@ static void process_subrate_request(const RawAddress& bd_addr) {
         // Notify new client_if but no require to update subrate
         if (gatt_cb.subrate_info[bd_addr].has_new_request) {
             gatt_cb.subrate_info[bd_addr].has_new_request = false;
-            BtmDevice* p_device = btm_find_dev(bd_addr);
+            const BtmDevice* p_device = btm_find_dev(bd_addr);
 
             if (p_device == nullptr) {
                 log::warn("No matching known device in record");
@@ -413,6 +413,12 @@ void gatt_handle_conn_parameter_cback_status(const RawAddress& bd_addr, uint16_t
         log::error("{} does not exist in gatt_cb.subrate_info", bd_addr);
         return;
     }
+
+    // According to spec, subrate reset after connection update
+    gatt_cb.subrate_info[bd_addr].current_config = {
+        .mode = GATT_SUBRATE_MODE_OFF,
+    };
+
     gatt_cb.subrate_info[bd_addr].pending_queue.push_back(req);
     process_subrate_request(bd_addr);
 }

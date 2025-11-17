@@ -20,7 +20,6 @@ import static java.util.Objects.requireNonNull;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.obex.ObexTransport;
 
@@ -130,7 +129,7 @@ public class BluetoothObexTransport implements ObexTransport {
         }
 
         if (mSocket.getConnectionType() == BluetoothSocket.TYPE_RFCOMM) {
-            return Utils.getBrEdrAddress(mSocket.getRemoteDevice(), mAdapterService);
+            return mAdapterService.getBrEdrAddress(mSocket.getRemoteDevice());
         }
         return mSocket.getRemoteDevice().getAddress();
     }

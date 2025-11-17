@@ -41,7 +41,6 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothEventLogger;
 import com.android.bluetooth.Util;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
@@ -1189,7 +1188,7 @@ public class DatabaseManager {
     }
 
     private void logMetadataChange(Metadata data, String log) {
-        String uidPid = Utils.getUidPidString();
+        String uidPid = Util.getUidPidString();
         mMetadataChangedLog.add(uidPid + ": " + data.getAnonymizedAddress() + " " + log);
     }
 

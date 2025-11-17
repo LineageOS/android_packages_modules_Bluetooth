@@ -29,6 +29,7 @@ import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemProperties;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
@@ -48,7 +49,9 @@ public class VapsServerService extends ProfileService {
     private final VapsServerNativeInterface mNativeInterface;
 
     public static boolean isEnabled() {
-        return (Flags.addProfileAsIntentExtra() ? true : false);
+        boolean isVapServerEnabled =
+                SystemProperties.getBoolean("bluetooth.profile.vap.server.enabled", false);
+        return Flags.addProfileAsIntentExtra() && isVapServerEnabled;
     }
 
     public VapsServerService(AdapterService adapterService) {
@@ -66,7 +69,7 @@ public class VapsServerService extends ProfileService {
                         nativeInterface,
                         () ->
                                 new VapsServerNativeInterface(
-                                        new VapsServerNativeCallback(adapterService, this)));
+                                        new VapsServerNativeCallback(getAdapterService(), this)));
         Log.d(TAG, " VapsServerService(): service is starting");
 
         if (looper == null) {

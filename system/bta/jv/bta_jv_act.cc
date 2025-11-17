@@ -25,6 +25,7 @@
 #define LOG_TAG "bluetooth"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
@@ -1548,6 +1549,9 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn, const RawAddre
             true, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX, sec_mask, BT_PSM_RFCOMM, BTM_SEC_PROTO_RFCOMM,
             0);
   }
+
+  bluetooth::metrics::LogRfcommNativeStartEvent(
+          peer_bd_addr, bluetooth::metrics::EventType::RFCOMM_SOCKET_NATIVE_CONNECTION, app_uid);
 
   port_status = RFCOMM_CreateConnectionWithSecurity(UUID_SERVCLASS_SERIAL_PORT, remote_scn, false,
                                                     BTA_JV_DEF_RFC_MTU, peer_bd_addr, &handle,

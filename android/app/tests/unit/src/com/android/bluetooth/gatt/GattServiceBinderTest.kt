@@ -33,10 +33,10 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.any
 import org.mockito.Mock
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -108,6 +108,7 @@ class GattServiceBinderTest {
         val isDirect = true
         val transport = 2
         val opportunistic = true
+        val isAutomaticMtuEnabled = false
 
         binder.clientConnect(
             callback,
@@ -116,6 +117,7 @@ class GattServiceBinderTest {
             isDirect,
             transport,
             opportunistic,
+            isAutomaticMtuEnabled,
             source,
         )
         verify(service)
@@ -126,6 +128,7 @@ class GattServiceBinderTest {
                 isDirect,
                 transport,
                 opportunistic,
+                isAutomaticMtuEnabled,
                 source,
             )
     }

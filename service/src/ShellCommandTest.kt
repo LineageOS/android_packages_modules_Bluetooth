@@ -51,7 +51,7 @@ import org.robolectric.shadows.ShadowBinder
 
 @SmallTest
 @RunWith(ParameterizedRobolectricTestRunner::class)
-class ShellCommandTest(private val flags: FlagsWrapper, private val returnValue: Boolean) {
+class ShellCommandTest(flags: FlagsWrapper, private val returnValue: Boolean) {
     @get:Rule val setFlagsRule: SetFlagsRule = SetFlagsRule(flags.flags)
     @get:Rule val testName = TestName()
 

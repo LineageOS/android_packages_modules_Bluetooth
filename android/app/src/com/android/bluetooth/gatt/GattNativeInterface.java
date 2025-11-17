@@ -50,7 +50,8 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
             int transport,
             boolean opportunistic,
             int preferredMtu,
-            boolean preferRelaxMode);
+            boolean preferRelaxMode,
+            boolean autoMtuEnabled);
 
     private native void gattClientDisconnectNative(int clientIf, String address, int connId);
 
@@ -203,7 +204,8 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
             int transport,
             boolean opportunistic,
             int preferredMtu,
-            boolean preferRelaxMode) {
+            boolean preferRelaxMode,
+            boolean autoMtuEnabled) {
         gattClientConnectNative(
                 clientIf,
                 device.getAddress(),
@@ -212,7 +214,8 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
                 transport,
                 opportunistic,
                 preferredMtu,
-                preferRelaxMode);
+                preferRelaxMode,
+                autoMtuEnabled);
     }
 
     /** Disconnect from the remote Gatt server */

@@ -623,6 +623,9 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
       // If client port is opened, close it, state machine will handle rfcomm
       // closed in opening state as failure and pass to upper layer
       if (ag_scb.conn_handle > 0) {
+        bluetooth::metrics::LogBluetoothEvent(
+                ag_scb.peer_addr, bluetooth::metrics::EventType::RFCOMM_HFP_AG_CONNECTION,
+                bluetooth::metrics::State::COLLISION_DETECTED_ACCEPT_INCOMING, 0);
         status = RFCOMM_RemoveConnection(ag_scb.conn_handle);
         if (status != PORT_SUCCESS) {
           log::warn("RFCOMM_RemoveConnection failed for {}, handle {}, error {}", dev_addr,
@@ -637,6 +640,9 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
     log::info("dev_addr={}, peer_addr={}, in_use={}, index={}", dev_addr, ag_scb.peer_addr,
               ag_scb.in_use, bta_ag_scb_to_idx(p_scb));
   }
+
+  bluetooth::metrics::LogRfcommNativeConnectionCompleteEvent(
+          p_scb->peer_addr, bluetooth::metrics::EventType::RFCOMM_HFP_AG_CONNECTION, false, 0);
 
   p_scb->peer_addr = dev_addr;
 

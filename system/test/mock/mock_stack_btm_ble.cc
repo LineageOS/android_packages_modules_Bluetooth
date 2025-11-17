@@ -134,9 +134,9 @@ void BTM_BlePasskeyReply(const RawAddress& bd_addr, tBTM_STATUS res, uint32_t pa
   test::mock::stack_btm_ble::BTM_BlePasskeyReply(bd_addr, res, passkey);
 }
 void BTM_BleReadPhy(const RawAddress& bd_addr,
-                    base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
+                    base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
   inc_func_call_count(__func__);
-  test::mock::stack_btm_ble::BTM_BleReadPhy(bd_addr, cb);
+  test::mock::stack_btm_ble::BTM_BleReadPhy(bd_addr, std::move(cb));
 }
 void BTM_BleReceiverTest(uint8_t rx_freq, tBTM_CMPL_CB* p_cmd_cmpl_cback) {
   inc_func_call_count(__func__);

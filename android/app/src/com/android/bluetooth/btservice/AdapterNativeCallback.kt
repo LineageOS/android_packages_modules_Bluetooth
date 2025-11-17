@@ -21,9 +21,9 @@ import android.bluetooth.UidTraffic
 import com.android.bluetooth.profile.NativeCallback
 
 class AdapterNativeCallback(
-    private val adapterService: AdapterService,
+    adapterService: AdapterService,
     private val adapterProperties: AdapterProperties,
-) : NativeCallback {
+) : NativeCallback(adapterService) {
 
     private var remoteDevices: RemoteDevices? = null
     private var bondStateMachine: BondStateMachine? = null
@@ -70,8 +70,24 @@ class AdapterNativeCallback(
         bondStateMachine?.pinRequestCallback(address, name, cod, min16Digits, pairingAlgorithm)
     }
 
-    fun bondStateChangeCallback(status: Int, address: ByteArray, newState: Int, hciReason: Int) {
-        bondStateMachine?.bondStateChangeCallback(status, address, newState, hciReason)
+    fun bondStateChangeCallback(
+        status: Int,
+        address: ByteArray,
+        transport: Int,
+        newState: Int,
+        pairingAlgorithm: Int,
+        pairingVariant: Int,
+        hciReason: Int,
+    ) {
+        bondStateMachine?.bondStateChangeCallback(
+            status,
+            address,
+            transport,
+            newState,
+            pairingAlgorithm,
+            pairingVariant,
+            hciReason,
+        )
     }
 
     fun addressConsolidateCallback(mainAddress: ByteArray, secondaryAddress: ByteArray) {

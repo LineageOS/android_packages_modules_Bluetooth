@@ -121,7 +121,8 @@ public class VolumeControlService extends ConnectableProfile {
                         nativeInterface,
                         () ->
                                 new VolumeControlNativeInterface(
-                                        new VolumeControlNativeCallback(adapterService, this)));
+                                        new VolumeControlNativeCallback(
+                                                getAdapterService(), this)));
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
         if (looper == null) {
             mHandler = new Handler(requireNonNull(Looper.getMainLooper()));

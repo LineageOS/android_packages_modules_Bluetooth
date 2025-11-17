@@ -111,6 +111,7 @@ typedef struct {
   tBT_DEVICE_TYPE remote_addr_type;
   uint16_t preferred_mtu;
   bool prefer_relax_mode;
+  bool auto_mtu_enabled;
 } tBTA_GATTC_API_OPEN;
 
 typedef struct {

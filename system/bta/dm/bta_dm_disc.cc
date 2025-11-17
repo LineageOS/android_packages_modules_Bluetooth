@@ -86,8 +86,7 @@ static bool is_same_device(const RawAddress& a, const RawAddress& b) {
 
 static void bta_dm_disc_sm_execute(tBTA_DM_DISC_EVT event, std::unique_ptr<tBTA_DM_MSG> msg);
 static void post_disc_evt(tBTA_DM_DISC_EVT event, std::unique_ptr<tBTA_DM_MSG> msg) {
-  if (do_in_main_thread(base::BindOnce(&bta_dm_disc_sm_execute, event, std::move(msg))) !=
-      BT_STATUS_SUCCESS) {
+  if (!do_in_main_thread(base::BindOnce(&bta_dm_disc_sm_execute, event, std::move(msg)))) {
     log::error("post_disc_evt failed");
   }
 }

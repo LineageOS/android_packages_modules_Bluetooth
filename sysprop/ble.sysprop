@@ -314,3 +314,11 @@ prop {
     access: Readonly
     prop_name: "bluetooth.ble.lecoc.fixed_psm_slots.config"
 }
+
+prop {
+    api_name: "primary_supervision_timeout"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.primary_supervision_timeout.config"
+}

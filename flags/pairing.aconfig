@@ -245,16 +245,6 @@ flag {
 }
 
 flag {
-    name: "enable_autonomous_repairing"
-    namespace: "bluetooth"
-    description: "Enable autonomous re-pairing when bond loss is detected."
-    bug: "442712426"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "detect_bondloss_legacy_bredr_pairing"
     namespace: "bluetooth"
     description: "Detect bond loss during legacy BR/EDR pairing"
@@ -269,4 +259,13 @@ flag {
     namespace: "bluetooth"
     description: "Add pairing algorithm in pairing request"
     bug: "453979807"
+    is_exported: true
+}
+
+flag {
+    name: "autonomous_repairing_initiation"
+    namespace: "bluetooth"
+    description: "Initiate autonomous re-pairing when bond loss is detected."
+    bug: "459695529"
+    is_exported: true
 }

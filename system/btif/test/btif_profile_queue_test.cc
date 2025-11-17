@@ -36,9 +36,9 @@ static bool sStackRunning;
 static bool get_stack_is_running(void) { return sStackRunning; }
 static stack_manager_t sStackManager = {nullptr, nullptr, nullptr, nullptr, get_stack_is_running};
 const stack_manager_t* stack_manager_get_interface() { return &sStackManager; }
-bt_status_t do_in_jni_thread(base::OnceClosure task) {
+BtStatus do_in_jni_thread(base::OnceClosure task) {
   std::move(task).Run();
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 bool is_on_jni_thread() { return true; }
 

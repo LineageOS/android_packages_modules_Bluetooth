@@ -120,7 +120,7 @@ public class HapClientService extends ConnectableProfile {
                         nativeInterface,
                         () ->
                                 new HapClientNativeInterface(
-                                        new HapClientNativeCallback(adapterService, this)));
+                                        new HapClientNativeCallback(getAdapterService(), this)));
 
         if (Flags.hapOnMainLooper()) {
             mStateMachinesLooper = requireNonNull(looper);

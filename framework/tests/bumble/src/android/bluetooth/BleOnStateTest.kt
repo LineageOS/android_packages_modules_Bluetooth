@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package android.bluetooth
 
 import android.bluetooth.le.AdvertiseCallback
@@ -34,7 +35,6 @@ import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CompletableFuture
@@ -58,8 +58,8 @@ class BleOnStateTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
-    private val leScanner
-        get() = adapter.bluetoothLeScanner
+    private val leAdvertiser = adapter.bluetoothLeAdvertiser!!
+    private val leScanner = adapter.bluetoothLeScanner!!
 
     private var wasBluetoothAdapterEnabled = true
 
@@ -106,10 +106,8 @@ class BleOnStateTest {
     }
 
     @Test
-    @RequiresFlagsDisabled(Flags.FLAG_ONLY_START_SCAN_DURING_BLE_ON)
+    @RequiresFlagsDisabled("com.android.bluetooth.flags.only_start_scan_during_ble_on")
     fun whenOnlyStartScanDuringBleOnOff_canAdvertise() {
-        val bluetoothLeAdvertiser = adapter.bluetoothLeAdvertiser ?: return
-
         val settings = AdvertiseSettings.Builder().build()
         val advertiseData = AdvertiseData.Builder().build()
 
@@ -127,22 +125,20 @@ class BleOnStateTest {
             }
 
         try {
-            bluetoothLeAdvertiser.startAdvertising(settings, advertiseData, advertiseCallback)
+            leAdvertiser.startAdvertising(settings, advertiseData, advertiseCallback)
             future.completeOnTimeout(null, TIMEOUT_ADVERTISING_MS, TimeUnit.MILLISECONDS).join()
 
             val advertisingResult = future.get()
             assertThat(advertisingResult).isNotNull()
             assertThat(advertisingResult).isEqualTo(ADVERTISE_SUCCESS)
         } finally {
-            bluetoothLeAdvertiser.stopAdvertising(advertiseCallback)
+            leAdvertiser.stopAdvertising(advertiseCallback)
         }
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ONLY_START_SCAN_DURING_BLE_ON)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.only_start_scan_during_ble_on")
     fun whenOnlyStartScanDuringBleOnOn_cantAdvertise() {
-        val bluetoothLeAdvertiser = adapter.bluetoothLeAdvertiser ?: return
-
         val settings = AdvertiseSettings.Builder().build()
         val advertiseData = AdvertiseData.Builder().build()
 
@@ -160,19 +156,19 @@ class BleOnStateTest {
             }
 
         try {
-            bluetoothLeAdvertiser.startAdvertising(settings, advertiseData, advertiseCallback)
+            leAdvertiser.startAdvertising(settings, advertiseData, advertiseCallback)
             future.completeOnTimeout(null, TIMEOUT_ADVERTISING_MS, TimeUnit.MILLISECONDS).join()
 
             val advertisingResult = future.get()
             assertThat(advertisingResult).isNotNull()
             assertThat(advertisingResult).isEqualTo(ADVERTISE_FAILED_INTERNAL_ERROR)
         } finally {
-            bluetoothLeAdvertiser.stopAdvertising(advertiseCallback)
+            leAdvertiser.stopAdvertising(advertiseCallback)
         }
     }
 
     @Test
-    @RequiresFlagsDisabled(Flags.FLAG_ONLY_START_SCAN_DURING_BLE_ON)
+    @RequiresFlagsDisabled("com.android.bluetooth.flags.only_start_scan_during_ble_on")
     fun whenOnlyStartScanDuringBleOnOff_gattCanConnect() {
         advertiseWithBumble()
 
@@ -189,7 +185,7 @@ class BleOnStateTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ONLY_START_SCAN_DURING_BLE_ON)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.only_start_scan_during_ble_on")
     fun whenOnlyStartScanDuringBleOnOn_gattCantConnect() {
         advertiseWithBumble()
 
@@ -246,7 +242,6 @@ class BleOnStateTest {
         callbackType: Int,
         isLegacy: Boolean,
     ): List<ScanResult>? {
-        val scanner = leScanner ?: return null
         val future = CompletableFuture<List<ScanResult>?>()
         val scanResults = mutableListOf<ScanResult>()
 
@@ -283,12 +278,12 @@ class BleOnStateTest {
                 }
             }
 
-        scanner.startScan(listOf(scanFilter), scanSettings, scanCallback)
+        leScanner.startScan(listOf(scanFilter), scanSettings, scanCallback)
 
         val result =
             future.completeOnTimeout(null, TIMEOUT_SCANNING_MS, TimeUnit.MILLISECONDS).join()
 
-        scanner.stopScan(scanCallback)
+        leScanner.stopScan(scanCallback)
 
         return result
     }

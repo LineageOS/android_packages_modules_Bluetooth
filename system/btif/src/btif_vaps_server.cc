@@ -32,57 +32,50 @@
  #include "stack/include/main_thread.h"
  #include "bluetooth/types/address.h"
 
- using base::Bind;
- using base::Unretained;
- using bluetooth::vaps::VapsServerCallbacks;
- using bluetooth::vaps::VapsServerInterface;
+using base::BindOnce;
+using base::Unretained;
+using bluetooth::vaps::VapsServerCallbacks;
+using bluetooth::vaps::VapsServerInterface;
 
- using bluetooth::vaps::VapsServer;
+using bluetooth::vaps::VapsServer;
 
- namespace {
- std::unique_ptr<VapsServerInterface> vaps_server_instance;
+namespace {
+std::unique_ptr<VapsServerInterface> vaps_server_instance;
 
- class VapsServerServiceInterfaceImpl : public VapsServerInterface,
-                                        public VapsServerCallbacks {
-   ~VapsServerServiceInterfaceImpl() override = default;
+class VapsServerServiceInterfaceImpl : public VapsServerInterface, public VapsServerCallbacks {
+  ~VapsServerServiceInterfaceImpl() override = default;
 
-   void Init(VapsServerCallbacks* callbacks) override {
-     this->callbacks_ = callbacks;
-     bluetooth::vaps::GetVapsServer()->Initialize(this);
-   }
+  void Init(VapsServerCallbacks* callbacks) override {
+    this->callbacks_ = callbacks;
+    bluetooth::vaps::GetVapsServer()->Initialize(this);
+  }
 
-   void SetCcid(int ccid) override {
-     bluetooth::vaps::GetVapsServer()->SetCcid(ccid);
-   }
+  void SetCcid(int ccid) override { bluetooth::vaps::GetVapsServer()->SetCcid(ccid); }
 
-   void SetVaeName(std::string vae_name) override {
-     bluetooth::vaps::GetVapsServer()->SetVaeName(vae_name);
-   }
+  void SetVaeName(std::string vae_name) override {
+    bluetooth::vaps::GetVapsServer()->SetVaeName(vae_name);
+  }
 
-   void Cleanup(void) override {
-     bluetooth::vaps::GetVapsServer()->Cleanup();
-   }
+  void Cleanup(void) override { bluetooth::vaps::GetVapsServer()->Cleanup(); }
 
-   void OnInitialized() override {
-     do_in_jni_thread(
-             Bind(&VapsServerCallbacks::OnInitialized, Unretained(callbacks_)));
-   }
+  void OnInitialized() override {
+    do_in_jni_thread(BindOnce(&VapsServerCallbacks::OnInitialized, Unretained(callbacks_)));
+  }
 
-   void OnStartVaSession(const RawAddress& addr) override {
-     do_in_jni_thread(
-             Bind(&VapsServerCallbacks::OnStartVaSession, Unretained(callbacks_), addr));
-   }
+  void OnStartVaSession(const RawAddress& addr) override {
+    do_in_jni_thread(
+            BindOnce(&VapsServerCallbacks::OnStartVaSession, Unretained(callbacks_), addr));
+  }
 
-   void OnStopVaSession(const RawAddress& addr) override {
-     do_in_jni_thread(
-            Bind(&VapsServerCallbacks::OnStopVaSession, Unretained(callbacks_), addr));
-   }
+  void OnStopVaSession(const RawAddress& addr) override {
+    do_in_jni_thread(BindOnce(&VapsServerCallbacks::OnStopVaSession, Unretained(callbacks_), addr));
+  }
 
- private:
-   VapsServerCallbacks* callbacks_;
- };
+private:
+  VapsServerCallbacks* callbacks_;
+};
 
- } /* namespace */
+} /* namespace */
 
  VapsServerInterface* btif_vaps_server_get_interface(void) {
    if (!vaps_server_instance) {

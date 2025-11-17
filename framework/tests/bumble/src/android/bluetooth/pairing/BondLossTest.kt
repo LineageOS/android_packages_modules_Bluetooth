@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package android.bluetooth.pairing
 
 import android.bluetooth.*
@@ -128,7 +129,7 @@ class BondLossTest {
         )
 
         testStep_BondBredr()
-        val address = Utils.addressBytesFromString(adapter.address)
+        val address = adapter.address.toAddressBytes()
         bumble
             .securityStorageBlocking()
             .deleteBond(
@@ -176,7 +177,7 @@ class BondLossTest {
         )
 
         testStep_BondBredr()
-        val address = Utils.addressBytesFromString(adapter.address)
+        val address = adapter.address.toAddressBytes()
         bumble
             .securityStorageBlocking()
             .deleteBond(

@@ -479,6 +479,7 @@ cc_test {
         "bluetooth_flags_c_lib_for_test",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_metrics",
         "libbluetooth_types",
         "libbt-common",
 
@@ -1649,6 +1650,7 @@ cc_test {
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_metrics",
         "libbluetooth_types",
         "libbt-btu-main-thread",
         "libbt-common",

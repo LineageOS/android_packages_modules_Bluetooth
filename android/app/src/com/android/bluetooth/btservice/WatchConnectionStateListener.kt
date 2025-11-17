@@ -25,7 +25,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.android.bluetooth.Util.isWatch
-import com.android.bluetooth.Utils.remoteDeviceIsWatch
+import com.android.bluetooth.Util.remoteDeviceIsWatch
 
 private const val TAG = "WatchConnectionStateListener"
 

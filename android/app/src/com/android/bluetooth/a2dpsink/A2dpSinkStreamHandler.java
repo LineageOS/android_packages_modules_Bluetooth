@@ -29,6 +29,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.bluetooth.R;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.AdapterService;
 
 /**
@@ -145,7 +146,7 @@ public class A2dpSinkStreamHandler extends Handler {
             // Remote play command.
             case SRC_PLAY -> {
                 mStreamAvailable = true;
-                if (isIotDevice() || isTvDevice() || shouldRequestFocus()) {
+                if (Util.isIotDevice(mAdapterService) || isTvDevice() || shouldRequestFocus()) {
                     requestAudioFocusIfNone();
                 }
             }
@@ -316,12 +317,6 @@ public class A2dpSinkStreamHandler extends Handler {
 
     private void setFluorideAudioTrackGain(float gain) {
         mNativeInterface.informAudioTrackGain(gain);
-    }
-
-    private boolean isIotDevice() {
-        return mAdapterService
-                .getPackageManager()
-                .hasSystemFeature(PackageManager.FEATURE_EMBEDDED);
     }
 
     private boolean isTvDevice() {

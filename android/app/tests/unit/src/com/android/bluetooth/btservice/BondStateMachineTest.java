@@ -178,10 +178,22 @@ public class BondStateMachineTest {
         verify(mNativeInterface).removeBond(eq(TEST_BT_ADDR_BYTES_2));
 
         mStateMachine.bondStateChangeCallback(
-                AbstractionLayer.BT_STATUS_SUCCESS, TEST_BT_ADDR_BYTES, BOND_NONE, 0);
+                AbstractionLayer.BT_STATUS_SUCCESS,
+                TEST_BT_ADDR_BYTES,
+                BluetoothDevice.TRANSPORT_BREDR,
+                BOND_NONE,
+                0,
+                0,
+                0);
         syncHandler(BondStateMachine.MESSAGE_BOND_STATE_CHANGE);
         mStateMachine.bondStateChangeCallback(
-                AbstractionLayer.BT_STATUS_SUCCESS, TEST_BT_ADDR_BYTES_2, BOND_NONE, 0);
+                AbstractionLayer.BT_STATUS_SUCCESS,
+                TEST_BT_ADDR_BYTES_2,
+                BluetoothDevice.TRANSPORT_BREDR,
+                BOND_NONE,
+                0,
+                0,
+                0);
         syncHandler(BondStateMachine.MESSAGE_BOND_STATE_CHANGE);
 
         // Try to pair these two devices again, createBondNative() should be invoked.
@@ -234,7 +246,13 @@ public class BondStateMachineTest {
                 mRemoteDevices.addDeviceProperties(TEST_BT_ADDR_BYTES_2);
         BluetoothDevice pendingDevice = pendingDeviceProperties.getDevice();
         assertThat(pendingDevice).isNotNull();
-        mStateMachine.handleBondStateChanged(pendingDevice, BOND_BONDED, TEST_BOND_REASON);
+        mStateMachine.handleBondStateChanged(
+                pendingDevice,
+                BluetoothDevice.TRANSPORT_BREDR,
+                BOND_BONDED,
+                0,
+                0,
+                TEST_BOND_REASON);
 
         RemoteDevices.DeviceProperties testDeviceProperties =
                 mRemoteDevices.addDeviceProperties(TEST_BT_ADDR_BYTES);
@@ -642,7 +660,8 @@ public class BondStateMachineTest {
             if (uuidUpdate) {
                 mStateMachine.handlePendingUuids(mDevice);
             } else {
-                mStateMachine.handleBondStateChanged(mDevice, newState, TEST_BOND_REASON);
+                mStateMachine.handleBondStateChanged(
+                        mDevice, BluetoothDevice.TRANSPORT_BREDR, newState, 0, 0, TEST_BOND_REASON);
             }
         } catch (IllegalArgumentException e) {
             // Do nothing.

@@ -143,10 +143,10 @@ public class SdpManager {
 
         SdpSearchInstance getSearchInstance(byte[] address, byte[] uuidBytes) {
             String addressString = Utils.getAddressStringFromByte(address);
-            addressString = Utils.getBrEdrAddress(addressString, mAdapterService);
+            addressString = mAdapterService.getBrEdrAddress(addressString);
             ParcelUuid uuid = Utils.byteArrayToUuid(uuidBytes)[0];
             for (SdpSearchInstance inst : mList) {
-                String instAddressString = Utils.getBrEdrAddress(inst.getDevice(), mAdapterService);
+                String instAddressString = mAdapterService.getBrEdrAddress(inst.getDevice());
                 if (instAddressString.equals(addressString) && inst.getUuid().equals(uuid)) {
                     return inst;
                 }
@@ -155,9 +155,9 @@ public class SdpManager {
         }
 
         boolean isSearching(BluetoothDevice device, ParcelUuid uuid) {
-            String addressString = Utils.getBrEdrAddress(device, mAdapterService);
+            String addressString = mAdapterService.getBrEdrAddress(device);
             for (SdpSearchInstance inst : mList) {
-                String instAddressString = Utils.getBrEdrAddress(inst.getDevice(), mAdapterService);
+                String instAddressString = mAdapterService.getBrEdrAddress(inst.getDevice());
                 if (instAddressString != null
                         && addressString != null
                         && instAddressString.equals(addressString)
@@ -463,7 +463,7 @@ public class SdpManager {
             inst.startSearch(); // Trigger timeout message
 
             mNativeInterface.sdpSearch(
-                    Utils.getByteBrEdrAddress(mAdapterService, inst.getDevice()),
+                    mAdapterService.getByteBrEdrAddress(inst.getDevice()),
                     Utils.uuidToByteArray(inst.getUuid()));
         } else { // Else queue is empty.
             Log.d(

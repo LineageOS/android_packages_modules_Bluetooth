@@ -116,14 +116,16 @@ extern struct BTM_BlePasskeyReply BTM_BlePasskeyReply;
 // Params: const RawAddress& bd_addr, base::Callback<void(uint8_t tx_phy,
 // uint8_t rx_phy, uint8_t status Return: void
 struct BTM_BleReadPhy {
-  std::function<void(const RawAddress& bd_addr,
-                     base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> callback)>
+  std::function<void(
+          const RawAddress& bd_addr,
+          base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> callback)>
           body{[](const RawAddress& /* bd_addr */,
-                  base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)>
+                  base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)>
                   /* callback */) {}};
-  void operator()(const RawAddress& bd_addr,
-                  base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> callback) {
-    body(bd_addr, callback);
+  void operator()(
+          const RawAddress& bd_addr,
+          base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> callback) {
+    body(bd_addr, std::move(callback));
   }
 };
 extern struct BTM_BleReadPhy BTM_BleReadPhy;

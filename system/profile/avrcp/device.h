@@ -326,8 +326,6 @@ private:
     return a2dp_interface_->find_audio_sink_service(address_, p_cback) == A2DP_SUCCESS;
   }
 
-  base::WeakPtrFactory<Device> weak_ptr_factory_;
-
   // TODO (apanicke): Initialize all the variables in the constructor.
   RawAddress address_;
 
@@ -388,6 +386,11 @@ private:
   std::optional<int8_t> pending_volume_ = {};
 
   bool pending_track_changed_ = false;
+
+  // Member variables should appear before the WeakPtrFactory, to ensure
+  // that any WeakPtrs are invalidated before its members
+  // variable's destructors are executed, rendering them invalid.
+  base::WeakPtrFactory<Device> weak_ptr_factory_{this};
 };
 
 }  // namespace avrcp

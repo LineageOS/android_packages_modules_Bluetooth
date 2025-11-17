@@ -30,6 +30,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/uuid.h>
+#include <com_android_bluetooth_flags.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_sdp.h>
 #include <pthread.h>
@@ -43,9 +44,11 @@
 #include "btif_common.h"
 #include "btif_sdp.h"
 #include "btif_sock_sdp.h"
+#include "btif_status.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
+#include "stack/include/main_thread.h"
 #include "stack/include/sdp_api.h"
 #include "utl.h"
 
@@ -53,6 +56,7 @@ using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
 
 // Protects the sdp_slots array from concurrent access.
+// TODO(b/415689442): Remove when btsec_sdp_database_thread_sync is shipped
 static std::recursive_mutex sdp_lock;
 
 /**
@@ -102,7 +106,7 @@ static int free_sdp_slot(int id);
  *     based on the ID being passed to BTA as user_data.
  *****************************************************************************/
 
-static void init_sdp_slots() {
+static void init_sdp_slots_in_main_thread() {
   int i;
   memset(sdp_slots, 0, sizeof(sdp_slot_t) * MAX_SDP_SLOTS);
   /* if SDP_RECORD_FREE is zero - no need to set the value */
@@ -113,15 +117,25 @@ static void init_sdp_slots() {
   }
 }
 
-bt_status_t sdp_server_init() {
-  log::verbose("Sdp Server Init");
-  init_sdp_slots();
-  return BT_STATUS_SUCCESS;
+static void init_sdp_slots() {
+  if (com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
+      get_main_thread()->DoInThreadSynchronously(&init_sdp_slots_in_main_thread);
+  } else {
+    init_sdp_slots_in_main_thread();
+  }
 }
 
-void sdp_server_cleanup() {
+BtStatus sdp_server_init() {
+  log::verbose("Sdp Server Init");
+  init_sdp_slots();
+  return BtifStatus();
+}
+
+static void cleanup_in_main_thread() {
   log::verbose("Sdp Server Cleanup");
-  std::unique_lock<std::recursive_mutex> lock(sdp_lock);
+  if (!com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
+    std::unique_lock<std::recursive_mutex> lock(sdp_lock);
+  }
   int i;
   for (i = 0; i < MAX_SDP_SLOTS; i++) {
     /*remove_sdp_record(i); we cannot send messages to the other threads, since
@@ -129,6 +143,14 @@ void sdp_server_cleanup() {
      *                       have been shut down already. Just do local cleanup.
      */
     free_sdp_slot(i);
+  }
+}
+
+void sdp_server_cleanup() {
+  if (com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
+    get_main_thread()->DoInThreadSynchronously(&cleanup_in_main_thread);
+  } else {
+    cleanup_in_main_thread();
   }
 }
 
@@ -198,7 +220,7 @@ void copy_sdp_records(bluetooth_sdp_record* in_records, bluetooth_sdp_record* ou
  *   service_name string,
  *   user1_ptr and
  *   user2_ptr. */
-static int alloc_sdp_slot(bluetooth_sdp_record* in_record) {
+static int alloc_sdp_slot_in_main_thread(bluetooth_sdp_record* in_record) {
   int record_size = get_sdp_records_size(in_record, 1);
   /* We are optimists here, and preallocate the record.
    * This is to reduce the time we hold the sdp_lock. */
@@ -211,7 +233,10 @@ static int alloc_sdp_slot(bluetooth_sdp_record* in_record) {
   }
 
   {
-    std::unique_lock<std::recursive_mutex> lock(sdp_lock);
+    if (!com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
+      std::unique_lock<std::recursive_mutex> lock(sdp_lock);
+    }
+
     for (int i = 0; i < MAX_SDP_SLOTS; i++) {
       if (sdp_slots[i].state == SDP_RECORD_FREE) {
         sdp_slots[i].state = SDP_RECORD_ALLOCED;
@@ -226,6 +251,14 @@ static int alloc_sdp_slot(bluetooth_sdp_record* in_record) {
   return -1;
 }
 
+static int alloc_sdp_slot(bluetooth_sdp_record* in_record) {
+  if (com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
+      return get_main_thread()->DoInThreadSynchronously(&alloc_sdp_slot_in_main_thread, in_record);
+  }
+
+  return alloc_sdp_slot_in_main_thread(in_record);
+}
+
 static int free_sdp_slot(int id) {
   int handle = -1;
   bluetooth_sdp_record* record = NULL;
@@ -235,7 +268,10 @@ static int free_sdp_slot(int id) {
   }
 
   {
-    std::unique_lock<std::recursive_mutex> lock(sdp_lock);
+    if (!com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
+      std::unique_lock<std::recursive_mutex> lock(sdp_lock);
+    }
+
     handle = sdp_slots[id].sdp_handle;
     sdp_slots[id].sdp_handle = 0;
     if (sdp_slots[id].state != SDP_RECORD_FREE) {
@@ -254,17 +290,16 @@ static int free_sdp_slot(int id) {
   return handle;
 }
 
-/***
- * Use this to get a reference to a SDP slot AND change the state to
- * SDP_RECORD_CREATE_INITIATED.
- */
-static const sdp_slot_t* start_create_sdp(int id) {
+static const sdp_slot_t* start_create_sdp_in_main_thread(int id) {
   if (id >= MAX_SDP_SLOTS) {
     log::error("failed - id {} is invalid", id);
     return NULL;
   }
 
-  std::unique_lock<std::recursive_mutex> lock(sdp_lock);
+  if (!com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
+    std::unique_lock<std::recursive_mutex> lock(sdp_lock);
+  }
+
   if (sdp_slots[id].state != SDP_RECORD_ALLOCED) {
     /* The record have been removed before this event occurred - e.g. deinit */
     log::error("failed - state for id {} is sdp_slots[id].state = {} expected {}", id,
@@ -275,44 +310,80 @@ static const sdp_slot_t* start_create_sdp(int id) {
   return &(sdp_slots[id]);
 }
 
-static void set_sdp_handle(int id, int handle) {
-  std::unique_lock<std::recursive_mutex> lock(sdp_lock);
+/***
+ * Use this to get a reference to a SDP slot AND change the state to
+ * SDP_RECORD_CREATE_INITIATED.
+ */
+static const sdp_slot_t* start_create_sdp(int id) {
+  if (com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
+      return get_main_thread()->DoInThreadSynchronously(&start_create_sdp_in_main_thread, id);
+  }
+
+  return start_create_sdp_in_main_thread(id);
+}
+
+static void set_sdp_handle_in_main_thread(int id, int handle) {
+  if (!com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
+    std::unique_lock<std::recursive_mutex> lock(sdp_lock);
+  }
   sdp_slots[id].sdp_handle = handle;
 }
 
-bt_status_t create_sdp_record(bluetooth_sdp_record* record, int* record_handle) {
+static void set_sdp_handle(int id, int handle) {
+  if (com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
+      get_main_thread()->DoInThreadSynchronously(&set_sdp_handle_in_main_thread, id, handle);
+  }
+  else {
+    set_sdp_handle_in_main_thread(id, handle);
+  }
+}
+
+static BtStatus create_sdp_record_in_main_thread(bluetooth_sdp_record* record, int* record_handle) {
   int handle;
 
   handle = alloc_sdp_slot(record);
   log::verbose("handle = 0x{:08x}", handle);
 
   if (handle < 0) {
-    return BT_STATUS_NOMEM;
+    return BtifStatus(NOMEM);
   }
 
   BTA_SdpCreateRecordByUser(INT_TO_PTR(handle));
 
   *record_handle = handle;
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
-bt_status_t remove_sdp_record(int record_id) {
+BtStatus create_sdp_record(bluetooth_sdp_record* record, int* record_handle) {
+  if (com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
+      return get_main_thread()->DoInThreadSynchronously(&create_sdp_record_in_main_thread,
+                                                      record, record_handle);
+  }
+
+  return create_sdp_record_in_main_thread(record, record_handle);
+}
+
+static BtStatus remove_sdp_record_in_main_thread(int record_id) {
   int handle;
 
   if (record_id >= MAX_SDP_SLOTS) {
-    return BT_STATUS_PARM_INVALID;
+    return BtifStatus(PARM_INVALID);
   }
 
   bluetooth_sdp_record* record;
   bluetooth_sdp_types sdp_type = SDP_TYPE_RAW;
   {
-    std::unique_lock<std::recursive_mutex> lock(sdp_lock);
+    if (!com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
+      std::unique_lock<std::recursive_mutex> lock(sdp_lock);
+    }
+
     record = sdp_slots[record_id].record_data;
     if (record != NULL) {
       sdp_type = record->hdr.type;
     }
   }
+
   tBTA_SERVICE_ID service_id = 0;
   switch (sdp_type) {
     case SDP_TYPE_MAP_MAS:
@@ -343,10 +414,19 @@ bt_status_t remove_sdp_record(int record_id) {
   /* Pass the actual record handle */
   if (handle > 0) {
     BTA_SdpRemoveRecordByUser(INT_TO_PTR(handle));
-    return BT_STATUS_SUCCESS;
+    return BtifStatus();
   }
   log::verbose("Sdp Server - record already removed - or never created");
-  return BT_STATUS_DONE;
+  return BtifStatus(DONE);
+}
+
+BtStatus remove_sdp_record(int record_id) {
+  if (com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
+      return get_main_thread()->DoInThreadSynchronously(&remove_sdp_record_in_main_thread,
+                                                      record_id);
+  }
+
+  return remove_sdp_record_in_main_thread(record_id);
 }
 
 /******************************************************************************
@@ -354,7 +434,7 @@ bt_status_t remove_sdp_record(int record_id) {
  * Called in BTA context to create/remove SDP records.
  ******************************************************************************/
 
-void on_create_record_event(int id) {
+static void handle_create_record_event_in_main_thread(int id) {
   /*
    * 1) Fetch the record pointer, and change its state?
    * 2) switch on the type to create the correct record
@@ -425,7 +505,17 @@ void on_create_record_event(int id) {
   }
 }
 
-void on_remove_record_event(int handle) {
+void on_create_record_event(int id) {
+  if (com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
+      get_main_thread()->DoInThreadSynchronously(&handle_create_record_event_in_main_thread,
+                                                      id);
+  }
+  else {
+    handle_create_record_event_in_main_thread(id);
+  }
+}
+
+static void handle_remove_record_event_in_main_thread(int handle) {
   log::verbose("Sdp Server");
 
   // User data carries the actual SDP handle, not the ID.
@@ -435,6 +525,16 @@ void on_remove_record_event(int handle) {
     if (!result) {
       log::error("Unable to remove handle 0x{:08x}", handle);
     }
+  }
+}
+
+void on_remove_record_event(int id) {
+  if (com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
+      get_main_thread()->DoInThreadSynchronously(&handle_remove_record_event_in_main_thread,
+                                                      id);
+  }
+  else {
+    handle_remove_record_event_in_main_thread(id);
   }
 }
 

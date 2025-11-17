@@ -105,7 +105,7 @@ class AirplaneModeController(
 
     @kotlin.time.ExperimentalTime
     fun notifyUserToggledBluetooth(isBluetoothOn: Boolean) {
-        session?.let { it.notifyUserToggledBluetooth(isBluetoothOn) }
+        session?.notifyUserToggledBluetooth(isBluetoothOn)
     }
 
     fun setIsMediaProfileConnected(connected: Boolean) {

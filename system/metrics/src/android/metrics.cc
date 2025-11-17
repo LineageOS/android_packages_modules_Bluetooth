@@ -91,20 +91,24 @@ void Counter(CounterKey key, int64_t count) {
   }
 }
 
-void LogBluetoothEvent(const Address& address, EventType event_type, State state) {
+void LogBluetoothEvent(const Address& address, EventType event_type, State state, int uid) {
   if (address.IsEmpty()) {
     log::warn("Failed BluetoothEvent Upload - Address is Empty");
     return;
   }
 
   int metric_id = MetricIdManager::GetInstance().AllocateId(address);
-  int ret = stats_write(BLUETOOTH_CROSS_LAYER_EVENT_REPORTED, event_type, state, 0, metric_id,
+  int ret = stats_write(BLUETOOTH_CROSS_LAYER_EVENT_REPORTED, event_type, state, uid, metric_id,
                         BytesField(nullptr, 0));
 
   if (ret < 0) {
-    log::warn("Failed BluetoothEvent Upload - Address {}, Event_type {}, State {}", address,
-              event_type, state);
+    log::warn("Failed BluetoothEvent Upload - Address {}, Event_type {}, State {}, Uid {}", address,
+              event_type, state, uid);
   }
+}
+
+void LogBluetoothEvent(const Address& address, EventType event_type, State state) {
+  LogBluetoothEvent(address, event_type, state, 0);
 }
 
 void LogMetricLinkLayerConnectionEvent(const Address& address, uint32_t connection_handle,

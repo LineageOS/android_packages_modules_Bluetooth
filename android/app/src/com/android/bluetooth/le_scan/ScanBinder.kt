@@ -33,6 +33,7 @@ import android.bluetooth.le.ScanSettings
 import android.content.AttributionSource
 import android.os.WorkSource
 import android.util.Log
+import com.android.bluetooth.Util
 import com.android.bluetooth.Util.enforceScanPermissionForDataDelivery
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.le_scan.ScanUtil.toStringShort
@@ -79,8 +80,9 @@ class ScanBinder(
         if (workSource != null) {
             adapterService.enforceCallingOrSelfPermission(UPDATE_DEVICE_STATS, null)
         }
+        val hasPrivilegedPermission = Util.checkCallerHasPrivilegedPermission(adapterService)
         withControllerRunOnScanThread(source, "registerScanner") {
-            registerScanner(callback, workSource, source)
+            registerScanner(callback, workSource, source, hasPrivilegedPermission)
         }
     }
 
@@ -95,8 +97,16 @@ class ScanBinder(
         if (workSource != null) {
             adapterService.enforceCallingOrSelfPermission(UPDATE_DEVICE_STATS, null)
         }
+        val hasPrivilegedPermission = Util.checkCallerHasPrivilegedPermission(adapterService)
         withControllerRunOnScanThread(source, "registerAndStartScan") {
-            registerAndStartScan(callback, workSource, source, settings, filters)
+            registerAndStartScan(
+                callback,
+                workSource,
+                source,
+                hasPrivilegedPermission,
+                settings,
+                filters,
+            )
         } ?: run { callback.onScannerRegistered(SCAN_FAILED_APPLICATION_REGISTRATION_FAILED, -1) }
     }
 

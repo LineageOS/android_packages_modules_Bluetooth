@@ -1386,7 +1386,8 @@ void bta_debug_av_dump(int fd) {
       }
       dprintf(fd, "    SEP ID: %zu\n", j);
       dprintf(fd, "      SEP AVDTP handle: %d\n", sep.av_handle);
-      dprintf(fd, "      Local SEP type: %d\n", sep.tsep);
+      dprintf(fd, "      Local SEP type: %d [%s]\n", sep.tsep,
+              peer_stream_endpoint_text(sep.tsep).c_str());
       dprintf(fd, "      Codec: %s\n", A2DP_CodecName(sep.codec_info));
     }
     dprintf(fd, "    BTA info tag: %d\n", p_scb->q_tag);

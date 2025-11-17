@@ -110,8 +110,6 @@ struct Ascs::service_impl {
     std::map<uint8_t, Ascs::AseState> last_notified_ase_state_by_ase_id;
   };
 
-  base::WeakPtrFactory<Ascs::service_impl> weak_factory_{this};
-
   int server_if_ = 0;
   Ascs::Callbacks* callbacks_ = nullptr;
   GattClientDataTracker<AscDevice> device_tracker_;
@@ -126,6 +124,11 @@ struct Ascs::service_impl {
 
   // Control point operation data
   std::map<RawAddress, AseCtpRequest> pending_request_by_address_;
+
+  // Member variables should appear before the WeakPtrFactory, to ensure
+  // that any WeakPtrs are invalidated before its members
+  // variable's destructors are executed, rendering them invalid.
+  base::WeakPtrFactory<Ascs::service_impl> weak_factory_{this};
 
   service_impl() = default;
   ~service_impl() {

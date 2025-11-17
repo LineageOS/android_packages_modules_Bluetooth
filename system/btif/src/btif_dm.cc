@@ -54,6 +54,7 @@
 #include <optional>
 
 #include "advertise_data_parser.h"
+#include "bluetooth/types/bt_transport.h"
 #include "bt_dev_class.h"
 #include "bt_name.h"
 #include "bta/dm/bta_dm_disc.h"
@@ -175,6 +176,7 @@ struct btif_dm_pairing_cb_t {
   btif_dm_ble_cb_t ble;
   uint8_t fail_reason;
   bool is_ctkd;
+  PairingType pairing_type;
 
   enum ServiceDiscoveryState { NOT_STARTED, SCHEDULED, FINISHED };
 
@@ -560,7 +562,8 @@ static void wipe_le_audio_metadata_cache_for_pairing_device() {
 }
 
 static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
-                               bt_bond_state_t state) {
+                               tBT_TRANSPORT transport, bt_bond_state_t state,
+                               PairingType pairing_type = kPairingTypeNone) {
   btif_stats_add_bond_event(bd_addr, BTIF_DM_FUNC_BOND_STATE_CHANGED, state);
 
   if ((pairing_cb.state == state) && (state == BT_BOND_STATE_BONDING)) {
@@ -570,8 +573,8 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
               kBtmLogTagCallback, bd_addr, "Bond state changed",
               std::format("Crosskey bt_status:{} bond_state:{} reason:{}", bt_status_text(status),
                           state, hci_reason_code_text(to_hci_reason_code(pairing_cb.fail_reason))));
-      GetInterfaceToProfiles()->events->invoke_bond_state_changed_cb(status, bd_addr, state,
-                                                                     pairing_cb.fail_reason);
+      GetInterfaceToProfiles()->events->invoke_bond_state_changed_cb(
+              status, bd_addr, transport, state, pairing_type, pairing_cb.fail_reason);
     }
     return;
   }
@@ -584,12 +587,13 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
   }
 
   log::info(
-          "Bond state changed to state={}[0:none, 1:bonding, "
-          "2:bonded],prev_state={}, sdp_attempts={}",
-          state, pairing_cb.state, pairing_cb.sdp_attempts);
+          "{}[{}] Bond state changed to state={}[0:none, 1:bonding, "
+          "2:bonded],prev_state={}, sdp_attempts={}, pairing_algorithm={}",
+          bd_addr, bt_transport_text(transport), state, pairing_cb.state, pairing_cb.sdp_attempts,
+          pairing_type.algorithm);
 
-  if (com::android::bluetooth::flags::enable_autonomous_repairing() && btm_is_bond_lost(bd_addr) &&
-      (state == BT_BOND_STATE_NONE)) {
+  if (com::android::bluetooth::flags::autonomous_repairing_initiation() &&
+      btm_is_bond_lost(bd_addr) && (state == BT_BOND_STATE_NONE)) {
     const std::string bd_addr_str = bd_addr.ToString();
     bt_status_t fetch_status = btif_in_fetch_bonded_device(bd_addr_str);
     log::debug(
@@ -615,8 +619,8 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Bond state changed",
                  std::format("bt_status:{} bond_state:{} reason:{}", bt_status_text(status), state,
                              hci_reason_code_text(to_hci_reason_code(pairing_cb.fail_reason))));
-  GetInterfaceToProfiles()->events->invoke_bond_state_changed_cb(status, bd_addr, state,
-                                                                 pairing_cb.fail_reason);
+  GetInterfaceToProfiles()->events->invoke_bond_state_changed_cb(
+          status, bd_addr, transport, state, pairing_type, pairing_cb.fail_reason);
 
   if ((state == BT_BOND_STATE_NONE) && (pairing_cb.bd_addr != bd_addr) && is_bonding_or_sdp()) {
     log::warn("Ignoring bond state changed for unexpected device: {} pairing: {}", bd_addr,
@@ -800,7 +804,7 @@ bool is_le_audio_capable_during_service_discovery(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 static void btif_dm_cb_create_bond(const RawAddress bd_addr, tBT_TRANSPORT transport) {
-  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
+  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, transport, BT_BOND_STATE_BONDING);
 
   if (transport == BT_TRANSPORT_AUTO && is_device_le_audio_capable(bd_addr) &&
       !btif_check_cod_phone(bd_addr)) {
@@ -850,7 +854,7 @@ static void btif_dm_cb_create_bond(const RawAddress bd_addr, tBT_TRANSPORT trans
  *
  ******************************************************************************/
 static void btif_dm_cb_create_bond_le(const RawAddress bd_addr, tBLE_ADDR_TYPE addr_type) {
-  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
+  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_LE, BT_BOND_STATE_BONDING);
   /* Handle only LE create bond with random address case */
   BTA_DmAddBleDevice(bd_addr, addr_type, BT_DEVICE_TYPE_BLE);
   BTA_DmBond(bd_addr, addr_type, BT_TRANSPORT_LE, BT_DEVICE_TYPE_BLE);
@@ -925,7 +929,7 @@ uint16_t btif_dm_get_connection_state_sync(const RawAddress& bd_addr) {
             promise.set_value(state);
           },
           bd_addr, std::move(promise)));
-  log::assert_that(BT_STATUS_SUCCESS == status, "assert failed: BT_STATUS_SUCCESS == status");
+  log::assert_that(status, "assert failed: status is success");
   return future.get();
 }
 
@@ -969,8 +973,13 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
     return;
   }
 
+  pairing_cb.pairing_type = {.algorithm = p_pin_req->pairing_algorithm,
+                             .legacy_variant = p_pin_req->min_16_digit
+                                                       ? LegacyPairingVariant::PIN_16
+                                                       : LegacyPairingVariant::PIN};
   pairing_cb.bond_type = BOND_TYPE_PERSISTENT;
-  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
+  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_BR_EDR, BT_BOND_STATE_BONDING,
+                     pairing_cb.pairing_type);
 
   cod = devclass2uint(p_pin_req->dev_class);
 
@@ -981,7 +990,7 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
 
   /* check for auto pair possibility only if bond was initiated by local device
    */
-  if (!(com::android::bluetooth::flags::enable_autonomous_repairing() &&
+  if (!(com::android::bluetooth::flags::autonomous_repairing_initiation() &&
         btm_is_bond_lost(bd_addr)) &&
       pairing_cb.is_local_initiated && !p_pin_req->min_16_digit) {
     if (btif_check_cod(&bd_addr, COD_AV_HEADSETS) || btif_check_cod(&bd_addr, COD_AV_HEADPHONES) ||
@@ -1022,7 +1031,7 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
                  std::format("name:\"{}\" min16:{:c}", reinterpret_cast<char const*>(bd_name.name),
                              p_pin_req->min_16_digit ? 'T' : 'F'));
   GetInterfaceToProfiles()->events->invoke_pin_request_cb(
-          bd_addr, bd_name, cod, p_pin_req->min_16_digit, p_pin_req->pairing_algorithm);
+          bd_addr, bd_name, cod, p_pin_req->min_16_digit, pairing_cb.pairing_type.algorithm);
 }
 
 static tBTM_BOND_TYPE btif_dm_get_pairing_type(const RawAddress& bd_addr, const bool just_works,
@@ -1072,7 +1081,12 @@ static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
   }
 
   bool api_initiated_bonding = (pairing_cb.state == BT_BOND_STATE_BONDING);
-  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
+  pairing_cb.pairing_type = {.algorithm = p_ssp_cfm_req->pairing_algorithm,
+                             .variant = p_ssp_cfm_req->just_works
+                                                ? BT_SSP_VARIANT_CONSENT
+                                                : BT_SSP_VARIANT_PASSKEY_CONFIRMATION};
+  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_BR_EDR, BT_BOND_STATE_BONDING,
+                     pairing_cb.pairing_type);
 
   pairing_cb.is_ssp = true;
   pairing_cb.sdp_attempts = 0;
@@ -1089,10 +1103,9 @@ static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Ssp request",
                  std::format("just_works:{:c} pin:{}", (p_ssp_cfm_req->just_works) ? 'T' : 'F',
                              p_ssp_cfm_req->num_val));
-  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
-          bd_addr,
-          p_ssp_cfm_req->just_works ? BT_SSP_VARIANT_CONSENT : BT_SSP_VARIANT_PASSKEY_CONFIRMATION,
-          p_ssp_cfm_req->num_val, p_ssp_cfm_req->pairing_algorithm);
+  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(bd_addr, pairing_cb.pairing_type.variant,
+                                                          p_ssp_cfm_req->num_val,
+                                                          pairing_cb.pairing_type.algorithm);
 }
 
 static void btif_dm_ssp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
@@ -1113,15 +1126,18 @@ static void btif_dm_ssp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
 
   RawAddress bd_addr = p_ssp_key_notif->bd_addr;
 
-  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
+  pairing_cb.pairing_type = {.algorithm = p_ssp_key_notif->pairing_algorithm,
+                             .variant = BT_SSP_VARIANT_PASSKEY_NOTIFICATION};
+  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_BR_EDR, BT_BOND_STATE_BONDING,
+                     pairing_cb.pairing_type);
   pairing_cb.is_ssp = true;
   pairing_cb.bond_type = BOND_TYPE_PERSISTENT;
 
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Ssp request",
                  std::format("passkey:{}", p_ssp_key_notif->passkey));
-  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
-          bd_addr, BT_SSP_VARIANT_PASSKEY_NOTIFICATION, p_ssp_key_notif->passkey,
-          p_ssp_key_notif->pairing_algorithm);
+  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(bd_addr, pairing_cb.pairing_type.variant,
+                                                          p_ssp_key_notif->passkey,
+                                                          pairing_cb.pairing_type.algorithm);
 }
 
 /*******************************************************************************
@@ -1165,7 +1181,8 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
         if (pairing_cb.bond_type == BOND_TYPE_TEMPORARY) {
           log::debug("sending BT_BOND_STATE_NONE for Temp pairing");
           btif_storage_remove_bonded_device(&bd_addr);
-          bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_NONE);
+          bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_BR_EDR, BT_BOND_STATE_NONE,
+                             pairing_cb.pairing_type);
           return;
         }
       }
@@ -1200,6 +1217,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
     if (pairing_cb.state == BT_BOND_STATE_BONDING && p_auth_cmpl->is_ctkd) {
       log::debug("bonding initiated due to cross key pairing");
       is_crosskey = true;
+      pairing_cb.pairing_type.algorithm = PairingAlgorithm::SC;
     }
 
     if (!is_crosskey) {
@@ -1217,7 +1235,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
       skip_sdp = true;
     }
     if (!pairing_cb.is_local_initiated && skip_sdp) {
-      bond_state_changed(status, bd_addr, state);
+      bond_state_changed(status, bd_addr, BT_TRANSPORT_BR_EDR, state, pairing_cb.pairing_type);
 
       log::warn("Incoming HID Connection");
       bt_property_t prop;
@@ -1250,7 +1268,8 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
           GetInterfaceToProfiles()->events->invoke_address_consolidate_cb(pairing_cb.bd_addr,
                                                                           bd_addr);
         } else {
-          bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDED);
+          bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_BR_EDR, BT_BOND_STATE_BONDED,
+                             pairing_cb.pairing_type);
         }
 
         if (pairing_cb.sdp_over_classic ==
@@ -1327,14 +1346,14 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
     // Report bond state change to java only if we are bonding to a device or
     // a device is removed from the pairing list.
     if (pairing_cb.state == BT_BOND_STATE_BONDING) {
-      bond_state_changed(status, bd_addr, state);
+      bond_state_changed(status, bd_addr, BT_TRANSPORT_BR_EDR, state, pairing_cb.pairing_type);
     }
 
     // If the bonding is initiated by local device (on a bond los device) and it fails, we should
     // disconnect the link. This should be done at the end, as if the auth_cmpl failed because of
     // any reason, it will be handled above (such as re-pairing attempt).
     // This reason: HCI_ERR_ILLEGAL_COMMAND is used to report AUTH_COMPL from BTM_SecBond().
-    if (com::android::bluetooth::flags::enable_autonomous_repairing() &&
+    if (com::android::bluetooth::flags::autonomous_repairing_initiation() &&
         btm_is_bond_lost(bd_addr) && p_auth_cmpl->fail_reason == HCI_ERR_ILLEGAL_COMMAND) {
       log::info("Disconnecting the link, because create bond failed.");
       btif_dm_disconnect_acl(
@@ -2448,7 +2467,7 @@ void btif_dm_sec_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
       if (is_bonding_or_sdp()) {
         bd_addr = pairing_cb.bd_addr;
         btm_set_bond_type_dev(pairing_cb.bd_addr, BOND_TYPE_UNKNOWN);
-        bond_state_changed((bt_status_t)p_data->bond_cancel_cmpl.result, bd_addr,
+        bond_state_changed((bt_status_t)p_data->bond_cancel_cmpl.result, bd_addr, BT_TRANSPORT_AUTO,
                            BT_BOND_STATE_NONE);
       }
       break;
@@ -2466,7 +2485,7 @@ void btif_dm_sec_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
 
       GetInterfaceToProfiles()->removeDeviceFromProfiles(bd_addr);
       btif_storage_remove_bonded_device(&bd_addr);
-      bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_NONE);
+      bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_AUTO, BT_BOND_STATE_NONE);
       break;
 
     case BTA_DM_BLE_KEY_EVT:
@@ -2480,7 +2499,8 @@ void btif_dm_sec_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
       now*/
       if (pairing_cb.state != BT_BOND_STATE_BONDING) {
         log::verbose("Bond state not sent to App so far.Notify the app now");
-        bond_state_changed(BT_STATUS_SUCCESS, p_data->ble_key.bd_addr, BT_BOND_STATE_BONDING);
+        bond_state_changed(BT_STATUS_SUCCESS, p_data->ble_key.bd_addr, BT_TRANSPORT_LE,
+                           BT_BOND_STATE_BONDING);
       } else if (pairing_cb.bd_addr != p_data->ble_key.bd_addr) {
         log::error("BD mismatch discard BLE key_type={}", p_data->ble_key.key_type);
         break;
@@ -2872,16 +2892,18 @@ void btif_dm_create_bond_out_of_band(const RawAddress bd_addr, tBT_TRANSPORT tra
           // TODO(181889116):
           // Upgrade to support p256 (for now we just ignore P256)
           // because the controllers do not yet support it.
-          bond_state_changed(BT_STATUS_UNSUPPORTED, bd_addr, BT_BOND_STATE_NONE);
+          bond_state_changed(BT_STATUS_UNSUPPORTED, bd_addr, BT_TRANSPORT_BR_EDR,
+                             BT_BOND_STATE_NONE);
           return;
         default:
           log::error("Invalid data present for controller:{}", oob_cb.data_present);
-          bond_state_changed(BT_STATUS_PARM_INVALID, bd_addr, BT_BOND_STATE_NONE);
+          bond_state_changed(BT_STATUS_PARM_INVALID, bd_addr, BT_TRANSPORT_BR_EDR,
+                             BT_BOND_STATE_NONE);
           return;
       }
       pairing_cb.is_local_initiated = true;
       log::error("Classic not implemented yet");
-      bond_state_changed(BT_STATUS_UNSUPPORTED, bd_addr, BT_BOND_STATE_NONE);
+      bond_state_changed(BT_STATUS_UNSUPPORTED, bd_addr, BT_TRANSPORT_BR_EDR, BT_BOND_STATE_NONE);
       return;
     case BT_TRANSPORT_LE: {
       // Guess default RANDOM for address type for LE
@@ -2917,7 +2939,7 @@ void btif_dm_create_bond_out_of_band(const RawAddress bd_addr, tBT_TRANSPORT tra
     }
     default:
       log::error("Invalid transport: {}", transport);
-      bond_state_changed(BT_STATUS_PARM_INVALID, bd_addr, BT_BOND_STATE_NONE);
+      bond_state_changed(BT_STATUS_PARM_INVALID, bd_addr, BT_TRANSPORT_AUTO, BT_BOND_STATE_NONE);
       return;
   }
 }
@@ -2956,7 +2978,7 @@ void btif_dm_cancel_bond(const RawAddress bd_addr) {
       } else {
         BTA_DmConfirm(bd_addr, false);
         BTA_DmBondCancel(bd_addr);
-        if (!com::android::bluetooth::flags::enable_autonomous_repairing() ||
+        if (!com::android::bluetooth::flags::autonomous_repairing_initiation() ||
             !btm_is_bond_lost(bd_addr)) {
           btif_storage_remove_bonded_device(&bd_addr);
         }
@@ -2986,7 +3008,7 @@ void btif_dm_remove_bond(const RawAddress bd_addr) {
 
   BTM_LogHistory(kBtmLogTag, bd_addr, "Remove bond");
 
-  if (com::android::bluetooth::flags::enable_autonomous_repairing()) {
+  if (com::android::bluetooth::flags::autonomous_repairing_initiation()) {
     btm_update_bond_lost(bd_addr, false);  // reset the bond lost status
   }
   btif_stats_add_bond_event(bd_addr, BTIF_DM_FUNC_REMOVE_BOND, pairing_cb.state);
@@ -3651,7 +3673,7 @@ bool btif_dm_proc_rmt_oob(const RawAddress& bd_addr, Octet16* p_c, Octet16* p_r)
   (void)fread(p_r->data(), 1, kOctet16Length, fp);
   fclose(fp);
 
-  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
+  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_BR_EDR, BT_BOND_STATE_BONDING);
   return true;
 }
 
@@ -3669,7 +3691,10 @@ static void btif_dm_ble_passkey_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif)
                                 p_ssp_key_notif->dev_class, (tBT_DEVICE_TYPE)dev_type);
   bd_addr = p_ssp_key_notif->bd_addr;
 
-  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
+  pairing_cb.pairing_type = {.algorithm = p_ssp_key_notif->pairing_algorithm,
+                             .variant = BT_SSP_VARIANT_PASSKEY_NOTIFICATION};
+  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_LE, BT_BOND_STATE_BONDING,
+                     pairing_cb.pairing_type);
   pairing_cb.is_ssp = false;
 
   if (com_android_bluetooth_flags_passkey_entry_pairing_approval()) {
@@ -3681,9 +3706,9 @@ static void btif_dm_ble_passkey_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif)
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Ssp request",
                  std::format("passkey:{}", p_ssp_key_notif->passkey));
 
-  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
-          bd_addr, BT_SSP_VARIANT_PASSKEY_NOTIFICATION, p_ssp_key_notif->passkey,
-          p_ssp_key_notif->pairing_algorithm);
+  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(bd_addr, pairing_cb.pairing_type.variant,
+                                                          p_ssp_key_notif->passkey,
+                                                          pairing_cb.pairing_type.algorithm);
 }
 
 static bool btif_dm_ble_is_temp_pairing(RawAddress& bd_addr, bool ctkd) {
@@ -3758,6 +3783,9 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
 
   RawAddress bd_addr = p_auth_cmpl->bd_addr;
   pairing_cb.is_ctkd = (pairing_cb.is_ctkd || p_auth_cmpl->is_ctkd);
+  if (pairing_cb.is_ctkd) {
+    pairing_cb.pairing_type.algorithm = PairingAlgorithm::SC;
+  }
 
   /* Clear OOB data */
   memset(&oob_cb, 0, sizeof(oob_cb));
@@ -3852,16 +3880,17 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
   if (state == BT_BOND_STATE_BONDED && !pairing_cb.static_bdaddr.IsEmpty() &&
       bd_addr != pairing_cb.static_bdaddr) {
     // Report RPA bonding state to Java in crosskey paring
-    bond_state_changed(status, bd_addr, BT_BOND_STATE_BONDING);
+    bond_state_changed(status, bd_addr, BT_TRANSPORT_LE, BT_BOND_STATE_BONDING,
+                       pairing_cb.pairing_type);
   }
-  bond_state_changed(status, bd_addr, state);
+  bond_state_changed(status, bd_addr, BT_TRANSPORT_LE, state, pairing_cb.pairing_type);
 
   // If the bonding is initiated by local device (on a bond los device) and it fails, we should
   // disconnect the link. This should be done at the end, as if the auth_cmpl failed because of
   // any reason, it will be handled above (such as re-pairing attempt).
   // This reason: HCI_ERR_ILLEGAL_COMMAND is used to report AUTH_COMPL from BTM_SecBond().
-  if (com::android::bluetooth::flags::enable_autonomous_repairing() && btm_is_bond_lost(bd_addr) &&
-      p_auth_cmpl->fail_reason == HCI_ERR_ILLEGAL_COMMAND) {
+  if (com::android::bluetooth::flags::autonomous_repairing_initiation() &&
+      btm_is_bond_lost(bd_addr) && p_auth_cmpl->fail_reason == HCI_ERR_ILLEGAL_COMMAND) {
     log::info("Disconnecting the link, because create bond failed.");
     btif_dm_disconnect_acl(
             bd_addr, BT_TRANSPORT_AUTO);  // `btif_dm_disconnect_acl` will identify the transport.
@@ -3980,7 +4009,11 @@ static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool consent
 
   RawAddress bd_addr = p_ble_req->bd_addr;
 
-  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
+  pairing_cb.pairing_type = {
+          .algorithm = p_ble_req->pairing_algorithm,
+          .variant = consent ? BT_SSP_VARIANT_CONSENT : BT_SSP_VARIANT_PARTICIPATION};
+  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_LE, BT_BOND_STATE_BONDING,
+                     pairing_cb.pairing_type);
 
   pairing_cb.bond_type = BOND_TYPE_PERSISTENT;
   pairing_cb.is_le_only = true;
@@ -3990,9 +4023,8 @@ static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool consent
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "SSP ble request",
                  consent ? "BT_SSP_VARIANT_CONSENT" : "BT_SSP_VARIANT_PARTICIPATION");
 
-  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
-          bd_addr, consent ? BT_SSP_VARIANT_CONSENT : BT_SSP_VARIANT_PARTICIPATION, 0,
-          p_ble_req->pairing_algorithm);
+  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(bd_addr, pairing_cb.pairing_type.variant,
+                                                          0, pairing_cb.pairing_type.algorithm);
 }
 
 /*******************************************************************************
@@ -4004,22 +4036,25 @@ static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool consent
  * Returns          void
  *
  ******************************************************************************/
-static void btif_dm_ble_passkey_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
+static void btif_dm_ble_passkey_req_evt(tBTA_DM_PIN_REQ* p_passkey_req) {
   bt_bdname_t bd_name;
   uint32_t cod;
   int dev_type;
 
   /* Remote name update */
-  if (!btif_get_device_type(p_pin_req->bd_addr, &dev_type)) {
+  if (!btif_get_device_type(p_passkey_req->bd_addr, &dev_type)) {
     dev_type = BT_DEVICE_TYPE_BLE;
   }
-  btif_update_remote_properties(p_pin_req->bd_addr, p_pin_req->bd_name, p_pin_req->dev_class,
-                                (tBT_DEVICE_TYPE)dev_type);
+  btif_update_remote_properties(p_passkey_req->bd_addr, p_passkey_req->bd_name,
+                                p_passkey_req->dev_class, (tBT_DEVICE_TYPE)dev_type);
 
-  RawAddress bd_addr = p_pin_req->bd_addr;
-  bd_name_copy(bd_name.name, p_pin_req->bd_name);
+  RawAddress bd_addr = p_passkey_req->bd_addr;
+  bd_name_copy(bd_name.name, p_passkey_req->bd_name);
 
-  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
+  pairing_cb.pairing_type = {.algorithm = p_passkey_req->pairing_algorithm,
+                             .variant = BT_SSP_VARIANT_PASSKEY_CONFIRMATION};
+  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_LE, BT_BOND_STATE_BONDING,
+                     pairing_cb.pairing_type);
   pairing_cb.is_le_only = true;
   pairing_cb.bond_type = BOND_TYPE_PERSISTENT;
 
@@ -4029,7 +4064,7 @@ static void btif_dm_ble_passkey_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
                  std::format("name:'{}'", reinterpret_cast<char const*>(bd_name.name)));
 
   GetInterfaceToProfiles()->events->invoke_pin_request_cb(bd_addr, bd_name, cod, false,
-                                                          p_pin_req->pairing_algorithm);
+                                                          pairing_cb.pairing_type.algorithm);
 }
 
 static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF* p_notif_req) {
@@ -4042,7 +4077,10 @@ static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF* p_notif_req) {
   btif_update_remote_properties(p_notif_req->bd_addr, p_notif_req->bd_name, p_notif_req->dev_class,
                                 BT_DEVICE_TYPE_BLE);
 
-  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
+  pairing_cb.pairing_type = {.algorithm = p_notif_req->pairing_algorithm,
+                             .variant = BT_SSP_VARIANT_PASSKEY_CONFIRMATION};
+  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_LE, BT_BOND_STATE_BONDING,
+                     pairing_cb.pairing_type);
   pairing_cb.is_ssp = false;
   pairing_cb.is_le_only = true;
   pairing_cb.is_le_nc = true;
@@ -4051,9 +4089,9 @@ static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF* p_notif_req) {
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Ssp request",
                  std::format("passkey:{}", p_notif_req->passkey));
 
-  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
-          bd_addr, BT_SSP_VARIANT_PASSKEY_CONFIRMATION, p_notif_req->passkey,
-          p_notif_req->pairing_algorithm);
+  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(bd_addr, pairing_cb.pairing_type.variant,
+                                                          p_notif_req->passkey,
+                                                          pairing_cb.pairing_type.algorithm);
 }
 
 static void btif_dm_ble_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
@@ -4076,7 +4114,7 @@ static void btif_dm_ble_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
   btif_update_remote_properties(req_oob_type->bd_addr, req_oob_type->bd_name,
                                 req_oob_type->dev_class, BT_DEVICE_TYPE_BLE);
 
-  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
+  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_LE, BT_BOND_STATE_BONDING);
   pairing_cb.is_ssp = false;
   pairing_cb.is_le_only = true;
   pairing_cb.is_le_nc = false;
@@ -4128,7 +4166,7 @@ static void btif_dm_ble_sc_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
   btif_update_remote_properties(req_oob_type->bd_addr, oob_data_to_use.device_name,
                                 req_oob_type->dev_class, BT_DEVICE_TYPE_BLE);
 
-  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
+  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_LE, BT_BOND_STATE_BONDING);
   pairing_cb.is_ssp = false;
   // TODO: we can derive classic pairing from this one
   pairing_cb.is_le_only = true;

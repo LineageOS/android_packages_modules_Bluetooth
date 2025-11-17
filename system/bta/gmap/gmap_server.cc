@@ -233,8 +233,8 @@ void GmapServer::OnGattServerRegister(tBTA_GATTS *p_data) {
 
   log::info("add service");
   BTA_GATTS_AddService(server_if_, service,
-                       base::BindRepeating([](tGATT_STATUS status, int server_if,
-                                              std::vector<btgatt_db_element_t> service) {
+                       base::BindOnce([](tGATT_STATUS status, int server_if,
+                                         std::vector<btgatt_db_element_t> service) {
                          OnServiceAdded(status, server_if, service);
                        }));
 }

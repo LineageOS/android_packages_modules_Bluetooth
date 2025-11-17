@@ -120,3 +120,33 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "hogp_cancel_gatt_if_policy_forbidden"
+    namespace: "bluetooth"
+    description: "Take out the bonded-but-not-connected HoGP device from the accept list when policy is changed to forbidden"
+    bug: "459303232"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "le_hid_connection_policy_suspend"
+    namespace: "bluetooth"
+    description: "Change connection policy for LE hid to forbid reconnect and restore the policy after resume"
+    bug: "459908685"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "hid_always_unbond_on_virtual_unplug"
+    namespace: "bluetooth"
+    description: "Don't do additional checks of whether CoD is HID device when unbonding from VUP"
+    bug: "460703858"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

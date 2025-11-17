@@ -19,7 +19,7 @@ package com.android.bluetooth.le_scan
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
 import android.os.UserHandle
-import com.android.bluetooth.le_scan.ScanUtil.scanModeToString
+import com.android.bluetooth.le_scan.ScanUtil.toBuilder
 import java.util.Objects
 import java.util.function.Consumer
 
@@ -41,6 +41,8 @@ private constructor(
     val hasDisavowedLocation: Boolean = false,
     val associatedDevices: List<String> = emptyList(),
 ) {
+    val isFiltered = filters.isNotEmpty()
+
     var started = false
     var appDied = false
     var appScanStats: AppScanStats? = null
@@ -157,8 +159,7 @@ private constructor(
     override fun toString() =
         "ScanClient(" +
             (appScanStats?.let { "${it.name}, " } ?: "") +
-            "id=$scannerId, " +
-            "mode[${scanModeToString(scanModeApp)}, used=${scanModeToString(settings.scanMode)}])"
+            "id=$scannerId, mode[${ScanMode(scanModeApp)}, used=${ScanMode(settings.scanMode)}])"
 
     fun ifAppScanStatsPresent(action: Consumer<AppScanStats>) =
         appScanStats?.let { action.accept(it) }
@@ -173,17 +174,7 @@ private constructor(
             return false
         }
 
-        settings =
-            ScanSettings.Builder()
-                .setScanMode(newScanMode)
-                .setCallbackType(settings.callbackType)
-                .setScanResultType(settings.scanResultType)
-                .setReportDelay(settings.reportDelayMillis)
-                .setNumOfMatches(settings.numOfMatches)
-                .setMatchMode(settings.matchMode)
-                .setLegacy(settings.legacy)
-                .setPhy(settings.phy)
-                .build()
+        settings = settings.toBuilder().setScanMode(newScanMode).build()
         return true
     }
 }

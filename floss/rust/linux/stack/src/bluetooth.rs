@@ -969,12 +969,12 @@ impl Bluetooth {
     // TODO(b/328675014): Add BtAddrType and BtTransport parameters
     pub(crate) fn get_hid_report_internal(
         &mut self,
-        mut addr: RawAddress,
+        addr: RawAddress,
         report_type: BthhReportType,
         report_id: u8,
     ) -> BtStatus {
         self.hh.as_mut().unwrap().get_report(
-            &mut addr,
+            addr,
             BtAddrType::Public,
             BtTransport::Auto,
             report_type,
@@ -986,13 +986,13 @@ impl Bluetooth {
     // TODO(b/328675014): Add BtAddrType and BtTransport parameters
     pub(crate) fn set_hid_report_internal(
         &mut self,
-        mut addr: RawAddress,
+        addr: RawAddress,
         report_type: BthhReportType,
         report: String,
     ) -> BtStatus {
         let mut rb = report.clone().into_bytes();
         self.hh.as_mut().unwrap().set_report(
-            &mut addr,
+            addr,
             BtAddrType::Public,
             BtTransport::Auto,
             report_type,
@@ -1001,14 +1001,10 @@ impl Bluetooth {
     }
 
     // TODO(b/328675014): Add BtAddrType and BtTransport parameters
-    pub(crate) fn send_hid_data_internal(
-        &mut self,
-        mut addr: RawAddress,
-        data: String,
-    ) -> BtStatus {
+    pub(crate) fn send_hid_data_internal(&mut self, addr: RawAddress, data: String) -> BtStatus {
         let mut rb = data.clone().into_bytes();
         self.hh.as_mut().unwrap().send_data(
-            &mut addr,
+            addr,
             BtAddrType::Public,
             BtTransport::Auto,
             rb.as_mut_slice(),
@@ -1016,8 +1012,8 @@ impl Bluetooth {
     }
 
     // TODO(b/328675014): Add BtAddrType and BtTransport parameters
-    pub(crate) fn send_hid_virtual_unplug_internal(&mut self, mut addr: RawAddress) -> BtStatus {
-        self.hh.as_mut().unwrap().virtual_unplug(&mut addr, BtAddrType::Public, BtTransport::Auto)
+    pub(crate) fn send_hid_virtual_unplug_internal(&mut self, addr: RawAddress) -> BtStatus {
+        self.hh.as_mut().unwrap().virtual_unplug(addr, BtAddrType::Public, BtTransport::Auto)
     }
 
     /// Returns all bonded and connected devices.
@@ -1162,7 +1158,7 @@ impl Bluetooth {
                         ));
                     }
                     props.push(BluetoothProperty::RemoteRssi(result.rssi));
-                    props.push(BluetoothProperty::RemoteAddrType((result.addr_type as u32).into()));
+                    props.push(BluetoothProperty::RemoteAddrType(result.addr_type.into()));
                     props
                 };
 
@@ -1397,7 +1393,7 @@ impl Bluetooth {
                                 // and BtTransport from
                                 // BluetoothDevice instead of default
                                 let status = self.hh.as_ref().unwrap().connect(
-                                    &mut addr.clone(),
+                                    addr.clone(),
                                     BtAddrType::Public,
                                     BtTransport::Auto,
                                 );
@@ -2815,7 +2811,7 @@ impl IBluetooth for Bluetooth {
                                 // correct reconnection behavior based
                                 // on device instead of the default
                                 self.hh.as_ref().unwrap().disconnect(
-                                    &mut addr.clone(),
+                                    addr.clone(),
                                     BtAddrType::Public,
                                     BtTransport::Auto,
                                     /*reconnect_allowed=*/ true,
@@ -3059,9 +3055,8 @@ impl BtifHHCallbacks for Bluetooth {
             );
             // TODO(b/329837967): Determine correct reconnection
             // behavior based on device instead of the default
-            let mut address = address;
             self.hh.as_ref().unwrap().disconnect(
-                &mut address,
+                address.clone(),
                 address_type,
                 transport,
                 /*reconnect_allowed=*/ true,

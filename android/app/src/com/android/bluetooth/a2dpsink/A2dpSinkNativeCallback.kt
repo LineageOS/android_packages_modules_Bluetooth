@@ -19,10 +19,8 @@ package com.android.bluetooth.a2dpsink
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.profile.NativeCallback
 
-class A2dpSinkNativeCallback(
-    private val adapterService: AdapterService,
-    private val service: A2dpSinkService,
-) : NativeCallback {
+class A2dpSinkNativeCallback(adapterService: AdapterService, private val service: A2dpSinkService) :
+    NativeCallback(adapterService) {
 
     /** For the JNI to send messages about connection state changes */
     fun onConnectionStateChanged(address: ByteArray, state: Int) =
@@ -34,6 +32,4 @@ class A2dpSinkNativeCallback(
     /** For the JNI to send messages about audio configuration changes */
     fun onAudioConfigChanged(address: ByteArray, sampleRate: Int, channelCount: Int) =
         service.onAudioConfigChangedFromNative(getDevice(address), sampleRate, channelCount)
-
-    private fun getDevice(address: ByteArray) = adapterService.getDeviceFromByte(address)
 }

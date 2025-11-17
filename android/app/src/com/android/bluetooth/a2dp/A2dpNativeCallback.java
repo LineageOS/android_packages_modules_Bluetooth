@@ -22,7 +22,6 @@ import android.annotation.NonNull;
 import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothCodecConfig;
 import android.bluetooth.BluetoothCodecStatus;
-import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
@@ -31,20 +30,15 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Arrays;
 
-class A2dpNativeCallback implements NativeCallback {
+class A2dpNativeCallback extends NativeCallback {
     private static final String TAG = A2dpNativeCallback.class.getSimpleName();
 
-    private final AdapterService mAdapterService;
     private final A2dpService mA2dpService;
 
     @VisibleForTesting
     A2dpNativeCallback(@NonNull AdapterService adapterService, @NonNull A2dpService a2dpService) {
-        mAdapterService = requireNonNull(adapterService);
+        super(adapterService);
         mA2dpService = requireNonNull(a2dpService);
-    }
-
-    private BluetoothDevice getDevice(byte[] address) {
-        return mAdapterService.getDeviceFromByte(address);
     }
 
     @VisibleForTesting

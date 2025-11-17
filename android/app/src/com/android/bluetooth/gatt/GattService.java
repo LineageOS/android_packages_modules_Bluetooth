@@ -157,7 +157,7 @@ public class GattService extends ProfileService {
     /**
      * Set of restricted (which require a BLUETOOTH_PRIVILEGED permission) handles per connectionId.
      */
-    final Map<Integer, Set<Integer>> mRestrictedHandles = new HashMap<>();
+    private final Map<Integer, Set<Integer>> mRestrictedHandles = new HashMap<>();
 
     /**
      * HashMap used to synchronize writeCharacteristic calls mapping remote device to available
@@ -377,14 +377,22 @@ public class GattService extends ProfileService {
     }
 
     ContextMap<IBluetoothGattCallback> getClientMap() {
+        enforceGattThread();
         return mClientMap;
     }
 
     ContextMap<IBluetoothGattServerCallback> getServerMap() {
+        enforceGattThread();
         return mServerManager.getServerMap();
     }
 
+    Map<Integer, Set<Integer>> getRestrictedHandles() {
+        enforceGattThread();
+        return mRestrictedHandles;
+    }
+
     Map<BluetoothDevice, Integer> getCachedPeripheralLatency() {
+        enforceGattThread();
         return mCachedPeripheralLatency;
     }
 
@@ -1008,6 +1016,7 @@ public class GattService extends ProfileService {
             boolean isDirect,
             int transport,
             boolean opportunistic,
+            boolean autoMtuEnabled,
             AttributionSource source) {
         enforceGattThread();
         var clientApp = mClientMap.getByCallbackId(callback);
@@ -1020,14 +1029,15 @@ public class GattService extends ProfileService {
                 TAG,
                 ("clientConnect(): device=" + device)
                         + (", transport=" + transportToString(transport))
-                        + (", addressType=" + addressType + ", isDirect=" + isDirect)
-                        + (", opportunistic=" + opportunistic));
+                        + (", addressType=" + addressType)
+                        + (", isDirect=" + isDirect)
+                        + (", opportunistic=" + opportunistic)
+                        + (", autoMtuEnabled=" + autoMtuEnabled));
         mMetricsReporter.logAppPackage(clientIf, device, source.getUid());
         mMetricsReporter.logClientForegroundInfo(source.getUid(), isDirect);
         mMetricsReporter.logGattConnectionStateChange(
                 device, clientIf, BluetoothProtoEnums.CONNECTION_STATE_CONNECTING, -1);
         mMetricsReporter.logConnect(device, isDirect, source.getUid());
-
         int preferredMtu = 0;
 
         final var packageName = source.getPackageName();
@@ -1077,7 +1087,8 @@ public class GattService extends ProfileService {
                 transport,
                 opportunistic,
                 preferredMtu,
-                preferRelaxMode);
+                preferRelaxMode,
+                autoMtuEnabled);
     }
 
     void clientDisconnect(
@@ -1437,7 +1448,7 @@ public class GattService extends ProfileService {
                 companionManager.getGattConnParameters(
                         device, CompanionManager.GATT_CONN_LATENCY, connectionPriority);
 
-        final int timeout = 500; // 5s. Link supervision timeout is measured in N * 10ms
+        final int timeout = companionManager.getGattSupervisionTimeout(device);
         Log.d(
                 TAG,
                 ("connectionParameterUpdate(): device=" + device + ", params=" + connectionPriority)
@@ -1506,7 +1517,8 @@ public class GattService extends ProfileService {
             maxLatency = mCachedPeripheralLatency.getOrDefault(device, 0);
         }
 
-        int supervisionTimeout = 500; // 5s. Link supervision timeout is measured in N * 10ms
+        final int supervisionTimeout =
+                getAdapterService().getCompanionManager().getGattSupervisionTimeout(device);
 
         // Confirm flag config
         if (Flags.leSubrateManager()) {
@@ -1689,6 +1701,12 @@ public class GattService extends ProfileService {
             task.cancel(true);
         }
         return defaultValue;
+    }
+
+    // TODO(b/377424060) Remove when "use internal APIs instead of framework APIs" is fixed
+    boolean isOnGattThread() {
+        if (!Flags.gattThread() || Utils.isInstrumentationTestMode()) return false;
+        return mGattHandler.getLooper().isCurrentThread();
     }
 
     void enforceGattThread() {

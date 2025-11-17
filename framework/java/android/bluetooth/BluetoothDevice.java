@@ -254,11 +254,12 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * Broadcast Action: Indicates a change in the bond state of a remote device. For example, if a
      * device is bonded (paired).
      *
-     * <p>Always contains the extra fields {@link #EXTRA_DEVICE}, {@link #EXTRA_BOND_STATE} and
-     * {@link #EXTRA_PREVIOUS_BOND_STATE}.
+     * <p>Always contains the extra fields {@link #EXTRA_DEVICE}, {@link #EXTRA_BOND_STATE}, and
+     * {@link #EXTRA_PREVIOUS_BOND_STATE}. Also, from {@link
+     * android.os.Build.VERSION_CODES#CINNAMON_BUN}, {@link #EXTRA_PAIRING_CONTEXT} will be
+     * available. An extra field {@link #EXTRA_UNBOND_REASON} will be present, if the {@link
+     * #EXTRA_BOND_STATE} is {@link #BOND_NONE}.
      */
-    // Note: When EXTRA_BOND_STATE is BOND_NONE then this will also
-    // contain a hidden extra field EXTRA_UNBOND_REASON with the result code.
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -548,6 +549,29 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @SuppressLint("ActionValue")
     public static final String EXTRA_PAIRING_INITIATOR =
             "android.bluetooth.device.extra.PAIRING_INITIATOR";
+
+    /**
+     * Used as an int extra field in {@link #ACTION_PAIRING_REQUEST} and {@link
+     * #ACTION_BOND_STATE_CHANGED} intents which indicates the pairing context. Possible values for
+     * {@link #ACTION_PAIRING_REQUEST} are: {@link #PAIRING_CONTEXT_USER_PARTICIPATION_REQUESTED}, {@link
+     * #PAIRING_CONTEXT_USER_APPROVAL_REQUESTED}, and {@link #PAIRING_CONTEXT_REPAIRING}, while the
+     * possible value for {@link #ACTION_BOND_STATE_CHANGED} is {@link #PAIRING_CONTEXT_REPAIRING}.
+     */
+    @FlaggedApi(Flags.FLAG_AUTONOMOUS_REPAIRING_INITIATION)
+    @SuppressLint("ActionValue")
+    public static final String EXTRA_PAIRING_CONTEXT =
+            "android.bluetooth.device.extra.PAIRING_CONTEXT";
+
+    /**
+     * Used as an int extra field in {@link #ACTION_PAIRING_REQUEST} intents which indicates the
+     * pairing algorithm used. Possible values are: {@link #PAIRING_ALGORITHM_LE_LEGACY}, {@link
+     * #PAIRING_ALGORITHM_BREDR_LEGACY}, {@link #PAIRING_ALGORITHM_BREDR_SSP}, and {@link
+     * #PAIRING_ALGORITHM_SC}.
+     */
+    @FlaggedApi(Flags.FLAG_PROVIDE_PAIRING_ALGO)
+    @SuppressLint("ActionValue")
+    public static final String EXTRA_PAIRING_ALGORITHM =
+            "android.bluetooth.device.extra.PAIRING_ALGORITHM";
 
     /**
      * Used as an int extra field in {@link #ACTION_ENCRYPTION_CHANGE} intents as the size of the
@@ -959,7 +983,20 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @SdkConstant(SdkConstantType.BROADCAST_INTENT_ACTION)
     public static final String ACTION_NAME_FAILED = "android.bluetooth.device.action.NAME_FAILED";
 
-    /** Broadcast Action: This intent is used to broadcast PAIRING REQUEST */
+    /**
+     * Broadcast Action: This intent is used to broadcast a PAIRING REQUEST.
+     *
+     * <p>It will contain the following extra fields:
+     *
+     * <ul>
+     *   <li>{@link #EXTRA_DEVICE}
+     *   <li>{@link #EXTRA_PAIRING_KEY}
+     *   <li>{@link #EXTRA_PAIRING_CONTEXT}, post {@link
+     *       android.os.Build.VERSION_CODES#CINNAMON_BUN} only
+     *   <li>{@link #EXTRA_PAIRING_ALGORITHM}, post {@link
+     *       android.os.Build.VERSION_CODES#CINNAMON_BUN} only
+     * </ul>
+     */
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -1138,6 +1175,23 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     /** An existing bond was explicitly revoked */
     @Hide @SystemApi public static final int UNBOND_REASON_REMOVED = 9;
 
+    /** Indicates the pairing variant used. */
+    @Hide
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(
+            prefix = "PAIRING_VARIANT_",
+            value = {
+                PAIRING_VARIANT_PIN,
+                PAIRING_VARIANT_PASSKEY,
+                PAIRING_VARIANT_PASSKEY_CONFIRMATION,
+                PAIRING_VARIANT_CONSENT,
+                PAIRING_VARIANT_DISPLAY_PASSKEY,
+                PAIRING_VARIANT_DISPLAY_PIN,
+                PAIRING_VARIANT_OOB_CONSENT,
+                PAIRING_VARIANT_PIN_16_DIGITS,
+            })
+    public @interface PairingVariant {}
+
     /** The user will be prompted to enter a pin or an app will enter a pin for user. */
     public static final int PAIRING_VARIANT_PIN = 0;
 
@@ -1176,6 +1230,54 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * user.
      */
     @Hide @SystemApi public static final int PAIRING_VARIANT_PIN_16_DIGITS = 7;
+
+    /** Indicates that user participation is requested to initiate the pairing process. */
+    @FlaggedApi(Flags.FLAG_AUTONOMOUS_REPAIRING_INITIATION)
+    public static final int PAIRING_CONTEXT_USER_PARTICIPATION_REQUESTED = 0;
+
+    /**
+     * Indicates that the pairing process is initiated, and user approval is requested to complete
+     * the pairing process.
+     */
+    @FlaggedApi(Flags.FLAG_AUTONOMOUS_REPAIRING_INITIATION)
+    public static final int PAIRING_CONTEXT_USER_APPROVAL_REQUESTED = 1;
+
+    /** Indicates that the re-pairing process is initiated. */
+    @FlaggedApi(Flags.FLAG_AUTONOMOUS_REPAIRING_INITIATION)
+    public static final int PAIRING_CONTEXT_REPAIRING = 2;
+
+    /** Indicates the pairing algorithm used. */
+    @Hide
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(
+            prefix = "PAIRING_ALGORITHM_",
+            value = {
+                PAIRING_ALGORITHM_LE_LEGACY,
+                PAIRING_ALGORITHM_BREDR_LEGACY,
+                PAIRING_ALGORITHM_BREDR_SSP,
+                PAIRING_ALGORITHM_SC,
+            })
+    @FlaggedApi(Flags.FLAG_PROVIDE_PAIRING_ALGO)
+    public @interface PairingAlgorithm {}
+
+    /** Indicates the pairing algorithm used is LE legacy. */
+    @FlaggedApi(Flags.FLAG_PROVIDE_PAIRING_ALGO)
+    public static final int PAIRING_ALGORITHM_LE_LEGACY = 0;
+
+    /** Indicates the pairing algorithm used is BR/EDR legacy. */
+    @FlaggedApi(Flags.FLAG_PROVIDE_PAIRING_ALGO)
+    public static final int PAIRING_ALGORITHM_BREDR_LEGACY = 1;
+
+    /** Indicates the pairing algorithm used is BR/EDR SSP. */
+    @FlaggedApi(Flags.FLAG_PROVIDE_PAIRING_ALGO)
+    public static final int PAIRING_ALGORITHM_BREDR_SSP = 2;
+
+    /**
+     * Indicates the pairing algorithm used is Secure Connections. This is applicable for both
+     * BR/EDR and LE transports.
+     */
+    @FlaggedApi(Flags.FLAG_PROVIDE_PAIRING_ALGO)
+    public static final int PAIRING_ALGORITHM_SC = 3;
 
     /**
      * Contains the {@link android.os.ParcelUuid}s of the remote device which is a parcelable
@@ -2391,7 +2493,54 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     }
 
     /**
-     * Perform a service discovery on the remote device to get the UUIDs supported.
+     * Performs a service discovery on the remote device to get the UUIDs supported, allowing the
+     * caller to specify the transport.
+     *
+     * <p>This API is asynchronous. When discovery completes, the {@link #ACTION_UUID} intent is
+     * sent, containing the UUIDs supported by the remote device for the specified transport(s).
+     * Cached UUIDs may be sent if an error occurs or if discovery is lengthy. Use {@link #getUuids}
+     * to retrieve cached UUIDs without initiating discovery.
+     *
+     * <p>The implementation already handles invalid transport arguments by throwing
+     * IllegalArgumentException and returns false when Bluetooth is disabled, covering the contract
+     * verification points.
+     *
+     * @param transport The transport to use for discovery: {@link #TRANSPORT_BREDR} for Classic
+     *     Bluetooth (SDP), {@link #TRANSPORT_LE} for Bluetooth Low Energy (GATT), or {@link
+     *     #TRANSPORT_AUTO} to discover on all applicable transports (typically BR/EDR and LE for
+     *     dual-mode devices). * @return False if the check fails, True if the process of initiating
+     *     an ACL connection to the remote device was started or cached UUIDs will be broadcast with
+     *     the specific transport.
+     */
+    @FlaggedApi(Flags.FLAG_EXPLICIT_UUID_TRANSPORT_API)
+    @RequiresBluetoothConnectPermission
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    public boolean fetchUuids(@Transport int transport) {
+        if (DBG) log("fetchUuids(transport=" + transport);
+        if (transport != TRANSPORT_AUTO
+                && transport != TRANSPORT_BREDR
+                && transport != TRANSPORT_LE) {
+            throw new IllegalArgumentException(
+                    "Invalid transport value: "
+                            + transport
+                            + ". Must be TRANSPORT_AUTO, "
+                            + "TRANSPORT_BREDR, or TRANSPORT_LE.");
+        }
+        final IBluetooth service = getService();
+        if (service == null || !isBluetoothEnabled()) {
+            Log.e(TAG, "BT not enabled. Cannot fetchUuids");
+            return false;
+        }
+        try {
+            return service.fetchRemoteUuids(this, transport, mAttributionSource);
+        } catch (RemoteException e) {
+            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+        }
+        return false;
+    }
+
+    /**
+     * Performs a service discovery on the remote device to get the UUIDs supported.
      *
      * <p>This API is asynchronous and {@link #ACTION_UUID} intent is sent, with the UUIDs supported
      * by the remote end. If there is an error in getting the SDP records or if the process takes a
@@ -2402,7 +2551,10 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *
      * @return False if the check fails, True if the process of initiating an ACL connection to the
      *     remote device was started or cached UUIDs will be broadcast.
+     * @deprecated Use {@link #fetchUuids(int)}.
      */
+    @FlaggedApi(Flags.FLAG_EXPLICIT_UUID_TRANSPORT_API)
+    @Deprecated
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -2430,7 +2582,10 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * @param transport - provide type of transport (e.g. LE or Classic).
      * @return False if the check fails, True if the process of initiating an ACL connection to the
      *     remote device was started or cached UUIDs will be broadcast with the specific transport.
+     * @deprecated Use {@link #fetchUuids(int)}.
      */
+    @FlaggedApi(Flags.FLAG_EXPLICIT_UUID_TRANSPORT_API)
+    @Deprecated
     @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission
@@ -2445,7 +2600,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else {
             try {
-                return service.fetchRemoteUuids(this, transport, mAttributionSource);
+                return service.fetchRemoteUuidsWithSdp(this, transport, mAttributionSource);
             } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
@@ -3069,6 +3224,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                                 new BluetoothUtils.SynchronousExecutor(), callback)
                         .setAutoConnectEnabled(autoConnect)
                         .setTransport(TRANSPORT_AUTO)
+                        .setAutomaticMtuEnabled(false)
                         .build()));
     }
 
@@ -3098,6 +3254,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                                 new BluetoothUtils.SynchronousExecutor(), callback)
                         .setAutoConnectEnabled(autoConnect)
                         .setTransport(transport)
+                        .setAutomaticMtuEnabled(false)
                         .build()));
     }
 
@@ -3135,6 +3292,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                                 new BluetoothUtils.SynchronousExecutor(), callback)
                         .setAutoConnectEnabled(autoConnect)
                         .setTransport(transport)
+                        .setAutomaticMtuEnabled(false)
                         .build()));
     }
 
@@ -3178,6 +3336,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                                 callback)
                         .setAutoConnectEnabled(autoConnect)
                         .setTransport(transport)
+                        .setAutomaticMtuEnabled(false)
                         .build()));
     }
 
@@ -3224,6 +3383,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                         .setAutoConnectEnabled(autoConnect)
                         .setTransport(transport)
                         .setOpportunisticEnabled(opportunistic)
+                        .setAutomaticMtuEnabled(false)
                         .build()));
     }
 
@@ -3951,6 +4111,36 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             }
         }
         return false;
+    }
+
+    /**
+     * Returns the bond status of this device.
+     *
+     * @param transport the transport to get the bond status for.
+     * @return The bond status of this device, or null if the device is not bonded.
+     */
+    @FlaggedApi(Flags.FLAG_ENABLE_GET_BOND_STATUS)
+    @RequiresBluetoothConnectPermission
+    @RequiresPermission(BLUETOOTH_CONNECT)
+    public @Nullable BondStatus getBondStatus(@SupportedTransport int transport) {
+        if (transport != TRANSPORT_BREDR && transport != TRANSPORT_LE) {
+            throw new IllegalArgumentException("Transport(" + transport + ") is not supported");
+        }
+
+        final IBluetooth service = getService();
+        if (service == null || !isBluetoothEnabled()) {
+            Log.e(TAG, "Bluetooth is not enabled. Cannot get bond status.");
+            if (DBG) log(Log.getStackTraceString(new Throwable()));
+        } else {
+            try {
+                BondStatus.InnerParcel parcel =
+                        service.getBondStatus(this, mAttributionSource, transport);
+                return (parcel != null) ? parcel.toBondStatus() : null;
+            } catch (RemoteException e) {
+                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+            }
+        }
+        return null;
     }
 
     private static void log(String msg) {

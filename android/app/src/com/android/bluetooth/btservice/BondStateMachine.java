@@ -84,6 +84,10 @@ public final class BondStateMachine extends StateMachine {
     static final String KEY_OOBDATAP256 = "oobdatap256";
     static final String KEY_DISPLAY_PASSKEY = "display_passkey";
     static final String KEY_DELAY_RETRY_COUNT = "delay_retry_count";
+    static final String KEY_BOND_TRANSPORT = "bond_transport";
+    static final String KEY_PAIRING_ALGORITHM = "pairing_algorithm";
+    static final String KEY_PAIRING_VARIANT = "pairing_variant";
+    static final String KEY_PAIRING_CONTEXT = "pairing_context";
 
     // Bond retry values
     private static final int BOND_MAX_RETRIES = 30;
@@ -193,7 +197,8 @@ public final class BondStateMachine extends StateMachine {
                         transitionTo(mStateBonding);
                     } else if (newState == BluetoothDevice.BOND_NONE) {
                         // The link key was deleted by the stack
-                        handleBondStateChanged(dev, newState, 0);
+                        handleBondStateChanged(
+                                dev, BluetoothDevice.TRANSPORT_AUTO, newState, 0, 0, 0);
                     } else {
                         logW("StateIdle: Bond state change - Invalid state, ignoring.");
                     }
@@ -254,6 +259,9 @@ public final class BondStateMachine extends StateMachine {
                 case MESSAGE_BOND_STATE_CHANGE:
                     int newState = msg.arg1;
                     int reason = convertBondStateChangeReason(msg.arg2);
+                    int transport = msg.getData().getInt(KEY_BOND_TRANSPORT);
+                    int pairingAlgorithm = msg.getData().getInt(KEY_PAIRING_ALGORITHM);
+                    int pairingVariant = msg.getData().getInt(KEY_PAIRING_VARIANT);
 
                     if (newState != BluetoothDevice.BOND_BONDING) {
                         mDevices.remove(dev);
@@ -269,7 +277,8 @@ public final class BondStateMachine extends StateMachine {
                     } else if (!mDevices.contains(dev)) {
                         result = true;
                     }
-                    handleBondStateChanged(dev, newState, reason);
+                    handleBondStateChanged(
+                            dev, transport, newState, pairingAlgorithm, pairingVariant, reason);
                     break;
                 case MESSAGE_PAIRING_REQUEST:
                     if (devProp == null) {
@@ -283,7 +292,9 @@ public final class BondStateMachine extends StateMachine {
                     sendPairingRequestIntent(
                             devProp.getDevice(),
                             displayPasskey ? Optional.of(passkey) : Optional.empty(),
-                            variant);
+                            variant,
+                            msg.getData().getInt(KEY_PAIRING_CONTEXT),
+                            msg.getData().getInt(KEY_PAIRING_ALGORITHM));
                     break;
                 case MESSAGE_PIN_REQUEST:
                     if (devProp == null) {
@@ -307,23 +318,20 @@ public final class BondStateMachine extends StateMachine {
                         sendPairingRequestIntent(
                                 devProp.getDevice(),
                                 Optional.of(pin),
-                                BluetoothDevice.PAIRING_VARIANT_DISPLAY_PIN);
+                                BluetoothDevice.PAIRING_VARIANT_DISPLAY_PIN,
+                                msg.getData().getInt(KEY_PAIRING_CONTEXT),
+                                msg.getData().getInt(KEY_PAIRING_ALGORITHM));
                         break;
                     }
 
-                    if (msg.arg2 == 1) { // Minimum 16 digit pin required here
-                        sendPairingRequestIntent(
-                                devProp.getDevice(),
-                                Optional.empty(),
-                                BluetoothDevice.PAIRING_VARIANT_PIN_16_DIGITS);
-                    } else {
-                        // In MESSAGE_PIN_REQUEST, there is no passkey to display. So do not send
-                        // the EXTRA_PAIRING_KEY type in the intent.
-                        sendPairingRequestIntent(
-                                devProp.getDevice(),
-                                Optional.empty(),
-                                BluetoothDevice.PAIRING_VARIANT_PIN);
-                    }
+                    sendPairingRequestIntent(
+                            devProp.getDevice(),
+                            Optional.empty(),
+                            (msg.arg2 == 1)
+                                    ? BluetoothDevice.PAIRING_VARIANT_PIN_16_DIGITS
+                                    : BluetoothDevice.PAIRING_VARIANT_PIN,
+                            msg.getData().getInt(KEY_PAIRING_CONTEXT),
+                            msg.getData().getInt(KEY_PAIRING_ALGORITHM));
                     break;
                 case MESSAGE_UUID_UPDATE:
                 case MESSAGE_SERVICE_DISCOVERY_TIMEOUT:
@@ -404,7 +412,7 @@ public final class BondStateMachine extends StateMachine {
             boolean transition) {
         int bondState = mRemoteDevices.getBondState(dev);
         if (bondState != BluetoothDevice.BOND_NONE
-                && !(Flags.enableAutonomousRepairing() && mAdapterService.isBondLost(dev))) {
+                && !(Flags.autonomousRepairingInitiation() && mAdapterService.isBondLost(dev))) {
             logW("createBond: " + dev + " already in " + bondStateToString(bondState) + " state");
             return false;
         }
@@ -471,9 +479,14 @@ public final class BondStateMachine extends StateMachine {
 
             // Using UNBOND_REASON_REMOVED for legacy reason
             handleBondStateChanged(
-                    dev, BluetoothDevice.BOND_NONE, BluetoothDevice.UNBOND_REASON_REMOVED);
+                    dev,
+                    BluetoothDevice.TRANSPORT_AUTO,
+                    BluetoothDevice.BOND_NONE,
+                    0,
+                    0,
+                    BluetoothDevice.UNBOND_REASON_REMOVED);
 
-            if (Flags.enableAutonomousRepairing() && mAdapterService.isBondLost(dev)) {
+            if (Flags.autonomousRepairingInitiation() && mAdapterService.isBondLost(dev)) {
                 // If it's a bond-loss scenario, disconnect the ACL.
                 // TODO (b/440298497): It is possible that createBond() is called on the device by
                 // any 1P/3P app and the bond loss was already detected. In this case, we should not
@@ -490,11 +503,21 @@ public final class BondStateMachine extends StateMachine {
     }
 
     private void sendPairingRequestIntent(
-            BluetoothDevice device, Optional<Integer> maybePin, int variant) {
+            BluetoothDevice device,
+            Optional<Integer> maybePin,
+            int variant,
+            int pairingContext,
+            int pairingAlgo) {
         Intent intent = new Intent(BluetoothDevice.ACTION_PAIRING_REQUEST);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         maybePin.ifPresent(pin -> intent.putExtra(BluetoothDevice.EXTRA_PAIRING_KEY, pin));
         intent.putExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, variant);
+        if (Flags.autonomousRepairingInitiation()) {
+            intent.putExtra(BluetoothDevice.EXTRA_PAIRING_CONTEXT, pairingContext);
+        }
+        if (Flags.providePairingAlgo()) {
+            intent.putExtra(BluetoothDevice.EXTRA_PAIRING_ALGORITHM, pairingAlgo);
+        }
         intent.setFlags(Intent.FLAG_RECEIVER_FOREGROUND);
         // Workaround for Android Auto until pre-accepting pairing requests is added.
         intent.addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
@@ -502,7 +525,11 @@ public final class BondStateMachine extends StateMachine {
                 "sendPairingRequestIntent: ACTION_PAIRING_REQUEST device="
                         + device
                         + ", variant="
-                        + variant);
+                        + variant
+                        + ", pairingContext="
+                        + pairingContext
+                        + ", pairingAlgo="
+                        + pairingAlgo);
         mAdapterService.sendOrderedBroadcast(
                 intent,
                 BLUETOOTH_CONNECT,
@@ -521,7 +548,13 @@ public final class BondStateMachine extends StateMachine {
      * should wait before broadcasting the new state. This also logs the bond state changes.
      */
     @VisibleForTesting
-    void handleBondStateChanged(BluetoothDevice device, int newState, int reason) {
+    void handleBondStateChanged(
+            BluetoothDevice device,
+            int transport,
+            int newState,
+            int pairingAlgorithm,
+            int pairingVariant,
+            int reason) {
 
         // If new bond state is invalid, immediately return.
         if (newState < BluetoothDevice.BOND_NONE || newState > BluetoothDevice.BOND_BONDED) {
@@ -534,10 +567,11 @@ public final class BondStateMachine extends StateMachine {
         int oldState = devProp != null ? devProp.getBondState() : BluetoothDevice.BOND_NONE;
 
         // Internal bond state update.
-        if (!(Flags.enableAutonomousRepairing() && mAdapterService.isBondLost(device))) {
+        if (!(Flags.autonomousRepairingInitiation() && mAdapterService.isBondLost(device))) {
             // Skip updating the bond state to RemoteDevices to protect updating the bonded devices
             // list.
-            mRemoteDevices.onBondStateChange(device, newState);
+            mRemoteDevices.onBondStateChange(
+                    device, transport, newState, pairingAlgorithm, pairingVariant);
         }
 
         // If the device is waiting for UUIDs the last state was bonded.
@@ -619,7 +653,7 @@ public final class BondStateMachine extends StateMachine {
         mAdapterService.handleBondStateChanged(device, oldState, newState);
 
         // Skip broadcasting the bond state changed if the device is in bond-loss state.
-        if (!(Flags.enableAutonomousRepairing() && mAdapterService.isBondLost(device))) {
+        if (!(Flags.autonomousRepairingInitiation() && mAdapterService.isBondLost(device))) {
             broadcastBondStateChangeIntent(device, oldState, newState, reason);
         }
     }
@@ -669,6 +703,11 @@ public final class BondStateMachine extends StateMachine {
         if (newState == BluetoothDevice.BOND_NONE) {
             intent.putExtra(BluetoothDevice.EXTRA_UNBOND_REASON, reason);
         }
+        if (Flags.autonomousRepairingInitiation() && mAdapterService.isBondLost(device)) {
+            intent.putExtra(
+                    BluetoothDevice.EXTRA_PAIRING_CONTEXT,
+                    BluetoothDevice.PAIRING_CONTEXT_REPAIRING);
+        }
 
         if (Flags.onlyBroadcastToLocalUser()) {
             mAdapterService.sendBroadcast(
@@ -680,7 +719,14 @@ public final class BondStateMachine extends StateMachine {
     }
 
     /** Callback from native indicating a bond state change */
-    void bondStateChangeCallback(int status, byte[] address, int newState, int hciReason) {
+    void bondStateChangeCallback(
+            int status,
+            byte[] address,
+            int transport,
+            int newState,
+            int pairingAlgorithm,
+            int pairingVariant,
+            int hciReason) {
         BluetoothDevice device = mRemoteDevices.getDevice(address);
 
         if (device == null) {
@@ -694,8 +740,12 @@ public final class BondStateMachine extends StateMachine {
                         + status
                         + " Address: "
                         + device
+                        + " Transport: "
+                        + transport
                         + " newState: "
                         + bondStateToString(newState)
+                        + " pairingAlgorithm: "
+                        + pairingAlgorithm
                         + " hciReason: "
                         + hciReason);
 
@@ -711,6 +761,9 @@ public final class BondStateMachine extends StateMachine {
             msg.arg1 = BluetoothDevice.BOND_NONE;
         }
         msg.arg2 = status;
+        msg.getData().putInt(KEY_BOND_TRANSPORT, transport);
+        msg.getData().putInt(KEY_PAIRING_ALGORITHM, pairingAlgorithm);
+        msg.getData().putInt(KEY_PAIRING_VARIANT, pairingVariant);
 
         sendMessage(msg);
     }
@@ -719,15 +772,20 @@ public final class BondStateMachine extends StateMachine {
     void sspRequestCallback(byte[] address, int pairingVariant, int passkey, int pairingAlgorithm) {
         int variant;
         boolean displayPasskey = false;
+        int context = BluetoothDevice.PAIRING_CONTEXT_USER_APPROVAL_REQUESTED;
         switch (pairingVariant) {
             case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_CONFIRMATION -> {
                 variant = BluetoothDevice.PAIRING_VARIANT_PASSKEY_CONFIRMATION;
                 displayPasskey = true;
             }
 
-            case AbstractionLayer.BT_SSP_VARIANT_CONSENT,
-                    AbstractionLayer.BT_SSP_VARIANT_PARTICIPATION ->
+            case AbstractionLayer.BT_SSP_VARIANT_CONSENT ->
                     variant = BluetoothDevice.PAIRING_VARIANT_CONSENT;
+
+            case AbstractionLayer.BT_SSP_VARIANT_PARTICIPATION -> {
+                variant = BluetoothDevice.PAIRING_VARIANT_CONSENT;
+                context = BluetoothDevice.PAIRING_CONTEXT_USER_PARTICIPATION_REQUESTED;
+            }
 
             case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_ENTRY ->
                     variant = BluetoothDevice.PAIRING_VARIANT_PASSKEY;
@@ -764,6 +822,15 @@ public final class BondStateMachine extends StateMachine {
             logW("sspRequestCallback: Unknown device:" + device);
         }
 
+        if (context == BluetoothDevice.PAIRING_CONTEXT_USER_APPROVAL_REQUESTED) {
+            // Identify whether its re-pairing or pairing
+            if (device != null
+                    && Flags.autonomousRepairingInitiation()
+                    && mAdapterService.isBondLost(device)) {
+                context = BluetoothDevice.PAIRING_CONTEXT_REPAIRING;
+            }
+        }
+
         BluetoothStatsLog.write(
                 BluetoothStatsLog.BLUETOOTH_BOND_STATE_CHANGED,
                 mAdapterService.obfuscateAddress(device),
@@ -779,6 +846,8 @@ public final class BondStateMachine extends StateMachine {
             msg.arg1 = passkey;
             Bundle bundle = new Bundle();
             bundle.putByte(KEY_DISPLAY_PASSKEY, (byte) 1 /* true */);
+            bundle.putInt(KEY_PAIRING_CONTEXT, context);
+            bundle.putInt(KEY_PAIRING_ALGORITHM, pairingAlgorithm);
             msg.setData(bundle);
         }
         msg.arg2 = variant;
@@ -819,6 +888,14 @@ public final class BondStateMachine extends StateMachine {
 
         Message msg = obtainMessage(MESSAGE_PIN_REQUEST);
         msg.obj = bdDevice;
+        Bundle bundle = new Bundle();
+        bundle.putInt(
+                KEY_PAIRING_CONTEXT,
+                (Flags.autonomousRepairingInitiation() && mAdapterService.isBondLost(bdDevice))
+                        ? BluetoothDevice.PAIRING_CONTEXT_REPAIRING
+                        : BluetoothDevice.PAIRING_CONTEXT_USER_APPROVAL_REQUESTED);
+        bundle.putInt(KEY_PAIRING_ALGORITHM, pairingAlgorithm);
+        msg.setData(bundle);
         msg.arg2 = min16Digits ? 1 : 0; // Use arg2 to pass the min16Digit boolean
 
         sendMessage(msg);

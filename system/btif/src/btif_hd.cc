@@ -347,8 +347,8 @@ static void bte_hd_evt(tBTA_HD_EVT event, tBTA_HD* p_data) {
       break;
   }
 
-  status = BtifStatus(static_cast<BtifStatusCode>(btif_transfer_context(btif_hd_upstreams_evt, (uint16_t)event, (char*)p_data, param_len,
-                                 p_copy_cback)));
+  status = btif_transfer_context(btif_hd_upstreams_evt, (uint16_t)event, (char*)p_data, param_len,
+                                 p_copy_cback);
 
   ASSERTC(status, "context transfer failed", status);
 }

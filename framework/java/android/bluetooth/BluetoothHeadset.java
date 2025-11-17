@@ -919,8 +919,8 @@ public final class BluetoothHeadset implements BluetoothProfile {
      * audio connection.
      *
      * @return whether the connection was successfully initiated or an error code on failure
-     * @deprecated Starting with API 37, applications should use {@link
-     *     android.telecom.InCallService#requestBluetoothAudio(BluetoothDevice)}
+     * @deprecated Starting with {@link android.os.Build.VERSION_CODES#CINNAMON_BUN}, applications
+     *     should use {@link android.telecom.InCallService#requestBluetoothAudio(BluetoothDevice)}
      */
     @Hide
     @FlaggedApi(Flags.FLAG_DEPRECATE_CONNECT_AUDIO)
@@ -973,8 +973,8 @@ public final class BluetoothHeadset implements BluetoothProfile {
      * #STATE_AUDIO_DISCONNECTED}.
      *
      * @return whether the disconnection was initiated successfully or an error code on failure
-     * @deprecated Starting with API 37, applications should use {@link
-     *     android.telecom.InCallService#requestBluetoothAudio(BluetoothDevice)}
+     * @deprecated Starting with {@link android.os.Build.VERSION_CODES#CINNAMON_BUN}, applications
+     *     should use {@link android.telecom.InCallService#requestBluetoothAudio(BluetoothDevice)}
      */
     @Hide
     @FlaggedApi(Flags.FLAG_DEPRECATE_CONNECT_AUDIO)

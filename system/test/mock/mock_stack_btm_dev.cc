@@ -36,6 +36,7 @@ namespace mock {
 namespace stack_btm_dev {
 
 struct btm_find_dev btm_find_dev;
+struct btm_get_dev btm_get_dev;
 struct BTM_Sec_AddressKnown BTM_Sec_AddressKnown;
 
 struct maybe_resolve_address maybe_resolve_address;
@@ -63,9 +64,13 @@ DEV_CLASS BTM_SecReadDevClass(const RawAddress& /* bd_addr */) {
   inc_func_call_count(__func__);
   return kDevClassEmpty;
 }
-BtmDevice* btm_find_dev(const RawAddress& bd_addr) {
+const BtmDevice* btm_find_dev(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_dev::btm_find_dev.body(bd_addr);
+}
+BtmDevice* btm_get_dev(const RawAddress& bd_addr) {
+  inc_func_call_count(__func__);
+  return test::mock::stack_btm_dev::btm_get_dev.body(bd_addr);
 }
 const BtmDevice* btm_find_dev_by_handle(uint16_t /* handle */) {
   inc_func_call_count(__func__);

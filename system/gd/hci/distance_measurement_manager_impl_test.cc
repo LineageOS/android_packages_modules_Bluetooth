@@ -17,6 +17,7 @@
 #include "hci/distance_measurement_manager_impl.h"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <gmock/gmock.h>
@@ -796,6 +797,7 @@ TEST_F(DistanceMeasurementManagerTest, fail_read_remote_cs_caps_complete_with_re
     cs_requester_.test_hci_layer_->IncomingLeMetaEvent(
             CsModule::GetRemoteSupportedCapabilitiesCompleteEvent(params.connection_handle,
                                                                   read_cs_complete_event));
+    cs_requester_.sync_client_handler();  // Ensure the event above is processed
     if (i < kMaxRetryCounterForReadRemoteCapability) {
       auto future = cs_requester_.fake_timer_advance(kCommandRetryIntervalMs);
       future.wait_for(kTimeout);
@@ -850,6 +852,7 @@ TEST_F(DistanceMeasurementManagerTest, fail_create_config_complete) {
     cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_CREATE_CONFIG);
     cs_requester_.test_hci_layer_->IncomingLeMetaEvent(
             CsModule::GetConfigCompleteEvent(params.connection_handle, cs_config_complete_event));
+    cs_requester_.sync_client_handler();  // Ensure event is processed, retry timer is set
     if (i < kMaxRetryCounterForCreateConfig) {
       auto future = cs_requester_.fake_timer_advance(kCommandRetryIntervalMs);
       future.wait_for(kTimeout);
@@ -893,6 +896,7 @@ TEST_F(DistanceMeasurementManagerTest, fail_set_procedure_parameters_with_retry)
     cs_requester_.test_hci_layer_->IncomingEvent(LeCsSetProcedureParametersCompleteBuilder::Create(
             /*num_hci_command_packets=*/static_cast<uint8_t>(0xEE),
             ErrorCode::INVALID_HCI_COMMAND_PARAMETERS, params.connection_handle));
+    cs_requester_.sync_client_handler();  // Ensure event is processed, retry timer is set
     if (i < kMaxRetryCounterForSetProcedureParameter) {
       auto future = cs_requester_.fake_timer_advance(kCommandRetryIntervalMs);
       future.wait_for(kTimeout);
@@ -962,6 +966,7 @@ TEST_F(DistanceMeasurementManagerTest, retry_fail_procedure_enable_command) {
     cs_requester_.test_hci_layer_->IncomingEvent(LeCsProcedureEnableStatusBuilder::Create(
             /*status=*/ErrorCode::COMMAND_DISALLOWED,
             /*num_hci_command_packets=*/0xff));
+    cs_requester_.sync_client_handler();  // Ensure event is processed, retry timer is set
     auto future = cs_requester_.fake_timer_advance(params.interval + 10);
     future.wait_for(kTimeout);
     cs_requester_.sync_client_handler();
@@ -1219,22 +1224,27 @@ TEST_F(DistanceMeasurementManagerTest, duplicated_requesting_session) {
   // start a new request after stop
   cs_requester_.StartMeasurement(params);
 
-  // Verify that LE_CS_SECURITY_ENABLE is sent upon restart
-  command_view = cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_SECURITY_ENABLE);
-  auto security_enable_view =
-          LeCsSecurityEnableView::Create(DistanceMeasurementCommandView::Create(command_view));
-  EXPECT_TRUE(security_enable_view.IsValid());
-  EXPECT_EQ(security_enable_view.GetConnectionHandle(), params.connection_handle);
-
-  // Allow the flow to continue to verify the next command
-  cs_requester_.test_hci_layer_->IncomingEvent(LeCsSecurityEnableStatusBuilder::Create(
-          /*status=*/ErrorCode::SUCCESS,
-          /*num_hci_command_packets=*/0xFF));
-  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(
-          LeCsSecurityEnableCompleteBuilder::Create(ErrorCode::SUCCESS, params.connection_handle));
   cs_requester_.sync_client_handler();
 
-  cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_SET_PROCEDURE_PARAMETERS);
+  if (com::android::bluetooth::flags::channel_sounding_26q1_fix()) {
+    // Verify that LE_CS_SECURITY_ENABLE is sent upon restart
+    command_view = cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_SECURITY_ENABLE);
+    auto security_enable_view =
+            LeCsSecurityEnableView::Create(DistanceMeasurementCommandView::Create(command_view));
+    EXPECT_TRUE(security_enable_view.IsValid());
+    EXPECT_EQ(security_enable_view.GetConnectionHandle(), params.connection_handle);
+
+    // Allow the flow to continue to verify the next command
+    cs_requester_.test_hci_layer_->IncomingEvent(LeCsSecurityEnableStatusBuilder::Create(
+            /*status=*/ErrorCode::SUCCESS,
+            /*num_hci_command_packets=*/0xFF));
+    cs_requester_.test_hci_layer_->IncomingLeMetaEvent(LeCsSecurityEnableCompleteBuilder::Create(
+            ErrorCode::SUCCESS, params.connection_handle));
+    cs_requester_.sync_client_handler();
+    cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_SET_PROCEDURE_PARAMETERS);
+  } else {
+    cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+  }
   cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
 }
 

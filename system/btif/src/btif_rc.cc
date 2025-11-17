@@ -96,6 +96,12 @@
 #define PLAY_STATUS_PLAYING 1
 #define BTIF_RC_NUM_CONN BT_RC_NUM_APP
 
+/* Configurable playback_position_changed_update interval */
+#define PLAY_POS_UPDATE_INTERVAL_PROPERTY \
+  "bluetooth.avrcp.controller.playback_pos_update_interval_sec"
+// Default interval associated with AVRC_EVT_PLAY_POS_CHANGED
+#define DEFAULT_PLAY_POS_UPDATE_INTERVAL_SEC 2
+
 #define CHECK_RC_CONNECTED(p_dev)                    \
   do {                                               \
     if ((p_dev) == NULL || !(p_dev)->rc_connected) { \
@@ -1164,7 +1170,8 @@ static void register_for_event_notification(btif_rc_supported_event_t* p_event,
   // interval is only valid for AVRC_EVT_PLAY_POS_CHANGED
   uint32_t interval_in_seconds = 0;
   if (p_event->event_id == AVRC_EVT_PLAY_POS_CHANGED) {
-    interval_in_seconds = 2;
+    interval_in_seconds = osi_property_get_int32(PLAY_POS_UPDATE_INTERVAL_PROPERTY,
+                                                 DEFAULT_PLAY_POS_UPDATE_INTERVAL_SEC);
   }
   BtStatus status = register_notification_cmd(p_event->event_id, interval_in_seconds, p_dev);
   if (!status) {

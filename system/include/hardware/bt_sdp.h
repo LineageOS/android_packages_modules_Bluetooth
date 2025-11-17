@@ -20,6 +20,7 @@
 #include <bluetooth/types/uuid.h>
 
 #include "bluetooth.h"
+#include "bt_status.h"
 
 #define SDP_OPP_SUPPORTED_FORMATS_MAX_LENGTH 15
 
@@ -132,7 +133,7 @@ typedef union {
 } bluetooth_sdp_record;
 
 /** Callback for SDP search */
-typedef void (*btsdp_search_callback)(bt_status_t status, const RawAddress& bd_addr,
+typedef void (*btsdp_search_callback)(BtStatus status, const RawAddress& bd_addr,
                                       const bluetooth::Uuid& uuid, int num_records,
                                       bluetooth_sdp_record* records);
 
@@ -147,13 +148,13 @@ typedef struct {
   size_t size;
 
   /** Register BT SDP search callbacks */
-  bt_status_t (*init)(btsdp_callbacks_t* callbacks);
+  BtStatus (*init)(btsdp_callbacks_t* callbacks);
 
   /** Unregister BT SDP */
-  bt_status_t (*deinit)();
+  BtStatus (*deinit)();
 
   /** Search for SDP records with specific uuid on remote device */
-  bt_status_t (*sdp_search)(RawAddress bd_addr, const bluetooth::Uuid& uuid);
+  BtStatus (*sdp_search)(RawAddress bd_addr, const bluetooth::Uuid& uuid);
 
   /**
    * Use listen in the socket interface to create rfcomm and/or l2cap PSM
@@ -168,10 +169,10 @@ typedef struct {
    * record_handle    (out)The corresponding record handle will be written to
    * this pointer.
    */
-  bt_status_t (*create_sdp_record)(bluetooth_sdp_record* record, int* record_handle);
+  BtStatus (*create_sdp_record)(bluetooth_sdp_record* record, int* record_handle);
 
   /** Remove a SDP record created by createSdpRecord */
-  bt_status_t (*remove_sdp_record)(int sdp_handle);
+  BtStatus (*remove_sdp_record)(int sdp_handle);
 } btsdp_interface_t;
 
 __END_DECLS

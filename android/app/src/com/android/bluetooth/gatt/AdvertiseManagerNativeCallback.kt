@@ -16,9 +16,13 @@
 
 package com.android.bluetooth.gatt
 
+import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.profile.NativeCallback
 
-class AdvertiseManagerNativeCallback(private val manager: AdvertiseManager) : NativeCallback {
+class AdvertiseManagerNativeCallback(
+    adapterService: AdapterService,
+    private val manager: AdvertiseManager,
+) : NativeCallback(adapterService) {
 
     fun onAdvertisingSetStarted(regId: Int, advertiserId: Int, txPower: Int, status: Int) {
         doOnAdvertiseThread { onAdvertisingSetStarted(regId, advertiserId, txPower, status) }

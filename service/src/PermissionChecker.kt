@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.server.bluetooth
 
 import android.Manifest.permission.BLUETOOTH_CONNECT
@@ -26,6 +27,10 @@ import android.content.AttributionSource
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.content.pm.PackageManager.MATCH_ANY_USER
+import android.content.pm.PackageManager.MATCH_SYSTEM_ONLY
+import android.content.pm.PackageManager.NameNotFoundException
+import android.content.pm.PackageManager.PackageInfoFlags
 import android.content.pm.PackageManager.SIGNATURE_MATCH
 import android.os.Process.NFC_UID
 import android.os.Process.ROOT_UID
@@ -45,6 +50,22 @@ class PermissionChecker(
     private val permissionManager: PermissionManager,
     private val attributionSource: AttributionSource,
 ) {
+
+    // We need to allow SystemUi to bypass some 'foreground user check'
+    // TODO: remove this hack and validate secondary user can still toggle via quick settings
+    private val systemUiUid: Int =
+        try {
+            val uid =
+                context.packageManager.getPackageUid(
+                    "com.android.systemui",
+                    PackageInfoFlags.of(MATCH_SYSTEM_ONLY.toLong()),
+                )
+            Log.d(TAG, "SystemUi's UID successfully detected: $uid")
+            uid
+        } catch (e: NameNotFoundException) {
+            Log.w(TAG, "Unable to resolve SystemUI's UID.")
+            -1
+        }
 
     // Throw an exception that will be catch prior to return to caller
     class BluetoothPermissionException(message: String? = null, cause: Throwable? = null) :
@@ -128,8 +149,8 @@ class PermissionChecker(
         val trustedAppId =
             UserHandle.getAppId(
                 try {
-                    packageManager.getPackageUid(name, PackageManager.MATCH_ANY_USER)
-                } catch (e: PackageManager.NameNotFoundException) {
+                    packageManager.getPackageUid(name, MATCH_ANY_USER)
+                } catch (e: NameNotFoundException) {
                     Log.w(TAG, "checkPackageName($appId, $name): Failed", e)
                     throw SecurityException(e.message)
                 }
@@ -148,7 +169,11 @@ class PermissionChecker(
 
         val callingAppId = UserHandle.getAppId(uid)
 
-        if (callingUser != foregroundUser && parentUser != foregroundUser) {
+        if (
+            callingUser != foregroundUser &&
+                parentUser != foregroundUser &&
+                callingAppId != systemUiUid // TODO remove foreground bypass
+        ) {
             throw BluetoothPermissionException(
                 "Not allowed for non-active and non system user." +
                     " callingUser=$callingUser" +
@@ -235,7 +260,7 @@ class PermissionChecker(
                     0,
                     UserHandle.getUserHandleForUid(source.uid),
                 )
-            } catch (e: PackageManager.NameNotFoundException) {
+            } catch (e: NameNotFoundException) {
                 Log.e(TAG, "Unknown package name")
                 return false
             }

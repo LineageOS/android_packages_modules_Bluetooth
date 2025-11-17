@@ -264,7 +264,7 @@ bool BTM_CanReadDiscoverableCharacteristics(const RawAddress& bd_addr) {
 
 // Return DEV_CLASS (uint8_t[3]) of bda
 DEV_CLASS btm_get_dev_class(const RawAddress& bda) {
-  BtmDevice* p_device = btm_find_dev(bda);
+  const BtmDevice* p_device = btm_find_dev(bda);
 
   if (p_device == nullptr) {
     log::error("No record found for bda: {}", bda);
@@ -276,7 +276,7 @@ DEV_CLASS btm_get_dev_class(const RawAddress& bda) {
 
 void BTM_update_version_info(const RawAddress& bd_addr,
                              const remote_version_info& remote_version_info) {
-  BtmDevice* p_device = btm_find_dev(bd_addr);
+  BtmDevice* p_device = btm_get_dev(bd_addr);
   if (p_device == nullptr) {
     return;
   }

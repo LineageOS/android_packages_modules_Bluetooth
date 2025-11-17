@@ -27,6 +27,7 @@
 #include "btif/avrcp/avrcp_service.h"
 #include "btif/include/btif_common.h"
 #include "btif/src/btif_rc.cc"
+#include "btif_status.h"
 #include "common/message_loop_thread.h"
 #include "device/include/interop.h"
 #include "include/hardware/bt_rc.h"
@@ -83,10 +84,10 @@ bool btif_av_is_sink_enabled(void) { return true; }
 RawAddress btif_av_sink_active_peer(void) { return RawAddress(); }
 RawAddress btif_av_source_active_peer(void) { return RawAddress(); }
 bool btif_av_stream_started_ready(const A2dpType /*local_a2dp_type*/) { return false; }
-bt_status_t btif_transfer_context(tBTIF_CBACK* /*p_cback*/, uint16_t /*event*/, char* /*p_params*/,
-                                  int /*param_len*/, tBTIF_COPY_CBACK* /*p_copy_cback*/) {
+BtStatus btif_transfer_context(tBTIF_CBACK* /*p_cback*/, uint16_t /*event*/, char* /*p_params*/,
+                               int /*param_len*/, tBTIF_COPY_CBACK* /*p_copy_cback*/) {
   inc_func_call_count("btif_transfer_context");
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 static bool btif_av_src_sink_coexist_enabled_value = true;
 static void set_btif_av_src_sink_coexist_enabled(bool value) {
@@ -104,12 +105,12 @@ bool btif_av_peer_is_source(const RawAddress& /*peer_address*/) { return true; }
 bool btif_av_both_enable(void) { return true; }
 
 static bluetooth::common::MessageLoopThread jni_thread("bt_jni_thread");
-bt_status_t do_in_jni_thread(base::OnceClosure task) {
+BtStatus do_in_jni_thread(base::OnceClosure task) {
   if (!jni_thread.DoInThread(std::move(task))) {
     log::error("Post task to task runner failed!");
-    return BT_STATUS_JNI_THREAD_ATTACH_ERROR;
+    return BtifStatus(JNI_THREAD_ATTACH_ERROR);
   }
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 bluetooth::common::MessageLoopThread* get_main_thread() { return nullptr; }
 bool interop_match_addr(const interop_feature_t /*feature*/, const RawAddress* /*addr*/) {

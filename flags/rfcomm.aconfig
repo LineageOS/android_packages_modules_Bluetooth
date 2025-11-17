@@ -40,3 +40,23 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "prevent_improper_closure_of_in_use_scn"
+    namespace: "bluetooth"
+    description: "When scn allocation fails, do not close already in use scn"
+    bug: "460151690"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "mark_port_not_in_use_on_release"
+    namespace: "bluetooth"
+    description: "Mark an in use port as not in use when calling port_release_port"
+    bug: "460549793"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

@@ -242,9 +242,9 @@ public:
     uint8_t client_id = is_native_advertiser(reg_id);
     if (client_id != kAdvertiserClientIdJni) {
       // Invoke callback for native client
-      do_in_main_thread(base::Bind(&::AdvertisingCallbacks::OnAdvertisingSetStarted,
-                                   base::Unretained(native_adv_callbacks_map_[client_id]), reg_id,
-                                   advertiser_id, tx_power, status));
+      do_in_main_thread(base::BindOnce(&::AdvertisingCallbacks::OnAdvertisingSetStarted,
+                                       base::Unretained(native_adv_callbacks_map_[client_id]),
+                                       reg_id, advertiser_id, tx_power, status));
       return;
     }
 
@@ -270,9 +270,9 @@ public:
     uint8_t client_id = is_native_advertiser(reg_id);
     if (client_id != kAdvertiserClientIdJni) {
       // Invoke callback for native client
-      do_in_main_thread(base::Bind(&::AdvertisingCallbacks::OnAdvertisingEnabled,
-                                   base::Unretained(native_adv_callbacks_map_[client_id]),
-                                   advertiser_id, enable, status));
+      do_in_main_thread(base::BindOnce(&::AdvertisingCallbacks::OnAdvertisingEnabled,
+                                       base::Unretained(native_adv_callbacks_map_[client_id]),
+                                       advertiser_id, enable, status));
       return;
     }
     do_in_jni_thread(base::BindOnce(&::AdvertisingCallbacks::OnAdvertisingEnabled,
@@ -287,9 +287,9 @@ public:
     uint8_t client_id = is_native_advertiser(reg_id);
     if (client_id != kAdvertiserClientIdJni) {
       // Invoke callback for native client
-      do_in_main_thread(base::Bind(&::AdvertisingCallbacks::OnAdvertisingDataSet,
-                                   base::Unretained(native_adv_callbacks_map_[client_id]),
-                                   advertiser_id, status));
+      do_in_main_thread(base::BindOnce(&::AdvertisingCallbacks::OnAdvertisingDataSet,
+                                       base::Unretained(native_adv_callbacks_map_[client_id]),
+                                       advertiser_id, status));
       return;
     }
     do_in_jni_thread(base::BindOnce(&::AdvertisingCallbacks::OnAdvertisingDataSet,
@@ -328,9 +328,9 @@ public:
     uint8_t client_id = is_native_advertiser(reg_id);
     if (client_id != kAdvertiserClientIdJni) {
       // Invoke callback for native client
-      do_in_main_thread(base::Bind(&::AdvertisingCallbacks::OnPeriodicAdvertisingDataSet,
-                                   base::Unretained(native_adv_callbacks_map_[client_id]),
-                                   advertiser_id, status));
+      do_in_main_thread(base::BindOnce(&::AdvertisingCallbacks::OnPeriodicAdvertisingDataSet,
+                                       base::Unretained(native_adv_callbacks_map_[client_id]),
+                                       advertiser_id, status));
       return;
     }
     do_in_jni_thread(base::BindOnce(&::AdvertisingCallbacks::OnPeriodicAdvertisingDataSet,

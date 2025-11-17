@@ -47,7 +47,6 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.R;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -388,8 +387,7 @@ public class BluetoothOppManager {
 
                 values.put(BluetoothShare.MIMETYPE, contentType);
                 values.put(
-                        BluetoothShare.DESTINATION,
-                        Utils.getBrEdrAddress(mRemoteDevice, adapterService));
+                        BluetoothShare.DESTINATION, adapterService.getBrEdrAddress(mRemoteDevice));
                 values.put(BluetoothShare.TIMESTAMP, ts);
                 if (mIsHandoverInitiated) {
                     values.put(
@@ -416,9 +414,7 @@ public class BluetoothOppManager {
             ContentValues values = new ContentValues();
             values.put(BluetoothShare.URI, mUri);
             values.put(BluetoothShare.MIMETYPE, mTypeOfSingleFile);
-            values.put(
-                    BluetoothShare.DESTINATION,
-                    Utils.getBrEdrAddress(mRemoteDevice, adapterService));
+            values.put(BluetoothShare.DESTINATION, adapterService.getBrEdrAddress(mRemoteDevice));
             if (mIsHandoverInitiated) {
                 values.put(
                         BluetoothShare.USER_CONFIRMATION,

@@ -105,6 +105,13 @@ void BTA_GATTC_Open(tGATT_IF /* client_if */, const RawAddress& /* remote_bda */
                     uint16_t /* preferred_mtu */, bool /* prefer_relax_mode */) {
   inc_func_call_count(__func__);
 }
+void BTA_GATTC_Open(tGATT_IF /* client_if */, const RawAddress& /* remote_bda */,
+                    tBLE_ADDR_TYPE /* addr_type */, tBTM_BLE_CONN_TYPE /* connection_type */,
+                    tBT_TRANSPORT /* transport */, bool /* opportunistic */,
+                    uint16_t /* preferred_mtu */, bool /* prefer_relax_mode */,
+                    bool /* auto_mtu_enabled */) {
+  inc_func_call_count(__func__);
+}
 void BTA_GATTC_PrepareWrite(uint16_t /* conn_id */, uint16_t /* handle */, uint16_t /* offset */,
                             std::vector<uint8_t> /* value */, tGATT_AUTH_REQ /* auth_req */,
                             GATT_WRITE_OP_CB /* callback */, void* /* cb_data */) {

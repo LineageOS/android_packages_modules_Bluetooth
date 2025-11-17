@@ -1204,7 +1204,6 @@ struct iso_impl {
   uint32_t last_big_create_req_sdu_itv_;
 
   std::list<std::function<void(bool)>> iso_traffic_active_callbacks_list_;
-  base::WeakPtrFactory<iso_impl> weak_factory_{this};
 
   // For generating unique client handles
   std::atomic<IsoClientHandle> next_iso_client_handle_ = kDefaultClientHandle;
@@ -1223,6 +1222,11 @@ struct iso_impl {
   // CIG/BIG Ownership Tracking
   std::unordered_map<uint8_t /* cig_id */, std::unique_ptr<iso_group>> cig_id_to_group_map_;
   std::unordered_map<uint8_t /* big_handle */, std::unique_ptr<iso_group>> big_handle_to_group_map_;
+
+  // Member variables should appear before the WeakPtrFactory, to ensure
+  // that any WeakPtrs are invalidated before its members
+  // variable's destructors are executed, rendering them invalid.
+  base::WeakPtrFactory<iso_impl> weak_factory_{this};
 };
 
 }  // namespace iso_manager

@@ -16,6 +16,11 @@
 
 package com.android.bluetooth.btservice;
 
+import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA_DUAL;
+import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA_ONLY;
+import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__CLASSIC;
+import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO_DUAL;
+import static com.android.bluetooth.BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO_ONLY;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -23,13 +28,17 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothUuid;
 import android.content.ContentResolver;
+import android.os.ParcelUuid;
 import android.provider.Settings;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -99,6 +108,8 @@ public class MetricsLoggerTest {
     @Mock private AdapterService mAdapterService;
     @Mock private RemoteDevices mRemoteDevices;
 
+    private BluetoothDevice mTestDevice;
+
     private static class TestableMetricsLogger extends MetricsLogger {
         final HashMap<Integer, Long> mTestableCounters = new HashMap<>();
         final HashMap<String, Integer> mTestableDeviceNames = new HashMap<>();
@@ -123,6 +134,7 @@ public class MetricsLoggerTest {
 
     @Before
     public void setUp() {
+        mTestDevice = getTestDevice(0);
         mTestableMetricsLogger = new TestableMetricsLogger();
         mTestableMetricsLogger.init(mAdapterService, mRemoteDevices);
     }
@@ -254,7 +266,6 @@ public class MetricsLoggerTest {
 
     @Test
     public void testUpdateHearingDeviceActiveTime() {
-        BluetoothDevice bluetoothDevice = getTestDevice(0);
         int day = BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__DAY;
         int week = BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__WEEK;
         int month = BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__MONTH;
@@ -265,7 +276,7 @@ public class MetricsLoggerTest {
         // last active time is 2 days ago, should update last active day
         TestableMetricsLogger logger = spy(mTestableMetricsLogger);
         prepareLastActiveTimeDaysAgo(2);
-        logger.updateHearingDeviceActiveTime(bluetoothDevice, 1);
+        logger.updateHearingDeviceActiveTime(mTestDevice, 1);
         verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(day));
         verify(logger, never()).logHearingDeviceActiveEvent(any(), anyInt(), eq(week));
         verify(logger, never()).logHearingDeviceActiveEvent(any(), anyInt(), eq(month));
@@ -273,7 +284,7 @@ public class MetricsLoggerTest {
         // last active time is 8 days ago, should update last active day and week
         Mockito.reset(logger);
         prepareLastActiveTimeDaysAgo(8);
-        logger.updateHearingDeviceActiveTime(bluetoothDevice, 1);
+        logger.updateHearingDeviceActiveTime(mTestDevice, 1);
         verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(day));
         verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(week));
         verify(logger, never()).logHearingDeviceActiveEvent(any(), anyInt(), eq(month));
@@ -281,10 +292,166 @@ public class MetricsLoggerTest {
         // last active time is 60 days ago, should update last active day, week and month
         Mockito.reset(logger);
         prepareLastActiveTimeDaysAgo(60);
-        logger.updateHearingDeviceActiveTime(bluetoothDevice, 1);
+        logger.updateHearingDeviceActiveTime(mTestDevice, 1);
         verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(day));
         verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(week));
         verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(month));
+    }
+
+    @Test
+    public void logDeviceConnectionStateChanges_connecting_logsDeviceName() {
+        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
+        doReturn("").when(logger).logAllowlistedDeviceNameHash(anyInt(), any());
+
+        final int metricId = 1234;
+        final String deviceName = "Test Device";
+        doReturn(metricId).when(mAdapterService).getMetricId(mTestDevice);
+        doReturn(deviceName).when(mRemoteDevices).getName(mTestDevice);
+
+        logger.logDeviceConnectionStateChanges(
+                mTestDevice, BluetoothProfile.A2DP, BluetoothProfile.STATE_CONNECTING);
+
+        verify(logger).logAllowlistedDeviceNameHash(metricId, deviceName);
+    }
+
+    @Test
+    public void logDeviceConnectionStateChanges_notConnected_doesNotLogHearingDeviceActiveTime() {
+        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
+
+        logger.logDeviceConnectionStateChanges(
+                mTestDevice, BluetoothProfile.A2DP, BluetoothProfile.STATE_DISCONNECTED);
+
+        verify(logger, never()).updateHearingDeviceActiveTime(any(), anyInt());
+    }
+
+    @Test
+    public void logDeviceConnectionStateChanges_a2dpConnected_medicalDevice_logsClassic()
+            throws IOException {
+        initTestingMedicalBloomfilter();
+        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
+        doNothing().when(logger).updateHearingDeviceActiveTime(any(), anyInt());
+
+        // "rphonak" is in the default medical device bloom filter
+        doReturn("rphonak hearing aid").when(mAdapterService).getRemoteName(mTestDevice);
+
+        logger.logDeviceConnectionStateChanges(
+                mTestDevice, BluetoothProfile.A2DP, BluetoothProfile.STATE_CONNECTED);
+
+        verify(logger)
+                .updateHearingDeviceActiveTime(
+                        eq(mTestDevice),
+                        eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__CLASSIC));
+    }
+
+    @Test
+    public void logDeviceConnectionStateChanges_a2dpConnected_notMedicalDevice_doesNotLog()
+            throws IOException {
+        initTestingMedicalBloomfilter();
+        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
+
+        doReturn("not a medical device").when(mAdapterService).getRemoteName(mTestDevice);
+
+        logger.logDeviceConnectionStateChanges(
+                mTestDevice, BluetoothProfile.A2DP, BluetoothProfile.STATE_CONNECTED);
+
+        verify(logger, never()).updateHearingDeviceActiveTime(any(), anyInt());
+    }
+
+    @Test
+    public void logDeviceConnectionStateChanges_headsetConnected_medicalDevice_logsClassic()
+            throws IOException {
+        initTestingMedicalBloomfilter();
+        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
+        doNothing().when(logger).updateHearingDeviceActiveTime(any(), anyInt());
+
+        // "rphonak" is in the default medical device bloom filter
+        doReturn("rphonak hearing aid").when(mAdapterService).getRemoteName(mTestDevice);
+
+        logger.logDeviceConnectionStateChanges(
+                mTestDevice, BluetoothProfile.HEADSET, BluetoothProfile.STATE_CONNECTED);
+
+        verify(logger)
+                .updateHearingDeviceActiveTime(
+                        eq(mTestDevice),
+                        eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__CLASSIC));
+    }
+
+    @Test
+    public void logDeviceConnectionStateChanges_hearingAidConnected_dualMode_logsAshaDual() {
+        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
+        doNothing().when(logger).updateHearingDeviceActiveTime(any(), anyInt());
+
+        doReturn(new ParcelUuid[] {BluetoothUuid.HEARING_AID, BluetoothUuid.LE_AUDIO})
+                .when(mRemoteDevices).getUuids(mTestDevice);
+
+        logger.logDeviceConnectionStateChanges(
+                mTestDevice, BluetoothProfile.HEARING_AID, BluetoothProfile.STATE_CONNECTED);
+
+        verify(logger)
+                .updateHearingDeviceActiveTime(
+                        eq(mTestDevice),
+                        eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA_DUAL));
+    }
+
+    @Test
+    public void logDeviceConnectionStateChanges_hearingAidConnected_singleMode_logsAshaOnly() {
+        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
+        doNothing().when(logger).updateHearingDeviceActiveTime(any(), anyInt());
+
+        doReturn(new ParcelUuid[] {BluetoothUuid.HEARING_AID})
+                .when(mRemoteDevices).getUuids(mTestDevice);
+
+        logger.logDeviceConnectionStateChanges(
+                mTestDevice, BluetoothProfile.HEARING_AID, BluetoothProfile.STATE_CONNECTED);
+
+        verify(logger)
+                .updateHearingDeviceActiveTime(
+                        eq(mTestDevice),
+                        eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__ASHA_ONLY));
+    }
+
+    @Test
+    public void logDeviceConnectionStateChanges_hapClientConnected_dualMode_logsLeAudioDual() {
+        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
+        doNothing().when(logger).updateHearingDeviceActiveTime(any(), anyInt());
+
+        doReturn(new ParcelUuid[] {BluetoothUuid.HEARING_AID, BluetoothUuid.LE_AUDIO})
+                .when(mRemoteDevices).getUuids(mTestDevice);
+
+        logger.logDeviceConnectionStateChanges(
+                mTestDevice, BluetoothProfile.HAP_CLIENT, BluetoothProfile.STATE_CONNECTED);
+
+        verify(logger)
+                .updateHearingDeviceActiveTime(
+                        eq(mTestDevice),
+                        eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO_DUAL));
+    }
+
+    @Test
+    public void logDeviceConnectionStateChanges_hapClientConnected_singleMode_logsLeAudioOnly() {
+        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
+        doNothing().when(logger).updateHearingDeviceActiveTime(any(), anyInt());
+
+        doReturn(new ParcelUuid[] {BluetoothUuid.LE_AUDIO})
+                .when(mRemoteDevices).getUuids(mTestDevice);
+
+        logger.logDeviceConnectionStateChanges(
+                mTestDevice, BluetoothProfile.HAP_CLIENT, BluetoothProfile.STATE_CONNECTED);
+
+        verify(logger)
+                .updateHearingDeviceActiveTime(
+                        eq(mTestDevice),
+                        eq(HEARING_DEVICE_ACTIVE_EVENT_REPORTED__DEVICE_TYPE__LE_AUDIO_ONLY));
+    }
+
+    @Test
+    public void logDeviceConnectionStateChanges_otherProfileConnected_doesNotLog() {
+        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
+
+        logger.logDeviceConnectionStateChanges(
+                mTestDevice, BluetoothProfile.PAN, BluetoothProfile.STATE_CONNECTED);
+
+        verify(logger, never()).updateHearingDeviceActiveTime(any(), anyInt());
     }
 
     private static void prepareLastActiveTimeDaysAgo(int days) {
@@ -304,5 +471,15 @@ public class MetricsLoggerTest {
         mTestableMetricsLogger.setBloomfilter(
                 BloomFilter.readFrom(
                         new ByteArrayInputStream(bloomfilterData), Funnels.byteArrayFunnel()));
+    }
+
+    private void initTestingMedicalBloomfilter() throws IOException {
+        byte[] bloomfilterData =
+                MedicalDeviceBloomfilterGenerator.hexStringToByteArray(
+                        MedicalDeviceBloomfilterGenerator.BLOOM_FILTER_DEFAULT);
+        mTestableMetricsLogger.setMedicalDeviceBloomfilter(
+                BloomFilter.readFrom(
+                        new ByteArrayInputStream(bloomfilterData), Funnels.byteArrayFunnel()));
+        mTestableMetricsLogger.mMedicalDeviceBloomFilterInitialized = true;
     }
 }

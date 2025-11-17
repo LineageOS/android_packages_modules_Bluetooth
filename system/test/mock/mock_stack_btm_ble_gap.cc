@@ -35,14 +35,14 @@
 #include "stack/include/rnr_interface.h"
 #include "test/common/mock_functions.h"
 
-using StartSyncCb = base::Callback<void(
+using StartSyncCb = base::RepeatingCallback<void(
         uint8_t /*status*/, uint16_t /*sync_handle*/, uint8_t /*advertising_sid*/,
         uint8_t /*address_type*/, RawAddress /*address*/, uint8_t /*phy*/, uint16_t /*interval*/)>;
 using SyncReportCb =
-        base::Callback<void(uint16_t /*sync_handle*/, int8_t /*tx_power*/, int8_t /*rssi*/,
-                            uint8_t /*status*/, std::vector<uint8_t> /*data*/)>;
-using SyncLostCb = base::Callback<void(uint16_t /*sync_handle*/)>;
-using SyncTransferCb = base::Callback<void(uint8_t /*status*/, RawAddress)>;
+        base::RepeatingCallback<void(uint16_t /*sync_handle*/, int8_t /*tx_power*/, int8_t /*rssi*/,
+                                     uint8_t /*status*/, std::vector<uint8_t> /*data*/)>;
+using SyncLostCb = base::RepeatingCallback<void(uint16_t /*sync_handle*/)>;
+using SyncTransferCb = base::RepeatingCallback<void(uint8_t /*status*/, RawAddress)>;
 
 bool BTM_BleConfigPrivacy(bool /* privacy_mode */) {
   inc_func_call_count(__func__);

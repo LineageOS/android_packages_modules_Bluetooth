@@ -20,7 +20,6 @@ import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSet
 import android.bluetooth.le.AdvertisingSetCallback
 import android.bluetooth.le.AdvertisingSetParameters
-import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
@@ -30,7 +29,6 @@ import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import io.grpc.Deadline
@@ -70,18 +68,17 @@ class PrivateGattAdvertisingTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)
-    private val bluetoothAdapter = bluetoothManager.adapter
-    private val leAdvertiser: BluetoothLeAdvertiser? = bluetoothAdapter.bluetoothLeAdvertiser
+    private val leAdvertiser = bluetoothManager.adapter.bluetoothLeAdvertiser!!
     private val advertisingSetCallbacksToClear = mutableListOf<AdvertisingSetCallback>()
 
     @After
     fun tearDown() {
         for (callback in advertisingSetCallbacksToClear) {
-            leAdvertiser?.stopAdvertisingSet(callback)
+            leAdvertiser.stopAdvertisingSet(callback)
         }
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_FIX_PRIVATE_GATT_ADVERTISEMENT)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.fix_private_gatt_advertisement")
     @Test
     fun privateGattAdvertisingWithNormalAdvertising() {
         // Starts private GATT advertisement, and get address of it.
@@ -182,7 +179,7 @@ class PrivateGattAdvertisingTest {
             .onConnectionStateChange(any(), eq(0), eq(BluetoothProfile.STATE_DISCONNECTED))
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_FIX_PRIVATE_GATT_ADVERTISEMENT)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.fix_private_gatt_advertisement")
     @Test
     fun twoPrivateGattAdvertising() {
         // Starts private GATT advertisement 1, and get address of it.
@@ -334,7 +331,7 @@ class PrivateGattAdvertisingTest {
                 }
             }
 
-        leAdvertiser?.startAdvertisingSet(
+        leAdvertiser.startAdvertisingSet(
             parameters,
             advertiseData,
             null,

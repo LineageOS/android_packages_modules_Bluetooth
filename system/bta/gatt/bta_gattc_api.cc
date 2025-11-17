@@ -128,6 +128,49 @@ void BTA_GATTC_AppDeregister(tGATT_IF client_if) {
  *                  connection_type: connection type used for the peer device
  *                  transport: Transport to be used for GATT connection
  *                             (BREDR/LE)
+ *                  opportunistic: whether the connection shall be opportunistic and
+ *                                 don't impact the disconnection timer
+ *                  auto_mtu_enabled: triggers mtu exchange with default mtu on connection
+ *
+ ******************************************************************************/
+void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda, tBLE_ADDR_TYPE addr_type,
+                    tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport, bool opportunistic,
+                    uint16_t preferred_mtu, bool prefer_relax_mode, bool auto_mtu_enabled) {
+  tBTA_GATTC_DATA data = {
+          .api_conn =
+                  {
+                          .hdr =
+                                  {
+                                          .event = BTA_GATTC_API_OPEN_EVT,
+                                  },
+                          .remote_bda = remote_bda,
+                          .client_if = client_if,
+                          .connection_type = connection_type,
+                          .transport = transport,
+                          .opportunistic = opportunistic,
+                          .remote_addr_type = addr_type,
+                          .preferred_mtu = preferred_mtu,
+                          .prefer_relax_mode = prefer_relax_mode,
+                          .auto_mtu_enabled = auto_mtu_enabled,
+                  },
+  };
+
+  post_on_bt_main([data]() { bta_gattc_process_api_open(&data); });
+}
+
+/*******************************************************************************
+ *
+ * Function         BTA_GATTC_Open
+ *
+ * Description      Open a direct connection or add a background auto connection
+ *                  bd address
+ *
+ * Parameters       client_if: server interface.
+ *                  remote_bda: remote device BD address.
+ *                  connection_type: connection type used for the peer device
+ *                  transport: Transport to be used for GATT connection
+ *                             (BREDR/LE)
+ *                  initiating_phys: LE PHY to use, optional
  *                  opportunistic: whether the connection shall be
  *                  opportunistic, and don't impact the disconnection timer
  *
@@ -776,7 +819,7 @@ tGATT_STATUS BTA_GATTC_DeregisterForNotifications(tGATT_IF client_if, const RawA
  *
  ******************************************************************************/
 void BTA_GATTC_Refresh(const RawAddress& remote_bda) {
-  do_in_main_thread(base::Bind(&bta_gattc_process_api_refresh, remote_bda));
+  do_in_main_thread(base::BindOnce(&bta_gattc_process_api_refresh, remote_bda));
 }
 
 /*******************************************************************************

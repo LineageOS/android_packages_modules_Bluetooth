@@ -16,9 +16,7 @@
 
 package com.android.bluetooth.gatt
 
-import android.bluetooth.BluetoothDevice
 import android.util.Log
-import com.android.bluetooth.Utils
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.profile.NativeCallback
 import java.util.UUID
@@ -26,10 +24,10 @@ import java.util.UUID
 private const val TAG = "GattNativeCallback"
 
 class GattNativeCallback(
-    private val adapterService: AdapterService,
+    adapterService: AdapterService,
     private val gatt: GattService,
     private val gattServer: GattServerManager,
-) : NativeCallback {
+) : NativeCallback(adapterService) {
 
     fun onClientRegistered(status: Int, clientIf: Int, uuidLsb: Long, uuidMsb: Long) {
         doOnGattThread { onClientRegisteredFromNative(status, clientIf, UUID(uuidMsb, uuidLsb)) }
@@ -325,11 +323,6 @@ class GattNativeCallback(
         serverDoOnGattThread {
             onServerCharacteristicsUnoffloadedFromNative(connId, sessionId, status)
         }
-    }
-
-    private fun getDevice(address: String): BluetoothDevice {
-        val addressBytes = Utils.getBytesFromAddress(address)
-        return adapterService.getDeviceFromByte(addressBytes)
     }
 
     private fun doOnGattThread(block: GattService.() -> Unit) = gatt.doOnGattThread { gatt.block() }

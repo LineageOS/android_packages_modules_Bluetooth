@@ -16,11 +16,22 @@
 
 package com.android.bluetooth.btservice;
 
+import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
+
+import static com.android.bluetooth.TestUtils.mockGetSystemService;
+
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -32,9 +43,11 @@ import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.IBluetoothActivityEnergyInfoListener;
 import android.bluetooth.IBluetoothOobDataCallback;
 import android.content.AttributionSource;
+import android.content.Context;
 import android.os.Bundle;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
+import android.os.UserManager;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
@@ -60,15 +73,46 @@ public class AdapterServiceBinderTest {
     @Mock private AdapterService mService;
     @Mock private AdapterProperties mAdapterProperties;
     @Mock private BluetoothDevice mDevice;
+    @Mock private RemoteDevices mRemoteDevices;
+    @Mock private UserManager mUserManager;
 
     private AdapterServiceBinder mBinder;
+
+    // Transport constants from BluetoothDevice
+    private static final int INVALID_TRANSPORT_NEGATIVE = -1;
+    private static final int INVALID_TRANSPORT_POSITIVE = 3;
 
     @Before
     public void setUp() {
         when(mService.getAdapterProperties()).thenReturn(mAdapterProperties);
+        when(mService.getRemoteDevices()).thenReturn(mRemoteDevices);
         doReturn(true).when(mService).isAvailable();
+        // Default for other permission checks if any
         doNothing().when(mService).enforceCallingOrSelfPermission(any(), any());
+
+        // Setup mock UserManager to be returned by mService
+        when(mService.getSystemService(Context.USER_SERVICE)).thenReturn(mUserManager);
+        mockGetSystemService(mService, UserManager.class, mUserManager);
+        // Default: Simulate caller is system/active
+        mockCallerIsSystemOrActive(true);
+
         mBinder = new AdapterServiceBinder(mService);
+    }
+
+    private void mockCallerIsSystemOrActive(boolean isSystemOrActive) {
+        // This is an approximation. The real static method is more complex.
+        when(mUserManager.isSystemUser()).thenReturn(isSystemOrActive);
+    }
+
+    @Test
+    public void cancelDiscovery_whenServiceNotAvailable_returnsFalse() {
+        // Setup: Simulate the service being unavailable.
+        doReturn(false).when(mService).isAvailable();
+
+        boolean result = mBinder.cancelDiscovery(mAttributionSource);
+
+        assertThat(result).isFalse();
+        verify(mService, never()).cancelDiscovery(any());
     }
 
     @Test
@@ -233,5 +277,135 @@ public class AdapterServiceBinderTest {
         mBinder.notifyActiveDeviceChangeApplied(mDevice, mAttributionSource);
 
         verify(mService).notifyActiveDeviceChangeApplied(mDevice);
+    }
+
+    @Test
+    public void connectAllEnabledProfiles_whenServiceNotAvailable_returnsError() {
+        // The service is not available
+        doReturn(false).when(mService).isAvailable();
+
+        // Call the method and verify that it returns an error and doesn't proceed
+        int result = mBinder.connectAllEnabledProfiles(mDevice, mAttributionSource);
+        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
+        verify(mService, never()).connectAllEnabledProfiles(any());
+    }
+
+    @Test
+    public void connectAllEnabledProfiles_whenServiceNotEnabled_returnsError() {
+        // The service is available but not enabled
+        when(mService.isEnabled()).thenReturn(false);
+
+        // Call the method and verify that it returns an error and doesn't proceed
+        int result = mBinder.connectAllEnabledProfiles(mDevice, mAttributionSource);
+        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
+        verify(mService, never()).connectAllEnabledProfiles(any());
+    }
+
+    @Test
+    public void connectAllEnabledProfiles_whenServiceEnabled_callsService() {
+        // The service is available and enabled
+        when(mService.isEnabled()).thenReturn(true);
+
+        // Call the method and verify that the underlying service method is called
+        mBinder.connectAllEnabledProfiles(mDevice, mAttributionSource);
+        verify(mService).connectAllEnabledProfiles(mDevice);
+    }
+
+    @Test
+    public void disconnectAllEnabledProfiles_whenServiceNotAvailable_returnsError() {
+        // The service is not available
+        doReturn(false).when(mService).isAvailable();
+
+        // Call the method and verify that it returns an error and doesn't proceed
+        int result = mBinder.disconnectAllEnabledProfiles(mDevice, mAttributionSource);
+        assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
+        verify(mService, never()).disconnectAllEnabledProfiles(any());
+    }
+
+    @Test
+    public void disconnectAllEnabledProfiles_whenServiceAvailable_callsService() {
+        // The service is available
+        // Call the method and verify that the underlying service method is called
+        mBinder.disconnectAllEnabledProfiles(mDevice, mAttributionSource);
+        verify(mService).disconnectAllEnabledProfiles(mDevice);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void fetchRemoteUuidsWithSdp_nullDevice_throwsNullPointerException() {
+        mBinder.fetchRemoteUuidsWithSdp(null, TRANSPORT_AUTO, mAttributionSource);
+    }
+
+    @Test
+    public void fetchRemoteUuidsWithSdp_serviceUnavailable_returnsFalse() {
+        doReturn(false).when(mService).isAvailable();
+        assertThat(mBinder.fetchRemoteUuidsWithSdp(mDevice, TRANSPORT_AUTO, mAttributionSource))
+                .isFalse();
+        verify(mRemoteDevices, never()).fetchUuids(any(), anyInt());
+    }
+
+    @Test
+    public void
+            fetchRemoteUuidsWithSdp_transportNotAuto_noPrivilegedPerm_throwsSecurityException() {
+        doThrow(new SecurityException("BT PRIVILEGED permission required"))
+                .when(mService)
+                .enforceCallingOrSelfPermission(eq(BLUETOOTH_PRIVILEGED), any());
+        assertThrows(
+                SecurityException.class,
+                () ->
+                        mBinder.fetchRemoteUuidsWithSdp(
+                                mDevice, TRANSPORT_BREDR, mAttributionSource));
+        verify(mRemoteDevices, never()).fetchUuids(any(), anyInt());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void fetchRemoteUuids_nullDevice_throwsNullPointerException() {
+        mBinder.fetchRemoteUuids(null, TRANSPORT_AUTO, mAttributionSource);
+    }
+
+    @Test
+    public void fetchRemoteUuids_serviceUnavailable_returnsFalse() {
+        doReturn(false).when(mService).isAvailable();
+        assertThat(mBinder.fetchRemoteUuids(mDevice, TRANSPORT_AUTO, mAttributionSource)).isFalse();
+        verify(mRemoteDevices, never()).fetchUuids(any(), anyInt());
+    }
+
+    @Test
+    public void fetchRemoteUuids_invalidTransport_throwsIllegalArgumentException() {
+        // Test with a negative invalid value
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        mBinder.fetchRemoteUuids(
+                                mDevice, INVALID_TRANSPORT_NEGATIVE, mAttributionSource));
+
+        // Test with a positive out-of-range value
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        mBinder.fetchRemoteUuids(
+                                mDevice, INVALID_TRANSPORT_POSITIVE, mAttributionSource));
+
+        // Verify that the call does not reach the RemoteDevices
+        verify(mRemoteDevices, never()).fetchUuids(any(), anyInt());
+    }
+
+    @Test
+    public void fetchRemoteUuids_validTransports_doesNotThrowIllegalArgumentException() {
+        // This test ensures that for valid transport types, no IllegalArgumentException is thrown.
+
+        // Call with TRANSPORT_AUTO
+        mBinder.fetchRemoteUuids(mDevice, TRANSPORT_AUTO, mAttributionSource);
+        verify(mRemoteDevices).fetchUuids(eq(mDevice), eq(TRANSPORT_AUTO));
+        Mockito.reset(mRemoteDevices);
+
+        // Call with TRANSPORT_BREDR
+        mBinder.fetchRemoteUuids(mDevice, TRANSPORT_BREDR, mAttributionSource);
+        verify(mRemoteDevices).fetchUuids(eq(mDevice), eq(TRANSPORT_BREDR));
+        Mockito.reset(mRemoteDevices);
+
+        // Call with TRANSPORT_LE
+        mBinder.fetchRemoteUuids(mDevice, TRANSPORT_LE, mAttributionSource);
+        verify(mRemoteDevices).fetchUuids(eq(mDevice), eq(TRANSPORT_LE));
+        Mockito.reset(mRemoteDevices);
     }
 }

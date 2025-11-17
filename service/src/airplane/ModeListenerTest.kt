@@ -41,7 +41,7 @@ import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
-class ModeListenerTest(private val flags: FlagsWrapper) {
+class ModeListenerTest(flags: FlagsWrapper) {
     @get:Rule val setFlagsRule: SetFlagsRule = SetFlagsRule(flags.flags)
     @get:Rule val testName = TestName()
 

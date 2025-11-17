@@ -69,6 +69,9 @@ struct eatt_impl {
   uint16_t max_mps_;
   tL2CAP_APPL_INFO reg_info_;
 
+  // Member variables should appear before the WeakPtrFactory, to ensure
+  // that any WeakPtrs are invalidated before its members
+  // variable's destructors are executed, rendering them invalid.
   base::WeakPtrFactory<eatt_impl> weak_factory_{this};
 
   eatt_impl() {
@@ -248,7 +251,7 @@ struct eatt_impl {
   }
 
   void upper_tester_delay_connect(const RawAddress& bda, int timeout_ms) {
-    bt_status_t status =
+    BtStatus status =
             do_in_main_thread_delayed(base::BindOnce(&eatt_impl::upper_tester_delay_connect_cb,
                                                      weak_factory_.GetWeakPtr(), bda),
                                       std::chrono::milliseconds(timeout_ms));
@@ -290,7 +293,7 @@ struct eatt_impl {
     upper_tester_send_data_if_needed(bda);
 
     if (stack_config_get_interface()->get_pts_l2cap_ecoc_reconfigure()) {
-      bt_status_t status = do_in_main_thread_delayed(
+      BtStatus status = do_in_main_thread_delayed(
               base::BindOnce(&eatt_impl::reconfigure_all, weak_factory_.GetWeakPtr(), bda, 300),
               std::chrono::seconds(4));
       log::info("Scheduled ECOC reconfiguration with status: {}", (int)status);

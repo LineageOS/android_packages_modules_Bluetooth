@@ -1809,7 +1809,7 @@ TEST(GeneratedPacketTest, testOneGenericStructArrayNoZeroEmpty) {
   auto view = OneGenericStructArrayNoZeroView::Create(PacketView<kLittleEndian>(too_few_bytes));
   for (size_t i = 0; i < 10; i++) {
     if (view.IsValid()) {
-      view.GetAnArray().size();
+      (void)view.GetAnArray().size();
     }
     too_few_bytes->push_back(0);
     view = OneGenericStructArrayNoZeroView::Create(PacketView<kLittleEndian>(too_few_bytes));

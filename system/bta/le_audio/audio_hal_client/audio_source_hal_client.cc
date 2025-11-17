@@ -38,11 +38,11 @@
 #include "audio/asrc/asrc_resampler.h"
 #include "audio_hal_client.h"
 #include "audio_hal_interface/le_audio_software.h"
+#include "bt_status.h"
 #include "bta/le_audio/codec_manager.h"
 #include "common/message_loop_thread.h"
 #include "common/repeating_timer.h"
 #include "common/time_util.h"
-#include "hardware/bluetooth.h"
 #include "le_audio/broadcaster/broadcaster_types.h"
 #include "le_audio/le_audio_types.h"
 #include "osi/include/wakelock.h"
@@ -127,6 +127,9 @@ public:
   std::mutex audioSourceCallbacksMutex_;
   std::unique_ptr<bluetooth::audio::asrc::SourceAudioHalAsrc> asrc_;
 
+  // Member variables should appear before the WeakPtrFactory, to ensure
+  // that any WeakPtrs are invalidated before its members
+  // variable's destructors are executed, rendering them invalid.
   base::WeakPtrFactory<SourceImpl> weak_factory_{this};
 };
 
@@ -197,10 +200,10 @@ bool SourceImpl::OnResumeReq(bool /*start_media_task*/) {
     log::error("audioSourceCallbacks_ not set");
     return false;
   }
-  bt_status_t status =
+  BtStatus status =
           do_in_main_thread(base::BindOnce(&LeAudioSourceAudioHalClient::Callbacks::OnAudioResume,
                                            audioSourceCallbacks_->weak_factory_.GetWeakPtr()));
-  if (status == BT_STATUS_SUCCESS) {
+  if (status) {
     return true;
   }
 
@@ -295,10 +298,10 @@ bool SourceImpl::OnSuspendReq() {
     return false;
   }
 
-  bt_status_t status =
+  BtStatus status =
           do_in_main_thread(base::BindOnce(&LeAudioSourceAudioHalClient::Callbacks::OnAudioSuspend,
                                            audioSourceCallbacks_->weak_factory_.GetWeakPtr()));
-  if (status == BT_STATUS_SUCCESS) {
+  if (status) {
     return true;
   }
 
@@ -320,10 +323,10 @@ bool SourceImpl::OnMetadataUpdateReq(const source_metadata_v7_t& source_metadata
             source_metadata.tracks, source_metadata.tracks + source_metadata.track_count);
   }
 
-  bt_status_t status = do_in_main_thread(base::BindOnce(
+  BtStatus status = do_in_main_thread(base::BindOnce(
           &LeAudioSourceAudioHalClient::Callbacks::OnAudioMetadataUpdate,
           audioSourceCallbacks_->weak_factory_.GetWeakPtr(), std::move(metadata), dsa_mode));
-  if (status == BT_STATUS_SUCCESS) {
+  if (status) {
     return true;
   }
 

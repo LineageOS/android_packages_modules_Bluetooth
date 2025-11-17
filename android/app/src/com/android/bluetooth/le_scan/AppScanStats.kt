@@ -25,8 +25,6 @@ import android.bluetooth.le.ScanSettings.SCAN_MODE_BALANCED
 import android.bluetooth.le.ScanSettings.SCAN_MODE_LOW_LATENCY
 import android.bluetooth.le.ScanSettings.SCAN_MODE_LOW_POWER
 import android.bluetooth.le.ScanSettings.SCAN_MODE_OPPORTUNISTIC
-import android.os.BatteryStatsManager
-import android.os.WorkSource
 import com.android.bluetooth.Utils
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.le_scan.ScanUtil.WEIGHT_AMBIENT_DISCOVERY
@@ -34,11 +32,9 @@ import com.android.bluetooth.le_scan.ScanUtil.WEIGHT_BALANCED
 import com.android.bluetooth.le_scan.ScanUtil.WEIGHT_LOW_LATENCY
 import com.android.bluetooth.le_scan.ScanUtil.WEIGHT_LOW_POWER
 import com.android.bluetooth.le_scan.ScanUtil.WEIGHT_OPPORTUNISTIC
-import com.android.bluetooth.le_scan.ScanUtil.callbackTypeToString
 import com.android.bluetooth.le_scan.ScanUtil.isBackgroundScan
 import com.android.bluetooth.le_scan.ScanUtil.isBatchScan
 import com.android.bluetooth.le_scan.ScanUtil.isOpportunisticScan
-import com.android.bluetooth.le_scan.ScanUtil.scanModeToString
 import com.android.bluetooth.le_scan.ScanUtil.toStringWithoutNullParam
 import com.android.bluetooth.util.TimeProvider
 import com.android.bluetooth.util.WorkSourceUtil
@@ -67,8 +63,9 @@ class AppScanStats(
     val uid: Int,
     val pid: Int,
     val name: String,
-    source: WorkSource?,
+    val workSourceUtil: WorkSourceUtil,
     private val adapterService: AdapterService,
+    private val scanMetricsReporter: ScanMetricsReporter,
     private val timeProvider: TimeProvider,
 ) {
 
@@ -76,8 +73,8 @@ class AppScanStats(
         internal val startTimestamp: Long,
         internal var endTimestamp: Long = 0,
         internal val scannerId: Int,
-        internal val scanMode: Int,
-        internal val scanCallbackType: Int,
+        internal val scanMode: ScanMode,
+        internal val callbackType: CallbackType,
         internal val reportDelayMillis: Long,
         internal val isBackgroundScan: Boolean,
         internal val isBatchScan: Boolean,
@@ -99,9 +96,6 @@ class AppScanStats(
 
     private val lastScans: MutableList<LastScan> = ArrayList()
     private val ongoingScans: MutableMap<Int, LastScan> = HashMap()
-
-    val workSourceUtil: WorkSourceUtil
-    private val scanMetricsReporter: ScanMetricsReporter
 
     var isAppDead = false
     var isRegistered = false
@@ -128,14 +122,6 @@ class AppScanStats(
     private var resultsScreenOn = 0
     private var resultsScreenOff = 0
     private var scheduledBatchAlarmCount = 0
-
-    init {
-        // Bill the caller uid if the work source isn't passed through
-        val workSource = source ?: WorkSource(uid, name)
-        workSourceUtil = WorkSourceUtil(workSource)
-        val batteryStatsManager = adapterService.getSystemService(BatteryStatsManager::class.java)
-        scanMetricsReporter = ScanMetricsReporter(workSource, workSourceUtil, batteryStatsManager)
-    }
 
     override fun toString() = "AppScanStats(uid=$uid, name=$name)"
 
@@ -192,8 +178,8 @@ class AppScanStats(
             LastScan(
                 startTimestamp = startTimestamp,
                 scannerId = scannerId,
-                scanMode = settings.scanMode,
-                scanCallbackType = settings.callbackType,
+                scanMode = ScanMode(settings.scanMode),
+                callbackType = CallbackType(settings.callbackType),
                 reportDelayMillis = settings.reportDelayMillis,
                 isBackgroundScan = isBackgroundScan(settings),
                 isBatchScan = isBatchScan(settings),
@@ -203,7 +189,7 @@ class AppScanStats(
                 appImportanceOnStart = appImportance,
                 attributionTag = attributionTag,
             )
-        when (scan.scanMode) {
+        when (scan.scanMode.value) {
             SCAN_MODE_OPPORTUNISTIC -> oppScan++
             SCAN_MODE_LOW_POWER -> lowPowerScan++
             SCAN_MODE_BALANCED -> balancedScan++
@@ -251,7 +237,7 @@ class AppScanStats(
         totalScanTime += scanDuration
         val activeDuration = scanDuration - scan.suspendDuration
         totalActiveTime += activeDuration
-        when (scan.scanMode) {
+        when (scan.scanMode.value) {
             SCAN_MODE_OPPORTUNISTIC -> oppScanTime += activeDuration
             SCAN_MODE_LOW_POWER -> lowPowerScanTime += activeDuration
             SCAN_MODE_BALANCED -> balancedScanTime += activeDuration
@@ -392,7 +378,7 @@ class AppScanStats(
             totalScanTime += scanDuration
             totalSuspendTime += suspendDuration
             totalActiveTime += activeDuration
-            when (ongoingScan.scanMode) {
+            when (ongoingScan.scanMode.value) {
                 SCAN_MODE_OPPORTUNISTIC -> opportunisticScanTime += activeDuration
                 SCAN_MODE_LOW_POWER -> lowPowerScanTime += activeDuration
                 SCAN_MODE_BALANCED -> balancedScanTime += activeDuration
@@ -520,8 +506,7 @@ class AppScanStats(
             appendLine("  └ Active Time: ${activeDuration}ms, Suspended Time: ${suspendDuration}ms")
         }
 
-        append("  └ Config: [ScanMode=${scanModeToString(scanMode)}")
-        appendLine(", callbackType=${callbackTypeToString(scanCallbackType)}]")
+        appendLine("  └ Config: [ScanMode=$scanMode, callbackType=$callbackType]")
 
         if (isFilterScan) append(filterStringBuilder.toString().indent("  └ "))
     }

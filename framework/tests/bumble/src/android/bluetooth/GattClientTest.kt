@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package android.bluetooth
 
 import android.bluetooth.BluetoothGatt.GATT_SUCCESS
@@ -25,7 +26,6 @@ import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
-import com.android.bluetooth.flags.Flags
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
 import com.google.testing.junit.testparameterinjector.TestParameter
@@ -133,6 +133,27 @@ class GattClientTest {
         }
         val gattCallback = mock(BluetoothGattCallback::class.java)
         val gatt = connectGattAndWaitConnection(gattCallback, autoConnect)
+        disconnectAndWaitDisconnection(gatt, gattCallback)
+    }
+
+    @Test
+    fun fullGattClientLifecycleWithGattSettings(@TestParameter autoConnect: Boolean) {
+        // val autoConnect = false
+        if (autoConnect) {
+            createLeBondAndWaitBonding(remoteLeDevice)
+        }
+        val gattCallback = mock(BluetoothGattCallback::class.java)
+
+        val gattSettings =
+            BluetoothGattConnectionSettings.Builder(context.mainExecutor, gattCallback)
+                .setTransport(BluetoothDevice.TRANSPORT_LE)
+                .setAutomaticMtuEnabled(true)
+                .setAutoConnectEnabled(false)
+                .setOpportunisticEnabled(false)
+                .build()
+
+        val gatt =
+            connectGattAndWaitConnectionWithGattSettings(gattCallback, autoConnect, gattSettings)
         disconnectAndWaitDisconnection(gatt, gattCallback)
     }
 
@@ -536,6 +557,22 @@ class GattClientTest {
         return gatt
     }
 
+    private fun connectGattAndWaitConnectionWithGattSettings(
+        callback: BluetoothGattCallback,
+        autoConnect: Boolean,
+        gattConnectionSettings: BluetoothGattConnectionSettings,
+    ): BluetoothGatt {
+        val status = GATT_SUCCESS
+        val state = STATE_CONNECTED
+
+        advertiseWithBumble()
+
+        val gatt: BluetoothGatt? = remoteLeDevice.connectGatt(gattConnectionSettings)
+        verify(callback, timeout(1000)).onConnectionStateChange(eq(gatt), eq(status), eq(state))
+
+        return gatt!!
+    }
+
     /** Tries to connect GATT, it could fail and return null. */
     private fun tryConnectGatt(
         callback: BluetoothGattCallback,
@@ -744,7 +781,7 @@ class GattClientTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_GATT_OFFLOAD_API)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_offload_api")
     fun clientOffloadCharacteristics() {
         assumeTrue(adapter.getSupportedGattOffloadCapabilities()?.isClientOffloadSupported ?: false)
 
@@ -791,7 +828,7 @@ class GattClientTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_GATT_OFFLOAD_API)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_offload_api")
     fun clientsConcurrentOffloadDifferentCharacteristics() {
         assumeTrue(adapter.getSupportedGattOffloadCapabilities()?.isClientOffloadSupported ?: false)
 
@@ -839,7 +876,7 @@ class GattClientTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_GATT_OFFLOAD_API)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_offload_api")
     fun clientOffloadSameCharacteristicsFails() {
         assumeTrue(adapter.getSupportedGattOffloadCapabilities()?.isClientOffloadSupported ?: false)
 
@@ -881,7 +918,7 @@ class GattClientTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_GATT_OFFLOAD_API)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_offload_api")
     fun clientOffloadSameCharacteristicsDifferentEndpointFails() {
         assumeTrue(adapter.getSupportedGattOffloadCapabilities()?.isClientOffloadSupported ?: false)
 
@@ -923,7 +960,7 @@ class GattClientTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_GATT_OFFLOAD_API)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_offload_api")
     fun differentClientsOffloadSameCharacteristicsFails() {
         assumeTrue(adapter.getSupportedGattOffloadCapabilities()?.isClientOffloadSupported ?: false)
 
@@ -971,7 +1008,7 @@ class GattClientTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_GATT_OFFLOAD_API)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_offload_api")
     fun clientUnoffloadCharacteristics() {
         assumeTrue(adapter.getSupportedGattOffloadCapabilities()?.isClientOffloadSupported ?: false)
 
@@ -1019,7 +1056,7 @@ class GattClientTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_GATT_OFFLOAD_API)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_offload_api")
     fun clientUnoffloadCharacteristics_autoClose() {
         assumeTrue(adapter.getSupportedGattOffloadCapabilities()?.isClientOffloadSupported ?: false)
 
@@ -1071,7 +1108,7 @@ class GattClientTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_GATT_OFFLOAD_API)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_offload_api")
     fun clientOffloadNotificationCharacteristicsFails_thenSuccess() {
         assumeTrue(adapter.getSupportedGattOffloadCapabilities()?.isClientOffloadSupported ?: false)
 
@@ -1118,7 +1155,7 @@ class GattClientTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_GATT_OFFLOAD_API)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_offload_api")
     fun clientOffloadNotificationCharacteristics_thenUnoffloaded() {
         assumeTrue(adapter.getSupportedGattOffloadCapabilities()?.isClientOffloadSupported ?: false)
 

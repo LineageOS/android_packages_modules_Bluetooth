@@ -175,6 +175,9 @@ private:
   void SdpLookupAudioRoleCb(uint16_t handle, bool found, tA2DP_Service* p_service,
                             const RawAddress& peer_address);
 
+  // Member variables should appear before the WeakPtrFactory, to ensure
+  // that any WeakPtrs are invalidated before its members
+  // variable's destructors are executed, rendering them invalid.
   base::WeakPtrFactory<ConnectionHandler> weak_ptr_factory_;
 };
 

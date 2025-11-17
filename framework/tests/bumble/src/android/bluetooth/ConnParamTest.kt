@@ -28,7 +28,6 @@ import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.android.bluetooth.flags.Flags
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.hamcrest.Matchers.greaterThan
@@ -39,12 +38,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
-import org.mockito.ArgumentMatchers.any
-import org.mockito.ArgumentMatchers.anyInt
-import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.AdvertiseResponse
 import pandora.HostProto.OwnAddressType
@@ -87,7 +85,7 @@ class ConnParamTest {
         host.close()
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_INITIAL_CONN_PARAMS_P1)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.initial_conn_params_p1")
     @Test
     fun connParamsAreRelaxedAfterServiceDiscovery() {
         checkAggressiveConnectionWillBeUsed()
@@ -102,9 +100,9 @@ class ConnParamTest {
             .onConnectionUpdated(
                 any(),
                 connectionIntervalCaptor.capture(),
-                anyInt(),
-                anyInt(),
-                anyInt(),
+                any<Int>(),
+                any<Int>(),
+                any<Int>(),
             )
 
         val capturedConnectionIntervals = connectionIntervalCaptor.allValues
@@ -119,7 +117,7 @@ class ConnParamTest {
         disconnectAndWaitDisconnection(gatt, gattCallback)
     }
 
-    @RequiresFlagsEnabled(Flags.FLAG_INITIAL_CONN_PARAMS_P1)
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.initial_conn_params_p1")
     @Test
     fun connParamsAreRelaxedForBondedDevice_withBluetoothRestart() {
         checkAggressiveConnectionWillBeUsed()
@@ -139,9 +137,9 @@ class ConnParamTest {
             .onConnectionUpdated(
                 any(),
                 connectionIntervalCaptor.capture(),
-                anyInt(),
-                anyInt(),
-                anyInt(),
+                any<Int>(),
+                any<Int>(),
+                any<Int>(),
             )
 
         val capturedConnectionIntervals = connectionIntervalCaptor.allValues
@@ -206,7 +204,7 @@ class ConnParamTest {
         ) {
             val state = STATE_DISCONNECTED
             gatt.disconnect()
-            verify(callback, timeout(1000)).onConnectionStateChange(eq(gatt), anyInt(), eq(state))
+            verify(callback, timeout(1000)).onConnectionStateChange(eq(gatt), any<Int>(), eq(state))
 
             gatt.close()
         }

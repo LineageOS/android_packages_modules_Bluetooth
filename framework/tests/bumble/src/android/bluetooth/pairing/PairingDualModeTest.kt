@@ -26,6 +26,8 @@ import android.bluetooth.pairing.utils.IntentReceiver
 import android.bluetooth.pairing.utils.TestUtil
 import android.bluetooth.test_utils.BlockingBluetoothAdapter
 import android.bluetooth.test_utils.EnableBluetoothRule
+import android.bluetooth.toAddressBytes
+import android.bluetooth.toAddressString
 import android.content.Context
 import android.os.ParcelUuid
 import android.util.Log
@@ -101,10 +103,7 @@ class PairingDualModeTest {
         // Always read fresh address
         val readLocalAddressResponse =
             currentDevice.hostBlocking().readLocalAddress(Empty.getDefaultInstance())
-        bumbleDevice =
-            adapter.getRemoteDevice(
-                Utils.addressStringFromByteString(readLocalAddressResponse.address)
-            )
+        bumbleDevice = adapter.getRemoteDevice(readLocalAddressResponse.address.toAddressString())
         Log.d(TAG, "Bumble Device: $bumbleDevice")
         Log.d(TAG, "Bumble LE Device: $remoteLeDevice")
     }
@@ -332,7 +331,7 @@ class PairingDualModeTest {
         testStep_restartBt()
 
         // Create connection from Bumble side
-        val address = ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
+        val address = ByteString.copyFrom(adapter.address.toAddressBytes())
         val connectionRequest = HostProto.ConnectRequest.newBuilder().setAddress(address).build()
         val response = currentDevice.hostBlocking().connect(connectionRequest)
 
@@ -453,9 +452,7 @@ class PairingDualModeTest {
                 .hostBlocking()
                 .connect(
                     HostProto.ConnectRequest.newBuilder()
-                        .setAddress(
-                            ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
-                        )
+                        .setAddress(ByteString.copyFrom(adapter.address.toAddressBytes()))
                         .build()
                 )
 
@@ -506,9 +503,7 @@ class PairingDualModeTest {
                 .hostBlocking()
                 .connect(
                     HostProto.ConnectRequest.newBuilder()
-                        .setAddress(
-                            ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
-                        )
+                        .setAddress(ByteString.copyFrom(adapter.address.toAddressBytes()))
                         .build()
                 )
 
@@ -576,9 +571,7 @@ class PairingDualModeTest {
                 .hostBlocking()
                 .connect(
                     HostProto.ConnectRequest.newBuilder()
-                        .setAddress(
-                            ByteString.copyFrom(Utils.addressBytesFromString(adapter.address))
-                        )
+                        .setAddress(ByteString.copyFrom(adapter.address.toAddressBytes()))
                         .build()
                 )
         // Start pairing from Bumble

@@ -58,7 +58,7 @@ import org.robolectric.Shadows.shadowOf
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @kotlin.time.ExperimentalTime
-class AirplaneModeControllerTest(private val flags: FlagsWrapper) {
+class AirplaneModeControllerTest(flags: FlagsWrapper) {
     @get:Rule val mSetFlagsRule: SetFlagsRule = SetFlagsRule(flags.flags)
     @get:Rule val testName = TestName()
 

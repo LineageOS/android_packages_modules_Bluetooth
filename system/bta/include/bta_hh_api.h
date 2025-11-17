@@ -349,6 +349,17 @@ void BTA_HhOpen(const AclLinkSpec& link_spec, bool direct);
 
 /*******************************************************************************
  *
+ * Function         BTA_HhOpen
+ *
+ * Description      This function cancels an ongoing connection attempt.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void BTA_HhCancelOpen(const AclLinkSpec& link_spec);
+
+/*******************************************************************************
+ *
  * Function         BTA_HhClose
  *
  * Description      This function disconnects the device.
