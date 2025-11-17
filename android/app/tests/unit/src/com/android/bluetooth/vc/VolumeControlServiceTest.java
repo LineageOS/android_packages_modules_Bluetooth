@@ -1797,6 +1797,34 @@ public class VolumeControlServiceTest {
         verify(callback, never()).onDeviceVolumeChanged(eq(mDevice2), eq(deviceOneVolume));
     }
 
+    @Test
+    @EnableFlags(Flags.FLAG_VCP_NOTIFY_VOLUME_ON_EACH_DEVICE_CONNECTION)
+    public void initialAutonomousVolume_notifiesRegisteredCallbacks() throws Exception {
+        int initialVolume = 128;
+        int flags = VolumeControlService.VOLUME_FLAGS_PERSISTED_USER_SET_VOLUME_MASK;
+        boolean isMuted = false;
+        boolean isAutonomous = true;
+
+        // Register a callback before the device connects
+        IBluetoothVolumeControlCallback callback =
+                Mockito.mock(IBluetoothVolumeControlCallback.class);
+        Binder binder = Mockito.mock(Binder.class);
+        when(callback.asBinder()).thenReturn(binder);
+        mService.registerCallback(callback);
+
+        // Simulate device connecting and providing initial volume
+        generateDeviceAvailableMessageFromNative(mDevice1, GROUP_ID, 1, 1);
+        generateConnectionMessageFromNative(mDevice1, STATE_CONNECTED, STATE_DISCONNECTED);
+
+        // Trigger the autonomous volume change event
+        generateVolumeStateChanged(
+                mDevice1, LE_AUDIO_GROUP_ID_INVALID, initialVolume, flags, isMuted, isAutonomous);
+
+        // With the flag enabled, the callback should be notified of the initial volume.
+        // Without the fix, this verification would fail.
+        verify(callback).onDeviceVolumeChanged(eq(mDevice1), eq(initialVolume));
+    }
+
     /** Test Volume Control changed for broadcast primary group. */
     @Test
     public void volumeControlChangedForBroadcastPrimaryGroup() {
