@@ -1305,13 +1305,12 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     @Override
     public int isDistanceMeasurementSupported(AttributionSource source) {
         AdapterService service = getService();
+        var method = "isDistanceMeasurementSupported";
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
-        } else if (!callerIsSystemOrActiveOrManagedUser(
-                service, TAG, "isDistanceMeasurementSupported")) {
+        } else if (!callerIsSystemOrActiveOrManagedUser(service, TAG, method)) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
-        } else if (!enforceConnectPermissionForDataDelivery(
-                service, source, TAG, "isDistanceMeasurementSupported")) {
+        } else if (!enforceConnectPermissionForDataDelivery(service, source, TAG, method)) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
@@ -1430,12 +1429,12 @@ class AdapterServiceBinder extends IBluetooth.Stub {
             BluetoothDevice device, BluetoothSinkAudioPolicy policies, AttributionSource source) {
         requireNonNull(device);
         AdapterService service = getService();
+        var method = "requestAudioPolicyAsSink";
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
-        } else if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "requestAudioPolicyAsSink")) {
+        } else if (!callerIsSystemOrActiveOrManagedUser(service, TAG, method)) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
-        } else if (!enforceConnectPermissionForDataDelivery(
-                service, source, TAG, "requestAudioPolicyAsSink")) {
+        } else if (!enforceConnectPermissionForDataDelivery(service, source, TAG, method)) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
 
@@ -1544,12 +1543,12 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
-        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "setPreferredAudioProfiles")) {
+        var method = "setPreferredAudioProfiles";
+        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, method)) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
         }
         requireNonNull(modeToProfileBundle);
-        if (!enforceConnectPermissionForDataDelivery(
-                service, source, TAG, "setPreferredAudioProfiles")) {
+        if (!enforceConnectPermissionForDataDelivery(service, source, TAG, method)) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
 
@@ -1583,11 +1582,11 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
-        if (!callerIsSystem(TAG, "notifyActiveDeviceChangeApplied")) {
+        var method = "notifyActiveDeviceChangeApplied";
+        if (!callerIsSystem(TAG, method)) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
         }
-        if (!enforceConnectPermissionForDataDelivery(
-                service, source, TAG, "notifyActiveDeviceChangeApplied")) {
+        if (!enforceConnectPermissionForDataDelivery(service, source, TAG, method)) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
 
@@ -1608,7 +1607,6 @@ class AdapterServiceBinder extends IBluetooth.Stub {
                 service, source, TAG, "isDualModeAudioEnabled")) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
-
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         if (!Utils.isDualModeAudioEnabled()) {
             return BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
@@ -1624,13 +1622,12 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
-        if (!callerIsSystemOrActiveOrManagedUser(
-                service, TAG, "registerPreferredAudioProfilesChangedCallback")) {
+        var method = "registerPreferredAudioProfilesChangedCallback";
+        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, method)) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
         }
         requireNonNull(callback);
-        if (!enforceConnectPermissionForDataDelivery(
-                service, source, TAG, "registerPreferredAudioProfilesChangedCallback")) {
+        if (!enforceConnectPermissionForDataDelivery(service, source, TAG, method)) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
 
@@ -1651,22 +1648,18 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
-        if (!callerIsSystemOrActiveOrManagedUser(
-                service, TAG, "unregisterPreferredAudioProfilesChangedCallback")) {
+        var method = "unregisterPreferredAudioProfilesChangedCallback";
+        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, method)) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
         }
         requireNonNull(callback);
-        if (!enforceConnectPermissionForDataDelivery(
-                service, source, TAG, "unregisterPreferredAudioProfilesChangedCallback")) {
+        if (!enforceConnectPermissionForDataDelivery(service, source, TAG, method)) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         if (!service.getPreferredAudioProfilesCallbacks().unregister(callback)) {
-            Log.e(
-                    TAG,
-                    "unregisterPreferredAudioProfilesChangedCallback: callback was never "
-                            + "registered");
+            Log.e(TAG, method + "(): callback was never " + "registered");
             return BluetoothStatusCodes.ERROR_CALLBACK_NOT_REGISTERED;
         }
         return BluetoothStatusCodes.SUCCESS;
@@ -1679,13 +1672,12 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
-        if (!callerIsSystemOrActiveOrManagedUser(
-                service, TAG, "registerBluetoothQualityReportReadyCallback")) {
+        var method = "registerBluetoothQualityReportReadyCallback";
+        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, method)) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
         }
         requireNonNull(callback);
-        if (!enforceConnectPermissionForDataDelivery(
-                service, source, TAG, "registerBluetoothQualityReportReadyCallback")) {
+        if (!enforceConnectPermissionForDataDelivery(service, source, TAG, method)) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
 
@@ -1701,21 +1693,18 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
-        if (!callerIsSystemOrActiveOrManagedUser(
-                service, TAG, "unregisterBluetoothQualityReportReadyCallback")) {
+        var method = "unregisterBluetoothQualityReportReadyCallback";
+        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, method)) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
         }
         requireNonNull(callback);
-        if (!enforceConnectPermissionForDataDelivery(
-                service, source, TAG, "unregisterBluetoothQualityReportReadyCallback")) {
+        if (!enforceConnectPermissionForDataDelivery(service, source, TAG, method)) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
 
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         if (!service.getBluetoothQualityReportReadyCallbacks().unregister(callback)) {
-            Log.e(
-                    TAG,
-                    "unregisterBluetoothQualityReportReadyCallback: callback was never registered");
+            Log.e(TAG, method + "(): callback was never registered");
             return BluetoothStatusCodes.ERROR_CALLBACK_NOT_REGISTERED;
         }
         return BluetoothStatusCodes.SUCCESS;
@@ -1848,11 +1837,11 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
-        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "setActiveAudioDevicePolicy")) {
+        var method = "setActiveAudioDevicePolicy";
+        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, method)) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
         }
-        if (!enforceConnectPermissionForDataDelivery(
-                service, source, TAG, "setActiveAudioDevicePolicy")) {
+        if (!enforceConnectPermissionForDataDelivery(service, source, TAG, method)) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
 
@@ -1875,12 +1864,12 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (service == null) {
             return BluetoothDevice.ACTIVE_AUDIO_DEVICE_POLICY_DEFAULT;
         }
-        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "getActiveAudioDevicePolicy")) {
+        var method = "getActiveAudioDevicePolicy";
+        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, method)) {
             throw new IllegalStateException(
                     "Caller is not the system or part of the active/managed user");
         }
-        if (!enforceConnectPermissionForDataDelivery(
-                service, source, TAG, "getActiveAudioDevicePolicy")) {
+        if (!enforceConnectPermissionForDataDelivery(service, source, TAG, method)) {
             return BluetoothDevice.ACTIVE_AUDIO_DEVICE_POLICY_DEFAULT;
         }
 
@@ -1899,11 +1888,11 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
-        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "setMicrophonePreferredForCalls")) {
+        var method = "setMicrophonePreferredForCalls";
+        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, method)) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
         }
-        if (!enforceConnectPermissionForDataDelivery(
-                service, source, TAG, "setMicrophonePreferredForCalls")) {
+        if (!enforceConnectPermissionForDataDelivery(service, source, TAG, method)) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
 
@@ -1927,12 +1916,12 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (service == null) {
             return true;
         }
-        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "isMicrophonePreferredForCalls")) {
+        var method = "isMicrophonePreferredForCalls";
+        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, method)) {
             throw new IllegalStateException(
                     "Caller is not the system or part of the active/managed user");
         }
-        if (!enforceConnectPermissionForDataDelivery(
-                service, source, TAG, "isMicrophonePreferredForCalls")) {
+        if (!enforceConnectPermissionForDataDelivery(service, source, TAG, method)) {
             return true;
         }
 
@@ -1951,11 +1940,11 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         if (service == null) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
-        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, "setOnHeadDetectionEnabled")) {
+        var method = "setOnHeadDetectionEnabled";
+        if (!callerIsSystemOrActiveOrManagedUser(service, TAG, method)) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED;
         }
-        if (!enforceConnectPermissionForDataDelivery(
-                service, source, TAG, "setOnHeadDetectionEnabled")) {
+        if (!enforceConnectPermissionForDataDelivery(service, source, TAG, method)) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION;
         }
 
