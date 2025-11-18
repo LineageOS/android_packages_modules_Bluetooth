@@ -379,15 +379,6 @@ using SyncReportCb =
 using SyncLostCb = base::RepeatingCallback<void(uint16_t /*sync_handle*/)>;
 using BigInfoReportCb = base::RepeatingCallback<void(uint16_t /*sync_handle*/, bool /*encrypted*/)>;
 
-void btm_ble_periodic_adv_sync_established(uint8_t status, uint16_t sync_handle, uint8_t adv_sid,
-                                           uint8_t address_type, const RawAddress& addr,
-                                           uint8_t phy, uint16_t interval,
-                                           uint8_t adv_clock_accuracy);
-void btm_ble_periodic_adv_report(uint16_t sync_handle, uint8_t tx_power, int8_t rssi,
-                                 uint8_t cte_type, uint8_t data_status, uint8_t data_len,
-                                 const uint8_t* periodic_data);
-void btm_ble_periodic_adv_sync_lost(uint16_t sync_handle);
-
 /*******************************************************************************
  *
  * Function         BTM_BleConfigPrivacy

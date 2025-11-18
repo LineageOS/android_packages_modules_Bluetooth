@@ -357,46 +357,6 @@ void btsnd_hcic_ble_remove_iso_data_path(uint16_t iso_handle, uint8_t data_path_
 void btsnd_hcic_ble_read_iso_link_quality(uint16_t iso_handle,
                                           base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
-void btsnd_hcic_ble_periodic_advertising_create_sync(uint8_t options, uint8_t adv_sid,
-                                                     uint8_t adv_addr_type,
-                                                     const RawAddress& adv_addr, uint16_t skip_num,
-                                                     uint16_t sync_timeout, uint8_t sync_cte_type);
-
-void btsnd_hcic_ble_periodic_advertising_create_sync_cancel(
-        base::OnceCallback<void(uint8_t*, uint16_t)> cb);
-
-void btsnd_hcic_ble_periodic_advertising_terminate_sync(
-        uint16_t sync_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb);
-
-void btsnd_hci_ble_add_device_to_periodic_advertiser_list(
-        uint8_t adv_addr_type, const RawAddress& adv_addr, uint8_t adv_sid,
-        base::OnceCallback<void(uint8_t*, uint16_t)> cb);
-
-void btsnd_hci_ble_remove_device_from_periodic_advertiser_list(
-        uint8_t adv_addr_type, const RawAddress& adv_addr, uint8_t adv_sid,
-        base::OnceCallback<void(uint8_t*, uint16_t)> cb);
-
-void btsnd_hci_ble_clear_periodic_advertiser_list(base::OnceCallback<void(uint8_t*, uint16_t)> cb);
-
-void btsnd_hcic_ble_set_periodic_advertising_receive_enable(
-        uint16_t sync_handle, bool enable, base::OnceCallback<void(uint8_t*, uint16_t)> cb);
-
-void btsnd_hcic_ble_periodic_advertising_sync_transfer(
-        uint16_t conn_handle, uint16_t service_data, uint16_t sync_handle,
-        base::OnceCallback<void(uint8_t*, uint16_t)> cb);
-
-void btsnd_hcic_ble_periodic_advertising_set_info_transfer(
-        uint16_t conn_handle, uint16_t service_data, uint8_t adv_handle,
-        base::OnceCallback<void(uint8_t*, uint16_t)> cb);
-
-void btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params(
-        uint16_t conn_handle, uint8_t mode, uint16_t skip, uint16_t sync_timeout, uint8_t cte_type,
-        base::OnceCallback<void(uint8_t*, uint16_t)> cb);
-
-void btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params(
-        uint16_t conn_handle, uint8_t mode, uint16_t skip, uint16_t sync_timeout, uint8_t cte_type,
-        base::OnceCallback<void(uint8_t*, uint16_t)> cb);
-
 void btsnd_hcic_configure_data_path(hci_data_direction_t data_path_direction, uint8_t data_path_id,
                                     std::vector<uint8_t> vendor_config);
 

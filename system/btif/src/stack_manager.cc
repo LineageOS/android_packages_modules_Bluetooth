@@ -271,8 +271,6 @@ static void stop_stack(ProfileStopCallback stopProfiles) {
   hack_future = local_hack_future;
   stack_is_running = false;
 
-  do_in_main_thread(base::BindOnce(&btm_ble_scanner_cleanup));
-
   btif_dm_on_disable();
   stopProfiles();
 

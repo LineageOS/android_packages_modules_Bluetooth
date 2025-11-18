@@ -39,50 +39,6 @@ namespace test {
 namespace mock {
 namespace stack_hcic_hciblecmds {
 
-// Shared state between mocked functions and tests
-// Name: btsnd_hci_ble_add_device_to_periodic_advertiser_list
-// Params: uint8_t adv_addr_type, const RawAddress& adv_addr, uint8_t adv_sid,
-// base::OnceCallback<void(uint8_t*, uint16_t Return: void
-struct btsnd_hci_ble_add_device_to_periodic_advertiser_list {
-  std::function<void(uint8_t, const RawAddress&, uint8_t,
-                     base::OnceCallback<void(uint8_t*, uint16_t)>)>
-          body{[](uint8_t /* adv_addr_type */, const RawAddress& /* adv_addr */,
-                  uint8_t /* adv_sid */, base::OnceCallback<void(uint8_t*, uint16_t)> /* cb */) {}};
-  void operator()(uint8_t adv_addr_type, const RawAddress& adv_addr, uint8_t adv_sid,
-                  base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-    body(adv_addr_type, adv_addr, adv_sid, std::move(cb));
-  }
-};
-extern struct btsnd_hci_ble_add_device_to_periodic_advertiser_list
-        btsnd_hci_ble_add_device_to_periodic_advertiser_list;
-
-// Name: btsnd_hci_ble_clear_periodic_advertiser_list
-// Params: base::OnceCallback<void(uint8_t*, uint16_t
-// Return: void
-struct btsnd_hci_ble_clear_periodic_advertiser_list {
-  std::function<void(base::OnceCallback<void(uint8_t*, uint16_t)>)> body{
-          [](base::OnceCallback<void(uint8_t*, uint16_t)>) {}};
-  void operator()(base::OnceCallback<void(uint8_t*, uint16_t)> cb) { body(std::move(cb)); }
-};
-extern struct btsnd_hci_ble_clear_periodic_advertiser_list
-        btsnd_hci_ble_clear_periodic_advertiser_list;
-
-// Name: btsnd_hci_ble_remove_device_from_periodic_advertiser_list
-// Params: uint8_t adv_addr_type, const RawAddress& adv_addr, uint8_t adv_sid,
-// base::OnceCallback<void(uint8_t*, uint16_t Return: void
-struct btsnd_hci_ble_remove_device_from_periodic_advertiser_list {
-  std::function<void(uint8_t, const RawAddress&, uint8_t,
-                     base::OnceCallback<void(uint8_t*, uint16_t)>)>
-          body{[](uint8_t /* adv_addr_type */, const RawAddress& /* adv_addr */,
-                  uint8_t /* adv_sid */, base::OnceCallback<void(uint8_t*, uint16_t)> /* cb */) {}};
-  void operator()(uint8_t adv_addr_type, const RawAddress& adv_addr, uint8_t adv_sid,
-                  base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-    body(adv_addr_type, adv_addr, adv_sid, std::move(cb));
-  }
-};
-extern struct btsnd_hci_ble_remove_device_from_periodic_advertiser_list
-        btsnd_hci_ble_remove_device_from_periodic_advertiser_list;
-
 // Name: btsnd_hcic_ble_add_device_resolving_list
 // Params: uint8_t addr_type_peer, const RawAddress& bda_peer, const Octet16&
 // irk_peer, const Octet16& irk_local Return: void
@@ -125,81 +81,6 @@ struct btsnd_hcic_ble_ltk_req_reply {
   void operator()(uint16_t handle, const Octet16& ltk) { body(handle, ltk); }
 };
 extern struct btsnd_hcic_ble_ltk_req_reply btsnd_hcic_ble_ltk_req_reply;
-
-// Name: btsnd_hcic_ble_periodic_advertising_create_sync
-// Params: uint8_t options, uint8_t adv_sid, uint8_t adv_addr_type, const
-// RawAddress& adv_addr, uint16_t skip_num, uint16_t sync_timeout, uint8_t
-// sync_cte_type Return: void
-struct btsnd_hcic_ble_periodic_advertising_create_sync {
-  std::function<void(uint8_t options, uint8_t adv_sid, uint8_t adv_addr_type,
-                     const RawAddress& adv_addr, uint16_t skip_num, uint16_t sync_timeout,
-                     uint8_t sync_cte_type)>
-          body{[](uint8_t /* options */, uint8_t /* adv_sid */, uint8_t /* adv_addr_type */,
-                  const RawAddress& /* adv_addr */, uint16_t /* skip_num */,
-                  uint16_t /* sync_timeout */, uint8_t /* sync_cte_type */) {}};
-  void operator()(uint8_t options, uint8_t adv_sid, uint8_t adv_addr_type,
-                  const RawAddress& adv_addr, uint16_t skip_num, uint16_t sync_timeout,
-                  uint8_t sync_cte_type) {
-    body(options, adv_sid, adv_addr_type, adv_addr, skip_num, sync_timeout, sync_cte_type);
-  }
-};
-extern struct btsnd_hcic_ble_periodic_advertising_create_sync
-        btsnd_hcic_ble_periodic_advertising_create_sync;
-
-// Name: btsnd_hcic_ble_periodic_advertising_create_sync_cancel
-// Params: base::OnceCallback<void(uint8_t*, uint16_t
-// Return: void
-struct btsnd_hcic_ble_periodic_advertising_create_sync_cancel {
-  std::function<void(base::OnceCallback<void(uint8_t*, uint16_t)>)> body{
-          [](base::OnceCallback<void(uint8_t*, uint16_t)> /* cb */) {}};
-  void operator()(base::OnceCallback<void(uint8_t*, uint16_t)> cb) { body(std::move(cb)); }
-};
-extern struct btsnd_hcic_ble_periodic_advertising_create_sync_cancel
-        btsnd_hcic_ble_periodic_advertising_create_sync_cancel;
-
-// Name: btsnd_hcic_ble_periodic_advertising_set_info_transfer
-// Params: uint16_t conn_handle, uint16_t service_data, uint8_t adv_handle,
-// base::OnceCallback<void(uint8_t*, uint16_t Return: void
-struct btsnd_hcic_ble_periodic_advertising_set_info_transfer {
-  std::function<void(uint16_t, uint16_t, uint8_t, base::OnceCallback<void(uint8_t*, uint16_t)>)>
-          body{[](uint16_t /* conn_handle */, uint16_t /* service_data */, uint8_t /* adv_handle */,
-                  base::OnceCallback<void(uint8_t*, uint16_t)> /* cb */) {}};
-  void operator()(uint16_t conn_handle, uint16_t service_data, uint8_t adv_handle,
-                  base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-    body(conn_handle, service_data, adv_handle, std::move(cb));
-  }
-};
-extern struct btsnd_hcic_ble_periodic_advertising_set_info_transfer
-        btsnd_hcic_ble_periodic_advertising_set_info_transfer;
-
-// Name: btsnd_hcic_ble_periodic_advertising_sync_transfer
-// Params: uint16_t conn_handle, uint16_t service_data, uint16_t sync_handle,
-// base::OnceCallback<void(uint8_t*, uint16_t Return: void
-struct btsnd_hcic_ble_periodic_advertising_sync_transfer {
-  std::function<void(uint16_t, uint16_t, uint16_t, base::OnceCallback<void(uint8_t*, uint16_t)>)>
-          body{[](uint16_t /* conn_handle */, uint16_t /* service_data */,
-                  uint16_t /* sync_handle */,
-                  base::OnceCallback<void(uint8_t*, uint16_t)> /* cb */) {}};
-  void operator()(uint16_t conn_handle, uint16_t service_data, uint16_t sync_handle,
-                  base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-    body(conn_handle, service_data, sync_handle, std::move(cb));
-  }
-};
-extern struct btsnd_hcic_ble_periodic_advertising_sync_transfer
-        btsnd_hcic_ble_periodic_advertising_sync_transfer;
-
-// Name: btsnd_hcic_ble_periodic_advertising_terminate_sync
-// Params: uint16_t sync_handle, base::OnceCallback<void(uint8_t*, uint16_t
-// Return: void
-struct btsnd_hcic_ble_periodic_advertising_terminate_sync {
-  std::function<void(uint16_t, base::OnceCallback<void(uint8_t*, uint16_t)>)> body{
-          [](uint16_t /* sync_handle */, base::OnceCallback<void(uint8_t*, uint16_t)> /* cb */) {}};
-  void operator()(uint16_t sync_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-    body(sync_handle, std::move(cb));
-  }
-};
-extern struct btsnd_hcic_ble_periodic_advertising_terminate_sync
-        btsnd_hcic_ble_periodic_advertising_terminate_sync;
 
 // Name: btsnd_hcic_ble_rand
 // Params: base::OnceCallback<void(Octet8)>
@@ -265,24 +146,6 @@ struct btsnd_hcic_ble_set_data_length {
 };
 extern struct btsnd_hcic_ble_set_data_length btsnd_hcic_ble_set_data_length;
 
-// Name: btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params
-// Params: uint16_t conn_handle, uint8_t mode, uint16_t skip, uint16_t
-// sync_timeout, uint8_t cte_type, base::OnceCallback<void(uint8_t*, uint16_t
-// Return: void
-struct btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params {
-  std::function<void(uint16_t, uint8_t, uint16_t, uint16_t, uint8_t,
-                     base::OnceCallback<void(uint8_t*, uint16_t)>)>
-          body{[](uint16_t /* conn_handle */, uint8_t /* mode */, uint16_t /* skip */,
-                  uint16_t /* sync_timeout */, uint8_t /* cte_type */,
-                  base::OnceCallback<void(uint8_t*, uint16_t)> /* cb */) {}};
-  void operator()(uint16_t conn_handle, uint8_t mode, uint16_t skip, uint16_t sync_timeout,
-                  uint8_t cte_type, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-    body(conn_handle, mode, skip, sync_timeout, cte_type, std::move(cb));
-  }
-};
-extern struct btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params
-        btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params;
-
 // Name: btsnd_hcic_ble_set_extended_scan_enable
 // Params: uint8_t enable, uint8_t filter_duplicates, uint16_t duration,
 // uint16_t period Return: void
@@ -310,39 +173,6 @@ struct btsnd_hcic_ble_set_extended_scan_params {
   }
 };
 extern struct btsnd_hcic_ble_set_extended_scan_params btsnd_hcic_ble_set_extended_scan_params;
-
-// Name: btsnd_hcic_ble_set_periodic_advertising_receive_enable
-// Params: uint16_t sync_handle, bool enable, base::OnceCallback<void(uint8_t*,
-// uint16_t Return: void
-struct btsnd_hcic_ble_set_periodic_advertising_receive_enable {
-  std::function<void(uint16_t, bool, base::OnceCallback<void(uint8_t*, uint16_t)>)> body{
-          [](uint16_t /* sync_handle */, bool /* enable */,
-             base::OnceCallback<void(uint8_t*, uint16_t)> /* cb */) {}};
-  void operator()(uint16_t sync_handle, bool enable,
-                  base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-    body(sync_handle, enable, std::move(cb));
-  }
-};
-extern struct btsnd_hcic_ble_set_periodic_advertising_receive_enable
-        btsnd_hcic_ble_set_periodic_advertising_receive_enable;
-
-// Name: btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params
-// Params: uint16_t conn_handle, uint8_t mode, uint16_t skip, uint16_t
-// sync_timeout, uint8_t cte_type, base::OnceCallback<void(uint8_t*, uint16_t
-// Return: void
-struct btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params {
-  std::function<void(uint16_t, uint8_t, uint16_t, uint16_t, uint8_t,
-                     base::OnceCallback<void(uint8_t*, uint16_t)>)>
-          body{[](uint16_t /* conn_handle */, uint8_t /* mode */, uint16_t /* skip */,
-                  uint16_t /* sync_timeout */, uint8_t /* cte_type */,
-                  base::OnceCallback<void(uint8_t*, uint16_t)> /* cb */) {}};
-  void operator()(uint16_t conn_handle, uint8_t mode, uint16_t skip, uint16_t sync_timeout,
-                  uint8_t cte_type, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-    body(conn_handle, mode, skip, sync_timeout, cte_type, std::move(cb));
-  }
-};
-extern struct btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params
-        btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params;
 
 // Name: btsnd_hcic_ble_set_rand_priv_addr_timeout
 // Params: uint16_t rpa_timeout
