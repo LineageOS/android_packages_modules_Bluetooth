@@ -916,10 +916,15 @@ void btif_hh_load_bonded_dev(const AclLinkSpec& link_spec_ref, tBTA_HH_ATTR_MASK
   }
 
   if (hh_add_device(link_spec, attr_mask, reconnect_allowed)) {
+    BTA_HhAddDev(link_spec, attr_mask, sub_class, app_id, dscp_info);
     if (reconnect_allowed) {
       BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_ACCEPTING, BTHH_OK);
+      if (com_android_bluetooth_flags_hogp_cancel_gatt_if_policy_forbidden() &&
+          link_spec.transport == BT_TRANSPORT_LE) {
+        // Trigger the background connection of HoGP devices.
+        BTA_HhOpen(link_spec, false);
+      }
     }
-    BTA_HhAddDev(link_spec, attr_mask, sub_class, app_id, dscp_info);
   }
 }
 

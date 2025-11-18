@@ -2158,7 +2158,9 @@ uint8_t bta_hh_le_add_device(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_MAINT_DEV* p_de
                             p_dev_info->dscp_info.ssr_max_latency,
                             p_dev_info->dscp_info.ssr_min_tout, p_dev_info->app_id);
 
-  bta_hh_le_add_dev_bg_conn(p_cb);
+  if (!com_android_bluetooth_flags_hogp_cancel_gatt_if_policy_forbidden()) {
+    bta_hh_le_add_dev_bg_conn(p_cb);
+  }
 
   return p_cb->hid_handle;
 }
