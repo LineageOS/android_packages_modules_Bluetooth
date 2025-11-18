@@ -88,7 +88,6 @@ class A2dpSinkStateMachine extends StateMachine {
         addState(mDisconnecting);
 
         setInitialState(mDisconnected);
-        Log.d(TAG, "[" + mDevice + "] State machine created");
         start(false);
     }
 
@@ -131,20 +130,13 @@ class A2dpSinkStateMachine extends StateMachine {
 
     @Override
     protected void unhandledMessage(Message msg) {
-        Log.w(
-                TAG,
-                "["
-                        + mDevice
-                        + "] unhandledMessage state="
-                        + getCurrentState()
-                        + ", msg.what="
-                        + msg.what);
+        warn("Unhandled msg=" + messageToString(msg.what));
     }
 
     class Disconnected extends State {
         @Override
         public void enter() {
-            Log.d(TAG, "[" + mDevice + "] Enter Disconnected");
+            debug("Enter");
             if (mMostRecentState != STATE_DISCONNECTED) {
                 sendMessage(CLEANUP);
             }
@@ -153,15 +145,16 @@ class A2dpSinkStateMachine extends StateMachine {
 
         @Override
         public boolean processMessage(Message msg) {
+            debug("Handle msg=" + messageToString(msg.what));
             switch (msg.what) {
                 case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(msg.arg1);
                 case MESSAGE_CONNECT -> {
-                    Log.d(TAG, "[" + mDevice + "] Connect");
+                    debug("Placing outgoing connection request");
                     transitionTo(mConnecting);
                 }
                 case CLEANUP -> {
                     mService.removeStateMachine(A2dpSinkStateMachine.this);
-                    Log.d(TAG, "[" + mDevice + "] State machine removed");
+                    debug("State machine removed");
                 }
                 default -> {
                     return false;
@@ -171,15 +164,11 @@ class A2dpSinkStateMachine extends StateMachine {
         }
 
         void processConnectionEvent(int state) {
+            debug("Handle state=" + BluetoothProfile.getConnectionStateName(state));
             switch (state) {
                 case STATE_CONNECTING -> {
                     if (mService.getConnectionPolicy(mDevice) == CONNECTION_POLICY_FORBIDDEN) {
-                        Log.w(
-                                TAG,
-                                "["
-                                        + mDevice
-                                        + "] Ignore incoming connection, profile"
-                                        + " is turned off");
+                        warn("Reject connection, policy=CONNECTION_POLICY_FORBIDDEN");
                         mNativeInterface.disconnectA2dpSink(mDevice);
                     } else {
                         mConnecting.mIncomingConnection = true;
@@ -198,7 +187,7 @@ class A2dpSinkStateMachine extends StateMachine {
 
         @Override
         public void enter() {
-            Log.d(TAG, "[" + mDevice + "] Enter Connecting");
+            debug("Enter");
             onConnectionStateChanged(STATE_CONNECTING);
             removeMessages(CLEANUP);
             sendMessageDelayed(MESSAGE_CONNECT_TIMEOUT, CONNECT_TIMEOUT_MS);
@@ -212,16 +201,12 @@ class A2dpSinkStateMachine extends StateMachine {
 
         @Override
         public boolean processMessage(Message msg) {
+            debug("Handle msg=" + messageToString(msg.what));
             switch (msg.what) {
                 case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(msg.arg1);
                 case MESSAGE_CONNECT_TIMEOUT -> transitionTo(mDisconnected);
                 case MESSAGE_DISCONNECT -> {
-                    Log.d(
-                            TAG,
-                            "["
-                                    + mDevice
-                                    + "] Received disconnect message while connecting."
-                                    + "deferred");
+                    debug("Received disconnect message while connecting. Deferred");
                     deferMessage(msg);
                 }
                 default -> {
@@ -232,6 +217,7 @@ class A2dpSinkStateMachine extends StateMachine {
         }
 
         void processConnectionEvent(int state) {
+            debug("Handle state=" + BluetoothProfile.getConnectionStateName(state));
             switch (state) {
                 case STATE_CONNECTED -> transitionTo(mConnected);
                 case STATE_DISCONNECTED -> transitionTo(mDisconnected);
@@ -249,13 +235,14 @@ class A2dpSinkStateMachine extends StateMachine {
     class Connected extends State {
         @Override
         public void enter() {
-            Log.d(TAG, "[" + mDevice + "] Enter Connected");
+            debug("Enter");
             removeMessages(CLEANUP);
             onConnectionStateChanged(STATE_CONNECTED);
         }
 
         @Override
         public boolean processMessage(Message msg) {
+            debug("Handle msg=" + messageToString(msg.what));
             switch (msg.what) {
                 case MESSAGE_DISCONNECT -> {
                     transitionTo(mDisconnecting);
@@ -275,6 +262,7 @@ class A2dpSinkStateMachine extends StateMachine {
         }
 
         void processConnectionEvent(int state) {
+            debug("Handle state=" + BluetoothProfile.getConnectionStateName(state));
             switch (state) {
                 case STATE_DISCONNECTING -> transitionTo(mDisconnecting);
                 case STATE_DISCONNECTED -> transitionTo(mDisconnected);
@@ -286,7 +274,7 @@ class A2dpSinkStateMachine extends StateMachine {
     protected class Disconnecting extends State {
         @Override
         public void enter() {
-            Log.d(TAG, "[" + mDevice + "] Enter Disconnecting");
+            debug("Enter");
             onConnectionStateChanged(STATE_DISCONNECTING);
             transitionTo(mDisconnected);
         }
@@ -296,7 +284,13 @@ class A2dpSinkStateMachine extends StateMachine {
         if (mMostRecentState == currentState) {
             return;
         }
-        Log.d(TAG, "[" + mDevice + "] Connection state: " + mMostRecentState + "->" + currentState);
+
+        debug(
+                "Connection state changed: "
+                        + BluetoothProfile.getConnectionStateName(mMostRecentState)
+                        + "->"
+                        + BluetoothProfile.getConnectionStateName(currentState));
+
         Intent intent = new Intent(BluetoothA2dpSink.ACTION_CONNECTION_STATE_CHANGED);
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, mMostRecentState);
         intent.putExtra(BluetoothProfile.EXTRA_STATE, currentState);
@@ -305,5 +299,26 @@ class A2dpSinkStateMachine extends StateMachine {
         mService.connectionStateChanged(mDevice, mMostRecentState, currentState);
         mMostRecentState = currentState;
         mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+    }
+
+    private void warn(String msg) {
+        Log.w(TAG, "[" + mDevice + "] " + getCurrentState().getName() + ": " + msg);
+    }
+
+    private void debug(String msg) {
+        Log.w(TAG, "[" + mDevice + "] " + getCurrentState().getName() + ": " + msg);
+    }
+
+    private static final String messageToString(int what) {
+        return switch(what) {
+            case -1 /* SM_QUIT_CMD */ -> "SM_QUIT_CMD";
+            case -2 /* SM_INIT_CMD */ -> "SM_INIT_CMD";
+            case MESSAGE_CONNECT -> "MESSAGE_CONNECT";
+            case MESSAGE_DISCONNECT -> "MESSAGE_DISCONNECT";
+            case MESSAGE_CONNECT_TIMEOUT -> "MESSAGE_CONNECT_TIMEOUT";
+            case MESSAGE_CONNECTION_STATE_CHANGED -> "MESSAGE_CONNECTION_STATE_CHANGED";
+            case MESSAGE_AUDIO_CONFIG_CHANGED -> "MESSAGE_AUDIO_CONFIG_CHANGED";
+            default -> "MESSAGE_UNKNOWN_" + what;
+        };
     }
 }

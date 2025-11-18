@@ -133,6 +133,7 @@ public class A2dpSinkService extends ConnectableProfile {
 
     /** Request audio focus such that the designated device can stream audio */
     public void requestAudioFocus(BluetoothDevice device, boolean request) {
+        Log.i(TAG, "requestAudioFocus(device=" + device + ", focus=" + request + ")");
         synchronized (mStreamHandlerLock) {
             mA2dpSinkStreamHandler.requestAudioFocus(request);
         }
@@ -169,7 +170,7 @@ public class A2dpSinkService extends ConnectableProfile {
      */
     @Override
     public boolean connect(BluetoothDevice device) {
-        Log.d(TAG, "connect device=" + device);
+        Log.i(TAG, "connect(device=" + device + ")");
 
         if (getConnectionPolicy(requireNonNull(device)) == CONNECTION_POLICY_FORBIDDEN) {
             Log.w(TAG, "Connection not allowed: <" + device + "> is CONNECTION_POLICY_FORBIDDEN");
@@ -192,7 +193,7 @@ public class A2dpSinkService extends ConnectableProfile {
      */
     @Override
     public boolean disconnect(BluetoothDevice device) {
-        Log.d(TAG, "disconnect device=" + device);
+        Log.i(TAG, "disconnect(device=" + device + ")");
         if (device == null) {
             throw new IllegalArgumentException("Null device");
         }
@@ -256,25 +257,17 @@ public class A2dpSinkService extends ConnectableProfile {
     }
 
     List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
-        Log.d(TAG, "getDevicesMatchingConnectionStates(states=" + Arrays.toString(states) + ")");
         List<BluetoothDevice> deviceList = new ArrayList<>();
         BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
         int connectionState;
         for (BluetoothDevice device : bondedDevices) {
             connectionState = getConnectionState(device);
-            Log.d(TAG, "Device: " + device + "State: " + connectionState);
             for (int i = 0; i < states.length; i++) {
                 if (connectionState == states[i]) {
                     deviceList.add(device);
                 }
             }
         }
-        Log.d(
-                TAG,
-                "getDevicesMatchingConnectionStates("
-                        + Arrays.toString(states)
-                        + "): Found "
-                        + deviceList.toString());
         return deviceList;
     }
 
@@ -313,7 +306,7 @@ public class A2dpSinkService extends ConnectableProfile {
      */
     @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
-        Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
+        Log.i(TAG, "setConnectionPolicy(device=" + device + ", policy=" + connectionPolicy + ")");
 
         if (!getAdapterService()
                 .setProfileConnectionPolicy(device, getProfileId(), connectionPolicy)) {
@@ -356,7 +349,12 @@ public class A2dpSinkService extends ConnectableProfile {
     }
 
     void onConnectionStateChangedFromNative(BluetoothDevice device, int state) {
-        Log.d(TAG, "onConnectionStateChangedFromNative(" + device + ", " + state + ")");
+        Log.d(
+                TAG,
+                "onConnectionStateChangedFromNative("
+                        + ("device=" + device)
+                        + (", state=" + state)
+                        + ")");
 
         if (device == null) {
             return;
@@ -387,11 +385,9 @@ public class A2dpSinkService extends ConnectableProfile {
         Log.d(
                 TAG,
                 "onAudioConfigChangedFromNative("
-                        + device
-                        + ", "
-                        + sampleRate
-                        + ", "
-                        + channelCount
+                        + ("device=" + device)
+                        + (", sampleRate=" + sampleRate)
+                        + (", channelCount=" + channelCount)
                         + ")");
 
         if (device == null) {
@@ -400,7 +396,7 @@ public class A2dpSinkService extends ConnectableProfile {
 
         A2dpSinkStateMachine stateMachine = getStateMachineForDevice(device);
         if (stateMachine == null) {
-            Log.w(TAG, "onAudioConfigChangedFromNative on unconnected " + device);
+            Log.w(TAG, "onAudioConfigChangedFromNative(device=" + device + "): Not connected");
             return;
         }
         stateMachine.sendMessage(
