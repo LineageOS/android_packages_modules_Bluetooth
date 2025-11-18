@@ -61,7 +61,10 @@ public:
   uint8_t security_mode{0};
   bool pairing_disabled{false};
   bool security_mode_changed{false};      /* mode changed during bonding */
+
+  // TODO : Remove when the flag local_pin_key_type is shipped
   bool pin_type_changed{false};           /* pin type changed during bonding */
+
   bool l2c_service_access_pending{false}; /* If an L2CAP service access request is pending */
 
   uint8_t pin_code_len{0};                               /* for legacy devices */

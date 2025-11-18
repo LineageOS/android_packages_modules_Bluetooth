@@ -32,6 +32,8 @@
  */
 typedef struct {
   BD_NAME bd_name;      /* local Bluetooth device name */
+
+  // TODO : Remove when the flag local_pin_key_type is shipped
   bool pin_type;        /* true if PIN type is fixed */
   uint8_t pin_code_len; /* Bonding information */
   PinCode pin_code;     /* PIN CODE if pin type is fixed */
