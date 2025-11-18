@@ -18,16 +18,11 @@ package android.bluetooth;
 
 import static android.bluetooth.BluetoothDevice.Transport;
 
-import static java.util.Objects.requireNonNull;
-
-import android.annotation.CallbackExecutor;
 import android.annotation.FlaggedApi;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 
 import com.android.bluetooth.flags.Flags;
-
-import java.util.concurrent.Executor;
 
 /**
  * Defines parameters for creating BluetoothGatt connection.
@@ -56,15 +51,6 @@ public final class BluetoothGattConnectionSettings {
     /** Transport to be used for GATT connection. */
     private final @Transport int mTransport;
 
-    /**
-     * Bluetooth gatt callback object {@link BluetoothGattCallback} which will be used to notify
-     * application with various Bluetooth Gatt related statuses
-     */
-    private final @NonNull BluetoothGattCallback mBluetoothGattCallback;
-
-    /** Executor on which callbacks will be invoked */
-    private final @NonNull Executor mCallbackExecutor;
-
     /** Returns true if auto connection enabled or false otherwise. */
     @RequiresNoPermission
     public boolean isAutoConnectEnabled() {
@@ -91,17 +77,6 @@ public final class BluetoothGattConnectionSettings {
         return mAutomaticMtuEnabled;
     }
 
-    /** Returns callback handle to receive the Bluetooth Gatt related callbacks. */
-    public @NonNull BluetoothGattCallback getBluetoothGattCallback() {
-        return mBluetoothGattCallback;
-    }
-
-    /** Returns the callback executor on which Bluetooth Gatt related callbacks will be invoked */
-    @RequiresNoPermission
-    public @NonNull Executor getBluetoothGattCallbackExecutor() {
-        return mCallbackExecutor;
-    }
-
     /**
      * Returns a {@link String} that describes each BluetoothGattConnectionSettings parameter
      * current value.
@@ -117,10 +92,6 @@ public final class BluetoothGattConnectionSettings {
                 .append(mTransport)
                 .append(", mAutomaticMtuEnabled=")
                 .append(mAutomaticMtuEnabled)
-                .append(", mBluetoothGattCallback=")
-                .append(mBluetoothGattCallback)
-                .append(", mCallbackExecutor=")
-                .append(mCallbackExecutor)
                 .append("}");
         return builder.toString();
     }
@@ -129,15 +100,11 @@ public final class BluetoothGattConnectionSettings {
             boolean isAutoConnectEnabled,
             boolean isOpportunisticEnabled,
             @Transport int transport,
-            boolean automaticMtuEnabled,
-            @CallbackExecutor Executor executor,
-            BluetoothGattCallback bluetoothGattCallback) {
+            boolean automaticMtuEnabled) {
         mAutoConnectEnabled = isAutoConnectEnabled;
         mOpportunisticEnabled = isOpportunisticEnabled;
         mTransport = transport;
         mAutomaticMtuEnabled = automaticMtuEnabled;
-        mBluetoothGattCallback = bluetoothGattCallback;
-        mCallbackExecutor = executor;
     }
 
     /** Builder for {@link BluetoothGattConnectionSettings}. */
@@ -146,21 +113,9 @@ public final class BluetoothGattConnectionSettings {
         private boolean mOpportunisticEnabled = false;
         private @Transport int mTransport = BluetoothDevice.TRANSPORT_LE;
         private boolean mAutomaticMtuEnabled = true;
-        private @NonNull BluetoothGattCallback mBluetoothGattCallback;
-        private @NonNull Executor mExecutor;
 
-        /**
-         * Creates a new Builder for {@link BluetoothGattConnectionSettings}.
-         *
-         * @param executor The executor on which GATT callbacks will be invoked.
-         * @param bluetoothGattCallback The callback object to receive GATT events.
-         */
-        public Builder(
-                @NonNull @CallbackExecutor Executor executor,
-                @NonNull BluetoothGattCallback bluetoothGattCallback) {
-            mExecutor = requireNonNull(executor);
-            mBluetoothGattCallback = requireNonNull(bluetoothGattCallback);
-        }
+        /** Creates a new Builder for {@link BluetoothGattConnectionSettings}. */
+        public Builder() {}
 
         /**
          * Setting this to true will enable the automatic connection to remote device when It is
@@ -234,12 +189,7 @@ public final class BluetoothGattConnectionSettings {
         @RequiresNoPermission
         public BluetoothGattConnectionSettings build() {
             return new BluetoothGattConnectionSettings(
-                    mAutoConnectEnabled,
-                    mOpportunisticEnabled,
-                    mTransport,
-                    mAutomaticMtuEnabled,
-                    mExecutor,
-                    mBluetoothGattCallback);
+                    mAutoConnectEnabled, mOpportunisticEnabled, mTransport, mAutomaticMtuEnabled);
         }
     }
 }

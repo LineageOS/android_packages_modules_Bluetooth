@@ -145,7 +145,7 @@ class GattClientTest {
         val gattCallback = mock(BluetoothGattCallback::class.java)
 
         val gattSettings =
-            BluetoothGattConnectionSettings.Builder(context.mainExecutor, gattCallback)
+            BluetoothGattConnectionSettings.Builder()
                 .setTransport(BluetoothDevice.TRANSPORT_LE)
                 .setAutomaticMtuEnabled(true)
                 .setAutoConnectEnabled(false)
@@ -567,7 +567,8 @@ class GattClientTest {
 
         advertiseWithBumble()
 
-        val gatt: BluetoothGatt? = remoteLeDevice.connectGatt(gattConnectionSettings)
+        val gatt: BluetoothGatt? =
+            remoteLeDevice.connectGatt(gattConnectionSettings, context.mainExecutor, callback)
         verify(callback, timeout(1000)).onConnectionStateChange(eq(gatt), eq(status), eq(state))
 
         return gatt!!
