@@ -76,6 +76,7 @@ public class HeadsetClientServiceTest {
     @Mock private HeadsetClientNativeInterface mNativeInterface;
     @Mock private DatabaseManager mDatabaseManager;
     @Mock private RemoteDevices mRemoteDevices;
+    @Mock private PackageManager mPackageManager;
 
     private HeadsetClientService mService;
 
@@ -90,6 +91,7 @@ public class HeadsetClientServiceTest {
         mockGetSystemService(mAdapterService, BatteryManager.class);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
+        doReturn(mPackageManager).when(mAdapterService).getPackageManager();
     }
 
     @Test
@@ -160,10 +162,7 @@ public class HeadsetClientServiceTest {
 
     @Test
     public void testHfpClientConnectionServiceStarted() throws Exception {
-        PackageManager packageManager = Mockito.mock(PackageManager.class);
-
-        doReturn(false).when(packageManager).hasSystemFeature(FEATURE_WATCH);
-        doReturn(packageManager).when(mAdapterService).getPackageManager();
+        doReturn(false).when(mPackageManager).hasSystemFeature(FEATURE_WATCH);
 
         HeadsetClientService service = new HeadsetClientService(mAdapterService, mNativeInterface);
 
@@ -174,10 +173,7 @@ public class HeadsetClientServiceTest {
 
     @Test
     public void testHfpClientConnectionServiceNotStarted_wearable() throws Exception {
-        PackageManager packageManager = Mockito.mock(PackageManager.class);
-
-        doReturn(true).when(packageManager).hasSystemFeature(FEATURE_WATCH);
-        doReturn(packageManager).when(mAdapterService).getPackageManager();
+        doReturn(true).when(mPackageManager).hasSystemFeature(FEATURE_WATCH);
 
         HeadsetClientService service = new HeadsetClientService(mAdapterService, mNativeInterface);
 
