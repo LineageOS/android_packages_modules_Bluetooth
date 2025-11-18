@@ -80,26 +80,6 @@ public class UtilsTest {
     }
 
     @Test
-    public void checkCallerHasCoarseLocation_doesNotCrash() {
-        Context context = InstrumentationRegistry.getInstrumentation().getContext();
-        UserHandle userHandle = UserHandle.SYSTEM;
-        LocationManager locationManager = context.getSystemService(LocationManager.class);
-        boolean enabledStatus = locationManager.isLocationEnabledForUser(userHandle);
-
-        locationManager.setLocationEnabledForUser(false, userHandle);
-        assertThat(
-                        Util.checkCallerHasCoarseLocation(
-                                context, context.getAttributionSource(), userHandle))
-                .isFalse();
-
-        locationManager.setLocationEnabledForUser(true, userHandle);
-        Util.checkCallerHasCoarseLocation(context, context.getAttributionSource(), userHandle);
-        if (!enabledStatus) {
-            locationManager.setLocationEnabledForUser(false, userHandle);
-        }
-    }
-
-    @Test
     public void checkCallerHasCoarseOrFineLocation_doesNotCrash() {
         Context context = InstrumentationRegistry.getInstrumentation().getContext();
         UserHandle userHandle = UserHandle.SYSTEM;

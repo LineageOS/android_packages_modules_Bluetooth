@@ -26,6 +26,7 @@ import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.Util.blockedByLocationOff
+import com.android.bluetooth.Util.checkCallerHasCoarseLocation
 import com.android.bluetooth.Util.checkProfileAvailable
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.profile.ProfileService
@@ -149,5 +150,22 @@ class UtilTest {
         assertThat(context.blockedByLocationOff(userHandle)).isEqualTo(enableStatus)
 
         locationManager.setLocationEnabledForUser(enableStatus, userHandle)
+    }
+
+    @Test
+    fun checkCallerHasCoarseLocation() {
+        val userHandle = UserHandle.SYSTEM
+        val locationManager = context.getSystemService(LocationManager::class.java)
+        val enableStatus = locationManager.isLocationEnabledForUser(userHandle)
+        val source = context.attributionSource
+
+        locationManager.setLocationEnabledForUser(false, userHandle)
+        assertThat(context.checkCallerHasCoarseLocation(source, userHandle)).isFalse()
+
+        locationManager.setLocationEnabledForUser(true, userHandle)
+        context.checkCallerHasCoarseLocation(source, userHandle)
+        if (!enableStatus) {
+            locationManager.setLocationEnabledForUser(false, userHandle)
+        }
     }
 }
