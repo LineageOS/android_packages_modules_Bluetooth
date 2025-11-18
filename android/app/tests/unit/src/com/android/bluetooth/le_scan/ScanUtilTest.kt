@@ -65,6 +65,33 @@ class ScanUtilTest {
     }
 
     @Test
+    fun matchModeToString() {
+        assertThat(MatchMode(ScanSettings.MATCH_MODE_AGGRESSIVE).toString()).isEqualTo("AGGRESSIVE")
+        assertThat(MatchMode(ScanSettings.MATCH_MODE_STICKY).toString()).isEqualTo("STICKY")
+        assertThat(MatchMode(99).toString()).isEqualTo("UNKNOWN(99)")
+    }
+
+    @Test
+    fun numberOfMatchesToString() {
+        assertThat(NumberOfMatches(ScanSettings.MATCH_NUM_ONE_ADVERTISEMENT).toString())
+            .isEqualTo("ONE")
+        assertThat(NumberOfMatches(ScanSettings.MATCH_NUM_FEW_ADVERTISEMENT).toString())
+            .isEqualTo("FEW")
+        assertThat(NumberOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT).toString())
+            .isEqualTo("MAX")
+        assertThat(NumberOfMatches(99).toString()).isEqualTo("UNKNOWN(99)")
+    }
+
+    @Test
+    fun phyToString() {
+        assertThat(Phy(ScanSettings.PHY_LE_ALL_SUPPORTED).toString()).isEqualTo("ALL")
+        assertThat(Phy(android.bluetooth.BluetoothDevice.PHY_LE_1M).toString()).isEqualTo("1M")
+        assertThat(Phy(android.bluetooth.BluetoothDevice.PHY_LE_CODED).toString())
+            .isEqualTo("CODED")
+        assertThat(Phy(99).toString()).isEqualTo("UNKNOWN(99)")
+    }
+
+    @Test
     fun resultTypeToString() {
         assertThat(ResultType(ScanSettings.SCAN_RESULT_TYPE_FULL).toString()).isEqualTo("FULL")
         assertThat(ResultType(ScanSettings.SCAN_RESULT_TYPE_ABBREVIATED).toString())
@@ -85,5 +112,13 @@ class ScanUtilTest {
         assertThat(ScanMode(ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED).toString())
             .isEqualTo("SCREEN_OFF_BALANCED")
         assertThat(ScanMode(99).toString()).isEqualTo("UNKNOWN(99)")
+    }
+
+    @Test
+    fun typeToString() {
+        assertThat(Type(ScanSettings.SCAN_TYPE_UNKNOWN).toString()).isEqualTo("UNKNOWN")
+        assertThat(Type(ScanSettings.SCAN_TYPE_PASSIVE).toString()).isEqualTo("PASSIVE")
+        assertThat(Type(ScanSettings.SCAN_TYPE_ACTIVE).toString()).isEqualTo("ACTIVE")
+        assertThat(Type(99).toString()).isEqualTo("UNKNOWN(99)")
     }
 }
