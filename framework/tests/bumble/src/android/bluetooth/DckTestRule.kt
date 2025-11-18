@@ -58,9 +58,6 @@ class DckTestRule(
     private val isGattConnected: Boolean = false,
 ) : TestRule {
 
-    private val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
-    private val leScanner = bluetoothAdapter.bluetoothLeScanner!!
-
     private val scope = CoroutineScope(Dispatchers.Default)
     private val ioScope = CoroutineScope(Dispatchers.IO)
 
@@ -267,15 +264,15 @@ class DckTestRule(
 
         try {
             withTimeout(TIMEOUT_MS * 2) { // Combined timeout for enabling and disabling BT
-                if (bluetoothAdapter.isEnabled()) {
+                if (adapter.isEnabled()) {
                     // Disable Bluetooth
-                    bluetoothAdapter.disable()
+                    adapter.disable()
                     // Wait for the BT state change to STATE_OFF
                     bluetoothStateFlow.first { it == BluetoothAdapter.STATE_OFF }
                 }
 
                 // Enable Bluetooth
-                bluetoothAdapter.enable()
+                adapter.enable()
                 // Wait for the BT state change to STATE_ON
                 bluetoothStateFlow.first { it == BluetoothAdapter.STATE_ON }
             }
@@ -312,7 +309,7 @@ class DckTestRule(
     private fun connectGatt() = runBlocking {
         // TODO(315852141): Use supported Bumble for the given type (LE Only vs. Dual Mode)
         val bumbleDevice =
-            bluetoothAdapter.getRemoteLeDevice(
+            adapter.getRemoteLeDevice(
                 Utils.BUMBLE_RANDOM_ADDRESS,
                 BluetoothDevice.ADDRESS_TYPE_RANDOM,
             )

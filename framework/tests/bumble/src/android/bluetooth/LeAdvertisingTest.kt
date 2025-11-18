@@ -20,10 +20,8 @@ import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSet
 import android.bluetooth.le.AdvertisingSetCallback
 import android.bluetooth.le.AdvertisingSetParameters
-import android.content.Context
 import android.util.Log
 import androidx.core.util.Pair
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
@@ -62,11 +60,8 @@ class LeAdvertisingTest {
 
     private fun startAdvertising(): CompletableFuture<Pair<String, Int>> {
         val future = CompletableFuture<Pair<String, Int>>()
-        val context = ApplicationProvider.getApplicationContext<Context>()
 
         // Start advertising
-        val leAdvertiser =
-            context.getSystemService(BluetoothManager::class.java).adapter.bluetoothLeAdvertiser!!
         val parameters =
             AdvertisingSetParameters.Builder()
                 .setOwnAddressType(AdvertisingSetParameters.ADDRESS_TYPE_RANDOM)
