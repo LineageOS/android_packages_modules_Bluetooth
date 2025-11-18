@@ -58,8 +58,6 @@ import pandora.HostProto.OwnAddressType
 class DckGattTest() {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
-    private val leScanner = bluetoothAdapter.bluetoothLeScanner!!
 
     private val scanResultCaptor = argumentCaptor<ScanResult>()
     private val scanCallbackMock = mock<ScanCallback>()
@@ -93,7 +91,7 @@ class DckGattTest() {
 
             // Connect DUT to Ref as prerequisite
             val device =
-                bluetoothAdapter.getRemoteLeDevice(
+                adapter.getRemoteLeDevice(
                     Utils.BUMBLE_RANDOM_ADDRESS,
                     BluetoothDevice.ADDRESS_TYPE_RANDOM,
                 )
@@ -171,7 +169,7 @@ class DckGattTest() {
 
         // 3. Fetch a remote Bluetooth device instance (here, Bumble).
         val bumbleDevice =
-            bluetoothAdapter.getRemoteLeDevice(
+            adapter.getRemoteLeDevice(
                 // To keep things straightforward, the Bumble RANDOM address is set to a predefined
                 // constant.
                 // Typically, an LE scan would be conducted to identify the Bumble device, matching

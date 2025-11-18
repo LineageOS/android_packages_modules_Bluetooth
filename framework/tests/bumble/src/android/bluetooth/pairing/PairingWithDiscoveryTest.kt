@@ -18,12 +18,12 @@ package android.bluetooth.pairing
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
 import android.bluetooth.PandoraDevice
 import android.bluetooth.StreamObserverSpliterator
 import android.bluetooth.Utils
 import android.bluetooth.Utils.BUMBLE_DEVICE_NAME
 import android.bluetooth.Utils.BUMBLE_DEVICE_NAME_2
+import android.bluetooth.adapter
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSetCallback
 import android.bluetooth.le.AdvertisingSetParameters
@@ -31,6 +31,8 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.bluetooth.leAdvertiser
+import android.bluetooth.leScanner
 import android.bluetooth.pairing.utils.IntentReceiver
 import android.bluetooth.pairing.utils.TestUtil
 import android.bluetooth.test_utils.BlockingBluetoothAdapter
@@ -102,10 +104,7 @@ class PairingWithDiscoveryTest {
     @Mock private lateinit var receiver: BroadcastReceiver
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
     private val actionRegistrationCounts = HashMap<String, Int>()
-    private val leAdvertiser = adapter.bluetoothLeAdvertiser!!
-    private val leScanner = adapter.bluetoothLeScanner!!
 
     private var bumbleDevice: BluetoothDevice? = null
     private lateinit var remoteLeDevice: BluetoothDevice

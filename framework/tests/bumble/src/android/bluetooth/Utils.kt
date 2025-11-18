@@ -18,10 +18,14 @@ package android.bluetooth
 
 import android.bluetooth.BluetoothAdapter.STATE_OFF
 import android.bluetooth.BluetoothProfile.getConnectionStateName
+import android.bluetooth.le.BluetoothLeAdvertiser
+import android.bluetooth.le.BluetoothLeScanner
 import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
 import android.os.ParcelUuid
 import android.util.Log
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.io.BaseEncoding.base16
 import com.google.protobuf.ByteString
 import java.util.Locale
@@ -29,6 +33,19 @@ import java.util.UUID
 import org.mockito.Mockito.any
 import org.mockito.Mockito.doAnswer
 import org.mockito.kotlin.whenever
+
+internal val manager: BluetoothManager by lazy {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    context.getSystemService(BluetoothManager::class.java)
+}
+
+internal val adapter: BluetoothAdapter by lazy { manager.adapter }
+
+internal val leAdvertiser: BluetoothLeAdvertiser
+    get() = adapter.bluetoothLeAdvertiser ?: error("LeAdvertiser is null. Bluetooth is off")
+
+internal val leScanner: BluetoothLeScanner
+    get() = adapter.bluetoothLeScanner ?: error("LeScanner is null. Bluetooth is off")
 
 fun ByteString.toAddressString() = toByteArray().joinToString(":") { "%02X".format(it) }
 

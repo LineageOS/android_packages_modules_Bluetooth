@@ -67,8 +67,6 @@ class PrivateGattAdvertisingTest {
     @get:Rule(order = 2) val bumble = PandoraDevice()
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)
-    private val leAdvertiser = bluetoothManager.adapter.bluetoothLeAdvertiser!!
     private val advertisingSetCallbacksToClear = mutableListOf<AdvertisingSetCallback>()
 
     @After
@@ -83,7 +81,7 @@ class PrivateGattAdvertisingTest {
     fun privateGattAdvertisingWithNormalAdvertising() {
         // Starts private GATT advertisement, and get address of it.
         val privateGattServerCallback = mock<BluetoothGattServerCallback>()
-        val privateGattServer = bluetoothManager.openGattServer(context, privateGattServerCallback)
+        val privateGattServer = manager.openGattServer(context, privateGattServerCallback)
         privateGattServer.addService(
             BluetoothGattService(
                 TEST_GATT_SERVICE_UUID_1,
@@ -98,7 +96,7 @@ class PrivateGattAdvertisingTest {
 
         // Starts a normal advertisement, and get address of it.
         val normalGattServerCallback = mock<BluetoothGattServerCallback>()
-        val normalGattServer = bluetoothManager.openGattServer(context, normalGattServerCallback)
+        val normalGattServer = manager.openGattServer(context, normalGattServerCallback)
         normalGattServer.addService(
             BluetoothGattService(
                 TEST_GATT_SERVICE_UUID_2,
@@ -184,8 +182,7 @@ class PrivateGattAdvertisingTest {
     fun twoPrivateGattAdvertising() {
         // Starts private GATT advertisement 1, and get address of it.
         val privateGattServer1Callback = mock<BluetoothGattServerCallback>()
-        val privateGattServer1 =
-            bluetoothManager.openGattServer(context, privateGattServer1Callback)
+        val privateGattServer1 = manager.openGattServer(context, privateGattServer1Callback)
         privateGattServer1.addService(
             BluetoothGattService(
                 TEST_GATT_SERVICE_UUID_1,
@@ -200,8 +197,7 @@ class PrivateGattAdvertisingTest {
 
         // Starts private GATT advertisement 2, and get address of it.
         val privateGattServer2Callback = mock<BluetoothGattServerCallback>()
-        val privateGattServer2 =
-            bluetoothManager.openGattServer(context, privateGattServer2Callback)
+        val privateGattServer2 = manager.openGattServer(context, privateGattServer2Callback)
         privateGattServer2.addService(
             BluetoothGattService(
                 TEST_GATT_SERVICE_UUID_2,

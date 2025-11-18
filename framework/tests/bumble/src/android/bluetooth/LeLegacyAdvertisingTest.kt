@@ -20,9 +20,7 @@ import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSet
 import android.bluetooth.le.AdvertisingSetCallback
 import android.bluetooth.le.AdvertisingSetParameters
-import android.content.Context
 import android.os.ParcelUuid
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
@@ -36,10 +34,6 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class LeLegacyAdvertisingTest {
     @get:Rule(order = 0) val permissionRule = AdoptShellPermissionsRule()
-
-    private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val leAdvertiser =
-        context.getSystemService(BluetoothManager::class.java).adapter.bluetoothLeAdvertiser!!
 
     @Test
     fun setAdvertisingDataOver31Bytes() {

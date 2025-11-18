@@ -71,8 +71,6 @@ class LeScanningTest {
     @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val leScanner =
-        context.getSystemService(BluetoothManager::class.java).adapter.bluetoothLeScanner!!
 
     @Test
     fun startBleScan_withCallbackTypeAllMatches() {

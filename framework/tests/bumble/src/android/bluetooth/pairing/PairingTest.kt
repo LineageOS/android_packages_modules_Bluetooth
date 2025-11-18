@@ -20,15 +20,16 @@ import android.bluetooth.BluetoothA2dp
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothHeadset
 import android.bluetooth.BluetoothHidHost
-import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.PandoraDevice
 import android.bluetooth.StreamObserverSpliterator
 import android.bluetooth.Utils
+import android.bluetooth.adapter
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertisingSetCallback
 import android.bluetooth.le.AdvertisingSetParameters
+import android.bluetooth.leAdvertiser
 import android.bluetooth.pairing.utils.IntentReceiver
 import android.bluetooth.pairing.utils.TestUtil
 import android.bluetooth.test_utils.BlockingBluetoothAdapter
@@ -68,7 +69,6 @@ import org.mockito.MockitoAnnotations
 import pandora.BumbleConfigProto.OverrideRequest
 import pandora.BumbleConfigProto.PairingConfig
 import pandora.GattProto
-import pandora.HostProto
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.AdvertiseResponse
 import pandora.HostProto.ConnectLERequest
@@ -102,6 +102,8 @@ class PairingTest {
     @get:Rule(order = 4) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Mock private lateinit var profileServiceListener: BluetoothProfile.ServiceListener
+
+    private val context = ApplicationProvider.getApplicationContext<Context>()
 
     /* Util instance for common test steps with current Context reference */
     private lateinit var util: TestUtil
@@ -1954,7 +1956,7 @@ class PairingTest {
                 .setBonding(false)
                 .setMitm(false)
                 .setSc(false)
-                .setIdentityAddressType(HostProto.OwnAddressType.PUBLIC)
+                .setIdentityAddressType(OwnAddressType.PUBLIC)
                 .build()
         val overrideRequest = OverrideRequest.newBuilder().setPairingConfig(pairingConfig).build()
         currentDevice.bumbleConfigBlocking().override(overrideRequest)
@@ -2034,10 +2036,6 @@ class PairingTest {
         private val HOGP_UUID = ParcelUuid.fromString("00001812-0000-1000-8000-00805F9B34FB")
         private const val SERIAL_PORT_UUID = "00001101-0000-1000-8000-00805F9B34FB"
         private const val TEST_SERVER_NAME = "RFCOMM Server"
-
-        private val context = ApplicationProvider.getApplicationContext<Context>()
-        private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
-        private val leAdvertiser = adapter.bluetoothLeAdvertiser!!
 
         private lateinit var deviceName: String
         private var toggleDevice = true
