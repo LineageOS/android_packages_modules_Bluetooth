@@ -16,6 +16,7 @@
 
 package com.android.bluetooth
 
+import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.BLUETOOTH_ADVERTISE
 import android.Manifest.permission.BLUETOOTH_CONNECT
 import android.Manifest.permission.BLUETOOTH_PRIVILEGED
@@ -243,6 +244,34 @@ object Util {
     @JvmStatic
     fun Context.blockedByLocationOff(userHandle: UserHandle) =
         !getSystemService(LocationManager::class.java).isLocationEnabledForUser(userHandle)
+
+    /** Checks that calling process has ACCESS_COARSE_LOCATION and OP_COARSE_LOCATION is allowed */
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
+    @JvmStatic
+    fun Context.checkCallerHasCoarseLocation(
+        source: AttributionSource,
+        userHandle: UserHandle,
+    ): Boolean {
+        if (blockedByLocationOff(userHandle)) {
+            Log.e(TAG, "Permission denial: Location is off")
+            return false
+        }
+        val currentAttribution =
+            AttributionSource.Builder(attributionSource).setNext(source).build()
+        val permissionManager = getSystemService(PermissionManager::class.java) ?: return false
+        val result =
+            permissionManager.checkPermissionForDataDeliveryFromDataSource(
+                ACCESS_COARSE_LOCATION,
+                currentAttribution,
+                "Bluetooth location check",
+            )
+        if (result == PERMISSION_GRANTED) {
+            return true
+        }
+
+        Log.e(TAG, "Need ACCESS_COARSE_LOCATION permission for $currentAttribution")
+        return false
+    }
 
     /**
      * Checks that the target sdk of the app corresponding to the provided package name is greater

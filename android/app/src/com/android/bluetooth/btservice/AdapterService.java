@@ -2830,7 +2830,7 @@ public class AdapterService extends Service {
                 }
                 permission = android.Manifest.permission.ACCESS_FINE_LOCATION;
             } else {
-                if (!Utils.checkCallerHasCoarseLocation(this, source, callingUser)) {
+                if (!Util.checkCallerHasCoarseLocation(this, source, callingUser)) {
                     return false;
                 }
                 permission = android.Manifest.permission.ACCESS_COARSE_LOCATION;

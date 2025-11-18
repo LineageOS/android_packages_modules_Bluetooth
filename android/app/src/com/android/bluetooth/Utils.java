@@ -502,31 +502,6 @@ public final class Utils {
         return checkCallerIsSystemOrActiveOrManagedUser(context, tag + "." + method + "()");
     }
 
-    /** Checks that calling process has ACCESS_COARSE_LOCATION and OP_COARSE_LOCATION is allowed */
-    public static boolean checkCallerHasCoarseLocation(
-            Context context, AttributionSource source, UserHandle userHandle) {
-        if (Util.blockedByLocationOff(context, userHandle)) {
-            Log.e(TAG, "Permission denial: Location is off.");
-            return false;
-        }
-        AttributionSource currentAttribution =
-                new AttributionSource.Builder(context.getAttributionSource())
-                        .setNext(requireNonNull(source))
-                        .build();
-        PermissionManager pm = context.getSystemService(PermissionManager.class);
-        if (pm == null) {
-            return false;
-        }
-        if (pm.checkPermissionForDataDeliveryFromDataSource(
-                        ACCESS_COARSE_LOCATION, currentAttribution, "Bluetooth location check")
-                == PERMISSION_GRANTED) {
-            return true;
-        }
-
-        Log.e(TAG, "Need ACCESS_COARSE_LOCATION permission for " + currentAttribution);
-        return false;
-    }
-
     /**
      * Checks that calling process has ACCESS_COARSE_LOCATION and OP_COARSE_LOCATION is allowed or
      * ACCESS_FINE_LOCATION and OP_FINE_LOCATION is allowed

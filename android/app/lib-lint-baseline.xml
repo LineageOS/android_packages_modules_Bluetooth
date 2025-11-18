@@ -822,18 +822,7 @@
         errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/Utils.java"
-            line="454"
-            column="27"/>
-    </issue>
-
-    <issue
-        id="IncorrectRequiresPermissionPropagation"
-        message="Method `Utils.checkCallerHasCoarseLocation` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.ACCESS_COARSE_LOCATION]} but is only annotated with [none]."
-        errorLine1="    public static boolean checkCallerHasCoarseLocation("
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/Utils.java"
-            line="586"
+            line="380"
             column="27"/>
     </issue>
 
