@@ -1,0 +1,12 @@
+## used by service-bluetooth ##
+
+rule _COROUTINE.** com.android.server.bluetooth.jarjar.@0
+rule android.sysprop.** com.android.server.bluetooth.jarjar.@0
+rule androidx.** com.android.server.bluetooth.jarjar.@0
+rule kotlin.** com.android.server.bluetooth.jarjar.@0
+rule kotlinx.** com.android.server.bluetooth.jarjar.@0
+rule com.android.modules.utils.** com.android.server.bluetooth.jarjar.@0
+rule com.android.bluetooth.flags.** com.android.server.bluetooth.jarjar.@0
+
+## output jarjaring should match framework signature to reconciliate classes
+rule com.android.server.bluetooth.SystemServiceMessage** com.android.bluetooth.jarjar.@0
