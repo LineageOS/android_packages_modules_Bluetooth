@@ -22,6 +22,7 @@ import android.Manifest.permission.UPDATE_DEVICE_STATS
 import android.annotation.RequiresPermission
 import android.app.PendingIntent
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothStatusCodes.FEATURE_SUPPORTED
 import android.bluetooth.IBluetoothScan
 import android.bluetooth.State
 import android.bluetooth.le.IPeriodicAdvertisingCallback
@@ -72,6 +73,7 @@ class ScanBinder(
         workSource: WorkSource?,
         source: AttributionSource,
     ) {
+        enforceTransportBlockFilterSupported(filters)
         enforcePrivilegedPermissionIfNeeded(settings, filters)
         if (workSource != null) {
             adapterService.enforceCallingOrSelfPermission(UPDATE_DEVICE_STATS, null)
@@ -99,6 +101,7 @@ class ScanBinder(
         filters: List<ScanFilter>,
         source: AttributionSource,
     ) {
+        enforceTransportBlockFilterSupported(filters)
         enforcePrivilegedPermissionIfNeeded(settings, filters)
         withControllerRunOnScanThread(source, "registerPiAndStartScan") {
             registerPiAndStartScan(intent, settings, filters, source)
@@ -161,6 +164,15 @@ class ScanBinder(
     override fun numHwTrackFiltersAvailable(source: AttributionSource): Int {
         val scan = getController(source, "numHwTrackFiltersAvailable") ?: return 0
         return scan.runOrFetchOnScanThread(scan, 0) { scan.numHwTrackFiltersAvailable() }
+    }
+
+    private fun enforceTransportBlockFilterSupported(filters: List<ScanFilter>) {
+        val hasTdsFilter = filters.any { it.transportBlockFilter != null }
+        if (hasTdsFilter) {
+            if (adapterService.offloadedTransportDiscoveryDataScanSupported != FEATURE_SUPPORTED) {
+                throw IllegalArgumentException("Transport Discovery Data filter is not supported")
+            }
+        }
     }
 
     @RequiresPermission(value = BLUETOOTH_PRIVILEGED, conditional = true)
