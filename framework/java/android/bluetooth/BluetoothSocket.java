@@ -1199,6 +1199,9 @@ public final class BluetoothSocket implements Closeable {
         bb.putShort((short) SOCK_ACCEPT_SIGNAL_SIZE);
         bb.putShort((short) (isAccepting ? 1 : 0));
         os.write(sig, 0, SOCK_ACCEPT_SIGNAL_SIZE);
+        if (Flags.flushSocketAcceptSignal()) {
+            os.flush();
+        }
     }
 
     private String waitSocketSignal(InputStream is) throws IOException {
