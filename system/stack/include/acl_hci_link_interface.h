@@ -57,5 +57,3 @@ void btm_pm_on_mode_change(tHCI_STATUS status, uint16_t handle, tHCI_MODE curren
 void btm_pm_on_sniff_subrating(tHCI_STATUS status, uint16_t handle,
                                uint16_t maximum_transmit_latency, uint16_t maximum_receive_latency,
                                uint16_t minimum_remote_timeout, uint16_t minimum_local_timeout);
-
-void acl_cache_role(const RawAddress& bd_addr, tHCI_ROLE new_role, bool overwrite_cache);

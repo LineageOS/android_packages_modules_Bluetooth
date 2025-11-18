@@ -118,7 +118,6 @@ struct RoleChangeView {
 
 namespace {
 StackAclBtmAcl internal_;
-std::unique_ptr<RoleChangeView> delayed_role_change_ = nullptr;
 }  // namespace
 
 typedef struct {
@@ -1124,28 +1123,6 @@ void btm_rejectlist_role_change_device(const RawAddress& bd_addr, uint8_t hci_st
 
 /*******************************************************************************
  *
- * Function         acl_cache_role
- *
- * Description      This function caches the role of the device associated
- *                  with the given address. This happens if we get a role change
- *                  before connection complete. The cached role is propagated
- *                  when ACL Link is created.
- *
- * Returns          void
- *
- ******************************************************************************/
-
-void acl_cache_role(const RawAddress& bd_addr, tHCI_ROLE new_role, bool overwrite_cache) {
-  if (overwrite_cache || delayed_role_change_ == nullptr) {
-    RoleChangeView role_change;
-    role_change.new_role = new_role;
-    role_change.bd_addr = bd_addr;
-    delayed_role_change_ = std::make_unique<RoleChangeView>(std::move(role_change));
-  }
-}
-
-/*******************************************************************************
- *
  * Function         btm_acl_role_changed
  *
  * Description      This function is called whan a link's central/peripheral
@@ -1160,10 +1137,7 @@ void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddre
                                           tHCI_ROLE new_role) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
   if (p_acl == nullptr) {
-    // If we get a role change before connection complete, we cache the new
-    // role here and then propagate it when ACL Link is created.
-    acl_cache_role(bd_addr, new_role, /*overwrite_cache=*/true);
-    log::warn("Unable to find active acl");
+    log::error("Unable to find active acl for {}", bd_addr);
     return;
   }
 
@@ -1896,12 +1870,8 @@ void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle, uint8_t enc
   log::verbose("{}, handle:{}, role:{}, enc_mode:{}, locally_initiated:{}", bda, handle,
                hci_role_text(role), enc_mode, locally_initiated);
   power_telemetry::GetInstance().LogLinkDetails(handle, bda, true, true);
-  if (delayed_role_change_ != nullptr && delayed_role_change_->bd_addr == bda) {
-    btm_sec_connected(bda, handle, HCI_SUCCESS, enc_mode, delayed_role_change_->new_role);
-  } else {
-    btm_sec_connected(bda, handle, HCI_SUCCESS, enc_mode);
-  }
-  delayed_role_change_ = nullptr;
+
+  btm_sec_connected(bda, handle, HCI_SUCCESS, enc_mode, role);
   l2c_link_hci_conn_comp(HCI_SUCCESS, handle, bda);
   uint16_t link_supervision_timeout =
           osi_property_get_int32(PROPERTY_LINK_SUPERVISION_TIMEOUT, 8000);
@@ -1931,14 +1901,8 @@ void on_acl_br_edr_failed(const RawAddress& bda, tHCI_STATUS status, bool locall
   AclLinkSpec link_spec = {.addrt = {.type = BLE_ADDR_PUBLIC, .bda = bda},
                            .transport = BT_TRANSPORT_BR_EDR};
   log::assert_that(status != HCI_SUCCESS, "Successful connection entering failing code path");
-  if (delayed_role_change_ != nullptr && delayed_role_change_->bd_addr == bda) {
-    btm_sec_connected(bda, HCI_INVALID_HANDLE, status, false, delayed_role_change_->new_role);
-  } else {
-    btm_sec_connected(bda, HCI_INVALID_HANDLE, status, false);
-  }
-  delayed_role_change_ = nullptr;
+  btm_sec_connected(bda, HCI_INVALID_HANDLE, status, false);
   l2c_link_hci_conn_comp(status, HCI_INVALID_HANDLE, bda);
-
   acl_set_locally_initiated(locally_initiated);
   btm_acl_create_failed(link_spec, status);
 }
