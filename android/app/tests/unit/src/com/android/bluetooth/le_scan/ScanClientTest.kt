@@ -17,11 +17,16 @@
 package com.android.bluetooth.le_scan
 
 import android.app.PendingIntent
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
 import android.os.Binder
 import android.os.UserHandle
+import android.platform.test.annotations.RequiresFlagsDisabled
+import android.platform.test.annotations.RequiresFlagsEnabled
+import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
+import com.android.bluetooth.flags.Flags
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -36,6 +41,7 @@ import org.mockito.kotlin.whenever
 @RunWith(AndroidJUnit4::class)
 class ScanClientTest {
     @get:Rule val mockitoRule = MockitoRule()
+    @get:Rule val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
 
     // TODO(b/397863857) Delete post `Flags.scanControllerThread()` cleanup
     @Test
@@ -123,7 +129,7 @@ class ScanClientTest {
         val id = 77
         val uid = 54321
         val settings = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_BALANCED).build()
-        val filters = emptyList<android.bluetooth.le.ScanFilter>()
+        val filters = emptyList<ScanFilter>()
         val userHandle = UserHandle.getUserHandleForUid(uid)
 
         val pendingIntent = mock<PendingIntent>()
@@ -177,6 +183,36 @@ class ScanClientTest {
 
         assertThat(result).isTrue()
         assertThat(client.settings.scanMode).isEqualTo(ScanSettings.SCAN_MODE_LOW_LATENCY)
+    }
+
+    @Test
+    @RequiresFlagsDisabled(Flags.FLAG_TREAT_EMPTY_FILTERS_AS_UNFILTERED)
+    fun isFiltered_allEmptyFiltersIsFiltered() {
+        val settings = ScanSettings.Builder().build()
+        val filters = listOf(ScanFilter.Builder().build())
+        val client = ScanClient(1000, 1, settings, filters, Binder.getCallingUserHandle())
+
+        assertThat(client.isFiltered).isTrue()
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_TREAT_EMPTY_FILTERS_AS_UNFILTERED)
+    fun isFiltered_allEmptyFiltersIsUnfiltered() {
+        val settings = ScanSettings.Builder().build()
+        val filters = listOf(ScanFilter.Builder().build())
+        val client = ScanClient(1000, 1, settings, filters, Binder.getCallingUserHandle())
+
+        assertThat(client.isFiltered).isFalse()
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_TREAT_EMPTY_FILTERS_AS_UNFILTERED)
+    fun isFiltered_anyFieldSetFiltersIsFiltered() {
+        val settings = ScanSettings.Builder().build()
+        val filters = listOf(ScanFilter.Builder().setDeviceName("TestName").build())
+        val client = ScanClient(1000, 1, settings, filters, Binder.getCallingUserHandle())
+
+        assertThat(client.isFiltered).isTrue()
     }
 
     @Test
