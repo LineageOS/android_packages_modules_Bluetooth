@@ -206,7 +206,8 @@ static void bta_hf_client_sco_conn_cback(uint16_t sco_idx) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_hf_client_sco_disc_cback(uint16_t sco_idx) {
+static void bta_hf_client_sco_disc_cback(uint16_t sco_idx,
+                                         [[maybe_unused]] SCO_CONNECTION_FAILURES reason) {
   log::verbose("sco_idx {}", sco_idx);
 
   tBTA_HF_CLIENT_CB* client_cb = bta_hf_client_find_cb_by_sco_handle(sco_idx);

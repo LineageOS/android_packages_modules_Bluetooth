@@ -412,8 +412,10 @@ uint8_t bta_ag_service_to_idx(tBTA_SERVICE_MASK services);
 uint16_t bta_ag_idx_by_bdaddr(const RawAddress* peer_addr);
 bool bta_ag_other_scb_open(tBTA_AG_SCB* p_curr_scb);
 bool bta_ag_scb_open(tBTA_AG_SCB* p_curr_scb);
-void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event, const tBTA_AG_DATA& data);
-void bta_ag_sm_execute_by_handle(uint16_t handle, uint16_t event, const tBTA_AG_DATA& data);
+void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event, const tBTA_AG_DATA& data,
+                       SCO_CONNECTION_FAILURES reason = NO_FAILURE);
+void bta_ag_sm_execute_by_handle(uint16_t handle, uint16_t event, const tBTA_AG_DATA& data,
+                                 SCO_CONNECTION_FAILURES reason = NO_FAILURE);
 void bta_ag_collision_cback(tBTA_SYS_CONN_STATUS status, tBTA_SYS_ID id, uint8_t app_id,
                             const RawAddress& peer_addr);
 void bta_ag_resume_open(tBTA_AG_SCB* p_scb);
@@ -472,7 +474,8 @@ void bta_ag_sco_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
 void bta_ag_sco_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
 void bta_ag_sco_shutdown(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
 void bta_ag_sco_conn_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
-void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
+void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data,
+                           SCO_CONNECTION_FAILURES reason = NO_FAILURE);
 void bta_ag_post_sco_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
 void bta_ag_post_sco_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
 void bta_ag_svc_conn_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);

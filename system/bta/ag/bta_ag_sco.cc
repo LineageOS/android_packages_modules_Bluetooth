@@ -185,7 +185,7 @@ static void bta_ag_sco_conn_cback(uint16_t sco_idx) {
 
   if (handle != 0) {
     do_in_main_thread(base::BindOnce(&bta_ag_sm_execute_by_handle, handle, BTA_AG_SCO_OPEN_EVT,
-                                     tBTA_AG_DATA::kEmpty));
+                                     tBTA_AG_DATA::kEmpty, NO_FAILURE));
   } else {
     /* no match found; disconnect sco, init sco variables */
     bta_ag_cb.sco.p_curr_scb = nullptr;
@@ -206,7 +206,7 @@ static void bta_ag_sco_conn_cback(uint16_t sco_idx) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
+static void bta_ag_sco_disc_cback(uint16_t sco_idx, SCO_CONNECTION_FAILURES reason = NO_FAILURE) {
   uint16_t handle = 0;
 
   log::debug("sco_idx: 0x{:x} sco.state:{}", sco_idx, bta_ag_cb.sco.state);
@@ -292,8 +292,9 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
 
     bta_ag_cb.sco.p_curr_scb->inuse_codec = tBTA_AG_UUID_CODEC::UUID_CODEC_NONE;
 
+    log::verbose("Sco connection failure: {}", static_cast<int>(reason));
     do_in_main_thread(base::BindOnce(&bta_ag_sm_execute_by_handle, handle, BTA_AG_SCO_CLOSE_EVT,
-                                     tBTA_AG_DATA::kEmpty));
+                                     tBTA_AG_DATA::kEmpty, reason));
   } else {
     /* no match found */
     log::verbose("no scb for ag_sco_disc_cback");
@@ -430,7 +431,7 @@ void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
     if (bta_ag_cb.sco.p_curr_scb != nullptr && bta_ag_cb.sco.p_curr_scb->in_use &&
         p_scb == bta_ag_cb.sco.p_curr_scb) {
       do_in_main_thread(base::BindOnce(&bta_ag_sm_execute, p_scb, BTA_AG_SCO_CLOSE_EVT,
-                                       tBTA_AG_DATA::kEmpty));
+                                       tBTA_AG_DATA::kEmpty, PRECONDITION_FAIL));
     }
     return;
   }
@@ -1519,7 +1520,8 @@ void bta_ag_sco_conn_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
+void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */,
+                           SCO_CONNECTION_FAILURES reason) {
   /* clear current scb */
   bta_ag_cb.sco.p_curr_scb = nullptr;
   p_scb->sco_idx = BTM_INVALID_SCO_INDEX;
@@ -1558,7 +1560,7 @@ void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
     }
 
     /* call app callback */
-    bta_ag_cback_sco(p_scb, BTA_AG_AUDIO_CLOSE_EVT);
+    bta_ag_cback_sco(p_scb, BTA_AG_AUDIO_CLOSE_EVT, reason);
     p_scb->codec_cvsd_settings = BTA_AG_SCO_CVSD_SETTINGS_S4;
     p_scb->codec_msbc_settings = BTA_AG_SCO_MSBC_SETTINGS_T2;
     p_scb->codec_lc3_settings = BTA_AG_SCO_LC3_SETTINGS_T2;

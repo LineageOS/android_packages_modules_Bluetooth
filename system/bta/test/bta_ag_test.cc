@@ -273,7 +273,7 @@ TEST_F(BtaAgCmdTest, at_hfp_cback__qcs_ev_codec_q0_enabled) {
   mock_btm_client_interface.sco.BTM_CreateSco =
           [](const RawAddress* /* remote_bda */, bool /* is_orig */, uint16_t /* pkt_types */,
              uint16_t* /* p_sco_inx */, tBTM_SCO_CB* /* p_conn_cb */,
-             tBTM_SCO_CB* /* p_disc_cb */) -> tBTM_STATUS {
+             tBTM_SCO_WITH_REASON_CB* /* p_disc_cb */) -> tBTM_STATUS {
     inc_func_call_count("BTM_CreateSco");
     return tBTM_STATUS::BTM_CMD_STARTED;
   };
@@ -313,7 +313,7 @@ TEST_F(BtaAgCmdTest, handle_swb_at_event__qcs_ev_codec_q1_fallback_to_q0) {
   mock_btm_client_interface.sco.BTM_CreateSco =
           [](const RawAddress* /* remote_bda */, bool /* is_orig */, uint16_t /* pkt_types */,
              uint16_t* /* p_sco_inx */, tBTM_SCO_CB* /* p_conn_cb */,
-             tBTM_SCO_CB* /* p_disc_cb */) -> tBTM_STATUS {
+             tBTM_SCO_WITH_REASON_CB* /* p_disc_cb */) -> tBTM_STATUS {
     inc_func_call_count("BTM_CreateSco");
     return tBTM_STATUS::BTM_CMD_STARTED;
   };
@@ -1176,7 +1176,7 @@ protected:
     mock_btm_client_interface.sco.BTM_CreateSco =
             [](const RawAddress* /* remote_bda */, bool /* is_orig */, uint16_t /* pkt_types */,
                uint16_t* p_sco_inx, tBTM_SCO_CB* /* p_conn_cb */,
-               tBTM_SCO_CB* /* p_disc_cb */) -> tBTM_STATUS {
+               tBTM_SCO_WITH_REASON_CB* /* p_disc_cb */) -> tBTM_STATUS {
       inc_func_call_count("BTM_CreateSco");
       if (p_sco_inx) {
         *p_sco_inx = 0;

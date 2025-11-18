@@ -113,7 +113,8 @@ static void bta_ag_sdp_cback(tSDP_STATUS status, uint8_t idx) {
     p_scb->sdp_metrics.status = (status == tSDP_STATUS::SDP_SUCCESS) ? tBTA_JV_STATUS::SUCCESS
                                                                      : tBTA_JV_STATUS::FAILURE;
     p_scb->sdp_metrics.sdp_end_ms = common::time_gettimeofday_us();
-    do_in_main_thread(base::BindOnce(&bta_ag_sm_execute_by_handle, idx, event, disc_result));
+    do_in_main_thread(
+            base::BindOnce(&bta_ag_sm_execute_by_handle, idx, event, disc_result, NO_FAILURE));
   }
 }
 

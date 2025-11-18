@@ -117,7 +117,7 @@ void BTA_AgRegister(tBTA_SERVICE_MASK services, tBTA_AG_FEAT features,
  ******************************************************************************/
 void BTA_AgDeregister(uint16_t handle) {
   do_in_main_thread(base::BindOnce(&bta_ag_sm_execute_by_handle, handle, BTA_AG_API_DEREGISTER_EVT,
-                                   tBTA_AG_DATA::kEmpty));
+                                   tBTA_AG_DATA::kEmpty, NO_FAILURE));
 }
 
 /*******************************************************************************
@@ -136,8 +136,8 @@ void BTA_AgDeregister(uint16_t handle) {
 void BTA_AgOpen(uint16_t handle, const RawAddress& bd_addr) {
   tBTA_AG_DATA data = {};
   data.api_open.bd_addr = bd_addr;
-  do_in_main_thread(
-          base::BindOnce(&bta_ag_sm_execute_by_handle, handle, BTA_AG_API_OPEN_EVT, data));
+  do_in_main_thread(base::BindOnce(&bta_ag_sm_execute_by_handle, handle, BTA_AG_API_OPEN_EVT, data,
+                                   NO_FAILURE));
 }
 
 /*******************************************************************************
@@ -153,7 +153,7 @@ void BTA_AgOpen(uint16_t handle, const RawAddress& bd_addr) {
  ******************************************************************************/
 void BTA_AgClose(uint16_t handle) {
   do_in_main_thread(base::BindOnce(&bta_ag_sm_execute_by_handle, handle, BTA_AG_API_CLOSE_EVT,
-                                   tBTA_AG_DATA::kEmpty));
+                                   tBTA_AG_DATA::kEmpty, NO_FAILURE));
 }
 
 /*******************************************************************************
@@ -173,8 +173,8 @@ void BTA_AgClose(uint16_t handle) {
 void BTA_AgAudioOpen(uint16_t handle, tBTA_AG_PEER_CODEC disabled_codecs) {
   tBTA_AG_DATA data = {};
   data.api_audio_open.disabled_codecs = disabled_codecs;
-  do_in_main_thread(
-          base::BindOnce(&bta_ag_sm_execute_by_handle, handle, BTA_AG_API_AUDIO_OPEN_EVT, data));
+  do_in_main_thread(base::BindOnce(&bta_ag_sm_execute_by_handle, handle, BTA_AG_API_AUDIO_OPEN_EVT,
+                                   data, NO_FAILURE));
 }
 
 /*******************************************************************************
@@ -190,7 +190,7 @@ void BTA_AgAudioOpen(uint16_t handle, tBTA_AG_PEER_CODEC disabled_codecs) {
  ******************************************************************************/
 void BTA_AgAudioClose(uint16_t handle) {
   do_in_main_thread(base::BindOnce(&bta_ag_sm_execute_by_handle, handle, BTA_AG_API_AUDIO_CLOSE_EVT,
-                                   tBTA_AG_DATA::kEmpty));
+                                   tBTA_AG_DATA::kEmpty, NO_FAILURE));
 }
 
 /*******************************************************************************
@@ -224,8 +224,8 @@ void BTA_AgResult(uint16_t handle, tBTA_AG_RES result, const tBTA_AG_RES_DATA& d
 void BTA_AgSetCodec(uint16_t handle, tBTA_AG_PEER_CODEC codec) {
   tBTA_AG_DATA data = {};
   data.api_setcodec.codec = codec;
-  do_in_main_thread(
-          base::BindOnce(&bta_ag_sm_execute_by_handle, handle, BTA_AG_API_SETCODEC_EVT, data));
+  do_in_main_thread(base::BindOnce(&bta_ag_sm_execute_by_handle, handle, BTA_AG_API_SETCODEC_EVT,
+                                   data, NO_FAILURE));
 }
 
 void BTA_AgSetScoOffloadEnabled(bool value) {

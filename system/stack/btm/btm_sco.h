@@ -232,7 +232,7 @@ typedef struct {
 typedef struct {
   tBTM_ESCO_INFO esco;    /* Current settings             */
   tBTM_SCO_CB* p_conn_cb; /* Callback for when connected  */
-  tBTM_SCO_CB* p_disc_cb; /* Callback for when disconnect */
+  tBTM_SCO_WITH_REASON_CB* p_disc_cb; /* Callback for when SCO is disconnected */
   tSCO_STATE state;       /* The state of the SCO link    */
 
   uint16_t hci_handle; /* HCI Handle                   */

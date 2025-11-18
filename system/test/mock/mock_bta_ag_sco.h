@@ -150,12 +150,17 @@ struct bta_ag_sco_codec_nego {
 extern struct bta_ag_sco_codec_nego bta_ag_sco_codec_nego;
 
 // Name: bta_ag_sco_conn_close
-// Params: tBTA_AG_SCB* p_scb, const tBTA_AG_DATA&
+// Params: tBTA_AG_SCB* p_scb, const tBTA_AG_DATA&, SCO_CONNECTION_FAILURES reason
 // Return: void
 struct bta_ag_sco_conn_close {
-  std::function<void(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data)> body{
-          [](tBTA_AG_SCB* /* p_scb */, const tBTA_AG_DATA& /* data */) {}};
-  void operator()(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) { body(p_scb, data); }
+  std::function<void(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data,
+                     const SCO_CONNECTION_FAILURES reason)>
+          body{[](tBTA_AG_SCB* /* p_scb */, const tBTA_AG_DATA& /* data */,
+                  const SCO_CONNECTION_FAILURES /* reason */) {}};
+  void operator()(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data,
+                  const SCO_CONNECTION_FAILURES reason) {
+    body(p_scb, data, reason);
+  }
 };
 extern struct bta_ag_sco_conn_close bta_ag_sco_conn_close;
 
