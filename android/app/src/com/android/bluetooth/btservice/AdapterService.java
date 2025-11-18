@@ -3107,11 +3107,6 @@ public class AdapterService extends Service {
             }
         }
 
-        removeBondGroup(devices);
-        return true;
-    }
-
-    private void removeBondGroup(Set<BluetoothDevice> devices) {
         for (BluetoothDevice dev : devices) {
             getBondAttemptCallerInfo().remove(dev.getAddress());
             if (Flags.mainlineBetaStorage()) {
@@ -3119,8 +3114,9 @@ public class AdapterService extends Service {
                         .filter(p -> p.getConnectionPolicy(dev) == CONNECTION_POLICY_ALLOWED)
                         .forEach(
                                 p -> {
-                                    Log.d(TAG, "removeBondGroup: " + dev + "Manually disable " + p);
-                                    p.setConnectionPolicy(dev, CONNECTION_POLICY_FORBIDDEN);
+                                    Log.d(TAG, "removeBond: " + dev + " Manually disable " + p);
+                                    setProfileConnectionPolicy(
+                                            dev, p.getProfileId(), CONNECTION_POLICY_FORBIDDEN);
                                 });
 
                 mBondStateMachine.dispatchMessage(BondStateMachine.MESSAGE_REMOVE_BOND, dev);
@@ -3133,6 +3129,7 @@ public class AdapterService extends Service {
                 getBondStateMachine().sendMessage(msg);
             }
         }
+        return true;
     }
 
     /**
