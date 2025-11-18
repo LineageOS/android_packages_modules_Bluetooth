@@ -157,6 +157,16 @@ flag {
 }
 
 flag {
+    name: "sco_state_machine_update_revision"
+    namespace: "bluetooth"
+    description: "Flag check correction for ag/33454932"
+    bug: "459353324"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "mode_change_before_sco_unpark"
     namespace: "bluetooth"
     description: "Do mode change before SCO unpark"
