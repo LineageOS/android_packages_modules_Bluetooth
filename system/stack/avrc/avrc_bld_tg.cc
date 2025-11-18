@@ -616,7 +616,7 @@ static tAVRC_STS avrc_bld_notify_rsp(tAVRC_REG_NOTIF_RSP* p_rsp, BT_HDR* p_pkt) 
             UINT8_TO_BE_STREAM(p_data, p_rsp->param.player_setting.attr_id[xx]);
             UINT8_TO_BE_STREAM(p_data, p_rsp->param.player_setting.attr_value[xx]);
           } else {
-            log::error("bad player app seeting attribute or value");
+            log::error("bad player app setting attribute or value");
             status = AVRC_STS_BAD_PARAM;
             break;
           }
@@ -818,7 +818,7 @@ static tAVRC_STS avrc_bld_set_browsed_player_rsp(tAVRC_SET_BR_PLAYER_RSP* p_rsp,
   uint8_t* p_folder_depth;
   uint16_t mtu;
 
-  /* make sure the given buffer can accomodate this response */
+  /* make sure the given buffer can accommodate this response */
   len_left = BT_DEFAULT_BUFFER_SIZE - BT_HDR_SIZE;
   p_data = (uint8_t*)(p_pkt + 1);
   BE_STREAM_TO_UINT16(mtu, p_data);

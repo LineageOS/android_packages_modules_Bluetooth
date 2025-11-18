@@ -826,7 +826,7 @@ static void avrc_msg_cback(uint8_t handle, uint8_t label, uint8_t cr, BT_HDR* p_
           }
         }
         /* If vendor response received, and did not ask for continuation */
-        /* then check queue for addition commands to send */
+        /* then check queue for additional commands to send */
         if ((cr == AVCT_RSP) && (drop_code != 2)) {
           avrc_send_next_vendor_cmd(handle);
         }
@@ -863,7 +863,7 @@ static void avrc_msg_cback(uint8_t handle, uint8_t label, uint8_t cr, BT_HDR* p_
         break;
 
       case AVRC_OP_BROWSE:
-        /* If browse response received, then check queue for addition commands
+        /* If browse response received, then check queue for additional commands
          * to send */
         if (cr == AVCT_RSP) {
           avrc_send_next_vendor_cmd(handle);
