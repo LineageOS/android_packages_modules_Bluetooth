@@ -47,7 +47,7 @@ public class HidHostServiceBinderTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private AttributionSource mAttributionSource;
+    @Mock private AttributionSource mSource;
     @Mock private HidHostService mService;
 
     private final BluetoothDevice mDevice = getTestDevice(50);
@@ -61,19 +61,19 @@ public class HidHostServiceBinderTest {
 
     @Test
     public void connect_callsServiceMethod() {
-        mBinder.connect(mDevice, mAttributionSource);
+        mBinder.connect(mDevice, mSource);
         verify(mService).connect(mDevice);
     }
 
     @Test
     public void disconnect_callsServiceMethod() {
-        mBinder.disconnect(mDevice, mAttributionSource);
+        mBinder.disconnect(mDevice, mSource);
         verify(mService).disconnect(mDevice);
     }
 
     @Test
     public void getConnectedDevices_callsServiceMethod() {
-        mBinder.getConnectedDevices(mAttributionSource);
+        mBinder.getConnectedDevices(mSource);
         verify(mService).getDevicesMatchingConnectionStates(new int[] {STATE_CONNECTED});
     }
 
@@ -81,13 +81,13 @@ public class HidHostServiceBinderTest {
     public void getDevicesMatchingConnectionStates_callsServiceMethod() {
         int[] states = new int[] {STATE_CONNECTED};
 
-        mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
+        mBinder.getDevicesMatchingConnectionStates(states, mSource);
         verify(mService).getDevicesMatchingConnectionStates(states);
     }
 
     @Test
     public void getConnectionState_callsServiceMethod() {
-        mBinder.getConnectionState(mDevice, mAttributionSource);
+        mBinder.getConnectionState(mDevice, mSource);
         verify(mService).getConnectionState(mDevice);
     }
 
@@ -95,13 +95,13 @@ public class HidHostServiceBinderTest {
     public void setConnectionPolicy_callsServiceMethod() {
         int connectionPolicy = CONNECTION_POLICY_ALLOWED;
 
-        mBinder.setConnectionPolicy(mDevice, connectionPolicy, mAttributionSource);
+        mBinder.setConnectionPolicy(mDevice, connectionPolicy, mSource);
         verify(mService).setConnectionPolicy(mDevice, connectionPolicy);
     }
 
     @Test
     public void getConnectionPolicy_callsServiceMethod() {
-        mBinder.getConnectionPolicy(mDevice, mAttributionSource);
+        mBinder.getConnectionPolicy(mDevice, mSource);
         verify(mService).getConnectionPolicy(mDevice);
     }
 
@@ -109,25 +109,25 @@ public class HidHostServiceBinderTest {
     public void setPreferredTransport_callsServiceMethod() {
         int preferredTransport = TRANSPORT_AUTO;
 
-        mBinder.setPreferredTransport(mDevice, preferredTransport, mAttributionSource);
+        mBinder.setPreferredTransport(mDevice, preferredTransport, mSource);
         verify(mService).setPreferredTransport(mDevice, preferredTransport);
     }
 
     @Test
     public void getPreferredTransport_callsServiceMethod() {
-        mBinder.getPreferredTransport(mDevice, mAttributionSource);
+        mBinder.getPreferredTransport(mDevice, mSource);
         verify(mService).getPreferredTransport(mDevice);
     }
 
     @Test
     public void getProtocolMode_callsServiceMethod() {
-        mBinder.getProtocolMode(mDevice, mAttributionSource);
+        mBinder.getProtocolMode(mDevice, mSource);
         verify(mService).getProtocolMode(mDevice);
     }
 
     @Test
     public void virtualUnplug_callsServiceMethod() {
-        mBinder.virtualUnplug(mDevice, mAttributionSource);
+        mBinder.virtualUnplug(mDevice, mSource);
         verify(mService).virtualUnplug(mDevice);
     }
 
@@ -135,7 +135,7 @@ public class HidHostServiceBinderTest {
     public void setProtocolMode_callsServiceMethod() {
         int protocolMode = 1;
 
-        mBinder.setProtocolMode(mDevice, protocolMode, mAttributionSource);
+        mBinder.setProtocolMode(mDevice, protocolMode, mSource);
         verify(mService).setProtocolMode(mDevice, protocolMode);
     }
 
@@ -145,7 +145,7 @@ public class HidHostServiceBinderTest {
         byte reportId = 2;
         int bufferSize = 16;
 
-        mBinder.getReport(mDevice, reportType, reportId, bufferSize, mAttributionSource);
+        mBinder.getReport(mDevice, reportType, reportId, bufferSize, mSource);
         verify(mService).getReport(mDevice, reportType, reportId, bufferSize);
     }
 
@@ -154,7 +154,7 @@ public class HidHostServiceBinderTest {
         byte reportType = 1;
         String report = "test_report";
 
-        mBinder.setReport(mDevice, reportType, report, mAttributionSource);
+        mBinder.setReport(mDevice, reportType, report, mSource);
         verify(mService).setReport(mDevice, reportType, report);
     }
 
@@ -162,7 +162,7 @@ public class HidHostServiceBinderTest {
     public void sendData_callsServiceMethod() {
         String report = "test_report";
 
-        mBinder.sendData(mDevice, report, mAttributionSource);
+        mBinder.sendData(mDevice, report, mSource);
         verify(mService).sendData(mDevice, report);
     }
 
@@ -170,13 +170,13 @@ public class HidHostServiceBinderTest {
     public void setIdleTime_callsServiceMethod() {
         byte idleTime = 1;
 
-        mBinder.setIdleTime(mDevice, idleTime, mAttributionSource);
+        mBinder.setIdleTime(mDevice, idleTime, mSource);
         verify(mService).setIdleTime(mDevice, idleTime);
     }
 
     @Test
     public void getIdleTime_callsServiceMethod() {
-        mBinder.getIdleTime(mDevice, mAttributionSource);
+        mBinder.getIdleTime(mDevice, mSource);
         verify(mService).getIdleTime(mDevice);
     }
 

@@ -49,7 +49,7 @@ public class HidDeviceServiceBinderTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private AttributionSource mAttributionSource;
+    @Mock private AttributionSource mSource;
     @Mock private HidDeviceService mService;
 
     private final BluetoothDevice mDevice = getTestDevice(29);
@@ -101,13 +101,13 @@ public class HidDeviceServiceBinderTest {
                         delayVariation);
         IBluetoothHidDeviceCallback cb = mock(IBluetoothHidDeviceCallback.class);
 
-        mBinder.registerApp(sdp, inQos, outQos, cb, mAttributionSource);
+        mBinder.registerApp(sdp, inQos, outQos, cb, mSource);
         verify(mService).registerApp(sdp, inQos, outQos, cb);
     }
 
     @Test
     public void unregisterApp() {
-        mBinder.unregisterApp(mAttributionSource);
+        mBinder.unregisterApp(mSource);
         verify(mService).unregisterApp();
     }
 
@@ -115,7 +115,7 @@ public class HidDeviceServiceBinderTest {
     public void sendReport() {
         int id = 100;
         byte[] data = new byte[] {0x00, 0x01};
-        mBinder.sendReport(mDevice, id, data, mAttributionSource);
+        mBinder.sendReport(mDevice, id, data, mSource);
         verify(mService).sendReport(mDevice, id, data);
     }
 
@@ -124,57 +124,57 @@ public class HidDeviceServiceBinderTest {
         byte type = 0;
         byte id = 100;
         byte[] data = new byte[] {0x00, 0x01};
-        mBinder.replyReport(mDevice, type, id, data, mAttributionSource);
+        mBinder.replyReport(mDevice, type, id, data, mSource);
         verify(mService).replyReport(mDevice, type, id, data);
     }
 
     @Test
     public void unplug() {
-        mBinder.unplug(mDevice, mAttributionSource);
+        mBinder.unplug(mDevice, mSource);
         verify(mService).unplug(mDevice);
     }
 
     @Test
     public void connect() {
-        mBinder.connect(mDevice, mAttributionSource);
+        mBinder.connect(mDevice, mSource);
         verify(mService).connect(mDevice);
     }
 
     @Test
     public void disconnect() {
-        mBinder.disconnect(mDevice, mAttributionSource);
+        mBinder.disconnect(mDevice, mSource);
         verify(mService).disconnect(mDevice);
     }
 
     @Test
     public void reportError() {
         byte error = -1;
-        mBinder.reportError(mDevice, error, mAttributionSource);
+        mBinder.reportError(mDevice, error, mSource);
         verify(mService).reportError(mDevice, error);
     }
 
     @Test
     public void getConnectionState() {
-        mBinder.getConnectionState(mDevice, mAttributionSource);
+        mBinder.getConnectionState(mDevice, mSource);
         verify(mService).getConnectionState(mDevice);
     }
 
     @Test
     public void getConnectedDevices() {
-        mBinder.getConnectedDevices(mAttributionSource);
+        mBinder.getConnectedDevices(mSource);
         verify(mService).getDevicesMatchingConnectionStates(any(int[].class));
     }
 
     @Test
     public void getDevicesMatchingConnectionStates() {
         int[] states = new int[] {STATE_CONNECTED};
-        mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
+        mBinder.getDevicesMatchingConnectionStates(states, mSource);
         verify(mService).getDevicesMatchingConnectionStates(states);
     }
 
     @Test
     public void getUserAppName() {
-        mBinder.getUserAppName(mAttributionSource);
+        mBinder.getUserAppName(mSource);
         verify(mService).getUserAppName();
     }
 }

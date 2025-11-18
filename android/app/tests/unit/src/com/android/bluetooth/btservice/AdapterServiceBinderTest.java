@@ -69,7 +69,7 @@ import java.io.FileDescriptor;
 public class AdapterServiceBinderTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private AttributionSource mAttributionSource;
+    @Mock private AttributionSource mSource;
     @Mock private AdapterService mService;
     @Mock private AdapterProperties mAdapterProperties;
     @Mock private BluetoothDevice mDevice;
@@ -109,7 +109,7 @@ public class AdapterServiceBinderTest {
         // Setup: Simulate the service being unavailable.
         doReturn(false).when(mService).isAvailable();
 
-        boolean result = mBinder.cancelDiscovery(mAttributionSource);
+        boolean result = mBinder.cancelDiscovery(mSource);
 
         assertThat(result).isFalse();
         verify(mService, never()).cancelDiscovery(any());
@@ -139,7 +139,7 @@ public class AdapterServiceBinderTest {
         int transport = 0;
         IBluetoothOobDataCallback cb = Mockito.mock(IBluetoothOobDataCallback.class);
 
-        mBinder.generateLocalOobData(transport, cb, mAttributionSource);
+        mBinder.generateLocalOobData(transport, cb, mSource);
 
         verify(mService).generateLocalOobData(transport, cb);
     }
@@ -150,7 +150,7 @@ public class AdapterServiceBinderTest {
         IBluetoothOobDataCallback cb = Mockito.mock(IBluetoothOobDataCallback.class);
         doReturn(false).when(mService).isAvailable();
 
-        mBinder.generateLocalOobData(transport, cb, mAttributionSource);
+        mBinder.generateLocalOobData(transport, cb, mSource);
 
         verify(mService, never()).generateLocalOobData(transport, cb);
     }
@@ -163,7 +163,7 @@ public class AdapterServiceBinderTest {
 
     @Test
     public void getScanMode() {
-        mBinder.getScanMode(mAttributionSource);
+        mBinder.getScanMode(mSource);
         verify(mService).getScanMode();
     }
 
@@ -194,14 +194,14 @@ public class AdapterServiceBinderTest {
     @Test
     public void removeActiveDevice() {
         int profiles = BluetoothAdapter.ACTIVE_DEVICE_ALL;
-        mBinder.removeActiveDevice(profiles, mAttributionSource);
+        mBinder.removeActiveDevice(profiles, mSource);
         verify(mService).setActiveDevice(null, profiles);
     }
 
     @Test
     public void requestActivityInfo() throws RemoteException {
         var listener = mock(IBluetoothActivityEnergyInfoListener.class);
-        mBinder.requestActivityInfo(listener, mAttributionSource);
+        mBinder.requestActivityInfo(listener, mSource);
         verify(mService).requestActivityInfo();
         verify(listener).onBluetoothActivityEnergyInfoAvailable(any());
     }
@@ -209,22 +209,22 @@ public class AdapterServiceBinderTest {
     @Test
     public void retrievePendingSocketForServiceRecord() {
         ParcelUuid uuid = ParcelUuid.fromString("0000110A-0000-1000-8000-00805F9B34FB");
-        mBinder.retrievePendingSocketForServiceRecord(uuid, mAttributionSource);
-        verify(mService).retrievePendingSocketForServiceRecord(uuid, mAttributionSource);
+        mBinder.retrievePendingSocketForServiceRecord(uuid, mSource);
+        verify(mService).retrievePendingSocketForServiceRecord(uuid, mSource);
     }
 
     @Test
     public void stopRfcommListener() {
         ParcelUuid uuid = ParcelUuid.fromString("0000110A-0000-1000-8000-00805F9B34FB");
-        mBinder.stopRfcommListener(uuid, mAttributionSource);
-        verify(mService).stopRfcommListener(uuid, mAttributionSource);
+        mBinder.stopRfcommListener(uuid, mSource);
+        verify(mService).stopRfcommListener(uuid, mSource);
     }
 
     @Test
     public void setPreferredAudioProfiles_deviceNotBonded_returnsError() {
         when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_NONE);
 
-        int result = mBinder.setPreferredAudioProfiles(mDevice, new Bundle(), mAttributionSource);
+        int result = mBinder.setPreferredAudioProfiles(mDevice, new Bundle(), mSource);
 
         assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED);
         verify(mService, never()).setPreferredAudioProfiles(any(), any());
@@ -235,7 +235,7 @@ public class AdapterServiceBinderTest {
         when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_BONDED);
         Bundle bundle = new Bundle();
 
-        mBinder.setPreferredAudioProfiles(mDevice, bundle, mAttributionSource);
+        mBinder.setPreferredAudioProfiles(mDevice, bundle, mSource);
 
         verify(mService).setPreferredAudioProfiles(mDevice, bundle);
     }
@@ -244,7 +244,7 @@ public class AdapterServiceBinderTest {
     public void getPreferredAudioProfiles_deviceNotBonded_returnsEmptyBundle() {
         when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_NONE);
 
-        Bundle result = mBinder.getPreferredAudioProfiles(mDevice, mAttributionSource);
+        Bundle result = mBinder.getPreferredAudioProfiles(mDevice, mSource);
 
         assertThat(result).isNotNull();
         assertThat(result).isEqualTo(Bundle.EMPTY);
@@ -255,7 +255,7 @@ public class AdapterServiceBinderTest {
     public void getPreferredAudioProfiles_deviceBonded_callsService() {
         when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_BONDED);
 
-        mBinder.getPreferredAudioProfiles(mDevice, mAttributionSource);
+        mBinder.getPreferredAudioProfiles(mDevice, mSource);
 
         verify(mService).getPreferredAudioProfiles(mDevice);
     }
@@ -264,7 +264,7 @@ public class AdapterServiceBinderTest {
     public void notifyActiveDeviceChangeApplied_deviceNotBonded_returnsError() {
         when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_NONE);
 
-        int result = mBinder.notifyActiveDeviceChangeApplied(mDevice, mAttributionSource);
+        int result = mBinder.notifyActiveDeviceChangeApplied(mDevice, mSource);
 
         assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED);
         verify(mService, never()).notifyActiveDeviceChangeApplied(any());
@@ -274,7 +274,7 @@ public class AdapterServiceBinderTest {
     public void notifyActiveDeviceChangeApplied_deviceBonded_callsService() {
         when(mService.getBondState(mDevice)).thenReturn(BluetoothDevice.BOND_BONDED);
 
-        mBinder.notifyActiveDeviceChangeApplied(mDevice, mAttributionSource);
+        mBinder.notifyActiveDeviceChangeApplied(mDevice, mSource);
 
         verify(mService).notifyActiveDeviceChangeApplied(mDevice);
     }
@@ -285,7 +285,7 @@ public class AdapterServiceBinderTest {
         doReturn(false).when(mService).isAvailable();
 
         // Call the method and verify that it returns an error and doesn't proceed
-        int result = mBinder.connectAllEnabledProfiles(mDevice, mAttributionSource);
+        int result = mBinder.connectAllEnabledProfiles(mDevice, mSource);
         assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
         verify(mService, never()).connectAllEnabledProfiles(any());
     }
@@ -296,7 +296,7 @@ public class AdapterServiceBinderTest {
         when(mService.isEnabled()).thenReturn(false);
 
         // Call the method and verify that it returns an error and doesn't proceed
-        int result = mBinder.connectAllEnabledProfiles(mDevice, mAttributionSource);
+        int result = mBinder.connectAllEnabledProfiles(mDevice, mSource);
         assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
         verify(mService, never()).connectAllEnabledProfiles(any());
     }
@@ -307,7 +307,7 @@ public class AdapterServiceBinderTest {
         when(mService.isEnabled()).thenReturn(true);
 
         // Call the method and verify that the underlying service method is called
-        mBinder.connectAllEnabledProfiles(mDevice, mAttributionSource);
+        mBinder.connectAllEnabledProfiles(mDevice, mSource);
         verify(mService).connectAllEnabledProfiles(mDevice);
     }
 
@@ -317,7 +317,7 @@ public class AdapterServiceBinderTest {
         doReturn(false).when(mService).isAvailable();
 
         // Call the method and verify that it returns an error and doesn't proceed
-        int result = mBinder.disconnectAllEnabledProfiles(mDevice, mAttributionSource);
+        int result = mBinder.disconnectAllEnabledProfiles(mDevice, mSource);
         assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
         verify(mService, never()).disconnectAllEnabledProfiles(any());
     }
@@ -326,20 +326,19 @@ public class AdapterServiceBinderTest {
     public void disconnectAllEnabledProfiles_whenServiceAvailable_callsService() {
         // The service is available
         // Call the method and verify that the underlying service method is called
-        mBinder.disconnectAllEnabledProfiles(mDevice, mAttributionSource);
+        mBinder.disconnectAllEnabledProfiles(mDevice, mSource);
         verify(mService).disconnectAllEnabledProfiles(mDevice);
     }
 
     @Test(expected = NullPointerException.class)
     public void fetchRemoteUuidsWithSdp_nullDevice_throwsNullPointerException() {
-        mBinder.fetchRemoteUuidsWithSdp(null, TRANSPORT_AUTO, mAttributionSource);
+        mBinder.fetchRemoteUuidsWithSdp(null, TRANSPORT_AUTO, mSource);
     }
 
     @Test
     public void fetchRemoteUuidsWithSdp_serviceUnavailable_returnsFalse() {
         doReturn(false).when(mService).isAvailable();
-        assertThat(mBinder.fetchRemoteUuidsWithSdp(mDevice, TRANSPORT_AUTO, mAttributionSource))
-                .isFalse();
+        assertThat(mBinder.fetchRemoteUuidsWithSdp(mDevice, TRANSPORT_AUTO, mSource)).isFalse();
         verify(mRemoteDevices, never()).fetchUuids(any(), anyInt());
     }
 
@@ -351,21 +350,19 @@ public class AdapterServiceBinderTest {
                 .enforceCallingOrSelfPermission(eq(BLUETOOTH_PRIVILEGED), any());
         assertThrows(
                 SecurityException.class,
-                () ->
-                        mBinder.fetchRemoteUuidsWithSdp(
-                                mDevice, TRANSPORT_BREDR, mAttributionSource));
+                () -> mBinder.fetchRemoteUuidsWithSdp(mDevice, TRANSPORT_BREDR, mSource));
         verify(mRemoteDevices, never()).fetchUuids(any(), anyInt());
     }
 
     @Test(expected = NullPointerException.class)
     public void fetchRemoteUuids_nullDevice_throwsNullPointerException() {
-        mBinder.fetchRemoteUuids(null, TRANSPORT_AUTO, mAttributionSource);
+        mBinder.fetchRemoteUuids(null, TRANSPORT_AUTO, mSource);
     }
 
     @Test
     public void fetchRemoteUuids_serviceUnavailable_returnsFalse() {
         doReturn(false).when(mService).isAvailable();
-        assertThat(mBinder.fetchRemoteUuids(mDevice, TRANSPORT_AUTO, mAttributionSource)).isFalse();
+        assertThat(mBinder.fetchRemoteUuids(mDevice, TRANSPORT_AUTO, mSource)).isFalse();
         verify(mRemoteDevices, never()).fetchUuids(any(), anyInt());
     }
 
@@ -374,16 +371,12 @@ public class AdapterServiceBinderTest {
         // Test with a negative invalid value
         assertThrows(
                 IllegalArgumentException.class,
-                () ->
-                        mBinder.fetchRemoteUuids(
-                                mDevice, INVALID_TRANSPORT_NEGATIVE, mAttributionSource));
+                () -> mBinder.fetchRemoteUuids(mDevice, INVALID_TRANSPORT_NEGATIVE, mSource));
 
         // Test with a positive out-of-range value
         assertThrows(
                 IllegalArgumentException.class,
-                () ->
-                        mBinder.fetchRemoteUuids(
-                                mDevice, INVALID_TRANSPORT_POSITIVE, mAttributionSource));
+                () -> mBinder.fetchRemoteUuids(mDevice, INVALID_TRANSPORT_POSITIVE, mSource));
 
         // Verify that the call does not reach the RemoteDevices
         verify(mRemoteDevices, never()).fetchUuids(any(), anyInt());
@@ -394,17 +387,17 @@ public class AdapterServiceBinderTest {
         // This test ensures that for valid transport types, no IllegalArgumentException is thrown.
 
         // Call with TRANSPORT_AUTO
-        mBinder.fetchRemoteUuids(mDevice, TRANSPORT_AUTO, mAttributionSource);
+        mBinder.fetchRemoteUuids(mDevice, TRANSPORT_AUTO, mSource);
         verify(mRemoteDevices).fetchUuids(eq(mDevice), eq(TRANSPORT_AUTO));
         Mockito.reset(mRemoteDevices);
 
         // Call with TRANSPORT_BREDR
-        mBinder.fetchRemoteUuids(mDevice, TRANSPORT_BREDR, mAttributionSource);
+        mBinder.fetchRemoteUuids(mDevice, TRANSPORT_BREDR, mSource);
         verify(mRemoteDevices).fetchUuids(eq(mDevice), eq(TRANSPORT_BREDR));
         Mockito.reset(mRemoteDevices);
 
         // Call with TRANSPORT_LE
-        mBinder.fetchRemoteUuids(mDevice, TRANSPORT_LE, mAttributionSource);
+        mBinder.fetchRemoteUuids(mDevice, TRANSPORT_LE, mSource);
         verify(mRemoteDevices).fetchUuids(eq(mDevice), eq(TRANSPORT_LE));
         Mockito.reset(mRemoteDevices);
     }
