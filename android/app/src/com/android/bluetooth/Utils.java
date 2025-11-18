@@ -43,7 +43,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Bundle;
@@ -503,16 +502,10 @@ public final class Utils {
         return checkCallerIsSystemOrActiveOrManagedUser(context, tag + "." + method + "()");
     }
 
-    /** Checks whether location is off and must be on for us to perform some operation */
-    public static boolean blockedByLocationOff(Context context, UserHandle userHandle) {
-        return !context.getSystemService(LocationManager.class)
-                .isLocationEnabledForUser(userHandle);
-    }
-
     /** Checks that calling process has ACCESS_COARSE_LOCATION and OP_COARSE_LOCATION is allowed */
     public static boolean checkCallerHasCoarseLocation(
             Context context, AttributionSource source, UserHandle userHandle) {
-        if (blockedByLocationOff(context, userHandle)) {
+        if (Util.blockedByLocationOff(context, userHandle)) {
             Log.e(TAG, "Permission denial: Location is off.");
             return false;
         }
@@ -540,7 +533,7 @@ public final class Utils {
      */
     public static boolean checkCallerHasCoarseOrFineLocation(
             Context context, AttributionSource source, UserHandle userHandle) {
-        if (blockedByLocationOff(context, userHandle)) {
+        if (Util.blockedByLocationOff(context, userHandle)) {
             Log.e(TAG, "Permission denial: Location is off.");
             return false;
         }
@@ -575,7 +568,7 @@ public final class Utils {
     /** Checks that calling process has ACCESS_FINE_LOCATION and OP_FINE_LOCATION is allowed */
     public static boolean checkCallerHasFineLocation(
             Context context, AttributionSource source, UserHandle userHandle) {
-        if (blockedByLocationOff(context, userHandle)) {
+        if (Util.blockedByLocationOff(context, userHandle)) {
             Log.e(TAG, "Permission denial: Location is off.");
             return false;
         }

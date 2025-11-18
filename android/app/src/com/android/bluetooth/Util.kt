@@ -36,10 +36,12 @@ import android.bluetooth.BluetoothUtils
 import android.content.AttributionSource
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.os.RemoteException
+import android.os.UserHandle
 import android.permission.PermissionManager
 import android.permission.PermissionManager.PERMISSION_GRANTED
 import android.permission.PermissionManager.PERMISSION_HARD_DENIED
@@ -236,6 +238,11 @@ object Util {
         val deviceType = adapterService.getMetadata(device, METADATA_DEVICE_TYPE) ?: return false
         return String(deviceType) == BluetoothDevice.DEVICE_TYPE_WATCH
     }
+
+    /** Checks whether location is off and must be on for us to perform some operation */
+    @JvmStatic
+    fun Context.blockedByLocationOff(userHandle: UserHandle) =
+        !getSystemService(LocationManager::class.java).isLocationEnabledForUser(userHandle)
 
     /**
      * Checks that the target sdk of the app corresponding to the provided package name is greater

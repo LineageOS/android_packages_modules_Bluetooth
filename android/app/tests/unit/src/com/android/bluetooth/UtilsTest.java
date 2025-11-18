@@ -85,10 +85,10 @@ public class UtilsTest {
         UserHandle userHandle = UserHandle.SYSTEM;
         LocationManager locationManager = context.getSystemService(LocationManager.class);
         boolean enableStatus = locationManager.isLocationEnabledForUser(userHandle);
-        assertThat(Utils.blockedByLocationOff(context, userHandle)).isEqualTo(!enableStatus);
+        assertThat(Util.blockedByLocationOff(context, userHandle)).isEqualTo(!enableStatus);
 
         locationManager.setLocationEnabledForUser(!enableStatus, userHandle);
-        assertThat(Utils.blockedByLocationOff(context, userHandle)).isEqualTo(enableStatus);
+        assertThat(Util.blockedByLocationOff(context, userHandle)).isEqualTo(enableStatus);
 
         locationManager.setLocationEnabledForUser(enableStatus, userHandle);
     }
