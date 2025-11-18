@@ -175,7 +175,10 @@ class A2dpSinkStateMachine extends StateMachine {
                         transitionTo(mConnecting);
                     }
                 }
-                case STATE_CONNECTED -> transitionTo(mConnected);
+                case STATE_CONNECTED -> {
+                    onConnectionStateChanged(STATE_CONNECTING);
+                    transitionTo(mConnected);
+                }
                 case STATE_DISCONNECTED -> sendMessage(CLEANUP);
                 default -> {} // Nothing to do
             }
