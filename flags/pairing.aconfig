@@ -279,3 +279,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "security_mode_3_pairing"
+    namespace: "bluetooth"
+    description: "Fixes pairing with devices which are in BR/EDR security mode 3."
+    bug: "460502961"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
