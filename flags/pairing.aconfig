@@ -269,3 +269,13 @@ flag {
     bug: "459695529"
     is_exported: true
 }
+
+flag {
+    name: "btm_disconnect_on_remove"
+    namespace: "bluetooth"
+    description: "BTM must disconnect any connection when bond is removed"
+    bug: "461581261"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
