@@ -167,8 +167,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
-    public String getIdentityAddress(String address) {
-        var source = Utils.getCallingAttributionSource(mService);
+    public String getIdentityAddress(String address, AttributionSource source) {
         var service = getServiceAndEnforceCallerUserAndConnect(source, "getIdentityAddress");
         if (service == null) {
             return null;
@@ -180,8 +179,8 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
     @Override
     @NonNull
-    public BluetoothAddress getIdentityAddressWithType(@NonNull String address) {
-        var source = Utils.getCallingAttributionSource(mService);
+    public BluetoothAddress getIdentityAddressWithType(
+            @NonNull String address, AttributionSource source) {
         var method = "getIdentityAddressWithType";
         var service = getServiceAndEnforceCallerUserAndConnect(source, method);
         if (service == null) {
@@ -1487,9 +1486,9 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
-    public boolean allowLowLatencyAudio(boolean allowed, BluetoothDevice device) {
+    public boolean allowLowLatencyAudio(
+            boolean allowed, BluetoothDevice device, AttributionSource source) {
         requireNonNull(device);
-        var source = Utils.getCallingAttributionSource(mService);
         var service = getServiceAndEnforceCallerUserAndConnect(source, "allowLowLatencyAudio");
         if (service == null) {
             return false;

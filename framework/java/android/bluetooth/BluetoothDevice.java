@@ -553,9 +553,10 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     /**
      * Used as an int extra field in {@link #ACTION_PAIRING_REQUEST} and {@link
      * #ACTION_BOND_STATE_CHANGED} intents which indicates the pairing context. Possible values for
-     * {@link #ACTION_PAIRING_REQUEST} are: {@link #PAIRING_CONTEXT_USER_PARTICIPATION_REQUESTED}, {@link
-     * #PAIRING_CONTEXT_USER_APPROVAL_REQUESTED}, and {@link #PAIRING_CONTEXT_REPAIRING}, while the
-     * possible value for {@link #ACTION_BOND_STATE_CHANGED} is {@link #PAIRING_CONTEXT_REPAIRING}.
+     * {@link #ACTION_PAIRING_REQUEST} are: {@link #PAIRING_CONTEXT_USER_PARTICIPATION_REQUESTED},
+     * {@link #PAIRING_CONTEXT_USER_APPROVAL_REQUESTED}, and {@link #PAIRING_CONTEXT_REPAIRING},
+     * while the possible value for {@link #ACTION_BOND_STATE_CHANGED} is {@link
+     * #PAIRING_CONTEXT_REPAIRING}.
      */
     @FlaggedApi(Flags.FLAG_AUTONOMOUS_REPAIRING_INITIATION)
     @SuppressLint("ActionValue")
@@ -1726,7 +1727,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             Log.e(TAG, "BT not enabled. Cannot get identity address");
         } else {
             try {
-                return service.getIdentityAddress(mAddress);
+                return service.getIdentityAddress(mAddress, mAttributionSource);
             } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
@@ -1752,7 +1753,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             Log.e(TAG, "BT not enabled. Cannot get identity address with type");
         } else {
             try {
-                return service.getIdentityAddressWithType(mAddress);
+                return service.getIdentityAddressWithType(mAddress, mAttributionSource);
             } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
@@ -3779,7 +3780,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else {
             try {
-                return service.allowLowLatencyAudio(allowed, this);
+                return service.allowLowLatencyAudio(allowed, this, mAttributionSource);
             } catch (RemoteException e) {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
