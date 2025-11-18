@@ -31,8 +31,8 @@ import android.os.WorkSource
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
-import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.getTestDevice
 import com.android.tests.bluetooth.MockitoRule
 import java.util.function.Supplier
 import org.junit.Before
@@ -58,7 +58,7 @@ class ScanBinderTest {
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var scanController: ScanController
 
-    private val context = InstrumentationRegistry.getInstrumentation().getContext()
+    private val context = InstrumentationRegistry.getInstrumentation().context
     private val device = getTestDevice(89)
 
     private lateinit var binder: ScanBinder

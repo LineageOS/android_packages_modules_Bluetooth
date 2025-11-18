@@ -28,7 +28,6 @@ import android.bluetooth.le.ScanSettings
 import android.companion.CompanionDeviceManager
 import android.content.AttributionSource
 import android.content.Context
-import android.content.res.Resources
 import android.location.LocationManager
 import android.os.Binder
 import android.os.RemoteException
@@ -38,14 +37,16 @@ import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.TestLooper
-import com.android.bluetooth.TestUtils.getTestDevice
-import com.android.bluetooth.TestUtils.mockGetRemoteDevice
-import com.android.bluetooth.TestUtils.mockGetSystemService
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.getTestDevice
 import com.android.bluetooth.le_scan.BatchScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS
 import com.android.bluetooth.le_scan.BatchScanUtil.enforceReportDelayFloor
 import com.android.bluetooth.le_scan.BatchScanUtil.parseTimestampNanos
+import com.android.bluetooth.mockGetRemoteDevice
+import com.android.bluetooth.mockGetSystemService
+import com.android.bluetooth.mockPackageManager
+import com.android.bluetooth.mockResources
 import com.android.bluetooth.util.TimeProvider
 import com.android.tests.bluetooth.FlagsWrapper
 import com.android.tests.bluetooth.MockitoRule
@@ -85,7 +86,6 @@ class ScanControllerTest(flags: FlagsWrapper) {
     @Mock private lateinit var periodicScanManager: PeriodicScanManager
     @Mock private lateinit var periodicScanNativeInterface: PeriodicScanNativeInterface
     @Mock private lateinit var companionDeviceManager: CompanionDeviceManager
-    @Mock private lateinit var resources: Resources
     @Mock private lateinit var scannerMap: ScannerMap
     @Mock private lateinit var app: ScannerApp
     @Mock private lateinit var timeProvider: TimeProvider
@@ -96,19 +96,18 @@ class ScanControllerTest(flags: FlagsWrapper) {
 
     @Before
     fun setUp() {
-        doReturn(resources).whenever(adapterService).resources
-
         val context = InstrumentationRegistry.getInstrumentation().context
-        doReturn(context.packageManager).whenever(adapterService).packageManager
+        adapterService.mockResources()
+        adapterService.mockPackageManager(context.packageManager)
+        adapterService.mockGetRemoteDevice(device)
+        adapterService.mockGetSystemService<LocationManager>()
+        adapterService.mockGetSystemService<AppOpsManager>()
+
         doReturn(context.packageName).whenever(source).packageName
         doReturn(context.getSharedPreferences("ScanControllerTest", Context.MODE_PRIVATE))
             .whenever(adapterService)
             .getSharedPreferences(any<String>(), any<Int>())
         doReturn(TEST_ADDRESS).whenever(device).address
-
-        mockGetRemoteDevice(adapterService, device)
-        mockGetSystemService(adapterService, LocationManager::class.java)
-        mockGetSystemService(adapterService, AppOpsManager::class.java)
 
         scanController =
             ScanController(
@@ -217,7 +216,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
         val periodicAdvInt = 0
         val bluetoothDevice = getTestDevice(0xAA)
         val deviceAddress = bluetoothDevice.address
-        mockGetRemoteDevice(adapterService, bluetoothDevice)
+        adapterService.mockGetRemoteDevice(bluetoothDevice)
 
         // Create a scan record for a device named "TestDevice"
         val scanRecordBytes =
@@ -413,8 +412,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
                 0x00,
             )
 
-        mockGetRemoteDevice(adapterService, getTestDevice("02:00:00:00:00:00"))
-
+        adapterService.mockGetRemoteDevice(getTestDevice("02:00:00:00:00:00"))
         doReturn(setOf<ScanClient>()).whenever(scanManager).fullBatchScanQueue
 
         scanController.onBatchScanReportsInternal(
@@ -473,8 +471,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
                 )
         }
 
-        mockGetRemoteDevice(adapterService, getTestDevice("02:00:00:00:00:00"))
-
+        adapterService.mockGetRemoteDevice(getTestDevice("02:00:00:00:00:00"))
         val scanClientSet = mutableSetOf<ScanClient>()
         val appUid = 1234
         val associatedDevices =
