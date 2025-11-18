@@ -80,20 +80,6 @@ public class UtilsTest {
     }
 
     @Test
-    public void blockedByLocationOff() throws Exception {
-        Context context = InstrumentationRegistry.getInstrumentation().getContext();
-        UserHandle userHandle = UserHandle.SYSTEM;
-        LocationManager locationManager = context.getSystemService(LocationManager.class);
-        boolean enableStatus = locationManager.isLocationEnabledForUser(userHandle);
-        assertThat(Util.blockedByLocationOff(context, userHandle)).isEqualTo(!enableStatus);
-
-        locationManager.setLocationEnabledForUser(!enableStatus, userHandle);
-        assertThat(Util.blockedByLocationOff(context, userHandle)).isEqualTo(enableStatus);
-
-        locationManager.setLocationEnabledForUser(enableStatus, userHandle);
-    }
-
-    @Test
     public void checkCallerHasCoarseLocation_doesNotCrash() {
         Context context = InstrumentationRegistry.getInstrumentation().getContext();
         UserHandle userHandle = UserHandle.SYSTEM;

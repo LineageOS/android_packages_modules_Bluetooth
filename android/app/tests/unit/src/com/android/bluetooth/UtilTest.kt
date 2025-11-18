@@ -19,9 +19,13 @@ package com.android.bluetooth
 import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothStatusCodes
+import android.location.LocationManager
+import android.os.UserHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
+import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.TestUtils.getTestDevice
+import com.android.bluetooth.Util.blockedByLocationOff
 import com.android.bluetooth.Util.checkProfileAvailable
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.profile.ProfileService
@@ -44,6 +48,8 @@ class UtilTest {
     @get:Rule val mockitoRule = MockitoRule()
 
     @Mock private lateinit var adapterService: AdapterService
+
+    private val context = InstrumentationRegistry.getInstrumentation().context
 
     private val device = getTestDevice(1)
 
@@ -130,5 +136,18 @@ class UtilTest {
 
         assertThat(Util.hciToAndroidDisconnectReason(0x9999))
             .isEqualTo(BluetoothStatusCodes.ERROR_UNKNOWN)
+    }
+
+    @Test
+    fun blockedByLocationOff() {
+        val userHandle = UserHandle.SYSTEM
+        val locationManager = context.getSystemService(LocationManager::class.java)
+        val enableStatus = locationManager.isLocationEnabledForUser(userHandle)
+        assertThat(context.blockedByLocationOff(userHandle)).isEqualTo(!enableStatus)
+
+        locationManager.setLocationEnabledForUser(!enableStatus, userHandle)
+        assertThat(context.blockedByLocationOff(userHandle)).isEqualTo(enableStatus)
+
+        locationManager.setLocationEnabledForUser(enableStatus, userHandle)
     }
 }
