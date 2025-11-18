@@ -95,6 +95,12 @@ public:
               (const ::bluetooth::le_audio::types::LeAudioCodecId& codecId, int32_t priority),
               (override));
   MOCK_METHOD((void), UpdateAudioConfigToHal, (const ::bluetooth::le_audio::stream_config&));
+  MOCK_METHOD((std::optional<::le_audio::broadcaster::BroadcastConfiguration>), GetBroadcastConfig,
+              ((const std::vector<std::pair<::le_audio::types::LeAudioContextType, uint8_t>>&),
+               (const std::optional<std::vector<::bluetooth::le_audio::types::acs_ac_record>>&)),
+              (const));
+  MOCK_METHOD((void), UpdateBroadcastAudioConfigToHal,
+              (const ::bluetooth::le_audio::broadcast_offload_config&));
   MOCK_METHOD((size_t), Write, (const uint8_t* p_buf, uint32_t len));
 };
 
@@ -188,6 +194,14 @@ void LeAudioClientInterface::Source::UpdateAudioConfigToHal(
         const ::bluetooth::le_audio::stream_config& /*config*/) {}
 void LeAudioClientInterface::Source::SuspendedForReconfiguration() {}
 void LeAudioClientInterface::Source::ReconfigurationComplete() {}
+void LeAudioClientInterface::Source::UpdateBroadcastAudioConfigToHal(
+        const ::bluetooth::le_audio::broadcast_offload_config& /*config*/) {}
+std::optional<::le_audio::broadcaster::BroadcastConfiguration>
+LeAudioClientInterface::Source::GetBroadcastConfig(
+    const std::vector<std::pair<::le_audio::types::LeAudioContextType, uint8_t>>& quality,
+    const std::optional<std::vector<::bluetooth::le_audio::types::acs_ac_record>>& pacs) const {
+  return source_mock->GetBroadcastConfig(quality, pacs);
+}
 
 size_t LeAudioClientInterface::Source::Write(const uint8_t* p_buf, uint32_t len) {
   return source_mock->Write(p_buf, len);
