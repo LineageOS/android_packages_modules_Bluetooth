@@ -20,6 +20,7 @@ package android.bluetooth;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.DurationMillisLong;
+import android.annotation.FlaggedApi;
 import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
@@ -29,6 +30,8 @@ import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
+
+import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -60,6 +63,8 @@ import java.nio.ByteOrder;
  *       BluetoothQualityReport.BqrEnergyMonitor} object.
  *   <li>For RF stats event, you can call {@link #getBqrEvent} to get a {@link
  *       BluetoothQualityReport.BqrRfStats} object.
+ *   <li>For LE Audio choppy event, you can call {@link #getBqrCommon} to get a {@link
+ *       BluetoothQualityReport.BqrCommon} object.
  * </ul>
  */
 @Hide
@@ -88,9 +93,12 @@ public final class BluetoothQualityReport implements Parcelable {
     /** Quality report ID: Energy Monitor. */
     @Hide @SystemApi public static final int QUALITY_REPORT_ID_ENERGY_MONITOR = 0x06;
 
-    // Report ID 0x07 is reserved for LE Audio Choppy events. This ID will be used
-    // in a future version to indicate instances of choppy audio playback
-    // experienced with LE Audio connections. It is currently not handled.
+    /** Quality report ID: LE Audio Choppy. */
+    @FlaggedApi(Flags.FLAG_BLUETOOTH_QUALITY_REPORT_V8)
+    @Hide
+    @SystemApi
+    public static final int QUALITY_REPORT_ID_LEA_CHOPPY = 0x07;
+
     /** Quality report ID: Connect Fail. */
     @Hide @SystemApi public static final int QUALITY_REPORT_ID_CONN_FAIL = 0x08;
 
@@ -107,6 +115,7 @@ public final class BluetoothQualityReport implements Parcelable {
                 QUALITY_REPORT_ID_A2DP_CHOPPY,
                 QUALITY_REPORT_ID_SCO_CHOPPY,
                 QUALITY_REPORT_ID_ENERGY_MONITOR,
+                QUALITY_REPORT_ID_LEA_CHOPPY,
                 QUALITY_REPORT_ID_CONN_FAIL,
                 QUALITY_REPORT_ID_RF_STATS,
             })
@@ -280,6 +289,11 @@ public final class BluetoothQualityReport implements Parcelable {
         } else if (id == QUALITY_REPORT_ID_RF_STATS) {
             mBqrRfStats = new BqrRfStats(rawData, 1);
         } else {
+            if (Flags.bluetoothQualityReportV8()) {
+                if (id == QUALITY_REPORT_ID_LEA_CHOPPY) {
+                    return;
+                }
+            }
             throw new IllegalArgumentException(TAG + ": unknown quality report id:" + id);
         }
     }
@@ -802,6 +816,12 @@ public final class BluetoothQualityReport implements Parcelable {
         }
 
         static String qualityReportIdToString(@QualityReportId int id) {
+            if (Flags.bluetoothQualityReportV8()) {
+                if (QUALITY_REPORT_ID_LEA_CHOPPY == id) {
+                    return "LEA choppy";
+                }
+            }
+
             return switch (id) {
                 case QUALITY_REPORT_ID_MONITOR -> "Quality monitor";
                 case QUALITY_REPORT_ID_APPROACH_LSTO -> "Approaching LSTO";
