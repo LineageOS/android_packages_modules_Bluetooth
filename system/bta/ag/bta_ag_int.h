@@ -441,6 +441,7 @@ void bta_ag_rfc_do_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data);
 bool bta_ag_sco_is_active_device(const RawAddress& bd_addr);
 bool bta_ag_sco_is_open(tBTA_AG_SCB* p_scb);
 bool bta_ag_sco_is_opening(tBTA_AG_SCB* p_scb);
+bool bta_ag_sco_is_codec_negotiating(tBTA_AG_SCB* p_scb);
 void bta_ag_sco_conn_rsp(tBTA_AG_SCB* p_scb, tBTM_ESCO_CONN_REQ_EVT_DATA* data);
 // Testonly
 void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig);
