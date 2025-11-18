@@ -1,0 +1,12 @@
+package: "com.android.bluetooth.flags"
+container: "com.android.bt"
+
+flag {
+    name: "avrcp_controller_abs_vol_changed_notification"
+    namespace: "bluetooth"
+    description: "When using absolute volume strategy, not Loud, send volume changed notifications to target device"
+    bug: "459815936"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
