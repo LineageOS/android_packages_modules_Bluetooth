@@ -39,7 +39,6 @@ import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.TestLooper
 import com.android.bluetooth.TestUtils.getTestDevice
-import com.android.bluetooth.TestUtils.mockGetBluetoothManager
 import com.android.bluetooth.TestUtils.mockGetRemoteDevice
 import com.android.bluetooth.TestUtils.mockGetSystemService
 import com.android.bluetooth.btservice.AdapterService
@@ -108,7 +107,6 @@ class ScanControllerTest(flags: FlagsWrapper) {
         doReturn(TEST_ADDRESS).whenever(device).address
 
         mockGetRemoteDevice(adapterService, device)
-        mockGetBluetoothManager(adapterService)
         mockGetSystemService(adapterService, LocationManager::class.java)
         mockGetSystemService(adapterService, AppOpsManager::class.java)
 
@@ -557,6 +555,9 @@ class ScanControllerTest(flags: FlagsWrapper) {
         doReturn(callback).whenever(mockApp).callback
         doReturn(mockApp).whenever(scannerMap).getById(TEST_SCANNER_ID)
         doReturn(scanClientSet).whenever(scanManager).regularScanQueue
+        doReturn(TEST_ADDRESS).whenever(device).address
+        doReturn(addrType).whenever(device).addressType
+        doReturn(device).whenever(adapterService).getRemoteDevice(TEST_ADDRESS, addrType)
 
         val advtFilterOnFoundOnLostInfo =
             AdvtFilterOnFoundOnLostInfo(

@@ -27,9 +27,7 @@ import static java.util.Objects.requireNonNullElseGet;
 import android.annotation.Nullable;
 import android.app.AppOpsManager;
 import android.app.PendingIntent;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothUtils;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.IPeriodicAdvertisingCallback;
@@ -107,7 +105,6 @@ public class ScanController {
     private final Object mTestModeLock = new Object();
 
     private final AdapterService mAdapterService;
-    private final BluetoothAdapter mAdapter;
     private final AppOpsManager mAppOps;
     private final CompanionDeviceManager mCompanionManager;
     private final ScanBinder mBinder;
@@ -162,7 +159,6 @@ public class ScanController {
             TimeProvider timeProvider) {
         Log.i(TAG, "Created with Flags.scanControllerThread: " + Flags.scanControllerThread());
         mAdapterService = requireNonNull(service);
-        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mAppOps = mAdapterService.getSystemService(AppOpsManager.class);
         mCompanionManager = companionDeviceManager;
         mBinder = new ScanBinder(mAdapterService, this);
@@ -400,9 +396,7 @@ public class ScanController {
         }
 
         byte[] legacyAdvData = Arrays.copyOfRange(advData, 0, 62);
-
-        BluetoothDevice device = mAdapter.getRemoteLeDevice(address, addressType);
-
+        var device = mAdapterService.getRemoteDevice(address, addressType);
         var noFilterMatchedClients = new ArrayList<ScanClient>();
         for (ScanClient client : mScanManager.getRegularScanQueue()) {
             var app = mScannerMap.getById(client.getScannerId());
@@ -783,8 +777,8 @@ public class ScanController {
             return;
         }
 
-        BluetoothDevice device =
-                mAdapter.getRemoteLeDevice(trackingInfo.address(), trackingInfo.addressType());
+        var device =
+                mAdapterService.getRemoteDevice(trackingInfo.address(), trackingInfo.addressType());
         int advertiserState = trackingInfo.advState();
         ScanResult result =
                 new ScanResult(
