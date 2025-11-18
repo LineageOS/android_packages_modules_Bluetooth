@@ -43,6 +43,7 @@
 #include "btif/include/btif_sock_sdp.h"
 #include "btif/include/btif_sock_thread.h"
 #include "btif/include/btif_sock_util.h"
+#include "btif_status.h"
 #include "common/time_util.h"
 #include "gd/os/rand.h"
 #include "include/hardware/bt_sock.h"
@@ -127,7 +128,7 @@ static uint64_t btif_rfc_sock_generate_socket_id();
 
 static bool is_init_done(void) { return pth != -1; }
 
-bt_status_t btsock_rfc_init(int poll_thread_handle, uid_set_t* set) {
+BtStatus btsock_rfc_init(int poll_thread_handle, uid_set_t* set) {
   pth = poll_thread_handle;
   uid_set = set;
 
@@ -144,7 +145,7 @@ bt_status_t btsock_rfc_init(int poll_thread_handle, uid_set_t* set) {
 
   BTA_JvEnable(jv_dm_cback);
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 void btsock_rfc_cleanup(void) {
@@ -322,16 +323,16 @@ static rfc_slot_t* create_srv_accept_rfc_slot(rfc_slot_t* srv_rs, const RawAddre
   return accept_rs;
 }
 
-bt_status_t btsock_rfc_control_req(uint8_t dlci, const RawAddress& bd_addr, uint8_t modem_signal,
-                                   uint8_t break_signal, uint8_t discard_buffers,
-                                   uint8_t break_signal_seq, bool fc) {
+BtStatus btsock_rfc_control_req(uint8_t dlci, const RawAddress& bd_addr, uint8_t modem_signal,
+                                uint8_t break_signal, uint8_t discard_buffers,
+                                uint8_t break_signal_seq, bool fc) {
   int status = RFCOMM_ControlReqFromBTSOCK(dlci, bd_addr, modem_signal, break_signal,
                                            discard_buffers, break_signal_seq, fc);
   if (status != PORT_SUCCESS) {
     log::warn("failed to send control parameters, status={}", status);
-    return BT_STATUS_FAIL;
+    return BtifStatus(FAIL);
   }
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 /// Determine the local MTU for the offloaded RFCOMM connection.
@@ -356,10 +357,10 @@ static bool btsock_rfc_get_offload_mtu(int app_max_rx_packet_size, int* rx_mtu) 
   return true;
 }
 
-bt_status_t btsock_rfc_listen(const char* service_name, const Uuid* service_uuid, int channel,
-                              int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
-                              const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
-                              int max_rx_packet_size) {
+BtStatus btsock_rfc_listen(const char* service_name, const Uuid* service_uuid, int channel,
+                           int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
+                           const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
+                           int max_rx_packet_size) {
   log::assert_that(sock_fd != NULL, "assert failed: sock_fd != NULL");
   log::assert_that((service_uuid != NULL) || (channel >= 1 && channel <= MAX_RFC_CHANNEL) ||
                            ((flags & BTSOCK_FLAG_NO_SDP) != 0),
@@ -374,7 +375,7 @@ bt_status_t btsock_rfc_listen(const char* service_name, const Uuid* service_uuid
   // should be an assert.
   if (!is_init_done()) {
     log::error("BT not ready");
-    return BT_STATUS_NOT_READY;
+    return BtifStatus(NOT_READY);
   }
 
   if ((flags & BTSOCK_FLAG_NO_SDP) == 0) {
@@ -395,7 +396,7 @@ bt_status_t btsock_rfc_listen(const char* service_name, const Uuid* service_uuid
   rfc_slot_t* slot = alloc_rfc_slot(NULL, service_name, *service_uuid, channel, flags, true);
   if (!slot) {
     log::error("unable to allocate RFCOMM slot");
-    return BT_STATUS_NOMEM;
+    return BtifStatus(NOMEM);
   }
   log::info("Adding listening socket service_name: {} - channel: {}", service_name, channel);
   BTA_JvGetChannelId(tBTA_JV_CONN_TYPE::RFCOMM, slot->id, channel, 0);
@@ -419,20 +420,20 @@ bt_status_t btsock_rfc_listen(const char* service_name, const Uuid* service_uuid
   slot->endpoint_id = endpoint_id;
   if (data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
     if (!btsock_rfc_get_offload_mtu(max_rx_packet_size, &slot->mtu)) {
-      return BT_STATUS_UNSUPPORTED;
+      return BtifStatus(UNSUPPORTED);
     }
   }
   btsock_thread_add_fd(pth, slot->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_EXCEPTION, slot->id);
   // start monitoring the socketpair to get call back when app is accepting on server socket
   btsock_thread_add_fd(pth, slot->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_RD, slot->id);
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
-bt_status_t btsock_rfc_connect(const RawAddress* bd_addr, const Uuid* service_uuid, int channel,
-                               int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
-                               const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
-                               int max_rx_packet_size) {
+BtStatus btsock_rfc_connect(const RawAddress* bd_addr, const Uuid* service_uuid, int channel,
+                            int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
+                            const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
+                            int max_rx_packet_size) {
   log::assert_that(sock_fd != NULL, "assert failed: sock_fd != NULL");
   log::assert_that((service_uuid != NULL) || (channel >= 1 && channel <= MAX_RFC_CHANNEL),
                    "assert failed: (service_uuid != NULL) || (channel >= 1 && channel <= "
@@ -446,7 +447,7 @@ bt_status_t btsock_rfc_connect(const RawAddress* bd_addr, const Uuid* service_uu
   // be an assert.
   if (!is_init_done()) {
     log::error("BT not ready");
-    return BT_STATUS_NOT_READY;
+    return BtifStatus(NOT_READY);
   }
 
   std::unique_lock<std::recursive_mutex> lock(slot_lock);
@@ -454,7 +455,7 @@ bt_status_t btsock_rfc_connect(const RawAddress* bd_addr, const Uuid* service_uu
   rfc_slot_t* slot = alloc_rfc_slot(bd_addr, NULL, *service_uuid, channel, flags, false);
   if (!slot) {
     log::error("unable to allocate RFCOMM slot. bd_addr:{}", *bd_addr);
-    return BT_STATUS_NOMEM;
+    return BtifStatus(NOMEM);
   }
 
   if (!service_uuid || service_uuid->IsEmpty()) {
@@ -464,13 +465,13 @@ bt_status_t btsock_rfc_connect(const RawAddress* bd_addr, const Uuid* service_uu
       log::error("unable to initiate RFCOMM connection. status:{}, scn:{}, bd_addr:{}",
                  bta_jv_status_text(ret), slot->scn, slot->addr);
       cleanup_rfc_slot(slot, BTSOCK_ERROR_CONNECTION_FAILURE);
-      return BT_STATUS_SOCKET_ERROR;
+      return BtifStatus(SOCKET_ERROR);
     }
 
     if (!send_app_scn(slot)) {
       log::error("send_app_scn() failed, closing slot_id:{}", slot->id);
       cleanup_rfc_slot(slot, BTSOCK_ERROR_SEND_SCN_FAILURE);
-      return BT_STATUS_SOCKET_ERROR;
+      return BtifStatus(SOCKET_ERROR);
     }
   } else {
     log::info("service_uuid:{}, bd_addr:{}, slot_id:{}", service_uuid->ToString(), *bd_addr,
@@ -498,12 +499,12 @@ bt_status_t btsock_rfc_connect(const RawAddress* bd_addr, const Uuid* service_uu
   slot->endpoint_id = endpoint_id;
   if (data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
     if (!btsock_rfc_get_offload_mtu(max_rx_packet_size, &slot->mtu)) {
-      return BT_STATUS_UNSUPPORTED;
+      return BtifStatus(UNSUPPORTED);
     }
   }
   btsock_thread_add_fd(pth, slot->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_RD, slot->id);
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 static int create_server_sdp_record(rfc_slot_t* slot) {
@@ -1428,11 +1429,11 @@ int bta_co_rfc_data_outgoing(uint32_t id, uint8_t* buf, uint16_t size) {
   return true;
 }
 
-bt_status_t btsock_rfc_disconnect(const RawAddress* bd_addr) {
+BtStatus btsock_rfc_disconnect(const RawAddress* bd_addr) {
   log::assert_that(bd_addr != NULL, "assert failed: bd_addr != NULL");
   if (!is_init_done()) {
     log::error("BT not ready");
-    return BT_STATUS_NOT_READY;
+    return BtifStatus(NOT_READY);
   }
 
   std::unique_lock<std::recursive_mutex> lock(slot_lock);
@@ -1442,5 +1443,5 @@ bt_status_t btsock_rfc_disconnect(const RawAddress* bd_addr) {
     }
   }
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }

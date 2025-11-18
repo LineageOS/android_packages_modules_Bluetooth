@@ -1636,10 +1636,9 @@ static jint connectSocketNative(JNIEnv* env, jobject /* obj */, jbyteArray addre
     nativeSocketName = env->GetStringUTFChars(socketName, nullptr);
   }
 
-  if (sBluetoothSocketInterface->connect(bd_addr, (btsock_type_t)type, &btUuid, port, &socket_fd,
-                                         flag, callingUid, (btsock_data_path_t)dataPath,
-                                         nativeSocketName, hubId, endPointId,
-                                         maxRxPacketSize) != BT_STATUS_SUCCESS) {
+  if (!sBluetoothSocketInterface->connect(bd_addr, (btsock_type_t)type, &btUuid, port, &socket_fd,
+                                          flag, callingUid, (btsock_data_path_t)dataPath,
+                                          nativeSocketName, hubId, endPointId, maxRxPacketSize)) {
     socket_fd = INVALID_FD;
   }
 
@@ -1679,10 +1678,9 @@ static jint createSocketChannelNative(JNIEnv* env, jobject /* obj */, jint type,
     nativeSocketName = env->GetStringUTFChars(socketName, nullptr);
   }
 
-  if (sBluetoothSocketInterface->listen((btsock_type_t)type, nativeServiceName, &btUuid, port,
-                                        &socket_fd, flag, callingUid, (btsock_data_path_t)dataPath,
-                                        nativeSocketName, hubId, endPointId,
-                                        maxRxPacketSize) != BT_STATUS_SUCCESS) {
+  if (!sBluetoothSocketInterface->listen((btsock_type_t)type, nativeServiceName, &btUuid, port,
+                                         &socket_fd, flag, callingUid, (btsock_data_path_t)dataPath,
+                                         nativeSocketName, hubId, endPointId, maxRxPacketSize)) {
     socket_fd = INVALID_FD;
   }
 
