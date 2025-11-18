@@ -3207,6 +3207,12 @@ public final class BluetoothAdapter {
         BiFunction<Context, BluetoothAdapter, BluetoothProfile> constructor =
                 PROFILE_CONSTRUCTORS.get(profile);
 
+        if (Flags.leaudioPeripheralFeature()) {
+            if (profile == BluetoothProfile.LE_AUDIO_PERIPHERAL && constructor == null) {
+                constructor = (c, a) -> new BluetoothLeAudioPeripheral(c, a);
+            }
+        }
+
         if (constructor == null) {
             Log.e(TAG, "getProfileProxy(): Unknown profile " + profile);
             return false;

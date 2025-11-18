@@ -134,6 +134,7 @@ public class AdapterProperties {
     private boolean mIsLePeriodicAdvertisingSyncTransferSenderSupported;
     private boolean mIsLePeriodicAdvertisingSyncTransferRecipientSupported;
     private boolean mIsLeConnectedIsochronousStreamCentralSupported;
+    private boolean mIsLeConnectedIsochronousStreamPeripheralSupported;
     private boolean mIsLeIsochronousBroadcasterSupported;
     private boolean mIsLeChannelSoundingSupported;
 
@@ -325,6 +326,10 @@ public class AdapterProperties {
 
     boolean isLeConnectedIsochronousStreamCentralSupported() {
         return mIsLeConnectedIsochronousStreamCentralSupported;
+    }
+
+    boolean isLeConnectedIsochronousStreamPeripheralSupported() {
+        return mIsLeConnectedIsochronousStreamPeripheralSupported;
     }
 
     boolean isLeIsochronousBroadcasterSupported() {
@@ -830,6 +835,7 @@ public class AdapterProperties {
         mIsOffloadedTransportDiscoveryDataScanSupported = ((0x01 & ((int) val[28])) != 0);
         mIsLeChannelSoundingSupported = ((0xFF & ((int) val[30])) != 0);
         mIsLeHighDataThroughputPhySupported = ((0xFF & ((int) val[31])) != 0);
+        mIsLeConnectedIsochronousStreamPeripheralSupported = ((0xFF & ((int) val[32])) != 0);
 
         debugLog(
                 "BT_PROPERTY_LOCAL_LE_FEATURES: update from BT controller"
@@ -860,6 +866,8 @@ public class AdapterProperties {
                                 + mIsLePeriodicAdvertisingSyncTransferSenderSupported)
                         + (", isLeConnectedIsochronousStreamCentralSupported="
                                 + mIsLeConnectedIsochronousStreamCentralSupported)
+                        + (", isLeConnectedIsochronousStreamPeripheralSupported="
+                                + mIsLeConnectedIsochronousStreamPeripheralSupported)
                         + (", isLeIsochronousBroadcasterSupported="
                                 + mIsLeIsochronousBroadcasterSupported)
                         + (", isLePeriodicAdvertisingSyncTransferRecipientSupported="
