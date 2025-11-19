@@ -28,6 +28,7 @@ import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.Util.blockedByLocationOff
 import com.android.bluetooth.Util.checkCallerHasCoarseLocation
 import com.android.bluetooth.Util.checkCallerHasCoarseOrFineLocation
+import com.android.bluetooth.Util.checkCallerHasFineLocation
 import com.android.bluetooth.Util.checkProfileAvailable
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.profile.ProfileService
@@ -182,6 +183,23 @@ class UtilTest {
 
         locationManager.setLocationEnabledForUser(true, userHandle)
         context.checkCallerHasCoarseOrFineLocation(source, userHandle)
+        if (!enableStatus) {
+            locationManager.setLocationEnabledForUser(false, userHandle)
+        }
+    }
+
+    @Test
+    fun checkCallerHasFineLocation() {
+        val userHandle = UserHandle.SYSTEM
+        val locationManager = context.getSystemService(LocationManager::class.java)
+        val enableStatus = locationManager.isLocationEnabledForUser(userHandle)
+        val source = context.attributionSource
+
+        locationManager.setLocationEnabledForUser(false, userHandle)
+        assertThat(context.checkCallerHasFineLocation(source, userHandle)).isFalse()
+
+        locationManager.setLocationEnabledForUser(true, userHandle)
+        context.checkCallerHasFineLocation(source, userHandle)
         if (!enableStatus) {
             locationManager.setLocationEnabledForUser(false, userHandle)
         }
