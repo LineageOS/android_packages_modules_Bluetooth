@@ -68,7 +68,7 @@ import com.android.bluetooth.mockResources
 import com.android.bluetooth.util.WorkSourceUtil
 import com.android.tests.bluetooth.FakeTimeProvider
 import com.android.tests.bluetooth.FlagsWrapper
-import com.android.tests.bluetooth.StaticMockitoRule
+import com.android.tests.bluetooth.staticMockitoRule
 import com.google.common.truth.Truth.assertThat
 import java.time.Duration
 import java.util.UUID
@@ -100,7 +100,7 @@ private const val TAG = "ScanManagerTest"
 @SmallTest
 @RunWith(ParameterizedAndroidJunit4::class)
 class ScanManagerTest(flags: FlagsWrapper) {
-    @get:Rule val mockitoRule = StaticMockitoRule(SystemProperties::class.java)
+    @get:Rule val mockitoRule = staticMockitoRule<SystemProperties>()
     @get:Rule val setFlagsRule = SetFlagsRule(flags.flags)
 
     @Mock private lateinit var adapterService: AdapterService
