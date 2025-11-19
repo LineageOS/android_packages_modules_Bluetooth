@@ -40,7 +40,6 @@
 
 #include <vector>
 
-#include "bt_status.h"
 #include "bta/include/bta_hearing_aid_api.h"
 
 // Original usings
@@ -76,22 +75,22 @@ extern struct btif_storage_add_hearing_aid btif_storage_add_hearing_aid;
 // Params: const AclLinkSpec& link_spec, uint16_t attr_mask, uint8_t sub_class,
 // uint8_t app_id, uint16_t vendor_id, uint16_t product_id, uint16_t version,
 // uint8_t ctry_code, uint16_t ssr_max_latency, uint16_t ssr_min_tout, uint16_t
-// dl_len, uint8_t* dsc_list Return: BtStatus
+// dl_len, uint8_t* dsc_list Return: bt_status_t
 struct btif_storage_add_hid_device_info {
-  static BtStatus return_value;
-  std::function<BtStatus(const AclLinkSpec& link_spec, uint16_t attr_mask, uint8_t sub_class,
-                         uint8_t app_id, uint16_t vendor_id, uint16_t product_id, uint16_t version,
-                         uint8_t ctry_code, uint16_t ssr_max_latency, uint16_t ssr_min_tout,
-                         uint16_t dl_len, uint8_t* dsc_list)>
+  static bt_status_t return_value;
+  std::function<bt_status_t(const AclLinkSpec& link_spec, uint16_t attr_mask, uint8_t sub_class,
+                            uint8_t app_id, uint16_t vendor_id, uint16_t product_id,
+                            uint16_t version, uint8_t ctry_code, uint16_t ssr_max_latency,
+                            uint16_t ssr_min_tout, uint16_t dl_len, uint8_t* dsc_list)>
           body{[](const AclLinkSpec& /* link_spec */, uint16_t /* attr_mask */,
                   uint8_t /* sub_class */, uint8_t /* app_id */, uint16_t /* vendor_id */,
                   uint16_t /* product_id */, uint16_t /* version */, uint8_t /* ctry_code */,
                   uint16_t /* ssr_max_latency */, uint16_t /* ssr_min_tout */,
                   uint16_t /* dl_len */, uint8_t* /* dsc_list */) { return return_value; }};
-  BtStatus operator()(const AclLinkSpec& link_spec, uint16_t attr_mask, uint8_t sub_class,
-                      uint8_t app_id, uint16_t vendor_id, uint16_t product_id, uint16_t version,
-                      uint8_t ctry_code, uint16_t ssr_max_latency, uint16_t ssr_min_tout,
-                      uint16_t dl_len, uint8_t* dsc_list) {
+  bt_status_t operator()(const AclLinkSpec& link_spec, uint16_t attr_mask, uint8_t sub_class,
+                         uint8_t app_id, uint16_t vendor_id, uint16_t product_id, uint16_t version,
+                         uint8_t ctry_code, uint16_t ssr_max_latency, uint16_t ssr_min_tout,
+                         uint16_t dl_len, uint8_t* dsc_list) {
     return body(link_spec, attr_mask, sub_class, app_id, vendor_id, product_id, version, ctry_code,
                 ssr_max_latency, ssr_min_tout, dl_len, dsc_list);
   }
@@ -266,11 +265,11 @@ extern struct btif_storage_load_bonded_hearing_aids btif_storage_load_bonded_hea
 
 // Name: btif_storage_load_bonded_hid_info
 // Params: void
-// Return: BtStatus
+// Return: bt_status_t
 struct btif_storage_load_bonded_hid_info {
-  static BtStatus return_value;
-  std::function<BtStatus(void)> body{[](void) { return return_value; }};
-  BtStatus operator()(void) { return body(); }
+  static bt_status_t return_value;
+  std::function<bt_status_t(void)> body{[](void) { return return_value; }};
+  bt_status_t operator()(void) { return body(); }
 };
 extern struct btif_storage_load_bonded_hid_info btif_storage_load_bonded_hid_info;
 
@@ -305,11 +304,11 @@ extern struct btif_storage_load_bonded_volume_control_devices
 
 // Name: btif_storage_load_hidd
 // Params: void
-// Return: BtStatus
+// Return: bt_status_t
 struct btif_storage_load_hidd {
-  static BtStatus return_value;
-  std::function<BtStatus(void)> body{[](void) { return return_value; }};
-  BtStatus operator()(void) { return body(); }
+  static bt_status_t return_value;
+  std::function<bt_status_t(void)> body{[](void) { return return_value; }};
+  bt_status_t operator()(void) { return body(); }
 };
 extern struct btif_storage_load_hidd btif_storage_load_hidd;
 
@@ -342,23 +341,23 @@ extern struct btif_storage_remove_hearing_aid btif_storage_remove_hearing_aid;
 
 // Name: btif_storage_remove_hid_info
 // Params: const AclLinkSpec& link_spec
-// Return: BtStatus
+// Return: bt_status_t
 struct btif_storage_remove_hid_info {
-  static BtStatus return_value;
-  std::function<BtStatus(const AclLinkSpec& link_spec)> body{
+  static bt_status_t return_value;
+  std::function<bt_status_t(const AclLinkSpec& link_spec)> body{
           [](const AclLinkSpec& /* link_spec */) { return return_value; }};
-  BtStatus operator()(const AclLinkSpec& link_spec) { return body(link_spec); }
+  bt_status_t operator()(const AclLinkSpec& link_spec) { return body(link_spec); }
 };
 extern struct btif_storage_remove_hid_info btif_storage_remove_hid_info;
 
 // Name: btif_storage_remove_hidd
 // Params: RawAddress* remote_bd_addr
-// Return: BtStatus
+// Return: bt_status_t
 struct btif_storage_remove_hidd {
-  static BtStatus return_value;
-  std::function<BtStatus(RawAddress* remote_bd_addr)> body{
+  static bt_status_t return_value;
+  std::function<bt_status_t(RawAddress* remote_bd_addr)> body{
           [](RawAddress* /* remote_bd_addr */) { return return_value; }};
-  BtStatus operator()(RawAddress* remote_bd_addr) { return body(remote_bd_addr); }
+  bt_status_t operator()(RawAddress* remote_bd_addr) { return body(remote_bd_addr); }
 };
 extern struct btif_storage_remove_hidd btif_storage_remove_hidd;
 
@@ -394,12 +393,12 @@ extern struct btif_storage_set_hearing_aid_acceptlist btif_storage_set_hearing_a
 
 // Name: btif_storage_set_hidd
 // Params: const RawAddress& remote_bd_addr
-// Return: BtStatus
+// Return: bt_status_t
 struct btif_storage_set_hidd {
-  static BtStatus return_value;
-  std::function<BtStatus(const RawAddress& remote_bd_addr)> body{
+  static bt_status_t return_value;
+  std::function<bt_status_t(const RawAddress& remote_bd_addr)> body{
           [](const RawAddress& /* remote_bd_addr */) { return return_value; }};
-  BtStatus operator()(const RawAddress& remote_bd_addr) { return body(remote_bd_addr); }
+  bt_status_t operator()(const RawAddress& remote_bd_addr) { return body(remote_bd_addr); }
 };
 extern struct btif_storage_set_hidd btif_storage_set_hidd;
 

@@ -22,7 +22,6 @@
 #include <com_android_bluetooth_flags.h>
 
 #include "btif/include/btif_storage.h"
-#include "btif_status.h"
 #include "osi/include/properties.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_device_record.h"
@@ -108,11 +107,11 @@ bool btm_sec_is_enc_algo_downgrade(uint16_t hci_handle, bool host_secure_connect
                             .len = sizeof(uint8_t),
                             .val = &controller_val};
 
-  BtStatus cached = btif_storage_get_remote_device_property(&p_device->bd_addr, &property);
+  bt_status_t cached = btif_storage_get_remote_device_property(&p_device->bd_addr, &property);
 
   // No cached value for this device, so it's a new device and we don't need to
   // make the check.
-  if (cached == BtifStatus(FAIL)) {
+  if (cached == BT_STATUS_FAIL) {
     return false;
   }
 
@@ -126,7 +125,7 @@ bool btm_sec_is_enc_algo_downgrade(uint16_t hci_handle, bool host_secure_connect
 
   // No cached value for host -- in theory we should always have both or
   // neither, but let's check this just in case.
-  if (cached == BtifStatus(FAIL)) {
+  if (cached == BT_STATUS_FAIL) {
     return false;
   }
 
@@ -164,9 +163,9 @@ bool btm_sec_is_session_key_size_downgrade(uint16_t hci_handle, uint8_t key_size
                             .len = sizeof(uint8_t),
                             .val = &property_val};
 
-  BtStatus cached = btif_storage_get_remote_device_property(&p_device->bd_addr, &property);
+  bt_status_t cached = btif_storage_get_remote_device_property(&p_device->bd_addr, &property);
 
-  if (cached == BtifStatus(FAIL)) {
+  if (cached == BT_STATUS_FAIL) {
     return false;
   }
 

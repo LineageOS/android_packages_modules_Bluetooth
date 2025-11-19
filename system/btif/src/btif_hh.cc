@@ -813,7 +813,8 @@ static void hh_get_dscp_handler(tBTA_HH_DEV_DSCP_INFO& dscp_info) {
   bt_bdname_t bdname = {};
   bt_property_t prop_name = {};
   BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_BDNAME, sizeof(bt_bdname_t), &bdname);
-  if (btif_storage_get_remote_device_property(&p_dev->link_spec.addrt.bda, &prop_name)) {
+  if (btif_storage_get_remote_device_property(&p_dev->link_spec.addrt.bda, &prop_name) ==
+      BT_STATUS_SUCCESS) {
     cached_name = (char*)bdname.name;
   } else {
     cached_name = "Bluetooth HID";
@@ -826,11 +827,11 @@ static void hh_get_dscp_handler(tBTA_HH_DEV_DSCP_INFO& dscp_info) {
     BtStatus ret = BtifStatus();
     BTA_HhAddDev(p_dev->link_spec, p_dev->attr_mask, p_dev->sub_class, p_dev->app_id, dscp_info);
     // Save HID info in the persistent storage
-    ret = btif_storage_add_hid_device_info(
+    ret = BtifStatus(static_cast<BtifStatusCode>(btif_storage_add_hid_device_info(
             p_dev->link_spec, p_dev->attr_mask, p_dev->sub_class, p_dev->app_id,
             dscp_info.vendor_id, dscp_info.product_id, dscp_info.version, dscp_info.ctry_code,
             dscp_info.ssr_max_latency, dscp_info.ssr_min_tout, dscp_info.descriptor.dl_len,
-            dscp_info.descriptor.dsc_list);
+            dscp_info.descriptor.dsc_list)));
 
     // Allow incoming connections
     btif_storage_set_hid_connection_policy(p_dev->link_spec, true);

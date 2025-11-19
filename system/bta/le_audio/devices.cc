@@ -1423,7 +1423,7 @@ void LeAudioDevice::GetDeviceModelName(void) {
   // Retrieve model name from storage
   BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_REMOTE_MODEL_NUM, sizeof(bt_bdname_t),
                              &prop_value);
-  if (btif_storage_get_remote_device_property(&address_, &prop_name)) {
+  if (btif_storage_get_remote_device_property(&address_, &prop_name) == BT_STATUS_SUCCESS) {
     model_name_.assign((char*)prop_value.name);
   }
 }

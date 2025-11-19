@@ -48,7 +48,6 @@
 #include "btif/include/btif_jni_task.h"
 #include "btif_config.h"
 #include "btif_hh.h"
-#include "btif_status.h"
 #include "btif_storage.h"
 #include "hardware/bluetooth.h"
 #include "stack/include/bt_uuid16.h"
@@ -131,22 +130,23 @@ static void btif_storage_hogp_device_info(std::string bdstr, uint16_t attr_mask,
  * Description      BTIF storage API - Adds the hid information of bonded hid
  *                  devices-to NVRAM
  *
- * Returns          BtifStatus() if the store was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the store was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
 
-BtStatus btif_storage_add_hid_device_info(const AclLinkSpec& link_spec, uint16_t attr_mask,
-                                          uint8_t sub_class, uint8_t app_id, uint16_t vendor_id,
-                                          uint16_t product_id, uint16_t version, uint8_t ctry_code,
-                                          uint16_t ssr_max_latency, uint16_t ssr_min_tout,
-                                          uint16_t dl_len, uint8_t* dsc_list) {
+bt_status_t btif_storage_add_hid_device_info(const AclLinkSpec& link_spec, uint16_t attr_mask,
+                                             uint8_t sub_class, uint8_t app_id, uint16_t vendor_id,
+                                             uint16_t product_id, uint16_t version,
+                                             uint8_t ctry_code, uint16_t ssr_max_latency,
+                                             uint16_t ssr_min_tout, uint16_t dl_len,
+                                             uint8_t* dsc_list) {
   log::verbose("link spec: {}", link_spec.ToRedactedStringForLogging());
   std::string bdstr = link_spec.addrt.bda.ToString();
 
   if (link_spec.transport == BT_TRANSPORT_AUTO) {
     log::error("Unexpected transport!");
-    return BtifStatus(UNHANDLED);
+    return BT_STATUS_UNHANDLED;
   }
   btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HID_DB_VERSION, STORAGE_HID_DB_VERSION);
   if (link_spec.transport == BT_TRANSPORT_BR_EDR) {
@@ -158,7 +158,7 @@ BtStatus btif_storage_add_hid_device_info(const AclLinkSpec& link_spec, uint16_t
                                   version, ctry_code, dl_len, dsc_list);
   }
 
-  return BtifStatus();
+  return BT_STATUS_SUCCESS;
 }
 
 static void btif_storage_load_bonded_hid_device(const AclLinkSpec link_spec) {
@@ -171,7 +171,7 @@ static void btif_storage_load_bonded_hid_device(const AclLinkSpec link_spec) {
   }
   uint16_t attr_mask = (uint16_t)value;
 
-  if (!btif_in_fetch_bonded_device(name)) {
+  if (btif_in_fetch_bonded_device(name) != BT_STATUS_SUCCESS) {
     btif_storage_remove_hid_info(link_spec);
     return;
   }
@@ -227,7 +227,7 @@ static void btif_storage_load_bonded_hogp_device(const AclLinkSpec link_spec) {
   }
   uint16_t attr_mask = (uint16_t)value;
 
-  if (!btif_in_fetch_bonded_device(name)) {
+  if (btif_in_fetch_bonded_device(name) != BT_STATUS_SUCCESS) {
     btif_storage_remove_hid_info(link_spec);
     return;
   }
@@ -271,10 +271,10 @@ static void btif_storage_load_bonded_hogp_device(const AclLinkSpec link_spec) {
  * Description      BTIF storage API - Loads hid info for all the bonded devices
  *                  from NVRAM and adds those devices  to the BTA_HH.
  *
- * Returns          BtifStatus() if successful, BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_load_bonded_hid_info(void) {
+bt_status_t btif_storage_load_bonded_hid_info(void) {
   for (const auto& bd_addr : btif_config_get_paired_devices()) {
     auto name = bd_addr.ToString();
     AclLinkSpec link_spec = {};
@@ -297,7 +297,7 @@ BtStatus btif_storage_load_bonded_hid_info(void) {
       btif_storage_load_bonded_hogp_device(link_spec);
     }
   }
-  return BtifStatus();
+  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
@@ -307,11 +307,11 @@ BtStatus btif_storage_load_bonded_hid_info(void) {
  * Description      BTIF storage API - Deletes the bonded hid device info from
  *                  NVRAM
  *
- * Returns          BtifStatus() if the deletion was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the deletion was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_remove_hid_info(const AclLinkSpec& link_spec) {
+bt_status_t btif_storage_remove_hid_info(const AclLinkSpec& link_spec) {
   std::string bdstr = link_spec.addrt.bda.ToString();
 
   btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_ATTR_MASK);
@@ -342,7 +342,7 @@ BtStatus btif_storage_remove_hid_info(const AclLinkSpec& link_spec) {
     btif_config_remove(bdstr, BTIF_STORAGE_KEY_HOGP_RECONNECT_ALLOWED);
   }
   btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_DB_VERSION);
-  return BtifStatus();
+  return BT_STATUS_SUCCESS;
 }
 
 // Check if a given profile is supported.
@@ -445,7 +445,7 @@ void btif_storage_load_bonded_hearing_aids() {
 
     log::verbose("Remote device:{}", bd_addr);
 
-    if (!btif_in_fetch_bonded_device(name)) {
+    if (btif_in_fetch_bonded_device(name) != BT_STATUS_SUCCESS) {
       btif_storage_remove_hearing_aid(bd_addr);
       continue;
     }
@@ -995,16 +995,16 @@ void btif_storage_remove_csis_device(const RawAddress& address) {
  *
  * Description      Loads hidd bonded device and "plugs" it into hidd
  *
- * Returns          BtifStatus() if successful, BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_load_hidd(void) {
+bt_status_t btif_storage_load_hidd(void) {
   for (const auto& bd_addr : btif_config_get_paired_devices()) {
     auto name = bd_addr.ToString();
 
     log::verbose("Remote device:{}", bd_addr);
     int value;
-    if (btif_in_fetch_bonded_device(name)) {
+    if (btif_in_fetch_bonded_device(name) == BT_STATUS_SUCCESS) {
       if (btif_config_get_int(name, BTIF_STORAGE_KEY_HID_DEVICE_CABLED, &value)) {
         BTA_HdAddDevice(bd_addr);
         break;
@@ -1012,7 +1012,7 @@ BtStatus btif_storage_load_hidd(void) {
     }
   }
 
-  return BtifStatus();
+  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
@@ -1022,23 +1022,23 @@ BtStatus btif_storage_load_hidd(void) {
  * Description      Stores currently used HIDD device info in nvram and remove
  *                  the "HidDeviceCabled" flag from unused devices
  *
- * Returns          BtifStatus()
+ * Returns          BT_STATUS_SUCCESS
  *
  ******************************************************************************/
-BtStatus btif_storage_set_hidd(const RawAddress& remote_bd_addr) {
+bt_status_t btif_storage_set_hidd(const RawAddress& remote_bd_addr) {
   std::string remote_device_address_string = remote_bd_addr.ToString();
   for (const auto& bd_addr : btif_config_get_paired_devices()) {
     auto name = bd_addr.ToString();
     if (bd_addr == remote_bd_addr) {
       continue;
     }
-    if (btif_in_fetch_bonded_device(name)) {
+    if (btif_in_fetch_bonded_device(name) == BT_STATUS_SUCCESS) {
       btif_config_remove(name, BTIF_STORAGE_KEY_HID_DEVICE_CABLED);
     }
   }
 
   btif_config_set_int(remote_device_address_string, BTIF_STORAGE_KEY_HID_DEVICE_CABLED, 1);
-  return BtifStatus();
+  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
@@ -1047,13 +1047,13 @@ BtStatus btif_storage_set_hidd(const RawAddress& remote_bd_addr) {
  *
  * Description      Removes hidd bonded device info from nvram
  *
- * Returns          BtifStatus()
+ * Returns          BT_STATUS_SUCCESS
  *
  ******************************************************************************/
-BtStatus btif_storage_remove_hidd(RawAddress* remote_bd_addr) {
+bt_status_t btif_storage_remove_hidd(RawAddress* remote_bd_addr) {
   btif_config_remove(remote_bd_addr->ToString(), BTIF_STORAGE_KEY_HID_DEVICE_CABLED);
 
-  return BtifStatus();
+  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
@@ -1062,11 +1062,11 @@ BtStatus btif_storage_remove_hidd(RawAddress* remote_bd_addr) {
  *
  * Description      Stores connection policy info in nvram
  *
- * Returns          BtifStatus()
+ * Returns          BT_STATUS_SUCCESS
  *
  ******************************************************************************/
-BtStatus btif_storage_set_hid_connection_policy(const AclLinkSpec& link_spec,
-                                                bool reconnect_allowed) {
+bt_status_t btif_storage_set_hid_connection_policy(const AclLinkSpec& link_spec,
+                                                   bool reconnect_allowed) {
   std::string bdstr = link_spec.addrt.bda.ToString();
 
   if (link_spec.transport == BT_TRANSPORT_LE) {
@@ -1077,7 +1077,7 @@ BtStatus btif_storage_set_hid_connection_policy(const AclLinkSpec& link_spec,
     log::error("Unexpected!");
   }
 
-  return BtifStatus();
+  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
@@ -1086,11 +1086,11 @@ BtStatus btif_storage_set_hid_connection_policy(const AclLinkSpec& link_spec,
  *
  * Description      get connection policy info from nvram
  *
- * Returns          BtifStatus()
+ * Returns          BT_STATUS_SUCCESS
  *
  ******************************************************************************/
-BtStatus btif_storage_get_hid_connection_policy(const AclLinkSpec& link_spec,
-                                                bool* reconnect_allowed) {
+bt_status_t btif_storage_get_hid_connection_policy(const AclLinkSpec& link_spec,
+                                                   bool* reconnect_allowed) {
   std::string bdstr = link_spec.addrt.bda.ToString();
 
   int value = 1;
@@ -1112,7 +1112,7 @@ BtStatus btif_storage_get_hid_connection_policy(const AclLinkSpec& link_spec,
     btif_storage_set_hid_connection_policy(link_spec, true);
   }
 
-  return BtifStatus();
+  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************

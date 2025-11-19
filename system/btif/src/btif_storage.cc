@@ -55,7 +55,6 @@
 #include "btif/include/btif_util.h"
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager_t.h"
-#include "btif_status.h"
 #include "hardware/bluetooth.h"
 #include "hci/controller.h"
 #include "internal_include/bt_target.h"
@@ -449,10 +448,10 @@ static bool cfg2prop(const RawAddress* remote_bd_addr, bt_property_t* prop) {
  * Description      Helper function to fetch the bonded devices
  *                  from NVRAM
  *
- * Returns          SUCCESS if successful, BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_in_fetch_bonded_device(const std::string& bdstr) {
+bt_status_t btif_in_fetch_bonded_device(const std::string& bdstr) {
   bool bt_linkkey_file_found = false;
 
   LinkKey link_key;
@@ -465,10 +464,11 @@ BtStatus btif_in_fetch_bonded_device(const std::string& bdstr) {
       bt_linkkey_file_found = false;
     }
   }
-  if ((!btif_in_fetch_bonded_ble_device(bdstr, false, NULL)) && (!bt_linkkey_file_found)) {
-    return BtifStatus(DEVICE_NOT_FOUND);
+  if ((btif_in_fetch_bonded_ble_device(bdstr, false, NULL) != BT_STATUS_SUCCESS) &&
+      (!bt_linkkey_file_found)) {
+    return BT_STATUS_DEVICE_NOT_FOUND;
   }
-  return BtifStatus();
+  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
@@ -478,10 +478,10 @@ BtStatus btif_in_fetch_bonded_device(const std::string& bdstr) {
  * Description      Internal helper function to fetch the bonded devices
  *                  from NVRAM
  *
- * Returns          SUCCESS if successful, BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-static BtStatus btif_in_fetch_bonded_devices(btif_bonded_devices_t* p_bonded_devices, int add) {
+static bt_status_t btif_in_fetch_bonded_devices(btif_bonded_devices_t* p_bonded_devices, int add) {
   memset(p_bonded_devices, 0, sizeof(btif_bonded_devices_t));
 
   bool bt_linkkey_file_found = false;
@@ -530,7 +530,7 @@ static BtStatus btif_in_fetch_bonded_devices(btif_bonded_devices_t* p_bonded_dev
       log::verbose("No link key or ble key found for device:{}", bd_addr);
     }
   }
-  return BtifStatus();
+  return BT_STATUS_SUCCESS;
 }
 
 static void btif_read_le_key(const uint8_t key_type, const size_t key_len, RawAddress bd_addr,
@@ -543,7 +543,7 @@ static void btif_read_le_key(const uint8_t key_type, const size_t key_len, RawAd
   memset(&key, 0, sizeof(key));
 
   if (btif_storage_get_ble_bonding_key(bd_addr, key_type, reinterpret_cast<uint8_t*>(&key),
-                                       key_len)) {
+                                       key_len) == BT_STATUS_SUCCESS) {
     if (add_key) {
       if (!*device_added) {
         BTA_DmAddBleDevice(bd_addr, addr_type, BT_DEVICE_TYPE_BLE);
@@ -604,8 +604,8 @@ size_t btif_split_uuids_string(const char* str, bluetooth::Uuid* p_uuid, size_t 
 }
 
 /** Helper function for fetching a bt_property of the adapter. */
-static BtStatus btif_storage_get_adapter_prop(bt_property_type_t type, void* buf, int size,
-                                              bt_property_t* property) {
+static bt_status_t btif_storage_get_adapter_prop(bt_property_type_t type, void* buf, int size,
+                                                 bt_property_t* property) {
   property->type = type;
   property->val = buf;
   property->len = size;
@@ -621,11 +621,11 @@ static BtStatus btif_storage_get_adapter_prop(bt_property_type_t type, void* buf
  *                  Caller should provide memory for property->val and
  *                  set the property->val
  *
- * Returns          SUCCESS if the fetch was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the fetch was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_get_adapter_property(bt_property_t* property) {
+bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
   /* Special handling for adapter address and BONDED_DEVICES */
   if (property->type == BT_PROPERTY_BDADDR) {
     RawAddress* bd_addr = reinterpret_cast<RawAddress*>(property->val);
@@ -633,13 +633,13 @@ BtStatus btif_storage_get_adapter_property(bt_property_t* property) {
     if (bluetooth::shim::GetController() == nullptr) {
       log::error("Controller not ready! Unable to return Bluetooth Address");
       *bd_addr = RawAddress::kEmpty;
-      return BtifStatus(NOT_READY);
+      return BT_STATUS_NOT_READY;
     } else {
       log::info("Controller ready!");
       *bd_addr = bluetooth::ToRawAddress(bluetooth::shim::GetController()->GetMacAddress());
     }
     property->len = RawAddress::kLength;
-    return BtifStatus();
+    return BT_STATUS_SUCCESS;
   } else if (property->type == BT_PROPERTY_ADAPTER_BONDED_DEVICES) {
     btif_bonded_devices_t bonded_devices;
 
@@ -656,7 +656,7 @@ BtStatus btif_storage_get_adapter_property(bt_property_t* property) {
     memcpy(property->val, bonded_devices_serialized.data(), property->len);
 
     /* if there are no bonded_devices, then length shall be 0 */
-    return BtifStatus();
+    return BT_STATUS_SUCCESS;
   } else if (property->type == BT_PROPERTY_UUIDS) {
     /* publish list of local supported services */
     Uuid* p_uuid = reinterpret_cast<Uuid*>(property->val);
@@ -713,14 +713,14 @@ BtStatus btif_storage_get_adapter_property(bt_property_t* property) {
       }
     }
     property->len = (num_uuids) * sizeof(Uuid);
-    return BtifStatus();
+    return BT_STATUS_SUCCESS;
   }
 
   /* fall through for other properties */
   if (!cfg2prop(NULL, property)) {
-    return BtifStatus(static_cast<BtifStatusCode>(btif_dm_get_adapter_property(property)));
+    return btif_dm_get_adapter_property(property);
   }
-  return BtifStatus();
+  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
@@ -730,17 +730,17 @@ BtStatus btif_storage_get_adapter_property(bt_property_t* property) {
  * Description      BTIF storage API - Stores the adapter property
  *                  to NVRAM
  *
- * Returns          SUCCESS if the store was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the store was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_set_adapter_property(bt_property_t* property) {
-  return prop2cfg(NULL, property) ? BtifStatus() : BtifStatus(FAIL);
+bt_status_t btif_storage_set_adapter_property(bt_property_t* property) {
+  return prop2cfg(NULL, property) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
 /** Helper function for fetching a bt_property of a remote device. */
-static BtStatus btif_storage_get_remote_prop(RawAddress* remote_addr, bt_property_type_t type,
-                                             void* buf, int size, bt_property_t* property) {
+static bt_status_t btif_storage_get_remote_prop(RawAddress* remote_addr, bt_property_type_t type,
+                                                void* buf, int size, bt_property_t* property) {
   property->type = type;
   property->val = buf;
   property->len = size;
@@ -756,13 +756,13 @@ static BtStatus btif_storage_get_remote_prop(RawAddress* remote_addr, bt_propert
  *                  Caller should provide memory for property->val and
  *                  set the property->val
  *
- * Returns          SUCCESS if the fetch was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the fetch was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_get_remote_device_property(const RawAddress* remote_bd_addr,
-                                                 bt_property_t* property) {
-  return cfg2prop(remote_bd_addr, property) ? BtifStatus() : BtifStatus(FAIL);
+bt_status_t btif_storage_get_remote_device_property(const RawAddress* remote_bd_addr,
+                                                    bt_property_t* property) {
+  return cfg2prop(remote_bd_addr, property) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 /*******************************************************************************
  *
@@ -771,13 +771,13 @@ BtStatus btif_storage_get_remote_device_property(const RawAddress* remote_bd_add
  * Description      BTIF storage API - Stores the remote device property
  *                  to NVRAM
  *
- * Returns          SUCCESS if the store was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the store was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_set_remote_device_property(const RawAddress* remote_bd_addr,
-                                                 bt_property_t* property) {
-  return prop2cfg(remote_bd_addr, property) ? BtifStatus() : BtifStatus(FAIL);
+bt_status_t btif_storage_set_remote_device_property(const RawAddress* remote_bd_addr,
+                                                    bt_property_t* property) {
+  return prop2cfg(remote_bd_addr, property) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
 /*******************************************************************************
@@ -788,12 +788,12 @@ BtStatus btif_storage_set_remote_device_property(const RawAddress* remote_bd_add
  *                  along with the timestamp. Also, stores the various
  *                  properties - RSSI, BDADDR, NAME (if found in EIR)
  *
- * Returns          SUCCESS if the store was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the store was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_add_remote_device(const RawAddress* remote_bd_addr, uint32_t num_properties,
-                                        bt_property_t* properties) {
+bt_status_t btif_storage_add_remote_device(const RawAddress* remote_bd_addr,
+                                           uint32_t num_properties, bt_property_t* properties) {
   uint32_t i = 0;
   /* TODO: If writing a property, fails do we go back undo the earlier
    * written properties? */
@@ -820,7 +820,7 @@ BtStatus btif_storage_add_remote_device(const RawAddress* remote_bd_addr, uint32
       btif_storage_set_remote_device_property(remote_bd_addr, &properties[i]);
     }
   }
-  return BtifStatus();
+  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
@@ -830,13 +830,13 @@ BtStatus btif_storage_add_remote_device(const RawAddress* remote_bd_addr, uint32
  * Description      BTIF storage API - Adds the newly bonded device to NVRAM
  *                  along with the link-key, Key type and Pin key length
  *
- * Returns          SUCCESS if the store was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the store was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
 
-BtStatus btif_storage_add_bonded_device(RawAddress* remote_bd_addr, LinkKey link_key,
-                                        uint8_t key_type, uint8_t pin_length) {
+bt_status_t btif_storage_add_bonded_device(RawAddress* remote_bd_addr, LinkKey link_key,
+                                           uint8_t key_type, uint8_t pin_length) {
   std::string bdstr = remote_bd_addr->ToString();
   bool ret = btif_config_set_int(bdstr, BTIF_STORAGE_KEY_LINK_KEY_TYPE, static_cast<int>(key_type));
   ret &= btif_config_set_int(bdstr, BTIF_STORAGE_KEY_PIN_LENGTH, static_cast<int>(pin_length));
@@ -845,7 +845,7 @@ BtStatus btif_storage_add_bonded_device(RawAddress* remote_bd_addr, LinkKey link
   if (ret) {
     btif_storage_set_mode(remote_bd_addr);
   }
-  return ret ? BtifStatus() : BtifStatus(FAIL);
+  return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
 /*******************************************************************************
@@ -854,11 +854,11 @@ BtStatus btif_storage_add_bonded_device(RawAddress* remote_bd_addr, LinkKey link
  *
  * Description      BTIF storage API - Deletes the bonded device from NVRAM
  *
- * Returns          SUCCESS if the deletion was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the deletion was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_remove_bonded_device(const RawAddress* remote_bd_addr) {
+bt_status_t btif_storage_remove_bonded_device(const RawAddress* remote_bd_addr) {
   std::string bdstr = remote_bd_addr->ToString();
   log::info("Removing bonded device addr={}", *remote_bd_addr);
 
@@ -875,7 +875,7 @@ BtStatus btif_storage_remove_bonded_device(const RawAddress* remote_bd_addr) {
     }
   }
 
-  return BtifStatus();
+  return BT_STATUS_SUCCESS;
 }
 
 /* Some devices hardcode sample LTK value from spec, instead of generating one.
@@ -894,7 +894,7 @@ static void remove_devices_with_sample_ltk() {
     memset(&key, 0, sizeof(key));
 
     if (btif_storage_get_ble_bonding_key(bd_addr, BTM_LE_KEY_PENC, reinterpret_cast<uint8_t*>(&key),
-                                         sizeof(tBTM_LE_PENC_KEYS))) {
+                                         sizeof(tBTM_LE_PENC_KEYS)) == BT_STATUS_SUCCESS) {
       if (key.penc_key.ltk == SAMPLE_LTK) {
         bad_ltk.push_back(bd_addr);
       }
@@ -934,7 +934,7 @@ void btif_storage_load_le_devices(void) {
     tBTA_LE_KEY_VALUE key = {};
     if (btif_storage_get_ble_bonding_key(bonded_devices.devices[i].bda, BTM_LE_KEY_PID,
                                          reinterpret_cast<uint8_t*>(&key),
-                                         sizeof(tBTM_LE_PID_KEYS))) {
+                                         sizeof(tBTM_LE_PID_KEYS)) == BT_STATUS_SUCCESS) {
       if (bonded_devices.devices[i].bda != key.pid_key.identity_addr) {
         log::info("Found device with a known identity address {} {}", bonded_devices.devices[i],
                   key.pid_key.identity_addr);
@@ -987,10 +987,10 @@ void btif_storage_load_le_devices(void) {
  *                  and remote_device_properties_cb for each of the bonded
  *                  devices.
  *
- * Returns          SUCCESS if successful, BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_load_bonded_devices(void) {
+bt_status_t btif_storage_load_bonded_devices(void) {
   btif_bonded_devices_t bonded_devices;
   uint32_t i = 0;
   bt_property_t adapter_props[6];
@@ -1002,7 +1002,7 @@ BtStatus btif_storage_load_bonded_devices(void) {
   Uuid local_uuids[BT_MAX_NUM_UUIDS];
   Uuid remote_uuids[BT_MAX_NUM_UUIDS];
   Uuid remote_uuids_le[BT_MAX_NUM_UUIDS];
-  BtStatus status = BtifStatus();
+  bt_status_t status;
 
   remove_devices_with_sample_ltk();
 
@@ -1017,7 +1017,7 @@ BtStatus btif_storage_load_bonded_devices(void) {
                                            &adapter_props[num_props]);
     // Add BT_PROPERTY_BDADDR property into list only when successful.
     // Otherwise, skip this property entry.
-    if (status) {
+    if (status == BT_STATUS_SUCCESS) {
       num_props++;
     }
 
@@ -1094,7 +1094,8 @@ BtStatus btif_storage_load_bonded_devices(void) {
       // Floss needs appearance for metrics purposes
       uint16_t appearance = 0;
       if (btif_storage_get_remote_prop(p_remote_addr, BT_PROPERTY_APPEARANCE, &appearance,
-                                       sizeof(appearance), &remote_properties[num_props])) {
+                                       sizeof(appearance),
+                                       &remote_properties[num_props]) == BT_STATUS_SUCCESS) {
         num_props++;
       }
 
@@ -1102,7 +1103,8 @@ BtStatus btif_storage_load_bonded_devices(void) {
       // Floss needs VID:PID for metrics purposes
       bt_vendor_product_info_t vp_info;
       if (btif_storage_get_remote_prop(p_remote_addr, BT_PROPERTY_VENDOR_PRODUCT_INFO, &vp_info,
-                                       sizeof(vp_info), &remote_properties[num_props])) {
+                                       sizeof(vp_info),
+                                       &remote_properties[num_props]) == BT_STATUS_SUCCESS) {
         num_props++;
       }
 #endif
@@ -1120,7 +1122,7 @@ BtStatus btif_storage_load_bonded_devices(void) {
                                  remote_properties);
     }
   }
-  return BtifStatus();
+  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
@@ -1130,13 +1132,13 @@ BtStatus btif_storage_load_bonded_devices(void) {
  * Description      BTIF storage API - Adds the newly bonded device to NVRAM
  *                  along with the ble-key, Key type and Pin key length
  *
- * Returns          SUCCESS if the store was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the store was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
 
-BtStatus btif_storage_add_ble_bonding_key(RawAddress* remote_bd_addr, const uint8_t* key_value,
-                                          uint8_t key_type, uint8_t key_length) {
+bt_status_t btif_storage_add_ble_bonding_key(RawAddress* remote_bd_addr, const uint8_t* key_value,
+                                             uint8_t key_type, uint8_t key_length) {
   for (size_t i = 0; i < std::size(BTIF_STORAGE_LE_KEYS); i++) {
     auto key = BTIF_STORAGE_LE_KEYS[i];
     if (key.type == key_type) {
@@ -1145,12 +1147,12 @@ BtStatus btif_storage_add_ble_bonding_key(RawAddress* remote_bd_addr, const uint
       if (ret) {
         btif_storage_set_mode(remote_bd_addr);
       }
-      return ret ? BtifStatus() : BtifStatus(FAIL);
+      return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
     }
   }
 
   log::warn("Unknown LE key type: {}", key_type);
-  return BtifStatus(FAIL);
+  return BT_STATUS_FAIL;
 }
 
 /*******************************************************************************
@@ -1159,23 +1161,23 @@ BtStatus btif_storage_add_ble_bonding_key(RawAddress* remote_bd_addr, const uint
  *
  * Description
  *
- * Returns          SUCCESS if the fetch was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the fetch was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_get_ble_bonding_key(const RawAddress& remote_bd_addr, uint8_t key_type,
-                                          uint8_t* key_value, int key_length) {
+bt_status_t btif_storage_get_ble_bonding_key(const RawAddress& remote_bd_addr, uint8_t key_type,
+                                             uint8_t* key_value, int key_length) {
   for (size_t i = 0; i < std::size(BTIF_STORAGE_LE_KEYS); i++) {
     auto key = BTIF_STORAGE_LE_KEYS[i];
     if (key.type == key_type) {
       size_t length = key_length;
       bool ret = btif_config_get_bin(remote_bd_addr.ToString(), key.name, key_value, &length);
-      return ret ? BtifStatus() : BtifStatus(FAIL);
+      return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
     }
   }
 
   log::warn("Unknown LE key type: {}", key_type);
-  return BtifStatus(FAIL);
+  return BT_STATUS_FAIL;
 }
 
 /*******************************************************************************
@@ -1184,11 +1186,11 @@ BtStatus btif_storage_get_ble_bonding_key(const RawAddress& remote_bd_addr, uint
  *
  * Description      BTIF storage API - Deletes the bonded device from NVRAM
  *
- * Returns          SUCCESS if the deletion was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the deletion was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_remove_ble_bonding_keys(const RawAddress* remote_bd_addr) {
+bt_status_t btif_storage_remove_ble_bonding_keys(const RawAddress* remote_bd_addr) {
   std::string bdstr = remote_bd_addr->ToString();
   log::info("Removing bonding keys for bd addr:{}", *remote_bd_addr);
   bool ret = true;
@@ -1199,7 +1201,7 @@ BtStatus btif_storage_remove_ble_bonding_keys(const RawAddress* remote_bd_addr) 
     }
   }
 
-  return ret ? BtifStatus() : BtifStatus(FAIL);
+  return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
 /*******************************************************************************
@@ -1208,29 +1210,29 @@ BtStatus btif_storage_remove_ble_bonding_keys(const RawAddress* remote_bd_addr) 
  *
  * Description      BTIF storage API - Adds the ble key to NVRAM
  *
- * Returns          SUCCESS if the store was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the store was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_add_ble_local_key(const Octet16& key_value, uint8_t key_type) {
+bt_status_t btif_storage_add_ble_local_key(const Octet16& key_value, uint8_t key_type) {
   for (size_t i = 0; i < std::size(BTIF_STORAGE_LOCAL_LE_KEYS); i++) {
     auto key = BTIF_STORAGE_LOCAL_LE_KEYS[i];
     if (key.type == key_type) {
       bool ret = btif_config_set_bin(BTIF_STORAGE_SECTION_ADAPTER, key.name, key_value.data(),
                                      key_value.size());
 
-      return ret ? BtifStatus() : BtifStatus(FAIL);
+      return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
     }
   }
   log::warn("Unknown LE key type: {}", key_type);
-  return BtifStatus(FAIL);
+  return BT_STATUS_FAIL;
 }
 
 /** Stores local key of |key_type| into |key_value|
- * Returns SUCCESS if the fetch was successful, BtifStatus(FAIL)
+ * Returns BT_STATUS_SUCCESS if the fetch was successful, BT_STATUS_FAIL
  * otherwise
  */
-BtStatus btif_storage_get_ble_local_key(uint8_t key_type, Octet16* key_value) {
+bt_status_t btif_storage_get_ble_local_key(uint8_t key_type, Octet16* key_value) {
   for (size_t i = 0; i < std::size(BTIF_STORAGE_LOCAL_LE_KEYS); i++) {
     auto key = BTIF_STORAGE_LOCAL_LE_KEYS[i];
     if (key.type == key_type) {
@@ -1238,15 +1240,15 @@ BtStatus btif_storage_get_ble_local_key(uint8_t key_type, Octet16* key_value) {
       bool ret = btif_config_get_bin(BTIF_STORAGE_SECTION_ADAPTER, key.name, key_value->data(),
                                      &length);
 
-      return ret ? BtifStatus() : BtifStatus(FAIL);
+      return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
     }
   }
   log::warn("Unknown LE key type: {}", key_type);
-  return BtifStatus(FAIL);
+  return BT_STATUS_FAIL;
 }
 
-BtStatus btif_in_fetch_bonded_ble_device(const std::string& remote_bd_addr, int add,
-                                         btif_bonded_devices_t* p_bonded_devices) {
+bt_status_t btif_in_fetch_bonded_ble_device(const std::string& remote_bd_addr, int add,
+                                            btif_bonded_devices_t* p_bonded_devices) {
   int device_type = BT_DEVICE_TYPE_UNKNOWN;
   tBLE_ADDR_TYPE addr_type;
   bool device_added = false;
@@ -1255,14 +1257,14 @@ BtStatus btif_in_fetch_bonded_ble_device(const std::string& remote_bd_addr, int 
   RawAddress bd_addr = RawAddress::FromString(remote_bd_addr).value_or(RawAddress::kEmpty);
 
   if (!btif_config_get_int(remote_bd_addr, BTIF_STORAGE_KEY_DEV_TYPE, &device_type)) {
-    return BtifStatus(FAIL);
+    return BT_STATUS_FAIL;
   }
 
   if ((device_type & BT_DEVICE_TYPE_BLE) == BT_DEVICE_TYPE_BLE ||
       btif_has_ble_keys(remote_bd_addr)) {
     log::verbose("Found a LE device: {}", bd_addr);
 
-    if (!btif_storage_get_remote_addr_type(&bd_addr, &addr_type)) {
+    if (btif_storage_get_remote_addr_type(&bd_addr, &addr_type) != BT_STATUS_SUCCESS) {
       addr_type = BLE_ADDR_PUBLIC;
       btif_storage_set_remote_addr_type(&bd_addr, BLE_ADDR_PUBLIC);
     }
@@ -1283,10 +1285,10 @@ BtStatus btif_in_fetch_bonded_ble_device(const std::string& remote_bd_addr, int 
     }
 
     if (key_found) {
-      return BtifStatus();
+      return BT_STATUS_SUCCESS;
     }
   }
-  return BtifStatus(DEVICE_NOT_FOUND);
+  return BT_STATUS_DEVICE_NOT_FOUND;
 }
 
 #if TARGET_FLOSS
@@ -1296,13 +1298,13 @@ static void btif_storage_invoke_addr_type_update(const RawAddress& remote_bd_add
   prop.type = BT_PROPERTY_REMOTE_ADDR_TYPE;
   prop.val = const_cast<tBLE_ADDR_TYPE*>(reinterpret_cast<const tBLE_ADDR_TYPE*>(&addr_type));
   prop.len = sizeof(tBLE_ADDR_TYPE);
-  GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(BtifStatus(), remote_bd_addr,
-                                                                       addr_type, 1, &prop);
+  GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
+          BT_STATUS_SUCCESS, remote_bd_addr, addr_type, 1, &prop);
 }
 #endif  // TARGET_FLOSS
 
-BtStatus btif_storage_set_remote_addr_type(const RawAddress* remote_bd_addr,
-                                           tBLE_ADDR_TYPE addr_type) {
+bt_status_t btif_storage_set_remote_addr_type(const RawAddress* remote_bd_addr,
+                                              tBLE_ADDR_TYPE addr_type) {
   bool ret = btif_config_set_int(remote_bd_addr->ToString(), BTIF_STORAGE_KEY_ADDR_TYPE,
                                  static_cast<int>(addr_type));
 
@@ -1311,7 +1313,7 @@ BtStatus btif_storage_set_remote_addr_type(const RawAddress* remote_bd_addr,
   btif_storage_invoke_addr_type_update(*remote_bd_addr, addr_type);
 #endif
 
-  return ret ? BtifStatus() : BtifStatus(FAIL);
+  return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
 static bool btif_has_ble_keys(const std::string& bdstr) {
@@ -1324,16 +1326,16 @@ static bool btif_has_ble_keys(const std::string& bdstr) {
  *
  * Description      BTIF storage API - Fetches the remote addr type
  *
- * Returns          SUCCESS if the fetch was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the fetch was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_get_remote_addr_type(const RawAddress* remote_bd_addr,
-                                           tBLE_ADDR_TYPE* addr_type) {
+bt_status_t btif_storage_get_remote_addr_type(const RawAddress* remote_bd_addr,
+                                              tBLE_ADDR_TYPE* addr_type) {
   int val = BLE_ADDR_ANONYMOUS;
   bool ret = btif_config_get_int(remote_bd_addr->ToString(), BTIF_STORAGE_KEY_ADDR_TYPE, &val);
   *addr_type = static_cast<tBLE_ADDR_TYPE>(val);
-  return ret ? BtifStatus() : BtifStatus(FAIL);
+  return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
 /** Stores information about GATT server supported features */
@@ -1416,7 +1418,7 @@ bool btif_storage_get_stored_remote_name(const RawAddress& bd_addr, char* name) 
           .val = name,
   };
 
-  return btif_storage_get_remote_device_property(&bd_addr, &property);
+  return btif_storage_get_remote_device_property(&bd_addr, &property) == BT_STATUS_SUCCESS;
 }
 
 // Get the Class of Device.
@@ -1427,7 +1429,7 @@ bool btif_storage_get_cod(const RawAddress& bd_addr, uint32_t* cod) {
           .val = cod,
   };
 
-  return btif_storage_get_remote_device_property(&bd_addr, &property);
+  return btif_storage_get_remote_device_property(&bd_addr, &property) == BT_STATUS_SUCCESS;
 }
 
 /** Stores information about GATT Client supported features support */
@@ -1512,7 +1514,8 @@ std::vector<bluetooth::Uuid> btif_storage_get_services(const RawAddress& bd_addr
   // Get BR/EDR services from storage
   if (get_bredr_services) {
     bt_property_t remote_properties = {BT_PROPERTY_UUIDS, sizeof(uuids), &uuids};
-    if (btif_storage_get_remote_device_property(&bd_addr, &remote_properties)) {
+    if (btif_storage_get_remote_device_property(&bd_addr, &remote_properties) ==
+        BT_STATUS_SUCCESS) {
       count = remote_properties.len / sizeof(uuids[0]);
     }
   }
@@ -1521,7 +1524,8 @@ std::vector<bluetooth::Uuid> btif_storage_get_services(const RawAddress& bd_addr
   if (get_le_services) {
     int size = (uuids.size() - count) * sizeof(uuids[0]);
     bt_property_t remote_properties = {BT_PROPERTY_UUIDS_LE, size, &uuids[count]};
-    if (btif_storage_get_remote_device_property(&bd_addr, &remote_properties)) {
+    if (btif_storage_get_remote_device_property(&bd_addr, &remote_properties) ==
+        BT_STATUS_SUCCESS) {
       count += remote_properties.len / sizeof(uuids[0]);
     }
   }
