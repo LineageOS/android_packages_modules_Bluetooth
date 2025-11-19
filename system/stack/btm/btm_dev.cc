@@ -158,42 +158,53 @@ void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class, LinkKey li
  * no longer valid!
  * *** WARNING ***
  *
- * Returns true if removed OK, false if not found or ACL link is active.
+ * Returns true if removed successfully, false if not found.
  */
 bool BTM_SecDeleteDevice(const RawAddress& bd_addr) {
+  if (com_android_bluetooth_flags_btm_disconnect_on_remove()) {
+    // BTA may not know about the connection if BTM is still reading remote features and version.
+    // If so, just disconnect the link here.
+    uint16_t handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
+    if (handle != HCI_INVALID_HANDLE) {
+      log::warn("Disconnecting unreported LE connection {}", bd_addr);
+      acl_disconnect_after_role_switch(handle, HCI_SUCCESS, "BTM_SecDeleteDevice");
+    }
+    handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_BR_EDR);
+    if (handle != HCI_INVALID_HANDLE) {
+      log::warn("Disconnecting unreported BR/EDR connection {}", bd_addr);
+      acl_disconnect_after_role_switch(handle, HCI_SUCCESS, "BTM_SecDeleteDevice");
+    }
+  }
+
   BtmDevice* p_device = btm_get_dev(bd_addr);
   if (p_device == nullptr) {
-    log::warn("Unable to delete link key for unknown device {}", bd_addr);
-    return true;
+    log::warn("Unknown device {}", bd_addr);
+    return false;
   }
 
   /* Invalidate bonded status */
   p_device->sec_rec.sec_flags &= ~BTM_SEC_LINK_KEY_KNOWN;
   p_device->sec_rec.sec_flags &= ~BTM_SEC_LE_LINK_KEY_KNOWN;
 
-  if (get_btm_client_interface().peer.BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE) ||
-      get_btm_client_interface().peer.BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR)) {
-    log::warn("FAILED: Cannot Delete when connection to {} is active", bd_addr);
-    return false;
+  if (!com_android_bluetooth_flags_btm_disconnect_on_remove()) {
+    if (get_btm_client_interface().peer.BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE) ||
+        get_btm_client_interface().peer.BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR)) {
+      log::warn("FAILED: Cannot Delete when connection to {} is active", bd_addr);
+      return false;
+    }
   }
-
-  RawAddress bda = p_device->bd_addr;
 
   log::info("Remove device {} from filter accept list before delete record", bd_addr);
   connection_manager::remove_unconditional(bd_addr);
-
-  const auto device_type = p_device->device_type;
-  const auto bond_type = p_device->sec_rec.bond_type;
 
   /* Clear out any saved BLE keys */
   btm_sec_clear_ble_keys(p_device);
   wipe_secrets_and_remove(p_device);
   /* Tell controller to get rid of the link key, if it has one stored */
-  btm_sec_hci_delete_stored_link_key(bda);
-  log::info("{} complete", bd_addr);
+  btm_sec_hci_delete_stored_link_key(p_device->bd_addr);
   BTM_LogHistory(kBtmLogTag, bd_addr, "Device removed",
-                 std::format("device_type:{} bond_type:{}", DeviceTypeText(device_type),
-                             bond_type_text(bond_type)));
+                 std::format("device_type:{} bond_type:{}", DeviceTypeText(p_device->device_type),
+                             bond_type_text(p_device->sec_rec.bond_type)));
 
   return true;
 }
