@@ -401,7 +401,7 @@ public class ScanController {
         for (ScanClient client : mScanManager.getRegularScanQueue()) {
             var app = mScannerMap.getById(client.getScannerId());
             if (app == null) {
-                Log.v(TAG, "App is null for " + client + "; Skip");
+                Log.v(TAG, "App not found for " + client + "; Skip");
                 continue;
             }
 
@@ -550,7 +550,7 @@ public class ScanController {
 
         var app = mScannerMap.getByUuid(uuid);
         if (app == null) {
-            Log.e(TAG, header + "ScannerApp not found in ScannerMap");
+            Log.e(TAG, header + "App not found");
             return;
         }
         if (app.getCallback() != null) {
@@ -663,8 +663,10 @@ public class ScanController {
                 BatchScanUtil.parseResults(mAdapterService, numRecords, reportType, recordData);
         if (reportType == SCAN_RESULT_TYPE_TRUNCATED) {
             // We only support single client for truncated mode.
+            var header = "onBatchScanReportsInternal(): ";
             var app = mScannerMap.getById(scannerId);
             if (app == null) {
+                Log.e(TAG, header + "App not found for scannerId=" + scannerId);
                 return;
             }
 
@@ -693,7 +695,7 @@ public class ScanController {
                             permittedResults,
                             ScanSettings.CALLBACK_TYPE_ALL_MATCHES);
                 } catch (PendingIntent.CanceledException e) {
-                    Log.e(TAG, "Error sending result via PendingIntent: " + e);
+                    Log.e(TAG, header + "Error sending result via PendingIntent: " + e);
                     handleDeadScanClient(client);
                 }
             }
@@ -710,6 +712,7 @@ public class ScanController {
     private void deliverBatchScan(ScanClient client, Set<ScanResult> allResults) {
         var app = mScannerMap.getById(client.getScannerId());
         if (app == null) {
+            Log.e(TAG, "deliverBatchScan(): App not found for scannerId=" + client.getScannerId());
             return;
         }
 
@@ -763,17 +766,18 @@ public class ScanController {
 
     void onTrackAdvFoundLost(AdvtFilterOnFoundOnLostInfo trackingInfo) {
         enforceScanThread();
+        int scannerId = trackingInfo.scannerId();
         Log.d(
                 TAG,
                 "onTrackAdvFoundLost(): "
-                        + ("scannerId=" + trackingInfo.scannerId())
+                        + ("scannerId=" + scannerId)
                         + (", address=" + trackingInfo.address())
                         + (", addressType=" + trackingInfo.addressType())
                         + (", adv_state=" + trackingInfo.advState()));
 
-        var app = mScannerMap.getById(trackingInfo.scannerId());
+        var app = mScannerMap.getById(scannerId);
         if (app == null) {
-            Log.e(TAG, "app is null");
+            Log.e(TAG, "onTrackAdvFoundLost(): App not found for scannerId=" + scannerId);
             return;
         }
 
@@ -788,7 +792,7 @@ public class ScanController {
                         SystemClock.elapsedRealtimeNanos());
 
         for (ScanClient client : mScanManager.getRegularScanQueue()) {
-            if (client.getScannerId() == trackingInfo.scannerId()) {
+            if (client.getScannerId() == scannerId) {
                 ScanSettings settings = client.getSettings();
                 if ((advertiserState == ADVT_STATE_ONFOUND)
                         && ((settings.getCallbackType() & ScanSettings.CALLBACK_TYPE_FIRST_MATCH)
@@ -831,18 +835,20 @@ public class ScanController {
         enforceScanThread();
         Log.d(TAG, "onScanParamSetupCompleted(): scannerId=" + scannerId + ", status=" + status);
         var app = mScannerMap.getById(scannerId);
-        if (app == null || app.getCallback() == null) {
-            Log.e(TAG, "Advertise app or callback is null");
-            return;
+        if (app == null) {
+            Log.e(TAG, "onScanParamSetupCompleted(): App not found for scannerId=" + scannerId);
+        } else if (app.getCallback() == null) {
+            Log.e(TAG, "onScanParamSetupCompleted(): App callback null for " + app);
         }
     }
 
     // callback from ScanManager for dispatch of errors apps.
     void onScanManagerErrorCallback(int scannerId, int errorCode) {
         enforceScanThread();
+        var header = "onScanManagerErrorCallback(): ";
         var app = mScannerMap.getById(scannerId);
         if (app == null) {
-            Log.e(TAG, "App null");
+            Log.e(TAG, header + "App not found for scannerId=" + scannerId);
             return;
         }
         if (app.getCallback() != null) {
@@ -851,7 +857,7 @@ public class ScanController {
             try {
                 sendErrorByPendingIntent(app.getInfo(), errorCode);
             } catch (PendingIntent.CanceledException e) {
-                Log.e(TAG, "Error sending error code via PendingIntent: " + e);
+                Log.e(TAG, header + "Error sending error code via PendingIntent: " + e);
                 handleDeadScanClient(scannerId);
             }
         }
@@ -1251,7 +1257,7 @@ public class ScanController {
         enforceScanThread();
         var app = mScannerMap.getByPendingIntentInfo(intent);
         if (app == null) {
-            Log.e(TAG, "stopScan(PendingIntent): Cannot find app for intent=" + intent);
+            Log.e(TAG, "stopScan(PendingIntent): App not found for intent=" + intent);
             return;
         }
         var scannerId = app.getId();
