@@ -64,7 +64,8 @@ class GattServerManager(
         val app = serverMap.getByUuid(uuid) ?: return
         app.id = serverIf
         val message = "Unregistering server for $app, callback=${app.callback}"
-        app.linkToDeath(ActionOnDeathRecipient(TAG, message, { unregisterServer(app.callback) }))
+        val onDeathAction = { gatt.doOnGattThread { unregisterServer(app.callback) } }
+        app.linkToDeath { ActionOnDeathRecipient(TAG, message, onDeathAction) }
         callbackToApp { app.callback.onServerRegistered(status) }
     }
 
