@@ -66,7 +66,7 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg, tAVRC_RESPONSE* p
   }
   p = p_msg->p_vendor_data;
   BE_STREAM_TO_UINT8(p_result->pdu, p);
-  p++; /* skip the reserved/packe_type byte */
+  p++; /* skip the reserved/packet_type byte */
   BE_STREAM_TO_UINT16(len, p);
   log::verbose("ctype:0x{:x} pdu:0x{:x}, len:{}/0x{:x} vendor_len=0x{:x}", p_msg->hdr.ctype,
                p_result->pdu, len, len, p_msg->vendor_len);

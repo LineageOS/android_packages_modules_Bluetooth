@@ -108,8 +108,8 @@ static void avrc_sdp_cback(const RawAddress& bd_addr, tSDP_STATUS status) {
  *
  *                  Input Parameters:
  *                      service_uuid: Indicates
- *                                       TG(UUID_SERVCLASS_AV_REM_CTRL_TARGET)
- *                                     r CT(UUID_SERVCLASS_AV_REMOTE_CONTROL)
+ *                                       TG (UUID_SERVCLASS_AV_REM_CTRL_TARGET)
+ *                                     or CT (UUID_SERVCLASS_AV_REMOTE_CONTROL)
  *
  *                      bd_addr:  BD address of the peer device.
  *
@@ -272,7 +272,7 @@ uint16_t AVRC_AddRecord(uint16_t service_uuid, const char* p_service_name,
   result &= get_legacy_stack_sdp_api()->handle.SDP_AddProtocolList(sdp_handle, AVRC_NUM_PROTO_ELEMS,
                                                                    &avrc_proto_desc_list[0]);
 
-  /* additional protocal descriptor, required only for version > 1.3 */
+  /* additional protocol descriptor, required only for version > 1.3 */
   if (profile_version > AVRC_REV_1_3) {
     int num_additional_protocols = 0;
     int i = 0;
