@@ -184,7 +184,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="678"
+            line="682"
             column="9"/>
     </issue>
 
@@ -195,7 +195,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="678"
+            line="682"
             column="9"/>
     </issue>
 
@@ -206,7 +206,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="678"
+            line="682"
             column="9"/>
     </issue>
 
@@ -217,7 +217,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="678"
+            line="682"
             column="9"/>
     </issue>
 
@@ -338,7 +338,7 @@
         errorLine2="                    ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientService.java"
-            line="3455"
+            line="3424"
             column="21"/>
     </issue>
 
@@ -349,7 +349,7 @@
         errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientService.java"
-            line="3673"
+            line="3642"
             column="18"/>
     </issue>
 
@@ -360,7 +360,7 @@
         errorLine2="                 ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="437"
+            line="438"
             column="18"/>
     </issue>
 
@@ -371,7 +371,7 @@
         errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="495"
+            line="491"
             column="18"/>
     </issue>
 
@@ -382,7 +382,7 @@
         errorLine2="                   ~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="1130"
+            line="1121"
             column="20"/>
     </issue>
 
@@ -393,7 +393,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2269"
+            line="2260"
             column="24"/>
     </issue>
 
@@ -404,7 +404,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2274"
+            line="2265"
             column="24"/>
     </issue>
 
@@ -415,7 +415,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2282"
+            line="2273"
             column="24"/>
     </issue>
 
@@ -426,7 +426,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2287"
+            line="2278"
             column="24"/>
     </issue>
 
@@ -437,7 +437,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2292"
+            line="2283"
             column="24"/>
     </issue>
 
@@ -448,7 +448,7 @@
         errorLine2="                       ~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2297"
+            line="2288"
             column="24"/>
     </issue>
 
@@ -459,7 +459,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2302"
+            line="2293"
             column="24"/>
     </issue>
 
@@ -470,7 +470,7 @@
         errorLine2="                    ~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2308"
+            line="2299"
             column="21"/>
     </issue>
 
@@ -481,7 +481,7 @@
         errorLine2="                    ~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2313"
+            line="2304"
             column="21"/>
     </issue>
 
@@ -580,7 +580,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppManager.java"
-            line="238"
+            line="237"
             column="17"/>
     </issue>
 
@@ -591,7 +591,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppManager.java"
-            line="245"
+            line="244"
             column="17"/>
     </issue>
 
@@ -602,7 +602,7 @@
         errorLine2="                  ~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppManager.java"
-            line="252"
+            line="251"
             column="19"/>
     </issue>
 
@@ -613,7 +613,7 @@
         errorLine2="                 ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppTransfer.java"
-            line="595"
+            line="593"
             column="18"/>
     </issue>
 
@@ -624,7 +624,7 @@
         errorLine2="                     ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppTransfer.java"
-            line="654"
+            line="652"
             column="22"/>
     </issue>
 
@@ -635,7 +635,7 @@
         errorLine2="                    ~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppTransfer.java"
-            line="703"
+            line="701"
             column="21"/>
     </issue>
 
@@ -822,7 +822,7 @@
         errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/Utils.java"
-            line="380"
+            line="378"
             column="27"/>
     </issue>
 
@@ -833,7 +833,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/RemoteDevices.java"
-            line="1844"
+            line="2548"
             column="25"/>
     </issue>
 
@@ -910,7 +910,7 @@
         errorLine2="                                  ~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/pbap/BluetoothPbapService.java"
-            line="532"
+            line="533"
             column="35"/>
     </issue>
 
@@ -932,7 +932,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/AdapterService.java"
-            line="4443"
+            line="4436"
             column="17"/>
     </issue>
 
@@ -987,7 +987,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/pbap/BluetoothPbapService.java"
-            line="522"
+            line="523"
             column="25"/>
     </issue>
 
@@ -1020,7 +1020,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/AdapterService.java"
-            line="1113"
+            line="1122"
             column="9"/>
     </issue>
 
@@ -1031,7 +1031,7 @@
         errorLine2="            ~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppManager.java"
-            line="81"
+            line="80"
             column="13"/>
     </issue>
 
@@ -1097,7 +1097,7 @@
         errorLine2="            ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppService.java"
-            line="310"
+            line="309"
             column="13"/>
     </issue>
 

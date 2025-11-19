@@ -63,7 +63,7 @@
         errorLine2="         ~~~~~~~~">
         <location
             file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex36/manifest_merger/AndroidManifest.xml"
-            line="147"
+            line="148"
             column="10"/>
     </issue>
 
@@ -74,7 +74,7 @@
         errorLine2="         ~~~~~~~~">
         <location
             file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex36/manifest_merger/AndroidManifest.xml"
-            line="212"
+            line="213"
             column="10"/>
     </issue>
 
@@ -85,7 +85,7 @@
         errorLine2="         ~~~~~~~">
         <location
             file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex36/manifest_merger/AndroidManifest.xml"
-            line="132"
+            line="133"
             column="10"/>
     </issue>
 
@@ -96,7 +96,7 @@
         errorLine2="         ~~~~~~~">
         <location
             file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex36/manifest_merger/AndroidManifest.xml"
-            line="337"
+            line="338"
             column="10"/>
     </issue>
 
@@ -107,7 +107,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex36/manifest_merger/AndroidManifest.xml"
-            line="209"
+            line="210"
             column="17"/>
     </issue>
 
