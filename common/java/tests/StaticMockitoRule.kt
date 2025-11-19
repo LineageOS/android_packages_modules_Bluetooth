@@ -58,3 +58,14 @@ class StaticMockitoRule(private vararg val classes: Class<*>) : MethodRule {
         }
     }
 }
+
+@JvmName("staticMockitoRule1")
+inline fun <reified T : Any> staticMockitoRule() = StaticMockitoRule(T::class.java)
+
+@JvmName("staticMockitoRule2")
+inline fun <reified T1 : Any, reified T2 : Any> staticMockitoRule(): StaticMockitoRule =
+    StaticMockitoRule(T1::class.java, T2::class.java)
+
+@JvmName("staticMockitoRule3")
+inline fun <reified T1 : Any, reified T2 : Any, reified T3 : Any> staticMockitoRule() =
+    StaticMockitoRule(T1::class.java, T2::class.java, T3::class.java)
