@@ -249,6 +249,8 @@ public:
   void Disable(int gatt_if);
   void Enable(int gatt_if, tBTM_BLE_CONN_TYPE reconnection_mode);
   bool IsEnabled(void) const;
+  void UpdateMetadataForActiveAndNotStreamingAses(
+          const types::BidirectionalPair<std::vector<uint8_t>>& ccid_lists);
   LeAudioCodecConfiguration GetAudioSessionCodecConfigForDirection(
           types::LeAudioContextType group_context_type, uint8_t direction) const;
   bool HasCodecConfigurationForDirection(types::LeAudioContextType group_context_type,

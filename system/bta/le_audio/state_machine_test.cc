@@ -1620,10 +1620,13 @@ protected:
     };
   }
 
-  void PrepareEnableHandler(LeAudioDeviceGroup* group, int verify_ase_count = 0,
-                            bool inject_enabling = true, bool incject_streaming = true) {
+  void PrepareEnableHandler(
+          LeAudioDeviceGroup* group, int verify_ase_count = 0, bool inject_enabling = true,
+          bool incject_streaming = true,
+          types::AudioContexts streaming_context_to_verify = types::AudioContexts()) {
     ON_CALL(ase_ctp_handler, AseCtpEnableHandler)
             .WillByDefault(Invoke([group, verify_ase_count, inject_enabling, incject_streaming,
+                                   streaming_context_to_verify,
                                    this](LeAudioDevice* device, std::vector<uint8_t> value,
                                          GATT_WRITE_OP_CB /*cb*/, void* /*cb_data*/) {
               InjectCtpNotification(group, device, value);
@@ -1657,7 +1660,16 @@ protected:
                         .metadata =
                                 std::vector<uint8_t>(value.begin() + num_handled_bytes,
                                                      value.begin() + num_handled_bytes + meta_len)};
+
                 enable_params_vec.push_back(enable_params);
+                if (streaming_context_to_verify.any()) {
+                  types::LeAudioLtvMap meta;
+                  meta.Parse(enable_params.metadata.data(), enable_params.metadata.size());
+
+                  auto received_streaming_contexts =
+                          meta.GetAsLeAudioMetadata().streaming_audio_context;
+                  ASSERT_TRUE(received_streaming_contexts == streaming_context_to_verify);
+                }
               }
 
               for (int i = 0; i < static_cast<int>(ases.size()); i++) {
@@ -1683,6 +1695,11 @@ protected:
                 }
               }
             }));
+  }
+
+  void PrepareEnableHandlerWithMetadataverify(LeAudioDeviceGroup* group,
+                                              types::AudioContexts streaming_context_to_verify) {
+    PrepareEnableHandler(group, 0, true, true, streaming_context_to_verify);
   }
 
   void PrepareDisableHandler(LeAudioDeviceGroup* group, int verify_ase_count = 0) {
@@ -8119,7 +8136,6 @@ TEST_F(StateMachineTest, StartStreamAfterConfigureToQoS_UnknownMetatadaDuringCon
 
   PrepareConfigureCodecHandler(group, 0, true);
   PrepareConfigureQosHandler(group);
-  PrepareEnableHandler(group);
   PrepareDisableHandler(group);
   PrepareReleaseHandler(group);
 
@@ -8162,6 +8178,7 @@ TEST_F(StateMachineTest, StartStreamAfterConfigureToQoS_UnknownMetatadaDuringCon
   // Start the configuration with updated metadata.
   types::AudioContexts metadata = types::AudioContexts(context_type);
 
+  PrepareEnableHandlerWithMetadataverify(group, metadata);
   LeAudioGroupStateMachine::Get()->StartStream(group, context_type,
                                                {.sink = metadata, .source = metadata});
 
