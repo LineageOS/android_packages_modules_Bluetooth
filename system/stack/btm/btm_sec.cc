@@ -367,23 +367,9 @@ uint8_t BTM_SecClrService(uint8_t service_id) { return btm_sec_cb.RemoveServiceB
  ******************************************************************************/
 uint8_t BTM_SecClrServiceByPsm(uint16_t psm) { return btm_sec_cb.RemoveServiceByPsm(psm); }
 
-/*******************************************************************************
- *
- * Function         BTM_PINCodeReply
- *
- * Description      This function is called after Security Manager submitted
- *                  PIN code request to the UI.
- *
- * Parameters:      bd_addr      - Address of the device for which PIN was
- *                                 requested
- *                  res          - result of the operation tBTM_STATUS::BTM_SUCCESS
- *                                 if success
- *                  pin_len      - length in bytes of the PIN Code
- *                  p_pin        - pointer to array with the PIN Code
- *
- ******************************************************************************/
-void BTM_PINCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len,
-                      PinCode pin_code) {
+// TODO (b/460502961): Remove once the flag security_mode_3_pairing is shipped.
+static void PinCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len,
+                         PinCode pin_code) {
   if (bd_addr != btm_sec_cb.link_spec.addrt.bda) {
     log::error("Requested addr {} does not match pairing device {}", bd_addr, btm_sec_cb.link_spec);
     return;
@@ -470,6 +456,83 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_le
     return;
   }
 
+  btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
+  acl_set_disconnect_reason(HCI_SUCCESS);
+
+  btsnd_hcic_pin_code_req_reply(bd_addr, pin_len, pin_code);
+}
+
+/*******************************************************************************
+ *
+ * Function         BTM_PINCodeReply
+ *
+ * Description      This function is called after Security Manager submitted
+ *                  PIN code request to the UI.
+ *
+ * Parameters:      bd_addr      - Address of the device for which PIN was
+ *                                 requested
+ *                  res          - result of the operation tBTM_STATUS::BTM_SUCCESS
+ *                                 if success
+ *                  pin_len      - length in bytes of the PIN Code
+ *                  pin_code     - Array with the PIN Code
+ *
+ ******************************************************************************/
+void BTM_PINCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len,
+                      PinCode pin_code) {
+  if (!com_android_bluetooth_flags_security_mode_3_pairing()) {
+    PinCodeReply(bd_addr, res, pin_len, pin_code);
+    return;
+  }
+
+  if (bd_addr != btm_sec_cb.link_spec.addrt.bda) {
+    log::error("Requested addr {} does not match pairing device {}", bd_addr, btm_sec_cb.link_spec);
+    return;
+  }
+
+  /* If timeout already expired or has been canceled, ignore the reply */
+  if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_WAIT_LOCAL_PIN) {
+    log::warn("{} wrong state:{}", bd_addr, btm_sec_cb.pairing_state);
+    return;
+  }
+
+  BtmDevice* p_device = btm_get_dev(bd_addr);
+  if (p_device == nullptr) {
+    log::error("Unknown device {}", bd_addr);
+    return;
+  }
+
+  if (pin_len > kOctet16Length || pin_len == 0) {
+    res = tBTM_STATUS::BTM_ILLEGAL_VALUE;
+  }
+
+  if (res != tBTM_STATUS::BTM_SUCCESS) {
+    log::warn("Pairing with {} rejected: {}", bd_addr, res);
+    btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
+    acl_set_disconnect_reason(HCI_ERR_HOST_REJECT_SECURITY);
+    btsnd_hcic_pin_code_neg_reply(bd_addr);
+    return;
+  }
+
+  if ((btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) &&
+      (p_device->hci_handle == HCI_INVALID_HANDLE)) {  // Remote device in security mode 3
+    acl_set_disconnect_reason(HCI_ERR_UNDEFINED);
+    // If we rejected incoming connection request, we have to wait HCI_Connection_Complete event
+    if (btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_REJECTED_CONNECT) {
+      log::warn("Waiting for connection complete after rejecting incoming connection {}", bd_addr);
+      /* Change state little bit early so btm_sec_connected() will originate connection when
+       * existing ACL link is down completely */
+      btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_WAIT_PIN_REQ);
+      return;
+    }
+  }
+
+  log::verbose("Device:{} flags:0x{:02x} pin_len:{}", bd_addr, btm_sec_cb.pairing_flags, pin_len);
+
+  p_device->sec_rec.sec_flags |= BTM_SEC_LINK_KEY_AUTHED;
+  p_device->sec_rec.pin_code_length = pin_len;
+  if (pin_len >= kOctet16Length) {
+    p_device->sec_rec.sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED;
+  }
   btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
   acl_set_disconnect_reason(HCI_SUCCESS);
 
@@ -595,14 +658,17 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
              bt_transport_text(transport));
 
   log::verbose("sec mode: {} sm4:x{:x}", btm_sec_cb.security_mode, p_device->sm4);
-  if (!bluetooth::shim::GetController()->SupportsSimplePairing() ||
-      (p_device->sm4 == BTM_SM4_KNOWN)) {
+
+  if (!com_android_bluetooth_flags_security_mode_3_pairing() &&
+      (!bluetooth::shim::GetController()->SupportsSimplePairing() ||
+       (p_device->sm4 == BTM_SM4_KNOWN))) {
     if (btm_sec_check_prefetch_pin(p_device)) {
       log::debug("Class of device used to check for pin peer:{} transport:{}", bd_addr,
                  bt_transport_text(transport));
       return tBTM_STATUS::BTM_CMD_STARTED;
     }
   }
+
   if ((btm_sec_cb.security_mode == BTM_SEC_MODE_SP ||
        btm_sec_cb.security_mode == BTM_SEC_MODE_SC) &&
       BTM_SEC_IS_SM4_UNKNOWN(p_device->sm4)) {
@@ -720,7 +786,9 @@ tBTM_STATUS BTM_SecBondCancel(const RawAddress& bd_addr) {
 
   log::verbose("hci_handle:0x{:x} le_link:{} classic_link:{}", p_device->hci_handle,
                p_device->sec_rec.le_link, p_device->sec_rec.classic_link);
-  if (BTM_PAIR_STATE_WAIT_LOCAL_PIN == btm_sec_cb.pairing_state &&
+
+  if (!com_android_bluetooth_flags_security_mode_3_pairing() &&
+      BTM_PAIR_STATE_WAIT_LOCAL_PIN == btm_sec_cb.pairing_state &&
       BTM_PAIR_FLAGS_WE_STARTED_DD & btm_sec_cb.pairing_flags) {
     /* pre-fetching pin for dedicated bonding */
     btm_sec_bond_cancel_complete();
@@ -2166,8 +2234,7 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr, const uint8_
     p_device->sec_rec.classic_link = tSECURITY_STATE::IDLE;
   }
 
-  /* If we were delaying asking UI for a PIN because name was not resolved,
-   * ask now */
+  /* If we were delaying asking UI for a PIN because name was not resolved, ask now */
   if (btm_sec_cb.pairing_state == BTM_PAIR_STATE_WAIT_LOCAL_PIN &&
       btm_sec_cb.link_spec.addrt.bda == bd_addr) {
     log::verbose("delayed pin now being requested flags:0x{:x}, (p_pin_callback=0x{})",
@@ -2232,10 +2299,10 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr, const uint8_
                  BTM_SEC_IS_SM4_UNKNOWN(p_device->sm4));
 
     bool await_connection = true;
-    /* BT 2.1 or carkit, bring up the connection to force the peer to request
-     *PIN.
-     ** Else prefetch (btm_sec_check_prefetch_pin will do the prefetching if
-     *needed)
+    /* Note: Prefetching is removed with the flag security_mode_3_pairing.
+     *
+     * If peer is BT 2.1 or carkit, bring up the connection to force the peer to request PIN.
+     ** Else prefetch (btm_sec_check_prefetch_pin will do the prefetching if needed)
      */
     if ((p_device->sm4 != BTM_SM4_KNOWN) || !btm_sec_check_prefetch_pin(p_device)) {
       /* if we rejected incoming connection request, we have to wait
@@ -2259,10 +2326,10 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr, const uint8_
       }
     }
 
-      if (await_connection) {
-        log::debug("Wait for connection to begin pairing");
-        return;
-      }
+    if (await_connection) {
+      log::debug("Wait for connection to begin pairing");
+      return;
+    }
   }
 
   /* check if we were delaying link_key_callback because name was not resolved
@@ -4257,7 +4324,8 @@ static void btm_sec_pairing_timeout(void* /* data */) {
       break;
 
     case BTM_PAIR_STATE_WAIT_LOCAL_PIN:
-      if ((btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_PRE_FETCH_PIN) == 0) {
+      if (com_android_bluetooth_flags_security_mode_3_pairing() ||
+          (btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_PRE_FETCH_PIN) == 0) {
         btsnd_hcic_pin_code_neg_reply(btm_sec_cb.link_spec.addrt.bda);
       }
       btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_IDLE);
@@ -4428,7 +4496,7 @@ void btm_sec_pin_code_request(const RawAddress p_bda) {
   }
 
   /* We could have started connection after asking user for the PIN code */
-  if (btm_sec_cb.pin_code_len != 0) {
+  if (!com_android_bluetooth_flags_security_mode_3_pairing() && btm_sec_cb.pin_code_len != 0) {
     log::verbose("btm_sec_pin_code_request bonding sending reply");
     btsnd_hcic_pin_code_req_reply(p_bda, btm_sec_cb.pin_code_len, p_cb->pin_code);
 
@@ -4807,7 +4875,7 @@ static void btm_send_link_key_notif(BtmDevice* p_device) {
  *
  ******************************************************************************/
 static void btm_restore_mode(void) {
-  if (btm_sec_cb.security_mode_changed) {
+  if (!com_android_bluetooth_flags_security_mode_3_pairing() && btm_sec_cb.security_mode_changed) {
     btm_sec_cb.security_mode_changed = false;
     btsnd_hcic_write_auth_enable(false);
   }
@@ -4940,7 +5008,12 @@ static bool btm_sec_queue_service_access_request(const RawAddress& bd_addr, uint
   return true;
 }
 
+// TODO (b/460502961): Remove this function when the flag security_mode_3_pairing is shipped
 static bool btm_sec_check_prefetch_pin(BtmDevice* p_device) {
+  if (com_android_bluetooth_flags_security_mode_3_pairing()) {
+    return false;
+  }
+
   uint8_t major = (uint8_t)(p_device->dev_class[1] & BTM_COD_MAJOR_CLASS_MASK);
   uint8_t minor = (uint8_t)(p_device->dev_class[2] & BTM_COD_MINOR_CLASS_MASK);
 

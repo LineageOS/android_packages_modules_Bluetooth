@@ -1482,10 +1482,8 @@ static void btm_ble_complete_evt(const RawAddress& bd_addr, BtmDevice* p_device,
     l2cu_start_post_bond_timer(p_device->ble_hci_handle);
   }
 
-  log::verbose(
-          "btm_sec_cb.pairing_state={:x} pairing_flags={:x} "
-          "pin_code_len={:x}",
-          btm_sec_cb.pairing_state, btm_sec_cb.pairing_flags, btm_sec_cb.pin_code_len);
+  log::verbose("btm_sec_cb.pairing_state={:x} pairing_flags={:x} ", btm_sec_cb.pairing_state,
+               btm_sec_cb.pairing_flags);
 
   /* Reset btm state only if the callback address matches pairing address */
   if (!com_android_bluetooth_flags_btm_le_pairing_state_reset() &&
