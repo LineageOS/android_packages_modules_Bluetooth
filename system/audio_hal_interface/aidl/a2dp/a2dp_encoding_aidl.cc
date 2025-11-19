@@ -830,7 +830,9 @@ tA2DP_STATUS provider::parse_a2dp_configuration(::bluetooth::a2dp::CodecId codec
     return A2DP_FAIL;
   }
 
-  convertCodecParameters(codec_parameters_aidl, codec_parameters);
+  if (codec_parameters != nullptr) {
+    convertCodecParameters(codec_parameters_aidl, codec_parameters);
+  }
 
   if (vendor_specific_parameters != nullptr) {
     *vendor_specific_parameters = codec_parameters_aidl.vendorSpecificParameters;
