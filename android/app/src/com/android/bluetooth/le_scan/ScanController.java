@@ -1067,7 +1067,7 @@ public class ScanController {
                         Utils.checkCallerHasFineLocation(mAdapterService, source, userHandle);
             } else {
                 hasLocationPermission =
-                        Utils.checkCallerHasCoarseOrFineLocation(
+                        Util.checkCallerHasCoarseOrFineLocation(
                                 mAdapterService, source, userHandle);
             }
         }
@@ -1178,7 +1178,7 @@ public class ScanController {
                                     mAdapterService, source, app.getUserHandle()));
                 } else {
                     app.setHasLocationPermission(
-                            Utils.checkCallerHasCoarseOrFineLocation(
+                            Util.checkCallerHasCoarseOrFineLocation(
                                     mAdapterService, source, app.getUserHandle()));
                 }
             } catch (SecurityException se) {

@@ -17,6 +17,7 @@
 package com.android.bluetooth
 
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
+import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.Manifest.permission.BLUETOOTH_ADVERTISE
 import android.Manifest.permission.BLUETOOTH_CONNECT
 import android.Manifest.permission.BLUETOOTH_PRIVILEGED
@@ -270,6 +271,51 @@ object Util {
         }
 
         Log.e(TAG, "Need ACCESS_COARSE_LOCATION permission for $currentAttribution")
+        return false
+    }
+
+    /**
+     * Checks that calling process has ACCESS_COARSE_LOCATION and OP_COARSE_LOCATION is allowed or
+     * ACCESS_FINE_LOCATION and OP_FINE_LOCATION is allowed
+     */
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
+    @JvmStatic
+    fun Context.checkCallerHasCoarseOrFineLocation(
+        source: AttributionSource,
+        userHandle: UserHandle,
+    ): Boolean {
+        if (blockedByLocationOff(userHandle)) {
+            Log.e(TAG, "Permission denial: Location is off.")
+            return false
+        }
+
+        val currentAttribution =
+            AttributionSource.Builder(attributionSource).setNext(source).build()
+        val permissionManager = getSystemService(PermissionManager::class.java) ?: return false
+        val fineResult =
+            permissionManager.checkPermissionForDataDeliveryFromDataSource(
+                ACCESS_FINE_LOCATION,
+                currentAttribution,
+                "Bluetooth location check",
+            )
+        if (fineResult == PackageManager.PERMISSION_GRANTED) {
+            return true
+        }
+
+        val coarseResult =
+            permissionManager.checkPermissionForDataDeliveryFromDataSource(
+                ACCESS_COARSE_LOCATION,
+                currentAttribution,
+                "Bluetooth location check",
+            )
+        if (coarseResult == PackageManager.PERMISSION_GRANTED) {
+            return true
+        }
+
+        Log.e(
+            TAG,
+            "Need ACCESS_COARSE_LOCATION or ACCESS_FINE_LOCATION permission for $currentAttribution",
+        )
         return false
     }
 

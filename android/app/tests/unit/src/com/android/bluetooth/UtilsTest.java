@@ -88,12 +88,12 @@ public class UtilsTest {
 
         locationManager.setLocationEnabledForUser(false, userHandle);
         assertThat(
-                        Utils.checkCallerHasCoarseOrFineLocation(
+                        Util.checkCallerHasCoarseOrFineLocation(
                                 context, context.getAttributionSource(), userHandle))
                 .isFalse();
 
         locationManager.setLocationEnabledForUser(true, userHandle);
-        Utils.checkCallerHasCoarseOrFineLocation(
+        Util.checkCallerHasCoarseOrFineLocation(
                 context, context.getAttributionSource(), userHandle);
         if (!enabledStatus) {
             locationManager.setLocationEnabledForUser(false, userHandle);

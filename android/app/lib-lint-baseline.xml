@@ -828,17 +828,6 @@
 
     <issue
         id="IncorrectRequiresPermissionPropagation"
-        message="Method `Utils.checkCallerHasCoarseOrFineLocation` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.ACCESS_FINE_LOCATION, android.permission.ACCESS_COARSE_LOCATION]} but is only annotated with [none]."
-        errorLine1="    public static boolean checkCallerHasCoarseOrFineLocation("
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/Utils.java"
-            line="616"
-            column="27"/>
-    </issue>
-
-    <issue
-        id="IncorrectRequiresPermissionPropagation"
         message="Method `Utils.checkCallerHasFineLocation` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.ACCESS_FINE_LOCATION]} but is only annotated with [none]."
         errorLine1="    public static boolean checkCallerHasFineLocation("
         errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~">
