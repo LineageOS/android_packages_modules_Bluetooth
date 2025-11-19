@@ -858,6 +858,13 @@ public class HeadsetService extends ConnectableProfile {
                                     + status
                                     + ", active device is "
                                     + mActiveDevice);
+                } else {
+                    Log.w(
+                            TAG,
+                            "startVoiceRecognition: audio is still active, sco managed by audio"
+                                    + " is enabled, not disconnecting audio"
+                                    + ", active device is "
+                                    + mActiveDevice);
                 }
                 return false;
             }
@@ -1201,9 +1208,23 @@ public class HeadsetService extends ConnectableProfile {
                                 });
             }
 
-            if (!mSystemInterface.isScoManagedByAudioEnabled()
-                    && getAudioState(previousActiveDevice)
-                            != BluetoothHeadset.STATE_AUDIO_DISCONNECTED) {
+            if (android.media.audio.Flags.unifyAbsoluteVolumeManagement()) {
+                initializeDeviceAbsoluteVolumeBehavior(mActiveDevice);
+            }
+
+            if (mSystemInterface.isScoManagedByAudioEnabled()) {
+                // tell Audio Framework that active device changed
+                mSystemInterface
+                        .getAudioManager()
+                        .handleBluetoothActiveDeviceChanged(
+                                mActiveDevice,
+                                previousActiveDevice,
+                                BluetoothProfileConnectionInfo.createHfpInfo());
+                updateInbandRinging(device, true);
+                return true;
+            }
+
+            if (getAudioState(previousActiveDevice) != BluetoothHeadset.STATE_AUDIO_DISCONNECTED) {
                 int disconnectStatus = disconnectAudio(previousActiveDevice);
                 if (disconnectStatus != BluetoothStatusCodes.SUCCESS) {
                     Log.e(
@@ -1216,36 +1237,8 @@ public class HeadsetService extends ConnectableProfile {
                     mNativeInterface.setActiveDevice(previousActiveDevice);
                     return false;
                 }
-                if (mSystemInterface.isScoManagedByAudioEnabled()) {
-                    // tell Audio Framework that active device changed
-                    mSystemInterface
-                            .getAudioManager()
-                            .handleBluetoothActiveDeviceChanged(
-                                    mActiveDevice,
-                                    previousActiveDevice,
-                                    BluetoothProfileConnectionInfo.createHfpInfo());
-                } else {
-                    broadcastActiveDevice(mActiveDevice);
-                }
-                if (android.media.audio.Flags.unifyAbsoluteVolumeManagement()) {
-                    initializeDeviceAbsoluteVolumeBehavior(mActiveDevice);
-                }
+                broadcastActiveDevice(mActiveDevice);
             } else if (shouldPersistAudio()) {
-                if (android.media.audio.Flags.unifyAbsoluteVolumeManagement()) {
-                    initializeDeviceAbsoluteVolumeBehavior(mActiveDevice);
-                }
-                if (mSystemInterface.isScoManagedByAudioEnabled()) {
-                    // tell Audio Framework that active device changed
-                    mSystemInterface
-                            .getAudioManager()
-                            .handleBluetoothActiveDeviceChanged(
-                                    mActiveDevice,
-                                    previousActiveDevice,
-                                    BluetoothProfileConnectionInfo.createHfpInfo());
-                    // Audio Framework will handle audio transition
-                    updateInbandRinging(device, true);
-                    return true;
-                }
                 broadcastActiveDevice(mActiveDevice);
                 int connectStatus = connectAudio(mActiveDevice);
                 if (connectStatus != BluetoothStatusCodes.SUCCESS) {
@@ -1264,20 +1257,7 @@ public class HeadsetService extends ConnectableProfile {
                     return false;
                 }
             } else {
-                if (mSystemInterface.isScoManagedByAudioEnabled()) {
-                    // tell Audio Framework that active device changed
-                    mSystemInterface
-                            .getAudioManager()
-                            .handleBluetoothActiveDeviceChanged(
-                                    mActiveDevice,
-                                    previousActiveDevice,
-                                    BluetoothProfileConnectionInfo.createHfpInfo());
-                } else {
-                    broadcastActiveDevice(mActiveDevice);
-                }
-                if (android.media.audio.Flags.unifyAbsoluteVolumeManagement()) {
-                    initializeDeviceAbsoluteVolumeBehavior(mActiveDevice);
-                }
+                broadcastActiveDevice(mActiveDevice);
             }
             updateInbandRinging(device, true);
         }
@@ -1312,7 +1292,7 @@ public class HeadsetService extends ConnectableProfile {
     int connectAudio(BluetoothDevice device) {
         Log.i(TAG, "connectAudio: device=" + device + ", " + Util.getUidPidString());
         if (mSystemInterface.isScoManagedByAudioEnabled()) {
-            Log.i(TAG, "Audio is managing sco connections");
+            Log.i(TAG, "Audio is managing sco connections, connectAudio is a noop");
             return BluetoothStatusCodes.SUCCESS;
         }
         synchronized (mStateMachines) {
@@ -1413,6 +1393,8 @@ public class HeadsetService extends ConnectableProfile {
                         BluetoothStatsLog
                                 .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__SCO_DISCONNECT_AUDIO_END,
                         Binder.getCallingUid());
+            } else {
+                Log.d(TAG, "Sco managed by audio enabled, disconnectAudio is ignored");
             }
         }
         return BluetoothStatusCodes.SUCCESS;
@@ -1452,7 +1434,9 @@ public class HeadsetService extends ConnectableProfile {
                                 + mActiveDevice
                                 + ", please try again");
                 mVoiceRecognitionStarted = false;
-                return false;
+                if (!mSystemInterface.isScoManagedByAudioEnabled()) {
+                    return false;
+                }
             }
             if (!isAudioModeIdle()) {
                 Log.w(
@@ -1473,8 +1457,15 @@ public class HeadsetService extends ConnectableProfile {
                                     + status
                                     + ", active device is "
                                     + mActiveDevice);
+                    return false;
+                } else {
+                    Log.w(
+                            TAG,
+                            "startScoUsingVirtualVoiceCall: audio is still active, sco managed by"
+                                + " audio is enabled, not disconnecting audio, active device is "
+                                    + mActiveDevice);
                 }
-                return false;
+
             }
             if (mActiveDevice == null) {
                 Log.w(TAG, "startScoUsingVirtualVoiceCall: no active device");
@@ -1697,6 +1688,12 @@ public class HeadsetService extends ConnectableProfile {
                                     + " audio to be disconnected, disconnectAudio() returned "
                                     + status
                                     + ", active device is "
+                                    + mActiveDevice);
+                } else {
+                    Log.w(
+                            TAG,
+                            "startVoiceRecognitionByHeadset: audio is still active, sco managed by"
+                                + " audio is enabled, not disconnecting audio, active device is "
                                     + mActiveDevice);
                 }
                 return false;
