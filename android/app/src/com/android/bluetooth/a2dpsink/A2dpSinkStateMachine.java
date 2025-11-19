@@ -91,19 +91,9 @@ class A2dpSinkStateMachine extends StateMachine {
         start(false);
     }
 
-    /**
-     * Get the current connection state
-     *
-     * @return current State
-     */
-    public int getState() {
-        return mMostRecentState;
-    }
-
-    /** get current audio config */
-    BluetoothAudioConfig getAudioConfig() {
-        return mAudioConfig;
-    }
+    // ---------------------------------------------------------------------------------------------
+    // State Management
+    // ---------------------------------------------------------------------------------------------
 
     /**
      * Get the underlying device tracked by this state machine
@@ -113,6 +103,46 @@ class A2dpSinkStateMachine extends StateMachine {
     public synchronized BluetoothDevice getDevice() {
         return mDevice;
     }
+
+    /**
+     * Get the current connection state
+     *
+     * @return current State
+     */
+    public int getState() {
+        return mMostRecentState;
+    }
+
+    /** Set the current connection state */
+    protected void setMostRecentState(int currentState) {
+        if (mMostRecentState == currentState) {
+            return;
+        }
+
+        debug(
+                "Connection state changed: "
+                        + BluetoothProfile.getConnectionStateName(mMostRecentState)
+                        + "->"
+                        + BluetoothProfile.getConnectionStateName(currentState));
+
+        Intent intent = new Intent(BluetoothA2dpSink.ACTION_CONNECTION_STATE_CHANGED);
+        intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, mMostRecentState);
+        intent.putExtra(BluetoothProfile.EXTRA_STATE, currentState);
+        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mDevice);
+        intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
+        mService.connectionStateChanged(mDevice, mMostRecentState, currentState);
+        mMostRecentState = currentState;
+        mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+    }
+
+    /** Get current audio config */
+    BluetoothAudioConfig getAudioConfig() {
+        return mAudioConfig;
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Comamnds and Events
+    // ---------------------------------------------------------------------------------------------
 
     /** Send the Connect command */
     final void connect() {
@@ -132,19 +162,9 @@ class A2dpSinkStateMachine extends StateMachine {
         sendMessage(MESSAGE_AUDIO_CONFIG_CHANGED, sampleRate, channelCount);
     }
 
-    /**
-     * Dump the current State Machine to the string builder.
-     *
-     * @param sb output string
-     */
-    public void dump(StringBuilder sb) {
-        ProfileService.println(sb, "mDevice: " + mDevice + " " + this.toString());
-    }
-
-    @Override
-    protected void unhandledMessage(Message msg) {
-        warn("Unhandled msg=" + messageToString(msg.what));
-    }
+    // ---------------------------------------------------------------------------------------------
+    // States and Message Handling
+    // ---------------------------------------------------------------------------------------------
 
     class Disconnected extends State {
         @Override
@@ -287,26 +307,14 @@ class A2dpSinkStateMachine extends StateMachine {
         }
     }
 
-    protected void setMostRecentState(int currentState) {
-        if (mMostRecentState == currentState) {
-            return;
-        }
-
-        debug(
-                "Connection state changed: "
-                        + BluetoothProfile.getConnectionStateName(mMostRecentState)
-                        + "->"
-                        + BluetoothProfile.getConnectionStateName(currentState));
-
-        Intent intent = new Intent(BluetoothA2dpSink.ACTION_CONNECTION_STATE_CHANGED);
-        intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, mMostRecentState);
-        intent.putExtra(BluetoothProfile.EXTRA_STATE, currentState);
-        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mDevice);
-        intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-        mService.connectionStateChanged(mDevice, mMostRecentState, currentState);
-        mMostRecentState = currentState;
-        mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+    @Override
+    protected void unhandledMessage(Message msg) {
+        warn("Unhandled msg=" + messageToString(msg.what));
     }
+
+    // ---------------------------------------------------------------------------------------------
+    // Utilities
+    // ---------------------------------------------------------------------------------------------
 
     private void warn(String msg) {
         Log.w(TAG, "[" + mDevice + "] " + getCurrentState().getName() + ": " + msg);
@@ -327,5 +335,14 @@ class A2dpSinkStateMachine extends StateMachine {
             case MESSAGE_AUDIO_CONFIG_CHANGED -> "MESSAGE_AUDIO_CONFIG_CHANGED";
             default -> "MESSAGE_UNKNOWN_" + what;
         };
+    }
+
+    /**
+     * Dump the current State Machine to the string builder.
+     *
+     * @param sb output string
+     */
+    public void dump(StringBuilder sb) {
+        ProfileService.println(sb, "mDevice: " + mDevice + " " + this.toString());
     }
 }
