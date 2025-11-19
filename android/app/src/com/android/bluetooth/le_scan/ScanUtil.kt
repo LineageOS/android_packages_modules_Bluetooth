@@ -31,7 +31,7 @@ import android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF
 import android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED
 import android.provider.Settings
 import android.util.Log
-import com.android.bluetooth.Utils
+import com.android.bluetooth.Util.blockedByLocationOff
 import com.android.bluetooth.Utils.millsToUnit
 import com.android.bluetooth.btservice.AdapterService
 import kotlin.time.Duration.Companion.milliseconds
@@ -105,7 +105,7 @@ object ScanUtil {
                 client.hasDisavowedLocation -> true
             else ->
                 client.hasLocationPermission &&
-                    !Utils.blockedByLocationOff(adapterService, client.userHandle)
+                    !adapterService.blockedByLocationOff(client.userHandle!!)
         }
 
     // Convert scanWindow and scanInterval from ms to LE scan units(0.625ms)

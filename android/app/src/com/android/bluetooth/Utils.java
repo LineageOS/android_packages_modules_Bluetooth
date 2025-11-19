@@ -43,7 +43,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Bundle;
@@ -503,44 +502,13 @@ public final class Utils {
         return checkCallerIsSystemOrActiveOrManagedUser(context, tag + "." + method + "()");
     }
 
-    /** Checks whether location is off and must be on for us to perform some operation */
-    public static boolean blockedByLocationOff(Context context, UserHandle userHandle) {
-        return !context.getSystemService(LocationManager.class)
-                .isLocationEnabledForUser(userHandle);
-    }
-
-    /** Checks that calling process has ACCESS_COARSE_LOCATION and OP_COARSE_LOCATION is allowed */
-    public static boolean checkCallerHasCoarseLocation(
-            Context context, AttributionSource source, UserHandle userHandle) {
-        if (blockedByLocationOff(context, userHandle)) {
-            Log.e(TAG, "Permission denial: Location is off.");
-            return false;
-        }
-        AttributionSource currentAttribution =
-                new AttributionSource.Builder(context.getAttributionSource())
-                        .setNext(requireNonNull(source))
-                        .build();
-        PermissionManager pm = context.getSystemService(PermissionManager.class);
-        if (pm == null) {
-            return false;
-        }
-        if (pm.checkPermissionForDataDeliveryFromDataSource(
-                        ACCESS_COARSE_LOCATION, currentAttribution, "Bluetooth location check")
-                == PERMISSION_GRANTED) {
-            return true;
-        }
-
-        Log.e(TAG, "Need ACCESS_COARSE_LOCATION permission for " + currentAttribution);
-        return false;
-    }
-
     /**
      * Checks that calling process has ACCESS_COARSE_LOCATION and OP_COARSE_LOCATION is allowed or
      * ACCESS_FINE_LOCATION and OP_FINE_LOCATION is allowed
      */
     public static boolean checkCallerHasCoarseOrFineLocation(
             Context context, AttributionSource source, UserHandle userHandle) {
-        if (blockedByLocationOff(context, userHandle)) {
+        if (Util.blockedByLocationOff(context, userHandle)) {
             Log.e(TAG, "Permission denial: Location is off.");
             return false;
         }
@@ -575,7 +543,7 @@ public final class Utils {
     /** Checks that calling process has ACCESS_FINE_LOCATION and OP_FINE_LOCATION is allowed */
     public static boolean checkCallerHasFineLocation(
             Context context, AttributionSource source, UserHandle userHandle) {
-        if (blockedByLocationOff(context, userHandle)) {
+        if (Util.blockedByLocationOff(context, userHandle)) {
             Log.e(TAG, "Permission denial: Location is off.");
             return false;
         }

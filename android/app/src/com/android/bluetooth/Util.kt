@@ -16,6 +16,7 @@
 
 package com.android.bluetooth
 
+import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.BLUETOOTH_ADVERTISE
 import android.Manifest.permission.BLUETOOTH_CONNECT
 import android.Manifest.permission.BLUETOOTH_PRIVILEGED
@@ -36,10 +37,12 @@ import android.bluetooth.BluetoothUtils
 import android.content.AttributionSource
 import android.content.Context
 import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.os.RemoteException
+import android.os.UserHandle
 import android.permission.PermissionManager
 import android.permission.PermissionManager.PERMISSION_GRANTED
 import android.permission.PermissionManager.PERMISSION_HARD_DENIED
@@ -235,6 +238,39 @@ object Util {
         // Check metadata
         val deviceType = adapterService.getMetadata(device, METADATA_DEVICE_TYPE) ?: return false
         return String(deviceType) == BluetoothDevice.DEVICE_TYPE_WATCH
+    }
+
+    /** Checks whether location is off and must be on for us to perform some operation */
+    @JvmStatic
+    fun Context.blockedByLocationOff(userHandle: UserHandle) =
+        !getSystemService(LocationManager::class.java).isLocationEnabledForUser(userHandle)
+
+    /** Checks that calling process has ACCESS_COARSE_LOCATION and OP_COARSE_LOCATION is allowed */
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
+    @JvmStatic
+    fun Context.checkCallerHasCoarseLocation(
+        source: AttributionSource,
+        userHandle: UserHandle,
+    ): Boolean {
+        if (blockedByLocationOff(userHandle)) {
+            Log.e(TAG, "Permission denial: Location is off")
+            return false
+        }
+        val currentAttribution =
+            AttributionSource.Builder(attributionSource).setNext(source).build()
+        val permissionManager = getSystemService(PermissionManager::class.java) ?: return false
+        val result =
+            permissionManager.checkPermissionForDataDeliveryFromDataSource(
+                ACCESS_COARSE_LOCATION,
+                currentAttribution,
+                "Bluetooth location check",
+            )
+        if (result == PERMISSION_GRANTED) {
+            return true
+        }
+
+        Log.e(TAG, "Need ACCESS_COARSE_LOCATION permission for $currentAttribution")
+        return false
     }
 
     /**
