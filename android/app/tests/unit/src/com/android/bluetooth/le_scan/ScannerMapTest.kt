@@ -40,9 +40,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
-import org.mockito.Mockito.mock
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 /** Test cases for [ScannerMap]. */
@@ -76,7 +76,7 @@ class ScannerMapTest {
             scannerMap.addWithPendingIntent(
                 APP_NAME,
                 uuid,
-                mock(UserHandle::class.java),
+                mock<UserHandle>(),
                 source,
                 info,
                 scanSettings,

@@ -32,8 +32,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
-import org.mockito.Mockito.mock
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 /** Test cases for [AppScanStats]. */
@@ -86,12 +86,12 @@ class AppScanStatsTest {
                 timeProvider,
             )
 
-        val app1 = mock(ScannerApp::class.java)
+        val app1 = mock<ScannerApp>()
         whenever(app1.id).thenReturn(101)
         whenever(app1.uuid).thenReturn(UUID.randomUUID())
         whenever(app1.attributionTag).thenReturn("appTag1")
 
-        val app2 = mock(ScannerApp::class.java)
+        val app2 = mock<ScannerApp>()
         whenever(app2.id).thenReturn(102)
         whenever(app2.uuid).thenReturn(UUID.randomUUID())
         whenever(app2.attributionTag).thenReturn(null)
