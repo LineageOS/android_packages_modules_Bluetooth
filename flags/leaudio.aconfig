@@ -369,6 +369,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_broadcast_treat_empty_rs_explicitly"
+    namespace: "bluetooth"
+    description: "Treat remote source removal as a final state for broadcast assistant"
+    bug: "460351363"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_improve_unicast_monitor"
     namespace: "bluetooth"
     description: "Improve unicast monitor mode robustness"
