@@ -171,8 +171,11 @@ public class A2dpSinkService extends ConnectableProfile {
     @Override
     public boolean connect(BluetoothDevice device) {
         Log.i(TAG, "connect(device=" + device + ")");
+        if (device == null) {
+            return false;
+        }
 
-        if (getConnectionPolicy(requireNonNull(device)) == CONNECTION_POLICY_FORBIDDEN) {
+        if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN) {
             Log.w(TAG, "Connection not allowed: <" + device + "> is CONNECTION_POLICY_FORBIDDEN");
             return false;
         }
@@ -195,7 +198,7 @@ public class A2dpSinkService extends ConnectableProfile {
     public boolean disconnect(BluetoothDevice device) {
         Log.i(TAG, "disconnect(device=" + device + ")");
         if (device == null) {
-            throw new IllegalArgumentException("Null device");
+            return false;
         }
 
         A2dpSinkStateMachine stateMachine;
@@ -210,6 +213,7 @@ public class A2dpSinkService extends ConnectableProfile {
         if (connectionState == STATE_DISCONNECTED || connectionState == STATE_DISCONNECTING) {
             return false;
         }
+
         // upon completion of disconnect, the state machine will remove itself from the available
         // devices map
         stateMachine.disconnect();
