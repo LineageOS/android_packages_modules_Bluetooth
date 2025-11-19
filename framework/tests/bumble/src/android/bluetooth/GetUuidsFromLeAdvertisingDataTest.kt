@@ -94,7 +94,7 @@ class GetUuidsFromLeAdvertisingDataTest {
         filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
         filter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
         context.registerReceiver(receiver, filter)
-        Utils.setupIntentLogger(TAG, receiver)
+        receiver.setupIntentLogger(TAG)
     }
 
     @After

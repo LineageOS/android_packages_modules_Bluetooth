@@ -18,7 +18,7 @@ package android.bluetooth.service_discovery.pairing
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.PandoraDevice
-import android.bluetooth.Utils
+import android.bluetooth.setupIntentLogger
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -89,7 +89,7 @@ class ServiceDiscoveryTest {
             }
 
         context.registerReceiver(receiver, filter)
-        Utils.setupIntentLogger(TAG, receiver)
+        receiver.setupIntentLogger(TAG)
     }
 
     @After

@@ -62,6 +62,94 @@ fun Intent.getParcelUuidArray(key: String): Array<ParcelUuid> {
     return extras.mapNotNull { it as? ParcelUuid }.toTypedArray()
 }
 
+fun BroadcastReceiver.setupIntentLogger(tag: String) {
+    doAnswer { invocation ->
+            intentLogger(tag, invocation.getArgument(1))
+            null
+        }
+        .whenever(this)
+        .onReceive(any(), any())
+}
+
+private fun intentLogger(tag: String, intent: Intent) {
+    when (val action = intent.action) {
+        BluetoothAdapter.ACTION_BLE_STATE_CHANGED,
+        BluetoothAdapter.ACTION_STATE_CHANGED -> {
+            val fromState =
+                BluetoothAdapter.nameForState(
+                    intent.getIntExtra(BluetoothAdapter.EXTRA_PREVIOUS_STATE, STATE_OFF)
+                )
+            val toState =
+                BluetoothAdapter.nameForState(
+                    intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, STATE_OFF)
+                )
+            Log.d("intentLogger", "$tag/$action $fromState -> $toState")
+        }
+        BluetoothAdapter.ACTION_DISCOVERY_STARTED,
+        BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> Log.d("intentLogger", "$tag/$action")
+        BluetoothDevice.ACTION_ACL_CONNECTED,
+        BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
+            val device = intent.getBluetoothDeviceExtra()
+            val transport =
+                intent.getIntExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_AUTO)
+            Log.d("intentLogger", "$tag/$action: $device - transport=$transport")
+        }
+        BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
+            val device = intent.getBluetoothDeviceExtra()
+            val state = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothAdapter.ERROR)
+            Log.d("intentLogger", "$tag/$action: $device - state=$state")
+        }
+        BluetoothDevice.ACTION_FOUND -> {
+            val device = intent.getBluetoothDeviceExtra()
+            val name = intent.getStringExtra(BluetoothDevice.EXTRA_NAME)
+            Log.d("intentLogger", "$tag/$action: $device - $name")
+        }
+        BluetoothDevice.ACTION_PAIRING_REQUEST -> {
+            val device = intent.getBluetoothDeviceExtra()
+            Log.d("intentLogger", "$tag/$action: $device")
+        }
+        BluetoothDevice.ACTION_UUID -> {
+            val uuids = intent.getParcelUuidArray(BluetoothDevice.EXTRA_UUID)
+            Log.d("intentLogger", "$tag/$action: Uuid=${uuids.contentToString()}")
+        }
+        BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED -> {
+            val device = intent.getBluetoothDeviceExtra()
+            val state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR)
+            Log.d(
+                "intentLogger",
+                "$tag/$action: Headset: $device - ${getConnectionStateName(state)}",
+            )
+        }
+        BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED -> {
+            val device = intent.getBluetoothDeviceExtra()
+            val state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR)
+            val transport =
+                intent.getIntExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_AUTO)
+            Log.d(
+                "intentLogger",
+                "$tag/$action: Hid: $device - ${getConnectionStateName(state)} - transport=$transport",
+            )
+        }
+        BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED -> {
+            val device = intent.getBluetoothDeviceExtra()
+            val state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR)
+            Log.d(
+                "intentLogger",
+                "$tag/$action: Headset: $device - ${getAudioConnectionStateName(state)} - $state ",
+            )
+        }
+        else -> throw IllegalArgumentException("Missing implementation for $action")
+    }
+}
+
+private fun getAudioConnectionStateName(state: Int) =
+    when (state) {
+        BluetoothHeadset.STATE_AUDIO_DISCONNECTED -> "AUDIO_STATE_DISCONNECTED"
+        BluetoothHeadset.STATE_AUDIO_CONNECTING -> "AUDIO_STATE_CONNECTING"
+        BluetoothHeadset.STATE_AUDIO_CONNECTED -> "AUDIO_STATE_CONNECTED"
+        else -> "STATE_UNKNOWN"
+    }
+
 object Utils {
     const val TAG = "Utils"
 
@@ -95,100 +183,5 @@ object Utils {
                 null
             }
         }
-    }
-
-    fun intentLogger(tag: String, intent: Intent) {
-        when (val action = intent.action) {
-            BluetoothAdapter.ACTION_BLE_STATE_CHANGED,
-            BluetoothAdapter.ACTION_STATE_CHANGED -> {
-                val fromState =
-                    BluetoothAdapter.nameForState(
-                        intent.getIntExtra(BluetoothAdapter.EXTRA_PREVIOUS_STATE, STATE_OFF)
-                    )
-                val toState =
-                    BluetoothAdapter.nameForState(
-                        intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, STATE_OFF)
-                    )
-                Log.d("intentLogger", "$tag/$action $fromState -> $toState")
-            }
-            BluetoothAdapter.ACTION_DISCOVERY_STARTED,
-            BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> Log.d("intentLogger", "$tag/$action")
-            BluetoothDevice.ACTION_ACL_CONNECTED,
-            BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
-                val device = intent.getBluetoothDeviceExtra()
-                val transport =
-                    intent.getIntExtra(
-                        BluetoothDevice.EXTRA_TRANSPORT,
-                        BluetoothDevice.TRANSPORT_AUTO,
-                    )
-                Log.d("intentLogger", "$tag/$action: $device - transport=$transport")
-            }
-            BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
-                val device = intent.getBluetoothDeviceExtra()
-                val state =
-                    intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothAdapter.ERROR)
-                Log.d("intentLogger", "$tag/$action: $device - state=$state")
-            }
-            BluetoothDevice.ACTION_FOUND -> {
-                val device = intent.getBluetoothDeviceExtra()
-                val name = intent.getStringExtra(BluetoothDevice.EXTRA_NAME)
-                Log.d("intentLogger", "$tag/$action: $device - $name")
-            }
-            BluetoothDevice.ACTION_PAIRING_REQUEST -> {
-                val device = intent.getBluetoothDeviceExtra()
-                Log.d("intentLogger", "$tag/$action: $device")
-            }
-            BluetoothDevice.ACTION_UUID -> {
-                val uuids = intent.getParcelUuidArray(BluetoothDevice.EXTRA_UUID)
-                Log.d("intentLogger", "$tag/$action: Uuid=${uuids.contentToString()}")
-            }
-            BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED -> {
-                val device = intent.getBluetoothDeviceExtra()
-                val state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR)
-                Log.d(
-                    "intentLogger",
-                    "$tag/$action: Headset: $device - ${getConnectionStateName(state)}",
-                )
-            }
-            BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED -> {
-                val device = intent.getBluetoothDeviceExtra()
-                val state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR)
-                val transport =
-                    intent.getIntExtra(
-                        BluetoothDevice.EXTRA_TRANSPORT,
-                        BluetoothDevice.TRANSPORT_AUTO,
-                    )
-                Log.d(
-                    "intentLogger",
-                    "$tag/$action: Hid: $device - ${getConnectionStateName(state)} - transport=$transport",
-                )
-            }
-            BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED -> {
-                val device = intent.getBluetoothDeviceExtra()
-                val state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR)
-                Log.d(
-                    "intentLogger",
-                    "$tag/$action: Headset: $device - ${getAudioConnectionStateName(state)} - $state ",
-                )
-            }
-            else -> throw IllegalArgumentException("Missing implementation for $action")
-        }
-    }
-
-    fun getAudioConnectionStateName(state: Int) =
-        when (state) {
-            BluetoothHeadset.STATE_AUDIO_DISCONNECTED -> "AUDIO_STATE_DISCONNECTED"
-            BluetoothHeadset.STATE_AUDIO_CONNECTING -> "AUDIO_STATE_CONNECTING"
-            BluetoothHeadset.STATE_AUDIO_CONNECTED -> "AUDIO_STATE_CONNECTED"
-            else -> "STATE_UNKNOWN"
-        }
-
-    fun setupIntentLogger(tag: String, receiver: BroadcastReceiver) {
-        doAnswer { invocation ->
-                intentLogger(tag, invocation.getArgument(1))
-                null
-            }
-            .whenever(receiver)
-            .onReceive(any(), any())
     }
 }
