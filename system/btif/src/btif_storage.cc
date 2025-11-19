@@ -1296,8 +1296,8 @@ static void btif_storage_invoke_addr_type_update(const RawAddress& remote_bd_add
   prop.type = BT_PROPERTY_REMOTE_ADDR_TYPE;
   prop.val = const_cast<tBLE_ADDR_TYPE*>(reinterpret_cast<const tBLE_ADDR_TYPE*>(&addr_type));
   prop.len = sizeof(tBLE_ADDR_TYPE);
-  GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(BtifStatus(), remote_bd_addr,
-                                                                       addr_type, 1, &prop);
+  GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
+          BT_STATUS_SUCCESS, remote_bd_addr, addr_type, 1, &prop);
 }
 #endif  // TARGET_FLOSS
 
