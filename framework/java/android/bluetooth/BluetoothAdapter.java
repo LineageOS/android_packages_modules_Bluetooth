@@ -5165,6 +5165,7 @@ public final class BluetoothAdapter {
     /**
      * Callbacks for receiving response of HCI Vendor-Specific Commands and Vendor-Specific Events
      * that arise from the controller.
+     *
      */
     @Hide
     @SystemApi
@@ -5198,25 +5199,39 @@ public final class BluetoothAdapter {
          * @param data from 0 to 254 Bytes.
          */
         void onEvent(@IntRange(from = 0x00, to = 0xfe) int code, @NonNull byte[] data);
+
+        /**
+         * Invoked when an event is received as HCI ACL packet.
+         *
+         * @param handle The vendor-specific ACL connection handle.
+         * @param data from 0 to 655256 Bytes.
+         */
+        @FlaggedApi(Flags.FLAG_REPORT_VENDOR_EVENTS_FROM_ACL)
+        default void onAclEvent(
+                @IntRange(from = 0x001, to = 0xfff) int handle, @NonNull byte[] data) {}
     }
 
     private static final class HciVendorSpecificCallbackRegistration {
         private BluetoothHciVendorSpecificCallback mCallback;
         private Executor mExecutor;
         private Set<Integer> mEventCodeSet;
+        private Set<Integer> mAclHandleSet;
 
         void set(
                 BluetoothHciVendorSpecificCallback callback,
                 Set<Integer> eventCodeSet,
+                Set<Integer> aclHandleSet,
                 Executor executor) {
             mCallback = callback;
             mEventCodeSet = eventCodeSet;
+            mAclHandleSet = aclHandleSet;
             mExecutor = executor;
         }
 
         void reset() {
             mCallback = null;
             mEventCodeSet = null;
+            mAclHandleSet = null;
             mExecutor = null;
         }
 
@@ -5235,8 +5250,9 @@ public final class BluetoothAdapter {
             }
 
             int[] eventCodes = mEventCodeSet.stream().mapToInt(i -> i).toArray();
+            int[] aclHandles = mAclHandleSet.stream().mapToInt(i -> i).toArray();
             try {
-                service.registerHciVendorSpecificCallback(stub, eventCodes);
+                service.registerHciVendorSpecificCallback(stub, eventCodes, aclHandles);
             } catch (RemoteException e) {
                 logRemoteException(TAG, e);
             }
@@ -5296,6 +5312,19 @@ public final class BluetoothAdapter {
                                 (cb) -> cb.onEvent(code, data));
                     }
                 }
+
+                @Override
+                @RequiresNoPermission
+                public void onAclEvent(int handle, byte[] data) {
+                    synchronized (mHciVendorSpecificCallbackRegistration) {
+                        mHciVendorSpecificCallbackRegistration.execute(
+                                (cb) -> {
+                                    if (Flags.reportVendorEventsFromAcl()) {
+                                        cb.onAclEvent(handle, data);
+                                    }
+                                });
+                    }
+                }
             };
 
     /**
@@ -5332,7 +5361,65 @@ public final class BluetoothAdapter {
                 if (mHciVendorSpecificCallbackRegistration.isSet()) {
                     throw new IllegalArgumentException("Only one registration allowed");
                 }
-                mHciVendorSpecificCallbackRegistration.set(callback, eventCodeSet, executor);
+                mHciVendorSpecificCallbackRegistration.set(
+                        callback, eventCodeSet, Collections.emptySet(),executor);
+                try {
+                    mHciVendorSpecificCallbackRegistration.registerToService(
+                            mService, mHciVendorSpecificCallbackStub);
+                } catch (Exception e) {
+                    mHciVendorSpecificCallbackRegistration.reset();
+                    throw e;
+                }
+            }
+        } finally {
+            mServiceLock.readLock().unlock();
+        }
+    }
+
+    /**
+     * Register an {@link BluetoothHciVendorCallback} to listen for HCI vendor responses and events
+     *
+     * @param eventCodeSet Set of vendor-specific event codes to listen for updates. Each
+     *     vendor-specific event code must be in the range 0x00 to 0x4f or 0x60 to 0xff. The
+     *     inclusive range 0x52-0x5f is reserved by the system.
+     * @param executor an {@link Executor} to execute given callback
+     * @param callback user implementation of the {@link BluetoothHciVendorCallback}
+     * @param aclHandleSet Set of vendor-specific ACL handles to listen for events.
+     * @throws IllegalArgumentException if the callback is already registered, or event codes not in
+     *     a valid range
+     */
+    @Hide
+    @SystemApi
+    @RequiresPermission(BLUETOOTH_PRIVILEGED)
+    @FlaggedApi(Flags.FLAG_REPORT_VENDOR_EVENTS_FROM_ACL)
+    public void registerBluetoothHciVendorSpecificCallback(
+            @NonNull Set<Integer> eventCodeSet,
+            @NonNull Set<Integer> aclHandleSet,
+            @NonNull @CallbackExecutor Executor executor,
+            @NonNull BluetoothHciVendorSpecificCallback callback) {
+        Log.v(TAG, "registerBluetoothHciVendorSpecificCallback()");
+
+        requireNonNull(eventCodeSet);
+        requireNonNull(aclHandleSet);
+        requireNonNull(executor);
+        requireNonNull(callback);
+        if (eventCodeSet.stream()
+                .anyMatch((n) -> (n < 0) || (n >= 0x52 && n < 0x60) || (n > 0xff))) {
+            throw new IllegalArgumentException("Event code not in valid range");
+        }
+
+        if (aclHandleSet.stream().anyMatch((n) -> (n <= 0) || (n > 0xfff))) {
+            throw new IllegalArgumentException("ACL handle not in valid range");
+        }
+
+        mServiceLock.readLock().lock();
+        try {
+            synchronized (mHciVendorSpecificCallbackRegistration) {
+                if (mHciVendorSpecificCallbackRegistration.isSet()) {
+                    throw new IllegalArgumentException("Only one registration allowed");
+                }
+                mHciVendorSpecificCallbackRegistration.set(
+                        callback, eventCodeSet, aclHandleSet, executor);
                 try {
                     mHciVendorSpecificCallbackRegistration.registerToService(
                             mService, mHciVendorSpecificCallbackStub);

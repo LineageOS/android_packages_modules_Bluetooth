@@ -22,4 +22,5 @@ oneway interface IBluetoothHciVendorSpecificCallback {
     void onCommandStatus(int ocf, in int status);
     void onCommandComplete(int ocf, in byte[] returnParameters);
     void onEvent(int code, in byte[] data);
+    void onAclEvent(int handle, in byte[] data);
 }
