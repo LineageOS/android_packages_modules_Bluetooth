@@ -14,365 +14,321 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.gatt;
+package com.android.bluetooth.gatt
 
-import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
+import android.app.ActivityManager
+import android.bluetooth.BluetoothProtoEnums
+import android.bluetooth.le.AdvertiseData
+import android.bluetooth.le.AdvertisingSetParameters
+import android.bluetooth.le.PeriodicAdvertisingParameters
+import android.content.AttributionSource
+import android.util.Log
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import com.android.bluetooth.BluetoothStatsLog
+import com.android.bluetooth.btservice.MetricsLogger
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.ArgumentCaptor
+import org.mockito.ArgumentMatchers.eq
+import org.mockito.Captor
+import org.mockito.Mock
+import org.mockito.Mockito.verify
+import org.mockito.kotlin.clearInvocations
 
-import static com.google.common.truth.Truth.assertThat;
+private const val TAG = "AppAdvertiseStatsTest"
 
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothProtoEnums;
-import android.bluetooth.le.AdvertiseData;
-import android.bluetooth.le.AdvertisingSetParameters;
-import android.bluetooth.le.PeriodicAdvertisingParameters;
-import android.content.AttributionSource;
-import android.platform.test.flag.junit.SetFlagsRule;
-import android.util.Log;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-
-import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.btservice.MetricsLogger;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-/** Test cases for {@link AppAdvertiseStats}. */
+/** Test cases for [AppAdvertiseStats]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
-public class AppAdvertiseStatsTest {
-    private static final String TAG = AppAdvertiseStatsTest.class.getSimpleName();
+@RunWith(AndroidJUnit4::class)
+class AppAdvertiseStatsTest {
+    @get:Rule val mockitoRule = MockitoRule()
 
-    private CountDownLatch mLatch;
+    @Mock private lateinit var source: AttributionSource
+    @Mock private lateinit var metricsLogger: MetricsLogger
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+    @Captor private lateinit var advDurationCaptor: ArgumentCaptor<Long>
 
-    @Mock private AttributionSource mSource;
-    @Mock private MetricsLogger mMetricsLogger;
-
-    @Captor ArgumentCaptor<Long> mAdvDurationCaptor;
+    private lateinit var latch: CountDownLatch
 
     @Before
-    public void setUp() throws Exception {
-        MetricsLogger.setInstanceForTesting(mMetricsLogger);
+    fun setUp() {
+        MetricsLogger.setInstanceForTesting(metricsLogger)
 
-        mLatch = new CountDownLatch(1);
-        assertThat(mLatch).isNotNull();
+        latch = CountDownLatch(1)
+        assertThat(latch).isNotNull()
     }
 
     @After
-    public void tearDown() throws Exception {
-        MetricsLogger.setInstanceForTesting(null);
-    }
-
-    private void testSleep(long millis) {
-        try {
-            mLatch.await(millis, TimeUnit.MILLISECONDS);
-        } catch (Exception e) {
-            Log.e(TAG, "Latch await", e);
-        }
+    fun tearDown() {
+        MetricsLogger.setInstanceForTesting(null)
     }
 
     @Test
-    public void recordAdvertiseStart() {
-        int appUid = 0;
-        int id = 1;
-        String name = "name";
+    fun recordAdvertiseStart() {
+        val appUid = 0
+        val id = 1
+        val name = "name"
+        val appAdvertiseStats = AppAdvertiseStats(appUid, id, name, source)
+        assertThat(appAdvertiseStats.mAdvertiserRecords).isEmpty()
 
-        AppAdvertiseStats appAdvertiseStats = new AppAdvertiseStats(appUid, id, name, mSource);
+        val duration = 1
+        val maxExtAdvEvents = 2
+        val instanceCount = 3
+        appAdvertiseStats.recordAdvertiseStart(duration, maxExtAdvEvents, instanceCount)
 
-        assertThat(appAdvertiseStats.mAdvertiserRecords).isEmpty();
-
-        int duration = 1;
-        int maxExtAdvEvents = 2;
-        int instanceCount = 3;
-
-        appAdvertiseStats.recordAdvertiseStart(duration, maxExtAdvEvents, instanceCount);
-
-        AdvertisingSetParameters parameters = new AdvertisingSetParameters.Builder().build();
-        AdvertiseData advertiseData = new AdvertiseData.Builder().build();
-        AdvertiseData scanResponse = new AdvertiseData.Builder().build();
-        PeriodicAdvertisingParameters periodicParameters =
-                new PeriodicAdvertisingParameters.Builder().build();
-        AdvertiseData periodicData = new AdvertiseData.Builder().build();
-
+        val parameters = AdvertisingSetParameters.Builder().build()
+        val advertiseData = AdvertiseData.Builder().build()
+        val scanResponse = AdvertiseData.Builder().build()
+        val periodicParameters = PeriodicAdvertisingParameters.Builder().build()
+        val periodicData = AdvertiseData.Builder().build()
         appAdvertiseStats.recordAdvertiseStart(
-                parameters,
-                advertiseData,
-                scanResponse,
-                periodicParameters,
-                periodicData,
-                duration,
-                maxExtAdvEvents,
-                instanceCount);
+            parameters,
+            advertiseData,
+            scanResponse,
+            periodicParameters,
+            periodicData,
+            duration,
+            maxExtAdvEvents,
+            instanceCount,
+        )
 
-        int numOfExpectedRecords = 2;
-
-        assertThat(appAdvertiseStats.mAdvertiserRecords).hasSize(numOfExpectedRecords);
+        val numOfExpectedRecords = 2
+        assertThat(appAdvertiseStats.mAdvertiserRecords).hasSize(numOfExpectedRecords)
     }
 
     @Test
-    public void recordAdvertiseStop() {
-        int appUid = 0;
-        int id = 1;
-        String name = "name";
+    fun recordAdvertiseStop() {
+        val appUid = 0
+        val id = 1
+        val name = "name"
+        val appAdvertiseStats = AppAdvertiseStats(appUid, id, name, source)
+        assertThat(appAdvertiseStats.mAdvertiserRecords).isEmpty()
 
-        AppAdvertiseStats appAdvertiseStats = new AppAdvertiseStats(appUid, id, name, mSource);
+        val duration = 1
+        val maxExtAdvEvents = 2
+        val instanceCount = 3
+        appAdvertiseStats.recordAdvertiseStart(duration, maxExtAdvEvents, instanceCount)
 
-        int duration = 1;
-        int maxExtAdvEvents = 2;
-        int instanceCount = 3;
-
-        assertThat(appAdvertiseStats.mAdvertiserRecords).isEmpty();
-
-        appAdvertiseStats.recordAdvertiseStart(duration, maxExtAdvEvents, instanceCount);
-
-        AdvertisingSetParameters parameters = new AdvertisingSetParameters.Builder().build();
-        AdvertiseData advertiseData = new AdvertiseData.Builder().build();
-        AdvertiseData scanResponse = new AdvertiseData.Builder().build();
-        PeriodicAdvertisingParameters periodicParameters =
-                new PeriodicAdvertisingParameters.Builder().build();
-        AdvertiseData periodicData = new AdvertiseData.Builder().build();
-
+        val parameters = AdvertisingSetParameters.Builder().build()
+        val advertiseData = AdvertiseData.Builder().build()
+        val scanResponse = AdvertiseData.Builder().build()
+        val periodicParameters = PeriodicAdvertisingParameters.Builder().build()
+        val periodicData = AdvertiseData.Builder().build()
         appAdvertiseStats.recordAdvertiseStart(
-                parameters,
-                advertiseData,
-                scanResponse,
-                periodicParameters,
-                periodicData,
-                duration,
-                maxExtAdvEvents,
-                instanceCount);
+            parameters,
+            advertiseData,
+            scanResponse,
+            periodicParameters,
+            periodicData,
+            duration,
+            maxExtAdvEvents,
+            instanceCount,
+        )
 
-        appAdvertiseStats.recordAdvertiseStop(instanceCount);
-
-        int numOfExpectedRecords = 2;
-
-        assertThat(appAdvertiseStats.mAdvertiserRecords).hasSize(numOfExpectedRecords);
+        appAdvertiseStats.recordAdvertiseStop(instanceCount)
+        val numOfExpectedRecords = 2
+        assertThat(appAdvertiseStats.mAdvertiserRecords).hasSize(numOfExpectedRecords)
     }
 
     @Test
-    public void enableAdvertisingSet() {
-        int appUid = 0;
-        int id = 1;
-        String name = "name";
+    fun enableAdvertisingSet() {
+        val appUid = 0
+        val id = 1
+        val name = "name"
+        val appAdvertiseStats = AppAdvertiseStats(appUid, id, name, source)
+        assertThat(appAdvertiseStats.mAdvertiserRecords).isEmpty()
 
-        AppAdvertiseStats appAdvertiseStats = new AppAdvertiseStats(appUid, id, name, mSource);
+        val duration = 1
+        val maxExtAdvEvents = 2
+        val instanceCount = 3
+        appAdvertiseStats.enableAdvertisingSet(true, duration, maxExtAdvEvents, instanceCount)
+        appAdvertiseStats.enableAdvertisingSet(false, duration, maxExtAdvEvents, instanceCount)
 
-        int duration = 1;
-        int maxExtAdvEvents = 2;
-        int instanceCount = 3;
-
-        assertThat(appAdvertiseStats.mAdvertiserRecords).isEmpty();
-
-        appAdvertiseStats.enableAdvertisingSet(true, duration, maxExtAdvEvents, instanceCount);
-        appAdvertiseStats.enableAdvertisingSet(false, duration, maxExtAdvEvents, instanceCount);
-
-        int numOfExpectedRecords = 1;
-
-        assertThat(appAdvertiseStats.mAdvertiserRecords).hasSize(numOfExpectedRecords);
+        val numOfExpectedRecords = 1
+        assertThat(appAdvertiseStats.mAdvertiserRecords).hasSize(numOfExpectedRecords)
     }
 
     @Test
-    public void setAdvertisingData() {
-        int appUid = 0;
-        int id = 1;
-        String name = "name";
-
-        AppAdvertiseStats appAdvertiseStats = new AppAdvertiseStats(appUid, id, name, mSource);
-
-        AdvertiseData advertiseData = new AdvertiseData.Builder().build();
-        appAdvertiseStats.setAdvertisingData(advertiseData);
-
-        appAdvertiseStats.setAdvertisingData(advertiseData);
+    fun setAdvertisingData() {
+        val appUid = 0
+        val id = 1
+        val name = "name"
+        val appAdvertiseStats = AppAdvertiseStats(appUid, id, name, source)
+        val advertiseData = AdvertiseData.Builder().build()
+        appAdvertiseStats.setAdvertisingData(advertiseData)
     }
 
     @Test
-    public void setScanResponseData() {
-        int appUid = 0;
-        int id = 1;
-        String name = "name";
-
-        AppAdvertiseStats appAdvertiseStats = new AppAdvertiseStats(appUid, id, name, mSource);
-
-        AdvertiseData scanResponse = new AdvertiseData.Builder().build();
-        appAdvertiseStats.setScanResponseData(scanResponse);
-
-        appAdvertiseStats.setScanResponseData(scanResponse);
+    fun setScanResponseData() {
+        val appUid = 0
+        val id = 1
+        val name = "name"
+        val appAdvertiseStats = AppAdvertiseStats(appUid, id, name, source)
+        val scanResponse = AdvertiseData.Builder().build()
+        appAdvertiseStats.setScanResponseData(scanResponse)
     }
 
     @Test
-    public void setAdvertisingParameters() {
-        int appUid = 0;
-        int id = 1;
-        String name = "name";
-
-        AppAdvertiseStats appAdvertiseStats = new AppAdvertiseStats(appUid, id, name, mSource);
-
-        AdvertisingSetParameters parameters = new AdvertisingSetParameters.Builder().build();
-        appAdvertiseStats.setAdvertisingParameters(parameters);
+    fun setAdvertisingParameters() {
+        val appUid = 0
+        val id = 1
+        val name = "name"
+        val appAdvertiseStats = AppAdvertiseStats(appUid, id, name, source)
+        val parameters = AdvertisingSetParameters.Builder().build()
+        appAdvertiseStats.setAdvertisingParameters(parameters)
     }
 
     @Test
-    public void setPeriodicAdvertisingParameters() {
-        int appUid = 0;
-        int id = 1;
-        String name = "name";
-
-        AppAdvertiseStats appAdvertiseStats = new AppAdvertiseStats(appUid, id, name, mSource);
-
-        PeriodicAdvertisingParameters periodicParameters =
-                new PeriodicAdvertisingParameters.Builder().build();
-        appAdvertiseStats.setPeriodicAdvertisingParameters(periodicParameters);
+    fun setPeriodicAdvertisingParameters() {
+        val appUid = 0
+        val id = 1
+        val name = "name"
+        val appAdvertiseStats = AppAdvertiseStats(appUid, id, name, source)
+        val periodicParameters = PeriodicAdvertisingParameters.Builder().build()
+        appAdvertiseStats.setPeriodicAdvertisingParameters(periodicParameters)
     }
 
     @Test
-    public void setPeriodicAdvertisingData() {
-        int appUid = 0;
-        int id = 1;
-        String name = "name";
-
-        AppAdvertiseStats appAdvertiseStats = new AppAdvertiseStats(appUid, id, name, mSource);
-
-        AdvertiseData periodicData = new AdvertiseData.Builder().build();
-        appAdvertiseStats.setPeriodicAdvertisingData(periodicData);
-
-        appAdvertiseStats.setPeriodicAdvertisingData(periodicData);
+    fun setPeriodicAdvertisingData() {
+        val appUid = 0
+        val id = 1
+        val name = "name"
+        val appAdvertiseStats = AppAdvertiseStats(appUid, id, name, source)
+        val periodicData = AdvertiseData.Builder().build()
+        appAdvertiseStats.setPeriodicAdvertisingData(periodicData)
     }
 
     @Test
-    public void testDump_doesNotCrash() throws Exception {
-        StringBuilder sb = new StringBuilder();
+    fun testDump_doesNotCrash() {
+        val sb = StringBuilder()
+        val appUid = 0
+        val id = 1
+        val name = "name"
+        val appAdvertiseStats = AppAdvertiseStats(appUid, id, name, source)
 
-        int appUid = 0;
-        int id = 1;
-        String name = "name";
-
-        AppAdvertiseStats appAdvertiseStats = new AppAdvertiseStats(appUid, id, name, mSource);
-
-        AdvertisingSetParameters parameters = new AdvertisingSetParameters.Builder().build();
-        AdvertiseData advertiseData = new AdvertiseData.Builder().build();
-        AdvertiseData scanResponse = new AdvertiseData.Builder().build();
-        PeriodicAdvertisingParameters periodicParameters =
-                new PeriodicAdvertisingParameters.Builder().build();
-        AdvertiseData periodicData = new AdvertiseData.Builder().build();
-        int duration = 1;
-        int maxExtAdvEvents = 2;
-        int instanceCount = 3;
-
+        val parameters = AdvertisingSetParameters.Builder().build()
+        val advertiseData = AdvertiseData.Builder().build()
+        val scanResponse = AdvertiseData.Builder().build()
+        val periodicParameters = PeriodicAdvertisingParameters.Builder().build()
+        val periodicData = AdvertiseData.Builder().build()
+        val duration = 1
+        val maxExtAdvEvents = 2
+        val instanceCount = 3
         appAdvertiseStats.recordAdvertiseStart(
-                parameters,
-                advertiseData,
-                scanResponse,
-                periodicParameters,
-                periodicData,
-                duration,
-                maxExtAdvEvents,
-                instanceCount);
-
-        AppAdvertiseStats.dumpToString(sb, appAdvertiseStats);
+            parameters,
+            advertiseData,
+            scanResponse,
+            periodicParameters,
+            periodicData,
+            duration,
+            maxExtAdvEvents,
+            instanceCount,
+        )
+        AppAdvertiseStats.dumpToString(sb, appAdvertiseStats)
     }
 
     @Test
-    public void testAdvertiseCounterMetrics() {
-        int appUid = 0;
-        int id = 1;
-        String name = "name";
-
-        AppAdvertiseStats appAdvertiseStats = new AppAdvertiseStats(appUid, id, name, mSource);
+    fun testAdvertiseCounterMetrics() {
+        val appUid = 0
+        val id = 1
+        val name = "name"
+        val appAdvertiseStats = AppAdvertiseStats(appUid, id, name, source)
         // Set app importance as Foreground Service for the stats
-        appAdvertiseStats.setAppImportance(IMPORTANCE_FOREGROUND_SERVICE);
+        appAdvertiseStats.setAppImportance(
+            ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
+        )
 
-        AdvertisingSetParameters parameters =
-                new AdvertisingSetParameters.Builder().setConnectable(true).build();
-        AdvertiseData advertiseData = new AdvertiseData.Builder().build();
-        AdvertiseData scanResponse = new AdvertiseData.Builder().build();
-        PeriodicAdvertisingParameters periodicParameters =
-                new PeriodicAdvertisingParameters.Builder().build();
-        AdvertiseData periodicData = new AdvertiseData.Builder().build();
-        int duration = 1;
-        int maxExtAdvEvents = 2;
-        int instanceCount = 3;
-        final long advTestDuration = 100;
-
+        val parameters = AdvertisingSetParameters.Builder().setConnectable(true).build()
+        val advertiseData = AdvertiseData.Builder().build()
+        val scanResponse = AdvertiseData.Builder().build()
+        val periodicParameters = PeriodicAdvertisingParameters.Builder().build()
+        val periodicData = AdvertiseData.Builder().build()
+        val duration = 1
+        val maxExtAdvEvents = 2
+        val instanceCount = 3
+        val advTestDuration = 100L
         appAdvertiseStats.recordAdvertiseStart(
-                parameters,
-                advertiseData,
-                scanResponse,
-                periodicParameters,
-                periodicData,
-                duration,
-                maxExtAdvEvents,
-                instanceCount);
-        verify(mMetricsLogger).cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_ENABLE), eq(1L));
-        verify(mMetricsLogger)
-                .cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_CONNECTABLE_ENABLE), eq(1L));
-        verify(mMetricsLogger)
-                .cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_PERIODIC_ENABLE), eq(1L));
-        verify(mMetricsLogger)
-                .logAdvStateChanged(
-                        new int[] {appUid},
-                        new String[] {name},
-                        true,
-                        BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_INTERVAL__INTERVAL_LOW,
-                        BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_TX_POWER__TX_POWER_MEDIUM,
-                        true,
-                        true,
-                        false,
-                        true,
-                        instanceCount,
-                        0,
-                        IMPORTANCE_FOREGROUND_SERVICE,
-                        "");
-        Mockito.clearInvocations(mMetricsLogger);
+            parameters,
+            advertiseData,
+            scanResponse,
+            periodicParameters,
+            periodicData,
+            duration,
+            maxExtAdvEvents,
+            instanceCount,
+        )
+        verify(metricsLogger).cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_ENABLE), eq(1L))
+        verify(metricsLogger)
+            .cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_CONNECTABLE_ENABLE), eq(1L))
+        verify(metricsLogger)
+            .cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_PERIODIC_ENABLE), eq(1L))
+        verify(metricsLogger)
+            .logAdvStateChanged(
+                intArrayOf(appUid),
+                arrayOf(name),
+                true,
+                BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_INTERVAL__INTERVAL_LOW,
+                BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_TX_POWER__TX_POWER_MEDIUM,
+                true,
+                true,
+                false,
+                true,
+                instanceCount,
+                0,
+                ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE,
+                "",
+            )
+        clearInvocations(metricsLogger)
 
         // Wait for adv test duration
-        testSleep(advTestDuration);
+        testSleep(advTestDuration)
 
-        appAdvertiseStats.recordAdvertiseStop(instanceCount);
-        verify(mMetricsLogger).cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_DISABLE), eq(1L));
-        verify(mMetricsLogger)
-                .cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_CONNECTABLE_DISABLE), eq(1L));
-        verify(mMetricsLogger)
-                .cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_PERIODIC_DISABLE), eq(1L));
-        verify(mMetricsLogger)
-                .cacheCount(eq(BluetoothProtoEnums.LE_ADV_DURATION_COUNT_TOTAL_1M), eq(1L));
-        verify(mMetricsLogger)
-                .cacheCount(eq(BluetoothProtoEnums.LE_ADV_DURATION_COUNT_CONNECTABLE_1M), eq(1L));
-        verify(mMetricsLogger)
-                .cacheCount(eq(BluetoothProtoEnums.LE_ADV_DURATION_COUNT_PERIODIC_1M), eq(1L));
-        verify(mMetricsLogger)
-                .logAdvStateChanged(
-                        eq(new int[] {appUid}),
-                        eq(new String[] {name}),
-                        eq(false),
-                        eq(BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_INTERVAL__INTERVAL_LOW),
-                        eq(BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_TX_POWER__TX_POWER_MEDIUM),
-                        eq(true),
-                        eq(true),
-                        eq(false),
-                        eq(true),
-                        eq(instanceCount),
-                        mAdvDurationCaptor.capture(),
-                        eq(IMPORTANCE_FOREGROUND_SERVICE),
-                        eq(""));
-        long capturedAppScanDuration = mAdvDurationCaptor.getValue();
-        Log.d(TAG, "capturedDuration: " + capturedAppScanDuration);
-        assertThat(capturedAppScanDuration).isAtLeast(advTestDuration);
+        appAdvertiseStats.recordAdvertiseStop(instanceCount)
+        verify(metricsLogger).cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_DISABLE), eq(1L))
+        verify(metricsLogger)
+            .cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_CONNECTABLE_DISABLE), eq(1L))
+        verify(metricsLogger)
+            .cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_PERIODIC_DISABLE), eq(1L))
+        verify(metricsLogger)
+            .cacheCount(eq(BluetoothProtoEnums.LE_ADV_DURATION_COUNT_TOTAL_1M), eq(1L))
+        verify(metricsLogger)
+            .cacheCount(eq(BluetoothProtoEnums.LE_ADV_DURATION_COUNT_CONNECTABLE_1M), eq(1L))
+        verify(metricsLogger)
+            .cacheCount(eq(BluetoothProtoEnums.LE_ADV_DURATION_COUNT_PERIODIC_1M), eq(1L))
+        verify(metricsLogger)
+            .logAdvStateChanged(
+                eq(intArrayOf(appUid)),
+                eq(arrayOf(name)),
+                eq(false),
+                eq(BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_INTERVAL__INTERVAL_LOW),
+                eq(BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_TX_POWER__TX_POWER_MEDIUM),
+                eq(true),
+                eq(true),
+                eq(false),
+                eq(true),
+                eq(instanceCount),
+                advDurationCaptor.capture(),
+                eq(ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE),
+                eq(""),
+            )
+        val capturedAppScanDuration = advDurationCaptor.getValue()
+        Log.d(TAG, "capturedDuration: $capturedAppScanDuration")
+        assertThat(capturedAppScanDuration).isAtLeast(advTestDuration)
+    }
+
+    private fun testSleep(millis: Long) {
+        try {
+            latch.await(millis, TimeUnit.MILLISECONDS)
+        } catch (e: Exception) {
+            Log.e(TAG, "Latch await", e)
+        }
     }
 }
