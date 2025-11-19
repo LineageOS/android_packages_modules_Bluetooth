@@ -34,7 +34,6 @@ import android.bluetooth.BluetoothDevice.TRANSPORT_BREDR
 import android.bluetooth.BluetoothHeadset
 import android.bluetooth.BluetoothHidDevice
 import android.bluetooth.BluetoothHidHost
-import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
@@ -46,6 +45,7 @@ import android.bluetooth.BluetoothProfile.STATE_DISCONNECTING
 import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.PandoraDevice
 import android.bluetooth.VirtualOnly
+import android.bluetooth.adapter
 import android.bluetooth.cts.EnableBluetoothRule
 import android.bluetooth.toAddressBytes
 import android.content.BroadcastReceiver
@@ -116,8 +116,6 @@ class HidHostTest {
     private lateinit var hfpService: BluetoothHeadset
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val adapter: BluetoothAdapter =
-        context.getSystemService(BluetoothManager::class.java).adapter
     private lateinit var hidBlockingStub: HIDGrpc.HIDBlockingStub
     private var inOrder: InOrder? = null
     private var reportData = byteArrayOf()

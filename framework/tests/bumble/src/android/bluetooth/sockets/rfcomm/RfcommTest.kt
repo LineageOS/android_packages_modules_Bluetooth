@@ -28,7 +28,6 @@ import android.bluetooth.BluetoothDevice.ACTION_PAIRING_REQUEST
 import android.bluetooth.BluetoothDevice.EXTRA_DEVICE
 import android.bluetooth.BluetoothHeadset
 import android.bluetooth.BluetoothHidHost
-import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
 import android.bluetooth.BluetoothServerSocket
@@ -36,6 +35,7 @@ import android.bluetooth.BluetoothSocket
 import android.bluetooth.BluetoothSocketSettings
 import android.bluetooth.Host
 import android.bluetooth.PandoraDevice
+import android.bluetooth.adapter
 import android.bluetooth.setupIntentLogger
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.BroadcastReceiver
@@ -110,7 +110,6 @@ class RfcommTest {
     @Mock private lateinit var serviceListener: BluetoothProfile.ServiceListener
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
 
     private lateinit var bumbleDevice: BluetoothDevice
     private lateinit var host: Host

@@ -18,9 +18,9 @@ package android.bluetooth.opp
 
 import android.Manifest
 import android.app.KeyguardManager
-import android.bluetooth.BluetoothManager
 import android.bluetooth.Host
 import android.bluetooth.PandoraDevice
+import android.bluetooth.adapter
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.ClipData
 import android.content.Intent
@@ -60,9 +60,6 @@ class OppSendFileTest {
     val mDevice
         get() = UiDevice.getInstance(mInstrumentation)
 
-    val mAdapter
-        get() = mContext.getSystemService(BluetoothManager::class.java).adapter
-
     @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
 
     @get:Rule(order = 1)
@@ -87,7 +84,7 @@ class OppSendFileTest {
     fun setUp() {
         mHost = Host(mContext)
         navigateToUnlockedHomeScreen()
-        mAdapter.bondedDevices.forEach(mHost::removeBondAndVerify)
+        adapter.bondedDevices.forEach(mHost::removeBondAndVerify)
         mHost.createBondAndVerify(mRemoteDevice)
     }
 

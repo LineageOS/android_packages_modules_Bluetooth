@@ -53,8 +53,6 @@ class GattServerConnectWithoutScanTest {
     @get:Rule(order = 2) val bumble = PandoraDevice()
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)
-    private val bluetoothAdapter = bluetoothManager.adapter
 
     @Test
     @Ignore("b/343749428: Remove hidden api's dependencies to enable the test.")
@@ -63,17 +61,13 @@ class GattServerConnectWithoutScanTest {
 
         val mockGattServerCallback = mock(BluetoothGattServerCallback::class.java)
         val gattServer =
-            bluetoothManager.openGattServer(
-                context,
-                mockGattServerCallback,
-                BluetoothDevice.TRANSPORT_AUTO,
-            )
+            manager.openGattServer(context, mockGattServerCallback, BluetoothDevice.TRANSPORT_AUTO)
 
         assertThat(gattServer).isNotNull()
 
         try {
             val device =
-                bluetoothAdapter.getRemoteLeDevice(
+                adapter.getRemoteLeDevice(
                     Utils.BUMBLE_RANDOM_ADDRESS,
                     BluetoothDevice.ADDRESS_TYPE_RANDOM,
                 )
@@ -93,17 +87,13 @@ class GattServerConnectWithoutScanTest {
 
         val mockGattServerCallback = mock(BluetoothGattServerCallback::class.java)
         val gattServer =
-            bluetoothManager.openGattServer(
-                context,
-                mockGattServerCallback,
-                BluetoothDevice.TRANSPORT_LE,
-            )
+            manager.openGattServer(context, mockGattServerCallback, BluetoothDevice.TRANSPORT_LE)
 
         assertThat(gattServer).isNotNull()
 
         try {
             val device =
-                bluetoothAdapter.getRemoteLeDevice(
+                adapter.getRemoteLeDevice(
                     Utils.BUMBLE_RANDOM_ADDRESS,
                     BluetoothDevice.ADDRESS_TYPE_RANDOM,
                 )
@@ -123,11 +113,7 @@ class GattServerConnectWithoutScanTest {
 
         val mockGattServerCallback = mock(BluetoothGattServerCallback::class.java)
         val gattServer =
-            bluetoothManager.openGattServer(
-                context,
-                mockGattServerCallback,
-                BluetoothDevice.TRANSPORT_AUTO,
-            )
+            manager.openGattServer(context, mockGattServerCallback, BluetoothDevice.TRANSPORT_AUTO)
 
         assertThat(gattServer).isNotNull()
 
@@ -147,11 +133,7 @@ class GattServerConnectWithoutScanTest {
 
         val mockGattServerCallback = mock(BluetoothGattServerCallback::class.java)
         val gattServer =
-            bluetoothManager.openGattServer(
-                context,
-                mockGattServerCallback,
-                BluetoothDevice.TRANSPORT_LE,
-            )
+            manager.openGattServer(context, mockGattServerCallback, BluetoothDevice.TRANSPORT_LE)
 
         assertThat(gattServer).isNotNull()
 
@@ -167,19 +149,13 @@ class GattServerConnectWithoutScanTest {
     @Test
     @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_offload_api")
     fun serverOffloadCharacteristics() {
-        assumeTrue(
-            bluetoothAdapter.supportedGattOffloadCapabilities?.isServerOffloadSupported ?: false
-        )
+        assumeTrue(adapter.supportedGattOffloadCapabilities?.isServerOffloadSupported ?: false)
 
         advertiseWithBumble(OwnAddressType.RANDOM)
 
         val mockGattServerCallback = mock(BluetoothGattServerCallback::class.java)
         val gattServer =
-            bluetoothManager.openGattServer(
-                context,
-                mockGattServerCallback,
-                BluetoothDevice.TRANSPORT_AUTO,
-            )
+            manager.openGattServer(context, mockGattServerCallback, BluetoothDevice.TRANSPORT_AUTO)
         assertThat(gattServer).isNotNull()
 
         val serviceCaptor = ArgumentCaptor.forClass(BluetoothGattService::class.java)
@@ -194,7 +170,7 @@ class GattServerConnectWithoutScanTest {
 
         try {
             val device =
-                bluetoothAdapter.getRemoteLeDevice(
+                adapter.getRemoteLeDevice(
                     Utils.BUMBLE_RANDOM_ADDRESS,
                     BluetoothDevice.ADDRESS_TYPE_RANDOM,
                 )
@@ -237,19 +213,13 @@ class GattServerConnectWithoutScanTest {
     @Test
     @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_offload_api")
     fun serverUnoffloadCharacteristics() {
-        assumeTrue(
-            bluetoothAdapter.supportedGattOffloadCapabilities?.isServerOffloadSupported ?: false
-        )
+        assumeTrue(adapter.supportedGattOffloadCapabilities?.isServerOffloadSupported ?: false)
 
         advertiseWithBumble(OwnAddressType.RANDOM)
 
         val mockGattServerCallback = mock(BluetoothGattServerCallback::class.java)
         val gattServer =
-            bluetoothManager.openGattServer(
-                context,
-                mockGattServerCallback,
-                BluetoothDevice.TRANSPORT_AUTO,
-            )
+            manager.openGattServer(context, mockGattServerCallback, BluetoothDevice.TRANSPORT_AUTO)
         assertThat(gattServer).isNotNull()
 
         val serviceCaptor = ArgumentCaptor.forClass(BluetoothGattService::class.java)
@@ -264,7 +234,7 @@ class GattServerConnectWithoutScanTest {
 
         try {
             val device =
-                bluetoothAdapter.getRemoteLeDevice(
+                adapter.getRemoteLeDevice(
                     Utils.BUMBLE_RANDOM_ADDRESS,
                     BluetoothDevice.ADDRESS_TYPE_RANDOM,
                 )
@@ -311,19 +281,13 @@ class GattServerConnectWithoutScanTest {
     @Test
     @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_offload_api")
     fun serverUnoffloadCharacteristics_autoClose() {
-        assumeTrue(
-            bluetoothAdapter.supportedGattOffloadCapabilities?.isServerOffloadSupported ?: false
-        )
+        assumeTrue(adapter.supportedGattOffloadCapabilities?.isServerOffloadSupported ?: false)
 
         advertiseWithBumble(OwnAddressType.RANDOM)
 
         val mockGattServerCallback = mock(BluetoothGattServerCallback::class.java)
         val gattServer =
-            bluetoothManager.openGattServer(
-                context,
-                mockGattServerCallback,
-                BluetoothDevice.TRANSPORT_AUTO,
-            )
+            manager.openGattServer(context, mockGattServerCallback, BluetoothDevice.TRANSPORT_AUTO)
         assertThat(gattServer).isNotNull()
 
         val serviceCaptor = ArgumentCaptor.forClass(BluetoothGattService::class.java)
@@ -339,7 +303,7 @@ class GattServerConnectWithoutScanTest {
         var sessionId = GattOffloadSession.OFFLOAD_SESSION_ID_UNKNOWN
         try {
             val device =
-                bluetoothAdapter.getRemoteLeDevice(
+                adapter.getRemoteLeDevice(
                     Utils.BUMBLE_RANDOM_ADDRESS,
                     BluetoothDevice.ADDRESS_TYPE_RANDOM,
                 )

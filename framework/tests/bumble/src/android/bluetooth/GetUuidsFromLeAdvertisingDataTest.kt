@@ -73,7 +73,6 @@ class GetUuidsFromLeAdvertisingDataTest {
     @Mock private lateinit var receiver: BroadcastReceiver
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
 
     private lateinit var inOrder: InOrder
     private lateinit var randomAddressBumbleDevice: BluetoothDevice

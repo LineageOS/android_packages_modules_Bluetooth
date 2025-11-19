@@ -19,11 +19,11 @@ package android.bluetooth.pairing
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothAdapter.OobDataCallback
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
 import android.bluetooth.OobData
 import android.bluetooth.PandoraDevice
 import android.bluetooth.StreamObserverSpliterator
 import android.bluetooth.Utils
+import android.bluetooth.adapter
 import android.bluetooth.cts.EnableBluetoothRule
 import android.bluetooth.pairing.utils.IntentReceiver
 import android.bluetooth.pairing.utils.TestUtil
@@ -62,8 +62,6 @@ class OobPairingTest {
     @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val adapter: BluetoothAdapter =
-        context.getSystemService(BluetoothManager::class.java).adapter
     private lateinit var device: BluetoothDevice
     private lateinit var remoteOobData: OobDataResponse
     private lateinit var dutAddr: String
