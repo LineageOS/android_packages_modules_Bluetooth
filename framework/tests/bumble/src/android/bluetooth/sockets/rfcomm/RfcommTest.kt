@@ -36,7 +36,7 @@ import android.bluetooth.BluetoothSocket
 import android.bluetooth.BluetoothSocketSettings
 import android.bluetooth.Host
 import android.bluetooth.PandoraDevice
-import android.bluetooth.Utils
+import android.bluetooth.setupIntentLogger
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -145,7 +145,7 @@ class RfcommTest {
                 addAction(ACTION_STATE_CHANGED)
             }
         context.registerReceiver(receiver, filter)
-        Utils.setupIntentLogger(TAG, receiver)
+        receiver.setupIntentLogger(TAG)
 
         bumbleDevice = bumble.remoteDevice
         host = Host(context)

@@ -36,6 +36,7 @@ import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.PandoraDevice
 import android.bluetooth.StreamObserverSpliterator
 import android.bluetooth.Utils
+import android.bluetooth.setupIntentLogger
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -136,7 +137,7 @@ class HidHeadTrackerTest {
             }
 
         context.registerReceiver(receiver, filter)
-        Utils.setupIntentLogger(TAG, receiver)
+        receiver.setupIntentLogger(TAG)
     }
 
     @After

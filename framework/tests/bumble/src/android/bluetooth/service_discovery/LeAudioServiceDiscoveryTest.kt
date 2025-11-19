@@ -22,6 +22,7 @@ import android.bluetooth.BluetoothUuid
 import android.bluetooth.PandoraDevice
 import android.bluetooth.Utils
 import android.bluetooth.VirtualOnly
+import android.bluetooth.setupIntentLogger
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -123,7 +124,7 @@ class LeAudioServiceDiscoveryTest {
             }
 
         context.registerReceiver(receiver, filter)
-        Utils.setupIntentLogger(TAG, receiver)
+        receiver.setupIntentLogger(TAG)
     }
 
     @After

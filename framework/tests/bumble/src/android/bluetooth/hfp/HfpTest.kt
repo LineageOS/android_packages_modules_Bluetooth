@@ -45,7 +45,7 @@ import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.bluetooth.BluetoothProfile.STATE_DISCONNECTING
 import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.PandoraDevice
-import android.bluetooth.Utils
+import android.bluetooth.setupIntentLogger
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.bluetooth.toAddressBytes
 import android.content.BroadcastReceiver
@@ -128,7 +128,7 @@ class HfpTest {
                 addAction(BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED)
             }
         targetContext.registerReceiver(receiver, filter)
-        Utils.setupIntentLogger(TAG, receiver)
+        receiver.setupIntentLogger(TAG)
 
         hfpService = connectToProfile(BluetoothProfile.HEADSET) as BluetoothHeadset
         a2dpService = connectToProfile(BluetoothProfile.A2DP) as BluetoothA2dp

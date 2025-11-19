@@ -74,7 +74,7 @@ class DeviceDiscoveryTest {
                 addAction(ACTION_FOUND)
             }
         context.registerReceiver(receiver, filter)
-        Utils.setupIntentLogger(TAG, receiver)
+        receiver.setupIntentLogger(TAG)
     }
 
     @After
