@@ -46,7 +46,11 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import pandora.HostProto.*
+import pandora.HostProto.AdvertiseRequest
+import pandora.HostProto.ConnectLERequest
+import pandora.HostProto.OwnAddressType
+import pandora.HostProto.ScanRequest
+import pandora.HostProto.ScanningResponse
 import pandora.OobProto.OobDataRequest
 import pandora.OobProto.OobDataResponse
 import pandora.SecurityProto.LESecurityLevel

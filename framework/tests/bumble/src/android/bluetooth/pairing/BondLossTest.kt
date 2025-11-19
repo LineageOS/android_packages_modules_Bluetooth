@@ -16,8 +16,17 @@
 
 package android.bluetooth.pairing
 
-import android.bluetooth.*
+import android.bluetooth.BluetoothA2dp
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothHeadset
+import android.bluetooth.BluetoothHidHost
+import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothStatusCodes
+import android.bluetooth.PandoraDevice
+import android.bluetooth.StreamObserverSpliterator
+import android.bluetooth.adapter
 import android.bluetooth.test_utils.EnableBluetoothRule
+import android.bluetooth.toAddressBytes
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -54,8 +63,15 @@ import org.mockito.Mockito.verifyNoMoreInteractions
 import org.mockito.MockitoAnnotations
 import org.mockito.hamcrest.MockitoHamcrest
 import org.mockito.kotlin.whenever
-import pandora.HostProto.*
-import pandora.SecurityProto.*
+import pandora.HostProto.ConnectRequest
+import pandora.HostProto.ConnectabilityMode
+import pandora.HostProto.SetConnectabilityModeRequest
+import pandora.SecurityProto.DeleteBondRequest
+import pandora.SecurityProto.PairingEvent
+import pandora.SecurityProto.PairingEventAnswer
+import pandora.SecurityProto.SecureRequest
+import pandora.SecurityProto.SecureResponse
+import pandora.SecurityProto.SecurityLevel
 
 @RunWith(AndroidJUnit4::class)
 class BondLossTest {
