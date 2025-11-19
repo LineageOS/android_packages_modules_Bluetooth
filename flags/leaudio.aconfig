@@ -463,6 +463,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_bass_read_characteristics_after_encryption"
+    namespace: "bluetooth"
+    description: "Read Bass characteristics after encryption is established"
+    bug: "459915166"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_over_hdt_phy_api"
     is_exported: true
     namespace: "bluetooth"
