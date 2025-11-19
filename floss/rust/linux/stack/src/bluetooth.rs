@@ -862,7 +862,7 @@ impl Bluetooth {
 
         // TODO: Determine why a callback isn't invoked to do this.
         remote_device.properties.insert(property_type, property.clone());
-        self.intf.lock().unwrap().set_remote_device_property(&mut device.address.clone(), property);
+        self.intf.lock().unwrap().set_remote_device_property(device.address, property);
         Ok(())
     }
 
@@ -2481,7 +2481,7 @@ impl IBluetooth for Bluetooth {
         metrics::bond_create_attempt(address, device_type.clone());
 
         self.active_pairing_address = Some(address);
-        let status = self.intf.lock().unwrap().create_bond(&address, transport);
+        let status = self.intf.lock().unwrap().create_bond(address, transport);
 
         if status != 0 {
             metrics::bond_state_changed(
@@ -2511,7 +2511,7 @@ impl IBluetooth for Bluetooth {
             );
         }
 
-        self.intf.lock().unwrap().cancel_bond(&device.address) == 0
+        self.intf.lock().unwrap().cancel_bond(device.address) == 0
     }
 
     fn remove_bond(&mut self, device: BluetoothDevice) -> bool {
@@ -2523,7 +2523,7 @@ impl IBluetooth for Bluetooth {
             warn!("Device {} is also cancelling the bond.", DisplayAddress(&address));
         }
 
-        let status = self.intf.lock().unwrap().remove_bond(&address);
+        let status = self.intf.lock().unwrap().remove_bond(address);
 
         if status != 0 {
             return false;
@@ -2564,7 +2564,7 @@ impl IBluetooth for Bluetooth {
         let mut btpin = BtPinCode { pin: array_utils::to_sized_array(&pin_code) };
 
         self.intf.lock().unwrap().pin_reply(
-            &device.address,
+            device.address,
             accept as u8,
             pin_code.len() as u8,
             &mut btpin,
@@ -2582,7 +2582,7 @@ impl IBluetooth for Bluetooth {
         let passkey = u32::from_ne_bytes(tmp);
 
         self.intf.lock().unwrap().ssp_reply(
-            &device.address,
+            device.address,
             BtSspVariant::PasskeyEntry,
             accept as u8,
             passkey,
@@ -2591,7 +2591,7 @@ impl IBluetooth for Bluetooth {
 
     fn set_pairing_confirmation(&self, device: BluetoothDevice, accept: bool) -> bool {
         self.intf.lock().unwrap().ssp_reply(
-            &device.address,
+            device.address,
             BtSspVariant::PasskeyConfirmation,
             accept as u8,
             0,
@@ -2690,7 +2690,7 @@ impl IBluetooth for Bluetooth {
     fn get_connection_state(&self, device: BluetoothDevice) -> BtConnectionState {
         // The underlying api adds whether this is ENCRYPTED_BREDR or ENCRYPTED_LE.
         // As long as it is non-zero, it is connected.
-        self.intf.lock().unwrap().get_connection_state(&device.address)
+        self.intf.lock().unwrap().get_connection_state(device.address)
     }
 
     fn get_profile_connection_state(&self, profile: Uuid) -> ProfileConnectionState {
@@ -2735,15 +2735,12 @@ impl IBluetooth for Bluetooth {
             _ => device.acl_reported_transport,
         };
 
-        self.intf.lock().unwrap().get_remote_services(&mut device.info.address.clone(), transport)
-            == 0
+        self.intf.lock().unwrap().get_remote_services(device.info.address, transport) == 0
     }
 
-    fn sdp_search(&self, mut device: BluetoothDevice, uuid: Uuid) -> bool {
-        if let Some(sdp) = self.sdp.as_ref() {
-            return sdp.sdp_search(&mut device.address, &uuid) == BtStatus::Success;
-        }
-        false
+    fn sdp_search(&self, device: BluetoothDevice, uuid: Uuid) -> bool {
+        let Some(sdp) = self.sdp.as_ref() else { return false };
+        sdp.sdp_search(device.address, &uuid) == BtStatus::Success
     }
 
     fn create_sdp_record(&mut self, sdp_record: BtSdpRecord) -> bool {
