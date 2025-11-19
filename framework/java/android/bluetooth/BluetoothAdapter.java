@@ -5165,7 +5165,6 @@ public final class BluetoothAdapter {
     /**
      * Callbacks for receiving response of HCI Vendor-Specific Commands and Vendor-Specific Events
      * that arise from the controller.
-     *
      */
     @Hide
     @SystemApi
@@ -5362,7 +5361,7 @@ public final class BluetoothAdapter {
                     throw new IllegalArgumentException("Only one registration allowed");
                 }
                 mHciVendorSpecificCallbackRegistration.set(
-                        callback, eventCodeSet, Collections.emptySet(),executor);
+                        callback, eventCodeSet, Collections.emptySet(), executor);
                 try {
                     mHciVendorSpecificCallbackRegistration.registerToService(
                             mService, mHciVendorSpecificCallbackStub);

@@ -41,8 +41,10 @@ class BluetoothHciVendorSpecificDispatcher {
         final Set<Integer> mAclHandles;
         final UUID mUuid;
 
-        Registration(IBluetoothHciVendorSpecificCallback callback, Set<Integer> eventCodes,
-        Set<Integer> aclHandles) {
+        Registration(
+                IBluetoothHciVendorSpecificCallback callback,
+                Set<Integer> eventCodes,
+                Set<Integer> aclHandles) {
             mCallback = callback;
             mEventCodes = eventCodes;
             mAclHandles = aclHandles;
@@ -71,7 +73,9 @@ class BluetoothHciVendorSpecificDispatcher {
         }
     }
 
-    void register(IBluetoothHciVendorSpecificCallback callback, Set<Integer> eventCodes,
+    void register(
+            IBluetoothHciVendorSpecificCallback callback,
+            Set<Integer> eventCodes,
             Set<Integer> aclHandles) {
         IBinder binder = callback.asBinder();
         synchronized (mRegistrations) {
@@ -132,13 +136,13 @@ class BluetoothHciVendorSpecificDispatcher {
         }
     }
 
-     void broadcastAclEvent(
+    void broadcastAclEvent(
             int handle,
             RemoteExceptionIgnoringConsumer<IBluetoothHciVendorSpecificCallback> action) {
         synchronized (mRegistrations) {
             mRegistrations.values().stream()
-            .filter((r) -> r.mAclHandles.contains(handle))
-            .forEach((r) -> action.accept(r.mCallback));
+                    .filter((r) -> r.mAclHandles.contains(handle))
+                    .forEach((r) -> action.accept(r.mCallback));
         }
     }
 }
