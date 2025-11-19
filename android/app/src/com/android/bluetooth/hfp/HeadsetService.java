@@ -31,6 +31,7 @@ import android.annotation.NonNull;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
@@ -822,6 +823,8 @@ public class HeadsetService extends ConnectableProfile {
             // TODO(b/79660380): Workaround in case voice recognition was not terminated properly
             if (mVoiceRecognitionStarted) {
                 boolean status = stopVoiceRecognition(mActiveDevice);
+                MetricsLogger.getInstance()
+                        .count(BluetoothProtoEnums.HFP_START_VOICE_RECOGNITION_ALREADY_STARTED, 1);
                 Log.w(
                         TAG,
                         "startVoiceRecognition: voice recognition is still active, just called "
@@ -1425,6 +1428,11 @@ public class HeadsetService extends ConnectableProfile {
             // TODO(b/79660380): Workaround in case voice recognition was not terminated properly
             if (mVoiceRecognitionStarted) {
                 boolean status = stopVoiceRecognition(mActiveDevice);
+                MetricsLogger.getInstance()
+                        .count(
+                                BluetoothProtoEnums
+                                        .HFP_START_SCO_USING_VIRTUAL_VOICE_CALL_ALREADY_STARTED,
+                                1);
                 Log.w(
                         TAG,
                         "startScoUsingVirtualVoiceCall: voice recognition is still active, "
@@ -1465,7 +1473,6 @@ public class HeadsetService extends ConnectableProfile {
                                 + " audio is enabled, not disconnecting audio, active device is "
                                     + mActiveDevice);
                 }
-
             }
             if (mActiveDevice == null) {
                 Log.w(TAG, "startScoUsingVirtualVoiceCall: no active device");
@@ -1655,6 +1662,11 @@ public class HeadsetService extends ConnectableProfile {
             // TODO(b/79660380): Workaround in case voice recognition was not terminated properly
             if (mVoiceRecognitionStarted) {
                 boolean status = stopVoiceRecognition(mActiveDevice);
+                MetricsLogger.getInstance()
+                        .count(
+                                BluetoothProtoEnums
+                                        .HFP_START_VOICE_RECOGNITION_BY_HEADSET_ALREADY_STARTED,
+                                1);
                 Log.w(
                         TAG,
                         "startVoiceRecognitionByHeadset: voice recognition is still active, "
