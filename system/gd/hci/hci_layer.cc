@@ -158,6 +158,7 @@ struct HciLayer::impl {
   }
 
   ~impl() {
+    handler_ = nullptr;
     incoming_acl_buffer_.Clear();
     incoming_sco_buffer_.Clear();
     incoming_iso_buffer_.Clear();
@@ -234,6 +235,12 @@ struct HciLayer::impl {
     log::assert_that(response_view.IsValid(), "assert failed: response_view.IsValid()");
     command_credits_ = response_view.GetNumHciCommandPackets();
     OpCode op_code = response_view.GetCommandOpCode();
+    if (handler_ == nullptr) {
+      log::warn("Ignoring command response {} for opcode {} because stack has been shutdown",
+                EventCodeText(event.GetEventCode()), OpCodeText(op_code));
+      return;
+    }
+
     if (op_code == OpCode::NONE) {
       send_next_command();
       return;
