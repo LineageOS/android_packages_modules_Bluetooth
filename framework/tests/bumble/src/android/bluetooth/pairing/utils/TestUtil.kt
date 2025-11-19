@@ -88,8 +88,8 @@ private constructor(
      *
      * @param profile The profile to get the proxy for
      * @return The profile proxy
-     * @throws RuntimeException if mProfileServiceListener || mAdapter is null (passed during
-     *   instance creation)
+     * @throws RuntimeException if profileServiceListener || adapter is null (passed during instance
+     *   creation)
      */
     fun getProfileProxy(profile: Int): BluetoothProfile {
         if (profileServiceListener == null || adapter == null) {

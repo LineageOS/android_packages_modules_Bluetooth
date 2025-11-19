@@ -201,8 +201,8 @@ class IntentReceiver private constructor(builder: Builder) {
     }
 
     /**
-     * Registers the latest intent filter which is at the deque.peekFirst() Note: The mDqBuilder
-     * must not be empty here.
+     * Registers the latest intent filter which is at the deque.peekFirst() Note: The dqBuilder must
+     * not be empty here.
      */
     private fun registerReceiver() {
         /* ArrayDeque should not be empty at all while registering a receiver */

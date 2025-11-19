@@ -55,17 +55,14 @@ import org.junit.runner.RunWith
 @RunWith(TestParameterInjector::class)
 @ExperimentalCoroutinesApi
 class OppSendFileTest {
-    val mInstrumentation = InstrumentationRegistry.getInstrumentation()
-    val mContext = mInstrumentation.targetContext
-    val mDevice
-        get() = UiDevice.getInstance(mInstrumentation)
 
     @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
+    val instrumentation = InstrumentationRegistry.getInstrumentation()
 
     @get:Rule(order = 1)
     val permissionRule =
         AdoptShellPermissionsRule(
-            mInstrumentation.uiAutomation,
+            instrumentation.uiAutomation,
             Manifest.permission.BLUETOOTH_PRIVILEGED,
             Manifest.permission.CREATE_USERS,
             Manifest.permission.INTERACT_ACROSS_USERS,
@@ -75,33 +72,35 @@ class OppSendFileTest {
 
     @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
-    val mRemoteDevice
+    val context = instrumentation.targetContext
+    val device
+        get() = UiDevice.getInstance(instrumentation)
+
+    val remoteDevice
         get() = bumble.remoteDevice
 
-    lateinit var mHost: Host
+    lateinit var host: Host
 
     @Before
     fun setUp() {
-        mHost = Host(mContext)
+        host = Host(context)
         navigateToUnlockedHomeScreen()
-        adapter.bondedDevices.forEach(mHost::removeBondAndVerify)
-        mHost.createBondAndVerify(mRemoteDevice)
+        adapter.bondedDevices.forEach(host::removeBondAndVerify)
+        host.createBondAndVerify(remoteDevice)
     }
 
     private fun navigateToUnlockedHomeScreen() {
-        val keyguardManager: KeyguardManager =
-            mContext.getSystemService(KeyguardManager::class.java)
+        val keyguardManager: KeyguardManager = context.getSystemService(KeyguardManager::class.java)
         if (keyguardManager.isKeyguardLocked) {
             dismissKeyguard()
         }
-        mDevice.pressHome()
+        device.pressHome()
     }
 
     private fun dismissKeyguard() {
-        val keyguardManager: KeyguardManager =
-            mContext.getSystemService(KeyguardManager::class.java)
+        val keyguardManager: KeyguardManager = context.getSystemService(KeyguardManager::class.java)
         retryUntil(condition = { !keyguardManager.isKeyguardLocked }) {
-            mDevice.executeShellCommand("wm dismiss-keyguard")
+            device.executeShellCommand("wm dismiss-keyguard")
         }
     }
 
@@ -125,9 +124,9 @@ class OppSendFileTest {
 
     @After
     fun tearDown() {
-        mRemoteDevice.removeBond()
-        mDevice.pressBack()
-        mDevice.pressHome()
+        remoteDevice.removeBond()
+        device.pressBack()
+        device.pressHome()
     }
 
     @Test
@@ -213,17 +212,17 @@ class OppSendFileTest {
     }
 
     private fun startIntentAndAssertDevicePicker(intent: Intent, shouldSucceed: Boolean) {
-        mContext.startActivity(intent)
+        context.startActivity(intent)
 
         val devicePickerText =
-            mDevice.wait(Until.findObject(By.text("Available devices")), TIMEOUT_MS)
+            device.wait(Until.findObject(By.text("Available devices")), TIMEOUT_MS)
         if (shouldSucceed) {
             assertThat(devicePickerText).isNotNull()
 
-            val name = mRemoteDevice.name
+            val name = remoteDevice.name
 
             val shareToBumbleButton =
-                mDevice.wait(Until.findObject(By.textStartsWith(name)), ASSERT_TIMEOUT_MS)
+                device.wait(Until.findObject(By.textStartsWith(name)), ASSERT_TIMEOUT_MS)
 
             assertThat(shareToBumbleButton).isNotNull()
         } else {
@@ -264,7 +263,7 @@ class OppSendFileTest {
     }
 
     private fun List<Uri>.revokePermissions() = forEach {
-        mContext.revokeUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        context.revokeUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
 
     companion object {

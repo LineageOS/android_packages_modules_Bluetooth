@@ -63,7 +63,7 @@ class PairingDualModeTest {
 
     @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
-    @Mock private lateinit var mProfileServiceListener: BluetoothProfile.ServiceListener
+    @Mock private lateinit var profileServiceListener: BluetoothProfile.ServiceListener
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
@@ -78,7 +78,7 @@ class PairingDualModeTest {
         MockitoAnnotations.openMocks(this)
         util =
             TestUtil.Builder(context)
-                .setProfileServiceListener(mProfileServiceListener)
+                .setProfileServiceListener(profileServiceListener)
                 .setBluetoothAdapter(adapter)
                 .build()
         // switch the bumble devices to avoid profile connection interference

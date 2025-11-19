@@ -658,7 +658,7 @@ class HidHostTest {
     @Test
     @Throws(Exception::class)
     fun hidSendDataTest() {
-        val mHidDataEventObserver: Iterator<ReportDataEvent> =
+        val hidDataEventObserver: Iterator<ReportDataEvent> =
             hidBlockingStub
                 .withDeadlineAfter(PROTO_MODE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
                 .onSendHostData(Empty.getDefaultInstance())
@@ -669,11 +669,10 @@ class HidHostTest {
         val Data = "010203040506070809"
         assertThat(hidService.sendData(device, Data)).isTrue()
 
-        if (mHidDataEventObserver.hasNext()) {
-            val hidDataEvent: ReportDataEvent = mHidDataEventObserver.next()
-            assertThat(hidDataEvent.getReportData()).isEqualTo(Data)
-            assertThat(hidDataEvent.getReportTypeValue())
-                .isEqualTo(BluetoothHidHost.REPORT_TYPE_OUTPUT)
+        if (hidDataEventObserver.hasNext()) {
+            val hidDataEvent: ReportDataEvent = hidDataEventObserver.next()
+            assertThat(hidDataEvent.reportData).isEqualTo(Data)
+            assertThat(hidDataEvent.reportTypeValue).isEqualTo(BluetoothHidHost.REPORT_TYPE_OUTPUT)
         }
     }
 
@@ -764,7 +763,7 @@ class HidHostTest {
             verifyConnectionState(device, equalTo(TRANSPORT_BREDR), equalTo(STATE_CONNECTING))
             verifyConnectionState(device, equalTo(TRANSPORT_BREDR), equalTo(STATE_CONNECTED))
         } else {
-            assertThat(device.isConnected()).isFalse()
+            assertThat(device.isConnected).isFalse()
         }
     }
 
