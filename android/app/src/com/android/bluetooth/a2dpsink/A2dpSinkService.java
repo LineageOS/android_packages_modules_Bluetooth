@@ -335,7 +335,12 @@ public class A2dpSinkService extends ConnectableProfile {
     }
 
     void onAudioStateChangedFromNative(BluetoothDevice device, int state) {
-        Log.d(TAG, "onAudioStateChangedFromNative(device=" + device + ", state=" + state + ")");
+        Log.d(
+                TAG,
+                "onAudioStateChangedFromNative("
+                        + ("device=" + device)
+                        + (", state=" + A2dpSinkNativeInterface.audioStateToString(state))
+                        + ")");
         if (device == null) {
             return;
         }
@@ -346,7 +351,7 @@ public class A2dpSinkService extends ConnectableProfile {
                     TAG,
                     "onAudioStateChangedFromNative("
                             + ("device=" + device)
-                            + (", state=" + state)
+                            + (", state=" + A2dpSinkNativeInterface.audioStateToString(state))
                             + "): Not connected");
             return;
         }
