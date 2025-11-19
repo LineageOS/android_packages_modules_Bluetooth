@@ -53,7 +53,6 @@ import android.os.SystemClock;
 import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.os.UserManager;
-import android.permission.PermissionManager;
 import android.provider.DeviceConfig;
 import android.provider.Telephony;
 import android.util.Log;
@@ -499,32 +498,6 @@ public final class Utils {
     public static boolean callerIsSystemOrActiveOrManagedUser(
             Context context, String tag, String method) {
         return checkCallerIsSystemOrActiveOrManagedUser(context, tag + "." + method + "()");
-    }
-
-    /** Checks that calling process has ACCESS_FINE_LOCATION and OP_FINE_LOCATION is allowed */
-    public static boolean checkCallerHasFineLocation(
-            Context context, AttributionSource source, UserHandle userHandle) {
-        if (Util.blockedByLocationOff(context, userHandle)) {
-            Log.e(TAG, "Permission denial: Location is off.");
-            return false;
-        }
-
-        AttributionSource currentAttribution =
-                new AttributionSource.Builder(context.getAttributionSource())
-                        .setNext(requireNonNull(source))
-                        .build();
-        PermissionManager pm = context.getSystemService(PermissionManager.class);
-        if (pm == null) {
-            return false;
-        }
-        if (pm.checkPermissionForDataDeliveryFromDataSource(
-                        ACCESS_FINE_LOCATION, currentAttribution, "Bluetooth location check")
-                == PERMISSION_GRANTED) {
-            return true;
-        }
-
-        Log.e(TAG, "Need ACCESS_FINE_LOCATION permission for " + currentAttribution);
-        return false;
     }
 
     /** Converts {@code milliseconds} to unit. Each unit is 0.625 millisecond. */

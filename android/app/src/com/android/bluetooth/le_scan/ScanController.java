@@ -1064,7 +1064,7 @@ public class ScanController {
         if (!hasDisavowedLocation) {
             if (isQApp) {
                 hasLocationPermission =
-                        Utils.checkCallerHasFineLocation(mAdapterService, source, userHandle);
+                        Util.checkCallerHasFineLocation(mAdapterService, source, userHandle);
             } else {
                 hasLocationPermission =
                         Util.checkCallerHasCoarseOrFineLocation(
@@ -1174,7 +1174,7 @@ public class ScanController {
             try {
                 if (checkCallerTargetSdk(mAdapterService, source, Build.VERSION_CODES.Q)) {
                     app.setHasLocationPermission(
-                            Utils.checkCallerHasFineLocation(
+                            Util.checkCallerHasFineLocation(
                                     mAdapterService, source, app.getUserHandle()));
                 } else {
                     app.setHasLocationPermission(
