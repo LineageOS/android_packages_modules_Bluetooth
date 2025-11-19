@@ -417,9 +417,10 @@ public class GattService extends ProfileService {
         } else {
             app.setId(clientIf);
             var message = "Unregistering client " + app + ", callback=" + callback;
-            Runnable onDeathAction =
-                    () -> unregisterClient(callback, getAttributionSource(), REASON_BINDER_DIED);
-            app.linkToDeath(new ActionOnDeathRecipient(TAG, message, onDeathAction));
+            var source = getAttributionSource();
+            var died = REASON_BINDER_DIED;
+            Runnable action = () -> doOnGattThread(() -> unregisterClient(callback, source, died));
+            app.linkToDeath(new ActionOnDeathRecipient(TAG, message, action));
         }
         callbackToApp(() -> callback.onClientRegistered(status));
     }
