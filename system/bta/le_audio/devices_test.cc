@@ -23,6 +23,7 @@
 #include <log/log.h>
 
 #include "bta/test/common/bta_gatt_api_mock.h"
+#include "btif_status.h"
 #include "btif_storage_mock.h"
 #include "btm_api_mock.h"
 #include "common/le_conn_params.h"
@@ -218,8 +219,7 @@ TEST_F(LeAudioDevicesTest, test_get_device_model_name_success) {
   std::shared_ptr<LeAudioDevice> device = devices_->GetByAddress(test_address_0);
   ASSERT_NE(nullptr, device);
   device->model_name_ = "Test";
-  ON_CALL(mock_btif_storage_, GetRemoteDeviceProperty(_, _))
-          .WillByDefault(Return(BT_STATUS_SUCCESS));
+  ON_CALL(mock_btif_storage_, GetRemoteDeviceProperty(_, _)).WillByDefault(Return(BtifStatus()));
   device->GetDeviceModelName();
   ASSERT_EQ("", device->model_name_);
 }
@@ -230,7 +230,8 @@ TEST_F(LeAudioDevicesTest, test_get_device_model_name_failed) {
   std::shared_ptr<LeAudioDevice> device = devices_->GetByAddress(test_address_0);
   ASSERT_NE(nullptr, device);
   device->model_name_ = "Test";
-  ON_CALL(mock_btif_storage_, GetRemoteDeviceProperty(_, _)).WillByDefault(Return(BT_STATUS_FAIL));
+  ON_CALL(mock_btif_storage_, GetRemoteDeviceProperty(_, _))
+          .WillByDefault(Return(BtifStatus(FAIL)));
   device->GetDeviceModelName();
   ASSERT_EQ("Test", device->model_name_);
 }

@@ -27,6 +27,7 @@
 
 #include "btif/include/btif_profile_storage.h"
 #include "btif/include/btif_storage.h"
+#include "btif_status.h"
 #include "test/common/mock_functions.h"
 
 // Original usings
@@ -95,18 +96,18 @@ namespace test {
 namespace mock {
 namespace btif_profile_storage {
 
-bt_status_t btif_storage_add_hid_device_info::return_value = BT_STATUS_SUCCESS;
+BtStatus btif_storage_add_hid_device_info::return_value = BtifStatus();
 bool btif_storage_get_hearing_aid_prop::return_value = false;
 std::vector<std::pair<RawAddress, uint8_t>> btif_storage_get_le_hid_devices::return_value = {};
 bool btif_storage_get_leaudio_has_features::return_value = false;
 bool btif_storage_get_leaudio_has_presets::return_value = false;
 std::vector<RawAddress> btif_storage_get_wake_capable_classic_hid_devices::return_value = {};
 bool btif_storage_is_pce_version_102::return_value = false;
-bt_status_t btif_storage_load_bonded_hid_info::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_storage_load_hidd::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_storage_remove_hid_info::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_storage_remove_hidd::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_storage_set_hidd::return_value = BT_STATUS_SUCCESS;
+BtStatus btif_storage_load_bonded_hid_info::return_value = BtifStatus();
+BtStatus btif_storage_load_hidd::return_value = BtifStatus();
+BtStatus btif_storage_remove_hid_info::return_value = BtifStatus();
+BtStatus btif_storage_remove_hidd::return_value = BtifStatus();
+BtStatus btif_storage_set_hidd::return_value = BtifStatus();
 
 }  // namespace btif_profile_storage
 }  // namespace mock
@@ -121,12 +122,11 @@ void btif_storage_add_hearing_aid(const bluetooth::asha::HearingDevice& dev_info
   inc_func_call_count(__func__);
   test::mock::btif_profile_storage::btif_storage_add_hearing_aid(dev_info);
 }
-bt_status_t btif_storage_add_hid_device_info(const AclLinkSpec& link_spec, uint16_t attr_mask,
-                                             uint8_t sub_class, uint8_t app_id, uint16_t vendor_id,
-                                             uint16_t product_id, uint16_t version,
-                                             uint8_t ctry_code, uint16_t ssr_max_latency,
-                                             uint16_t ssr_min_tout, uint16_t dl_len,
-                                             uint8_t* dsc_list) {
+BtStatus btif_storage_add_hid_device_info(const AclLinkSpec& link_spec, uint16_t attr_mask,
+                                          uint8_t sub_class, uint8_t app_id, uint16_t vendor_id,
+                                          uint16_t product_id, uint16_t version, uint8_t ctry_code,
+                                          uint16_t ssr_max_latency, uint16_t ssr_min_tout,
+                                          uint16_t dl_len, uint8_t* dsc_list) {
   inc_func_call_count(__func__);
   return test::mock::btif_profile_storage::btif_storage_add_hid_device_info(
           link_spec, attr_mask, sub_class, app_id, vendor_id, product_id, version, ctry_code,
@@ -201,7 +201,7 @@ void btif_storage_load_bonded_hearing_aids() {
   inc_func_call_count(__func__);
   test::mock::btif_profile_storage::btif_storage_load_bonded_hearing_aids();
 }
-bt_status_t btif_storage_load_bonded_hid_info(void) {
+BtStatus btif_storage_load_bonded_hid_info(void) {
   inc_func_call_count(__func__);
   return test::mock::btif_profile_storage::btif_storage_load_bonded_hid_info();
 }
@@ -217,7 +217,7 @@ void btif_storage_load_bonded_volume_control_devices(void) {
   inc_func_call_count(__func__);
   test::mock::btif_profile_storage::btif_storage_load_bonded_volume_control_devices();
 }
-bt_status_t btif_storage_load_hidd(void) {
+BtStatus btif_storage_load_hidd(void) {
   inc_func_call_count(__func__);
   return test::mock::btif_profile_storage::btif_storage_load_hidd();
 }
@@ -233,11 +233,11 @@ void btif_storage_remove_hearing_aid(const RawAddress& address) {
   inc_func_call_count(__func__);
   test::mock::btif_profile_storage::btif_storage_remove_hearing_aid(address);
 }
-bt_status_t btif_storage_remove_hid_info(const AclLinkSpec& link_spec) {
+BtStatus btif_storage_remove_hid_info(const AclLinkSpec& link_spec) {
   inc_func_call_count(__func__);
   return test::mock::btif_profile_storage::btif_storage_remove_hid_info(link_spec);
 }
-bt_status_t btif_storage_remove_hidd(RawAddress* remote_bd_addr) {
+BtStatus btif_storage_remove_hidd(RawAddress* remote_bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::btif_profile_storage::btif_storage_remove_hidd(remote_bd_addr);
 }
@@ -254,7 +254,7 @@ void btif_storage_set_hearing_aid_acceptlist(const RawAddress& address, bool add
   test::mock::btif_profile_storage::btif_storage_set_hearing_aid_acceptlist(address,
                                                                             add_to_acceptlist);
 }
-bt_status_t btif_storage_set_hidd(const RawAddress& remote_bd_addr) {
+BtStatus btif_storage_set_hidd(const RawAddress& remote_bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::btif_profile_storage::btif_storage_set_hidd(remote_bd_addr);
 }

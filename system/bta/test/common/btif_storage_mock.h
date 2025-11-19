@@ -19,6 +19,7 @@
 #include <bluetooth/types/address.h>
 #include <gmock/gmock.h>
 
+#include "bt_status.h"
 #include "include/hardware/bluetooth.h"
 
 namespace bluetooth::asha {
@@ -51,8 +52,7 @@ public:
   virtual bool GetLeaudioHasPresets(const RawAddress& address, std::vector<uint8_t>& presets_bin,
                                     uint8_t& active_preset) = 0;
   virtual void RemoveLeaudioHas(const RawAddress& address) = 0;
-  virtual bt_status_t GetRemoteDeviceProperty(const RawAddress* address,
-                                              bt_property_t* property) = 0;
+  virtual BtStatus GetRemoteDeviceProperty(const RawAddress* address, bt_property_t* property) = 0;
 
   virtual bool GetHearingAidProp(const RawAddress& address, uint8_t* capabilities,
                                  uint64_t* hi_sync_id, uint16_t* render_delay,
@@ -95,7 +95,7 @@ public:
   MOCK_METHOD((void), SetLeaudioHasActivePreset, (const RawAddress& address, uint8_t active_preset),
               (override));
   MOCK_METHOD((void), RemoveLeaudioHas, (const RawAddress& address), (override));
-  MOCK_METHOD((bt_status_t), GetRemoteDeviceProperty,
+  MOCK_METHOD((BtStatus), GetRemoteDeviceProperty,
               (const RawAddress* address, bt_property_t* property), (override));
   MOCK_METHOD((bool), GetHearingAidProp,
               (const RawAddress& address, uint8_t* capabilities, uint64_t* hi_sync_id,
