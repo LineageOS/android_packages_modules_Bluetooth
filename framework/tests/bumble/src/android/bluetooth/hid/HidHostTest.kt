@@ -34,7 +34,6 @@ import android.bluetooth.BluetoothDevice.TRANSPORT_BREDR
 import android.bluetooth.BluetoothHeadset
 import android.bluetooth.BluetoothHidDevice
 import android.bluetooth.BluetoothHidHost
-import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
@@ -46,6 +45,7 @@ import android.bluetooth.BluetoothProfile.STATE_DISCONNECTING
 import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.PandoraDevice
 import android.bluetooth.VirtualOnly
+import android.bluetooth.adapter
 import android.bluetooth.cts.EnableBluetoothRule
 import android.bluetooth.toAddressBytes
 import android.content.BroadcastReceiver
@@ -116,8 +116,6 @@ class HidHostTest {
     private lateinit var hfpService: BluetoothHeadset
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val adapter: BluetoothAdapter =
-        context.getSystemService(BluetoothManager::class.java).adapter
     private lateinit var hidBlockingStub: HIDGrpc.HIDBlockingStub
     private var inOrder: InOrder? = null
     private var reportData = byteArrayOf()
@@ -660,7 +658,7 @@ class HidHostTest {
     @Test
     @Throws(Exception::class)
     fun hidSendDataTest() {
-        val mHidDataEventObserver: Iterator<ReportDataEvent> =
+        val hidDataEventObserver: Iterator<ReportDataEvent> =
             hidBlockingStub
                 .withDeadlineAfter(PROTO_MODE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
                 .onSendHostData(Empty.getDefaultInstance())
@@ -671,11 +669,10 @@ class HidHostTest {
         val Data = "010203040506070809"
         assertThat(hidService.sendData(device, Data)).isTrue()
 
-        if (mHidDataEventObserver.hasNext()) {
-            val hidDataEvent: ReportDataEvent = mHidDataEventObserver.next()
-            assertThat(hidDataEvent.getReportData()).isEqualTo(Data)
-            assertThat(hidDataEvent.getReportTypeValue())
-                .isEqualTo(BluetoothHidHost.REPORT_TYPE_OUTPUT)
+        if (hidDataEventObserver.hasNext()) {
+            val hidDataEvent: ReportDataEvent = hidDataEventObserver.next()
+            assertThat(hidDataEvent.reportData).isEqualTo(Data)
+            assertThat(hidDataEvent.reportTypeValue).isEqualTo(BluetoothHidHost.REPORT_TYPE_OUTPUT)
         }
     }
 
@@ -766,7 +763,7 @@ class HidHostTest {
             verifyConnectionState(device, equalTo(TRANSPORT_BREDR), equalTo(STATE_CONNECTING))
             verifyConnectionState(device, equalTo(TRANSPORT_BREDR), equalTo(STATE_CONNECTED))
         } else {
-            assertThat(device.isConnected()).isFalse()
+            assertThat(device.isConnected).isFalse()
         }
     }
 

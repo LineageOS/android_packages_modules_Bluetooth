@@ -17,7 +17,6 @@
 package android.bluetooth.hfp
 
 import android.bluetooth.BluetoothA2dp
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothDevice.ACTION_ACL_CONNECTED
 import android.bluetooth.BluetoothDevice.ACTION_ACL_DISCONNECTED
@@ -34,7 +33,6 @@ import android.bluetooth.BluetoothHeadset
 import android.bluetooth.BluetoothHeadset.STATE_AUDIO_CONNECTED
 import android.bluetooth.BluetoothHeadset.STATE_AUDIO_CONNECTING
 import android.bluetooth.BluetoothHeadset.STATE_AUDIO_DISCONNECTED
-import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
@@ -45,6 +43,7 @@ import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.bluetooth.BluetoothProfile.STATE_DISCONNECTING
 import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.PandoraDevice
+import android.bluetooth.adapter
 import android.bluetooth.setupIntentLogger
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.bluetooth.toAddressBytes
@@ -54,9 +53,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.Uri
 import android.util.Log
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
-import androidx.test.platform.app.InstrumentationRegistry
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
@@ -101,9 +100,7 @@ class HfpTest {
     @Mock private lateinit var receiver: BroadcastReceiver
     @Mock private lateinit var serviceListener: BluetoothProfile.ServiceListener
 
-    private val targetContext: Context = InstrumentationRegistry.getInstrumentation().targetContext
-    private val adapter: BluetoothAdapter =
-        targetContext.getSystemService(BluetoothManager::class.java).adapter
+    private val context = ApplicationProvider.getApplicationContext<Context>()
 
     private lateinit var hfBlockingStub: HFPGrpc.HFPBlockingStub
     private lateinit var bumbleDevice: BluetoothDevice
@@ -127,7 +124,7 @@ class HfpTest {
                 addAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED)
                 addAction(BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED)
             }
-        targetContext.registerReceiver(receiver, filter)
+        context.registerReceiver(receiver, filter)
         receiver.setupIntentLogger(TAG)
 
         hfpService = connectToProfile(BluetoothProfile.HEADSET) as BluetoothHeadset
@@ -179,7 +176,7 @@ class HfpTest {
     @After
     fun tearDown() {
         removeBond()
-        targetContext.unregisterReceiver(receiver)
+        context.unregisterReceiver(receiver)
     }
 
     @Test
@@ -538,7 +535,7 @@ class HfpTest {
         val address: Uri = Uri.fromParts("tel", TEST_PHONE_NUMBER, null)
         val intent =
             Intent(Intent.ACTION_CALL, address).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-        targetContext.startActivity(intent)
+        context.startActivity(intent)
         // Allow some time to launch call screen.
         Thread.sleep(300)
     }
@@ -580,7 +577,7 @@ class HfpTest {
     }
 
     private fun connectToProfile(profile: Int): BluetoothProfile {
-        adapter.getProfileProxy(targetContext, serviceListener, profile)
+        adapter.getProfileProxy(context, serviceListener, profile)
         val proxyCaptor = ArgumentCaptor.forClass(BluetoothProfile::class.java)
         verify(serviceListener, timeout(INTENT_TIMEOUT.toMillis()))
             .onServiceConnected(eq(profile), proxyCaptor.capture())

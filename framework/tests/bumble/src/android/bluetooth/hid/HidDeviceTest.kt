@@ -32,7 +32,6 @@ import android.bluetooth.BluetoothHidDevice
 import android.bluetooth.BluetoothHidDeviceAppQosSettings
 import android.bluetooth.BluetoothHidDeviceAppSdpSettings
 import android.bluetooth.BluetoothHidHost
-import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
@@ -42,6 +41,7 @@ import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.bluetooth.BluetoothProfile.STATE_DISCONNECTING
 import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.PandoraDevice
+import android.bluetooth.adapter
 import android.bluetooth.cts.EnableBluetoothRule
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -98,8 +98,6 @@ class HidDeviceTest {
     @Mock private lateinit var profileServiceListener: BluetoothProfile.ServiceListener
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val adapter: BluetoothAdapter =
-        context.getSystemService(BluetoothManager::class.java).adapter
 
     private lateinit var hidBlockingStub: HIDGrpc.HIDBlockingStub
     private lateinit var executor: ExecutorService

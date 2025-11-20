@@ -39,7 +39,6 @@ import android.bluetooth.BluetoothDevice.TRANSPORT_LE
 import android.bluetooth.BluetoothHeadset
 import android.bluetooth.BluetoothHidDevice
 import android.bluetooth.BluetoothHidHost
-import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
@@ -52,6 +51,7 @@ import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.BluetoothUuid
 import android.bluetooth.PandoraDevice
 import android.bluetooth.VirtualOnly
+import android.bluetooth.adapter
 import android.bluetooth.getParcelUuidArray
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.BroadcastReceiver
@@ -117,8 +117,6 @@ class HidHostDualModeTest {
     @Mock private lateinit var profileServiceListener: BluetoothProfile.ServiceListener
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val adapter: BluetoothAdapter =
-        context.getSystemService(BluetoothManager::class.java).adapter
     private lateinit var hidBlockingStub: HIDGrpc.HIDBlockingStub
     private lateinit var device: BluetoothDevice
     private lateinit var hidService: BluetoothHidHost

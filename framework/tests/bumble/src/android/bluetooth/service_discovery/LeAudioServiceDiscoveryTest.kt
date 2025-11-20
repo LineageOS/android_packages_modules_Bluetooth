@@ -17,11 +17,11 @@
 package android.bluetooth.service_discovery.pairing
 
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothUuid
 import android.bluetooth.PandoraDevice
 import android.bluetooth.Utils
 import android.bluetooth.VirtualOnly
+import android.bluetooth.adapter
 import android.bluetooth.setupIntentLogger
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.BroadcastReceiver
@@ -78,7 +78,6 @@ class LeAudioServiceDiscoveryTest {
     @Mock private lateinit var receiver: BroadcastReceiver
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
 
     private lateinit var inOrder: InOrder
     private lateinit var bumbleDevice: BluetoothDevice

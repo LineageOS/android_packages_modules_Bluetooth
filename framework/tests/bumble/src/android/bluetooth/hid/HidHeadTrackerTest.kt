@@ -24,7 +24,6 @@ import android.bluetooth.BluetoothDevice.TRANSPORT_LE
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothHeadset
 import android.bluetooth.BluetoothHidHost
-import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
@@ -36,6 +35,7 @@ import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.PandoraDevice
 import android.bluetooth.StreamObserverSpliterator
 import android.bluetooth.Utils
+import android.bluetooth.adapter
 import android.bluetooth.setupIntentLogger
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.BroadcastReceiver
@@ -103,7 +103,6 @@ class HidHeadTrackerTest {
 
     private val pairingEventStreamObserver = StreamObserverSpliterator<Void, PairingEvent>()
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
 
     private lateinit var hidBlockingStub: HIDGrpc.HIDBlockingStub
     private lateinit var inOrder: InOrder

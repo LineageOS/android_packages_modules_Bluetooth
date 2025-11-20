@@ -16,17 +16,26 @@
 
 package android.bluetooth.pairing
 
-import android.bluetooth.*
+import android.bluetooth.BluetoothA2dp
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothHeadset
+import android.bluetooth.BluetoothHidHost
+import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothStatusCodes
+import android.bluetooth.PandoraDevice
+import android.bluetooth.StreamObserverSpliterator
+import android.bluetooth.adapter
 import android.bluetooth.test_utils.EnableBluetoothRule
+import android.bluetooth.toAddressBytes
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.util.Log
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
@@ -54,8 +63,15 @@ import org.mockito.Mockito.verifyNoMoreInteractions
 import org.mockito.MockitoAnnotations
 import org.mockito.hamcrest.MockitoHamcrest
 import org.mockito.kotlin.whenever
-import pandora.HostProto.*
-import pandora.SecurityProto.*
+import pandora.HostProto.ConnectRequest
+import pandora.HostProto.ConnectabilityMode
+import pandora.HostProto.SetConnectabilityModeRequest
+import pandora.SecurityProto.DeleteBondRequest
+import pandora.SecurityProto.PairingEvent
+import pandora.SecurityProto.PairingEventAnswer
+import pandora.SecurityProto.SecureRequest
+import pandora.SecurityProto.SecureResponse
+import pandora.SecurityProto.SecurityLevel
 
 @RunWith(AndroidJUnit4::class)
 class BondLossTest {
@@ -70,9 +86,7 @@ class BondLossTest {
     @Mock private lateinit var receiver: BroadcastReceiver
     @Mock private lateinit var profileServiceListener: BluetoothProfile.ServiceListener
 
-    private val targetContext: Context = InstrumentationRegistry.getInstrumentation().targetContext
-    private val adapter: BluetoothAdapter =
-        targetContext.getSystemService(BluetoothManager::class.java).adapter
+    private val context = ApplicationProvider.getApplicationContext<Context>()
 
     private val actionRegistrationCounts = mutableMapOf<String, Int>()
     private val pairingEventStreamObserver = StreamObserverSpliterator<Void, PairingEvent>()
@@ -115,7 +129,7 @@ class BondLossTest {
             removeBond(bumbleDevice)
         }
         if (actionRegistrationCounts.isNotEmpty()) {
-            targetContext.unregisterReceiver(receiver)
+            context.unregisterReceiver(receiver)
             actionRegistrationCounts.clear()
         }
     }
@@ -384,7 +398,7 @@ class BondLossTest {
         }
         if (actionRegistrationCounts.isNotEmpty()) {
             Log.d(TAG, "registerIntentActions(): unregister ALL intents")
-            targetContext.unregisterReceiver(receiver)
+            context.unregisterReceiver(receiver)
         }
         for (action in actions) {
             actionRegistrationCounts[action] = actionRegistrationCounts.getOrDefault(action, 0) + 1
@@ -396,7 +410,7 @@ class BondLossTest {
                 Log.d(TAG, "registerIntentActions(): Registering action = ${it.key}")
                 filter.addAction(it.key)
             }
-        targetContext.registerReceiver(receiver, filter)
+        context.registerReceiver(receiver, filter)
     }
 
     private fun unregisterIntentActions(vararg actions: String) {
@@ -404,7 +418,7 @@ class BondLossTest {
             return
         }
         Log.d(TAG, "unregisterIntentActions(): unregister ALL intents")
-        targetContext.unregisterReceiver(receiver)
+        context.unregisterReceiver(receiver)
         for (action in actions) {
             if (!actionRegistrationCounts.containsKey(action)) {
                 continue
@@ -422,12 +436,12 @@ class BondLossTest {
                     Log.d(TAG, "unregisterIntentActions(): Registering action = ${it.key}")
                     filter.addAction(it.key)
                 }
-            targetContext.registerReceiver(receiver, filter)
+            context.registerReceiver(receiver, filter)
         }
     }
 
     private fun getProfileProxy(profile: Int): BluetoothProfile {
-        adapter.getProfileProxy(targetContext, profileServiceListener, profile)
+        adapter.getProfileProxy(context, profileServiceListener, profile)
         val proxyCaptor = ArgumentCaptor.forClass(BluetoothProfile::class.java)
         verify(profileServiceListener, timeout(BOND_INTENT_TIMEOUT.toMillis()))
             .onServiceConnected(eq(profile), proxyCaptor.capture())
