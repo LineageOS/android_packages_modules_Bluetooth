@@ -1256,7 +1256,9 @@ public class AdapterService extends Service {
     }
 
     private void startScanController() {
-        Log.i(TAG, "startScanController()");
+        Instant start = Instant.now();
+        var header = "startScanController(): ";
+        Log.i(TAG, header + "Starting…");
         mScanController =
                 new ScanController(
                         this,
@@ -1264,15 +1266,21 @@ public class AdapterService extends Service {
                         mPeriodicScanNativeInterface,
                         mCompanionDeviceManager);
         mNativeInterface.enable(mLocalName);
+        Instant end = Instant.now();
+        Log.i(TAG, header + "Completed in " + Duration.between(start, end).toMillis() + "ms");
     }
 
     private void startGattProfileService() {
-        Log.i(TAG, "startGattProfileService()");
+        Instant start = Instant.now();
+        var header = "startGattProfileService(): ";
+        Log.i(TAG, header + "Starting…");
         constructProfile(BluetoothProfile.GATT);
         mStartedProfiles.put(BluetoothProfile.GATT, mGattService);
         addProfile(mGattService);
         mGattService.setAvailable(true);
         onProfileServiceStateChanged(mGattService, BluetoothAdapter.STATE_ON);
+        Instant end = Instant.now();
+        Log.i(TAG, header + "Completed in " + Duration.between(start, end).toMillis() + "ms");
     }
 
     void startProfileServices() {
