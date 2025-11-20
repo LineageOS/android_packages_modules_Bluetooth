@@ -137,8 +137,9 @@ public:
     topshim::rust::internal::connection_state_cb(state, bd_addr);
   }
 
-  void AudioStateCallback(headset::bthf_audio_state_t state, RawAddress* bd_addr) override {
-    log::info("AudioStateCallback {} from {}", state, *bd_addr);
+  void AudioStateCallback(headset::bthf_audio_state_t state, RawAddress* bd_addr,
+                          uint8_t reason) override {
+    log::info("AudioStateCallback {} from {}, reason:{}", state, *bd_addr, reason);
     topshim::rust::internal::audio_state_cb(state, bd_addr);
   }
 

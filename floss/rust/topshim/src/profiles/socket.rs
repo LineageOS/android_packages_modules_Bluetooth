@@ -208,7 +208,6 @@ impl BtSocket {
         let mut sockfd: i32 = -1;
         let sockfd_ptr = LTCheckedPtrMut::from_ref(&mut sockfd);
         let uuid_ptr = LTCheckedPtr::from(&service_uuid);
-        let addr_ptr = LTCheckedPtr::from_ref(&addr);
 
         let data_path: u32 = 0;
         let sock_name = CString::new("test").expect("Socket name has null in it");
@@ -219,7 +218,7 @@ impl BtSocket {
         let status: BtStatus = ccall!(
             self,
             connect,
-            addr_ptr.into(),
+            addr,
             sock_type.into(),
             uuid_ptr.into(),
             channel,

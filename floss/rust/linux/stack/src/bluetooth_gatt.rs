@@ -506,6 +506,7 @@ pub trait IBluetoothGatt {
     fn unregister_client(&mut self, client_id: i32);
 
     /// Initiates a GATT connection to a peer device.
+    /// TODO(b/461933854): Remove the deprecated |phy| argument and add |auto_mtu_enabled|
     fn client_connect(
         &self,
         client_id: i32,
@@ -2295,7 +2296,7 @@ impl IBluetoothGatt for BluetoothGatt {
         is_direct: bool,
         transport: BtTransport,
         opportunistic: bool,
-        phy: LePhy,
+        _phy: LePhy,
     ) {
         self.gatt.lock().unwrap().client.connect(
             client_id,
@@ -2305,9 +2306,9 @@ impl IBluetoothGatt for BluetoothGatt {
             is_direct,
             transport as i32,
             opportunistic,
-            phy.into(),
-            0,
-            false,
+            0,     // preferred_mtu
+            false, // prefer_relax_mode
+            false, // auto_mtu_enabled
         );
     }
 

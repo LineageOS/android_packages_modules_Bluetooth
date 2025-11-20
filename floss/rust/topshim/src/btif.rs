@@ -1067,57 +1067,77 @@ type BaseCb = Arc<Mutex<BaseCallbacksDispatcher>>;
 
 cb_variant!(BaseCb, adapter_state_cb -> BaseCallbacks::AdapterState, u32 -> BtState);
 cb_variant!(BaseCb, adapter_properties_cb -> BaseCallbacks::AdapterProperties,
-u32 -> BtStatus, i32 -> _, *mut bindings::bt_property_t, {
-    let _2 = ptr_to_vec(_2, _1 as usize);
-});
+    u32 -> BtStatus, i32 -> _, *mut bindings::bt_property_t, {
+        let _2 = ptr_to_vec(_2, _1 as usize);
+    }
+);
 cb_variant!(BaseCb, remote_device_properties_cb -> BaseCallbacks::RemoteDeviceProperties,
-u32 -> BtStatus, *mut RawAddress -> RawAddress, u8, i32 -> _, *mut bindings::bt_property_t, {
-    let _1 = unsafe { *(_1 as *const RawAddress) };
-    let _4 = ptr_to_vec(_4, _3 as usize);
-});
+    u32 -> BtStatus, *mut RawAddress -> RawAddress, u8, i32 -> _, *mut bindings::bt_property_t, {
+        let _1 = unsafe { *(_1 as *const RawAddress) };
+        let _4 = ptr_to_vec(_4, _3 as usize);
+    }
+);
 cb_variant!(BaseCb, device_found_cb -> BaseCallbacks::DeviceFound,
-i32 -> _, *mut bindings::bt_property_t, {
-    let _1 = ptr_to_vec(_1, _0 as usize);
-});
+    i32 -> _, *mut bindings::bt_property_t, {
+        let _1 = ptr_to_vec(_1, _0 as usize);
+    }
+);
 cb_variant!(BaseCb, discovery_state_cb -> BaseCallbacks::DiscoveryState,
-    bindings::bt_discovery_state_t -> BtDiscoveryState);
+    bindings::bt_discovery_state_t -> BtDiscoveryState
+);
 cb_variant!(BaseCb, pin_request_cb -> BaseCallbacks::PinRequest,
-*mut RawAddress, *mut bindings::bt_bdname_t, u32, bool, {
-    let _0 = unsafe { *(_0 as *const RawAddress)};
-    let _1 = String::from(unsafe{*_1});
-});
+    *mut RawAddress, *mut bindings::bt_bdname_t, u32, bool, bindings::PairingAlgorithm -> _, {
+        let _0 = unsafe { *(_0 as *const RawAddress)};
+        let _1 = String::from(unsafe{*_1});
+    }
+);
 cb_variant!(BaseCb, ssp_request_cb -> BaseCallbacks::SspRequest,
-*mut RawAddress, bindings::bt_ssp_variant_t -> BtSspVariant, u32, {
-    let _0 = unsafe { *(_0 as *const RawAddress) };
-});
+    *mut RawAddress,
+    bindings::bt_ssp_variant_t -> BtSspVariant,
+    u32,
+    bindings::PairingAlgorithm -> _,
+    {
+        let _0 = unsafe { *(_0 as *const RawAddress) };
+    }
+);
 cb_variant!(BaseCb, bond_state_cb -> BaseCallbacks::BondState,
-u32 -> BtStatus, *mut RawAddress, bindings::bt_bond_state_t -> BtBondState, i32, {
-    let _1 = unsafe { *(_1 as *const RawAddress) };
-});
-
+    u32 -> BtStatus, *mut RawAddress,
+    bindings::tBT_TRANSPORT -> _,
+    bindings::bt_bond_state_t -> BtBondState,
+    bindings::PairingType -> _,
+    i32,
+    {
+        let _1 = unsafe { *(_1 as *const RawAddress) };
+    }
+);
 cb_variant!(BaseCb, address_consolidate_cb -> BaseCallbacks::AddressConsolidate,
-*mut RawAddress, *mut RawAddress, {
-    let _0 = unsafe { *(_0 as *const RawAddress) };
-    let _1 = unsafe { *(_1 as *const RawAddress) };
-});
-
+    *mut RawAddress, *mut RawAddress, {
+        let _0 = unsafe { *(_0 as *const RawAddress) };
+        let _1 = unsafe { *(_1 as *const RawAddress) };
+    }
+);
 cb_variant!(BaseCb, le_address_associate_cb -> BaseCallbacks::LeAddressAssociate,
-*mut RawAddress, *mut RawAddress, u8, {
-    let _0 = unsafe { *(_0 as *const RawAddress) };
-    let _1 = unsafe { *(_1 as *const RawAddress) };
-});
-
+    *mut RawAddress, *mut RawAddress, u8, {
+        let _0 = unsafe { *(_0 as *const RawAddress) };
+        let _1 = unsafe { *(_1 as *const RawAddress) };
+    }
+);
 cb_variant!(BaseCb, thread_evt_cb -> BaseCallbacks::ThreadEvent, u32 -> BtThreadEvent);
-
 cb_variant!(BaseCb, acl_state_cb -> BaseCallbacks::AclState,
-u32 -> BtStatus, *mut AclLinkSpec, bindings::bt_acl_state_t -> BtAclState, bindings::bt_hci_error_code_t -> BtHciErrorCode, bindings::bt_conn_direction_t -> BtConnectionDirection, u16 -> u16, {
-    let _1 = unsafe { *(_1 as *const AclLinkSpec) };
-});
-
-cb_variant!(BaseCb, generate_local_oob_data_cb -> BaseCallbacks::GenerateLocalOobData, bindings::tBT_TRANSPORT, OobData -> Box::<OobData>);
-
+    u32 -> BtStatus,
+    *mut AclLinkSpec,
+    bindings::bt_acl_state_t -> BtAclState,
+    bindings::bt_hci_error_code_t -> BtHciErrorCode,
+    bindings::bt_conn_direction_t -> BtConnectionDirection,
+    u16 -> u16,
+    {
+        let _1 = unsafe { *(_1 as *const AclLinkSpec) };
+    }
+);
+cb_variant!(BaseCb, generate_local_oob_data_cb -> BaseCallbacks::GenerateLocalOobData,
+    bindings::tBT_TRANSPORT, OobData -> Box::<OobData>
+);
 cb_variant!(BaseCb, le_rand_cb -> BaseCallbacks::LeRandCallback, u64);
-
 cb_variant!(BaseCb, key_missing_cb -> BaseCallbacks::KeyMissing, RawAddress, u8);
 
 struct RawInterfaceWrapper {
@@ -1318,35 +1338,23 @@ impl BluetoothInterface {
         ccall!(self, set_scan_mode, mode.into())
     }
 
-    pub fn get_remote_device_properties(&self, addr: &mut RawAddress) -> i32 {
-        let addr_ptr = LTCheckedPtrMut::from_ref(addr);
-        ccall!(self, get_remote_device_properties, addr_ptr.into())
+    pub fn get_remote_device_properties(&self, addr: RawAddress) -> i32 {
+        ccall!(self, get_remote_device_properties, addr)
     }
 
-    pub fn get_remote_device_property(
-        &self,
-        addr: &mut RawAddress,
-        prop_type: BtPropertyType,
-    ) -> i32 {
-        let addr_ptr = LTCheckedPtrMut::from_ref(addr);
+    pub fn get_remote_device_property(&self, addr: RawAddress, prop_type: BtPropertyType) -> i32 {
         let converted_type = bindings::bt_property_type_t::from(prop_type);
-        ccall!(self, get_remote_device_property, addr_ptr.into(), converted_type)
+        ccall!(self, get_remote_device_property, addr, converted_type)
     }
 
-    pub fn set_remote_device_property(
-        &self,
-        addr: &mut RawAddress,
-        prop: BluetoothProperty,
-    ) -> i32 {
+    pub fn set_remote_device_property(&self, addr: RawAddress, prop: BluetoothProperty) -> i32 {
         let prop_pair: (Box<[u8]>, bindings::bt_property_t) = prop.into();
         let prop_ptr = LTCheckedPtr::from_ref(&prop_pair.1);
-        let addr_ptr = LTCheckedPtrMut::from_ref(addr);
-        ccall!(self, set_remote_device_property, addr_ptr.into(), prop_ptr.into())
+        ccall!(self, set_remote_device_property, addr, prop_ptr.into())
     }
 
-    pub fn get_remote_services(&self, addr: &mut RawAddress, transport: BtTransport) -> i32 {
-        let addr_ptr = LTCheckedPtrMut::from_ref(addr);
-        ccall!(self, get_remote_services, addr_ptr.into(), transport.to_i32().unwrap())
+    pub fn get_remote_services(&self, addr: RawAddress, transport: BtTransport) -> i32 {
+        ccall!(self, get_remote_services, addr, transport.to_i32().unwrap())
     }
 
     pub fn start_discovery(&self) -> i32 {
@@ -1361,48 +1369,42 @@ impl BluetoothInterface {
         ccall!(self, pairing_is_busy)
     }
 
-    pub fn create_bond(&self, addr: &RawAddress, transport: BtTransport) -> i32 {
-        let addr_ptr = LTCheckedPtr::from_ref(addr);
-        ccall!(self, create_bond, addr_ptr.into(), transport as i32)
+    pub fn create_bond(&self, addr: RawAddress, transport: BtTransport) -> i32 {
+        ccall!(self, create_bond, addr, transport as i32)
     }
 
-    pub fn remove_bond(&self, addr: &RawAddress) -> i32 {
-        let addr_ptr = LTCheckedPtr::from_ref(addr);
-        ccall!(self, remove_bond, addr_ptr.into())
+    pub fn remove_bond(&self, addr: RawAddress) -> i32 {
+        ccall!(self, remove_bond, addr)
     }
 
-    pub fn cancel_bond(&self, addr: &RawAddress) -> i32 {
-        let addr_ptr = LTCheckedPtr::from_ref(addr);
-        ccall!(self, cancel_bond, addr_ptr.into())
+    pub fn cancel_bond(&self, addr: RawAddress) -> i32 {
+        ccall!(self, cancel_bond, addr)
     }
 
-    pub fn get_connection_state(&self, addr: &RawAddress) -> BtConnectionState {
-        let addr_ptr = LTCheckedPtr::from_ref(addr);
-        ccall!(self, get_connection_state, addr_ptr.into()).into()
+    pub fn get_connection_state(&self, addr: RawAddress) -> BtConnectionState {
+        ccall!(self, get_connection_state, addr).into()
     }
 
     pub fn pin_reply(
         &self,
-        addr: &RawAddress,
+        addr: RawAddress,
         accept: u8,
         pin_len: u8,
         pin_code: &mut BtPinCode,
     ) -> i32 {
-        let addr_ptr = LTCheckedPtr::from_ref(addr);
         let pin_code_ptr = LTCheckedPtrMut::from_ref(pin_code);
-        ccall!(self, pin_reply, addr_ptr.into(), accept, pin_len, pin_code_ptr.into())
+        ccall!(self, pin_reply, addr, accept, pin_len, pin_code_ptr.into())
     }
 
     pub fn ssp_reply(
         &self,
-        addr: &RawAddress,
+        addr: RawAddress,
         variant: BtSspVariant,
         accept: u8,
         passkey: u32,
     ) -> i32 {
-        let addr_ptr = LTCheckedPtr::from_ref(addr);
         let cvariant = bindings::bt_ssp_variant_t::from(variant);
-        ccall!(self, ssp_reply, addr_ptr.into(), cvariant, accept, passkey)
+        ccall!(self, ssp_reply, addr, cvariant, accept, passkey)
     }
 
     pub fn clear_event_filter(&self) -> i32 {

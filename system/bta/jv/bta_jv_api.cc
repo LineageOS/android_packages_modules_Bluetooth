@@ -245,7 +245,7 @@ void BTA_JvL2capConnect(tBTA_JV_CONN_TYPE conn_type, tBTA_SEC sec_mask,
   log::assert_that(p_cback != nullptr, "assert failed: p_cback != nullptr");
 
   do_in_main_thread(BindOnce(&bta_jv_l2cap_connect, conn_type, sec_mask, remote_psm, rx_mtu,
-                             peer_bd_addr, base::Passed(&cfg), base::Passed(&ertm_info), p_cback,
+                             peer_bd_addr, std::move(cfg), std::move(ertm_info), p_cback,
                              l2cap_socket_id));
 }
 
@@ -293,8 +293,7 @@ void BTA_JvL2capStartServer(tBTA_JV_CONN_TYPE conn_type, tBTA_SEC sec_mask,
   CHECK(p_cback);
 
   do_in_main_thread(BindOnce(&bta_jv_l2cap_start_server, conn_type, sec_mask, local_psm, rx_mtu,
-                             base::Passed(&cfg), base::Passed(&ertm_info), p_cback,
-                             l2cap_socket_id));
+                             std::move(cfg), std::move(ertm_info), p_cback, l2cap_socket_id));
 }
 
 /*******************************************************************************
