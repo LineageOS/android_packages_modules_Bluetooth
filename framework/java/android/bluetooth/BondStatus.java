@@ -18,8 +18,8 @@ package android.bluetooth;
 
 import android.annotation.FlaggedApi;
 import android.annotation.Hide;
-import android.annotation.IntRange;
 import android.annotation.NonNull;
+import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
 import android.bluetooth.BluetoothDevice.PairingAlgorithm;
 import android.bluetooth.BluetoothDevice.PairingVariant;
@@ -59,6 +59,18 @@ public final class BondStatus {
     }
 
     /**
+     * @return the {@link BondStatus} associated with this parcel
+     */
+    @FlaggedApi(Flags.FLAG_ENABLE_GET_BOND_STATUS)
+    @RequiresNoPermission
+    static @Nullable BondStatus fromParcel(InnerParcel parcel) {
+        if (parcel == null) {
+            return null;
+        }
+        return new BondStatus(parcel);
+    }
+
+    /**
      * @return the pairing algorithm used to create the bond with the device.
      */
     @RequiresNoPermission
@@ -93,16 +105,6 @@ public final class BondStatus {
                 @PairingAlgorithm int pairingAlgorithm, @PairingVariant int pairingVariant) {
             mPairingAlgorithm = pairingAlgorithm;
             mPairingVariant = pairingVariant;
-        }
-
-        /**
-         * @return the {@link BondStatus} associated with this parcel
-         */
-        @FlaggedApi(Flags.FLAG_ENABLE_GET_BOND_STATUS)
-        @RequiresNoPermission
-        @NonNull
-        BondStatus toBondStatus() {
-            return new BondStatus(this);
         }
 
         @Override
