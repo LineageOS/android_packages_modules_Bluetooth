@@ -35,14 +35,45 @@ object Permissions {
      * Set permissions to be used as long as the resource is open. Restore initial permissions after
      * closing resource.
      *
-     * @param newPermissions Permissions to hold when using resource. You need to specify at least 1
+     * @param newPermissions Permissions to hold when using resource.
      */
+    @JvmStatic
+    fun with(vararg newPermissions: String): PermissionContext = withPermissions(*newPermissions)
+
     @JvmStatic
     fun withPermissions(vararg newPermissions: String): PermissionContext {
         val savedPermissions = replacePermissionsWith(*newPermissions)
         return object : PermissionContext {
             override fun close() {
                 restorePermissions(savedPermissions)
+            }
+        }
+    }
+
+    /** See {@link #enforce(List<String>, () -> Any} */
+    @JvmStatic
+    fun enforce(permissionToEnforce: String, action: () -> Any) =
+        enforce(listOf(permissionToEnforce), action)
+
+    /**
+     * Grant all the permissions required then only remove one and perform the action. Then re-grant
+     * all permissions and remove the next permissions
+     *
+     * @param permissionsToEnforce List of every single permissions to enforce one by one
+     */
+    @JvmStatic
+    fun enforce(permissionsToEnforce: List<String>, action: () -> Any) {
+        withPermissions().use {
+            permissionsToEnforce.forEach { permEnforced ->
+                val permissionsAllowed =
+                    permissionsToEnforce.filter { it != permEnforced }.toTypedArray()
+
+                uiAutomation.adoptShellPermissionIdentity(*permissionsAllowed)
+                assertThrows(
+                    "$permEnforced is not enforced",
+                    SecurityException::class.java,
+                    { action() },
+                )
             }
         }
     }
@@ -73,19 +104,22 @@ object Permissions {
         } else if (permissions.size == 0) {
             uiAutomation.dropShellPermissionIdentity()
         } else {
-            uiAutomation.adoptShellPermissionIdentity(*permissions.map { it }.toTypedArray())
+            uiAutomation.adoptShellPermissionIdentity(*permissions.toTypedArray())
         }
-        Log.d(TAG, "Restored ${permissions}")
+        Log.d(TAG, "Restored [${permissions.joinToString()}]")
     }
 
     private fun replacePermissionsWith(vararg newPermissions: String): Set<String> {
         val currentPermissions = uiAutomation.getAdoptedShellPermissions()
-        if (newPermissions.size == 0) {
-            // Throw even if the code support it as we are not expecting this by design
-            throw IllegalArgumentException("Invalid permissions replacement with no permissions.")
+        if (newPermissions.size != 0) {
+            uiAutomation.adoptShellPermissionIdentity(*newPermissions)
+        } else {
+            uiAutomation.dropShellPermissionIdentity()
         }
-        uiAutomation.adoptShellPermissionIdentity(*newPermissions)
-        Log.d(TAG, "Replaced ${currentPermissions} with ${newPermissions.toSet()}")
+        Log.d(
+            TAG,
+            "Replaced [${currentPermissions.joinToString()}] with [${newPermissions.joinToString()}]",
+        )
         return currentPermissions
     }
 }
