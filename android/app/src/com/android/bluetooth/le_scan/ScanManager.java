@@ -50,8 +50,6 @@ import static java.util.Objects.requireNonNullElseGet;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
@@ -171,7 +169,6 @@ class ScanManager {
             new MsftAdvMonitorMergedPatternList();
 
     private final AdapterService mAdapterService;
-    private final BluetoothAdapter mAdapter;
     private final ScanController mScanController;
     private final ScanNativeCallback mNativeCallback;
     private final ScanNativeInterface mNativeInterface;
@@ -243,7 +240,6 @@ class ScanManager {
             Looper looper,
             TimeProvider timeProvider) {
         mAdapterService = requireNonNull(service);
-        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mScanController = scanController;
         mNativeCallback = requireNonNull(nativeCallback);
         mNativeInterface =
@@ -445,7 +441,7 @@ class ScanManager {
     }
 
     private boolean isFilteringSupported() {
-        return mAdapter.isOffloadedFilteringSupported();
+        return ScanUtil.isOffloadedFilteringSupported(mAdapterService);
     }
 
     int getCurrentUsedTrackingAdvertisement() {
