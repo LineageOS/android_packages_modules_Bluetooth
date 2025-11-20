@@ -233,7 +233,7 @@ class GattServerManager(
 
         callbackToApp { app.callback.onServerConnectionState(0, stateToReport, device) }
         metricsReporter.logAppPackage(serverIf, device, applicationUid)
-        metricsReporter.logGattConnectionStateChange(device, serverIf, connectionState, -1)
+        metricsReporter.logConnectionStateChange(device, serverIf, connectionState, -1)
     }
 
     fun onServerPhyUpdateFromNative(connId: Int, txPhy: Int, rxPhy: Int, status: Int) {
