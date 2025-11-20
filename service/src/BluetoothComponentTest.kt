@@ -23,24 +23,36 @@ import android.content.Context
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.ServiceInfo
+import android.content.res.Resources
 import android.os.Process
+import android.platform.test.annotations.EnableFlags
+import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.core.app.ApplicationProvider
+import com.android.bluetooth.flags.Flags
 import com.android.server.bluetooth.BluetoothComponent
+import com.android.tests.bluetooth.FlagsWrapper
 import com.google.common.truth.Truth.assertThat
-import kotlin.test.assertFailsWith
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
+import org.robolectric.ParameterizedRobolectricTestRunner
+import org.robolectric.ParameterizedRobolectricTestRunner.Parameters
 import org.robolectric.Shadows
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.Implementation
+import org.robolectric.annotation.Implements
 
 private const val PACKAGE_NAME = "com.android.bluetooth"
 
-@RunWith(RobolectricTestRunner::class)
-class BluetoothComponentTest {
+@RunWith(ParameterizedRobolectricTestRunner::class)
+@Config(shadows = [ShadowBluetoothResources::class])
+class BluetoothComponentTest(flags: FlagsWrapper) {
+    @get:Rule val setFlagsRule = SetFlagsRule(flags.flags)
+
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
     @Test
-    fun `can create instance when configuration is ready`() {
+    fun `create instance with valid values`() {
         val component = setup()
 
         assertThat(component.packageName).isEqualTo(PACKAGE_NAME)
@@ -48,23 +60,41 @@ class BluetoothComponentTest {
         assertThat(component.componentName.className).isEqualTo(BluetoothComponent.ADAPTER_CLASS)
     }
 
+    @Test(expected = IllegalStateException::class)
+    fun `when missing Bluetooth package - throw exception`() {
+        BluetoothComponent(context)
+    }
+
+    @EnableFlags(Flags.FLAG_VALIDATE_BLUETOOTH_NAME_IN_PLATFORM_CONFIG)
+    @Test(expected = IllegalStateException::class)
+    fun `when system config is invalid - throw exception`() {
+        setup("my.pkg.name")
+    }
+
+    @EnableFlags(Flags.FLAG_VALIDATE_BLUETOOTH_NAME_IN_PLATFORM_CONFIG)
     @Test
-    fun `will throw exception when misconfigured`() {
-        assertFailsWith<IllegalStateException> { BluetoothComponent(context) }
+    fun `when system config is missing - can create`() {
+        setup("")
+    }
+
+    @EnableFlags(Flags.FLAG_VALIDATE_BLUETOOTH_NAME_IN_PLATFORM_CONFIG)
+    @Test
+    fun `when system config is invalid but safe mode is on - can create`() {
+        setup("my.pkg.name", true)
     }
 
     @Test
-    fun `can create instance even when too many packages`() {
-        val pm = Shadows.shadowOf(context.packageManager)
+    fun `when UID has multiples packages - can create with valid values`() {
+        setupPackage(context, false)
 
-        setup()
-
-        pm.setPackagesForUid(
-            Process.BLUETOOTH_UID,
-            "random.first.package.name",
-            PACKAGE_NAME,
-            "random.second.package.name",
-        )
+        // Only the last call to setPackagesForUid is taken into consideration
+        Shadows.shadowOf(context.packageManager)
+            .setPackagesForUid(
+                Process.BLUETOOTH_UID,
+                "random.first.package.name",
+                PACKAGE_NAME,
+                "random.second.package.name",
+            )
 
         val component = BluetoothComponent(context)
 
@@ -74,9 +104,21 @@ class BluetoothComponentTest {
     }
 
     companion object {
-        internal fun setup(): BluetoothComponent {
+        internal fun setup(
+            config_systemBluetoothStack: String = PACKAGE_NAME,
+            safeMode: Boolean = false,
+        ): BluetoothComponent {
             val context = ApplicationProvider.getApplicationContext<Context>()
+
+            ShadowBluetoothResources.configValue = config_systemBluetoothStack
+            setupPackage(context, safeMode)
+
+            return BluetoothComponent(context)
+        }
+
+        private fun setupPackage(context: Context, safeMode: Boolean) {
             val pm = Shadows.shadowOf(context.packageManager)
+            pm.setSafeMode(safeMode)
 
             val componentName = ComponentName(PACKAGE_NAME, BluetoothComponent.ADAPTER_CLASS)
 
@@ -92,7 +134,40 @@ class BluetoothComponentTest {
             val intentFilter = IntentFilter(IAdapter::class.java.name)
             pm.addIntentFilterForService(componentName, intentFilter)
             pm.setPackagesForUid(Process.BLUETOOTH_UID, PACKAGE_NAME)
-            return BluetoothComponent(context)
         }
+
+        @JvmStatic
+        @Parameters(name = "{0}")
+        fun getParams() =
+            FlagsWrapper.progressionOf(Flags.FLAG_VALIDATE_BLUETOOTH_NAME_IN_PLATFORM_CONFIG)
+    }
+}
+
+@Implements(Resources::class)
+class ShadowBluetoothResources {
+    @Implementation
+    fun getIdentifier(name: String, defType: String, defPackage: String): Int {
+        if (name == CONFIG_NAME && defType == CONFIG_TYPE && defPackage == CONFIG_PACKAGE) {
+            return if (configValue.isNotEmpty()) FAKE_CONFIG_RES_ID else 0
+        }
+        // This shadow only handles the Bluetooth stack resource. Return 0 for others.
+        return 0
+    }
+
+    @Implementation
+    fun getString(id: Int): String {
+        if (id == FAKE_CONFIG_RES_ID) {
+            return configValue
+        }
+        throw Resources.NotFoundException("resource ID #$id not found by ShadowBluetoothResources")
+    }
+
+    companion object {
+        private const val FAKE_CONFIG_RES_ID = 12345
+        private const val CONFIG_NAME = "config_systemBluetoothStack"
+        private const val CONFIG_TYPE = "string"
+        private const val CONFIG_PACKAGE = "android"
+
+        lateinit var configValue: String
     }
 }
