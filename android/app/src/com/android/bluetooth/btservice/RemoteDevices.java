@@ -88,10 +88,11 @@ public class RemoteDevices {
     private final ArrayList<BluetoothDevice> mSdpTracker = new ArrayList<>();
     private final Object mObject = new Object();
 
-    private static final int UUID_INTENT_DELAY = 6000;
-    private static final int MESSAGE_UUID_INTENT = 1;
-    private static final int MESSAGE_UUID_STATUS_SUCCESS = 0;
-    private static final int MESSAGE_UUID_STATUS_TIMEOUT = 1;
+    private static final int MESSAGE_NOTIFY_UUIDS = 1;
+    private static final int MESSAGE_SERVICE_DISCOVERY_TIMEOUT = 2;
+
+    private static final int SERVICE_DISCOVERY_TIMEOUT_MS = 6000; // 6 seconds
+
     private static final String LOG_SOURCE_DIS = "DIS";
 
     private final LinkedHashMap<String, DeviceProperties> mDevices =
@@ -134,21 +135,31 @@ public class RemoteDevices {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case MESSAGE_UUID_INTENT -> {
+                case MESSAGE_NOTIFY_UUIDS -> {
                     BluetoothDevice device = (BluetoothDevice) msg.obj;
-                    if (device != null) {
-                        boolean success = (msg.arg1 == MESSAGE_UUID_STATUS_SUCCESS);
-                        debugLog("MESSAGE_UUID_INTENT: " + device);
-                        // SDP Sending delayed SDP UUID intent
-                        MetricsLogger.getInstance()
-                                .cacheCount(BluetoothProtoEnums.SDP_SENDING_DELAYED_UUID, 1);
-                        DeviceProperties prop = getDeviceProperties(device);
-                        sendUuidIntent(device, prop, success);
-                    } else {
-                        // SDP Not sending delayed SDP UUID intent b/c device is not there
+                    if (device == null) {
+                        warnLog("MESSAGE_NOTIFY_UUIDS: device is null");
+                        return;
+                    }
+
+                    debugLog("MESSAGE_NOTIFY_UUIDS: " + device);
+                    DeviceProperties prop = getDeviceProperties(device);
+                    sendUuidIntent(device, prop, true);
+                }
+                case MESSAGE_SERVICE_DISCOVERY_TIMEOUT -> {
+                    BluetoothDevice device = (BluetoothDevice) msg.obj;
+                    if (device == null) {
+                        warnLog("MESSAGE_SERVICE_DISCOVERY_TIMEOUT: device is null");
                         MetricsLogger.getInstance()
                                 .cacheCount(BluetoothProtoEnums.SDP_NOT_SENDING_DELAYED_UUID, 1);
+                        return;
                     }
+
+                    debugLog("MESSAGE_SERVICE_DISCOVERY_TIMEOUT: " + device);
+                    MetricsLogger.getInstance()
+                            .cacheCount(BluetoothProtoEnums.SDP_SENDING_DELAYED_UUID, 1);
+                    DeviceProperties prop = getDeviceProperties(device);
+                    sendUuidIntent(device, prop, false);
                 }
                 default -> {} // Nothing to do
             }
@@ -1122,7 +1133,7 @@ public class RemoteDevices {
         if (index >= 0) {
             BluetoothDevice originalDevice = mSdpTracker.get(index);
             if (originalDevice != null) {
-                mHandler.removeMessages(MESSAGE_UUID_INTENT, originalDevice);
+                mHandler.removeMessages(MESSAGE_SERVICE_DISCOVERY_TIMEOUT, originalDevice);
             }
         }
         mSdpTracker.remove(device);
@@ -2020,10 +2031,8 @@ public class RemoteDevices {
 
         mSdpTracker.add(device);
 
-        Message message = mHandler.obtainMessage(MESSAGE_UUID_INTENT);
-        message.obj = device;
-        message.arg1 = MESSAGE_UUID_STATUS_TIMEOUT;
-        mHandler.sendMessageDelayed(message, UUID_INTENT_DELAY);
+        Message message = mHandler.obtainMessage(MESSAGE_SERVICE_DISCOVERY_TIMEOUT, device);
+        mHandler.sendMessageDelayed(message, SERVICE_DISCOVERY_TIMEOUT_MS);
 
         // Uses cached UUIDs if we are bonding. If not, we fetch the UUIDs with SDP.
         if (deviceProperties != null && deviceProperties.isBonding()) {
@@ -2079,9 +2088,7 @@ public class RemoteDevices {
     }
 
     void updateUuids(BluetoothDevice device) {
-        Message message = mHandler.obtainMessage(MESSAGE_UUID_INTENT);
-        message.obj = device;
-        message.arg1 = MESSAGE_UUID_STATUS_SUCCESS;
+        Message message = mHandler.obtainMessage(MESSAGE_NOTIFY_UUIDS, device);
         mHandler.sendMessage(message);
     }
 
