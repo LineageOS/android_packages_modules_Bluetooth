@@ -1552,7 +1552,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * @throws IllegalArgumentException address or addressType is invalid
      */
     @Hide
-    /*package*/ BluetoothDevice(String address, int addressType) {
+    /*package*/ BluetoothDevice(BluetoothAdapter adapter, String address, int addressType) {
         if (!BluetoothAdapter.checkBluetoothAddress(address)) {
             throw new IllegalArgumentException(address + " is not a valid Bluetooth address");
         }
@@ -1569,10 +1569,16 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                             + BluetoothUtils.toAnonymizedAddress(address));
         }
 
+        mAdapter = adapter;
         mAddress = address;
         mAddressType = addressType;
         mAttributionSource = AttributionSource.myAttributionSource();
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
+    }
+
+    // Constructor used by android/app/jni/com_android_bluetooth_le_audio.cpp
+    @SuppressWarnings("unused")
+    private BluetoothDevice(String address, int addressType) {
+        this(BluetoothAdapter.getDefaultAdapter(), address, addressType);
     }
 
     /**
@@ -1585,8 +1591,16 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      */
     @Hide
     @UnsupportedAppUsage
+    /*package*/ BluetoothDevice(BluetoothAdapter adapter, String address) {
+        this(adapter, address, ADDRESS_TYPE_PUBLIC);
+    }
+
+    // Constructor used via reflection by ShadowBluetoothDevice.newInstance
+    @Hide
+    @Deprecated
+    @UnsupportedAppUsage
     /*package*/ BluetoothDevice(String address) {
-        this(address, ADDRESS_TYPE_PUBLIC);
+        this(BluetoothAdapter.getDefaultAdapter(), address, ADDRESS_TYPE_PUBLIC);
     }
 
     /**
@@ -1599,7 +1613,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @Hide
     @UnsupportedAppUsage
     /*package*/ BluetoothDevice(Parcel in) {
-        this(in.readString(), in.readInt());
+        this(BluetoothAdapter.getDefaultAdapter(), in.readString(), in.readInt());
     }
 
     @Hide
