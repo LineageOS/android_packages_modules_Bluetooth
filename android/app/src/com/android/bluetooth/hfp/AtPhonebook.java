@@ -123,7 +123,7 @@ public class AtPhonebook {
         mPhonebooks.clear();
     }
 
-    /** Returns the last dialled number, or null if no numbers have been called */
+    /** Returns the last dialed number, or null if no numbers have been called */
     public String getLastDialledNumber() {
         String[] projection = {Calls.NUMBER};
         Bundle queryArgs = new Bundle();
@@ -310,7 +310,7 @@ public class AtPhonebook {
                     pbr.cursor = null;
                 }
                 if (size == 0) {
-                    /* Sending "+CPBR: (1-0)" can confused some carkits, send "1-1" * instead */
+                    /* Sending "+CPBR: (1-0)" can confuse some carkits, send "1-1" * instead */
                     size = 1;
                 }
                 atCommandResponse = "+CPBR: (1-" + size + "),30,30";

@@ -336,7 +336,7 @@ public class HeadsetService extends ConnectableProfile {
                     try {
                         mSystemInterface.getVoiceRecognitionWakeLock().release();
                     } catch (RuntimeException e) {
-                        Log.d(TAG, "non properly release getVoiceRecognitionWakeLock", e);
+                        Log.d(TAG, "cleanup: could not release getVoiceRecognitionWakeLock", e);
                     }
                 }
             }
@@ -871,7 +871,10 @@ public class HeadsetService extends ConnectableProfile {
                     try {
                         mSystemInterface.getVoiceRecognitionWakeLock().release();
                     } catch (RuntimeException e) {
-                        Log.d(TAG, "non properly release getVoiceRecognitionWakeLock", e);
+                        Log.d(
+                                TAG,
+                                "startVoiceRecognition: could not release voiceRecognitionWakeLock",
+                                e);
                     }
                 }
                 pendingRequestByHeadset = true;
@@ -1607,7 +1610,7 @@ public class HeadsetService extends ConnectableProfile {
                     try {
                         mSystemInterface.getVoiceRecognitionWakeLock().release();
                     } catch (RuntimeException e) {
-                        Log.d(TAG, "non properly release getVoiceRecognitionWakeLock", e);
+                        Log.d(TAG, "could not properly release getVoiceRecognitionWakeLock", e);
                     }
                 }
                 mVoiceRecognitionTimeoutEvent = null;
