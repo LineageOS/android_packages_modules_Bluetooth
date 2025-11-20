@@ -115,6 +115,12 @@ public:
   bool DoInThread(base::OnceClosure task);
 
   /**
+   * Suspend the current thread blocking the execution of new tasks on the thread.
+   * ShutDown must be called after this to clean up the resources.
+   */
+  void Suspend();
+
+  /**
    * Shutdown the current thread as if it is never started. IsRunning() and
    * DoInThread() will return false after this call. Blocks until the thread is
    * joined and freed. This thread can be re-started again using StartUp()
