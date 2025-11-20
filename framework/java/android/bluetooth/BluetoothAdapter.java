@@ -3018,16 +3018,12 @@ public final class BluetoothAdapter {
 
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    private static BluetoothServerSocket createNewRfcommSocketAndRecord(
+    private BluetoothServerSocket createNewRfcommSocketAndRecord(
             String name, UUID uuid, boolean auth, boolean encrypt) throws IOException {
         BluetoothServerSocket socket;
         socket =
                 new BluetoothServerSocket(
-                        BluetoothAdapter.getDefaultAdapter(),
-                        BluetoothSocket.TYPE_RFCOMM,
-                        auth,
-                        encrypt,
-                        new ParcelUuid(uuid));
+                        this, BluetoothSocket.TYPE_RFCOMM, auth, encrypt, new ParcelUuid(uuid));
         socket.setServiceName(name);
         int errno = socket.mSocket.bindListen();
         if (errno != 0) {
