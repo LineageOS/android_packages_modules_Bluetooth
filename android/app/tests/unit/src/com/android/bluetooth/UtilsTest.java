@@ -25,9 +25,7 @@ import static org.junit.Assert.assertThrows;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
-import android.location.LocationManager;
 import android.os.ParcelUuid;
-import android.os.UserHandle;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
@@ -77,27 +75,6 @@ public class UtilsTest {
         converter.putLong(16, 30);
         converter.putLong(24, 40);
         assertThat(Utils.uuidsToByteArray(uuids)).isEqualTo(converter.array());
-    }
-
-    @Test
-    public void checkCallerHasCoarseOrFineLocation_doesNotCrash() {
-        Context context = InstrumentationRegistry.getInstrumentation().getContext();
-        UserHandle userHandle = UserHandle.SYSTEM;
-        LocationManager locationManager = context.getSystemService(LocationManager.class);
-        boolean enabledStatus = locationManager.isLocationEnabledForUser(userHandle);
-
-        locationManager.setLocationEnabledForUser(false, userHandle);
-        assertThat(
-                        Utils.checkCallerHasCoarseOrFineLocation(
-                                context, context.getAttributionSource(), userHandle))
-                .isFalse();
-
-        locationManager.setLocationEnabledForUser(true, userHandle);
-        Utils.checkCallerHasCoarseOrFineLocation(
-                context, context.getAttributionSource(), userHandle);
-        if (!enabledStatus) {
-            locationManager.setLocationEnabledForUser(false, userHandle);
-        }
     }
 
     @Test
