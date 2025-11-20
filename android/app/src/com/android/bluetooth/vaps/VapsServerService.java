@@ -203,13 +203,13 @@ public class VapsServerService extends ProfileService {
     }
 
     void messageFromNative(VapsServerStackEvent stackEvent) {
-        if (!isAvailable()) {
-            Log.e(TAG, "Event ignored, service not available: " + stackEvent);
-            return;
-        }
         mHandler.post(
                 () -> {
                     BluetoothDevice device = stackEvent.device;
+                    if (!isAvailable()) {
+                        Log.e(TAG, "Event ignored, service not available: " + stackEvent);
+                        return;
+                    }
 
                     switch (stackEvent.type) {
                         case VapsServerStackEvent.EVENT_TYPE_ON_INITIALIZED -> {
