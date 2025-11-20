@@ -2779,7 +2779,8 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                 && (channel < 1 || channel > BluetoothSocket.MAX_RFCOMM_CHANNEL)) {
             throw new IOException("Invalid RFCOMM channel: " + channel);
         }
-        return new BluetoothSocket(this, BluetoothSocket.TYPE_RFCOMM, true, true, channel, null);
+        return new BluetoothSocket(
+                mAdapter, this, BluetoothSocket.TYPE_RFCOMM, true, true, channel, null);
     }
 
     /**
@@ -2806,7 +2807,8 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @Hide
     @RequiresNoPermission
     public BluetoothSocket createL2capSocket(int channel) {
-        return new BluetoothSocket(this, BluetoothSocket.TYPE_L2CAP, true, true, channel, null);
+        return new BluetoothSocket(
+                mAdapter, this, BluetoothSocket.TYPE_L2CAP, true, true, channel, null);
     }
 
     /**
@@ -2826,7 +2828,8 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @Hide
     @RequiresNoPermission
     public BluetoothSocket createInsecureL2capSocket(int channel) {
-        return new BluetoothSocket(this, BluetoothSocket.TYPE_L2CAP, false, false, channel, null);
+        return new BluetoothSocket(
+                mAdapter, this, BluetoothSocket.TYPE_L2CAP, false, false, channel, null);
     }
 
     /**
@@ -2867,7 +2870,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
         }
 
         return new BluetoothSocket(
-                this, BluetoothSocket.TYPE_RFCOMM, true, true, -1, new ParcelUuid(uuid));
+                mAdapter, this, BluetoothSocket.TYPE_RFCOMM, true, true, -1, new ParcelUuid(uuid));
     }
 
     /**
@@ -2906,7 +2909,13 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             throw new IOException();
         }
         return new BluetoothSocket(
-                this, BluetoothSocket.TYPE_RFCOMM, false, false, -1, new ParcelUuid(uuid));
+                mAdapter,
+                this,
+                BluetoothSocket.TYPE_RFCOMM,
+                false,
+                false,
+                -1,
+                new ParcelUuid(uuid));
     }
 
     /**
@@ -2934,7 +2943,8 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                 && (channel < 1 || channel > BluetoothSocket.MAX_RFCOMM_CHANNEL)) {
             throw new IOException("Invalid RFCOMM channel: " + channel);
         }
-        return new BluetoothSocket(this, BluetoothSocket.TYPE_RFCOMM, false, false, channel, null);
+        return new BluetoothSocket(
+                mAdapter, this, BluetoothSocket.TYPE_RFCOMM, false, false, channel, null);
     }
 
     /**
@@ -2953,7 +2963,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             Log.e(TAG, "Bluetooth is not enabled");
             throw new IOException();
         }
-        return new BluetoothSocket(this, BluetoothSocket.TYPE_SCO, true, true, -1, null);
+        return new BluetoothSocket(mAdapter, this, BluetoothSocket.TYPE_SCO, true, true, -1, null);
     }
 
     /**
@@ -3249,7 +3259,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             throw new IOException();
         }
         if (DBG) Log.d(TAG, "createL2capChannel: psm=" + psm);
-        return new BluetoothSocket(this, BluetoothSocket.TYPE_LE, true, true, psm, null);
+        return new BluetoothSocket(mAdapter, this, BluetoothSocket.TYPE_LE, true, true, psm, null);
     }
 
     /**
@@ -3282,7 +3292,8 @@ public final class BluetoothDevice implements Parcelable, Attributable {
         if (DBG) {
             Log.d(TAG, "createInsecureL2capChannel: psm=" + psm);
         }
-        return new BluetoothSocket(this, BluetoothSocket.TYPE_LE, false, false, psm, null);
+        return new BluetoothSocket(
+                mAdapter, this, BluetoothSocket.TYPE_LE, false, false, psm, null);
     }
 
     /**
@@ -3332,6 +3343,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
         }
         if (settings.getDataPath() == BluetoothSocketSettings.DATA_PATH_NO_OFFLOAD) {
             return new BluetoothSocket(
+                    mAdapter,
                     this,
                     settings.getSocketType(),
                     settings.isAuthenticationRequired(),
@@ -3340,6 +3352,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                     uuid);
         } else {
             return new BluetoothSocket(
+                    mAdapter,
                     this,
                     settings.getSocketType(),
                     settings.isAuthenticationRequired(),
