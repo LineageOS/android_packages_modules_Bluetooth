@@ -78,7 +78,8 @@ public:
   virtual void OnDistanceMeasurementResult(
           Address address, uint32_t centimeter, uint32_t error_centimeter, int azimuth_angle,
           int error_azimuth_angle, int altitude_angle, int error_altitude_angle,
-          uint64_t elapsed_realtime_nanos, int8_t confidence_level, double delayed_spread_meters,
+          uint64_t elapsed_realtime_nanos, int remote_tx_power, int reflector_rssi,
+          int8_t confidence_level, double delayed_spread_meters,
           DistanceMeasurementDetectedAttackLevel detected_attack_level,
           double velocity_meters_per_second, DistanceMeasurementMethod method) = 0;
   virtual void OnRasFragmentReady(Address address, uint16_t procedure_counter, bool is_last,
