@@ -92,6 +92,17 @@ object ScanUtil {
     const val WEIGHT_BALANCED = 25
     const val WEIGHT_LOW_LATENCY = 100
 
+    const val MIN_OFFLOADED_FILTERS = 10
+    const val MIN_OFFLOADED_SCAN_STORAGE_BYTES = 1024
+
+    @JvmStatic
+    fun isOffloadedFilteringSupported(adapterService: AdapterService) =
+        adapterService.numOfOffloadedScanFilterSupported >= MIN_OFFLOADED_FILTERS
+
+    @JvmStatic
+    fun isOffloadedScanBatchingSupported(adapterService: AdapterService) =
+        adapterService.offloadedScanResultStorage >= MIN_OFFLOADED_SCAN_STORAGE_BYTES
+
     @JvmStatic fun findById(clients: Set<ScanClient>, id: Int) = clients.find { it.scannerId == id }
 
     @JvmStatic
