@@ -49,6 +49,7 @@ using ::testing::MockFunction;
 using ::testing::NiceMock;
 using ::testing::Return;
 using ::testing::SaveArg;
+using ::testing::WithArg;
 
 static bool get_pts_avrcp_test(void) { return false; }
 
@@ -157,9 +158,9 @@ TEST_F(AvrcpDeviceTest, trackChangedTest) {
                     AttributeEntry(Attribute::DEFAULT_COVER_ART, "0000001")}};
   std::vector<SongInfo> list = {info};
 
-  EXPECT_CALL(interface, GetNowPlayingList(_))
-          .Times(2)
-          .WillRepeatedly(InvokeCb<0>("test_id", list));
+  EXPECT_CALL(interface, GetNowPlayingList(_)).Times(2).WillRepeatedly(WithArg<0>([&](auto cb) {
+    std::move(cb).Run("test_id", list);
+  }));
 
   // Test the interim response for track changed
   auto interim_response = RegisterNotificationResponseBuilder::MakeTrackChangedBuilder(true, 0x01);
@@ -189,7 +190,8 @@ TEST_F(AvrcpDeviceTest, playerSettingsChangedTest) {
 
   EXPECT_CALL(player_settings_interface, GetCurrentPlayerSettingValue(_, _))
           .Times(1)
-          .WillRepeatedly(InvokeCb<1>(attributes, attributes_values));
+          .WillRepeatedly(
+                  WithArg<1>([&](auto cb) { std::move(cb).Run(attributes, attributes_values); }));
 
   // Test the interim response for player settings changed
   auto interim_response = RegisterNotificationResponseBuilder::MakePlayerSettingChangedBuilder(
@@ -238,8 +240,8 @@ TEST_F(AvrcpDeviceTest, playStatusTest) {
 
   EXPECT_CALL(interface, GetPlayStatus(_))
           .Times(2)
-          .WillOnce(InvokeCb<0>(status1))
-          .WillOnce(InvokeCb<0>(status2));
+          .WillOnce(WithArg<0>([&](auto cb) { std::move(cb).Run(status1); }))
+          .WillOnce(WithArg<0>([&](auto cb) { std::move(cb).Run(status2); }));
 
   // Pretend the device is active
   EXPECT_CALL(a2dp_interface, active_peer()).WillRepeatedly(Return(test_device->GetAddress()));
@@ -274,8 +276,8 @@ TEST_F(AvrcpDeviceTest, playPositionTest) {
 
   EXPECT_CALL(interface, GetPlayStatus(_))
           .Times(2)
-          .WillOnce(InvokeCb<0>(status1))
-          .WillOnce(InvokeCb<0>(status2));
+          .WillOnce(WithArg<0>([&](auto cb) { std::move(cb).Run(status1); }))
+          .WillOnce(WithArg<0>([&](auto cb) { std::move(cb).Run(status2); }));
 
   // Pretend the device is active
   EXPECT_CALL(a2dp_interface, active_peer()).WillRepeatedly(Return(test_device->GetAddress()));
@@ -323,8 +325,8 @@ TEST_F(AvrcpDeviceTest, trackChangedBeforeInterimTest) {
 
   EXPECT_CALL(interface, GetNowPlayingList(_))
           .Times(3)
-          .WillOnce(SaveArg<0>(&interim_cb))
-          .WillOnce(SaveArg<0>(&changed_cb));
+          .WillOnce(WithArg<0>([&](auto cb) { interim_cb = std::move(cb); }))
+          .WillOnce(WithArg<0>([&](auto cb) { changed_cb = std::move(cb); }));
 
   // Test that the changed response doesn't get sent before the interim
   ::testing::InSequence s;
@@ -343,11 +345,11 @@ TEST_F(AvrcpDeviceTest, trackChangedBeforeInterimTest) {
   test_device->HandleTrackUpdate();
 
   // Send the interim response
-  interim_cb.Run("test_id", list);
+  std::move(interim_cb).Run("test_id", list);
 
   // Try to send track changed update, should succeed
   test_device->HandleTrackUpdate();
-  changed_cb.Run("test_id", list);
+  std::move(changed_cb).Run("test_id", list);
 }
 
 TEST_F(AvrcpDeviceTest, playStatusChangedBeforeInterimTest) {
@@ -364,8 +366,8 @@ TEST_F(AvrcpDeviceTest, playStatusChangedBeforeInterimTest) {
 
   EXPECT_CALL(interface, GetPlayStatus(_))
           .Times(2)
-          .WillOnce(SaveArg<0>(&interim_cb))
-          .WillOnce(SaveArg<0>(&changed_cb));
+          .WillOnce(WithArg<0>([&](auto cb) { interim_cb = std::move(cb); }))
+          .WillOnce(WithArg<0>([&](auto cb) { changed_cb = std::move(cb); }));
 
   // Test that the changed response doesn't get sent before the interim
   ::testing::InSequence s;
@@ -388,12 +390,12 @@ TEST_F(AvrcpDeviceTest, playStatusChangedBeforeInterimTest) {
 
   // Send the interim response.
   PlayStatus status1 = {0x1234, 0x5678, PlayState::PLAYING};
-  interim_cb.Run(status1);
+  std::move(interim_cb).Run(status1);
 
   // Send the changed response, should succeed this time
   test_device->HandlePlayStatusUpdate();
   PlayStatus status2 = {0x1234, 0x5678, PlayState::STOPPED};
-  changed_cb.Run(status2);
+  std::move(changed_cb).Run(status2);
 }
 
 TEST_F(AvrcpDeviceTest, playPositionChangedBeforeInterimTest) {
@@ -410,8 +412,8 @@ TEST_F(AvrcpDeviceTest, playPositionChangedBeforeInterimTest) {
 
   EXPECT_CALL(interface, GetPlayStatus(_))
           .Times(2)
-          .WillOnce(SaveArg<0>(&interim_cb))
-          .WillOnce(SaveArg<0>(&changed_cb));
+          .WillOnce(WithArg<0>([&](auto cb) { interim_cb = std::move(cb); }))
+          .WillOnce(WithArg<0>([&](auto cb) { changed_cb = std::move(cb); }));
 
   // Test that the changed response doesn't get sent before the interim
   ::testing::InSequence s;
@@ -435,12 +437,12 @@ TEST_F(AvrcpDeviceTest, playPositionChangedBeforeInterimTest) {
   // Run the interim callback for GetPlayStatus which should be pointing to the
   // GetPlayStatus call made by the update.
   PlayStatus status1 = {0x1234, 0x5678, PlayState::PAUSED};
-  interim_cb.Run(status1);
+  std::move(interim_cb).Run(status1);
 
   // Send a play position update, this one should succeed.
   test_device->HandlePlayPosUpdate();
   PlayStatus status2 = {0x5678, 0x9ABC, PlayState::STOPPED};
-  changed_cb.Run(status2);
+  std::move(changed_cb).Run(status2);
 }
 
 TEST_F(AvrcpDeviceTest, nowPlayingChangedBeforeInterim) {
@@ -466,8 +468,8 @@ TEST_F(AvrcpDeviceTest, nowPlayingChangedBeforeInterim) {
 
   EXPECT_CALL(interface, GetNowPlayingList(_))
           .Times(2)
-          .WillOnce(SaveArg<0>(&interim_cb))
-          .WillOnce(SaveArg<0>(&changed_cb));
+          .WillOnce(WithArg<0>([&](auto cb) { interim_cb = std::move(cb); }))
+          .WillOnce(WithArg<0>([&](auto cb) { changed_cb = std::move(cb); }));
 
   // Test that the changed response doesn't get sent before the interim
   ::testing::InSequence s;
@@ -488,11 +490,11 @@ TEST_F(AvrcpDeviceTest, nowPlayingChangedBeforeInterim) {
   test_device->HandleNowPlayingUpdate();
 
   // Send the data needed for the interim response
-  interim_cb.Run("test_id", list);
+  std::move(interim_cb).Run("test_id", list);
 
   // Send now playing changed, should succeed
   test_device->HandleNowPlayingUpdate();
-  changed_cb.Run("test_id", list);
+  std::move(changed_cb).Run("test_id", list);
 }
 
 TEST_F(AvrcpDeviceTest, addressPlayerChangedBeforeInterim) {
@@ -506,8 +508,8 @@ TEST_F(AvrcpDeviceTest, addressPlayerChangedBeforeInterim) {
 
   EXPECT_CALL(interface, GetAddressedPlayer(_))
           .Times(2)
-          .WillOnce(SaveArg<0>(&interim_cb))
-          .WillOnce(SaveArg<0>(&changed_cb));
+          .WillOnce(WithArg<0>([&](auto cb) { interim_cb = std::move(cb); }))
+          .WillOnce(WithArg<0>([&](auto cb) { changed_cb = std::move(cb); }));
 
   // Test that the changed response doesn't get sent before the interim
   ::testing::InSequence s;
@@ -537,11 +539,11 @@ TEST_F(AvrcpDeviceTest, addressPlayerChangedBeforeInterim) {
   // Send the data needed for the interim response
   MediaPlayerInfo info = {0, "Test Player", true};
   std::vector<MediaPlayerInfo> list = {info};
-  interim_cb.Run(0);
+  std::move(interim_cb).Run(0);
 
   // Send addressed player update, should succeed
   test_device->HandleAddressedPlayerUpdate();
-  changed_cb.Run(0);
+  std::move(changed_cb).Run(0);
 }
 
 TEST_F(AvrcpDeviceTest, nowPlayingTest) {
@@ -561,9 +563,9 @@ TEST_F(AvrcpDeviceTest, nowPlayingTest) {
                     AttributeEntry(Attribute::PLAYING_TIME, "1000"),
                     AttributeEntry(Attribute::DEFAULT_COVER_ART, "0000001")}};
   std::vector<SongInfo> list = {info};
-  EXPECT_CALL(interface, GetNowPlayingList(_))
-          .Times(2)
-          .WillRepeatedly(InvokeCb<0>("test_id", list));
+  EXPECT_CALL(interface, GetNowPlayingList(_)).Times(2).WillRepeatedly(WithArg<0>([&](auto cb) {
+    std::move(cb).Run("test_id", list);
+  }));
 
   // Test the interim response for now playing list changed
   auto interim_response = RegisterNotificationResponseBuilder::MakeNowPlayingBuilder(true);
@@ -589,7 +591,9 @@ TEST_F(AvrcpDeviceTest, getPlayStatusTest) {
 
   PlayStatus status = {0x1234, 0x5678, PlayState::PLAYING};
 
-  EXPECT_CALL(interface, GetPlayStatus(_)).Times(1).WillOnce(InvokeCb<0>(status));
+  EXPECT_CALL(interface, GetPlayStatus(_)).Times(1).WillOnce(WithArg<0>([&](auto cb) {
+    std::move(cb).Run(status);
+  }));
 
   // Pretend the device is active
   EXPECT_CALL(a2dp_interface, active_peer()).WillRepeatedly(Return(test_device->GetAddress()));
@@ -619,7 +623,9 @@ TEST_F(AvrcpDeviceTest, getElementAttributesTest) {
                     AttributeEntry(Attribute::PLAYING_TIME, "1000"),
                     AttributeEntry(Attribute::DEFAULT_COVER_ART, "0000001")}};
 
-  EXPECT_CALL(interface, GetSongInfo(_)).WillRepeatedly(InvokeCb<0>(info));
+  EXPECT_CALL(interface, GetSongInfo(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
+    std::move(cb).Run(info);
+  }));
 
   auto compare_to_partial = GetElementAttributesResponseBuilder::MakeBuilder(0xFFFF);
   compare_to_partial->AddAttributeEntry(Attribute::TITLE, "Test Song");
@@ -655,7 +661,9 @@ TEST_F(AvrcpDeviceTest, getElementAttributesWithCoverArtTest) {
                     AttributeEntry(Attribute::PLAYING_TIME, "1000"),
                     AttributeEntry(Attribute::DEFAULT_COVER_ART, "0000001")}};
 
-  EXPECT_CALL(interface, GetSongInfo(_)).WillRepeatedly(InvokeCb<0>(info));
+  EXPECT_CALL(interface, GetSongInfo(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
+    std::move(cb).Run(info);
+  }));
   SetBipClientStatus(false);
 
   auto compare_to_no_art = GetElementAttributesResponseBuilder::MakeBuilder(0xFFFF);
@@ -700,7 +708,9 @@ TEST_F(AvrcpDeviceTest, getElementAttributesMtuTest) {
   device.RegisterInterfaces(&interface, &a2dp_interface, nullptr, nullptr);
 
   SongInfo info = {"test_id", {AttributeEntry(Attribute::TITLE, "1234truncated")}};
-  EXPECT_CALL(interface, GetSongInfo(_)).WillRepeatedly(InvokeCb<0>(info));
+  EXPECT_CALL(interface, GetSongInfo(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
+    std::move(cb).Run(info);
+  }));
 
   EXPECT_CALL(response_cb, Call(1, false, matchPacket(std::move(truncated_packet)))).Times(1);
 
@@ -719,7 +729,9 @@ TEST_F(AvrcpDeviceTest, getTotalNumberOfItemsMediaPlayersTest) {
           {2, "player3", true},
   };
 
-  EXPECT_CALL(interface, GetMediaPlayerList(_)).Times(1).WillOnce(InvokeCb<0>(0, player_list));
+  EXPECT_CALL(interface, GetMediaPlayerList(_)).Times(1).WillOnce(WithArg<0>([&](auto cb) {
+    std::move(cb).Run(0, player_list);
+  }));
 
   auto expected_response = GetTotalNumberOfItemsResponseBuilder::MakeBuilder(Status::NO_ERROR, 0,
                                                                              player_list.size());
@@ -739,7 +751,9 @@ TEST_F(AvrcpDeviceTest, getTotalNumberOfItemsVFSTest) {
           {ListItem::FOLDER, {"id2", true, "folder2"}, SongInfo()},
   };
 
-  EXPECT_CALL(interface, GetFolderItems(_, "", _)).Times(1).WillOnce(InvokeCb<2>(vfs_list));
+  EXPECT_CALL(interface, GetFolderItems(_, "", _)).Times(1).WillOnce(WithArg<2>([&](auto cb) {
+    std::move(cb).Run(vfs_list);
+  }));
 
   auto expected_response =
           GetTotalNumberOfItemsResponseBuilder::MakeBuilder(Status::NO_AVAILABLE_PLAYERS, 0, 0);
@@ -758,8 +772,9 @@ TEST_F(AvrcpDeviceTest, getTotalNumberOfItemsNowPlayingTest) {
           {"test_id1", {}}, {"test_id2", {}}, {"test_id3", {}}, {"test_id4", {}}, {"test_id5", {}},
   };
 
-  EXPECT_CALL(interface, GetNowPlayingList(_))
-          .WillRepeatedly(InvokeCb<0>("test_id1", now_playing_list));
+  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
+    std::move(cb).Run("test_id1", now_playing_list);
+  }));
 
   auto expected_response =
           GetTotalNumberOfItemsResponseBuilder::MakeBuilder(Status::NO_AVAILABLE_PLAYERS, 0, 0);
@@ -777,7 +792,9 @@ TEST_F(AvrcpDeviceTest, getMediaPlayerListTest) {
   MediaPlayerInfo info = {0, "Test Player", true};
   std::vector<MediaPlayerInfo> list = {info};
 
-  EXPECT_CALL(interface, GetMediaPlayerList(_)).Times(1).WillOnce(InvokeCb<0>(0, list));
+  EXPECT_CALL(interface, GetMediaPlayerList(_)).Times(1).WillOnce(WithArg<0>([&](auto cb) {
+    std::move(cb).Run(0, list);
+  }));
 
   auto expected_response =
           GetFolderItemsResponseBuilder::MakePlayerListBuilder(Status::NO_ERROR, 0x0000, 0xFFFF);
@@ -807,7 +824,9 @@ TEST_F(AvrcpDeviceTest, getNowPlayingListTest) {
                     AttributeEntry(Attribute::DEFAULT_COVER_ART, "0000001")}};
   std::vector<SongInfo> list = {info};
 
-  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(InvokeCb<0>("test_id", list));
+  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
+    std::move(cb).Run("test_id", list);
+  }));
 
   FilterCoverArt(info);
   auto expected_response =
@@ -837,7 +856,9 @@ TEST_F(AvrcpDeviceTest, getNowPlayingListWithCoverArtTest) {
                     AttributeEntry(Attribute::DEFAULT_COVER_ART, "0000001")}};
   std::vector<SongInfo> list = {info};
 
-  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(InvokeCb<0>("test_id", list));
+  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
+    std::move(cb).Run("test_id", list);
+  }));
 
   auto expected_response =
           GetFolderItemsResponseBuilder::MakeNowPlayingBuilder(Status::NO_ERROR, 0x0000, 0xFFFF);
@@ -858,7 +879,9 @@ TEST_F(AvrcpDeviceTest, getVFSFolderTest) {
   ListItem item = {ListItem::FOLDER, info, SongInfo()};
   std::vector<ListItem> list = {item};
 
-  EXPECT_CALL(interface, GetFolderItems(_, "", _)).Times(1).WillOnce(InvokeCb<2>(list));
+  EXPECT_CALL(interface, GetFolderItems(_, "", _)).Times(1).WillOnce(WithArg<2>([&](auto cb) {
+    std::move(cb).Run(list);
+  }));
 
   auto expected_response =
           GetFolderItemsResponseBuilder::MakeVFSBuilder(Status::NO_ERROR, 0x0000, 0xFFFF);
@@ -899,7 +922,9 @@ TEST_F(AvrcpDeviceTest, getFolderItemsMtuTest) {
   ListItem item3 = {ListItem::FOLDER, small_info, SongInfo()};
 
   std::vector<ListItem> list0 = {item0, item1, item2, item3};
-  EXPECT_CALL(interface, GetFolderItems(_, "", _)).WillRepeatedly(InvokeCb<2>(list0));
+  EXPECT_CALL(interface, GetFolderItems(_, "", _)).WillRepeatedly(WithArg<2>([&](auto cb) {
+    std::move(cb).Run(list0);
+  }));
 
   EXPECT_CALL(response_cb, Call(1, true, matchPacket(std::move(truncated_packet)))).Times(1);
   device.BrowseMessageReceived(1, TestBrowsePacket::Make(get_folder_items_request_vfs));
@@ -916,7 +941,9 @@ TEST_F(AvrcpDeviceTest, changePathTest) {
   ListItem item0 = {ListItem::FOLDER, info0, SongInfo()};
   ListItem item1 = {ListItem::FOLDER, info1, SongInfo()};
   std::vector<ListItem> list0 = {item0, item1};
-  EXPECT_CALL(interface, GetFolderItems(_, "", _)).Times(1).WillRepeatedly(InvokeCb<2>(list0));
+  EXPECT_CALL(interface, GetFolderItems(_, "", _)).Times(1).WillRepeatedly(WithArg<2>([&](auto cb) {
+    std::move(cb).Run(list0);
+  }));
 
   FolderInfo info2 = {"test_id2", true, "Test Folder2"};
   FolderInfo info3 = {"test_id3", true, "Test Folder3"};
@@ -927,10 +954,12 @@ TEST_F(AvrcpDeviceTest, changePathTest) {
   std::vector<ListItem> list1 = {item2, item3, item4};
   EXPECT_CALL(interface, GetFolderItems(_, "test_id1", _))
           .Times(3)
-          .WillRepeatedly(InvokeCb<2>(list1));
+          .WillRepeatedly(WithArg<2>([&](auto cb) { std::move(cb).Run(list1); }));
 
   std::vector<ListItem> list2 = {};
-  EXPECT_CALL(interface, GetFolderItems(_, "test_id3", _)).Times(1).WillOnce(InvokeCb<2>(list2));
+  EXPECT_CALL(interface, GetFolderItems(_, "test_id3", _))
+          .Times(1)
+          .WillOnce(WithArg<2>([&](auto cb) { std::move(cb).Run(list2); }));
 
   // Populate the VFS ID map
   auto folder_items_response =
@@ -1000,7 +1029,9 @@ TEST_F(AvrcpDeviceTest, getItemAttributesNowPlayingTest) {
                     AttributeEntry(Attribute::DEFAULT_COVER_ART, "0000001")}};
   std::vector<SongInfo> list = {info};
 
-  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(InvokeCb<0>("test_id", list));
+  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
+    std::move(cb).Run("test_id", list);
+  }));
 
   SetBipClientStatus(false);
 
@@ -1036,7 +1067,9 @@ TEST_F(AvrcpDeviceTest, getItemAttributesNowPlayingWithCoverArtTest) {
                     AttributeEntry(Attribute::DEFAULT_COVER_ART, "0000001")}};
   std::vector<SongInfo> list = {info};
 
-  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(InvokeCb<0>("test_id", list));
+  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
+    std::move(cb).Run("test_id", list);
+  }));
 
   SetBipClientStatus(true);
 
@@ -1087,7 +1120,9 @@ TEST_F(AvrcpDeviceTest, getItemAttributesMtuTest) {
 
   SongInfo info = {"test_id", {AttributeEntry(Attribute::TITLE, "1234truncated")}};
   std::vector<SongInfo> list = {info};
-  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(InvokeCb<0>("test_id", list));
+  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
+    std::move(cb).Run("test_id", list);
+  }));
 
   EXPECT_CALL(response_cb, Call(1, true, matchPacket(std::move(truncated_packet)))).Times(1);
   device.BrowseMessageReceived(1,
@@ -1103,7 +1138,9 @@ TEST_F(AvrcpDeviceTest, setAddressedPlayerTest) {
   MediaPlayerInfo info = {0, "Test Player", true};
   std::vector<MediaPlayerInfo> list = {info};
 
-  EXPECT_CALL(interface, SetAddressedPlayer(_, _)).WillRepeatedly(InvokeCb<1>(0));
+  EXPECT_CALL(interface, SetAddressedPlayer(_, _)).WillRepeatedly(WithArg<1>([&](auto cb) {
+    std::move(cb).Run(0);
+  }));
 
   auto set_addr_player_rej_rsp =
           RejectBuilder::MakeBuilder(CommandPdu::SET_ADDRESSED_PLAYER, Status::INVALID_PLAYER_ID);
@@ -1130,9 +1167,9 @@ TEST_F(AvrcpDeviceTest, setBrowsedPlayerTest) {
 
   EXPECT_CALL(interface, SetBrowsedPlayer(_, "", _))
           .Times(3)
-          .WillOnce(InvokeCb<2>(true, "", 0))
-          .WillOnce(InvokeCb<2>(false, "", 0))
-          .WillOnce(InvokeCb<2>(true, "", 2));
+          .WillOnce(WithArg<2>([&](auto cb) { std::move(cb).Run(true, "", 0); }))
+          .WillOnce(WithArg<2>([&](auto cb) { std::move(cb).Run(false, "", 0); }))
+          .WillOnce(WithArg<2>([&](auto cb) { std::move(cb).Run(true, "", 2); }));
 
   auto not_browsable_rsp = SetBrowsedPlayerResponseBuilder::MakeBuilder(
           Status::PLAYER_NOT_BROWSABLE, 0x0000, 0, 0, "");
@@ -1169,7 +1206,7 @@ TEST_F(AvrcpDeviceTest, volumeChangedTest) {
 
   EXPECT_CALL(vol_interface, DeviceConnected(test_device->GetAddress(), _))
           .Times(1)
-          .WillOnce(InvokeCb<1>(0x30));
+          .WillOnce(WithArg<1>([&](auto cb) { std::move(cb).Run(0x30); }));
   auto set_vol = SetAbsoluteVolumeRequestBuilder::MakeBuilder(0x30);
   EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(set_vol)))).Times(1);
 
@@ -1201,7 +1238,7 @@ TEST_F(AvrcpDeviceTest, volumeChangedNonActiveTest) {
 
   EXPECT_CALL(vol_interface, DeviceConnected(test_device->GetAddress(), _))
           .Times(1)
-          .WillOnce(InvokeCb<1>(0x30));
+          .WillOnce(WithArg<1>([&](auto cb) { std::move(cb).Run(0x30); }));
   auto set_vol = SetAbsoluteVolumeRequestBuilder::MakeBuilder(0x30);
   EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(set_vol)))).Times(1);
 
@@ -1277,7 +1314,9 @@ TEST_F(AvrcpDeviceTest, playPushedActiveDeviceTest) {
   EXPECT_CALL(response_cb, Call(_, false, matchPacket(std::move(play_pushed_response)))).Times(1);
 
   PlayStatus status = {0x1234, 0x5678, PlayState::PLAYING};
-  EXPECT_CALL(interface, GetPlayStatus(_)).Times(1).WillOnce(InvokeCb<0>(status));
+  EXPECT_CALL(interface, GetPlayStatus(_)).Times(1).WillOnce(WithArg<0>([&](auto cb) {
+    std::move(cb).Run(status);
+  }));
 
   EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, 0x44, KeyState::PUSHED)).Times(1);
 
@@ -1306,7 +1345,9 @@ TEST_F(AvrcpDeviceTest, playPushedInactiveDeviceTest) {
 
   // No play command should be sent since the music is already playing
   PlayStatus status = {0x1234, 0x5678, PlayState::PLAYING};
-  EXPECT_CALL(interface, GetPlayStatus(_)).Times(1).WillOnce(InvokeCb<0>(status));
+  EXPECT_CALL(interface, GetPlayStatus(_)).Times(1).WillOnce(WithArg<0>([&](auto cb) {
+    std::move(cb).Run(status);
+  }));
   EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, 0x44, KeyState::PUSHED)).Times(0);
 
   auto play_pushed_pkt = TestAvrcpPacket::Make();
@@ -1463,7 +1504,9 @@ TEST_F(AvrcpDeviceTest, getInvalidItemAttributesTest) {
                     AttributeEntry(Attribute::PLAYING_TIME, "1000")}};
   std::vector<SongInfo> list = {info};
 
-  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(InvokeCb<0>("test_id", list));
+  EXPECT_CALL(interface, GetNowPlayingList(_)).WillRepeatedly(WithArg<0>([&](auto cb) {
+    std::move(cb).Run("test_id", list);
+  }));
 
   auto compare_to_full =
           GetItemAttributesResponseBuilder::MakeBuilder(Status::UIDS_CHANGED, 0xFFFF);
@@ -1490,7 +1533,7 @@ TEST_F(AvrcpDeviceTest, listPlayerSettingsTest) {
   test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr, &player_settings_interface);
 
   EXPECT_CALL(player_settings_interface, ListPlayerSettings(_))
-          .WillRepeatedly(InvokeCb<0>(attributes));
+          .WillRepeatedly(WithArg<0>([&](auto cb) { std::move(cb).Run(attributes); }));
 
   auto player_settings_list_response =
           ListPlayerApplicationSettingAttributesResponseBuilder::MakeBuilder(attributes);
@@ -1530,7 +1573,8 @@ TEST_F(AvrcpDeviceTest, listPlayerSettingValuesTest) {
   test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr, &player_settings_interface);
 
   EXPECT_CALL(player_settings_interface, ListPlayerSettingValues(attribute, _))
-          .WillRepeatedly(InvokeCb<1>(attribute, attribute_values));
+          .WillRepeatedly(
+                  WithArg<1>([&](auto cb) { std::move(cb).Run(attribute, attribute_values); }));
 
   auto player_settings_list_values_response =
           ListPlayerApplicationSettingValuesResponseBuilder::MakeBuilder(attribute_values);
@@ -1601,7 +1645,8 @@ TEST_F(AvrcpDeviceTest, getCurrentPlayerApplicationSettingValueTest) {
   test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr, &player_settings_interface);
 
   EXPECT_CALL(player_settings_interface, GetCurrentPlayerSettingValue(attributes, _))
-          .WillRepeatedly(InvokeCb<1>(attributes, attributes_values));
+          .WillRepeatedly(
+                  WithArg<1>([&](auto cb) { std::move(cb).Run(attributes, attributes_values); }));
 
   auto player_settings_get_current_values_response =
           GetCurrentPlayerApplicationSettingValueResponseBuilder::MakeBuilder(attributes,
@@ -1673,7 +1718,7 @@ TEST_F(AvrcpDeviceTest, setPlayerApplicationSettingValueTest) {
   test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr, &player_settings_interface);
 
   EXPECT_CALL(player_settings_interface, SetPlayerSettings(attributes, attributes_values, _))
-          .WillRepeatedly(InvokeCb<2>(true));
+          .WillRepeatedly(WithArg<2>([&](auto cb) { std::move(cb).Run(true); }));
 
   auto set_player_settings_response =
           SetPlayerApplicationSettingValueResponseBuilder::MakeBuilder();

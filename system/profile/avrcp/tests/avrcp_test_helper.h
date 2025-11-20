@@ -112,18 +112,6 @@ public:
   MOCK_METHOD3(FindProfileVersionInRec, bool(t_sdp_disc_rec*, uint16_t, uint16_t*));
 };
 
-ACTION_TEMPLATE(InvokeCb, HAS_1_TEMPLATE_PARAMS(int, k), AND_1_VALUE_PARAMS(input)) {
-  ::testing::get<k>(args).Run(input);
-}
-
-ACTION_TEMPLATE(InvokeCb, HAS_1_TEMPLATE_PARAMS(int, k), AND_2_VALUE_PARAMS(a, b)) {
-  ::testing::get<k>(args).Run(a, b);
-}
-
-ACTION_TEMPLATE(InvokeCb, HAS_1_TEMPLATE_PARAMS(int, k), AND_3_VALUE_PARAMS(a, b, c)) {
-  ::testing::get<k>(args).Run(a, b, c);
-}
-
 template <class PacketType>
 class PacketMatcher : public ::testing::MatcherInterface<const AvrcpResponse&> {
 public:
