@@ -706,7 +706,7 @@ typedef enum : uint8_t {
 } tGATT_SUBRATE_MODE;
 
 #define GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP  \
-  1 /* start a idle timer for this duration \
+  4 /* start a idle timer for this duration \
      when no application need to use the link */
 
 #define GATT_LINK_NO_IDLE_TIMEOUT 0xFFFF
