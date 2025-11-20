@@ -577,24 +577,25 @@ public class AdapterService extends Service {
 
         @Override
         public void handleMessage(Message msg) {
+            var header = "handleMessage(): ";
             switch (msg.what) {
                 case MESSAGE_PROFILE_SERVICE_STATE_CHANGED -> {
-                    Log.v(TAG, "handleMessage() - MESSAGE_PROFILE_SERVICE_STATE_CHANGED");
-                    processProfileServiceStateChanged((ProfileService) msg.obj, msg.arg1);
+                    var profile = (ProfileService) msg.obj;
+                    Log.v(TAG, header + "MESSAGE_PROFILE_SERVICE_STATE_CHANGED for " + profile);
+                    processProfileServiceStateChanged(profile, msg.arg1);
                 }
                 case MESSAGE_PROFILE_SERVICE_REGISTERED -> {
-                    Log.v(TAG, "handleMessage() - MESSAGE_PROFILE_SERVICE_REGISTERED");
-                    registerProfileService((ProfileService) msg.obj);
+                    var profile = (ProfileService) msg.obj;
+                    Log.v(TAG, header + "MESSAGE_PROFILE_SERVICE_REGISTERED for " + profile);
+                    registerProfileService(profile);
                 }
                 case MESSAGE_PROFILE_SERVICE_UNREGISTERED -> {
-                    Log.v(TAG, "handleMessage() - MESSAGE_PROFILE_SERVICE_UNREGISTERED");
-                    unregisterProfileService((ProfileService) msg.obj);
+                    var profile = (ProfileService) msg.obj;
+                    Log.v(TAG, header + "MESSAGE_PROFILE_SERVICE_UNREGISTERED for " + profile);
+                    unregisterProfileService(profile);
                 }
                 case MESSAGE_PREFERRED_AUDIO_PROFILES_AUDIO_FRAMEWORK_TIMEOUT -> {
-                    Log.e(
-                            TAG,
-                            "handleMessage() - "
-                                    + "MESSAGE_PREFERRED_PROFILE_CHANGE_AUDIO_FRAMEWORK_TIMEOUT");
+                    Log.e(TAG, header + "MESSAGE_PREFERRED_PROFILE_CHANGE_AUDIO_FRAMEWORK_TIMEOUT");
                     int groupId = (int) msg.obj;
 
                     synchronized (mCsipGroupsPendingAudioProfileChanges) {
@@ -611,7 +612,7 @@ public class AdapterService extends Service {
                                 BluetoothStatusCodes.ERROR_TIMEOUT);
                     }
                 }
-                default -> Log.e(TAG, "handleMessage() - Unknown message: " + msg.what);
+                default -> Log.e(TAG, header + "Unknown message: " + msg.what);
             }
         }
 
@@ -1255,7 +1256,9 @@ public class AdapterService extends Service {
     }
 
     private void startScanController() {
-        Log.i(TAG, "startScanController()");
+        Instant start = Instant.now();
+        var header = "startScanController(): ";
+        Log.i(TAG, header + "Starting…");
         mScanController =
                 new ScanController(
                         this,
@@ -1263,15 +1266,21 @@ public class AdapterService extends Service {
                         mPeriodicScanNativeInterface,
                         mCompanionDeviceManager);
         mNativeInterface.enable(mLocalName);
+        Instant end = Instant.now();
+        Log.i(TAG, header + "Completed in " + Duration.between(start, end).toMillis() + "ms");
     }
 
     private void startGattProfileService() {
-        Log.i(TAG, "startGattProfileService()");
+        Instant start = Instant.now();
+        var header = "startGattProfileService(): ";
+        Log.i(TAG, header + "Starting…");
         constructProfile(BluetoothProfile.GATT);
         mStartedProfiles.put(BluetoothProfile.GATT, mGattService);
         addProfile(mGattService);
         mGattService.setAvailable(true);
         onProfileServiceStateChanged(mGattService, BluetoothAdapter.STATE_ON);
+        Instant end = Instant.now();
+        Log.i(TAG, header + "Completed in " + Duration.between(start, end).toMillis() + "ms");
     }
 
     void startProfileServices() {
