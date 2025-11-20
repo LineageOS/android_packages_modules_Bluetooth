@@ -180,7 +180,9 @@ void btsnd_hcic_write_pagescan_cfg(uint16_t interval,
 void btsnd_hcic_write_inqscan_cfg(uint16_t interval, uint16_t window);
 /* Write Inquiry Scan Activity */
 
+// TODO (b/460502961): Remove once the flag security_mode_3_pairing is shipped.
 void btsnd_hcic_write_auth_enable(uint8_t flag);      /* Write Authentication Enable */
+
 void btsnd_hcic_write_dev_class(DEV_CLASS dev);       /* Write Class of Device */
 void btsnd_hcic_write_voice_settings(uint16_t flags); /* Write Voice Settings */
 
