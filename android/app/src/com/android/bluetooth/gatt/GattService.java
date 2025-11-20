@@ -173,8 +173,6 @@ public class GattService extends ProfileService {
     /** HashMap used for storing RSSI cache entries */
     @VisibleForTesting final Map<String, RssiCacheEntry> mRssiCache = new HashMap<>();
 
-    final Object mOffloadLock = new Object();
-
     private final CompanionDeviceManager mCompanionDeviceManager;
     private final GattServerManager mServerManager;
     private final GattNativeInterface mNativeInterface;
