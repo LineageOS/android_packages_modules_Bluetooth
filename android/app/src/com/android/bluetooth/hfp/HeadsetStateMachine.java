@@ -825,7 +825,7 @@ class HeadsetStateMachine extends StateMachine {
                                 processSWBEvent(event.valueInt, event.valueInt2);
                         case HeadsetStackEvent.EVENT_TYPE_BIND ->
                                 processAtBind(event.valueString, event.device);
-                        // Unexpected AT commands, we only handle them for comparability reasons
+                        // Unexpected AT commands, we only handle them for compatibility reasons
                         case HeadsetStackEvent.EVENT_TYPE_VR_STATE_CHANGED -> {
                             stateLogW(
                                     "Unexpected VR event, device="

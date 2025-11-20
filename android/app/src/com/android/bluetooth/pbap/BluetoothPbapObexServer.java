@@ -321,7 +321,7 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
 
     @Override
     public int onDelete(final HeaderSet request, final HeaderSet reply) {
-        Log.d(TAG, "onDelete(): not support PUT request.");
+        Log.d(TAG, "onDelete(): not support DELETE request.");
         notifyUpdateWakeLock();
         return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
     }
