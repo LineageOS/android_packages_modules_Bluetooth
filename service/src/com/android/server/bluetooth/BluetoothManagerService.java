@@ -1313,7 +1313,7 @@ class BluetoothManagerService {
                     addCrashLog();
                     mActiveLogs.add(ENABLE_DISABLE_REASON_CRASH, false);
                     if (mEnable) {
-                        prepareRestartMessage();
+                        prepareRestartMessage(false);
                     }
 
                     sendBluetoothServiceDownCallback();
@@ -1349,7 +1349,7 @@ class BluetoothManagerService {
                     bluetoothStateChangeHandler(State.BLE_TURNING_ON, State.OFF);
                     mHandler.removeMessages(MESSAGE_BLUETOOTH_SERVICE_CONNECTED);
                     if (mEnable) {
-                        prepareRestartMessage();
+                        prepareRestartMessage(true);
                     }
                 }
 
@@ -1362,7 +1362,7 @@ class BluetoothManagerService {
         return mHandler.hasMessages(MESSAGE_TIMEOUT_BIND);
     }
 
-    private void prepareRestartMessage() {
+    private void prepareRestartMessage(boolean recoverFromTimeout) {
         mEnable = false;
 
         mErrorRecoveryRetryCounter++;
@@ -1375,6 +1375,13 @@ class BluetoothManagerService {
         var delay = SERVICE_RESTART_DELAY.multipliedBy(mErrorRecoveryRetryCounter);
         if (mErrorRecoveryRetryCounter > MAX_ERROR_RESTART_RETRIES / 2) {
             // Last attempts should leave way more time
+            delay = delay.multipliedBy(10);
+        }
+        if (recoverFromTimeout) {
+            // Leave more time to recover when it come from a timeout, to not add load on an already
+            // performance limited device.
+            // This should also give enough time to terminate the Bluetooth process and make sure it
+            // is not being re-used.
             delay = delay.multipliedBy(10);
         }
 
@@ -1851,7 +1858,7 @@ class BluetoothManagerService {
             mBleAppManager.clearBleApps();
         }
 
-        prepareRestartMessage();
+        prepareRestartMessage(false);
 
         if (repeatAirplaneRunnable) {
             onAirplaneModeChanged(mAirplaneModeController.isOnForUser());
