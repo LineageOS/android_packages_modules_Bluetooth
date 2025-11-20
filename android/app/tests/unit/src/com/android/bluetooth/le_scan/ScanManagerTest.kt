@@ -18,9 +18,7 @@ package com.android.bluetooth.le_scan
 
 import android.app.ActivityManager
 import android.app.AlarmManager
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProtoEnums
 import android.bluetooth.le.ScanFilter
@@ -104,8 +102,6 @@ class ScanManagerTest(flags: FlagsWrapper) {
     @get:Rule val setFlagsRule = SetFlagsRule(flags.flags)
 
     @Mock private lateinit var adapterService: AdapterService
-    @Mock private lateinit var bluetoothManager: BluetoothManager
-    @Mock private lateinit var adapter: BluetoothAdapter
     @Mock private lateinit var locationManager: LocationManager
     @Mock private lateinit var batteryStatsManager: BatteryStatsManager
     @Mock private lateinit var metricsLogger: MetricsLogger
@@ -154,8 +150,6 @@ class ScanManagerTest(flags: FlagsWrapper) {
         adapterService.mockGetSystemService<DisplayManager>()
         adapterService.mockGetSystemService<BatteryStatsManager>(batteryStatsManager)
         adapterService.mockGetSystemService<AlarmManager>()
-        adapterService.mockGetSystemService<BluetoothManager>(bluetoothManager)
-        doReturn(adapter).whenever(bluetoothManager).adapter
 
         val context = InstrumentationRegistry.getInstrumentation().context
         adapterService.mockResources(context.resources)
@@ -170,7 +164,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
         )
         doReturn(mockContentResolver).whenever(adapterService).contentResolver
         // Needed to mock Native call/callback when hw offload scan filter is enabled
-        doReturn(true).whenever(adapter).isOffloadedFilteringSupported
+        simulateIsOffloadFilteringSupported(true)
 
         // TODO(b/397863857) Delete on `Flags.scanControllerThread()` cleanup
         // Mock JNI callback in ScanNativeCallback
@@ -1993,7 +1987,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
     @EnableFlags(Flags.FLAG_LE_SCAN_MSFT_SUPPORT)
     fun testMsftScan() {
         doReturn(true).whenever(nativeInterface).isMsftSupported()
-        doReturn(false).whenever(adapter).isOffloadedFilteringSupported
+        simulateIsOffloadFilteringSupported(false)
 
         val isFiltered = true
         val serviceUuid = ParcelUuid(UUID.fromString("12345678-90AB-CDEF-1234-567890ABCDEF"))
@@ -2059,7 +2053,7 @@ class ScanManagerTest(flags: FlagsWrapper) {
     @EnableFlags(Flags.FLAG_LE_SCAN_MSFT_SUPPORT)
     fun testPreferApcfOverMsftScan() {
         doReturn(true).whenever(nativeInterface).isMsftSupported()
-        doReturn(true).whenever(adapter).isOffloadedFilteringSupported
+        simulateIsOffloadFilteringSupported(true)
 
         val isFiltered = true
         val serviceUuid = ParcelUuid(UUID.fromString("12345678-90AB-CDEF-1234-567890ABCDEF"))
@@ -2288,6 +2282,11 @@ class ScanManagerTest(flags: FlagsWrapper) {
             else ScanManager.MSG_STOP_CONNECTING
         message.obj = null
         return message
+    }
+
+    private fun simulateIsOffloadFilteringSupported(supported: Boolean) {
+        val filterCount = if (supported) ScanUtil.MIN_OFFLOADED_FILTERS else 0
+        doReturn(filterCount).whenever(adapterService).numOfOffloadedScanFilterSupported
     }
 
     companion object {
