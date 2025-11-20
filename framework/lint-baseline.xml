@@ -8,7 +8,7 @@
         errorLine2="                    ~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothAdapter.java"
-            line="4144"
+            line="4182"
             column="21"/>
     </issue>
 
@@ -41,7 +41,7 @@
         errorLine2="                               ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothQualityReport.java"
-            line="712"
+            line="726"
             column="32"/>
     </issue>
 
@@ -151,7 +151,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothAdapter.java"
-            line="2666"
+            line="2700"
             column="33"/>
     </issue>
 
@@ -162,7 +162,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothAdapter.java"
-            line="3212"
+            line="3246"
             column="17"/>
     </issue>
 
@@ -173,7 +173,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothAdapter.java"
-            line="3337"
+            line="3371"
             column="29"/>
     </issue>
 
@@ -184,7 +184,7 @@
         errorLine2="               ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothDevice.java"
-            line="2052"
+            line="2208"
             column="16"/>
     </issue>
 
@@ -195,7 +195,7 @@
         errorLine2="                   ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothDevice.java"
-            line="2362"
+            line="2568"
             column="20"/>
     </issue>
 
@@ -206,7 +206,7 @@
         errorLine2="                    ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothGatt.java"
-            line="269"
+            line="263"
             column="21"/>
     </issue>
 
@@ -217,7 +217,7 @@
         errorLine2="                    ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothGatt.java"
-            line="462"
+            line="460"
             column="21"/>
     </issue>
 
@@ -228,7 +228,7 @@
         errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothGatt.java"
-            line="522"
+            line="520"
             column="21"/>
     </issue>
 
@@ -239,7 +239,7 @@
         errorLine2="                    ~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothGatt.java"
-            line="622"
+            line="620"
             column="21"/>
     </issue>
 
@@ -250,7 +250,7 @@
         errorLine2="                    ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothGatt.java"
-            line="673"
+            line="671"
             column="21"/>
     </issue>
 
@@ -371,7 +371,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/le/BluetoothLeScanner.java"
-            line="292"
+            line="293"
             column="17"/>
     </issue>
 
@@ -382,7 +382,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/le/BluetoothLeScanner.java"
-            line="451"
+            line="457"
             column="17"/>
     </issue>
 
@@ -393,7 +393,7 @@
         errorLine2="                    ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/le/BluetoothLeScanner.java"
-            line="570"
+            line="598"
             column="21"/>
     </issue>
 
@@ -404,7 +404,7 @@
         errorLine2="               ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothMap.java"
-            line="393"
+            line="392"
             column="16"/>
     </issue>
 
@@ -415,7 +415,7 @@
         errorLine2="               ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothSap.java"
-            line="391"
+            line="390"
             column="16"/>
     </issue>
 
@@ -448,7 +448,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/CallbackWrapper.java"
-            line="89"
+            line="96"
             column="17"/>
     </issue>
 
@@ -459,7 +459,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/CallbackWrapper.java"
-            line="111"
+            line="118"
             column="17"/>
     </issue>
 
