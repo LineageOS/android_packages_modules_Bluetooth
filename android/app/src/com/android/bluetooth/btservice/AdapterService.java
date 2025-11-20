@@ -1447,7 +1447,9 @@ public class AdapterService extends Service {
     }
 
     private void stopScanController() {
-        Log.i(TAG, "stopScanController()");
+        Instant start = Instant.now();
+        var header = "stopScanController(): ";
+        Log.i(TAG, header + "Stopping…");
         setScanMode(SCAN_MODE_NONE, "stopScanController");
         final var scanController = getBluetoothScanController();
         if (scanController != null) {
@@ -1455,10 +1457,14 @@ public class AdapterService extends Service {
             scanController.cleanup();
         }
         mNativeInterface.disable();
+        Instant end = Instant.now();
+        Log.i(TAG, header + "Completed in " + Duration.between(start, end).toMillis() + "ms");
     }
 
     private void stopGattProfileService() {
-        Log.i(TAG, "stopGattProfileService()");
+        Instant start = Instant.now();
+        var header = "stopGattProfileService(): ";
+        Log.i(TAG, header + "Stopping…");
         setScanMode(SCAN_MODE_NONE, "stopGattProfileService");
 
         mStartedProfiles.remove(BluetoothProfile.GATT);
@@ -1471,6 +1477,8 @@ public class AdapterService extends Service {
             gattService.cleanup();
             gattService.getBinder().ifPresent(ProfileService.IProfileServiceBinder::cleanup);
         }
+        Instant end = Instant.now();
+        Log.i(TAG, header + "Completed in " + Duration.between(start, end).toMillis() + "ms");
     }
 
     void stopProfileServices() {
