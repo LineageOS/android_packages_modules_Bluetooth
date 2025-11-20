@@ -394,6 +394,7 @@ public class AdapterProperties {
     /**
      * @return the mBondedDevices
      */
+    @NonNull
     BluetoothDevice[] getBondedDevices() {
         BluetoothDevice[] bondedDeviceList = new BluetoothDevice[0];
         try {

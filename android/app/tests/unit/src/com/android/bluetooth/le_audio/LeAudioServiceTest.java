@@ -2586,7 +2586,7 @@ public class LeAudioServiceTest {
         assertThat(mService.getDevicesMatchingConnectionStates(null)).isEmpty();
 
         int[] states = new int[] {STATE_CONNECTED};
-        doReturn(null).when(mAdapterService).getBondedDevices();
+        doReturn(new BluetoothDevice[] {}).when(mAdapterService).getBondedDevices();
         assertThat(mService.getDevicesMatchingConnectionStates(states)).isEmpty();
 
         doReturn(new BluetoothDevice[] {mSingleDevice}).when(mAdapterService).getBondedDevices();
