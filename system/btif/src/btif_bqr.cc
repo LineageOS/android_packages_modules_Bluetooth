@@ -26,7 +26,6 @@
 #include <cerrno>
 #include <cstdint>
 
-#include "bt_status.h"
 #include "btif/include/btif_common.h"
 #include "btif/include/btif_storage.h"
 #include "btif/include/core_callbacks.h"
@@ -999,7 +998,7 @@ static bt_remote_version_t btif_get_remote_version(const RawAddress& bd_addr) {
           .val = reinterpret_cast<void*>(&info),
   };
 
-  if (btif_storage_get_remote_device_property(&bd_addr, &prop)) {
+  if (btif_storage_get_remote_device_property(&bd_addr, &prop) == BT_STATUS_SUCCESS) {
     return info;
   }
   return {};

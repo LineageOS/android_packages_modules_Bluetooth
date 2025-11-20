@@ -213,8 +213,8 @@ bool interop_match_name(const interop_feature_t feature, const char* name) {
 }
 
 bool interop_match_addr_or_name(const interop_feature_t feature, const RawAddress* addr,
-                                BtStatus (*get_remote_device_property)(const RawAddress*,
-                                                                       bt_property_t*)) {
+                                bt_status_t (*get_remote_device_property)(const RawAddress*,
+                                                                          bt_property_t*)) {
   log::assert_that(addr != nullptr, "assert failed: addr != nullptr");
   log::assert_that(get_remote_device_property != nullptr,
                    "assert failed: get_remote_device_property != nullptr");
@@ -228,7 +228,7 @@ bool interop_match_addr_or_name(const interop_feature_t feature, const RawAddres
 
   BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_BDNAME, sizeof(bt_bdname_t), bdname.name);
 
-  if (!get_remote_device_property(addr, &prop_name)) {
+  if (get_remote_device_property(addr, &prop_name) != BT_STATUS_SUCCESS) {
     return false;
   }
   if (strlen((const char*)bdname.name) == 0) {

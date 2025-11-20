@@ -635,7 +635,8 @@ static bool check_cached_model_name(const RawAddress& bd_addr) {
   bt_bdname_t model_name;
   BTIF_STORAGE_FILL_PROPERTY(&prop, BT_PROPERTY_REMOTE_MODEL_NUM, sizeof(model_name), &model_name);
 
-  if (!btif_storage_get_remote_device_property(&bd_addr, &prop) || prop.len == 0) {
+  if (btif_storage_get_remote_device_property(&bd_addr, &prop) != BT_STATUS_SUCCESS ||
+      prop.len == 0) {
     log::info("Device {} no cached model name", bd_addr);
     return false;
   }

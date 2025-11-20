@@ -233,8 +233,8 @@ bool interop_match_addr_get_max_lat(const interop_feature_t feature, const RawAd
   return test::mock::device_interop::interop_match_addr_get_max_lat(feature, addr, max_lat);
 }
 bool interop_match_addr_or_name(const interop_feature_t feature, const RawAddress* addr,
-                                BtStatus (*get_remote_device_property)(const RawAddress*,
-                                                                       bt_property_t*)) {
+                                bt_status_t (*get_remote_device_property)(const RawAddress*,
+                                                                          bt_property_t*)) {
   inc_func_call_count(__func__);
   return test::mock::device_interop::interop_match_addr_or_name(feature, addr,
                                                                 get_remote_device_property);

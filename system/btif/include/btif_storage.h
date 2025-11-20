@@ -29,7 +29,6 @@
 
 #include <string>
 
-#include "bt_status.h"
 #include "internal_include/bt_target.h"
 
 /*******************************************************************************
@@ -60,18 +59,18 @@
  * Description      Helper function to fetch the bonded devices
  *                  from NVRAM
  *
- * Returns          BtifStatus() if successful, BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_in_fetch_bonded_device(const std::string& bdstr);
+bt_status_t btif_in_fetch_bonded_device(const std::string& bdstr);
 
 typedef struct {
   uint32_t num_devices;
   tBLE_BD_ADDR devices[BTM_SEC_MAX_DEVICE_RECORDS];
 } btif_bonded_devices_t;
 
-BtStatus btif_in_fetch_bonded_ble_device(const std::string& remote_bd_addr, int add,
-                                         btif_bonded_devices_t* p_bonded_devices);
+bt_status_t btif_in_fetch_bonded_ble_device(const std::string& remote_bd_addr, int add,
+                                            btif_bonded_devices_t* p_bonded_devices);
 
 /*******************************************************************************
  *
@@ -82,11 +81,11 @@ BtStatus btif_in_fetch_bonded_ble_device(const std::string& remote_bd_addr, int 
  *                  Caller should provide memory for property->val and
  *                  set the property->val
  *
- * Returns          BtifStatus() if the fetch was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the fetch was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_get_adapter_property(bt_property_t* property);
+bt_status_t btif_storage_get_adapter_property(bt_property_t* property);
 
 /*******************************************************************************
  *
@@ -95,11 +94,11 @@ BtStatus btif_storage_get_adapter_property(bt_property_t* property);
  * Description      BTIF storage API - Stores the adapter property
  *                  to NVRAM
  *
- * Returns          BtifStatus() if the store was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the store was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_set_adapter_property(bt_property_t* property);
+bt_status_t btif_storage_set_adapter_property(bt_property_t* property);
 
 /*******************************************************************************
  *
@@ -110,12 +109,12 @@ BtStatus btif_storage_set_adapter_property(bt_property_t* property);
  *                  Caller should provide memory for property->val and
  *                  set the property->val
  *
- * Returns          BtifStatus() if the fetch was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the fetch was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_get_remote_device_property(const RawAddress* remote_bd_addr,
-                                                 bt_property_t* property);
+bt_status_t btif_storage_get_remote_device_property(const RawAddress* remote_bd_addr,
+                                                    bt_property_t* property);
 
 /*******************************************************************************
  *
@@ -124,12 +123,12 @@ BtStatus btif_storage_get_remote_device_property(const RawAddress* remote_bd_add
  * Description      BTIF storage API - Stores the remote device property
  *                  to NVRAM
  *
- * Returns          BtifStatus() if the store was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the store was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_set_remote_device_property(const RawAddress* remote_bd_addr,
-                                                 bt_property_t* property);
+bt_status_t btif_storage_set_remote_device_property(const RawAddress* remote_bd_addr,
+                                                    bt_property_t* property);
 
 /*******************************************************************************
  *
@@ -139,12 +138,12 @@ BtStatus btif_storage_set_remote_device_property(const RawAddress* remote_bd_add
  *                  track along with the timestamp. Also, stores the various
  *                  properties - RSSI, BDADDR, NAME (if found in EIR)
  *
- * Returns          BtifStatus() if successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_add_remote_device(const RawAddress* remote_bd_addr, uint32_t num_properties,
-                                        bt_property_t* properties);
+bt_status_t btif_storage_add_remote_device(const RawAddress* remote_bd_addr,
+                                           uint32_t num_properties, bt_property_t* properties);
 
 /*******************************************************************************
  *
@@ -153,12 +152,12 @@ BtStatus btif_storage_add_remote_device(const RawAddress* remote_bd_addr, uint32
  * Description      BTIF storage API - Adds the newly bonded device to NVRAM
  *                  along with the link-key, Key type and Pin key length
  *
- * Returns          BtifStatus() if the store was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the store was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_add_bonded_device(RawAddress* remote_bd_addr, LinkKey link_key,
-                                        uint8_t key_type, uint8_t pin_length);
+bt_status_t btif_storage_add_bonded_device(RawAddress* remote_bd_addr, LinkKey link_key,
+                                           uint8_t key_type, uint8_t pin_length);
 
 /*******************************************************************************
  *
@@ -166,11 +165,11 @@ BtStatus btif_storage_add_bonded_device(RawAddress* remote_bd_addr, LinkKey link
  *
  * Description      BTIF storage API - Deletes the bonded device from NVRAM
  *
- * Returns          BtifStatus() if the deletion was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the deletion was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_remove_bonded_device(const RawAddress* remote_bd_addr);
+bt_status_t btif_storage_remove_bonded_device(const RawAddress* remote_bd_addr);
 
 /*******************************************************************************
  *
@@ -196,10 +195,10 @@ void btif_storage_load_le_devices(void);
  *                  and remote_device_properties_cb for each of the bonded
  *                  devices.
  *
- * Returns          BtifStatus() if successful, BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_load_bonded_devices(void);
+bt_status_t btif_storage_load_bonded_devices(void);
 
 /*******************************************************************************
  *
@@ -208,16 +207,17 @@ BtStatus btif_storage_load_bonded_devices(void);
  * Description      BTIF storage API - Adds the hid information of bonded hid
  *                  devices-to NVRAM
  *
- * Returns          BtifStatus() if the store was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the store was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
 
-BtStatus btif_storage_add_hid_device_info(const AclLinkSpec& link_spec, uint16_t attr_mask,
-                                          uint8_t sub_class, uint8_t app_id, uint16_t vendor_id,
-                                          uint16_t product_id, uint16_t version, uint8_t ctry_code,
-                                          uint16_t ssr_max_latency, uint16_t ssr_min_tout,
-                                          uint16_t dl_len, uint8_t* dsc_list);
+bt_status_t btif_storage_add_hid_device_info(const AclLinkSpec& link_spec, uint16_t attr_mask,
+                                             uint8_t sub_class, uint8_t app_id, uint16_t vendor_id,
+                                             uint16_t product_id, uint16_t version,
+                                             uint8_t ctry_code, uint16_t ssr_max_latency,
+                                             uint16_t ssr_min_tout, uint16_t dl_len,
+                                             uint8_t* dsc_list);
 
 /*******************************************************************************
  *
@@ -226,10 +226,10 @@ BtStatus btif_storage_add_hid_device_info(const AclLinkSpec& link_spec, uint16_t
  * Description      BTIF storage API - Loads hid info for all the bonded devices
  *                  from NVRAM and adds those devices  to the BTA_HH.
  *
- * Returns          BtifStatus() if successful, BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_load_bonded_hid_info(void);
+bt_status_t btif_storage_load_bonded_hid_info(void);
 
 /*******************************************************************************
  *
@@ -238,11 +238,11 @@ BtStatus btif_storage_load_bonded_hid_info(void);
  * Description      BTIF storage API - Deletes the bonded hid device info from
  *                  NVRAM
  *
- * Returns          BtifStatus() if the deletion was successful,
- *                  BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if the deletion was successful,
+ *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_remove_hid_info(const AclLinkSpec& link_spec);
+bt_status_t btif_storage_remove_hid_info(const AclLinkSpec& link_spec);
 
 /** Loads information about bonded hearing aid devices */
 void btif_storage_load_bonded_hearing_aids();
@@ -348,20 +348,20 @@ bool btif_storage_is_restricted_device(RawAddress remote_bd_addr);
  ******************************************************************************/
 void btif_storage_prune_devices();
 
-BtStatus btif_storage_add_ble_bonding_key(RawAddress* remote_bd_addr, const uint8_t* key,
-                                          uint8_t key_type, uint8_t key_length);
-BtStatus btif_storage_get_ble_bonding_key(const RawAddress& remote_bd_addr, uint8_t key_type,
-                                          uint8_t* key_value, int key_length);
+bt_status_t btif_storage_add_ble_bonding_key(RawAddress* remote_bd_addr, const uint8_t* key,
+                                             uint8_t key_type, uint8_t key_length);
+bt_status_t btif_storage_get_ble_bonding_key(const RawAddress& remote_bd_addr, uint8_t key_type,
+                                             uint8_t* key_value, int key_length);
 
-BtStatus btif_storage_add_ble_local_key(const Octet16& key, uint8_t key_type);
-BtStatus btif_storage_remove_ble_bonding_keys(const RawAddress* remote_bd_addr);
-BtStatus btif_storage_get_ble_local_key(uint8_t key_type, Octet16* key_value);
+bt_status_t btif_storage_add_ble_local_key(const Octet16& key, uint8_t key_type);
+bt_status_t btif_storage_remove_ble_bonding_keys(const RawAddress* remote_bd_addr);
+bt_status_t btif_storage_get_ble_local_key(uint8_t key_type, Octet16* key_value);
 
-BtStatus btif_storage_get_remote_addr_type(const RawAddress* remote_bd_addr,
-                                           tBLE_ADDR_TYPE* addr_type);
+bt_status_t btif_storage_get_remote_addr_type(const RawAddress* remote_bd_addr,
+                                              tBLE_ADDR_TYPE* addr_type);
 
-BtStatus btif_storage_set_remote_addr_type(const RawAddress* remote_bd_addr,
-                                           tBLE_ADDR_TYPE addr_type);
+bt_status_t btif_storage_set_remote_addr_type(const RawAddress* remote_bd_addr,
+                                              tBLE_ADDR_TYPE addr_type);
 
 void btif_storage_add_groups(const RawAddress& addr);
 void btif_storage_load_bonded_groups(void);
@@ -376,10 +376,10 @@ void btif_storage_remove_csis_device(const RawAddress& address);
  *
  * Description      Loads hidd bonded device and "plugs" it into hidd
  *
- * Returns          BtifStatus() if successful, BtifStatus(FAIL) otherwise
+ * Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-BtStatus btif_storage_load_hidd(void);
+bt_status_t btif_storage_load_hidd(void);
 
 /*******************************************************************************
  *
@@ -387,11 +387,11 @@ BtStatus btif_storage_load_hidd(void);
  *
  * Description      Stores hidd bonded device info in nvram.
  *
- * Returns          BtifStatus()
+ * Returns          BT_STATUS_SUCCESS
  *
  ******************************************************************************/
 
-BtStatus btif_storage_set_hidd(const RawAddress& remote_bd_addr);
+bt_status_t btif_storage_set_hidd(const RawAddress& remote_bd_addr);
 
 /*******************************************************************************
  *
@@ -399,11 +399,11 @@ BtStatus btif_storage_set_hidd(const RawAddress& remote_bd_addr);
  *
  * Description      Removes hidd bonded device info from nvram
  *
- * Returns          BtifStatus()
+ * Returns          BT_STATUS_SUCCESS
  *
  ******************************************************************************/
 
-BtStatus btif_storage_remove_hidd(RawAddress* remote_bd_addr);
+bt_status_t btif_storage_remove_hidd(RawAddress* remote_bd_addr);
 
 // Gets the device name for a given Bluetooth address |bd_addr|.
 // The device name (if found) is stored in |name|.
@@ -429,12 +429,12 @@ bool btif_storage_get_cod(const RawAddress& bd_addr, uint32_t* cod);
  *
  * Description      Stores connection policy info in nvram.
  *
- * Returns          BtifStatus()
+ * Returns          BT_STATUS_SUCCESS
  *
  ******************************************************************************/
 
-BtStatus btif_storage_set_hid_connection_policy(const AclLinkSpec& link_spec,
-                                                bool reconnect_allowed);
+bt_status_t btif_storage_set_hid_connection_policy(const AclLinkSpec& link_spec,
+                                                   bool reconnect_allowed);
 
 /*******************************************************************************
  *
@@ -442,12 +442,12 @@ BtStatus btif_storage_set_hid_connection_policy(const AclLinkSpec& link_spec,
  *
  * Description      Get connection policy info from nvram.
  *
- * Returns          BtifStatus()
+ * Returns          BT_STATUS_SUCCESS
  *
  ******************************************************************************/
 
-BtStatus btif_storage_get_hid_connection_policy(const AclLinkSpec& link_spec,
-                                                bool* reconnect_allowed);
+bt_status_t btif_storage_get_hid_connection_policy(const AclLinkSpec& link_spec,
+                                                   bool* reconnect_allowed);
 
 /*******************************************************************************
  *

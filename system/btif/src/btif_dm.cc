@@ -67,7 +67,6 @@
 #include "btif_config.h"
 #include "btif_iot_config.h"
 #include "btif_sdp.h"
-#include "btif_status.h"
 #include "btif_storage.h"
 #include "btif_util.h"
 #include "common/lru_cache.h"
@@ -477,7 +476,7 @@ static bool get_cached_remote_name(const RawAddress& bd_addr, bt_bdname_t* p_rem
   /* check if we already have it in our btif_storage cache */
 
   BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_BDNAME, sizeof(bt_bdname_t), &bdname);
-  if (btif_storage_get_remote_device_property(&bd_addr, &prop_name)) {
+  if (btif_storage_get_remote_device_property(&bd_addr, &prop_name) == BT_STATUS_SUCCESS) {
     if (p_remote_name && p_remote_name_len) {
       snprintf((char*)p_remote_name->name, sizeof(p_remote_name->name), "%s", (char*)bdname.name);
       *p_remote_name_len = strlen((char*)p_remote_name);
@@ -542,7 +541,7 @@ static bool check_sdp_bl(const RawAddress* remote_bdaddr) {
   BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_REMOTE_VERSION_INFO,
                              sizeof(bt_remote_version_t), &info);
 
-  if (!btif_storage_get_remote_device_property(remote_bdaddr, &prop_name)) {
+  if (btif_storage_get_remote_device_property(remote_bdaddr, &prop_name) != BT_STATUS_SUCCESS) {
     return false;
   }
   uint16_t manufacturer = info.manufacturer;
@@ -596,11 +595,11 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
   if (com::android::bluetooth::flags::autonomous_repairing_initiation() &&
       btm_is_bond_lost(bd_addr) && (state == BT_BOND_STATE_NONE)) {
     const std::string bd_addr_str = bd_addr.ToString();
-    BtStatus fetch_status = btif_in_fetch_bonded_device(bd_addr_str);
+    bt_status_t fetch_status = btif_in_fetch_bonded_device(bd_addr_str);
     log::debug(
             "Re-pairing attempt, changing the bond state from BOND_NONE to BOND_BONDED, fetching "
             "device details from persistent storage: {}",
-            fetch_status);
+            bt_status_text(fetch_status));
     status = BT_STATUS_SUCCESS;
     state = BT_BOND_STATE_BONDED;
   }
@@ -651,6 +650,7 @@ static void btif_update_remote_version_property(RawAddress* p_bd) {
   uint16_t lmp_subver = 0;
   uint16_t mfct_set = 0;
   bt_remote_version_t info;
+  bt_status_t status;
 
   log::assert_that(p_bd != nullptr, "assert failed: p_bd != nullptr");
 
@@ -668,15 +668,15 @@ static void btif_update_remote_version_property(RawAddress* p_bd) {
     info.version = lmp_ver;
     BTIF_STORAGE_FILL_PROPERTY(&property, BT_PROPERTY_REMOTE_VERSION_INFO,
                                sizeof(bt_remote_version_t), &info);
-    BtStatus status = btif_storage_set_remote_device_property(p_bd, &property);
-    ASSERTC(status, "failed to save remote version", status);
+    status = btif_storage_set_remote_device_property(p_bd, &property);
+    ASSERTC(status == BT_STATUS_SUCCESS, "failed to save remote version", status);
   }
 }
 
 void btif_update_remote_properties(const RawAddress& bdaddr, BD_NAME bd_name, DEV_CLASS dev_class,
                                    tBT_DEVICE_TYPE device_type) {
   std::vector<bt_property_t> properties;
-  BtStatus status = BtifStatus(UNHANDLED);
+  bt_status_t status = BT_STATUS_UNHANDLED;
   uint32_t cod;
   uint32_t dev_type;
 
@@ -685,7 +685,7 @@ void btif_update_remote_properties(const RawAddress& bdaddr, BD_NAME bd_name, DE
     properties.push_back(
             bt_property_t{BT_PROPERTY_BDNAME, static_cast<int>(strlen((char*)bd_name)), bd_name});
     status = btif_storage_set_remote_device_property(&bdaddr, &properties.back());
-    ASSERTC(status, "failed to save remote device name", status);
+    ASSERTC(status == BT_STATUS_SUCCESS, "failed to save remote device name", status);
   }
 
   uint32_t old_cod = btif_get_cod(&bdaddr);
@@ -705,14 +705,14 @@ void btif_update_remote_properties(const RawAddress& bdaddr, BD_NAME bd_name, DE
   properties.push_back(bt_property_t{BT_PROPERTY_CLASS_OF_DEVICE, sizeof(cod), &cod});
 
   status = btif_storage_set_remote_device_property(&bdaddr, &properties.back());
-  ASSERTC(status, "failed to save remote device class", status);
+  ASSERTC(status == BT_STATUS_SUCCESS, "failed to save remote device class", status);
 
   /* device type */
   bt_property_t prop_name;
   uint32_t remote_dev_type;
   BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_TYPE_OF_DEVICE, sizeof(uint32_t),
                              &remote_dev_type);
-  if (btif_storage_get_remote_device_property(&bdaddr, &prop_name)) {
+  if (btif_storage_get_remote_device_property(&bdaddr, &prop_name) == BT_STATUS_SUCCESS) {
     dev_type = remote_dev_type | device_type;
   } else {
     dev_type = device_type;
@@ -720,7 +720,7 @@ void btif_update_remote_properties(const RawAddress& bdaddr, BD_NAME bd_name, DE
 
   properties.push_back(bt_property_t{BT_PROPERTY_TYPE_OF_DEVICE, sizeof(dev_type), &dev_type});
   status = btif_storage_set_remote_device_property(&bdaddr, &properties.back());
-  ASSERTC(status, "failed to save remote device type", status);
+  ASSERTC(status == BT_STATUS_SUCCESS, "failed to save remote device type", status);
 
   tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
   bt_property_t addr_type_prop = {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type};
@@ -732,8 +732,7 @@ void btif_update_remote_properties(const RawAddress& bdaddr, BD_NAME bd_name, DE
   }
 
   GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
-          static_cast<bt_status_t>(status.code()), bdaddr, addr_type, properties.size(),
-          properties.data());
+          status, bdaddr, addr_type, properties.size(), properties.data());
 }
 
 /* If device is LE Audio capable, we prefer LE connection first, this speeds
@@ -821,7 +820,7 @@ static void btif_dm_cb_create_bond(const RawAddress bd_addr, tBT_TRANSPORT trans
     if (!btif_config_get_int(bdstr, BTIF_STORAGE_KEY_DEV_TYPE, &device_type)) {
       btif_config_set_int(bdstr, BTIF_STORAGE_KEY_DEV_TYPE, BT_DEVICE_TYPE_BLE);
     }
-    if (!btif_storage_get_remote_addr_type(&bd_addr, &addr_type)) {
+    if (btif_storage_get_remote_addr_type(&bd_addr, &addr_type) != BT_STATUS_SUCCESS) {
       // Try to read address type. OOB pairing might have set it earlier, but
       // didn't store it, it defaults to BLE_ADDR_PUBLIC
       uint8_t tmp_dev_type;
@@ -833,7 +832,7 @@ static void btif_dm_cb_create_bond(const RawAddress bd_addr, tBT_TRANSPORT trans
     }
   }
   if ((btif_config_get_int(bdstr, BTIF_STORAGE_KEY_DEV_TYPE, &device_type) &&
-       btif_storage_get_remote_addr_type(&bd_addr, &addr_type) &&
+       (btif_storage_get_remote_addr_type(&bd_addr, &addr_type) == BT_STATUS_SUCCESS) &&
        (device_type & BT_DEVICE_TYPE_BLE) == BT_DEVICE_TYPE_BLE) ||
       (transport == BT_TRANSPORT_LE)) {
     BTA_DmAddBleDevice(bd_addr, addr_type, static_cast<tBT_DEVICE_TYPE>(device_type));
@@ -864,7 +863,7 @@ static void btif_dm_cb_create_bond_le(const RawAddress bd_addr, tBLE_ADDR_TYPE a
 
   // Store address type if not already stored
   tBLE_ADDR_TYPE stored_addr_type;
-  if (!btif_storage_get_remote_addr_type(&bd_addr, &stored_addr_type)) {
+  if (btif_storage_get_remote_addr_type(&bd_addr, &stored_addr_type) != BT_STATUS_SUCCESS) {
     btif_storage_set_remote_addr_type(&bd_addr, addr_type);
   } else if (stored_addr_type != addr_type) {
     log::warn("Address type does not match for {}, stored: {}, requested:{}", bd_addr,
@@ -1173,9 +1172,9 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
         ASSERTC(!bd_addr.IsEmpty(), "bd_addr is empty", BT_STATUS_PARM_INVALID);
         log::debug("Storing link key. key_type=0x{:x}, bond_type={}", p_auth_cmpl->key_type,
                    pairing_cb.bond_type);
-        BtStatus ret = btif_storage_add_bonded_device(
+        bt_status_t ret = btif_storage_add_bonded_device(
                 &bd_addr, p_auth_cmpl->key, p_auth_cmpl->key_type, pairing_cb.pin_code_len);
-        ASSERTC(ret, "storing link key failed", ret);
+        ASSERTC(ret == BT_STATUS_SUCCESS, "storing link key failed", ret);
       } else {
         log::debug("Temporary key. Not storing. key_type=0x{:x}, bond_type={}",
                    p_auth_cmpl->key_type, pairing_cb.bond_type);
@@ -1465,6 +1464,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
       {
         std::vector<bt_property_t> bt_properties;
         uint32_t dev_type;
+        bt_status_t status;
 
         /* RawAddress */
         bt_properties.push_back(bt_property_t{BT_PROPERTY_BDADDR, sizeof(bdaddr), &bdaddr});
@@ -1598,11 +1598,11 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
                   bt_property_t{BT_PROPERTY_APPEARANCE, sizeof(appearance), &appearance});
         }
 
-        BtStatus status =
+        status =
                 btif_storage_add_remote_device(&bdaddr, bt_properties.size(), bt_properties.data());
-        ASSERTC(status, "failed to save remote device (inquiry)", status);
+        ASSERTC(status == BT_STATUS_SUCCESS, "failed to save remote device (inquiry)", status);
         status = btif_storage_set_remote_addr_type(&bdaddr, addr_type);
-        ASSERTC(status, "failed to save remote addr type (inquiry)", status);
+        ASSERTC(status == BT_STATUS_SUCCESS, "failed to save remote addr type (inquiry)", status);
 
         bool restrict_report =
                 osi_property_get_bool("bluetooth.restrict_discovered_device.enabled", false);
@@ -2010,8 +2010,8 @@ static void btif_on_service_discovery_results(RawAddress bd_addr,
     bredr_prop = {BT_PROPERTY_UUIDS, static_cast<int>(Uuid::kNumBytes128 * uuids.size()),
                   (void*)bredr_property_value.data()};
 
-    BtStatus ret = btif_storage_set_remote_device_property(&bd_addr, &bredr_prop);
-    ASSERTC(ret, "storing remote classic services failed", ret);
+    bt_status_t ret = btif_storage_set_remote_device_property(&bd_addr, &bredr_prop);
+    ASSERTC(ret == BT_STATUS_SUCCESS, "storing remote classic services failed", ret);
 
     std::set<Uuid> le_uuids;
     if (results_for_bonding_device) {
@@ -2191,8 +2191,8 @@ static void btif_on_gatt_results(RawAddress bd_addr, std::vector<bluetooth::Uuid
                                (void*)property_value.data()});
 
   /* Also write this to the NVRAM */
-  BtStatus ret = btif_storage_set_remote_device_property(&bd_addr, &prop[0]);
-  ASSERTC(ret, "storing remote services failed", ret);
+  bt_status_t ret = btif_storage_set_remote_device_property(&bd_addr, &prop[0]);
+  ASSERTC(ret == BT_STATUS_SUCCESS, "storing remote services failed", ret);
 
   if (!is_transport_le) {
     /* If services were returned as part of SDP discovery, we will immediately
@@ -2254,8 +2254,9 @@ static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status, co
                                      static_cast<int>(strnlen((char*)bd_name, BD_NAME_LEN)),
                                      (void*)(bd_name)});
 
-  BtStatus status = btif_storage_set_remote_device_property(&bd_addr, properties.data());
-  log::assert_that(status, "Failed to save remote device property status:{}", status);
+  const bt_status_t status = btif_storage_set_remote_device_property(&bd_addr, properties.data());
+  log::assert_that(status == BT_STATUS_SUCCESS, "Failed to save remote device property status:{}",
+                   bt_status_text(status));
 
   tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
   bt_property_t addr_type_prop = {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type};
@@ -2263,8 +2264,7 @@ static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status, co
   properties.push_back(addr_type_prop);
 
   GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
-          static_cast<bt_status_t>(status.code()), bd_addr, addr_type, properties.size(),
-          properties.data());
+          status, bd_addr, addr_type, properties.size(), properties.data());
   log::info("Callback for read name event addr:{}[{}] name:{}", bd_addr, AddressTypeText(addr_type),
             reinterpret_cast<char const*>(bd_name));
 
@@ -2305,8 +2305,8 @@ static void btif_on_did_received(RawAddress bd_addr, uint8_t vendor_id_src, uint
           .val = &vp_info,
   };
 
-  BtStatus ret = btif_storage_set_remote_device_property(&bd_addr, &prop_did);
-  ASSERTC(ret, "storing remote services failed", ret);
+  bt_status_t ret = btif_storage_set_remote_device_property(&bd_addr, &prop_did);
+  ASSERTC(ret == BT_STATUS_SUCCESS, "storing remote services failed", ret);
 
   tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
   bt_property_t addr_type_prop = {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type};
@@ -2378,8 +2378,8 @@ void BTIF_dm_enable(const std::string local_name) {
             .val = (void*)bdname,
     };
 
-    BtStatus status = btif_storage_get_adapter_property(&prop);
-    if (status) {
+    bt_status_t status = btif_storage_get_adapter_property(&prop);
+    if (status == BT_STATUS_SUCCESS) {
       /* A name exists in the storage. Make this the device name */
       BTA_DmSetDeviceName((const char*)prop.val);
     } else {
@@ -3724,7 +3724,8 @@ static bool btif_model_name_known(const RawAddress& bd_addr) {
   bt_bdname_t model_name;
   BTIF_STORAGE_FILL_PROPERTY(&prop, BT_PROPERTY_REMOTE_MODEL_NUM, sizeof(model_name), &model_name);
 
-  if (!btif_storage_get_remote_device_property(&bd_addr, &prop) || prop.len == 0) {
+  if (btif_storage_get_remote_device_property(&bd_addr, &prop) != BT_STATUS_SUCCESS ||
+      prop.len == 0) {
     log::info("Device {} no cached model name", bd_addr);
     return false;
   }
@@ -3797,7 +3798,7 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
     state = BT_BOND_STATE_BONDED;
     tBLE_ADDR_TYPE addr_type;
 
-    if (!btif_storage_get_remote_addr_type(&bd_addr, &addr_type)) {
+    if (btif_storage_get_remote_addr_type(&bd_addr, &addr_type) != BT_STATUS_SUCCESS) {
       btif_storage_set_remote_addr_type(&bd_addr, p_auth_cmpl->addr_type);
     }
 
@@ -3901,14 +3902,18 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
 void btif_dm_load_ble_local_keys(void) {
   memset(&ble_local_key_cb, 0, sizeof(btif_dm_local_key_cb_t));
 
-  if (btif_storage_get_ble_local_key(BTIF_DM_LE_LOCAL_KEY_ER, &ble_local_key_cb.er)) {
+  if (btif_storage_get_ble_local_key(BTIF_DM_LE_LOCAL_KEY_ER, &ble_local_key_cb.er) ==
+      BT_STATUS_SUCCESS) {
     ble_local_key_cb.is_er_rcvd = true;
     log::verbose("BLE ER key loaded");
   }
 
-  if (btif_storage_get_ble_local_key(BTIF_DM_LE_LOCAL_KEY_IR, &ble_local_key_cb.id_keys.ir) &&
-      btif_storage_get_ble_local_key(BTIF_DM_LE_LOCAL_KEY_IRK, &ble_local_key_cb.id_keys.irk) &&
-      btif_storage_get_ble_local_key(BTIF_DM_LE_LOCAL_KEY_DHK, &ble_local_key_cb.id_keys.dhk)) {
+  if ((btif_storage_get_ble_local_key(BTIF_DM_LE_LOCAL_KEY_IR, &ble_local_key_cb.id_keys.ir) ==
+       BT_STATUS_SUCCESS) &&
+      (btif_storage_get_ble_local_key(BTIF_DM_LE_LOCAL_KEY_IRK, &ble_local_key_cb.id_keys.irk) ==
+       BT_STATUS_SUCCESS) &&
+      (btif_storage_get_ble_local_key(BTIF_DM_LE_LOCAL_KEY_DHK, &ble_local_key_cb.id_keys.dhk) ==
+       BT_STATUS_SUCCESS)) {
     ble_local_key_cb.is_id_keys_rcvd = true;
     log::verbose("BLE ID keys loaded");
   }
