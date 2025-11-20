@@ -518,9 +518,11 @@ static void a2dp_aac_encode_frames(uint8_t nb_frame) {
   out_buf_desc.bufSizes = out_buf_sizes;
   out_buf_desc.bufElSizes = out_buf_element_sizes;
   log::assert_that(p_encoder_params->max_encoded_buffer_bytes <=
-                           static_cast<int>(BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR)),
+                           static_cast<int>(BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR) -
+                                            A2DP_AAC_OFFSET),
                    "assert failed: p_encoder_params->max_encoded_buffer_bytes <= "
-                   "static_cast<int>(BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR))");
+                   "static_cast<int>(BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR) - "
+                   "A2DP_AAC_OFFSET)");
 
   AACENC_InArgs aac_in_args;
   aac_in_args.numInSamples = p_encoder_params->frame_length * p_feeding_params->channel_count;
