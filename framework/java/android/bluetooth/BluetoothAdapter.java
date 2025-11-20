@@ -1090,7 +1090,7 @@ public final class BluetoothAdapter {
      */
     @RequiresNoPermission
     public BluetoothDevice getRemoteDevice(String address) {
-        final BluetoothDevice res = new BluetoothDevice(address);
+        final BluetoothDevice res = new BluetoothDevice(this, address);
         res.setAttributionSource(mAttributionSource);
         return res;
     }
@@ -1114,7 +1114,7 @@ public final class BluetoothAdapter {
     @NonNull
     public BluetoothDevice getRemoteLeDevice(
             @NonNull String address, @AddressType int addressType) {
-        final BluetoothDevice res = new BluetoothDevice(address, addressType);
+        final BluetoothDevice res = new BluetoothDevice(this, address, addressType);
         res.setAttributionSource(mAttributionSource);
         return res;
     }
@@ -1136,17 +1136,17 @@ public final class BluetoothAdapter {
         if (address == null || address.length != 6) {
             throw new IllegalArgumentException("Bluetooth address must have 6 bytes");
         }
-        final BluetoothDevice res =
-                new BluetoothDevice(
-                        String.format(
-                                Locale.US,
-                                "%02X:%02X:%02X:%02X:%02X:%02X",
-                                address[0],
-                                address[1],
-                                address[2],
-                                address[3],
-                                address[4],
-                                address[5]));
+        final String addressString =
+                String.format(
+                        Locale.US,
+                        "%02X:%02X:%02X:%02X:%02X:%02X",
+                        address[0],
+                        address[1],
+                        address[2],
+                        address[3],
+                        address[4],
+                        address[5]);
+        final BluetoothDevice res = new BluetoothDevice(this, addressString);
         res.setAttributionSource(mAttributionSource);
         return res;
     }
