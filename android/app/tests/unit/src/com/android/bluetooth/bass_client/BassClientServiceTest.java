@@ -82,6 +82,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
+import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
@@ -1695,6 +1696,13 @@ public class BassClientServiceTest {
         doReturn(false).when(sm).isConnected();
         doReturn(new ArrayList<>()).when(sm).getAllSources();
         mBassClientService.connectionStateChanged(device, STATE_CONNECTED, STATE_DISCONNECTED);
+    }
+
+    private void injectDeviceConnection(BluetoothDevice device) {
+        BassClientStateMachine sm = mStateMachines.get(device);
+        doReturn(STATE_CONNECTED).when(sm).getConnectionState();
+        doReturn(true).when(sm).isConnected();
+        mBassClientService.connectionStateChanged(device, STATE_DISCONNECTED, STATE_CONNECTED);
     }
 
     private void prepareSyncToSourceAndVerify() {
@@ -6111,7 +6119,7 @@ public class BassClientServiceTest {
     }
 
     /**
-     * Test resume source will be triggered if new device connected and its peer is synced to
+     * Test resume source will be triggered if device is reconnected and its peer is synced to
      * broadcast source
      */
     @Test
@@ -6120,7 +6128,7 @@ public class BassClientServiceTest {
         doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
         prepareTwoSynchronizedDevicesForLocalBroadcast();
 
-        // Disconnect device to remove its data
+        // Disconnect device but left source added
         mBassClientService.connectionStateChanged(
                 mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
 
@@ -6192,11 +6200,7 @@ public class BassClientServiceTest {
         prepareSynchronizedPairAndStopSearching();
 
         // Disconnect device to remove its data
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
-
-        // Remove source on the mCurrentDevice
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
+        injectDeviceDisconnection(mCurrentDevice);
 
         // Suspend all receivers, SUSPENDED_BY_HOST
         mBassClientService.suspendAllReceiversSourceSynchronization();
@@ -6206,6 +6210,7 @@ public class BassClientServiceTest {
         injectRemoteSourceStateChanged(
                 mStateMachines.get(mCurrentDevice1), mBroadcastMetadata1, false, false);
 
+        injectDeviceConnection(mCurrentDevice);
         mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice);
         mLooper.dispatchAll();
 
@@ -6224,12 +6229,9 @@ public class BassClientServiceTest {
         bigMonitoringWithoutScanning();
 
         // Disconnect device to remove its data
-        mBassClientService.connectionStateChanged(
-                mCurrentDevice, STATE_CONNECTED, STATE_DISCONNECTED);
+        injectDeviceDisconnection(mCurrentDevice);
 
-        // Remove source on the mCurrentDevice
-        injectRemoteSourceStateRemoval(mStateMachines.get(mCurrentDevice), TEST_SOURCE_ID);
-
+        injectDeviceConnection(mCurrentDevice);
         mBassClientService.getCallbacks().notifyBassStateReady(mCurrentDevice);
         mLooper.dispatchAll();
 
@@ -6810,8 +6812,7 @@ public class BassClientServiceTest {
         injectDeviceDisconnection(mCurrentDevice);
 
         // Connect again first sink
-        doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(true).when(mStateMachines.get(mCurrentDevice)).isConnected();
+        injectDeviceConnection(mCurrentDevice);
         injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
@@ -6830,10 +6831,8 @@ public class BassClientServiceTest {
         injectDeviceDisconnection(mCurrentDevice1);
 
         // Connect again both devices
-        doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(true).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice1)).getConnectionState();
-        doReturn(true).when(mStateMachines.get(mCurrentDevice1)).isConnected();
+        injectDeviceConnection(mCurrentDevice);
+        injectDeviceConnection(mCurrentDevice1);
         injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
@@ -6869,8 +6868,7 @@ public class BassClientServiceTest {
         injectDeviceDisconnection(mCurrentDevice);
 
         // Connect again first sink
-        doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(true).when(mStateMachines.get(mCurrentDevice)).isConnected();
+        injectDeviceConnection(mCurrentDevice);
         injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
@@ -6897,10 +6895,8 @@ public class BassClientServiceTest {
         injectDeviceDisconnection(mCurrentDevice1);
 
         // Connect again both devices
-        doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(true).when(mStateMachines.get(mCurrentDevice)).isConnected();
-        doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice1)).getConnectionState();
-        doReturn(true).when(mStateMachines.get(mCurrentDevice1)).isConnected();
+        injectDeviceConnection(mCurrentDevice);
+        injectDeviceConnection(mCurrentDevice1);
         injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
@@ -6936,8 +6932,7 @@ public class BassClientServiceTest {
         }
 
         // Connect again first sink
-        doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(true).when(mStateMachines.get(mCurrentDevice)).isConnected();
+        injectDeviceConnection(mCurrentDevice);
         injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
@@ -6981,8 +6976,7 @@ public class BassClientServiceTest {
         }
 
         // Connect again first sink
-        doReturn(STATE_CONNECTED).when(mStateMachines.get(mCurrentDevice)).getConnectionState();
-        doReturn(true).when(mStateMachines.get(mCurrentDevice)).isConnected();
+        injectDeviceConnection(mCurrentDevice);
         injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata1, /* isPaSynced */ false, /* isBisSynced */ false);
 
@@ -7213,6 +7207,7 @@ public class BassClientServiceTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_TREAT_EMPTY_RS_EXPLICITLY)
     public void broadcastMonitoringOnResume_stopSourceReceivers() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -8695,5 +8690,64 @@ public class BassClientServiceTest {
         // Verify that setBigChannelMapClassification is never called
         verify(mLeAudioService, never())
                 .setBigChannelMapClassification(anyInt(), any(BluetoothDevice.class), anyInt());
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_TREAT_EMPTY_RS_EXPLICITLY)
+    public void sourcesRemovedAutonomously() {
+        prepareSynchronizedPair();
+
+        BassClientStateMachine sm1 = mStateMachines.get(mCurrentDevice);
+        BassClientStateMachine sm2 = mStateMachines.get(mCurrentDevice1);
+
+        // Simulate PA and BIG lost which is mandatory to remove the source
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced= */ false, /* isBisSynced= */ false);
+
+        // That will start BIG monitoring
+        checkTimeout(TEST_BROADCAST_ID, BassClientService.MESSAGE_BIG_MONITOR_TIMEOUT);
+
+        // Simulate autonomous sources removal by injecting a source removal on both devices
+        injectRemoteSourceStateRemoval(sm1, TEST_SOURCE_ID);
+        injectRemoteSourceStateRemoval(sm2, TEST_SOURCE_ID + 1);
+
+        checkNoResumeSynchronizationByBig();
+        checkNoResumeSynchronizationByHost();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_TREAT_EMPTY_RS_EXPLICITLY)
+    public void sourceRemovedWhilePausedByHost() {
+        prepareSynchronizedPair();
+
+        BassClientStateMachine sm1 = mStateMachines.get(mCurrentDevice);
+        BassClientStateMachine sm2 = mStateMachines.get(mCurrentDevice1);
+
+        // Suspend all receivers, which sets the paused sinks
+        mBassClientService.suspendAllReceiversSourceSynchronization();
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced= */ true, /* isBisSynced= */ false);
+        clearInvocations(sm1);
+        clearInvocations(sm2);
+
+        // Simulate PA lost which is mandatory to remove the source
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1, /* isPaSynced= */ false, /* isBisSynced= */ false);
+
+        // Simulate autonomous source removal by injecting a source removal event on first device
+        injectRemoteSourceStateRemoval(sm1, TEST_SOURCE_ID);
+
+        // Verify that resume will update only second device
+        mBassClientService.resumeReceiversSourceSynchronization();
+        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+        Optional<Message> msg;
+        verify(sm2).sendMessage(messageCaptor.capture());
+        msg =
+                messageCaptor.getAllValues().stream()
+                        .filter(m -> m.what == BassClientStateMachine.UPDATE_BCAST_SOURCE)
+                        .findFirst();
+        expect.that(msg.isPresent()).isTrue();
+        expect.that(msg.orElse(null)).isNotNull();
+        verify(sm1, never()).sendMessage(any());
     }
 }
