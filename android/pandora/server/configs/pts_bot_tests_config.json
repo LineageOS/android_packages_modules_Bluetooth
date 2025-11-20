@@ -2549,7 +2549,7 @@
     "PAN": {},
     "PBAP": {},
     "RFCOMM": {
-      "TSPX_server_channel_iut": "7",
+      "TSPX_server_channel_iut": "8",
       "TSPX_security_enabled": "FALSE"
     },
     "SAP": {},
