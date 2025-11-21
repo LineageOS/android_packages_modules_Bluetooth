@@ -348,9 +348,6 @@ public class A2dpService extends ConnectableProfile {
             return devices;
         }
         final BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
-        if (bondedDevices == null) {
-            return devices;
-        }
         synchronized (mStateMachines) {
             for (BluetoothDevice device : bondedDevices) {
                 if (!Utils.arrayContains(

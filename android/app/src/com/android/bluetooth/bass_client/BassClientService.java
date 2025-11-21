@@ -2287,9 +2287,6 @@ public class BassClientService extends ConnectableProfile {
             return devices;
         }
         final BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
-        if (bondedDevices == null) {
-            return devices;
-        }
         synchronized (mStateMachines) {
             for (BluetoothDevice device : bondedDevices) {
                 final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
