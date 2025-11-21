@@ -502,6 +502,14 @@ public:
 
   int GetDeviceCount() { return hearingDevices.size(); }
 
+  void HandleConnectionFailed(const HearingDevice* hearingDevice) {
+    log::info("Device (addr={}) failed to connect. Use background connect", hearingDevice->address);
+    BTA_GATTC_Open(gatt_if, hearingDevice->address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
+    if (hearingDevice->connecting_actively) {
+      callbacks->OnConnectionState(ConnectionState::DISCONNECTED, hearingDevice->address);
+    }
+  }
+
   void OnGattConnected(tGATT_STATUS status, tCONN_ID conn_id, tGATT_IF /*client_if*/,
                        RawAddress address, tBT_TRANSPORT /*transport*/, uint16_t /*mtu*/) {
     HearingDevice* hearingDevice = hearingDevices.FindByAddress(address);
@@ -516,27 +524,30 @@ public:
     log::info("address={}, conn_id={}", address, conn_id);
 
     if (status != GATT_SUCCESS) {
-      if (!hearingDevice->connecting_actively) {
-        // acceptlist connection failed, that's ok.
+      if (com_android_bluetooth_flags_asha_retry_reconnect_when_in_set()) {
+        HandleConnectionFailed(hearingDevice);
+      } else {
+        if (!hearingDevice->connecting_actively) {
+          // acceptlist connection failed, that's ok.
+          return;
+        }
+
+        if (hearingDevice->switch_to_background_connection_after_failure) {
+          hearingDevice->connecting_actively = false;
+          hearingDevice->switch_to_background_connection_after_failure = false;
+          BTA_GATTC_Open(gatt_if, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
+        } else {
+          log::info("Failed to connect to Hearing Aid device, bda={}", address);
+
+          hearingDevices.Remove(address);
+          callbacks->OnConnectionState(ConnectionState::DISCONNECTED, address);
+        }
         return;
       }
-
-      if (hearingDevice->switch_to_background_connection_after_failure) {
-        hearingDevice->connecting_actively = false;
-        hearingDevice->switch_to_background_connection_after_failure = false;
-        BTA_GATTC_Open(gatt_if, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
-      } else {
-        log::info("Failed to connect to Hearing Aid device, bda={}", address);
-
-        hearingDevices.Remove(address);
-        callbacks->OnConnectionState(ConnectionState::DISCONNECTED, address);
-      }
-      return;
     }
 
     hearingDevice->conn_id = conn_id;
 
-    log::info("[gatt] Clean conn_id={:#x}", conn_id);
     BtaGattQueue::Clean(conn_id);
 
     uint64_t hi_sync_id = hearingDevice->hi_sync_id;
@@ -545,13 +556,26 @@ public:
     // it to a direct connection to scan more aggressively for it
     if (hi_sync_id != 0) {
       for (auto& device : hearingDevices.devices) {
-        if (device.hi_sync_id == hi_sync_id && device.conn_id == INVALID_CONN_ID &&
-            !device.connecting_actively) {
-          log::info("Promoting device from the set from background to direct connection, bda={}",
-                    device.address);
-          device.connecting_actively = true;
-          device.switch_to_background_connection_after_failure = true;
-          BTA_GATTC_Open(gatt_if, device.address, BTM_BLE_DIRECT_CONNECTION, false);
+        if (com_android_bluetooth_flags_asha_retry_reconnect_when_in_set()) {
+          // If other device is not connected yet, promote it to direct connect.
+          // This connection may fail - in that case, device will be added back to
+          // background connect
+          if (device.hi_sync_id == hi_sync_id && device.conn_id == INVALID_CONN_ID &&
+              device.conn_id != hearingDevice->conn_id) {
+            log::info("Connecting other device from set, bda={} using direct connect",
+                      device.address);
+            BTA_GATTC_Close(device.conn_id);
+            BTA_GATTC_Open(gatt_if, device.address, BTM_BLE_DIRECT_CONNECTION, false);
+          }
+        } else {
+          if (device.hi_sync_id == hi_sync_id && device.conn_id == INVALID_CONN_ID &&
+              !device.connecting_actively) {
+            log::info("Promoting device from the set from background to direct connection, bda={}",
+                      device.address);
+            device.connecting_actively = true;
+            device.switch_to_background_connection_after_failure = true;
+            BTA_GATTC_Open(gatt_if, device.address, BTM_BLE_DIRECT_CONNECTION, false);
+          }
         }
       }
     }
@@ -1125,6 +1149,11 @@ public:
     log::info("bd_addr={}", address);
 
     if (hearingDevice->first_connection) {
+      if (com_android_bluetooth_flags_asha_retry_reconnect_when_in_set()) {
+        /* first connection sets connecting_actively to true. First connection just completed -
+         * set it to false */
+        hearingDevice->connecting_actively = false;
+      }
       btif_storage_add_hearing_aid(*hearingDevice);
 
       hearingDevice->first_connection = false;
@@ -1918,8 +1947,10 @@ public:
     auto connection_type = hearingDevice->connecting_actively ? BTM_BLE_DIRECT_CONNECTION
                                                               : BTM_BLE_BKG_CONNECT_ALLOW_LIST;
 
-    hearingDevice->switch_to_background_connection_after_failure =
-            connection_type == BTM_BLE_DIRECT_CONNECTION;
+    if (!com_android_bluetooth_flags_asha_retry_reconnect_when_in_set()) {
+      hearingDevice->switch_to_background_connection_after_failure =
+              connection_type == BTM_BLE_DIRECT_CONNECTION;
+    }
 
     // This is needed just for the first connection. After stack is restarted,
     // code that loads device will add them to acceptlist.
