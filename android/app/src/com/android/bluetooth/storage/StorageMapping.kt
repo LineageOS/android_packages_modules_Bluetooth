@@ -28,6 +28,7 @@ import android.bluetooth.BluetoothSinkAudioPolicy
 import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.storage.ActiveAudioPolicy.Type as ActiveAudioPolicy
+import com.android.bluetooth.storage.HfpClientSettings.SinkAudioPolicy
 import com.android.bluetooth.storage.MediaProfile.Type as MediaProfile
 import com.android.bluetooth.storage.VoiceProfile.Type as VoiceProfile
 
@@ -72,16 +73,18 @@ internal fun fromVoiceProfile(profile: VoiceProfile) =
         else -> 0
     }
 
-internal fun toAudioPolicy(status: Boolean) =
-    when (status) {
-        true -> BluetoothSinkAudioPolicy.POLICY_ALLOWED
-        false -> BluetoothSinkAudioPolicy.POLICY_NOT_ALLOWED
+internal fun toSinkAudioPolicy(policy: SinkAudioPolicy) =
+    when (policy) {
+        SinkAudioPolicy.ALLOWED -> BluetoothSinkAudioPolicy.POLICY_ALLOWED
+        SinkAudioPolicy.NOT_ALLOWED -> BluetoothSinkAudioPolicy.POLICY_NOT_ALLOWED
+        else -> BluetoothSinkAudioPolicy.POLICY_UNCONFIGURED
     }
 
-internal fun fromAudioPolicy(policy: Int) =
+internal fun fromSinkAudioPolicy(policy: Int) =
     when (policy) {
-        BluetoothSinkAudioPolicy.POLICY_ALLOWED -> true
-        else -> false
+        BluetoothSinkAudioPolicy.POLICY_ALLOWED -> SinkAudioPolicy.ALLOWED
+        BluetoothSinkAudioPolicy.POLICY_NOT_ALLOWED -> SinkAudioPolicy.NOT_ALLOWED
+        else -> SinkAudioPolicy.UNCONFIGURED
     }
 
 internal fun toSupported(status: Boolean?) =

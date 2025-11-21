@@ -75,7 +75,7 @@ message Device {
 
   A2dpSettings a2dp_settings = 4;
   AvrcpSettings avrcp_settings = 5;
-  optional HfpClientSettings hfp_client_settings = 6;
+  HfpClientSettings hfp_client_settings = 6;
   LeAudioSettings le_audio_settings = 7;
 
   map<uint32, bytes> custom_metadata = 8;
@@ -124,9 +124,14 @@ message A2dpSettings {
 }
 
 message HfpClientSettings {
-  bool call_establish = 1;
-  bool set_active_after_connection = 2;
-  bool in_band_ringtone_enabled = 3;
+  enum SinkAudioPolicy {
+    UNCONFIGURED = 0;
+    ALLOWED = 1;
+    NOT_ALLOWED = 2;
+  }
+  SinkAudioPolicy call_establish = 1;
+  SinkAudioPolicy set_active_after_connection = 2;
+  SinkAudioPolicy in_band_ringtone = 3;
 }
 
 message AvrcpSettings {

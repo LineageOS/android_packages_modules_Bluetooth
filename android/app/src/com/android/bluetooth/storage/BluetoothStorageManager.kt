@@ -340,19 +340,16 @@ constructor(
         }
     }
 
-    fun getAudioPolicyMetadata(device: BluetoothDevice): BluetoothSinkAudioPolicy {
-        val device = currentStorage.devicesMap[device.address]
-        if (device == null || !device.hasHfpClientSettings()) {
-            return BluetoothSinkAudioPolicy.Builder().build()
-        }
-        val settings = device.hfpClientSettings
-
-        return BluetoothSinkAudioPolicy.Builder()
-            .setCallEstablishPolicy(toAudioPolicy(settings.callEstablish))
-            .setActiveDevicePolicyAfterConnection(toAudioPolicy(settings.setActiveAfterConnection))
-            .setInBandRingtonePolicy(toAudioPolicy(settings.inBandRingtoneEnabled))
-            .build()
-    }
+    fun getAudioPolicyMetadata(device: BluetoothDevice) =
+        currentStorage.devicesMap[device.address]?.hfpClientSettings?.let {
+            BluetoothSinkAudioPolicy.Builder()
+                .setCallEstablishPolicy(toSinkAudioPolicy(it.callEstablish))
+                .setActiveDevicePolicyAfterConnection(
+                    toSinkAudioPolicy(it.setActiveAfterConnection)
+                )
+                .setInBandRingtonePolicy(toSinkAudioPolicy(it.inBandRingtone))
+                .build()
+        } ?: BluetoothSinkAudioPolicy.Builder().build()
 
     fun setAudioPolicyMetadata(device: BluetoothDevice, policy: BluetoothSinkAudioPolicy) =
         dataStore.blockingUpdateData { storage ->
@@ -360,10 +357,10 @@ constructor(
             val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
 
             val settingsBuilder = deviceBuilder.hfpClientSettings.toBuilder()
-            settingsBuilder.callEstablish = fromAudioPolicy(policy.callEstablishPolicy)
+            settingsBuilder.callEstablish = fromSinkAudioPolicy(policy.callEstablishPolicy)
             settingsBuilder.setActiveAfterConnection =
-                fromAudioPolicy(policy.activeDevicePolicyAfterConnection)
-            settingsBuilder.inBandRingtoneEnabled = fromAudioPolicy(policy.inBandRingtonePolicy)
+                fromSinkAudioPolicy(policy.activeDevicePolicyAfterConnection)
+            settingsBuilder.inBandRingtone = fromSinkAudioPolicy(policy.inBandRingtonePolicy)
 
             logEvent(device, "audio policy metadata to $policy")
 
