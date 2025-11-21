@@ -1133,7 +1133,8 @@ void gatt_sr_init_cl_status(tGATT_TCB& tcb) {
     tcb.cl_supp_feat &= ~BLE_GATT_CL_SUP_FEAT_CACHING_BITMASK;
   }
 
-  if (gatt_sr_is_cl_robust_caching_supported(tcb)) {
+  if (com_android_bluetooth_flags_send_service_changed_indication_upon_reconnection() ||
+      gatt_sr_is_cl_robust_caching_supported(tcb)) {
     Octet16 stored_hash = btif_storage_get_gatt_cl_db_hash(tcb.peer_bda);
     tcb.is_robust_cache_change_aware = (stored_hash == gatt_cb.database_hash);
   } else {
@@ -1156,7 +1157,8 @@ void gatt_sr_init_cl_status(tGATT_TCB& tcb) {
  ******************************************************************************/
 void gatt_sr_update_cl_status(tGATT_TCB& tcb, bool chg_aware) {
   // if robust caching is not supported, do nothing
-  if (!gatt_sr_is_cl_robust_caching_supported(tcb)) {
+  if (!com_android_bluetooth_flags_send_service_changed_indication_upon_reconnection() &&
+      !gatt_sr_is_cl_robust_caching_supported(tcb)) {
     return;
   }
 
