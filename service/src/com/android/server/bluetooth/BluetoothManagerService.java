@@ -202,7 +202,7 @@ class BluetoothManagerService {
     private boolean mQuietEnableExternal = false;
     private boolean mEnableExternal = false;
 
-    private int mErrorRecoveryRetryCounter = 0;
+    private int mRetryCounter = 0;
 
     // The code in mBluetoothCallback is running on Binder thread.
     // It must be posted on the local looper to prevent concurrent access.
@@ -1295,9 +1295,9 @@ class BluetoothManagerService {
                     }
                     if (newState == State.ON || newState == State.BLE_ON) {
                         // bluetooth is working, reset the counter
-                        if (mErrorRecoveryRetryCounter != 0) {
+                        if (mRetryCounter != 0) {
                             Log.w(TAG, "bluetooth is recovered from error");
-                            mErrorRecoveryRetryCounter = 0;
+                            mRetryCounter = 0;
                         }
                     }
                 }
@@ -1365,15 +1365,15 @@ class BluetoothManagerService {
     private void prepareRestartMessage(boolean recoverFromTimeout) {
         mEnable = false;
 
-        mErrorRecoveryRetryCounter++;
-        if (mErrorRecoveryRetryCounter > MAX_ERROR_RESTART_RETRIES) {
+        mRetryCounter++;
+        if (mRetryCounter > MAX_ERROR_RESTART_RETRIES) {
             resetAdapter();
             Log.e(TAG, "Reached maximum retry to restart Bluetooth!");
             return;
         }
 
-        var delay = SERVICE_RESTART_DELAY.multipliedBy(mErrorRecoveryRetryCounter);
-        if (mErrorRecoveryRetryCounter > MAX_ERROR_RESTART_RETRIES / 2) {
+        var delay = SERVICE_RESTART_DELAY.multipliedBy(mRetryCounter);
+        if (mRetryCounter > MAX_ERROR_RESTART_RETRIES / 2) {
             // Last attempts should leave way more time
             delay = delay.multipliedBy(10);
         }
@@ -1385,7 +1385,7 @@ class BluetoothManagerService {
             delay = delay.multipliedBy(10);
         }
 
-        Log.d(TAG, "Recovery " + mErrorRecoveryRetryCounter + " scheduled in " + delay + "ms");
+        Log.d(TAG, "Recovery #" + mRetryCounter + " scheduled in " + delay.toString().substring(2));
         sendMessageDelayed(MESSAGE_RESTART_BLUETOOTH_SERVICE, delay);
     }
 
