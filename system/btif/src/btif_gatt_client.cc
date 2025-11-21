@@ -399,9 +399,9 @@ static BtStatus btif_gattc_close(int client_if, const RawAddress& bd_addr, int c
   return do_in_jni_thread(BindOnce(&btif_gattc_close_impl, client_if, bd_addr, conn_id));
 }
 
-static BtStatus btif_gattc_refresh(int /* client_if */, const RawAddress& bd_addr) {
+static BtStatus btif_gattc_refresh(int client_if, const RawAddress& bd_addr) {
   CHECK_BTGATT_INIT();
-  return do_in_jni_thread(BindOnce(&BTA_GATTC_Refresh, bd_addr));
+  return do_in_jni_thread(BindOnce(&BTA_GATTC_Refresh, static_cast<tGATT_IF>(client_if), bd_addr));
 }
 
 static BtStatus btif_gattc_search_service(int conn_id, const Uuid* filter_uuid) {

@@ -818,8 +818,8 @@ tGATT_STATUS BTA_GATTC_DeregisterForNotifications(tGATT_IF client_if, const RawA
  * Returns          void
  *
  ******************************************************************************/
-void BTA_GATTC_Refresh(const RawAddress& remote_bda) {
-  do_in_main_thread(base::BindOnce(&bta_gattc_process_api_refresh, remote_bda));
+void BTA_GATTC_Refresh(tGATT_IF clientIf, const RawAddress& remote_bda) {
+  do_in_main_thread(base::BindOnce(&bta_gattc_process_api_refresh, clientIf, remote_bda));
 }
 
 /*******************************************************************************

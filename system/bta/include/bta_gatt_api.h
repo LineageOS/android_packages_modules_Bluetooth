@@ -847,12 +847,13 @@ void BTA_GATTC_ReadMultiple(tCONN_ID conn_id, tBTA_GATTC_MULTI& p_read_multi, bo
  *
  * Description      Refresh the server cache of the remote device
  *
- * Parameters       remote_bda: remote device BD address.
+ * Parameters       client_if - the client requesting refresh.
+ *                  remote_bda - remote device BD address.
  *
  * Returns          void
  *
  ******************************************************************************/
-void BTA_GATTC_Refresh(const RawAddress& remote_bda);
+void BTA_GATTC_Refresh(tGATT_IF client_if, const RawAddress& remote_bda);
 
 /*******************************************************************************
  *

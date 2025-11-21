@@ -138,7 +138,9 @@ void BTA_GATTC_ReadUsingCharUuid(uint16_t /* conn_id */, const bluetooth::Uuid& 
                                  void* /* cb_data */) {
   inc_func_call_count(__func__);
 }
-void BTA_GATTC_Refresh(const RawAddress& /* remote_bda */) { inc_func_call_count(__func__); }
+void BTA_GATTC_Refresh(tGATT_IF /*client_if*/, const RawAddress& /* remote_bda */) {
+  inc_func_call_count(__func__);
+}
 void BTA_GATTC_SendIndConfirm(uint16_t /* conn_id */, uint16_t /* cid */) {
   inc_func_call_count(__func__);
 }

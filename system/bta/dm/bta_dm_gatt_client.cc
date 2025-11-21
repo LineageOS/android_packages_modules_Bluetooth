@@ -53,10 +53,10 @@ static gatt_interface_t default_gatt_interface = {
                   BTA_GATTC_CancelOpen(client_if, remote_bda, is_direct);
                 },
         .BTA_GATTC_Refresh =
-                [](const RawAddress& remote_bda) {
-                  gatt_history_.Push(
-                          std::format("{:<32s} bd_addr:{}", "GATTC_Refresh", remote_bda));
-                  BTA_GATTC_Refresh(remote_bda);
+                [](tGATT_IF client_if, const RawAddress& remote_bda) {
+                  gatt_history_.Push(std::format("{:<32s} bd_addr:{} client_if:{}", "GATTC_Refresh",
+                                                 remote_bda, client_if));
+                  BTA_GATTC_Refresh(client_if, remote_bda);
                 },
         .BTA_GATTC_GetGattDb =
                 [](tCONN_ID conn_id, uint16_t start_handle, uint16_t end_handle,
