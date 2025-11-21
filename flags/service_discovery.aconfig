@@ -40,3 +40,14 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+
+flag {
+    name: "broadcast_uuids_from_main_looper"
+    namespace: "bluetooth"
+    description: "Broadcast service discovery results from main looper"
+    bug: "462533972"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
