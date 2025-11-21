@@ -519,3 +519,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_fix_stream_confirm_datapath_race"
+    namespace: "bluetooth"
+    description: "Fix race condition where incomplete data path blocks stream establishment confirmation"
+    bug: "462672161"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
