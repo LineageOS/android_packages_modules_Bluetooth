@@ -35,6 +35,7 @@ import com.android.bluetooth.btservice.storage.DatabaseManager
 import com.android.bluetooth.btservice.storage.Metadata
 import com.android.bluetooth.btservice.storage.MetadataDatabase
 import com.android.bluetooth.storage.ActiveAudioPolicy.Type as ActiveAudioPolicy
+import com.android.bluetooth.storage.HfpClientSettings.SinkAudioPolicy
 import com.android.bluetooth.storage.MediaProfile.Type as MediaProfile
 import com.android.bluetooth.storage.VoiceProfile.Type as VoiceProfile
 import com.android.tests.bluetooth.MockitoRule
@@ -120,7 +121,7 @@ class MigrationFromRoomDatabaseTest {
         metadata.audioPolicyMetadata.connectingTimeAudioPolicy =
             BluetoothSinkAudioPolicy.POLICY_NOT_ALLOWED
         metadata.audioPolicyMetadata.inBandRingtoneAudioPolicy =
-            BluetoothSinkAudioPolicy.POLICY_ALLOWED
+            BluetoothSinkAudioPolicy.POLICY_UNCONFIGURED
         metadata.preferred_output_only_profile = BluetoothProfile.A2DP
         metadata.preferred_duplex_profile = BluetoothProfile.HEADSET
         metadata.active_audio_device_policy =
@@ -167,9 +168,11 @@ class MigrationFromRoomDatabaseTest {
         assertThat(deviceProto.a2DpSettings.optionalCodecsEnabled).isTrue()
 
         // Verify HFP Client Settings
-        assertThat(deviceProto.hfpClientSettings.callEstablish).isTrue()
-        assertThat(deviceProto.hfpClientSettings.setActiveAfterConnection).isFalse()
-        assertThat(deviceProto.hfpClientSettings.inBandRingtoneEnabled).isTrue()
+        assertThat(deviceProto.hfpClientSettings.callEstablish).isEqualTo(SinkAudioPolicy.ALLOWED)
+        assertThat(deviceProto.hfpClientSettings.setActiveAfterConnection)
+            .isEqualTo(SinkAudioPolicy.NOT_ALLOWED)
+        assertThat(deviceProto.hfpClientSettings.inBandRingtone)
+            .isEqualTo(SinkAudioPolicy.UNCONFIGURED)
 
         // Verify LE Audio Settings
         assertThat(deviceProto.leAudioSettings.preferredOutputProfile).isEqualTo(MediaProfile.A2DP)

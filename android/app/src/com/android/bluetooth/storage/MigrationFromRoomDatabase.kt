@@ -117,11 +117,11 @@ class MigrationFromRoomDatabase(private val adapterService: AdapterService) :
             val hfpClientSettingsBuilder = HfpClientSettings.newBuilder()
             metadata.audioPolicyMetadata?.let {
                 hfpClientSettingsBuilder.callEstablish =
-                    fromAudioPolicy(it.callEstablishAudioPolicy)
+                    fromSinkAudioPolicy(it.callEstablishAudioPolicy)
                 hfpClientSettingsBuilder.setActiveAfterConnection =
-                    fromAudioPolicy(it.connectingTimeAudioPolicy)
-                hfpClientSettingsBuilder.inBandRingtoneEnabled =
-                    fromAudioPolicy(it.inBandRingtoneAudioPolicy)
+                    fromSinkAudioPolicy(it.connectingTimeAudioPolicy)
+                hfpClientSettingsBuilder.inBandRingtone =
+                    fromSinkAudioPolicy(it.inBandRingtoneAudioPolicy)
             }
             deviceBuilder.setHfpClientSettings(hfpClientSettingsBuilder.build())
 
