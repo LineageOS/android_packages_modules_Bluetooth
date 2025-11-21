@@ -83,7 +83,7 @@ class AdapterBinder extends IAdapter.Stub {
         // Bluetooth cannot be killed on the main thread; it is in a deadlock.
         // Trying to recover by killing the Bluetooth from the binder thread.
         // This is bad :(
-        Log.wtf(TAG, "Failed to kill Bluetooth using its main thread. Trying from binder");
+        Log.wtf(TAG, "killBluetoothProcess: Deadlock on main thread. Trying from binder");
         killAction.run();
     }
 
