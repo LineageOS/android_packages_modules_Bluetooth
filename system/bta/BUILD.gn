@@ -119,6 +119,7 @@ static_library("bta") {
     "le_audio/metrics_collector.cc",
     "le_audio/state_machine.cc",
     "le_audio/storage_helper.cc",
+    "mcp/mcp_client.cc",
     "pan/bta_pan_act.cc",
     "pan/bta_pan_api.cc",
     "pan/bta_pan_ci.cc",
