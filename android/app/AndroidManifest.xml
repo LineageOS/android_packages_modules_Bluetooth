@@ -16,10 +16,17 @@
          android:description="@string/permdesc_bluetoothAcceptlist"
          android:protectionLevel="signature|privileged"/>
 
+    <!-- Allows access to backup broadcast receiver -->
+    <permission android:name="android.permission.ALLOW_BLUETOOTH_BACKUP_DATA"
+        android:label="@string/permlab_bluetoothBackup"
+        android:description="@string/permdesc_bluetoothBackup"
+        android:protectionLevel="signature|privileged"/>
+
     <uses-permission android:name="android.permission.ACCESS_BLUETOOTH_SHARE"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ALLOW_BLUETOOTH_BACKUP_DATA"/>
     <uses-permission android:name="android.permission.BLUETOOTH"/>
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE"/>
@@ -289,7 +296,8 @@
 
         <receiver
             android:name="com.android.bluetooth.backup.BackupBroadcastReceiver"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.ALLOW_BLUETOOTH_BACKUP_DATA">
             <intent-filter>
                 <action android:name="com.android.bluetooth.backup.ACTION_BACKUP_DATA" />
             </intent-filter>

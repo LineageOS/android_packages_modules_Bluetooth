@@ -40,6 +40,11 @@
         a Bluetooth device, allowing that device to send files to this device without user
         confirmation.</string>
 
+    <string name="permlab_bluetoothBackup">Allow Bluetooth Backup broadcasts.</string>
+
+    <string name="permdesc_bluetoothBackup">Allows the bluetooth app to accept broadcasts to
+        trigger settings data backup</string>
+
     <!-- string showed on "Share picutre via" dialog -->
     <string name="bt_share_picker_label">Bluetooth</string>
 
