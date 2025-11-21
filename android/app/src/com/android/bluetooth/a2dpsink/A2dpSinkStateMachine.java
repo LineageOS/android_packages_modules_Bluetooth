@@ -300,7 +300,8 @@ class A2dpSinkStateMachine extends StateMachine {
         }
 
         void processAudioStateEvent(int event) {
-            debug("Audio state changed, event=" + event);
+            debug("Audio state changed, event="
+                    + A2dpSinkNativeInterface.audioStateToString(event));
         }
 
         void processAudioConfigEvent(int rate, int channels) {
