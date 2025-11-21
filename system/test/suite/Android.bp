@@ -146,8 +146,4 @@ cc_test {
         },
         host: {},
     },
-    // TODO(b/457825862): Temporary workaround to fix the long link time
-    sanitize: {
-        cfi: false,
-    },
 }
