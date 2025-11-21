@@ -26,6 +26,7 @@ import static java.util.Objects.requireNonNull;
 
 import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.IBluetoothHeadset;
@@ -33,6 +34,7 @@ import android.content.AttributionSource;
 
 import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 
 import java.util.Collections;
@@ -280,6 +282,7 @@ class HeadsetServiceBinder extends IBluetoothHeadset.Stub implements IProfileSer
 
     @Override
     public boolean setActiveDevice(BluetoothDevice device, AttributionSource source) {
+        MetricsLogger.getInstance().count(BluetoothProtoEnums.HFP_SET_ACTIVE_DEVICE_CALLED, 1);
         HeadsetService service = getService(source);
         if (service == null) {
             return false;
@@ -291,6 +294,7 @@ class HeadsetServiceBinder extends IBluetoothHeadset.Stub implements IProfileSer
 
     @Override
     public BluetoothDevice getActiveDevice(AttributionSource source) {
+        MetricsLogger.getInstance().count(BluetoothProtoEnums.HFP_GET_ACTIVE_DEVICE_CALLED, 1);
         HeadsetService service = getService(source);
         if (service == null) {
             return null;
