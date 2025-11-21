@@ -673,6 +673,13 @@ cc_test {
     ],
     sanitize: {
         cfi: false,
+        address: true,
+        all_undefined: true,
+        integer_overflow: true,
+        diag: {
+            undefined: true,
+        },
+        misc_undefined: ["bounds"],
     },
 }
 
