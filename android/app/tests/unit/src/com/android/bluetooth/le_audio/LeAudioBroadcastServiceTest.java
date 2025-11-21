@@ -1969,4 +1969,74 @@ public class LeAudioBroadcastServiceTest {
         verify(mLeAudioBroadcasterNativeInterface, never())
                 .setBigChannelMapClassification(anyInt(), any(BluetoothDevice.class), anyInt());
     }
+
+    /**
+     * Test that handleRecordingModeChange does not re-execute logic if the state hasn't changed.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_FIX_STREAM_CONFIRM_DATAPATH_RACE)
+    public void testHandleRecordingModeChange_deduplication() throws RemoteException {
+        int groupId = 1;
+        int broadcastId = 243;
+        byte[] code = {0x00, 0x01, 0x00, 0x02};
+        List<BluetoothDevice> devices = new ArrayList<>();
+
+        // 1. Perepare Unicast and start Broadcast
+        when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        devices.add(mDevice1);
+
+        InOrder inOrderNative = inOrder(mLeAudioNativeInterface);
+
+        prepareHandoverStreamingBroadcast(groupId, broadcastId, code);
+        /* Check if unicast to broadcast handover clear active group */
+        inOrderNative.verify(mLeAudioNativeInterface).groupSetActive(eq(LE_AUDIO_GROUP_ID_INVALID));
+
+        // 2. Enable Recording Mode (First Time)
+        mService.handleRecordingModeChange(true);
+        verify(mLeAudioBroadcasterNativeInterface).pauseBroadcast(broadcastId);
+
+        Mockito.clearInvocations(mLeAudioBroadcasterNativeInterface);
+
+        // 3. Enable Recording Mode (Second Time - Duplicate)
+        mService.handleRecordingModeChange(true);
+        verify(mLeAudioBroadcasterNativeInterface, never()).pauseBroadcast(anyInt());
+
+        // 4. Disable Recording Mode (First Time)
+        mService.handleRecordingModeChange(false);
+        verify(mLeAudioNativeInterface).groupSetActive(eq(LE_AUDIO_GROUP_ID_INVALID));
+    }
+
+    /** Test that handleAudioModeChange does not re-execute logic if the mode hasn't changed. */
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_FIX_STREAM_CONFIRM_DATAPATH_RACE)
+    public void testHandleAudioModeChange_deduplication() throws RemoteException {
+        int groupId = 1;
+        int broadcastId = 243;
+        byte[] code = {0x00, 0x01, 0x00, 0x02};
+        List<BluetoothDevice> devices = new ArrayList<>();
+
+        // 1. Perepare Unicast and start Broadcast
+        when(mDatabaseManager.getMostRecentlyConnectedDevices()).thenReturn(devices);
+        devices.add(mDevice1);
+
+        InOrder inOrderNative = inOrder(mLeAudioNativeInterface);
+
+        prepareHandoverStreamingBroadcast(groupId, broadcastId, code);
+        /* Check if unicast to broadcast handover clear active group */
+        inOrderNative.verify(mLeAudioNativeInterface).groupSetActive(eq(LE_AUDIO_GROUP_ID_INVALID));
+
+        // 2. Set Audio Mode to IN_CALL (First Time)
+        mService.handleAudioModeChange(AudioManager.MODE_IN_CALL);
+        verify(mLeAudioBroadcasterNativeInterface).pauseBroadcast(broadcastId);
+
+        Mockito.clearInvocations(mLeAudioBroadcasterNativeInterface);
+
+        // 3. Set Audio Mode to IN_CALL (Second Time - Duplicate)
+        mService.handleAudioModeChange(AudioManager.MODE_IN_CALL);
+        verify(mLeAudioBroadcasterNativeInterface, never()).pauseBroadcast(anyInt());
+
+        // 4. Audio Mode back to normal (First Time)
+        mService.handleAudioModeChange(AudioManager.MODE_NORMAL);
+        verify(mLeAudioNativeInterface).groupSetActive(eq(LE_AUDIO_GROUP_ID_INVALID));
+    }
 }

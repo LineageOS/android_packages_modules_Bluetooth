@@ -776,6 +776,12 @@ public class LeAudioService extends ConnectableProfile {
     }
 
     void handleRecordingModeChange(boolean isRecording) {
+        if (Flags.leaudioFixStreamConfirmDatapathRace()) {
+            if (isRecording == mCurrentRecordingMode) {
+                return;
+            }
+        }
+
         Log.d(TAG, "Recording mode changed: " + mCurrentRecordingMode + " -> " + isRecording);
         boolean previousRecordingMode = mCurrentRecordingMode;
 
@@ -3148,7 +3154,19 @@ public class LeAudioService extends ConnectableProfile {
         }
     }
 
-    private boolean isBroadcastAllowedToBeActivateInCurrentAudioMode() {
+    /**
+     * Checks if starting or resuming a broadcast is allowed in the current audio and recording
+     * mode.
+     *
+     * @return {@code true} if broadcast is allowed to be active, {@code false} otherwise.
+     */
+    private boolean isBroadcastAllowedToActivateInCurrentMode() {
+        if (Flags.leaudioFixStreamConfirmDatapathRace()) {
+            if (mCurrentRecordingMode) {
+                return false;
+            }
+        }
+
         switch (mCurrentAudioMode) {
             case AudioManager.MODE_NORMAL:
                 return true;
@@ -3164,13 +3182,13 @@ public class LeAudioService extends ConnectableProfile {
         return areAllGroupsInNotGettingActiveState()
                 && (!mCreateBroadcastQueue.isEmpty()
                         || mBroadcastIdDeactivatedForUnicastTransition.isPresent())
-                && isBroadcastAllowedToBeActivateInCurrentAudioMode();
+                && isBroadcastAllowedToActivateInCurrentMode();
     }
 
     private boolean isBroadcastReadyToBeReActivated() {
         return areAllGroupsInNotGettingActiveState()
                 && mBroadcastIdDeactivatedForUnicastTransition.isPresent()
-                && isBroadcastAllowedToBeActivateInCurrentAudioMode();
+                && isBroadcastAllowedToActivateInCurrentMode();
     }
 
     private BluetoothDevice getBroadcastBluetoothDevice() {
@@ -4107,7 +4125,7 @@ public class LeAudioService extends ConnectableProfile {
                                 BluetoothLeAudio.CONTEXTS_ALL);
                     }
 
-                    if (isBroadcastAllowedToBeActivateInCurrentAudioMode()) {
+                    if (isBroadcastAllowedToActivateInCurrentMode()) {
                         /* Check if broadcast was deactivated due to unicast */
                         if (mBroadcastIdDeactivatedForUnicastTransition.isPresent()) {
                             startBroadcast(mBroadcastIdDeactivatedForUnicastTransition.get());
@@ -5157,6 +5175,12 @@ public class LeAudioService extends ConnectableProfile {
 
     @VisibleForTesting
     void handleAudioModeChange(int mode) {
+        if (Flags.leaudioFixStreamConfirmDatapathRace()) {
+            if (mode == mCurrentAudioMode) {
+                return;
+            }
+        }
+
         mEventLogger.logd(
                 TAG,
                 "[From AudioManager]: Audio mode changed: " + mCurrentAudioMode + " -> " + mode);
