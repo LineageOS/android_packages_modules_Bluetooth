@@ -25,8 +25,10 @@ class HidDeviceNativeCallback(
 ) : NativeCallback(adapterService) {
 
     @Synchronized
-    fun onApplicationStateChanged(address: ByteArray, registered: Boolean) =
-        service.onApplicationStateChangedFromNative(getDevice(address), registered)
+    fun onApplicationStateChanged(address: ByteArray?, registered: Boolean) {
+        val device = if (address != null) getDevice(address) else null
+        service.onApplicationStateChangedFromNative(device, registered)
+    }
 
     @Synchronized
     fun onConnectStateChanged(address: ByteArray, state: Int) =
