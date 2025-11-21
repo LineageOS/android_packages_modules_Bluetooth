@@ -52,6 +52,16 @@ flag {
 }
 
 flag {
+    name: "btsec_disable_legacy_auto_pair"
+    namespace: "bluetooth"
+    description: "Remove support for auto-pairing with code 0000 against some legacy devices"
+    bug: "432805312"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "passkey_entry_pairing_approval"
     namespace: "bluetooth"
     description: "Don't auto approve passkey entry pairing"
