@@ -968,7 +968,6 @@ public final class BluetoothAdapter {
     @Deprecated
     @RequiresNoPermission
     public static synchronized BluetoothAdapter getDefaultAdapter() {
-        Log.e(TAG, "BluetoothAdapter.getDefaultAdapter is deprecated.", new Throwable());
         if (sAdapter == null) {
             sAdapter = createAdapter(null);
         }
