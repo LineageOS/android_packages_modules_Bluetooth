@@ -44,7 +44,9 @@ static void connection_state_cb(const RawAddress& addr, btav_connection_state_t 
   };
   rusty::sink_connection_state_callback(addr, state, a2dp_error);
 }
-static void audio_state_cb(btav_audio_state_t state) { rusty::sink_audio_state_callback(state); }
+static void audio_state_cb(const RawAddress& addr, btav_audio_state_t state) {
+  rusty::sink_audio_state_callback(addr, state);
+}
 static void audio_config_cb(const RawAddress& addr, uint32_t sample_rate, uint8_t channel_count) {
   rusty::sink_audio_config_callback(addr, sample_rate, channel_count);
 }
