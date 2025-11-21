@@ -397,7 +397,13 @@ public class ScanController {
 
         byte[] legacyAdvData = Arrays.copyOfRange(advData, 0, 62);
         var device = mAdapterService.getRemoteDevice(address, addressType);
-        var noFilterMatchedClients = new ArrayList<ScanClient>();
+        // Aggregate skipped clients to reduce log spam
+        var scanTypeMismatch = new ArrayList<ScanClient>();
+        var legacyScanNonLegacyResult = new ArrayList<ScanClient>();
+        var locationDenyList = new ArrayList<ScanClient>();
+        var noPermission = new ArrayList<ScanClient>();
+        var noFilterMatched = new ArrayList<ScanClient>();
+        var notAllMatches = new ArrayList<ScanClient>();
         for (ScanClient client : mScanManager.getRegularScanQueue()) {
             var app = mScannerMap.getById(client.getScannerId());
             if (app == null) {
@@ -418,13 +424,15 @@ public class ScanController {
                                     && requiresScanResponse)
                             || (settings.getScanType() == ScanSettings.SCAN_TYPE_PASSIVE
                                     && isScanResponse))) {
+                scanTypeMismatch.add(client);
                 continue;
             }
+
             // This is for compatibility with applications that assume fixed size scan data.
             if (settings.getLegacy()) {
                 if ((eventType & ET_LEGACY_MASK) == 0) {
                     // If this is legacy scan, but nonlegacy result - skip.
-                    Log.v(TAG, "Legacy scan, non legacy result; Skip");
+                    legacyScanNonLegacyResult.add(client);
                     continue;
                 } else {
                     // Some apps are used to fixed-size advertise data.
@@ -450,7 +458,7 @@ public class ScanController {
 
             if (client.getHasDisavowedLocation()) {
                 if (mLocationDenylistPredicate.test(result)) {
-                    Log.i(TAG, "Location deny list for " + client + "; Skip");
+                    locationDenyList.add(client);
                     continue;
                 }
             }
@@ -472,18 +480,18 @@ public class ScanController {
                 }
             }
             if (!hasPermission) {
-                Log.v(TAG, "No permission for " + client + "; Skip");
+                noPermission.add(client);
                 continue;
             }
             if (!matchesFilters(client, result, originalAddress)) {
-                noFilterMatchedClients.add(client);
+                noFilterMatched.add(client);
                 continue;
             }
 
             final int callbackType = settings.getCallbackType();
             if (!(callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES
                     || callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH)) {
-                Log.v(TAG, "Not CALLBACK_TYPE_ALL_MATCHES for " + client + "; Skip");
+                notAllMatches.add(client);
                 continue;
             }
 
@@ -502,8 +510,25 @@ public class ScanController {
                 handleDeadScanClient(client);
             }
         }
-        if (!noFilterMatchedClients.isEmpty()) {
-            Log.v(TAG, "No filter match for " + noFilterMatchedClients + "; Skip");
+        if (!scanTypeMismatch.isEmpty()) {
+            Log.v(TAG, "Scan type mismatch for " + scanTypeMismatch + "; Skip");
+        }
+        if (!legacyScanNonLegacyResult.isEmpty()) {
+            Log.v(
+                    TAG,
+                    "Legacy scan, non legacy result for " + legacyScanNonLegacyResult + "; Skip");
+        }
+        if (!locationDenyList.isEmpty()) {
+            Log.i(TAG, "Location deny list for " + locationDenyList + "; Skip");
+        }
+        if (!noPermission.isEmpty()) {
+            Log.v(TAG, "No permission for " + noPermission + "; Skip");
+        }
+        if (!noFilterMatched.isEmpty()) {
+            Log.v(TAG, "No filter match for " + noFilterMatched + "; Skip");
+        }
+        if (!notAllMatches.isEmpty()) {
+            Log.v(TAG, "Not CALLBACK_TYPE_ALL_MATCHES for " + notAllMatches + "; Skip");
         }
     }
 
