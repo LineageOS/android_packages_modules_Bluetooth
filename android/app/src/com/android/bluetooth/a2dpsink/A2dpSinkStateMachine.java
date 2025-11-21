@@ -281,11 +281,7 @@ class A2dpSinkStateMachine extends StateMachine {
                     mNativeInterface.disconnectA2dpSink(mDevice);
                 }
                 case MESSAGE_AUDIO_STATE_CHANGED -> processAudioStateEvent(msg.arg1);
-                case MESSAGE_AUDIO_CONFIG_CHANGED -> {
-                    mAudioConfig =
-                            new BluetoothAudioConfig(
-                                    msg.arg1, msg.arg2, AudioFormat.ENCODING_PCM_16BIT);
-                }
+                case MESSAGE_AUDIO_CONFIG_CHANGED -> processAudioConfigEvent(msg.arg1, msg.arg2);
                 case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(msg.arg1);
                 default -> {
                     return false;
@@ -305,6 +301,11 @@ class A2dpSinkStateMachine extends StateMachine {
 
         void processAudioStateEvent(int event) {
             debug("Audio state changed, event=" + event);
+        }
+
+        void processAudioConfigEvent(int rate, int channels) {
+            debug("Config changed, sampleRate=" + rate + ", channelCount=" + channels);
+            mAudioConfig = new BluetoothAudioConfig(rate, channels, AudioFormat.ENCODING_PCM_16BIT);
         }
     }
 
