@@ -127,3 +127,14 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "gatt_reg_notification_on_jni_thread"
+    namespace: "bluetooth"
+    description: "Push register notification callback on JNI thread"
+    bug: "462776109"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
