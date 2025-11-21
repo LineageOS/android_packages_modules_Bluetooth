@@ -386,6 +386,7 @@ static std::string getImageHandleFromJavaObj(JNIEnv* env, jobject image) {
           env->GetMethodID(class_image, "getImageHandle", "()Ljava/lang/String;");
   jstring imageHandle = (jstring)env->CallObjectMethod(image, method_getImageHandle);
   if (imageHandle == nullptr) {
+    env->DeleteLocalRef(class_image);
     return handle;
   }
 
@@ -393,6 +394,7 @@ static std::string getImageHandleFromJavaObj(JNIEnv* env, jobject image) {
   handle = std::string(value);
   env->ReleaseStringUTFChars(imageHandle, value);
   env->DeleteLocalRef(imageHandle);
+  env->DeleteLocalRef(class_image);
   return handle;
 }
 
@@ -489,6 +491,7 @@ static SongInfo getSongInfoFromJavaObj(JNIEnv* env, jobject metadata) {
     env->DeleteLocalRef(object_image);
   }
 
+  env->DeleteLocalRef(class_metadata);
   return info;
 }
 
@@ -520,6 +523,7 @@ static FolderInfo getFolderInfoFromJavaObj(JNIEnv* env, jobject folder) {
   }
   info.folderType = env->GetIntField(folder, field_folderType);
 
+  env->DeleteLocalRef(class_folder);
   return info;
 }
 
