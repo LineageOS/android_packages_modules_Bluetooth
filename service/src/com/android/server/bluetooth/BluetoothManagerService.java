@@ -87,15 +87,12 @@ import kotlin.time.TimeSource;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -1902,9 +1899,6 @@ class BluetoothManagerService {
 
         writer.println("");
 
-        dumpBluetoothFlags(writer);
-        writer.println("");
-
         writer.flush();
 
         if (mAdapter == null) {
@@ -1925,42 +1919,6 @@ class BluetoothManagerService {
         if (errorMsg != null) {
             writer.println(errorMsg);
         }
-    }
-
-    private static void dumpBluetoothFlags(PrintWriter writer) {
-        writer.println("🚩Flag dump:");
-        Pattern pattern = Pattern.compile("_([0-9a-z])");
-        // When a flag contains a number, the camelCase method doesn't provide information if the
-        // number should have an underscore before or not. Example: a2dpVersion14 is for
-        // a2dp_version_1_4...
-        // To fix that, we first need to get the static flag value, then we convert the SNAKE_NAME
-        // to camelCase and call the associated method to get the flag value
-        Arrays.stream(Flags.class.getDeclaredFields())
-                .filter((Field f) -> f.getType() == String.class)
-                .forEach(
-                        (Field f) -> {
-                            try {
-                                String flagName =
-                                        ((String) f.get(null))
-                                                .replaceFirst(
-                                                        "com.android.bluetooth.*\\.flags\\.", "");
-                                String methodName =
-                                        pattern.matcher(flagName)
-                                                .replaceAll(m -> m.group(1).toUpperCase(Locale.US));
-                                boolean flagValue =
-                                        (boolean)
-                                                Flags.class
-                                                        .getDeclaredMethod(methodName)
-                                                        .invoke(null);
-                                writer.println(
-                                        "\t" + (flagValue ? "[■]" : "[ ]") + ": " + flagName);
-                            } catch (IllegalAccessException
-                                    | InvocationTargetException
-                                    | NoSuchMethodException e) {
-                                writer.println("Cannot invoke flag value for " + f);
-                                throw new RuntimeException(e);
-                            }
-                        });
     }
 
     static @NonNull Bundle getTempAllowlistBroadcastOptions() {
