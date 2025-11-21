@@ -2357,7 +2357,8 @@ void btif_remove_local_irk_from_resolving_list() {
     return;
   }
 
-  if (bluetooth::shim::GetController()->IsRpaGenerationSupported()) {
+  if (bluetooth::shim::GetController() &&
+      bluetooth::shim::GetController()->IsRpaGenerationSupported()) {
     log::info("Removing local IRK from resolving list before reset");
     bluetooth::shim::GetAclManagerLe()->RemoveDeviceFromResolvingList(
             {bluetooth::hci::Address::kEmpty, bluetooth::hci::AddressType::PUBLIC_DEVICE_ADDRESS});
