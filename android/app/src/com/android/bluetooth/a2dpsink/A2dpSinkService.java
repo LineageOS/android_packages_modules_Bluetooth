@@ -334,7 +334,25 @@ public class A2dpSinkService extends ConnectableProfile {
                 });
     }
 
-    void onAudioStateChangedFromNative(int state) {
+    void onAudioStateChangedFromNative(BluetoothDevice device, int state) {
+        Log.d(TAG, "onAudioStateChangedFromNative(device=" + device + ", state=" + state + ")");
+        if (device == null) {
+            return;
+        }
+
+        A2dpSinkStateMachine stateMachine = getStateMachineForDevice(device);
+        if (stateMachine == null) {
+            Log.w(
+                    TAG,
+                    "onAudioStateChangedFromNative("
+                            + ("device=" + device)
+                            + (", state=" + state)
+                            + "): Not connected");
+            return;
+        }
+
+        stateMachine.onAudioStateChanged(state);
+
         synchronized (mStreamHandlerLock) {
             mA2dpSinkStreamHandler.onAudioStateChanged(state);
         }

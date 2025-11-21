@@ -240,7 +240,7 @@ public class A2dpSinkStateMachineTest {
     }
 
     @Test
-    public void testAudioStateChangeInConnecting() {
+    public void testAudioConfigChangeInConnecting() {
         testConnectInDisconnected();
 
         sendAudioConfigChangedEvent(44, 1);
@@ -304,7 +304,7 @@ public class A2dpSinkStateMachineTest {
     }
 
     @Test
-    public void testAudioStateChangeInConnected() {
+    public void testAudioConfigChangeInConnected() {
         testConnectedInConnecting();
 
         sendAudioConfigChangedEvent(44, 1);
