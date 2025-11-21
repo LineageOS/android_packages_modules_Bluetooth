@@ -85,7 +85,6 @@ public class RemoteDevices {
 
     private final AdapterService mAdapterService;
     private final BluetoothAdapter mAdapter;
-    private final ArrayList<BluetoothDevice> mSdpTracker = new ArrayList<>();
     private final Object mObject = new Object();
 
     private static final int MESSAGE_NOTIFY_UUIDS = 1;
@@ -143,8 +142,12 @@ public class RemoteDevices {
                     }
 
                     debugLog("MESSAGE_NOTIFY_UUIDS: " + device);
-                    DeviceProperties prop = getDeviceProperties(device);
-                    sendUuidIntent(device, prop, true);
+                    if (Flags.broadcastUuidsFromMainLooper()) {
+                        uuidsUpdated(getDeviceProperties(device), true);
+                    } else {
+                        DeviceProperties prop = getDeviceProperties(device);
+                        sendUuidIntent(device, prop, true);
+                    }
                 }
                 case MESSAGE_SERVICE_DISCOVERY_TIMEOUT -> {
                     BluetoothDevice device = (BluetoothDevice) msg.obj;
@@ -156,10 +159,12 @@ public class RemoteDevices {
                     }
 
                     debugLog("MESSAGE_SERVICE_DISCOVERY_TIMEOUT: " + device);
-                    MetricsLogger.getInstance()
-                            .cacheCount(BluetoothProtoEnums.SDP_SENDING_DELAYED_UUID, 1);
-                    DeviceProperties prop = getDeviceProperties(device);
-                    sendUuidIntent(device, prop, false);
+                    if (Flags.broadcastUuidsFromMainLooper()) {
+                        uuidsUpdated(getDeviceProperties(device), false);
+                    } else {
+                        DeviceProperties prop = getDeviceProperties(device);
+                        sendUuidIntent(device, prop, false);
+                    }
                 }
                 default -> {} // Nothing to do
             }
@@ -179,8 +184,6 @@ public class RemoteDevices {
      * still usable after reset
      */
     void reset() {
-        mSdpTracker.clear();
-
         // Unregister Handler and stop all queued messages.
         mMainHandler.removeCallbacksAndMessages(null);
 
@@ -1128,15 +1131,9 @@ public class RemoteDevices {
 
         // Remove the outstanding UUID request
         // Handler.removeMessages() compares the object pointer so we cannot use the device
-        // directly. So we have to extract original BluetoothDevice object from mSdpTracker.
-        int index = mSdpTracker.indexOf(device);
-        if (index >= 0) {
-            BluetoothDevice originalDevice = mSdpTracker.get(index);
-            if (originalDevice != null) {
-                mHandler.removeMessages(MESSAGE_SERVICE_DISCOVERY_TIMEOUT, originalDevice);
-            }
-        }
-        mSdpTracker.remove(device);
+        // directly. So we have to extract original BluetoothDevice object from DeviceProperties.
+        mHandler.removeMessages(
+                MESSAGE_SERVICE_DISCOVERY_TIMEOUT, prop == null ? device : prop.getDevice());
     }
 
     /**
@@ -1270,7 +1267,7 @@ public class RemoteDevices {
         DeviceProperties deviceProperties;
         if (bdDevice == null) {
             deviceProperties = addDeviceProperties(address, addressType);
-            bdDevice = getDevice(address);
+            bdDevice = deviceProperties.getDevice();
             debugLog("Added new device property, device=" + bdDevice);
         } else {
             deviceProperties = getDeviceProperties(bdDevice);
@@ -1284,7 +1281,7 @@ public class RemoteDevices {
             return;
         }
 
-        boolean uuidsUpdated = false;
+        boolean newUuidsFound = false;
 
         for (int j = 0; j < types.length; j++) {
             type = types[j];
@@ -1371,7 +1368,7 @@ public class RemoteDevices {
                             }
                             deviceProperties.setUuidsLe(newUuidsLe);
                         }
-                        uuidsUpdated = true;
+                        newUuidsFound = true;
                     }
                     case AbstractionLayer.BT_PROPERTY_TYPE_OF_DEVICE -> {
                         if (deviceProperties.isConsolidated()) {
@@ -1463,27 +1460,44 @@ public class RemoteDevices {
             }
         }
 
-        if (uuidsUpdated) {
-            // Broadcast UUID update only once even if LE and BREDR UUIDs are received separately
-            uuidsUpdated(deviceProperties);
+        if (newUuidsFound) {
+            if (Flags.broadcastUuidsFromMainLooper()) {
+                updateUuids(bdDevice); // Ensures that UUID update is propagated in main looper
+            } else {
+                uuidsUpdated(deviceProperties, true);
+            }
         }
     }
 
-    private void uuidsUpdated(DeviceProperties deviceProperties) {
+    private void uuidsUpdated(DeviceProperties deviceProperties, boolean success) {
+        if (deviceProperties == null) {
+            errorLog("uuidsUpdated: Device Properties is null");
+            return;
+        }
+
         BluetoothDevice device = deviceProperties.getDevice();
-        if (mAdapterService.getState() == BluetoothAdapter.STATE_ON) {
-            // SDP Adding UUIDs to property cache and sending intent
-            MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_ADD_UUID_WITH_INTENT, 1);
-            mAdapterService.deviceUuidUpdated(device);
-            sendUuidIntent(device, deviceProperties, true);
-        } else if (mAdapterService.getState() == BluetoothAdapter.STATE_BLE_ON) {
-            // SDP Adding UUIDs to property cache but with no intent
-            MetricsLogger.getInstance()
-                    .cacheCount(BluetoothProtoEnums.SDP_ADD_UUID_WITH_NO_INTENT, 1);
-            mAdapterService.deviceUuidUpdated(device);
-        } else {
-            // SDP Silently dropping UUIDs and with no intent
-            MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_DROP_UUID, 1);
+        switch (mAdapterService.getState()) {
+            case BluetoothAdapter.STATE_ON -> {
+                if (success) {
+                    MetricsLogger.getInstance()
+                            .cacheCount(BluetoothProtoEnums.SDP_ADD_UUID_WITH_INTENT, 1);
+                    // Adding UUIDs to property cache and sending intent
+                    mAdapterService.deviceUuidUpdated(device);
+                } else {
+                    MetricsLogger.getInstance()
+                            .cacheCount(BluetoothProtoEnums.SDP_SENDING_DELAYED_UUID, 1);
+                }
+                sendUuidIntent(device, deviceProperties, success);
+            }
+            case BluetoothAdapter.STATE_BLE_ON -> {
+                if (success) {
+                    MetricsLogger.getInstance()
+                            .cacheCount(BluetoothProtoEnums.SDP_ADD_UUID_WITH_NO_INTENT, 1);
+                    // Adding UUIDs to property cache but with no intent
+                    mAdapterService.deviceUuidUpdated(device);
+                }
+            }
+            default -> MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_DROP_UUID, 1);
         }
     }
 
@@ -2007,7 +2021,26 @@ public class RemoteDevices {
     }
 
     void fetchUuids(BluetoothDevice device, int transport) {
-        if (mSdpTracker.contains(device)) {
+        DeviceProperties deviceProperties = getDeviceProperties(device);
+
+        // If there are no cached UUIDs and the device is bonding, wait for service discovery
+        // results from the bonding process.
+        if (deviceProperties != null && deviceProperties.isBonding()) {
+            debugLog("Skip fetch UUIDs due to bonding peer:" + device + " transport:" + transport);
+            MetricsLogger.getInstance()
+                    .cacheCount(BluetoothProtoEnums.SDP_FETCH_UUID_SKIP_ALREADY_BONDED, 1);
+            return;
+        }
+
+        if (deviceProperties == null) {
+            deviceProperties =
+                    addDeviceProperties(Utils.getByteAddress(device), device.getAddressType());
+        }
+
+        // mHandler.hasMessages() and mHandler.removeMessages() uses reference equality to compare
+        // the device object. So the BluetoothDevice object from deviceProperties must be used.
+        device = deviceProperties.getDevice();
+        if (mHandler.hasMessages(MESSAGE_SERVICE_DISCOVERY_TIMEOUT, device)) {
             debugLog(
                     "Skip fetch UUIDs are they are already cached peer:"
                             + device
@@ -2018,38 +2051,14 @@ public class RemoteDevices {
             return;
         }
 
-        // If no UUIDs are cached and the device is bonding, wait for SDP after the device is bonded
-        DeviceProperties deviceProperties = getDeviceProperties(device);
-        if (deviceProperties != null
-                && deviceProperties.isBonding()
-                && getDeviceProperties(device).getUuids() == null) {
-            debugLog("Skip fetch UUIDs due to bonding peer:" + device + " transport:" + transport);
-            MetricsLogger.getInstance()
-                    .cacheCount(BluetoothProtoEnums.SDP_FETCH_UUID_SKIP_ALREADY_BONDED, 1);
-            return;
-        }
-
-        mSdpTracker.add(device);
-
+        // Start a timer to conclude service discovery if it takes too long.
         Message message = mHandler.obtainMessage(MESSAGE_SERVICE_DISCOVERY_TIMEOUT, device);
         mHandler.sendMessageDelayed(message, SERVICE_DISCOVERY_TIMEOUT_MS);
 
-        // Uses cached UUIDs if we are bonding. If not, we fetch the UUIDs with SDP.
-        if (deviceProperties != null && deviceProperties.isBonding()) {
-            debugLog("Wait for SDP after bonding peer:" + device);
-            return;
-        }
-
-        debugLog(
-                "Invoking core stack to spin up SDP cycle peer:"
-                        + device
-                        + " transport:"
-                        + transport);
         MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_INVOKE_SDP_CYCLE, 1);
 
         // Some apps expect service discovery to be performed on all connected transports.
-        if (deviceProperties != null
-                && transport == TRANSPORT_AUTO
+        if (transport == TRANSPORT_AUTO
                 && (Flags.serviceDiscoveryOnConnectedTransport()
                         || serviceDiscoveryIopFixNeeded(device))) {
             boolean startedLeServiceDiscovery = false;
@@ -2082,6 +2091,11 @@ public class RemoteDevices {
             }
         }
 
+        debugLog(
+                "fetchUuids: Start service discovery for device:"
+                        + device
+                        + " transport:"
+                        + transport);
         mAdapterService
                 .getNative()
                 .getRemoteServices(Utils.getBytesFromAddress(device.getAddress()), transport);
