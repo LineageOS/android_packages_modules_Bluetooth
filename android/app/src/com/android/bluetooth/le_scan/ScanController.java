@@ -1057,7 +1057,7 @@ public class ScanController {
             List<ScanFilter> filters,
             AttributionSource source) {
         enforceScanThread();
-        Log.d(TAG, "Start scan with filters");
+        Log.d(TAG, "startScan(scannerId=" + scannerId + ")");
         String callingPackage = source.getPackageName();
         settings = BatchScanUtil.enforceReportDelayFloor(settings);
         final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
