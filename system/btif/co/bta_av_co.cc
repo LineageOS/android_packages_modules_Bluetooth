@@ -369,8 +369,15 @@ tA2DP_STATUS BtaAvCo::ProcessSinkGetConfig(tBTA_AV_HNDL bta_av_handle,
 
   p_peer->num_rx_sources++;
 
+  // Bypass the validation for codecs that are offloaded:
+  // the stack does not need to know about the peer capabilities,
+  // since the validation and selection will be performed by the
+  // bluetooth audio HAL for offloaded codecs.
+  auto codec_index = A2DP_SinkCodecIndex(p_codec_info);
+  bool is_offloaded_codec = ::bluetooth::audio::a2dp::provider::supports_codec(codec_index);
+
   // Check the peer's Source codec
-  if (A2DP_IsPeerSourceCodecValid(p_codec_info)) {
+  if (is_offloaded_codec || A2DP_IsPeerSourceCodecValid(p_codec_info)) {
     // If there is room for a new one
     if (p_peer->num_sup_sources < BTA_AV_CO_NUM_ELEMENTS(p_peer->sources)) {
       BtaAvCoSep* p_source = &p_peer->sources[p_peer->num_sup_sources++];
