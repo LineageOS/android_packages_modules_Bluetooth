@@ -385,8 +385,8 @@ void BleScannerInterfaceImpl::BatchScanReadReports(int client_if, int scan_mode)
 
 void BleScannerInterfaceImpl::StartSync(uint8_t sid, RawAddress address,
                                         tBLE_ADDR_TYPE address_type, uint16_t skip,
-                                        uint16_t timeout, int reg_id) {
-  log::info("in shim layer");
+                                        uint16_t timeout, int reg_id, uint8_t client_id) {
+  log::info("in shim layer, client_id={}", client_id);
   if (!is_ble_addr_type_valid(address_type)) {
     address_type = BLE_ADDR_RANDOM;
   }
@@ -396,6 +396,7 @@ void BleScannerInterfaceImpl::StartSync(uint8_t sid, RawAddress address,
   }
   btm_random_pseudo_to_identity_addr(&address, &address_type);
   address_type &= ~BLE_ADDR_TYPE_ID_BIT;
+  periodic_sync_reg_id_to_client_map_[reg_id] = client_id;
   bluetooth::shim::GetScanning()->StartSync(sid, ToAddressWithType(address, address_type), skip,
                                             timeout, reg_id);
 }
@@ -451,6 +452,15 @@ void BleScannerInterfaceImpl::SyncTxParameters(RawAddress addr, uint8_t mode, ui
 void BleScannerInterfaceImpl::RegisterCallbacks(ScanningCallbacks* callbacks) {
   log::info("in shim layer");
   scanning_callbacks_ = callbacks;
+  RegisterCallbacksNative(callbacks, kScannerClientIdJni);
+}
+
+void BleScannerInterfaceImpl::RegisterCallbacksNative(ScanningCallbacks* callbacks,
+                                                      uint8_t client_id) {
+  log::info("in shim layer, client_id={}", client_id);
+  if (callbacks) {
+    native_client_to_callbacks_map_[client_id] = callbacks;
+  }
 }
 
 void BleScannerInterfaceImpl::OnScannerRegistered(const bluetooth::hci::Uuid app_uuid,
@@ -551,6 +561,7 @@ void BleScannerInterfaceImpl::OnTrackAdvFoundLost(
     track_info.scan_response.insert(track_info.scan_response.end(), scan_rsp_data.begin(),
                                     scan_rsp_data.end());
   }
+
   do_in_jni_thread(base::BindOnce(&ScanningCallbacks::OnTrackAdvFoundLost,
                                   base::Unretained(scanning_callbacks_), track_info));
 }
@@ -576,6 +587,27 @@ void BleScannerInterfaceImpl::OnPeriodicSyncStarted(
     btm_identity_addr_to_random_pseudo(&raw_address, &ble_addr_type, true);
   }
 
+  if (com_android_bluetooth_flags_support_native_pa_callback()) {
+    if (periodic_sync_reg_id_to_client_map_.count(reg_id)) {
+      uint8_t client_id = periodic_sync_reg_id_to_client_map_[reg_id];
+      periodic_sync_reg_id_to_client_map_.erase(reg_id);
+
+      if (status == 0) {  // Success
+        periodic_sync_handle_to_client_map_[sync_handle] = client_id;
+      }
+
+      if (native_client_to_callbacks_map_.count(client_id)) {
+        do_in_jni_thread(
+                base::BindOnce(&ScanningCallbacks::OnPeriodicSyncStarted,
+                               base::Unretained(native_client_to_callbacks_map_[client_id]), reg_id,
+                               status, sync_handle, advertising_sid,
+                               static_cast<int>(ble_addr_type), raw_address, phy, interval));
+      }
+      return;
+    }
+    log::warn("OnPeriodicSyncStarted: Unknown reg_id={}", reg_id);
+    return;
+  }
   do_in_jni_thread(base::BindOnce(&ScanningCallbacks::OnPeriodicSyncStarted,
                                   base::Unretained(scanning_callbacks_), reg_id, status,
                                   sync_handle, advertising_sid, static_cast<int>(ble_addr_type),
@@ -585,12 +617,41 @@ void BleScannerInterfaceImpl::OnPeriodicSyncStarted(
 void BleScannerInterfaceImpl::OnPeriodicSyncReport(uint16_t sync_handle, int8_t tx_power,
                                                    int8_t rssi, uint8_t status,
                                                    std::vector<uint8_t> data) {
+  if (com_android_bluetooth_flags_support_native_pa_callback()) {
+    if (periodic_sync_handle_to_client_map_.count(sync_handle)) {
+      uint8_t client_id = periodic_sync_handle_to_client_map_[sync_handle];
+      if (native_client_to_callbacks_map_.count(client_id)) {
+        do_in_jni_thread(
+                base::BindOnce(&ScanningCallbacks::OnPeriodicSyncReport,
+                               base::Unretained(native_client_to_callbacks_map_[client_id]),
+                               sync_handle, tx_power, rssi, status, data));
+      }
+      return;
+    }
+    log::warn("OnPeriodicSyncReport: Unknown sync_handle={}", sync_handle);
+    return;
+  }
   do_in_jni_thread(base::BindOnce(&ScanningCallbacks::OnPeriodicSyncReport,
                                   base::Unretained(scanning_callbacks_), sync_handle, tx_power,
                                   rssi, status, std::move(data)));
 }
 
 void BleScannerInterfaceImpl::OnPeriodicSyncLost(uint16_t sync_handle) {
+  if (com_android_bluetooth_flags_support_native_pa_callback()) {
+    if (periodic_sync_handle_to_client_map_.count(sync_handle)) {
+      uint8_t client_id = periodic_sync_handle_to_client_map_[sync_handle];
+      periodic_sync_handle_to_client_map_.erase(sync_handle);
+
+      if (native_client_to_callbacks_map_.count(client_id)) {
+        do_in_jni_thread(base::BindOnce(
+                &ScanningCallbacks::OnPeriodicSyncLost,
+                base::Unretained(native_client_to_callbacks_map_[client_id]), sync_handle));
+      }
+      return;
+    }
+    log::warn("OnPeriodicSyncLost: Unknown sync_handle={}", sync_handle);
+    return;
+  }
   do_in_jni_thread(base::BindOnce(&ScanningCallbacks::OnPeriodicSyncLost,
                                   base::Unretained(scanning_callbacks_), sync_handle));
 }
@@ -603,6 +664,20 @@ void BleScannerInterfaceImpl::OnPeriodicSyncTransferred(int pa_source, uint8_t s
 }
 
 void BleScannerInterfaceImpl::OnBigInfoReport(uint16_t sync_handle, bool encrypted) {
+  if (com_android_bluetooth_flags_support_native_pa_callback()) {
+    if (periodic_sync_handle_to_client_map_.count(sync_handle)) {
+      uint8_t client_id = periodic_sync_handle_to_client_map_[sync_handle];
+      if (native_client_to_callbacks_map_.count(client_id)) {
+        do_in_jni_thread(
+                base::BindOnce(&ScanningCallbacks::OnBigInfoReport,
+                               base::Unretained(native_client_to_callbacks_map_[client_id]),
+                               sync_handle, encrypted));
+      }
+      return;
+    }
+    log::warn("OnBigInfoReport: Unknown sync_handle={}", sync_handle);
+    return;
+  }
   do_in_jni_thread(base::BindOnce(&ScanningCallbacks::OnBigInfoReport,
                                   base::Unretained(scanning_callbacks_), sync_handle, encrypted));
 }
