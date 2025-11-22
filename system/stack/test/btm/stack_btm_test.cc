@@ -162,6 +162,23 @@ TEST_F(StackBtmWithQueuesTest, InformClientOnConnectionSuccess) {
   get_btm_client_interface().lifecycle.btm_free();
 }
 
+TEST_F(StackBtmWithQueuesTest, RoleIsSetOnSuccessfulConnection) {
+  EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_, GetScoQueueEnd())
+          .WillOnce(Return(sco_queue_.GetUpEnd()));
+  get_btm_client_interface().lifecycle.btm_init();
+
+  RawAddress bda({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+
+  on_acl_br_edr_connected(bda, 2, 0, false, HCI_ROLE_CENTRAL);
+
+  // Verify that the role is correctly set
+  tHCI_ROLE role = HCI_ROLE_UNKNOWN;
+  ASSERT_EQ(BTM_GetRole(bda, BT_TRANSPORT_BR_EDR, &role), tBTM_STATUS::BTM_SUCCESS);
+  ASSERT_EQ(role, HCI_ROLE_CENTRAL);
+
+  get_btm_client_interface().lifecycle.btm_free();
+}
+
 TEST_F(StackBtmWithQueuesTest, NoInformClientOnConnectionFail) {
   EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_, GetScoQueueEnd())
           .WillOnce(Return(sco_queue_.GetUpEnd()));
@@ -260,6 +277,15 @@ TEST_F(StackBtmWithInitFreeTest, btm_sec_rmt_name_request_complete) {
   ASSERT_STREQ((const char*)p_bd_name, (const char*)btm_test.bd_name);
   ASSERT_THAT(btm_test.dc, Each(Eq(0)));
   ASSERT_EQ(bd_addr, btm_test.bd_addr);
+}
+
+TEST_F(StackBtmWithInitFreeTest, btm_acl_role_changed_with_unknown_address) {
+  const RawAddress bd_addr = RawAddress({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
+  const tHCI_ROLE new_role = HCI_ROLE_CENTRAL;
+
+  // This should not crash and just log an error because there is no active ACL
+  // connection for bd_addr.
+  btm_acl_role_changed(HCI_SUCCESS, bd_addr, new_role);
 }
 
 TEST_F(StackBtmTest, sco_state_text) {
