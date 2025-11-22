@@ -952,6 +952,46 @@ public class AdapterServiceTest {
         assertThat(mLooper.nextMessage()).isNull();
     }
 
+    @Test
+    public void getByteBrEdrAddress_withIdentityAddress_returnsIdentityAddress() {
+        initTest();
+        doEnable(false); // Needed for getRemoteDevice to work
+        RemoteDevices remoteDevices = mAdapter.getRemoteDevices();
+        BluetoothDevice device = getTestDevice(0);
+        String identityAddressString = "0A:0B:0C:0D:0E:0F";
+        byte[] identityAddressBytes = Utils.getBytesFromAddress(identityAddressString);
+
+        // Set up the identity address for the device
+        remoteDevices.addDeviceProperties(Utils.getBytesFromAddress(device.getAddress()));
+        remoteDevices.leAddressAssociateCallback(
+                Utils.getBytesFromAddress(device.getAddress()),
+                identityAddressBytes,
+                BluetoothDevice.ADDRESS_TYPE_PUBLIC);
+
+        // Call the method under test
+        byte[] result = mAdapter.getByteBrEdrAddress(device);
+
+        // Verify that the identity address is returned
+        assertThat(result).isEqualTo(identityAddressBytes);
+    }
+
+    @Test
+    public void getByteBrEdrAddress_withoutIdentityAddress_returnsDeviceAddress() {
+        initTest();
+        doEnable(false); // Needed for getRemoteDevice to work
+        BluetoothDevice device = getTestDevice(0);
+        byte[] deviceAddressBytes = Utils.getByteAddress(device);
+
+        // Ensure no identity address is set (this is the default state)
+        assertThat(mAdapter.getByteIdentityAddress(device)).isNull();
+
+        // Call the method under test
+        byte[] result = mAdapter.getByteBrEdrAddress(device);
+
+        // Verify that the device's own address is returned
+        assertThat(result).isEqualTo(deviceAddressBytes);
+    }
+
     /**
      * Test: Get id for null address Check if returned value from {@link
      * AdapterService#getMetricId(BluetoothDevice)} is 0 when device address is null
