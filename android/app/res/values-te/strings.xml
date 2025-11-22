@@ -112,10 +112,10 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"తెరువు"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"లిస్ట్‌ నుండి క్లియర్ చేయండి"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"క్లియర్ చేయండి"</string>
-    <string name="bluetooth_a2dp_sink_queue_name" msgid="7521243473328258997">"ప్రస్తుతం ప్లే అవుతున్నవి"</string>
+    <string name="bluetooth_media_audio_queue_name" msgid="7521243473328258997">"ప్రస్తుతం ప్లే అవుతున్నవి"</string>
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"యాప్‌ చిహ్నం"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"బ్లూటూత్ ఆడియో డిస్‌కనెక్ట్ చేయబడింది"</string>
-    <string name="a2dp_sink_mbs_label" msgid="6035366346569127155">"బ్లూటూత్ ఆడియో"</string>
+    <string name="bluetooth_media_audio_app_name" msgid="6035366346569127155">"బ్లూటూత్ ఆడియో"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"4GB కన్నా పెద్ద ఫైళ్లు బదిలీ చేయబడవు"</string>
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"బ్లూటూత్‌కు కనెక్ట్ చేయి"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"విమానం మోడ్‌లో బ్లూటూత్ ఆన్ చేయబడింది"</string>

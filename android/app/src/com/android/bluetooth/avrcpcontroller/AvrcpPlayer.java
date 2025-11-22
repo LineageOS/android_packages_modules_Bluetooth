@@ -138,15 +138,8 @@ class AvrcpPlayer {
 
     public void setCurrentPlayerApplicationSettings(
             PlayerApplicationSettings playerApplicationSettings) {
-        Log.d(TAG, "Play application settings changed, settings=" + playerApplicationSettings);
+        Log.d(TAG, "Player application settings changed, settings=" + playerApplicationSettings);
         mCurrentPlayerApplicationSettings = playerApplicationSettings;
-        MediaSessionCompat session = BluetoothMediaBrowserService.getSession();
-        session.setRepeatMode(
-                mCurrentPlayerApplicationSettings.getSetting(
-                        PlayerApplicationSettings.REPEAT_STATUS));
-        session.setShuffleMode(
-                mCurrentPlayerApplicationSettings.getSetting(
-                        PlayerApplicationSettings.SHUFFLE_STATUS));
     }
 
     public int getPlayStatus() {
@@ -231,6 +224,30 @@ class AvrcpPlayer {
                         .build();
 
         Log.d(TAG, "Supported Actions = " + mAvailableActions);
+    }
+
+    public int getShuffleMode() {
+        if (mCurrentPlayerApplicationSettings == null) {
+            return PlaybackStateCompat.SHUFFLE_MODE_NONE;
+        }
+        int mode = mCurrentPlayerApplicationSettings
+                .getSetting(PlayerApplicationSettings.SHUFFLE_STATUS);
+        if (mode == -1) {
+            return PlaybackStateCompat.SHUFFLE_MODE_NONE;
+        }
+        return mode;
+    }
+
+    public int getRepeatMode() {
+        if (mCurrentPlayerApplicationSettings == null) {
+            return PlaybackStateCompat.REPEAT_MODE_NONE;
+        }
+        int mode = mCurrentPlayerApplicationSettings
+                .getSetting(PlayerApplicationSettings.REPEAT_STATUS);
+        if (mode == -1) {
+            return PlaybackStateCompat.REPEAT_MODE_NONE;
+        }
+        return mode;
     }
 
     @Override
