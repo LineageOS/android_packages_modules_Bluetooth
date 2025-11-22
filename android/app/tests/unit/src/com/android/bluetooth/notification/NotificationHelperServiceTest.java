@@ -126,23 +126,11 @@ public class NotificationHelperServiceTest {
 
     @Test
     public void onStartCommand_withCorrectAction_sendsNotification() {
-        Intent intent =
-                new Intent(NOTIFICATION_ACTION).putExtra(NOTIFICATION_EXTRA, APM_BT_NOTIFICATION);
-        mNotificationHelperService.onStartCommand(intent, 0, 1);
+        Notification capturedNotification = captureNotificationForApmBtNotification();
 
-        ArgumentCaptor<Notification> notificationCaptor =
-                ArgumentCaptor.forClass(Notification.class);
-        String expectedTag = NOTIFICATION_TAG + "/" + APM_BT_NOTIFICATION;
-
-        verify(mNotificationManager)
-                .notify(
-                        eq(expectedTag),
-                        eq(SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE),
-                        notificationCaptor.capture());
-
-        Notification capturedNotification = notificationCaptor.getValue();
         assertThat(capturedNotification.extras.getString(Notification.EXTRA_TITLE)).isNotNull();
         assertThat(capturedNotification.extras.getString(Notification.EXTRA_TEXT)).isNotNull();
+        assertThat(capturedNotification.contentIntent).isNotNull();
     }
 
     @Test
@@ -161,5 +149,43 @@ public class NotificationHelperServiceTest {
         mNotificationHelperService.onStartCommand(intent, 0, 1);
 
         verify(mNotificationManager).cancel(tag, SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE);
+    }
+
+    @Test
+    public void onStartCommand_onWatchDevice_doesNotSetContentIntent() {
+        // This test verifies that on a watch device, the notification does not include a
+        // content intent, as watches cannot display the help webpage.
+        doReturn(true).when(mPackageManager).hasSystemFeature(PackageManager.FEATURE_WATCH);
+
+        Notification capturedNotification = captureNotificationForApmBtNotification();
+
+        // Expect a null contentIntent on watch devices.
+        assertThat(capturedNotification.contentIntent).isNull();
+    }
+
+    @Test
+    public void helper_returnsNotificationWithTitleAndText() {
+        Notification capturedNotification = captureNotificationForApmBtNotification();
+
+        assertThat(capturedNotification.extras.getString(Notification.EXTRA_TITLE)).isNotNull();
+        assertThat(capturedNotification.extras.getString(Notification.EXTRA_TEXT)).isNotNull();
+    }
+
+    private Notification captureNotificationForApmBtNotification() {
+        Intent intent =
+                new Intent(NOTIFICATION_ACTION).putExtra(NOTIFICATION_EXTRA, APM_BT_NOTIFICATION);
+        mNotificationHelperService.onStartCommand(intent, 0, 1);
+
+        ArgumentCaptor<Notification> notificationCaptor =
+                ArgumentCaptor.forClass(Notification.class);
+        String expectedTag = NOTIFICATION_TAG + "/" + APM_BT_NOTIFICATION;
+
+        verify(mNotificationManager)
+                .notify(
+                        eq(expectedTag),
+                        eq(SystemMessage.ID.NOTE_BT_APM_NOTIFICATION_VALUE),
+                        notificationCaptor.capture());
+
+        return notificationCaptor.getValue();
     }
 }
