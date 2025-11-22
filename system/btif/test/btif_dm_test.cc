@@ -26,16 +26,20 @@
 
 #include "bta/include/bta_api_data_types.h"
 #include "bta/include/bta_dm_api.h"
+#include "btif/include/btif_config.h"
+#include "btif/include/btif_storage.h"
 #include "btif/include/mock_core_callbacks.h"
 #include "btif/include/stack_manager_t.h"
 #include "hardware/bluetooth.h"
 #include "main/shim/entry.h"
 #include "main/shim/shim.h"
 #include "main/shim/stack.h"
+#include "stack/btm/btm_sec_cb.h"
 #include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/hci_error_code.h"
 #include "storage/storage_module.h"
+#include "test/common/mock_functions.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_osi_properties.h"
 
@@ -285,4 +289,18 @@ TEST_F(BtifDmWithStackTest, auth_cmpl_evt_fails_when_not_bonding) {
 
   // Verify that the bond state changed callback was not invoked.
   ASSERT_EQ(bond_state_changed_cb_count, 0);
+}
+
+TEST_F(BtifDmWithStackTest, test_btif_dm_reset_irk) {
+  if (com_android_bluetooth_flags_btsec_cycle_irks()) {
+    btif_storage_add_bonded_device((RawAddress*)(&kRawAddress), SAMPLE_LTK, 0, 0);
+
+    bt_status_t status = btif_storage_remove_bonded_device((RawAddress*)(&kRawAddress));
+
+    ASSERT_EQ(status, BT_STATUS_SUCCESS);
+
+    auto paired_devices = btif_config_get_paired_devices();
+
+    ASSERT_TRUE(paired_devices.empty());
+  }
 }
