@@ -18,12 +18,9 @@ package com.android.bluetooth.le_scan
 
 import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.profile.NativeCallback
 import com.google.protobuf.ByteString
 import java.util.UUID
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 private const val TAG = ScanUtil.TAG_PREFIX + "ScanNativeCallback"
 
@@ -31,35 +28,6 @@ class ScanNativeCallback(
     adapterService: AdapterService,
     private val scanController: ScanController,
 ) : NativeCallback(adapterService) {
-
-    // TODO(b/397863857) Delete on `Flags.scanControllerThread()` cleanup
-    private var latch = CountDownLatch(1)
-
-    fun callbackDone() {
-        if (Flags.scanControllerThread()) {
-            return
-        }
-        latch.countDown()
-    }
-
-    fun resetCountDownLatch() {
-        if (Flags.scanControllerThread()) {
-            return
-        }
-        latch = CountDownLatch(1)
-    }
-
-    // Returns true if [latch] reaches 0, false if timeout or interrupted
-    fun waitForCallback(timeoutMs: Long): Boolean {
-        if (Flags.scanControllerThread()) {
-            return true
-        }
-        return try {
-            latch.await(timeoutMs, TimeUnit.MILLISECONDS)
-        } catch (_: InterruptedException) {
-            false
-        }
-    }
 
     fun onScanResult(
         eventType: Int,
@@ -99,7 +67,6 @@ class ScanNativeCallback(
             TAG,
             "onScanFilterEnableDisabled(): action=$action, status=$status, scannerId=$scannerId",
         )
-        callbackDone()
     }
 
     fun onScanFilterParamsConfigured(
@@ -113,7 +80,6 @@ class ScanNativeCallback(
             "onScanFilterParamsConfigured(): action=$action, status=$status, scannerId=$scannerId," +
                 " availableSpace=$availableSpace",
         )
-        callbackDone()
     }
 
     fun onScanFilterConfig(
@@ -128,12 +94,10 @@ class ScanNativeCallback(
             "onScanFilterConfig(): action=$action, status=$status, scannerId=$scannerId," +
                 " filterType=$filterType, availableSpace=$availableSpace",
         )
-        callbackDone()
     }
 
     fun onBatchScanStorageConfigured(status: Int, scannerId: Int) {
         Log.d(TAG, "onBatchScanStorageConfigured(): status=$status, scannerId=$scannerId")
-        callbackDone()
     }
 
     // TODO: split into two different callbacks : onBatchScanStarted and onBatchScanStopped
@@ -143,7 +107,6 @@ class ScanNativeCallback(
             "onBatchScanStartStopped(): startStopAction=$startStopAction, status=$status," +
                 " scannerId=$scannerId",
         )
-        callbackDone()
     }
 
     fun onBatchScanReports(
@@ -158,9 +121,6 @@ class ScanNativeCallback(
             "onBatchScanReports(): status=$status, scannerId=$scannerId, reportType=$reportType," +
                 " reportType=$reportType",
         )
-        if (Flags.scanControllerThread()) {
-            callbackDone()
-        }
         doOnScanThread { onBatchScanReports(status, scannerId, reportType, numRecords, recordData) }
     }
 

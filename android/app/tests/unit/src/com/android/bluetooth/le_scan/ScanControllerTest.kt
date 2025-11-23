@@ -40,7 +40,6 @@ import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.TestLooper
 import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.getTestDevice
 import com.android.bluetooth.le_scan.BatchScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS
 import com.android.bluetooth.le_scan.BatchScanUtil.enforceReportDelayFloor
@@ -390,10 +389,6 @@ class ScanControllerTest(flags: FlagsWrapper) {
             numRecords,
             recordData,
         )
-
-        // Verify that callbackDone is not called because the method returns early when client is
-        // not found.
-        verify(scanManager, never()).callbackDone(any<Int>(), any<Int>())
     }
 
     @Test
@@ -429,9 +424,6 @@ class ScanControllerTest(flags: FlagsWrapper) {
             recordData,
         )
 
-        if (!Flags.scanControllerThread()) {
-            verify(scanManager).callbackDone(TEST_SCANNER_ID, TEST_STATUS)
-        }
         verify(scannerMap, never()).getById(any<Int>())
     }
 
@@ -519,9 +511,6 @@ class ScanControllerTest(flags: FlagsWrapper) {
             numRecords,
             recordData,
         )
-        if (!Flags.scanControllerThread()) {
-            verify(scanManager).callbackDone(TEST_SCANNER_ID, TEST_STATUS)
-        }
         if (expectResults) {
             verify(callback).onBatchScanResults(any())
         } else {
@@ -808,8 +797,6 @@ class ScanControllerTest(flags: FlagsWrapper) {
         private const val TEST_STATUS = 0
         private const val TEST_ADDRESS = "00:11:22:33:FF:EE"
 
-        @JvmStatic
-        @Parameters(name = "{0}")
-        fun getParams() = FlagsWrapper.progressionOf(Flags.FLAG_SCAN_CONTROLLER_THREAD)
+        @JvmStatic @Parameters(name = "{0}") fun getParams() = FlagsWrapper.progressionOf()
     }
 }

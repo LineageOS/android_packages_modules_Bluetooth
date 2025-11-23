@@ -114,13 +114,9 @@ public class ScanController {
     private final String mExposureNotificationPackage;
     private final Predicate<ScanResult> mLocationDenylistPredicate;
 
-    // TODO(b/397863857) Used when `Flags.scanControllerThread()` is false. Delete on flag cleanup
-    @Nullable private final Looper mMainLooper;
-
     private final HandlerThread mScanThread;
     private final Looper mScanLooper;
-    // TODO(b/397863857) Used when `Flags.scanControllerThread()`. Remove @Nullable on flag cleanup
-    @Nullable private final Handler mScanHandler;
+    private final Handler mScanHandler;
     private final ScanManager mScanManager;
     private final ScanSuspendManager mScanSuspendManager;
     private final PeriodicScanManager mPeriodicScanManager;
@@ -161,7 +157,7 @@ public class ScanController {
             CompanionDeviceManager companionDeviceManager,
             @Nullable Looper looper,
             TimeProvider timeProvider) {
-        Log.i(TAG, "Created with Flags.scanControllerThread: " + Flags.scanControllerThread());
+        Log.i(TAG, "Created");
         mAdapterService = requireNonNull(service);
         mAppOps = mAdapterService.getSystemService(AppOpsManager.class);
         mBatteryStatsManager = batteryStatsManager;
@@ -189,19 +185,10 @@ public class ScanController {
                     }
                     return false;
                 };
-        if (!Flags.scanControllerThread()) {
-            mMainLooper = mAdapterService.getMainLooper();
-        } else {
-            mMainLooper = null;
-        }
         mScanThread = new HandlerThread("BluetoothScanManager");
         mScanThread.start();
         mScanLooper = requireNonNullElseGet(looper, mScanThread::getLooper);
-        if (Flags.scanControllerThread()) {
-            mScanHandler = new Handler(mScanLooper);
-        } else {
-            mScanHandler = null;
-        }
+        mScanHandler = new Handler(mScanLooper);
         mScanManager =
                 requireNonNullElseGet(
                         scanManager,
@@ -212,7 +199,7 @@ public class ScanController {
                                         scanNativeInterface,
                                         mScanLooper,
                                         timeProvider));
-        mScanSuspendManager = new ScanSuspendManager(this, mScanManager, mScanLooper);
+        mScanSuspendManager = new ScanSuspendManager(mScanManager);
         mPeriodicScanManager =
                 requireNonNullElseGet(
                         periodicScanManager,
@@ -224,22 +211,14 @@ public class ScanController {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
         mIsAvailable = false;
-        if (Flags.scanControllerThread()) {
-            mScanHandler.removeCallbacksAndMessages(null);
-        }
+        mScanHandler.removeCallbacksAndMessages(null);
         forceRunSyncOnScanThread(
                 () -> {
                     mBinder.cleanup();
                     mScannerMap.clear();
-                    if (Flags.scanControllerThread()) {
-                        mScanManager.cleanup();
-                        mPeriodicScanManager.cleanup();
-                        mScanThread.quitSafely();
-                    } else {
-                        mScanThread.quitSafely();
-                        mScanManager.cleanup();
-                        mPeriodicScanManager.cleanup();
-                    }
+                    mScanManager.cleanup();
+                    mPeriodicScanManager.cleanup();
+                    mScanThread.quitSafely();
                 });
     }
 
@@ -284,9 +263,8 @@ public class ScanController {
     public void setTestModeEnabled(boolean enableTestMode) {
         synchronized (mTestModeLock) {
             if (mTestModeHandler == null) {
-                final var looper = Flags.scanControllerThread() ? mScanLooper : mMainLooper;
                 mTestModeHandler =
-                        new Handler(looper) {
+                        new Handler(mScanLooper) {
                             public void handleMessage(Message msg) {
                                 synchronized (mTestModeLock) {
                                     if (!mTestModeEnabled) {
@@ -699,7 +677,6 @@ public class ScanController {
                 permittedResults.removeIf(mLocationDenylistPredicate);
             }
             if (permittedResults.isEmpty()) {
-                mScanManager.callbackDone(scannerId, status);
                 return;
             }
 
@@ -724,7 +701,6 @@ public class ScanController {
                 deliverBatchScan(client, results);
             }
         }
-        mScanManager.callbackDone(scannerId, status);
     }
 
     // Check and deliver scan results for different scan clients.
@@ -935,7 +911,7 @@ public class ScanController {
             AttributionSource source,
             boolean hasPrivilegedPermission) {
         enforceScanThread();
-        var uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
+        var uid = source.getUid();
         var appScanStats = mScannerMap.getAppScanStatsByUid(uid);
         if (appScanStats != null
                 && appScanStats.isScanningTooFrequently()
@@ -959,7 +935,7 @@ public class ScanController {
             ScanSettings settings,
             List<ScanFilter> filters) {
         enforceScanThread();
-        var uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
+        var uid = source.getUid();
         var appScanStats = mScannerMap.getAppScanStatsByUid(uid);
         if (appScanStats != null
                 && appScanStats.isScanningTooFrequently()
@@ -981,8 +957,8 @@ public class ScanController {
     public void registerScannerInternal(
             IScannerCallback callback, WorkSource workSource, AttributionSource source) {
         enforceScanThread();
-        final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
-        final int pid = Flags.scanControllerThread() ? source.getPid() : Binder.getCallingPid();
+        final int uid = source.getUid();
+        final int pid = source.getPid();
         final var appName = Util.appNameOrUnknown(mAdapterService, uid);
         final var uuid = UUID.randomUUID();
         Log.d(
@@ -1010,7 +986,7 @@ public class ScanController {
             ScanSettings settings,
             List<ScanFilter> filters) {
         enforceScanThread();
-        final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
+        final int uid = source.getUid();
         registerAndStartScan(uid, callback, null, source, settings, filters, /* isInternal */ true);
     }
 
@@ -1022,7 +998,7 @@ public class ScanController {
             ScanSettings settings,
             List<ScanFilter> filters,
             boolean isInternal) {
-        final int pid = Flags.scanControllerThread() ? source.getPid() : Binder.getCallingPid();
+        final int pid = source.getPid();
         final var appName = Util.appNameOrUnknown(mAdapterService, uid);
         final var uuid = UUID.randomUUID();
         Log.d(
@@ -1088,7 +1064,7 @@ public class ScanController {
         Log.d(TAG, "startScan(scannerId=" + scannerId + ")");
         String callingPackage = source.getPackageName();
         settings = BatchScanUtil.enforceReportDelayFloor(settings);
-        final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
+        final int uid = source.getUid();
         mAppOps.checkPackage(uid, callingPackage);
         var hasDisavowedLocation =
                 Util.hasDisavowedLocationForScan(mAdapterService, source, mTestModeEnabled);
@@ -1188,7 +1164,7 @@ public class ScanController {
             return;
         }
 
-        final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
+        final int uid = source.getUid();
         var app =
                 mScannerMap.addWithPendingIntent(
                         Util.appNameOrUnknown(mAdapterService, callingUid),
@@ -1342,7 +1318,7 @@ public class ScanController {
     }
 
     void enforceScanThread() {
-        if (!Flags.scanControllerThread() || Util.isInstrumentationTestMode()) return;
+        if (Util.isInstrumentationTestMode()) return;
 
         if (!mScanHandler.getLooper().isCurrentThread()) {
             throw new IllegalStateException("Not on scan thread");
@@ -1350,7 +1326,7 @@ public class ScanController {
     }
 
     private void enforceScanThreadIsNotUsed() {
-        if (!Flags.scanControllerThread() || Util.isInstrumentationTestMode()) return;
+        if (Util.isInstrumentationTestMode()) return;
 
         if (mScanHandler.getLooper().isCurrentThread()) {
             throw new IllegalStateException("Must NOT be on scan thread");
@@ -1358,16 +1334,11 @@ public class ScanController {
     }
 
     public boolean isOnScanThread() {
-        if (!Flags.scanControllerThread() || Util.isInstrumentationTestMode()) return false;
+        if (Util.isInstrumentationTestMode()) return false;
         return mScanHandler.getLooper().isCurrentThread();
     }
 
     public void doOnScanThread(Runnable r) {
-        if (!Flags.scanControllerThread()) {
-            r.run();
-            return;
-        }
-
         enforceScanThreadIsNotUsed();
 
         if (!mIsAvailable) return;
@@ -1385,7 +1356,7 @@ public class ScanController {
     }
 
     public void forceRunSyncOnScanThread(Runnable r) {
-        if (!Flags.scanControllerThread() || Util.isInstrumentationTestMode()) {
+        if (Util.isInstrumentationTestMode()) {
             r.run();
             return;
         }
@@ -1411,10 +1382,6 @@ public class ScanController {
     }
 
     <T> T fetchOnScanThread(Supplier<T> supplier, T defaultValue) {
-        if (!Flags.scanControllerThread()) {
-            return supplier.get();
-        }
-
         enforceScanThreadIsNotUsed();
 
         if (!mIsAvailable) return defaultValue;
