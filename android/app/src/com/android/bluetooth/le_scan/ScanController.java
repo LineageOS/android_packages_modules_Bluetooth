@@ -60,7 +60,6 @@ import com.android.bluetooth.ActionOnDeathRecipient;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.util.TimeProvider;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -563,28 +562,21 @@ public class ScanController {
             callbackToApp(() -> app.getCallback().onScannerRegistered(status, scannerId));
         }
         if (status != ScanCallback.NO_ERROR) {
-            if (Flags.scanRegisterAndStart()) {
                 unregisterScanner(scannerId);
-            } else {
-                mScannerMap.remove(uuid);
-            }
             return;
         }
         app.setId(scannerId);
-        // TODO(b/455057044) Delete the comment below on flag cleanup
-        // If app is callback based, setup a death recipient. App will initiate the start.
+        // If app is callback based, setup a death recipient and start scan.
         // Otherwise, if PendingIntent based, start the scan directly.
         if (app.getCallback() != null) {
             var message = "Unregister " + scannerId + " for " + app;
             Runnable onDeathAction = () -> doOnScanThread(() -> handleDeadScanClient(scannerId));
             app.linkToDeath(new ActionOnDeathRecipient(TAG, message, onDeathAction));
-            if (Flags.scanRegisterAndStart()) {
                 if (app.isInternal()) {
                     startScanInternal(scannerId, app.getSettings(), app.getFilters());
                 } else {
                     startScan(scannerId, app.getSettings(), app.getFilters(), app.getSource());
                 }
-            }
         } else {
             dispatchPendingIntentStartScan(scannerId, app);
         }
@@ -904,29 +896,6 @@ public class ScanController {
         }
     }
 
-    // TODO(b/455057044) Delete on flag cleanup
-    void registerScanner(
-            IScannerCallback callback,
-            WorkSource workSource,
-            AttributionSource source,
-            boolean hasPrivilegedPermission) {
-        enforceScanThread();
-        var uid = source.getUid();
-        var appScanStats = mScannerMap.getAppScanStatsByUid(uid);
-        if (appScanStats != null
-                && appScanStats.isScanningTooFrequently()
-                && !hasPrivilegedPermission) {
-            Log.e(TAG, "registerScanner(): " + appScanStats + " is scanning too frequently");
-            try {
-                callback.onScannerRegistered(ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY, -1);
-            } catch (RemoteException e) {
-                Log.e(TAG, "registerScanner(): Exception: " + e);
-            }
-            return;
-        }
-        registerScannerInternal(callback, workSource, source);
-    }
-
     void registerAndStartScan(
             IScannerCallback callback,
             WorkSource workSource,
@@ -950,33 +919,6 @@ public class ScanController {
         }
         registerAndStartScan(
                 uid, callback, workSource, source, settings, filters, /* isInternal */ false);
-    }
-
-    // TODO(b/455057044) Delete on flag cleanup
-    /** Intended for internal use within the Bluetooth app. Bypass permission check */
-    public void registerScannerInternal(
-            IScannerCallback callback, WorkSource workSource, AttributionSource source) {
-        enforceScanThread();
-        final int uid = source.getUid();
-        final int pid = source.getPid();
-        final var appName = Util.appNameOrUnknown(mAdapterService, uid);
-        final var uuid = UUID.randomUUID();
-        Log.d(
-                TAG,
-                ("registerScanner(): uid=" + uid + ", pid=" + uid + ", ")
-                        + ("app=" + appName + ", UUID=" + uuid));
-        mScannerMap.addWithCallback(
-                uid,
-                pid,
-                appName,
-                uuid,
-                source,
-                workSource,
-                callback,
-                mAdapterService,
-                mBatteryStatsManager,
-                false);
-        mScanManager.registerScanner(uuid);
     }
 
     /** Intended for internal use within the Bluetooth app. Bypass permission check */
@@ -1054,13 +996,11 @@ public class ScanController {
         return Collections.emptyList();
     }
 
-    // TODO(b/455057044) Make private on cleanup
-    void startScan(
+    private void startScan(
             int scannerId,
             ScanSettings settings,
             List<ScanFilter> filters,
             AttributionSource source) {
-        enforceScanThread();
         Log.d(TAG, "startScan(scannerId=" + scannerId + ")");
         String callingPackage = source.getPackageName();
         settings = BatchScanUtil.enforceReportDelayFloor(settings);
@@ -1098,10 +1038,8 @@ public class ScanController {
         dispatchStartScan(client);
     }
 
-    // TODO(b/455057044) Make private on cleanup
     /** Intended for internal use within the Bluetooth app. Bypass permission check */
-    public void startScanInternal(int scannerId, ScanSettings settings, List<ScanFilter> filters) {
-        enforceScanThread(); // TODO(b/455057044) Remove on cleanup
+    private void startScanInternal(int scannerId, ScanSettings settings, List<ScanFilter> filters) {
         // This ScanClient will be billed to the Bluetooth app due to its internal usage
         var client =
                 new ScanClient(

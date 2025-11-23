@@ -588,13 +588,15 @@ class ScanControllerTest(flags: FlagsWrapper) {
     }
 
     @Test
-    fun registerScanner() {
+    fun registerAndStartScan() {
         val callback = mock<IScannerCallback>()
         val workSource = mock<WorkSource>()
         val appScanStats = mock<AppScanStats>()
+        val settings = ScanSettings.Builder().build()
+        val filters = listOf(ScanFilter.Builder().build())
         doReturn(appScanStats).whenever(scannerMap).getAppScanStatsByUid(Binder.getCallingUid())
 
-        scanController.registerScanner(callback, workSource, source, false)
+        scanController.registerAndStartScan(callback, workSource, source, false, settings, filters)
         verify(scannerMap)
             .addWithCallback(
                 any<Int>(),
@@ -604,6 +606,8 @@ class ScanControllerTest(flags: FlagsWrapper) {
                 eq(source),
                 eq(workSource),
                 eq(callback),
+                eq(settings),
+                eq(filters),
                 eq(adapterService),
                 eq(batteryStatsManager),
                 eq(false),
