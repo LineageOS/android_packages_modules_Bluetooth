@@ -501,7 +501,7 @@ public class ScanManager {
             if (!isOpportunisticScanClient(client)) {
                 configureRegularScanParams();
             }
-        } else if (!Flags.stopBatchScanOnlyIfBatchClient() || mBatchClients.contains(client)) {
+        } else if (mBatchClients.contains(client)) {
             if (isAutoBatchScanClientEnabled(client)) {
                 handleFlushBatchResults(client);
             }
