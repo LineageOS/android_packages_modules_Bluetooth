@@ -44,6 +44,7 @@ cc_library_static {
             ],
             srcs: [
                 "a2dp_encoding.cc",
+                "aidl/a2dp/a2dp_aidl_transport.cc",
                 "aidl/a2dp/a2dp_encoding_aidl.cc",
                 "aidl/a2dp/a2dp_encoding_aidl_utils.cc",
                 "aidl/a2dp/a2dp_provider_info.cc",
@@ -123,10 +124,12 @@ cc_test {
         ":TestCommonMockFunctions",
         ":TestMockAudioHalInterface",
         ":TestMockStackA2dp",
+        "aidl/a2dp/a2dp_aidl_transport.cc",
         "aidl/a2dp/a2dp_encoding_aidl_utils.cc",
         "aidl/a2dp/a2dp_provider_info.cc",
         "aidl/a2dp/a2dp_provider_info_unittest.cc",
         "test/a2dp_encoding_aidl_utils_unittest.cc",
+        "test/a2dp_transport_unittest.cc",
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
