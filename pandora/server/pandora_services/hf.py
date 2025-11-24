@@ -22,6 +22,7 @@ def _default_hf_configuration():
     configuration = hfp.HfConfiguration(
         supported_hf_features=[
             hfp.HfFeature.THREE_WAY_CALLING,
+            hfp.HfFeature.VOICE_RECOGNITION_ACTIVATION,
             hfp.HfFeature.REMOTE_VOLUME_CONTROL,
             hfp.HfFeature.ENHANCED_CALL_STATUS,
             hfp.HfFeature.ENHANCED_CALL_CONTROL,
