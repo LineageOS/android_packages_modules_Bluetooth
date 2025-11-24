@@ -31,7 +31,6 @@
 #include <string>
 #include <vector>
 
-#include "bta/include/bta_api.h"
 #include "bta_api.h"
 #include "internal_include/bt_target.h"
 #include "macros.h"
@@ -369,7 +368,7 @@ typedef enum : uint8_t {
   BTA_AG_AT_COPS_EVT = 23, /* Query list of current calls */
   BTA_AG_AT_UNAT_EVT = 24, /* Unknown AT command */
   BTA_AG_AT_CBC_EVT = 25,  /* Battery Level report from HF */
-  BTA_AG_AT_BAC_EVT = 26,  /* avablable codec */
+  BTA_AG_AT_BAC_EVT = 26,  /* available codec */
   BTA_AG_AT_BCS_EVT = 27,  /* Codec select */
   BTA_AG_AT_BIND_EVT = 28, /* HF indicator */
   BTA_AG_AT_BIEV_EVT = 29, /* HF indicator updates from peer */
@@ -382,6 +381,7 @@ typedef struct {
   uint16_t handle;
   uint8_t app_id;
   tBTA_AG_STATUS status;
+  SCO_CONNECTION_FAILURES reason;
 } tBTA_AG_HDR;
 
 /* data associated with BTA_AG_REGISTER_EVT */

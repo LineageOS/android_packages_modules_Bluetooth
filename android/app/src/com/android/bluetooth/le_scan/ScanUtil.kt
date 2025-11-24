@@ -31,13 +31,14 @@ import android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF
 import android.bluetooth.le.ScanSettings.SCAN_MODE_SCREEN_OFF_BALANCED
 import android.provider.Settings
 import android.util.Log
-import com.android.bluetooth.Utils
+import com.android.bluetooth.Util.blockedByLocationOff
 import com.android.bluetooth.Utils.millsToUnit
 import com.android.bluetooth.btservice.AdapterService
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
+import libcore.util.HexEncoding
 
 private const val TAG = ScanUtil.TAG_PREFIX + "ScanUtil"
 
@@ -91,6 +92,17 @@ object ScanUtil {
     const val WEIGHT_BALANCED = 25
     const val WEIGHT_LOW_LATENCY = 100
 
+    const val MIN_OFFLOADED_FILTERS = 10
+    const val MIN_OFFLOADED_SCAN_STORAGE_BYTES = 1024
+
+    @JvmStatic
+    fun isOffloadedFilteringSupported(adapterService: AdapterService) =
+        adapterService.numOfOffloadedScanFilterSupported >= MIN_OFFLOADED_FILTERS
+
+    @JvmStatic
+    fun isOffloadedScanBatchingSupported(adapterService: AdapterService) =
+        adapterService.offloadedScanResultStorage >= MIN_OFFLOADED_SCAN_STORAGE_BYTES
+
     @JvmStatic fun findById(clients: Set<ScanClient>, id: Int) = clients.find { it.scannerId == id }
 
     @JvmStatic
@@ -104,7 +116,7 @@ object ScanUtil {
                 client.hasDisavowedLocation -> true
             else ->
                 client.hasLocationPermission &&
-                    !Utils.blockedByLocationOff(adapterService, client.userHandle)
+                    !adapterService.blockedByLocationOff(client.userHandle!!)
         }
 
     // Convert scanWindow and scanInterval from ms to LE scan units(0.625ms)
@@ -301,14 +313,11 @@ object ScanUtil {
 
     @JvmStatic
     fun requiresScreenOn(client: ScanClient) =
-        !isOpportunisticScanClient(client) && !isFilteredScan(client)
+        !isOpportunisticScanClient(client) && !client.hasNonEmptyFilters
 
     @JvmStatic
     fun requiresLocationOn(client: ScanClient) =
-        !client.hasDisavowedLocation && !isFilteredScan(client)
-
-    // A valid filter need at least one field not empty
-    private fun isFilteredScan(client: ScanClient) = client.filters.any { !it.isAllFieldsEmpty }
+        !client.hasDisavowedLocation && !client.hasNonEmptyFilters
 
     fun isBackgroundScan(settings: ScanSettings) =
         (settings.callbackType and ScanSettings.CALLBACK_TYPE_FIRST_MATCH) != 0
@@ -355,7 +364,31 @@ object ScanUtil {
         client.appScanStats?.isAutoBatchScan(client.scannerId) ?: false
 
     @JvmStatic
-    fun isPhyConfigured(client: ScanClient, use1mPhy: Boolean) =
+    fun getAggressiveClient(
+        clients: Set<ScanClient>,
+        use1mPhy: Boolean,
+        isBatch: Boolean,
+    ): ScanClient? {
+        var result: ScanClient? = null
+        var currentScanModePriority = Int.MIN_VALUE
+        for (client in clients) {
+            // Batch is only done on the 1M PHY and the client PHY setting is ignored
+            if (!isBatch && !isPhyConfigured(client, use1mPhy)) {
+                continue
+            }
+            if (isOpportunisticScanClient(client)) {
+                continue
+            }
+            val priority = priorityForScanMode(client.settings.scanMode)
+            if (priority > currentScanModePriority) {
+                result = client
+                currentScanModePriority = priority
+            }
+        }
+        return result
+    }
+
+    private fun isPhyConfigured(client: ScanClient, use1mPhy: Boolean) =
         client.settings.phy == ScanSettings.PHY_LE_ALL_SUPPORTED ||
             client.settings.phy ==
                 if (use1mPhy) BluetoothDevice.PHY_LE_1M else BluetoothDevice.PHY_LE_CODED
@@ -482,7 +515,7 @@ object ScanUtil {
     fun ScanSettings.toStringShort() =
         "ScanSettings(mode=${ScanMode(scanMode)}" +
             ", reportDelayMs=$reportDelayMillis" +
-            ", callbackType=${CallbackType(callbackType)})" +
+            ", callbackType=${CallbackType(callbackType)}" +
             ", resultType=${ResultType(scanResultType)})"
 
     fun ScanFilter.toStringWithoutNullParam() = buildString {
@@ -520,6 +553,38 @@ value class CallbackType(val value: Int) {
 }
 
 @JvmInline
+value class MatchMode(val value: Int) {
+    override fun toString() =
+        when (value) {
+            ScanSettings.MATCH_MODE_AGGRESSIVE -> "AGGRESSIVE"
+            ScanSettings.MATCH_MODE_STICKY -> "STICKY"
+            else -> "UNKNOWN($value)"
+        }
+}
+
+@JvmInline
+value class NumberOfMatches(val value: Int) {
+    override fun toString() =
+        when (value) {
+            ScanSettings.MATCH_NUM_ONE_ADVERTISEMENT -> "ONE"
+            ScanSettings.MATCH_NUM_FEW_ADVERTISEMENT -> "FEW"
+            ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT -> "MAX"
+            else -> "UNKNOWN($value)"
+        }
+}
+
+@JvmInline
+value class Phy(val value: Int) {
+    override fun toString() =
+        when (value) {
+            ScanSettings.PHY_LE_ALL_SUPPORTED -> "ALL"
+            BluetoothDevice.PHY_LE_1M -> "1M"
+            BluetoothDevice.PHY_LE_CODED -> "CODED"
+            else -> "UNKNOWN($value)"
+        }
+}
+
+@JvmInline
 value class ResultType(val value: Int) {
     override fun toString() =
         when (value) {
@@ -541,5 +606,46 @@ value class ScanMode(val value: Int) {
             SCAN_MODE_SCREEN_OFF -> "SCREEN_OFF"
             SCAN_MODE_SCREEN_OFF_BALANCED -> "SCREEN_OFF_BALANCED"
             else -> "UNKNOWN($value)"
+        }
+}
+
+@JvmInline
+value class Type(val value: Int) {
+    override fun toString() =
+        when (value) {
+            ScanSettings.SCAN_TYPE_UNKNOWN -> "UNKNOWN"
+            ScanSettings.SCAN_TYPE_PASSIVE -> "PASSIVE"
+            ScanSettings.SCAN_TYPE_ACTIVE -> "ACTIVE"
+            else -> "UNKNOWN($value)"
+        }
+}
+
+object ScanTestUtil {
+    /** Example raw beacons captured from a Blue Charm BC011 */
+    private val TEST_MODE_BEACONS =
+        arrayOf(
+            "020106",
+            "0201060303AAFE1716AAFE10EE01626C7565636861726D626561636F6E730009168020691E0EFE13551109426C7565436861726D5F313639363835000000",
+            "0201060303AAFE1716AAFE00EE626C7565636861726D31000000000001000009168020691E0EFE13551109426C7565436861726D5F313639363835000000",
+            "0201060303AAFE1116AAFE20000BF017000008874803FB93540916802069080EFE13551109426C7565436861726D5F313639363835000000000000000000",
+            "0201061AFF4C000215426C7565436861726D426561636F6E730EFE1355C509168020691E0EFE13551109426C7565436861726D5F31363936383500000000",
+        )
+
+    @JvmStatic
+    fun ScanController.runTestCycle() =
+        TEST_MODE_BEACONS.forEach { test ->
+            onScanResultInternal(
+                0x1b,
+                0x1,
+                "DD:34:02:05:5C:4D",
+                1,
+                0,
+                0xff,
+                127,
+                -54,
+                0x0,
+                HexEncoding.decode(test),
+                "DD:34:02:05:5C:4E",
+            )
         }
 }

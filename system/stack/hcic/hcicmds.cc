@@ -888,6 +888,7 @@ void btsnd_hcic_write_def_policy_set(uint16_t settings) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
+// TODO : Remove when the flag local_pin_key_type is shipped
 void btsnd_hcic_write_pin_type(uint8_t type) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
@@ -981,6 +982,7 @@ void btsnd_hcic_write_inqscan_cfg(uint16_t interval, uint16_t window) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
+// TODO (b/460502961): Remove once the flag security_mode_3_pairing is shipped.
 void btsnd_hcic_write_auth_enable(uint8_t flag) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);

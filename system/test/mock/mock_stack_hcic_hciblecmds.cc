@@ -33,36 +33,15 @@ namespace mock {
 namespace stack_hcic_hciblecmds {
 
 // Function state capture and return values, if needed
-struct btsnd_hci_ble_add_device_to_periodic_advertiser_list
-        btsnd_hci_ble_add_device_to_periodic_advertiser_list;
-struct btsnd_hci_ble_clear_periodic_advertiser_list btsnd_hci_ble_clear_periodic_advertiser_list;
-struct btsnd_hci_ble_remove_device_from_periodic_advertiser_list
-        btsnd_hci_ble_remove_device_from_periodic_advertiser_list;
 struct btsnd_hcic_ble_ltk_req_neg_reply btsnd_hcic_ble_ltk_req_neg_reply;
 struct btsnd_hcic_ble_ltk_req_reply btsnd_hcic_ble_ltk_req_reply;
-struct btsnd_hcic_ble_periodic_advertising_create_sync
-        btsnd_hcic_ble_periodic_advertising_create_sync;
-struct btsnd_hcic_ble_periodic_advertising_create_sync_cancel
-        btsnd_hcic_ble_periodic_advertising_create_sync_cancel;
-struct btsnd_hcic_ble_periodic_advertising_set_info_transfer
-        btsnd_hcic_ble_periodic_advertising_set_info_transfer;
-struct btsnd_hcic_ble_periodic_advertising_sync_transfer
-        btsnd_hcic_ble_periodic_advertising_sync_transfer;
-struct btsnd_hcic_ble_periodic_advertising_terminate_sync
-        btsnd_hcic_ble_periodic_advertising_terminate_sync;
 struct btsnd_hcic_ble_rand btsnd_hcic_ble_rand;
 struct btsnd_hcic_ble_read_remote_feat btsnd_hcic_ble_read_remote_feat;
 struct btsnd_hcic_ble_read_resolvable_addr_peer btsnd_hcic_ble_read_resolvable_addr_peer;
 struct btsnd_hcic_ble_receiver_test btsnd_hcic_ble_receiver_test;
 struct btsnd_hcic_ble_set_data_length btsnd_hcic_ble_set_data_length;
-struct btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params
-        btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params;
 struct btsnd_hcic_ble_set_extended_scan_enable btsnd_hcic_ble_set_extended_scan_enable;
 struct btsnd_hcic_ble_set_extended_scan_params btsnd_hcic_ble_set_extended_scan_params;
-struct btsnd_hcic_ble_set_periodic_advertising_receive_enable
-        btsnd_hcic_ble_set_periodic_advertising_receive_enable;
-struct btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params
-        btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params;
 struct btsnd_hcic_ble_set_rand_priv_addr_timeout btsnd_hcic_ble_set_rand_priv_addr_timeout;
 struct btsnd_hcic_ble_set_scan_enable btsnd_hcic_ble_set_scan_enable;
 struct btsnd_hcic_ble_set_scan_params btsnd_hcic_ble_set_scan_params;
@@ -93,24 +72,6 @@ namespace stack_hcic_hciblecmds {}  // namespace stack_hcic_hciblecmds
 }  // namespace test
 
 // Mocked functions, if any
-void btsnd_hci_ble_add_device_to_periodic_advertiser_list(
-        uint8_t adv_addr_type, const RawAddress& adv_addr, uint8_t adv_sid,
-        base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::btsnd_hci_ble_add_device_to_periodic_advertiser_list(
-          adv_addr_type, adv_addr, adv_sid, std::move(cb));
-}
-void btsnd_hci_ble_clear_periodic_advertiser_list(base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::btsnd_hci_ble_clear_periodic_advertiser_list(std::move(cb));
-}
-void btsnd_hci_ble_remove_device_from_periodic_advertiser_list(
-        uint8_t adv_addr_type, const RawAddress& adv_addr, uint8_t adv_sid,
-        base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::btsnd_hci_ble_remove_device_from_periodic_advertiser_list(
-          adv_addr_type, adv_addr, adv_sid, std::move(cb));
-}
 void btsnd_hcic_ble_ltk_req_neg_reply(uint16_t handle) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_ltk_req_neg_reply(handle);
@@ -118,40 +79,6 @@ void btsnd_hcic_ble_ltk_req_neg_reply(uint16_t handle) {
 void btsnd_hcic_ble_ltk_req_reply(uint16_t handle, const Octet16& ltk) {
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_ltk_req_reply(handle, ltk);
-}
-void btsnd_hcic_ble_periodic_advertising_create_sync(uint8_t options, uint8_t adv_sid,
-                                                     uint8_t adv_addr_type,
-                                                     const RawAddress& adv_addr, uint16_t skip_num,
-                                                     uint16_t sync_timeout, uint8_t sync_cte_type) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_periodic_advertising_create_sync(
-          options, adv_sid, adv_addr_type, adv_addr, skip_num, sync_timeout, sync_cte_type);
-}
-void btsnd_hcic_ble_periodic_advertising_create_sync_cancel(
-        base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_periodic_advertising_create_sync_cancel(
-          std::move(cb));
-}
-void btsnd_hcic_ble_periodic_advertising_set_info_transfer(
-        uint16_t conn_handle, uint16_t service_data, uint8_t adv_handle,
-        base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_periodic_advertising_set_info_transfer(
-          conn_handle, service_data, adv_handle, std::move(cb));
-}
-void btsnd_hcic_ble_periodic_advertising_sync_transfer(
-        uint16_t conn_handle, uint16_t service_data, uint16_t sync_handle,
-        base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_periodic_advertising_sync_transfer(
-          conn_handle, service_data, sync_handle, std::move(cb));
-}
-void btsnd_hcic_ble_periodic_advertising_terminate_sync(
-        uint16_t sync_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_periodic_advertising_terminate_sync(
-          sync_handle, std::move(cb));
 }
 void btsnd_hcic_ble_rand(base::OnceCallback<void(Octet8)> cb) {
   inc_func_call_count(__func__);
@@ -175,14 +102,6 @@ void btsnd_hcic_ble_set_data_length(uint16_t conn_handle, uint16_t tx_octets, ui
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_set_data_length(conn_handle, tx_octets,
                                                                     tx_time);
 }
-void btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params(
-        uint16_t conn_handle, uint8_t mode, uint16_t skip, uint16_t sync_timeout, uint8_t cte_type,
-        base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::
-          btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params(
-                  conn_handle, mode, skip, sync_timeout, cte_type, std::move(cb));
-}
 void btsnd_hcic_ble_set_extended_scan_enable(uint8_t enable, uint8_t filter_duplicates,
                                              uint16_t duration, uint16_t period) {
   inc_func_call_count(__func__);
@@ -195,19 +114,6 @@ void btsnd_hcic_ble_set_extended_scan_params(uint8_t own_address_type,
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_set_extended_scan_params(
           own_address_type, scanning_filter_policy, scanning_phys, phy_cfg);
-}
-void btsnd_hcic_ble_set_periodic_advertising_receive_enable(
-        uint16_t sync_handle, bool enable, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_set_periodic_advertising_receive_enable(
-          sync_handle, enable, std::move(cb));
-}
-void btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params(
-        uint16_t conn_handle, uint8_t mode, uint16_t skip, uint16_t sync_timeout, uint8_t cte_type,
-        base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params(
-          conn_handle, mode, skip, sync_timeout, cte_type, std::move(cb));
 }
 void btsnd_hcic_ble_set_rand_priv_addr_timeout(uint16_t rpa_timeout) {
   inc_func_call_count(__func__);

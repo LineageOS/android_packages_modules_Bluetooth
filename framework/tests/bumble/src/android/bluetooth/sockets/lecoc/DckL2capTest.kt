@@ -76,20 +76,6 @@ import pandora.l2cap.L2CAPProto.WaitDisconnectionRequest
 @kotlinx.coroutines.ExperimentalCoroutinesApi
 class DckL2capTest() : Closeable {
 
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
-    private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
-    private val openedGatts: MutableList<BluetoothGatt> = mutableListOf()
-    private var serviceDiscoveredFlow = MutableStateFlow(false)
-    private var connectionStateFlow = MutableStateFlow(STATE_DISCONNECTED)
-    private var dckSpsmFlow = MutableStateFlow(0)
-    private var dckSpsm = 0
-    private var connectionHandle = BluetoothDevice.ERROR
-    private lateinit var advertiseContext: GrpcContext.CancellableContext
-    private lateinit var connectionResponse: WaitConnectionResponse
-    private lateinit var host: Host
-    private var FIXED_PSM = 0xFD
-
     @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
 
     @get:Rule(order = 1)
@@ -104,6 +90,19 @@ class DckL2capTest() : Closeable {
     @get:Rule(order = 2) val bumble = PandoraDevice()
 
     @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
+
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
+    private val context = ApplicationProvider.getApplicationContext<Context>()
+    private val openedGatts: MutableList<BluetoothGatt> = mutableListOf()
+    private var serviceDiscoveredFlow = MutableStateFlow(false)
+    private var connectionStateFlow = MutableStateFlow(STATE_DISCONNECTED)
+    private var dckSpsmFlow = MutableStateFlow(0)
+    private var dckSpsm = 0
+    private var connectionHandle = BluetoothDevice.ERROR
+    private lateinit var advertiseContext: GrpcContext.CancellableContext
+    private lateinit var connectionResponse: WaitConnectionResponse
+    private lateinit var host: Host
+    private var FIXED_PSM = 0xFD
 
     /** Wrapper for [BluetoothGatt] along with its [state] and [status] */
     data class GattState(val gatt: BluetoothGatt, val status: Int, val state: Int)
@@ -133,7 +132,7 @@ class DckL2capTest() : Closeable {
 
         // Connect to GATT (Generic Attribute Profile) on Bumble.
         val remoteDevice =
-            bluetoothAdapter.getRemoteLeDevice(
+            adapter.getRemoteLeDevice(
                 Utils.BUMBLE_RANDOM_ADDRESS,
                 BluetoothDevice.ADDRESS_TYPE_RANDOM,
             )
@@ -445,7 +444,7 @@ class DckL2capTest() : Closeable {
     fun testSendOverEncryptedOnlySocketAsClient() {
         Log.d(TAG, "testSendOverEncryptedOnlySocketAsClient")
         val remoteDevice =
-            bluetoothAdapter.getRemoteLeDevice(
+            adapter.getRemoteLeDevice(
                 Utils.BUMBLE_RANDOM_ADDRESS,
                 BluetoothDevice.ADDRESS_TYPE_RANDOM,
             )
@@ -482,7 +481,7 @@ class DckL2capTest() : Closeable {
     fun testReceiveOverEncryptedOnlySocketAsClient() {
         Log.d(TAG, "testReceiveOverEncryptedOnlySocketAsClient")
         val remoteDevice =
-            bluetoothAdapter.getRemoteLeDevice(
+            adapter.getRemoteLeDevice(
                 Utils.BUMBLE_RANDOM_ADDRESS,
                 BluetoothDevice.ADDRESS_TYPE_RANDOM,
             )
@@ -520,7 +519,7 @@ class DckL2capTest() : Closeable {
     fun testSendOverEncryptedOnlySocketAsServer() {
         Log.d(TAG, "testSendOverEncryptedOnlySocketAsServer")
         val remoteDevice =
-            bluetoothAdapter.getRemoteLeDevice(
+            adapter.getRemoteLeDevice(
                 Utils.BUMBLE_RANDOM_ADDRESS,
                 BluetoothDevice.ADDRESS_TYPE_RANDOM,
             )
@@ -559,7 +558,7 @@ class DckL2capTest() : Closeable {
 
         setSystemProperty(PROPERTY_FIXED_PSM_SLOTS, "8")
         val remoteDevice =
-            bluetoothAdapter.getRemoteLeDevice(
+            adapter.getRemoteLeDevice(
                 Utils.BUMBLE_RANDOM_ADDRESS,
                 BluetoothDevice.ADDRESS_TYPE_RANDOM,
             )
@@ -602,7 +601,7 @@ class DckL2capTest() : Closeable {
 
         setSystemProperty(PROPERTY_FIXED_PSM_SLOTS, "8")
         val remoteDevice =
-            bluetoothAdapter.getRemoteLeDevice(
+            adapter.getRemoteLeDevice(
                 Utils.BUMBLE_RANDOM_ADDRESS,
                 BluetoothDevice.ADDRESS_TYPE_RANDOM,
             )
@@ -645,7 +644,7 @@ class DckL2capTest() : Closeable {
         Log.d(TAG, "testServerWithInvalidFixedPsm")
         setSystemProperty(PROPERTY_FIXED_PSM_SLOTS, "8")
         val remoteDevice =
-            bluetoothAdapter.getRemoteLeDevice(
+            adapter.getRemoteLeDevice(
                 Utils.BUMBLE_RANDOM_ADDRESS,
                 BluetoothDevice.ADDRESS_TYPE_RANDOM,
             )
@@ -677,7 +676,7 @@ class DckL2capTest() : Closeable {
     fun testReceiveOverEncryptedOnlySocketAsServer() {
         Log.d(TAG, "testReceiveOverEncryptedOnlySocketAsServer")
         val remoteDevice =
-            bluetoothAdapter.getRemoteLeDevice(
+            adapter.getRemoteLeDevice(
                 Utils.BUMBLE_RANDOM_ADDRESS,
                 BluetoothDevice.ADDRESS_TYPE_RANDOM,
             )
@@ -851,7 +850,7 @@ class DckL2capTest() : Closeable {
     // Utility functions
     private fun clientSocketConnectUtil(isSecure: Boolean = false): Pair<BluetoothSocket, Channel> {
         val remoteDevice =
-            bluetoothAdapter.getRemoteLeDevice(
+            adapter.getRemoteLeDevice(
                 Utils.BUMBLE_RANDOM_ADDRESS,
                 BluetoothDevice.ADDRESS_TYPE_RANDOM,
             )
@@ -883,7 +882,7 @@ class DckL2capTest() : Closeable {
         isEncrypted: Boolean = false,
     ): Pair<BluetoothSocket, Channel> {
         val remoteDevice =
-            bluetoothAdapter.getRemoteLeDevice(
+            adapter.getRemoteLeDevice(
                 Utils.BUMBLE_RANDOM_ADDRESS,
                 BluetoothDevice.ADDRESS_TYPE_RANDOM,
             )
@@ -954,7 +953,7 @@ class DckL2capTest() : Closeable {
     ): SocketServerDetails {
         var bluetoothSocket: BluetoothSocket
         val channel: Channel
-        val l2capServer = bluetoothAdapter.listenUsingInsecureL2capChannel()
+        val l2capServer = adapter.listenUsingInsecureL2capChannel()
         val socketFlow = flow { emit(l2capServer.accept()) }
         val connectResponse = createAndConnectL2capChannelWithBumble(l2capServer.psm)
         runBlocking {
@@ -1044,7 +1043,7 @@ class DckL2capTest() : Closeable {
     private fun createAndConnectL2capChannelWithBumble(psm: Int): ConnectResponse {
         Log.d(TAG, "createAndConnectL2capChannelWithBumble")
         val remoteDevice =
-            bluetoothAdapter.getRemoteLeDevice(
+            adapter.getRemoteLeDevice(
                 Utils.BUMBLE_RANDOM_ADDRESS,
                 BluetoothDevice.ADDRESS_TYPE_RANDOM,
             )
@@ -1136,7 +1135,7 @@ class DckL2capTest() : Closeable {
                     .build()
         }
 
-        socket = bluetoothAdapter.listenUsingSocketSettings(socketSettings)
+        socket = adapter.listenUsingSocketSettings(socketSettings)
         return socket
     }
 

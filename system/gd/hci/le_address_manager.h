@@ -106,6 +106,7 @@ public:
           const std::chrono::time_point<std::chrono::system_clock>& interval_max,
           const std::chrono::time_point<std::chrono::system_clock>& event_time,
           const std::string& client_name);
+  void PrepareToRotateAddress();
 
   // Unsynchronized check for testing purposes
   size_t NumberCachedCommands() const { return cached_commands_.size(); }

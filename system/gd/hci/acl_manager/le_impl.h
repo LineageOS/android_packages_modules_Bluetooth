@@ -556,6 +556,10 @@ public:
                                                 common::Unretained(le_client_callbacks_),
                                                 remote_address, std::move(connection)));
     }
+    if (com::android::bluetooth::flags::rotate_address_when_connected() &&
+        role == hci::Role::CENTRAL) {
+      le_address_manager_->PrepareToRotateAddress();
+    }
   }
 
   RoleSpecificData initialize_role_specific_data(Role role) {

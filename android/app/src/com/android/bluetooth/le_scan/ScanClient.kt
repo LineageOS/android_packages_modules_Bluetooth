@@ -19,6 +19,7 @@ package com.android.bluetooth.le_scan
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
 import android.os.UserHandle
+import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.le_scan.ScanUtil.toBuilder
 import java.util.Objects
 import java.util.function.Consumer
@@ -41,7 +42,13 @@ private constructor(
     val hasDisavowedLocation: Boolean = false,
     val associatedDevices: List<String> = emptyList(),
 ) {
-    val isFiltered = filters.isNotEmpty()
+    val isFiltered: Boolean
+        get() =
+            if (Flags.treatEmptyFiltersAsUnfiltered()) hasNonEmptyFilters else filters.isNotEmpty()
+
+    // TODO(b/461650493) inline within the above `val isFiltered` on flag cleanup
+    // A valid filter need at least one field not empty
+    val hasNonEmptyFilters = filters.any { !it.isAllFieldsEmpty }
 
     var started = false
     var appDied = false

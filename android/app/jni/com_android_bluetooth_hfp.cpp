@@ -90,8 +90,8 @@ public:
                                  addr.get(), (jint)reason);
   }
 
-  void AudioStateCallback(bluetooth::headset::bthf_audio_state_t state,
-                          RawAddress* bd_addr) override {
+  void AudioStateCallback(bluetooth::headset::bthf_audio_state_t state, RawAddress* bd_addr,
+                          uint8_t reason) override {
     log::info("{} for {}", state, *bd_addr);
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
@@ -102,8 +102,8 @@ public:
 
     // TODO(b/424272093) Unchecked RawAddress* dereference.
     ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
-    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAudioStateChanged, (jint)state,
-                                 addr.get());
+    sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAudioStateChanged, (jint)state, addr.get(),
+                                 (jint)reason);
   }
 
   void VoiceRecognitionCallback(bluetooth::headset::bthf_vr_state_t state,
@@ -864,7 +864,7 @@ int register_com_android_bluetooth_hfp(JNIEnv* env) {
   // Client callback functions defined in HeadsetNativeCallback
   const JNIJavaMethod javaMethods[] = {
           {"onConnectionStateChanged", "(I[BI)V", &method_onConnectionStateChanged},
-          {"onAudioStateChanged", "(I[B)V", &method_onAudioStateChanged},
+          {"onAudioStateChanged", "(I[BI)V", &method_onAudioStateChanged},
           {"onVrStateChanged", "(I[B)V", &method_onVrStateChanged},
           {"onAnswerCall", "([B)V", &method_onAnswerCall},
           {"onHangupCall", "([B)V", &method_onHangupCall},

@@ -32,6 +32,8 @@
  */
 typedef struct {
   BD_NAME bd_name;      /* local Bluetooth device name */
+
+  // TODO : Remove when the flag local_pin_key_type is shipped
   bool pin_type;        /* true if PIN type is fixed */
   uint8_t pin_code_len; /* Bonding information */
   PinCode pin_code;     /* PIN CODE if pin type is fixed */
@@ -69,7 +71,9 @@ enum tBTM_KEY_MISSING_REASON : uint8_t {
 #define BTM_PAIR_FLAGS_PEER_STARTED_DD 0x02  /* Peer initiated dedicated bonding             */
 #define BTM_PAIR_FLAGS_DISC_WHEN_DONE 0x04   /* Disconnect when done     */
 #define BTM_PAIR_FLAGS_PIN_REQD 0x08         /* set this bit when pin_callback is called     */
-#define BTM_PAIR_FLAGS_PRE_FETCH_PIN 0x10    /* set this bit when pre-fetch pin     */
+// TODO(b/460502961): remove when security_mode_3_pairing is shipped
+#define BTM_PAIR_FLAGS_PRE_FETCH_PIN 0x10 /* set this bit when pre-fetch pin */
+
 #define BTM_PAIR_FLAGS_REJECTED_CONNECT 0x20 /* set this bit when rejected incoming connection  */
 #define BTM_PAIR_FLAGS_WE_CANCEL_DD 0x40     /* set this bit when cancelling a bonding procedure */
 #define BTM_PAIR_FLAGS_LE_ACTIVE 0x80        /* use this bit when SMP pairing is active */

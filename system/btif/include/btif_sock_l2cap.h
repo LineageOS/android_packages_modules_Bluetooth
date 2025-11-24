@@ -25,19 +25,20 @@
 #include <hardware/bluetooth.h>
 #include <hardware/bt_sock.h>
 
+#include "bt_status.h"
 #include "btif_uid.h"
 
-bt_status_t btsock_l2cap_init(int handle, uid_set_t* set);
-bt_status_t btsock_l2cap_cleanup();
-bt_status_t btsock_l2cap_listen(const char* name, int channel, int* sock_fd, int flags, int app_uid,
-                                btsock_data_path_t data_path, const char* socket_name,
-                                uint64_t hub_id, uint64_t endpoint_id, int max_rx_packet_size);
-bt_status_t btsock_l2cap_connect(const RawAddress* bd_addr, int channel, int* sock_fd, int flags,
-                                 int app_uid, btsock_data_path_t data_path, const char* socket_name,
-                                 uint64_t hub_id, uint64_t endpoint_id, int max_rx_packet_size);
+BtStatus btsock_l2cap_init(int handle, uid_set_t* set);
+BtStatus btsock_l2cap_cleanup();
+BtStatus btsock_l2cap_listen(const char* name, int channel, int* sock_fd, int flags, int app_uid,
+                             btsock_data_path_t data_path, const char* socket_name, uint64_t hub_id,
+                             uint64_t endpoint_id, int max_rx_packet_size);
+BtStatus btsock_l2cap_connect(const RawAddress* bd_addr, int channel, int* sock_fd, int flags,
+                              int app_uid, btsock_data_path_t data_path, const char* socket_name,
+                              uint64_t hub_id, uint64_t endpoint_id, int max_rx_packet_size);
 void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id);
 void on_l2cap_psm_assigned(int id, int psm);
-bt_status_t btsock_l2cap_disconnect(const RawAddress* bd_addr);
+BtStatus btsock_l2cap_disconnect(const RawAddress* bd_addr);
 bool btsock_l2cap_in_use(uint64_t socket_id);
 void on_btsocket_l2cap_opened_complete(uint64_t socket_id, bool success);
 void on_btsocket_l2cap_close(uint64_t socket_id);

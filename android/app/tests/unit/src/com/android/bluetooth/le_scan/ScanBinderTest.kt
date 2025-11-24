@@ -31,8 +31,8 @@ import android.os.WorkSource
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
-import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.getTestDevice
 import com.android.tests.bluetooth.MockitoRule
 import java.util.function.Supplier
 import org.junit.Before
@@ -40,12 +40,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
-import org.mockito.Mockito.any
-import org.mockito.Mockito.doAnswer
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.never
-import org.mockito.Mockito.verify
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 /** Test cases for [ScanBinder]. */
@@ -58,7 +58,7 @@ class ScanBinderTest {
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var scanController: ScanController
 
-    private val context = InstrumentationRegistry.getInstrumentation().getContext()
+    private val context = InstrumentationRegistry.getInstrumentation().context
     private val device = getTestDevice(89)
 
     private lateinit var binder: ScanBinder
@@ -83,10 +83,10 @@ class ScanBinderTest {
 
     @Test
     fun registerScanner() {
-        val callback = mock(IScannerCallback::class.java)
+        val callback = mock<IScannerCallback>()
         val settings = ScanSettings.Builder().build()
         val filters = listOf<ScanFilter>()
-        val workSource = mock(WorkSource::class.java)
+        val workSource = mock<WorkSource>()
 
         binder.registerScanner(callback, settings, filters, workSource, source)
         verify(scanController).registerScanner(callback, workSource, source, true)
@@ -95,10 +95,10 @@ class ScanBinderTest {
     @Test
     fun registerAndStartScan() {
         // Setup: Create mock objects for the call
-        val callback = mock(IScannerCallback::class.java)
+        val callback = mock<IScannerCallback>()
         val settings = ScanSettings.Builder().build()
         val filters = listOf<ScanFilter>()
-        val workSource = mock(WorkSource::class.java)
+        val workSource = mock<WorkSource>()
 
         // Action: Call the method to be tested
         binder.registerAndStartScan(callback, settings, filters, workSource, source)
@@ -107,13 +107,13 @@ class ScanBinderTest {
         verify(scanController)
             .registerAndStartScan(callback, workSource, source, true, settings, filters)
         // The callback should not be invoked directly by the binder in the success path
-        verify(callback, never()).onScannerRegistered(any(Int::class.java), any(Int::class.java))
+        verify(callback, never()).onScannerRegistered(any<Int>(), any<Int>())
     }
 
     @Test
     fun registerAndStartScan_afterCleanup_callsOnScannerRegisteredFailed() {
         // Setup: Create mock objects and put the binder in a cleaned-up state
-        val callback = mock(IScannerCallback::class.java)
+        val callback = mock<IScannerCallback>()
         val settings = ScanSettings.Builder().build()
         val filters = listOf<ScanFilter>()
         val workSource: WorkSource? = null
@@ -247,10 +247,10 @@ class ScanBinderTest {
 
     @Test
     fun registerSync() {
-        val scanResult = mock(ScanResult::class.java)
+        val scanResult = mock<ScanResult>()
         val skip = 1
         val timeout = 2
-        val callback = mock(IPeriodicAdvertisingCallback::class.java)
+        val callback = mock<IPeriodicAdvertisingCallback>()
 
         binder.registerSync(scanResult, skip, timeout, callback, source)
         verify(scanController).registerSync(scanResult, skip, timeout, callback)
@@ -258,7 +258,7 @@ class ScanBinderTest {
 
     @Test
     fun unregisterSync() {
-        val callback = mock(IPeriodicAdvertisingCallback::class.java)
+        val callback = mock<IPeriodicAdvertisingCallback>()
 
         binder.unregisterSync(callback, source)
         verify(scanController).unregisterSync(callback)
@@ -277,7 +277,7 @@ class ScanBinderTest {
     fun transferSetInfo() {
         val serviceData = 1
         val advHandle = 2
-        val callback = mock(IPeriodicAdvertisingCallback::class.java)
+        val callback = mock<IPeriodicAdvertisingCallback>()
 
         binder.transferSetInfo(device, serviceData, advHandle, callback, source)
         verify(scanController).transferSetInfo(device, serviceData, advHandle, callback)

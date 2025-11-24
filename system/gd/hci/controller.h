@@ -210,6 +210,8 @@ public:
     uint32_t dynamic_audio_buffer_support_;
     uint8_t a2dp_offload_v2_support_;
     uint8_t sniff_offload_support_;
+    uint16_t vendor_connection_handle_min_;
+    uint16_t vendor_connection_handle_max_;
   };
 
   virtual uint32_t GetDabSupportedCodecs() const = 0;

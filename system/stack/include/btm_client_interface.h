@@ -114,7 +114,8 @@ struct btm_client_interface_t {
   struct {
     [[nodiscard]] tBTM_STATUS (*BTM_CreateSco)(const RawAddress* bd_addr, bool is_orig,
                                                uint16_t pkt_types, uint16_t* p_sco_inx,
-                                               tBTM_SCO_CB* p_conn_cb, tBTM_SCO_CB* p_disc_cb);
+                                               tBTM_SCO_CB* p_conn_cb,
+                                               tBTM_SCO_WITH_REASON_CB* p_disc_cb);
     [[nodiscard]] tBTM_STATUS (*BTM_RegForEScoEvts)(uint16_t sco_inx,
                                                     tBTM_ESCO_CBACK* p_esco_cback);
     [[nodiscard]] tBTM_STATUS (*BTM_RemoveSco)(uint16_t sco_inx);

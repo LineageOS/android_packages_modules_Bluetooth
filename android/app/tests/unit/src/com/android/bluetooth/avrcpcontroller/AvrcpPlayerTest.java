@@ -20,6 +20,8 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
@@ -152,6 +154,76 @@ public class AvrcpPlayerTest {
                 new AvrcpPlayer.Builder().setSupportedFeatures(supportedFeatures).build();
 
         assertThat(avrcpPlayer.getPlaybackState().getActions()).isEqualTo(expectedActions);
+    }
+
+    @Test
+    public void getShuffleMode_shuffleSet_returnsSetValue() {
+        doReturn(true).when(mPlayerApplicationSettings)
+                .supportsSetting(PlayerApplicationSettings.SHUFFLE_STATUS);
+        doReturn(PlaybackStateCompat.SHUFFLE_MODE_ALL).when(mPlayerApplicationSettings)
+                .getSetting(PlayerApplicationSettings.SHUFFLE_STATUS);
+
+        AvrcpPlayer player = new AvrcpPlayer.Builder().build();
+        player.setSupportedPlayerApplicationSettings(mPlayerApplicationSettings);
+        player.setCurrentPlayerApplicationSettings(mPlayerApplicationSettings);
+
+        assertThat(player.getShuffleMode()).isEqualTo(PlaybackStateCompat.SHUFFLE_MODE_ALL);
+    }
+
+    @Test
+    public void getShuffleMode_shuffleUnset_returnsNone() {
+        doReturn(true).when(mPlayerApplicationSettings)
+                .supportsSetting(eq(PlayerApplicationSettings.SHUFFLE_STATUS));
+        doReturn(/* jni_invalid */ -1).when(mPlayerApplicationSettings)
+                .getSetting(eq(PlayerApplicationSettings.SHUFFLE_STATUS));
+
+        AvrcpPlayer player = new AvrcpPlayer.Builder().build();
+        player.setSupportedPlayerApplicationSettings(mPlayerApplicationSettings);
+        player.setCurrentPlayerApplicationSettings(mPlayerApplicationSettings);
+
+        assertThat(player.getShuffleMode()).isEqualTo(PlaybackStateCompat.SHUFFLE_MODE_NONE);
+    }
+
+    @Test
+    public void getRepeatMode_repeatSet_returnsSetValue() {
+        doReturn(true).when(mPlayerApplicationSettings)
+                .supportsSetting(PlayerApplicationSettings.REPEAT_STATUS);
+        doReturn(PlaybackStateCompat.REPEAT_MODE_ALL).when(mPlayerApplicationSettings)
+                .getSetting(PlayerApplicationSettings.REPEAT_STATUS);
+
+        AvrcpPlayer player = new AvrcpPlayer.Builder().build();
+        player.setSupportedPlayerApplicationSettings(mPlayerApplicationSettings);
+        player.setCurrentPlayerApplicationSettings(mPlayerApplicationSettings);
+
+        assertThat(player.getRepeatMode()).isEqualTo(PlaybackStateCompat.REPEAT_MODE_ALL);
+    }
+
+    @Test
+    public void getRepeatMode_repeatUnset_returnsNone() {
+        doReturn(true).when(mPlayerApplicationSettings)
+                .supportsSetting(eq(PlayerApplicationSettings.REPEAT_STATUS));
+        doReturn(/* jni_invalid */ -1).when(mPlayerApplicationSettings)
+                .getSetting(eq(PlayerApplicationSettings.REPEAT_STATUS));
+
+        AvrcpPlayer player = new AvrcpPlayer.Builder().build();
+        player.setSupportedPlayerApplicationSettings(mPlayerApplicationSettings);
+        player.setCurrentPlayerApplicationSettings(mPlayerApplicationSettings);
+
+        assertThat(player.getRepeatMode()).isEqualTo(PlaybackStateCompat.REPEAT_MODE_NONE);
+    }
+
+    @Test
+    public void getShuffleAndRepeatMode_playerSettingsUnset_returnsNone() {
+        doReturn(true).when(mPlayerApplicationSettings)
+                .supportsSetting(eq(PlayerApplicationSettings.SHUFFLE_STATUS));
+        doReturn(true).when(mPlayerApplicationSettings)
+                .supportsSetting(eq(PlayerApplicationSettings.REPEAT_STATUS));
+
+        AvrcpPlayer player = new AvrcpPlayer.Builder().build();
+        player.setSupportedPlayerApplicationSettings(mPlayerApplicationSettings);
+
+        assertThat(player.getShuffleMode()).isEqualTo(PlaybackStateCompat.SHUFFLE_MODE_NONE);
+        assertThat(player.getRepeatMode()).isEqualTo(PlaybackStateCompat.REPEAT_MODE_NONE);
     }
 
     @Test

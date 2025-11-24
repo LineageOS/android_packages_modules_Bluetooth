@@ -532,7 +532,7 @@ package android.bluetooth {
     method @Deprecated @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback, int);
     method @Deprecated @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback, int, int);
     method @Deprecated @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(android.content.Context, boolean, android.bluetooth.BluetoothGattCallback, int, int, android.os.Handler);
-    method @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") @Nullable @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(@NonNull android.bluetooth.BluetoothGattConnectionSettings);
+    method @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") @Nullable @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothGatt connectGatt(@NonNull android.bluetooth.BluetoothGattConnectionSettings, @NonNull java.util.concurrent.Executor, @NonNull android.bluetooth.BluetoothGattCallback);
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean createBond();
     method @FlaggedApi("com.android.bluetooth.flags.apairing_26q2_permission_improvements") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean createBond(int);
     method @NonNull public android.bluetooth.BluetoothSocket createInsecureL2capChannel(int) throws java.io.IOException;
@@ -775,8 +775,6 @@ package android.bluetooth {
   }
 
   @FlaggedApi("com.android.bluetooth.flags.gatt_conn_settings") public final class BluetoothGattConnectionSettings {
-    method @NonNull public android.bluetooth.BluetoothGattCallback getBluetoothGattCallback();
-    method @NonNull public java.util.concurrent.Executor getBluetoothGattCallbackExecutor();
     method public int getTransport();
     method public boolean isAutoConnectEnabled();
     method public boolean isAutomaticMtuEnabled();
@@ -784,7 +782,7 @@ package android.bluetooth {
   }
 
   public static final class BluetoothGattConnectionSettings.Builder {
-    ctor public BluetoothGattConnectionSettings.Builder(@NonNull java.util.concurrent.Executor, @NonNull android.bluetooth.BluetoothGattCallback);
+    ctor public BluetoothGattConnectionSettings.Builder();
     method @NonNull public android.bluetooth.BluetoothGattConnectionSettings build();
     method @NonNull public android.bluetooth.BluetoothGattConnectionSettings.Builder setAutoConnectEnabled(boolean);
     method @NonNull public android.bluetooth.BluetoothGattConnectionSettings.Builder setAutomaticMtuEnabled(boolean);

@@ -825,7 +825,7 @@ class HeadsetStateMachine extends StateMachine {
                                 processSWBEvent(event.valueInt, event.valueInt2);
                         case HeadsetStackEvent.EVENT_TYPE_BIND ->
                                 processAtBind(event.valueString, event.device);
-                        // Unexpected AT commands, we only handle them for comparability reasons
+                        // Unexpected AT commands, we only handle them for compatibility reasons
                         case HeadsetStackEvent.EVENT_TYPE_VR_STATE_CHANGED -> {
                             stateLogW(
                                     "Unexpected VR event, device="
@@ -1140,7 +1140,7 @@ class HeadsetStateMachine extends StateMachine {
                         case HeadsetStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED ->
                                 processConnectionEvent(message, event.valueInt);
                         case HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED ->
-                                processAudioEvent(event.valueInt);
+                                processAudioEvent(event.valueInt, event.reason);
                         case HeadsetStackEvent.EVENT_TYPE_VR_STATE_CHANGED ->
                                 processVrEvent(event.valueInt);
                         case HeadsetStackEvent.EVENT_TYPE_ANSWER_CALL ->
@@ -1215,7 +1215,7 @@ class HeadsetStateMachine extends StateMachine {
          *
          * @param state audio state
          */
-        abstract void processAudioEvent(int state);
+        abstract void processAudioEvent(int state, int reason);
 
         void processIntentScoVolume(Intent intent, BluetoothDevice device) {
             int volumeValue = intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_VALUE, 0);
@@ -1367,20 +1367,24 @@ class HeadsetStateMachine extends StateMachine {
         }
 
         @Override
-        public void processAudioEvent(int state) {
+        public void processAudioEvent(int state, int reason) {
             stateLogD("processAudioEvent, state=" + state);
             switch (state) {
                 case HeadsetHalConstants.AUDIO_STATE_CONNECTED -> {
                     if (mHeadsetService.isScoAcceptable(mDevice) != BluetoothStatusCodes.SUCCESS) {
                         stateLogW("processAudioEvent: reject incoming audio connection");
-                        if (!mNativeInterface.disconnectAudio(mDevice)) {
-                            stateLogE("processAudioEvent: failed to disconnect audio");
+                        sendScoConnectionFailureToAudio(
+                                AudioManager.HFP_AUDIO_DISCONNECT_PRECONDITION_FAILED, mDevice);
+                        if (!mSystemInterface.isScoManagedByAudioEnabled()) {
+                            if (!mNativeInterface.disconnectAudio(mDevice)) {
+                                stateLogE("processAudioEvent: failed to disconnect audio");
+                            }
+                            // Indicate rejection to other components.
+                            broadcastAudioState(
+                                    mDevice,
+                                    BluetoothHeadset.STATE_AUDIO_DISCONNECTED,
+                                    BluetoothHeadset.STATE_AUDIO_DISCONNECTED);
                         }
-                        // Indicate rejection to other components.
-                        broadcastAudioState(
-                                mDevice,
-                                BluetoothHeadset.STATE_AUDIO_DISCONNECTED,
-                                BluetoothHeadset.STATE_AUDIO_DISCONNECTED);
                         break;
                     }
                     stateLogI("processAudioEvent: audio connected");
@@ -1389,14 +1393,18 @@ class HeadsetStateMachine extends StateMachine {
                 case HeadsetHalConstants.AUDIO_STATE_CONNECTING -> {
                     if (mHeadsetService.isScoAcceptable(mDevice) != BluetoothStatusCodes.SUCCESS) {
                         stateLogW("processAudioEvent: reject incoming pending audio connection");
-                        if (!mNativeInterface.disconnectAudio(mDevice)) {
-                            stateLogE("processAudioEvent: failed to disconnect pending audio");
+                        sendScoConnectionFailureToAudio(
+                                AudioManager.HFP_AUDIO_DISCONNECT_PRECONDITION_FAILED, mDevice);
+                        if (!mSystemInterface.isScoManagedByAudioEnabled()) {
+                            if (!mNativeInterface.disconnectAudio(mDevice)) {
+                                stateLogE("processAudioEvent: failed to disconnect pending audio");
+                            }
+                            // Indicate rejection to other components.
+                            broadcastAudioState(
+                                    mDevice,
+                                    BluetoothHeadset.STATE_AUDIO_DISCONNECTED,
+                                    BluetoothHeadset.STATE_AUDIO_DISCONNECTED);
                         }
-                        // Indicate rejection to other components.
-                        broadcastAudioState(
-                                mDevice,
-                                BluetoothHeadset.STATE_AUDIO_DISCONNECTED,
-                                BluetoothHeadset.STATE_AUDIO_DISCONNECTED);
                         break;
                     }
                     stateLogI("processAudioEvent: audio connecting");
@@ -1460,10 +1468,11 @@ class HeadsetStateMachine extends StateMachine {
         }
 
         @Override
-        public void processAudioEvent(int state) {
+        public void processAudioEvent(int state, int reason) {
             switch (state) {
                 case HeadsetHalConstants.AUDIO_STATE_DISCONNECTED -> {
                     stateLogW("processAudioEvent: audio connection failed");
+                    sendScoConnectionFailureToAudio(reason, mDevice);
                     transitionTo(mConnected);
                 }
                 // ignore, already in audio connecting state
@@ -1636,14 +1645,16 @@ class HeadsetStateMachine extends StateMachine {
         }
 
         @Override
-        public void processAudioEvent(int state) {
+        public void processAudioEvent(int state, int reason) {
             switch (state) {
                 case HeadsetHalConstants.AUDIO_STATE_DISCONNECTED -> {
                     stateLogI("processAudioEvent: audio disconnected by remote");
+                    sendScoConnectionFailureToAudio(reason, mDevice);
                     transitionTo(mConnected);
                 }
                 case HeadsetHalConstants.AUDIO_STATE_DISCONNECTING -> {
                     stateLogI("processAudioEvent: audio being disconnected by remote");
+                    sendScoConnectionFailureToAudio(reason, mDevice);
                     transitionTo(mAudioDisconnecting);
                 }
                 default -> stateLogE("processAudioEvent: bad state: " + state);
@@ -1697,7 +1708,7 @@ class HeadsetStateMachine extends StateMachine {
         }
 
         @Override
-        public void processAudioEvent(int state) {
+        public void processAudioEvent(int state, int reason) {
             switch (state) {
                 case HeadsetHalConstants.AUDIO_STATE_DISCONNECTED -> {
                     stateLogI("processAudioEvent: audio disconnected");
@@ -2443,6 +2454,23 @@ class HeadsetStateMachine extends StateMachine {
         return mHsClientAudioPolicy;
     }
 
+    private void sendScoConnectionFailureToAudio(int reason, BluetoothDevice device) {
+        if (android.media.audio.Flags.btAudioDisconnectApi()) return;
+        if (reason == 0 /* NO_FAILURE */) return;
+        switch (reason) {
+            case AudioManager.HFP_AUDIO_DISCONNECT_CODEC_NEGOTIATION_FAILED,
+                    AudioManager.HFP_AUDIO_DISCONNECT_REMOTE_INITIATED,
+                    AudioManager.HFP_AUDIO_DISCONNECT_PRECONDITION_FAILED,
+                    AudioManager.HFP_AUDIO_DISCONNECT_INTERNAL_ERROR ->
+                    mSystemInterface
+                            .getAudioManager()
+                            .handleBluetoothHfpAudioDisconnected(device, reason);
+            default -> {
+                Log.w(TAG, "Received unknown reason: " + reason);
+            }
+        }
+    }
+
     /**
      * Process AT+XAPL AT command
      *
@@ -2691,7 +2719,8 @@ class HeadsetStateMachine extends StateMachine {
         }
         mAgIndicatorEnableState = agIndicatorEnableState;
         int events = PhoneStateListener.LISTEN_NONE;
-        if (mAgIndicatorEnableState != null && mAgIndicatorEnableState.service) {
+        if (mAgIndicatorEnableState != null
+                && (mAgIndicatorEnableState.service || mAgIndicatorEnableState.roam)) {
             events |= PhoneStateListener.LISTEN_SERVICE_STATE;
         }
         if (mAgIndicatorEnableState != null && mAgIndicatorEnableState.signal) {

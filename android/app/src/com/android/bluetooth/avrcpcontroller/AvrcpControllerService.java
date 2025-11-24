@@ -32,7 +32,8 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothPrefs;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService.BrowseResult;
+import com.android.bluetooth.media_audio.sink.BluetoothMediaBrowserService;
+import com.android.bluetooth.media_audio.sink.BluetoothMediaBrowserService.BrowseResult;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
@@ -404,11 +405,6 @@ public class AvrcpControllerService extends ProfileService {
         // Make sure the active device isn't changed while we're processing the event so play/pause
         // commands get routed to the correct device
         synchronized (mActiveDeviceLock) {
-            switch (state) {
-                case AudioManager.AUDIOFOCUS_GAIN -> BluetoothMediaBrowserService.setActive(true);
-                case AudioManager.AUDIOFOCUS_LOSS -> BluetoothMediaBrowserService.setActive(false);
-                default -> {} // Nothing to do
-            }
             BluetoothDevice device = getActiveDevice();
             if (device == null) {
                 Log.w(TAG, "No active device set, ignore focus change");

@@ -49,7 +49,7 @@ final class AvrcpCoverArtStorage {
 
         mImageHandles = new HashMap<>();
 
-        // Using a LinkedHashMap allows us to having items ordered LRU -> MRU (true param does this)
+        // Using a LinkedHashMap allows us to have items ordered LRU -> MRU (true param does this)
         // This way, if we need run out of space we can remove from the front to remove the least
         // recently accessed items
         mImages = new LinkedHashMap<>(0, 0.75f /* default load factor */, true);

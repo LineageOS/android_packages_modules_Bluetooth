@@ -20,6 +20,7 @@
 
 #include "btif/include/btif_sock_l2cap.h"
 #include "btif/include/btif_sock_rfc.h"
+#include "btif_status.h"
 #include "lpp/lpp_offload_interface.h"
 #include "main/shim/entry.h"
 #include "stack/include/main_thread.h"
@@ -55,16 +56,16 @@ public:
 
 static BtifSocketHalCallback btif_socket_hal_cb;
 
-bt_status_t btsock_hal_init() {
+BtStatus btsock_hal_init() {
   log::info("");
   auto lpp_offload_manager_interface = bluetooth::shim::GetLppOffloadManager();
   if (lpp_offload_manager_interface == nullptr) {
     log::warn("GetLppOffloadManager() returned nullptr!");
-    return BT_STATUS_FAIL;
+    return BtifStatus(FAIL);
   }
   if (!lpp_offload_manager_interface->RegisterSocketHalCallback(&btif_socket_hal_cb)) {
     log::warn("RegisterSocketHalCallback() failed!");
-    return BT_STATUS_FAIL;
+    return BtifStatus(FAIL);
   }
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }

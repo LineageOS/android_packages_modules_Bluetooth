@@ -1170,9 +1170,6 @@ public class LeAudioService extends ConnectableProfile {
             return devices;
         }
         final BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
-        if (bondedDevices == null) {
-            return devices;
-        }
         mGroupReadLock.lock();
         try {
             for (BluetoothDevice device : bondedDevices) {
@@ -5110,6 +5107,14 @@ public class LeAudioService extends ConnectableProfile {
         getAdapterService()
                 .getTbsService()
                 .ifPresent(tbsService -> tbsService.setDeviceAuthorized(device, authorize));
+
+        if (Flags.headtrackerConnectionPolicy()) {
+            getAdapterService()
+                    .getHidHostService()
+                    .ifPresent(
+                            hidHostService ->
+                                    hidHostService.setAndroidHeadTrackerEnabled(device, authorize));
+        }
     }
 
     private void removeAuthorizationInfoForRelatedProfiles(BluetoothDevice device) {

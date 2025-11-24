@@ -150,3 +150,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "headtracker_connection_policy"
+    namespace: "bluetooth"
+    description: "Link Android Headtracker Service connection policy to the LE Audio connection policy"
+    bug: "462191804"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

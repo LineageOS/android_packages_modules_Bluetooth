@@ -30,3 +30,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "vcp_notify_volume_on_each_device_connection"
+    namespace: "bluetooth"
+    description: "On each device connection, notify its volume to registered clients"
+    bug: "461421538"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

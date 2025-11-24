@@ -51,17 +51,3 @@ TEST(BtifStorageTest, test_uuid_split_partial) {
   size_t num_uuids = btif_split_uuids_string(s1, uuids, 1);
   EXPECT_EQ(num_uuids, 1u);
 }
-
-RawAddress kRawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
-
-TEST(BtifStorageTest, test_btif_storage_reset_irk) {
-  if (com_android_bluetooth_flags_btsec_cycle_irks()) {
-    btif_storage_add_bonded_device(&kRawAddress, SAMPLE_LTK, 0, 0);
-
-    ASSERT_EQ(0, get_func_call_count("BTA_DmBleResetId"));
-
-    btif_storage_remove_bonded_device(&kRawAddress);
-
-    ASSERT_EQ(1, get_func_call_count("BTA_DmBleResetId"));
-  }
-}

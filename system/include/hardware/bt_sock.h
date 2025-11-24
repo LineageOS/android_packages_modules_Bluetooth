@@ -21,6 +21,7 @@
 #include <stddef.h>
 
 #include "bluetooth.h"
+#include "bt_status.h"
 
 __BEGIN_DECLS
 
@@ -106,10 +107,10 @@ typedef struct {
    * The callingUid is the UID of the application which is requesting the
    * socket. This is used for traffic accounting purposes.
    */
-  bt_status_t (*listen)(btsock_type_t type, const char* service_name,
-                        const bluetooth::Uuid* service_uuid, int channel, int* sock_fd, int flags,
-                        int callingUid, btsock_data_path_t data_path, const char* socket_name,
-                        uint64_t hub_id, uint64_t endpoint_id, int max_rx_packet_size);
+  BtStatus (*listen)(btsock_type_t type, const char* service_name,
+                     const bluetooth::Uuid* service_uuid, int channel, int* sock_fd, int flags,
+                     int callingUid, btsock_data_path_t data_path, const char* socket_name,
+                     uint64_t hub_id, uint64_t endpoint_id, int max_rx_packet_size);
 
   /**
    * Connect to a RFCOMM UUID channel of remote device, It returns the socket fd
@@ -118,10 +119,10 @@ typedef struct {
    * which is requesting the socket. This is used for traffic accounting
    * purposes.
    */
-  bt_status_t (*connect)(RawAddress bd_addr, btsock_type_t type, const bluetooth::Uuid* uuid,
-                         int channel, int* sock_fd, int flags, int callingUid,
-                         btsock_data_path_t data_path, const char* socket_name, uint64_t hub_id,
-                         uint64_t endpoint_id, int max_rx_packet_size);
+  BtStatus (*connect)(RawAddress bd_addr, btsock_type_t type, const bluetooth::Uuid* uuid,
+                      int channel, int* sock_fd, int flags, int callingUid,
+                      btsock_data_path_t data_path, const char* socket_name, uint64_t hub_id,
+                      uint64_t endpoint_id, int max_rx_packet_size);
 
   /**
    * Set the LE Data Length value to this connected peer to the
@@ -137,15 +138,15 @@ typedef struct {
    * This API allows the host to start the control request while it works as an
    * RFCOMM server.
    */
-  bt_status_t (*control_req)(uint8_t dlci, const RawAddress& bd_addr, uint8_t modem_signal,
-                             uint8_t break_signal, uint8_t discard_buffers,
-                             uint8_t break_signal_seq, bool fc);
+  BtStatus (*control_req)(uint8_t dlci, const RawAddress& bd_addr, uint8_t modem_signal,
+                          uint8_t break_signal, uint8_t discard_buffers, uint8_t break_signal_seq,
+                          bool fc);
 
   /**
    * Disconnect all RFCOMM and L2CAP socket connections with the associated
    * device address.
    */
-  bt_status_t (*disconnect_all)(const RawAddress* bd_addr);
+  BtStatus (*disconnect_all)(const RawAddress* bd_addr);
 } btsock_interface_t;
 
 __END_DECLS

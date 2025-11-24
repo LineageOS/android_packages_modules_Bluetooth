@@ -314,7 +314,7 @@ public final class BluetoothLeScanner {
             throw new IllegalArgumentException("settings is null");
         }
         if (!BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter)) {
-            Log.w(TAG, "BLE is not available");
+            Log.w(TAG, "doStartScan(): BLE is not available");
             return postCallbackErrorOrReturn(callback, ScanCallback.SCAN_FAILED_INTERNAL_ERROR);
         }
         synchronized (mLeScanClients) {
@@ -375,7 +375,7 @@ public final class BluetoothLeScanner {
     @RequiresPermission(BLUETOOTH_SCAN)
     public void stopScan(ScanCallback callback) {
         if (!BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter)) {
-            Log.w(TAG, "BLE is not available");
+            Log.w(TAG, "stopScan(callback): BLE is not available");
             return;
         }
         synchronized (mLeScanClients) {
@@ -401,7 +401,7 @@ public final class BluetoothLeScanner {
     @RequiresPermission(BLUETOOTH_SCAN)
     public void stopScan(PendingIntent callbackIntent) {
         if (!BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter)) {
-            Log.w(TAG, "BLE is not available");
+            Log.w(TAG, "stopScan(callbackIntent): BLE is not available");
             return;
         }
         try {
@@ -429,7 +429,7 @@ public final class BluetoothLeScanner {
     @RequiresPermission(BLUETOOTH_SCAN)
     public void flushPendingScanResults(ScanCallback callback) {
         if (!BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter)) {
-            Log.w(TAG, "BLE is not available");
+            Log.w(TAG, "flushPendingScanResults(): BLE is not available");
             return;
         }
         if (callback == null) {
@@ -480,6 +480,7 @@ public final class BluetoothLeScanner {
         private final ScanCallback mCallback;
 
         // 0: not registered
+        // TODO(b/455057044) Delete -2 and -1 on flag cleanup
         // -2: registration failed because app is scanning to frequently
         // -1: scan stopped or registration failed
         // > 0: registered and scan started
@@ -604,7 +605,7 @@ public final class BluetoothLeScanner {
                         mScannerId = scannerId;
                     } else {
                         // If scanning too frequently, don't report anything to the app.
-                        if (scannerId == -2) {
+                        if (status == ScanCallback.SCAN_FAILED_SCANNING_TOO_FREQUENTLY) {
                             Log.e(TAG, header + "Failed. App is scanning too frequently");
                         } else {
                             postCallbackError(

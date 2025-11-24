@@ -109,7 +109,7 @@ class GattMetricsReporter(private val profileId: Int, private val adapterService
         )
     }
 
-    fun logGattConnectionStateChange(
+    fun logConnectionStateChange(
         device: BluetoothDevice,
         sessionIndex: Int,
         connectionState: Int,
@@ -118,7 +118,7 @@ class GattMetricsReporter(private val profileId: Int, private val adapterService
         val metricId = adapterService.getMetricId(device)
         Log.d(
             TAG,
-            ("logGattConnectionStateChange(metricId=$metricId, sessionIndex=$sessionIndex, " +
+            ("logConnectionStateChange(metricId=$metricId, sessionIndex=$sessionIndex, " +
                 "connectionState=$connectionState, connectionStatus=$connectionStatus)"),
         )
         BluetoothStatsLog.write(

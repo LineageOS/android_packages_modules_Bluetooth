@@ -16,7 +16,6 @@
 
 package com.android.bluetooth;
 
-import static android.Manifest.permission.ACCESS_COARSE_LOCATION;
 import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
@@ -43,10 +42,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
 import android.os.ParcelUuid;
@@ -56,7 +53,6 @@ import android.os.SystemClock;
 import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.os.UserManager;
-import android.permission.PermissionManager;
 import android.provider.DeviceConfig;
 import android.provider.Telephony;
 import android.util.Log;
@@ -374,16 +370,6 @@ public final class Utils {
         return true;
     }
 
-    public static AttributionSource getCallingAttributionSource(Context context) {
-        int callingUid = Binder.getCallingUid();
-        if (callingUid == android.os.Process.ROOT_UID) {
-            callingUid = android.os.Process.SYSTEM_UID;
-        }
-        return new AttributionSource.Builder(callingUid)
-                .setPackageName(context.getPackageManager().getPackagesForUid(callingUid)[0])
-                .build();
-    }
-
     /**
      * Returns true if the specified package has disavowed the use of bluetooth scans for location,
      * that is, if they have specified the {@code neverForLocation} flag on the BLUETOOTH_SCAN
@@ -512,131 +498,6 @@ public final class Utils {
     public static boolean callerIsSystemOrActiveOrManagedUser(
             Context context, String tag, String method) {
         return checkCallerIsSystemOrActiveOrManagedUser(context, tag + "." + method + "()");
-    }
-
-    /** Checks whether location is off and must be on for us to perform some operation */
-    public static boolean blockedByLocationOff(Context context, UserHandle userHandle) {
-        return !context.getSystemService(LocationManager.class)
-                .isLocationEnabledForUser(userHandle);
-    }
-
-    /** Checks that calling process has ACCESS_COARSE_LOCATION and OP_COARSE_LOCATION is allowed */
-    public static boolean checkCallerHasCoarseLocation(
-            Context context, AttributionSource source, UserHandle userHandle) {
-        if (blockedByLocationOff(context, userHandle)) {
-            Log.e(TAG, "Permission denial: Location is off.");
-            return false;
-        }
-        AttributionSource currentAttribution =
-                new AttributionSource.Builder(context.getAttributionSource())
-                        .setNext(requireNonNull(source))
-                        .build();
-        // STOPSHIP(b/188391719): enable this security enforcement
-        // source.enforceCallingUid();
-        PermissionManager pm = context.getSystemService(PermissionManager.class);
-        if (pm == null) {
-            return false;
-        }
-        if (pm.checkPermissionForDataDeliveryFromDataSource(
-                        ACCESS_COARSE_LOCATION, currentAttribution, "Bluetooth location check")
-                == PERMISSION_GRANTED) {
-            return true;
-        }
-
-        Log.e(TAG, "Need ACCESS_COARSE_LOCATION permission for " + currentAttribution);
-        return false;
-    }
-
-    /**
-     * Checks that calling process has ACCESS_COARSE_LOCATION and OP_COARSE_LOCATION is allowed or
-     * ACCESS_FINE_LOCATION and OP_FINE_LOCATION is allowed
-     */
-    public static boolean checkCallerHasCoarseOrFineLocation(
-            Context context, AttributionSource source, UserHandle userHandle) {
-        if (blockedByLocationOff(context, userHandle)) {
-            Log.e(TAG, "Permission denial: Location is off.");
-            return false;
-        }
-
-        final AttributionSource currentAttribution =
-                new AttributionSource.Builder(context.getAttributionSource())
-                        .setNext(requireNonNull(source))
-                        .build();
-        // STOPSHIP(b/188391719): enable this security enforcement
-        // source.enforceCallingUid();
-        PermissionManager pm = context.getSystemService(PermissionManager.class);
-        if (pm == null) {
-            return false;
-        }
-        if (pm.checkPermissionForDataDeliveryFromDataSource(
-                        ACCESS_FINE_LOCATION, currentAttribution, "Bluetooth location check")
-                == PERMISSION_GRANTED) {
-            return true;
-        }
-
-        if (pm.checkPermissionForDataDeliveryFromDataSource(
-                        ACCESS_COARSE_LOCATION, currentAttribution, "Bluetooth location check")
-                == PERMISSION_GRANTED) {
-            return true;
-        }
-
-        Log.e(
-                TAG,
-                "Need ACCESS_COARSE_LOCATION or ACCESS_FINE_LOCATION permission for "
-                        + currentAttribution);
-        return false;
-    }
-
-    /** Checks that calling process has ACCESS_FINE_LOCATION and OP_FINE_LOCATION is allowed */
-    public static boolean checkCallerHasFineLocation(
-            Context context, AttributionSource source, UserHandle userHandle) {
-        if (blockedByLocationOff(context, userHandle)) {
-            Log.e(TAG, "Permission denial: Location is off.");
-            return false;
-        }
-
-        AttributionSource currentAttribution =
-                new AttributionSource.Builder(context.getAttributionSource())
-                        .setNext(requireNonNull(source))
-                        .build();
-        // STOPSHIP(b/188391719): enable this security enforcement
-        // source.enforceCallingUid();
-        PermissionManager pm = context.getSystemService(PermissionManager.class);
-        if (pm == null) {
-            return false;
-        }
-        if (pm.checkPermissionForDataDeliveryFromDataSource(
-                        ACCESS_FINE_LOCATION, currentAttribution, "Bluetooth location check")
-                == PERMISSION_GRANTED) {
-            return true;
-        }
-
-        Log.e(TAG, "Need ACCESS_FINE_LOCATION permission for " + currentAttribution);
-        return false;
-    }
-
-    /**
-     * Checks that the target sdk of the app corresponding to the provided package name is greater
-     * than or equal to the passed in target sdk.
-     *
-     * <p>For example, if the calling app has target SDK {@link Build.VERSION_CODES#S} and we pass
-     * in the targetSdk {@link Build.VERSION_CODES#R}, the API will return true because S >= R.
-     *
-     * @param context Bluetooth service context
-     * @param pkgName caller's package name
-     * @param expectedMinimumTargetSdk one of the values from {@link Build.VERSION_CODES}
-     * @return {@code true} if the caller's target sdk is greater than or equal to
-     *     expectedMinimumTargetSdk, {@code false} otherwise
-     */
-    public static boolean checkCallerTargetSdk(
-            Context context, String pkgName, int expectedMinimumTargetSdk) {
-        try {
-            return context.getPackageManager().getApplicationInfo(pkgName, 0).targetSdkVersion
-                    >= expectedMinimumTargetSdk;
-        } catch (PackageManager.NameNotFoundException e) {
-            // In case of exception, assume true
-        }
-        return true;
     }
 
     /** Converts {@code milliseconds} to unit. Each unit is 0.625 millisecond. */

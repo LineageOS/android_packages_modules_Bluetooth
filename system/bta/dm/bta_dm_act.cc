@@ -41,8 +41,8 @@
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_gatt_client.h"
 #include "bta/dm/bta_dm_int.h"
-#include "bta/dm/bta_dm_sec_int.h"
 #include "bta/dm/bta_dm_pm_offload.h"
+#include "bta/dm/bta_dm_sec_int.h"
 #include "bta/include/bta_api.h"
 #include "bta/include/bta_dm_acl.h"
 #include "bta/include/bta_dm_api.h"
@@ -63,7 +63,6 @@
 #include "stack/acl/acl.h"
 #include "stack/connection_manager/connection_manager.h"
 #include "stack/include/acl_api.h"
-#include "stack/include/ble_scanner.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
@@ -288,8 +287,6 @@ void BTA_dm_on_hw_on(const std::string local_name) {
   if (bta_dm_acl_cb.p_acl_cback) {
     bta_dm_acl_cb.p_acl_cback(BTA_DM_LPP_OFFLOAD_FEATURES_READ, NULL);
   }
-
-  btm_ble_scanner_init();
 
   // Synchronize with the controller before continuing
   bta_dm_le_rand(get_main_thread()->BindOnce(

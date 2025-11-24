@@ -17,6 +17,7 @@
 
 #include "btif_sock_l2cap.h"
 
+#include <android_bluetooth_sysprop.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
@@ -25,7 +26,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <android_bluetooth_sysprop.h>
 #include <cstdint>
 #include <cstring>
 #include <mutex>
@@ -37,6 +37,7 @@
 #include "btif/include/btif_sock_thread.h"
 #include "btif/include/btif_sock_util.h"
 #include "btif/include/btif_uid.h"
+#include "btif_status.h"
 #include "common/time_util.h"
 #include "gd/os/rand.h"
 #include "include/hardware/bluetooth.h"
@@ -398,21 +399,21 @@ fail_sockpair:
   return NULL;
 }
 
-bt_status_t btsock_l2cap_init(int handle, uid_set_t* set) {
+BtStatus btsock_l2cap_init(int handle, uid_set_t* set) {
   std::unique_lock<std::mutex> lock(state_lock);
   pth = handle;
   socks = NULL;
   uid_set = set;
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
-bt_status_t btsock_l2cap_cleanup() {
+BtStatus btsock_l2cap_cleanup() {
   std::unique_lock<std::mutex> lock(state_lock);
   pth = -1;
   while (socks) {
     btsock_l2cap_free_l(socks, BTSOCK_ERROR_NONE);
   }
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 static inline bool send_app_psm_or_chan_l(l2cap_socket* sock) {
@@ -928,13 +929,13 @@ static bool btsock_l2cap_get_offload_mtu(uint16_t* rx_mtu, uint16_t app_max_rx_p
   return true;
 }
 
-static bt_status_t btsock_l2cap_listen_or_connect(const char* name, const RawAddress* addr,
-                                                  int channel, int* sock_fd, int flags, char listen,
-                                                  int app_uid, btsock_data_path_t data_path,
-                                                  const char* socket_name, uint64_t hub_id,
-                                                  uint64_t endpoint_id, int max_rx_packet_size) {
+static BtStatus btsock_l2cap_listen_or_connect(const char* name, const RawAddress* addr,
+                                               int channel, int* sock_fd, int flags, char listen,
+                                               int app_uid, btsock_data_path_t data_path,
+                                               const char* socket_name, uint64_t hub_id,
+                                               uint64_t endpoint_id, int max_rx_packet_size) {
   if (!is_inited()) {
-    return BT_STATUS_NOT_READY;
+    return BtifStatus(NOT_READY);
   }
 
   bool is_le_coc = (flags & BTSOCK_FLAG_LE_COC) != 0;
@@ -948,7 +949,7 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name, const RawAdd
         }
       } else if (channel <= 0) {
         log::error("type BTSOCK_L2CAP_LE: invalid channel={}", channel);
-        return BT_STATUS_SOCKET_ERROR;
+        return BtifStatus(SOCKET_ERROR);
       }
     } else {
       // Ensure device is in inquiry database during L2CAP CoC connection
@@ -958,7 +959,7 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name, const RawAdd
 
   if (!sock_fd) {
     log::info("Invalid socket descriptor");
-    return BT_STATUS_PARM_INVALID;
+    return BtifStatus(PARM_INVALID);
   }
 
   // TODO: This is kind of bad to lock here, but it is needed for the current
@@ -966,7 +967,7 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name, const RawAdd
   std::unique_lock<std::mutex> lock(state_lock);
   l2cap_socket* sock = btsock_l2cap_alloc_l(name, addr, listen, flags);
   if (!sock) {
-    return BT_STATUS_NOMEM;
+    return BtifStatus(NOMEM);
   }
 
   sock->channel = channel;
@@ -985,7 +986,7 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name, const RawAdd
   }
   if (data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
     if (!btsock_l2cap_get_offload_mtu(&sock->rx_mtu, static_cast<uint16_t>(max_rx_packet_size))) {
-      return BT_STATUS_UNSUPPORTED;
+      return BtifStatus(UNSUPPORTED);
     }
   } else {
     sock->rx_mtu = is_le_coc ? L2CAP_SDU_LENGTH_LE_MAX : L2CAP_SDU_LENGTH_MAX;
@@ -1036,19 +1037,19 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name, const RawAdd
    * apparently do not work */
   btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_EXCEPTION, sock->id);
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
-bt_status_t btsock_l2cap_listen(const char* name, int channel, int* sock_fd, int flags, int app_uid,
-                                btsock_data_path_t data_path, const char* socket_name,
-                                uint64_t hub_id, uint64_t endpoint_id, int max_rx_packet_size) {
+BtStatus btsock_l2cap_listen(const char* name, int channel, int* sock_fd, int flags, int app_uid,
+                             btsock_data_path_t data_path, const char* socket_name, uint64_t hub_id,
+                             uint64_t endpoint_id, int max_rx_packet_size) {
   return btsock_l2cap_listen_or_connect(name, NULL, channel, sock_fd, flags, 1, app_uid, data_path,
                                         socket_name, hub_id, endpoint_id, max_rx_packet_size);
 }
 
-bt_status_t btsock_l2cap_connect(const RawAddress* bd_addr, int channel, int* sock_fd, int flags,
-                                 int app_uid, btsock_data_path_t data_path, const char* socket_name,
-                                 uint64_t hub_id, uint64_t endpoint_id, int max_rx_packet_size) {
+BtStatus btsock_l2cap_connect(const RawAddress* bd_addr, int channel, int* sock_fd, int flags,
+                              int app_uid, btsock_data_path_t data_path, const char* socket_name,
+                              uint64_t hub_id, uint64_t endpoint_id, int max_rx_packet_size) {
   return btsock_l2cap_listen_or_connect(NULL, bd_addr, channel, sock_fd, flags, 0, app_uid,
                                         data_path, socket_name, hub_id, endpoint_id,
                                         max_rx_packet_size);
@@ -1202,12 +1203,12 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
   }
 }
 
-bt_status_t btsock_l2cap_disconnect(const RawAddress* bd_addr) {
+BtStatus btsock_l2cap_disconnect(const RawAddress* bd_addr) {
   if (!bd_addr) {
-    return BT_STATUS_PARM_INVALID;
+    return BtifStatus(PARM_INVALID);
   }
   if (!is_inited()) {
-    return BT_STATUS_NOT_READY;
+    return BtifStatus(NOT_READY);
   }
 
   std::unique_lock<std::mutex> lock(state_lock);
@@ -1221,7 +1222,7 @@ bt_status_t btsock_l2cap_disconnect(const RawAddress* bd_addr) {
     sock = next;
   }
 
-  return BT_STATUS_SUCCESS;
+  return BtifStatus();
 }
 
 // TODO(b/380189525): Replace the randomized socket ID with static counter when we don't have

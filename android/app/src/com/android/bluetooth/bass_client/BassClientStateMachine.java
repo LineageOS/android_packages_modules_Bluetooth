@@ -112,6 +112,7 @@ class BassClientStateMachine extends StateMachine {
     static final int CANCEL_PENDING_SOURCE_OPERATION = 15;
     static final int INITIATE_PA_SYNC_TRANSFER = 16;
     static final int UPDATE_METADATA = 17;
+    static final int ENCRYPTION_STATE_CHANGED = 18;
 
     // Type of argument for set broadcast code operation
     static final int ARGTYPE_METADATA = 1;
@@ -170,6 +171,7 @@ class BassClientStateMachine extends StateMachine {
     IPeriodicAdvertisingCallback mLocalPeriodicAdvCallback = new PACallback();
     int mMaxSingleAttributeWriteValueLen = 0;
     @VisibleForTesting BluetoothLeBroadcastMetadata mPendingSourceToSwitch = null;
+    @VisibleForTesting boolean mIsWaitingForEncryption = false;
 
     BassClientStateMachine(
             BluetoothDevice device,
@@ -1038,8 +1040,18 @@ class BassClientStateMachine extends StateMachine {
         @Override
         public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
             if (mMTUChangeRequested && mBluetoothGatt != null) {
-                acquireAllBassChars();
                 mMTUChangeRequested = false;
+                if (Flags.leaudioBassReadCharacteristicsAfterEncryption()) {
+                    boolean isEncrypted = mService.isEncrypted(mDevice);
+                    if (isEncrypted) {
+                        acquireAllBassChars();
+                    } else {
+                        mIsWaitingForEncryption = true;
+                        Log.d(TAG, "MTU changed, waiting for encryption");
+                    }
+                } else {
+                    acquireAllBassChars();
+                }
             } else {
                 Log.d(
                         TAG,
@@ -1221,6 +1233,7 @@ class BassClientStateMachine extends StateMachine {
                             + "): "
                             + messageWhatToString(getCurrentMessage().what));
             logAllBroadcastSyncStatsAndCleanup();
+            mIsWaitingForEncryption = false;
             clearCharsCache();
             mNextSourceId = 0;
             removeDeferredMessages(DISCONNECT);
@@ -1369,6 +1382,7 @@ class BassClientStateMachine extends StateMachine {
                     resetBluetoothGatt();
                     transitionTo(mDisconnected);
                 }
+                case ENCRYPTION_STATE_CHANGED -> deferMessage(message);
                 default -> {
                     Log.d(TAG, "CONNECTING: not handled message:" + message.what);
                     return NOT_HANDLED;
@@ -1945,6 +1959,18 @@ class BassClientStateMachine extends StateMachine {
                     updateMetadataWithReceiveStateIfBisSyncStateChanged(
                             getBroadcastReceiveStateForSourceId(sourceIdForUpdateMetadata));
                 }
+                case ENCRYPTION_STATE_CHANGED -> {
+                    boolean isEncrypted = (message.arg1 == BassConstants.ENCRYPTED);
+                    if (isEncrypted && mIsWaitingForEncryption) {
+                        Log.d(TAG, "Encrypted, acquiring BASS chars");
+                        acquireAllBassChars();
+                        mIsWaitingForEncryption = false;
+                    } else if (!isEncrypted) {
+                        Log.e(TAG, "Encryption failed, notify BASS state setup failed");
+                        mIsWaitingForEncryption = false;
+                        mService.getCallbacks().notifyBassStateSetupFailed(mDevice);
+                    }
+                }
                 default -> {
                     Log.d(TAG, "CONNECTED: not handled message:" + message.what);
                     return NOT_HANDLED;
@@ -2114,6 +2140,7 @@ class BassClientStateMachine extends StateMachine {
                     int broadcastId = message.arg1;
                     cancelPendingSourceOperation(broadcastId);
                 }
+                case ENCRYPTION_STATE_CHANGED -> deferMessage(message);
                 default -> {
                     Log.d(TAG, "ConnectedProcessing: not handled message:" + message.what);
                     return NOT_HANDLED;
@@ -2196,6 +2223,7 @@ class BassClientStateMachine extends StateMachine {
             case CANCEL_PENDING_SOURCE_OPERATION -> "CANCEL_PENDING_SOURCE_OPERATION";
             case INITIATE_PA_SYNC_TRANSFER -> "INITIATE_PA_SYNC_TRANSFER";
             case UPDATE_METADATA -> "UPDATE_METADATA";
+            case ENCRYPTION_STATE_CHANGED -> "ENCRYPTION_STATE_CHANGED";
             default -> Integer.toString(what);
         };
     }

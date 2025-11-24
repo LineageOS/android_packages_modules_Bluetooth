@@ -147,3 +147,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "flush_socket_accept_signal"
+    namespace: "bluetooth"
+    description: "Flush the socket accept signal to miminmize the latency"
+    bug: "461807788"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

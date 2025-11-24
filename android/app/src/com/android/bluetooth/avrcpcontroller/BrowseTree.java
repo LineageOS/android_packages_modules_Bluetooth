@@ -135,7 +135,7 @@ public class BrowseTree {
     }
 
     // Each node of the tree is represented by Folder ID, Folder Name and the children.
-    class BrowseNode {
+    public class BrowseNode {
         // AvrcpItem to store the media related details.
         AvrcpItem mItem;
 
@@ -270,7 +270,7 @@ public class BrowseTree {
             mItem.setCoverArtLocation(uri);
         }
 
-        synchronized List<MediaItem> getContents() {
+        public synchronized List<MediaItem> getContents() {
             if (mChildren.size() > 0 || mCached) {
                 List<MediaItem> contents = new ArrayList<MediaItem>(mChildren.size());
                 for (BrowseNode child : mChildren) {
@@ -307,7 +307,7 @@ public class BrowseTree {
         }
 
         // Fetch the Unique UID for this item, this is unique across all elements in the tree.
-        synchronized String getID() {
+        public synchronized String getID() {
             return mItem.getUuid();
         }
 
@@ -316,7 +316,7 @@ public class BrowseTree {
             return Integer.parseInt(getID().replace(PLAYER_PREFIX, ""));
         }
 
-        synchronized byte getScope() {
+        public synchronized byte getScope() {
             return mBrowseScope;
         }
 

@@ -44,7 +44,6 @@ import androidx.test.rule.ServiceTestRule;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerService;
-import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.tests.bluetooth.MockitoRule;
@@ -129,7 +128,6 @@ public class A2dpSinkStreamHandlerTest {
         verify(mNativeInterface, never()).informAudioFocusState(1);
         verify(mNativeInterface, never()).informAudioTrackGain(1.0f);
         assertThat(mStreamHandler.isPlaying()).isFalse();
-        assertThat(BluetoothMediaBrowserService.isActive()).isFalse();
     }
 
     @Test
@@ -141,7 +139,6 @@ public class A2dpSinkStreamHandlerTest {
         verify(mNativeInterface, never()).informAudioFocusState(1);
         verify(mNativeInterface, never()).informAudioTrackGain(1.0f);
         assertThat(mStreamHandler.isPlaying()).isFalse();
-        assertThat(BluetoothMediaBrowserService.isActive()).isFalse();
     }
 
     @Test
@@ -150,7 +147,6 @@ public class A2dpSinkStreamHandlerTest {
         mStreamHandler.handleMessage(mStreamHandler.obtainMessage(A2dpSinkStreamHandler.SNK_PLAY));
         verify(mAudioManager).requestAudioFocus(any());
         assertThat(mStreamHandler.isPlaying()).isFalse();
-        assertThat(BluetoothMediaBrowserService.isActive()).isFalse();
     }
 
     @Test
@@ -161,7 +157,6 @@ public class A2dpSinkStreamHandlerTest {
         verify(mNativeInterface, never()).informAudioFocusState(1);
         verify(mNativeInterface, never()).informAudioTrackGain(1.0f);
         assertThat(mStreamHandler.isPlaying()).isFalse();
-        assertThat(BluetoothMediaBrowserService.isActive()).isFalse();
     }
 
     @Test
@@ -173,7 +168,6 @@ public class A2dpSinkStreamHandlerTest {
         verify(mAudioManager, never()).abandonAudioFocus(any());
         verify(mNativeInterface, never()).informAudioFocusState(0);
         assertThat(mStreamHandler.isPlaying()).isFalse();
-        assertThat(BluetoothMediaBrowserService.isActive()).isFalse();
     }
 
     @Test
@@ -184,7 +178,6 @@ public class A2dpSinkStreamHandlerTest {
         verify(mNativeInterface, never()).informAudioFocusState(1);
         verify(mNativeInterface, never()).informAudioTrackGain(1.0f);
         assertThat(mStreamHandler.isPlaying()).isFalse();
-        assertThat(BluetoothMediaBrowserService.isActive()).isFalse();
     }
 
     @Test
@@ -220,7 +213,6 @@ public class A2dpSinkStreamHandlerTest {
 
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
         assertThat(mStreamHandler.getFocusState()).isEqualTo(AudioManager.AUDIOFOCUS_GAIN);
-        assertThat(BluetoothMediaBrowserService.isActive()).isTrue();
     }
 
     @Test
@@ -236,7 +228,6 @@ public class A2dpSinkStreamHandlerTest {
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
         assertThat(mStreamHandler.getFocusState())
                 .isEqualTo(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK);
-        assertThat(BluetoothMediaBrowserService.isActive()).isFalse();
     }
 
     @Test
@@ -254,7 +245,6 @@ public class A2dpSinkStreamHandlerTest {
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
         assertThat(mStreamHandler.getFocusState())
                 .isEqualTo(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT);
-        assertThat(BluetoothMediaBrowserService.isActive()).isFalse();
     }
 
     @Test
@@ -271,7 +261,6 @@ public class A2dpSinkStreamHandlerTest {
         mStreamHandler.handleMessage(
                 mStreamHandler.obtainMessage(A2dpSinkStreamHandler.REQUEST_FOCUS, true));
         verify(mAudioManager, times(2)).requestAudioFocus(any());
-        assertThat(BluetoothMediaBrowserService.isActive()).isFalse();
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
     }
 
@@ -287,7 +276,6 @@ public class A2dpSinkStreamHandlerTest {
         verify(mNativeInterface).informAudioTrackGain(1.0f);
 
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
-        assertThat(BluetoothMediaBrowserService.isActive()).isTrue();
         assertThat(mStreamHandler.getFocusState()).isEqualTo(AudioManager.AUDIOFOCUS_GAIN);
     }
 
@@ -302,7 +290,6 @@ public class A2dpSinkStreamHandlerTest {
         verify(mNativeInterface).informAudioFocusState(0);
 
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
-        assertThat(BluetoothMediaBrowserService.isActive()).isFalse();
         assertThat(mStreamHandler.getFocusState()).isEqualTo(AudioManager.AUDIOFOCUS_NONE);
         assertThat(mStreamHandler.isPlaying()).isFalse();
     }

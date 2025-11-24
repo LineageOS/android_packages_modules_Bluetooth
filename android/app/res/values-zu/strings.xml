@@ -112,10 +112,10 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"Vula"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"Sula ohlwini"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"Sula"</string>
-    <string name="bluetooth_a2dp_sink_queue_name" msgid="7521243473328258997">"Okudlala manje"</string>
+    <string name="bluetooth_media_audio_queue_name" msgid="7521243473328258997">"Okudlala manje"</string>
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"Isithonjana sohlelo lokusebenza"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"Umsindo we-Bluetooth unqanyuliwe"</string>
-    <string name="a2dp_sink_mbs_label" msgid="6035366346569127155">"Umsindo we-Bluetooth"</string>
+    <string name="bluetooth_media_audio_app_name" msgid="6035366346569127155">"Umsindo we-Bluetooth"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"Amafayela amakhulu kuno-4GB awakwazi ukudluliselwa"</string>
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"Xhumeka ku-Bluetooth"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"I-Bluetooth ivuliwe kumodi yendiza"</string>

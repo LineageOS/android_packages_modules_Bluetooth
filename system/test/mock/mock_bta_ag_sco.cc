@@ -126,9 +126,10 @@ void bta_ag_sco_codec_nego(tBTA_AG_SCB* p_scb, bool result) {
   inc_func_call_count(__func__);
   test::mock::bta_ag_sco::bta_ag_sco_codec_nego(p_scb, result);
 }
-void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
+void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data,
+                           SCO_CONNECTION_FAILURES reason) {
   inc_func_call_count(__func__);
-  test::mock::bta_ag_sco::bta_ag_sco_conn_close(p_scb, data);
+  test::mock::bta_ag_sco::bta_ag_sco_conn_close(p_scb, data, reason);
 }
 void bta_ag_sco_conn_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   inc_func_call_count(__func__);

@@ -158,6 +158,7 @@ struct HciLayer::impl {
   }
 
   ~impl() {
+    handler_ = nullptr;
     incoming_acl_buffer_.Clear();
     incoming_sco_buffer_.Clear();
     incoming_iso_buffer_.Clear();
@@ -234,6 +235,12 @@ struct HciLayer::impl {
     log::assert_that(response_view.IsValid(), "assert failed: response_view.IsValid()");
     command_credits_ = response_view.GetNumHciCommandPackets();
     OpCode op_code = response_view.GetCommandOpCode();
+    if (handler_ == nullptr) {
+      log::warn("Ignoring command response {} for opcode {} because stack has been shutdown",
+                EventCodeText(event.GetEventCode()), OpCodeText(op_code));
+      return;
+    }
+
     if (op_code == OpCode::NONE) {
       send_next_command();
       return;
@@ -593,6 +600,9 @@ struct HciLayer::impl {
   os::EnqueueBuffer<IsoView> incoming_iso_buffer_{iso_queue_.GetDownEnd()};
 
   HciDataRouter router_;
+  uint16_t vendor_connection_handle_min_{0};
+  uint16_t vendor_connection_handle_max_{0};
+  ContextualCallback<void(uint16_t, std::vector<uint8_t>)> vendor_specific_acl_handler_{};
 };
 
 // All functions here are running on the HAL thread
@@ -617,7 +627,31 @@ struct HciLayer::hal_callbacks : public hal::HciHalCallbacks {
     }
     auto packet = packet::PacketView<packet::kLittleEndian>(
             std::make_shared<std::vector<uint8_t>>(std::move(data_bytes)));
-    auto acl = std::make_unique<AclView>(AclView::Create(packet));
+    auto acl_view = AclView::Create(packet);
+
+    if (com::android::bluetooth::flags::report_vendor_events_from_acl() &&
+        module_.impl_->vendor_connection_handle_min_ > 0) {
+      uint16_t handle = acl_view.GetHandle();
+      if (handle >= module_.impl_->vendor_connection_handle_min_ &&
+          handle <= module_.impl_->vendor_connection_handle_max_) {
+        if (module_.impl_->vendor_specific_acl_handler_) {
+          // The payload is copied into a vector because the callback expects a vector.
+          auto payload = acl_view.GetPayload();
+          std::vector<uint8_t> data(payload.begin(), payload.end());
+          // Post the task to the handler thread.
+          module_.impl_->handler_->Post(common::BindOnce(
+                  [](ContextualCallback<void(uint16_t, std::vector<uint8_t>)> handler,
+                     uint16_t handle,
+                     std::vector<uint8_t> data) { handler(handle, std::move(data)); },
+                  module_.impl_->vendor_specific_acl_handler_, handle, std::move(data)));
+        } else {
+          log::warn("Dropping vendor specific ACL packet since no handler is registered");
+        }
+        return;
+      }
+    }
+
+    auto acl = std::make_unique<AclView>(std::move(acl_view));
     module_.impl_->incoming_acl_buffer_.Enqueue(std::move(acl), module_.impl_->handler_);
   }
 
@@ -750,6 +784,29 @@ void HciLayer::RegisterDefaultVendorSpecificEventHandler(
 
 void HciLayer::UnregisterDefaultVendorSpecificEventHandler() {
   impl_->handler_->CallOn(impl_, &impl::unregister_vs_event_default);
+}
+
+void HciLayer::SetVendorAclHandleRange(uint16_t min, uint16_t max) {
+  impl_->handler_->Post(common::BindOnce(
+          [](impl* p_impl, uint16_t min, uint16_t max) {
+            p_impl->vendor_connection_handle_min_ = min;
+            p_impl->vendor_connection_handle_max_ = max;
+          },
+          impl_, min, max));
+}
+
+void HciLayer::RegisterVendorSpecificAclHandler(
+        ContextualCallback<void(uint16_t, std::vector<uint8_t>)> handler) {
+  impl_->handler_->Post(common::BindOnce(
+          [](impl* p_impl, ContextualCallback<void(uint16_t, std::vector<uint8_t>)> handler) {
+            p_impl->vendor_specific_acl_handler_ = handler;
+          },
+          impl_, handler));
+}
+
+void HciLayer::UnregisterVendorSpecificAclHandler() {
+  impl_->handler_->Post(
+          common::BindOnce([](impl* p_impl) { p_impl->vendor_specific_acl_handler_ = {}; }, impl_));
 }
 
 void HciLayer::on_disconnection_complete(EventView event_view) {

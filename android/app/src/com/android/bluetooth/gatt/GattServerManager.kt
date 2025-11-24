@@ -53,6 +53,8 @@ class GattServerManager(
     private val nativeInterface: GattNativeInterface
         get() = gatt.nativeInterface
 
+    private val offloadLock = Any()
+
     fun clear() {
         serverMap.clear()
         handleMap.clear()
@@ -64,7 +66,8 @@ class GattServerManager(
         val app = serverMap.getByUuid(uuid) ?: return
         app.id = serverIf
         val message = "Unregistering server for $app, callback=${app.callback}"
-        app.linkToDeath(ActionOnDeathRecipient(TAG, message, { unregisterServer(app.callback) }))
+        val onDeathAction = { gatt.doOnGattThread { unregisterServer(app.callback) } }
+        app.linkToDeath { ActionOnDeathRecipient(TAG, message, onDeathAction) }
         callbackToApp { app.callback.onServerRegistered(status) }
     }
 
@@ -232,7 +235,7 @@ class GattServerManager(
 
         callbackToApp { app.callback.onServerConnectionState(0, stateToReport, device) }
         metricsReporter.logAppPackage(serverIf, device, applicationUid)
-        metricsReporter.logGattConnectionStateChange(device, serverIf, connectionState, -1)
+        metricsReporter.logConnectionStateChange(device, serverIf, connectionState, -1)
     }
 
     fun onServerPhyUpdateFromNative(connId: Int, txPhy: Int, rxPhy: Int, status: Int) {
@@ -905,7 +908,7 @@ class GattServerManager(
         val connId = gatt.getFirstConnectionIdForDevice(clientIf, device)
         requireNotNull(connId) { "No connection to $device" }
 
-        synchronized(gatt.mOffloadLock) {
+        synchronized(offloadLock) {
             return nativeInterface.gattClientOffloadCharacteristics(
                 connId,
                 getGattDatabaseForOffload(service, characteristics),
@@ -932,7 +935,7 @@ class GattServerManager(
 
         val connId = gatt.getFirstConnectionIdForDevice(clientIf, device)
         requireNotNull(connId) { "No connection to $device" }
-        synchronized(gatt.mOffloadLock) {
+        synchronized(offloadLock) {
             nativeInterface.gattClientUnoffloadCharacteristics(connId, sessionId)
         }
     }
@@ -961,7 +964,7 @@ class GattServerManager(
         requireNotNull(connId) { "No connection to $device" }
 
         // Lock the thread until onServerCharacteristicsOffloaded comes back.
-        synchronized(gatt.mOffloadLock) {
+        synchronized(offloadLock) {
             return nativeInterface.gattServerOffloadCharacteristics(
                 connId,
                 getGattDatabaseForOffload(service, characteristics),
@@ -989,7 +992,7 @@ class GattServerManager(
         val connections = serverMap.getConnectionsByDevice(serverIf, device)
         val connId = (if (connections.isEmpty()) null else connections.get(0).connId)
         requireNotNull(connId) { "No connection to $device" }
-        synchronized(gatt.mOffloadLock) {
+        synchronized(offloadLock) {
             nativeInterface.gattServerUnoffloadCharacteristics(connId, sessionId)
         }
     }

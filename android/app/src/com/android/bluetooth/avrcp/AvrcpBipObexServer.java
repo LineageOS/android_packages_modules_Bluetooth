@@ -166,9 +166,9 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
     /**
      * Determine if a given image handle is valid in format
      *
-     * <p>An image handle a 9 character string of numbers 0-9 only. Anything else is invalid. This
-     * is defined in section 4.4.4 (Image Handles) of the BIP specification, which is inherited by
-     * the AVRCP specification.
+     * <p>An image handle is a 7 character string of numbers 0-9 only. Anything else is invalid.
+     * This is defined in section 4.4.4 (Image Handles) of the BIP specification, which is inherited
+     * by the AVRCP specification.
      *
      * @return True if the image handle is valid, false otherwise.
      */

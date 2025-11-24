@@ -609,6 +609,8 @@ struct ControllerImpl::impl {
     vendor_capabilities_.bluetooth_quality_report_support_ = 0x00;
     vendor_capabilities_.a2dp_offload_v2_support_ = 0x00;
     vendor_capabilities_.sniff_offload_support_ = 0x00;
+    vendor_capabilities_.vendor_connection_handle_min_ = 0;
+    vendor_capabilities_.vendor_connection_handle_max_ = 0;
 
     if (!complete_view.IsValid()) {
       vendor_promise.set_value();
@@ -699,6 +701,17 @@ struct ControllerImpl::impl {
       log::info("invalid data for hci requirements v1.05");
     } else {
       vendor_capabilities_.sniff_offload_support_ = v105.GetSniffOffloadSupport();
+    }
+
+    // v1.06
+    if (com::android::bluetooth::flags::report_vendor_events_from_acl()) {
+      auto v106 = LeGetVendorCapabilitiesComplete106View::Create(v105);
+      if (!v106.IsValid()) {
+        log::info("invalid data for hci requirements v1.06");
+      } else {
+        vendor_capabilities_.vendor_connection_handle_min_ = v106.GetVendorConnectionHandleMin();
+        vendor_capabilities_.vendor_connection_handle_max_ = v106.GetVendorConnectionHandleMax();
+      }
     }
 
     if (vendor_capabilities_.dynamic_audio_buffer_support_) {
@@ -1659,7 +1672,9 @@ void ControllerImpl::impl::dump(OutputT&& out) const {
           "        bluetooth_quality_report_support: {}\n"
           "        dynamic_audio_buffer_support: {}\n"
           "        a2dp_offload_v2_support: {}\n"
-          "        sniff_offload_support: {}\n",
+          "        sniff_offload_support: {}\n"
+          "        vendor_connection_handle_min: {}\n"
+          "        vendor_connection_handle_max: {}\n",
           vendor_capabilities_.is_supported_, vendor_capabilities_.max_advt_instances_,
           vendor_capabilities_.offloaded_resolution_of_private_address_,
           vendor_capabilities_.total_scan_results_storage_, vendor_capabilities_.max_irk_list_sz_,
@@ -1673,7 +1688,9 @@ void ControllerImpl::impl::dump(OutputT&& out) const {
           vendor_capabilities_.bluetooth_quality_report_support_,
           vendor_capabilities_.dynamic_audio_buffer_support_,
           vendor_capabilities_.a2dp_offload_v2_support_,
-          vendor_capabilities_.sniff_offload_support_);
+          vendor_capabilities_.sniff_offload_support_,
+          vendor_capabilities_.vendor_connection_handle_min_,
+          vendor_capabilities_.vendor_connection_handle_max_);
 }
 
 void ControllerImpl::Dump(int fd) const {

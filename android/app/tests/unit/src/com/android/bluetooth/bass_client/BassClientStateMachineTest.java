@@ -39,6 +39,7 @@ import static com.android.bluetooth.bass_client.BassClientStateMachine.CONNECT;
 import static com.android.bluetooth.bass_client.BassClientStateMachine.CONNECTION_STATE_CHANGED;
 import static com.android.bluetooth.bass_client.BassClientStateMachine.CONNECT_TIMEOUT;
 import static com.android.bluetooth.bass_client.BassClientStateMachine.DISCONNECT;
+import static com.android.bluetooth.bass_client.BassClientStateMachine.ENCRYPTION_STATE_CHANGED;
 import static com.android.bluetooth.bass_client.BassClientStateMachine.GATT_TXN_PROCESSED;
 import static com.android.bluetooth.bass_client.BassClientStateMachine.GATT_TXN_TIMEOUT;
 import static com.android.bluetooth.bass_client.BassClientStateMachine.INITIATE_PA_SYNC_TRANSFER;
@@ -66,6 +67,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -101,8 +103,10 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.bass_client.BassConstants;
 import com.android.bluetooth.le_scan.ScanController;
 import com.android.tests.bluetooth.MockitoRule;
+import com.android.internal.annotations.VisibleForTesting;
 
 import com.google.common.primitives.Bytes;
 
@@ -216,6 +220,71 @@ public class BassClientStateMachineTest {
     @Test
     public void testDefaultDisconnectedState() {
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTED);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LEAUDIO_BASS_READ_CHARACTERISTICS_AFTER_ENCRYPTION)
+    public void testReadCharacteristicsAfterEncryption() {
+        // Test that BASS characteristics are read only after encryption is complete.
+        // Initial state is Disconnected
+        assertThat(mStateMachine.getCurrentState())
+                .isInstanceOf(BassClientStateMachine.Disconnected.class);
+        BassClientService.Callbacks callbacks = Mockito.mock(BassClientService.Callbacks.class);
+        when(mBassClientService.getCallbacks()).thenReturn(callbacks);
+
+        // Mock connect
+        allowConnection(true);
+        allowConnectGatt(true);
+        // Link is not encrypted at first
+        doReturn(false).when(mBassClientService).isEncrypted(mDevice);
+
+        // Message CONNECT
+        mStateMachine.sendMessage(CONNECT);
+        mLooper.dispatchAll();
+        assertThat(mStateMachine.getCurrentState())
+                .isInstanceOf(BassClientStateMachine.Connecting.class);
+
+        // Gatt callback, connected
+        mStateMachine.notifyConnectionStateChanged(GATT_SUCCESS, STATE_CONNECTED);
+        mLooper.dispatchAll();
+        assertThat(mStateMachine.getCurrentState())
+                .isInstanceOf(BassClientStateMachine.Connected.class);
+
+        // Service discovery
+        mStateMachine.mBluetoothGatt = mBluetoothGatt;
+        mStateMachine.mDiscoveryInitiated = true;
+        BluetoothGattService gattService = mock(BluetoothGattService.class);
+        when(mBluetoothGatt.getService(BassConstants.BASS_UUID)).thenReturn(gattService);
+        List<BluetoothGattCharacteristic> characteristics = new ArrayList<>();
+        BluetoothGattCharacteristic characteristic = mock(BluetoothGattCharacteristic.class);
+        when(characteristic.getUuid()).thenReturn(BassConstants.BASS_BCAST_RECEIVER_STATE);
+        characteristics.add(characteristic);
+        when(gattService.getCharacteristics()).thenReturn(characteristics);
+        mStateMachine.mGattCallback.onServicesDiscovered(null, GATT_SUCCESS);
+        mLooper.dispatchAll();
+
+        // After service discovery, it should request MTU
+        verify(mBluetoothGatt).requestMtu(anyInt());
+
+        // After MTU change, it should check encryption. Let's say MTU is changed.
+        mStateMachine.mGattCallback.onMtuChanged(null, 512, GATT_SUCCESS);
+        mLooper.dispatchAll();
+
+        // It should not read characteristics because it's not encrypted
+        assertThat(mStateMachine.mIsWaitingForEncryption).isTrue();
+        assertThat(mStateMachine.mMsgWhats).doesNotContain(READ_BASS_CHARACTERISTICS);
+        verify(callbacks, never()).notifyBassStateReady(eq(mStateMachine.getDevice()));
+        int oldMsgCount = mStateMachine.mMsgWhats.size();
+
+        // Now, mock encryption success
+        mStateMachine.sendMessage(ENCRYPTION_STATE_CHANGED, BassConstants.ENCRYPTED);
+        mLooper.dispatchAll();
+
+        // Now it should read characteristics
+        List<Integer> newMessages =
+                mStateMachine.mMsgWhats.subList(oldMsgCount, mStateMachine.mMsgWhats.size());
+        assertThat(newMessages).contains(READ_BASS_CHARACTERISTICS);
+        assertThat(mStateMachine.mIsWaitingForEncryption).isFalse();
     }
 
     /**
@@ -426,6 +495,77 @@ public class BassClientStateMachineTest {
         mStateMachine.acquireAllBassChars();
         assertThat(mStateMachine.mBroadcastScanControlPoint).isEqualTo(scanControlPoint);
         assertThat(mStateMachine.mBroadcastCharacteristics).contains(bassCharacteristic);
+    }
+
+    @Test
+    public void acquireAllBassChars_noCharacteristics() {
+        BassClientStateMachine.BluetoothGattTestableWrapper btGatt =
+                Mockito.mock(BassClientStateMachine.BluetoothGattTestableWrapper.class);
+        mStateMachine.mBluetoothGatt = btGatt;
+        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
+        when(btGatt.getService(BassConstants.BASS_UUID)).thenReturn(gattService);
+        List<BluetoothGattCharacteristic> characteristics = new ArrayList<>();
+        when(gattService.getCharacteristics()).thenReturn(characteristics);
+
+        mStateMachine.acquireAllBassChars();
+
+        assertThat(mStateMachine.mBroadcastScanControlPoint).isNull();
+        assertThat(mStateMachine.mBroadcastCharacteristics).isEmpty();
+        // numOfChars is 0, so mNumOfBroadcastReceiverStates becomes 0 - 1 = -1
+        assertThat(mStateMachine.mNumOfBroadcastReceiverStates).isEqualTo(-1);
+    }
+
+    @Test
+    public void acquireAllBassChars_onlyControlPoint() {
+        BassClientStateMachine.BluetoothGattTestableWrapper btGatt =
+                Mockito.mock(BassClientStateMachine.BluetoothGattTestableWrapper.class);
+        mStateMachine.mBluetoothGatt = btGatt;
+        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
+        when(btGatt.getService(BassConstants.BASS_UUID)).thenReturn(gattService);
+
+        List<BluetoothGattCharacteristic> characteristics = new ArrayList<>();
+        BluetoothGattCharacteristic scanControlPoint =
+                new BluetoothGattCharacteristic(
+                        BassConstants.BASS_BCAST_AUDIO_SCAN_CTRL_POINT,
+                        BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE
+                                | BluetoothGattCharacteristic.PROPERTY_WRITE,
+                        BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED);
+        characteristics.add(scanControlPoint);
+
+        when(gattService.getCharacteristics()).thenReturn(characteristics);
+        mStateMachine.acquireAllBassChars();
+        assertThat(mStateMachine.mBroadcastScanControlPoint).isEqualTo(scanControlPoint);
+        assertThat(mStateMachine.mBroadcastCharacteristics).isEmpty();
+        // numOfChars is 1, so mNumOfBroadcastReceiverStates becomes 1 - 1 = 0
+        assertThat(mStateMachine.mNumOfBroadcastReceiverStates).isEqualTo(0);
+    }
+
+    @Test
+    public void acquireAllBassChars_controlPointWithInvalidProperties() {
+        BassClientStateMachine.BluetoothGattTestableWrapper btGatt =
+                Mockito.mock(BassClientStateMachine.BluetoothGattTestableWrapper.class);
+        mStateMachine.mBluetoothGatt = btGatt;
+        BluetoothGattService gattService = Mockito.mock(BluetoothGattService.class);
+        when(btGatt.getService(BassConstants.BASS_UUID)).thenReturn(gattService);
+
+        List<BluetoothGattCharacteristic> characteristics = new ArrayList<>();
+        // Invalid properties (e.g., missing PROPERTY_WRITE)
+        BluetoothGattCharacteristic scanControlPoint =
+                new BluetoothGattCharacteristic(
+                        BassConstants.BASS_BCAST_AUDIO_SCAN_CTRL_POINT,
+                        BluetoothGattCharacteristic.PROPERTY_READ,
+                        BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED);
+        characteristics.add(scanControlPoint);
+
+        when(gattService.getCharacteristics()).thenReturn(characteristics);
+        mStateMachine.acquireAllBassChars();
+
+        // Control point should not be set due to invalid properties
+        assertThat(mStateMachine.mBroadcastScanControlPoint).isNull();
+        // The characteristic is not added to the broadcast characteristics list either
+        assertThat(mStateMachine.mBroadcastCharacteristics).isEmpty();
+        // numOfChars is 1, so mNumOfBroadcastReceiverStates becomes 1 - 1 = 0
+        assertThat(mStateMachine.mNumOfBroadcastReceiverStates).isEqualTo(0);
     }
 
     @Test

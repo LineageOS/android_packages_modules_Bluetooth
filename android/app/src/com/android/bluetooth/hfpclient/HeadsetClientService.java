@@ -21,7 +21,6 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
-import static android.content.pm.PackageManager.FEATURE_WATCH;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -116,7 +115,7 @@ public class HeadsetClientService extends ConnectableProfile {
 
         // Start the HfpClientConnectionService to create connection with telecom when HFP
         // connection is available on non-wearable device.
-        if (getPackageManager() != null && !getPackageManager().hasSystemFeature(FEATURE_WATCH)) {
+        if (!Util.isWatch(getAdapterService())) {
             Intent startIntent = new Intent(this, HfpClientConnectionService.class);
             startService(startIntent);
         }
@@ -141,8 +140,7 @@ public class HeadsetClientService extends ConnectableProfile {
 
         synchronized (HeadsetClientService.class) {
             // Stop the HfpClientConnectionService for non-wearables devices.
-            if (getPackageManager() != null
-                    && !getPackageManager().hasSystemFeature(FEATURE_WATCH)) {
+            if (!Util.isWatch(getAdapterService())) {
                 Intent stopIntent = new Intent(this, HfpClientConnectionService.class);
                 getAdapterService().stopService(stopIntent);
             }

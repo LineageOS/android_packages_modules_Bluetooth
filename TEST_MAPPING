@@ -72,8 +72,7 @@
     { "name": "GoogleBluetoothInstrumentationTests" },
     { "name": "FrameworkBluetoothTests" },
     { "name": "ServiceBluetoothTests" },
-    { "name": "bluetooth_test_common" },
-    { "name": "bluetooth_vc_test" }
+    { "name": "bluetooth_test_common" }
   ],
   "postsubmit": [
     { "name": "audio_bluetooth_hw_test" },

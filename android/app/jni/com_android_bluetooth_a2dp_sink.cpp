@@ -30,6 +30,7 @@
 
 #include "bt_status.h"
 #include "btif/include/btif_av.h"
+#include "btif/include/btif_util.h"
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_av.h"
@@ -46,7 +47,7 @@ static std::shared_timed_mutex callbacks_mutex;
 static void a2dp_sink_connection_state_callback(const RawAddress& bd_addr,
                                                 btav_connection_state_t state,
                                                 const btav_error_t& /* error */) {
-  log::info("");
+  log::info("addr={}, state={}", bd_addr, dump_av_conn_state(state));
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   if (!mCallbacksObj) {
     return;
@@ -62,8 +63,8 @@ static void a2dp_sink_connection_state_callback(const RawAddress& bd_addr,
                                (jint)state);
 }
 
-static void a2dp_sink_audio_state_callback(btav_audio_state_t state) {
-  log::info("");
+static void a2dp_sink_audio_state_callback(const RawAddress& bd_addr, btav_audio_state_t state) {
+  log::info("addr={}, state={}", bd_addr, dump_av_audio_state(state));
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   if (!mCallbacksObj) {
     return;
@@ -74,12 +75,14 @@ static void a2dp_sink_audio_state_callback(btav_audio_state_t state) {
     return;
   }
 
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAudioStateChanged, (jint)state);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAudioStateChanged, jaddr.get(),
+                               (jint)state);
 }
 
 static void a2dp_sink_audio_config_callback(const RawAddress& bd_addr, uint32_t sample_rate,
                                             uint8_t channel_count) {
-  log::info("");
+  log::info("addr={}, sample_rate={}, channels={}", bd_addr, sample_rate, channel_count);
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   if (!mCallbacksObj) {
     return;
@@ -214,7 +217,7 @@ int register_com_android_bluetooth_a2dp_sink(JNIEnv* env) {
   // Client callback functions defined in A2dpSinkNativeCallback
   const JNIJavaMethod javaMethods[] = {
           {"onConnectionStateChanged", "([BI)V", &method_onConnectionStateChanged},
-          {"onAudioStateChanged", "(I)V", &method_onAudioStateChanged},
+          {"onAudioStateChanged", "([BI)V", &method_onAudioStateChanged},
           {"onAudioConfigChanged", "([BII)V", &method_onAudioConfigChanged},
   };
   GET_JAVA_METHODS(env, "com/android/bluetooth/a2dpsink/A2dpSinkNativeCallback", javaMethods);

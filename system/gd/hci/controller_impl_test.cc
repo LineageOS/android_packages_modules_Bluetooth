@@ -122,6 +122,19 @@ public:
     FAIL() << "ControllerImpl properties should not generate Command Status";
   }
 
+  void SetVendorAclHandleRange(uint16_t min, uint16_t max) override {
+    HciLayerFake::SetVendorAclHandleRange(min, max);
+  }
+
+  void RegisterVendorSpecificAclHandler(
+          common::ContextualCallback<void(uint16_t, std::vector<uint8_t>)> handler) override {
+    HciLayerFake::RegisterVendorSpecificAclHandler(handler);
+  }
+
+  void UnregisterVendorSpecificAclHandler() override {
+    HciLayerFake::UnregisterVendorSpecificAclHandler();
+  }
+
   void HandleCommand(std::unique_ptr<CommandBuilder> command_builder,
                      common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) {
     auto bytes = std::make_shared<std::vector<uint8_t>>();

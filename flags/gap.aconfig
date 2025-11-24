@@ -339,3 +339,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "rotate_address_when_connected"
+    namespace: "bluetooth"
+    description: "Rotate address whenever a BLE connection is made"
+    bug: "462281358"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

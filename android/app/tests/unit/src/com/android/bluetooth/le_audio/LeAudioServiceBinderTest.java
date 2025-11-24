@@ -57,7 +57,7 @@ public class LeAudioServiceBinderTest {
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private AttributionSource mAttributionSource;
+    @Mock private AttributionSource mSource;
     @Mock private LeAudioService mService;
 
     private static final String TEST_BROADCAST_NAME = "TEST";
@@ -74,7 +74,7 @@ public class LeAudioServiceBinderTest {
     public void connect() {
         BluetoothDevice device = getTestDevice(0);
 
-        mBinder.connect(device, mAttributionSource);
+        mBinder.connect(device, mSource);
         verify(mService).connect(device);
     }
 
@@ -82,14 +82,14 @@ public class LeAudioServiceBinderTest {
     public void disconnect() {
         BluetoothDevice device = getTestDevice(0);
 
-        mBinder.disconnect(device, mAttributionSource);
+        mBinder.disconnect(device, mSource);
         verify(mService).disconnect(device);
     }
 
     @Test
     public void getConnectedDevices() {
 
-        mBinder.getConnectedDevices(mAttributionSource);
+        mBinder.getConnectedDevices(mSource);
         verify(mService).getConnectedDevices();
     }
 
@@ -97,7 +97,7 @@ public class LeAudioServiceBinderTest {
     public void getConnectedGroupLeadDevice() {
         int groupId = 1;
 
-        mBinder.getConnectedGroupLeadDevice(groupId, mAttributionSource);
+        mBinder.getConnectedGroupLeadDevice(groupId, mSource);
         verify(mService).getConnectedGroupLeadDevice(groupId);
     }
 
@@ -105,7 +105,7 @@ public class LeAudioServiceBinderTest {
     public void getDevicesMatchingConnectionStates() {
         int[] states = new int[] {STATE_DISCONNECTED};
 
-        mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
+        mBinder.getDevicesMatchingConnectionStates(states, mSource);
         verify(mService).getDevicesMatchingConnectionStates(states);
     }
 
@@ -113,7 +113,7 @@ public class LeAudioServiceBinderTest {
     public void getConnectionState() {
         BluetoothDevice device = getTestDevice(0);
 
-        mBinder.getConnectionState(device, mAttributionSource);
+        mBinder.getConnectionState(device, mSource);
         verify(mService).getConnectionState(device);
     }
 
@@ -121,21 +121,21 @@ public class LeAudioServiceBinderTest {
     public void setActiveDevice() {
         BluetoothDevice device = getTestDevice(0);
 
-        mBinder.setActiveDevice(device, mAttributionSource);
+        mBinder.setActiveDevice(device, mSource);
         verify(mService).setActiveDevice(device);
     }
 
     @Test
     public void setActiveDevice_withNullDevice_callsRemoveActiveDevice() {
 
-        mBinder.setActiveDevice(null, mAttributionSource);
+        mBinder.setActiveDevice(null, mSource);
         verify(mService).removeActiveDevice(true);
     }
 
     @Test
     public void getActiveDevices() {
 
-        mBinder.getActiveDevices(mAttributionSource);
+        mBinder.getActiveDevices(mSource);
         verify(mService).getActiveDevices();
     }
 
@@ -143,7 +143,7 @@ public class LeAudioServiceBinderTest {
     public void getAudioLocation() {
         BluetoothDevice device = getTestDevice(0);
 
-        mBinder.getAudioLocation(device, mAttributionSource);
+        mBinder.getAudioLocation(device, mSource);
         verify(mService).getAudioLocation(device);
     }
 
@@ -152,7 +152,7 @@ public class LeAudioServiceBinderTest {
         BluetoothDevice device = getTestDevice(0);
         int connectionPolicy = CONNECTION_POLICY_UNKNOWN;
 
-        mBinder.setConnectionPolicy(device, connectionPolicy, mAttributionSource);
+        mBinder.setConnectionPolicy(device, connectionPolicy, mSource);
         verify(mService).setConnectionPolicy(device, connectionPolicy);
     }
 
@@ -160,7 +160,7 @@ public class LeAudioServiceBinderTest {
     public void getConnectionPolicy() {
         BluetoothDevice device = getTestDevice(0);
 
-        mBinder.getConnectionPolicy(device, mAttributionSource);
+        mBinder.getConnectionPolicy(device, mSource);
         verify(mService).getConnectionPolicy(device);
     }
 
@@ -170,7 +170,7 @@ public class LeAudioServiceBinderTest {
         int ccid = 0;
         int contextType = BluetoothLeAudio.CONTEXT_TYPE_UNSPECIFIED;
 
-        mBinder.setCcidInformation(uuid, ccid, contextType, mAttributionSource);
+        mBinder.setCcidInformation(uuid, ccid, contextType, mSource);
         verify(mService).setCcidInformation(uuid, ccid, contextType);
     }
 
@@ -178,7 +178,7 @@ public class LeAudioServiceBinderTest {
     public void getGroupId() {
         BluetoothDevice device = getTestDevice(0);
 
-        mBinder.getGroupId(device, mAttributionSource);
+        mBinder.getGroupId(device, mSource);
         verify(mService).getGroupId(device);
     }
 
@@ -187,7 +187,7 @@ public class LeAudioServiceBinderTest {
         int groupId = 1;
         BluetoothDevice device = getTestDevice(0);
 
-        mBinder.groupAddNode(groupId, device, mAttributionSource);
+        mBinder.groupAddNode(groupId, device, mSource);
         verify(mService).groupAddNode(groupId, device);
     }
 
@@ -195,7 +195,7 @@ public class LeAudioServiceBinderTest {
     public void setInCall() {
         boolean inCall = true;
 
-        mBinder.setInCall(inCall, mAttributionSource);
+        mBinder.setInCall(inCall, mSource);
         verify(mService).setInCall(inCall);
     }
 
@@ -203,7 +203,7 @@ public class LeAudioServiceBinderTest {
     public void setInactiveForHfpHandover() {
         BluetoothDevice device = getTestDevice(0);
 
-        mBinder.setInactiveForHfpHandover(device, mAttributionSource);
+        mBinder.setInactiveForHfpHandover(device, mSource);
         verify(mService).setInactiveForHfpHandover(device);
     }
 
@@ -212,7 +212,7 @@ public class LeAudioServiceBinderTest {
         int groupId = 1;
         BluetoothDevice device = getTestDevice(0);
 
-        mBinder.groupRemoveNode(groupId, device, mAttributionSource);
+        mBinder.groupRemoveNode(groupId, device, mSource);
         verify(mService).groupRemoveNode(groupId, device);
     }
 
@@ -220,7 +220,7 @@ public class LeAudioServiceBinderTest {
     public void setVolume() {
         int volume = 3;
 
-        mBinder.setVolume(volume, mAttributionSource);
+        mBinder.setVolume(volume, mSource);
         verify(mService).setVolume(volume);
     }
 
@@ -228,10 +228,10 @@ public class LeAudioServiceBinderTest {
     public void registerUnregisterCallback() {
         IBluetoothLeAudioCallback callback = Mockito.mock(IBluetoothLeAudioCallback.class);
 
-        mBinder.registerCallback(callback, mAttributionSource);
+        mBinder.registerCallback(callback, mSource);
         verify(mService).registerCallback(callback);
 
-        mBinder.unregisterCallback(callback, mAttributionSource);
+        mBinder.unregisterCallback(callback, mSource);
         verify(mService).unregisterCallback(callback);
     }
 
@@ -239,10 +239,10 @@ public class LeAudioServiceBinderTest {
     public void registerUnregisterLeBroadcastCallback() {
         IBluetoothLeBroadcastCallback callback = Mockito.mock(IBluetoothLeBroadcastCallback.class);
 
-        mBinder.registerLeBroadcastCallback(callback, mAttributionSource);
+        mBinder.registerLeBroadcastCallback(callback, mSource);
         verify(mService).registerLeBroadcastCallback(callback);
 
-        mBinder.unregisterLeBroadcastCallback(callback, mAttributionSource);
+        mBinder.unregisterLeBroadcastCallback(callback, mSource);
         verify(mService).unregisterLeBroadcastCallback(callback);
     }
 
@@ -250,7 +250,7 @@ public class LeAudioServiceBinderTest {
     public void startBroadcast() {
         BluetoothLeBroadcastSettings broadcastSettings = buildBroadcastSettingsFromMetadata();
 
-        mBinder.startBroadcast(broadcastSettings, mAttributionSource);
+        mBinder.startBroadcast(broadcastSettings, mSource);
         verify(mService).createBroadcast(broadcastSettings);
     }
 
@@ -258,7 +258,7 @@ public class LeAudioServiceBinderTest {
     public void stopBroadcast() {
         int id = 1;
 
-        mBinder.stopBroadcast(id, mAttributionSource);
+        mBinder.stopBroadcast(id, mSource);
         verify(mService).stopBroadcast(id);
     }
 
@@ -267,7 +267,7 @@ public class LeAudioServiceBinderTest {
         int id = 1;
         BluetoothLeBroadcastSettings broadcastSettings = buildBroadcastSettingsFromMetadata();
 
-        mBinder.updateBroadcast(id, broadcastSettings, mAttributionSource);
+        mBinder.updateBroadcast(id, broadcastSettings, mSource);
         verify(mService).updateBroadcast(id, broadcastSettings);
     }
 
@@ -275,14 +275,14 @@ public class LeAudioServiceBinderTest {
     public void isPlaying() {
         int id = 1;
 
-        mBinder.isPlaying(id, mAttributionSource);
+        mBinder.isPlaying(id, mSource);
         verify(mService).isPlaying(id);
     }
 
     @Test
     public void getAllBroadcastMetadata() {
 
-        mBinder.getAllBroadcastMetadata(mAttributionSource);
+        mBinder.getAllBroadcastMetadata(mSource);
         verify(mService).getAllBroadcastMetadata();
     }
 
@@ -308,7 +308,7 @@ public class LeAudioServiceBinderTest {
     public void getCodecStatus() {
         int groupId = 1;
 
-        mBinder.getCodecStatus(groupId, mAttributionSource);
+        mBinder.getCodecStatus(groupId, mSource);
         verify(mService).getCodecStatus(groupId);
     }
 
@@ -319,7 +319,7 @@ public class LeAudioServiceBinderTest {
         BluetoothLeAudioCodecConfig outputConfig =
                 new BluetoothLeAudioCodecConfig.Builder().build();
 
-        mBinder.setCodecConfigPreference(groupId, inputConfig, outputConfig, mAttributionSource);
+        mBinder.setCodecConfigPreference(groupId, inputConfig, outputConfig, mSource);
         verify(mService).setCodecConfigPreference(groupId, inputConfig, outputConfig);
     }
 

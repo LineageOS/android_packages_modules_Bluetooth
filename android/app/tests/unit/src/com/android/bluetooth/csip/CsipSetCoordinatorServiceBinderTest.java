@@ -47,7 +47,7 @@ public class CsipSetCoordinatorServiceBinderTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private AttributionSource mAttributionSource;
+    @Mock private AttributionSource mSource;
     @Mock private CsipSetCoordinatorService mService;
 
     private final BluetoothDevice mDevice = getTestDevice(45);
@@ -61,7 +61,7 @@ public class CsipSetCoordinatorServiceBinderTest {
 
     @Test
     public void getConnectedDevices() {
-        mBinder.getConnectedDevices(mAttributionSource);
+        mBinder.getConnectedDevices(mSource);
         verify(mService).getConnectedDevices();
     }
 
@@ -69,13 +69,13 @@ public class CsipSetCoordinatorServiceBinderTest {
     public void getDevicesMatchingConnectionStates() {
         int[] states = new int[] {STATE_CONNECTED};
 
-        mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
+        mBinder.getDevicesMatchingConnectionStates(states, mSource);
         verify(mService).getDevicesMatchingConnectionStates(states);
     }
 
     @Test
     public void getConnectionState() {
-        mBinder.getConnectionState(mDevice, mAttributionSource);
+        mBinder.getConnectionState(mDevice, mSource);
         verify(mService).getConnectionState(mDevice);
     }
 
@@ -83,13 +83,13 @@ public class CsipSetCoordinatorServiceBinderTest {
     public void setConnectionPolicy() {
         int connectionPolicy = CONNECTION_POLICY_ALLOWED;
 
-        mBinder.setConnectionPolicy(mDevice, connectionPolicy, mAttributionSource);
+        mBinder.setConnectionPolicy(mDevice, connectionPolicy, mSource);
         verify(mService).setConnectionPolicy(mDevice, connectionPolicy);
     }
 
     @Test
     public void getConnectionPolicy() {
-        mBinder.getConnectionPolicy(mDevice, mAttributionSource);
+        mBinder.getConnectionPolicy(mDevice, mSource);
         verify(mService).getConnectionPolicy(mDevice);
     }
 
@@ -99,7 +99,7 @@ public class CsipSetCoordinatorServiceBinderTest {
         IBluetoothCsipSetCoordinatorLockCallback cb =
                 mock(IBluetoothCsipSetCoordinatorLockCallback.class);
 
-        mBinder.lockGroup(groupId, cb, mAttributionSource);
+        mBinder.lockGroup(groupId, cb, mSource);
         verify(mService).lockGroup(groupId, cb);
     }
 
@@ -107,7 +107,7 @@ public class CsipSetCoordinatorServiceBinderTest {
     public void unlockGroup() {
         ParcelUuid uuid = ParcelUuid.fromString("0000110A-0000-1000-8000-00805F9B34FB");
 
-        mBinder.unlockGroup(uuid, mAttributionSource);
+        mBinder.unlockGroup(uuid, mSource);
         verify(mService).unlockGroup(uuid.getUuid());
     }
 
@@ -115,20 +115,20 @@ public class CsipSetCoordinatorServiceBinderTest {
     public void getAllGroupIds() {
         ParcelUuid uuid = ParcelUuid.fromString("0000110A-0000-1000-8000-00805F9B34FB");
 
-        mBinder.getAllGroupIds(uuid, mAttributionSource);
+        mBinder.getAllGroupIds(uuid, mSource);
         verify(mService).getAllGroupIds(uuid);
     }
 
     @Test
     public void getGroupUuidMapByDevice() {
-        mBinder.getGroupUuidMapByDevice(mDevice, mAttributionSource);
+        mBinder.getGroupUuidMapByDevice(mDevice, mSource);
         verify(mService).getGroupUuidMapByDevice(mDevice);
     }
 
     @Test
     public void getDesiredGroupSize() {
         int groupId = 100;
-        mBinder.getDesiredGroupSize(groupId, mAttributionSource);
+        mBinder.getDesiredGroupSize(groupId, mSource);
         verify(mService).getDesiredGroupSize(groupId);
     }
 }

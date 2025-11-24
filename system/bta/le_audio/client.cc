@@ -7048,9 +7048,9 @@ public:
 
     if (current_sm_state == AseState::BTA_LE_AUDIO_ASE_STATE_IDLE ||
         current_sm_state == AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED) {
-      log::assert_that(
-              false,
-              "Group_id {} in {} state and not in transition, invalid_state {} should not happen",
+      log::error(
+              "Group_id {} in {} state and not in transition, invalid_state {} should not happen. "
+              "Most likely a remote issue - ignore it",
               group_id, ToString(current_sm_state), invalid_state);
       return;
     }

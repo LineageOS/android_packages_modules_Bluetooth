@@ -27,7 +27,6 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -139,7 +138,7 @@ public class A2dpSinkServiceTest {
     @Test
     public void testConnectNullDevice() {
         initTest();
-        assertThrows(NullPointerException.class, () -> mService.connect(null));
+        assertThat(mService.connect(null)).isEqualTo(false);
         assertThat(mLooper.nextMessage()).isNull();
     }
 
@@ -212,7 +211,7 @@ public class A2dpSinkServiceTest {
     @Test
     public void testDisconnectNullDevice() {
         initTest();
-        assertThrows(IllegalArgumentException.class, () -> mService.disconnect(null));
+        assertThat(mService.disconnect(null)).isEqualTo(false);
         assertThat(mLooper.nextMessage()).isNull();
     }
 

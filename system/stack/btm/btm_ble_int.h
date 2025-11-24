@@ -51,6 +51,3 @@ void btm_ble_batchscan_init(void);
 void btm_ble_adv_filter_init(void);
 tBTM_STATUS btm_ble_start_inquiry(uint8_t duration);
 void btm_ble_stop_inquiry(void);
-
-void btm_ble_scanner_init(void);
-void btm_ble_scanner_cleanup(void);

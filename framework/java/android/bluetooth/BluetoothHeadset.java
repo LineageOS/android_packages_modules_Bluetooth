@@ -1021,8 +1021,12 @@ public final class BluetoothHeadset implements BluetoothProfile {
      *     idle (connecting or connected) - virtual call has already started - there is no active
      *     device - a Telecom managed call is going on - binder is dead or Bluetooth is disabled or
      *     other error
+     * @deprecated This method is not intended for use by external callers. Use {@link
+     *     android.media.AudioManager#setCommunicationDevice(android.media.AudioDeviceInfo)} instead
      */
     @Hide
+    @FlaggedApi(Flags.FLAG_DEPRECATE_CONNECT_AUDIO)
+    @Deprecated
     @SystemApi
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission
@@ -1057,8 +1061,12 @@ public final class BluetoothHeadset implements BluetoothProfile {
      *
      * @return true if successful, false if one of the following case applies - virtual voice call
      *     is not started or has ended - binder is dead or Bluetooth is disabled or other error
+     * @deprecated This method is not intended for use by external callers. Use {@link
+     *     android.media.AudioManager#setCommunicationDevice(android.media.AudioDeviceInfo)} instead
      */
     @Hide
+    @FlaggedApi(Flags.FLAG_DEPRECATE_CONNECT_AUDIO)
+    @Deprecated
     @SystemApi
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothConnectPermission

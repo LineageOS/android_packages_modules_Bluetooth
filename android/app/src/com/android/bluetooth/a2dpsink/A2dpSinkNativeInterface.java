@@ -103,6 +103,15 @@ public class A2dpSinkNativeInterface extends NativeInterface<A2dpSinkNativeCallb
         informAudioTrackGainNative(gain);
     }
 
+    public static String audioStateToString(int state) {
+        return switch (state) {
+            case A2dpSinkNativeInterface.AUDIO_STATE_STARTED -> "AUDIO_STATE_STARTED";
+            case A2dpSinkNativeInterface.AUDIO_STATE_STOPPED -> "AUDIO_STATE_STOPPED";
+            case A2dpSinkNativeInterface.AUDIO_STATE_REMOTE_SUSPEND -> "AUDIO_STATE_REMOTE_SUSPEND";
+            default -> "UNKNOWN (" + state + ")";
+        };
+    }
+
     // Native methods that call into the JNI interface
     private native void initNative(int maxConnectedAudioDevices);
 

@@ -91,7 +91,7 @@ static void bta_ag_port_cback(uint32_t /* code */, uint16_t port_handle, uint16_
                  p_scb->peer_addr, bta_ag_state_str(p_scb->state));
     }
     do_in_main_thread(base::BindOnce(&bta_ag_sm_execute_by_handle, handle, BTA_AG_RFC_DATA_EVT,
-                                     tBTA_AG_DATA::kEmpty));
+                                     tBTA_AG_DATA::kEmpty, NO_FAILURE));
   }
 }
 
@@ -158,7 +158,7 @@ static void bta_ag_mgmt_cback(const tPORT_RESULT code, uint16_t port_handle, uin
 
   tBTA_AG_DATA data = {};
   data.rfc.port_handle = port_handle;
-  do_in_main_thread(base::BindOnce(&bta_ag_sm_execute_by_handle, handle, event, data));
+  do_in_main_thread(base::BindOnce(&bta_ag_sm_execute_by_handle, handle, event, data, NO_FAILURE));
 }
 
 /*******************************************************************************
@@ -382,7 +382,7 @@ void bta_ag_rfc_do_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
     /* Need to trigger the state machine to send callback to the app    */
     /* and move back to INIT state.                                     */
     do_in_main_thread(base::BindOnce(&bta_ag_sm_execute_by_handle, bta_ag_scb_to_idx(p_scb),
-                                     BTA_AG_RFC_CLOSE_EVT, tBTA_AG_DATA::kEmpty));
+                                     BTA_AG_RFC_CLOSE_EVT, tBTA_AG_DATA::kEmpty, NO_FAILURE));
 
     /* Cancel SDP if it had been started. */
     /*

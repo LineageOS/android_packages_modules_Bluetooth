@@ -72,6 +72,7 @@ public class HidHostService extends ConnectableProfile {
         int mSelectedTransport = TRANSPORT_AUTO;
         private int mHidState = STATE_DISCONNECTED;
         private int mHogpState = STATE_DISCONNECTED;
+        private boolean mAndroidHeadTrackerEnabled = true;
 
         int getState(int transport) {
             return (transport == TRANSPORT_LE) ? mHogpState : mHidState;
@@ -119,6 +120,7 @@ public class HidHostService extends ConnectableProfile {
     private static final int MESSAGE_SET_IDLE_TIME = 16;
     private static final int MESSAGE_SET_PREFERRED_TRANSPORT = 17;
     private static final int MESSAGE_SEND_DATA = 18;
+    private static final int MESSAGE_SET_ANDROID_HEADTRACKER_ENABLED = 19;
 
     public static final int STATE_ACCEPTING = STATE_DISCONNECTING + 1;
 
@@ -161,6 +163,28 @@ public class HidHostService extends ConnectableProfile {
             }
             mInputDevices.clear();
         }
+    }
+
+    public void setAndroidHeadTrackerEnabled(BluetoothDevice device, boolean enabled) {
+        if (!Flags.headtrackerConnectionPolicy()) {
+            Log.w(TAG, "setAndroidHeadTrackerEnabled: Operation not supported " + device);
+            return;
+        }
+
+        final ParcelUuid[] uuids = getAdapterService().getRemoteUuids(device);
+        if (!Utils.arrayContains(uuids, HidHostService.ANDROID_HEADTRACKER_UUID)) {
+            Log.v(
+                    TAG,
+                    "setAndroidHeadTrackerEnabled: "
+                            + device
+                            + " does not support Android Headtracker");
+            return;
+        }
+
+        Message msg = mHandler.obtainMessage(MESSAGE_SET_ANDROID_HEADTRACKER_ENABLED);
+        msg.obj = device;
+        msg.arg1 = enabled ? 1 : 0;
+        mHandler.sendMessage(msg);
     }
 
     private byte[] getByteAddress(BluetoothDevice device, int transport) {
@@ -324,10 +348,53 @@ public class HidHostService extends ConnectableProfile {
                         case MESSAGE_SET_PREFERRED_TRANSPORT ->
                                 handleMessageSetPreferredTransport(msg);
                         case MESSAGE_SEND_DATA -> handleMessageSendData(msg);
+                        case MESSAGE_SET_ANDROID_HEADTRACKER_ENABLED ->
+                                handleMessageSetAndroidHeadTrackerEnabled(msg);
                         default -> {} // Nothing to do
                     }
                 }
             };
+
+    private void handleMessageSetAndroidHeadTrackerEnabled(Message msg) {
+        BluetoothDevice device = (BluetoothDevice) msg.obj;
+        boolean enabled = msg.arg1 != 0;
+
+        InputDevice inputDevice = mInputDevices.get(device);
+        if (inputDevice == null) {
+            Log.w(
+                    TAG,
+                    "handleMessageSetAndroidHeadTrackerEnabled: InputDevice not found: " + device);
+            return;
+        }
+
+        if (inputDevice.mAndroidHeadTrackerEnabled != enabled) {
+            Log.d(
+                    TAG,
+                    "handleMessageSetAndroidHeadTrackerEnabled: "
+                            + device
+                            + (enabled ? " enabled" : " disabled"));
+            inputDevice.mAndroidHeadTrackerEnabled = enabled;
+
+            if (inputDevice.mSelectedTransport != TRANSPORT_LE) {
+                return;
+            }
+
+            if (getConnectionPolicy(device) != CONNECTION_POLICY_ALLOWED) {
+                return;
+            }
+
+            // Request connection if headtracker is enabled but is disconnected
+            if (enabled && getState(device, TRANSPORT_LE) == STATE_DISCONNECTED) {
+                nativeConnect(device, TRANSPORT_LE);
+                return;
+            }
+
+            // Disable connection if headtracker is disabled
+            if (!enabled) {
+                nativeDisconnect(device, TRANSPORT_LE, false);
+            }
+        }
+    }
 
     private void handleMessageSendData(Message msg) {
         BluetoothDevice device = (BluetoothDevice) msg.obj;
@@ -615,6 +682,17 @@ public class HidHostService extends ConnectableProfile {
 
             return;
         }
+
+        if (Flags.headtrackerConnectionPolicy()
+                && inputDevice.mSelectedTransport == TRANSPORT_LE
+                && !inputDevice.mAndroidHeadTrackerEnabled
+                && Utils.arrayContains(
+                        getAdapterService().getRemoteUuids(device),
+                        HidHostService.ANDROID_HEADTRACKER_UUID)) {
+            Log.w(TAG, "handleMessageConnect: " + device + " Android Headtracker is disabled");
+            return;
+        }
+
         nativeConnect(device, inputDevice.mSelectedTransport);
     }
 

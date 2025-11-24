@@ -39,6 +39,7 @@ import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.storage.ActiveAudioPolicy.Type as ActiveAudioPolicy
 import com.android.bluetooth.storage.MediaProfile.Type as MediaProfile
 import com.android.bluetooth.storage.VoiceProfile.Type as VoiceProfile
+import com.android.bluetooth.util.indent
 import com.google.protobuf.ByteString
 import com.google.protobuf.InvalidProtocolBufferException
 import java.io.InputStream
@@ -158,7 +159,7 @@ constructor(
     fun dump(sb: StringBuilder) {
         eventLog.dump(sb)
 
-        sb.append(
+        sb.appendLine(
             currentStorage
                 .toString()
                 .replace(PATTERN_DELETE_MUTABLE, "")
@@ -169,6 +170,7 @@ constructor(
                 .joinToString("\n")
                 .anonymizeAddress()
                 .replace("a2_dp", "a2dp") // Fix proto parsing of letter after a digit
+                .indent("  ")
         )
     }
 
@@ -338,19 +340,16 @@ constructor(
         }
     }
 
-    fun getAudioPolicyMetadata(device: BluetoothDevice): BluetoothSinkAudioPolicy {
-        val device = currentStorage.devicesMap[device.address]
-        if (device == null || !device.hasHfpClientSettings()) {
-            return BluetoothSinkAudioPolicy.Builder().build()
-        }
-        val settings = device.hfpClientSettings
-
-        return BluetoothSinkAudioPolicy.Builder()
-            .setCallEstablishPolicy(toAudioPolicy(settings.callEstablish))
-            .setActiveDevicePolicyAfterConnection(toAudioPolicy(settings.setActiveAfterConnection))
-            .setInBandRingtonePolicy(toAudioPolicy(settings.inBandRingtoneEnabled))
-            .build()
-    }
+    fun getAudioPolicyMetadata(device: BluetoothDevice) =
+        currentStorage.devicesMap[device.address]?.hfpClientSettings?.let {
+            BluetoothSinkAudioPolicy.Builder()
+                .setCallEstablishPolicy(toSinkAudioPolicy(it.callEstablish))
+                .setActiveDevicePolicyAfterConnection(
+                    toSinkAudioPolicy(it.setActiveAfterConnection)
+                )
+                .setInBandRingtonePolicy(toSinkAudioPolicy(it.inBandRingtone))
+                .build()
+        } ?: BluetoothSinkAudioPolicy.Builder().build()
 
     fun setAudioPolicyMetadata(device: BluetoothDevice, policy: BluetoothSinkAudioPolicy) =
         dataStore.blockingUpdateData { storage ->
@@ -358,10 +357,10 @@ constructor(
             val deviceBuilder = builder.getExistingOrNewDeviceBuilder(device)
 
             val settingsBuilder = deviceBuilder.hfpClientSettings.toBuilder()
-            settingsBuilder.callEstablish = fromAudioPolicy(policy.callEstablishPolicy)
+            settingsBuilder.callEstablish = fromSinkAudioPolicy(policy.callEstablishPolicy)
             settingsBuilder.setActiveAfterConnection =
-                fromAudioPolicy(policy.activeDevicePolicyAfterConnection)
-            settingsBuilder.inBandRingtoneEnabled = fromAudioPolicy(policy.inBandRingtonePolicy)
+                fromSinkAudioPolicy(policy.activeDevicePolicyAfterConnection)
+            settingsBuilder.inBandRingtone = fromSinkAudioPolicy(policy.inBandRingtonePolicy)
 
             logEvent(device, "audio policy metadata to $policy")
 

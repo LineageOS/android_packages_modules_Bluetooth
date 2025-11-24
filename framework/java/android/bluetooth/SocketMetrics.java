@@ -37,6 +37,7 @@ class SocketMetrics {
     /*package*/ static final int RESULT_L2CAP_CONN_SERVER_FAILURE = 2000;
 
     static void logSocketConnect(
+            BluetoothAdapter adapter,
             int socketExceptionCode,
             long socketConnectionTimeNanos,
             int connType,
@@ -45,7 +46,7 @@ class SocketMetrics {
             boolean auth,
             long socketCreationTimeNanos,
             long socketCreationLatencyNanos) {
-        IBluetooth bluetoothProxy = BluetoothAdapter.getDefaultAdapter().getBluetoothService();
+        IBluetooth bluetoothProxy = adapter.getBluetoothService();
         if (bluetoothProxy == null) {
             Log.w(TAG, "logSocketConnect: bluetoothProxy is null");
             return;
@@ -69,6 +70,7 @@ class SocketMetrics {
     }
 
     static void logSocketAccept(
+            BluetoothAdapter adapter,
             BluetoothSocket acceptedSocket,
             BluetoothSocket socket,
             int connType,
@@ -81,7 +83,7 @@ class SocketMetrics {
         if (connType != BluetoothSocket.TYPE_LE) {
             return;
         }
-        IBluetooth bluetoothProxy = BluetoothAdapter.getDefaultAdapter().getBluetoothService();
+        IBluetooth bluetoothProxy = adapter.getBluetoothService();
         if (bluetoothProxy == null) {
             Log.w(TAG, "logSocketConnect: bluetoothProxy is null");
             return;

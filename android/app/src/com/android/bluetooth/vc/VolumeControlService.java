@@ -301,9 +301,6 @@ public class VolumeControlService extends ConnectableProfile {
             return devices;
         }
         final BluetoothDevice[] bondedDevices = getAdapterService().getBondedDevices();
-        if (bondedDevices == null) {
-            return devices;
-        }
         synchronized (mStateMachines) {
             for (BluetoothDevice device : bondedDevices) {
                 final ParcelUuid[] featureUuids = getAdapterService().getRemoteUuids(device);
@@ -967,39 +964,39 @@ public class VolumeControlService extends ConnectableProfile {
                 // Ignore volume from AF because persisted volume was used
                 updateIgnoreSetVolumeFromAFFlag(true);
                 updateCacheByAutonomousChange(groupId, volume, mute, /* showInUI */ false);
+            } else {
+                // Reset flag is used
+                int deviceVolume = getDeviceVolume(device);
+                if (deviceVolume != VOLUME_CONTROL_UNKNOWN_VOLUME) {
+                    Log.i(
+                            TAG,
+                            "Setting device/group volume: "
+                                    + deviceVolume
+                                    + " to the device: "
+                                    + device);
+                    setDeviceVolume(device, deviceVolume, false);
+                    Boolean isDeviceMuted = getMute(device);
+                    Log.i(TAG, "Setting mute:" + isDeviceMuted + " to " + device);
+                    if (isDeviceMuted) {
+                        mute(device);
+                    } else {
+                        unmute(device);
+                    }
+                    if (getConnectedDevices(groupId).size() == 1) {
+                        // Ignore volume from AF because cached volume was used
+                        updateIgnoreSetVolumeFromAFFlag(true);
+                    }
+                } else {
+                    Log.i(TAG, "Waiting for volume from AF to set to the device: " + device);
+                    if (getConnectedDevices(groupId).size() == 1) {
+                        // Clear ignore flag as volume from AF is needed
+                        updateIgnoreSetVolumeFromAFFlag(false);
+                    }
+                }
+            }
+            if (!Flags.vcpNotifyVolumeOnEachDeviceConnection()) {
                 return;
             }
-
-            // Reset flag is used
-            int deviceVolume = getDeviceVolume(device);
-            if (deviceVolume != VOLUME_CONTROL_UNKNOWN_VOLUME) {
-                Log.i(
-                        TAG,
-                        "Setting device/group volume: "
-                                + deviceVolume
-                                + " to the device: "
-                                + device);
-                setDeviceVolume(device, deviceVolume, false);
-                Boolean isDeviceMuted = getMute(device);
-                Log.i(TAG, "Setting mute:" + isDeviceMuted + " to " + device);
-                if (isDeviceMuted) {
-                    mute(device);
-                } else {
-                    unmute(device);
-                }
-                if (getConnectedDevices(groupId).size() == 1) {
-                    // Ignore volume from AF because cached volume was used
-                    updateIgnoreSetVolumeFromAFFlag(true);
-                }
-            } else {
-                Log.i(TAG, "Waiting for volume from AF to set to the device: " + device);
-                if (getConnectedDevices(groupId).size() == 1) {
-                    // Clear ignore flag as volume from AF is needed
-                    updateIgnoreSetVolumeFromAFFlag(false);
-                }
-            }
-
-            return;
         }
 
         Log.i(

@@ -73,7 +73,6 @@ class GetUuidsFromLeAdvertisingDataTest {
     @Mock private lateinit var receiver: BroadcastReceiver
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
 
     private lateinit var inOrder: InOrder
     private lateinit var randomAddressBumbleDevice: BluetoothDevice
@@ -94,7 +93,7 @@ class GetUuidsFromLeAdvertisingDataTest {
         filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
         filter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
         context.registerReceiver(receiver, filter)
-        Utils.setupIntentLogger(TAG, receiver)
+        receiver.setupIntentLogger(TAG)
     }
 
     @After

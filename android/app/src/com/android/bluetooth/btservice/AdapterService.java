@@ -577,24 +577,25 @@ public class AdapterService extends Service {
 
         @Override
         public void handleMessage(Message msg) {
+            var header = "handleMessage(): ";
             switch (msg.what) {
                 case MESSAGE_PROFILE_SERVICE_STATE_CHANGED -> {
-                    Log.v(TAG, "handleMessage() - MESSAGE_PROFILE_SERVICE_STATE_CHANGED");
-                    processProfileServiceStateChanged((ProfileService) msg.obj, msg.arg1);
+                    var profile = (ProfileService) msg.obj;
+                    Log.v(TAG, header + "MESSAGE_PROFILE_SERVICE_STATE_CHANGED for " + profile);
+                    processProfileServiceStateChanged(profile, msg.arg1);
                 }
                 case MESSAGE_PROFILE_SERVICE_REGISTERED -> {
-                    Log.v(TAG, "handleMessage() - MESSAGE_PROFILE_SERVICE_REGISTERED");
-                    registerProfileService((ProfileService) msg.obj);
+                    var profile = (ProfileService) msg.obj;
+                    Log.v(TAG, header + "MESSAGE_PROFILE_SERVICE_REGISTERED for " + profile);
+                    registerProfileService(profile);
                 }
                 case MESSAGE_PROFILE_SERVICE_UNREGISTERED -> {
-                    Log.v(TAG, "handleMessage() - MESSAGE_PROFILE_SERVICE_UNREGISTERED");
-                    unregisterProfileService((ProfileService) msg.obj);
+                    var profile = (ProfileService) msg.obj;
+                    Log.v(TAG, header + "MESSAGE_PROFILE_SERVICE_UNREGISTERED for " + profile);
+                    unregisterProfileService(profile);
                 }
                 case MESSAGE_PREFERRED_AUDIO_PROFILES_AUDIO_FRAMEWORK_TIMEOUT -> {
-                    Log.e(
-                            TAG,
-                            "handleMessage() - "
-                                    + "MESSAGE_PREFERRED_PROFILE_CHANGE_AUDIO_FRAMEWORK_TIMEOUT");
+                    Log.e(TAG, header + "MESSAGE_PREFERRED_PROFILE_CHANGE_AUDIO_FRAMEWORK_TIMEOUT");
                     int groupId = (int) msg.obj;
 
                     synchronized (mCsipGroupsPendingAudioProfileChanges) {
@@ -611,7 +612,7 @@ public class AdapterService extends Service {
                                 BluetoothStatusCodes.ERROR_TIMEOUT);
                     }
                 }
-                default -> Log.e(TAG, "handleMessage() - Unknown message: " + msg.what);
+                default -> Log.e(TAG, header + "Unknown message: " + msg.what);
             }
         }
 
@@ -1255,7 +1256,9 @@ public class AdapterService extends Service {
     }
 
     private void startScanController() {
-        Log.i(TAG, "startScanController()");
+        Instant start = Instant.now();
+        var header = "startScanController(): ";
+        Log.i(TAG, header + "Starting…");
         mScanController =
                 new ScanController(
                         this,
@@ -1263,15 +1266,21 @@ public class AdapterService extends Service {
                         mPeriodicScanNativeInterface,
                         mCompanionDeviceManager);
         mNativeInterface.enable(mLocalName);
+        Instant end = Instant.now();
+        Log.i(TAG, header + "Completed in " + Duration.between(start, end).toMillis() + "ms");
     }
 
     private void startGattProfileService() {
-        Log.i(TAG, "startGattProfileService()");
+        Instant start = Instant.now();
+        var header = "startGattProfileService(): ";
+        Log.i(TAG, header + "Starting…");
         constructProfile(BluetoothProfile.GATT);
         mStartedProfiles.put(BluetoothProfile.GATT, mGattService);
         addProfile(mGattService);
         mGattService.setAvailable(true);
         onProfileServiceStateChanged(mGattService, BluetoothAdapter.STATE_ON);
+        Instant end = Instant.now();
+        Log.i(TAG, header + "Completed in " + Duration.between(start, end).toMillis() + "ms");
     }
 
     void startProfileServices() {
@@ -1447,7 +1456,9 @@ public class AdapterService extends Service {
     }
 
     private void stopScanController() {
-        Log.i(TAG, "stopScanController()");
+        Instant start = Instant.now();
+        var header = "stopScanController(): ";
+        Log.i(TAG, header + "Stopping…");
         setScanMode(SCAN_MODE_NONE, "stopScanController");
         final var scanController = getBluetoothScanController();
         if (scanController != null) {
@@ -1455,10 +1466,14 @@ public class AdapterService extends Service {
             scanController.cleanup();
         }
         mNativeInterface.disable();
+        Instant end = Instant.now();
+        Log.i(TAG, header + "Completed in " + Duration.between(start, end).toMillis() + "ms");
     }
 
     private void stopGattProfileService() {
-        Log.i(TAG, "stopGattProfileService()");
+        Instant start = Instant.now();
+        var header = "stopGattProfileService(): ";
+        Log.i(TAG, header + "Stopping…");
         setScanMode(SCAN_MODE_NONE, "stopGattProfileService");
 
         mStartedProfiles.remove(BluetoothProfile.GATT);
@@ -1471,6 +1486,8 @@ public class AdapterService extends Service {
             gattService.cleanup();
             gattService.getBinder().ifPresent(ProfileService.IProfileServiceBinder::cleanup);
         }
+        Instant end = Instant.now();
+        Log.i(TAG, header + "Completed in " + Duration.between(start, end).toMillis() + "ms");
     }
 
     void stopProfileServices() {
@@ -2812,7 +2829,7 @@ public class AdapterService extends Service {
         Log.d(TAG, "startDiscovery");
         String callingPackage = source.getPackageName();
         mAppOps.checkPackage(Binder.getCallingUid(), callingPackage);
-        boolean isQApp = Utils.checkCallerTargetSdk(this, callingPackage, Build.VERSION_CODES.Q);
+        boolean isQApp = Util.checkCallerTargetSdk(this, source, Build.VERSION_CODES.Q);
         boolean hasDisavowedLocation =
                 Utils.hasDisavowedLocationForScan(this, source, mTestModeEnabled);
         String permission = null;
@@ -2825,12 +2842,12 @@ public class AdapterService extends Service {
             permission = android.Manifest.permission.NETWORK_SETUP_WIZARD;
         } else if (!hasDisavowedLocation) {
             if (isQApp) {
-                if (!Utils.checkCallerHasFineLocation(this, source, callingUser)) {
+                if (!Util.checkCallerHasFineLocation(this, source, callingUser)) {
                     return false;
                 }
                 permission = android.Manifest.permission.ACCESS_FINE_LOCATION;
             } else {
-                if (!Utils.checkCallerHasCoarseLocation(this, source, callingUser)) {
+                if (!Util.checkCallerHasCoarseLocation(this, source, callingUser)) {
                     return false;
                 }
                 permission = android.Manifest.permission.ACCESS_COARSE_LOCATION;
@@ -2904,8 +2921,9 @@ public class AdapterService extends Service {
     /**
      * Same as API method {@link BluetoothAdapter#getBondedDevices()}
      *
-     * @return array of bonded {@link BluetoothDevice} or null on error
+     * @return array of bonded {@link BluetoothDevice}
      */
+    @NonNull
     public BluetoothDevice[] getBondedDevices() {
         return mAdapterProperties.getBondedDevices();
     }
@@ -3107,11 +3125,6 @@ public class AdapterService extends Service {
             }
         }
 
-        removeBondGroup(devices);
-        return true;
-    }
-
-    private void removeBondGroup(Set<BluetoothDevice> devices) {
         for (BluetoothDevice dev : devices) {
             getBondAttemptCallerInfo().remove(dev.getAddress());
             if (Flags.mainlineBetaStorage()) {
@@ -3119,8 +3132,9 @@ public class AdapterService extends Service {
                         .filter(p -> p.getConnectionPolicy(dev) == CONNECTION_POLICY_ALLOWED)
                         .forEach(
                                 p -> {
-                                    Log.d(TAG, "removeBondGroup: " + dev + "Manually disable " + p);
-                                    p.setConnectionPolicy(dev, CONNECTION_POLICY_FORBIDDEN);
+                                    Log.d(TAG, "removeBond: " + dev + " Manually disable " + p);
+                                    setProfileConnectionPolicy(
+                                            dev, p.getProfileId(), CONNECTION_POLICY_FORBIDDEN);
                                 });
 
                 mBondStateMachine.dispatchMessage(BondStateMachine.MESSAGE_REMOVE_BOND, dev);
@@ -3133,6 +3147,7 @@ public class AdapterService extends Service {
                 getBondStateMachine().sendMessage(msg);
             }
         }
+        return true;
     }
 
     /**
@@ -3205,10 +3220,6 @@ public class AdapterService extends Service {
     public void updateUuids() {
         Log.d(TAG, "updateUuids() - Updating UUIDs for bonded devices");
         BluetoothDevice[] bondedDevices = getBondedDevices();
-        if (bondedDevices == null) {
-            return;
-        }
-
         for (BluetoothDevice device : bondedDevices) {
             mRemoteDevices.updateUuids(device);
         }
@@ -3853,79 +3864,6 @@ public class AdapterService extends Service {
             cb.accept(mBluetoothConnectionCallbacks.getBroadcastItem(i));
         }
         mBluetoothConnectionCallbacks.finishBroadcast();
-    }
-
-    /**
-     * Converts HCI disconnect reasons to Android disconnect reasons.
-     *
-     * <p>The HCI Error Codes used for ACL disconnect reasons propagated up from native code were
-     * copied from: packages/modules/Bluetooth/system/stack/include/hci_error_code.h
-     *
-     * <p>These error codes are specified and described in Bluetooth Core Spec v5.1, Vol 2, Part D.
-     *
-     * @param hciReason is the raw HCI disconnect reason from native.
-     * @return the Android disconnect reason for apps.
-     */
-    @SuppressWarnings("StatementSwitchToExpressionSwitch") // Code will be unclear either way
-    static @BluetoothAdapter.BluetoothConnectionCallback.DisconnectReason int
-            hciToAndroidDisconnectReason(int hciReason) {
-        switch (hciReason) {
-            case /*HCI_SUCCESS*/ 0x00:
-            case /*HCI_ERR_UNSPECIFIED*/ 0x1F:
-            case /*HCI_ERR_UNDEFINED*/ 0xff:
-                return BluetoothStatusCodes.ERROR_UNKNOWN;
-            case /*HCI_ERR_ILLEGAL_COMMAND*/ 0x01:
-            case /*HCI_ERR_NO_CONNECTION*/ 0x02:
-            case /*HCI_ERR_HW_FAILURE*/ 0x03:
-            case /*HCI_ERR_DIFF_TRANSACTION_COLLISION*/ 0x2A:
-            case /*HCI_ERR_ROLE_SWITCH_PENDING*/ 0x32:
-            case /*HCI_ERR_ROLE_SWITCH_FAILED*/ 0x35:
-                return BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL;
-            case /*HCI_ERR_PAGE_TIMEOUT*/ 0x04:
-            case /*HCI_ERR_CONNECTION_TOUT*/ 0x08:
-            case /*HCI_ERR_HOST_TIMEOUT*/ 0x10:
-            case /*HCI_ERR_LMP_RESPONSE_TIMEOUT*/ 0x22:
-            case /*HCI_ERR_ADVERTISING_TIMEOUT*/ 0x3C:
-            case /*HCI_ERR_CONN_FAILED_ESTABLISHMENT*/ 0x3E:
-                return BluetoothStatusCodes.ERROR_DISCONNECT_REASON_TIMEOUT;
-            case /*HCI_ERR_AUTH_FAILURE*/ 0x05:
-            case /*HCI_ERR_KEY_MISSING*/ 0x06:
-            case /*HCI_ERR_HOST_REJECT_SECURITY*/ 0x0E:
-            case /*HCI_ERR_REPEATED_ATTEMPTS*/ 0x17:
-            case /*HCI_ERR_PAIRING_NOT_ALLOWED*/ 0x18:
-            case /*HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE*/ 0x25:
-            case /*HCI_ERR_UNIT_KEY_USED*/ 0x26:
-            case /*HCI_ERR_PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED*/ 0x29:
-            case /*HCI_ERR_INSUFFICIENT_SECURITY*/ 0x2F:
-            case /*HCI_ERR_HOST_BUSY_PAIRING*/ 0x38:
-                return BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SECURITY;
-            case /*HCI_ERR_MEMORY_FULL*/ 0x07:
-            case /*HCI_ERR_MAX_NUM_OF_CONNECTIONS*/ 0x09:
-            case /*HCI_ERR_MAX_NUM_OF_SCOS*/ 0x0A:
-            case /*HCI_ERR_COMMAND_DISALLOWED*/ 0x0C:
-            case /*HCI_ERR_HOST_REJECT_RESOURCES*/ 0x0D:
-            case /*HCI_ERR_LIMIT_REACHED*/ 0x43:
-                return BluetoothStatusCodes.ERROR_DISCONNECT_REASON_RESOURCE_LIMIT_REACHED;
-            case /*HCI_ERR_CONNECTION_EXISTS*/ 0x0B:
-                return BluetoothStatusCodes.ERROR_DISCONNECT_REASON_CONNECTION_ALREADY_EXISTS;
-            case /*HCI_ERR_HOST_REJECT_DEVICE*/ 0x0F:
-                return BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SYSTEM_POLICY;
-            case /*HCI_ERR_ILLEGAL_PARAMETER_FMT*/ 0x12:
-                return BluetoothStatusCodes.ERROR_DISCONNECT_REASON_BAD_PARAMETERS;
-            case /*HCI_ERR_PEER_USER*/ 0x13:
-                return BluetoothStatusCodes.ERROR_DISCONNECT_REASON_REMOTE_REQUEST;
-            case /*HCI_ERR_REMOTE_POWER_OFF*/ 0x15:
-                return BluetoothStatusCodes.ERROR_DISCONNECT_REASON_REMOTE_REQUEST;
-            case /*HCI_ERR_CONN_CAUSE_LOCAL_HOST*/ 0x16:
-                return BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL_REQUEST;
-            case /*HCI_ERR_UNSUPPORTED_REM_FEATURE*/ 0x1A:
-                return BluetoothStatusCodes.ERROR_DISCONNECT_REASON_REMOTE;
-            case /*HCI_ERR_UNACCEPT_CONN_INTERVAL*/ 0x3B:
-                return BluetoothStatusCodes.ERROR_DISCONNECT_REASON_BAD_PARAMETERS;
-            default:
-                Log.e(TAG, "Invalid HCI disconnect reason: " + hciReason);
-                return BluetoothStatusCodes.ERROR_UNKNOWN;
-        }
     }
 
     void logUserBondResponse(BluetoothDevice device, boolean accepted, AttributionSource source) {

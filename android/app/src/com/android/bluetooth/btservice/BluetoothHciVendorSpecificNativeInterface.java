@@ -54,6 +54,10 @@ public class BluetoothHciVendorSpecificNativeInterface {
         mDispatcher.broadcastEvent(code, (cb) -> cb.onEvent(code, data));
     }
 
+    private void onAclEvent(int handle, byte[] data) {
+        mDispatcher.broadcastAclEvent(handle, (cb) -> cb.onAclEvent(handle, data));
+    }
+
     // Native methods that call into the JNI interface
 
     private native void initNative();

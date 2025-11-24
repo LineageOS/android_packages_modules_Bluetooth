@@ -486,9 +486,8 @@ impl Sdp {
     }
 
     #[log_args]
-    pub fn sdp_search(&self, address: &mut RawAddress, uuid: &Uuid) -> BtStatus {
-        let addr_ptr = LTCheckedPtrMut::from_ref(address);
-        BtStatus::from(ccall!(self, sdp_search, addr_ptr.into(), uuid))
+    pub fn sdp_search(&self, address: RawAddress, uuid: &Uuid) -> BtStatus {
+        BtStatus::from(ccall!(self, sdp_search, address, uuid))
     }
 
     #[log_args]

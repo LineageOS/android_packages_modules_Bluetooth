@@ -334,9 +334,7 @@ extern struct BTM_acl_after_controller_started BTM_acl_after_controller_started;
 // Returns: void
 struct acl_disconnect_after_role_switch {
   std::function<void(uint16_t conn_handle, tHCI_STATUS reason, std::string comment)> body{
-          [](uint16_t /* conn_handle */, tHCI_STATUS /* reason */, std::string /* comment */) {
-            ;
-          }};
+          [](uint16_t /* conn_handle */, tHCI_STATUS /* reason */, std::string /* comment */) {}};
   void operator()(uint16_t conn_handle, tHCI_STATUS reason, std::string comment) {
     body(conn_handle, reason, comment);
   }
@@ -544,37 +542,6 @@ struct btm_read_automatic_flush_timeout_complete {
   std::function<void(uint8_t* p)> body{[](uint8_t* /* p */) { ; }};
   void operator()(uint8_t* p) { body(p); }
 };
-extern struct btm_read_automatic_flush_timeout_complete btm_read_automatic_flush_timeout_complete;
-// Name: btm_read_remote_ext_features_complete
-// Params: uint16_t handle, uint8_t page_num, uint8_t max_page, uint8_t*
-// features Returns: void
-struct btm_read_remote_ext_features_complete {
-  std::function<void(uint16_t handle, uint8_t page_num, uint8_t max_page, uint8_t* features)> body{
-          [](uint16_t /* handle */, uint8_t /* page_num */, uint8_t /* max_page */,
-             uint8_t* /* features */) { ; }};
-  void operator()(uint16_t handle, uint8_t page_num, uint8_t max_page, uint8_t* features) {
-    body(handle, page_num, max_page, features);
-  }
-};
-extern struct btm_read_remote_ext_features_complete btm_read_remote_ext_features_complete;
-// Name: btm_read_remote_ext_features_complete_raw
-// Params: uint8_t* p, uint8_t evt_len
-// Returns: void
-struct btm_read_remote_ext_features_complete_raw {
-  std::function<void(uint8_t* p, uint8_t evt_len)> body{
-          [](uint8_t* /* p */, uint8_t /* evt_len */) { ; }};
-  void operator()(uint8_t* p, uint8_t evt_len) { body(p, evt_len); }
-};
-extern struct btm_read_remote_ext_features_complete_raw btm_read_remote_ext_features_complete_raw;
-// Name: btm_read_remote_ext_features_failed
-// Params: uint8_t status, uint16_t handle
-// Returns: void
-struct btm_read_remote_ext_features_failed {
-  std::function<void(uint8_t status, uint16_t handle)> body{
-          [](uint8_t /* status */, uint16_t /* handle */) { ; }};
-  void operator()(uint8_t status, uint16_t handle) { body(status, handle); }
-};
-extern struct btm_read_remote_ext_features_failed btm_read_remote_ext_features_failed;
 // Name: btm_read_remote_version_complete
 // Params: tHCI_STATUS status, uint16_t handle, uint8_t lmp_version, uint16_t
 // manufacturer, uint16_t lmp_subversion Returns: void
@@ -637,7 +604,6 @@ extern struct on_acl_br_edr_connected on_acl_br_edr_connected;
 struct on_acl_br_edr_failed {
   std::function<void(const RawAddress& bda, tHCI_STATUS status, bool locally_initiated)> body{
           [](const RawAddress& /* bda */, tHCI_STATUS /* status */, bool /* locally_initiated */) {
-            ;
           }};
   void operator()(const RawAddress& bda, tHCI_STATUS status, bool locally_initiated) {
     body(bda, status, locally_initiated);

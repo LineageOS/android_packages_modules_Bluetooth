@@ -369,6 +369,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_broadcast_treat_empty_rs_explicitly"
+    namespace: "bluetooth"
+    description: "Treat remote source removal as a final state for broadcast assistant"
+    bug: "460351363"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_improve_unicast_monitor"
     namespace: "bluetooth"
     description: "Improve unicast monitor mode robustness"
@@ -457,6 +467,16 @@ flag {
     namespace: "bluetooth"
     description: "Improve broadcast config selection by using quality-based logic instead of context type"
     bug: "450213446"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_bass_read_characteristics_after_encryption"
+    namespace: "bluetooth"
+    description: "Read Bass characteristics after encryption is established"
+    bug: "459915166"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

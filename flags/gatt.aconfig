@@ -117,3 +117,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "send_service_changed_indication_upon_reconnection"
+    namespace: "bluetooth"
+    description: "Send service change indication upon reconnection if required"
+    bug: "459450198"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

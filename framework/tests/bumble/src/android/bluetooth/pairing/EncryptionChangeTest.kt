@@ -16,12 +16,11 @@
 
 package android.bluetooth.pairing
 
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.PandoraDevice
 import android.bluetooth.StreamObserverSpliterator
+import android.bluetooth.adapter
 import android.bluetooth.getParcelUuidArray
 import android.bluetooth.pairing.utils.IntentReceiver
 import android.bluetooth.pairing.utils.TestUtil
@@ -30,10 +29,10 @@ import android.content.Context
 import android.os.ParcelUuid
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import io.grpc.stub.StreamObserver
@@ -64,9 +63,7 @@ class EncryptionChangeTest {
 
     @Mock private lateinit var profileServiceListener: BluetoothProfile.ServiceListener
 
-    private val targetContext: Context = InstrumentationRegistry.getInstrumentation().targetContext
-    private val adapter: BluetoothAdapter =
-        targetContext.getSystemService(BluetoothManager::class.java).adapter
+    private val context = ApplicationProvider.getApplicationContext<Context>()
 
     private val pairingEventStreamObserver = StreamObserverSpliterator<Void, PairingEvent>()
     private lateinit var util: TestUtil
@@ -88,7 +85,7 @@ class EncryptionChangeTest {
     fun setUp() {
         MockitoAnnotations.initMocks(this)
         util =
-            TestUtil.Builder(targetContext)
+            TestUtil.Builder(context)
                 .setProfileServiceListener(profileServiceListener)
                 .setBluetoothAdapter(adapter)
                 .build()
@@ -110,7 +107,7 @@ class EncryptionChangeTest {
     fun encryptionChangeSecureLeLink() {
         val intentReceiver =
             IntentReceiver.Builder(
-                    targetContext,
+                    context,
                     BluetoothDevice.ACTION_BOND_STATE_CHANGED,
                     BluetoothDevice.ACTION_ENCRYPTION_CHANGE,
                     BluetoothDevice.ACTION_PAIRING_REQUEST,
@@ -192,7 +189,7 @@ class EncryptionChangeTest {
     fun encryptionChangeSecureClassicLink() {
         val intentReceiver =
             IntentReceiver.Builder(
-                    targetContext,
+                    context,
                     BluetoothDevice.ACTION_BOND_STATE_CHANGED,
                     BluetoothDevice.ACTION_ENCRYPTION_CHANGE,
                     BluetoothDevice.ACTION_PAIRING_REQUEST,

@@ -26,6 +26,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <cstring>
@@ -218,6 +219,10 @@ void port_release_port(tPORT* p_port) {
   alarm_cancel(p_port->rfc.port_timer);
 
   p_port->state = PORT_CONNECTION_STATE_CLOSED;
+  if (com_android_bluetooth_flags_mark_port_not_in_use_on_release()) {
+    log::debug("setting p_port->in_use=false");
+    p_port->in_use = false;
+  }
 
   if (p_port->rfc.sm_cb.state == RFC_STATE_CLOSED) {
     if (p_port->rfc.p_mcb) {
@@ -257,6 +262,7 @@ void port_release_port(tPORT* p_port) {
       p_port->rfc.p_mcb = nullptr;
       if (p_port->is_server) {
         p_port->dlci &= 0xfe;
+        log::info("p_port->dlci={}, p_port->handle={}", p_port->dlci, p_port->handle);
       }
 
       p_port->local_ctrl.modem_signal = p_port->default_signal_state;

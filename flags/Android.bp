@@ -16,6 +16,7 @@ aconfig_declarations {
         "active_device_manager.aconfig",
         "adapter.aconfig",
         "avrcp.aconfig",
+        "avrcp_controller.aconfig",
         "bta_dm.aconfig",
         "btif_dm.aconfig",
         "btm_ble.aconfig",

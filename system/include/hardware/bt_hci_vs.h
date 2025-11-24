@@ -33,6 +33,7 @@ public:
   virtual void onCommandComplete(uint16_t ocf, std::vector<uint8_t> return_parameters,
                                  Cookie cookie) = 0;
   virtual void onEvent(uint8_t code, std::vector<uint8_t> data) = 0;
+  virtual void onAclEvent(uint16_t handle, std::vector<uint8_t> data) = 0;
 };
 
 class BluetoothHciVendorSpecificInterface {

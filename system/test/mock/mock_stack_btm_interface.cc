@@ -208,8 +208,10 @@ struct btm_client_interface_t default_btm_client_interface = {
         .sco = {
                 .BTM_CreateSco = [](const RawAddress* /* remote_bda */, bool /* is_orig */,
                                     uint16_t /* pkt_types */, uint16_t* /* p_sco_inx */,
-                                    tBTM_SCO_CB* /* p_conn_cb */, tBTM_SCO_CB* /* p_disc_cb */)
-                        -> tBTM_STATUS { return tBTM_STATUS::BTM_SUCCESS; },
+                                    tBTM_SCO_CB* /* p_conn_cb */,
+                                    tBTM_SCO_WITH_REASON_CB* /* p_disc_cb */) -> tBTM_STATUS {
+                  return tBTM_STATUS::BTM_SUCCESS;
+                },
                 .BTM_RegForEScoEvts = [](uint16_t /* sco_inx */,
                                          tBTM_ESCO_CBACK* /* p_esco_cback */) -> tBTM_STATUS {
                   return tBTM_STATUS::BTM_SUCCESS;

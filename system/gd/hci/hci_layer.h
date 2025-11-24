@@ -92,6 +92,13 @@ public:
 
   virtual void UnregisterDefaultVendorSpecificEventHandler();
 
+  virtual void SetVendorAclHandleRange(uint16_t min, uint16_t max);
+
+  virtual void RegisterVendorSpecificAclHandler(
+          common::ContextualCallback<void(uint16_t, std::vector<uint8_t>)> handler);
+
+  virtual void UnregisterVendorSpecificAclHandler();
+
   virtual void RegisterForDisconnects(
           common::ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect);
 

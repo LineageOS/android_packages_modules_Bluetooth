@@ -369,8 +369,15 @@ tA2DP_STATUS BtaAvCo::ProcessSinkGetConfig(tBTA_AV_HNDL bta_av_handle,
 
   p_peer->num_rx_sources++;
 
+  // Bypass the validation for codecs that are offloaded:
+  // the stack does not need to know about the peer capabilities,
+  // since the validation and selection will be performed by the
+  // bluetooth audio HAL for offloaded codecs.
+  auto codec_index = A2DP_SinkCodecIndex(p_codec_info);
+  bool is_offloaded_codec = ::bluetooth::audio::a2dp::provider::supports_codec(codec_index);
+
   // Check the peer's Source codec
-  if (A2DP_IsPeerSourceCodecValid(p_codec_info)) {
+  if (is_offloaded_codec || A2DP_IsPeerSourceCodecValid(p_codec_info)) {
     // If there is room for a new one
     if (p_peer->num_sup_sources < BTA_AV_CO_NUM_ELEMENTS(p_peer->sources)) {
       BtaAvCoSep* p_source = &p_peer->sources[p_peer->num_sup_sources++];
@@ -498,7 +505,23 @@ void BtaAvCo::ProcessSetConfig(tBTA_AV_HNDL bta_av_handle, const RawAddress& pee
 
     if (t_local_sep == AVDT_TSEP_SNK) {
       log::verbose("peer {} is A2DP Source", p_peer->addr);
-      status = A2DP_IsSinkCodecSupported(p_codec_info);
+
+      if (com::android::bluetooth::flags::a2dp_sink_offload() &&
+          ::bluetooth::audio::a2dp::provider::supports_codec(A2DP_SinkCodecIndex(p_codec_info))) {
+        std::vector<::bluetooth::audio::a2dp::provider::a2dp_remote_capabilities> a2dp_remote_caps;
+        btav_a2dp_codec_config_t codec_config{};
+        auto& capabilities = a2dp_remote_caps.emplace_back();
+        capabilities.seid = seid;
+        capabilities.capabilities = p_codec_info;
+        auto result = ::bluetooth::audio::a2dp::provider::get_a2dp_configuration(
+                p_peer->addr, a2dp_remote_caps, codec_config,
+                bluetooth::a2dp::ParseCodecId(p_codec_info).value());
+        if (!result.has_value()) {
+          status = A2DP_FAIL;
+        }
+      } else {
+        status = A2DP_IsSinkCodecSupported(p_codec_info);
+      }
 
       if (status == A2DP_SUCCESS) {
         // If Peer is Source, and our config subset matches with what is

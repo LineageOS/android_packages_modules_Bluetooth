@@ -37,6 +37,7 @@ import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -56,7 +57,7 @@ public class A2dpServiceBinderTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private AttributionSource mAttributionSource;
+    @Mock private AttributionSource mSource;
     @Mock private A2dpService mA2dpService;
     @Mock private PackageManager mPackageManager;
 
@@ -66,8 +67,10 @@ public class A2dpServiceBinderTest {
 
     @Before
     public void setUp() throws Exception {
+        final var context = InstrumentationRegistry.getInstrumentation().getContext();
+        doReturn(context.getPackageName()).when(mSource).getPackageName();
         doReturn(mPackageManager).when(mA2dpService).getPackageManager();
-        ApplicationInfo appInfo = new ApplicationInfo();
+        var appInfo = new ApplicationInfo();
         appInfo.targetSdkVersion = android.os.Build.VERSION_CODES.CUR_DEVELOPMENT;
         doReturn(appInfo).when(mPackageManager).getApplicationInfo(any(), anyInt());
 
@@ -81,19 +84,19 @@ public class A2dpServiceBinderTest {
 
     @Test
     public void connect() {
-        mBinder.connect(mDevice, mAttributionSource);
+        mBinder.connect(mDevice, mSource);
         verify(mA2dpService).connect(mDevice);
     }
 
     @Test
     public void disconnect() {
-        mBinder.disconnect(mDevice, mAttributionSource);
+        mBinder.disconnect(mDevice, mSource);
         verify(mA2dpService).disconnect(mDevice);
     }
 
     @Test
     public void getConnectedDevices() {
-        mBinder.getConnectedDevices(mAttributionSource);
+        mBinder.getConnectedDevices(mSource);
         verify(mA2dpService).getConnectedDevices();
     }
 
@@ -101,31 +104,31 @@ public class A2dpServiceBinderTest {
     public void getDevicesMatchingConnectionStates() {
         int[] states = new int[] {STATE_CONNECTED};
 
-        mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
+        mBinder.getDevicesMatchingConnectionStates(states, mSource);
         verify(mA2dpService).getDevicesMatchingConnectionStates(states);
     }
 
     @Test
     public void getConnectionState() {
-        mBinder.getConnectionState(mDevice, mAttributionSource);
+        mBinder.getConnectionState(mDevice, mSource);
         verify(mA2dpService).getConnectionState(mDevice);
     }
 
     @Test
     public void setActiveDevice() {
-        mBinder.setActiveDevice(mDevice, mAttributionSource);
+        mBinder.setActiveDevice(mDevice, mSource);
         verify(mA2dpService).setActiveDevice(mDevice);
     }
 
     @Test
     public void setActiveDevice_withNull_callsRemoveActiveDevice() {
-        mBinder.setActiveDevice(null, mAttributionSource);
+        mBinder.setActiveDevice(null, mSource);
         verify(mA2dpService).removeActiveDevice(false);
     }
 
     @Test
     public void getActiveDevice() {
-        mBinder.getActiveDevice(mAttributionSource);
+        mBinder.getActiveDevice(mSource);
         verify(mA2dpService).getActiveDevice();
     }
 
@@ -133,13 +136,13 @@ public class A2dpServiceBinderTest {
     public void setConnectionPolicy() {
         int connectionPolicy = CONNECTION_POLICY_ALLOWED;
 
-        mBinder.setConnectionPolicy(mDevice, connectionPolicy, mAttributionSource);
+        mBinder.setConnectionPolicy(mDevice, connectionPolicy, mSource);
         verify(mA2dpService).setConnectionPolicy(mDevice, connectionPolicy);
     }
 
     @Test
     public void getConnectionPolicy() {
-        mBinder.getConnectionPolicy(mDevice, mAttributionSource);
+        mBinder.getConnectionPolicy(mDevice, mSource);
         verify(mA2dpService).getConnectionPolicy(mDevice);
     }
 
@@ -147,19 +150,19 @@ public class A2dpServiceBinderTest {
     public void setAvrcpAbsoluteVolume() {
         int volume = 3;
 
-        mBinder.setAvrcpAbsoluteVolume(volume, mAttributionSource);
+        mBinder.setAvrcpAbsoluteVolume(volume, mSource);
         verify(mA2dpService).setAvrcpAbsoluteVolume(volume);
     }
 
     @Test
     public void isA2dpPlaying() {
-        mBinder.isA2dpPlaying(mDevice, mAttributionSource);
+        mBinder.isA2dpPlaying(mDevice, mSource);
         verify(mA2dpService).isA2dpPlaying(mDevice);
     }
 
     @Test
     public void getCodecStatus() {
-        mBinder.getCodecStatus(mDevice, mAttributionSource);
+        mBinder.getCodecStatus(mDevice, mSource);
         verify(mA2dpService).getCodecStatus(mDevice);
     }
 
@@ -167,33 +170,33 @@ public class A2dpServiceBinderTest {
     public void setCodecConfigPreference() {
         BluetoothCodecConfig config = new BluetoothCodecConfig(SOURCE_CODEC_TYPE_INVALID);
 
-        mBinder.setCodecConfigPreference(mDevice, config, mAttributionSource);
+        mBinder.setCodecConfigPreference(mDevice, config, mSource);
         verify(mA2dpService).setCodecConfigPreference(mDevice, config);
     }
 
     @Test
     public void enableOptionalCodecs() {
 
-        mBinder.enableOptionalCodecs(mDevice, mAttributionSource);
+        mBinder.enableOptionalCodecs(mDevice, mSource);
         verify(mA2dpService).enableOptionalCodecs(mDevice);
     }
 
     @Test
     public void disableOptionalCodecs() {
 
-        mBinder.disableOptionalCodecs(mDevice, mAttributionSource);
+        mBinder.disableOptionalCodecs(mDevice, mSource);
         verify(mA2dpService).disableOptionalCodecs(mDevice);
     }
 
     @Test
     public void isOptionalCodecsSupported() {
-        mBinder.isOptionalCodecsSupported(mDevice, mAttributionSource);
+        mBinder.isOptionalCodecsSupported(mDevice, mSource);
         verify(mA2dpService).getSupportsOptionalCodecs(mDevice);
     }
 
     @Test
     public void isOptionalCodecsEnabled() {
-        mBinder.isOptionalCodecsEnabled(mDevice, mAttributionSource);
+        mBinder.isOptionalCodecsEnabled(mDevice, mSource);
         verify(mA2dpService).getOptionalCodecsEnabled(mDevice);
     }
 
@@ -201,19 +204,19 @@ public class A2dpServiceBinderTest {
     public void setOptionalCodecsEnabled() {
         int value = BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN;
 
-        mBinder.setOptionalCodecsEnabled(mDevice, value, mAttributionSource);
+        mBinder.setOptionalCodecsEnabled(mDevice, value, mSource);
         verify(mA2dpService).setOptionalCodecsEnabled(mDevice, value);
     }
 
     @Test
     public void getDynamicBufferSupport() {
-        mBinder.getDynamicBufferSupport(mAttributionSource);
+        mBinder.getDynamicBufferSupport(mSource);
         verify(mA2dpService).getDynamicBufferSupport();
     }
 
     @Test
     public void getBufferConstraints() {
-        mBinder.getBufferConstraints(mAttributionSource);
+        mBinder.getBufferConstraints(mSource);
         verify(mA2dpService).getBufferConstraints();
     }
 
@@ -222,7 +225,7 @@ public class A2dpServiceBinderTest {
         int codec = 0;
         int value = BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN;
 
-        mBinder.setBufferLengthMillis(codec, value, mAttributionSource);
+        mBinder.setBufferLengthMillis(codec, value, mSource);
         verify(mA2dpService).setBufferLengthMillis(codec, value);
     }
 }

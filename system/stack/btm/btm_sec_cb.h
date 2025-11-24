@@ -60,12 +60,17 @@ public:
   uint32_t dev_rec_count{0}; /* Counter used for device record timestamp */
   uint8_t security_mode{0};
   bool pairing_disabled{false};
-  bool security_mode_changed{false};      /* mode changed during bonding */
+
+  // TODO : Remove when the flag local_pin_key_type is shipped
   bool pin_type_changed{false};           /* pin type changed during bonding */
+
   bool l2c_service_access_pending{false}; /* If an L2CAP service access request is pending */
 
+  // TODO(b/460502961): Remove once the flag security_mode_3_pairing is shipped
+  bool security_mode_changed{false};                     /* mode changed during bonding */
   uint8_t pin_code_len{0};                               /* for legacy devices */
   PinCode pin_code;                                      /* for legacy devices */
+
   tBTM_PAIRING_STATE pairing_state{BTM_PAIR_STATE_IDLE}; /* The current pairing state    */
   uint8_t pairing_flags{0};                              /* The current pairing flags    */
   AclLinkSpec link_spec;                                 /* The device currently pairing.

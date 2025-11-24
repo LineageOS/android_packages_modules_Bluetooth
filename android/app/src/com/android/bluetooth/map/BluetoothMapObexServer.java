@@ -661,13 +661,13 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
             message.setVersionString(messageVersion);
             Log.d(
                     TAG,
-                    "pushMessage: charset"
+                    "pushMessage: charset: "
                             + appParams.getCharset()
-                            + "folderId: "
+                            + ", folderId: "
                             + folderElement.getFolderId()
-                            + "Name: "
+                            + ", folderName: "
                             + folderName
-                            + "TYPE: "
+                            + ", msgType: "
                             + message.getType());
             if (message.getType().equals(TYPE.SMS_GSM) || message.getType().equals(TYPE.SMS_CDMA)) {
                 // Convert messages to the default network type.

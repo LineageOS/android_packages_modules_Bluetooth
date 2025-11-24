@@ -57,9 +57,6 @@ class BleOnStateTest {
     @get:Rule(order = 2) val bumble = PandoraDevice()
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
-    private val leAdvertiser = adapter.bluetoothLeAdvertiser!!
-    private val leScanner = adapter.bluetoothLeScanner!!
 
     private var wasBluetoothAdapterEnabled = true
 

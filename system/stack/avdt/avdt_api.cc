@@ -973,6 +973,31 @@ uint16_t AVDT_GetL2CapChannel(uint8_t handle) {
   return lcid;
 }
 
+/*******************************************************************************
+ *
+ * Function         DumpAvdtCodecInfo
+ *
+ * Description      Dump the AVDT codec info to hex string
+ *
+ * Returns          std::string with hex dump of codec info.
+ *
+ ******************************************************************************/
+std::string DumpAvdtCodecInfo(const uint8_t* data) {
+  std::string s;
+  s.reserve(AVDT_CODEC_SIZE * 7 + 1);
+  s += "\n";
+  for (size_t i = 0; i < AVDT_CODEC_SIZE; ++i) {
+    s += std::format("{:#04x}", data[i]);
+    if (i < AVDT_CODEC_SIZE - 1) {
+      s += ", ";
+    }
+    if ((i + 1) % 10 == 0) {
+      s += "\n";
+    }
+  }
+  return s;
+}
+
 void stack_debug_avdtp_api_dump(int fd) {
   dprintf(fd, "\nAVDTP Stack State:\n");
   dprintf(fd, "  AVDTP signalling L2CAP channel MTU: %d\n", avdtp_cb.rcb.ctrl_mtu);

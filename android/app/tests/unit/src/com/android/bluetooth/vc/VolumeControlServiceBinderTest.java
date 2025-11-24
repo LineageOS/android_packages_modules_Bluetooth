@@ -56,7 +56,7 @@ public class VolumeControlServiceBinderTest {
     @Rule public final SetFlagsRule mSetFlagsRule;
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private AttributionSource mAttributionSource;
+    @Mock private AttributionSource mSource;
     @Mock private VolumeControlService mService;
 
     private final BluetoothDevice mDevice = getTestDevice(25);
@@ -87,7 +87,7 @@ public class VolumeControlServiceBinderTest {
 
     @Test
     public void getConnectedDevices() {
-        mBinder.getConnectedDevices(mAttributionSource);
+        mBinder.getConnectedDevices(mSource);
         verify(mService).getConnectedDevices();
     }
 
@@ -95,13 +95,13 @@ public class VolumeControlServiceBinderTest {
     public void getDevicesMatchingConnectionStates() {
         int[] states = new int[] {STATE_CONNECTED};
 
-        mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
+        mBinder.getDevicesMatchingConnectionStates(states, mSource);
         verify(mService).getDevicesMatchingConnectionStates(states);
     }
 
     @Test
     public void getConnectionState() {
-        mBinder.getConnectionState(mDevice, mAttributionSource);
+        mBinder.getConnectionState(mDevice, mSource);
         verify(mService).getConnectionState(mDevice);
     }
 
@@ -109,25 +109,25 @@ public class VolumeControlServiceBinderTest {
     public void setConnectionPolicy() {
         int connectionPolicy = CONNECTION_POLICY_ALLOWED;
 
-        mBinder.setConnectionPolicy(mDevice, connectionPolicy, mAttributionSource);
+        mBinder.setConnectionPolicy(mDevice, connectionPolicy, mSource);
         verify(mService).setConnectionPolicy(mDevice, connectionPolicy);
     }
 
     @Test
     public void getConnectionPolicy() {
-        mBinder.getConnectionPolicy(mDevice, mAttributionSource);
+        mBinder.getConnectionPolicy(mDevice, mSource);
         verify(mService).getConnectionPolicy(mDevice);
     }
 
     @Test
     public void isVolumeOffsetAvailable() {
-        mBinder.isVolumeOffsetAvailable(mDevice, mAttributionSource);
+        mBinder.isVolumeOffsetAvailable(mDevice, mSource);
         verify(mService).isVolumeOffsetAvailable(mDevice);
     }
 
     @Test
     public void getNumberOfVolumeOffsetInstances() {
-        mBinder.getNumberOfVolumeOffsetInstances(mDevice, mAttributionSource);
+        mBinder.getNumberOfVolumeOffsetInstances(mDevice, mSource);
         verify(mService).getNumberOfVolumeOffsetInstances(mDevice);
     }
 
@@ -136,7 +136,7 @@ public class VolumeControlServiceBinderTest {
         int instanceId = 1;
         int volumeOffset = 2;
 
-        mBinder.setVolumeOffset(mDevice, instanceId, volumeOffset, mAttributionSource);
+        mBinder.setVolumeOffset(mDevice, instanceId, volumeOffset, mSource);
         verify(mService).setVolumeOffset(mDevice, instanceId, volumeOffset);
     }
 
@@ -145,13 +145,13 @@ public class VolumeControlServiceBinderTest {
         int volume = 1;
         boolean isGroupOp = true;
 
-        mBinder.setDeviceVolume(mDevice, volume, isGroupOp, mAttributionSource);
+        mBinder.setDeviceVolume(mDevice, volume, isGroupOp, mSource);
         verify(mService).setDeviceVolume(mDevice, volume, isGroupOp);
     }
 
     @Test
     public void getNumberOfAudioInputControlServices() {
-        mBinder.getNumberOfAudioInputControlServices(mAttributionSource, mDevice);
+        mBinder.getNumberOfAudioInputControlServices(mSource, mDevice);
     }
 
     @Test
@@ -159,8 +159,7 @@ public class VolumeControlServiceBinderTest {
         int instanceId = 1;
         IAudioInputCallback callback = mock(IAudioInputCallback.class);
 
-        mBinder.registerAudioInputControlCallback(
-                mAttributionSource, mDevice, instanceId, callback);
+        mBinder.registerAudioInputControlCallback(mSource, mDevice, instanceId, callback);
     }
 
     @Test
@@ -168,96 +167,95 @@ public class VolumeControlServiceBinderTest {
         int instanceId = 1;
         IAudioInputCallback callback = mock(IAudioInputCallback.class);
 
-        mBinder.unregisterAudioInputControlCallback(
-                mAttributionSource, mDevice, instanceId, callback);
+        mBinder.unregisterAudioInputControlCallback(mSource, mDevice, instanceId, callback);
     }
 
     @Test
     public void getAudioInputGainSettingUnit() {
         int instanceId = 1;
-        mBinder.getAudioInputGainSettingUnit(mAttributionSource, mDevice, instanceId);
+        mBinder.getAudioInputGainSettingUnit(mSource, mDevice, instanceId);
     }
 
     @Test
     public void getAudioInputGainSettingMin() {
         int instanceId = 1;
-        mBinder.getAudioInputGainSettingMin(mAttributionSource, mDevice, instanceId);
+        mBinder.getAudioInputGainSettingMin(mSource, mDevice, instanceId);
     }
 
     @Test
     public void getAudioInputGainSettingMax() {
         int instanceId = 1;
-        mBinder.getAudioInputGainSettingMax(mAttributionSource, mDevice, instanceId);
+        mBinder.getAudioInputGainSettingMax(mSource, mDevice, instanceId);
     }
 
     @Test
     public void getAudioInputDescription() {
         int instanceId = 1;
-        mBinder.getAudioInputDescription(mAttributionSource, mDevice, instanceId);
+        mBinder.getAudioInputDescription(mSource, mDevice, instanceId);
     }
 
     @Test
     public void isAudioInputDescriptionWritable() {
         int instanceId = 1;
-        mBinder.isAudioInputDescriptionWritable(mAttributionSource, mDevice, instanceId);
+        mBinder.isAudioInputDescriptionWritable(mSource, mDevice, instanceId);
     }
 
     @Test
     public void setAudioInputDescription() {
         int instanceId = 1;
         String description = "test";
-        mBinder.setAudioInputDescription(mAttributionSource, mDevice, instanceId, description);
+        mBinder.setAudioInputDescription(mSource, mDevice, instanceId, description);
     }
 
     @Test
     public void getAudioInputStatus() {
         int instanceId = 1;
-        mBinder.getAudioInputStatus(mAttributionSource, mDevice, instanceId);
+        mBinder.getAudioInputStatus(mSource, mDevice, instanceId);
     }
 
     @Test
     public void getAudioInputType() {
         int instanceId = 1;
-        mBinder.getAudioInputType(mAttributionSource, mDevice, instanceId);
+        mBinder.getAudioInputType(mSource, mDevice, instanceId);
     }
 
     @Test
     public void getAudioInputGainSetting() {
         int instanceId = 1;
-        mBinder.getAudioInputGainSetting(mAttributionSource, mDevice, instanceId);
+        mBinder.getAudioInputGainSetting(mSource, mDevice, instanceId);
     }
 
     @Test
     public void setAudioInputGainSetting() {
         int instanceId = 1;
         int gainSetting = 2;
-        mBinder.setAudioInputGainSetting(mAttributionSource, mDevice, instanceId, gainSetting);
+        mBinder.setAudioInputGainSetting(mSource, mDevice, instanceId, gainSetting);
     }
 
     @Test
     public void getAudioInputGainMode() {
         int instanceId = 1;
-        mBinder.getAudioInputGainMode(mAttributionSource, mDevice, instanceId);
+        mBinder.getAudioInputGainMode(mSource, mDevice, instanceId);
     }
 
     @Test
     public void setAudioInputGainMode() {
         int instanceId = 1;
         int gainMode = 2;
-        mBinder.setAudioInputGainMode(mAttributionSource, mDevice, instanceId, gainMode);
+        mBinder.setAudioInputGainMode(mSource, mDevice, instanceId, gainMode);
     }
 
     @Test
     public void getAudioInputMute() {
         int instanceId = 1;
-        mBinder.getAudioInputMute(mAttributionSource, mDevice, instanceId);
+        mBinder.getAudioInputMute(mSource, mDevice, instanceId);
     }
 
     @Test
     public void setAudioInputMute() {
         int instanceId = 1;
         int mute = 2;
-        mBinder.setAudioInputMute(mAttributionSource, mDevice, instanceId, mute);
+        mBinder.setAudioInputMute(mSource, mDevice, instanceId, mute);
     }
 
     @Test

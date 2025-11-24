@@ -48,3 +48,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "treat_empty_filters_as_unfiltered"
+    namespace: "bluetooth"
+    description: "Treat scans with all-fields-empty filters as unfiltered"
+    bug: "461650493"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

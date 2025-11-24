@@ -44,7 +44,7 @@ public class HeadsetServiceBinderTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private AttributionSource mAttributionSource;
+    @Mock private AttributionSource mSource;
     @Mock private HeadsetService mService;
 
     private final BluetoothDevice mDevice = getTestDevice(39);
@@ -58,19 +58,19 @@ public class HeadsetServiceBinderTest {
 
     @Test
     public void connect() {
-        mBinder.connect(mDevice, mAttributionSource);
+        mBinder.connect(mDevice, mSource);
         verify(mService).connect(mDevice);
     }
 
     @Test
     public void disconnect() {
-        mBinder.disconnect(mDevice, mAttributionSource);
+        mBinder.disconnect(mDevice, mSource);
         verify(mService).disconnect(mDevice);
     }
 
     @Test
     public void getConnectedDevices() {
-        mBinder.getConnectedDevices(mAttributionSource);
+        mBinder.getConnectedDevices(mSource);
         verify(mService).getConnectedDevices();
     }
 
@@ -78,74 +78,74 @@ public class HeadsetServiceBinderTest {
     public void getDevicesMatchingConnectionStates() {
         int[] states = new int[] {STATE_CONNECTED};
 
-        mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
+        mBinder.getDevicesMatchingConnectionStates(states, mSource);
         verify(mService).getDevicesMatchingConnectionStates(states);
     }
 
     @Test
     public void getConnectionState() {
-        mBinder.getConnectionState(mDevice, mAttributionSource);
+        mBinder.getConnectionState(mDevice, mSource);
         verify(mService).getConnectionState(mDevice);
     }
 
     @Test
     public void setConnectionPolicy() {
         int connectionPolicy = CONNECTION_POLICY_ALLOWED;
-        mBinder.setConnectionPolicy(mDevice, connectionPolicy, mAttributionSource);
+        mBinder.setConnectionPolicy(mDevice, connectionPolicy, mSource);
         verify(mService).setConnectionPolicy(mDevice, connectionPolicy);
     }
 
     @Test
     public void getConnectionPolicy() {
-        mBinder.getConnectionPolicy(mDevice, mAttributionSource);
+        mBinder.getConnectionPolicy(mDevice, mSource);
         verify(mService).getConnectionPolicy(mDevice);
     }
 
     @Test
     public void isNoiseReductionSupported() {
-        mBinder.isNoiseReductionSupported(mDevice, mAttributionSource);
+        mBinder.isNoiseReductionSupported(mDevice, mSource);
         verify(mService).isNoiseReductionSupported(mDevice);
     }
 
     @Test
     public void isVoiceRecognitionSupported() {
-        mBinder.isVoiceRecognitionSupported(mDevice, mAttributionSource);
+        mBinder.isVoiceRecognitionSupported(mDevice, mSource);
         verify(mService).isVoiceRecognitionSupported(mDevice);
     }
 
     @Test
     public void startVoiceRecognition() {
-        mBinder.startVoiceRecognition(mDevice, mAttributionSource);
+        mBinder.startVoiceRecognition(mDevice, mSource);
         verify(mService).startVoiceRecognition(mDevice);
     }
 
     @Test
     public void stopVoiceRecognition() {
-        mBinder.stopVoiceRecognition(mDevice, mAttributionSource);
+        mBinder.stopVoiceRecognition(mDevice, mSource);
         verify(mService).stopVoiceRecognition(mDevice);
     }
 
     @Test
     public void isAudioConnected() {
-        mBinder.isAudioConnected(mDevice, mAttributionSource);
+        mBinder.isAudioConnected(mDevice, mSource);
         verify(mService).isAudioConnected(mDevice);
     }
 
     @Test
     public void getAudioState() {
-        mBinder.getAudioState(mDevice, mAttributionSource);
+        mBinder.getAudioState(mDevice, mSource);
         verify(mService).getAudioState(mDevice);
     }
 
     @Test
     public void connectAudio() {
-        mBinder.connectAudio(mAttributionSource);
+        mBinder.connectAudio(mSource);
         verify(mService).connectAudio();
     }
 
     @Test
     public void disconnectAudio() {
-        mBinder.disconnectAudio(mAttributionSource);
+        mBinder.disconnectAudio(mSource);
         verify(mService).disconnectAudio();
     }
 
@@ -153,25 +153,25 @@ public class HeadsetServiceBinderTest {
     public void setAudioRouteAllowed() {
         boolean allowed = true;
 
-        mBinder.setAudioRouteAllowed(allowed, mAttributionSource);
+        mBinder.setAudioRouteAllowed(allowed, mSource);
         verify(mService).setAudioRouteAllowed(allowed);
     }
 
     @Test
     public void getAudioRouteAllowed() {
-        mBinder.getAudioRouteAllowed(mAttributionSource);
+        mBinder.getAudioRouteAllowed(mSource);
         verify(mService).getAudioRouteAllowed();
     }
 
     @Test
     public void startScoUsingVirtualVoiceCall() {
-        mBinder.startScoUsingVirtualVoiceCall(mAttributionSource);
+        mBinder.startScoUsingVirtualVoiceCall(mSource);
         verify(mService).startScoUsingVirtualVoiceCall();
     }
 
     @Test
     public void stopScoUsingVirtualVoiceCall() {
-        mBinder.stopScoUsingVirtualVoiceCall(mAttributionSource);
+        mBinder.stopScoUsingVirtualVoiceCall(mSource);
         verify(mService).stopScoUsingVirtualVoiceCall();
     }
 }

@@ -58,7 +58,6 @@ class DeviceDiscoveryTest {
     @Mock private lateinit var receiver: BroadcastReceiver
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
-    private val adapter = context.getSystemService(BluetoothManager::class.java).adapter
 
     private lateinit var inOrder: InOrder
 
@@ -74,7 +73,7 @@ class DeviceDiscoveryTest {
                 addAction(ACTION_FOUND)
             }
         context.registerReceiver(receiver, filter)
-        Utils.setupIntentLogger(TAG, receiver)
+        receiver.setupIntentLogger(TAG)
     }
 
     @After

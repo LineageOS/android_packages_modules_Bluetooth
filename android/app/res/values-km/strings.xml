@@ -112,10 +112,10 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"បើក"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"សម្អាត​ពី​បញ្ជី"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"សម្អាត"</string>
-    <string name="bluetooth_a2dp_sink_queue_name" msgid="7521243473328258997">"ឥឡូវកំពុងចាក់"</string>
+    <string name="bluetooth_media_audio_queue_name" msgid="7521243473328258997">"ឥឡូវកំពុងចាក់"</string>
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"រូបតំណាងកម្មវិធី"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"សំឡេងប៊្លូធូសត្រូវបានផ្តាច់"</string>
-    <string name="a2dp_sink_mbs_label" msgid="6035366346569127155">"សំឡេងប៊្លូធូស"</string>
+    <string name="bluetooth_media_audio_app_name" msgid="6035366346569127155">"សំឡេងប៊្លូធូស"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"ឯកសារ​ដែល​មាន​ទំហំ​ធំ​ជាង 4 GB មិន​អាចផ្ទេរ​បាន​ទេ"</string>
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"ភ្ជាប់​ប៊្លូធូស"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"បើកប៊្លូធូស​នៅក្នុង​មុខងារពេលជិះយន្តហោះ"</string>

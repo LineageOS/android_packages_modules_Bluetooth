@@ -664,6 +664,11 @@ provider::get_a2dp_configuration(
   using ::aidl::android::hardware::bluetooth::audio::A2dpRemoteCapabilities;
   using ::aidl::android::hardware::bluetooth::audio::CodecId;
 
+  if (offloading_hal_interface == nullptr) {
+    log::error("the offloading HAL interface is not opened");
+    return std::nullopt;
+  }
+
   // Convert the remote audio capabilities to the exchange format used
   // by the HAL.
   std::vector<A2dpRemoteCapabilities> a2dp_remote_capabilities;
@@ -780,13 +785,6 @@ provider::get_a2dp_configuration(
   }
   log::info("hint: {}", hint.toString());
 
-  if (offloading_hal_interface == nullptr &&
-      (offloading_hal_interface = new_hal_interface(
-               SessionType::A2DP_HARDWARE_OFFLOAD_ENCODING_DATAPATH)) == nullptr) {
-    log::error("the offloading HAL interface cannot be opened");
-    return std::nullopt;
-  }
-
   // Invoke the HAL GetAdpCapabilities method with the
   // remote capabilities.
   auto result = offloading_hal_interface->GetA2dpConfiguration(a2dp_remote_capabilities, hint);
@@ -830,7 +828,9 @@ tA2DP_STATUS provider::parse_a2dp_configuration(::bluetooth::a2dp::CodecId codec
     return A2DP_FAIL;
   }
 
-  convertCodecParameters(codec_parameters_aidl, codec_parameters);
+  if (codec_parameters != nullptr) {
+    convertCodecParameters(codec_parameters_aidl, codec_parameters);
+  }
 
   if (vendor_specific_parameters != nullptr) {
     *vendor_specific_parameters = codec_parameters_aidl.vendorSpecificParameters;

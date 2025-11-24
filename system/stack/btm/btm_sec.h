@@ -70,6 +70,7 @@ bool BTM_IsAuthenticated(const RawAddress& bd_addr, tBT_TRANSPORT transport);
  * Returns          void
  *
  ******************************************************************************/
+// TODO : Remove when the flag local_pin_key_type is shipped
 void BTM_SetPinType(uint8_t pin_type, PinCode pin_code, uint8_t pin_code_len);
 
 /*******************************************************************************

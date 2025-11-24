@@ -88,5 +88,9 @@ public class BassConstants {
     public static final int FLAG_SYNC_PA = 1 << 0;
     public static final int FLAG_SYNC_BIS_CHANNEL_PREFERENCE = 1 << 1;
 
+    // Encryption state
+    public static final int ENCRYPTED = 1;
+    public static final int NOT_ENCRYPTED = 2;
+
     private BassConstants() {}
 }
