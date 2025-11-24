@@ -25,8 +25,6 @@
 #include "bluetooth/types/bt_octets.h"
 #define LOG_TAG "bt_btm_sec"
 
-#include "stack/btm/btm_sec.h"
-
 #include <android_bluetooth_sysprop.h>
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
@@ -62,6 +60,7 @@
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_device_record.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_cb.h"
 #include "stack/btm/btm_sec_int_types.h"
 #include "stack/btm/internal/btm_api.h"
@@ -77,6 +76,7 @@
 #include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
+#include "stack/include/hcidefs.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/l2cap_security_interface.h"
 #include "stack/include/l2cdefs.h"
@@ -3394,9 +3394,28 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
   btm_sec_check_pending_enc_req(p_device, transport, encr_enable != HCI_ENCRYPT_MODE_DISABLED);
 
   if (!from_key_refresh) {
-    bta_dm_on_encryption_change(bt_encryption_change_evt{p_device->bd_addr, status,
-                                                         (bool)encr_enable, key_size, transport,
-                                                         p_device->SupportsSecureConnections()});
+    // Determine encryption_algo as per BT spec section `Encryption Change event`.
+    EncryptionAlgorithm encryption_algo = EncryptionAlgorithm::NONE;
+    if (encr_enable == HCI_ENCRYPT_MODE_ON) {
+      encryption_algo =
+              (transport == BT_TRANSPORT_LE) ? EncryptionAlgorithm::AES : EncryptionAlgorithm::E0;
+    } else if (encr_enable == HCI_ENCRYPT_MODE_ON_BR_EDR_AES_CCM) {
+      encryption_algo = EncryptionAlgorithm::AES;  // this is for BR/EDR
+      if (transport == BT_TRANSPORT_LE) {
+        log::warn(
+                "Incorrect parameter `Encryption_Enabled` in encryption change event for TRANSPORT "
+                "LE.");
+      }
+    }
+
+    bta_dm_on_encryption_change(bt_encryption_change_evt{
+            p_device->bd_addr,
+            status,
+            (bool)encr_enable,
+            key_size,
+            transport,
+            encryption_algo,
+    });
   }
 
   if (transport == BT_TRANSPORT_LE) {

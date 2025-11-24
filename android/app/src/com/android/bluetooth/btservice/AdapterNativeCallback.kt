@@ -135,7 +135,7 @@ class AdapterNativeCallback(
         status: Int,
         encryptionEnable: Boolean,
         transport: Int,
-        secureConnection: Boolean,
+        encryptionAlgo: Int,
         keySize: Int,
     ) {
         remoteDevices?.encryptionChangeCallback(
@@ -143,7 +143,7 @@ class AdapterNativeCallback(
             status,
             encryptionEnable,
             transport,
-            secureConnection,
+            encryptionAlgo,
             keySize,
         )
     }
