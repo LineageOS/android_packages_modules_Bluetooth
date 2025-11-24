@@ -36,7 +36,7 @@ from navi.utils import constants
 _A2DP_SERVICE_RECORD_HANDLE = 1
 _AVRCP_CONTROLLER_RECORD_HANDLE = 2
 _AVRCP_TARGET_RECORD_HANDLE = 3
-_DEFAULT_STEP_TIMEOUT_SECONDS = 10.0
+_DEFAULT_STEP_TIMEOUT_SECONDS = 5.0
 _PROPERTY_CODEC_PRIORITY = "bluetooth.a2dp.source.%s_priority.config"
 _PROPERTY_OPUS_ENABLED = "persist.bluetooth.opus.enabled"
 _VALUE_CODEC_DISABLED = -1
@@ -459,6 +459,59 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
 
             self.logger.info("[DUT] Wait for player paused.")
             await dut_player_cb.wait_for_event(bl4a_api.PlayerIsPlayingChanged(is_playing=False),)
+
+    @navi_test_base.retry(3)
+    async def test_disconnection_from_source_during_streaming(self) -> None:
+        """Tests A2DP disconnection initiated by the Source (DUT).
+
+    1. Connect DUT and REF.
+    2. Play the audio streaming.
+    3. Initiate disconnection from Source (DUT) .
+    4. Verify DUT is disconnected successfully.
+    """
+        # 1. Connect DUT and REF (A2DP Source and Sink).
+        await self._setup_a2dp_connection([_A2dpCodec.SBC])
+
+        # 2. Play the audio streaming.
+        with (
+                self.dut.bl4a.register_callback(bl4a_api.Module.A2DP) as dut_a2dp_cb,
+                self.dut.bl4a.register_callback(bl4a_api.Module.PLAYER) as dut_player_cb,
+        ):
+            self.logger.info("[DUT] Start streaming.")
+            # Allow repeating to avoid the end of the track.
+            self.dut.bt.audioSetRepeat(android_constants.RepeatMode.ONE)
+            # Play the sine wave track.
+            self.dut.bt.audioPlaySine()
+
+            self.logger.info("[DUT] Wait for playback started.")
+            await dut_player_cb.wait_for_event(
+                bl4a_api.PlayerIsPlayingChanged(is_playing=True),
+                timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
+            )
+
+            if not self.dut.bt.isA2dpPlaying(self.ref.address):
+                self.logger.info("[DUT] Wait for A2DP playing.")
+                await dut_a2dp_cb.wait_for_event(
+                    bl4a_api.A2dpPlayingStateChanged(self.ref.address, _A2dpState.PLAYING),
+                    timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
+                )
+            self.logger.info("[TEST] Audio streaming started.")
+
+            # Streaming for 1 second.
+            await asyncio.sleep(1.0)
+
+            # 3. Initiate disconnection and Verify disconnected successfully.
+            self.logger.info("[DUT] Disconnect.")
+            self.dut.bt.disconnect(self.ref.address)
+
+            self.logger.info("[DUT] Wait for A2DP disconnected.")
+            await dut_a2dp_cb.wait_for_event(
+                bl4a_api.ProfileConnectionStateChanged(
+                    address=self.ref.address,
+                    state=android_constants.ConnectionState.DISCONNECTED,
+                ),
+                timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
+            )
 
 
 if __name__ == "__main__":

@@ -165,8 +165,8 @@ class BluetoothAdapterSnippet : Snippet {
     }
 
     /** Creates a [BroadcastReceiver] which redirects intents to the event queue of [callbackId]. */
-    @AsyncRpc(description = "Setup callbacks")
-    fun adapterSetup(callbackId: String) {
+    @AsyncRpc(description = "Register adapter callback")
+    fun registerAdapterCallback(callbackId: String) {
         val intentFilter =
             IntentFilter().apply {
                 addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
@@ -264,8 +264,8 @@ class BluetoothAdapterSnippet : Snippet {
     }
 
     /** Removes a [BroadcastReceiver] of [callbackId]. */
-    @Rpc(description = "Teardown callbacks")
-    fun adapterTeardown(callbackId: String) {
+    @Rpc(description = "Unregister an adapter callback")
+    fun unregisterAdapterCallback(callbackId: String) {
         broadcastReceivers.remove(callbackId)?.let { context.unregisterReceiver(it) }
     }
 
@@ -661,6 +661,11 @@ class BluetoothAdapterSnippet : Snippet {
     fun maxConnectedAudioDevices(): Int {
         return bluetoothAdapter.getMaxConnectedAudioDevices()
     }
+
+    /** Returns whether LE Periodic Advertising is supported. */
+    @Rpc(description = "Is LE Periodic Advertising Supported")
+    fun isLePeriodicAdvertisingSupported(): Boolean =
+        bluetoothAdapter.isLePeriodicAdvertisingSupported
 
     companion object {
         const val TAG = "BluetoothAdapterSnippet"

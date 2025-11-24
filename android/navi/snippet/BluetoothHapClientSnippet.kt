@@ -47,7 +47,7 @@ class BluetoothHapClientSnippet : Snippet {
     }
 
     /* Register HAP client callbacks. */
-    @AsyncRpc(description = "Setup HAP client callbacks.")
+    @AsyncRpc(description = "Register HAP client callbacks.")
     fun registerHapClientCallback(callbackId: String) {
         val callback =
             object : BluetoothHapClient.Callback {

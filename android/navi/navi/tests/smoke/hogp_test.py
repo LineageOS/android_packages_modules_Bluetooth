@@ -14,6 +14,7 @@
 """Tests for HID over GATT Profile(GATT) implementation on Android."""
 
 import asyncio
+import contextlib
 import struct
 
 from bumble import gatt
@@ -27,6 +28,8 @@ from navi.tests import navi_test_base
 from navi.utils import android_constants
 from navi.utils import bl4a_api
 from navi.utils import constants
+
+_VIDEO_SERVICE_NAME = "video"
 
 
 class HogpTest(navi_test_base.TwoDevicesTestBase):

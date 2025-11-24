@@ -42,10 +42,10 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
     def waitForAdapterState(self, state: int) -> bool:
         ...
 
-    def adapterSetup(self) -> callback_handler_v2.CallbackHandlerV2:
+    def registerAdapterCallback(self) -> callback_handler_v2.CallbackHandlerV2:
         ...
 
-    def adapterTeardown(self, callback_id: str) -> None:
+    def unregisterAdapterCallback(self, callback_id: str) -> None:
         ...
 
     def getBondedDevices(self) -> list[str]:
@@ -116,6 +116,8 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
         advertising_set_parameters: dict[str, Any],
         advertise_data: dict[str, Any] | None = None,
         scan_response: dict[str, Any] | None = None,
+        periodic_advertising_parameters: dict[str, Any] | None = None,
+        periodic_advertising_data: dict[str, Any] | None = None,
     ) -> str:
         ...
 
@@ -159,11 +161,14 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
     def unregisterBluetoothQualityReportCallback(self, callback_id: str) -> None:
         ...
 
-    # A2DP
-    def a2dpSetup(self) -> callback_handler_v2.CallbackHandlerV2:
+    def isLePeriodicAdvertisingSupported(self) -> bool:
         ...
 
-    def a2dpTeardown(self, callback_id: str) -> None:
+    # A2DP
+    def registerA2dpCallback(self) -> callback_handler_v2.CallbackHandlerV2:
+        ...
+
+    def unregisterA2dpCallback(self, callback_id: str) -> None:
         ...
 
     def setA2dpConnectionPolicy(self, address: str, policy: int) -> None:
@@ -282,10 +287,10 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
         ...
 
     # HFP-AG
-    def hfpAgSetup(self) -> callback_handler_v2.CallbackHandlerV2:
+    def registerHfpAgCallback(self) -> callback_handler_v2.CallbackHandlerV2:
         ...
 
-    def hfpAgTeardown(self, callback_id: str) -> None:
+    def unregisterHfpAgCallback(self, callback_id: str) -> None:
         ...
 
     def setHfpAgConnectionPolicy(self, address: str, policy: int) -> None:
@@ -313,10 +318,10 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
         ...
 
     # HFP-HF
-    def hfpHfSetup(self) -> callback_handler_v2.CallbackHandlerV2:
+    def registerHfpHfCallback(self) -> callback_handler_v2.CallbackHandlerV2:
         ...
 
-    def hfpHfTeardown(self, callback_id: str) -> None:
+    def unregisterHfpHfCallback(self, callback_id: str) -> None:
         ...
 
     def setHfpHfConnectionPolicy(self, address: str, policy: int) -> None:
@@ -360,7 +365,16 @@ class BluetoothSnippet(snippet_client_v2.SnippetClientV2):
         ...
 
     # RFCOMM
-    def rfcommConnectWithUuid(self, address: str, secure: bool, uuid: str) -> str:
+    def rfcommConnectWithUuid(self,
+                              address: str,
+                              secure: bool,
+                              uuid: str,
+                              blocking: bool = True) -> str:
+        ...
+
+    def rfcommWaitForConnectionComplete(self,
+                                        cookie: str,
+                                        timeout_milliseconds: int = 10_000) -> None:
         ...
 
     def rfcommOpenServer(self, secure: bool, uuid: str) -> None:

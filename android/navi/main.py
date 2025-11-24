@@ -37,8 +37,13 @@ from navi.tests.smoke import pan_test
 from navi.tests.smoke import pbap_test
 from navi.tests.smoke import rfcomm_test
 from navi.tests.functionality import a2dp_sink_test
+from navi.tests.functionality import a2dp_source_test
+from navi.tests.functionality import aics_test
+from navi.tests.functionality import coex_test
 from navi.tests.functionality import hap_test
+from navi.tests.functionality import hfp_ag_test as hfp_ag_test_venti
 from navi.tests.functionality import le_pairing_test
+from navi.tests.functionality import rfcomm_socket_test
 
 if __name__ == "__main__":
     # Take test args
@@ -70,4 +75,9 @@ if __name__ == "__main__":
         le_pairing_test.LePairingTest,
         hap_test.HapTest,
         bluetooth_service_test.BluetoothServiceTest,
+        a2dp_source_test.A2dpSourceTest,
+        aics_test.AicsTest,
+        coex_test.CoexTest,
+        hfp_ag_test_venti.HfpAgTest,
+        rfcomm_socket_test.RfcommSocketTest,
     ])
