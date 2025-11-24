@@ -113,7 +113,7 @@ static void delete_hal_interface(BluetoothAudioClientInterface* hal_interface) {
   if (hal_interface == nullptr) {
     return;
   }
-  auto a2dp_transport = static_cast<A2dpTransport*>(hal_interface->GetTransportInstance());
+  auto a2dp_transport = hal_interface->GetTransportInstance();
   delete a2dp_transport;
   delete hal_interface;
 }
@@ -155,8 +155,7 @@ bool init(bluetooth::common::MessageLoopThread* /*message_loop*/,
 
   if (remote_delay != 0) {
     log::info("restore DELAY {} ms", static_cast<float>(remote_delay / 10.0));
-    static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance())
-            ->SetRemoteDelay(remote_delay);
+    active_hal_interface->GetTransportInstance()->SetRemoteDelay(remote_delay);
     remote_delay = 0;
   }
   return true;
@@ -169,20 +168,20 @@ void cleanup() {
   }
   end_session();
 
-  auto a2dp_sink = active_hal_interface->GetTransportInstance();
-  static_cast<A2dpTransport*>(a2dp_sink)->ResetPendingCmd();
-  static_cast<A2dpTransport*>(a2dp_sink)->ResetPresentationPosition();
+  auto transport = active_hal_interface->GetTransportInstance();
+  transport->ResetPendingCmd();
+  transport->ResetPresentationPosition();
   active_hal_interface = nullptr;
 
-  a2dp_sink = software_hal_interface->GetTransportInstance();
+  transport = software_hal_interface->GetTransportInstance();
   delete software_hal_interface;
   software_hal_interface = nullptr;
-  delete a2dp_sink;
+  delete transport;
   if (offloading_hal_interface != nullptr) {
-    a2dp_sink = offloading_hal_interface->GetTransportInstance();
+    transport = offloading_hal_interface->GetTransportInstance();
     delete offloading_hal_interface;
     offloading_hal_interface = nullptr;
-    delete a2dp_sink;
+    delete transport;
   }
 
   remote_delay = 0;
@@ -291,9 +290,8 @@ void end_session() {
     return;
   }
   active_hal_interface->EndSession();
-  static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance())->ResetPendingCmd();
-  static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance())
-          ->ResetPresentationPosition();
+  active_hal_interface->GetTransportInstance()->ResetPendingCmd();
+  active_hal_interface->GetTransportInstance()->ResetPresentationPosition();
 }
 
 void ack_stream_started(Status ack) {
@@ -310,13 +308,13 @@ void ack_stream_started(Status ack) {
 
     log::info("result={}", ack);
 
-    auto a2dp_sink = static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance());
-    auto pending_cmd = a2dp_sink->GetPendingCmd();
+    auto transport = active_hal_interface->GetTransportInstance();
+    auto pending_cmd = transport->GetPendingCmd();
     if (pending_cmd == A2DP_CTRL_CMD_START) {
       // Clear the pending cmd state before reporting the status to the IBluetoothAudioProvider.
       // The BT audio HAL can invoke another command immediately after on the same thread and the
       // state would be incorrect.
-      a2dp_sink->ResetPendingCmd();
+      transport->ResetPendingCmd();
       active_hal_interface->StreamStarted(ack);
     } else {
       log::warn("pending={} ignore result={}", pending_cmd, ack);
@@ -324,8 +322,8 @@ void ack_stream_started(Status ack) {
 
   } else {
     log::info("result={}", ack);
-    auto a2dp_sink = static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance());
-    auto pending_cmd = a2dp_sink->GetPendingCmd();
+    auto transport = active_hal_interface->GetTransportInstance();
+    auto pending_cmd = transport->GetPendingCmd();
     if (pending_cmd == A2DP_CTRL_CMD_START) {
       active_hal_interface->StreamStarted(ack);
     } else {
@@ -333,7 +331,7 @@ void ack_stream_started(Status ack) {
       return;
     }
     if (ack != Status::PENDING) {
-      a2dp_sink->ResetPendingCmd();
+      transport->ResetPendingCmd();
     }
   }
 }
@@ -354,16 +352,16 @@ void ack_stream_suspended(Status ack) {
     log::info("result={}", ack);
 
     // The pending cmd state is set from one of the binder threads.
-    auto a2dp_sink = static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance());
-    auto pending_cmd = a2dp_sink->GetPendingCmd();
+    auto transport = active_hal_interface->GetTransportInstance();
+    auto pending_cmd = transport->GetPendingCmd();
     if (pending_cmd == A2DP_CTRL_CMD_SUSPEND) {
       // Clear the pending cmd state before reporting the status to the IBluetoothAudioProvider.
       // The BT audio HAL can invoke another command immediately after on the same thread and the
       // state would be incorrect.
-      a2dp_sink->ResetPendingCmd();
+      transport->ResetPendingCmd();
       active_hal_interface->StreamSuspended(ack);
     } else if (pending_cmd == A2DP_CTRL_CMD_STOP) {
-      a2dp_sink->ResetPendingCmd();
+      transport->ResetPendingCmd();
       log::info("A2DP_CTRL_CMD_STOP result={}", ack);
     } else {
       log::warn("pending={} ignore result={}", pending_cmd, ack);
@@ -371,8 +369,8 @@ void ack_stream_suspended(Status ack) {
 
   } else {
     log::info("result={}", ack);
-    auto a2dp_sink = static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance());
-    auto pending_cmd = a2dp_sink->GetPendingCmd();
+    auto transport = active_hal_interface->GetTransportInstance();
+    auto pending_cmd = transport->GetPendingCmd();
     if (pending_cmd == A2DP_CTRL_CMD_SUSPEND) {
       active_hal_interface->StreamSuspended(ack);
     } else if (pending_cmd == A2DP_CTRL_CMD_STOP) {
@@ -382,7 +380,7 @@ void ack_stream_suspended(Status ack) {
       return;
     }
     if (ack != Status::PENDING) {
-      a2dp_sink->ResetPendingCmd();
+      transport->ResetPendingCmd();
     }
   }
 }
@@ -409,8 +407,7 @@ void set_remote_delay(uint16_t delay_report) {
     return;
   }
   log::verbose("DELAY {} ms", static_cast<float>(delay_report / 10.0));
-  static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance())
-          ->SetRemoteDelay(delay_report);
+  active_hal_interface->GetTransportInstance()->SetRemoteDelay(delay_report);
 }
 
 // Set low latency buffer mode allowed or disallowed
