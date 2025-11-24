@@ -33,6 +33,7 @@ public:
                                            uint32_t error_centimeter, int azimuth_angle,
                                            int error_azimuth_angle, int altitude_angle,
                                            int error_altitude_angle, uint64_t elapsedRealtimeNanos,
+                                           int remote_tx_power, int reflector_rssi,
                                            int8_t confidence_level, double delayedSpreadCentimeters,
                                            uint8_t detectedAttackLevel,
                                            double velocityCentimetersPerSecond, uint8_t method) = 0;

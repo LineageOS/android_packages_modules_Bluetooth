@@ -1806,10 +1806,10 @@ TEST_F(DistanceMeasurementManagerTest, get_rssi_result_success) {
   int8_t rssi_drop_off_at_1m = 41;
   double pow_value = (transmit_power_level - rssi - rssi_drop_off_at_1m) / 20.0;
   double distance = pow(10.0, pow_value);
-  EXPECT_CALL(
-          cs_requester_.mock_dm_callbacks_,
-          OnDistanceMeasurementResult(params.responder_addr, distance * 100, distance * 100, _, _,
-                                      _, _, _, _, _, _, _, DistanceMeasurementMethod::METHOD_RSSI));
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+              OnDistanceMeasurementResult(params.responder_addr, distance * 100, distance * 100, _,
+                                          _, _, _, _, _, _, _, _, _, _,
+                                          DistanceMeasurementMethod::METHOD_RSSI));
   cs_requester_.test_hci_layer_->IncomingEvent(ReadRssiCompleteBuilder::Create(
           /*num_hci_command_packets=*/128, ErrorCode::SUCCESS, params.connection_handle, rssi));
   fake_timerfd_reset();
@@ -1930,8 +1930,9 @@ TEST_F(DistanceMeasurementManagerTest, ranging_hal_on_result_v2) {
                       kInvalidAzimuthAngleDegree, kInvalidAzimuthAngleDegree,
                       kInvalidAltitudeAngleDegree, kInvalidAltitudeAngleDegree,
                       ranging_result.elapsed_timestamp_nanos_,  // V2 uses the provided timestamp
-                      ranging_result.confidence_level_,         // 90
-                      ranging_result.delay_spread_meters_,      // 1.2
+                      _, _,
+                      ranging_result.confidence_level_,     // 90
+                      ranging_result.delay_spread_meters_,  // 1.2
                       static_cast<DistanceMeasurementDetectedAttackLevel>(
                               ranging_result.detected_attack_level_),  // NADM_ATTACK_UNLIKELY
                       ranging_result.velocity_meters_per_second_,      // 0.1

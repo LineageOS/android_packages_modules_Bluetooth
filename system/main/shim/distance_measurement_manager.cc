@@ -147,7 +147,8 @@ public:
                                    uint32_t error_centimeter, int azimuth_angle,
                                    int error_azimuth_angle, int altitude_angle,
                                    int error_altitude_angle, uint64_t elapsed_realtime_nanos,
-                                   int8_t confidence_level, double delay_spread_meters,
+                                   int remote_tx_power, int reflector_rssi, int8_t confidence_level,
+                                   double delay_spread_meters,
                                    DistanceMeasurementDetectedAttackLevel detected_attack_level,
                                    double velocity_meters_per_second,
                                    DistanceMeasurementMethod method) override {
@@ -155,9 +156,9 @@ public:
             &::DistanceMeasurementCallbacks::OnDistanceMeasurementResult,
             base::Unretained(distance_measurement_callbacks_), bluetooth::ToRawAddress(address),
             centimeter, error_centimeter, azimuth_angle, error_azimuth_angle, altitude_angle,
-            error_altitude_angle, elapsed_realtime_nanos, confidence_level, delay_spread_meters,
-            static_cast<uint8_t>(detected_attack_level), velocity_meters_per_second,
-            static_cast<uint8_t>(method)));
+            error_altitude_angle, elapsed_realtime_nanos, remote_tx_power, reflector_rssi,
+            confidence_level, delay_spread_meters, static_cast<uint8_t>(detected_attack_level),
+            velocity_meters_per_second, static_cast<uint8_t>(method)));
   }
 
   void OnRasFragmentReady(bluetooth::hci::Address address, uint16_t procedure_counter, bool is_last,
