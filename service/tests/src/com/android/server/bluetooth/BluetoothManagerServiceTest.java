@@ -389,8 +389,19 @@ public class BluetoothManagerServiceTest {
         mInOrder.verify(mContext).unbindService(any());
         verifyBleStateIntentSent(State.BLE_TURNING_ON, State.OFF);
 
-        mLooper.moveTimeForward(120_000);
-        discardMessage(MESSAGE_RESTART_BLUETOOTH_SERVICE); // verify recovery process is started
+        // Calculate the expected delay for the first retry after a timeout.
+        // It should be SERVICE_RESTART_DELAY * 1 (retry) * 10 (for timeout).
+        Duration expectedDelay = SERVICE_RESTART_DELAY.multipliedBy(10);
+
+        // Check that the restart message is scheduled with the correct delay.
+        mLooper.moveTimeForward(expectedDelay.toMillis() - 1);
+        assertThat(mLooper.nextMessage()).isNull();
+        mLooper.moveTimeForward(1);
+        syncHandler(MESSAGE_RESTART_BLUETOOTH_SERVICE);
+
+        // Let the restart proceed to ensure no other issues.
+        transition_offToBleOn();
+        assertThat(mManagerService.getState()).isEqualTo(State.BLE_ON);
 
         endTest();
     }
