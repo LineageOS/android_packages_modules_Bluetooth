@@ -17,7 +17,6 @@
 package com.android.bluetooth.a2dp;
 
 import static android.bluetooth.BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED;
-import static android.bluetooth.BluetoothA2dp.ACTION_PLAYING_STATE_CHANGED;
 import static android.bluetooth.BluetoothA2dp.STATE_NOT_PLAYING;
 import static android.bluetooth.BluetoothA2dp.STATE_PLAYING;
 import static android.bluetooth.BluetoothProfile.EXTRA_PREVIOUS_STATE;
@@ -30,9 +29,10 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.a2dp.A2dpStateMachine.MESSAGE_AUDIO_STATE_CHANGED;
 import static com.android.bluetooth.a2dp.A2dpStateMachine.MESSAGE_CONNECT;
+import static com.android.bluetooth.a2dp.A2dpStateMachine.MESSAGE_CONNECTION_STATE_CHANGED;
 import static com.android.bluetooth.a2dp.A2dpStateMachine.MESSAGE_DISCONNECT;
-import static com.android.bluetooth.a2dp.A2dpStateMachine.MESSAGE_STACK_EVENT;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -153,11 +153,7 @@ public class A2dpStateMachineTest {
         doReturn(false).when(mService).okToConnect(any(), anyBoolean());
 
         // Inject an event for when incoming connection is requested
-        A2dpStackEvent connStCh =
-                new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        connStCh.device = mDevice;
-        connStCh.valueInt = STATE_CONNECTED;
-        sendAndDispatchMessage(MESSAGE_STACK_EVENT, connStCh);
+        sendAndDispatchMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_CONNECTED);
 
         verify(mService, never()).sendBroadcast(any(Intent.class), anyString(), any(Bundle.class));
         assertThat(mStateMachine.getCurrentState())
@@ -409,11 +405,7 @@ public class A2dpStateMachineTest {
         assertThat(mStateMachine.isPlaying()).isFalse();
 
         // --- Test audio started ---
-        A2dpStackEvent audioStarted =
-                new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED);
-        audioStarted.device = mDevice;
-        audioStarted.valueInt = A2dpStackEvent.AUDIO_STATE_STARTED;
-        sendAndDispatchMessage(MESSAGE_STACK_EVENT, audioStarted);
+        sendAndDispatchMessage(MESSAGE_AUDIO_STATE_CHANGED, A2dpNativeCallback.AUDIO_STATE_STARTED);
 
         // Verify broadcast and state for playing
         verifyIntentSent(
@@ -423,11 +415,7 @@ public class A2dpStateMachineTest {
         assertThat(mStateMachine.isPlaying()).isTrue();
 
         // --- Test audio stopped ---
-        A2dpStackEvent audioStopped =
-                new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED);
-        audioStopped.device = mDevice;
-        audioStopped.valueInt = A2dpStackEvent.AUDIO_STATE_STOPPED;
-        sendAndDispatchMessage(MESSAGE_STACK_EVENT, audioStopped);
+        sendAndDispatchMessage(MESSAGE_AUDIO_STATE_CHANGED, A2dpNativeCallback.AUDIO_STATE_STOPPED);
 
         // Verify broadcast and state for not playing
         verifyIntentSent(
@@ -438,6 +426,11 @@ public class A2dpStateMachineTest {
     }
 
     private void sendAndDispatchMessage(int what, Object obj) {
+        mStateMachine.sendMessage(what, obj);
+        mLooper.dispatchAll();
+    }
+
+    private void sendAndDispatchMessage(int what, int obj) {
         mStateMachine.sendMessage(what, obj);
         mLooper.dispatchAll();
     }
@@ -458,12 +451,7 @@ public class A2dpStateMachineTest {
     }
 
     private void generateConnectionMessageFromNative(int newState, int oldState) {
-        A2dpStackEvent event =
-                new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        event.device = mDevice;
-        event.valueInt = newState;
-
-        sendAndDispatchMessage(MESSAGE_STACK_EVENT, event);
+        sendAndDispatchMessage(MESSAGE_CONNECTION_STATE_CHANGED, newState);
         verifyConnectionStateIntent(newState, oldState);
     }
 }

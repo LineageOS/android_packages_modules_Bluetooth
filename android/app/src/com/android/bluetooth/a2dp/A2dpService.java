@@ -831,39 +831,68 @@ public class A2dpService extends ConnectableProfile {
         return getAdapterService().setBufferLengthMillis(codec, value);
     }
 
-    // Handle messages from native (JNI) to Java
-    void messageFromNative(A2dpStackEvent stackEvent) {
+    void onConnectionStateChangedFromNative(BluetoothDevice device, int state, int reason) {
         if (!isAvailable()) {
-            Log.w(TAG, "messageFromNative(): service is not available");
+            Log.w(TAG, "onConnectionStateChangedFromNative(): service is not available");
             return;
         }
-        BluetoothDevice device = requireNonNull(stackEvent.device);
         synchronized (mStateMachines) {
             A2dpStateMachine sm = mStateMachines.get(device);
-            if (sm == null) {
-                if (stackEvent.type == A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED) {
-                    switch (stackEvent.valueInt) {
-                        case STATE_CONNECTED, STATE_CONNECTING -> {
-                            // Create a new state machine only when connecting to a device
-                            if (!connectionAllowedCheckMaxDevices(device)) {
-                                Log.e(
-                                        TAG,
-                                        "Cannot connect to "
-                                                + device
-                                                + " : too many connected devices");
-                                return;
-                            }
-                            sm = getOrCreateStateMachine(device);
-                        }
-                        default -> {} // Nothing to do
-                    }
-                }
+            if (sm == null
+                    && (state == STATE_CONNECTED || state == STATE_CONNECTING)
+                    && connectionAllowedCheckMaxDevices(device)) {
+                sm = getOrCreateStateMachine(device);
             }
-            if (sm == null) {
-                Log.e(TAG, "Cannot process stack event: no state machine: " + stackEvent);
-                return;
+            if (sm != null) {
+                sm.sendMessage(A2dpStateMachine.MESSAGE_CONNECTION_STATE_CHANGED, state);
+            } else {
+                Log.e(TAG, "onConnectionStateChangedFromNative(" + device + "): no state machine");
             }
-            sm.sendMessage(A2dpStateMachine.MESSAGE_STACK_EVENT, stackEvent);
+        }
+    }
+
+    void onAudioStateChangedFromNative(BluetoothDevice device, int state) {
+        if (!isAvailable()) {
+            Log.w(TAG, "onAudioStateChangedFromNative(): service is not available");
+            return;
+        }
+        synchronized (mStateMachines) {
+            A2dpStateMachine sm = mStateMachines.get(requireNonNull(device));
+            if (sm != null) {
+                sm.sendMessage(A2dpStateMachine.MESSAGE_AUDIO_STATE_CHANGED, state);
+            } else {
+                Log.e(TAG, "onAudioStateChangedFromNative(" + device + "): no state machine");
+            }
+        }
+    }
+
+    void onCodecConfigChangedFromNative(BluetoothDevice device, BluetoothCodecStatus codecStatus) {
+        if (!isAvailable()) {
+            Log.w(TAG, "onCodecConfigChangedFromNative(): service is not available");
+            return;
+        }
+        synchronized (mStateMachines) {
+            A2dpStateMachine sm = mStateMachines.get(requireNonNull(device));
+            if (sm != null) {
+                sm.sendMessage(A2dpStateMachine.MESSAGE_CODEC_CONFIG_CHANGED, codecStatus);
+            } else {
+                Log.e(TAG, "onCodecConfigChangedFromNative(" + device + "): no state machine");
+            }
+        }
+    }
+
+    void onAudioDelayReportedFromNative(BluetoothDevice device, int audioDelay) {
+        if (!isAvailable()) {
+            Log.w(TAG, "onAudioDelayReportedFromNative(): service is not available");
+            return;
+        }
+        synchronized (mStateMachines) {
+            A2dpStateMachine sm = mStateMachines.get(requireNonNull(device));
+            if (sm != null) {
+                sm.sendMessage(A2dpStateMachine.MESSAGE_AUDIO_DELAY_REPORTED, audioDelay);
+            } else {
+                Log.e(TAG, "onAudioDelayReportedFromNative(" + device + "): no state machine");
+            }
         }
     }
 

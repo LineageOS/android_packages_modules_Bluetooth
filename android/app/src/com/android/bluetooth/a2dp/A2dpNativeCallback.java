@@ -33,6 +33,11 @@ import java.util.Arrays;
 class A2dpNativeCallback extends NativeCallback {
     private static final String TAG = A2dpNativeCallback.class.getSimpleName();
 
+    // Match up with btav_audio_state_t enum of bt_av.h
+    static final int AUDIO_STATE_REMOTE_SUSPEND = 0;
+    static final int AUDIO_STATE_STOPPED = 1;
+    static final int AUDIO_STATE_STARTED = 2;
+
     private final A2dpService mA2dpService;
 
     @VisibleForTesting
@@ -43,24 +48,12 @@ class A2dpNativeCallback extends NativeCallback {
 
     @VisibleForTesting
     void onConnectionStateChanged(byte[] address, int state, int reason) {
-        A2dpStackEvent event =
-                new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        event.device = getDevice(address);
-        event.valueInt = state;
-        event.reason = reason;
-
-        Log.d(TAG, "onConnectionStateChanged: " + event);
-        mA2dpService.messageFromNative(event);
+        mA2dpService.onConnectionStateChangedFromNative(getDevice(address), state, reason);
     }
 
     @VisibleForTesting
     void onAudioStateChanged(byte[] address, int state) {
-        A2dpStackEvent event = new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED);
-        event.device = getDevice(address);
-        event.valueInt = state;
-
-        Log.d(TAG, "onAudioStateChanged: " + event);
-        mA2dpService.messageFromNative(event);
+        mA2dpService.onAudioStateChangedFromNative(getDevice(address), state);
     }
 
     @VisibleForTesting
@@ -69,25 +62,16 @@ class A2dpNativeCallback extends NativeCallback {
             BluetoothCodecConfig newCodecConfig,
             BluetoothCodecConfig[] codecsLocalCapabilities,
             BluetoothCodecConfig[] codecsSelectableCapabilities) {
-        A2dpStackEvent event = new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_CODEC_CONFIG_CHANGED);
-        event.device = getDevice(address);
-        event.codecStatus =
+        mA2dpService.onCodecConfigChangedFromNative(
+                getDevice(address),
                 new BluetoothCodecStatus(
                         newCodecConfig,
                         Arrays.asList(codecsLocalCapabilities),
-                        Arrays.asList(codecsSelectableCapabilities));
-
-        Log.d(TAG, "onCodecConfigChanged: " + event);
-        mA2dpService.messageFromNative(event);
+                        Arrays.asList(codecsSelectableCapabilities)));
     }
 
     void onAudioDelayReported(byte[] address, int audioDelay) {
-        A2dpStackEvent event = new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_AUDIO_DELAY_REPORTED);
-        event.device = getDevice(address);
-        event.valueInt = audioDelay;
-
-        Log.d(TAG, "onAudioDelayReported: " + event);
-        mA2dpService.messageFromNative(event);
+        mA2dpService.onAudioDelayReportedFromNative(getDevice(address), audioDelay);
     }
 
     @VisibleForTesting

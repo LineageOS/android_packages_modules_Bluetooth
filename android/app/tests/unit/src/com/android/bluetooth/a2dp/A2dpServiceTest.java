@@ -309,8 +309,6 @@ public class A2dpServiceTest {
     /** Test that an outgoing connection/disconnection succeeds */
     @Test
     public void testOutgoingConnectDisconnectSuccess() {
-        A2dpStackEvent connCompletedEvent;
-
         // Update the device priority so okToConnect() returns true
         when(mAdapterService.getProfileConnectionPolicy(mDevice, BluetoothProfile.A2DP))
                 .thenReturn(CONNECTION_POLICY_ALLOWED);
@@ -326,10 +324,7 @@ public class A2dpServiceTest {
         assertThat(mA2dpService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTING);
 
         // Send a message to trigger connection completed
-        connCompletedEvent = new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        connCompletedEvent.device = mDevice;
-        connCompletedEvent.valueInt = STATE_CONNECTED;
-        mA2dpService.messageFromNative(connCompletedEvent);
+        mA2dpService.onConnectionStateChangedFromNative(mDevice, STATE_CONNECTED, 0);
         dispatchAtLeastOneMessage();
 
         // Verify the connection state broadcast, and that we are in Connected state
@@ -348,10 +343,7 @@ public class A2dpServiceTest {
         assertThat(mA2dpService.getConnectionState(mDevice)).isEqualTo(STATE_DISCONNECTING);
 
         // Send a message to trigger disconnection completed
-        connCompletedEvent = new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        connCompletedEvent.device = mDevice;
-        connCompletedEvent.valueInt = STATE_DISCONNECTED;
-        mA2dpService.messageFromNative(connCompletedEvent);
+        mA2dpService.onConnectionStateChangedFromNative(mDevice, STATE_DISCONNECTED, 0);
         dispatchAtLeastOneMessage();
 
         // Verify the connection state broadcast, and that we are in Disconnected state
@@ -365,7 +357,6 @@ public class A2dpServiceTest {
     /** Test that an outgoing connection/disconnection succeeds */
     @Test
     public void testMaxConnectDevices() {
-        A2dpStackEvent connCompletedEvent;
         BluetoothDevice[] testDevices = new BluetoothDevice[MAX_CONNECTED_AUDIO_DEVICES];
         BluetoothDevice extraTestDevice;
 
@@ -385,11 +376,7 @@ public class A2dpServiceTest {
             verifyConnectionStateIntent(testDevice, STATE_CONNECTING, STATE_DISCONNECTED);
             assertThat(mA2dpService.getConnectionState(testDevice)).isEqualTo(STATE_CONNECTING);
             // Send a message to trigger connection completed
-            connCompletedEvent =
-                    new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-            connCompletedEvent.device = testDevice;
-            connCompletedEvent.valueInt = STATE_CONNECTED;
-            mA2dpService.messageFromNative(connCompletedEvent);
+            mA2dpService.onConnectionStateChangedFromNative(testDevice, STATE_CONNECTED, 0);
             dispatchAtLeastOneMessage();
             // Verify the connection state broadcast, and that we are in Connected state
             verifyConnectionStateIntent(testDevice, STATE_CONNECTED, STATE_CONNECTING);
@@ -502,7 +489,7 @@ public class A2dpServiceTest {
         doReturn(true).when(mMockNativeInterface).disconnectA2dp(any(BluetoothDevice.class));
 
         // A2DP stack event: EVENT_TYPE_AUDIO_STATE_CHANGED - state machine should not be created
-        generateUnexpectedAudioMessageFromNative(mDevice, A2dpStackEvent.AUDIO_STATE_STARTED);
+        generateUnexpectedAudioMessageFromNative(mDevice, A2dpNativeCallback.AUDIO_STATE_STARTED);
         assertThat(mA2dpService.getConnectionState(mDevice)).isEqualTo(STATE_DISCONNECTED);
         assertThat(mA2dpService.getDevices()).doesNotContain(mDevice);
 
@@ -528,7 +515,7 @@ public class A2dpServiceTest {
 
         generateAudioMessageFromNative(
                 mDevice,
-                A2dpStackEvent.AUDIO_STATE_STARTED,
+                A2dpNativeCallback.AUDIO_STATE_STARTED,
                 BluetoothA2dp.STATE_PLAYING,
                 BluetoothA2dp.STATE_NOT_PLAYING);
         assertThat(mA2dpService.getConnectionState(mDevice)).isEqualTo(STATE_CONNECTED);
@@ -936,8 +923,6 @@ public class A2dpServiceTest {
 
     private void connectDeviceWithCodecStatus(
             BluetoothDevice device, BluetoothCodecStatus codecStatus) {
-        A2dpStackEvent connCompletedEvent;
-
         List<BluetoothDevice> prevConnectedDevices = mA2dpService.getConnectedDevices();
 
         // Update the device priority so okToConnect() returns true
@@ -963,10 +948,7 @@ public class A2dpServiceTest {
         }
 
         // Send a message to trigger connection completed
-        connCompletedEvent = new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        connCompletedEvent.device = device;
-        connCompletedEvent.valueInt = STATE_CONNECTED;
-        mA2dpService.messageFromNative(connCompletedEvent);
+        mA2dpService.onConnectionStateChangedFromNative(device, STATE_CONNECTED, 0);
         dispatchAtLeastOneMessage();
 
         // Verify the connection state broadcast, and that we are in Connected state
@@ -985,11 +967,7 @@ public class A2dpServiceTest {
 
     private void generateConnectionMessageFromNative(
             BluetoothDevice device, int newConnectionState, int oldConnectionState) {
-        A2dpStackEvent stackEvent =
-                new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        stackEvent.device = device;
-        stackEvent.valueInt = newConnectionState;
-        mA2dpService.messageFromNative(stackEvent);
+        mA2dpService.onConnectionStateChangedFromNative(device, newConnectionState, 0);
         dispatchAtLeastOneMessage();
         // Verify the connection state broadcast
         verifyConnectionStateIntent(device, newConnectionState, oldConnectionState);
@@ -998,11 +976,7 @@ public class A2dpServiceTest {
 
     private void generateUnexpectedConnectionMessageFromNative(
             BluetoothDevice device, int newConnectionState) {
-        A2dpStackEvent stackEvent =
-                new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        stackEvent.device = device;
-        stackEvent.valueInt = newConnectionState;
-        mA2dpService.messageFromNative(stackEvent);
+        mA2dpService.onConnectionStateChangedFromNative(device, newConnectionState, 0);
         // Verify the connection state broadcast
         mInOrder.verify(mAdapterService, timeout(TIMEOUT.toMillis()).times(0))
                 .sendBroadcast(any(), any(), any());
@@ -1011,11 +985,7 @@ public class A2dpServiceTest {
 
     private void generateAudioMessageFromNative(
             BluetoothDevice device, int audioStackEvent, int newAudioState, int oldAudioState) {
-        A2dpStackEvent stackEvent =
-                new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED);
-        stackEvent.device = device;
-        stackEvent.valueInt = audioStackEvent;
-        mA2dpService.messageFromNative(stackEvent);
+        mA2dpService.onAudioStateChangedFromNative(device, audioStackEvent);
         dispatchAtLeastOneMessage();
         // Verify the audio state broadcast
         verifyIntentSent(
@@ -1028,11 +998,7 @@ public class A2dpServiceTest {
 
     private void generateUnexpectedAudioMessageFromNative(
             BluetoothDevice device, int audioStackEvent) {
-        A2dpStackEvent stackEvent =
-                new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED);
-        stackEvent.device = device;
-        stackEvent.valueInt = audioStackEvent;
-        mA2dpService.messageFromNative(stackEvent);
+        mA2dpService.onAudioStateChangedFromNative(device, audioStackEvent);
         // Verify the audio state broadcast
         mInOrder.verify(mAdapterService, timeout(TIMEOUT.toMillis()).times(0))
                 .sendBroadcast(any(), any(), any());
@@ -1040,11 +1006,7 @@ public class A2dpServiceTest {
 
     private void generateCodecMessageFromNative(
             BluetoothDevice device, BluetoothCodecStatus codecStatus) {
-        A2dpStackEvent stackEvent =
-                new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_CODEC_CONFIG_CHANGED);
-        stackEvent.device = device;
-        stackEvent.codecStatus = codecStatus;
-        mA2dpService.messageFromNative(stackEvent);
+        mA2dpService.onCodecConfigChangedFromNative(device, codecStatus);
         dispatchAtLeastOneMessage();
         verifyIntentSent(
                 hasAction(BluetoothA2dp.ACTION_CODEC_CONFIG_CHANGED),
@@ -1054,11 +1016,7 @@ public class A2dpServiceTest {
 
     private void generateUnexpectedCodecMessageFromNative(
             BluetoothDevice device, BluetoothCodecStatus codecStatus) {
-        A2dpStackEvent stackEvent =
-                new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_CODEC_CONFIG_CHANGED);
-        stackEvent.device = device;
-        stackEvent.codecStatus = codecStatus;
-        mA2dpService.messageFromNative(stackEvent);
+        mA2dpService.onCodecConfigChangedFromNative(device, codecStatus);
         // Verify the codec status broadcast
         mInOrder.verify(mAdapterService, timeout(TIMEOUT.toMillis()).times(0))
                 .sendBroadcast(any(), any(), any());
