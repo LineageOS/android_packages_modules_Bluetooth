@@ -635,7 +635,7 @@ typedef void (*adapter_properties_callback)(bt_status_t status, int num_properti
 /** TODO: For remote device properties, do not see a need to get/set
  * multiple properties - num_properties shall be 1
  */
-typedef void (*remote_device_properties_callback)(bt_status_t status, RawAddress* bd_addr,
+typedef void (*remote_device_properties_callback)(bt_status_t status, RawAddress bd_addr,
                                                   uint8_t address_type, int num_properties,
                                                   bt_property_t* properties);
 
@@ -648,7 +648,7 @@ typedef void (*device_found_callback)(int num_properties, bt_property_t* propert
 typedef void (*discovery_state_changed_callback)(bt_discovery_state_t state);
 
 /** Bluetooth Legacy PinKey Request callback */
-typedef void (*pin_request_callback)(RawAddress* remote_bd_addr, bt_bdname_t* bd_name, uint32_t cod,
+typedef void (*pin_request_callback)(RawAddress remote_bd_addr, bt_bdname_t* bd_name, uint32_t cod,
                                      bool min_16_digit, PairingAlgorithm pairing_algorithm);
 
 /** Bluetooth SSP Request callback - Just Works & Numeric Comparison*/
@@ -656,26 +656,24 @@ typedef void (*pin_request_callback)(RawAddress* remote_bd_addr, bt_bdname_t* bd
  *  BT_SSP_PAIRING_PASSKEY_ENTRY */
 /* TODO: Passkey request callback shall not be needed for devices with display
  * capability. We still need support this in the stack for completeness */
-typedef void (*ssp_request_callback)(RawAddress* remote_bd_addr, bt_ssp_variant_t pairing_variant,
+typedef void (*ssp_request_callback)(RawAddress remote_bd_addr, bt_ssp_variant_t pairing_variant,
                                      uint32_t pass_key, PairingAlgorithm pairing_algorithm);
 
 /** Bluetooth Bond state changed callback */
 /* Invoked in response to create_bond, cancel_bond or remove_bond */
-typedef void (*bond_state_changed_callback)(bt_status_t status, RawAddress* remote_bd_addr,
+typedef void (*bond_state_changed_callback)(bt_status_t status, RawAddress remote_bd_addr,
                                             tBT_TRANSPORT transport, bt_bond_state_t state,
                                             PairingType pairing_type, int fail_reason);
 
 /** Bluetooth Address consolidate callback */
 /* Callback to inform upper layer that these two addresses come from same
  * bluetooth device (DUAL mode) */
-typedef void (*address_consolidate_callback)(RawAddress* main_bd_addr,
-                                             RawAddress* secondary_bd_addr);
+typedef void (*address_consolidate_callback)(RawAddress main_bd_addr, RawAddress secondary_bd_addr);
 
 /** Bluetooth LE Address association callback */
 /* Callback for the upper layer to associate the LE-only device's RPA to the
  * identity address and identity address type */
-typedef void (*le_address_associate_callback)(RawAddress* main_bd_addr,
-                                              RawAddress* secondary_bd_addr,
+typedef void (*le_address_associate_callback)(RawAddress main_bd_addr, RawAddress secondary_bd_addr,
                                               uint8_t identity_address_type);
 
 /** Bluetooth ACL connection state changed callback */

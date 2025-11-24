@@ -1297,7 +1297,7 @@ void invoke_remote_device_properties_cb(bt_status_t status, RawAddress bd_addr,
   do_in_jni_thread(base::BindOnce(
           [](bt_status_t status, RawAddress bd_addr, uint8_t address_type, int num_properties,
              bt_property_t* properties) {
-            HAL_CBACK(bt_hal_cbacks, remote_device_properties_cb, status, &bd_addr, address_type,
+            HAL_CBACK(bt_hal_cbacks, remote_device_properties_cb, status, bd_addr, address_type,
                       num_properties, properties);
             if (properties) {
               osi_free(properties);
@@ -1331,7 +1331,7 @@ void invoke_pin_request_cb(RawAddress bd_addr, bt_bdname_t bd_name, uint32_t cod
   do_in_jni_thread(base::BindOnce(
           [](RawAddress bd_addr, bt_bdname_t bd_name, uint32_t cod, bool min_16_digit,
              PairingAlgorithm pairing_algorithm) {
-            HAL_CBACK(bt_hal_cbacks, pin_request_cb, &bd_addr, &bd_name, cod, min_16_digit,
+            HAL_CBACK(bt_hal_cbacks, pin_request_cb, bd_addr, &bd_name, cod, min_16_digit,
                       pairing_algorithm);
           },
           bd_addr, bd_name, cod, min_16_digit, pairing_algorithm));
@@ -1342,7 +1342,7 @@ void invoke_ssp_request_cb(RawAddress bd_addr, bt_ssp_variant_t pairing_variant,
   do_in_jni_thread(base::BindOnce(
           [](RawAddress bd_addr, bt_ssp_variant_t pairing_variant, uint32_t pass_key,
              PairingAlgorithm pairing_algorithm) {
-            HAL_CBACK(bt_hal_cbacks, ssp_request_cb, &bd_addr, pairing_variant, pass_key,
+            HAL_CBACK(bt_hal_cbacks, ssp_request_cb, bd_addr, pairing_variant, pass_key,
                       pairing_algorithm);
           },
           bd_addr, pairing_variant, pass_key, pairing_algorithm));
@@ -1401,7 +1401,7 @@ void invoke_bond_state_changed_cb(bt_status_t status, RawAddress bd_addr, tBT_TR
   do_in_jni_thread(base::BindOnce(
           [](bt_status_t status, RawAddress bd_addr, tBT_TRANSPORT transport, bt_bond_state_t state,
              PairingType pairing_type, int fail_reason) {
-            HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, status, &bd_addr, transport, state,
+            HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, status, bd_addr, transport, state,
                       pairing_type, fail_reason);
           },
           status, bd_addr, transport, state, pairing_type, fail_reason));
@@ -1410,7 +1410,7 @@ void invoke_bond_state_changed_cb(bt_status_t status, RawAddress bd_addr, tBT_TR
 void invoke_address_consolidate_cb(RawAddress main_bd_addr, RawAddress secondary_bd_addr) {
   do_in_jni_thread(base::BindOnce(
           [](RawAddress main_bd_addr, RawAddress secondary_bd_addr) {
-            HAL_CBACK(bt_hal_cbacks, address_consolidate_cb, &main_bd_addr, &secondary_bd_addr);
+            HAL_CBACK(bt_hal_cbacks, address_consolidate_cb, main_bd_addr, secondary_bd_addr);
           },
           main_bd_addr, secondary_bd_addr));
 }
@@ -1419,7 +1419,7 @@ void invoke_le_address_associate_cb(RawAddress main_bd_addr, RawAddress secondar
                                     uint8_t identity_address_type) {
   do_in_jni_thread(base::BindOnce(
           [](RawAddress main_bd_addr, RawAddress secondary_bd_addr, uint8_t identity_address_type) {
-            HAL_CBACK(bt_hal_cbacks, le_address_associate_cb, &main_bd_addr, &secondary_bd_addr,
+            HAL_CBACK(bt_hal_cbacks, le_address_associate_cb, main_bd_addr, secondary_bd_addr,
                       identity_address_type);
           },
           main_bd_addr, secondary_bd_addr, identity_address_type));

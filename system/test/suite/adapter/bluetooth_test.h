@@ -121,7 +121,7 @@ protected:
                                         bt_property_t* properties);
 
   // A callback that is called when the remote device's property changes
-  friend void RemoteDevicePropertiesCallback(bt_status_t status, RawAddress* remote_bd_addr,
+  friend void RemoteDevicePropertiesCallback(bt_status_t status, RawAddress remote_bd_addr,
                                              uint8_t address_type, int num_properties,
                                              bt_property_t* properties);
 
