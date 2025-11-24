@@ -22,6 +22,8 @@
 #include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
+#include <algorithm>
+
 #include "abstract_message_loop.h"
 #include "array_utils.h"
 #include "avrcp_common.h"
@@ -1724,8 +1726,10 @@ void Device::SetBrowsedPlayerResponse(uint8_t label, std::shared_ptr<SetBrowsedP
   current_path_ = std::stack<std::string>();
   current_path_.push(current_path);
 
+  uint8_t folder_depth = std::max<uint8_t>(current_path_.size() - 1, 0);
+
   auto response = SetBrowsedPlayerResponseBuilder::MakeBuilder(Status::NO_ERROR, 0x0000, num_items,
-                                                               0, current_path);
+                                                               folder_depth, current_path);
   send_message(label, true, std::move(response));
 }
 
