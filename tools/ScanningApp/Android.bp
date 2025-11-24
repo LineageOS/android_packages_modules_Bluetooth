@@ -13,11 +13,13 @@ android_app {
     manifest: "AndroidManifest.xml",
 
     static_libs: [
-        "androidx-constraintlayout_constraintlayout",
-        "androidx.activity_activity",
-        "androidx.appcompat_appcompat",
+        "androidx.activity_activity-compose",
+        "androidx.compose.foundation_foundation",
+        "androidx.compose.material3_material3",
+        "androidx.compose.runtime_runtime",
+        "androidx.compose.ui_ui",
+        "androidx.compose.ui_ui-tooling-preview",
         "androidx.core_core-ktx",
-        "androidx.lifecycle_lifecycle-extensions",
         "com.google.android.material_material",
     ],
 
