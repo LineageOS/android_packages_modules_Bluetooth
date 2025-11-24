@@ -19,19 +19,21 @@
 #include <vector>
 
 #include "a2dp_encoding.h"
-#include "client_interface_aidl.h"
+#include "audio_aidl_interfaces.h"
 #include "common/message_loop_thread.h"
 #include "hardware/bt_av.h"
-#include "transport_instance.h"
 
 namespace bluetooth {
 namespace audio {
 namespace aidl {
 namespace a2dp {
 
+using ::aidl::android::hardware::bluetooth::audio::AudioConfiguration;
+using ::aidl::android::hardware::bluetooth::audio::LatencyMode;
+using ::aidl::android::hardware::bluetooth::audio::SessionType;
+
 using ::bluetooth::audio::a2dp::Status;
 using ::bluetooth::audio::a2dp::StreamCallbacks;
-using ::bluetooth::audio::aidl::a2dp::LatencyMode;
 
 typedef enum {
   A2DP_CTRL_CMD_NONE,
@@ -51,20 +53,26 @@ typedef enum {
 
 // Provide call-in APIs for the Bluetooth Audio HAL
 
-class A2dpTransport : public ::bluetooth::audio::aidl::a2dp::IBluetoothTransportInstance {
+class A2dpTransport {
 public:
   A2dpTransport(SessionType sessionType, StreamCallbacks const* stream_callbacks);
 
-  Status StartRequest(bool is_low_latency) override;
+  SessionType GetSessionType() const { return session_type_; }
 
-  Status SuspendRequest() override;
+  AudioConfiguration GetAudioConfiguration() const { return audio_config_; }
 
-  void StopRequest() override;
+  void UpdateAudioConfiguration(const AudioConfiguration& audio_config);
 
-  void SetLatencyMode(LatencyMode latency_mode) override;
+  Status StartRequest(bool is_low_latency);
+
+  Status SuspendRequest();
+
+  void StopRequest();
+
+  void SetLatencyMode(LatencyMode latency_mode);
 
   bool GetPresentationPosition(uint64_t* remote_delay_report_ns, uint64_t* total_bytes_read,
-                               timespec* data_position) override;
+                               timespec* data_position);
 
   void SourceMetadataChanged(btav_a2dp_codec_audio_context_t audio_context);
 
@@ -74,12 +82,14 @@ public:
 
   void ResetPresentationPosition();
 
-  void LogBytesRead(size_t bytes_read) override;
+  void LogBytesRead(size_t bytes_read);
 
   // delay reports from AVDTP is based on 1/10 ms (100us)
   void SetRemoteDelay(uint16_t delay_report);
 
 private:
+  const SessionType session_type_;
+  AudioConfiguration audio_config_{};
   tA2DP_CTRL_CMD a2dp_pending_cmd_{A2DP_CTRL_CMD_NONE};
   uint16_t remote_delay_report_{0};
   uint64_t total_bytes_read_{0};

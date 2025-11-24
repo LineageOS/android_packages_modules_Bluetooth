@@ -70,6 +70,12 @@ public:
 // A2dpAidlTransportTest
 //=============================================================================
 
+TEST_F(A2dpAidlTransportTest, UpdateAudioConfiguration) {
+  auto audio_config = ::aidl::android::hardware::bluetooth::audio::AudioConfiguration();
+  software_transport_aidl->UpdateAudioConfiguration(audio_config);
+  ASSERT_EQ(software_transport_aidl->GetAudioConfiguration(), audio_config);
+}
+
 TEST_F(A2dpAidlTransportTest, AssertCorrectSession) {
   ASSERT_NE(software_transport_aidl, nullptr);
   ASSERT_EQ(software_transport_aidl->GetSessionType(),

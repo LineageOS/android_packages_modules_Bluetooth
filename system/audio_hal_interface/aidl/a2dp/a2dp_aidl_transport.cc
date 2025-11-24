@@ -24,7 +24,6 @@
 #include "audio_aidl_interfaces.h"
 #include "client_interface_aidl.h"
 #include "codec_status_aidl.h"
-#include "transport_instance.h"
 
 namespace bluetooth {
 namespace audio {
@@ -38,9 +37,36 @@ using ::aidl::android::hardware::bluetooth::audio::AudioConfiguration;
 using ::aidl::android::hardware::bluetooth::audio::SessionType;
 
 A2dpTransport::A2dpTransport(SessionType sessionType, StreamCallbacks const* stream_callbacks)
-    : IBluetoothTransportInstance(sessionType, (AudioConfiguration){}),
-      stream_callbacks_(stream_callbacks) {
+    : session_type_(sessionType), stream_callbacks_(stream_callbacks) {
   log::assert_that(stream_callbacks_ != nullptr, "stream_callbacks != nullptr");
+}
+
+void A2dpTransport::UpdateAudioConfiguration(const AudioConfiguration& audio_config) {
+  switch (audio_config.getTag()) {
+    case AudioConfiguration::pcmConfig:
+      audio_config_.set<AudioConfiguration::pcmConfig>(
+              audio_config.get<AudioConfiguration::pcmConfig>());
+      break;
+    case AudioConfiguration::a2dpConfig:
+      audio_config_.set<AudioConfiguration::a2dpConfig>(
+              audio_config.get<AudioConfiguration::a2dpConfig>());
+      break;
+    case AudioConfiguration::hfpConfig:
+      audio_config_.set<AudioConfiguration::hfpConfig>(
+              audio_config.get<AudioConfiguration::hfpConfig>());
+      break;
+    case AudioConfiguration::leAudioConfig:
+      audio_config_.set<AudioConfiguration::leAudioConfig>(
+              audio_config.get<AudioConfiguration::leAudioConfig>());
+      break;
+    case AudioConfiguration::leAudioBroadcastConfig:
+      audio_config_.set<AudioConfiguration::leAudioBroadcastConfig>(
+              audio_config.get<AudioConfiguration::leAudioBroadcastConfig>());
+      break;
+    case AudioConfiguration::a2dp:
+      audio_config_.set<AudioConfiguration::a2dp>(audio_config.get<AudioConfiguration::a2dp>());
+      break;
+  }
 }
 
 Status A2dpTransport::StartRequest(bool is_low_latency) {

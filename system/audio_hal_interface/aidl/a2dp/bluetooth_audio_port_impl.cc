@@ -85,8 +85,7 @@ static int audioContextPriority(btav_a2dp_codec_audio_context_t context) {
 using ::bluetooth::common::StopWatchLegacy;
 
 BluetoothAudioPortImpl::BluetoothAudioPortImpl(
-        IBluetoothTransportInstance* transport_instance,
-        const std::shared_ptr<IBluetoothAudioProvider>& provider)
+        A2dpTransport* transport_instance, const std::shared_ptr<IBluetoothAudioProvider>& provider)
     : transport_instance_(transport_instance), provider_(provider) {}
 
 BluetoothAudioPortImpl::~BluetoothAudioPortImpl() {}
