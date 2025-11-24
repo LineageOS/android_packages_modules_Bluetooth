@@ -112,10 +112,12 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"විවෘත කරන්න"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"ලැයිස්තුව වෙතින් හිස් කරන්න"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"හිස් කරන්න"</string>
-    <string name="bluetooth_media_audio_queue_name" msgid="7521243473328258997">"දැන් වාදනය වේ"</string>
+    <!-- no translation found for bluetooth_media_audio_app_name (2389937877819723460) -->
+    <skip />
+    <!-- no translation found for bluetooth_media_audio_queue_name (2327164681598379428) -->
+    <skip />
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"යෙදුම් නිරූපකය"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"බ්ලූටූත් ශ්‍රව්‍යය විසන්ධි කරන ලදී"</string>
-    <string name="bluetooth_media_audio_app_name" msgid="6035366346569127155">"බ්ලූටූත් ශ්‍රව්‍යය"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"4GBට වඩා විශාල ගොනු මාරු කළ නොහැකිය"</string>
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"බ්ලූටූත් වෙත සබඳින්න"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"අහස්යානා ආකාරයේ බ්ලූටූත් ක්‍රියාත්මකයි"</string>

@@ -112,10 +112,12 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"ဖွင့်ရန်"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"စာရင်းမှ ရှင်းပစ်မည်"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"ရှင်းရန်"</string>
-    <string name="bluetooth_media_audio_queue_name" msgid="7521243473328258997">"Now Playing"</string>
+    <!-- no translation found for bluetooth_media_audio_app_name (2389937877819723460) -->
+    <skip />
+    <!-- no translation found for bluetooth_media_audio_queue_name (2327164681598379428) -->
+    <skip />
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"အပလီကေးရှင်း သင်္ကေတ"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"ဘလူးတုသ်အသံ မချိတ်ဆက်ထားပါ"</string>
-    <string name="bluetooth_media_audio_app_name" msgid="6035366346569127155">"ဘလူးတုသ် အသံ"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"4GB ထက်ပိုကြီးသည့် ဖိုင်များကို လွှဲပြောင်းမရနိုင်ပါ"</string>
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"ဘလူးတုသ်သို့ ချိတ်ဆက်ရန်"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"လေယာဉ်ပျံမုဒ်တွင် ဘလူးတုသ် ပွင့်နေသည်"</string>

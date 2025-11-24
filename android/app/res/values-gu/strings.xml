@@ -112,10 +112,12 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"ખોલો"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"સૂચિમાંથી સાફ કરો"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"સાફ કરો"</string>
-    <string name="bluetooth_media_audio_queue_name" msgid="7521243473328258997">"હમણાં વાગી રહ્યું છે"</string>
+    <!-- no translation found for bluetooth_media_audio_app_name (2389937877819723460) -->
+    <skip />
+    <!-- no translation found for bluetooth_media_audio_queue_name (2327164681598379428) -->
+    <skip />
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"ઍપ્લિકેશન આયકન"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"બ્લૂટૂથ ઑડિઓ ડિસ્કનેક્ટ થયું"</string>
-    <string name="bluetooth_media_audio_app_name" msgid="6035366346569127155">"બ્લૂટૂથ ઑડિયો"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"4GB કરતા મોટી ફાઇલ ટ્રાન્સફર કરી શકાતી નથી"</string>
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"બ્લૂટૂથ સાથે કનેક્ટ કરો"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"એરપ્લેન મોડમાં બ્લૂટૂથ ચાલુ છે"</string>

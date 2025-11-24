@@ -112,10 +112,12 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"उघडा"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"सूचीमधून साफ करा"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"साफ करा"</string>
-    <string name="bluetooth_media_audio_queue_name" msgid="7521243473328258997">"आता प्ले करत आहे"</string>
+    <!-- no translation found for bluetooth_media_audio_app_name (2389937877819723460) -->
+    <skip />
+    <!-- no translation found for bluetooth_media_audio_queue_name (2327164681598379428) -->
+    <skip />
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"ॲप्लिकेशन आयकन"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"ब्लूटूथ ऑडिओ डिस्कनेक्ट केला"</string>
-    <string name="bluetooth_media_audio_app_name" msgid="6035366346569127155">"ब्लूटूथ ऑडिओ"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"4 GB हून मोठ्या फाइल ट्रान्सफर करता येणार नाहीत"</string>
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"ब्लूटूथशी कनेक्ट करा"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"विमान मोडमध्ये ब्लूटूथ सुरू आहे"</string>
