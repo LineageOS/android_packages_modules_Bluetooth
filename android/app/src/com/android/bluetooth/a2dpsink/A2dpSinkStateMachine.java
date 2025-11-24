@@ -333,7 +333,7 @@ class A2dpSinkStateMachine extends StateMachine {
     }
 
     private void debug(String msg) {
-        Log.w(TAG, "[" + mDevice + "] " + getCurrentState().getName() + ": " + msg);
+        Log.d(TAG, "[" + mDevice + "] " + getCurrentState().getName() + ": " + msg);
     }
 
     private static final String messageToString(int what) {
