@@ -52,11 +52,24 @@ enum class Status {
 class StreamCallbacks {
 public:
   virtual ~StreamCallbacks() {}
-  virtual Status StartStream(bool /*low_latency*/) const { return Status::FAILURE; }
-  virtual Status SuspendStream() const { return Status::FAILURE; }
-  virtual Status StopStream() const { return SuspendStream(); }
-  virtual Status SetLatencyMode(bool /*low_latency*/) const { return Status::FAILURE; }
+  virtual Status StartStream(bool /*low_latency*/) const {
+    log::error("unimplemented");
+    return Status::FAILURE;
+  }
+  virtual Status SuspendStream() const {
+    log::error("unimplemented");
+    return Status::FAILURE;
+  }
+  virtual Status StopStream() const {
+    log::error("unimplemented");
+    return Status::FAILURE;
+  }
+  virtual Status SetLatencyMode(bool /*low_latency*/) const {
+    log::error("unimplemented");
+    return Status::FAILURE;
+  }
   virtual Status SourceMetadataChanged(btav_a2dp_codec_audio_context_t /*audio_context*/) const {
+    log::error("unimplemented");
     return Status::FAILURE;
   }
 };
