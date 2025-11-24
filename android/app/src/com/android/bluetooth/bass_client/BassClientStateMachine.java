@@ -359,6 +359,11 @@ class BassClientStateMachine extends StateMachine {
         return mPendingSourceToSwitch != null;
     }
 
+    Boolean hasPendingSwitchingSourceOperation(int broadcastId) {
+        return mPendingSourceToSwitch != null
+                && mPendingSourceToSwitch.getBroadcastId() == broadcastId;
+    }
+
     private void setCurrentBroadcastMetadata(
             Integer sourceId, BluetoothLeBroadcastMetadata metadata) {
         if (metadata != null) {
