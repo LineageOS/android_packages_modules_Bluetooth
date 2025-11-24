@@ -93,6 +93,15 @@ bool init(bluetooth::common::MessageLoopThread* message_loop,
   return aidl::a2dp::init(message_loop, stream_callbacks, offload_enabled);
 }
 
+// Initialize BluetoothAudio HAL for decoding session
+bool init_decoder(bluetooth::audio::a2dp::StreamCallbacks const* stream_callbacks,
+                  bool offload_enabled) {
+  if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::AIDL) {
+    return aidl::a2dp::init_decoder(stream_callbacks, offload_enabled);
+  }
+  return false;
+}
+
 // Clean up BluetoothAudio HAL
 void cleanup() {
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::HIDL) {

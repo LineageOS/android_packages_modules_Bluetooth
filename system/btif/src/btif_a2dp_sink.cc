@@ -37,6 +37,7 @@
 
 #include "a2dp_api.h"
 #include "a2dp_codec_api.h"
+#include "audio_hal_interface/a2dp_encoding.h"
 #include "avdt_api.h"
 #include "bta_av_api.h"
 #include "btif/include/btif_av.h"
@@ -210,9 +211,18 @@ bool btif_a2dp_sink_init() {
   return true;
 }
 
+class A2dpSinkStreamCallbacks : public bluetooth::audio::a2dp::StreamCallbacks {};
+
+static const A2dpSinkStreamCallbacks a2dp_sink_stream_callbacks;
+
 static void btif_a2dp_sink_init_delayed() {
   log::info("");
   btif_a2dp_sink_state = BTIF_A2DP_SINK_STATE_RUNNING;
+
+  if (com::android::bluetooth::flags::a2dp_sink_offload()) {
+    bluetooth::audio::a2dp::init_decoder(&a2dp_sink_stream_callbacks,
+                                         btif_av_is_a2dp_offload_enabled());
+  }
 }
 
 bool btif_a2dp_sink_startup() {

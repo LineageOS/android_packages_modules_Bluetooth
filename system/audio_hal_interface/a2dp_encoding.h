@@ -98,6 +98,9 @@ bool is_hal_offloading();
 bool init(bluetooth::common::MessageLoopThread* message_loop,
           StreamCallbacks const* strean_callbacks, bool offload_enabled);
 
+// Initialize BluetoothAudio HAL for decoding session
+bool init_decoder(StreamCallbacks const* stream_callbacks, bool offload_enabled);
+
 // Clean up BluetoothAudio HAL
 void cleanup();
 
