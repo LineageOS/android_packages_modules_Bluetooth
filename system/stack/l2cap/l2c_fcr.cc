@@ -28,6 +28,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "btif/include/btif_storage.h"
+#include "device/include/interop.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
@@ -1600,7 +1602,18 @@ uint8_t l2c_fcr_chk_chan_modes(tL2C_CCB* p_ccb) {
       p_ccb->p_rcb->ertm_info.preferred_mode == L2CAP_FCR_ERTM_MODE) {
     log::warn("L2CAP - Peer does not support our desired channel types");
     p_ccb->p_rcb->ertm_info.preferred_mode = 0;
-    return false;
+
+    // TODO: This interop fix is temporary. Need to remove If there is a better
+    //  way to handle this
+    char remote_name[BD_NAME_LEN] = "";
+    btif_storage_get_stored_remote_name(p_ccb->p_lcb->remote_bd_addr, remote_name);
+    if (interop_match_name(INTEROP_L2CAP_DISABLE_ERTM, remote_name)) {
+      log::info("INTEROP_L2CAP_DISABLE_ERTM: interop matched name {} address {}", remote_name,
+                p_ccb->p_lcb->remote_bd_addr);
+      return true;
+    } else {
+      return false;
+    }
   }
   return true;
 }
