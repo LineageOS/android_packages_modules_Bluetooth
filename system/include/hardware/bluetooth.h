@@ -560,13 +560,33 @@ typedef enum {
   BT_SSP_VARIANT_PARTICIPATION  // Incoming LE pairing request
 } bt_ssp_variant_t;
 
+// This is inline with BluetoothDevice.EncryptionAlgorithm.
+enum class EncryptionAlgorithm : uint8_t {
+  NONE, /* Indicates encryption information is not available */
+  E0,
+  AES,
+  UNKNOWN, /* Indicates link was encrypted using unknown algorithm */
+};
+
+static inline std::string encryption_algorithm_text(
+        const EncryptionAlgorithm& encryption_algorithm) {
+  switch (encryption_algorithm) {
+    CASE_RETURN_STRING(EncryptionAlgorithm::NONE);
+    CASE_RETURN_STRING(EncryptionAlgorithm::E0);
+    CASE_RETURN_STRING(EncryptionAlgorithm::AES);
+    CASE_RETURN_STRING(EncryptionAlgorithm::UNKNOWN);
+    default:
+      RETURN_UNKNOWN_TYPE_STRING(EncryptionAlgorithm, encryption_algorithm);
+  }
+}
+
 typedef struct {
   RawAddress bd_addr;
   uint8_t status; /* bt_hci_error_code_t */
   bool encr_enable;
   uint8_t key_size;
   tBT_TRANSPORT transport;
-  bool secure_connections;
+  EncryptionAlgorithm encryption_algo;
 } bt_encryption_change_evt;
 
 #define BT_MAX_NUM_UUIDS 32
@@ -1128,6 +1148,9 @@ struct formatter<BtIoCap> : formatter<std::string> {
     return std::formatter<std::string>::format(BtIoCapText(io_cap), ctx);
   }
 };
+template <>
+struct formatter<EncryptionAlgorithm>
+    : string_formatter<EncryptionAlgorithm, &encryption_algorithm_text> {};
 template <>
 struct formatter<PairingAlgorithm> : string_formatter<PairingAlgorithm, &pairing_algorithm_text> {};
 template <>

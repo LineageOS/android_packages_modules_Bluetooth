@@ -710,7 +710,7 @@ static void encryption_change_callback(const bt_encryption_change_evt encryption
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_encryptionChangeCallback, addr.get(),
                                encryption_change.status, encryption_change.encr_enable,
-                               encryption_change.transport, encryption_change.secure_connections,
+                               encryption_change.transport, (jint)encryption_change.encryption_algo,
                                encryption_change.key_size);
 }
 
@@ -2070,7 +2070,7 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"releaseWakeLock", "(Ljava/lang/String;)Z", &method_releaseWakeLock},
           {"energyInfoCallback", "(IIJJJJ[Landroid/bluetooth/UidTraffic;)V", &method_energyInfo},
           {"keyMissingCallback", "([BI)V", &method_keyMissingCallback},
-          {"encryptionChangeCallback", "([BIZIZI)V", &method_encryptionChangeCallback},
+          {"encryptionChangeCallback", "([BIZIII)V", &method_encryptionChangeCallback},
   };
   GET_JAVA_METHODS(env, "com/android/bluetooth/btservice/AdapterNativeCallback", javaMethods);
 
