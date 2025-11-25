@@ -150,7 +150,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
               fuzzAddress = RawAddress::FromString(addressString).value_or(RawAddress::kEmpty);
               interop_database_add(
                       mFuzzedDataProvider.PickValueInArray(kInteropFeature) /* feature */,
-                      &fuzzAddress,
+                      fuzzAddress,
                       mFuzzedDataProvider.ConsumeIntegralInRange<int32_t>(
                               1, RawAddress::kLength - 1) /* length */
               );

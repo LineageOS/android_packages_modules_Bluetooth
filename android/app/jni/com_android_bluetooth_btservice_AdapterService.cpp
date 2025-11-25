@@ -1771,7 +1771,7 @@ static jboolean interopMatchAddrOrNameNative(JNIEnv* env, jclass /* clazz */, js
     return JNI_FALSE;
   }
 
-  bool matched = sBluetoothInterface->interop_match_addr_or_name(feature_name_str, &bdaddr.value());
+  bool matched = sBluetoothInterface->interop_match_addr_or_name(feature_name_str, bdaddr.value());
   env->ReleaseStringUTFChars(feature_name, feature_name_str);
 
   return matched ? JNI_TRUE : JNI_FALSE;
@@ -1813,7 +1813,7 @@ static void interopDatabaseAddRemoveAddrNative(JNIEnv* env, jclass /* clazz */, 
   }
 
   sBluetoothInterface->interop_database_add_remove_addr(do_add == JNI_TRUE, feature_name_str,
-                                                        &bdaddr.value(), static_cast<int>(length));
+                                                        bdaddr.value(), static_cast<int>(length));
 
   env->ReleaseStringUTFChars(feature_name, feature_name_str);
 }
@@ -1869,7 +1869,7 @@ static int getRemotePbapPceVersionNative(JNIEnv* env, jobject /* obj */, jstring
     return JNI_FALSE;
   }
 
-  return sBluetoothInterface->get_remote_pbap_pce_version(&bdaddr.value());
+  return sBluetoothInterface->get_remote_pbap_pce_version(bdaddr.value());
 }
 
 static jboolean pbapPseDynamicVersionUpgradeIsEnabledNative(JNIEnv* /* env */, jobject /* obj */) {

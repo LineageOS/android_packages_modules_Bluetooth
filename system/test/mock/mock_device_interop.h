@@ -45,9 +45,9 @@ namespace device_interop {
 // Params: const uint16_t feature, const RawAddress* addr, size_t length
 // Return: void
 struct interop_database_add {
-  std::function<void(const uint16_t feature, const RawAddress* addr, size_t length)> body{
-          [](const uint16_t /* feature */, const RawAddress* /* addr */, size_t /* length */) {}};
-  void operator()(const uint16_t feature, const RawAddress* addr, size_t length) {
+  std::function<void(const uint16_t feature, const RawAddress addr, size_t length)> body{
+          [](const uint16_t /* feature */, const RawAddress /* addr */, size_t /* length */) {}};
+  void operator()(const uint16_t feature, const RawAddress addr, size_t length) {
     body(feature, addr, length);
   }
 };

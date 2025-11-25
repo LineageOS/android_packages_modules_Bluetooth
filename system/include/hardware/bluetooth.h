@@ -872,7 +872,7 @@ typedef struct {
   int (*set_remote_device_property)(RawAddress remote_addr, const bt_property_t* property);
 
   /** Get Remote Device's service record  for the given UUID */
-  int (*get_remote_service_record)(const RawAddress& remote_addr, const bluetooth::Uuid& uuid);
+  int (*get_remote_service_record)(RawAddress remote_addr, const bluetooth::Uuid& uuid);
 
   /** Start service discovery with transport to get remote services */
   int (*get_remote_services)(RawAddress remote_addr, int transport);
@@ -962,7 +962,7 @@ typedef struct {
    * NOTE: |feature| has to match an item defined in interop_feature_t
    * (interop.h).
    */
-  void (*interop_database_add)(uint16_t feature, const RawAddress* addr, size_t len);
+  void (*interop_database_add)(uint16_t feature, RawAddress addr, size_t len);
 
   /**
    * Get the AvrcpTarget Service interface to interact with the Avrcp Service
@@ -975,7 +975,7 @@ typedef struct {
    * @param address Bluetooth MAC address to be obfuscated
    * @return a string of uint8_t that is unique to this MAC address
    */
-  std::string (*obfuscate_address)(const RawAddress& address);
+  std::string (*obfuscate_address)(RawAddress address);
 
   /**
    * Get an incremental id for as primary key for Bluetooth metric and log
@@ -983,7 +983,7 @@ typedef struct {
    * @param address Bluetooth MAC address of Bluetooth device
    * @return int incremental Bluetooth id
    */
-  int (*get_metric_id)(const RawAddress& address);
+  int (*get_metric_id)(RawAddress address);
 
   /**
    * Set the dynamic audio buffer size to the Controller
@@ -1002,7 +1002,7 @@ typedef struct {
    * @param address Bluetooth MAC address of Bluetooth device
    * @return true if audio low latency is successfully allowed or disallowed
    */
-  bool (*allow_low_latency_audio)(bool allowed, const RawAddress& address);
+  bool (*allow_low_latency_audio)(bool allowed, RawAddress address);
 
   /**
    * Set the event filter for the controller
@@ -1027,7 +1027,7 @@ typedef struct {
   /**
    * Call to disconnect ACL connection to device
    */
-  int (*disconnect_acl)(const RawAddress& bd_addr, int transport);
+  int (*disconnect_acl)(RawAddress bd_addr, int transport);
 
   /**
    * Call to retrieve a generated random
@@ -1098,26 +1098,26 @@ typedef struct {
    * @param key Metadata key
    * @param value Metadata value
    */
-  void (*metadata_changed)(const RawAddress& remote_bd_addr, int key, std::vector<uint8_t> value);
+  void (*metadata_changed)(RawAddress remote_bd_addr, int key, std::vector<uint8_t> value);
 
   /** interop match address */
-  bool (*interop_match_addr)(const char* feature_name, const RawAddress* addr);
+  bool (*interop_match_addr)(const char* feature_name, RawAddress addr);
 
   /** interop match name */
   bool (*interop_match_name)(const char* feature_name, const char* name);
 
   /** interop match address or name */
-  bool (*interop_match_addr_or_name)(const char* feature_name, const RawAddress* addr);
+  bool (*interop_match_addr_or_name)(const char* feature_name, RawAddress addr);
 
   /** add or remove address entry to interop database */
-  void (*interop_database_add_remove_addr)(bool do_add, const char* feature_name,
-                                           const RawAddress* addr, int length);
+  void (*interop_database_add_remove_addr)(bool do_add, const char* feature_name, RawAddress addr,
+                                           int length);
 
   /** add or remove name entry to interop database */
   void (*interop_database_add_remove_name)(bool do_add, const char* feature_name, const char* name);
 
   /** get remote Pbap PCE  version*/
-  int (*get_remote_pbap_pce_version)(const RawAddress* bd_addr);
+  int (*get_remote_pbap_pce_version)(RawAddress bd_addr);
 
   /** check if pbap pse dynamic version upgrade is enable */
   bool (*pbap_pse_dynamic_version_upgrade_is_enabled)();
