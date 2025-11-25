@@ -236,6 +236,8 @@ static void btif_a2dp_sink_on_decode_complete([[maybe_unused]] uint8_t* data,
 
 static bool btif_a2dp_sink_initialize_a2dp_control_block(const RawAddress& peer_address) {
   log::info("Initializing the control block for peer {}", peer_address);
+  std::unique_lock<std::mutex> lock(g_mutex);
+
   if (peer_address.IsEmpty()) {
     log::error("Peer address is empty. Control block cannot be initialized");
     return false;
@@ -285,12 +287,18 @@ static bool btif_a2dp_sink_initialize_a2dp_control_block(const RawAddress& peer_
   btif_a2dp_sink_cb.bits_per_sample = bits_per_sample;
   btif_a2dp_sink_cb.channel_count = channel_count;
 
+  // Release `g_mutex` before calling BtifAvrcpAudioTrackCreate which performs
+  // binder calls to the media framework. BtifAvrcpAudioTrackCreate does not
+  // modify the stack state and is not required to hold g_mutex.
+  lock.unlock();
   btif_a2dp_sink_cb.audio_track =
 #ifdef __ANDROID__
           BtifAvrcpAudioTrackCreate(sample_rate, bits_per_sample, channel_count);
 #else
           NULL;
 #endif
+
+  lock.lock();
   if (btif_a2dp_sink_cb.audio_track == nullptr) {
     log::error("track creation failed");
     return false;
@@ -315,7 +323,6 @@ bool btif_a2dp_sink_start_session(const RawAddress& peer_address,
 static void btif_a2dp_sink_start_session_delayed(const RawAddress& peer_address,
                                                  std::promise<void> peer_ready_promise) {
   log::info("");
-  LockGuard lock(g_mutex);
   btif_a2dp_sink_initialize_a2dp_control_block(peer_address);
   peer_ready_promise.set_value();
 }
