@@ -92,10 +92,10 @@ public:
   void SetRemoteDelay(uint16_t delay_report);
 
 private:
-  static tA2DP_CTRL_CMD a2dp_pending_cmd_;
-  static uint16_t remote_delay_report_;
-  uint64_t total_bytes_read_;
-  timespec data_position_;
+  tA2DP_CTRL_CMD a2dp_pending_cmd_{A2DP_CTRL_CMD_NONE};
+  uint16_t remote_delay_report_{0};
+  uint64_t total_bytes_read_{0};
+  timespec data_position_{};
 };
 
 }  // namespace
@@ -126,17 +126,8 @@ using ::bluetooth::audio::aidl::a2dp::codec::getHalPcmConfiguration;
  *
  ***/
 
-tA2DP_CTRL_CMD A2dpTransport::a2dp_pending_cmd_ = A2DP_CTRL_CMD_NONE;
-
-uint16_t A2dpTransport::remote_delay_report_ = 0;
-
 A2dpTransport::A2dpTransport(SessionType sessionType)
-    : IBluetoothTransportInstance(sessionType, (AudioConfiguration){}),
-      total_bytes_read_(0),
-      data_position_({}) {
-  a2dp_pending_cmd_ = A2DP_CTRL_CMD_NONE;
-  remote_delay_report_ = 0;
-}
+    : IBluetoothTransportInstance(sessionType, (AudioConfiguration){}) {}
 
 Status A2dpTransport::StartRequest(bool is_low_latency) {
   // Check if a previous Start request is ongoing.
