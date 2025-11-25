@@ -1427,18 +1427,8 @@ static void setBigChannelMapClassificationNative(JNIEnv* env, jobject /* object 
     return;
   }
 
-  jbyte* sink_addr_bytes = env->GetByteArrayElements(sink_addr, nullptr);
-  if (!sink_addr_bytes) {
-    log::error("Failed to get byte array elements for sink address");
-    jniThrowIOException(env, EINVAL);
-    return;
-  }
-
-  RawAddress* sink_addr_raw = (RawAddress*)sink_addr_bytes;
-  sLeAudioBroadcasterInterface->SetBigChannelMapClassification(action, *sink_addr_raw,
-                                                               broadcast_id);
-
-  env->ReleaseByteArrayElements(sink_addr, sink_addr_bytes, 0);
+  RawAddress bd_addr = addressFromJByteArray(env, sink_addr);
+  sLeAudioBroadcasterInterface->SetBigChannelMapClassification(action, bd_addr, broadcast_id);
 }
 
 static int register_com_android_bluetooth_le_audio_broadcaster(JNIEnv* env) {
