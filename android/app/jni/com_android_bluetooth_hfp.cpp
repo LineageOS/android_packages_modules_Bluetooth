@@ -75,8 +75,8 @@ public:
   }
 
   void ConnectionStateCallback(bluetooth::headset::bthf_connection_state_t state,
-                               RawAddress* bd_addr, uint8_t reason) override {
-    log::info("{} for {}", state, *bd_addr);
+                               RawAddress bd_addr, uint8_t reason) override {
+    log::info("{} for {}", state, bd_addr);
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -84,15 +84,14 @@ public:
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectionStateChanged, (jint)state,
                                  addr.get(), (jint)reason);
   }
 
-  void AudioStateCallback(bluetooth::headset::bthf_audio_state_t state, RawAddress* bd_addr,
+  void AudioStateCallback(bluetooth::headset::bthf_audio_state_t state, RawAddress bd_addr,
                           uint8_t reason) override {
-    log::info("{} for {}", state, *bd_addr);
+    log::info("{} for {}", state, bd_addr);
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
@@ -100,72 +99,66 @@ public:
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAudioStateChanged, (jint)state, addr.get(),
                                  (jint)reason);
   }
 
   void VoiceRecognitionCallback(bluetooth::headset::bthf_vr_state_t state,
-                                RawAddress* bd_addr) override {
+                                RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onVrStateChanged, (jint)state, addr.get());
   }
 
-  void AnswerCallCallback(RawAddress* bd_addr) override {
+  void AnswerCallCallback(RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAnswerCall, addr.get());
   }
 
-  void HangupCallCallback(RawAddress* bd_addr) override {
+  void HangupCallCallback(RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onHangupCall, addr.get());
   }
 
   void VolumeControlCallback(bluetooth::headset::bthf_volume_type_t type, int volume,
-                             RawAddress* bd_addr) override {
+                             RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onVolumeChanged, (jint)type, (jint)volume,
                                  addr.get());
   }
 
-  void DialCallCallback(char* number, RawAddress* bd_addr) override {
+  void DialCallCallback(char* number, RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
 
     char null_str[] = "";
     if (!sCallbackEnv.isValidUtf(number)) {
@@ -177,127 +170,117 @@ public:
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onDialCall, js_number.get(), addr.get());
   }
 
-  void DtmfCmdCallback(char dtmf, RawAddress* bd_addr) override {
+  void DtmfCmdCallback(char dtmf, RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
 
     // TBD dtmf has changed from int to char
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onSendDtmf, dtmf, addr.get());
   }
 
-  void NoiseReductionCallback(bluetooth::headset::bthf_nrec_t nrec, RawAddress* bd_addr) override {
+  void NoiseReductionCallback(bluetooth::headset::bthf_nrec_t nrec, RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onNoiseReductionEnable,
                                  nrec == bluetooth::headset::BTHF_NREC_START, addr.get());
   }
 
-  void WbsCallback(bluetooth::headset::bthf_wbs_config_t wbs_config, RawAddress* bd_addr) override {
+  void WbsCallback(bluetooth::headset::bthf_wbs_config_t wbs_config, RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onWBS, wbs_config, addr.get());
   }
 
   void SwbCallback(bluetooth::headset::bthf_swb_codec_t swb_codec,
-                   bluetooth::headset::bthf_swb_config_t swb_config, RawAddress* bd_addr) override {
+                   bluetooth::headset::bthf_swb_config_t swb_config, RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onSWB, swb_codec, swb_config, addr.get());
   }
 
-  void AtChldCallback(bluetooth::headset::bthf_chld_type_t chld, RawAddress* bd_addr) override {
+  void AtChldCallback(bluetooth::headset::bthf_chld_type_t chld, RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtChld, chld, addr.get());
   }
 
-  void AtCnumCallback(RawAddress* bd_addr) override {
+  void AtCnumCallback(RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtCnum, addr.get());
   }
 
-  void AtCindCallback(RawAddress* bd_addr) override {
+  void AtCindCallback(RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtCind, addr.get());
   }
 
-  void AtCopsCallback(RawAddress* bd_addr) override {
+  void AtCopsCallback(RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtCops, addr.get());
   }
 
-  void AtClccCallback(RawAddress* bd_addr) override {
+  void AtClccCallback(RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtClcc, addr.get());
   }
 
-  void UnknownAtCallback(char* at_string, RawAddress* bd_addr) override {
+  void UnknownAtCallback(char* at_string, RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
 
     char null_str[] = "";
     if (!sCallbackEnv.isValidUtf(at_string)) {
@@ -309,27 +292,25 @@ public:
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onUnknownAt, js_at_string.get(), addr.get());
   }
 
-  void KeyPressedCallback(RawAddress* bd_addr) override {
+  void KeyPressedCallback(RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onKeyPressed, addr.get());
   }
 
-  void AtBindCallback(char* at_string, RawAddress* bd_addr) override {
+  void AtBindCallback(char* at_string, RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
 
     char null_str[] = "";
     if (!sCallbackEnv.isValidUtf(at_string)) {
@@ -343,42 +324,39 @@ public:
   }
 
   void AtBievCallback(bluetooth::headset::bthf_hf_ind_type_t ind_id, int ind_value,
-                      RawAddress* bd_addr) override {
+                      RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtBiev, ind_id, (jint)ind_value,
                                  addr.get());
   }
 
   void AtBiaCallback(bool service, bool roam, bool signal, bool battery,
-                     RawAddress* bd_addr) override {
+                     RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtBia, service, roam, signal, battery,
                                  addr.get());
   }
 
-  void AtBccCallback(RawAddress* bd_addr) override {
+  void AtBccCallback(RawAddress bd_addr) override {
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mCallbacksObj) {
       return;
     }
 
-    // TODO(b/424272093) Unchecked RawAddress* dereference.
-    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+    ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
     sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAtBcc, addr.get());
   }
 
