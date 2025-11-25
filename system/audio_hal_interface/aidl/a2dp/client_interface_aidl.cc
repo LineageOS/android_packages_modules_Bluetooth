@@ -38,7 +38,7 @@ namespace audio {
 namespace aidl {
 namespace a2dp {
 
-BluetoothAudioClientInterface::BluetoothAudioClientInterface(IBluetoothTransportInstance* instance)
+BluetoothAudioClientInterface::BluetoothAudioClientInterface(A2dpTransport* instance)
     : provider_(nullptr),
       provider_factory_(nullptr),
       session_started_(false),

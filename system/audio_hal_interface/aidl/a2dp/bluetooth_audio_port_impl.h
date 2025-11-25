@@ -16,8 +16,8 @@
 
 #pragma once
 
+#include "a2dp_aidl_transport.h"
 #include "audio_aidl_interfaces.h"
-#include "transport_instance.h"
 
 namespace bluetooth {
 namespace audio {
@@ -34,7 +34,7 @@ using ::aidl::android::hardware::bluetooth::audio::PresentationPosition;
 
 class BluetoothAudioPortImpl : public BnBluetoothAudioPort {
 public:
-  BluetoothAudioPortImpl(IBluetoothTransportInstance* transport_instance,
+  BluetoothAudioPortImpl(A2dpTransport* transport_instance,
                          const std::shared_ptr<IBluetoothAudioProvider>& provider);
 
   ndk::ScopedAStatus startStream(bool is_low_latency) override;
@@ -48,7 +48,7 @@ public:
 protected:
   virtual ~BluetoothAudioPortImpl();
 
-  IBluetoothTransportInstance* transport_instance_;
+  A2dpTransport* transport_instance_;
   const std::shared_ptr<IBluetoothAudioProvider> provider_;
   PresentationPosition::TimeSpec timespec_convert_to_hal(const timespec& ts);
 

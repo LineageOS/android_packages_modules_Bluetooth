@@ -28,7 +28,6 @@
 #include "audio_aidl_interfaces.h"
 #include "client_interface_aidl.h"
 #include "codec_status_aidl.h"
-#include "transport_instance.h"
 
 namespace bluetooth {
 namespace audio {
@@ -97,8 +96,7 @@ bool is_hal_offloading() {
 // Opens the HAL client interface of the specified session type and check
 // that is is valid. Returns nullptr if the client interface did not open
 // properly.
-static BluetoothAudioClientInterface* new_hal_interface(
-        IBluetoothTransportInstance* transport_instance) {
+static BluetoothAudioClientInterface* new_hal_interface(A2dpTransport* transport_instance) {
   auto hal_interface = new BluetoothAudioClientInterface(transport_instance);
   if (hal_interface->IsValid()) {
     return hal_interface;
