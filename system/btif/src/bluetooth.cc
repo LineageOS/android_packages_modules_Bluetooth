@@ -320,6 +320,12 @@ struct CoreInterfaceImpl : bluetooth::core::CoreInterface {
     if (VolumeController::IsRunning()) {
       btif_vcp_controller_get_interface()->RemoveDevice(bd_addr);
     }
+
+    if (com_android_bluetooth_flags_hap_keep_bonded_dev_in_ram()) {
+      if (bluetooth::le_audio::has::HasClient::IsHasClientRunning()) {
+        btif_has_client_get_interface()->RemoveDevice(bd_addr);
+      }
+    }
   }
 
   void onLinkDown(const RawAddress& bd_addr, tBT_TRANSPORT transport) override {

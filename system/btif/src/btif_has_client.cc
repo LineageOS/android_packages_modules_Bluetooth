@@ -18,6 +18,7 @@
 #include <base/functional/bind.h>
 #include <base/location.h>
 #include <bluetooth/types/address.h>
+#include <com_android_bluetooth_flags.h>
 #include <hardware/bt_has.h>
 
 #include <cstdint>
@@ -105,7 +106,11 @@ class HearingAaccessClientServiceInterfaceImpl : public HasClientInterface,
   void RemoveDevice(const RawAddress& addr) override {
     /* RemoveDevice can be called on devices that don't have BAS enabled */
     if (HasClient::IsHasClientRunning()) {
-      do_in_main_thread(BindOnce(&HasClient::Disconnect, Unretained(HasClient::Get()), addr));
+      if (com_android_bluetooth_flags_hap_keep_bonded_dev_in_ram()) {
+        do_in_main_thread(BindOnce(&HasClient::RemoveDevice, Unretained(HasClient::Get()), addr));
+      } else {
+        do_in_main_thread(BindOnce(&HasClient::Disconnect, Unretained(HasClient::Get()), addr));
+      }
     }
 
     do_in_jni_thread(BindOnce(&btif_storage_remove_leaudio_has, addr));

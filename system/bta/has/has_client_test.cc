@@ -763,12 +763,22 @@ protected:
   void TestDisconnect(const RawAddress& address, uint16_t conn_id) {
     EXPECT_CALL(gatt_interface, CancelOpen(_, address, _)).Times(AnyNumber());
     if (conn_id != GATT_INVALID_CONN_ID) {
-      assert(0);
       EXPECT_CALL(gatt_interface, Close(conn_id));
     } else {
       EXPECT_CALL(gatt_interface, CancelOpen(gatt_if, address, _));
     }
     HasClient::Get()->Disconnect(address);
+    Mock::VerifyAndClearExpectations(&gatt_interface);
+  }
+
+  void TestRemove(const RawAddress& address, uint16_t conn_id) {
+    if (conn_id != GATT_INVALID_CONN_ID) {
+      EXPECT_CALL(gatt_interface, Close(conn_id));
+    } else {
+      EXPECT_CALL(gatt_interface, CancelOpen(gatt_if, address, _));
+    }
+    HasClient::Get()->RemoveDevice(address);
+    Mock::VerifyAndClearExpectations(&gatt_interface);
   }
 
   void TestAddFromStorage(const RawAddress& address, uint8_t features, bool auto_connect) {
@@ -1110,6 +1120,26 @@ protected:
     set_sample_database(address, builder, features, std::nullopt);
   }
 
+  void CheckDebugDump(const std::string& substr, bool present) {
+    int fds[2];
+    ASSERT_NE(pipe(fds), -1);
+
+    HasClient::DebugDump(fds[1]);
+    close(fds[1]);
+
+    char buf[1024] = {};
+    ssize_t len = read(fds[0], buf, sizeof(buf) - 1);
+    close(fds[0]);
+
+    ASSERT_GT(len, 0);
+    std::string dump_output(buf, len);
+    if (present) {
+      ASSERT_THAT(dump_output, ::testing::HasSubstr(substr));
+    } else {
+      ASSERT_THAT(dump_output, ::testing::Not(::testing::HasSubstr(substr)));
+    }
+  }
+
   NiceMock<MockHasCallbacks> callbacks;
   NiceMock<bluetooth::manager::MockBtmInterface> btm_interface;
   NiceMock<bluetooth::storage::MockBtifStorageInterface> btif_storage_interface_;
@@ -1228,6 +1258,44 @@ TEST_F(HasClientTest, test_disconnect_connected) {
   EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(1);
   EXPECT_CALL(gatt_queue, Clean(1)).Times(AtLeast(1));
   TestDisconnect(test_address, 1);
+}
+
+TEST_F(HasClientTest, test_disconnect_connected_keep_bonded_dev_in_ram) {
+  com::android::bluetooth::flags::provider_->hap_keep_bonded_dev_in_ram(true);
+  const RawAddress test_address = GetTestAddress(1);
+  /* Minimal possible HA device (only feature flags) */
+  SetSampleDatabaseHasNoPresetChange(test_address,
+                                     bluetooth::has::kFeatureBitHearingAidTypeBinaural);
+
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
+  TestConnect(test_address);
+
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(1);
+  EXPECT_CALL(gatt_queue, Clean(1)).Times(AtLeast(1));
+  TestDisconnect(test_address, 1);
+
+  // Verify that the device list is not empty by inspecting the dump output
+  CheckDebugDump("No known HAS devices", false);
+}
+
+TEST_F(HasClientTest, test_remove_connected) {
+  com::android::bluetooth::flags::provider_->hap_keep_bonded_dev_in_ram(true);
+  const RawAddress test_address = GetTestAddress(1);
+  /* Minimal possible HA device (only feature flags) */
+  SetSampleDatabaseHasNoPresetChange(test_address,
+                                     bluetooth::has::kFeatureBitHearingAidTypeBinaural);
+
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
+  TestConnect(test_address);
+
+  EXPECT_CALL(callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(1);
+  EXPECT_CALL(gatt_queue, Clean(1)).Times(AtLeast(1));
+  TestRemove(test_address, 1);
+
+  // Verify that the device list is empty by inspecting the dump output
+  CheckDebugDump("No known HAS devices", true);
+  Mock::VerifyAndClearExpectations(&callbacks);
+  Mock::VerifyAndClearExpectations(&gatt_queue);
 }
 
 TEST_F(HasClientTest, test_disconnected_while_autoconnect) {
