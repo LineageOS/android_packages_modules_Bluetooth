@@ -17,6 +17,7 @@
 package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
+import static android.bluetooth.BluetoothClass.Device.Major.UNCATEGORIZED;
 import static android.bluetooth.BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
@@ -131,13 +132,14 @@ public class RemoteDevicesTest {
         mInOrder = inOrder(mAdapterService);
         mHandlerThread = new HandlerThread("RemoteDevicesTestHandlerThread");
         mHandlerThread.start();
-        mTestLooperManager =
-                InstrumentationRegistry.getInstrumentation()
-                        .acquireLooperManager(mHandlerThread.getLooper());
+        var instrumentation = InstrumentationRegistry.getInstrumentation();
+        mTestLooperManager = instrumentation.acquireLooperManager(mHandlerThread.getLooper());
 
         mockGetBluetoothManager(mAdapterService);
         mockGetSystemService(mAdapterService, CompanionDeviceManager.class);
         doReturn(mPackageManager).when(mAdapterService).getPackageManager();
+        doReturn(UNCATEGORIZED).when(mAdapterService).getRemoteClass(mDevice);
+
         mRemoteDevices = new RemoteDevices(mAdapterService, mHandlerThread.getLooper());
         verify(mAdapterService).getSystemService(BluetoothManager.class);
         verify(mAdapterService, times(2)).getPackageManager();
