@@ -21,7 +21,6 @@ from bumble import core
 from bumble import device
 from bumble import gatt
 from bumble import hci
-from bumble.profiles import ascs
 from bumble.profiles import bap
 from bumble.profiles import bass
 from bumble.profiles import le_audio
@@ -30,6 +29,7 @@ from mobly import test_runner
 from mobly import signals
 from typing_extensions import override
 
+from navi.bumble_ext import ascs
 from navi.tests import navi_test_base
 from navi.utils import android_constants
 from navi.utils import bl4a_api

@@ -26,6 +26,7 @@ import android.bluetooth.OobData
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.AdvertisingSetParameters
+import android.bluetooth.le.PeriodicAdvertisingParameters
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
@@ -293,6 +294,16 @@ class JsonObjectConverter : SnippetObjectConverter {
             }
             .build()
 
+    private fun JSONObject.toPeriodicAdvertisingParameters(): PeriodicAdvertisingParameters =
+        PeriodicAdvertisingParameters.Builder()
+            .apply {
+                getOrNull<Int>(SnippetConstants.ADV_PARAMETER_INTERVAL)?.let { setInterval(it) }
+                getOrNull<Boolean>(SnippetConstants.ADV_DATA_INCLUDE_TX_POWER_LEVEL)?.let {
+                    setIncludeTxPower(it)
+                }
+            }
+            .build()
+
     private fun JSONObject.toBluetoothGattDescriptor() =
         BluetoothGattDescriptor(
             UUID.fromString(optString(SnippetConstants.FIELD_UUID)),
@@ -504,6 +515,9 @@ class JsonObjectConverter : SnippetObjectConverter {
         }
         if (type === AdvertisingSetParameters::class.java) {
             return jsonObject?.toAdvertisingSetParameters()
+        }
+        if (type === PeriodicAdvertisingParameters::class.java) {
+            return jsonObject?.toPeriodicAdvertisingParameters()
         }
         if (type === BluetoothGattService::class.java) {
             return jsonObject?.toBluetoothGattService()

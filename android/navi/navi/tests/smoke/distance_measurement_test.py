@@ -201,10 +201,10 @@ class DistanceMeasurementTest(navi_test_base.TwoDevicesTestBase):
         subevent = rap.Subevent(
             start_acl_connection_event=event.start_acl_conn_event_counter,
             frequency_compensation=event.frequency_compensation,
-            ranging_abort_reason=event.procedure_done_status,
+            ranging_abort_reason=event.abort_reason & 0x0F,
             ranging_done_status=event.procedure_done_status,
             subevent_done_status=event.subevent_done_status,
-            subevent_abort_reason=event.abort_reason,
+            subevent_abort_reason=event.abort_reason >> 4,
             reference_power_level=event.reference_power_level,
         )
         ranging_data.subevents.append(subevent)
@@ -313,9 +313,6 @@ class DistanceMeasurementTest(navi_test_base.TwoDevicesTestBase):
         ras = _RangingService(ras_features=rap.RasFeatures.REAL_TIME_RANGING_DATA)
         self.ref.device.gatt_server.add_service(ras)
 
-        # Setup connection and pairing.
-        await self.le_connect_and_pair(ref_address_type=hci.OwnAddressType.RANDOM)
-
         await self.ref.device.start_advertising(
             own_address_type=hci.OwnAddressType.RANDOM,
             advertising_interval_min=_DEFAULT_ADVERTISING_INTERVAL,
@@ -323,12 +320,16 @@ class DistanceMeasurementTest(navi_test_base.TwoDevicesTestBase):
         )
 
         # Devices must be connected before starting distance measurement.
+        # Connect before pairing to avoid being disconnected due to timeout.
         self.logger.info('[DUT] Connect to REF')
         await self.dut.bl4a.connect_gatt_client(
             address=self.ref.random_address,
             transport=android_constants.Transport.LE,
             address_type=android_constants.AddressTypeStatus.RANDOM,
         )
+
+        # Setup connection and pairing.
+        await self.le_connect_and_pair(ref_address_type=hci.OwnAddressType.RANDOM)
 
         ref_dut_acl = self.ref.device.find_connection_by_bd_addr(
             hci.Address(self.dut.address),
@@ -420,6 +421,9 @@ class DistanceMeasurementTest(navi_test_base.TwoDevicesTestBase):
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECEONDS):
             dut_cs_capabilities = await self.ref.device.get_remote_cs_capabilities(ref_dut_acl)
             await self.ref.device.set_default_cs_settings(ref_dut_acl)
+            # Wait for CS settings to be ready on DUT.
+            await asyncio.sleep(1)
+
             config = await self.ref.device.create_cs_config(ref_dut_acl)
             await self.ref.device.enable_cs_security(ref_dut_acl)
             tone_antenna_config_selection = _CS_TONE_ANTENNA_CONFIG_MAPPING_TABLE[

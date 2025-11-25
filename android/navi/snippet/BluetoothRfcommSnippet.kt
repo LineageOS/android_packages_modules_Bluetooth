@@ -20,12 +20,18 @@ import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothServerSocket
 import android.bluetooth.BluetoothSocket
 import android.util.Base64
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.android.mobly.snippet.Snippet
 import com.google.android.mobly.snippet.rpc.Rpc
+import com.google.android.mobly.snippet.rpc.RpcDefault
 import com.google.android.mobly.snippet.rpc.RpcOptional
 import java.util.UUID
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 
 class BluetoothRfcommSnippet : Snippet {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -33,6 +39,8 @@ class BluetoothRfcommSnippet : Snippet {
     private val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
     private val servers = mutableMapOf<String, BluetoothServerSocket>()
     private val sockets = mutableMapOf<String, BluetoothSocket>()
+    private val threadPool = Executors.newCachedThreadPool()
+    private val connectingFutures = mutableMapOf<String, Future<*>>()
 
     init {
         instrumentation.uiAutomation.adoptShellPermissionIdentity()
@@ -40,7 +48,13 @@ class BluetoothRfcommSnippet : Snippet {
 
     /** Connects an RFCOMM channel with a service record UUID. */
     @Rpc(description = "Connect an RFCOMM channel with a service record UUID")
-    fun rfcommConnectWithUuid(address: String, secure: Boolean, uuid: String): String {
+    fun rfcommConnectWithUuid(
+        address: String,
+        secure: Boolean,
+        uuid: String,
+        @RpcDefault(true.toString(), converter = Utils.BooleanConverter::class)
+        blocking: Boolean = true,
+    ): String {
         val device = bluetoothAdapter.getRemoteDevice(address)
         val socket =
             if (secure) {
@@ -48,10 +62,47 @@ class BluetoothRfcommSnippet : Snippet {
             } else {
                 device.createInsecureRfcommSocketToServiceRecord(UUID.fromString(uuid))
             }
-        socket.connect()
+
         val cookie = UUID.randomUUID().toString()
         sockets[cookie] = socket
+
+        if (blocking) {
+            socket.connect()
+        } else {
+            connectingFutures[cookie] =
+                threadPool.submit {
+                    try {
+                        socket.connect()
+                    } catch (e: java.io.IOException) {
+                        Log.e(TAG, "Failed to connect to RFCOMM channel", e)
+                        throw e
+                    }
+                }
+        }
+
         return cookie
+    }
+
+    /** Waits for an RFCOMM channel connection to complete. */
+    @Rpc(description = "Wait for an RFCOMM channel connection to complete")
+    fun rfcommWaitForConnectionComplete(
+        cookie: String,
+        @RpcDefault(
+            DEFAULT_CONNECTION_TIMEOUT_MILLISECONDS.toString(),
+            converter = Utils.LongConverter::class,
+        )
+        timeoutMilliseconds: Long = DEFAULT_CONNECTION_TIMEOUT_MILLISECONDS,
+    ) {
+        val future =
+            connectingFutures[cookie]
+                ?: throw IllegalArgumentException("No connection on cookie $cookie")
+        try {
+            future.get(timeoutMilliseconds, TimeUnit.MILLISECONDS)
+        } catch (e: ExecutionException) {
+            // Throw the cause of the ExecutionException if it exists, otherwise throw the
+            // ExecutionException itself.
+            throw e.cause ?: e
+        }
     }
 
     /** Listens for an [secure] RFCOMM channel with SDP record [uuid]. */
@@ -89,6 +140,7 @@ class BluetoothRfcommSnippet : Snippet {
     @Rpc(description = "Disconnect an RFCOMM channel")
     fun rfcommDisconnect(cookie: String) {
         sockets.remove(cookie)?.close()
+        connectingFutures.remove(cookie)?.cancel(true)
     }
 
     /** Reads [bytesToRead] bytes of data from an RFCOMM channel with [cookie]. */
@@ -119,7 +171,8 @@ class BluetoothRfcommSnippet : Snippet {
 
     @VisibleForTesting fun getServers() = this.servers
 
-    companion object {
+    private companion object {
         const val TAG = "BluetoothRfcommSnippet"
+        const val DEFAULT_CONNECTION_TIMEOUT_MILLISECONDS = 10_000L
     }
 }

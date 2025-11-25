@@ -14,6 +14,7 @@
 """Tests for HID over GATT Profile(GATT) implementation on Android."""
 
 import asyncio
+import contextlib
 import struct
 
 from bumble import core
@@ -30,6 +31,7 @@ from navi.utils import constants
 
 _DEFAULT_STEP_TIMEOUT_SECONDS = 10.0
 _PREPARE_INPUT_ACTIVITY_TIMEOUT_SECONDS = 0.5
+_VIDEO_SERVICE_NAME = "video"
 
 
 class HidHostTest(navi_test_base.TwoDevicesTestBase):
