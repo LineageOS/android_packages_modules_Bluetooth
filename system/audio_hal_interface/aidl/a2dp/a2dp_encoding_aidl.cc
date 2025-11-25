@@ -57,6 +57,7 @@ using ::bluetooth::audio::aidl::a2dp::codec::getHalPcmConfiguration;
 // Common interface to call-out into Bluetooth Audio HAL
 BluetoothAudioClientInterface* software_hal_interface = nullptr;
 BluetoothAudioClientInterface* offloading_hal_interface = nullptr;
+BluetoothAudioClientInterface* decoder_offloading_hal_interface = nullptr;
 BluetoothAudioClientInterface* active_hal_interface = nullptr;
 
 // ProviderInfo for A2DP hardware offload encoding and decoding data paths,
@@ -161,6 +162,33 @@ bool init(bluetooth::common::MessageLoopThread* /*message_loop*/,
   return true;
 }
 
+// Initialize BluetoothAudio HAL for decoding session
+bool init_decoder(StreamCallbacks const* stream_callbacks, bool offload_enabled) {
+  log::info("");
+  log::assert_that(stream_callbacks != nullptr, "stream_callbacks != nullptr");
+  if (decoder_offloading_hal_interface != nullptr) {
+    return true;
+  }
+
+  if (!BluetoothAudioClientInterface::is_aidl_available()) {
+    log::error("BluetoothAudio AIDL implementation does not exist");
+    return false;
+  }
+
+  if (offload_enabled) {
+    auto transport = new A2dpTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DECODING_DATAPATH,
+                                       stream_callbacks);
+    decoder_offloading_hal_interface = new BluetoothAudioClientInterface(transport);
+    if (!decoder_offloading_hal_interface->IsValid()) {
+      log::error("BluetoothAudio HAL for a2dp decoder is invalid");
+      delete transport;
+      delete decoder_offloading_hal_interface;
+      return false;
+    }
+  }
+  return true;
+}
+
 // Clean up BluetoothAudio HAL
 void cleanup() {
   if (!is_hal_enabled()) {
@@ -181,6 +209,14 @@ void cleanup() {
     transport = offloading_hal_interface->GetTransportInstance();
     delete offloading_hal_interface;
     offloading_hal_interface = nullptr;
+    delete transport;
+  }
+
+  if (com::android::bluetooth::flags::a2dp_sink_offload() &&
+      decoder_offloading_hal_interface != nullptr) {
+    transport = decoder_offloading_hal_interface->GetTransportInstance();
+    delete decoder_offloading_hal_interface;
+    decoder_offloading_hal_interface = nullptr;
     delete transport;
   }
 
@@ -483,9 +519,27 @@ provider::get_a2dp_configuration(
   using ::aidl::android::hardware::bluetooth::audio::A2dpRemoteCapabilities;
   using ::aidl::android::hardware::bluetooth::audio::CodecId;
 
-  if (offloading_hal_interface == nullptr) {
-    log::error("the offloading HAL interface is not opened");
-    return std::nullopt;
+  BluetoothAudioClientInterface* hal_interface_to_use = nullptr;
+
+  if (com::android::bluetooth::flags::a2dp_sink_offload()) {
+    if (is_source) {
+      hal_interface_to_use = offloading_hal_interface;
+      if (hal_interface_to_use == nullptr) {
+        log::error("the offloading HAL interface is not opened");
+        return std::nullopt;
+      }
+    } else {
+      hal_interface_to_use = decoder_offloading_hal_interface;
+      if (hal_interface_to_use == nullptr) {
+        log::error("the decoder offloading HAL interface is not opened");
+        return std::nullopt;
+      }
+    }
+  } else {
+    if (offloading_hal_interface == nullptr) {
+      log::error("the offloading HAL interface is not opened");
+      return std::nullopt;
+    }
   }
 
   // Convert the remote audio capabilities to the exchange format used
@@ -606,8 +660,12 @@ provider::get_a2dp_configuration(
 
   // Invoke the HAL GetAdpCapabilities method with the
   // remote capabilities.
-  auto result = offloading_hal_interface->GetA2dpConfiguration(a2dp_remote_capabilities, hint);
-
+  std::optional<A2dpConfiguration> result = std::nullopt;
+  if (com::android::bluetooth::flags::a2dp_sink_offload()) {
+    result = hal_interface_to_use->GetA2dpConfiguration(a2dp_remote_capabilities, hint);
+  } else {
+    result = offloading_hal_interface->GetA2dpConfiguration(a2dp_remote_capabilities, hint);
+  }
   // Convert the result configuration back to the stack's format.
   if (!result.has_value()) {
     log::info("provider cannot resolve the a2dp configuration");

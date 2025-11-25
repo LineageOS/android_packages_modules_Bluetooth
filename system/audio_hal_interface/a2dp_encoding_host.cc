@@ -276,6 +276,12 @@ bool init(bluetooth::common::MessageLoopThread* /*message_loop*/,
   return true;
 }
 
+// Initialize BluetoothAudio HAL for decoding session
+bool init_decoder([[maybe_unused]] bluetooth::audio::a2dp::StreamCallbacks const* stream_callbacks,
+                  [[maybe_unused]] bool offload_enabled) {
+  return false;
+}
+
 // Clean up BluetoothAudio HAL
 void cleanup() {
   end_session();

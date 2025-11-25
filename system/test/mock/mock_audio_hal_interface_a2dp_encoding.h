@@ -152,6 +152,21 @@ struct init {
 };
 extern struct init init;
 
+// Name: init_decoder
+// Params: bluetooth::audio::a2dp::StreamCallbacks const* stream_callbacks, bool offload_enabled
+// Return: bool
+struct init_decoder {
+  static bool return_value;
+  std::function<bool(bluetooth::audio::a2dp::StreamCallbacks const*, bool)> body{
+          [](bluetooth::audio::a2dp::StreamCallbacks const* /* stream_callbacks */,
+             bool /* offload_enabled */) { return return_value; }};
+  bool operator()(bluetooth::audio::a2dp::StreamCallbacks const* stream_callbacks,
+                  bool offload_enabled) {
+    return body(stream_callbacks, offload_enabled);
+  }
+};
+extern struct init_decoder init_decoder;
+
 // Name: is_hal_enabled
 // Params:
 // Return: bool
