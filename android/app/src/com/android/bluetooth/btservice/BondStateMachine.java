@@ -412,7 +412,7 @@ public final class BondStateMachine extends StateMachine {
             boolean transition) {
         int bondState = mRemoteDevices.getBondState(dev);
         if (bondState != BluetoothDevice.BOND_NONE
-                && !(Flags.autonomousRepairingInitiation() && mAdapterService.isBondLost(dev))) {
+                && !(Utils.isAutonomousRepairingSupported() && mAdapterService.isBondLost(dev))) {
             logW("createBond: " + dev + " already in " + bondStateToString(bondState) + " state");
             return false;
         }
@@ -486,7 +486,7 @@ public final class BondStateMachine extends StateMachine {
                     0,
                     BluetoothDevice.UNBOND_REASON_REMOVED);
 
-            if (Flags.autonomousRepairingInitiation() && mAdapterService.isBondLost(dev)) {
+            if (Utils.isAutonomousRepairingSupported() && mAdapterService.isBondLost(dev)) {
                 // If it's a bond-loss scenario, disconnect the ACL.
                 // TODO (b/440298497): It is possible that createBond() is called on the device by
                 // any 1P/3P app and the bond loss was already detected. In this case, we should not
@@ -512,7 +512,7 @@ public final class BondStateMachine extends StateMachine {
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         maybePin.ifPresent(pin -> intent.putExtra(BluetoothDevice.EXTRA_PAIRING_KEY, pin));
         intent.putExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, variant);
-        if (Flags.autonomousRepairingInitiation()) {
+        if (Utils.isAutonomousRepairingSupported()) {
             intent.putExtra(BluetoothDevice.EXTRA_PAIRING_CONTEXT, pairingContext);
         }
         if (Flags.providePairingAlgo()) {
@@ -567,7 +567,7 @@ public final class BondStateMachine extends StateMachine {
         int oldState = devProp != null ? devProp.getBondState() : BluetoothDevice.BOND_NONE;
 
         // Internal bond state update.
-        if (!(Flags.autonomousRepairingInitiation() && mAdapterService.isBondLost(device))) {
+        if (!(Utils.isAutonomousRepairingSupported() && mAdapterService.isBondLost(device))) {
             // Skip updating the bond state to RemoteDevices to protect updating the bonded devices
             // list.
             mRemoteDevices.onBondStateChange(
@@ -653,7 +653,7 @@ public final class BondStateMachine extends StateMachine {
         mAdapterService.handleBondStateChanged(device, oldState, newState);
 
         // Skip broadcasting the bond state changed if the device is in bond-loss state.
-        if (!(Flags.autonomousRepairingInitiation() && mAdapterService.isBondLost(device))) {
+        if (!(Utils.isAutonomousRepairingSupported() && mAdapterService.isBondLost(device))) {
             broadcastBondStateChangeIntent(device, oldState, newState, reason);
         }
     }
@@ -703,7 +703,7 @@ public final class BondStateMachine extends StateMachine {
         if (newState == BluetoothDevice.BOND_NONE) {
             intent.putExtra(BluetoothDevice.EXTRA_UNBOND_REASON, reason);
         }
-        if (Flags.autonomousRepairingInitiation() && mAdapterService.isBondLost(device)) {
+        if (Utils.isAutonomousRepairingSupported() && mAdapterService.isBondLost(device)) {
             intent.putExtra(
                     BluetoothDevice.EXTRA_PAIRING_CONTEXT,
                     BluetoothDevice.PAIRING_CONTEXT_REPAIRING);
@@ -825,7 +825,7 @@ public final class BondStateMachine extends StateMachine {
         if (context == BluetoothDevice.PAIRING_CONTEXT_USER_APPROVAL_REQUESTED) {
             // Identify whether its re-pairing or pairing
             if (device != null
-                    && Flags.autonomousRepairingInitiation()
+                    && Utils.isAutonomousRepairingSupported()
                     && mAdapterService.isBondLost(device)) {
                 context = BluetoothDevice.PAIRING_CONTEXT_REPAIRING;
             }
@@ -891,7 +891,7 @@ public final class BondStateMachine extends StateMachine {
         Bundle bundle = new Bundle();
         bundle.putInt(
                 KEY_PAIRING_CONTEXT,
-                (Flags.autonomousRepairingInitiation() && mAdapterService.isBondLost(bdDevice))
+                (Utils.isAutonomousRepairingSupported() && mAdapterService.isBondLost(bdDevice))
                         ? BluetoothDevice.PAIRING_CONTEXT_REPAIRING
                         : BluetoothDevice.PAIRING_CONTEXT_USER_APPROVAL_REQUESTED);
         bundle.putInt(KEY_PAIRING_ALGORITHM, pairingAlgorithm);
