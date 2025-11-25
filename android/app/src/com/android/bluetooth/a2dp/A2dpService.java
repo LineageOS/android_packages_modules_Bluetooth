@@ -56,6 +56,7 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.InteropUtil;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.profile.ConnectableProfile;
 import com.android.bluetooth.profile.ProfileService;
@@ -324,7 +325,12 @@ public class A2dpService extends ConnectableProfile {
         int connectionPolicy = getConnectionPolicy(device);
         if (connectionPolicy != CONNECTION_POLICY_UNKNOWN
                 && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
-            if (!isOutgoingRequest) {
+            boolean matched =
+                    InteropUtil.interopMatchAddrOrName(
+                            getAdapterService(),
+                            InteropUtil.InteropFeature.INTEROP_DISABLE_PROFILE_FALLBACK,
+                            device.getAddress());
+            if (!isOutgoingRequest && !matched) {
                 final var headset = getAdapterService().getHeadsetService();
                 if (headset.isPresent() && headset.get().okToAcceptConnection(device, true)) {
                     Log.d(

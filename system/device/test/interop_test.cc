@@ -235,6 +235,12 @@ TEST_F(InteropTest, test_lookup_hit) {
 
   test_address = RawAddress::FromString("94:b2:cc:30:c5:4d").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_SLC_SKIP_BIND_COMMAND, &test_address));
+
+  test_address = RawAddress::FromString("9c:df:03:44:02:68").value();
+  EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_PROFILE_FALLBACK, &test_address));
+
+  test_address = RawAddress::FromString("98:49:14:45:06:06").value();
+  EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_PROFILE_FALLBACK, &test_address));
 #endif
 
   module_clean_up(&interop_module);
@@ -316,6 +322,7 @@ TEST_F(InteropTest, test_lookup_miss) {
   EXPECT_FALSE(interop_match_addr(INTEROP_DISABLE_AVDTP_SUSPEND, &test_address));
   EXPECT_FALSE(interop_match_addr(INTEROP_SLC_SKIP_BIND_COMMAND, &test_address));
   EXPECT_FALSE(interop_match_addr(INTEROP_AVRCP_1_3_ONLY, &test_address));
+  EXPECT_FALSE(interop_match_addr(INTEROP_DISABLE_PROFILE_FALLBACK, &test_address));
 
   module_clean_up(&interop_module);
 }
@@ -381,6 +388,8 @@ TEST_F(InteropTest, test_name_hit) {
           interop_match_name(INTEROP_ENABLE_PREFERRED_CONN_PARAMETER, "Microsoft Bluetooth Mouse"));
   EXPECT_TRUE(interop_match_name(INTEROP_RETRY_SCO_AFTER_REMOTE_REJECT_SCO, "HAVAL M6"));
   EXPECT_TRUE(interop_match_name(INTEROP_CHANGE_HID_VID_PID, "CK87BT"));
+  EXPECT_TRUE(interop_match_name(INTEROP_DISABLE_PROFILE_FALLBACK, "BMW 88876"));
+  EXPECT_TRUE(interop_match_name(INTEROP_DISABLE_PROFILE_FALLBACK, "myCadillac"));
 #endif
 
   module_clean_up(&interop_module);
@@ -450,6 +459,7 @@ TEST_F(InteropTest, test_name_miss) {
   EXPECT_FALSE(interop_match_name(INTEROP_DISABLE_AVDTP_SUSPEND, "TEST"));
   EXPECT_FALSE(interop_match_name(INTEROP_SLC_SKIP_BIND_COMMAND, "TEST"));
   EXPECT_FALSE(interop_match_name(INTEROP_AVRCP_1_3_ONLY, "TEST"));
+  EXPECT_FALSE(interop_match_name(INTEROP_DISABLE_PROFILE_FALLBACK, "TEST"));
 
   module_clean_up(&interop_module);
 }
