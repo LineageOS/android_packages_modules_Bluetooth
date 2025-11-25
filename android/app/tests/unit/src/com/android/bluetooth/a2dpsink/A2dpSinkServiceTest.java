@@ -21,6 +21,7 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.TestUtils.getTestDevice;
@@ -193,9 +194,11 @@ public class A2dpSinkServiceTest {
 
         assertThat(mService.disconnect(mDevice1)).isTrue();
         syncHandler(A2dpSinkStateMachine.MESSAGE_DISCONNECT);
-        assertThat(mService.getConnectionState(mDevice1)).isEqualTo(STATE_DISCONNECTED);
+        mService.onConnectionStateChangedFromNative(mDevice1, STATE_DISCONNECTING);
+        mService.onConnectionStateChangedFromNative(mDevice1, STATE_DISCONNECTED);
+        mLooper.dispatchAll();
 
-        syncHandler(A2dpSinkStateMachine.CLEANUP, -1 /* SM_QUIT_CMD */);
+        assertThat(mService.getConnectionState(mDevice1)).isEqualTo(STATE_DISCONNECTED);
         assertThat(mLooper.nextMessage()).isNull();
     }
 
@@ -419,9 +422,11 @@ public class A2dpSinkServiceTest {
 
         syncHandler(A2dpSinkStateMachine.MESSAGE_DISCONNECT);
         verify(mNativeInterface).disconnectA2dpSink(eq(mDevice1));
-        assertThat(mService.getConnectionState(mDevice1)).isEqualTo(STATE_DISCONNECTED);
+        mService.onConnectionStateChangedFromNative(mDevice1, STATE_DISCONNECTING);
+        mService.onConnectionStateChangedFromNative(mDevice1, STATE_DISCONNECTED);
+        mLooper.dispatchAll();
 
-        syncHandler(A2dpSinkStateMachine.CLEANUP, -1 /* SM_QUIT_CMD */);
+        assertThat(mService.getConnectionState(mDevice1)).isEqualTo(STATE_DISCONNECTED);
         assertThat(mLooper.nextMessage()).isNull();
     }
 
