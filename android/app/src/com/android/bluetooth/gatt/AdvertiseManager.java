@@ -322,6 +322,8 @@ public class AdvertiseManager {
                     duration,
                     maxExtAdvEvents);
 
+            // Advertising parameters will be logged above using requested parameters
+            parameters = adjustTxPower(parameters);
             mNativeInterface.startAdvertisingSet(
                     parameters,
                     advDataBytes,
@@ -342,6 +344,32 @@ public class AdvertiseManager {
                 Log.e(TAG, "Failed to callback:" + Log.getStackTraceString(exception));
             }
         }
+    }
+
+    private static AdvertisingSetParameters adjustTxPower(AdvertisingSetParameters params) {
+        if (params.getTxPowerLevel() > 1) {
+            AdvertisingSetParameters.Builder builder =
+                    new AdvertisingSetParameters.Builder()
+                            .setConnectable(params.isConnectable())
+                            .setDiscoverable(params.isDiscoverable())
+                            .setScannable(params.isScannable())
+                            .setLegacyMode(params.isLegacy())
+                            .setAnonymous(params.isAnonymous())
+                            .setIncludeTxPower(params.includeTxPower())
+                            .setPrimaryPhy(params.getPrimaryPhy())
+                            .setSecondaryPhy(params.getSecondaryPhy())
+                            .setInterval(params.getInterval())
+                            .setTxPowerLevel(1)
+                            .setOwnAddressType(params.getOwnAddressType())
+                            .setDirected(params.isDirected())
+                            .setHighDutyCycle(params.isHighDutyCycle())
+                            .setPeerAddressType(params.getPeerAddressType());
+            if (params.getPeerAddress() != null) {
+                builder.setPeerAddress(params.getPeerAddress());
+            }
+            return builder.build();
+        }
+        return params;
     }
 
     void onOwnAddressRead(int advertiserId, int addressType, String address) {
@@ -509,6 +537,7 @@ public class AdvertiseManager {
             Log.w(TAG, "setAdvertisingParameters() - bad advertiserId " + advertiserId);
             return;
         }
+        parameters = adjustTxPower(parameters);
         mNativeInterface.setAdvertisingParameters(advertiserId, parameters);
         mAdvertiserMap.setAdvertisingParameters(advertiserId, parameters);
     }
