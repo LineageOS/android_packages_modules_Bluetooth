@@ -20,10 +20,15 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
 
+import android.platform.test.flag.junit.SetFlagsRule;
+
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+
+import com.android.bluetooth.flags.Flags;
 
 import com.google.common.primitives.Bytes;
 
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -32,6 +37,8 @@ import java.util.Random;
 /** Test cases for {@link BaseData}. */
 @RunWith(AndroidJUnit4.class)
 public class BaseDataTest {
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+
     @Test
     public void parseBaseData() {
         assertThrows(IllegalArgumentException.class, () -> BaseData.parseBaseData(null));
@@ -54,9 +61,9 @@ public class BaseDataTest {
                     (byte) 0x01,
                     (byte) 'A', // mCodecConfigInfo
                     (byte) 0x03, // mMetaDataLength
-                    (byte) 0x06,
-                    (byte) 0x07,
-                    (byte) 0x08, // mMetaData
+                    (byte) 0x02,
+                    (byte) 0x08,
+                    (byte) 0x01, // mMetaData: Audio Active State = TRUE
                     // LEVEL 3
                     (byte) 0x04, // mIndex
                     (byte) 0x03, // mCodecConfigLength
@@ -76,6 +83,11 @@ public class BaseDataTest {
         assertThat(subgroup.mCodecId).isEqualTo(0);
         assertThat(subgroup.mCodecSpecificConfiguration.length).isEqualTo(2);
         assertThat(subgroup.mMetadata.length).isEqualTo(3);
+        if (Flags.leaudioBroadcastExtendAudioActiveState()) {
+            assertThat(subgroup.mLtvData).isNotNull();
+            assertThat(subgroup.mLtvData.getAudioActiveState())
+                    .isEqualTo(LtvData.AudioActiveState.TRUE);
+        }
 
         BaseData.BaseBis bis = subgroup.mBises.get(0);
         assertThat(bis.mIndex).isEqualTo(4);
@@ -222,6 +234,11 @@ public class BaseDataTest {
         BaseData.BaseBis bis = subgroup.mBises.get(0);
         assertThat(bis.mIndex).isEqualTo(4);
         assertThat(bis.mCodecSpecificConfiguration.length).isEqualTo(3);
+        if (Flags.leaudioBroadcastExtendAudioActiveState()) {
+            assertThat(subgroup.mLtvData).isNotNull();
+            assertThat(subgroup.mLtvData.getAudioActiveState())
+                    .isEqualTo(LtvData.AudioActiveState.NONE);
+        }
     }
 
     @Test

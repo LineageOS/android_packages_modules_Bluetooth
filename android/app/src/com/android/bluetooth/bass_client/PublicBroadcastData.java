@@ -20,6 +20,8 @@ import android.bluetooth.BluetoothLeAudioContentMetadata;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 import android.util.Log;
 
+import com.android.bluetooth.flags.Flags;
+
 import java.util.Arrays;
 
 /** Helper class to parse the Public Broadcast Announcement data */
@@ -39,11 +41,13 @@ class PublicBroadcastData {
         public byte[] metaData;
         public boolean isEncrypted;
         public int audioConfigQuality;
+        public LtvData ltvData;
 
         PublicBroadcastInfo() {
             metaData = new byte[0];
             isEncrypted = false;
             audioConfigQuality = BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_NONE;
+            ltvData = LtvData.parse(null);
             log("PublicBroadcastInfo is Initialized");
         }
 
@@ -54,6 +58,11 @@ class PublicBroadcastData {
             log("metaDataLength: " + metaData.length);
             if (metaData.length != 0) {
                 log("metaData: " + Arrays.toString(metaData));
+            }
+            if (Flags.leaudioBroadcastExtendAudioActiveState()) {
+                if (ltvData != null) {
+                    log(ltvData.toString());
+                }
             }
             log("**END: Public Broadcast Information****");
         }
@@ -75,6 +84,9 @@ class PublicBroadcastData {
                 metadata.getPublicBroadcastMetadata();
         if (publicBroadcastMetadata != null) {
             publicBroadcastInfo.metaData = publicBroadcastMetadata.getRawMetadata();
+            if (Flags.leaudioBroadcastExtendAudioActiveState()) {
+                publicBroadcastInfo.ltvData = LtvData.parse(publicBroadcastInfo.metaData);
+            }
         }
 
         publicBroadcastInfo.print();
@@ -115,6 +127,9 @@ class PublicBroadcastData {
         if (metaDataLength != 0) {
             publicBroadcastInfo.metaData = new byte[metaDataLength];
             System.arraycopy(serviceData, offset, publicBroadcastInfo.metaData, 0, metaDataLength);
+            if (Flags.leaudioBroadcastExtendAudioActiveState()) {
+                publicBroadcastInfo.ltvData = LtvData.parse(publicBroadcastInfo.metaData);
+            }
         }
         publicBroadcastInfo.print();
         return new PublicBroadcastData(publicBroadcastInfo);
@@ -134,6 +149,10 @@ class PublicBroadcastData {
 
     byte[] getMetadata() {
         return mPublicBroadcastInfo.metaData;
+    }
+
+    LtvData getLtvData() {
+        return mPublicBroadcastInfo.ltvData;
     }
 
     void print() {
