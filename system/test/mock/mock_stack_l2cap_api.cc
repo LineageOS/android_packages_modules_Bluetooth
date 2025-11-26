@@ -57,6 +57,7 @@ struct L2CA_SetIdleTimeoutByBdAddr L2CA_SetIdleTimeoutByBdAddr;
 struct L2CA_UseLatencyMode L2CA_UseLatencyMode;
 struct L2CA_SetAclPriority L2CA_SetAclPriority;
 struct L2CA_SetAclLatency L2CA_SetAclLatency;
+struct L2CA_SetRateControlEnabled L2CA_SetRateControlEnabled;
 struct L2CA_SetTxPriority L2CA_SetTxPriority;
 struct L2CA_GetPeerFeatures L2CA_GetPeerFeatures;
 struct L2CA_RegisterFixedChannel L2CA_RegisterFixedChannel;
@@ -181,6 +182,10 @@ bool L2CA_SetAclPriority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority) {
 bool L2CA_SetAclLatency(const RawAddress& bd_addr, tL2CAP_LATENCY latency) {
   inc_func_call_count(__func__);
   return test::mock::stack_l2cap_api::L2CA_SetAclLatency(bd_addr, latency);
+}
+bool L2CA_SetRateControlEnabled(const RawAddress& bd_addr, bool enabled) {
+  inc_func_call_count(__func__);
+  return test::mock::stack_l2cap_api::L2CA_SetRateControlEnabled(bd_addr, enabled);
 }
 bool L2CA_SetTxPriority(uint16_t cid, tL2CAP_CHNL_PRIORITY priority) {
   inc_func_call_count(__func__);

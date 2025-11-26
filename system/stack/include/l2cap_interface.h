@@ -547,6 +547,20 @@ public:
 
   /*******************************************************************************
    **
+   ** Function         L2CA_SetRateControlEnabled
+   **
+   ** Description      Enable or disable rate control algorithm for a channel.
+   **
+   ** Parameters:      bd_addr: Peer bluetooth device address
+   **                  enabled: true to enable rate control; false to enable
+   **
+   ** Returns          true if command succeeded, false if failed
+   **
+   ******************************************************************************/
+  virtual bool L2CA_SetRateControlEnabled(const RawAddress& bd_addr, bool enabled) = 0;
+
+  /*******************************************************************************
+   **
    ** Function         L2CA_GetPeerFeatures
    **
    ** Description      Request peer features and fixed channel map
