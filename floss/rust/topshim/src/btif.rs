@@ -1072,8 +1072,7 @@ cb_variant!(BaseCb, adapter_properties_cb -> BaseCallbacks::AdapterProperties,
     }
 );
 cb_variant!(BaseCb, remote_device_properties_cb -> BaseCallbacks::RemoteDeviceProperties,
-    u32 -> BtStatus, *mut RawAddress -> RawAddress, u8, i32 -> _, *mut bindings::bt_property_t, {
-        let _1 = unsafe { *(_1 as *const RawAddress) };
+    u32 -> BtStatus, RawAddress, u8, i32 -> _, *mut bindings::bt_property_t, {
         let _4 = ptr_to_vec(_4, _3 as usize);
     }
 );
@@ -1086,41 +1085,29 @@ cb_variant!(BaseCb, discovery_state_cb -> BaseCallbacks::DiscoveryState,
     bindings::bt_discovery_state_t -> BtDiscoveryState
 );
 cb_variant!(BaseCb, pin_request_cb -> BaseCallbacks::PinRequest,
-    *mut RawAddress, *mut bindings::bt_bdname_t, u32, bool, bindings::PairingAlgorithm -> _, {
-        let _0 = unsafe { *(_0 as *const RawAddress)};
+    RawAddress, *mut bindings::bt_bdname_t, u32, bool, bindings::PairingAlgorithm -> _, {
         let _1 = String::from(unsafe{*_1});
     }
 );
 cb_variant!(BaseCb, ssp_request_cb -> BaseCallbacks::SspRequest,
-    *mut RawAddress,
+    RawAddress,
     bindings::bt_ssp_variant_t -> BtSspVariant,
     u32,
-    bindings::PairingAlgorithm -> _,
-    {
-        let _0 = unsafe { *(_0 as *const RawAddress) };
-    }
+    bindings::PairingAlgorithm -> _
 );
 cb_variant!(BaseCb, bond_state_cb -> BaseCallbacks::BondState,
-    u32 -> BtStatus, *mut RawAddress,
+    u32 -> BtStatus,
+    RawAddress,
     bindings::tBT_TRANSPORT -> _,
     bindings::bt_bond_state_t -> BtBondState,
     bindings::PairingType -> _,
-    i32,
-    {
-        let _1 = unsafe { *(_1 as *const RawAddress) };
-    }
+    i32
 );
 cb_variant!(BaseCb, address_consolidate_cb -> BaseCallbacks::AddressConsolidate,
-    *mut RawAddress, *mut RawAddress, {
-        let _0 = unsafe { *(_0 as *const RawAddress) };
-        let _1 = unsafe { *(_1 as *const RawAddress) };
-    }
+    RawAddress, RawAddress
 );
 cb_variant!(BaseCb, le_address_associate_cb -> BaseCallbacks::LeAddressAssociate,
-    *mut RawAddress, *mut RawAddress, u8, {
-        let _0 = unsafe { *(_0 as *const RawAddress) };
-        let _1 = unsafe { *(_1 as *const RawAddress) };
-    }
+    RawAddress, RawAddress, u8
 );
 cb_variant!(BaseCb, thread_evt_cb -> BaseCallbacks::ThreadEvent, u32 -> BtThreadEvent);
 cb_variant!(BaseCb, acl_state_cb -> BaseCallbacks::AclState,
