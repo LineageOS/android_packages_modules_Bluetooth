@@ -28,36 +28,36 @@ namespace internal {
 // Singleton instance of HhIntf
 static HhIntf* g_hh_if;
 
-static void connection_state_cb(RawAddress* addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+static void connection_state_cb(RawAddress addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                                 bthh_connection_state_t state, bthh_status_t hh_status) {
-  rusty::connection_state_cb(*addr, addr_type, transport, state, hh_status);
+  rusty::connection_state_cb(addr, addr_type, transport, state, hh_status);
 }
 
-static void hid_info_cb(RawAddress* addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+static void hid_info_cb(RawAddress addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                         bthh_hid_info_t hid_info) {
-  rusty::hid_info_cb(*addr, addr_type, transport, hid_info);
+  rusty::hid_info_cb(addr, addr_type, transport, hid_info);
 }
 
-static void protocol_mode_cb(RawAddress* addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+static void protocol_mode_cb(RawAddress addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                              bthh_status_t hh_status, bthh_protocol_mode_t mode) {
-  rusty::protocol_mode_cb(*addr, addr_type, transport, hh_status, mode);
+  rusty::protocol_mode_cb(addr, addr_type, transport, hh_status, mode);
 }
 
-static void idle_time_cb(RawAddress* addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+static void idle_time_cb(RawAddress addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                          bthh_status_t hh_status, int idle_rate) {
-  rusty::idle_time_cb(*addr, addr_type, transport, hh_status, idle_rate);
+  rusty::idle_time_cb(addr, addr_type, transport, hh_status, idle_rate);
 }
-static void get_report_cb(RawAddress* addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+static void get_report_cb(RawAddress addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                           bthh_status_t hh_status, uint8_t* rpt_data, int rpt_size) {
-  rusty::get_report_cb(*addr, addr_type, transport, hh_status, rpt_data, rpt_size);
+  rusty::get_report_cb(addr, addr_type, transport, hh_status, rpt_data, rpt_size);
 }
-static void virtual_unplug_cb(RawAddress* addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+static void virtual_unplug_cb(RawAddress addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                               bthh_status_t hh_status) {
-  rusty::virtual_unplug_cb(*addr, addr_type, transport, hh_status);
+  rusty::virtual_unplug_cb(addr, addr_type, transport, hh_status);
 }
-static void handshake_cb(RawAddress* addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
+static void handshake_cb(RawAddress addr, tBLE_ADDR_TYPE addr_type, tBT_TRANSPORT transport,
                          bthh_status_t hh_status) {
-  rusty::handshake_cb(*addr, addr_type, transport, hh_status);
+  rusty::handshake_cb(addr, addr_type, transport, hh_status);
 }
 
 bthh_callbacks_t hh_callbacks = {

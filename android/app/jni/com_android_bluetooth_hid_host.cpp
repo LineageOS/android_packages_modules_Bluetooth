@@ -48,7 +48,7 @@ static jobject mCallbacksObj = NULL;
 static jfieldID sCallbacksField;
 static std::shared_timed_mutex mCallbacks_mutex;
 
-static void connection_state_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+static void connection_state_callback(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                       tBT_TRANSPORT transport, bthh_connection_state_t state,
                                       bthh_status_t hh_status) {
   std::shared_lock<std::shared_timed_mutex> lock(mCallbacks_mutex);
@@ -61,13 +61,12 @@ static void connection_state_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_t
     return;
   }
 
-  // TODO(b/424272093) Unchecked RawAddress* dereference.
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectStateChanged, addr.get(),
                                (jint)addr_type, (jint)transport, (jint)state, (jint)hh_status);
 }
 
-static void get_protocol_mode_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+static void get_protocol_mode_callback(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                        tBT_TRANSPORT transport, bthh_status_t hh_status,
                                        bthh_protocol_mode_t mode) {
   std::shared_lock<std::shared_timed_mutex> lock(mCallbacks_mutex);
@@ -84,13 +83,12 @@ static void get_protocol_mode_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_
     return;
   }
 
-  // TODO(b/424272093) Unchecked RawAddress* dereference.
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onGetProtocolMode, addr.get(), (jint)addr_type,
                                (jint)transport, (jint)mode);
 }
 
-static void get_report_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+static void get_report_callback(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                 tBT_TRANSPORT transport, bthh_status_t hh_status, uint8_t* rpt_data,
                                 int rpt_size) {
   std::shared_lock<std::shared_timed_mutex> lock(mCallbacks_mutex);
@@ -107,8 +105,7 @@ static void get_report_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
     return;
   }
 
-  // TODO(b/424272093) Unchecked RawAddress* dereference.
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
 
   ScopedLocalRef<jbyteArray> data(sCallbackEnv.get(), sCallbackEnv->NewByteArray(rpt_size));
   if (!data.get()) {
@@ -121,7 +118,7 @@ static void get_report_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
                                (jint)transport, data.get(), (jint)rpt_size);
 }
 
-static void virtual_unplug_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+static void virtual_unplug_callback(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                     tBT_TRANSPORT transport, bthh_status_t hh_status) {
   log::verbose("call to virtual_unplug_callback");
   std::shared_lock<std::shared_timed_mutex> lock(mCallbacks_mutex);
@@ -134,13 +131,12 @@ static void virtual_unplug_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_typ
     return;
   }
 
-  // TODO(b/424272093) Unchecked RawAddress* dereference.
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onVirtualUnplug, addr.get(), (jint)addr_type,
                                (jint)transport, (jint)hh_status);
 }
 
-static void handshake_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+static void handshake_callback(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                tBT_TRANSPORT transport, bthh_status_t hh_status) {
   std::shared_lock<std::shared_timed_mutex> lock(mCallbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
@@ -152,13 +148,12 @@ static void handshake_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
     return;
   }
 
-  // TODO(b/424272093) Unchecked RawAddress* dereference.
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onHandshake, addr.get(), (jint)addr_type,
                                (jint)transport, (jint)hh_status);
 }
 
-static void get_idle_time_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+static void get_idle_time_callback(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                    tBT_TRANSPORT transport, bthh_status_t /* hh_status */,
                                    int idle_time) {
   std::shared_lock<std::shared_timed_mutex> lock(mCallbacks_mutex);
@@ -167,8 +162,7 @@ static void get_idle_time_callback(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type
     return;
   }
 
-  // TODO(b/424272093) Unchecked RawAddress* dereference.
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onGetIdleTime, addr.get(), (jint)addr_type,
                                (jint)transport, (jint)idle_time);
 }

@@ -244,7 +244,7 @@ static void btif_in_pan_generic_evt(uint16_t event, char* p_param) {
       if (conn) {
         btpan_conn_local_role = bta_role_to_btpan(conn->local_role);
         btpan_remote_role = bta_role_to_btpan(conn->remote_role);
-        callback.connection_state_cb(BTPAN_STATE_DISCONNECTING, BtifStatus(), &conn->peer,
+        callback.connection_state_cb(BTPAN_STATE_DISCONNECTING, BtifStatus(), conn->peer,
                                      btpan_conn_local_role, btpan_remote_role);
       }
     } break;
@@ -604,7 +604,7 @@ static void bta_pan_callback_transfer(uint16_t event, char* p_param) {
         conn->handle = p_data->opening.handle;
         int btpan_conn_local_role = bta_role_to_btpan(conn->local_role);
         int btpan_remote_role = bta_role_to_btpan(conn->remote_role);
-        callback.connection_state_cb(BTPAN_STATE_CONNECTING, BtifStatus(), &p_data->opening.bd_addr,
+        callback.connection_state_cb(BTPAN_STATE_CONNECTING, BtifStatus(), p_data->opening.bd_addr,
                                      btpan_conn_local_role, btpan_remote_role);
       } else {
         log::error("connection not found");
@@ -632,7 +632,7 @@ static void bta_pan_callback_transfer(uint16_t event, char* p_param) {
        * conn->remote_role); */
       int btpan_conn_local_role = bta_role_to_btpan(p_data->open.local_role);
       int btpan_remote_role = bta_role_to_btpan(p_data->open.peer_role);
-      callback.connection_state_cb(state, status, &p_data->open.bd_addr, btpan_conn_local_role,
+      callback.connection_state_cb(state, status, p_data->open.bd_addr, btpan_conn_local_role,
                                    btpan_remote_role);
       break;
     }
@@ -644,7 +644,7 @@ static void bta_pan_callback_transfer(uint16_t event, char* p_param) {
       if (conn && conn->handle >= 0) {
         int btpan_conn_local_role = bta_role_to_btpan(conn->local_role);
         int btpan_remote_role = bta_role_to_btpan(conn->remote_role);
-        callback.connection_state_cb(BTPAN_STATE_DISCONNECTED, BtifStatus(), &conn->peer,
+        callback.connection_state_cb(BTPAN_STATE_DISCONNECTED, BtifStatus(), conn->peer,
                                      btpan_conn_local_role, btpan_remote_role);
         btpan_cleanup_conn(conn);
       } else {

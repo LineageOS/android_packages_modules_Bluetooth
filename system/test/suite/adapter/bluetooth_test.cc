@@ -75,10 +75,10 @@ void AdapterPropertiesCallback(bt_status_t /*status*/, int num_properties,
   semaphore_post(instance->adapter_properties_callback_sem_);
 }
 
-void RemoteDevicePropertiesCallback(bt_status_t /*status*/, RawAddress* remote_bd_addr,
+void RemoteDevicePropertiesCallback(bt_status_t /*status*/, RawAddress remote_bd_addr,
                                     uint8_t /*address_type*/, int num_properties,
                                     bt_property_t* properties) {
-  instance->curr_remote_device_ = *remote_bd_addr;
+  instance->curr_remote_device_ = remote_bd_addr;
   property_free_array(instance->remote_device_last_changed_properties_,
                       instance->remote_device_properties_changed_count_);
   instance->remote_device_last_changed_properties_ =
