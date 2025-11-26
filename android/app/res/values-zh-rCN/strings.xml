@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"允许应用访问蓝牙共享 (BluetoothShare) 管理器并将其用于传输文件。"</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"将蓝牙设备加入许可名单。"</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"允许该应用暂时将某个蓝牙设备加入许可名单，从而允许该设备在不经过用户确认的情况下，将文件发送到本设备。"</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"蓝牙"</string>
     <string name="unknown_device" msgid="2317679521750821654">"未知设备"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"未知号码"</string>

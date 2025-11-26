@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"อนุญาตให้แอปพลิเคชันเข้าถึงและใช้ตัวจัดการ BluetoothShare เพื่อถ่ายโอนไฟล์"</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"รายการที่อนุญาตการเข้าถึงอุปกรณ์บลูทูธ"</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"อนุญาตให้แอปบันทึกอุปกรณ์บลูทูธในรายการที่อนุญาตเป็นการชั่วคราว ซึ่งจะทำให้อุปกรณ์ดังกล่าวสามารถส่งไฟล์มายังอุปกรณ์นี้ได้โดยไม่ต้องยืนยันผู้ใช้"</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"บลูทูธ"</string>
     <string name="unknown_device" msgid="2317679521750821654">"อุปกรณ์ที่ไม่รู้จัก"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"ไม่รู้จัก"</string>

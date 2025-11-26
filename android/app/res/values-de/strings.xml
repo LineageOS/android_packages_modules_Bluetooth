@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Ermöglicht der App, auf den Bluetooth-Weiterleitungs-Manager zuzugreifen und diesen für die Übertragung von Dateien zu verwenden."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"Bluetooth-Gerät für Zugriff zur Zulassungsliste hinzufügen"</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Ermöglicht der App, ein Bluetooth-Gerät vorübergehend zur Zulassungsliste hinzuzufügen, sodass es ohne Bestätigung des Nutzers Dateien an dieses Gerät senden kann."</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetooth"</string>
     <string name="unknown_device" msgid="2317679521750821654">"Unbekanntes Gerät"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"Unbekannter Anrufer"</string>

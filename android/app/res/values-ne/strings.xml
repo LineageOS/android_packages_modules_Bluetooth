@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"एपलाई ब्लुटुथसाझेदारी प्रबन्धक पहुँचको अनुमति दिन्छ र यसलाई फाइलहरू स्थानान्तरण गर्न प्रयोग गर्दछ।"</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"ब्लुटूथ चल्ने यन्त्रको एक्सेस श्वेतसूचीमा राख्नुहोस्।"</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"यो सेटिङले यस एपलाई केही समयका लागि ब्लुटुथ चल्ने कुनै यन्त्र श्वेतसूचीमा राख्ने अनुमति दिन्छ। यस प्रकार श्वेतसूचीमा राखिएको उक्त यन्त्रले प्रयोगकर्ताको अनुमति नलिइकन यो डिभाइसमा फाइलहरू पठाउन सक्छ।"</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"ब्लुटुथ"</string>
     <string name="unknown_device" msgid="2317679521750821654">"अज्ञात उपकरण"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"अज्ञात"</string>

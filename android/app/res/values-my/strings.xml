@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"အပလီကေးရှင်းအား ဘလူးတုသ်မျှဝေမှု မန်နေဂျာကို အသုံးပြုခွင့်ပေးပြီး ဖိုင်လွှဲရန် အသုံးပြုပါ"</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"ဘလူးတုသ်ယာယီလက်ခံစာရင်းကို အသုံးပြုခွင့်။"</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"အက်ပ်အား ဘလူးတုသ်စက်ကို ယာယီလက်ခံစာရင်းထဲ ထည့်ရန်ခွင့်ပြုကာ အသုံးပြုသူ၏ အတည်ပြုချက်မရယူဘဲ ဖိုင်များကို စက်ထဲသို့ ပို့ခွင့်ပြုမည်။"</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"ဘလူးတုသ်"</string>
     <string name="unknown_device" msgid="2317679521750821654">"မသိသော စက်"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"မသိ"</string>

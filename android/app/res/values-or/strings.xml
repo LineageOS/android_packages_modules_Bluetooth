@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"BluetoothShare ମ୍ୟାନେଜର୍‌ ଆକ୍ସେସ୍‌ କରି ଫାଇଲ୍‌ଗୁଡ଼ିକ ଟ୍ରାନ୍ସଫର୍‌ କରିବାକୁ ବ୍ୟବହାର କରିବା ପାଇଁ ଆପ୍‌କୁ ଅନୁମତି ଦିଅନ୍ତୁ।"</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"ବ୍ଲୁଟୁଥ୍ ଡିଭାଇସର ଆକ୍ସେସକୁ ଗ୍ରହଣ-ସୂଚୀରେ ରଖନ୍ତୁ।"</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"ଏକ ବ୍ଲୁଟୁଥ ଡିଭାଇସକୁ ଅସ୍ଥାୟୀ ଭାବେ ଗ୍ରହଣ-ସୂଚୀରେ ରଖିବାକୁ ଆପଟିକୁ ଅନୁମତି ଦେଇଥାଏ, ଯାହା ଦ୍ୱାରା ୟୁଜରଙ୍କ ସୁନିଶ୍ଚିତକରଣ ବିନା ଏହି ଡିଭାଇସକୁ ଫାଇଲ ପଠାଇବା ପାଇଁ ସେହି ଡିଭାଇସକୁ ଅନୁମତି ମିଳିଥାଏ।"</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"ବ୍ଲୁଟୁଥ"</string>
     <string name="unknown_device" msgid="2317679521750821654">"ଅଜଣା ଡିଭାଇସ୍"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"ଅଜଣା"</string>
