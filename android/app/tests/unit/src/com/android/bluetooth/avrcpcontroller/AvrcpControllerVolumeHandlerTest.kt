@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.avrcpcontroller
 
-import android.bluetooth.BluetoothDevice
 import android.content.pm.PackageManager
 import android.media.AudioManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -25,7 +24,6 @@ import com.android.bluetooth.TestUtils.mockGetSystemService
 import com.android.bluetooth.btservice.AdapterService
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
-import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -49,6 +47,7 @@ class AvrcpControllerVolumeHandlerTest {
 
     private val mDevice = getTestDevice(43)
 
+    /** [makeVolumeHandler] must be called per test */
     private lateinit var mVolumeHandler: AvrcpControllerVolumeHandler
 
     @Before
@@ -59,50 +58,50 @@ class AvrcpControllerVolumeHandlerTest {
         doReturn(mPackageManager).whenever(mAdapterService).packageManager
 
         mockGetSystemService(mAdapterService, AudioManager::class.java, mAudioManager)
-
-        mVolumeHandler = makeVolumeHandler(mDevice, isVolumeFixed = true, isAutomotive = false)
     }
 
-    @After
-    fun tearDown() {
-        destroyAvrcpControllerVolumeHandler(mVolumeHandler)
-    }
+    // *********************************************************************************************
+    // * Tests
+    // *********************************************************************************************
 
-    /** Test #getAbsoluteVolume */
+    // getAbsoluteVolume
+
+    /** Test #getAbsoluteVolume: fixed volume, not automotive = Loud */
     @Test
     fun testGetAbsoluteVolume_volumeIsFixed_getsAbsVolumeMax() {
-        // Loud strategy
+        makeVolumeHandler(isVolumeFixed = true, isAutomotive = false)
+
         val absVol = mVolumeHandler.absoluteVolume
         assertThat(absVol).isEqualTo(127)
     }
 
-    /** Test #getAbsoluteVolume */
+    /** Test #getAbsoluteVolume: not fixed volume, automotive = Loud */
     @Test
-    fun testGetAbsoluteVolume_volumeIsNotFixed_doesNotGetAbsVolumeMax() {
-        // Absolute strategy
-        mVolumeHandler = makeVolumeHandler(mDevice, isVolumeFixed = false, isAutomotive = false)
+    fun testGetAbsoluteVolume_isAutomotive_getsAbsVolumeMax() {
+        makeVolumeHandler(isVolumeFixed = false, isAutomotive = true)
+
+        val absVol = mVolumeHandler.absoluteVolume
+        assertThat(absVol).isEqualTo(127)
+    }
+
+    /** Test #getAbsoluteVolume: not fixed volume, not automotive = Absolute */
+    @Test
+    fun testGetAbsoluteVolume_isAbsolute_doesNotGetAbsVolumeMax() {
+        makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
 
         val absVol = mVolumeHandler.absoluteVolume
         assertThat(absVol).isEqualTo(31)
     }
 
-    /** Test #getAbsoluteVolume */
-    @Test
-    fun testGetAbsoluteVolume_volumeIsNotFixedSinkAbsoluteVolumeEnabled_getsAbsVolumeMax() {
-        // Loud strategy
-        mVolumeHandler = makeVolumeHandler(mDevice, isVolumeFixed = false, isAutomotive = true)
+    // setAbsoluteVolume
 
-        val absVol = mVolumeHandler.absoluteVolume
-        assertThat(absVol).isEqualTo(127)
-    }
-
-    /** Test #setAbsoluteVolume */
+    /** Test #setAbsoluteVolume: fixed volume, not automotive = Loud */
     @Test
     fun testSetAbsoluteVolume_volumeIsFixed_setsAbsVolumeMax() {
-        // Loud strategy
-        val label: Byte = 42
-        val absVol = mVolumeHandler.setAbsoluteVolume(20, label.toInt())
-        assertThat(absVol).isEqualTo(127)
+        makeVolumeHandler(isVolumeFixed = true, isAutomotive = false)
+
+        val setLabel: Byte = 52
+        verifySetAbsVolume(setLabel, 20, 127)
         verify(mAudioManager, never())
             .setStreamVolume(
                 eq(AudioManager.STREAM_MUSIC),
@@ -111,42 +110,38 @@ class AvrcpControllerVolumeHandlerTest {
             )
     }
 
-    /** Test #setAbsoluteVolume */
+    /** Test #setAbsoluteVolume: not fixed volume, automotive = Loud */
     @Test
-    fun testSetAbsoluteVolume_volumeIsNotFixed_doesNotSetAbsVolumeMax() {
-        // Absolute strategy
-        mVolumeHandler = makeVolumeHandler(mDevice, isVolumeFixed = false, isAutomotive = false)
+    fun testSetAbsoluteVolume_isAutomotive_setsAbsVolumeMax() {
+        makeVolumeHandler(isVolumeFixed = false, isAutomotive = true)
 
-        val label: Byte = 42
-        val absVol = mVolumeHandler.setAbsoluteVolume(20, label.toInt())
-        assertThat(absVol).isEqualTo(20)
+        val setLabel: Byte = 52
+        verifySetAbsVolume(setLabel, 20, 127)
+        verify(mAudioManager, never())
+            .setStreamVolume(
+                eq(AudioManager.STREAM_MUSIC),
+                any<Int>(),
+                eq(AudioManager.FLAG_SHOW_UI),
+            )
+    }
+
+    /** Test #setAbsoluteVolume: not fixed volume, not automotive = Absolute */
+    @Test
+    fun testSetAbsoluteVolume_isAbsolute_doesNotSetAbsVolumeMax() {
+        makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
+
+        val setLabel: Byte = 52
+        verifySetAbsVolume(setLabel, 20, 20)
         verify(mAudioManager)
             .setStreamVolume(eq(AudioManager.STREAM_MUSIC), eq(15), eq(AudioManager.FLAG_SHOW_UI))
     }
 
-    /** Test #setAbsoluteVolume */
-    @Test
-    fun testSetAbsoluteVolume_volumeIsNotFixedSinkAbsoluteVolumeEnabled_setsAbsVolumeMax() {
-        // Loud strategy
-        mVolumeHandler = makeVolumeHandler(mDevice, isVolumeFixed = false, isAutomotive = true)
-
-        val label: Byte = 42
-        val absVol = mVolumeHandler.setAbsoluteVolume(20, label.toInt())
-        assertThat(absVol).isEqualTo(127)
-        verify(mAudioManager, never())
-            .setStreamVolume(
-                eq(AudioManager.STREAM_MUSIC),
-                any<Int>(),
-                eq(AudioManager.FLAG_SHOW_UI),
-            )
-    }
+    // *********************************************************************************************
+    // * Test Utilities
+    // *********************************************************************************************
 
     /** Create a volume handler to test */
-    private fun makeVolumeHandler(
-        device: BluetoothDevice,
-        isVolumeFixed: Boolean,
-        isAutomotive: Boolean,
-    ): AvrcpControllerVolumeHandler {
+    private fun makeVolumeHandler(isVolumeFixed: Boolean, isAutomotive: Boolean) {
         doReturn(isVolumeFixed).whenever(mAudioManager).isVolumeFixed
 
         // Absolute volume support (Utils.isAutomotive())
@@ -154,13 +149,11 @@ class AvrcpControllerVolumeHandlerTest {
             .whenever(mPackageManager)
             .hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
 
-        return AvrcpControllerVolumeHandler(mAdapterService, device)
+        mVolumeHandler = AvrcpControllerVolumeHandler(mAdapterService, mDevice)
     }
 
-    companion object {
-        /** Destroy a volume handler you created to test */
-        private fun destroyAvrcpControllerVolumeHandler(vh: AvrcpControllerVolumeHandler) {
-            if (vh == null) return
-        }
+    private fun verifySetAbsVolume(setLabel: Byte, absVol: Int, absVolRsp: Int) {
+        val absVolFromSet = mVolumeHandler.setAbsoluteVolume(absVol, setLabel.toInt())
+        assertThat(absVolFromSet).isEqualTo(absVolRsp)
     }
 }
