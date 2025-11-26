@@ -566,12 +566,25 @@ bool UpdateOffloadingCapabilities(
       case BTAV_A2DP_CODEC_INDEX_SINK_OPUS:
         log::warn("Ignore sink codec_type={}", preference.codec_type);
         break;
-      case BTAV_A2DP_CODEC_INDEX_MAX:
       default:
-        log::error("Unknown codec_type={}", preference.codec_type);
-        return false;
+        // The codec types that are received in the codec offloaded capabilities
+        // are provided by the audio framework by the API
+        // AudioManager.getHwOffloadFormatsSupportedForA2dp and are configured
+        // by the vendor. Thus it is unlikely than an invalid value will be provided.
+        //
+        // Rather, unknown values correspond to exclusive codecs that were added by
+        // the vendor through extensive stack modifications.
+        //
+        // Supporting these codecs is not possible with the legacy offloading HAL,
+        // instead the codec extensibility APIs were developed for this purpose.
+        log::warn(
+                "Unknown codec type {}.\n"
+                "Legacy offloading cannot support unknown codecs,"
+                " please migrate to codec extensibility for full support",
+                preference.codec_type);
     }
   }
+
   offloading_preference.clear();
   for (auto capability : audio_hal_capabilities) {
     auto codec_type = capability.get<AudioCapabilities::a2dpCapabilities>().codecType;
