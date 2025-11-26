@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"अ‍ॅपला BluetoothShare व्‍यवस्‍थापकामध्‍ये प्रवेश करण्‍याची आणि फाइल स्‍थानांतरित करण्‍यासाठी त्याचा वापर करण्‍याची अनुमती देते."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"ब्लूटूथ डिव्‍हाइस अ‍ॅक्सेस ॲक्सेप्टलिस्ट करा."</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"त्या डिव्हाइसला वापरकर्ता पुष्‍टीशिवाय या डिव्हाइसवर फाइल पाठवण्‍याची अनुमती देऊन ब्लूटूथ डिव्‍हाइसला तात्पुरते ॲक्सेप्टलिस्ट करण्‍याची अ‍ॅपला अनुमती देते."</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"ब्लूटूथ"</string>
     <string name="unknown_device" msgid="2317679521750821654">"अज्ञात डिव्हाइस"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"अज्ञात"</string>

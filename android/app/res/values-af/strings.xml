@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Gee aan die app toegang tot die BluetoothShare-bestuurder en om dit te gebruik om lêers oor te dra."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"Voeg Bluetooth-toesteltoegang by aanvaarlys."</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Laat die app toe om \'n Bluetooth-toestel tydelik by aanvaarlys te voeg, sodat daardie toestel lêers na hierdie toestel kan stuur sonder die gebruiker se bevestiging."</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetooth"</string>
     <string name="unknown_device" msgid="2317679521750821654">"Onbekende toestel"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"Onbekend"</string>

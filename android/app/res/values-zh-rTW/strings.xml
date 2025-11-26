@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"允許應用程式存取 BluetoothShare 管理員，並可使用 BluetoothShare 管理員傳輸檔案。"</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"將藍牙裝置存取權限加入許可清單。"</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"允許應用程式暫時將藍牙裝置加入許可清單，讓該裝置可以直接傳送檔案到這部裝置，不用經過使用者確認。"</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"藍牙"</string>
     <string name="unknown_device" msgid="2317679521750821654">"未知的裝置"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"不明"</string>

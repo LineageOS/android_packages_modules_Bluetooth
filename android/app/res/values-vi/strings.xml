@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Cho phép ứng dụng truy cập trình quản lý BluetoothShare và sử dụng trình quản lý đó để chuyển tệp."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"Quyền sử dụng thiết bị Bluetooth trong danh sách chấp nhận."</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Cho phép ứng dụng tạm thời đưa một thiết bị Bluetooth vào danh sách chấp nhận và để thiết bị đó gửi tệp tới thiết bị này mà không cần người dùng xác nhận."</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetooth"</string>
     <string name="unknown_device" msgid="2317679521750821654">"Thiết bị không xác định"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"Không xác định"</string>

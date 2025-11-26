@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"એપ્લિકેશનને BluetoothShare મેનેજર અ‍ૅક્સેસ કરવાની અને ફાઇલો ટ્રાન્સફર કરવા માટે તેનો ઉપયોગ કરવાની મંજૂરી આપે છે."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"વ્હાઇટલિસ્ટ બ્લૂટૂથ ડિવાઇસ ઍક્સેસ."</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"ઍપને હંગામી રૂપે બ્લૂટૂથ ડિવાઇસને વ્હાઇટલિસ્ટ કરવાની મંજૂરી આપે છે, જેનાથી તે ડિવાઇસ આ ડિવાઇસ પર વપરાશકર્તાની ખાતરી વિના ફાઇલ મોકલી શકે છે."</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"બ્લૂટૂથ"</string>
     <string name="unknown_device" msgid="2317679521750821654">"અજાણ્યું ઉપકરણ"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"અજાણ્યો"</string>

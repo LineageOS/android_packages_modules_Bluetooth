@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"బ్లూటూత్ భాగస్వామ్య మేనేజర్‌ను యాక్సెస్ చేయడానికి యాప్‌ను అనుమతిస్తుంది మరియు ఫైళ్లను బదిలీ చేయడానికి దీన్ని ఉపయోగిస్తుంది."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"అనుమతి లిస్ట్‌లో ఉంచిన బ్లూటూత్ డివైజ్‌ యాక్సెస్."</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"బ్లూటూత్ పరికరాన్ని తాత్కాలికంగా అనుమతి లిస్ట్‌లో ఉంచడానికి యాప్‌ను అనుమతిస్తుంది, తద్వారా యూజర్ నిర్ధారణ లేకుండానే ఫైళ్లను ఈ పరికరానికి పంపడానికి ఆ పరికరాన్ని అనుమతిస్తుంది."</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"బ్లూటూత్"</string>
     <string name="unknown_device" msgid="2317679521750821654">"తెలియని పరికరం"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"తెలియదు"</string>

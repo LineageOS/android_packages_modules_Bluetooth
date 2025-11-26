@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Aplikaciji omogućuje pristup upravitelju za BluetoothShare i njegovu upotrebu za prijenos datoteka."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"Stavi pristup Bluetooth uređaja na popis prihvaćenih."</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Omogućuje aplikaciji privremeno stavljanje Bluetooth uređaja na popis prihvaćenih, čime mu omogućuje slanje datoteka na ovaj uređaj bez korisnikove potvrde."</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetooth"</string>
     <string name="unknown_device" msgid="2317679521750821654">"Nepoznati uređaj"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"Nepoznato"</string>

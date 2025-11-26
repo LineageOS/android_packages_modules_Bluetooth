@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"යෙදුමට බ්ලූටූත් බෙදා ගැනීම් කළමනාකරු වෙත ප්‍රවේශ වීමට ඉඩ දී එය ගොනු මාරු කිරීමට භාවිතා කරන්න."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"පිළිගත් ලැයිස්තු බ්ලූටූත් උපාංග ප්‍රවේශය."</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"පරිශීලක තහවුරු කිරීම නොමැතිව එම උපාංගයට මෙම උපාංගය වෙත ගොනු එවීමට ඉඩ දෙමින්, බ්ලූටූත් උපාංගයක් තාවකාලිකව පිළිගත් ලැයිස්තුගත කිරීමට යෙදුමට ඉඩ දෙයි."</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"බ්ලූටූත්"</string>
     <string name="unknown_device" msgid="2317679521750821654">"නොදන්නා උපාංගයකි"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"නොදනී"</string>
