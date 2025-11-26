@@ -756,7 +756,11 @@ impl StartA2dpOffload {
 }
 
 #[derive(Debug, Read, Write)]
-pub struct StopA2dpOffload {}
+pub struct StopA2dpOffload {
+    pub connection_handle: u16,
+    pub l2cap_channel_id: u16,
+    pub data_path_direction: u8,
+}
 
 impl StopA2dpOffload {
     const OPCODE: u8 = 0x04;
@@ -765,7 +769,7 @@ impl StopA2dpOffload {
 #[test]
 fn test_start_a2dp_offload() {
     let dump = [
-        0x5d, 0xfd, 14, 0x03, 0x23, 0x01, 0x67, 0x45, 0x00, 0x00, 0x01, 0x00, 0x42, 0x03, 0x01,
+        0x5d, 0xfd, 0x0e, 0x03, 0x23, 0x01, 0x67, 0x45, 0x00, 0x00, 0x01, 0x00, 0x42, 0x03, 0x01,
         0x02, 0x03,
     ];
     let Ok(Command::A2dpHardwareOffload(A2dpHardwareOffload::StartA2dpOffload(c))) =
@@ -795,12 +799,15 @@ fn test_start_a2dp_complete() {
 
 #[test]
 fn test_stop_a2dp_offload() {
-    let dump = [0x5d, 0xfd, 1, 0x04];
+    let dump = [0x5d, 0xfd, 0x06, 0x04, 0x23, 0x01, 0x67, 0x45, 0x00];
     let Ok(Command::A2dpHardwareOffload(A2dpHardwareOffload::StopA2dpOffload(c))) =
         Command::from_bytes(&dump)
     else {
         panic!()
     };
+    assert_eq!(c.connection_handle, 0x0123);
+    assert_eq!(c.l2cap_channel_id, 0x4567);
+    assert_eq!(c.data_path_direction, 0);
     assert_eq!(A2dpHardwareOffload::StopA2dpOffload(c).to_bytes(), &dump[..]);
 }
 
