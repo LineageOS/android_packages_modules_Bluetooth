@@ -226,6 +226,21 @@ public class BipPixel {
                 && p.getMaxHeight() == getMaxHeight();
     }
 
+    /** Checks that the width and height of {@code o} is not bigger. */
+    public boolean isBiggerOrEquals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof BipPixel p)) {
+            return false;
+        }
+
+        return p.getMinWidth() <= getMaxWidth()
+                && p.getMaxWidth() <= getMaxWidth()
+                && p.getMinHeight() <= getMaxHeight()
+                && p.getMaxHeight() <= getMaxHeight();
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(

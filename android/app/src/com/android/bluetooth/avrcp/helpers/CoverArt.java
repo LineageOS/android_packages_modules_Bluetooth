@@ -227,7 +227,8 @@ public class CoverArt {
 
         int encodingType = encoding.getType();
         if ((encodingType == BipEncoding.JPEG || encodingType == BipEncoding.PNG)
-                && (Flags.implementGetImageFromDescriptorForCoverArt()
+                && ((Flags.implementGetImageFromDescriptorForCoverArt()
+                                && PIXEL_THUMBNAIL.isBiggerOrEquals(pixel))
                         || PIXEL_THUMBNAIL.equals(pixel))) {
             return true;
         }
