@@ -36,7 +36,7 @@ public:
    * @param state one of the values from bthf_connection_state_t
    * @param bd_addr remote device address
    */
-  virtual void ConnectionStateCallback(bthf_connection_state_t state, RawAddress* bd_addr,
+  virtual void ConnectionStateCallback(bthf_connection_state_t state, RawAddress bd_addr,
                                        uint8_t reason) = 0;
 
   /**
@@ -46,8 +46,7 @@ public:
    * @param bd_addr remote device address
    * @param reason optional information about the audio state change
    */
-  virtual void AudioStateCallback(bthf_audio_state_t state, RawAddress* bd_addr,
-                                  uint8_t reason) = 0;
+  virtual void AudioStateCallback(bthf_audio_state_t state, RawAddress bd_addr, uint8_t reason) = 0;
 
   /**
    * Callback for VR connection state change.
@@ -55,21 +54,21 @@ public:
    * @param state one of the values from bthf_vr_state_t
    * @param bd_addr
    */
-  virtual void VoiceRecognitionCallback(bthf_vr_state_t state, RawAddress* bd_addr) = 0;
+  virtual void VoiceRecognitionCallback(bthf_vr_state_t state, RawAddress bd_addr) = 0;
 
   /**
    * Callback for answer incoming call (ATA)
    *
    * @param bd_addr remote device address
    */
-  virtual void AnswerCallCallback(RawAddress* bd_addr) = 0;
+  virtual void AnswerCallCallback(RawAddress bd_addr) = 0;
 
   /**
    * Callback for disconnect call (AT+CHUP)
    *
    * @param bd_addr remote device address
    */
-  virtual void HangupCallCallback(RawAddress* bd_addr) = 0;
+  virtual void HangupCallCallback(RawAddress bd_addr) = 0;
 
   /**
    * Callback for disconnect call (AT+CHUP)
@@ -78,7 +77,7 @@ public:
    * @param volume volume value 0 to 15, p69, HFP 1.7.1 spec
    * @param bd_addr remote device address
    */
-  virtual void VolumeControlCallback(bthf_volume_type_t type, int volume, RawAddress* bd_addr) = 0;
+  virtual void VolumeControlCallback(bthf_volume_type_t type, int volume, RawAddress bd_addr) = 0;
 
   /**
    * Callback for dialing an outgoing call
@@ -86,7 +85,7 @@ public:
    * @param number intended phone number, if number is NULL, redial
    * @param bd_addr remote device address
    */
-  virtual void DialCallCallback(char* number, RawAddress* bd_addr) = 0;
+  virtual void DialCallCallback(char* number, RawAddress bd_addr) = 0;
 
   /**
    * Callback for sending DTMF tones
@@ -94,7 +93,7 @@ public:
    * @param tone contains the dtmf character to be sent
    * @param bd_addr remote device address
    */
-  virtual void DtmfCmdCallback(char tone, RawAddress* bd_addr) = 0;
+  virtual void DtmfCmdCallback(char tone, RawAddress bd_addr) = 0;
 
   /**
    * Callback for enabling/disabling noise reduction/echo cancellation
@@ -102,7 +101,7 @@ public:
    * @param nrec 1 to enable, 0 to disable
    * @param bd_addr remote device address
    */
-  virtual void NoiseReductionCallback(bthf_nrec_t nrec, RawAddress* bd_addr) = 0;
+  virtual void NoiseReductionCallback(bthf_nrec_t nrec, RawAddress bd_addr) = 0;
 
   /**
    * Callback for AT+BCS and event from BAC
@@ -110,7 +109,7 @@ public:
    * @param wbs WBS enable, WBS disable
    * @param bd_addr remote device address
    */
-  virtual void WbsCallback(bthf_wbs_config_t wbs, RawAddress* bd_addr) = 0;
+  virtual void WbsCallback(bthf_wbs_config_t wbs, RawAddress bd_addr) = 0;
 
   /**
    * Callback for AT+BCS and event from BAC
@@ -119,7 +118,7 @@ public:
    * @param swb SWB enable, SWB disable
    * @param bd_addr remote device address
    */
-  virtual void SwbCallback(bthf_swb_codec_t codec, bthf_swb_config_t swb, RawAddress* bd_addr) = 0;
+  virtual void SwbCallback(bthf_swb_codec_t codec, bthf_swb_config_t swb, RawAddress bd_addr) = 0;
 
   /**
    * Callback for call hold handling (AT+CHLD)
@@ -127,35 +126,35 @@ public:
    * @param chld the call hold command (0, 1, 2, 3)
    * @param bd_addr remote device address
    */
-  virtual void AtChldCallback(bthf_chld_type_t chld, RawAddress* bd_addr) = 0;
+  virtual void AtChldCallback(bthf_chld_type_t chld, RawAddress bd_addr) = 0;
 
   /**
    * Callback for CNUM (subscriber number)
    *
    * @param bd_addr remote device address
    */
-  virtual void AtCnumCallback(RawAddress* bd_addr) = 0;
+  virtual void AtCnumCallback(RawAddress bd_addr) = 0;
 
   /**
    * Callback for indicators (CIND)
    *
    * @param bd_addr remote device address
    */
-  virtual void AtCindCallback(RawAddress* bd_addr) = 0;
+  virtual void AtCindCallback(RawAddress bd_addr) = 0;
 
   /**
    * Callback for operator selection (COPS)
    *
    * @param bd_addr remote device address
    */
-  virtual void AtCopsCallback(RawAddress* bd_addr) = 0;
+  virtual void AtCopsCallback(RawAddress bd_addr) = 0;
 
   /**
    * Callback for call list (AT+CLCC)
    *
    * @param bd_addr remote device address
    */
-  virtual void AtClccCallback(RawAddress* bd_addr) = 0;
+  virtual void AtClccCallback(RawAddress bd_addr) = 0;
 
   /**
    * Callback for unknown AT command recd from HF
@@ -163,14 +162,14 @@ public:
    * @param at_string he unparsed AT string
    * @param bd_addr remote device address
    */
-  virtual void UnknownAtCallback(char* at_string, RawAddress* bd_addr) = 0;
+  virtual void UnknownAtCallback(char* at_string, RawAddress bd_addr) = 0;
 
   /**
    * Callback for keypressed (HSP) event.
    *
    * @param bd_addr remote device address
    */
-  virtual void KeyPressedCallback(RawAddress* bd_addr) = 0;
+  virtual void KeyPressedCallback(RawAddress bd_addr) = 0;
 
   /**
    * Callback for BIND. Pass the remote HF Indicators supported.
@@ -178,7 +177,7 @@ public:
    * @param at_string unparsed AT command string
    * @param bd_addr remote device address
    */
-  virtual void AtBindCallback(char* at_string, RawAddress* bd_addr) = 0;
+  virtual void AtBindCallback(char* at_string, RawAddress bd_addr) = 0;
 
   /**
    * Callback for BIEV. Pass the change in the Remote HF indicator values
@@ -187,7 +186,7 @@ public:
    * @param ind_value HF indicator value
    * @param bd_addr remote device address
    */
-  virtual void AtBievCallback(bthf_hf_ind_type_t ind_id, int ind_value, RawAddress* bd_addr) = 0;
+  virtual void AtBievCallback(bthf_hf_ind_type_t ind_id, int ind_value, RawAddress bd_addr) = 0;
 
   /**
    * Callback for BIA. Pass the change in AG indicator activation.
@@ -201,14 +200,14 @@ public:
    * @param bd_addr remote HF device address
    */
   virtual void AtBiaCallback(bool service, bool roam, bool signal, bool battery,
-                             RawAddress* bd_addr) = 0;
+                             RawAddress bd_addr) = 0;
 
   /**
    * Callback for BCC.
    *
    * @param bd_addr remote device address
    */
-  virtual void AtBccCallback(RawAddress* bd_addr) = 0;
+  virtual void AtBccCallback(RawAddress bd_addr) = 0;
 
   /**
    * Callback for DebugDump.

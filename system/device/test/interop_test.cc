@@ -326,14 +326,14 @@ TEST_F(InteropTest, test_dynamic_db_clear) {
   auto test_address = RawAddress::FromString("11:22:33:44:55:66").value();
   EXPECT_FALSE(interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address));
 
-  interop_database_add(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address, 3);
+  interop_database_add(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, test_address, 3);
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address));
   EXPECT_FALSE(interop_match_addr(INTEROP_AUTO_RETRY_PAIRING, &test_address));
 
   test_address = RawAddress::FromString("66:55:44:33:22:11").value();
   EXPECT_FALSE(interop_match_addr(INTEROP_AUTO_RETRY_PAIRING, &test_address));
 
-  interop_database_add(INTEROP_AUTO_RETRY_PAIRING, &test_address, 3);
+  interop_database_add(INTEROP_AUTO_RETRY_PAIRING, test_address, 3);
   EXPECT_TRUE(interop_match_addr(INTEROP_AUTO_RETRY_PAIRING, &test_address));
   EXPECT_FALSE(interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address));
 

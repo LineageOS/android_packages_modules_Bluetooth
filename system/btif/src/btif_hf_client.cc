@@ -170,7 +170,7 @@ static void btif_in_hf_client_generic_evt(uint16_t event, char* p_param) {
   log::verbose("event={}", event);
   switch (event) {
     case BTIF_HF_CLIENT_CB_AUDIO_CONNECTING: {
-      HAL_CBACK(bt_hf_client_callbacks, audio_state_cb, &cb->peer_bda,
+      HAL_CBACK(bt_hf_client_callbacks, audio_state_cb, cb->peer_bda,
                 (bthf_client_audio_state_t)BTHF_CLIENT_AUDIO_STATE_CONNECTING);
     } break;
     default: {
@@ -820,34 +820,34 @@ static void process_ind_evt(tBTA_HF_CLIENT_IND* ind) {
 
   switch (ind->type) {
     case BTA_HF_CLIENT_IND_CALL:
-      HAL_CBACK(bt_hf_client_callbacks, call_cb, &cb->peer_bda, (bthf_client_call_t)ind->value);
+      HAL_CBACK(bt_hf_client_callbacks, call_cb, cb->peer_bda, (bthf_client_call_t)ind->value);
       break;
 
     case BTA_HF_CLIENT_IND_CALLSETUP:
-      HAL_CBACK(bt_hf_client_callbacks, callsetup_cb, &cb->peer_bda,
+      HAL_CBACK(bt_hf_client_callbacks, callsetup_cb, cb->peer_bda,
                 (bthf_client_callsetup_t)ind->value);
       break;
     case BTA_HF_CLIENT_IND_CALLHELD:
-      HAL_CBACK(bt_hf_client_callbacks, callheld_cb, &cb->peer_bda,
+      HAL_CBACK(bt_hf_client_callbacks, callheld_cb, cb->peer_bda,
                 (bthf_client_callheld_t)ind->value);
       break;
 
     case BTA_HF_CLIENT_IND_SERVICE:
-      HAL_CBACK(bt_hf_client_callbacks, network_state_cb, &cb->peer_bda,
+      HAL_CBACK(bt_hf_client_callbacks, network_state_cb, cb->peer_bda,
                 (bthf_client_network_state_t)ind->value);
       break;
 
     case BTA_HF_CLIENT_IND_SIGNAL:
-      HAL_CBACK(bt_hf_client_callbacks, network_signal_cb, &cb->peer_bda, ind->value);
+      HAL_CBACK(bt_hf_client_callbacks, network_signal_cb, cb->peer_bda, ind->value);
       break;
 
     case BTA_HF_CLIENT_IND_ROAM:
-      HAL_CBACK(bt_hf_client_callbacks, network_roaming_cb, &cb->peer_bda,
+      HAL_CBACK(bt_hf_client_callbacks, network_roaming_cb, cb->peer_bda,
                 (bthf_client_service_type_t)ind->value);
       break;
 
     case BTA_HF_CLIENT_IND_BATTCH:
-      HAL_CBACK(bt_hf_client_callbacks, battery_level_cb, &cb->peer_bda, ind->value);
+      HAL_CBACK(bt_hf_client_callbacks, battery_level_cb, cb->peer_bda, ind->value);
       break;
 
     default:
@@ -905,7 +905,7 @@ static void btif_hf_client_upstreams_evt(uint16_t event, char* p_param) {
         break;
       }
 
-      HAL_CBACK(bt_hf_client_callbacks, connection_state_cb, &cb->peer_bda, cb->state,
+      HAL_CBACK(bt_hf_client_callbacks, connection_state_cb, cb->peer_bda, cb->state,
                 0, /* peer feat */
                 0 /* AT+CHLD feat */);
 
@@ -923,12 +923,12 @@ static void btif_hf_client_upstreams_evt(uint16_t event, char* p_param) {
       cb->chld_feat = p_data->conn.chld_feat;
       cb->state = BTHF_CLIENT_CONNECTION_STATE_SLC_CONNECTED;
 
-      HAL_CBACK(bt_hf_client_callbacks, connection_state_cb, &cb->peer_bda, cb->state,
-                cb->peer_feat, cb->chld_feat);
+      HAL_CBACK(bt_hf_client_callbacks, connection_state_cb, cb->peer_bda, cb->state, cb->peer_feat,
+                cb->chld_feat);
 
       /* Inform the application about in-band ringtone */
       if (cb->peer_feat & BTA_HF_CLIENT_PEER_INBAND) {
-        HAL_CBACK(bt_hf_client_callbacks, in_band_ring_tone_cb, &cb->peer_bda,
+        HAL_CBACK(bt_hf_client_callbacks, in_band_ring_tone_cb, cb->peer_bda,
                   BTHF_CLIENT_IN_BAND_RINGTONE_PROVIDED);
       }
 
@@ -937,7 +937,7 @@ static void btif_hf_client_upstreams_evt(uint16_t event, char* p_param) {
 
     case BTA_HF_CLIENT_CLOSE_EVT:
       cb->state = BTHF_CLIENT_CONNECTION_STATE_DISCONNECTED;
-      HAL_CBACK(bt_hf_client_callbacks, connection_state_cb, &cb->peer_bda, cb->state, 0, 0);
+      HAL_CBACK(bt_hf_client_callbacks, connection_state_cb, cb->peer_bda, cb->state, 0, 0);
       cb->peer_bda = RawAddress::kAny;
       cb->peer_feat = 0;
       cb->chld_feat = 0;
@@ -965,45 +965,45 @@ static void btif_hf_client_upstreams_evt(uint16_t event, char* p_param) {
       break;
 
     case BTA_HF_CLIENT_MIC_EVT:
-      HAL_CBACK(bt_hf_client_callbacks, volume_change_cb, &cb->peer_bda,
-                BTHF_CLIENT_VOLUME_TYPE_MIC, p_data->val.value);
+      HAL_CBACK(bt_hf_client_callbacks, volume_change_cb, cb->peer_bda, BTHF_CLIENT_VOLUME_TYPE_MIC,
+                p_data->val.value);
       break;
 
     case BTA_HF_CLIENT_SPK_EVT:
-      HAL_CBACK(bt_hf_client_callbacks, volume_change_cb, &cb->peer_bda,
-                BTHF_CLIENT_VOLUME_TYPE_SPK, p_data->val.value);
+      HAL_CBACK(bt_hf_client_callbacks, volume_change_cb, cb->peer_bda, BTHF_CLIENT_VOLUME_TYPE_SPK,
+                p_data->val.value);
       break;
 
     case BTA_HF_CLIENT_VOICE_REC_EVT:
-      HAL_CBACK(bt_hf_client_callbacks, vr_cmd_cb, &cb->peer_bda,
+      HAL_CBACK(bt_hf_client_callbacks, vr_cmd_cb, cb->peer_bda,
                 (bthf_client_vr_state_t)p_data->val.value);
       break;
 
     case BTA_HF_CLIENT_OPERATOR_NAME_EVT:
-      HAL_CBACK(bt_hf_client_callbacks, current_operator_cb, &cb->peer_bda,
+      HAL_CBACK(bt_hf_client_callbacks, current_operator_cb, cb->peer_bda,
                 p_data->operator_name.name);
       break;
 
     case BTA_HF_CLIENT_CLIP_EVT:
-      HAL_CBACK(bt_hf_client_callbacks, clip_cb, &cb->peer_bda, p_data->number.number);
+      HAL_CBACK(bt_hf_client_callbacks, clip_cb, cb->peer_bda, p_data->number.number);
       break;
 
     case BTA_HF_CLIENT_BINP_EVT:
-      HAL_CBACK(bt_hf_client_callbacks, last_voice_tag_number_callback, &cb->peer_bda,
+      HAL_CBACK(bt_hf_client_callbacks, last_voice_tag_number_callback, cb->peer_bda,
                 p_data->number.number);
       break;
 
     case BTA_HF_CLIENT_CCWA_EVT:
-      HAL_CBACK(bt_hf_client_callbacks, call_waiting_cb, &cb->peer_bda, p_data->number.number);
+      HAL_CBACK(bt_hf_client_callbacks, call_waiting_cb, cb->peer_bda, p_data->number.number);
       break;
 
     case BTA_HF_CLIENT_AT_RESULT_EVT:
-      HAL_CBACK(bt_hf_client_callbacks, cmd_complete_cb, &cb->peer_bda,
+      HAL_CBACK(bt_hf_client_callbacks, cmd_complete_cb, cb->peer_bda,
                 (bthf_client_cmd_complete_t)p_data->result.type, p_data->result.cme);
       break;
 
     case BTA_HF_CLIENT_CLCC_EVT:
-      HAL_CBACK(bt_hf_client_callbacks, current_calls_cb, &cb->peer_bda, p_data->clcc.idx,
+      HAL_CBACK(bt_hf_client_callbacks, current_calls_cb, cb->peer_bda, p_data->clcc.idx,
                 p_data->clcc.inc ? BTHF_CLIENT_CALL_DIRECTION_INCOMING
                                  : BTHF_CLIENT_CALL_DIRECTION_OUTGOING,
                 (bthf_client_call_state_t)p_data->clcc.status,
@@ -1014,56 +1014,56 @@ static void btif_hf_client_upstreams_evt(uint16_t event, char* p_param) {
 
     case BTA_HF_CLIENT_CNUM_EVT:
       if (p_data->cnum.service == 4) {
-        HAL_CBACK(bt_hf_client_callbacks, subscriber_info_cb, &cb->peer_bda, p_data->cnum.number,
+        HAL_CBACK(bt_hf_client_callbacks, subscriber_info_cb, cb->peer_bda, p_data->cnum.number,
                   BTHF_CLIENT_SERVICE_VOICE);
       } else if (p_data->cnum.service == 5) {
-        HAL_CBACK(bt_hf_client_callbacks, subscriber_info_cb, &cb->peer_bda, p_data->cnum.number,
+        HAL_CBACK(bt_hf_client_callbacks, subscriber_info_cb, cb->peer_bda, p_data->cnum.number,
                   BTHF_CLIENT_SERVICE_FAX);
       } else {
-        HAL_CBACK(bt_hf_client_callbacks, subscriber_info_cb, &cb->peer_bda, p_data->cnum.number,
+        HAL_CBACK(bt_hf_client_callbacks, subscriber_info_cb, cb->peer_bda, p_data->cnum.number,
                   BTHF_CLIENT_SERVICE_UNKNOWN);
       }
       break;
 
     case BTA_HF_CLIENT_BTRH_EVT:
       if (p_data->val.value <= BTRH_CLIENT_RESP_AND_HOLD_REJECT) {
-        HAL_CBACK(bt_hf_client_callbacks, resp_and_hold_cb, &cb->peer_bda,
+        HAL_CBACK(bt_hf_client_callbacks, resp_and_hold_cb, cb->peer_bda,
                   (bthf_client_resp_and_hold_t)p_data->val.value);
       }
       break;
 
     case BTA_HF_CLIENT_BSIR_EVT:
       if (p_data->val.value != 0) {
-        HAL_CBACK(bt_hf_client_callbacks, in_band_ring_tone_cb, &cb->peer_bda,
+        HAL_CBACK(bt_hf_client_callbacks, in_band_ring_tone_cb, cb->peer_bda,
                   BTHF_CLIENT_IN_BAND_RINGTONE_PROVIDED);
       } else {
-        HAL_CBACK(bt_hf_client_callbacks, in_band_ring_tone_cb, &cb->peer_bda,
+        HAL_CBACK(bt_hf_client_callbacks, in_band_ring_tone_cb, cb->peer_bda,
                   BTHF_CLIENT_IN_BAND_RINGTONE_NOT_PROVIDED);
       }
       break;
 
     case BTA_HF_CLIENT_AUDIO_OPEN_EVT:
-      HAL_CBACK(bt_hf_client_callbacks, audio_state_cb, &cb->peer_bda,
+      HAL_CBACK(bt_hf_client_callbacks, audio_state_cb, cb->peer_bda,
                 BTHF_CLIENT_AUDIO_STATE_CONNECTED);
       break;
 
     case BTA_HF_CLIENT_AUDIO_MSBC_OPEN_EVT:
-      HAL_CBACK(bt_hf_client_callbacks, audio_state_cb, &cb->peer_bda,
+      HAL_CBACK(bt_hf_client_callbacks, audio_state_cb, cb->peer_bda,
                 BTHF_CLIENT_AUDIO_STATE_CONNECTED_MSBC);
       break;
     case BTA_HF_CLIENT_AUDIO_LC3_OPEN_EVT:
-      HAL_CBACK(bt_hf_client_callbacks, audio_state_cb, &cb->peer_bda,
+      HAL_CBACK(bt_hf_client_callbacks, audio_state_cb, cb->peer_bda,
                 BTHF_CLIENT_AUDIO_STATE_CONNECTED_LC3);
       break;
     case BTA_HF_CLIENT_AUDIO_CLOSE_EVT:
-      HAL_CBACK(bt_hf_client_callbacks, audio_state_cb, &cb->peer_bda,
+      HAL_CBACK(bt_hf_client_callbacks, audio_state_cb, cb->peer_bda,
                 BTHF_CLIENT_AUDIO_STATE_DISCONNECTED);
       break;
     case BTA_HF_CLIENT_RING_INDICATION:
-      HAL_CBACK(bt_hf_client_callbacks, ring_indication_cb, &cb->peer_bda);
+      HAL_CBACK(bt_hf_client_callbacks, ring_indication_cb, cb->peer_bda);
       break;
     case BTA_HF_CLIENT_UNKNOWN_EVT:
-      HAL_CBACK(bt_hf_client_callbacks, unknown_event_cb, &cb->peer_bda,
+      HAL_CBACK(bt_hf_client_callbacks, unknown_event_cb, cb->peer_bda,
                 p_data->unknown.event_string);
       break;
     default:

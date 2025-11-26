@@ -106,7 +106,7 @@ bool interop_match_vendor_product_ids::return_value = false;
 }  // namespace test
 
 // Mocked functions, if any
-void interop_database_add(const uint16_t feature, const RawAddress* addr, size_t length) {
+void interop_database_add(const uint16_t feature, RawAddress addr, size_t length) {
   inc_func_call_count(__func__);
   test::mock::device_interop::interop_database_add(feature, addr, length);
 }
