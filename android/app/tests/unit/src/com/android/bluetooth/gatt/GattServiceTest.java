@@ -54,6 +54,7 @@ import android.content.res.Resources;
 import android.location.LocationManager;
 import android.os.Binder;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.Process;
 import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
@@ -65,6 +66,7 @@ import android.test.mock.MockContentResolver;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.android.bluetooth.ActionOnDeathRecipient;
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
@@ -78,6 +80,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.stubbing.Answer;
@@ -228,6 +231,7 @@ public class GattServiceTest {
         mockGetBluetoothManager(mAdapterService);
         mockGetSystemService(mAdapterService, LocationManager.class);
         mockGetSystemService(mAdapterService, ActivityManager.class);
+        doReturn(mSource).when(mAdapterService).getAttributionSource();
 
         CompanionManager mBtCompanionManager = new CompanionManager(mAdapterService);
         doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
@@ -428,6 +432,47 @@ public class GattServiceTest {
 
         // The second call is not propagated to the native stack.
         verify(mNativeInterface, times(1)).gattClientUnregisterApp(CLIENT_IF);
+    }
+
+    @Test
+    public void onClientRegisteredFromNative_success_unregistersOnBinderDied() throws Exception {
+        final UUID uuid = UUID.randomUUID();
+        final int clientIf = 1;
+        final int status = BluetoothGatt.GATT_SUCCESS;
+        final IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
+        final ContextApp<IBluetoothGattCallback> app = mock(ContextApp.class);
+
+        doReturn(callback).when(app).getCallback();
+        doReturn(app).when(mClientMap).getByUuid(uuid);
+        doReturn(app).when(mClientMap).getByCallbackId(callback);
+        doReturn(clientIf).when(app).getId();
+        // This mock is needed for unregisterClient to proceed
+        doReturn(app)
+                .when(mClientMap)
+                .remove(eq(clientIf), eq(ContextMap.RemoveReason.REASON_BINDER_DIED));
+
+        // Call the method under test
+        mService.setAvailable(true);
+        mService.onClientRegisteredFromNative(status, clientIf, uuid);
+
+        // Verify that the app ID is set
+        verify(app).setId(clientIf);
+
+        // Verify that linkToDeath is called and capture the DeathRecipient
+        ArgumentCaptor<IBinder.DeathRecipient> captor =
+                ArgumentCaptor.forClass(IBinder.DeathRecipient.class);
+        verify(app).linkToDeath(captor.capture());
+        assertThat(captor.getValue()).isInstanceOf(ActionOnDeathRecipient.class);
+
+        // Verify that the callback is invoked
+        verify(callback).onClientRegistered(status);
+
+        // Trigger binderDied on the captured recipient
+        captor.getValue().binderDied();
+        mLooper.dispatchAll();
+
+        // Verify that unregisterClient logic is executed
+        verify(mNativeInterface).gattClientUnregisterApp(clientIf);
     }
 
     @Test
