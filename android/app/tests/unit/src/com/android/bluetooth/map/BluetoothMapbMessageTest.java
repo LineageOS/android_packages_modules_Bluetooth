@@ -17,6 +17,7 @@
 package com.android.bluetooth.map;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertThrows;
 
 import android.telephony.PhoneNumberUtils;
 
@@ -33,6 +34,7 @@ import org.mockito.Mock;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 /** Test cases for {@link BluetoothMapbMessage}. */
 @RunWith(AndroidJUnit4.class)
@@ -200,5 +202,177 @@ public class BluetoothMapbMessageTest {
         assertThat(messageMimeParsed.getFolder()).isEqualTo(TEST_FOLDER);
         assertThat(messageMimeParsed.getRecipients()).hasSize(1);
         assertThat(messageMimeParsed.getOriginators()).hasSize(1);
+    }
+
+    @Test
+    public void bMsgReader_getLine_withoutNewline_singleLine() {
+        String testString = "single line";
+        InputStream stream = new ByteArrayInputStream(testString.getBytes(StandardCharsets.UTF_8));
+        BluetoothMapbMessage.BMsgReader reader = new BluetoothMapbMessage.BMsgReader(stream);
+
+        assertThat(reader.getLine(false)).isEqualTo(testString);
+        assertThat(reader.getLine(false)).isNull();
+    }
+
+    @Test
+    public void bMsgReader_getLine_withoutNewline_singleLineWithCRLF() {
+        String testString = "single line";
+        InputStream stream =
+                new ByteArrayInputStream((testString + "\r\n").getBytes(StandardCharsets.UTF_8));
+        BluetoothMapbMessage.BMsgReader reader = new BluetoothMapbMessage.BMsgReader(stream);
+
+        assertThat(reader.getLine(false)).isEqualTo(testString);
+        assertThat(reader.getLine(false)).isNull();
+    }
+
+    @Test
+    public void bMsgReader_getLine_withoutNewline_multipleLines() {
+        String line1 = "Line 1";
+        String line2 = "Line 2";
+        String testString = line1 + "\r\n" + line2 + "\r\n";
+        InputStream stream = new ByteArrayInputStream(testString.getBytes(StandardCharsets.UTF_8));
+        BluetoothMapbMessage.BMsgReader reader = new BluetoothMapbMessage.BMsgReader(stream);
+
+        assertThat(reader.getLine(false)).isEqualTo(line1);
+        assertThat(reader.getLine(false)).isEqualTo(line2);
+        assertThat(reader.getLine(false)).isNull();
+    }
+
+    @Test
+    public void bMsgReader_getLine_withoutNewline_skipsLeadingEmptyLines() {
+        String line1 = "Line 1";
+        String testString = "\r\n\r\n" + line1 + "\r\n";
+        InputStream stream = new ByteArrayInputStream(testString.getBytes(StandardCharsets.UTF_8));
+        BluetoothMapbMessage.BMsgReader reader = new BluetoothMapbMessage.BMsgReader(stream);
+
+        assertThat(reader.getLine(false)).isEqualTo(line1);
+        assertThat(reader.getLine(false)).isNull();
+    }
+
+    @Test
+    public void bMsgReader_getLine_withoutNewline_emptyStream_returnsNull() {
+        InputStream stream = new ByteArrayInputStream("".getBytes(StandardCharsets.UTF_8));
+        BluetoothMapbMessage.BMsgReader reader = new BluetoothMapbMessage.BMsgReader(stream);
+
+        assertThat(reader.getLine(false)).isNull();
+    }
+
+    @Test
+    public void bMsgReader_getLine_withoutNewline_onlyNewlines_returnsNull() {
+        InputStream stream = new ByteArrayInputStream("\r\n\r\n".getBytes(StandardCharsets.UTF_8));
+        BluetoothMapbMessage.BMsgReader reader = new BluetoothMapbMessage.BMsgReader(stream);
+
+        assertThat(reader.getLine(false)).isNull();
+    }
+
+    @Test
+    public void bMsgReader_getLine_withNewline_singleLine() {
+        String testString = "single line";
+        InputStream stream = new ByteArrayInputStream(testString.getBytes(StandardCharsets.UTF_8));
+        BluetoothMapbMessage.BMsgReader reader = new BluetoothMapbMessage.BMsgReader(stream);
+
+        assertThat(reader.getLine(true)).isEqualTo(testString);
+        assertThat(reader.getLine(true)).isNull();
+    }
+
+    @Test
+    public void bMsgReader_getLine_withNewline_singleLineWithCRLF() {
+        String testString = "single line\r\n";
+        InputStream stream = new ByteArrayInputStream(testString.getBytes(StandardCharsets.UTF_8));
+        BluetoothMapbMessage.BMsgReader reader = new BluetoothMapbMessage.BMsgReader(stream);
+
+        assertThat(reader.getLine(true)).isEqualTo(testString);
+        assertThat(reader.getLine(true)).isNull();
+    }
+
+    @Test
+    public void bMsgReader_getLine_withNewline_multipleLines() {
+        String line1 = "Line 1\r\n";
+        String line2 = "Line 2\r\n";
+        String testString = line1 + line2;
+        InputStream stream = new ByteArrayInputStream(testString.getBytes(StandardCharsets.UTF_8));
+        BluetoothMapbMessage.BMsgReader reader = new BluetoothMapbMessage.BMsgReader(stream);
+
+        assertThat(reader.getLine(true)).isEqualTo(line1);
+        assertThat(reader.getLine(true)).isEqualTo(line2);
+        assertThat(reader.getLine(true)).isNull();
+    }
+
+    @Test
+    public void bMsgReader_getLine_withNewline_includesLeadingEmptyLines() {
+        String line1 = "Line 1\r\n";
+        String testString = "\r\n\r\n" + line1;
+        InputStream stream = new ByteArrayInputStream(testString.getBytes(StandardCharsets.UTF_8));
+        BluetoothMapbMessage.BMsgReader reader = new BluetoothMapbMessage.BMsgReader(stream);
+
+        assertThat(reader.getLine(true)).isEqualTo(testString);
+        assertThat(reader.getLine(true)).isNull();
+    }
+
+    @Test
+    public void bMsgReader_getLine_withNewline_emptyLineBetweenContent() {
+        String line1 = "Line 1\r\n";
+        String emptyLine = "\r\n";
+        String line2 = "Line 2\r\n";
+        String testString = line1 + emptyLine + line2;
+        InputStream stream = new ByteArrayInputStream(testString.getBytes(StandardCharsets.UTF_8));
+        BluetoothMapbMessage.BMsgReader reader = new BluetoothMapbMessage.BMsgReader(stream);
+
+        assertThat(reader.getLine(true)).isEqualTo(line1);
+        assertThat(reader.getLine(true)).isEqualTo(emptyLine + line2);
+        assertThat(reader.getLine(true)).isNull();
+    }
+
+    @Test
+    public void bMsgReader_getLine_withNewline_emptyStream_returnsNull() {
+        InputStream stream = new ByteArrayInputStream("".getBytes(StandardCharsets.UTF_8));
+        BluetoothMapbMessage.BMsgReader reader = new BluetoothMapbMessage.BMsgReader(stream);
+
+        assertThat(reader.getLine(true)).isNull();
+    }
+
+    @Test
+    public void bMsgReader_getLine_withNewline_onlyNewlines_returnsNull() {
+        InputStream stream = new ByteArrayInputStream("\r\n\r\n".getBytes(StandardCharsets.UTF_8));
+        BluetoothMapbMessage.BMsgReader reader = new BluetoothMapbMessage.BMsgReader(stream);
+
+        assertThat(reader.getLine(true)).isNull();
+    }
+
+    @Test
+    public void bMsgReader_getLineEnforce_withoutNewline_throwsExceptionOnEmptyStream() {
+        InputStream stream = new ByteArrayInputStream("".getBytes(StandardCharsets.UTF_8));
+        BluetoothMapbMessage.BMsgReader reader = new BluetoothMapbMessage.BMsgReader(stream);
+
+        assertThrows(IllegalArgumentException.class, () -> reader.getLineEnforce());
+    }
+
+    @Test
+    public void bMsgReader_getLineEnforce_withNewline_throwsExceptionOnEmptyStream() {
+        InputStream stream = new ByteArrayInputStream("".getBytes(StandardCharsets.UTF_8));
+        BluetoothMapbMessage.BMsgReader reader = new BluetoothMapbMessage.BMsgReader(stream);
+
+        assertThrows(IllegalArgumentException.class, () -> reader.getLineEnforce(true));
+    }
+
+    @Test
+    public void bMsgReader_getLineEnforce_withoutNewline_returnsLine() {
+        String line1 = "Line 1";
+        String testString = line1 + "\r\n";
+        InputStream stream = new ByteArrayInputStream(testString.getBytes(StandardCharsets.UTF_8));
+        BluetoothMapbMessage.BMsgReader reader = new BluetoothMapbMessage.BMsgReader(stream);
+
+        assertThat(reader.getLineEnforce()).isEqualTo(line1);
+        assertThrows(IllegalArgumentException.class, () -> reader.getLineEnforce());
+    }
+
+    @Test
+    public void bMsgReader_getLineEnforce_withNewline_returnsLine() {
+        String line1 = "Line 1\r\n";
+        InputStream stream = new ByteArrayInputStream(line1.getBytes(StandardCharsets.UTF_8));
+        BluetoothMapbMessage.BMsgReader reader = new BluetoothMapbMessage.BMsgReader(stream);
+
+        assertThat(reader.getLineEnforce(true)).isEqualTo(line1);
+        assertThrows(IllegalArgumentException.class, () -> reader.getLineEnforce(true));
     }
 }
