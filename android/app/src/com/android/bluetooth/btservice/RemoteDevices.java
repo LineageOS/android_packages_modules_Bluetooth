@@ -1795,7 +1795,7 @@ public class RemoteDevices {
 
         // Send the ACTION_KEY_MISSING Intent here if the link is disconnected in a bond-loss
         // scenario.
-        if (Flags.autonomousRepairingInitiation()
+        if (Utils.isAutonomousRepairingSupported()
                 && mAdapterService.isBondLost(device)
                 && newState == AbstractionLayer.BT_ACL_STATE_DISCONNECTED
                 && deviceProperties.getLastBondLossReason().isPresent()) {
@@ -1929,7 +1929,7 @@ public class RemoteDevices {
             }
         }
 
-        if (!Flags.autonomousRepairingInitiation()) {
+        if (!Utils.isAutonomousRepairingSupported()) {
             sendKeyMissingIntent(device, reason);
             return;
         }
@@ -2498,7 +2498,7 @@ public class RemoteDevices {
                     .append("] ")
                     .append(deviceProperties.getName());
 
-            if (Flags.autonomousRepairingInitiation()
+            if (Utils.isAutonomousRepairingSupported()
                     && deviceProperties.getLastBondLossReason().isPresent()) {
                 sb.append("[Latest bond-loss reason: ")
                         .append(deviceProperties.getLastBondLossReason().get())

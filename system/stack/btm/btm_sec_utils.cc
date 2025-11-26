@@ -319,3 +319,15 @@ const char* btm_pair_state_descr(tBTM_PAIRING_STATE state) {
 
   return "???";
 }
+
+/*******************************************************************************
+ *
+ * Function         is_autonomous_repairing_supported
+ *
+ * Description      Return true if the autonomous repairing is supported.
+ *
+ ******************************************************************************/
+bool is_autonomous_repairing_supported() {
+  // TODO (b/440298497): Change this to flag and android check once the SDK check CL is in.
+  return false;
+}

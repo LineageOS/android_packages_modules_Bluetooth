@@ -46,3 +46,5 @@ void BTM_update_version_info(const RawAddress& bd_addr,
                              const remote_version_info& remote_version_info);
 
 const char* btm_pair_state_descr(tBTM_PAIRING_STATE state);
+
+bool is_autonomous_repairing_supported();

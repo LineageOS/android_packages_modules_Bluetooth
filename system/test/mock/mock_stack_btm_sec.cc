@@ -100,6 +100,7 @@ struct btm_sec_update_clock_offset btm_sec_update_clock_offset;
 struct btm_simple_pair_complete btm_simple_pair_complete;
 struct btm_is_bond_lost btm_is_bond_lost;
 struct btm_update_bond_lost btm_update_bond_lost;
+struct is_autonomous_repairing_supported is_autonomous_repairing_supported;
 
 }  // namespace stack_btm_sec
 }  // namespace mock
@@ -132,6 +133,7 @@ tBTM_STATUS btm_sec_l2cap_access_req::return_value = tBTM_STATUS::BTM_SUCCESS;
 tBTM_STATUS btm_sec_l2cap_access_req_by_requirement::return_value = tBTM_STATUS::BTM_SUCCESS;
 tBTM_STATUS btm_sec_service_access_request::return_value = tBTM_STATUS::BTM_SUCCESS;
 bool btm_is_bond_lost::return_value = false;
+bool is_autonomous_repairing_supported::return_value = false;
 
 }  // namespace stack_btm_sec
 }  // namespace mock
@@ -396,6 +398,10 @@ bool btm_is_bond_lost(const RawAddress& bd_addr) {
 void btm_update_bond_lost(const RawAddress& bd_addr, bool bond_lost) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::btm_update_bond_lost(bd_addr, bond_lost);
+}
+bool is_autonomous_repairing_supported() {
+  inc_func_call_count(__func__);
+  return test::mock::stack_btm_sec::is_autonomous_repairing_supported();
 }
 // Mocked functions complete
 // END mockcify generation
