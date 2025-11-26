@@ -24,6 +24,8 @@ service VCP {
   rpc SetVolumeOffset(SetVolumeOffsetRequest) returns (google.protobuf.Empty);
   // Wait for device to be connected.
   rpc WaitConnect(WaitConnectRequest) returns (google.protobuf.Empty);
+  // Set connection policy for the profile
+  rpc SetConnectionPolicy(SetConnectionPolicyRequest) returns (google.protobuf.Empty);
 
   // TODO: AICS interfaces could be made a bit more generic by first fetching
   // what are the available instances and using them like the Connection object
@@ -32,6 +34,16 @@ service VCP {
   rpc SetGainSetting(SetGainSettingRequest) returns (google.protobuf.Empty);
   rpc SetMute(SetMuteRequest) returns (google.protobuf.Empty);
   rpc SetGainMode(SetGainModeRequest) returns (google.protobuf.Empty);
+}
+
+enum ConnectionPolicy {
+  CONNECTION_POLICY_ALLOWED = 0;
+  CONNECTION_POLICY_FORBIDDEN = 1;
+}
+
+message SetConnectionPolicyRequest {
+  Connection connection = 1;
+  ConnectionPolicy policy = 2;
 }
 
 // Request of the `SetDeviceVolume` method

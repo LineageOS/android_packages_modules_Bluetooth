@@ -20,12 +20,14 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
 import android.bluetooth.BluetoothProfile.STATE_CONNECTED
 import android.bluetooth.BluetoothVolumeControl
 import android.content.Context
 import android.content.IntentFilter
 import android.util.Log
 import com.google.protobuf.Empty
+import io.grpc.Status
 import io.grpc.stub.StreamObserver
 import java.io.Closeable
 import kotlinx.coroutines.CoroutineScope
@@ -64,6 +66,29 @@ class Vcp(val context: Context) : VCPImplBase(), Closeable {
     override fun close() {
         // Deinit the CoroutineScope
         scope.cancel()
+    }
+
+    override fun setConnectionPolicy(
+        request: SetConnectionPolicyRequest,
+        responseObserver: StreamObserver<Empty>,
+    ) {
+        grpcUnary(scope, responseObserver) {
+            val policy =
+                when (request.policy) {
+                    ConnectionPolicy.CONNECTION_POLICY_ALLOWED -> CONNECTION_POLICY_ALLOWED
+                    ConnectionPolicy.CONNECTION_POLICY_FORBIDDEN -> CONNECTION_POLICY_FORBIDDEN
+                    else -> {
+                        throw Status.INVALID_ARGUMENT.withDescription("Invalid connection policy")
+                            .asRuntimeException()
+                    }
+                }
+
+            val device = request.connection.toBluetoothDevice(bluetoothAdapter)
+
+            bluetoothVolumeControl.setConnectionPolicy(device, policy)
+
+            Empty.getDefaultInstance()
+        }
     }
 
     override fun setDeviceVolume(
