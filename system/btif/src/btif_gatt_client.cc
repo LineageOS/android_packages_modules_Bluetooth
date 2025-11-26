@@ -555,8 +555,8 @@ static BtStatus btif_gattc_execute_write(int conn_id, int execute) {
 static void btif_gattc_reg_for_notification_impl(tGATT_IF client_if, const RawAddress& bda,
                                                  uint16_t handle) {
   tGATT_STATUS status = BTA_GATTC_RegisterForNotifications(client_if, bda, handle);
-
-  if (com::android::bluetooth::flags::gatt_conn_settings()) {
+  // TODO: conn_id is currently unused
+  if (com::android::bluetooth::flags::gatt_reg_notification_on_jni_thread()) {
     do_in_jni_thread(BindOnce(
         [](tGATT_STATUS status, uint16_t handle) {
           auto callbacks = bt_gatt_callbacks;
@@ -565,7 +565,6 @@ static void btif_gattc_reg_for_notification_impl(tGATT_IF client_if, const RawAd
         },
         status, handle));
   } else {
-    // TODO: conn_id is currently unused
     auto callbacks = bt_gatt_callbacks;
     HAL_CBACK(callbacks, client->register_for_notification_cb,
               /* conn_id */ 0, 1, status, handle);
@@ -583,11 +582,20 @@ BtStatus btif_gattc_reg_for_notification(int client_if, const RawAddress& bd_add
 static void btif_gattc_dereg_for_notification_impl(tGATT_IF client_if, const RawAddress& bda,
                                                    uint16_t handle) {
   tGATT_STATUS status = BTA_GATTC_DeregisterForNotifications(client_if, bda, handle);
-
   // TODO: conn_id is currently unused
-  auto callbacks = bt_gatt_callbacks;
-  HAL_CBACK(callbacks, client->register_for_notification_cb,
-            /* conn_id */ 0, 0, status, handle);
+  if (com::android::bluetooth::flags::gatt_reg_notification_on_jni_thread()) {
+    do_in_jni_thread(BindOnce(
+        [](tGATT_STATUS status, uint16_t handle) {
+          auto callbacks = bt_gatt_callbacks;
+          HAL_CBACK(callbacks, client->register_for_notification_cb,
+                    /* conn_id */ 0, 0, status, handle);
+        },
+        status, handle));
+  } else {
+    auto callbacks = bt_gatt_callbacks;
+    HAL_CBACK(callbacks, client->register_for_notification_cb,
+              /* conn_id */ 0, 0, status, handle);
+  }
 }
 
 BtStatus btif_gattc_dereg_for_notification(int client_if, const RawAddress& bd_addr,
