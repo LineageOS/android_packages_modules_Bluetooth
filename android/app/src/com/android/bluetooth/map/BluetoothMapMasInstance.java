@@ -65,8 +65,8 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
 
     /* TODO: Should these be adaptive for each MAS? - e.g. read from app? */
     static final int SDP_MAP_MAS_FEATURES_1_2 = 0x0000007F;
-    static final int SDP_MAP_MAS_FEATURES_1_3 = 0x000603FF;
-    static final int SDP_MAP_MAS_FEATURES_1_4 = 0x000603FF;
+    static final int SDP_MAP_MAS_FEATURES_1_3 = 0x000E03FF;
+    static final int SDP_MAP_MAS_FEATURES_1_4 = 0x000E03FF;
 
     private final AdapterService mAdapterService;
 
