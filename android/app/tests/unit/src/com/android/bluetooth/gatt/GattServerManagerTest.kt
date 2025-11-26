@@ -18,6 +18,7 @@ package com.android.bluetooth.gatt
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothDevice.TRANSPORT_LE
+import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.IBluetoothGattServerCallback
 import android.content.AttributionSource
@@ -25,6 +26,7 @@ import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.android.bluetooth.ActionOnDeathRecipient
 import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.flags.Flags
@@ -105,6 +107,28 @@ class GattServerManagerTest {
         doReturn(context.packageManager).whenever(adapterService).packageManager
         doReturn(nativeInterface).whenever(service).nativeInterface
         serverManager = GattServerManager(adapterService, service, serverMap, metricsReporter)
+    }
+
+    @Test
+    fun onServerRegistered_appNotFound_doesNotLinkToDeath() {
+        val uuid = UUID.randomUUID()
+        whenever(serverMap.getByUuid(uuid)).thenReturn(null)
+
+        serverManager.onServerRegisteredFromNative(BluetoothGatt.GATT_SUCCESS, SERVER_IF, uuid)
+        verify(gattServerCallback, never()).onServerRegistered(any())
+    }
+
+    @Test
+    fun onServerRegistered_appFound_linksToDeathAndCallbacks() {
+        val uuid = UUID.randomUUID()
+        val serverApp = mock<ContextApp<IBluetoothGattServerCallback>>()
+        whenever(serverApp.callback).thenReturn(gattServerCallback)
+        whenever(serverMap.getByUuid(uuid)).thenReturn(serverApp)
+
+        serverManager.onServerRegisteredFromNative(BluetoothGatt.GATT_SUCCESS, SERVER_IF, uuid)
+        verify(serverApp).id = SERVER_IF
+        verify(serverApp).linkToDeath(any<ActionOnDeathRecipient>())
+        verify(gattServerCallback).onServerRegistered(BluetoothGatt.GATT_SUCCESS)
     }
 
     @Test
