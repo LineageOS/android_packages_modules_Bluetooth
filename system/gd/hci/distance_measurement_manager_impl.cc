@@ -341,7 +341,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
               ranging_result.confidence_level_, elapsedRealtimeNanos);
 
     int reflector_rssi = kInvalidRssi;
-    if (com::android::bluetooth::flags::add_rssi_and_power_in_distance_measurement_result()) {
+    if (com::android::bluetooth::flags::include_power_and_rssi_in_distance_measurement_result()) {
       int rssi_count = cs_requester_trackers_[connection_handle].reflector_rssi_count;
       if (rssi_count > 0) {
         reflector_rssi = cs_requester_trackers_[connection_handle].reflector_rssi_sum / rssi_count;
@@ -2562,7 +2562,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
               live_tracker->procedure_sequence_after_enable;
     }
 
-    if (com::android::bluetooth::flags::add_rssi_and_power_in_distance_measurement_result()) {
+    if (com::android::bluetooth::flags::include_power_and_rssi_in_distance_measurement_result()) {
       for (size_t i = 0; i < procedure_data->rssi_reflector.size(); i++) {
         live_tracker->reflector_rssi_sum = procedure_data->rssi_reflector[i];
       }
