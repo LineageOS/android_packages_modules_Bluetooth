@@ -55,7 +55,8 @@ class GattServerManager(
 
     private val offloadLock = Any()
 
-    fun clear() {
+    fun cleanup() {
+        Log.i(TAG, "cleanup()")
         serverMap.clear()
         handleMap.clear()
     }
