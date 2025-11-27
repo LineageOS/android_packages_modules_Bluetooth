@@ -200,7 +200,6 @@ public class GattService extends ProfileService {
                 advertiseManagerNativeInterface,
                 distanceMeasurementNativeInterface,
                 new ContextMap<>() /* mClientMap */,
-                new ContextMap<>() /* mServerMap */,
                 new HashSet<>() /* mReliableQueue */,
                 companionDeviceManager,
                 null,
@@ -214,7 +213,6 @@ public class GattService extends ProfileService {
             AdvertiseManagerNativeInterface advertiseManagerNativeInterface,
             DistanceMeasurementNativeInterface distanceMeasurementNativeInterface,
             ContextMap<IBluetoothGattCallback> clientMap,
-            ContextMap<IBluetoothGattServerCallback> serverMap,
             Set<BluetoothDevice> reliableQueue,
             CompanionDeviceManager companionDeviceManager,
             @Nullable Looper gattLooper,
@@ -229,8 +227,7 @@ public class GattService extends ProfileService {
         Settings.Global.putInt(
                 getContentResolver(), "bluetooth_sanitized_exposure_notification_supported", 1);
 
-        mServerManager =
-                new GattServerManager(getAdapterService(), this, serverMap, mMetricsReporter);
+        mServerManager = new GattServerManager(getAdapterService(), this, mMetricsReporter);
         var nativeCallback = new GattNativeCallback(getAdapterService(), this, mServerManager);
         mNativeInterface =
                 requireNonNullElseGet(

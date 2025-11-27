@@ -43,7 +43,7 @@ class ContextApp<C : IInterface>(
     /** Internal callback info queue, waiting to be send on congestion clear */
     private val congestionQueue = mutableListOf<CallbackInfo>()
 
-    private var deathRecipient: IBinder.DeathRecipient? = null
+    var deathRecipient: IBinder.DeathRecipient? = null
 
     data class CallbackInfo(
         val device: BluetoothDevice,

@@ -17,16 +17,18 @@
 package com.android.bluetooth.gatt
 
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.TRANSPORT_AUTO
+import android.bluetooth.BluetoothDevice.TRANSPORT_BREDR
 import android.bluetooth.BluetoothDevice.TRANSPORT_LE
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.IBluetoothGattServerCallback
 import android.content.AttributionSource
+import android.os.IBinder
 import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.android.bluetooth.ActionOnDeathRecipient
 import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.flags.Flags
@@ -42,10 +44,9 @@ import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
 @RunWith(AndroidJUnit4::class)
@@ -53,10 +54,11 @@ class GattServerManagerTest {
     @get:Rule val mockitoRule = MockitoRule()
     @get:Rule val setFlagsRule = SetFlagsRule()
 
+    @Mock private lateinit var binder: IBinder
+    @Mock private lateinit var binder2: IBinder
     @Mock private lateinit var source: AttributionSource
     @Mock private lateinit var gattServerCallback: IBluetoothGattServerCallback
     @Mock private lateinit var gattServerCallback2: IBluetoothGattServerCallback
-    @Mock private lateinit var serverMap: ContextMap<IBluetoothGattServerCallback>
     @Mock private lateinit var nativeInterface: GattNativeInterface
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var service: GattService
@@ -64,7 +66,6 @@ class GattServerManagerTest {
 
     private val context = InstrumentationRegistry.getInstrumentation().context
     private val device = getTestDevice(109)
-    private val serverConnections = mutableListOf<ContextMap.Connection>()
 
     private lateinit var serverManager: GattServerManager
 
@@ -77,111 +78,54 @@ class GattServerManagerTest {
             .whenever(service)
             .doOnGattThread(any())
 
-        doAnswer { invocation ->
-                val arguments = invocation.arguments
-                val id = arguments[0] as Int
-                val connId = arguments[1] as Int
-                val transport = arguments[2] as Int
-                val device = arguments[3] as BluetoothDevice
-                serverConnections.add(ContextMap.Connection(connId, device, transport, id))
-            }
-            .whenever(serverMap)
-            .addConnection(any<Int>(), any<Int>(), any<Int>(), any<BluetoothDevice>())
-
-        doAnswer { invocation ->
-                val arguments = invocation.arguments
-                val id = arguments[0] as Int
-                val connId = arguments[1] as Int
-                serverConnections.removeAll { conn -> conn.appId == id && conn.connId == connId }
-            }
-            .whenever(serverMap)
-            .removeConnection(any<Int>(), any<Int>())
-
-        doAnswer { invocation ->
-                val currentConnections = mutableListOf<ContextMap.Connection>()
-                val arguments = invocation.arguments
-                val id = arguments[0] as Int
-                val device = arguments[1] as BluetoothDevice
-                for (connection in serverConnections) {
-                    if (connection.device == device && connection.appId == id) {
-                        currentConnections.add(connection)
-                    }
-                }
-                currentConnections
-            }
-            .whenever(serverMap)
-            .getConnectionsByDevice(any<Int>(), any<BluetoothDevice>())
-
+        doReturn(binder).whenever(gattServerCallback).asBinder()
+        doReturn(binder2).whenever(gattServerCallback2).asBinder()
         doReturn(context.packageManager).whenever(adapterService).packageManager
         doReturn(nativeInterface).whenever(service).nativeInterface
-        serverManager = GattServerManager(adapterService, service, serverMap, metricsReporter)
+        serverManager = GattServerManager(adapterService, service, metricsReporter)
     }
 
     @Test
     fun onServerRegistered_appNotFound_doesNotLinkToDeath() {
         val uuid = UUID.randomUUID()
-        whenever(serverMap.getByUuid(uuid)).thenReturn(null)
-
         serverManager.onServerRegisteredFromNative(BluetoothGatt.GATT_SUCCESS, SERVER_IF, uuid)
         verify(gattServerCallback, never()).onServerRegistered(any())
     }
 
     @Test
-    fun onServerRegistered_appFound_linksToDeathAndCallbacks() {
-        val uuid = UUID.randomUUID()
-        val serverApp = mock<ContextApp<IBluetoothGattServerCallback>>()
-        whenever(serverApp.callback).thenReturn(gattServerCallback)
-        whenever(serverMap.getByUuid(uuid)).thenReturn(serverApp)
+    fun onServerRegistered_appFound_linksToDeathAndCallbacks_onBinderDiedCleanupActionExecuted() {
+        val serverApp = register(TRANSPORT_LE, SERVER_IF, gattServerCallback)
+        assertThat(serverApp.deathRecipient).isNull()
 
-        serverManager.onServerRegisteredFromNative(BluetoothGatt.GATT_SUCCESS, SERVER_IF, uuid)
-        verify(serverApp).id = SERVER_IF
-        verify(serverApp).linkToDeath(any<ActionOnDeathRecipient>())
-        verify(gattServerCallback).onServerRegistered(BluetoothGatt.GATT_SUCCESS)
-    }
+        onRegistered(serverApp.uuid, SERVER_IF, serverApp, gattServerCallback)
+        assertThat(serverApp.deathRecipient).isNotNull()
 
-    @Test
-    fun onServerRegistered_appDied_cleanupActionExecuted() {
-        val uuid = UUID.randomUUID()
-        val serverApp = mock<ContextApp<IBluetoothGattServerCallback>>()
-        whenever(serverApp.callback).thenReturn(gattServerCallback)
-        whenever(serverApp.id).thenReturn(SERVER_IF)
-        whenever(serverMap.getByUuid(uuid)).thenReturn(serverApp)
-        whenever(serverMap.getByCallbackId(any())).thenReturn(serverApp)
-
-        serverManager.onServerRegisteredFromNative(BluetoothGatt.GATT_SUCCESS, SERVER_IF, uuid)
-
-        val captor = argumentCaptor<ActionOnDeathRecipient>()
-        verify(serverApp).linkToDeath(captor.capture())
-
-        captor.firstValue.binderDied()
-
-        // Check that unregister logic flowed through to the native interface
+        serverApp.deathRecipient!!.binderDied()
         verify(nativeInterface).gattServerUnregisterApp(SERVER_IF)
     }
 
     @Test
     fun serverConnect() {
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+
         val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
         val isDirect = true
-        val transport = 2
-
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
         serverManager.serverConnect(
             gattServerCallback,
             device,
             addressType,
             isDirect,
-            transport,
+            TRANSPORT_LE,
             source,
         )
         verify(nativeInterface)
-            .gattServerConnect(SERVER_IF, device, addressType, isDirect, transport)
+            .gattServerConnect(SERVER_IF, device, addressType, isDirect, TRANSPORT_LE)
     }
 
     @Test
     fun serverDisconnect_oneBearerConnected_bearerDisconnectRequested() {
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
 
         serverManager.serverDisconnect(gattServerCallback, device)
         verify(nativeInterface).gattServerDisconnect(SERVER_IF, device, SERVER_CONN_ID)
@@ -190,9 +134,9 @@ class GattServerManagerTest {
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
     fun serverDisconnect_multipleBearersConnected_allBearersDisconnected() {
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID_2, TRANSPORT_LE, device)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID_2, SERVER_IF)
 
         serverManager.serverDisconnect(gattServerCallback, device)
         verify(nativeInterface).gattServerDisconnect(SERVER_IF, device, SERVER_CONN_ID)
@@ -201,7 +145,7 @@ class GattServerManagerTest {
 
     @Test
     fun serverDisconnect_noBearersConnected_zeroUsedToDisconnectInFlightConnections() {
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
 
         serverManager.serverDisconnect(gattServerCallback, device)
         verify(nativeInterface, never()).gattServerDisconnect(SERVER_IF, device, SERVER_CONN_ID)
@@ -209,91 +153,59 @@ class GattServerManagerTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun serverClientConnects_noExistingBearers_stateChangedToConnected() {
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
 
-        serverManager.onClientConnectedFromNative(
-            device,
-            BluetoothDevice.TRANSPORT_BREDR,
-            true,
-            SERVER_CONN_ID_2,
-            SERVER_IF,
-        )
-        verify(serverMap)
-            .addConnection(
-                eq(SERVER_IF),
-                eq(SERVER_CONN_ID_2),
-                eq(BluetoothDevice.TRANSPORT_BREDR),
-                eq(device),
-            )
         verify(gattServerCallback).onServerConnectionState(eq(0), eq(true), eq(device))
     }
 
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
-    @Throws(Exception::class)
     fun serverClientConnects_bearerExistsForSameDevice_stateDoesNotChange() {
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
+        clearInvocations(gattServerCallback)
 
-        serverManager.onClientConnectedFromNative(
-            device,
-            TRANSPORT_LE,
-            true,
-            SERVER_CONN_ID_2,
-            SERVER_IF,
-        )
-        verify(serverMap)
-            .addConnection(eq(SERVER_IF), eq(SERVER_CONN_ID_2), eq(TRANSPORT_LE), eq(device))
+        // Second call should do nothing
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID_2, SERVER_IF)
         verify(gattServerCallback, never())
             .onServerConnectionState(any<Int>(), any<Boolean>(), any())
     }
 
     @Test
-    @Throws(Exception::class)
     fun serverClientDisconnects_noMoreBearersExistsForDevice_stateChangedToDisconnected() {
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
 
-        serverManager.onClientConnectedFromNative(
-            device,
-            TRANSPORT_LE,
-            false,
-            SERVER_CONN_ID,
-            SERVER_IF,
-        )
-        verify(serverMap).removeConnection(eq(SERVER_IF), eq(SERVER_CONN_ID))
-        assertThat(serverConnections).isEmpty()
+        // connected = false should remove connection
+        onDisconnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
+        assertThat(serverManager.serverMap.getConnectionByApp(SERVER_IF)).isEmpty()
         verify(gattServerCallback).onServerConnectionState(eq(0), eq(false), eq(device))
     }
 
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
-    @Throws(Exception::class)
     fun serverClientDisconnects_bearerStillExistsForDevice_stateDoesNotChange() {
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID_2, TRANSPORT_LE, device)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID_2, SERVER_IF)
+        clearInvocations(gattServerCallback)
 
-        serverManager.onClientConnectedFromNative(
-            device,
-            TRANSPORT_LE,
-            false,
-            SERVER_CONN_ID,
-            SERVER_IF,
-        )
-        verify(serverMap).removeConnection(eq(SERVER_IF), eq(SERVER_CONN_ID))
-        verify(serverMap, never()).removeConnection(eq(SERVER_IF), eq(SERVER_CONN_ID_2))
+        // connected = false should remove only connection for given connection id
+        onDisconnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
+
+        val connectionByApp = serverManager.serverMap.getConnectionByApp(SERVER_IF)
+        assertThat(connectionByApp.firstOrNull { it.connId == SERVER_CONN_ID }).isNull()
+        assertThat(connectionByApp.firstOrNull { it.connId == SERVER_CONN_ID_2 }).isNotNull()
         verify(gattServerCallback, never())
             .onServerConnectionState(any<Int>(), any<Boolean>(), any())
     }
 
     @Test
-    @Throws(Exception::class)
     fun serverServiceAdded_forRegisteredApp_serviceAdded() {
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
 
         val service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1)
         serverManager.onServiceAddedFromNative(0, SERVER_IF, listOf(service))
@@ -301,9 +213,9 @@ class GattServerManagerTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun serverServiceAdded_forUnregisteredApp_serviceNotAdded() {
-        addClientConnectionRecordForUnregisteredApp(SERVER_IF, SERVER_CONN_ID, TRANSPORT_LE, device)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = false)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF, isRegistered = false)
 
         val service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1)
         serverManager.onServiceAddedFromNative(0, SERVER_IF, listOf(service))
@@ -311,10 +223,9 @@ class GattServerManagerTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun serverServiceAdded_statusNotSuccess_serviceNotAdded() {
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
 
         val service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1)
         serverManager.onServiceAddedFromNative(1, SERVER_IF, listOf(service))
@@ -323,21 +234,19 @@ class GattServerManagerTest {
 
     @Test
     fun serverClearServices_withEmptyServiceSetForApp_noServicesDeleted() {
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
 
         serverManager.clearServices(gattServerCallback)
         verify(nativeInterface, never()).gattServerDeleteService(eq(SERVER_IF), any<Int>())
     }
 
     @Test
-    @Throws(Exception::class)
     fun serverSetPreferredPhy() {
         val txPhy = 2
         val rxPhy = 1
         val phyOptions = 3
-
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
 
         serverManager.serverSetPreferredPhy(gattServerCallback, device, txPhy, rxPhy, phyOptions)
         verify(nativeInterface)
@@ -346,8 +255,8 @@ class GattServerManagerTest {
 
     @Test
     fun serverReadPhy() {
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
 
         serverManager.serverReadPhy(gattServerCallback, device)
         verify(nativeInterface).gattServerReadPhy(SERVER_IF, device)
@@ -355,10 +264,10 @@ class GattServerManagerTest {
 
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
-    @Throws(Exception::class)
     fun serverReadCharacteristic_AppAndCharacteristicExist_requestSentToApp() {
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
+
         val service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1)
         val characteristic = createCharacteristic(SERVER_TEST_CHAR_UUID, 2, 0, 0)
         val serviceList = listOf(service, characteristic)
@@ -385,10 +294,10 @@ class GattServerManagerTest {
 
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
-    @Throws(Exception::class)
     fun serverReadDescriptor_AppAndDescriptorExist_requestSentToApp() {
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
+
         val service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1)
         val characteristic = createCharacteristic(SERVER_TEST_CHAR_UUID, 2, 0, 0)
         val descriptor = createDescriptor(SERVER_TEST_DESC_UUID, 3, 0)
@@ -416,10 +325,10 @@ class GattServerManagerTest {
 
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
-    @Throws(Exception::class)
     fun serverWriteCharacteristic_AppAndCharacteristicExist_requestSentToApp() {
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
+
         val service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1)
         val characteristic = createCharacteristic(SERVER_TEST_CHAR_UUID, 2, 0, 0)
         val serviceList = listOf(service, characteristic)
@@ -453,10 +362,10 @@ class GattServerManagerTest {
 
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
-    @Throws(Exception::class)
     fun serverWriteDescriptor_AppAndDescriptorExist_requestSentToApp() {
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
+
         val service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1)
         val characteristic = createCharacteristic(SERVER_TEST_CHAR_UUID, 2, 0, 0)
         val descriptor = createDescriptor(SERVER_TEST_DESC_UUID, 3, 0)
@@ -491,10 +400,9 @@ class GattServerManagerTest {
 
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
-    @Throws(Exception::class)
     fun serverExecuteWrite_writePreparedWrite_writeSentAndAppResponds() {
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
 
         serverManager.onExecuteWriteFromNative(
             device,
@@ -534,10 +442,9 @@ class GattServerManagerTest {
 
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
-    @Throws(Exception::class)
     fun serverExecuteWrite_cancelPreparedWrite_cancelSentAndAppResponds() {
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
 
         serverManager.onExecuteWriteFromNative(
             device,
@@ -577,7 +484,6 @@ class GattServerManagerTest {
 
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
-    @Throws(Exception::class)
     fun serverSendResponse_requestContextExists_responseSent() {
         // Stage valid service/characteristic and request to respond to
         serverReadCharacteristic_AppAndCharacteristicExist_requestSentToApp()
@@ -607,7 +513,6 @@ class GattServerManagerTest {
 
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
-    @Throws(Exception::class)
     fun serverSendResponse_requestContextDoesNotExist_responseNotSent() {
         // Stage valid service/characteristic and request that we _could_ respond to
         serverReadCharacteristic_AppAndCharacteristicExist_requestSentToApp()
@@ -663,14 +568,10 @@ class GattServerManagerTest {
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
     fun serverSendResponse_withSameTransactionIdAndDifferentBearers_responsesSent() {
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
-        addClientConnectionRecord(
-            serverApp,
-            SERVER_CONN_ID_2,
-            BluetoothDevice.TRANSPORT_BREDR,
-            device,
-        )
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
+        onConnected(device, TRANSPORT_BREDR, SERVER_CONN_ID_2, SERVER_IF)
+
         val service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1)
         val characteristic1 = createCharacteristic(SERVER_TEST_CHAR_UUID, 2, 0, 0)
         val characteristic2 = createCharacteristic(SERVER_TEST_CHAR_UUID, 3, 0, 0)
@@ -737,11 +638,10 @@ class GattServerManagerTest {
 
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_TRANSACTIONS)
-    @Throws(Exception::class)
     fun serverSendResponse_usingRequestIdBelongingToAnotherServer_responseNotSent() {
         // Stage request for server, then register a new server
         serverReadCharacteristic_AppAndCharacteristicExist_requestSentToApp()
-        addServerAppRecord(SERVER_IF_2, TRANSPORT_LE, gattServerCallback2)
+        register(TRANSPORT_LE, SERVER_IF_2, gattServerCallback2, onRegistered = true)
 
         val data = byteArrayOf(5, 6)
         serverManager.sendResponse(
@@ -767,29 +667,25 @@ class GattServerManagerTest {
     }
 
     @Test
-    @Throws(Exception::class)
     fun serverSendNotification_oneBearerConnected_bearerNotified() {
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
+
         val handle = 2
         val confirm = true
         val value = byteArrayOf(5, 6)
-
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
-
         serverManager.sendNotification(gattServerCallback, device, handle, confirm, value)
         verify(nativeInterface).gattServerSendIndication(SERVER_IF, handle, SERVER_CONN_ID, value)
     }
 
     @Test
-    @Throws(Exception::class)
     fun serverSendIndication_oneBearerConnected_bearerIndicated() {
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
+
         val handle = 2
         val confirm = false
         val value = byteArrayOf(5, 6)
-
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
-
         serverManager.sendNotification(gattServerCallback, device, handle, confirm, value)
         verify(nativeInterface).gattServerSendNotification(SERVER_IF, handle, SERVER_CONN_ID, value)
     }
@@ -797,18 +693,12 @@ class GattServerManagerTest {
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
     fun serverSendNotification_multipleBearersConnectedPrefLe_leTransportUsed() {
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_BREDR, SERVER_CONN_ID, SERVER_IF)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID_2, SERVER_IF)
+
         val handle = 2
         val value = byteArrayOf(5, 6)
-
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(
-            serverApp,
-            SERVER_CONN_ID,
-            BluetoothDevice.TRANSPORT_BREDR,
-            device,
-        )
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID_2, TRANSPORT_LE, device)
-
         serverManager.sendNotification(gattServerCallback, device, handle, false, value)
         verify(nativeInterface)
             .gattServerSendNotification(SERVER_IF, handle, SERVER_CONN_ID_2, value)
@@ -817,20 +707,13 @@ class GattServerManagerTest {
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
     fun serverSendNotification_multipleBearersConnectedPrefBredr_BredrTransportUsed() {
+        register(TRANSPORT_BREDR, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_BREDR, SERVER_CONN_ID, SERVER_IF)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID_2, SERVER_IF)
+
         val handle = 2
         val confirm = false
         val value = byteArrayOf(5, 6)
-
-        val serverApp =
-            addServerAppRecord(SERVER_IF, BluetoothDevice.TRANSPORT_BREDR, gattServerCallback)
-        addClientConnectionRecord(
-            serverApp,
-            SERVER_CONN_ID,
-            BluetoothDevice.TRANSPORT_BREDR,
-            device,
-        )
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID_2, TRANSPORT_LE, device)
-
         serverManager.sendNotification(gattServerCallback, device, handle, confirm, value)
         verify(nativeInterface).gattServerSendNotification(SERVER_IF, handle, SERVER_CONN_ID, value)
     }
@@ -838,20 +721,13 @@ class GattServerManagerTest {
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
     fun serverSendNotification_twoBearersConnectedPrefAutoBredrOldest_bredrTransportUsed() {
+        register(TRANSPORT_AUTO, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_BREDR, SERVER_CONN_ID, SERVER_IF)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID_2, SERVER_IF)
+
         val handle = 2
         val confirm = false
         val value = byteArrayOf(5, 6)
-
-        val serverApp =
-            addServerAppRecord(SERVER_IF, BluetoothDevice.TRANSPORT_AUTO, gattServerCallback)
-        addClientConnectionRecord(
-            serverApp,
-            SERVER_CONN_ID,
-            BluetoothDevice.TRANSPORT_BREDR,
-            device,
-        )
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID_2, TRANSPORT_LE, device)
-
         serverManager.sendNotification(gattServerCallback, device, handle, confirm, value)
         verify(nativeInterface).gattServerSendNotification(SERVER_IF, handle, SERVER_CONN_ID, value)
     }
@@ -859,31 +735,24 @@ class GattServerManagerTest {
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
     fun serverSendNotification_twoBearersConnectedPrefAutoLeOldest_leTransportUsed() {
+        register(TRANSPORT_AUTO, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
+        onConnected(device, TRANSPORT_BREDR, SERVER_CONN_ID_2, SERVER_IF)
+
         val handle = 2
         val confirm = false
         val value = byteArrayOf(5, 6)
-
-        val serverApp =
-            addServerAppRecord(SERVER_IF, BluetoothDevice.TRANSPORT_AUTO, gattServerCallback)
-        addClientConnectionRecord(serverApp, SERVER_CONN_ID, TRANSPORT_LE, device)
-        addClientConnectionRecord(
-            serverApp,
-            SERVER_CONN_ID_2,
-            BluetoothDevice.TRANSPORT_BREDR,
-            device,
-        )
-
         serverManager.sendNotification(gattServerCallback, device, handle, confirm, value)
         verify(nativeInterface).gattServerSendNotification(SERVER_IF, handle, SERVER_CONN_ID, value)
     }
 
     @Test
     fun serverSendNotification_noBearersConnected_noNotificationSent() {
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+
         val handle = 2
         val confirm = false
         val value = byteArrayOf(5, 6)
-        addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-
         serverManager.sendNotification(gattServerCallback, device, handle, confirm, value)
         verify(nativeInterface, never())
             .gattServerSendNotification(SERVER_IF, handle, SERVER_CONN_ID_2, value)
@@ -892,41 +761,68 @@ class GattServerManagerTest {
     @Test
     @EnableFlags(Flags.FLAG_GATT_MULTI_BEARER_CONNECTIONS)
     fun serverSendNotification_noBearersThatMatchPref_notificationSentOnOldest() {
+        register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
+        onConnected(device, TRANSPORT_BREDR, SERVER_CONN_ID, SERVER_IF)
+        onConnected(device, TRANSPORT_BREDR, SERVER_CONN_ID_2, SERVER_IF)
+
         val handle = 2
         val confirm = false
         val value = byteArrayOf(5, 6)
-
-        val serverApp = addServerAppRecord(SERVER_IF, TRANSPORT_LE, gattServerCallback)
-        addClientConnectionRecord(
-            serverApp,
-            SERVER_CONN_ID,
-            BluetoothDevice.TRANSPORT_BREDR,
-            device,
-        )
-        addClientConnectionRecord(
-            serverApp,
-            SERVER_CONN_ID_2,
-            BluetoothDevice.TRANSPORT_BREDR,
-            device,
-        )
-
         serverManager.sendNotification(gattServerCallback, device, handle, confirm, value)
         verify(nativeInterface).gattServerSendNotification(SERVER_IF, handle, SERVER_CONN_ID, value)
     }
 
-    private fun addServerAppRecord(
-        serverIf: Int,
+    private fun register(
         transport: Int,
-        cb: IBluetoothGattServerCallback,
+        serverIf: Int,
+        callback: IBluetoothGattServerCallback,
+        onRegistered: Boolean = false,
     ): ContextApp<IBluetoothGattServerCallback> {
-        val serverApp = mock<ContextApp<IBluetoothGattServerCallback>>()
-        doReturn(serverIf).whenever(serverApp).id
-        doReturn(transport).whenever(serverApp).transport
-        doReturn(cb).whenever(serverApp).callback
-        doReturn(serverApp).whenever(serverMap).getByCallbackId(gattServerCallback)
-        doReturn(serverApp).whenever(serverMap).getById(serverIf)
+        val uuid = UUID.randomUUID()
+        serverManager.registerServer(uuid, callback, true, transport, source)
+        val serverApp = serverManager.serverMap.getByUuid(uuid)
+        assertThat(serverApp).isNotNull()
+        assertThat(serverApp!!.uuid).isEqualTo(uuid)
+        assertThat(serverApp.id).isEqualTo(0)
+        assertThat(serverApp.callback).isEqualTo(callback)
+
+        if (onRegistered) onRegistered(uuid, serverIf, serverApp, callback)
+
         return serverApp
     }
+
+    private fun onRegistered(
+        uuid: UUID,
+        serverIf: Int,
+        serverApp: ContextApp<IBluetoothGattServerCallback>,
+        callback: IBluetoothGattServerCallback,
+    ) {
+        serverManager.onServerRegisteredFromNative(BluetoothGatt.GATT_SUCCESS, serverIf, uuid)
+        assertThat(serverApp.id).isEqualTo(serverIf)
+        verify(callback).onServerRegistered(BluetoothGatt.GATT_SUCCESS)
+    }
+
+    private fun onConnected(
+        device: BluetoothDevice,
+        transport: Int,
+        connId: Int,
+        serverIf: Int,
+        isRegistered: Boolean = true,
+    ) {
+        serverManager.onClientConnectedFromNative(device, transport, true, connId, serverIf)
+        if (isRegistered) {
+            assertThat(serverManager.serverMap.getConnectionByApp(serverIf)).isNotEmpty()
+        } else {
+            assertThat(serverManager.serverMap.getConnectionByApp(serverIf)).isEmpty()
+        }
+    }
+
+    private fun onDisconnected(
+        device: BluetoothDevice,
+        transport: Int,
+        connId: Int,
+        serverIf: Int,
+    ) = serverManager.onClientConnectedFromNative(device, transport, false, connId, serverIf)
 
     private fun createPrimaryService(uuid: UUID, handle: Int): GattDbElement {
         val service = GattDbElement.createPrimaryService(uuid)
@@ -951,30 +847,7 @@ class GattServerManagerTest {
         return descriptor
     }
 
-    private fun addClientConnectionRecordForUnregisteredApp(
-        serverIf: Int,
-        connId: Int,
-        transport: Int,
-        device: BluetoothDevice,
-    ) {
-        val conn = ContextMap.Connection(connId, device, transport, serverIf)
-        serverConnections.add(conn)
-    }
-
-    private fun addClientConnectionRecord(
-        serverApp: ContextApp<IBluetoothGattServerCallback>,
-        connId: Int,
-        transport: Int,
-        device: BluetoothDevice,
-    ) {
-        val conn = ContextMap.Connection(connId, device, transport, serverApp.id)
-        serverConnections.add(conn)
-        doReturn(serverApp).whenever(serverMap).getByConnId(eq(connId))
-    }
-
     companion object {
-        private const val CLIENT_IF = 12
-        private const val CLIENT_CONN_ID = 42
         private const val SERVER_IF = 34
         private const val SERVER_IF_2 = 35
         private const val SERVER_CONN_ID = 84

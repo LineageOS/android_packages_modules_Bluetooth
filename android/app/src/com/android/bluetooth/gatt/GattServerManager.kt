@@ -46,10 +46,12 @@ private const val TAG = GattUtil.TAG_PREFIX + "GattServerManager"
 class GattServerManager(
     private val adapterService: AdapterService,
     private val gatt: GattService,
-    val serverMap: ContextMap<IBluetoothGattServerCallback>,
     private val metricsReporter: GattMetricsReporter,
 ) {
+    val serverMap = ContextMap<IBluetoothGattServerCallback>()
+
     internal val handleMap = HandleMap()
+
     private val nativeInterface: GattNativeInterface
         get() = gatt.nativeInterface
 
