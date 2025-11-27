@@ -64,21 +64,19 @@ namespace {
 // convenience mock
 class IopMock {
 public:
-  MOCK_METHOD(bool, InteropMatchAddr, (const interop_feature_t, const RawAddress*));
+  MOCK_METHOD(bool, InteropMatchAddr, (const interop_feature_t, RawAddress));
   MOCK_METHOD(bool, InteropMatchName, (const interop_feature_t, const char*));
   MOCK_METHOD(void, InteropDatabaseAdd, (uint16_t, RawAddress, size_t));
   MOCK_METHOD(void, InteropDatabaseClear, ());
   MOCK_METHOD(bool, InteropMatchAddrOrName,
-              (const interop_feature_t, const RawAddress*,
-               bt_status_t (*)(const RawAddress*, bt_property_t*)));
+              (const interop_feature_t, RawAddress, bt_status_t (*)(RawAddress, bt_property_t*)));
   MOCK_METHOD(bool, InteropMatchManufacturer, (const interop_feature_t, uint16_t));
   MOCK_METHOD(bool, InteropMatchVendorProductIds, (const interop_feature_t, uint16_t, uint16_t));
   MOCK_METHOD(bool, InteropDatabaseMatchVersion, (const interop_feature_t, uint16_t));
-  MOCK_METHOD(bool, InteropMatchAddrGetMaxLat,
-              (const interop_feature_t, const RawAddress*, uint16_t*));
+  MOCK_METHOD(bool, InteropMatchAddrGetMaxLat, (const interop_feature_t, RawAddress, uint16_t*));
   MOCK_METHOD(bool, InteropGetAllowlistedMediaPlayersList, (list_t*));
   MOCK_METHOD(int, InteropFeatureNameToFeatureId, (const char*));
-  MOCK_METHOD(void, InteropDatabaseAddAddr, (uint16_t, const RawAddress*, size_t));
+  MOCK_METHOD(void, InteropDatabaseAddAddr, (uint16_t, RawAddress, size_t));
 };
 
 class AvrcpVersionMock {
@@ -90,7 +88,7 @@ std::unique_ptr<IopMock> localIopMock;
 std::unique_ptr<AvrcpVersionMock> localAvrcpVersionMock;
 }  // namespace
 
-bool interop_match_addr(const interop_feature_t feature, const RawAddress* addr) {
+bool interop_match_addr(const interop_feature_t feature, RawAddress addr) {
   return localIopMock->InteropMatchAddr(feature, addr);
 }
 bool interop_match_name(const interop_feature_t feature, const char* name) {
@@ -101,8 +99,8 @@ void interop_database_add(uint16_t feature, RawAddress addr, size_t length) {
 }
 void interop_database_clear() { localIopMock->InteropDatabaseClear(); }
 
-bool interop_match_addr_or_name(const interop_feature_t feature, const RawAddress* addr,
-                                bt_status_t (*get_remote_device_property)(const RawAddress*,
+bool interop_match_addr_or_name(const interop_feature_t feature, RawAddress addr,
+                                bt_status_t (*get_remote_device_property)(RawAddress,
                                                                           bt_property_t*)) {
   return localIopMock->InteropMatchAddrOrName(feature, addr, get_remote_device_property);
 }
@@ -119,7 +117,7 @@ bool interop_match_vendor_product_ids(const interop_feature_t feature, uint16_t 
 bool interop_database_match_version(const interop_feature_t feature, uint16_t version) {
   return localIopMock->InteropDatabaseMatchVersion(feature, version);
 }
-bool interop_match_addr_get_max_lat(const interop_feature_t feature, const RawAddress* addr,
+bool interop_match_addr_get_max_lat(const interop_feature_t feature, RawAddress addr,
                                     uint16_t* max_lat) {
   return localIopMock->InteropMatchAddrGetMaxLat(feature, addr, max_lat);
 }
@@ -128,7 +126,7 @@ int interop_feature_name_to_feature_id(const char* feature_name) {
   return localIopMock->InteropFeatureNameToFeatureId(feature_name);
 }
 
-void interop_database_add_addr(uint16_t feature, const RawAddress* addr, size_t length) {
+void interop_database_add_addr(uint16_t feature, RawAddress addr, size_t length) {
   return localIopMock->InteropDatabaseAddAddr(feature, addr, length);
 }
 
@@ -277,7 +275,7 @@ protected:
 TEST_F(StackSdpUtilsTest, sdpu_set_avrc_target_version_device_in_iop_table_version_1_4) {
   RawAddress bdaddr;
   EXPECT_CALL(*localAvrcpVersionMock, AvrcpProfileVersionMock()).WillOnce(Return(AVRC_REV_1_5));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, bdaddr))
           .WillOnce(Return(true));
   sdpu_set_avrc_target_version(&avrcp_attr, &bdaddr);
   ASSERT_EQ(get_avrc_target_version(&avrcp_attr), AVRC_REV_1_4);
@@ -286,9 +284,9 @@ TEST_F(StackSdpUtilsTest, sdpu_set_avrc_target_version_device_in_iop_table_versi
 TEST_F(StackSdpUtilsTest, sdpu_set_avrc_target_version_device_in_iop_table_version_1_3) {
   RawAddress bdaddr;
   EXPECT_CALL(*localAvrcpVersionMock, AvrcpProfileVersionMock()).WillOnce(Return(AVRC_REV_1_5));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, bdaddr))
           .WillOnce(Return(false));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, bdaddr))
           .WillOnce(Return(true));
   sdpu_set_avrc_target_version(&avrcp_attr, &bdaddr);
   ASSERT_EQ(get_avrc_target_version(&avrcp_attr), AVRC_REV_1_3);
@@ -320,9 +318,9 @@ TEST_F(StackSdpUtilsTest, sdpu_set_avrc_target_version_device_older_version) {
   RawAddress bdaddr;
   uint8_t config_0104[2] = {0x04, 0x01};
   EXPECT_CALL(*localAvrcpVersionMock, AvrcpProfileVersionMock()).WillOnce(Return(AVRC_REV_1_5));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, bdaddr))
           .WillOnce(Return(false));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, bdaddr))
           .WillOnce(Return(false));
   EXPECT_CALL(btif_config_interface_, GetBinLength(bdaddr.ToString(), _)).WillOnce(Return(2));
   EXPECT_CALL(btif_config_interface_, GetBin(bdaddr.ToString(), _, _, _))
@@ -336,9 +334,9 @@ TEST_F(StackSdpUtilsTest, sdpu_set_avrc_target_version_device_same_version) {
   RawAddress bdaddr;
   uint8_t config_0105[2] = {0x05, 0x01};
   EXPECT_CALL(*localAvrcpVersionMock, AvrcpProfileVersionMock()).WillOnce(Return(AVRC_REV_1_5));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, bdaddr))
           .WillOnce(Return(false));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, bdaddr))
           .WillOnce(Return(false));
   EXPECT_CALL(btif_config_interface_, GetBinLength(bdaddr.ToString(), _)).WillOnce(Return(2));
   EXPECT_CALL(btif_config_interface_, GetBin(bdaddr.ToString(), _, _, _))
@@ -352,9 +350,9 @@ TEST_F(StackSdpUtilsTest, sdpu_set_avrc_target_version_device_newer_version) {
   RawAddress bdaddr;
   uint8_t config_0106[2] = {0x06, 0x01};
   EXPECT_CALL(*localAvrcpVersionMock, AvrcpProfileVersionMock()).WillOnce(Return(AVRC_REV_1_5));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, bdaddr))
           .WillOnce(Return(false));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, bdaddr))
           .WillOnce(Return(false));
   EXPECT_CALL(btif_config_interface_, GetBinLength(bdaddr.ToString(), _)).WillOnce(Return(2));
   EXPECT_CALL(btif_config_interface_, GetBin(bdaddr.ToString(), _, _, _))
@@ -367,9 +365,9 @@ TEST_F(StackSdpUtilsTest, sdpu_set_avrc_target_version_device_newer_version) {
 TEST_F(StackSdpUtilsTest, sdpu_set_avrc_target_version_no_config_value) {
   RawAddress bdaddr;
   EXPECT_CALL(*localAvrcpVersionMock, AvrcpProfileVersionMock()).WillOnce(Return(AVRC_REV_1_5));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, bdaddr))
           .WillOnce(Return(false));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, bdaddr))
           .WillOnce(Return(false));
   EXPECT_CALL(btif_config_interface_, GetBinLength(bdaddr.ToString(), _)).WillOnce(Return(0));
   sdpu_set_avrc_target_version(&avrcp_attr, &bdaddr);
@@ -380,9 +378,9 @@ TEST_F(StackSdpUtilsTest, sdpu_set_avrc_target_version_no_config_value) {
 TEST_F(StackSdpUtilsTest, sdpu_set_avrc_target_version_config_value_1_byte) {
   RawAddress bdaddr;
   EXPECT_CALL(*localAvrcpVersionMock, AvrcpProfileVersionMock()).WillOnce(Return(AVRC_REV_1_5));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, bdaddr))
           .WillOnce(Return(false));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, bdaddr))
           .WillOnce(Return(false));
   EXPECT_CALL(btif_config_interface_, GetBinLength(bdaddr.ToString(), _)).WillOnce(Return(1));
   sdpu_set_avrc_target_version(&avrcp_attr, &bdaddr);
@@ -393,9 +391,9 @@ TEST_F(StackSdpUtilsTest, sdpu_set_avrc_target_version_config_value_1_byte) {
 TEST_F(StackSdpUtilsTest, sdpu_set_avrc_target_version_config_value_3_bytes) {
   RawAddress bdaddr;
   EXPECT_CALL(*localAvrcpVersionMock, AvrcpProfileVersionMock()).WillOnce(Return(AVRC_REV_1_5));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, bdaddr))
           .WillOnce(Return(false));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, bdaddr))
           .WillOnce(Return(false));
   EXPECT_CALL(btif_config_interface_, GetBinLength(bdaddr.ToString(), _)).WillOnce(Return(3));
   sdpu_set_avrc_target_version(&avrcp_attr, &bdaddr);
@@ -407,9 +405,9 @@ TEST_F(StackSdpUtilsTest, sdpu_set_avrc_target_version_config_value_not_valid) {
   RawAddress bdaddr;
   uint8_t config_not_valid[2] = {0x12, 0x34};
   EXPECT_CALL(*localAvrcpVersionMock, AvrcpProfileVersionMock()).WillOnce(Return(AVRC_REV_1_5));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, bdaddr))
           .WillOnce(Return(false));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, bdaddr))
           .WillOnce(Return(false));
   EXPECT_CALL(btif_config_interface_, GetBinLength(bdaddr.ToString(), _)).WillOnce(Return(2));
   EXPECT_CALL(btif_config_interface_, GetBin(bdaddr.ToString(), _, _, _))
@@ -443,7 +441,7 @@ TEST_F(StackSdpUtilsTest, sdpu_set_avrc_target_feature_device_in_iop_table_versi
   RawAddress bdaddr;
   uint8_t feature_0105[2] = {0xC1, 0x00};
   EXPECT_CALL(*localAvrcpVersionMock, AvrcpProfileVersionMock()).WillOnce(Return(AVRC_REV_1_5));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, bdaddr))
           .WillOnce(Return(true));
   sdpu_set_avrc_target_version(&avrcp_attr, &bdaddr);
   ASSERT_EQ(get_avrc_target_version(&avrcp_attr), AVRC_REV_1_4);
@@ -459,9 +457,9 @@ TEST_F(StackSdpUtilsTest, sdpu_set_avrc_target_feature_device_in_iop_table_versi
   RawAddress bdaddr;
   uint8_t feature_0105[2] = {0xC1, 0x00};
   EXPECT_CALL(*localAvrcpVersionMock, AvrcpProfileVersionMock()).WillOnce(Return(AVRC_REV_1_5));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, bdaddr))
           .WillOnce(Return(false));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, bdaddr))
           .WillOnce(Return(true));
   sdpu_set_avrc_target_version(&avrcp_attr, &bdaddr);
   ASSERT_EQ(get_avrc_target_version(&avrcp_attr), AVRC_REV_1_3);
@@ -502,9 +500,9 @@ TEST_F(StackSdpUtilsTest, sdpu_set_avrc_target_feature_device_version_1_6) {
   uint8_t config_0106[2] = {0x06, 0x01};
   uint8_t feature_0106[2] = {0xC1, 0x01};
   EXPECT_CALL(*localAvrcpVersionMock, AvrcpProfileVersionMock()).WillOnce(Return(AVRC_REV_1_6));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_4_ONLY, bdaddr))
           .WillOnce(Return(false));
-  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, &bdaddr))
+  EXPECT_CALL(*localIopMock, InteropMatchAddr(INTEROP_AVRCP_1_3_ONLY, bdaddr))
           .WillOnce(Return(false));
   EXPECT_CALL(btif_config_interface_, GetBinLength(bdaddr.ToString(), _)).WillOnce(Return(2));
   EXPECT_CALL(btif_config_interface_, GetBin(bdaddr.ToString(), _, _, _))
@@ -537,10 +535,10 @@ TEST_F(StackSdpUtilsTest, check_HFP_version_change_fail) {
   set_hfp_attr(SDP_PROFILE_DESC_LENGTH, ATTR_ID_BT_PROFILE_DESC_LIST, UUID_HF_LSB);
   test::mock::osi_properties::osi_property_get_bool.body =
           [](const char* /* key */, bool /* default_value */) { return false; };
-  EXPECT_CALL(*localIopMock, InteropMatchAddrOrName(INTEROP_HFP_1_7_ALLOWLIST, &bdaddr,
+  EXPECT_CALL(*localIopMock, InteropMatchAddrOrName(INTEROP_HFP_1_7_ALLOWLIST, bdaddr,
                                                     &btif_storage_get_remote_device_property))
           .WillOnce(Return(false));
-  EXPECT_CALL(*localIopMock, InteropMatchAddrOrName(INTEROP_HFP_1_9_ALLOWLIST, &bdaddr,
+  EXPECT_CALL(*localIopMock, InteropMatchAddrOrName(INTEROP_HFP_1_9_ALLOWLIST, bdaddr,
                                                     &btif_storage_get_remote_device_property))
           .WillOnce(Return(false));
   ASSERT_EQ(sdp_dynamic_change_hfp_version(&hfp_attr, bdaddr), false);
@@ -549,10 +547,10 @@ TEST_F(StackSdpUtilsTest, check_HFP_version_change_fail) {
 TEST_F(StackSdpUtilsTest, check_HFP_version_change_success) {
   RawAddress bdaddr(RawAddress::kEmpty);
   set_hfp_attr(SDP_PROFILE_DESC_LENGTH, ATTR_ID_BT_PROFILE_DESC_LIST, UUID_HF_LSB);
-  EXPECT_CALL(*localIopMock, InteropMatchAddrOrName(INTEROP_HFP_1_7_ALLOWLIST, &bdaddr,
+  EXPECT_CALL(*localIopMock, InteropMatchAddrOrName(INTEROP_HFP_1_7_ALLOWLIST, bdaddr,
                                                     &btif_storage_get_remote_device_property))
           .WillOnce(Return(true));
-  EXPECT_CALL(*localIopMock, InteropMatchAddrOrName(INTEROP_HFP_1_9_ALLOWLIST, &bdaddr,
+  EXPECT_CALL(*localIopMock, InteropMatchAddrOrName(INTEROP_HFP_1_9_ALLOWLIST, bdaddr,
                                                     &btif_storage_get_remote_device_property))
           .WillOnce(Return(true));
   ASSERT_EQ(sdp_dynamic_change_hfp_version(&hfp_attr, bdaddr), true);
@@ -561,10 +559,10 @@ TEST_F(StackSdpUtilsTest, check_HFP_version_change_success) {
 TEST_F(StackSdpUtilsTest, check_HFP_version_fallback_success) {
   RawAddress bdaddr(RawAddress::kEmpty);
   set_hfp_attr(SDP_PROFILE_DESC_LENGTH, ATTR_ID_BT_PROFILE_DESC_LIST, UUID_HF_LSB);
-  EXPECT_CALL(*localIopMock, InteropMatchAddrOrName(INTEROP_HFP_1_7_ALLOWLIST, &bdaddr,
+  EXPECT_CALL(*localIopMock, InteropMatchAddrOrName(INTEROP_HFP_1_7_ALLOWLIST, bdaddr,
                                                     &btif_storage_get_remote_device_property))
           .WillOnce(Return(true));
-  EXPECT_CALL(*localIopMock, InteropMatchAddrOrName(INTEROP_HFP_1_9_ALLOWLIST, &bdaddr,
+  EXPECT_CALL(*localIopMock, InteropMatchAddrOrName(INTEROP_HFP_1_9_ALLOWLIST, bdaddr,
                                                     &btif_storage_get_remote_device_property))
           .WillOnce(Return(true));
   ASSERT_TRUE(sdp_dynamic_change_hfp_version(&hfp_attr, bdaddr));

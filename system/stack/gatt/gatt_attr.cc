@@ -899,7 +899,7 @@ static bool read_sr_sirk_req(tCONN_ID conn_id,
   btm_random_pseudo_to_identity_addr(&identity_address, &address_type);
 
   if (address_type == BLE_ADDR_PUBLIC &&
-      interop_match_addr(INTEROP_DISABLE_SIRK_READ_BY_TYPE, &identity_address)) {
+      interop_match_addr(INTEROP_DISABLE_SIRK_READ_BY_TYPE, identity_address)) {
     if (GATTC_Read(conn_id, GATT_READ_CHAR_VALUE, &param) != GATT_SUCCESS) {
       log::error("Read GATT Support features GATT_Read Failed, conn_id: {}",
                  static_cast<int>(conn_id));

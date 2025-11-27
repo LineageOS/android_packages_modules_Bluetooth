@@ -117,11 +117,11 @@ static int btif_storage_get_user_id() {
 #endif
 }
 
-static void btif_storage_set_mode(RawAddress* remote_bd_addr) {
-  std::string bdstr = remote_bd_addr->ToString();
+static void btif_storage_set_mode(RawAddress remote_bd_addr) {
+  std::string bdstr = remote_bd_addr.ToString();
   if (GetInterfaceToProfiles()->config->isRestrictedMode()) {
     int user_id = btif_storage_get_user_id();
-    log::info("{} added by user {}, will be removed on exiting restricted mode", *remote_bd_addr,
+    log::info("{} added by user {}, will be removed on exiting restricted mode", remote_bd_addr,
               user_id);
     btif_config_set_int(bdstr, BTIF_STORAGE_KEY_RESTRICTED, user_id);
   }
@@ -739,7 +739,7 @@ bt_status_t btif_storage_set_adapter_property(bt_property_t* property) {
 }
 
 /** Helper function for fetching a bt_property of a remote device. */
-static bt_status_t btif_storage_get_remote_prop(RawAddress* remote_addr, bt_property_type_t type,
+static bt_status_t btif_storage_get_remote_prop(RawAddress remote_addr, bt_property_type_t type,
                                                 void* buf, int size, bt_property_t* property) {
   property->type = type;
   property->val = buf;
@@ -760,9 +760,9 @@ static bt_status_t btif_storage_get_remote_prop(RawAddress* remote_addr, bt_prop
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_get_remote_device_property(const RawAddress* remote_bd_addr,
+bt_status_t btif_storage_get_remote_device_property(RawAddress remote_bd_addr,
                                                     bt_property_t* property) {
-  return cfg2prop(remote_bd_addr, property) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+  return cfg2prop(&remote_bd_addr, property) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 /*******************************************************************************
  *
@@ -775,9 +775,9 @@ bt_status_t btif_storage_get_remote_device_property(const RawAddress* remote_bd_
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_set_remote_device_property(const RawAddress* remote_bd_addr,
+bt_status_t btif_storage_set_remote_device_property(RawAddress remote_bd_addr,
                                                     bt_property_t* property) {
-  return prop2cfg(remote_bd_addr, property) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+  return prop2cfg(&remote_bd_addr, property) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
 /*******************************************************************************
@@ -792,8 +792,8 @@ bt_status_t btif_storage_set_remote_device_property(const RawAddress* remote_bd_
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_add_remote_device(const RawAddress* remote_bd_addr,
-                                           uint32_t num_properties, bt_property_t* properties) {
+bt_status_t btif_storage_add_remote_device(RawAddress remote_bd_addr, uint32_t num_properties,
+                                           bt_property_t* properties) {
   uint32_t i = 0;
   /* TODO: If writing a property, fails do we go back undo the earlier
    * written properties? */
@@ -835,9 +835,9 @@ bt_status_t btif_storage_add_remote_device(const RawAddress* remote_bd_addr,
  *
  ******************************************************************************/
 
-bt_status_t btif_storage_add_bonded_device(RawAddress* remote_bd_addr, LinkKey link_key,
+bt_status_t btif_storage_add_bonded_device(RawAddress remote_bd_addr, LinkKey link_key,
                                            uint8_t key_type, uint8_t pin_length) {
-  std::string bdstr = remote_bd_addr->ToString();
+  std::string bdstr = remote_bd_addr.ToString();
   bool ret = btif_config_set_int(bdstr, BTIF_STORAGE_KEY_LINK_KEY_TYPE, static_cast<int>(key_type));
   ret &= btif_config_set_int(bdstr, BTIF_STORAGE_KEY_PIN_LENGTH, static_cast<int>(pin_length));
   ret &= btif_config_set_bin(bdstr, BTIF_STORAGE_KEY_LINK_KEY, link_key.data(), link_key.size());
@@ -858,9 +858,9 @@ bt_status_t btif_storage_add_bonded_device(RawAddress* remote_bd_addr, LinkKey l
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_remove_bonded_device(const RawAddress* remote_bd_addr) {
-  std::string bdstr = remote_bd_addr->ToString();
-  log::info("Removing bonded device addr={}", *remote_bd_addr);
+bt_status_t btif_storage_remove_bonded_device(RawAddress remote_bd_addr) {
+  std::string bdstr = remote_bd_addr.ToString();
+  log::info("Removing bonded device addr={}", remote_bd_addr);
 
   btif_config_remove_device(bdstr);
 
@@ -904,7 +904,7 @@ static void remove_devices_with_sample_ltk() {
   for (RawAddress address : bad_ltk) {
     log::error("Removing bond to device using test TLK: {}", address);
 
-    btif_storage_remove_bonded_device(&address);
+    btif_storage_remove_bonded_device(address);
   }
 }
 
@@ -1056,8 +1056,6 @@ bt_status_t btif_storage_load_bonded_devices(void) {
 
   {
     for (i = 0; i < bonded_devices.num_devices; i++) {
-      RawAddress* p_remote_addr;
-
       /*
        * TODO: improve handling of missing fields in NVRAM.
        */
@@ -1065,35 +1063,36 @@ bt_status_t btif_storage_load_bonded_devices(void) {
       uint32_t devtype = 0;
 
       num_props = 0;
-      p_remote_addr = &bonded_devices.devices[i].bda;
+      RawAddress remote_addr = bonded_devices.devices[i].bda;
       memset(remote_properties, 0, sizeof(remote_properties));
-      btif_storage_get_remote_prop(p_remote_addr, BT_PROPERTY_BDNAME, &name, sizeof(name),
+
+      btif_storage_get_remote_prop(remote_addr, BT_PROPERTY_BDNAME, &name, sizeof(name),
                                    &remote_properties[num_props]);
       num_props++;
 
-      btif_storage_get_remote_prop(p_remote_addr, BT_PROPERTY_REMOTE_FRIENDLY_NAME, &alias,
+      btif_storage_get_remote_prop(remote_addr, BT_PROPERTY_REMOTE_FRIENDLY_NAME, &alias,
                                    sizeof(alias), &remote_properties[num_props]);
       num_props++;
 
-      btif_storage_get_remote_prop(p_remote_addr, BT_PROPERTY_CLASS_OF_DEVICE, &cod, sizeof(cod),
+      btif_storage_get_remote_prop(remote_addr, BT_PROPERTY_CLASS_OF_DEVICE, &cod, sizeof(cod),
                                    &remote_properties[num_props]);
       num_props++;
 
-      btif_storage_get_remote_prop(p_remote_addr, BT_PROPERTY_TYPE_OF_DEVICE, &devtype,
+      btif_storage_get_remote_prop(remote_addr, BT_PROPERTY_TYPE_OF_DEVICE, &devtype,
                                    sizeof(devtype), &remote_properties[num_props]);
       num_props++;
 
-      btif_storage_get_remote_prop(p_remote_addr, BT_PROPERTY_UUIDS, &remote_uuids,
+      btif_storage_get_remote_prop(remote_addr, BT_PROPERTY_UUIDS, &remote_uuids,
                                    sizeof(remote_uuids), &remote_properties[num_props]);
       num_props++;
 
-      btif_storage_get_remote_prop(p_remote_addr, BT_PROPERTY_UUIDS_LE, &remote_uuids_le,
+      btif_storage_get_remote_prop(remote_addr, BT_PROPERTY_UUIDS_LE, &remote_uuids_le,
                                    sizeof(remote_uuids_le), &remote_properties[num_props]);
       num_props++;
 
       // Floss needs appearance for metrics purposes
       uint16_t appearance = 0;
-      if (btif_storage_get_remote_prop(p_remote_addr, BT_PROPERTY_APPEARANCE, &appearance,
+      if (btif_storage_get_remote_prop(remote_addr, BT_PROPERTY_APPEARANCE, &appearance,
                                        sizeof(appearance),
                                        &remote_properties[num_props]) == BT_STATUS_SUCCESS) {
         num_props++;
@@ -1110,15 +1109,15 @@ bt_status_t btif_storage_load_bonded_devices(void) {
 #endif
 
       tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
-      btif_storage_get_remote_prop(p_remote_addr, BT_PROPERTY_REMOTE_ADDR_TYPE, &addr_type,
+      btif_storage_get_remote_prop(remote_addr, BT_PROPERTY_REMOTE_ADDR_TYPE, &addr_type,
                                    sizeof(addr_type), &remote_properties[num_props]);
       num_props++;
 
-      btif_storage_get_remote_prop(p_remote_addr, BT_PROPERTY_REMOTE_MODEL_NUM, &model_name,
+      btif_storage_get_remote_prop(remote_addr, BT_PROPERTY_REMOTE_MODEL_NUM, &model_name,
                                    sizeof(model_name), &remote_properties[num_props]);
       num_props++;
 
-      btif_remote_properties_evt(BT_STATUS_SUCCESS, p_remote_addr, addr_type, num_props,
+      btif_remote_properties_evt(BT_STATUS_SUCCESS, remote_addr, addr_type, num_props,
                                  remote_properties);
     }
   }
@@ -1137,12 +1136,12 @@ bt_status_t btif_storage_load_bonded_devices(void) {
  *
  ******************************************************************************/
 
-bt_status_t btif_storage_add_ble_bonding_key(RawAddress* remote_bd_addr, const uint8_t* key_value,
+bt_status_t btif_storage_add_ble_bonding_key(RawAddress remote_bd_addr, const uint8_t* key_value,
                                              uint8_t key_type, uint8_t key_length) {
   for (size_t i = 0; i < std::size(BTIF_STORAGE_LE_KEYS); i++) {
     auto key = BTIF_STORAGE_LE_KEYS[i];
     if (key.type == key_type) {
-      bool ret = btif_config_set_bin(remote_bd_addr->ToString(), key.name, key_value, key_length);
+      bool ret = btif_config_set_bin(remote_bd_addr.ToString(), key.name, key_value, key_length);
 
       if (ret) {
         btif_storage_set_mode(remote_bd_addr);
@@ -1190,9 +1189,9 @@ bt_status_t btif_storage_get_ble_bonding_key(const RawAddress& remote_bd_addr, u
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_remove_ble_bonding_keys(const RawAddress* remote_bd_addr) {
-  std::string bdstr = remote_bd_addr->ToString();
-  log::info("Removing bonding keys for bd addr:{}", *remote_bd_addr);
+bt_status_t btif_storage_remove_ble_bonding_keys(RawAddress remote_bd_addr) {
+  std::string bdstr = remote_bd_addr.ToString();
+  log::info("Removing bonding keys for bd addr:{}", remote_bd_addr);
   bool ret = true;
   for (size_t i = 0; i < std::size(BTIF_STORAGE_LE_KEYS); i++) {
     auto key_name = BTIF_STORAGE_LE_KEYS[i].name;
@@ -1264,9 +1263,9 @@ bt_status_t btif_in_fetch_bonded_ble_device(const std::string& remote_bd_addr, i
       btif_has_ble_keys(remote_bd_addr)) {
     log::verbose("Found a LE device: {}", bd_addr);
 
-    if (btif_storage_get_remote_addr_type(&bd_addr, &addr_type) != BT_STATUS_SUCCESS) {
+    if (btif_storage_get_remote_addr_type(bd_addr, &addr_type) != BT_STATUS_SUCCESS) {
       addr_type = BLE_ADDR_PUBLIC;
-      btif_storage_set_remote_addr_type(&bd_addr, BLE_ADDR_PUBLIC);
+      btif_storage_set_remote_addr_type(bd_addr, BLE_ADDR_PUBLIC);
     }
 
     for (size_t i = 0; i < std::size(BTIF_STORAGE_LE_KEYS); i++) {
@@ -1303,9 +1302,8 @@ static void btif_storage_invoke_addr_type_update(const RawAddress& remote_bd_add
 }
 #endif  // TARGET_FLOSS
 
-bt_status_t btif_storage_set_remote_addr_type(const RawAddress* remote_bd_addr,
-                                              tBLE_ADDR_TYPE addr_type) {
-  bool ret = btif_config_set_int(remote_bd_addr->ToString(), BTIF_STORAGE_KEY_ADDR_TYPE,
+bt_status_t btif_storage_set_remote_addr_type(RawAddress remote_bd_addr, tBLE_ADDR_TYPE addr_type) {
+  bool ret = btif_config_set_int(remote_bd_addr.ToString(), BTIF_STORAGE_KEY_ADDR_TYPE,
                                  static_cast<int>(addr_type));
 
 #if TARGET_FLOSS
@@ -1330,10 +1328,10 @@ static bool btif_has_ble_keys(const std::string& bdstr) {
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_get_remote_addr_type(const RawAddress* remote_bd_addr,
+bt_status_t btif_storage_get_remote_addr_type(RawAddress remote_bd_addr,
                                               tBLE_ADDR_TYPE* addr_type) {
   int val = BLE_ADDR_ANONYMOUS;
-  bool ret = btif_config_get_int(remote_bd_addr->ToString(), BTIF_STORAGE_KEY_ADDR_TYPE, &val);
+  bool ret = btif_config_get_int(remote_bd_addr.ToString(), BTIF_STORAGE_KEY_ADDR_TYPE, &val);
   *addr_type = static_cast<tBLE_ADDR_TYPE>(val);
   return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
@@ -1418,7 +1416,7 @@ bool btif_storage_get_stored_remote_name(const RawAddress& bd_addr, char* name) 
           .val = name,
   };
 
-  return btif_storage_get_remote_device_property(&bd_addr, &property) == BT_STATUS_SUCCESS;
+  return btif_storage_get_remote_device_property(bd_addr, &property) == BT_STATUS_SUCCESS;
 }
 
 // Get the Class of Device.
@@ -1429,7 +1427,7 @@ bool btif_storage_get_cod(const RawAddress& bd_addr, uint32_t* cod) {
           .val = cod,
   };
 
-  return btif_storage_get_remote_device_property(&bd_addr, &property) == BT_STATUS_SUCCESS;
+  return btif_storage_get_remote_device_property(bd_addr, &property) == BT_STATUS_SUCCESS;
 }
 
 /** Stores information about GATT Client supported features support */
@@ -1514,8 +1512,7 @@ std::vector<bluetooth::Uuid> btif_storage_get_services(const RawAddress& bd_addr
   // Get BR/EDR services from storage
   if (get_bredr_services) {
     bt_property_t remote_properties = {BT_PROPERTY_UUIDS, sizeof(uuids), &uuids};
-    if (btif_storage_get_remote_device_property(&bd_addr, &remote_properties) ==
-        BT_STATUS_SUCCESS) {
+    if (btif_storage_get_remote_device_property(bd_addr, &remote_properties) == BT_STATUS_SUCCESS) {
       count = remote_properties.len / sizeof(uuids[0]);
     }
   }
@@ -1524,8 +1521,7 @@ std::vector<bluetooth::Uuid> btif_storage_get_services(const RawAddress& bd_addr
   if (get_le_services) {
     int size = (uuids.size() - count) * sizeof(uuids[0]);
     bt_property_t remote_properties = {BT_PROPERTY_UUIDS_LE, size, &uuids[count]};
-    if (btif_storage_get_remote_device_property(&bd_addr, &remote_properties) ==
-        BT_STATUS_SUCCESS) {
+    if (btif_storage_get_remote_device_property(bd_addr, &remote_properties) == BT_STATUS_SUCCESS) {
       count += remote_properties.len / sizeof(uuids[0]);
     }
   }
@@ -1551,7 +1547,7 @@ void btif_storage_migrate_services() {
     Uuid remote_uuids[BT_MAX_NUM_UUIDS];
     BTIF_STORAGE_FILL_PROPERTY(&remote_uuids_prop, BT_PROPERTY_UUIDS, sizeof(remote_uuids),
                                remote_uuids);
-    btif_storage_get_remote_device_property(&mac_address, &remote_uuids_prop);
+    btif_storage_get_remote_device_property(mac_address, &remote_uuids_prop);
 
     log::info("Will migrate Services => ServicesLe for {}", mac_address);
 
@@ -1570,7 +1566,7 @@ void btif_storage_migrate_services() {
                                 (void*)property_value.data()};
 
     /* Write LE services to storage */
-    btif_storage_set_remote_device_property(&mac_address, &le_uuids_prop);
+    btif_storage_set_remote_device_property(mac_address, &le_uuids_prop);
     log::info("Migration finished for {}", mac_address);
   }
 }

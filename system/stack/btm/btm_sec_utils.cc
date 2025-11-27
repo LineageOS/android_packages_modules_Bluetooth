@@ -68,14 +68,14 @@ void btm_sec_store_device_sc_support(uint16_t hci_handle, bool host_secure_conne
                             .len = sizeof(uint8_t),
                             .val = &property_val};
 
-  btif_storage_set_remote_device_property(&p_device->bd_addr, &property);
+  btif_storage_set_remote_device_property(p_device->bd_addr, &property);
 
   property_val = (uint8_t)controller_secure_connections_supported;
   property = {.type = BT_PROPERTY_REMOTE_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED,
               .len = sizeof(uint8_t),
               .val = &property_val};
 
-  btif_storage_set_remote_device_property(&p_device->bd_addr, &property);
+  btif_storage_set_remote_device_property(p_device->bd_addr, &property);
 }
 
 /*******************************************************************************
@@ -107,7 +107,7 @@ bool btm_sec_is_enc_algo_downgrade(uint16_t hci_handle, bool host_secure_connect
                             .len = sizeof(uint8_t),
                             .val = &controller_val};
 
-  bt_status_t cached = btif_storage_get_remote_device_property(&p_device->bd_addr, &property);
+  bt_status_t cached = btif_storage_get_remote_device_property(p_device->bd_addr, &property);
 
   // No cached value for this device, so it's a new device and we don't need to
   // make the check.
@@ -121,7 +121,7 @@ bool btm_sec_is_enc_algo_downgrade(uint16_t hci_handle, bool host_secure_connect
               .len = sizeof(uint8_t),
               .val = &host_val};
 
-  cached = btif_storage_get_remote_device_property(&p_device->bd_addr, &property);
+  cached = btif_storage_get_remote_device_property(p_device->bd_addr, &property);
 
   // No cached value for host -- in theory we should always have both or
   // neither, but let's check this just in case.
@@ -163,7 +163,7 @@ bool btm_sec_is_session_key_size_downgrade(uint16_t hci_handle, uint8_t key_size
                             .len = sizeof(uint8_t),
                             .val = &property_val};
 
-  bt_status_t cached = btif_storage_get_remote_device_property(&p_device->bd_addr, &property);
+  bt_status_t cached = btif_storage_get_remote_device_property(p_device->bd_addr, &property);
 
   if (cached == BT_STATUS_FAIL) {
     return false;
@@ -190,7 +190,7 @@ void btm_sec_update_session_key_size(uint16_t hci_handle, uint8_t key_size) {
                             .len = sizeof(uint8_t),
                             .val = &property_val};
 
-  btif_storage_set_remote_device_property(&p_device->bd_addr, &property);
+  btif_storage_set_remote_device_property(p_device->bd_addr, &property);
 }
 
 /*******************************************************************************

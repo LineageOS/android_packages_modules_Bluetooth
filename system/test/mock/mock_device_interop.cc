@@ -110,17 +110,17 @@ void interop_database_add(const uint16_t feature, RawAddress addr, size_t length
   inc_func_call_count(__func__);
   test::mock::device_interop::interop_database_add(feature, addr, length);
 }
-void interop_database_add_addr(const uint16_t feature, const RawAddress* addr, size_t length) {
+void interop_database_add_addr(const uint16_t feature, RawAddress addr, size_t length) {
   inc_func_call_count(__func__);
   test::mock::device_interop::interop_database_add_addr(feature, addr, length);
 }
-void interop_database_add_addr_lmp_version(const interop_feature_t feature, const RawAddress* addr,
+void interop_database_add_addr_lmp_version(const interop_feature_t feature, RawAddress addr,
                                            uint8_t lmp_ver, uint16_t lmp_sub_ver) {
   inc_func_call_count(__func__);
   test::mock::device_interop::interop_database_add_addr_lmp_version(feature, addr, lmp_ver,
                                                                     lmp_sub_ver);
 }
-void interop_database_add_addr_max_lat(const interop_feature_t feature, const RawAddress* addr,
+void interop_database_add_addr_max_lat(const interop_feature_t feature, RawAddress addr,
                                        uint16_t max_lat) {
   inc_func_call_count(__func__);
   test::mock::device_interop::interop_database_add_addr_max_lat(feature, addr, max_lat);
@@ -146,19 +146,18 @@ void interop_database_clear() {
   inc_func_call_count(__func__);
   test::mock::device_interop::interop_database_clear();
 }
-bool interop_database_match_addr(const interop_feature_t feature, const RawAddress* addr) {
+bool interop_database_match_addr(const interop_feature_t feature, RawAddress addr) {
   inc_func_call_count(__func__);
   return test::mock::device_interop::interop_database_match_addr(feature, addr);
 }
-bool interop_database_match_addr_get_lmp_ver(const interop_feature_t feature,
-                                             const RawAddress* addr, uint8_t* lmp_ver,
-                                             uint16_t* lmp_sub_ver) {
+bool interop_database_match_addr_get_lmp_ver(const interop_feature_t feature, RawAddress addr,
+                                             uint8_t* lmp_ver, uint16_t* lmp_sub_ver) {
   inc_func_call_count(__func__);
   return test::mock::device_interop::interop_database_match_addr_get_lmp_ver(feature, addr, lmp_ver,
                                                                              lmp_sub_ver);
 }
-bool interop_database_match_addr_get_max_lat(const interop_feature_t feature,
-                                             const RawAddress* addr, uint16_t* max_lat) {
+bool interop_database_match_addr_get_max_lat(const interop_feature_t feature, RawAddress addr,
+                                             uint16_t* max_lat) {
   inc_func_call_count(__func__);
   return test::mock::device_interop::interop_database_match_addr_get_max_lat(feature, addr,
                                                                              max_lat);
@@ -181,18 +180,17 @@ bool interop_database_match_vndr_prdt(const interop_feature_t feature, uint16_t 
   return test::mock::device_interop::interop_database_match_vndr_prdt(feature, vendor_id,
                                                                       product_id);
 }
-bool interop_database_remove_addr(const interop_feature_t feature, const RawAddress* addr) {
+bool interop_database_remove_addr(const interop_feature_t feature, RawAddress addr) {
   inc_func_call_count(__func__);
   return test::mock::device_interop::interop_database_remove_addr(feature, addr);
 }
-bool interop_database_remove_addr_lmp_version(const interop_feature_t feature,
-                                              const RawAddress* addr, uint8_t lmp_ver,
-                                              uint16_t lmp_sub_ver) {
+bool interop_database_remove_addr_lmp_version(const interop_feature_t feature, RawAddress addr,
+                                              uint8_t lmp_ver, uint16_t lmp_sub_ver) {
   inc_func_call_count(__func__);
   return test::mock::device_interop::interop_database_remove_addr_lmp_version(feature, addr,
                                                                               lmp_ver, lmp_sub_ver);
 }
-bool interop_database_remove_addr_max_lat(const interop_feature_t feature, const RawAddress* addr,
+bool interop_database_remove_addr_max_lat(const interop_feature_t feature, RawAddress addr,
                                           uint16_t max_lat) {
   inc_func_call_count(__func__);
   return test::mock::device_interop::interop_database_remove_addr_max_lat(feature, addr, max_lat);
@@ -223,17 +221,17 @@ int interop_feature_name_to_feature_id(const char* feature_name) {
   inc_func_call_count(__func__);
   return test::mock::device_interop::interop_feature_name_to_feature_id(feature_name);
 }
-bool interop_match_addr(const interop_feature_t feature, const RawAddress* addr) {
+bool interop_match_addr(const interop_feature_t feature, RawAddress addr) {
   inc_func_call_count(__func__);
   return test::mock::device_interop::interop_match_addr(feature, addr);
 }
-bool interop_match_addr_get_max_lat(const interop_feature_t feature, const RawAddress* addr,
+bool interop_match_addr_get_max_lat(const interop_feature_t feature, RawAddress addr,
                                     uint16_t* max_lat) {
   inc_func_call_count(__func__);
   return test::mock::device_interop::interop_match_addr_get_max_lat(feature, addr, max_lat);
 }
-bool interop_match_addr_or_name(const interop_feature_t feature, const RawAddress* addr,
-                                bt_status_t (*get_remote_device_property)(const RawAddress*,
+bool interop_match_addr_or_name(const interop_feature_t feature, RawAddress addr,
+                                bt_status_t (*get_remote_device_property)(RawAddress,
                                                                           bt_property_t*)) {
   inc_func_call_count(__func__);
   return test::mock::device_interop::interop_match_addr_or_name(feature, addr,

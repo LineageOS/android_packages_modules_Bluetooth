@@ -570,7 +570,7 @@ static int set_remote_device_property(RawAddress remote_addr, const bt_property_
 
   do_in_main_thread(base::BindOnce(
           [](RawAddress remote_addr, bt_property_t* property) {
-            btif_set_remote_device_property(&remote_addr, property);
+            btif_set_remote_device_property(remote_addr, property);
             osi_free(property);
           },
           remote_addr, property_deep_copy(property)));
@@ -1102,7 +1102,7 @@ static bool interop_match_addr(const char* feature_name, RawAddress addr) {
     return false;
   }
 
-  return interop_match_addr((interop_feature_t)feature, &addr);
+  return interop_match_addr((interop_feature_t)feature, addr);
 }
 
 static bool interop_match_name(const char* feature_name, const char* name) {
@@ -1130,7 +1130,7 @@ static bool interop_match_addr_or_name(const char* feature_name, RawAddress addr
     return false;
   }
 
-  return interop_match_addr_or_name((interop_feature_t)feature, &addr,
+  return interop_match_addr_or_name((interop_feature_t)feature, addr,
                                     &btif_storage_get_remote_device_property);
 }
 
@@ -1147,9 +1147,9 @@ static void interop_database_add_remove_addr(bool do_add, const char* feature_na
   }
 
   if (do_add) {
-    interop_database_add_addr((interop_feature_t)feature, &addr, (size_t)length);
+    interop_database_add_addr((interop_feature_t)feature, addr, (size_t)length);
   } else {
-    interop_database_remove_addr((interop_feature_t)feature, &addr);
+    interop_database_remove_addr((interop_feature_t)feature, addr);
   }
 }
 

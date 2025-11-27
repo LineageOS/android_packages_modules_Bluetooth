@@ -111,7 +111,7 @@ static void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
       p_tbl->state = AVDT_AD_ST_CFG;
       p_tbl->role = tAVDT_ROLE::AVDT_ACP;
 
-      if (interop_match_addr(INTEROP_2MBPS_LINK_ONLY, &bd_addr)) {
+      if (interop_match_addr(INTEROP_2MBPS_LINK_ONLY, bd_addr)) {
         // Disable 3DH packets for AVDT ACL to improve sensitivity on HS
         btm_set_packet_types_from_address(
                 bd_addr, (acl_get_supported_packet_types() | HCI_PKT_TYPES_MASK_NO_3_DH1 |
@@ -253,7 +253,7 @@ static void avdt_l2c_connect_cfm_cback(uint16_t lcid, tL2CAP_CONN result) {
   p_tbl->lcid = lcid;
   p_tbl->role = tAVDT_ROLE::AVDT_INT;
 
-  if (interop_match_addr(INTEROP_2MBPS_LINK_ONLY, (const RawAddress*)&p_ccb->peer_addr)) {
+  if (interop_match_addr(INTEROP_2MBPS_LINK_ONLY, p_ccb->peer_addr)) {
     // Disable 3DH packets for AVDT ACL to improve sensitivity on HS
     btm_set_packet_types_from_address(
             p_ccb->peer_addr, (acl_get_supported_packet_types() | HCI_PKT_TYPES_MASK_NO_3_DH1 |

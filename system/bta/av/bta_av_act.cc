@@ -1630,7 +1630,7 @@ void bta_av_sig_chg(tBTA_AV_DATA* p_data) {
           if ((p_cb->p_scb[xx]->state == 1) &&
               alarm_is_scheduled(p_cb->p_scb[xx]->accept_signalling_timer) &&
               interop_match_addr(INTEROP_IGNORE_DISC_BEFORE_SIGNALLING_TIMEOUT,
-                                 &(p_data->str_msg.bd_addr))) {
+                                 p_data->str_msg.bd_addr)) {
             continue;
           }
           log::verbose("Closing timer for AVDTP service");

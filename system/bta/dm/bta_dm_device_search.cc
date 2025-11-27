@@ -497,7 +497,7 @@ static void bta_dm_discover_name(const RawAddress& remote_bd_addr) {
        (bta_dm_search_cb.p_btm_inq_info->results.inq_result_type == BT_DEVICE_TYPE_BLE) &&
        (bta_dm_search_get_state() == BTA_DM_SEARCH_ACTIVE)) ||
       (transport == BT_TRANSPORT_LE &&
-       interop_match_addr(INTEROP_DISABLE_NAME_REQUEST, &bta_dm_search_cb.peer_bdaddr))) {
+       interop_match_addr(INTEROP_DISABLE_NAME_REQUEST, bta_dm_search_cb.peer_bdaddr))) {
     /* Do not perform RNR for LE devices at inquiry complete*/
     bta_dm_search_cb.name_discover_done = true;
   }

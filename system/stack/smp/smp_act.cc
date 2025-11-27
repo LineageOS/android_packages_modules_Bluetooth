@@ -210,8 +210,7 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
           if (!p_cb->sc_only_mode_locally_required &&
               (!(p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT) ||
                (remote_lmp_version && remote_lmp_version < HCI_PROTO_VERSION_4_2) ||
-               interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS,
-                                  (const RawAddress*)&p_cb->pairing_bda))) {
+               interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, p_cb->pairing_bda))) {
             log::debug(
                     "Setting SC, H7 and LinkKey bits to false to support legacy "
                     "device with lmp version:{}",

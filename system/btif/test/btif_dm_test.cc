@@ -293,9 +293,9 @@ TEST_F(BtifDmWithStackTest, auth_cmpl_evt_fails_when_not_bonding) {
 
 TEST_F(BtifDmWithStackTest, test_btif_dm_reset_irk) {
   if (com_android_bluetooth_flags_btsec_cycle_irks()) {
-    btif_storage_add_bonded_device((RawAddress*)(&kRawAddress), SAMPLE_LTK, 0, 0);
+    btif_storage_add_bonded_device(kRawAddress, SAMPLE_LTK, 0, 0);
 
-    bt_status_t status = btif_storage_remove_bonded_device((RawAddress*)(&kRawAddress));
+    bt_status_t status = btif_storage_remove_bonded_device(kRawAddress);
 
     ASSERT_EQ(status, BT_STATUS_SUCCESS);
 
