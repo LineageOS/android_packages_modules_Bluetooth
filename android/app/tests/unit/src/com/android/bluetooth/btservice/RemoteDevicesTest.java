@@ -1034,6 +1034,87 @@ public class RemoteDevicesTest {
         verify(mAdapterService).discoveryResultHandler(eq(deviceProp));
     }
 
+    @Test
+    public void aclStateChangeCallback_unbondedWithoutBondingAttempt_keepsProperties() {
+        // Add a device. By default, its bond state is BOND_NONE and no bonding has been
+        // initiated.
+        mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+        assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNotNull();
+        assertThat(mRemoteDevices.getDeviceProperties(mDevice).getBondingInitiator())
+                .isEqualTo(0); // BONDING_INITIATOR_NONE
+
+        when(mAdapterService.getState()).thenReturn(BluetoothAdapter.STATE_ON);
+
+        // Simulate ACL disconnection for this device.
+        mRemoteDevices.aclStateChangeCallback(
+                AbstractionLayer.BT_STATUS_SUCCESS,
+                Utils.getByteAddress(mDevice),
+                mDevice.getAddressType(),
+                TRANSPORT_BREDR,
+                AbstractionLayer.BT_ACL_STATE_DISCONNECTED,
+                0, // hciReason
+                1); // handle
+
+        // Verify that the device properties are NOT removed, because no bonding attempt was ever
+        // made for this device.
+        assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNotNull();
+    }
+
+    @Test
+    public void aclStateChangeCallback_unbondedWithBondingAttempt_removesProperties() {
+        // Add a device and set its state to reflect a prior bonding attempt that failed,
+        // resulting in BOND_NONE state.
+        DeviceProperties deviceProp =
+                mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+        deviceProp.setBondState(BluetoothDevice.BOND_NONE);
+        deviceProp.setBondingInitiatedLocally(true); // Signifies a bonding attempt was made
+        assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNotNull();
+
+        when(mAdapterService.getState()).thenReturn(BluetoothAdapter.STATE_ON);
+
+        // Simulate ACL disconnection for this device.
+        mRemoteDevices.aclStateChangeCallback(
+                AbstractionLayer.BT_STATUS_SUCCESS,
+                Utils.getByteAddress(mDevice),
+                mDevice.getAddressType(),
+                TRANSPORT_BREDR,
+                AbstractionLayer.BT_ACL_STATE_DISCONNECTED,
+                0, // hciReason
+                1); // handle
+
+        // Verify that the device properties ARE removed, because a bonding attempt was made.
+        assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
+    }
+
+    @Test
+    public void aclStateChangeCallback_bondingDevice_keepsPropertiesAndSendsCancel() {
+        // Add a device and set its state to BOND_BONDING.
+        DeviceProperties deviceProp =
+                mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+        deviceProp.setBondState(BluetoothDevice.BOND_BONDING);
+        assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNotNull();
+
+        when(mAdapterService.getState()).thenReturn(BluetoothAdapter.STATE_ON);
+        // Mock for sendPairingCancelIntent to get the pairing UI package
+        ExtendedMockito.doReturn("some.package.name")
+                .when(() -> SystemProperties.get(anyString(), anyString()));
+
+        // Simulate ACL disconnection during bonding.
+        mRemoteDevices.aclStateChangeCallback(
+                AbstractionLayer.BT_STATUS_SUCCESS,
+                Utils.getByteAddress(mDevice),
+                mDevice.getAddressType(),
+                TRANSPORT_BREDR,
+                AbstractionLayer.BT_ACL_STATE_DISCONNECTED,
+                0, // hciReason
+                1); // handle
+
+        // Verify that the device properties are NOT removed.
+        assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNotNull();
+        // Verify that a PAIRING_CANCEL intent is sent to dismiss any UI dialogs.
+        verifyIntentSent(hasAction(BluetoothDevice.ACTION_PAIRING_CANCEL));
+    }
+
     private static Object[] getXEventArray(int batteryLevel, int numLevels) {
         ArrayList<Object> list = new ArrayList<>();
         list.add(BluetoothHeadset.VENDOR_SPECIFIC_HEADSET_EVENT_XEVENT_BATTERY_LEVEL);
