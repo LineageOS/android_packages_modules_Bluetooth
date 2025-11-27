@@ -379,6 +379,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_broadcast_extend_audio_active_state"
+    namespace: "bluetooth"
+    description: "Add Audio Active State to BASE and parser for metadata"
+    bug: "463606623"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_improve_unicast_monitor"
     namespace: "bluetooth"
     description: "Improve unicast monitor mode robustness"
