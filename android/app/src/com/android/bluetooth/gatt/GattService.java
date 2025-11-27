@@ -334,7 +334,7 @@ public class GattService extends ProfileService {
                 () -> {
                     mClientMap.clear();
                     mRestrictedHandles.clear();
-                    mServerManager.clear();
+                    mServerManager.cleanup();
                     mRssiCache.clear();
                     mReliableQueue.clear();
                     mNativeInterface.cleanup();
