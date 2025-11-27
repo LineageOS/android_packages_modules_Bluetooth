@@ -70,23 +70,12 @@ impl Debug for BthfClientCallbacksDispatcher {
 
 type BthfClientCb = Arc<Mutex<BthfClientCallbacksDispatcher>>;
 
-cb_variant!(
-    BthfClientCb,
-    hf_client_connection_state_cb -> BthfClientCallbacks::ConnectionState,
-    *const RawAddress,
-    bindings::bthf_client_connection_state_t -> BthfClientConnectionState,
-    u32, u32, {
-        let _0 = unsafe { *_0 };
-    }
+cb_variant!(BthfClientCb, hf_client_connection_state_cb -> BthfClientCallbacks::ConnectionState,
+    RawAddress, bindings::bthf_client_connection_state_t -> BthfClientConnectionState, u32, u32
 );
 
-cb_variant!(
-    BthfClientCb,
-    hf_client_audio_state_cb -> BthfClientCallbacks::AudioState,
-    *const RawAddress,
-    bindings::bthf_client_audio_state_t -> BthfClientAudioState,{
-        let _0 = unsafe { *_0 };
-    }
+cb_variant!(BthfClientCb, hf_client_audio_state_cb -> BthfClientCallbacks::AudioState,
+    RawAddress, bindings::bthf_client_audio_state_t -> BthfClientAudioState
 );
 
 struct RawHfClientWrapper {
