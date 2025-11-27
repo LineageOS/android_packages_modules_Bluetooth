@@ -94,14 +94,6 @@ static RawAddress str2addr(JNIEnv* env, jstring address) {
   return bd_addr.value_or(RawAddress::kEmpty);
 }
 
-static jstring bdaddr2newjstr(JNIEnv* env, const RawAddress* bda) {
-  char c_address[32];
-  snprintf(c_address, sizeof(c_address), "%02X:%02X:%02X:%02X:%02X:%02X", bda->address[0],
-           bda->address[1], bda->address[2], bda->address[3], bda->address[4], bda->address[5]);
-
-  return env->NewStringUTF(c_address);
-}
-
 namespace android {
 
 /**
@@ -176,7 +168,7 @@ public:
       return;
     }
 
-    ScopedLocalRef<jstring> address(sCallbackEnv.get(), bdaddr2newjstr(sCallbackEnv.get(), &bda));
+    ScopedLocalRef<jstring> address = addressToJString(sCallbackEnv.get(), bda);
     ScopedLocalRef<jbyteArray> jb(sCallbackEnv.get(), sCallbackEnv->NewByteArray(adv_data.size()));
     sCallbackEnv->SetByteArrayRegion(jb.get(), 0, adv_data.size(), (jbyte*)adv_data.data());
 
@@ -201,8 +193,8 @@ public:
       return;
     }
 
-    ScopedLocalRef<jstring> address(
-            sCallbackEnv.get(), bdaddr2newjstr(sCallbackEnv.get(), &track_info.advertiser_address));
+    ScopedLocalRef<jstring> address =
+            addressToJString(sCallbackEnv.get(), track_info.advertiser_address);
 
     ScopedLocalRef<jbyteArray> jb_adv_pkt(sCallbackEnv.get(),
                                           sCallbackEnv->NewByteArray(track_info.adv_packet_len));
@@ -266,7 +258,7 @@ public:
       log::error("mPeriodicScanCallbacksObj is NULL. Return.");
       return;
     }
-    ScopedLocalRef<jstring> addr(sCallbackEnv.get(), bdaddr2newjstr(sCallbackEnv.get(), &address));
+    ScopedLocalRef<jstring> addr = addressToJString(sCallbackEnv.get(), address);
 
     sCallbackEnv->CallVoidMethod(mPeriodicScanCallbacksObj, method_onSyncStarted, reg_id,
                                  sync_handle, sid, address_type, addr.get(), phy, interval, status);
@@ -307,7 +299,7 @@ public:
       log::error("mPeriodicScanCallbacksObj is NULL. Return.");
       return;
     }
-    ScopedLocalRef<jstring> addr(sCallbackEnv.get(), bdaddr2newjstr(sCallbackEnv.get(), &address));
+    ScopedLocalRef<jstring> addr = addressToJString(sCallbackEnv.get(), address);
 
     sCallbackEnv->CallVoidMethod(mPeriodicScanCallbacksObj, method_onSyncTransferredCallback,
                                  pa_source, status, addr.get());
