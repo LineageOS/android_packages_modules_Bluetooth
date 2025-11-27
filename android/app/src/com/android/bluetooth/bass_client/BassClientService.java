@@ -5366,9 +5366,11 @@ public class BassClientService extends ConnectableProfile {
             int broadcastId,
             BluetoothLeBroadcastReceiveState receiveState,
             boolean broadcastSyncIsAdvancing) {
+        Log.d(TAG, "handlePausedBroadcasts: sink: " + sink + ", broadcastId: " + broadcastId);
         // If sink unsynced then remove potentially waiting past and check if any broadcast
         // monitoring should be stopped for all broadcast Ids
         if (isEmptyBluetoothDevice(receiveState.getSourceDevice())) {
+            Log.d(TAG, "handlePausedBroadcasts: empty RS");
             if (!Flags.leaudioBroadcastImproveSourceOperations()) {
                 synchronized (mSinksWaitingForPast) {
                     mSinksWaitingForPast.remove(sink);
@@ -5394,6 +5396,7 @@ public class BassClientService extends ConnectableProfile {
             // If paused by host then stop active sync, it could be not stopped, if during previous
             // stop there was pending past or metadata request.
         } else if (isSuspendedByHostPauseReason(broadcastId)) {
+            Log.d(TAG, "handlePausedBroadcasts: suspended by host");
             stopActiveSync(broadcastId);
             // Clear paused broadcast sink if autonomously resumed by remote
             if (Flags.leaudioBroadcastStopBigMonitoringBasedOnBisSync()
@@ -5412,6 +5415,7 @@ public class BassClientService extends ConnectableProfile {
         } else {
             // If sink actively synced (PA or BIG)
             if (isReceiverActive(receiveState)) {
+                Log.d(TAG, "handlePausedBroadcasts: active");
                 // Clear paused broadcast sink (not need to resume manually)
                 mPausedBroadcastSinks.remove(sink);
                 mSinksToRestoreFromPeer.remove(sink);
@@ -5430,6 +5434,7 @@ public class BassClientService extends ConnectableProfile {
                 if (!Flags.leaudioBroadcastImproveSourceOperations()
                         && !mPausedBroadcastIds.containsKey(broadcastId)
                         && mCachedBroadcasts.containsKey(broadcastId)) {
+                    Log.d(TAG, "handlePausedBroadcasts: unsynced");
                     // Try to sync to it and start BIG monitoring
                     cacheSuspendingSources(broadcastId);
                     mPausedBroadcastIds.put(broadcastId, PauseReason.BIG_MONITORING);
@@ -5441,6 +5446,7 @@ public class BassClientService extends ConnectableProfile {
                     // If sink synchronization not advancing
                 } else if (Flags.leaudioBroadcastImproveSourceOperations()
                         && !broadcastSyncIsAdvancing) {
+                    Log.d(TAG, "handlePausedBroadcasts: unsynced");
                     // Add sink to monitor and start BIG monitoring if not started yet to
                     // automatically resume it when possible
                     boolean newPausedSinkAdded = false;
