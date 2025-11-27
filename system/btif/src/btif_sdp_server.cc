@@ -119,7 +119,13 @@ static void init_sdp_slots_in_main_thread() {
 
 static void init_sdp_slots() {
   if (com_android_bluetooth_flags_btsec_sdp_database_thread_sync()) {
-      get_main_thread()->DoInThreadSynchronously(&init_sdp_slots_in_main_thread);
+    // We should not block this thread on main_thread to post this synchronously.
+    // As Init sequence is long and some other enable/init sequence may block the main thread for
+    // too long leading to timeout during synchronous execution. Doing this init asynchronously
+    // will be safe as SDP will be required post complete init anyway. Also, doing this
+    // synchronously on the same thread is also fine, but keeping the sdp access on main_thread to
+    // avoid any race whatsoever.
+    do_in_main_thread(common::BindOnce(&init_sdp_slots_in_main_thread));
   } else {
     init_sdp_slots_in_main_thread();
   }

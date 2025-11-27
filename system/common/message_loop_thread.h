@@ -260,6 +260,8 @@ public:
       if (!IsRunningOnSameThread()) {
         // block current thread, currently its unblocked
         blocked_threads_.testAndBlock(caller_thread_id);
+        log::info("Blocked current_thread id: {}, on the target thread: {}({})", caller_thread_id,
+                  target_thread_id, thread_name_);
         DoInThread(base::BindOnce(task, std::forward<Functor>(func_ptr), std::move(promise),
                                   std::forward<Args>(args)...));
         auto result = future.wait_for(kHandlerStopTimeout);
