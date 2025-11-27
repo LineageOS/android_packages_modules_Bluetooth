@@ -42,6 +42,7 @@ import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.never
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -69,6 +70,13 @@ class GattServerManagerTest {
 
     @Before
     fun setUp() {
+        doAnswer { invocation ->
+                (invocation.getArgument(0) as Runnable).run()
+                null
+            }
+            .whenever(service)
+            .doOnGattThread(any())
+
         doAnswer { invocation ->
                 val arguments = invocation.arguments
                 val id = arguments[0] as Int
@@ -129,6 +137,26 @@ class GattServerManagerTest {
         verify(serverApp).id = SERVER_IF
         verify(serverApp).linkToDeath(any<ActionOnDeathRecipient>())
         verify(gattServerCallback).onServerRegistered(BluetoothGatt.GATT_SUCCESS)
+    }
+
+    @Test
+    fun onServerRegistered_appDied_cleanupActionExecuted() {
+        val uuid = UUID.randomUUID()
+        val serverApp = mock<ContextApp<IBluetoothGattServerCallback>>()
+        whenever(serverApp.callback).thenReturn(gattServerCallback)
+        whenever(serverApp.id).thenReturn(SERVER_IF)
+        whenever(serverMap.getByUuid(uuid)).thenReturn(serverApp)
+        whenever(serverMap.getByCallbackId(any())).thenReturn(serverApp)
+
+        serverManager.onServerRegisteredFromNative(BluetoothGatt.GATT_SUCCESS, SERVER_IF, uuid)
+
+        val captor = argumentCaptor<ActionOnDeathRecipient>()
+        verify(serverApp).linkToDeath(captor.capture())
+
+        captor.firstValue.binderDied()
+
+        // Check that unregister logic flowed through to the native interface
+        verify(nativeInterface).gattServerUnregisterApp(SERVER_IF)
     }
 
     @Test
