@@ -27,17 +27,25 @@
 namespace bluetooth {
 namespace os {
 
+#define kDefaultReactableTimeout std::chrono::milliseconds(0)
+
 // A single-shot alarm for reactor-based thread, implemented by Linux timerfd.
 // When it's constructed, it will register a reactable on the specified thread; when it's destroyed,
 // it will unregister itself from the thread.
 class Alarm {
 public:
   // Create and register a single-shot alarm on a given thread. This creates a wake alarm.
-  explicit Alarm(Thread* thread);
+  // `reactable_timeout` is the timeout for waiting for the reactable to be unregistered.
+  // Note: If set, this will block the ~Alarm() until the reactor gets idle.
+  explicit Alarm(Thread* thread,
+                 std::chrono::milliseconds reactable_timeout = kDefaultReactableTimeout);
 
   // Create and register a single-shot alarm on a given thread.
   // This constructor can specify whether the alarm will be a wake alarm or a non-wake alarm.
-  explicit Alarm(Thread* thread, bool isWakeAlarm);
+  // `reactable_timeout` is the timeout for waiting for the reactable to be unregistered.
+  // Note: If set, this will block the ~Alarm() until the reactor gets idle.
+  explicit Alarm(Thread* thread, bool isWakeAlarm,
+                 std::chrono::milliseconds reactable_timeout = kDefaultReactableTimeout);
 
   Alarm(const Alarm&) = delete;
   Alarm& operator=(const Alarm&) = delete;
@@ -61,6 +69,8 @@ private:
   Reactor::Reactable* token_;
   mutable std::mutex mutex_;
   void on_fire();
+
+  std::chrono::milliseconds reactable_timeout_;
 };
 
 }  // namespace os

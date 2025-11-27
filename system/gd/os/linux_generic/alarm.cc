@@ -36,10 +36,13 @@
 namespace bluetooth {
 namespace os {
 
-Alarm::Alarm(Thread* thread) : Alarm(thread, true) {}
+Alarm::Alarm(Thread* thread, std::chrono::milliseconds reactable_timeout)
+    : Alarm(thread, true, reactable_timeout) {}
 
-Alarm::Alarm(Thread* thread, bool isWakeAlarm)
-    : armed_time_(std::chrono::time_point<std::chrono::system_clock>::min()), thread_(thread) {
+Alarm::Alarm(Thread* thread, bool isWakeAlarm, std::chrono::milliseconds reactable_timeout)
+    : armed_time_(std::chrono::time_point<std::chrono::system_clock>::min()),
+      thread_(thread),
+      reactable_timeout_(reactable_timeout) {
   int timerfd_flag = TFD_NONBLOCK;
 
   fd_ = TIMERFD_CREATE(isWakeAlarm ? ALARM_CLOCK : CLOCK_BOOTTIME, timerfd_flag);
@@ -52,12 +55,22 @@ Alarm::Alarm(Thread* thread, bool isWakeAlarm)
 }
 
 Alarm::~Alarm() {
-  auto reactor = thread_->GetReactor();
-  reactor->Unregister(token_);
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto reactor = thread_->GetReactor();
+    reactor->Unregister(token_);
+    token_ = nullptr;
 
-  int close_status;
-  RUN_NO_INTR(close_status = TIMERFD_CLOSE(fd_));
-  log::assert_that(close_status != -1, "assert failed: close_status != -1");
+    int close_status;
+    RUN_NO_INTR(close_status = TIMERFD_CLOSE(fd_));
+    log::assert_that(close_status != -1, "assert failed: close_status != -1");
+  }
+
+  // If the timeout is set, wait for the reactable to be unregistered.
+  if (reactable_timeout_ != kDefaultReactableTimeout) {
+    log::assert_that(thread_->GetReactor()->WaitForUnregisteredReactable(reactable_timeout_),
+                     "assert failed: thread_->GetReactor()->WaitForUnregisteredReactable(timeout)");
+  }
 }
 
 void Alarm::Schedule(base::OnceClosure task, std::chrono::milliseconds delay) {
