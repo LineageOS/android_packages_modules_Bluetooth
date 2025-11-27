@@ -84,3 +84,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fix_module_shutdown_sync_with_stack"
+    namespace : "bluetooth"
+    description: "Fix the module shutdown synchronization with the stack."
+    bug: "462626831"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
