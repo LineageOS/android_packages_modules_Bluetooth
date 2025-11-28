@@ -162,7 +162,7 @@ public:
   virtual std::optional<BigConfig> const& GetBigConfig() const = 0;
   virtual BroadcastStateMachineConfig const& GetStateMachineConfig() const = 0;
   virtual void RequestOwnAddress(
-          base::Callback<void(uint8_t /* address_type*/, RawAddress /*address*/)> cb) = 0;
+          base::OnceCallback<void(uint8_t /* address_type*/, RawAddress /*address*/)> cb) = 0;
   virtual void RequestOwnAddress() = 0;
   virtual RawAddress GetOwnAddress() = 0;
   virtual uint8_t GetOwnAddressType() = 0;

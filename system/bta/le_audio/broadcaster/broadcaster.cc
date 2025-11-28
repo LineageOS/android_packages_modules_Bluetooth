@@ -869,29 +869,6 @@ public:
     }
   }
 
-  void IsValidBroadcast(uint32_t broadcast_id, uint8_t addr_type, RawAddress addr,
-                        base::Callback<void(uint8_t /* broadcast_id */, uint8_t /* addr_type */,
-                                            RawAddress /* addr */, bool /* is_local */)>
-                                cb) override {
-    if (broadcasts_.count(broadcast_id) == 0) {
-      log::error("No such broadcast_id={}", broadcast_id);
-      std::move(cb).Run(broadcast_id, addr_type, addr, false);
-      return;
-    }
-
-    broadcasts_[broadcast_id]->RequestOwnAddress(base::Bind(
-            [](uint32_t broadcast_id, uint8_t req_address_type, RawAddress req_address,
-               base::Callback<void(uint8_t /* broadcast_id */, uint8_t /* addr_type */,
-                                   RawAddress /* addr */, bool /* is_local */)>
-                       cb,
-               uint8_t rcv_address_type, RawAddress rcv_address) {
-              bool is_local =
-                      (req_address_type == rcv_address_type) && (req_address == rcv_address);
-              std::move(cb).Run(broadcast_id, req_address_type, req_address, is_local);
-            },
-            broadcast_id, addr_type, addr, std::move(cb)));
-  }
-
   void SetStreamingPhy(uint8_t phy) override { current_phy_ = phy; }
 
   uint8_t GetStreamingPhy(void) const override { return current_phy_; }
