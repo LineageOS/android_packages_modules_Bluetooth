@@ -50,7 +50,7 @@ typedef void (*command_status_cb)(uint8_t status, BT_HDR* command, void* context
 
 typedef struct hci_t {
   // Set the callback that the HCI layer uses to send data upwards
-  void (*set_data_cb)(base::Callback<void(BT_HDR*)> send_data_cb);
+  void (*set_data_cb)(base::RepeatingCallback<void(BT_HDR*)> send_data_cb);
 
   // Send a command through the HCI layer
   void (*transmit_command)(const BT_HDR* command, command_complete_cb complete_callback,
