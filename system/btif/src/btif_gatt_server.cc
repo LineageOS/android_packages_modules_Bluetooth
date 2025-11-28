@@ -389,7 +389,8 @@ static void add_service_impl(int server_if, vector<btgatt_db_element_t> service)
     return;
   }
 
-  BTA_GATTS_AddService(server_if, service, jni_thread_wrapper(base::Bind(&on_service_added_cb)));
+  BTA_GATTS_AddService(server_if, service,
+                       jni_thread_wrapper(base::BindOnce(&on_service_added_cb)));
 }
 
 static BtStatus btif_gatts_add_service(int server_if, const btgatt_db_element_t* service,
@@ -457,7 +458,8 @@ static BtStatus btif_gatts_read_phy(
         const RawAddress& bd_addr,
         base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
   CHECK_BTGATT_INIT();
-  do_in_main_thread(BindOnce(&BTM_BleReadPhy, bd_addr, jni_thread_wrapper(cb)));
+  do_in_main_thread(
+          BindOnce(&BTM_BleReadPhy, bd_addr, jni_thread_wrapper(base::BindOnce(std::move(cb)))));
   return BtifStatus();
 }
 

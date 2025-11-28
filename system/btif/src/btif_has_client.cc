@@ -56,7 +56,7 @@ class HearingAaccessClientServiceInterfaceImpl : public HasClientInterface,
 
     do_in_main_thread(BindOnce(
             &HasClient::Initialize, this,
-            jni_thread_wrapper(base::Bind(&btif_storage_load_bonded_leaudio_has_devices))));
+            jni_thread_wrapper(base::BindOnce(&btif_storage_load_bonded_leaudio_has_devices))));
   }
 
   void Connect(const RawAddress& addr) override {
