@@ -168,14 +168,14 @@ private:
 class FakeVolumeInterface : public VolumeInterface {
 public:
   FakeVolumeInterface(FuzzedDataProvider* fdp) : mFdp(fdp) {}
-  void DeviceConnected(const RawAddress& /* bdaddr */) { return; }
-  void DeviceConnected(const RawAddress& /* bdaddr */, VolumeChangedCb cb) {
+  void DeviceConnected(const RawAddress& /* bdaddr */) override { return; }
+  void DeviceConnected(const RawAddress& /* bdaddr */, VolumeChangedCb cb) override {
     uint8_t volume = mFdp->ConsumeIntegral<uint8_t>();
-    cb.Run(volume);
+    std::move(cb).Run(volume);
     return;
   }
-  void DeviceDisconnected(const RawAddress& /* bdaddr */) { return; }
-  void SetVolume(int8_t /* volume */) { return; }
+  void DeviceDisconnected(const RawAddress& /* bdaddr */) override { return; }
+  void SetVolume(int8_t /* volume */) override { return; }
 
 private:
   FuzzedDataProvider* mFdp;
@@ -184,7 +184,7 @@ private:
 class FakePlayerSettingsInterface : public PlayerSettingsInterface {
 public:
   FakePlayerSettingsInterface(FuzzedDataProvider* fdp) : mFdp(fdp) {}
-  void ListPlayerSettings(ListPlayerSettingsCallback cb) {
+  void ListPlayerSettings(ListPlayerSettingsCallback cb) override {
     mFdp->ConsumeIntegral<uint8_t>();
     size_t size = mFdp->ConsumeIntegralInRange<uint8_t>(kMinSize, kMaxSize);
     std::vector<PlayerAttribute> attributes;
@@ -193,28 +193,30 @@ public:
               uint8_t(PlayerAttribute::EQUALIZER), uint8_t(PlayerAttribute::SCAN));
       attributes.push_back(playerAttr);
     }
-    cb.Run(attributes);
+    std::move(cb).Run(attributes);
     return;
   }
-  void ListPlayerSettingValues(PlayerAttribute setting, ListPlayerSettingValuesCallback cb) {
+  void ListPlayerSettingValues(PlayerAttribute setting,
+                               ListPlayerSettingValuesCallback cb) override {
     size_t size = mFdp->ConsumeIntegralInRange<size_t>(kMinSize, kMaxSize);
     std::vector<uint8_t> values = mFdp->ConsumeBytes<uint8_t>(size);
-    cb.Run(setting, values);
+    std::move(cb).Run(setting, values);
     return;
   }
   void GetCurrentPlayerSettingValue(std::vector<PlayerAttribute> attributes,
-                                    GetCurrentPlayerSettingValueCallback cb) {
+                                    GetCurrentPlayerSettingValueCallback cb) override {
     std::vector<uint8_t> values(attributes.size());
     for (size_t iter = 0; iter < attributes.size(); ++iter) {
       values.push_back(mFdp->ConsumeIntegral<uint8_t>());
     }
-    cb.Run(attributes, values);
+    std::move(cb).Run(attributes, values);
     return;
   }
   void SetPlayerSettings(std::vector<PlayerAttribute> /* attributes */,
-                         std::vector<uint8_t> /* values */, SetPlayerSettingValueCallback cb) {
+                         std::vector<uint8_t> /* values */,
+                         SetPlayerSettingValueCallback cb) override {
     bool success = mFdp->ConsumeBool();
-    cb.Run(success);
+    std::move(cb).Run(success);
     return;
   }
 

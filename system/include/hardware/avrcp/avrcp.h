@@ -155,7 +155,7 @@ class VolumeInterface {
 public:
   // TODO (apanicke): Investigate the best value type for volume. Right now it
   // is a value from 0-127 because thats what AVRCP uses.
-  using VolumeChangedCb = base::Callback<void(int8_t volume)>;
+  using VolumeChangedCb = base::RepeatingCallback<void(int8_t volume)>;
 
   // Indicate that a device has been connected that does not support absolute
   // volume.
@@ -177,20 +177,21 @@ public:
 
 class PlayerSettingsInterface {
 public:
-  using ListPlayerSettingsCallback = base::Callback<void(std::vector<PlayerAttribute> attributes)>;
+  using ListPlayerSettingsCallback =
+          base::OnceCallback<void(std::vector<PlayerAttribute> attributes)>;
   virtual void ListPlayerSettings(ListPlayerSettingsCallback cb) = 0;
 
   using ListPlayerSettingValuesCallback =
-          base::Callback<void(PlayerAttribute setting, std::vector<uint8_t> values)>;
+          base::OnceCallback<void(PlayerAttribute setting, std::vector<uint8_t> values)>;
   virtual void ListPlayerSettingValues(PlayerAttribute setting,
                                        ListPlayerSettingValuesCallback cb) = 0;
 
-  using GetCurrentPlayerSettingValueCallback = base::Callback<void(
+  using GetCurrentPlayerSettingValueCallback = base::OnceCallback<void(
           std::vector<PlayerAttribute> attributes, std::vector<uint8_t> values)>;
   virtual void GetCurrentPlayerSettingValue(std::vector<PlayerAttribute> attributes,
                                             GetCurrentPlayerSettingValueCallback cb) = 0;
 
-  using SetPlayerSettingValueCallback = base::Callback<void(bool success)>;
+  using SetPlayerSettingValueCallback = base::OnceCallback<void(bool success)>;
   virtual void SetPlayerSettings(std::vector<PlayerAttribute> attributes,
                                  std::vector<uint8_t> values, SetPlayerSettingValueCallback cb) = 0;
 

@@ -198,7 +198,7 @@ public:
   void DeviceConnected(const RawAddress& bdaddr) override { volumeDeviceConnected(bdaddr); }
 
   void DeviceConnected(const RawAddress& bdaddr, VolumeChangedCb cb) override {
-    volumeDeviceConnected(bdaddr, cb);
+    volumeDeviceConnected(bdaddr, std::move(cb));
   }
 
   void DeviceDisconnected(const RawAddress& bdaddr) override { volumeDeviceDisconnected(bdaddr); }
@@ -209,20 +209,20 @@ static VolumeInterfaceImpl mVolumeInterface;
 
 class PlayerSettingsInterfaceImpl : public PlayerSettingsInterface {
 public:
-  void ListPlayerSettings(ListPlayerSettingsCallback cb) { listPlayerSettings(cb); }
+  void ListPlayerSettings(ListPlayerSettingsCallback cb) { listPlayerSettings(std::move(cb)); }
 
   void ListPlayerSettingValues(PlayerAttribute setting, ListPlayerSettingValuesCallback cb) {
-    listPlayerSettingValues(setting, cb);
+    listPlayerSettingValues(setting, std::move(cb));
   }
 
   void GetCurrentPlayerSettingValue(std::vector<PlayerAttribute> attributes,
                                     GetCurrentPlayerSettingValueCallback cb) {
-    getPlayerSettings(attributes, cb);
+    getPlayerSettings(attributes, std::move(cb));
   }
 
   void SetPlayerSettings(std::vector<PlayerAttribute> attributes, std::vector<uint8_t> values,
                          SetPlayerSettingValueCallback cb) {
-    setPlayerSettings(attributes, values, cb);
+    setPlayerSettings(attributes, values, std::move(cb));
   }
 };
 static PlayerSettingsInterfaceImpl mPlayerSettingsInterface;
@@ -1010,7 +1010,13 @@ static void listPlayerSettingsResponseNative(JNIEnv* env, jobject /* object */,
   std::vector<PlayerAttribute> attributes_vector;
   copyJavaArraytoCppVector(env, attributes, &attributes_vector);
 
-  list_player_settings_cb.Run(std::move(attributes_vector));
+  // If everything works correctly, the callback will be set and it will only be called once,
+  // checking is for extra safety.
+  if (list_player_settings_cb) {
+    std::move(list_player_settings_cb).Run(std::move(attributes_vector));
+  } else {
+    log::error("list_player_settings_cb is not set");
+  }
 }
 
 // Called from native to list available values for player setting
@@ -1032,7 +1038,14 @@ static void listPlayerSettingValuesResponseNative(JNIEnv* env, jobject /* object
   PlayerAttribute player_attribute = static_cast<PlayerAttribute>(attribute);
   std::vector<uint8_t> values_vector;
   copyJavaArraytoCppVector(env, values, &values_vector);
-  list_player_setting_values_cb.Run(player_attribute, std::move(values_vector));
+
+  // If everything works correctly, the callback will be set and it will only be called once,
+  // checking is for extra safety.
+  if (list_player_setting_values_cb) {
+    std::move(list_player_setting_values_cb).Run(player_attribute, std::move(values_vector));
+  } else {
+    log::error("list_player_setting_values_cb is not set");
+  }
 }
 
 // Called from native to get current player settings
@@ -1104,7 +1117,13 @@ static void setPlayerSettings(std::vector<PlayerAttribute> attributes, std::vect
 static void setPlayerSettingsResponseNative(JNIEnv* /* env */, jobject /* object */,
                                             jboolean success) {
   log::debug("");
-  set_player_setting_value_cb.Run(success);
+  // If everything works correctly, the callback will be set and it will only be called once,
+  // checking is for extra safety.
+  if (set_player_setting_value_cb) {
+    std::move(set_player_setting_value_cb).Run(success);
+  } else {
+    log::error("set_player_setting_value_cb is not set");
+  }
 }
 
 static void sendPlayerSettingsNative(JNIEnv* env, jobject /* object */, jbyteArray attributes,

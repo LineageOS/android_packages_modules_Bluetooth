@@ -309,12 +309,12 @@ public:
       do_in_main_thread(base::BindOnce(std::move(cb), volume));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, std::move(cb));
+    auto bound_cb = base::BindRepeating(cb_lambda, std::move(cb));
 
     do_in_jni_thread(base::BindOnce(
             static_cast<void (VolumeInterface::*)(const RawAddress&, VolumeChangedCb)>(
                     &VolumeInterface::DeviceConnected),
-            base::Unretained(wrapped_), bdaddr, bound_cb));
+            base::Unretained(wrapped_), bdaddr, std::move(bound_cb)));
   }
 
   void DeviceDisconnected(const RawAddress& bdaddr) override {
@@ -339,55 +339,55 @@ public:
       : wrapped_(interface) {}
 
   void ListPlayerSettings(ListPlayerSettingsCallback cb) override {
-    auto cb_lambda = [](const ListPlayerSettingsCallback& cb,
-                        std::vector<PlayerAttribute> attributes) {
+    auto cb_lambda = [](ListPlayerSettingsCallback cb, std::vector<PlayerAttribute> attributes) {
       do_in_main_thread(base::BindOnce(std::move(cb), std::move(attributes)));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, std::move(cb));
+    auto bound_cb = base::BindOnce(cb_lambda, std::move(cb));
 
     do_in_jni_thread(base::BindOnce(&PlayerSettingsInterface::ListPlayerSettings,
-                                    base::Unretained(wrapped_), bound_cb));
+                                    base::Unretained(wrapped_), std::move(bound_cb)));
   }
 
   void ListPlayerSettingValues(PlayerAttribute setting,
                                ListPlayerSettingValuesCallback cb) override {
-    auto cb_lambda = [](const ListPlayerSettingValuesCallback& cb, PlayerAttribute setting,
+    auto cb_lambda = [](ListPlayerSettingValuesCallback cb, PlayerAttribute setting,
                         std::vector<uint8_t> values) {
       do_in_main_thread(base::BindOnce(std::move(cb), setting, std::move(values)));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, std::move(cb));
+    auto bound_cb = base::BindOnce(cb_lambda, std::move(cb));
 
     do_in_jni_thread(base::BindOnce(&PlayerSettingsInterface::ListPlayerSettingValues,
-                                    base::Unretained(wrapped_), setting, bound_cb));
+                                    base::Unretained(wrapped_), setting, std::move(bound_cb)));
   }
 
   void GetCurrentPlayerSettingValue(std::vector<PlayerAttribute> attributes,
                                     GetCurrentPlayerSettingValueCallback cb) override {
-    auto cb_lambda = [](const GetCurrentPlayerSettingValueCallback& cb,
+    auto cb_lambda = [](GetCurrentPlayerSettingValueCallback cb,
                         std::vector<PlayerAttribute> attributes, std::vector<uint8_t> values) {
       do_in_main_thread(base::BindOnce(std::move(cb), std::move(attributes), std::move(values)));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, std::move(cb));
+    auto bound_cb = base::BindOnce(cb_lambda, std::move(cb));
 
     do_in_jni_thread(base::BindOnce(&PlayerSettingsInterface::GetCurrentPlayerSettingValue,
-                                    base::Unretained(wrapped_), std::move(attributes), bound_cb));
+                                    base::Unretained(wrapped_), std::move(attributes),
+                                    std::move(bound_cb)));
   }
 
   void SetPlayerSettings(std::vector<PlayerAttribute> attributes, std::vector<uint8_t> values,
                          SetPlayerSettingValueCallback cb) override {
     log::info("");
-    auto cb_lambda = [](const SetPlayerSettingValueCallback& cb, bool success) {
+    auto cb_lambda = [](SetPlayerSettingValueCallback cb, bool success) {
       do_in_main_thread(base::BindOnce(std::move(cb), success));
     };
 
-    auto bound_cb = base::Bind(cb_lambda, std::move(cb));
+    auto bound_cb = base::BindOnce(cb_lambda, std::move(cb));
 
     do_in_jni_thread(base::BindOnce(&PlayerSettingsInterface::SetPlayerSettings,
                                     base::Unretained(wrapped_), std::move(attributes),
-                                    std::move(values), bound_cb));
+                                    std::move(values), std::move(bound_cb)));
   }
 
 private:
