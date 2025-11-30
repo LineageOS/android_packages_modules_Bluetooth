@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,391 +14,402 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.gatt;
+package com.android.bluetooth.gatt
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothStatusCodes
+import android.bluetooth.le.ChannelSoundingParams
+import android.bluetooth.le.DistanceMeasurementMethod
+import android.bluetooth.le.DistanceMeasurementParams
+import android.bluetooth.le.DistanceMeasurementResult
+import android.bluetooth.le.IDistanceMeasurementCallback
+import android.content.pm.PackageManager
+import android.os.HandlerThread
+import android.os.TestLooperManager
+import android.platform.test.annotations.EnableFlags
+import android.platform.test.flag.junit.SetFlagsRule
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SmallTest
+import androidx.test.platform.app.InstrumentationRegistry
+import com.android.bluetooth.BluetoothStatsLog
+import com.android.bluetooth.TestUtils
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.btservice.MetricsLogger
+import com.android.bluetooth.flags.Flags
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import java.util.UUID
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.kotlin.after
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.after;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothStatusCodes;
-import android.bluetooth.le.ChannelSoundingParams;
-import android.bluetooth.le.DistanceMeasurementMethod;
-import android.bluetooth.le.DistanceMeasurementParams;
-import android.bluetooth.le.DistanceMeasurementResult;
-import android.bluetooth.le.IDistanceMeasurementCallback;
-import android.content.pm.PackageManager;
-import android.os.HandlerThread;
-import android.os.Message;
-import android.os.RemoteException;
-import android.os.TestLooperManager;
-import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.SetFlagsRule;
-
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.filters.SmallTest;
-import androidx.test.platform.app.InstrumentationRegistry;
-
-import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.MetricsLogger;
-import com.android.bluetooth.flags.Flags;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-
-import java.util.UUID;
-
-/** Test cases for {@link DistanceMeasurementManager}. */
+/** Test cases for [DistanceMeasurementManager]. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
+@RunWith(AndroidJUnit4::class)
 @EnableFlags(Flags.FLAG_DISTANCE_MEASUREMENT_THREAD)
-public class DistanceMeasurementManagerTest {
-    @Rule public SetFlagsRule mSetFlagsRule = new SetFlagsRule();
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+class DistanceMeasurementManagerTest {
+    @get:Rule val mockitoRule = MockitoRule()
+    @get:Rule val setFlagsRule = SetFlagsRule()
 
-    @Mock private DistanceMeasurementNativeInterface mNativeInterface;
-    @Mock private AdapterService mAdapterService;
-    @Mock private GattService mGattService;
-    @Mock private PackageManager mPackageManager;
-    @Mock private IDistanceMeasurementCallback mCallback;
+    @Mock private lateinit var nativeInterface: DistanceMeasurementNativeInterface
+    @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var gattService: GattService
+    @Mock private lateinit var packageManager: PackageManager
+    @Mock private lateinit var callback: IDistanceMeasurementCallback
+    @Mock private lateinit var mockMetricsLogger: MetricsLogger
 
-    private final BluetoothDevice mDevice = getTestDevice(57);
+    private val device = TestUtils.getTestDevice(57)
 
-    private DistanceMeasurementManager mDistanceMeasurementManager;
-    private UUID mUuid;
-    private HandlerThread mHandlerThread;
-    private TestLooperManager mTestLooperManager;
-    @Mock private MetricsLogger mMockMetricsLogger;
-
-    private static final int RSSI_FREQUENCY_LOW = 3000;
-    private static final int CS_FREQUENCY_LOW = 5000;
-    private static final int APP_UID = 100;
+    private lateinit var distanceMeasurementManager: DistanceMeasurementManager
+    private lateinit var uuid: UUID
+    private lateinit var handlerThread: HandlerThread
+    private lateinit var testLooperManager: TestLooperManager
 
     @Before
-    public void setUp() throws Exception {
-        doReturn(mPackageManager).when(mAdapterService).getPackageManager();
-        doReturn(true).when(mPackageManager).hasSystemFeature(any());
-        doReturn(true).when(mAdapterService).isLeChannelSoundingSupported();
-        final String address = mDevice.getAddress();
-        doReturn(address).when(mAdapterService).getIdentityAddress(address);
-        doReturn(true).when(mAdapterService).isConnected(any());
+    fun setUp() {
+        doReturn(packageManager).whenever(adapterService).packageManager
+        doReturn(true).whenever(packageManager).hasSystemFeature(any())
+        doReturn(true).whenever(adapterService).isLeChannelSoundingSupported
+        val address = device.address
+        doReturn(address).whenever(adapterService).getIdentityAddress(address)
+        doReturn(true).whenever(adapterService).isConnected(any<BluetoothDevice>())
 
-        mHandlerThread = new HandlerThread("DistanceMeasurementManagerTest");
-        mHandlerThread.start();
-        var looper = mHandlerThread.getLooper();
-        mTestLooperManager =
-                InstrumentationRegistry.getInstrumentation().acquireLooperManager(looper);
+        handlerThread = HandlerThread("DistanceMeasurementManagerTest")
+        handlerThread.start()
+        val looper = handlerThread.looper
+        testLooperManager =
+            InstrumentationRegistry.getInstrumentation().acquireLooperManager(looper)
 
-        MetricsLogger.setInstanceForTesting(mMockMetricsLogger);
+        MetricsLogger.setInstanceForTesting(mockMetricsLogger)
 
-        mDistanceMeasurementManager =
-                new DistanceMeasurementManager(
-                        mAdapterService, mGattService, mNativeInterface, looper);
-        Message msg = mTestLooperManager.next();
-        mTestLooperManager.execute(msg);
-        mUuid = UUID.randomUUID();
+        distanceMeasurementManager =
+            DistanceMeasurementManager(adapterService, gattService, nativeInterface, looper)
+        val msg = testLooperManager.next()
+        testLooperManager.execute(msg)
+        uuid = UUID.randomUUID()
     }
 
     @After
-    public void tearDown() throws Exception {
-        mDistanceMeasurementManager.cleanup();
-        mTestLooperManager.release();
-        mHandlerThread.quit();
-        MetricsLogger.setInstanceForTesting(null);
-        MetricsLogger.getInstance();
+    fun tearDown() {
+        distanceMeasurementManager.cleanup()
+        testLooperManager.release()
+        handlerThread.quit()
+        MetricsLogger.setInstanceForTesting(null)
+        MetricsLogger.getInstance()
     }
 
     @Test
-    public void testStartRssiTracker() {
-        DistanceMeasurementParams params =
-                new DistanceMeasurementParams.Builder(mDevice)
-                        .setDurationSeconds(1000)
-                        .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
-                        .setMethodId(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI)
-                        .build();
-        mDistanceMeasurementManager.startDistanceMeasurement(mUuid, APP_UID, params, mCallback);
-        verify(mNativeInterface)
-                .startDistanceMeasurement(
-                        APP_UID,
-                        mDevice.getAddress(),
-                        RSSI_FREQUENCY_LOW,
-                        DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
-                        ChannelSoundingParams.SIGHT_TYPE_UNKNOWN,
-                        ChannelSoundingParams.LOCATION_TYPE_UNKNOWN);
+    fun testStartRssiTracker() {
+        val params =
+            DistanceMeasurementParams.Builder(device)
+                .setDurationSeconds(1000)
+                .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
+                .setMethodId(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI)
+                .build()
+        distanceMeasurementManager.startDistanceMeasurement(uuid, APP_UID, params, callback)
+        verify(nativeInterface)
+            .startDistanceMeasurement(
+                APP_UID,
+                device.address,
+                RSSI_FREQUENCY_LOW,
+                DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
+                ChannelSoundingParams.SIGHT_TYPE_UNKNOWN,
+                ChannelSoundingParams.LOCATION_TYPE_UNKNOWN,
+            )
     }
 
     @Test
-    public void testStopRssiTracker() {
-        DistanceMeasurementParams params =
-                new DistanceMeasurementParams.Builder(mDevice)
-                        .setDurationSeconds(1000)
-                        .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
-                        .setMethodId(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI)
-                        .build();
-        mDistanceMeasurementManager.startDistanceMeasurement(mUuid, APP_UID, params, mCallback);
-        mDistanceMeasurementManager.stopDistanceMeasurement(
-                mUuid, mDevice, DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI, false);
-        verify(mNativeInterface)
-                .stopDistanceMeasurement(
-                        mDevice.getAddress(),
-                        DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI);
+    fun testStopRssiTracker() {
+        val params =
+            DistanceMeasurementParams.Builder(device)
+                .setDurationSeconds(1000)
+                .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
+                .setMethodId(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI)
+                .build()
+        distanceMeasurementManager.startDistanceMeasurement(uuid, APP_UID, params, callback)
+        distanceMeasurementManager.stopDistanceMeasurement(
+            uuid,
+            device,
+            DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
+            false,
+        )
+        verify(nativeInterface)
+            .stopDistanceMeasurement(
+                device.address,
+                DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
+            )
     }
 
     @Test
-    public void testHandleRssiStarted() throws RemoteException {
-        DistanceMeasurementParams params =
-                new DistanceMeasurementParams.Builder(mDevice)
-                        .setDurationSeconds(1000)
-                        .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
-                        .setMethodId(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI)
-                        .build();
-        mDistanceMeasurementManager.startDistanceMeasurement(mUuid, APP_UID, params, mCallback);
-        verify(mNativeInterface)
-                .startDistanceMeasurement(
-                        APP_UID,
-                        mDevice.getAddress(),
-                        RSSI_FREQUENCY_LOW,
-                        DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
-                        ChannelSoundingParams.SIGHT_TYPE_UNKNOWN,
-                        ChannelSoundingParams.LOCATION_TYPE_UNKNOWN);
-        mDistanceMeasurementManager.onDistanceMeasurementStarted(
-                mDevice.getAddress(), DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI);
-        verify(mCallback).onStarted(mDevice);
+    fun testHandleRssiStarted() {
+        val params =
+            DistanceMeasurementParams.Builder(device)
+                .setDurationSeconds(1000)
+                .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
+                .setMethodId(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI)
+                .build()
+        distanceMeasurementManager.startDistanceMeasurement(uuid, APP_UID, params, callback)
+        verify(nativeInterface)
+            .startDistanceMeasurement(
+                APP_UID,
+                device.address,
+                RSSI_FREQUENCY_LOW,
+                DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
+                ChannelSoundingParams.SIGHT_TYPE_UNKNOWN,
+                ChannelSoundingParams.LOCATION_TYPE_UNKNOWN,
+            )
+        distanceMeasurementManager.onDistanceMeasurementStarted(
+            device.address,
+            DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
+        )
+        verify(callback).onStarted(device)
     }
 
     @Test
-    public void testHandleRssiStartFail() throws RemoteException {
-        DistanceMeasurementParams params =
-                new DistanceMeasurementParams.Builder(mDevice)
-                        .setDurationSeconds(1000)
-                        .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
-                        .setMethodId(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI)
-                        .build();
-        mDistanceMeasurementManager.startDistanceMeasurement(mUuid, APP_UID, params, mCallback);
-        verify(mNativeInterface)
-                .startDistanceMeasurement(
-                        APP_UID,
-                        mDevice.getAddress(),
-                        RSSI_FREQUENCY_LOW,
-                        DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
-                        ChannelSoundingParams.SIGHT_TYPE_UNKNOWN,
-                        ChannelSoundingParams.LOCATION_TYPE_UNKNOWN);
-        mDistanceMeasurementManager.onDistanceMeasurementStopped(
-                mDevice.getAddress(),
-                BluetoothStatusCodes.ERROR_DISTANCE_MEASUREMENT_INTERNAL,
-                DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI);
-        verify(mCallback)
-                .onStartFail(mDevice, BluetoothStatusCodes.ERROR_DISTANCE_MEASUREMENT_INTERNAL);
+    fun testHandleRssiStartFail() {
+        val params =
+            DistanceMeasurementParams.Builder(device)
+                .setDurationSeconds(1000)
+                .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
+                .setMethodId(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI)
+                .build()
+        distanceMeasurementManager.startDistanceMeasurement(uuid, APP_UID, params, callback)
+        verify(nativeInterface)
+            .startDistanceMeasurement(
+                APP_UID,
+                device.address,
+                RSSI_FREQUENCY_LOW,
+                DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
+                ChannelSoundingParams.SIGHT_TYPE_UNKNOWN,
+                ChannelSoundingParams.LOCATION_TYPE_UNKNOWN,
+            )
+        distanceMeasurementManager.onDistanceMeasurementStopped(
+            device.address,
+            BluetoothStatusCodes.ERROR_DISTANCE_MEASUREMENT_INTERNAL,
+            DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
+        )
+        verify(callback)
+            .onStartFail(device, BluetoothStatusCodes.ERROR_DISTANCE_MEASUREMENT_INTERNAL)
     }
 
     @Test
-    public void testCsStartFailForNoBondedBLE() throws RemoteException {
-        doReturn(BluetoothDevice.BOND_NONE).when(mAdapterService).getBondState(any());
-        DistanceMeasurementParams params =
-                new DistanceMeasurementParams.Builder(mDevice)
-                        .setDurationSeconds(1000)
-                        .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
-                        .setMethodId(
-                                DistanceMeasurementMethod
-                                        .DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING)
-                        .build();
-        mDistanceMeasurementManager.startDistanceMeasurement(mUuid, APP_UID, params, mCallback);
+    fun testCsStartFailForNoBondedBLE() {
+        doReturn(BluetoothDevice.BOND_NONE).whenever(adapterService).getBondState(any())
+        val params =
+            DistanceMeasurementParams.Builder(device)
+                .setDurationSeconds(1000)
+                .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
+                .setMethodId(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING)
+                .build()
+        distanceMeasurementManager.startDistanceMeasurement(uuid, APP_UID, params, callback)
 
-        verify(mNativeInterface, never())
-                .startDistanceMeasurement(
-                        APP_UID,
-                        mDevice.getAddress(),
-                        CS_FREQUENCY_LOW,
-                        DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING,
-                        ChannelSoundingParams.SIGHT_TYPE_UNKNOWN,
-                        ChannelSoundingParams.LOCATION_TYPE_UNKNOWN);
-        verify(mCallback).onStartFail(mDevice, BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED);
+        verify(nativeInterface, never())
+            .startDistanceMeasurement(
+                APP_UID,
+                device.address,
+                CS_FREQUENCY_LOW,
+                DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING,
+                ChannelSoundingParams.SIGHT_TYPE_UNKNOWN,
+                ChannelSoundingParams.LOCATION_TYPE_UNKNOWN,
+            )
+        verify(callback).onStartFail(device, BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED)
     }
 
     @Test
-    public void testCsStartSuccessForBondedBLE() throws RemoteException {
-        doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(any());
-        DistanceMeasurementParams params =
-                new DistanceMeasurementParams.Builder(mDevice)
-                        .setDurationSeconds(1000)
-                        .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
-                        .setMethodId(
-                                DistanceMeasurementMethod
-                                        .DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING)
-                        .build();
-        mDistanceMeasurementManager.startDistanceMeasurement(mUuid, APP_UID, params, mCallback);
+    fun testCsStartSuccessForBondedBLE() {
+        doReturn(BluetoothDevice.BOND_BONDED).whenever(adapterService).getBondState(any())
+        val params =
+            DistanceMeasurementParams.Builder(device)
+                .setDurationSeconds(1000)
+                .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
+                .setMethodId(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING)
+                .build()
+        distanceMeasurementManager.startDistanceMeasurement(uuid, APP_UID, params, callback)
 
-        verify(mNativeInterface)
-                .startDistanceMeasurement(
-                        APP_UID,
-                        mDevice.getAddress(),
-                        CS_FREQUENCY_LOW,
-                        DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING,
-                        ChannelSoundingParams.SIGHT_TYPE_UNKNOWN,
-                        ChannelSoundingParams.LOCATION_TYPE_UNKNOWN);
+        verify(nativeInterface)
+            .startDistanceMeasurement(
+                APP_UID,
+                device.address,
+                CS_FREQUENCY_LOW,
+                DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING,
+                ChannelSoundingParams.SIGHT_TYPE_UNKNOWN,
+                ChannelSoundingParams.LOCATION_TYPE_UNKNOWN,
+            )
 
-        mDistanceMeasurementManager.onDistanceMeasurementStarted(
-                mDevice.getAddress(),
-                DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING);
-        mDistanceMeasurementManager.onDistanceMeasurementResult(
-                mDevice.getAddress(),
-                100,
-                0,
-                100,
-                0,
-                45,
-                0,
-                10000,
-                127,
-                127,
-                1,
-                /* delayedSpreadMeters= */ 10.0,
-                /* detectedAttackLevel= */ DistanceMeasurementResult.NADM_ATTACK_IS_POSSIBLE,
-                /* velocityMetersPerSecond= */ 1.0,
-                DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING);
-        ArgumentCaptor<DistanceMeasurementResult> result =
-                ArgumentCaptor.forClass(DistanceMeasurementResult.class);
-
-        verify(mCallback).onResult(eq(mDevice), result.capture());
-        assertThat(result.getValue().getResultMeters()).isEqualTo(1.00);
-        assertThat(result.getValue().getAzimuthAngle()).isEqualTo(100);
-        assertThat(result.getValue().getAltitudeAngle()).isEqualTo(45);
-        assertThat(result.getValue().getMeasurementTimestampNanos()).isEqualTo(10000);
-        assertThat(result.getValue().getConfidenceLevel()).isEqualTo(0.01);
-        assertThat(result.getValue().getDelaySpreadMeters()).isEqualTo(10.0);
-        assertThat(result.getValue().getDetectedAttackLevel())
-                .isEqualTo(DistanceMeasurementResult.NADM_ATTACK_IS_POSSIBLE);
-        assertThat(result.getValue().getVelocityMetersPerSecond()).isEqualTo(1.0);
-        mDistanceMeasurementManager.onDistanceMeasurementStopped(
-                mDevice.getAddress(),
-                BluetoothStatusCodes.REASON_REMOTE_REQUEST,
-                DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING);
+        distanceMeasurementManager.onDistanceMeasurementStarted(
+            device.address,
+            DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING,
+        )
+        distanceMeasurementManager.onDistanceMeasurementResult(
+            device.address,
+            100,
+            0,
+            100,
+            0,
+            45,
+            0,
+            10000L,
+            127,
+            127,
+            1,
+            /* delaySpreadMeters = */ 10.0,
+            /* detectedAttackLevel= */ DistanceMeasurementResult.NADM_ATTACK_IS_POSSIBLE,
+            /* velocityMetersPerSecond= */ 1.0,
+            DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING,
+        )
+        val captor = argumentCaptor<DistanceMeasurementResult>()
+        verify(callback).onResult(eq(device), captor.capture())
+        val result = captor.firstValue
+        assertThat(result.resultMeters).isEqualTo(1.00)
+        assertThat(result.azimuthAngle).isEqualTo(100)
+        assertThat(result.altitudeAngle).isEqualTo(45)
+        assertThat(result.measurementTimestampNanos).isEqualTo(10000)
+        assertThat(result.confidenceLevel).isEqualTo(0.01)
+        assertThat(result.delaySpreadMeters).isEqualTo(10.0)
+        assertThat(result.detectedAttackLevel)
+            .isEqualTo(DistanceMeasurementResult.NADM_ATTACK_IS_POSSIBLE)
+        assertThat(result.velocityMetersPerSecond).isEqualTo(1.0)
+        distanceMeasurementManager.onDistanceMeasurementStopped(
+            device.address,
+            BluetoothStatusCodes.REASON_REMOTE_REQUEST,
+            DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING,
+        )
     }
 
     @Test
-    public void testHandleRssiStopped() throws RemoteException {
-        DistanceMeasurementParams params =
-                new DistanceMeasurementParams.Builder(mDevice)
-                        .setDurationSeconds(1000)
-                        .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
-                        .setMethodId(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI)
-                        .build();
-        mDistanceMeasurementManager.startDistanceMeasurement(mUuid, APP_UID, params, mCallback);
-        mDistanceMeasurementManager.onDistanceMeasurementStarted(
-                mDevice.getAddress(), DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI);
-        verify(mCallback).onStarted(mDevice);
+    fun testHandleRssiStopped() {
+        val params =
+            DistanceMeasurementParams.Builder(device)
+                .setDurationSeconds(1000)
+                .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
+                .setMethodId(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI)
+                .build()
+        distanceMeasurementManager.startDistanceMeasurement(uuid, APP_UID, params, callback)
+        distanceMeasurementManager.onDistanceMeasurementStarted(
+            device.address,
+            DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
+        )
+        verify(callback).onStarted(device)
 
-        mDistanceMeasurementManager.onDistanceMeasurementStopped(
-                mDevice.getAddress(),
-                BluetoothStatusCodes.REASON_REMOTE_REQUEST,
-                DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI);
-        verify(mCallback).onStopped(mDevice, BluetoothStatusCodes.REASON_REMOTE_REQUEST);
+        distanceMeasurementManager.onDistanceMeasurementStopped(
+            device.address,
+            BluetoothStatusCodes.REASON_REMOTE_REQUEST,
+            DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
+        )
+        verify(callback).onStopped(device, BluetoothStatusCodes.REASON_REMOTE_REQUEST)
     }
 
     @Test
-    public void testHandleRssiResult() throws RemoteException {
-        DistanceMeasurementParams params =
-                new DistanceMeasurementParams.Builder(mDevice)
-                        .setDurationSeconds(1000)
-                        .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
-                        .setMethodId(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI)
-                        .build();
-        mDistanceMeasurementManager.startDistanceMeasurement(mUuid, APP_UID, params, mCallback);
-        mDistanceMeasurementManager.onDistanceMeasurementStarted(
-                mDevice.getAddress(), DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI);
-        verify(mCallback).onStarted(mDevice);
+    fun testHandleRssiResult() {
+        val params =
+            DistanceMeasurementParams.Builder(device)
+                .setDurationSeconds(1000)
+                .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
+                .setMethodId(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI)
+                .build()
+        distanceMeasurementManager.startDistanceMeasurement(uuid, APP_UID, params, callback)
+        distanceMeasurementManager.onDistanceMeasurementStarted(
+            device.address,
+            DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
+        )
+        verify(callback).onStarted(device)
 
-        mDistanceMeasurementManager.onDistanceMeasurementResult(
-                mDevice.getAddress(),
-                100,
-                100,
-                -1,
-                -1,
-                -1,
-                -1,
-                1000L,
-                127,
-                127,
-                -1,
-                /* delayedSpreadMeters= */ 10.0,
-                /* detectedAttackLevel= */ DistanceMeasurementResult.NADM_ATTACK_IS_POSSIBLE,
-                /* velocityMetersPerSecond= */ 0.0,
-                DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI);
-        ArgumentCaptor<DistanceMeasurementResult> result =
-                ArgumentCaptor.forClass(DistanceMeasurementResult.class);
-        verify(mCallback).onResult(eq(mDevice), result.capture());
-        assertThat(result.getValue().getResultMeters()).isEqualTo(1.00);
-        assertThat(result.getValue().getErrorMeters()).isEqualTo(1.00);
-        assertThat(result.getValue().getAzimuthAngle()).isEqualTo(Double.NaN);
-        assertThat(result.getValue().getErrorAzimuthAngle()).isEqualTo(Double.NaN);
-        assertThat(result.getValue().getAltitudeAngle()).isEqualTo(Double.NaN);
-        assertThat(result.getValue().getErrorAltitudeAngle()).isEqualTo(Double.NaN);
-        assertThat(result.getValue().getMeasurementTimestampNanos()).isEqualTo(1000L);
-        assertThat(result.getValue().getDelaySpreadMeters()).isEqualTo(Double.NaN);
-        assertThat(result.getValue().getDetectedAttackLevel())
-                .isEqualTo(DistanceMeasurementResult.NADM_UNKNOWN);
-        assertThat(result.getValue().getVelocityMetersPerSecond()).isEqualTo(Double.NaN);
+        distanceMeasurementManager.onDistanceMeasurementResult(
+            device.address,
+            100,
+            100,
+            -1,
+            -1,
+            -1,
+            -1,
+            1000L,
+            127,
+            127,
+            -1,
+            /* delaySpreadMeters= */ 10.0,
+            /* detectedAttackLevel= */ DistanceMeasurementResult.NADM_ATTACK_IS_POSSIBLE,
+            /* velocityMetersPerSecond= */ 0.0,
+            DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
+        )
+        val captor = argumentCaptor<DistanceMeasurementResult>()
+        verify(callback).onResult(eq(device), captor.capture())
+        val result = captor.firstValue
+        assertThat(result.resultMeters).isEqualTo(1.00)
+        assertThat(result.errorMeters).isEqualTo(1.00)
+        assertThat(result.azimuthAngle).isEqualTo(Double.NaN)
+        assertThat(result.errorAzimuthAngle).isEqualTo(Double.NaN)
+        assertThat(result.altitudeAngle).isEqualTo(Double.NaN)
+        assertThat(result.errorAltitudeAngle).isEqualTo(Double.NaN)
+        assertThat(result.measurementTimestampNanos).isEqualTo(1000L)
+        assertThat(result.delaySpreadMeters).isEqualTo(Double.NaN)
+        assertThat(result.detectedAttackLevel).isEqualTo(DistanceMeasurementResult.NADM_UNKNOWN)
+        assertThat(result.velocityMetersPerSecond).isEqualTo(Double.NaN)
     }
 
     @Test
-    public void testReceivedResultAfterStopped() throws RemoteException {
-        DistanceMeasurementParams params =
-                new DistanceMeasurementParams.Builder(mDevice)
-                        .setDurationSeconds(1000)
-                        .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
-                        .setDurationSeconds(
-                                DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI)
-                        .build();
-        mDistanceMeasurementManager.startDistanceMeasurement(mUuid, APP_UID, params, mCallback);
-        mDistanceMeasurementManager.stopDistanceMeasurement(
-                mUuid, mDevice, DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI, false);
-        verify(mNativeInterface)
-                .stopDistanceMeasurement(
-                        mDevice.getAddress(),
-                        DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI);
-        mDistanceMeasurementManager.onDistanceMeasurementResult(
-                mDevice.getAddress(),
-                100,
-                100,
-                -1,
-                -1,
-                -1,
-                -1,
-                1000L,
-                127,
-                127,
-                -1,
-                /* delayedSpreadMeters= */ 10.0,
-                /* detectedAttackLevel= */ DistanceMeasurementResult.NADM_ATTACK_IS_POSSIBLE,
-                /* velocityMetersPerSecond= */ 0.0,
-                DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI);
-        DistanceMeasurementResult result =
-                new DistanceMeasurementResult.Builder(1.00, 1.00).build();
-        verify(mCallback, after(100).never()).onResult(mDevice, result);
+    fun testReceivedResultAfterStopped() {
+        val params =
+            DistanceMeasurementParams.Builder(device)
+                .setDurationSeconds(1000)
+                .setFrequency(DistanceMeasurementParams.REPORT_FREQUENCY_LOW)
+                .setDurationSeconds(DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI)
+                .build()
+        distanceMeasurementManager.startDistanceMeasurement(uuid, APP_UID, params, callback)
+        distanceMeasurementManager.stopDistanceMeasurement(
+            uuid,
+            device,
+            DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
+            false,
+        )
+        verify(nativeInterface)
+            .stopDistanceMeasurement(
+                device.address,
+                DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
+            )
+        distanceMeasurementManager.onDistanceMeasurementResult(
+            device.address,
+            100,
+            100,
+            -1,
+            -1,
+            -1,
+            -1,
+            1000L,
+            127,
+            127,
+            -1,
+            /* delaySpreadMeters= */ 10.0,
+            /* detectedAttackLevel= */ DistanceMeasurementResult.NADM_ATTACK_IS_POSSIBLE,
+            /* velocityMetersPerSecond= */ 0.0,
+            DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI,
+        )
+        val result = DistanceMeasurementResult.Builder(1.00, 1.00).build()
+        verify(callback, after(100).never()).onResult(device, result)
     }
 
     @Test
-    public void testLogChannelSoundingTypesSupportedMetrics() {
-        ArgumentCaptor<int[]> csTypes = ArgumentCaptor.forClass(int[].class);
+    fun testLogChannelSoundingTypesSupportedMetrics() {
+        val captor = argumentCaptor<IntArray>()
+        verify(mockMetricsLogger).logChannelSoundingTypesSupported(captor.capture())
+        assertThat(captor.firstValue)
+            .asList()
+            .contains(BluetoothStatsLog.CHANNEL_SOUNDING_TYPES_SUPPORTED__CS_TYPES__CS_BT_CORE60)
+    }
 
-        verify(mMockMetricsLogger).logChannelSoundingTypesSupported(csTypes.capture());
-        assertThat(csTypes.getValue())
-                .asList()
-                .contains(
-                        BluetoothStatsLog.CHANNEL_SOUNDING_TYPES_SUPPORTED__CS_TYPES__CS_BT_CORE60);
+    companion object {
+        private const val RSSI_FREQUENCY_LOW = 3000
+        private const val CS_FREQUENCY_LOW = 5000
+        private const val APP_UID = 100
     }
 }
