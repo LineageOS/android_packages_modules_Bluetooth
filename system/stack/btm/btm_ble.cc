@@ -311,53 +311,6 @@ void BTM_ReadDevInfo(const RawAddress& remote_bda, tBT_DEVICE_TYPE* p_dev_type,
 
 /*******************************************************************************
  *
- * Function         BTM_ReadConnectedTransportAddress
- *
- * Description      This function is called to read the paired device/address
- *                  type of other device paired corresponding to the BD_address
- *
- * Parameter        remote_bda: remote device address, carry out the transport
- *                              address
- *                  transport: active transport
- *
- * Return           true if an active link is identified; false otherwise
- *
- ******************************************************************************/
-bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda, tBT_TRANSPORT transport) {
-  const BtmDevice* p_device = btm_find_dev(*remote_bda);
-
-  /* if no device can be located, return */
-  if (p_device == nullptr) {
-    return false;
-  }
-
-  if (transport == BT_TRANSPORT_BR_EDR) {
-    if (get_btm_client_interface().peer.BTM_IsAclConnectionUp(p_device->bd_addr, transport)) {
-      *remote_bda = p_device->bd_addr;
-      return true;
-    } else if (p_device->device_type & BT_DEVICE_TYPE_BREDR) {
-      *remote_bda = p_device->bd_addr;
-    } else {
-      *remote_bda = RawAddress::kEmpty;
-    }
-    return false;
-  }
-
-  if (transport == BT_TRANSPORT_LE) {
-    *remote_bda = p_device->ble.pseudo_addr;
-    if (get_btm_client_interface().peer.BTM_IsAclConnectionUp(p_device->ble.pseudo_addr,
-                                                              transport)) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  return false;
-}
-
-/*******************************************************************************
- *
  * Function         BTM_GetConnectedTransportAddress
  *
  * Description      This function gets the pseudo and identity address of the
