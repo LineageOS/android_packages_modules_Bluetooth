@@ -287,6 +287,7 @@ protected:
     com::android::bluetooth::flags::provider_->leaudio_always_use_group_size_to_check_audio_config(
             true);
     com::android::bluetooth::flags::provider_->leaudio_fix_allocation_in_codec_config(true);
+    com::android::bluetooth::flags::provider_->leaudio_fix_clear_cises_in_the_cig(true);
 
     init_message_loop_thread();
     reset_mock_function_count_map();
@@ -12103,12 +12104,10 @@ TEST_F(StateMachineTest, testStreamDifferentRangeOfPresentationDelayMultipleDevi
 
   InjectInitialIdleNotification(group);
 
-  /* This is going to be called twice, because QoS config will is called twice. This should be
-   * improved with future CL.*/
   EXPECT_CALL(mock_callbacks_,
               OnStateMachineInvalidStatusCb(
                       leaudio_group_id, StateMachineInvalidStatus::INVALID_DEVICE_CONFIGURATION))
-          .Times(2);
+          .Times(1);
   // Start the configuration and stream the content
   StartStream_onMainloop(group, context_type,
                          {.sink = types::AudioContexts(context_type),
