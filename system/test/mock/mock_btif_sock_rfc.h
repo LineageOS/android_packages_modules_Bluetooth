@@ -89,23 +89,22 @@ struct btsock_rfc_cleanup {
 extern struct btsock_rfc_cleanup btsock_rfc_cleanup;
 
 // Name: btsock_rfc_connect
-// Params: const RawAddress* bd_addr, const Uuid* service_uuid, int channel,
+// Params: RawAddress bd_addr, const Uuid* service_uuid, int channel,
 // int* sock_fd, int flags, int app_uid Return: BtStatus
 struct btsock_rfc_connect {
   static BtStatus return_value;
-  std::function<BtStatus(const RawAddress* bd_addr, const bluetooth::Uuid* uuid, int channel,
-                         int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
+  std::function<BtStatus(RawAddress bd_addr, const bluetooth::Uuid* uuid, int channel, int* sock_fd,
+                         int flags, int app_uid, btsock_data_path_t data_path,
                          const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
                          int max_rx_packet_size)>
-          body{[](const RawAddress* /*bd_addr*/, const bluetooth::Uuid* /*uuid*/, int /*channel*/,
+          body{[](RawAddress /*bd_addr*/, const bluetooth::Uuid* /*uuid*/, int /*channel*/,
                   int* /*sock_fd*/, int /*flags*/, int /*app_uid*/,
                   btsock_data_path_t /*data_path*/, const char* /*socket_name*/,
                   uint64_t /*hub_id*/, uint64_t /*endpoint_id*/,
                   int /*max_rx_packet_size*/) { return return_value; }};
-  BtStatus operator()(const RawAddress* bd_addr, const bluetooth::Uuid* uuid, int channel,
-                      int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
-                      const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
-                      int max_rx_packet_size) {
+  BtStatus operator()(RawAddress bd_addr, const bluetooth::Uuid* uuid, int channel, int* sock_fd,
+                      int flags, int app_uid, btsock_data_path_t data_path, const char* socket_name,
+                      uint64_t hub_id, uint64_t endpoint_id, int max_rx_packet_size) {
     return body(bd_addr, uuid, channel, sock_fd, flags, app_uid, data_path, socket_name, hub_id,
                 endpoint_id, max_rx_packet_size);
   }
@@ -133,13 +132,13 @@ struct btsock_rfc_control_req {
 extern struct btsock_rfc_control_req btsock_rfc_control_req;
 
 // Name: btsock_rfc_disconnect
-// Params: const RawAddress* bd_addr
+// Params: RawAddress bd_addr
 // Return: BtStatus
 struct btsock_rfc_disconnect {
   static BtStatus return_value;
-  std::function<BtStatus(const RawAddress* bd_addr)> body{
-          [](const RawAddress* /* bd_addr */) { return return_value; }};
-  BtStatus operator()(const RawAddress* bd_addr) { return body(bd_addr); }
+  std::function<BtStatus(RawAddress bd_addr)> body{
+          [](RawAddress /* bd_addr */) { return return_value; }};
+  BtStatus operator()(RawAddress bd_addr) { return body(bd_addr); }
 };
 extern struct btsock_rfc_disconnect btsock_rfc_disconnect;
 
