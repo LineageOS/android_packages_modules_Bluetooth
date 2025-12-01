@@ -4193,12 +4193,19 @@ TEST_F(StateMachineTest, testReleaseMultiple) {
 static void InjectCisDisconnected(LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice,
                                   uint8_t reason, bool first_cis_disconnect_only = false) {
   bluetooth::hci::iso_manager::cis_disconnected_evt event;
+  std::set<uint16_t> disconnected_cis;
 
   for (auto const& ase : leAudioDevice->ases_) {
     if (ase.cis_state != types::CisState::ASSIGNED && ase.cis_state != types::CisState::IDLE) {
       event.reason = reason;
       event.cig_id = group->group_id_;
       event.cis_conn_hdl = ase.cis_conn_hdl;
+      if (disconnected_cis.contains(ase.cis_conn_hdl)) {
+        log::debug("{}, cis_handle: {:#x} already disconnected", leAudioDevice->address_,
+                   ase.cis_conn_hdl);
+        continue;
+      }
+      disconnected_cis.insert(ase.cis_conn_hdl);
       LeAudioGroupStateMachine::Get()->ProcessHciNotifCisDisconnected(group, leAudioDevice, &event);
       if (first_cis_disconnect_only) {
         break;
