@@ -22,6 +22,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_fix_clear_cises_in_the_cig"
+    namespace: "bluetooth"
+    description: "Improve operations around CIG, especially on the occasion of the controller issue."
+    bug: "465088801"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_fix_stop_stream_race"
     namespace: "bluetooth"
     description: "Fix race when resume is called just after stream release"
