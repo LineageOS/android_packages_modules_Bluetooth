@@ -1154,6 +1154,49 @@ public class ActiveDeviceManagerTest {
     }
 
     /**
+     * Verify set active device calls when two sets connect in parallel.
+     *
+     * <pre>
+     * Steps:
+     * 1. There are two LE Audio Sets: A and B with devices in them: A = {1, 2}, B={3, 4}.
+     * 2. Devices connect:
+     *    i) device 1 - set active device is called
+     *    ii) device 3 - set active device is called
+     *    iii) devices 2 - set active device is not called
+     *    iv) device 4 - set active device is not called
+     * 3. After this operation Set B={3, 4} remains Active as it was connected as the second set.
+     * </pre>
+     */
+    @Test
+    public void leAudioTwoSetsAlternatingConnections_setActive() {
+        doReturn(1).when(mLeAudioService).getGroupId(mLeAudioDevice);
+        doReturn(1).when(mLeAudioService).getGroupId(mLeAudioDevice2);
+        doReturn(2).when(mLeAudioService).getGroupId(mLeAudioDevice3);
+        doReturn(2).when(mLeAudioService).getGroupId(mLeAudioDevice4);
+        doReturn(mLeAudioDevice).when(mLeAudioService).getLeadDevice(mLeAudioDevice);
+        doReturn(mLeAudioDevice).when(mLeAudioService).getLeadDevice(mLeAudioDevice2);
+        doReturn(mLeAudioDevice3).when(mLeAudioService).getLeadDevice(mLeAudioDevice3);
+        doReturn(mLeAudioDevice3).when(mLeAudioService).getLeadDevice(mLeAudioDevice4);
+
+        InOrder order = inOrder(mLeAudioService);
+        leAudioConnected(mLeAudioDevice);
+        mTestLooper.dispatchAll();
+        order.verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
+
+        leAudioConnected(mLeAudioDevice3);
+        mTestLooper.dispatchAll();
+        order.verify(mLeAudioService).setActiveDevice(mLeAudioDevice3);
+
+        leAudioConnected(mLeAudioDevice2);
+        mTestLooper.dispatchAll();
+        order.verify(mLeAudioService, never()).setActiveDevice(mLeAudioDevice4);
+
+        leAudioConnected(mLeAudioDevice4);
+        mTestLooper.dispatchAll();
+        order.verify(mLeAudioService, never()).setActiveDevice(mLeAudioDevice2);
+    }
+
+    /**
      * One LE Audio set, containing two buds, is connected. When one device got disconnected
      * fallback device should not be set to true active device to fallback device.
      */
