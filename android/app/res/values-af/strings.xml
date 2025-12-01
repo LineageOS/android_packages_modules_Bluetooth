@@ -21,10 +21,8 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Gee aan die app toegang tot die BluetoothShare-bestuurder en om dit te gebruik om lêers oor te dra."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"Voeg Bluetooth-toesteltoegang by aanvaarlys."</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Laat die app toe om \'n Bluetooth-toestel tydelik by aanvaarlys te voeg, sodat daardie toestel lêers na hierdie toestel kan stuur sonder die gebruiker se bevestiging."</string>
-    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
-    <skip />
-    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
-    <skip />
+    <string name="permlab_bluetoothBackup" msgid="49451988877877942">"Laat Bluetooth-rugsteunuitsendings toe."</string>
+    <string name="permdesc_bluetoothBackup" msgid="2871500153259509669">"Laat die Bluetooth-app toe om uitsendings te aanvaar om instellingsdata se rugsteun te aktiveer"</string>
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetooth"</string>
     <string name="unknown_device" msgid="2317679521750821654">"Onbekende toestel"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"Onbekend"</string>
@@ -116,10 +114,8 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"Open"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"Verwyder uit lys"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"Vee uit"</string>
-    <!-- no translation found for bluetooth_media_audio_app_name (2389937877819723460) -->
-    <skip />
-    <!-- no translation found for bluetooth_media_audio_queue_name (2327164681598379428) -->
-    <skip />
+    <string name="bluetooth_media_audio_app_name" msgid="2389937877819723460">"Bluetooth-oudio"</string>
+    <string name="bluetooth_media_audio_queue_name" msgid="2327164681598379428">"Wat Speel"</string>
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"Programikoon"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"Bluetooth-oudio is ontkoppel"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"Lêers groter as 4 GB kan nie oorgedra word nie"</string>

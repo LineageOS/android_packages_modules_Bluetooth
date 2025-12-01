@@ -21,10 +21,8 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Овозможува апликацијата да пристапи до менаџерот на BluetoothShare и да го користи за пренос на датотеки."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"Пристап до уредот со Bluetooth на белата листа."</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Дозволува апликацијата привремено да стави на белата листа уред со Bluetooth на којшто ќе му овозможи испраќање датотеки до овој уред без потврда од корисникот."</string>
-    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
-    <skip />
-    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
-    <skip />
+    <string name="permlab_bluetoothBackup" msgid="49451988877877942">"Дозволете емитувања на бекап преку Bluetooth."</string>
+    <string name="permdesc_bluetoothBackup" msgid="2871500153259509669">"Ѝ дозволува на апликацијата за Bluetooth да прифаќа емитувања за да активира бекап на податоците за поставките"</string>
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetooth"</string>
     <string name="unknown_device" msgid="2317679521750821654">"Непознат уред"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"Непознат"</string>
@@ -116,10 +114,8 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"Отвори"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"Исчисти од списокот"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"Исчисти"</string>
-    <!-- no translation found for bluetooth_media_audio_app_name (2389937877819723460) -->
-    <skip />
-    <!-- no translation found for bluetooth_media_audio_queue_name (2327164681598379428) -->
-    <skip />
+    <string name="bluetooth_media_audio_app_name" msgid="2389937877819723460">"Аудио преку Bluetooth"</string>
+    <string name="bluetooth_media_audio_queue_name" msgid="2327164681598379428">"Now Playing"</string>
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"Икона на апликацијата"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"Аудиото преку Bluetooth е исклучено"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"Не може да се пренесуваат датотеки поголеми од 4 GB"</string>

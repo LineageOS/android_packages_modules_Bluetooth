@@ -21,10 +21,8 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Võimaldab rakendusel pääseda BluetoothShare\'i haldurisse ja kasutada seda failide edastamiseks."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"Bluetooth-seadmele juurdepääsu andmine."</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Lubab rakendusel lisada Bluetooth-seadme ajutiselt lubatud seadmete loendisse, mis võimaldab seadmel saata faile sellesse seadmesse ilma kasutaja kinnituseta."</string>
-    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
-    <skip />
-    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
-    <skip />
+    <string name="permlab_bluetoothBackup" msgid="49451988877877942">"Lubage Bluetoothi varundamise teated."</string>
+    <string name="permdesc_bluetoothBackup" msgid="2871500153259509669">"Võimaldab Bluetoothi rakendusel teateid vastu võtta, et käivitada seadete andmete varundamine."</string>
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetooth"</string>
     <string name="unknown_device" msgid="2317679521750821654">"Tundmatu seade"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"Tundmatu"</string>
@@ -116,10 +114,8 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"Ava"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"Eemaldage loendist"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"Kustuta"</string>
-    <!-- no translation found for bluetooth_media_audio_app_name (2389937877819723460) -->
-    <skip />
-    <!-- no translation found for bluetooth_media_audio_queue_name (2327164681598379428) -->
-    <skip />
+    <string name="bluetooth_media_audio_app_name" msgid="2389937877819723460">"Bluetoothi heli"</string>
+    <string name="bluetooth_media_audio_queue_name" msgid="2327164681598379428">"Hetkel mängimas"</string>
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"Rakenduse ikoon"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"Bluetoothi heli ühendus on katkestatud"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"Faile, mis on üle 4 GB, ei saa üle kanda"</string>

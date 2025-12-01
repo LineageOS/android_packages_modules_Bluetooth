@@ -21,10 +21,8 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Consente all\'applicazione di accedere al gestore BluetoothShare e di utilizzarlo per trasferire file."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"Aggiunta dell\'accesso del dispositivo Bluetooth alla lista consentita."</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Consente all\'app di aggiungere temporaneamente un dispositivo Bluetooth alla lista consentita, permettendo a tale dispositivo di inviare file a questo dispositivo senza la conferma dell\'utente."</string>
-    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
-    <skip />
-    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
-    <skip />
+    <string name="permlab_bluetoothBackup" msgid="49451988877877942">"Consenti le trasmissioni di backup tramite Bluetooth."</string>
+    <string name="permdesc_bluetoothBackup" msgid="2871500153259509669">"Consente all\'app Bluetooth di accettare trasmissioni per attivare il backup dei dati delle impostazioni"</string>
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetooth"</string>
     <string name="unknown_device" msgid="2317679521750821654">"Dispositivo sconosciuto"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"Sconosciuto"</string>
@@ -116,10 +114,8 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"Apri"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"Cancella da elenco"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"Cancella"</string>
-    <!-- no translation found for bluetooth_media_audio_app_name (2389937877819723460) -->
-    <skip />
-    <!-- no translation found for bluetooth_media_audio_queue_name (2327164681598379428) -->
-    <skip />
+    <string name="bluetooth_media_audio_app_name" msgid="2389937877819723460">"Audio Bluetooth"</string>
+    <string name="bluetooth_media_audio_queue_name" msgid="2327164681598379428">"Now Playing"</string>
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"Icona applicazione"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"Audio Bluetooth disconnesso"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"Impossibile trasferire file con dimensioni superiori a 4 GB"</string>

@@ -21,10 +21,8 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Թույլ է տալիս, որ ծրագիրը մատչի BluetoothShare կառավարչին և այն օգտագործի ֆայլեր փոխանցելու համար:"</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"Թույլատրված Bluetooth սարքի հասանելիություն։"</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Թույլատրում է հավելվածին ժամանակավորապես ավելացնել Bluetooth սարքը սպիտակ ցուցակում, ինչը հնարավորություն է տալիս, որ Bluetooth սարքը ֆայլեր ուղարկի այս սարքին՝ առանց օգտատիրոջ հաստատման։"</string>
-    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
-    <skip />
-    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
-    <skip />
+    <string name="permlab_bluetoothBackup" msgid="49451988877877942">"Թույլատրել պահուստավորման ծանուցումները Bluetooth-ի միջոցով։"</string>
+    <string name="permdesc_bluetoothBackup" msgid="2871500153259509669">"Թույլ է տալիս Bluetooth հավելվածին ընդունել ծանուցումներ՝ կարգավորումների տվյալների պահուստավորումը գործարկելու համար"</string>
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetooth"</string>
     <string name="unknown_device" msgid="2317679521750821654">"Անհայտ սարք"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"Անհայտ"</string>
@@ -116,10 +114,8 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"Բաց"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"Ջնջել ցուցակից"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"Ջնջել"</string>
-    <!-- no translation found for bluetooth_media_audio_app_name (2389937877819723460) -->
-    <skip />
-    <!-- no translation found for bluetooth_media_audio_queue_name (2327164681598379428) -->
-    <skip />
+    <string name="bluetooth_media_audio_app_name" msgid="2389937877819723460">"Աուդիո Bluetooth-ի միջոցով"</string>
+    <string name="bluetooth_media_audio_queue_name" msgid="2327164681598379428">"Այժմ հնչում է"</string>
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"Հավելվածի պատկերակը"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"Bluetooth աուդիոն անջատված է"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"4 ԳԲ-ից մեծ ֆայլերը հնարավոր չէ փոխանցել"</string>
