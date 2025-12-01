@@ -16,15 +16,26 @@
 
 package com.android.bluetooth;
 
+import static android.Manifest.permission.ACCESS_FINE_LOCATION;
+import static android.Manifest.permission.BLUETOOTH_SCAN;
+import static android.Manifest.permission.INTERNET;
+
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.Utils.formatSimple;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 
 import android.bluetooth.BluetoothDevice;
+import android.content.AttributionSource;
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.ParcelUuid;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -32,6 +43,7 @@ import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.util.Text;
+import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.common.truth.Expect;
 
@@ -42,12 +54,15 @@ import org.junit.runner.RunWith;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.UUID;
 
 /** Test cases for {@link Utils}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class UtilsTest {
+
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Rule public Expect expect = Expect.create();
 
@@ -218,5 +233,42 @@ public class UtilsTest {
     public void testFormatSimple_Mismatch() {
         assertThrows(IllegalArgumentException.class, () -> formatSimple("%s"));
         assertThrows(IllegalArgumentException.class, () -> formatSimple("%s", "foo", "bar"));
+    }
+
+    @Test
+    public void hasDisavowedLocationForScan() throws PackageManager.NameNotFoundException {
+        var context = mock(Context.class);
+        var packageManager = mock(PackageManager.class);
+        var sourceStart = mock(AttributionSource.class);
+        var sourceEnd = mock(AttributionSource.class);
+        doReturn(packageManager).when(context).getPackageManager();
+
+        // We create a chain: SourceStart -> SourceEnd -> null
+        doReturn(sourceEnd).when(sourceStart).getNext();
+        doReturn(null).when(sourceEnd).getNext();
+
+        doReturn(Collections.emptySet()).when(sourceStart).getRenouncedPermissions();
+        doReturn(Collections.emptySet()).when(sourceEnd).getRenouncedPermissions();
+
+        var testPackageName = "com.example.bluetooth";
+        doReturn(testPackageName).when(sourceStart).getPackageName();
+        doReturn(testPackageName).when(sourceEnd).getPackageName();
+
+        var packageInfo = new PackageInfo();
+        packageInfo.requestedPermissions =
+                new String[] {INTERNET, BLUETOOTH_SCAN, ACCESS_FINE_LOCATION};
+        packageInfo.requestedPermissionsFlags = new int[] {0, 0, 0};
+        doReturn(packageInfo).when(packageManager).getPackageInfo(eq(testPackageName), anyInt());
+        // The flag REQUESTED_PERMISSION_NEVER_FOR_LOCATION has not yet been set
+        assertThat(Utils.hasDisavowedLocationForScan(context, sourceStart, false)).isFalse();
+
+        packageInfo.requestedPermissionsFlags =
+                new int[] {
+                    0,
+                    PackageInfo
+                            .REQUESTED_PERMISSION_NEVER_FOR_LOCATION, // BLUETOOTH_SCAN (Flag Set!)
+                    0
+                };
+        assertThat(Utils.hasDisavowedLocationForScan(context, sourceStart, false)).isTrue();
     }
 }
