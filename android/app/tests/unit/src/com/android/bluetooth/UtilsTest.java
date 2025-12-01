@@ -260,7 +260,7 @@ public class UtilsTest {
         packageInfo.requestedPermissionsFlags = new int[] {0, 0, 0};
         doReturn(packageInfo).when(packageManager).getPackageInfo(eq(testPackageName), anyInt());
         // The flag REQUESTED_PERMISSION_NEVER_FOR_LOCATION has not yet been set
-        assertThat(Utils.hasDisavowedLocationForScan(context, sourceStart, false)).isFalse();
+        assertThat(Util.hasDisavowedLocationForScan(context, sourceStart, false)).isFalse();
 
         packageInfo.requestedPermissionsFlags =
                 new int[] {
@@ -269,6 +269,6 @@ public class UtilsTest {
                             .REQUESTED_PERMISSION_NEVER_FOR_LOCATION, // BLUETOOTH_SCAN (Flag Set!)
                     0
                 };
-        assertThat(Utils.hasDisavowedLocationForScan(context, sourceStart, false)).isTrue();
+        assertThat(Util.hasDisavowedLocationForScan(context, sourceStart, false)).isTrue();
     }
 }

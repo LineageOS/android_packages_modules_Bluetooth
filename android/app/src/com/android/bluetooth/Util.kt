@@ -25,6 +25,7 @@ import android.Manifest.permission.BLUETOOTH_SCAN
 import android.Manifest.permission.NETWORK_SETTINGS
 import android.Manifest.permission.NETWORK_SETUP_WIZARD
 import android.Manifest.permission.RADIO_SCAN_WITHOUT_LOCATION
+import android.Manifest.permission.RENOUNCE_PERMISSIONS
 import android.Manifest.permission.WRITE_SMS
 import android.annotation.PermissionMethod
 import android.annotation.PermissionName
@@ -37,7 +38,10 @@ import android.bluetooth.BluetoothStatusCodes
 import android.bluetooth.BluetoothUtils
 import android.content.AttributionSource
 import android.content.Context
+import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.content.pm.PackageManager.GET_PERMISSIONS
+import android.content.pm.PackageManager.MATCH_UNINSTALLED_PACKAGES
 import android.location.LocationManager
 import android.os.Binder
 import android.os.Build
@@ -222,6 +226,53 @@ object Util {
     @JvmStatic
     fun isXrDevice(context: Context) =
         context.packageManager.hasSystemFeature(PackageManager.FEATURE_XR_PERIPHERAL)
+
+    /**
+     * Returns true if the specified package has disavowed the use of bluetooth scans for location,
+     * that is, if they have specified the `neverForLocation` flag on the [BLUETOOTH_SCAN]
+     * permission.
+     */
+    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
+    @JvmStatic
+    fun hasDisavowedLocationForScan(
+        context: Context,
+        source: AttributionSource,
+        inTestMode: Boolean,
+    ): Boolean {
+        // Check every step along the attribution chain for a renouncement.
+        // If location has been renounced anywhere in the chain we treat it as a disavowal.
+        var currentAttrib = source
+        while (true) {
+            if (
+                currentAttrib.renouncedPermissions.contains(ACCESS_FINE_LOCATION) &&
+                    (inTestMode ||
+                        (context.checkPermission(RENOUNCE_PERMISSIONS, -1, currentAttrib.uid) ==
+                            PackageManager.PERMISSION_GRANTED))
+            ) {
+                return true
+            }
+            val nextAttrib = currentAttrib.next ?: break
+            currentAttrib = nextAttrib
+        }
+
+        // Check the last attribution in the chain for a neverForLocation disavowal.
+        val packageName = currentAttrib.packageName
+        val pm = context.packageManager
+        try {
+            // TODO(b/183478032): Cache PackageInfo for use here.
+            val pkgInfo =
+                pm.getPackageInfo(packageName!!, GET_PERMISSIONS or MATCH_UNINSTALLED_PACKAGES)
+            for (i in pkgInfo.requestedPermissions!!.indices) {
+                if (pkgInfo.requestedPermissions!![i] == BLUETOOTH_SCAN) {
+                    return (pkgInfo.requestedPermissionsFlags!![i] and
+                        PackageInfo.REQUESTED_PERMISSION_NEVER_FOR_LOCATION) != 0
+                }
+            }
+        } catch (e: PackageManager.NameNotFoundException) {
+            Log.w(TAG, "Could not find package for disavowal check: $packageName")
+        }
+        return false
+    }
 
     /**
      * Checks CoD and metadata to determine if the remote device is a watch
