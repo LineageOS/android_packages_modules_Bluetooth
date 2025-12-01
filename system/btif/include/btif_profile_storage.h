@@ -165,6 +165,7 @@ void btif_storage_load_bonded_csis_devices();
 void btif_storage_remove_csis_device(const RawAddress& address);
 
 void btif_storage_load_bonded_volume_control_devices(void);
+
 /*******************************************************************************
  * Function         btif_storage_load_hidd
  *
@@ -197,7 +198,7 @@ bt_status_t btif_storage_set_hidd(const RawAddress& remote_bd_addr);
  *
  ******************************************************************************/
 
-bt_status_t btif_storage_remove_hidd(RawAddress* remote_bd_addr);
+bt_status_t btif_storage_remove_hidd(RawAddress remote_bd_addr);
 
 /*******************************************************************************
  *

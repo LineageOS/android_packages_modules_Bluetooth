@@ -369,40 +369,6 @@ void btif_storage_update_csis_info(const RawAddress& addr);
 void btif_storage_load_bonded_csis_devices();
 void btif_storage_remove_csis_device(const RawAddress& address);
 
-/*******************************************************************************
- * Function         btif_storage_load_hidd
- *
- * Description      Loads hidd bonded device and "plugs" it into hidd
- *
- * Returns          BT_STATUS_SUCCESS if successful, BT_STATUS_FAIL otherwise
- *
- ******************************************************************************/
-bt_status_t btif_storage_load_hidd(void);
-
-/*******************************************************************************
- *
- * Function         btif_storage_set_hidd
- *
- * Description      Stores hidd bonded device info in nvram.
- *
- * Returns          BT_STATUS_SUCCESS
- *
- ******************************************************************************/
-
-bt_status_t btif_storage_set_hidd(const RawAddress& remote_bd_addr);
-
-/*******************************************************************************
- *
- * Function         btif_storage_remove_hidd
- *
- * Description      Removes hidd bonded device info from nvram
- *
- * Returns          BT_STATUS_SUCCESS
- *
- ******************************************************************************/
-
-bt_status_t btif_storage_remove_hidd(RawAddress remote_bd_addr);
-
 // Gets the device name for a given Bluetooth address |bd_addr|.
 // The device name (if found) is stored in |name|.
 // Returns true if the device name is found, otherwise false.
