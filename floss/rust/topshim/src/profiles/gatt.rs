@@ -24,7 +24,6 @@ pub type BtGattReadParams = bindings::btgatt_read_params_t;
 pub type BtGattDbElement = bindings::btgatt_db_element_t;
 pub type BtGattResponse = bindings::btgatt_response_t;
 pub type BtGattValue = bindings::btgatt_value_t;
-pub type BtGattTestParams = bindings::btgatt_test_params_t;
 
 #[cxx::bridge(namespace = bluetooth::topshim::rust)]
 pub mod ffi {
