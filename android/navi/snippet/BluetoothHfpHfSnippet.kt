@@ -43,9 +43,9 @@ class BluetoothHfpHfSnippet : Snippet {
         instrumentation.uiAutomation.adoptShellPermissionIdentity()
     }
 
-    /** Setups a HFP HF callback with ID [callbackId]. */
-    @AsyncRpc(description = "Setup HFP HF callbacks.")
-    fun hfpHfSetup(callbackId: String) {
+    /** Register a HFP HF callback with ID [callbackId]. */
+    @AsyncRpc(description = "Register HFP HF callbacks.")
+    fun registerHfpHfCallback(callbackId: String) {
         val intentFilter =
             IntentFilter().apply {
                 addAction(ACTION_CONNECTION_STATE_CHANGED)
@@ -84,9 +84,9 @@ class BluetoothHfpHfSnippet : Snippet {
         context.registerReceiver(broadcastReceivers[callbackId], intentFilter)
     }
 
-    /** Teardown a HFP HF callback with ID [callbackId]. */
-    @Rpc(description = "Teardown HFP HF callbacks.")
-    fun hfpHfTeardown(callbackId: String) =
+    /** Unregister a HFP HF callback with ID [callbackId]. */
+    @Rpc(description = "Unregister HFP HF callbacks.")
+    fun unregisterHfpHfCallback(callbackId: String) =
         broadcastReceivers.remove(callbackId)?.let { context.unregisterReceiver(it) }
 
     /** Sets HFP HF connection policy of device [address] to [policy]. */

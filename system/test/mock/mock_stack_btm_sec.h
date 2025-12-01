@@ -769,6 +769,16 @@ struct BTM_IsRemoteNameKnown {
 };
 extern struct BTM_IsRemoteNameKnown BTM_IsRemoteNameKnown;
 
+// Name: is_autonomous_repairing_supported
+// Params: void
+// Return: bool
+struct is_autonomous_repairing_supported {
+  static bool return_value;
+  std::function<bool(void)> body{[](void) { return return_value; }};
+  bool operator()(void) { return body(); }
+};
+extern struct is_autonomous_repairing_supported is_autonomous_repairing_supported;
+
 }  // namespace stack_btm_sec
 }  // namespace mock
 }  // namespace test

@@ -53,6 +53,8 @@ void Thread::run(std::promise<void> start_promise) {
     }
   }
   start_promise.set_value();
+  log::info("Thread: {} started with tid: {}", name_, linux_tid_);
+
   reactor_.Run();
 }
 

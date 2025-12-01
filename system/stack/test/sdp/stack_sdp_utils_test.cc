@@ -66,7 +66,7 @@ class IopMock {
 public:
   MOCK_METHOD(bool, InteropMatchAddr, (const interop_feature_t, const RawAddress*));
   MOCK_METHOD(bool, InteropMatchName, (const interop_feature_t, const char*));
-  MOCK_METHOD(void, InteropDatabaseAdd, (uint16_t, const RawAddress*, size_t));
+  MOCK_METHOD(void, InteropDatabaseAdd, (uint16_t, RawAddress, size_t));
   MOCK_METHOD(void, InteropDatabaseClear, ());
   MOCK_METHOD(bool, InteropMatchAddrOrName,
               (const interop_feature_t, const RawAddress*,
@@ -96,7 +96,7 @@ bool interop_match_addr(const interop_feature_t feature, const RawAddress* addr)
 bool interop_match_name(const interop_feature_t feature, const char* name) {
   return localIopMock->InteropMatchName(feature, name);
 }
-void interop_database_add(uint16_t feature, const RawAddress* addr, size_t length) {
+void interop_database_add(uint16_t feature, RawAddress addr, size_t length) {
   return localIopMock->InteropDatabaseAdd(feature, addr, length);
 }
 void interop_database_clear() { localIopMock->InteropDatabaseClear(); }

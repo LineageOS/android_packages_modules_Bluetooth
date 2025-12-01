@@ -95,12 +95,6 @@ class HapTest(navi_test_base.MultiDevicesTestBase):
         if self.dut.getprop(_Property.HAP_CLIENT_ENABLED) != "true":
             raise signals.TestAbortClass("HAP Client is not enabled on DUT.")
 
-    @override
-    async def async_teardown_test(self) -> None:
-        for address in self.dut.bt.getBondedDevices():
-            self.dut.bt.removeBond(address)
-        await super().async_teardown_test()
-
     def _setup_hap_servers(
         self,
         hearing_aid_type: _HaType = _HaType.MONAURAL_HEARING_AID,

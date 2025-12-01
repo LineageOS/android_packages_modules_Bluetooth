@@ -21,39 +21,58 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.pm.PackageManager
-import android.content.res.ColorStateList
 import android.os.Bundle
 import android.util.Log
-import android.view.View
-import android.view.ViewGroup
-import android.widget.Button
-import android.widget.CheckBox
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.PopupMenu
-import androidx.core.app.ActivityCompat
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.updateLayoutParams
-import androidx.core.view.updatePadding
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.android.bluetooth.scanningapp.extensions.toScanErrorMessage
 import com.android.bluetooth.scanningapp.extensions.toScanModeString
 import com.android.bluetooth.scanningapp.extensions.toast
-import com.google.android.material.slider.Slider
 
 private const val TAG = "MainActivity"
 
-@SuppressLint("SetTextI18n")
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
 
-    private val bluetoothLeScanner: BluetoothLeScanner by lazy {
+    private val leScanner: BluetoothLeScanner by lazy {
         val attributionContext = createAttributionContext(getString(R.string.attribution_tag))
         val bluetoothManager = attributionContext.getSystemService(BluetoothManager::class.java)
         bluetoothManager.adapter.bluetoothLeScanner!!
@@ -81,76 +100,23 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-    private val scanResultAdapter = ScanResultAdapter()
-
-    private var rssiThreshold = -100f
-    private var batchScan = false
-    private var scanMode = ScanSettings.SCAN_MODE_LOW_POWER
-    private var isScanning = false
-
-    private lateinit var scanResultsRecyclerView: RecyclerView
-    private lateinit var rssiSlider: Slider
-    private lateinit var batchScanCheckbox: CheckBox
-    private lateinit var scanModeButton: Button
-    private lateinit var scanButton: Button
+    private val scanResults = mutableStateListOf<ScanResult>()
+    private var rssiThreshold by mutableFloatStateOf(-100f)
+    private var batchScan by mutableStateOf(false)
+    private var scanMode by mutableIntStateOf(ScanSettings.SCAN_MODE_LOW_POWER)
+    private var isScanning by mutableStateOf(false)
+    private var showScanModeMenu by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_main)
-
-        scanResultsRecyclerView = findViewById(R.id.scanResultsRecyclerView)
-        rssiSlider = findViewById(R.id.rssiSlider)
-        batchScanCheckbox = findViewById(R.id.batchScanCheckbox)
-        scanModeButton = findViewById(R.id.scanModeButton)
-        scanButton = findViewById(R.id.scanButton)
-
-        ViewCompat.setOnApplyWindowInsetsListener(scanButton) { v, windowInsets ->
-            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.updateLayoutParams<ViewGroup.MarginLayoutParams> { bottomMargin = insets.bottom }
-
-            WindowInsetsCompat.CONSUMED
-        }
-
-        ViewCompat.setOnApplyWindowInsetsListener(scanResultsRecyclerView) { v, insets ->
-            val bars =
-                insets.getInsets(
-                    WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
-                )
-            v.updatePadding(
-                left = bars.left,
-                top = bars.top,
-                right = bars.right,
-                bottom = bars.bottom,
-            )
-            WindowInsetsCompat.CONSUMED
-        }
-
-        scanResultsRecyclerView.adapter = scanResultAdapter
-        scanResultsRecyclerView.layoutManager = LinearLayoutManager(this)
-
-        rssiSlider.setLabelFormatter { value: Float -> "RSSI threshold: $value dBm" }
-
-        rssiSlider.addOnChangeListener { slider, value, fromUser ->
-            Log.d(TAG, "Slider value changed: $value")
-            rssiThreshold = value
-            if (isScanning) {
-                stopScan()
-            }
-        }
-
-        batchScanCheckbox.setOnCheckedChangeListener { _, isChecked -> batchScan = isChecked }
-
-        scanModeButton.setOnClickListener { configureScanMode(it) }
-
-        scanButton.setOnClickListener {
-            if (isScanning) {
-                stopScan()
-            } else {
-                if (checkPermissions()) {
-                    startScan()
-                } else {
-                    requestPermissions()
+        setContent {
+            MaterialTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background,
+                ) {
+                    MainScreen()
                 }
             }
         }
@@ -161,46 +127,120 @@ class MainActivity : AppCompatActivity() {
         stopScan()
     }
 
-    private fun configureScanMode(anchorView: View) {
-        val popup = PopupMenu(this, anchorView)
+    @Composable
+    @Preview
+    fun MainScreen() {
+        Scaffold(modifier = Modifier.fillMaxSize().systemBarsPadding()) { innerPadding ->
+            Column(modifier = Modifier.padding(innerPadding).padding(8.dp).fillMaxSize()) {
+                LazyColumn(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    items(scanResults) { result ->
+                        ScanResultItem(result)
+                        HorizontalDivider()
+                    }
+                }
 
-        popup.menu.add(0, ScanSettings.SCAN_MODE_LOW_POWER, 0, "Low Power")
-        popup.menu.add(0, ScanSettings.SCAN_MODE_BALANCED, 1, "Balanced")
-        popup.menu.add(0, ScanSettings.SCAN_MODE_LOW_LATENCY, 2, "Low Latency")
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(text = "RSSI threshold: ${rssiThreshold.toInt()} dBm")
+                    Slider(
+                        value = rssiThreshold,
+                        onValueChange = {
+                            rssiThreshold = it
+                            if (isScanning) stopScan()
+                        },
+                        valueRange = -120f..-50f,
+                        steps = 13, // Calculated from stepSize 5.0
+                    )
 
-        popup.setOnMenuItemClickListener { menuItem ->
-            scanMode = menuItem.itemId
-            scanModeButton.text = scanMode.toScanModeString()
-            if (isScanning) {
-                stopScan()
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = batchScan, onCheckedChange = { batchScan = it })
+                            Text("Batch Scan")
+                        }
+
+                        Box {
+                            Button(
+                                onClick = { showScanModeMenu = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = Green),
+                            ) {
+                                Text(scanMode.toScanModeString())
+                            }
+
+                            DropdownMenu(
+                                expanded = showScanModeMenu,
+                                onDismissRequest = { showScanModeMenu = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Low Power") },
+                                    onClick = { updateScanMode(ScanSettings.SCAN_MODE_LOW_POWER) },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Balanced") },
+                                    onClick = { updateScanMode(ScanSettings.SCAN_MODE_BALANCED) },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Low Latency") },
+                                    onClick = { updateScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY) },
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = { toggleScan() },
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = if (isScanning) Red else Blue
+                                ),
+                        ) {
+                            Text(if (isScanning) "Stop Scan" else "Start Scan")
+                        }
+                    }
+                }
             }
-            true
-        }
-
-        popup.show()
-    }
-
-    private fun checkPermissions(): Boolean {
-        return REQUIRED_PERMISSIONS.all {
-            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
     }
 
-    private fun requestPermissions() {
-        requestBluetoothPermissions.launch(REQUIRED_PERMISSIONS)
+    @SuppressLint("MissingPermission")
+    @Composable
+    fun ScanResultItem(result: ScanResult) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = result.device?.name ?: "N/A",
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+            )
+            Text(text = result.device?.address ?: "N/A", fontSize = 14.sp)
+            Text(text = "RSSI: ${result.rssi} dBm", fontSize = 14.sp)
+        }
     }
 
+    private fun updateScanMode(mode: Int) {
+        scanMode = mode
+        showScanModeMenu = false
+        if (isScanning) stopScan()
+    }
+
+    private fun toggleScan() {
+        if (isScanning) {
+            stopScan()
+        } else {
+            if (checkPermissions()) {
+                startScan()
+            } else {
+                requestBluetoothPermissions.launch(REQUIRED_PERMISSIONS)
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
     private fun startScan() {
-        if (
-            ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) !=
-                PackageManager.PERMISSION_GRANTED
-        ) {
-            return
-        }
+        if (!checkPermissions()) return
 
-        scanResultAdapter.clearResults()
+        scanResults.clear()
 
-        val scanFilters: List<ScanFilter> = emptyList()
         val scanSettings =
             ScanSettings.Builder()
                 .setReportDelay(if (batchScan) 5000 else 0)
@@ -209,55 +249,48 @@ class MainActivity : AppCompatActivity() {
                 .build()
 
         isScanning = true
-        scanButton.text = "Stop Scan"
-        scanButton.backgroundTintList =
-            ColorStateList.valueOf(ContextCompat.getColor(this, R.color.red))
-        bluetoothLeScanner.startScan(scanFilters, scanSettings, leScanCallback)
+        leScanner.startScan(emptyList(), scanSettings, leScanCallback)
     }
 
+    @SuppressLint("MissingPermission")
     private fun stopScan() {
-        if (!isScanning) {
-            Log.d(TAG, "Scan already stopped.")
-            return
-        }
-
-        if (
-            ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) !=
-                PackageManager.PERMISSION_GRANTED
-        ) {
-            return
-        }
+        if (!isScanning) return
+        if (!checkPermissions()) return
 
         toast("Scan stopped")
         isScanning = false
-        scanButton.text = "Start Scan"
-        scanButton.backgroundTintList =
-            ColorStateList.valueOf(ContextCompat.getColor(this, R.color.blue))
-        bluetoothLeScanner.stopScan(leScanCallback)
+        leScanner.stopScan(leScanCallback)
     }
 
     private val leScanCallback: ScanCallback =
         object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
-                super.onScanResult(callbackType, result)
-                runOnUiThread { scanResultAdapter.addScanResult(result) }
+                handleScanResult(result)
             }
 
             override fun onBatchScanResults(results: MutableList<ScanResult>?) {
-                super.onBatchScanResults(results)
-                results?.forEach { result ->
-                    runOnUiThread { scanResultAdapter.addScanResult(result) }
-                }
+                results?.forEach { handleScanResult(it) }
             }
 
             override fun onScanFailed(errorCode: Int) {
-                super.onScanFailed(errorCode)
-                Log.e(TAG, "Scan Failed with error code: $errorCode")
-
                 runOnUiThread {
                     toast("Scan failed: ${errorCode.toScanErrorMessage()}")
                     stopScan()
                 }
             }
+        }
+
+    private fun handleScanResult(result: ScanResult) {
+        val index = scanResults.indexOfFirst { it.device?.address == result.device?.address }
+        if (index == -1) {
+            scanResults.add(result)
+        } else {
+            scanResults[index] = result
+        }
+    }
+
+    private fun checkPermissions() =
+        REQUIRED_PERMISSIONS.all {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
 }

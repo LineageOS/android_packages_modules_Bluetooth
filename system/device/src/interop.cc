@@ -252,11 +252,10 @@ bool interop_match_addr_get_max_lat(const interop_feature_t feature, const RawAd
   return interop_database_match_addr_get_max_lat(feature, addr, max_lat);
 }
 
-void interop_database_add(const uint16_t feature, const RawAddress* addr, size_t length) {
-  log::assert_that(addr != nullptr, "assert failed: addr != nullptr");
+void interop_database_add(const uint16_t feature, RawAddress addr, size_t length) {
   log::assert_that(length > 0, "assert failed: length > 0");
   log::assert_that(length < sizeof(RawAddress), "assert failed: length < sizeof(RawAddress)");
-  interop_database_add_addr(feature, addr, length);
+  interop_database_add_addr(feature, &addr, length);
 }
 
 void interop_database_clear() {

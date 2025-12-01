@@ -52,11 +52,24 @@ enum class Status {
 class StreamCallbacks {
 public:
   virtual ~StreamCallbacks() {}
-  virtual Status StartStream(bool /*low_latency*/) const { return Status::FAILURE; }
-  virtual Status SuspendStream() const { return Status::FAILURE; }
-  virtual Status StopStream() const { return SuspendStream(); }
-  virtual Status SetLatencyMode(bool /*low_latency*/) const { return Status::FAILURE; }
+  virtual Status StartStream(bool /*low_latency*/) const {
+    log::error("unimplemented");
+    return Status::FAILURE;
+  }
+  virtual Status SuspendStream() const {
+    log::error("unimplemented");
+    return Status::FAILURE;
+  }
+  virtual Status StopStream() const {
+    log::error("unimplemented");
+    return Status::FAILURE;
+  }
+  virtual Status SetLatencyMode(bool /*low_latency*/) const {
+    log::error("unimplemented");
+    return Status::FAILURE;
+  }
   virtual Status SourceMetadataChanged(btav_a2dp_codec_audio_context_t /*audio_context*/) const {
+    log::error("unimplemented");
     return Status::FAILURE;
   }
 };
@@ -84,6 +97,9 @@ bool is_hal_offloading();
 // Initialize BluetoothAudio HAL: openProvider
 bool init(bluetooth::common::MessageLoopThread* message_loop,
           StreamCallbacks const* strean_callbacks, bool offload_enabled);
+
+// Initialize BluetoothAudio HAL for decoding session
+bool init_decoder(StreamCallbacks const* stream_callbacks, bool offload_enabled);
 
 // Clean up BluetoothAudio HAL
 void cleanup();
@@ -192,7 +208,7 @@ struct a2dp_remote_capabilities {
 std::optional<a2dp_configuration> get_a2dp_configuration(
         RawAddress peer_address, std::vector<a2dp_remote_capabilities> const& remote_seps,
         btav_a2dp_codec_config_t const& user_preferences,
-        ::bluetooth::a2dp::CodecId user_preferred_codec_id);
+        ::bluetooth::a2dp::CodecId user_preferred_codec_id, bool is_source);
 
 // Query the codec parameters from the audio HAL.
 // The HAL is expected to parse the codec configuration

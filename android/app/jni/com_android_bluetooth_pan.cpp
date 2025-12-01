@@ -54,7 +54,7 @@ static void control_state_callback(btpan_control_state_t state, int local_role, 
 }
 
 static void connection_state_callback(btpan_connection_state_t state, BtStatus error,
-                                      const RawAddress* bd_addr, int local_role, int remote_role) {
+                                      const RawAddress bd_addr, int local_role, int remote_role) {
   log::debug("state:{}, local_role:{}, remote_role:{}", state, local_role, remote_role);
   if (mCallbacksObj == NULL) {
     log::error("Callbacks Obj is NULL");
@@ -66,8 +66,7 @@ static void connection_state_callback(btpan_connection_state_t state, BtStatus e
     return;
   }
 
-  // TODO(b/424272093) Unchecked RawAddress* dereference.
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectStateChanged, jaddr.get(),
                                (jint)state, (jint)error, (jint)local_role, (jint)remote_role);
 }

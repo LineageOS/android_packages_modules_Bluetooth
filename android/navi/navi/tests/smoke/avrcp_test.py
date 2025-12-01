@@ -54,7 +54,6 @@ class AvrcpDelegate(avrcp.Delegate):
         super().__init__(supported_events)
         self.condition = asyncio.Condition()
 
-    @override
     async def set_absolute_volume(self, volume: int) -> None:
         await super().set_absolute_volume(volume)
         async with self.condition:

@@ -178,6 +178,42 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     switch (code) {
       case SubeventCode::CONNECTION_COMPLETE:
       case SubeventCode::ENHANCED_CONNECTION_COMPLETE:
+        if (com::android::bluetooth::flags::resolve_collision_conn_discon()) {
+          uint16_t handle = kIllegalConnectionHandle;
+          if (code == SubeventCode::CONNECTION_COMPLETE) {
+            auto connection_complete = LeConnectionCompleteView::Create(event_packet);
+            log::assert_that(connection_complete.IsValid(),
+                             "assert failed: connection_complete.IsValid()");
+            handle = connection_complete.GetConnectionHandle();
+          } else {  // code == SubeventCode::ENHANCED_CONNECTION_COMPLETE
+            auto enhanced_conn_complete = LeEnhancedConnectionCompleteView::Create(event_packet);
+            log::assert_that(enhanced_conn_complete.IsValid(),
+                             "assert failed: enhanced_conn_complete.IsValid()");
+            handle = enhanced_conn_complete.GetConnectionHandle();
+          }
+
+          if (round_robin_scheduler_.IsRegistered(handle)) {
+            /**
+             * There is already an ACL connection with the same handle, so this either could be a
+             * dupe, or a disconnection is in progress. So, it is wise to wait for the disconnection
+             * to complete before proceeding.
+             */
+            log::warn(
+                    "Connection already exists with the same handle ({}), waiting for "
+                    "disconnection "
+                    "to complete before proceeding, event: {}",
+                    handle, SubeventCodeText(code));
+
+            // Push to be handled later
+            if (pending_connection_complete_events_.find(handle) !=
+                pending_connection_complete_events_.end()) {
+              log::warn("Event already pending for handle: {}.", handle);
+            }
+            pending_connection_complete_events_.emplace(handle, std::move(event_packet));
+            return;  // our work here is done, the event will be processed later
+          }
+        }
+
         on_le_connection_complete(event_packet);
         break;
       case SubeventCode::CONNECTION_UPDATE_COMPLETE:
@@ -202,6 +238,9 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
 
 private:
   static constexpr uint16_t kIllegalConnectionHandle = 0xffff;
+  // Stores the connection_complete events which are not processed immediately because another
+  // connection with same handle is already available, suspecting a disconnection is in progress.
+  std::map<uint16_t, LeMetaEventView> pending_connection_complete_events_;
   struct {
   private:
     std::map<uint16_t, le_acl_connection> le_acl_connections_;
@@ -557,7 +596,7 @@ public:
                                                 remote_address, std::move(connection)));
     }
     if (com::android::bluetooth::flags::rotate_address_when_connected() &&
-        role == hci::Role::CENTRAL) {
+        role == hci::Role::CENTRAL && le_address_manager_->RotatingAddress()) {
       le_address_manager_->PrepareToRotateAddress();
     }
   }
@@ -617,6 +656,17 @@ public:
         log::info("re-add device to accept list with identity address");
         arm_on_resume_ = true;
         add_device_to_accept_list(identity_addr);
+      }
+    }
+
+    // Check & process if there is any pending connection_complete event for this handle.
+    if (com::android::bluetooth::flags::resolve_collision_conn_discon()) {
+      auto it = pending_connection_complete_events_.find(handle);
+      if (it != pending_connection_complete_events_.end()) {
+        LeMetaEventView event_view = std::move(it->second);
+        pending_connection_complete_events_.erase(it);
+        handler_->Post(common::BindOnce(&le_impl::on_le_connection_complete,
+                                        common::Unretained(this), std::move(event_view)));
       }
     }
   }

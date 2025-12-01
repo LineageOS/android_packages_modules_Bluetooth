@@ -183,4 +183,12 @@ object Utils {
     class IntConverter : TypeConverter<Int> {
         override fun convert(value: String): Int = value.toInt()
     }
+
+    class LongConverter : TypeConverter<Long> {
+        override fun convert(value: String): Long = value.toLong()
+    }
+
+    class BooleanConverter : TypeConverter<Boolean> {
+        override fun convert(value: String): Boolean = value.toBoolean()
+    }
 }

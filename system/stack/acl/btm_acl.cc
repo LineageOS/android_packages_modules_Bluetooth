@@ -1116,7 +1116,7 @@ void btm_rejectlist_role_change_device(const RawAddress& bd_addr, uint8_t hci_st
               "Device {} rejectlisted for role switching - multiple role switch "
               "failed attempts: {}",
               bd_addr, p->switch_role_failed_attempts);
-      interop_database_add(INTEROP_DYNAMIC_ROLE_SWITCH, &bd_addr, 3);
+      interop_database_add(INTEROP_DYNAMIC_ROLE_SWITCH, bd_addr, 3);
     }
   }
 }

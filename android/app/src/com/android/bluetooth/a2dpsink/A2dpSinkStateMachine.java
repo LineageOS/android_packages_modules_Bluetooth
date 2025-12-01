@@ -49,6 +49,7 @@ class A2dpSinkStateMachine extends StateMachine {
     // 100->199 Internal Events
     @VisibleForTesting static final int CLEANUP = 100;
     @VisibleForTesting static final int MESSAGE_CONNECT_TIMEOUT = 101;
+    @VisibleForTesting static final int MESSAGE_DISCONNECT_TIMEOUT = 102;
 
     // 200->299 Events from Native
     static final int MESSAGE_CONNECTION_STATE_CHANGED = 200;
@@ -56,6 +57,7 @@ class A2dpSinkStateMachine extends StateMachine {
     static final int MESSAGE_AUDIO_CONFIG_CHANGED = 202;
 
     static final int CONNECT_TIMEOUT_MS = 10000;
+    static final int DISCONNECT_TIMEOUT_MS = 4000;
 
     protected final BluetoothDevice mDevice;
     protected final A2dpSinkService mService;
@@ -294,7 +296,10 @@ class A2dpSinkStateMachine extends StateMachine {
             debug("Handle state=" + BluetoothProfile.getConnectionStateName(state));
             switch (state) {
                 case STATE_DISCONNECTING -> transitionTo(mDisconnecting);
-                case STATE_DISCONNECTED -> transitionTo(mDisconnected);
+                case STATE_DISCONNECTED -> {
+                    setMostRecentState(STATE_DISCONNECTING);
+                    transitionTo(mDisconnected);
+                }
                 default -> {} // Nothing to do
             }
         }
@@ -315,7 +320,34 @@ class A2dpSinkStateMachine extends StateMachine {
         public void enter() {
             debug("Enter");
             setMostRecentState(STATE_DISCONNECTING);
-            transitionTo(mDisconnected);
+            sendMessageDelayed(MESSAGE_DISCONNECT_TIMEOUT, DISCONNECT_TIMEOUT_MS);
+        }
+
+        @Override
+        public boolean processMessage(Message msg) {
+            debug("Handle msg=" + messageToString(msg.what));
+            switch (msg.what) {
+                case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(msg.arg1);
+                case MESSAGE_DISCONNECT_TIMEOUT -> transitionTo(mDisconnected);
+                case MESSAGE_CONNECT, MESSAGE_DISCONNECT -> deferMessage(msg);
+                default -> {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        void processConnectionEvent(int state) {
+            debug("Handle state=" + BluetoothProfile.getConnectionStateName(state));
+            switch (state) {
+                case STATE_DISCONNECTED -> transitionTo(mDisconnected);
+                default -> {} // Nothing to do
+            }
+        }
+
+        @Override
+        public void exit() {
+            removeMessages(MESSAGE_DISCONNECT_TIMEOUT);
         }
     }
 
@@ -333,7 +365,7 @@ class A2dpSinkStateMachine extends StateMachine {
     }
 
     private void debug(String msg) {
-        Log.w(TAG, "[" + mDevice + "] " + getCurrentState().getName() + ": " + msg);
+        Log.d(TAG, "[" + mDevice + "] " + getCurrentState().getName() + ": " + msg);
     }
 
     private static final String messageToString(int what) {
@@ -343,6 +375,7 @@ class A2dpSinkStateMachine extends StateMachine {
             case MESSAGE_CONNECT -> "MESSAGE_CONNECT";
             case MESSAGE_DISCONNECT -> "MESSAGE_DISCONNECT";
             case MESSAGE_CONNECT_TIMEOUT -> "MESSAGE_CONNECT_TIMEOUT";
+            case MESSAGE_DISCONNECT_TIMEOUT -> "MESSAGE_DISCONNECT_TIMEOUT";
             case MESSAGE_CONNECTION_STATE_CHANGED -> "MESSAGE_CONNECTION_STATE_CHANGED";
             case MESSAGE_AUDIO_STATE_CHANGED -> "MESSAGE_AUDIO_STATE_CHANGED";
             case MESSAGE_AUDIO_CONFIG_CHANGED -> "MESSAGE_AUDIO_CONFIG_CHANGED";

@@ -560,13 +560,33 @@ typedef enum {
   BT_SSP_VARIANT_PARTICIPATION  // Incoming LE pairing request
 } bt_ssp_variant_t;
 
+// This is inline with BluetoothDevice.EncryptionAlgorithm.
+enum class EncryptionAlgorithm : uint8_t {
+  NONE, /* Indicates encryption information is not available */
+  E0,
+  AES,
+  UNKNOWN, /* Indicates link was encrypted using unknown algorithm */
+};
+
+static inline std::string encryption_algorithm_text(
+        const EncryptionAlgorithm& encryption_algorithm) {
+  switch (encryption_algorithm) {
+    CASE_RETURN_STRING(EncryptionAlgorithm::NONE);
+    CASE_RETURN_STRING(EncryptionAlgorithm::E0);
+    CASE_RETURN_STRING(EncryptionAlgorithm::AES);
+    CASE_RETURN_STRING(EncryptionAlgorithm::UNKNOWN);
+    default:
+      RETURN_UNKNOWN_TYPE_STRING(EncryptionAlgorithm, encryption_algorithm);
+  }
+}
+
 typedef struct {
   RawAddress bd_addr;
   uint8_t status; /* bt_hci_error_code_t */
   bool encr_enable;
   uint8_t key_size;
   tBT_TRANSPORT transport;
-  bool secure_connections;
+  EncryptionAlgorithm encryption_algo;
 } bt_encryption_change_evt;
 
 #define BT_MAX_NUM_UUIDS 32
@@ -635,7 +655,7 @@ typedef void (*adapter_properties_callback)(bt_status_t status, int num_properti
 /** TODO: For remote device properties, do not see a need to get/set
  * multiple properties - num_properties shall be 1
  */
-typedef void (*remote_device_properties_callback)(bt_status_t status, RawAddress* bd_addr,
+typedef void (*remote_device_properties_callback)(bt_status_t status, RawAddress bd_addr,
                                                   uint8_t address_type, int num_properties,
                                                   bt_property_t* properties);
 
@@ -648,7 +668,7 @@ typedef void (*device_found_callback)(int num_properties, bt_property_t* propert
 typedef void (*discovery_state_changed_callback)(bt_discovery_state_t state);
 
 /** Bluetooth Legacy PinKey Request callback */
-typedef void (*pin_request_callback)(RawAddress* remote_bd_addr, bt_bdname_t* bd_name, uint32_t cod,
+typedef void (*pin_request_callback)(RawAddress remote_bd_addr, bt_bdname_t* bd_name, uint32_t cod,
                                      bool min_16_digit, PairingAlgorithm pairing_algorithm);
 
 /** Bluetooth SSP Request callback - Just Works & Numeric Comparison*/
@@ -656,26 +676,24 @@ typedef void (*pin_request_callback)(RawAddress* remote_bd_addr, bt_bdname_t* bd
  *  BT_SSP_PAIRING_PASSKEY_ENTRY */
 /* TODO: Passkey request callback shall not be needed for devices with display
  * capability. We still need support this in the stack for completeness */
-typedef void (*ssp_request_callback)(RawAddress* remote_bd_addr, bt_ssp_variant_t pairing_variant,
+typedef void (*ssp_request_callback)(RawAddress remote_bd_addr, bt_ssp_variant_t pairing_variant,
                                      uint32_t pass_key, PairingAlgorithm pairing_algorithm);
 
 /** Bluetooth Bond state changed callback */
 /* Invoked in response to create_bond, cancel_bond or remove_bond */
-typedef void (*bond_state_changed_callback)(bt_status_t status, RawAddress* remote_bd_addr,
+typedef void (*bond_state_changed_callback)(bt_status_t status, RawAddress remote_bd_addr,
                                             tBT_TRANSPORT transport, bt_bond_state_t state,
                                             PairingType pairing_type, int fail_reason);
 
 /** Bluetooth Address consolidate callback */
 /* Callback to inform upper layer that these two addresses come from same
  * bluetooth device (DUAL mode) */
-typedef void (*address_consolidate_callback)(RawAddress* main_bd_addr,
-                                             RawAddress* secondary_bd_addr);
+typedef void (*address_consolidate_callback)(RawAddress main_bd_addr, RawAddress secondary_bd_addr);
 
 /** Bluetooth LE Address association callback */
 /* Callback for the upper layer to associate the LE-only device's RPA to the
  * identity address and identity address type */
-typedef void (*le_address_associate_callback)(RawAddress* main_bd_addr,
-                                              RawAddress* secondary_bd_addr,
+typedef void (*le_address_associate_callback)(RawAddress main_bd_addr, RawAddress secondary_bd_addr,
                                               uint8_t identity_address_type);
 
 /** Bluetooth ACL connection state changed callback */
@@ -854,7 +872,7 @@ typedef struct {
   int (*set_remote_device_property)(RawAddress remote_addr, const bt_property_t* property);
 
   /** Get Remote Device's service record  for the given UUID */
-  int (*get_remote_service_record)(const RawAddress& remote_addr, const bluetooth::Uuid& uuid);
+  int (*get_remote_service_record)(RawAddress remote_addr, const bluetooth::Uuid& uuid);
 
   /** Start service discovery with transport to get remote services */
   int (*get_remote_services)(RawAddress remote_addr, int transport);
@@ -944,7 +962,7 @@ typedef struct {
    * NOTE: |feature| has to match an item defined in interop_feature_t
    * (interop.h).
    */
-  void (*interop_database_add)(uint16_t feature, const RawAddress* addr, size_t len);
+  void (*interop_database_add)(uint16_t feature, RawAddress addr, size_t len);
 
   /**
    * Get the AvrcpTarget Service interface to interact with the Avrcp Service
@@ -957,7 +975,7 @@ typedef struct {
    * @param address Bluetooth MAC address to be obfuscated
    * @return a string of uint8_t that is unique to this MAC address
    */
-  std::string (*obfuscate_address)(const RawAddress& address);
+  std::string (*obfuscate_address)(RawAddress address);
 
   /**
    * Get an incremental id for as primary key for Bluetooth metric and log
@@ -965,7 +983,7 @@ typedef struct {
    * @param address Bluetooth MAC address of Bluetooth device
    * @return int incremental Bluetooth id
    */
-  int (*get_metric_id)(const RawAddress& address);
+  int (*get_metric_id)(RawAddress address);
 
   /**
    * Set the dynamic audio buffer size to the Controller
@@ -984,7 +1002,7 @@ typedef struct {
    * @param address Bluetooth MAC address of Bluetooth device
    * @return true if audio low latency is successfully allowed or disallowed
    */
-  bool (*allow_low_latency_audio)(bool allowed, const RawAddress& address);
+  bool (*allow_low_latency_audio)(bool allowed, RawAddress address);
 
   /**
    * Set the event filter for the controller
@@ -1009,7 +1027,7 @@ typedef struct {
   /**
    * Call to disconnect ACL connection to device
    */
-  int (*disconnect_acl)(const RawAddress& bd_addr, int transport);
+  int (*disconnect_acl)(RawAddress bd_addr, int transport);
 
   /**
    * Call to retrieve a generated random
@@ -1080,26 +1098,26 @@ typedef struct {
    * @param key Metadata key
    * @param value Metadata value
    */
-  void (*metadata_changed)(const RawAddress& remote_bd_addr, int key, std::vector<uint8_t> value);
+  void (*metadata_changed)(RawAddress remote_bd_addr, int key, std::vector<uint8_t> value);
 
   /** interop match address */
-  bool (*interop_match_addr)(const char* feature_name, const RawAddress* addr);
+  bool (*interop_match_addr)(const char* feature_name, RawAddress addr);
 
   /** interop match name */
   bool (*interop_match_name)(const char* feature_name, const char* name);
 
   /** interop match address or name */
-  bool (*interop_match_addr_or_name)(const char* feature_name, const RawAddress* addr);
+  bool (*interop_match_addr_or_name)(const char* feature_name, RawAddress addr);
 
   /** add or remove address entry to interop database */
-  void (*interop_database_add_remove_addr)(bool do_add, const char* feature_name,
-                                           const RawAddress* addr, int length);
+  void (*interop_database_add_remove_addr)(bool do_add, const char* feature_name, RawAddress addr,
+                                           int length);
 
   /** add or remove name entry to interop database */
   void (*interop_database_add_remove_name)(bool do_add, const char* feature_name, const char* name);
 
   /** get remote Pbap PCE  version*/
-  int (*get_remote_pbap_pce_version)(const RawAddress* bd_addr);
+  int (*get_remote_pbap_pce_version)(RawAddress bd_addr);
 
   /** check if pbap pse dynamic version upgrade is enable */
   bool (*pbap_pse_dynamic_version_upgrade_is_enabled)();
@@ -1128,6 +1146,9 @@ struct formatter<BtIoCap> : formatter<std::string> {
     return std::formatter<std::string>::format(BtIoCapText(io_cap), ctx);
   }
 };
+template <>
+struct formatter<EncryptionAlgorithm>
+    : string_formatter<EncryptionAlgorithm, &encryption_algorithm_text> {};
 template <>
 struct formatter<PairingAlgorithm> : string_formatter<PairingAlgorithm, &pairing_algorithm_text> {};
 template <>

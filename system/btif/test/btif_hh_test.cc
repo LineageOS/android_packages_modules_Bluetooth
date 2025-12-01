@@ -219,11 +219,11 @@ TEST_F(BtifHhWithDevice, BTA_HH_GET_RPT_EVT) {
 
   g_bthh_callbacks_get_report_promise = std::promise<get_report_cb_t>();
   auto future = g_bthh_callbacks_get_report_promise.get_future();
-  bthh_callbacks.get_report_cb = [](RawAddress* bd_addr, tBLE_ADDR_TYPE /* addr_type */,
+  bthh_callbacks.get_report_cb = [](RawAddress bd_addr, tBLE_ADDR_TYPE /* addr_type */,
                                     tBT_TRANSPORT /* transport */, bthh_status_t hh_status,
                                     uint8_t* rpt_data, int rpt_size) {
     get_report_cb_t report = {
-            .raw_address = *bd_addr,
+            .raw_address = bd_addr,
             .status = hh_status,
             .data = std::vector<uint8_t>(),
     };
@@ -249,21 +249,20 @@ class BtifHHVirtualUnplugTest : public BtifHhAdapterReady {
 protected:
   void SetUp() override {
     BtifHhAdapterReady::SetUp();
-    bthh_callbacks.connection_state_cb = [](RawAddress* bd_addr, tBLE_ADDR_TYPE /* addr_type */,
-                                            tBT_TRANSPORT /* transport */,
-                                            bthh_connection_state_t state,
-                                            bthh_status_t /* hh_status */) {
-      connection_state_cb_t connection_state = {
-              .raw_address = *bd_addr,
-              .state = state,
-      };
-      g_bthh_connection_state_promise.set_value(connection_state);
-    };
+    bthh_callbacks.connection_state_cb =
+            [](RawAddress bd_addr, tBLE_ADDR_TYPE /* addr_type */, tBT_TRANSPORT /* transport */,
+               bthh_connection_state_t state, bthh_status_t /* hh_status */) {
+              connection_state_cb_t connection_state = {
+                      .raw_address = bd_addr,
+                      .state = state,
+              };
+              g_bthh_connection_state_promise.set_value(connection_state);
+            };
   }
 
   void TearDown() override {
     bthh_callbacks.connection_state_cb =
-            [](RawAddress* /* bd_addr */, tBLE_ADDR_TYPE /* addr_type */,
+            [](RawAddress /* bd_addr */, tBLE_ADDR_TYPE /* addr_type */,
                tBT_TRANSPORT /* transport */, bthh_connection_state_t /* state */,
                bthh_status_t /* hh_status */) {};
     BtifHhAdapterReady::TearDown();

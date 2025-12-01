@@ -137,7 +137,7 @@ typedef struct {
 /** Callback for connection state change.
  *  state will have one of the values from bthh_connection_state_t
  */
-typedef void (*bthh_connection_state_callback)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+typedef void (*bthh_connection_state_callback)(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                                tBT_TRANSPORT transport,
                                                bthh_connection_state_t state,
                                                bthh_status_t hh_status);
@@ -145,40 +145,40 @@ typedef void (*bthh_connection_state_callback)(RawAddress* bd_addr, tBLE_ADDR_TY
 /** Callback for vitual unplug api.
  *  the status of the vitual unplug
  */
-typedef void (*bthh_virtual_unplug_callback)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+typedef void (*bthh_virtual_unplug_callback)(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                              tBT_TRANSPORT transport, bthh_status_t hh_status);
 
 /** Callback for get hid info
  *  hid_info will contain attr_mask, sub_class, app_id, vendor_id, product_id,
  * version, ctry_code, len
  */
-typedef void (*bthh_hid_info_callback)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+typedef void (*bthh_hid_info_callback)(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                        tBT_TRANSPORT transport, bthh_hid_info_t hid_info);
 
 /** Callback for get protocol api.
  *  the protocol mode is one of the value from bthh_protocol_mode_t
  */
-typedef void (*bthh_protocol_mode_callback)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+typedef void (*bthh_protocol_mode_callback)(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                             tBT_TRANSPORT transport, bthh_status_t hh_status,
                                             bthh_protocol_mode_t mode);
 
 /** Callback for get/set_idle_time api.
  */
-typedef void (*bthh_idle_time_callback)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+typedef void (*bthh_idle_time_callback)(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                         tBT_TRANSPORT transport, bthh_status_t hh_status,
                                         int idle_rate);
 
 /** Callback for get report api.
  *  if staus is ok rpt_data contains the report data
  */
-typedef void (*bthh_get_report_callback)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+typedef void (*bthh_get_report_callback)(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                          tBT_TRANSPORT transport, bthh_status_t hh_status,
                                          uint8_t* rpt_data, int rpt_size);
 
 /** Callback for set_report/set_protocol api and if error
  *  occurs for get_report/get_protocol api.
  */
-typedef void (*bthh_handshake_callback)(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
+typedef void (*bthh_handshake_callback)(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                         tBT_TRANSPORT transport, bthh_status_t hh_status);
 
 /** BT-HH callback structure. */

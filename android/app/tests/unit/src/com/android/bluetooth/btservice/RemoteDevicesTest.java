@@ -17,6 +17,7 @@
 package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
+import static android.bluetooth.BluetoothClass.Device.Major.UNCATEGORIZED;
 import static android.bluetooth.BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
@@ -65,6 +66,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.HandlerThread;
 import android.os.Message;
+import android.os.SystemProperties;
 import android.os.TestLooperManager;
 import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
@@ -104,7 +106,10 @@ import java.util.Optional;
 @MediumTest
 @RunWith(ParameterizedAndroidJunit4.class)
 public class RemoteDevicesTest {
-    @Rule public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(Config.class);
+    @Rule
+    public final StaticMockitoRule mMockitoRule =
+            new StaticMockitoRule(Config.class, SystemProperties.class);
+
     @Rule public final SetFlagsRule mSetFlagsRule;
 
     @Mock private AdapterService mAdapterService;
@@ -131,13 +136,14 @@ public class RemoteDevicesTest {
         mInOrder = inOrder(mAdapterService);
         mHandlerThread = new HandlerThread("RemoteDevicesTestHandlerThread");
         mHandlerThread.start();
-        mTestLooperManager =
-                InstrumentationRegistry.getInstrumentation()
-                        .acquireLooperManager(mHandlerThread.getLooper());
+        var instrumentation = InstrumentationRegistry.getInstrumentation();
+        mTestLooperManager = instrumentation.acquireLooperManager(mHandlerThread.getLooper());
 
         mockGetBluetoothManager(mAdapterService);
         mockGetSystemService(mAdapterService, CompanionDeviceManager.class);
         doReturn(mPackageManager).when(mAdapterService).getPackageManager();
+        doReturn(UNCATEGORIZED).when(mAdapterService).getRemoteClass(mDevice);
+
         mRemoteDevices = new RemoteDevices(mAdapterService, mHandlerThread.getLooper());
         verify(mAdapterService).getSystemService(BluetoothManager.class);
         verify(mAdapterService, times(2)).getPackageManager();
@@ -958,6 +964,74 @@ public class RemoteDevicesTest {
                 0, // hciReason
                 1); // handle
         verifyIntentSent(hasAction(BluetoothAdapter.ACTION_BLE_ACL_DISCONNECTED));
+    }
+
+    @Test
+    public void deviceFoundCallback_callsDiscoveryResultHandler() {
+        // When discovery result restriction is disabled
+        ExtendedMockito.doReturn(false)
+                .when(
+                        () ->
+                                SystemProperties.getBoolean(
+                                        "bluetooth.restrict_discovered_device.enabled", false));
+
+        // And device properties exist
+        DeviceProperties deviceProp =
+                mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+        assertThat(deviceProp).isNotNull();
+
+        // Then discovery result handler should be called
+        mRemoteDevices.deviceFoundCallback(Utils.getByteAddress(mDevice));
+        verify(mAdapterService).discoveryResultHandler(eq(deviceProp));
+    }
+
+    @Test
+    public void deviceFoundCallback_noProperties_doesNothing() {
+        // When device properties do not exist for a device
+        assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
+
+        // Then discovery result handler should not be called
+        mRemoteDevices.deviceFoundCallback(Utils.getByteAddress(mDevice));
+        verify(mAdapterService, never()).discoveryResultHandler(any());
+    }
+
+    @Test
+    public void deviceFoundCallback_restrictedNoName_doesNothing() {
+        // When discovery result restriction is enabled
+        ExtendedMockito.doReturn(true)
+                .when(
+                        () ->
+                                SystemProperties.getBoolean(
+                                        "bluetooth.restrict_discovered_device.enabled", false));
+
+        // And device properties exist but device name is null
+        DeviceProperties deviceProp =
+                mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+        assertThat(deviceProp).isNotNull();
+        assertThat(deviceProp.getName()).isNull();
+
+        // Then discovery result handler should not be called
+        mRemoteDevices.deviceFoundCallback(Utils.getByteAddress(mDevice));
+        verify(mAdapterService, never()).discoveryResultHandler(any());
+    }
+
+    @Test
+    public void deviceFoundCallback_restrictedWithName_callsDiscoveryResultHandler() {
+        // When discovery result restriction is enabled
+        ExtendedMockito.doReturn(true)
+                .when(
+                        () ->
+                                SystemProperties.getBoolean(
+                                        "bluetooth.restrict_discovered_device.enabled", false));
+
+        // And device properties exist with a valid device name
+        DeviceProperties deviceProp =
+                mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+        deviceProp.setName("Test Device");
+
+        // Then discovery result handler should be called
+        mRemoteDevices.deviceFoundCallback(Utils.getByteAddress(mDevice));
+        verify(mAdapterService).discoveryResultHandler(eq(deviceProp));
     }
 
     private static Object[] getXEventArray(int batteryLevel, int numLevels) {

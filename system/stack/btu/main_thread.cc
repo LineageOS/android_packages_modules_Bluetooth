@@ -78,4 +78,5 @@ void main_thread_start_up() {
   }
 }
 
+void main_thread_suspend() { main_thread.Suspend(); }
 void main_thread_shut_down() { main_thread.ShutDown(); }

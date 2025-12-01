@@ -15,7 +15,6 @@
 import asyncio
 import contextlib
 import datetime
-from typing import Coroutine
 from unittest import mock
 import uuid
 
@@ -33,6 +32,7 @@ from navi.utils import bl4a_api
 from navi.utils import errors
 
 _DEFAULT_STEP_TIMEOUT_SECONDS = 5.0
+_PENDING_CONNECTION_WAIT_SECONDS = 3.0
 
 _PairingDelegate = pairing.PairingDelegate
 
@@ -86,7 +86,6 @@ class RfcommSocketTest(navi_test_base.TwoDevicesTestBase):
     Returns:
       An asyncio queue for the RFCOMM server's incoming DLC.
     """
-
         accept_queue = asyncio.Queue[rfcomm.DLC](maxsize=1)
         rfcomm_channel = rfcomm_server.listen(acceptor=accept_queue.put_nowait,)
         self.logger.info(
@@ -118,7 +117,6 @@ class RfcommSocketTest(navi_test_base.TwoDevicesTestBase):
     Args:
       num_connections: The number of RFCOMM socket connections to create.
     """
-
         # Initialize RFCOMM sockets server on REF.
         rfcomm_server = rfcomm.Server(self.ref.device)
 
@@ -133,7 +131,7 @@ class RfcommSocketTest(navi_test_base.TwoDevicesTestBase):
         await self._setup_pairing()
 
         # Create RFCOMM sockets connection from DUT to REF.
-        rfcomm_connection_coroutines_list = [
+        rfcomm_sockets = [
             self.dut.bl4a.create_rfcomm_channel_async(
                 address=self.ref.address,
                 secure=True,
@@ -146,7 +144,9 @@ class RfcommSocketTest(navi_test_base.TwoDevicesTestBase):
             self.logger.info("[REF] Wait for all RFCOMM connections to be accepted.")
             server_accept_results = await asyncio.gather(*[q.get() for q in ref_accept_queues])
             self.logger.info("[DUT] Wait for all RFCOMM connections to complete.")
-            await asyncio.gather(*rfcomm_connection_coroutines_list)
+            await asyncio.gather(
+                *[rfcomm_socket.wait_for_connected() for rfcomm_socket in rfcomm_sockets])
+            self.logger.info("[DUT] All RFCOMM connections completed.")
 
             # Verify both RFCOMM sockets connection are successful.
             for dlc_result in server_accept_results:
@@ -158,7 +158,7 @@ class RfcommSocketTest(navi_test_base.TwoDevicesTestBase):
                     f" {dlc_result.state.name}",
                 )
 
-    async def test_concurrent_rfcomm_connect_fail_raises_exception(self) -> None:
+    async def test_concurrent_rfcomm_connect_fail_raises_exception(self,) -> None:
         """Tests concurrent RFCOMM connect fail should raises exception.
 
     Typical duration: 30-60s.
@@ -203,7 +203,7 @@ class RfcommSocketTest(navi_test_base.TwoDevicesTestBase):
             custom_on_l2cap_connection_request)
 
         ref_accept_future = asyncio.get_running_loop().create_future()
-        rfcomm_connection_coroutines_list: list[Coroutine[None, None, bl4a_api.RfcommChannel]] = []
+        rfcomm_sockets: list[bl4a_api.RfcommChannel] = []
 
         rfcomm_server = rfcomm.Server(self.ref.device)
         for i in range(2):
@@ -222,7 +222,7 @@ class RfcommSocketTest(navi_test_base.TwoDevicesTestBase):
             )
 
             # Create RFCOMM socket connection from DUT to REF.
-            rfcomm_connection_coroutines_list.append(
+            rfcomm_sockets.append(
                 self.dut.bl4a.create_rfcomm_channel_async(
                     address=self.ref.address,
                     secure=True,
@@ -249,9 +249,80 @@ class RfcommSocketTest(navi_test_base.TwoDevicesTestBase):
 
             # wait for both RFCOMM sockets connection to fail.
             async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
-                for coro in rfcomm_connection_coroutines_list:
-                    with self.assertRaises(errors.SnippetError):
-                        await coro
+                for rfcomm_socket in rfcomm_sockets:
+                    with self.assertRaises(errors.ConnectionError):
+                        await rfcomm_socket.wait_for_connected()
+
+    async def test_rfcomm_connect_after_page_timeout(self) -> None:
+        """Tests RFCOMM connect after page timeout.
+
+    Typical duration: 30-60s.
+
+    Test steps:
+      1. Pair DUT and REF.
+      2. Disable inquiry and page scan of REF.
+      4. Create and connect to an RFCOMM socket - expect not connected because
+      of REF non-connectable.
+      5. Wait 3 seconds.
+      6. Before page timeout of 5 seconds, close the socket.
+      7. Enable inquiry and page scan of REF.
+      8. Create and connect to an RFCOMM socket - verify proper should be
+      connected.
+    """
+        # Pair DUT and REF.
+        await self._setup_pairing()
+
+        # Set REF to be non-connectable and non-discoverable.
+        self.logger.info("[REF] Setting device to be non-connectable.")
+        await self.ref.device.set_discoverable(False)
+        await self.ref.device.set_connectable(False)
+
+        # Create RFCOMM sockets server on REF.
+        rfcomm_server = rfcomm.Server(self.ref.device)
+        rfcomm_uuid = str(uuid.uuid4())
+        accept_queue = self._setup_rfcomm_server_on_ref(0, rfcomm_uuid, rfcomm_server)
+
+        self.logger.info("[DUT] Attempting to connect to non-connectable REF (expecting to"
+                         " hang).")
+        rfcomm_socket = self.dut.bl4a.create_rfcomm_channel_async(
+            address=self.ref.address,
+            secure=False,
+            uuid=rfcomm_uuid,
+        )
+
+        # For Android device, the page timeout is 5 seconds.
+        # Wait for 3 seconds before page timeout of 5 seconds
+        await asyncio.sleep(_PENDING_CONNECTION_WAIT_SECONDS)
+
+        # Close the RFCOMM socket.
+        await rfcomm_socket.close()
+
+        # Set REF to be connectable and discoverable.
+        self.logger.info("[REF] Setting device to be connectable and discoverable.")
+        await self.ref.device.set_discoverable(True)
+        await self.ref.device.set_connectable(True)
+
+        self.logger.info("[DUT] Connect RFCOMM channel to REF.")
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS * 2):
+            ref_dut_dlc, dut_ref_dlc = await asyncio.gather(
+                accept_queue.get(),
+                self.dut.bl4a.create_rfcomm_channel(
+                    address=self.ref.address,
+                    secure=False,
+                    uuid=rfcomm_uuid,
+                ),
+            )
+
+        self.logger.info("[DUT] Verify RFCOMM channel is connected.")
+        self.assertEqual(
+            ref_dut_dlc.state,
+            rfcomm.DLC.State.CONNECTED,
+            "DLC connection failed. Expected state: CONNECTED, but got:"
+            f" {ref_dut_dlc.state.name}",
+        )
+
+        self.logger.info("[DUT] Disconnect RFCOMM channel.")
+        await dut_ref_dlc.close()
 
 
 if __name__ == "__main__":

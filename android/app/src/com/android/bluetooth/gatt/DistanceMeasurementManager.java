@@ -69,7 +69,7 @@ public class DistanceMeasurementManager {
     private static final int CS_HIGH_FREQUENCY_INTERVAL_MS = 100;
     private static final int THREAD_WAIT_TIMEOUT_MS = 2000;
 
-    // sync with system/gd/hic/DistanceMeasurementManager
+    // sync with system/gd/hci/DistanceMeasurementManager
     private static final int INVALID_AZIMUTH_ANGLE_DEGREE = -1;
     private static final int INVALID_ALTITUDE_ANGLE_DEGREE = -91;
 
@@ -565,6 +565,8 @@ public class DistanceMeasurementManager {
             int altitudeAngle,
             int errorAltitudeAngle,
             long elapsedRealtimeNanos,
+            int remoteTxPower, // TODO(b/462311235): Use this when creating related APIs
+            int reflectorRssi, // TODO(b/462311235): Use this when creating related APIs
             int confidenceLevel,
             double delaySpreadMeters,
             int detectedAttackLevel,
@@ -602,6 +604,7 @@ public class DistanceMeasurementManager {
                 if (velocityMetersPerSecond >= 0) {
                     builder.setVelocityMetersPerSecond(velocityMetersPerSecond);
                 }
+                // TODO(b/459954352): Set remoteTxPower and reflectorRssi when creating APIs
                 builder.setDetectedAttackLevel(detectedAttackLevel);
                 handleCsResult(address, builder.build());
             }

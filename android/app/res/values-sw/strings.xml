@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Huruhusu programu kufikia kidhibiti cha BluetoothShare na kukitumia kuhamisha faili."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"Orodha ya vifaa vyenye bluetooth vilivyoruhusiwa kufikia."</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Huruhusu programu kuorodhesha kwa muda Kifaa chenye Bluetooth kwenye orodha ya vifaa vilivyoruhusiwa, ikiruhusu kifaa hicho kutuma faili kwenye kifaa hiki bila uthibitishaji wa mtumiaji."</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetooth"</string>
     <string name="unknown_device" msgid="2317679521750821654">"Kifaa kisichojulikana"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"Haijulikani"</string>
@@ -112,10 +116,12 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"Fungua"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"Futa kutoka orodha"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"Futa"</string>
-    <string name="bluetooth_media_audio_queue_name" msgid="7521243473328258997">"Inayocheza Sasa"</string>
+    <!-- no translation found for bluetooth_media_audio_app_name (2389937877819723460) -->
+    <skip />
+    <!-- no translation found for bluetooth_media_audio_queue_name (2327164681598379428) -->
+    <skip />
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"Aikoni ya programu"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"Imeondoa sauti ya Bluetooth"</string>
-    <string name="bluetooth_media_audio_app_name" msgid="6035366346569127155">"Sauti ya Bluetooth"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"Haiwezi kutuma faili zinazozidi GB 4"</string>
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"Unganisha kwenye Bluetooth"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"Bluetooth itawashwa katika hali ya ndegeni"</string>

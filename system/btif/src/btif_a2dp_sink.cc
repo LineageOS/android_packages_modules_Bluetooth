@@ -37,6 +37,7 @@
 
 #include "a2dp_api.h"
 #include "a2dp_codec_api.h"
+#include "audio_hal_interface/a2dp_encoding.h"
 #include "avdt_api.h"
 #include "bta_av_api.h"
 #include "btif/include/btif_av.h"
@@ -210,9 +211,18 @@ bool btif_a2dp_sink_init() {
   return true;
 }
 
+class A2dpSinkStreamCallbacks : public bluetooth::audio::a2dp::StreamCallbacks {};
+
+static const A2dpSinkStreamCallbacks a2dp_sink_stream_callbacks;
+
 static void btif_a2dp_sink_init_delayed() {
   log::info("");
   btif_a2dp_sink_state = BTIF_A2DP_SINK_STATE_RUNNING;
+
+  if (com::android::bluetooth::flags::a2dp_sink_offload()) {
+    bluetooth::audio::a2dp::init_decoder(&a2dp_sink_stream_callbacks,
+                                         btif_av_is_a2dp_offload_enabled());
+  }
 }
 
 bool btif_a2dp_sink_startup() {
@@ -236,6 +246,8 @@ static void btif_a2dp_sink_on_decode_complete([[maybe_unused]] uint8_t* data,
 
 static bool btif_a2dp_sink_initialize_a2dp_control_block(const RawAddress& peer_address) {
   log::info("Initializing the control block for peer {}", peer_address);
+  std::unique_lock<std::mutex> lock(g_mutex);
+
   if (peer_address.IsEmpty()) {
     log::error("Peer address is empty. Control block cannot be initialized");
     return false;
@@ -285,12 +297,18 @@ static bool btif_a2dp_sink_initialize_a2dp_control_block(const RawAddress& peer_
   btif_a2dp_sink_cb.bits_per_sample = bits_per_sample;
   btif_a2dp_sink_cb.channel_count = channel_count;
 
+  // Release `g_mutex` before calling BtifAvrcpAudioTrackCreate which performs
+  // binder calls to the media framework. BtifAvrcpAudioTrackCreate does not
+  // modify the stack state and is not required to hold g_mutex.
+  lock.unlock();
   btif_a2dp_sink_cb.audio_track =
 #ifdef __ANDROID__
           BtifAvrcpAudioTrackCreate(sample_rate, bits_per_sample, channel_count);
 #else
           NULL;
 #endif
+
+  lock.lock();
   if (btif_a2dp_sink_cb.audio_track == nullptr) {
     log::error("track creation failed");
     return false;
@@ -315,7 +333,6 @@ bool btif_a2dp_sink_start_session(const RawAddress& peer_address,
 static void btif_a2dp_sink_start_session_delayed(const RawAddress& peer_address,
                                                  std::promise<void> peer_ready_promise) {
   log::info("");
-  LockGuard lock(g_mutex);
   btif_a2dp_sink_initialize_a2dp_control_block(peer_address);
   peer_ready_promise.set_value();
 }

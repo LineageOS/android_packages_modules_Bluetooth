@@ -60,6 +60,7 @@ class Property(enum.StrEnum):
     HAP_CLIENT_ENABLED = "bluetooth.profile.hap.client.enabled"
     HFP_AG_ENABLED = "bluetooth.profile.hfp.ag.enabled"
     HFP_HF_ENABLED = "bluetooth.profile.hfp.hf.enabled"
+    VAPS_SERVER_ENABLED = "bluetooth.profile.vap.server.enabled"
     # LE Audio.
     LEAUDIO_BYPASS_ALLOW_LIST = "persist.bluetooth.leaudio.bypass_allow_list"
     LEAUDIO_ALLOW_LIST = "persist.bluetooth.leaudio.allow_list"

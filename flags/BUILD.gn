@@ -30,6 +30,7 @@ aconfig("bluetooth_flags_c_lib") {
     "le_scanning.aconfig",
     "leaudio.aconfig",
     "mapclient.aconfig",
+    "media_audio.aconfig",
     "metric.aconfig",
     "native.aconfig",
     "opp.aconfig",

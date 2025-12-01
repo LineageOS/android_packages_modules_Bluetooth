@@ -219,7 +219,7 @@ static void adapter_properties_callback(bt_status_t status, int num_properties,
                                props.get());
 }
 
-static void remote_device_properties_callback(bt_status_t status, RawAddress* bd_addr,
+static void remote_device_properties_callback(bt_status_t status, RawAddress bd_addr,
                                               tBLE_ADDR_TYPE address_type, int num_properties,
                                               bt_property_t* properties) {
   std::shared_lock<std::shared_timed_mutex> lock(jniObjMutex);
@@ -233,7 +233,7 @@ static void remote_device_properties_callback(bt_status_t status, RawAddress* bd
     return;
   }
 
-  log::verbose("Device: {}, Status: {}, Properties: {}", *bd_addr, bt_status_text(status),
+  log::verbose("Device: {}, Status: {}, Properties: {}", bd_addr, bt_status_text(status),
                num_properties);
 
   if (status != BT_STATUS_SUCCESS) {
@@ -267,7 +267,7 @@ static void remote_device_properties_callback(bt_status_t status, RawAddress* bd
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
 
   jintArray typesPtr = types.get();
   jobjectArray propsPtr = props.get();
@@ -310,12 +310,13 @@ static void device_found_callback(int num_properties, bt_property_t* properties)
   ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), *addr);
 
   // Add device properties before announcing device found
-  remote_device_properties_callback(BT_STATUS_SUCCESS, addr, addr_type, num_properties, properties);
+  remote_device_properties_callback(BT_STATUS_SUCCESS, *addr, addr_type, num_properties,
+                                    properties);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_deviceFoundCallback, jaddr.get());
 }
 
-static void bond_state_changed_callback(bt_status_t status, RawAddress* bd_addr,
+static void bond_state_changed_callback(bt_status_t status, RawAddress bd_addr,
                                         tBT_TRANSPORT transport, bt_bond_state_t state,
                                         PairingType pairing_type, int fail_reason) {
   std::shared_lock<std::shared_timed_mutex> lock(jniObjMutex);
@@ -329,12 +330,7 @@ static void bond_state_changed_callback(bt_status_t status, RawAddress* bd_addr,
     return;
   }
 
-  if (!bd_addr) {
-    log::error("Address is null");
-    return;
-  }
-
-  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+  ScopedLocalRef<jbyteArray> jaddr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_bondStateChangeCallback, (jint)status,
                                jaddr.get(), (jint)transport, (jint)state,
@@ -342,7 +338,7 @@ static void bond_state_changed_callback(bt_status_t status, RawAddress* bd_addr,
                                (jint)fail_reason);
 }
 
-static void address_consolidate_callback(RawAddress* main_bd_addr, RawAddress* secondary_bd_addr) {
+static void address_consolidate_callback(RawAddress main_bd_addr, RawAddress secondary_bd_addr) {
   std::shared_lock<std::shared_timed_mutex> lock(jniObjMutex);
   if (!sJniCallbacksObj) {
     log::error("JNI obj is null. Failed to call JNI callback");
@@ -351,15 +347,15 @@ static void address_consolidate_callback(RawAddress* main_bd_addr, RawAddress* s
 
   CallbackEnv sCallbackEnv(__func__);
 
-  ScopedLocalRef<jbyteArray> main_addr = addressToJByteArray(sCallbackEnv.get(), *main_bd_addr);
+  ScopedLocalRef<jbyteArray> main_addr = addressToJByteArray(sCallbackEnv.get(), main_bd_addr);
   ScopedLocalRef<jbyteArray> secondary_addr =
-          addressToJByteArray(sCallbackEnv.get(), *secondary_bd_addr);
+          addressToJByteArray(sCallbackEnv.get(), secondary_bd_addr);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_addressConsolidateCallback, main_addr.get(),
                                secondary_addr.get());
 }
 
-static void le_address_associate_callback(RawAddress* main_bd_addr, RawAddress* secondary_bd_addr,
+static void le_address_associate_callback(RawAddress main_bd_addr, RawAddress secondary_bd_addr,
                                           uint8_t identity_address_type) {
   std::shared_lock<std::shared_timed_mutex> lock(jniObjMutex);
   if (!sJniCallbacksObj) {
@@ -369,9 +365,9 @@ static void le_address_associate_callback(RawAddress* main_bd_addr, RawAddress* 
 
   CallbackEnv sCallbackEnv(__func__);
 
-  ScopedLocalRef<jbyteArray> main_addr = addressToJByteArray(sCallbackEnv.get(), *main_bd_addr);
+  ScopedLocalRef<jbyteArray> main_addr = addressToJByteArray(sCallbackEnv.get(), main_bd_addr);
   ScopedLocalRef<jbyteArray> secondary_addr =
-          addressToJByteArray(sCallbackEnv.get(), *secondary_bd_addr);
+          addressToJByteArray(sCallbackEnv.get(), secondary_bd_addr);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_leAddressAssociateCallback, main_addr.get(),
                                secondary_addr.get(), (jint)identity_address_type);
@@ -415,13 +411,8 @@ static void discovery_state_changed_callback(bt_discovery_state_t state) {
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_discoveryStateChangeCallback, (jint)state);
 }
 
-static void pin_request_callback(RawAddress* bd_addr, bt_bdname_t* bdname, uint32_t cod,
+static void pin_request_callback(RawAddress bd_addr, bt_bdname_t* bdname, uint32_t cod,
                                  bool min_16_digits, PairingAlgorithm pairing_algorithm) {
-  if (!bd_addr) {
-    log::error("Address is null");
-    return;
-  }
-
   std::shared_lock<std::shared_timed_mutex> lock(jniObjMutex);
   if (!sJniCallbacksObj) {
     log::error("JNI obj is null. Failed to call JNI callback");
@@ -433,7 +424,7 @@ static void pin_request_callback(RawAddress* bd_addr, bt_bdname_t* bdname, uint3
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
   ScopedLocalRef<jbyteArray> devname(sCallbackEnv.get(),
                                      sCallbackEnv->NewByteArray(sizeof(bt_bdname_t)));
   if (!devname.get()) {
@@ -448,13 +439,8 @@ static void pin_request_callback(RawAddress* bd_addr, bt_bdname_t* bdname, uint3
                                devname.get(), cod, min_16_digits, (jint)pairing_algorithm);
 }
 
-static void ssp_request_callback(RawAddress* bd_addr, bt_ssp_variant_t pairing_variant,
+static void ssp_request_callback(RawAddress bd_addr, bt_ssp_variant_t pairing_variant,
                                  uint32_t pass_key, PairingAlgorithm pairing_algorithm) {
-  if (!bd_addr) {
-    log::error("Address is null");
-    return;
-  }
-
   std::shared_lock<std::shared_timed_mutex> lock(jniObjMutex);
   if (!sJniCallbacksObj) {
     log::error("JNI obj is null. Failed to call JNI callback");
@@ -466,7 +452,7 @@ static void ssp_request_callback(RawAddress* bd_addr, bt_ssp_variant_t pairing_v
     return;
   }
 
-  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), *bd_addr);
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_sspRequestCallback, addr.get(),
                                (jint)pairing_variant, pass_key, (jint)pairing_algorithm);
@@ -710,7 +696,7 @@ static void encryption_change_callback(const bt_encryption_change_evt encryption
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_encryptionChangeCallback, addr.get(),
                                encryption_change.status, encryption_change.encr_enable,
-                               encryption_change.transport, encryption_change.secure_connections,
+                               encryption_change.transport, (jint)encryption_change.encryption_algo,
                                encryption_change.key_size);
 }
 
@@ -1785,7 +1771,7 @@ static jboolean interopMatchAddrOrNameNative(JNIEnv* env, jclass /* clazz */, js
     return JNI_FALSE;
   }
 
-  bool matched = sBluetoothInterface->interop_match_addr_or_name(feature_name_str, &bdaddr.value());
+  bool matched = sBluetoothInterface->interop_match_addr_or_name(feature_name_str, bdaddr.value());
   env->ReleaseStringUTFChars(feature_name, feature_name_str);
 
   return matched ? JNI_TRUE : JNI_FALSE;
@@ -1827,7 +1813,7 @@ static void interopDatabaseAddRemoveAddrNative(JNIEnv* env, jclass /* clazz */, 
   }
 
   sBluetoothInterface->interop_database_add_remove_addr(do_add == JNI_TRUE, feature_name_str,
-                                                        &bdaddr.value(), static_cast<int>(length));
+                                                        bdaddr.value(), static_cast<int>(length));
 
   env->ReleaseStringUTFChars(feature_name, feature_name_str);
 }
@@ -1883,7 +1869,7 @@ static int getRemotePbapPceVersionNative(JNIEnv* env, jobject /* obj */, jstring
     return JNI_FALSE;
   }
 
-  return sBluetoothInterface->get_remote_pbap_pce_version(&bdaddr.value());
+  return sBluetoothInterface->get_remote_pbap_pce_version(bdaddr.value());
 }
 
 static jboolean pbapPseDynamicVersionUpgradeIsEnabledNative(JNIEnv* /* env */, jobject /* obj */) {
@@ -2070,7 +2056,7 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"releaseWakeLock", "(Ljava/lang/String;)Z", &method_releaseWakeLock},
           {"energyInfoCallback", "(IIJJJJ[Landroid/bluetooth/UidTraffic;)V", &method_energyInfo},
           {"keyMissingCallback", "([BI)V", &method_keyMissingCallback},
-          {"encryptionChangeCallback", "([BIZIZI)V", &method_encryptionChangeCallback},
+          {"encryptionChangeCallback", "([BIZIII)V", &method_encryptionChangeCallback},
   };
   GET_JAVA_METHODS(env, "com/android/bluetooth/btservice/AdapterNativeCallback", javaMethods);
 

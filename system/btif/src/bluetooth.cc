@@ -769,7 +769,7 @@ static int disconnect_all_acls() {
   return BT_STATUS_SUCCESS;
 }
 
-static int disconnect_acl(const RawAddress& bd_addr, int transport) {
+static int disconnect_acl(RawAddress bd_addr, int transport) {
   log::verbose("{}", bd_addr);
   if (!interface_ready()) {
     return BT_STATUS_NOT_READY;
@@ -893,13 +893,13 @@ static void dump(int fd, const char** /*arguments*/) {
   log::debug("Finished bluetooth dumpsys");
 }
 
-static int get_remote_pbap_pce_version(const RawAddress* bd_addr) {
+static int get_remote_pbap_pce_version(RawAddress bd_addr) {
   // Read and restore the PCE version from local storage
   uint16_t pce_version = 0;
   size_t version_value_size = sizeof(pce_version);
-  if (!btif_config_get_bin(bd_addr->ToString(), BTIF_STORAGE_KEY_PBAP_PCE_VERSION,
+  if (!btif_config_get_bin(bd_addr.ToString(), BTIF_STORAGE_KEY_PBAP_PCE_VERSION,
                            (uint8_t*)&pce_version, &version_value_size)) {
-    log::warn("Failed to read cached peer PCE version for {}", *bd_addr);
+    log::warn("Failed to read cached peer PCE version for {}", bd_addr);
   }
   return pce_version;
 }
@@ -1064,11 +1064,11 @@ static bluetooth::avrcp::ServiceInterface* get_avrcp_service(void) {
   return bluetooth::avrcp::AvrcpService::GetServiceInterface();
 }
 
-static std::string obfuscate_address(const RawAddress& address) {
+static std::string obfuscate_address(RawAddress address) {
   return bluetooth::common::AddressObfuscator::GetInstance()->Obfuscate(address);
 }
 
-static int get_metric_id(const RawAddress& address) {
+static int get_metric_id(RawAddress address) {
   return bluetooth::metrics::AllocateIdFromMetricIdAllocator(address);
 }
 
@@ -1076,13 +1076,12 @@ static int set_dynamic_audio_buffer_size(int codec, int size) {
   return btif_set_dynamic_audio_buffer_size(codec, size);
 }
 
-static bool allow_low_latency_audio(bool allowed, const RawAddress& /* address */) {
+static bool allow_low_latency_audio(bool allowed, RawAddress /* address */) {
   btif_a2dp_source_allow_low_latency_audio(allowed);
   return true;
 }
 
-static void metadata_changed(const RawAddress& remote_bd_addr, int key,
-                             std::vector<uint8_t> value) {
+static void metadata_changed(RawAddress remote_bd_addr, int key, std::vector<uint8_t> value) {
   if (!interface_ready()) {
     log::error("Interface not ready!");
     return;
@@ -1092,8 +1091,8 @@ static void metadata_changed(const RawAddress& remote_bd_addr, int key,
           base::BindOnce(btif_dm_metadata_changed, remote_bd_addr, key, std::move(value)));
 }
 
-static bool interop_match_addr(const char* feature_name, const RawAddress* addr) {
-  if (feature_name == NULL || addr == NULL) {
+static bool interop_match_addr(const char* feature_name, RawAddress addr) {
+  if (feature_name == NULL) {
     return false;
   }
 
@@ -1103,7 +1102,7 @@ static bool interop_match_addr(const char* feature_name, const RawAddress* addr)
     return false;
   }
 
-  return interop_match_addr((interop_feature_t)feature, addr);
+  return interop_match_addr((interop_feature_t)feature, &addr);
 }
 
 static bool interop_match_name(const char* feature_name, const char* name) {
@@ -1120,8 +1119,8 @@ static bool interop_match_name(const char* feature_name, const char* name) {
   return interop_match_name((interop_feature_t)feature, name);
 }
 
-static bool interop_match_addr_or_name(const char* feature_name, const RawAddress* addr) {
-  if (feature_name == NULL || addr == NULL) {
+static bool interop_match_addr_or_name(const char* feature_name, RawAddress addr) {
+  if (feature_name == NULL) {
     return false;
   }
 
@@ -1131,13 +1130,13 @@ static bool interop_match_addr_or_name(const char* feature_name, const RawAddres
     return false;
   }
 
-  return interop_match_addr_or_name((interop_feature_t)feature, addr,
+  return interop_match_addr_or_name((interop_feature_t)feature, &addr,
                                     &btif_storage_get_remote_device_property);
 }
 
-static void interop_database_add_remove_addr(bool do_add, const char* feature_name,
-                                             const RawAddress* addr, int length) {
-  if (feature_name == NULL || addr == NULL) {
+static void interop_database_add_remove_addr(bool do_add, const char* feature_name, RawAddress addr,
+                                             int length) {
+  if (feature_name == NULL) {
     return;
   }
 
@@ -1148,9 +1147,9 @@ static void interop_database_add_remove_addr(bool do_add, const char* feature_na
   }
 
   if (do_add) {
-    interop_database_add_addr((interop_feature_t)feature, addr, (size_t)length);
+    interop_database_add_addr((interop_feature_t)feature, &addr, (size_t)length);
   } else {
-    interop_database_remove_addr((interop_feature_t)feature, addr);
+    interop_database_remove_addr((interop_feature_t)feature, &addr);
   }
 }
 
@@ -1297,7 +1296,7 @@ void invoke_remote_device_properties_cb(bt_status_t status, RawAddress bd_addr,
   do_in_jni_thread(base::BindOnce(
           [](bt_status_t status, RawAddress bd_addr, uint8_t address_type, int num_properties,
              bt_property_t* properties) {
-            HAL_CBACK(bt_hal_cbacks, remote_device_properties_cb, status, &bd_addr, address_type,
+            HAL_CBACK(bt_hal_cbacks, remote_device_properties_cb, status, bd_addr, address_type,
                       num_properties, properties);
             if (properties) {
               osi_free(properties);
@@ -1331,7 +1330,7 @@ void invoke_pin_request_cb(RawAddress bd_addr, bt_bdname_t bd_name, uint32_t cod
   do_in_jni_thread(base::BindOnce(
           [](RawAddress bd_addr, bt_bdname_t bd_name, uint32_t cod, bool min_16_digit,
              PairingAlgorithm pairing_algorithm) {
-            HAL_CBACK(bt_hal_cbacks, pin_request_cb, &bd_addr, &bd_name, cod, min_16_digit,
+            HAL_CBACK(bt_hal_cbacks, pin_request_cb, bd_addr, &bd_name, cod, min_16_digit,
                       pairing_algorithm);
           },
           bd_addr, bd_name, cod, min_16_digit, pairing_algorithm));
@@ -1342,7 +1341,7 @@ void invoke_ssp_request_cb(RawAddress bd_addr, bt_ssp_variant_t pairing_variant,
   do_in_jni_thread(base::BindOnce(
           [](RawAddress bd_addr, bt_ssp_variant_t pairing_variant, uint32_t pass_key,
              PairingAlgorithm pairing_algorithm) {
-            HAL_CBACK(bt_hal_cbacks, ssp_request_cb, &bd_addr, pairing_variant, pass_key,
+            HAL_CBACK(bt_hal_cbacks, ssp_request_cb, bd_addr, pairing_variant, pass_key,
                       pairing_algorithm);
           },
           bd_addr, pairing_variant, pass_key, pairing_algorithm));
@@ -1401,7 +1400,7 @@ void invoke_bond_state_changed_cb(bt_status_t status, RawAddress bd_addr, tBT_TR
   do_in_jni_thread(base::BindOnce(
           [](bt_status_t status, RawAddress bd_addr, tBT_TRANSPORT transport, bt_bond_state_t state,
              PairingType pairing_type, int fail_reason) {
-            HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, status, &bd_addr, transport, state,
+            HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, status, bd_addr, transport, state,
                       pairing_type, fail_reason);
           },
           status, bd_addr, transport, state, pairing_type, fail_reason));
@@ -1410,7 +1409,7 @@ void invoke_bond_state_changed_cb(bt_status_t status, RawAddress bd_addr, tBT_TR
 void invoke_address_consolidate_cb(RawAddress main_bd_addr, RawAddress secondary_bd_addr) {
   do_in_jni_thread(base::BindOnce(
           [](RawAddress main_bd_addr, RawAddress secondary_bd_addr) {
-            HAL_CBACK(bt_hal_cbacks, address_consolidate_cb, &main_bd_addr, &secondary_bd_addr);
+            HAL_CBACK(bt_hal_cbacks, address_consolidate_cb, main_bd_addr, secondary_bd_addr);
           },
           main_bd_addr, secondary_bd_addr));
 }
@@ -1419,7 +1418,7 @@ void invoke_le_address_associate_cb(RawAddress main_bd_addr, RawAddress secondar
                                     uint8_t identity_address_type) {
   do_in_jni_thread(base::BindOnce(
           [](RawAddress main_bd_addr, RawAddress secondary_bd_addr, uint8_t identity_address_type) {
-            HAL_CBACK(bt_hal_cbacks, le_address_associate_cb, &main_bd_addr, &secondary_bd_addr,
+            HAL_CBACK(bt_hal_cbacks, le_address_associate_cb, main_bd_addr, secondary_bd_addr,
                       identity_address_type);
           },
           main_bd_addr, secondary_bd_addr, identity_address_type));

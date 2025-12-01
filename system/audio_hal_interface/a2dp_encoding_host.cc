@@ -276,6 +276,12 @@ bool init(bluetooth::common::MessageLoopThread* /*message_loop*/,
   return true;
 }
 
+// Initialize BluetoothAudio HAL for decoding session
+bool init_decoder([[maybe_unused]] bluetooth::audio::a2dp::StreamCallbacks const* stream_callbacks,
+                  [[maybe_unused]] bool offload_enabled) {
+  return false;
+}
+
 // Clean up BluetoothAudio HAL
 void cleanup() {
   end_session();
@@ -373,7 +379,7 @@ bool codec_info(btav_a2dp_codec_index_t /*codec_index*/, bluetooth::a2dp::CodecI
 std::optional<a2dp_configuration> get_a2dp_configuration(
         RawAddress /*peer_address*/, std::vector<a2dp_remote_capabilities> const& /*remote_seps*/,
         btav_a2dp_codec_config_t const& /*user_preferences*/,
-        ::bluetooth::a2dp::CodecId /* user_preferred_codec_id */) {
+        ::bluetooth::a2dp::CodecId /* user_preferred_codec_id */, bool /* is_source */) {
   return std::nullopt;
 }
 

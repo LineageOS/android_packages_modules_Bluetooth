@@ -324,9 +324,13 @@ struct HciLayer::impl {
 
     log::error("Flushing #{} waiting commands", command_queue_.size());
     for (auto& command : command_queue_) {
-      log::debug("Flushing command: opcode:{}, waiting for: {}",
-                 command.command_view ? OpCodeText(command.command_view->GetOpCode()) : "??",
-                 static_cast<int>(command.waiting_for_));
+      auto* cmd_view = command.command_view.get();
+      if (cmd_view && cmd_view->IsValid()) {
+        log::debug("Flushing command: opcode:{}, waiting for: {}",
+                   OpCodeText(cmd_view->GetOpCode()), static_cast<int>(command.waiting_for_));
+      } else {
+        log::debug("Flushing command: Invalid command_view packet");
+      }
     }
 
     // Clear any waiting commands (there is an abort coming anyway)

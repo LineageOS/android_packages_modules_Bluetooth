@@ -189,7 +189,7 @@ A2dpCodecConfig* A2dpCodecConfig::createCodec(btav_a2dp_codec_index_t codec_inde
   // management of the codec is moved under the ProviderInfo
   // class of the aidl audio HAL client.
   if (::bluetooth::audio::a2dp::provider::supports_codec(codec_index)) {
-    return new A2dpCodecConfigExt(codec_index, true);
+    return new A2dpCodecConfigExt(codec_index, codec_index < BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MAX);
   }
 
   A2dpCodecConfig* codec_config = nullptr;

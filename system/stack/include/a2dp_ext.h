@@ -49,7 +49,7 @@ public:
                       std::vector<uint8_t> const& vendor_specific_parameters);
 
 private:
-  [[maybe_unused]] bool is_source_;  // True if local is Source
+  bool is_source_;  // True if local is Source
   std::vector<uint8_t> vendor_specific_parameters_;
 };
 

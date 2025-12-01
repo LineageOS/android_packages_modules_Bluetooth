@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"อนุญาตให้แอปพลิเคชันเข้าถึงและใช้ตัวจัดการ BluetoothShare เพื่อถ่ายโอนไฟล์"</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"รายการที่อนุญาตการเข้าถึงอุปกรณ์บลูทูธ"</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"อนุญาตให้แอปบันทึกอุปกรณ์บลูทูธในรายการที่อนุญาตเป็นการชั่วคราว ซึ่งจะทำให้อุปกรณ์ดังกล่าวสามารถส่งไฟล์มายังอุปกรณ์นี้ได้โดยไม่ต้องยืนยันผู้ใช้"</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"บลูทูธ"</string>
     <string name="unknown_device" msgid="2317679521750821654">"อุปกรณ์ที่ไม่รู้จัก"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"ไม่รู้จัก"</string>
@@ -112,10 +116,12 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"เปิด"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"ล้างจากรายการ"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"ล้าง"</string>
-    <string name="bluetooth_media_audio_queue_name" msgid="7521243473328258997">"กำลังเล่น"</string>
+    <!-- no translation found for bluetooth_media_audio_app_name (2389937877819723460) -->
+    <skip />
+    <!-- no translation found for bluetooth_media_audio_queue_name (2327164681598379428) -->
+    <skip />
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"ไอคอนแอปพลิเคชัน"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"ยกเลิกการเชื่อมต่อ Bluetooth Audio แล้ว"</string>
-    <string name="bluetooth_media_audio_app_name" msgid="6035366346569127155">"Bluetooth Audio"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"โอนไฟล์ที่มีขนาดใหญ่กว่า 4 GB ไม่ได้"</string>
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"เชื่อมต่อบลูทูธ"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"บลูทูธเปิดอยู่ในโหมดบนเครื่องบิน"</string>

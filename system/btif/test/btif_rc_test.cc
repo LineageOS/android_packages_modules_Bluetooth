@@ -2317,7 +2317,7 @@ TEST_F(BtifRcTest, btif_debug_rc_dump_test) {
   std::string output(buf);
 
   // 8. Assert the output contains expected strings
-  ASSERT_NE(output.find("AVRCP Native State:"), std::string::npos);
+  ASSERT_NE(output.find("AVRCP Controller Native State:"), std::string::npos);
   ASSERT_NE(output.find(kDeviceAddress.ToRedactedStringForLogging()), std::string::npos);
   ASSERT_NE(output.find("Transaction Labels:"), std::string::npos);
 

@@ -16,12 +16,12 @@
 
 package com.android.bluetooth.bass_client;
 
+import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
-import static android.Manifest.permission.BLUETOOTH_CONNECT;
 
 import static java.util.Objects.requireNonNull;
 
@@ -36,10 +36,6 @@ import android.bluetooth.BluetoothLeBroadcastReceiveState;
 import android.bluetooth.BluetoothLeBroadcastSubgroup;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.IBluetoothLeBroadcastAssistantCallback;
@@ -53,6 +49,10 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -4023,12 +4023,24 @@ public class BassClientService extends ConnectableProfile {
         if (entry == null) {
             return;
         }
+
+        BassClientStateMachine sm = mStateMachines.get(device);
+        if (sm == null) {
+            removeSinkMetadata(device);
+            return;
+        }
+
         Set<Integer> currentBroadcastIds =
                 getAllSources(device).stream()
                         .map(BluetoothLeBroadcastReceiveState::getBroadcastId)
                         .collect(Collectors.toUnmodifiableSet());
+
         entry.keySet().stream()
-                .filter(broadcastId -> !currentBroadcastIds.contains(broadcastId))
+                .filter(
+                        broadcastId ->
+                                !currentBroadcastIds.contains(broadcastId)
+                                        && (!sm.hasPendingSourceOperation(broadcastId))
+                                        && (!sm.hasPendingSwitchingSourceOperation(broadcastId)))
                 .collect(Collectors.toList()) // Collect to avoid ConcurrentModificationException
                 .forEach(staleBroadcastId -> removeSinkMetadata(device, staleBroadcastId));
     }

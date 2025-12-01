@@ -36,6 +36,7 @@
 #include "stack/btm/btm_ble_sec.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/btm/btm_sec_utils.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"
@@ -561,8 +562,7 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     if (BTM_IsBonded(p_cb->pairing_bda, BT_TRANSPORT_LE) &&
         !BTM_IsEncrypted(p_cb->pairing_bda, BT_TRANSPORT_LE)) {
       get_btm_client_interface().security.BTM_SecReportBondLoss(p_cb->pairing_bda, BT_TRANSPORT_LE);
-      if (!com::android::bluetooth::flags::autonomous_repairing_initiation() ||
-          !p_device->bond_lost) {
+      if (!is_autonomous_repairing_supported() || !p_device->bond_lost) {
         // continue with pairing if it's a bond loss scenario.
         return;
       }

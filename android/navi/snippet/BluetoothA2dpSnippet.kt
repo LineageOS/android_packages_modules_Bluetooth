@@ -42,9 +42,9 @@ class BluetoothA2dpSnippet : Snippet {
         instrumentation.uiAutomation.adoptShellPermissionIdentity()
     }
 
-    /** Setup an A2DP callback with ID [callbackId]. */
-    @AsyncRpc(description = "Setup A2DP callbacks.")
-    fun a2dpSetup(callbackId: String) {
+    /** Register an A2DP callback with ID [callbackId]. */
+    @AsyncRpc(description = "Register A2DP callbacks.")
+    fun registerA2dpCallback(callbackId: String) {
         val intentFilter =
             IntentFilter().apply {
                 addAction(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED)
@@ -91,9 +91,9 @@ class BluetoothA2dpSnippet : Snippet {
         context.registerReceiver(broadcastReceivers[callbackId], intentFilter)
     }
 
-    /** Teardown an A2DP callback with ID [callbackId]. */
-    @Rpc(description = "Teardown A2DP callbacks.")
-    fun a2dpTeardown(callbackId: String) {
+    /** Unregister an A2DP callback with ID [callbackId]. */
+    @Rpc(description = "Unregister A2DP callbacks.")
+    fun unregisterA2dpCallback(callbackId: String) {
         broadcastReceivers.remove(callbackId)?.let { context.unregisterReceiver(it) }
     }
 

@@ -39,7 +39,7 @@ typedef enum { BTPAN_STATE_ENABLED = 0, BTPAN_STATE_DISABLED = 1 } btpan_control
  * Callback for pan connection state
  */
 typedef void (*btpan_connection_state_callback)(btpan_connection_state_t state, BtStatus error,
-                                                const RawAddress* bd_addr, int local_role,
+                                                const RawAddress bd_addr, int local_role,
                                                 int remote_role);
 typedef void (*btpan_control_state_callback)(btpan_control_state_t state, int local_role,
                                              BtStatus error, const char* ifname);

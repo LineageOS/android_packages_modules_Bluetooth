@@ -31,7 +31,7 @@ public:
   MOCK_METHOD(void, OnDistanceMeasurementStopped,
               (Address, DistanceMeasurementErrorCode, DistanceMeasurementMethod));
   MOCK_METHOD(void, OnDistanceMeasurementResult,
-              (Address, uint32_t, uint32_t, int, int, int, int, uint64_t, int8_t, double,
+              (Address, uint32_t, uint32_t, int, int, int, int, uint64_t, int, int, int8_t, double,
                DistanceMeasurementDetectedAttackLevel, double, DistanceMeasurementMethod));
   MOCK_METHOD(void, OnRasFragmentReady,
               (Address address, uint16_t procedure_counter, bool is_last,

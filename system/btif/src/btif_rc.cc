@@ -307,6 +307,7 @@ static void get_folder_item_type_player(const tAVRC_ITEM* avrc_item,
                                         btrc_folder_items_t* btrc_item);
 static BtStatus get_folder_items_cmd(const RawAddress& bd_addr, uint8_t scope, uint32_t start_item,
                                      uint32_t end_item);
+static std::string dump_peer_features(const uint16_t feats);
 
 /*****************************************************************************
  *  Static variables
@@ -659,7 +660,7 @@ static void handle_rc_browse_connect(tBTA_AV_RC_BROWSE_OPEN* p_rc_br_open) {
  *
  ***************************************************************************/
 static void handle_rc_connect(tBTA_AV_RC_OPEN* p_rc_open) {
-  log::verbose("rc_handle: {}", p_rc_open->rc_handle);
+  log::info("handle_rc_connect(handle={}, addr={})", p_rc_open->rc_handle, p_rc_open->peer_addr);
 
   btif_rc_device_cb_t* p_dev = alloc_device();
   if (p_dev == NULL) {
@@ -739,7 +740,8 @@ static void handle_rc_connect(tBTA_AV_RC_OPEN* p_rc_open) {
  ***************************************************************************/
 static void handle_rc_disconnect(tBTA_AV_RC_CLOSE* p_rc_close) {
   btif_rc_device_cb_t* p_dev = NULL;
-  log::verbose("rc_handle: {}", p_rc_close->rc_handle);
+  log::info("handle_rc_disconnect(handle={}, addr={})", p_rc_close->rc_handle,
+               p_rc_close->peer_addr);
 
   p_dev = btif_rc_get_device_by_handle(p_rc_close->rc_handle);
   if (p_dev == NULL) {
@@ -3754,6 +3756,63 @@ static void btif_rc_transaction_timer_timeout(void* data) {
                         sizeof(rc_transaction_context_t), NULL);
 }
 
+/***************************************************************************
+ *
+ * Function       dump_peer_features
+ *
+ * Description    Dump peer features bit field for debugging
+ *
+ * Returns        String of peer features info
+ ******************************************************************************/
+static std::string dump_peer_features(const uint16_t feats) {
+  std::stringstream ss;
+
+  if (feats == 0) {
+    ss << "        EMPTY" << "\n";
+  }
+  if (feats & BTA_AV_FEAT_RCTG) {
+    ss << "        BTA_AV_FEAT_RCTG" << "\n";
+  }
+  if (feats & BTA_AV_FEAT_RCCT) {
+    ss << "        BTA_AV_FEAT_RCCT" << "\n";
+  }
+  if (feats & BTA_AV_FEAT_PROTECT) {
+    ss << "        BTA_AV_FEAT_PROTECT" << "\n";
+  }
+  if (feats & BTA_AV_FEAT_VENDOR) {
+    ss << "        BTA_AV_FEAT_VENDOR" << "\n";
+  }
+  if (feats & BTA_AV_FEAT_REPORT) {
+    ss << "        BTA_AV_FEAT_REPORT" << "\n";
+  }
+  if (feats & BTA_AV_FEAT_METADATA) {
+    ss << "        BTA_AV_FEAT_METADATA" << "\n";
+  }
+  if (feats & BTA_AV_FEAT_MULTI_AV) {
+    ss << "        BTA_AV_FEAT_MULTI_AV" << "\n";
+  }
+  if (feats & BTA_AV_FEAT_BROWSE) {
+    ss << "        BTA_AV_FEAT_BROWSE" << "\n";
+  }
+  if (feats & BTA_AV_FEAT_ADV_CTRL) {
+    ss << "        BTA_AV_FEAT_ADV_CTRL" << "\n";
+  }
+  if (feats & BTA_AV_FEAT_DELAY_RPT) {
+    ss << "        BTA_AV_FEAT_DELAY_RPT" << "\n";
+  }
+  if (feats & BTA_AV_FEAT_ACP_START) {
+    ss << "        BTA_AV_FEAT_ACP_START" << "\n";
+  }
+  if (feats & BTA_AV_FEAT_COVER_ARTWORK) {
+    ss << "        BTA_AV_FEAT_COVER_ARTWORK" << "\n";
+  }
+  if (feats & BTA_AV_FEAT_APP_SETTING) {
+    ss << "        BTA_AV_FEAT_APP_SETTING" << "\n";
+  }
+
+  return ss.str();
+}
+
 /*******************************************************************************
  *      Function       btif_debug_rc_dump
  *
@@ -3762,7 +3821,7 @@ static void btif_rc_transaction_timer_timeout(void* data) {
  *      Returns        void
  ******************************************************************************/
 void btif_debug_rc_dump(int fd) {
-  dprintf(fd, "\nAVRCP Native State:\n");
+  dprintf(fd, "\nAVRCP Controller Native State:\n");
 
   int connected_count = 0;
   for (int i = 0; i < BTIF_RC_NUM_CONN; ++i) {
@@ -3777,6 +3836,15 @@ void btif_debug_rc_dump(int fd) {
     btif_rc_device_cb_t* p_dev = &btif_rc_cb.rc_multi_cb[i];
     if (p_dev->rc_state != BTRC_CONNECTION_STATE_DISCONNECTED) {
       dprintf(fd, "    %s:\n", p_dev->rc_addr.ToRedactedStringForLogging().c_str());
+
+      dprintf(fd, "      Control: %s\n", p_dev->rc_connected ? "connected" : "disconnected");
+      dprintf(fd, "      Browse: %s\n", p_dev->br_connected ? "connected" : "disconnected");
+      dprintf(fd, "      Cover Art PSM: %i\n", p_dev->rc_cover_art_psm);
+
+      dprintf(fd, "      Peer Target Features:\n%s",
+              dump_peer_features(p_dev->peer_tg_features).c_str());
+      dprintf(fd, "      Peer Controller Features:\n%s",
+              dump_peer_features(p_dev->peer_ct_features).c_str());
 
       rc_transaction_set_t* transaction_set = &(p_dev->transaction_set);
       std::unique_lock<std::recursive_mutex> lock(transaction_set->label_lock);

@@ -15,20 +15,18 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Sequence
 import contextlib
 import decimal
 import struct
 import sys
 import tempfile
-from typing import Sequence, TYPE_CHECKING, TypeAlias
-from unittest import mock
+from typing import TYPE_CHECKING, TypeAlias
 import wave
 
 from bumble import core
 from bumble import device
 from bumble import hci
-from bumble import utils
-from bumble.profiles import ascs
 from bumble.profiles import bap
 from bumble.profiles import gmap
 from bumble.profiles import le_audio
@@ -38,6 +36,7 @@ from mobly import test_runner
 from mobly import signals
 from typing_extensions import override
 
+from navi.bumble_ext import ascs
 from navi.bumble_ext import ccp
 from navi.bumble_ext import gatt_helper
 from navi.bumble_ext import pacs
@@ -83,7 +82,10 @@ _CallState: TypeAlias = android_constants.CallState
 _AndroidProperty = android_constants.Property
 
 
-async def _wait_for_ase_state(ase: ascs.AseStateMachine, state: ascs.AseStateMachine.State) -> None:
+async def _wait_for_ase_state(
+    ase: ascs.AudioStreamEndpointCharacteristic,
+    state: ascs.AudioStreamEndpointCharacteristic.State,
+) -> None:
     """Waits for the ASE state to be changed to the specified state."""
     with pyee_extensions.EventTriggeredValueObserver(
             ase,
@@ -93,7 +95,7 @@ async def _wait_for_ase_state(ase: ascs.AseStateMachine, state: ascs.AseStateMac
         await observer.wait_for_target_value(state)
 
 
-def decoder_for_ase(ase: ascs.AseStateMachine) -> lc3.Decoder:
+def decoder_for_ase(ase: ascs.AudioStreamEndpointCharacteristic) -> lc3.Decoder:
     """Returns the decoder for the ASE."""
     if not lc3:
         raise RuntimeError("LC3 is not available")
@@ -185,31 +187,6 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
         self.dut_mcp_enabled = (self.dut.getprop(_AndroidProperty.MCP_SERVER_ENABLED) == "true")
         self.dut_ccp_enabled = (self.dut.getprop(_AndroidProperty.CCP_SERVER_ENABLED) == "true")
 
-        # TODO: Remove this once the bug is fixed in Bumble.
-        def on_release(
-            ase: ascs.AseStateMachine,) -> tuple[ascs.AseResponseCode, ascs.AseReasonCode]:
-            if ase.state == ascs.AseStateMachine.State.IDLE:
-                return (
-                    ascs.AseResponseCode.INVALID_ASE_STATE_MACHINE_TRANSITION,
-                    ascs.AseReasonCode.NONE,
-                )
-            # ASE state cannot be changed to IDLE directly.
-            ase.state = ase.State.RELEASING
-            utils.cancel_on_event(
-                ase.service.device,
-                "flush",
-                ase.service.device.notify_subscribers(ase, ase.value),
-            )
-            ase.state = ase.State.IDLE
-
-            if ase.cis_link:
-                ase.cis_link.acl_connection.cancel_on_disconnection(
-                    ase.cis_link.remove_data_path([ase.cis_link.Direction(ase.role.value)]))
-            return (ascs.AseResponseCode.SUCCESS, ascs.AseReasonCode.NONE)
-
-        self.test_class_context.enter_context(
-            mock.patch.object(ascs.AseStateMachine, "on_release", on_release))
-
     @override
     async def async_setup_test(self) -> None:
         # Disable the allow list to allow the connect LE Audio to Bumble.
@@ -231,12 +208,13 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
         self.dut.bt.setHandleAudioBecomingNoisy(False)
         await super().async_teardown_test()
 
-    def _get_sampling_frequency(self, ase: ascs.AseStateMachine) -> bap.SamplingFrequency:
+    def _get_sampling_frequency(
+            self, ase: ascs.AudioStreamEndpointCharacteristic) -> bap.SamplingFrequency:
         """Returns the sampling frequency of the ASE."""
-        if isinstance(
+        if (isinstance(
                 codec_config := ase.codec_specific_configuration,
                 bap.CodecSpecificConfiguration,
-        ) and codec_config.sampling_frequency is not None:
+        ) and codec_config.sampling_frequency is not None):
             return codec_config.sampling_frequency
         return bap.SamplingFrequency(0)
 
@@ -296,7 +274,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
             _DEFAULT_STEP_TIMEOUT_SECONDS,
             msg="[REF] Wait for audio to stop",
         ):
-            await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.IDLE)
+            await _wait_for_ase_state(sink_ase, ascs.AudioStreamEndpointCharacteristic.State.IDLE)
 
         self.logger.info("[DUT] Start audio streaming")
         await asyncio.to_thread(self.dut.bt.audioPlaySine)
@@ -304,7 +282,8 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                 _DEFAULT_STEP_TIMEOUT_SECONDS,
                 msg="[REF] Wait for audio to start",
         ):
-            await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.STREAMING)
+            await _wait_for_ase_state(sink_ase,
+                                      ascs.AudioStreamEndpointCharacteristic.State.STREAMING)
 
         # Setup audio sink.
         sink_frames = list[bytes]()
@@ -327,7 +306,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                 _DEFAULT_STEP_TIMEOUT_SECONDS,
                 msg="[REF] Wait for audio to stop",
         ):
-            await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.IDLE)
+            await _wait_for_ase_state(sink_ase, ascs.AudioStreamEndpointCharacteristic.State.IDLE)
 
         if self.user_params.get(navi_test_base.RECORD_FULL_DATA):
             self.write_test_output_data("sink.lc3", b"".join(sink_frames))
@@ -389,7 +368,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
             msg="[REF] Wait for audio to stop",
         ):
             for ase in self.ref_ascs.ase_state_machines.values():
-                await _wait_for_ase_state(ase, ascs.AseStateMachine.State.IDLE)
+                await _wait_for_ase_state(ase, ascs.AudioStreamEndpointCharacteristic.State.IDLE)
 
         self.logger.info("[DUT] Start gaming audio streaming")
         await asyncio.to_thread(self.dut.bt.audioPlaySine)
@@ -416,8 +395,8 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
             self.logger.info("source_freq: %r", source_freq)
             return (sink_freq >= expected_sink_freq and
                     source_freq >= bap.SamplingFrequency.FREQ_32000 and
-                    sink_ase.state == ascs.AseStateMachine.State.STREAMING and
-                    source_ase.state == ascs.AseStateMachine.State.STREAMING)
+                    sink_ase.state == ascs.AudioStreamEndpointCharacteristic.State.STREAMING and
+                    source_ase.state == ascs.AudioStreamEndpointCharacteristic.State.STREAMING)
 
         async with self.assert_not_timeout(
                 _DEFAULT_STEP_TIMEOUT_SECONDS,
@@ -439,7 +418,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                 msg="[REF] Wait for audio to stop",
         ):
             for ase in self.ref_ascs.ase_state_machines.values():
-                await _wait_for_ase_state(ase, ascs.AseStateMachine.State.IDLE)
+                await _wait_for_ase_state(ase, ascs.AudioStreamEndpointCharacteristic.State.IDLE)
 
     async def test_bidirectional_audio_stream(self) -> None:
         """Tests bidirectional audio stream between DUT and REF.
@@ -481,7 +460,8 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                 msg="[REF] Wait for audio to stop",
             ):
                 for ase in self.ref_ascs.ase_state_machines.values():
-                    await _wait_for_ase_state(ase, ascs.AseStateMachine.State.IDLE)
+                    await _wait_for_ase_state(ase,
+                                              ascs.AudioStreamEndpointCharacteristic.State.IDLE)
 
             self.logger.info("[DUT] Start audio streaming")
             await asyncio.to_thread(self.dut.bt.audioPlaySine)
@@ -489,7 +469,8 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                     _DEFAULT_STEP_TIMEOUT_SECONDS,
                     msg="[REF] Wait for sink ASE to start",
             ):
-                await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.STREAMING)
+                await _wait_for_ase_state(sink_ase,
+                                          ascs.AudioStreamEndpointCharacteristic.State.STREAMING)
 
             self.logger.info("[DUT] Start audio recording")
             recorder = await asyncio.to_thread(lambda: self.dut.bl4a.start_audio_recording(
@@ -501,7 +482,8 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                     _DEFAULT_STEP_TIMEOUT_SECONDS,
                     msg="[REF] Wait for source ASE to start",
             ):
-                await _wait_for_ase_state(source_ase, ascs.AseStateMachine.State.STREAMING)
+                await _wait_for_ase_state(source_ase,
+                                          ascs.AudioStreamEndpointCharacteristic.State.STREAMING)
 
             # Setup audio sink.
             sink_frames = list[bytes]()
@@ -527,7 +509,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                 msg="[REF] Wait for audio to stop",
         ):
             for ase in self.ref_ascs.ase_state_machines.values():
-                await _wait_for_ase_state(ase, ascs.AseStateMachine.State.IDLE)
+                await _wait_for_ase_state(ase, ascs.AudioStreamEndpointCharacteristic.State.IDLE)
 
         if self.user_params.get(navi_test_base.RECORD_FULL_DATA):
             self.write_test_output_data("sink.lc3", b"".join(sink_frames))
@@ -608,7 +590,8 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                     msg="[REF] Wait for audio to start",
             ):
                 for ase in self.ref_ascs.ase_state_machines.values():
-                    await _wait_for_ase_state(ase, ascs.AseStateMachine.State.STREAMING)
+                    await _wait_for_ase_state(
+                        ase, ascs.AudioStreamEndpointCharacteristic.State.STREAMING)
 
     async def test_reconfiguration(self) -> None:
         """Tests reconfiguration from media to conversational.
@@ -627,7 +610,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
             _DEFAULT_STEP_TIMEOUT_SECONDS,
             msg="[REF] Wait for audio to stop",
         ):
-            await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.IDLE)
+            await _wait_for_ase_state(sink_ase, ascs.AudioStreamEndpointCharacteristic.State.IDLE)
 
         self.logger.info("[DUT] Start audio streaming")
         await asyncio.to_thread(self.dut.bt.audioPlaySine)
@@ -635,7 +618,8 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                 _DEFAULT_STEP_TIMEOUT_SECONDS,
                 msg="[REF] Wait for audio to start",
         ):
-            await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.STREAMING)
+            await _wait_for_ase_state(sink_ase,
+                                      ascs.AudioStreamEndpointCharacteristic.State.STREAMING)
         get_audio_context = lambda: next(entry for entry in sink_ase.metadata.entries if entry.tag
                                          == le_audio.Metadata.Tag.STREAMING_AUDIO_CONTEXTS)
         context_type = struct.unpack_from("<H", get_audio_context().data)[0]
@@ -655,12 +639,14 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                     _DEFAULT_STEP_TIMEOUT_SECONDS,
                     msg="[DUT] Wait for ASE to be released",
             ):
-                await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.IDLE)
+                await _wait_for_ase_state(sink_ase,
+                                          ascs.AudioStreamEndpointCharacteristic.State.IDLE)
             async with self.assert_not_timeout(
                     _DEFAULT_STEP_TIMEOUT_SECONDS,
                     msg="[DUT] Wait for ASE to be reconfigured",
             ):
-                await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.STREAMING)
+                await _wait_for_ase_state(sink_ase,
+                                          ascs.AudioStreamEndpointCharacteristic.State.STREAMING)
             context_type = struct.unpack_from("<H", get_audio_context().data)[0]
             self.assertTrue(context_type & bap.ContextType.CONVERSATIONAL)
 
@@ -1122,7 +1108,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
             _DEFAULT_STEP_TIMEOUT_SECONDS,
             msg="[REF] Wait for ASE state to be idle",
         ):
-            await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.IDLE)
+            await _wait_for_ase_state(sink_ase, ascs.AudioStreamEndpointCharacteristic.State.IDLE)
 
         self.logger.info("[DUT] Start audio streaming")
         self.dut.bt.audioSetRepeat(android_constants.RepeatMode.ALL)
@@ -1131,7 +1117,8 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                 _DEFAULT_STEP_TIMEOUT_SECONDS,
                 msg="[REF] Wait for ASE state to be streaming",
         ):
-            await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.STREAMING)
+            await _wait_for_ase_state(sink_ase,
+                                      ascs.AudioStreamEndpointCharacteristic.State.STREAMING)
 
         # Streaming for 1 second.
         await asyncio.sleep(_STREAMING_TIME_SECONDS)

@@ -33,4 +33,11 @@ BtStatus do_in_main_thread(base::OnceClosure task);
 BtStatus do_in_main_thread_delayed(base::OnceClosure task, std::chrono::microseconds delay);
 void post_on_bt_main(BtMainClosure closure);
 void main_thread_start_up();
+
+// Stop the execution of the main thread and prevent applications
+// from posting new tasks to the looper.
+void main_thread_suspend();
+
+// Cleanup resources attached to the main thread.
+// main_thread_suspend must have be called previously.
 void main_thread_shut_down();

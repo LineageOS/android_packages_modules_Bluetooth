@@ -49,6 +49,16 @@ flag {
 }
 
 flag {
+    name: "dont_mask_disconnection_complete_on_suspend"
+    namespace: "bluetooth"
+    description: "Wait for disconnect complete events when suspending, instead of masking them out"
+    bug: "463276426"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "ref_counted_native_wakelock"
     namespace: "bluetooth"
     description: "Make native wakelock reference counted"

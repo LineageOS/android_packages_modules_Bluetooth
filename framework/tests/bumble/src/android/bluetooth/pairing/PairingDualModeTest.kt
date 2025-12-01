@@ -377,15 +377,7 @@ class PairingDualModeTest {
     @Test
     @Throws(Exception::class)
     fun testProperties_IntactAfterRestart() {
-        val intentReceiver =
-            IntentReceiver.Builder(
-                    context,
-                    BluetoothDevice.ACTION_BOND_STATE_CHANGED,
-                    BluetoothDevice.ACTION_ACL_CONNECTED,
-                )
-                .build()
-
-        testStep_BondBrEdr(intentReceiver)
+        testStep_BondBrEdr(null)
         // Retrieve all the properties from remote device
         val type = bumbleDevice.type
         val name = bumbleDevice.name
@@ -418,7 +410,6 @@ class PairingDualModeTest {
         assertThat(cod).isEqualTo(bumbleDevice.bluetoothClass)
         assertThat(bumbleDevice.alias).isEqualTo(BUMBLE_ALIAS)
 
-        intentReceiver.close()
     }
 
     /**
@@ -528,9 +519,10 @@ class PairingDualModeTest {
         )
 
         assertThat(bumbleDevice.bondState).isEqualTo(BluetoothDevice.BOND_BONDED)
+        intentReceiver.close()
     }
 
-    private fun testStep_BondBrEdr(parentIntentReceiver: IntentReceiver) {
+    private fun testStep_BondBrEdr(parentIntentReceiver: IntentReceiver?) {
         val intentReceiver =
             IntentReceiver.update(
                 parentIntentReceiver,
@@ -552,19 +544,10 @@ class PairingDualModeTest {
             hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
             hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED),
         )
+        intentReceiver.close()
     }
 
-    private fun testStep_BondBredrFromRemote(parentIntentReceiver: IntentReceiver) {
-        val intentReceiver =
-            IntentReceiver.update(
-                parentIntentReceiver,
-                IntentReceiver.Builder(
-                    context,
-                    BluetoothDevice.ACTION_ACL_CONNECTED,
-                    BluetoothDevice.ACTION_BOND_STATE_CHANGED,
-                    BluetoothDevice.ACTION_PAIRING_REQUEST,
-                ),
-            )
+    private fun testStep_BondBredrFromRemote(intentReceiver: IntentReceiver) {
         val response =
             currentDevice
                 .hostBlocking()
@@ -590,7 +573,6 @@ class PairingDualModeTest {
         // Approve pairing from Android
         assertThat(bumbleDevice.setPairingConfirmation(true)).isTrue()
 
-        intentReceiver.close()
     }
 
     private fun testStep_VerifyBondIntents(

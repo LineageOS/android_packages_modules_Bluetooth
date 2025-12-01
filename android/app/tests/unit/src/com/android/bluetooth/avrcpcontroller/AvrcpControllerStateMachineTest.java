@@ -26,7 +26,6 @@ import static com.android.bluetooth.Utils.getBytesFromAddress;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyByte;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -317,6 +316,43 @@ public class AvrcpControllerStateMachineTest {
         nowPlaying = mAvrcpStateMachine.findNode("NOW_PLAYING");
         assertThat(nowPlaying.isCached()).isTrue();
         assertThat(getNowPlayingList()).containsExactlyElementsIn(nowPlayingList).inOrder();
+    }
+
+    // Absolute Volume Test Utilities
+
+    /**
+     * Create a state machine for absolute volume tests after configuring fixed volume and
+     * automotive settings (affects volume strategy)
+     */
+    private void makeStateMachineForAbsVolumeTests(boolean isVolumeFixed, boolean isAutomotive) {
+        destroyStateMachine(mAvrcpStateMachine);
+
+        doReturn(isVolumeFixed).when(mAudioManager).isVolumeFixed();
+        // Absolute volume support (Utils.isAutomotive())
+        doReturn(isAutomotive)
+                .when(mPackageManager)
+                .hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE);
+
+        doReturn(100).when(mAudioManager).getStreamMaxVolume(eq(AudioManager.STREAM_MUSIC));
+        doReturn(25).when(mAudioManager).getStreamVolume(eq(AudioManager.STREAM_MUSIC));
+
+        mAvrcpStateMachine = makeStateMachine(mDevice);
+    }
+
+    /** Verify that an absolute volume notification was registered for with response absVolRsp */
+    private void verifyRegisterAbsVolumeNotification(byte label, int absVolRsp) {
+        mAvrcpStateMachine.sendMessage(
+                AvrcpControllerStateMachine.MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION, label);
+        verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
+                .sendRegisterAbsVolRsp(any(), eq((byte) 0x00), eq(absVolRsp), eq((int) label));
+    }
+
+    /** Verify that a set absolute volume command was responded with absVolRsp */
+    private void verifySetAbsVolume(byte setLabel, int absVol, int absVolRsp) {
+        mAvrcpStateMachine.sendMessage(
+                AvrcpControllerStateMachine.MESSAGE_PROCESS_SET_ABS_VOL_CMD, absVol, setLabel);
+        verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
+                .sendAbsVolRsp(any(), eq(absVolRsp), eq((int) setLabel));
     }
 
     /**
@@ -1023,106 +1059,74 @@ public class AvrcpControllerStateMachineTest {
                         eq(KEY_UP));
     }
 
-    /** Test that Absolute Volume Registration is working */
+    /** Test that Absolute Volume Registration is working: fixed volume, not automotive = Loud */
     @Test
     public void testRegisterAbsVolumeNotification_volumeIsFixed_getsAbsVolumeMax() {
-        byte label = 42;
         setUpConnectedState(true, true);
-        mAvrcpStateMachine.sendMessage(
-                AvrcpControllerStateMachine.MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION, label);
-        verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
-                .sendRegisterAbsVolRsp(any(), anyByte(), eq(127), eq((int) label));
+
+        byte label = 42;
+        verifyRegisterAbsVolumeNotification(label, 127);
     }
 
-    /** Test that Absolute Volume Registration is working */
+    /** Test that Absolute Volume Registration is working: not fixed volume, automotive = Loud */
     @Test
-    public void testRegisterAbsVolumeNotification_volumeIsNotFixed_doesNotGetAbsVolumeMax() {
-        doReturn(false).when(mAudioManager).isVolumeFixed();
-        mAvrcpStateMachine =
-                new AvrcpControllerStateMachine(
-                        mAdapterService, mAvrcpControllerService, mDevice, mNativeInterface);
-        mAvrcpStateMachine.start();
-        byte label = 42;
+    public void testRegisterAbsVolumeNotification_isAutomotive_getsAbsVolumeMax() {
+        makeStateMachineForAbsVolumeTests(false, true);
         setUpConnectedState(true, true);
-        doReturn(100).when(mAudioManager).getStreamMaxVolume(eq(AudioManager.STREAM_MUSIC));
-        doReturn(25).when(mAudioManager).getStreamVolume(eq(AudioManager.STREAM_MUSIC));
-        mAvrcpStateMachine.sendMessage(
-                AvrcpControllerStateMachine.MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION, label);
-        verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
-                .sendRegisterAbsVolRsp(any(), anyByte(), eq(31), eq((int) label));
+
+        byte label = 42;
+        verifyRegisterAbsVolumeNotification(label, 127);
     }
 
-    /** Test that Absolute Volume Registration is working */
+    /**
+     * Test that Absolute Volume Registration is working: not fixed volume, not automotive =
+     * Absolute
+     */
     @Test
-    public void
-            testRegisterAbsVolumeNotification_volumeIsNotFixedSinkAbsoluteVolumeEnabled_getsAbsVolumeMax() {
-        doReturn(false).when(mAudioManager).isVolumeFixed();
-
-        // Absolute volume support (Utils.isAutomotive())
-        doReturn(true).when(mPackageManager).hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE);
-
-        mAvrcpStateMachine =
-                new AvrcpControllerStateMachine(
-                        mAdapterService, mAvrcpControllerService, mDevice, mNativeInterface);
-        mAvrcpStateMachine.start();
-        byte label = 42;
+    public void testRegisterAbsVolumeNotification_isAbsolute_doesNotGetAbsVolumeMax() {
+        makeStateMachineForAbsVolumeTests(false, false);
         setUpConnectedState(true, true);
-        mAvrcpStateMachine.sendMessage(
-                AvrcpControllerStateMachine.MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION, label);
-        verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
-                .sendRegisterAbsVolRsp(any(), anyByte(), eq(127), eq((int) label));
+
+        byte label = 42;
+        verifyRegisterAbsVolumeNotification(label, 31);
     }
 
-    /** Test that set absolute volume is working */
+    /** Test that set absolute volume is working: fixed volume, not automotive = Loud */
     @Test
     public void testSetAbsoluteVolume_volumeIsFixed_setsAbsVolumeMax() {
-        byte label = 42;
         setUpConnectedState(true, true);
-        mAvrcpStateMachine.sendMessage(
-                AvrcpControllerStateMachine.MESSAGE_PROCESS_SET_ABS_VOL_CMD, 20, label);
-        verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
-                .sendAbsVolRsp(any(), eq(127), eq((int) label));
+
+        byte setLabel = 52;
+        verifySetAbsVolume(setLabel, 20, 127);
+        verify(mAudioManager, never())
+                .setStreamVolume(
+                        eq(AudioManager.STREAM_MUSIC), anyInt(), eq(AudioManager.FLAG_SHOW_UI));
     }
 
-    /** Test that set absolute volume is working */
+    /** Test that set absolute volume is working: not fixed volume, automotive = Loud */
     @Test
-    public void testSetAbsoluteVolume_volumeIsNotFixed_doesNotSetAbsVolumeMax() {
-        doReturn(false).when(mAudioManager).isVolumeFixed();
-        mAvrcpStateMachine =
-                new AvrcpControllerStateMachine(
-                        mAdapterService, mAvrcpControllerService, mDevice, mNativeInterface);
-        mAvrcpStateMachine.start();
-        byte label = 42;
+    public void testSetAbsoluteVolume_isAutomotive_setsAbsVolumeMax() {
+        makeStateMachineForAbsVolumeTests(false, true);
         setUpConnectedState(true, true);
-        doReturn(100).when(mAudioManager).getStreamMaxVolume(eq(AudioManager.STREAM_MUSIC));
-        doReturn(25).when(mAudioManager).getStreamVolume(eq(AudioManager.STREAM_MUSIC));
-        mAvrcpStateMachine.sendMessage(
-                AvrcpControllerStateMachine.MESSAGE_PROCESS_SET_ABS_VOL_CMD, 20, label);
-        verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
-                .sendAbsVolRsp(any(), eq(20), eq((int) label));
+
+        byte setLabel = 52;
+        verifySetAbsVolume(setLabel, 20, 127);
+        verify(mAudioManager, never())
+                .setStreamVolume(
+                        eq(AudioManager.STREAM_MUSIC), anyInt(), eq(AudioManager.FLAG_SHOW_UI));
+    }
+
+    /** Test that set absolute volume is working: not fixed volume, not automotive = Absolute */
+    @Test
+    public void testSetAbsoluteVolume_isAbsolute_doesNotSetAbsVolumeMax() {
+        makeStateMachineForAbsVolumeTests(false, false);
+        setUpConnectedState(true, true);
+
+        byte setLabel = 52;
+        verifySetAbsVolume(setLabel, 20, 20);
         verify(mAudioManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
                 .setStreamVolume(
                         eq(AudioManager.STREAM_MUSIC), eq(15), eq(AudioManager.FLAG_SHOW_UI));
-    }
-
-    /** Test that set absolute volume is working */
-    @Test
-    public void testSetAbsoluteVolume_volumeIsNotFixedSinkAbsoluteVolumeEnabled_setsAbsVolumeMax() {
-        doReturn(false).when(mAudioManager).isVolumeFixed();
-
-        // Absolute volume support (Utils.isAutomotive())
-        doReturn(true).when(mPackageManager).hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE);
-
-        mAvrcpStateMachine =
-                new AvrcpControllerStateMachine(
-                        mAdapterService, mAvrcpControllerService, mDevice, mNativeInterface);
-        mAvrcpStateMachine.start();
-        byte label = 42;
-        setUpConnectedState(true, true);
-        mAvrcpStateMachine.sendMessage(
-                AvrcpControllerStateMachine.MESSAGE_PROCESS_SET_ABS_VOL_CMD, 20, label);
-        verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
-                .sendAbsVolRsp(any(), eq(127), eq((int) label));
     }
 
     /** Test playback does not request focus when another app is playing music. */

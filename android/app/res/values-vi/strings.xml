@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Cho phép ứng dụng truy cập trình quản lý BluetoothShare và sử dụng trình quản lý đó để chuyển tệp."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"Quyền sử dụng thiết bị Bluetooth trong danh sách chấp nhận."</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Cho phép ứng dụng tạm thời đưa một thiết bị Bluetooth vào danh sách chấp nhận và để thiết bị đó gửi tệp tới thiết bị này mà không cần người dùng xác nhận."</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetooth"</string>
     <string name="unknown_device" msgid="2317679521750821654">"Thiết bị không xác định"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"Không xác định"</string>
@@ -112,10 +116,12 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"Mở"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"Xóa khỏi danh sách"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"Xóa"</string>
-    <string name="bluetooth_media_audio_queue_name" msgid="7521243473328258997">"Phát hiện nhạc"</string>
+    <!-- no translation found for bluetooth_media_audio_app_name (2389937877819723460) -->
+    <skip />
+    <!-- no translation found for bluetooth_media_audio_queue_name (2327164681598379428) -->
+    <skip />
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"Biểu tượng ứng dụng"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"Đã ngắt kết nối âm thanh Bluetooth"</string>
-    <string name="bluetooth_media_audio_app_name" msgid="6035366346569127155">"Âm thanh Bluetooth"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"Không thể chuyển những tệp lớn hơn 4 GB"</string>
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"Kết nối với Bluetooth"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"Bluetooth đang bật ở chế độ trên máy bay"</string>

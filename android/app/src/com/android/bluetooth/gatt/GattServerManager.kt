@@ -55,7 +55,8 @@ class GattServerManager(
 
     private val offloadLock = Any()
 
-    fun clear() {
+    fun cleanup() {
+        Log.i(TAG, "cleanup()")
         serverMap.clear()
         handleMap.clear()
     }
@@ -67,7 +68,7 @@ class GattServerManager(
         app.id = serverIf
         val message = "Unregistering server for $app, callback=${app.callback}"
         val onDeathAction = { gatt.doOnGattThread { unregisterServer(app.callback) } }
-        app.linkToDeath { ActionOnDeathRecipient(TAG, message, onDeathAction) }
+        app.linkToDeath(ActionOnDeathRecipient(TAG, message, onDeathAction))
         callbackToApp { app.callback.onServerRegistered(status) }
     }
 

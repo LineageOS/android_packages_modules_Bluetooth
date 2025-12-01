@@ -6683,9 +6683,20 @@ public class BassClientServiceTest {
         onSyncEstablished(mSourceDevice2, TEST_SYNC_HANDLE_2);
         mBassClientService.addSource(mCurrentDevice, mBroadcastMetadata2, /* isGroupOp */ true);
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata2);
-        for (BassClientStateMachine sm : mStateMachines.values()) {
-            clearInvocations(sm);
-        }
+
+        BassClientStateMachine sm1 = mStateMachines.get(mCurrentDevice);
+        BassClientStateMachine sm2 = mStateMachines.get(mCurrentDevice1);
+
+        // Mock pending switch operation
+        doReturn(true).when(sm1).hasPendingSwitchingSourceOperation(TEST_BROADCAST_ID_2);
+        doReturn(true).when(sm2).hasPendingSwitchingSourceOperation(TEST_BROADCAST_ID_2);
+
+        // Simulate source removal
+        injectRemoteSourceStateRemoval(sm1, TEST_SOURCE_ID);
+        injectRemoteSourceStateRemoval(sm2, TEST_SOURCE_ID + 1);
+
+        clearInvocations(sm1);
+        clearInvocations(sm2);
         injectRemoteSourceStateSourceAdded(
                 mBroadcastMetadata2, /* isPaSynced */ false, /* isBisSynced */ false);
 
@@ -6693,10 +6704,9 @@ public class BassClientServiceTest {
         mBassClientService.cacheSuspendingSources(TEST_BROADCAST_ID_2);
         mBassClientService.resumeReceiversSourceSynchronization();
         // Verify that only one message per sink was sent
-        for (BassClientStateMachine sm : mStateMachines.values()) {
-            ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
-            verify(sm).sendMessage(messageCaptor.capture());
-        }
+        verify(sm1).sendMessage(any());
+        verify(sm2).sendMessage(any());
+
         // And this message is to resume broadcast
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata2);
     }
@@ -6733,8 +6743,7 @@ public class BassClientServiceTest {
         mBassClientService.resumeReceiversSourceSynchronization();
         // Verify that only one message per sink was sent
         for (BassClientStateMachine sm : mStateMachines.values()) {
-            ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
-            verify(sm).sendMessage(messageCaptor.capture());
+            verify(sm).sendMessage(any());
         }
         // And this message is to resume broadcast
         verifyAllGroupMembersGettingUpdateOrAddSource(mBroadcastMetadata2);

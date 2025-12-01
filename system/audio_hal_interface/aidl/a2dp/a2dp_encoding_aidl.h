@@ -53,6 +53,12 @@ bool init(bluetooth::common::MessageLoopThread* message_loop,
           bluetooth::audio::a2dp::StreamCallbacks const* stream_callbacks, bool offload_enabled);
 
 /***
+ * Initialize BluetoothAudio HAL for decoding session
+ ***/
+bool init_decoder(bluetooth::audio::a2dp::StreamCallbacks const* stream_callbacks,
+                  bool offload_enabled);
+
+/***
  * Clean up BluetoothAudio HAL
  ***/
 void cleanup();
@@ -133,7 +139,7 @@ std::optional<::bluetooth::audio::a2dp::provider::a2dp_configuration> get_a2dp_c
         std::vector<::bluetooth::audio::a2dp::provider::a2dp_remote_capabilities> const&
                 remote_seps,
         btav_a2dp_codec_config_t const& user_preferences,
-        ::bluetooth::a2dp::CodecId user_preferred_codec_id);
+        ::bluetooth::a2dp::CodecId user_preferred_codec_id, bool is_source);
 
 /***
  * Query the codec parameters from the audio HAL.

@@ -27,10 +27,10 @@
 #include "bluetooth_audio_port_impl.h"
 #include "bta/le_audio/broadcaster/broadcaster_types.h"
 #include "bta/le_audio/le_audio_types.h"
-#include "transport_instance.h"
 
 // Keep after audio_aidl_interfaces.h because of <base/logging.h>
 // conflicting definitions.
+#include "a2dp_aidl_transport.h"
 #include "a2dp_encoding.h"
 
 namespace bluetooth {
@@ -56,10 +56,13 @@ using ::aidl::android::hardware::bluetooth::audio::IBluetoothAudioProviderFactor
 using ::aidl::android::hardware::bluetooth::audio::LatencyMode;
 using ::aidl::android::hardware::bluetooth::audio::MetadataLtv;
 using ::aidl::android::hardware::bluetooth::audio::PcmConfiguration;
+using ::aidl::android::hardware::bluetooth::audio::SessionType;
 
 using ::aidl::android::hardware::common::fmq::MQDescriptor;
 using ::aidl::android::hardware::common::fmq::SynchronizedReadWrite;
 using ::android::AidlMessageQueue;
+
+using ::bluetooth::audio::a2dp::Status;
 
 using MqDataType = int8_t;
 using MqDataMode = SynchronizedReadWrite;
@@ -82,17 +85,17 @@ inline BluetoothAudioStatus StatusToHalStatus(Status ack) {
 }
 
 /***
- * The client interface connects an IBluetoothTransportInstance to
+ * The client interface connects an A2dpTransport to
  * IBluetoothAudioProvider and helps to route callbacks to
- * IBluetoothTransportInstance
+ * A2dpTransport
  ***/
 class BluetoothAudioClientInterface {
 public:
-  BluetoothAudioClientInterface(IBluetoothTransportInstance* instance);
+  BluetoothAudioClientInterface(A2dpTransport* instance);
   virtual ~BluetoothAudioClientInterface();
 
   bool IsValid() const;
-  IBluetoothTransportInstance* GetTransportInstance() const { return transport_; }
+  A2dpTransport* GetTransportInstance() const { return transport_; }
 
   std::vector<AudioCapabilities> GetAudioCapabilities() const;
 
@@ -166,7 +169,7 @@ protected:
           std::string() + IBluetoothAudioProviderFactory::descriptor + "/default";
 
 private:
-  IBluetoothTransportInstance* transport_;
+  A2dpTransport* transport_;
   std::vector<AudioCapabilities> capabilities_;
   std::vector<LatencyMode> latency_modes_;
 

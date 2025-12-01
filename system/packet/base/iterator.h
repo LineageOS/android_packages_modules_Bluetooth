@@ -70,6 +70,7 @@ public:
 
   uint8_t operator*() const;
 
+  // Extract in Little Endian Format
   template <typename FixedWidthIntegerType>
   FixedWidthIntegerType extract() {
     static_assert(std::is_integral<FixedWidthIntegerType>::value,
@@ -84,7 +85,7 @@ public:
     return extracted_value;
   }
 
-  // Extract in Little Endian Format
+  // Extract in Big Endian Format
   template <typename FixedWidthIntegerType>
   FixedWidthIntegerType extractBE() {
     static_assert(std::is_integral<FixedWidthIntegerType>::value,

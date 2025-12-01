@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
-from collections.abc import Callable, Coroutine, Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 import contextlib
 import dataclasses
 import datetime
@@ -46,6 +46,7 @@ from navi.utils import snippet_stub
 _logger = logging.getLogger(__name__)
 _DEFAULT_RETRY_COUNT = 3
 _DEFAULT_RETRY_DELAY_SECONDS = 1.0
+_DEFAULT_CONNECTION_TIMEOUT_SECONDS = 10.0
 _DEFAULT_CALLBACK_TIMEOUT_SECONDS = 30.0
 _FIELD = 'field'
 _MAPPER = 'mapper'
@@ -133,17 +134,17 @@ class CallbackHandler:
                 handler = snippet.audioRegisterCallback()
                 on_close = snippet.audioUnregisterCallback
             case Module.A2DP:
-                handler = snippet.a2dpSetup()
-                on_close = snippet.a2dpTeardown
+                handler = snippet.registerA2dpCallback()
+                on_close = snippet.unregisterA2dpCallback
             case Module.ADAPTER:
-                handler = snippet.adapterSetup()
-                on_close = snippet.adapterTeardown
+                handler = snippet.registerAdapterCallback()
+                on_close = snippet.unregisterAdapterCallback
             case Module.HFP_AG:
-                handler = snippet.hfpAgSetup()
-                on_close = snippet.hfpAgTeardown
+                handler = snippet.registerHfpAgCallback()
+                on_close = snippet.unregisterHfpAgCallback
             case Module.HFP_HF:
-                handler = snippet.hfpHfSetup()
-                on_close = snippet.hfpHfTeardown
+                handler = snippet.registerHfpHfCallback()
+                on_close = snippet.unregisterHfpHfCallback
             case Module.TELECOM:
                 handler = snippet.registerTelecomCallback()
                 on_close = snippet.unregisterTelecomCallback
@@ -1180,6 +1181,14 @@ class AdvertisingSetParameters:
 
 
 @dataclasses.dataclass
+class PeriodicAdvertisingParameters:
+    """android.bluetooth.le.PeriodicAdvertisingParameters."""
+
+    interval: int
+    include_tx_power_level: bool = False
+
+
+@dataclasses.dataclass
 class AdvertisingData:
     """android.bluetooth.le.AdvertiseData."""
 
@@ -1302,7 +1311,7 @@ class LegacyAdvertiser:
         return cls(cookie=cookie, snippet=snippet)
 
     def stop(self) -> None:
-        self.snippet.stopAdvertisingSet(self.cookie)
+        self.snippet.stopAdvertising(self.cookie)
 
     def __enter__(self) -> Self:
         return self
@@ -1321,11 +1330,13 @@ class ExtendedAdvertisingSet:
 
     @classmethod
     async def create(
-        cls: Type[Self],
-        snippet: snippet_stub.BluetoothSnippet,
-        advertising_set_parameters: AdvertisingSetParameters,
-        advertising_data: AdvertisingData | None = None,
-        scan_response: AdvertisingData | None = None,
+            cls: Type[Self],
+            snippet: snippet_stub.BluetoothSnippet,
+            advertising_set_parameters: AdvertisingSetParameters,
+            advertising_data: AdvertisingData | None = None,
+            scan_response: AdvertisingData | None = None,
+            periodic_advertising_parameters: PeriodicAdvertisingParameters | None = (None),
+            periodic_advertising_data: AdvertisingData | None = (None),
     ) -> Self:
         """Starts an Extended Advertising Set.
 
@@ -1334,6 +1345,8 @@ class ExtendedAdvertisingSet:
       advertising_set_parameters: advertising set parameters.
       advertising_data: advertising data.
       scan_response: scan response.
+      periodic_advertising_parameters: periodic advertising parameters.
+      periodic_advertising_data: periodic advertising data.
 
     Returns:
       advertiser instance.
@@ -1343,6 +1356,8 @@ class ExtendedAdvertisingSet:
                 _make_json_object(advertising_set_parameters),
                 _make_json_object(advertising_data),
                 _make_json_object(scan_response),
+                _make_json_object(periodic_advertising_parameters),
+                _make_json_object(periodic_advertising_data),
             ),)
         return cls(cookie=cookie, snippet=snippet)
 
@@ -1485,26 +1500,6 @@ def find_characteristic_by_uuid(characteristic_uuid: str,
     if not characteristic:
         raise errors.NotFoundError(f'Characteristic with {characteristic_uuid} not found.')
     return characteristic
-
-
-def _schedule_rpc(
-    snippet: snippet_stub.BluetoothSnippet,
-    method_name: str,
-    args: Sequence[Any],
-    delay_ms: int = 0,
-) -> Coroutine[None, None, str]:
-    """Calls a snippet method asynchronously."""
-    handler = snippet.scheduleRpc(method_name, delay_ms, args)
-
-    async def wait_for_result() -> str:
-        response: callback_event.CallbackEvent = await asyncio.to_thread(
-            lambda: handler.waitAndGet(method_name))
-        # Mobly doesn't parse JSON events, so they are remained as strings.
-        if (error := response.data['error']) != 'null':
-            raise errors.SnippetError(error)
-        return response.data['result']
-
-    return wait_for_result()
 
 
 class PhoneCall:
@@ -1778,35 +1773,45 @@ class RfcommChannel:
         snippet: snippet_stub.BluetoothSnippet,
         address: str,
         secure: bool,
-        channel_or_uuid: str,
-    ) -> Coroutine[None, None, Self]:
+        uuid: str,
+    ) -> Self:
         """Connects an RFCOMM channel asynchronously.
 
     Args:
       snippet: snippet client instance.
       address: address of target device.
       secure: whether encryption is required.
-      channel_or_uuid: channel number or UUID of the RFCOMM channel.
+      uuid: UUID of the RFCOMM channel.
 
     Returns:
       A coroutine that will return the RFCOMM client wrapper instance.
     """
-        if isinstance(channel_or_uuid, int):
-            method = 'rfcommConnectWithChannel'
-        else:
-            method = 'rfcommConnectWithUuid'
-
-        coro = _schedule_rpc(
-            snippet,
-            method,
-            (address, secure, channel_or_uuid),
+        return cls(
+            snippet=snippet,
+            cookie=snippet.rfcommConnectWithUuid(address, secure, uuid, False),
         )
 
-        async def inner() -> Self:
-            cookie = await coro
-            return cls(snippet=snippet, cookie=cookie)
+    async def wait_for_connected(
+        self,
+        timeout: datetime.timedelta = datetime.timedelta(
+            seconds=_DEFAULT_CONNECTION_TIMEOUT_SECONDS),
+    ) -> None:
+        """Waits for async connection to complete.
 
-        return inner()
+    Args:
+      timeout: Timeout for connection to complete, default is 10 seconds.
+
+    Raises:
+      ConnectionError: RFCOMM is not connected as expected.
+    """
+        try:
+            await asyncio.to_thread(
+                self.snippet.rfcommWaitForConnectionComplete,
+                self.cookie,
+                int(timeout.total_seconds() * 1000),
+            )
+        except mobly.snippet.errors.ApiError as e:
+            raise errors.ConnectionError('Unable to connect RFCOMM') from e
 
     async def close(self) -> None:
         """Closes the RFCOMM channel."""
@@ -2649,7 +2654,7 @@ class SnippetWrapper:
         address: str,
         secure: bool,
         uuid: str,
-    ) -> Coroutine[None, None, RfcommChannel]:
+    ) -> RfcommChannel:
         """Creates an RFCOMM channel.
 
     Args:
@@ -2686,10 +2691,12 @@ class SnippetWrapper:
         )
 
     async def start_extended_advertising_set(
-        self,
-        advertising_set_parameters: AdvertisingSetParameters,
-        advertising_data: AdvertisingData | None = None,
-        scan_response: AdvertisingData | None = None,
+            self,
+            advertising_set_parameters: AdvertisingSetParameters,
+            advertising_data: AdvertisingData | None = None,
+            scan_response: AdvertisingData | None = None,
+            periodic_advertising_parameters: PeriodicAdvertisingParameters | None = (None),
+            periodic_advertising_data: AdvertisingData | None = (None),
     ) -> ExtendedAdvertisingSet:
         """Starts an extended advertising set.
 
@@ -2697,6 +2704,8 @@ class SnippetWrapper:
       advertising_set_parameters: Advertising set parameters.
       advertising_data: Advertising data.
       scan_response: Scan response data.
+      periodic_advertising_parameters: Periodic advertising parameters.
+      periodic_advertising_data: Periodic advertising data.
 
     Returns:
       The extended advertising set control block.
@@ -2706,6 +2715,8 @@ class SnippetWrapper:
             advertising_set_parameters,
             advertising_data,
             scan_response,
+            periodic_advertising_parameters,
+            periodic_advertising_data,
         )
 
     async def start_le_audio_broadcast(

@@ -8,7 +8,7 @@
         errorLine2="                 ~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/tools/ScanningApp/src/com/android/bluetooth/scanningapp/MainActivity.kt"
-            line="205"
+            line="245"
             column="18"/>
     </issue>
 

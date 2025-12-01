@@ -10,3 +10,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "hap_keep_bonded_dev_in_ram"
+    namespace: "bluetooth"
+    description: "Bonded HAS devices are kept in RAM until they are unbonded"
+    bug: "463580421"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

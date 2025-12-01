@@ -977,9 +977,9 @@ public:
                                    uint32_t error_centimeter, int azimuth_angle,
                                    int error_azimuth_angle, int altitude_angle,
                                    int error_altitude_angle, uint64_t elapsed_realtime_nanos,
-                                   int8_t confidence_level, double delay_spread_meters,
-                                   uint8_t detected_attack_level, double velocity_meters_per_second,
-                                   uint8_t method) {
+                                   int remote_tx_power, int reflector_rssi, int8_t confidence_level,
+                                   double delay_spread_meters, uint8_t detected_attack_level,
+                                   double velocity_meters_per_second, uint8_t method) {
     std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
     if (!sCallbackEnv.valid() || !mDistanceMeasurementCallbacksObj) {
@@ -989,8 +989,9 @@ public:
     sCallbackEnv->CallVoidMethod(
             mDistanceMeasurementCallbacksObj, method_onDistanceMeasurementResult, addr.get(),
             centimeter, error_centimeter, azimuth_angle, error_azimuth_angle, altitude_angle,
-            error_altitude_angle, elapsed_realtime_nanos, confidence_level, delay_spread_meters,
-            detected_attack_level, velocity_meters_per_second, method);
+            error_altitude_angle, elapsed_realtime_nanos, remote_tx_power, reflector_rssi,
+            confidence_level, delay_spread_meters, detected_attack_level,
+            velocity_meters_per_second, method);
   }
 };
 
@@ -2104,7 +2105,7 @@ static int register_com_android_bluetooth_gatt_distance_measurement(JNIEnv* env)
            &method_onDistanceMeasurementStarted},
           {"onDistanceMeasurementStopped", "(Ljava/lang/String;II)V",
            &method_onDistanceMeasurementStopped},
-          {"onDistanceMeasurementResult", "(Ljava/lang/String;IIIIIIJIDIDI)V",
+          {"onDistanceMeasurementResult", "(Ljava/lang/String;IIIIIIJIIIDIDI)V",
            &method_onDistanceMeasurementResult},
   };
   GET_JAVA_METHODS(env, "com/android/bluetooth/gatt/DistanceMeasurementNativeCallback",

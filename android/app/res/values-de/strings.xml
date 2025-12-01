@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Ermöglicht der App, auf den Bluetooth-Weiterleitungs-Manager zuzugreifen und diesen für die Übertragung von Dateien zu verwenden."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"Bluetooth-Gerät für Zugriff zur Zulassungsliste hinzufügen"</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Ermöglicht der App, ein Bluetooth-Gerät vorübergehend zur Zulassungsliste hinzuzufügen, sodass es ohne Bestätigung des Nutzers Dateien an dieses Gerät senden kann."</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetooth"</string>
     <string name="unknown_device" msgid="2317679521750821654">"Unbekanntes Gerät"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"Unbekannter Anrufer"</string>
@@ -112,10 +116,12 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"Öffnen"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"Aus Liste löschen"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"Löschen"</string>
-    <string name="bluetooth_media_audio_queue_name" msgid="7521243473328258997">"Now Playing"</string>
+    <!-- no translation found for bluetooth_media_audio_app_name (2389937877819723460) -->
+    <skip />
+    <!-- no translation found for bluetooth_media_audio_queue_name (2327164681598379428) -->
+    <skip />
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"App-Symbol"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"Bluetooth-Audio-Verbindung aufgehoben"</string>
-    <string name="bluetooth_media_audio_app_name" msgid="6035366346569127155">"Bluetooth-Audio"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"Dateien mit mehr als 4 GB können nicht übertragen werden"</string>
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"Mit Bluetooth verbinden"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"Bluetooth im Flugmodus eingeschaltet"</string>

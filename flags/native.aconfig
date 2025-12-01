@@ -74,3 +74,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "resolve_collision_conn_discon"
+    namespace : "bluetooth"
+    description: "Resolve the collision between connection and disconnection on the same handle."
+    bug: "461368782"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

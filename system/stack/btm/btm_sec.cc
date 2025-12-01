@@ -25,8 +25,6 @@
 #include "bluetooth/types/bt_octets.h"
 #define LOG_TAG "bt_btm_sec"
 
-#include "stack/btm/btm_sec.h"
-
 #include <android_bluetooth_sysprop.h>
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
@@ -62,6 +60,7 @@
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_device_record.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_cb.h"
 #include "stack/btm/btm_sec_int_types.h"
 #include "stack/btm/internal/btm_api.h"
@@ -77,6 +76,7 @@
 #include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
+#include "stack/include/hcidefs.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/l2cap_security_interface.h"
 #include "stack/include/l2cdefs.h"
@@ -204,7 +204,7 @@ static tBTM_STATUS btm_sec_report_bond_loss(BtmDevice* p_device, tBT_TRANSPORT t
   }
 
   // Mark this device as bond lost
-  if (com::android::bluetooth::flags::autonomous_repairing_initiation()) {
+  if (is_autonomous_repairing_supported()) {
     p_device->bond_lost = true;
   }
 
@@ -224,7 +224,7 @@ static tBTM_STATUS btm_sec_report_bond_loss(BtmDevice* p_device, tBT_TRANSPORT t
     return tBTM_STATUS::BTM_SUCCESS;
   }
 
-  if (!com::android::bluetooth::flags::autonomous_repairing_initiation()) {
+  if (!is_autonomous_repairing_supported()) {
     btm_sec_disconnect(handle, HCI_ERR_AUTH_FAILURE, disc_reason.c_str());
   }
 
@@ -2440,20 +2440,19 @@ void btm_io_capabilities_req(RawAddress p) {
     /* Encrypted link means that the device is already authenticated and is trying to upgrade
      * security */
     if (!p_device->sec_rec.is_device_encrypted()) {
-      if (!com::android::bluetooth::flags::autonomous_repairing_initiation()) {
+      if (!is_autonomous_repairing_supported()) {
         btsnd_hcic_io_cap_req_neg_reply(p, HCI_ERR_PAIRING_NOT_ALLOWED);
       }
       btm_sec_report_bond_loss(p_device, BT_TRANSPORT_BR_EDR,
                                BTM_KEY_MISSING_BREDR_INCOMING_PAIRING);
-      if (!com::android::bluetooth::flags::autonomous_repairing_initiation()) {
+      if (!is_autonomous_repairing_supported()) {
         // continue with pairing process
         return;
       }
     }
 
     log::info("Incoming pairing request for bonded and encrypted device {}", p);
-    if (!com::android::bluetooth::flags::autonomous_repairing_initiation() ||
-        !p_device->bond_lost) {
+    if (!is_autonomous_repairing_supported() || !p_device->bond_lost) {
       // Do not remove the device, just proceed with re-pairing.
       bta_dm_process_remove_device(p);
     }
@@ -3039,7 +3038,7 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
             reinterpret_cast<char const*>(p_device->sec_bd_name));
 
     if (status == HCI_ERR_KEY_MISSING) {
-      if (com::android::bluetooth::flags::autonomous_repairing_initiation()) {
+      if (is_autonomous_repairing_supported()) {
         // Reset the security state to IDLE to allow for a new pairing attempt.
         p_device->sec_rec.classic_link = tSECURITY_STATE::IDLE;
       }
@@ -3132,7 +3131,7 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
     }
   }
 
-  if (com::android::bluetooth::flags::autonomous_repairing_initiation() && status == HCI_SUCCESS) {
+  if (is_autonomous_repairing_supported() && status == HCI_SUCCESS) {
     log::debug("Reset the bond lost status, pairing was successful.");
     p_device->bond_lost = false;
   }
@@ -3394,9 +3393,28 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
   btm_sec_check_pending_enc_req(p_device, transport, encr_enable != HCI_ENCRYPT_MODE_DISABLED);
 
   if (!from_key_refresh) {
-    bta_dm_on_encryption_change(bt_encryption_change_evt{p_device->bd_addr, status,
-                                                         (bool)encr_enable, key_size, transport,
-                                                         p_device->SupportsSecureConnections()});
+    // Determine encryption_algo as per BT spec section `Encryption Change event`.
+    EncryptionAlgorithm encryption_algo = EncryptionAlgorithm::NONE;
+    if (encr_enable == HCI_ENCRYPT_MODE_ON) {
+      encryption_algo =
+              (transport == BT_TRANSPORT_LE) ? EncryptionAlgorithm::AES : EncryptionAlgorithm::E0;
+    } else if (encr_enable == HCI_ENCRYPT_MODE_ON_BR_EDR_AES_CCM) {
+      encryption_algo = EncryptionAlgorithm::AES;  // this is for BR/EDR
+      if (transport == BT_TRANSPORT_LE) {
+        log::warn(
+                "Incorrect parameter `Encryption_Enabled` in encryption change event for TRANSPORT "
+                "LE.");
+      }
+    }
+
+    bta_dm_on_encryption_change(bt_encryption_change_evt{
+            p_device->bd_addr,
+            status,
+            (bool)encr_enable,
+            key_size,
+            transport,
+            encryption_algo,
+    });
   }
 
   if (transport == BT_TRANSPORT_LE) {
@@ -3581,8 +3599,7 @@ void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status, uint8_t 
 
   if (status != HCI_SUCCESS && encr_enable == 0) {
     // Skip the disconnection in case of bond-loss, instead proceed with re-pairing.
-    if (!(com::android::bluetooth::flags::autonomous_repairing_initiation() &&
-          status == HCI_ERR_KEY_MISSING)) {
+    if (!(is_autonomous_repairing_supported() && status == HCI_ERR_KEY_MISSING)) {
       log::error("Encryption failure {}, disconnecting {}", status, handle);
       btm_sec_disconnect(handle, status,
                         "stack::btu::btu_hcif::encryption_change_evt Encryption Failure");

@@ -1359,7 +1359,7 @@ static void btu_hcif_encryption_key_refresh_cmpl_evt(uint8_t* p) {
 
 static void btu_ble_proc_ltk_req(uint8_t* p, uint16_t evt_len) {
   uint16_t ediv, handle;
-  uint8_t* pp;
+  Octet8 rand;
 
   // following the spec in Core_v5.3/Vol 4/Part E
   // / 7.7.65.5 LE Long Term Key Request event
@@ -1374,10 +1374,8 @@ static void btu_ble_proc_ltk_req(uint8_t* p, uint16_t evt_len) {
   }
 
   STREAM_TO_UINT16(handle, p);
-  pp = p + 8;
-  STREAM_TO_UINT16(ediv, pp);
-  Octet8 rand;
-  STREAM_TO_ARRAY(rand.data(), pp, kOctet8Length);
+  STREAM_TO_ARRAY(rand.data(), p, kOctet8Length);
+  STREAM_TO_UINT16(ediv, p);
   btm_ble_ltk_request(handle, rand, ediv);
   /* This is empty until an upper layer cares about returning event */
 }

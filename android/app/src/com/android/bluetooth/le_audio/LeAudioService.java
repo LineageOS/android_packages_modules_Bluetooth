@@ -417,13 +417,7 @@ public class LeAudioService extends ConnectableProfile {
 
             try {
                 ApplicationInfo info = mPackageManager.getApplicationInfo(packageName, 0);
-                boolean isGameApp;
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    isGameApp = info.category == ApplicationInfo.CATEGORY_GAME;
-                } else {
-                    isGameApp = (info.flags & ApplicationInfo.FLAG_IS_GAME) != 0;
-                }
+                boolean isGameApp = info.category == ApplicationInfo.CATEGORY_GAME;
                 if (isGameApp) {
                     return true;
                 }

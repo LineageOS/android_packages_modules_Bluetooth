@@ -120,18 +120,17 @@ struct get_a2dp_configuration {
   std::function<std::optional<a2dp_configuration>(
           RawAddress peer_address, std::vector<a2dp_remote_capabilities> const& remote_seps,
           btav_a2dp_codec_config_t const& user_preferences,
-          ::bluetooth::a2dp::CodecId user_preferred_codec_id)>
+          ::bluetooth::a2dp::CodecId user_preferred_codec_id, bool is_source)>
           body{[](RawAddress /* peer_address */,
                   std::vector<a2dp_remote_capabilities> const& /* remote_seps */,
                   btav_a2dp_codec_config_t const& /* user_preferences */,
-                  ::bluetooth::a2dp::CodecId /* user_preferred_codec_id */) {
-            return return_value;
-          }};
+                  ::bluetooth::a2dp::CodecId /* user_preferred_codec_id */,
+                  bool /* is_source */) { return return_value; }};
   std::optional<a2dp_configuration> operator()(
           RawAddress peer_address, std::vector<a2dp_remote_capabilities> const& remote_seps,
           btav_a2dp_codec_config_t const& user_preferences,
-          ::bluetooth::a2dp::CodecId user_preferred_codec_id) {
-    return body(peer_address, remote_seps, user_preferences, user_preferred_codec_id);
+          ::bluetooth::a2dp::CodecId user_preferred_codec_id, bool is_source) {
+    return body(peer_address, remote_seps, user_preferences, user_preferred_codec_id, is_source);
   }
 };
 extern struct get_a2dp_configuration get_a2dp_configuration;
@@ -152,6 +151,21 @@ struct init {
   }
 };
 extern struct init init;
+
+// Name: init_decoder
+// Params: bluetooth::audio::a2dp::StreamCallbacks const* stream_callbacks, bool offload_enabled
+// Return: bool
+struct init_decoder {
+  static bool return_value;
+  std::function<bool(bluetooth::audio::a2dp::StreamCallbacks const*, bool)> body{
+          [](bluetooth::audio::a2dp::StreamCallbacks const* /* stream_callbacks */,
+             bool /* offload_enabled */) { return return_value; }};
+  bool operator()(bluetooth::audio::a2dp::StreamCallbacks const* stream_callbacks,
+                  bool offload_enabled) {
+    return body(stream_callbacks, offload_enabled);
+  }
+};
+extern struct init_decoder init_decoder;
 
 // Name: is_hal_enabled
 // Params:

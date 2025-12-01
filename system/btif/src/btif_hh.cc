@@ -150,7 +150,7 @@ static tHID_KB_LIST hid_kb_numlock_on_list[] = {
 #define BTHH_STATE_UPDATE(_link_spec, _state, _reason)                                     \
   do {                                                                                     \
     log::verbose("link spec: {} state: {} reason: {}", (_link_spec), (_state), (_reason)); \
-    HAL_CBACK(bt_hh_callbacks, connection_state_cb, &(_link_spec).addrt.bda,               \
+    HAL_CBACK(bt_hh_callbacks, connection_state_cb, (_link_spec).addrt.bda,                \
               (_link_spec).addrt.type, (_link_spec).transport, (_state), (_reason));       \
   } while (0)
 
@@ -720,12 +720,12 @@ static void hh_get_rpt_handler(tBTA_HH_HSDATA& hs_data) {
   if (hdr) { /* Get report response */
     uint8_t* data = (uint8_t*)(hdr + 1) + hdr->offset;
     uint16_t len = hdr->len;
-    HAL_CBACK(bt_hh_callbacks, get_report_cb, &p_dev->link_spec.addrt.bda,
+    HAL_CBACK(bt_hh_callbacks, get_report_cb, p_dev->link_spec.addrt.bda,
               p_dev->link_spec.addrt.type, p_dev->link_spec.transport, hs_data.status, data, len);
 
     bta_hh_co_get_rpt_rsp(p_dev->dev_handle, hs_data.status, data, len);
   } else { /* Handshake */
-    HAL_CBACK(bt_hh_callbacks, handshake_cb, &p_dev->link_spec.addrt.bda,
+    HAL_CBACK(bt_hh_callbacks, handshake_cb, p_dev->link_spec.addrt.bda,
               p_dev->link_spec.addrt.type, p_dev->link_spec.transport, hs_data.status);
     bta_hh_co_get_rpt_rsp(p_dev->dev_handle, hs_data.status, NULL, 0);
   }
@@ -739,7 +739,7 @@ static void hh_set_rpt_handler(tBTA_HH_CBDATA& dev_status) {
   }
 
   log::verbose("Status = {}, handle = {}", dev_status.status, dev_status.handle);
-  HAL_CBACK(bt_hh_callbacks, handshake_cb, &p_dev->link_spec.addrt.bda, p_dev->link_spec.addrt.type,
+  HAL_CBACK(bt_hh_callbacks, handshake_cb, p_dev->link_spec.addrt.bda, p_dev->link_spec.addrt.type,
             p_dev->link_spec.transport, dev_status.status);
 
   bta_hh_co_set_rpt_rsp(p_dev->dev_handle, dev_status.status);
@@ -758,11 +758,11 @@ static void hh_get_proto_handler(tBTA_HH_HSDATA& hs_data) {
             : (hs_data.rsp_data.proto_mode == BTA_HH_PROTO_BOOT_MODE) ? "Boot Mode"
                                                                       : "Unsupported");
   if (hs_data.rsp_data.proto_mode != BTA_HH_PROTO_UNKNOWN) {
-    HAL_CBACK(bt_hh_callbacks, protocol_mode_cb, &p_dev->link_spec.addrt.bda,
+    HAL_CBACK(bt_hh_callbacks, protocol_mode_cb, p_dev->link_spec.addrt.bda,
               p_dev->link_spec.addrt.type, p_dev->link_spec.transport, hs_data.status,
               (bthh_protocol_mode_t)hs_data.rsp_data.proto_mode);
   } else {
-    HAL_CBACK(bt_hh_callbacks, handshake_cb, &p_dev->link_spec.addrt.bda,
+    HAL_CBACK(bt_hh_callbacks, handshake_cb, p_dev->link_spec.addrt.bda,
               p_dev->link_spec.addrt.type, p_dev->link_spec.transport, hs_data.status);
   }
 }
@@ -775,7 +775,7 @@ static void hh_set_proto_handler(tBTA_HH_CBDATA& dev_status) {
   }
 
   log::verbose("Status = {}, handle = {}", dev_status.status, dev_status.handle);
-  HAL_CBACK(bt_hh_callbacks, handshake_cb, &p_dev->link_spec.addrt.bda, p_dev->link_spec.addrt.type,
+  HAL_CBACK(bt_hh_callbacks, handshake_cb, p_dev->link_spec.addrt.bda, p_dev->link_spec.addrt.type,
             p_dev->link_spec.transport, dev_status.status);
 }
 
@@ -788,7 +788,7 @@ static void hh_get_idle_handler(tBTA_HH_HSDATA& hs_data) {
 
   log::verbose("Handle = {}, status = {}, rate = {}", hs_data.handle, hs_data.status,
                hs_data.rsp_data.idle_rate);
-  HAL_CBACK(bt_hh_callbacks, idle_time_cb, &p_dev->link_spec.addrt.bda, p_dev->link_spec.addrt.type,
+  HAL_CBACK(bt_hh_callbacks, idle_time_cb, p_dev->link_spec.addrt.bda, p_dev->link_spec.addrt.type,
             p_dev->link_spec.transport, hs_data.status, hs_data.rsp_data.idle_rate);
 }
 
@@ -1031,15 +1031,15 @@ static void btif_hh_remove_device_in_jni_thread(const AclLinkSpec& link_spec) {
 
   if (com::android::bluetooth::flags::hidh_close_in_jni_thread()) {
     RawAddress bd_addr = link_spec.addrt.bda;
-    HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, &bd_addr, link_spec.addrt.type,
+    HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, bd_addr, link_spec.addrt.type,
               link_spec.transport, BTHH_OK);
     return;
   }
 
   do_in_jni_thread(base::BindOnce(
           [](AclLinkSpec ls) {
-            HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, &ls.addrt.bda, ls.addrt.type,
-                      ls.transport, BTHH_OK);
+            HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, ls.addrt.bda, ls.addrt.type, ls.transport,
+                      BTHH_OK);
           },
           link_spec));
 }
@@ -1092,12 +1092,12 @@ static void btif_hh_remove_pending_connection(const AclLinkSpec& link_spec) {
     log::verbose("Removed pending connections to {}", link_spec);
     if (com_android_bluetooth_flags_hh_state_update_race_fix()) {
       AclLinkSpec ls = link_spec;
-      HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, &ls.addrt.bda, ls.addrt.type, ls.transport,
+      HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, ls.addrt.bda, ls.addrt.type, ls.transport,
                 BTHH_OK);
     } else {
       do_in_jni_thread(base::BindOnce(
               [](AclLinkSpec ls) {
-                HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, &ls.addrt.bda, ls.addrt.type,
+                HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, ls.addrt.bda, ls.addrt.type,
                           ls.transport, BTHH_OK);
               },
               link_spec));

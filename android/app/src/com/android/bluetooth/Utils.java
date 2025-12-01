@@ -775,4 +775,9 @@ public final class Utils {
             throw new IllegalThreadStateException("Must NOT be called on main thread");
         }
     }
+
+    public static boolean isAutonomousRepairingSupported() {
+        // TODO (b/440298497): Change this to flag and android check once the SDK check CL is in.
+        return false;
+    }
 }

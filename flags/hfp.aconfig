@@ -203,3 +203,13 @@ flag {
     description: "Deprecate methods that will not be used for Audio managed by Sco"
     bug: "456541678"
 }
+
+flag {
+    name: "hangup_callstate_simulated_ringing"
+    namespace: "bluetooth"
+    description: "Reject to hang up call that is STATE_SIMULATED_RINGING state"
+    bug: "460640390"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

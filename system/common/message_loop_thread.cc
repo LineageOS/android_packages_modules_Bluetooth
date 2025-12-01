@@ -138,35 +138,54 @@ bool MessageLoopThread::DoInThreadDelayed(base::OnceClosure task, std::chrono::m
   return true;
 }
 
+void MessageLoopThread::Suspend() {
+  if (!com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
+    return;
+  }
+
+  std::future<void> future;
+  {
+    std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+    if (handler_ == nullptr) {  // or (handler_thread_ == nullptr)
+      log::error("handler is already stopped for thread {}", *this);
+      return;
+    }
+
+    /**
+     * Waiting for the handler to be idle.
+     * This replicates RunLoop::QuitWhenIdle() functionality.
+     */
+    future = handler_->NotifyWhenIdle();
+  }
+
+  // Let this thread finish with `api_mutex_` released.
+  log::assert_that(future.wait_for(kHandlerStopTimeout) == std::future_status::ready,
+                   "assert failed: Thread {} is not idle after waiting for {} ms",
+                   handler_thread_->GetThreadName(), kHandlerStopTimeout.count());
+  {
+    std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+    handler_->Clear();
+  }
+
+  // To prevent deadlock, release the lock before waiting for the reactable to be unregistered.
+  // This is safe because the handler is already cleared and will no longer accept tasks.
+  handler_->WaitUntilStopped(kHandlerStopTimeout);
+}
+
 void MessageLoopThread::ShutDown() {
   if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
-    std::future<void> future;
     {
       std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
       if (handler_ == nullptr) {  // or (handler_thread_ == nullptr)
         log::error("handler is already stopped for thread {}", *this);
         return;
       }
-
-      /**
-       * Waiting for the handler to be idle.
-       * This replicates RunLoop::QuitWhenIdle() functionality.
-       */
-      future = handler_->NotifyWhenIdle();
     }
 
-    // Let this thread finish with `api_mutex_` released.
-    log::assert_that(future.wait_for(kHandlerStopTimeout) == std::future_status::ready,
-                     "assert failed: Thread {} is not idle after waiting for {} ms",
-                     handler_thread_->GetThreadName(), kHandlerStopTimeout.count());
-    {
-      std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
-      handler_->Clear();
+    if (!handler_->IsCleared()) {
+      log::info("MessageLoopThread was not previously suspended");
+      Suspend();
     }
-
-    // To prevent deadlock, release the lock before waiting for the reactable to be unregistered.
-    // This is safe because the handler is already cleared and will no longer accept tasks.
-    handler_->WaitUntilStopped(kHandlerStopTimeout);
 
     {
       std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);

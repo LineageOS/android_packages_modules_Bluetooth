@@ -21,6 +21,10 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"अ‍ॅपला BluetoothShare व्‍यवस्‍थापकामध्‍ये प्रवेश करण्‍याची आणि फाइल स्‍थानांतरित करण्‍यासाठी त्याचा वापर करण्‍याची अनुमती देते."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"ब्लूटूथ डिव्‍हाइस अ‍ॅक्सेस ॲक्सेप्टलिस्ट करा."</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"त्या डिव्हाइसला वापरकर्ता पुष्‍टीशिवाय या डिव्हाइसवर फाइल पाठवण्‍याची अनुमती देऊन ब्लूटूथ डिव्‍हाइसला तात्पुरते ॲक्सेप्टलिस्ट करण्‍याची अ‍ॅपला अनुमती देते."</string>
+    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
+    <skip />
+    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
+    <skip />
     <string name="bt_share_picker_label" msgid="7464438494743777696">"ब्लूटूथ"</string>
     <string name="unknown_device" msgid="2317679521750821654">"अज्ञात डिव्हाइस"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"अज्ञात"</string>
@@ -112,10 +116,12 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"उघडा"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"सूचीमधून साफ करा"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"साफ करा"</string>
-    <string name="bluetooth_media_audio_queue_name" msgid="7521243473328258997">"आता प्ले करत आहे"</string>
+    <!-- no translation found for bluetooth_media_audio_app_name (2389937877819723460) -->
+    <skip />
+    <!-- no translation found for bluetooth_media_audio_queue_name (2327164681598379428) -->
+    <skip />
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"ॲप्लिकेशन आयकन"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"ब्लूटूथ ऑडिओ डिस्कनेक्ट केला"</string>
-    <string name="bluetooth_media_audio_app_name" msgid="6035366346569127155">"ब्लूटूथ ऑडिओ"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"4 GB हून मोठ्या फाइल ट्रान्सफर करता येणार नाहीत"</string>
     <string name="bluetooth_connect_action" msgid="2319449093046720209">"ब्लूटूथशी कनेक्ट करा"</string>
     <string name="bluetooth_enabled_apm_title" msgid="6914461147844949044">"विमान मोडमध्ये ब्लूटूथ सुरू आहे"</string>
