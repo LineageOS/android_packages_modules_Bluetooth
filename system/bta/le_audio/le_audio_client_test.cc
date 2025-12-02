@@ -1250,7 +1250,7 @@ protected:
                   group->cig.GenerateCisIds(context_type);
 
                   std::vector<uint16_t> conn_handles;
-                  for (uint8_t i = 0; i < (uint8_t)(group->cig.cises.size()); i++) {
+                  for (uint8_t i = 0; i < (uint8_t)(group->cig.GetCises().size()); i++) {
                     conn_handles.push_back(iso_con_counter_++);
                   }
                   group->cig.AssignCisConnHandles(conn_handles);
@@ -13745,7 +13745,7 @@ TEST_F(UnicastTest, SpeakerStreamingTimeout) {
 
   /* No assigned cises should remain when transition remains in IDLE state */
   ASSERT_NE(0lu, streaming_groups.count(group_id));
-  ASSERT_EQ(0, static_cast<int>(group->cig.cises.size()));
+  ASSERT_EQ(0, static_cast<int>(group->cig.GetCises().size()));
   ASSERT_TRUE(device != nullptr);
   ASSERT_EQ(device->GetConnectionState(), DeviceConnectState::CONNECTING_AUTOCONNECT);
   Mock::VerifyAndClearExpectations(&mock_btm_interface_);

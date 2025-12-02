@@ -1450,7 +1450,7 @@ public:
         }
 
         log::info("Lost all members from the group {}", group->group_id_);
-        group->cig.cises.clear();
+        group->cig.ClearCisIds();
         RemoveCigForGroup(group);
 
         group->SetState(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE);
@@ -1819,7 +1819,8 @@ private:
      * later, with active device/ASE(s), check if current configuration is
      * supported or not, if not, reconfigure CIG.
      */
-    for (struct bluetooth::le_audio::types::cis& cis : group->cig.cises) {
+    auto& cises = group->cig.GetCises();
+    for (const struct bluetooth::le_audio::types::cis& cis : cises) {
       uint16_t max_sdu_size_mtos_temp =
               group->GetMaxSduSize(bluetooth::le_audio::types::kLeAudioDirectionSink, cis.id);
       uint16_t max_sdu_size_stom_temp =
@@ -1835,7 +1836,7 @@ private:
       rtn_stom = rtn_stom_temp ? rtn_stom_temp : rtn_stom;
     }
 
-    for (struct bluetooth::le_audio::types::cis& cis : group->cig.cises) {
+    for (const struct bluetooth::le_audio::types::cis& cis : cises) {
       EXT_CIS_CFG cis_cfg = {};
 
       cis_cfg.cis_id = cis.id;
