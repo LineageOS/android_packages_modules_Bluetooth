@@ -21,10 +21,8 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"‏מאפשר לאפליקציה לגשת למנהל BluetoothShare ולהשתמש בו להעברת קבצים."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"‏גישה לרשימת ההיתרים של מכשיר Bluetooth."</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"‏התכונה הזו מאפשרת לאפליקציה להוסיף מכשיר Bluetooth לרשימת ההיתרים באופן זמני, ובכך לאפשר לאותו מכשיר לשלוח קבצים למכשיר זה ללא אישור משתמש."</string>
-    <!-- no translation found for permlab_bluetoothBackup (49451988877877942) -->
-    <skip />
-    <!-- no translation found for permdesc_bluetoothBackup (2871500153259509669) -->
-    <skip />
+    <string name="permlab_bluetoothBackup" msgid="49451988877877942">"‏מתן הרשאה לשדר גיבויים ב-Bluetooth."</string>
+    <string name="permdesc_bluetoothBackup" msgid="2871500153259509669">"‏מאפשר לאפליקציית Bluetooth לקבל שידורים כדי להפעיל גיבוי של נתוני ההגדרות"</string>
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetooth"</string>
     <string name="unknown_device" msgid="2317679521750821654">"מכשיר לא ידוע"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"לא ידוע"</string>
@@ -116,10 +114,8 @@
     <string name="transfer_menu_open" msgid="5193344638774400131">"פתיחה"</string>
     <string name="transfer_menu_clear" msgid="7213491281898188730">"ניקוי מהרשימה"</string>
     <string name="transfer_clear_dlg_title" msgid="128904516163257225">"ניקוי"</string>
-    <!-- no translation found for bluetooth_media_audio_app_name (2389937877819723460) -->
-    <skip />
-    <!-- no translation found for bluetooth_media_audio_queue_name (2327164681598379428) -->
-    <skip />
+    <string name="bluetooth_media_audio_app_name" msgid="2389937877819723460">"‏אודיו Bluetooth"</string>
+    <string name="bluetooth_media_audio_queue_name" msgid="2327164681598379428">"מה שומעים עכשיו?"</string>
     <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"סמל אפליקציה"</string>
     <string name="bluetooth_disconnected" msgid="6841396291728343534">"‏אודיו Bluetooth מנותק"</string>
     <string name="bluetooth_opp_file_limit_exceeded" msgid="6612109860149473930">"‏לא ניתן להעביר קבצים שגדולים מ-4GB"</string>
@@ -134,6 +130,6 @@
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"‏חיבורי ה-Wi‑Fi וה-Bluetooth יישארו מופעלים"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"‏חיבורי ה-Wi‑Fi וה-Bluetooth במכשיר יישארו מופעלים במצב טיסה. אפשר להשבית את ה-Wi-Fi וה-Bluetooth אם לא רוצים שהם יפעלו."</string>
     <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"‏ה-Bluetooth הופעל מחדש"</string>
-    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"תמיד אפשר לשנות את זה ב\'הגדרות\'"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"תמיד אפשר לשנות את זה ב\"הגדרות\""</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"‏החלפת מצב אוטומטית של Bluetooth"</string>
 </resources>
