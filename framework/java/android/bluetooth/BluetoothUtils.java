@@ -419,6 +419,24 @@ public final class BluetoothUtils {
         return function.apply(service, defaultValue);
     }
 
+    public static <S, R> R callServiceIfEnabling(
+            BluetoothAdapter adapter,
+            Supplier<S> provider,
+            RemoteExceptionIgnoringFunction<S, R> function,
+            R defaultValue) {
+        int state = adapter.getState();
+        if (state != BluetoothAdapter.STATE_ON && state != BluetoothAdapter.STATE_TURNING_ON) {
+            Log.d(TAG, "Invalid Bluetooth state " + BluetoothAdapter.nameForState(state));
+            return defaultValue;
+        }
+        final S service = provider.get();
+        if (service == null) {
+            Log.d(TAG, "Proxy not attached to service");
+            return defaultValue;
+        }
+        return callService(service, function, defaultValue);
+    }
+
     public static <S, R> R callServiceIfEnabled(
             BluetoothAdapter adapter,
             Supplier<S> provider,

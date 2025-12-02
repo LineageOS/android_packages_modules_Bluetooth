@@ -1730,7 +1730,10 @@ public final class BluetoothAdapter {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public @NonNull List<ParcelUuid> getUuidsList() {
         List<ParcelUuid> defaultValue = new ArrayList<>();
-        if (getState() != STATE_ON) {
+        int state = getState();
+        // Exceptionally allow call to go through during TURNING_ON, as this method can be called in
+        // response to loading the stored bonded devices.
+        if (state != STATE_ON && state != STATE_TURNING_ON) {
             return defaultValue;
         }
         return callServiceIfEnabled(s -> s.getUuids(mAttributionSource), defaultValue);
