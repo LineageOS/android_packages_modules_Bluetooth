@@ -158,7 +158,12 @@ void LeAudioDeviceGroup::ClearSourcesFromConfiguration(void) {
 
 void LeAudioDeviceGroup::ClearAllCises(void) {
   log::info("group_id: {}", group_id_);
-  cig.ClearCisIds();
+
+  if (com_android_bluetooth_flags_leaudio_fix_clear_cises_in_the_cig()) {
+    cig.UnassignAllCises();
+  } else {
+    cig.ClearCisIds();
+  }
   ClearSinksFromConfiguration();
   ClearSourcesFromConfiguration();
 }
@@ -1855,6 +1860,24 @@ void LeAudioDeviceGroup::AssignCisConnHandlesToAses(void) {
   /* Assign all CIS connection handles to ases */
   for (; leAudioDevice != nullptr; leAudioDevice = GetNextActiveDevice(leAudioDevice)) {
     AssignCisConnHandlesToAses(leAudioDevice);
+  }
+}
+
+void LeAudioDeviceGroup::CigConfiguration::UnassignAllCises(void) {
+  log::info("Group {}, group_id {}", std::format_ptr(group_), group_->group_id_);
+
+  for (struct bluetooth::le_audio::types::cis& cis_entry : cises) {
+    cis_entry.addr = RawAddress::kEmpty;
+  }
+}
+
+void LeAudioDeviceGroup::CigConfiguration::PrintCigState(void) {
+  log::verbose("Group {}, group_id {} cig_state: {}", std::format_ptr(group_), group_->group_id_,
+               bluetooth::common::ToString(state_));
+
+  for (struct bluetooth::le_audio::types::cis& cis_entry : cises) {
+    log::verbose("cis_id: {}, type: {}, conn_handle: {:#x}, assigned_address: {}", cis_entry.id,
+                 cis_entry.type, cis_entry.conn_handle, cis_entry.addr);
   }
 }
 
