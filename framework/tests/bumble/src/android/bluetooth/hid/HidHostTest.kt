@@ -464,6 +464,11 @@ class HidHostTest {
                 BluetoothHidHost.VIRTUAL_UNPLUG_STATUS_SUCCESS,
             ),
         )
+        verifyIntentReceived(
+            hasAction(ACTION_BOND_STATE_CHANGED),
+            hasExtra(EXTRA_DEVICE, device),
+            hasExtra(EXTRA_BOND_STATE, BOND_NONE),
+        )
     }
 
     /**
