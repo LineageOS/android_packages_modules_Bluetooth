@@ -221,9 +221,13 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                      */
                     leAudio.get().removeActiveDevice(true /* hasFallbackDevice */);
                 } else {
-                    if (a2dp.isPresent() && a2dp.get().getActiveDevice() != null) {
-                        // TODO:  b/312396770
-                        a2dp.get().removeActiveDevice(false);
+                    if (Flags.admUseSetActiveDeviceHelpers()) {
+                        setA2dpActiveDevice(null, /* stopAudio= */ false);
+                    } else {
+                        if (a2dp.isPresent() && a2dp.get().getActiveDevice() != null) {
+                            // TODO:  b/312396770
+                            a2dp.get().removeActiveDevice(false);
+                        }
                     }
                     if (headset.isPresent() && headset.get().getActiveDevice() != null) {
                         headset.get().setActiveDevice(null);
@@ -243,9 +247,13 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                      */
                     leAudio.get().removeActiveDevice(true /* hasFallbackDevice */);
                 } else {
-                    if (a2dp.isPresent() && a2dp.get().getActiveDevice() != null) {
-                        // TODO:  b/312396770
-                        a2dp.get().removeActiveDevice(false);
+                    if (Flags.admUseSetActiveDeviceHelpers()) {
+                        setA2dpActiveDevice(null, /* stopAudio= */ false);
+                    } else {
+                        if (a2dp.isPresent() && a2dp.get().getActiveDevice() != null) {
+                            // TODO:  b/312396770
+                            a2dp.get().removeActiveDevice(false);
+                        }
                     }
                     leAudio.get().setActiveDevice(device);
                 }
@@ -261,7 +269,11 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
         if (setA2dp && a2dpSupported) {
             Log.i(TAG, "setActiveDevice: Setting active A2dp device " + device);
             if (device == null) {
-                a2dp.get().removeActiveDevice(false);
+                if (Flags.admUseSetActiveDeviceHelpers()) {
+                    setA2dpActiveDevice(null, /* stopAudio= */ false);
+                } else {
+                    a2dp.get().removeActiveDevice(false);
+                }
             } else {
                 /* Workaround for the controller issue which is not able to handle correctly
                  * A2DP offloader vendor specific command while ISO Data path is set.
@@ -273,7 +285,11 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                         leAudio.get().removeActiveDevice(true);
                     }
                 }
-                a2dp.get().setActiveDevice(device);
+                if (Flags.admUseSetActiveDeviceHelpers()) {
+                    setA2dpActiveDevice(device, /* stopAudio= */ false);
+                } else {
+                    a2dp.get().setActiveDevice(device);
+                }
             }
         }
 
