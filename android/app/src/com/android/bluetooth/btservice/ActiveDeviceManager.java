@@ -219,12 +219,17 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     /* If called by BluetoothAdapter it means Audio should not be stopped.
                      * For this reason let's say that fallback device exists
                      */
-                    leAudio.get().removeActiveDevice(true /* hasFallbackDevice */);
+                    if (Flags.admUseSetActiveDeviceHelpers()) {
+                        setLeAudioActiveDevice(null, /* stopAudio= */ false);
+                    } else {
+                        leAudio.get().removeActiveDevice(true /* hasFallbackDevice */);
+                    }
                 } else {
                     if (Flags.admUseSetActiveDeviceHelpers()) {
                         setA2dpActiveDevice(null, /* stopAudio= */ false);
                         setHfpActiveDevice(null);
                         setHearingAidActiveDevice(null, /* stopAudio= */ false);
+                        setLeAudioActiveDevice(device, /* stopAudio= */ false);
                     } else {
                         if (a2dp.isPresent() && a2dp.get().getActiveDevice() != null) {
                             // TODO:  b/312396770
@@ -238,8 +243,8 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                                         || hearingAid.get().getActiveDevices().get(1) != null)) {
                             hearingAid.get().removeActiveDevice(false);
                         }
+                        leAudio.get().setActiveDevice(device);
                     }
-                    leAudio.get().setActiveDevice(device);
                 }
             } else {
                 Log.i(TAG, "setActiveDevice: Setting active Le Audio device " + device);
@@ -247,17 +252,22 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     /* If called by BluetoothAdapter it means Audio should not be stopped.
                      * For this reason let's say that fallback device exists
                      */
-                    leAudio.get().removeActiveDevice(true /* hasFallbackDevice */);
+                    if (Flags.admUseSetActiveDeviceHelpers()) {
+                        setLeAudioActiveDevice(null, /* stopAudio= */ false);
+                    } else {
+                        leAudio.get().removeActiveDevice(true /* hasFallbackDevice */);
+                    }
                 } else {
                     if (Flags.admUseSetActiveDeviceHelpers()) {
                         setA2dpActiveDevice(null, /* stopAudio= */ false);
+                        setLeAudioActiveDevice(device, /* stopAudio= */ false);
                     } else {
                         if (a2dp.isPresent() && a2dp.get().getActiveDevice() != null) {
                             // TODO:  b/312396770
                             a2dp.get().removeActiveDevice(false);
                         }
+                        leAudio.get().setActiveDevice(device);
                     }
-                    leAudio.get().setActiveDevice(device);
                 }
             }
         }
@@ -288,7 +298,11 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 if (leAudio.isPresent()) {
                     List<BluetoothDevice> activeLeAudioDevices = leAudio.get().getActiveDevices();
                     if (activeLeAudioDevices.get(0) != null) {
-                        leAudio.get().removeActiveDevice(true);
+                        if (Flags.admUseSetActiveDeviceHelpers()) {
+                            setLeAudioActiveDevice(null, false);
+                        } else {
+                            leAudio.get().removeActiveDevice(true);
+                        }
                     }
                 }
                 if (Flags.admUseSetActiveDeviceHelpers()) {
