@@ -232,10 +232,14 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     if (headset.isPresent() && headset.get().getActiveDevice() != null) {
                         headset.get().setActiveDevice(null);
                     }
-                    if (hearingAid.isPresent()
-                            && (hearingAid.get().getActiveDevices().get(0) != null
-                                    || hearingAid.get().getActiveDevices().get(1) != null)) {
-                        hearingAid.get().removeActiveDevice(false);
+                    if (Flags.admUseSetActiveDeviceHelpers()) {
+                        setHearingAidActiveDevice(null, /* stopAudio= */ false);
+                    } else {
+                        if (hearingAid.isPresent()
+                                && (hearingAid.get().getActiveDevices().get(0) != null
+                                        || hearingAid.get().getActiveDevices().get(1) != null)) {
+                            hearingAid.get().removeActiveDevice(false);
+                        }
                     }
                     leAudio.get().setActiveDevice(device);
                 }
@@ -297,10 +301,14 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
             if (device == null
                     || hearingAid.get().getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED) {
                 Log.i(TAG, "setActiveDevice: Setting active Hearing Aid " + device);
-                if (device == null) {
-                    hearingAid.get().removeActiveDevice(false);
+                if (Flags.admUseSetActiveDeviceHelpers()) {
+                    setHearingAidActiveDevice(device, /* stopAudio= */ false);
                 } else {
-                    hearingAid.get().setActiveDevice(device);
+                    if (device == null) {
+                        hearingAid.get().removeActiveDevice(false);
+                    } else {
+                        hearingAid.get().setActiveDevice(device);
+                    }
                 }
             }
         }
