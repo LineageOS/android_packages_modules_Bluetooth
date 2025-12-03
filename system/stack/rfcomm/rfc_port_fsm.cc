@@ -606,6 +606,7 @@ void rfc_port_sm_disc_wait_ua(tPORT* p_port, RfcommPortEvent event, void* p_data
 
     case RFC_PORT_EVENT_TIMEOUT:
       log::error("RFC_EVENT_TIMEOUT, port_handle:{}", p_port->handle);
+      p_port->p_mcb->is_disc_initiator = true;
       rfc_port_closed(p_port);
       return;
     default:
