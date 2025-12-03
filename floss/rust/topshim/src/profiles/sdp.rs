@@ -7,13 +7,10 @@ use std::sync::{Arc, Mutex};
 use std::vec::Vec;
 
 use crate::bindings::root as bindings;
-use crate::btif::{
-    ascii_to_string, ptr_to_vec, BluetoothInterface, BtStatus, RawAddress, SupportedProfiles, Uuid,
-};
-use crate::ccall;
+use crate::btif::{ascii_to_string, ptr_to_vec, BluetoothInterface, BtStatus, RawAddress, Uuid};
 use crate::topstack::get_dispatchers;
 use crate::utils::{LTCheckedPtr, LTCheckedPtrMut};
-use topshim_macros::{cb_variant, log_args};
+use topshim_macros::{cb_variant, gen_cxx_extern_trivial_tuple, log_args};
 
 #[derive(Clone, Debug, FromPrimitive, ToPrimitive, PartialEq, PartialOrd)]
 #[repr(u32)]
@@ -300,27 +297,41 @@ pub enum BtSdpRecord {
     Mps(BtSdpMpsRecord),
 }
 
-impl From<bindings::bluetooth_sdp_record> for BtSdpRecord {
-    fn from(item: bindings::bluetooth_sdp_record) -> Self {
-        let sdp_type = unsafe { BtSdpType::from(item.hdr.type_) };
+#[derive(Clone, Copy)]
+#[gen_cxx_extern_trivial_tuple]
+struct CxxBtSdpRecord(bindings::bluetooth_sdp_record);
 
-        match sdp_type {
-            BtSdpType::Raw => unsafe {
-                BtSdpRecord::HeaderOverlay(BtSdpHeaderOverlay::from(item.hdr))
-            },
-            BtSdpType::MapMas => unsafe { BtSdpRecord::MapMas(BtSdpMasRecord::from(item.mas)) },
-            BtSdpType::MapMns => unsafe { BtSdpRecord::MapMns(BtSdpMnsRecord::from(item.mns)) },
-            BtSdpType::PbapPse => unsafe { BtSdpRecord::PbapPse(BtSdpPseRecord::from(item.pse)) },
-            BtSdpType::PbapPce => unsafe { BtSdpRecord::PbapPce(BtSdpPceRecord::from(item.pce)) },
-            BtSdpType::OppServer => unsafe {
-                BtSdpRecord::OppServer(BtSdpOpsRecord::from(item.ops))
-            },
-            BtSdpType::SapServer => unsafe {
-                BtSdpRecord::SapServer(BtSdpSapRecord::from(item.sap))
-            },
-            BtSdpType::Dip => unsafe { BtSdpRecord::Dip(BtSdpDipRecord::from(item.dip)) },
-            BtSdpType::Mps => unsafe { BtSdpRecord::Mps(BtSdpMpsRecord::from(item.mps)) },
+impl From<CxxBtSdpRecord> for BtSdpRecord {
+    fn from(item: CxxBtSdpRecord) -> Self {
+        let i = item.0;
+
+        // SAFETY: Accessing union fields is unsafe. The C-style union
+        // `bluetooth_sdp_record` uses `hdr.type_` to indicate the valid field.
+        // We can safely access `hdr.type_` because `hdr` is a common field.
+        //
+        // Based on `sdp_type`, we access the corresponding union field.
+        // This is safe because `sdp_type` guarantees which field is active.
+        unsafe {
+            let sdp_type = BtSdpType::from(i.hdr.type_);
+            match sdp_type {
+                BtSdpType::Raw => BtSdpRecord::HeaderOverlay(BtSdpHeaderOverlay::from(i.hdr)),
+                BtSdpType::MapMas => BtSdpRecord::MapMas(BtSdpMasRecord::from(i.mas)),
+                BtSdpType::MapMns => BtSdpRecord::MapMns(BtSdpMnsRecord::from(i.mns)),
+                BtSdpType::PbapPse => BtSdpRecord::PbapPse(BtSdpPseRecord::from(i.pse)),
+                BtSdpType::PbapPce => BtSdpRecord::PbapPce(BtSdpPceRecord::from(i.pce)),
+                BtSdpType::OppServer => BtSdpRecord::OppServer(BtSdpOpsRecord::from(i.ops)),
+                BtSdpType::SapServer => BtSdpRecord::SapServer(BtSdpSapRecord::from(i.sap)),
+                BtSdpType::Dip => BtSdpRecord::Dip(BtSdpDipRecord::from(i.dip)),
+                BtSdpType::Mps => BtSdpRecord::Mps(BtSdpMpsRecord::from(i.mps)),
+            }
         }
+    }
+}
+
+impl From<BtSdpRecord> for CxxBtSdpRecord {
+    fn from(item: BtSdpRecord) -> Self {
+        let i = item.clone().get_unsafe_record();
+        CxxBtSdpRecord(i)
     }
 }
 
@@ -429,35 +440,72 @@ impl Debug for SdpCallbacksDispatcher {
 type SdpCb = Arc<Mutex<SdpCallbacksDispatcher>>;
 
 cb_variant!(SdpCb, sdp_search_cb -> SdpCallbacks::SdpSearch,
-bindings::bt_status_t -> BtStatus,
-*const RawAddress, *const Uuid, i32 -> _,
-*mut bindings::bluetooth_sdp_record, {
-    let _1 = unsafe { *_1 };
-    let _2 = unsafe { *_2 };
-    let _4 = ptr_to_vec(_4, _3 as usize);
-});
+  u32 -> BtStatus, RawAddress, Uuid, i32 -> _, *const CxxBtSdpRecord, {
+      let _4: Vec<BtSdpRecord> = ptr_to_vec(_4, _3 as usize);
+  }
+);
 
-struct RawSdpWrapper {
-    pub raw: *const bindings::btsdp_interface_t,
+// Rust Sdp FFI that matches the C++ Sdp Interface defined in /topshim/sdp/sdp_shim.h
+#[cxx::bridge(namespace = "bluetooth::topshim::rust")]
+mod ffi {
+    unsafe extern "C++" {
+        include!("bluetooth/types/uuid.h");
+        include!("include/hardware/bt_sdp.h");
+        include!("topshim/sdp/sdp_shim.h");
+
+        #[namespace = ""]
+        #[cxx_name = "bt_interface_t"]
+        type BluetoothInterface = crate::btif::CxxBluetoothInterface;
+
+        #[namespace = ""]
+        #[cxx_name = "bluetooth_sdp_record"]
+        type BtSdpRecord = super::CxxBtSdpRecord;
+
+        #[namespace = ""]
+        type RawAddress = crate::btif::RawAddress;
+
+        #[namespace = "bluetooth"]
+        type Uuid = crate::btif::Uuid;
+
+        type SdpIntf;
+
+        fn GetSdpProfile(btif: &BluetoothInterface) -> UniquePtr<SdpIntf>;
+
+        fn init(self: &SdpIntf) -> u32;
+        #[allow(dead_code)]
+        fn deinit(self: &SdpIntf) -> u32;
+        fn sdp_search(self: &SdpIntf, addr: RawAddress, uuid: Uuid) -> u32;
+        fn create_sdp_record(self: &SdpIntf, record: BtSdpRecord, record_handle: &mut i32) -> u32;
+        fn remove_sdp_record(self: &SdpIntf, sdp_handle: i32) -> u32;
+    }
+
+    // Callbacks from C++ to Rust. Generated by cb_variant!
+    extern "Rust" {
+        fn sdp_search_cb(
+            status: u32,
+            bd_addr: RawAddress,
+            uuid: Uuid,
+            num_records: i32,
+            records: &mut BtSdpRecord,
+        );
+    }
 }
-
-unsafe impl Send for RawSdpWrapper {}
 
 pub struct Sdp {
-    internal: RawSdpWrapper,
+    internal: cxx::UniquePtr<ffi::SdpIntf>,
     is_init: bool,
-    callbacks: Option<Box<bindings::btsdp_callbacks_t>>,
 }
+
+// SAFETY: The pointer is to a static, thread-safe interface provided by the
+// Bluetooth stack. It's safe to send this pointer across threads.
+unsafe impl Send for Sdp {}
 
 impl Sdp {
     #[log_args]
     pub fn new(intf: &BluetoothInterface) -> Sdp {
-        let r = intf.get_profile_interface(SupportedProfiles::Sdp);
-        Sdp {
-            internal: RawSdpWrapper { raw: r as *const bindings::btsdp_interface_t },
-            is_init: false,
-            callbacks: None,
-        }
+        let sdp_intf: cxx::UniquePtr<ffi::SdpIntf> = ffi::GetSdpProfile(intf.as_raw_btif());
+
+        Sdp { internal: sdp_intf, is_init: false }
     }
 
     #[log_args]
@@ -471,35 +519,23 @@ impl Sdp {
             panic!("Tried to set dispatcher for SdpCallbacks but it already existed");
         }
 
-        let mut callbacks = Box::new(bindings::btsdp_callbacks_t {
-            size: 2 * 8,
-            sdp_search_cb: Some(sdp_search_cb),
-        });
-
-        let cb_ptr = LTCheckedPtrMut::from(&mut callbacks);
-
-        let init = ccall!(self, init, cb_ptr.into());
+        let init = self.internal.init();
         self.is_init = BtStatus::from(init) == BtStatus::Success;
-        self.callbacks = Some(callbacks);
-
-        return self.is_init;
+        true
     }
 
     #[log_args]
-    pub fn sdp_search(&self, address: RawAddress, uuid: &Uuid) -> BtStatus {
-        BtStatus::from(ccall!(self, sdp_search, address, uuid))
+    pub fn sdp_search(&self, address: RawAddress, uuid: Uuid) -> BtStatus {
+        self.internal.sdp_search(address, uuid).into()
     }
 
     #[log_args]
-    pub fn create_sdp_record(&self, record: &mut BtSdpRecord, handle: &mut i32) -> BtStatus {
-        let mut converted = record.get_unsafe_record();
-        let record_ptr = LTCheckedPtrMut::from_ref(&mut converted);
-        let handle_ptr = LTCheckedPtrMut::from_ref(handle);
-        BtStatus::from(ccall!(self, create_sdp_record, record_ptr.into(), handle_ptr.into()))
+    pub fn create_sdp_record(&self, record: BtSdpRecord, handle: &mut i32) -> BtStatus {
+        self.internal.create_sdp_record(record.into(), handle).into()
     }
 
     #[log_args]
     pub fn remove_sdp_record(&self, handle: i32) -> BtStatus {
-        BtStatus::from(ccall!(self, remove_sdp_record, handle))
+        self.internal.remove_sdp_record(handle).into()
     }
 }
