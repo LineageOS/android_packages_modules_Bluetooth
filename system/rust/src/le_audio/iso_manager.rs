@@ -16,6 +16,8 @@
 
 //! ISO manager module.
 
+mod ffi;
+pub mod manager;
 pub mod traits;
 
 pub use traits::IsoManager;
