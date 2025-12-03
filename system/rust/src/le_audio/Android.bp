@@ -52,6 +52,7 @@ cc_library_static {
         "-Wno-missing-prototypes",
     ],
     srcs: [
+        "iso_manager/iso_manager_shim.cc",
         "periodic_advertising_sync/periodic_advertising_sync_shim.cc",
     ],
     static_libs: [
