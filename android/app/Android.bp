@@ -88,6 +88,7 @@ cc_library_shared {
         "libbluetooth_metrics",
         "libbluetooth_private_gatt_rs",
         "libbluetooth_private_gatt_rs_bridge",
+        "libbluetooth_rs",
         "libbluetooth_types",
         "libbt-audio-asrc",
         "libbt-audio-hal-interface",
