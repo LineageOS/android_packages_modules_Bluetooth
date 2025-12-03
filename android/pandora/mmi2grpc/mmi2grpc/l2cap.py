@@ -463,12 +463,12 @@ class L2CAPProxy(ProfileProxy):
         self.connection = self.host.Connect(address=pts_addr).connection
         return "OK"
 
-    @assert_description
-    def _mmi_2001(self, **kwargs):
+    @match_description
+    def _mmi_2001(self, passkey: str, **kwargs):
         """
-        Please verify the passKey is correct: 000000
+        Please verify the passKey is correct: (?P<passkey>[0-9]+)
         """
-        passkey = "000000"
+
         for event in self.pairing_events:
             if event.numeric_comparison == int(passkey):
                 self.pairing_events.send(PairingEventAnswer(event=event, confirm=True))
