@@ -78,7 +78,7 @@ impl BluetoothServerSocket {
     fn new() -> Self {
         BluetoothServerSocket {
             id: 0,
-            sock_type: SocketType::Unknown,
+            sock_type: SocketType::Rfcomm,
             flags: 0,
             psm: None,
             channel: None,
@@ -206,7 +206,7 @@ impl BluetoothSocket {
         BluetoothSocket {
             id: 0,
             remote_device: BluetoothDevice::new(RawAddress::default(), String::new()),
-            sock_type: SocketType::Unknown,
+            sock_type: SocketType::Rfcomm,
             flags: 0,
             fd: None,
             port: 0,
