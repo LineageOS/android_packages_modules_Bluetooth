@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-//! LE Audio Rust implementation module.
-//!
-//! This module contains the core logic for LE Audio features.
+//! ISO manager module.
 
-pub mod iso_manager;
-pub mod periodic_sync;
+pub mod traits;
