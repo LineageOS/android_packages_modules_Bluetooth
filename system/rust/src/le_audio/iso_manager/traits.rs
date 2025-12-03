@@ -37,6 +37,16 @@ pub struct CisId(u8);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CigId(u8);
 
+/// Identifier for a BIG.
+#[bt_handle(mask = 0xef)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct BigHandle(u8);
+
+/// Identifier for a advertising set.
+#[bt_handle(mask = 0xef)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct AdvertisingHandle(u8);
+
 /// ISO Connection handle.
 #[bt_handle(mask = 0xeff)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -93,6 +103,50 @@ pub struct CigParameters {
 pub struct CreateCisParameters {
     /// Connection handle pairs (CIS handle, ACL handle).
     pub conn_handle_pairs: Vec<(IsoConnectionHandle, AclConnectionHandle)>,
+}
+
+/// Parameters for creating a BIG.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CreateBigParameters {
+    /// Advertising handle.
+    pub advertising_handle: AdvertisingHandle,
+    /// Number of BIS.
+    pub num_bis: u8,
+    /// SDU interval.
+    pub sdu_itv: u32,
+    /// Maximum SDU size.
+    pub max_sdu_size: u16,
+    /// Maximum transport latency.
+    pub max_transport_latency: u16,
+    /// Retransmission number.
+    pub rtn: u8,
+    /// PHY.
+    pub phy: u8,
+    /// Packing.
+    pub packing: bool,
+    /// Framing.
+    pub framing: bool,
+    /// Encryption.
+    pub encryption: bool,
+    /// Broadcast code.
+    pub broadcast_code: [u8; 16],
+}
+
+/// Parameters for synchronizing to a Broadcast Isochronous Group (BIG).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BigCreateSyncParameters {
+    /// Sync handle.
+    pub sync_handle: u8,
+    /// Encryption.
+    pub encryption: bool,
+    /// Broadcast code.
+    pub broadcast_code: [u8; 16],
+    /// Maximum number of subevents.
+    pub mse: u8,
+    /// BIG sync timeout.
+    pub big_sync_timeout: Duration,
+    /// BIS indices.
+    pub bis_indices: Vec<u8>,
 }
 
 /// Codec ID.
@@ -261,6 +315,49 @@ pub trait Cig: Clone + fmt::Debug {
     ) -> impl Future<Output = Result<Vec<Self::Cis>>> + Send;
 }
 
+/// Interface for a Broadcast Isochronous Stream (BIS).
+pub trait Bis: IsoDataStream + Send + Sync + fmt::Debug {}
+
+/// Interface for a Broadcast Isochronous Group (BIG) source.
+pub trait BigSource: Clone + fmt::Debug {
+    /// Resource type for individual BIS connections.
+    type Bis: Bis;
+
+    /// Returns the BIG handle.
+    fn big_handle(&self) -> BigHandle;
+
+    /// Returns the BIS connections in this BIG.
+    fn bis_connections(&self) -> Vec<Self::Bis>;
+
+    /// Returns a specific BIS connection from this group.
+    fn get_bis_connection(&self, bis_conn_handle: IsoConnectionHandle) -> Option<Self::Bis>;
+
+    /// Terminates the BIG.
+    fn terminate(&self, reason: HciStatus) -> impl Future<Output = Result<()>> + Send;
+}
+
+/// Interface for a Broadcast Isochronous Group (BIG) sync.
+pub trait BigSync: Clone + Send + Sync + fmt::Debug {
+    /// Resource type for individual BIS connections.
+    type Bis: Bis;
+
+    /// Returns the BIG handle.
+    fn big_handle(&self) -> BigHandle;
+
+    /// Returns the BIS connections in this BIG.
+    fn bis_connections(&self) -> Vec<Self::Bis>;
+
+    /// Returns a specific BIS connection from this group.
+    fn get_bis_connection(&self, bis_conn_handle: IsoConnectionHandle) -> Option<Self::Bis>;
+
+    /// Terminates the synchronization to the BIG.
+    fn terminate(&self) -> impl Future<Output = Result<()>> + Send;
+
+    /// Returns a future that completes when the BIG sync is lost.
+    /// This does NOT trigger if the local BigSync object's terminate() was called.
+    fn on_lost(&self) -> impl Future<Output = HciStatus> + Send;
+}
+
 #[cfg(test)]
 mockall::mock! {
     pub Cis {}
@@ -321,6 +418,84 @@ mockall::mock! {
     }
 
     impl fmt::Debug for Cig {
+        fn fmt<'a>(&self, f: &mut fmt::Formatter<'a>) -> fmt::Result;
+    }
+}
+
+#[cfg(test)]
+mockall::mock! {
+    pub Bis {}
+
+    impl IsoDataStream for Bis {
+        type DataStream = ReceiverStream<IsoDataPacket>;
+        fn conn_handle(&self) -> IsoConnectionHandle;
+        fn write(&self, data: &[u8]);
+        fn read(&self) -> ReceiverStream<IsoDataPacket>;
+        fn setup_iso_data_path(
+            &self,
+            path_params: SetupIsoDataPathParameters,
+        ) -> impl Future<Output = Result<()>> + Send;
+        fn remove_iso_data_path(
+            &self,
+            data_path_dir: RemoveIsoDataPathDirection,
+        ) -> impl Future<Output = Result<()>> + Send;
+    }
+
+    impl Bis for Bis {}
+
+    impl Clone for Bis {
+        fn clone(&self) -> Self;
+    }
+
+    impl fmt::Debug for Bis {
+        fn fmt<'a>(&self, f: &mut fmt::Formatter<'a>) -> fmt::Result;
+    }
+}
+
+#[cfg(test)]
+mockall::mock! {
+    pub BigSource {}
+
+    impl BigSource for BigSource {
+        type Bis = MockBis;
+
+        fn big_handle(&self) -> BigHandle;
+        fn bis_connections(&self) -> Vec<MockBis>;
+        fn get_bis_connection(&self, bis_conn_handle: IsoConnectionHandle) -> Option<MockBis>;
+        fn terminate(
+            &self,
+            reason: HciStatus,
+        ) -> impl Future<Output = Result<()>> + Send;
+    }
+
+    impl Clone for BigSource {
+        fn clone(&self) -> Self;
+    }
+
+    impl fmt::Debug for BigSource {
+        fn fmt<'a>(&self, f: &mut fmt::Formatter<'a>) -> fmt::Result;
+    }
+}
+
+#[cfg(test)]
+mockall::mock! {
+    pub BigSync {}
+
+    impl BigSync for BigSync {
+        type Bis = MockBis;
+
+        fn big_handle(&self) -> BigHandle;
+        fn bis_connections(&self) -> Vec<MockBis>;
+        fn get_bis_connection(&self, bis_conn_handle: IsoConnectionHandle) -> Option<MockBis>;
+        fn terminate(&self) -> impl Future<Output = Result<()>> + Send;
+        fn on_lost(&self) -> impl Future<Output = HciStatus> + Send;
+    }
+
+    impl Clone for BigSync {
+        fn clone(&self) -> Self;
+    }
+
+    impl fmt::Debug for BigSync {
         fn fmt<'a>(&self, f: &mut fmt::Formatter<'a>) -> fmt::Result;
     }
 }
