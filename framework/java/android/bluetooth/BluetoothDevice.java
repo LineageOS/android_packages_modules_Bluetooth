@@ -22,6 +22,8 @@ import static android.Manifest.permission.BLUETOOTH_SCAN;
 import static android.Manifest.permission.MODIFY_PHONE_STATE;
 import static android.bluetooth.BluetoothUtils.callServiceIfEnabling;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.BroadcastBehavior;
 import android.annotation.CallbackExecutor;
 import android.annotation.FlaggedApi;
@@ -2186,13 +2188,21 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * For example, to verify a2dp is connected, you would listen for {@link
      * BluetoothA2dp#ACTION_CONNECTION_STATE_CHANGED}
      *
+     * <p>This method requires the calling app to have the {@link
+     * android.Manifest.permission#BLUETOOTH_CONNECT} permission. Additionally, an app must either
+     * have both {@link android.Manifest.permission#BLUETOOTH_PRIVILEGED} and {@link
+     * android.Manifest.permission#MODIFY_PHONE_STATE} permissions, or be associated with the
+     * Companion Device manager (see {@link android.companion.CompanionDeviceManager#associate(
+     * AssociationRequest, android.companion.CompanionDeviceManager.Callback, Handler)}).
+     *
      * @return whether the messages were successfully sent to try to connect all profiles
      * @throws IllegalArgumentException if the device address is invalid
      */
-    @Hide
-    @SystemApi
+    @FlaggedApi(Flags.FLAG_GATT_CONN_SETTINGS)
     @RequiresBluetoothConnectPermission
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED, MODIFY_PHONE_STATE})
+    @RequiresPermission(
+            allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED, MODIFY_PHONE_STATE},
+            conditional = true)
     public @ConnectionReturnValues int connect() {
         if (DBG) log("connect()");
         return callServiceIfEnabled(
@@ -2211,13 +2221,20 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * <p>In the rare event that one or more profiles fail to disconnect, call this method again to
      * send another request to disconnect each connected profile.
      *
+     * <p>This method requires the calling app to have the {@link
+     * android.Manifest.permission#BLUETOOTH_CONNECT} permission. Additionally, an app must either
+     * have both {@link android.Manifest.permission#BLUETOOTH_PRIVILEGED} or be associated with the
+     * Companion Device manager (see {@link android.companion.CompanionDeviceManager#associate(
+     * AssociationRequest, android.companion.CompanionDeviceManager.Callback, Handler)}).
+     *
      * @return whether the messages were successfully sent to try to disconnect all profiles
      * @throws IllegalArgumentException if the device address is invalid
      */
-    @Hide
-    @SystemApi
+    @FlaggedApi(Flags.FLAG_GATT_CONN_SETTINGS)
     @RequiresBluetoothConnectPermission
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
+    @RequiresPermission(
+            allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
+            conditional = true)
     public @ConnectionReturnValues int disconnect() {
         if (DBG) log("disconnect()");
         return callServiceIfEnabled(
@@ -3119,9 +3136,9 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             @NonNull BluetoothGattConnectionSettings gattConnectionSettings,
             @NonNull @CallbackExecutor Executor executor,
             @NonNull BluetoothGattCallback callback) {
-        if (gattConnectionSettings == null || callback == null || executor == null) {
-            throw new NullPointerException("Invalid input prameters");
-        }
+        requireNonNull(gattConnectionSettings);
+        requireNonNull(executor);
+        requireNonNull(callback);
 
         // TODO(Bluetooth) check whether platform support BLE
         //     Do the check here or in GattServer?
