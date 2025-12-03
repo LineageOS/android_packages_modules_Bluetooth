@@ -140,9 +140,6 @@ bool A2DP_VendorAdjustCodecAptxHd(uint8_t* p_codec_info);
 // otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
 btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexAptxHd(const uint8_t* p_codec_info);
 
-// Gets the A2DP aptX-HD Source codec name.
-const char* A2DP_VendorCodecIndexStrAptxHd(void);
-
 // Initializes A2DP aptX-HD Source codec information into |AvdtpSepConfig|
 // configuration entry pointed by |p_cfg|.
 bool A2DP_VendorInitCodecConfigAptxHd(AvdtpSepConfig* p_cfg);

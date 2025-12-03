@@ -156,9 +156,6 @@ bool A2DP_VendorAdjustCodecLhdcV5(uint8_t* p_codec_info);
 // otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
 btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexLhdcV5(const uint8_t* p_codec_info);
 
-// Gets the A2DP LHDC Source codec name.
-const char* A2DP_VendorCodecIndexStrLhdcV5(void);
-
 // Initializes A2DP LHDC Source codec information into |tAVDT_CFG|
 // configuration entry pointed by |p_cfg|.
 bool A2DP_VendorInitCodecConfigLhdcV5(AvdtpSepConfig* p_cfg);
@@ -196,9 +193,6 @@ const tA2DP_DECODER_INTERFACE* A2DP_VendorGetDecoderInterfaceLhdcV5(const uint8_
 // Returns the corresponding |btav_a2dp_codec_index_t| on success,
 // otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
 btav_a2dp_codec_index_t A2DP_VendorSinkCodecIndexLhdcV5(const uint8_t* p_codec_info);
-
-// Gets the A2DP LHDC V3 Sink codec name.
-const char* A2DP_VendorCodecIndexStrLhdcV5Sink(void);
 
 // Initializes A2DP SBC Sink codec information into |AvdtpSepConfig|
 // configuration entry pointed by |p_cfg|.

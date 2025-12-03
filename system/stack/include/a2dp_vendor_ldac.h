@@ -163,9 +163,6 @@ bool A2DP_VendorAdjustCodecLdac(uint8_t* p_codec_info);
 // otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
 btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexLdac(const uint8_t* p_codec_info);
 
-// Gets the A2DP LDAC Source codec name.
-const char* A2DP_VendorCodecIndexStrLdac(void);
-
 // Initializes A2DP LDAC Source codec information into |AvdtpSepConfig|
 // configuration entry pointed by |p_cfg|.
 bool A2DP_VendorInitCodecConfigLdac(AvdtpSepConfig* p_cfg);

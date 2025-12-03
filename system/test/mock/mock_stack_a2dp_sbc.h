@@ -79,26 +79,6 @@ struct A2DP_CodecEqualsSbc {
 };
 extern struct A2DP_CodecEqualsSbc A2DP_CodecEqualsSbc;
 
-// Name: A2DP_CodecIndexStrSbc
-// Params: void
-// Return: const char*
-struct A2DP_CodecIndexStrSbc {
-  static const char* return_value;
-  std::function<const char*(void)> body{[](void) { return return_value; }};
-  const char* operator()(void) { return body(); }
-};
-extern struct A2DP_CodecIndexStrSbc A2DP_CodecIndexStrSbc;
-
-// Name: A2DP_CodecIndexStrSbcSink
-// Params: void
-// Return: const char*
-struct A2DP_CodecIndexStrSbcSink {
-  static const char* return_value;
-  std::function<const char*(void)> body{[](void) { return return_value; }};
-  const char* operator()(void) { return body(); }
-};
-extern struct A2DP_CodecIndexStrSbcSink A2DP_CodecIndexStrSbcSink;
-
 // Name: A2DP_CodecInfoStringSbc
 // Params: const uint8_t* p_codec_info
 // Return: std::string

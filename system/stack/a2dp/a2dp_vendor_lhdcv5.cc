@@ -964,8 +964,6 @@ btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexLhdcV5(UNUSED_ATTR const uint
   return BTAV_A2DP_CODEC_INDEX_SOURCE_LHDCV5;
 }
 
-const char* A2DP_VendorCodecIndexStrLhdcV5(void) { return "LHDC V5"; }
-
 bool A2DP_VendorInitCodecConfigLhdcV5(AvdtpSepConfig* p_cfg) {
   if (p_cfg == nullptr) {
     log::error("nullptr input");
@@ -1047,8 +1045,8 @@ UNUSED_ATTR static void build_codec_config(const tA2DP_LHDCV5_CIE& config_cie,
 }
 
 A2dpCodecConfigLhdcV5Source::A2dpCodecConfigLhdcV5Source(btav_a2dp_codec_priority_t codec_priority)
-    : A2dpCodecConfigLhdcV5Base(BTAV_A2DP_CODEC_INDEX_SOURCE_LHDCV5,
-                                A2DP_VendorCodecIndexStrLhdcV5(), codec_priority, true) {
+    : A2dpCodecConfigLhdcV5Base(BTAV_A2DP_CODEC_INDEX_SOURCE_LHDCV5, "LHDCv5", codec_priority,
+                                true) {
   // Compute the local capability
   codec_local_capability_.sample_rate = BTAV_A2DP_CODEC_SAMPLE_RATE_NONE;
   if (a2dp_lhdcv5_source_caps.sampleRate & A2DP_LHDCV5_SAMPLING_FREQ_44100) {

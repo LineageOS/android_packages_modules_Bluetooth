@@ -40,8 +40,6 @@ namespace stack_a2dp_sbc {
 struct A2DP_AdjustCodecSbc A2DP_AdjustCodecSbc;
 struct A2DP_BuildCodecHeaderSbc A2DP_BuildCodecHeaderSbc;
 struct A2DP_CodecEqualsSbc A2DP_CodecEqualsSbc;
-struct A2DP_CodecIndexStrSbc A2DP_CodecIndexStrSbc;
-struct A2DP_CodecIndexStrSbcSink A2DP_CodecIndexStrSbcSink;
 struct A2DP_CodecInfoStringSbc A2DP_CodecInfoStringSbc;
 struct A2DP_CodecTypeEqualsSbc A2DP_CodecTypeEqualsSbc;
 struct A2DP_GetAllocationMethodCodeSbc A2DP_GetAllocationMethodCodeSbc;
@@ -78,8 +76,6 @@ namespace stack_a2dp_sbc {
 bool A2DP_AdjustCodecSbc::return_value = false;
 bool A2DP_BuildCodecHeaderSbc::return_value = false;
 bool A2DP_CodecEqualsSbc::return_value = false;
-const char* A2DP_CodecIndexStrSbc::return_value = nullptr;
-const char* A2DP_CodecIndexStrSbcSink::return_value = nullptr;
 std::string A2DP_CodecInfoStringSbc::return_value = std::string();
 bool A2DP_CodecTypeEqualsSbc::return_value = false;
 int A2DP_GetAllocationMethodCodeSbc::return_value = 0;
@@ -123,14 +119,6 @@ bool A2DP_BuildCodecHeaderSbc(const uint8_t* p_codec_info, BT_HDR* p_buf,
 bool A2DP_CodecEqualsSbc(const uint8_t* p_codec_info_a, const uint8_t* p_codec_info_b) {
   inc_func_call_count(__func__);
   return test::mock::stack_a2dp_sbc::A2DP_CodecEqualsSbc(p_codec_info_a, p_codec_info_b);
-}
-const char* A2DP_CodecIndexStrSbc(void) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_a2dp_sbc::A2DP_CodecIndexStrSbc();
-}
-const char* A2DP_CodecIndexStrSbcSink(void) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_a2dp_sbc::A2DP_CodecIndexStrSbcSink();
 }
 std::string A2DP_CodecInfoStringSbc(const uint8_t* p_codec_info) {
   inc_func_call_count(__func__);

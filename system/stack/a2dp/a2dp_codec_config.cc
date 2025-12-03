@@ -1597,24 +1597,32 @@ const char* A2DP_CodecIndexStr(btav_a2dp_codec_index_t codec_index) {
 
   switch (codec_index) {
     case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:
-      return A2DP_CodecIndexStrSbc();
+      return "SBC";
     case BTAV_A2DP_CODEC_INDEX_SINK_SBC:
-      return A2DP_CodecIndexStrSbcSink();
-#if !defined(EXCLUDE_NONSTANDARD_CODECS)
+      return "SBC SINK";
     case BTAV_A2DP_CODEC_INDEX_SOURCE_AAC:
-      return A2DP_CodecIndexStrAac();
+      return "AAC";
     case BTAV_A2DP_CODEC_INDEX_SINK_AAC:
-      return A2DP_CodecIndexStrAacSink();
-#endif
-    default:
+      return "AAC SINK";
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX:
+      return "AptX";
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD:
+      return "AptX-HD";
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC:
+      return "LDAC";
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_LC3:
+      return "LC3 not implemented";
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS:
+      return "Opus";
+    case BTAV_A2DP_CODEC_INDEX_SINK_OPUS:
+      return "Opus SINK";
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_LHDCV5:
+      return "LHDCv5";
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN:
+    case BTAV_A2DP_CODEC_INDEX_SINK_EXT_MIN:
+    case BTAV_A2DP_CODEC_INDEX_MAX:
       break;
   }
-
-#if !defined(EXCLUDE_NONSTANDARD_CODECS)
-  if (codec_index < BTAV_A2DP_CODEC_INDEX_MAX) {
-    return A2DP_VendorCodecIndexStr(codec_index);
-  }
-#endif
 
   return "UNKNOWN CODEC INDEX";
 }

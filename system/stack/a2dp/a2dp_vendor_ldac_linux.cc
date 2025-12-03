@@ -71,13 +71,10 @@ btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexLdac(const uint8_t* p_codec_i
   return BTAV_A2DP_CODEC_INDEX_MAX;
 }
 
-const char* A2DP_VendorCodecIndexStrLdac(void) { return "Ldac"; }
-
 bool A2DP_VendorInitCodecConfigLdac(AvdtpSepConfig* p_cfg) { return false; }
 
 A2dpCodecConfigLdacSource::A2dpCodecConfigLdacSource(btav_a2dp_codec_priority_t codec_priority)
-    : A2dpCodecConfigLdacBase(BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC, A2DP_VendorCodecIndexStrLdac(),
-                              codec_priority, true) {}
+    : A2dpCodecConfigLdacBase(BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC, "LDAC", codec_priority, true) {}
 
 A2dpCodecConfigLdacSource::~A2dpCodecConfigLdacSource() {}
 

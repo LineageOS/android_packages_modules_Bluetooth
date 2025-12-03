@@ -82,13 +82,11 @@ btav_a2dp_codec_index_t A2DP_VendorSinkCodecIndexAptxHd(const uint8_t* p_codec_i
   return BTAV_A2DP_CODEC_INDEX_MAX;
 }
 
-const char* A2DP_VendorCodecIndexStrAptxHd(void) { return "AptxHd"; }
-
 bool A2DP_VendorInitCodecConfigAptxHd(AvdtpSepConfig* p_cfg) { return false; }
 
 A2dpCodecConfigAptxHd::A2dpCodecConfigAptxHd(btav_a2dp_codec_priority_t codec_priority)
     : A2dpCodecConfig(BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD, bluetooth::a2dp::CodecId::APTX_HD,
-                      A2DP_VendorCodecIndexStrAptxHd(), codec_priority) {}
+                      "AptX-HD", codec_priority) {}
 
 A2dpCodecConfigAptxHd::~A2dpCodecConfigAptxHd() {}
 

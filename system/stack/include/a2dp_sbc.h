@@ -217,12 +217,6 @@ btav_a2dp_codec_index_t A2DP_SourceCodecIndexSbc(const uint8_t* p_codec_info);
 // otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
 btav_a2dp_codec_index_t A2DP_SinkCodecIndexSbc(const uint8_t* p_codec_info);
 
-// Gets the A2DP SBC Source codec name.
-const char* A2DP_CodecIndexStrSbc(void);
-
-// Gets the A2DP SBC Sink codec name.
-const char* A2DP_CodecIndexStrSbcSink(void);
-
 // Initializes A2DP SBC Source codec information into |AvdtpSepConfig|
 // configuration entry pointed by |p_cfg|.
 bool A2DP_InitCodecConfigSbc(AvdtpSepConfig* p_cfg);
