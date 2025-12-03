@@ -35,6 +35,10 @@ TEST_F(BluetoothAudioHalVersionTest, versionOperatorEqual) {
               BluetoothAudioHalVersion::VERSION_AIDL_V3);
   EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V4 ==
               BluetoothAudioHalVersion::VERSION_AIDL_V4);
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V5 ==
+              BluetoothAudioHalVersion::VERSION_AIDL_V5);
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V6 ==
+              BluetoothAudioHalVersion::VERSION_AIDL_V6);
 }
 
 TEST_F(BluetoothAudioHalVersionTest, versionOperatorLessOrEqual) {
@@ -59,6 +63,16 @@ TEST_F(BluetoothAudioHalVersionTest, versionOperatorLessOrEqual) {
   EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V3 <=
               BluetoothAudioHalVersion::VERSION_AIDL_V4);
 
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V4 <
+              BluetoothAudioHalVersion::VERSION_AIDL_V5);
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V4 <=
+              BluetoothAudioHalVersion::VERSION_AIDL_V5);
+
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V5 <
+              BluetoothAudioHalVersion::VERSION_AIDL_V6);
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V5 <=
+              BluetoothAudioHalVersion::VERSION_AIDL_V6);
+
   EXPECT_FALSE(BluetoothAudioHalVersion::VERSION_2_1 < BluetoothAudioHalVersion::VERSION_2_0);
   EXPECT_FALSE(BluetoothAudioHalVersion::VERSION_2_1 <= BluetoothAudioHalVersion::VERSION_2_0);
 
@@ -79,6 +93,16 @@ TEST_F(BluetoothAudioHalVersionTest, versionOperatorLessOrEqual) {
                BluetoothAudioHalVersion::VERSION_AIDL_V3);
   EXPECT_FALSE(BluetoothAudioHalVersion::VERSION_AIDL_V4 <=
                BluetoothAudioHalVersion::VERSION_AIDL_V3);
+
+  EXPECT_FALSE(BluetoothAudioHalVersion::VERSION_AIDL_V5 <
+               BluetoothAudioHalVersion::VERSION_AIDL_V4);
+  EXPECT_FALSE(BluetoothAudioHalVersion::VERSION_AIDL_V5 <=
+               BluetoothAudioHalVersion::VERSION_AIDL_V4);
+
+  EXPECT_FALSE(BluetoothAudioHalVersion::VERSION_AIDL_V6 <
+               BluetoothAudioHalVersion::VERSION_AIDL_V5);
+  EXPECT_FALSE(BluetoothAudioHalVersion::VERSION_AIDL_V6 <=
+               BluetoothAudioHalVersion::VERSION_AIDL_V5);
 }
 
 TEST_F(BluetoothAudioHalVersionTest, versionOperatorGreaterOrEqual) {
@@ -103,6 +127,16 @@ TEST_F(BluetoothAudioHalVersionTest, versionOperatorGreaterOrEqual) {
   EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V4 >=
               BluetoothAudioHalVersion::VERSION_AIDL_V3);
 
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V5 >
+              BluetoothAudioHalVersion::VERSION_AIDL_V4);
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V5 >=
+              BluetoothAudioHalVersion::VERSION_AIDL_V4);
+
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V6 >
+              BluetoothAudioHalVersion::VERSION_AIDL_V5);
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V6 >=
+              BluetoothAudioHalVersion::VERSION_AIDL_V5);
+
   EXPECT_FALSE(BluetoothAudioHalVersion::VERSION_2_0 > BluetoothAudioHalVersion::VERSION_2_1);
   EXPECT_FALSE(BluetoothAudioHalVersion::VERSION_2_0 >= BluetoothAudioHalVersion::VERSION_2_1);
 
@@ -123,6 +157,16 @@ TEST_F(BluetoothAudioHalVersionTest, versionOperatorGreaterOrEqual) {
                BluetoothAudioHalVersion::VERSION_AIDL_V4);
   EXPECT_FALSE(BluetoothAudioHalVersion::VERSION_AIDL_V3 >=
                BluetoothAudioHalVersion::VERSION_AIDL_V4);
+
+  EXPECT_FALSE(BluetoothAudioHalVersion::VERSION_AIDL_V4 >
+               BluetoothAudioHalVersion::VERSION_AIDL_V5);
+  EXPECT_FALSE(BluetoothAudioHalVersion::VERSION_AIDL_V4 >=
+               BluetoothAudioHalVersion::VERSION_AIDL_V5);
+
+  EXPECT_FALSE(BluetoothAudioHalVersion::VERSION_AIDL_V5 >
+               BluetoothAudioHalVersion::VERSION_AIDL_V6);
+  EXPECT_FALSE(BluetoothAudioHalVersion::VERSION_AIDL_V5 >=
+               BluetoothAudioHalVersion::VERSION_AIDL_V6);
 }
 
 TEST_F(BluetoothAudioHalVersionTest, HIDL_VERSION_2_0) {
@@ -225,13 +269,47 @@ TEST_F(BluetoothAudioHalVersionTest, AIDL_VERSIONS_V4) {
               std::string::npos);
 }
 
+TEST_F(BluetoothAudioHalVersionTest, AIDL_VERSIONS_V5) {
+  EXPECT_EQ(BluetoothAudioHalVersion::VERSION_AIDL_V5,
+            BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 5, 0));
+
+  EXPECT_EQ(BluetoothAudioHalVersion::VERSION_AIDL_V5.getTransport(),
+            BluetoothAudioHalTransport::AIDL);
+  EXPECT_FALSE(BluetoothAudioHalVersion::VERSION_AIDL_V5.isHIDL());
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V5.isAIDL());
+
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V5.toString().find("transport: AIDL") !=
+              std::string::npos);
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V5.toString().find("major: 5") !=
+              std::string::npos);
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V5.toString().find("minor: 0") !=
+              std::string::npos);
+}
+
+TEST_F(BluetoothAudioHalVersionTest, AIDL_VERSIONS_V6) {
+  EXPECT_EQ(BluetoothAudioHalVersion::VERSION_AIDL_V6,
+            BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 6, 0));
+
+  EXPECT_EQ(BluetoothAudioHalVersion::VERSION_AIDL_V6.getTransport(),
+            BluetoothAudioHalTransport::AIDL);
+  EXPECT_FALSE(BluetoothAudioHalVersion::VERSION_AIDL_V6.isHIDL());
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V6.isAIDL());
+
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V6.toString().find("transport: AIDL") !=
+              std::string::npos);
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V6.toString().find("major: 6") !=
+              std::string::npos);
+  EXPECT_TRUE(BluetoothAudioHalVersion::VERSION_AIDL_V6.toString().find("minor: 0") !=
+              std::string::npos);
+}
+
 /**
  * An example of future AIDL version (next one will be V5), we check that next
  * AIDL version will be larger than existing AIDL versions
  */
 TEST_F(BluetoothAudioHalVersionTest, AIDL_VERSIONS_Vx) {
-  EXPECT_TRUE(BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 5, 0) >
-              BluetoothAudioHalVersion::VERSION_AIDL_V4);
-  EXPECT_FALSE(BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 5, 0).isHIDL());
-  EXPECT_TRUE(BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 5, 0).isAIDL());
+  EXPECT_TRUE(BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 7, 0) >
+              BluetoothAudioHalVersion::VERSION_AIDL_V6);
+  EXPECT_FALSE(BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 7, 0).isHIDL());
+  EXPECT_TRUE(BluetoothAudioHalVersion(BluetoothAudioHalTransport::AIDL, 7, 0).isAIDL());
 }

@@ -22,3 +22,4 @@ bool LeAudioHalVerifier::SupportsLeAudio() { return true; }
 bool LeAudioHalVerifier::SupportsLeAudioHardwareOffload() { return false; }
 bool LeAudioHalVerifier::SupportsLeAudioBroadcast() { return false; }
 bool LeAudioHalVerifier::SupportsStreamActiveApi() { return false; }
+bool LeAudioHalVerifier::SupportsIsoParameterUpdate() { return false; }
