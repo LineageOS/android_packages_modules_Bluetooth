@@ -91,9 +91,6 @@ uint16_t A2DP_VendorCodecGetCodecId(const uint8_t* p_codec_info);
 // header, otherwise false.
 bool A2DP_VendorUsesRtpHeader(bool content_protection_enabled, const uint8_t* p_codec_info);
 
-// Gets the A2DP vendor-specific codec name for a given |p_codec_info|.
-const char* A2DP_VendorCodecName(const uint8_t* p_codec_info);
-
 // Checks whether two A2DP vendor-specific codecs |p_codec_info_a| and
 // |p_codec_info_b| have the same type.
 // Returns true if the two codecs have the same type, otherwise false.

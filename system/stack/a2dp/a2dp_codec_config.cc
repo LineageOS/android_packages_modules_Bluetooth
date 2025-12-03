@@ -128,6 +128,7 @@ std::string CodecIdToString(CodecId codec_id) {
 }  // namespace bluetooth::a2dp
 
 using namespace bluetooth;
+using bluetooth::a2dp::CodecId;
 
 // Initializes the codec config.
 // |codec_config| is the codec config to initialize.
@@ -1216,23 +1217,30 @@ uint8_t A2DP_GetMediaType(const uint8_t* p_codec_info) {
 }
 
 const char* A2DP_CodecName(const uint8_t* p_codec_info) {
-  tA2DP_CODEC_TYPE codec_type = A2DP_GetCodecType(p_codec_info);
+  auto codec_id = bluetooth::a2dp::ParseCodecId(p_codec_info);
 
-  switch (codec_type) {
-    case A2DP_MEDIA_CT_SBC:
-      return A2DP_CodecNameSbc(p_codec_info);
-#if !defined(EXCLUDE_NONSTANDARD_CODECS)
-    case A2DP_MEDIA_CT_AAC:
-      return A2DP_CodecNameAac(p_codec_info);
-    case A2DP_MEDIA_CT_NON_A2DP:
-      return A2DP_VendorCodecName(p_codec_info);
-#endif
-    default:
-      break;
+  if (!codec_id.has_value()) {
+    return "(invalid capabilities)";
   }
 
-  log::error("unsupported codec type 0x{:x}", codec_type);
-  return "UNKNOWN CODEC";
+  switch (codec_id.value()) {
+    case CodecId::SBC:
+      return "SBC";
+    case CodecId::AAC:
+      return "AAC";
+    case CodecId::APTX:
+      return "aptX";
+    case CodecId::APTX_HD:
+      return "aptX-HD";
+    case CodecId::LDAC:
+      return "LDAC";
+    case CodecId::OPUS:
+      return "Opus";
+    case CodecId::LHDCV5:
+      return "LHDCv5";
+    default:
+      return "(unknown codec)";
+  }
 }
 
 bool A2DP_CodecTypeEquals(const uint8_t* p_codec_info_a, const uint8_t* p_codec_info_b) {

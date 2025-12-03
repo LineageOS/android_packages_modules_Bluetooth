@@ -78,9 +78,6 @@ bool A2DP_IsCodecValidAac(const uint8_t* p_codec_info);
 // Returns true if the A2DP AAC Sink codec is supported, otherwise false.
 tA2DP_STATUS A2DP_IsSinkCodecSupportedAac(const uint8_t* p_codec_info);
 
-// Gets the A2DP AAC codec name for a given |p_codec_info|.
-const char* A2DP_CodecNameAac(const uint8_t* p_codec_info);
-
 // Checks whether two A2DP AAC codecs |p_codec_info_a| and |p_codec_info_b|
 // have the same type.
 // Returns true if the two codecs have the same type, otherwise false.

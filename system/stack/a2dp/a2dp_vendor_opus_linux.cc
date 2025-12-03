@@ -30,10 +30,6 @@ bool A2DP_VendorUsesRtpHeaderOpus(bool content_protection_enabled,
   return false;
 }
 
-const char* A2DP_VendorCodecNameOpus(const uint8_t* p_codec_info) {
-  return "Opus";
-}
-
 bool A2DP_VendorCodecTypeEqualsOpus(const uint8_t* p_codec_info_a,
                                     const uint8_t* p_codec_info_b) {
   return false;

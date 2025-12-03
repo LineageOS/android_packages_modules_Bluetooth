@@ -83,9 +83,6 @@ tA2DP_STATUS A2DP_IsSinkCodecSupportedSbc(const uint8_t* p_codec_info);
 // |p_codec_info|.
 void A2DP_InitDefaultCodecSbc(uint8_t* p_codec_info);
 
-// Gets the A2DP SBC codec name for a given |p_codec_info|.
-const char* A2DP_CodecNameSbc(const uint8_t* p_codec_info);
-
 // Checks whether two A2DP SBC codecs |p_codec_info_a| and |p_codec_info_b|
 // have the same type.
 // Returns true if the two codecs have the same type, otherwise false.

@@ -342,8 +342,6 @@ bool A2DP_VendorUsesRtpHeaderOpus(bool /* content_protection_enabled */,
   return true;
 }
 
-const char* A2DP_VendorCodecNameOpus(const uint8_t* /* p_codec_info */) { return "Opus"; }
-
 bool A2DP_VendorCodecTypeEqualsOpus(const uint8_t* p_codec_info_a, const uint8_t* p_codec_info_b) {
   tA2DP_OPUS_CIE Opus_cie_a;
   tA2DP_OPUS_CIE Opus_cie_b;

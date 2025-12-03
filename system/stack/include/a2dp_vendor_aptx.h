@@ -59,9 +59,6 @@ bool A2DP_IsCodecValidAptx(const uint8_t* p_codec_info);
 // false.
 bool A2DP_VendorUsesRtpHeaderAptx(bool content_protection_enabled, const uint8_t* p_codec_info);
 
-// Gets the A2DP aptX codec name for a given |p_codec_info|.
-const char* A2DP_VendorCodecNameAptx(const uint8_t* p_codec_info);
-
 // Checks whether two A2DP aptX codecs |p_codec_info_a| and |p_codec_info_b|
 // have the same type.
 // Returns true if the two codecs have the same type, otherwise false.

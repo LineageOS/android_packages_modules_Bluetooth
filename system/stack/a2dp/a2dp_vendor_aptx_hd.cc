@@ -212,8 +212,6 @@ bool A2DP_VendorUsesRtpHeaderAptxHd(bool /* content_protection_enabled */,
   return true;
 }
 
-const char* A2DP_VendorCodecNameAptxHd(const uint8_t* /* p_codec_info */) { return "aptX-HD"; }
-
 bool A2DP_VendorCodecTypeEqualsAptxHd(const uint8_t* p_codec_info_a,
                                       const uint8_t* p_codec_info_b) {
   tA2DP_APTX_HD_CIE aptx_hd_cie_a;

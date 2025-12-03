@@ -478,9 +478,6 @@ TEST_F(StackA2dpTest, test_a2dp_get_media_type) {
 }
 
 TEST_F(StackA2dpTest, test_a2dp_codec_name) {
-  uint8_t codec_info_test[AVDT_CODEC_SIZE];
-
-  // Explicit tests for known codecs
   EXPECT_STREQ(A2DP_CodecName(codec_info_sbc), "SBC");
   EXPECT_STREQ(A2DP_CodecName(codec_info_sbc_capability), "SBC");
   EXPECT_STREQ(A2DP_CodecName(codec_info_sbc_sink_capability), "SBC");
@@ -490,15 +487,6 @@ TEST_F(StackA2dpTest, test_a2dp_codec_name) {
   ASSERT_STREQ(A2DP_CodecName(codec_info_opus), "Opus");
   ASSERT_STREQ(A2DP_CodecName(codec_info_opus_capability), "Opus");
   ASSERT_STREQ(A2DP_CodecName(codec_info_opus_sink_capability), "Opus");
-  EXPECT_STREQ(A2DP_CodecName(codec_info_non_a2dp), "UNKNOWN VENDOR CODEC");
-
-  // Test all unknown codecs
-  memcpy(codec_info_test, codec_info_sbc, sizeof(codec_info_sbc));
-  for (uint8_t codec_type = A2DP_MEDIA_CT_AAC + 1; codec_type < A2DP_MEDIA_CT_NON_A2DP;
-       codec_type++) {
-    codec_info_test[2] = codec_type;  // Unknown codec type
-    EXPECT_STREQ(A2DP_CodecName(codec_info_test), "UNKNOWN CODEC");
-  }
 }
 
 TEST_F(StackA2dpTest, test_a2dp_vendor) {

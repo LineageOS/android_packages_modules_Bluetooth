@@ -27,10 +27,6 @@ bool A2DP_VendorUsesRtpHeaderAptxHd(bool content_protection_enabled,
   return false;
 }
 
-const char* A2DP_VendorCodecNameAptxHd(const uint8_t* p_codec_info) {
-  return "AptxHd";
-}
-
 bool A2DP_VendorCodecTypeEqualsAptxHd(const uint8_t* p_codec_info_a,
                                       const uint8_t* p_codec_info_b) {
   return false;

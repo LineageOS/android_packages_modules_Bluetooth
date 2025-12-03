@@ -315,8 +315,6 @@ static void A2DP_BuildMediaPayloadHeaderSbc(uint8_t* p_dst, bool frag, bool star
   *p_dst |= (A2DP_SBC_HDR_NUM_MSK & num);
 }
 
-const char* A2DP_CodecNameSbc(const uint8_t* /* p_codec_info */) { return "SBC"; }
-
 bool A2DP_IsCodecValidSbc(const uint8_t* p_codec_info) {
   tA2DP_SBC_CIE cfg_cie;
 

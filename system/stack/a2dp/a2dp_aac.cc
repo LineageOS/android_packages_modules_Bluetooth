@@ -324,8 +324,6 @@ static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAac(const tA2DP_AAC_CIE* p_ca
   return A2DP_SUCCESS;
 }
 
-const char* A2DP_CodecNameAac(const uint8_t* /* p_codec_info */) { return "AAC"; }
-
 bool A2DP_CodecTypeEqualsAac(const uint8_t* p_codec_info_a, const uint8_t* p_codec_info_b) {
   tA2DP_AAC_CIE aac_cie_a;
   tA2DP_AAC_CIE aac_cie_b;

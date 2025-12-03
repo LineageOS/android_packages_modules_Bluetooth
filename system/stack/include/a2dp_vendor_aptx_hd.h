@@ -66,9 +66,6 @@ bool A2DP_IsVendorPeerSinkCodecValidAptxHd(const uint8_t* p_codec_info);
 // false.
 bool A2DP_VendorUsesRtpHeaderAptxHd(bool content_protection_enabled, const uint8_t* p_codec_info);
 
-// Gets the A2DP aptX-HD codec name for a given |p_codec_info|.
-const char* A2DP_VendorCodecNameAptxHd(const uint8_t* p_codec_info);
-
 // Checks whether two A2DP aptX-HD codecs |p_codec_info_a| and |p_codec_info_b|
 // have the same type.
 // Returns true if the two codecs have the same type, otherwise false.

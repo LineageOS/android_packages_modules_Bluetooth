@@ -572,10 +572,6 @@ bool A2DP_VendorUsesRtpHeaderLhdcV5(UNUSED_ATTR bool content_protection_enabled,
   return true;
 }
 
-const char* A2DP_VendorCodecNameLhdcV5(UNUSED_ATTR const uint8_t* p_codec_info) {
-  return "LHDC V5";
-}
-
 bool A2DP_VendorCodecTypeEqualsLhdcV5(const uint8_t* p_codec_info_a,
                                       const uint8_t* p_codec_info_b) {
   tA2DP_LHDCV5_CIE lhdc_cie_a;

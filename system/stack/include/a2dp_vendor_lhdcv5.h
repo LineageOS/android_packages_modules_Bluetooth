@@ -178,9 +178,6 @@ bool A2DP_IsVendorSinkCodecSupportedLhdcV5(const uint8_t* p_codec_info);
 // supported, otherwise false.
 bool A2DP_IsPeerSourceCodecSupportedLhdcV5(const uint8_t* p_codec_info);
 
-// Gets the A2DP SBC codec name for a given |p_codec_info|.
-const char* A2DP_VendorCodecNameLhdcV5Sink(const uint8_t* p_codec_info);
-
 // Gets the channel type for the A2DP SBC Sink codec:
 // 1 for mono, or 3 for dual/stereo/joint.
 // |p_codec_info| is a pointer to the SBC codec_info to decode.

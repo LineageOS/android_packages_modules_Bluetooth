@@ -25,10 +25,6 @@ bool A2DP_VendorUsesRtpHeaderLdac(bool content_protection_enabled,
   return false;
 }
 
-const char* A2DP_VendorCodecNameLdac(const uint8_t* p_codec_info) {
-  return "Ldac";
-}
-
 bool A2DP_VendorCodecTypeEqualsLdac(const uint8_t* p_codec_info_a,
                                     const uint8_t* p_codec_info_b) {
   return false;

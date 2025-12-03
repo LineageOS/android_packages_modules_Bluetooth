@@ -110,17 +110,6 @@ struct A2DP_CodecInfoStringSbc {
 };
 extern struct A2DP_CodecInfoStringSbc A2DP_CodecInfoStringSbc;
 
-// Name: A2DP_CodecNameSbc
-// Params:  const uint8_t* p_codec_info
-// Return: const char*
-struct A2DP_CodecNameSbc {
-  static const char* return_value;
-  std::function<const char*(const uint8_t* p_codec_info)> body{
-          [](const uint8_t* /* p_codec_info */) { return return_value; }};
-  const char* operator()(const uint8_t* p_codec_info) { return body(p_codec_info); }
-};
-extern struct A2DP_CodecNameSbc A2DP_CodecNameSbc;
-
 // Name: A2DP_CodecTypeEqualsSbc
 // Params: const uint8_t* p_codec_info_a, const uint8_t* p_codec_info_b
 // Return: bool

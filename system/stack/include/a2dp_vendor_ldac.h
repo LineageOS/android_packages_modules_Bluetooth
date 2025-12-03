@@ -75,9 +75,6 @@ tA2DP_STATUS A2DP_IsVendorSinkCodecSupportedLdac(const uint8_t* p_codec_info);
 // false.
 bool A2DP_VendorUsesRtpHeaderLdac(bool content_protection_enabled, const uint8_t* p_codec_info);
 
-// Gets the A2DP LDAC codec name for a given |p_codec_info|.
-const char* A2DP_VendorCodecNameLdac(const uint8_t* p_codec_info);
-
 // Checks whether two A2DP LDAC codecs |p_codec_info_a| and |p_codec_info_b|
 // have the same type.
 // Returns true if the two codecs have the same type, otherwise false.
