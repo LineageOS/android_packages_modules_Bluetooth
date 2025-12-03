@@ -223,18 +223,16 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 } else {
                     if (Flags.admUseSetActiveDeviceHelpers()) {
                         setA2dpActiveDevice(null, /* stopAudio= */ false);
+                        setHfpActiveDevice(null);
+                        setHearingAidActiveDevice(null, /* stopAudio= */ false);
                     } else {
                         if (a2dp.isPresent() && a2dp.get().getActiveDevice() != null) {
                             // TODO:  b/312396770
                             a2dp.get().removeActiveDevice(false);
                         }
-                    }
-                    if (headset.isPresent() && headset.get().getActiveDevice() != null) {
-                        headset.get().setActiveDevice(null);
-                    }
-                    if (Flags.admUseSetActiveDeviceHelpers()) {
-                        setHearingAidActiveDevice(null, /* stopAudio= */ false);
-                    } else {
+                        if (headset.isPresent() && headset.get().getActiveDevice() != null) {
+                            headset.get().setActiveDevice(null);
+                        }
                         if (hearingAid.isPresent()
                                 && (hearingAid.get().getActiveDevices().get(0) != null
                                         || hearingAid.get().getActiveDevices().get(1) != null)) {
@@ -267,7 +265,11 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
         // Order matters, some devices do not accept A2DP connection before HFP connection
         if (setHeadset && hfpSupported) {
             Log.i(TAG, "setActiveDevice: Setting active Headset " + device);
-            headset.get().setActiveDevice(device);
+            if (Flags.admUseSetActiveDeviceHelpers()) {
+                setHfpActiveDevice(device);
+            } else {
+                headset.get().setActiveDevice(device);
+            }
         }
 
         if (setA2dp && a2dpSupported) {
