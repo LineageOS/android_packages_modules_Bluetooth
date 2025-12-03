@@ -3520,7 +3520,8 @@ static uint8_t get_min_enc_key_size() {
   return min_key_size;
 }
 
-static void read_encryption_key_size_complete_after_encryption_change(uint8_t status,
+static void read_encryption_key_size_complete_after_encryption_change(uint8_t encr_enable,
+                                                                      uint8_t status,
                                                                       uint16_t handle,
                                                                       uint8_t key_size) {
   if (status == HCI_ERR_INSUFFICIENT_SECURITY) {
@@ -3563,8 +3564,8 @@ static void read_encryption_key_size_complete_after_encryption_change(uint8_t st
   btm_sec_update_session_key_size(handle, key_size);
 
   // good key size - succeed
-  btm_acl_encrypt_change(handle, static_cast<tHCI_STATUS>(status), 1 /* enable */);
-  btm_sec_encrypt_change(handle, static_cast<tHCI_STATUS>(status), 1 /* enable */, key_size);
+  btm_acl_encrypt_change(handle, static_cast<tHCI_STATUS>(status), encr_enable);
+  btm_sec_encrypt_change(handle, static_cast<tHCI_STATUS>(status), encr_enable, key_size);
 }
 
 /*******************************************************************************
@@ -3580,14 +3581,16 @@ void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status, uint8_t 
                                    uint8_t key_size) {
   if (status == HCI_SUCCESS && encr_enable != 0 && !BTM_IsBleConnection(handle)) {
     if (key_size != 0) {
-      read_encryption_key_size_complete_after_encryption_change(status, handle, key_size);
+      read_encryption_key_size_complete_after_encryption_change(encr_enable, status, handle,
+                                                                key_size);
       return;
     }
 
     if (bluetooth::shim::GetController()->IsSupported(
                 bluetooth::hci::OpCode::READ_ENCRYPTION_KEY_SIZE)) {
       btsnd_hcic_read_encryption_key_size(
-              handle, base::Bind(&read_encryption_key_size_complete_after_encryption_change));
+              handle,
+              base::Bind(&read_encryption_key_size_complete_after_encryption_change, encr_enable));
       return;
     }
   }
@@ -4113,8 +4116,8 @@ void btm_sec_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr, tHC
   }
 }
 
-static void read_encryption_key_size_complete_after_key_refresh(uint8_t status, uint16_t handle,
-                                                                uint8_t key_size) {
+static void read_encryption_key_size_complete_after_key_refresh(uint8_t encr_enable, uint8_t status,
+                                                                uint16_t handle, uint8_t key_size) {
   if (status == HCI_ERR_INSUFFICIENT_SECURITY) {
     /* If remote device stop the encryption before we call "Read Encryption Key
      * Size", we might receive Insufficient Security, which means that link is
@@ -4139,7 +4142,7 @@ static void read_encryption_key_size_complete_after_key_refresh(uint8_t status, 
     return;
   }
 
-  btm_sec_encrypt_change(handle, static_cast<tHCI_STATUS>(status), 1 /* enc_enable */, key_size);
+  btm_sec_encrypt_change(handle, static_cast<tHCI_STATUS>(status), encr_enable, key_size);
 }
 
 void btm_sec_encryption_key_refresh_complete(uint16_t handle, tHCI_STATUS status) {
@@ -4151,7 +4154,8 @@ void btm_sec_encryption_key_refresh_complete(uint16_t handle, tHCI_STATUS status
                            (status == HCI_SUCCESS) ? 1 : 0, 0, true);
   } else {
     btsnd_hcic_read_encryption_key_size(
-            handle, base::Bind(&read_encryption_key_size_complete_after_key_refresh));
+            handle,
+            base::Bind(&read_encryption_key_size_complete_after_key_refresh, 1 /* encr_enable */));
   }
 }
 
