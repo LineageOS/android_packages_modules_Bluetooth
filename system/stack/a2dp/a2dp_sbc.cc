@@ -805,14 +805,6 @@ bool A2DP_AdjustCodecSbc(uint8_t* p_codec_info) {
   return A2DP_BuildInfoSbc(AVDT_MEDIA_TYPE_AUDIO, &cfg_cie, p_codec_info);
 }
 
-btav_a2dp_codec_index_t A2DP_SourceCodecIndexSbc(const uint8_t* /* p_codec_info */) {
-  return BTAV_A2DP_CODEC_INDEX_SOURCE_SBC;
-}
-
-btav_a2dp_codec_index_t A2DP_SinkCodecIndexSbc(const uint8_t* /* p_codec_info */) {
-  return BTAV_A2DP_CODEC_INDEX_SINK_SBC;
-}
-
 bool A2DP_InitCodecConfigSbc(AvdtpSepConfig* p_cfg) {
   return A2DP_BuildInfoSbc(AVDT_MEDIA_TYPE_AUDIO, &a2dp_sbc_source_caps, p_cfg->codec_info);
 }

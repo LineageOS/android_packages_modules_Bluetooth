@@ -399,27 +399,27 @@ btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndex(const uint8_t* p_codec_info)
 
   // Check for aptX
   if (vendor_id == A2DP_APTX_VENDOR_ID && codec_id == A2DP_APTX_CODEC_ID_BLUETOOTH) {
-    return A2DP_VendorSourceCodecIndexAptx(p_codec_info);
+    return BTAV_A2DP_CODEC_INDEX_SOURCE_APTX;
   }
 
   // Check for aptX-HD
   if (vendor_id == A2DP_APTX_HD_VENDOR_ID && codec_id == A2DP_APTX_HD_CODEC_ID_BLUETOOTH) {
-    return A2DP_VendorSourceCodecIndexAptxHd(p_codec_info);
+    return BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD;
   }
 
   // Check for LDAC
   if (vendor_id == A2DP_LDAC_VENDOR_ID && codec_id == A2DP_LDAC_CODEC_ID) {
-    return A2DP_VendorSourceCodecIndexLdac(p_codec_info);
+    return BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC;
   }
 
   // Check for Opus
   if (vendor_id == A2DP_OPUS_VENDOR_ID && codec_id == A2DP_OPUS_CODEC_ID) {
-    return A2DP_VendorSourceCodecIndexOpus(p_codec_info);
+    return BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS;
   }
 
   // Check for LHDCv5
   if (vendor_id == A2DP_LHDC_VENDOR_ID && codec_id == A2DP_LHDCV5_CODEC_ID) {
-    return A2DP_VendorSourceCodecIndexLhdcV5(p_codec_info);
+    return BTAV_A2DP_CODEC_INDEX_SOURCE_LHDCV5;
   }
 
   // Add checks based on <vendor_id, codec_id>
@@ -436,7 +436,7 @@ btav_a2dp_codec_index_t A2DP_VendorSinkCodecIndex(const uint8_t* p_codec_info) {
 
   // Check for Opus
   if (vendor_id == A2DP_OPUS_VENDOR_ID && codec_id == A2DP_OPUS_CODEC_ID) {
-    return A2DP_VendorSinkCodecIndexOpus(p_codec_info);
+    return BTAV_A2DP_CODEC_INDEX_SINK_OPUS;
   }
 
   return BTAV_A2DP_CODEC_INDEX_MAX;

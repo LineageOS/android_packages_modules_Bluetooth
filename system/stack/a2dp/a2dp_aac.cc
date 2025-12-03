@@ -672,14 +672,6 @@ bool A2DP_AdjustCodecAac(uint8_t* p_codec_info) {
   return true;
 }
 
-btav_a2dp_codec_index_t A2DP_SourceCodecIndexAac(const uint8_t* /* p_codec_info */) {
-  return BTAV_A2DP_CODEC_INDEX_SOURCE_AAC;
-}
-
-btav_a2dp_codec_index_t A2DP_SinkCodecIndexAac(const uint8_t* /* p_codec_info */) {
-  return BTAV_A2DP_CODEC_INDEX_SINK_AAC;
-}
-
 static void aac_source_caps_initialize() {
   if (aac_source_caps_configured) {
     return;

@@ -318,28 +318,6 @@ struct A2DP_IsSinkCodecSupportedSbc {
 };
 extern struct A2DP_IsSinkCodecSupportedSbc A2DP_IsSinkCodecSupportedSbc;
 
-// Name: A2DP_SinkCodecIndexSbc
-// Params:  const uint8_t* p_codec_info
-// Return: btav_a2dp_codec_index_t
-struct A2DP_SinkCodecIndexSbc {
-  static btav_a2dp_codec_index_t return_value;
-  std::function<btav_a2dp_codec_index_t(const uint8_t* p_codec_info)> body{
-          [](const uint8_t* /* p_codec_info */) { return return_value; }};
-  btav_a2dp_codec_index_t operator()(const uint8_t* p_codec_info) { return body(p_codec_info); }
-};
-extern struct A2DP_SinkCodecIndexSbc A2DP_SinkCodecIndexSbc;
-
-// Name: A2DP_SourceCodecIndexSbc
-// Params:  const uint8_t* p_codec_info
-// Return: btav_a2dp_codec_index_t
-struct A2DP_SourceCodecIndexSbc {
-  static btav_a2dp_codec_index_t return_value;
-  std::function<btav_a2dp_codec_index_t(const uint8_t* p_codec_info)> body{
-          [](const uint8_t* /* p_codec_info */) { return return_value; }};
-  btav_a2dp_codec_index_t operator()(const uint8_t* p_codec_info) { return body(p_codec_info); }
-};
-extern struct A2DP_SourceCodecIndexSbc A2DP_SourceCodecIndexSbc;
-
 }  // namespace stack_a2dp_sbc
 }  // namespace mock
 }  // namespace test

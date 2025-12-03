@@ -520,10 +520,6 @@ bool A2DP_VendorAdjustCodecLdac(uint8_t* p_codec_info) {
   return true;
 }
 
-btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexLdac(const uint8_t* /* p_codec_info */) {
-  return BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC;
-}
-
 bool A2DP_VendorInitCodecConfigLdac(AvdtpSepConfig* p_cfg) {
   return A2DP_BuildInfoLdac(AVDT_MEDIA_TYPE_AUDIO, &a2dp_ldac_source_caps, p_cfg->codec_info);
 }

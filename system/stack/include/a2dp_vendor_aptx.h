@@ -128,11 +128,6 @@ const tA2DP_ENCODER_INTERFACE* A2DP_VendorGetEncoderInterfaceAptx(const uint8_t*
 // Returns true if |p_codec_info| is valid and supported, otherwise false.
 bool A2DP_VendorAdjustCodecAptx(uint8_t* p_codec_info);
 
-// Gets the A2DP aptX Source codec index for a given |p_codec_info|.
-// Returns the corresponding |btav_a2dp_codec_index_t| on success,
-// otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
-btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexAptx(const uint8_t* p_codec_info);
-
 // Initializes A2DP aptX Source codec information into |AvdtpSepConfig|
 // configuration entry pointed by |p_cfg|.
 bool A2DP_VendorInitCodecConfigAptx(AvdtpSepConfig* p_cfg);

@@ -61,8 +61,6 @@ struct A2DP_InitCodecConfigSbc A2DP_InitCodecConfigSbc;
 struct A2DP_InitCodecConfigSbcSink A2DP_InitCodecConfigSbcSink;
 struct A2DP_InitDefaultCodecSbc A2DP_InitDefaultCodecSbc;
 struct A2DP_IsSinkCodecSupportedSbc A2DP_IsSinkCodecSupportedSbc;
-struct A2DP_SinkCodecIndexSbc A2DP_SinkCodecIndexSbc;
-struct A2DP_SourceCodecIndexSbc A2DP_SourceCodecIndexSbc;
 
 }  // namespace stack_a2dp_sbc
 }  // namespace mock
@@ -96,10 +94,6 @@ int A2DP_GetTrackSampleRateSbc::return_value = 0;
 bool A2DP_InitCodecConfigSbc::return_value = false;
 bool A2DP_InitCodecConfigSbcSink::return_value = false;
 tA2DP_STATUS A2DP_IsSinkCodecSupportedSbc::return_value = A2DP_NOT_SUPPORTED_CODEC_TYPE;
-btav_a2dp_codec_index_t A2DP_SinkCodecIndexSbc::return_value =
-    BTAV_A2DP_CODEC_INDEX_SOURCE_MIN;
-btav_a2dp_codec_index_t A2DP_SourceCodecIndexSbc::return_value =
-    BTAV_A2DP_CODEC_INDEX_SOURCE_MIN;
 
 }  // namespace stack_a2dp_sbc
 }  // namespace mock
@@ -204,14 +198,6 @@ void A2DP_InitDefaultCodecSbc(uint8_t* p_codec_info) {
 tA2DP_STATUS A2DP_IsSinkCodecSupportedSbc(const uint8_t* p_codec_info) {
   inc_func_call_count(__func__);
   return test::mock::stack_a2dp_sbc::A2DP_IsSinkCodecSupportedSbc(p_codec_info);
-}
-btav_a2dp_codec_index_t A2DP_SinkCodecIndexSbc(const uint8_t* p_codec_info) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_a2dp_sbc::A2DP_SinkCodecIndexSbc(p_codec_info);
-}
-btav_a2dp_codec_index_t A2DP_SourceCodecIndexSbc(const uint8_t* p_codec_info) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_a2dp_sbc::A2DP_SourceCodecIndexSbc(p_codec_info);
 }
 // Mocked functions complete
 // END mockcify generation

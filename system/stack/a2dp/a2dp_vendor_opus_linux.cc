@@ -78,14 +78,6 @@ const tA2DP_DECODER_INTERFACE* A2DP_VendorGetDecoderInterfaceOpus(const uint8_t*
 
 bool A2DP_VendorAdjustCodecOpus(uint8_t* p_codec_info) { return false; }
 
-btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexOpus(const uint8_t* p_codec_info) {
-  return BTAV_A2DP_CODEC_INDEX_MAX;
-}
-
-btav_a2dp_codec_index_t A2DP_VendorSinkCodecIndexOpus(const uint8_t* p_codec_info) {
-  return BTAV_A2DP_CODEC_INDEX_MAX;
-}
-
 bool A2DP_VendorInitCodecConfigOpus(AvdtpSepConfig* p_cfg) { return false; }
 
 bool A2DP_VendorInitCodecConfigOpusSink(AvdtpSepConfig* p_cfg) { return false; }

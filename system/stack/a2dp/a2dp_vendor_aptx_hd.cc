@@ -377,10 +377,6 @@ bool A2DP_VendorAdjustCodecAptxHd(uint8_t* p_codec_info) {
   return true;
 }
 
-btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexAptxHd(const uint8_t* /* p_codec_info */) {
-  return BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD;
-}
-
 bool A2DP_VendorInitCodecConfigAptxHd(AvdtpSepConfig* p_cfg) {
   return A2DP_BuildInfoAptxHd(AVDT_MEDIA_TYPE_AUDIO, &a2dp_aptx_hd_source_caps, p_cfg->codec_info);
 }
