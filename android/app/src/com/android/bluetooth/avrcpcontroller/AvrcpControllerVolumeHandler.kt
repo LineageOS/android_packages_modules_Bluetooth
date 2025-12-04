@@ -55,6 +55,9 @@ class AvrcpControllerVolumeHandler(
     private val mContext: Context,
     private val mDevice: BluetoothDevice,
 ) {
+    /** For synchronizing [start] and [stop]. */
+    private val mLock = Any()
+
     private val mAudioManager: AudioManager = mContext.getSystemService(AudioManager::class.java)
 
     /** The volume strategy in use by our device. */
@@ -64,6 +67,14 @@ class AvrcpControllerVolumeHandler(
 
     private val isLoud: Boolean
         get() = this.volumeStrategy == STRATEGY_LOUD
+
+    fun start() {
+        synchronized(mLock) { debug("Starting volume handler") }
+    }
+
+    fun stop() {
+        synchronized(mLock) { debug("Stopping volume handler") }
+    }
 
     val absoluteVolume: Int
         /**
