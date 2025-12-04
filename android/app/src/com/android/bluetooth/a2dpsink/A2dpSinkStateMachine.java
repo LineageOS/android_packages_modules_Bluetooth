@@ -216,8 +216,13 @@ class A2dpSinkStateMachine extends StateMachine {
                     }
                 }
                 case STATE_CONNECTED -> {
-                    setMostRecentState(STATE_CONNECTING);
-                    transitionTo(mConnected);
+                    if (mService.getConnectionPolicy(mDevice) == CONNECTION_POLICY_FORBIDDEN) {
+                        warn("Reject connection, policy=CONNECTION_POLICY_FORBIDDEN");
+                        mNativeInterface.disconnectA2dpSink(mDevice);
+                    } else {
+                        setMostRecentState(STATE_CONNECTING);
+                        transitionTo(mConnected);
+                    }
                 }
                 case STATE_DISCONNECTED -> sendMessage(CLEANUP);
                 default -> {} // Nothing to do
