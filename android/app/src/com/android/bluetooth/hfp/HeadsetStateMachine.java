@@ -2455,16 +2455,18 @@ class HeadsetStateMachine extends StateMachine {
     }
 
     private void sendScoConnectionFailureToAudio(int reason, BluetoothDevice device) {
-        if (android.media.audio.Flags.btAudioDisconnectApi()) return;
+        if (!android.media.audio.Flags.btAudioDisconnectApi()) return;
         if (reason == 0 /* NO_FAILURE */) return;
         switch (reason) {
             case AudioManager.HFP_AUDIO_DISCONNECT_CODEC_NEGOTIATION_FAILED,
                     AudioManager.HFP_AUDIO_DISCONNECT_REMOTE_INITIATED,
                     AudioManager.HFP_AUDIO_DISCONNECT_PRECONDITION_FAILED,
-                    AudioManager.HFP_AUDIO_DISCONNECT_INTERNAL_ERROR ->
-                    mSystemInterface
-                            .getAudioManager()
-                            .handleBluetoothHfpAudioDisconnected(device, reason);
+                    AudioManager.HFP_AUDIO_DISCONNECT_INTERNAL_ERROR -> {
+                Log.d(TAG, "Logging SCO connection failure: " + reason);
+                mSystemInterface
+                        .getAudioManager()
+                        .handleBluetoothHfpAudioDisconnected(device, reason);
+            }
             default -> {
                 Log.w(TAG, "Received unknown reason: " + reason);
             }
