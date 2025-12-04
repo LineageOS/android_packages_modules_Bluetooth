@@ -194,7 +194,7 @@ PrepareReferenceLeAudioDataPathConfigurationLc3() {
           LeAudioDataPathConfiguration{
                   .dataPathId = 0x01,  // kIsoDataPathPlatformDefault
                   // Empty vector
-                  .dataPathConfiguration = {.configuration = {}},
+                  .dataPathConfiguration = {.configuration = {{}}},
                   .isoDataPathConfiguration =
                           {
                                   .codecId = kAidlCodecLc3,
@@ -203,7 +203,7 @@ PrepareReferenceLeAudioDataPathConfigurationLc3() {
                                   // Irrelevant for the transparent ISO data path
                                   .controllerDelayUs = 0,
                                   // Empty for LC3 codec
-                                  .configuration = std::nullopt,
+                                  .configuration = {{}},
                           },
           };
 
@@ -520,12 +520,14 @@ PrepareReferenceAseConfigurationSetting(
 
   // Config Flags
   // AIDL:
-  aidl_audio_set_config.flags->bitmask =
-          ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::SPATIAL_AUDIO |
-          ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::LOW_LATENCY |
-          ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::
-                  ALLOW_ASYMMETRIC_CONFIGURATIONS |
-          ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::MONO_MIC_CONFIGURATION;
+  aidl_audio_set_config.flags = {::aidl::android::hardware::bluetooth::audio::ConfigurationFlags{
+          .bitmask =
+                  ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::SPATIAL_AUDIO |
+                  ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::LOW_LATENCY |
+                  ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::
+                          ALLOW_ASYMMETRIC_CONFIGURATIONS |
+                  ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::
+                          MONO_MIC_CONFIGURATION}};
 
   /* Low latency microphone */
   if (source_locations) {
@@ -618,12 +620,14 @@ PrepareReferenceAseConfigurationSettingVendor1(
 
   // Config Flags
   // AIDL:
-  aidl_audio_set_config.flags->bitmask =
-          ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::SPATIAL_AUDIO |
-          ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::LOW_LATENCY |
-          ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::
-                  ALLOW_ASYMMETRIC_CONFIGURATIONS |
-          ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::MONO_MIC_CONFIGURATION;
+  aidl_audio_set_config.flags = {::aidl::android::hardware::bluetooth::audio::ConfigurationFlags{
+          .bitmask =
+                  ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::SPATIAL_AUDIO |
+                  ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::LOW_LATENCY |
+                  ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::
+                          ALLOW_ASYMMETRIC_CONFIGURATIONS |
+                  ::aidl::android::hardware::bluetooth::audio::ConfigurationFlags::
+                          MONO_MIC_CONFIGURATION}};
 
   /* Low latency microphone */
   if (source_locations) {
