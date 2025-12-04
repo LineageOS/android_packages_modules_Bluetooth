@@ -38,3 +38,8 @@ bool LeAudioHalVerifier::SupportsStreamActiveApi() {
   return bluetooth::audio::HalVersionManager::GetHalVersion() >=
          bluetooth::audio::BluetoothAudioHalVersion::VERSION_AIDL_V3;
 }
+
+bool LeAudioHalVerifier::SupportsIsoParameterUpdate() {
+  return bluetooth::audio::HalVersionManager::GetHalVersion() >=
+         bluetooth::audio::BluetoothAudioHalVersion::VERSION_AIDL_V6;
+}
