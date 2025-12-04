@@ -1092,10 +1092,10 @@ void port_rfc_closed(tPORT* p_port, uint8_t res) {
   p_port->rfc.sm_cb.close_reason = static_cast<tPORT_RESULT>(res);
   port_collect_attempt_metrics(p_port);
   log::info(
-          "RFCOMM connection closed, port_handle={}, state={}, reason={}[{}], "
+          "RFCOMM connection closed, port_handle={}, state={}, reason={}, "
           "UUID=0x{:x}, bd_addr={}, is_server={}",
-          p_port->handle, p_port->state, PORT_GetResultString(res), res, p_port->uuid,
-          p_port->bd_addr, p_port->is_server);
+          p_port->handle, p_port->state, port_result_text(p_port->rfc.sm_cb.close_reason),
+          p_port->uuid, p_port->bd_addr, p_port->is_server);
 
   port_release_port(p_port);
 }

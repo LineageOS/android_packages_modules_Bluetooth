@@ -174,7 +174,7 @@ inline std::string port_result_text(const tPORT_RESULT& result) {
     CASE_RETURN_STRING(PORT_TX_QUEUE_DISABLED);
     CASE_RETURN_STRING(PORT_PAGE_TIMEOUT);
     CASE_RETURN_STRING(PORT_INVALID_SCN);
-    CASE_RETURN_STRING(PORT_ERR_MAX);
+    // PORT_ERR_MAX is treated as "Unknown port result code"
     default:
       break;
   }
@@ -487,19 +487,6 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint16_t port_handle)
  *
  ******************************************************************************/
 void RFCOMM_Init(void);
-
-/*******************************************************************************
- *
- * Function         PORT_GetResultString
- *
- * Description      This function returns the human-readable string for a given
- *                  result code.
- *
- * Returns          a pointer to the human-readable string for the given
- *                  result. Note that the string returned must not be freed.
- *
- ******************************************************************************/
-[[nodiscard]] const char* PORT_GetResultString(const uint8_t result_code);
 
 /*******************************************************************************
  *
