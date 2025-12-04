@@ -549,12 +549,12 @@ protected:
                                           ? requirements.sink_requirements
                                           : requirements.source_requirements;
 
-    if (std::count_if(required_pacs->begin(), required_pacs->end(),
-                      [](auto const& pac) { return pac.codec_spec_caps_raw.empty(); })) {
+    if (!required_pacs.has_value() || (required_pacs->size() == 0)) {
       return ase_confs;
     }
 
-    if (!required_pacs.has_value() || (required_pacs->size() == 0)) {
+    if (std::count_if(required_pacs->begin(), required_pacs->end(),
+                      [](auto const& pac) { return pac.codec_spec_caps_raw.empty(); })) {
       return ase_confs;
     }
 
