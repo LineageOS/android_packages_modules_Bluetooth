@@ -63,6 +63,15 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
         }
 
         String brEdrAddress = mService.getBrEdrAddress(device);
+        String leDeviceAddr = device.getAddress();
+        if (Flags.addAddressMappingForLecoc()) {
+            if (type == BluetoothSocket.TYPE_LE) {
+                leDeviceAddr = mService.getIdentityAddress(device.getAddress());
+                if (leDeviceAddr == null) {
+                    leDeviceAddr = device.getAddress();
+                }
+            }
+        }
 
         Log.i(
                 TAG,
@@ -82,7 +91,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
                         .connectSocket(
                                 Utils.getBytesFromAddress(
                                         type == BluetoothSocket.TYPE_LE
-                                                ? device.getAddress()
+                                                ? leDeviceAddr
                                                 : brEdrAddress),
                                 type,
                                 Utils.uuidToByteArray(uuid),
