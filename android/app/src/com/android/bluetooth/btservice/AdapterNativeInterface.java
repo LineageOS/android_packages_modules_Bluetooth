@@ -156,10 +156,6 @@ public class AdapterNativeInterface {
         return readEnergyInfoNative();
     }
 
-    boolean factoryReset() {
-        return factoryResetNative();
-    }
-
     void dump(FileDescriptor fd, String[] arguments) {
         dumpNative(fd, arguments);
     }
@@ -341,8 +337,6 @@ public class AdapterNativeInterface {
     private native boolean getRemoteMasInstancesNative(byte[] address);
 
     private native int readEnergyInfoNative();
-
-    private native boolean factoryResetNative();
 
     private native void dumpNative(FileDescriptor fd, String[] arguments);
 

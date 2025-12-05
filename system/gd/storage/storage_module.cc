@@ -188,11 +188,6 @@ void StorageModule::SaveImmediately() {
   }
 }
 
-void StorageModule::Clear() {
-  std::lock_guard<std::recursive_mutex> lock(mutex_);
-  pimpl_->cache_.Clear();
-}
-
 Device StorageModule::GetDeviceByLegacyKey(hci::Address legacy_key_address) {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   return Device(&pimpl_->cache_, std::move(legacy_key_address),
