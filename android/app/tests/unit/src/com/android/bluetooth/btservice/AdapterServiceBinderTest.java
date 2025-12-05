@@ -41,6 +41,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.IBluetoothActivityEnergyInfoListener;
+import android.bluetooth.IBluetoothHciVendorSpecificCallback;
 import android.bluetooth.IBluetoothOobDataCallback;
 import android.content.AttributionSource;
 import android.content.Context;
@@ -62,6 +63,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import java.io.FileDescriptor;
+import java.util.Set;
 
 /** Test cases for {@link AdapterServiceBinder}. */
 @SmallTest
@@ -75,6 +77,7 @@ public class AdapterServiceBinderTest {
     @Mock private BluetoothDevice mDevice;
     @Mock private RemoteDevices mRemoteDevices;
     @Mock private UserManager mUserManager;
+    @Mock private BluetoothHciVendorSpecificDispatcher mDispatcher;
 
     private AdapterServiceBinder mBinder;
 
@@ -86,6 +89,7 @@ public class AdapterServiceBinderTest {
     public void setUp() {
         when(mService.getAdapterProperties()).thenReturn(mAdapterProperties);
         when(mService.getRemoteDevices()).thenReturn(mRemoteDevices);
+        when(mService.getBluetoothHciVendorSpecificDispatcher()).thenReturn(mDispatcher);
         doReturn(true).when(mService).isAvailable();
         // Default for other permission checks if any
         doNothing().when(mService).enforceCallingOrSelfPermission(any(), any());
@@ -400,5 +404,61 @@ public class AdapterServiceBinderTest {
         mBinder.fetchRemoteUuids(mDevice, TRANSPORT_LE, mSource);
         verify(mRemoteDevices).fetchUuids(eq(mDevice), eq(TRANSPORT_LE));
         Mockito.reset(mRemoteDevices);
+    }
+
+    @Test
+    public void registerHciVendorSpecificCallback_nullAclHandles_throwsNullPointerException() {
+        IBluetoothHciVendorSpecificCallback callback =
+                mock(IBluetoothHciVendorSpecificCallback.class);
+        int[] eventCodes = new int[] {0x01};
+
+        assertThrows(
+                NullPointerException.class,
+                () -> mBinder.registerHciVendorSpecificCallback(callback, eventCodes, null));
+    }
+
+    @Test
+    public void
+            registerHciVendorSpecificCallback_invalidAclHandle_throwsIllegalArgumentException() {
+        IBluetoothHciVendorSpecificCallback callback =
+                mock(IBluetoothHciVendorSpecificCallback.class);
+        int[] eventCodes = new int[] {0x01};
+
+        // Test with handle <= 0
+        int[] invalidAclHandlesZero = new int[] {0x01, 0};
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        mBinder.registerHciVendorSpecificCallback(
+                                callback, eventCodes, invalidAclHandlesZero));
+
+        int[] invalidAclHandlesNegative = new int[] {0x01, -1};
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        mBinder.registerHciVendorSpecificCallback(
+                                callback, eventCodes, invalidAclHandlesNegative));
+
+        // Test with handle > 0xfff
+        int[] invalidAclHandlesTooLarge = new int[] {0x01, 0x1000};
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        mBinder.registerHciVendorSpecificCallback(
+                                callback, eventCodes, invalidAclHandlesTooLarge));
+    }
+
+    @Test
+    public void registerHciVendorSpecificCallback_validArgs_callsDispatcherRegister() {
+        IBluetoothHciVendorSpecificCallback callback =
+                mock(IBluetoothHciVendorSpecificCallback.class);
+        int[] eventCodes = new int[] {0x01, 0x02};
+        int[] aclHandles = new int[] {0x01, 0x02};
+
+        mBinder.registerHciVendorSpecificCallback(callback, eventCodes, aclHandles);
+
+        Set<Integer> expectedEventCodes = Set.of(0x01, 0x02);
+        Set<Integer> expectedAclHandles = Set.of(0x01, 0x02);
+        verify(mDispatcher).register(eq(callback), eq(expectedEventCodes), eq(expectedAclHandles));
     }
 }
