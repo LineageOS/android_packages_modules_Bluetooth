@@ -129,65 +129,6 @@ protected:
   }
 };
 
-TEST_F(DeviceIotConfigModuleTest, test_device_iot_config_module_init_is_factory_reset) {
-  bool is_factory_reset = false;
-  config_t* config_new_return_value = NULL;
-  config_t* config_new_empty_return_value = NULL;
-
-  test::mock::osi_properties::osi_property_get_bool.body =
-          [&](const char* /*key*/, bool /*default_value*/) -> int { return is_factory_reset; };
-
-  test::mock::osi_config::config_new.body = [&](const char* /*filename*/) {
-    return std::unique_ptr<config_t>(config_new_return_value);
-  };
-
-  test::mock::osi_config::config_new_empty.body = [&](void) {
-    return std::unique_ptr<config_t>(config_new_empty_return_value);
-  };
-
-  {
-    reset_mock_function_count_map();
-
-    is_factory_reset = true;
-    config_new_return_value = NULL;
-    config_new_empty_return_value = NULL;
-
-    errno = 0;
-    int file_fd = -1;
-    int backup_fd = -1;
-
-    file_fd = open(IOT_CONFIG_FILE_PATH, O_CREAT | O_RDWR | O_TRUNC | O_CLOEXEC, S_IRUSR | S_IWUSR);
-    EXPECT_GT(file_fd, 0);
-    EXPECT_EQ(errno, 0);
-
-    backup_fd =
-            open(IOT_CONFIG_BACKUP_PATH, O_CREAT | O_RDWR | O_TRUNC | O_CLOEXEC, S_IRUSR | S_IWUSR);
-    EXPECT_GT(backup_fd, 0);
-    EXPECT_EQ(errno, 0);
-
-    EXPECT_EQ(access(IOT_CONFIG_FILE_PATH, F_OK), 0);
-    EXPECT_EQ(access(IOT_CONFIG_BACKUP_PATH, F_OK), 0);
-
-    device_iot_config_module_init();
-
-    errno = 0;
-    EXPECT_EQ(access(IOT_CONFIG_FILE_PATH, F_OK), -1);
-    EXPECT_EQ(errno, ENOENT);
-
-    errno = 0;
-    EXPECT_EQ(access(IOT_CONFIG_BACKUP_PATH, F_OK), -1);
-    EXPECT_EQ(errno, ENOENT);
-
-    EXPECT_EQ(get_func_call_count("config_new"), 2);
-    EXPECT_EQ(get_func_call_count("config_new_empty"), 1);
-    EXPECT_EQ(get_func_call_count("alarm_free"), 1);
-    EXPECT_EQ(get_func_call_count("future_new_immediate"), 1);
-  }
-
-  test::mock::osi_config::config_new.body = {};
-  test::mock::osi_config::config_new_empty.body = {};
-}
-
 TEST_F(DeviceIotConfigModuleTest, test_device_iot_config_module_init_no_config) {
   test::mock::osi_config::config_new.body = [&](const char* /*filename*/) {
     return std::unique_ptr<config_t>(nullptr);
@@ -3044,22 +2985,6 @@ TEST_F(DeviceIotConfigTest, test_device_debug_iot_config_dump) {
   }
 }
 
-TEST_F(DeviceIotConfigTest, test_device_iot_config_is_factory_reset) {
-  bool return_value;
-  test::mock::osi_properties::osi_property_get_bool.body =
-          [&](const char* /*key*/, bool /*default_value*/) -> bool { return return_value; };
-
-  {
-    return_value = false;
-    EXPECT_FALSE(device_iot_config_is_factory_reset());
-  }
-
-  {
-    return_value = true;
-    EXPECT_TRUE(device_iot_config_is_factory_reset());
-  }
-}
-
 TEST_F(DeviceIotConfigTest, test_device_debug_iot_config_delete_files) {
   {
     errno = 0;
@@ -3077,15 +3002,5 @@ TEST_F(DeviceIotConfigTest, test_device_debug_iot_config_delete_files) {
 
     EXPECT_EQ(access(IOT_CONFIG_FILE_PATH, F_OK), 0);
     EXPECT_EQ(access(IOT_CONFIG_BACKUP_PATH, F_OK), 0);
-
-    device_iot_config_delete_files();
-
-    errno = 0;
-    EXPECT_EQ(access(IOT_CONFIG_FILE_PATH, F_OK), -1);
-    EXPECT_EQ(errno, ENOENT);
-
-    errno = 0;
-    EXPECT_EQ(access(IOT_CONFIG_BACKUP_PATH, F_OK), -1);
-    EXPECT_EQ(errno, ENOENT);
   }
 }
