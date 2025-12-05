@@ -398,6 +398,36 @@ struct btsnd_hcic_ble_set_big_channel_map_classification_vsc {
 };
 extern struct btsnd_hcic_ble_set_big_channel_map_classification_vsc
         btsnd_hcic_ble_set_big_channel_map_classification_vsc;
+// Name: btsnd_hcic_ble_big_create_sync
+// Params: uint8_t big_handle, uint16_t sync_handle, uint8_t encryption, const std::array<uint8_t,
+// 16>& bcast_code, uint8_t mse, uint16_t sync_timeout, const std::vector<uint8_t>& bis
+// void
+struct btsnd_hcic_ble_big_create_sync {
+  std::function<void(uint8_t big_handle, uint16_t sync_handle, uint8_t encryption,
+                     const std::array<uint8_t, 16>& bcast_code, uint8_t mse, uint16_t sync_timeout,
+                     const std::vector<uint8_t>& bis)>
+          body{[](uint8_t /* big_handle */, uint16_t /* sync_handle */, uint8_t /* encryption */,
+                  const std::array<uint8_t, 16>& /* bcast_code */, uint8_t /* mse */,
+                  uint16_t /* sync_timeout */, const std::vector<uint8_t>& /* bis */) {}};
+  void operator()(uint8_t big_handle, uint16_t sync_handle, uint8_t encryption,
+                  const std::array<uint8_t, 16>& bcast_code, uint8_t mse, uint16_t sync_timeout,
+                  const std::vector<uint8_t>& bis) {
+    body(big_handle, sync_handle, encryption, bcast_code, mse, sync_timeout, bis);
+  }
+};
+extern struct btsnd_hcic_ble_big_create_sync btsnd_hcic_ble_big_create_sync;
+
+// Name: btsnd_hcic_ble_big_terminate_sync
+// Params: uint8_t big_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb
+// Return: void
+struct btsnd_hcic_ble_big_terminate_sync {
+  std::function<void(uint8_t, base::OnceCallback<void(uint8_t*, uint16_t)>)> body{
+          [](uint8_t /* big_handle */, base::OnceCallback<void(uint8_t*, uint16_t)> /* cb */) {}};
+  void operator()(uint8_t big_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+    body(big_handle, std::move(cb));
+  }
+};
+extern struct btsnd_hcic_ble_big_terminate_sync btsnd_hcic_ble_big_terminate_sync;
 
 }  // namespace stack_hcic_hciblecmds
 }  // namespace mock

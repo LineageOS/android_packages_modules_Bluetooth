@@ -101,6 +101,18 @@ void btsnd_hcic_ble_set_big_channel_map_classification_vsc(uint8_t action, uint8
   hcic_interface->SetBigChannelMapClassificationByConnHandles(action, big_handle, handles);
 }
 
+void btsnd_hcic_ble_big_create_sync(uint8_t big_handle, uint16_t sync_handle, uint8_t encryption,
+                                    const std::array<uint8_t, 16>& bcast_code, uint8_t mse,
+                                    uint16_t sync_timeout, const std::vector<uint8_t>& bis) {
+  hcic_interface->BigCreateSync(big_handle, sync_handle, encryption, bcast_code, mse, sync_timeout,
+                                bis);
+}
+
+void btsnd_hcic_ble_big_terminate_sync(uint8_t big_handle,
+                                       base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+  hcic_interface->BigTerminateSync(big_handle, std::move(cb));
+}
+
 namespace bluetooth::legacy::hci {
 
 class MockInterface : public Interface {

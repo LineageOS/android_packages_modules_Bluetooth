@@ -59,6 +59,8 @@ struct btsnd_hcic_ble_setup_iso_data_path btsnd_hcic_ble_setup_iso_data_path;
 struct btsnd_hcic_ble_term_big btsnd_hcic_ble_term_big;
 struct btsnd_hcic_ble_set_big_channel_map_classification_vsc
         btsnd_hcic_ble_set_big_channel_map_classification_vsc;
+struct btsnd_hcic_ble_big_create_sync btsnd_hcic_ble_big_create_sync;
+struct btsnd_hcic_ble_big_terminate_sync btsnd_hcic_ble_big_terminate_sync;
 
 }  // namespace stack_hcic_hciblecmds
 }  // namespace mock
@@ -205,6 +207,20 @@ void btsnd_hcic_ble_set_big_channel_map_classification_vsc(uint8_t action, uint8
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_set_big_channel_map_classification_vsc(
           action, big_handle, handles);
+}
+
+void btsnd_hcic_ble_big_create_sync(uint8_t big_handle, uint16_t sync_handle, uint8_t encryption,
+                                    const std::array<uint8_t, 16>& bcast_code, uint8_t mse,
+                                    uint16_t sync_timeout, const std::vector<uint8_t>& bis) {
+  inc_func_call_count(__func__);
+  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_big_create_sync(
+          big_handle, sync_handle, encryption, bcast_code, mse, sync_timeout, bis);
+}
+
+void btsnd_hcic_ble_big_terminate_sync(uint8_t big_handle,
+                                       base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+  inc_func_call_count(__func__);
+  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_big_terminate_sync(big_handle, std::move(cb));
 }
 // Mocked functions complete
 // END mockcify generation
