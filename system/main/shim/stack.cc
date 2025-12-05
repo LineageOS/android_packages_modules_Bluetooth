@@ -105,33 +105,15 @@ struct Stack::impl {
                              &storage_),
         msft_extension_manager_(handler, &hci_hal_, &hci_layer_),
         le_advertising_manager_(handler, &hci_layer_, &controller_,
-                                acl_manager_.GetLeAddressManager(), &acl_manager_) {
-    socket_hal_ = std::make_unique<hal::SocketHalImpl>();
-    gatt_hal_ = std::make_unique<hal::GattHalImpl>();
-    lpp_offload_manager_ =
-            std::make_unique<lpp::LppOffloadManager>(handler, socket_hal_.get(), gatt_hal_.get());
-  }
-
-  ~impl() {
-    if (lpp_offload_manager_) {
-      lpp_offload_manager_.reset();
-    }
-
-    if (gatt_hal_) {
-      gatt_hal_.reset();
-    }
-
-    if (socket_hal_) {
-      socket_hal_.reset();
-    }
+                                acl_manager_.GetLeAddressManager(), &acl_manager_),
+        socket_hal_(),
+        gatt_hal_(),
+        lpp_offload_manager_(handler, &socket_hal_, &gatt_hal_) {
   }
 
   Acl* acl_ = nullptr;
   storage::StorageModule storage_;
   hal::SnoopLogger snoop_logger_;
-  std::unique_ptr<hal::GattHal> gatt_hal_ = nullptr;
-  std::unique_ptr<hal::SocketHal> socket_hal_ = nullptr;
-  std::unique_ptr<lpp::LppOffloadManager> lpp_offload_manager_ = nullptr;
   hal::LinkClocker link_clocker_;
   hal::HciHalImpl hci_hal_;
   hal::RangingHalImpl ranging_hal_;
@@ -150,6 +132,9 @@ struct Stack::impl {
   hci::LeScanningManagerImpl le_scanning_manager_;
   hci::MsftExtensionManager msft_extension_manager_;
   hci::LeAdvertisingManagerImpl le_advertising_manager_;
+  hal::SocketHalImpl socket_hal_;
+  hal::GattHalImpl gatt_hal_;
+  lpp::LppOffloadManager lpp_offload_manager_;
 };
 
 Stack::Stack() {}
@@ -313,7 +298,7 @@ hal::SnoopLogger* Stack::GetSnoopLogger() const {
 lpp::LppOffloadInterface* Stack::GetLppOffloadInterface() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
-  return pimpl_->lpp_offload_manager_.get();
+  return &pimpl_->lpp_offload_manager_;
 }
 
 hci::HciInterface* Stack::GetHciLayer() const {
