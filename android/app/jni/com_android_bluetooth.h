@@ -38,6 +38,9 @@ RawAddress addressFromJByteArray(JNIEnv* env, jbyteArray object);
 /// Convert a bluetooth address to a scoped jbyte array object.
 ScopedLocalRef<jbyteArray> addressToJByteArray(JNIEnv* env, RawAddress address);
 
+/// Convert a bluetooth address to a scoped jstring object.
+ScopedLocalRef<jstring> addressToJString(JNIEnv* env, RawAddress address);
+
 JNIEnv* getCallbackEnv();
 bool isCallbackThread();
 
