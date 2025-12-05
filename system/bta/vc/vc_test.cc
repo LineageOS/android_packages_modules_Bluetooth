@@ -759,7 +759,9 @@ protected:
   bluetooth::groups::DeviceGroupsCallbacks* group_callbacks_ = nullptr;
 };
 
-TEST_F(VolumeControlTest, test_get_uninitialized) { ASSERT_DEATH(VolumeControl::Get(), ""); }
+class VolumeControlDeathTest : public VolumeControlTest {};
+
+TEST_F(VolumeControlDeathTest, get_while_uninitialized) { ASSERT_DEATH(VolumeControl::Get(), ""); }
 
 TEST_F(VolumeControlTest, test_initialize) {
   bool init_cb_called = false;
