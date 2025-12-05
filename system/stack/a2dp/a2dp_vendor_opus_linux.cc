@@ -30,10 +30,6 @@ bool A2DP_VendorUsesRtpHeaderOpus(bool content_protection_enabled,
   return false;
 }
 
-const char* A2DP_VendorCodecNameOpus(const uint8_t* p_codec_info) {
-  return "Opus";
-}
-
 bool A2DP_VendorCodecTypeEqualsOpus(const uint8_t* p_codec_info_a,
                                     const uint8_t* p_codec_info_b) {
   return false;
@@ -82,25 +78,12 @@ const tA2DP_DECODER_INTERFACE* A2DP_VendorGetDecoderInterfaceOpus(const uint8_t*
 
 bool A2DP_VendorAdjustCodecOpus(uint8_t* p_codec_info) { return false; }
 
-btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexOpus(const uint8_t* p_codec_info) {
-  return BTAV_A2DP_CODEC_INDEX_MAX;
-}
-
-btav_a2dp_codec_index_t A2DP_VendorSinkCodecIndexOpus(const uint8_t* p_codec_info) {
-  return BTAV_A2DP_CODEC_INDEX_MAX;
-}
-
-const char* A2DP_VendorCodecIndexStrOpus(void) { return "Opus"; }
-
-const char* A2DP_VendorCodecIndexStrOpusSink(void) { return "Opus SINK"; }
-
 bool A2DP_VendorInitCodecConfigOpus(AvdtpSepConfig* p_cfg) { return false; }
 
 bool A2DP_VendorInitCodecConfigOpusSink(AvdtpSepConfig* p_cfg) { return false; }
 
 A2dpCodecConfigOpusSource::A2dpCodecConfigOpusSource(btav_a2dp_codec_priority_t codec_priority)
-    : A2dpCodecConfigOpusBase(BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS, A2DP_VendorCodecIndexStrOpus(),
-                              codec_priority, true) {}
+    : A2dpCodecConfigOpusBase(BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS, "Opus", codec_priority, true) {}
 
 A2dpCodecConfigOpusSource::~A2dpCodecConfigOpusSource() {}
 
@@ -121,8 +104,8 @@ bool A2dpCodecConfigOpusBase::setPeerCodecCapabilities(const uint8_t* p_peer_cod
 }
 
 A2dpCodecConfigOpusSink::A2dpCodecConfigOpusSink(btav_a2dp_codec_priority_t codec_priority)
-    : A2dpCodecConfigOpusBase(BTAV_A2DP_CODEC_INDEX_SINK_OPUS, A2DP_VendorCodecIndexStrOpusSink(),
-                              codec_priority, false) {}
+    : A2dpCodecConfigOpusBase(BTAV_A2DP_CODEC_INDEX_SINK_OPUS, "Opus SINK", codec_priority, false) {
+}
 
 A2dpCodecConfigOpusSink::~A2dpCodecConfigOpusSink() {}
 

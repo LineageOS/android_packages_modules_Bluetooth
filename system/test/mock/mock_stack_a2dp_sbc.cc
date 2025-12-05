@@ -40,10 +40,7 @@ namespace stack_a2dp_sbc {
 struct A2DP_AdjustCodecSbc A2DP_AdjustCodecSbc;
 struct A2DP_BuildCodecHeaderSbc A2DP_BuildCodecHeaderSbc;
 struct A2DP_CodecEqualsSbc A2DP_CodecEqualsSbc;
-struct A2DP_CodecIndexStrSbc A2DP_CodecIndexStrSbc;
-struct A2DP_CodecIndexStrSbcSink A2DP_CodecIndexStrSbcSink;
 struct A2DP_CodecInfoStringSbc A2DP_CodecInfoStringSbc;
-struct A2DP_CodecNameSbc A2DP_CodecNameSbc;
 struct A2DP_CodecTypeEqualsSbc A2DP_CodecTypeEqualsSbc;
 struct A2DP_GetAllocationMethodCodeSbc A2DP_GetAllocationMethodCodeSbc;
 struct A2DP_GetBitrateSbc A2DP_GetBitrateSbc;
@@ -64,8 +61,6 @@ struct A2DP_InitCodecConfigSbc A2DP_InitCodecConfigSbc;
 struct A2DP_InitCodecConfigSbcSink A2DP_InitCodecConfigSbcSink;
 struct A2DP_InitDefaultCodecSbc A2DP_InitDefaultCodecSbc;
 struct A2DP_IsSinkCodecSupportedSbc A2DP_IsSinkCodecSupportedSbc;
-struct A2DP_SinkCodecIndexSbc A2DP_SinkCodecIndexSbc;
-struct A2DP_SourceCodecIndexSbc A2DP_SourceCodecIndexSbc;
 
 }  // namespace stack_a2dp_sbc
 }  // namespace mock
@@ -79,10 +74,7 @@ namespace stack_a2dp_sbc {
 bool A2DP_AdjustCodecSbc::return_value = false;
 bool A2DP_BuildCodecHeaderSbc::return_value = false;
 bool A2DP_CodecEqualsSbc::return_value = false;
-const char* A2DP_CodecIndexStrSbc::return_value = nullptr;
-const char* A2DP_CodecIndexStrSbcSink::return_value = nullptr;
 std::string A2DP_CodecInfoStringSbc::return_value = std::string();
-const char* A2DP_CodecNameSbc::return_value = nullptr;
 bool A2DP_CodecTypeEqualsSbc::return_value = false;
 int A2DP_GetAllocationMethodCodeSbc::return_value = 0;
 uint32_t A2DP_GetBitrateSbc::return_value = 0;
@@ -102,10 +94,6 @@ int A2DP_GetTrackSampleRateSbc::return_value = 0;
 bool A2DP_InitCodecConfigSbc::return_value = false;
 bool A2DP_InitCodecConfigSbcSink::return_value = false;
 tA2DP_STATUS A2DP_IsSinkCodecSupportedSbc::return_value = A2DP_NOT_SUPPORTED_CODEC_TYPE;
-btav_a2dp_codec_index_t A2DP_SinkCodecIndexSbc::return_value =
-    BTAV_A2DP_CODEC_INDEX_SOURCE_MIN;
-btav_a2dp_codec_index_t A2DP_SourceCodecIndexSbc::return_value =
-    BTAV_A2DP_CODEC_INDEX_SOURCE_MIN;
 
 }  // namespace stack_a2dp_sbc
 }  // namespace mock
@@ -126,21 +114,9 @@ bool A2DP_CodecEqualsSbc(const uint8_t* p_codec_info_a, const uint8_t* p_codec_i
   inc_func_call_count(__func__);
   return test::mock::stack_a2dp_sbc::A2DP_CodecEqualsSbc(p_codec_info_a, p_codec_info_b);
 }
-const char* A2DP_CodecIndexStrSbc(void) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_a2dp_sbc::A2DP_CodecIndexStrSbc();
-}
-const char* A2DP_CodecIndexStrSbcSink(void) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_a2dp_sbc::A2DP_CodecIndexStrSbcSink();
-}
 std::string A2DP_CodecInfoStringSbc(const uint8_t* p_codec_info) {
   inc_func_call_count(__func__);
   return test::mock::stack_a2dp_sbc::A2DP_CodecInfoStringSbc(p_codec_info);
-}
-const char* A2DP_CodecNameSbc(const uint8_t* p_codec_info) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_a2dp_sbc::A2DP_CodecNameSbc(p_codec_info);
 }
 bool A2DP_CodecTypeEqualsSbc(const uint8_t* p_codec_info_a, const uint8_t* p_codec_info_b) {
   inc_func_call_count(__func__);
@@ -222,14 +198,6 @@ void A2DP_InitDefaultCodecSbc(uint8_t* p_codec_info) {
 tA2DP_STATUS A2DP_IsSinkCodecSupportedSbc(const uint8_t* p_codec_info) {
   inc_func_call_count(__func__);
   return test::mock::stack_a2dp_sbc::A2DP_IsSinkCodecSupportedSbc(p_codec_info);
-}
-btav_a2dp_codec_index_t A2DP_SinkCodecIndexSbc(const uint8_t* p_codec_info) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_a2dp_sbc::A2DP_SinkCodecIndexSbc(p_codec_info);
-}
-btav_a2dp_codec_index_t A2DP_SourceCodecIndexSbc(const uint8_t* p_codec_info) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_a2dp_sbc::A2DP_SourceCodecIndexSbc(p_codec_info);
 }
 // Mocked functions complete
 // END mockcify generation

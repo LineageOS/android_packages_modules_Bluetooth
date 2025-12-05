@@ -324,8 +324,6 @@ static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAac(const tA2DP_AAC_CIE* p_ca
   return A2DP_SUCCESS;
 }
 
-const char* A2DP_CodecNameAac(const uint8_t* /* p_codec_info */) { return "AAC"; }
-
 bool A2DP_CodecTypeEqualsAac(const uint8_t* p_codec_info_a, const uint8_t* p_codec_info_b) {
   tA2DP_AAC_CIE aac_cie_a;
   tA2DP_AAC_CIE aac_cie_b;
@@ -674,18 +672,6 @@ bool A2DP_AdjustCodecAac(uint8_t* p_codec_info) {
   return true;
 }
 
-btav_a2dp_codec_index_t A2DP_SourceCodecIndexAac(const uint8_t* /* p_codec_info */) {
-  return BTAV_A2DP_CODEC_INDEX_SOURCE_AAC;
-}
-
-btav_a2dp_codec_index_t A2DP_SinkCodecIndexAac(const uint8_t* /* p_codec_info */) {
-  return BTAV_A2DP_CODEC_INDEX_SINK_AAC;
-}
-
-const char* A2DP_CodecIndexStrAac(void) { return "AAC"; }
-
-const char* A2DP_CodecIndexStrAacSink(void) { return "AAC SINK"; }
-
 static void aac_source_caps_initialize() {
   if (aac_source_caps_configured) {
     return;
@@ -713,8 +699,7 @@ bool A2DP_InitCodecConfigAacSink(AvdtpSepConfig* p_cfg) {
 }
 
 A2dpCodecConfigAacSource::A2dpCodecConfigAacSource(btav_a2dp_codec_priority_t codec_priority)
-    : A2dpCodecConfigAacBase(BTAV_A2DP_CODEC_INDEX_SOURCE_AAC, A2DP_CodecIndexStrAac(),
-                             codec_priority, true) {
+    : A2dpCodecConfigAacBase(BTAV_A2DP_CODEC_INDEX_SOURCE_AAC, "AAC", codec_priority, true) {
   aac_source_caps_initialize();
   // Compute the local capability
   if (a2dp_aac_source_caps.sampleRate & A2DP_AAC_SAMPLING_FREQ_44100) {
@@ -1384,8 +1369,7 @@ fail:
 }
 
 A2dpCodecConfigAacSink::A2dpCodecConfigAacSink(btav_a2dp_codec_priority_t codec_priority)
-    : A2dpCodecConfigAacBase(BTAV_A2DP_CODEC_INDEX_SINK_AAC, A2DP_CodecIndexStrAacSink(),
-                             codec_priority, false) {}
+    : A2dpCodecConfigAacBase(BTAV_A2DP_CODEC_INDEX_SINK_AAC, "AAC SINK", codec_priority, false) {}
 
 A2dpCodecConfigAacSink::~A2dpCodecConfigAacSink() {}
 

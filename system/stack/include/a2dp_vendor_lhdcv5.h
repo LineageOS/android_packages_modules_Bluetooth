@@ -151,14 +151,6 @@ const tA2DP_ENCODER_INTERFACE* A2DP_VendorGetEncoderInterfaceLhdcV5(const uint8_
 // Returns true if |p_codec_info| is valid and supported, otherwise false.
 bool A2DP_VendorAdjustCodecLhdcV5(uint8_t* p_codec_info);
 
-// Gets the A2DP LHDC Source codec index for a given |p_codec_info|.
-// Returns the corresponding |btav_a2dp_codec_index_t| on success,
-// otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
-btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexLhdcV5(const uint8_t* p_codec_info);
-
-// Gets the A2DP LHDC Source codec name.
-const char* A2DP_VendorCodecIndexStrLhdcV5(void);
-
 // Initializes A2DP LHDC Source codec information into |tAVDT_CFG|
 // configuration entry pointed by |p_cfg|.
 bool A2DP_VendorInitCodecConfigLhdcV5(AvdtpSepConfig* p_cfg);
@@ -178,9 +170,6 @@ bool A2DP_IsVendorSinkCodecSupportedLhdcV5(const uint8_t* p_codec_info);
 // supported, otherwise false.
 bool A2DP_IsPeerSourceCodecSupportedLhdcV5(const uint8_t* p_codec_info);
 
-// Gets the A2DP SBC codec name for a given |p_codec_info|.
-const char* A2DP_VendorCodecNameLhdcV5Sink(const uint8_t* p_codec_info);
-
 // Gets the channel type for the A2DP SBC Sink codec:
 // 1 for mono, or 3 for dual/stereo/joint.
 // |p_codec_info| is a pointer to the SBC codec_info to decode.
@@ -199,9 +188,6 @@ const tA2DP_DECODER_INTERFACE* A2DP_VendorGetDecoderInterfaceLhdcV5(const uint8_
 // Returns the corresponding |btav_a2dp_codec_index_t| on success,
 // otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
 btav_a2dp_codec_index_t A2DP_VendorSinkCodecIndexLhdcV5(const uint8_t* p_codec_info);
-
-// Gets the A2DP LHDC V3 Sink codec name.
-const char* A2DP_VendorCodecIndexStrLhdcV5Sink(void);
 
 // Initializes A2DP SBC Sink codec information into |AvdtpSepConfig|
 // configuration entry pointed by |p_cfg|.

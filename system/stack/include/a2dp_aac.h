@@ -78,9 +78,6 @@ bool A2DP_IsCodecValidAac(const uint8_t* p_codec_info);
 // Returns true if the A2DP AAC Sink codec is supported, otherwise false.
 tA2DP_STATUS A2DP_IsSinkCodecSupportedAac(const uint8_t* p_codec_info);
 
-// Gets the A2DP AAC codec name for a given |p_codec_info|.
-const char* A2DP_CodecNameAac(const uint8_t* p_codec_info);
-
 // Checks whether two A2DP AAC codecs |p_codec_info_a| and |p_codec_info_b|
 // have the same type.
 // Returns true if the two codecs have the same type, otherwise false.
@@ -193,22 +190,6 @@ const tA2DP_DECODER_INTERFACE* A2DP_GetDecoderInterfaceAac(const uint8_t* p_code
 // |p_codec_info| contains the codec information to adjust.
 // Returns true if |p_codec_info| is valid and supported, otherwise false.
 bool A2DP_AdjustCodecAac(uint8_t* p_codec_info);
-
-// Gets the A2DP AAC Source codec index for a given |p_codec_info|.
-// Returns the corresponding |btav_a2dp_codec_index_t| on success,
-// otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
-btav_a2dp_codec_index_t A2DP_SourceCodecIndexAac(const uint8_t* p_codec_info);
-
-// Gets the A2DP AAC Sink codec index for a given |p_codec_info|.
-// Returns the corresponding |btav_a2dp_codec_index_t| on success,
-// otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
-btav_a2dp_codec_index_t A2DP_SinkCodecIndexAac(const uint8_t* p_codec_info);
-
-// Gets the A2DP AAC Source codec name.
-const char* A2DP_CodecIndexStrAac(void);
-
-// Gets the A2DP AAC Sink codec name.
-const char* A2DP_CodecIndexStrAacSink(void);
 
 // Initializes A2DP AAC Source codec information into |AvdtpSepConfig|
 // configuration entry pointed by |p_cfg|.
