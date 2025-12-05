@@ -110,9 +110,10 @@ python_binary_host {
     srcs: [
         "src/bumble_server.py",
     ],
-    embedded_launcher: false,
+    embedded_launcher: true,
     libs: [
         "bumble-pandora-services",
         "pandora_interfaces-python",
+        "py-grpcio",
     ],
 }
