@@ -17,8 +17,7 @@ import avatar
 import enum
 import grpc
 import logging
-import math
-import struct
+import numpy as np
 
 from avatar import BumblePandoraDevice, PandoraDevice, PandoraDevices, asynchronous
 import pandora_services as bumble_server
@@ -213,24 +212,18 @@ class AshaTest(base_test.BaseTestClass):  # type: ignore[misc]
 
     async def generate_sine(self, connection: Connection) -> AsyncIterator[PlaybackAudioRequest]:
         # generate sine wave audio
-        samples_per_frame = int(AUDIO_SIGNAL_SAMPLING_RATE * SINE_DURATION)
-        num_frames = int(4 / SINE_DURATION)
+        sine = AUDIO_SIGNAL_AMPLITUDE * np.sin(
+            2 * np.pi * np.arange(AUDIO_SIGNAL_SAMPLING_RATE * SINE_DURATION) *
+            (SINE_FREQUENCY / AUDIO_SIGNAL_SAMPLING_RATE))
+        s16le = (sine * 32767).astype('<i2')
 
-        for i in range(num_frames):
-            frame_data = bytearray()
-            for j in range(samples_per_frame):
-                sample_index = i * samples_per_frame + j
-                time_s = sample_index / AUDIO_SIGNAL_SAMPLING_RATE
-                sine_value = AUDIO_SIGNAL_AMPLITUDE * math.sin(
-                    2 * math.pi * SINE_FREQUENCY * time_s)
+        # Interleaved audio.
+        stereo = np.zeros(s16le.size * 2, dtype=sine.dtype)
+        stereo[0::2] = s16le
 
-                # Convert to 16-bit signed integer
-                sample = int(sine_value * 32767)
-
-                # Interleave stereo samples (mono for now, so just duplicate)
-                frame_data += struct.pack('<hh', sample, sample)
-
-            yield PlaybackAudioRequest(connection=connection, data=bytes(frame_data))
+        # Send 4 second of audio.
+        for _ in range(0, int(4 / SINE_DURATION)):
+            yield PlaybackAudioRequest(connection=connection, data=stereo.tobytes())
 
     @avatar.parameterized(
         (RANDOM, PUBLIC),
