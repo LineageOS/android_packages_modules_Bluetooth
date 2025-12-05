@@ -1,13 +1,9 @@
-use crate::btif::{BluetoothInterface, BtStatus, RawAddress, SupportedProfiles, ToggleableProfile};
+use crate::btif::{BluetoothInterface, BtStatus, RawAddress, ToggleableProfile};
 use crate::topstack::get_dispatchers;
 
 use std::fmt::{Debug, Formatter, Result};
 use std::sync::{Arc, Mutex};
 use topshim_macros::{cb_variant, log_args, profile_enabled_or};
-
-use crate::bindings::root as bindings;
-use crate::ccall;
-use crate::utils::LTCheckedPtrMut;
 
 use log::warn;
 
@@ -25,6 +21,10 @@ pub mod ffi {
         include!("bluetooth/types/address.h");
         #[namespace = ""]
         type RawAddress = crate::btif::RawAddress;
+
+        #[namespace = ""]
+        #[cxx_name = "bt_interface_t"]
+        type BluetoothInterface = crate::btif::CxxBluetoothInterface;
     }
 
     unsafe extern "C++" {
@@ -33,7 +33,7 @@ pub mod ffi {
 
         type AvrcpIntf;
 
-        unsafe fn GetAvrcpProfile(btif: *const u8) -> UniquePtr<AvrcpIntf>;
+        unsafe fn GetAvrcpProfile(btif: &BluetoothInterface) -> UniquePtr<AvrcpIntf>;
 
         fn init(self: Pin<&mut AvrcpIntf>);
         fn cleanup(self: Pin<&mut AvrcpIntf>);
@@ -121,8 +121,8 @@ cb_variant!(
 
 pub struct Avrcp {
     internal: cxx::UniquePtr<ffi::AvrcpIntf>,
-    _is_init: bool,
-    _is_enabled: bool,
+    is_init: bool,
+    is_enabled: bool,
 }
 
 // For *const u8 opaque btif
@@ -130,19 +130,19 @@ unsafe impl Send for Avrcp {}
 
 impl ToggleableProfile for Avrcp {
     fn is_enabled(&self) -> bool {
-        self._is_enabled
+        self.is_enabled
     }
 
     fn enable(&mut self) -> bool {
         self.internal.pin_mut().init();
-        self._is_enabled = true;
+        self.is_enabled = true;
         true
     }
 
     #[profile_enabled_or(false)]
     fn disable(&mut self) -> bool {
         self.internal.pin_mut().cleanup();
-        self._is_enabled = false;
+        self.is_enabled = false;
         true
     }
 }
@@ -150,16 +150,17 @@ impl ToggleableProfile for Avrcp {
 impl Avrcp {
     pub fn new(intf: &BluetoothInterface) -> Avrcp {
         let avrcpif: cxx::UniquePtr<ffi::AvrcpIntf>;
+
         unsafe {
-            avrcpif = ffi::GetAvrcpProfile(intf.as_raw_ptr());
+            avrcpif = ffi::GetAvrcpProfile(intf.as_raw_btif());
         }
 
-        Avrcp { internal: avrcpif, _is_init: false, _is_enabled: false }
+        Avrcp { internal: avrcpif, is_init: false, is_enabled: false }
     }
 
     #[log_args]
     pub fn is_initialized(&self) -> bool {
-        self._is_init
+        self.is_init
     }
 
     #[log_args]
@@ -167,19 +168,19 @@ impl Avrcp {
         if get_dispatchers().lock().unwrap().set::<AvrcpCb>(Arc::new(Mutex::new(callbacks))) {
             panic!("Tried to set dispatcher for Avrcp callbacks while it already exists");
         }
-        self._is_init = true;
+        self.is_init = true;
         true
     }
 
     #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn connect(&mut self, addr: RawAddress) -> BtStatus {
-        BtStatus::from(self.internal.pin_mut().connect(addr.into()))
+        self.internal.pin_mut().connect(addr).into()
     }
 
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn disconnect(&mut self, addr: RawAddress) -> BtStatus {
-        BtStatus::from(self.internal.pin_mut().disconnect(addr.into()))
+        self.internal.pin_mut().disconnect(addr).into()
     }
 
     #[profile_enabled_or]
@@ -216,118 +217,5 @@ impl Avrcp {
     #[profile_enabled_or]
     pub fn add_player(&mut self, name: &String, browsing_supported: bool) {
         self.internal.pin_mut().add_player(name, browsing_supported);
-    }
-}
-
-struct RawAvrcpCtrlWrapper {
-    raw: *const bindings::btrc_ctrl_interface_t,
-}
-
-// Pointers unsafe due to ownership but this is a static pointer so Send is ok.
-unsafe impl Send for RawAvrcpCtrlWrapper {}
-
-pub struct AvrcpCtrl {
-    internal: RawAvrcpCtrlWrapper,
-    callbacks: Option<Box<bindings::btrc_ctrl_callbacks_t>>,
-}
-
-cb_variant!(AvrcpCtCb, avrcp_connection_state_cb -> AvrcpCtrlCallbacks::ConnectionState,
-bool, bool, *const RawAddress, {
-    let _2 = unsafe { *_2 };
-});
-
-cb_variant!(AvrcpCtCb, avrcp_getrcfeatures_cb -> AvrcpCtrlCallbacks::GetRCFeatures,
-*const RawAddress, i32, {
-    let _0 = unsafe { *_0 };
-});
-
-cb_variant!(AvrcpCtCb, avrcp_get_cover_art_psm_cb -> AvrcpCtrlCallbacks::GetCoverArtPsm,
-*const RawAddress, u16, {
-    let _0 = unsafe { *_0 };
-});
-
-cb_variant!(AvrcpCtCb, avrcp_passthrough_rsp_cb -> AvrcpCtrlCallbacks::PassthroughRsp,
-*const RawAddress, i32, i32, {
-    let _0 = unsafe { *_0 };
-});
-
-#[derive(Debug)]
-pub enum AvrcpCtrlCallbacks {
-    PassthroughRsp(RawAddress, i32, i32),
-    ConnectionState(bool, bool, RawAddress),
-    GetRCFeatures(RawAddress, i32),
-    GetCoverArtPsm(RawAddress, u16),
-}
-
-pub struct AvrcpCtrlCallbacksDispatcher {
-    pub dispatch: Box<dyn Fn(AvrcpCtrlCallbacks) + Send>,
-}
-
-impl Debug for AvrcpCtrlCallbacksDispatcher {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "AvrcpCtrlCallbacksDispatcher {{}}")
-    }
-}
-
-type AvrcpCtCb = Arc<Mutex<AvrcpCtrlCallbacksDispatcher>>;
-
-impl AvrcpCtrl {
-    #[log_args]
-    pub fn new(intf: &BluetoothInterface) -> AvrcpCtrl {
-        let r = intf.get_profile_interface(SupportedProfiles::AvrcpCtrl);
-        AvrcpCtrl {
-            internal: RawAvrcpCtrlWrapper { raw: r as *const bindings::btrc_ctrl_interface_t },
-            callbacks: None,
-        }
-    }
-
-    #[log_args]
-    pub fn initialize(&mut self, callbacks: AvrcpCtrlCallbacksDispatcher) -> bool {
-        // Register dispatcher
-        if get_dispatchers().lock().unwrap().set::<AvrcpCtCb>(Arc::new(Mutex::new(callbacks))) {
-            panic!("Tried to set dispatcher for AvrcpCt Callbacks but it already existed");
-        }
-
-        let callbacks = Box::new(bindings::btrc_ctrl_callbacks_t {
-            size: 21 * 8,
-            passthrough_rsp_cb: Some(avrcp_passthrough_rsp_cb),
-            groupnavigation_rsp_cb: None,
-            connection_state_cb: Some(avrcp_connection_state_cb),
-            getrcfeatures_cb: Some(avrcp_getrcfeatures_cb),
-            setplayerappsetting_rsp_cb: None,
-            playerapplicationsetting_cb: None,
-            playerapplicationsetting_changed_cb: None,
-            setabsvol_cmd_cb: None,
-            registernotification_absvol_cb: None,
-            track_changed_cb: None,
-            play_position_changed_cb: None,
-            play_status_changed_cb: None,
-            get_folder_items_cb: None,
-            change_folder_path_cb: None,
-            set_browsed_player_cb: None,
-            set_addressed_player_cb: None,
-            addressed_player_changed_cb: None,
-            now_playing_contents_changed_cb: None,
-            available_player_changed_cb: None,
-            get_cover_art_psm_cb: Some(avrcp_get_cover_art_psm_cb),
-        });
-
-        self.callbacks = Some(callbacks);
-
-        let cb_ptr = LTCheckedPtrMut::from(self.callbacks.as_mut().unwrap());
-
-        ccall!(self, init, cb_ptr.into());
-
-        true
-    }
-
-    #[log_args]
-    pub fn send_pass_through_cmd(
-        &mut self,
-        addr: RawAddress,
-        key_code: u8,
-        key_state: u8,
-    ) -> BtStatus {
-        ccall!(self, send_pass_through_cmd, &addr, key_code.into(), key_state.into()).into()
     }
 }
