@@ -483,6 +483,12 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
  *
  ******************************************************************************/
 static void l2c_csm_orig_w4_sec_comp(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
+  if (p_ccb->p_rcb == nullptr) {
+    log::error("LCID: 0x{:04x}  st: CST_ORIG_W4_SEC_COMP  evt: {} p_rcb == NULL", p_ccb->local_cid,
+               l2c_csm_get_event_name(event));
+    return;
+  }
+
   tL2CA_DISCONNECT_IND_CB* disconnect_ind = p_ccb->p_rcb->api.pL2CA_DisconnectInd_Cb;
   uint16_t local_cid = p_ccb->local_cid;
 
@@ -579,6 +585,12 @@ static void l2c_csm_orig_w4_sec_comp(tL2C_CCB* p_ccb, tL2CEVT event, void* p_dat
  *
  ******************************************************************************/
 static void l2c_csm_term_w4_sec_comp(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
+  if (p_ccb->p_rcb == nullptr) {
+    log::error("LCID: 0x{:04x}  st: TERM_W4_SEC_COMP  evt: {} p_rcb == NULL", p_ccb->local_cid,
+               l2c_csm_get_event_name(event));
+    return;
+  }
+
   log::debug("LCID: 0x{:04x}  st: TERM_W4_SEC_COMP  evt: {} psm: {}", p_ccb->local_cid,
              l2c_csm_get_event_name(event), psm_to_text(p_ccb->p_rcb->psm));
 
@@ -736,6 +748,12 @@ static void l2c_csm_term_w4_sec_comp(tL2C_CCB* p_ccb, tL2CEVT event, void* p_dat
  *
  ******************************************************************************/
 static void l2c_csm_w4_l2cap_connect_rsp(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
+  if (p_ccb->p_rcb == nullptr) {
+    log::error("LCID: 0x{:04x}  st: W4_L2CAP_CON_RSP  evt: {} p_rcb == NULL", p_ccb->local_cid,
+               l2c_csm_get_event_name(event));
+    return;
+  }
+
   tL2C_CONN_INFO* p_ci = (tL2C_CONN_INFO*)p_data;
   tL2CA_DISCONNECT_IND_CB* disconnect_ind = p_ccb->p_rcb->api.pL2CA_DisconnectInd_Cb;
   tL2CA_CREDIT_BASED_CONNECT_CFM_CB* credit_based_connect_cfm =
@@ -901,6 +919,12 @@ static void l2c_csm_w4_l2cap_connect_rsp(tL2C_CCB* p_ccb, tL2CEVT event, void* p
  *
  ******************************************************************************/
 static void l2c_csm_w4_l2ca_connect_rsp(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
+  if (p_ccb->p_rcb == nullptr) {
+    log::error("LCID: 0x{:04x}  st: CST_W4_L2CA_CONNECT_RSP  evt: {} p_rcb == NULL",
+               p_ccb->local_cid, l2c_csm_get_event_name(event));
+    return;
+  }
+
   tL2C_CONN_INFO* p_ci;
   tL2C_LCB* p_lcb = p_ccb->p_lcb;
   tL2CA_DISCONNECT_IND_CB* disconnect_ind = p_ccb->p_rcb->api.pL2CA_DisconnectInd_Cb;
@@ -1055,6 +1079,12 @@ static void l2c_csm_w4_l2ca_connect_rsp(tL2C_CCB* p_ccb, tL2CEVT event, void* p_
  *
  ******************************************************************************/
 static void l2c_csm_config(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
+  if (p_ccb->p_rcb == nullptr) {
+    log::error("LCID: 0x{:04x}  st: CONFIG  evt: {} p_rcb == NULL",
+               p_ccb->local_cid, l2c_csm_get_event_name(event));
+    return;
+  }
+
   tL2CAP_CFG_INFO* p_cfg = (tL2CAP_CFG_INFO*)p_data;
   tL2CA_DISCONNECT_IND_CB* disconnect_ind = p_ccb->p_rcb->api.pL2CA_DisconnectInd_Cb;
   uint16_t local_cid = p_ccb->local_cid;
@@ -1349,6 +1379,12 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
  *
  ******************************************************************************/
 static void l2c_csm_open(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
+  if (p_ccb->p_rcb == nullptr) {
+    log::error("LCID: 0x{:04x}  st: OPEN  evt: {} p_rcb == NULL",
+               p_ccb->local_cid, l2c_csm_get_event_name(event));
+    return;
+  }
+
   uint16_t local_cid = p_ccb->local_cid;
   tL2CAP_CFG_INFO* p_cfg;
   tL2C_CHNL_STATE tempstate;
@@ -1553,6 +1589,12 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
  *
  ******************************************************************************/
 static void l2c_csm_w4_l2cap_disconnect_rsp(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
+  if (p_ccb->p_rcb == nullptr) {
+    log::error("LCID: 0x{:04x}  st: CST_W4_L2CAP_DISCONNECT_RSP  evt: {} p_rcb == NULL",
+               p_ccb->local_cid, l2c_csm_get_event_name(event));
+    return;
+  }
+
   tL2CA_DISCONNECT_CFM_CB* disconnect_cfm = p_ccb->p_rcb->api.pL2CA_DisconnectCfm_Cb;
   uint16_t local_cid = p_ccb->local_cid;
 
@@ -1606,6 +1648,12 @@ static void l2c_csm_w4_l2cap_disconnect_rsp(tL2C_CCB* p_ccb, tL2CEVT event, void
  *
  ******************************************************************************/
 static void l2c_csm_w4_l2ca_disconnect_rsp(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
+  if (p_ccb->p_rcb == nullptr) {
+    log::error("LCID: 0x{:04x}  st: CST_W4_L2CA_DISCONNECT_RSP  evt: {} p_rcb == NULL",
+               p_ccb->local_cid, l2c_csm_get_event_name(event));
+    return;
+  }
+
   tL2CA_DISCONNECT_IND_CB* disconnect_ind = p_ccb->p_rcb->api.pL2CA_DisconnectInd_Cb;
   uint16_t local_cid = p_ccb->local_cid;
 
