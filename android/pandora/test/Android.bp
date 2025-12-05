@@ -22,14 +22,13 @@ python_test_host {
     srcs: [
         "**/*.py",
     ],
-    embedded_launcher: true,
+    embedded_launcher: false,
     libs: [
         "bumble",
         "bumble-pandora-services",
         "libprotobuf-python",
         "mobly",
         "pandora_interfaces-python",
-        "py-grpcio",
     ],
     required: [
         "aapt",

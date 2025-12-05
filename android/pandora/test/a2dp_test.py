@@ -13,14 +13,14 @@
 # limitations under the License.
 
 import asyncio
-import math
-import struct
+
 import bumble.avdtp
 import bumble.device
 import avatar
 import bumble
 import dataclasses
 import logging
+import numpy as np
 import time
 from unittest.mock import ANY
 
@@ -229,26 +229,30 @@ def aac_service_capabilites() -> list[ServiceCapability]:
 
 async def generate_sine(source: Source,
                         duration_s: float = 4.0) -> AsyncIterator[PlaybackAudioRequest]:
+    num_samples = int(AUDIO_SIGNAL_SAMPLING_RATE * duration_s)
+
+    time_vector = np.arange(num_samples) / AUDIO_SIGNAL_SAMPLING_RATE
+
+    sine_wave = AUDIO_SIGNAL_AMPLITUDE * np.sin(2 * np.pi * AUDIO_SIGNAL_FREQUENCY * time_vector)
+
+    audio_data = (sine_wave * MAX_INT16).astype(np.int16)
+
+    right_amplitude = np.sqrt(AUDIO_SIGNAL_PAN_VALUE)
+    left_amplitude = np.sqrt(1 - AUDIO_SIGNAL_PAN_VALUE)
+
+    left_channel = (sine_wave * left_amplitude * MAX_INT16).astype(np.int16)
+    right_channel = (sine_wave * right_amplitude * MAX_INT16).astype(np.int16)
+
+    audio_data = np.vstack((left_channel, right_channel)).T.reshape(-1, 2)
+
     samples_per_frame = int(AUDIO_SIGNAL_SAMPLING_RATE * AUDIO_SIGNAL_SINE_DURATION)
-    num_frames = int(duration_s / AUDIO_SIGNAL_SINE_DURATION)
 
-    right_amplitude = math.sqrt(AUDIO_SIGNAL_PAN_VALUE)
-    left_amplitude = math.sqrt(1.0 - AUDIO_SIGNAL_PAN_VALUE)
-
-    for i in range(num_frames):
-        frame_data = bytearray()
-        for j in range(samples_per_frame):
-            sample_index = i * samples_per_frame + j
-            time_s = sample_index / AUDIO_SIGNAL_SAMPLING_RATE
-            sine_value = AUDIO_SIGNAL_AMPLITUDE * math.sin(
-                2 * math.pi * AUDIO_SIGNAL_FREQUENCY * time_s)
-
-            left_sample = int(sine_value * left_amplitude * MAX_INT16)
-            right_sample = int(sine_value * right_amplitude * MAX_INT16)
-
-            frame_data += struct.pack('<hh', left_sample, right_sample)
-
-        yield PlaybackAudioRequest(source=source, data=bytes(frame_data))
+    for i in range(0, int(num_samples / samples_per_frame)):
+        frame_samples = samples_per_frame
+        if i + samples_per_frame > num_samples:
+            frame_samples = num_samples - i
+        frame_data = audio_data[i:i + frame_samples]
+        yield PlaybackAudioRequest(source=source, data=frame_data.tobytes())
 
 
 class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
