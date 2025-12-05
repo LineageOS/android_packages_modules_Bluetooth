@@ -76,6 +76,25 @@ TEST_F(A2dpAidlTransportTest, UpdateAudioConfiguration) {
   ASSERT_EQ(software_transport_aidl->GetAudioConfiguration(), audio_config);
 }
 
+TEST_F(A2dpAidlTransportTest, UpdateAudioConfiguration_UnsupportedConfig) {
+  // Store the initial audio configuration to compare against later.
+  auto initial_config = software_transport_aidl->GetAudioConfiguration();
+
+  // Create an audio configuration with an unsupported tag.
+  // `hfpConfig` is used here as an example of a valid but unsupported config.
+  auto unsupported_config =
+      ::aidl::android::hardware::bluetooth::audio::AudioConfiguration();
+  unsupported_config.set<
+      ::aidl::android::hardware::bluetooth::audio::AudioConfiguration::hfpConfig>(
+      ::aidl::android::hardware::bluetooth::audio::HfpConfiguration{});
+
+  // Attempt to update with the unsupported configuration.
+  software_transport_aidl->UpdateAudioConfiguration(unsupported_config);
+
+  // Verify that the transport's audio configuration remains unchanged.
+  ASSERT_EQ(software_transport_aidl->GetAudioConfiguration(), initial_config);
+}
+
 TEST_F(A2dpAidlTransportTest, AssertCorrectSession) {
   ASSERT_NE(software_transport_aidl, nullptr);
   ASSERT_EQ(software_transport_aidl->GetSessionType(),
