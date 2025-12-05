@@ -105,7 +105,7 @@ using namespace bluetooth;
 static tBTM_STATUS btm_sec_execute_procedure(BtmDevice* p_device);
 static bool btm_sec_start_get_name(BtmDevice* p_device);
 static void btm_sec_wait_and_start_authentication(BtmDevice* p_device);
-static void btm_sec_auth_timer_timeout(void* data);
+static void btm_sec_auth_timer_timeout(RawAddress bd_addr);
 static void btm_sec_collision_timeout(void* data);
 static void btm_restore_mode(void);
 static void btm_sec_pairing_timeout(void* data);
@@ -4797,22 +4797,22 @@ static bool btm_sec_start_get_name(BtmDevice* p_device) {
  *
  ******************************************************************************/
 static void btm_sec_wait_and_start_authentication(BtmDevice* p_device) {
-  auto addr = new RawAddress(p_device->bd_addr);
   int32_t delay_auth = osi_property_get_int32("bluetooth.btm.sec.delay_auth_ms.value", 0);
 
   /* Overwrite the system-wide authentication delay if device-specific
    * interoperability delay is needed. */
-  if (interop_match_addr(INTEROP_DELAY_AUTH, addr) ||
+  if (interop_match_addr(INTEROP_DELAY_AUTH, &p_device->bd_addr) ||
       interop_match_name(INTEROP_DELAY_AUTH,
                          reinterpret_cast<char const*>(p_device->sec_bd_name))) {
     delay_auth = BTM_SEC_START_AUTH_DELAY;
   }
 
-  BtStatus status = do_in_main_thread_delayed(base::BindOnce(&btm_sec_auth_timer_timeout, addr),
-                                              std::chrono::milliseconds(delay_auth));
+  BtStatus status =
+          do_in_main_thread_delayed(base::BindOnce(btm_sec_auth_timer_timeout, p_device->bd_addr),
+                                    std::chrono::milliseconds(delay_auth));
   if (!status) {
     log::error("do_in_main_thread_delayed failed. directly calling");
-    btm_sec_auth_timer_timeout(addr);
+    btm_sec_auth_timer_timeout(p_device->bd_addr);
   }
 }
 
@@ -4823,10 +4823,9 @@ static void btm_sec_wait_and_start_authentication(BtmDevice* p_device) {
  * Description      called after wait timeout to request authentication
  *
  ******************************************************************************/
-static void btm_sec_auth_timer_timeout(void* data) {
-  RawAddress* p_addr = (RawAddress*)data;
-  BtmDevice* p_device = btm_get_dev(*p_addr);
-  delete p_addr;
+static void btm_sec_auth_timer_timeout(RawAddress bd_addr) {
+  BtmDevice* p_device = btm_get_dev(bd_addr);
+
   if (p_device == nullptr) {
     log::info("invalid device or not found");
   } else if (btm_dev_authenticated(p_device)) {
