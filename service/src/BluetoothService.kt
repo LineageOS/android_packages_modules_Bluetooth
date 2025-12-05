@@ -60,6 +60,11 @@ class BluetoothService(context: Context) : SystemService(context) {
         publishBinderService(SERVICE_NAME, BluetoothServiceBinder(looper, supervisor.api, context))
     }
 
+    override fun onBootPhase(phase: Int) {
+        if (phase != SystemService.PHASE_BOOT_COMPLETED) return
+        runOnBmsThread { supervisor.onBootCompleted() }
+    }
+
     override fun onUserStarting(user: TargetUser) {
         if (Flags.userVisibleOnUserStarting()) {
             val isUserVisible =

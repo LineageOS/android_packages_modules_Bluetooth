@@ -84,6 +84,11 @@ class BluetoothSupervisor(
         bms.onSatelliteModeChanged(isSatelliteModeOn)
     }
 
+    fun onBootCompleted() {
+        enforceCorrectThread()
+        bms.onBootCompleted()
+    }
+
     fun onUserStarting(userHandle: UserHandle) {
         enforceCorrectThread()
         if (mInitialized) {
