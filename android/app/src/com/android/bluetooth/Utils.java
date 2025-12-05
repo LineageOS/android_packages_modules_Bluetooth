@@ -16,14 +16,9 @@
 
 package com.android.bluetooth;
 
-import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
-import static android.Manifest.permission.BLUETOOTH_SCAN;
-import static android.Manifest.permission.RENOUNCE_PERMISSIONS;
 import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringRunnable;
 import static android.bluetooth.BluetoothUtils.USER_HANDLE_NULL;
-import static android.content.pm.PackageManager.GET_PERMISSIONS;
-import static android.content.pm.PackageManager.MATCH_UNINSTALLED_PACKAGES;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.os.PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED;
 
@@ -40,7 +35,6 @@ import android.companion.CompanionDeviceManager;
 import android.content.AttributionSource;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Binder;
@@ -368,52 +362,6 @@ public final class Utils {
             return false;
         }
         return true;
-    }
-
-    /**
-     * Returns true if the specified package has disavowed the use of bluetooth scans for location,
-     * that is, if they have specified the {@code neverForLocation} flag on the BLUETOOTH_SCAN
-     * permission.
-     */
-    public static boolean hasDisavowedLocationForScan(
-            Context context, AttributionSource source, boolean inTestMode) {
-
-        // Check every step along the attribution chain for a renouncement.
-        // If location has been renounced anywhere in the chain we treat it as a disavowal.
-        AttributionSource currentAttrib = source;
-        while (true) {
-            if (currentAttrib.getRenouncedPermissions().contains(ACCESS_FINE_LOCATION)
-                    && (inTestMode
-                            || context.checkPermission(
-                                            RENOUNCE_PERMISSIONS, -1, currentAttrib.getUid())
-                                    == PackageManager.PERMISSION_GRANTED)) {
-                return true;
-            }
-            AttributionSource nextAttrib = currentAttrib.getNext();
-            if (nextAttrib == null) {
-                break;
-            }
-            currentAttrib = nextAttrib;
-        }
-
-        // Check the last attribution in the chain for a neverForLocation disavowal.
-        String packageName = currentAttrib.getPackageName();
-        PackageManager pm = context.getPackageManager();
-        try {
-            // TODO(b/183478032): Cache PackageInfo for use here.
-            PackageInfo pkgInfo =
-                    pm.getPackageInfo(packageName, GET_PERMISSIONS | MATCH_UNINSTALLED_PACKAGES);
-            for (int i = 0; i < pkgInfo.requestedPermissions.length; i++) {
-                if (pkgInfo.requestedPermissions[i].equals(BLUETOOTH_SCAN)) {
-                    return (pkgInfo.requestedPermissionsFlags[i]
-                                    & PackageInfo.REQUESTED_PERMISSION_NEVER_FOR_LOCATION)
-                            != 0;
-                }
-            }
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.w(TAG, "Could not find package for disavowal check: " + packageName);
-        }
-        return false;
     }
 
     private static boolean checkCallerIsSystem() {

@@ -1088,7 +1088,7 @@ public class ScanController {
         final int uid = Flags.scanControllerThread() ? source.getUid() : Binder.getCallingUid();
         mAppOps.checkPackage(uid, callingPackage);
         var hasDisavowedLocation =
-                Utils.hasDisavowedLocationForScan(mAdapterService, source, mTestModeEnabled);
+                Util.hasDisavowedLocationForScan(mAdapterService, source, mTestModeEnabled);
         var isQApp = checkCallerTargetSdk(mAdapterService, source, Build.VERSION_CODES.Q);
         var userHandle = Binder.getCallingUserHandle();
         var hasLocationPermission = false; // Unacted upon if `hasDisavowedLocation` is true
@@ -1200,7 +1200,7 @@ public class ScanController {
         app.setEligibleForSanitizedExposureNotification(
                 callingPackage.equals(mExposureNotificationPackage));
         app.setHasDisavowedLocation(
-                Utils.hasDisavowedLocationForScan(mAdapterService, source, mTestModeEnabled));
+                Util.hasDisavowedLocationForScan(mAdapterService, source, mTestModeEnabled));
         if (!app.getHasDisavowedLocation()) {
             try {
                 if (checkCallerTargetSdk(mAdapterService, source, Build.VERSION_CODES.Q)) {
