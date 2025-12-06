@@ -52,6 +52,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.os.Handler;
+import android.os.Message;
 import android.os.UserManager;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -71,6 +72,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Spy;
 
@@ -242,7 +244,17 @@ public class BluetoothPbapObexServerTest {
         HeaderSet request = new HeaderSet();
         HeaderSet reply = new HeaderSet();
 
-        assertThat(mServer.onDelete(request, reply)).isEqualTo(ResponseCodes.OBEX_HTTP_BAD_REQUEST);
+        // Arrange
+        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+
+        // Act
+        int result = mServer.onDelete(request, reply);
+
+        // Assert
+        assertThat(result).isEqualTo(ResponseCodes.OBEX_HTTP_BAD_REQUEST);
+        verify(mMockHandler).sendMessage(messageCaptor.capture());
+        assertThat(messageCaptor.getValue().what)
+                .isEqualTo(BluetoothPbapService.MSG_ACQUIRE_WAKE_LOCK);
     }
 
     @Test
