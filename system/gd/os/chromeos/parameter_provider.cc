@@ -34,9 +34,7 @@ std::string sysprops_file_path;
 // Write to $PWD/bt_stack.conf if $PWD can be found, otherwise, write to $HOME/bt_stack.conf
 std::string ParameterProvider::ConfigFilePath() { return "/var/lib/bluetooth/bt_config.conf"; }
 
-std::string ParameterProvider::SnoopLogFilePath() { return "/var/log/bluetooth/btsnoop_hci.log"; }
-
-std::string ParameterProvider::SnoozLogFilePath() { return "/var/log/bluetooth/btsnooz_hci.log"; }
+std::string ParameterProvider::SnoopLogDirPath() { return "/var/log/bluetooth"; }
 
 std::string ParameterProvider::SyspropsFilePath() {
   {

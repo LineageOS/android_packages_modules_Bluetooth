@@ -46,29 +46,15 @@ std::string ParameterProvider::ConfigFilePath() {
                              : std::string(cwd) + "/" + name + "_bt_config.conf";
 }
 
-std::string ParameterProvider::SnoopLogFilePath() {
+std::string ParameterProvider::SnoopLogDirPath() {
   const std::string name = GetHciInstanceName();
   char cwd[PATH_MAX] = {};
   if (getcwd(cwd, sizeof(cwd)) == nullptr) {
     log::error("Failed to get current working directory due to \"{}\", returning default",
                strerror(errno));
-    return (name == "default") ? "btsnoop_hci.log" : name + "_btsnoop_hci.log";
+    return (name == "default") ? "" : name;
   }
-  return (name == "default") ? std::string(cwd) + "/btsnoop_hci.log"
-                             : std::string(cwd) + "/" + name + "_btsnoop_hci.log";
-}
-
-// Return the path to the default snooz log file location
-std::string ParameterProvider::SnoozLogFilePath() {
-  const std::string name = GetHciInstanceName();
-  char cwd[PATH_MAX] = {};
-  if (getcwd(cwd, sizeof(cwd)) == nullptr) {
-    log::error("Failed to get current working directory due to \"{}\", returning default",
-               strerror(errno));
-    return (name == "default") ? "btsnooz_hci.log" : name + "_btsnooz_hci.log";
-  }
-  return (name == "default") ? std::string(cwd) + "/btsnooz_hci.log"
-                             : std::string(cwd) + "/" + name + "_btsnooz_hci.log";
+  return (name == "default") ? std::string(cwd) : std::string(cwd) + "/" + name;
 }
 
 std::string ParameterProvider::SyspropsFilePath() {

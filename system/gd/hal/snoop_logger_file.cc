@@ -42,8 +42,7 @@ namespace bluetooth::hal {
 // The expected permissions and group for the created directory is like:
 //   drwxrwxr-x bluetooth bluetooth
 bool create_log_directories() {
-  std::filesystem::path default_path = os::ParameterProvider::SnoopLogFilePath();
-  std::filesystem::path default_dir_path = default_path.parent_path();
+  std::filesystem::path default_dir_path = os::ParameterProvider::SnoopLogDirPath();
 
   if (std::filesystem::exists(default_dir_path)) {
     log::info("Directory {} already exists", default_dir_path.string());
@@ -71,14 +70,12 @@ bool create_log_directories() {
 }
 #endif  // __ANDROID__
 
-static std::filesystem::path get_last_log_path(const std::filesystem::path& log_file_path) {
-  std::filesystem::path last_log_path = log_file_path;
-  last_log_path += ".last";
-  return last_log_path;
-}
-
-SnoopLoggerFile::SnoopLoggerFile(std::filesystem::path snoop_log_path, int max_packet_count)
-    : snoop_log_path_(snoop_log_path), max_packets_per_file_(max_packet_count) {
+SnoopLoggerFile::SnoopLoggerFile(std::filesystem::path snoop_dir_path, bool is_filtered,
+                                 int max_packet_count)
+    : snoop_dir_path_(snoop_dir_path),
+      is_filtered_(is_filtered),
+      max_packets_per_file_(max_packet_count) {
+  snoop_log_path_ = AssembleFileName(snoop_dir_path_, false, is_filtered_, false);
   std::lock_guard<std::mutex> lock(file_mutex_);
   OpenNextSnoopLogFile();
 }
@@ -86,7 +83,7 @@ SnoopLoggerFile::SnoopLoggerFile(std::filesystem::path snoop_log_path, int max_p
 void SnoopLoggerFile::OpenNextSnoopLogFile() {
   CloseCurrentSnoopLogFile();
 
-  auto last_file_path = get_last_log_path(snoop_log_path_);
+  auto last_file_path = AssembleFileName(snoop_dir_path_, false, is_filtered_, true);
 
 #ifdef __ANDROID__
   if (!create_log_directories()) {
@@ -180,10 +177,28 @@ static void delete_log_file(const std::filesystem::path& log_path) {
   }
 }
 
-void SnoopLoggerFile::DeleteBtsnoopFiles(const std::filesystem::path log_path) {
-  log::info("Deleting logs based on {} if they exist", log_path.string());
-  delete_log_file(log_path);
-  auto last_log_path = get_last_log_path(log_path);
-  delete_log_file(last_log_path);
+std::filesystem::path SnoopLoggerFile::AssembleFileName(const std::filesystem::path& dir_path,
+                                                        bool is_snooz, bool is_filtered,
+                                                        bool is_last) {
+  std::filesystem::path log_path = dir_path;
+  log_path /= (is_snooz ? "btsnooz_hci" : "btsnoop_hci");
+  log_path += ".log";
+  if (is_filtered) {
+    log_path += ".filtered";
+  }
+  if (is_last) {
+    log_path += ".last";
+  }
+  return log_path;
+}
+
+void SnoopLoggerFile::DeleteBtsnoopFiles(const std::filesystem::path dir_path, bool is_filtered) {
+  delete_log_file(AssembleFileName(dir_path, false, is_filtered, false));
+  delete_log_file(AssembleFileName(dir_path, false, is_filtered, true));
+}
+
+void SnoopLoggerFile::DeleteBtsnoozFiles(const std::filesystem::path dir_path) {
+  delete_log_file(AssembleFileName(dir_path, true, false, false));
+  delete_log_file(AssembleFileName(dir_path, true, false, true));
 }
 }  // namespace bluetooth::hal

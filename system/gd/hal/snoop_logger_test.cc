@@ -112,16 +112,16 @@ protected:
 
     log::debug("Setup for test {} in test suite {}.", test_info->name(),
                test_info->test_suite_name());
-    const std::filesystem::path temp_dir_ = std::filesystem::temp_directory_path();
+    temp_dir_ = std::filesystem::temp_directory_path();
     test_name_ = test_info->name();
     std::replace(test_name_.begin(), test_name_.end(), '/', '_');
 
-    temp_snoop_log_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log");
-    temp_snoop_log_last_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.last");
-    temp_snooz_log_ = temp_dir_ / (test_name_ + "_btsnooz_hci.log");
-    temp_snooz_log_last_ = temp_dir_ / (test_name_ + "_btsnooz_hci.log.last");
-    temp_snoop_log_filtered_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.filtered");
-    temp_snoop_log_filtered_last_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.filtered.last");
+    temp_snoop_log_ = temp_dir_ / "btsnoop_hci.log";
+    temp_snoop_log_last_ = temp_dir_ / "btsnoop_hci.log.last";
+    temp_snooz_log_ = temp_dir_ / "btsnooz_hci.log";
+    temp_snooz_log_last_ = temp_dir_ / "btsnooz_hci.log.last";
+    temp_snoop_log_filtered_ = temp_dir_ / "btsnoop_hci.log.filtered";
+    temp_snoop_log_filtered_last_ = temp_dir_ / "btsnoop_hci.log.filtered.last";
 
     DeleteSnoopLogFiles();
     ASSERT_FALSE(std::filesystem::exists(temp_snoop_log_));
@@ -160,9 +160,8 @@ protected:
                                               bool qualcomm_debug_log_enabled,
                                               bool snoop_log_persists, int port = 0) {
     return std::unique_ptr<SnoopLogger>(new SnoopLogger(
-            shared_handler_, temp_snoop_log_.string(), temp_snooz_log_.string(), max_packets_per_file,
-            SnoopLogger::GetMaxPacketsPerBuffer(), btsnoop_mode, qualcomm_debug_log_enabled, 20ms,
-            5ms, snoop_log_persists, port));
+            shared_handler_, temp_dir_, max_packets_per_file, SnoopLogger::GetMaxPacketsPerBuffer(),
+            btsnoop_mode, qualcomm_debug_log_enabled, 20ms, 5ms, snoop_log_persists, port));
   }
 
   void DeleteSnoopLogFiles() {
@@ -188,6 +187,7 @@ protected:
 
   os::Thread* thread_ = nullptr;
   os::Handler* shared_handler_ = nullptr;  // Not necessarily used, depending on flags.
+  std::filesystem::path temp_dir_;
   std::filesystem::path temp_snoop_log_;
   std::filesystem::path temp_snoop_log_last_;
   std::filesystem::path temp_snooz_log_;
@@ -199,6 +199,7 @@ protected:
 
 TEST_F(SnoopLoggerTest, empty_snoop_log_test) {
   // Actual test
+  NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeDisabled, false, false).reset();
   auto snoop_logger = NewSnoopLogger(10, SnoopLogger::kBtSnoopLogModeFull, false, false);
   snoop_logger.reset();
 
@@ -1385,17 +1386,16 @@ TEST_F(SnoopLoggerTest, custom_socket_profiles_filtered_hfp_hf_test) {
 
 #ifdef __ANDROID__
 TEST_F(SnoopLoggerTest, recreate_log_directory_when_enabled_test) {
-  const std::filesystem::path file_path = os::ParameterProvider::SnoopLogFilePath();
-  const std::filesystem::path temp_dir_ = file_path.parent_path();
+  temp_dir_ = os::ParameterProvider::SnoopLogDirPath();
 
   // Override the paths used for the test. The feature tested here relies on the actual
   // snoop path on Android to work.
-  temp_snoop_log_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log");
-  temp_snoop_log_last_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.last");
-  temp_snooz_log_ = temp_dir_ / (test_name_ + "_btsnooz_hci.log");
-  temp_snooz_log_last_ = temp_dir_ / (test_name_ + "_btsnooz_hci.log.last");
-  temp_snoop_log_filtered_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.filtered");
-  temp_snoop_log_filtered_last_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.filtered.last");
+  temp_snoop_log_ = temp_dir_ / "btsnoop_hci.log";
+  temp_snoop_log_last_ = temp_dir_ / "btsnoop_hci.log.last";
+  temp_snooz_log_ = temp_dir_ / "btsnooz_hci.log";
+  temp_snooz_log_last_ = temp_dir_ / "btsnooz_hci.log.last";
+  temp_snoop_log_filtered_ = temp_dir_ / "btsnoop_hci.log.filtered";
+  temp_snoop_log_filtered_last_ = temp_dir_ / "btsnoop_hci.log.filtered.last";
   DeleteSnoopLogFiles();
   std::filesystem::remove_all(temp_dir_);
 
@@ -1413,17 +1413,16 @@ TEST_F(SnoopLoggerTest, recreate_log_directory_when_enabled_test) {
 }
 
 TEST_F(SnoopLoggerTest, recreate_log_directory_when_filtered_test) {
-  const std::filesystem::path file_path = os::ParameterProvider::SnoopLogFilePath();
-  const std::filesystem::path temp_dir_ = file_path.parent_path();
+  temp_dir_ = os::ParameterProvider::SnoopLogDirPath();
 
   // Override the paths used for the test. The feature tested here relies on the actual
   // snoop path on Android to work.
-  temp_snoop_log_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log");
-  temp_snoop_log_last_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.last");
-  temp_snooz_log_ = temp_dir_ / (test_name_ + "_btsnooz_hci.log");
-  temp_snooz_log_last_ = temp_dir_ / (test_name_ + "_btsnooz_hci.log.last");
-  temp_snoop_log_filtered_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.filtered");
-  temp_snoop_log_filtered_last_ = temp_dir_ / (test_name_ + "_btsnoop_hci.log.filtered.last");
+  temp_snoop_log_ = temp_dir_ / "btsnoop_hci.log";
+  temp_snoop_log_last_ = temp_dir_ / "btsnoop_hci.log.last";
+  temp_snooz_log_ = temp_dir_ / "btsnooz_hci.log";
+  temp_snooz_log_last_ = temp_dir_ / "btsnooz_hci.log.last";
+  temp_snoop_log_filtered_ = temp_dir_ / "btsnoop_hci.log.filtered";
+  temp_snoop_log_filtered_last_ = temp_dir_ / "btsnoop_hci.log.filtered.last";
   DeleteSnoopLogFiles();
   std::filesystem::remove_all(temp_dir_);
 
