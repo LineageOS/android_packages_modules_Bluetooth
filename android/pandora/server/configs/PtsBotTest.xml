@@ -34,7 +34,9 @@
 
     <target_preparer class="com.android.tradefed.targetprep.PythonVirtualenvPreparer">
         <option name="dep-module" value="grpcio" />
-        <option name="dep-module" value="protobuf==5.29.5" />
+        <!-- The major version of the protobuf package must match the version
+             currently mirrored in the AOSP tree. -->
+        <option name="dep-module" value="protobuf~=6.33" />
         <option name="dep-module" value="numpy" />
 
         <!-- Re-enable when A2DP audio streaming tests are active, disabling to speed up atest runtime
