@@ -735,20 +735,6 @@ public final class BondStateMachine extends StateMachine {
             logD("bondStateChangeCallback: Unknown device:" + device);
         }
 
-        logI(
-                "bondStateChangeCallback: Status: "
-                        + status
-                        + " Address: "
-                        + device
-                        + " Transport: "
-                        + transport
-                        + " newState: "
-                        + bondStateToString(newState)
-                        + " pairingAlgorithm: "
-                        + pairingAlgorithm
-                        + " hciReason: "
-                        + hciReason);
-
         Message msg = obtainMessage(MESSAGE_BOND_STATE_CHANGE);
         msg.obj = device;
 
@@ -764,6 +750,20 @@ public final class BondStateMachine extends StateMachine {
         msg.getData().putInt(KEY_BOND_TRANSPORT, transport);
         msg.getData().putInt(KEY_PAIRING_ALGORITHM, pairingAlgorithm);
         msg.getData().putInt(KEY_PAIRING_VARIANT, pairingVariant);
+
+        logI(
+                "bondStateChangeCallback: Status: "
+                        + status
+                        + " Address: "
+                        + device
+                        + " Transport: "
+                        + transport
+                        + " newState: "
+                        + bondStateToString(msg.arg1)
+                        + " pairingAlgorithm: "
+                        + pairingAlgorithm
+                        + " hciReason: "
+                        + hciReason);
 
         sendMessage(msg);
     }
