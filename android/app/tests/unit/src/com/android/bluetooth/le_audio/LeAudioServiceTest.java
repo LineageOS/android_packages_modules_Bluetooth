@@ -100,6 +100,7 @@ import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hap.HapClientService;
 import com.android.bluetooth.hearingaid.HearingAidService;
 import com.android.bluetooth.hfp.HeadsetService;
+import com.android.bluetooth.hid.HidHostService;
 import com.android.bluetooth.le_scan.ScanController;
 import com.android.bluetooth.mcp.McpService;
 import com.android.bluetooth.storage.BluetoothStorageManager;
@@ -161,6 +162,7 @@ public class LeAudioServiceTest {
     @Mock private HapClientService mHapClientService;
     @Mock private HeadsetService mHeadsetService;
     @Mock private HearingAidService mHearingAidService;
+    @Mock private HidHostService mHidHostService;
     @Mock private McpService mMcpService;
     @Mock private TbsService mTbsService;
     @Mock private VolumeControlService mVolumeControlService;
@@ -341,6 +343,7 @@ public class LeAudioServiceTest {
                 .getCsipSetCoordinatorService();
         doReturn(Optional.of(mHapClientService)).when(mAdapterService).getHapClientService();
         doReturn(Optional.of(mHeadsetService)).when(mAdapterService).getHeadsetService();
+        doReturn(Optional.of(mHidHostService)).when(mAdapterService).getHidHostService();
         doReturn(Optional.of(mHearingAidService)).when(mAdapterService).getHearingAidService();
         doReturn(Optional.of(mMcpService)).when(mAdapterService).getMcpService();
         doReturn(Optional.of(mVolumeControlService))
@@ -2710,6 +2713,65 @@ public class LeAudioServiceTest {
         assertThat(mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED)).isTrue();
         verify(mMcpService, times(2)).setDeviceAuthorized(mSingleDevice, true);
         verify(mTbsService, times(2)).setDeviceAuthorized(mSingleDevice, true);
+    }
+
+    /**
+     * Test that HidHostService authorization is managed correctly when the LE Audio connection
+     * policy changes and the headtracker_connection_policy flag is enabled.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_HEADTRACKER_CONNECTION_POLICY)
+    public void testHidHostAuthorizationWithConnectionPolicy_flagEnabled() {
+        mService.handleBluetoothEnabled();
+        doReturn(true).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
+        doReturn(CONNECTION_POLICY_UNKNOWN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO);
+
+        // Ensures HidHostService is not authorized when the device does not have a group
+        assertThat(mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED)).isTrue();
+        verify(mHidHostService, never()).setAndroidHeadTrackerEnabled(mSingleDevice, true);
+
+        // Connects the test device and verifies HidHostService is authorized.
+        // Authorization happens in handleGroupNodeAdded via connectTestDevice.
+        connectTestDevice(mSingleDevice, TEST_GROUP_ID);
+        verify(mHidHostService).setAndroidHeadTrackerEnabled(mSingleDevice, true);
+
+        // Ensure that setting policy to forbidden unauthorizes HidHostService
+        assertThat(mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_FORBIDDEN))
+                .isTrue();
+        verify(mHidHostService).setAndroidHeadTrackerEnabled(mSingleDevice, false);
+
+        // Setting policy to allowed on a device that has a group re-authorizes HidHostService
+        assertThat(mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED)).isTrue();
+        verify(mHidHostService, times(2)).setAndroidHeadTrackerEnabled(mSingleDevice, true);
+    }
+
+    /**
+     * Test that HidHostService authorization is not changed when the LE Audio connection policy
+     * changes and the headtracker_connection_policy flag is disabled.
+     */
+    @Test
+    @DisableFlags(Flags.FLAG_HEADTRACKER_CONNECTION_POLICY)
+    public void testHidHostAuthorizationWithConnectionPolicy_flagDisabled() {
+        mService.handleBluetoothEnabled();
+        doReturn(true).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
+        doReturn(CONNECTION_POLICY_UNKNOWN)
+                .when(mAdapterService)
+                .getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO);
+
+        // Connects the test device
+        connectTestDevice(mSingleDevice, TEST_GROUP_ID);
+
+        // Ensure that setting policy to forbidden does not touch HidHostService
+        assertThat(mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_FORBIDDEN))
+                .isTrue();
+
+        // Setting policy to allowed on a device that has a group does not touch HidHostService
+        assertThat(mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED)).isTrue();
+
+        // Verify HidHostService is never called for authorization changes
+        verify(mHidHostService, never()).setAndroidHeadTrackerEnabled(any(), anyBoolean());
     }
 
     @Test

@@ -58,3 +58,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "support_native_pa_callback"
+    namespace: "bluetooth"
+    description: "Support native pa callback"
+    bug: "462892602"
+}

@@ -315,8 +315,6 @@ static void A2DP_BuildMediaPayloadHeaderSbc(uint8_t* p_dst, bool frag, bool star
   *p_dst |= (A2DP_SBC_HDR_NUM_MSK & num);
 }
 
-const char* A2DP_CodecNameSbc(const uint8_t* /* p_codec_info */) { return "SBC"; }
-
 bool A2DP_IsCodecValidSbc(const uint8_t* p_codec_info) {
   tA2DP_SBC_CIE cfg_cie;
 
@@ -807,18 +805,6 @@ bool A2DP_AdjustCodecSbc(uint8_t* p_codec_info) {
   return A2DP_BuildInfoSbc(AVDT_MEDIA_TYPE_AUDIO, &cfg_cie, p_codec_info);
 }
 
-btav_a2dp_codec_index_t A2DP_SourceCodecIndexSbc(const uint8_t* /* p_codec_info */) {
-  return BTAV_A2DP_CODEC_INDEX_SOURCE_SBC;
-}
-
-btav_a2dp_codec_index_t A2DP_SinkCodecIndexSbc(const uint8_t* /* p_codec_info */) {
-  return BTAV_A2DP_CODEC_INDEX_SINK_SBC;
-}
-
-const char* A2DP_CodecIndexStrSbc(void) { return "SBC"; }
-
-const char* A2DP_CodecIndexStrSbcSink(void) { return "SBC SINK"; }
-
 bool A2DP_InitCodecConfigSbc(AvdtpSepConfig* p_cfg) {
   return A2DP_BuildInfoSbc(AVDT_MEDIA_TYPE_AUDIO, &a2dp_sbc_source_caps, p_cfg->codec_info);
 }
@@ -828,8 +814,7 @@ bool A2DP_InitCodecConfigSbcSink(AvdtpSepConfig* p_cfg) {
 }
 
 A2dpCodecConfigSbcSource::A2dpCodecConfigSbcSource(btav_a2dp_codec_priority_t codec_priority)
-    : A2dpCodecConfigSbcBase(BTAV_A2DP_CODEC_INDEX_SOURCE_SBC, A2DP_CodecIndexStrSbc(),
-                             codec_priority, true) {
+    : A2dpCodecConfigSbcBase(BTAV_A2DP_CODEC_INDEX_SOURCE_SBC, "SBC", codec_priority, true) {
   // Compute the local capability
   if (a2dp_sbc_source_caps.samp_freq & A2DP_SBC_IE_SAMP_FREQ_44) {
     codec_local_capability_.sample_rate |= BTAV_A2DP_CODEC_SAMPLE_RATE_44100;
@@ -1432,8 +1417,7 @@ fail:
 }
 
 A2dpCodecConfigSbcSink::A2dpCodecConfigSbcSink(btav_a2dp_codec_priority_t codec_priority)
-    : A2dpCodecConfigSbcBase(BTAV_A2DP_CODEC_INDEX_SINK_SBC, A2DP_CodecIndexStrSbcSink(),
-                             codec_priority, false) {}
+    : A2dpCodecConfigSbcBase(BTAV_A2DP_CODEC_INDEX_SINK_SBC, "SBC SINK", codec_priority, false) {}
 
 A2dpCodecConfigSbcSink::~A2dpCodecConfigSbcSink() {}
 

@@ -464,7 +464,7 @@ void btsnd_hcic_ble_create_big(uint8_t big_handle, uint8_t adv_handle, uint8_t n
   UINT8_TO_STREAM(pp, enc);
 
   uint8_t* buf_ptr = bcst_code.data();
-  ARRAY_TO_STREAM(pp, buf_ptr, 16);
+  ARRAY_TO_STREAM(pp, buf_ptr, bcst_code.size());
 
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
@@ -486,6 +486,41 @@ void btsnd_hcic_ble_term_big(uint8_t big_handle, uint8_t reason) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
+void btsnd_hcic_ble_big_create_sync(uint8_t big_handle, uint16_t sync_handle, uint8_t encryption,
+                                    const std::array<uint8_t, 16>& bcast_code, uint8_t mse,
+                                    uint16_t sync_timeout, const std::vector<uint8_t>& bis) {
+  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
+  uint8_t* pp = (uint8_t*)(p + 1);
+
+  constexpr uint8_t kBigCreateSyncCommandBaseSize = 24;  // Command size excluding bis[i] field.
+  auto param_len = kBigCreateSyncCommandBaseSize + bis.size();
+  p->len = HCIC_PREAMBLE_SIZE + param_len;
+  p->offset = 0;
+
+  UINT16_TO_STREAM(pp, HCI_LE_BIG_CREATE_SYNC);
+  UINT8_TO_STREAM(pp, param_len);
+
+  UINT8_TO_STREAM(pp, big_handle);
+  UINT16_TO_STREAM(pp, sync_handle);
+  UINT8_TO_STREAM(pp, encryption);
+  ARRAY_TO_STREAM(pp, bcast_code.data(), 16);
+  UINT8_TO_STREAM(pp, mse);
+  UINT16_TO_STREAM(pp, sync_timeout);
+  UINT8_TO_STREAM(pp, bis.size());
+  ARRAY_TO_STREAM(pp, bis.data(), bis.size());
+
+  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+void btsnd_hcic_ble_big_terminate_sync(uint8_t big_handle,
+                                       base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+  uint8_t param[1];
+  uint8_t* pp = param;
+
+  UINT8_TO_STREAM(pp, big_handle);
+
+  btu_hcif_send_cmd_with_cb(HCI_LE_BIG_TERM_SYNC, param, 1, std::move(cb));
+}
 void btsnd_hcic_ble_setup_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir,
                                         uint8_t data_path_id, uint8_t codec_id_format,
                                         uint16_t codec_id_company, uint16_t codec_id_vendor,

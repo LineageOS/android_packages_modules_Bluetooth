@@ -21,6 +21,7 @@ import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
 import static android.Manifest.permission.MODIFY_PHONE_STATE;
 import static android.bluetooth.BluetoothUtils.callServiceIfEnabled;
+import static android.bluetooth.BluetoothUtils.callServiceIfEnabling;
 
 import android.annotation.BroadcastBehavior;
 import android.annotation.CallbackExecutor;
@@ -2363,7 +2364,9 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public ParcelUuid[] getUuids() {
-        return callServiceIfEnabled(
+        // Exceptionally allow call to go through during TURNING_ON, as this method can be called in
+        // response to loading the stored bonded devices.
+        return callServiceIfEnabling(
                 mAdapter,
                 this::getServiceInternal,
                 s -> parcelListToArray(s.getRemoteUuids(this, mAttributionSource)),

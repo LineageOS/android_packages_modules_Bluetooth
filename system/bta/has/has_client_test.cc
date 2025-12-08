@@ -1123,19 +1123,9 @@ protected:
   bool encryption_result;
 };
 
-class HasClientTest : public HasClientTestBase {
-  void SetUp(void) override {
-    com::android::bluetooth::flags::provider_->reset_flags();
-    HasClientTestBase::SetUp();
-    TestAppRegister();
-  }
-  void TearDown(void) override {
-    TestAppUnregister();
-    HasClientTestBase::TearDown();
-  }
-};
+class HasClientDeathTest : public HasClientTestBase {};
 
-TEST_F(HasClientTestBase, test_get_uninitialized) { ASSERT_DEATH(HasClient::Get(), ""); }
+TEST_F(HasClientDeathTest, get_while_uninitialized) { ASSERT_DEATH(HasClient::Get(), ""); }
 
 TEST_F(HasClientTestBase, test_initialize) {
   HasClient::Initialize(&callbacks, base::DoNothing());
@@ -1166,6 +1156,18 @@ TEST_F(HasClientTestBase, test_app_registration) {
   TestAppRegister();
   TestAppUnregister();
 }
+
+class HasClientTest : public HasClientTestBase {
+  void SetUp(void) override {
+    com::android::bluetooth::flags::provider_->reset_flags();
+    HasClientTestBase::SetUp();
+    TestAppRegister();
+  }
+  void TearDown(void) override {
+    TestAppUnregister();
+    HasClientTestBase::TearDown();
+  }
+};
 
 TEST_F(HasClientTest, test_connect) { TestConnect(GetTestAddress(1)); }
 

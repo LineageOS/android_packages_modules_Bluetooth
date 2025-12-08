@@ -394,6 +394,12 @@ typedef enum {
   // subsequent Start commands to be rejected.
   INTEROP_AVDTP_SKIP_DISCOVER_AFTER_CONFIG,
 
+  // Stack performs auto-connect fallback when only one switch is enabled:
+  // media or phone call. Some devices perform their own auto-connect and
+  // this interferes with the stack. This interop disables auto-connect
+  // fallback in the stack for those devices.
+  INTEROP_DISABLE_PROFILE_FALLBACK,
+
   END_OF_INTEROP_LIST
 } interop_feature_t;
 

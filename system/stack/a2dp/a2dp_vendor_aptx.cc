@@ -196,8 +196,6 @@ bool A2DP_VendorUsesRtpHeaderAptx(bool /* content_protection_enabled */,
   return false;
 }
 
-const char* A2DP_VendorCodecNameAptx(const uint8_t* /* p_codec_info */) { return "aptX"; }
-
 bool A2DP_VendorCodecTypeEqualsAptx(const uint8_t* p_codec_info_a, const uint8_t* p_codec_info_b) {
   tA2DP_APTX_CIE aptx_cie_a;
   tA2DP_APTX_CIE aptx_cie_b;
@@ -362,19 +360,13 @@ bool A2DP_VendorAdjustCodecAptx(uint8_t* p_codec_info) {
   return true;
 }
 
-btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexAptx(const uint8_t* /* p_codec_info */) {
-  return BTAV_A2DP_CODEC_INDEX_SOURCE_APTX;
-}
-
-const char* A2DP_VendorCodecIndexStrAptx(void) { return "aptX"; }
-
 bool A2DP_VendorInitCodecConfigAptx(AvdtpSepConfig* p_cfg) {
   return A2DP_BuildInfoAptx(AVDT_MEDIA_TYPE_AUDIO, &a2dp_aptx_source_caps, p_cfg->codec_info);
 }
 
 A2dpCodecConfigAptx::A2dpCodecConfigAptx(btav_a2dp_codec_priority_t codec_priority)
-    : A2dpCodecConfig(BTAV_A2DP_CODEC_INDEX_SOURCE_APTX, bluetooth::a2dp::CodecId::APTX,
-                      A2DP_VendorCodecIndexStrAptx(), codec_priority) {
+    : A2dpCodecConfig(BTAV_A2DP_CODEC_INDEX_SOURCE_APTX, bluetooth::a2dp::CodecId::APTX, "AptX",
+                      codec_priority) {
   // Compute the local capability
   if (a2dp_aptx_source_caps.sampleRate & A2DP_APTX_SAMPLERATE_44100) {
     codec_local_capability_.sample_rate |= BTAV_A2DP_CODEC_SAMPLE_RATE_44100;

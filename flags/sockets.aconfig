@@ -157,3 +157,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "add_address_mapping_for_lecoc"
+    namespace: "bluetooth"
+    description: "Derive the pseudo address from the identity address for LE CoC"
+    bug: "465859619"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

@@ -81,7 +81,7 @@ private:
   bluetooth::avrcp::ServiceInterface* intf_;
 };
 
-std::unique_ptr<AvrcpIntf> GetAvrcpProfile(const unsigned char* btif);
+std::unique_ptr<AvrcpIntf> GetAvrcpProfile(const bt_interface_t& intf);
 
 }  // namespace rust
 }  // namespace topshim

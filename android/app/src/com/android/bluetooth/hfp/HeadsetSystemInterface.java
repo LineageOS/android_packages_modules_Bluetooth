@@ -387,7 +387,7 @@ class HeadsetSystemInterface {
      */
     boolean isScoManagedByAudioEnabled() {
         // TODO(b/437953494) Replace with SDK check when flag is fully rolled out
-        if (android.media.audio.Flags.scoManagedByAudio()) {
+        if (android.media.audio.Flags.amscoAvailableApi()) {
             boolean isScoManagedByAudio = mAudioManager.isScoManagedByAudio();
             Log.d(TAG, "isScoManagedByAudioEnabled state is: " + isScoManagedByAudio);
             return isScoManagedByAudio;

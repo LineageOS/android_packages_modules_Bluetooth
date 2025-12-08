@@ -2740,17 +2740,15 @@ impl IBluetooth for Bluetooth {
 
     fn sdp_search(&self, device: BluetoothDevice, uuid: Uuid) -> bool {
         let Some(sdp) = self.sdp.as_ref() else { return false };
-        sdp.sdp_search(device.address, &uuid) == BtStatus::Success
+        sdp.sdp_search(device.address, uuid) == BtStatus::Success
     }
 
     fn create_sdp_record(&mut self, sdp_record: BtSdpRecord) -> bool {
         let mut handle: i32 = -1;
-        let mut sdp_record = sdp_record;
-        match self.sdp.as_ref().unwrap().create_sdp_record(&mut sdp_record, &mut handle) {
+        match self.sdp.as_ref().unwrap().create_sdp_record(sdp_record.clone(), &mut handle) {
             BtStatus::Success => {
-                let record_clone = sdp_record.clone();
                 self.callbacks.for_all_callbacks(|callback| {
-                    callback.on_sdp_record_created(record_clone.clone(), handle);
+                    callback.on_sdp_record_created(sdp_record.clone(), handle);
                 });
                 true
             }

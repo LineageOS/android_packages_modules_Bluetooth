@@ -816,17 +816,6 @@
     </issue>
 
     <issue
-        id="IncorrectRequiresPermissionPropagation"
-        message="Method `Utils.hasDisavowedLocationForScan` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.RENOUNCE_PERMISSIONS]} but is only annotated with [none]."
-        errorLine1="    public static boolean hasDisavowedLocationForScan("
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/Utils.java"
-            line="378"
-            column="27"/>
-    </issue>
-
-    <issue
         id="MissingOrMismatchedSendBroadcastRequiresPermission"
         message="Broadcast action requires {allOf=[android.permission.BLUETOOTH_CONNECT, android.permission.BLUETOOTH_PRIVILEGED]} but call is protected with {allOf=[android.permission.BLUETOOTH_CONNECT]}."
         errorLine1="        mAdapterService.sendOrderedBroadcast("

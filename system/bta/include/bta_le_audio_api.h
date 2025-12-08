@@ -30,6 +30,7 @@ public:
   static bool SupportsLeAudioHardwareOffload();
   static bool SupportsLeAudioBroadcast();
   static bool SupportsStreamActiveApi();
+  static bool SupportsIsoParameterUpdate();
 };
 
 typedef bool(LeAudioIsoDataCallback)(const RawAddress& address, uint16_t cis_conn_hdl,

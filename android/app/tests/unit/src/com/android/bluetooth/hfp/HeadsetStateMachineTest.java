@@ -1377,6 +1377,47 @@ public class HeadsetStateMachineTest {
         mStateMachine.dump(sb);
     }
 
+    /**
+     * Test that an unexpected ANSWER_CALL event is handled in Connecting state for compatibility.
+     */
+    @Test
+    public void testUnexpectedAnswerCallEventInConnectingState() {
+        setUpConnectingState();
+        sendAndDispatchStackEvent(
+                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_ANSWER_CALL, mDevice));
+        verify(mSystemInterface).answerCall(mDevice);
+    }
+
+    /**
+     * Test that an unexpected HANGUP_CALL event is handled in Connecting state for compatibility.
+     */
+    @Test
+    public void testUnexpectedHangupCallEventInConnectingState() {
+        setUpConnectingState();
+        sendAndDispatchStackEvent(
+                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_HANGUP_CALL, mDevice));
+        verify(mSystemInterface).hangupCall(mDevice);
+    }
+
+    /**
+     * Test that an unexpected VOLUME_CHANGED event is handled in Connecting state for
+     * compatibility.
+     */
+    @Test
+    public void testUnexpectedVolumeChangedEventInConnectingState() {
+        setUpConnectingState();
+        // The device is not active in Connecting state, so volume change should be ignored.
+        doReturn(null).when(mHeadsetService).getActiveDevice();
+        sendAndDispatchStackEvent(
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_VOLUME_CHANGED,
+                        HeadsetHalConstants.VOLUME_TYPE_SPK,
+                        10,
+                        mDevice));
+        // Verify that AudioManager is not called to set volume
+        verify(mAudioManager, never()).setStreamVolume(anyInt(), anyInt(), anyInt());
+    }
+
     /** A test to validate received Android AT commands and processing */
     @Test
     public void testCheckAndProcessAndroidAt() {

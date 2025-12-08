@@ -245,8 +245,6 @@ bool A2DP_VendorUsesRtpHeaderLdac(bool /* content_protection_enabled */,
   return true;
 }
 
-const char* A2DP_VendorCodecNameLdac(const uint8_t* /* p_codec_info */) { return "LDAC"; }
-
 bool A2DP_VendorCodecTypeEqualsLdac(const uint8_t* p_codec_info_a, const uint8_t* p_codec_info_b) {
   tA2DP_LDAC_CIE ldac_cie_a;
   tA2DP_LDAC_CIE ldac_cie_b;
@@ -522,19 +520,12 @@ bool A2DP_VendorAdjustCodecLdac(uint8_t* p_codec_info) {
   return true;
 }
 
-btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexLdac(const uint8_t* /* p_codec_info */) {
-  return BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC;
-}
-
-const char* A2DP_VendorCodecIndexStrLdac(void) { return "LDAC"; }
-
 bool A2DP_VendorInitCodecConfigLdac(AvdtpSepConfig* p_cfg) {
   return A2DP_BuildInfoLdac(AVDT_MEDIA_TYPE_AUDIO, &a2dp_ldac_source_caps, p_cfg->codec_info);
 }
 
 A2dpCodecConfigLdacSource::A2dpCodecConfigLdacSource(btav_a2dp_codec_priority_t codec_priority)
-    : A2dpCodecConfigLdacBase(BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC, A2DP_VendorCodecIndexStrLdac(),
-                              codec_priority, true) {
+    : A2dpCodecConfigLdacBase(BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC, "LDAC", codec_priority, true) {
   // Compute the local capability
   if (a2dp_ldac_source_caps.sampleRate & A2DP_LDAC_SAMPLING_FREQ_44100) {
     codec_local_capability_.sample_rate |= BTAV_A2DP_CODEC_SAMPLE_RATE_44100;

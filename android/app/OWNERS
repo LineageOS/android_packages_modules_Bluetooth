@@ -1,0 +1,18 @@
+# Reviewers for /android/app
+
+aarthibc@google.com
+aliceypkuo@google.com
+bhaktha@google.com
+eruffieux@google.com
+henrichataing@google.com
+jpawlowski@google.com
+klhyun@google.com
+okamil@google.com
+poahlo@google.com
+rongxuan@google.com
+rwt@google.com
+ssrinivaz@google.com
+wescande@google.com
+
+# Reviewers for Channel Sounding related files
+per-file src/com/android/bluetooth/gatt/DistanceMeasurement*.java=file:/OWNERS_channel_sounding

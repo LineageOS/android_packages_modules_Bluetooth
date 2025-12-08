@@ -2829,7 +2829,7 @@ public class AdapterService extends Service {
         mAppOps.checkPackage(Binder.getCallingUid(), callingPackage);
         boolean isQApp = Util.checkCallerTargetSdk(this, source, Build.VERSION_CODES.Q);
         boolean hasDisavowedLocation =
-                Utils.hasDisavowedLocationForScan(this, source, mTestModeEnabled);
+                Util.hasDisavowedLocationForScan(this, source, mTestModeEnabled);
         String permission = null;
         if (getState() != BluetoothAdapter.STATE_ON) {
             return false;

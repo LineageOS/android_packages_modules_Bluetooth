@@ -166,8 +166,8 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
       } else {
         address_rotation_wake_alarm_ = std::make_unique<os::Alarm>(&handler_->thread(), true);
         address_rotation_non_wake_alarm_ = std::make_unique<os::Alarm>(&handler_->thread(), false);
+        set_random_address();
       }
-      set_random_address();
       break;
     case AddressPolicy::POLICY_NOT_SET:
       log::fatal("invalid parameters");

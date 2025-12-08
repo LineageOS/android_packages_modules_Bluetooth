@@ -631,18 +631,6 @@ static void bta_ag_codec_negotiation_timer_cback(void* data) {
   /* Announce that codec negotiation failed. */
   bta_ag_sco_codec_nego(p_scb, false);
 
-  // CancelStreamingRequest before callback is sent to java layer
-  if (bta_ag_is_sco_managed_by_audio()) {
-    if (hfp_software_datapath_enabled) {
-      if (hfp_encode_interface) {
-        hfp_encode_interface->CancelStreamingRequest();
-        hfp_decode_interface->CancelStreamingRequest();
-      }
-    } else {
-      hfp_offload_interface->CancelStreamingRequest();
-    }
-  }
-
   /* call app callback */
   bta_ag_cback_sco(p_scb, BTA_AG_AUDIO_CLOSE_EVT, CODEC_NEGOTIATION_FAIL);
 }
@@ -1533,8 +1521,8 @@ void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */,
   p_scb->sco_idx = BTM_INVALID_SCO_INDEX;
   const bool aptx_voice = is_hfp_aptx_voice_enabled() && p_scb->codec_fallback &&
                           (p_scb->sco_codec == BTA_AG_SCO_APTX_SWB_SETTINGS_Q0);
-  log::verbose("aptx_voice={}, codec_fallback={:#x}, sco_codec={:#x}", aptx_voice,
-               p_scb->codec_fallback, p_scb->sco_codec);
+  log::verbose("aptx_voice={}, codec_fallback={:#x}, sco_codec={:#x}, reason={}", aptx_voice,
+               p_scb->codec_fallback, p_scb->sco_codec, static_cast<int>(reason));
 
   /* codec_fallback is set when AG is initiator and connection failed for mSBC.
    * OR if codec is msbc and T2 settings failed, then retry Safe T1 settings

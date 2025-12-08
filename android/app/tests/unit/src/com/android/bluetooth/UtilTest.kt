@@ -16,9 +16,14 @@
 
 package com.android.bluetooth
 
+import android.Manifest
 import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothStatusCodes
+import android.content.AttributionSource
+import android.content.Context
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.os.UserHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -38,7 +43,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
+import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
@@ -66,6 +73,44 @@ class UtilTest {
 
         doReturn(true).whenever(mockProfile).isAvailable
         assertThat(mockProfile.checkProfileAvailable(TAG)).isTrue()
+    }
+
+    @Test
+    fun hasDisavowedLocationForScan() {
+        val context = mock<Context>()
+        val packageManager = mock<PackageManager>()
+        val sourceStart = mock<AttributionSource>()
+        val sourceEnd = mock<AttributionSource>()
+        doReturn(packageManager).whenever(context).packageManager
+
+        // We create a chain: SourceStart -> SourceEnd -> null
+        doReturn(sourceEnd).whenever(sourceStart).next
+        doReturn(null).whenever(sourceEnd).next
+
+        doReturn(emptySet<String>()).whenever(sourceStart).renouncedPermissions
+        doReturn(emptySet<String>()).whenever(sourceEnd).renouncedPermissions
+
+        val packageName = "com.example.bluetooth"
+        doReturn(packageName).whenever(sourceStart).packageName
+        doReturn(packageName).whenever(sourceEnd).packageName
+
+        val packageInfo = PackageInfo()
+        packageInfo.requestedPermissions =
+            arrayOf(
+                Manifest.permission.INTERNET,
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+            )
+        packageInfo.requestedPermissionsFlags = intArrayOf(0, 0, 0)
+        doReturn(packageInfo).whenever(packageManager).getPackageInfo(eq(packageName), any<Int>())
+
+        // The flag REQUESTED_PERMISSION_NEVER_FOR_LOCATION has not yet been set
+        assertThat(Util.hasDisavowedLocationForScan(context, sourceStart, false)).isFalse()
+
+        // Set the flag for BLUETOOTH_SCAN (Index 1)
+        packageInfo.requestedPermissionsFlags =
+            intArrayOf(0, PackageInfo.REQUESTED_PERMISSION_NEVER_FOR_LOCATION, 0)
+        assertThat(Util.hasDisavowedLocationForScan(context, sourceStart, false)).isTrue()
     }
 
     @Test

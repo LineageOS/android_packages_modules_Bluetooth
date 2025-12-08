@@ -152,6 +152,19 @@ void IsoManager::SetBigChannelMapClassificationByConnHandles(uint8_t action, uin
   }
 }
 
+void IsoManager::BigCreateSync(iso_manager::IsoClientHandle client_handle,
+                               struct iso_manager::big_create_sync_params sync_params) {
+  if (pimpl_->IsRunning()) {
+    pimpl_->iso_impl_->big_create_sync(client_handle, std::move(sync_params));
+  }
+}
+
+void IsoManager::BigTerminateSync(uint8_t big_handle) {
+  if (pimpl_->IsRunning()) {
+    pimpl_->iso_impl_->big_terminate_sync(big_handle);
+  }
+}
+
 void IsoManager::HandleIsoData(void* p_msg) {
   if (pimpl_->IsRunning()) {
     pimpl_->iso_impl_->handle_iso_data(static_cast<BT_HDR*>(p_msg));

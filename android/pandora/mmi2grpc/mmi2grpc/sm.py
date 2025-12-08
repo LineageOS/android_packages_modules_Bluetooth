@@ -168,10 +168,10 @@ class SMProxy(ProfileProxy):
 
         return "OK"
 
-    @assert_description
-    def _mmi_2001(self, **kwargs):
+    @match_description
+    def _mmi_2001(self, passkey: str, **kwargs):
         """
-        Please verify the passKey is correct: 000000
+        Please verify the passKey is correct: (?P<passkey>[0-9]+)
         """
         return "OK"
 

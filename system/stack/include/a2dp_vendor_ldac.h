@@ -75,9 +75,6 @@ tA2DP_STATUS A2DP_IsVendorSinkCodecSupportedLdac(const uint8_t* p_codec_info);
 // false.
 bool A2DP_VendorUsesRtpHeaderLdac(bool content_protection_enabled, const uint8_t* p_codec_info);
 
-// Gets the A2DP LDAC codec name for a given |p_codec_info|.
-const char* A2DP_VendorCodecNameLdac(const uint8_t* p_codec_info);
-
 // Checks whether two A2DP LDAC codecs |p_codec_info_a| and |p_codec_info_b|
 // have the same type.
 // Returns true if the two codecs have the same type, otherwise false.
@@ -160,14 +157,6 @@ const tA2DP_ENCODER_INTERFACE* A2DP_VendorGetEncoderInterfaceLdac(const uint8_t*
 // |p_codec_info| contains the codec information to adjust.
 // Returns true if |p_codec_info| is valid and supported, otherwise false.
 bool A2DP_VendorAdjustCodecLdac(uint8_t* p_codec_info);
-
-// Gets the A2DP LDAC Source codec index for a given |p_codec_info|.
-// Returns the corresponding |btav_a2dp_codec_index_t| on success,
-// otherwise |BTAV_A2DP_CODEC_INDEX_MAX|.
-btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexLdac(const uint8_t* p_codec_info);
-
-// Gets the A2DP LDAC Source codec name.
-const char* A2DP_VendorCodecIndexStrLdac(void);
 
 // Initializes A2DP LDAC Source codec information into |AvdtpSepConfig|
 // configuration entry pointed by |p_cfg|.

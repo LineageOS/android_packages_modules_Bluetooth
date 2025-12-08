@@ -348,15 +348,13 @@ RustPresentationPosition A2dpIntf::get_presentation_position() const {
 static bluetooth::avrcp::AvrcpMediaInterfaceImpl mAvrcpInterface;
 static bluetooth::avrcp::VolumeInterfaceImpl mVolumeInterface;
 
-std::unique_ptr<AvrcpIntf> GetAvrcpProfile(const unsigned char* btif) {
+std::unique_ptr<AvrcpIntf> GetAvrcpProfile(const bt_interface_t& intf) {
   if (internal::g_avrcpif) {
     std::abort();
   }
 
-  const bt_interface_t* btif_ = reinterpret_cast<const bt_interface_t*>(btif);
-
   auto avrcpif = std::make_unique<AvrcpIntf>(
-          reinterpret_cast<avrcp::ServiceInterface*>(btif_->get_avrcp_service()));
+          reinterpret_cast<avrcp::ServiceInterface*>(intf.get_avrcp_service()));
   internal::g_avrcpif = avrcpif.get();
   return avrcpif;
 }

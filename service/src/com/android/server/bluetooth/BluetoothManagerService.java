@@ -114,7 +114,7 @@ class BluetoothManagerService {
             SystemProperties.getBoolean(
                     "bluetooth.hardware.degraded_performance_mode.enabled", false);
 
-    private static final Duration TIMEOUT_BIND;
+    @VisibleForTesting static final Duration TIMEOUT_BIND;
     private static final Duration STATE_TIMEOUT;
     @VisibleForTesting static final Duration SERVICE_RESTART_DELAY;
     private static final Duration ADD_PROXY_DELAY;
@@ -200,6 +200,7 @@ class BluetoothManagerService {
     private boolean mEnableExternal = false;
 
     private int mRetryCounter = 0;
+    private boolean mIsBootCompleted = false;
 
     // The code in mBluetoothCallback is running on Binder thread.
     // It must be posted on the local looper to prevent concurrent access.
@@ -1031,6 +1032,16 @@ class BluetoothManagerService {
         mHandler.removeMessages(MESSAGE_TIMEOUT_BIND);
     }
 
+    void onBootCompleted() {
+        mIsBootCompleted = true;
+        if (!mHandler.hasMessages(MESSAGE_TIMEOUT_BIND)) {
+            return;
+        }
+
+        mHandler.removeMessages(MESSAGE_TIMEOUT_BIND);
+        sendMessageDelayed(MESSAGE_TIMEOUT_BIND, TIMEOUT_BIND);
+    }
+
     /**
      * Send enable message and set adapter name and address. Called when the boot phase becomes
      * PHASE_SYSTEM_SERVICES_READY.
@@ -1176,7 +1187,7 @@ class BluetoothManagerService {
         public void onServiceDisconnected(ComponentName componentName) {
             // Called if we unexpectedly disconnect.
             String name = componentName.getClassName();
-            Log.d(TAG, "ServiceConnection.onServiceDisconnected(" + name + ")");
+            Log.e(TAG, "ServiceConnection.onServiceDisconnected(" + name + ")");
             if (!name.equals("com.android.bluetooth.btservice.AdapterService")) {
                 Log.e(TAG, "Unknown service disconnected: " + name);
                 return;
@@ -1382,7 +1393,7 @@ class BluetoothManagerService {
             delay = delay.multipliedBy(10);
         }
 
-        Log.d(TAG, "Recovery #" + mRetryCounter + " scheduled in " + delay.toString().substring(2));
+        Log.e(TAG, "Recovery #" + mRetryCounter + " scheduled in " + delay.toString().substring(2));
         sendMessageDelayed(MESSAGE_RESTART_BLUETOOTH_SERVICE, delay);
     }
 
@@ -1509,7 +1520,10 @@ class BluetoothManagerService {
             mActiveLogs.add(ENABLE_DISABLE_REASON_START_ERROR, false);
             return;
         }
-        sendMessageDelayed(MESSAGE_TIMEOUT_BIND, TIMEOUT_BIND);
+
+        // Leave more time to bind to Bluetooth if the boot is not completed
+        var delay = mIsBootCompleted ? TIMEOUT_BIND : TIMEOUT_BIND.multipliedBy(20);
+        sendMessageDelayed(MESSAGE_TIMEOUT_BIND, delay);
     }
 
     private void propagateOffToBleOn(String hciInstanceName) {

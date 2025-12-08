@@ -32,6 +32,7 @@ import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.util.Text;
+import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.common.truth.Expect;
 
@@ -48,6 +49,8 @@ import java.util.UUID;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class UtilsTest {
+
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Rule public Expect expect = Expect.create();
 

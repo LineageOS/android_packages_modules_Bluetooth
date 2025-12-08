@@ -564,13 +564,15 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
       break;
 
     case BTA_AG_AUDIO_OPEN_EVT:
-      log::debug("Audio open event:{}", dump_hf_event(event));
+      log::debug("Audio open event:{}, reason:{}", dump_hf_event(event),
+                 static_cast<int>(p_data->hdr.reason));
       bt_hf_callbacks->AudioStateCallback(BTHF_AUDIO_STATE_CONNECTED, btif_hf_cb[idx].connected_bda,
                                           p_data->hdr.reason);
       break;
 
     case BTA_AG_AUDIO_CLOSE_EVT:
-      log::debug("Audio close event:{}", dump_hf_event(event));
+      log::debug("Audio close event:{}, reason:{}", dump_hf_event(event),
+                 static_cast<int>(p_data->hdr.reason));
 
       DEVICE_IOT_CONFIG_ADDR_INT_ADD_ONE(btif_hf_cb[idx].connected_bda,
                                          IOT_CONF_KEY_HFP_SCO_CONN_FAIL_COUNT);

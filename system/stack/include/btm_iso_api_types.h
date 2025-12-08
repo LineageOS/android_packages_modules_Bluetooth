@@ -69,13 +69,22 @@ constexpr uint8_t kIsoSca0To20Ppm = 0x07;
 constexpr uint8_t kIsoEventCisDataAvailable = 0x00;
 constexpr uint8_t kIsoEventCisEstablishCmpl = 0x01;
 constexpr uint8_t kIsoEventCisDisconnected = 0x02;
+constexpr uint8_t kIsoEventBisDataAvailable = 0x03;
 
 constexpr uint8_t kIsoEventCigOnCreateCmpl = 0x00;
 constexpr uint8_t kIsoEventCigOnReconfigureCmpl = 0x01;
 constexpr uint8_t kIsoEventCigOnRemoveCmpl = 0x02;
 
-constexpr uint8_t kIsoEventBigOnCreateCmpl = 0x00;
-constexpr uint8_t kIsoEventBigOnTerminateCmpl = 0x01;
+enum class BigSourceEvent : uint8_t {
+  kCreateCmpl = 0x00,
+  kTerminateCmpl,
+};
+
+enum class BigSinkEvent : uint8_t {
+  kSyncEst = 0x00,
+  kSyncLost,
+  kTerminateSyncCmpl,
+};
 
 struct cig_create_params {
   uint32_t sdu_itv_mtos;
@@ -180,6 +189,48 @@ struct iso_data_path_params {
   uint16_t codec_id_vendor;
   uint32_t controller_delay;
   std::vector<uint8_t> codec_conf;
+};
+
+struct big_create_sync_params {
+  uint8_t big_handle;
+  uint16_t sync_handle;
+  uint8_t encryption;
+  std::array<uint8_t, 16> broadcast_code;
+  uint8_t mse;
+  uint16_t big_sync_timeout;
+  std::vector<uint8_t> bis;
+};
+
+struct big_sync_est_evt {
+  uint8_t status;
+  uint8_t big_handle;
+  uint32_t transport_latency_big;
+  uint8_t nse;
+  uint8_t bn;
+  uint8_t pto;
+  uint8_t irc;
+  uint16_t max_pdu;
+  uint16_t iso_interval;
+  std::vector<uint16_t> conn_handles;
+};
+
+struct big_sync_lost_evt {
+  uint8_t big_handle;
+  uint8_t reason;
+};
+
+struct big_terminate_sync_cmpl_evt {
+  uint8_t status;
+  uint8_t big_handle;
+};
+
+struct bis_data_evt {
+  uint8_t big_handle;
+  uint16_t bis_conn_hdl;
+  uint32_t ts;
+  uint16_t evt_lost;
+  uint16_t seq_nb;
+  BT_HDR* p_msg;
 };
 
 }  // namespace iso_manager

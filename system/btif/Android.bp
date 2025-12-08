@@ -252,8 +252,6 @@ cc_test {
     },
     sanitize: {
         integer_overflow: true,
-        // TODO(b/457825862): Temporary workaround to fix the long link time
-        cfi: false,
     },
 }
 
