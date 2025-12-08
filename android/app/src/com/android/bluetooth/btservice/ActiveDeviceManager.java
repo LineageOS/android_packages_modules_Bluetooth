@@ -21,7 +21,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -533,7 +532,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 return;
             }
             // New connected device: select it as active
-            if (setHearingAidActiveDevice(device)) {
+            if (setHearingAidActiveDevice(device, false)) {
                 setA2dpActiveDevice(null, true);
                 setHfpActiveDevice(null);
                 mAdapterService
@@ -1174,10 +1173,6 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
         return true;
     }
 
-    private boolean setHearingAidActiveDevice(@NonNull BluetoothDevice device) {
-        return setHearingAidActiveDevice(device, false);
-    }
-
     private boolean setHearingAidActiveDevice(
             @Nullable BluetoothDevice device, boolean hasFallbackDevice) {
         Log.i(
@@ -1355,7 +1350,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
 
                 if (mHearingAidConnectedDevices.contains(device)) {
                     Log.i(TAG, "Found a hearing aid fallback device: " + device);
-                    setHearingAidActiveDevice(device);
+                    setHearingAidActiveDevice(device, false);
                     setA2dpActiveDevice(null, hasFallbackDevice);
                     setHfpActiveDevice(null);
                     setLeAudioActiveDevice(null, hasFallbackDevice);
@@ -1634,19 +1629,6 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
 
         Log.d(TAG, "isBroadcastingAudio: true");
         return true;
-    }
-
-    /**
-     * Called when a wired audio device is connected. It might be called multiple times each time a
-     * wired audio device is connected.
-     */
-    @VisibleForTesting
-    void wiredAudioDeviceConnected() {
-        Log.d(TAG, "wiredAudioDeviceConnected");
-        setA2dpActiveDevice(null, true);
-        setHfpActiveDevice(null);
-        setHearingAidActiveDevice(null, true);
-        setLeAudioActiveDevice(null, true);
     }
 
     private void getDevicesInfo(
