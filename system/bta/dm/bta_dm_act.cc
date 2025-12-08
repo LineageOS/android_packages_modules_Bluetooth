@@ -286,11 +286,15 @@ void BTA_dm_on_hw_on(const std::string local_name) {
   }
 
   // Synchronize with the controller before continuing
+  std::promise<void> enable_promise;
+  std::future<void> enable_future = enable_promise.get_future();
+
   bta_dm_le_rand(get_main_thread()->BindOnce(
-          [](const std::string local_name, uint64_t /*value*/) {
+          [](const std::string local_name, std::promise<void> enable_promise, uint64_t /*value*/) {
             BTIF_dm_enable(std::move(local_name));
+            enable_promise.set_value();
           },
-          std::move(local_name)));
+          std::move(local_name), std::move(enable_promise)));
 
   bta_sys_rm_register(bta_dm_rm_cback);
 
@@ -306,6 +310,8 @@ void BTA_dm_on_hw_on(const std::string local_name) {
   }
 
   bta_dm_disc_gattc_register();
+
+  enable_future.wait();
 }
 
 /** Disables the BT device manager */

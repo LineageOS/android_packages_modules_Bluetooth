@@ -198,7 +198,6 @@ void btif_enable_bluetooth_evt() {
 
   btif_dm_load_local_oob();
 
-  future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
   log::info("Bluetooth enable event completed");
 }
 
