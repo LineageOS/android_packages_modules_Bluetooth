@@ -50,3 +50,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "adm_use_set_active_device_helpers"
+    namespace: "bluetooth"
+    description: "Use set<profile>ActiveDevice helper functions instead of direct service calls"
+    bug: "467020079"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
