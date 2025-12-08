@@ -1496,6 +1496,11 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
                 ErrorCodeText(status_view.GetStatus()));
       return;
     }
+    if (status_view.GetApcfOpcode() != ApcfOpcode::READ_EXTENDED_FEATURES) {
+      log::error("Received unexpected apcf_opcode {}",
+                 static_cast<uint8_t>(status_view.GetApcfOpcode()));
+      return;
+    }
     auto complete_view = LeAdvFilterReadExtendedFeaturesCompleteView::Create(status_view);
     log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
     is_transport_discovery_data_filter_supported_ =
