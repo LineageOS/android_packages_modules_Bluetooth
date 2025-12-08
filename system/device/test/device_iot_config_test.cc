@@ -2834,64 +2834,6 @@ TEST_F(DeviceIotConfigTest, test_device_iot_config_flush) {
   test::mock::osi_alarm::alarm_is_scheduled.body = {};
 }
 
-TEST_F(DeviceIotConfigTest, test_device_iot_config_clear) {
-  config_t* config_new_empty_return_value;
-  bool config_save_return_value;
-
-  test::mock::osi_alarm::alarm_cancel.body = [&](alarm_t* /*alarm*/) {};
-
-  test::mock::osi_config::config_new_empty.body = [&]() {
-    return std::unique_ptr<config_t>(config_new_empty_return_value);
-  };
-
-  test::mock::osi_config::config_save.body = [&](const config_t& /*config*/,
-                                                 const std::string& /*filename*/) -> bool {
-    return config_save_return_value;
-  };
-
-  {
-    reset_mock_function_count_map();
-
-    config_new_empty_return_value = new config_t();
-    config_save_return_value = false;
-
-    EXPECT_FALSE(device_iot_config_clear());
-
-    EXPECT_EQ(get_func_call_count("config_new_empty"), 1);
-    EXPECT_EQ(get_func_call_count("alarm_cancel"), 1);
-    EXPECT_EQ(get_func_call_count("config_save"), 1);
-  }
-
-  {
-    reset_mock_function_count_map();
-
-    config_new_empty_return_value = new config_t();
-    config_save_return_value = true;
-
-    EXPECT_TRUE(device_iot_config_clear());
-
-    EXPECT_EQ(get_func_call_count("config_new_empty"), 1);
-    EXPECT_EQ(get_func_call_count("alarm_cancel"), 1);
-    EXPECT_EQ(get_func_call_count("config_save"), 1);
-  }
-
-  {
-    reset_mock_function_count_map();
-
-    config_new_empty_return_value = NULL;
-
-    EXPECT_FALSE(device_iot_config_clear());
-
-    EXPECT_EQ(get_func_call_count("config_new_empty"), 1);
-    EXPECT_EQ(get_func_call_count("alarm_cancel"), 1);
-    EXPECT_EQ(get_func_call_count("config_save"), 0);
-  }
-
-  test::mock::osi_alarm::alarm_cancel.body = {};
-  test::mock::osi_config::config_new_empty.body = {};
-  test::mock::osi_config::config_save.body = {};
-}
-
 TEST_F(DeviceIotConfigTest, test_device_iot_config_timer_save_cb) {
   {
     reset_mock_function_count_map();

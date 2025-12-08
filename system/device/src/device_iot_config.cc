@@ -312,26 +312,6 @@ void device_iot_config_flush(void) {
   device_iot_config_write(event, NULL);
 }
 
-bool device_iot_config_clear(void) {
-  log::assert_that(config != NULL, "assert failed: config != NULL");
-  log::assert_that(config_timer != NULL, "assert failed: config_timer != NULL");
-
-  log::info("");
-  alarm_cancel(config_timer);
-
-  std::unique_lock<std::mutex> lock(config_lock);
-  config.reset();
-
-  config = config_new_empty();
-  if (config == NULL) {
-    return false;
-  }
-
-  bool ret = config_save(*config, IOT_CONFIG_FILE_PATH);
-  device_iot_config_source = RESET;
-  return ret;
-}
-
 void device_debug_iot_config_dump(int fd) {
   dprintf(fd, "\nBluetooth Iot Config:\n");
 

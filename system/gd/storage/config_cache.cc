@@ -110,21 +110,6 @@ bool ConfigCache::operator==(const ConfigCache& rhs) const {
 
 bool ConfigCache::operator!=(const ConfigCache& rhs) const { return !(*this == rhs); }
 
-void ConfigCache::Clear() {
-  std::lock_guard<std::recursive_mutex> lock(mutex_);
-  if (information_sections_.size() > 0) {
-    information_sections_.clear();
-    PersistentConfigChangedCallback();
-  }
-  if (persistent_devices_.size() > 0) {
-    persistent_devices_.clear();
-    PersistentConfigChangedCallback();
-  }
-  if (temporary_devices_.size() > 0) {
-    temporary_devices_.clear();
-  }
-}
-
 bool ConfigCache::HasSection(const std::string& section) const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   return information_sections_.contains(section) || persistent_devices_.contains(section) ||

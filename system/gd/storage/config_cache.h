@@ -113,8 +113,6 @@ public:
   // TODO: have a systematic way of doing this instead of specialized methods
   // Remove sections with |property| set
   virtual void RemoveSectionWithProperty(const std::string& property);
-  // remove all content in this config cache, restore it to the state after the explicit constructor
-  virtual void Clear();
   // Set a callback to notify interested party that a persistent config change has just happened
   virtual void SetPersistentConfigChangedCallback(
           std::function<void()> persistent_config_changed_callback);

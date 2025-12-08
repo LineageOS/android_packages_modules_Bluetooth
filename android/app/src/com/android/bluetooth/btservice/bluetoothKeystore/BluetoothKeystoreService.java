@@ -21,7 +21,6 @@ import static java.util.Objects.requireNonNullElseGet;
 import android.annotation.Nullable;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
-import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothKeystoreProto;
@@ -200,10 +199,6 @@ public class BluetoothKeystoreService {
         try {
             debugLog("loadConfigData");
 
-            if (BluetoothProperties.factory_reset().orElse(false)) {
-                cleanupAll();
-            }
-
             if (Files.exists(Paths.get(CONFIG_CHECKSUM_ENCRYPTION_PATH))) {
                 debugLog("Load encryption file.");
                 // Step2: Load checksum file.
@@ -294,7 +289,7 @@ public class BluetoothKeystoreService {
 
     /** Clean up memory and all files. */
     @VisibleForTesting
-    public void cleanupAll() throws IOException {
+    void cleanupAll() throws IOException {
         cleanupFile();
         cleanupMemory();
     }

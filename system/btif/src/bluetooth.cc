@@ -1044,22 +1044,6 @@ static int set_os_callouts(bt_os_callouts_t* callouts) {
   return BT_STATUS_SUCCESS;
 }
 
-static int config_clear(void) {
-  log::info("");
-  int ret = BT_STATUS_SUCCESS;
-  if (!btif_config_clear()) {
-    log::error("Failed to clear btif config");
-    ret = BT_STATUS_FAIL;
-  }
-
-  if (!device_iot_config_clear()) {
-    log::error("Failed to clear device iot config");
-    ret = BT_STATUS_FAIL;
-  }
-
-  return ret;
-}
-
 static bluetooth::avrcp::ServiceInterface* get_avrcp_service(void) {
   return bluetooth::avrcp::AvrcpService::GetServiceInterface();
 }
@@ -1206,7 +1190,6 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
         .set_os_callouts = set_os_callouts,
         .read_energy_info = read_energy_info,
         .dump = dump,
-        .config_clear = config_clear,
         .interop_database_clear = interop_database_clear,
         .interop_database_add = interop_database_add,
         .get_avrcp_service = get_avrcp_service,

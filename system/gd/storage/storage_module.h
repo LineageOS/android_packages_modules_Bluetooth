@@ -145,8 +145,6 @@ protected:
   // In some cases, one may want to save the config immediately to disk. Call this method with
   // caution as it runs immediately on the calling thread
   void SaveImmediately();
-  // remove all content in this config cache, restore it to the state after the explicit constructor
-  void Clear();
 
   void SetProperty(std::string section, std::string property, std::string value);
 
