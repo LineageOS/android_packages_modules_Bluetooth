@@ -24,6 +24,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include "bta/dm/bta_dm_sec_int.h"
@@ -33,7 +34,6 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/main_thread.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -119,11 +119,6 @@ void BTA_DmAddDevice(RawAddress bd_addr, DEV_CLASS dev_class, LinkKey link_key, 
 /** This function removes a device from the security database list of peer
  * device. It manages unpairing even while connected */
 tBTA_STATUS BTA_DmRemoveDevice(const RawAddress& bd_addr) {
-  if (!com::android::bluetooth::flags::remove_device_in_main_thread()) {
-    bta_dm_remove_device(bd_addr);
-    return BTA_SUCCESS;
-  }
-
   do_in_main_thread(base::BindOnce(bta_dm_remove_device, bd_addr));
   return BTA_SUCCESS;
 }

@@ -28,6 +28,8 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <stdlib.h>
@@ -47,8 +49,6 @@
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/sdpdefs.h"
 #include "stack/sdp/sdp_discovery_db.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using namespace bluetooth::legacy::stack::sdp;
@@ -432,7 +432,7 @@ tHID_STATUS HID_HostRemoveDev(uint8_t dev_handle) {
     return HID_ERR_INVALID_PARAM;
   }
 
-  if (!com::android::bluetooth::flags::wait_hid_disconnect_before_marking_unused()) {
+  if (!com_android_bluetooth_flags_wait_hid_disconnect_before_marking_unused()) {
     HID_HostCloseDev(dev_handle);
     hh_cb.devices[dev_handle].in_use = false;
     hh_cb.devices[dev_handle].conn.conn_state = HID_CONN_STATE_UNUSED;
@@ -449,6 +449,13 @@ tHID_STATUS HID_HostRemoveDev(uint8_t dev_handle) {
   } else if (hh_cb.devices[dev_handle].state == HIDH_DEV_NO_CONN) {
     hh_cb.devices[dev_handle].state = HIDH_DEV_UNUSED;
     log::verbose("set handle {} state to UNUSED", dev_handle);
+    if (com::android::bluetooth::flags::reset_state_when_removing_non_connected_hid_device()) {
+      // It's possible for us to be in the NO_CONN state while initiating an outgoing connection,
+      // threfore having nonzero CID. In this awkward state let's try our best to disconnect those
+      // CIDs and clean the state.
+      hidh_conn_force_disconnect(dev_handle);
+      hidh_conn_reset(dev_handle);
+    }
   }
   return HID_SUCCESS;
 }
@@ -557,7 +564,8 @@ tHID_STATUS HID_HostCloseDev(uint8_t dev_handle) {
 
   alarm_cancel(hh_cb.devices[dev_handle].conn.process_repage_timer);
   hh_cb.devices[dev_handle].conn_tries = HID_HOST_MAX_CONN_RETRY + 1;
-  return hidh_conn_disconnect(dev_handle);
+  hidh_conn_disconnect(dev_handle);
+  return HID_SUCCESS;
 }
 
 /*******************************************************************************

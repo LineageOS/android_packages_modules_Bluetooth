@@ -18,6 +18,7 @@
 
 #include <base/test/bind_test_util.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 #include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
 #include <gmock/gmock.h>
@@ -31,7 +32,6 @@
 #include "bta/test/bta_test_fixtures.h"
 #include "bta_api_data_types.h"
 #include "stack/btm/neighbor_inquiry.h"
-#include "types/bt_transport.h"
 
 #define TEST_BT com::android::bluetooth::flags
 
@@ -90,6 +90,7 @@ TEST_F(BtaInitializedTest, bta_dm_discover_next_device) {
 }
 
 TEST_F(BtaInitializedTest, bta_dm_sdp_find_services) {
+  EXPECT_CALL(mock_l2cap_interface_, L2CA_ConnectReqWithSecurity(_, _, _));
   std::unique_ptr<tBTA_DM_SDP_STATE> state = std::make_unique<tBTA_DM_SDP_STATE>(tBTA_DM_SDP_STATE{
           .bd_addr = kRawAddress,
           .services_to_search = BTA_ALL_SERVICE_MASK,

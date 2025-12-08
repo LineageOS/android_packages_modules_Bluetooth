@@ -16,14 +16,12 @@
 
 package android.bluetooth.le;
 
-import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
-
-import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -90,9 +88,9 @@ public final class DistanceMeasurementMethod implements Parcelable {
      * @deprecated use {@link #getMethodId} instead.
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING_25Q2_APIS)
     @Deprecated
     @SystemApi
+    @RequiresNoPermission
     public double getId() {
         return mId;
     }
@@ -103,8 +101,8 @@ public final class DistanceMeasurementMethod implements Parcelable {
      * @return ID of the measurement method
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING_25Q2_APIS)
     @SystemApi
+    @RequiresNoPermission
     public @DistanceMeasurementMethodId int getMethodId() {
         return mId;
     }
@@ -116,6 +114,7 @@ public final class DistanceMeasurementMethod implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public boolean isAzimuthAngleSupported() {
         return mIsAzimuthAngleSupported;
     }
@@ -127,6 +126,7 @@ public final class DistanceMeasurementMethod implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public boolean isAltitudeAngleSupported() {
         return mIsAltitudeAngleSupported;
     }
@@ -234,8 +234,8 @@ public final class DistanceMeasurementMethod implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setAzimuthAngleSupported(boolean supported) {
+        @RequiresNoPermission
+        public @NonNull Builder setAzimuthAngleSupported(boolean supported) {
             mIsAzimuthAngleSupported = supported;
             return this;
         }
@@ -247,8 +247,8 @@ public final class DistanceMeasurementMethod implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setAltitudeAngleSupported(boolean supported) {
+        @RequiresNoPermission
+        public @NonNull Builder setAltitudeAngleSupported(boolean supported) {
             mIsAltitudeAngleSupported = supported;
             return this;
         }
@@ -259,8 +259,8 @@ public final class DistanceMeasurementMethod implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public DistanceMeasurementMethod build() {
+        @RequiresNoPermission
+        public @NonNull DistanceMeasurementMethod build() {
             return new DistanceMeasurementMethod(
                     mId, mIsAzimuthAngleSupported, mIsAltitudeAngleSupported);
         }

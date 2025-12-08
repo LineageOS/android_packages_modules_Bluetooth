@@ -2,6 +2,13 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
+    name: "use_data_store_storage"
+    namespace: "bluetooth"
+    description: "Implement a robust storage to handle rollback"
+    bug: "430166215"
+}
+
+flag {
     name: "adapter_suspend_mgmt"
     namespace: "bluetooth"
     description: "Configure the BT adapter in a suspend state to avoid unexpected wake-up"
@@ -9,40 +16,20 @@ flag {
 }
 
 flag {
-    name: "call_bluetooth_ready_before_profiles_start"
+    name: "adapter_suspend_advertisement"
     namespace: "bluetooth"
-    description: "Initiates the adapter properties before starting profiles"
-    bug: "405437771"
+    description: "Disable advertisement on adapter suspend and re-enable on resume"
+    bug: "433136730"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
 }
 
 flag {
-    name: "factory_reset_at_bluetooth_start"
+    name: "adapter_suspend_discoverability"
     namespace: "bluetooth"
-    description: "Regroup all data deletion to happen when Bluetooth start instead of sometimes at start and sometimes with a direct call"
-    bug: "406868063"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "factory_reset_clear_additional_data"
-    namespace: "bluetooth"
-    description: "Factory reset will now clear the notification history and reset snoop log mode"
-    bug: "416520754"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "remove_legacy_management_thread"
-    namespace: "bluetooth"
-    description: "Remove non-necessary management_thread"
-    bug: "406345320"
+    description: "Set discoverability to none on adapter suspend and restore on resume"
+    bug: "435053102"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -59,10 +46,30 @@ flag {
 }
 
 flag {
+    name: "validate_connection_policy_before_accepting_connection"
+    namespace: "bluetooth"
+    description: "Make native wakelock reference counted"
+    bug: "428276547"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "ref_counted_native_wakelock"
     namespace: "bluetooth"
     description: "Make native wakelock reference counted"
     bug: "409059723"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "get_profile_oneway"
+    namespace: "bluetooth"
+    description: "do not block calling thread when fetching profiles"
+    bug: "438829357"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -97,8 +104,21 @@ flag {
 }
 
 flag {
-    name: "adapter_service_profiles_use_optional"
+    name: "ignore_multiple_connect_request_in_bt_services"
     namespace: "bluetooth"
-    description: "Add optional getters for all profiles in [Bluetooth]AdapterService"
-    bug: "422543753"
+    description: "Ignore multiple connect request in BT Services"
+    bug: "429143534"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "consistent_battery_level"
+    namespace: "bluetooth"
+    description: "Do not reset battey level from BAS to prevent battey level fluctuation"
+    bug: "442696675"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
 }

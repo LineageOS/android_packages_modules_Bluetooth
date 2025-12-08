@@ -23,6 +23,9 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/uuid.h>
 #include <string.h>
 
 #include <algorithm>
@@ -41,9 +44,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/l2cap_interface.h"
-#include "types/bluetooth/uuid.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using bluetooth::Uuid;
@@ -250,90 +250,6 @@ void bnep_send_conn_response(tBNEP_CONN* p_bcb, uint16_t resp_code) {
 
 /*******************************************************************************
  *
- * Function         bnepu_send_peer_our_filters
- *
- * Description      This function sends our filters to a peer
- *
- * Returns          void
- *
- ******************************************************************************/
-void bnepu_send_peer_our_filters(tBNEP_CONN* p_bcb) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(BNEP_BUF_SIZE);
-  uint8_t* p;
-  uint16_t xx;
-
-  log::verbose("BNEP sending peer our filters");
-
-  p_buf->offset = L2CAP_MIN_OFFSET;
-  p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
-
-  /* Put in BNEP frame type - filter control */
-  UINT8_TO_BE_STREAM(p, BNEP_FRAME_CONTROL);
-
-  /* Put in filter message type - set filters */
-  UINT8_TO_BE_STREAM(p, BNEP_FILTER_NET_TYPE_SET_MSG);
-
-  UINT16_TO_BE_STREAM(p, (4 * p_bcb->sent_num_filters));
-  for (xx = 0; xx < p_bcb->sent_num_filters; xx++) {
-    UINT16_TO_BE_STREAM(p, p_bcb->sent_prot_filter_start[xx]);
-    UINT16_TO_BE_STREAM(p, p_bcb->sent_prot_filter_end[xx]);
-  }
-
-  p_buf->len = 4 + (4 * p_bcb->sent_num_filters);
-
-  bnepu_check_send_packet(p_bcb, p_buf);
-
-  p_bcb->con_flags |= BNEP_FLAGS_FILTER_RESP_PEND;
-
-  /* Start timer waiting for setup response */
-  alarm_set_on_mloop(p_bcb->conn_timer, BNEP_FILTER_SET_TIMEOUT_MS, bnep_conn_timer_timeout, p_bcb);
-}
-
-/*******************************************************************************
- *
- * Function         bnepu_send_peer_our_multi_filters
- *
- * Description      This function sends our multicast filters to a peer
- *
- * Returns          void
- *
- ******************************************************************************/
-void bnepu_send_peer_our_multi_filters(tBNEP_CONN* p_bcb) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(BNEP_BUF_SIZE);
-  uint8_t* p;
-  uint16_t xx;
-
-  log::verbose("BNEP sending peer our multicast filters");
-
-  p_buf->offset = L2CAP_MIN_OFFSET;
-  p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
-
-  /* Put in BNEP frame type - filter control */
-  UINT8_TO_BE_STREAM(p, BNEP_FRAME_CONTROL);
-
-  /* Put in filter message type - set filters */
-  UINT8_TO_BE_STREAM(p, BNEP_FILTER_MULTI_ADDR_SET_MSG);
-
-  UINT16_TO_BE_STREAM(p, (2 * BD_ADDR_LEN * p_bcb->sent_mcast_filters));
-  for (xx = 0; xx < p_bcb->sent_mcast_filters; xx++) {
-    memcpy(p, p_bcb->sent_mcast_filter_start[xx].address, BD_ADDR_LEN);
-    p += BD_ADDR_LEN;
-    memcpy(p, p_bcb->sent_mcast_filter_end[xx].address, BD_ADDR_LEN);
-    p += BD_ADDR_LEN;
-  }
-
-  p_buf->len = 4 + (2 * BD_ADDR_LEN * p_bcb->sent_mcast_filters);
-
-  bnepu_check_send_packet(p_bcb, p_buf);
-
-  p_bcb->con_flags |= BNEP_FLAGS_MULTI_RESP_PEND;
-
-  /* Start timer waiting for setup response */
-  alarm_set_on_mloop(p_bcb->conn_timer, BNEP_FILTER_SET_TIMEOUT_MS, bnep_conn_timer_timeout, p_bcb);
-}
-
-/*******************************************************************************
- *
  * Function         bnepu_send_peer_filter_rsp
  *
  * Description      This function sends a filter response to a peer
@@ -464,10 +380,10 @@ void bnepu_build_bnep_hdr(tBNEP_CONN* p_bcb, BT_HDR* p_buf, uint16_t protocol,
     case BNEP_FRAME_GENERAL_ETHERNET:
       p = bnepu_init_hdr(p_buf, 15, (uint8_t)(ext_bit | BNEP_FRAME_GENERAL_ETHERNET));
 
-      memcpy(p, dest_addr.address, BD_ADDR_LEN);
+      memcpy(p, dest_addr.address.data(), BD_ADDR_LEN);
       p += BD_ADDR_LEN;
 
-      memcpy(p, source_addr.address, BD_ADDR_LEN);
+      memcpy(p, source_addr.address.data(), BD_ADDR_LEN);
       p += BD_ADDR_LEN;
       break;
 
@@ -478,14 +394,14 @@ void bnepu_build_bnep_hdr(tBNEP_CONN* p_bcb, BT_HDR* p_buf, uint16_t protocol,
     case BNEP_FRAME_COMPRESSED_ETHERNET_SRC_ONLY:
       p = bnepu_init_hdr(p_buf, 9, (uint8_t)(ext_bit | BNEP_FRAME_COMPRESSED_ETHERNET_SRC_ONLY));
 
-      memcpy(p, source_addr.address, BD_ADDR_LEN);
+      memcpy(p, source_addr.address.data(), BD_ADDR_LEN);
       p += BD_ADDR_LEN;
       break;
 
     case BNEP_FRAME_COMPRESSED_ETHERNET_DEST_ONLY:
       p = bnepu_init_hdr(p_buf, 9, (uint8_t)(ext_bit | BNEP_FRAME_COMPRESSED_ETHERNET_DEST_ONLY));
 
-      memcpy(p, dest_addr.address, BD_ADDR_LEN);
+      memcpy(p, dest_addr.address.data(), BD_ADDR_LEN);
       p += BD_ADDR_LEN;
       break;
   }
@@ -1033,7 +949,7 @@ static void bnepu_process_peer_multicast_filter_set(tBNEP_CONN* p_bcb, uint8_t* 
                                                     uint16_t len) {
   uint16_t resp_code = BNEP_FILTER_CRL_OK;
   uint16_t num_filters, xx;
-  uint8_t *p_temp_filters, null_bda[BD_ADDR_LEN] = {0, 0, 0, 0, 0, 0};
+  uint8_t* p_temp_filters;
 
   if ((p_bcb->con_state != BNEP_STATE_CONNECTED) &&
       (!(p_bcb->con_flags & BNEP_FLAGS_CONN_COMPLETED))) {
@@ -1076,14 +992,15 @@ static void bnepu_process_peer_multicast_filter_set(tBNEP_CONN* p_bcb, uint8_t* 
   p_bcb->rcvd_mcast_filters = num_filters;
   p_temp_filters = p_filters;
   for (xx = 0; xx < num_filters; xx++) {
-    memcpy(p_bcb->rcvd_mcast_filter_start[xx].address, p_temp_filters, BD_ADDR_LEN);
-    memcpy(p_bcb->rcvd_mcast_filter_end[xx].address, p_temp_filters + BD_ADDR_LEN, BD_ADDR_LEN);
+    memcpy(p_bcb->rcvd_mcast_filter_start[xx].address.data(), p_temp_filters, BD_ADDR_LEN);
+    memcpy(p_bcb->rcvd_mcast_filter_end[xx].address.data(), p_temp_filters + BD_ADDR_LEN,
+           BD_ADDR_LEN);
     p_temp_filters += (BD_ADDR_LEN * 2);
 
     /* Check if any of the ranges have all zeros as both starting and ending
      * addresses */
-    if ((memcmp(null_bda, p_bcb->rcvd_mcast_filter_start[xx].address, BD_ADDR_LEN) == 0) &&
-        (memcmp(null_bda, p_bcb->rcvd_mcast_filter_end[xx].address, BD_ADDR_LEN) == 0)) {
+    if (p_bcb->rcvd_mcast_filter_start[xx] == RawAddress::kEmpty &&
+        p_bcb->rcvd_mcast_filter_end[xx] == RawAddress::kEmpty) {
       p_bcb->rcvd_mcast_filters = 0xFFFF;
       break;
     }
@@ -1242,10 +1159,8 @@ tBNEP_RESULT bnep_is_packet_allowed(tBNEP_CONN* p_bcb, const RawAddress& dest_ad
     if (p_bcb->rcvd_mcast_filters != 0xFFFF) {
       /* Check if the address is mentioned in the filter range */
       for (i = 0; i < p_bcb->rcvd_mcast_filters; i++) {
-        if ((memcmp(p_bcb->rcvd_mcast_filter_start[i].address, dest_addr.address, BD_ADDR_LEN) <=
-             0) &&
-            (memcmp(p_bcb->rcvd_mcast_filter_end[i].address, dest_addr.address, BD_ADDR_LEN) >=
-             0)) {
+        if (p_bcb->rcvd_mcast_filter_start[i] <= dest_addr &&
+            p_bcb->rcvd_mcast_filter_end[i] >= dest_addr) {
           break;
         }
       }

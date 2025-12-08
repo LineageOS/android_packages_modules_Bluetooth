@@ -35,7 +35,7 @@ service VCP {
 }
 
 // Request of the `SetDeviceVolume` method
-message SetDeviceVolumeRequest{
+message SetDeviceVolumeRequest {
   // Connection crafted by grpc server
   Connection connection = 1;
   // Volume value to be set
@@ -43,7 +43,7 @@ message SetDeviceVolumeRequest{
 }
 
 // Request of the `SetVolumeOffset` method
-message SetVolumeOffsetRequest{
+message SetVolumeOffsetRequest {
   // Connection crafted by grpc server
   Connection connection = 1;
   // Volume offset value to be set

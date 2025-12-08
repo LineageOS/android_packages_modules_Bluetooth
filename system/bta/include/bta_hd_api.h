@@ -19,11 +19,12 @@
 #ifndef BTA_HD_API_H
 #define BTA_HD_API_H
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "bta/include/bta_api.h"
 #include "stack/include/hiddefs.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants and Type Definitions

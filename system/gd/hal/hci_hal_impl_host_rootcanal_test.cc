@@ -157,7 +157,7 @@ protected:
   void TearDown() override {
     hal_->unregisterIncomingPacketCallback();
     handler_->Clear();
-    if (com::android::bluetooth::flags::same_handler_for_all_modules()) {
+    if (com_android_bluetooth_flags_same_handler_for_all_modules()) {
       handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
     }
     hal_.reset();

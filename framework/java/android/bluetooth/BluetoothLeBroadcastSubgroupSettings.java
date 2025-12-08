@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNull;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -97,8 +98,8 @@ public final class BluetoothLeBroadcastSubgroupSettings implements Parcelable {
      * @hide
      */
     @SystemApi
-    @NonNull
-    public BluetoothLeAudioContentMetadata getContentMetadata() {
+    @RequiresNoPermission
+    public @NonNull BluetoothLeAudioContentMetadata getContentMetadata() {
         return mContentMetadata;
     }
 
@@ -109,6 +110,7 @@ public final class BluetoothLeBroadcastSubgroupSettings implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @Quality int getPreferredQuality() {
         return mPreferredQuality;
     }
@@ -195,8 +197,8 @@ public final class BluetoothLeBroadcastSubgroupSettings implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setPreferredQuality(@Quality int preferredQuality) {
+        @RequiresNoPermission
+        public @NonNull Builder setPreferredQuality(@Quality int preferredQuality) {
             mPreferredQuality = preferredQuality;
             return this;
         }
@@ -210,8 +212,8 @@ public final class BluetoothLeBroadcastSubgroupSettings implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setContentMetadata(
+        @RequiresNoPermission
+        public @NonNull Builder setContentMetadata(
                 @NonNull BluetoothLeAudioContentMetadata contentMetadata) {
             requireNonNull(contentMetadata);
             mContentMetadata = contentMetadata;
@@ -227,8 +229,8 @@ public final class BluetoothLeBroadcastSubgroupSettings implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public BluetoothLeBroadcastSubgroupSettings build() {
+        @RequiresNoPermission
+        public @NonNull BluetoothLeBroadcastSubgroupSettings build() {
             requireNonNull(mContentMetadata);
             if (mPreferredQuality != QUALITY_STANDARD && mPreferredQuality != QUALITY_HIGH) {
                 throw new IllegalArgumentException(

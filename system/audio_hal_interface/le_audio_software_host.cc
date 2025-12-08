@@ -322,6 +322,8 @@ void LeAudioClientInterface::Sink::SuspendedForReconfiguration() {
 
 void LeAudioClientInterface::Sink::ReconfigurationComplete() { log::info(""); }
 
+void LeAudioClientInterface::Sink::StreamSuspended() { log::info(""); }
+
 size_t LeAudioClientInterface::Sink::Read(uint8_t* p_buf, uint32_t len) {
   uint32_t bytes_read = 0;
   bytes_read = UIPC_Read(*lea_uipc, UIPC_CH_ID_AV_AUDIO, p_buf, len);
@@ -475,6 +477,7 @@ void LeAudioClientInterface::Source::SuspendedForReconfiguration() {
 }
 
 void LeAudioClientInterface::Source::ReconfigurationComplete() { log::info(""); }
+void LeAudioClientInterface::Source::StreamSuspended() { log::info(""); }
 
 size_t LeAudioClientInterface::Source::Write(const uint8_t* p_buf, uint32_t len) {
   bool ok = UIPC_Send(*lea_uipc, UIPC_CH_ID_AV_AUDIO, 0, p_buf, len);

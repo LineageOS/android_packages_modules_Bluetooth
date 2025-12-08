@@ -34,17 +34,17 @@ impl Lc3Encoder {
         match (lc3_config.hr_mode, config.frame_duration_us) {
             (false, 2500 | 5000 | 7500 | 10000) => Ok(()),
             (true, 2500 | 5000 | 10000) => Ok(()),
-            (_, v) => Err(format!("Invalid frame duration: {} us", v)),
+            (_, v) => Err(format!("Invalid frame duration: {v} us")),
         }
         .and(match (lc3_config.hr_mode, config.sample_rate) {
             (false, 8000 | 16000 | 24000 | 32000 | 48000) => Ok(()),
             (true, 48000 | 96000) => Ok(()),
-            (_, v) => Err(format!("Invalid sample rate: {} Hz", v)),
+            (_, v) => Err(format!("Invalid sample rate: {v} Hz")),
         })
         .and(match (lc3_config.hr_mode, frame_bytes, frame_bytes_ceiled) {
             (false, 20.., ..=400) => Ok(()),
             (true, 20.., ..=625) => Ok(()),
-            (..) => Err(format!("Invalid block size: {}", block_bytes)),
+            (..) => Err(format!("Invalid block size: {block_bytes}")),
         })
     }
 

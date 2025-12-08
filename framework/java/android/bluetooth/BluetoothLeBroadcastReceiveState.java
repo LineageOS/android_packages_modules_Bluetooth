@@ -22,6 +22,7 @@ import android.annotation.IntDef;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -310,6 +311,7 @@ public final class BluetoothLeBroadcastReceiveState implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @IntRange(from = 0x00, to = 0xFF) int getSourceId() {
         return mSourceId;
     }
@@ -324,6 +326,7 @@ public final class BluetoothLeBroadcastReceiveState implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @BluetoothDevice.AddressType int getSourceAddressType() {
         return mSourceAddressType;
     }
@@ -336,6 +339,7 @@ public final class BluetoothLeBroadcastReceiveState implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @NonNull BluetoothDevice getSourceDevice() {
         return mSourceDevice;
     }
@@ -349,6 +353,7 @@ public final class BluetoothLeBroadcastReceiveState implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public int getSourceAdvertisingSid() {
         return mSourceAdvertisingSid;
     }
@@ -360,6 +365,7 @@ public final class BluetoothLeBroadcastReceiveState implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public int getBroadcastId() {
         return mBroadcastId;
     }
@@ -376,6 +382,7 @@ public final class BluetoothLeBroadcastReceiveState implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @PaSyncState int getPaSyncState() {
         return mPaSyncState;
     }
@@ -391,6 +398,7 @@ public final class BluetoothLeBroadcastReceiveState implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @BigEncryptionState int getBigEncryptionState() {
         return mBigEncryptionState;
     }
@@ -405,6 +413,7 @@ public final class BluetoothLeBroadcastReceiveState implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @Nullable byte[] getBadCode() {
         return mBadCode;
     }
@@ -414,6 +423,7 @@ public final class BluetoothLeBroadcastReceiveState implements Parcelable {
      *
      * @return number of Broadcast subgroups being added to this sink
      */
+    @RequiresNoPermission
     public int getNumSubgroups() {
         return mNumSubgroups;
     }
@@ -437,6 +447,7 @@ public final class BluetoothLeBroadcastReceiveState implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @NonNull List<Long> getBisSyncState() {
         return mBisSyncState;
     }
@@ -450,6 +461,7 @@ public final class BluetoothLeBroadcastReceiveState implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @NonNull List<BluetoothLeAudioContentMetadata> getSubgroupMetadata() {
         return mSubgroupMetadata;
     }

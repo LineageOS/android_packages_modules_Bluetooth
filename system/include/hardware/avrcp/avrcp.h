@@ -17,13 +17,13 @@
 #pragma once
 
 #include <base/functional/callback_forward.h>
+#include <bluetooth/types/address.h>
 
 #include <set>
 #include <string>
 #include <vector>
 
 #include "avrcp_common.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace avrcp {
@@ -58,6 +58,7 @@ struct FolderInfo {
   std::string media_id;
   bool is_playable;
   std::string name;
+  uint8_t folderType;
 };
 
 // TODO (apanicke): Convert this to a union
@@ -103,7 +104,7 @@ public:
 // behavior in case the threading model changes on either side.
 class MediaInterface {
 public:
-  virtual void SendKeyEvent(uint8_t key, KeyState state) = 0;
+  virtual void SendKeyEvent(const RawAddress& bdaddr, uint8_t key, KeyState state) = 0;
 
   using SongInfoCallback = base::Callback<void(SongInfo)>;
   virtual void GetSongInfo(SongInfoCallback info_cb) = 0;

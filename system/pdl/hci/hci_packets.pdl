@@ -461,6 +461,10 @@ enum OpCode : 16 {
   // MSFT_OPCODE_xxxx below are needed for the tests.
   MSFT_OPCODE_MEDIATEK = 0xFD30,
   MSFT_OPCODE_QUALCOMM = 0xFD70,
+
+  // Sniff offload
+  WRITE_SNIFF_OFFLOAD_ENABLE = 0xFF10,
+  WRITE_SNIFF_OFFLOAD_PARAMETERS = 0xFF11,
 }
 
 // For mapping Local Supported Commands command
@@ -5366,6 +5370,11 @@ packet LeGetVendorCapabilitiesComplete104 : LeGetVendorCapabilitiesComplete103 {
   _payload_,
 }
 
+packet LeGetVendorCapabilitiesComplete105 : LeGetVendorCapabilitiesComplete104 {
+  sniff_offload_support : 8,
+  _payload_,
+}
+
 enum SubOcf : 8 {
   SET_PARAM = 0x01,
   SET_DATA = 0x02,
@@ -6894,7 +6903,7 @@ packet LeCsProcedureEnableComplete : LeMetaEvent (subevent_code = LE_CS_PROCEDUR
   max_procedure_len : 16,
 }
 
-struct LeCsMode0InitatorData {
+struct LeCsMode0InitiatorData {
   packet_quality : 8,
   packet_rssi : 8,
   packet_antenna : 8,
@@ -6925,7 +6934,7 @@ struct LeCsPacketPct {
   _reserved_ : 8,
 }
 
-struct LeCsMode1InitatorData {
+struct LeCsMode1InitiatorData {
   packet_quality : 8,
   packet_nadm : CsPacketNadm,
   packet_rssi : 8,
@@ -6933,7 +6942,7 @@ struct LeCsMode1InitatorData {
   packet_antenna : 8,
 }
 
-struct LeCsMode1InitatorDataWithPacketPct {
+struct LeCsMode1InitiatorDataWithPacketPct {
   packet_quality : 8,
   packet_nadm : CsPacketNadm,
   packet_rssi : 8,
@@ -6973,7 +6982,7 @@ struct LeCsMode2Data {
   tone_data : LeCsToneDataWithQuality[],
 }
 
-struct LeCsMode3InitatorData {
+struct LeCsMode3InitiatorData {
   _count_(tone_data) : 8,
   packet_quality : 8,
   packet_nadm : CsPacketNadm,
@@ -6984,7 +6993,7 @@ struct LeCsMode3InitatorData {
   tone_data : LeCsToneDataWithQuality[],
 }
 
-struct LeCsMode3InitatorDataWithPacketPct {
+struct LeCsMode3InitiatorDataWithPacketPct {
   _count_(tone_data) : 8,
   packet_quality : 8,
   packet_nadm : CsPacketNadm,
@@ -7496,4 +7505,35 @@ packet MsftLeMonitorDeviceEventPayload : MsftEventPayload (msft_event_code = MSF
 test MsftLeMonitorDeviceEventPayload {
   "\x02\x01\x00\x01\x02\x03\x04\x05\x10\x00",
   "\x02\x02\xf0\xf1\xf2\xf3\xf4\xf5\xaa\x02",
+}
+
+packet WriteSniffOffloadEnable : VendorCommand (op_code = WRITE_SNIFF_OFFLOAD_ENABLE) {
+  enable_sniff_offload : 8,
+  subrate_max_latency : 16,
+  subrate_min_remote_timeout : 16,
+  subrate_min_local_timeout : 16,
+  suppress_mode_change_event : 8,
+  suppress_sniff_subrating_event : 8,
+}
+
+packet WriteSniffOffloadEnableComplete : CommandComplete (command_op_code = WRITE_SNIFF_OFFLOAD_ENABLE) {
+  status : ErrorCode,
+}
+
+packet WriteSniffOffloadParameters : VendorCommand (op_code = WRITE_SNIFF_OFFLOAD_PARAMETERS) {
+  connection_handle : 16,
+  sniff_max_interval : 16,
+  sniff_min_interval : 16,
+  sniff_attempt : 16,
+  sniff_timeout : 16,
+  link_idle_timeout : 16,
+  max_latency : 16,
+  min_remote_timeout : 16,
+  min_local_timeout : 16,
+  allow_exit_sniff_on_rx : 8,
+  allow_exit_sniff_on_tx : 8,
+}
+
+packet WriteSniffOffloadParametersComplete : CommandComplete (command_op_code = WRITE_SNIFF_OFFLOAD_PARAMETERS) {
+  status : ErrorCode,
 }

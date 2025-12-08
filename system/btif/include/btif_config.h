@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -26,8 +28,6 @@
 #include <vector>
 
 #include "osi/include/config.h"
-#include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 
 static const char BTIF_CONFIG_MODULE[] = "btif_config_module";
 

@@ -16,12 +16,13 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/hci_role.h>
+
 #include <cstdint>
 
 #include "stack/include/hci_error_code.h"
-#include "types/ble_address_with_type.h"
-#include "types/hci_role.h"
-#include "types/raw_address.h"
 
 void acl_ble_enhanced_connection_complete(const tBLE_BD_ADDR& address_with_type, uint16_t handle,
                                           tHCI_ROLE role, bool match, uint16_t conn_interval,

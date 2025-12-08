@@ -16,9 +16,12 @@
 
 package com.android.bluetooth.btservice;
 
+import static android.bluetooth.BluetoothDevice.BOND_BONDED;
 import static android.bluetooth.BluetoothProfile.A2DP;
 import static android.bluetooth.BluetoothProfile.A2DP_SINK;
 import static android.bluetooth.BluetoothProfile.BATTERY;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.CSIP_SET_COORDINATOR;
 import static android.bluetooth.BluetoothProfile.HAP_CLIENT;
 import static android.bluetooth.BluetoothProfile.HEADSET;
@@ -41,8 +44,6 @@ import static android.bluetooth.BluetoothProfile.getProfileName;
 
 import static com.android.bluetooth.Utils.arrayContains;
 
-import static java.util.Objects.requireNonNull;
-
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
@@ -51,6 +52,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hid.HidHostService;
 
 import java.util.Arrays;
@@ -63,7 +65,7 @@ public abstract class ConnectableProfile extends ProfileService {
 
     protected ConnectableProfile(int id, AdapterService adapterService) {
         super(id, adapterService);
-        mDatabaseManager = requireNonNull(mAdapterService.getDatabaseManager());
+        mDatabaseManager = mAdapterService.getDatabaseManager();
     }
 
     static boolean isSupported(AdapterService adapterService, BluetoothDevice device, int id) {
@@ -151,6 +153,36 @@ public abstract class ConnectableProfile extends ProfileService {
     public abstract boolean disconnect(BluetoothDevice device);
 
     /**
+     * @return true if connection to remote device is allowed, otherwise false
+     */
+    public boolean okToConnect(BluetoothDevice device) {
+        if (!Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
+            throw new IllegalStateException("Invalid flag configuration to call okToConnect");
+        }
+        String log = "okToConnect(" + device + "): Connect rejected: ";
+        // Check if this is an incoming connection in Quiet mode.
+        if (mAdapterService.isQuietModeEnabled()) {
+            Log.e(mName, log + "quiet mode enabled");
+            return false;
+        }
+        // Allow this connection only if the device is bonded.
+        // Any attempt to connect while bonding would lead to an unauthorized connection.
+        int bondState = mAdapterService.getBondState(device);
+        if (bondState != BOND_BONDED) {
+            Log.e(mName, log + "invalid bond state: " + bondState);
+            return false;
+        }
+        // Check connectionPolicy and reject the connection if it is not valid.
+        int connectionPolicy = getConnectionPolicy(device);
+        if (connectionPolicy != CONNECTION_POLICY_UNKNOWN
+                && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
+            Log.e(mName, log + "invalid connection policy: " + connectionPolicy);
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Gets the connection state of the profile for the given Bluetooth device.
      *
      * <p>Implementations should typically return one of the connection state constants defined in
@@ -176,7 +208,7 @@ public abstract class ConnectableProfile extends ProfileService {
      * @return connection policy of the device
      */
     public int getConnectionPolicy(BluetoothDevice device) {
-        return mDatabaseManager.getProfileConnectionPolicy(device, mProfileId);
+        return mAdapterService.getProfileConnectionPolicy(device, mProfileId);
     }
 
     /**

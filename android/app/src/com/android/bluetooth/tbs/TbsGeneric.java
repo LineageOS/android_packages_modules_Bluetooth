@@ -23,10 +23,10 @@ import static com.android.bluetooth.telephony.BluetoothInCallService.Result;
 
 import static java.util.Objects.requireNonNull;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.BluetoothLeCall;
-import android.bluetooth.IBluetoothLeCallControlCallback;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -34,13 +34,11 @@ import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.ParcelUuid;
-import android.os.RemoteException;
 import android.util.Log;
 
-import com.android.bluetooth.btservice.ServiceFactory;
+import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.ContentControlIdKeeper;
-import com.android.bluetooth.le_audio.LeAudioService;
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -72,14 +70,14 @@ public class TbsGeneric {
         final int mRequestedOpcode;
         final int mCallIndex;
 
-        public Request(BluetoothDevice device, UUID callId, int requestedOpcode, int callIndex) {
+        Request(BluetoothDevice device, UUID callId, int requestedOpcode, int callIndex) {
             this.mDevice = device;
             this.mCallIdList = Arrays.asList(callId);
             this.mRequestedOpcode = requestedOpcode;
             this.mCallIndex = callIndex;
         }
 
-        public Request(
+        Request(
                 BluetoothDevice device,
                 List<ParcelUuid> callIds,
                 int requestedOpcode,
@@ -97,7 +95,7 @@ public class TbsGeneric {
     /* Application-registered TBS instance */
     private static class Bearer {
         final String token;
-        final IBluetoothLeCallControlCallback callback;
+        final TbsService.Callback callback;
         final List<String> mUriSchemes;
         final int capabilities;
         final int ccid;
@@ -108,7 +106,7 @@ public class TbsGeneric {
 
         Bearer(
                 String token,
-                IBluetoothLeCallControlCallback callback,
+                TbsService.Callback callback,
                 List<String> uriSchemes,
                 int capabilities,
                 String providerName,
@@ -127,10 +125,9 @@ public class TbsGeneric {
     private final List<Bearer> mBearerList = new ArrayList<>();
     private final Map<Integer, TbsCall> mCurrentCallsList = new TreeMap<>();
     private final Receiver mReceiver = new Receiver();
-    private final ServiceFactory mFactory = new ServiceFactory();
 
+    private final AdapterService mAdapterService;
     private final TbsGatt mTbsGatt;
-    private final Context mContext;
 
     private boolean mIsInitialized;
     private int mLastIndexAssigned = TbsCall.INDEX_UNASSIGNED;
@@ -138,7 +135,6 @@ public class TbsGeneric {
     private int mLastRequestIdAssigned = 0;
     private List<String> mUriSchemes = new ArrayList<>(Arrays.asList("tel"));
     private int mStoredRingerMode = -1;
-    private LeAudioService mLeAudioService;
 
     private final class Receiver extends BroadcastReceiver {
         @Override
@@ -168,12 +164,13 @@ public class TbsGeneric {
     }
     ;
 
-    TbsGeneric(Context ctx, TbsGatt tbsGatt) {
+    TbsGeneric(AdapterService adapterService, TbsGatt tbsGatt) {
+        mAdapterService = requireNonNull(adapterService);
         mTbsGatt = requireNonNull(tbsGatt);
-        mContext = requireNonNull(ctx);
 
         int ccid =
                 ContentControlIdKeeper.acquireCcid(
+                        mAdapterService,
                         new ParcelUuid(TbsGatt.UUID_GTBS),
                         BluetoothLeAudio.CONTEXT_TYPE_CONVERSATIONAL);
         if (!isCcidValid(ccid)) {
@@ -196,8 +193,8 @@ public class TbsGeneric {
             return;
         }
 
-        AudioManager audioManager = requireNonNull(mContext.getSystemService(AudioManager.class));
-
+        final var audioManager =
+                requireNonNull(mAdapterService.getSystemService(AudioManager.class));
         // read initial value of ringer mode
         mStoredRingerMode = audioManager.getRingerMode();
 
@@ -209,7 +206,7 @@ public class TbsGeneric {
 
         IntentFilter filter = new IntentFilter(AudioManager.RINGER_MODE_CHANGED_ACTION);
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
-        mContext.registerReceiver(mReceiver, filter);
+        mAdapterService.registerReceiver(mReceiver, filter);
 
         mIsInitialized = true;
     }
@@ -218,7 +215,7 @@ public class TbsGeneric {
         Log.d(TAG, "cleanup");
 
         if (mIsInitialized) {
-            mContext.unregisterReceiver(mReceiver);
+            mAdapterService.unregisterReceiver(mReceiver);
         }
         mTbsGatt.cleanup();
 
@@ -299,7 +296,7 @@ public class TbsGeneric {
 
     public synchronized boolean addBearer(
             String token,
-            IBluetoothLeCallControlCallback callback,
+            TbsService.Callback callback,
             String uci,
             List<String> uriSchemes,
             int capabilities,
@@ -339,6 +336,7 @@ public class TbsGeneric {
                         providerName,
                         technology,
                         ContentControlIdKeeper.acquireCcid(
+                                mAdapterService,
                                 new ParcelUuid(UUID.randomUUID()),
                                 BluetoothLeAudio.CONTEXT_TYPE_CONVERSATIONAL));
         if (isCcidValid(bearer.ccid)) {
@@ -354,11 +352,7 @@ public class TbsGeneric {
 
         if (callback != null) {
             Log.d(TAG, "ccid=" + bearer.ccid);
-            try {
-                callback.onBearerRegistered(bearer.ccid);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            }
+            callback.onBearerRegistered(bearer.ccid);
         }
 
         return isCcidValid(bearer.ccid);
@@ -387,7 +381,7 @@ public class TbsGeneric {
         }
 
         // Release the ccid acquired
-        ContentControlIdKeeper.releaseCcid(bearer.ccid);
+        ContentControlIdKeeper.releaseCcid(mAdapterService, bearer.ccid);
 
         mBearerList.remove(bearer);
 
@@ -712,7 +706,7 @@ public class TbsGeneric {
             Log.i(TAG, "originate uri=" + uri);
             Intent intent = new Intent(Intent.ACTION_CALL_PRIVILEGED, Uri.parse(uri));
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            mContext.startActivity(intent);
+            mAdapterService.startActivity(intent);
             mTbsGatt.setCallControlPointResult(
                     device,
                     TbsGatt.CALL_CONTROL_POINT_OPCODE_ORIGINATE,
@@ -733,12 +727,7 @@ public class TbsGeneric {
                 return TbsGatt.CALL_CONTROL_POINT_RESULT_INVALID_OUTGOING_URI;
             }
 
-            try {
-                bearer.callback.onPlaceCall(requestId, new ParcelUuid(callId), uri);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-                return TbsGatt.CALL_CONTROL_POINT_RESULT_OPERATION_NOT_POSSIBLE;
-            }
+            bearer.callback.onPlaceCall(requestId, callId, uri);
 
             bearer.mRequestMap.put(requestId, request);
             mLastIndexAssigned = requestId;
@@ -760,12 +749,13 @@ public class TbsGeneric {
 
                 @Override
                 public boolean isInbandRingtoneEnabled(BluetoothDevice device) {
-                    if (!isLeAudioServiceAvailable()) {
+                    final var leAudio = mAdapterService.getLeAudioService();
+                    if (leAudio.isEmpty()) {
                         Log.i(TAG, "LeAudio service not available");
                         return false;
                     }
-                    int groupId = mLeAudioService.getGroupId(device);
-                    return mLeAudioService.isInbandRingtoneEnabled(groupId);
+                    int groupId = leAudio.get().getGroupId(device);
+                    return leAudio.get().isInbandRingtoneEnabled(groupId);
                 }
 
                 @Override
@@ -806,19 +796,80 @@ public class TbsGeneric {
                         int result;
 
                         switch (opcode) {
-                            case TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT:
-                            case TbsGatt.CALL_CONTROL_POINT_OPCODE_TERMINATE:
-                            case TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_HOLD:
-                            case TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_RETRIEVE:
-                                {
-                                    if (args.length == 0) {
+                            case TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT,
+                                    TbsGatt.CALL_CONTROL_POINT_OPCODE_TERMINATE,
+                                    TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_HOLD,
+                                    TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_RETRIEVE -> {
+                                if (args.length == 0) {
+                                    result =
+                                            TbsGatt
+                                                    .CALL_CONTROL_POINT_RESULT_OPERATION_NOT_POSSIBLE;
+                                    break;
+                                }
+
+                                int callIndex = args[0];
+                                Map.Entry<UUID, Bearer> entry = getCallIdByIndex(callIndex);
+                                if (entry == null) {
+                                    result = TbsGatt.CALL_CONTROL_POINT_RESULT_INVALID_CALL_INDEX;
+                                    break;
+                                }
+
+                                TbsCall call = mCurrentCallsList.get(callIndex);
+                                if (!isCallStateTransitionValid(call.getState(), opcode)) {
+                                    result = TbsGatt.CALL_CONTROL_POINT_RESULT_STATE_MISMATCH;
+                                    break;
+                                }
+
+                                Bearer bearer = entry.getValue();
+                                UUID callId = entry.getKey();
+                                int requestId = mLastRequestIdAssigned + 1;
+                                Request request = new Request(device, callId, opcode, callIndex);
+                                if (opcode == TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT) {
+                                    setActiveLeDevice(device);
+                                    bearer.callback.onAcceptCall(requestId, callId);
+                                } else if (opcode == TbsGatt.CALL_CONTROL_POINT_OPCODE_TERMINATE) {
+                                    bearer.callback.onTerminateCall(requestId, callId);
+                                } else if (opcode == TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_HOLD) {
+                                    if ((bearer.capabilities & Capability.HOLD_CALL) == 0) {
                                         result =
                                                 TbsGatt
-                                                        .CALL_CONTROL_POINT_RESULT_OPERATION_NOT_POSSIBLE;
+                                                        .CALL_CONTROL_POINT_RESULT_OPCODE_NOT_SUPPORTED;
                                         break;
                                     }
+                                    bearer.callback.onHoldCall(requestId, callId);
+                                } else {
+                                    if ((bearer.capabilities & Capability.HOLD_CALL) == 0) {
+                                        result =
+                                                TbsGatt
+                                                        .CALL_CONTROL_POINT_RESULT_OPCODE_NOT_SUPPORTED;
+                                        break;
+                                    }
+                                    bearer.callback.onUnholdCall(requestId, callId);
+                                }
 
-                                    int callIndex = args[0];
+                                bearer.mRequestMap.put(requestId, request);
+                                mLastRequestIdAssigned = requestId;
+
+                                result = TbsGatt.CALL_CONTROL_POINT_RESULT_SUCCESS;
+                            }
+
+                            case TbsGatt.CALL_CONTROL_POINT_OPCODE_ORIGINATE -> {
+                                result = processOriginateCall(device, new String(args));
+                            }
+
+                            case TbsGatt.CALL_CONTROL_POINT_OPCODE_JOIN -> {
+                                // at least 2 call indices are required
+                                if (args.length < 2) {
+                                    result =
+                                            TbsGatt
+                                                    .CALL_CONTROL_POINT_RESULT_OPERATION_NOT_POSSIBLE;
+                                    break;
+                                }
+
+                                Map.Entry<UUID, Bearer> firstEntry = null;
+                                List<ParcelUuid> parcelUuids = new ArrayList<>();
+                                result = TbsGatt.CALL_CONTROL_POINT_RESULT_SUCCESS;
+                                for (int callIndex : args) {
                                     Map.Entry<UUID, Bearer> entry = getCallIdByIndex(callIndex);
                                     if (entry == null) {
                                         result =
@@ -827,143 +878,47 @@ public class TbsGeneric {
                                         break;
                                     }
 
-                                    TbsCall call = mCurrentCallsList.get(callIndex);
-                                    if (!isCallStateTransitionValid(call.getState(), opcode)) {
-                                        result = TbsGatt.CALL_CONTROL_POINT_RESULT_STATE_MISMATCH;
-                                        break;
+                                    // state transition is valid, because a call in any state
+                                    // can requested to join
+
+                                    if (firstEntry == null) {
+                                        firstEntry = entry;
                                     }
 
-                                    Bearer bearer = entry.getValue();
-                                    UUID callId = entry.getKey();
-                                    int requestId = mLastRequestIdAssigned + 1;
-                                    Request request =
-                                            new Request(device, callId, opcode, callIndex);
-                                    try {
-                                        if (opcode == TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT) {
-                                            setActiveLeDevice(device);
-                                            bearer.callback.onAcceptCall(
-                                                    requestId, new ParcelUuid(callId));
-                                        } else if (opcode
-                                                == TbsGatt.CALL_CONTROL_POINT_OPCODE_TERMINATE) {
-                                            bearer.callback.onTerminateCall(
-                                                    requestId, new ParcelUuid(callId));
-                                        } else if (opcode
-                                                == TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_HOLD) {
-                                            if ((bearer.capabilities & Capability.HOLD_CALL) == 0) {
-                                                result =
-                                                        TbsGatt
-                                                                .CALL_CONTROL_POINT_RESULT_OPCODE_NOT_SUPPORTED;
-                                                break;
-                                            }
-                                            bearer.callback.onHoldCall(
-                                                    requestId, new ParcelUuid(callId));
-                                        } else {
-                                            if ((bearer.capabilities & Capability.HOLD_CALL) == 0) {
-                                                result =
-                                                        TbsGatt
-                                                                .CALL_CONTROL_POINT_RESULT_OPCODE_NOT_SUPPORTED;
-                                                break;
-                                            }
-                                            bearer.callback.onUnholdCall(
-                                                    requestId, new ParcelUuid(callId));
-                                        }
-                                    } catch (RemoteException e) {
-                                        Log.e(
-                                                TAG,
-                                                e.toString()
-                                                        + "\n"
-                                                        + Log.getStackTraceString(new Throwable()));
+                                    if (firstEntry.getValue() != entry.getValue()) {
+                                        Log.w(TAG, "Cannot join calls from different bearers!");
                                         result =
                                                 TbsGatt
                                                         .CALL_CONTROL_POINT_RESULT_OPERATION_NOT_POSSIBLE;
                                         break;
                                     }
 
-                                    bearer.mRequestMap.put(requestId, request);
-                                    mLastRequestIdAssigned = requestId;
+                                    parcelUuids.add(new ParcelUuid(entry.getKey()));
+                                }
 
-                                    result = TbsGatt.CALL_CONTROL_POINT_RESULT_SUCCESS;
+                                if (result != TbsGatt.CALL_CONTROL_POINT_RESULT_SUCCESS) {
                                     break;
                                 }
 
-                            case TbsGatt.CALL_CONTROL_POINT_OPCODE_ORIGINATE:
-                                {
-                                    result = processOriginateCall(device, new String(args));
-                                    break;
+                                List<UUID> callUuids = new ArrayList<>();
+                                for (ParcelUuid parcelUuid : parcelUuids) {
+                                    callUuids.add(parcelUuid.getUuid());
                                 }
 
-                            case TbsGatt.CALL_CONTROL_POINT_OPCODE_JOIN:
-                                {
-                                    // at least 2 call indices are required
-                                    if (args.length < 2) {
-                                        result =
-                                                TbsGatt
-                                                        .CALL_CONTROL_POINT_RESULT_OPERATION_NOT_POSSIBLE;
-                                        break;
-                                    }
+                                Bearer bearer = firstEntry.getValue();
+                                Request request = new Request(device, parcelUuids, opcode, args[0]);
+                                int requestId = mLastRequestIdAssigned + 1;
+                                bearer.callback.onJoinCalls(requestId, callUuids);
 
-                                    Map.Entry<UUID, Bearer> firstEntry = null;
-                                    List<ParcelUuid> parcelUuids = new ArrayList<>();
-                                    result = TbsGatt.CALL_CONTROL_POINT_RESULT_SUCCESS;
-                                    for (int callIndex : args) {
-                                        Map.Entry<UUID, Bearer> entry = getCallIdByIndex(callIndex);
-                                        if (entry == null) {
-                                            result =
-                                                    TbsGatt
-                                                            .CALL_CONTROL_POINT_RESULT_INVALID_CALL_INDEX;
-                                            break;
-                                        }
+                                bearer.mRequestMap.put(requestId, request);
+                                mLastIndexAssigned = requestId;
 
-                                        // state transition is valid, because a call in any state
-                                        // can requested to join
+                                result = TbsGatt.CALL_CONTROL_POINT_RESULT_SUCCESS;
+                            }
 
-                                        if (firstEntry == null) {
-                                            firstEntry = entry;
-                                        }
-
-                                        if (firstEntry.getValue() != entry.getValue()) {
-                                            Log.w(TAG, "Cannot join calls from different bearers!");
-                                            result =
-                                                    TbsGatt
-                                                            .CALL_CONTROL_POINT_RESULT_OPERATION_NOT_POSSIBLE;
-                                            break;
-                                        }
-
-                                        parcelUuids.add(new ParcelUuid(entry.getKey()));
-                                    }
-
-                                    if (result != TbsGatt.CALL_CONTROL_POINT_RESULT_SUCCESS) {
-                                        break;
-                                    }
-
-                                    Bearer bearer = firstEntry.getValue();
-                                    Request request =
-                                            new Request(device, parcelUuids, opcode, args[0]);
-                                    int requestId = mLastRequestIdAssigned + 1;
-                                    try {
-                                        bearer.callback.onJoinCalls(requestId, parcelUuids);
-                                    } catch (RemoteException e) {
-                                        Log.e(
-                                                TAG,
-                                                e.toString()
-                                                        + "\n"
-                                                        + Log.getStackTraceString(new Throwable()));
-                                        result =
-                                                TbsGatt
-                                                        .CALL_CONTROL_POINT_RESULT_OPERATION_NOT_POSSIBLE;
-                                        break;
-                                    }
-
-                                    bearer.mRequestMap.put(requestId, request);
-                                    mLastIndexAssigned = requestId;
-
-                                    result = TbsGatt.CALL_CONTROL_POINT_RESULT_SUCCESS;
-                                    break;
-                                }
-
-                            default:
+                            default -> {
                                 result = TbsGatt.CALL_CONTROL_POINT_RESULT_OPCODE_NOT_SUPPORTED;
-                                break;
+                            }
                         }
 
                         if (result == TbsGatt.CALL_CONTROL_POINT_RESULT_SUCCESS) {
@@ -1025,7 +980,7 @@ public class TbsGeneric {
     }
 
     private synchronized Map.Entry<Integer, TbsCall> getForegroundCall() {
-        LinkedHashSet<Integer> states = new LinkedHashSet<Integer>();
+        LinkedHashSet<Integer> states = new LinkedHashSet<>();
         Map.Entry<Integer, TbsCall> foregroundCall;
 
         if (mCurrentCallsList.size() == 0) {
@@ -1097,35 +1052,19 @@ public class TbsGeneric {
         mForegroundBearer = bearer;
     }
 
-    private boolean isLeAudioServiceAvailable() {
-        if (mLeAudioService != null) {
-            return true;
-        }
-
-        mLeAudioService = mFactory.getLeAudioService();
-        if (mLeAudioService == null) {
-            Log.e(TAG, "leAudioService not available");
-            return false;
-        }
-
-        return true;
-    }
-
-    @VisibleForTesting
-    void setLeAudioServiceForTesting(LeAudioService leAudioService) {
-        mLeAudioService = leAudioService;
-    }
-
     private synchronized void notifyCclc() {
         Log.d(TAG, "notifyCclc");
 
-        if (isLeAudioServiceAvailable()) {
-            if (mCurrentCallsList.size() > 0) {
-                mLeAudioService.setInCall(true);
-            } else {
-                mLeAudioService.setInCall(false);
-            }
-        }
+        mAdapterService
+                .getLeAudioService()
+                .ifPresent(
+                        leAudio -> {
+                            if (mCurrentCallsList.size() > 0) {
+                                leAudio.setInCall(true);
+                            } else {
+                                leAudio.setInCall(false);
+                            }
+                        });
 
         mTbsGatt.setCallState(mCurrentCallsList);
         mTbsGatt.setBearerListCurrentCalls(mCurrentCallsList);
@@ -1152,45 +1091,44 @@ public class TbsGeneric {
             Log.w(TAG, "setActiveLeDevice: ignore null device");
             return;
         }
-        if (!isLeAudioServiceAvailable()) {
-            Log.w(TAG, "mLeAudioService not available");
+
+        if (Flags.tbsSetLeaFromBtservice()) {
+            mAdapterService.setActiveDevice(device, BluetoothAdapter.ACTIVE_DEVICE_AUDIO);
             return;
         }
-        mLeAudioService.setActiveDevice(device);
+
+        mAdapterService
+                .getLeAudioService()
+                .ifPresentOrElse(
+                        leAudio -> {
+                            leAudio.setActiveDevice(device);
+                        },
+                        () -> {
+                            Log.w(TAG, "mLeAudioService not available");
+                        });
     }
 
     private static boolean isCallStateTransitionValid(int callState, int requestedOpcode) {
-        switch (requestedOpcode) {
-            case TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT:
-                if (callState == BluetoothLeCall.STATE_INCOMING) {
-                    return true;
-                }
-                break;
+        return switch (requestedOpcode) {
+            case TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT ->
+                    callState == BluetoothLeCall.STATE_INCOMING;
+            // Any call can be terminated.
+            case TbsGatt.CALL_CONTROL_POINT_OPCODE_TERMINATE -> true;
 
-            case TbsGatt.CALL_CONTROL_POINT_OPCODE_TERMINATE:
-                // Any call can be terminated.
-                return true;
+            case TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_HOLD ->
+                    callState == BluetoothLeCall.STATE_INCOMING
+                            || callState == BluetoothLeCall.STATE_ACTIVE
+                            || callState == BluetoothLeCall.STATE_REMOTELY_HELD;
 
-            case TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_HOLD:
-                if (callState == BluetoothLeCall.STATE_INCOMING
-                        || callState == BluetoothLeCall.STATE_ACTIVE
-                        || callState == BluetoothLeCall.STATE_REMOTELY_HELD) {
-                    return true;
-                }
-                break;
+            case TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_RETRIEVE ->
+                    callState == BluetoothLeCall.STATE_LOCALLY_HELD
+                            || callState == BluetoothLeCall.STATE_LOCALLY_AND_REMOTELY_HELD;
 
-            case TbsGatt.CALL_CONTROL_POINT_OPCODE_LOCAL_RETRIEVE:
-                if (callState == BluetoothLeCall.STATE_LOCALLY_HELD
-                        || callState == BluetoothLeCall.STATE_LOCALLY_AND_REMOTELY_HELD) {
-                    return true;
-                }
-                break;
-
-            default:
+            default -> {
                 Log.e(TAG, "unhandled opcode " + requestedOpcode);
-        }
-
-        return false;
+                yield false;
+            }
+        };
     }
 
     private boolean shouldBlockTbsForBroadcastReceiver(BluetoothDevice device) {
@@ -1198,13 +1136,15 @@ public class TbsGeneric {
             Log.w(TAG, "shouldBlockTbsForBroadcastReceiver: Ignore null device");
             return false;
         }
-        if (!isLeAudioServiceAvailable()) {
+
+        final var leAudio = mAdapterService.getLeAudioService();
+        if (leAudio.isEmpty()) {
             Log.w(TAG, "shouldBlockTbsForBroadcastReceiver: LeAudioService is not available");
             return false;
         }
 
-        return mLeAudioService.getLocalBroadcastReceivers().contains(device)
-                && !mLeAudioService.isPrimaryDevice(device);
+        return leAudio.get().getLocalBroadcastReceivers().contains(device)
+                && !leAudio.get().isPrimaryDevice(device);
     }
 
     /**

@@ -81,12 +81,7 @@ public class ObexServerSockets {
      */
     public static ObexServerSockets create(
             AdapterService adapterService, IObexConnectionHandler validator) {
-        return create(
-                adapterService,
-                validator,
-                BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP,
-                BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP,
-                true);
+        return create(adapterService, validator, true);
     }
 
     /**
@@ -99,12 +94,7 @@ public class ObexServerSockets {
      */
     public static ObexServerSockets createInsecure(
             AdapterService adapterService, IObexConnectionHandler validator) {
-        return create(
-                adapterService,
-                validator,
-                BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP,
-                BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP,
-                false);
+        return create(adapterService, validator, false);
     }
 
     private static final int CREATE_RETRY_TIME = 10;
@@ -124,12 +114,8 @@ public class ObexServerSockets {
      */
     @SuppressLint("AndroidFrameworkRequiresPermission") // TODO: b/350563786
     private static ObexServerSockets create(
-            AdapterService adapterService,
-            IObexConnectionHandler validator,
-            int rfcommChannel,
-            int l2capPsm,
-            boolean isSecure) {
-        Log.d(TAG, "create(rfcomm = " + rfcommChannel + ", l2capPsm = " + l2capPsm + ")");
+            AdapterService adapterService, IObexConnectionHandler validator, boolean isSecure) {
+        Log.d(TAG, "create()");
 
         BluetoothServerSocket rfcommSocket = null;
         BluetoothServerSocket l2capSocket = null;
@@ -143,16 +129,20 @@ public class ObexServerSockets {
             try {
                 if (rfcommSocket == null) {
                     if (isSecure) {
-                        rfcommSocket = adapter.listenUsingRfcommOn(rfcommChannel);
+                        rfcommSocket = adapter.listenUsingRfcommOn();
                     } else {
-                        rfcommSocket = adapter.listenUsingInsecureRfcommOn(rfcommChannel);
+                        rfcommSocket = adapter.listenUsingInsecureRfcommOn();
                     }
                 }
                 if (l2capSocket == null) {
                     if (isSecure) {
-                        l2capSocket = adapter.listenUsingL2capOn(l2capPsm);
+                        l2capSocket =
+                                adapter.listenUsingL2capOn(
+                                        BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP);
                     } else {
-                        l2capSocket = adapter.listenUsingInsecureL2capOn(l2capPsm);
+                        l2capSocket =
+                                adapter.listenUsingInsecureL2capOn(
+                                        BluetoothAdapter.SOCKET_CHANNEL_AUTO_STATIC_NO_SDP);
                     }
                 }
             } catch (IOException e) {
@@ -382,7 +372,7 @@ public class ObexServerSockets {
          * BluetoothSockets to disconnect, hence do not call until all all accepted connections are
          * ready to be disconnected.
          */
-        public void shutdown() {
+        void shutdown() {
             if (!mStopped) {
                 mStopped = true;
                 // TODO: According to the documentation, this should not close the accepted

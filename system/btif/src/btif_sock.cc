@@ -22,6 +22,8 @@
 
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_sock.h>
@@ -38,8 +40,6 @@
 #include "btif_uid.h"
 #include "osi/include/osi.h"  // INVALID_FD
 #include "osi/include/thread.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;
@@ -118,11 +118,9 @@ bt_status_t btif_sock_init(uid_set_t* uid_set) {
     goto error;
   }
 
-  if (com::android::bluetooth::flags::socket_settings_api()) {
-    status = btsock_hal_init();
-    if (status != BT_STATUS_SUCCESS) {
-      log::warn("error initializing socket hal: {}", status);
-    }
+  status = btsock_hal_init();
+  if (status != BT_STATUS_SUCCESS) {
+    log::warn("error initializing socket hal: {}", status);
   }
 
   return BT_STATUS_SUCCESS;

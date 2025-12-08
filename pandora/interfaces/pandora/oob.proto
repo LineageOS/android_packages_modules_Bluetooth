@@ -4,7 +4,6 @@ package pandora;
 
 option java_outer_classname = "OobProto";
 
-
 service OOB {
   // Share OOB data
   rpc ShareOobData(OobDataRequest) returns (OobDataResponse);
@@ -21,4 +20,3 @@ message OobDataResponse {
   // OOB data Pairing Hash and Randomizer - 32 bytes.
   bytes oob = 1;
 }
-

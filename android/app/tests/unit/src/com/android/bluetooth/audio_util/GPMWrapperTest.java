@@ -27,9 +27,9 @@ import android.media.MediaMetadata;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -43,12 +43,11 @@ import java.util.List;
 @RunWith(AndroidJUnit4.class)
 public class GPMWrapperTest {
 
-    private Context mContext;
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
     private MediaController mMediaController;
 
     @Before
     public void setUp() throws Exception {
-        mContext = InstrumentationRegistry.getInstrumentation().getContext();
         mMediaController = mock(MediaController.class);
     }
 

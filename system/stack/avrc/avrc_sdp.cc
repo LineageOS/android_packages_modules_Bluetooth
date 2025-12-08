@@ -25,6 +25,8 @@
 #define LOG_TAG "avrcp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <string.h>
 
 #include <cstdint>
@@ -41,8 +43,6 @@
 #include "stack/include/sdp_api.h"
 #include "stack/include/sdpdefs.h"
 #include "stack/sdp/sdp_discovery_db.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using namespace bluetooth::legacy::stack::sdp;
@@ -135,12 +135,14 @@ uint16_t AVRC_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
   if ((service_uuid != UUID_SERVCLASS_AV_REM_CTRL_TARGET &&
        service_uuid != UUID_SERVCLASS_AV_REMOTE_CONTROL) ||
       p_db == NULL || p_db->p_db == NULL || find_cback.is_null()) {
+    log::error("Failed to find service for {}, bad parameters", bd_addr);
     return AVRC_BAD_PARAM;
   }
 
   /* check if it is busy */
   if (avrc_cb.service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET ||
       avrc_cb.service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL) {
+    log::error("Failed to find service for {}, no resources", bd_addr);
     return AVRC_NO_RESOURCES;
   }
 
@@ -167,8 +169,9 @@ uint16_t AVRC_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
       log::error("Failed to init SDP for peer {}", bd_addr);
       avrc_sdp_cback(bd_addr, tSDP_STATUS::SDP_GENERIC_ERROR);
     }
+  } else {
+    log::error("Failed to find service for {}, failed to init discovery DB", bd_addr);
   }
-
   return result ? AVRC_SUCCESS : AVRC_FAIL;
 }
 
@@ -379,4 +382,16 @@ uint16_t AVRC_RemoveRecord(uint32_t sdp_handle) {
  * Returns          void
  *
  ******************************************************************************/
-void AVRC_Init(void) { memset(&avrc_cb, 0, sizeof(tAVRC_CB)); }
+void AVRC_Init(void) { avrc_cb = tAVRC_CB{}; }
+
+/*******************************************************************************
+ *
+ * Function         AVRC_ResetServiceUuid
+ *
+ * Description      This function is called at stack cleanup to reset the
+ *                  service uuid.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void AVRC_ResetServiceUuid() { avrc_cb.service_uuid = 0; }

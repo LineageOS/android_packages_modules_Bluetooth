@@ -28,13 +28,11 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED;
 import static com.android.bluetooth.hap.HapClientStateMachine.CONNECT_TIMEOUT;
 import static com.android.bluetooth.hap.HapClientStateMachine.MESSAGE_CONNECT;
+import static com.android.bluetooth.hap.HapClientStateMachine.MESSAGE_CONNECTION_STATE_CHANGED;
 import static com.android.bluetooth.hap.HapClientStateMachine.MESSAGE_DISCONNECT;
-import static com.android.bluetooth.hap.HapClientStateMachine.MESSAGE_STACK_EVENT;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -46,11 +44,15 @@ import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
+import android.platform.test.annotations.EnableFlags;
+import android.platform.test.flag.junit.SetFlagsRule;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
+import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
@@ -67,6 +69,7 @@ import org.mockito.hamcrest.MockitoHamcrest;
 @RunWith(AndroidJUnit4.class)
 public class HapClientStateMachineTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private HapClientService mService;
     @Mock private HapClientNativeInterface mNativeInterface;
@@ -139,7 +142,7 @@ public class HapClientStateMachineTest {
         sendAndDispatchMessage(MESSAGE_CONNECT);
         verifyConnectionStateIntent(STATE_CONNECTING, STATE_DISCONNECTED);
         assertThat(mStateMachine.getCurrentState())
-            .isInstanceOf(HapClientStateMachine.Connecting.class);
+                .isInstanceOf(HapClientStateMachine.Connecting.class);
 
         sendAndDispatchMessage(MESSAGE_CONNECT);
         mLooper.moveTimeForward(CONNECT_TIMEOUT.toMillis());
@@ -238,6 +241,36 @@ public class HapClientStateMachineTest {
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_CONNECTED);
     }
 
+    @Test
+    public void ignoreConnectState_onConnectingState() {
+        generateConnectionMessageFromNative(STATE_CONNECTING, STATE_DISCONNECTED);
+
+        /* Those 2 connects should be ignored */
+        sendAndDispatchMessage(MESSAGE_CONNECT);
+        sendAndDispatchMessage(MESSAGE_CONNECT);
+
+        sendAndDispatchMessage(MESSAGE_DISCONNECT);
+        verifyConnectionStateIntent(STATE_DISCONNECTED, STATE_CONNECTING);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_IGNORE_MULTIPLE_CONNECT_REQUEST_IN_BT_SERVICES)
+    public void handleMultipleConnectDisconnect_onDisconnectingState() {
+        generateConnectionMessageFromNative(STATE_CONNECTED, STATE_DISCONNECTED);
+
+        sendAndDispatchMessage(MESSAGE_DISCONNECT);
+        verifyConnectionStateIntent(STATE_DISCONNECTING, STATE_CONNECTED);
+        assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTING);
+
+        /* While being in disconnecting state defer the Connect message */
+        sendAndDispatchMessage(MESSAGE_CONNECT);
+        /* This one will be ignored and previous Connect will be removed  */
+        sendAndDispatchMessage(MESSAGE_DISCONNECT);
+
+        /* Verify Connected and Disconnecting states  */
+        generateConnectionMessageFromNative(STATE_DISCONNECTED, STATE_DISCONNECTING);
+    }
+
     private void sendAndDispatchMessage(int what) {
         mStateMachine.sendMessage(what);
         mLooper.dispatchAll();
@@ -259,23 +292,18 @@ public class HapClientStateMachineTest {
         assertThat(mStateMachine.getConnectionState()).isEqualTo(newState);
     }
 
-    private void generateConnectionMessageFromNative(int newState, int oldState) {
-        HapClientStackEvent event = new HapClientStackEvent(EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        event.device = mDevice;
-        event.valueInt1 = newState;
-
-        mStateMachine.sendMessage(MESSAGE_STACK_EVENT, event);
+    private void generateConnectionMessageFromNativeNoVerify(int newState) {
+        mStateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, newState);
         mLooper.dispatchAll();
+    }
 
+    private void generateConnectionMessageFromNative(int newState, int oldState) {
+        generateConnectionMessageFromNativeNoVerify(newState);
         verifyConnectionStateIntent(newState, oldState);
     }
 
     private void generateUnexpectedConnectionMessageFromNative(int newConnectionState) {
-        HapClientStackEvent event = new HapClientStackEvent(EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        event.device = mDevice;
-        event.valueInt1 = newConnectionState;
-
-        mStateMachine.sendMessage(MESSAGE_STACK_EVENT, event);
+        mStateMachine.sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, newConnectionState);
         mLooper.dispatchAll();
 
         mInOrder.verify(mService, never()).sendBroadcast(any(), any(), any());

@@ -19,15 +19,21 @@
 #include "stack/include/l2cap_interface.h"
 
 namespace {
-bluetooth::testing::stack::l2cap::Mock mock_l2cap_interface;
-bluetooth::stack::l2cap::Interface* interface_ = &mock_l2cap_interface;
+bluetooth::testing::stack::l2cap::Mock default_l2cap_interface;
+bluetooth::stack::l2cap::Interface* interface_ = &default_l2cap_interface;
+bluetooth::testing::stack::l2cap::Mock* mock_interface_{};
 }  // namespace
 
-void bluetooth::testing::stack::l2cap::reset_interface() { interface_ = &mock_l2cap_interface; }
-
-void bluetooth::testing::stack::l2cap::set_interface(
-        bluetooth::stack::l2cap::Interface* interface) {
-  interface_ = interface;
+void bluetooth::testing::stack::l2cap::reset_interface() {
+  mock_interface_ = nullptr;
+  interface_ = &default_l2cap_interface;
 }
 
-bluetooth::stack::l2cap::Interface& bluetooth::stack::l2cap::get_interface() { return *interface_; }
+void bluetooth::testing::stack::l2cap::set_interface(
+        bluetooth::testing::stack::l2cap::Mock* mock_interface) {
+  mock_interface_ = mock_interface;
+}
+
+bluetooth::stack::l2cap::Interface& bluetooth::stack::l2cap::get_interface() {
+  return (mock_interface_ != nullptr) ? (*mock_interface_) : (*interface_);
+}

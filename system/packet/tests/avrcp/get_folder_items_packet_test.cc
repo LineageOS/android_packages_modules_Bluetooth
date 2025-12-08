@@ -32,7 +32,7 @@ TEST(GetFolderItemsResponseBuilderTest, builderMediaPlayerSizeTest) {
   // If there are no items, then the only data in the packet is the status
   ASSERT_EQ(builder->size(), get_folder_items_error_response.size());
 
-  auto player = MediaPlayerItem(0x0001, "com.google.android.music", true);
+  auto player = MediaPlayerItem(0x0001, "com.google.android.music", true, 0x02);
   builder->AddMediaPlayer(player);
   ASSERT_EQ(builder->size(), get_folder_items_media_player_response.size());
 }
@@ -40,7 +40,7 @@ TEST(GetFolderItemsResponseBuilderTest, builderMediaPlayerSizeTest) {
 TEST(GetFolderItemsResponseBuilderTest, builderMediaPlayerAddTest) {
   auto builder =
           GetFolderItemsResponseBuilder::MakePlayerListBuilder(Status::NO_ERROR, 0x0000, 0xFFFF);
-  auto player = MediaPlayerItem(0x0001, "com.google.android.music", true);
+  auto player = MediaPlayerItem(0x0001, "com.google.android.music", true, 0x02);
   builder->AddMediaPlayer(player);
 
   auto test_packet = TestGetFolderItemsReqPacket::Make();
@@ -49,9 +49,9 @@ TEST(GetFolderItemsResponseBuilderTest, builderMediaPlayerAddTest) {
 }
 
 TEST(GetFolderItemsResponseBuilderTest, builderPlayerAddMtuTest) {
-  MediaPlayerItem player1(1, "Player 1 that fits", true);
-  MediaPlayerItem player2(2, "Player 2 that doesn't fit", true);
-  MediaPlayerItem player3(3, "Player 3 that fits", true);
+  MediaPlayerItem player1(1, "Player 1 that fits", true, 0x02);
+  MediaPlayerItem player2(2, "Player 2 that doesn't fit", true, 0x02);
+  MediaPlayerItem player3(3, "Player 3 that fits", true, 0x02);
 
   // Browsing Header + Status field + UID Counter field + Number of Items field
   auto packet_size = BrowsePacket::kMinSize() + 5;
@@ -172,7 +172,7 @@ TEST(GetFolderItemsResponseBuilderTest, builderErrorStatusTest) {
   builder->Serialize(test_packet);
   ASSERT_EQ(test_packet->GetData(), get_folder_items_inv_scope);
 
-  auto player = MediaPlayerItem(0x0001, "com.google.android.music", true);
+  auto player = MediaPlayerItem(0x0001, "com.google.android.music", true, 0x02);
   builder->AddMediaPlayer(player);
 
   // Check to make sure that even though we added an item, it doesn't get
@@ -183,7 +183,7 @@ TEST(GetFolderItemsResponseBuilderTest, builderErrorStatusTest) {
 }
 
 TEST(GetFolderItemsResponseBuilderDeathTest, builderDeathTest) {
-  auto player = MediaPlayerItem(0x0001, "com.google.android.music", true);
+  auto player = MediaPlayerItem(0x0001, "com.google.android.music", true, 0x02);
   auto folder = FolderItem(0x01, 0x00, true, "test folder");
   auto song = MediaElementItem(0x01, "test song", std::set<AttributeEntry>());
 

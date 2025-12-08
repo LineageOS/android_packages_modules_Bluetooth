@@ -12,13 +12,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from __future__ import annotations
+
 import asyncio
-from collections.abc import Sequence
 import contextlib
 import decimal
 import struct
+import sys
 import tempfile
-from typing import TypeAlias
+from typing import Sequence, TYPE_CHECKING, TypeAlias
+from unittest import mock
 import wave
 
 from bumble import core
@@ -26,6 +29,7 @@ from bumble import device
 from bumble import hci
 from bumble.profiles import ascs
 from bumble.profiles import bap
+from bumble.profiles import gmap
 from bumble.profiles import le_audio
 from bumble.profiles import mcp
 from bumble.profiles import pacs
@@ -38,9 +42,20 @@ from navi.bumble_ext import ccp
 from navi.bumble_ext import gatt_helper
 from navi.tests import navi_test_base
 from navi.utils import android_constants
+from navi.utils import audio
 from navi.utils import bl4a_api
 from navi.utils import constants
 from navi.utils import pyee_extensions
+
+# pylint: disable=g-import-not-at-top
+if TYPE_CHECKING:
+    from navi.utils import lc3  # pylint: disable=g-bad-import-order
+else:
+    try:
+        # LC3 may not be present in the external repo.
+        from navi.utils import lc3
+    except ImportError:
+        lc3 = None
 
 _DEFAUILT_ADVERTISING_PARAMETERS = device.AdvertisingParameters(
     own_address_type=hci.OwnAddressType.RANDOM,
@@ -49,13 +64,14 @@ _DEFAUILT_ADVERTISING_PARAMETERS = device.AdvertisingParameters(
 )
 _DEFAULT_STEP_TIMEOUT_SECONDS = 10.0
 _DEFAULT_RETRY_COUNT = 2
-_STREAMING_TIME_SECONDS = 1.0
+_STREAMING_TIME_SECONDS = 3.0
 _PREPARE_TIME_SECONDS = 0.5
 _CALLER_NAME = "Pixel Bluetooth"
 _CALLER_NUMBER = "123456789"
-_SAMPLE_AUDIO_FILE_DEVICE_PATH = "/storage/self/primary/Music/sample.wav"
 _SINK_ASE_ID = 1
 _SOURCE_ASE_ID = 2
+_DEFAULT_FRAME_RATE = 48000
+_RECORDING_PATH = "/storage/self/primary/Recordings/record.wav"
 
 _ConnectionState = android_constants.ConnectionState
 _Direction = constants.Direction
@@ -70,10 +86,27 @@ async def _wait_for_ase_state(ase: ascs.AseStateMachine, state: ascs.AseStateMac
     """Waits for the ASE state to be changed to the specified state."""
     with pyee_extensions.EventTriggeredValueObserver(
             ase,
-            event="state_change",
+            event=ase.EVENT_STATE_CHANGE,
             value_producer=lambda: ase.state,
     ) as observer:
         await observer.wait_for_target_value(state)
+
+
+def decoder_for_ase(ase: ascs.AseStateMachine) -> lc3.Decoder:
+    """Returns the decoder for the ASE."""
+    if not lc3:
+        raise RuntimeError("LC3 is not available")
+    codec_config = ase.codec_specific_configuration
+    assert isinstance(codec_config, bap.CodecSpecificConfiguration)
+    assert codec_config.frame_duration is not None
+    assert codec_config.sampling_frequency is not None
+    assert codec_config.audio_channel_allocation is not None
+    return lc3.Decoder(
+        frame_duration_us=codec_config.frame_duration.us,
+        sample_rate_hz=codec_config.sampling_frequency.hz,
+        pcm_sample_rate_hz=_DEFAULT_FRAME_RATE,
+        num_channels=codec_config.audio_channel_allocation.channel_count,
+    )
 
 
 class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
@@ -150,11 +183,17 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
         self.ref_vcs = vcs.VolumeControlService(volume_setting=vcs.MAX_VOLUME // 2)
         self.ref.device.add_service(self.ref_ascs)
         self.ref.device.add_service(self.ref_vcs)
+        self.ref.device.add_service(
+            gmap.GamingAudioService(
+                gmap_role=gmap.GmapRole.UNICAST_GAME_TERMINAL,
+                ugt_features=(gmap.UgtFeatures.UGT_SOURCE | gmap.UgtFeatures.UGT_SINK),
+            ))
 
     async def _prepare_paired_devices(self) -> None:
         with self.dut.bl4a.register_callback(bl4a_api.Module.LE_AUDIO) as dut_lea_cb:
             self.logger.info("[DUT] Pair with REF")
-            await self.le_connect_and_pair(ref_address_type=hci.OwnAddressType.RANDOM)
+            await self.le_connect_and_pair(ref_address_type=hci.OwnAddressType.RANDOM,
+                                           connect_profiles=True)
 
             self.logger.info("[DUT] Wait for LE Audio connected")
             event = await dut_lea_cb.wait_for_event(
@@ -173,12 +212,13 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
         if self.dut.getprop(_AndroidProperty.BAP_UNICAST_CLIENT_ENABLED) != "true":
             raise signals.TestAbortClass("Unicast client is not enabled")
 
-        if self.dut.getprop(_AndroidProperty.LEAUDIO_BYPASS_ALLOW_LIST) != "true":
+        if (self.dut.getprop(_AndroidProperty.LEAUDIO_BYPASS_ALLOW_LIST) != "true" and
+                not self.dut.getprop(_AndroidProperty.LEAUDIO_ALLOW_LIST) and
+                self.dut.getprop("ro.hardware") != "cutf_cvm"):
             # Allow list will not be used in the test, but here we still check if the
             # allow list is empty to make sure DUT is ready to use LE Audio.
-            if not self.dut.getprop(_AndroidProperty.LEAUDIO_ALLOW_LIST):
-                raise signals.TestAbortClass(
-                    "Allow list is empty, DUT is probably not ready to use LE Audio.")
+            raise signals.TestAbortClass(
+                "Allow list is empty, DUT is probably not ready to use LE Audio.")
 
         self.ref.config.cis_enabled = True
         self.ref.device.cis_enabled = True
@@ -186,16 +226,23 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
         self.dut_mcp_enabled = (self.dut.getprop(_AndroidProperty.MCP_SERVER_ENABLED) == "true")
         self.dut_ccp_enabled = (self.dut.getprop(_AndroidProperty.CCP_SERVER_ENABLED) == "true")
 
-        with tempfile.NamedTemporaryFile() as local_file:
-            with wave.open(local_file.name, "wb") as wave_file:
-                wave_file.setnchannels(1)
-                wave_file.setsampwidth(2)
-                wave_file.setframerate(48000)
-                wave_file.writeframes(bytes(48000 * 2 * 5))  # 5 seconds.
-            self.dut.adb.push([
-                local_file.name,
-                f"/data/media/{self.dut.adb.current_user_id}/Music/sample.wav",
-            ])
+        # TODO: Remove this when Bumble is fixed and synced.
+        origin_on_enable = ascs.AseStateMachine.on_enable
+
+        def on_enable(ase: ascs.AseStateMachine,
+                      metadata: bytes) -> tuple[ascs.AseResponseCode, ascs.AseReasonCode]:
+            res = origin_on_enable(ase, metadata)
+            # CIS could be established before enable.
+            if cis_link := next(
+                (cis_link for cis_link in ase.service.device.cis_links.values()
+                 if cis_link.cig_id == ase.cig_id and cis_link.cis_id == ase.cis_id),
+                    None,
+            ):
+                ase.on_cis_establishment(cis_link)
+            return res
+
+        self.test_class_context.enter_context(
+            mock.patch.object(ascs.AseStateMachine, "on_enable", new=on_enable))
 
     @override
     async def async_setup_test(self) -> None:
@@ -203,15 +250,29 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
         self.dut.setprop(_AndroidProperty.LEAUDIO_BYPASS_ALLOW_LIST, "true")
         await super().async_setup_test()
         self._setup_unicast_server()
+        # Reset audio attributes to media.
+        self.dut.bl4a.set_audio_attributes(
+            bl4a_api.AudioAttributes(usage=bl4a_api.AudioAttributes.Usage.MEDIA),
+            handle_audio_focus=False,
+        )
         await self._prepare_paired_devices()
 
     @override
     async def async_teardown_test(self) -> None:
-        await super().async_teardown_test()
         # Make sure audio is stopped before starting the test.
         await asyncio.to_thread(self.dut.bt.audioStop)
         # Reset to the default value.
         self.dut.bt.setHandleAudioBecomingNoisy(False)
+        await super().async_teardown_test()
+
+    def _get_sampling_frequency(self, ase: ascs.AseStateMachine) -> bap.SamplingFrequency | None:
+        """Returns the sampling frequency of the ASE."""
+        if isinstance(
+                codec_config := ase.codec_specific_configuration,
+                bap.CodecSpecificConfiguration,
+        ):
+            return codec_config.sampling_frequency
+        return None
 
     @navi_test_base.named_parameterized(
         ("active", True),
@@ -225,16 +286,16 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
       is_active: True if reconnect is actively initialized by DUT, otherwise TA
         will be used to perform the reconnection passively.
     """
+        if not is_active and self.dut.device.is_emulator:
+            self.skipTest("b/425668688 - TA filter reconnection is not supported on rootcanal"
+                          " yet.")
+
         with self.dut.bl4a.register_callback(bl4a_api.Module.LE_AUDIO) as dut_cb:
             self.logger.info("[DUT] Disconnect REF")
             self.dut.bt.disconnect(self.ref.random_address)
 
             self.logger.info("[DUT] Wait for LE Audio disconnected")
-            await dut_cb.wait_for_event(
-                bl4a_api.ProfileConnectionStateChanged(
-                    address=self.ref.random_address,
-                    state=android_constants.ConnectionState.DISCONNECTED,
-                ),)
+            await dut_cb.wait_for_event(bl4a_api.ProfileActiveDeviceChanged(address=None),)
 
             self.logger.info("[REF] Start advertising")
             await self.ref.device.create_advertising_set(
@@ -250,10 +311,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
 
             self.logger.info("[DUT] Wait for LE Audio connected")
             await dut_cb.wait_for_event(
-                bl4a_api.ProfileConnectionStateChanged(
-                    address=self.ref.random_address,
-                    state=android_constants.ConnectionState.CONNECTED,
-                ),)
+                bl4a_api.ProfileActiveDeviceChanged(address=self.ref.random_address),)
 
     async def test_unidirectional_audio_stream(self) -> None:
         """Tests unidirectional audio stream between DUT and REF.
@@ -282,16 +340,123 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
         ):
             await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.STREAMING)
 
+        # Setup audio sink.
+        sink_frames = list[bytes]()
+        decoder = decoder_for_ase(sink_ase) if lc3 else None
+
+        def sink(pdu: hci.HCI_IsoDataPacket):
+            if pdu.iso_sdu_fragment:
+                sink_frames.append(pdu.iso_sdu_fragment)
+
+        assert (cis_link := sink_ase.cis_link)
+        cis_link.sink = sink
+
         # Streaming for 1 second.
         await asyncio.sleep(_STREAMING_TIME_SECONDS)
 
         self.logger.info("[DUT] Stop audio streaming")
+        cis_link.sink = None
         await asyncio.to_thread(self.dut.bt.audioStop)
         async with self.assert_not_timeout(
                 _DEFAULT_STEP_TIMEOUT_SECONDS,
                 msg="[REF] Wait for audio to stop",
         ):
             await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.IDLE)
+
+        if self.user_params.get(navi_test_base.RECORD_FULL_DATA):
+            self.write_test_output_data("sink.lc3", b"".join(sink_frames))
+        if lc3 and decoder and audio.SUPPORT_AUDIO_PROCESSING:
+            pcm_format = lc3.PcmFormat.SIGNED_16
+            decoded_frames = [decoder.decode(frame, pcm_format) for frame in sink_frames]
+            dominant_frequency = audio.get_dominant_frequency(
+                buffer=b"".join(decoded_frames),
+                format="pcm",
+                sample_width=pcm_format.sample_width,
+                frame_rate=_DEFAULT_FRAME_RATE,
+                channels=decoder.num_channels,
+            )
+            self.logger.info("dominant_frequency: %.2f", dominant_frequency)
+            self.assertAlmostEqual(dominant_frequency, 1000, delta=10)
+
+    async def test_gaming_context(self) -> None:
+        """Tests streaming with gaming context.
+
+    Test steps:
+      1. [Optional] Wait for audio streaming to stop if it is already streaming.
+      2. Start audio streaming from DUT with gaming context and put a call on
+      DUT.
+      3. Wait for audio streaming to start from REF.
+      4. Stop audio streaming from DUT and end the call.
+      5. Wait for audio streaming to stop from REF.
+    """
+        sink_ase = self.ref_ascs.ase_state_machines[_SINK_ASE_ID]
+        source_ase = self.ref_ascs.ase_state_machines[_SOURCE_ASE_ID]
+        self.dut.bl4a.set_audio_attributes(
+            bl4a_api.AudioAttributes(usage=bl4a_api.AudioAttributes.Usage.GAME),
+            handle_audio_focus=False,
+        )
+
+        # Make sure audio is not streaming.
+        async with self.assert_not_timeout(
+            _DEFAULT_STEP_TIMEOUT_SECONDS,
+            msg="[REF] Wait for audio to stop",
+        ):
+            for ase in self.ref_ascs.ase_state_machines.values():
+                await _wait_for_ase_state(ase, ascs.AseStateMachine.State.IDLE)
+
+        self.logger.info("[DUT] Put a VoIP call")
+        call = self.dut.bl4a.make_phone_call(
+            _CALLER_NAME,
+            _CALLER_NUMBER,
+            constants.Direction.OUTGOING,
+        )
+        self.test_case_context.push(call)
+
+        self.logger.info("[DUT] Start audio streaming")
+        await asyncio.to_thread(self.dut.bt.audioPlaySine)
+        async with self.assert_not_timeout(
+                _DEFAULT_STEP_TIMEOUT_SECONDS,
+                msg="[REF] Wait for sink ASE to start",
+        ):
+            await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.STREAMING)
+
+        self.logger.info("[DUT] Start audio recording")
+        recorder = await asyncio.to_thread(lambda: self.dut.bl4a.start_audio_recording(
+            _RECORDING_PATH,
+            source=bl4a_api.AudioRecorder.Source.VOICE_PERFORMANCE,
+        ))
+        self.test_case_context.push(recorder)
+        async with self.assert_not_timeout(
+                _DEFAULT_STEP_TIMEOUT_SECONDS,
+                msg="[REF] Wait for source ASE to start",
+        ):
+            await _wait_for_ase_state(source_ase, ascs.AseStateMachine.State.STREAMING)
+
+        # Check codec configuration.
+        sink_freq = self._get_sampling_frequency(sink_ase)
+        source_freq = self._get_sampling_frequency(source_ase)
+        self.logger.info("sink_freq: %r, source_freq: %r", sink_freq, source_freq)
+
+        if self.dut.getprop(_AndroidProperty.GMAP_ENABLED) == "true":
+            # Asymmetric configuration is enabled with GMAP.
+            expected_sink_freq = bap.SamplingFrequency.FREQ_48000
+        else:
+            expected_sink_freq = bap.SamplingFrequency.FREQ_32000
+        self.assertEqual(sink_freq, expected_sink_freq)
+        self.assertEqual(source_freq, bap.SamplingFrequency.FREQ_32000)
+
+        # Streaming for 1 second.
+        await asyncio.sleep(_STREAMING_TIME_SECONDS)
+
+        self.logger.info("[DUT] Stop audio streaming")
+        await asyncio.to_thread(self.dut.bt.audioStop)
+        recorder.close()
+        async with self.assert_not_timeout(
+                _DEFAULT_STEP_TIMEOUT_SECONDS,
+                msg="[REF] Wait for audio to stop",
+        ):
+            for ase in self.ref_ascs.ase_state_machines.values():
+                await _wait_for_ase_state(ase, ascs.AseStateMachine.State.IDLE)
 
     async def test_bidirectional_audio_stream(self) -> None:
         """Tests bidirectional audio stream between DUT and REF.
@@ -311,6 +476,15 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
             _CALLER_NUMBER,
             constants.Direction.OUTGOING,
         )
+        sink_ase = self.ref_ascs.ase_state_machines[_SINK_ASE_ID]
+        source_ase = self.ref_ascs.ase_state_machines[_SOURCE_ASE_ID]
+        self.dut.bl4a.set_audio_attributes(
+            bl4a_api.AudioAttributes(
+                usage=bl4a_api.AudioAttributes.Usage.VOICE_COMMUNICATION,
+                content_type=bl4a_api.AudioAttributes.ContentType.SPEECH,
+            ),
+            handle_audio_focus=False,
+        )
 
         with call:
             await dut_telecom_cb.wait_for_event(
@@ -328,21 +502,42 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
 
             self.logger.info("[DUT] Start audio streaming")
             await asyncio.to_thread(self.dut.bt.audioPlaySine)
-
             async with self.assert_not_timeout(
                     _DEFAULT_STEP_TIMEOUT_SECONDS,
-                    msg="[REF] Wait for audio to start",
+                    msg="[REF] Wait for sink ASE to start",
             ):
-                # With current configuration, all ASEs will be active in bidirectional
-                # streaming.
-                for ase in self.ref_ascs.ase_state_machines.values():
-                    await _wait_for_ase_state(ase, ascs.AseStateMachine.State.STREAMING)
+                await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.STREAMING)
+
+            self.logger.info("[DUT] Start audio recording")
+            recorder = await asyncio.to_thread(lambda: self.dut.bl4a.start_audio_recording(
+                _RECORDING_PATH,
+                source=bl4a_api.AudioRecorder.Source.VOICE_COMMUNICATION,
+            ))
+            self.test_case_context.push(recorder)
+            async with self.assert_not_timeout(
+                    _DEFAULT_STEP_TIMEOUT_SECONDS,
+                    msg="[REF] Wait for source ASE to start",
+            ):
+                await _wait_for_ase_state(source_ase, ascs.AseStateMachine.State.STREAMING)
+
+            # Setup audio sink.
+            sink_frames = list[bytes]()
+            decoder = decoder_for_ase(sink_ase) if lc3 else None
+
+            def sink(pdu: hci.HCI_IsoDataPacket):
+                if pdu.iso_sdu_fragment:
+                    sink_frames.append(pdu.iso_sdu_fragment)
+
+            assert (cis_link := sink_ase.cis_link)
+            cis_link.sink = sink
 
             # Streaming for 1 second.
             await asyncio.sleep(_STREAMING_TIME_SECONDS)
 
             self.logger.info("[DUT] Stop audio streaming")
+            cis_link.sink = None
             await asyncio.to_thread(self.dut.bt.audioStop)
+            recorder.close()
 
         async with self.assert_not_timeout(
                 _DEFAULT_STEP_TIMEOUT_SECONDS,
@@ -350,6 +545,21 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
         ):
             for ase in self.ref_ascs.ase_state_machines.values():
                 await _wait_for_ase_state(ase, ascs.AseStateMachine.State.IDLE)
+
+        if self.user_params.get(navi_test_base.RECORD_FULL_DATA):
+            self.write_test_output_data("sink.lc3", b"".join(sink_frames))
+        if lc3 and decoder and audio.SUPPORT_AUDIO_PROCESSING:
+            pcm_format = lc3.PcmFormat.SIGNED_16
+            decoded_frames = [decoder.decode(frame, pcm_format) for frame in sink_frames]
+            dominant_frequency = audio.get_dominant_frequency(
+                buffer=b"".join(decoded_frames),
+                format="pcm",
+                sample_width=pcm_format.sample_width,
+                frame_rate=_DEFAULT_FRAME_RATE,
+                channels=decoder.num_channels,
+            )
+            self.logger.info("dominant_frequency: %.2f", dominant_frequency)
+            self.assertAlmostEqual(dominant_frequency, 1000, delta=10)
 
     async def test_reconnect_during_call(self) -> None:
         """Tests reconnecting during a call. Call audio should be routed to Unicast.
@@ -360,16 +570,16 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
       3. Reconnect REF.
       4. Wait for audio streaming to start from REF.
     """
+        if self.dut.device.is_emulator:
+            self.skipTest("b/425668688 - TA filter reconnection is not supported on rootcanal"
+                          " yet.")
+
         with self.dut.bl4a.register_callback(bl4a_api.Module.LE_AUDIO) as dut_cb:
             self.logger.info("[DUT] Disconnect REF")
             self.dut.bt.disconnect(self.ref.random_address)
 
             self.logger.info("[DUT] Wait for LE Audio disconnected")
-            await dut_cb.wait_for_event(
-                bl4a_api.ProfileConnectionStateChanged(
-                    address=self.ref.random_address,
-                    state=android_constants.ConnectionState.DISCONNECTED,
-                ),)
+            await dut_cb.wait_for_event(bl4a_api.ProfileActiveDeviceChanged(address=None),)
 
         with contextlib.ExitStack() as stack:
             dut_telecom_cb = self.dut.bl4a.register_callback(bl4a_api.Module.TELECOM)
@@ -388,6 +598,11 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
             # Start audio streaming from DUT.
             self.dut.bt.audioSetRepeat(android_constants.RepeatMode.ONE)
             self.dut.bt.audioPlaySine()
+            recorder = await asyncio.to_thread(lambda: self.dut.bl4a.start_audio_recording(
+                _RECORDING_PATH,
+                source=bl4a_api.AudioRecorder.Source.VOICE_COMMUNICATION,
+            ))
+            stack.enter_context(recorder)
 
             dut_leaudio_cb = self.dut.bl4a.register_callback(bl4a_api.Module.LE_AUDIO)
             stack.enter_context(dut_leaudio_cb)
@@ -402,10 +617,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                 )
             self.logger.info("[DUT] Wait for LE Audio connected")
             await dut_leaudio_cb.wait_for_event(
-                bl4a_api.ProfileConnectionStateChanged(
-                    address=self.ref.random_address,
-                    state=android_constants.ConnectionState.CONNECTED,
-                ),)
+                bl4a_api.ProfileActiveDeviceChanged(address=self.ref.random_address),)
 
             self.logger.info("[REF] Wait for streaming to start")
             async with self.assert_not_timeout(
@@ -441,7 +653,6 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                 msg="[REF] Wait for audio to start",
         ):
             await _wait_for_ase_state(sink_ase, ascs.AseStateMachine.State.STREAMING)
-        self.assertIsInstance(sink_ase.metadata, le_audio.Metadata)
         get_audio_context = lambda: next(entry for entry in sink_ase.metadata.entries if entry.tag
                                          == le_audio.Metadata.Tag.STREAMING_AUDIO_CONTEXTS)
         context_type = struct.unpack_from("<H", get_audio_context().data)[0]
@@ -479,7 +690,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
         if self.dut.bluetooth_flags.get("vcp_device_volume_api_improvements", True):
             vcs_volume = pyee_extensions.EventTriggeredValueObserver[int](
                 self.ref_vcs,
-                "volume_state_change",
+                self.ref_vcs.EVENT_VOLUME_STATE_CHANGE,
                 lambda: self.ref_vcs.volume_setting,
             )
             ref_expected_volume = decimal.Decimal(
@@ -531,7 +742,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
         with (self.dut.bl4a.register_callback(bl4a_api.Module.AUDIO) as dut_audio_cb,):
             vcs_volume = pyee_extensions.EventTriggeredValueObserver[int](
                 self.ref_vcs,
-                "volume_state_change",
+                self.ref_vcs.EVENT_VOLUME_STATE_CHANGE,
                 lambda: self.ref_vcs.volume_setting,
             )
             if issuer == _TestRole.DUT:
@@ -580,7 +791,7 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                                                                          )
 
         # Make sure player is active but not streaming.
-        await asyncio.to_thread(lambda: self.dut.bt.audioPlayFile(_SAMPLE_AUDIO_FILE_DEVICE_PATH))
+        await asyncio.to_thread(self.dut.bt.audioPlaySine)
         await asyncio.to_thread(self.dut.bt.audioPause)
         await asyncio.sleep(_PREPARE_TIME_SECONDS)
 
@@ -628,13 +839,33 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
             if not ref_mcp_client:
                 self.fail("Failed to connect MCP")
 
-        # Make sure there are at least two tracks.
-        await asyncio.to_thread(lambda: self.dut.bt.audioPlayFile(_SAMPLE_AUDIO_FILE_DEVICE_PATH))
-        self.dut.bt.addMediaItem(_SAMPLE_AUDIO_FILE_DEVICE_PATH)
-        await asyncio.sleep(_PREPARE_TIME_SECONDS)
+        # Allow repeating to avoid the end of the track.
+        self.dut.bt.audioSetRepeat(android_constants.RepeatMode.ONE)
+        # Generate a sine wave audio file, and push it to DUT twice.
+        with tempfile.NamedTemporaryFile(
+                # On Windows, NamedTemporaryFile cannot be deleted if used multiple
+                # times.
+                delete=(sys.platform != "win32")) as local_file:
+            with wave.open(local_file.name, "wb") as wave_file:
+                wave_file.setnchannels(1)
+                wave_file.setsampwidth(2)
+                wave_file.setframerate(48000)
+                wave_file.writeframes(bytes(48000 * 2 * 5))  # 5 seconds.
+            for i in range(2):
+                self.dut.adb.push([
+                    local_file.name,
+                    f"/data/media/{self.dut.adb.current_user_id}/Music/sample-{i}.wav",
+                ])
 
-        watcher = pyee_extensions.EventWatcher()
-        track_changed = watcher.async_monitor(ref_mcp_client, "track_changed")
+        dut_player_cb = self.dut.bl4a.register_callback(bl4a_api.Module.PLAYER)
+        self.test_case_context.push(dut_player_cb)
+        # Play the first track.
+        self.dut.bt.audioPlayFile("/storage/self/primary/Music/sample-0.wav")
+        # Add the second track to the player.
+        self.dut.bt.addMediaItem("/storage/self/primary/Music/sample-1.wav")
+
+        self.logger.info("[DUT] Wait for playback started.")
+        await dut_player_cb.wait_for_event(bl4a_api.PlayerIsPlayingChanged(is_playing=True))
 
         async with self.assert_not_timeout(
                 _DEFAULT_STEP_TIMEOUT_SECONDS,
@@ -647,28 +878,24 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
                 _DEFAULT_STEP_TIMEOUT_SECONDS,
                 msg="[REF] Move to next track",
         ):
-            self.assertEqual(
-                await ref_mcp_client.write_control_point(_McpOpcode.NEXT_TRACK),
-                mcp.MediaControlPointResultCode.SUCCESS,
-            )
-            self.logger.info("[REF] Wait for track changed")
-            await track_changed.get()
+            result = await ref_mcp_client.write_control_point(_McpOpcode.NEXT_TRACK)
+            self.assertEqual(result, mcp.MediaControlPointResultCode.SUCCESS)
 
-        # Clear the track changed events.
-        while not track_changed.empty():
-            track_changed.get_nowait()
+        self.logger.info("[DUT] Wait for playback changed.")
+        await dut_player_cb.wait_for_event(
+            bl4a_api.PlayerMediaItemTransition(uri="/storage/self/primary/Music/sample-1.wav"),)
 
         await asyncio.sleep(_PREPARE_TIME_SECONDS)
         async with self.assert_not_timeout(
                 _DEFAULT_STEP_TIMEOUT_SECONDS,
                 msg="[REF] Move to previous track",
         ):
-            self.assertEqual(
-                await ref_mcp_client.write_control_point(_McpOpcode.PREVIOUS_TRACK),
-                mcp.MediaControlPointResultCode.SUCCESS,
-            )
-            self.logger.info("[REF] Wait for track changed")
-            await track_changed.get()
+            result = await ref_mcp_client.write_control_point(_McpOpcode.PREVIOUS_TRACK)
+            self.assertEqual(result, mcp.MediaControlPointResultCode.SUCCESS)
+
+        self.logger.info("[DUT] Wait for playback changed.")
+        await dut_player_cb.wait_for_event(
+            bl4a_api.PlayerMediaItemTransition(uri="/storage/self/primary/Music/sample-0.wav"),)
 
     async def test_mcp_fast_rewind_fast_forward(self) -> None:
         """Tests moving to previous and next track over MCP.
@@ -689,7 +916,23 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
             if not ref_mcp_client:
                 self.fail("Failed to connect MCP")
 
-        await asyncio.to_thread(lambda: self.dut.bt.audioPlayFile(_SAMPLE_AUDIO_FILE_DEVICE_PATH))
+        # Push a long audio file to DUT.
+        with tempfile.NamedTemporaryFile(
+                # On Windows, NamedTemporaryFile cannot be deleted if used multiple
+                # times.
+                delete=(sys.platform != "win32")) as local_file:
+            with wave.open(local_file.name, "wb") as wave_file:
+                wave_file.setnchannels(1)
+                wave_file.setsampwidth(2)
+                wave_file.setframerate(48000)
+                wave_file.writeframes(bytes(48000 * 2 * 60))  # 60 seconds.
+            self.dut.adb.push([
+                local_file.name,
+                f"/data/media/{self.dut.adb.current_user_id}/Music/sample.wav",
+            ])
+
+        await asyncio.to_thread(
+            lambda: self.dut.bt.audioPlayFile("/storage/self/primary/Music/sample.wav"))
 
         watcher = pyee_extensions.EventWatcher()
         track_position = watcher.async_monitor(ref_mcp_client, "track_position")
@@ -899,6 +1142,9 @@ class LeAudioUnicastClientTest(navi_test_base.TwoDevicesTestBase):
       3. Disconnect from REF.
       4. Wait for player paused.
     """
+        if self.dut.device.is_emulator:
+            self.skipTest("b/434613780 - Disconnection on streaming may cause Rootcanal crash.")
+
         # Enable audio noisy handling.
         self.dut.bt.setHandleAudioBecomingNoisy(True)
 

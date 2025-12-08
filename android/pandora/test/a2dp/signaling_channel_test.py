@@ -42,7 +42,7 @@ from bumble.core import BT_BR_EDR_TRANSPORT
 from bumble.device import Device
 from bumble.host import Host
 from bumble.link import LocalLink
-from bumble.transport import AsyncPipeSink
+from bumble.transport.common import AsyncPipeSink
 from .packets import avdtp as av
 from .signaling_channel import SignalingChannel
 from unittest.mock import ANY

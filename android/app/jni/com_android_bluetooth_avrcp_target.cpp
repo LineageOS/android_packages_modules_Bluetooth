@@ -19,6 +19,7 @@
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <jni.h>
 
 #include <cerrno>
@@ -35,7 +36,6 @@
 #include "hardware/avrcp/avrcp.h"
 #include "hardware/avrcp/avrcp_common.h"
 #include "hardware/bluetooth.h"
-#include "types/raw_address.h"
 
 using bluetooth::avrcp::Attribute;
 using bluetooth::avrcp::AttributeEntry;
@@ -63,7 +63,7 @@ static std::shared_timed_mutex interface_mutex;
 static std::shared_timed_mutex callbacks_mutex;
 
 // Forward Declarations
-static void sendMediaKeyEvent(int, KeyState);
+static void sendMediaKeyEvent(const RawAddress& address, int, KeyState);
 static std::string getCurrentMediaId();
 static SongInfo getSongInfo();
 static PlayStatus getCurrentPlayStatus();
@@ -128,7 +128,9 @@ void copyJavaArraytoCppVector(JNIEnv* env, const jbyteArray& jArray, std::vector
 // as it is hard to get a handle on the JNI thread from here.
 class AvrcpMediaInterfaceImpl : public MediaInterface {
 public:
-  void SendKeyEvent(uint8_t key, KeyState state) { sendMediaKeyEvent(key, state); }
+  void SendKeyEvent(const RawAddress& bdaddr, uint8_t key, KeyState state) {
+    sendMediaKeyEvent(bdaddr, key, state);
+  }
 
   void GetSongInfo(SongInfoCallback cb) override {
     auto info = getSongInfo();
@@ -327,15 +329,14 @@ static jboolean connectDeviceNative(JNIEnv* env, jobject /* object */, jstring a
   }
 
   const char* tmp_addr = env->GetStringUTFChars(address, 0);
-  RawAddress bdaddr;
-  bool success = RawAddress::FromString(tmp_addr, bdaddr);
+  auto bdaddr = RawAddress::FromString(tmp_addr);
   env->ReleaseStringUTFChars(address, tmp_addr);
 
-  if (!success) {
+  if (!bdaddr.has_value()) {
     return JNI_FALSE;
   }
 
-  return sServiceInterface->ConnectDevice(bdaddr) == true ? JNI_TRUE : JNI_FALSE;
+  return sServiceInterface->ConnectDevice(bdaddr.value()) == true ? JNI_TRUE : JNI_FALSE;
 }
 
 static jboolean disconnectDeviceNative(JNIEnv* env, jobject /* object */, jstring address) {
@@ -347,25 +348,25 @@ static jboolean disconnectDeviceNative(JNIEnv* env, jobject /* object */, jstrin
   }
 
   const char* tmp_addr = env->GetStringUTFChars(address, 0);
-  RawAddress bdaddr;
-  bool success = RawAddress::FromString(tmp_addr, bdaddr);
+  auto bdaddr = RawAddress::FromString(tmp_addr);
   env->ReleaseStringUTFChars(address, tmp_addr);
 
-  if (!success) {
+  if (!bdaddr.has_value()) {
     return JNI_FALSE;
   }
 
-  return sServiceInterface->DisconnectDevice(bdaddr) == true ? JNI_TRUE : JNI_FALSE;
+  return sServiceInterface->DisconnectDevice(bdaddr.value()) == true ? JNI_TRUE : JNI_FALSE;
 }
 
-static void sendMediaKeyEvent(int key, KeyState state) {
+static void sendMediaKeyEvent(const RawAddress& address, int key, KeyState state) {
   log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) {
     return;
   }
-  sCallbackEnv->CallVoidMethod(mJavaInterface, method_sendMediaKeyEvent, key,
+  jstring j_bdaddr = sCallbackEnv->NewStringUTF(address.ToString().c_str());
+  sCallbackEnv->CallVoidMethod(mJavaInterface, method_sendMediaKeyEvent, j_bdaddr, key,
                                state == KeyState::PUSHED ? JNI_TRUE : JNI_FALSE);
 }
 
@@ -494,6 +495,7 @@ static FolderInfo getFolderInfoFromJavaObj(JNIEnv* env, jobject folder) {
   jfieldID field_mediaId = env->GetFieldID(class_folder, "mediaId", "Ljava/lang/String;");
   jfieldID field_isPlayable = env->GetFieldID(class_folder, "isPlayable", "Z");
   jfieldID field_name = env->GetFieldID(class_folder, "title", "Ljava/lang/String;");
+  jfieldID field_folderType = env->GetFieldID(class_folder, "folderType", "I");
 
   jstring jstr = (jstring)env->GetObjectField(folder, field_mediaId);
   if (jstr != nullptr) {
@@ -512,6 +514,7 @@ static FolderInfo getFolderInfoFromJavaObj(JNIEnv* env, jobject folder) {
     env->ReleaseStringUTFChars(jstr, value);
     env->DeleteLocalRef(jstr);
   }
+  info.folderType = env->GetIntField(folder, field_folderType);
 
   return info;
 }
@@ -888,18 +891,17 @@ static void volumeDeviceDisconnected(const RawAddress& address) {
 static void sendVolumeChangedNative(JNIEnv* env, jobject /* object */, jstring address,
                                     jint volume) {
   const char* tmp_addr = env->GetStringUTFChars(address, 0);
-  RawAddress bdaddr;
-  bool success = RawAddress::FromString(tmp_addr, bdaddr);
+  auto bdaddr = RawAddress::FromString(tmp_addr);
   env->ReleaseStringUTFChars(address, tmp_addr);
 
-  if (!success) {
+  if (!bdaddr.has_value()) {
     return;
   }
 
   log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
-  if (volumeCallbackMap.find(bdaddr) != volumeCallbackMap.end()) {
-    volumeCallbackMap.find(bdaddr)->second.Run(volume & 0x7F);
+  if (volumeCallbackMap.find(bdaddr.value()) != volumeCallbackMap.end()) {
+    volumeCallbackMap.find(bdaddr.value())->second.Run(volume & 0x7F);
   }
 }
 
@@ -923,16 +925,15 @@ static void setBipClientStatusNative(JNIEnv* env, jobject /* object */, jstring 
   }
 
   const char* tmp_addr = env->GetStringUTFChars(address, 0);
-  RawAddress bdaddr;
-  bool success = RawAddress::FromString(tmp_addr, bdaddr);
+  auto bdaddr = RawAddress::FromString(tmp_addr);
   env->ReleaseStringUTFChars(address, tmp_addr);
 
-  if (!success) {
+  if (!bdaddr.has_value()) {
     return;
   }
 
   bool status = (connected == JNI_TRUE);
-  sServiceInterface->SetBipClientStatus(bdaddr, status);
+  sServiceInterface->SetBipClientStatus(bdaddr.value(), status);
 }
 
 // Called from native to list available player settings
@@ -1101,7 +1102,7 @@ int register_com_android_bluetooth_avrcp_target(JNIEnv* env) {
            &method_getCurrentSongInfo},
           {"getPlayStatus", "()Lcom/android/bluetooth/audio_util/PlayStatus;",
            &method_getPlaybackStatus},
-          {"sendMediaKeyEvent", "(IZ)V", &method_sendMediaKeyEvent},
+          {"sendMediaKeyEvent", "(Ljava/lang/String;IZ)V", &method_sendMediaKeyEvent},
           {"getCurrentMediaId", "()Ljava/lang/String;", &method_getCurrentMediaId},
           {"getNowPlayingList", "()Ljava/util/List;", &method_getNowPlayingList},
           {"getCurrentPlayerId", "()I", &method_getCurrentPlayerId},

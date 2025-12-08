@@ -19,12 +19,12 @@
  *   Functions generated:16
  */
 
+#include <bluetooth/types/address.h>
 #include <stdlib.h>
 
 #include "stack/include/hidd_api.h"
 #include "stack/include/hiddefs.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 tHID_STATUS HID_DevAddRecord(uint32_t /* handle */, char* /* p_name */, char* /* p_description */,
                              char* /* p_provider */, uint16_t /* subclass */,

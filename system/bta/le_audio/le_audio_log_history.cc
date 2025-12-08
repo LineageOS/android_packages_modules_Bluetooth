@@ -17,6 +17,7 @@
 #include "le_audio_log_history.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstddef>
 #include <cstdio>
@@ -28,7 +29,6 @@
 #include "common/circular_buffer.h"
 #include "common/strings.h"
 #include "main/shim/dumpsys.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using TimestampedStringCircularBuffer = common::TimestampedStringCircularBuffer;

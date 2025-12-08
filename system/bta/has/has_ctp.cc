@@ -18,6 +18,7 @@
 #include "has_ctp.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 #include <cstring>
@@ -29,7 +30,6 @@
 
 #include "has_preset.h"
 #include "stack/include/bt_types.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

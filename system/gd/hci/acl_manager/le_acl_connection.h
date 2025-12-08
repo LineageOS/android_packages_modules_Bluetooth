@@ -134,6 +134,7 @@ public:
   // TODO implement LeRemoteConnectionParameterRequestReply,
   // LeRemoteConnectionParameterRequestNegativeReply
 
+  virtual void ClearEventCallbacks();
   // Called once before passing the connection to the client
   virtual LeConnectionManagementCallbacks* GetEventCallbacks(
           std::function<void(uint16_t)> invalidate_callbacks);

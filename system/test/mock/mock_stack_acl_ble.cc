@@ -19,14 +19,15 @@
  *   Functions generated:6
  */
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/hci_role.h>
+
 #include <cstdint>
 
 #include "stack/include/ble_acl_interface.h"
 #include "stack/include/hci_error_code.h"
 #include "test/common/mock_functions.h"
-#include "types/ble_address_with_type.h"
-#include "types/hci_role.h"
-#include "types/raw_address.h"
 
 void acl_ble_connection_fail(const tBLE_BD_ADDR& /* address_with_type */, uint16_t /* handle */,
                              bool /* enhanced */, tHCI_STATUS /* status */) {

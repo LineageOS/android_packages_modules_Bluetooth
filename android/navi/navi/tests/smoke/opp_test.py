@@ -17,6 +17,7 @@ import asyncio
 import contextlib
 import datetime
 import pathlib
+import sys
 import tempfile
 from typing import TypeAlias
 import uuid
@@ -159,7 +160,12 @@ class OppTest(navi_test_base.TwoDevicesTestBase):
     """
         user_id = self.dut.adb.current_user_id
         # [DUT] Generate a test file.
-        with tempfile.NamedTemporaryFile(mode='wb') as temp_file:
+        with tempfile.NamedTemporaryFile(
+                mode='wb',
+                # On Windows, NamedTemporaryFile cannot be deleted if used multiple
+                # times.
+                delete=(sys.platform != 'win32'),
+        ) as temp_file:
             temp_file.write(_TEST_DATA)
             self.dut.adb.push([temp_file.name, f'/data/media/{user_id}/opp_test_file.txt'])
 

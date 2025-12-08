@@ -23,6 +23,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/metric_id_api.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 #include <openssl/rand.h>
 #include <unistd.h>
 
@@ -38,7 +39,6 @@
 #include "main/shim/config.h"
 #include "main/shim/shim.h"
 #include "storage/config_keys.h"
-#include "types/raw_address.h"
 
 #define TEMPORARY_SECTION_CAPACITY 10000
 
@@ -52,12 +52,6 @@ using bluetooth::common::AddressObfuscator;
 using namespace bluetooth;
 
 // Key attestation
-static const std::string ENCRYPTED_STR = "encrypted";
-static const std::string CONFIG_FILE_PREFIX = "bt_config-origin";
-static const std::string CONFIG_FILE_HASH = "hash";
-static const std::string encrypt_key_name_list[] = {"LinkKey",     "LE_KEY_PENC",  "LE_KEY_PID",
-                                                    "LE_KEY_LID",  "LE_KEY_PCSRK", "LE_KEY_LENC",
-                                                    "LE_KEY_LCSRK"};
 
 /**
  * Read metrics salt from config file, if salt is invalid or does not exist,
@@ -290,10 +284,10 @@ std::vector<RawAddress> btif_config_get_paired_devices() {
   std::vector<RawAddress> result;
   result.reserve(names.size());
   for (const auto& name : names) {
-    RawAddress addr = {};
+    auto addr = RawAddress::FromString(name);
     // Gather up known devices from configuration section names
-    if (RawAddress::FromString(name, addr)) {
-      result.emplace_back(addr);
+    if (addr.has_value()) {
+      result.emplace_back(addr.value());
     }
   }
   return result;

@@ -43,8 +43,12 @@ public class InteropUtil {
         INTEROP_HFP_SEND_CALL_INDICATORS_BACK_TO_BACK,
         INTEROP_SETUP_SCO_WITH_NO_DELAY_AFTER_SLC_DURING_CALL,
         INTEROP_RETRY_SCO_AFTER_REMOTE_REJECT_SCO,
-        INTEROP_ADV_PBAP_VER_1_2;
+        INTEROP_ADV_PBAP_VER_1_2,
+        INTEROP_HFP_SEND_OK_FOR_CLCC_AFTER_VOIP_CALL_END,
+        INTEROP_A2DP_DELAY_DISCONNECT;
     }
+
+    private InteropUtil() {}
 
     /**
      * Check if a given address or remote device name matches a known interoperability workaround

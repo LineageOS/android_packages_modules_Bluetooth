@@ -10,16 +10,8 @@ flag {
 }
 
 flag {
-    name: "channel_sounding_in_stack"
+    name:"channel_sounding_offload"
     namespace: "bluetooth"
-    description: "Enable Channel Sounding in the Bluetooth stack"
-    bug: "324185011"
-}
-
-flag {
-    name:"channel_sounding_25q2_apis"
-    namespace: "bluetooth"
-    is_exported: true
-    description: "Add new APIs for channel sounding"
-    bug: "367409858"
+    description: "Add mechanism to handle channel sounding offload"
+    bug: "423421929"
 }

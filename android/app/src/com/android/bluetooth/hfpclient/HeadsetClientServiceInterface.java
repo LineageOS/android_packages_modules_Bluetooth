@@ -20,7 +20,10 @@ import android.bluetooth.BluetoothDevice;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.android.bluetooth.btservice.AdapterService;
+
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -36,10 +39,15 @@ public class HeadsetClientServiceInterface {
     public static final int CALL_ACCEPT_HOLD = 1;
     public static final int CALL_ACCEPT_TERMINATE = 2;
 
-    public HeadsetClientServiceInterface() {}
+    HeadsetClientServiceInterface() {}
 
-    private static boolean isServiceAvailable(HeadsetClientService service) {
-        if (service == null) {
+    private static Optional<HeadsetClientService> getHeadsetClientService() {
+        return Optional.ofNullable(AdapterService.deprecatedGetAdapterService())
+                .flatMap(AdapterService::getHeadsetClientService);
+    }
+
+    private static boolean isServiceAvailable(Optional<HeadsetClientService> headsetClient) {
+        if (headsetClient.isEmpty()) {
             Log.w(TAG, "HeadsetClientService is not available");
             return false;
         }
@@ -47,81 +55,81 @@ public class HeadsetClientServiceInterface {
     }
 
     public HfpClientCall dial(BluetoothDevice device, String number) {
-        HeadsetClientService service = HeadsetClientService.getHeadsetClientService();
-        if (!isServiceAvailable(service)) return null;
-        return service.dial(device, number);
+        final var headsetClient = getHeadsetClientService();
+        if (!isServiceAvailable(headsetClient)) return null;
+        return headsetClient.get().dial(device, number);
     }
 
     public boolean enterPrivateMode(BluetoothDevice device, int index) {
-        HeadsetClientService service = HeadsetClientService.getHeadsetClientService();
-        if (!isServiceAvailable(service)) return false;
-        return service.enterPrivateMode(device, index);
+        final var headsetClient = getHeadsetClientService();
+        if (!isServiceAvailable(headsetClient)) return false;
+        return headsetClient.get().enterPrivateMode(device, index);
     }
 
     public boolean sendDTMF(BluetoothDevice device, byte code) {
-        HeadsetClientService service = HeadsetClientService.getHeadsetClientService();
-        if (!isServiceAvailable(service)) return false;
-        return service.sendDTMF(device, code);
+        final var headsetClient = getHeadsetClientService();
+        if (!isServiceAvailable(headsetClient)) return false;
+        return headsetClient.get().sendDTMF(device, code);
     }
 
     public boolean terminateCall(BluetoothDevice device, HfpClientCall call) {
-        HeadsetClientService service = HeadsetClientService.getHeadsetClientService();
-        if (!isServiceAvailable(service)) return false;
-        return service.terminateCall(device, call != null ? call.getUUID() : null);
+        final var headsetClient = getHeadsetClientService();
+        if (!isServiceAvailable(headsetClient)) return false;
+        return headsetClient.get().terminateCall(device, call != null ? call.getUUID() : null);
     }
 
     public boolean holdCall(BluetoothDevice device) {
-        HeadsetClientService service = HeadsetClientService.getHeadsetClientService();
-        if (!isServiceAvailable(service)) return false;
-        return service.holdCall(device);
+        final var headsetClient = getHeadsetClientService();
+        if (!isServiceAvailable(headsetClient)) return false;
+        return headsetClient.get().holdCall(device);
     }
 
     public boolean acceptCall(BluetoothDevice device, int flag) {
-        HeadsetClientService service = HeadsetClientService.getHeadsetClientService();
-        if (!isServiceAvailable(service)) return false;
-        return service.acceptCall(device, flag);
+        final var headsetClient = getHeadsetClientService();
+        if (!isServiceAvailable(headsetClient)) return false;
+        return headsetClient.get().acceptCall(device, flag);
     }
 
     public boolean rejectCall(BluetoothDevice device) {
-        HeadsetClientService service = HeadsetClientService.getHeadsetClientService();
-        if (!isServiceAvailable(service)) return false;
-        return service.rejectCall(device);
+        final var headsetClient = getHeadsetClientService();
+        if (!isServiceAvailable(headsetClient)) return false;
+        return headsetClient.get().rejectCall(device);
     }
 
     public boolean connectAudio(BluetoothDevice device) {
-        HeadsetClientService service = HeadsetClientService.getHeadsetClientService();
-        if (!isServiceAvailable(service)) return false;
-        return service.connectAudio(device);
+        final var headsetClient = getHeadsetClientService();
+        if (!isServiceAvailable(headsetClient)) return false;
+        return headsetClient.get().connectAudio(device);
     }
 
     public boolean disconnectAudio(BluetoothDevice device) {
-        HeadsetClientService service = HeadsetClientService.getHeadsetClientService();
-        if (!isServiceAvailable(service)) return false;
-        return service.disconnectAudio(device);
+        final var headsetClient = getHeadsetClientService();
+        if (!isServiceAvailable(headsetClient)) return false;
+        return headsetClient.get().disconnectAudio(device);
     }
 
     public Set<Integer> getCurrentAgFeatures(BluetoothDevice device) {
-        HeadsetClientService service = HeadsetClientService.getHeadsetClientService();
-        if (!isServiceAvailable(service)) return null;
-        return service.getCurrentAgFeatures(device);
+        final var headsetClient = getHeadsetClientService();
+        if (!isServiceAvailable(headsetClient)) return null;
+        return headsetClient.get().getCurrentAgFeatures(device);
     }
 
     public Bundle getCurrentAgEvents(BluetoothDevice device) {
-        HeadsetClientService service = HeadsetClientService.getHeadsetClientService();
-        if (!isServiceAvailable(service)) return null;
-        return service.getCurrentAgEvents(device);
+        final var headsetClient = getHeadsetClientService();
+        if (!isServiceAvailable(headsetClient)) return null;
+        return headsetClient.get().getCurrentAgEvents(device);
     }
 
     public List<BluetoothDevice> getConnectedDevices() {
-        HeadsetClientService service = HeadsetClientService.getHeadsetClientService();
-        if (!isServiceAvailable(service)) return null;
-        return service.getConnectedDevices();
+        final var headsetClient = getHeadsetClientService();
+        if (!isServiceAvailable(headsetClient)) return null;
+        return headsetClient.get().getConnectedDevices();
     }
 
     public List<HfpClientCall> getCurrentCalls(BluetoothDevice device) {
-        HeadsetClientService service = HeadsetClientService.getHeadsetClientService();
-        if (!isServiceAvailable(service)) return null;
-        return service.getCurrentCalls(device);
+        final var headsetClient = getHeadsetClientService();
+        if (!isServiceAvailable(headsetClient)) return null;
+        return headsetClient.get().getCurrentCalls(device);
     }
 
     public boolean hasHfpClientEcc(BluetoothDevice device) {

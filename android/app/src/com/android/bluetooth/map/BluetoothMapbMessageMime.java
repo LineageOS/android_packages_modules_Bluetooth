@@ -24,6 +24,7 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+import com.android.bluetooth.flags.Flags;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
@@ -481,11 +482,17 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
                 sb.append("Message-Id: ").append(mMessageId).append("\r\n");
             }
             if (mContentType != null) {
-                sb.append("Content-Type: ")
-                        .append(mContentType)
-                        .append("; boundary=")
-                        .append(getBoundary())
-                        .append("\r\n");
+                if (Flags.mapMimeMultipart()) {
+                    sb.append("Content-Type: multipart/mixed; boundary=\"")
+                            .append(getBoundary())
+                            .append("\"\r\n");
+                } else {
+                    sb.append("Content-Type: ")
+                            .append(mContentType)
+                            .append("; boundary=")
+                            .append(getBoundary())
+                            .append("\r\n");
+                }
             }
         }
         // If no headers exists, we still need two CRLF, hence keep it out of the if above.

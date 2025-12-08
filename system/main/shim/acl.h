@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <future>
 #include <memory>
 
@@ -27,7 +29,6 @@
 #include "main/shim/acl_interface.h"
 #include "os/handler.h"
 #include "packet/raw_builder.h"
-#include "types/raw_address.h"
 
 void DumpsysAcl(int fd);
 void DumpsysNeighbor(int fd);

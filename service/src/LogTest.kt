@@ -22,7 +22,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
-private const val TAG: String = "LogTest"
+private const val TAG = "LogTest"
 
 @RunWith(RobolectricTestRunner::class)
 class LogTest {
@@ -59,7 +59,29 @@ class LogTest {
     }
 
     @Test
+    fun log_whatATerribleFailure() {
+        Log.wtf(TAG, "Logging error")
+        Log.wtf("Logging error")
+        Log.wtf(TAG, "Logging error... ", RuntimeException("With a Throwable"))
+    }
+
+    @Test
     fun log_timeToStringWithZone() {
         assertThat(Log.timeToStringWithZone(123456789)).isEqualTo("01-02 02:17:36.789")
+    }
+
+    @Test
+    fun `log address with expected address`() {
+        assertThat(Log.address("11:22:33:44:55:66")).isEqualTo("XX:XX:XX:XX:55:66")
+    }
+
+    @Test
+    fun `log address with null`() {
+        assertThat(Log.address(null)).isEqualTo("[address is null]")
+    }
+
+    @Test
+    fun `log address with unexpected length`() {
+        assertThat(Log.address("11:22:33:44")).isEqualTo("[address invalid]")
     }
 }

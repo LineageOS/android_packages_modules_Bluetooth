@@ -501,7 +501,8 @@ public abstract class BluetoothMapbMessage {
         this.mVersionString = "VERSION:" + version;
     }
 
-    public static BluetoothMapbMessage parse(InputStream bMsgStream, int appParamCharset)
+    public static BluetoothMapbMessage parse(
+            BluetoothMapService mapService, InputStream bMsgStream, int appParamCharset)
             throws IllegalArgumentException {
         BMsgReader reader;
         BluetoothMapbMessage newBMsg = null;
@@ -543,31 +544,26 @@ public abstract class BluetoothMapbMessage {
                 String[] arg = COLON.split(line);
                 if (arg != null && arg.length == 2) {
                     String value = arg[1].trim();
+                    // Some carkits have typo.
+                    if (value.equals("SMS_CMDA")) {
+                        value = "SMS_CDMA";
+                    }
                     /* Will throw IllegalArgumentException if value is wrong */
                     type = TYPE.valueOf(value);
                     if (appParamCharset == BluetoothMapAppParams.CHARSET_NATIVE
                             && type != TYPE.SMS_CDMA
                             && type != TYPE.SMS_GSM) {
                         throw new IllegalArgumentException(
-                                "Native appParamsCharset " + "only supported for SMS");
+                                "Native appParamsCharset only supported for SMS");
                     }
-                    switch (type) {
-                        case SMS_CDMA:
-                        case SMS_GSM:
-                            newBMsg = new BluetoothMapbMessageSms();
-                            break;
-                        case MMS:
-                            newBMsg = new BluetoothMapbMessageMime();
-                            break;
-                        case EMAIL:
-                            newBMsg = new BluetoothMapbMessageEmail();
-                            break;
-                        case IM:
-                            newBMsg = new BluetoothMapbMessageMime();
-                            break;
-                        default:
-                            break;
-                    }
+                    newBMsg =
+                            switch (type) {
+                                case SMS_CDMA, SMS_GSM -> new BluetoothMapbMessageSms(mapService);
+                                case MMS -> new BluetoothMapbMessageMime();
+                                case EMAIL -> new BluetoothMapbMessageEmail();
+                                case IM -> new BluetoothMapbMessageMime();
+                                default -> null;
+                            };
                 } else {
                     throw new IllegalArgumentException("Missing value for 'TYPE':" + line);
                 }
@@ -583,7 +579,7 @@ public abstract class BluetoothMapbMessage {
         }
         if (newBMsg == null) {
             throw new IllegalArgumentException(
-                    "Missing bMessage TYPE: " + "- unable to parse body-content");
+                    "Missing bMessage TYPE: - unable to parse body-content");
         }
         newBMsg.setType(type);
         newBMsg.mAppParamCharset = appParamCharset;

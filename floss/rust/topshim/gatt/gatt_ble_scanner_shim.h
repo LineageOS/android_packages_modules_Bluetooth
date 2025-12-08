@@ -109,21 +109,21 @@ public:
                          uint8_t scan_phy);
 
   // Configure the batchscan storage and get a response via |OnStatusCallback|.
-  void BatchscanConfigStorage(uint8_t scanner_id, int32_t batch_scan_full_max,
+  void BatchScanConfigStorage(uint8_t scanner_id, int32_t batch_scan_full_max,
                               int32_t batch_scan_trunc_max, int32_t batch_scan_notify_threshold);
 
   // Enable batchscan. Gets responses via |OnStatusCallback| with scanner id
   // = 0 (since multiple scanners can be registered).
-  void BatchscanEnable(int32_t scan_mode, uint16_t scan_interval, uint16_t scan_window,
+  void BatchScanEnable(int32_t scan_mode, uint16_t scan_interval, uint16_t scan_window,
                        int32_t addr_type, int32_t discard_rule);
 
   // Disable batchscan. Gets responses via |OnStatusCallback| with a scanner id
   // = 0 (since multiple scanners can be registered).
-  void BatchscanDisable();
+  void BatchScanDisable();
 
   // Read out batchscan report for a specific scanner. Gets responses via
   // |ScanningCallbacks::OnBatchScanReports|.
-  void BatchscanReadReports(uint8_t scanner_id, int32_t scan_mode);
+  void BatchScanReadReports(uint8_t scanner_id, int32_t scan_mode);
 
   // Start periodic sync. Gets responses via |OnStartSyncCb|. Periodic reports
   // come via |OnSyncReportCb| and |OnSyncLostCb|.
@@ -164,7 +164,7 @@ private:
                               uint8_t action, uint8_t btm_status);
   void OnMsftAdvMonitorAddCallback(uint8_t monitor_handle, uint8_t status);
   void OnMsftAdvMonitorRemoveCallback(uint8_t status);
-  void OnMsftAdvMonitorEnableCallback(uint8_t status);
+  void OnMsftAdvMonitorEnableCallback(bool enable, uint8_t status);
 
   BleScannerInterface* scanner_intf_;
 };

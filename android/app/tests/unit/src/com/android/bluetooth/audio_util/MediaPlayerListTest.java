@@ -19,8 +19,6 @@ package com.android.bluetooth.audio_util;
 import static android.Manifest.permission.MEDIA_CONTENT_CONTROL;
 import static android.Manifest.permission.MODIFY_PHONE_STATE;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -42,11 +40,13 @@ import android.media.session.MediaSessionManager;
 import android.media.session.PlaybackState;
 import android.os.Looper;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
+import com.android.tests.bluetooth.StaticMockitoRule;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -62,8 +62,9 @@ import java.util.ArrayList;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class MediaPlayerListTest {
-    @Rule public final StaticMockitoRule mStaticMockitoRule =
-              new StaticMockitoRule(MediaPlayerWrapper.class);
+    @Rule
+    public final StaticMockitoRule mStaticMockitoRule =
+            new StaticMockitoRule(MediaPlayerWrapper.class);
 
     @Mock private Context mMockContext;
     @Mock private MediaPlayerList.MediaUpdateCallback mMediaUpdateCallback;
@@ -104,9 +105,6 @@ public class MediaPlayerListTest {
         when(mMockContext.getPackageManager()).thenReturn(mockPackageManager);
         when(mockPackageManager.queryIntentServices(any(), anyInt())).thenReturn(null);
 
-        BrowsablePlayerConnector mockConnector = mock(BrowsablePlayerConnector.class);
-        BrowsablePlayerConnector.setInstanceForTesting(mockConnector);
-
         MediaControllerFactory.inject(mMockController);
         MediaPlayerWrapperFactory.inject(mMockPlayerWrapper);
 
@@ -129,8 +127,6 @@ public class MediaPlayerListTest {
 
     @After
     public void tearDown() throws Exception {
-        BrowsablePlayerConnector.setInstanceForTesting(null);
-
         MediaControllerFactory.inject(null);
         MediaPlayerWrapperFactory.inject(null);
         mMediaPlayerList.cleanup();

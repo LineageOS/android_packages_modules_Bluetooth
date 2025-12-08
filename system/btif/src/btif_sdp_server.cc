@@ -29,6 +29,7 @@
 #define LOG_TAG "bt_btif_sdp_server"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_sdp.h>
 #include <pthread.h>
@@ -46,7 +47,6 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/sdp_api.h"
-#include "types/bluetooth/uuid.h"
 #include "utl.h"
 
 using namespace bluetooth::legacy::stack::sdp;
@@ -205,6 +205,11 @@ static int alloc_sdp_slot(bluetooth_sdp_record* in_record) {
   bluetooth_sdp_record* record = (bluetooth_sdp_record*)osi_malloc(record_size);
 
   copy_sdp_records(in_record, record, 1);
+  if (record->hdr.type == SDP_TYPE_OPP_SERVER) {
+    log::verbose("Copied OPP record: record_ptr={}, list_len={}", static_cast<void*>(record),
+                 record->ops.supported_formats_list_len);
+  }
+
   {
     std::unique_lock<std::recursive_mutex> lock(sdp_lock);
     for (int i = 0; i < MAX_SDP_SLOTS; i++) {
@@ -377,6 +382,9 @@ void on_create_record_event(int id) {
         service_id = BTA_PBAP_SERVICE_ID;
         break;
       case SDP_TYPE_OPP_SERVER:
+        log::verbose("Executing OPP on_create_record_event: record_ptr={}, list_len={}",
+                     static_cast<void*>(sdp_slot->record_data),
+                     sdp_slot->record_data->ops.supported_formats_list_len);
         handle = add_opps_sdp(&record->ops);
         break;
       case SDP_TYPE_SAP_SERVER:
@@ -774,6 +782,8 @@ static int add_opps_sdp(const bluetooth_sdp_ops_record* rec) {
           sdp_handle, UUID_SERVCLASS_OBEX_OBJECT_PUSH, rec->hdr.profile_version);
 
   /* add sequence for supported types */
+  log::verbose("Iterate through supported formats: rec_ptr={}, list_len={}",
+               static_cast<const void*>(rec), rec->supported_formats_list_len);
   for (i = 0, j = 0; i < rec->supported_formats_list_len; i++) {
     type_value[j] = (uint8_t*)&rec->supported_formats_list[i];
     desc_type[j] = UINT_DESC_TYPE;

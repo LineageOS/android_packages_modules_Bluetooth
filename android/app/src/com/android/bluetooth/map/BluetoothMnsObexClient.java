@@ -81,7 +81,7 @@ public class BluetoothMnsObexClient {
     private Handler mCallback = null;
     private SdpMnsRecord mMnsRecord;
 
-    public BluetoothMnsObexClient(
+    BluetoothMnsObexClient(
             AdapterService adapterService,
             BluetoothDevice device,
             SdpMnsRecord mnsRecord,
@@ -130,7 +130,7 @@ public class BluetoothMnsObexClient {
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case MSG_MNS_NOTIFICATION_REGISTRATION:
+                case MSG_MNS_NOTIFICATION_REGISTRATION -> {
                     Log.v(TAG, "Reg  masId:  " + msg.arg1 + " notfStatus: " + msg.arg2);
                     if (isValidMnsRecord()) {
                         handleRegistration(msg.arg1 /*masId*/, msg.arg2 /*status*/);
@@ -138,11 +138,11 @@ public class BluetoothMnsObexClient {
                         // Should not happen
                         Log.d(TAG, "MNS SDP info not available yet - Cannot Connect.");
                     }
-                    break;
-                case MSG_MNS_SEND_EVENT:
+                }
+                case MSG_MNS_SEND_EVENT -> {
                     sendEventHandler((byte[]) msg.obj /*byte[]*/, msg.arg1 /*masId*/);
-                    break;
-                case MSG_MNS_SDP_SEARCH_REGISTRATION:
+                }
+                case MSG_MNS_SDP_SEARCH_REGISTRATION -> {
                     // Initiate SDP Search
                     notifyMnsSdpSearch();
                     // Save the mns search info
@@ -153,9 +153,8 @@ public class BluetoothMnsObexClient {
                                     MSG_MNS_NOTIFICATION_REGISTRATION, msg.arg1, msg.arg2);
                     Log.v(TAG, "SearchReg  masId:  " + msg.arg1 + " notfStatus: " + msg.arg2);
                     mHandler.sendMessageDelayed(msgReg, MNS_SDP_SEARCH_DELAY);
-                    break;
-                default:
-                    break;
+                }
+                default -> {}
             }
         }
     }

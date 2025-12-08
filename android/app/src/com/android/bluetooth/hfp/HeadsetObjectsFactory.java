@@ -89,16 +89,4 @@ public class HeadsetObjectsFactory {
     public void destroyStateMachine(HeadsetStateMachine stateMachine) {
         HeadsetStateMachine.destroy(stateMachine);
     }
-
-    /**
-     * Get a system interface
-     *
-     * @param adapterService the adapter service
-     * @param headsetService the headset service
-     * @return a system interface
-     */
-    public HeadsetSystemInterface makeSystemInterface(
-            AdapterService adapterService, HeadsetService headsetService) {
-        return new HeadsetSystemInterface(adapterService, headsetService);
-    }
 }

@@ -25,6 +25,7 @@
 #define LOG_TAG "bluetooth"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -42,7 +43,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/pan_api.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

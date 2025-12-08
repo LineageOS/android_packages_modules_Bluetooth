@@ -45,10 +45,6 @@ using ::testing::Test;
 
 using namespace bluetooth;
 
-tA2DP_CODEC_TYPE A2DP_GetCodecType(const uint8_t* p_codec_info) {
-  return (tA2DP_CODEC_TYPE)(p_codec_info[AVDT_CODEC_TYPE_INDEX]);
-}
-
 uint16_t A2DP_VendorCodecGetCodecId(const uint8_t* p_codec_info) {
   const uint8_t* p = &p_codec_info[A2DP_VENDOR_CODEC_CODEC_ID_START_IDX];
 
@@ -317,32 +313,6 @@ TEST_F(ProviderInfoTest, TestSourceCodecIndexByVendorAndCodecId) {
   ASSERT_FALSE(a2dp_codec_index_opt.has_value());
 }
 
-TEST_F(ProviderInfoTest, TestSourceCodecIndexByCapabilities) {
-  GetProviderInfoForTesting(true, false);
-
-  std::optional<btav_a2dp_codec_index_t> a2dp_codec_index_opt;
-
-  a2dp_codec_index_opt = provider_info->SourceCodecIndex(test_sbc_codec_info.data());
-  ASSERT_TRUE(a2dp_codec_index_opt.has_value());
-  ASSERT_EQ(a2dp_codec_index_opt.value(), BTAV_A2DP_CODEC_INDEX_SOURCE_SBC);
-
-  a2dp_codec_index_opt = provider_info->SourceCodecIndex(test_aac_codec_info.data());
-  ASSERT_TRUE(a2dp_codec_index_opt.has_value());
-  ASSERT_EQ(a2dp_codec_index_opt.value(), BTAV_A2DP_CODEC_INDEX_SOURCE_AAC);
-
-  a2dp_codec_index_opt = provider_info->SourceCodecIndex(test_opus_codec_info.data());
-  ASSERT_TRUE(a2dp_codec_index_opt.has_value());
-  ASSERT_EQ(a2dp_codec_index_opt.value(), BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS);
-
-  a2dp_codec_index_opt = provider_info->SourceCodecIndex(test_foobar_codec_info.data());
-  ASSERT_TRUE(a2dp_codec_index_opt.has_value());
-  ASSERT_EQ(a2dp_codec_index_opt.value(), BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN);
-
-  a2dp_codec_index_opt =
-          provider_info->SourceCodecIndex(std::vector<uint8_t>({0xde, 0xad, 0xbe, 0xef}).data());
-  ASSERT_FALSE(a2dp_codec_index_opt.has_value());
-}
-
 TEST_F(ProviderInfoTest, TestSourceCodecIndexByCodecIdAssertNoSources) {
   GetProviderInfoForTesting(false, true);
 
@@ -501,61 +471,6 @@ TEST_F(ProviderInfoTest, TestSupportsCodec) {
         break;
     }
   }
-}
-
-TEST_F(ProviderInfoTest, TestBuildCodecCapabilitiesSbc) {
-  GetProviderInfoForTesting(true, false);
-
-  std::vector<uint8_t> sbc_caps = {0x3f, 0xff, 0x02, 0x25};
-  uint8_t result_sbc_codec_info[7];
-
-  ASSERT_TRUE(ProviderInfo::BuildCodecCapabilities(CodecId::A2dp(CodecId::A2dp::SBC), sbc_caps,
-                                                   result_sbc_codec_info));
-  ASSERT_EQ(std::memcmp(result_sbc_codec_info, test_sbc_codec_info.data(),
-                        test_sbc_codec_info.size()),
-            0);
-}
-
-TEST_F(ProviderInfoTest, TestBuildCodecCapabilitiesAac) {
-  GetProviderInfoForTesting(true, false);
-  std::vector<uint8_t> aac_caps = {0x80, 0x01, 0x8c, 0x83, 0xe8, 0x00};
-  uint8_t result_aac_codec_info[9];
-
-  ASSERT_TRUE(ProviderInfo::BuildCodecCapabilities(CodecId::A2dp(CodecId::A2dp::AAC), aac_caps,
-                                                   result_aac_codec_info));
-  ASSERT_EQ(std::memcmp(result_aac_codec_info, test_aac_codec_info.data(),
-                        test_aac_codec_info.size()),
-            0);
-}
-
-TEST_F(ProviderInfoTest, TestBuildCodecCapabilitiesOpus) {
-  std::vector<uint8_t> opus_caps = {0x3c};
-  uint8_t result_opus_codec_info[10];
-
-  ASSERT_TRUE(ProviderInfo::BuildCodecCapabilities(test_opus_codec_id, opus_caps,
-                                                   result_opus_codec_info));
-  ASSERT_EQ(std::memcmp(result_opus_codec_info, test_opus_codec_info.data(),
-                        test_opus_codec_info.size()),
-            0);
-}
-
-TEST_F(ProviderInfoTest, TestBuildCodecCapabilitiesFoobar) {
-  std::vector<uint8_t> foobar_caps = {0x3c};
-  uint8_t result_foobar_codec_info[10];
-
-  ASSERT_TRUE(ProviderInfo::BuildCodecCapabilities(test_foobar_codec_id, foobar_caps,
-                                                   result_foobar_codec_info));
-  ASSERT_EQ(std::memcmp(result_foobar_codec_info, test_foobar_codec_info.data(),
-                        test_foobar_codec_info.size()),
-            0);
-}
-
-TEST_F(ProviderInfoTest, TestBuildCodecCapabilitiesNotSupported) {
-  std::vector<uint8_t> foobar_caps = {0x3c};
-  uint8_t result_foobar_codec_info[10];
-
-  ASSERT_FALSE(ProviderInfo::BuildCodecCapabilities(CodecId::Core(CodecId::Core::CVSD), foobar_caps,
-                                                    result_foobar_codec_info));
 }
 
 TEST_F(ProviderInfoTest, TestCodecCapabilitiesSbc) {

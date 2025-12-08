@@ -1,8 +1,7 @@
 use pkg_config::Config;
-use std::env;
-use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::{env, fs};
 
 fn paths_to_strs<P: AsRef<Path>>(paths: &[P]) -> Vec<&str> {
     paths.iter().map(|p| p.as_ref().as_os_str().to_str().unwrap()).collect()
@@ -47,7 +46,7 @@ fn main() {
         _ => (),
     };
 
-    protoc_rust::Codegen::new()
+    protobuf_codegen::Codegen::new()
         .out_dir(proto_out_dir.as_os_str().to_str().unwrap())
         .inputs(&paths_to_strs(&proto_input_files))
         .includes(&paths_to_strs(&proto_include_dirs))

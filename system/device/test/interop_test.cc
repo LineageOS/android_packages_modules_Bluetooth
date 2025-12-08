@@ -18,11 +18,11 @@
 
 #include "device/include/interop.h"
 
+#include <bluetooth/types/address.h>
 #include <gtest/gtest.h>
 
 #include "btcore/include/module.h"
 #include "device/include/interop_config.h"
-#include "types/raw_address.h"
 
 #ifndef __ANDROID__
 #include <base/files/file_util.h>
@@ -120,122 +120,120 @@ protected:
 TEST_F(InteropTest, test_lookup_hit) {
   module_init(&interop_module);
 
-  RawAddress test_address;
-
-  RawAddress::FromString("38:2c:4a:e6:67:89", test_address);
+  auto test_address = RawAddress::FromString("38:2c:4a:e6:67:89").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address));
 
-  RawAddress::FromString("34:c7:31:12:34:56", test_address);
+  test_address = RawAddress::FromString("34:c7:31:12:34:56").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_AUTO_PAIRING, &test_address));
 
 #ifdef __ANDROID__
-  RawAddress::FromString("9c:df:03:12:34:56", test_address);
+  test_address = RawAddress::FromString("9c:df:03:12:34:56").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_AUTO_RETRY_PAIRING, &test_address));
 
-  RawAddress::FromString("a0:e9:db:e6:67:89", test_address);
+  test_address = RawAddress::FromString("a0:e9:db:e6:67:89").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_ABSOLUTE_VOLUME, &test_address));
 
-  RawAddress::FromString("00:0f:f6:e6:67:89", test_address);
+  test_address = RawAddress::FromString("00:0f:f6:e6:67:89").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_KEYBOARD_REQUIRES_FIXED_PIN, &test_address));
 
-  RawAddress::FromString("00:18:91:12:34:56", test_address);
+  test_address = RawAddress::FromString("00:18:91:12:34:56").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_2MBPS_LINK_ONLY, &test_address));
 
-  RawAddress::FromString("00:12:a1:e6:67:89", test_address);
+  test_address = RawAddress::FromString("00:12:a1:e6:67:89").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_AUTH_FOR_HID_POINTING, &test_address));
 
-  RawAddress::FromString("20:4c:10:12:34:56", test_address);
+  test_address = RawAddress::FromString("20:4c:10:12:34:56").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_SNIFF_DURING_SCO, &test_address));
 
-  RawAddress::FromString("00:14:09:e6:67:89", test_address);
+  test_address = RawAddress::FromString("00:14:09:e6:67:89").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_INCREASE_AG_CONN_TIMEOUT, &test_address));
 
-  RawAddress::FromString("fc:c2:de:12:34:56", test_address);
+  test_address = RawAddress::FromString("fc:c2:de:12:34:56").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_ROLE_SWITCH, &test_address));
 
-  RawAddress::FromString("28:a1:83:9c:20:a8", test_address);
+  test_address = RawAddress::FromString("28:a1:83:9c:20:a8").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_AAC_CODEC, &test_address));
 
-  RawAddress::FromString("28:83:35:7a:5f:23", test_address);
+  test_address = RawAddress::FromString("28:83:35:7a:5f:23").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_AAC_VBR_CODEC, &test_address));
 
-  RawAddress::FromString("b8:ad:3e:12:34:56", test_address);
+  test_address = RawAddress::FromString("b8:ad:3e:12:34:56").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_ENABLE_AAC_CODEC, &test_address));
 
-  RawAddress::FromString("ac:fd:ce:e6:67:89", test_address);
+  test_address = RawAddress::FromString("ac:fd:ce:e6:67:89").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_PCE_SDP_AFTER_PAIRING, &test_address));
 
-  RawAddress::FromString("98:7b:f3:12:34:56", test_address);
+  test_address = RawAddress::FromString("98:7b:f3:12:34:56").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_HF_INDICATOR, &test_address));
 
-  RawAddress::FromString("04:52:c7:e6:67:89", test_address);
+  test_address = RawAddress::FromString("04:52:c7:e6:67:89").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DELAY_SCO_FOR_MT_CALL, &test_address));
 
-  RawAddress::FromString("04:52:c7:12:34:56", test_address);
+  test_address = RawAddress::FromString("04:52:c7:12:34:56").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DELAY_SCO_FOR_MT_CALL, &test_address));
 
-  RawAddress::FromString("00:08:8a:f0:1d:8a", test_address);
+  test_address = RawAddress::FromString("00:08:8a:f0:1d:8a").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_CODEC_NEGOTIATION, &test_address));
 
-  RawAddress::FromString("a0:56:b2:4f:86:a8", test_address);
+  test_address = RawAddress::FromString("a0:56:b2:4f:86:a8").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_PLAYER_APPLICATION_SETTING_CMDS, &test_address));
 
-  RawAddress::FromString("a0:14:3d:e6:67:89", test_address);
+  test_address = RawAddress::FromString("a0:14:3d:e6:67:89").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_CONNECTION_AFTER_COLLISION, &test_address));
 
-  RawAddress::FromString("38:2c:4a:c9:34:56", test_address);
+  test_address = RawAddress::FromString("38:2c:4a:c9:34:56").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_HID_PREF_CONN_SUP_TIMEOUT_3S, &test_address));
 
-  RawAddress::FromString("00:1d:86:e6:67:89", test_address);
+  test_address = RawAddress::FromString("00:1d:86:e6:67:89").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_AVDTP_RECONFIGURE, &test_address));
 
-  RawAddress::FromString("2c:dc:ad:08:91:89", test_address);
+  test_address = RawAddress::FromString("2c:dc:ad:08:91:89").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_AVRCP_BROWSE_OPEN_CHANNEL_COLLISION, &test_address));
 
-  RawAddress::FromString("10:b7:f6:03:38:b0", test_address);
+  test_address = RawAddress::FromString("10:b7:f6:03:38:b0").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_SNIFF_DURING_CALL, &test_address));
 
-  RawAddress::FromString("00:0e:9f:12:34:56", test_address);
+  test_address = RawAddress::FromString("00:0e:9f:12:34:56").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_SKIP_INCOMING_STATE, &test_address));
 
-  RawAddress::FromString("98:b6:e9:e6:67:89", test_address);
+  test_address = RawAddress::FromString("98:b6:e9:e6:67:89").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_HID_HOST_LIMIT_SNIFF_INTERVAL, &test_address));
 
-  RawAddress::FromString("04:4e:af:a8:a0:01", test_address);
+  test_address = RawAddress::FromString("04:4e:af:a8:a0:01").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_REFRESH_ACCEPT_SIG_TIMER, &test_address));
 
-  RawAddress::FromString("bc:30:7e:5e:f6:27", test_address);
+  test_address = RawAddress::FromString("bc:30:7e:5e:f6:27").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_NOT_UPDATE_AVRCP_PAUSED_TO_REMOTE, &test_address));
 
-  RawAddress::FromString("10:4f:a8:08:91:89", test_address);
+  test_address = RawAddress::FromString("10:4f:a8:08:91:89").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_PHONE_POLICY_REDUCED_DELAY_CONNECT_OTHER_PROFILES,
                                  &test_address));
 
-  RawAddress::FromString("00:15:83:03:38:b0", test_address);
+  test_address = RawAddress::FromString("00:15:83:03:38:b0").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_HFP_FAKE_INCOMING_CALL_INDICATOR, &test_address));
 
-  RawAddress::FromString("00:09:93:a6:c5:4d", test_address);
+  test_address = RawAddress::FromString("00:09:93:a6:c5:4d").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DELAY_SCO_FOR_MO_CALL, &test_address));
 
-  RawAddress::FromString("48:eb:62:e6:67:89", test_address);
+  test_address = RawAddress::FromString("48:eb:62:e6:67:89").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_ROLE_SWITCH_DURING_CONNECTION, &test_address));
 
-  RawAddress::FromString("9c:df:03:a8:a0:01", test_address);
+  test_address = RawAddress::FromString("9c:df:03:a8:a0:01").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_AUTO_RETRY_PAIRING, &test_address));
 
-  RawAddress::FromString("d4:7a:e2:5e:f6:27", test_address);
+  test_address = RawAddress::FromString("d4:7a:e2:5e:f6:27").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_NAME_REQUEST, &test_address));
 
-  RawAddress::FromString("48:f0:7b:08:91:89", test_address);
+  test_address = RawAddress::FromString("48:f0:7b:08:91:89").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_AVRCP_1_4_ONLY, &test_address));
 
-  RawAddress::FromString("00:0a:08:03:38:b0", test_address);
+  test_address = RawAddress::FromString("00:0a:08:03:38:b0").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_AVRCP_1_3_ONLY, &test_address));
 
-  RawAddress::FromString("44:ea:d8:a6:c5:4d", test_address);
+  test_address = RawAddress::FromString("44:ea:d8:a6:c5:4d").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_SNIFF, &test_address));
 
-  RawAddress::FromString("94:b2:cc:30:c5:4d", test_address);
+  test_address = RawAddress::FromString("94:b2:cc:30:c5:4d").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_SLC_SKIP_BIND_COMMAND, &test_address));
 #endif
 
@@ -245,21 +243,19 @@ TEST_F(InteropTest, test_lookup_hit) {
 TEST_F(InteropTest, test_lookup_miss) {
   module_init(&interop_module);
 
-  RawAddress test_address;
-
-  RawAddress::FromString("00:00:00:00:00:00", test_address);
+  auto test_address = RawAddress::FromString("00:00:00:00:00:00").value();
   EXPECT_FALSE(interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address));
 
-  RawAddress::FromString("ff:ff:ff:ff:ff:ff", test_address);
+  test_address = RawAddress::FromString("ff:ff:ff:ff:ff:ff").value();
   EXPECT_FALSE(interop_match_addr(INTEROP_AUTO_RETRY_PAIRING, &test_address));
 
-  RawAddress::FromString("42:08:15:ae:ae:ae", test_address);
+  test_address = RawAddress::FromString("42:08:15:ae:ae:ae").value();
   EXPECT_FALSE(interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address));
 
-  RawAddress::FromString("38:2c:4a:59:67:89", test_address);
+  test_address = RawAddress::FromString("38:2c:4a:59:67:89").value();
   EXPECT_FALSE(interop_match_addr(INTEROP_AUTO_RETRY_PAIRING, &test_address));
 
-  RawAddress::FromString("ff:ff:ff:ff:ff:ff", test_address);
+  test_address = RawAddress::FromString("ff:ff:ff:ff:ff:ff").value();
   EXPECT_FALSE(interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address));
   EXPECT_FALSE(interop_match_addr(INTEROP_AUTO_RETRY_PAIRING, &test_address));
   EXPECT_FALSE(interop_match_addr(INTEROP_DISABLE_ABSOLUTE_VOLUME, &test_address));
@@ -327,16 +323,14 @@ TEST_F(InteropTest, test_lookup_miss) {
 TEST_F(InteropTest, test_dynamic_db_clear) {
   module_init(&interop_module);
 
-  RawAddress test_address;
-
-  RawAddress::FromString("11:22:33:44:55:66", test_address);
+  auto test_address = RawAddress::FromString("11:22:33:44:55:66").value();
   EXPECT_FALSE(interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address));
 
   interop_database_add(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address, 3);
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address));
   EXPECT_FALSE(interop_match_addr(INTEROP_AUTO_RETRY_PAIRING, &test_address));
 
-  RawAddress::FromString("66:55:44:33:22:11", test_address);
+  test_address = RawAddress::FromString("66:55:44:33:22:11").value();
   EXPECT_FALSE(interop_match_addr(INTEROP_AUTO_RETRY_PAIRING, &test_address));
 
   interop_database_add(INTEROP_AUTO_RETRY_PAIRING, &test_address, 3);
@@ -375,7 +369,6 @@ TEST_F(InteropTest, test_name_hit) {
   EXPECT_TRUE(interop_match_name(INTEROP_DISABLE_AVDTP_RECONFIGURE, "KMM-BT51*HD"));
   EXPECT_TRUE(interop_match_name(INTEROP_DISABLE_LE_CONN_UPDATES, "ITAG"));
   EXPECT_TRUE(interop_match_name(INTEROP_DELAY_SCO_FOR_MT_CALL, "AirPods Pro"));
-  EXPECT_TRUE(interop_match_name(INTEROP_DISABLE_CODEC_NEGOTIATION, "JABRA EASYGO"));
   EXPECT_TRUE(interop_match_name(INTEROP_ENABLE_AAC_CODEC, "MDR-1RBT"));
   EXPECT_TRUE(interop_match_name(INTEROP_DISABLE_SNIFF_LINK_DURING_SCO, "AirPods"));
   EXPECT_TRUE(interop_match_name(INTEROP_DISABLE_SNIFF_DURING_CALL, "AirPods"));
@@ -464,12 +457,11 @@ TEST_F(InteropTest, test_name_miss) {
 TEST_F(InteropTest, test_range_hit) {
   module_init(&interop_module);
 
-  RawAddress test_address;
-  RawAddress::FromString("00:0f:59:50:00:00", test_address);
+  auto test_address = RawAddress::FromString("00:0f:59:50:00:00").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_ABSOLUTE_VOLUME, &test_address));
-  RawAddress::FromString("00:0f:59:59:12:34", test_address);
+  test_address = RawAddress::FromString("00:0f:59:59:12:34").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_ABSOLUTE_VOLUME, &test_address));
-  RawAddress::FromString("00:0f:59:6f:ff:ff", test_address);
+  test_address = RawAddress::FromString("00:0f:59:6f:ff:ff").value();
   EXPECT_TRUE(interop_match_addr(INTEROP_DISABLE_ABSOLUTE_VOLUME, &test_address));
 
   module_clean_up(&interop_module);
@@ -478,10 +470,9 @@ TEST_F(InteropTest, test_range_hit) {
 TEST_F(InteropTest, test_range_miss) {
   module_init(&interop_module);
 
-  RawAddress test_address;
-  RawAddress::FromString("00:0f:59:49:12:34", test_address);
+  auto test_address = RawAddress::FromString("00:0f:59:49:12:34").value();
   EXPECT_FALSE(interop_match_addr(INTEROP_DISABLE_ABSOLUTE_VOLUME, &test_address));
-  RawAddress::FromString("00:0f:59:70:12:34", test_address);
+  test_address = RawAddress::FromString("00:0f:59:70:12:34").value();
   EXPECT_FALSE(interop_match_addr(INTEROP_DISABLE_ABSOLUTE_VOLUME, &test_address));
 
   module_clean_up(&interop_module);
@@ -539,8 +530,7 @@ TEST_F(InteropTest, test_manufacturer_miss) {
 TEST_F(InteropTest, test_ssr_max_latency_hit) {
   module_init(&interop_module);
 
-  RawAddress test_address;
-  RawAddress::FromString("00:1b:dc:70:12:34", test_address);
+  auto test_address = RawAddress::FromString("00:1b:dc:70:12:34").value();
   uint16_t max_lat = 0;
 
   EXPECT_TRUE(interop_database_match_addr_get_max_lat(INTEROP_UPDATE_HID_SSR_MAX_LAT, &test_address,
@@ -553,8 +543,7 @@ TEST_F(InteropTest, test_ssr_max_latency_hit) {
 TEST_F(InteropTest, test_ssr_max_latency_miss) {
   module_init(&interop_module);
 
-  RawAddress test_address;
-  RawAddress::FromString("00:1b:db:70:12:34", test_address);
+  auto test_address = RawAddress::FromString("00:1b:db:70:12:34").value();
   uint16_t max_lat = 0;
 
   EXPECT_FALSE(interop_database_match_addr_get_max_lat(INTEROP_UPDATE_HID_SSR_MAX_LAT,
@@ -566,9 +555,7 @@ TEST_F(InteropTest, test_ssr_max_latency_miss) {
 TEST_F(InteropTest, test_dynamic_addr) {
   module_init(&interop_module);
 
-  RawAddress test_address;
-
-  RawAddress::FromString("11:22:33:44:55:66", test_address);
+  auto test_address = RawAddress::FromString("11:22:33:44:55:66").value();
   EXPECT_FALSE(interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address));
 
   interop_database_add_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS, &test_address, 3);
@@ -617,8 +604,7 @@ TEST_F(InteropTest, test_dynamic_vndr_prdt) {
 TEST_F(InteropTest, test_dynamic_addr_get_ssr_max_lat) {
   module_init(&interop_module);
 
-  RawAddress test_address;
-  RawAddress::FromString("11:22:33:44:55:66", test_address);
+  auto test_address = RawAddress::FromString("11:22:33:44:55:66").value();
   uint16_t max_lat = 0;
 
   EXPECT_FALSE(interop_database_match_addr_get_max_lat(INTEROP_UPDATE_HID_SSR_MAX_LAT,
@@ -660,8 +646,7 @@ TEST_F(InteropTest, test_dynamic_manufacturer) {
 TEST_F(InteropTest, test_dynamic_addr_get_lmp_version) {
   module_init(&interop_module);
 
-  RawAddress test_address;
-  RawAddress::FromString("11:22:33:44:55:66", test_address);
+  auto test_address = RawAddress::FromString("11:22:33:44:55:66").value();
   uint8_t lmp_version = 0;
   uint16_t lmp_sub_version = 0;
 
@@ -692,8 +677,6 @@ TEST_F(InteropTest, test_dynamic_addr_get_lmp_version) {
 TEST_F(InteropTest, test_dynamic_did_version) {
   module_init(&interop_module);
 
-  RawAddress test_address;
-  RawAddress::FromString("11:22:33:44:55:66", test_address);
   uint16_t did_version = 0xABCD;
 
   EXPECT_FALSE(interop_database_match_version(INTEROP_DISABLE_SNIFF_DURING_SCO, did_version));

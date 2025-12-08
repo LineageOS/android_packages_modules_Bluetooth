@@ -20,6 +20,7 @@
 #include <base/location.h>
 #include <base/threading/platform_thread.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <utility>
@@ -112,7 +113,12 @@ bt_status_t do_in_jni_thread(base::OnceClosure task) {
   return BT_STATUS_SUCCESS;
 }
 
-bool is_on_jni_thread() { return jni_thread.GetThreadId() == PlatformThread::CurrentId(); }
+bool is_on_jni_thread() {
+  if (com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
+    return jni_thread.IsRunningOnSameThread();
+  }
+  return jni_thread.GetThreadId() == PlatformThread::CurrentId();
+}
 
 static void do_post_on_bt_jni(BtJniClosure closure) { closure(); }
 

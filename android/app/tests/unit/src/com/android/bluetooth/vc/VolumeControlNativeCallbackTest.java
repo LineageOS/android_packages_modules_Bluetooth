@@ -18,7 +18,6 @@ package com.android.bluetooth.vc;
 
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED;
 import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_DEVICE_AVAILABLE;
 import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED;
@@ -28,12 +27,18 @@ import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_VOLUME
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
-import androidx.test.runner.AndroidJUnit4;
+import android.platform.test.flag.junit.SetFlagsRule;
+
+import androidx.test.filters.SmallTest;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.FlagsWrapper;
+import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.common.truth.Expect;
 
@@ -45,11 +50,18 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 
-/** Test cases for {@link VolumeControlNativeCallback}. */
-@RunWith(AndroidJUnit4.class)
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
+
+import java.util.List;
+import java.util.function.Consumer;
+
+@SmallTest
+@RunWith(ParameterizedAndroidJunit4.class)
 public class VolumeControlNativeCallbackTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public Expect expect = Expect.create();
+    @Rule public final SetFlagsRule mSetFlagsRule;
 
     @Mock private AdapterService mAdapterService;
     @Mock private VolumeControlService mService;
@@ -57,9 +69,25 @@ public class VolumeControlNativeCallbackTest {
 
     private VolumeControlNativeCallback mNativeCallback;
 
+    @Parameters(name = "{0}")
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(Flags.FLAG_VCP_ON_MAIN_LOOPER);
+    }
+
+    public VolumeControlNativeCallbackTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
+    }
+
     @Before
     public void setUp() throws Exception {
         doReturn(true).when(mService).isAvailable();
+        doAnswer(
+                        inv -> {
+                            ((Consumer<VolumeControlService>) inv.getArgument(0)).accept(mService);
+                            return null;
+                        })
+                .when(mService)
+                .syncPost(any());
 
         mNativeCallback = new VolumeControlNativeCallback(mAdapterService, mService);
     }

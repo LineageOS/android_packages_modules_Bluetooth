@@ -25,6 +25,9 @@
 #ifndef RFC_INT_H
 #define RFC_INT_H
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
+
 #include <cstdint>
 #include <cstring>
 #include <unordered_map>
@@ -34,8 +37,6 @@
 #include "stack/include/l2cap_interface.h"
 #include "stack/rfcomm/port_int.h"
 #include "stack/rfcomm/rfc_event.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 /*
  * Define RFCOMM result codes

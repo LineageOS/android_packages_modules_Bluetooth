@@ -53,8 +53,8 @@ static HfpDecodingTransport* get_decode_transport_instance() {
   return HfpDecodingTransport::instance_;
 }
 
-static HfpDecodingTransport* get_encode_transport_instance() {
-  return HfpDecodingTransport::instance_;
+static HfpEncodingTransport* get_encode_transport_instance() {
+  return HfpEncodingTransport::instance_;
 }
 
 static PcmConfiguration get_default_pcm_configuration() {
@@ -285,7 +285,7 @@ bool HfpClientInterface::ReleaseDecode(HfpClientInterface::Decode* decode) {
     return false;
   }
 
-  log::info("decode");
+  log::info("");
   if (get_decode_client_interface()) {
     decode->Cleanup();
   }
@@ -454,6 +454,7 @@ bool HfpClientInterface::ReleaseEncode(HfpClientInterface::Encode* encode) {
     return false;
   }
 
+  log::info("");
   if (get_encode_client_interface()) {
     encode->Cleanup();
   }
@@ -504,6 +505,7 @@ void HfpClientInterface::Offload::StopSession() {
   log::info("offload");
   get_encode_client_interface()->EndSession();
   if (get_encode_transport_instance()) {
+    get_encode_transport_instance()->SuspendRequest();
     get_encode_transport_instance()->ResetPendingCmd();
     get_encode_transport_instance()->ResetPresentationPosition();
   }
@@ -620,6 +622,7 @@ bool HfpClientInterface::ReleaseOffload(HfpClientInterface::Offload* offload) {
     return false;
   }
 
+  log::info("");
   if (get_encode_client_interface()) {
     offload->Cleanup();
   }

@@ -130,7 +130,7 @@ mod test {
     #[test]
     fn test_uuid_from_16_fixed_view() {
         let expected = Uuid::new(0x0102);
-        let actual: Uuid = att::Uuid16 { data: 0x0102 }.try_into().unwrap();
+        let actual: Uuid = att::Uuid16 { data: 0x0102 }.into();
         assert_eq!(expected, actual);
     }
 
@@ -138,7 +138,7 @@ mod test {
     fn test_uuid_from_128_fixed_view() {
         let data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
         let expected = Uuid::new_from_le_bytes(data);
-        let actual: Uuid = att::Uuid128 { data }.try_into().unwrap();
+        let actual: Uuid = att::Uuid128 { data }.into();
         assert_eq!(expected, actual);
     }
 
@@ -169,5 +169,15 @@ mod test {
         let packet = att::Uuid { data: vec![10, 9, 8, 7, 6, 5, 4, 3, 2, 1] };
         let res = Uuid::try_from(packet);
         assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_le_bytes_roundtrip() {
+        let mut bytes = [0u8; 16];
+        for (i, byte) in bytes.iter_mut().enumerate() {
+            *byte = i as u8;
+        }
+        let uuid = Uuid::new_from_le_bytes(bytes);
+        assert_eq!(uuid.le_bytes(), bytes);
     }
 }

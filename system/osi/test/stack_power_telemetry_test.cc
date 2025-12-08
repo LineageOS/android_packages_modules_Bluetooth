@@ -1,10 +1,10 @@
 #include "osi/src/stack_power_telemetry.cc"
 
+#include <bluetooth/types/address.h>
 #include <gtest/gtest.h>
 
 #include "osi/include/stack_power_telemetry.h"
 #include "stack/include/btm_status.h"
-#include "types/raw_address.h"
 
 class PowerTelemetryTest : public ::testing::Test {
 protected:
@@ -23,7 +23,7 @@ protected:
   void SetUp() override {
     power_telemetry::GetInstance();   // Init the object.
     power_telemerty_enabled_ = true;  // Enable the feature flag
-    RawAddress::FromString("00:00:00:00:00:00", bdaddr);
+    bdaddr = RawAddress::FromString("00:00:00:00:00:00").value();
   }
 };
 
@@ -209,8 +209,6 @@ TEST_F(PowerTelemetryTest, test_LogChannelDisconnected) {
   power_telemetry::GetInstance().LogChannelDisconnected(0, 0, 0, bdaddr);
   ASSERT_EQ(State::kDisconnected, ldc.channel_map[bdaddr].back().state);
 
-  RawAddress dummyAddr;
-  RawAddress::FromString("00:00:00:00:00:11", dummyAddr);
   power_telemetry::GetInstance().LogChannelDisconnected(0, 0, 0, bdaddr);
   ASSERT_EQ(1, (int)ldc.channel_map[bdaddr].size());
 }

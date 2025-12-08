@@ -120,20 +120,15 @@ public class BluetoothPbapActivity extends AlertActivity
     }
 
     private void showPbapDialog(int id) {
-        switch (id) {
-            case DIALOG_YES_NO_AUTH:
-                mAlertBuilder.setTitle(getString(R.string.pbap_session_key_dialog_header));
-                mAlertBuilder.setView(createView(DIALOG_YES_NO_AUTH));
-                mAlertBuilder.setPositiveButton(
-                        android.R.string.ok, (dialog, which) -> onPositive());
-                mAlertBuilder.setNegativeButton(
-                        android.R.string.cancel, (dialog, which) -> onNegative());
-                setupAlert();
-                changeButtonEnabled(DialogInterface.BUTTON_POSITIVE, false);
-                break;
-            default:
-                break;
+        if (id != DIALOG_YES_NO_AUTH) {
+            return;
         }
+        mAlertBuilder.setTitle(getString(R.string.pbap_session_key_dialog_header));
+        mAlertBuilder.setView(createView(DIALOG_YES_NO_AUTH));
+        mAlertBuilder.setPositiveButton(android.R.string.ok, (dialog, which) -> onPositive());
+        mAlertBuilder.setNegativeButton(android.R.string.cancel, (dialog, which) -> onNegative());
+        setupAlert();
+        changeButtonEnabled(DialogInterface.BUTTON_POSITIVE, false);
     }
 
     private String createDisplayText(final int id) {
@@ -259,14 +254,11 @@ public class BluetoothPbapActivity extends AlertActivity
             new Handler() {
                 @Override
                 public void handleMessage(Message msg) {
-                    switch (msg.what) {
-                        case DISMISS_TIMEOUT_DIALOG:
-                            Log.v(TAG, "Received DISMISS_TIMEOUT_DIALOG msg.");
-                            finish();
-                            break;
-                        default:
-                            break;
+                    if (msg.what != DISMISS_TIMEOUT_DIALOG) {
+                        return;
                     }
+                    Log.v(TAG, "Received DISMISS_TIMEOUT_DIALOG msg.");
+                    finish();
                 }
             };
 }

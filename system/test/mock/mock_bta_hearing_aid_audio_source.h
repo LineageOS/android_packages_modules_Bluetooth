@@ -31,8 +31,8 @@ class Interface {
 public:
   virtual ~Interface() = default;
 
-  virtual void Start(const struct CodecConfiguration codec_configuration,
-                     HearingAidAudioReceiver* audio_receiver, uint16_t remote_delay_ms) = 0;
+  virtual void Start(const asha::CodecConfiguration codec_configuration,
+                     asha::HearingAidAudioReceiver* audio_receiver, uint16_t remote_delay_ms) = 0;
   virtual void Stop() = 0;
   virtual void Initialize() = 0;
   virtual void CleanUp() = 0;
@@ -44,8 +44,8 @@ public:
   ~Mock() = default;
 
   MOCK_METHOD(void, Start,
-              (const struct CodecConfiguration codec_configuration,
-               HearingAidAudioReceiver* audio_receiver, uint16_t remote_delay_ms));
+              (const asha::CodecConfiguration codec_configuration,
+               asha::HearingAidAudioReceiver* audio_receiver, uint16_t remote_delay_ms));
   MOCK_METHOD(void, Stop, ());
   MOCK_METHOD(void, Initialize, ());
   MOCK_METHOD(void, CleanUp, ());

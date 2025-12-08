@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.opp;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 
@@ -42,11 +41,11 @@ import android.os.Looper;
 import android.sysprop.BluetoothProperties;
 
 import androidx.test.espresso.intent.Intents;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.TestUtils;
+import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.common.base.Objects;
 
@@ -95,12 +94,10 @@ public class BluetoothOppReceiverTest {
         mReceiver = new BluetoothOppReceiver();
 
         Intents.init();
-        TestUtils.setUpUiTest();
     }
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.tearDownUiTest();
         BluetoothMethodProxy.setInstanceForTesting(null);
 
         Intents.release();

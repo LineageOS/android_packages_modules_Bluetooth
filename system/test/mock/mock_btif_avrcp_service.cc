@@ -23,9 +23,10 @@
 // Mock include file to share data between tests and mock
 #include "test/mock/mock_btif_avrcp_service.h"
 
+#include <bluetooth/types/address.h>
+
 #include "btif/avrcp/avrcp_service.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 // Original usings
 

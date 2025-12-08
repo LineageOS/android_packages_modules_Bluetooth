@@ -24,8 +24,6 @@ from typing import cast
 from mobly.controllers import android_device
 from mobly.controllers.android_device_lib import adb
 
-from navi.utils import retry
-
 _logger = logging.getLogger('AdbSnippets')
 
 
@@ -51,6 +49,10 @@ def enable_btsnoop(device: android_device.AndroidDevice) -> None:
   Args:
     device: Android device to enable btsnoop.
   """
+    # Starting from mainline 25.08, persist.bluetooth.btsnooplogmode will be reset
+    # on factory reset, but default snoop mode will be kept.
+    device.adb.shell(['settings', 'put', 'global', 'bluetooth_btsnoop_default_mode', 'full'])
+    device.adb.shell(['setprop', 'persist.bluetooth.btsnoopdefaultmode', 'full'])
     device.adb.shell(['setprop', 'persist.bluetooth.btsnooplogmode', 'full'])
 
 
@@ -127,59 +129,6 @@ def enable_bluetooth(device: android_device.AndroidDevice, enable: bool) -> None
         ])
     except android_device.adb.AdbError:
         time.sleep(1)
-
-
-@retry.retry_on_exception(initial_delay_sec=1, num_retries=3, max_delay_sec=10)
-def connect_to_wifi(
-    device: android_device.AndroidDevice,
-    wifi_ssid: str,
-    wifi_password: str,
-) -> None:
-    """Connect to wifi network.
-
-  Args:
-    device: Android device to connect to wifi.
-    wifi_ssid: Wifi network name.
-    wifi_password: Wifi network password.
-
-  Raises:
-    RuntimeError: If failed to connect to wifi.
-  """
-    wifi_status = device.adb.shell('cmd wifi status').decode('utf8')
-    wifi_enable_pattern = 'Wifi is enabled'
-    wifi_connected_pattern = r'Wifi is connected to \"%s\"' % wifi_ssid
-    if re.search(wifi_enable_pattern, wifi_status) is None:
-        device.adb.shell('svc wifi enable')
-        time.sleep(10)
-    else:
-        if re.search(wifi_connected_pattern, wifi_status) is not None:
-            _logger.info('%s is already connected to wifi.', device.serial)
-            return
-
-    _logger.info(
-        'Trying to connect %s to network %s with password %s',
-        device.serial,
-        wifi_ssid,
-        '*' * len(wifi_password)  # Mask password in logs
-        if wifi_password else 'open',
-    )
-    if not wifi_password:
-        device.adb.shell(
-            f'cmd wifi connect-network {wifi_ssid} open',
-            timeout=30,
-        )
-    else:
-        device.adb.shell(
-            f'cmd wifi connect-network {wifi_ssid} wpa2 {wifi_password}',
-            timeout=30,
-        )
-
-    time.sleep(30)
-    wifi_status = device.adb.shell('cmd wifi status').decode('utf8')
-    if not re.search(wifi_connected_pattern, wifi_status):
-        raise RuntimeError('Failed to connect to wifi.')
-
-    _logger.info('Successfully connected %s to wifi.', device.serial)
 
 
 def get_bluetooth_flags(device: android_device.AndroidDevice,) -> dict[str, bool]:

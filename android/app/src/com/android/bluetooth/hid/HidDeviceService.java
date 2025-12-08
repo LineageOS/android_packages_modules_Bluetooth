@@ -114,7 +114,7 @@ public class HidDeviceService extends ConnectableProfile {
 
         @Override
         public void handleMessage(Message msg) {
-            Log.d(TAG, "handleMessage(): msg.what=" + msg.what);
+            Log.d(TAG, "handleMessage: " + messageToString(msg.what));
 
             switch (msg.what) {
                 case MESSAGE_APPLICATION_STATE_CHANGED -> {
@@ -264,6 +264,20 @@ public class HidDeviceService extends ConnectableProfile {
                 default -> {} // Nothing to do
             }
         }
+
+        private static String messageToString(int msg) {
+            return switch (msg) {
+                case MESSAGE_APPLICATION_STATE_CHANGED -> "MESSAGE_APPLICATION_STATE_CHANGED";
+                case MESSAGE_CONNECT_STATE_CHANGED -> "MESSAGE_CONNECT_STATE_CHANGED";
+                case MESSAGE_GET_REPORT -> "MESSAGE_GET_REPORT";
+                case MESSAGE_SET_REPORT -> "MESSAGE_SET_REPORT";
+                case MESSAGE_SET_PROTOCOL -> "MESSAGE_SET_PROTOCOL";
+                case MESSAGE_INTR_DATA -> "MESSAGE_INTR_DATA";
+                case MESSAGE_VC_UNPLUG -> "MESSAGE_VC_UNPLUG";
+                case MESSAGE_IMPORTANCE_CHANGE -> "MESSAGE_IMPORTANCE_CHANGE";
+                default -> "UNKNOWN_MESSAGE(" + msg + ")";
+            };
+        }
     }
 
     private static class BluetoothHidDeviceDeathRecipient implements IBinder.DeathRecipient {
@@ -279,7 +293,7 @@ public class HidDeviceService extends ConnectableProfile {
             mService.unregisterApp();
         }
 
-        public void cleanup() {
+        void cleanup() {
             mService.unregisterApp();
             mService = null;
         }
@@ -456,7 +470,7 @@ public class HidDeviceService extends ConnectableProfile {
                 BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
+        if (!mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
@@ -509,7 +523,7 @@ public class HidDeviceService extends ConnectableProfile {
     }
 
     List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
-        List<BluetoothDevice> inputDevices = new ArrayList<BluetoothDevice>();
+        List<BluetoothDevice> inputDevices = new ArrayList<>();
 
         if (mHidDevice != null) {
             for (int state : states) {
@@ -620,7 +634,7 @@ public class HidDeviceService extends ConnectableProfile {
         intent.putExtra(BluetoothProfile.EXTRA_STATE, newState);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-        sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+        sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
     }
 
     private static int convertHalState(int halState) {

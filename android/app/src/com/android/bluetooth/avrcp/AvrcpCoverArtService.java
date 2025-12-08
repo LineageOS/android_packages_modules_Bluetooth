@@ -58,8 +58,7 @@ public class AvrcpCoverArtService {
     private volatile boolean mShutdown = true;
     private final SocketAcceptor mAcceptThread;
     private ObexServerSockets mServerSockets = null;
-    private final HashMap<BluetoothDevice, ServerSession> mClients =
-            new HashMap<BluetoothDevice, ServerSession>();
+    private final HashMap<BluetoothDevice, ServerSession> mClients = new HashMap<>();
     private final Object mClientsLock = new Object();
     private final Object mServerLock = new Object();
 

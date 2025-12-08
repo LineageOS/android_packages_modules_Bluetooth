@@ -23,12 +23,17 @@
 #include <bluetooth/log.h>
 #include <unistd.h>
 
+#include <chrono>
 #include <future>
+#include <mutex>
+#include <ostream>
 #include <string>
 #include <thread>
 
 #include "abstract_message_loop.h"
 #include "common/postable_context.h"
+#include "os/handler.h"
+#include "os/thread.h"
 
 namespace bluetooth {
 
@@ -46,6 +51,8 @@ public:
    * @param thread_name name of this worker thread
    */
   explicit MessageLoopThread(const std::string& thread_name);
+  explicit MessageLoopThread(const std::string& thread_name,
+                             os::Thread::Priority handler_thread_priority);
 
   MessageLoopThread(const MessageLoopThread&) = delete;
   MessageLoopThread& operator=(const MessageLoopThread&) = delete;
@@ -95,6 +102,14 @@ public:
    * @return this thread's ID
    */
   base::PlatformThreadId GetThreadId() const;
+
+  /**
+   * Check if the current thread in use is same as this thread.
+   * Note: This is only valid when flag replace_message_loop_thread_with_gd_handler is enabled.
+   *
+   * @return true if the current thread in use is same as this thread.
+   */
+  bool IsRunningOnSameThread() const;
 
   /**
    * Get this thread's name set in constructor
@@ -202,6 +217,10 @@ private:
   pid_t linux_tid_;
   base::WeakPtrFactory<MessageLoopThread> weak_ptr_factory_;
   bool shutting_down_;
+
+  os::Thread* handler_thread_;
+  os::Handler* handler_;
+  os::Thread::Priority handler_thread_priority_;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const bluetooth::common::MessageLoopThread& a) {

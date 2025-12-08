@@ -75,6 +75,8 @@ public final class BluetoothA2dp implements BluetoothProfile {
      *   <li>{@link #EXTRA_STATE} - The current state of the profile.
      *   <li>{@link #EXTRA_PREVIOUS_STATE}- The previous state of the profile.
      *   <li>{@link BluetoothDevice#EXTRA_DEVICE} - The remote device.
+     *   <li>{@link #EXTRA_DISCONNECTED_REASON} - The reason for the profile disconnection in case
+     *       the new state is {@link #STATE_DISCONNECTED}.
      * </ul>
      *
      * <p>{@link #EXTRA_STATE} or {@link #EXTRA_PREVIOUS_STATE} can be any of {@link
@@ -276,11 +278,11 @@ public final class BluetoothA2dp implements BluetoothProfile {
      * <ul>
      *   <li>{@link BluetoothStatusCodes#SUCCESS},
      *   <li>{@link BluetoothStatusCodes#ERROR_UNKNOWN},
-     *   <li>{@link BluetoothStatusCodes#INSUFFICIENT_RESOURCES},
-     *   <li>{@link BluetoothStatusCodes#SDP_DISCOVERY_FAILED},
-     *   <li>{@link BluetoothStatusCodes#STREAM_CONNECTION_FAILED},
-     *   <li>{@link BluetoothStatusCodes#ROLE_SWITCH_FAILED},
-     *   <li>{@link BluetoothStatusCodes#AVDTP_DISCOVERY_FAILED}.
+     *   <li>{@link BluetoothStatusCodes#ERROR_INSUFFICIENT_RESOURCES},
+     *   <li>{@link BluetoothStatusCodes#ERROR_SDP_DISCOVERY_FAILED},
+     *   <li>{@link BluetoothStatusCodes#ERROR_STREAM_CONNECTION_FAILED},
+     *   <li>{@link BluetoothStatusCodes#ERROR_ROLE_SWITCH_FAILED},
+     *   <li>{@link BluetoothStatusCodes#ERROR_AVDTP_DISCOVERY_FAILED}.
      * </ul>
      */
     @FlaggedApi(Flags.FLAG_A2DP_DISCONNECT_REASON_API)
@@ -458,7 +460,6 @@ public final class BluetoothA2dp implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public @BtProfileState int getConnectionState(BluetoothDevice device) {
-        if (VDBG) log("getState(" + device + ")");
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");

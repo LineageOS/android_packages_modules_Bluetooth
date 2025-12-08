@@ -25,12 +25,13 @@
 #ifndef BNEP_API_H
 #define BNEP_API_H
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
+
 #include <cstdint>
 
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2cap_types.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants
@@ -306,53 +307,6 @@ tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const RawAddress& dest_addr, BT_HDR*
  ******************************************************************************/
 tBNEP_RESULT BNEP_Write(uint16_t handle, const RawAddress& dest_addr, uint8_t* p_data, uint16_t len,
                         uint16_t protocol, const RawAddress& src_addr, bool fw_ext_present);
-
-/*******************************************************************************
- *
- * Function         BNEP_SetProtocolFilters
- *
- * Description      This function sets the protocol filters on peer device
- *
- * Parameters:      handle        - Handle for the connection
- *                  num_filters   - total number of filter ranges
- *                  p_start_array - Array of beginings of all protocol ranges
- *                  p_end_array   - Array of ends of all protocol ranges
- *
- * Returns          BNEP_WRONG_HANDLE           - if the connection handle is
- *                                                not valid
- *                  BNEP_SET_FILTER_FAIL        - if the connection is in the
- *                                                wrong state
- *                  BNEP_TOO_MANY_FILTERS       - if too many filters
- *                  BNEP_SUCCESS                - if request sent successfully
- *
- ******************************************************************************/
-tBNEP_RESULT BNEP_SetProtocolFilters(uint16_t handle, uint16_t num_filters, uint16_t* p_start_array,
-                                     uint16_t* p_end_array);
-
-/*******************************************************************************
- *
- * Function         BNEP_SetMulticastFilters
- *
- * Description      This function sets the filters for multicast addresses for
- *                  BNEP.
- *
- * Parameters:      handle        - Handle for the connection
- *                  num_filters   - total number of filter ranges
- *                  p_start_array - Pointer to sequence of beginings of all
- *                                         multicast address ranges
- *                  p_end_array   - Pointer to sequence of ends of all
- *                                         multicast address ranges
- *
- * Returns          BNEP_WRONG_HANDLE           - if the connection handle is
- *                                                not valid
- *                  BNEP_SET_FILTER_FAIL        - if the connection is in the
- *                                                wrong state
- *                  BNEP_TOO_MANY_FILTERS       - if too many filters
- *                  BNEP_SUCCESS                - if request sent successfully
- *
- ******************************************************************************/
-tBNEP_RESULT BNEP_SetMulticastFilters(uint16_t handle, uint16_t num_filters, uint8_t* p_start_array,
-                                      uint8_t* p_end_array);
 
 /*******************************************************************************
  *

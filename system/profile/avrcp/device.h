@@ -18,6 +18,7 @@
 
 #include <base/cancelable_callback.h>
 #include <base/functional/bind.h>
+#include <bluetooth/types/address.h>
 
 #include <iostream>
 #include <memory>
@@ -44,7 +45,6 @@
 #include "packet/avrcp/set_player_application_setting_value.h"
 #include "packet/avrcp/vendor_packet.h"
 #include "profile/avrcp/media_id_map.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace avrcp {
@@ -363,6 +363,7 @@ private:
 
   SongInfo last_song_info_;
   PlayStatus last_play_status_;
+  PlayState last_media_player_status_ = PlayState::PAUSED;
 
   base::CancelableClosure play_pos_update_cb_;
 
@@ -373,8 +374,10 @@ private:
 
   // Labels used for messages currently in flight.
   std::set<uint8_t> active_labels_;
+  bool set_vol_cmd_in_progress_ = false;
 
   int8_t volume_ = -1;
+  std::optional<int8_t> pending_volume_ = {};
 };
 
 }  // namespace avrcp

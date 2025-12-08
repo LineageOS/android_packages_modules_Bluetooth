@@ -21,6 +21,8 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 
 #include <deque>
 #include <list>
@@ -35,8 +37,6 @@
 #include "macros.h"
 #include "osi/include/fixed_queue.h"
 #include "stack/include/bt_hdr.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 #define GATT_TRANS_ID_MAX 0x0fffffff /* 4 MSB is reserved */
 #define GATT_CL_RCB_MAX 255          /* Maximum number of cl_rcb */
@@ -490,6 +490,7 @@ struct tTCB_STATE_HISTORY {
 extern bluetooth::common::TimestampedCircularBuffer<tTCB_STATE_HISTORY> tcb_state_history_;
 
 /* from gatt_main.cc */
+void gatt_force_disconnect(tGATT_TCB* p_tcb, std::string comment);
 bool gatt_disconnect(tGATT_TCB* p_tcb);
 bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr, tBT_TRANSPORT transport,
                       int8_t initiating_phys);

@@ -18,10 +18,15 @@ package com.android.bluetooth.gatt;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import com.google.common.truth.Expect;
+
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.UUID;
 
 @RunWith(AndroidJUnit4.class)
 public class HandleMapTest {
@@ -40,6 +45,84 @@ public class HandleMapTest {
     private static final int HANDLE_2 = 2;
 
     private static final int REQUEST_ID_INVALID = -1;
+
+    private static final UUID FAKE_UUID = UUID.randomUUID();
+    private static final int SERVICE_HANDLE = 10;
+    private static final int SERVICE_TYPE = 0;
+    private static final int INSTANCE = 1;
+    private static final boolean ADVERTISE_PREFERRED = true;
+    private static final int CHARACTERISTIC_HANDLE = 11;
+    private static final int DESCRIPTOR_HANDLE = 12;
+
+    @Rule public Expect expect = Expect.create();
+
+    /** Verifies that adding a service creates a correct Entry object. */
+    @Test
+    public void testAddService_createsCorrectEntry() {
+        mHandleMap.addService(
+                SERVER_IF_1,
+                SERVICE_HANDLE,
+                FAKE_UUID,
+                SERVICE_TYPE,
+                INSTANCE,
+                ADVERTISE_PREFERRED);
+
+        assertThat(mHandleMap.getEntries()).hasSize(1);
+        HandleMap.Entry entry = mHandleMap.getEntries().get(0);
+
+        expect.that(entry.mServerIf).isEqualTo(SERVER_IF_1);
+        expect.that(entry.mType).isEqualTo(HandleMap.Type.SERVICE);
+        expect.that(entry.mHandle).isEqualTo(SERVICE_HANDLE);
+        expect.that(entry.mUuid).isEqualTo(FAKE_UUID);
+        expect.that(entry.mInstance).isEqualTo(INSTANCE);
+        expect.that(entry.mServiceType).isEqualTo(SERVICE_TYPE);
+        expect.that(entry.mServiceHandle).isEqualTo(0);
+        expect.that(entry.mCharHandle).isEqualTo(0);
+        expect.that(entry.mAdvertisePreferred).isEqualTo(ADVERTISE_PREFERRED);
+    }
+
+    /** Verifies that adding a characteristic creates a correct Entry object. */
+    @Test
+    public void testAddCharacteristic_createsCorrectEntry() {
+        mHandleMap.addCharacteristic(SERVER_IF_1, CHARACTERISTIC_HANDLE, FAKE_UUID, SERVICE_HANDLE);
+
+        assertThat(mHandleMap.getEntries()).hasSize(1);
+        HandleMap.Entry entry = mHandleMap.getEntries().get(0);
+
+        assertThat(entry.mServerIf).isEqualTo(SERVER_IF_1);
+        assertThat(entry.mType).isEqualTo(HandleMap.Type.CHARACTERISTIC);
+        assertThat(entry.mHandle).isEqualTo(CHARACTERISTIC_HANDLE);
+        assertThat(entry.mUuid).isEqualTo(FAKE_UUID);
+        assertThat(entry.mServiceHandle).isEqualTo(SERVICE_HANDLE);
+        // Check default values for fields not set by this constructor
+        assertThat(entry.mInstance).isEqualTo(0);
+        assertThat(entry.mServiceType).isEqualTo(0);
+        assertThat(entry.mCharHandle).isEqualTo(0);
+        assertThat(entry.mAdvertisePreferred).isFalse();
+    }
+
+    /** Verifies that adding a descriptor creates a correct Entry object. */
+    @Test
+    public void testAddDescriptor_createsCorrectEntry() {
+        // addDescriptor uses the handle of the last added characteristic
+        mHandleMap.addCharacteristic(SERVER_IF_1, CHARACTERISTIC_HANDLE, FAKE_UUID, SERVICE_HANDLE);
+        mHandleMap.addDescriptor(SERVER_IF_1, DESCRIPTOR_HANDLE, FAKE_UUID, SERVICE_HANDLE);
+
+        assertThat(mHandleMap.getEntries()).hasSize(2);
+        // The descriptor is the second entry added
+        HandleMap.Entry entry = mHandleMap.getEntries().get(1);
+
+        assertThat(entry.mServerIf).isEqualTo(SERVER_IF_1);
+        assertThat(entry.mType).isEqualTo(HandleMap.Type.DESCRIPTOR);
+        assertThat(entry.mHandle).isEqualTo(DESCRIPTOR_HANDLE);
+        assertThat(entry.mUuid).isEqualTo(FAKE_UUID);
+        assertThat(entry.mServiceHandle).isEqualTo(SERVICE_HANDLE);
+        assertThat(entry.mCharHandle).isEqualTo(CHARACTERISTIC_HANDLE);
+        // Check default values for fields not set by this constructor
+        assertThat(entry.mInstance).isEqualTo(0);
+        assertThat(entry.mServiceType).isEqualTo(0);
+        assertThat(entry.mAdvertisePreferred).isFalse();
+    }
 
     /*
      * Requests from different bearers can that have the same transaction IDs and target the same

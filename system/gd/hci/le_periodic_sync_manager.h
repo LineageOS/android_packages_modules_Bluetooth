@@ -87,13 +87,7 @@ public:
     handler_ = handler;
   }
 
-  // This is the *only* method that we allow to be called from a different thread. We allow this
-  // when a module is being stopped at which point the handler should have been stopped.
-  void SetScanningCallback(ScanningCallback* callbacks) {
-    log::assert_that(handler_->IsCleared() || handler_->thread().IsSameThread(), "Wrong thread");
-
-    callbacks_ = callbacks;
-  }
+  void SetScanningCallback(ScanningCallback* callbacks) { callbacks_ = callbacks; }
 
   void StartSync(const PeriodicSyncStates& request, uint16_t skip, uint16_t sync_timeout) {
     log::assert_that(handler_->thread().IsSameThread(), "Wrong thread");

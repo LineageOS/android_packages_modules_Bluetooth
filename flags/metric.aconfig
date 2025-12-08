@@ -7,3 +7,13 @@ flag {
     description: "Toggle the bluetooth power telemetry feature."
     bug: "301874865"
 }
+
+flag {
+    name: "bqr_common_part_unified_length"
+    namespace: "bluetooth"
+    description: "Unified the BQR common part length for backward compatibility with older versions."
+    bug: "439472012"
+    metadata {
+	purpose: PURPOSE_BUGFIX
+    }
+}

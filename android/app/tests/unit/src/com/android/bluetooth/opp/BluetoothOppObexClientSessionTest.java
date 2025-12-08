@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.opp;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 import static com.android.bluetooth.opp.BluetoothOppObexSession.MSG_SESSION_COMPLETE;
 import static com.android.bluetooth.opp.BluetoothOppObexSession.MSG_SHARE_INTERRUPTED;
@@ -39,12 +38,13 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothObexTransport;
 import com.android.obex.ClientSession;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.opp;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
@@ -43,12 +42,13 @@ import android.content.SharedPreferences;
 import android.database.MatrixCursor;
 import android.os.Looper;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;
@@ -144,11 +144,6 @@ public class BluetoothOppServiceTest {
         BluetoothMethodProxy.setInstanceForTesting(null);
         BluetoothOppPreference.setInstance(null);
         mService.cleanup();
-    }
-
-    @Test
-    public void testInitialize() {
-        assertThat(BluetoothOppService.getBluetoothOppService()).isNotNull();
     }
 
     @Test

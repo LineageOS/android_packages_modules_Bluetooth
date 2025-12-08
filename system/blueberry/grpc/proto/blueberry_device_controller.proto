@@ -18,11 +18,9 @@ message TargetMacAddress {
 }
 
 message PairAndConnectBluetoothResult {
-  double pairing_time_sec =
-      1;  // The time it takes in seconds to pair the devices.
-  double connection_time_sec =
-      2;             // The time it takes in seconds to connect the devices.
-  string error = 3;  // Error message if unsuccessful.
+  double pairing_time_sec = 1;     // The time it takes in seconds to pair the devices.
+  double connection_time_sec = 2;  // The time it takes in seconds to connect the devices.
+  string error = 3;                // Error message if unsuccessful.
 }
 
 service BlueberryDeviceController {
@@ -30,6 +28,5 @@ service BlueberryDeviceController {
   rpc SetDiscoverableMode(DiscoverableMode) returns (DiscoverableResult) {}
 
   // Returns the result from a request to connect to a target device.
-  rpc PairAndConnectBluetooth(TargetMacAddress)
-      returns (PairAndConnectBluetoothResult) {}
+  rpc PairAndConnectBluetooth(TargetMacAddress) returns (PairAndConnectBluetoothResult) {}
 }

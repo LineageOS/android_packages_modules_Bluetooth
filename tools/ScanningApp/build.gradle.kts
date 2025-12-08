@@ -6,16 +6,14 @@ plugins {
 android {
     namespace = "com.android.bluetooth.scanningapp"
     compileSdk = 36
-
     defaultConfig {
         applicationId = "com.android.bluetooth.scanningapp"
         minSdk = 36
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-
     sourceSets {
         getByName("main") {
             manifest.srcFile("AndroidManifest.xml")
@@ -23,7 +21,6 @@ android {
             res.srcDirs("res")
         }
     }
-
     buildTypes { release { isMinifyEnabled = false } }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

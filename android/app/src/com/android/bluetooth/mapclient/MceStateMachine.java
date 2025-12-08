@@ -230,8 +230,7 @@ class MceStateMachine extends StateMachine {
 
     // Map each message to its metadata via the handle
     @VisibleForTesting
-    ConcurrentHashMap<String, MessageMetadata> mMessages =
-            new ConcurrentHashMap<String, MessageMetadata>();
+    ConcurrentHashMap<String, MessageMetadata> mMessages = new ConcurrentHashMap<>();
 
     MceStateMachine(
             MapClientService service, BluetoothDevice device, AdapterService adapterService) {
@@ -640,13 +639,7 @@ class MceStateMachine extends StateMachine {
                             + " [Connected]: Entered, message="
                             + getMessageName(getCurrentMessage().what));
 
-            MapClientContent.Callbacks callbacks =
-                    new MapClientContent.Callbacks() {
-                        @Override
-                        public void onMessageStatusChanged(String handle, int status) {
-                            setMessageStatus(handle, status);
-                        }
-                    };
+            MapClientContent.Callbacks callbacks = MceStateMachine.this::setMessageStatus;
             // Keeps mock database from being overwritten in tests
             if (mDatabase == null) {
                 mDatabase = new MapClientContent(mAdapterService, callbacks, mDevice);

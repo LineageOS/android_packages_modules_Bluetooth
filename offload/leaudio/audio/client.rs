@@ -323,7 +323,7 @@ impl Callbacks for StreamerEvents {
         };
 
         if let Err(e) = hci.sendPacket(handle.into(), sequence_number.into(), data) {
-            log::error!("Cannot send packet to HCI: {:?}", e);
+            log::error!("Cannot send packet to HCI: {e:?}");
         }
 
         if let Some(status) = self.status.lock().unwrap().get_mut(&handle) {

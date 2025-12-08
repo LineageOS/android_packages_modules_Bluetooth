@@ -48,7 +48,6 @@ public:
   std::vector<GapData> scan_response;
   uint32_t interval_min;
   uint32_t interval_max;
-  AdvertisingType advertising_type;
   AdvertiserAddressType requested_advertiser_address_type;
   PeerAddressType peer_address_type;
   Address peer_address;
@@ -156,6 +155,8 @@ public:
   virtual void RemoveAdvertiser(AdvertiserId advertiser_id) = 0;
 
   virtual void RegisterAdvertisingCallback(AdvertisingCallback* advertising_callback) = 0;
+
+  virtual void Dump(int fd) = 0;
 };
 
 }  // namespace hci

@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <memory>
 #include <utility>  // for std::pair
 #include <vector>
@@ -28,7 +30,6 @@
 #include "le_audio_types.h"
 #include "osi/include/alarm.h"
 #include "stack/btm/btm_dev.h"
-#include "types/raw_address.h"
 
 namespace bluetooth::le_audio {
 
@@ -61,7 +62,25 @@ enum class DeviceConnectState : uint8_t {
   CONNECTED_AUTOCONNECT_GETTING_READY,
 };
 
+enum class SubrateState : uint8_t {
+  /* Initial state*/
+  DISABLED,
+  /* Pending on the LE Audio aggresive connection parameter update */
+  PENDING_ENABLING_CONN_UPDATE,
+  /* Pending on the LE Audio aggresive connection parameter update complete */
+  PENDING_ENABLING_CONN_UPDATE_COMPLETE,
+  /* Pending on the subrate update proceduce complete */
+  PENDING_ENABLING_SUBRATE_UPDATE,
+  /* When the host receive the subrate change event with success */
+  ENABLED,
+};
+
+static constexpr uint16_t kDefaultSubrateLeAudioModeMaxSubrate = 2;
+static constexpr uint16_t kDefaultSubrateLeAudioModeMinSubrate = 1;
+static constexpr uint16_t kDefaultSubrateLeAudioModeContNumber = 1;
+
 std::ostream& operator<<(std::ostream& os, const DeviceConnectState& state);
+std::ostream& operator<<(std::ostream& os, const SubrateState& state);
 
 /* Class definitions */
 
@@ -109,6 +128,7 @@ public:
   bool acl_asymmetric_;
   bool acl_phy_update_done_;
   std::unique_ptr<GmapClient> gmap_client_;
+  SubrateState subrate_state_;
 
   alarm_t* link_quality_timer;
   uint16_t link_quality_timer_data;
@@ -135,6 +155,7 @@ public:
         allowlist_flag_(false),
         acl_asymmetric_(false),
         acl_phy_update_done_(false),
+        subrate_state_(SubrateState::DISABLED),
         link_quality_timer(nullptr),
         last_ase_ctp_command_sent(0x00),
         update_to_relaxed_conn_interval_timer(alarm_new(
@@ -150,6 +171,8 @@ public:
 
   void SetConnectionState(DeviceConnectState state);
   DeviceConnectState GetConnectionState(void);
+  void SetSubrateState(SubrateState state);
+  SubrateState GetSubrateState(void);
   void ClearPACs(void);
   void RegisterPACs(std::vector<struct types::acs_ac_record>* apr_db,
                     std::vector<struct types::acs_ac_record>* apr);
@@ -163,6 +186,7 @@ public:
                                                             types::DataPathState data_path_state);
   struct types::ase* GetFirstInactiveAse(uint8_t direction, bool reconnect = false);
   struct types::ase* GetFirstAseWithState(uint8_t direction, types::AseState state);
+  struct types::ase* GetAseWaitingForDataPathByConnHandle(uint16_t conn_handle);
   struct types::ase* GetNextActiveAse(struct types::ase* ase);
   struct types::ase* GetAseToMatchBidirectionCis(struct types::ase* ase);
   types::BidirectionalPair<struct types::ase*> GetAsesByCisConnHdl(uint16_t conn_hdl);
@@ -255,6 +279,10 @@ public:
     }
     return gmap_client_->IsGmapClientEnabled();
   }
+  void StartConnSubrate();
+  void StopConnSubrate();
+  void OnConnParameterUpdate(tGATT_STATUS status);
+  void OnSubrateChanged(tGATT_STATUS status);
 
   void StartLinkQualityReports(uint16_t cis_handle);
   void FreeLinkQualityReports(void);

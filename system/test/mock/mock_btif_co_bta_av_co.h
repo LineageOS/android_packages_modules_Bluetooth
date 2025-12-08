@@ -26,6 +26,8 @@
 #include <functional>
 
 // Original included files, if any
+#include <bluetooth/types/address.h>
+
 #include <vector>
 
 #include "bta/include/bta_av_api.h"
@@ -34,7 +36,6 @@
 #include "stack/include/a2dp_constants.h"
 #include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
-#include "types/raw_address.h"
 
 // Original usings
 

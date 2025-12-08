@@ -18,13 +18,16 @@ package com.android.bluetooth.map;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
+import com.android.tests.bluetooth.MockitoRule;
 
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -33,6 +36,10 @@ import java.io.InputStream;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapbMessageEmailTest {
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private BluetoothMapService mMapService;
+
     public static final String TEST_EMAIL_BODY = "test_email_body";
 
     @Test
@@ -54,7 +61,8 @@ public class BluetoothMapbMessageEmailTest {
         InputStream inputStream = new ByteArrayInputStream(encodedMessageEmail);
 
         BluetoothMapbMessage messageParsed =
-                BluetoothMapbMessage.parse(inputStream, BluetoothMapAppParams.CHARSET_UTF8);
+                BluetoothMapbMessage.parse(
+                        mMapService, inputStream, BluetoothMapAppParams.CHARSET_UTF8);
         assertThat(messageParsed).isInstanceOf(BluetoothMapbMessageEmail.class);
         BluetoothMapbMessageEmail messageEmailParsed = (BluetoothMapbMessageEmail) messageParsed;
         assertThat(messageEmailParsed.getEmailBody()).isEqualTo(TEST_EMAIL_BODY);
@@ -71,7 +79,8 @@ public class BluetoothMapbMessageEmailTest {
         InputStream inputStream = new ByteArrayInputStream(encodedMessageEmail);
 
         BluetoothMapbMessage messageParsed =
-                BluetoothMapbMessage.parse(inputStream, BluetoothMapAppParams.CHARSET_UTF8);
+                BluetoothMapbMessage.parse(
+                        mMapService, inputStream, BluetoothMapAppParams.CHARSET_UTF8);
         assertThat(messageParsed).isInstanceOf(BluetoothMapbMessageEmail.class);
         BluetoothMapbMessageEmail messageEmailParsed = (BluetoothMapbMessageEmail) messageParsed;
         assertThat(messageEmailParsed.getEmailBody()).isEqualTo("");

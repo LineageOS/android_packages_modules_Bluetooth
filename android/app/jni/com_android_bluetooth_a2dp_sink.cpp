@@ -17,6 +17,7 @@
 #define LOG_TAG "BluetoothA2dpSinkServiceJni"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <jni.h>
 #include <nativehelper/JNIHelp.h>
 #include <nativehelper/scoped_local_ref.h>
@@ -31,7 +32,6 @@
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_av.h"
-#include "types/raw_address.h"
 
 namespace android {
 static jmethodID method_onConnectionStateChanged;
@@ -63,7 +63,7 @@ static void a2dp_sink_connection_state_callback(const RawAddress& bd_addr,
   }
 
   sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
-                                   (const jbyte*)bd_addr.address);
+                                   (const jbyte*)bd_addr.address.data());
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onConnectionStateChanged, addr.get(),
                                (jint)state);
 }
@@ -88,7 +88,7 @@ static void a2dp_sink_audio_state_callback(const RawAddress& bd_addr, btav_audio
   }
 
   sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
-                                   (const jbyte*)bd_addr.address);
+                                   (const jbyte*)bd_addr.address.data());
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAudioStateChanged, addr.get(), (jint)state);
 }
 
@@ -113,7 +113,7 @@ static void a2dp_sink_audio_config_callback(const RawAddress& bd_addr, uint32_t 
   }
 
   sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
-                                   (const jbyte*)bd_addr.address);
+                                   (const jbyte*)bd_addr.address.data());
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onAudioConfigChanged, addr.get(),
                                (jint)sample_rate, (jint)channel_count);
 }
@@ -173,8 +173,7 @@ static jboolean connectA2dpNative(JNIEnv* env, jobject /* object */, jbyteArray 
     return JNI_FALSE;
   }
 
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
   log::info("{}", bd_addr);
   bt_status_t status = btif_av_sink_connect(bd_addr);
@@ -193,8 +192,7 @@ static jboolean disconnectA2dpNative(JNIEnv* env, jobject /* object */, jbyteArr
     return JNI_FALSE;
   }
 
-  RawAddress bd_addr;
-  bd_addr.FromOctets(reinterpret_cast<const uint8_t*>(addr));
+  RawAddress bd_addr = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
   log::info("{}", bd_addr);
   bt_status_t status = btif_av_sink_disconnect(bd_addr);
@@ -221,8 +219,7 @@ static jboolean setActiveDeviceNative(JNIEnv* env, jobject /* object */, jbyteAr
     return JNI_FALSE;
   }
 
-  RawAddress rawAddress;
-  rawAddress.FromOctets(reinterpret_cast<uint8_t*>(addr));
+  RawAddress rawAddress = RawAddress::FromOctets(reinterpret_cast<const uint8_t*>(addr));
 
   log::info("{}", rawAddress);
   bt_status_t status = btif_av_sink_set_active_device(rawAddress);

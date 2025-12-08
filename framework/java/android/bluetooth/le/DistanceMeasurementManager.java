@@ -21,7 +21,6 @@ import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.FlaggedApi;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -38,8 +37,6 @@ import android.os.CancellationSignal;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
 import android.util.Log;
-
-import com.android.bluetooth.flags.Flags;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -183,7 +180,6 @@ public final class DistanceMeasurementManager {
      * @deprecated do not use it, this is meaningless, no alternative API.
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING_25Q2_APIS)
     @Deprecated
     @SystemApi
     @RequiresBluetoothConnectPermission
@@ -217,7 +213,6 @@ public final class DistanceMeasurementManager {
      * @deprecated use {@link #getChannelSoundingSupportedSecurityLevels} instead.
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING_25Q2_APIS)
     @Deprecated
     @SystemApi
     @RequiresBluetoothConnectPermission
@@ -250,7 +245,6 @@ public final class DistanceMeasurementManager {
      *     supported.
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_CHANNEL_SOUNDING_25Q2_APIS)
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})

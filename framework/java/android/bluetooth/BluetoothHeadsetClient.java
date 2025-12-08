@@ -1192,7 +1192,8 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
      * Places a call with specified number.
      *
      * @param device remote device
-     * @param number valid phone number
+     * @param number The phone number to dial. If {@code null} or an empty string, this method will
+     *     attempt to redial the last dialed number.
      * @return <code>{@link BluetoothHeadsetClientCall} call</code> if command has been issued
      *     successfully; <code>{@code null}</code> otherwise; upon completion HFP sends {@link
      *     #ACTION_CALL_CHANGED} intent in case of success; {@link #ACTION_RESULT} is sent
@@ -1488,6 +1489,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull BluetoothDevice getDevice() {
             return mDevice;
         }
@@ -1499,6 +1501,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public boolean isServiceAvailable() {
             return mIsServiceAvailable;
         }
@@ -1511,6 +1514,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @Nullable String getNetworkOperatorName() {
             return mOperatorName;
         }
@@ -1531,6 +1535,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @IntRange(from = 0, to = 5) int getSignalStrength() {
             return mSignalStrength;
         }
@@ -1543,6 +1548,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public boolean isRoaming() {
             return mIsRoaming;
         }

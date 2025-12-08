@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.opp;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.opp.BluetoothOppTestUtils.CursorMockData;
 import static com.android.bluetooth.opp.BluetoothOppTransferActivity.DIALOG_RECEIVE_COMPLETE_FAIL;
 import static com.android.bluetooth.opp.BluetoothOppTransferActivity.DIALOG_RECEIVE_COMPLETE_SUCCESS;
@@ -37,11 +36,11 @@ import android.database.Cursor;
 import android.net.Uri;
 
 import androidx.test.core.app.ActivityScenario;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.TestUtils;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;
@@ -60,11 +59,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppTransferActivityTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
-    // Activity tests can sometimes flaky because of external factors like system dialog, etc.
-    // making the expected Espresso's root not focused or the activity doesn't show up.
-    // Add retry rule to resolve this problem.
-    @Rule public TestUtils.RetryTestRule mRetryTestRule = new TestUtils.RetryTestRule();
 
     @Spy BluetoothMethodProxy mBluetoothMethodProxy;
 
@@ -115,13 +109,10 @@ public class BluetoothOppTransferActivityTest {
                                         11,
                                         BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED)));
         BluetoothOppTestUtils.enableActivity(BluetoothOppTransferActivity.class, true, mContext);
-        TestUtils.setUpUiTest();
     }
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.tearDownUiTest();
-
         BluetoothMethodProxy.setInstanceForTesting(null);
         BluetoothOppTestUtils.enableActivity(BluetoothOppTransferActivity.class, false, mContext);
     }

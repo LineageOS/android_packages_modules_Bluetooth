@@ -60,6 +60,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -75,7 +76,7 @@ final class HearingAidStateMachine extends StateMachine {
 
     static final int MESSAGE_CONNECT = 1;
     static final int MESSAGE_DISCONNECT = 2;
-    @VisibleForTesting static final int MESSAGE_STACK_EVENT = 101;
+    static final int MESSAGE_STACK_EVENT = 101;
     private static final int MESSAGE_CONNECT_TIMEOUT = 201;
 
     @VisibleForTesting static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(30);
@@ -162,6 +163,10 @@ final class HearingAidStateMachine extends StateMachine {
                     log("Connecting to " + mDevice);
                     if (!mNativeInterface.connectHearingAid(mDevice)) {
                         Log.e(TAG, "Disconnected: error connecting to " + mDevice);
+                        break;
+                    }
+                    if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
+                        transitionTo(mConnecting);
                         break;
                     }
                     if (mService.okToConnect(mDevice)) {
@@ -527,11 +532,12 @@ final class HearingAidStateMachine extends StateMachine {
         intent.addFlags(
                 Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                         | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-        mService.sendBroadcastAsUser(
-                intent,
-                UserHandle.ALL,
-                BLUETOOTH_CONNECT,
-                Utils.getTempBroadcastOptions().toBundle());
+        if (Flags.onlyBroadcastToLocalUser()) {
+            mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        } else {
+            mService.sendBroadcastAsUser(
+                    intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        }
     }
 
     private static String messageWhatToString(int what) {

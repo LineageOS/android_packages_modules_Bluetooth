@@ -23,10 +23,12 @@
 #pragma once
 
 #include <base/thread_annotations.h>
+#include <bluetooth/types/address.h>
+
+#include <mutex>
 
 #include "rust/cxx.h"
 #include "stack/include/bt_hdr.h"
-#include "types/raw_address.h"
 
 namespace bluetooth::shim::arbiter {
 

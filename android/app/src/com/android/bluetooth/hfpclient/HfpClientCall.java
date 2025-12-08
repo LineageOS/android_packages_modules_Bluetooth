@@ -225,57 +225,33 @@ public final class HfpClientCall implements Parcelable {
      */
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder("HfpClientCall{mDevice: ");
-        builder.append(mDevice);
-        builder.append(", mId: ");
-        builder.append(mId);
-        builder.append(", mUUID: ");
-        builder.append(mUUID);
-        builder.append(", mState: ");
-        switch (mState) {
-            case CALL_STATE_ACTIVE:
-                builder.append("ACTIVE");
-                break;
-            case CALL_STATE_HELD:
-                builder.append("HELD");
-                break;
-            case CALL_STATE_DIALING:
-                builder.append("DIALING");
-                break;
-            case CALL_STATE_ALERTING:
-                builder.append("ALERTING");
-                break;
-            case CALL_STATE_INCOMING:
-                builder.append("INCOMING");
-                break;
-            case CALL_STATE_WAITING:
-                builder.append("WAITING");
-                break;
-            case CALL_STATE_HELD_BY_RESPONSE_AND_HOLD:
-                builder.append("HELD_BY_RESPONSE_AND_HOLD");
-                break;
-            case CALL_STATE_TERMINATED:
-                builder.append("TERMINATED");
-                break;
-            default:
-                builder.append(mState);
-                break;
-        }
-        builder.append(", mNumber: ");
-        builder.append(mNumber);
-        builder.append(", mMultiParty: ");
-        builder.append(mMultiParty);
-        builder.append(", mOutgoing: ");
-        builder.append(mOutgoing);
-        builder.append(", mInBandRing: ");
-        builder.append(mInBandRing);
-        builder.append("}");
-        return builder.toString();
+        return "HfpClientCall{"
+                + ("mDevice: " + mDevice)
+                + (", mId: " + mId)
+                + (", mUUID: " + mUUID)
+                + (", mState: "
+                        + switch (mState) {
+                            case CALL_STATE_ACTIVE -> "ACTIVE";
+                            case CALL_STATE_HELD -> "HELD";
+                            case CALL_STATE_DIALING -> "DIALING";
+                            case CALL_STATE_ALERTING -> "ALERTING";
+                            case CALL_STATE_INCOMING -> "INCOMING";
+                            case CALL_STATE_WAITING -> "WAITING";
+                            case CALL_STATE_HELD_BY_RESPONSE_AND_HOLD ->
+                                    "HELD_BY_RESPONSE_AND_HOLD";
+                            case CALL_STATE_TERMINATED -> "TERMINATED";
+                            default -> mState;
+                        })
+                + (", mNumber: " + mNumber)
+                + (", mMultiParty: " + mMultiParty)
+                + (", mOutgoing: " + mOutgoing)
+                + (", mInBandRing: " + mInBandRing)
+                + "}";
     }
 
     /** {@link Parcelable.Creator} interface implementation. */
     public static final @NonNull Parcelable.Creator<HfpClientCall> CREATOR =
-            new Parcelable.Creator<HfpClientCall>() {
+            new Parcelable.Creator<>() {
                 @Override
                 public HfpClientCall createFromParcel(Parcel in) {
                     return new HfpClientCall(

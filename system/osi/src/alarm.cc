@@ -178,6 +178,7 @@ static alarm_t* alarm_new_internal(const char* name, bool is_periodic) {
 
   // NOTE: The stats were reset by osi_calloc() above
 
+  log::verbose("Alarm {} created", name);
   return ret;
 }
 
@@ -186,12 +187,14 @@ void alarm_free(alarm_t* alarm) {
     return;
   }
 
+  std::string name = alarm->stats.name;
   alarm_cancel(alarm);
 
   osi_free((void*)alarm->stats.name);
   alarm->closure.~CancelableClosureInStruct();
   alarm->callback_mutex.reset();
   osi_free(alarm);
+  log::verbose("Alarm {} released", name);
 }
 
 uint64_t alarm_get_remaining_ms(const alarm_t* alarm) {
@@ -238,6 +241,7 @@ static void alarm_set_internal(alarm_t* alarm, uint64_t period_ms, alarm_callbac
 void alarm_cancel(alarm_t* alarm) {
   log::assert_that(alarms != NULL, "assert failed: alarms != NULL");
   if (!alarm) {
+    log::warn("alarm is null");
     return;
   }
 
@@ -245,7 +249,7 @@ void alarm_cancel(alarm_t* alarm) {
   {
     std::lock_guard<std::mutex> lock(alarms_mutex);
     local_mutex_ref = alarm->callback_mutex;
-    if (com::android::bluetooth::flags::set_ptr_null_after_free()) {
+    if (com_android_bluetooth_flags_set_ptr_null_after_free()) {
       log::assert_that(local_mutex_ref != nullptr, "assert failed: local_mutex_ref != nullptr");
     }
     alarm_cancel_internal(alarm);

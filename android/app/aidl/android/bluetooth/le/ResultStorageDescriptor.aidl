@@ -17,7 +17,7 @@
 package android.bluetooth.le;
 
 /**
- * {@hide}
+ * @hide
  */
 
 parcelable ResultStorageDescriptor;

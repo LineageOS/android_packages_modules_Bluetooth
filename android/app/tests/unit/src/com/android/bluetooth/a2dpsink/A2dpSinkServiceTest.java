@@ -22,7 +22,6 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -40,13 +39,13 @@ import android.bluetooth.BluetoothProfile;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;
@@ -65,7 +64,6 @@ public class A2dpSinkServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private DatabaseManager mDatabaseManager;
     @Mock private A2dpSinkNativeInterface mNativeInterface;
 
     private static final int TEST_SAMPLE_RATE = 44;
@@ -81,12 +79,11 @@ public class A2dpSinkServiceTest {
     public void setUp() throws Exception {
         BluetoothDevice[] bondedDevices = new BluetoothDevice[] {mDevice1, mDevice2};
 
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
         doReturn(1).when(mAdapterService).getMaxConnectedAudioDevices();
         TestUtils.mockGetSystemService(mAdapterService, AudioManager.class);
 
-        doReturn(true).when(mDatabaseManager).setProfileConnectionPolicy(any(), anyInt(), anyInt());
+        doReturn(true).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
 
         doReturn(true).when(mNativeInterface).setActiveDevice(any());
 
@@ -98,7 +95,6 @@ public class A2dpSinkServiceTest {
     @After
     public void tearDown() throws Exception {
         mService.cleanup();
-        assertThat(A2dpSinkService.getA2dpSinkService()).isNull();
     }
 
     private void syncHandler(int... what) {
@@ -126,14 +122,13 @@ public class A2dpSinkServiceTest {
      */
     private void mockDevicePriority(BluetoothDevice device, int priority) {
         doReturn(priority)
-                .when(mDatabaseManager)
+                .when(mAdapterService)
                 .getProfileConnectionPolicy(device, BluetoothProfile.A2DP_SINK);
     }
 
     /** Test that initialization of the service completes and that we can get a instance */
     @Test
     public void testInitialize() {
-        assertThat(A2dpSinkService.getA2dpSinkService()).isEqualTo(mService);
         assertThat(mLooper.nextMessage()).isNull();
     }
 
@@ -371,7 +366,7 @@ public class A2dpSinkServiceTest {
     @Test
     public void testSetConnectionPolicyDeviceAllowed() {
         assertThat(mService.setConnectionPolicy(mDevice1, CONNECTION_POLICY_ALLOWED)).isTrue();
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.A2DP_SINK, CONNECTION_POLICY_ALLOWED);
         assertThat(mLooper.nextMessage()).isNull();
@@ -381,7 +376,7 @@ public class A2dpSinkServiceTest {
     @Test
     public void testSetConnectionPolicyDeviceForbiddenWhileNotConnected() {
         assertThat(mService.setConnectionPolicy(mDevice1, CONNECTION_POLICY_FORBIDDEN)).isTrue();
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.A2DP_SINK, CONNECTION_POLICY_FORBIDDEN);
         assertThat(mLooper.nextMessage()).isNull();
@@ -397,7 +392,7 @@ public class A2dpSinkServiceTest {
         setupDeviceConnection(mDevice1);
 
         assertThat(mService.setConnectionPolicy(mDevice1, CONNECTION_POLICY_FORBIDDEN)).isTrue();
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.A2DP_SINK, CONNECTION_POLICY_FORBIDDEN);
 
@@ -413,7 +408,7 @@ public class A2dpSinkServiceTest {
     @Test
     public void testSetConnectionPolicyDeviceUnknown() {
         assertThat(mService.setConnectionPolicy(mDevice1, CONNECTION_POLICY_UNKNOWN)).isTrue();
-        verify(mDatabaseManager)
+        verify(mAdapterService)
                 .setProfileConnectionPolicy(
                         mDevice1, BluetoothProfile.A2DP_SINK, CONNECTION_POLICY_UNKNOWN);
         assertThat(mLooper.nextMessage()).isNull();
@@ -422,9 +417,7 @@ public class A2dpSinkServiceTest {
     /** Test that SetConnectionPolicy is robust to DatabaseManager failures */
     @Test
     public void testSetConnectionPolicyDatabaseWriteFails() {
-        doReturn(false)
-                .when(mDatabaseManager)
-                .setProfileConnectionPolicy(any(), anyInt(), anyInt());
+        doReturn(false).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
         assertThat(mService.setConnectionPolicy(mDevice1, CONNECTION_POLICY_ALLOWED)).isFalse();
         assertThat(mLooper.nextMessage()).isNull();
     }

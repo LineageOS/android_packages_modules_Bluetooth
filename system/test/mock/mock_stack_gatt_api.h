@@ -28,12 +28,13 @@
 
 // Original included files, if any
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/uuid.h>
+
 #include <string>
 
 #include "stack/include/gatt_api.h"
-#include "types/bluetooth/uuid.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 // Original usings
 using bluetooth::Uuid;

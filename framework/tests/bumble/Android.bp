@@ -11,7 +11,7 @@ android_test_helper_app {
     name: "BumbleBluetoothTestsApp",
     defaults: ["framework-bluetooth-tests-defaults"],
 
-    min_sdk_version: "current",
+    min_sdk_version: "36",
     target_sdk_version: "current",
     libs: [
         "android.test.base.stubs",
@@ -63,6 +63,7 @@ java_test_host {
         ":BumbleBluetoothTestsApp",
         ":BumbleBluetoothTestsHelperApp",
         "bumble_config.json",
+        "bumble_config_2.json",
     ],
     data_native_bins: [
         "bumble_pandora_server",
@@ -88,6 +89,7 @@ java_test_host {
 
     data: [
         "bumble_config.json",
+        "bumble_config_2.json",
     ],
     device_common_data: [
         ":BumbleBluetoothTestsApp",

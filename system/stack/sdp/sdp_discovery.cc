@@ -25,6 +25,8 @@
 #define LOG_TAG "stack::sdp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -36,8 +38,6 @@
 #include "stack/include/sdpdefs.h"
 #include "stack/sdp/sdp_discovery_db.h"
 #include "stack/sdp/sdpint.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;
@@ -206,38 +206,50 @@ static bool sdp_copy_raw_data(tCONN_CB* p_ccb, bool offset) {
   uint8_t* p_end;
   uint8_t type;
 
-  if (p_ccb->p_db && p_ccb->p_db->raw_data) {
-    cpy_len = p_ccb->p_db->raw_size - p_ccb->p_db->raw_used;
-    list_len = p_ccb->list_len;
-    p = &p_ccb->rsp_list[0];
-    p_end = &p_ccb->rsp_list[0] + list_len;
-
-    if (offset) {
-      cpy_len -= 1;
-      type = *p++;
-      uint8_t* old_p = p;
-      p = sdpu_get_len_from_type(p, p_end, type, &list_len);
-      if (p == NULL || (p + list_len) > p_end) {
-        log::warn("bad length");
-        return false;
-      }
-      if ((int)cpy_len < (p - old_p)) {
-        log::warn("no bytes left for data");
-        return false;
-      }
-      cpy_len -= (p - old_p);
-    }
-    if (list_len < cpy_len) {
-      cpy_len = list_len;
-    }
-    rem_len = SDP_MAX_LIST_BYTE_COUNT - (unsigned int)(p - &p_ccb->rsp_list[0]);
-    if (cpy_len > rem_len) {
-      log::warn("rem_len :{} less than cpy_len:{}", rem_len, cpy_len);
-      cpy_len = rem_len;
-    }
-    memcpy(&p_ccb->p_db->raw_data[p_ccb->p_db->raw_used], p, cpy_len);
-    p_ccb->p_db->raw_used += cpy_len;
+  if (p_ccb->p_db == NULL || p_ccb->p_db->raw_data == NULL) {
+    return true;
   }
+
+  // Check on destination buffer bounds.
+  // Check raw_used against raw_size as a sanity check.
+  if (p_ccb->p_db->raw_used >= p_ccb->p_db->raw_size) {
+    log::error(
+            "MEMCPY ABORT: raw_used is at or beyond raw_size: "
+            "raw_used: {}, raw_size: {}",
+            p_ccb->p_db->raw_used, p_ccb->p_db->raw_size);
+    return false;
+  }
+  cpy_len = p_ccb->p_db->raw_size - p_ccb->p_db->raw_used;
+  list_len = p_ccb->list_len;
+  p = &p_ccb->rsp_list[0];
+  p_end = &p_ccb->rsp_list[0] + list_len;
+
+  if (offset) {
+    cpy_len -= 1;
+    type = *p++;
+    uint8_t* old_p = p;
+    p = sdpu_get_len_from_type(p, p_end, type, &list_len);
+    if (p == NULL || (p + list_len) > p_end) {
+      log::warn("bad length");
+      return false;
+    }
+    if ((int)cpy_len < (p - old_p)) {
+      log::warn("no bytes left for data");
+      return false;
+    }
+    cpy_len -= (p - old_p);
+  }
+  if (list_len < cpy_len) {
+    cpy_len = list_len;
+  }
+  rem_len = SDP_MAX_LIST_BYTE_COUNT - (unsigned int)(p - &p_ccb->rsp_list[0]);
+  if (cpy_len > rem_len) {
+    log::warn("rem_len :{} less than cpy_len:{}", rem_len, cpy_len);
+    cpy_len = rem_len;
+  }
+
+  memcpy(&p_ccb->p_db->raw_data[p_ccb->p_db->raw_used], p, cpy_len);
+  p_ccb->p_db->raw_used += cpy_len;
   return true;
 }
 

@@ -18,6 +18,7 @@
 
 #include "bta_gatts_co.h"
 
+#include <bluetooth/types/address.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -25,7 +26,6 @@
 #include "btif_util.h"
 #include "osi/include/osi.h"
 #include "stack/include/gatt_api.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Local type definitions

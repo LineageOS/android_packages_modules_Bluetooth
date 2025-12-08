@@ -19,7 +19,7 @@ package com.android.bluetooth.gatt;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
 
-import static com.android.bluetooth.util.AttributionSourceUtil.getLastAttributionTag;
+import static com.android.bluetooth.util.AttributionSourceUtils.getLastAttributionTag;
 
 import android.annotation.Nullable;
 import android.bluetooth.BluetoothDevice;
@@ -35,32 +35,28 @@ import android.util.SparseArray;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.bluetooth.BluetoothStatsLog;
+import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.MetricsLogger;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /** AdvStats class helps keep track of information about advertising on a per application basis. */
 class AppAdvertiseStats {
-    private static final String TAG = AppAdvertiseStats.class.getSimpleName();
-
-    private static final DateTimeFormatter sDateFormat =
-            DateTimeFormatter.ofPattern("MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
+    private static final String TAG = GattUtil.TAG_PREFIX + AppAdvertiseStats.class.getSimpleName();
 
     static final String[] PHY_LE_STRINGS = {"LE_1M", "LE_2M", "LE_CODED"};
     static final int UUID_STRING_FILTER_LEN = 8;
 
-    static class AppAdvertiserData {
-        public boolean includeDeviceName = false;
-        public boolean includeTxPowerLevel = false;
-        public SparseArray<byte[]> manufacturerData;
-        public Map<ParcelUuid, byte[]> serviceData;
-        public List<ParcelUuid> serviceUuids;
+    private static class AppAdvertiserData {
+        private boolean mIncludeDeviceName;
+        private boolean mIncludeTxPowerLevel;
+        private SparseArray<byte[]> mManufacturerData;
+        private Map<ParcelUuid, byte[]> mServiceData;
+        private List<ParcelUuid> mServiceUuids;
 
         AppAdvertiserData(
                 boolean includeDeviceName,
@@ -68,11 +64,11 @@ class AppAdvertiseStats {
                 SparseArray<byte[]> manufacturerData,
                 Map<ParcelUuid, byte[]> serviceData,
                 List<ParcelUuid> serviceUuids) {
-            this.includeDeviceName = includeDeviceName;
-            this.includeTxPowerLevel = includeTxPowerLevel;
-            this.manufacturerData = manufacturerData;
-            this.serviceData = serviceData;
-            this.serviceUuids = serviceUuids;
+            mIncludeDeviceName = includeDeviceName;
+            mIncludeTxPowerLevel = includeTxPowerLevel;
+            mManufacturerData = manufacturerData;
+            mServiceData = serviceData;
+            mServiceUuids = serviceUuids;
         }
     }
 
@@ -103,13 +99,14 @@ class AppAdvertiseStats {
     private boolean mAnonymous = false;
     private boolean mConnectable = false;
     private boolean mScannable = false;
+    private boolean mDiscoverable = false;
     private @Nullable AppAdvertiserData mAdvertisingData = null;
     private @Nullable AppAdvertiserData mScanResponseData = null;
     private @Nullable AppAdvertiserData mPeriodicAdvertisingData = null;
     private boolean mPeriodicIncludeTxPower = false;
     private int mPeriodicInterval = 0;
     private int mAppImportance = IMPORTANCE_CACHED;
-    public ArrayList<AppAdvertiserRecord> mAdvertiserRecords = new ArrayList<AppAdvertiserRecord>();
+    public ArrayList<AppAdvertiserRecord> mAdvertiserRecords = new ArrayList<>();
 
     AppAdvertiseStats(int appUid, int id, String name, AttributionSource source) {
         this.mAppUid = appUid;
@@ -145,6 +142,7 @@ class AppAdvertiseStats {
             mAnonymous = parameters.isAnonymous();
             mConnectable = parameters.isConnectable();
             mScannable = parameters.isScannable();
+            mDiscoverable = parameters.isDiscoverable();
         }
 
         if (advertiseData != null) {
@@ -277,11 +275,11 @@ class AppAdvertiseStats {
                             data.getServiceData(),
                             data.getServiceUuids());
         } else if (data != null) {
-            mAdvertisingData.includeDeviceName = data.getIncludeDeviceName();
-            mAdvertisingData.includeTxPowerLevel = data.getIncludeTxPowerLevel();
-            mAdvertisingData.manufacturerData = data.getManufacturerSpecificData();
-            mAdvertisingData.serviceData = data.getServiceData();
-            mAdvertisingData.serviceUuids = data.getServiceUuids();
+            mAdvertisingData.mIncludeDeviceName = data.getIncludeDeviceName();
+            mAdvertisingData.mIncludeTxPowerLevel = data.getIncludeTxPowerLevel();
+            mAdvertisingData.mManufacturerData = data.getManufacturerSpecificData();
+            mAdvertisingData.mServiceData = data.getServiceData();
+            mAdvertisingData.mServiceUuids = data.getServiceUuids();
         }
     }
 
@@ -295,11 +293,11 @@ class AppAdvertiseStats {
                             data.getServiceData(),
                             data.getServiceUuids());
         } else if (data != null) {
-            mScanResponseData.includeDeviceName = data.getIncludeDeviceName();
-            mScanResponseData.includeTxPowerLevel = data.getIncludeTxPowerLevel();
-            mScanResponseData.manufacturerData = data.getManufacturerSpecificData();
-            mScanResponseData.serviceData = data.getServiceData();
-            mScanResponseData.serviceUuids = data.getServiceUuids();
+            mScanResponseData.mIncludeDeviceName = data.getIncludeDeviceName();
+            mScanResponseData.mIncludeTxPowerLevel = data.getIncludeTxPowerLevel();
+            mScanResponseData.mManufacturerData = data.getManufacturerSpecificData();
+            mScanResponseData.mServiceData = data.getServiceData();
+            mScanResponseData.mServiceUuids = data.getServiceUuids();
         }
     }
 
@@ -313,6 +311,7 @@ class AppAdvertiseStats {
             mAnonymous = parameters.isAnonymous();
             mConnectable = parameters.isConnectable();
             mScannable = parameters.isScannable();
+            mDiscoverable = parameters.isDiscoverable();
         }
     }
 
@@ -333,11 +332,11 @@ class AppAdvertiseStats {
                             data.getServiceData(),
                             data.getServiceUuids());
         } else if (data != null) {
-            mPeriodicAdvertisingData.includeDeviceName = data.getIncludeDeviceName();
-            mPeriodicAdvertisingData.includeTxPowerLevel = data.getIncludeTxPowerLevel();
-            mPeriodicAdvertisingData.manufacturerData = data.getManufacturerSpecificData();
-            mPeriodicAdvertisingData.serviceData = data.getServiceData();
-            mPeriodicAdvertisingData.serviceUuids = data.getServiceUuids();
+            mPeriodicAdvertisingData.mIncludeDeviceName = data.getIncludeDeviceName();
+            mPeriodicAdvertisingData.mIncludeTxPowerLevel = data.getIncludeTxPowerLevel();
+            mPeriodicAdvertisingData.mManufacturerData = data.getManufacturerSpecificData();
+            mPeriodicAdvertisingData.mServiceData = data.getServiceData();
+            mPeriodicAdvertisingData.mServiceUuids = data.getServiceUuids();
         }
     }
 
@@ -484,29 +483,29 @@ class AppAdvertiseStats {
 
     private static void dumpAppAdvertiserData(StringBuilder sb, AppAdvertiserData advData) {
         sb.append("\n          └Include Device Name                          : ")
-                .append(advData.includeDeviceName);
+                .append(advData.mIncludeDeviceName);
         sb.append("\n          └Include Tx Power Level                       : ")
-                .append(advData.includeTxPowerLevel);
+                .append(advData.mIncludeTxPowerLevel);
 
-        if (advData.manufacturerData.size() > 0) {
+        if (advData.mManufacturerData.size() > 0) {
             sb.append("\n          └Manufacturer Data (length of data)           : ")
-                    .append(advData.manufacturerData.size());
+                    .append(advData.mManufacturerData.size());
         }
 
-        if (!advData.serviceData.isEmpty()) {
+        if (!advData.mServiceData.isEmpty()) {
             sb.append("\n          └Service Data(UUID, length of data)           : ");
-            for (ParcelUuid uuid : advData.serviceData.keySet()) {
+            for (ParcelUuid uuid : advData.mServiceData.keySet()) {
                 sb.append("\n            [")
                         .append(uuid.toString().substring(0, UUID_STRING_FILTER_LEN))
                         .append("-xxxx-xxxx-xxxx-xxxxxxxxxxxx, ")
-                        .append(advData.serviceData.get(uuid).length)
+                        .append(advData.mServiceData.get(uuid).length)
                         .append("]");
             }
         }
 
-        if (!advData.serviceUuids.isEmpty()) {
+        if (!advData.mServiceUuids.isEmpty()) {
             sb.append("\n          └Service Uuids                                : \n            ")
-                    .append(advData.serviceUuids.toString().substring(0, UUID_STRING_FILTER_LEN))
+                    .append(advData.mServiceUuids.toString().substring(0, UUID_STRING_FILTER_LEN))
                     .append("-xxxx-xxxx-xxxx-xxxxxxxxxxxx");
         }
     }
@@ -537,6 +536,8 @@ class AppAdvertiseStats {
                 .append(stats.mConnectable);
         sb.append("\n        └Scannable                                      : ")
                 .append(stats.mScannable);
+        sb.append("\n        └Discoverable                                   : ")
+                .append(stats.mDiscoverable);
 
         if (stats.mAdvertisingData != null) {
             sb.append("\n        └Advertise Data:");
@@ -579,7 +580,7 @@ class AppAdvertiseStats {
 
             sb.append("\n      ").append((i + 1)).append(":");
             sb.append("\n        └Start time                                     : ")
-                    .append(sDateFormat.format(record.startTime));
+                    .append(Utils.formatInstant(record.startTime));
             if (record.stopTime == null) {
                 Duration timeElapsed = Duration.between(record.startTime, currentTime);
                 sb.append("\n        └Elapsed time                                   : ")
@@ -587,7 +588,7 @@ class AppAdvertiseStats {
                         .append("ms");
             } else {
                 sb.append("\n        └Stop time                                      : ")
-                        .append(sDateFormat.format(record.stopTime));
+                        .append(Utils.formatInstant(record.stopTime));
             }
             sb.append("\n        └Duration(10ms unit)                            : ")
                     .append(record.duration);

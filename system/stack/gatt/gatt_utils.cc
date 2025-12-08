@@ -24,6 +24,9 @@
 #define LOG_TAG "gatt_utils"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <deque>
@@ -47,8 +50,6 @@
 #include "stack/include/btm_sec_api.h"
 #include "stack/include/l2cdefs.h"
 #include "stack/include/sdp_api.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
@@ -773,7 +774,11 @@ void gatt_rsp_timeout(void* data) {
     EattExtension::GetInstance()->Disconnect(p_clcb->p_tcb->peer_bda, p_clcb->cid);
   } else {
     log::warn("conn_id: 0x{:04x} disconnecting GATT...", p_clcb->conn_id);
-    gatt_disconnect(p_clcb->p_tcb);
+    if (com_android_bluetooth_flags_disconnect_acl_on_gatt_timeout()) {
+      gatt_force_disconnect(p_clcb->p_tcb, "stack::gatt::gatt_utils::gatt_rsp_timeout");
+    } else {
+      gatt_disconnect(p_clcb->p_tcb);
+    }
   }
 }
 
@@ -811,7 +816,11 @@ void gatt_indication_confirmation_timeout(void* data) {
   }
 
   log::warn("disconnecting... bda:{} transport:{}", p_tcb->peer_bda, p_tcb->transport);
-  gatt_disconnect(p_tcb);
+  if (com_android_bluetooth_flags_disconnect_acl_on_gatt_timeout()) {
+    gatt_force_disconnect(p_tcb, "stack::gatt::gatt_utils::gatt_indication_confirmation_timeout");
+  } else {
+    gatt_disconnect(p_tcb);
+  }
 }
 
 /*******************************************************************************
@@ -1508,8 +1517,6 @@ void gatt_sr_update_cback_cnt(tGATT_TCB& tcb, uint16_t cid, tGATT_IF gatt_if, bo
  *
  ******************************************************************************/
 void gatt_sr_update_prep_cnt(tGATT_TCB& tcb, tGATT_IF gatt_if, bool is_inc, bool is_reset_first) {
-  uint8_t idx = ((uint8_t)gatt_if) - 1;
-
   log::verbose("tcb idx={} gatt_if={} is_inc={} is_reset_first={}", tcb.tcb_idx, gatt_if, is_inc,
                is_reset_first);
 

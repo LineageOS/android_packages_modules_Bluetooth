@@ -63,7 +63,7 @@ class HidTest(navi_test_base.TwoDevicesTestBase):
     async def test_connect(self) -> None:
         """Tests establishing the HID connection from DUT to REF.
 
-    Test Steps:
+    Test steps:
       1. Establish the HID connection between DUT and REF.
       2. Verify the HID connection is established.
     """
@@ -85,7 +85,7 @@ class HidTest(navi_test_base.TwoDevicesTestBase):
     async def test_reconnect(self) -> None:
         """Tests reconnecting the HID connection with the background scanner.
 
-    Test Steps:
+    Test steps:
       1. Pair with REF.
       2. Terminate the connection.
       3. Connect HID from REF.
@@ -125,7 +125,7 @@ class HidTest(navi_test_base.TwoDevicesTestBase):
     async def test_keyboard_input(self) -> None:
         """Tests the HID keyboard input.
 
-    Test Steps:
+    Test steps:
       1. Establish the HID connection between DUT and REF.
       2. Press each key on the keyboard and verify the key down and up events
          on DUT.
@@ -161,7 +161,7 @@ class HidTest(navi_test_base.TwoDevicesTestBase):
     async def test_mouse_click(self) -> None:
         """Tests the HID mouse click.
 
-    Test Steps:
+    Test steps:
       1. Leverage the test_connect() to establish the connection.
       2. Press primary button and wait for button press.
       3. Release primary button and wait for button down.
@@ -194,7 +194,7 @@ class HidTest(navi_test_base.TwoDevicesTestBase):
     async def test_mouse_movement(self) -> None:
         """Tests the HID mouse movement.
 
-    Test Steps:
+    Test steps:
       1. Leverage the test_connect() to establish the connection.
       2. Move on X axis and wait for hover movement.
       3. Move on Y axis and wait for hover movement.

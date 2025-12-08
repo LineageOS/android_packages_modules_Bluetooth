@@ -114,6 +114,9 @@ struct OddDisconnectionsRule {
     /// make this a special case.
     pending_disconnect_due_to_host_power_off: HashSet<ConnectionHandle>,
 
+    /// When cancelling le connection, we will receive LE connection complete with failure status.
+    is_cancelling_le_conn: bool,
+
     /// Pre-defined signals discovered in the logs.
     signals: Vec<Signal>,
 
@@ -140,6 +143,7 @@ impl OddDisconnectionsRule {
             pending_le_feat: HashMap::new(),
             last_feat_handle: HashMap::new(),
             pending_disconnect_due_to_host_power_off: HashSet::new(),
+            is_cancelling_le_conn: false,
             signals: vec![],
             reportable: vec![],
         }
@@ -182,8 +186,14 @@ impl OddDisconnectionsRule {
         self.last_le_connection_filter_policy = Some(policy);
         if let Some(p) = self.le_connection_attempt.insert(address, packet.clone()) {
             self.reportable.push((
-                p.ts,
+                packet.ts,
                 format!("Dangling LE connection attempt at {:?} replaced with {:?}", p, packet),
+            ));
+        }
+        if self.is_cancelling_le_conn {
+            self.reportable.push((
+                packet.ts,
+                format!("Creating LE conn when LE conn cancellation is in progress"),
             ));
         }
     }
@@ -243,13 +253,14 @@ impl OddDisconnectionsRule {
             | OpCode::EnhancedSetupSynchronousConnection
             | OpCode::EnhancedAcceptSynchronousConnection
             | OpCode::LeCreateConnection
-            | OpCode::LeExtendedCreateConnection => {
+            | OpCode::LeExtendedCreateConnectionV1
+            | OpCode::LeExtendedCreateConnectionV2 => {
                 self.process_command_status_conn(status, opcode, packet);
             }
 
             OpCode::ReadRemoteSupportedFeatures
             | OpCode::ReadRemoteExtendedFeatures
-            | OpCode::LeReadRemoteFeatures => {
+            | OpCode::LeReadRemoteFeaturesPage0 => {
                 self.process_command_status_feat(status, opcode, packet);
             }
 
@@ -271,9 +282,9 @@ impl OddDisconnectionsRule {
                 self.last_sco_connection_attempt.take()
             }
 
-            OpCode::LeCreateConnection | OpCode::LeExtendedCreateConnection => {
-                self.last_le_connection_attempt.take()
-            }
+            OpCode::LeCreateConnection
+            | OpCode::LeExtendedCreateConnectionV1
+            | OpCode::LeExtendedCreateConnectionV2 => self.last_le_connection_attempt.take(),
 
             _ => return,
         };
@@ -298,7 +309,9 @@ impl OddDisconnectionsRule {
                         self.sco_connection_attempt.remove(&address);
                     }
 
-                    OpCode::LeCreateConnection | OpCode::LeExtendedCreateConnection => {
+                    OpCode::LeCreateConnection
+                    | OpCode::LeExtendedCreateConnectionV1
+                    | OpCode::LeExtendedCreateConnectionV2 => {
                         self.le_connection_attempt.remove(&address);
                         self.last_le_connection_filter_policy = None;
                     }
@@ -320,7 +333,7 @@ impl OddDisconnectionsRule {
         let feat_type = match opcode {
             OpCode::ReadRemoteSupportedFeatures => PendingRemoteFeature::Supported,
             OpCode::ReadRemoteExtendedFeatures => PendingRemoteFeature::Extended,
-            OpCode::LeReadRemoteFeatures => PendingRemoteFeature::Le,
+            OpCode::LeReadRemoteFeaturesPage0 => PendingRemoteFeature::Le,
             _ => return,
         };
 
@@ -478,36 +491,50 @@ impl OddDisconnectionsRule {
         address: Address,
         packet: &Packet,
     ) {
-        let use_accept_list = self
-            .last_le_connection_filter_policy
-            .map_or(false, |policy| policy == InitiatorFilterPolicy::UseFilterAcceptList);
+        let use_accept_list = self.last_le_connection_filter_policy.map_or(false, |policy| {
+            policy == InitiatorFilterPolicy::UseFilterAcceptListWithPeerAddress
+                || policy == InitiatorFilterPolicy::UseFilterAcceptListWithDecisionPdus
+        });
         let addr_to_remove =
             if use_accept_list { hcidoc_packets::hci::EMPTY_ADDRESS } else { address };
 
+        let mut msg = None;
         if let Some(_) = self.le_connection_attempt.remove(&addr_to_remove) {
             if status == ErrorCode::Success {
                 self.active_handles.insert(handle, (packet.ts, address));
                 self.pending_disconnect_due_to_host_power_off.remove(&handle);
-            } else {
-                let message = if use_accept_list {
-                    format!("LeConnectionComplete error {:?} for accept list", status)
+                if self.is_cancelling_le_conn {
+                    msg = Some(format!(
+                        "Receive connection success when cancelling LE conn, addr {}, (handle={})",
+                        address, handle
+                    ));
+                }
+            } else if !self.is_cancelling_le_conn {
+                // if we're cancelling LE conn, it's expected that controller pass an error here.
+                msg = if use_accept_list {
+                    Some(format!("LeConnectionComplete error {:?} for accept list", status))
                 } else {
-                    format!(
+                    Some(format!(
                         "LeConnectionComplete error {:?} for addr {} (handle={})",
                         status, address, handle
-                    )
-                };
-                self.reportable.push((packet.ts, message));
+                    ))
+                }
             }
         } else {
-            self.reportable.push((
-                packet.ts,
-                format!(
-                    "LeConnectionComplete with status {:?} for unknown addr {} (handle={})",
-                    status, address, handle
-                ),
-            ));
+            msg = Some(format!(
+                "LeConnectionComplete with status {:?} for unknown addr {} (handle={}), is_cancelling_le_conn {}",
+                status, address, handle, self.is_cancelling_le_conn
+            ))
         }
+
+        self.is_cancelling_le_conn = false;
+        if let Some(m) = msg {
+            self.reportable.push((packet.ts, m));
+        }
+    }
+
+    fn process_le_cancel_connection(&mut self) {
+        self.is_cancelling_le_conn = true;
     }
 
     fn process_acl_tx(&mut self, acl_tx: &Acl, packet: &Packet) {
@@ -609,6 +636,7 @@ impl OddDisconnectionsRule {
         self.pending_le_feat.clear();
         self.last_feat_handle.clear();
         self.pending_disconnect_due_to_host_power_off.clear();
+        self.is_cancelling_le_conn = false;
     }
 
     fn process_system_note(&mut self, note: &String) {
@@ -665,12 +693,22 @@ impl Rule for OddDisconnectionsRule {
                         packet,
                     );
                 }
-                CommandChild::LeExtendedCreateConnection(lecc) => {
+                CommandChild::LeExtendedCreateConnectionV1(lecc) => {
                     self.process_le_create_connection(
                         lecc.get_peer_address(),
                         lecc.get_initiator_filter_policy(),
                         packet,
                     );
+                }
+                CommandChild::LeExtendedCreateConnectionV2(lecc) => {
+                    self.process_le_create_connection(
+                        lecc.get_peer_address(),
+                        lecc.get_initiator_filter_policy(),
+                        packet,
+                    );
+                }
+                CommandChild::LeCreateConnectionCancel(_lccc) => {
+                    self.process_le_cancel_connection();
                 }
                 CommandChild::LeAddDeviceToFilterAcceptList(laac) => {
                     self.process_add_accept_list(laac.get_address(), packet);
@@ -681,7 +719,7 @@ impl Rule for OddDisconnectionsRule {
                 CommandChild::LeClearFilterAcceptList(_lcac) => {
                     self.process_clear_accept_list(packet);
                 }
-                CommandChild::LeReadRemoteFeatures(lrrf) => {
+                CommandChild::LeReadRemoteFeaturesPage0(lrrf) => {
                     self.process_remote_feat_cmd(
                         PendingRemoteFeature::Le,
                         &lrrf.get_connection_handle(),
@@ -758,7 +796,7 @@ impl Rule for OddDisconnectionsRule {
                             packet,
                         );
                     }
-                    LeMetaEventChild::LeEnhancedConnectionComplete(lecc) => {
+                    LeMetaEventChild::LeEnhancedConnectionCompleteV1(lecc) => {
                         self.process_le_conn_complete_ev(
                             lecc.get_status(),
                             lecc.get_connection_handle(),
@@ -766,7 +804,15 @@ impl Rule for OddDisconnectionsRule {
                             packet,
                         );
                     }
-                    LeMetaEventChild::LeReadRemoteFeaturesComplete(lrrfc) => {
+                    LeMetaEventChild::LeEnhancedConnectionCompleteV2(lecc) => {
+                        self.process_le_conn_complete_ev(
+                            lecc.get_status(),
+                            lecc.get_connection_handle(),
+                            lecc.get_peer_address(),
+                            packet,
+                        );
+                    }
+                    LeMetaEventChild::LeReadRemoteFeaturesPage0Complete(lrrfc) => {
                         self.process_remote_feat_ev(
                             PendingRemoteFeature::Le,
                             lrrfc.get_status(),
@@ -810,6 +856,10 @@ impl Rule for OddDisconnectionsRule {
 
     fn report_signals(&self) -> &[Signal] {
         self.signals.as_slice()
+    }
+
+    fn output_json(&self, _writer: &mut dyn Write) {
+        // Not implemented.
     }
 }
 
@@ -969,7 +1019,12 @@ impl Rule for LinkKeyMismatchRule {
                             self.handles.insert(ev.get_connection_handle(), ev.get_peer_address());
                         }
                     }
-                    LeMetaEventChild::LeEnhancedConnectionComplete(ev) => {
+                    LeMetaEventChild::LeEnhancedConnectionCompleteV1(ev) => {
+                        if ev.get_status() == ErrorCode::Success {
+                            self.handles.insert(ev.get_connection_handle(), ev.get_peer_address());
+                        }
+                    }
+                    LeMetaEventChild::LeEnhancedConnectionCompleteV2(ev) => {
                         if ev.get_status() == ErrorCode::Success {
                             self.handles.insert(ev.get_connection_handle(), ev.get_peer_address());
                         }
@@ -1028,6 +1083,10 @@ impl Rule for LinkKeyMismatchRule {
 
     fn report_signals(&self) -> &[Signal] {
         self.signals.as_slice()
+    }
+
+    fn output_json(&self, _writer: &mut dyn Write) {
+        // Not implemented.
     }
 }
 
@@ -1098,6 +1157,10 @@ impl Rule for SecurityMode3Rule {
 
     fn report_signals(&self) -> &[Signal] {
         self.signals.as_slice()
+    }
+
+    fn output_json(&self, _writer: &mut dyn Write) {
+        // Not implemented.
     }
 }
 

@@ -111,8 +111,6 @@ class SecurityTest(base_test.BaseTestClass):  # type: ignore[misc]
                     },
                 )
 
-        await asyncio.gather(self.dut.reset(), self.ref.reset())
-
     def teardown_class(self) -> None:
         if self.devices:
             self.devices.stop_all()

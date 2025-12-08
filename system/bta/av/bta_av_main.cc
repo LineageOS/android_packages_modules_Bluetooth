@@ -25,6 +25,8 @@
 #define LOG_TAG "bluetooth-a2dp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/hci_role.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 
@@ -63,8 +65,6 @@
 #include "stack/include/hci_error_code.h"
 #include "stack/include/sdp_api.h"
 #include "storage/config_keys.h"
-#include "types/hci_role.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
@@ -860,8 +860,8 @@ static void bta_av_sys_rs_cback(tBTA_SYS_CONN_STATUS /* status */, tHCI_ROLE new
 
   /* restore role switch policy, if role switch failed */
   if ((HCI_SUCCESS != hci_status) &&
-      (get_btm_client_interface().link_policy.BTM_GetRole(peer_addr, &cur_role) ==
-       tBTM_STATUS::BTM_SUCCESS) &&
+      (get_btm_client_interface().link_policy.BTM_GetRole(peer_addr, BT_TRANSPORT_BR_EDR,
+                                                          &cur_role) == tBTM_STATUS::BTM_SUCCESS) &&
       (cur_role == HCI_ROLE_PERIPHERAL)) {
     get_btm_client_interface().link_policy.BTM_unblock_role_switch_for(peer_addr);
   }
@@ -955,59 +955,6 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, uint8_t num_sco_li
 
 /*******************************************************************************
  *
- * Function         bta_av_switch_if_needed
- *
- * Description      This function checks if there is another existing AV
- *                  channel that is local as peripheral role.
- *                  If so, role switch and remove it from link policy.
- *
- * Returns          true, if role switch is done
- *
- ******************************************************************************/
-bool bta_av_switch_if_needed(tBTA_AV_SCB* /*p_scb*/) {
-  // TODO: A workaround for devices that are connected first, become
-  // Central, and block follow-up role changes - b/72122792 .
-  return false;
-#if 0
-  uint8_t role;
-  bool needed = false;
-  tBTA_AV_SCB* p_scbi;
-  int i;
-  uint8_t mask;
-
-  for (i = 0; i < BTA_AV_NUM_STRS; i++) {
-    mask = BTA_AV_HNDL_TO_MSK(i);
-    p_scbi = bta_av_cb.p_scb[i];
-    if (p_scbi && (p_scb->hdi != i) &&   /* not the original channel */
-        ((bta_av_cb.conn_audio & mask))) /* connected audio */
-    {
-      get_btm_client_interface().link_policy.BTM_GetRole(p_scbi->PeerAddress(), &role);
-      /* this channel is open - clear the role switch link policy for this link
-       */
-      if (HCI_ROLE_CENTRAL != role) {
-        if (bta_av_cb.features & BTA_AV_FEAT_CENTRAL)
-          get_btm_client_interface().link_policy.BTM_block_role_switch_for(p_scbi->PeerAddress());
-        if (BTM_CMD_STARTED !=
-            BTM_SwitchRole(p_scbi->PeerAddress(), HCI_ROLE_CENTRAL)) {
-          /* can not switch role on SCBI
-           * start the timer on SCB - because this function is ONLY called when
-           * SCB gets API_OPEN */
-          bta_sys_start_timer(p_scb->avrc_ct_timer, BTA_AV_RS_TIME_VAL,
-                              BTA_AV_AVRC_TIMER_EVT, p_scb->hndl);
-        }
-        needed = true;
-        /* mark the original channel as waiting for RS result */
-        bta_av_cb.rs_idx = p_scb->hdi + 1;
-        break;
-      }
-    }
-  }
-  return needed;
-#endif
-}
-
-/*******************************************************************************
- *
  * Function         bta_av_link_role_ok
  *
  * Description      This function checks if the SCB has existing ACL connection
@@ -1018,8 +965,8 @@ bool bta_av_switch_if_needed(tBTA_AV_SCB* /*p_scb*/) {
  ******************************************************************************/
 bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
   tHCI_ROLE role;
-  if (get_btm_client_interface().link_policy.BTM_GetRole(p_scb->PeerAddress(), &role) !=
-      tBTM_STATUS::BTM_SUCCESS) {
+  if (get_btm_client_interface().link_policy.BTM_GetRole(p_scb->PeerAddress(), BT_TRANSPORT_BR_EDR,
+                                                         &role) != tBTM_STATUS::BTM_SUCCESS) {
     log::warn("Unable to find link role for device:{}", p_scb->PeerAddress());
     return true;
   }

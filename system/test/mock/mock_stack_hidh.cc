@@ -19,13 +19,14 @@
  *   Functions generated:11
  */
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hiddefs.h"
 #include "stack/include/hidh_api.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 tHID_STATUS HID_HostAddDev(const RawAddress& /* addr */, uint16_t /* attr_mask */,
                            uint8_t* /* handle */) {

@@ -20,3 +20,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "adm_centralize_active_device_handling"
+    namespace: "bluetooth"
+    description: "ActiveDeviceManager is centralized manager of active Bluetooth device."
+    bug: "429980017"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

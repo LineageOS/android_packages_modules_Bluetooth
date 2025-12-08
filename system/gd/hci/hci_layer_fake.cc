@@ -234,6 +234,13 @@ void HciLayerFake::InitEmptyCommand() {
   ASSERT_TRUE(empty_command_view_.IsValid());
 }
 
+void HciLayerFake::SetLeAclDataConsumer(LeAclDataConsumer* le_acl_data_consumer) {
+  router_.SetLeAclDataConsumer(le_acl_data_consumer);
+}
+void HciLayerFake::SetClassicAclDataConsumer(ClassicAclDataConsumer* classic_acl_data_consumer) {
+  router_.SetClassicAclDataConsumer(classic_acl_data_consumer);
+}
+
 void HciLayerFake::IncomingAclData(uint16_t handle, std::unique_ptr<AclBuilder> acl_builder) {
   std::lock_guard lock(mutex_);
   auto* queue_end = acl_queue_.GetDownEnd();
@@ -289,7 +296,8 @@ void HciLayerFake::do_disconnect(uint16_t handle, ErrorCode reason) {
   HciLayer::Disconnect(handle, reason);
 }
 
-HciLayerFake::HciLayerFake(os::Handler* handler) : HciLayer(handler), handler_(handler) {
+HciLayerFake::HciLayerFake(os::Handler* handler)
+    : HciLayer(handler), handler_(handler), router_(handler, acl_queue_.GetUpEnd()) {
   InitEmptyCommand();
   StartWithNoHalDependencies(handler);
 }

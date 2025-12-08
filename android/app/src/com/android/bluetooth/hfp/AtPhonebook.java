@@ -94,8 +94,7 @@ public class AtPhonebook {
     // package and class name to which we send intent to check phone book access permission
     private final String mPairingPackage;
 
-    @VisibleForTesting
-    final HashMap<String, PhonebookResult> mPhonebooks = new HashMap<String, PhonebookResult>(4);
+    @VisibleForTesting final HashMap<String, PhonebookResult> mPhonebooks = new HashMap<>(4);
 
     static final int TYPE_UNKNOWN = -1;
     static final int TYPE_READ = 0;
@@ -667,7 +666,7 @@ public class AtPhonebook {
         mAdapterService.sendOrderedBroadcast(
                 intent,
                 BLUETOOTH_CONNECT,
-                Utils.getTempBroadcastOptions().toBundle(),
+                Utils.getTempBroadcastBundle(),
                 null,
                 null,
                 Activity.RESULT_OK,

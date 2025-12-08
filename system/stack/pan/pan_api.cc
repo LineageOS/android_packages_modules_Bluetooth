@@ -28,6 +28,8 @@
 #include "stack/include/pan_api.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 
 #include <cstdint>
 #include <cstring>
@@ -43,8 +45,6 @@
 #include "stack/include/btm_log_history.h"
 #include "stack/include/sdp_api.h"
 #include "stack/pan/pan_int.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using namespace bluetooth::legacy::stack::sdp;
@@ -407,58 +407,6 @@ tPAN_RESULT PAN_Disconnect(uint16_t handle) {
 
 /*******************************************************************************
  *
- * Function         PAN_Write
- *
- * Description      This sends data over the PAN connections. If this is called
- *                  on GN or NAP side and the packet is multicast or broadcast
- *                  it will be sent on all the links. Otherwise the correct link
- *                  is found based on the destination address and forwarded on
- *                  it.
- *
- * Parameters:      handle   - handle for the connection
- *                  dst      - MAC or BD Addr of the destination device
- *                  src      - MAC or BD Addr of the source who sent this packet
- *                  protocol - protocol of the ethernet packet like IP or ARP
- *                  p_data   - pointer to the data
- *                  len      - length of the data
- *                  ext      - to indicate that extension headers present
- *
- * Returns          PAN_SUCCESS       - if the data is sent successfully
- *                  PAN_FAILURE       - if the connection is not found or
- *                                           there is an error in sending data
- *
- ******************************************************************************/
-tPAN_RESULT PAN_Write(uint16_t handle, const RawAddress& dst, const RawAddress& src,
-                      uint16_t protocol, uint8_t* p_data, uint16_t len, bool ext) {
-  if (pan_cb.role == PAN_ROLE_INACTIVE || !pan_cb.num_conns) {
-    log::error("PAN is not active, data write failed.");
-    return PAN_FAILURE;
-  }
-
-  // If the packet is broadcast or multicast, we're going to have to create
-  // a copy of the packet for each connection. We can save one extra copy
-  // by fast-pathing here and calling BNEP_Write instead of placing the packet
-  // in a BT_HDR buffer, calling BNEP_Write, and then freeing the buffer.
-  if (dst.address[0] & 0x01) {
-    int i;
-    for (i = 0; i < MAX_PAN_CONNS; ++i) {
-      if (pan_cb.pcb[i].con_state == PAN_STATE_CONNECTED) {
-        BNEP_Write(pan_cb.pcb[i].handle, dst, p_data, len, protocol, src, ext);
-      }
-    }
-    return PAN_SUCCESS;
-  }
-
-  BT_HDR* buffer = reinterpret_cast<BT_HDR*>(osi_malloc(PAN_BUF_SIZE));
-  buffer->len = len;
-  buffer->offset = PAN_MINIMUM_OFFSET;
-  memcpy(reinterpret_cast<uint8_t*>(buffer) + sizeof(BT_HDR) + buffer->offset, p_data, buffer->len);
-
-  return PAN_WriteBuf(handle, dst, src, protocol, buffer, ext);
-}
-
-/*******************************************************************************
- *
  * Function         PAN_WriteBuf
  *
  * Description      This sends data over the PAN connections. If this is called
@@ -569,82 +517,6 @@ tPAN_RESULT PAN_WriteBuf(uint16_t handle, const RawAddress& dst, const RawAddres
 
   log::verbose("PAN successfully sent data buf to the PANU");
 
-  return PAN_SUCCESS;
-}
-
-/*******************************************************************************
- *
- * Function         PAN_SetProtocolFilters
- *
- * Description      This function is used to set protocol filters on the peer
- *
- * Parameters:      handle      - handle for the connection
- *                  num_filters - number of protocol filter ranges
- *                  start       - array of starting protocol numbers
- *                  end         - array of ending protocol numbers
- *
- *
- * Returns          PAN_SUCCESS    if protocol filters are set successfully
- *                  PAN_FAILURE    if connection not found or error in setting
- *
- ******************************************************************************/
-tPAN_RESULT PAN_SetProtocolFilters(uint16_t handle, uint16_t num_filters, uint16_t* p_start_array,
-                                   uint16_t* p_end_array) {
-  tPAN_CONN* pcb;
-
-  /* Check if the connection exists */
-  pcb = pan_get_pcb_by_handle(handle);
-  if (!pcb) {
-    log::error("PAN connection not found for the handle {}", handle);
-    return PAN_FAILURE;
-  }
-
-  tBNEP_RESULT result =
-          BNEP_SetProtocolFilters(pcb->handle, num_filters, p_start_array, p_end_array);
-  if (result != BNEP_SUCCESS) {
-    log::error("PAN failed to set protocol filters for handle {}", handle);
-    return (tPAN_RESULT)result;
-  }
-
-  log::verbose("PAN successfully sent protocol filters for handle {}", handle);
-  return PAN_SUCCESS;
-}
-
-/*******************************************************************************
- *
- * Function         PAN_SetMulticastFilters
- *
- * Description      This function is used to set multicast filters on the peer
- *
- * Parameters:      handle      - handle for the connection
- *                  num_filters - number of multicast filter ranges
- *                  start       - array of starting multicast filter addresses
- *                  end         - array of ending multicast filter addresses
- *
- *
- * Returns          PAN_SUCCESS    if multicast filters are set successfully
- *                  PAN_FAILURE    if connection not found or error in setting
- *
- ******************************************************************************/
-tPAN_RESULT PAN_SetMulticastFilters(uint16_t handle, uint16_t num_mcast_filters,
-                                    uint8_t* p_start_array, uint8_t* p_end_array) {
-  tPAN_CONN* pcb;
-
-  /* Check if the connection exists */
-  pcb = pan_get_pcb_by_handle(handle);
-  if (!pcb) {
-    log::error("PAN connection not found for the handle {}", handle);
-    return PAN_FAILURE;
-  }
-
-  tBNEP_RESULT result =
-          BNEP_SetMulticastFilters(pcb->handle, num_mcast_filters, p_start_array, p_end_array);
-  if (result != BNEP_SUCCESS) {
-    log::error("PAN failed to set multicast filters for handle {}", handle);
-    return (tPAN_RESULT)result;
-  }
-
-  log::verbose("PAN successfully sent multicast filters for handle {}", handle);
   return PAN_SUCCESS;
 }
 

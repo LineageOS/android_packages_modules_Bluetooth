@@ -25,6 +25,8 @@
 #ifndef HIDH_INT_H
 #define HIDH_INT_H
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "internal_include/bt_target.h"
@@ -32,7 +34,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hidh_api.h"
 #include "stack/include/l2cap_types.h"
-#include "types/raw_address.h"
 
 typedef enum {
   HIDH_DEV_UNUSED,
@@ -74,10 +75,12 @@ tHID_STATUS hidh_conn_snd_data(uint8_t dhandle, uint8_t trans_type, uint8_t para
                                uint8_t rpt_id, BT_HDR* buf);
 tHID_STATUS hidh_conn_reg(void);
 void hidh_conn_dereg(void);
-tHID_STATUS hidh_conn_disconnect(uint8_t dhandle);
+void hidh_conn_disconnect(uint8_t dhandle);
+void hidh_conn_force_disconnect(uint8_t dhandle);
 tHID_STATUS hidh_conn_initiate(uint8_t dhandle);
 void hidh_dump(int fd);
 bool hidh_in_use(const per_device_ctb& ctb);
+void hidh_conn_reset(uint8_t dhandle);
 
 /******************************************************************************
  * Main Control Block

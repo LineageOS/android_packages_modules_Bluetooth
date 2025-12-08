@@ -48,5 +48,5 @@ object SenderUtils {
 
     const val MIME_TYPE_IMAGE = "image/*"
 
-    private val TAG = "SenderUtils"
+    private const val TAG = "SenderUtils"
 }

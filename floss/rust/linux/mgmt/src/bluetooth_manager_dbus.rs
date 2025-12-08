@@ -3,9 +3,11 @@ use dbus::strings::Path;
 use dbus_crossroads;
 use dbus_macros::{dbus_method, dbus_propmap, dbus_proxy_obj, generate_dbus_exporter};
 use dbus_projection::prelude::*;
+use num_traits::{FromPrimitive, ToPrimitive};
 
 use btstack::RPCProxy;
 
+use crate::config_util::UnstableAflagsUseMode;
 use crate::dbus_arg::{DBusArg, DBusArgError, RefArgToRust};
 use crate::iface_bluetooth_manager::{
     AdapterWithEnabled, BluetoothManagerMixin, IBluetoothManager, IBluetoothManagerCallback,
@@ -16,6 +18,8 @@ pub struct AdapterWithEnabledDbus {
     hci_interface: i32,
     enabled: bool,
 }
+
+impl_dbus_arg_enum!(UnstableAflagsUseMode);
 
 /// D-Bus projection of IBluetoothManager.
 #[allow(dead_code)]
@@ -80,6 +84,16 @@ impl IBluetoothManager for BluetoothManagerDBus {
 
     #[dbus_method("SetTabletMode")]
     fn set_tablet_mode(&mut self, tablet_mode: bool) {
+        dbus_generated!()
+    }
+
+    #[dbus_method("GetUnstableAflagsUseMode")]
+    fn get_unstable_aflags_use_mode(&mut self) -> UnstableAflagsUseMode {
+        dbus_generated!()
+    }
+
+    #[dbus_method("SetUnstableAflagsUseMode")]
+    fn set_unstable_aflags_use_mode(&mut self, mode: UnstableAflagsUseMode) -> bool {
         dbus_generated!()
     }
 }

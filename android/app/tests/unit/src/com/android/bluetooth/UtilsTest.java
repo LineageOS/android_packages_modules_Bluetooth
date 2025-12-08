@@ -30,9 +30,9 @@ import android.location.LocationManager;
 import android.os.ParcelUuid;
 import android.os.UserHandle;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.ProfileService;
 
@@ -154,10 +154,8 @@ public class UtilsTest {
         Context context = InstrumentationRegistry.getInstrumentation().getContext();
         try {
             Utils.checkAdvertisePermissionForDataDelivery(context, null, "message");
-            Utils.checkAdvertisePermissionForPreflight(context);
             Utils.checkCallerHasWriteSmsPermission(context);
-            Utils.checkScanPermissionForPreflight(context);
-            Utils.checkConnectPermissionForPreflight(context);
+            Utils.checkConnectPermissionForPreflight(context, context.getAttributionSource());
         } catch (SecurityException e) {
             // SecurityException could happen.
         }

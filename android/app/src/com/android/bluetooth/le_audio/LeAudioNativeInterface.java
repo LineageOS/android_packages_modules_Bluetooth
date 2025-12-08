@@ -388,6 +388,19 @@ public class LeAudioNativeInterface {
         setGroupAllowedContextMaskNative(groupId, sinkContextTypes, sourceContextTypes);
     }
 
+    /**
+     * Confirms that the group is active.
+     *
+     * <p>This method should be called after the group has been set as active to confirm the
+     * activation.
+     *
+     * @param groupId is the groupId that is being confirmed as active
+     */
+    void groupConfirmActive(int groupId) {
+        Log.d(TAG, "groupConfirmActive groupId =" + groupId);
+        groupConfirmActiveNative(groupId);
+    }
+
     // Native methods that call into the JNI interface
     private native void initNative(BluetoothLeAudioCodecConfig[] codecConfigOffloading);
 
@@ -424,4 +437,6 @@ public class LeAudioNativeInterface {
 
     private native void setGroupAllowedContextMaskNative(
             int groupId, int sinkContextTypes, int sourceContextTypes);
+
+    private native void groupConfirmActiveNative(int groupId);
 }

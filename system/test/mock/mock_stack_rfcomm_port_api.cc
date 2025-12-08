@@ -19,9 +19,10 @@
  *   Functions generated:20
  */
 
+#include <bluetooth/types/address.h>
+
 #include "port_api.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 const char* PORT_GetResultString(const uint8_t /* result_code */) {
   inc_func_call_count(__func__);

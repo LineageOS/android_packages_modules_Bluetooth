@@ -16,6 +16,7 @@
 
 package android.bluetooth.le;
 
+import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -43,6 +44,7 @@ public final class PeriodicAdvertisingParameters implements Parcelable {
     }
 
     /** Returns whether the TX Power will be included. */
+    @RequiresNoPermission
     public boolean getIncludeTxPower() {
         return mIncludeTxPower;
     }
@@ -51,6 +53,7 @@ public final class PeriodicAdvertisingParameters implements Parcelable {
      * Returns the periodic advertising interval, in 1.25ms unit. Valid values are from 80 (100ms)
      * to 65519 (81.89875s).
      */
+    @RequiresNoPermission
     public int getInterval() {
         return mInterval;
     }
@@ -84,6 +87,7 @@ public final class PeriodicAdvertisingParameters implements Parcelable {
         private int mInterval = INTERVAL_MAX;
 
         /** Whether the transmission power level should be included in the periodic packet. */
+        @RequiresNoPermission
         public Builder setIncludeTxPower(boolean includeTxPower) {
             mIncludeTxPower = includeTxPower;
             return this;
@@ -96,6 +100,7 @@ public final class PeriodicAdvertisingParameters implements Parcelable {
          *
          * @throws IllegalArgumentException If the interval is invalid.
          */
+        @RequiresNoPermission
         public Builder setInterval(int interval) {
             if (interval < INTERVAL_MIN || interval > INTERVAL_MAX) {
                 throw new IllegalArgumentException(
@@ -106,6 +111,7 @@ public final class PeriodicAdvertisingParameters implements Parcelable {
         }
 
         /** Build the {@link AdvertisingSetParameters} object. */
+        @RequiresNoPermission
         public PeriodicAdvertisingParameters build() {
             return new PeriodicAdvertisingParameters(mIncludeTxPower, mInterval);
         }

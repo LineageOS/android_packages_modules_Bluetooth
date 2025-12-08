@@ -33,8 +33,7 @@
 //       may need attention to prune from (or add to ) the inclusion set.
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
-
-#include <cstdint>
+#include <bluetooth/types/address.h>
 
 #include "audio_hal_interface/hfp_client_interface.h"
 #include "bta/ag/bta_ag_int.h"
@@ -50,7 +49,6 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/main_thread.h"
-#include "types/raw_address.h"
 
 // Original usings
 using HfpInterface = bluetooth::audio::hfp::HfpClientInterface;
@@ -301,6 +299,26 @@ struct bta_clear_active_device {
   void operator()() { body(); }
 };
 extern struct bta_clear_active_device bta_clear_active_device;
+
+// Name: bta_ag_get_wbs_supported
+// Params:
+// Return: bool
+struct bta_ag_get_wbs_supported {
+  static bool return_value;
+  std::function<bool()> body{[]() { return return_value; }};
+  bool operator()() { return body(); }
+};
+extern struct bta_ag_get_wbs_supported bta_ag_get_wbs_supported;
+
+// Name: bta_ag_get_swb_supported
+// Params:
+// Return: bool
+struct bta_ag_get_swb_supported {
+  static bool return_value;
+  std::function<bool()> body{[]() { return return_value; }};
+  bool operator()() { return body(); }
+};
+extern struct bta_ag_get_swb_supported bta_ag_get_swb_supported;
 
 }  // namespace bta_ag_sco
 }  // namespace mock

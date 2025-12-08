@@ -228,10 +228,11 @@ bool codec_info(btav_a2dp_codec_index_t codec_index, bluetooth::a2dp::CodecId* c
 // discovered remote SEPs.
 std::optional<a2dp_configuration> get_a2dp_configuration(
         RawAddress peer_address, std::vector<a2dp_remote_capabilities> const& remote_seps,
-        btav_a2dp_codec_config_t const& user_preferences) {
+        btav_a2dp_codec_config_t const& user_preferences,
+        ::bluetooth::a2dp::CodecId user_preferred_codec_id) {
   return (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::AIDL)
-                 ? aidl::a2dp::provider::get_a2dp_configuration(peer_address, remote_seps,
-                                                                user_preferences)
+                 ? aidl::a2dp::provider::get_a2dp_configuration(
+                           peer_address, remote_seps, user_preferences, user_preferred_codec_id)
                  : std::nullopt;
 }
 
@@ -242,17 +243,24 @@ std::optional<a2dp_configuration> get_a2dp_configuration(
 // In case any of these checks fails, the corresponding A2DP
 // status is returned. If the configuration is valid and supported,
 // A2DP_OK is returned.
-tA2DP_STATUS parse_a2dp_configuration(btav_a2dp_codec_index_t codec_index,
+tA2DP_STATUS parse_a2dp_configuration(::bluetooth::a2dp::CodecId codec_id,
                                       const uint8_t* codec_info,
                                       btav_a2dp_codec_config_t* codec_parameters,
                                       std::vector<uint8_t>* vendor_specific_parameters) {
   return (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::AIDL)
                  ? aidl::a2dp::provider::parse_a2dp_configuration(
-                           codec_index, codec_info, codec_parameters, vendor_specific_parameters)
+                           codec_id, codec_info, codec_parameters, vendor_specific_parameters)
                  : A2DP_FAIL;
 }
 
 }  // namespace provider
+
+std::optional<btav_a2dp_hal_provider_info_t> get_provider_info() {
+  return (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::AIDL)
+                 ? aidl::a2dp::get_provider_info()
+                 : std::nullopt;
+}
+
 }  // namespace a2dp
 }  // namespace audio
 }  // namespace bluetooth

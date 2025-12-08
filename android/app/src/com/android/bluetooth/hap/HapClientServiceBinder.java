@@ -18,14 +18,18 @@ package com.android.bluetooth.hap;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+import static android.bluetooth.BluetoothCsipSetCoordinator.GROUP_ID_INVALID;
+import static android.bluetooth.BluetoothHapClient.PRESET_INDEX_UNAVAILABLE;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.RequiresPermission;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothCsipSetCoordinator;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHapClient;
@@ -37,12 +41,12 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ProfileService.IProfileServiceBinder;
-import com.android.internal.annotations.VisibleForTesting;
+import com.android.bluetooth.flags.Flags;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
-@VisibleForTesting
 class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfileServiceBinder {
     private static final String TAG = HapClientServiceBinder.class.getSimpleName();
 
@@ -77,11 +81,39 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
         return service;
     }
 
+    private static void validateBluetoothDevice(BluetoothDevice device) {
+        requireNonNull(device);
+        String address = device.getAddress();
+        if (!BluetoothAdapter.checkBluetoothAddress(address)) {
+            throw new IllegalArgumentException("Invalid device address: " + address);
+        }
+    }
+
+    // Post and do not wait for the action to be completed
+    private static void post(HapClientService service, Consumer<HapClientService> consumer) {
+        if (service == null) { // No need to re-check for available here
+            return;
+        }
+        service.post(consumer);
+    }
+
+    // Post and wait for the action to be completed
+    private static <T> T syncPost(
+            HapClientService service, Function<HapClientService, T> function, T defaultValue) {
+        if (service == null) { // No need to re-check for available here
+            return defaultValue;
+        }
+        return service.syncPost(function, defaultValue);
+    }
+
     @Override
     public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            return syncPost(service, s -> s.getConnectedDevices(), emptyList());
+        }
         if (service == null) {
-            return Collections.emptyList();
+            return emptyList();
         }
         return service.getConnectedDevices();
     }
@@ -90,15 +122,26 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(
             int[] states, AttributionSource source) {
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            return syncPost(
+                    service, s -> s.getDevicesMatchingConnectionStates(states), emptyList());
+        }
         if (service == null) {
-            return Collections.emptyList();
+            return emptyList();
         }
         return service.getDevicesMatchingConnectionStates(states);
     }
 
     @Override
     public int getConnectionState(BluetoothDevice device, AttributionSource source) {
+        if (Flags.hapOnMainLooper()) {
+            validateBluetoothDevice(device);
+        }
+
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            return syncPost(service, s -> s.getConnectionState(device), STATE_DISCONNECTED);
+        }
         if (service == null) {
             return STATE_DISCONNECTED;
         }
@@ -110,7 +153,18 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     @Override
     public boolean setConnectionPolicy(
             BluetoothDevice device, int connectionPolicy, AttributionSource source) {
+        if (Flags.hapOnMainLooper()) {
+            validateBluetoothDevice(device);
+            if (connectionPolicy != CONNECTION_POLICY_ALLOWED
+                    && connectionPolicy != CONNECTION_POLICY_FORBIDDEN) {
+                throw new IllegalArgumentException(
+                        "Invalid connectionPolicy value: " + connectionPolicy);
+            }
+        }
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            return syncPost(service, s -> s.setConnectionPolicy(device, connectionPolicy), false);
+        }
         if (service == null) {
             return false;
         }
@@ -127,7 +181,14 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
 
     @Override
     public int getConnectionPolicy(BluetoothDevice device, AttributionSource source) {
+        if (Flags.hapOnMainLooper()) {
+            validateBluetoothDevice(device);
+        }
+
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            return syncPost(service, s -> s.getConnectionPolicy(device), CONNECTION_POLICY_UNKNOWN);
+        }
         if (service == null) {
             return CONNECTION_POLICY_UNKNOWN;
         }
@@ -138,7 +199,14 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
 
     @Override
     public int getActivePresetIndex(BluetoothDevice device, AttributionSource source) {
+        if (Flags.hapOnMainLooper()) {
+            validateBluetoothDevice(device);
+        }
+
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            return syncPost(service, s -> s.getActivePresetIndex(device), PRESET_INDEX_UNAVAILABLE);
+        }
         if (service == null) {
             return BluetoothHapClient.PRESET_INDEX_UNAVAILABLE;
         }
@@ -150,7 +218,14 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     @Override
     public BluetoothHapPresetInfo getActivePresetInfo(
             BluetoothDevice device, AttributionSource source) {
+        if (Flags.hapOnMainLooper()) {
+            validateBluetoothDevice(device);
+        }
+
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            return syncPost(service, s -> s.getActivePresetInfo(device), null);
+        }
         if (service == null) {
             return null;
         }
@@ -161,7 +236,14 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
 
     @Override
     public int getHapGroup(BluetoothDevice device, AttributionSource source) {
+        if (Flags.hapOnMainLooper()) {
+            validateBluetoothDevice(device);
+        }
+
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            return syncPost(service, s -> s.getHapGroup(device), GROUP_ID_INVALID);
+        }
         if (service == null) {
             return BluetoothCsipSetCoordinator.GROUP_ID_INVALID;
         }
@@ -172,7 +254,15 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
 
     @Override
     public void selectPreset(BluetoothDevice device, int presetIndex, AttributionSource source) {
+        if (Flags.hapOnMainLooper()) {
+            validateBluetoothDevice(device);
+        }
+
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            post(service, s -> s.selectPreset(device, presetIndex));
+            return;
+        }
         if (service == null) {
             return;
         }
@@ -184,6 +274,10 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     @Override
     public void selectPresetForGroup(int groupId, int presetIndex, AttributionSource source) {
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            post(service, s -> s.selectPresetForGroup(groupId, presetIndex));
+            return;
+        }
         if (service == null) {
             return;
         }
@@ -192,7 +286,15 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
 
     @Override
     public void switchToNextPreset(BluetoothDevice device, AttributionSource source) {
+        if (Flags.hapOnMainLooper()) {
+            validateBluetoothDevice(device);
+        }
+
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            post(service, s -> s.switchToNextPreset(device));
+            return;
+        }
         if (service == null) {
             return;
         }
@@ -204,6 +306,10 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     @Override
     public void switchToNextPresetForGroup(int groupId, AttributionSource source) {
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            post(service, s -> s.switchToNextPresetForGroup(groupId));
+            return;
+        }
         if (service == null) {
             return;
         }
@@ -212,7 +318,15 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
 
     @Override
     public void switchToPreviousPreset(BluetoothDevice device, AttributionSource source) {
+        if (Flags.hapOnMainLooper()) {
+            validateBluetoothDevice(device);
+        }
+
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            post(service, s -> s.switchToPreviousPreset(device));
+            return;
+        }
         if (service == null) {
             return;
         }
@@ -224,6 +338,10 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     @Override
     public void switchToPreviousPresetForGroup(int groupId, AttributionSource source) {
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            post(service, s -> s.switchToPreviousPresetForGroup(groupId));
+            return;
+        }
         if (service == null) {
             return;
         }
@@ -233,7 +351,14 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     @Override
     public BluetoothHapPresetInfo getPresetInfo(
             BluetoothDevice device, int presetIndex, AttributionSource source) {
+        if (Flags.hapOnMainLooper()) {
+            validateBluetoothDevice(device);
+        }
+
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            return syncPost(service, s -> s.getPresetInfo(device, presetIndex), null);
+        }
         if (service == null) {
             return null;
         }
@@ -245,9 +370,16 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     @Override
     public List<BluetoothHapPresetInfo> getAllPresetInfo(
             BluetoothDevice device, AttributionSource source) {
+        if (Flags.hapOnMainLooper()) {
+            validateBluetoothDevice(device);
+        }
+
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            return syncPost(service, s -> s.getAllPresetInfo(device), emptyList());
+        }
         if (service == null) {
-            return Collections.emptyList();
+            return emptyList();
         }
 
         requireNonNull(device);
@@ -256,7 +388,14 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
 
     @Override
     public int getFeatures(BluetoothDevice device, AttributionSource source) {
+        if (Flags.hapOnMainLooper()) {
+            validateBluetoothDevice(device);
+        }
+
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            return syncPost(service, s -> s.getFeatures(device), 0x00);
+        }
         if (service == null) {
             return 0x00;
         }
@@ -268,7 +407,16 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     @Override
     public void setPresetName(
             BluetoothDevice device, int presetIndex, String name, AttributionSource source) {
+        if (Flags.hapOnMainLooper()) {
+            validateBluetoothDevice(device);
+            requireNonNull(name);
+        }
+
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            post(service, s -> s.setPresetName(device, presetIndex, name));
+            return;
+        }
         if (service == null) {
             return;
         }
@@ -281,7 +429,15 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
     @Override
     public void setPresetNameForGroup(
             int groupId, int presetIndex, String name, AttributionSource source) {
+        if (Flags.hapOnMainLooper()) {
+            requireNonNull(name);
+        }
+
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            post(service, s -> s.setPresetNameForGroup(groupId, presetIndex, name));
+            return;
+        }
         if (service == null) {
             return;
         }
@@ -292,7 +448,15 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
 
     @Override
     public void registerCallback(IBluetoothHapClientCallback callback, AttributionSource source) {
+        if (Flags.hapOnMainLooper()) {
+            requireNonNull(callback);
+        }
+
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            post(service, s -> s.registerCallback(callback));
+            return;
+        }
         if (service == null) {
             return;
         }
@@ -303,7 +467,15 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
 
     @Override
     public void unregisterCallback(IBluetoothHapClientCallback callback, AttributionSource source) {
+        if (Flags.hapOnMainLooper()) {
+            requireNonNull(callback);
+        }
+
         HapClientService service = getService(source);
+        if (Flags.hapOnMainLooper()) {
+            post(service, s -> s.unregisterCallback(callback));
+            return;
+        }
         if (service == null) {
             return;
         }

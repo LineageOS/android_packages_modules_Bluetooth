@@ -18,13 +18,13 @@
 
 #include "hci/address.h"
 
+#include <bluetooth/types/address.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
 #include <iomanip>
 #include <sstream>
-
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace hci {
@@ -69,8 +69,6 @@ std::string Address::_ToMaskedColonSepHexString(int bytes_to_mask) const {
 std::string Address::ToString() const { return _ToMaskedColonSepHexString(0); }
 
 std::string Address::ToColonSepHexString() const { return _ToMaskedColonSepHexString(0); }
-
-std::string Address::ToStringForLogging() const { return _ToMaskedColonSepHexString(0); }
 
 std::string Address::ToRedactedStringForLogging() const { return _ToMaskedColonSepHexString(4); }
 

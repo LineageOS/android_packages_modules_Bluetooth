@@ -21,6 +21,8 @@
 
 #include <base/functional/bind.h>
 #include <base/location.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 
 #include <cstdint>
 #include <memory>
@@ -28,8 +30,6 @@
 #include "bta/include/bta_jv_api.h"
 #include "stack/include/bt_hdr.h"
 #include "test/common/mock_functions.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 tBTA_JV_STATUS BTA_JvCreateRecordByUser(uint32_t /* rfcomm_slot_id */) {
   inc_func_call_count(__func__);

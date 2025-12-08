@@ -18,8 +18,8 @@ static_library("types") {
   cflags = [ "-fvisibility=default" ]
 
   sources = [
-    "bluetooth/uuid.cc",
-    "raw_address.cc",
+    "src/address.cc",
+    "src/uuid.cc",
   ]
 
   include_dirs = [ "//bt/system/" ]
@@ -30,8 +30,8 @@ static_library("types") {
 if (use.test) {
   executable("net_test_types") {
     sources = [
-      "test/bluetooth/uuid_unittest.cc",
-      "test/raw_address_unittest.cc",
+      "test/address_unittest.cc",
+      "test/uuid_unittest.cc",
     ]
 
     include_dirs = [ "//bt/system/" ]

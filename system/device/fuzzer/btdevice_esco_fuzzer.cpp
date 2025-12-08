@@ -120,7 +120,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     auto invokeBtDeviceApi = mFuzzedDataProvider.PickValueInArray<const std::function<void()>>({
             [&]() {
               generateString(mFuzzedDataProvider, addressString);
-              RawAddress::FromString(addressString, fuzzAddress);
+              fuzzAddress = RawAddress::FromString(addressString).value_or(RawAddress::kEmpty);
               interop_match_addr(
                       mFuzzedDataProvider.PickValueInArray(kInteropFeature) /* feature */,
                       &fuzzAddress);
@@ -147,7 +147,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
             },
             [&]() {
               generateString(mFuzzedDataProvider, addressString);
-              RawAddress::FromString(addressString, fuzzAddress);
+              fuzzAddress = RawAddress::FromString(addressString).value_or(RawAddress::kEmpty);
               interop_database_add(
                       mFuzzedDataProvider.PickValueInArray(kInteropFeature) /* feature */,
                       &fuzzAddress,
@@ -164,7 +164,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
             },
             [&]() {
               generateString(mFuzzedDataProvider, addressString);
-              RawAddress::FromString(addressString, fuzzAddress);
+              fuzzAddress = RawAddress::FromString(addressString).value_or(RawAddress::kEmpty);
               uint16_t max_lat = 0;
               interop_match_addr_get_max_lat(
                       mFuzzedDataProvider.PickValueInArray(kInteropFeature) /* feature */,
@@ -172,7 +172,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
             },
             [&]() {
               generateString(mFuzzedDataProvider, addressString);
-              RawAddress::FromString(addressString, fuzzAddress);
+              fuzzAddress = RawAddress::FromString(addressString).value_or(RawAddress::kEmpty);
               interop_feature_name_to_feature_id(addressString.c_str());
             },
             [&]() {
@@ -192,7 +192,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
             },
             [&]() {
               generateString(mFuzzedDataProvider, addressString);
-              RawAddress::FromString(addressString, fuzzAddress);
+              fuzzAddress = RawAddress::FromString(addressString).value_or(RawAddress::kEmpty);
               interop_database_add_addr_max_lat(
                       mFuzzedDataProvider.PickValueInArray(kInteropFeature) /* feature */,
                       &fuzzAddress, mFuzzedDataProvider.ConsumeIntegral<uint16_t>() /* max_lat */);
@@ -228,7 +228,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
             },
             [&]() {
               generateString(mFuzzedDataProvider, addressString);
-              RawAddress::FromString(addressString, fuzzAddress);
+              fuzzAddress = RawAddress::FromString(addressString).value_or(RawAddress::kEmpty);
               interop_database_remove_addr_max_lat(
                       mFuzzedDataProvider.PickValueInArray(kInteropFeature) /* feature */,
                       &fuzzAddress, mFuzzedDataProvider.ConsumeIntegral<uint16_t>() /* max_lat */);

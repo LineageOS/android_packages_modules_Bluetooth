@@ -16,7 +16,7 @@
 
 package com.android.server.bluetooth.test
 
-import android.bluetooth.BluetoothAdapter.STATE_OFF
+import android.bluetooth.State
 import android.os.IpcDataCache
 import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
@@ -44,20 +44,20 @@ class BluetoothAdapterStateTest {
 
     @Before
     fun setUp() {
-        IpcDataCache.setTestMode(true)
+        IpcDataCache.setCacheTestMode(true)
         Log.i("BluetoothAdapterStateTest", "\t--> setup of " + testName.getMethodName())
         mState = BluetoothAdapterState()
     }
 
     @After
     fun tearDown() {
-        IpcDataCache.setTestMode(false)
+        IpcDataCache.setCacheTestMode(false)
     }
 
     @Test
     fun init_isStateOff() {
         Log.d("BluetoothAdapterStateTest", "Initial state is " + mState)
-        assertThat(mState.get()).isEqualTo(STATE_OFF)
+        assertThat(mState.get()).isEqualTo(State.OFF)
     }
 
     @Test

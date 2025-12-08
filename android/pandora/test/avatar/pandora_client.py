@@ -115,8 +115,9 @@ class PandoraClient:
         # The server should not be accepting new connections at this time.
         # Re-create the channel. The server will return UNAVAILABLE until
         # reboot is completed.
-        self._aio.channel.close()
-        self._aio = None
+        if self._aio:
+            self._aio.channel.close()
+            self._aio = None
 
         # This call might fail if the server is unavailable.
         self._address = Address((await self.aio.host.ReadLocalAddress(wait_for_ready=True,

@@ -20,6 +20,8 @@
 #define HCIMSGS_H
 
 #include <base/functional/callback_forward.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 
 #include <cstdint>
 #include <vector>
@@ -29,8 +31,6 @@
 #include "stack/include/bt_name.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_api_types.h"
-#include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 
 /* Message by message.... */
 
@@ -245,15 +245,6 @@ void btsnd_hcic_vendor_spec_cmd(uint16_t opcode, uint8_t len, uint8_t* p_data,
 
 /* ULP HCI command */
 void btsnd_hcic_ble_set_local_used_feat(uint8_t feat_set[8]);
-
-void btsnd_hcic_ble_write_adv_params(uint16_t adv_int_min, uint16_t adv_int_max, uint8_t adv_type,
-                                     tBLE_ADDR_TYPE addr_type_own, tBLE_ADDR_TYPE addr_type_dir,
-                                     const RawAddress& direct_bda, uint8_t channel_map,
-                                     uint8_t adv_filter_policy);
-
-void btsnd_hcic_ble_set_adv_data(uint8_t data_len, uint8_t* p_data);
-
-void btsnd_hcic_ble_set_adv_enable(uint8_t adv_enable);
 
 void btsnd_hcic_ble_set_scan_params(uint8_t scan_type, uint16_t scan_int, uint16_t scan_win,
                                     uint8_t addr_type, uint8_t scan_filter_policy);

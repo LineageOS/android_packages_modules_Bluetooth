@@ -24,8 +24,9 @@
 #include <string>
 
 #include "bta/pan/bta_pan_int.h"
-#include "test/common/main_handler.h"
+#include "stack/include/main_thread.h"
 #include "test/common/mock_functions.h"
+#include "test/common/sync_main_handler.h"
 #include "test/mock/mock_stack_pan_api.h"
 
 using namespace testing;

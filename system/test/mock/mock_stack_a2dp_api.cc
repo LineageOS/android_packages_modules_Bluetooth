@@ -19,10 +19,11 @@
  *   Functions generated:9
  */
 
+#include <bluetooth/types/address.h>
+
 #include "a2dp_api.h"
 #include "stack/a2dp/a2dp_int.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 bool A2DP_AddRecord(uint16_t /* service_uuid */, char* /* p_service_name */,
                     char* /* p_provider_name */, uint16_t /* features */,

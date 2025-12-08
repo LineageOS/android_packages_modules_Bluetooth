@@ -558,70 +558,65 @@ public final class ScanRecord {
                 byte[] advertisingData = extractBytes(scanRecord, currentPos, dataLength);
                 advertisingDataMap.put(fieldType, advertisingData);
                 switch (fieldType) {
-                    case DATA_TYPE_FLAGS:
-                        advertiseFlag = scanRecord[currentPos] & 0xFF;
-                        break;
-                    case DATA_TYPE_SERVICE_UUIDS_16_BIT_PARTIAL:
-                    case DATA_TYPE_SERVICE_UUIDS_16_BIT_COMPLETE:
+                    case DATA_TYPE_FLAGS -> advertiseFlag = scanRecord[currentPos] & 0xFF;
+                    case DATA_TYPE_SERVICE_UUIDS_16_BIT_PARTIAL,
+                            DATA_TYPE_SERVICE_UUIDS_16_BIT_COMPLETE -> {
                         parseServiceUuid(
                                 scanRecord,
                                 currentPos,
                                 dataLength,
                                 BluetoothUuid.UUID_BYTES_16_BIT,
                                 serviceUuids);
-                        break;
-                    case DATA_TYPE_SERVICE_UUIDS_32_BIT_PARTIAL:
-                    case DATA_TYPE_SERVICE_UUIDS_32_BIT_COMPLETE:
+                    }
+                    case DATA_TYPE_SERVICE_UUIDS_32_BIT_PARTIAL,
+                            DATA_TYPE_SERVICE_UUIDS_32_BIT_COMPLETE -> {
                         parseServiceUuid(
                                 scanRecord,
                                 currentPos,
                                 dataLength,
                                 BluetoothUuid.UUID_BYTES_32_BIT,
                                 serviceUuids);
-                        break;
-                    case DATA_TYPE_SERVICE_UUIDS_128_BIT_PARTIAL:
-                    case DATA_TYPE_SERVICE_UUIDS_128_BIT_COMPLETE:
+                    }
+                    case DATA_TYPE_SERVICE_UUIDS_128_BIT_PARTIAL,
+                            DATA_TYPE_SERVICE_UUIDS_128_BIT_COMPLETE -> {
                         parseServiceUuid(
                                 scanRecord,
                                 currentPos,
                                 dataLength,
                                 BluetoothUuid.UUID_BYTES_128_BIT,
                                 serviceUuids);
-                        break;
-                    case DATA_TYPE_SERVICE_SOLICITATION_UUIDS_16_BIT:
+                    }
+                    case DATA_TYPE_SERVICE_SOLICITATION_UUIDS_16_BIT -> {
                         parseServiceSolicitationUuid(
                                 scanRecord,
                                 currentPos,
                                 dataLength,
                                 BluetoothUuid.UUID_BYTES_16_BIT,
                                 serviceSolicitationUuids);
-                        break;
-                    case DATA_TYPE_SERVICE_SOLICITATION_UUIDS_32_BIT:
+                    }
+                    case DATA_TYPE_SERVICE_SOLICITATION_UUIDS_32_BIT -> {
                         parseServiceSolicitationUuid(
                                 scanRecord,
                                 currentPos,
                                 dataLength,
                                 BluetoothUuid.UUID_BYTES_32_BIT,
                                 serviceSolicitationUuids);
-                        break;
-                    case DATA_TYPE_SERVICE_SOLICITATION_UUIDS_128_BIT:
+                    }
+                    case DATA_TYPE_SERVICE_SOLICITATION_UUIDS_128_BIT -> {
                         parseServiceSolicitationUuid(
                                 scanRecord,
                                 currentPos,
                                 dataLength,
                                 BluetoothUuid.UUID_BYTES_128_BIT,
                                 serviceSolicitationUuids);
-                        break;
-                    case DATA_TYPE_LOCAL_NAME_SHORT:
-                    case DATA_TYPE_LOCAL_NAME_COMPLETE:
+                    }
+                    case DATA_TYPE_LOCAL_NAME_SHORT, DATA_TYPE_LOCAL_NAME_COMPLETE -> {
                         localName = new String(extractBytes(scanRecord, currentPos, dataLength));
-                        break;
-                    case DATA_TYPE_TX_POWER_LEVEL:
-                        txPowerLevel = scanRecord[currentPos];
-                        break;
-                    case DATA_TYPE_SERVICE_DATA_16_BIT:
-                    case DATA_TYPE_SERVICE_DATA_32_BIT:
-                    case DATA_TYPE_SERVICE_DATA_128_BIT:
+                    }
+                    case DATA_TYPE_TX_POWER_LEVEL -> txPowerLevel = scanRecord[currentPos];
+                    case DATA_TYPE_SERVICE_DATA_16_BIT,
+                            DATA_TYPE_SERVICE_DATA_32_BIT,
+                            DATA_TYPE_SERVICE_DATA_128_BIT -> {
                         int serviceUuidLength = BluetoothUuid.UUID_BYTES_16_BIT;
                         if (fieldType == DATA_TYPE_SERVICE_DATA_32_BIT) {
                             serviceUuidLength = BluetoothUuid.UUID_BYTES_32_BIT;
@@ -639,8 +634,8 @@ public final class ScanRecord {
                                         currentPos + serviceUuidLength,
                                         dataLength - serviceUuidLength);
                         serviceData.put(serviceDataUuid, serviceDataArray);
-                        break;
-                    case DATA_TYPE_MANUFACTURER_SPECIFIC_DATA:
+                    }
+                    case DATA_TYPE_MANUFACTURER_SPECIFIC_DATA -> {
                         // The first two bytes of the manufacturer specific data are
                         // manufacturer ids in little endian.
                         int manufacturerId =
@@ -659,18 +654,16 @@ public final class ScanRecord {
                         } else {
                             manufacturerData.put(manufacturerId, manufacturerDataBytes);
                         }
-                        break;
-                    case DATA_TYPE_TRANSPORT_DISCOVERY_DATA:
+                    }
+                    case DATA_TYPE_TRANSPORT_DISCOVERY_DATA -> {
                         // -1 / +1 to include the type in the extract
                         byte[] transportDiscoveryDataBytes =
                                 extractBytes(scanRecord, currentPos - 1, dataLength + 1);
                         transportDiscoveryData =
                                 new TransportDiscoveryData(transportDiscoveryDataBytes);
-                        break;
+                    }
 
-                    default:
-                        // Just ignore, we don't handle such data type.
-                        break;
+                    default -> {} // Just ignore, we don't handle such data type.
                 }
                 currentPos += dataLength;
             }

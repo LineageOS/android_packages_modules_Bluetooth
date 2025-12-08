@@ -34,3 +34,7 @@ class NotFoundError(AssertionError):
 
 class CancelledError(AssertionError):
     """Raised when an operation is cancelled."""
+
+
+class SnippetError(AssertionError):
+    """Raised when an operation fails due to a Snippet error."""

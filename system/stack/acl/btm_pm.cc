@@ -32,6 +32,7 @@
 #define LOG_TAG "bt_btm_pm"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 #include <unordered_map>
@@ -50,7 +51,6 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/l2cap_hci_link_interface.h"
 #include "stack/include/sco_hci_link_interface.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -793,33 +793,6 @@ void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t /* evt_len */) {
 
 /*******************************************************************************
  *
- * Function         btm_pm_device_in_active_or_sniff_mode
- *
- * Description      This function is called to check if in active or sniff mode
- *
- * Returns          true, if in active or sniff mode
- *
- ******************************************************************************/
-static bool btm_pm_device_in_active_or_sniff_mode(void) {
-  /* The active state is the highest state-includes connected device and sniff
-   * mode*/
-
-  /* Covers active and sniff modes */
-  if (!pm_mode_db.empty()) {
-    return true;
-  }
-
-  /* Check BLE states */
-  if (!btm_cb.ble_ctr_cb.is_connection_state_idle()) {
-    log::verbose("- BLE state is not idle");
-    return true;
-  }
-
-  return false;
-}
-
-/*******************************************************************************
- *
  * Function         BTM_PM_DeviceInScanState
  *
  * Description      This function is called to check if in inquiry
@@ -835,26 +808,6 @@ bool BTM_PM_DeviceInScanState(void) {
   }
 
   return false;
-}
-
-/*******************************************************************************
- *
- * Function         BTM_PM_ReadControllerState
- *
- * Description      This function is called to obtain the controller state
- *
- * Returns          Controller State-BTM_CONTRL_ACTIVE, BTM_CONTRL_SCAN, and
- *                  BTM_CONTRL_IDLE
- *
- ******************************************************************************/
-tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void) {
-  if (btm_pm_device_in_active_or_sniff_mode()) {
-    return BTM_CONTRL_ACTIVE;
-  } else if (BTM_PM_DeviceInScanState()) {
-    return BTM_CONTRL_SCAN;
-  } else {
-    return BTM_CONTRL_IDLE;
-  }
 }
 
 /*******************************************************************************

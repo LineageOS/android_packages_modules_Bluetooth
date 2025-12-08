@@ -23,6 +23,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <atomic>
@@ -47,7 +48,6 @@
 #include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"
 #include "stack/include/bt_hdr.h"
-#include "types/raw_address.h"
 
 using bluetooth::common::MessageLoopThread;
 using LockGuard = std::lock_guard<std::mutex>;
@@ -95,7 +95,7 @@ typedef struct {
 class BtifA2dpSinkControlBlock {
 public:
   explicit BtifA2dpSinkControlBlock(const std::string& thread_name)
-      : worker_thread(thread_name),
+      : worker_thread(thread_name, os::Thread::Priority::REAL_TIME),
         rx_audio_queue(nullptr),
         rx_flush(false),
         decode_alarm(nullptr),

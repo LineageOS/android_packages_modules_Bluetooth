@@ -51,8 +51,11 @@ public:
   // Cancel the alarm. No-op if it's not armed.
   void Cancel();
 
+  std::chrono::system_clock::time_point GetArmedTime() { return armed_time_; }
+
 private:
   common::OnceClosure task_;
+  std::chrono::system_clock::time_point armed_time_;
   Thread* thread_;
   int fd_ = 0;
   Reactor::Reactable* token_;

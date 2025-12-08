@@ -1,0 +1,498 @@
+/*
+ * Copyright (C) 2022 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "hci/acl_manager/acl_manager_classic_impl.h"
+
+#include <com_android_bluetooth_flags.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include <chrono>
+#include <deque>
+#include <future>
+#include <memory>
+
+#include "common/bind.h"
+#include "hci/acl_manager/round_robin_scheduler.h"
+#include "hci/address.h"
+#include "hci/address_with_type.h"
+#include "hci/class_of_device.h"
+#include "hci/controller_mock.h"
+#include "hci/hci_layer_fake.h"
+#include "hci/remote_name_request_mock.h"
+#include "os/thread.h"
+#include "packet/raw_builder.h"
+
+using namespace std::chrono_literals;
+
+namespace bluetooth {
+namespace hci {
+namespace acl_manager {
+namespace {
+
+using common::BidiQueue;
+using common::BidiQueueEnd;
+using packet::kLittleEndian;
+using packet::PacketView;
+using packet::RawBuilder;
+
+namespace {
+constexpr char kLocalRandomAddressString[] = "D0:05:04:03:02:01";
+constexpr char kRemotePublicDeviceStringA[] = "11:A2:A3:A4:A5:A6";
+constexpr char kRemotePublicDeviceStringB[] = "11:B2:B3:B4:B5:B6";
+constexpr uint16_t kHciHandleA = 123;
+constexpr uint16_t kHciHandleB = 456;
+
+const AddressWithType empty_address_with_type = hci::AddressWithType();
+
+struct {
+  Address address;
+  ClassOfDevice class_of_device;
+  const uint16_t handle;
+} remote_device[2] = {
+        {.address = {}, .class_of_device = {}, .handle = kHciHandleA},
+        {.address = {}, .class_of_device = {}, .handle = kHciHandleB},
+};
+}  // namespace
+
+class TestController : public testing::MockController {
+public:
+  uint16_t GetAclPacketLength() const override { return acl_buffer_length_; }
+
+  uint16_t GetNumAclPacketBuffers() const override { return total_acl_buffers_; }
+
+  bool IsSupported(bluetooth::hci::OpCode /* op_code */) const override { return false; }
+
+  LeBufferSize GetLeBufferSize() const override {
+    LeBufferSize le_buffer_size;
+    le_buffer_size.total_num_le_packets_ = 2;
+    le_buffer_size.le_data_packet_length_ = 32;
+    return le_buffer_size;
+  }
+
+private:
+  uint16_t acl_buffer_length_ = 1024;
+  uint16_t total_acl_buffers_ = 2;
+  common::ContextualCallback<void(uint16_t /* handle */, uint16_t /* packets */)> acl_cb_;
+};
+
+class MockConnectionCallback : public ConnectionCallbacks {
+public:
+  void OnConnectSuccess(std::unique_ptr<ClassicAclConnection> connection) override {
+    // Convert to std::shared_ptr during push_back()
+    connections_.push_back(std::move(connection));
+    if (is_promise_set_) {
+      is_promise_set_ = false;
+      connection_promise_.set_value(connections_.back());
+    }
+  }
+  MOCK_METHOD(void, OnConnectRequest, (Address, ClassOfDevice), (override));
+  MOCK_METHOD(void, OnConnectFail, (Address, ErrorCode reason, bool locally_initiated), (override));
+
+  size_t NumberOfConnections() const { return connections_.size(); }
+
+private:
+  friend class AclManagerClassicWithCallbacksTest;
+  friend class AclManagerClassicNoCallbacksTest;
+
+  std::deque<std::shared_ptr<ClassicAclConnection>> connections_;
+  std::promise<std::shared_ptr<ClassicAclConnection>> connection_promise_;
+  bool is_promise_set_{false};
+};
+
+class AclManagerClassicBaseTest : public ::testing::Test {
+protected:
+  void SetUp() override {
+    thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
+    client_handler_ = new os::Handler(thread_);
+    ASSERT_NE(client_handler_, nullptr);
+
+    test_storage_ = std::make_unique<storage::StorageModule>(client_handler_);
+    test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
+    test_controller_ = std::make_unique<TestController>();
+    test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
+    test_rnr_ = std::make_unique<RemoteNameRequestModuleMock>();
+    test_round_robin_scheduler_ = std::make_unique<RoundRobinScheduler>(
+            client_handler_, *test_controller_, test_hci_layer_->GetAclQueueEnd());
+    acl_manager_classic_ = std::make_unique<AclManagerClassicImpl>(
+            client_handler_, *test_hci_layer_, *test_acl_scheduler_, *test_rnr_,
+            *test_round_robin_scheduler_);
+  }
+
+  void TearDown() override {
+    test_storage_.reset();
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+    acl_manager_classic_.reset();
+    test_round_robin_scheduler_.reset();
+    test_rnr_.reset();
+    test_acl_scheduler_.reset();
+    test_controller_.reset();
+    test_hci_layer_.reset();
+
+    client_handler_->Clear();
+    client_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
+
+    delete client_handler_;
+    delete thread_;
+  }
+
+  void sync_client_handler() {
+    std::promise<void> promise;
+    auto future = promise.get_future();
+    client_handler_->Post(
+            common::BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)));
+    auto future_status = future.wait_for(std::chrono::seconds(1));
+    ASSERT_EQ(future_status, std::future_status::ready);
+  }
+
+  os::Thread* thread_ = nullptr;
+  os::Handler* client_handler_ = nullptr;
+
+  std::unique_ptr<storage::StorageModule> test_storage_ = nullptr;
+  std::unique_ptr<HciLayerFake> test_hci_layer_ = nullptr;
+  std::unique_ptr<TestController> test_controller_ = nullptr;
+
+  std::unique_ptr<AclScheduler> test_acl_scheduler_ = nullptr;
+  std::unique_ptr<RemoteNameRequestModule> test_rnr_ = nullptr;
+  std::unique_ptr<RoundRobinScheduler> test_round_robin_scheduler_ = nullptr;
+  std::unique_ptr<AclManagerClassicImpl> acl_manager_classic_ = nullptr;
+};
+
+class AclManagerClassicNoCallbacksTest : public AclManagerClassicBaseTest {
+protected:
+  void SetUp() override {
+    AclManagerClassicBaseTest::SetUp();
+
+    local_address_with_type_ =
+            AddressWithType(Address::FromString(kLocalRandomAddressString).value(),
+                            hci::AddressType::RANDOM_DEVICE_ADDRESS);
+  }
+
+  void TearDown() override { AclManagerClassicBaseTest::TearDown(); }
+
+  AddressWithType local_address_with_type_;
+};
+
+class AclManagerClassicWithCallbacksTest : public AclManagerClassicNoCallbacksTest {
+protected:
+  void SetUp() override {
+    AclManagerClassicNoCallbacksTest::SetUp();
+    acl_manager_classic_->RegisterCallbacks(&mock_connection_callbacks_, client_handler_);
+  }
+
+  void TearDown() override {
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+    {
+      std::promise<void> promise;
+      auto future = promise.get_future();
+      acl_manager_classic_->UnregisterCallbacks(&mock_connection_callbacks_, std::move(promise));
+      future.wait_for(2s);
+    }
+
+    mock_connection_callbacks_.connections_.clear();
+
+    AclManagerClassicNoCallbacksTest::TearDown();
+  }
+
+  std::future<std::shared_ptr<ClassicAclConnection>> GetConnectionFuture() {
+    // Run on main thread
+    mock_connection_callbacks_.connection_promise_ =
+            std::promise<std::shared_ptr<ClassicAclConnection>>();
+    mock_connection_callbacks_.is_promise_set_ = true;
+    return mock_connection_callbacks_.connection_promise_.get_future();
+  }
+
+  std::shared_ptr<ClassicAclConnection> GetLastConnection() {
+    return mock_connection_callbacks_.connections_.back();
+  }
+
+  size_t NumberOfConnections() { return mock_connection_callbacks_.connections_.size(); }
+
+  MockConnectionCallback mock_connection_callbacks_;
+};
+
+class AclManagerClassicWithConnectionTest : public AclManagerClassicWithCallbacksTest {
+protected:
+  void SetUp() override {
+    AclManagerClassicWithCallbacksTest::SetUp();
+
+    handle_ = 0x123;
+    Address::FromString("A1:A2:A3:A4:A5:A6", remote);
+
+    acl_manager_classic_->CreateConnection(remote);
+
+    // Wait for the connection request
+    auto last_command = test_hci_layer_->GetCommand(OpCode::CREATE_CONNECTION);
+
+    EXPECT_CALL(mock_connection_management_callbacks_,
+                OnRoleChange(hci::ErrorCode::SUCCESS, Role::CENTRAL));
+
+    auto first_connection = GetConnectionFuture();
+    test_hci_layer_->IncomingEvent(ConnectionCompleteBuilder::Create(
+            ErrorCode::SUCCESS, handle_, remote, LinkType::ACL, Enable::DISABLED));
+
+    auto first_connection_status = first_connection.wait_for(2s);
+    ASSERT_EQ(first_connection_status, std::future_status::ready);
+
+    connection_ = GetLastConnection();
+    connection_->RegisterCallbacks(&mock_connection_management_callbacks_, client_handler_);
+  }
+
+  void TearDown() override {
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+    client_handler_->Synchronize(std::chrono::milliseconds(20));
+
+    AclManagerClassicWithCallbacksTest::TearDown();
+  }
+
+  uint16_t handle_;
+  Address remote;
+  std::shared_ptr<ClassicAclConnection> connection_;
+
+  class MockConnectionManagementCallbacks : public ConnectionManagementCallbacks {
+  public:
+    MOCK_METHOD1(OnConnectionPacketTypeChanged, void(uint16_t packet_type));
+    MOCK_METHOD1(OnAuthenticationComplete, void(hci::ErrorCode hci_status));
+    MOCK_METHOD1(OnEncryptionChange, void(EncryptionEnabled enabled));
+    MOCK_METHOD0(OnChangeConnectionLinkKeyComplete, void());
+    MOCK_METHOD1(OnReadClockOffsetComplete, void(uint16_t clock_offse));
+    MOCK_METHOD3(OnModeChange, void(ErrorCode status, Mode current_mode, uint16_t interval));
+    MOCK_METHOD5(OnSniffSubrating,
+                 void(ErrorCode status, uint16_t maximum_transmit_latency,
+                      uint16_t maximum_receive_latency, uint16_t minimum_remote_timeout,
+                      uint16_t minimum_local_timeout));
+    MOCK_METHOD5(OnQosSetupComplete,
+                 void(ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth,
+                      uint32_t latency, uint32_t delay_variation));
+    MOCK_METHOD6(OnFlowSpecificationComplete,
+                 void(FlowDirection flow_direction, ServiceType service_type, uint32_t token_rate,
+                      uint32_t token_bucket_size, uint32_t peak_bandwidth,
+                      uint32_t access_latency));
+    MOCK_METHOD0(OnFlushOccurred, void());
+    MOCK_METHOD1(OnRoleDiscoveryComplete, void(Role current_role));
+    MOCK_METHOD1(OnReadLinkPolicySettingsComplete, void(uint16_t link_policy_settings));
+    MOCK_METHOD1(OnReadAutomaticFlushTimeoutComplete, void(uint16_t flush_timeout));
+    MOCK_METHOD1(OnReadTransmitPowerLevelComplete, void(uint8_t transmit_power_level));
+    MOCK_METHOD1(OnReadLinkSupervisionTimeoutComplete, void(uint16_t link_supervision_timeout));
+    MOCK_METHOD1(OnReadFailedContactCounterComplete, void(uint16_t failed_contact_counter));
+    MOCK_METHOD1(OnReadLinkQualityComplete, void(uint8_t link_quality));
+    MOCK_METHOD2(OnReadAfhChannelMapComplete,
+                 void(AfhMode afh_mode, std::array<uint8_t, 10> afh_channel_map));
+    MOCK_METHOD1(OnReadRssiComplete, void(uint8_t rssi));
+    MOCK_METHOD2(OnReadClockComplete, void(uint32_t clock, uint16_t accuracy));
+    MOCK_METHOD1(OnCentralLinkKeyComplete, void(KeyFlag flag));
+    MOCK_METHOD2(OnRoleChange, void(ErrorCode hci_status, Role new_role));
+    MOCK_METHOD1(OnDisconnection, void(ErrorCode reason));
+    MOCK_METHOD4(OnReadRemoteVersionInformationComplete,
+                 void(hci::ErrorCode hci_status, uint8_t lmp_version, uint16_t manufacturer_name,
+                      uint16_t sub_version));
+    MOCK_METHOD1(OnReadRemoteSupportedFeaturesComplete, void(uint64_t features));
+    MOCK_METHOD3(OnReadRemoteExtendedFeaturesComplete,
+                 void(uint8_t page_number, uint8_t max_page_number, uint64_t features));
+  } mock_connection_management_callbacks_;
+};
+
+TEST_F(AclManagerClassicWithCallbacksTest, startup_teardown) {}
+
+class AclManagerWithResolvableAddressTest : public AclManagerClassicWithCallbacksTest {
+protected:
+  void SetUp() override {
+    // client_handler_ = fake_registry_.GetTestHandler();
+    ASSERT_NE(client_handler_, nullptr);
+    test_hci_layer_ = std::make_unique<HciLayerFake>(client_handler_);
+    test_controller_ = std::make_unique<TestController>();
+    test_acl_scheduler_ = std::make_unique<AclScheduler>(client_handler_);
+    test_rnr_ = std::make_unique<RemoteNameRequestModuleMock>();
+    test_round_robin_scheduler_ = std::make_unique<RoundRobinScheduler>(
+            client_handler_, *test_controller_, test_hci_layer_->GetAclQueueEnd());
+    acl_manager_classic_ = std::make_unique<AclManagerClassicImpl>(
+            client_handler_, *test_hci_layer_, *test_acl_scheduler_, *test_rnr_,
+            *test_round_robin_scheduler_);
+
+    hci::Address address;
+    Address::FromString("D0:05:04:03:02:01", address);
+    hci::AddressWithType address_with_type(address, hci::AddressType::RANDOM_DEVICE_ADDRESS);
+    acl_manager_classic_->RegisterCallbacks(&mock_connection_callbacks_, client_handler_);
+  }
+};
+
+TEST_F(AclManagerClassicNoCallbacksTest, unregister_classic_before_connection_request) {
+  ClassOfDevice class_of_device;
+
+  MockConnectionCallback mock_connection_callbacks_;
+
+  acl_manager_classic_->RegisterCallbacks(&mock_connection_callbacks_, client_handler_);
+
+  // Unregister callbacks before receiving connection request
+  auto promise = std::promise<void>();
+  auto future = promise.get_future();
+  acl_manager_classic_->UnregisterCallbacks(&mock_connection_callbacks_, std::move(promise));
+  future.get();
+
+  // Inject peer sending connection request
+  test_hci_layer_->IncomingEvent(ConnectionRequestBuilder::Create(
+          local_address_with_type_.GetAddress(), class_of_device, ConnectionRequestLinkType::ACL));
+  sync_client_handler();
+
+  // There should be no connections
+  ASSERT_EQ(0UL, mock_connection_callbacks_.NumberOfConnections());
+
+  auto command = test_hci_layer_->GetCommand(OpCode::REJECT_CONNECTION_REQUEST);
+}
+
+TEST_F(AclManagerClassicWithCallbacksTest, two_remote_connection_requests_ABAB) {
+  Address::FromString(kRemotePublicDeviceStringA, remote_device[0].address);
+  Address::FromString(kRemotePublicDeviceStringB, remote_device[1].address);
+
+  {
+    // Device A sends connection request
+    test_hci_layer_->IncomingEvent(ConnectionRequestBuilder::Create(
+            remote_device[0].address, remote_device[0].class_of_device,
+            ConnectionRequestLinkType::ACL));
+    sync_client_handler();
+    // Verify we accept this connection
+    auto command = test_hci_layer_->GetCommand(OpCode::ACCEPT_CONNECTION_REQUEST);
+  }
+
+  {
+    // Device B sends connection request
+    test_hci_layer_->IncomingEvent(ConnectionRequestBuilder::Create(
+            remote_device[1].address, remote_device[1].class_of_device,
+            ConnectionRequestLinkType::ACL));
+    sync_client_handler();
+    // Verify we accept this connection
+    auto command = test_hci_layer_->GetCommand(OpCode::ACCEPT_CONNECTION_REQUEST);
+  }
+
+  ASSERT_EQ(0UL, NumberOfConnections());
+
+  {
+    // Device A completes first connection
+    auto future = GetConnectionFuture();
+    test_hci_layer_->IncomingEvent(ConnectionCompleteBuilder::Create(
+            ErrorCode::SUCCESS, remote_device[0].handle, remote_device[0].address, LinkType::ACL,
+            Enable::DISABLED));
+    ASSERT_EQ(std::future_status::ready, future.wait_for(2s))
+            << "Timeout waiting for first connection complete";
+    ASSERT_EQ(1UL, NumberOfConnections());
+    auto connection = future.get();
+    ASSERT_EQ(connection->GetAddress(), remote_device[0].address)
+            << "First connection remote address mismatch";
+  }
+
+  {
+    // Device B completes second connection
+    auto future = GetConnectionFuture();
+    test_hci_layer_->IncomingEvent(ConnectionCompleteBuilder::Create(
+            ErrorCode::SUCCESS, remote_device[1].handle, remote_device[1].address, LinkType::ACL,
+            Enable::DISABLED));
+    ASSERT_EQ(std::future_status::ready, future.wait_for(2s))
+            << "Timeout waiting for second connection complete";
+    ASSERT_EQ(2UL, NumberOfConnections());
+    auto connection = future.get();
+    ASSERT_EQ(connection->GetAddress(), remote_device[1].address)
+            << "Second connection remote address mismatch";
+  }
+}
+
+TEST_F(AclManagerClassicWithCallbacksTest, two_remote_connection_requests_ABBA) {
+  Address::FromString(kRemotePublicDeviceStringA, remote_device[0].address);
+  Address::FromString(kRemotePublicDeviceStringB, remote_device[1].address);
+
+  {
+    // Device A sends connection request
+    test_hci_layer_->IncomingEvent(ConnectionRequestBuilder::Create(
+            remote_device[0].address, remote_device[0].class_of_device,
+            ConnectionRequestLinkType::ACL));
+    sync_client_handler();
+    // Verify we accept this connection
+    auto command = test_hci_layer_->GetCommand(OpCode::ACCEPT_CONNECTION_REQUEST);
+  }
+
+  {
+    // Device B sends connection request
+    test_hci_layer_->IncomingEvent(ConnectionRequestBuilder::Create(
+            remote_device[1].address, remote_device[1].class_of_device,
+            ConnectionRequestLinkType::ACL));
+    sync_client_handler();
+    // Verify we accept this connection
+    auto command = test_hci_layer_->GetCommand(OpCode::ACCEPT_CONNECTION_REQUEST);
+  }
+
+  ASSERT_EQ(0UL, NumberOfConnections());
+
+  {
+    // Device B completes first connection
+    auto future = GetConnectionFuture();
+    test_hci_layer_->IncomingEvent(ConnectionCompleteBuilder::Create(
+            ErrorCode::SUCCESS, remote_device[1].handle, remote_device[1].address, LinkType::ACL,
+            Enable::DISABLED));
+    ASSERT_EQ(std::future_status::ready, future.wait_for(2s))
+            << "Timeout waiting for first connection complete";
+    ASSERT_EQ(1UL, NumberOfConnections());
+    auto connection = future.get();
+    ASSERT_EQ(connection->GetAddress(), remote_device[1].address)
+            << "First connection remote address mismatch";
+  }
+
+  {
+    // Device A completes second connection
+    auto future = GetConnectionFuture();
+    test_hci_layer_->IncomingEvent(ConnectionCompleteBuilder::Create(
+            ErrorCode::SUCCESS, remote_device[0].handle, remote_device[0].address, LinkType::ACL,
+            Enable::DISABLED));
+    ASSERT_EQ(std::future_status::ready, future.wait_for(2s))
+            << "Timeout waiting for second connection complete";
+    ASSERT_EQ(2UL, NumberOfConnections());
+    auto connection = future.get();
+    ASSERT_EQ(connection->GetAddress(), remote_device[0].address)
+            << "Second connection remote address mismatch";
+  }
+}
+
+TEST_F(AclManagerClassicWithCallbacksTest, test_disconnection_after_request) {
+  Address remote = *Address::FromString("12:34:56:78:9a:bc");
+  EXPECT_CALL(mock_connection_callbacks_, OnConnectRequest).Times(1);
+  test_hci_layer_->IncomingEvent(ConnectionRequestBuilder::Create(remote, ClassOfDevice({1, 2, 3}),
+                                                                  ConnectionRequestLinkType::ACL));
+  test_hci_layer_->IncomingEvent(
+          ConnectionCompleteBuilder::Create(ErrorCode::REMOTE_USER_TERMINATED_CONNECTION, 0, remote,
+                                            LinkType::ACL, Enable::DISABLED));
+}
+
+TEST_F(AclManagerClassicWithCallbacksTest, test_disconnection_after_request_sync) {
+  std::promise<void> request_promise;
+  auto request_future = request_promise.get_future();
+
+  Address remote = *Address::FromString("12:34:56:78:9a:bc");
+  EXPECT_CALL(mock_connection_callbacks_, OnConnectRequest).WillOnce([&request_promise]() {
+    request_promise.set_value();
+  });
+  test_hci_layer_->IncomingEvent(ConnectionRequestBuilder::Create(remote, ClassOfDevice({1, 2, 3}),
+                                                                  ConnectionRequestLinkType::ACL));
+  ASSERT_EQ(std::future_status::ready, request_future.wait_for(std::chrono::seconds(1)));
+  test_hci_layer_->IncomingEvent(
+          ConnectionCompleteBuilder::Create(ErrorCode::REMOTE_USER_TERMINATED_CONNECTION, 0, remote,
+                                            LinkType::ACL, Enable::DISABLED));
+}
+
+}  // namespace
+}  // namespace acl_manager
+}  // namespace hci
+}  // namespace bluetooth

@@ -17,9 +17,13 @@
 #include "repeating_timer.h"
 
 #include <base/functional/bind.h>
+#include <com_android_bluetooth_flags.h>
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <future>
+#include <string>
+#include <thread>
 
 #include "bind_helpers.h"
 #include "message_loop_thread.h"
@@ -75,13 +79,13 @@ public:
   void VerifyMultipleDelayedTasks(int scheduled_tasks, int task_length_ms,
                                   int interval_between_tasks_ms) {
     std::string name = "test_thread";
-    MessageLoopThread message_loop_thread(name);
+    MessageLoopThread message_loop_thread(name, bluetooth::os::Thread::Priority::REAL_TIME);
     message_loop_thread.StartUp();
     message_loop_thread.EnableRealTimeScheduling();
     auto future = promise_->get_future();
     auto start_time = std::chrono::steady_clock::now();
     timer_->SchedulePeriodic(
-            message_loop_thread.GetWeakPtr(),
+            &message_loop_thread,
             base::BindRepeating(&RepeatingTimerTest::VerifyDelayTimeAndSleep,
                                 base::Unretained(this), start_time, interval_between_tasks_ms,
                                 scheduled_tasks, task_length_ms, promise_),
@@ -136,7 +140,7 @@ TEST_F(RepeatingTimerTest, periodic_run) {
   uint32_t delay_ms = 5;
   int num_tasks = 200;
 
-  timer_->SchedulePeriodic(message_loop_thread.GetWeakPtr(),
+  timer_->SchedulePeriodic(&message_loop_thread,
                            base::BindRepeating(&RepeatingTimerTest::IncreaseTaskCounter,
                                                base::Unretained(this), num_tasks, promise_),
                            std::chrono::milliseconds(delay_ms));
@@ -152,7 +156,7 @@ TEST_F(RepeatingTimerTest, schedule_periodic_task_zero_interval) {
   uint32_t interval_ms = 0;
 
   ASSERT_FALSE(timer_->SchedulePeriodic(
-          message_loop_thread.GetWeakPtr(),
+          &message_loop_thread,
           base::BindRepeating(&RepeatingTimerTest::ShouldNotHappen, base::Unretained(this)),
           std::chrono::milliseconds(interval_ms)));
   std::this_thread::sleep_for(std::chrono::milliseconds(delay_error_ms));
@@ -165,7 +169,7 @@ TEST_F(RepeatingTimerTest, periodic_delete_without_cancel) {
   message_loop_thread.StartUp();
   uint32_t delay_ms = 5;
   timer_->SchedulePeriodic(
-          message_loop_thread.GetWeakPtr(),
+          &message_loop_thread,
           base::BindRepeating(&RepeatingTimerTest::ShouldNotHappen, base::Unretained(this)),
           std::chrono::milliseconds(delay_ms));
   delete timer_;
@@ -178,7 +182,7 @@ TEST_F(RepeatingTimerTest, cancel_single_task_near_fire_no_race_condition) {
   MessageLoopThread message_loop_thread(name);
   message_loop_thread.StartUp();
   uint32_t delay_ms = 5;
-  timer_->SchedulePeriodic(message_loop_thread.GetWeakPtr(), base::DoNothing(),
+  timer_->SchedulePeriodic(&message_loop_thread, base::DoNothing(),
                            std::chrono::milliseconds(delay_ms));
   std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
   timer_->CancelAndWait();
@@ -192,7 +196,7 @@ TEST_F(RepeatingTimerTest, cancel_periodic_task) {
   int num_tasks = 5;
   auto future = promise_->get_future();
 
-  timer_->SchedulePeriodic(message_loop_thread.GetWeakPtr(),
+  timer_->SchedulePeriodic(&message_loop_thread,
                            base::BindRepeating(&RepeatingTimerTest::IncreaseTaskCounter,
                                                base::Unretained(this), num_tasks, promise_),
                            std::chrono::milliseconds(delay_ms));
@@ -225,11 +229,21 @@ TEST_F(RepeatingTimerTest, message_loop_thread_down_cancel_scheduled_periodic_ta
   uint32_t delay_ms = 5;
   int num_tasks = 5;
 
-  timer_->SchedulePeriodic(message_loop_thread.GetWeakPtr(),
+  timer_->SchedulePeriodic(&message_loop_thread,
                            base::BindRepeating(&RepeatingTimerTest::IncreaseTaskCounter,
                                                base::Unretained(this), num_tasks, promise_),
                            std::chrono::milliseconds(delay_ms));
   future.wait();
+  if (com::android::bluetooth::flags::replace_message_loop_thread_with_gd_handler()) {
+    /**
+     * Need to cancel the timer, as previously we were using weak_ptr, hence the internal checks
+     * were working fine even when the thread is stopped. But with the change to GD handler, we now
+     * need to explicitly set the message_loop_thread to null, hence doing so by calling Cancel().
+     * All usages of SchedulePeriodic already uses CancelAndWait(), hence doing this here is safe
+     * and required by design for GD handler usage.
+     */
+    timer_->Cancel();
+  }
   message_loop_thread.ShutDown();
   std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms + delay_error_ms));
   int counter = counter_;

@@ -87,6 +87,10 @@ genrule {
         "pandora/le_audio_grpc_aio.py",
         "pandora/le_audio_pb2.py",
         "pandora/le_audio_pb2.pyi",
+        "pandora/map_client_grpc.py",
+        "pandora/map_client_grpc_aio.py",
+        "pandora/map_client_pb2.py",
+        "pandora/map_client_pb2.pyi",
         "pandora/map_grpc.py",
         "pandora/map_grpc_aio.py",
         "pandora/map_pb2.py",
@@ -139,6 +143,10 @@ filegroup {
     exclude_srcs: [
         ":pandora_interfaces-python-stubs",
     ],
+    visibility: [
+        "//packages/modules/Bluetooth:__subpackages__",
+        "//vendor:__subpackages__",
+    ],
 }
 
 filegroup {
@@ -156,6 +164,7 @@ filegroup {
         ":pandora_interfaces-python-gen-src{pandora/host_pb2.pyi}",
         ":pandora_interfaces-python-gen-src{pandora/l2cap_pb2.pyi}",
         ":pandora_interfaces-python-gen-src{pandora/le_audio_pb2.pyi}",
+        ":pandora_interfaces-python-gen-src{pandora/map_client_pb2.pyi}",
         ":pandora_interfaces-python-gen-src{pandora/map_pb2.pyi}",
         ":pandora_interfaces-python-gen-src{pandora/mediaplayer_pb2.pyi}",
         ":pandora_interfaces-python-gen-src{pandora/oob_pb2.pyi}",

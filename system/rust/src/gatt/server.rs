@@ -768,4 +768,52 @@ mod tests {
             assert!(!is_connection_isolated);
         });
     }
+
+    #[test]
+    fn test_on_le_connect_no_advertiser() {
+        let (mut gatt, _) = start_gatt_module();
+        gatt.open_gatt_server(SERVER_ID).unwrap();
+        gatt.get_isolation_manager().associate_server_with_advertiser(SERVER_ID, ADVERTISER_ID);
+        assert!(gatt.on_le_connect(TCB_IDX, None).is_err());
+        assert!(gatt.get_bearer(TCB_IDX).is_none());
+    }
+
+    #[test]
+    fn test_on_le_connect_no_server() {
+        let (mut gatt, _) = start_gatt_module();
+        gatt.get_isolation_manager().associate_server_with_advertiser(SERVER_ID, ADVERTISER_ID);
+        assert!(gatt.on_le_connect(TCB_IDX, Some(ADVERTISER_ID)).is_err());
+        assert!(gatt.get_bearer(TCB_IDX).is_none());
+    }
+
+    #[test]
+    fn test_on_le_disconnect_no_bearer() {
+        let (mut gatt, _) = start_gatt_module();
+        assert!(gatt.on_le_disconnect(TCB_IDX).is_err());
+    }
+
+    #[test]
+    fn test_unregister_gatt_service_no_server() {
+        let (mut gatt, _) = start_gatt_module();
+        assert!(gatt.unregister_gatt_service(SERVER_ID, SERVICE_HANDLE).is_err());
+    }
+
+    #[test]
+    fn test_open_gatt_server_twice() {
+        let (mut gatt, _) = start_gatt_module();
+        gatt.open_gatt_server(SERVER_ID).unwrap();
+        assert!(gatt.open_gatt_server(SERVER_ID).is_err());
+    }
+
+    #[test]
+    fn test_close_gatt_server_no_server() {
+        let (mut gatt, _) = start_gatt_module();
+        assert!(gatt.close_gatt_server(SERVER_ID).is_err());
+    }
+
+    #[test]
+    fn test_get_bearer_nonexistent() {
+        let (gatt, _) = start_gatt_module();
+        assert!(gatt.get_bearer(TCB_IDX).is_none());
+    }
 }

@@ -19,6 +19,7 @@ if (defined(use.android) && use.android) {
     sources = [
       "adapter/adapter_unittest.cc",
       "adapter/bluetooth_test.cc",
+      "bt_status/bt_status_unittest.cc",
     ]
 
     include_dirs = [

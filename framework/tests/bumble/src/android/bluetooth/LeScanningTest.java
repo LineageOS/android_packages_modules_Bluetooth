@@ -407,7 +407,6 @@ public class LeScanningTest {
     // PHY_LE_1M: 1, PHY_LE_CODED: 3, PHY_LE_ALL_SUPPORTED: 255
     @Test
     @VirtualOnly
-    @RequiresFlagsEnabled(Flags.FLAG_PHY_TO_NATIVE)
     public void startBleScan_codedPhy(
             @TestParameter({"1", "3", "255"}) int phy, @TestParameter boolean advertiseCoded) {
         advertiseWithBumbleWithServiceDataAndPhy(advertiseCoded);
@@ -538,7 +537,7 @@ public class LeScanningTest {
 
                     @Override
                     public void onScanFailed(int errorCode) {
-                        Log.i(TAG, "onScanFailed " + "errorCode: " + errorCode);
+                        Log.i(TAG, "onScanFailed errorCode: " + errorCode);
                         future.complete(null);
                     }
                 };

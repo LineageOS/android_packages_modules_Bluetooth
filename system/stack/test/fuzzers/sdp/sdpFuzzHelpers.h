@@ -20,6 +20,7 @@
 // NOTE: This file should not be included directly.
 //       It is included by the corresponding "...Functions.h" file.
 
+#include <bluetooth/types/address.h>
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include <algorithm>
@@ -29,7 +30,6 @@
 #include "stack/include/sdp_api.h"
 #include "stack/include/sdpdefs.h"
 #include "stack/sdp/sdpint.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth::legacy::stack::sdp;
 

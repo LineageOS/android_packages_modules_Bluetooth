@@ -110,10 +110,6 @@ public:
     return address_.ToString() + "[" + AddressTypeText(address_type_) + "]";
   }
 
-  std::string ToStringForLogging() const {
-    return address_.ToStringForLogging() + "[" + AddressTypeText(address_type_) + "]";
-  }
-
   std::string ToRedactedStringForLogging() const {
     return address_.ToRedactedStringForLogging() + "[" + AddressTypeText(address_type_) + "]";
   }

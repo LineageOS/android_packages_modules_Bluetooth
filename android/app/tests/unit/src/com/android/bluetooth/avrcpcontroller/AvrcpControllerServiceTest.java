@@ -19,7 +19,6 @@ package com.android.bluetooth.avrcpcontroller;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
@@ -41,16 +40,17 @@ import android.media.AudioManager;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.support.v4.media.session.PlaybackStateCompat;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.ServiceTestRule;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService.BrowseResult;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;
@@ -63,6 +63,7 @@ import org.mockito.Mock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 /** Test cases for {@link AvrcpControllerService}. */
 @MediumTest
@@ -84,8 +85,7 @@ public class AvrcpControllerServiceTest {
 
     private final BluetoothDevice mDevice1 = getTestDevice(89);
     private final BluetoothDevice mDevice2 = getTestDevice(41);
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
 
     private AvrcpControllerService mService = null;
 
@@ -93,14 +93,13 @@ public class AvrcpControllerServiceTest {
     public void setUp() throws Exception {
         doReturn(mAdapterService).when(mAdapterService).getApplicationContext();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
-        doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
-        doReturn(mTargetContext.getPackageManager()).when(mAdapterService).getPackageManager();
-        doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();
+        doReturn(mContext.getPackageName()).when(mAdapterService).getPackageName();
+        doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
+        doReturn(mContext.getResources()).when(mAdapterService).getResources();
         mockGetSystemService(mAdapterService, AudioManager.class);
 
         mService = new AvrcpControllerService(mAdapterService, mNativeInterface);
-        // Set a mock A2dpSinkService for audio focus calls
-        A2dpSinkService.setA2dpSinkService(mA2dpSinkService);
+        doReturn(Optional.of(mA2dpSinkService)).when(mAdapterService).getA2dpSinkService();
 
         mService.mDeviceStateMap.put(mDevice1, mStateMachine);
         final Intent bluetoothBrowserMediaServiceStartIntent =
@@ -116,14 +115,6 @@ public class AvrcpControllerServiceTest {
     @After
     public void tearDown() throws Exception {
         mService.cleanup();
-        A2dpSinkService.setA2dpSinkService(null);
-        mService = AvrcpControllerService.getAvrcpControllerService();
-        assertThat(mService).isNull();
-    }
-
-    @Test
-    public void initialize() {
-        assertThat(AvrcpControllerService.getAvrcpControllerService()).isNotNull();
     }
 
     @Test
@@ -160,9 +151,8 @@ public class AvrcpControllerServiceTest {
 
     @Test
     public void setActiveDevice_whenA2dpSinkServiceIsNotInitialized_returnsFalse() {
-        A2dpSinkService.setA2dpSinkService(null);
+        doReturn(Optional.empty()).when(mAdapterService).getA2dpSinkService();
         assertThat(mService.setActiveDevice(mDevice1)).isFalse();
-
         assertThat(mService.getActiveDevice()).isNull();
     }
 
@@ -275,7 +265,7 @@ public class AvrcpControllerServiceTest {
         String parentMediaId = "test_parent_media_id";
         BrowseTree.BrowseNode node = mock(BrowseTree.BrowseNode.class);
         when(mStateMachine.findNode(parentMediaId)).thenReturn(node);
-        when(node.getContents()).thenReturn(new ArrayList(0));
+        when(node.getContents()).thenReturn(new ArrayList<>(0));
         when(node.isCached()).thenReturn(true);
 
         BrowseResult result = mService.getContents(parentMediaId);

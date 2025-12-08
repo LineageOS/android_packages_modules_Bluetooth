@@ -157,7 +157,7 @@ class AvrcpControllerStateMachine extends StateMachine {
         mCoverArtPsm = 0;
         mCoverArtManager = service.getCoverArtManager();
 
-        mAvailablePlayerList = new SparseArray<AvrcpPlayer>();
+        mAvailablePlayerList = new SparseArray<>();
         mAddressedPlayerId = AvrcpPlayer.DEFAULT_ID;
 
         AvrcpPlayer.Builder apb = new AvrcpPlayer.Builder();
@@ -256,7 +256,11 @@ class AvrcpControllerStateMachine extends StateMachine {
         ProfileService.println(sb, "Control: " + mRemoteControlConnected);
         ProfileService.println(sb, "Browsing: " + mBrowsingConnected);
         ProfileService.println(
-                sb, "Cover Art: " + (mCoverArtManager.getState(mDevice) == STATE_CONNECTED));
+                sb,
+                "Cover Art: "
+                        + (mCoverArtManager != null
+                                ? mCoverArtManager.getState(mDevice) == STATE_CONNECTED
+                                : "false, mCoverArtManager is null"));
 
         ProfileService.println(sb, "Addressed Player ID: " + mAddressedPlayerId);
         ProfileService.println(sb, "Browsed Player ID: " + mBrowseTree.getCurrentBrowsedPlayer());
@@ -912,7 +916,7 @@ class AvrcpControllerStateMachine extends StateMachine {
                         // Since players hold metadata, including cover art handles that point to
                         // stored images, be sure to save image UUIDs so we can see if we can
                         // remove them from storage after setting our new player object
-                        ArrayList<String> coverArtUuids = new ArrayList<String>();
+                        ArrayList<String> coverArtUuids = new ArrayList<>();
                         for (int i = 0; i < mAvailablePlayerList.size(); i++) {
                             AvrcpPlayer player = mAvailablePlayerList.valueAt(i);
                             AvrcpItem track = player.getCurrentTrack();
@@ -1225,13 +1229,11 @@ class AvrcpControllerStateMachine extends StateMachine {
         }
     }
 
-    private static int getFocusState() {
-        int focusState = AudioManager.ERROR;
-        A2dpSinkService a2dpSinkService = A2dpSinkService.getA2dpSinkService();
-        if (a2dpSinkService != null) {
-            focusState = a2dpSinkService.getFocusState();
-        }
-        return focusState;
+    private int getFocusState() {
+        return mAdapterService
+                .getA2dpSinkService()
+                .map(A2dpSinkService::getFocusState)
+                .orElse(AudioManager.ERROR);
     }
 
     MediaSessionCompat.Callback mSessionCallbacks =
@@ -1300,10 +1302,9 @@ class AvrcpControllerStateMachine extends StateMachine {
                 @Override
                 public void onPrepare() {
                     debug("onPrepare");
-                    A2dpSinkService a2dpSinkService = A2dpSinkService.getA2dpSinkService();
-                    if (a2dpSinkService != null) {
-                        a2dpSinkService.requestAudioFocus(mDevice, true);
-                    }
+                    mAdapterService
+                            .getA2dpSinkService()
+                            .ifPresent(a2dpSink -> a2dpSink.requestAudioFocus(mDevice, true));
                 }
 
                 @Override
@@ -1363,8 +1364,7 @@ class AvrcpControllerStateMachine extends StateMachine {
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mDevice);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
         mMostRecentState = currentState;
-        mService.sendBroadcast(
-                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+        mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
     }
 
     private boolean shouldRequestFocus() {

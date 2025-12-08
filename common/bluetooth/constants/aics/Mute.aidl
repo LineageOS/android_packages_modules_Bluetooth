@@ -18,7 +18,7 @@ package bluetooth.constants.aics;
 
 /**
  * See Audio Input Control Service 1.0 - 2.2.1.2. Mute field
- * {@hide}
+ * @hide
  */
 @JavaDerive(toString = true)
 @Backing(type="byte")

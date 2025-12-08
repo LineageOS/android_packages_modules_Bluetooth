@@ -2923,7 +2923,6 @@ impl BtifGattClientCallbacks for BluetoothGatt {
         // No-op.
     }
 
-    #[log_cb_args]
     fn notify_cb(&mut self, conn_id: i32, data: BtGattNotifyParams) {
         let Some(client) = self.context_map.get_client_by_conn_id(conn_id) else { return };
         if let Some(cb) = self.context_map.get_callback_from_callback_id(client.cbid) {
@@ -2931,7 +2930,6 @@ impl BtifGattClientCallbacks for BluetoothGatt {
         }
     }
 
-    #[log_cb_args]
     fn read_characteristic_cb(&mut self, conn_id: i32, status: GattStatus, data: BtGattReadParams) {
         let Some(addr) = self.context_map.get_address_by_conn_id(conn_id) else { return };
         let Some(client) = self.context_map.get_client_by_conn_id(conn_id) else { return };
@@ -2974,7 +2972,6 @@ impl BtifGattClientCallbacks for BluetoothGatt {
         }
     }
 
-    #[log_cb_args]
     fn read_descriptor_cb(&mut self, conn_id: i32, status: GattStatus, data: BtGattReadParams) {
         let Some(addr) = self.context_map.get_address_by_conn_id(conn_id) else { return };
         let Some(client) = self.context_map.get_client_by_conn_id(conn_id) else { return };
@@ -3059,7 +3056,6 @@ impl BtifGattClientCallbacks for BluetoothGatt {
         }
     }
 
-    #[log_cb_args]
     fn get_gatt_db_cb(&mut self, conn_id: i32, elements: Vec<BtGattDbElement>, _count: i32) {
         let Some(addr) = self.context_map.get_address_by_conn_id(conn_id) else { return };
         let Some(client) = self.context_map.get_client_by_conn_id(conn_id) else { return };
@@ -3313,7 +3309,6 @@ impl BtifGattServerCallbacks for BluetoothGatt {
         }
     }
 
-    #[log_cb_args]
     fn service_added_cb(
         &mut self,
         status: GattStatus,
@@ -3947,7 +3942,6 @@ impl BtifGattScannerInbandCallbacks for BluetoothGatt {
 }
 
 impl BtifGattScannerCallbacks for BluetoothGatt {
-    #[log_cb_args]
     fn on_scanner_registered(&mut self, uuid: Uuid, scanner_id: u8, status: GattStatus) {
         debug!(
             "on_scanner_registered UUID = {}, scanner_id = {}, status = {}",
@@ -3978,7 +3972,6 @@ impl BtifGattScannerCallbacks for BluetoothGatt {
         }
     }
 
-    #[log_cb_args]
     fn on_scan_result(
         &mut self,
         event_type: u16,

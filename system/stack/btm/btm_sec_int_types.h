@@ -18,6 +18,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 
@@ -25,7 +26,6 @@
 #include "stack/include/btm_api_types.h"  // tBTM_CMPL_CB
 #include "stack/include/btm_ble_sec_api_types.h"
 #include "stack/include/btm_sec_api_types.h"
-#include "types/raw_address.h"
 
 /*
  * Local device configuration
@@ -58,6 +58,7 @@ enum tBTM_PAIRING_STATE : uint8_t {
 };
 
 enum tBTM_KEY_MISSING_REASON : uint8_t {
+  BTM_KEY_MISSING_UNKNOWN,
   BTM_KEY_MISSING_BREDR_AUTH_FAILURE,
   BTM_KEY_MISSING_BREDR_INCOMING_PAIRING,
   BTM_KEY_MISSING_LE_ENCRYPT_FAILURE,

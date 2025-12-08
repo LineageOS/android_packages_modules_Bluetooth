@@ -20,6 +20,8 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 
 #include "btm_ble_api.h"
 #include "osi/include/allocator.h"
@@ -29,8 +31,6 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/btu_hcif.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

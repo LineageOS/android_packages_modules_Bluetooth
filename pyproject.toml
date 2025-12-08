@@ -21,7 +21,7 @@ dependencies = [
     "types-portpicker",
     # Only for local test.
     "pytest",
-    "bumble == 0.0.212",
+    "bumble == 0.0.214",
     "snippet-uiautomator"
 ]
 
@@ -37,6 +37,9 @@ dependencies = [
 
 [tool.setuptools.cmdclass]
 build_py = "_pandora_build._build.cmd.build_py"
+
+[tool.mypy]
+disable_error_code = ["method-assign"]
 
 [[tool.mypy.overrides]]
 module = "grpc.*"

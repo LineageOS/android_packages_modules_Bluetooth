@@ -24,6 +24,7 @@ import functools
 import grpc
 import grpc.aio
 import importlib
+import inspect
 import logging
 import pathlib
 import re
@@ -221,6 +222,8 @@ def enableFlag(flag: str) -> Callable[..., Any]:
         TypeError: when the provided flag argument is not a string
     """
 
+    listOfServerToRestoreFlag: List[PandoraServer[Any]] = []
+
     def getFlagValue(server: PandoraServer[Any], flag: str) -> str:
         cmd_output = server.device.adb.shell(
             f'aflags list -c com.android.bt | grep {flag}').decode().split('\n')
@@ -241,40 +244,53 @@ def enableFlag(flag: str) -> Callable[..., Any]:
     def isFlagValidForTest(server: PandoraServer[Any], flag: str) -> bool:
         return bool(re.search(flag + '.* (enabled|read-write)', getFlagValue(server, flag)))
 
+    def enableFlag(test_class: base_test.BaseTestClass, flag: str):
+        if not (devices := getattr(test_class, 'devices', None)):
+            raise AttributeError("Attribute 'devices' not found in test class or is None")
+
+        if not isinstance(devices, PandoraDevices):
+            raise TypeError("devices attribute must be of a PandoraDevices type")
+
+        for server in devices._servers:
+            if isinstance(server, pandora_server.AndroidPandoraServer):
+                if not isFlagValidForTest(server, flag):
+                    raise signals.TestSkip('Flag cannot be enabled on this device')
+                if isFlagEnabled(server, flag):
+                    continue  # Nothing to do flag is already active
+                server.device.adb.shell(f'aflags enable --immediate {flag}')  # type: ignore
+                if not isFlagEnabled(server, flag):
+                    raise signals.TestError('Despite writable flag, runner couldn\'t enable it')
+                listOfServerToRestoreFlag.append(server)
+
+    def restoreFlag(flag: str):
+        for server in listOfServerToRestoreFlag:
+            server.device.adb.shell(f'aflags unset --immediate {flag}')  # type: ignore
+            if isFlagEnabled(server, flag):
+                raise signals.TestError(
+                    'Despite writable flag, runner couldn\'t reset its initial value')
+
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
 
-        @functools.wraps(func)
-        def wrapper(self: base_test.BaseTestClass, *args: Any, **kwargs: Any) -> Any:
-            devices = getattr(self, 'devices', None)
+        if inspect.iscoroutinefunction(func):
 
-            if not devices:
-                raise AttributeError("Attribute 'devices' not found in test class or is None")
+            @functools.wraps(func)
+            async def wrapper(self: base_test.BaseTestClass, *args: Any, **kwargs: Any) -> Any:
+                enableFlag(self, flag)
+                try:
+                    result = await func(self, *args, **kwargs)
+                finally:
+                    restoreFlag(flag)
+                return result
+        else:
 
-            if not isinstance(devices, PandoraDevices):
-                raise TypeError("devices attribute must be of a PandoraDevices type")
-
-            listOfServerToRestoreFlag: List[PandoraServer[Any]] = []
-
-            for server in devices._servers:
-                if isinstance(server, pandora_server.AndroidPandoraServer):
-                    if not isFlagValidForTest(server, flag):
-                        raise signals.TestSkip('Flag cannot be enabled on this device')
-                    if isFlagEnabled(server, flag):
-                        continue  # Nothing to do flag is already active
-                    server.device.adb.shell(f'aflags enable --immediate {flag}')  # type: ignore
-                    if not isFlagEnabled(server, flag):
-                        raise signals.TestError('Despite writable flag, runner couldn\'t enable it')
-                    listOfServerToRestoreFlag.append(server)
-
-            result = func(self, *args, **kwargs)
-
-            for server in listOfServerToRestoreFlag:
-                server.device.adb.shell(f'aflags unset --immediate {flag}')  # type: ignore
-                if isFlagEnabled(server, flag):
-                    raise signals.TestError(
-                        'Despite writable flag, runner couldn\'t reset its initial value')
-
-            return result
+            @functools.wraps(func)
+            def wrapper(self: base_test.BaseTestClass, *args: Any, **kwargs: Any) -> Any:
+                enableFlag(self, flag)
+                try:
+                    result = func(self, *args, **kwargs)
+                finally:
+                    restoreFlag(flag)
+                return result
 
         return wrapper
 

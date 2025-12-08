@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.sap;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.sap.SapMessage.CON_STATUS_OK;
 import static com.android.bluetooth.sap.SapMessage.DISC_GRACEFUL;
 import static com.android.bluetooth.sap.SapMessage.ID_CONNECT_RESP;
@@ -55,8 +54,10 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
-import androidx.test.runner.AndroidJUnit4;
+
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;

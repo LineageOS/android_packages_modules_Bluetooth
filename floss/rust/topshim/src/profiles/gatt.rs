@@ -29,7 +29,7 @@ pub type BtGattTestParams = bindings::btgatt_test_params_t;
 #[cxx::bridge(namespace = bluetooth::topshim::rust)]
 pub mod ffi {
     unsafe extern "C++" {
-        include!("types/raw_address.h");
+        include!("bluetooth/types/address.h");
         #[namespace = ""]
         type RawAddress = crate::btif::RawAddress;
         #[namespace = "bluetooth"]
@@ -179,14 +179,14 @@ pub mod ffi {
             scan_phy: u8,
         );
 
-        fn BatchscanConfigStorage(
+        fn BatchScanConfigStorage(
             self: Pin<&mut BleScannerIntf>,
             scanner_id: u8,
             batch_scan_full_max: i32,
             batch_scan_trunc_max: i32,
             batch_scan_notify_threshold: i32,
         );
-        fn BatchscanEnable(
+        fn BatchScanEnable(
             self: Pin<&mut BleScannerIntf>,
             scan_mode: i32,
             scan_interval: u16,
@@ -194,8 +194,8 @@ pub mod ffi {
             addr_type: i32,
             discard_rule: i32,
         );
-        fn BatchscanDisable(self: Pin<&mut BleScannerIntf>);
-        fn BatchscanReadReports(self: Pin<&mut BleScannerIntf>, scanner_id: u8, scan_mode: i32);
+        fn BatchScanDisable(self: Pin<&mut BleScannerIntf>);
+        fn BatchScanReadReports(self: Pin<&mut BleScannerIntf>, scanner_id: u8, scan_mode: i32);
 
         fn StartSync(
             self: Pin<&mut BleScannerIntf>,
@@ -1659,7 +1659,7 @@ impl BleScanner {
     }
 
     #[log_args]
-    pub fn batchscan_config_storage(
+    pub fn batch_scan_config_storage(
         &mut self,
         scanner_id: u8,
         full_max: i32,
@@ -1668,7 +1668,7 @@ impl BleScanner {
     ) {
         mutcxxcall!(
             self,
-            BatchscanConfigStorage,
+            BatchScanConfigStorage,
             scanner_id,
             full_max,
             trunc_max,
@@ -1677,7 +1677,7 @@ impl BleScanner {
     }
 
     #[log_args]
-    pub fn batchscan_enable(
+    pub fn batch_scan_enable(
         &mut self,
         scan_mode: i32,
         scan_interval: u16,
@@ -1687,7 +1687,7 @@ impl BleScanner {
     ) {
         mutcxxcall!(
             self,
-            BatchscanEnable,
+            BatchScanEnable,
             scan_mode,
             scan_interval,
             scan_window,
@@ -1697,13 +1697,13 @@ impl BleScanner {
     }
 
     #[log_args]
-    pub fn batchscan_disable(&mut self) {
-        mutcxxcall!(self, BatchscanDisable);
+    pub fn batch_scan_disable(&mut self) {
+        mutcxxcall!(self, BatchScanDisable);
     }
 
     #[log_args]
-    pub fn batchscan_read_reports(&mut self, scanner_id: u8, scan_mode: i32) {
-        mutcxxcall!(self, BatchscanReadReports, scanner_id, scan_mode);
+    pub fn batch_scan_read_reports(&mut self, scanner_id: u8, scan_mode: i32) {
+        mutcxxcall!(self, BatchScanReadReports, scanner_id, scan_mode);
     }
 
     #[log_args]

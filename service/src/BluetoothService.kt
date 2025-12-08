@@ -17,147 +17,96 @@
 package com.android.server.bluetooth
 
 import android.content.Context
-import android.content.res.Resources
+import android.os.Handler
 import android.os.HandlerThread
 import android.os.UserManager
-import android.provider.Settings
 import com.android.bluetooth.flags.Flags
 import com.android.server.SystemService
-import com.android.server.SystemService.TargetUser
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.android.asCoroutineDispatcher
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
-val SERVICE_NAME = "bluetooth_manager" // See BluetoothServiceManager.BLUETOOTH_MANAGER_SERVICE
+// See BluetoothServiceManager.BLUETOOTH_MANAGER_SERVICE
+private const val SERVICE_NAME = "bluetooth_manager"
 
 class BluetoothService(context: Context) : SystemService(context) {
-    private val mHandlerThread: HandlerThread
-    private val mBluetoothManagerService: BluetoothManagerService
+    private val looper = HandlerThread("BluetoothSystemServer").apply { start() }.looper
+    private val serviceDispatcher = Handler(looper).asCoroutineDispatcher()
+    private val scope = CoroutineScope(serviceDispatcher + SupervisorJob())
+
+    private var supervisor: BluetoothSupervisor
     private var mInitialized = false
 
     init {
-        mHandlerThread = HandlerThread("BluetoothManagerService")
-        mHandlerThread.start()
-        if (Flags.hciInstanceNameUseInjected()) {
-            var bluetoothHciInstance = BluetoothHciInstance()
-            mBluetoothManagerService =
-                BluetoothManagerService(
-                    context,
-                    mHandlerThread.getLooper(),
-                    bluetoothHciInstance.getInstance(),
-                )
-        } else {
-            mBluetoothManagerService =
-                BluetoothManagerService(context, mHandlerThread.getLooper(), "default")
+        Log.d("Booting now")
+        val bluetoothComponent =
+            if (Flags.userRestrictionRefactor()) {
+                BluetoothComponent(context)
+            } else {
+                null
+            }
+        // Run BluetoothManagerService on the correct thread even during constructor
+        supervisor =
+            runBlocking(serviceDispatcher) {
+                BluetoothSupervisor(context, looper, bluetoothComponent)
+            }
+
+        runOnBmsThread {
+            if (Flags.userRestrictionRefactor()) {
+                BluetoothRestriction.initialize(context, looper, supervisor::onBluetoothDisallowed)
+            }
         }
     }
 
-    private fun initialize(user: TargetUser) {
-        if (!mInitialized) {
-            Log.i("initialize($user)")
-            mBluetoothManagerService.handleOnBootPhase(user.userHandle)
-            mInitialized = true
-        }
-    }
+    // Run any lambda on the BluetoothSystemServer thread without waiting for its completion
+    private fun runOnBmsThread(block: suspend CoroutineScope.() -> Unit) = scope.launch { block() }
 
     override fun onStart() {
-        if (!Flags.publishBinderOnStart()) {
-            return
-        }
-        publishBinderService(SERVICE_NAME, mBluetoothManagerService.getBinder())
-    }
-
-    override fun onBootPhase(phase: Int) {
-        if (Flags.publishBinderOnStart()) {
-            return
-        }
-        if (phase == SystemService.PHASE_SYSTEM_SERVICES_READY) {
-            publishBinderService(SERVICE_NAME, mBluetoothManagerService.getBinder())
-        }
-    }
-
-    private fun shouldInitializeBluetooth(): Boolean {
-        // HSUM can be simulated on phone with:
-        // adb shell cmd user set-system-user-mode-emulation headless
-        // and it can be restored with:
-        // adb shell cmd user set-system-user-mode-emulation default
-
-        // Not HSUM, we can initialize Bluetooth on system user
-        if (!UserManager.isHeadlessSystemUserMode()) {
-            Log.i("shouldInitializeBluetooth() -> true: Not HSUM")
-            return true
-        }
-
-        try {
-            // In HSUM, refer to config_hsumBootStrategy to see if we can boot on system user for
-            // provisioned device
-            val r = Resources.getSystem()
-            if (
-                r.getInteger(r.getIdentifier("config_hsumBootStrategy", "integer", "android")) ==
-                    1 &&
-                    Settings.Global.getInt(
-                        context.contentResolver,
-                        Settings.Global.DEVICE_PROVISIONED,
-                        0,
-                    ) == 1
-            ) {
-                Log.i("shouldInitializeBluetooth() -> true: HSUM provisioned")
-                return true
-            }
-        } catch (_e: Resources.NotFoundException) {
-            // Config not found, assuming it's 0 so no need to initialize Bluetooth
-        }
-
-        Log.i("shouldInitializeBluetooth() -> false: HSUM")
-        return false
+        publishBinderService(
+            SERVICE_NAME,
+            BluetoothServiceBinder(looper, supervisor.api(), context),
+        )
     }
 
     override fun onUserStarting(user: TargetUser) {
-        if (Flags.cleanupStartingUser()) {
-            if (mInitialized) {
-                Log.i("onUserStarting($user) but already initialized")
+        if (mInitialized) {
+            Log.i("onUserStarting($user) but already initialized")
+            return
+        }
+        if (Flags.userVisibleOnUserStarting()) {
+            val isUserVisible =
+                context
+                    .createContextAsUser(user.userHandle, 0)
+                    .getSystemService(android.os.UserManager::class.java)!!
+                    .isUserVisible
+            if (!isUserVisible) {
+                Log.i("onUserStarting($user) Skipping non visible user ")
                 return
             }
+            Log.i("onUserStarting($user) Initializing for visible user ")
+        } else {
             val isForeground =
                 context
                     .createContextAsUser(user.userHandle, 0)
                     .getSystemService(android.os.UserManager::class.java)!!
-                    .isUserForeground()
+                    .isUserForeground
             if (!isForeground) {
                 Log.i("onUserStarting($user) Skipping non foreground user ")
                 return
             }
             Log.i("onUserStarting($user) Initializing for foreground user ")
-            mBluetoothManagerService.handleOnBootPhase(user.userHandle)
-            mInitialized = true
-            return
         }
-        Log.d("onUserStarting($user)")
-        if (shouldInitializeBluetooth()) {
-            initialize(user)
-        }
+        runOnBmsThread { supervisor.handleOnBootPhase(user.userHandle) }
+        mInitialized = true
     }
 
     override fun onUserSwitching(_from: TargetUser?, to: TargetUser) {
         Log.d("onUserSwitching($to)")
-        if (Flags.cleanupStartingUser()) {
-            if (!mInitialized) {
-                throw IllegalStateException(
-                    "Switching on a user when not initialized should never happen"
-                )
-            }
-            mBluetoothManagerService.onSwitchUser(to.userHandle)
-            return
-        }
         if (!mInitialized) {
-            initialize(to)
-        } else {
-            mBluetoothManagerService.onSwitchUser(to.userHandle)
+            throw IllegalStateException("Initialize did not happen")
         }
-    }
-
-    override fun onUserUnlocking(user: TargetUser) {
-        if (Flags.cleanupStartingUser()) {
-            Log.d("onUserUnlocking($user): Nothing to do at unlock")
-            return
-        }
-        mBluetoothManagerService.handleOnUnlockUser(user.userHandle)
+        runOnBmsThread { supervisor.onUserSwitching(to.userHandle) }
     }
 }

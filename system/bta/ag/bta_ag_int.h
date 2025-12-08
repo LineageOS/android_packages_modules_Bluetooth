@@ -25,6 +25,7 @@
 #define BTA_AG_INT_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 #include <string>
@@ -39,7 +40,6 @@
 #include "stack/include/btm_api_types.h"
 #include "stack/include/sdp_status.h"
 #include "stack/sdp/sdp_discovery_db.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants
@@ -405,6 +405,7 @@ void bta_ag_api_result(uint16_t handle, tBTA_AG_RES result, const tBTA_AG_RES_DA
 
 /* main functions */
 void bta_ag_scb_dealloc(tBTA_AG_SCB* p_scb);
+void bta_ag_sco_reset(tBTA_AG_SCB* p_scb);
 uint16_t bta_ag_scb_to_idx(tBTA_AG_SCB* p_scb);
 tBTA_AG_SCB* bta_ag_scb_by_idx(uint16_t idx);
 uint8_t bta_ag_service_to_idx(tBTA_SERVICE_MASK services);
@@ -483,10 +484,14 @@ size_t bta_ag_sco_write(const uint8_t* p_buf, uint32_t len);
 size_t bta_ag_sco_read(uint8_t* p_buf, uint32_t len);
 
 /* Internal utility functions */
+void bta_ag_release_hfp_client_interface();
+void bta_ag_init_hfp_client_interface();
 void bta_ag_sco_codec_nego(tBTA_AG_SCB* p_scb, bool result);
 void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb);
 bool bta_ag_is_sco_open_allowed(tBTA_AG_SCB* p_scb, const std::string event);
 void bta_ag_send_bcs(tBTA_AG_SCB* p_scb);
+bool bta_ag_get_wbs_supported();
+bool bta_ag_get_swb_supported();
 bool bta_ag_get_sco_offload_enabled();
 void bta_ag_set_sco_offload_enabled(bool value);
 void bta_ag_set_sco_allowed(bool value);

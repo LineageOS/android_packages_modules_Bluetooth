@@ -322,7 +322,7 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
             return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         }
 
-        Log.v(TAG, "onConnect(): uuid is ok, will send out " + "MSG_SESSION_ESTABLISHED msg.");
+        Log.v(TAG, "onConnect(): uuid is ok, will send out MSG_SESSION_ESTABLISHED msg.");
 
         return ResponseCodes.OBEX_HTTP_OK;
     }
@@ -734,7 +734,7 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
         boolean parseOk = true;
         while ((i < appParam.length) && (parseOk)) {
             switch (appParam[i]) {
-                case ApplicationParameter.TRIPLET_TAGID.PROPERTY_SELECTOR_TAGID:
+                case ApplicationParameter.TRIPLET_TAGID.PROPERTY_SELECTOR_TAGID -> {
                     i += 2; // length and tag field in triplet
                     for (int index = 0;
                             index < ApplicationParameter.TRIPLET_LENGTH.PROPERTY_SELECTOR_LENGTH;
@@ -745,8 +745,8 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
                         }
                     }
                     i += ApplicationParameter.TRIPLET_LENGTH.PROPERTY_SELECTOR_LENGTH;
-                    break;
-                case ApplicationParameter.TRIPLET_TAGID.SUPPORTEDFEATURE_TAGID:
+                }
+                case ApplicationParameter.TRIPLET_TAGID.SUPPORTEDFEATURE_TAGID -> {
                     i += 2; // length and tag field in triplet
                     for (int index = 0;
                             index < ApplicationParameter.TRIPLET_LENGTH.SUPPORTEDFEATURE_LENGTH;
@@ -757,14 +757,13 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
                     }
 
                     i += ApplicationParameter.TRIPLET_LENGTH.SUPPORTEDFEATURE_LENGTH;
-                    break;
-
-                case ApplicationParameter.TRIPLET_TAGID.ORDER_TAGID:
+                }
+                case ApplicationParameter.TRIPLET_TAGID.ORDER_TAGID -> {
                     i += 2; // length and tag field in triplet
                     appParamValue.order = Byte.toString(appParam[i]);
                     i += ApplicationParameter.TRIPLET_LENGTH.ORDER_LENGTH;
-                    break;
-                case ApplicationParameter.TRIPLET_TAGID.SEARCH_VALUE_TAGID:
+                }
+                case ApplicationParameter.TRIPLET_TAGID.SEARCH_VALUE_TAGID -> {
                     i += 1; // length field in triplet
                     // length of search value is variable
                     int length = appParam[i];
@@ -779,13 +778,13 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
                     }
                     i += length;
                     i += 1;
-                    break;
-                case ApplicationParameter.TRIPLET_TAGID.SEARCH_ATTRIBUTE_TAGID:
+                }
+                case ApplicationParameter.TRIPLET_TAGID.SEARCH_ATTRIBUTE_TAGID -> {
                     i += 2;
                     appParamValue.searchAttr = Byte.toString(appParam[i]);
                     i += ApplicationParameter.TRIPLET_LENGTH.SEARCH_ATTRIBUTE_LENGTH;
-                    break;
-                case ApplicationParameter.TRIPLET_TAGID.MAXLISTCOUNT_TAGID:
+                }
+                case ApplicationParameter.TRIPLET_TAGID.MAXLISTCOUNT_TAGID -> {
                     i += 2;
                     if (appParam[i] == 0 && appParam[i + 1] == 0) {
                         mNeedPhonebookSize = true;
@@ -795,23 +794,22 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
                         appParamValue.maxListCount = highValue * 256 + lowValue;
                     }
                     i += ApplicationParameter.TRIPLET_LENGTH.MAXLISTCOUNT_LENGTH;
-                    break;
-                case ApplicationParameter.TRIPLET_TAGID.LISTSTARTOFFSET_TAGID:
+                }
+                case ApplicationParameter.TRIPLET_TAGID.LISTSTARTOFFSET_TAGID -> {
                     i += 2;
                     int highValue = appParam[i] & 0xff;
                     int lowValue = appParam[i + 1] & 0xff;
                     appParamValue.listStartOffset = highValue * 256 + lowValue;
                     i += ApplicationParameter.TRIPLET_LENGTH.LISTSTARTOFFSET_LENGTH;
-                    break;
-                case ApplicationParameter.TRIPLET_TAGID.FORMAT_TAGID:
+                }
+                case ApplicationParameter.TRIPLET_TAGID.FORMAT_TAGID -> {
                     i += 2; // length field in triplet
                     if (appParam[i] != 0) {
                         appParamValue.vcard21 = false;
                     }
                     i += ApplicationParameter.TRIPLET_LENGTH.FORMAT_LENGTH;
-                    break;
-
-                case ApplicationParameter.TRIPLET_TAGID.VCARDSELECTOR_TAGID:
+                }
+                case ApplicationParameter.TRIPLET_TAGID.VCARDSELECTOR_TAGID -> {
                     i += 2;
                     for (int index = 0;
                             index < ApplicationParameter.TRIPLET_LENGTH.VCARDSELECTOR_LENGTH;
@@ -822,13 +820,13 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
                         }
                     }
                     i += ApplicationParameter.TRIPLET_LENGTH.VCARDSELECTOR_LENGTH;
-                    break;
-                case ApplicationParameter.TRIPLET_TAGID.VCARDSELECTOROPERATOR_TAGID:
+                }
+                case ApplicationParameter.TRIPLET_TAGID.VCARDSELECTOROPERATOR_TAGID -> {
                     i += 2;
                     appParamValue.vCardSelectorOperator = Byte.toString(appParam[i]);
                     i += ApplicationParameter.TRIPLET_LENGTH.VCARDSELECTOROPERATOR_LENGTH;
-                    break;
-                default:
+                }
+                default -> {
                     parseOk = false;
                     Log.e(TAG, "Parse Application Parameter error");
                     ContentProfileErrorReportUtils.report(
@@ -837,7 +835,7 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
                             BluetoothStatsLog
                                     .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
                             15);
-                    break;
+                }
             }
         }
 
@@ -970,7 +968,7 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
 
         if (type.equals("number")) {
             List<Integer> savedPosList = new ArrayList<>();
-            List<String> selectedNameList = new ArrayList<String>();
+            List<String> selectedNameList = new ArrayList<>();
             // query the number, to get the names
             List<String> names = new ArrayList<>();
             if (contactType == ContactsType.TYPE_PHONEBOOK) {
@@ -1004,7 +1002,7 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
 
         } else {
             List<Integer> savedPosList = new ArrayList<>();
-            List<String> selectedNameList = new ArrayList<String>();
+            List<String> selectedNameList = new ArrayList<>();
             if (appParamValue.searchValue != null) {
                 compareValue = appParamValue.searchValue.trim().toLowerCase(Locale.ROOT);
             }
@@ -1326,9 +1324,7 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
         if (TextUtils.isEmpty(orderPara)) {
             // If order parameter is not set by PCE, set default value per spec.
             orderPara = "0";
-            Log.d(
-                    TAG,
-                    "Order parameter is not set by PCE. " + "Assume order by 'Indexed' by default");
+            Log.d(TAG, "Order parameter is not set by PCE. Assume order by 'Indexed' by default");
         } else if (!orderPara.equals("0") && !orderPara.equals("1")) {
             Log.d(TAG, "Order parameter is not supported: " + appParamValue.order);
             if (orderPara.equals("2")) {
@@ -1680,29 +1676,24 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
     public final void onAuthenticationFailure(final byte[] userName) {}
 
     public static final String createSelectionPara(final int type) {
-        String selection = null;
-        switch (type) {
-            case ContentType.INCOMING_CALL_HISTORY:
-                selection =
-                        "("
-                                + Calls.TYPE
-                                + "="
-                                + CallLog.Calls.INCOMING_TYPE
-                                + " OR "
-                                + Calls.TYPE
-                                + "="
-                                + CallLog.Calls.REJECTED_TYPE
-                                + ")";
-                break;
-            case ContentType.OUTGOING_CALL_HISTORY:
-                selection = Calls.TYPE + "=" + CallLog.Calls.OUTGOING_TYPE;
-                break;
-            case ContentType.MISSED_CALL_HISTORY:
-                selection = Calls.TYPE + "=" + CallLog.Calls.MISSED_TYPE;
-                break;
-            default:
-                break;
-        }
+        final String selection =
+                switch (type) {
+                    case ContentType.INCOMING_CALL_HISTORY ->
+                            "("
+                                    + Calls.TYPE
+                                    + "="
+                                    + CallLog.Calls.INCOMING_TYPE
+                                    + " OR "
+                                    + Calls.TYPE
+                                    + "="
+                                    + CallLog.Calls.REJECTED_TYPE
+                                    + ")";
+                    case ContentType.OUTGOING_CALL_HISTORY ->
+                            Calls.TYPE + "=" + CallLog.Calls.OUTGOING_TYPE;
+                    case ContentType.MISSED_CALL_HISTORY ->
+                            Calls.TYPE + "=" + CallLog.Calls.MISSED_TYPE;
+                    default -> null;
+                };
         Log.v(TAG, "Call log selection: " + selection);
         return selection;
     }

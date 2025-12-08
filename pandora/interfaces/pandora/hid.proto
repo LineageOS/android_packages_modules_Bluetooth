@@ -21,6 +21,8 @@ service HID {
   rpc OnSetProtocolMode(google.protobuf.Empty) returns (stream ProtocolModeEvent);
   // receive Report Event
   rpc OnSetReport(google.protobuf.Empty) returns (stream ReportEvent);
+  // receive Data Event
+  rpc OnSendHostData(google.protobuf.Empty) returns (stream ReportDataEvent);
 }
 // Enum values match those in BluetoothHidHost.java
 enum HidReportType {
@@ -57,9 +59,7 @@ message SendHostReportRequest {
   string report = 3;
 }
 
-message SendHostReportResponse {
-
-}
+message SendHostReportResponse {}
 
 message ProtocolModeEvent {
   ProtocolMode protocol_mode = 1;
@@ -69,4 +69,9 @@ message ReportEvent {
   HidReportType report_type = 1;
   HidReportId report_id = 2;
   string report_data = 3;
+}
+
+message ReportDataEvent {
+  HidReportType report_type = 1;
+  string report_data = 2;
 }

@@ -15,10 +15,9 @@
 
 from __future__ import annotations
 
-import abc
 import asyncio
 import base64
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Coroutine, Mapping, Sequence
 import contextlib
 import dataclasses
 import datetime
@@ -48,6 +47,8 @@ _logger = logging.getLogger(__name__)
 _DEFAULT_RETRY_COUNT = 3
 _DEFAULT_RETRY_DELAY_SECONDS = 1.0
 _DEFAULT_CALLBACK_TIMEOUT_SECONDS = 30.0
+_FIELD = 'field'
+_MAPPER = 'mapper'
 
 
 def _make_json_object(arg: Any) -> Any:
@@ -89,6 +90,9 @@ class Module(enum.Enum):
     MAP = enum.auto()
     SAP = enum.auto()
     PLAYER = enum.auto()
+    BQR = enum.auto()
+    A2DP_SINK = enum.auto()
+    AVRCP_CONTROLLER = enum.auto()
 
 
 @dataclasses.dataclass
@@ -155,6 +159,13 @@ class CallbackHandler:
                 handler = snippet.registerBassCallback()
             case Module.PLAYER:
                 handler = snippet.registerPlayerListener()
+            case Module.BQR:
+                handler = snippet.registerBluetoothQualityReportCallback()
+            case Module.A2DP_SINK:
+                handler = snippet.registerProfileCallback(android_constants.Profile.A2DP_SINK)
+            case Module.AVRCP_CONTROLLER:
+                handler = snippet.registerProfileCallback(
+                    android_constants.Profile.AVRCP_CONTROLLER)
             case _:
                 raise ValueError(f'Unsupported module: {module}')
         return cls(snippet=snippet, handler=handler, module=module)
@@ -182,12 +193,15 @@ class CallbackHandler:
                 self.snippet.unregisterHidHostCallback(self.handler.callback_id)
             case Module.PAN:
                 self.snippet.unregisterPanCallback(self.handler.callback_id)
-            case Module.ASHA | Module.PBAP | Module.MAP | Module.SAP:
+            case (Module.ASHA | Module.PBAP | Module.MAP | Module.SAP | Module.A2DP_SINK |
+                  Module.AVRCP_CONTROLLER):
                 self.snippet.unregisterProfileCallback(self.handler.callback_id)
             case Module.BASS:
                 self.snippet.unregisterBassCallback(self.handler.callback_id)
             case Module.PLAYER:
                 self.snippet.unregisterPlayerListener(self.handler.callback_id)
+            case Module.BQR:
+                self.snippet.unregisterBluetoothQualityReportCallback(self.handler.callback_id)
             case _:
                 raise ValueError(f'Unsupported module: {self.module}')
 
@@ -221,6 +235,10 @@ class CallbackHandler:
             timeout = timeout.total_seconds()
         if isinstance(event, type):
             match_msg = ''
+            if predicate:
+                # inspect.getsource may raise OSError if source unavailable.
+                with contextlib.suppress(OSError):
+                    match_msg = f'matching `{inspect.getsource(predicate).strip()}`'
             event_class = event
         else:
             match_msg = f'== {event}'
@@ -271,13 +289,13 @@ class CallbackHandler:
             self.close()
 
 
-class JsonDeserializableEvent(abc.ABC):
+@dataclasses.dataclass
+class JsonDeserializableEvent:
     """Base class for JSON deserializable objects."""
 
     EVENT_NAME: ClassVar[str]
 
     @classmethod
-    @abc.abstractmethod
     def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
         """Creates an instance deserialized from a JSON-style mapping.
 
@@ -287,12 +305,18 @@ class JsonDeserializableEvent(abc.ABC):
     Returns:
       The converted instance.
     """
-        raise NotImplementedError
+        kwargs: dict[str, Any] = {}
+        for field in dataclasses.fields(cls):
+            json_field = field.metadata.get(_FIELD, field.name)
+            value = mapping.get(json_field)
+            mapper = field.metadata.get(_MAPPER, lambda x: x)
+            kwargs[field.name] = mapper(value) if value is not None else None
+        return cls(**kwargs)
 
 
 @dataclasses.dataclass
 class GattDescriptor:
-    """Dataclass for GATT Descriptor metadata.
+    """android.bluetooth.BluetoothGattDescriptor.
 
   Attributes:
     uuid: Descriptor UUID in string format.
@@ -321,7 +345,7 @@ class GattDescriptor:
 
 @dataclasses.dataclass
 class GattCharacteristic:
-    """Dataclass for GATT Characteristic metadata.
+    """android.bluetooth.BluetoothGattCharacteristic.
 
   Attributes:
     uuid: Characteristic UUID in string format.
@@ -364,7 +388,7 @@ class GattCharacteristic:
 
 @dataclasses.dataclass
 class GattService:
-    """Dataclass for GATT Service metadata.
+    """android.bluetooth.BluetoothGattService.
 
   Attributes:
     uuid: Service UUID in string format.
@@ -399,280 +423,216 @@ class GattService:
 
 @dataclasses.dataclass
 class KeyEvent(JsonDeserializableEvent):
-    key_code: int
-    action: int
+    """android.app.Activity.dispatchKeyEvent."""
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.KEY_EVENT
+    key_code: int = dataclasses.field(metadata={_FIELD: snippet_constants.KEY_EVENT_FIELD_KEY_CODE})
+    action: int = dataclasses.field(metadata={_FIELD: snippet_constants.KEY_EVENT_FIELD_ACTION})
 
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            key_code=mapping[snippet_constants.KEY_EVENT_FIELD_KEY_CODE],
-            action=mapping[snippet_constants.KEY_EVENT_FIELD_ACTION],
-        )
+    EVENT_NAME = snippet_constants.KEY_EVENT
 
 
 @dataclasses.dataclass
 class MotionEvent(JsonDeserializableEvent):
-    action: android_constants.MotionAction
-    button_state: android_constants.Button
-    x: float
-    y: float
+    """android.app.Activity.onGenericMotionEvent."""
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.MOTION_EVENT
+    action: android_constants.MotionAction = dataclasses.field(metadata={
+        _FIELD: snippet_constants.KEY_EVENT_FIELD_ACTION,
+        _MAPPER: android_constants.MotionAction,
+    })
+    button_state: int = dataclasses.field(
+        metadata={_FIELD: snippet_constants.MOTION_EVENT_FIELD_BUTTON_STATE})
+    x: float = dataclasses.field(metadata={_FIELD: snippet_constants.MOTION_EVENT_FIELD_X})
+    y: float = dataclasses.field(metadata={_FIELD: snippet_constants.MOTION_EVENT_FIELD_Y})
 
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            action=android_constants.MotionAction(
-                mapping[snippet_constants.KEY_EVENT_FIELD_ACTION]),
-            button_state=android_constants.Button(
-                mapping[snippet_constants.MOTION_EVENT_FIELD_BUTTON_STATE]),
-            x=mapping[snippet_constants.MOTION_EVENT_FIELD_X],
-            y=mapping[snippet_constants.MOTION_EVENT_FIELD_Y],
-        )
+    EVENT_NAME = snippet_constants.MOTION_EVENT
 
 
 @dataclasses.dataclass
 class AclConnected(JsonDeserializableEvent):
-    """Dataclass for ACL Connected event metadata.
+    """android.bluetooth.device.action.ACL_CONNECTED.
 
   Attributes:
     address: mac address of remote device in string format.
     transport: transport of the connected connection.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
-    address: str
-    transport: android_constants.Transport
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    transport: android_constants.Transport = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_TRANSPORT,
+        _MAPPER: android_constants.Transport,
+    })
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.ACL_CONNECTED
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            address=mapping[snippet_constants.FIELD_DEVICE],
-            transport=android_constants.Transport(mapping[snippet_constants.FIELD_TRANSPORT]),
-        )
+    EVENT_NAME = snippet_constants.ACL_CONNECTED
 
 
 @dataclasses.dataclass
 class AclDisconnected(JsonDeserializableEvent):
-    """Dataclass for ACL Disconnected event metadata.
+    """android.bluetooth.device.action.ACL_DISCONNECTED.
 
   Attributes:
     address: mac address of remote device in string format.
     transport: transport of the disconnected connection.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
-    address: str
-    transport: android_constants.Transport
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    transport: android_constants.Transport = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_TRANSPORT,
+        _MAPPER: android_constants.Transport,
+    })
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.ACL_DISCONNECTED
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            address=mapping[snippet_constants.FIELD_DEVICE],
-            transport=android_constants.Transport(mapping[snippet_constants.FIELD_TRANSPORT]),
-        )
+    EVENT_NAME = snippet_constants.ACL_DISCONNECTED
 
 
 @dataclasses.dataclass
 class BondStateChanged(JsonDeserializableEvent):
-    """Dataclass for Bond State Changed event metadata.
+    """android.bluetooth.device.action.BOND_STATE_CHANGED.
 
   Attributes:
     address: mac address of remote device in string format.
     state: new bond state of remote device.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
-    address: str
-    state: android_constants.BondState
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    state: android_constants.BondState = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_STATE,
+        _MAPPER: android_constants.BondState,
+    })
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.BOND_STATE_CHANGE
+    EVENT_NAME = snippet_constants.BOND_STATE_CHANGE
 
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            address=mapping[snippet_constants.FIELD_DEVICE],
-            state=android_constants.BondState(mapping[snippet_constants.FIELD_STATE]),
-        )
+
+@dataclasses.dataclass
+class UuidChanged(JsonDeserializableEvent):
+    """android.bluetooth.device.action.UUID."""
+
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    uuids: list[str] | None = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_UUID})
+
+    EVENT_NAME = snippet_constants.UUID_CHANGED
 
 
 @dataclasses.dataclass
 class A2dpPlayingStateChanged(JsonDeserializableEvent):
-    EVENT_NAME: ClassVar[str] = snippet_constants.A2DP_PLAYING_STATE_CHANGED
+    """android.bluetooth.a2dp.profile.action.PLAYING_STATE_CHANGED."""
 
-    address: str
-    state: android_constants.A2dpState
+    EVENT_NAME = snippet_constants.A2DP_PLAYING_STATE_CHANGED
 
-    @classmethod
-    @override
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            address=mapping[snippet_constants.FIELD_DEVICE],
-            state=android_constants.A2dpState(mapping[snippet_constants.FIELD_STATE]),
-        )
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    state: android_constants.A2dpState = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_STATE,
+        _MAPPER: android_constants.A2dpState,
+    })
 
 
 @dataclasses.dataclass
 class PairingRequest(JsonDeserializableEvent):
-    """Dataclass for Pairing Request event metadata.
+    """android.bluetooth.device.action.PAIRING_REQUEST.
 
   Attributes:
     address: mac address of remote device in string format.
     variant: variant of pairing procedure.
     pin: pairing confirmation pin code.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
-    address: str
-    variant: android_constants.PairingVariant
-    pin: int
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    variant: android_constants.PairingVariant = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_VARIANT,
+        _MAPPER: android_constants.PairingVariant,
+    })
+    pin: int = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_PIN})
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.PAIRING_REQUEST
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            address=mapping[snippet_constants.FIELD_DEVICE],
-            variant=android_constants.PairingVariant(mapping[snippet_constants.FIELD_VARIANT]),
-            pin=mapping[snippet_constants.FIELD_PIN],
-        )
+    EVENT_NAME = snippet_constants.PAIRING_REQUEST
 
 
 @dataclasses.dataclass
 class DeviceFound(JsonDeserializableEvent):
-    """Dataclass for Device Found (Inquiry Result) event metadata.
+    """android.bluetooth.device.action.FOUND.
 
   Attributes:
     address: mac address of remote device in string format.
     name: name of remote device.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
-    address: str
-    name: str
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    name: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_NAME})
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.DEVICE_FOUND
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            address=mapping[snippet_constants.FIELD_DEVICE],
-            name=mapping[snippet_constants.FIELD_NAME],
-        )
+    EVENT_NAME = snippet_constants.DEVICE_FOUND
 
 
 @dataclasses.dataclass
 class AudioDeviceAdded(JsonDeserializableEvent):
-    """Dataclass for Audio Device Added event metadata.
+    """android.media.AudioDeviceCallback.onAudioDevicesAdded.
 
   Attributes:
     address: mac address of remote device in string format.
     device_type: type of audio device.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
-    address: str
-    device_type: android_constants.AudioDeviceType
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    device_type: android_constants.AudioDeviceType = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_TRANSPORT,
+        _MAPPER: android_constants.AudioDeviceType,
+    })
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.AUDIO_DEVICE_ADDED
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            address=mapping[snippet_constants.FIELD_DEVICE],
-            device_type=android_constants.AudioDeviceType(
-                mapping[snippet_constants.FIELD_TRANSPORT]),
-        )
+    EVENT_NAME = snippet_constants.AUDIO_DEVICE_ADDED
 
 
 @dataclasses.dataclass
 class CommunicationDeviceChanged(JsonDeserializableEvent):
-    address: str
-    device_type: android_constants.AudioDeviceType
+    """android.media.AudioManager.OnCommunicationDeviceChangedListener.onCommunicationDeviceChanged."""
 
-    EVENT_NAME: ClassVar[str] = (snippet_constants.AUDIO_COMMUNICATION_DEVICE_CHANGED)
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    device_type: android_constants.AudioDeviceType = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_TRANSPORT,
+        _MAPPER: android_constants.AudioDeviceType,
+    })
 
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            address=mapping[snippet_constants.FIELD_DEVICE],
-            device_type=android_constants.AudioDeviceType(
-                mapping[snippet_constants.FIELD_TRANSPORT]),
-        )
+    EVENT_NAME = snippet_constants.AUDIO_COMMUNICATION_DEVICE_CHANGED
 
 
 @dataclasses.dataclass
 class GattConnectionStateChanged(JsonDeserializableEvent):
-    """Dataclass for GATT Connection State Changed event metadata.
+    """android.bluetooth.BluetoothGattCallback.onConnectionStateChange.
 
   Attributes:
     state: new state of GATT connection.
     status: status or reason of state transition.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
-    state: android_constants.ConnectionState
-    status: android_constants.GattStatus
+    state: android_constants.ConnectionState = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_STATE,
+        _MAPPER: android_constants.ConnectionState,
+    })
+    status: android_constants.GattStatus = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_STATUS,
+        _MAPPER: android_constants.GattStatus,
+    })
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.GATT_CONNECTION_STATE_CHANGE
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            state=android_constants.ConnectionState(mapping[snippet_constants.FIELD_STATE]),
-            status=android_constants.GattStatus(mapping[snippet_constants.FIELD_STATUS]),
-        )
+    EVENT_NAME = snippet_constants.GATT_CONNECTION_STATE_CHANGE
 
 
 @dataclasses.dataclass
 class GattCharacteristicReadRequest(JsonDeserializableEvent):
-    """Dataclass for GATT Characteristic read request metadata.
+    """android.bluetooth.BluetoothGattServerCallback.onCharacteristicReadRequest.
 
   Attributes:
     address: mac address of target device in string format.
     characteristic_uuid: Characteristic UUID in string format.
     request_id: request ID required by send_response method.
     offset: offset of value in the request.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
-    address: str
-    characteristic_uuid: str
-    request_id: int
-    offset: int
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    characteristic_uuid: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_UUID})
+    request_id: int = dataclasses.field(metadata={_FIELD: snippet_constants.GATT_FIELD_REQUEST_ID})
+    offset: int = dataclasses.field(metadata={_FIELD: snippet_constants.GATT_FIELD_OFFSET})
 
-    EVENT_NAME: ClassVar[str] = (snippet_constants.GATT_SERVER_CHARACTERISTIC_READ_REQUEST)
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            address=mapping[snippet_constants.FIELD_DEVICE],
-            characteristic_uuid=mapping[snippet_constants.FIELD_UUID],
-            request_id=mapping[snippet_constants.GATT_FIELD_REQUEST_ID],
-            offset=mapping[snippet_constants.GATT_FIELD_OFFSET],
-        )
+    EVENT_NAME = snippet_constants.GATT_SERVER_CHARACTERISTIC_READ_REQUEST
 
 
 @dataclasses.dataclass
 class GattCharacteristicWriteRequest(JsonDeserializableEvent):
-    """Dataclass for GATT Characteristic write request metadata.
+    """android.bluetooth.BluetoothGattServerCallback.onCharacteristicWriteRequest.
 
   Attributes:
     address: mac address of target device in string format.
@@ -682,36 +642,27 @@ class GattCharacteristicWriteRequest(JsonDeserializableEvent):
     value: what the remote wants to write.
     response_needed: whether response is required for this request.
     prepared_write: whether this is a prepared write.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
-    address: str
-    characteristic_uuid: str
-    request_id: int
-    offset: int
-    value: bytes
-    response_needed: bool
-    prepared_write: bool
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    characteristic_uuid: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_UUID})
+    request_id: int = dataclasses.field(metadata={_FIELD: snippet_constants.GATT_FIELD_REQUEST_ID})
+    offset: int = dataclasses.field(metadata={_FIELD: snippet_constants.GATT_FIELD_OFFSET})
+    value: bytes = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_VALUE,
+        _MAPPER: bytes
+    })
+    response_needed: bool = dataclasses.field(
+        metadata={_FIELD: snippet_constants.GATT_FIELD_RESPONSE_NEEDED})
+    prepared_write: bool = dataclasses.field(
+        metadata={_FIELD: snippet_constants.GATT_FIELD_PREPARED_WRITE})
 
-    EVENT_NAME: ClassVar[str] = (snippet_constants.GATT_SERVER_CHARACTERISTIC_WRITE_REQUEST)
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            address=mapping[snippet_constants.FIELD_DEVICE],
-            characteristic_uuid=mapping[snippet_constants.FIELD_UUID],
-            request_id=mapping[snippet_constants.GATT_FIELD_REQUEST_ID],
-            offset=mapping[snippet_constants.GATT_FIELD_OFFSET],
-            value=bytes(mapping[snippet_constants.FIELD_VALUE]),
-            response_needed=mapping[snippet_constants.GATT_FIELD_RESPONSE_NEEDED],
-            prepared_write=mapping[snippet_constants.GATT_FIELD_PREPARED_WRITE],
-        )
+    EVENT_NAME = snippet_constants.GATT_SERVER_CHARACTERISTIC_WRITE_REQUEST
 
 
 @dataclasses.dataclass
 class GattDescriptorWriteRequest(JsonDeserializableEvent):
-    """Dataclass for GATT Descriptor write request metadata.
+    """android.bluetooth.BluetoothGattServerCallback.onDescriptorWriteRequest.
 
   Attributes:
     address: mac address of target device in string format.
@@ -722,284 +673,213 @@ class GattDescriptorWriteRequest(JsonDeserializableEvent):
     value: what the remote wants to write.
     response_needed: whether response is required for this request.
     prepared_write: whether this is a prepared write.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
-    address: str
-    characteristic_handle: int
-    descriptor_uuid: str
-    request_id: int
-    offset: int
-    value: bytes
-    response_needed: bool
-    prepared_write: bool
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    characteristic_handle: int = dataclasses.field(
+        metadata={_FIELD: snippet_constants.FIELD_HANDLE})
+    descriptor_uuid: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_UUID})
+    request_id: int = dataclasses.field(metadata={_FIELD: snippet_constants.GATT_FIELD_REQUEST_ID})
+    offset: int = dataclasses.field(metadata={_FIELD: snippet_constants.GATT_FIELD_OFFSET})
+    value: bytes = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_VALUE,
+        _MAPPER: bytes
+    })
+    response_needed: bool = dataclasses.field(
+        metadata={_FIELD: snippet_constants.GATT_FIELD_RESPONSE_NEEDED})
+    prepared_write: bool = dataclasses.field(
+        metadata={_FIELD: snippet_constants.GATT_FIELD_PREPARED_WRITE})
 
-    EVENT_NAME: ClassVar[str] = (snippet_constants.GATT_SERVER_DESCRIPTOR_WRITE_REQUEST)
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            address=mapping[snippet_constants.FIELD_DEVICE],
-            characteristic_handle=mapping[snippet_constants.FIELD_HANDLE],
-            descriptor_uuid=mapping[snippet_constants.FIELD_UUID],
-            request_id=mapping[snippet_constants.GATT_FIELD_REQUEST_ID],
-            offset=mapping[snippet_constants.GATT_FIELD_OFFSET],
-            value=bytes(mapping[snippet_constants.FIELD_VALUE]),
-            response_needed=mapping[snippet_constants.GATT_FIELD_RESPONSE_NEEDED],
-            prepared_write=mapping[snippet_constants.GATT_FIELD_PREPARED_WRITE],
-        )
+    EVENT_NAME = snippet_constants.GATT_SERVER_DESCRIPTOR_WRITE_REQUEST
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class GattCharacteristicChanged(JsonDeserializableEvent):
-    address: str
-    handle: int
-    value: bytes
+    """android.bluetooth.BluetoothGattCallback.onCharacteristicChanged."""
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.GATT_CHARACTERISTIC_CHANGED
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    handle: int = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_HANDLE})
+    value: bytes = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_VALUE,
+        _MAPPER: bytes
+    })
 
-    @classmethod
-    def from_mapping(cls: Type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            address=mapping[snippet_constants.FIELD_DEVICE],
-            handle=mapping[snippet_constants.FIELD_HANDLE],
-            value=bytes(mapping[snippet_constants.FIELD_VALUE]),
-        )
+    EVENT_NAME = snippet_constants.GATT_CHARACTERISTIC_CHANGED
+
+
+@dataclasses.dataclass
+class GattSubrateChanged(JsonDeserializableEvent):
+    """android.bluetooth.BluetoothGattCallback.onSubrateChange."""
+
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    subrate_mode: android_constants.LeSubrateMode = dataclasses.field(metadata={
+        _FIELD: snippet_constants.GATT_FIELD_SUBRATE_MODE,
+        _MAPPER: android_constants.LeSubrateMode,
+    })
+    status: int = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_STATUS})
+
+    EVENT_NAME = snippet_constants.GATT_SUBRATE_CHANGED
 
 
 @dataclasses.dataclass
 class VolumeChanged(JsonDeserializableEvent):
-    """Dataclass for System Volume Changed metadata.
+    """android.media.VOLUME_CHANGED_ACTION.
 
   Attributes:
     stream_type: type of stream.
     volume_value: index of volume for stream_type.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
-    stream_type: android_constants.StreamType
-    volume_value: int
+    stream_type: android_constants.StreamType = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_TYPE,
+        _MAPPER: android_constants.StreamType,
+    })
+    volume_value: int = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_VALUE})
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.VOLUME_CHANGED
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            stream_type=android_constants.StreamType(mapping[snippet_constants.FIELD_TYPE]),
-            volume_value=mapping[snippet_constants.FIELD_VALUE],
-        )
+    EVENT_NAME = snippet_constants.VOLUME_CHANGED
 
 
 @dataclasses.dataclass
 class CallStateChanged(JsonDeserializableEvent):
-    """Dataclass for Call State Changed metadata.
+    """android.telecom.Call.Callback.onStateChanged.
 
   Attributes:
     handle: uri handle of the call.
     name: displayed name of caller.
     state: state of the call.
-    EVENT_NAME: ClassVar, callback event name.
   """
 
-    handle: str
-    name: str
-    state: android_constants.CallState
+    handle: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_HANDLE})
+    name: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_NAME})
+    state: android_constants.CallState = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_STATE,
+        _MAPPER: android_constants.CallState,
+    })
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.CALL_STATE_CHANGED
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            handle=mapping[snippet_constants.FIELD_HANDLE],
-            name=mapping[snippet_constants.FIELD_NAME],
-            state=android_constants.CallState(mapping[snippet_constants.FIELD_STATE]),
-        )
+    EVENT_NAME = snippet_constants.CALL_STATE_CHANGED
 
 
 @dataclasses.dataclass
 class ProfileConnectionStateChanged(JsonDeserializableEvent):
-    """Dataclass for Profile Connection State Changed event metadata.
+    """android.bluetooth.*.profile.action.CONNECTION_STATE_CHANGED."""
 
-  Attributes:
-    address: mac address of remote device in string format.
-    state: new bond state of remote device.
-    EVENT_NAME: ClassVar, callback event name.
-  """
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    state: android_constants.ConnectionState = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_STATE,
+        _MAPPER: android_constants.ConnectionState,
+    })
 
-    address: str
-    state: android_constants.ConnectionState
-
-    EVENT_NAME: ClassVar[str] = snippet_constants.PROFILE_CONNECTION_STATE_CHANGE
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            address=mapping[snippet_constants.FIELD_DEVICE],
-            state=android_constants.ConnectionState(mapping[snippet_constants.FIELD_STATE]),
-        )
+    EVENT_NAME = snippet_constants.PROFILE_CONNECTION_STATE_CHANGE
 
 
 @dataclasses.dataclass
 class ProfileActiveDeviceChanged(JsonDeserializableEvent):
-    address: str | None = None
+    """android.bluetooth.*.profile.action.ACTIVE_DEVICE_CHANGED."""
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.ACTIVE_DEVICE_CHANGED
+    address: str | None = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
 
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(address=mapping.get(snippet_constants.FIELD_DEVICE))
+    EVENT_NAME = snippet_constants.ACTIVE_DEVICE_CHANGED
 
 
 @dataclasses.dataclass
 class HfpAgAudioStateChanged(JsonDeserializableEvent):
-    """Dataclass for HFP AG Audio State Changed event metadata.
+    """android.bluetooth.headset.profile.action.AUDIO_STATE_CHANGED."""
 
-  Attributes:
-    address: mac address of remote device in string format.
-    state: new bond state of remote device.
-    EVENT_NAME: ClassVar, callback event name.
-  """
+    EVENT_NAME = snippet_constants.HFP_AG_AUDIO_STATE_CHANGED
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.HFP_AG_AUDIO_STATE_CHANGED
-
-    address: str
-    state: android_constants.ScoState
-
-    @classmethod
-    @override
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            address=mapping[snippet_constants.FIELD_DEVICE],
-            state=android_constants.ScoState(mapping[snippet_constants.FIELD_STATE]),
-        )
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    state: android_constants.ScoState = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_STATE,
+        _MAPPER: android_constants.ScoState,
+    })
 
 
 @dataclasses.dataclass
 class HfpHfAudioStateChanged(JsonDeserializableEvent):
-    """Dataclass for HFP HF Audio State Changed event metadata.
+    """android.bluetooth.headsetclient.profile.action.AUDIO_STATE_CHANGED."""
 
-  Attributes:
-    address: mac address of remote device in string format.
-    state: new bond state of remote device.
-    EVENT_NAME: ClassVar, callback event name.
-  """
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    state: android_constants.ConnectionState = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_STATE,
+        _MAPPER: android_constants.ConnectionState,
+    })
 
-    address: str
-    state: android_constants.ConnectionState
-
-    EVENT_NAME: ClassVar[str] = snippet_constants.HFP_HF_AUDIO_STATE_CHANGED
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            address=mapping[snippet_constants.FIELD_DEVICE],
-            state=android_constants.ConnectionState(mapping[snippet_constants.FIELD_STATE]),
-        )
+    EVENT_NAME = snippet_constants.HFP_HF_AUDIO_STATE_CHANGED
 
 
 @dataclasses.dataclass
 class BatteryLevelChanged(JsonDeserializableEvent):
-    """Dataclass for Battery Level Changed event metadata."""
+    """android.bluetooth.device.action.BATTERY_LEVEL_CHANGED."""
 
-    address: str
-    level: int
+    address: str = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_DEVICE})
+    level: int = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_VALUE})
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.BATTERY_LEVEL_CHANGED
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            address=mapping[snippet_constants.FIELD_DEVICE],
-            level=mapping[snippet_constants.FIELD_VALUE],
-        )
+    EVENT_NAME = snippet_constants.BATTERY_LEVEL_CHANGED
 
 
 @dataclasses.dataclass
 class BroadcastSourceFound(JsonDeserializableEvent):
+    """android.bluetooth.BluetoothLeBroadcastAssistant.Callback.onSourceFound."""
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.BASS_SOURCE_FOUND
+    EVENT_NAME = snippet_constants.BASS_SOURCE_FOUND
 
-    source: auracast_uri.BroadcastAudioUri
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(source=auracast_uri.BroadcastAudioUri.from_string(
-            mapping[snippet_constants.FIELD_SOURCE]),)
+    source: auracast_uri.BroadcastAudioUri = dataclasses.field(metadata={
+        _FIELD: snippet_constants.FIELD_SOURCE,
+        _MAPPER: auracast_uri.BroadcastAudioUri.from_string,
+    })
 
 
 @dataclasses.dataclass
 class PlayerIsPlayingChanged(JsonDeserializableEvent):
+    """androidx.media3.common.Player.Listener.onIsPlayingChanged."""
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.PLAYER_IS_PLAYING_CHANGED
+    EVENT_NAME = snippet_constants.PLAYER_IS_PLAYING_CHANGED
 
-    is_playing: bool
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(is_playing=mapping[snippet_constants.FIELD_STATE])
+    is_playing: bool = dataclasses.field(metadata={_FIELD: snippet_constants.FIELD_STATE})
 
 
 @dataclasses.dataclass
 class PlayerMediaItemTransition(JsonDeserializableEvent):
+    """androidx.media3.common.Player.Listener.onMediaItemTransition."""
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.PLAYER_MEDIA_ITEM_TRANSITION
+    EVENT_NAME = snippet_constants.PLAYER_MEDIA_ITEM_TRANSITION
 
-    uri: str | None
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(uri=mapping.get(snippet_constants.URI))
+    uri: str | None = dataclasses.field(metadata={_FIELD: snippet_constants.URI})
 
 
 @dataclasses.dataclass
 class DistanceMeasurementResult(JsonDeserializableEvent):
-    """Dataclass for Distance Measurement Result event metadata."""
+    """android.bluetooth.le.DistanceMeasurementSession.Callback.onResult."""
 
-    result_meters: float | None = None
-    error_meters: float | None = None
-    azimuth_angle: float | None = None
-    error_azimuth_angle: float | None = None
-    altitude_angle: float | None = None
-    error_altitude_angle: float | None = None
-    delay_spread_meters: float | None = None
-    confidence_level: float | None = None
-    velocity_meters_per_second: float | None = None
-    detected_attack_level: int | None = None
-    measurement_timestamp_nanos: int | None = None
+    result_meters: float | None = dataclasses.field(
+        metadata={_FIELD: snippet_constants.RESULT_METERS})
+    error_meters: float | None = dataclasses.field(
+        metadata={_FIELD: snippet_constants.ERROR_METERS})
+    azimuth_angle: float | None = dataclasses.field(
+        metadata={_FIELD: snippet_constants.AZIMUTH_ANGLE})
+    error_azimuth_angle: float | None = dataclasses.field(
+        metadata={_FIELD: snippet_constants.ERROR_AZIMUTH_ANGLE})
+    altitude_angle: float | None = dataclasses.field(
+        metadata={_FIELD: snippet_constants.ALTITUDE_ANGLE})
+    error_altitude_angle: float | None = dataclasses.field(
+        metadata={_FIELD: snippet_constants.ERROR_ALTITUDE_ANGLE})
+    delay_spread_meters: float | None = dataclasses.field(
+        metadata={_FIELD: snippet_constants.DELAY_SPREAD_METERS})
+    confidence_level: float | None = dataclasses.field(
+        metadata={_FIELD: snippet_constants.CONFIDENCE_LEVEL})
+    velocity_meters_per_second: float | None = dataclasses.field(
+        metadata={_FIELD: snippet_constants.VELOCITY_METERS_PER_SECOND})
+    detected_attack_level: int | None = dataclasses.field(
+        metadata={_FIELD: snippet_constants.DETECTED_ATTACK_LEVEL})
+    measurement_timestamp_nanos: int | None = dataclasses.field(
+        metadata={_FIELD: snippet_constants.MEASUREMENT_TIMESTAMP_NANOS})
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.DISTANCE_MEASUREMENT_RESULT
-
-    @override
-    @classmethod
-    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
-        return cls(
-            result_meters=mapping.get(snippet_constants.RESULT_METERS),
-            error_meters=mapping.get(snippet_constants.ERROR_METERS),
-            azimuth_angle=mapping.get(snippet_constants.AZIMUTH_ANGLE),
-            error_azimuth_angle=mapping.get(snippet_constants.ERROR_AZIMUTH_ANGLE),
-            altitude_angle=mapping.get(snippet_constants.ALTITUDE_ANGLE),
-            error_altitude_angle=mapping.get(snippet_constants.ERROR_ALTITUDE_ANGLE),
-            delay_spread_meters=mapping.get(snippet_constants.DELAY_SPREAD_METERS),
-            confidence_level=mapping.get(snippet_constants.CONFIDENCE_LEVEL),
-            velocity_meters_per_second=mapping.get(snippet_constants.VELOCITY_METERS_PER_SECOND),
-            detected_attack_level=mapping.get(snippet_constants.DETECTED_ATTACK_LEVEL),
-            measurement_timestamp_nanos=mapping.get(snippet_constants.MEASUREMENT_TIMESTAMP_NANOS),
-        )
+    EVENT_NAME = snippet_constants.DISTANCE_MEASUREMENT_RESULT
 
 
 @dataclasses.dataclass
 class ScanResult(JsonDeserializableEvent):
-    """LE Scan result."""
+    """android.bluetooth.le.ScanCallback.onScanResult."""
 
     primary_phy: int
     secondary_phy: int
@@ -1017,7 +897,7 @@ class ScanResult(JsonDeserializableEvent):
     service_data: dict[str, bytes] | None = None
     manufacturer_data: dict[int, bytes] | None = None
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.SCAN_RESULT
+    EVENT_NAME = snippet_constants.SCAN_RESULT
 
     @override
     @classmethod
@@ -1077,12 +957,69 @@ class ScanResult(JsonDeserializableEvent):
 
 
 @dataclasses.dataclass
+class BluetoothQualityReportReady(JsonDeserializableEvent):
+    """android.bluetooth.BluetoothAdapter.BluetoothQualityReportReadyCallback.onBluetoothQualityReportReady."""
+
+    @dataclasses.dataclass
+    class Common:
+        """Common fields for Bluetooth Quality Report."""
+
+        packet_type: int
+        connection_handle: int
+        connection_role: int
+        tx_power_level: int
+        rssi: int
+        snr: int
+        unused_afh_channel_count: int
+        afh_select_unideal_channel_count: int
+        lsto: int
+        piconet_clock: int
+        retransmission_count: int
+        no_rx_count: int
+        nak_count: int
+        last_tx_ack_timestamp: int
+        flow_off_count: int
+        last_flow_on_timestamp: int
+        overflow_count: int
+        underflow_count: int
+        cal_failed_item_count: int
+        # V6 fields
+        tx_total_packets: int | None = None
+        tx_unack_packets: int | None = None
+        tx_flush_packets: int | None = None
+        tx_last_subevent_packets: int | None = None
+        crc_error_packets: int | None = None
+        rx_dup_packets: int | None = None
+        rx_un_recv_packets: int | None = None
+        coex_info_mask: int | None = None
+
+    device: str
+    quality_report_id: int
+    status: int
+    common: Common | None
+
+    EVENT_NAME = snippet_constants.BLUETOOTH_QUALITY_REPORT
+
+    @override
+    @classmethod
+    def from_mapping(cls: type[Self], mapping: Mapping[str, Any]) -> Self:
+        report = mapping[snippet_constants.FIELD_REPORT]
+        return cls(
+            device=mapping[snippet_constants.FIELD_DEVICE],
+            status=mapping[snippet_constants.FIELD_STATUS],
+            quality_report_id=report[snippet_constants.FIELD_ID],
+            common=(cls.Common(**report[snippet_constants.FIELD_COMMON])
+                    if snippet_constants.FIELD_COMMON in report else None),
+        )
+
+
+@dataclasses.dataclass
 class BatchScanResults(JsonDeserializableEvent):
-    """LE Batch Scan result."""
+    """android.bluetooth.le.ScanCallback.onBatchScanResults."""
 
     results: Sequence[ScanResult]
 
-    EVENT_NAME: ClassVar[str] = snippet_constants.BATCH_SCAN_RESULTS
+    EVENT_NAME = snippet_constants.BATCH_SCAN_RESULTS
 
     @override
     @classmethod
@@ -1093,6 +1030,8 @@ class BatchScanResults(JsonDeserializableEvent):
 
 @dataclasses.dataclass
 class LegacyAdvertiseSettings:
+    """android.bluetooth.le.AdvertiseSettings."""
+
     connectable: bool = True
     discoverable: bool = True
     own_address_type: int = android_constants.AddressTypeStatus.RANDOM
@@ -1103,6 +1042,8 @@ class LegacyAdvertiseSettings:
 
 @dataclasses.dataclass
 class AdvertisingSetParameters:
+    """android.bluetooth.le.AdvertisingSetParameters."""
+
     connectable: bool = False
     anonymous: bool = False
     include_tx_power_level: bool = False
@@ -1118,6 +1059,8 @@ class AdvertisingSetParameters:
 
 @dataclasses.dataclass
 class AdvertisingData:
+    """android.bluetooth.le.AdvertiseData."""
+
     include_device_name: bool = False
     include_tx_power_level: bool = False
     service_uuids: Sequence[str] | None = None
@@ -1128,7 +1071,7 @@ class AdvertisingData:
 
 @dataclasses.dataclass
 class ScanFilter:
-    """LE Scan filter.
+    """android.bluetooth.le.ScanFilter.
 
   Attributes:
     advertising_data_type: Advertising Data Type.
@@ -1155,7 +1098,7 @@ class ScanFilter:
 
 @dataclasses.dataclass
 class ScanSettings:
-    """LE Scan settings."""
+    """android.bluetooth.le.ScanSettings."""
 
     scan_mode: android_constants.BleScanMode | None = None
     callback_type: android_constants.BleScanCallbackType | None = None
@@ -1167,7 +1110,7 @@ class ScanSettings:
 
 @dataclasses.dataclass
 class DistanceMeasurementParameters:
-    """Distance Measurement Parameters."""
+    """android.bluetooth.le.DistanceMeasurementParams."""
 
     @dataclasses.dataclass
     class ChannelSoundingParameters:
@@ -1182,6 +1125,18 @@ class DistanceMeasurementParameters:
     frequency: int | None = None
     method_id: int | None = None
     channel_sounding_parameters: ChannelSoundingParameters | None = None
+
+
+@dataclasses.dataclass
+class OobData:
+    """Out of Band Pairing Data."""
+
+    confirmation_hash: bytes
+    device_address_with_type: bytes
+    randomizer_hash: bytes | None = None
+    le_temporary_key: bytes | None = None
+    le_device_role: int | None = None
+    classic_length: int | None = None
 
 
 @dataclasses.dataclass
@@ -1219,8 +1174,6 @@ class LegacyAdvertiser:
                 _make_json_object(advertising_data),
                 _make_json_object(scan_response),
             ),)
-        if not cookie:
-            raise RuntimeError('Failed to start advertising.')
         return cls(cookie=cookie, snippet=snippet)
 
     def stop(self) -> None:
@@ -1409,6 +1362,26 @@ def find_characteristic_by_uuid(characteristic_uuid: str,
     return characteristic
 
 
+def _schedule_rpc(
+    snippet: snippet_stub.BluetoothSnippet,
+    method_name: str,
+    args: Sequence[Any],
+    delay_ms: int = 0,
+) -> Coroutine[None, None, str]:
+    """Calls a snippet method asynchronously."""
+    handler = snippet.scheduleRpc(method_name, delay_ms, args)
+
+    async def wait_for_result() -> str:
+        response: callback_event.CallbackEvent = await asyncio.to_thread(
+            lambda: handler.waitAndGet(method_name))
+        # Mobly doesn't parse JSON events, so they are remained as strings.
+        if (error := response.data['error']) != 'null':
+            raise errors.SnippetError(error)
+        return response.data['result']
+
+    return wait_for_result()
+
+
 class PhoneCall:
     """Context managable phone call wrapper."""
 
@@ -1453,20 +1426,41 @@ class PhoneCall:
 class AudioRecorder:
     """Context managable AudioRecorder wrapper."""
 
+    class Source(enum.IntEnum):
+        """android.media.MediaRecorder.Source."""
+
+        DEFAULT = 0
+        MIC = 1
+        VOICE_UPLINK = 2
+        VOICE_DOWNLINK = 3
+        VOICE_CALL = 4
+        CAMCORDER = 5
+        VOICE_RECOGNITION = 6
+        VOICE_COMMUNICATION = 7
+        REMOTE_SUBMIX = 8
+        UNPROCESSED = 9
+        VOICE_PERFORMANCE = 10
+        ECHO_REFERENCE = 1997
+        RADIO_TUNER = 1998
+        HOTWORD = 1999
+        ULTRASOUND = 2000
+
     def __init__(
         self,
         snippet: snippet_stub.BluetoothSnippet,
         path: str,
+        source: Source,
     ):
         """Class initializer.
 
     Args:
         snippet: snippet client instance.
         path: Path on device to save the recorded media file.
+        source: Source of the audio to record.
     """
         self.snippet = snippet
         self.path = path
-        snippet.startRecording(path)
+        snippet.startRecording(path, source)
 
     def close(self) -> None:
         """Closes the phone call."""
@@ -1615,12 +1609,12 @@ class RfcommChannel:
     cookie: str
 
     @classmethod
-    async def connect_with_channel_number(
+    async def connect(
         cls: Type[Self],
         snippet: snippet_stub.BluetoothSnippet,
         address: str,
         secure: bool,
-        channel: int,
+        channel_or_uuid: int | str,
         retry_count: int = _DEFAULT_RETRY_COUNT,
     ) -> Self:
         """Connects an RFCOMM channel.
@@ -1629,7 +1623,7 @@ class RfcommChannel:
       snippet: snippet client instance.
       address: address of target device.
       secure: whether encryption is required.
-      channel: channel number of the RFCOMM channel.
+      channel_or_uuid: channel number or UUID of the RFCOMM channel.
       retry_count: allowed retry count of connect attempts.
 
     Returns:
@@ -1638,65 +1632,61 @@ class RfcommChannel:
     Raises:
       ConnectionError: RFCOMM is not connected after allowed retry counts.
     """
+        if isinstance(channel_or_uuid, int):
+            method = lambda: snippet.rfcommConnectWithChannel(address, secure, channel_or_uuid)
+        elif isinstance(channel_or_uuid, str):
+            method = lambda: snippet.rfcommConnectWithUuid(address, secure, channel_or_uuid)
+        else:
+            raise ValueError(f'Unsupported channel_or_uuid: {channel_or_uuid}')
 
         @retry.retry_on_exception(
             initial_delay_sec=_DEFAULT_RETRY_DELAY_SECONDS,
             num_retries=retry_count,
         )
-        async def inner():
-            with contextlib.suppress(mobly.snippet.errors.ApiError):
-                cookie = await asyncio.to_thread(
-                    snippet.rfcommConnectWithChannel,
-                    address,
-                    secure,
-                    channel,
-                )
+        async def inner() -> Self:
+            try:
+                cookie = await asyncio.to_thread(method)
                 return cls(snippet=snippet, cookie=cookie)
-            raise errors.ConnectionError('Unable to connect RFCOMM')
+            except mobly.snippet.errors.ApiError as e:
+                raise errors.ConnectionError('Unable to connect RFCOMM') from e
 
         return await inner()
 
     @classmethod
-    async def connect_with_service_record(
+    def connect_async(
         cls: Type[Self],
         snippet: snippet_stub.BluetoothSnippet,
         address: str,
         secure: bool,
-        uuid: str,
-        retry_count: int = _DEFAULT_RETRY_COUNT,
-    ) -> Self:
-        """Connects an RFCOMM channel with Service Record UUID.
+        channel_or_uuid: int | str,
+    ) -> Coroutine[None, None, Self]:
+        """Connects an RFCOMM channel asynchronously.
 
     Args:
-      snippet: Snippet client instance.
-      address: Address of target device.
-      secure: Whether encryption is required.
-      uuid: Service record UUID.
-      retry_count: Allowed retry count of connect attempts.
+      snippet: snippet client instance.
+      address: address of target device.
+      secure: whether encryption is required.
+      channel_or_uuid: channel number or UUID of the RFCOMM channel.
 
     Returns:
-      RFCOMM client wrapper instance.
-
-    Raises:
-      ConnectionError: RFCOMM is not connected after allowed retry counts.
+      A coroutine that will return the RFCOMM client wrapper instance.
     """
+        if isinstance(channel_or_uuid, int):
+            method = 'rfcommConnectWithChannel'
+        else:
+            method = 'rfcommConnectWithUuid'
 
-        @retry.retry_on_exception(
-            initial_delay_sec=_DEFAULT_RETRY_DELAY_SECONDS,
-            num_retries=retry_count,
+        coro = _schedule_rpc(
+            snippet,
+            method,
+            (address, secure, channel_or_uuid),
         )
-        async def inner():
-            with contextlib.suppress(mobly.snippet.errors.ApiError):
-                cookie = await asyncio.to_thread(
-                    snippet.rfcommConnectWithUuid,
-                    address,
-                    secure,
-                    uuid,
-                )
-                return cls(snippet=snippet, cookie=cookie)
-            raise errors.ConnectionError('Unable to connect RFCOMM')
 
-        return await inner()
+        async def inner() -> Self:
+            cookie = await coro
+            return cls(snippet=snippet, cookie=cookie)
+
+        return inner()
 
     async def close(self) -> None:
         """Closes the RFCOMM channel."""
@@ -2046,6 +2036,46 @@ class GattClient(CallbackHandler):
             android_constants.Phy(event.data[snippet_constants.FIELD_RX_PHY]),
         )
 
+    async def request_connection_priority(
+        self, connection_priority: android_constants.ConnectionPriority
+    ) -> android_constants.ConnectionPriority:
+        """Requests connection priority.
+
+    Args:
+      connection_priority: Target connection priority.
+
+    Returns:
+      Updated connection priority.
+
+    Raises:
+      ConnectionError: Unable to request connection priority.
+    """
+        self.snippet.gattRequestConnectionPriority(self.handler.callback_id, connection_priority)
+        return connection_priority
+
+    async def request_subrate_mode(
+            self, mode: android_constants.LeSubrateMode) -> android_constants.LeSubrateMode:
+        """Requests LE Subrate Mode.
+
+    Args:
+      mode: Target subrate mode.
+
+    Returns:
+      Updated subrate mode.
+
+    Raises:
+      ConnectionError: Unable to request subrate mode.
+    """
+        # Clear all previous events.
+        self.handler.getAll(snippet_constants.GATT_SUBRATE_CHANGED)
+        status = self.snippet.gattRequestSubrateMode(self.handler.callback_id, mode)
+        if status != android_constants.GattStatus.SUCCESS:
+            raise errors.ConnectionError(f'Unable to request subrate mode, status={status}')
+        event = await self.wait_for_event(GattSubrateChanged)
+        if event.status != android_constants.GattStatus.SUCCESS:
+            raise errors.ConnectionError(f'Unable to request subrate mode, status={event.status}')
+        return event.subrate_mode
+
 
 _EVENT = TypeVar('_EVENT', bound=JsonDeserializableEvent)
 
@@ -2370,12 +2400,26 @@ class SnippetWrapper:
     Returns:
       The RFCOMM channel control block.
     """
-        if isinstance(channel_or_uuid, int):
-            return await RfcommChannel.connect_with_channel_number(self.snippet, address, secure,
-                                                                   channel_or_uuid, retry_count)
-        else:
-            return await RfcommChannel.connect_with_service_record(self.snippet, address, secure,
-                                                                   channel_or_uuid, retry_count)
+        return await RfcommChannel.connect(self.snippet, address, secure, channel_or_uuid,
+                                           retry_count)
+
+    def create_rfcomm_channel_async(
+        self,
+        address: str,
+        secure: bool,
+        channel_or_uuid: int | str,
+    ) -> Coroutine[None, None, RfcommChannel]:
+        """Creates an RFCOMM channel.
+
+    Args:
+      address: Address of target device.
+      secure: Whether encryption is required.
+      channel_or_uuid: Channel number or UUID of the RFCOMM service.
+
+    Returns:
+      The RFCOMM channel control block.
+    """
+        return RfcommChannel.connect_async(self.snippet, address, secure, channel_or_uuid)
 
     async def start_legacy_advertiser(
         self,
@@ -2467,13 +2511,61 @@ class SnippetWrapper:
             direction=direction,
         )
 
-    def start_audio_recording(self, path: str) -> AudioRecorder:
+    def start_audio_recording(
+        self,
+        path: str,
+        source: AudioRecorder.Source = AudioRecorder.Source.DEFAULT,
+    ) -> AudioRecorder:
         """Starts audio recording.
 
     Args:
       path: Path to the recording file.
+      source: Source of the audio recording.
 
     Returns:
       The audio recorder control block.
     """
-        return AudioRecorder(self.snippet, path)
+        return AudioRecorder(self.snippet, path, source)
+
+    def create_bond_oob(
+        self,
+        address: str,
+        transport: android_constants.Transport,
+        address_type: android_constants.AddressTypeStatus,
+        p_192_data: OobData | None = None,
+        p_256_data: OobData | None = None,
+    ) -> bool:
+        """Creates a bond with OOB data.
+
+    Args:
+      address: Address of target device.
+      transport: Transport to use (Classic or LE).
+      address_type: Address type of target device (if LE transport is used).
+      p_192_data: OOB data for 192-bit key.
+      p_256_data: OOB data for 256-bit key.
+
+    Returns:
+      True if the bond is created successfully.
+    """
+        return self.snippet.createBondOutOfBand(
+            address,
+            transport,
+            address_type,
+            _make_json_object(p_192_data),
+            _make_json_object(p_256_data),
+        )
+
+    def generate_oob_data(self, transport: int) -> OobData:
+        """Generates OOB data.
+
+    Args:
+      transport: Transport to use (Classic or LE).
+
+    Returns:
+      OOB data.
+    """
+        return OobData(
+            **{
+                key: bytes(value) if isinstance(value, list) else value
+                for key, value in self.snippet.generateLocalOobData(transport).items()
+            })  # type: ignore[arg-type]

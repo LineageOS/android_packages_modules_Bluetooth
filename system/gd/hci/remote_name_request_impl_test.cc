@@ -86,6 +86,8 @@ protected:
     client_handler_->Clear();
     client_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
 
+    test_hci_layer_.reset();
+
     delete client_handler_;
     delete thread_;
   }
@@ -288,7 +290,7 @@ TEST_F(RemoteNameRequestModuleTest, DISABLED_SendCommandThenCancelItCallbackInte
                                                         std::array<uint8_t, 248>{}))));
 }
 
-// This test should be replaced with the above one, so we test the integration of AclManager and
+// This test should be replaced with the above one, so we test the integration of AclManagerLe and
 // RnrModule
 TEST_F(RemoteNameRequestModuleTest, SendCommandThenCancelItCallbackInteropWorkaround) {
   auto promise = std::promise<std::tuple<ErrorCode, std::array<uint8_t, 248>>>{};

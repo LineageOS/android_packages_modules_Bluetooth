@@ -113,7 +113,7 @@ pub extern "C" fn swoff_leaudio_setup(
     ) {
         Ok(stream) => Box::into_raw(Box::new(stream)),
         Err(e) => {
-            log::error!("Failed to setup stream: {}", e);
+            log::error!("Failed to setup stream: {e}");
             std::ptr::null_mut()
         }
     }
@@ -145,7 +145,7 @@ pub extern "C" fn swoff_leaudio_write(
     let result = match stream.write(unsafe { slice::from_raw_parts(data.cast(), len) }) {
         Ok(n) => n,
         Err(reason) => {
-            log::warn!("Unable to write PCM data: {}", reason);
+            log::warn!("Unable to write PCM data: {reason}");
             0
         }
     };

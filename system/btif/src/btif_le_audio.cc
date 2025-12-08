@@ -18,6 +18,7 @@
 #include "btif_le_audio.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <hardware/bt_le_audio.h>
 
 #include <atomic>
@@ -29,7 +30,6 @@
 #include "btif_common.h"
 #include "btif_profile_storage.h"
 #include "stack/include/main_thread.h"
-#include "types/raw_address.h"
 
 using base::Bind;
 using base::Unretained;
@@ -326,6 +326,18 @@ class LeAudioClientInterfaceImpl : public LeAudioClientInterface, public LeAudio
     do_in_main_thread(Bind(&LeAudioClient::SetGroupAllowedContextMask,
                            Unretained(LeAudioClient::Get()), group_id, sink_context_types,
                            source_context_types));
+  }
+
+  void GroupConfirmActive(int group_id) {
+    if (!initialized || !LeAudioClient::IsLeAudioClientRunning()) {
+      log::verbose(
+              "call ignored, due to already started cleanup procedure or service "
+              "being not read");
+      return;
+    }
+
+    do_in_main_thread(
+            Bind(&LeAudioClient::GroupConfirmActive, Unretained(LeAudioClient::Get()), group_id));
   }
 
 private:

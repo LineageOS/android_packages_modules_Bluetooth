@@ -935,8 +935,8 @@ impl From<SupportedProfiles> for Vec<u8> {
 /// #[cxx::bridge(namespace = bluetooth::topshim::rust)]
 /// mod ffi {
 ///     unsafe extern "C++" {
-///         include!("types/raw_address.h");
-///         include!("types/bluetooth/uuid.h");
+///         include!("bluetooth/types/address.h");
+///         include!("bluetooth/types/uuid.h");
 ///
 ///         #[namespace = ""]
 ///         type RawAddress = crate::btif::RawAddress;

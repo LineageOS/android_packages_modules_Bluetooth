@@ -22,10 +22,12 @@ import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static com.android.bluetooth.Utils.callerIsSystemOrActiveOrManagedUser;
 import static com.android.bluetooth.Utils.checkCallerTargetSdk;
 import static com.android.bluetooth.Utils.checkConnectPermissionForDataDelivery;
+import static com.android.bluetooth.gatt.GattUtil.isHidCharUuid;
 
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.RequiresPermission;
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
@@ -44,10 +46,10 @@ import com.android.bluetooth.btservice.ProfileService.IProfileServiceBinder;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBinder {
-    private static final String TAG =
-            GattServiceConfig.TAG_PREFIX + GattServiceBinder.class.getSimpleName();
+    private static final String TAG = GattUtil.TAG_PREFIX + GattServiceBinder.class.getSimpleName();
 
     private GattService mService;
 
@@ -215,7 +217,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         }
 
         try {
-            service.permissionCheck(callback, device, handle);
+            enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle);
         } catch (SecurityException ex) {
             String callingPackage = source.getPackageName();
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
@@ -244,7 +246,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         }
 
         try {
-            if (service.isHidCharUuid(uuid.getUuid())) {
+            if (isHidCharUuid(uuid.getUuid())) {
                 service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
             }
         } catch (SecurityException ex) {
@@ -273,7 +275,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         if (service == null) {
             return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
         }
-        service.permissionCheck(callback, device, handle);
+        enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle);
         return service.writeCharacteristic(callback, device, handle, writeType, authReq, value);
     }
 
@@ -290,7 +292,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         }
 
         try {
-            service.permissionCheck(callback, device, handle);
+            enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle);
         } catch (SecurityException ex) {
             String callingPackage = source.getPackageName();
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
@@ -316,7 +318,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
         if (service == null) {
             return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
         }
-        service.permissionCheck(callback, device, handle);
+        enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle);
         return service.writeDescriptor(callback, device, handle, authReq, value);
     }
 
@@ -354,7 +356,7 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             return;
         }
         try {
-            service.permissionCheck(callback, device, handle);
+            enforcePrivilegedPermissionIfNeededForHandle(service, callback, device, handle);
         } catch (SecurityException ex) {
             String callingPackage = source.getPackageName();
             // Only throws on apps with target SDK T+ as this old API did not throw prior to T
@@ -609,5 +611,38 @@ class GattServiceBinder extends IBluetoothGatt.Stub implements IProfileServiceBi
             return;
         }
         service.disconnectAll(source);
+    }
+
+    // Suppressed because we are conditionally enforcing
+    @SuppressLint("AndroidFrameworkRequiresPermission")
+    private static void enforcePrivilegedPermissionIfNeededForHandle(
+            GattService service,
+            IBluetoothGattCallback callback,
+            BluetoothDevice device,
+            int handle) {
+        if (Utils.isInstrumentationTestMode()) {
+            return;
+        }
+
+        final var clientApp = service.mClientMap.getByCallbackId(callback);
+        if (clientApp == null) {
+            Log.w(TAG, "(" + callback + ") - App not registered");
+            return;
+        }
+        final var connId = service.getFirstConnectionIdForDevice(clientApp.id, device);
+        if (connId == null) {
+            Log.e(TAG, "(" + device + ") - No connection");
+            return;
+        }
+
+        if (!isHandleRestricted(service, connId, handle)) {
+            return;
+        }
+        service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
+    }
+
+    private static boolean isHandleRestricted(GattService service, int connId, int handle) {
+        Set<Integer> restrictedHandles = service.mRestrictedHandles.get(connId);
+        return restrictedHandles != null && restrictedHandles.contains(handle);
     }
 }

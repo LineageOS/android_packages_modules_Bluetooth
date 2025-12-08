@@ -25,6 +25,7 @@
 #define LOG_TAG "smp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include "internal_include/bt_target.h"
@@ -35,7 +36,6 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/l2cdefs.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -115,7 +115,7 @@ static void smp_connect_callback(uint16_t /* channel */, const RawAddress& bd_ad
       log::debug("connect_initialized: {}, smp_over_br: {}", p_cb->connect_initialized,
                  p_cb->smp_over_br);
 
-      if (!com::android::bluetooth::flags::ignore_le_smp_conn_when_sm_over_br_progress()) {
+      if (!com_android_bluetooth_flags_ignore_le_smp_conn_when_sm_over_br_progress()) {
         if (!p_cb->connect_initialized) {
           p_cb->connect_initialized = true;
           /* initiating connection established */
@@ -234,12 +234,6 @@ static void smp_data_received(uint16_t channel, const RawAddress& bd_addr, BT_HD
 static void smp_tx_complete_callback(uint16_t cid, uint16_t num_pkt) {
   tSMP_CB* p_cb = &smp_cb;
 
-  if (!com::android::bluetooth::flags::l2cap_tx_complete_cb_info()) {
-    log::verbose("Exit since l2cap_tx_complete_cb_info is disabled");
-    return;
-  }
-
-  log::verbose("l2cap_tx_complete_cb_info is enabled, continue");
   if (p_cb->total_tx_unacked >= num_pkt) {
     p_cb->total_tx_unacked -= num_pkt;
   } else {
@@ -309,7 +303,7 @@ static void smp_br_connect_callback(uint16_t /* channel */, const RawAddress& bd
   if (connected) {
     log::debug("connect_initialized: {}, smp_over_br: {}", p_cb->connect_initialized,
                p_cb->smp_over_br);
-    if (!com::android::bluetooth::flags::ignore_le_smp_conn_when_sm_over_br_progress()) {
+    if (!com_android_bluetooth_flags_ignore_le_smp_conn_when_sm_over_br_progress()) {
       if (!p_cb->connect_initialized) {
         p_cb->connect_initialized = true;
         /* initialize local i/r key to be default keys */

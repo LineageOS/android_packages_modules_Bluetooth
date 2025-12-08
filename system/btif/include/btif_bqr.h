@@ -17,11 +17,11 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include "common/postable_context.h"
 #include "include/hardware/bt_bqr.h"
 #include "osi/include/osi.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace bqr {

@@ -22,6 +22,7 @@
 
 #include <chrono>
 #include <future>
+#include <mutex>
 
 #include "time_util.h"
 
@@ -41,7 +42,9 @@ class MessageLoopThread;
 class RepeatingTimer final {
 public:
   RepeatingTimer(uint64_t (*clock_tick_us)(void) = bluetooth::common::time_get_os_boottime_us)
-      : expected_time_next_task_us_(0), clock_tick_us_(clock_tick_us) {}
+      : message_loop_thread_(nullptr),
+        expected_time_next_task_us_(0),
+        clock_tick_us_(clock_tick_us) {}
   RepeatingTimer(const RepeatingTimer&) = delete;
   RepeatingTimer& operator=(const RepeatingTimer&) = delete;
 
@@ -58,7 +61,7 @@ public:
    * @param period period for the task to be executed
    * @return true iff task is scheduled successfully
    */
-  bool SchedulePeriodic(const base::WeakPtr<MessageLoopThread>& thread, base::RepeatingClosure task,
+  bool SchedulePeriodic(MessageLoopThread* thread, base::RepeatingClosure task,
                         std::chrono::microseconds period);
 
   /**
@@ -79,7 +82,8 @@ public:
   bool IsScheduled() const;
 
 private:
-  base::WeakPtr<MessageLoopThread> message_loop_thread_;
+  base::WeakPtr<MessageLoopThread> message_loop_thread_weak_ptr_;
+  MessageLoopThread* message_loop_thread_;
   base::CancelableClosure task_wrapper_;
   base::RepeatingClosure task_;
   std::chrono::microseconds period_;

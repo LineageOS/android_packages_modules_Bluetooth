@@ -22,6 +22,8 @@
 // Mock include file to share data between tests and mock
 #include "test/mock/mock_stack_btm_sec.h"
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 #include <string>
 
@@ -31,7 +33,6 @@
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 // Original usings
 
@@ -369,13 +370,13 @@ void btm_sec_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr, tHC
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::btm_sec_role_changed(hci_status, bd_addr, new_role);
 }
-void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported, bool sc_supported,
-                               bool hci_role_switch_supported, bool br_edr_supported,
-                               bool le_supported) {
+void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported, bool host_sc_supported,
+                               bool controller_sc_supported, bool hci_role_switch_supported,
+                               bool br_edr_supported, bool le_supported) {
   inc_func_call_count(__func__);
-  test::mock::stack_btm_sec::btm_sec_set_peer_sec_caps(hci_handle, ssp_supported, sc_supported,
-                                                       hci_role_switch_supported, br_edr_supported,
-                                                       le_supported);
+  test::mock::stack_btm_sec::btm_sec_set_peer_sec_caps(
+          hci_handle, ssp_supported, host_sc_supported, controller_sc_supported,
+          hci_role_switch_supported, br_edr_supported, le_supported);
 }
 void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset) {
   inc_func_call_count(__func__);

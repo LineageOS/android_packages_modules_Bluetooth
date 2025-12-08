@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/le/enums.pb.h>
@@ -27,7 +28,6 @@
 
 #include "btif/include/btif_bqr.h"
 #include "hci/address.h"
-#include "types/raw_address.h"
 
 namespace bluetooth::metrics {
 
@@ -331,7 +331,8 @@ void LogMetricLeAudioConnectionSessionReported(
 
 void LogMetricLeAudioBroadcastSessionReported(int64_t duration_nanos);
 
-void LogMetricBluetoothQualityReport(const bqr::BqrLinkQualityEvent& event);
+void LogMetricBluetoothQualityReport(const RawAddress& remote_addr,
+                                     const bqr::BqrLinkQualityEvent& event);
 
 void LogMetricsChannelSoundingRequesterSessionReported(
         const hci::Address& remote_addr, const std::vector<int32_t>& app_uids,
@@ -341,4 +342,11 @@ void LogMetricsChannelSoundingRequesterSessionReported(
         int32_t duration_seconds, bool back_to_back,
         android::bluetooth::ChannelSoundingType cs_type, int32_t min_subevent_len,
         int32_t min_subevent_len_count);
+
+void LogMetricBluetoothEnergyMonitorReported(uint16_t bqr_version,
+                                             const bluetooth::bqr::BqrEnergyMonitorEvent& event);
+
+void LogMetricBluetoothRFStatsReported(uint16_t bqr_version,
+                                       const bluetooth::bqr::BqrRFStatsEvent& event);
+
 }  // namespace bluetooth::metrics

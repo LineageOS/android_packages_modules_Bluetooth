@@ -49,12 +49,14 @@ static_library("libbluetooth_gd") {
     "common/utils.cc",
     "hal/link_clocker.cc",
     "hal/snoop_logger.cc",
+    "hal/snoop_logger_file.cc",
     "hal/snoop_logger_socket.cc",
     "hal/snoop_logger_socket_thread.cc",
     "hal/syscall_wrapper_impl.cc",
-    "hci/acl_manager_impl.cc",
     "hci/acl_manager/acl_connection.cc",
     "hci/acl_manager/acl_fragmenter.cc",
+    "hci/acl_manager/acl_manager_classic_impl.cc",
+    "hci/acl_manager/acl_manager_le_impl.cc",
     "hci/acl_manager/acl_scheduler.cc",
     "hci/acl_manager/classic_acl_connection.cc",
     "hci/acl_manager/le_acl_connection.cc",
@@ -73,16 +75,6 @@ static_library("libbluetooth_gd") {
     "hci/remote_name_request_impl.cc",
     "hci/uuid.cc",
     "lpp/lpp_offload_manager.cc",
-    "os/handler.cc",
-    "os/linux_generic/alarm.cc",
-    "os/linux_generic/files.cc",
-    "os/linux_generic/mgmt.cc",
-    "os/linux_generic/reactive_semaphore.cc",
-    "os/linux_generic/reactor.cc",
-    "os/linux_generic/repeating_alarm.cc",
-    "os/linux_generic/thread.cc",
-    "os/linux_generic/wakelock_manager.cc",
-    "os/system_properties_common.cc",
     "storage/classic_device.cc",
     "storage/config_cache.cc",
     "storage/config_cache_helper.cc",
@@ -121,14 +113,51 @@ static_library("libbluetooth_gd") {
       "metrics/chromeos/metrics.cc",
       "metrics/chromeos/metrics_allowlist.cc",
       "metrics/chromeos/metrics_event.cc",
-      "os/chromeos/parameter_provider.cc",
-      "os/chromeos/system_properties.cc",
-      "os/chromeos/wakelock_native.cc",
     ]
     deps += [ "//bt/floss/android-base:android-base" ]
   } else {
     sources += [
       "metrics/linux/metrics.cc",
+    ]
+  }
+}
+
+static_library("libbluetooth_gd_os") {
+  sources = [
+    "os/handler.cc",
+    "os/linux_generic/alarm.cc",
+    "os/linux_generic/boottime_clock.cc",
+    "os/linux_generic/files.cc",
+    "os/linux_generic/mgmt.cc",
+    "os/linux_generic/reactive_semaphore.cc",
+    "os/linux_generic/reactor.cc",
+    "os/linux_generic/repeating_alarm.cc",
+    "os/linux_generic/thread.cc",
+    "os/linux_generic/wakelock_manager.cc",
+    "os/system_properties_common.cc",
+  ]
+
+  include_dirs = [ "." ]
+  configs += [
+    ":gd_defaults",
+    "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
+  ]
+
+  deps = [
+    "//bt/flags:bluetooth_flags_c_lib",
+    "//bt/sysprop:libcom.android.sysprop.bluetooth",
+    "//bt/system/gd:gd_default_deps",
+  ]
+
+  if (target_os == "chromeos") {
+    sources += [
+      "os/chromeos/parameter_provider.cc",
+      "os/chromeos/system_properties.cc",
+      "os/chromeos/wakelock_native.cc",
+    ]
+  } else {
+    sources += [
       "os/linux/parameter_provider.cc",
       "os/linux/system_properties.cc",
       "os/linux/wakelock_native.cc",

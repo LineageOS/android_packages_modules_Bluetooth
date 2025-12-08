@@ -20,7 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.annotation.SuppressLint;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.android.bluetooth.SignedLongLong;
 

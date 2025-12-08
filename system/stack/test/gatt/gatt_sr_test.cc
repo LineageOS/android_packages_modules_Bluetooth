@@ -24,8 +24,9 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"
 #undef LOG_TAG
+#include <bluetooth/types/address.h>
+
 #include "stack/gatt/gatt_sr.cc"
-#include "types/raw_address.h"
 
 #define MAX_UINT16 ((uint16_t)0xffff)
 
@@ -69,6 +70,7 @@ tGATT_STATUS attp_send_sr_msg(tGATT_TCB& /*tcb*/, uint16_t /*cid*/, BT_HDR* /*p_
 }
 
 void gatt_act_discovery(tGATT_CLCB* /*p_clcb*/) {}
+void gatt_force_disconnect(tGATT_TCB* /*p_tcb*/, std::string /*comment*/) {}
 bool gatt_disconnect(tGATT_TCB* /*p_tcb*/) { return false; }
 tGATT_CH_STATE gatt_get_ch_state(tGATT_TCB* /*p_tcb*/) { return GATT_CH_CLOSE; }
 tGATT_STATUS gatts_db_read_attr_value_by_type(tGATT_TCB& /*tcb*/, uint16_t /*cid*/,

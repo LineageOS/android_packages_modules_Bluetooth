@@ -17,6 +17,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <string.h>
 
@@ -26,7 +27,6 @@
 #include "stack/include/ais_api.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/gatt_api.h"
-#include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
 using bluetooth::log::error;

@@ -2,34 +2,10 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "auto_connect_on_multiple_hfp_when_no_a2dp_device"
-    namespace: "bluetooth"
-    description: "Auto connect to hfp device is there is no a2dp device to connect to"
-    bug: "305867804"
-}
-
-flag {
     name: "sco_managed_by_audio_remove_hfp_hal"
     namespace: "bluetooth"
     description: "Deprecate the btm_sco_hfp_hal and migrate to IBluetoothAudio"
     bug: "417621867"
-}
-
-flag {
-    name: "hfp_software_datapath"
-    namespace: "bluetooth"
-    description: "enable HFP software decode/encode data path"
-    bug: "362865563"
-}
-
-flag {
-    name: "bta_ag_cmd_brsf_allow_uint32"
-    namespace: "bluetooth"
-    description: "Allow and ignore the RFU bits set to 0b1 rather than responding ERROR"
-    bug: "331129986"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
 }
 
 flag {
@@ -47,16 +23,6 @@ flag {
     namespace: "bluetooth"
     description: "Avoid change of clcc call index after call disconnects from conference"
     bug: "345380335"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "ignore_notify_when_already_connected"
-    namespace: "bluetooth"
-    description: "Flag to ignore connect state notification from Native to Java layer when already connected"
-    bug: "346679106"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -97,16 +63,6 @@ flag {
     namespace: "bluetooth"
     description: "Flag to ignore vendor specific battery level update when HF indicator support is enabled."
     bug: "385870861"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "hfp_volume_control_property"
-    namespace: "bluetooth"
-    description: "Check system property before hands-free volume UI request."
-    bug: "404152232"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -171,13 +127,6 @@ flag {
 }
 
 flag {
-    name: "hfp_connection_failures_api"
-    namespace: "bluetooth"
-    description: "Add api support for api to collect hfp connection failures"
-    bug: "418829893"
-}
-
-flag {
     name: "send_ok_clcc_before_slc"
     namespace: "bluetooth"
     description: "Send clcc response ok before slc is completed to avoid remote issues"
@@ -187,3 +136,92 @@ flag {
     }
 }
 
+flag {
+    name: "merge_call_with_held_conference"
+    namespace: "bluetooth"
+    description: "Merge the active call with held conference call"
+    bug: "397374535"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "hold_conference_call_from_remote"
+    namespace: "bluetooth"
+    description: "hold conference call from remote"
+    bug: "422315662"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "send_ok_on_no_action_on_chld"
+    namespace: "bluetooth"
+    description: "Send OK on no action perfomed on CHLD instead of ERROR"
+    bug: "424860125"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "hfp_sco_state_reset_when_profile_restart"
+    namespace: "bluetooth"
+    description: "Reset sco state when BT profile restart without BT stack shutdown"
+    bug: "424125580"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "microphone_mute_status_sync"
+    namespace: "bluetooth"
+    description: "Synchronize microphone Mute status of phone with peripheral"
+    bug: "391258154"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "sco_state_machine_update_in_codec_state"
+    namespace: "bluetooth"
+    description: "sco state machine update when other HFP device disconnected during codec negotiation"
+    bug: "416436313"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "mode_change_before_sco_unpark"
+    namespace: "bluetooth"
+    description: "Do mode change before SCO unpark"
+    bug: "419189913"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "end_outgoing_call_on_chld"
+    namespace: "bluetooth"
+    description: "End outgoing call on CHLD"
+    bug: "426374659"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "check_call_state_atd"
+    namespace: "bluetooth"
+    description: "End outgoing call on CHLD"
+    bug: "441983109"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

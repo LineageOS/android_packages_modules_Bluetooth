@@ -131,7 +131,7 @@ pub trait IBluetooth {
     fn set_discoverable(&mut self, mode: BtDiscMode, duration: u32) -> bool;
 
     /// Returns whether multi-advertisement is supported.
-    /// A minimum number of 5 advertising instances is required for multi-advertisment support.
+    /// A minimum number of 5 advertising instances is required for multi-advertisement support.
     fn is_multi_advertisement_supported(&self) -> bool;
 
     /// Returns whether LE extended advertising is supported.
@@ -627,6 +627,7 @@ pub struct Bluetooth {
 
     /// Virtual uhid device created to keep bluetooth as a wakeup source.
     uhid_wakeup_source: UHid,
+    is_accept_ssp_request: bool,
 }
 
 impl Bluetooth {
@@ -683,6 +684,7 @@ impl Bluetooth {
             le_local_supported_features: 0u64,
             sig_notifier,
             uhid_wakeup_source: UHid::new(),
+            is_accept_ssp_request: false,
         }
     }
 
@@ -713,10 +715,12 @@ impl Bluetooth {
             return;
         }
         // Set connectable if
+        // - admin policy of accept ssp pairing is enable, or
         // - there is bredr socket listening, or
         // - there is a classic device bonded and not connected
         self.set_connectable_internal(
-            self.is_socket_listening
+            self.is_accept_ssp_request
+                || self.is_socket_listening
                 || self.remote_devices.values().any(|ctx| {
                     ctx.bond_state == BtBondState::Bonded
                         && ctx.bredr_acl_state == BtAclState::Disconnected
@@ -780,6 +784,9 @@ impl Bluetooth {
                 let _ = tx.send(Message::HidHostEnable).await;
             });
         }
+
+        self.is_accept_ssp_request = admin_policy_helper.is_accept_ssp_request();
+        self.update_connectable_mode();
     }
 
     pub fn enable_hidhost(&mut self) {
@@ -1861,12 +1868,13 @@ impl BtifBluetoothCallbacks for Bluetooth {
 
     #[log_cb_args]
     fn ssp_request(&mut self, remote_addr: RawAddress, variant: BtSspVariant, passkey: u32) {
-        // Accept the Just-Works pairing that we initiated, reject otherwise.
+        // Accept the Just-Works pairing that we initiated or accept incoming ssp pairing if the
+        // policy enabled, reject otherwise.
         if variant == BtSspVariant::Consent {
             let initiated_by_us = Some(remote_addr) == self.active_pairing_address;
             self.set_pairing_confirmation(
                 BluetoothDevice::new(remote_addr, "".to_string()),
-                initiated_by_us,
+                self.is_accept_ssp_request || initiated_by_us,
             );
             return;
         }

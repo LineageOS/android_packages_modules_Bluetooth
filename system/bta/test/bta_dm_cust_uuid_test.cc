@@ -16,11 +16,11 @@
  *
  ******************************************************************************/
 
+#include <bluetooth/types/uuid.h>
 #include <gtest/gtest.h>
 
 #include "bta/dm/bta_dm_int.h"
 #include "bta/test/bta_test_fixtures.h"
-#include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
 

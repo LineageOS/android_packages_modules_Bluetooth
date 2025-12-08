@@ -22,7 +22,7 @@ import android.bluetooth.OobData;
 /**
  * API for receiving OobData from the host stack
  *
- * {@hide}
+ * @hide
  */
 oneway interface IBluetoothOobDataCallback {
     void onOobData(int transport, in OobData oobData);

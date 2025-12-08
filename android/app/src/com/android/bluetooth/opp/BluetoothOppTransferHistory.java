@@ -38,7 +38,6 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.StaleDataException;
@@ -63,7 +62,6 @@ import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
-import com.android.bluetooth.flags.Flags;
 
 /**
  * View showing the user's finished bluetooth opp transfers that the user does not confirm.
@@ -93,23 +91,17 @@ public class BluetoothOppTransferHistory extends Activity
     public void onCreate(Bundle icicle) {
         super.onCreate(icicle);
 
-        if (Flags.oppSetInsetsForEdgeToEdge()) {
-            ViewCompat.setOnApplyWindowInsetsListener(
-                    findViewById(android.R.id.content),
-                    (v, windowInsets) -> {
-                        Insets insets =
-                                windowInsets.getInsets(
-                                        WindowInsetsCompat.Type.systemBars()
-                                                | WindowInsetsCompat.Type.ime()
-                                                | WindowInsetsCompat.Type.displayCutout());
-                        v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
-                        return WindowInsetsCompat.CONSUMED;
-                    });
-        } else {
-            // TODO(b/309578419): Make this activity handle insets properly and then remove this.
-            getTheme().applyStyle(R.style.OptOutEdgeToEdgeEnforcement, /* force */ false);
-        }
-
+        ViewCompat.setOnApplyWindowInsetsListener(
+                findViewById(android.R.id.content),
+                (v, windowInsets) -> {
+                    Insets insets =
+                            windowInsets.getInsets(
+                                    WindowInsetsCompat.Type.systemBars()
+                                            | WindowInsetsCompat.Type.ime()
+                                            | WindowInsetsCompat.Type.displayCutout());
+                    v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
+                    return WindowInsetsCompat.CONSUMED;
+                });
         setContentView(R.layout.bluetooth_transfers_page);
         mListView = (ListView) findViewById(R.id.list);
         mListView.setEmptyView(findViewById(R.id.empty));
@@ -267,13 +259,7 @@ public class BluetoothOppTransferHistory extends Activity
                 .setTitle(R.string.transfer_clear_dlg_title)
                 .setMessage(R.string.transfer_clear_dlg_msg)
                 .setPositiveButton(
-                        android.R.string.ok,
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                clearAllDownloads();
-                            }
-                        })
+                        android.R.string.ok, (dialog, whichButton) -> clearAllDownloads())
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
     }
@@ -321,7 +307,7 @@ public class BluetoothOppTransferHistory extends Activity
 
     /*
      * (non-Javadoc)
-     * @see
+     * see
      * android.widget.AdapterView.OnItemClickListener#onItemClick(android.widget
      * .AdapterView, android.view.View, int, long)
      */

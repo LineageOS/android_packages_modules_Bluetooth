@@ -184,7 +184,7 @@ public:
 
   virtual uint16_t GetLeSuggestedDefaultDataLength() const = 0;
 
-  virtual uint8_t GetLeNumberOfSupportedAdverisingSets() const = 0;
+  virtual uint8_t GetLeNumberOfSupportedAdvertisingSets() const = 0;
 
   virtual uint8_t GetLePeriodicAdvertiserListSize() const = 0;
 
@@ -209,6 +209,7 @@ public:
     uint8_t bluetooth_quality_report_support_;
     uint32_t dynamic_audio_buffer_support_;
     uint8_t a2dp_offload_v2_support_;
+    uint8_t sniff_offload_support_;
   };
 
   virtual uint32_t GetDabSupportedCodecs() const = 0;

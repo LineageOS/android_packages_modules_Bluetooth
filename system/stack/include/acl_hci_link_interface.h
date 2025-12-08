@@ -17,6 +17,9 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/hci_role.h>
+
 #include <cstdint>
 
 #include "hci/class_of_device.h"
@@ -24,8 +27,6 @@
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hci_mode.h"
 #include "stack/include/hcidefs.h"
-#include "types/hci_role.h"
-#include "types/raw_address.h"
 
 // This header contains functions for HCIF-Acl Management to invoke
 //

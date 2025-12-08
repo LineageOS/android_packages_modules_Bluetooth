@@ -17,6 +17,8 @@
 #ifndef ANDROID_INCLUDE_BLE_SCANNER_H
 #define ANDROID_INCLUDE_BLE_SCANNER_H
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <stdint.h>
 
 #include <memory>
@@ -25,8 +27,6 @@
 #include "bt_common_types.h"
 #include "bt_gatt_client.h"
 #include "bt_gatt_types.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 class AdvertisingTrackInfo {
 public:
@@ -97,7 +97,8 @@ public:
 
   using MsftAdvMonitorRemoveCallback = base::Callback<void(uint8_t /* status */)>;
 
-  using MsftAdvMonitorEnableCallback = base::Callback<void(uint8_t /* status */)>;
+  using MsftAdvMonitorEnableCallback =
+          base::Callback<void(bool /* enable */, uint8_t /* status */)>;
 
   /** Registers a scanner with the stack */
   virtual void RegisterScanner(const bluetooth::Uuid& app_uuid, RegisterCallback) = 0;
@@ -141,19 +142,19 @@ public:
                                  int scan_window_coded, int scan_phy) = 0;
 
   /* Configure the batchscan storage */
-  virtual void BatchscanConfigStorage(int client_if, int batch_scan_full_max,
+  virtual void BatchScanConfigStorage(int client_if, int batch_scan_full_max,
                                       int batch_scan_trunc_max, int batch_scan_notify_threshold,
                                       Callback cb) = 0;
 
   /* Enable batchscan */
-  virtual void BatchscanEnable(int scan_mode, int scan_interval, int scan_window, int addr_type,
+  virtual void BatchScanEnable(int scan_mode, int scan_interval, int scan_window, int addr_type,
                                int discard_rule, Callback cb) = 0;
 
   /* Disable batchscan */
-  virtual void BatchscanDisable(Callback cb) = 0;
+  virtual void BatchScanDisable(Callback cb) = 0;
 
   /* Read out batchscan reports */
-  virtual void BatchscanReadReports(int client_if, int scan_mode) = 0;
+  virtual void BatchScanReadReports(int client_if, int scan_mode) = 0;
 
   virtual void StartSync(uint8_t sid, RawAddress address, uint16_t skip, uint16_t timeout,
                          int reg_id) = 0;

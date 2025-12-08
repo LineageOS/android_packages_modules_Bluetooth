@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -83,6 +84,7 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public boolean isSelected() {
         return mIsSelected;
     }
@@ -94,6 +96,7 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public int getChannelIndex() {
         return mChannelIndex;
     }
@@ -105,6 +108,7 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @NonNull BluetoothLeAudioCodecConfigMetadata getCodecMetadata() {
         return mCodecMetadata;
     }
@@ -197,6 +201,7 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder setSelected(boolean isSelected) {
             mIsSelected = isSelected;
             return this;
@@ -211,6 +216,7 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder setChannelIndex(int channelIndex) {
             if (channelIndex == UNKNOWN_VALUE_PLACEHOLDER) {
                 throw new IllegalArgumentException(
@@ -229,8 +235,8 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
          * @hide
          */
         @SystemApi
-        @NonNull
-        public Builder setCodecMetadata(
+        @RequiresNoPermission
+        public @NonNull Builder setCodecMetadata(
                 @NonNull BluetoothLeAudioCodecConfigMetadata codecMetadata) {
             requireNonNull(codecMetadata);
             mCodecMetadata = codecMetadata;
@@ -246,6 +252,7 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull BluetoothLeBroadcastChannel build() {
             requireNonNull(mCodecMetadata);
             if (mChannelIndex == UNKNOWN_VALUE_PLACEHOLDER) {

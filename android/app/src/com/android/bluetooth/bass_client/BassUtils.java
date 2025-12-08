@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.bass_client;
 
-import static com.android.bluetooth.flags.Flags.leaudioBassScanWithInternalScanController;
-
 import android.bluetooth.BluetoothUtils;
 import android.bluetooth.BluetoothUtils.TypeValueEntry;
 import android.bluetooth.le.ScanFilter;
@@ -30,21 +28,18 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /** Bass Utility functions */
 class BassUtils {
     private static final String TAG = BassUtils.class.getSimpleName();
 
+    private BassUtils() {}
+
     static boolean containUuid(List<ScanFilter> filters, ParcelUuid uuid) {
         for (ScanFilter filter : filters) {
-            if (leaudioBassScanWithInternalScanController()) {
-                if (filter.getServiceDataUuid().equals(uuid)) {
-                    return true;
-                }
-            } else {
-                if (filter.getServiceUuid().equals(uuid)) {
-                    return true;
-                }
+            if (Objects.equals(filter.getServiceDataUuid(), uuid)) {
+                return true;
             }
         }
         return false;

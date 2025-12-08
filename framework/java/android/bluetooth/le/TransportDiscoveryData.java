@@ -18,6 +18,7 @@ package android.bluetooth.le;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
@@ -63,7 +64,7 @@ public final class TransportDiscoveryData implements Parcelable {
      */
     public TransportDiscoveryData(@NonNull byte[] transportDiscoveryData) {
         ByteBuffer byteBuffer = ByteBuffer.wrap(transportDiscoveryData);
-        mTransportBlocks = new ArrayList();
+        mTransportBlocks = new ArrayList<>();
         if (byteBuffer.remaining() > 0) {
             mTransportDataType = byteBuffer.get();
         } else {
@@ -134,6 +135,7 @@ public final class TransportDiscoveryData implements Parcelable {
             };
 
     /** Gets the transport data type. */
+    @RequiresNoPermission
     public int getTransportDataType() {
         return mTransportDataType;
     }
@@ -142,8 +144,8 @@ public final class TransportDiscoveryData implements Parcelable {
      * @return the list of {@link TransportBlock} in this TransportDiscoveryData or an empty list if
      *     there are no Transport Blocks
      */
-    @NonNull
-    public List<TransportBlock> getTransportBlocks() {
+    @RequiresNoPermission
+    public @NonNull List<TransportBlock> getTransportBlocks() {
         if (mTransportBlocks == null) {
             return Collections.emptyList();
         }
@@ -156,8 +158,8 @@ public final class TransportDiscoveryData implements Parcelable {
      * @return byte array representation of this Transport Discovery Data or null if the conversion
      *     failed
      */
-    @Nullable
-    public byte[] toByteArray() {
+    @RequiresNoPermission
+    public @Nullable byte[] toByteArray() {
         try {
             ByteBuffer buffer = ByteBuffer.allocate(totalBytes());
             buffer.put((byte) mTransportDataType);
@@ -179,6 +181,7 @@ public final class TransportDiscoveryData implements Parcelable {
     /**
      * @return total byte count of this TransportDataDiscovery
      */
+    @RequiresNoPermission
     public int totalBytes() {
         int size = 1; // Counting Transport Data Type here.
         for (TransportBlock transportBlock : getTransportBlocks()) {

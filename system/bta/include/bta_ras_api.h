@@ -16,11 +16,11 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
+
 #include <cstdint>
 #include <vector>
-
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace ras {
@@ -87,6 +87,7 @@ public:
   virtual void SendVendorSpecificReply(
           const RawAddress& address,
           const std::vector<VendorSpecificCharacteristic>& vendor_specific_data) = 0;
+  virtual void NotifyRangingHardwareOffloadEnabled() = 0;
 };
 
 RasClient* GetRasClient();

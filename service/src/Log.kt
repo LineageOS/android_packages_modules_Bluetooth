@@ -25,6 +25,9 @@ private const val TAG = "BluetoothSystemServer"
 
 object Log {
 
+    private val DATE_TIME_FORMATTER =
+        DateTimeFormatter.ofPattern("MM-dd HH:mm:ss.SSS").withZone(ZoneId.systemDefault())
+
     // Kotlin could shorten below method by having a Throwable? that is default to null but the
     // current implementation of util.Log is behaving differently depending if it is called with
     // 2 or 3 parameters. We do not want to change the behavior in this class, just add a common
@@ -48,6 +51,13 @@ object Log {
 
     @JvmStatic fun w(subtag: String, msg: String, tr: Throwable) = Log.w(TAG, "$subtag: $msg", tr)
 
+    @JvmStatic fun wtf(subtag: String, msg: String) = Log.wtf(TAG, "$subtag: $msg")
+
+    @JvmStatic fun wtf(msg: String) = Log.wtf(TAG, msg)
+
+    @JvmStatic
+    fun wtf(subtag: String, msg: String, tr: Throwable) = Log.wtf(TAG, "$subtag: $msg", tr)
+
     @JvmStatic fun e(subtag: String, msg: String) = Log.e(TAG, "$subtag: $msg")
 
     @JvmStatic fun e(msg: String) = Log.e(TAG, msg)
@@ -56,7 +66,14 @@ object Log {
 
     @JvmStatic
     fun timeToStringWithZone(timestamp: Long) =
-        DateTimeFormatter.ofPattern("MM-dd HH:mm:ss.SSS")
-            .withZone(ZoneId.systemDefault())
-            .format(Instant.ofEpochMilli(timestamp))
+        DATE_TIME_FORMATTER.format(Instant.ofEpochMilli(timestamp))
+
+    @JvmStatic
+    fun address(address: String?): String {
+        return when {
+            address == null -> "[address is null]"
+            address.length != 17 -> "[address invalid]"
+            else -> "XX:XX:XX:XX:${address.takeLast(5)}"
+        }
+    }
 }

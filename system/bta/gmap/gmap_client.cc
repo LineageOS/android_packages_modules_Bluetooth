@@ -21,6 +21,7 @@
 #include <base/functional/callback.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 
@@ -31,7 +32,6 @@
 #include "bta_gatt_queue.h"
 #include "osi/include/properties.h"
 #include "stack/include/bt_types.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using bluetooth::le_audio::GmapClient;
@@ -50,24 +50,24 @@ void GmapClient::DebugDump(std::stringstream &stream) {
     stream << "GmapClient not enabled\n";
     return;
   }
-  stream << "GmapClient device: " << addr_ << ", Role: " << role_ << ", ";
+  stream << "GmapClient device: " << addr_.ToRedactedStringForLogging() << ", Role: " << role_
+         << ", ";
   stream << "UGT Feature: " << UGT_feature_ << "\n";
 }
 
 bool GmapClient::IsGmapClientEnabled() {
-  bool flag = com::android::bluetooth::flags::leaudio_gmap_client();
   bool system_prop = osi_property_get_bool("bluetooth.profile.gmap.enabled", false);
   bool is_gmap_supported_in_software_datapath =
-          android::sysprop::bluetooth::LeAudio::is_gmap_supported_in_software_datapath().value_or(
+          android::sysprop::bluetooth::LeAudio::is_software_datapath_supported_test().value_or(
                   false);
 
-  bool result = flag && system_prop &&
-                (is_gmap_supported_in_software_datapath || is_offloader_support_gmap_);
+  bool result =
+          system_prop && (is_gmap_supported_in_software_datapath || is_offloader_support_gmap_);
   log::info(
-          "GmapClientEnabled={}, flag={}, system_prop={}, "
+          "GmapClientEnabled={}, system_prop={}, "
           "is_gmap_supported_in_software_datapath={}, "
           "offloader_support={}",
-          result, flag, system_prop, is_gmap_supported_in_software_datapath,
+          result, system_prop, is_gmap_supported_in_software_datapath,
           GmapClient::is_offloader_support_gmap_);
   return result;
 }

@@ -19,11 +19,12 @@
  *   Functions generated:14
  */
 
+#include <bluetooth/types/address.h>
+
 #include "stack/avrc/avrc_int.h"
 #include "stack/include/avrc_api.h"
 #include "stack/include/bt_hdr.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 bool avrcp_absolute_volume_is_enabled() {
   inc_func_call_count(__func__);

@@ -19,13 +19,14 @@
 #ifndef GAP_API_H
 #define GAP_API_H
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
+
 #include <cstdint>
 
 #include "profiles_api.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2cap_types.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants

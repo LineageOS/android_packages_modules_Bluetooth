@@ -26,6 +26,8 @@
 #define LOG_TAG "bluetooth-a2dp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
+#include <bluetooth/types/address.h>
 #include <string.h>
 
 #include <cstdint>
@@ -39,7 +41,6 @@
 #include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"
 #include "stack/include/bt_hdr.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -308,6 +309,10 @@ void avdt_ccb_hdl_start_rsp(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data) {
       avdt_scb_event(p_scb, event, (tAVDT_SCB_EVT*)&p_data->msg);
     }
   }
+
+  if (event == AVDT_SCB_MSG_START_REJ_EVT) {
+    bluetooth::metrics::LogAvdtpStartRejectEvent(p_ccb->peer_addr);
+  }
 }
 
 /*******************************************************************************
@@ -376,6 +381,10 @@ void avdt_ccb_hdl_suspend_rsp(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data) {
     if (p_scb != NULL) {
       avdt_scb_event(p_scb, event, (tAVDT_SCB_EVT*)&p_data->msg);
     }
+  }
+
+  if (event == AVDT_SCB_MSG_SUSPEND_REJ_EVT) {
+    bluetooth::metrics::LogAvdtpSuspendRejectEvent(p_ccb->peer_addr);
   }
 }
 
@@ -713,6 +722,7 @@ void avdt_ccb_cmd_fail(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data) {
       }
     }
 
+    bluetooth::metrics::LogAvdtpSignalingTimeoutEvent(p_ccb->peer_addr, msg.hdr.err_code);
     osi_free_and_reset((void**)&p_ccb->p_curr_cmd);
   }
 }

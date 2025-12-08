@@ -691,11 +691,11 @@ public class SapServer extends Thread implements Handler.Callback {
         SapMessage sapMsg = null;
 
         switch (msg.what) {
-            case SAP_MSG_RFC_REPLY:
+            case SAP_MSG_RFC_REPLY -> {
                 sapMsg = (SapMessage) msg.obj;
                 handleRfcommReply(sapMsg);
-                break;
-            case SAP_MSG_RIL_CONNECT:
+            }
+            case SAP_MSG_RIL_CONNECT -> {
                 /* The connection to rild-bt have been established. Store the outStream handle
                  * and send the connect request. */
                 if (mTestMode != SapMessage.INVALID_VALUE) {
@@ -708,30 +708,30 @@ public class SapServer extends Thread implements Handler.Callback {
                 SapMessage rilSapConnect = new SapMessage(SapMessage.ID_CONNECT_REQ);
                 rilSapConnect.setMaxMsgSize(mMaxMsgSize);
                 sendRilMessage(rilSapConnect);
-                break;
-            case SAP_MSG_RIL_REQ:
+            }
+            case SAP_MSG_RIL_REQ -> {
                 sapMsg = (SapMessage) msg.obj;
                 if (sapMsg != null) {
                     sendRilMessage(sapMsg);
                 }
-                break;
-            case SAP_MSG_RIL_IND:
+            }
+            case SAP_MSG_RIL_IND -> {
                 sapMsg = (SapMessage) msg.obj;
                 handleRilInd(sapMsg);
-                break;
-            case SAP_RIL_SOCK_CLOSED:
+            }
+            case SAP_RIL_SOCK_CLOSED -> {
                 /* The RIL socket was closed unexpectedly, send immediate disconnect indication
                 - close RFCOMM after timeout if no response. */
                 startDisconnectTimer(SapMessage.DISC_RFCOMM, DISCONNECT_TIMEOUT_RFCOMM);
-                break;
-            case SAP_PROXY_DEAD:
+            }
+            case SAP_PROXY_DEAD -> {
                 mRilBtReceiver.notifyShutdown(); /* Only needed in case of a connection error */
-                break;
-            default:
-                /* Message not handled */
-                return false;
+            }
+            default -> {
+                return false; // Message not handled
+            }
         }
-        return true; // Message handles
+        return true; // Message handled
     }
 
     /**
@@ -817,7 +817,7 @@ public class SapServer extends Thread implements Handler.Callback {
                             + SapMessage.getMsgTypeName(sapMsg.getMsgType()));
 
             switch (sapMsg.getMsgType()) {
-                case SapMessage.ID_CONNECT_RESP:
+                case SapMessage.ID_CONNECT_RESP -> {
                     if (mState == SAP_STATE.CONNECTING_CALL_ONGOING) {
                         /* Hold back the connect resp if a call was ongoing when the connect req
                          * was received.
@@ -847,12 +847,12 @@ public class SapServer extends Thread implements Handler.Callback {
                          * time. */
                         startDisconnectTimer(SapMessage.DISC_FORCED, DISCONNECT_TIMEOUT_RFCOMM);
                     }
-                    break;
-                case SapMessage.ID_DISCONNECT_RESP:
+                }
+                case SapMessage.ID_DISCONNECT_RESP -> {
                     if (mState == SAP_STATE.DISCONNECTING) {
                         /* Close the RIL-BT output Stream and signal to SapRilReceiver to close
                          * down the input stream. */
-                        Log.d(TAG, "ID_DISCONNECT_RESP received in SAP_STATE." + "DISCONNECTING.");
+                        Log.d(TAG, "ID_DISCONNECT_RESP received in SAP_STATE. DISCONNECTING.");
 
                         /* Send the disconnect resp, and wait for the client to close the Rfcomm,
                          * but start a timeout timer, just to be sure. Use alarm, to ensure we wake
@@ -880,8 +880,8 @@ public class SapServer extends Thread implements Handler.Callback {
                             startDisconnectTimer(SapMessage.DISC_RFCOMM, DISCONNECT_TIMEOUT_RFCOMM);
                         }
                     }
-                    break;
-                case SapMessage.ID_STATUS_IND:
+                }
+                case SapMessage.ID_STATUS_IND -> {
                     /* Some car-kits only "likes" status indication when connected, hence discard
                      * any arriving outside this state */
                     if (mState == SAP_STATE.DISCONNECTED
@@ -897,9 +897,8 @@ public class SapServer extends Thread implements Handler.Callback {
                         setNotification(SapMessage.DISC_GRACEFUL, 0);
                         Log.d(TAG, "MSG_CHANGE_STATE sent out.");
                     }
-                    break;
-                default:
-                    // Nothing special, just send the message
+                }
+                default -> {} // Nothing special, just send the message
             }
         }
 
@@ -924,28 +923,21 @@ public class SapServer extends Thread implements Handler.Callback {
         if (sapMsg == null) {
             return;
         }
+        if (sapMsg.getMsgType() != SapMessage.ID_RIL_UNSOL_DISCONNECT_IND) {
+            Log.w(
+                    TAG_HANDLER,
+                    "Unhandled message - type: " + SapMessage.getMsgTypeName(sapMsg.getMsgType()));
+            return;
+        }
 
-        switch (sapMsg.getMsgType()) {
-            case SapMessage.ID_RIL_UNSOL_DISCONNECT_IND:
-                {
-                    if (mState != SAP_STATE.DISCONNECTED && mState != SAP_STATE.DISCONNECTING) {
-                        /* we only send disconnect indication to the client if we are actually
-                        connected*/
-                        SapMessage reply = new SapMessage(SapMessage.ID_DISCONNECT_IND);
-                        reply.setDisconnectionType(sapMsg.getDisconnectionType());
-                        sendClientMessage(reply);
-                    } else {
-                        /* TODO: This was introduced to handle disconnect indication from RIL */
-                        sendDisconnectInd(sapMsg.getDisconnectionType());
-                    }
-                    break;
-                }
-
-            default:
-                Log.w(
-                        TAG_HANDLER,
-                        "Unhandled message - type: "
-                                + SapMessage.getMsgTypeName(sapMsg.getMsgType()));
+        if (mState != SAP_STATE.DISCONNECTED && mState != SAP_STATE.DISCONNECTING) {
+            /* we only send disconnect indication to the client if we are actually connected*/
+            SapMessage reply = new SapMessage(SapMessage.ID_DISCONNECT_IND);
+            reply.setDisconnectionType(sapMsg.getDisconnectionType());
+            sendClientMessage(reply);
+        } else {
+            /* TODO: This was introduced to handle disconnect indication from RIL */
+            sendDisconnectInd(sapMsg.getDisconnectionType());
         }
     }
 

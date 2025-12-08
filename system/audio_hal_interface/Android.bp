@@ -32,6 +32,7 @@ cc_library_static {
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbluetooth_metrics",
+        "libbluetooth_types",
         "libbt-common",
         "libosi",
     ],
@@ -44,6 +45,7 @@ cc_library_static {
             srcs: [
                 "a2dp_encoding.cc",
                 "aidl/a2dp/a2dp_encoding_aidl.cc",
+                "aidl/a2dp/a2dp_encoding_aidl_utils.cc",
                 "aidl/a2dp/a2dp_provider_info.cc",
                 "aidl/a2dp/bluetooth_audio_port_impl.cc",
                 "aidl/a2dp/client_interface_aidl.cc",
@@ -83,9 +85,9 @@ cc_library_static {
     header_libs: ["libbluetooth_headers"],
 }
 
-// Bluetooth Audio Provider Info unit tests for target and host
+// Bluetooth Audio A2dp Encoding AIDL unit tests
 cc_test {
-    name: "bluetooth-test-audio-hal-a2dp-provider-info",
+    name: "bluetooth-test-audio-hal-a2dp",
     test_suites: ["general-tests"],
     defaults: [
         "fluoride_defaults",
@@ -103,6 +105,7 @@ cc_test {
     },
     include_dirs: [
         "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/audio_hal_interface",
         "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/stack/include",
     ],
@@ -119,8 +122,11 @@ cc_test {
     srcs: [
         ":TestCommonMockFunctions",
         ":TestMockAudioHalInterface",
+        ":TestMockStackA2dp",
+        "aidl/a2dp/a2dp_encoding_aidl_utils.cc",
         "aidl/a2dp/a2dp_provider_info.cc",
         "aidl/a2dp/a2dp_provider_info_unittest.cc",
+        "test/a2dp_encoding_aidl_utils_unittest.cc",
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
@@ -132,6 +138,7 @@ cc_test {
         "server_configurable_flags",
     ],
     static_libs: [
+        "android.hardware.audio.common@5.0",
         "android.hardware.bluetooth.audio@2.0",
         "android.hardware.bluetooth.audio@2.1",
         "android.hardware.bluetooth@1.0",
@@ -140,8 +147,8 @@ cc_test {
         "android.hardware.common.fmq-V1-ndk",
         "bluetooth_flags_c_lib_for_test",
         "libbase",
-        "libbluetooth-types",
         "libbluetooth_log",
+        "libbluetooth_types",
         "libbt-common",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
@@ -185,12 +192,12 @@ cc_defaults {
         "android.hardware.common.fmq-V1-ndk",
         "libFraunhoferAAC",
         "libbase",
-        "libbluetooth-types",
         "libbluetooth_core_rs",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
+        "libbluetooth_types",
         "libbt-common", // needed for MessageLoopThread
         "libbt-jni-thread",
         "libbt-sbc-decoder",
@@ -262,8 +269,8 @@ cc_test {
         "android.hardware.common-V2-ndk",
         "android.hardware.common.fmq-V1-ndk",
         "bluetooth_flags_c_lib_for_test",
-        "libbluetooth-types",
         "libbluetooth_log",
+        "libbluetooth_types",
         "libbt-bta",
         "libbt-common",
         "libchrome",
@@ -336,10 +343,18 @@ cc_test {
         "hfp_client_interface_unittest.cc",
     ],
     static_libs: [
+        "bluetooth_flags_c_lib_for_test",
         "server_configurable_flags",
     ],
     header_libs: ["libbluetooth_headers"],
     cflags: [
         "-DBUILDCFG",
     ],
+    target: {
+        android: {
+            sanitize: {
+                address: true,
+            },
+        },
+    },
 }

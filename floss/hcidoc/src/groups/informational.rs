@@ -14,6 +14,8 @@ use hcidoc_packets::hci::{
     LeMetaEventChild,
 };
 use hcidoc_packets::l2cap::{ConnectionResponseResult, ControlChild};
+use serde::Serialize;
+use serde_json::to_writer_pretty;
 
 /// Valid values are in the range 0x0000-0x0EFF.
 type ConnectionHandle = u16;
@@ -83,7 +85,7 @@ impl AddressType {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Serialize)]
 enum Transport {
     Unknown,
     BREDR,
@@ -101,7 +103,7 @@ impl fmt::Display for Transport {
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Serialize)]
 enum InitiatorType {
     Unknown,
     Host,
@@ -470,7 +472,7 @@ impl fmt::Display for AclInformation {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Serialize)]
 enum ProfileType {
     Att,
     Avctp,
@@ -589,6 +591,84 @@ impl fmt::Display for ProfileInformation {
             ),
             profile_id = self.profile_id,
         )
+    }
+}
+
+#[derive(Serialize)]
+struct JsonReport {
+    devices_connections: HashMap<String, Vec<JsonDeviceAclInfo>>,
+}
+
+impl From<&HashMap<Address, DeviceInformation>> for JsonReport {
+    fn from(devices_info: &HashMap<Address, DeviceInformation>) -> Self {
+        JsonReport {
+            devices_connections: devices_info
+                .iter()
+                .map(|(address, info)| {
+                    let device_acls =
+                        info.acls.values().flatten().map(JsonDeviceAclInfo::from).collect();
+                    (address.to_string(), device_acls)
+                })
+                .collect(),
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct JsonDeviceAclInfo {
+    transport: Transport,
+    start_time: String,
+    end_time: Option<String>,
+    initiator: InitiatorType,
+    end_initiator: InitiatorType,
+    profile_connections: HashMap<ProfileType, Vec<JsonDeviceProfileInfo>>,
+}
+
+impl From<&AclInformation> for JsonDeviceAclInfo {
+    fn from(acl: &AclInformation) -> Self {
+        // This closure now groups profiles into the HashMap.
+        let profiles_map = acl
+            .active_profiles
+            .values()
+            .chain(acl.inactive_profiles.iter())
+            .map(JsonDeviceProfileInfo::from)
+            .fold(
+                HashMap::new(),
+                |mut acc: HashMap<ProfileType, Vec<JsonDeviceProfileInfo>>, profile_info| {
+                    acc.entry(profile_info.profile).or_default().push(profile_info);
+                    acc
+                },
+            );
+
+        JsonDeviceAclInfo {
+            transport: acl.transport,
+            start_time: acl.start_time.to_string(),
+            end_time: (acl.end_time != INVALID_TS).then(|| acl.end_time.to_string()),
+            initiator: acl.start_initiator,
+            end_initiator: acl.end_initiator,
+            profile_connections: profiles_map,
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct JsonDeviceProfileInfo {
+    profile: ProfileType,
+    start_time: String,
+    end_time: Option<String>,
+    initiator: InitiatorType,
+    end_initiator: InitiatorType,
+}
+
+impl From<&ProfileInformation> for JsonDeviceProfileInfo {
+    fn from(profile: &ProfileInformation) -> Self {
+        JsonDeviceProfileInfo {
+            profile: profile.profile_type,
+            start_time: profile.start_time.to_string(),
+            end_time: (profile.end_time != INVALID_TS).then(|| profile.end_time.to_string()),
+            initiator: profile.start_initiator,
+            end_initiator: profile.end_initiator,
+        }
     }
 }
 
@@ -913,7 +993,27 @@ impl Rule for InformationalRule {
                         self.report_address_type(&ev.get_peer_address(), AddressType::LE);
                     }
 
-                    LeMetaEventChild::LeEnhancedConnectionComplete(ev) => {
+                    LeMetaEventChild::LeEnhancedConnectionCompleteV1(ev) => {
+                        if ev.get_status() != ErrorCode::Success {
+                            return;
+                        }
+
+                        // Determining LE initiator is complex, for simplicity assume host inits.
+                        self.report_acl_state(
+                            &ev.get_peer_address(),
+                            Transport::LE,
+                            AclState::Initiating,
+                        );
+                        self.report_connection_start(
+                            &ev.get_peer_address(),
+                            ev.get_connection_handle(),
+                            Transport::LE,
+                            packet.ts,
+                        );
+                        self.report_address_type(&ev.get_peer_address(), AddressType::LE);
+                    }
+
+                    LeMetaEventChild::LeEnhancedConnectionCompleteV2(ev) => {
                         if ev.get_status() != ErrorCode::Success {
                             return;
                         }
@@ -1149,6 +1249,11 @@ impl Rule for InformationalRule {
 
     fn report_signals(&self) -> &[Signal] {
         &[]
+    }
+
+    fn output_json(&self, writer: &mut dyn Write) {
+        let json_report = JsonReport::from(&self.devices);
+        to_writer_pretty(writer, &json_report).expect("Failed to write JSON");
     }
 }
 

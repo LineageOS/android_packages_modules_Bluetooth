@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/uuid.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <sys/socket.h>
@@ -55,8 +57,6 @@
 #include "test/mock/mock_osi_properties.h"
 #include "test/mock/mock_osi_thread.h"
 #include "test/mock/mock_stack_btm_sec.h"
-#include "types/ble_address_with_type.h"
-#include "types/bluetooth/uuid.h"
 
 namespace bluetooth::testing {
 void set_hal_cbacks(bt_callbacks_t* callbacks);

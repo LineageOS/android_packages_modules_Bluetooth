@@ -19,14 +19,14 @@
 #pragma once
 
 #include <base/functional/callback_forward.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 
 #include <cstdint>
 
 #include "stack/include/sdp_callback.h"
 #include "stack/include/sdp_device_id.h"
 #include "stack/sdp/sdp_discovery_db.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 /*******************************************************************************
  *

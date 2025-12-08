@@ -28,7 +28,7 @@
 
 // Original included files, if any
 
-#include "types/raw_address.h"
+#include <bluetooth/types/address.h>
 
 // Mocked compile conditionals, if any
 

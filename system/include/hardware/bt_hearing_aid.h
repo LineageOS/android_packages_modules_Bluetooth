@@ -17,12 +17,10 @@
 #ifndef ANDROID_INCLUDE_BT_HEARING_AID_H
 #define ANDROID_INCLUDE_BT_HEARING_AID_H
 
+#include <bluetooth/types/address.h>
 #include <hardware/bluetooth.h>
 
-#include "types/raw_address.h"
-
-namespace bluetooth {
-namespace hearing_aid {
+namespace bluetooth::asha {
 
 // Must be kept in sync with BluetoothProfile.java
 enum class ConnectionState { DISCONNECTED = 0, CONNECTING, CONNECTED, DISCONNECTING };
@@ -69,7 +67,6 @@ public:
   virtual void RemoveDevice(const RawAddress& address) = 0;
 };
 
-}  // namespace hearing_aid
-}  // namespace bluetooth
+}  // namespace bluetooth::asha
 
 #endif /* ANDROID_INCLUDE_BT_HEARING_AID_H */

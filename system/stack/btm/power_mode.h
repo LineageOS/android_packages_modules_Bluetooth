@@ -16,13 +16,14 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 #include <string>
 
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hci_mode.h"
-#include "types/raw_address.h"
 
 /* BTM Power manager status codes */
 enum : uint8_t {
@@ -255,18 +256,6 @@ bool BTM_SetLinkPolicyActiveMode(const RawAddress& remote_bda);
  ******************************************************************************/
 tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat, uint16_t min_rmt_to,
                              uint16_t min_loc_to);
-
-/*******************************************************************************
- *
- * Function         BTM_PM_ReadControllerState
- *
- * Description      This function is called to obtain the controller state
- *
- * Returns          Controller state (BTM_CONTRL_ACTIVE, BTM_CONTRL_SCAN, and
- *                                    BTM_CONTRL_IDLE)
- *
- ******************************************************************************/
-tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void);
 
 /*******************************************************************************
  *

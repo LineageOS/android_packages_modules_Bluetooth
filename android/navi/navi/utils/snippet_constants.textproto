@@ -115,6 +115,16 @@ constants {
   string_value: "source"
 }
 
+constants {
+  name: "FIELD_REPORT"
+  string_value: "report"
+}
+
+constants {
+  name: "FIELD_COMMON"
+  string_value: "common"
+}
+
 # =========================== #
 # General                     #
 # =========================== #
@@ -141,6 +151,11 @@ constants {
 constants {
   name: "BOND_STATE_CHANGE"
   string_value: "BOND_STATE_CHANGE"
+}
+
+constants {
+  name: "UUID_CHANGED"
+  string_value: "UUID_CHANGED"
 }
 
 constants {
@@ -318,6 +333,177 @@ constants: {
   string_value: "report_delay_millis"
 }
 
+# BQR constants
+constants: {
+  name: "BLUETOOTH_QUALITY_REPORT"
+  string_value: "BLUETOOTH_QUALITY_REPORT"
+}
+
+constants: {
+  name: "PACKET_TYPE"
+  string_value: "packet_type"
+}
+
+constants: {
+  name: "CONNECTION_HANDLE"
+  string_value: "connection_handle"
+}
+
+constants: {
+  name: "CONNECTION_ROLE"
+  string_value: "connection_role"
+}
+
+constants: {
+  name: "TX_POWER_LEVEL"
+  string_value: "tx_power_level"
+}
+
+constants: {
+  name: "RSSI"
+  string_value: "rssi"
+}
+
+constants: {
+  name: "SNR"
+  string_value: "snr"
+}
+
+constants: {
+  name: "UNUSED_AFH_CHANNEL_COUNT"
+  string_value: "unused_afh_channel_count"
+}
+
+constants: {
+  name: "AFH_SELECT_UNIDEAL_CHANNEL_COUNT"
+  string_value: "afh_select_unideal_channel_count"
+}
+
+constants: {
+  name: "LSTO"
+  string_value: "lsto"
+}
+
+constants: {
+  name: "PICONET_CLOCK"
+  string_value: "piconet_clock"
+}
+
+constants: {
+  name: "RETRANSMISSION_COUNT"
+  string_value: "retransmission_count"
+}
+
+constants: {
+  name: "NO_RX_COUNT"
+  string_value: "no_rx_count"
+}
+
+constants: {
+  name: "NAK_COUNT"
+  string_value: "nak_count"
+}
+
+constants: {
+  name: "LAST_TX_ACK_TIMESTAMP"
+  string_value: "last_tx_ack_timestamp"
+}
+
+constants: {
+  name: "FLOW_OFF_COUNT"
+  string_value: "flow_off_count"
+}
+
+constants: {
+  name: "LAST_FLOW_ON_TIMESTAMP"
+  string_value: "last_flow_on_timestamp"
+}
+
+constants: {
+  name: "OVERFLOW_COUNT"
+  string_value: "overflow_count"
+}
+
+constants: {
+  name: "UNDERFLOW_COUNT"
+  string_value: "underflow_count"
+}
+
+constants: {
+  name: "CAL_FAILED_ITEM_COUNT"
+  string_value: "cal_failed_item_count"
+}
+
+constants: {
+  name: "TX_TOTAL_PACKETS"
+  string_value: "tx_total_packets"
+}
+
+constants: {
+  name: "TX_UNACK_PACKETS"
+  string_value: "tx_unack_packets"
+}
+
+constants: {
+  name: "TX_FLUSH_PACKETS"
+  string_value: "tx_flush_packets"
+}
+
+constants: {
+  name: "TX_LAST_SUBEVENT_PACKETS"
+  string_value: "tx_last_subevent_packets"
+}
+
+constants: {
+  name: "CRC_ERROR_PACKETS"
+  string_value: "crc_error_packets"
+}
+
+constants: {
+  name: "RX_DUP_PACKETS"
+  string_value: "rx_dup_packets"
+}
+
+constants: {
+  name: "RX_UN_RECV_PACKETS"
+  string_value: "rx_un_recv_packets"
+}
+
+constants: {
+  name: "COEX_INFO_MASK"
+  string_value: "coex_info_mask"
+}
+
+constants {
+  name: "OOB_DATA_CONFIRMATION_HASH"
+  string_value: "confirmation_hash"
+}
+
+constants {
+  name: "OOB_DATA_RANDOMIZER_HASH"
+  string_value: "randomizer_hash"
+}
+
+constants {
+  name: "OOB_DATA_LE_TEMPORARY_KEY"
+  string_value: "le_temporary_key"
+}
+
+constants {
+  name: "OOB_DATA_DEVICE_ADDRESS_WITH_TYPE"
+  string_value: "device_address_with_type"
+}
+
+constants {
+  name: "OOB_DATA_LE_DEVICE_ROLE"
+  string_value: "le_device_role"
+}
+
+constants {
+  name: "OOB_DATA_CLASSIC_LENGTH"
+  string_value: "classic_length"
+}
+
 # =========================== #
 # BluetoothGattClientSnippet  #
 # =========================== #
@@ -345,6 +531,11 @@ constants {
 constants {
   name: "GATT_FIELD_PERMISSIONS"
   string_value: "permissions"
+}
+
+constants {
+  name: "GATT_FIELD_SUBRATE_MODE"
+  string_value: "subrate_mode"
 }
 
 constants {
@@ -395,6 +586,11 @@ constants {
 constants {
   name: "GATT_MTU_CHANGED"
   string_value: "GATT_MTU_CHANGED"
+}
+
+constants {
+  name: "GATT_SUBRATE_CHANGED"
+  string_value: "GATT_SUBRATE_CHANGED"
 }
 
 # =========================== #
@@ -561,7 +757,7 @@ constants {
 
 constants {
   name: "CONTENT_TYPE"
-  string_value: "CONTENT_TYPE"
+  string_value: "content_type"
 }
 
 constants: {
@@ -784,4 +980,23 @@ constants {
 constants {
   name: "SECURITY_LEVEL"
   string_value: "security_level"
+}
+
+# ============================ #
+# BluetoothHapClientSnippet    #
+# ============================ #
+
+constants {
+  name: "PRESET_INFO_CHANGED"
+  string_value: "PRESET_INFO_CHANGED"
+}
+
+constants {
+  name: "PRESET_SELECTED"
+  string_value: "PRESET_SELECTED"
+}
+
+constants {
+  name: "SET_PRESET_NAME_FAILED"
+  string_value: "SET_PRESET_NAME_FAILED"
 }

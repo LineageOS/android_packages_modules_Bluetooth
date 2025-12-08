@@ -17,9 +17,8 @@
 #ifndef ANDROID_INCLUDE_DISTANCE_MEASUREMENT_INTERFACE_H
 #define ANDROID_INCLUDE_DISTANCE_MEASUREMENT_INTERFACE_H
 
+#include <bluetooth/types/address.h>
 #include <stdint.h>
-
-#include "types/raw_address.h"
 
 /**
  * Distance measurement callbacks related callbacks invoked from from the

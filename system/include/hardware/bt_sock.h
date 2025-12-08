@@ -16,11 +16,11 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <stddef.h>
 
 #include "bluetooth.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 __BEGIN_DECLS
 

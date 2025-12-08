@@ -16,6 +16,8 @@
 
 #include "topshim/btav/btav_shim.h"
 
+#include <bluetooth/types/address.h>
+
 #include <cstdio>
 #include <map>
 #include <memory>
@@ -27,14 +29,13 @@
 #include "rust/cxx.h"
 #include "src/profiles/a2dp.rs.h"
 #include "src/profiles/avrcp.rs.h"
-#include "types/raw_address.h"
 
 namespace rusty = ::bluetooth::topshim::rust;
 
 namespace bluetooth::avrcp {
 class AvrcpMediaInterfaceImpl : public MediaInterface {
 public:
-  void SendKeyEvent(uint8_t key, KeyState state) {
+  void SendKeyEvent(const RawAddress&, uint8_t key, KeyState state) {
     rusty::avrcp_send_key_event(key, state == KeyState::PUSHED);
   }
 

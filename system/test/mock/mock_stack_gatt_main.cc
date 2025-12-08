@@ -19,12 +19,13 @@
  *   Functions generated:23
  */
 
+#include <bluetooth/types/address.h>
+
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/l2cap_interface.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 void gatt_init(void) { inc_func_call_count(__func__); }
 bool gatt_act_connect(tGATT_REG* /* p_reg */, const RawAddress& /* bd_addr */,
@@ -32,6 +33,9 @@ bool gatt_act_connect(tGATT_REG* /* p_reg */, const RawAddress& /* bd_addr */,
                       int8_t /* initiating_phys */) {
   inc_func_call_count(__func__);
   return false;
+}
+void gatt_force_disconnect(tGATT_TCB* /* p_tcb */, std::string /* comment */) {
+  inc_func_call_count(__func__);
 }
 bool gatt_disconnect(tGATT_TCB* /* p_tcb */) {
   inc_func_call_count(__func__);

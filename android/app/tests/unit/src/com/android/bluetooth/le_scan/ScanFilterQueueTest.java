@@ -22,8 +22,8 @@ import android.bluetooth.BluetoothUuid;
 import android.bluetooth.le.ScanFilter;
 import android.os.ParcelUuid;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.google.common.primitives.Bytes;
 

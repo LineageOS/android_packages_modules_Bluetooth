@@ -18,6 +18,7 @@
 #include "btif/src/btif_rc.cc"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <gtest/gtest.h>
 
 #include <cstdint>
@@ -34,7 +35,6 @@
 #include "test/mock/mock_osi_alarm.h"
 #include "test/mock/mock_osi_allocator.h"
 #include "test/mock/mock_osi_list.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace avrcp {

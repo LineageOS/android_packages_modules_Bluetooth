@@ -239,7 +239,7 @@ mod tests {
 
     use super::{
         CallbackResponseError, CallbackTransactionManager, GattWriteRequestType, GattWriteType,
-        RawGattDatastore,
+        RawGattDatastore, TransactionDecision,
     };
     use crate::gatt::ffi::AttributeBackingType;
     use crate::gatt::ids::{AttHandle, ConnectionId, ServerId, TransactionId, TransportIndex};
@@ -272,6 +272,7 @@ mod tests {
         match events_rx.recv().await.unwrap() {
             MockCallbackEvents::OnServerRead(_, trans_id, _, _, _) => trans_id,
             MockCallbackEvents::OnServerWrite(_, trans_id, _, _, _, _) => trans_id,
+            MockCallbackEvents::OnExecute(_, trans_id, _) => trans_id,
             _ => unimplemented!(),
         }
     }
@@ -613,6 +614,29 @@ mod tests {
                 unreachable!()
             };
             assert_eq!(recv_data, data);
+        });
+    }
+
+    #[test]
+    fn test_execute_callback() {
+        block_on_locally(async {
+            // arrange
+            let (callback_manager, mut callbacks_rx) = initialize_manager_with_connection();
+
+            // act: start execute operation
+            spawn_local(async move {
+                callback_manager
+                    .get_datastore(SERVER_ID)
+                    .execute(TCB_IDX, TransactionDecision::Execute)
+                    .await
+            });
+
+            // assert: verify the execute callback is received
+            let MockCallbackEvents::OnExecute(CONN_ID, _, TransactionDecision::Execute) =
+                callbacks_rx.recv().await.unwrap()
+            else {
+                unreachable!()
+            };
         });
     }
 }

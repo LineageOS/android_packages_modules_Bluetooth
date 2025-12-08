@@ -18,6 +18,7 @@
 #include "btif_sock_l2cap.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -46,7 +47,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/l2cdefs.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -263,12 +263,11 @@ static void btsock_l2cap_free_l(l2cap_socket* sock, btsock_error_code_t error_co
           sock->server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, sock->app_uid, sock->channel,
           sock->tx_bytes, sock->rx_bytes, sock->name, sock->connection_start_time_ms, error_code,
           sock->data_path);
-  if (com::android::bluetooth::flags::socket_settings_api()) {
-    if (sock->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD && !sock->server &&
-        sock->socket_id != 0) {
-      bluetooth::shim::GetLppOffloadManager()->SocketClosed(sock->socket_id);
-    }
+  if (sock->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD && !sock->server &&
+      sock->socket_id != 0) {
+    bluetooth::shim::GetLppOffloadManager()->SocketClosed(sock->socket_id);
   }
+
   if (sock->next) {
     sock->next->prev = sock->prev;
   }
@@ -551,13 +550,9 @@ static void on_cl_l2cap_init(tBTA_JV_L2CAP_CL_INIT* p_init, uint32_t id) {
   sock->handle = p_init->handle;
 }
 
-/**
- * Here we allocate a new sock instance to mimic the BluetoothSocket. The socket
- * will be a clone of the sock representing the BluetoothServerSocket.
- * */
-static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket* sock) {
-  // state_lock taken by caller
-  l2cap_socket* accept_rs = btsock_l2cap_alloc_l(sock->name, &p_open->rem_bda, false, 0);
+static void clone_server_socket_to_accepted_socket(tBTA_JV_L2CAP_OPEN* p_open,
+                                                   l2cap_socket* sock,
+                                                   l2cap_socket* accept_rs) {
   accept_rs->connected = true;
   accept_rs->security = sock->security;
   accept_rs->channel = sock->channel;
@@ -566,22 +561,28 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket*
   sock->handle = -1; /* We should no longer associate this handle with the server socket */
   accept_rs->is_le_coc = sock->is_le_coc;
   accept_rs->tx_mtu = sock->tx_mtu = p_open->tx_mtu;
-  if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3349374
-    accept_rs->rx_mtu = sock->rx_mtu;
-  }
+  accept_rs->rx_mtu = sock->rx_mtu;
   accept_rs->local_cid = p_open->local_cid;
   accept_rs->remote_cid = p_open->remote_cid;
   // TODO(b/342012881) Remove connection uuid when offload socket API is landed.
   Uuid uuid = Uuid::From128BitBE(bluetooth::os::GenerateRandom<Uuid::kNumBytes128>());
   accept_rs->conn_uuid = uuid;
-  if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3349374
-    accept_rs->socket_id = btif_l2cap_sock_generate_socket_id();
-    accept_rs->data_path = sock->data_path;
-    strncpy(accept_rs->socket_name, sock->socket_name, sizeof(accept_rs->socket_name) - 1);
-    accept_rs->socket_name[sizeof(accept_rs->socket_name) - 1] = '\0';
-    accept_rs->hub_id = sock->hub_id;
-    accept_rs->endpoint_id = sock->endpoint_id;
-  }
+  accept_rs->socket_id = btif_l2cap_sock_generate_socket_id();
+  accept_rs->data_path = sock->data_path;
+  strncpy(accept_rs->socket_name, sock->socket_name, sizeof(accept_rs->socket_name) - 1);
+  accept_rs->socket_name[sizeof(accept_rs->socket_name) - 1] = '\0';
+  accept_rs->hub_id = sock->hub_id;
+  accept_rs->endpoint_id = sock->endpoint_id;
+}
+
+/**
+ * Here we allocate a new sock instance to mimic the BluetoothSocket. The socket
+ * will be a clone of the sock representing the BluetoothServerSocket.
+ */
+static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket* sock) {
+  // state_lock taken by caller
+  l2cap_socket* accept_rs = btsock_l2cap_alloc_l(sock->name, &p_open->rem_bda, false, 0);
+  clone_server_socket_to_accepted_socket(p_open, sock, accept_rs);
 
   /* Swap IDs to hand over the GAP connection to the accepted socket, and start
      a new server on the newly create socket ID. */
@@ -611,9 +612,7 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket*
   // one or the accept socket one.
   btsock_l2cap_server_listen(sock);
   // start monitoring the socketpair to get call back when app is accepting on server socket
-  if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3349375
-    btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, sock->id);
-  }
+  btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, sock->id);
 }
 
 static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket* sock) {
@@ -624,9 +623,7 @@ static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket* 
   // TODO(b/342012881) Remove connection uuid when offload socket API is landed.
   Uuid uuid = Uuid::From128BitBE(bluetooth::os::GenerateRandom<Uuid::kNumBytes128>());
   sock->conn_uuid = uuid;
-  if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3349374
-    sock->socket_id = btif_l2cap_sock_generate_socket_id();
-  }
+  sock->socket_id = btif_l2cap_sock_generate_socket_id();
 
   if (!send_app_psm_or_chan_l(sock)) {
     log::error("Unable to send l2cap socket to application socket_id:{}", sock->id);
@@ -670,8 +667,7 @@ static void on_l2cap_connect(tBTA_JV* p_data, uint32_t id) {
 
   sock->tx_mtu = le_open->tx_mtu;
   if (psm_open->status == tBTA_JV_STATUS::SUCCESS) {
-    if (!com::android::bluetooth::flags::socket_settings_api() ||  // Added with aosp/3349378
-        sock->data_path == BTSOCK_DATA_PATH_NO_OFFLOAD) {
+    if (sock->data_path == BTSOCK_DATA_PATH_NO_OFFLOAD) {
       if (!sock->server) {
         on_cl_l2cap_psm_connect_l(psm_open, sock);
       } else {
@@ -685,7 +681,7 @@ static void on_l2cap_connect(tBTA_JV* p_data, uint32_t id) {
       }
     }
     // Update data length to get better throughput on CoC
-    if (com::android::bluetooth::flags::set_max_data_length_for_lecoc()) {
+    if (com_android_bluetooth_flags_set_max_data_length_for_lecoc()) {
       if (get_btm_client_interface().ble.BTM_SetBleDataLength(
                   le_open->rem_bda, BTM_BLE_DATA_SIZE_MAX,
                   /*is_privileged_client*/ false) != tBTM_STATUS::BTM_SUCCESS) {
@@ -889,11 +885,9 @@ static void btsock_l2cap_server_listen(l2cap_socket* sock) {
   /* For hardware offload data path, host stack sets the initial credits to 0. The offload stack
    * should send initial credits to peer device through L2CAP signaling command when the data path
    * is switched successfully. */
-  if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3349376
-    if (sock->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
-      cfg->init_credit_present = true;
-      cfg->init_credit = 0;
-    }
+  if (sock->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
+    cfg->init_credit_present = true;
+    cfg->init_credit = 0;
   }
 
   std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info;
@@ -974,31 +968,26 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name, const RawAdd
   sock->channel = channel;
   sock->app_uid = app_uid;
   sock->is_le_coc = is_le_coc;
-  if (com::android::bluetooth::flags::socket_settings_api() &&  // Added with aosp/3349377
-      data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
+  if (data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
     if (!btsock_l2cap_get_offload_mtu(&sock->rx_mtu, static_cast<uint16_t>(max_rx_packet_size))) {
       return BT_STATUS_UNSUPPORTED;
     }
   } else {
     sock->rx_mtu = is_le_coc ? L2CAP_SDU_LENGTH_LE_MAX : L2CAP_SDU_LENGTH_MAX;
   }
-  if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3349374
-    sock->data_path = data_path;
-    if (socket_name) {
-      strncpy(sock->socket_name, socket_name, sizeof(sock->socket_name) - 1);
-      sock->socket_name[sizeof(sock->socket_name) - 1] = '\0';
-    }
-    sock->hub_id = hub_id;
-    sock->endpoint_id = endpoint_id;
+  sock->data_path = data_path;
+  if (socket_name) {
+    strncpy(sock->socket_name, socket_name, sizeof(sock->socket_name) - 1);
+    sock->socket_name[sizeof(sock->socket_name) - 1] = '\0';
   }
+  sock->hub_id = hub_id;
+  sock->endpoint_id = endpoint_id;
 
   /* "role" is never initialized in rfcomm code */
   if (listen) {
     btsock_l2cap_server_listen(sock);
     // start monitoring the socketpair to get call back when app is accepting on server socket
-    if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3349375
-      btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, sock->id);
-    }
+    btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, sock->id);
   } else {
     tBTA_JV_CONN_TYPE connection_type =
             sock->is_le_coc ? tBTA_JV_CONN_TYPE::L2CAP_LE : tBTA_JV_CONN_TYPE::L2CAP;
@@ -1009,11 +998,9 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name, const RawAdd
     /* For hardware offload data path, host stack sets the initial credits to 0. The offload stack
      * should send initial credits to peer device through L2CAP signaling command when the data path
      * is switched successfully. */
-    if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3349376
-      if (sock->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
-        cfg->init_credit_present = true;
-        cfg->init_credit = 0;
-      }
+    if (sock->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
+      cfg->init_credit_present = true;
+      cfg->init_credit = 0;
     }
 
     std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info;
@@ -1159,7 +1146,7 @@ static bool btsock_l2cap_read_signaled_on_listen_socket(int fd, int /* flags */,
   return true;
 }
 
-static void btsock_l2cap_signaled_flagged(int fd, int flags, uint32_t user_id) {
+void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
   char drop_it = false;
   btsock_error_code_t error_code = BTSOCK_ERROR_NONE;
 
@@ -1183,77 +1170,6 @@ static void btsock_l2cap_signaled_flagged(int fd, int flags, uint32_t user_id) {
         error_code = BTSOCK_ERROR_READ_SIGNALED_FAILURE;
         drop_it = true;
       }
-    }
-  }
-  if (flags & SOCK_THREAD_FD_WR) {
-    // app is ready to receive more data, tell stack to enable the data flow
-    if (flush_incoming_que_on_wr_signal_l(sock) && sock->connected) {
-      btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_WR, sock->id);
-    }
-  }
-  if (drop_it || (flags & SOCK_THREAD_FD_EXCEPTION)) {
-    int size = 0;
-    if (drop_it || ioctl(sock->our_fd, FIONREAD, &size) != 0 || size == 0) {
-      btsock_l2cap_free_l(sock, error_code);
-    }
-  }
-}
-
-void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
-  if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3349375
-    btsock_l2cap_signaled_flagged(fd, flags, user_id);
-    return;
-  }
-  char drop_it = false;
-  btsock_error_code_t error_code = BTSOCK_ERROR_NONE;
-
-  /* We use MSG_DONTWAIT when sending data to JAVA, hence it can be accepted to
-   * hold the lock. */
-  std::unique_lock<std::mutex> lock(state_lock);
-  l2cap_socket* sock = btsock_l2cap_find_by_id_l(user_id);
-  if (!sock) {
-    return;
-  }
-
-  if ((flags & SOCK_THREAD_FD_RD) && !sock->server) {
-    // app sending data
-    if (sock->connected) {
-      int size = 0;
-      bool ioctl_success = ioctl(sock->our_fd, FIONREAD, &size) == 0;
-      if (!(flags & SOCK_THREAD_FD_EXCEPTION) || (ioctl_success && size)) {
-        /* FIONREAD return number of bytes that are immediately available for
-           reading, might be bigger than awaiting packet.
-
-           BluetoothSocket.write(...) guarantees that any packet send to this
-           socket is broken into pieces no bigger than MTU bytes (as requested
-           by BT spec). */
-        size = std::min(size, (int)sock->tx_mtu);
-
-        BT_HDR* buffer = malloc_l2cap_buf(size);
-        /* The socket is created with SOCK_SEQPACKET, hence we read one message
-         * at the time. */
-        ssize_t count;
-        OSI_NO_INTR(count = recv(fd, get_l2cap_sdu_start_ptr(buffer), size,
-                                 MSG_NOSIGNAL | MSG_DONTWAIT | MSG_TRUNC));
-        if (count > sock->tx_mtu) {
-          /* This can't happen thanks to check in BluetoothSocket.java but leave
-           * this in case this socket is ever used anywhere else*/
-          log::error("recv more than MTU. Data will be lost: {}", count);
-          count = sock->tx_mtu;
-        }
-
-        /* When multiple packets smaller than MTU are flushed to the socket, the
-           size of the single packet read could be smaller than the ioctl
-           reported total size of awaiting packets. Hence, we adjust the buffer
-           length. */
-        buffer->len = count;
-
-        // will take care of freeing buffer
-        BTA_JvL2capWrite(sock->handle, PTR_TO_UINT(buffer), buffer, user_id);
-      }
-    } else {
-      error_code = BTSOCK_ERROR_READ_SIGNALED_FAILURE;
-      drop_it = true;
     }
   }
   if (flags & SOCK_THREAD_FD_WR) {
@@ -1449,7 +1365,7 @@ static void on_cl_l2cap_psm_connect_offload_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_
   log::info(
           "L2CAP socket opened successful. Will send connect signal in "
           "on_btsocket_l2cap_opened_complete() asynchronously.");
-  if (com::android::bluetooth::flags::monitor_read_flag_on_offloaded_socket()) {
+  if (com_android_bluetooth_flags_monitor_read_flag_on_offloaded_socket()) {
     btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, sock->id);
   }
 }
@@ -1457,26 +1373,7 @@ static void on_cl_l2cap_psm_connect_offload_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_
 static void on_srv_l2cap_psm_connect_offload_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket* sock) {
   // std::mutex locked by caller
   l2cap_socket* accept_rs = btsock_l2cap_alloc_l(sock->name, &p_open->rem_bda, false, 0);
-  accept_rs->connected = true;
-  accept_rs->security = sock->security;
-  accept_rs->channel = sock->channel;
-  accept_rs->handle = sock->handle;
-  accept_rs->app_uid = sock->app_uid;
-  sock->handle = -1; /* We should no longer associate this handle with the server socket */
-  accept_rs->is_le_coc = sock->is_le_coc;
-  accept_rs->tx_mtu = sock->tx_mtu = p_open->tx_mtu;
-  accept_rs->rx_mtu = sock->rx_mtu;
-  accept_rs->local_cid = p_open->local_cid;
-  accept_rs->remote_cid = p_open->remote_cid;
-  // TODO(b/342012881) Remove connection uuid when offload socket API is landed.
-  Uuid uuid = Uuid::From128BitBE(bluetooth::os::GenerateRandom<Uuid::kNumBytes128>());
-  accept_rs->conn_uuid = uuid;
-  accept_rs->socket_id = btif_l2cap_sock_generate_socket_id();
-  accept_rs->data_path = sock->data_path;
-  strncpy(accept_rs->socket_name, sock->socket_name, sizeof(accept_rs->socket_name) - 1);
-  accept_rs->socket_name[sizeof(accept_rs->socket_name) - 1] = '\0';
-  accept_rs->hub_id = sock->hub_id;
-  accept_rs->endpoint_id = sock->endpoint_id;
+  clone_server_socket_to_accepted_socket(p_open, sock, accept_rs);
   accept_rs->listen_fd = sock->our_fd;
 
   /* Swap IDs to hand over the GAP connection to the accepted socket, and start
@@ -1516,7 +1413,7 @@ static void on_srv_l2cap_psm_connect_offload_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap
     btsock_l2cap_free_l(accept_rs, BTSOCK_ERROR_OFFLOAD_HAL_OPEN_FAILURE);
   } else {
     log::info("L2CAP socket opened successful. Will send connect signal in async callback.");
-    if (com::android::bluetooth::flags::monitor_read_flag_on_offloaded_socket()) {
+    if (com_android_bluetooth_flags_monitor_read_flag_on_offloaded_socket()) {
       btsock_thread_add_fd(pth, accept_rs->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD, accept_rs->id);
     }
   }

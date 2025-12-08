@@ -50,14 +50,14 @@ def retry_on_exception(
                     try:
                         return await func(*args, **kwargs)
                     except exception_type:  # pylint: disable=broad-exception-caught
-                        if log_exception:
-                            logging.exception(
-                                'Retrying function %s, attempt %d of %d',
-                                func,
-                                i + 1,
-                                num_retries,
-                            )
                         if i < num_retries:
+                            if log_exception:
+                                logging.exception(
+                                    'Retrying function %s, attempt %d of %d',
+                                    func,
+                                    i + 1,
+                                    num_retries,
+                                )
                             await asyncio.sleep(min(initial_delay_sec * (2**i), max_delay_sec))
                         else:
                             raise
@@ -70,14 +70,14 @@ def retry_on_exception(
                     try:
                         return func(*args, **kwargs)
                     except exception_type:  # pylint: disable=broad-exception-caught
-                        if log_exception:
-                            logging.exception(
-                                'Retrying function %s, attempt %d of %d',
-                                func,
-                                i + 1,
-                                num_retries,
-                            )
                         if i < num_retries:
+                            if log_exception:
+                                logging.exception(
+                                    'Retrying function %s, attempt %d of %d',
+                                    func,
+                                    i + 1,
+                                    num_retries,
+                                )
                             time.sleep(min(initial_delay_sec * (2**i), max_delay_sec))
                         else:
                             raise

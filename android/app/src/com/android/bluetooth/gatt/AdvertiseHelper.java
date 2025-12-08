@@ -26,7 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 
 class AdvertiseHelper {
-    private static final String TAG = AdvertiseHelper.class.getSimpleName();
+    private static final String TAG = GattUtil.TAG_PREFIX + AdvertiseHelper.class.getSimpleName();
 
     private static final int DEVICE_NAME_MAX = 26;
 

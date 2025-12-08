@@ -59,6 +59,8 @@ public:
     hci_->RegisterLeEventHandler(
             SubeventCode::CONNECTION_COMPLETE,
             handler_->BindOn(this, &DependsOnHci::handle_event<LeMetaEventView>));
+    // We must unregister Dequeue registered by HciDataRouter for this tests
+    hci_->GetAclQueueEnd()->UnregisterDequeue();
     hci_->GetAclQueueEnd()->RegisterDequeue(
             handler_, common::Bind(&DependsOnHci::handle_acl, common::Unretained(this)));
     hci_->GetIsoQueueEnd()->RegisterDequeue(
@@ -66,7 +68,8 @@ public:
   }
 
   ~DependsOnHci() {
-    hci_->GetAclQueueEnd()->UnregisterDequeue();
+    // HciDataRouter destructor will unregister our queue
+    // hci_->GetAclQueueEnd()->UnregisterDequeue();
     hci_->GetIsoQueueEnd()->UnregisterDequeue();
   }
 
@@ -245,10 +248,10 @@ public:
 
   os::Thread* thread_ = nullptr;
   os::Handler* client_handler_ = nullptr;
-  std::unique_ptr<DependsOnHci> upper = nullptr;
   std::unique_ptr<hal::TestHciHal> hal = nullptr;
   std::unique_ptr<storage::StorageModule> storage = nullptr;
   std::unique_ptr<HciLayer> hci = nullptr;
+  std::unique_ptr<DependsOnHci> upper = nullptr;
 };
 
 TEST_F(HciTest, initAndClose) {}
@@ -560,9 +563,9 @@ TEST_F(HciTest, createConnectionTest) {
   ASSERT_TRUE(acl_view_result.has_value());
   auto acl_view = *acl_view_result;
   ASSERT_TRUE(acl_view.IsValid());
-  ASSERT_EQ(bd_addr.length() + sizeof(handle), acl_view.GetPayload().size());
+  ASSERT_EQ(Address::kLength + sizeof(handle), acl_view.GetPayload().size());
   auto itr = acl_view.GetPayload().begin();
-  ASSERT_EQ(bd_addr, itr.extract<Address>());
+  ASSERT_EQ(bd_addr, packet::extractAddress(itr));
   ASSERT_EQ(handle, itr.extract<uint16_t>());
 
   // Send an ACL packet from DependsOnHci
@@ -579,10 +582,10 @@ TEST_F(HciTest, createConnectionTest) {
   ASSERT_TRUE(sent_acl.has_value());
   AclView sent_acl_view = AclView::Create(*sent_acl);
   ASSERT_TRUE(sent_acl_view.IsValid());
-  ASSERT_EQ(bd_addr.length() + sizeof(handle), sent_acl_view.GetPayload().size());
+  ASSERT_EQ(Address::kLength + sizeof(handle), sent_acl_view.GetPayload().size());
   auto sent_itr = sent_acl_view.GetPayload().begin();
   ASSERT_EQ(handle, sent_itr.extract<uint16_t>());
-  ASSERT_EQ(bd_addr, sent_itr.extract<Address>());
+  ASSERT_EQ(bd_addr, packet::extractAddress(sent_itr));
 }
 
 TEST_F(HciTest, receiveMultipleAclPackets) {
@@ -606,9 +609,9 @@ TEST_F(HciTest, receiveMultipleAclPackets) {
     ASSERT_TRUE(acl_opt.has_value());
     auto acl_view = *acl_opt;
     ASSERT_TRUE(acl_view.IsValid());
-    ASSERT_EQ(bd_addr.length() + sizeof(handle) + sizeof(i), acl_view.GetPayload().size());
+    ASSERT_EQ(Address::kLength + sizeof(handle) + sizeof(i), acl_view.GetPayload().size());
     auto itr = acl_view.GetPayload().begin();
-    ASSERT_EQ(bd_addr, itr.extract<Address>());
+    ASSERT_EQ(bd_addr, packet::extractAddress(itr));
     ASSERT_EQ(handle, itr.extract<uint16_t>());
     ASSERT_EQ(i, itr.extract<uint16_t>());
   }

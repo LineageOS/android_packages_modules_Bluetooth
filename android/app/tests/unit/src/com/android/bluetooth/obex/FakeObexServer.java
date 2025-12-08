@@ -257,7 +257,7 @@ public class FakeObexServer {
     private static class TestServiceRequestHandler extends ServerRequestHandler {
         private final FakeObexServer mServer;
 
-        public TestServiceRequestHandler(FakeObexServer server) {
+        TestServiceRequestHandler(FakeObexServer server) {
             mServer = server;
         }
 

@@ -46,8 +46,11 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ProviderInfo;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.OpenableColumns;
 import android.provider.Settings;
 import android.util.Log;
 import android.util.Patterns;
@@ -57,6 +60,7 @@ import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
@@ -112,6 +116,8 @@ public class BluetoothOppLauncherActivity extends Activity {
                 finish();
                 return;
             }
+
+            reportOppMetrics(intent);
 
             /*
              * Other application is trying to share a file via Bluetooth,
@@ -299,6 +305,130 @@ public class BluetoothOppLauncherActivity extends Activity {
             if (!Utils.isInstrumentationTestMode()) {
                 finish();
             }
+        }
+    }
+
+    /**
+     * Returns the file size from the given URI.
+     *
+     * @param context The context to use.
+     * @param uri The URI to get the file size from.
+     * @return The file size in bytes, or -1 if the URI is null or the file size cannot be
+     *     determined.
+     */
+    private static long getFileSizeFromUri(Context context, Uri uri) {
+        if (uri == null || !ContentResolver.SCHEME_CONTENT.equals(uri.getScheme())) {
+            return -1;
+        }
+
+        try (Cursor cursor =
+                BluetoothMethodProxy.getInstance()
+                        .getContentResolver(context)
+                        .query(uri, null, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int sizeIndex = cursor.getColumnIndexOrThrow(OpenableColumns.SIZE);
+                if (!cursor.isNull(sizeIndex)) {
+                    return cursor.getLong(sizeIndex);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error getting file size from URI: " + uri.toString(), e);
+        }
+
+        return -1;
+    }
+
+    /**
+     * Calculates the total size of the files in the given intent.
+     *
+     * @param context The context of the activity.
+     * @param intent The intent to get the total size of the files from.
+     * @return The total size of the files in the intent, or 0 if the intent is null.
+     */
+    private static long calculateTotalSizeFromIntent(Context context, Intent intent) {
+        if (intent == null) {
+            return 0;
+        }
+
+        String action = intent.getAction();
+        long totalSize = 0;
+
+        if (Intent.ACTION_SEND.equals(action)) {
+            Uri streamUri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+            if (streamUri != null) {
+                totalSize = getFileSizeFromUri(context, streamUri);
+            }
+        } else if (Intent.ACTION_SEND_MULTIPLE.equals(action)) {
+            ArrayList<Uri> uris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+            if (uris != null) {
+                for (Uri uri : uris) {
+                    long fileSize = getFileSizeFromUri(context, uri);
+                    if (fileSize > 0) {
+                        totalSize += fileSize;
+                    }
+                }
+            }
+        }
+
+        return totalSize;
+    }
+
+    /**
+     * Reports the metrics for the OPP launcher activity.
+     *
+     * @param intent The intent that was received by the activity.
+     */
+    private void reportOppMetrics(Intent intent) {
+        String action = intent.getAction();
+
+        int fileCount = 0;
+        int callingUid = -1;
+        long totalFileSize = calculateTotalSizeFromIntent(this, intent);
+
+        if (action.equals(Intent.ACTION_SEND)) {
+            fileCount = 1;
+        } else if (action.equals(Intent.ACTION_SEND_MULTIPLE)) {
+            ArrayList<Uri> uris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+            if (uris != null) {
+                fileCount = uris.size();
+            }
+        }
+
+        Uri streamUri = null;
+        if (action.equals(Intent.ACTION_SEND)) {
+            streamUri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+        } else if (action.equals(Intent.ACTION_SEND_MULTIPLE)) {
+            ArrayList<Uri> uris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+            if (uris != null && !uris.isEmpty()) {
+                streamUri = uris.get(0);
+            }
+        }
+
+        if (streamUri != null && ContentResolver.SCHEME_CONTENT.equals(streamUri.getScheme())) {
+            String authority = streamUri.getAuthority();
+            if (authority != null) {
+                try {
+                    PackageManager pm = BluetoothMethodProxy.getInstance().getPackageManager(this);
+                    ProviderInfo providerInfo = pm.resolveContentProvider(authority, 0);
+                    if (providerInfo != null) {
+                        callingUid = providerInfo.applicationInfo.uid;
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error resolving content provider", e);
+                }
+            }
+        } else {
+            Log.w(TAG, " URI error, can not get callingUid.");
+        }
+
+        if (fileCount > 0) {
+            MetricsLogger.getInstance()
+                    .logBluetoothOppLauncherCreated(
+                            callingUid,
+                            fileCount,
+                            BluetoothOppUtility.categorizeFileSize(totalFileSize));
+        } else {
+            Log.w(TAG, "Received " + intent + " with null file count");
         }
     }
 

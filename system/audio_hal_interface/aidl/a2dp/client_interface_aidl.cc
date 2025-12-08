@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "bta/ag/bta_ag_int.h"
+#include "stack/include/main_thread.h"
 
 const uint8_t kFetchAudioProviderRetryNumber = 3;
 
@@ -219,13 +220,14 @@ void BluetoothAudioClientInterface::FetchAudioProvider() {
 }
 
 void BluetoothAudioClientInterface::binderDiedCallbackAidl(void* ptr) {
-  log::warn("restarting connection with new Audio Hal");
   auto client = static_cast<BluetoothAudioClientInterface*>(ptr);
   if (client == nullptr) {
     log::error("null audio HAL died!");
     return;
   }
-  client->RenewAudioProviderAndSession();
+
+  do_in_main_thread(base::BindOnce(&BluetoothAudioClientInterface::RenewAudioProviderAndSession,
+                                   base::Unretained(client)));
 }
 
 bool BluetoothAudioClientInterface::UpdateAudioConfig(const AudioConfiguration& audio_config) {
@@ -534,7 +536,7 @@ size_t BluetoothAudioClientInterface::ReadAudioData(uint8_t* p_buf, size_t len) 
 
   std::lock_guard<std::mutex> guard(internal_mutex_);
 
-  if (com::android::bluetooth::flags::a2dp_fmq_read_exact()) {
+  if (com_android_bluetooth_flags_a2dp_fmq_read_exact()) {
     for (int n = 0; n < 10; n++) {
       if (n > 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(kDefaultDataReadPollIntervalMs));

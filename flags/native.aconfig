@@ -37,3 +37,60 @@ flag {
     description: "Use GD Handler and Reactor Thread instead of MessageLoopThread in legacy stack"
     bug: "418119118"
 }
+
+flag {
+    name: "remove_handler_clear"
+    namespace: "bluetooth"
+    description: "Remove Handler::Clear(), and use the destructor instead."
+    bug: "428667010"
+}
+
+flag {
+    name: "protect_dumpsys_during_stack_shutdown"
+    namespace: "bluetooth"
+    description: "Do not proceed with dumpsys if the stack is not running."
+    bug: "429999031"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "use_shared_promise_for_le_address_manager"
+    namespace: "bluetooth"
+    description: "Use shared promise for LE Address Manager."
+    bug: "432148110"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "fix_event_handler_reg_and_dereg"
+    namespace: "bluetooth"
+    description: "Fix the event handler registration and deregistration."
+    bug: "433222144"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "prevent_storage_access_without_gd_running"
+    namespace: "bluetooth"
+    description: "Prevent read and write to storage when gd is not running"
+    bug: "434749707"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "fix_use_after_object_destroyed"
+    namespace: "bluetooth"
+    description: "Fix use of object passed to handler bind after the object is destroyed."
+    bug: "433736221"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

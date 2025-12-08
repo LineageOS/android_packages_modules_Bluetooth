@@ -232,7 +232,7 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
      */
     @RequiresNoPermission
     public boolean connect(BluetoothDevice device) {
-        log("connect(" + device + ")" + "not supported for MAPS");
+        log("connect(" + device + ") not supported for MAPS");
         return false;
     }
 

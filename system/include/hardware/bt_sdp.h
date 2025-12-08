@@ -16,9 +16,10 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
+
 #include "bluetooth.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 #define SDP_OPP_SUPPORTED_FORMATS_MAX_LENGTH 15
 

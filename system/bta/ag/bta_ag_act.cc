@@ -23,6 +23,8 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
+#include <bluetooth/types/bt_transport.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -40,23 +42,25 @@
 #include "device/include/device_iot_conf_defs.h"
 #include "osi/include/alarm.h"
 #include "sdp_status.h"
-#include "types/bt_transport.h"
 
 #ifdef __ANDROID__
 #endif
 
+#include <bluetooth/types/address.h>
+
 #include "btif/include/btif_config.h"
 #include "device/include/device_iot_config.h"
+#include "device/include/interop_config.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/port_api.h"
 #include "stack/include/sdp_api.h"
 #include "storage/config_keys.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using namespace bluetooth::legacy::stack::sdp;
+using namespace metrics;
 
 /*****************************************************************************
  *  Constants
@@ -68,6 +72,8 @@ using namespace bluetooth::legacy::stack::sdp;
 /* maximum AT command length */
 #define BTA_AG_CMD_MAX 512
 
+/* SLC TIMER exception for IOT devices */
+#define SLC_EXCEPTION_TIMEOUT_MS 10000
 const uint16_t bta_ag_uuid[BTA_AG_NUM_IDX] = {UUID_SERVCLASS_HEADSET_AUDIO_GATEWAY,
                                               UUID_SERVCLASS_AG_HANDSFREE};
 
@@ -103,6 +109,7 @@ static void bta_ag_cback_open(tBTA_AG_SCB* p_scb, const RawAddress& bd_addr,
   open.hdr.handle = bta_ag_scb_to_idx(p_scb);
   open.hdr.app_id = p_scb->app_id;
   open.status = status;
+  LogMetricAgOpenStatus(bd_addr, open.status);
   open.service_id = bta_ag_svc_id[p_scb->conn_service];
   open.bd_addr = bd_addr;
 
@@ -162,6 +169,10 @@ void bta_ag_deregister(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /*data*/) {
   /* remove rfcomm servers */
   bta_ag_close_servers(p_scb, p_scb->reg_services);
 
+  if (com_android_bluetooth_flags_hfp_sco_state_reset_when_profile_restart()) {
+    /* reset sco state */
+    bta_ag_sco_reset(p_scb);
+  }
   /* dealloc */
   bta_ag_scb_dealloc(p_scb);
 }
@@ -354,7 +365,7 @@ void bta_ag_rfc_fail(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
   log::info("reset p_scb with index={}", bta_ag_scb_to_idx(p_scb));
   RawAddress peer_addr = p_scb->peer_addr;
 
-  if (com::android::bluetooth::flags::release_port_in_bta_ag_rfc_fail_before_reset_context()) {
+  if (com_android_bluetooth_flags_release_port_in_bta_ag_rfc_fail_before_reset_context()) {
     for (uint8_t i = 0; i < BTA_AG_NUM_IDX; i++) {
       if (p_scb->serv_handle[i] != 0) {
         log::info("SCB idx {}: Removing server on serv_handle[{}] = {}",
@@ -485,6 +496,10 @@ void bta_ag_rfc_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
       log::warn("Unable to remove RFCOMM server peer:{} handle:{}", p_scb->peer_addr,
                 p_scb->conn_handle);
     }
+    if (com_android_bluetooth_flags_hfp_sco_state_reset_when_profile_restart()) {
+      /* reset sco state */
+      bta_ag_sco_reset(p_scb);
+    }
     bta_ag_scb_dealloc(p_scb);
   }
 }
@@ -545,9 +560,16 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
 
   bta_ag_cback_open(p_scb, p_scb->peer_addr, BTA_AG_SUCCESS);
 
+  int ag_conn_timeout = p_bta_ag_cfg->conn_tout;
+  if (interop_match_addr(INTEROP_INCREASE_AG_CONN_TIMEOUT, &p_scb->peer_addr)) {
+    /* use higher value for ag conn timeout */
+    ag_conn_timeout = SLC_EXCEPTION_TIMEOUT_MS;
+  }
+
+  log::verbose("bta_ag_rfc_open: ag_conn_timeout: {}", ag_conn_timeout);
   if (p_scb->conn_service == BTA_AG_HFP) {
     /* if hfp start timer for service level conn */
-    bta_sys_start_timer(p_scb->ring_timer, p_bta_ag_cfg->conn_tout, BTA_AG_SVC_TIMEOUT_EVT,
+    bta_sys_start_timer(p_scb->ring_timer, ag_conn_timeout, BTA_AG_SVC_TIMEOUT_EVT,
                         bta_ag_scb_to_idx(p_scb));
   } else {
     /* else service level conn is open */
@@ -577,7 +599,7 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   int status = PORT_CheckConnection(data.rfc.port_handle, &dev_addr, &lcid);
   if (status != PORT_SUCCESS) {
     log::error("PORT_CheckConnection returned {}", status);
-    if (com::android::bluetooth::flags::rfcomm_fix_bta_ag_rfc_acp_open_error()) {
+    if (com_android_bluetooth_flags_rfcomm_fix_bta_ag_rfc_acp_open_error()) {
       bta_ag_rfc_fail(p_scb, tBTA_AG_DATA::kEmpty);
     }
     return;

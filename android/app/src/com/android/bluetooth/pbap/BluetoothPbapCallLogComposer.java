@@ -241,36 +241,25 @@ public class BluetoothPbapCallLogComposer implements AutoCloseable {
         // when connected over bluetooth)
         //
         // e.g. "X-IRMC-CALL-DATETIME;MISSED:20050320T100000"
-        final int callLogType = mCursor.getInt(CALL_TYPE_COLUMN_INDEX);
-        final String callLogTypeStr;
-        switch (callLogType) {
-            case Calls.REJECTED_TYPE:
-            case Calls.INCOMING_TYPE:
-                {
-                    callLogTypeStr = VCARD_PROPERTY_CALLTYPE_INCOMING;
-                    break;
-                }
-            case Calls.OUTGOING_TYPE:
-                {
-                    callLogTypeStr = VCARD_PROPERTY_CALLTYPE_OUTGOING;
-                    break;
-                }
-            case Calls.MISSED_TYPE:
-                {
-                    callLogTypeStr = VCARD_PROPERTY_CALLTYPE_MISSED;
-                    break;
-                }
-            default:
-                {
-                    Log.w(TAG, "Call log type not correct.");
-                    ContentProfileErrorReportUtils.report(
-                            BluetoothProfile.PBAP,
-                            BluetoothProtoEnums.BLUETOOTH_PBAP_CALL_LOG_COMPOSER,
-                            BluetoothStatsLog
-                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                            1);
-                    return;
-                }
+        final String callLogTypeStr =
+                switch (mCursor.getInt(CALL_TYPE_COLUMN_INDEX)) {
+                    case Calls.REJECTED_TYPE, Calls.INCOMING_TYPE ->
+                            VCARD_PROPERTY_CALLTYPE_INCOMING;
+                    case Calls.OUTGOING_TYPE -> VCARD_PROPERTY_CALLTYPE_OUTGOING;
+                    case Calls.MISSED_TYPE -> VCARD_PROPERTY_CALLTYPE_MISSED;
+                    default -> {
+                        Log.w(TAG, "Call log type not correct.");
+                        ContentProfileErrorReportUtils.report(
+                                BluetoothProfile.PBAP,
+                                BluetoothProtoEnums.BLUETOOTH_PBAP_CALL_LOG_COMPOSER,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                                1);
+                        yield null;
+                    }
+                };
+        if (callLogTypeStr == null) {
+            return;
         }
 
         final long dateAsLong = mCursor.getLong(DATE_COLUMN_INDEX);

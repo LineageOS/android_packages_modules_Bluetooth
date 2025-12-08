@@ -16,9 +16,10 @@
 
 package com.android.bluetooth.le_scan;
 
-import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringRunnable;
+import static com.android.bluetooth.Utils.callbackToApp;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -27,16 +28,11 @@ import android.bluetooth.le.IPeriodicAdvertisingCallback;
 import android.bluetooth.le.PeriodicAdvertisingReport;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.os.RemoteException;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.gatt.GattServiceConfig;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Collections;
@@ -44,20 +40,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 /** Manages Bluetooth LE Periodic scans */
 @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
 public class PeriodicScanManager {
-    private static final String TAG =
-            GattServiceConfig.TAG_PREFIX + PeriodicScanManager.class.getSimpleName();
-
-    private static final long RUN_SYNC_WAIT_TIME_MS = 2000L;
+    private static final String TAG = PeriodicScanManager.class.getSimpleName();
 
     @VisibleForTesting int mTempRegistrationId = -1;
 
@@ -67,31 +56,26 @@ public class PeriodicScanManager {
 
     private final AdapterService mAdapterService;
     private final BluetoothAdapter mAdapter;
+    private final ScanController mScanController;
     private final PeriodicScanNativeInterface mNativeInterface;
-    private final Handler mHandler;
 
-    private volatile boolean mIsAvailable = true;
-
-    /** Constructor of {@link PeriodicScanManager}. */
-    PeriodicScanManager(AdapterService service, Looper looper) {
-        Log.d(TAG, "Periodic Scan Manager created");
+    PeriodicScanManager(
+            AdapterService service,
+            ScanController scanController,
+            PeriodicScanNativeInterface nativeInterface) {
         mAdapterService = requireNonNull(service);
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
-        mNativeInterface = PeriodicScanNativeInterface.getInstance();
-        mNativeInterface.init(this);
-        mHandler = new Handler(looper);
+        mScanController = scanController;
+        mNativeInterface =
+                requireNonNullElseGet(nativeInterface, () -> new PeriodicScanNativeInterface(this));
+        mNativeInterface.init();
     }
 
     void cleanup() {
         Log.i(TAG, "cleanup()");
-        mIsAvailable = false;
-        mHandler.removeCallbacksAndMessages(null);
-        forceRunSyncOnScanThread(
-                () -> {
-                    mNativeInterface.cleanup();
-                    mSyncs.clear();
-                    mTempRegistrationId = -1;
-                });
+        mNativeInterface.cleanup();
+        mSyncs.clear();
+        mTempRegistrationId = -1;
     }
 
     private record SyncTransferInfo(String address, IPeriodicAdvertisingCallback callback) {}
@@ -158,7 +142,7 @@ public class PeriodicScanManager {
             int phy,
             int interval,
             int status) {
-        checkThread();
+        mScanController.enforceScanThread();
         List<IPeriodicAdvertisingCallback> callbacks = getAllCallbacks(regId);
         if (callbacks.isEmpty()) {
             Log.d(TAG, "onSyncStarted() - no callback found for regId " + regId);
@@ -185,7 +169,7 @@ public class PeriodicScanManager {
                                     e.getValue().timeout,
                                     e.getValue().deathRecipient,
                                     callback));
-                    sendToCallback(
+                    callbackToApp(
                             () ->
                                     callback.onSyncEstablished(
                                             syncHandle,
@@ -196,7 +180,7 @@ public class PeriodicScanManager {
                                             status));
 
                 } else {
-                    sendToCallback(
+                    callbackToApp(
                             () ->
                                     callback.onSyncEstablished(
                                             syncHandle,
@@ -214,7 +198,7 @@ public class PeriodicScanManager {
     }
 
     void onSyncReport(int syncHandle, int txPower, int rssi, int dataStatus, byte[] data) {
-        checkThread();
+        mScanController.enforceScanThread();
         List<IPeriodicAdvertisingCallback> callbacks = getAllCallbacks(syncHandle);
         if (callbacks.isEmpty()) {
             Log.i(TAG, "onSyncReport() - no callback found for syncHandle " + syncHandle);
@@ -224,12 +208,12 @@ public class PeriodicScanManager {
             PeriodicAdvertisingReport report =
                     new PeriodicAdvertisingReport(
                             syncHandle, txPower, rssi, dataStatus, ScanRecord.parseFromBytes(data));
-            sendToCallback(() -> callback.onPeriodicAdvertisingReport(report));
+            callbackToApp(() -> callback.onPeriodicAdvertisingReport(report));
         }
     }
 
     void onSyncLost(int syncHandle) {
-        checkThread();
+        mScanController.enforceScanThread();
         List<IPeriodicAdvertisingCallback> callbacks = getAllCallbacks(syncHandle);
         if (callbacks.isEmpty()) {
             Log.i(TAG, "onSyncLost() - no callback found for syncHandle " + syncHandle);
@@ -240,25 +224,25 @@ public class PeriodicScanManager {
             synchronized (mSyncs) {
                 mSyncs.remove(binder);
             }
-            sendToCallback(() -> callback.onSyncLost(syncHandle));
+            callbackToApp(() -> callback.onSyncLost(syncHandle));
         }
     }
 
     void onBigInfoReport(int syncHandle, boolean encrypted) {
-        checkThread();
+        mScanController.enforceScanThread();
         List<IPeriodicAdvertisingCallback> callbacks = getAllCallbacks(syncHandle);
         if (callbacks.isEmpty()) {
             Log.i(TAG, "onBigInfoReport() - no callback found for syncHandle " + syncHandle);
             return;
         }
         for (IPeriodicAdvertisingCallback callback : callbacks) {
-            sendToCallback(() -> callback.onBigInfoAdvertisingReport(syncHandle, encrypted));
+            callbackToApp(() -> callback.onBigInfoAdvertisingReport(syncHandle, encrypted));
         }
     }
 
     public void startSync(
             ScanResult scanResult, int skip, int timeout, IPeriodicAdvertisingCallback callback) {
-        checkThread();
+        mScanController.enforceScanThread();
         SyncDeathRecipient deathRecipient = new SyncDeathRecipient(callback);
         IBinder binder = callback.asBinder();
         try {
@@ -321,7 +305,7 @@ public class PeriodicScanManager {
     }
 
     public void stopSync(IPeriodicAdvertisingCallback callback) {
-        checkThread();
+        mScanController.enforceScanThread();
         IBinder binder = callback.asBinder();
         Log.d(TAG, "stopSync() " + binder);
         SyncInfo sync = null;
@@ -354,7 +338,7 @@ public class PeriodicScanManager {
     }
 
     void onSyncTransferredCallback(int paSource, int status, String bda) {
-        checkThread();
+        mScanController.enforceScanThread();
         Map.Entry<IBinder, SyncTransferInfo> entry = findSyncTransfer(bda);
         if (entry != null) {
             mSyncTransfers.remove(entry);
@@ -368,7 +352,7 @@ public class PeriodicScanManager {
     }
 
     public void transferSync(BluetoothDevice bda, int serviceData, int syncHandle) {
-        checkThread();
+        mScanController.enforceScanThread();
         Log.d(TAG, "transferSync()");
         Map.Entry<IBinder, SyncInfo> entry = findSync(syncHandle);
         if (entry == null) {
@@ -386,7 +370,7 @@ public class PeriodicScanManager {
             int serviceData,
             int advHandle,
             IPeriodicAdvertisingCallback callback) {
-        checkThread();
+        mScanController.enforceScanThread();
         SyncDeathRecipient deathRecipient = new SyncDeathRecipient(callback);
         IBinder binder = callback.asBinder();
         Log.d(TAG, "transferSetInfo() " + binder);
@@ -400,59 +384,6 @@ public class PeriodicScanManager {
     }
 
     void doOnScanThread(Runnable r) {
-        if (!mIsAvailable) return;
-
-        if (!Flags.scanControllerThread()) {
-            r.run();
-            return;
-        }
-
-        final var posted =
-                mHandler.post(
-                        () -> {
-                            if (mIsAvailable) {
-                                r.run();
-                            }
-                        });
-        if (!posted) {
-            Log.w(TAG, "Unable to post async task to the handler");
-        }
-    }
-
-    private void forceRunSyncOnScanThread(Runnable r) {
-        if (!Flags.scanControllerThread()) {
-            r.run();
-            return;
-        }
-
-        final CompletableFuture<Void> future = new CompletableFuture<>();
-        final var posted =
-                mHandler.postAtFrontOfQueue(
-                        () -> {
-                            r.run();
-                            future.complete(null);
-                        });
-        if (!posted) {
-            Log.w(TAG, "Unable to post sync task");
-            return;
-        }
-
-        try {
-            future.get(RUN_SYNC_WAIT_TIME_MS, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException | TimeoutException | ExecutionException e) {
-            Log.w(TAG, "Unable to complete sync task: " + e);
-        }
-    }
-
-    private void checkThread() {
-        if (Flags.scanControllerThread()
-                && !mHandler.getLooper().isCurrentThread()
-                && !Utils.isInstrumentationTestMode()) {
-            throw new IllegalStateException("Not on scan thread");
-        }
-    }
-
-    private static void sendToCallback(RemoteExceptionIgnoringRunnable wrapper) {
-        wrapper.run();
+        mScanController.doOnScanThread(r);
     }
 }

@@ -79,13 +79,13 @@ public:
 
   // Get the next sizeof(T) bytes and return the filled type
   template <typename T, typename std::enable_if<std::is_trivial<T>::value, int>::type = 0>
-  T extract() {
+  T extract(size_t len = sizeof(T)) {
     static_assert(std::is_trivial<T>::value, "Iterator::extract requires a fixed-width type.");
     T extracted_value{};
     uint8_t* value_ptr = (uint8_t*)&extracted_value;
 
-    for (size_t i = 0; i < sizeof(T); i++) {
-      size_t index = (little_endian ? i : sizeof(T) - i - 1);
+    for (size_t i = 0; i < len; i++) {
+      size_t index = (little_endian ? i : len - i - 1);
       value_ptr[index] = this->operator*();
       this->operator++();
     }

@@ -20,6 +20,8 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
+import android.bluetooth.BluetoothQualityReport
+import android.bluetooth.OobData
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
 import android.bluetooth.le.AdvertisingSetParameters
@@ -121,6 +123,73 @@ class JsonObjectConverter : SnippetObjectConverter {
                     put(SnippetConstants.ADV_DATA_MANUFACTURER_DATA, jsonManufacturerSpecificData)
                 }
             }
+        }
+
+    private fun BluetoothQualityReport.toJson(): JSONObject =
+        JSONObject().apply {
+            put(SnippetConstants.FIELD_ID, qualityReportId)
+            bqrCommon?.let {
+                val commonObj = JSONObject()
+                commonObj.put(SnippetConstants.PACKET_TYPE, it.packetType)
+                commonObj.put(SnippetConstants.CONNECTION_HANDLE, it.connectionHandle)
+                commonObj.put(SnippetConstants.CONNECTION_ROLE, it.connectionRole)
+                commonObj.put(SnippetConstants.TX_POWER_LEVEL, it.txPowerLevel)
+                commonObj.put(SnippetConstants.RSSI, it.rssi)
+                commonObj.put(SnippetConstants.SNR, it.snr)
+                commonObj.put(SnippetConstants.UNUSED_AFH_CHANNEL_COUNT, it.unusedAfhChannelCount)
+                commonObj.put(
+                    SnippetConstants.AFH_SELECT_UNIDEAL_CHANNEL_COUNT,
+                    it.afhSelectUnidealChannelCount,
+                )
+                commonObj.put(SnippetConstants.LSTO, it.lsto)
+                commonObj.put(SnippetConstants.PICONET_CLOCK, it.piconetClock)
+                commonObj.put(SnippetConstants.RETRANSMISSION_COUNT, it.retransmissionCount)
+                commonObj.put(SnippetConstants.NO_RX_COUNT, it.noRxCount)
+                commonObj.put(SnippetConstants.NAK_COUNT, it.nakCount)
+                commonObj.put(SnippetConstants.LAST_TX_ACK_TIMESTAMP, it.lastTxAckTimestamp)
+                commonObj.put(SnippetConstants.FLOW_OFF_COUNT, it.flowOffCount)
+                commonObj.put(SnippetConstants.LAST_FLOW_ON_TIMESTAMP, it.lastFlowOnTimestamp)
+                commonObj.put(SnippetConstants.OVERFLOW_COUNT, it.overflowCount)
+                commonObj.put(SnippetConstants.UNDERFLOW_COUNT, it.underflowCount)
+                commonObj.put(SnippetConstants.CAL_FAILED_ITEM_COUNT, it.calFailedItemCount)
+                // V6 fields
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                    commonObj.put(SnippetConstants.TX_TOTAL_PACKETS, it.txTotalPackets)
+                    commonObj.put(SnippetConstants.TX_UNACK_PACKETS, it.txUnackPackets)
+                    commonObj.put(SnippetConstants.TX_FLUSH_PACKETS, it.txFlushPackets)
+                    commonObj.put(
+                        SnippetConstants.TX_LAST_SUBEVENT_PACKETS,
+                        it.txLastSubeventPackets,
+                    )
+                    commonObj.put(SnippetConstants.CRC_ERROR_PACKETS, it.crcErrorPackets)
+                    commonObj.put(SnippetConstants.RX_DUP_PACKETS, it.rxDupPackets)
+                    commonObj.put(SnippetConstants.RX_UN_RECV_PACKETS, it.rxUnRecvPackets)
+                    commonObj.put(SnippetConstants.COEX_INFO_MASK, it.coexInfoMask)
+                }
+                put(SnippetConstants.FIELD_COMMON, commonObj)
+            }
+        }
+
+    private fun OobData.toJson(): JSONObject =
+        JSONObject().apply {
+            put(
+                SnippetConstants.OOB_DATA_CONFIRMATION_HASH,
+                JSONArray(confirmationHash.map { it.toInt() and 0xFF }),
+            )
+            put(
+                SnippetConstants.OOB_DATA_RANDOMIZER_HASH,
+                JSONArray(randomizerHash.map { it.toInt() and 0xFF }),
+            )
+            if (leTemporaryKey != null) {
+                this.put(
+                    SnippetConstants.OOB_DATA_LE_TEMPORARY_KEY,
+                    JSONArray(leTemporaryKey?.map { byte -> byte.toInt() and 0xFF }),
+                )
+            }
+            put(
+                SnippetConstants.OOB_DATA_DEVICE_ADDRESS_WITH_TYPE,
+                JSONArray(deviceAddressWithType.map { it.toInt() and 0xFF }),
+            )
         }
 
     private fun JSONObject.toAdvertiseSettings() =
@@ -335,6 +404,42 @@ class JsonObjectConverter : SnippetObjectConverter {
             }
             .build()
 
+    private fun JSONObject.toOobData(): OobData {
+        val confirmationHash =
+            getJSONArray(SnippetConstants.OOB_DATA_CONFIRMATION_HASH).toList<Byte>().toByteArray()
+        val deviceAddressWithType =
+            getJSONArray(SnippetConstants.OOB_DATA_DEVICE_ADDRESS_WITH_TYPE)
+                .toList<Byte>()
+                .toByteArray()
+        val leDeviceRole = getOrNull<Int>(SnippetConstants.OOB_DATA_LE_DEVICE_ROLE)
+        val classicLength = getOrNull<Int>(SnippetConstants.OOB_DATA_CLASSIC_LENGTH)
+        val randomizerHash =
+            getOrNull<JSONArray>(SnippetConstants.OOB_DATA_RANDOMIZER_HASH)
+                ?.toList<Byte>()
+                ?.toByteArray()
+        if (leDeviceRole != null) {
+            return OobData.LeBuilder(confirmationHash, deviceAddressWithType, leDeviceRole)
+                .apply {
+                    optJSONArray(SnippetConstants.OOB_DATA_LE_TEMPORARY_KEY)
+                        ?.toList<Byte>()
+                        ?.toByteArray()
+                        ?.let { setLeTemporaryKey(it) }
+                    randomizerHash?.let { setRandomizerHash(it) }
+                }
+                .build()
+        }
+        if (classicLength != null) {
+            return OobData.ClassicBuilder(
+                    confirmationHash,
+                    byteArrayOf((classicLength / 0xFF).toByte(), (classicLength % 0xFF).toByte()),
+                    deviceAddressWithType,
+                )
+                .apply { randomizerHash?.let { setRandomizerHash(it) } }
+                .build()
+        }
+        throw IllegalArgumentException("OobData must have either leDeviceRole or classicLength")
+    }
+
     /**
      * Serializes JVM object [parameter] to a [JSONObject], or returns null if there is no viable
      * conversion.
@@ -350,6 +455,12 @@ class JsonObjectConverter : SnippetObjectConverter {
             return parameter.toJson()
         }
         if (parameter is ScanResult) {
+            return parameter.toJson()
+        }
+        if (parameter is BluetoothQualityReport) {
+            return parameter.toJson()
+        }
+        if (parameter is OobData) {
             return parameter.toJson()
         }
         return null
@@ -381,6 +492,9 @@ class JsonObjectConverter : SnippetObjectConverter {
         }
         if (type === AudioAttributes::class.java) {
             return jsonObject?.toAudioAttributes()
+        }
+        if (type === OobData::class.java) {
+            return jsonObject?.toOobData()
         }
         return null
     }

@@ -22,6 +22,8 @@
  *  mockcify.pl ver 0.6.2
  */
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -32,8 +34,6 @@
 #include "btif/include/btif_uid.h"
 #include "hardware/bt_sock.h"
 #include "stack/include/bt_hdr.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 // Original usings
 using bluetooth::Uuid;

@@ -16,19 +16,16 @@ from __future__ import annotations
 
 import asyncio
 import decimal
-import enum
-import functools
+import sys
 import tempfile
 from typing import Iterable, TypeAlias
 import wave
 
-from bumble import a2dp
 from bumble import avc
 from bumble import avdtp
 from bumble import avrcp
 from bumble import hci
 import bumble.core
-import bumble.utils
 from mobly import test_runner
 from mobly import signals
 from typing_extensions import override
@@ -36,6 +33,7 @@ from typing_extensions import override
 from navi.bumble_ext import a2dp as a2dp_ext
 from navi.tests import navi_test_base
 from navi.utils import android_constants
+from navi.utils import audio
 from navi.utils import bl4a_api
 from navi.utils import constants
 from navi.utils import matcher
@@ -46,6 +44,7 @@ _AVRCP_TARGET_RECORD_HANDLE = 3
 _DEFAULT_STEP_TIMEOUT_SECONDS = 5.0
 _AVRCP_MAX_VOLUME = 127
 _PROPERTY_CODEC_PRIORITY = "bluetooth.a2dp.source.%s_priority.config"
+_PROPERTY_OPUS_ENABLED = "persist.bluetooth.opus.enabled"
 _VALUE_CODEC_DISABLED = -1
 _PREPARE_TIME_SECONDS = 0.5
 
@@ -58,25 +57,26 @@ _A2dpCodec = a2dp_ext.A2dpCodec
 class LocalSinkWrapper:
     """Wrapper for LocalSink to provide start/suspend events."""
 
-    class Command(enum.StrEnum):
-        OPEN = "open"
-        START = "start"
-        SUSPEND = "suspend"
-        CLOSE = "close"
-        ABORT = "abort"
-
     def __init__(self, impl: avdtp.LocalSink):
         self.impl = impl
-        self.last_command: LocalSinkWrapper.Command | None = None
         self.condition = asyncio.Condition()
-        for command in LocalSinkWrapper.Command:
-            self.impl.on(command.value, functools.partial(self._on_command, command))
+        for command in (
+                impl.EVENT_CONFIGURATION,
+                impl.EVENT_OPEN,
+                impl.EVENT_START,
+                impl.EVENT_SUSPEND,
+                impl.EVENT_CLOSE,
+                impl.EVENT_ABORT,
+        ):
+            self.impl.on(command, self._on_command)
 
-    @bumble.utils.AsyncRunner.run_in_task()
-    async def _on_command(self, command: LocalSinkWrapper.Command) -> None:
-        self.last_command = command
+    async def _on_command(self) -> None:
         async with self.condition:
             self.condition.notify_all()
+
+    @property
+    def stream_state(self) -> int | None:
+        return self.impl.stream.state if self.impl.stream else None
 
 
 class AvrcpDelegate(avrcp.Delegate):
@@ -100,10 +100,14 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
         await super().async_setup_class()
         if (self.dut.getprop(android_constants.Property.A2DP_SOURCE_ENABLED) != "true"):
             raise signals.TestAbortClass("A2DP is not enabled on DUT.")
+        if self.dut.device.build_info["hardware"] == "cutf_cvm":
+            # Force enable OPUS on Cuttlefish.
+            self.dut.setprop(_PROPERTY_OPUS_ENABLED, "true")
         self.dut_supported_codecs = [
             codec for codec in _A2dpCodec
             if int(self.dut.getprop(_PROPERTY_CODEC_PRIORITY %
-                                    codec.name.lower()) or "0") > _VALUE_CODEC_DISABLED
+                                    codec.name.lower()) or "0") > _VALUE_CODEC_DISABLED and
+            (codec != _A2dpCodec.OPUS or self.dut.getprop(_PROPERTY_OPUS_ENABLED) == "true")
         ]
 
     @override
@@ -111,74 +115,47 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
         await super().async_teardown_test()
         self.dut.bt.audioStop()
 
-    def _setup_a2dp_device(
-        self, codecs: list[_A2dpCodec]
-    ) -> tuple[
-            AvrcpDelegate,
-            avrcp.Protocol,
-            asyncio.Queue[tuple[avdtp.Protocol, dict[_A2dpCodec, LocalSinkWrapper]]],
-    ]:
+    def _setup_a2dp_device(self, codecs: list[_A2dpCodec]) -> tuple[avdtp.Listener, avrcp.Protocol]:
         """Sets up A2DP profile on REF.
 
     Args:
       codecs: A2DP codecs supported by REF.
 
     Returns:
-      A tuple of (AvrcpDelegate, avrcp.Protocol, asyncio.Queue)
-      - AvrcpDelegate: Delegate for AVRCP protocol.
-      - avrcp.Protocol: AVRCP protocol.
-      - asyncio.Queue: Queue of AVDTP connections.
+      A tuple of (avdtp.Listener, avrcp.Protocol).
     """
-        avdtp_connections = asyncio.Queue[tuple[avdtp.Protocol, dict[_A2dpCodec,
-                                                                     LocalSinkWrapper]]]()
-        self.ref.device.sdp_service_records = {
-            _A2DP_SERVICE_RECORD_HANDLE:
-                a2dp.make_audio_sink_service_sdp_records(_A2DP_SERVICE_RECORD_HANDLE),
-            _AVRCP_CONTROLLER_RECORD_HANDLE:
-                (avrcp.make_controller_service_sdp_records(_AVRCP_CONTROLLER_RECORD_HANDLE)),
-            _AVRCP_TARGET_RECORD_HANDLE:
-                avrcp.make_target_service_sdp_records(_AVRCP_TARGET_RECORD_HANDLE),
-        }
+        listener = a2dp_ext.setup_sink_server(
+            self.ref.device,
+            [codec.get_default_capabilities() for codec in codecs],
+            _A2DP_SERVICE_RECORD_HANDLE,
+        )
+        avrcp_delegator = AvrcpDelegate(supported_events=(avrcp.EventId.VOLUME_CHANGED,))
+        avrcp_protocol = a2dp_ext.setup_avrcp_server(
+            self.ref.device,
+            avrcp_controller_handle=_AVRCP_CONTROLLER_RECORD_HANDLE,
+            avrcp_target_handle=_AVRCP_TARGET_RECORD_HANDLE,
+            delegate=avrcp_delegator,
+        )
 
-        def on_avdtp_connection(server: avdtp.Protocol) -> None:
-            ref_sinks = dict[_A2dpCodec, LocalSinkWrapper]()
-            for codec in codecs:
-                ref_sinks[codec] = LocalSinkWrapper(
-                    server.add_sink(codec.get_default_capabilities()))
-            avdtp_connections.put_nowait((server, ref_sinks))
-
-        avdtp_listener = avdtp.Listener.for_device(self.ref.device)
-        avdtp_listener.on("connection", on_avdtp_connection)
-
-        ref_avrcp_delegator = AvrcpDelegate(supported_events=(avrcp.EventId.VOLUME_CHANGED,))
-        ref_avrcp_protocol = avrcp.Protocol(ref_avrcp_delegator)
-        ref_avrcp_protocol.listen(self.ref.device)
-        return ref_avrcp_delegator, ref_avrcp_protocol, avdtp_connections
+        return listener, avrcp_protocol
 
     async def _setup_a2dp_connection(
-        self, ref_codecs: list[_A2dpCodec]
-    ) -> tuple[
-            AvrcpDelegate,
-            avrcp.Protocol,
-            avdtp.Protocol,
-            dict[_A2dpCodec, LocalSinkWrapper],
-    ]:
+            self, ref_codecs: list[_A2dpCodec]) -> tuple[
+                avrcp.Protocol,
+                avdtp.Protocol,
+            ]:
         """Sets up A2DP connection between DUT and REF.
 
     Args:
       ref_codecs: A2DP codecs supported by REF.
 
     Returns:
-      A tuple of (AvrcpDelegate, avrcp.Protocol, avdtp.Protocol,
-      dict[_A2dpCodec, LocalSinkWrapper])
-      - AvrcpDelegate: Delegate for AVRCP protocol.
-      - avrcp.Protocol: AVRCP protocol.
-      - avdtp.Protocol: AVDTP protocol.
-      - dict[_A2dpCodec, LocalSinkWrapper]: Sinks for each codec.
+      A tuple of (avrcp.Protocol, avdtp.Protocol).
     """
         with self.dut.bl4a.register_callback(bl4a_api.Module.A2DP) as dut_cb:
-            ref_avrcp_delegator, ref_avrcp_protocol, avdtp_connections = (
-                self._setup_a2dp_device(ref_codecs))
+            ref_avdtp_listener, ref_avrcp_protocol = self._setup_a2dp_device(ref_codecs)
+            ref_avdtp_connections = asyncio.Queue[avdtp.Protocol]()
+            ref_avdtp_listener.on(ref_avdtp_listener.EVENT_CONNECTION, ref_avdtp_connections.put)
 
             self.logger.info("[DUT] Connect and pair REF.")
             ref_acl = await self.classic_connect_and_pair()
@@ -191,7 +168,7 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
                 ),)
             async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS,
                                                msg="[REF] Wait for A2DP connected."):
-                avdtp_connection, ref_sinks = await avdtp_connections.get()
+                ref_avdtp_connection = await ref_avdtp_connections.get()
             self.logger.info("[DUT] Wait for A2DP becomes active.")
             await dut_cb.wait_for_event(
                 bl4a_api.ProfileActiveDeviceChanged(address=self.ref.address),
@@ -205,7 +182,7 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
                 async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
                     await ref_avrcp_protocol.connect(ref_acl)
                 self.logger.info("[REF] AVRCP connected.")
-        return ref_avrcp_delegator, ref_avrcp_protocol, avdtp_connection, ref_sinks
+        return ref_avrcp_protocol, ref_avdtp_connection
 
     async def _terminate_connection_from_ref(self) -> None:
         self.logger.info("[DUT] Terminate connection.")
@@ -392,16 +369,19 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
                 self.dut.bl4a.register_callback(bl4a_api.Module.A2DP) as dut_cb,
                 self.dut.bl4a.register_callback(bl4a_api.Module.PLAYER) as dut_player_cb,
         ):
-            (
-                ref_avrcp_delegator,
-                ref_avrcp_protocol,
-                ref_avdtp_connection,
-                ref_sinks,
-            ) = await self._setup_a2dp_connection(ref_codecs)
-            del ref_avrcp_delegator, ref_avdtp_connection  # Unused.
+            ref_avrcp_protocol, ref_avdtp_connection = (await
+                                                        self._setup_a2dp_connection(ref_codecs))
 
-            if not (ref_sink := ref_sinks.get(preferred_codec)):
+            ref_sinks = a2dp_ext.find_local_endpoints_by_codec(
+                ref_avdtp_connection,
+                preferred_codec.codec_type,
+                avdtp.LocalSink,
+                vendor_id=preferred_codec.vendor_id,
+                codec_id=preferred_codec.codec_id,
+            )
+            if not ref_sinks:
                 self.fail("No sink found for codec %s." % preferred_codec.name)
+            ref_sink = LocalSinkWrapper(ref_sinks[0])
 
             # If there is a playback, wait until it ends.
             if self.dut.bt.isA2dpPlaying(self.ref.address):
@@ -416,7 +396,10 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
                     ref_sink.condition,
             ):
                 await ref_sink.condition.wait_for(
-                    lambda: ref_sink.last_command != LocalSinkWrapper.Command.START)
+                    lambda: ref_sink.stream_state != avdtp.AVDTP_STREAMING_STATE)
+
+            # Register the sink buffer to receive the packets.
+            buffer = a2dp_ext.register_sink_buffer(ref_sink.impl, preferred_codec)
 
             if issuer == _Issuer.DUT:
                 self.logger.info("[DUT] Start stream.")
@@ -439,7 +422,7 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
                     ref_sink.condition,
             ):
                 await ref_sink.condition.wait_for(
-                    lambda: ref_sink.last_command == LocalSinkWrapper.Command.START)
+                    lambda: ref_sink.stream_state == avdtp.AVDTP_STREAMING_STATE)
 
             # Streaming for 1 second.
             await asyncio.sleep(1.0)
@@ -466,7 +449,21 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
                     ref_sink.condition,
             ):
                 await ref_sink.condition.wait_for(
-                    lambda: ref_sink.last_command == LocalSinkWrapper.Command.SUSPEND)
+                    lambda: ref_sink.stream_state != avdtp.AVDTP_STREAMING_STATE)
+            if self.user_params.get(navi_test_base.RECORD_FULL_DATA) and buffer:
+                self.write_test_output_data(
+                    f"a2dp_data.{preferred_codec.format}",
+                    buffer,
+                )
+
+            if (buffer is not None and preferred_codec != _A2dpCodec.LDAC and
+                    audio.SUPPORT_AUDIO_PROCESSING):
+                dominant_frequency = audio.get_dominant_frequency(buffer,
+                                                                  format=preferred_codec.format)
+                self.logger.info("Dominant frequency: %.2f", dominant_frequency)
+                # Dominant frequency is not accurate on emulator.
+                if not self.dut.device.is_emulator:
+                    self.assertAlmostEqual(dominant_frequency, 1000, delta=10)
 
     @navi_test_base.parameterized(_Issuer.DUT, _Issuer.REF)
     async def test_set_absolute_volume(self, issuer: _Issuer) -> None:
@@ -479,9 +476,9 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
     Args:
       issuer: device to issue the volume change command.
     """
-        ref_avrcp_delegator, ref_avrcp_protocol, *_ = (await
-                                                       self._setup_a2dp_connection([_A2dpCodec.SBC]
-                                                                                  ))
+        ref_avrcp_protocol, _ = await self._setup_a2dp_connection([_A2dpCodec.SBC])
+        ref_avrcp_delegator = ref_avrcp_protocol.delegate
+        assert isinstance(ref_avrcp_delegator, AvrcpDelegate)
 
         dut_max_volume = self.dut.bt.getMaxVolume(_StreamType.MUSIC)
         dut_min_volume = self.dut.bt.getMinVolume(_StreamType.MUSIC)
@@ -544,12 +541,15 @@ class A2dpTest(navi_test_base.TwoDevicesTestBase):
     @navi_test_base.retry(3)
     async def test_avrcp_previous_next_track(self) -> None:
         """Tests moving to previous and next track over AVRCP."""
-        ref_avrcp_protocol = (await self._setup_a2dp_connection([_A2dpCodec.SBC]))[1]
+        ref_avrcp_protocol, _ = await self._setup_a2dp_connection([_A2dpCodec.SBC])
 
         # Allow repeating to avoid the end of the track.
         self.dut.bt.audioSetRepeat(android_constants.RepeatMode.ONE)
         # Generate a sine wave audio file, and push it to DUT twice.
-        with tempfile.NamedTemporaryFile() as local_file:
+        with tempfile.NamedTemporaryFile(
+                # On Windows, NamedTemporaryFile cannot be deleted if used multiple
+                # times.
+                delete=(sys.platform != "win32")) as local_file:
             with wave.open(local_file.name, "wb") as wave_file:
                 wave_file.setnchannels(1)
                 wave_file.setsampwidth(2)

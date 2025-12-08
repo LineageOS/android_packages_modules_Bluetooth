@@ -1,535 +1,84 @@
+// See go/a-unit-tests
+// Some tests are device only.
+// Some tests are host enabled and run in the CI automatically. But we still
+// want to run them on device too
 {
   "bt-mainline-presubmit": [
-    {
-      "name": "CtsBluetoothTestCases"
-    },
-    {
-      "name": "BluetoothJavaUnitTests"
-    },
-    {
-      "name": "GoogleBluetoothInstrumentationTests"
-    },
-    {
-      "name": "FrameworkBluetoothTests"
-    },
-    {
-      "name": "ServiceBluetoothTests"
-    },
-    // Device only tests
-    {
-      "name": "net_test_bluetooth"
-    },
-    {
-      "name": "net_test_btif_hf_client_service"
-    },
-    {
-      "name": "net_test_btif_profile_queue"
-    },
-    {
-      "name": "net_test_device"
-    },
-    {
-      "name": "net_test_device_iot_config"
-    },
-    {
-      "name": "net_test_hci"
-    },
-    {
-      "name": "net_test_stack"
-    },
-    {
-      "name": "net_test_stack_ad_parser"
-    },
-    // go/a-unit-tests tests
-    // These tests run on the host in the CI automatically.
-    // Run the one that are available on the device on the
-    // device as well
-    {
-      "name": "bluetooth_csis_test"
-    },
-    {
-      "name": "bluetooth_groups_test"
-    },
-    {
-      "name": "bluetooth_has_test"
-    },
-    {
-      "name": "bluetooth_hh_test"
-    },
-    {
-      "name": "bluetooth_packet_parser_test"
-    },
-    {
-      "name": "bluetooth_ras_test"
-    },
-    {
-      "name": "bluetooth-test-audio-hal-a2dp-provider-info"
-    },
-    {
-      "name": "bluetooth-test-audio-hal-aidl-leaudio-utils"
-    },
-    {
-      "name": "bluetooth-test-audio-hal-hfp-client-interface"
-    },
-    {
-      "name": "bluetooth-test-audio-hal-le-audio-software"
-    },
-    {
-      "name": "bluetooth_test_broadcaster"
-    },
-    {
-      "name": "bluetooth_test_broadcaster_state_machine"
-    },
-    {
-      "name": "bluetooth_test_common"
-    },
-    {
-      "name": "bluetooth_test_with_timerfd"
-    },
-    {
-      "name": "bluetooth_vc_test"
-    },
-    {
-      "name": "bt_host_test_bta_scn"
-    },
-    {
-      "name": "libaptx_enc_tests"
-    },
-    {
-      "name": "libaptxhd_enc_tests"
-    },
-    {
-      "name": "libbluetooth_core_rs_test"
-    },
-    {
-      "name": "libbluetooth_log_test"
-    },
-    {
-      "name": "libbluetooth_offload_hci_test"
-    },
-    {
-      "name": "net_test_avrcp"
-    },
-    {
-      "name": "net_test_bta"
-    },
-    {
-      "name": "net_test_bta_jv"
-    },
-    {
-      "name": "net_test_bta_security"
-    },
-    {
-      "name": "net_test_btif"
-    },
-    {
-      "name": "net_test_btif_avrcp_audio_track"
-    },
-    {
-      "name": "net_test_btif_hh"
-    },
-    {
-      "name": "net_test_btif_rc"
-    },
-    {
-      "name": "net_test_btif_stack"
-    },
-    {
-      "name": "net_test_btm_iso"
-    },
-    {
-      "name": "net_test_btpackets"
-    },
-    {
-      "name": "net_test_conn_multiplexing"
-    },
-    {
-      "name": "net_test_eatt"
-    },
-    {
-      "name": "net_test_main_shim"
-    },
-    {
-      "name": "net_test_osi"
-    },
-    {
-      "name": "net_test_performance"
-    },
-    {
-      "name": "net_test_stack_acl"
-    },
-    {
-      "name": "net_test_stack_a2dp_codecs_native"
-    },
-    {
-      "name": "net_test_stack_avctp"
-    },
-    {
-      "name": "net_test_stack_avdtp"
-    },
-    {
-      "name": "net_test_stack_btm"
-    },
-    {
-      "name": "net_test_stack_btu"
-    },
-    {
-      "name": "net_test_stack_gatt"
-    },
-    {
-      "name": "net_test_stack_gatt_native"
-    },
-    {
-      "name": "net_test_stack_gatt_sr_hash_native"
-    },
-    {
-      "name": "net_test_stack_hci"
-    },
-    {
-      "name": "net_test_stack_hid"
-    },
-    {
-      "name": "net_test_stack_l2cap"
-    },
-    {
-      "name": "net_test_stack_rfcomm"
-    },
-    {
-      "name": "net_test_stack_rnr"
-    },
-    {
-      "name": "net_test_stack_sdp"
-    },
-    {
-      "name": "net_test_stack_smp"
-    },
-    {
-      "name": "net_test_types"
-    }
+    { "name": "CtsBluetoothTestCases" },
+    { "name": "BluetoothJavaUnitTests" },
+    { "name": "GoogleBluetoothInstrumentationTests" },
+    { "name": "FrameworkBluetoothTests" },
+    { "name": "ServiceBluetoothTests" },
+    { "name": "bluetooth_csis_test" },
+    { "name": "bluetooth_groups_test" },
+    { "name": "bluetooth_has_test" },
+    { "name": "bluetooth_hh_test" },
+    { "name": "bluetooth_packet_parser_test" },
+    { "name": "bluetooth_ras_test" },
+    { "name": "bluetooth-test-audio-hal-a2dp" },
+    { "name": "bluetooth-test-audio-hal-aidl-leaudio-utils" },
+    { "name": "bluetooth-test-audio-hal-hfp-client-interface" },
+    { "name": "bluetooth-test-audio-hal-le-audio-software" },
+    { "name": "bluetooth_test_broadcaster" },
+    { "name": "bluetooth_test_broadcaster_state_machine" },
+    { "name": "bluetooth_test_common" },
+    { "name": "bluetooth_test_with_timerfd" },
+    { "name": "bluetooth_vc_test" },
+    { "name": "bt_host_test_bta_scn" },
+    { "name": "libaptx_enc_tests" },
+    { "name": "libaptxhd_enc_tests" },
+    { "name": "libbluetooth_core_rs_test" },
+    { "name": "libbluetooth_log_test" },
+    { "name": "libbluetooth_offload_hci_test" }
   ],
   "presubmit": [
     // android_test targets
-    {
-      "name": "CtsBluetoothTestCases"
-    },
-    {
-      "name": "CtsStrictJavaPackagesTestCases"
-    },
-    {
-      "name": "BluetoothJavaUnitTests"
-    },
-    {
-      "name": "BluetoothInstrumentationTests"
-    },
+    { "name": "CtsBluetoothTestCases" },
+    { "name": "CtsStrictJavaPackagesTestCases" },
+    { "name": "BluetoothJavaUnitTests" },
+    { "name": "BluetoothInstrumentationTests" },
     {
       "name": "GoogleBluetoothInstrumentationTests",
       "keywords": ["internal"]
     },
-    {
-      "name": "FrameworkBluetoothTests"
-    },
-    {
-      "name": "ServiceBluetoothTests"
-    },
-    // Device only tests
-    {
-      "name": "net_test_bluetooth"
-    },
-    {
-      "name": "net_test_btif_hf_client_service"
-    },
-    {
-      "name": "net_test_btif_profile_queue"
-    },
-    {
-      "name": "net_test_device"
-    },
-    {
-      "name": "net_test_device_iot_config"
-    },
-    {
-      "name": "net_test_hci"
-    },
-    {
-      "name": "net_test_stack"
-    },
-    {
-      "name": "net_test_stack_ad_parser"
-    },
-    // go/a-unit-tests tests
-    // These tests run on the host in the CI automatically.
-    // Run the one that are available on the device on the
-    // device as well
-    {
-      "name": "bluetooth_csis_test"
-    },
-    {
-      "name": "bluetooth_groups_test"
-    },
-    {
-      "name": "bluetooth_has_test"
-    },
-    {
-      "name": "bluetooth_hh_test"
-    },
-    {
-      "name": "bluetooth_packet_parser_test"
-    },
-    {
-      "name": "bluetooth_ras_test"
-    },
-    {
-      "name": "bluetooth-test-audio-hal-a2dp-provider-info"
-    },
-    {
-      "name": "bluetooth-test-audio-hal-aidl-leaudio-utils"
-    },
-    {
-      "name": "bluetooth-test-audio-hal-hfp-client-interface"
-    },
-    {
-      "name": "bluetooth-test-audio-hal-le-audio-software"
-    },
-    {
-      "name": "bluetooth_test_broadcaster"
-    },
-    {
-      "name": "bluetooth_test_broadcaster_state_machine"
-    },
-    {
-      "name": "bluetooth_test_common"
-    },
-    {
-      "name": "bluetooth_test_with_timerfd"
-    },
-    {
-      "name": "bluetooth_vc_test"
-    },
-    {
-      "name": "bt_host_test_bta_scn"
-    },
-    {
-      "name": "libaptx_enc_tests"
-    },
-    {
-      "name": "libaptxhd_enc_tests"
-    },
-    {
-      "name": "libbluetooth_core_rs_test"
-    },
-    {
-      "name": "libbluetooth_log_test"
-    },
-    {
-      "name": "libbluetooth_offload_hci_test"
-    },
-    {
-      "name": "net_test_avrcp"
-    },
-    {
-      "name": "net_test_bta"
-    },
-    {
-      "name": "net_test_bta_jv"
-    },
-    {
-      "name": "net_test_bta_security"
-    },
-    {
-      "name": "net_test_btif"
-    },
-    {
-      "name": "net_test_btif_avrcp_audio_track"
-    },
-    {
-      "name": "net_test_btif_hh"
-    },
-    {
-      "name": "net_test_btif_rc"
-    },
-    {
-      "name": "net_test_btif_stack"
-    },
-    {
-      "name": "net_test_btm_iso"
-    },
-    {
-      "name": "net_test_btpackets"
-    },
-    {
-      "name": "net_test_conn_multiplexing"
-    },
-    {
-      "name": "net_test_eatt"
-    },
-    {
-      "name": "net_test_main_shim"
-    },
-    {
-      "name": "net_test_osi"
-    },
-    {
-      "name": "net_test_performance"
-    },
-    {
-      "name": "net_test_stack_acl"
-    },
-    {
-      "name": "net_test_stack_a2dp_codecs_native"
-    },
-    {
-      "name": "net_test_stack_avctp"
-    },
-    {
-      "name": "net_test_stack_avdtp"
-    },
-    {
-      "name": "net_test_stack_btm"
-    },
-    {
-      "name": "net_test_stack_btu"
-    },
-    {
-      "name": "net_test_stack_gatt"
-    },
-    {
-      "name": "net_test_stack_gatt_native"
-    },
-    {
-      "name": "net_test_stack_gatt_sr_hash_native"
-    },
-    {
-      "name": "net_test_stack_hci"
-    },
-    {
-      "name": "net_test_stack_hid"
-    },
-    {
-      "name": "net_test_stack_l2cap"
-    },
-    {
-      "name": "net_test_stack_rfcomm"
-    },
-    {
-      "name": "net_test_stack_rnr"
-    },
-    {
-      "name": "net_test_stack_sdp"
-    },
-    {
-      "name": "net_test_stack_smp"
-    },
-    {
-      "name": "net_test_types"
-    }
+    { "name": "FrameworkBluetoothTests" },
+    { "name": "ServiceBluetoothTests" },
+    { "name": "bluetooth_csis_test" },
+    { "name": "bluetooth_groups_test" },
+    { "name": "bluetooth_has_test" },
+    { "name": "bluetooth_hh_test" },
+    { "name": "bluetooth_packet_parser_test" },
+    { "name": "bluetooth_ras_test" },
+    { "name": "bluetooth-test-audio-hal-a2dp" },
+    { "name": "bluetooth-test-audio-hal-aidl-leaudio-utils" },
+    { "name": "bluetooth-test-audio-hal-hfp-client-interface" },
+    { "name": "bluetooth-test-audio-hal-le-audio-software" },
+    { "name": "bluetooth_test_broadcaster" },
+    { "name": "bluetooth_test_broadcaster_state_machine" },
+    { "name": "bluetooth_test_common" },
+    { "name": "bluetooth_test_with_timerfd" },
+    { "name": "bluetooth_vc_test" },
+    { "name": "bt_host_test_bta_scn" },
+    { "name": "libaptx_enc_tests" },
+    { "name": "libaptxhd_enc_tests" },
+    { "name": "libbluetooth_core_rs_test" },
+    { "name": "libbluetooth_log_test" },
+    { "name": "libbluetooth_offload_hci_test" }
   ],
   "hwasan-presubmit": [
-    // android_test targets
-    {
-      "name": "CtsBluetoothTestCases"
-    },
-    {
-      "name": "BluetoothJavaUnitTests"
-    },
-    {
-      "name": "BluetoothInstrumentationTests"
-    },
-    {
-      "name": "GoogleBluetoothInstrumentationTests"
-    },
-    {
-      "name": "FrameworkBluetoothTests"
-    },
-    {
-      "name": "ServiceBluetoothTests"
-    },
-    // device only tests
-    {
-      "name": "net_test_bluetooth"
-    },
-    {
-      "name": "net_test_bta"
-    },
-    {
-      "name": "net_test_bta_security"
-    },
-    {
-      "name": "net_test_btif"
-    },
-    {
-      "name": "net_test_btif_hf_client_service"
-    },
-    {
-      "name": "net_test_btif_profile_queue"
-    },
-    {
-      "name": "net_test_btif_avrcp_audio_track"
-    },
-    {
-      "name": "net_test_device"
-    },
-    {
-      "name": "net_test_device_iot_config"
-    },
-    {
-      "name": "net_test_conn_multiplexing"
-    },
-    {
-      "name": "net_test_stack"
-    },
-    {
-      "name": "net_test_stack_ad_parser"
-    },
-    // go/a-unit-tests tests
-    // These tests run on the host in the CI automatically.
-    // Run the one that are available on the device on the
-    // device as well
-    {
-      "name": "bluetooth_test_common"
-    },
-    {
-      "name": "bluetooth_vc_test"
-    },
-    {
-      "name": "net_test_avrcp"
-    },
-    {
-      "name": "net_test_btpackets"
-    },
-    {
-      "name": "net_test_eatt"
-    },
-    {
-      "name": "net_test_performance"
-    },
-    {
-      "name": "net_test_stack_gatt_sr_hash_native"
-    },
-    {
-      "name": "net_test_stack_rfcomm"
-    },
-    {
-      "name": "net_test_stack_sdp"
-    },
-    {
-      "name": "net_test_stack_smp"
-    },
-    {
-      "name": "net_test_types"
-    }
+    { "name": "CtsBluetoothTestCases" },
+    { "name": "BluetoothJavaUnitTests" },
+    { "name": "BluetoothInstrumentationTests" },
+    { "name": "GoogleBluetoothInstrumentationTests" },
+    { "name": "FrameworkBluetoothTests" },
+    { "name": "ServiceBluetoothTests" },
+    { "name": "bluetooth_test_common" },
+    { "name": "bluetooth_vc_test" }
   ],
   "postsubmit": [
-    {
-      "name": "audio_bluetooth_hw_test"
-    },
-    {
-      "name": "bluetooth_audio_hal_version_test"
-    },
-    {
-      "name": "libbluetooth_offload_leaudio_hci_test"
-    },
-    {
-      "name": "net_test_bta_gatt"
-    }
+    { "name": "audio_bluetooth_hw_test" },
+    { "name": "bluetooth_audio_hal_version_test" },
+    { "name": "libbluetooth_offload_leaudio_hci_test" },
+    { "name": "net_test_bta_gatt" }
   ]
 }

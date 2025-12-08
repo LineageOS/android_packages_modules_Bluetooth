@@ -24,6 +24,9 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/hci_role.h>
 #include <stdbool.h>
 
 #include <cstdint>
@@ -32,9 +35,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/l2cap_types.h"
-#include "types/bt_transport.h"
-#include "types/hci_role.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants
@@ -693,6 +693,12 @@ void L2CA_LockBleConnParamsForServiceDiscovery(const RawAddress& rem_bda, bool l
  * called with lock=false, parameters are relaxed.
  */
 void L2CA_LockBleConnParamsForProfileConnection(const RawAddress& rem_bda, bool lock);
+
+/* When called with lock=true, LE connection parameters will be locked on
+ * le audio subrate capable device, and we won't accept request to change it from remote. When
+ * called with lock=false, parameters are relaxed.
+ */
+void L2CA_LockBleConnParamsForLeAudioSubrate(const RawAddress& rem_bda, bool lock);
 
 /*******************************************************************************
  *

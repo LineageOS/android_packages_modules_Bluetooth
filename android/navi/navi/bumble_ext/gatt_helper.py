@@ -27,10 +27,10 @@ class MutableCharacteristicState(pyee_extensions.EventTriggeredValueObserver[byt
 
         # Register first so that the value is updated before the observer is
         # triggered.
-        characteristic.on("update", self._on_update)
+        characteristic.on(characteristic.EVENT_UPDATE, self._on_update)
         super().__init__(
             emitter=self._characteristic,
-            event="update",
+            event=characteristic.EVENT_UPDATE,
             value_producer=lambda: self.value,
         )
 

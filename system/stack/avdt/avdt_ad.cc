@@ -25,6 +25,7 @@
 #define LOG_TAG "bluetooth-a2dp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
 #include <com_android_bluetooth_flags.h>
 #include <string.h>
 
@@ -536,6 +537,9 @@ void avdt_ad_open_req(uint8_t type, AvdtpCcb* p_ccb, AvdtpScb* p_scb, tAVDT_ROLE
     if (lcid == 0) {
       /* if connect req failed, call avdt_ad_tc_close_ind() */
       avdt_ad_tc_close_ind(p_tbl);
+      bluetooth::metrics::LogAvdtpL2capEvent(
+            p_ccb->peer_addr, bluetooth::metrics::EventType::AVDTP_L2CAP_CONNECTION_REQUEST_SENT,
+            tL2CAP_CONN::L2CAP_CONN_OTHER_ERROR);
       return;
     }
 
@@ -546,6 +550,10 @@ void avdt_ad_open_req(uint8_t type, AvdtpCcb* p_ccb, AvdtpScb* p_scb, tAVDT_ROLE
     avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].lcid = lcid;
     log::verbose("For ccb index: {} and tcid: {} store lcid 0x{:x}", avdt_ccb_to_idx(p_ccb),
                  p_tbl->tcid, lcid);
+
+    bluetooth::metrics::LogAvdtpL2capEvent(
+            p_ccb->peer_addr, bluetooth::metrics::EventType::AVDTP_L2CAP_CONNECTION_REQUEST_SENT,
+            tL2CAP_CONN::L2CAP_CONN_OK);
   }
 }
 
@@ -583,6 +591,15 @@ void avdt_ad_close_req(uint8_t type, AvdtpCcb* p_ccb, AvdtpScb* p_scb) {
       /* call l2cap disconnect req */
       if (!stack::l2cap::get_interface().L2CA_DisconnectReq(lcid)) {
         log::warn("Unable to disconnect L2CAP lcid: 0x{:04x}", lcid);
+        bluetooth::metrics::LogAvdtpL2capEvent(
+                p_ccb->peer_addr,
+                bluetooth::metrics::EventType::AVDTP_L2CAP_DISCONNECTION_REQUEST_SENT,
+                tL2CAP_CONN::L2CAP_CONN_OTHER_ERROR);
+      } else {
+        bluetooth::metrics::LogAvdtpL2capEvent(
+                p_ccb->peer_addr,
+                bluetooth::metrics::EventType::AVDTP_L2CAP_DISCONNECTION_REQUEST_SENT,
+                tL2CAP_CONN::L2CAP_CONN_OK);
       }
       avdt_ad_tc_close_ind(p_tbl);
   }

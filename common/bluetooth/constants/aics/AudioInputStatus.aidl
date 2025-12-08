@@ -18,7 +18,7 @@ package bluetooth.constants.aics;
 
 /**
  * See Audio Input Control Service 1.0 - 3.4 Audio Input Status
- * {@hide}
+ * @hide
  */
 @JavaDerive(toString = true)
 @Backing(type="byte")

@@ -17,6 +17,8 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 
 #include <cstdint>
 
@@ -27,8 +29,6 @@
 #include "stack/include/bt_name.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/hci_error_code.h"
-#include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 
 /* Discoverable modes */
 enum : uint16_t {
@@ -37,12 +37,6 @@ enum : uint16_t {
   BTM_GENERAL_DISCOVERABLE = (1 << 1),
   BTM_MAX_DISCOVERABLE = BTM_GENERAL_DISCOVERABLE,
   BTM_DISCOVERABLE_MASK = (BTM_LIMITED_DISCOVERABLE | BTM_GENERAL_DISCOVERABLE),
-  /* high byte for BLE Discoverable modes */
-  BTM_BLE_NON_DISCOVERABLE = 0x0000,
-  BTM_BLE_LIMITED_DISCOVERABLE = 0x0100,
-  BTM_BLE_GENERAL_DISCOVERABLE = 0x0200,
-  BTM_BLE_MAX_DISCOVERABLE = BTM_BLE_GENERAL_DISCOVERABLE,
-  BTM_BLE_DISCOVERABLE_MASK = (BTM_BLE_LIMITED_DISCOVERABLE | BTM_BLE_GENERAL_DISCOVERABLE),
 };
 
 /* Connectable modes */
@@ -50,11 +44,7 @@ enum : uint16_t {
   BTM_NON_CONNECTABLE = 0,
   BTM_CONNECTABLE = (1 << 0),
   BTM_CONNECTABLE_MASK = (BTM_NON_CONNECTABLE | BTM_CONNECTABLE),
-  /* high byte for BLE Connectable modes */
-  BTM_BLE_NON_CONNECTABLE = BTM_NON_CONNECTABLE,
-  BTM_BLE_CONNECTABLE = 0x0100,
-  BTM_BLE_MAX_CONNECTABLE = BTM_BLE_CONNECTABLE,
-  BTM_BLE_CONNECTABLE_MASK = (BTM_BLE_NON_CONNECTABLE | BTM_BLE_CONNECTABLE),
+
 };
 
 /* Inquiry modes
@@ -100,7 +90,7 @@ typedef struct {
   bool eir_complete_list;
   tBT_DEVICE_TYPE device_type;
   uint8_t inq_result_type;
-  uint8_t last_inq_result_from_type; /* Whether the last inquiry is from LE or BR/EDR */
+  tBT_TRANSPORT last_inq_result_transport; /* Whether the last inquiry is from LE or BR/EDR */
   tBLE_ADDR_TYPE ble_addr_type;
   uint16_t ble_evt_type;
   uint8_t ble_primary_phy;

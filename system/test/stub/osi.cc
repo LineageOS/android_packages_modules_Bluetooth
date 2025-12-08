@@ -129,7 +129,7 @@ int config_get_int(const config_t& config, const std::string& section, const std
 }
 std::string checksum_read(const char* filename) {
   inc_func_call_count(__func__);
-  return 0;
+  return "";
 }
 std::unique_ptr<config_t> config_new(const char* filename) {
   inc_func_call_count(__func__);
@@ -331,8 +331,18 @@ void* fixed_queue_try_remove_from_queue(fixed_queue_t* queue, void* data) {
 
 alarm_t* alarm_new(const char* name) {
   inc_func_call_count(__func__);
-  return (alarm_t*)new uint8_t[30];
+  bluetooth::log::debug("{}", name);
+
+  if (name == nullptr) {
+    return (alarm_t*)new uint8_t[30];
+  }
+
+  uint8_t* val = new uint8_t[60];
+  memset(val, 0, 60);
+  memcpy(val, name, strlen(name));
+  return (alarm_t*)val;
 }
+
 alarm_t* alarm_new_periodic(const char* name) {
   inc_func_call_count(__func__);
   return nullptr;
@@ -349,16 +359,14 @@ bool alarm_is_scheduled(const alarm_t* alarm) {
 
   auto iter = find_if(previous_fake_osi_alarms_.begin(), previous_fake_osi_alarms_.end(),
                       [alarm](auto const& a) {
-                        bluetooth::log::debug("iter: {} == {} ?", std::format_ptr(a.alarm),
-                                              std::format_ptr(alarm));
+                        bluetooth::log::debug("iter: {} == {} ?", (char*)(a.alarm), (char*)(alarm));
                         return a.alarm == alarm;
                       });
   if (iter != previous_fake_osi_alarms_.end()) {
     return true;
   }
 
-  bluetooth::log::debug(" {} == {} ?", std::format_ptr(fake_osi_alarm_set_on_mloop_.alarm),
-                        std::format_ptr(alarm));
+  bluetooth::log::debug(" {} == {} ?", (char*)(fake_osi_alarm_set_on_mloop_.alarm), (char*)(alarm));
 
   return fake_osi_alarm_set_on_mloop_.alarm == alarm;
 }
@@ -372,14 +380,15 @@ static void fake_osi_alarm_clear(alarm_t* alarm) {
     auto iter = find_if(previous_fake_osi_alarms_.begin(), previous_fake_osi_alarms_.end(),
                         [alarm](auto const& a) { return a.alarm == alarm; });
     if (iter != previous_fake_osi_alarms_.end()) {
-      bluetooth::log::debug(" clearing alarm {} ", std::format_ptr(iter->alarm));
+      bluetooth::log::debug(" clearing alarm {}({}) ", (char*)(alarm),
+                            std::format_ptr(iter->alarm));
       previous_fake_osi_alarms_.erase(iter);
       return;
     }
   }
 
   if (fake_osi_alarm_set_on_mloop_.alarm == alarm || alarm == nullptr) {
-    bluetooth::log::debug(" clearing alarm {} ", std::format_ptr(alarm));
+    bluetooth::log::debug(" clearing alarm {}({}) ", (char*)(alarm), std::format_ptr(alarm));
     fake_osi_alarm_set_on_mloop_.alarm = nullptr;
     fake_osi_alarm_set_on_mloop_.interval_ms = 0;
     fake_osi_alarm_set_on_mloop_.cb = nullptr;
@@ -387,8 +396,62 @@ static void fake_osi_alarm_clear(alarm_t* alarm) {
   }
 }
 
+/* Here is a set of helper test functions to check how many times given alarm was set
+ * and how many times was canceled.
+ */
+std::mutex alarm_mock_mutex_{};
+
+static std::map<std::string, int>& _get_alarm_set_mloop_mock_func_call_count_map() {
+  static std::map<std::string, int> alarm_set_mloop_mock_function_count_map;
+  return alarm_set_mloop_mock_function_count_map;
+}
+
+static void inc_alarm_set_mloop_mock_func_call_count_map(const char* alarm_name) {
+  std::lock_guard<std::mutex> lock(alarm_mock_mutex_);
+  _get_alarm_set_mloop_mock_func_call_count_map()[alarm_name]++;
+}
+
+int get_alarm_set_on_mloop_call_count(const char* alarm_name) {
+  std::lock_guard<std::mutex> lock(alarm_mock_mutex_);
+  return _get_alarm_set_mloop_mock_func_call_count_map()[alarm_name];
+}
+
+static std::map<std::string, int>& _get_alarm_cancel_mock_func_call_count_map() {
+  static std::map<std::string, int> alarm_cancel_mock_func_call_count_map;
+  return alarm_cancel_mock_func_call_count_map;
+}
+
+static void inc_alarm_cancel_mock_func_call_count_map(const char* alarm_name) {
+  std::lock_guard<std::mutex> lock(alarm_mock_mutex_);
+  _get_alarm_cancel_mock_func_call_count_map()[alarm_name]++;
+}
+
+int get_alarm_cancel_call_count(const char* alarm_name) {
+  std::lock_guard<std::mutex> lock(alarm_mock_mutex_);
+  return _get_alarm_cancel_mock_func_call_count_map()[alarm_name];
+}
+
+void reset_alarm_mock_function_count_map() {
+  std::lock_guard<std::mutex> lock(alarm_mock_mutex_);
+  _get_alarm_cancel_mock_func_call_count_map().clear();
+  _get_alarm_set_mloop_mock_func_call_count_map().clear();
+}
+
+void fake_osi_alarm_expired(struct fake_osi_alarm_set_on_mloop& fake_alarm, bool is_periodic) {
+  bluetooth::log::info("Simulating alarm {} to be fired, is periodic: {}", (char*)fake_alarm.alarm,
+                       is_periodic);
+  fake_alarm.cb(fake_alarm.data);
+
+  if (!is_periodic) {
+    fake_osi_alarm_clear(fake_alarm.alarm);
+  }
+}
+
 void alarm_cancel(alarm_t* alarm) {
   inc_func_call_count(__func__);
+  if (alarm != nullptr) {
+    inc_alarm_cancel_mock_func_call_count_map((char*)(alarm));
+  }
   fake_osi_alarm_clear(alarm);
 }
 
@@ -411,13 +474,15 @@ void alarm_set(alarm_t* alarm, uint64_t interval_ms, alarm_callback_t cb, void* 
 
 void alarm_set_on_mloop(alarm_t* alarm, uint64_t interval_ms, alarm_callback_t cb, void* data) {
   inc_func_call_count(__func__);
+  inc_alarm_set_mloop_mock_func_call_count_map((char*)(alarm));
 
   if (fake_osi_alarm_set_on_mloop_.alarm != nullptr) {
-    bluetooth::log::info("Queuing alarm {}", std::format_ptr(fake_osi_alarm_set_on_mloop_.alarm));
+    bluetooth::log::info("Queuing alarm {} ({})", (char*)(fake_osi_alarm_set_on_mloop_.alarm),
+                         std::format_ptr(fake_osi_alarm_set_on_mloop_.alarm));
     previous_fake_osi_alarms_.push_back(fake_osi_alarm_set_on_mloop_);
   }
 
-  bluetooth::log::info("Adding alarm {}", std::format_ptr(alarm));
+  bluetooth::log::info("Adding alarm {}({})", (char*)(alarm), std::format_ptr(alarm));
   fake_osi_alarm_set_on_mloop_.alarm = alarm;
   fake_osi_alarm_set_on_mloop_.interval_ms = interval_ms;
   fake_osi_alarm_set_on_mloop_.cb = cb;

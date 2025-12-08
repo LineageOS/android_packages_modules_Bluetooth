@@ -144,7 +144,7 @@ public:
   MOCK_METHOD(LeMaximumDataLength, GetLeMaximumDataLength, (), (const));
   MOCK_METHOD(uint16_t, GetLeMaximumAdvertisingDataLength, (), (const));
   MOCK_METHOD(uint16_t, GetLeSuggestedDefaultDataLength, (), (const));
-  MOCK_METHOD(uint8_t, GetLeNumberOfSupportedAdverisingSets, (), (const));
+  MOCK_METHOD(uint8_t, GetLeNumberOfSupportedAdvertisingSets, (), (const));
   MOCK_METHOD(uint8_t, GetLePeriodicAdvertiserListSize, (), (const));
   MOCK_METHOD(std::vector<uint8_t>, GetLocalSupportedBrEdrCodecIds, (), (const));
   MOCK_METHOD(VendorCapabilities, GetVendorCapabilities, (), (const));

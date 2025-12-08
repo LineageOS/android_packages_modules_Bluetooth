@@ -31,7 +31,7 @@
 #include <vector>
 
 #include "common/bind.h"
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/acl_manager_le.h"
 #include "hci/address.h"
 #include "hci/controller_mock.h"
 #include "hci/hci_layer.h"
@@ -345,7 +345,7 @@ TEST_F(LeScanningManagerTest, legacy_adv_scan_ind_report_with_scan_response) {
   // Scannable & not connectable!
   report.event_type_ = AdvertisingEventType::ADV_SCAN_IND;
 
-  if (com::android::bluetooth::flags::support_passive_scanning()) {
+  if (com_android_bluetooth_flags_support_passive_scanning()) {
     uint16_t extended_event_type = kLegacy | kScannable;
     EXPECT_CALL(mock_callbacks_, OnScanResult(extended_event_type, _, _, _, _, _, _, _, _, _));
   }
@@ -376,7 +376,7 @@ TEST_F(LeScanningManagerTest, legacy_adv_ind_report_with_scan_response) {
   LeAdvertisingResponse report = make_advertising_report();
   // Scannable & connectable!
   report.event_type_ = AdvertisingEventType::ADV_IND;
-  if (com::android::bluetooth::flags::support_passive_scanning()) {
+  if (com_android_bluetooth_flags_support_passive_scanning()) {
     uint16_t extended_event_type = kLegacy | kScannable | kConnectable;
     EXPECT_CALL(mock_callbacks_, OnScanResult(extended_event_type, _, _, _, _, _, _, _, _, _));
   }
@@ -415,10 +415,8 @@ TEST_F(LeScanningManagerExtendedTest, is_coded_phy_supported_test) {
   auto command_view = LeSetExtendedScanParametersView::Create(
           LeScanningCommandView::Create(test_hci_layer_->GetCommand()));
   ASSERT_TRUE(command_view.IsValid());
-  if (com::android::bluetooth::flags::phy_to_native()) {
-    ASSERT_EQ(command_view.GetScanningPhys(), scan_phy);
-    ASSERT_EQ(command_view.GetParameters().size(), static_cast<size_t>(1));
-  }
+  ASSERT_EQ(command_view.GetScanningPhys(), scan_phy);
+  ASSERT_EQ(command_view.GetParameters().size(), static_cast<size_t>(1));
 }
 
 TEST_F(LeScanningManagerExtendedTest, is_multiple_phy_supported_test) {
@@ -432,10 +430,8 @@ TEST_F(LeScanningManagerExtendedTest, is_multiple_phy_supported_test) {
   auto command_view = LeSetExtendedScanParametersView::Create(
           LeScanningCommandView::Create(test_hci_layer_->GetCommand()));
   ASSERT_TRUE(command_view.IsValid());
-  if (com::android::bluetooth::flags::phy_to_native()) {
-    ASSERT_EQ(command_view.GetScanningPhys(), scan_phy);
-    ASSERT_EQ(command_view.GetParameters().size(), static_cast<size_t>(2));
-  }
+  ASSERT_EQ(command_view.GetScanningPhys(), scan_phy);
+  ASSERT_EQ(command_view.GetParameters().size(), static_cast<size_t>(2));
 }
 
 TEST_F(LeScanningManagerAndroidHciTest, startup_teardown) {}
@@ -606,7 +602,7 @@ TEST_F(LeScanningManagerAndroidHciTest, scan_filter_add_ad_type_test) {
 }
 
 TEST_F(LeScanningManagerAndroidHciTest, read_batch_scan_result) {
-  le_scanning_manager->BatchScanConifgStorage(100, 0, 95, 0x00);
+  le_scanning_manager->BatchScanConfigStorage(100, 0, 95, 0x00);
   sync_client_handler();
   ASSERT_EQ(OpCode::LE_BATCH_SCAN, test_hci_layer_->GetCommand().GetOpCode());
   test_hci_layer_->IncomingEvent(
@@ -796,11 +792,9 @@ TEST_F(LeScanningManagerExtendedTest, on_pause_on_resume_test) {
 
   // Ensure scan is resumed (enabled)
   test_le_address_manager_->client_->OnResume();
-  if (com::android::bluetooth::flags::configure_scan_on_resume()) {
-    ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS, test_hci_layer_->GetCommand().GetOpCode());
-    test_hci_layer_->IncomingEvent(
-            LeSetExtendedScanParametersCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
-  }
+  ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+          LeSetExtendedScanParametersCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
   test_hci_layer_->IncomingEvent(
           LeSetExtendedScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
@@ -866,7 +860,7 @@ TEST_F(LeScanningManagerExtendedTest, drop_insignificant_bytes_test) {
   }
   adv_data.push_back(name_data);
   for (int i = 0; i != 5; ++i) {
-    adv_data.push_back({});  // pad with a few insigificant zeros
+    adv_data.push_back({});  // pad with a few insignificant zeros
   }
   advertisement_report.advertising_data_ = adv_data;
 
@@ -880,11 +874,11 @@ TEST_F(LeScanningManagerExtendedTest, drop_insignificant_bytes_test) {
   }
   adv_data = {extra_data};
   for (int i = 0; i != 5; ++i) {
-    adv_data.push_back({});  // pad with a few insigificant zeros
+    adv_data.push_back({});  // pad with a few insignificant zeros
   }
   scan_response_report.advertising_data_ = adv_data;
 
-  if (com::android::bluetooth::flags::support_passive_scanning()) {
+  if (com_android_bluetooth_flags_support_passive_scanning()) {
     auto result_without_scan_response = std::vector<uint8_t>();
     packet::BitInserter it(result_without_scan_response);
     flags_data.Serialize(it);

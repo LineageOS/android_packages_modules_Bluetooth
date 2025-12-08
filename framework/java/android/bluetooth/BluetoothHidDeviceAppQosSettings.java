@@ -17,6 +17,7 @@
 package android.bluetooth;
 
 import android.annotation.NonNull;
+import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -70,26 +71,32 @@ public final class BluetoothHidDeviceAppQosSettings implements Parcelable {
         mDelayVariation = delayVariation;
     }
 
+    @RequiresNoPermission
     public int getServiceType() {
         return mServiceType;
     }
 
+    @RequiresNoPermission
     public int getTokenRate() {
         return mTokenRate;
     }
 
+    @RequiresNoPermission
     public int getTokenBucketSize() {
         return mTokenBucketSize;
     }
 
+    @RequiresNoPermission
     public int getPeakBandwidth() {
         return mPeakBandwidth;
     }
 
+    @RequiresNoPermission
     public int getLatency() {
         return mLatency;
     }
 
+    @RequiresNoPermission
     public int getDelayVariation() {
         return mDelayVariation;
     }

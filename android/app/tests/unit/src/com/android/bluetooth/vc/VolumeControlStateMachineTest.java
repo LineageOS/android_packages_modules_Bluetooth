@@ -28,7 +28,6 @@ import static android.bluetooth.BluetoothVolumeControl.ACTION_CONNECTION_STATE_C
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.vc.VolumeControlStateMachine.MESSAGE_CONNECT;
 import static com.android.bluetooth.vc.VolumeControlStateMachine.MESSAGE_CONNECT_TIMEOUT;
@@ -47,11 +46,15 @@ import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
+import android.platform.test.annotations.EnableFlags;
+import android.platform.test.flag.junit.SetFlagsRule;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
+import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
@@ -68,6 +71,7 @@ import org.mockito.hamcrest.MockitoHamcrest;
 @RunWith(AndroidJUnit4.class)
 public class VolumeControlStateMachineTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private VolumeControlService mService;
     @Mock private VolumeControlNativeInterface mNativeInterface;
@@ -213,6 +217,37 @@ public class VolumeControlStateMachineTest {
 
         generateConnectionMessageFromNative(STATE_CONNECTED, STATE_DISCONNECTING);
         assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_CONNECTED);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_IGNORE_MULTIPLE_CONNECT_REQUEST_IN_BT_SERVICES)
+    public void ignoreConnectState_onConnectingState() {
+        generateConnectionMessageFromNative(STATE_CONNECTING, STATE_DISCONNECTED);
+
+        /* Those 2 connects should be ignored */
+        sendAndDispatchMessage(MESSAGE_CONNECT);
+        sendAndDispatchMessage(MESSAGE_CONNECT);
+
+        sendAndDispatchMessage(MESSAGE_DISCONNECT);
+        verifyConnectionStateIntent(STATE_DISCONNECTED, STATE_CONNECTING);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_IGNORE_MULTIPLE_CONNECT_REQUEST_IN_BT_SERVICES)
+    public void handleMultipleConnectDisconnect_onDisconnectingState() {
+        generateConnectionMessageFromNative(STATE_CONNECTED, STATE_DISCONNECTED);
+
+        sendAndDispatchMessage(MESSAGE_DISCONNECT);
+        verifyConnectionStateIntent(STATE_DISCONNECTING, STATE_CONNECTED);
+        assertThat(mStateMachine.getConnectionState()).isEqualTo(STATE_DISCONNECTING);
+
+        /* While being in disconnecting state defer the Connect message */
+        sendAndDispatchMessage(MESSAGE_CONNECT);
+        /* This one will be ignored and previous Connect will be removed  */
+        sendAndDispatchMessage(MESSAGE_DISCONNECT);
+
+        /* Now move to Disconnected state and make sure state is going to Disconnected state */
+        generateConnectionMessageFromNative(STATE_DISCONNECTED, STATE_DISCONNECTING);
     }
 
     private void sendAndDispatchMessage(int what, Object obj) {

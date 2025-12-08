@@ -58,6 +58,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -73,7 +74,7 @@ final class HapClientStateMachine extends StateMachine {
 
     static final int MESSAGE_CONNECT = 1;
     static final int MESSAGE_DISCONNECT = 2;
-    static final int MESSAGE_STACK_EVENT = 101;
+    static final int MESSAGE_CONNECTION_STATE_CHANGED = 102;
     @VisibleForTesting static final int MESSAGE_CONNECT_TIMEOUT = 201;
 
     @VisibleForTesting static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(30);
@@ -110,14 +111,14 @@ final class HapClientStateMachine extends StateMachine {
         addState(mConnected);
 
         setInitialState(mDisconnected);
-        start();
+        start(!Flags.hapOnMainLooper());
     }
 
     private static String messageWhatToString(int what) {
         return switch (what) {
             case MESSAGE_CONNECT -> "CONNECT";
             case MESSAGE_DISCONNECT -> "DISCONNECT";
-            case MESSAGE_STACK_EVENT -> "STACK_EVENT";
+            case MESSAGE_CONNECTION_STATE_CHANGED -> "CONNECTION_STATE_CHANGED";
             case MESSAGE_CONNECT_TIMEOUT -> "CONNECT_TIMEOUT";
             default -> Integer.toString(what);
         };
@@ -125,7 +126,7 @@ final class HapClientStateMachine extends StateMachine {
 
     public void doQuit() {
         Log.d(TAG, "doQuit for " + mDevice);
-        quitNow();
+        quitNow(!Flags.hapOnMainLooper());
     }
 
     int getConnectionState() {
@@ -209,7 +210,11 @@ final class HapClientStateMachine extends StateMachine {
             switch (message.what) {
                 case MESSAGE_CONNECT -> {
                     if (!mNativeInterface.connectHapClient(mDevice)) {
-                        Log.e(TAG, mStateLog + "native cannot connect");
+                        Log.e(TAG, mStateLog + "native error during connection");
+                        break;
+                    }
+                    if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
+                        transitionTo(mConnecting);
                         break;
                     }
                     if (mService.okToConnect(mDevice)) {
@@ -218,18 +223,8 @@ final class HapClientStateMachine extends StateMachine {
                         Log.w(TAG, mStateLog + "outgoing connect request rejected");
                     }
                 }
-                case MESSAGE_DISCONNECT -> {
-                    mNativeInterface.disconnectHapClient(mDevice);
-                }
-                case MESSAGE_STACK_EVENT -> {
-                    HapClientStackEvent event = (HapClientStackEvent) message.obj;
-                    switch (event.type) {
-                        case HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED -> {
-                            processConnectionEvent(event.valueInt1);
-                        }
-                        default -> Log.e(TAG, mStateLog + "ignoring stack event: " + event);
-                    }
-                }
+                case MESSAGE_DISCONNECT -> mNativeInterface.disconnectHapClient(mDevice);
+                case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(message.arg1);
                 default -> {
                     Log.e(TAG, mStateLog + "not handled: " + messageWhatToString(message.what));
                     return NOT_HANDLED;
@@ -251,7 +246,7 @@ final class HapClientStateMachine extends StateMachine {
                     }
                 }
                 case STATE_CONNECTED -> {
-                    Log.w(TAG, "HearingAccess Connected from Disconnected state: " + mDevice);
+                    Log.w(TAG, mStateLog + "HearingAccess Connected from Disconnected state");
                     if (mService.okToConnect(mDevice)) {
                         Log.w(TAG, mStateLog + "Incoming connected transition accepted");
                         transitionTo(mConnected);
@@ -289,33 +284,23 @@ final class HapClientStateMachine extends StateMachine {
             Log.d(TAG, mStateLog + "processMessage: " + messageWhatToString(message.what));
 
             switch (message.what) {
-                case MESSAGE_CONNECT -> {
-                    Log.w(TAG, "Connecting: CONNECT ignored: " + mDevice);
-                }
+                case MESSAGE_CONNECT -> Log.w(TAG, mStateLog + "CONNECT ignored ");
+
                 case MESSAGE_CONNECT_TIMEOUT -> {
                     Log.w(TAG, mStateLog + "connection timeout");
                     mNativeInterface.disconnectHapClient(mDevice);
-                    HapClientStackEvent disconnectEvent =
-                            new HapClientStackEvent(
-                                    HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-                    disconnectEvent.device = mDevice;
-                    disconnectEvent.valueInt1 = STATE_DISCONNECTED;
-                    sendMessage(MESSAGE_STACK_EVENT, disconnectEvent);
+                    if (Flags.hapOnMainLooper()) {
+                        transitionTo(mDisconnected);
+                        break;
+                    }
+                    sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_DISCONNECTED);
                 }
                 case MESSAGE_DISCONNECT -> {
                     Log.d(TAG, mStateLog + "connection canceled");
                     mNativeInterface.disconnectHapClient(mDevice);
                     transitionTo(mDisconnected);
                 }
-                case MESSAGE_STACK_EVENT -> {
-                    HapClientStackEvent event = (HapClientStackEvent) message.obj;
-                    switch (event.type) {
-                        case HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED -> {
-                            processConnectionEvent(event.valueInt1);
-                        }
-                        default -> Log.e(TAG, mStateLog + "ignoring stack event: " + event);
-                    }
-                }
+                case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(message.arg1);
                 default -> {
                     Log.e(TAG, mStateLog + "not handled: " + messageWhatToString(message.what));
                     return NOT_HANDLED;
@@ -365,27 +350,39 @@ final class HapClientStateMachine extends StateMachine {
             Log.d(TAG, mStateLog + "processMessage: " + messageWhatToString(message.what));
 
             switch (message.what) {
-                case MESSAGE_CONNECT, MESSAGE_DISCONNECT -> deferMessage(message);
+                case MESSAGE_CONNECT -> {
+                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
+                        if (!hasDeferredMessages(MESSAGE_CONNECT)) {
+                            deferMessage(message);
+                        } else {
+                            Log.w(TAG, mStateLog + "CONNECT already scheduled");
+                        }
+                    } else {
+                        deferMessage(message);
+                    }
+                }
+                case MESSAGE_DISCONNECT -> {
+                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
+                        if (hasDeferredMessages(MESSAGE_CONNECT)) {
+                            Log.w(TAG, mStateLog + "removing scheduled CONNECT");
+                            removeDeferredMessages(MESSAGE_CONNECT);
+                        } else {
+                            Log.w(TAG, mStateLog + "ignore DISCONNECT");
+                        }
+                    } else {
+                        deferMessage(message);
+                    }
+                }
                 case MESSAGE_CONNECT_TIMEOUT -> {
                     Log.w(TAG, mStateLog + "connection timeout");
                     mNativeInterface.disconnectHapClient(mDevice);
-
-                    HapClientStackEvent disconnectEvent =
-                            new HapClientStackEvent(
-                                    HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-                    disconnectEvent.device = mDevice;
-                    disconnectEvent.valueInt1 = STATE_DISCONNECTED;
-                    sendMessage(MESSAGE_STACK_EVENT, disconnectEvent);
-                }
-                case MESSAGE_STACK_EVENT -> {
-                    HapClientStackEvent event = (HapClientStackEvent) message.obj;
-                    switch (event.type) {
-                        case HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED -> {
-                            processConnectionEvent(event.valueInt1);
-                        }
-                        default -> Log.e(TAG, mStateLog + "ignoring stack event: " + event);
+                    if (Flags.hapOnMainLooper()) {
+                        transitionTo(mDisconnected);
+                        break;
                     }
+                    sendMessage(MESSAGE_CONNECTION_STATE_CHANGED, STATE_DISCONNECTED);
                 }
+                case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(message.arg1);
                 default -> {
                     Log.e(TAG, mStateLog + "not handled: " + messageWhatToString(message.what));
                     return NOT_HANDLED;
@@ -458,14 +455,7 @@ final class HapClientStateMachine extends StateMachine {
                     }
                     transitionTo(mDisconnecting);
                 }
-                case MESSAGE_STACK_EVENT -> {
-                    HapClientStackEvent event = (HapClientStackEvent) message.obj;
-                    switch (event.type) {
-                        case HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED ->
-                                processConnectionEvent(event.valueInt1);
-                        default -> Log.e(TAG, mStateLog + "ignoring stack event: " + event);
-                    }
-                }
+                case MESSAGE_CONNECTION_STATE_CHANGED -> processConnectionEvent(message.arg1);
                 default -> {
                     Log.e(TAG, mStateLog + "not handled: " + messageWhatToString(message.what));
                     return NOT_HANDLED;

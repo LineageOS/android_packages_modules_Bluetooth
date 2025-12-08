@@ -19,6 +19,7 @@ import struct
 from bumble import core
 from bumble import device
 from bumble import gatt
+from bumble import gatt_client
 from bumble import hci
 from mobly import test_runner
 from mobly import signals
@@ -27,9 +28,20 @@ from navi.bumble_ext import rap
 from navi.tests import navi_test_base
 from navi.utils import android_constants
 from navi.utils import bl4a_api
+from navi.utils import constants
 
 _DEFAULT_TIMEOUT_SECEONDS = 10.0
 _DEFAULT_ADVERTISING_INTERVAL = 100
+
+# From
+# https://cs.android.com/android/platform/superproject/main/+/main:packages/modules/Bluetooth/system/gd/hci/distance_measurement_manager.cc.
+_CS_TONE_ANTENNA_CONFIG_MAPPING_TABLE = [
+    [0, 4, 5, 6],
+    [1, 7, 7, 7],
+    [2, 7, 7, 7],
+    [3, 7, 7, 7],
+]
+_CS_PREFERRED_PEER_ANTENNA_MAPPING_TABLE = [1, 1, 1, 1, 3, 7, 15, 3]
 
 
 class _RangingService(gatt.TemplateService):
@@ -143,6 +155,30 @@ class _RangingService(gatt.TemplateService):
             )
 
 
+class _RangingServiceClient(gatt_client.ProfileServiceProxy):
+    """Ranging Service Client."""
+
+    SERVICE_CLASS = _RangingService
+
+    def __init__(self, service_proxy: gatt_client.ServiceProxy) -> None:
+        self.service_proxy = service_proxy
+        self.ras_features_characteristic = (service_proxy.get_required_characteristic_by_uuid(
+            rap.GATT_RAS_FEATURES_CHARACTERISTIC))
+        self.real_time_ranging_data_characteristic = (
+            service_proxy.get_required_characteristic_by_uuid(
+                rap.GATT_REAL_TIME_RANGING_DATA_CHARACTERISTIC))
+        self.on_demand_ranging_data_characteristic = (
+            service_proxy.get_required_characteristic_by_uuid(
+                rap.GATT_ON_DEMAND_RANGING_DATA_CHARACTERISTIC))
+        self.ras_control_point_characteristic = (service_proxy.get_required_characteristic_by_uuid(
+            rap.GATT_RAS_CONTROL_POINT_CHARACTERISTIC))
+        self.ranging_data_ready_characteristic = (service_proxy.get_required_characteristic_by_uuid(
+            rap.GATT_RANGING_DATA_READY_CHARACTERISTIC))
+        self.ranging_data_overwritten_characteristic = (
+            service_proxy.get_required_characteristic_by_uuid(
+                rap.GATT_RANGING_DATA_OVERWRITTEN_CHARACTERISTIC))
+
+
 class DistanceMeasurementTest(navi_test_base.TwoDevicesTestBase):
     dut_supported_methods = list[android_constants.DistanceMeasurementMethodId]()
     active_procedure_counter = dict[int, int]()
@@ -208,7 +244,13 @@ class DistanceMeasurementTest(navi_test_base.TwoDevicesTestBase):
         self.logger.info('DUT supported methods: %s', self.dut_supported_methods)
         if not self.dut_supported_methods:
             raise signals.TestAbortClass('DUT does not support any distance measurement method.')
-        self.ref.config.channel_sounding_enabled = True
+
+        # If DUT supports Channel Sounding, check if the REF device supports it.
+        if (android_constants.DistanceMeasurementMethodId.CHANNEL_SOUNDING
+                in self.dut_supported_methods):
+            async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECEONDS):
+                self.ref.config.channel_sounding_enabled = (
+                    self.ref.device.host.supports_le_features(hci.LeFeatureMask.CHANNEL_SOUNDING))
 
     async def async_setup_test(self) -> None:
         await super().async_setup_test()
@@ -265,6 +307,8 @@ class DistanceMeasurementTest(navi_test_base.TwoDevicesTestBase):
         if (android_constants.DistanceMeasurementMethodId.CHANNEL_SOUNDING
                 not in self.dut_supported_methods):
             self.skipTest('Channel Sounding is not supported, skip the test.')
+        if not self.ref.config.channel_sounding_enabled:
+            self.skipTest('Channel Sounding is not enabled on the REF device.')
 
         ras = _RangingService(ras_features=rap.RasFeatures.REAL_TIME_RANGING_DATA)
         self.ref.device.gatt_server.add_service(ras)
@@ -335,6 +379,69 @@ class DistanceMeasurementTest(navi_test_base.TwoDevicesTestBase):
         self.logger.info('[DUT] Wait for distance measurement result')
         result = await distance_measurement.wait_for_event(bl4a_api.DistanceMeasurementResult)
         self.logger.info('Distance: %.2fm', result.result_meters)
+
+    async def test_cs_ranging_incoming(self) -> None:
+        """Test incoming Channel Sounding ranging.
+
+    Test steps:
+      1. Setup connection.
+      2. Setup pairing.
+      3. Subscribe to real-time ranging data from REF.
+      4. Start CS procedure on the REF device.
+      5. Wait for ranging data on the REF device.
+    """
+        if (android_constants.DistanceMeasurementMethodId.CHANNEL_SOUNDING
+                not in self.dut_supported_methods or
+                not (ref_cs_capabilities := self.ref.device.cs_capabilities)):
+            self.skipTest('Channel Sounding is not supported, skip the test.')
+        if not self.ref.config.channel_sounding_enabled:
+            self.skipTest('Channel Sounding is not enabled on the REF device.')
+
+        # Pairing from REF.
+        await self.le_connect_and_pair(
+            ref_address_type=hci.OwnAddressType.RANDOM,
+            direction=constants.Direction.INCOMING,
+        )
+        if not (ref_dut_acl := self.ref.device.find_connection_by_bd_addr(
+                hci.Address(self.dut.address),
+                transport=core.BT_LE_TRANSPORT,
+        )):
+            self.fail('Failed to find ACL connection between DUT and REF.')
+
+        async with device.Peer(ref_dut_acl) as peer:
+            ras = peer.create_service_proxy(_RangingServiceClient)
+            if not ras:
+                self.fail('Failed to create Ranging Service Client.')
+
+        real_time_ranging_data = asyncio.Queue[bytes]()
+        await ras.real_time_ranging_data_characteristic.subscribe(real_time_ranging_data.put_nowait)
+
+        self.logger.info('[REF] Setup Channel Sounding')
+        async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECEONDS):
+            dut_cs_capabilities = await self.ref.device.get_remote_cs_capabilities(ref_dut_acl)
+            await self.ref.device.set_default_cs_settings(ref_dut_acl)
+            config = await self.ref.device.create_cs_config(ref_dut_acl)
+            await self.ref.device.enable_cs_security(ref_dut_acl)
+            tone_antenna_config_selection = _CS_TONE_ANTENNA_CONFIG_MAPPING_TABLE[
+                ref_cs_capabilities.num_antennas_supported -
+                1][dut_cs_capabilities.num_antennas_supported - 1]
+            await self.ref.device.set_cs_procedure_parameters(
+                connection=ref_dut_acl,
+                config=config,
+                tone_antenna_config_selection=tone_antenna_config_selection,
+                preferred_peer_antenna=_CS_PREFERRED_PEER_ANTENNA_MAPPING_TABLE[
+                    tone_antenna_config_selection],
+            )
+
+        self.logger.info('[REF] Enable CS Procedure')
+        async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECEONDS):
+            await self.ref.device.enable_cs_procedure(connection=ref_dut_acl, config=config)
+
+        async with self.assert_not_timeout(
+                _DEFAULT_TIMEOUT_SECEONDS,
+                msg='[REF] Wait for ranging data',
+        ):
+            await real_time_ranging_data.get()
 
 
 if __name__ == '__main__':

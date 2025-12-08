@@ -1,0 +1,47 @@
+module: "android.sysprop.bluetooth.Tmap"
+owner: Platform
+
+# Whether the TMAP (Telephony and Media Audio Profile) Call Gateway (GG) role is enabled on this
+# device. Set by vendors overlay, read at Bluetooth initialization. The follow framework profiles
+# will be enabled as a result:
+#   * BAP_UNICAST_CLIENT
+#   * CCP_CALL_CONTROL_SERVER
+#   * VCP_VOLUME_CONTROLLER
+#   * CSIP_SET_COORDINATOR
+prop {
+    api_name: "isProfileTmapCallGatewayEnabled"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.profile.tmap.call_gateway.enabled"
+}
+
+# Whether the TMAP (Telephony and Media Audio Profile) Unicast Media Sender (UMS) role is enabled
+# on this device. Set by vendors overlay, read at Bluetooth initialization. The follow framework
+# profiles will be enabled as a result:
+#   * BAP_UNICAST_CLIENT
+#   * MCP_MEDIA_CONTROL_SERVER
+#   * VCP_VOLUME_CONTROLLER
+#   * CSIP_SET_COORDINATOR
+prop {
+    api_name: "isProfileTmapUnicastMediaSenderEnabled"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.profile.tmap.unicast_media_sender.enabled"
+}
+
+# Whether the TMAP (Telephony and Media Audio Profile) Broadcast Media Sender (BMS) role is enabled
+# on this device. Set by vendors overlay, read at Bluetooth initialization. The follow framework
+# profiles will be enabled as a result:
+#   * BAP_BROADCAST_SOURCE
+#   * BAP_BROADCAST_ASSISTANT
+#   * VCP_VOLUME_CONTROLLER
+#   * CSIP_SET_COORDINATOR
+prop {
+    api_name: "isProfileTmapBroadcastMediaSenderEnabled"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.profile.tmap.broadcast_media_sender.enabled"
+}

@@ -19,6 +19,8 @@
 #define LOG_TAG "bt_srvc"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 
 #include "gatt_api.h"
@@ -29,8 +31,6 @@
 #include "srvc_eng_int.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -89,7 +89,7 @@ static void dis_gatt_c_read_dis_value_cmpl(tCONN_ID conn_id) {
     dis_cb.p_read_dis_cback = NULL;
   }
 
-  if (com::android::bluetooth::flags::queue_dis_requests()) {
+  if (com_android_bluetooth_flags_queue_dis_requests()) {
     while (!dis_cb.pend_reqs.empty()) {
       tDIS_REQ req = dis_cb.pend_reqs.front();
       dis_cb.pend_reqs.pop();
@@ -244,7 +244,7 @@ bool DIS_ReadDISInfo(const RawAddress& peer_bda, tDIS_READ_CBACK* p_cback, tDIS_
   }
 
   if (dis_cb.dis_read_uuid_idx != 0xff) {
-    if (!com::android::bluetooth::flags::queue_dis_requests()) {
+    if (!com_android_bluetooth_flags_queue_dis_requests()) {
       /* For now we only handle one at a time */
       return false;
     }
@@ -259,7 +259,7 @@ bool DIS_ReadDISInfo(const RawAddress& peer_bda, tDIS_READ_CBACK* p_cback, tDIS_
     return true;
   }
 
-  if (com::android::bluetooth::flags::queue_dis_requests()) {
+  if (com_android_bluetooth_flags_queue_dis_requests()) {
     /* For now, we don't serve the request if GATT isn't connected.
      * We need to call GATT_Connect and implement the handler for both success and failure case. */
     if (!GATT_GetConnIdIfConnected(srvc_eng_cb.gatt_if, peer_bda, &conn_id, BT_TRANSPORT_LE)) {
@@ -278,7 +278,7 @@ bool DIS_ReadDISInfo(const RawAddress& peer_bda, tDIS_READ_CBACK* p_cback, tDIS_
   /* need to enhance it as multiple service is needed */
   srvc_eng_request_channel(peer_bda, SRVC_ID_DIS);
 
-  if (!com::android::bluetooth::flags::queue_dis_requests()) {
+  if (!com_android_bluetooth_flags_queue_dis_requests()) {
     if (!GATT_GetConnIdIfConnected(srvc_eng_cb.gatt_if, peer_bda, &conn_id, BT_TRANSPORT_LE)) {
       conn_id = GATT_INVALID_CONN_ID;
     }

@@ -15,11 +15,12 @@
 
 package com.android.bluetooth.map;
 
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
-import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -35,12 +36,15 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.SignedLongLong;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.HeaderSet;
 import com.android.obex.Operation;
 import com.android.obex.ResponseCodes;
+import com.android.obex.ServerOperation;
 import com.android.obex.ServerRequestHandler;
 
 import java.io.IOException;
@@ -103,7 +107,8 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
 
     private static final int MAS_INSTANCE_INFORMATION_LENGTH = 200;
 
-    private final Context mContext;
+    private final AdapterService mAdapterService;
+    private final BluetoothMapService mMapService;
 
     private BluetoothMapFolderElement mCurrentFolder;
     private BluetoothMapContentObserver mObserver = null;
@@ -127,7 +132,8 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
     private ContentProviderClient mProviderClient = null;
 
     public BluetoothMapObexServer(
-            Context context,
+            AdapterService adapterService,
+            BluetoothMapService mapService,
             Handler callback,
             BluetoothMapContentObserver observer,
             BluetoothMapMasInstance mas,
@@ -135,7 +141,8 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
             boolean enableSmsMms)
             throws RemoteException {
         super();
-        mContext = context;
+        mAdapterService = requireNonNull(adapterService);
+        mMapService = mapService;
         mCallback = callback;
         mObserver = observer;
         mEnableSmsMms = enableSmsMms;
@@ -147,7 +154,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
         if (account != null && account.getProviderAuthority() != null) {
             mAccountId = account.getAccountId();
             mAuthority = account.getProviderAuthority();
-            mResolver = mContext.getContentResolver();
+            mResolver = mAdapterService.getContentResolver();
             Log.d(TAG, "BluetoothMapObexServer(): accountId=" + mAccountId);
             mBaseUriString = account.mBase_uri + "/";
             Log.d(TAG, "BluetoothMapObexServer(): baseUri=" + mBaseUriString);
@@ -163,7 +170,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                                 mCurrentFolder to root folder */
         mObserver.setFolderStructure(mCurrentFolder.getRoot());
 
-        mOutContent = new BluetoothMapContent(mContext, mAccount, mMasInstance);
+        mOutContent = new BluetoothMapContent(mAdapterService, mMapService, mAccount, mMasInstance);
     }
 
     /** */
@@ -384,7 +391,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
             mMessageVersion = BluetoothMapUtils.MAP_V11_STR;
         }
 
-        Log.v(TAG, "onConnect(): uuid is ok, will send out " + "MSG_SESSION_ESTABLISHED msg.");
+        Log.v(TAG, "onConnect(): uuid is ok, will send out MSG_SESSION_ESTABLISHED msg.");
 
         if (mCallback != null) {
             Message msg = Message.obtain(mCallback);
@@ -418,7 +425,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
     }
 
     private boolean isUserUnlocked() {
-        UserManager manager = mContext.getSystemService(UserManager.class);
+        UserManager manager = mAdapterService.getSystemService(UserManager.class);
         return (manager == null || manager.isUserUnlocked());
     }
 
@@ -442,6 +449,27 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                 appParams = new BluetoothMapAppParams(appParamRaw);
             }
             Log.d(TAG, "type = " + type + ", name = " + name);
+
+            boolean shouldContinue =
+                    Flags.mapContinueOperation()
+                            && (op instanceof ServerOperation)
+                            && !((ServerOperation) op).finalBitSet;
+            if (shouldContinue) {
+                int continueCnt = 0;
+                while (((ServerOperation) op).continueOperation(true, true)) {
+                    // Too many continue operations, could be an error.
+                    if (++continueCnt >= 100) {
+                        return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
+                    }
+                }
+                if (appParamRaw == null) {
+                    request = op.getReceivedHeader();
+                    appParamRaw = (byte[]) request.getHeader(HeaderSet.APPLICATION_PARAMETER);
+                    if (appParamRaw != null) {
+                        appParams = new BluetoothMapAppParams(appParamRaw);
+                    }
+                }
+            }
             if (type.equals(TYPE_MESSAGE_UPDATE)) {
                 Log.v(TAG, "TYPE_MESSAGE_UPDATE:");
                 return updateInbox();
@@ -700,7 +728,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
             BluetoothMapbMessage message;
             bMsgStream = op.openInputStream();
             // Decode the messageBody
-            message = BluetoothMapbMessage.parse(bMsgStream, appParams.getCharset());
+            message = BluetoothMapbMessage.parse(mMapService, bMsgStream, appParams.getCharset());
             message.setVersionString(messageVersion);
             Log.d(
                     TAG,
@@ -714,7 +742,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                             + message.getType());
             if (message.getType().equals(TYPE.SMS_GSM) || message.getType().equals(TYPE.SMS_CDMA)) {
                 // Convert messages to the default network type.
-                TelephonyManager tm = mContext.getSystemService(TelephonyManager.class);
+                TelephonyManager tm = mAdapterService.getSystemService(TelephonyManager.class);
                 if (tm.getPhoneType() == TelephonyManager.PHONE_TYPE_GSM) {
                     message.setType(TYPE.SMS_GSM);
                 } else if (tm.getPhoneType() == TelephonyManager.PHONE_TYPE_CDMA) {

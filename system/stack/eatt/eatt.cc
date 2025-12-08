@@ -18,6 +18,7 @@
 #include "stack/eatt/eatt.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <memory>
 #include <vector>
@@ -27,7 +28,6 @@
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/l2cdefs.h"
-#include "types/raw_address.h"
 
 using bluetooth::eatt::eatt_impl;
 

@@ -32,9 +32,10 @@
 //       for this effort.  This compilation unit may compile as-is, or
 //       may need attention to prune from (or add to ) the inclusion set.
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
+
 #include "stack/include/avrc_api.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 // Original usings
 using bluetooth::Uuid;
@@ -107,6 +108,15 @@ struct AVRC_RemoveRecord {
   uint16_t operator()(uint32_t sdp_handle) { return body(sdp_handle); }
 };
 extern struct AVRC_RemoveRecord AVRC_RemoveRecord;
+
+// Name: AVRC_ResetServiceUuid
+// Params: void
+// Return: void
+struct AVRC_ResetServiceUuid {
+  std::function<void(void)> body{[](void) {}};
+  void operator()(void) { body(); }
+};
+extern struct AVRC_ResetServiceUuid AVRC_ResetServiceUuid;
 
 }  // namespace stack_avrc_sdp
 }  // namespace mock

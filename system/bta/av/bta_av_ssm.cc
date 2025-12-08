@@ -25,6 +25,7 @@
 #define LOG_TAG "bluetooth-a2dp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -48,6 +49,22 @@ enum {
   BTA_AV_CLOSING_SST
 };
 
+static void bta_av_ssm_metric_event(const RawAddress& bd_addr, uint16_t event) {
+  switch (event) {
+    case BTA_AV_STR_DISC_FAIL_EVT:
+      bluetooth::metrics::LogAvdtpDiscFailEvent(bd_addr);
+      break;
+    case BTA_AV_STR_GETCAP_FAIL_EVT:
+      bluetooth::metrics::LogAvdtpGetCapFailEvent(bd_addr);
+      break;
+    case BTA_AV_STR_OPEN_FAIL_EVT:
+      bluetooth::metrics::LogAvdtpOpenFailEvent(bd_addr);
+      break;
+    default:
+      break;
+  }
+}
+
 /*******************************************************************************
  *
  * Function         bta_av_ssm_execute
@@ -66,6 +83,7 @@ void bta_av_ssm_execute(tBTA_AV_SCB* p_scb, uint16_t event, tBTA_AV_DATA* p_data
   }
 
   uint8_t previous_state = p_scb->state;
+  bool log_metric_event = false;
   tBTA_AV_ACT event_handler1 = nullptr;
   tBTA_AV_ACT event_handler2 = nullptr;
 
@@ -193,6 +211,7 @@ void bta_av_ssm_execute(tBTA_AV_SCB* p_scb, uint16_t event, tBTA_AV_DATA* p_data
           event_handler1 = &bta_av_disc_results;
           break;
         case BTA_AV_STR_DISC_FAIL_EVT:
+          log_metric_event = true;
           p_scb->state = BTA_AV_CLOSING_SST;
           event_handler1 = &bta_av_open_failed;
           break;
@@ -200,6 +219,7 @@ void bta_av_ssm_execute(tBTA_AV_SCB* p_scb, uint16_t event, tBTA_AV_DATA* p_data
           event_handler1 = &bta_av_getcap_results;
           break;
         case BTA_AV_STR_GETCAP_FAIL_EVT:
+          log_metric_event = true;
           p_scb->state = BTA_AV_CLOSING_SST;
           event_handler1 = &bta_av_open_failed;
           break;
@@ -209,6 +229,7 @@ void bta_av_ssm_execute(tBTA_AV_SCB* p_scb, uint16_t event, tBTA_AV_DATA* p_data
           event_handler2 = &bta_av_str_opened;
           break;
         case BTA_AV_STR_OPEN_FAIL_EVT:
+          log_metric_event = true;
           p_scb->state = BTA_AV_CLOSING_SST;
           event_handler1 = &bta_av_open_failed;
           break;
@@ -448,6 +469,10 @@ void bta_av_ssm_execute(tBTA_AV_SCB* p_scb, uint16_t event, tBTA_AV_DATA* p_data
     log::verbose("peer {} p_scb={:#x}({}) AV event=0x{:x}({}) state={}({})", p_scb->PeerAddress(),
                  p_scb->hndl, std::format_ptr(p_scb), event, bta_av_evt_code(event), p_scb->state,
                  bta_av_sst_code(p_scb->state));
+  }
+
+  if (log_metric_event) {
+    bta_av_ssm_metric_event(p_scb->PeerAddress(), event);
   }
 
   if (event_handler1 != nullptr) {

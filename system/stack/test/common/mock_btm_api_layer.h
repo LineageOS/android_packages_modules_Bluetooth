@@ -16,10 +16,9 @@
  */
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
 #include <gmock/gmock.h>
-
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace manager {

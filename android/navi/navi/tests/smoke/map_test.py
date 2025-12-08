@@ -13,6 +13,7 @@
 #  limitations under the License.
 """Tests for Message Access Profile (MAP) Server implementation on Android."""
 
+import asyncio
 import dataclasses
 import datetime
 import enum
@@ -30,7 +31,6 @@ from navi.bumble_ext import rfcomm
 from navi.tests import navi_test_base
 from navi.utils import android_constants
 from navi.utils import bl4a_api
-from navi.utils import retry
 
 _AppParams: TypeAlias = message_access.ApplicationParameters
 _AppParamValue: TypeAlias = message_access.ApplicationParameterValue
@@ -57,8 +57,8 @@ class _SmsMessage:
 
 _DEFAULT_TIMEOUT_SECONDS = 30.0
 _MAX_OBEX_PACKET_LENGTH = 8192
-_PROPERTY_MAP_SERVER_ENABLED = 'bluetooth.profile.map.server.enabled'
-_MMSSMS_DB_PATH = ('/data/data/com.android.providers.telephony/databases/mmssms.db')
+_PROPERTY_MAP_SERVER_ENABLED = "bluetooth.profile.map.server.enabled"
+_MMSSMS_DB_PATH = ("/data/data/com.android.providers.telephony/databases/mmssms.db")
 _CONNECT_REQUEST = obex.ConnectRequest(
     obex_version_number=obex.Version.V_1_0,
     flags=0,
@@ -73,8 +73,8 @@ _CONNECT_REQUEST = obex.ConnectRequest(
 _SAMPLE_MESSAGE = _SmsMessage(
     thread_id=1,
     date=int(datetime.datetime(year=2024, month=10, day=1).timestamp() * 1000),
-    address='0987654321',
-    body='Hi, 你好',
+    address="0987654321",
+    body="Hi, 你好",
 )
 
 
@@ -84,31 +84,18 @@ class _DisconnectVariant(enum.IntEnum):
 
 
 class MapTest(navi_test_base.TwoDevicesTestBase):
-    ref_rfcomm_manager: rfcomm.Manager
 
     @override
     async def async_setup_class(self) -> None:
         await super().async_setup_class()
 
         if self.dut.device.is_emulator:
-            self.dut.setprop(_PROPERTY_MAP_SERVER_ENABLED, 'true')
+            self.dut.setprop(_PROPERTY_MAP_SERVER_ENABLED, "true")
 
-        if self.dut.getprop(_PROPERTY_MAP_SERVER_ENABLED) != 'true':
-            raise signals.TestAbortClass('MAP server is not enabled on DUT.')
+        if self.dut.getprop(_PROPERTY_MAP_SERVER_ENABLED) != "true":
+            raise signals.TestAbortClass("MAP server is not enabled on DUT.")
 
-        await self._setup_paired_devices()
-        self.ref_rfcomm_manager = rfcomm.Manager(self.ref.device)
-
-    @retry.retry_on_exception()
     async def _setup_paired_devices(self) -> None:
-        # Reset devices.
-        self.dut.bt.enable()
-        self.dut.bt.factoryReset()
-        async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
-            await self.ref.reset()
-
-        self.ref.device.sdp_service_records = {}
-
         # Setup pairing and terminate connection.
         with self.dut.bl4a.register_callback(_Module.ADAPTER) as dut_cb:
             await self.classic_connect_and_pair()
@@ -121,44 +108,43 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
                 ),)
 
     @override
-    @retry.retry_on_exception()
     async def async_setup_test(self) -> None:
-        # Restart Bluetooth on DUT to clear any stale state.
-        self.dut.bt.disable()
-        self.dut.bt.enable()
         self._clear_sms_messages()
+        await super().async_setup_test()
+        await self._setup_paired_devices()
 
     async def _make_mas_client_from_ref(self) -> obex.ClientSession:
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
-            self.logger.info('[REF] Connect to DUT.')
+            self.logger.info("[REF] Connect to DUT.")
             ref_dut_acl = await self.ref.device.connect(self.dut.address,
                                                         transport=core.BT_BR_EDR_TRANSPORT)
 
-            self.logger.info('[REF] Authenticate and encrypt.')
+            self.logger.info("[REF] Authenticate and encrypt.")
             await ref_dut_acl.authenticate()
             await ref_dut_acl.encrypt()
 
-            self.logger.info('[REF] Find SDP record.')
+            self.logger.info("[REF] Find SDP record.")
             sdp_info = await message_access.MasSdpInfo.find(ref_dut_acl)
             if not sdp_info:
-                self.fail('Failed to find SDP record for MAP MAS.')
+                self.fail("Failed to find SDP record for MAP MAS.")
 
-            self.logger.info('[REF] Connect RFCOMM.')
-            rfcomm_client = await self.ref_rfcomm_manager.connect(ref_dut_acl)
-            self.logger.info('[REF] Open DLC to %d.', sdp_info.rfcomm_channel)
+            ref_rfcomm_manager = rfcomm.Manager.find_or_create(self.ref.device)
+            self.logger.info("[REF] Connect RFCOMM.")
+            rfcomm_client = await ref_rfcomm_manager.connect(ref_dut_acl)
+            self.logger.info("[REF] Open DLC to %d.", sdp_info.rfcomm_channel)
             ref_dlc = await rfcomm_client.open_dlc(sdp_info.rfcomm_channel)
             return obex.ClientSession(ref_dlc)
 
     async def _make_connected_mas_client_from_ref(self,) -> tuple[obex.ClientSession, int]:
         with self.dut.bl4a.register_callback(_Module.MAP) as dut_cb:
             client = await self._make_mas_client_from_ref()
-            self.logger.info('[REF] Send connect request.')
+            self.logger.info("[REF] Send connect request.")
             async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
                 response = await client.send_request(_CONNECT_REQUEST)
             self.assertEqual(response.response_code, obex.ResponseCode.SUCCESS)
             if not (connection_id := response.headers.connection_id):
-                self.fail('Failed to get connection ID from connect response.')
-            self.logger.info('[DUT] Wait for profile connected.')
+                self.fail("Failed to get connection ID from connect response.")
+            self.logger.info("[DUT] Wait for profile connected.")
             await dut_cb.wait_for_event(
                 bl4a_api.ProfileConnectionStateChanged(
                     address=self.ref.address,
@@ -167,11 +153,11 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
         return client, connection_id
 
     def _clear_sms_messages(self) -> None:
-        self.dut.shell(['sqlite3', _MMSSMS_DB_PATH, '"delete from sms"'])
+        self.dut.shell(["sqlite3", _MMSSMS_DB_PATH, "'delete from sms'"])
 
     def _add_sms_message(self, sms_message: _SmsMessage, message_type: int) -> None:
         self.dut.shell([
-            'sqlite3',
+            "sqlite3",
             _MMSSMS_DB_PATH,
             ('"insert into sms (thread_id, date, type, address, body) values '
              "(%d, %d, %d, '%s', '%s')\"" % (
@@ -190,7 +176,7 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
     async def test_connect_disconnect(self, variant: _DisconnectVariant) -> None:
         """Tests connecting and disconnecting message_access.
 
-    Test Steps:
+    Test steps:
       1. Connect MAP from REF to DUT.
       2. Disconnect bearer or ACL from REF.
 
@@ -202,16 +188,16 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
 
             match variant:
                 case _DisconnectVariant.ACL:
-                    self.logger.info('[REF] Disconnect ACL.')
+                    self.logger.info("[REF] Disconnect ACL.")
                     coroutine = (client.bearer.multiplexer.l2cap_channel.connection.disconnect())
                 case _DisconnectVariant.BEARER:
-                    self.logger.info('[REF] Disconnect bearer.')
+                    self.logger.info("[REF] Disconnect bearer.")
                     coroutine = client.bearer.disconnect()
 
             async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
                 await coroutine
 
-            self.logger.info('[REF] Wait for profile disconnected.')
+            self.logger.info("[REF] Wait for profile disconnected.")
             await dut_cb.wait_for_event(
                 bl4a_api.ProfileConnectionStateChanged(
                     address=self.ref.address,
@@ -225,7 +211,7 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
     async def test_get_sms(self, message_type: android_constants.SmsMessageType) -> None:
         """Tests getting SMS message from DUT.
 
-    Test Steps:
+    Test steps:
       1. Add SMS message to DUT.
       2. Connect MAP from REF to DUT.
       3. Get SMS message list.
@@ -235,14 +221,14 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
       message_type: The SMS message type.
     """
         folder_path = {
-            android_constants.SmsMessageType.INBOX: 'inbox',
-            android_constants.SmsMessageType.SENT: 'sent',
+            android_constants.SmsMessageType.INBOX: "inbox",
+            android_constants.SmsMessageType.SENT: "sent",
         }[message_type]
         self._add_sms_message(_SAMPLE_MESSAGE, message_type)
 
         client, connection_id = await self._make_connected_mas_client_from_ref()
-        for folder in ('telecom', 'msg'):
-            self.logger.info('[REF] Set folder path to %s.', folder)
+        for folder in ("telecom", "msg"):
+            self.logger.info("[REF] Set folder path to %s.", folder)
             setpath_request = obex.SetpathRequest(
                 opcode=obex.Opcode.SETPATH,
                 final=True,
@@ -256,7 +242,7 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
                 response = await client.send_request(setpath_request)
                 self.assertEqual(response.response_code, obex.ResponseCode.SUCCESS)
 
-        self.logger.info('[REF] Get SMS Message list.')
+        self.logger.info("[REF] Get SMS Message list.")
         request = obex.Request(
             opcode=obex.Opcode.GET,
             final=True,
@@ -269,12 +255,12 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
             response = await client.send_request(request)
         self.assertEqual(response.response_code, obex.ResponseCode.SUCCESS)
-        body = response.headers.body or response.headers.end_of_body or b''
-        if (msg := ET.fromstring(body).find('msg')) is None:
-            self.fail('Failed to find message in message listing.')
-        self.assertIsNotNone(handle := msg.attrib.get('handle'))
+        body = response.headers.body or response.headers.end_of_body or b""
+        if (msg := ET.fromstring(body).find("msg")) is None:
+            self.fail("Failed to find message in message listing.")
+        self.assertIsNotNone(handle := msg.attrib.get("handle"))
 
-        self.logger.info('[REF] Get SMS Message with handle %s.', handle)
+        self.logger.info("[REF] Get SMS Message with handle %s.", handle)
         request = obex.Request(
             opcode=obex.Opcode.GET,
             final=True,
@@ -291,22 +277,23 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
             response = await client.send_request(request)
         self.assertEqual(response.response_code, obex.ResponseCode.SUCCESS)
-        body = response.headers.body or response.headers.end_of_body or b''
-        lines = body.decode('utf-8').split('\r\n')
+        body = response.headers.body or response.headers.end_of_body or b""
+        lines = body.decode("utf-8").split("\r\n")
         self.assertIn(_SAMPLE_MESSAGE.body, lines)
-        self.assertIn(f'TEL:{_SAMPLE_MESSAGE.address}', lines)
+        self.assertIn(f"TEL:{_SAMPLE_MESSAGE.address}", lines)
 
     async def test_message_notification(self) -> None:
         """Tests sending message notification from DUT to REF.
 
-    Test Steps:
+    Test steps:
       1. Setup MNS server on REF.
       2. Register message notification from REF.
       3. Wait for DUT to connect to the MNS server.
       4. Add SMS message to DUT.
       5. Wait for REF to receive the message notification.
     """
-        mns_server = message_access.MnsServer(self.ref_rfcomm_manager)
+        ref_rfcomm_manager = rfcomm.Manager.find_or_create(self.ref.device)
+        mns_server = message_access.MnsServer(ref_rfcomm_manager)
         self.ref.device.sdp_service_records = {
             1: (message_access.MnsSdpInfo(
                 service_record_handle=1,
@@ -326,42 +313,47 @@ class MapTest(navi_test_base.TwoDevicesTestBase):
                 connection_id=connection_id,
                 app_parameters=message_access.ApplicationParameters(
                     notification_status=1).to_bytes(),
-                end_of_body=b'\0',
+                end_of_body=b"\0",
             ),
         )
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
-            self.logger.info('[REF] Register message notification.')
+            self.logger.info("[REF] Register message notification.")
             response = await client.send_request(request)
         self.assertEqual(response.response_code, obex.ResponseCode.SUCCESS)
 
         # After sending the request, DUT should connect to the MNS server.
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
-            self.logger.info('[REF] Wait for MNS OBEX connection.')
+            self.logger.info("[REF] Wait for MNS OBEX connection.")
             session = await mns_server.sessions.get()
-            self.logger.info('[REF] Wait for MNS connect request.')
+            self.logger.info("[REF] Wait for MNS connect request.")
             await session.connected.wait()
+
+        # SMS Content Observer might not be ready right after MNS connection.
+        # However, there isn't a good way to check if the SMS Content Observer is
+        # ready. So we just wait for a short period.
+        await asyncio.sleep(0.5)
 
         # Add an SMS message to DUT to trigger message notification.
         new_message = _SmsMessage(
             thread_id=1,
             # Since 24Q1, Android only sends notification for new messages in the
             # last 7 days.
-            date=int(self.dut.shell('date +%s')) * 1000,
-            address='0987654321',
-            body='This is a new message',
+            date=int(self.dut.shell("date +%s")) * 1000,
+            address="0987654321",
+            body="This is a new message",
         )
         self._add_sms_message(new_message, android_constants.SmsMessageType.INBOX)
         self.dut.bt.notifyMmsSmsChange()
-        self.logger.info('[REF] Wait for message notification.')
+        self.logger.info("[REF] Wait for message notification.")
         async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
             notification = await session.notifications.get()
         # Check the notification content.
-        if (event := ET.fromstring(notification).find('event')) is None:
-            self.fail('Failed to find event in message notification.')
-        self.assertEqual(event.attrib['type'], 'NewMessage')
-        self.assertEqual(event.attrib['sender_name'], new_message.address)
-        self.assertIn('handle', event.attrib)
+        if (event := ET.fromstring(notification).find("event")) is None:
+            self.fail("Failed to find event in message notification.")
+        self.assertEqual(event.attrib["type"], "NewMessage")
+        self.assertEqual(event.attrib["sender_name"], new_message.address)
+        self.assertIn("handle", event.attrib)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_runner.main()

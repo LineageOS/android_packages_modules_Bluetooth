@@ -41,6 +41,7 @@ struct AVRC_AddRecord AVRC_AddRecord;
 struct AVRC_FindService AVRC_FindService;
 struct AVRC_Init AVRC_Init;
 struct AVRC_RemoveRecord AVRC_RemoveRecord;
+struct AVRC_ResetServiceUuid AVRC_ResetServiceUuid;
 
 }  // namespace stack_avrc_sdp
 }  // namespace mock
@@ -80,6 +81,10 @@ void AVRC_Init(void) {
 uint16_t AVRC_RemoveRecord(uint32_t sdp_handle) {
   inc_func_call_count(__func__);
   return test::mock::stack_avrc_sdp::AVRC_RemoveRecord(sdp_handle);
+}
+void AVRC_ResetServiceUuid(void) {
+  inc_func_call_count(__func__);
+  test::mock::stack_avrc_sdp::AVRC_ResetServiceUuid();
 }
 // Mocked functions complete
 // END mockcify generation

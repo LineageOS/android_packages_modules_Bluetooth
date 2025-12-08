@@ -208,8 +208,6 @@ void LeAudioTransport::SourceMetadataChanged(const source_metadata_v7_t& source_
 }
 
 void LeAudioTransport::SinkMetadataChanged(const sink_metadata_v7_t& sink_metadata) {
-  auto track_count = sink_metadata.track_count;
-
   if (stream_cb_.on_sink_metadata_update_) {
     stream_cb_.on_sink_metadata_update_(sink_metadata);
   }
@@ -740,7 +738,7 @@ AudioConfiguration stream_config_to_hal_audio_config(
     LeAudioConfiguration::StreamMap::BluetoothDeviceAddress aidl_device_address;
     // The address should be set only if stream is active
     if (info.is_stream_active) {
-      aidl_device_address.deviceAddress = info.address.ToArray();
+      aidl_device_address.deviceAddress = info.address.address;
       aidl_device_address.deviceAddressType =
               (info.address_type == BLE_ADDR_PUBLIC || info.address_type == BLE_ADDR_PUBLIC_ID)
                       ? LeAudioConfiguration::StreamMap::BluetoothDeviceAddress::DeviceAddressType::

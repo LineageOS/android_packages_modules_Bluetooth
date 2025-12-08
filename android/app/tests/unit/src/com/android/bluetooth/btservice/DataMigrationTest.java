@@ -20,8 +20,6 @@ import static android.bluetooth.BluetoothA2dp.OPTIONAL_CODECS_NOT_SUPPORTED;
 import static android.bluetooth.BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
@@ -42,13 +40,14 @@ import android.test.mock.MockCursor;
 import android.util.Log;
 import android.util.Pair;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.storage.Metadata;
 import com.android.bluetooth.btservice.storage.MetadataDatabase;
 import com.android.bluetooth.opp.BluetoothShare;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;
@@ -67,29 +66,28 @@ import java.util.List;
 public class DataMigrationTest {
     private static final String TAG = DataMigrationTest.class.getSimpleName();
 
-    private static final String AUTHORITY = "bluetooth_legacy.provider";
-
-    private static final String TEST_PREF = "DatabaseTestPref";
-
-    private MockContentResolver mMockContentResolver;
-
-    private Context mTargetContext;
-    private SharedPreferences mPrefs;
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private Context mMockContext;
 
+    private static final String AUTHORITY = "bluetooth_legacy.provider";
+
+    private static final String TEST_PREF = "DatabaseTestPref";
+
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
+
+    private MockContentResolver mMockContentResolver;
+    private SharedPreferences mPrefs;
+
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
-        mTargetContext.deleteSharedPreferences(TEST_PREF);
-        mPrefs = mTargetContext.getSharedPreferences(TEST_PREF, Context.MODE_PRIVATE);
+        mContext.deleteSharedPreferences(TEST_PREF);
+        mPrefs = mContext.getSharedPreferences(TEST_PREF, Context.MODE_PRIVATE);
         mPrefs.edit().clear().apply();
 
-        mMockContentResolver = new MockContentResolver(mTargetContext);
+        mMockContentResolver = new MockContentResolver(mContext);
         when(mMockContext.getContentResolver()).thenReturn(mMockContentResolver);
-        when(mMockContext.getCacheDir()).thenReturn(mTargetContext.getCacheDir());
+        when(mMockContext.getCacheDir()).thenReturn(mContext.getCacheDir());
 
         when(mMockContext.getSharedPreferences(anyString(), anyInt())).thenReturn(mPrefs);
     }
@@ -97,9 +95,9 @@ public class DataMigrationTest {
     @After
     public void tearDown() throws Exception {
         mPrefs.edit().clear().apply();
-        mTargetContext.deleteSharedPreferences(TEST_PREF);
-        mTargetContext.deleteDatabase("TestBluetoothDb");
-        mTargetContext.deleteDatabase("TestOppDb");
+        mContext.deleteSharedPreferences(TEST_PREF);
+        mContext.deleteDatabase("TestBluetoothDb");
+        mContext.deleteDatabase("TestOppDb");
     }
 
     private void assertRunStatus(int status) {
@@ -249,31 +247,18 @@ public class DataMigrationTest {
             Bundle b = new Bundle();
             b.putStringArrayList(DataMigration.KEY_LIST, new ArrayList<String>(Arrays.asList(key)));
             switch (arg) {
-                case "Boolean":
-                    b.putBoolean(key, true);
-                    break;
-                case "Long":
-                    b.putLong(key, Long.valueOf(42));
-                    break;
-                case "Int":
-                    b.putInt(key, 42);
-                    break;
-                case "String":
-                    b.putString(key, "42");
-                    break;
-                case "String2":
-                    b.putString(key, "42");
-                    break;
-                case "Invalid":
-                    // Put anything different from Boolean/Long/Integer/String
-                    b.putFloat(key, 42f);
-                    break;
-                case "empty":
-                    // Do not put anything in the bundle and remove the key
-                    b = new Bundle();
-                    break;
-                default:
+                case "Boolean" -> b.putBoolean(key, true);
+                case "Long" -> b.putLong(key, Long.valueOf(42));
+                case "Int" -> b.putInt(key, 42);
+                case "String" -> b.putString(key, "42");
+                case "String2" -> b.putString(key, "42");
+                // Put anything different from Boolean/Long/Integer/String
+                case "Invalid" -> b.putFloat(key, 42f);
+                // Do not put anything in the bundle and remove the key
+                case "empty" -> b = new Bundle();
+                default -> {
                     return null;
+                }
             }
             return b;
         }
@@ -283,9 +268,9 @@ public class DataMigrationTest {
     @Test
     public void testIncompleteDbMigration() {
         when(mMockContext.getDatabasePath("btopp.db"))
-                .thenReturn(mTargetContext.getDatabasePath("TestOppDb"));
+                .thenReturn(mContext.getDatabasePath("TestOppDb"));
         when(mMockContext.getDatabasePath("bluetooth_db"))
-                .thenReturn(mTargetContext.getDatabasePath("TestBluetoothDb"));
+                .thenReturn(mContext.getDatabasePath("TestBluetoothDb"));
 
         BluetoothLegacyDbContentProvider fakeContentProvider =
                 new BluetoothLegacyDbContentProvider(mMockContext);
@@ -305,7 +290,7 @@ public class DataMigrationTest {
     @Test
     public void testBluetoothDbMigration() {
         when(mMockContext.getDatabasePath("bluetooth_db"))
-                .thenReturn(mTargetContext.getDatabasePath("TestBluetoothDb"));
+                .thenReturn(mContext.getDatabasePath("TestBluetoothDb"));
 
         BluetoothLegacyDbContentProvider fakeContentProvider =
                 new BluetoothLegacyDbContentProvider(mMockContext);
@@ -393,7 +378,7 @@ public class DataMigrationTest {
     @Test
     public void testOppDbMigration() {
         when(mMockContext.getDatabasePath("btopp.db"))
-                .thenReturn(mTargetContext.getDatabasePath("TestOppDb"));
+                .thenReturn(mContext.getDatabasePath("TestOppDb"));
 
         BluetoothLegacyDbContentProvider fakeContentProvider =
                 new BluetoothLegacyDbContentProvider(mMockContext);

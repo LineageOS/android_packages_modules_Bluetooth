@@ -31,11 +31,14 @@
 #include <android/sysprop/BluetoothProperties.sysprop.h>
 #endif
 
+#include <bluetooth/types/address.h>
+
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager_t.h"
 #include "common/le_conn_params.h"
 #include "hci/controller.h"
 #include "hci/hci_interface.h"
+#include "hci/hci_packets.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"
@@ -60,7 +63,6 @@
 #include "stack/include/l2cdefs.h"
 #include "stack/include/main_thread.h"
 #include "stack/l2cap/l2c_int.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -150,6 +152,7 @@ bool l2cble_conn_comp(uint16_t handle, tHCI_ROLE role, const RawAddress& bda,
       return false;
     } else {
       if (!l2cu_initialize_fixed_ccb(p_lcb, L2CAP_ATT_CID)) {
+        l2cu_release_lcb(p_lcb);
         log::error("Unable to allocate channel resource for le acl connection");
         return false;
       }
@@ -186,7 +189,7 @@ bool l2cble_conn_comp(uint16_t handle, tHCI_ROLE role, const RawAddress& bda,
   p_lcb->timeout = conn_timeout;
   p_lcb->latency = conn_latency;
   p_lcb->conn_update_mask = L2C_BLE_NOT_DEFAULT_PARAM;
-  if (com::android::bluetooth::flags::initial_conn_params_p1()) {
+  if (com_android_bluetooth_flags_initial_conn_params_p1()) {
     uint16_t min_conn_interval_aggressive = LeConnectionParameters::GetMinConnIntervalAggressive();
     uint16_t max_conn_interval_aggressive = LeConnectionParameters::GetMaxConnIntervalAggressive();
 
@@ -204,6 +207,7 @@ bool l2cble_conn_comp(uint16_t handle, tHCI_ROLE role, const RawAddress& bda,
 
   p_lcb->conn_update_blocked_by_profile_connection = false;
   p_lcb->conn_update_blocked_by_service_discovery = false;
+  p_lcb->conn_update_blocked_by_lea_subrate_device = false;
 
   p_lcb->subrate_req_mask = 0;
   p_lcb->subrate_min = 1;
@@ -244,6 +248,24 @@ static void l2cble_handle_connect_rsp_neg(tL2C_LCB* p_lcb, tL2C_CONN_INFO* con_i
 
   p_lcb->pending_ecoc_conn_cnt = 0;
   memset(p_lcb->pending_ecoc_connection_cids, 0, L2CAP_CREDIT_BASED_MAX_CIDS);
+}
+
+/*******************************************************************************
+ *
+ * Function         validate_l2cap_params
+ *
+ * Description      Validate l2cap params mtu and mps to be in valid range
+ *
+ * Returns          true if valid, false otherwise
+ *
+ ******************************************************************************/
+static bool validate_l2cap_params(int mtu, int mps) {
+  /* validate the parameters */
+  if (mtu < L2CAP_LE_MIN_MTU || mps < L2CAP_LE_MIN_MPS || mps > L2CAP_LE_MAX_MPS) {
+    log::error("L2CAP invalid params, mtu: {}, mps: {}", mtu, mps);
+    return false;
+  }
+  return true;
 }
 
 /*******************************************************************************
@@ -353,7 +375,7 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
           p_lcb->latency = latency;
           p_lcb->timeout = timeout;
           p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
-          if (com::android::bluetooth::flags::initial_conn_params_p1()) {
+          if (com_android_bluetooth_flags_initial_conn_params_p1()) {
             p_lcb->conn_update_mask &= ~L2C_BLE_AGGRESSIVE_INITIAL_PARAM;
           }
 
@@ -424,9 +446,8 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       }
 
       /* validate the parameters */
-      if (mtu < L2CAP_CREDIT_BASED_MIN_MTU || mps < L2CAP_CREDIT_BASED_MIN_MPS ||
-          mps > L2CAP_LE_MAX_MPS) {
-        log::error("L2CAP don't like the params");
+      if (!validate_l2cap_params(mtu, mps)) {
+        log::error("reject conn request");
         l2cu_reject_credit_based_conn_req(
                 p_lcb, id, num_of_channels,
                 tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_INVALID_PARAMETERS);
@@ -555,9 +576,7 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       }
 
       /* validate the parameters */
-      if (mtu < L2CAP_CREDIT_BASED_MIN_MTU || mps < L2CAP_CREDIT_BASED_MIN_MPS ||
-          mps > L2CAP_LE_MAX_MPS) {
-        log::error("L2CAP - invalid params");
+      if (!validate_l2cap_params(mtu, mps)) {
         con_info.l2cap_result =
                 static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_INVALID_PARAMETERS);
         l2cble_handle_connect_rsp_neg(p_lcb, &con_info);
@@ -649,9 +668,7 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       STREAM_TO_UINT16(mps, p);
 
       /* validate the parameters */
-      if (mtu < L2CAP_CREDIT_BASED_MIN_MTU || mps < L2CAP_CREDIT_BASED_MIN_MPS ||
-          mps > L2CAP_LE_MAX_MPS) {
-        log::error("L2CAP - invalid params");
+      if (!validate_l2cap_params(mtu, mps)) {
         l2cu_send_ble_reconfig_rsp(p_lcb, id,
                                    tL2CAP_RECONFIG_RESULT::L2CAP_RECONFIG_UNACCAPTED_PARAM);
         return;
@@ -796,8 +813,7 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       }
 
       /* validate the parameters */
-      if (mtu < L2CAP_LE_MIN_MTU || mps < L2CAP_LE_MIN_MPS || mps > L2CAP_LE_MAX_MPS) {
-        log::error("L2CAP do not like the params");
+      if (!validate_l2cap_params(mtu, mps)) {
         l2cu_reject_ble_connection(p_ccb, id, tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_NO_RESOURCES);
         break;
       }
@@ -806,22 +822,10 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       p_ccb->p_rcb = p_rcb;
       p_ccb->remote_cid = rcid;
 
-      if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3349377
-        p_ccb->local_conn_cfg.mtu = p_rcb->coc_cfg.mtu;
-        p_ccb->local_conn_cfg.mps = p_rcb->coc_cfg.mps;
-      } else {
-        p_ccb->local_conn_cfg.mtu = L2CAP_SDU_LENGTH_LE_MAX;
-        p_ccb->local_conn_cfg.mps =
-                bluetooth::shim::GetController()->GetLeBufferSize().le_data_packet_length_;
-      }
-      if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3349376
-        p_ccb->local_conn_cfg.credits = p_rcb->coc_cfg.credits;
-        p_ccb->remote_credit_count = p_rcb->coc_cfg.credits;
-      } else {
-        p_ccb->local_conn_cfg.credits = L2CA_LeCreditDefault();
-        p_ccb->remote_credit_count = L2CA_LeCreditDefault();
-      }
-
+      p_ccb->local_conn_cfg.mtu = p_rcb->coc_cfg.mtu;
+      p_ccb->local_conn_cfg.mps = p_rcb->coc_cfg.mps;
+      p_ccb->local_conn_cfg.credits = p_rcb->coc_cfg.credits;
+      p_ccb->remote_credit_count = p_rcb->coc_cfg.credits;
       p_ccb->peer_conn_cfg.mtu = mtu;
       p_ccb->peer_conn_cfg.mps = mps;
       p_ccb->peer_conn_cfg.credits = initial_credit;
@@ -870,28 +874,50 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
                 p_ccb->remote_cid, p_ccb->peer_conn_cfg.mtu, p_ccb->peer_conn_cfg.mps,
                 p_ccb->peer_conn_cfg.credits, con_info.l2cap_result);
 
-        /* validate the parameters */
-        if (p_ccb->peer_conn_cfg.mtu < L2CAP_LE_MIN_MTU ||
-            p_ccb->peer_conn_cfg.mps < L2CAP_LE_MIN_MPS ||
-            p_ccb->peer_conn_cfg.mps > L2CAP_LE_MAX_MPS) {
-          log::error("L2CAP do not like the params");
-          con_info.l2cap_result =
-                  static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_NO_RESOURCES);
-          l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
-          break;
-        }
-
-        p_ccb->tx_mps = p_ccb->peer_conn_cfg.mps;
-        p_ccb->ble_sdu = NULL;
-        p_ccb->ble_sdu_length = 0;
-        p_ccb->is_first_seg = true;
-        p_ccb->peer_cfg.fcr.mode = L2CAP_FCR_LE_COC_MODE;
-
-        if (con_info.l2cap_result ==
-            static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_CONN_OK)) {
-          l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP, &con_info);
+        if (com_android_bluetooth_flags_check_l2c_conn_status_before_param_validation()) {
+          if (con_info.l2cap_result ==
+              static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_CONN_OK)) {
+            if (validate_l2cap_params(p_ccb->peer_conn_cfg.mtu, p_ccb->peer_conn_cfg.mps)) {
+              p_ccb->tx_mps = p_ccb->peer_conn_cfg.mps;
+              p_ccb->ble_sdu = NULL;
+              p_ccb->ble_sdu_length = 0;
+              p_ccb->is_first_seg = true;
+              p_ccb->peer_cfg.fcr.mode = L2CAP_FCR_LE_COC_MODE;
+              l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP, &con_info);
+            } else {
+              con_info.l2cap_result =
+                      static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_NO_RESOURCES);
+              l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
+              break;
+            }
+          } else {
+            l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
+            break;
+          }
         } else {
-          l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
+          /* validate the parameters */
+          if (p_ccb->peer_conn_cfg.mtu < L2CAP_LE_MIN_MTU ||
+              p_ccb->peer_conn_cfg.mps < L2CAP_LE_MIN_MPS ||
+              p_ccb->peer_conn_cfg.mps > L2CAP_LE_MAX_MPS) {
+            log::error("L2CAP invalid params");
+            con_info.l2cap_result =
+                    static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_NO_RESOURCES);
+            l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
+            break;
+          }
+
+          p_ccb->tx_mps = p_ccb->peer_conn_cfg.mps;
+          p_ccb->ble_sdu = NULL;
+          p_ccb->ble_sdu_length = 0;
+          p_ccb->is_first_seg = true;
+          p_ccb->peer_cfg.fcr.mode = L2CAP_FCR_LE_COC_MODE;
+
+          if (con_info.l2cap_result ==
+              static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_CONN_OK)) {
+            l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP, &con_info);
+          } else {
+            l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
+          }
         }
       } else {
         log::verbose("I DO NOT remember the connection req");
@@ -1476,6 +1502,13 @@ void L2CA_AdjustConnectionIntervals(uint16_t* /* min_interval */, uint16_t* max_
 }
 
 void L2CA_SetEcosystemBaseInterval(uint32_t base_interval) {
+  if (com_android_bluetooth_flags_leaudio_check_ecosystem_base_interval_support() &&
+      !bluetooth::shim::GetController()->IsSupported(
+              bluetooth::hci::OpCode::SET_ECOSYSTEM_BASE_INTERVAL)) {
+    // Command not supported! Just exit, no need to update the BLE conn parameter.
+    return;
+  }
+
   log::info("base_interval: {}ms", base_interval);
   bluetooth::shim::GetHciLayer()->EnqueueCommand(
           bluetooth::hci::SetEcosystemBaseIntervalBuilder::Create(base_interval),
@@ -1503,6 +1536,7 @@ void L2CA_SetEcosystemBaseInterval(uint32_t base_interval) {
       bool ret = L2CA_UpdateBleConnParams(p_lcb->remote_bd_addr, p_lcb->min_interval,
                                           p_lcb->max_interval, p_lcb->latency, p_lcb->timeout,
                                           p_lcb->min_ce_len, p_lcb->max_ce_len);
+
       if (!ret) {
         log::warn("Unable to update BLE connection parameters peer:{}", p_lcb->remote_bd_addr);
       }

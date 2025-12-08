@@ -27,8 +27,9 @@
 #ifndef BTIF_PAN_INTERNAL_H
 #define BTIF_PAN_INTERNAL_H
 
+#include <bluetooth/types/address.h>
+
 #include "internal_include/bt_target.h"
-#include "types/raw_address.h"
 
 /*******************************************************************************
  *  Constants & Macros

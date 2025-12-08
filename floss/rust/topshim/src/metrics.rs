@@ -6,7 +6,7 @@ use crate::btif::{
 #[cxx::bridge(namespace = bluetooth::topshim::rust)]
 mod ffi {
     unsafe extern "C++" {
-        include!("types/raw_address.h");
+        include!("bluetooth/types/address.h");
         #[namespace = ""]
         type RawAddress = crate::btif::RawAddress;
     }

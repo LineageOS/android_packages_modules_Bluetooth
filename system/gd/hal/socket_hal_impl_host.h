@@ -16,15 +16,22 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include "hal/socket_hal.h"
 
 namespace bluetooth::hal {
 
 class SocketHalImpl : public SocketHal {
+public:
+  SocketHalImpl() { log::verbose("SocketHal module started !!"); }
+
+  ~SocketHalImpl() { log::verbose("SocketHal module stopped !!"); }
+
 protected:
   hal::SocketCapabilities GetSocketCapabilities() const override { return {}; }
 
-  bool RegisterCallback(hal::SocketHalCallback const* /*callback*/) override { return false; }
+  bool RegisterCallback(hal::SocketHalCallback const* /*callback*/) override { return true; }
 
   bool Opened(const hal::SocketContext& /*context*/) const override { return false; }
 

@@ -24,11 +24,12 @@
 #ifndef SMP_API_H
 #define SMP_API_H
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
+
 #include <cstdint>
 
 #include "smp_api_types.h"
-#include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  External Function Declarations

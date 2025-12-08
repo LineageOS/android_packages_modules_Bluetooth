@@ -537,3 +537,34 @@ test Arrays {
   "\x03\x01\x02\x03\x06\x01\x11\x02\x12\x03\x13\x0C\x01\x11\x21\x31\x02\x12\x22\x32\x03\x13\x23\x33",
   "\x06\x05\x04\x03\x02\x01\x00\x0C\x05\x15\x04\x14\x03\x13\x02\x12\x01\x11\x00\x10\x18\x05\x15\x25\x35\x04\x14\x24\x34\x03\x13\x23\x33\x02\x12\x22\x32\x01\x11\x21\x31\x00\x10\x20\x30",
 }
+
+packet ThreeOctetsAtTheEndPacket {
+    header_one : 24,
+    header_two : 24,
+}
+
+test ThreeOctetsAtTheEndPacket {
+    "\x01\x02\x03\x04\x05\x06",
+}
+
+struct ThreeOctetsAtTheEndStruct {
+  twentyfour : 24,
+}
+
+packet ThreeOctetsAtTheEndStructArrayPacket {
+  _count_(twentyfours_structs) : 8,
+  twentyfours_structs : ThreeOctetsAtTheEndStruct[],
+}
+
+test ThreeOctetsAtTheEndStructArrayPacket {
+    "\x01\x01\x02\x03",
+}
+
+packet TwentyFoursArray {
+  _count_(twentyfours) : 8,
+  twentyfours : 24[],
+}
+
+test TwentyFoursArray {
+  "\x01\x01\x01\x02",
+}

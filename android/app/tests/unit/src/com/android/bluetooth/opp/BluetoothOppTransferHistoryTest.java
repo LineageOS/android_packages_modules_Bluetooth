@@ -23,8 +23,6 @@ import static androidx.test.espresso.matcher.RootMatchers.isDialog;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -40,12 +38,12 @@ import android.net.Uri;
 import android.view.MenuItem;
 
 import androidx.test.core.app.ActivityScenario;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.R;
-import com.android.bluetooth.TestUtils;
+import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.common.base.Objects;
 
@@ -67,11 +65,6 @@ import java.util.List;
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppTransferHistoryTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
-    // Activity tests can sometimes flaky because of external factors like system dialog, etc.
-    // making the expected Espresso's root not focused or the activity doesn't show up.
-    // Add retry rule to resolve this problem.
-    @Rule public TestUtils.RetryTestRule mRetryTestRule = new TestUtils.RetryTestRule();
 
     @Mock Cursor mCursor;
     @Spy BluetoothMethodProxy mBluetoothMethodProxy;
@@ -136,12 +129,10 @@ public class BluetoothOppTransferHistoryTest {
                                         BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED)));
 
         BluetoothOppTestUtils.enableActivity(BluetoothOppTransferHistory.class, true, mContext);
-        TestUtils.setUpUiTest();
     }
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.tearDownUiTest();
         BluetoothMethodProxy.setInstanceForTesting(null);
         BluetoothOppTestUtils.enableActivity(BluetoothOppTransferHistory.class, false, mContext);
     }

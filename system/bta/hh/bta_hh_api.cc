@@ -27,6 +27,8 @@
 #include "bta_hh_api.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/uuid.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -38,8 +40,6 @@
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"
-#include "types/ble_address_with_type.h"
-#include "types/bluetooth/uuid.h"
 
 using namespace bluetooth;
 

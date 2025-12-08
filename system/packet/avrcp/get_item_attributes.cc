@@ -81,7 +81,7 @@ bool GetItemAttributesResponseBuilder::Serialize(const std::shared_ptr<::bluetoo
     AddPayloadOctets2(pkt, base::ByteSwap(character_set));
     uint16_t value_length = entry.value().length();
     AddPayloadOctets2(pkt, base::ByteSwap(value_length));
-    for (const uint8_t& byte : entry.value()) {
+    for (const uint8_t byte : entry.value()) {
       AddPayloadOctets1(pkt, byte);
     }
   }

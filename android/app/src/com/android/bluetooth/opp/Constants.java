@@ -104,6 +104,17 @@ public class Constants {
 
     static final int MEDIA_SCANNED_SCANNED_FAILED = 2;
 
+    /** The bytes size unit used in the file size categorization */
+    static final long KB_TO_BYTES = 1024;
+
+    static final long MB_TO_BYTES = KB_TO_BYTES * 1024;
+    static final long GB_TO_BYTES = MB_TO_BYTES * 1024;
+
+    /** The time unit used in the duration categorization */
+    static final int SEC_TO_MS = 1000;
+
+    static final int MIN_TO_MS = 60 * SEC_TO_MS;
+
     /**
      * The MIME type(s) of we could accept from other device. This is in essence a "acceptlist" of
      * acceptable types. Today, restricted to images, audio, video and certain text types.
@@ -154,7 +165,10 @@ public class Constants {
 
     static final String FILENAME_SEQUENCE_SEPARATOR = "-";
 
+    private Constants() {}
+
     static void updateShareStatus(Context context, int id, int status) {
+        BluetoothOppUtility.checkAndReportShareCompleted(context, id, status);
         Uri contentUri = Uri.parse(BluetoothShare.CONTENT_URI + "/" + id);
         ContentValues updateValues = new ContentValues();
         updateValues.put(BluetoothShare.STATUS, status);

@@ -18,6 +18,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <array>
 #include <bitset>
@@ -25,8 +26,6 @@
 #include <optional>
 #include <ostream>
 #include <vector>
-
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace le_audio {
@@ -65,6 +64,7 @@ enum class GroupStatus {
   INACTIVE = 0,
   ACTIVE,
   TURNED_IDLE_DURING_CALL,
+  AUTONOMOUS_INACTIVE,
 };
 
 enum class GroupStreamStatus {
@@ -470,6 +470,9 @@ public:
   /* Set allowed to stream context */
   virtual void SetGroupAllowedContextMask(int group_id, int sink_context_types,
                                           int source_context_types) = 0;
+
+  /* Confirm group is active */
+  virtual void GroupConfirmActive(int group_id) = 0;
 };
 
 /* Represents the broadcast source state. */

@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "types/raw_address.h"
+#include <bluetooth/types/address.h>
 
 // Brings connection to active mode
 void bta_dm_pm_active(const RawAddress& peer_addr);

@@ -18,8 +18,9 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include "stack/include/sdp_status.h"
-#include "types/raw_address.h"
 
 /* Define a callback function for when discovery is complete. */
 typedef void(tSDP_DISC_CMPL_CB)(const RawAddress& bd_addr, tSDP_RESULT result);

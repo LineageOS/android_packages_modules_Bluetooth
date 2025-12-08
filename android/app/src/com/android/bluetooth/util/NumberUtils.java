@@ -19,6 +19,8 @@ package com.android.bluetooth.util;
 /** Utility for parsing numbers in Bluetooth. */
 public class NumberUtils {
 
+    private NumberUtils() {}
+
     /** Convert a byte to unsigned int. */
     public static int unsignedByteToInt(byte b) {
         return b & 0xFF;

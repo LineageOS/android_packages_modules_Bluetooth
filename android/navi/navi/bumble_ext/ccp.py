@@ -281,8 +281,7 @@ class TelephoneBearerService(gatt.TemplateService):
 
         super().__init__(characteristics)
 
-    async def _on_call_control_point(self, connection: device.Connection | None,
-                                     data: bytes) -> None:
+    async def _on_call_control_point(self, connection: device.Connection, data: bytes) -> None:
         opcode = data[0]
         match opcode:
             case (CallControlPointOpcode.ACCEPT | CallControlPointOpcode.TERMINATE |

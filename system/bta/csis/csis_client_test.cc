@@ -17,13 +17,13 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <vector>
 
 #include "bind_helpers.h"
-#include "bt_transport.h"
 #include "bta_csis_api.h"
 #include "bta_dm_api_mock.h"
 #include "bta_gatt_api_mock.h"
@@ -453,12 +453,12 @@ protected:
     gatt_callback = nullptr;
   }
 
-  void TestConnect(const RawAddress& address, bool encrypted = true) {
+  void TestConnect(const RawAddress& address, bool encrypted = true, bool opportunistic = false) {
     // by default indicate link as encrypted
     ON_CALL(btm_interface, GetSecurityFlagsByTransport(address, NotNull(), _))
             .WillByDefault(DoAll(SetArgPointee<1>(BTM_SEC_FLAG_ENCRYPTED), Return(encrypted)));
 
-    EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, _));
+    EXPECT_CALL(gatt_interface, Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, opportunistic));
     CsisClient::Get()->Connect(address);
     Mock::VerifyAndClearExpectations(&gatt_interface);
     Mock::VerifyAndClearExpectations(&btm_interface);
@@ -671,6 +671,22 @@ TEST_F(CsisClientTest, test_connect) {
 TEST_F(CsisClientTest, test_verify_opportunistic_connect_active_after_connect_timeout) {
   TestAppRegister();
 
+  EXPECT_CALL(*callbacks, OnConnectionState(test_address, ConnectionState::DISCONNECTED)).Times(1);
+  TestConnect(test_address, true, false);
+
+  EXPECT_CALL(gatt_interface, CancelOpen(gatt_if, test_address, _)).Times(0);
+  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION, true))
+          .Times(1);
+
+  InjectConnectedEvent(test_address, 0, GATT_ERROR);
+  Mock::VerifyAndClearExpectations(&gatt_interface);
+  Mock::VerifyAndClearExpectations(callbacks.get());
+  TestAppUnregister();
+}
+
+TEST_F(CsisClientTest, test_verify_opportunistic_connect_active_for_known_devices) {
+  TestAppRegister();
+
   std::vector<uint8_t> no_set_info;
 
   DeviceGroups::AddFromStorage(test_address, no_set_info);
@@ -679,15 +695,7 @@ TEST_F(CsisClientTest, test_verify_opportunistic_connect_active_after_connect_ti
   Mock::VerifyAndClearExpectations(&gatt_interface);
   Mock::VerifyAndClearExpectations(callbacks.get());
 
-  EXPECT_CALL(*callbacks, OnConnectionState(test_address, ConnectionState::DISCONNECTED)).Times(1);
-  TestConnect(test_address);
-
-  EXPECT_CALL(gatt_interface, CancelOpen(gatt_if, test_address, _)).Times(0);
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION, true))
-          .Times(1);
-
-  InjectConnectedEvent(test_address, 0, GATT_ERROR);
-  Mock::VerifyAndClearExpectations(&gatt_interface);
+  TestConnect(test_address, true, true /* opportunistic */);
   Mock::VerifyAndClearExpectations(callbacks.get());
   TestAppUnregister();
 }
@@ -984,6 +992,12 @@ TEST_F(CsisClientTest, test_set_discovery_state_ongoing) {
   ASSERT_EQ(g_1->GetDiscoveryState(), CsisDiscoveryState::CSIS_DISCOVERY_ONGOING);
 }
 
+TEST_F(CsisClientTest, test_set_discovery_state_blocked) {
+  auto g_1 = std::make_shared<CsisGroup>(666, bluetooth::Uuid::kEmpty);
+  g_1->SetDiscoveryState(CsisDiscoveryState::CSIS_DISCOVERY_BLOCKED);
+  ASSERT_EQ(g_1->GetDiscoveryState(), CsisDiscoveryState::CSIS_DISCOVERY_BLOCKED);
+}
+
 TEST_F(CsisClientTest, test_set_various_discovery_states) {
   auto g_1 = std::make_shared<CsisGroup>(666, bluetooth::Uuid::kEmpty);
   g_1->SetDiscoveryState(CsisDiscoveryState::CSIS_DISCOVERY_COMPLETED);
@@ -992,6 +1006,8 @@ TEST_F(CsisClientTest, test_set_various_discovery_states) {
   ASSERT_EQ(g_1->GetDiscoveryState(), CsisDiscoveryState::CSIS_DISCOVERY_IDLE);
   g_1->SetDiscoveryState(CsisDiscoveryState::CSIS_DISCOVERY_ONGOING);
   ASSERT_EQ(g_1->GetDiscoveryState(), CsisDiscoveryState::CSIS_DISCOVERY_ONGOING);
+  g_1->SetDiscoveryState(CsisDiscoveryState::CSIS_DISCOVERY_BLOCKED);
+  ASSERT_EQ(g_1->GetDiscoveryState(), CsisDiscoveryState::CSIS_DISCOVERY_BLOCKED);
 }
 
 TEST_F(CsisClientTest, test_get_first_last_device) {
@@ -1105,6 +1121,94 @@ TEST_F(CsisClientTest, test_not_open_duplicate_active_scan_while_bonding_set_mem
   // At this momoment we should not open second active scan because the set
   // member is already cached and waiting for bonding
   GetSearchCompleteEvent(conn_id);
+
+  Mock::VerifyAndClearExpectations(&dm_interface);
+}
+
+TEST_F(CsisClientTest, test_not_report_set_member_after_remove_first_device) {
+  uint16_t conn_id = 0x0001;
+  EXPECT_CALL(dm_interface, BTA_DmBleCsisObserve(true, _)).Times(1);
+  SetSampleDatabaseCsis(conn_id, 1, 1);
+  TestAppRegister();
+
+  // Here we handle background scan request
+  Mock::VerifyAndClearExpectations(&dm_interface);
+
+  TestConnect(test_address);
+  InjectConnectedEvent(test_address, 1);
+
+  auto ReadCharacteristicCbGenerator = []() {
+    return [](uint16_t conn_id, uint16_t handle, GATT_READ_OP_CB cb, void* cb_data) -> void {
+      std::vector<uint8_t> value;
+      switch (handle) {
+        case 0x0003:
+          // device name
+          value.resize(20);
+          break;
+        case 0x0021:
+          // plain sirk
+          value.resize(17);
+          value.assign(17, 1);
+          break;
+        case 0x0024:
+          // size
+          value.resize(1);
+          value.assign(1, 2);
+          break;
+        case 0x0027:
+          // lock
+          value.resize(2);
+          break;
+        case 0x0030:
+          // rank
+          value.resize(1);
+          value.assign(1, 1);
+          break;
+        default:
+          FAIL();
+          return;
+      }
+      if (cb) {
+        cb(conn_id, GATT_SUCCESS, handle, value.size(), value.data(), cb_data);
+      }
+    };
+  };
+
+  // We should read 4 times for sirk, rank, size, and lock characteristics
+  EXPECT_CALL(gatt_queue, ReadCharacteristic(conn_id, _, _, _))
+          .Times(4)
+          .WillOnce(Invoke(ReadCharacteristicCbGenerator()))
+          .WillOnce(Invoke(ReadCharacteristicCbGenerator()))
+          .WillOnce(Invoke(ReadCharacteristicCbGenerator()))
+          .WillOnce(Invoke(ReadCharacteristicCbGenerator()));
+
+  // Here is actual active scan request for the first device
+  tBTA_DM_SEARCH_CBACK* p_results_cb = nullptr;
+  EXPECT_CALL(dm_interface, BTA_DmBleCsisObserve(true, _))
+          .Times(1)
+          .WillOnce(DoAll(SaveArg<1>(&p_results_cb)));
+
+  GetSearchCompleteEvent(conn_id);
+
+  Mock::VerifyAndClearExpectations(&dm_interface);
+
+  // Remove first device
+  CsisClient::Get()->RemoveDevice(test_address);
+
+  // Simulate we find the set member
+  tBTA_DM_SEARCH result;
+  result.inq_res.include_rsi = true;
+  std::vector<uint8_t> rsi = {0x07, 0x2e, 0x00, 0xed, 0x1a, 0x00, 0x00, 0x00};
+  result.inq_res.p_eir = rsi.data();
+  result.inq_res.eir_len = 8;
+  result.inq_res.bd_addr = test_address2;
+
+  ON_CALL(btm_interface, IsDeviceBonded(test_address2, BT_TRANSPORT_LE))
+          .WillByDefault(Return(false));
+  // CSIS client should NOT process set member event to JNI
+  EXPECT_CALL(*callbacks, OnSetMemberAvailable(test_address2, 1)).Times(0);
+
+  p_results_cb(BTA_DM_INQ_RES_EVT, &result);
 
   Mock::VerifyAndClearExpectations(&dm_interface);
 }

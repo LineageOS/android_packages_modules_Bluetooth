@@ -1,6 +1,24 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
+import static android.bluetooth.BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
@@ -8,7 +26,6 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
@@ -35,6 +52,7 @@ import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
+import android.bluetooth.EncryptionStatus;
 import android.companion.CompanionDeviceManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -43,7 +61,6 @@ import android.os.HandlerThread;
 import android.os.Message;
 import android.os.TestLooperManager;
 import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
@@ -54,6 +71,9 @@ import com.android.bluetooth.bas.BatteryService;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetHalConstants;
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
+import com.android.tests.bluetooth.FlagsWrapper;
+import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
@@ -71,12 +91,13 @@ import platform.test.runner.parameterized.Parameters;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /** Test cases for {@link RemoteDevices}. */
 @MediumTest
 @RunWith(ParameterizedAndroidJunit4.class)
 public class RemoteDevicesTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+    @Rule public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(Config.class);
     @Rule public final SetFlagsRule mSetFlagsRule;
 
     @Mock private AdapterService mAdapterService;
@@ -90,12 +111,12 @@ public class RemoteDevicesTest {
     private TestLooperManager mTestLooperManager;
 
     @Parameters(name = "{0}")
-    public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.progressionOf(Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE);
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(Flags.FLAG_WATCH_DEVICE_OVERRIDE_AIRPLANE_MODE);
     }
 
-    public RemoteDevicesTest(FlagsParameterization flags) {
-        mSetFlagsRule = new SetFlagsRule(flags);
+    public RemoteDevicesTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
     }
 
     @Before
@@ -234,6 +255,7 @@ public class RemoteDevicesTest {
         // .BATTERY_LEVEL_UNKNOWN
         mRemoteDevices.onHeadsetConnectionStateChanged(
                 mDevice, STATE_DISCONNECTING, STATE_DISCONNECTED);
+        verify(mAdapterService).getBatteryService();
         verifyBatteryLevelUpdate(BluetoothDevice.BATTERY_LEVEL_UNKNOWN);
 
         // Verify that updating battery level triggers ACTION_BATTERY_LEVEL_CHANGED intent again
@@ -247,8 +269,9 @@ public class RemoteDevicesTest {
     public void testOnHeadsetStateChangeWithBatteryService_NotResetBatteryLevel() {
         int batteryLevel = 10;
 
-        BatteryService oldBatteryService = setBatteryServiceForTesting(mDevice);
+        makeBatteryServiceAvailable(mDevice);
         assertThat(mRemoteDevices.hasBatteryService(mDevice)).isTrue();
+        verify(mAdapterService).getBatteryService();
 
         // Verify that updating battery level triggers ACTION_BATTERY_LEVEL_CHANGED intent
         mRemoteDevices.updateBatteryLevel(mDevice, batteryLevel, /* fromBas= */ false);
@@ -257,14 +280,13 @@ public class RemoteDevicesTest {
         // Verify that battery level is not reset
         mRemoteDevices.onHeadsetConnectionStateChanged(
                 mDevice, STATE_DISCONNECTING, STATE_DISCONNECTED);
+        verify(mAdapterService, times(2)).getBatteryService();
 
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNotNull();
         assertThat(mRemoteDevices.getDeviceProperties(mDevice).getBatteryLevel())
                 .isEqualTo(batteryLevel);
 
-        // Recover the previous battery service if exists
-        BatteryService.setBatteryService(oldBatteryService);
-
+        doReturn(Optional.empty()).when(mAdapterService).getBatteryService();
         verifyNoMoreInteractions(mAdapterService);
     }
 
@@ -459,6 +481,7 @@ public class RemoteDevicesTest {
         // .BATTERY_LEVEL_UNKNOWN
         mRemoteDevices.onHeadsetClientConnectionStateChanged(
                 mDevice, STATE_DISCONNECTING, STATE_DISCONNECTED);
+        verify(mAdapterService).getBatteryService();
         verifyBatteryLevelUpdate(BluetoothDevice.BATTERY_LEVEL_UNKNOWN);
 
         // Verify that updating battery level triggers ACTION_BATTERY_LEVEL_CHANGED intent again
@@ -472,8 +495,9 @@ public class RemoteDevicesTest {
     public void testHeadsetClientDisconnectedWithBatteryService_NotResetBatteryLevel() {
         int batteryLevel = 10;
 
-        BatteryService oldBatteryService = setBatteryServiceForTesting(mDevice);
+        makeBatteryServiceAvailable(mDevice);
         assertThat(mRemoteDevices.hasBatteryService(mDevice)).isTrue();
+        verify(mAdapterService).getBatteryService();
 
         // Verify that device property is null initially
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
@@ -485,41 +509,83 @@ public class RemoteDevicesTest {
         // Verify that battery level is not reset.
         mRemoteDevices.onHeadsetClientConnectionStateChanged(
                 mDevice, STATE_DISCONNECTING, STATE_DISCONNECTED);
+        verify(mAdapterService, times(2)).getBatteryService();
 
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNotNull();
         assertThat(mRemoteDevices.getDeviceProperties(mDevice).getBatteryLevel())
                 .isEqualTo(batteryLevel);
 
-        BatteryService.setBatteryService(oldBatteryService);
-
+        doReturn(Optional.empty()).when(mAdapterService).getBatteryService();
         verifyNoMoreInteractions(mAdapterService);
     }
 
     @Test
     public void testUpdateBatteryLevelWithBas_overridesHfpBatteryLevel() {
-        int batteryLevel = 10;
-        int batteryLevel2 = 20;
+        int batteryLevelHfp = 10;
+        int batteryLevelBas = 15;
 
-        BatteryService oldBatteryService = setBatteryServiceForTesting(mDevice);
+        makeBatteryServiceAvailable(mDevice);
         assertThat(mRemoteDevices.hasBatteryService(mDevice)).isTrue();
+        verify(mAdapterService).getBatteryService();
 
         // Verify that device property is null initially
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
 
         // Verify that updating battery level triggers ACTION_BATTERY_LEVEL_CHANGED intent
-        mRemoteDevices.updateBatteryLevel(mDevice, batteryLevel, /* fromBas= */ false);
-        verifyBatteryLevelUpdate(batteryLevel);
+        mRemoteDevices.updateBatteryLevel(mDevice, batteryLevelHfp, /* fromBas= */ false);
+        verifyBatteryLevelUpdate(batteryLevelHfp);
 
         // Verify that updating battery service overrides hfp battery level
-        mRemoteDevices.updateBatteryLevel(mDevice, batteryLevel2, /* fromBas= */ true);
-        verifyBatteryLevelUpdate(batteryLevel2);
+        mRemoteDevices.updateBatteryLevel(mDevice, batteryLevelBas, /* fromBas= */ true);
+        verifyBatteryLevelUpdate(batteryLevelBas);
 
-        // Verify that the battery level isn't reset
+        // Verify that the battery level persists
         mRemoteDevices.resetBatteryLevel(mDevice, /* fromBas= */ true);
-        verifyBatteryLevelUpdate(batteryLevel);
+        if (Flags.consistentBatteryLevel()) {
+            verifyNoMoreInteractions(mAdapterService);
 
-        BatteryService.setBatteryService(oldBatteryService);
+            // We lost both connection and battery level is reset
+            mRemoteDevices.resetBatteryLevel(mDevice, /* fromBas= */ false);
+            verifyBatteryLevelUpdate(BATTERY_LEVEL_UNKNOWN);
+        } else {
+            verifyBatteryLevelUpdate(batteryLevelHfp);
+        }
 
+        doReturn(Optional.empty()).when(mAdapterService).getBatteryService();
+        verifyNoMoreInteractions(mAdapterService);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_CONSISTENT_BATTERY_LEVEL)
+    public void testUpdateBatteryLevelWithHfp_overridesUnknownBasBatteryLevel() {
+        int batteryLevelHfp = 10;
+        int batteryLevelBas = 15;
+        int batteryLevelHfp2 = 20;
+
+        makeBatteryServiceAvailable(mDevice);
+        assertThat(mRemoteDevices.hasBatteryService(mDevice)).isTrue();
+        verify(mAdapterService).getBatteryService();
+
+        // Verify that device property is null initially
+        assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
+
+        // Verify that updating battery level triggers ACTION_BATTERY_LEVEL_CHANGED intent
+        mRemoteDevices.updateBatteryLevel(mDevice, batteryLevelHfp, /* fromBas= */ false);
+        verifyBatteryLevelUpdate(batteryLevelHfp);
+
+        // Verify that updating battery service overrides hfp battery level
+        mRemoteDevices.updateBatteryLevel(mDevice, batteryLevelBas, /* fromBas= */ true);
+        verifyBatteryLevelUpdate(batteryLevelBas);
+
+        // Verify that the battery level persists
+        mRemoteDevices.resetBatteryLevel(mDevice, /* fromBas= */ true);
+        verifyNoIntentSentForBatteryLevelUpdate();
+
+        // Verify that the battery level
+        mRemoteDevices.updateBatteryLevel(mDevice, batteryLevelHfp2, /* fromBas= */ false);
+        verifyBatteryLevelUpdate(batteryLevelHfp2);
+
+        doReturn(Optional.empty()).when(mAdapterService).getBatteryService();
         verifyNoMoreInteractions(mAdapterService);
     }
 
@@ -527,8 +593,9 @@ public class RemoteDevicesTest {
     public void testUpdateBatteryLevelWithSameValue_notSendBroadcast() {
         int batteryLevel = 10;
 
-        BatteryService oldBatteryService = setBatteryServiceForTesting(mDevice);
+        makeBatteryServiceAvailable(mDevice);
         assertThat(mRemoteDevices.hasBatteryService(mDevice)).isTrue();
+        verify(mAdapterService).getBatteryService();
 
         // Verify that device property is null initially
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
@@ -547,8 +614,7 @@ public class RemoteDevicesTest {
                 .isEqualTo(batteryLevel);
         verifyNoMoreInteractions(mAdapterService);
 
-        BatteryService.setBatteryService(oldBatteryService);
-
+        doReturn(Optional.empty()).when(mAdapterService).getBatteryService();
         verifyNoMoreInteractions(mAdapterService);
     }
 
@@ -599,9 +665,8 @@ public class RemoteDevicesTest {
 
     @Test
     public void testIsCoordinatedSetMemberAsLeAudioEnabled() {
-        doReturn((long) (1 << BluetoothProfile.CSIP_SET_COORDINATOR))
-                .when(mAdapterService)
-                .getSupportedProfilesBitMask();
+        ExtendedMockito.doReturn(true)
+                .when(() -> Config.isProfileSupported(BluetoothProfile.CSIP_SET_COORDINATOR));
 
         // Verify that device property is null initially
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
@@ -615,9 +680,8 @@ public class RemoteDevicesTest {
 
     @Test
     public void testIsCoordinatedSetMemberAsLeAudioDisabled() {
-        doReturn((long) (0 << BluetoothProfile.CSIP_SET_COORDINATOR))
-                .when(mAdapterService)
-                .getSupportedProfilesBitMask();
+        ExtendedMockito.doReturn(false)
+                .when(() -> Config.isProfileSupported(BluetoothProfile.CSIP_SET_COORDINATOR));
 
         // Verify that device property is null initially
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();
@@ -644,15 +708,10 @@ public class RemoteDevicesTest {
         return list.toArray();
     }
 
-    private static BatteryService setBatteryServiceForTesting(BluetoothDevice device) {
-        BatteryService newService = mock(BatteryService.class);
-        when(newService.getConnectionState(device)).thenReturn(STATE_CONNECTED);
-        when(newService.isAvailable()).thenReturn(true);
-
-        BatteryService oldService = BatteryService.getBatteryService();
-        BatteryService.setBatteryService(newService);
-
-        return oldService;
+    private void makeBatteryServiceAvailable(BluetoothDevice device) {
+        BatteryService batteryService = mock(BatteryService.class);
+        when(batteryService.getConnectionState(device)).thenReturn(STATE_CONNECTED);
+        doReturn(Optional.of(batteryService)).when(mAdapterService).getBatteryService();
     }
 
     @Test
@@ -763,12 +822,35 @@ public class RemoteDevicesTest {
                 .isEqualTo(newBatteryLevel);
     }
 
-    private void verifyIntentSent(Matcher<Intent>... matchers) {
-        mInOrder.verify(mAdapterService)
-                .sendBroadcast(
-                        MockitoHamcrest.argThat(AllOf.allOf(matchers)),
-                        eq(BLUETOOTH_CONNECT),
-                        any(Bundle.class));
+    @Test
+    @EnableFlags(Flags.FLAG_LINK_STATUS_API)
+    public void testLinkState_bredr() {
+        final int transport = TRANSPORT_BREDR;
+
+        // Prepare the base device property
+        if (mRemoteDevices.getDeviceProperties(mDevice) == null) {
+            mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+        }
+
+        // Validate the connected state
+        DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(mDevice);
+        deviceProp.setConnected(transport, 1);
+        assertThat(deviceProp.getConnectionHandle(transport)).isEqualTo(1);
+
+        // Validate encryption
+        deviceProp.setEncryptionStatus(transport, 10, BluetoothDevice.ENCRYPTION_ALGORITHM_AES);
+        EncryptionStatus encryptionStatus = deviceProp.getEncryptionStatus(transport);
+        assertThat(encryptionStatus.getAlgorithm())
+                .isEqualTo(BluetoothDevice.ENCRYPTION_ALGORITHM_AES);
+        assertThat(encryptionStatus.getKeySize()).isEqualTo(10);
+
+        // Invalid encryption should be null
+        deviceProp.setEncryptionStatus(transport, 0, BluetoothDevice.ENCRYPTION_ALGORITHM_E0);
+        assertThat(deviceProp.getEncryptionStatus(transport)).isNull();
+
+        // Set disconnected, and validate the state.
+        deviceProp.setDisconnected(transport);
+        assertThat(deviceProp.getConnectionHandle(transport)).isEqualTo(BluetoothDevice.ERROR);
     }
 
     private void verifyBatteryLevelUpdate(int batteryLevel) {
@@ -786,5 +868,13 @@ public class RemoteDevicesTest {
         mInOrder.verify(mAdapterService, never()).sendBroadcastAsUser(any(), any(), any(), any());
         mInOrder.verify(mAdapterService, never())
                 .sendBroadcastWithMultiplePermissions(any(), any());
+    }
+
+    private void verifyIntentSent(Matcher<Intent>... matchers) {
+        mInOrder.verify(mAdapterService)
+                .sendBroadcast(
+                        MockitoHamcrest.argThat(AllOf.allOf(matchers)),
+                        eq(BLUETOOTH_CONNECT),
+                        any(Bundle.class));
     }
 }

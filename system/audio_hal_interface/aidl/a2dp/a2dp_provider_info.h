@@ -79,14 +79,6 @@ public:
   bool SupportsCodec(btav_a2dp_codec_index_t codec_index) const;
 
   /***
-   * Helper to convert CodecId and byte[] configuration to
-   * the Media Codec Capabilities format.
-   * Returns true if the capabilities were successfully converted.
-   ***/
-  static bool BuildCodecCapabilities(CodecId const& codec_id,
-                                     std::vector<uint8_t> const& capabilities, uint8_t* codec_info);
-
-  /***
    * Return the A2DP capabilities for the selected codec.
    * Returns true if the codec is supported, false otherwise.
    ***/

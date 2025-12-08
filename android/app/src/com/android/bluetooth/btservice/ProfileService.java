@@ -104,30 +104,19 @@ public abstract class ProfileService extends ContextWrapper {
         if (className == null) {
             return;
         }
-        ComponentName component = new ComponentName(getPackageName(), className);
-        setComponentAvailable(component, enable);
-    }
 
-    /**
-     * Set the availability of an owned/managed component (Service, Activity, Provider, etc.)
-     *
-     * <p>It's expected that profiles can have a set of components that they may use to provide
-     * features or interact with other services/the user. Profiles are expected to enable those
-     * components when they start, and disable them when they stop.
-     *
-     * @param component The component name of owned component
-     * @param enable True to enable the component, False to disable it
-     */
-    protected void setComponentAvailable(ComponentName component, boolean enable) {
+        final var component = new ComponentName(getPackageName(), className);
         // Test should not set components available for the device
         if (Utils.isInstrumentationTestMode()) {
             Log.w(mName, "Skip call to setComponentAvailable(" + component + ", " + enable + ")");
             return;
         }
+
         Log.d(mName, "setComponentAvailable(" + component + ", " + enable + ")");
         if (component == null) {
             return;
         }
+
         getPackageManager()
                 .setComponentEnabledSetting(
                         component,

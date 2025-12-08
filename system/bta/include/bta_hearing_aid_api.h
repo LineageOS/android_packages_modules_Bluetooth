@@ -20,6 +20,7 @@
 
 #include <base/functional/callback_forward.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <hardware/bt_hearing_aid.h>
 
 #include <cstdint>
@@ -29,7 +30,8 @@
 
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/gap_api.h"
-#include "types/raw_address.h"
+
+namespace bluetooth::asha {
 
 constexpr uint16_t HA_INTERVAL_10_MS = 10;
 constexpr uint16_t HA_INTERVAL_20_MS = 20;
@@ -117,7 +119,7 @@ struct HearingDevice {
   bool switch_to_background_connection_after_failure;
 
   /* For two hearing aids, you must update their parameters one after another,
-   * not simulteanously, to ensure start of connection events for both devices
+   * not simultaneously, to ensure start of connection events for both devices
    * are far from each other. This status tracks whether this device is waiting
    * for update of parameters, that should happen after "LE Connection Update
    * Complete" event
@@ -237,8 +239,7 @@ class HearingAid {
 public:
   virtual ~HearingAid() = default;
 
-  static void Initialize(bluetooth::hearing_aid::HearingAidCallbacks* callbacks,
-                         base::Closure initCb);
+  static void Initialize(bluetooth::asha::HearingAidCallbacks* callbacks, base::Closure initCb);
   static void CleanUp();
   static bool IsHearingAidRunning();
   static void DebugDump(int fd);
@@ -269,7 +270,7 @@ struct CodecConfiguration {
    * should match how often we grab data from audio source, optionally we can
    * grab data every 2 or 3 intervals, but this would increase latency.
    *
-   * Value is provided in ms, must be divisable by 1.25 to make sure the
+   * Value is provided in ms, must be divisible by 1.25 to make sure the
    * connection interval is integer.
    */
   uint16_t data_interval_ms;
@@ -286,7 +287,10 @@ public:
   static void DebugDump(int fd);
 };
 
+}  // namespace bluetooth::asha
+
 namespace std {
 template <>
-struct formatter<connection_update_status_t> : enum_formatter<connection_update_status_t> {};
+struct formatter<bluetooth::asha::connection_update_status_t>
+    : enum_formatter<bluetooth::asha::connection_update_status_t> {};
 }  // namespace std

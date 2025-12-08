@@ -21,6 +21,7 @@
 #include "device_iot_config_int.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
@@ -35,7 +36,6 @@
 #include "osi/include/config.h"
 #include "osi/include/future.h"
 #include "osi/include/properties.h"
-#include "types/raw_address.h"
 
 extern enum ConfigSource device_iot_config_source;
 

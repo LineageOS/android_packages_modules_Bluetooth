@@ -18,7 +18,6 @@ package com.android.bluetooth.map;
 
 import static android.content.pm.PackageManager.FEATURE_TELEPHONY_MESSAGING;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -32,11 +31,12 @@ import android.content.pm.PackageManager;
 import android.telephony.SmsMessage;
 import android.telephony.TelephonyManager;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.map.BluetoothMapSmsPdu.SmsPdu;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -52,6 +52,12 @@ import java.util.List;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapSmsPduTest {
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private Context mContext;
+    @Mock private TelephonyManager mTelephonyManager;
+    @Mock private BluetoothMapService mMapService;
+
     private static final String TEST_TEXT = "test";
     // Text below size 160 only need one SMS part
     private static final String TEST_TEXT_WITH_TWO_SMS_PARTS = "a".repeat(161);
@@ -62,11 +68,6 @@ public class BluetoothMapSmsPduTest {
     private byte[] TEST_DATA;
     private int TEST_ENCODING;
     private int TEST_LANGUAGE_TABLE;
-
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
-    @Mock private Context mContext;
-    @Mock private TelephonyManager mTelephonyManager;
 
     @Before
     public void setUp() throws Exception {
@@ -116,7 +117,7 @@ public class BluetoothMapSmsPduTest {
         assertThat(pdus).hasSize(2);
         assertThat(pdus.get(0).getType()).isEqualTo(BluetoothMapSmsPdu.SMS_TYPE_GSM);
 
-        BluetoothMapbMessageSms messageSmsToEncode = new BluetoothMapbMessageSms();
+        BluetoothMapbMessageSms messageSmsToEncode = new BluetoothMapbMessageSms(mMapService);
         messageSmsToEncode.setType(BluetoothMapUtils.TYPE.SMS_GSM);
         messageSmsToEncode.setFolder("placeholder");
         messageSmsToEncode.setStatus(true);
@@ -125,7 +126,8 @@ public class BluetoothMapSmsPduTest {
         byte[] encodedMessageSms = messageSmsToEncode.encode();
         InputStream inputStream = new ByteArrayInputStream(encodedMessageSms);
         BluetoothMapbMessage messageParsed =
-                BluetoothMapbMessage.parse(inputStream, BluetoothMapAppParams.CHARSET_NATIVE);
+                BluetoothMapbMessage.parse(
+                        mMapService, inputStream, BluetoothMapAppParams.CHARSET_NATIVE);
 
         assertThat(messageParsed).isInstanceOf(BluetoothMapbMessageSms.class);
         BluetoothMapbMessageSms messageSmsParsed = (BluetoothMapbMessageSms) messageParsed;
@@ -141,7 +143,7 @@ public class BluetoothMapSmsPduTest {
         assertThat(pdus).hasSize(1);
         assertThat(pdus.get(0).getType()).isEqualTo(BluetoothMapSmsPdu.SMS_TYPE_CDMA);
 
-        BluetoothMapbMessageSms messageSmsToEncode = new BluetoothMapbMessageSms();
+        BluetoothMapbMessageSms messageSmsToEncode = new BluetoothMapbMessageSms(mMapService);
         messageSmsToEncode.setType(BluetoothMapUtils.TYPE.SMS_CDMA);
         messageSmsToEncode.setFolder("placeholder");
         messageSmsToEncode.setStatus(true);
@@ -150,7 +152,8 @@ public class BluetoothMapSmsPduTest {
         byte[] encodedMessageSms = messageSmsToEncode.encode();
         InputStream inputStream = new ByteArrayInputStream(encodedMessageSms);
         BluetoothMapbMessage messageParsed =
-                BluetoothMapbMessage.parse(inputStream, BluetoothMapAppParams.CHARSET_NATIVE);
+                BluetoothMapbMessage.parse(
+                        mMapService, inputStream, BluetoothMapAppParams.CHARSET_NATIVE);
 
         assertThat(messageParsed).isInstanceOf(BluetoothMapbMessageSms.class);
     }
@@ -166,7 +169,7 @@ public class BluetoothMapSmsPduTest {
         assertThat(pdus).hasSize(1);
         assertThat(pdus.get(0).getType()).isEqualTo(BluetoothMapSmsPdu.SMS_TYPE_GSM);
 
-        BluetoothMapbMessageSms messageSmsToEncode = new BluetoothMapbMessageSms();
+        BluetoothMapbMessageSms messageSmsToEncode = new BluetoothMapbMessageSms(mMapService);
         messageSmsToEncode.setType(BluetoothMapUtils.TYPE.SMS_GSM);
         messageSmsToEncode.setFolder("placeholder");
         messageSmsToEncode.setStatus(true);
@@ -179,7 +182,7 @@ public class BluetoothMapSmsPduTest {
                 IllegalArgumentException.class,
                 () ->
                         BluetoothMapbMessage.parse(
-                                inputStream, BluetoothMapAppParams.CHARSET_NATIVE));
+                                mMapService, inputStream, BluetoothMapAppParams.CHARSET_NATIVE));
     }
 
     @Test
@@ -193,7 +196,7 @@ public class BluetoothMapSmsPduTest {
         assertThat(pdus).hasSize(1);
         assertThat(pdus.get(0).getType()).isEqualTo(BluetoothMapSmsPdu.SMS_TYPE_CDMA);
 
-        BluetoothMapbMessageSms messageSmsToEncode = new BluetoothMapbMessageSms();
+        BluetoothMapbMessageSms messageSmsToEncode = new BluetoothMapbMessageSms(mMapService);
         messageSmsToEncode.setType(BluetoothMapUtils.TYPE.SMS_CDMA);
         messageSmsToEncode.setFolder("placeholder");
         messageSmsToEncode.setStatus(true);
@@ -206,7 +209,7 @@ public class BluetoothMapSmsPduTest {
                 IllegalArgumentException.class,
                 () ->
                         BluetoothMapbMessage.parse(
-                                inputStream, BluetoothMapAppParams.CHARSET_NATIVE));
+                                mMapService, inputStream, BluetoothMapAppParams.CHARSET_NATIVE));
     }
 
     @Test

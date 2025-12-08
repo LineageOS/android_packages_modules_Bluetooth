@@ -25,6 +25,7 @@
 #define LOG_TAG "bt_bta_hh"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 
@@ -205,6 +206,13 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, tBTA_HH_INT_EVT event, const tBTA_H
       break;
     case BTA_HH_W4_CONN_ST:
       switch (event) {
+        case BTA_HH_API_OPEN_EVT:
+          if (!com_android_bluetooth_flags_hogp_direct_connection_upgrade()) {
+            unexpected_event = true;
+            break;
+          }
+          bta_hh_connect_upgrade(p_cb, p_data);
+          break;
         case BTA_HH_API_CLOSE_EVT:
           p_cb->state = BTA_HH_IDLE_ST;
           break;

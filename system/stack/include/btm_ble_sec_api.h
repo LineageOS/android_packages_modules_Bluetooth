@@ -19,6 +19,7 @@
 #pragma once
 
 #include <base/functional/callback_forward.h>
+#include <bluetooth/types/address.h>
 #include <hardware/bt_common_types.h>
 
 #include <cstdint>
@@ -27,7 +28,6 @@
 #include "btm_ble_api_types.h"
 #include "btm_ble_sec_api_types.h"
 #include "stack/include/bt_device_type.h"
-#include "types/raw_address.h"
 
 /*******************************************************************************
  *

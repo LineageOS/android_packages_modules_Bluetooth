@@ -18,8 +18,7 @@ package com.android.bluetooth.le_scan;
 
 import static android.bluetooth.le.ScanSettings.SCAN_MODE_BALANCED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-import static com.android.bluetooth.le_scan.ScanController.DEFAULT_REPORT_DELAY_FLOOR;
+import static com.android.bluetooth.le_scan.ScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -30,6 +29,7 @@ import android.platform.test.flag.junit.SetFlagsRule;
 import androidx.test.filters.SmallTest;
 
 import com.android.bluetooth.TestUtils.FakeTimeProvider;
+import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;
@@ -72,11 +72,11 @@ public class BatchScanThrottlerTest {
         }
         Set<ScanClient> clients =
                 Collections.singleton(
-                        createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR, isFiltered));
+                        createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR_MS, isFiltered));
         long[] backoffIntervals =
                 getBackoffIntervals(
                         isScreenOn
-                                ? DEFAULT_REPORT_DELAY_FLOOR
+                                ? DEFAULT_REPORT_DELAY_FLOOR_MS
                                 : BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT);
         for (long x : backoffIntervals) {
             long expected = adjustExpectedInterval(x, isFiltered, isScreenOn);
@@ -97,8 +97,8 @@ public class BatchScanThrottlerTest {
             throttler.onScreenOn(false);
         }
         Set<ScanClient> clients =
-                Collections.singleton(createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR, true));
-        long[] backoffIntervals = getBackoffIntervals(DEFAULT_REPORT_DELAY_FLOOR);
+                Collections.singleton(createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR_MS, true));
+        long[] backoffIntervals = getBackoffIntervals(DEFAULT_REPORT_DELAY_FLOOR_MS);
         advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_DEFAULT - 1);
         for (long x : backoffIntervals) {
             assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x);
@@ -119,7 +119,7 @@ public class BatchScanThrottlerTest {
         BatchScanThrottler throttler = new BatchScanThrottler(mTimeProvider, false);
         advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_DEFAULT);
         Set<ScanClient> clients =
-                Collections.singleton(createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR, true));
+                Collections.singleton(createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR_MS, true));
         long[] backoffIntervals =
                 getBackoffIntervals(BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT);
         for (long x : backoffIntervals) {
@@ -127,7 +127,7 @@ public class BatchScanThrottlerTest {
         }
 
         throttler.onScreenOn(true);
-        backoffIntervals = getBackoffIntervals(DEFAULT_REPORT_DELAY_FLOOR);
+        backoffIntervals = getBackoffIntervals(DEFAULT_REPORT_DELAY_FLOOR_MS);
         for (long x : backoffIntervals) {
             assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x);
         }
@@ -144,11 +144,11 @@ public class BatchScanThrottlerTest {
             advanceTime(BatchScanThrottler.SCREEN_OFF_DELAY_DEFAULT);
         }
         Set<ScanClient> clients =
-                Collections.singleton(createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR, true));
+                Collections.singleton(createBatchScanClient(DEFAULT_REPORT_DELAY_FLOOR_MS, true));
         long[] backoffIntervals =
                 getBackoffIntervals(
                         isScreenOn
-                                ? DEFAULT_REPORT_DELAY_FLOOR
+                                ? DEFAULT_REPORT_DELAY_FLOOR_MS
                                 : BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT);
         for (long x : backoffIntervals) {
             assertThat(throttler.getBatchTriggerIntervalMillis(clients)).isEqualTo(x);
@@ -200,4 +200,3 @@ public class BatchScanThrottlerTest {
         return scanFilterList;
     }
 }
-

@@ -19,13 +19,14 @@
  *   Functions generated:12
  */
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "bta/include/bta_hh_api.h"
 #include "bta/include/bta_hh_co.h"
 #include "btif/include/btif_hh.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 int bta_hh_co_write(int /* fd */, uint8_t* /* rpt */, uint16_t /* len */) {
   inc_func_call_count(__func__);

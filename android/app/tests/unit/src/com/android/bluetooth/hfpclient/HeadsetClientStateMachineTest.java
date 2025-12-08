@@ -28,7 +28,6 @@ import static android.content.pm.PackageManager.FEATURE_WATCH;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.hfpclient.HeadsetClientStateMachine.AT_OK;
 import static com.android.bluetooth.hfpclient.HeadsetClientStateMachine.ENTER_PRIVATE_MODE;
@@ -68,8 +67,8 @@ import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.util.Pair;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.R;
 import com.android.bluetooth.TestLooper;
@@ -77,6 +76,7 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetService;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
@@ -91,6 +91,7 @@ import org.mockito.Mock;
 import org.mockito.hamcrest.MockitoHamcrest;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /** Test cases for {@link HeadsetClientStateMachine}. */
@@ -144,7 +145,7 @@ public class HeadsetClientStateMachineTest {
                 new TestHeadsetClientStateMachine(
                         mAdapterService,
                         mHeadsetClientService,
-                        mHeadsetService,
+                        Optional.of(mHeadsetService),
                         mTestLooper.getLooper(),
                         mNativeInterface);
         mTestLooper.dispatchAll();
@@ -1588,10 +1589,10 @@ public class HeadsetClientStateMachineTest {
         TestHeadsetClientStateMachine(
                 AdapterService adapterService,
                 HeadsetClientService context,
-                HeadsetService headsetService,
+                Optional<HeadsetService> headset,
                 Looper looper,
                 HeadsetClientNativeInterface nativeInterface) {
-            super(adapterService, context, headsetService, looper, nativeInterface);
+            super(adapterService, context, headset, looper, nativeInterface);
         }
 
         public boolean doesSuperHaveDeferredMessages(int what) {

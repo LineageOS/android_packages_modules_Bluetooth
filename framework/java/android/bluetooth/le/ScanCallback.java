@@ -61,7 +61,8 @@ public abstract class ScanCallback {
     /** Fails to start scan as application tries to scan too frequently. */
     public static final int SCAN_FAILED_SCANNING_TOO_FREQUENTLY = 6;
 
-    static final int NO_ERROR = 0;
+    /** @hide */
+    public static final int NO_ERROR = 0;
 
     /**
      * Callback when a BLE advertisement has been found.

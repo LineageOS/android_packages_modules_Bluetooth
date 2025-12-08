@@ -15,14 +15,18 @@
  */
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/remote_version.h>
+
 #include "stack/btm/btm_sec_int_types.h"
 #include "stack/btm/security_device_record.h"
-#include "types/raw_address.h"
-#include "types/remote_version_type.h"
 
 bool concurrentPeerAuthIsEnabled();
 bool handleUnexpectedEncryptionChange();
-void btm_sec_store_device_sc_support(uint16_t hci_handle, bool secure_connections_supported);
+void btm_sec_store_device_sc_support(uint16_t hci_handle, bool host_secure_connections_supported,
+                                     bool controller_secure_connections_supported);
+bool btm_sec_is_enc_algo_downgrade(uint16_t hci_handle, bool host_secure_connections_supported,
+                                   bool controller_secure_connections_supported);
 bool btm_sec_is_session_key_size_downgrade(uint16_t hci_handle, uint8_t key_size);
 void btm_sec_update_session_key_size(uint16_t hci_handle, uint8_t key_size);
 

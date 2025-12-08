@@ -168,7 +168,7 @@ public class SapRilReceiver implements ISapRilReceiver {
             Log.d(TAG, "serviceDied");
             // todo: temp hack to send delayed message so that rild is back up by then
             mSapServerMsgHandler.sendMessageDelayed(
-                    mSapServerMsgHandler.obtainMessage(SapServer.SAP_PROXY_DEAD, (long) 0),
+                    mSapServerMsgHandler.obtainMessage(SapServer.SAP_PROXY_DEAD, 0L),
                     SapServer.ISAP_GET_SERVICE_DELAY_MILLIS);
         }
     }

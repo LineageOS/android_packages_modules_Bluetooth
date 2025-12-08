@@ -19,7 +19,7 @@ package android.bluetooth;
 /**
  * Callback for Bluetooth Pan Tethering
  *
- * {@hide}
+ * @hide
  */
 oneway interface IBluetoothPanCallback {
     void onAvailable(in String iface);

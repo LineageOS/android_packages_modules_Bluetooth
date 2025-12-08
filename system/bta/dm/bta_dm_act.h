@@ -16,8 +16,9 @@
 
 #pragma once
 
+#include <bluetooth/types/ble_address_with_type.h>
+
 #include "bta/dm/bta_dm_int.h"
-#include "types/ble_address_with_type.h"
 
 void bta_dm_process_remove_device_no_callback(const RawAddress& bd_addr);
 void bta_dm_process_remove_device(const RawAddress& bd_addr);

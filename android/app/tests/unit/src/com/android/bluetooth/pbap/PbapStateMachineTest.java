@@ -20,22 +20,23 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.doReturn;
 
+import android.app.NotificationManager;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -52,8 +53,9 @@ import java.io.InputStream;
 public class PbapStateMachineTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private BluetoothPbapService mBluetoothPbapService;
     @Mock private AdapterService mAdapterService;
+    @Mock private BluetoothPbapService mBluetoothPbapService;
+    @Mock private NotificationManager mNotificationManager;
     @Mock private BluetoothSocket mSocket;
     @Mock private InputStream mInputStream;
 
@@ -75,9 +77,10 @@ public class PbapStateMachineTest {
 
         mStateMachine =
                 new PbapStateMachine(
-                        mBluetoothPbapService,
-                        mLooper.getLooper(),
                         mAdapterService,
+                        mBluetoothPbapService,
+                        mNotificationManager,
+                        mLooper.getLooper(),
                         mDevice,
                         mSocket,
                         mHandler,

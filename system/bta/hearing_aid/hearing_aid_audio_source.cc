@@ -41,8 +41,7 @@
 #include "osi/include/wakelock.h"
 #include "stack/include/main_thread.h"
 
-using namespace bluetooth;
-
+namespace bluetooth::asha {
 namespace {
 
 int bit_rate = -1;
@@ -100,11 +99,10 @@ void start_audio_ticks() {
     log::fatal("Unsupported data interval: {}", data_interval_ms);
   }
 
-  if (!com::android::bluetooth::flags::ref_counted_native_wakelock() ||
-      !audio_timer.IsScheduled()) {
+  if (!com_android_bluetooth_flags_ref_counted_native_wakelock() || !audio_timer.IsScheduled()) {
     wakelock_acquire();
   }
-  audio_timer.SchedulePeriodic(get_main_thread()->GetWeakPtr(),
+  audio_timer.SchedulePeriodic(get_main_thread(),
                                base::BindRepeating(&send_audio_data),
                                std::chrono::milliseconds(data_interval_ms));
   log::info("running with data interval: {}", data_interval_ms);
@@ -112,7 +110,7 @@ void start_audio_ticks() {
 
 void stop_audio_ticks() {
   log::info("stopped");
-  if (!com::android::bluetooth::flags::ref_counted_native_wakelock() || audio_timer.IsScheduled()) {
+  if (!com_android_bluetooth_flags_ref_counted_native_wakelock() || audio_timer.IsScheduled()) {
     audio_timer.CancelAndWait();
     wakelock_release();
   }
@@ -217,3 +215,5 @@ void HearingAidAudioSource::DebugDump(int fd) {
          << std::endl;
   dprintf(fd, "%s", stream.str().c_str());
 }
+
+}  // namespace bluetooth::asha

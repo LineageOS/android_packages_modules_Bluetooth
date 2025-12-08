@@ -16,11 +16,12 @@
 
 package com.android.bluetooth.util;
 
-import static android.os.Flags.asyncTraceForTrack;
-
 import android.os.Trace;
 
 public final class BluetoothTrace {
+
+    private BluetoothTrace() {}
+
     /**
      * Writes a trace message that a given section of code has begun. Must be followed by a call to
      * {@link #asyncTraceForTrackEnd} using the same track name and cookie.
@@ -30,7 +31,7 @@ public final class BluetoothTrace {
      * @param cookie The cookie associated with this track.
      */
     public static void asyncTraceForTrackBegin(String tag, String methodName, int cookie) {
-        if (!asyncTraceForTrack()) {
+        if (!android.os.Flags.asyncTraceForTrack()) {
             return;
         }
         Trace.asyncTraceForTrackBegin(tag, methodName, cookie);
@@ -44,7 +45,7 @@ public final class BluetoothTrace {
      * @param cookie The cookie associated with this track.
      */
     public static void asyncTraceForTrackEnd(String tag, int cookie) {
-        if (!asyncTraceForTrack()) {
+        if (!android.os.Flags.asyncTraceForTrack()) {
             return;
         }
         Trace.asyncTraceForTrackEnd(tag, cookie);

@@ -19,6 +19,8 @@
  *   Functions generated:23
  */
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "device/include/esco_parameters.h"
@@ -30,7 +32,6 @@
 #include "stack/include/hci_error_code.h"
 #include "stack/include/sco_hci_link_interface.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 const RawAddress* BTM_ReadScoBdAddr(uint16_t /* sco_inx */) {
   inc_func_call_count(__func__);

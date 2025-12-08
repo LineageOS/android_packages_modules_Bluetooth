@@ -67,6 +67,7 @@ public:
     log::assert_that(callback_ == &kNullCallbacks, "callbacks already set");
     log::assert_that(callback != nullptr, "callback != nullptr");
     std::lock_guard<std::mutex> lock(mutex_);
+    log::info("callbacks have been set!");
     callback_ = callback;
   }
 
@@ -77,12 +78,13 @@ public:
   }
 
   void initializationComplete() override {
-    common::StopWatch stop_watch(__func__);
+    common::StopWatch stop_watch(common::StopWatch::hciHalRxBuffer_, __func__);
     init_promise_.set_value();
   }
 
   void hciEventReceived(const std::vector<uint8_t>& packet) override {
-    common::StopWatch stop_watch(GetTimerText(__func__, packet));
+    common::StopWatch stop_watch(common::StopWatch::hciHalRxBuffer_,
+                                 GetTimerText(__func__, packet));
     link_clocker_.OnHciEvent(packet);
     btsnoop_logger_->Capture(packet, SnoopLogger::Direction::INCOMING,
                              SnoopLogger::PacketType::EVT);
@@ -93,7 +95,8 @@ public:
   }
 
   void aclDataReceived(const std::vector<uint8_t>& packet) override {
-    common::StopWatch stop_watch(GetTimerText(__func__, packet));
+    common::StopWatch stop_watch(common::StopWatch::hciHalRxBuffer_,
+                                 GetTimerText(__func__, packet));
     btsnoop_logger_->Capture(packet, SnoopLogger::Direction::INCOMING,
                              SnoopLogger::PacketType::ACL);
     {
@@ -103,7 +106,8 @@ public:
   }
 
   void scoDataReceived(const std::vector<uint8_t>& packet) override {
-    common::StopWatch stop_watch(GetTimerText(__func__, packet));
+    common::StopWatch stop_watch(common::StopWatch::hciHalRxBuffer_,
+                                 GetTimerText(__func__, packet));
     btsnoop_logger_->Capture(packet, SnoopLogger::Direction::INCOMING,
                              SnoopLogger::PacketType::SCO);
     {
@@ -113,7 +117,8 @@ public:
   }
 
   void isoDataReceived(const std::vector<uint8_t>& packet) override {
-    common::StopWatch stop_watch(GetTimerText(__func__, packet));
+    common::StopWatch stop_watch(common::StopWatch::hciHalRxBuffer_,
+                                 GetTimerText(__func__, packet));
     btsnoop_logger_->Capture(packet, SnoopLogger::Direction::INCOMING,
                              SnoopLogger::PacketType::ISO);
     {
@@ -137,27 +142,31 @@ void HciHalImpl::registerIncomingPacketCallback(HciHalCallbacks* callback) {
 void HciHalImpl::unregisterIncomingPacketCallback() { callbacks_->ResetCallback(); }
 
 void HciHalImpl::sendHciCommand(HciPacket packet) {
+  common::StopWatch stop_watch(common::StopWatch::hciHalTxBuffer_, GetTimerText(__func__, packet));
   btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::CMD);
   backend_->sendHciCommand(packet);
 }
 
 void HciHalImpl::sendAclData(HciPacket packet) {
+  common::StopWatch stop_watch(common::StopWatch::hciHalTxBuffer_, GetTimerText(__func__, packet));
   btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::ACL);
   backend_->sendAclData(packet);
 }
 
 void HciHalImpl::sendScoData(HciPacket packet) {
+  common::StopWatch stop_watch(common::StopWatch::hciHalTxBuffer_, GetTimerText(__func__, packet));
   btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::SCO);
   backend_->sendScoData(packet);
 }
 
 void HciHalImpl::sendIsoData(HciPacket packet) {
+  common::StopWatch stop_watch(common::StopWatch::hciHalTxBuffer_, GetTimerText(__func__, packet));
   btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::ISO);
   backend_->sendIsoData(packet);
 }
 
 uint16_t HciHalImpl::getMsftOpcode() {
-  if (com::android::bluetooth::flags::le_scan_msft_support()) {
+  if (com_android_bluetooth_flags_le_scan_msft_support()) {
     return android::sysprop::bluetooth::Hci::msft_vendor_opcode().value_or(0);
   }
   return 0;
@@ -165,17 +174,21 @@ uint16_t HciHalImpl::getMsftOpcode() {
 
 HciHalImpl::HciHalImpl(os::Handler* handler, LinkClocker& link_clocker, SnoopLogger* btsnoop_logger)
     : link_clocker_(link_clocker), btsnoop_logger_(btsnoop_logger) {
-  common::StopWatch stop_watch(__func__);
+  common::StopWatch stop_watch(common::StopWatch::hciHalTxBuffer_, __func__);
   log::assert_that(backend_ == nullptr,
                    "Start can't be called more than once before Stop is called.");
 
-  if (com::android::bluetooth::flags::hci_instance_name_use_injected()) {
+  log::info("Initializing HCI HAL backend and callbacks !!");
+  if (com_android_bluetooth_flags_hci_instance_name_use_injected()) {
     backend_ = HciBackend::CreateAidl(bluetooth::os::ParameterProvider::GetHciInstanceName());
   } else {
     backend_ = HciBackend::CreateAidl();
   }
   if (!backend_) {
+    log::info("AIDL backend not available, falling back to HIDL");
     backend_ = HciBackend::CreateHidl(handler);
+  } else {
+    log::info("AIDL backend available");
   }
 
   log::assert_that(backend_ != nullptr, "No backend available");
@@ -184,6 +197,7 @@ HciHalImpl::HciHalImpl(os::Handler* handler, LinkClocker& link_clocker, SnoopLog
 
   backend_->initialize(callbacks_);
   callbacks_->init_promise->get_future().wait();
+  log::info("HCI HAL initialization completed !!");
 }
 
 HciHalImpl::~HciHalImpl() {

@@ -18,6 +18,7 @@ package android.bluetooth;
 
 import android.annotation.IntDef;
 import android.annotation.NonNull;
+import android.annotation.RequiresNoPermission;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.os.Parcel;
 import android.os.ParcelUuid;
@@ -288,6 +289,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *
      * @hide
      */
+    @RequiresNoPermission
     public int getKeySize() {
         return mKeySize;
     }
@@ -298,6 +300,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      * @param descriptor Descriptor to be added to this characteristic.
      * @return true, if the descriptor was added to the characteristic
      */
+    @RequiresNoPermission
     public boolean addDescriptor(BluetoothGattDescriptor descriptor) {
         mDescriptors.add(descriptor);
         descriptor.setCharacteristic(this);
@@ -323,6 +326,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *
      * @return The associated service
      */
+    @RequiresNoPermission
     public BluetoothGattService getService() {
         return mService;
     }
@@ -342,6 +346,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *
      * @return UUID of this characteristic
      */
+    @RequiresNoPermission
     public UUID getUuid() {
         return mUuid;
     }
@@ -354,6 +359,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *
      * @return Instance ID of this characteristic
      */
+    @RequiresNoPermission
     public int getInstanceId() {
         return mInstance;
     }
@@ -363,6 +369,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *
      * @hide
      */
+    @RequiresNoPermission
     public void setInstanceId(int instanceId) {
         mInstance = instanceId;
     }
@@ -375,6 +382,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *
      * @return Properties of this characteristic
      */
+    @RequiresNoPermission
     public int getProperties() {
         return mProperties;
     }
@@ -384,6 +392,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *
      * @return Permissions of this characteristic
      */
+    @RequiresNoPermission
     public int getPermissions() {
         return mPermissions;
     }
@@ -393,6 +402,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *
      * @return Write type for this characteristic
      */
+    @RequiresNoPermission
     public @WriteType int getWriteType() {
         return mWriteType;
     }
@@ -406,6 +416,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *
      * @param writeType The write type to for this characteristic.
      */
+    @RequiresNoPermission
     public void setWriteType(@WriteType int writeType) {
         mWriteType = writeType;
     }
@@ -416,6 +427,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      * @hide
      */
     @UnsupportedAppUsage
+    @RequiresNoPermission
     public void setKeySize(int keySize) {
         mKeySize = keySize;
     }
@@ -425,6 +437,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *
      * @return Descriptors for this characteristic
      */
+    @RequiresNoPermission
     public List<BluetoothGattDescriptor> getDescriptors() {
         return mDescriptors;
     }
@@ -435,6 +448,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *
      * @return GATT descriptor object or null if no descriptor with the given UUID was found.
      */
+    @RequiresNoPermission
     public BluetoothGattDescriptor getDescriptor(UUID uuid) {
         for (BluetoothGattDescriptor descriptor : mDescriptors) {
             if (descriptor.getUuid().equals(uuid)) {
@@ -456,6 +470,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      * @deprecated Use {@link BluetoothGatt#readCharacteristic(BluetoothGattCharacteristic)} instead
      */
     @Deprecated
+    @RequiresNoPermission
     public byte[] getValue() {
         return mValue;
     }
@@ -474,6 +489,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *     the characteristic value
      */
     @Deprecated
+    @RequiresNoPermission
     public Integer getIntValue(int formatType, int offset) {
         if ((offset + getTypeLen(formatType)) > mValue.length) {
             return null;
@@ -516,6 +532,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *     the characteristic value
      */
     @Deprecated
+    @RequiresNoPermission
     public Float getFloatValue(int formatType, int offset) {
         if ((offset + getTypeLen(formatType)) > mValue.length) {
             return null;
@@ -544,6 +561,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *     the characteristic value
      */
     @Deprecated
+    @RequiresNoPermission
     public String getStringValue(int offset) {
         if (mValue == null || offset > mValue.length) return null;
         byte[] strBytes = new byte[mValue.length - offset];
@@ -565,6 +583,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *     BluetoothGatt#writeCharacteristic(BluetoothGattCharacteristic, byte[], int)}
      */
     @Deprecated
+    @RequiresNoPermission
     public boolean setValue(byte[] value) {
         mValue = value;
         return true;
@@ -583,6 +602,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *     BluetoothGatt#writeCharacteristic(BluetoothGattCharacteristic, byte[], int)}
      */
     @Deprecated
+    @RequiresNoPermission
     public boolean setValue(int value, int formatType, int offset) {
         int len = offset + getTypeLen(formatType);
         if (mValue == null) mValue = new byte[len];
@@ -634,31 +654,33 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *     BluetoothGatt#writeCharacteristic(BluetoothGattCharacteristic, byte[], int)}
      */
     @Deprecated
+    @RequiresNoPermission
     public boolean setValue(int mantissa, int exponent, int formatType, int offset) {
         int len = offset + getTypeLen(formatType);
         if (mValue == null) mValue = new byte[len];
         if (len > mValue.length) return false;
 
         switch (formatType) {
-            case FORMAT_SFLOAT:
+            case FORMAT_SFLOAT -> {
                 mantissa = intToSignedBits(mantissa, 12);
                 exponent = intToSignedBits(exponent, 4);
                 mValue[offset++] = (byte) (mantissa & 0xFF);
                 mValue[offset] = (byte) ((mantissa >> 8) & 0x0F);
                 mValue[offset] += (byte) ((exponent & 0x0F) << 4);
-                break;
+            }
 
-            case FORMAT_FLOAT:
+            case FORMAT_FLOAT -> {
                 mantissa = intToSignedBits(mantissa, 24);
                 exponent = intToSignedBits(exponent, 8);
                 mValue[offset++] = (byte) (mantissa & 0xFF);
                 mValue[offset++] = (byte) ((mantissa >> 8) & 0xFF);
                 mValue[offset++] = (byte) ((mantissa >> 16) & 0xFF);
                 mValue[offset] += (byte) (exponent & 0xFF);
-                break;
+            }
 
-            default:
+            default -> {
                 return false;
+            }
         }
 
         return true;
@@ -675,6 +697,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      *     BluetoothGatt#writeCharacteristic(BluetoothGattCharacteristic, byte[], int)}
      */
     @Deprecated
+    @RequiresNoPermission
     public boolean setValue(String value) {
         mValue = value.getBytes();
         return true;

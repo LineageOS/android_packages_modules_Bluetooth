@@ -185,7 +185,7 @@ public:
 
   virtual uint16_t GetLeSuggestedDefaultDataLength() const override;
 
-  virtual uint8_t GetLeNumberOfSupportedAdverisingSets() const override;
+  virtual uint8_t GetLeNumberOfSupportedAdvertisingSets() const override;
 
   virtual uint8_t GetLePeriodicAdvertiserListSize() const override;
 

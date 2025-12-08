@@ -22,10 +22,6 @@
 #include "hci/controller_mock.h"
 #include "test/mock/mock_main_shim_entry.h"
 
-namespace {
-const char kName[] = "Hello";
-}
-
 class BtaSdpTest : public BtaWithHwOnTest {
 protected:
   void SetUp() override {
@@ -37,8 +33,8 @@ protected:
   }
 
   void TearDown() override {
-    BtaWithHwOnTest::TearDown();
     bluetooth::hci::testing::mock_controller_.reset();
+    BtaWithHwOnTest::TearDown();
   }
 };
 

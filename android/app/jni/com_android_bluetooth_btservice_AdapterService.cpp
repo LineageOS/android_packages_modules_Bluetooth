@@ -19,6 +19,8 @@
 
 #include <android/log.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/uuid.h>
 #include <jni.h>
 #include <nativehelper/JNIHelp.h>
 #include <nativehelper/JNIPlatformHelp.h>
@@ -39,8 +41,6 @@
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_sock.h"
-#include "types/ble_address_with_type.h"
-#include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
 extern bt_interface_t bluetoothInterface;
@@ -1347,7 +1347,7 @@ static jboolean set_data(JNIEnv* env, jobject oobData, jint transport, bt_oob_da
         env->ReleaseByteArrayElements(leAppearance, leAppearanceBytes, 0);
         return JNI_FALSE;
       }
-      memcpy(oob_data->sm_tk, leAppearanceBytes, OOB_LE_APPEARANCE_SIZE);
+      memcpy(oob_data->le_appearance, leAppearanceBytes, OOB_LE_APPEARANCE_SIZE);
       env->ReleaseByteArrayElements(leAppearance, leAppearanceBytes, 0);
     }
 
@@ -1414,8 +1414,7 @@ static jboolean createBondOutOfBandNative(JNIEnv* env, jobject /* obj */, jbyteA
     return JNI_FALSE;
   }
 
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
+  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
   env->ReleaseByteArrayElements(address, addr, 0);
 
   // Convert P192 data from Java POJO to C Struct
@@ -1751,8 +1750,7 @@ static jbyteArray obfuscateAddressNative(JNIEnv* env, jobject /* obj */, jbyteAr
     jniThrowIOException(env, EINVAL);
     return env->NewByteArray(0);
   }
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
+  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
   env->ReleaseByteArrayElements(address, addr, 0);
   std::string output = sBluetoothInterface->obfuscate_address(addr_obj);
   jsize output_size = output.size() * sizeof(char);
@@ -1889,8 +1887,7 @@ static int getMetricIdNative(JNIEnv* env, jobject /* obj */, jbyteArray address)
     jniThrowIOException(env, EINVAL);
     return 0;
   }
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
+  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
   env->ReleaseByteArrayElements(address, addr, 0);
   return sBluetoothInterface->get_metric_id(addr_obj);
 }
@@ -1907,8 +1904,7 @@ static jboolean allowLowLatencyAudioNative(JNIEnv* env, jobject /* obj */, jbool
     return false;
   }
 
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
+  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
   env->ReleaseByteArrayElements(address, addr, 0);
   sBluetoothInterface->allow_low_latency_audio(allowed, addr_obj);
   return true;
@@ -1925,8 +1921,7 @@ static void metadataChangedNative(JNIEnv* env, jobject /* obj */, jbyteArray add
     jniThrowIOException(env, EINVAL);
     return;
   }
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
+  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
   env->ReleaseByteArrayElements(address, addr, 0);
 
   if (value == NULL) {
@@ -1962,12 +1957,12 @@ static jboolean interopMatchAddrOrNameNative(JNIEnv* env, jclass /* clazz */, js
     log::warn("address is null.");
     return JNI_FALSE;
   }
-  RawAddress bdaddr;
-  bool success = RawAddress::FromString(tmp_addr, bdaddr);
+
+  auto bdaddr = RawAddress::FromString(tmp_addr);
 
   env->ReleaseStringUTFChars(address, tmp_addr);
 
-  if (!success) {
+  if (!bdaddr.has_value()) {
     log::warn("address is invalid.");
     return JNI_FALSE;
   }
@@ -1978,7 +1973,7 @@ static jboolean interopMatchAddrOrNameNative(JNIEnv* env, jclass /* clazz */, js
     return JNI_FALSE;
   }
 
-  bool matched = sBluetoothInterface->interop_match_addr_or_name(feature_name_str, &bdaddr);
+  bool matched = sBluetoothInterface->interop_match_addr_or_name(feature_name_str, &bdaddr.value());
   env->ReleaseStringUTFChars(feature_name, feature_name_str);
 
   return matched ? JNI_TRUE : JNI_FALSE;
@@ -2003,12 +1998,12 @@ static void interopDatabaseAddRemoveAddrNative(JNIEnv* env, jclass /* clazz */, 
     log::warn("address is null.");
     return;
   }
-  RawAddress bdaddr;
-  bool success = RawAddress::FromString(tmp_addr, bdaddr);
+
+  auto bdaddr = RawAddress::FromString(tmp_addr);
 
   env->ReleaseStringUTFChars(address, tmp_addr);
 
-  if (!success) {
+  if (!bdaddr.has_value()) {
     log::warn("address is invalid.");
     return;
   }
@@ -2019,8 +2014,8 @@ static void interopDatabaseAddRemoveAddrNative(JNIEnv* env, jclass /* clazz */, 
     return;
   }
 
-  sBluetoothInterface->interop_database_add_remove_addr((do_add == JNI_TRUE), feature_name_str,
-                                                        &bdaddr, static_cast<int>(length));
+  sBluetoothInterface->interop_database_add_remove_addr(do_add == JNI_TRUE, feature_name_str,
+                                                        &bdaddr.value(), static_cast<int>(length));
 
   env->ReleaseStringUTFChars(feature_name, feature_name_str);
 }
@@ -2067,17 +2062,16 @@ static int getRemotePbapPceVersionNative(JNIEnv* env, jobject /* obj */, jstring
     return JNI_FALSE;
   }
 
-  RawAddress bdaddr;
-  bool success = RawAddress::FromString(tmp_addr, bdaddr);
+  auto bdaddr = RawAddress::FromString(tmp_addr);
 
   env->ReleaseStringUTFChars(address, tmp_addr);
 
-  if (!success) {
+  if (!bdaddr.has_value()) {
     log::warn("address is invalid.");
     return JNI_FALSE;
   }
 
-  return sBluetoothInterface->get_remote_pbap_pce_version(&bdaddr);
+  return sBluetoothInterface->get_remote_pbap_pce_version(&bdaddr.value());
 }
 
 static jboolean pbapPseDynamicVersionUpgradeIsEnabledNative(JNIEnv* /* env */, jobject /* obj */) {
@@ -2172,8 +2166,7 @@ static jboolean disconnectAclNative(JNIEnv* env, jobject /* obj */, jbyteArray a
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  RawAddress addr_obj = {};
-  addr_obj.FromOctets(reinterpret_cast<uint8_t*>(addr));
+  RawAddress addr_obj = RawAddress::FromOctets(reinterpret_cast<uint8_t*>(addr));
   env->ReleaseByteArrayElements(address, addr, 0);
 
   return sBluetoothInterface->disconnect_acl(addr_obj, transport);
@@ -2376,6 +2369,12 @@ jint JNI_OnLoad(JavaVM* jvm, void* /* reserved */) {
     return JNI_ERR;
   }
 
+  status = android::register_com_android_bluetooth_scan(e);
+  if (status < 0) {
+    log::error("jni scan registration failure: {}", status);
+    return JNI_ERR;
+  }
+
   status = android::register_com_android_bluetooth_hfp(e);
   if (status < 0) {
     log::error("jni hfp registration failure, status: {}", status);
@@ -2468,6 +2467,12 @@ jint JNI_OnLoad(JavaVM* jvm, void* /* reserved */) {
   status = android::register_com_android_bluetooth_csip_set_coordinator(e);
   if (status < 0) {
     log::error("jni csis client registration failure: {}", status);
+    return JNI_ERR;
+  }
+
+  status = android::register_com_android_bluetooth_vaps_server(e);
+  if (status < 0) {
+    log::error("jni le audio vaps server registration failure: {}", status);
     return JNI_ERR;
   }
 

@@ -15,6 +15,7 @@
 
 import asyncio
 from collections.abc import Iterable, Sequence
+from unittest import mock
 
 from bumble import core
 from bumble import device as bumble_device
@@ -36,8 +37,8 @@ _CallState = android_constants.CallState
 _Callback = bl4a_api.CallbackHandler
 _DEFAULT_STEP_TIMEOUT_SECONDS = 5.0
 _HFP_AG_SDP_HANDLE = 1
-_HFP_HF_ENABLED_PROPERTY = "bluetooth.profile.hfp.hf.enabled"
 _PROPERTY_SWB_SUPPORTED = "bluetooth.hfp.swb.supported"
+_PROPERTY_HF_FEATURES = "bluetooth.hfp.hf_client_features.config"
 _MIN_HFP_VOLUME = 1
 _MAX_HFP_VOLUME = 15
 _STREAM_TYPE_CALL = android_constants.StreamType.CALL
@@ -50,7 +51,11 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
     @override
     async def async_setup_class(self) -> None:
         await super().async_setup_class()
-        if self.dut.getprop(_HFP_HF_ENABLED_PROPERTY) != "true":
+        if self.dut.device.is_emulator:
+            self.dut.setprop(android_constants.Property.HFP_HF_ENABLED, "true")
+            self.dut.setprop(_PROPERTY_HF_FEATURES, "0x1b5")
+
+        if self.dut.getprop(android_constants.Property.HFP_HF_ENABLED) != "true":
             raise signals.TestAbortClass("DUT does not have HFP HF enabled.")
 
     @override
@@ -275,7 +280,7 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
             self.logger.info("[REF] Create SCO.")
             connection = ref_hfp_protocol.dlc.multiplexer.l2cap_channel.connection
             sco_links = asyncio.Queue[bumble_device.ScoLink]()
-            self.ref.device.on("sco_connection", sco_links.put_nowait)
+            self.ref.device.on(self.ref.device.EVENT_SCO_CONNECTION, sco_links.put_nowait)
             await self.ref.device.send_command(
                 hci.HCI_Enhanced_Setup_Synchronous_Connection_Command(
                     connection_handle=connection.handle, **esco_parameters.asdict()))
@@ -340,7 +345,7 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
             self.logger.info("[REF] Wait for HFP connected.")
             async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
                 ref_hfp_protocol = await self.ref_hfp_protocols.get()
-            ref_hfp_protocol.on("speaker_volume", ref_volumes.put_nowait)
+            ref_hfp_protocol.on(ref_hfp_protocol.EVENT_SPEAKER_VOLUME, ref_volumes.put_nowait)
 
             self.logger.info("[DUT] Wait for HFP connected.")
             await self._wait_for_hfp_state(dut_hfp_cb, _HfpState.CONNECTED)
@@ -399,7 +404,7 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
                 ref_hfp_protocol = await self.ref_hfp_protocols.get()
 
             hf_indicators = asyncio.Queue[hfp.HfIndicatorState]()
-            ref_hfp_protocol.on("hf_indicator", hf_indicators.put_nowait)
+            ref_hfp_protocol.on(ref_hfp_protocol.EVENT_HF_INDICATOR, hf_indicators.put_nowait)
 
             self.logger.info("[DUT] Wait for HFP connected.")
             await self._wait_for_hfp_state(dut_cb, _HfpState.CONNECTED)
@@ -420,6 +425,105 @@ class HfpHfTest(navi_test_base.TwoDevicesTestBase):
                 hf_indicator = await hf_indicators.get()
                 self.assertEqual(hf_indicator.indicator, hfp.HfIndicator.BATTERY_LEVEL)
                 self.assertEqual(hf_indicator.current_status, expected_battery_level)
+
+    @navi_test_base.named_parameterized(
+        accept=True,
+        reject=False,
+    )
+    async def test_answer_call_from_hf(self, accepted: bool) -> None:
+        """Tests answering call from HF.
+
+    Test steps:
+      1. Setup HFP connection between DUT and REF.
+      2. Answer call from HF.
+      3. Check the call state from AG.
+
+    Args:
+      accepted: Whether the call is accepted or rejected.
+    """
+        configuration = self._ag_configuration(
+            supported_ag_features=[
+                hfp.AgFeature.ENHANCED_CALL_STATUS,
+                hfp.AgFeature.CODEC_NEGOTIATION,
+            ],
+            supported_ag_indicators=[
+                hfp.AgIndicatorState.call(),
+                hfp.AgIndicatorState.callsetup(),
+            ],
+        )
+        self._setup_ag_device(configuration)
+
+        hf_cb = self.dut.bl4a.register_callback(bl4a_api.Module.HFP_HF)
+        telecom_cb = self.dut.bl4a.register_callback(bl4a_api.Module.TELECOM)
+        self.test_case_context.push(hf_cb)
+        self.test_case_context.push(telecom_cb)
+
+        await self.classic_connect_and_pair()
+
+        self.logger.info("[REF] Wait for HFP connected.")
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            ref_hfp_protocol = await self.ref_hfp_protocols.get()
+
+        self.logger.info("[DUT] Wait for HFP connected.")
+        await self._wait_for_hfp_state(hf_cb, _HfpState.CONNECTED)
+
+        self.logger.info("[REF] Update call state.")
+        call_info = hfp.CallInfo(
+            index=1,
+            direction=hfp.CallInfoDirection.MOBILE_TERMINATED_CALL,
+            status=hfp.CallInfoStatus.INCOMING,
+            mode=hfp.CallInfoMode.VOICE,
+            multi_party=hfp.CallInfoMultiParty.NOT_IN_CONFERENCE,
+            number="+1234567890",
+        )
+        ref_hfp_protocol.calls.append(call_info)
+        ref_hfp_protocol.update_ag_indicator(
+            hfp.AgIndicator.CALL_SETUP,
+            hfp.CallSetupAgIndicator.INCOMING_CALL_PROCESS,
+        )
+
+        self.logger.info("[DUT] Wait for call ringing.")
+        await telecom_cb.wait_for_event(
+            bl4a_api.CallStateChanged(
+                handle=mock.ANY,
+                name=mock.ANY,
+                state=_CallState.RINGING,
+            ))
+        if accepted:
+            answered = asyncio.Event()
+            ref_hfp_protocol.once(ref_hfp_protocol.EVENT_ANSWER, answered.set)
+            self.logger.info("[DUT] Answer call.")
+            self.dut.shell("input keyevent KEYCODE_CALL")
+            self.logger.info("[REF] Wait for call answered.")
+            async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+                await answered.wait()
+        else:
+            rejected = asyncio.Event()
+            ref_hfp_protocol.once(ref_hfp_protocol.EVENT_HANG_UP, rejected.set)
+            self.logger.info("[DUT] Reject call.")
+            self.dut.shell("input keyevent KEYCODE_ENDCALL")
+            self.logger.info("[REF] Wait for call rejected.")
+            async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+                await rejected.wait()
+
+        self.logger.info("[REF] Update call state.")
+        ref_hfp_protocol.update_ag_indicator(
+            hfp.AgIndicator.CALL_SETUP,
+            hfp.CallSetupAgIndicator.NOT_IN_CALL_SETUP,
+        )
+        if accepted:
+            call_info.status = hfp.CallInfoStatus.ACTIVE
+            ref_hfp_protocol.update_ag_indicator(hfp.AgIndicator.CALL, 1)
+        else:
+            ref_hfp_protocol.calls.clear()
+
+        self.logger.info("[DUT] Wait for call state changed.")
+        await telecom_cb.wait_for_event(
+            bl4a_api.CallStateChanged(
+                handle=mock.ANY,
+                name=mock.ANY,
+                state=(_CallState.ACTIVE if accepted else _CallState.DISCONNECTED),
+            ))
 
 
 if __name__ == "__main__":

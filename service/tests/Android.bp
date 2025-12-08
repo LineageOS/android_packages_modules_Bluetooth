@@ -30,11 +30,12 @@ android_test {
     static_libs: [
         "androidx.test.espresso.intents",
         "androidx.test.rules",
+        "bluetooth-common-java-tests",
         "flag-junit",
         "frameworks-base-testutils",
         "kotlinx_coroutines_test",
         "libprotobuf-java-nano",
-        "mockito-target-extended-minus-junit4",
+        "mockito-target-extended",
         "platform-compat-test-rules",
         "platform-parametric-runner-lib",
         "platform-test-annotations",
@@ -62,6 +63,15 @@ android_test {
         "mts-bluetooth",
         "mts-bt",
     ],
+
+    jacoco: {
+        include_filter: [
+            "android.bluetooth.**",
+            "com.android.bluetooth.**",
+            "com.android.server.bluetooth.**",
+        ],
+        exclude_filter: [],
+    },
 
     sdk_version: "system_server_current",
     min_sdk_version: "36",

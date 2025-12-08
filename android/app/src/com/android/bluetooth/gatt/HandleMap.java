@@ -28,8 +28,19 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class HandleMap {
-    private static final String TAG =
-            GattServiceConfig.TAG_PREFIX + HandleMap.class.getSimpleName();
+    private static final String TAG = GattUtil.TAG_PREFIX + HandleMap.class.getSimpleName();
+
+    // Prepared writes can be requested by a client, requesting that a server implementation hold
+    // all write requests until the client commits or executes the write. This execution is meant to
+    // commit all the writes, in the order they were received, on the server. This operations is
+    // exposed to server apps via the 'isPrep' field in the various request callbacks, combined with
+    // the onExecuteWrite() callback when the client is ready to commit. While both operations have
+    // transaction IDs, the characteristics written to usually have attribute handles that are
+    // exposed to apps, but the prepared write commit operation itself does not. Despite this, our
+    // APIs used to send a response require a handle. We use 0 as a dummy handle to respond to these
+    // prepared writes. By specification, this is an invalid handle, so its safe to use without
+    // consequence. The stack will ignore the handle down below anyways.
+    public static final int HANDLE_PREPARED_WRITE = 0;
 
     enum Type {
         SERVICE,
@@ -54,20 +65,33 @@ class HandleMap {
         final Type mType;
         final int mHandle;
         final UUID mUuid;
-        int mInstance = 0;
-        int mServiceType = 0;
-        int mServiceHandle = 0;
-        int mCharHandle = 0;
-        boolean mAdvertisePreferred = false;
+        final int mInstance;
+        final int mServiceType;
+        final int mServiceHandle;
+        final int mCharHandle;
+        final boolean mAdvertisePreferred;
+
         boolean mStarted = false;
 
-        Entry(int serverIf, int handle, UUID uuid, int serviceType, int instance) {
+        private Entry(
+                int serverIf,
+                Type type,
+                int handle,
+                UUID uuid,
+                int instance,
+                int serviceType,
+                int serviceHandle,
+                int charHandle,
+                boolean advertisePreferred) {
             mServerIf = serverIf;
-            mType = Type.SERVICE;
+            mType = type;
             mHandle = handle;
             mUuid = uuid;
             mInstance = instance;
             mServiceType = serviceType;
+            mServiceHandle = serviceHandle;
+            mCharHandle = charHandle;
+            mAdvertisePreferred = advertisePreferred;
         }
 
         Entry(
@@ -77,30 +101,42 @@ class HandleMap {
                 int serviceType,
                 int instance,
                 boolean advertisePreferred) {
-            mServerIf = serverIf;
-            mType = Type.SERVICE;
-            mHandle = handle;
-            mUuid = uuid;
-            mInstance = instance;
-            mServiceType = serviceType;
-            mAdvertisePreferred = advertisePreferred;
+            this(
+                    serverIf,
+                    Type.SERVICE,
+                    handle,
+                    uuid,
+                    instance,
+                    serviceType,
+                    0 /* serviceHandle */,
+                    0 /* charHandle */,
+                    advertisePreferred);
         }
 
         Entry(int serverIf, Type type, int handle, UUID uuid, int serviceHandle) {
-            mServerIf = serverIf;
-            mType = type;
-            mHandle = handle;
-            mUuid = uuid;
-            mServiceHandle = serviceHandle;
+            this(
+                    serverIf,
+                    type,
+                    handle,
+                    uuid,
+                    0 /* instance */,
+                    0 /* serviceType */,
+                    serviceHandle,
+                    0 /* charHandle */,
+                    false);
         }
 
         Entry(int serverIf, Type type, int handle, UUID uuid, int serviceHandle, int charHandle) {
-            mServerIf = serverIf;
-            mType = type;
-            mHandle = handle;
-            mUuid = uuid;
-            mServiceHandle = serviceHandle;
-            mCharHandle = charHandle;
+            this(
+                    serverIf,
+                    type,
+                    handle,
+                    uuid,
+                    0 /* instance */,
+                    0 /* serviceType */,
+                    serviceHandle,
+                    charHandle,
+                    false);
         }
     }
 

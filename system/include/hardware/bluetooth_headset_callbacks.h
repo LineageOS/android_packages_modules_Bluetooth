@@ -16,8 +16,9 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include "bt_hf.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace headset {

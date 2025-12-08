@@ -23,6 +23,9 @@
  ******************************************************************************/
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
+
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -35,8 +38,6 @@
 #include "stack/include/l2cap_types.h"
 #include "stack/include/port_api.h"
 #include "stack/include/rfcdefs.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants and data types

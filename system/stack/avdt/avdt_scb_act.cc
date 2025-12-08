@@ -26,6 +26,8 @@
 #define LOG_TAG "bluetooth-a2dp"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <string.h>
 
@@ -43,7 +45,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/l2cap_interface.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -92,6 +93,9 @@ uint32_t avdt_scb_gen_ssrc(AvdtpScb* p_scb) {
  ******************************************************************************/
 void avdt_scb_hdl_abort_cmd(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
   p_scb->role = AVDT_CLOSE_ACP;
+  if (p_scb->p_ccb != NULL) {
+    bluetooth::metrics::LogAvdtpAbortResponseSendEvent(p_scb->p_ccb->peer_addr);
+  }
   avdt_scb_event(p_scb, AVDT_SCB_API_ABORT_RSP_EVT, p_data);
 }
 
@@ -119,6 +123,9 @@ void avdt_scb_hdl_abort_rsp(AvdtpScb* /* p_scb */, tAVDT_SCB_EVT* /* p_data */) 
  ******************************************************************************/
 void avdt_scb_hdl_close_cmd(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
   p_scb->role = AVDT_CLOSE_ACP;
+  if (p_scb->p_ccb != NULL) {
+    bluetooth::metrics::LogAvdtpCloseResponseSendEvent(p_scb->p_ccb->peer_addr);
+  }
   avdt_scb_event(p_scb, AVDT_SCB_API_CLOSE_RSP_EVT, p_data);
 }
 
@@ -194,6 +201,10 @@ void avdt_scb_hdl_open_cmd(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
 void avdt_scb_hdl_open_rej(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
   /* do exactly same as setconfig reject */
   avdt_scb_hdl_setconfig_rej(p_scb, p_data);
+
+  if (p_scb != NULL && p_scb->p_ccb != NULL) {
+    bluetooth::metrics::LogAvdtpOpenRejectedEvent(p_scb->p_ccb->peer_addr);
+  }
 }
 
 /*******************************************************************************
@@ -626,6 +637,9 @@ void avdt_scb_hdl_setconfig_rej(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
   (*p_scb->stream_config.p_avdt_ctrl_cback)(avdt_scb_to_hdl(p_scb), RawAddress::kEmpty,
                                             AVDT_OPEN_CFM_EVT, (tAVDT_CTRL*)&p_data->msg.hdr,
                                             p_scb->stream_config.scb_index);
+  if (p_scb->p_ccb != NULL) {
+    bluetooth::metrics::LogAvdtpSetConfigRejectedEvent(p_scb->p_ccb->peer_addr);
+  }
 }
 
 /*******************************************************************************
@@ -679,7 +693,7 @@ void avdt_scb_hdl_setconfig_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
     // Delay reporting is sent before open request (i.e., in configured state).
     avdt_scb_snd_snk_delay_rpt_req(p_scb, p_data);
 
-    if (com::android::bluetooth::flags::avdt_wait_for_initial_delay_report_as_initiator() &&
+    if (com_android_bluetooth_flags_avdt_wait_for_initial_delay_report_as_initiator() &&
         (p_scb->curr_cfg.psc_mask & AVDT_PSC_DELAY_RPT)) {
       log::verbose("set alarm init_delay_report_timer");
       alarm_set_on_mloop(p_scb->init_delay_report_timer, AVDT_INIT_DELAY_REPORT_TIMEOUT_MS,
@@ -849,7 +863,7 @@ void avdt_scb_hdl_delay_rpt_cmd(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
 
   avdt_msg_send_rsp(p_scb->p_ccb, AVDT_SIG_DELAY_RPT, &p_data->msg);
 
-  if (!com::android::bluetooth::flags::avdt_wait_for_initial_delay_report_as_initiator()) {
+  if (!com_android_bluetooth_flags_avdt_wait_for_initial_delay_report_as_initiator()) {
     return;
   }
 

@@ -19,15 +19,16 @@
  */
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/uuid.h>
+
 #include <queue>
 #include <set>
 #include <vector>
 
 #include "hci/le_scanning_callback.h"
 #include "include/hardware/ble_scanner.h"
-#include "types/ble_address_with_type.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace shim {
@@ -39,7 +40,8 @@ public:
   using MsftAdvMonitorAddCallback =
           base::Callback<void(uint8_t /* monitor_handle */, uint8_t /* status */)>;
   using MsftAdvMonitorRemoveCallback = base::Callback<void(uint8_t /* status */)>;
-  using MsftAdvMonitorEnableCallback = base::Callback<void(uint8_t /* status */)>;
+  using MsftAdvMonitorEnableCallback =
+          base::Callback<void(bool /* enable */, uint8_t /* status */)>;
 
   MsftAdvMonitorAddCallback Add;
   MsftAdvMonitorRemoveCallback Remove;
@@ -71,12 +73,12 @@ public:
   void SetScanParameters(uint8_t scan_type, int scanner_id_1m, int scan_interval_1m,
                          int scan_window_1m, int scanner_id_coded, int scan_interval_coded,
                          int scan_window_coded, int scan_phy) override;
-  void BatchscanConfigStorage(int client_if, int batch_scan_full_max, int batch_scan_trunc_max,
+  void BatchScanConfigStorage(int client_if, int batch_scan_full_max, int batch_scan_trunc_max,
                               int batch_scan_notify_threshold, Callback cb) override;
-  void BatchscanEnable(int scan_mode, int scan_interval, int scan_window, int addr_type,
+  void BatchScanEnable(int scan_mode, int scan_interval, int scan_window, int addr_type,
                        int discard_rule, Callback cb) override;
-  void BatchscanDisable(Callback cb) override;
-  void BatchscanReadReports(int client_if, int scan_mode) override;
+  void BatchScanDisable(Callback cb) override;
+  void BatchScanReadReports(int client_if, int scan_mode) override;
   void StartSync(uint8_t sid, RawAddress address, uint16_t skip, uint16_t timeout,
                  int reg_id) override;
   void StopSync(uint16_t handle) override;
@@ -125,6 +127,9 @@ public:
   void OnMsftAdvMonitorRemove(bluetooth::hci::ErrorCode status);
   void OnMsftAdvMonitorEnable(bool enable, bluetooth::hci::ErrorCode status);
   MsftCallbacks msft_callbacks_;
+
+private:
+  bool msft_adv_monitor_enabled_ = false;
 
 private:
   bool parse_filter_command(bluetooth::hci::AdvertisingPacketContentFilterCommand&

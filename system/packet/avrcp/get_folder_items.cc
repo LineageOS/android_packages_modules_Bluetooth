@@ -150,7 +150,7 @@ void GetFolderItemsResponseBuilder::PushMediaPlayerItem(
   AddPayloadOctets2(pkt, base::ByteSwap(item.id_));  // Player ID
   AddPayloadOctets1(pkt, 0x01);                      // Player Type
   AddPayloadOctets4(pkt, 0x00000000);                // Player Subtype
-  AddPayloadOctets1(pkt, 0x02);  // Player Play Status // TODO: Add this as a passed field
+  AddPayloadOctets1(pkt, item.state_);               // Player Play Status
 
   // Features
   AddPayloadOctets1(pkt, 0x00);
@@ -179,7 +179,7 @@ void GetFolderItemsResponseBuilder::PushMediaPlayerItem(
   uint16_t name_len = item.name_.size();
   AddPayloadOctets2(pkt, base::ByteSwap(name_len));
 
-  for (const uint8_t& byte : item.name_) {
+  for (const uint8_t byte : item.name_) {
     AddPayloadOctets1(pkt, byte);
   }
 }
@@ -196,7 +196,7 @@ void GetFolderItemsResponseBuilder::PushFolderItem(const std::shared_ptr<::bluet
                     base::ByteSwap((uint16_t)0x006a));  // UTF-8 Character Set
   uint16_t name_len = item.name_.size();
   AddPayloadOctets2(pkt, base::ByteSwap(name_len));
-  for (const uint8_t& byte : item.name_) {
+  for (const uint8_t byte : item.name_) {
     AddPayloadOctets1(pkt, byte);
   }
 }
@@ -212,7 +212,7 @@ void GetFolderItemsResponseBuilder::PushMediaElementItem(
                     base::ByteSwap((uint16_t)0x006a));  // UTF-8 Character Set
   uint16_t name_len = item.name_.size();
   AddPayloadOctets2(pkt, base::ByteSwap(name_len));
-  for (const uint8_t& byte : item.name_) {
+  for (const uint8_t byte : item.name_) {
     AddPayloadOctets1(pkt, byte);
   }
 
@@ -226,7 +226,7 @@ void GetFolderItemsResponseBuilder::PushMediaElementItem(
     uint16_t attr_len = attr_val.size();
 
     AddPayloadOctets2(pkt, base::ByteSwap(attr_len));
-    for (const uint8_t& byte : attr_val) {
+    for (const uint8_t byte : attr_val) {
       AddPayloadOctets1(pkt, byte);
     }
   }

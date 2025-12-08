@@ -36,16 +36,16 @@ namespace bluetooth {
 namespace os {
 using common::Closure;
 
-RepeatingAlarm::RepeatingAlarm(Handler* handler)
-    : handler_(handler), fd_(TIMERFD_CREATE(ALARM_CLOCK, 0)) {
+RepeatingAlarm::RepeatingAlarm(Thread* thread)
+    : thread_(thread), fd_(TIMERFD_CREATE(ALARM_CLOCK, 0)) {
   log::assert_that(fd_ != -1, "assert failed: fd_ != -1");
 
-  token_ = handler_->thread_->GetReactor()->Register(
+  token_ = thread_->GetReactor()->Register(
           fd_, common::Bind(&RepeatingAlarm::on_fire, common::Unretained(this)), common::Closure());
 }
 
 RepeatingAlarm::~RepeatingAlarm() {
-  handler_->thread_->GetReactor()->Unregister(token_);
+  thread_->GetReactor()->Unregister(token_);
 
   int close_status;
   RUN_NO_INTR(close_status = TIMERFD_CLOSE(fd_));

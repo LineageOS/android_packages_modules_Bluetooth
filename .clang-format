@@ -44,3 +44,7 @@ RemoveParentheses: ReturnStatement
 Language: Java
 # Java format is handled by google-java-format
 DisableFormat: true
+
+---
+Language: Proto
+ColumnLimit: 100 # vs 80

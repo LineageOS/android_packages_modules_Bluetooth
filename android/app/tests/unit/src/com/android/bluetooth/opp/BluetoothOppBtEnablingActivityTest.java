@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.opp;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -30,11 +28,11 @@ import android.view.KeyEvent;
 
 import androidx.lifecycle.Lifecycle;
 import androidx.test.core.app.ActivityScenario;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.TestUtils;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -53,11 +51,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppBtEnablingActivityTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
-    // Activity tests can sometimes flaky because of external factors like system dialog, etc.
-    // making the expected Espresso's root not focused or the activity doesn't show up.
-    // Add retry rule to resolve this problem.
-    @Rule public TestUtils.RetryTestRule mRetryTestRule = new TestUtils.RetryTestRule();
 
     @Spy BluetoothMethodProxy mBluetoothMethodProxy;
 
@@ -86,12 +79,10 @@ public class BluetoothOppBtEnablingActivityTest {
         mIntent.setClass(sContext, BluetoothOppBtEnablingActivity.class);
 
         mRealTimeoutValue = BluetoothOppBtEnablingActivity.sBtEnablingTimeoutMs;
-        TestUtils.setUpUiTest();
     }
 
     @After
     public void tearDown() throws Exception {
-        TestUtils.tearDownUiTest();
         BluetoothMethodProxy.setInstanceForTesting(null);
         BluetoothOppBtEnablingActivity.sBtEnablingTimeoutMs = mRealTimeoutValue;
     }

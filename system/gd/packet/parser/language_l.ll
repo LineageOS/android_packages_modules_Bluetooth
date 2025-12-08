@@ -78,10 +78,6 @@ string_literal \".*\"
                           yylval->integer = 1;
                           return token::IS_LITTLE_ENDIAN;
                         }
-"big_endian_packets"    {
-                          yylval->integer = 0;
-                          return token::IS_LITTLE_ENDIAN;
-                        }
 
   /* Begin identifier definitions */
 {string_literal}        {

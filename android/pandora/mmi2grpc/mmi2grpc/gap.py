@@ -615,7 +615,7 @@ class GAPProxy(ProfileProxy):
         """
         Please send a disconnect request to terminate connection.
         """
-        if test == "GAP/CONN/TERM/BV-01-C":
+        if not self.connection:
             self.connection = next(self.advertise).connection
         try:
             self.host.Disconnect(connection=self.connection)

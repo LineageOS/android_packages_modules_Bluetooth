@@ -44,21 +44,17 @@ final class StackEvent {
     public String toString() {
         StringBuilder sb = new StringBuilder("StackEvent<device=" + mDevice + ", type =");
         switch (mType) {
-            case EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                sb.append("EVENT_TYPE_CONNECTION_STATE_CHANGED, state=").append(mState);
-                break;
-            case EVENT_TYPE_AUDIO_STATE_CHANGED:
-                sb.append("EVENT_TYPE_AUDIO_STATE_CHANGED, state=").append(mState);
-                break;
-            case EVENT_TYPE_AUDIO_CONFIG_CHANGED:
+            case EVENT_TYPE_CONNECTION_STATE_CHANGED ->
+                    sb.append("EVENT_TYPE_CONNECTION_STATE_CHANGED, state=").append(mState);
+            case EVENT_TYPE_AUDIO_STATE_CHANGED ->
+                    sb.append("EVENT_TYPE_AUDIO_STATE_CHANGED, state=").append(mState);
+            case EVENT_TYPE_AUDIO_CONFIG_CHANGED -> {
                 sb.append("EVENT_TYPE_AUDIO_CONFIG_CHANGED, sampleRate=")
                         .append(mSampleRate)
                         .append(", channelCount=")
                         .append(mChannelCount);
-                break;
-            default:
-                sb.append("Unknown");
-                break;
+            }
+            default -> sb.append("Unknown");
         }
         sb.append(">");
         return sb.toString();

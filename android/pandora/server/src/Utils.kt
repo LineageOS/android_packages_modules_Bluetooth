@@ -368,6 +368,7 @@ fun buildAudioTrack(
     channelConfig: Int = AudioFormat.CHANNEL_OUT_STEREO,
     audioFormat: Int = AudioFormat.ENCODING_PCM_16BIT,
     audioUsage: Int = AudioAttributes.USAGE_MEDIA,
+    metadataTag: String? = null,
 ): AudioTrack? {
     val minBufferSize = AudioTrack.getMinBufferSize(sampleRate, channelConfig, audioFormat)
     if (minBufferSize == AudioTrack.ERROR_BAD_VALUE || minBufferSize == AudioTrack.ERROR) {
@@ -381,6 +382,7 @@ fun buildAudioTrack(
             AudioAttributes.Builder()
                 .setUsage(audioUsage)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .addTag(metadataTag)
                 .build()
         )
         .setAudioFormat(

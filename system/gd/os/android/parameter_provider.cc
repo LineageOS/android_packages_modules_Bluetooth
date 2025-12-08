@@ -34,15 +34,23 @@ int common_criteria_config_compare_result = 0b11;
 }  // namespace
 
 // On Android we always write a single default location
-std::string ParameterProvider::ConfigFilePath() { return "/data/misc/bluedroid/bt_config.conf"; }
+std::string ParameterProvider::ConfigFilePath() {
+  const std::string name = GetHciInstanceName();
+  return (name == "default") ? "/data/misc/bluedroid/bt_config.conf"
+                             : "/data/misc/bluedroid/" + name + "_bt_config.conf";
+}
 
 std::string ParameterProvider::SnoopLogFilePath() {
-  return "/data/misc/bluetooth/logs/btsnoop_hci.log";
+  const std::string name = GetHciInstanceName();
+  return (name == "default") ? "/data/misc/bluetooth/logs/btsnoop_hci.log"
+                             : "/data/misc/bluetooth/logs/" + name + "_btsnoop_hci.log";
 }
 
 // Return the path to the default snooz log file location
 std::string ParameterProvider::SnoozLogFilePath() {
-  return "/data/misc/bluetooth/logs/btsnooz_hci.log";
+  const std::string name = GetHciInstanceName();
+  return (name == "default") ? "/data/misc/bluetooth/logs/btsnooz_hci.log"
+                             : "/data/misc/bluetooth/logs/" + name + "_btsnooz_hci.log";
 }
 
 // Android doesn't have a need for the sysprops module

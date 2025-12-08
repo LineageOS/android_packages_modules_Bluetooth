@@ -55,7 +55,7 @@ bool IsCallIdle() {
   return test::mock::btif_hf::IsCallIdle();
 }
 
-bool IsDuringVoiceRecognition(RawAddress* bd_addr) {
+bool IsDuringVoiceRecognition(RawAddress bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::btif_hf::IsDuringVoiceRecognition(bd_addr);
 }

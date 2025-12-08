@@ -19,13 +19,13 @@
  *   Functions generated:4
  */
 
+#include <bluetooth/types/address.h>
 #include <openssl/hmac.h>
 
 #include <string>
 
 #include "common/address_obfuscator.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace common {

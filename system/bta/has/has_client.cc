@@ -19,6 +19,9 @@
 #include <base/functional/callback.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <hardware/bt_gatt_types.h>
 #include <hardware/bt_has.h>
@@ -60,9 +63,6 @@
 #include "osi/include/properties.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_types.h"
-#include "types/bluetooth/uuid.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 using base::Closure;
 using bluetooth::Uuid;
@@ -291,6 +291,8 @@ public:
     if (status == GATT_DATABASE_OUT_OF_SYNC) {
       log::info("Database out of sync for {}", device->addr);
       ClearDeviceInformationAndStartSearch(device);
+    } else {
+      log::warn("{}: operation was not a success: status={}", device->addr, status);
     }
   }
 
@@ -325,6 +327,8 @@ public:
     if (status == GATT_DATABASE_OUT_OF_SYNC) {
       log::info("Database out of sync for {}", device->addr);
       ClearDeviceInformationAndStartSearch(device);
+    } else {
+      log::warn("{}: operation was not a success: status={}", device->addr, status);
     }
   }
 
@@ -358,7 +362,7 @@ public:
       log::info("Database out of sync for {}", device->addr);
       ClearDeviceInformationAndStartSearch(device);
     } else {
-      log::error("Devices {}: Control point not usable. Disconnecting!", device->addr);
+      log::error("{}: Control point not usable, status={}. Disconnecting!", device->addr, status);
       CleanAndDisconnectByConnId(conn_id);
     }
   }
@@ -404,7 +408,7 @@ public:
       log::info("Database out of sync for {}", device->addr);
       ClearDeviceInformationAndStartSearch(device);
     } else {
-      log::error("Devices {}: Control point not usable. Disconnecting!", device->addr);
+      log::error("{}: Control point not usable, status={}. Disconnecting!", device->addr, status);
       CleanAndDisconnectByConnId(conn_id);
     }
   }
@@ -971,7 +975,12 @@ public:
   void OnGroupOpCoordinatorTimeout(void* /*p*/) {
     log::error("Not all the devices notified their state change on time.");
 
-    /* Clear pending group operations */
+    if (com_android_bluetooth_flags_synchronize_preset_can_timeout()) {
+      for (auto op : pending_group_operation_timeouts_) {
+        callbacks_->OnActivePresetSelectError(op.second.operation.addr_or_group,
+                                              ErrorCode::TIMEOUT);
+      }
+    }
     pending_group_operation_timeouts_.clear();
     HasCtpGroupOpCoordinator::Cleanup();
   }
@@ -1583,8 +1592,53 @@ private:
     if (!device->isGattServiceValid()) {
       return;
     }
-    if (pending_group_operation_timeouts_.empty()) {
+    // Always report the current active preset to upper layer to reflect the remote state.
+    // Android may not always be aware of the origin of the changes and shouldn't delay the event
+    if (com_android_bluetooth_flags_synchronize_preset_can_timeout()) {
       callbacks_->OnActivePresetSelected(device->addr, device->currently_active_preset);
+    }
+    if (pending_group_operation_timeouts_.empty()) {
+      if (!com_android_bluetooth_flags_synchronize_preset_can_timeout()) {
+        callbacks_->OnActivePresetSelected(device->addr, device->currently_active_preset);
+      }
+      return;
+    }
+
+    if (com_android_bluetooth_flags_hap_safely_erase_pending_operation_timeout()) {
+      for (auto it = pending_group_operation_timeouts_.rbegin();
+           it != pending_group_operation_timeouts_.rend();) {
+        auto& group_op_coordinator = it->second;
+
+        bool matches = false;
+        switch (group_op_coordinator.operation.opcode) {
+          case PresetCtpOpcode::SET_ACTIVE_PRESET:
+          case PresetCtpOpcode::SET_NEXT_PRESET:
+          case PresetCtpOpcode::SET_PREV_PRESET:
+          case PresetCtpOpcode::SET_ACTIVE_PRESET_SYNC:
+          case PresetCtpOpcode::SET_NEXT_PRESET_SYNC:
+          case PresetCtpOpcode::SET_PREV_PRESET_SYNC: {
+            if (group_op_coordinator.SetCompleted(device->addr)) {
+              matches = true;
+              break;
+            }
+          } break;
+          default:
+            /* Ignore */
+            break;
+        }
+        if (group_op_coordinator.IsFullyCompleted()) {
+          if (!com_android_bluetooth_flags_synchronize_preset_can_timeout()) {
+            callbacks_->OnActivePresetSelectedForGroup(group_op_coordinator.operation.GetGroupId(),
+                                                       device->currently_active_preset);
+          }
+          it = decltype(it)(pending_group_operation_timeouts_.erase(std::next(it).base()));
+        } else {
+          ++it;
+        }
+        if (matches) {
+          break;
+        }
+      }
       return;
     }
     for (auto it = pending_group_operation_timeouts_.rbegin();
@@ -1609,8 +1663,10 @@ private:
           break;
       }
       if (group_op_coordinator.IsFullyCompleted()) {
-        callbacks_->OnActivePresetSelectedForGroup(group_op_coordinator.operation.GetGroupId(),
-                                                   device->currently_active_preset);
+        if (!com_android_bluetooth_flags_synchronize_preset_can_timeout()) {
+          callbacks_->OnActivePresetSelectedForGroup(group_op_coordinator.operation.GetGroupId(),
+                                                     device->currently_active_preset);
+        }
         pending_group_operation_timeouts_.erase(it->first);
       }
       if (matches) {
@@ -1849,7 +1905,7 @@ private:
       return false;
     }
 
-    /* If deatails are loaded from storage we are done here */
+    /* If details are loaded from storage we are done here */
     if (LoadHasDetailsFromStorage(device)) {
       return true;
     }
@@ -1932,9 +1988,7 @@ private:
     }
 
     device->conn_id = evt.conn_id;
-    if (com::android::bluetooth::flags::gatt_queue_cleanup_connected()) {
-      BtaGattQueue::Clean(evt.conn_id);
-    }
+    BtaGattQueue::Clean(evt.conn_id);
     if (BTM_SecIsLeSecurityPending(device->addr)) {
       /* if security collision happened, wait for encryption done
        * (BTA_GATTC_ENC_CMPL_CB_EVT)

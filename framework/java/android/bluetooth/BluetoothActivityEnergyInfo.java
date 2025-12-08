@@ -19,6 +19,7 @@ package android.bluetooth;
 import android.annotation.ElapsedRealtimeLong;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -134,6 +135,7 @@ public final class BluetoothActivityEnergyInfo implements Parcelable {
     /**
      * @return the Bluetooth stack state associated with the energy info.
      */
+    @RequiresNoPermission
     public @BluetoothStackState int getBluetoothStackState() {
         return mBluetoothStackState;
     }
@@ -141,6 +143,7 @@ public final class BluetoothActivityEnergyInfo implements Parcelable {
     /**
      * @return tx time in ms
      */
+    @RequiresNoPermission
     public long getControllerTxTimeMillis() {
         return mControllerTxTimeMs;
     }
@@ -148,6 +151,7 @@ public final class BluetoothActivityEnergyInfo implements Parcelable {
     /**
      * @return rx time in ms
      */
+    @RequiresNoPermission
     public long getControllerRxTimeMillis() {
         return mControllerRxTimeMs;
     }
@@ -155,6 +159,7 @@ public final class BluetoothActivityEnergyInfo implements Parcelable {
     /**
      * @return idle time in ms
      */
+    @RequiresNoPermission
     public long getControllerIdleTimeMillis() {
         return mControllerIdleTimeMs;
     }
@@ -164,6 +169,7 @@ public final class BluetoothActivityEnergyInfo implements Parcelable {
      *
      * @return energy used
      */
+    @RequiresNoPermission
     public long getControllerEnergyUsed() {
         return mControllerEnergyUsed;
     }
@@ -171,6 +177,7 @@ public final class BluetoothActivityEnergyInfo implements Parcelable {
     /**
      * @return timestamp (real time elapsed in milliseconds since boot) of record creation
      */
+    @RequiresNoPermission
     public @ElapsedRealtimeLong long getTimestampMillis() {
         return mTimestamp;
     }
@@ -180,6 +187,7 @@ public final class BluetoothActivityEnergyInfo implements Parcelable {
      *
      * @return current {@link List} of {@link android.bluetooth.UidTraffic}
      */
+    @RequiresNoPermission
     public @NonNull List<UidTraffic> getUidTraffic() {
         if (mUidTraffic == null) {
             return Collections.emptyList();
@@ -188,6 +196,7 @@ public final class BluetoothActivityEnergyInfo implements Parcelable {
     }
 
     /** @hide */
+    @RequiresNoPermission
     public void setUidTraffic(List<UidTraffic> traffic) {
         mUidTraffic = traffic;
     }
@@ -195,6 +204,7 @@ public final class BluetoothActivityEnergyInfo implements Parcelable {
     /**
      * @return true if the record Tx time, Rx time, and Idle time are more than 0.
      */
+    @RequiresNoPermission
     public boolean isValid() {
         return ((mControllerTxTimeMs >= 0)
                 && (mControllerRxTimeMs >= 0)

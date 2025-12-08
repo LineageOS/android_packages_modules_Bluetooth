@@ -65,3 +65,50 @@ impl<T> Drop for SharedMutex<T> {
         self.on_death.add_permits(Arc::strong_count(&self.lock) + 1);
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::utils::task::{block_on_locally, try_await};
+    use std::rc::Rc;
+
+    #[test]
+    fn test_lock_and_try_lock() {
+        block_on_locally(async {
+            let m = SharedMutex::new(5);
+            let guard = m.lock().await.unwrap();
+            assert_eq!(*guard, 5);
+            assert!(m.try_lock().is_err());
+            drop(guard);
+            let mut guard = m.try_lock().unwrap();
+            *guard = 10;
+            drop(guard);
+            assert_eq!(*m.lock().await.unwrap(), 10);
+        });
+    }
+
+    #[test]
+    fn test_lock_when_dropped() {
+        block_on_locally(async {
+            let m = Rc::new(SharedMutex::new(5));
+            let m2 = m.clone();
+            let lock_future = m.lock();
+            drop(m);
+            drop(m2);
+            assert!(lock_future.await.is_none());
+        });
+    }
+
+    #[test]
+    fn test_lock_held_when_dropped() {
+        block_on_locally(async {
+            let m = SharedMutex::new(5);
+            let guard = m.lock().await.unwrap();
+            let lock_future = m.lock();
+            let pending_lock = try_await(lock_future).await.unwrap_err();
+            drop(m);
+            drop(guard);
+            assert!(pending_lock.await.is_none());
+        });
+    }
+}

@@ -26,11 +26,12 @@
 #include "stack/include/btm_ble_privacy.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include "btm_dev.h"
 #include "btm_sec_cb.h"
 #include "btm_sec_int_types.h"
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/acl_manager_le.h"
 #include "hci/controller.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
@@ -42,7 +43,6 @@
 #include "stack/include/bt_octets.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_client_interface.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -447,7 +447,7 @@ static tBTM_STATUS btm_ble_remove_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_r
 
   if (bluetooth::shim::GetController()->SupportsBlePrivacy()) {
     auto& addr = p_dev_rec->ble.identity_address_with_type;
-    bluetooth::shim::GetAclManager()->RemoveDeviceFromResolvingList(
+    bluetooth::shim::GetAclManagerLe()->RemoveDeviceFromResolvingList(
             ToAddressWithType(addr.bda, addr.type));
   } else {
     uint8_t param[20] = {0};
@@ -476,7 +476,7 @@ static tBTM_STATUS btm_ble_remove_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_r
  ******************************************************************************/
 static void btm_ble_clear_resolving_list(void) {
   if (bluetooth::shim::GetController()->SupportsBlePrivacy()) {
-    bluetooth::shim::GetAclManager()->ClearResolvingList();
+    bluetooth::shim::GetAclManagerLe()->ClearResolvingList();
   } else {
     uint8_t param[20] = {0};
     uint8_t* p = param;
@@ -614,7 +614,7 @@ void btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC& dev_rec) {
     return;
   }
 
-  bluetooth::shim::GetAclManager()->AddDeviceToResolvingList(
+  bluetooth::shim::GetAclManagerLe()->AddDeviceToResolvingList(
           ToAddressWithType(dev_rec.ble.identity_address_with_type.bda,
                             dev_rec.ble.identity_address_with_type.type),
           peer_irk, local_irk);

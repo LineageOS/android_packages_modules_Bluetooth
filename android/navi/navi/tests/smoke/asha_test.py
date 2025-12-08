@@ -26,6 +26,7 @@ from typing_extensions import override
 from navi.bumble_ext import asha
 from navi.tests import navi_test_base
 from navi.utils import android_constants
+from navi.utils import audio
 from navi.utils import bl4a_api
 from navi.utils import constants
 from navi.utils import pyee_extensions
@@ -62,28 +63,18 @@ class AshaTest(navi_test_base.TwoDevicesTestBase):
         self.ref.device.advertising_data = (self.ref_asha_service.get_advertising_data())
 
     async def _setup_paired_devices(self) -> None:
-        with (
-                self.dut.bl4a.register_callback(bl4a_api.Module.ASHA) as dut_cb,
-                self.dut.bl4a.register_callback(bl4a_api.Module.AUDIO) as dut_audio_cb,
-        ):
-            await self.le_connect_and_pair(ref_address_type=hci.OwnAddressType.RANDOM)
+        with self.dut.bl4a.register_callback(bl4a_api.Module.ASHA) as dut_cb:
+            await self.le_connect_and_pair(ref_address_type=hci.OwnAddressType.RANDOM,
+                                           connect_profiles=True)
 
             self.logger.info("[DUT] Wait for ASHA connected.")
             await dut_cb.wait_for_event(
                 bl4a_api.ProfileActiveDeviceChanged(address=self.ref.random_address),)
 
-            # Emulator never reports audio device added.
-            if not self.dut.device.is_emulator:
-                self.logger.info("[DUT] Wait for audio connected.")
-                await dut_audio_cb.wait_for_event(
-                    bl4a_api.AudioDeviceAdded,
-                    lambda e: (e.device_type == android_constants.AudioDeviceType.HEARING_AID),
-                )
-
     async def test_connect(self) -> None:
         """Tests ASHA connection.
 
-    Test Steps:
+    Test steps:
       1. Pair with REF.
       2. Verify ASHA is connected.
     """
@@ -96,7 +87,7 @@ class AshaTest(navi_test_base.TwoDevicesTestBase):
     async def test_reconnect(self) -> None:
         """Tests ASHA reconnection.
 
-    Test Steps:
+    Test steps:
       1. Pair with REF.
       2. Verify ASHA is connected.
       3. Disconnect from REF.
@@ -135,7 +126,7 @@ class AshaTest(navi_test_base.TwoDevicesTestBase):
     async def test_streaming(self, usage: bl4a_api.AudioAttributes.Usage) -> None:
         """Tests ASHA streaming.
 
-    Test Steps:
+    Test steps:
       1. Establish ASHA connection.
       2. (Optional) Start phone call.
       3. Start streaming.
@@ -147,6 +138,8 @@ class AshaTest(navi_test_base.TwoDevicesTestBase):
     """
         await self._setup_paired_devices()
 
+        sink_buffer = bytearray()
+        self.ref_asha_service.audio_sink = sink_buffer.extend
         watcher = pyee_extensions.EventWatcher()
         start_events = watcher.async_monitor(self.ref_asha_service, asha.AshaService.Event.STARTED)
         stop_events = watcher.async_monitor(self.ref_asha_service, asha.AshaService.Event.STOPPED)
@@ -177,10 +170,23 @@ class AshaTest(navi_test_base.TwoDevicesTestBase):
                 self.logger.info("[REF] Wait for audio stopped")
                 await stop_events.get()
 
+            if (self.user_params.get(navi_test_base.RECORD_FULL_DATA) and sink_buffer):
+                self.write_test_output_data(
+                    "asha_data.g722",
+                    sink_buffer,
+                )
+
+            if audio.SUPPORT_AUDIO_PROCESSING:
+                dominant_frequency = audio.get_dominant_frequency(sink_buffer, format="g722")
+                self.logger.info("Dominant frequency: %.2f", dominant_frequency)
+                # Dominant frequency is not accurate on emulator.
+                if not self.dut.device.is_emulator:
+                    self.assertAlmostEqual(dominant_frequency, 1000, delta=10)
+
     async def test_set_volume(self) -> None:
         """Tests ASHA set volume.
 
-    Test Steps:
+    Test steps:
       1. Establish ASHA connection.
       2. Set volume to min.
       3. Verify volume changed to -128.

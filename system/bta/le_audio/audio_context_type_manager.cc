@@ -87,7 +87,7 @@ public:
       if (bluetooth::le_audio::types::kLeAudioContextAllBidir.test(context_type)) {
         /* Some of the bidirectional context needs to be allowed also by Audio Framework */
         if (!isBidirectionalControlledByAudioFramework(context_type) ||
-            isMetadataTagPresent(entry.tags, "bidirectional")) {
+            isMetadataTagPresent(entry.tags, "VX_AOSP_bidirectional")) {
           local_encoding_contexts_types_.sink.set(context_type);
         }
       }
@@ -235,7 +235,7 @@ public:
   }
 
   std::pair<LeAudioContextType, BidirectionalPair<AudioContexts>> GetAudioContextsForTheGroup(
-          const LeAudioDeviceGroup* group) {
+          const LeAudioDeviceGroup* group, uint8_t remote_directions) {
     if (group == nullptr) {
       log::error("Group is null");
       BidirectionalPair<AudioContexts> empty_metadata = {AudioContexts(), AudioContexts()};
@@ -245,9 +245,26 @@ public:
     log::info(
             "inCallState: {}, local_encoding_contexts_types_.source: {}, "
             "local_encoding_contexts_types_.sink: {}, "
-            "local_decoding_context_types_: {}",
+            "local_decoding_context_types_: {}, remote_directions: {}",
             inCallState, ToString(local_encoding_contexts_types_.source),
-            ToString(local_encoding_contexts_types_.sink), ToString(local_decoding_context_types_));
+            ToString(local_encoding_contexts_types_.sink), ToString(local_decoding_context_types_),
+            ToString(remote_directions));
+
+    auto copy_local_encoding_ctxs = local_encoding_contexts_types_;
+    auto copy_local_decoding_ctxs = local_decoding_context_types_;
+
+    if (remote_directions != bluetooth::le_audio::types::kLeAudioDirectionBoth) {
+      log::warn("Some directions are omitted by the user. Remote directions are: {}",
+                ToString(remote_directions));
+      if (!(remote_directions & bluetooth::le_audio::types::kLeAudioDirectionSink)) {
+        copy_local_encoding_ctxs.sink.clear();
+        copy_local_encoding_ctxs.source.clear();
+      }
+
+      if (!(remote_directions & bluetooth::le_audio::types::kLeAudioDirectionSource)) {
+        copy_local_decoding_ctxs.clear();
+      }
+    }
 
     /* If there is no metadata set but call is happening, we can move forward. Othwerise lets return
      * here.*/
@@ -266,7 +283,7 @@ public:
     if (IsInCall() || IsInVoip()) {
       conversational_context_if_needed.set(LeAudioContextType::CONVERSATIONAL);
       if (!(group->IsGmapEnabled() &&
-            local_encoding_contexts_types_.source.test(LeAudioContextType::GAME))) {
+            copy_local_encoding_ctxs.source.test(LeAudioContextType::GAME))) {
         configuration_context_type = LeAudioContextType::CONVERSATIONAL;
       }
       log::info("Adding {}, isInCall: {}, inInVoip: {}", ToString(conversational_context_if_needed),
@@ -288,11 +305,11 @@ public:
      * i.e. if context type is bidirectional, and decoding session is enabled, we should remove
      * LIVE context and replace it with bidirectional one
      */
-    auto adjusted_dec_context_types = local_decoding_context_types_;
+    auto adjusted_dec_context_types = copy_local_decoding_ctxs;
     auto bidirectional_context = group->GetAllSupportedBidirectionalContextTypes();
     auto used_bidirectional_on_encoding =
             bidirectional_context &
-            (local_encoding_contexts_types_.sink | conversational_context_if_needed);
+            (copy_local_encoding_ctxs.sink | conversational_context_if_needed);
 
     /* If decoding session is started, let's check if we should replace LIVE context with another
      * one. This can happen, because metadata on the decoding sessions are limited and we need to do
@@ -301,17 +318,16 @@ public:
     if (adjusted_dec_context_types.test(LeAudioContextType::LIVE)) {
       log::info("used_bidirectional_on_encoding: {}, local_encoding_contexts_types_.source: {}",
                 ToString(used_bidirectional_on_encoding),
-                ToString(local_encoding_contexts_types_.source));
+                ToString(copy_local_encoding_ctxs.source));
       if (used_bidirectional_on_encoding.any()) {
         adjusted_dec_context_types.clear();
         adjusted_dec_context_types.set_all(used_bidirectional_on_encoding);
-      } else if (remote_available_contexts.sink.none() &&
-                 local_encoding_contexts_types_.source.any()) {
+      } else if (remote_available_contexts.sink.none() && copy_local_encoding_ctxs.source.any()) {
         log::info("Source only devices");
         /* For source only devices, we might need a support for choosing context type based on the
          * encoding session metadata.
          */
-        adjusted_dec_context_types = local_encoding_contexts_types_.source;
+        adjusted_dec_context_types = copy_local_encoding_ctxs.source;
       }
     }
 
@@ -321,7 +337,7 @@ public:
      */
     if (configuration_context_type == LeAudioContextType::UNINITIALIZED) {
       configuration_context_type = getConfigurationContextType(
-              get_bidirectional(local_encoding_contexts_types_) | adjusted_dec_context_types,
+              get_bidirectional(copy_local_encoding_ctxs) | adjusted_dec_context_types,
               group->IsGmapEnabled());
     }
     /* Let's calculate expected contex types. Note, that here Local Source becomes Remote Sink  */
@@ -341,7 +357,7 @@ public:
       }
     }
     /* Same as above to other directions. */
-    if (expected_remote_context_types.source.none() && local_decoding_context_types_.any() &&
+    if (expected_remote_context_types.source.none() && copy_local_decoding_ctxs.any() &&
         remote_available_contexts.source.test(LeAudioContextType::UNSPECIFIED)) {
       auto decoding = local_encoding_contexts_types_.sink | adjusted_dec_context_types |
                       conversational_context_if_needed;

@@ -77,7 +77,7 @@ class GattClientTest(navi_test_base.TwoDevicesTestBase):
 
         write_future = asyncio.get_running_loop().create_future()
 
-        def on_write(connection: device.Connection | None, value: bytes) -> None:
+        def on_write(connection: device.Connection, value: bytes) -> None:
             del connection  # Unused.
             write_future.set_result(value)
 

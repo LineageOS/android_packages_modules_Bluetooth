@@ -195,6 +195,10 @@ class CrownAdapter:
         """Stops the adapter."""
         # Doesn't need to do anything here.
 
+    def dump_debug_logs(self, output_dir: str) -> None:
+        """Dumps debug logs from the adapter."""
+        # Doesn't need to do anything here.
+
 
 class AndroidCrownAdapter(CrownAdapter):
     """Adapter launching HCI proxy on Android to adapt Bumble.
@@ -225,8 +229,7 @@ class AndroidCrownAdapter(CrownAdapter):
         abi_type = self.ad.adb.getprop('ro.product.cpu.abi')
         file_path = resources.GetResourceFilename(_HCI_PROXY_G3_PATH_PREFIX + abi_type)
         self.ad.adb.push([file_path, _HCI_PROXY_DEVICE_PATH], timeout=60)
-        if b'ok' not in self.ad.adb.shell(f'test -x {_HCI_PROXY_DEVICE_PATH} && echo ok'):
-            self.ad.adb.shell(f'chmod +x {_HCI_PROXY_DEVICE_PATH}')
+        self.ad.adb.shell(f'chmod +x {_HCI_PROXY_DEVICE_PATH}')
 
         self._hci_proxy_process = subprocess.Popen(
             [
@@ -240,6 +243,8 @@ class AndroidCrownAdapter(CrownAdapter):
             stderr=subprocess.PIPE,
             stdin=subprocess.PIPE,
         )
+        # Wait for HCI proxy to start.
+        time.sleep(1.0)
 
         if sys.platform == 'linux':
             # Select a random socket name to avoid collision.
@@ -270,6 +275,11 @@ class AndroidCrownAdapter(CrownAdapter):
         self._hci_proxy_process.kill()
         # Disable Satellite Mode.
         self.ad.adb.shell(['settings', 'put', 'global', 'satellite_mode_enabled', '0'])
+
+    @override
+    def dump_debug_logs(self, output_dir: str) -> None:
+        """Dumps debug logs from the HCI Proxy."""
+        self.ad.take_bug_report(test_name='crown', destination=output_dir)
 
 
 class NetsimCrownAdapter(CrownAdapter):

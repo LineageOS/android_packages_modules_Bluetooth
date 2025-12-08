@@ -27,6 +27,7 @@
 #include "../le_audio_types.h"
 #include "broadcast_configuration_provider.h"
 #include "btm_iso_api.h"
+#include "mock_codec_manager.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_main_shim_le_advertising_manager.h"
@@ -113,6 +114,13 @@ protected:
 
     mock_ble_advertising_manager_ = MockBleAdvertisingManager::Get();
 
+    codec_manager_ = bluetooth::le_audio::CodecManager::GetInstance();
+    ASSERT_NE(codec_manager_, nullptr);
+    std::vector<bluetooth::le_audio::btle_audio_codec_config_t> mock_offloading_preference(0);
+    codec_manager_->Start(mock_offloading_preference);
+    mock_codec_manager_ = MockCodecManager::GetInstance();
+    ASSERT_NE(mock_codec_manager_, nullptr);
+
     sm_callbacks_.reset(new MockBroadcastStatMachineCallbacks());
     adv_callbacks_.reset(new MockBroadcastAdvertisingCallbacks());
     BroadcastStateMachine::Initialize(sm_callbacks_.get(), adv_callbacks_.get());
@@ -148,9 +156,7 @@ protected:
             .WillByDefault(
                     [](uint8_t /*inst_id*/, ::BleAdvertiserInterface::GetAddressCallback cb) {
                       uint8_t address_type = 0x02;
-                      RawAddress address;
-                      const uint8_t addr[] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
-                      address.FromOctets(addr);
+                      RawAddress address({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
                       cb.Run(address_type, address);
                     });
 
@@ -324,6 +330,9 @@ protected:
 
     MockBleAdvertisingManager::CleanUp();
     mock_ble_advertising_manager_ = nullptr;
+
+    codec_manager_->Stop();
+    mock_codec_manager_ = nullptr;
   }
 
   uint32_t InstantiateStateMachine(
@@ -355,6 +364,8 @@ protected:
   MockBleAdvertisingManager* mock_ble_advertising_manager_;
   IsoManager* iso_manager_;
   MockIsoManager* mock_iso_manager_;
+  bluetooth::le_audio::CodecManager* codec_manager_;
+  MockCodecManager* mock_codec_manager_;
 
   std::map<uint32_t, std::unique_ptr<BroadcastStateMachine>> broadcasts_;
   std::vector<std::unique_ptr<BroadcastStateMachine>> pending_broadcasts_;
@@ -1141,10 +1152,7 @@ TEST_F(StateMachineTest, GetMetadataBeforeGettingAddress) {
               OnStateMachineEvent(_, BroadcastStateMachine::State::CONFIGURED, _))
           .WillOnce([this](uint32_t broadcast_id, BroadcastStateMachine::State /*state*/,
                            const void* /*data*/) {
-            RawAddress test_address;
-
-            RawAddress::FromString("00:00:00:00:00:00", test_address);
-            ASSERT_NE(test_address, this->broadcasts_[broadcast_id]->GetOwnAddress());
+            ASSERT_NE(RawAddress::kEmpty, this->broadcasts_[broadcast_id]->GetOwnAddress());
           });
 
   broadcast_id = InstantiateStateMachine();
@@ -1152,6 +1160,58 @@ TEST_F(StateMachineTest, GetMetadataBeforeGettingAddress) {
   ASSERT_TRUE(pending_broadcasts_.empty());
   ASSERT_FALSE(broadcasts_.empty());
   ASSERT_TRUE(broadcasts_[broadcast_id]->GetBroadcastId() == broadcast_id);
+}
+
+TEST_F(StateMachineTest, ConfigureDataPathBeforeSetIsoDataPath) {
+  com::android::bluetooth::flags::
+        provider_->leaudio_broadcast_config_data_path_before_set_iso_data_path(true);
+
+  EXPECT_CALL(*(sm_callbacks_.get()), OnStateMachineCreateStatus(_, true)).Times(1);
+
+  auto sound_context = bluetooth::le_audio::types::LeAudioContextType::MEDIA;
+  uint8_t num_channels = 2;
+
+  auto broadcast_id = InstantiateStateMachine(sound_context);
+  ASSERT_EQ(broadcasts_[broadcast_id]->GetState(), BroadcastStateMachine::State::CONFIGURED);
+
+  uint8_t num_bises = 0;
+  EXPECT_CALL(*mock_iso_manager_, CreateBig)
+          .WillOnce([this, &num_bises](uint8_t big_id, big_create_params p) {
+            auto bit = std::find_if(broadcasts_.begin(), broadcasts_.end(),
+                                    [big_id](auto const& entry) {
+                                      return entry.second->GetAdvertisingSid() == big_id;
+                                    });
+            if (bit == broadcasts_.end()) {
+              return;
+            }
+
+            num_bises = p.num_bis;
+
+            big_create_cmpl_evt evt;
+            evt.big_id = big_id;
+
+            // For test convenience lets encode big_id into conn_hdl's
+            // MSB
+            static uint8_t conn_lsb = 1;
+            uint16_t conn_msb = ((uint16_t)big_id) << 8;
+            for (auto i = 0; i < p.num_bis; ++i) {
+              evt.conn_handles.push_back(conn_msb | conn_lsb++);
+            }
+
+            bit->second->HandleHciEvent(HCI_BLE_CREATE_BIG_CPL_EVT, &evt);
+          });
+
+  EXPECT_CALL(*mock_codec_manager_, ConfigureDataPath(_, _, _)).Times(num_channels);
+  EXPECT_CALL(*mock_iso_manager_, SetupIsoDataPath).Times(num_channels);
+  EXPECT_CALL(*mock_iso_manager_, RemoveIsoDataPath).Times(0);
+  EXPECT_CALL(*(sm_callbacks_.get()),
+              OnStateMachineEvent(broadcast_id, BroadcastStateMachine::State::STREAMING, _))
+          .Times(1);
+  broadcasts_[broadcast_id]->ProcessMessage(BroadcastStateMachine::Message::START);
+
+  // Verify the right number of BISes in the BIG being created
+  ASSERT_EQ(num_bises, num_channels);
+  ASSERT_EQ(broadcasts_[broadcast_id]->GetState(), BroadcastStateMachine::State::STREAMING);
 }
 
 }  // namespace

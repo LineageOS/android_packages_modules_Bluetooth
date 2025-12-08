@@ -27,10 +27,11 @@
 #include <vector>
 
 // Original included files, if any
+#include <bluetooth/types/address.h>
+
 #include "base/callback.h"
 #include "hcimsgs.h"
 #include "stack/include/bt_octets.h"
-#include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
 
@@ -252,25 +253,6 @@ struct btsnd_hcic_ble_rm_device_resolving_list {
 };
 extern struct btsnd_hcic_ble_rm_device_resolving_list btsnd_hcic_ble_rm_device_resolving_list;
 
-// Name: btsnd_hcic_ble_set_adv_data
-// Params: uint8_t data_len, uint8_t* p_data
-// Return: void
-struct btsnd_hcic_ble_set_adv_data {
-  std::function<void(uint8_t data_len, uint8_t* p_data)> body{
-          [](uint8_t /* data_len */, uint8_t* /* p_data */) {}};
-  void operator()(uint8_t data_len, uint8_t* p_data) { body(data_len, p_data); }
-};
-extern struct btsnd_hcic_ble_set_adv_data btsnd_hcic_ble_set_adv_data;
-
-// Name: btsnd_hcic_ble_set_adv_enable
-// Params: uint8_t adv_enable
-// Return: void
-struct btsnd_hcic_ble_set_adv_enable {
-  std::function<void(uint8_t adv_enable)> body{[](uint8_t /* adv_enable */) {}};
-  void operator()(uint8_t adv_enable) { body(adv_enable); }
-};
-extern struct btsnd_hcic_ble_set_adv_enable btsnd_hcic_ble_set_adv_enable;
-
 // Name: btsnd_hcic_ble_set_data_length
 // Params: uint16_t conn_handle, uint16_t tx_octets, uint16_t tx_time
 // Return: void
@@ -431,27 +413,6 @@ struct btsnd_hcic_ble_transmitter_test {
   }
 };
 extern struct btsnd_hcic_ble_transmitter_test btsnd_hcic_ble_transmitter_test;
-
-// Name: btsnd_hcic_ble_write_adv_params
-// Params: uint16_t adv_int_min, uint16_t adv_int_max, uint8_t adv_type,
-// tBLE_ADDR_TYPE addr_type_own, tBLE_ADDR_TYPE addr_type_dir, const RawAddress&
-// direct_bda, uint8_t channel_map, uint8_t adv_filter_policy Return: void
-struct btsnd_hcic_ble_write_adv_params {
-  std::function<void(uint16_t adv_int_min, uint16_t adv_int_max, uint8_t adv_type,
-                     tBLE_ADDR_TYPE addr_type_own, tBLE_ADDR_TYPE addr_type_dir,
-                     const RawAddress& direct_bda, uint8_t channel_map, uint8_t adv_filter_policy)>
-          body{[](uint16_t /* adv_int_min */, uint16_t /* adv_int_max */, uint8_t /* adv_type */,
-                  tBLE_ADDR_TYPE /* addr_type_own */, tBLE_ADDR_TYPE /* addr_type_dir */,
-                  const RawAddress& /* direct_bda */, uint8_t /* channel_map */,
-                  uint8_t /* adv_filter_policy */) {}};
-  void operator()(uint16_t adv_int_min, uint16_t adv_int_max, uint8_t adv_type,
-                  tBLE_ADDR_TYPE addr_type_own, tBLE_ADDR_TYPE addr_type_dir,
-                  const RawAddress& direct_bda, uint8_t channel_map, uint8_t adv_filter_policy) {
-    body(adv_int_min, adv_int_max, adv_type, addr_type_own, addr_type_dir, direct_bda, channel_map,
-         adv_filter_policy);
-  }
-};
-extern struct btsnd_hcic_ble_write_adv_params btsnd_hcic_ble_write_adv_params;
 
 // Name: btsnd_hcic_create_big
 // Params: uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis, uint32_t

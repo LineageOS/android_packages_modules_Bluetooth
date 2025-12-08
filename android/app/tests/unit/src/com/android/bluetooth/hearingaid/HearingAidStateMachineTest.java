@@ -25,7 +25,6 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -42,10 +41,12 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.os.UserHandle;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
+import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
@@ -194,11 +195,16 @@ public class HearingAidStateMachineTest {
 
     @SafeVarargs
     private void verifyIntentSent(Matcher<Intent>... matchers) {
-        mInOrder.verify(mService)
-                .sendBroadcastAsUser(
-                        MockitoHamcrest.argThat(AllOf.allOf(matchers)),
-                        eq(UserHandle.ALL),
-                        any(),
-                        any());
+        if (Flags.onlyBroadcastToLocalUser()) {
+            mInOrder.verify(mService)
+                    .sendBroadcast(MockitoHamcrest.argThat(AllOf.allOf(matchers)), any(), any());
+        } else {
+            mInOrder.verify(mService)
+                    .sendBroadcastAsUser(
+                            MockitoHamcrest.argThat(AllOf.allOf(matchers)),
+                            eq(UserHandle.ALL),
+                            any(),
+                            any());
+        }
     }
 }

@@ -22,7 +22,9 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/a2dp/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
@@ -76,7 +78,6 @@
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/main_thread.h"
-#include "types/raw_address.h"
 
 #ifdef __ANDROID__
 #include <android/sysprop/BluetoothProperties.sysprop.h>
@@ -514,10 +515,23 @@ public:
   bool SetActivePeer(const RawAddress& peer_address, std::promise<void> peer_ready_promise) {
     log::info("peer={} active_peer={}", peer_address, active_peer_);
 
+    BtifAvPeer* peer = FindPeer(peer_address);
+    BtifAvPeer* active_peer = FindPeer(active_peer_);
     if (active_peer_ == peer_address) {
       peer_ready_promise.set_value();
       return true;  // Nothing has changed
     }
+
+    if (com_android_bluetooth_flags_a2dp_reject_sho_request()) {
+      if (!peer_address.IsEmpty() && peer && (peer->IsSink() && AllowedToConnect(peer_address)) &&
+          !active_peer_.IsEmpty() && active_peer &&
+          active_peer->CheckFlags(BtifAvPeer::kFlagPendingStart)) {
+        log::error("Pending Start Response on {}, Return Fail",
+                   peer_address.ToRedactedStringForLogging());
+        return false;
+      }
+    }
+
     if (peer_address.IsEmpty()) {
       log::info("peer address is empty, shutdown the Audio source");
       if (!bta_av_co_set_active_source_peer(peer_address)) {
@@ -537,7 +551,6 @@ public:
       return true;
     }
 
-    BtifAvPeer* peer = FindPeer(peer_address);
     if (peer == nullptr || !peer->IsConnected()) {
       log::error("Error setting {} as active Source peer", peer_address);
       peer_ready_promise.set_value();
@@ -786,6 +799,7 @@ static void btif_report_connection_state(const RawAddress& peer_address,
                                          uint8_t error_code, const A2dpType local_a2dp_type);
 static void btif_report_audio_state(const RawAddress& peer_address, btav_audio_state_t state,
                                     const A2dpType local_a2dp_type);
+static void btif_report_audio_delay(const RawAddress& peer_address, int delay);
 static void btif_av_report_sink_audio_config_state(const RawAddress& peer_address, int sample_rate,
                                                    int channel_count);
 static void btif_av_query_mandatory_codec_priority(const RawAddress& peer_address);
@@ -1216,7 +1230,7 @@ BtifAvPeer* BtifAvSource::FindOrCreatePeer(const RawAddress& peer_address,
     return peer;
   }
 
-  // Find next availabie Peer ID to use
+  // Find next available Peer ID to use
   uint8_t peer_id;
   for (peer_id = kPeerIdMin; peer_id < kPeerIdMax; peer_id++) {
     /* because the peer id may be in source cb and we cannot use it */
@@ -1477,7 +1491,7 @@ BtifAvPeer* BtifAvSink::FindOrCreatePeer(const RawAddress& peer_address, tBTA_AV
     return peer;
   }
 
-  // Find next availabie Peer ID to use
+  // Find next available Peer ID to use
   uint8_t peer_id;
   for (peer_id = kPeerIdMin; peer_id < kPeerIdMax; peer_id++) {
     /* because the peer id may be in source cb and we cannot use it */
@@ -2052,7 +2066,7 @@ bool BtifAvStateMachine::StateOpening::ProcessEvent(uint32_t event, void* p_data
         log::assert_that(peer_.PeerSep() == p_bta_data->open.sep,
                          "assert failed: peer_.PeerSep() == p_bta_data->open.sep");
         /** normally it can be checked in IDLE PENDING/CONNECT_REQ, in case:
-         * 1 speacker connected to DUT and phone connect DUT, because
+         * 1 speaker connected to DUT and phone connect DUT, because
          * default
          * connect req is as SINK peer. only at here, we can know which
          * role
@@ -2080,7 +2094,7 @@ bool BtifAvStateMachine::StateOpening::ProcessEvent(uint32_t event, void* p_data
         bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::A2DP_CONNECTION_SUCCESS);
       } else {
         if (btif_rc_is_connected_peer(peer_.PeerAddress())) {
-          // Disconnect the AVRCP connection, in case the A2DP connectiton
+          // Disconnect the AVRCP connection, in case the A2DP connection
           // failed for any reason.
           log::warn("Peer {} : Disconnecting AVRCP", peer_.PeerAddress());
           uint8_t peer_handle = btif_rc_get_connected_peer_handle(peer_.PeerAddress());
@@ -2289,8 +2303,7 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event, void* p_data)
         // Invoke the started handler only when initiator.
         log::info("Peer should suspend: {}", should_suspend);
 
-        if ((!com::android::bluetooth::flags::a2dp_ignore_started_when_responder() ||
-             !should_suspend) &&
+        if (!should_suspend &&
             btif_a2dp_on_started(peer_.PeerAddress(), &p_av->start, A2dpType::kSource)) {
           // Only clear pending flag after acknowledgement
           peer_.ClearFlags(BtifAvPeer::kFlagPendingStart);
@@ -2558,6 +2571,12 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event, void* p_data
       // Wait in closing state until fully closed
       peer_.StateMachine().TransitionTo(BtifAvStateMachine::kStateClosing);
       break;
+
+    case BTIF_AV_CONNECT_REQ_EVT: {
+      log::warn("Peer {} : Ignore {} for same device", peer_.PeerAddress(),
+                BtifAvEvent::EventName(event));
+      btif_queue_advance();
+    } break;
 
     case BTA_AV_SUSPEND_EVT: {
       log::info("Peer {} : event={} status={} initiator={} flags={}", peer_.PeerAddress(),
@@ -2856,6 +2875,9 @@ static void btif_report_connection_state(const RawAddress& peer_address,
     if (peer->IsSink()) {
       do_in_jni_thread(base::BindOnce(btif_av_source.Callbacks()->connection_state_cb, peer_address,
                                       state, btav_error_t{}));
+      if (error_code != BTA_AV_SUCCESS) {
+        bluetooth::metrics::LogA2dpBtifAvStateChangeEvent(peer_address, error_code);
+      }
     } else if (peer->IsSource()) {
       do_in_jni_thread(base::BindOnce(btif_av_sink.Callbacks()->connection_state_cb, peer_address,
                                       state, btav_error_t{}));
@@ -2867,6 +2889,9 @@ static void btif_report_connection_state(const RawAddress& peer_address,
     do_in_jni_thread(base::BindOnce(btif_av_source.Callbacks()->connection_state_cb, peer_address,
                                     state,
                                     btav_error_t{.status = status, .error_code = error_code}));
+    if (error_code != BTA_AV_SUCCESS) {
+      bluetooth::metrics::LogA2dpBtifAvStateChangeEvent(peer_address, error_code);
+    }
   } else if (btif_av_sink.Enabled()) {
     do_in_jni_thread(base::BindOnce(btif_av_sink.Callbacks()->connection_state_cb, peer_address,
                                     state,
@@ -2923,6 +2948,18 @@ static void btif_report_audio_state(const RawAddress& peer_address, btav_audio_s
                                                   : AudioCodingModeEnum::AUDIO_CODING_MODE_SOFTWARE;
 
   bluetooth::metrics::LogMetricA2dpPlaybackEvent(peer_address, playback_state, audio_coding_mode);
+}
+
+/**
+ * Report the audio delay of the A2DP connection.
+ * @param peer_address the peer address
+ * @param delay the audio delay measured in 1/10ms
+ */
+static void btif_report_audio_delay(const RawAddress& peer_address, int delay) {
+  if (btif_av_source.Enabled()) {
+    do_in_jni_thread(base::BindOnce(btif_av_source.Callbacks()->audio_delay_reported_cb,
+                                    peer_address, delay));
+  }
 }
 
 void btif_av_report_source_codec_state(
@@ -3421,25 +3458,24 @@ void btif_av_sink_set_audio_track_gain(float gain) {
 }
 
 // Establishes the AV signalling channel with the remote headset
-static bt_status_t connect_int(RawAddress* peer_address, uint16_t uuid) {
-  log::info("peer={} uuid=0x{:x}", *peer_address, uuid);
+static bt_status_t connect_int(RawAddress peer_address, uint16_t uuid) {
+  log::info("peer={} uuid=0x{:x}", peer_address, uuid);
 
   if (btif_av_both_enable()) {
-    const RawAddress tmp = *peer_address;
     if (uuid == UUID_SERVCLASS_AUDIO_SOURCE) {
-      btif_av_source_dispatch_sm_event(tmp, BTIF_AV_CONNECT_REQ_EVT);
+      btif_av_source_dispatch_sm_event(peer_address, BTIF_AV_CONNECT_REQ_EVT);
     } else if (uuid == UUID_SERVCLASS_AUDIO_SINK) {
-      btif_av_sink_dispatch_sm_event(tmp, BTIF_AV_CONNECT_REQ_EVT);
+      btif_av_sink_dispatch_sm_event(peer_address, BTIF_AV_CONNECT_REQ_EVT);
     }
     return BT_STATUS_SUCCESS;
   }
 
-  auto connection_task = [](RawAddress* peer_address, uint16_t uuid) {
+  auto connection_task = [](RawAddress peer_address, uint16_t uuid) {
     BtifAvPeer* peer = nullptr;
     if (uuid == UUID_SERVCLASS_AUDIO_SOURCE) {
-      peer = btif_av_source.FindOrCreatePeer(*peer_address, kBtaHandleUnknown);
+      peer = btif_av_source.FindOrCreatePeer(peer_address, kBtaHandleUnknown);
     } else if (uuid == UUID_SERVCLASS_AUDIO_SINK) {
-      peer = btif_av_sink.FindOrCreatePeer(*peer_address, kBtaHandleUnknown);
+      peer = btif_av_sink.FindOrCreatePeer(peer_address, kBtaHandleUnknown);
     }
     if (peer == nullptr) {
       btif_queue_advance();
@@ -3503,8 +3539,7 @@ bt_status_t btif_av_source_connect(const RawAddress& peer_address) {
     return BT_STATUS_NOT_READY;
   }
 
-  RawAddress peer_address_copy(peer_address);
-  return btif_queue_connect(UUID_SERVCLASS_AUDIO_SOURCE, &peer_address_copy, connect_int);
+  return btif_queue_connect(UUID_SERVCLASS_AUDIO_SOURCE, peer_address, connect_int);
 }
 
 bt_status_t btif_av_sink_connect(const RawAddress& peer_address) {
@@ -3515,8 +3550,7 @@ bt_status_t btif_av_sink_connect(const RawAddress& peer_address) {
     return BT_STATUS_NOT_READY;
   }
 
-  RawAddress peer_address_copy(peer_address);
-  return btif_queue_connect(UUID_SERVCLASS_AUDIO_SINK, &peer_address_copy, connect_int);
+  return btif_queue_connect(UUID_SERVCLASS_AUDIO_SINK, peer_address, connect_int);
 }
 
 bt_status_t btif_av_source_disconnect(const RawAddress& peer_address) {
@@ -4022,6 +4056,9 @@ void btif_av_set_audio_delay(const RawAddress& peer_address, uint16_t delay,
 
   BtifAvPeer* peer = btif_av_find_peer(peer_address, local_a2dp_type);
   if (peer != nullptr && peer->IsSink()) {
+    if (com_android_bluetooth_flags_a2dp_delay_report_in_dumpsys()) {
+      btif_report_audio_delay(peer_address, delay);
+    }
     peer->SetDelayReport(delay);
     if (peer->IsActivePeer()) {
       bluetooth::audio::a2dp::set_remote_delay(peer->GetDelayReport());

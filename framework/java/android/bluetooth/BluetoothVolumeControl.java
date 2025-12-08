@@ -23,12 +23,12 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.callServiceIfEnabled;
+import static android.bluetooth.BluetoothUtils.enforcePermissionInFramework;
 import static android.bluetooth.BluetoothUtils.executeFromBinder;
 
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.CallbackExecutor;
-import android.annotation.FlaggedApi;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -46,7 +46,6 @@ import android.os.RemoteException;
 import android.util.CloseGuard;
 import android.util.Log;
 
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 
 import java.util.Arrays;
@@ -70,6 +69,7 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
     private static final String TAG = BluetoothVolumeControl.class.getSimpleName();
 
     private final CloseGuard mCloseGuard;
+    private final Context mContext;
 
     @GuardedBy("mCallbackExecutorMap")
     private final Map<Callback, Executor> mCallbackExecutorMap = new HashMap<>();
@@ -256,6 +256,7 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
      */
     /*package*/ BluetoothVolumeControl(Context context, BluetoothAdapter adapter) {
         mAdapter = adapter;
+        mContext = context;
         mAttributionSource = adapter.getAttributionSource();
         mService = null;
 
@@ -393,14 +394,15 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
     /**
      * Register a {@link Callback} that will be invoked during the operation of this profile.
      *
-     * <p>Repeated registration of the same <var>callback</var> object will have no effect after the
-     * first call to this method, even when the <var>executor</var> is different. API caller must
-     * call {@link #unregisterCallback(Callback)} with the same callback object before registering
-     * it again.
+     * <p>Repeated registration of the same <var>callback</var> object after the first call to this
+     * method will result with IllegalArgumentException being thrown, even when the
+     * <var>executor</var> is different. API caller must call {@link #unregisterCallback(Callback)}
+     * with the same callback object before registering it again.
      *
      * @param executor an {@link Executor} to execute given callback
      * @param callback user implementation of the {@link Callback}
-     * @throws IllegalArgumentException if a null executor, or callback is given
+     * @throws NullPointerException if a null executor, or callback is given, or
+     *     IllegalArgumentException if the same <var>callback<var> is already registered.
      * @hide
      */
     @SystemApi
@@ -411,6 +413,9 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
         requireNonNull(executor);
         requireNonNull(callback);
         Log.d(TAG, "registerCallback");
+
+        enforcePermissionInFramework(mContext, BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
+
         synchronized (mCallbackExecutorMap) {
             if (!mAdapter.isEnabled()) {
                 /* If Bluetooth is off, just store callback and it will be registered
@@ -445,7 +450,6 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
                             mAttributionSource);
                 }
             } catch (RemoteException e) {
-                mCallbackExecutorMap.remove(callback);
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
@@ -469,6 +473,9 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
     public void unregisterCallback(@NonNull Callback callback) {
         requireNonNull(callback);
         Log.d(TAG, "unregisterCallback");
+
+        enforcePermissionInFramework(mContext, BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
+
         synchronized (mCallbackExecutorMap) {
             if (mCallbackExecutorMap.remove(callback) == null) {
                 throw new IllegalArgumentException("This callback has not been registered");
@@ -558,6 +565,9 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
         if (!isValidDevice(device)) {
             return;
         }
+
+        enforcePermissionInFramework(mContext, BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
+
         callServiceIfEnabled(
                 mAdapter,
                 this::getService,
@@ -702,6 +712,9 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
         if (volume < 0 || volume > 255) {
             throw new IllegalArgumentException("illegal volume " + volume);
         }
+
+        enforcePermissionInFramework(mContext, BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
+
         callServiceIfEnabled(
                 mAdapter,
                 this::getService,
@@ -722,7 +735,6 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
      * @throws IllegalArgumentException If the provided device is invalid.
      * @hide
      */
-    @FlaggedApi(Flags.FLAG_AICS_API)
     @SystemApi
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
@@ -736,7 +748,9 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
         return callServiceIfEnabled(
                 mAdapter,
                 this::getService,
-                s -> AudioInputControl.getAudioInputControlServices(s, mAttributionSource, device),
+                s ->
+                        AudioInputControl.getAudioInputControlServices(
+                                mContext, s, mAttributionSource, device),
                 Collections.emptyList());
     }
 

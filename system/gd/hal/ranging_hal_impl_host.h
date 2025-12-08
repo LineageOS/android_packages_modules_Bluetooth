@@ -17,10 +17,18 @@
 #pragma once
 
 #include "ranging_hal.h"
+#include <bluetooth/log.h>
 
 namespace bluetooth::hal {
 class RangingHalImpl : public RangingHal {
 public:
+  RangingHalImpl() {
+    log::verbose("module started !!");
+  }
+  ~RangingHalImpl() {
+    log::verbose("module stopped !!");
+  }
+
   bool IsBound() override { return false; }
   RangingHalVersion GetRangingHalVersion() override { return V_UNKNOWN; }
   void RegisterCallback(RangingHalCallback* /* callback */) override {}
@@ -59,5 +67,9 @@ public:
   }
 
   bool IsAbortedProcedureRequired(uint16_t /*connection_handle*/) override { return false; }
+
+  std::vector<RangingSessionType> GetSupportedSessionTypes() override {
+    return {RangingSessionType::SOFTWARE_STACK_DATA_PARSING};
+  }
 };
 }  // namespace bluetooth::hal

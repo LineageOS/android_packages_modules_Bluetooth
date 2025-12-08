@@ -35,7 +35,6 @@ import android.bluetooth.annotations.RequiresLegacyBluetoothPermission;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.AttributionSource;
 import android.os.Binder;
-import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.ParcelUuid;
@@ -66,24 +65,21 @@ public final class BluetoothGatt implements BluetoothProfile {
 
     private static final boolean VDBG = Log.isLoggable("bluetooth", Log.VERBOSE);
 
-    @UnsupportedAppUsage private final IBluetoothGatt mService;
-    @UnsupportedAppUsage private volatile BluetoothGattCallback mCallback;
+    private final IBluetoothGatt mService;
+    private volatile BluetoothGattCallback mCallback;
     private Handler mHandler;
     private final BluetoothDevice mDevice;
-    @UnsupportedAppUsage private boolean mAutoConnect;
+    private boolean mAutoConnect;
     private boolean mClientRegistered;
 
-    @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.P, trackingBug = 115609023)
-    private int mAuthRetryState;
+    private int mAuthRetryState = AUTH_RETRY_STATE_IDLE;
 
-    private int mConnState;
+    private int mConnState = CONN_STATE_IDLE;
     private final Object mStateLock = new Object();
     private final Object mDeviceBusyLock = new Object();
 
-    @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
-    private Boolean mDeviceBusy = false;
+    private boolean mDeviceBusy = false;
 
-    @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
     private final int mTransport;
 
     private final int mPhy;
@@ -103,7 +99,8 @@ public final class BluetoothGatt implements BluetoothProfile {
     // Max length of an attribute value, defined in gatt_api.h
     private static final int GATT_MAX_ATTR_LEN = 512;
 
-    private final CopyOnWriteArrayList<BluetoothGattService> mServices;
+    private final CopyOnWriteArrayList<BluetoothGattService> mServices =
+            new CopyOnWriteArrayList<>();
 
     /** A GATT operation completed successfully */
     public static final int GATT_SUCCESS = 0;
@@ -295,11 +292,9 @@ public final class BluetoothGatt implements BluetoothProfile {
             mClientRegistered = status == GATT_SUCCESS;
             synchronized (mStateLock) {
                 if (mConnState == CONN_STATE_CLOSED) {
-                    Log.d(TAG, "Client registration completed after closed," + " unregistering");
+                    Log.d(TAG, "Client registration completed after closed, unregistering");
                     unregisterApp();
-                    if (Flags.unregisterGattClientDisconnected()) {
-                        mCallback = null;
-                    }
+                    mCallback = null;
                     return;
                 }
                 if (VDBG) {
@@ -415,7 +410,7 @@ public final class BluetoothGatt implements BluetoothProfile {
             }
             int profileState = connected ? STATE_CONNECTED : STATE_DISCONNECTED;
 
-            if (Flags.unregisterGattClientDisconnected() && !connected && !mAutoConnect) {
+            if (!connected && !mAutoConnect) {
                 unregisterApp();
             }
 
@@ -462,16 +457,13 @@ public final class BluetoothGatt implements BluetoothProfile {
                 s.setDevice(mDevice);
             }
 
-            if (Flags.fixBluetoothGattGettingDuplicateServices()) {
-                mServices.clear();
-            }
-
+            mServices.clear();
             mServices.addAll(services);
 
             // Fix references to included services, as they doesn't point to right objects.
             for (BluetoothGattService fixedService : mServices) {
                 ArrayList<BluetoothGattService> includedServices =
-                        new ArrayList(fixedService.getIncludedServices());
+                        new ArrayList<>(fixedService.getIncludedServices());
                 fixedService.getIncludedServices().clear();
 
                 for (BluetoothGattService brokenRef : includedServices) {
@@ -936,9 +928,9 @@ public final class BluetoothGatt implements BluetoothProfile {
         }
     }
 
-    /* package */ BluetoothGatt(
-            IBluetoothGatt iGatt,
-            BluetoothDevice device,
+    BluetoothGatt(
+            @NonNull IBluetoothGatt iGatt,
+            @NonNull BluetoothDevice device,
             int transport,
             boolean opportunistic,
             int phy,
@@ -949,10 +941,6 @@ public final class BluetoothGatt implements BluetoothProfile {
         mPhy = phy;
         mOpportunistic = opportunistic;
         mAttributionSource = source;
-        mServices = new CopyOnWriteArrayList<>();
-
-        mConnState = CONN_STATE_IDLE;
-        mAuthRetryState = AUTH_RETRY_STATE_IDLE;
     }
 
     /** @hide */
@@ -984,9 +972,7 @@ public final class BluetoothGatt implements BluetoothProfile {
         Log.d(TAG, "close()");
 
         unregisterApp();
-        if (Flags.unregisterGattClientDisconnected()) {
-            mCallback = null;
-        }
+        mCallback = null;
 
         mConnState = CONN_STATE_CLOSED;
         mAuthRetryState = AUTH_RETRY_STATE_IDLE;
@@ -1052,34 +1038,12 @@ public final class BluetoothGatt implements BluetoothProfile {
      * @param callback GATT callback handler that will receive asynchronous callbacks.
      * @return If true, the callback will be called to notify success or failure, false on immediate
      *     error
-     */
-    @RequiresLegacyBluetoothPermission
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(BLUETOOTH_CONNECT)
-    private boolean registerApp(BluetoothGattCallback callback, Handler handler) {
-        return registerApp(callback, handler, false);
-    }
-
-    /**
-     * Register an application callback to start using GATT.
-     *
-     * <p>This is an asynchronous call. If registration is successful, client connection will be
-     * initiated.
-     *
-     * @param callback GATT callback handler that will receive asynchronous callbacks.
-     * @param eattSupport indicate to allow for eatt support
-     * @return If true, the callback will be called to notify success or failure, false on immediate
-     *     error
      * @hide
      */
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    private boolean registerApp(
-            BluetoothGattCallback callback, Handler handler, boolean eattSupport) {
-        Log.d(TAG, "registerApp()");
-        if (mService == null) return false;
-
+    boolean registerApp(BluetoothGattCallback callback, Handler handler) {
         mCallback = callback;
         mHandler = handler;
         UUID uuid = UUID.randomUUID();
@@ -1089,7 +1053,7 @@ public final class BluetoothGatt implements BluetoothProfile {
             mService.registerClient(
                     new ParcelUuid(uuid),
                     mBluetoothGattCallback,
-                    eattSupport,
+                    false, // eattSupport
                     mTransport,
                     mAttributionSource);
         } catch (RemoteException e) {
@@ -1105,13 +1069,10 @@ public final class BluetoothGatt implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     private void unregisterApp() {
-        if (mService == null || !mClientRegistered) return;
+        if (!mClientRegistered) return;
         Log.d(TAG, "unregisterApp()");
 
         try {
-            if (!Flags.unregisterGattClientDisconnected()) {
-                mCallback = null;
-            }
             mService.unregisterClient(mBluetoothGattCallback, mAttributionSource);
             mClientRegistered = false;
         } catch (RemoteException e) {
@@ -1136,12 +1097,10 @@ public final class BluetoothGatt implements BluetoothProfile {
      *     automatically connect as soon as the remote device becomes available (true).
      * @return true, if the connection attempt was initiated successfully
      */
-    @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    /*package*/ boolean connect(
-            Boolean autoConnect, BluetoothGattCallback callback, Handler handler) {
+    boolean connect(boolean autoConnect, BluetoothGattCallback callback, Handler handler) {
         Log.d(TAG, "connect() - device: " + mDevice + ", auto: " + autoConnect);
         synchronized (mStateLock) {
             if (mConnState != CONN_STATE_IDLE) {
@@ -1172,7 +1131,7 @@ public final class BluetoothGatt implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public void disconnect() {
         Log.d(TAG, "cancelOpen() - device: " + mDevice);
-        if (mService == null || !mClientRegistered) return;
+        if (!mClientRegistered) return;
 
         try {
             mService.clientDisconnect(mBluetoothGattCallback, mDevice, mAttributionSource);
@@ -1193,11 +1152,7 @@ public final class BluetoothGatt implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean connect() {
-        if (mService == null) return false;
         if (!mClientRegistered) {
-            if (!Flags.unregisterGattClientDisconnected()) {
-                return false;
-            }
             synchronized (mStateLock) {
                 if (mConnState != CONN_STATE_IDLE) {
                     return false;
@@ -1268,7 +1223,7 @@ public final class BluetoothGatt implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public void setPreferredPhy(int txPhy, int rxPhy, int phyOptions) {
-        if (mService == null || !mClientRegistered) return;
+        if (!mClientRegistered) return;
 
         try {
             mService.clientSetPreferredPhy(
@@ -1285,7 +1240,7 @@ public final class BluetoothGatt implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public void readPhy() {
-        if (mService == null || !mClientRegistered) return;
+        if (!mClientRegistered) return;
 
         try {
             mService.clientReadPhy(mBluetoothGattCallback, mDevice, mAttributionSource);
@@ -1320,11 +1275,7 @@ public final class BluetoothGatt implements BluetoothProfile {
     public boolean discoverServices() {
         Log.d(TAG, "discoverServices() - device: " + mDevice);
 
-        if (mService == null || !mClientRegistered) return false;
-
-        if (!Flags.fixBluetoothGattGettingDuplicateServices()) {
-            mServices.clear();
-        }
+        if (!mClientRegistered) return false;
 
         try {
             mService.discoverServices(mBluetoothGattCallback, mDevice, mAttributionSource);
@@ -1349,11 +1300,7 @@ public final class BluetoothGatt implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean discoverServiceByUuid(UUID uuid) {
         Log.d(TAG, "discoverServiceByUuid() - device: " + mDevice);
-        if (mService == null || !mClientRegistered) return false;
-
-        if (!Flags.fixBluetoothGattGettingDuplicateServices()) {
-            mServices.clear();
-        }
+        if (!mClientRegistered) return false;
 
         try {
             mService.discoverServiceByUuid(
@@ -1431,7 +1378,7 @@ public final class BluetoothGatt implements BluetoothProfile {
         }
 
         if (VDBG) Log.d(TAG, "readCharacteristic() - uuid: " + characteristic.getUuid());
-        if (mService == null || !mClientRegistered) return false;
+        if (!mClientRegistered) return false;
 
         BluetoothGattService service = characteristic.getService();
         if (service == null) return false;
@@ -1480,7 +1427,7 @@ public final class BluetoothGatt implements BluetoothProfile {
             conditional = true)
     public boolean readUsingCharacteristicUuid(UUID uuid, int startHandle, int endHandle) {
         if (VDBG) Log.d(TAG, "readUsingCharacteristicUuid() - uuid: " + uuid);
-        if (mService == null || !mClientRegistered) return false;
+        if (!mClientRegistered) return false;
 
         synchronized (mDeviceBusyLock) {
             if (mDeviceBusy) return false;
@@ -1587,7 +1534,7 @@ public final class BluetoothGatt implements BluetoothProfile {
                         == 0) {
             return BluetoothStatusCodes.ERROR_GATT_WRITE_NOT_ALLOWED;
         }
-        if (mService == null || !mClientRegistered) {
+        if (!mClientRegistered) {
             return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
         }
 
@@ -1660,7 +1607,7 @@ public final class BluetoothGatt implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean readDescriptor(BluetoothGattDescriptor descriptor) {
         if (VDBG) Log.d(TAG, "readDescriptor() - uuid: " + descriptor.getUuid());
-        if (mService == null || !mClientRegistered) return false;
+        if (!mClientRegistered) return false;
 
         BluetoothGattCharacteristic characteristic = descriptor.getCharacteristic();
         if (characteristic == null) return false;
@@ -1741,7 +1688,7 @@ public final class BluetoothGatt implements BluetoothProfile {
             throw new IllegalArgumentException("value must not be null");
         }
         if (VDBG) Log.d(TAG, "writeDescriptor() - uuid: " + descriptor.getUuid());
-        if (mService == null || !mClientRegistered) {
+        if (!mClientRegistered) {
             return BluetoothStatusCodes.ERROR_PROFILE_SERVICE_NOT_BOUND;
         }
 
@@ -1804,7 +1751,7 @@ public final class BluetoothGatt implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean beginReliableWrite() {
         if (VDBG) Log.d(TAG, "beginReliableWrite() - device: " + mDevice);
-        if (mService == null || !mClientRegistered) return false;
+        if (!mClientRegistered) return false;
 
         try {
             mService.beginReliableWrite(mDevice, mAttributionSource);
@@ -1832,7 +1779,7 @@ public final class BluetoothGatt implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean executeReliableWrite() {
         if (VDBG) Log.d(TAG, "executeReliableWrite() - device: " + mDevice);
-        if (mService == null || !mClientRegistered) return false;
+        if (!mClientRegistered) return false;
 
         synchronized (mDeviceBusyLock) {
             if (mDeviceBusy) return false;
@@ -1863,7 +1810,7 @@ public final class BluetoothGatt implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public void abortReliableWrite() {
         if (VDBG) Log.d(TAG, "abortReliableWrite() - device: " + mDevice);
-        if (mService == null || !mClientRegistered) return;
+        if (!mClientRegistered) return;
 
         try {
             mService.endReliableWrite(mBluetoothGattCallback, mDevice, false, mAttributionSource);
@@ -1905,7 +1852,7 @@ public final class BluetoothGatt implements BluetoothProfile {
                         + characteristic.getUuid()
                         + " enable: "
                         + enable);
-        if (mService == null || !mClientRegistered) return false;
+        if (!mClientRegistered) return false;
 
         BluetoothGattService service = characteristic.getService();
         if (service == null) return false;
@@ -1938,7 +1885,7 @@ public final class BluetoothGatt implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean refresh() {
         Log.d(TAG, "refresh() - device: " + mDevice);
-        if (mService == null || !mClientRegistered) return false;
+        if (!mClientRegistered) return false;
 
         try {
             mService.refreshDevice(mBluetoothGattCallback, mDevice, mAttributionSource);
@@ -1963,7 +1910,7 @@ public final class BluetoothGatt implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean readRemoteRssi() {
         Log.d(TAG, "readRssi() - device: " + mDevice);
-        if (mService == null || !mClientRegistered) return false;
+        if (!mClientRegistered) return false;
 
         try {
             mService.readRemoteRssi(mBluetoothGattCallback, mDevice, mAttributionSource);
@@ -1996,7 +1943,7 @@ public final class BluetoothGatt implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean requestMtu(int mtu) {
         Log.d(TAG, "configureMTU() - device: " + mDevice + " mtu: " + mtu);
-        if (mService == null || !mClientRegistered) return false;
+        if (!mClientRegistered) return false;
 
         try {
             mService.configureMTU(mBluetoothGattCallback, mDevice, mtu, mAttributionSource);
@@ -2029,7 +1976,7 @@ public final class BluetoothGatt implements BluetoothProfile {
         }
 
         Log.d(TAG, "requestConnectionPriority() - params: " + connectionPriority);
-        if (mService == null || !mClientRegistered) return false;
+        if (!mClientRegistered) return false;
 
         try {
             mService.connectionParameterUpdate(
@@ -2078,7 +2025,7 @@ public final class BluetoothGatt implements BluetoothProfile {
                         + minConnectionEventLen
                         + ", max_ce="
                         + maxConnectionEventLen);
-        if (mService == null || !mClientRegistered) return false;
+        if (!mClientRegistered) return false;
 
         try {
             mService.leConnectionUpdate(
@@ -2144,7 +2091,7 @@ public final class BluetoothGatt implements BluetoothProfile {
         }
 
         Log.d(TAG, "requestsubrateMode(" + subrateMode + ")");
-        if (mService == null || !mClientRegistered) {
+        if (!mClientRegistered) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
 

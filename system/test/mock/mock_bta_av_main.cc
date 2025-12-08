@@ -19,12 +19,13 @@
  *   Functions generated:21
  */
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "bta/av/bta_av_int.h"
 #include "stack/include/bt_hdr.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 bool bta_av_chk_start(tBTA_AV_SCB* /* p_scb */) {
   inc_func_call_count(__func__);
@@ -35,10 +36,6 @@ bool bta_av_hdl_event(const BT_HDR_RIGID* /* p_msg */) {
   return false;
 }
 bool bta_av_link_role_ok(tBTA_AV_SCB* /* p_scb */, uint8_t /* bits */) {
-  inc_func_call_count(__func__);
-  return false;
-}
-bool bta_av_switch_if_needed(tBTA_AV_SCB* /* p_scb */) {
   inc_func_call_count(__func__);
   return false;
 }

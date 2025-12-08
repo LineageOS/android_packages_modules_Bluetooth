@@ -23,6 +23,11 @@
  ******************************************************************************/
 
 #pragma once
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/hci_role.h>
+
 #include <cstdint>
 #include <string>
 
@@ -35,10 +40,6 @@
 #include "stack/include/hci_error_code.h"
 #include "stack/include/security_client_callbacks.h"
 #include "stack/include/smp_api_types.h"
-#include "types/ble_address_with_type.h"
-#include "types/bt_transport.h"
-#include "types/hci_role.h"
-#include "types/raw_address.h"
 
 #define BTM_SEC_MAX_COLLISION_DELAY (5000)
 
@@ -701,9 +702,9 @@ void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec);
  * Returns          void
  *
  ******************************************************************************/
-void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported, bool sc_supported,
-                               bool hci_role_switch_supported, bool br_edr_supported,
-                               bool le_supported);
+void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported, bool host_sc_supported,
+                               bool controller_sc_supported, bool hci_role_switch_supported,
+                               bool br_edr_supported, bool le_supported);
 
 /*******************************************************************************
  *

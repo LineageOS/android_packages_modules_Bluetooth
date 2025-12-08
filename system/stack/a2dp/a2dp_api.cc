@@ -27,6 +27,8 @@
 #include "a2dp_api.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <string.h>
 
@@ -43,8 +45,6 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/sdp_api.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using namespace bluetooth::legacy::stack::sdp;
@@ -221,8 +221,7 @@ bool A2DP_AddRecord(uint16_t service_uuid, char* p_service_name, char* p_provide
 
   /* add profile descriptor list   */
   result &= get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(
-          sdp_handle, UUID_SERVCLASS_ADV_AUDIO_DISTRIBUTION,
-          com::android::bluetooth::flags::a2dp_version_1_4() ? A2DP_VERSION_V1_4 : A2DP_VERSION_V1_3);
+          sdp_handle, UUID_SERVCLASS_ADV_AUDIO_DISTRIBUTION, A2DP_VERSION_V1_4);
 
   /* add supported feature */
   if (features != 0) {
@@ -367,8 +366,6 @@ uint8_t A2DP_BitsSet(uint64_t num) {
  * Returns          void
  *
  ******************************************************************************/
-void A2DP_Init(void) {
-  memset(&a2dp_cb, 0, sizeof(tA2DP_CB));
-}
+void A2DP_Init(void) { a2dp_cb = tA2DP_CB{}; }
 
 uint16_t A2DP_GetAvdtpVersion() { return AVDT_VERSION; }

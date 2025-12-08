@@ -22,6 +22,8 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -51,8 +53,6 @@
 #include "osi/include/osi.h"  // INVALID_FD
 #include "stack/include/bt_hdr.h"
 #include "stack/include/port_api.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;
@@ -292,16 +292,13 @@ static rfc_slot_t* create_srv_accept_rfc_slot(rfc_slot_t* srv_rs, const RawAddre
   accept_rs->rfc_handle = open_handle;
   accept_rs->rfc_port_handle = BTA_JvRfcommGetPortHdl(open_handle);
   accept_rs->app_uid = srv_rs->app_uid;
-
-  if (com::android::bluetooth::flags::socket_settings_api()) {
-    accept_rs->socket_id = btif_rfc_sock_generate_socket_id();
-    accept_rs->data_path = srv_rs->data_path;
-    strncpy(accept_rs->socket_name, srv_rs->socket_name, sizeof(accept_rs->socket_name) - 1);
-    accept_rs->socket_name[sizeof(accept_rs->socket_name) - 1] = '\0';
-    accept_rs->hub_id = srv_rs->hub_id;
-    accept_rs->endpoint_id = srv_rs->endpoint_id;
-    accept_rs->listen_fd = srv_rs->fd;
-  }
+  accept_rs->socket_id = btif_rfc_sock_generate_socket_id();
+  accept_rs->data_path = srv_rs->data_path;
+  strncpy(accept_rs->socket_name, srv_rs->socket_name, sizeof(accept_rs->socket_name) - 1);
+  accept_rs->socket_name[sizeof(accept_rs->socket_name) - 1] = '\0';
+  accept_rs->hub_id = srv_rs->hub_id;
+  accept_rs->endpoint_id = srv_rs->endpoint_id;
+  accept_rs->listen_fd = srv_rs->fd;
 
   srv_rs->rfc_handle = new_listen_handle;
   srv_rs->rfc_port_handle = BTA_JvRfcommGetPortHdl(new_listen_handle);
@@ -411,25 +408,21 @@ bt_status_t btsock_rfc_listen(const char* service_name, const Uuid* service_uuid
   //        close(rs->app_fd);
   slot->app_fd = INVALID_FD;  // Drop our reference to the fd.
   slot->app_uid = app_uid;
-  if (com::android::bluetooth::flags::socket_settings_api()) {
-    slot->data_path = data_path;
-    if (socket_name) {
-      strncpy(slot->socket_name, socket_name, sizeof(slot->socket_name) - 1);
-      slot->socket_name[sizeof(slot->socket_name) - 1] = '\0';
-    }
-    slot->hub_id = hub_id;
-    slot->endpoint_id = endpoint_id;
-    if (data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
-      if (!btsock_rfc_get_offload_mtu(max_rx_packet_size, &slot->mtu)) {
-        return BT_STATUS_UNSUPPORTED;
-      }
+  slot->data_path = data_path;
+  if (socket_name) {
+    strncpy(slot->socket_name, socket_name, sizeof(slot->socket_name) - 1);
+    slot->socket_name[sizeof(slot->socket_name) - 1] = '\0';
+  }
+  slot->hub_id = hub_id;
+  slot->endpoint_id = endpoint_id;
+  if (data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
+    if (!btsock_rfc_get_offload_mtu(max_rx_packet_size, &slot->mtu)) {
+      return BT_STATUS_UNSUPPORTED;
     }
   }
   btsock_thread_add_fd(pth, slot->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_EXCEPTION, slot->id);
   // start monitoring the socketpair to get call back when app is accepting on server socket
-  if (com::android::bluetooth::flags::socket_settings_api()) {
-    btsock_thread_add_fd(pth, slot->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_RD, slot->id);
-  }
+  btsock_thread_add_fd(pth, slot->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_RD, slot->id);
 
   return BT_STATUS_SUCCESS;
 }
@@ -494,18 +487,16 @@ bt_status_t btsock_rfc_connect(const RawAddress* bd_addr, const Uuid* service_uu
   *sock_fd = slot->app_fd;    // Transfer ownership of fd to caller.
   slot->app_fd = INVALID_FD;  // Drop our reference to the fd.
   slot->app_uid = app_uid;
-  if (com::android::bluetooth::flags::socket_settings_api()) {
-    slot->data_path = data_path;
-    if (socket_name) {
-      strncpy(slot->socket_name, socket_name, sizeof(slot->socket_name) - 1);
-      slot->socket_name[sizeof(slot->socket_name) - 1] = '\0';
-    }
-    slot->hub_id = hub_id;
-    slot->endpoint_id = endpoint_id;
-    if (data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
-      if (!btsock_rfc_get_offload_mtu(max_rx_packet_size, &slot->mtu)) {
-        return BT_STATUS_UNSUPPORTED;
-      }
+  slot->data_path = data_path;
+  if (socket_name) {
+    strncpy(slot->socket_name, socket_name, sizeof(slot->socket_name) - 1);
+    slot->socket_name[sizeof(slot->socket_name) - 1] = '\0';
+  }
+  slot->hub_id = hub_id;
+  slot->endpoint_id = endpoint_id;
+  if (data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
+    if (!btsock_rfc_get_offload_mtu(max_rx_packet_size, &slot->mtu)) {
+      return BT_STATUS_UNSUPPORTED;
     }
   }
   btsock_thread_add_fd(pth, slot->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_RD, slot->id);
@@ -554,12 +545,10 @@ static void cleanup_rfc_slot(rfc_slot_t* slot, btsock_error_code_t error_code) {
 
     slot->fd = INVALID_FD;
 
-    if (com::android::bluetooth::flags::socket_settings_api()) {
-      if (slot->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD && !slot->f.server &&
-          slot->socket_id != 0) {
-        bluetooth::shim::GetLppOffloadManager()->SocketClosed(slot->socket_id);
-        slot->socket_id = 0;
-      }
+    if (slot->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD && !slot->f.server &&
+        slot->socket_id != 0) {
+      bluetooth::shim::GetLppOffloadManager()->SocketClosed(slot->socket_id);
+      slot->socket_id = 0;
     }
   }
 
@@ -696,7 +685,7 @@ static uint32_t on_srv_rfc_connect_offload(tBTA_JV_RFCOMM_SRV_OPEN* p_open, rfc_
     cleanup_rfc_slot(accept_rs, BTSOCK_ERROR_OFFLOAD_HAL_OPEN_FAILURE);
   } else {
     log::info("RFCOMM socket opened successful. Will send connect signal in async callback.");
-    if (com::android::bluetooth::flags::monitor_read_flag_on_offloaded_socket()) {
+    if (com_android_bluetooth_flags_monitor_read_flag_on_offloaded_socket()) {
       btsock_thread_add_fd(pth, accept_rs->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_RD, accept_rs->id);
     }
   }
@@ -718,8 +707,7 @@ static uint32_t on_srv_rfc_connect(tBTA_JV_RFCOMM_SRV_OPEN* p_open, uint32_t id)
     return 0;
   }
 
-  if (com::android::bluetooth::flags::socket_settings_api() &&
-      srv_rs->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
+  if (srv_rs->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
     return on_srv_rfc_connect_offload(p_open, srv_rs);
   }
 
@@ -747,9 +735,7 @@ static uint32_t on_srv_rfc_connect(tBTA_JV_RFCOMM_SRV_OPEN* p_open, uint32_t id)
                           accept_rs->socket_id);
   accept_rs->app_fd = INVALID_FD;  // Ownership of the application fd has been transferred.
   // start monitoring the socketpair to get call back when app is accepting on server socket
-  if (com::android::bluetooth::flags::socket_settings_api()) {
-    btsock_thread_add_fd(pth, srv_rs->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_RD, srv_rs->id);
-  }
+  btsock_thread_add_fd(pth, srv_rs->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_RD, srv_rs->id);
   return srv_rs->id;
 }
 
@@ -805,8 +791,7 @@ static void on_cli_rfc_connect(tBTA_JV_RFCOMM_OPEN* p_open, uint32_t id) {
     return;
   }
 
-  if (com::android::bluetooth::flags::socket_settings_api() &&
-      slot->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
+  if (slot->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
     on_cli_rfc_connect_offload(p_open, slot);
     return;
   }
@@ -1052,13 +1037,11 @@ static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
         // For hardware offload data path, host stack sets the initial credits to 0. The offload
         // stack should send initial credits to peer device through RFCOMM signaling command when
         // the data path is switched successfully.
-        if (com::android::bluetooth::flags::socket_settings_api()) {
-          if (rs->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
-            cfg.init_credit_present = true;
-            cfg.init_credit = 0;
-            cfg.rx_mtu_present = rs->mtu > 0;
-            cfg.rx_mtu = rs->mtu;
-          }
+        if (rs->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
+          cfg.init_credit_present = true;
+          cfg.init_credit = 0;
+          cfg.rx_mtu_present = rs->mtu > 0;
+          cfg.rx_mtu = rs->mtu;
         }
         // now start the rfcomm server after sdp & channel # assigned
         BTA_JvRfcommStartServer(rs->security, rs->scn, MAX_RFC_SESSION, rfcomm_cback, rs->id, cfg,
@@ -1093,15 +1076,14 @@ static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
       // For hardware offload data path, host stack sets the initial credits to 0. The offload
       // stack should send initial credits to peer device through RFCOMM signaling command when
       // the data path is switched successfully.
-      if (com::android::bluetooth::flags::socket_settings_api()) {
-        if (slot->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
-          cfg.init_credit_present = true;
-          cfg.init_credit = 0;
-          cfg.rx_mtu_present = slot->mtu > 0;
-          cfg.rx_mtu = slot->mtu;
-          cfg.data_path = slot->data_path;
-        }
+      if (slot->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
+        cfg.init_credit_present = true;
+        cfg.init_credit = 0;
+        cfg.rx_mtu_present = slot->mtu > 0;
+        cfg.rx_mtu = slot->mtu;
+        cfg.data_path = slot->data_path;
       }
+
       // Start the rfcomm server after sdp & channel # assigned.
       BTA_JvRfcommStartServer(slot->security, slot->scn, MAX_RFC_SESSION, rfcomm_cback, slot->id,
                               cfg, slot->app_uid);
@@ -1159,14 +1141,12 @@ static void handle_discovery_comp(tBTA_JV_STATUS status, int scn, uint32_t id) {
   // For hardware offload data path, host stack sets the initial credits to 0. The offload
   // stack should send initial credits to peer device through RFCOMM signaling command when
   // the data path is switched successfully.
-  if (com::android::bluetooth::flags::socket_settings_api()) {
-    if (slot->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
-      cfg.init_credit_present = true;
-      cfg.init_credit = 0;
-      cfg.rx_mtu_present = slot->mtu > 0;
-      cfg.rx_mtu = slot->mtu;
-      cfg.data_path = slot->data_path;
-    }
+  if (slot->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
+    cfg.init_credit_present = true;
+    cfg.init_credit = 0;
+    cfg.rx_mtu_present = slot->mtu > 0;
+    cfg.rx_mtu = slot->mtu;
+    cfg.data_path = slot->data_path;
   }
 
   if (BTA_JvRfcommConnect(slot->security, scn, slot->addr, rfcomm_cback, slot->id, cfg,
@@ -1287,7 +1267,7 @@ static bool btsock_rfc_read_signaled_on_listen_socket(int fd, int /* flags */, u
   return true;
 }
 
-static void btsock_rfc_signaled_flagged(int fd, int flags, uint32_t id) {
+void btsock_rfc_signaled(int fd, int flags, uint32_t id) {
   bool need_close = false;
   btsock_error_code_t error_code = BTSOCK_ERROR_NONE;
   std::unique_lock<std::recursive_mutex> lock(slot_lock);
@@ -1323,60 +1303,6 @@ static void btsock_rfc_signaled_flagged(int fd, int flags, uint32_t id) {
               slot->id, slot->scn);
       need_close = true;
       error_code = BTSOCK_ERROR_WRITE_SIGNALED_FAILURE;
-    }
-  }
-
-  if (need_close || (flags & SOCK_THREAD_FD_EXCEPTION)) {
-    // Clean up if there's no data pending.
-    int size = 0;
-    if (need_close || ioctl(slot->fd, FIONREAD, &size) != 0 || !size) {
-      if (slot->f.doing_sdp_request) {
-        BTA_JvCancelDiscovery(slot->id);
-      }
-      cleanup_rfc_slot(slot, error_code);
-    }
-  }
-}
-
-void btsock_rfc_signaled(int fd, int flags, uint32_t id) {
-  if (com::android::bluetooth::flags::socket_settings_api()) {
-    btsock_rfc_signaled_flagged(fd, flags, id);
-    return;
-  }
-  bool need_close = false;
-  btsock_error_code_t error_code = BTSOCK_ERROR_NONE;
-  std::unique_lock<std::recursive_mutex> lock(slot_lock);
-  rfc_slot_t* slot = find_rfc_slot_by_id(id);
-  if (!slot) {
-    log::warn("RFCOMM slot with id {} not found.", id);
-    return;
-  }
-
-  // Data available from app, tell stack we have outgoing data.
-  if (flags & SOCK_THREAD_FD_RD && !slot->f.server) {
-    if (slot->f.connected) {
-      // Make sure there's data pending in case the peer closed the socket.
-      int size = 0;
-      if (!(flags & SOCK_THREAD_FD_EXCEPTION) || (ioctl(slot->fd, FIONREAD, &size) == 0 && size)) {
-        BTA_JvRfcommWrite(slot->rfc_handle, slot->id);
-      }
-    } else {
-      log::error("socket signaled for read while disconnected, slot_id: {}, channel: {}", slot->id,
-                 slot->scn);
-      error_code = BTSOCK_ERROR_READ_SIGNALED_FAILURE;
-      need_close = true;
-    }
-  }
-
-  if (flags & SOCK_THREAD_FD_WR) {
-    // App is ready to receive more data, tell stack to enable data flow.
-    if (!slot->f.connected || !flush_incoming_que_on_wr_signal(slot)) {
-      log::error(
-              "socket signaled for write while disconnected (or write failure), "
-              "slot_id: {}, channel: {}",
-              slot->id, slot->scn);
-      error_code = BTSOCK_ERROR_WRITE_SIGNALED_FAILURE;
-      need_close = true;
     }
   }
 

@@ -18,6 +18,9 @@
 #define LOG_TAG "bt_bta_hh"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_transport.h>
 #include <string.h>  // memset
 
 #include <cstdint>
@@ -34,9 +37,6 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/sdp_api.h"
-#include "types/ble_address_with_type.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;

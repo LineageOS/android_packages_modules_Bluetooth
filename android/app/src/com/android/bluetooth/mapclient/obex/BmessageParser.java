@@ -428,7 +428,7 @@ class BmessageParser {
     }
 
     private static class VcardHandler implements VCardEntryHandler {
-        public VCardEntry vcard;
+        VCardEntry vcard;
 
         @Override
         public void onStart() {}

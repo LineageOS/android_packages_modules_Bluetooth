@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <string.h>
 
@@ -39,7 +40,6 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/l2cap_types.h"
-#include "types/bluetooth/uuid.h"
 
 #define GATT_MTU_REQ_MIN_LEN 2
 #define L2CAP_PKT_OVERHEAD 4
@@ -418,15 +418,10 @@ static void gatt_process_exec_write_req(tGATT_TCB& tcb, uint16_t cid, uint8_t op
     }
   } else { /* nothing needs to be executed , send response now */
     log::warn("gatt_process_exec_write_req: no prepare write pending");
-    if (com::android::bluetooth::flags::fix_execute_write_no_pending()) {
-      uint16_t payload_size = gatt_tcb_get_payload_size(tcb, cid);
-      BT_HDR* p_buf =
-              attp_build_sr_msg(tcb, GATT_RSP_EXEC_WRITE, (tGATT_SR_MSG*)NULL, payload_size);
-      if (p_buf != NULL) {
-        attp_send_sr_msg(tcb, cid, p_buf);
-      } else {
-        gatt_send_error_rsp(tcb, cid, GATT_ERROR, GATT_REQ_EXEC_WRITE, 0, false);
-      }
+    uint16_t payload_size = gatt_tcb_get_payload_size(tcb, cid);
+    BT_HDR* p_buf = attp_build_sr_msg(tcb, GATT_RSP_EXEC_WRITE, (tGATT_SR_MSG*)NULL, payload_size);
+    if (p_buf != NULL) {
+      attp_send_sr_msg(tcb, cid, p_buf);
     } else {
       gatt_send_error_rsp(tcb, cid, GATT_ERROR, GATT_REQ_EXEC_WRITE, 0, false);
     }

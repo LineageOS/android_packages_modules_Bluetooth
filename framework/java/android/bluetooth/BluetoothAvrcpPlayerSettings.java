@@ -17,6 +17,7 @@
 package android.bluetooth;
 
 import android.annotation.NonNull;
+import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
@@ -140,6 +141,7 @@ public final class BluetoothAvrcpPlayerSettings implements Parcelable {
      *
      * @return int ORed value of supported settings.
      */
+    @RequiresNoPermission
     public int getSettings() {
         return mSettings;
     }
@@ -153,6 +155,7 @@ public final class BluetoothAvrcpPlayerSettings implements Parcelable {
      * @param value value for the setting.
      * @throws IllegalStateException if the setting is not supported.
      */
+    @RequiresNoPermission
     public void addSettingValue(int setting, int value) {
         if ((setting & mSettings) == 0) {
             Log.e(TAG, "Setting not supported: " + setting + " " + mSettings);
@@ -170,6 +173,7 @@ public final class BluetoothAvrcpPlayerSettings implements Parcelable {
      * @return value value for the setting.
      * @throws IllegalStateException if the setting is not supported.
      */
+    @RequiresNoPermission
     public int getSettingValue(int setting) {
         if ((setting & mSettings) == 0) {
             Log.e(TAG, "Setting not supported: " + setting + " " + mSettings);

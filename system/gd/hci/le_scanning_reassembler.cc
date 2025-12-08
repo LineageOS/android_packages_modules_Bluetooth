@@ -74,7 +74,7 @@ LeScanningReassembler::ProcessAdvertisingReport(uint16_t event_type, uint8_t add
   // - For extended advertising, when the current data is marked
   //   incomplete OR when a scan response is expected.
   if (data_status == DataStatus::CONTINUING ||
-      (expect_scan_response && !com::android::bluetooth::flags::support_passive_scanning())) {
+      (expect_scan_response && !com_android_bluetooth_flags_support_passive_scanning())) {
     log::verbose("Ignoring advertising report when current data is marked incomplete");
     return {};
   }

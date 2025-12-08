@@ -30,7 +30,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.AudioAttributes;
 import android.media.AudioManager;
+import android.media.AudioPlaybackConfiguration;
 import android.os.Looper;
 import android.os.UserManager;
 import android.sysprop.BluetoothProperties;
@@ -50,7 +52,6 @@ import com.android.bluetooth.audio_util.PlayerInfo;
 import com.android.bluetooth.audio_util.PlayerSettingsManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -66,8 +67,6 @@ public class AvrcpTargetService extends ProfileService {
     private final BluetoothEventLogger mMediaKeyEventLogger =
             new BluetoothEventLogger(MEDIA_KEY_EVENT_LOGGER_SIZE, MEDIA_KEY_EVENT_LOGGER_TITLE);
 
-    // TODO(b/422543753) Delete on flag cleanup
-    private final ServiceFactory mFactory = new ServiceFactory();
     private final BroadcastReceiver mUserUnlockedReceiver =
             new BroadcastReceiver() {
                 @Override
@@ -100,10 +99,8 @@ public class AvrcpTargetService extends ProfileService {
     // Only used to see if the metadata has changed from its previous value
     private MediaData mCurrentData;
 
-    private static AvrcpTargetService sInstance = null;
-
-    public AvrcpTargetService(AdapterService adapterService) {
-        this(requireNonNull(adapterService), null, null, null, Looper.myLooper());
+    public AvrcpTargetService(AdapterService adapterService, UserManager userManager) {
+        this(requireNonNull(adapterService), null, null, null, userManager, Looper.myLooper());
     }
 
     @VisibleForTesting
@@ -112,6 +109,7 @@ public class AvrcpTargetService extends ProfileService {
             AudioManager audioManager,
             AvrcpNativeInterface nativeInterface,
             AvrcpVolumeManager volumeManager,
+            UserManager userManager,
             Looper looper) {
         super(BluetoothProfile.AVRCP, requireNonNull(adapterService));
         mAudioManager =
@@ -141,7 +139,6 @@ public class AvrcpTargetService extends ProfileService {
                                 new AvrcpVolumeManager(
                                         requireNonNull(adapterService), mNativeInterface));
 
-        UserManager userManager = obtainSystemService(UserManager.class);
         if (userManager.isUserUnlocked()) {
             mMediaPlayerList.init(new ListCallback());
         }
@@ -167,9 +164,6 @@ public class AvrcpTargetService extends ProfileService {
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         filter.addAction(AudioManager.ACTION_VOLUME_CHANGED);
         registerReceiver(mReceiver, filter);
-
-        // Only allow the service to be used once it is initialized
-        sInstance = this;
     }
 
     /** Checks for profile enabled state in Bluetooth sysprops. */
@@ -206,7 +200,7 @@ public class AvrcpTargetService extends ProfileService {
 
     /**
      * Listens for {@link AudioManager.ACTION_VOLUME_CHANGED} events to update {@link
-     * AvrcpVolumeManager}.
+     * AvrcpVolumeManager} in case the remote device doesn't support absolute volume.
      */
     private class AvrcpBroadcastReceiver extends BroadcastReceiver {
         @Override
@@ -228,21 +222,6 @@ public class AvrcpTargetService extends ProfileService {
         }
     }
 
-    /** Sets the AvrcpTargetService instance. */
-    @VisibleForTesting
-    public static void set(AvrcpTargetService instance) {
-        sInstance = instance;
-    }
-
-    /**
-     * Returns the {@link AvrcpTargetService} instance.
-     *
-     * <p>Returns null if the service hasn't been initialized.
-     */
-    public static AvrcpTargetService get() {
-        return sInstance;
-    }
-
     /** Returns the {@link AvrcpCoverArtService} instance. */
     public AvrcpCoverArtService getCoverArtService() {
         return mAvrcpCoverArtService;
@@ -257,16 +236,10 @@ public class AvrcpTargetService extends ProfileService {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        if (sInstance == null) {
-            Log.w(TAG, "cleanup() called before initialization");
-            return;
-        }
-
         if (mAvrcpCoverArtService != null) {
             mAvrcpCoverArtService.stop();
         }
 
-        sInstance = null;
         unregisterReceiver(mReceiver);
 
         // We check the interfaces first since they only get set on User Unlocked
@@ -279,14 +252,7 @@ public class AvrcpTargetService extends ProfileService {
 
     /** Returns the active A2DP {@link BluetoothDevice} */
     private BluetoothDevice getA2dpActiveDevice() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getA2dpService().map(A2dpService::getActiveDevice).orElse(null);
-        }
-        A2dpService service = mFactory.getA2dpService();
-        if (service == null) {
-            return null;
-        }
-        return service.getActiveDevice();
+        return mAdapterService.getA2dpService().map(A2dpService::getActiveDevice).orElse(null);
     }
 
     /**
@@ -300,12 +266,7 @@ public class AvrcpTargetService extends ProfileService {
             mAdapterService.setActiveDevice(device, BluetoothAdapter.ACTIVE_DEVICE_AUDIO);
             return;
         }
-        A2dpService service = A2dpService.getA2dpService();
-        if (service == null) {
-            Log.d(TAG, "setA2dpActiveDevice: A2dp service not found");
-            return;
-        }
-        service.setActiveDevice(device);
+        mAdapterService.getA2dpService().ifPresent(a2dp -> a2dp.setActiveDevice(device));
     }
 
     /** Informs {@link AvrcpVolumeManager} that a new device is connected */
@@ -514,37 +475,70 @@ public class AvrcpTargetService extends ProfileService {
     }
 
     /** Informs {@link AudioManager} of an incoming key event from a remote device. */
-    void sendMediaKeyEvent(int key, boolean pushed) {
+    void sendMediaKeyEvent(BluetoothDevice device, int key, boolean pushed) {
         MediaPlayerWrapper activePlayer = mMediaPlayerList.getActivePlayer();
-        if (Flags.setAddressedPlayer()) {
-            MediaPlayerWrapper addressedPlayer = mMediaPlayerList.getAddressedPlayer();
-            // A/V controls should be sent to the addressed player.
-            // We don't have a way to set a media player as the active session so we
-            // keep the active device playing until we receive a PLAY event for the
-            // addressed player. Other events will still be broadcasted to active player.
-            if (addressedPlayer != null
-                    && KeyEvent.KEYCODE_MEDIA_PLAY == AvrcpPassthrough.toKeyCode(key)
-                    && activePlayer != addressedPlayer) {
-                addressedPlayer.playCurrent();
-                return;
-            }
-        }
 
-        BluetoothDevice activeDevice = getA2dpActiveDevice();
-        mMediaKeyEventLogger.logd(
-                TAG,
+        boolean voiceCommunicationActive = isVoiceCommunicationActive();
+        int keyCode = AvrcpPassthrough.toKeyCode(key);
+
+        String keyEventLog =
                 "sendMediaKeyEvent:"
                         + " device="
-                        + activeDevice
+                        + device
                         + " key="
-                        + key
+                        + KeyEvent.keyCodeToString(keyCode)
                         + " pushed="
                         + pushed
-                        + " to "
-                        + (activePlayer == null ? null : activePlayer.getPackageName()));
+                        + " voice active="
+                        + voiceCommunicationActive
+                        + " internal active player is "
+                        + (activePlayer == null ? null : activePlayer.getPackageName());
+        mMediaKeyEventLogger.logd(TAG, keyEventLog);
+
+        // Some devices will send a play event upon SCO disconnection, resulting in music starting
+        // even if the call is still ongoing. As this is a BT specific issue we handle it here.
+        if (voiceCommunicationActive && KeyEvent.KEYCODE_MEDIA_PLAY == keyCode) {
+            Log.w(TAG, "Received play event while call is active, not sending it to AudioManager");
+            return;
+        }
+
+        // A/V controls should be sent to the addressed player.
+        // We don't have a way to set a media player as the active session so we
+        // keep the active device playing until we receive a PLAY event for the
+        // addressed player. Other events will still be broadcasted to active player.
+        // Note: some devices will only send the event when the button is released and some
+        // will only send the event when the button is pressed, so we can't filter it here.
+        MediaPlayerWrapper addressedPlayer = mMediaPlayerList.getAddressedPlayer();
+        if (addressedPlayer != null
+                && KeyEvent.KEYCODE_MEDIA_PLAY == keyCode
+                && activePlayer != addressedPlayer) {
+            Log.d(
+                    TAG,
+                    "Sending play event directly to addressed player: "
+                            + addressedPlayer.getPackageName());
+            addressedPlayer.playCurrent();
+            return;
+        }
+
+        Log.d(TAG, "KeyEvent dispatched to AudioManager");
+
+        if (isA2dpConnectionForbidden(device)) {
+            Log.e(TAG, "Ignore passthrough key as media profiles disabled");
+            return;
+        }
+
         int action = pushed ? KeyEvent.ACTION_DOWN : KeyEvent.ACTION_UP;
-        KeyEvent event = new KeyEvent(action, AvrcpPassthrough.toKeyCode(key));
+        KeyEvent event = new KeyEvent(action, keyCode);
         mAudioManager.dispatchMediaKeyEvent(event);
+    }
+
+    /** Returns {@code true} if A2DP connection policy is forbidden. */
+    private boolean isA2dpConnectionForbidden(BluetoothDevice device) {
+        return BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
+                == mAdapterService
+                        .getA2dpService()
+                        .map(a2dp -> a2dp.getConnectionPolicy(device))
+                        .orElse(BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
     }
 
     /**
@@ -619,13 +613,22 @@ public class AvrcpTargetService extends ProfileService {
         return false;
     }
 
+    private boolean isVoiceCommunicationActive() {
+        for (AudioPlaybackConfiguration audioConfig :
+                mAudioManager.getActivePlaybackConfigurations()) {
+            if (audioConfig.getAudioAttributes().getUsage()
+                            == AudioAttributes.USAGE_VOICE_COMMUNICATION
+                    && audioConfig.isActive()) {
+                Log.d(TAG, "Voice active playback found: " + audioConfig);
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** Dump debugging information to the string builder */
     public void dump(StringBuilder sb) {
         sb.append("\nProfile: AvrcpTargetService:\n");
-        if (sInstance == null) {
-            sb.append("AvrcpTargetService not running");
-            return;
-        }
 
         StringBuilder tempBuilder = new StringBuilder();
         tempBuilder.append("AVRCP version: ").append(mAvrcpVersion).append("\n");

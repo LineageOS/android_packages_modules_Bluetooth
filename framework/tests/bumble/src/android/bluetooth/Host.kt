@@ -41,10 +41,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 
+private const val TAG = "PandoraHost"
+
 @SuppressLint("MissingPermission")
 @kotlinx.coroutines.ExperimentalCoroutinesApi
 public class Host(context: Context) : Closeable {
-    private val TAG = "PandoraHost"
 
     private val flow: Flow<Intent>
     private val scope: CoroutineScope
@@ -65,7 +66,7 @@ public class Host(context: Context) : Closeable {
         scope.cancel()
     }
 
-    public fun createBondAndVerify(remoteDevice: BluetoothDevice) {
+    fun createBondAndVerify(remoteDevice: BluetoothDevice) {
         Log.d(TAG, "createBondAndVerify: $remoteDevice")
         if (bluetoothAdapter.bondedDevices.contains(remoteDevice)) {
             Log.d(TAG, "createBondAndVerify: already bonded")

@@ -99,7 +99,7 @@ public class EventReport {
             while (event != XmlPullParser.END_DOCUMENT) {
                 if (event == XmlPullParser.START_TAG) {
                     if (xpp.getName().equals("event")) {
-                        HashMap<String, String> attrs = new HashMap<String, String>();
+                        HashMap<String, String> attrs = new HashMap<>();
 
                         for (int i = 0; i < xpp.getAttributeCount(); i++) {
                             attrs.put(xpp.getAttributeName(i), xpp.getAttributeValue(i));

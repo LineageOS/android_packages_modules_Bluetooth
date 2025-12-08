@@ -17,16 +17,30 @@
 package com.android.bluetooth.hap;
 
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import static android.bluetooth.BluetoothStatusCodes.ERROR_HAP_INVALID_PRESET_INDEX;
+import static android.bluetooth.BluetoothStatusCodes.ERROR_HAP_PRESET_NAME_TOO_LONG;
+import static android.bluetooth.BluetoothStatusCodes.ERROR_REMOTE_OPERATION_NOT_SUPPORTED;
+import static android.bluetooth.BluetoothStatusCodes.ERROR_REMOTE_OPERATION_REJECTED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
+import static com.android.bluetooth.hap.HapClientNativeCallback.STATUS_INVALID_PRESET_INDEX;
+import static com.android.bluetooth.hap.HapClientNativeCallback.STATUS_INVALID_PRESET_NAME_LENGTH;
+import static com.android.bluetooth.hap.HapClientNativeCallback.STATUS_OPERATION_NOT_POSSIBLE;
+import static com.android.bluetooth.hap.HapClientNativeCallback.STATUS_OPERATION_NOT_SUPPORTED;
+import static com.android.bluetooth.hap.HapClientNativeCallback.STATUS_SET_NAME_NOT_ALLOWED;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothHapPresetInfo;
-
-import androidx.test.runner.AndroidJUnit4;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.FlagsWrapper;
+import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.common.truth.Expect;
 
@@ -34,202 +48,216 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
+
+import java.util.List;
+import java.util.function.Consumer;
+
 /** Test cases for {@link HapClientNativeCallback}. */
-@RunWith(AndroidJUnit4.class)
+@RunWith(ParameterizedAndroidJunit4.class)
 public class HapClientNativeCallbackTest {
+    @Rule public final SetFlagsRule mSetFlagsRule;
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public Expect expect = Expect.create();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private HapClientService mHapClientService;
-    @Captor private ArgumentCaptor<HapClientStackEvent> mEvent;
+    @Mock private HapClientService mService;
 
+    private InOrder mInOrder;
     private HapClientNativeCallback mNativeCallback;
+
+    @Parameters(name = "{0}")
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(Flags.FLAG_HAP_ON_MAIN_LOOPER);
+    }
+
+    public HapClientNativeCallbackTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
+    }
 
     @Before
     public void setUp() throws Exception {
-        mNativeCallback = new HapClientNativeCallback(mAdapterService, mHapClientService);
+        mInOrder = inOrder(mService);
+        doReturn(true).when(mService).isAvailable();
+        doAnswer(
+                        inv -> {
+                            ((Consumer<HapClientService>) inv.getArgument(0)).accept(mService);
+                            return null;
+                        })
+                .when(mService)
+                .post(any());
+        mNativeCallback = new HapClientNativeCallback(mAdapterService, mService);
     }
 
     @Test
     public void onConnectionStateChanged() {
-        int state = STATE_CONNECTED;
-        mNativeCallback.onConnectionStateChanged(state, null);
-
-        verify(mHapClientService).messageFromNative(mEvent.capture());
-        HapClientStackEvent event = mEvent.getValue();
-        expect.that(event.type).isEqualTo(HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        expect.that(event.valueInt1).isEqualTo(state);
+        mNativeCallback.onConnectionStateChanged(null, STATE_CONNECTED);
+        verify(mService).onConnectionStateChanged(null, STATE_CONNECTED);
     }
 
     @Test
     public void onDeviceAvailable() {
         int features = 1;
         mNativeCallback.onDeviceAvailable(null, features);
-
-        verify(mHapClientService).messageFromNative(mEvent.capture());
-        HapClientStackEvent event = mEvent.getValue();
-        expect.that(event.type).isEqualTo(HapClientStackEvent.EVENT_TYPE_DEVICE_AVAILABLE);
-        expect.that(event.valueInt1).isEqualTo(features);
+        verify(mService).onDeviceAvailable(null, features);
     }
 
     @Test
     public void onFeaturesUpdate() {
         int features = 1;
         mNativeCallback.onFeaturesUpdate(null, features);
-
-        verify(mHapClientService).messageFromNative(mEvent.capture());
-        HapClientStackEvent event = mEvent.getValue();
-        expect.that(event.type).isEqualTo(HapClientStackEvent.EVENT_TYPE_DEVICE_FEATURES);
-        expect.that(event.valueInt1).isEqualTo(features);
+        verify(mService).onFeaturesUpdate(null, features);
     }
 
     @Test
-    public void onActivePresetSelected() {
+    public void onPresetSelected() {
         int presetIndex = 0;
-        mNativeCallback.onActivePresetSelected(null, presetIndex);
-
-        verify(mHapClientService).messageFromNative(mEvent.capture());
-        HapClientStackEvent event = mEvent.getValue();
-        expect.that(event.type).isEqualTo(HapClientStackEvent.EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED);
-        expect.that(event.valueInt1).isEqualTo(presetIndex);
+        mNativeCallback.onPresetSelected(null, presetIndex);
+        verify(mService).onPresetSelected(null, presetIndex);
     }
 
     @Test
-    public void onActivePresetSelectedForGroup() {
+    public void onPresetSelectedForGroup() {
         int groupId = 1;
         int presetIndex = 0;
-        mNativeCallback.onActivePresetSelectedForGroup(groupId, presetIndex);
-
-        verify(mHapClientService).messageFromNative(mEvent.capture());
-        HapClientStackEvent event = mEvent.getValue();
-        expect.that(event.type)
-                .isEqualTo(HapClientStackEvent.EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED_FOR_GROUP);
-        expect.that(event.valueInt1).isEqualTo(presetIndex);
-        expect.that(event.valueInt2).isEqualTo(groupId);
+        mNativeCallback.onPresetSelectedForGroup(groupId, presetIndex);
+        verify(mService).onPresetSelectedForGroup(groupId, presetIndex);
     }
 
     @Test
-    public void onActivePresetSelectError() {
-        int resultCode = -1;
-        mNativeCallback.onActivePresetSelectError(null, resultCode);
+    public void onPresetSelectionFailed() {
+        /* Not a valid name length */
+        mNativeCallback.onPresetSelectionFailed(null, STATUS_INVALID_PRESET_NAME_LENGTH);
+        mInOrder.verify(mService).onPresetSelectionFailed(null, ERROR_HAP_PRESET_NAME_TOO_LONG);
 
-        verify(mHapClientService).messageFromNative(mEvent.capture());
-        HapClientStackEvent event = mEvent.getValue();
-        expect.that(event.type)
-                .isEqualTo(HapClientStackEvent.EVENT_TYPE_ON_ACTIVE_PRESET_SELECT_ERROR);
-        expect.that(event.valueInt1).isEqualTo(resultCode);
+        /* Invalid preset index provided */
+        mNativeCallback.onPresetSelectionFailed(null, STATUS_INVALID_PRESET_INDEX);
+        mInOrder.verify(mService).onPresetSelectionFailed(null, ERROR_HAP_INVALID_PRESET_INDEX);
+
+        /* Not allowed on this particular preset */
+        mNativeCallback.onPresetSelectionFailed(null, STATUS_SET_NAME_NOT_ALLOWED);
+        mInOrder.verify(mService).onPresetSelectionFailed(null, ERROR_REMOTE_OPERATION_REJECTED);
+
+        /* Not allowed on this particular preset at this time, might be possible later on */
+        mNativeCallback.onPresetSelectionFailed(null, STATUS_OPERATION_NOT_POSSIBLE);
+        mInOrder.verify(mService).onPresetSelectionFailed(null, ERROR_REMOTE_OPERATION_REJECTED);
+
+        /* Not allowed on all presets - for example missing characteristic */
+        mNativeCallback.onPresetSelectionFailed(null, STATUS_OPERATION_NOT_SUPPORTED);
+        mInOrder.verify(mService)
+                .onPresetSelectionFailed(null, ERROR_REMOTE_OPERATION_NOT_SUPPORTED);
     }
 
     @Test
-    public void onActivePresetGroupSelectError() {
+    public void onPresetSelectionForGroupFailed() {
         int groupId = 1;
-        int resultCode = -2;
-        mNativeCallback.onActivePresetGroupSelectError(groupId, resultCode);
 
-        verify(mHapClientService).messageFromNative(mEvent.capture());
-        HapClientStackEvent event = mEvent.getValue();
-        expect.that(event.type)
-                .isEqualTo(HapClientStackEvent.EVENT_TYPE_ON_ACTIVE_PRESET_SELECT_ERROR);
-        expect.that(event.valueInt1).isEqualTo(resultCode);
-        expect.that(event.valueInt2).isEqualTo(groupId);
+        /* Not a valid name length */
+        mNativeCallback.onPresetSelectionForGroupFailed(groupId, STATUS_INVALID_PRESET_NAME_LENGTH);
+        mInOrder.verify(mService)
+                .onPresetSelectionForGroupFailed(groupId, ERROR_HAP_PRESET_NAME_TOO_LONG);
+
+        /* Invalid preset index provided */
+        mNativeCallback.onPresetSelectionForGroupFailed(groupId, STATUS_INVALID_PRESET_INDEX);
+        mInOrder.verify(mService)
+                .onPresetSelectionForGroupFailed(groupId, ERROR_HAP_INVALID_PRESET_INDEX);
+
+        /* Not allowed on this particular preset */
+        mNativeCallback.onPresetSelectionForGroupFailed(groupId, STATUS_SET_NAME_NOT_ALLOWED);
+        mInOrder.verify(mService)
+                .onPresetSelectionForGroupFailed(groupId, ERROR_REMOTE_OPERATION_REJECTED);
+
+        /* Not allowed on this particular preset at this time, might be possible later on */
+        mNativeCallback.onPresetSelectionForGroupFailed(groupId, STATUS_OPERATION_NOT_POSSIBLE);
+        mInOrder.verify(mService)
+                .onPresetSelectionForGroupFailed(groupId, ERROR_REMOTE_OPERATION_REJECTED);
+
+        /* Not allowed on all presets - for example missing characteristic */
+        mNativeCallback.onPresetSelectionForGroupFailed(groupId, STATUS_OPERATION_NOT_SUPPORTED);
+        mInOrder.verify(mService)
+                .onPresetSelectionForGroupFailed(groupId, ERROR_REMOTE_OPERATION_NOT_SUPPORTED);
     }
 
     @Test
     public void onPresetInfo() {
-        int infoReason = HapClientStackEvent.PRESET_INFO_REASON_ALL_PRESET_INFO;
+        int reason = 1;
         BluetoothHapPresetInfo[] presets = {
             new BluetoothHapPresetInfo.Builder(0x01, "onPresetInfo")
                     .setWritable(true)
                     .setAvailable(false)
                     .build()
         };
-        mNativeCallback.onPresetInfo(null, infoReason, presets);
-
-        verify(mHapClientService).messageFromNative(mEvent.capture());
-        HapClientStackEvent event = mEvent.getValue();
-        expect.that(event.type).isEqualTo(HapClientStackEvent.EVENT_TYPE_ON_PRESET_INFO);
-        expect.that(event.valueInt2).isEqualTo(infoReason);
-        expect.that(event.valueList.toArray()).isEqualTo(presets);
+        mNativeCallback.onPresetInfo(null, reason, presets);
+        verify(mService).onPresetInfo(null, reason, List.of(presets));
     }
 
     @Test
-    public void onGroupPresetInfo() {
+    public void onPresetInfoForGroup() {
         int groupId = 100;
-        int infoReason = HapClientStackEvent.PRESET_INFO_REASON_ALL_PRESET_INFO;
+        int reason = 1;
         BluetoothHapPresetInfo[] presets = {
             new BluetoothHapPresetInfo.Builder(0x01, "onPresetInfo")
                     .setWritable(true)
                     .setAvailable(false)
                     .build()
         };
-        mNativeCallback.onGroupPresetInfo(groupId, infoReason, presets);
-
-        verify(mHapClientService).messageFromNative(mEvent.capture());
-        HapClientStackEvent event = mEvent.getValue();
-        expect.that(event.type).isEqualTo(HapClientStackEvent.EVENT_TYPE_ON_PRESET_INFO);
-        expect.that(event.valueInt2).isEqualTo(infoReason);
-        expect.that(event.valueInt3).isEqualTo(groupId);
-        expect.that(event.valueList.toArray()).isEqualTo(presets);
+        mNativeCallback.onPresetInfoForGroup(groupId, reason, presets);
+        verify(mService).onPresetInfoForGroup(groupId, reason, List.of(presets));
     }
 
     @Test
-    public void onPresetNameSetError() {
-        int presetIndex = 2;
-        int resultCode = HapClientStackEvent.STATUS_SET_NAME_NOT_ALLOWED;
-        mNativeCallback.onPresetNameSetError(null, presetIndex, resultCode);
+    public void onSetPresetNameFailed() {
+        /* Not a valid name length */
+        mNativeCallback.onSetPresetNameFailed(null, STATUS_INVALID_PRESET_NAME_LENGTH);
+        mInOrder.verify(mService).onSetPresetNameFailed(null, ERROR_HAP_PRESET_NAME_TOO_LONG);
 
-        verify(mHapClientService).messageFromNative(mEvent.capture());
-        HapClientStackEvent event = mEvent.getValue();
-        expect.that(event.type).isEqualTo(HapClientStackEvent.EVENT_TYPE_ON_PRESET_NAME_SET_ERROR);
-        expect.that(event.valueInt1).isEqualTo(resultCode);
-        expect.that(event.valueInt2).isEqualTo(presetIndex);
+        /* Invalid preset index provided */
+        mNativeCallback.onSetPresetNameFailed(null, STATUS_INVALID_PRESET_INDEX);
+        mInOrder.verify(mService).onSetPresetNameFailed(null, ERROR_HAP_INVALID_PRESET_INDEX);
+
+        /* Not allowed on this particular preset */
+        mNativeCallback.onSetPresetNameFailed(null, STATUS_SET_NAME_NOT_ALLOWED);
+        mInOrder.verify(mService).onSetPresetNameFailed(null, ERROR_REMOTE_OPERATION_REJECTED);
+
+        /* Not allowed on this particular preset at this time, might be possible later on */
+        mNativeCallback.onSetPresetNameFailed(null, STATUS_OPERATION_NOT_POSSIBLE);
+        mInOrder.verify(mService).onSetPresetNameFailed(null, ERROR_REMOTE_OPERATION_REJECTED);
+
+        /* Not allowed on all presets - for example missing characteristic */
+        mNativeCallback.onSetPresetNameFailed(null, STATUS_OPERATION_NOT_SUPPORTED);
+        mInOrder.verify(mService).onSetPresetNameFailed(null, ERROR_REMOTE_OPERATION_NOT_SUPPORTED);
     }
 
     @Test
-    public void onGroupPresetNameSetError() {
+    public void onSetPresetNameForGroupFailed() {
         int groupId = 5;
-        int presetIndex = 2;
-        int resultCode = HapClientStackEvent.STATUS_SET_NAME_NOT_ALLOWED;
-        mNativeCallback.onGroupPresetNameSetError(groupId, presetIndex, resultCode);
+        /* Not a valid name length */
+        mNativeCallback.onSetPresetNameForGroupFailed(groupId, STATUS_INVALID_PRESET_NAME_LENGTH);
+        mInOrder.verify(mService)
+                .onSetPresetNameForGroupFailed(groupId, ERROR_HAP_PRESET_NAME_TOO_LONG);
 
-        verify(mHapClientService).messageFromNative(mEvent.capture());
-        HapClientStackEvent event = mEvent.getValue();
-        expect.that(event.type).isEqualTo(HapClientStackEvent.EVENT_TYPE_ON_PRESET_NAME_SET_ERROR);
-        expect.that(event.valueInt1).isEqualTo(resultCode);
-        expect.that(event.valueInt2).isEqualTo(presetIndex);
-        expect.that(event.valueInt3).isEqualTo(groupId);
-    }
+        /* Invalid preset index provided */
+        mNativeCallback.onSetPresetNameForGroupFailed(groupId, STATUS_INVALID_PRESET_INDEX);
+        mInOrder.verify(mService)
+                .onSetPresetNameForGroupFailed(groupId, ERROR_HAP_INVALID_PRESET_INDEX);
 
-    @Test
-    public void onPresetInfoError() {
-        int presetIndex = 2;
-        int resultCode = HapClientStackEvent.STATUS_SET_NAME_NOT_ALLOWED;
-        mNativeCallback.onPresetInfoError(null, presetIndex, resultCode);
+        /* Not allowed on this particular preset */
+        mNativeCallback.onSetPresetNameForGroupFailed(groupId, STATUS_SET_NAME_NOT_ALLOWED);
+        mInOrder.verify(mService)
+                .onSetPresetNameForGroupFailed(groupId, ERROR_REMOTE_OPERATION_REJECTED);
 
-        verify(mHapClientService).messageFromNative(mEvent.capture());
-        HapClientStackEvent event = mEvent.getValue();
-        expect.that(event.type).isEqualTo(HapClientStackEvent.EVENT_TYPE_ON_PRESET_INFO_ERROR);
-        expect.that(event.valueInt1).isEqualTo(resultCode);
-        expect.that(event.valueInt2).isEqualTo(presetIndex);
-    }
+        /* Not allowed on this particular preset at this time, might be possible later on */
+        mNativeCallback.onSetPresetNameForGroupFailed(groupId, STATUS_OPERATION_NOT_POSSIBLE);
+        mInOrder.verify(mService)
+                .onSetPresetNameForGroupFailed(groupId, ERROR_REMOTE_OPERATION_REJECTED);
 
-    @Test
-    public void onGroupPresetInfoError() {
-        int groupId = 5;
-        int presetIndex = 2;
-        int resultCode = HapClientStackEvent.STATUS_SET_NAME_NOT_ALLOWED;
-        mNativeCallback.onGroupPresetInfoError(groupId, presetIndex, resultCode);
-
-        verify(mHapClientService).messageFromNative(mEvent.capture());
-        HapClientStackEvent event = mEvent.getValue();
-        expect.that(event.type).isEqualTo(HapClientStackEvent.EVENT_TYPE_ON_PRESET_INFO_ERROR);
-        expect.that(event.valueInt1).isEqualTo(resultCode);
-        expect.that(event.valueInt2).isEqualTo(presetIndex);
-        expect.that(event.valueInt3).isEqualTo(groupId);
+        /* Not allowed on all presets - for example missing characteristic */
+        mNativeCallback.onSetPresetNameForGroupFailed(groupId, STATUS_OPERATION_NOT_SUPPORTED);
+        mInOrder.verify(mService)
+                .onSetPresetNameForGroupFailed(groupId, ERROR_REMOTE_OPERATION_NOT_SUPPORTED);
     }
 }

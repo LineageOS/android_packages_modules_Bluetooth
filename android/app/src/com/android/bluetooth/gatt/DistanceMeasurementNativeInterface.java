@@ -20,7 +20,8 @@ import android.bluetooth.BluetoothStatusCodes;
 
 /** Distance Measurement Native Interface to/from JNI. */
 public class DistanceMeasurementNativeInterface {
-    private static final String TAG = DistanceMeasurementNativeInterface.class.getSimpleName();
+    private static final String TAG =
+            GattUtil.TAG_PREFIX + DistanceMeasurementNativeInterface.class.getSimpleName();
 
     /**
      * Do not modify without updating distance_measurement_manager.h match up with

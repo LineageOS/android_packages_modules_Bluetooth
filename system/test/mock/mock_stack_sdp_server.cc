@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/address.h>
+
 #include "stack/sdp/sdpint.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 void update_pce_entry_to_interop_database(RawAddress /* remote_addr */) {
   inc_func_call_count(__func__);

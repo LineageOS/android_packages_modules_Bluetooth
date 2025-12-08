@@ -18,10 +18,13 @@
 #include <aidl/android/hardware/bluetooth/ranging/BnBluetoothChannelSoundingSession.h>
 #include <aidl/android/hardware/bluetooth/ranging/BnBluetoothChannelSoundingSessionCallback.h>
 #include <aidl/android/hardware/bluetooth/ranging/IBluetoothChannelSounding.h>
+#include <aidl/android/hardware/bluetooth/ranging/SessionType.h>
 #include <android/binder_manager.h>
 #include <bluetooth/log.h>
 
 #include <unordered_map>
+
+#include "hal/ranging_hal.h"
 
 // AIDL uses syslog.h, so these defines conflict with log/log.h
 #undef LOG_DEBUG
@@ -46,6 +49,7 @@ using aidl::android::hardware::bluetooth::ranging::ModeType;
 using aidl::android::hardware::bluetooth::ranging::ProcedureEnableConfig;
 using aidl::android::hardware::bluetooth::ranging::Role;
 using aidl::android::hardware::bluetooth::ranging::RttType;
+using aidl::android::hardware::bluetooth::ranging::SessionType;
 using aidl::android::hardware::bluetooth::ranging::SightType;
 using aidl::android::hardware::bluetooth::ranging::StepTonePct;
 using aidl::android::hardware::bluetooth::ranging::SubModeType;
@@ -120,6 +124,7 @@ public:
   ::ndk::ScopedAStatus onClose(::aidl::android::hardware::bluetooth::ranging::Reason in_reason) {
     log::info("reason {}", (uint16_t)in_reason);
     bluetooth_channel_sounding_session_ = nullptr;
+    ranging_hal_callback_->OnClosed(connection_handle_, static_cast<hal::Reason>(in_reason));
     return ::ndk::ScopedAStatus::ok();
   }
   ::ndk::ScopedAStatus onCloseFailed(
@@ -266,12 +271,13 @@ void CopyVendorSpecificData(const std::vector<hal::VendorSpecificCharacteristic>
 
 RangingHalImpl::RangingHalImpl() {
   std::string instance = std::string() + IBluetoothChannelSounding::descriptor + "/default";
-  log::info("AServiceManager_isDeclared {}", AServiceManager_isDeclared(instance.c_str()));
-  if (AServiceManager_isDeclared(instance.c_str())) {
+  bool is_declared = AServiceManager_isDeclared(instance.c_str());
+  log::info("AServiceManager_isDeclared {}", is_declared);
+  if (is_declared) {
     ::ndk::SpAIBinder binder(AServiceManager_waitForService(instance.c_str()));
     bluetooth_channel_sounding_ = IBluetoothChannelSounding::fromBinder(binder);
-    log::info("Bind IBluetoothChannelSounding {}", IsBound() ? "Success" : "Fail");
-    if (bluetooth_channel_sounding_ != nullptr) {
+    log::info("Bind IBluetoothChannelSounding {}", (IsBound() ? "Success" : "Fail"));
+    if (IsBound()) {
       hal_ver_ = get_ranging_hal_version();
     }
   }
@@ -279,7 +285,7 @@ RangingHalImpl::RangingHalImpl() {
 
 std::vector<VendorSpecificCharacteristic> RangingHalImpl::GetVendorSpecificCharacteristics() {
   std::vector<VendorSpecificCharacteristic> vendor_specific_characteristics = {};
-  if (bluetooth_channel_sounding_ != nullptr) {
+  if (IsBound()) {
     std::optional<std::vector<std::optional<VendorSpecificData>>> vendorSpecificDataOptional;
     bluetooth_channel_sounding_->getVendorSpecificData(&vendorSpecificDataOptional);
     if (vendorSpecificDataOptional.has_value()) {
@@ -554,6 +560,21 @@ bool RangingHalImpl::IsAbortedProcedureRequired(uint16_t connection_handle) {
   }
   log::error("can not get result for isAbortedProcedureRequired.");
   return false;
+}
+
+std::vector<RangingSessionType> RangingHalImpl::GetSupportedSessionTypes() {
+  std::optional<std::vector<SessionType>> session_types;
+  auto aidl_ret = bluetooth_channel_sounding_->getSupportedSessionTypes(&session_types);
+  if (aidl_ret.isOk()) {
+    std::vector<RangingSessionType> types;
+    for (auto session_type : *session_types) {
+      types.push_back(static_cast<RangingSessionType>(session_type));
+    }
+    return types;
+  }
+
+  log::warn("ranging HAL session type is unknown, default software stack data parsing.");
+  return {RangingSessionType::SOFTWARE_STACK_DATA_PARSING};
 }
 
 RangingHalVersion RangingHalImpl::get_ranging_hal_version() {

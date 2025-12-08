@@ -31,7 +31,7 @@
 using bluetooth::common::MessageLoopThread;
 using namespace bluetooth;
 
-static MessageLoopThread main_thread("bt_main_thread");
+static MessageLoopThread main_thread("bt_main_thread", os::Thread::Priority::REAL_TIME);
 
 bluetooth::common::MessageLoopThread* get_main_thread() { return &main_thread; }
 bluetooth::common::PostableContext* get_main() { return main_thread.Postable(); }

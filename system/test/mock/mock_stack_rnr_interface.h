@@ -15,6 +15,7 @@
  */
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -24,7 +25,6 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/rnr_interface.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace testing {

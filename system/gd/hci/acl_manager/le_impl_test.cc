@@ -34,7 +34,6 @@
 #include "hci/hci_layer_fake.h"
 #include "hci/hci_packets.h"
 #include "hci/octets.h"
-#include "hci/remote_name_request_mock.h"
 #include "os/handler.h"
 #include "packet/bit_inserter.h"
 #include "packet/raw_builder.h"
@@ -77,10 +76,7 @@ constexpr std::chrono::milliseconds kMaximumRotationTime(16 * 1000);
 constexpr uint16_t kIntervalMax = 0x40;
 constexpr uint16_t kIntervalMin = 0x20;
 constexpr uint16_t kLatency = 0x60;
-constexpr uint16_t kLength = 0x5678;
-constexpr uint16_t kTime = 0x1234;
 constexpr uint16_t kTimeout = 0x80;
-constexpr uint16_t kContinuationNumber = 0x32;
 constexpr std::array<uint8_t, 16> kPeerIdentityResolvingKey({
         0x00,
         0x01,
@@ -231,6 +227,11 @@ public:
               (override));
 };
 
+class MockClassicAclCountProvider : public acl_manager::ClassicAclCountProvider {
+public:
+  MOCK_METHOD(size_t, GetAclCount, (), (override));
+};
+
 class LeImplTest : public ::testing::Test {
 protected:
   void SetUp() override {
@@ -243,17 +244,15 @@ protected:
     round_robin_scheduler_ =
             std::make_unique<RoundRobinScheduler>(handler_, *controller_, hci_queue_.GetUpEnd());
     test_storage_ = std::make_unique<storage::StorageModule>(handler_);
-    test_rnr_ = std::make_unique<RemoteNameRequestModuleMock>();
-    test_acl_scheduler_ = std::make_unique<AclScheduler>(handler_);
 
     hci_queue_.GetDownEnd()->RegisterDequeue(
             handler_, common::Bind(&LeImplTest::HciDownEndDequeue, common::Unretained(this)));
 
-    classic_impl_ = std::make_unique<classic_impl>(*hci_layer_, handler_, *round_robin_scheduler_,
-                                                   false, *test_acl_scheduler_, *test_rnr_);
-    le_impl_ =
-            std::make_unique<le_impl>(*hci_layer_, *controller_, handler_, *round_robin_scheduler_,
-                                      *test_storage_, kCrashOnUnknownHandle, classic_impl_.get());
+    classic_acl_count_provider_ = std::make_unique<MockClassicAclCountProvider>();
+
+    le_impl_ = std::make_unique<le_impl>(*hci_layer_, *controller_, handler_,
+                                         *round_robin_scheduler_, *test_storage_,
+                                         kCrashOnUnknownHandle, *classic_acl_count_provider_);
     le_impl_->handle_register_le_callbacks(&mock_le_connection_callbacks_, handler_);
 
     Address address;
@@ -359,7 +358,6 @@ protected:
 
     sync_handler();
     le_impl_.reset();
-    classic_impl_.reset();
 
     hci_queue_.GetDownEnd()->UnregisterDequeue();
 
@@ -367,8 +365,6 @@ protected:
     round_robin_scheduler_.reset();
     controller_.reset();
 
-    test_acl_scheduler_.reset();
-    test_rnr_.reset();
     test_storage_.reset();
 
     handler_->Clear();
@@ -425,12 +421,10 @@ protected:
   Thread* thread_;
   Handler* handler_;
   std::unique_ptr<HciLayerFake> hci_layer_;
-  std::unique_ptr<classic_impl> classic_impl_;
   std::unique_ptr<TestController> controller_;
   std::unique_ptr<RoundRobinScheduler> round_robin_scheduler_{nullptr};
-  std::unique_ptr<RemoteNameRequestModuleMock> test_rnr_ = nullptr;
-  std::unique_ptr<AclScheduler> test_acl_scheduler_ = nullptr;
   std::unique_ptr<storage::StorageModule> test_storage_ = nullptr;
+  std::unique_ptr<MockClassicAclCountProvider> classic_acl_count_provider_ = nullptr;
 
   MockLeConnectionCallbacks mock_le_connection_callbacks_;
   MockLeConnectionManagementCallbacks connection_management_callbacks_;
@@ -1598,8 +1592,6 @@ TEST_F(LeImplTest, direct_connection_after_direct_connection) {
 }
 
 TEST_F(LeImplTest, direct_connection_cancel_but_connected) {
-  com::android::bluetooth::flags::provider_->le_impl_ack_pause_disarmed(true);
-
   set_random_device_address_policy();
   controller_->AddSupported(OpCode::LE_EXTENDED_CREATE_CONNECTION);
 

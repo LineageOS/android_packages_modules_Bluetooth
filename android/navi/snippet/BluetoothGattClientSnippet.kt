@@ -148,6 +148,14 @@ class BluetoothGattClientSnippet : Snippet {
                 putInt(SnippetConstants.FIELD_STATUS, status)
             }
         }
+
+        override fun onSubrateChange(gatt: BluetoothGatt, subrateMode: Int, status: Int) {
+            postSnippetEvent(callbackId, SnippetConstants.GATT_SUBRATE_CHANGED) {
+                putString(SnippetConstants.FIELD_DEVICE, gatt.device.address)
+                putInt(SnippetConstants.GATT_FIELD_SUBRATE_MODE, subrateMode)
+                putInt(SnippetConstants.FIELD_STATUS, status)
+            }
+        }
     }
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -365,6 +373,25 @@ class BluetoothGattClientSnippet : Snippet {
         val client =
             gattClients[cookie] ?: throw IllegalArgumentException("Client $cookie doesn't exist!")
         return client.requestMtu(mtu)
+    }
+
+    /**
+     * Requests connection parameters of GATT connection [cookie] to [connectionPriority], and
+     * returns true if success, false otherwise.
+     */
+    @Rpc(description = "Request connection priority")
+    fun gattRequestConnectionPriority(cookie: String, connectionPriority: Int): Boolean {
+        val client =
+            gattClients[cookie] ?: throw IllegalArgumentException("Client $cookie doesn't exist!")
+        return client.requestConnectionPriority(connectionPriority)
+    }
+
+    /** Requests subrate mode of GATT connection [cookie] to [mode], and returns the status code. */
+    @Rpc(description = "Request subrate mode")
+    fun gattRequestSubrateMode(cookie: String, mode: Int): Int {
+        val client =
+            gattClients[cookie] ?: throw IllegalArgumentException("Client $cookie doesn't exist!")
+        return client.requestSubrateMode(mode)
     }
 
     companion object {

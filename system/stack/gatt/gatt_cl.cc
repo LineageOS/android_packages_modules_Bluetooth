@@ -25,6 +25,7 @@
 #define LOG_TAG "bluetooth"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <string.h>
 
 #include "gatt_int.h"
@@ -36,7 +37,6 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/l2cdefs.h"
-#include "types/bluetooth/uuid.h"
 
 #define GATT_WRITE_LONG_HDR_SIZE 5 /* 1 opcode + 2 handle + 2 offset */
 #define GATT_READ_CHAR_VALUE_HDL (GATT_READ_CHAR_VALUE | 0x80)
@@ -292,7 +292,7 @@ void gatt_send_queue_write_cancel(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, tGATT_EXEC
   gatt_cl_msg.exec_write = flag;
   rt = attp_send_cl_msg(tcb, p_clcb, GATT_REQ_EXEC_WRITE, &gatt_cl_msg);
 
-  if (rt != GATT_SUCCESS) {
+  if (rt != GATT_SUCCESS && rt != GATT_CMD_STARTED) {
     gatt_end_operation(p_clcb, rt, NULL);
   }
 }
@@ -634,11 +634,9 @@ static void gatt_process_prep_write_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, uint
 static void gatt_process_notification(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code, uint16_t len,
                                       uint8_t* p_data) {
   tGATT_VALUE value = {};
-  tGATT_REG* p_reg;
   tCONN_ID conn_id;
   tGATT_STATUS encrypt_status = {};
   uint8_t* p = p_data;
-  uint8_t i;
   tGATTC_OPTYPE event =
           (op_code == GATT_HANDLE_VALUE_IND) ? GATTC_OPTYPE_INDICATION : GATTC_OPTYPE_NOTIFICATION;
 

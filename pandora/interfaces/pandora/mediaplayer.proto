@@ -6,7 +6,6 @@ package pandora;
 
 import "google/protobuf/empty.proto";
 
-
 service MediaPlayer {
   rpc Play(google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc PlayUpdated(google.protobuf.Empty) returns (google.protobuf.Empty);

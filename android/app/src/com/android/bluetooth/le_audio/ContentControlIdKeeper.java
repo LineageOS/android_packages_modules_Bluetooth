@@ -22,7 +22,7 @@ import android.os.ParcelUuid;
 import android.util.Log;
 import android.util.Pair;
 
-import com.android.bluetooth.btservice.ServiceFactory;
+import com.android.bluetooth.btservice.AdapterService;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,13 +42,11 @@ public class ContentControlIdKeeper {
 
     private static SortedSet<Integer> sAssignedCcidList = new TreeSet();
     private static HashMap<ParcelUuid, Pair<Integer, Integer>> sUuidToCcidContextPair =
-            new HashMap();
-    private static ServiceFactory sServiceFactory = null;
+            new HashMap<>();
 
-    static synchronized void initForTesting(ServiceFactory instance) {
+    static synchronized void initForTesting() {
         sAssignedCcidList = new TreeSet();
-        sUuidToCcidContextPair = new HashMap();
-        sServiceFactory = instance;
+        sUuidToCcidContextPair = new HashMap<>();
     }
 
     /**
@@ -60,7 +58,8 @@ public class ContentControlIdKeeper {
      * @param contextType the context types as defined in {@link BluetoothLeAudio}
      * @return ccid to be used in the Gatt service Ccid characteristic.
      */
-    public static synchronized int acquireCcid(ParcelUuid userUuid, int contextType) {
+    public static synchronized int acquireCcid(
+            AdapterService adapterService, ParcelUuid userUuid, int contextType) {
         int ccid = CCID_INVALID;
         if (contextType == BluetoothLeAudio.CONTEXT_TYPE_INVALID) {
             Log.e(TAG, "Invalid context type value: " + contextType);
@@ -70,7 +69,7 @@ public class ContentControlIdKeeper {
         // Remove any previous mapping
         Pair<Integer, Integer> ccidContextPair = sUuidToCcidContextPair.get(userUuid);
         if (ccidContextPair != null) {
-            releaseCcid(ccidContextPair.first);
+            releaseCcid(adapterService, ccidContextPair.first);
         }
 
         if (sAssignedCcidList.size() == 0) {
@@ -94,14 +93,13 @@ public class ContentControlIdKeeper {
             sAssignedCcidList.add(ccid);
             sUuidToCcidContextPair.put(userUuid, new Pair(ccid, contextType));
 
-            if (sServiceFactory == null) {
-                sServiceFactory = new ServiceFactory();
-            }
-            /* Notify LeAudioService about new ccid  */
-            LeAudioService service = sServiceFactory.getLeAudioService();
-            if (service != null) {
-                service.setCcidInformation(userUuid, ccid, contextType);
-            }
+            // Notify LeAudioService about new ccid
+            final var ccidFinal = ccid;
+            adapterService
+                    .getLeAudioService()
+                    .ifPresent(
+                            leAudio ->
+                                    leAudio.setCcidInformation(userUuid, ccidFinal, contextType));
         }
         return ccid;
     }
@@ -111,7 +109,7 @@ public class ContentControlIdKeeper {
      *
      * @param value Ccid value to release
      */
-    public static synchronized void releaseCcid(int value) {
+    public static synchronized void releaseCcid(AdapterService adapterService, int value) {
         ParcelUuid uuid = null;
 
         for (Entry entry : sUuidToCcidContextPair.entrySet()) {
@@ -126,14 +124,11 @@ public class ContentControlIdKeeper {
         }
 
         if (sAssignedCcidList.contains(value)) {
-            if (sServiceFactory == null) {
-                sServiceFactory = new ServiceFactory();
-            }
-            /* Notify LeAudioService about new value  */
-            LeAudioService service = sServiceFactory.getLeAudioService();
-            if (service != null) {
-                service.setCcidInformation(uuid, value, 0);
-            }
+            // Notify LeAudioService about new value
+            final var uuidFinal = uuid;
+            adapterService
+                    .getLeAudioService()
+                    .ifPresent(leAudio -> leAudio.setCcidInformation(uuidFinal, value, 0));
 
             sAssignedCcidList.remove(value);
             sUuidToCcidContextPair.remove(uuid);

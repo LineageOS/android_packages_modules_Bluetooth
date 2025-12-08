@@ -19,6 +19,7 @@ package android.bluetooth;
 
 import android.annotation.IntDef;
 import android.annotation.NonNull;
+import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.ParcelUuid;
 import android.os.Parcelable;
@@ -35,7 +36,6 @@ import java.util.UUID;
  */
 public final class BluetoothLeCall implements Parcelable {
 
-    /** @hide */
     @IntDef(
             prefix = "STATE_",
             value = {
@@ -50,77 +50,43 @@ public final class BluetoothLeCall implements Parcelable {
     @Retention(RetentionPolicy.SOURCE)
     public @interface State {}
 
-    /**
-     * A remote party is calling (incoming call).
-     *
-     * @hide
-     */
+    /** A remote party is calling (incoming call). */
     public static final int STATE_INCOMING = 0x00;
 
     /**
      * The process to call the remote party has started but the remote party is not being alerted
      * (outgoing call).
-     *
-     * @hide
      */
     public static final int STATE_DIALING = 0x01;
 
-    /**
-     * A remote party is being alerted (outgoing call).
-     *
-     * @hide
-     */
+    /** A remote party is being alerted (outgoing call). */
     public static final int STATE_ALERTING = 0x02;
 
-    /**
-     * The call is in an active conversation.
-     *
-     * @hide
-     */
+    /** The call is in an active conversation. */
     public static final int STATE_ACTIVE = 0x03;
 
     /**
      * The call is connected but held locally. “Locally Held” implies that either the server or the
      * client can affect the state.
-     *
-     * @hide
      */
     public static final int STATE_LOCALLY_HELD = 0x04;
 
     /**
      * The call is connected but held remotely. “Remotely Held” means that the state is controlled
      * by the remote party of a call.
-     *
-     * @hide
      */
     public static final int STATE_REMOTELY_HELD = 0x05;
 
-    /**
-     * The call is connected but held both locally and remotely.
-     *
-     * @hide
-     */
+    /** The call is connected but held both locally and remotely. */
     public static final int STATE_LOCALLY_AND_REMOTELY_HELD = 0x06;
 
-    /**
-     * Whether the call direction is outgoing.
-     *
-     * @hide
-     */
+    /** Whether the call direction is outgoing. */
     public static final int FLAG_OUTGOING_CALL = 0x00000001;
 
-    /**
-     * Whether the call URI and Friendly Name are withheld by server.
-     *
-     * @hide
-     */
+    /** Whether the call URI and Friendly Name are withheld by server. */
     public static final int FLAG_WITHHELD_BY_SERVER = 0x00000002;
 
-    /**
-     * Whether the call URI and Friendly Name are withheld by network.
-     *
-     * @hide
-     */
+    /** Whether the call URI and Friendly Name are withheld by network. */
     public static final int FLAG_WITHHELD_BY_NETWORK = 0x00000004;
 
     /** Unique UUID that identifies this call */
@@ -138,7 +104,6 @@ public final class BluetoothLeCall implements Parcelable {
     /** Call flags */
     private final int mCallFlags;
 
-    /** @hide */
     public BluetoothLeCall(@NonNull BluetoothLeCall that) {
         mUuid =
                 new UUID(
@@ -150,7 +115,6 @@ public final class BluetoothLeCall implements Parcelable {
         mCallFlags = that.mCallFlags;
     }
 
-    /** @hide */
     public BluetoothLeCall(
             @NonNull UUID uuid,
             @NonNull String uri,
@@ -230,63 +194,49 @@ public final class BluetoothLeCall implements Parcelable {
     }
 
     /**
-     * Returns an UUID of this BluetoothLeCall.
-     *
-     * <p>An UUID is unique identifier of a BluetoothLeCall.
-     *
-     * @return UUID of this BluetoothLeCall
-     * @hide
+     * @return unique identifier of this BluetoothLeCall
      */
+    @RequiresNoPermission
     public @NonNull UUID getUuid() {
         return mUuid;
     }
 
     /**
-     * Returns a URI of the remote party of this BluetoothLeCall.
-     *
      * @return string representation of this BluetoothLeCall
-     * @hide
      */
+    @RequiresNoPermission
     public @NonNull String getUri() {
         return mUri;
     }
 
     /**
-     * Returns a friendly name of the call.
-     *
      * @return friendly name representation of this BluetoothLeCall
-     * @hide
      */
+    @RequiresNoPermission
     public @NonNull String getFriendlyName() {
         return mFriendlyName;
     }
 
     /**
-     * Returns the call state.
-     *
      * @return the state of this BluetoothLeCall
-     * @hide
      */
+    @RequiresNoPermission
     public @State int getState() {
         return mState;
     }
 
     /**
-     * Returns the call flags.
-     *
      * @return call flags
-     * @hide
      */
+    @RequiresNoPermission
     public int getCallFlags() {
         return mCallFlags;
     }
 
     /**
-     * Whether the call direction is incoming.
-     *
      * @return true if incoming call, false otherwise
-     * @hide
      */
+    @RequiresNoPermission
     public boolean isIncomingCall() {
         return (mCallFlags & FLAG_OUTGOING_CALL) == 0;
     }

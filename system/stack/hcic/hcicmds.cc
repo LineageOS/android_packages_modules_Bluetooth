@@ -25,6 +25,7 @@
 
 #include <base/functional/bind.h>
 #include <base/functional/callback_forward.h>
+#include <bluetooth/types/address.h>
 #include <string.h>
 
 #include "device/include/esco_parameters.h"
@@ -39,7 +40,6 @@
 #include "stack/include/bt_octets.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btu_hcif.h"
-#include "types/raw_address.h"
 
 /* Message by message.... */
 
@@ -425,9 +425,7 @@
 
 #define HCIC_PARAM_SIZE_SET_USED_FEAT_CMD 8
 #define HCIC_PARAM_SIZE_WRITE_RANDOM_ADDR_CMD 6
-#define HCIC_PARAM_SIZE_BLE_WRITE_ADV_PARAMS 15
 #define HCIC_PARAM_SIZE_BLE_WRITE_SCAN_RSP 31
-#define HCIC_PARAM_SIZE_WRITE_ADV_ENABLE 1
 #define HCIC_PARAM_SIZE_BLE_WRITE_SCAN_PARAM 7
 #define HCIC_PARAM_SIZE_BLE_WRITE_SCAN_ENABLE 2
 #define HCIC_PARAM_SIZE_BLE_CREATE_LL_CONN 25
@@ -448,7 +446,6 @@
 #define HCIC_PARAM_SIZE_LTK_REQ_REPLY (2 + HCIC_BLE_ENCRYPT_KEY_SIZE)
 #define HCIC_PARAM_SIZE_LTK_REQ_NEG_REPLY 2
 #define HCIC_BLE_CHNL_MAP_SIZE 5
-#define HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA 31
 
 #define HCIC_PARAM_SIZE_BLE_ADD_DEV_RESOLVING_LIST (7 + HCIC_BLE_IRK_SIZE * 2)
 #define HCIC_PARAM_SIZE_BLE_RM_DEV_RESOLVING_LIST 7

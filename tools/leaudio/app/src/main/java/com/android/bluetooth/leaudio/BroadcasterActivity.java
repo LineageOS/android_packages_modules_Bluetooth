@@ -598,7 +598,7 @@ public class BroadcasterActivity extends AppCompatActivity {
             final CheckBox publicCheckbox,
             final EditText public_content) {
 
-        ArrayList<String> listSavedBroadcast = new ArrayList();
+        ArrayList<String> listSavedBroadcast = new ArrayList<>();
 
         final SharedPreferences broadcastsPrefs = getSharedPreferences(BROADCAST_PREFS_KEY, 0);
         Map<String, ?> allEntries = broadcastsPrefs.getAll();

@@ -22,6 +22,9 @@
 #include <base/functional/callback.h>
 #include <base/strings/string_number_conversions.h>  // HexEncode
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 #include <string.h>
@@ -76,15 +79,11 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/main_thread.h"
-#include "types/bluetooth/uuid.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
+
+namespace bluetooth::asha {
 
 using base::Closure;
-using bluetooth::Uuid;
-using bluetooth::hci::IsoManager;
-using bluetooth::hearing_aid::ConnectionState;
-using namespace bluetooth;
+using hci::IsoManager;
 
 // The MIN_CE_LEN parameter for Connection Parameters based on the current
 // Connection Interval
@@ -299,7 +298,7 @@ private:
 public:
   ~HearingAidImpl() override = default;
 
-  HearingAidImpl(bluetooth::hearing_aid::HearingAidCallbacks* callbacks, Closure initCb)
+  HearingAidImpl(HearingAidCallbacks* callbacks, Closure initCb)
       : audio_running(false),
         overwrite_min_ce_len(-1),
         overwrite_max_ce_len(-1),
@@ -519,9 +518,8 @@ public:
 
     hearingDevice->conn_id = conn_id;
 
-    if (com::android::bluetooth::flags::gatt_queue_cleanup_connected()) {
-      BtaGattQueue::Clean(conn_id);
-    }
+    log::info("[gatt] Clean conn_id={:#x}", conn_id);
+    BtaGattQueue::Clean(conn_id);
 
     uint64_t hi_sync_id = hearingDevice->hi_sync_id;
 
@@ -695,14 +693,14 @@ public:
       log::error("encryption failed: bd_addr={}", address);
       BTA_GATTC_Close(hearingDevice->conn_id);
       if (hearingDevice->first_connection ||
-          com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
+          com_android_bluetooth_flags_continue_queued_command_after_discovery()) {
         callbacks->OnConnectionState(ConnectionState::DISCONNECTED, address);
       }
       return;
     }
 
     log::info("encryption successful: bd_addr={}", address);
-    if (!com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
+    if (!com_android_bluetooth_flags_continue_queued_command_after_discovery()) {
       if (hearingDevice->audio_control_point_handle && hearingDevice->audio_status_handle &&
           hearingDevice->audio_status_ccc_handle && hearingDevice->volume_handle &&
           hearingDevice->read_psm_handle) {
@@ -719,21 +717,20 @@ public:
     }
   }
 
-  // Just take care phy update successful case to avoid loop executing.
   void OnPhyUpdateEvent(tCONN_ID conn_id, uint8_t tx_phys, uint8_t rx_phys, tGATT_STATUS status) {
     HearingDevice* hearingDevice = hearingDevices.FindByConnId(conn_id);
     if (!hearingDevice) {
-      log::error("unknown device: conn_id=0x{:x}", conn_id);
+      log::warn("unknown device: conn_id={:#x}", conn_id);
       return;
     }
 
     if (status != GATT_SUCCESS) {
-      log::warn("phy update failed: bd_addr={} status={}", hearingDevice->address, status);
+      log::warn("phy update failed: conn_id={:#x} status={}", conn_id, status);
       return;
     }
 
     if (tx_phys == PHY_LE_2M && rx_phys == PHY_LE_2M) {
-      log::info("phy update to 2M successful: bd_addr={}", hearingDevice->address);
+      log::info("phy update to 2M successful: conn_id={:#x}", conn_id);
       hearingDevice->phy_update_retry_remain = kPhyUpdateRetryLimit;
       return;
     }
@@ -741,29 +738,29 @@ public:
     if (hearingDevice->phy_update_retry_remain > 0) {
       log::info(
               "phy update successful with unexpected phys, retrying:"
-              " bd_addr={} tx_phy=0x{:x} rx_phy=0x{:x}",
-              hearingDevice->address, tx_phys, rx_phys);
+              " conn_id={:#x} tx_phy=0x{:x} rx_phy=0x{:x}",
+              conn_id, tx_phys, rx_phys);
       get_btm_client_interface().ble.BTM_BleSetPhy(hearingDevice->address, PHY_LE_2M, PHY_LE_2M, 0);
       hearingDevice->phy_update_retry_remain--;
     } else {
       log::warn(
               "phy update successful with unexpected phys, exceeded retry count:"
-              " bd_addr={} tx_phy=0x{:x} rx_phy=0x{:x}",
-              hearingDevice->address, tx_phys, rx_phys);
+              " conn_id={:#x} tx_phy=0x{:x} rx_phy=0x{:x}",
+              conn_id, tx_phys, rx_phys);
     }
   }
 
   void OnServiceChangeEvent(const RawAddress& address) {
     HearingDevice* hearingDevice = hearingDevices.FindByAddress(address);
     if (!hearingDevice) {
-      log::error("unknown device: bd_addr={}", address);
+      log::warn("unknown device: bd_addr={}", address);
       return;
     }
 
-    log::info("bd_addr={}", address);
-
     hearingDevice->first_connection = true;
     hearingDevice->service_changed_rcvd = true;
+
+    log::info("[gatt] Clean connd_id={:#x}", hearingDevice->conn_id);
     BtaGattQueue::Clean(hearingDevice->conn_id);
 
     if (hearingDevice->gap_handle != GAP_INVALID_HANDLE) {
@@ -775,7 +772,7 @@ public:
   void OnServiceDiscDoneEvent(const RawAddress& address) {
     HearingDevice* hearingDevice = hearingDevices.FindByAddress(address);
     if (!hearingDevice) {
-      log::error("unknown device: bd_addr={}", address);
+      log::warn("unknown device: bd_addr={}", address);
       return;
     }
 
@@ -793,13 +790,12 @@ public:
   void OnServiceSearchComplete(tCONN_ID conn_id, tGATT_STATUS status) {
     HearingDevice* hearingDevice = hearingDevices.FindByConnId(conn_id);
     if (!hearingDevice) {
-      log::error("unknown device: conn_id=0x{:x}", conn_id);
+      log::warn("unknown device: conn_id=0x{:x}", conn_id);
       return;
     }
 
-    if (!com::android::bluetooth::flags::continue_queued_command_after_discovery() &&
+    if (!com_android_bluetooth_flags_continue_queued_command_after_discovery() &&
         !hearingDevice->first_connection) {
-      // Known device, nothing to do.
       log::info("service discovery result ignored: bd_addr={}", hearingDevice->address);
       return;
     }
@@ -807,7 +803,7 @@ public:
     if (status != GATT_SUCCESS) {
       /* close connection and report service discovery complete with error */
       log::error("service discovery failed: bd_addr={} status={}", hearingDevice->address, status);
-      if (com::android::bluetooth::flags::continue_queued_command_after_discovery() ||
+      if (com_android_bluetooth_flags_continue_queued_command_after_discovery() ||
           hearingDevice->first_connection) {
         callbacks->OnConnectionState(ConnectionState::DISCONNECTED, hearingDevice->address);
       }
@@ -842,7 +838,8 @@ public:
                     hearingDevice->address, &hearingDevice->capabilities,
                     &hearingDevice->hi_sync_id, &hearingDevice->render_delay,
                     &hearingDevice->preparation_delay, &hearingDevice->codecs)) {
-          log::debug("Reading read only properties 0x{:x}", charac.value_handle);
+          log::info("[gatt] ReadCharacteristic conn_id={:#x} handle=ReadOnlyProperties({:#x})",
+                    conn_id, charac.value_handle);
           BtaGattQueue::ReadCharacteristic(conn_id, charac.value_handle,
                                            HearingAidImpl::OnReadOnlyPropertiesReadStatic, nullptr);
         }
@@ -882,7 +879,7 @@ public:
        * Just in case, log such occurrence, letting us know we may use the old handle.
        */
       if (hearingDevice->service_changed_rcvd) {
-        if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+        if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
           log::error("Service change received before PSM read. Read omitted.");
           return;
         } else {
@@ -891,7 +888,8 @@ public:
                   "Attempting to read PSM using old handle");
         }
       }
-      log::info("bd_addr={} handle=0x{:x}", hearingDevice->address, hearingDevice->read_psm_handle);
+      log::info("[gatt] ReadCharacteristic conn_id={:#x} handle=PSM({:#x})", hearingDevice->conn_id,
+                hearingDevice->read_psm_handle);
       BtaGattQueue::ReadCharacteristic(hearingDevice->conn_id, hearingDevice->read_psm_handle,
                                        HearingAidImpl::OnPsmReadStatic, nullptr);
     }
@@ -950,7 +948,7 @@ public:
       return;
     }
 
-    if (com::android::bluetooth::flags::continue_queued_command_after_discovery()) {
+    if (com_android_bluetooth_flags_continue_queued_command_after_discovery()) {
       hearingDevice->first_connection = true;
     }
 
@@ -1088,8 +1086,8 @@ public:
             /// The L2CAP will automatically reconnect the LE-ACL link on
             /// disconnection when there is a pending channel request,
             /// which invalidates all encryption checks performed here.
-            BTM_SEC_IN_ENCRYPT | BTM_SEC_OUT_ENCRYPT,
-            HearingAidImpl::GapCallbackStatic, BT_TRANSPORT_LE);
+            BTM_SEC_IN_ENCRYPT | BTM_SEC_OUT_ENCRYPT, HearingAidImpl::GapCallbackStatic,
+            BT_TRANSPORT_LE);
 
     if (gap_handle == GAP_INVALID_HANDLE) {
       log::error("failed to open socket: bd_addr={}", hearingDevice->address);
@@ -1155,7 +1153,7 @@ public:
      * Just in case, log such occurrence, letting us know we may use the old handle.
      */
     if (hearingDevice->service_changed_rcvd) {
-      if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+      if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
         log::error("Stream is starting, but service change received. Aborting.");
         return;
       } else {
@@ -1164,6 +1162,11 @@ public:
                 "Attempting to subscribe Audio Status using old handle");
       }
     }
+
+    log::info(
+            "[gatt] WriteDescriptor conn_id={:#x} handle=AudioStatusCCC({:#x}) value=[{:#x}, "
+            "{:#x}]",
+            hearingDevice->conn_id, hearingDevice->audio_status_ccc_handle, value[0], value[1]);
     BtaGattQueue::WriteDescriptor(hearingDevice->conn_id, hearingDevice->audio_status_ccc_handle,
                                   std::move(value), GATT_WRITE, write_rpt_ctl_cfg_cb, nullptr);
 
@@ -1243,7 +1246,7 @@ public:
          * Just in case, log such occurrence, letting us know we may use the old handle.
          */
         if (device.service_changed_rcvd) {
-          if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+          if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
             log::error(
                     "Service change received during active stream."
                     "Omit write to Audio Control Point");
@@ -1253,6 +1256,11 @@ public:
                   "Service change received, but stream is active."
                   "Attempting to write using old Audio Control Point handle");
         }
+
+        log::info(
+                "[gatt] WriteCharacteristic conn_id={:#x} handle=AudioControlPoint({:#x}) "
+                "value=[{:#x}]",
+                device.conn_id, device.audio_control_point_handle, stop[0]);
         BtaGattQueue::WriteCharacteristic(device.conn_id, device.audio_control_point_handle, stop,
                                           GATT_WRITE, nullptr, nullptr);
       }
@@ -1318,7 +1326,7 @@ public:
      * Just in case, log such occurrence, letting us know we may use the old handle.
      */
     if (device->service_changed_rcvd) {
-      if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+      if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
         log::error(
                 "Service change received, but stream is starting."
                 "Omit write to Service Changed CCC");
@@ -1328,6 +1336,11 @@ public:
               "Service change received, but stream is starting."
               "Attempting to subscribe Service Changed using old handle");
     }
+
+    log::info(
+            "[gatt] WriteDescriptor conn_id={:#x} handle=ServiceChangedCCC({:#x}) value=[{:#x}, "
+            "{:#x}]",
+            device->conn_id, device->service_changed_ccc_handle, value[0], value[1]);
     BtaGattQueue::WriteDescriptor(device->conn_id, device->service_changed_ccc_handle,
                                   std::move(value), GATT_WRITE, nullptr, nullptr);
   }
@@ -1362,7 +1375,7 @@ public:
        * Just in case, log such occurrence, letting us know we may use the old handle.
        */
       if (device->service_changed_rcvd) {
-        if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+        if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
           log::error(
                   "Service change received, but stream is starting."
                   "Omit write using to Audio Control Point");
@@ -1372,6 +1385,12 @@ public:
                 "Service change received, but stream is starting."
                 "Attempting to write using old Audio Control Point handle");
       }
+
+      log::info(
+              "[gatt] WriteCharacteristic conn_id={:#x} handle=AudioControlPoint({:#x}) "
+              "value=[{:#x}, {:#x}, {:#x}, {:#x}, {:#x}]",
+              device->conn_id, device->audio_control_point_handle, start[0], start[1], start[2],
+              start[3], start[4]);
       BtaGattQueue::WriteCharacteristic(device->conn_id, device->audio_control_point_handle, start,
                                         GATT_WRITE, HearingAidImpl::StartAudioCtrlCallbackStatic,
                                         nullptr);
@@ -1936,6 +1955,7 @@ public:
     hearingDevice->gap_opened = false;
 
     if (hearingDevice->conn_id != INVALID_CONN_ID) {
+      log::info("[gatt] Clean conn_id={:#x}", hearingDevice->conn_id);
       BtaGattQueue::Clean(hearingDevice->conn_id);
       BTA_GATTC_Close(hearingDevice->conn_id);
       hearingDevice->conn_id = INVALID_CONN_ID;
@@ -1971,7 +1991,7 @@ public:
 
       std::vector<uint8_t> volume_value({static_cast<unsigned char>(volume)});
       if (device.volume_handle == 0 || device.service_changed_rcvd) {
-        if (com::android::bluetooth::flags::asha_omit_gatt_after_svc_changed()) {
+        if (com_android_bluetooth_flags_asha_omit_gatt_after_svc_changed()) {
           log::error(
                   "Volume handle not set or service changed received: bd_addr={}"
                   "Write to Volume omitted",
@@ -1980,6 +2000,9 @@ public:
         }
         log::error("Volume handle not set or service changed received: bd_addr={}", device.address);
       }
+
+      log::info("[gatt] WriteCharacteristic conn_id={:#x} handle=Volume({:#x}) value=[{:#x}]",
+                device.conn_id, device.volume_handle, volume);
       BtaGattQueue::WriteCharacteristic(device.conn_id, device.volume_handle, volume_value,
                                         GATT_WRITE_NO_RSP, nullptr, nullptr);
     }
@@ -2001,7 +2024,7 @@ private:
   uint8_t seq_counter;
   /* current volume gain for the hearing aids*/
   int8_t current_volume;
-  bluetooth::hearing_aid::HearingAidCallbacks* callbacks;
+  HearingAidCallbacks* callbacks;
 
   /* currently used codec */
   uint8_t codec_in_use;
@@ -2060,7 +2083,10 @@ private:
         return;
       }
       // Send the data packet
-      log::info("Send State Change: bd_addr={} status=0x{:x}", device->address, payload[1]);
+      log::info(
+              "[gatt] WriteCharacteristic conn_id={:#x} handle=AudioControlPoint({:#x}) "
+              "value=[{:#x} ..]",
+              device->conn_id, device->audio_control_point_handle, payload[0]);
       BtaGattQueue::WriteCharacteristic(device->conn_id, device->audio_control_point_handle,
                                         payload, GATT_WRITE_NO_RSP, nullptr, nullptr);
     }
@@ -2222,9 +2248,9 @@ HearingAidAudioReceiverImpl audioReceiverImpl;
 
 }  // namespace
 
-void HearingAid::Initialize(bluetooth::hearing_aid::HearingAidCallbacks* callbacks,
-                            Closure initCb) {
+void HearingAid::Initialize(HearingAidCallbacks* callbacks, Closure initCb) {
   std::scoped_lock<std::mutex> lock(instance_mutex);
+
   if (instance) {
     log::error("Already initialized!");
     return;
@@ -2310,3 +2336,5 @@ void HearingAid::DebugDump(int fd) {
   HearingAidAudioSource::DebugDump(fd);
   dprintf(fd, "\n");
 }
+
+}  // namespace bluetooth::asha

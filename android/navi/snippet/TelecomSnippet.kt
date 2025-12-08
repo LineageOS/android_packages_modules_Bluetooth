@@ -112,7 +112,7 @@ class TelecomSnippet : Snippet {
                 override fun onCallStateChanged(call: Call, state: Int) {
                     postSnippetEvent(callbackId, SnippetConstants.CALL_STATE_CHANGED) {
                         putString(SnippetConstants.FIELD_NAME, call.details.callerDisplayName)
-                        putString(SnippetConstants.FIELD_HANDLE, call.details.handle.toString())
+                        putString(SnippetConstants.FIELD_HANDLE, call.details.handle?.toString())
                         putInt(SnippetConstants.FIELD_STATE, state)
                     }
                 }
@@ -407,7 +407,7 @@ class TelecomSnippet : Snippet {
 
     private companion object {
         const val TAG = "TelecomSnippet"
-        val CALL_CONTROL_TIMEOUT = 3.seconds
+        val CALL_CONTROL_TIMEOUT = 5.seconds
 
         class DeferredOutcomeReceiver<T, E : Exception>() : OutcomeReceiver<T, E> {
             val deferred = CompletableDeferred<T>()

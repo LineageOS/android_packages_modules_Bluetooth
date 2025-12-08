@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Android Open Source Project
+ * Copyright (C) 2019 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,9 @@
 #include "hal/ranging_hal_impl.h"
 #include "hal/snoop_logger.h"
 #include "hal/socket_hal_impl.h"
+#include "hci/acl_manager/acl_manager_classic_impl.h"
+#include "hci/acl_manager/acl_manager_le_impl.h"
 #include "hci/acl_manager/acl_scheduler.h"
-#include "hci/acl_manager_impl.h"
 #include "hci/controller_impl.h"
 #include "hci/distance_measurement_manager_impl.h"
 #include "hci/hci_layer.h"
@@ -80,8 +81,11 @@ struct Stack::impl {
         controller_(handler, &hci_layer_),
         acl_scheduler_(handler),
         remote_name_request_(handler, hci_layer_, acl_scheduler_),
-        acl_manager_(handler, hci_layer_, controller_, acl_scheduler_, remote_name_request_,
-                     storage_),
+        round_robin_scheduler_(handler, controller_, hci_layer_.GetAclQueueEnd()),
+        acl_manager_classic_(handler, hci_layer_, acl_scheduler_, remote_name_request_,
+                             round_robin_scheduler_),
+        acl_manager_(handler, hci_layer_, controller_, storage_, round_robin_scheduler_,
+                     acl_manager_classic_),
         le_scanning_manager_(handler, &hci_layer_, &controller_, acl_manager_.GetLeAddressManager(),
                              &storage_),
         msft_extension_manager_(handler, &hci_hal_, &hci_layer_),
@@ -89,12 +93,39 @@ struct Stack::impl {
                                 acl_manager_.GetLeAddressManager(), &acl_manager_),
         distance_measurement_manager_(handler, &hci_layer_, &controller_, &acl_manager_,
                                       &ranging_hal_) {
-#ifndef TARGET_FLOSS
-    if (com::android::bluetooth::flags::socket_settings_api()) {  // Added with aosp/3286716
-      socket_hal_ = std::make_unique<hal::SocketHalImpl>();
-      lpp_offload_manager_ = std::make_unique<lpp::LppOffloadManager>(handler, socket_hal_.get());
-    }
+    socket_hal_ = std::make_unique<hal::SocketHalImpl>();
+    lpp_offload_manager_ = std::make_unique<lpp::LppOffloadManager>(handler, socket_hal_.get());
+  }
+
+  // TODO: Remove this constructor once the flag (same_handler_for_all_modules) is fully rolled out.
+  impl(os::Thread* thread)
+      : storage_(new os::Handler(thread)),
+        snoop_logger_(new os::Handler(thread)),
+#ifdef TARGET_FLOSS
+        sysprops_module_(),
 #endif
+        link_clocker_(),
+        hci_hal_(new os::Handler(thread), link_clocker_, &snoop_logger_),
+        ranging_hal_(),
+        hci_layer_(new os::Handler(thread), &hci_hal_, &storage_),
+        controller_(new os::Handler(thread), &hci_layer_),
+        acl_scheduler_(new os::Handler(thread)),
+        remote_name_request_(new os::Handler(thread), hci_layer_, acl_scheduler_),
+        round_robin_scheduler_(new os::Handler(thread), controller_, hci_layer_.GetAclQueueEnd()),
+        acl_manager_classic_(new os::Handler(thread), hci_layer_, acl_scheduler_,
+                             remote_name_request_, round_robin_scheduler_),
+        acl_manager_(new os::Handler(thread), hci_layer_, controller_, storage_,
+                     round_robin_scheduler_, acl_manager_classic_),
+        le_scanning_manager_(new os::Handler(thread), &hci_layer_, &controller_,
+                             acl_manager_.GetLeAddressManager(), &storage_),
+        msft_extension_manager_(new os::Handler(thread), &hci_hal_, &hci_layer_),
+        le_advertising_manager_(new os::Handler(thread), &hci_layer_, &controller_,
+                                acl_manager_.GetLeAddressManager(), &acl_manager_),
+        distance_measurement_manager_(new os::Handler(thread), &hci_layer_, &controller_,
+                                      &acl_manager_, &ranging_hal_) {
+    socket_hal_ = std::make_unique<hal::SocketHalImpl>();
+    lpp_offload_manager_ =
+            std::make_unique<lpp::LppOffloadManager>(new os::Handler(thread), socket_hal_.get());
   }
 
   ~impl() {
@@ -122,7 +153,9 @@ struct Stack::impl {
   hci::ControllerImpl controller_;
   hci::acl_manager::AclScheduler acl_scheduler_;
   hci::RemoteNameRequestModuleImpl remote_name_request_;
-  hci::AclManagerImpl acl_manager_;
+  hci::acl_manager::RoundRobinScheduler round_robin_scheduler_;
+  hci::acl_manager::AclManagerClassicImpl acl_manager_classic_;
+  hci::acl_manager::AclManagerLeImpl acl_manager_;
   hci::LeScanningManagerImpl le_scanning_manager_;
   hci::MsftExtensionManager msft_extension_manager_;
   hci::LeAdvertisingManagerImpl le_advertising_manager_;
@@ -161,12 +194,12 @@ void Stack::StartEverything() {
   log::info("init_status == {}", int(init_status));
 
   if (init_status != std::future_status::ready) {
-    /* Crash stuck thread and print it's stack trace, so that we know why starartup is taking too
+    /* Crash stuck thread and print it's stack trace, so that we know why startup is taking too
      * long */
     management_thread_->Abort();
 
     /* Crashed thread should take whole stack with it, but main thread is being executed
-     * simulteanously. This sleep ensures that main thread doesn't execute any logic below, and
+     * simultaneously. This sleep ensures that main thread doesn't execute any logic below, and
      * nicely dies with rest of stack.  */
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
@@ -205,7 +238,7 @@ void Stack::Stop() {
   log::info("GD stack is not running");
 
   stack_handler_->Clear();
-  if (com::android::bluetooth::flags::same_handler_for_all_modules()) {
+  if (com_android_bluetooth_flags_same_handler_for_all_modules()) {
     stack_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
   }
 
@@ -287,10 +320,16 @@ hci::RemoteNameRequestModule* Stack::GetRemoteNameRequest() const {
   return &pimpl_->remote_name_request_;
 }
 
-hci::AclManager* Stack::GetAclManager() const {
+hci::AclManagerLe* Stack::GetAclManagerLe() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
   return &pimpl_->acl_manager_;
+}
+
+hci::acl_manager::AclManagerClassic* Stack::GetAclManagerClassic() const {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  log::assert_that(is_running_, "assert failed: is_running_");
+  return &pimpl_->acl_manager_classic_;
 }
 
 hci::MsftExtensionManager* Stack::GetMsftExtensionManager() const {
@@ -329,7 +368,8 @@ void Stack::Dump(int fd, std::promise<void> promise) const {
     stack_handler_->Call(
             [](int fd, std::promise<void> promise) {
               bluetooth::shim::GetController()->Dump(fd);
-              bluetooth::shim::GetAclManager()->Dump(fd);
+              bluetooth::shim::GetAclManagerLe()->Dump(fd);
+              bluetooth::shim::GetAdvertising()->Dump(fd);
               bluetooth::os::WakelockManager::Get().Dump(fd);
               bluetooth::shim::GetSnoopLogger()->DumpSnoozLogToFile();
               promise.set_value();
@@ -341,7 +381,13 @@ void Stack::Dump(int fd, std::promise<void> promise) const {
 }
 
 void Stack::handle_start_up(std::promise<void> promise) {
-  pimpl_ = std::make_unique<Stack::impl>(stack_handler_);
+  if (!com_android_bluetooth_flags_same_handler_for_all_modules()) {
+    // Create a new handler for each module to remain consistent with the old implementation.
+    pimpl_ = std::make_unique<Stack::impl>(stack_thread_);
+  } else {
+    pimpl_ = std::make_unique<Stack::impl>(stack_handler_);
+  }
+
   promise.set_value();
 }
 

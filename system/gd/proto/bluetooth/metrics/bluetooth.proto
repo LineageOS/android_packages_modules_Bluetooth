@@ -23,10 +23,10 @@ option java_package = "com.android.bluetooth";
 option java_outer_classname = "BluetoothMetricsProto";
 
 /**
-* Encapsulates Remote Device Information. Needs to be kept consistent with
-* BluetoothRemoteDeviceInformation
-* in frameworks/proto_logging/stats/atoms/bluetooth/bluetooth_extension_atoms.proto
-*/
+ * Encapsulates Remote Device Information. Needs to be kept consistent with
+ * BluetoothRemoteDeviceInformation
+ * in frameworks/proto_logging/stats/atoms/bluetooth/bluetooth_extension_atoms.proto
+ */
 message BluetoothRemoteDeviceInformation {
   // SHA256 hashed Bluetooth device name.
   optional string allowlisted_device_name_hash = 1;

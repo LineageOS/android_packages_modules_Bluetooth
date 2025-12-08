@@ -21,7 +21,7 @@ import android.bluetooth.BluetoothActivityEnergyInfo;
 /**
  * Interface for Bluetooth activity energy info listener.
  *
- * {@hide}
+ * @hide
  */
 oneway interface IBluetoothActivityEnergyInfoListener
 {

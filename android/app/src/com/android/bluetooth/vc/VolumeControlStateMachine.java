@@ -33,6 +33,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -61,6 +62,7 @@ class VolumeControlStateMachine extends StateMachine {
     private final VolumeControlNativeInterface mNativeInterface;
     private final BluetoothDevice mDevice;
 
+    private State mCurrentState;
     private int mLastConnectionState = -1;
 
     VolumeControlStateMachine(
@@ -77,6 +79,7 @@ class VolumeControlStateMachine extends StateMachine {
         mConnecting = new Connecting();
         mDisconnecting = new Disconnecting();
         mConnected = new Connected();
+        mCurrentState = mDisconnected;
 
         addState(mDisconnected);
         addState(mConnecting);
@@ -95,6 +98,7 @@ class VolumeControlStateMachine extends StateMachine {
     class Disconnected extends State {
         @Override
         public void enter() {
+            mCurrentState = this;
             Log.i(
                     TAG,
                     "Enter Disconnected("
@@ -133,6 +137,10 @@ class VolumeControlStateMachine extends StateMachine {
                     log("Connecting to " + mDevice);
                     if (!mNativeInterface.connectVolumeControl(mDevice)) {
                         Log.e(TAG, "Disconnected: error connecting to " + mDevice);
+                        break;
+                    }
+                    if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
+                        transitionTo(mConnecting);
                         break;
                     }
                     if (mService.okToConnect(mDevice)) {
@@ -209,6 +217,7 @@ class VolumeControlStateMachine extends StateMachine {
     class Connecting extends State {
         @Override
         public void enter() {
+            mCurrentState = this;
             Log.i(
                     TAG,
                     "Enter Connecting("
@@ -239,7 +248,13 @@ class VolumeControlStateMachine extends StateMachine {
                             + messageWhatToString(message.what));
 
             switch (message.what) {
-                case MESSAGE_CONNECT -> deferMessage(message);
+                case MESSAGE_CONNECT -> {
+                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
+                        Log.w(TAG, "Connecting: CONNECT ignored: " + mDevice);
+                    } else {
+                        deferMessage(message);
+                    }
+                }
                 case MESSAGE_CONNECT_TIMEOUT -> {
                     Log.w(TAG, "Connecting connection timeout: " + mDevice);
                     mNativeInterface.disconnectVolumeControl(mDevice);
@@ -300,8 +315,7 @@ class VolumeControlStateMachine extends StateMachine {
     }
 
     int getConnectionState() {
-        String currentState = getCurrentState().getName();
-        return switch (currentState) {
+        return switch (mCurrentState.getName()) {
             case "Disconnected" -> STATE_DISCONNECTED;
             case "Connecting" -> STATE_CONNECTING;
             case "Connected" -> STATE_CONNECTED;
@@ -314,6 +328,7 @@ class VolumeControlStateMachine extends StateMachine {
     class Disconnecting extends State {
         @Override
         public void enter() {
+            mCurrentState = this;
             Log.i(
                     TAG,
                     "Enter Disconnecting("
@@ -344,7 +359,28 @@ class VolumeControlStateMachine extends StateMachine {
                             + messageWhatToString(message.what));
 
             switch (message.what) {
-                case MESSAGE_CONNECT, MESSAGE_DISCONNECT -> deferMessage(message);
+                case MESSAGE_CONNECT -> {
+                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
+                        if (!hasDeferredMessages(MESSAGE_CONNECT)) {
+                            deferMessage(message);
+                        } else {
+                            log("Connect already scheduled for " + mDevice);
+                        }
+                    } else {
+                        deferMessage(message);
+                    }
+                }
+                case MESSAGE_DISCONNECT -> {
+                    if (Flags.ignoreMultipleConnectRequestInBtServices()) {
+                        log("Disconnect is ongoing for " + mDevice);
+                        if (hasDeferredMessages(MESSAGE_CONNECT)) {
+                            log("Removing scheduled connect for " + mDevice);
+                            removeDeferredMessages(MESSAGE_CONNECT);
+                        }
+                    } else {
+                        deferMessage(message);
+                    }
+                }
                 case MESSAGE_CONNECT_TIMEOUT -> {
                     Log.w(TAG, "Disconnecting connection timeout: " + mDevice);
                     mNativeInterface.disconnectVolumeControl(mDevice);
@@ -416,6 +452,7 @@ class VolumeControlStateMachine extends StateMachine {
     class Connected extends State {
         @Override
         public void enter() {
+            mCurrentState = this;
             Log.i(
                     TAG,
                     "Enter Connected("
@@ -499,7 +536,7 @@ class VolumeControlStateMachine extends StateMachine {
     }
 
     synchronized boolean isConnected() {
-        return getCurrentState() == mConnected;
+        return mCurrentState == mConnected;
     }
 
     // This method does not check for error condition (newState == prevState)

@@ -62,7 +62,7 @@ public class CallbackWrapperTest {
 
     @Before
     public void setUp() {
-        mCallbackExecutorMap = new HashMap();
+        mCallbackExecutorMap = new HashMap<>();
         mCallbackWrapper =
                 new CallbackWrapper(mRegisterConsumer, mUnregisterConsumer, mCallbackExecutorMap);
     }

@@ -44,7 +44,6 @@ import android.util.Log;
 
 import com.android.bluetooth.flags.Flags;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -237,12 +236,15 @@ public final class BluetoothLeScanner {
             final WorkSource workSource,
             final ScanCallback callback,
             final PendingIntent callbackIntent) {
-        BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter);
         if (callback == null && callbackIntent == null) {
             throw new IllegalArgumentException("callback is null");
         }
         if (settings == null) {
             throw new IllegalArgumentException("settings is null");
+        }
+        if (!BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter)) {
+            Log.w(TAG, "BLE is not available");
+            return postCallbackErrorOrReturn(callback, ScanCallback.SCAN_FAILED_INTERNAL_ERROR);
         }
         synchronized (mLeScanClients) {
             if (callback != null && mLeScanClients.containsKey(callback)) {
@@ -294,7 +296,10 @@ public final class BluetoothLeScanner {
     @RequiresBluetoothScanPermission
     @RequiresPermission(BLUETOOTH_SCAN)
     public void stopScan(ScanCallback callback) {
-        BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter);
+        if (!BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter)) {
+            Log.w(TAG, "BLE is not available");
+            return;
+        }
         synchronized (mLeScanClients) {
             BleScanCallbackWrapper wrapper = mLeScanClients.remove(callback);
             if (wrapper == null) {
@@ -317,7 +322,10 @@ public final class BluetoothLeScanner {
     @RequiresBluetoothScanPermission
     @RequiresPermission(BLUETOOTH_SCAN)
     public void stopScan(PendingIntent callbackIntent) {
-        BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter);
+        if (!BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter)) {
+            Log.w(TAG, "BLE is not available");
+            return;
+        }
         try {
             IBluetoothScan scan = mBluetoothAdapter.getBluetoothScan();
             if (scan == null) {
@@ -342,7 +350,10 @@ public final class BluetoothLeScanner {
     @RequiresBluetoothScanPermission
     @RequiresPermission(BLUETOOTH_SCAN)
     public void flushPendingScanResults(ScanCallback callback) {
-        BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter);
+        if (!BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter)) {
+            Log.w(TAG, "BLE is not available");
+            return;
+        }
         if (callback == null) {
             throw new IllegalArgumentException("callback cannot be null!");
         }
@@ -365,16 +376,12 @@ public final class BluetoothLeScanner {
     @SystemApi
     @RequiresBluetoothScanPermission
     @RequiresPermission(BLUETOOTH_SCAN)
+    @SuppressLint("AndroidFrameworkRequiresPermission")
     public void startTruncatedScan(
             List<TruncatedFilter> truncatedFilters,
             ScanSettings settings,
             final ScanCallback callback) {
-        int filterSize = truncatedFilters.size();
-        List<ScanFilter> scanFilters = new ArrayList<ScanFilter>(filterSize);
-        for (TruncatedFilter filter : truncatedFilters) {
-            scanFilters.add(filter.getFilter());
-        }
-        startScan(scanFilters, settings, null, callback, null);
+        Log.wtf(TAG, "startTruncatedScan is deprecated and not supported; Will be removed soon");
     }
 
     /**

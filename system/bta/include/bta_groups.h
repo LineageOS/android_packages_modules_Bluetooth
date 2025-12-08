@@ -16,11 +16,11 @@
  */
 
 #pragma once
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
+
 #include <list>
 #include <vector>
-
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace groups {

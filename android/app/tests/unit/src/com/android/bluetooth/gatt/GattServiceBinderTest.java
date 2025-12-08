@@ -16,9 +16,9 @@
 
 package com.android.bluetooth.gatt;
 
+import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static org.mockito.Mockito.doReturn;
@@ -32,8 +32,10 @@ import android.bluetooth.IBluetoothGattServerCallback;
 import android.content.AttributionSource;
 import android.os.ParcelUuid;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
-import androidx.test.runner.AndroidJUnit4;
+
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -76,7 +78,7 @@ public class GattServiceBinderTest {
     public void registerClient() {
         UUID uuid = UUID.randomUUID();
         boolean eattSupport = true;
-        int transport = BluetoothDevice.TRANSPORT_LE;
+        int transport = TRANSPORT_LE;
 
         mBinder.registerClient(
                 new ParcelUuid(uuid), mGattCallback, eattSupport, transport, mAttributionSource);
@@ -323,7 +325,7 @@ public class GattServiceBinderTest {
     public void registerServer() {
         UUID uuid = UUID.randomUUID();
         boolean eattSupport = true;
-        int transport = BluetoothDevice.TRANSPORT_LE;
+        int transport = TRANSPORT_LE;
 
         mBinder.registerServer(
                 new ParcelUuid(uuid),

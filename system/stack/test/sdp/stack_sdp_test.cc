@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <com_android_bluetooth_flags.h>
-#include <flag_macros.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -485,9 +483,7 @@ TEST_F(StackSdpInitTest, SDP_Dumpsys_ccb) {
   SDP_Dumpsys(1);
 }
 
-TEST_F_WITH_FLAGS(StackSdpInitTest, sdp_cancel_pending_conn,
-                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(com::android::bluetooth::flags,
-                                                      sdp_ccb_clean_up_after_l2cap_disc))) {
+TEST_F(StackSdpInitTest, sdp_cancel_pending_conn) {
   EXPECT_CALL(mock_stack_l2cap_interface_, L2CA_ConnectReqWithSecurity(_, _, _))
           .WillOnce(Invoke([](uint16_t /* psm */, const RawAddress& /* p_bd_addr */,
                               uint16_t /* sec_level */) -> uint16_t {

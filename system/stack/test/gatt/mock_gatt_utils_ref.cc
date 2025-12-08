@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/address.h>
+
 #include "stack/connection_manager/connection_manager.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_hdr.h"
-#include "types/raw_address.h"
 
 /** stack/gatt/att_protocol.cc */
 BT_HDR* attp_build_sr_msg(tGATT_TCB& /*tcb*/, uint8_t /*op_code*/, tGATT_SR_MSG* /*p_msg*/,
@@ -45,6 +46,7 @@ void gatt_act_discovery(tGATT_CLCB* /*p_clcb*/) {}
 void gatt_update_app_use_link_flag(tGATT_IF /*gatt_if*/, tGATT_TCB* /*p_tcb*/, bool /*is_add*/,
                                    bool /*check_acl_link*/) {}
 void gatts_proc_srv_chg_ind_ack(tGATT_TCB) {}
+void gatt_force_disconnect(tGATT_TCB* /*p_tcb*/, std::string /*comment*/) {}
 bool gatt_disconnect(tGATT_TCB* /*p_tcb*/) { return false; }
 tGATT_CH_STATE gatt_get_ch_state(tGATT_TCB* /*p_tcb*/) { return GATT_CH_CLOSE; }
 void gatt_set_ch_state(tGATT_TCB* /*p_tcb*/, tGATT_CH_STATE /*ch_state*/) {}

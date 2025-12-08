@@ -18,10 +18,10 @@
 
 #pragma once
 
-#include <set>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 
-#include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
+#include <set>
 
 /* Must be provided by stack to connection manager, so it can dump nice client names in dumpsys */
 std::string get_client_name(uint8_t gatt_if);
@@ -85,5 +85,6 @@ void on_connection_timed_out(uint8_t app_id, const RawAddress& address);
 void on_connection_timed_out_from_shim(const RawAddress& address);
 
 bool is_background_connection(const RawAddress& address);
+bool is_direct_connection(const RawAddress& address);
 
 }  // namespace connection_manager

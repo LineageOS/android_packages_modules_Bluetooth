@@ -80,7 +80,7 @@ TEST_F(LeScanningReassemblerTest, non_scannable_legacy_advertising) {
 TEST_F(LeScanningReassemblerTest, scannable_non_connectable_legacy_advertising) {
   // Test scannable legacy advertising with well formed advertising and
   // scan response payload.
-  if (com::android::bluetooth::flags::support_passive_scanning()) {
+  if (com_android_bluetooth_flags_support_passive_scanning()) {
     ASSERT_TRUE(reassembler_
                         .ProcessAdvertisingReport(kLegacy | kScannable | kComplete,
                                                   (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
@@ -104,7 +104,7 @@ TEST_F(LeScanningReassemblerTest, scannable_non_connectable_legacy_advertising) 
 
   // Test scannable legacy advertising with padding after the
   // advertising and scan response data.
-  if (com::android::bluetooth::flags::support_passive_scanning()) {
+  if (com_android_bluetooth_flags_support_passive_scanning()) {
     ASSERT_TRUE(reassembler_
                         .ProcessAdvertisingReport(kLegacy | kScannable | kComplete,
                                                   (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
@@ -131,7 +131,7 @@ TEST_F(LeScanningReassemblerTest, scannable_non_connectable_legacy_advertising) 
 }
 
 TEST_F(LeScanningReassemblerTest, scannable_connectable_legacy_advertising) {
-  if (com::android::bluetooth::flags::support_passive_scanning()) {
+  if (com_android_bluetooth_flags_support_passive_scanning()) {
     ASSERT_TRUE(reassembler_
                         .ProcessAdvertisingReport(kLegacy | kScannable | kConnectable,
                                                   (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,
@@ -214,7 +214,7 @@ TEST_F(LeScanningReassemblerTest, scannable_extended_advertising) {
                                                  kTestAddress, kSidNotPresent, {0x1, 0x2, 0x3})
                        .has_value());
 
-  if (com::android::bluetooth::flags::support_passive_scanning()) {
+  if (com_android_bluetooth_flags_support_passive_scanning()) {
     ASSERT_TRUE(reassembler_
                         .ProcessAdvertisingReport(
                                 kScannable | kComplete, (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS,

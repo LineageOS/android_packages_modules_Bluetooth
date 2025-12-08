@@ -285,9 +285,10 @@ void LogMetricLeAudioBroadcastSessionReported(int64_t duration_nanos) {
   }
 }
 
-void LogMetricBluetoothQualityReport(const bqr::BqrLinkQualityEvent& event) {
+void LogMetricBluetoothQualityReport(const RawAddress& remote_addr,
+                                     const bqr::BqrLinkQualityEvent& event) {
   if (metricsInstance) {
-    metricsInstance->LogMetricBluetoothQualityReport(event);
+    metricsInstance->LogMetricBluetoothQualityReport(remote_addr, event);
   }
 }
 
@@ -304,6 +305,19 @@ void LogMetricsChannelSoundingRequesterSessionReported(
             remote_addr, app_uids, security_levels, measurement_interval_ms, stop_reason,
             setup_latency_ms, duration_seconds, back_to_back, cs_type, min_subevent_len,
             min_subevent_len_count);
+  }
+}
+
+void LogMetricBluetoothEnergyMonitorReported(uint16_t bqr_version,
+                                             const bqr::BqrEnergyMonitorEvent& event) {
+  if (metricsInstance) {
+    metricsInstance->LogMetricBluetoothEnergyMonitorReported(bqr_version, event);
+  }
+}
+
+void LogMetricBluetoothRFStatsReported(uint16_t bqr_version, const bqr::BqrRFStatsEvent& event) {
+  if (metricsInstance) {
+    metricsInstance->LogMetricBluetoothRFStatsReported(bqr_version, event);
   }
 }
 

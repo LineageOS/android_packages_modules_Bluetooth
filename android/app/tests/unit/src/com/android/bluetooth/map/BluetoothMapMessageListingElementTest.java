@@ -20,13 +20,16 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.util.Xml;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 import org.xmlpull.v1.XmlSerializer;
@@ -38,6 +41,10 @@ import java.text.SimpleDateFormat;
 /** Test cases for {@link BluetoothMapMessageListingElement}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapMessageListingElementTest {
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private BluetoothMapService mMapService;
+
     private static final long TEST_CP_HANDLE = 1;
     private static final String TEST_SUBJECT = "test_subject";
     private static final long TEST_DATE_TIME = 2;
@@ -70,7 +77,7 @@ public class BluetoothMapMessageListingElementTest {
 
     @Before
     public void setUp() throws Exception {
-        mMessageListingElement = new BluetoothMapMessageListingElement();
+        mMessageListingElement = new BluetoothMapMessageListingElement(mMapService);
 
         mMessageListingElement.setHandle(TEST_CP_HANDLE);
         mMessageListingElement.setSubject(TEST_SUBJECT);
@@ -210,7 +217,7 @@ public class BluetoothMapMessageListingElementTest {
     @Test
     public void compareTo_withLaterDateTime_ReturnsOne() {
         BluetoothMapMessageListingElement elementWithLaterDateTime =
-                new BluetoothMapMessageListingElement();
+                new BluetoothMapMessageListingElement(mMapService);
         elementWithLaterDateTime.setDateTime(TEST_DATE_TIME + 1);
         assertThat(mMessageListingElement.compareTo(elementWithLaterDateTime)).isEqualTo(1);
     }
@@ -218,7 +225,7 @@ public class BluetoothMapMessageListingElementTest {
     @Test
     public void compareTo_withFasterDateTime_ReturnsNegativeOne() {
         BluetoothMapMessageListingElement elementWithFasterDateTime =
-                new BluetoothMapMessageListingElement();
+                new BluetoothMapMessageListingElement(mMapService);
         elementWithFasterDateTime.setDateTime(TEST_DATE_TIME - 1);
         assertThat(mMessageListingElement.compareTo(elementWithFasterDateTime)).isEqualTo(-1);
     }
@@ -226,7 +233,7 @@ public class BluetoothMapMessageListingElementTest {
     @Test
     public void compareTo_withEqualDateTime_ReturnsZero() {
         BluetoothMapMessageListingElement elementWithEqualDateTime =
-                new BluetoothMapMessageListingElement();
+                new BluetoothMapMessageListingElement(mMapService);
         elementWithEqualDateTime.setDateTime(TEST_DATE_TIME);
         assertThat(mMessageListingElement.compareTo(elementWithEqualDateTime)).isEqualTo(0);
     }

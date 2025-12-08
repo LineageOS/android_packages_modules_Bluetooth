@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <string>
@@ -25,7 +27,6 @@
 
 #include "bta/include/bta_gatt_api.h"
 #include "bta/vc/types.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace vc {
@@ -82,8 +83,6 @@ public:
         requests_initiated(false) {}
 
   ~VolumeControlDevice() = default;
-
-  std::string ToStringForLogging() const { return address.ToStringForLogging(); }
 
   std::string ToRedactedStringForLogging() const { return address.ToRedactedStringForLogging(); }
 

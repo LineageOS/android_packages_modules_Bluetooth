@@ -40,6 +40,7 @@
 #include "flatbuffers/vector.h"
 #include "le_audio/le_audio_types.h"
 #include "le_audio_set_configuration_provider.h"
+#include "osi/include/properties.h"
 
 using bluetooth::le_audio::types::AseConfiguration;
 using bluetooth::le_audio::types::AudioSetConfiguration;
@@ -91,12 +92,11 @@ struct AudioSetConfigurationProviderJson {
   static constexpr auto kDefaultScenario = "Media";
 
   AudioSetConfigurationProviderJson(types::CodecLocation location) {
-    bool is_gmap_supported_in_software_datapath =
-            android::sysprop::bluetooth::LeAudio::is_gmap_supported_in_software_datapath().value_or(
+    bool is_software_datapath_supported_test =
+            android::sysprop::bluetooth::LeAudio::is_software_datapath_supported_test().value_or(
                     false);
-    const auto& selected_scenarios = is_gmap_supported_in_software_datapath
-                                             ? kLeAudioTestSetScenarios
-                                             : kLeAudioSetScenarios;
+    const auto& selected_scenarios =
+            is_software_datapath_supported_test ? kLeAudioTestSetScenarios : kLeAudioSetScenarios;
     log::info("Using set scenarios: {}", selected_scenarios.back().second);
 
     log::assert_that(LoadContent(kLeAudioSetConfigs, selected_scenarios, location),
@@ -339,6 +339,14 @@ private:
     }
 
     types::BidirectionalPair<std::vector<AseConfiguration>> subconfigs;
+
+    uint8_t packing_type = bluetooth::hci::kIsoCigPackingSequential;
+
+    if (android::sysprop::bluetooth::LeAudio::iso_interleaved_packing_enabled().value_or(false)) {
+      log::info("Switching to default interleaved packing for CIG.");
+      packing_type = bluetooth::hci::kIsoCigPackingInterleaved;
+    }
+
     if (codec_cfg != nullptr && codec_cfg->subconfigurations()) {
       /* Load subconfigurations */
       for (auto subconfig : *codec_cfg->subconfigurations()) {
@@ -355,7 +363,7 @@ private:
 
     return {
             .name = flat_cfg->name()->c_str(),
-            .packing = bluetooth::hci::kIsoCigPackingSequential,
+            .packing = packing_type,
             .confs = std::move(subconfigs),
     };
   }
@@ -567,38 +575,6 @@ struct AudioSetConfigurationProvider::impl {
 
   bool IsRunning() { return config_provider_impl_ ? true : false; }
 
-  void Dump(int fd) {
-    std::stringstream stream;
-
-    for (LeAudioContextType context : types::kLeAudioContextAllTypesArray) {
-      auto confs = Get()->GetConfigurations(context);
-      stream << "\n  === Configurations for context type: " << (int)context
-             << ", num: " << (confs == nullptr ? 0 : confs->size()) << " \n";
-      if (confs && confs->size() > 0) {
-        for (const auto& conf : *confs) {
-          stream << "  name: " << conf->name << " \n";
-          for (const auto direction :
-               {types::kLeAudioDirectionSink, types::kLeAudioDirectionSource}) {
-            stream << "   ASE configs for direction: "
-                   << (direction == types::kLeAudioDirectionSink ? "Sink (speaker)\n"
-                                                                 : "Source (microphone)\n");
-            for (const auto& ent : conf->confs.get(direction)) {
-              stream << "    ASE config: " << "     qos->target latency: "
-                     << +ent.qos.target_latency << " \n"
-                     << "     qos->retransmission_number: " << +ent.qos.retransmission_number
-                     << " \n"
-                     << "     qos->max_transport_latency: " << +ent.qos.max_transport_latency
-                     << " \n"
-                     << "     channel count per ISO stream: "
-                     << +ent.codec.GetChannelCountPerIsoStream() << "\n";
-            }
-          }
-        }
-      }
-    }
-    dprintf(fd, "%s", stream.str().c_str());
-  }
-
   const AudioSetConfigurationProvider& config_provider_;
   std::unique_ptr<AudioSetConfigurationProviderJson> config_provider_impl_;
 };
@@ -618,20 +594,6 @@ void AudioSetConfigurationProvider::Initialize(types::CodecLocation location) {
   if (!config_provider->pimpl_->IsRunning()) {
     config_provider->pimpl_->Initialize(location);
   }
-}
-
-void AudioSetConfigurationProvider::DebugDump(int fd) {
-  std::scoped_lock<std::mutex> lock(instance_mutex);
-  if (!config_provider || !config_provider->pimpl_->IsRunning()) {
-    dprintf(fd,
-            "\n AudioSetConfigurationProvider not initialized: config provider: "
-            "%d, pimpl: %d \n",
-            config_provider != nullptr,
-            (config_provider == nullptr ? 0 : config_provider->pimpl_->IsRunning()));
-    return;
-  }
-  dprintf(fd, "\n AudioSetConfigurationProvider: \n");
-  config_provider->pimpl_->Dump(fd);
 }
 
 void AudioSetConfigurationProvider::Cleanup() {

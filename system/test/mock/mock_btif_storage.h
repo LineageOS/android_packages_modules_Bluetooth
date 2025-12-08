@@ -32,10 +32,11 @@
 //       for this effort.  This compilation unit may compile as-is, or
 //       may need attention to prune from (or add to ) the inclusion set.
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
+
 #include "btif/include/btif_storage.h"
 #include "stack/include/bt_octets.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 // Original usings
 

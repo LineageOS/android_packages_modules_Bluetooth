@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.vc;
 
+import static android.bluetooth.BluetoothUtils.inlineStackTrace;
+
 import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED;
 import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_DEVICE_AVAILABLE;
 import static com.android.bluetooth.vc.VolumeControlStackEvent.EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED;
@@ -33,9 +35,9 @@ import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
-import java.util.Arrays;
 import java.util.function.Consumer;
 
 class VolumeControlNativeCallback {
@@ -55,15 +57,23 @@ class VolumeControlNativeCallback {
     }
 
     private void sendMessageToService(Consumer<VolumeControlService> action) {
+        if (Flags.vcpOnMainLooper()) { // inline in caller when cleaning flag
+            mVolumeControlService.syncPost(action);
+            return;
+        }
         if (!mVolumeControlService.isAvailable()) {
-            StringBuilder sb = new StringBuilder();
-            Arrays.stream(new Throwable().getStackTrace())
-                    .skip(1) // skip the inlineStackTrace method in the outputted stack trace
-                    .forEach(trace -> sb.append(" [at ").append(trace).append("]"));
-            Log.e(TAG, "Action ignored, service not available: " + sb.toString());
+            Log.e(TAG, "Action ignored, service not available: " + inlineStackTrace());
             return;
         }
         action.accept(mVolumeControlService);
+    }
+
+    private void messageFromNative(VolumeControlStackEvent event) {
+        if (Flags.vcpOnMainLooper()) {
+            mVolumeControlService.syncPost(v -> v.messageFromNative(event));
+            return;
+        }
+        mVolumeControlService.messageFromNative(event);
     }
 
     @VisibleForTesting
@@ -74,7 +84,7 @@ class VolumeControlNativeCallback {
         event.valueInt1 = state;
 
         Log.d(TAG, "onConnectionStateChanged: " + event);
-        mVolumeControlService.messageFromNative(event);
+        messageFromNative(event);
     }
 
     @VisibleForTesting
@@ -90,7 +100,7 @@ class VolumeControlNativeCallback {
         event.valueBool2 = isAutonomous;
 
         Log.d(TAG, "onVolumeStateChanged: " + event);
-        mVolumeControlService.messageFromNative(event);
+        messageFromNative(event);
     }
 
     @VisibleForTesting
@@ -104,7 +114,7 @@ class VolumeControlNativeCallback {
         event.valueBool2 = isAutonomous;
 
         Log.d(TAG, "onGroupVolumeStateChanged: " + event);
-        mVolumeControlService.messageFromNative(event);
+        messageFromNative(event);
     }
 
     @VisibleForTesting
@@ -117,7 +127,7 @@ class VolumeControlNativeCallback {
         event.valueInt3 = numOfExternalInputs;
 
         Log.d(TAG, "onDeviceAvailable: " + event);
-        mVolumeControlService.messageFromNative(event);
+        messageFromNative(event);
     }
 
     @VisibleForTesting
@@ -129,7 +139,7 @@ class VolumeControlNativeCallback {
         event.valueInt2 = offset;
 
         Log.d(TAG, "onExtAudioOutVolumeOffsetChanged: " + event);
-        mVolumeControlService.messageFromNative(event);
+        messageFromNative(event);
     }
 
     @VisibleForTesting
@@ -141,7 +151,7 @@ class VolumeControlNativeCallback {
         event.valueInt2 = location;
 
         Log.d(TAG, "onExtAudioOutLocationChanged: " + event);
-        mVolumeControlService.messageFromNative(event);
+        messageFromNative(event);
     }
 
     @VisibleForTesting
@@ -153,7 +163,7 @@ class VolumeControlNativeCallback {
         event.valueString1 = descr;
 
         Log.d(TAG, "onExtAudioOutLocationChanged: " + event);
-        mVolumeControlService.messageFromNative(event);
+        messageFromNative(event);
     }
 
     @VisibleForTesting

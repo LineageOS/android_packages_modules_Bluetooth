@@ -17,6 +17,9 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/hci_role.h>
 #include <stdbool.h>
 
 #include <cstdint>
@@ -24,9 +27,6 @@
 
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2cap_types.h"
-#include "types/bt_transport.h"
-#include "types/hci_role.h"
-#include "types/raw_address.h"
 
 /* result code for L2CA_DataWrite() */
 enum class tL2CAP_DW_RESULT : uint8_t {
@@ -623,6 +623,23 @@ public:
    **
    ******************************************************************************/
   virtual void L2CA_LockBleConnParamsForProfileConnection(const RawAddress& rem_bda, bool lock) = 0;
+
+  /*******************************************************************************
+   **
+   ** Function         L2CA_LockBleConnParamsForLeAudioSubrate
+   **
+   ** Description:     When called with lock=true, LE connection parameters will
+   **                  be locked on LE Audio subrate capable device, and we won't
+   **                  accept request to change it from remote. When called with
+   **                  lock=false, parameters are relaxed.
+   **
+   ** Parameters:      bd_addr: Peer bluetooth device address
+   **                  lock: Determines the lock the update from the remote side
+   **
+   ** Returns          void
+   **
+   ******************************************************************************/
+  virtual void L2CA_LockBleConnParamsForLeAudioSubrate(const RawAddress& bd_addr, bool lock) = 0;
 
   /*******************************************************************************
    **

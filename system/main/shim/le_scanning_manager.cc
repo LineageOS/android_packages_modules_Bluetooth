@@ -21,6 +21,9 @@
 #include <base/functional/bind.h>
 #include <base/threading/thread.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <hardware/bluetooth.h>
 
@@ -48,9 +51,6 @@
 #include "storage/device.h"
 #include "storage/le_device.h"
 #include "storage/storage_module.h"
-#include "types/ble_address_with_type.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -67,6 +67,7 @@ constexpr uint16_t kListLogicOr = 0x01;
 constexpr uint8_t k1mPhyMask = 1;
 constexpr uint8_t kCodedPhyMask = 1 << 2;
 
+constexpr uint16_t kScannableMask = 1 << 1;
 constexpr uint16_t kScanResponseMask = 1 << 3;
 
 class DefaultScanningCallback : public ::ScanningCallbacks {
@@ -171,8 +172,12 @@ void BleScannerInterfaceImpl::Scan(bool start) {
     return;
   }
 
-  do_in_jni_thread(base::BindOnce(&BleScannerInterfaceImpl::AddressCache::init,
-                                  base::Unretained(&address_cache_)));
+  // TODO (b/432614634): When the flag remove_address_cache_from_ble_scanner is removed,
+  //                     also remove the AddressCache class entirely.
+  if (!com_android_bluetooth_flags_remove_address_cache_from_ble_scanner()) {
+    do_in_jni_thread(base::BindOnce(&BleScannerInterfaceImpl::AddressCache::init,
+                                    base::Unretained(&address_cache_)));
+  }
 }
 
 /** Setup scan filter params */
@@ -300,9 +305,10 @@ void BleScannerInterfaceImpl::OnMsftAdvMonitorEnable(bool enable,
     bluetooth::shim::GetScanning()->SetScanFilterPolicy(
             enable ? bluetooth::hci::LeScanningFilterPolicy::FILTER_ACCEPT_LIST_ONLY
                    : bluetooth::hci::LeScanningFilterPolicy::ACCEPT_ALL);
+    msft_adv_monitor_enabled_ = enable;
   }
 
-  do_in_jni_thread(base::BindOnce(msft_callbacks_.Enable, (uint8_t)status));
+  do_in_jni_thread(base::BindOnce(msft_callbacks_.Enable, enable, (uint8_t)status));
 }
 
 /** Sets the LE scan interval and window in units of N*0.625 msec */
@@ -342,17 +348,17 @@ void BleScannerInterfaceImpl::SetScanParameters(uint8_t scan_type, int scanner_i
 }
 
 /* Configure the batchscan storage */
-void BleScannerInterfaceImpl::BatchscanConfigStorage(int client_if, int batch_scan_full_max,
+void BleScannerInterfaceImpl::BatchScanConfigStorage(int client_if, int batch_scan_full_max,
                                                      int batch_scan_trunc_max,
                                                      int batch_scan_notify_threshold, Callback cb) {
   log::info("in shim layer");
-  bluetooth::shim::GetScanning()->BatchScanConifgStorage(batch_scan_full_max, batch_scan_trunc_max,
+  bluetooth::shim::GetScanning()->BatchScanConfigStorage(batch_scan_full_max, batch_scan_trunc_max,
                                                          batch_scan_notify_threshold, client_if);
   do_in_jni_thread(base::BindOnce(cb, btm_status_value(tBTM_STATUS::BTM_SUCCESS)));
 }
 
 /* Enable batchscan */
-void BleScannerInterfaceImpl::BatchscanEnable(int scan_mode, int scan_interval, int scan_window,
+void BleScannerInterfaceImpl::BatchScanEnable(int scan_mode, int scan_interval, int scan_window,
                                               int /* addr_type */, int discard_rule, Callback cb) {
   log::info("in shim layer");
   auto batch_scan_mode = static_cast<bluetooth::hci::BatchScanMode>(scan_mode);
@@ -363,14 +369,14 @@ void BleScannerInterfaceImpl::BatchscanEnable(int scan_mode, int scan_interval, 
 }
 
 /* Disable batchscan */
-void BleScannerInterfaceImpl::BatchscanDisable(Callback cb) {
+void BleScannerInterfaceImpl::BatchScanDisable(Callback cb) {
   log::info("in shim layer");
   bluetooth::shim::GetScanning()->BatchScanDisable();
   do_in_jni_thread(base::BindOnce(cb, btm_status_value(tBTM_STATUS::BTM_SUCCESS)));
 }
 
 /* Read out batchscan reports */
-void BleScannerInterfaceImpl::BatchscanReadReports(int client_if, int scan_mode) {
+void BleScannerInterfaceImpl::BatchScanReadReports(int client_if, int scan_mode) {
   log::info("in shim layer");
   auto batch_scan_mode = static_cast<bluetooth::hci::BatchScanMode>(scan_mode);
   auto scanner_id = static_cast<bluetooth::hci::ScannerId>(client_if);
@@ -468,7 +474,8 @@ void BleScannerInterfaceImpl::on_scan_result(uint16_t event_type, uint8_t addres
   tBLE_ADDR_TYPE ble_addr_type = to_ble_addr_type(address_type);
 
   btm_cb.neighbor.le_scan.results++;
-  if (ble_addr_type != BLE_ADDR_ANONYMOUS) {
+  if (!com_android_bluetooth_flags_resolve_address_for_adv_report() &&
+      ble_addr_type != BLE_ADDR_ANONYMOUS) {
     btm_ble_process_adv_addr(raw_address, &ble_addr_type);
   }
 
@@ -485,8 +492,8 @@ void BleScannerInterfaceImpl::on_scan_result(uint16_t event_type, uint8_t addres
           advertising_sid, tx_power, rssi, periodic_advertising_interval, advertising_data));
 
   // TODO: Remove when StartInquiry in GD part implemented
-  if (!com::android::bluetooth::flags::support_passive_scanning() ||
-      (event_type & kScanResponseMask)) {
+  if (!com_android_bluetooth_flags_support_passive_scanning() || !(event_type & kScannableMask) ||
+      (event_type & kScanResponseMask) || msft_adv_monitor_enabled_) {
     btm_ble_process_adv_pkt_cont_for_inquiry(event_type, ble_addr_type, raw_address, primary_phy,
                                              secondary_phy, advertising_sid, tx_power, rssi,
                                              periodic_advertising_interval, advertising_data);
@@ -499,13 +506,6 @@ void BleScannerInterfaceImpl::OnScanResult(uint16_t event_type, uint8_t address_
                                            int8_t tx_power, int8_t rssi,
                                            uint16_t periodic_advertising_interval,
                                            std::vector<uint8_t> advertising_data) {
-  if (!com::android::bluetooth::flags::scan_results_in_main_thread()) {
-    BleScannerInterfaceImpl::on_scan_result(event_type, address_type, address, primary_phy,
-                                            secondary_phy, advertising_sid, tx_power, rssi,
-                                            periodic_advertising_interval, advertising_data);
-    return;
-  }
-
   do_in_main_thread(base::BindOnce(&BleScannerInterfaceImpl::on_scan_result, base::Unretained(this),
                                    event_type, address_type, address, primary_phy, secondary_phy,
                                    advertising_sid, tx_power, rssi, periodic_advertising_interval,
@@ -690,7 +690,7 @@ void BleScannerInterfaceImpl::handle_remote_properties(RawAddress bd_addr, tBLE_
     return;
   }
 
-  // skip anonymous advertisment
+  // skip anonymous advertisement
   if (addr_type == BLE_ADDR_ANONYMOUS) {
     return;
   }
@@ -719,8 +719,11 @@ void BleScannerInterfaceImpl::handle_remote_properties(RawAddress bd_addr, tBLE_
 
   // update device name
   if (p_eir_remote_name) {
-    if (!address_cache_.find(bd_addr)) {
-      address_cache_.add(bd_addr);
+    if (com_android_bluetooth_flags_remove_address_cache_from_ble_scanner() ||
+        !address_cache_.find(bd_addr)) {
+      if (!com_android_bluetooth_flags_remove_address_cache_from_ble_scanner()) {
+        address_cache_.add(bd_addr);
+      }
 
       if (remote_name_len > BD_NAME_LEN + 1 ||
           (remote_name_len == BD_NAME_LEN + 1 && p_eir_remote_name[BD_NAME_LEN] != '\0')) {

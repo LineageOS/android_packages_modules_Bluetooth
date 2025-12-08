@@ -226,7 +226,7 @@ static void process_l2cap_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
 
   /* if l2c free was already called that indicates stack being shutdown, donot process
    * any command*/
-  if (com::android::bluetooth::flags::avoid_l2c_processing_while_stack_shutdown() &&
+  if (com_android_bluetooth_flags_avoid_l2c_processing_while_stack_shutdown() &&
       is_l2c_cleanup_inprogress) {
     log::warn("Do not process any events when stack is being shutdown");
     return;
@@ -854,7 +854,7 @@ static void process_l2cap_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
 void l2c_init(void) {
   int16_t xx;
 
-  memset(&l2cb, 0, sizeof(tL2C_CB));
+  l2cb = tL2C_CB{};
 
   /* the LE PSM is increased by 1 before being used */
   l2cb.le_dyn_psm = LE_DYNAMIC_PSM_START - 1;

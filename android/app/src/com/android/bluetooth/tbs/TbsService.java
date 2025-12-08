@@ -24,15 +24,13 @@ import static java.util.Objects.requireNonNull;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeCall;
 import android.bluetooth.BluetoothProfile;
-import android.bluetooth.IBluetoothLeCallControlCallback;
-import android.os.RemoteException;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.le_audio.LeAudioService;
+import com.android.bluetooth.gatt.GattService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -42,16 +40,34 @@ import java.util.UUID;
 public class TbsService extends ProfileService {
     private static final String TAG = TbsService.class.getSimpleName();
 
-    private static TbsService sTbsService;
+    /** Callback for TBS events. */
+    public interface Callback {
+        void onBearerRegistered(int ccid);
 
+        void onAcceptCall(int requestId, UUID uuid);
+
+        void onTerminateCall(int requestId, UUID uuid);
+
+        void onHoldCall(int requestId, UUID uuid);
+
+        void onUnholdCall(int requestId, UUID uuid);
+
+        void onPlaceCall(int requestId, UUID uuid, String uri);
+
+        void onJoinCalls(int requestId, List<UUID> uuids);
+    }
+
+    private final GattService unusedGattService;
     private final Map<BluetoothDevice, Integer> mDeviceAuthorizations = new HashMap<>();
     private final TbsGeneric mTbsGeneric;
 
     public TbsService(AdapterService adapterService) {
-        super(BluetoothProfile.LE_CALL_CONTROL, requireNonNull(adapterService));
+        this(adapterService, null);
+    }
 
-        // Mark service as started
-        setTbsService(this);
+    public TbsService(AdapterService adapterService, GattService gattService) {
+        super(BluetoothProfile.LE_CALL_CONTROL, requireNonNull(adapterService));
+        unusedGattService = requireNonNull(gattService);
 
         mTbsGeneric = new TbsGeneric(adapterService, new TbsGatt(adapterService, this));
     }
@@ -62,49 +78,15 @@ public class TbsService extends ProfileService {
 
     @Override
     protected IProfileServiceBinder initBinder() {
-        return new TbsServiceBinder(this);
+        return null;
     }
 
     @Override
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        if (sTbsService == null) {
-            Log.w(TAG, "cleanup() called before initialization");
-            return;
-        }
-
-        // Mark service as stopped
-        setTbsService(null);
-
         mTbsGeneric.cleanup();
-
         mDeviceAuthorizations.clear();
-    }
-
-    /**
-     * Get the TbsService instance
-     *
-     * @return TbsService instance
-     */
-    public static synchronized TbsService getTbsService() {
-        if (sTbsService == null) {
-            Log.w(TAG, "getTbsService: service is NULL");
-            return null;
-        }
-
-        if (!sTbsService.isAvailable()) {
-            Log.w(TAG, "getTbsService: service is not available");
-            return null;
-        }
-
-        return sTbsService;
-    }
-
-    public static synchronized void setTbsService(TbsService instance) {
-        Log.d(TAG, "setTbsService: set to=" + instance);
-
-        sTbsService = instance;
     }
 
     public void onDeviceUnauthorized(BluetoothDevice device) {
@@ -166,13 +148,13 @@ public class TbsService extends ProfileService {
             return authorization;
         }
 
-        LeAudioService leAudioService = LeAudioService.getLeAudioService();
-        if (leAudioService == null) {
+        final var leAudio = mAdapterService.getLeAudioService();
+        if (leAudio.isEmpty()) {
             Log.e(TAG, "TBS access not permitted. LeAudioService not available");
             return BluetoothDevice.ACCESS_UNKNOWN;
         }
 
-        if (leAudioService.getConnectionPolicy(device) > CONNECTION_POLICY_FORBIDDEN) {
+        if (leAudio.get().getConnectionPolicy(device) > CONNECTION_POLICY_FORBIDDEN) {
             Log.d(TAG, "TBS authorization allowed based on supported LeAudio service");
             setDeviceAuthorized(device, true);
             return BluetoothDevice.ACCESS_ALLOWED;
@@ -202,7 +184,7 @@ public class TbsService extends ProfileService {
 
     public void registerBearer(
             String token,
-            IBluetoothLeCallControlCallback callback,
+            Callback callback,
             String uci,
             List<String> uriSchemes,
             int capabilities,
@@ -213,21 +195,9 @@ public class TbsService extends ProfileService {
         boolean success =
                 mTbsGeneric.addBearer(
                         token, callback, uci, uriSchemes, capabilities, providerName, technology);
-        if (success) {
-            try {
-                callback.asBinder()
-                        .linkToDeath(
-                                () -> {
-                                    Log.e(TAG, token + " application died, removing...");
-                                    unregisterBearer(token);
-                                },
-                                0);
-            } catch (RemoteException e) {
-                Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-            }
+        if (!success) {
+            Log.e(TAG, "Failed to register bearer for token=" + token);
         }
-
-        Log.d(TAG, "registerBearer: token=" + token + " success=" + success);
     }
 
     public void unregisterBearer(String token) {

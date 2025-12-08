@@ -39,7 +39,8 @@ using common::OnceClosure;
 
 Alarm::Alarm(Thread* thread) : Alarm(thread, true) {}
 
-Alarm::Alarm(Thread* thread, bool isWakeAlarm) : thread_(thread) {
+Alarm::Alarm(Thread* thread, bool isWakeAlarm)
+    : armed_time_(std::chrono::time_point<std::chrono::system_clock>::min()), thread_(thread) {
   int timerfd_flag = TFD_NONBLOCK;
 
   fd_ = TIMERFD_CREATE(isWakeAlarm ? ALARM_CLOCK : CLOCK_BOOTTIME, timerfd_flag);
@@ -62,6 +63,7 @@ Alarm::~Alarm() {
 void Alarm::Schedule(OnceClosure task, std::chrono::milliseconds delay) {
   std::lock_guard<std::mutex> lock(mutex_);
   long delay_ms = delay.count();
+  armed_time_ = std::chrono::system_clock::now(); // reset the armed time on every schedule
   itimerspec timer_itimerspec{{/* interval for periodic timer */},
                               {delay_ms / 1000, delay_ms % 1000 * 1000000}};
   int result = TIMERFD_SETTIME(fd_, 0, &timer_itimerspec, nullptr);
@@ -74,7 +76,8 @@ void Alarm::Cancel() {
   std::lock_guard<std::mutex> lock(mutex_);
   itimerspec disarm_itimerspec{/* disarm timer */};
   int result = TIMERFD_SETTIME(fd_, 0, &disarm_itimerspec, nullptr);
-  log::assert_that(result == 0, "assert failed: result == 0");
+  log::assert_that(result == 0 || errno == EAGAIN,
+                   "Failed to disarm the timer: result: {}, errno: {}", result, strerror(errno));
 }
 
 void Alarm::on_fire() {

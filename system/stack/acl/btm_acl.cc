@@ -35,6 +35,8 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/hci_role.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -82,8 +84,6 @@
 #include "stack/include/l2cdefs.h"
 #include "stack/include/main_thread.h"
 #include "stack/l2cap/l2c_int.h"
-#include "types/ble_address_with_type.h"
-#include "types/hci_role.h"
 
 #ifndef PROPERTY_LINK_SUPERVISION_TIMEOUT
 #define PROPERTY_LINK_SUPERVISION_TIMEOUT "bluetooth.core.acl.link_supervision_timeout"
@@ -478,18 +478,24 @@ void btm_acl_device_down(void) {
   BTM_db_reset();
 }
 
-tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, tHCI_ROLE* p_role) {
+tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, tBT_TRANSPORT transport,
+                        tHCI_ROLE* p_role) {
   if (p_role == nullptr) {
     return tBTM_STATUS::BTM_ILLEGAL_VALUE;
   }
   *p_role = HCI_ROLE_UNKNOWN;
 
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bd_addr, BT_TRANSPORT_BR_EDR);
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bd_addr, transport);
   if (p_acl == nullptr) {
-    log::warn("Unable to find active acl");
+    log::warn("Unable to find active acl. bd_addr: {}, transport: {}", remote_bd_addr,
+              bt_transport_text(transport));
     return tBTM_STATUS::BTM_UNKNOWN_ADDR;
   }
   *p_role = p_acl->link_role;
+
+  log::verbose("{} transport: {}, role: {}", remote_bd_addr, bt_transport_text(transport),
+               hci_role_text(*p_role));
+
   return tBTM_STATUS::BTM_SUCCESS;
 }
 
@@ -822,13 +828,17 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb, uint8_t max_page_numbe
   }
 
   bool ssp_supported = HCI_SSP_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
-  bool secure_connections_supported = HCI_SC_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
+  bool host_secure_connections_supported =
+          HCI_SC_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
+  bool controller_secure_connections_supported =
+          HCI_SC_CTRLR_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[2]);
   bool role_switch_supported = HCI_SWITCH_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[0]);
   bool br_edr_supported = !HCI_BREDR_NOT_SPT_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[0]);
   bool le_supported = HCI_LE_SPT_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[0]) &&
                       HCI_LE_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
-  btm_sec_set_peer_sec_caps(p_acl_cb->hci_handle, ssp_supported, secure_connections_supported,
-                            role_switch_supported, br_edr_supported, le_supported);
+  btm_sec_set_peer_sec_caps(p_acl_cb->hci_handle, ssp_supported, host_secure_connections_supported,
+                            controller_secure_connections_supported, role_switch_supported,
+                            br_edr_supported, le_supported);
 }
 
 /*******************************************************************************

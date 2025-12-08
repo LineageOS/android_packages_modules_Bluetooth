@@ -14,6 +14,7 @@
 """Base classes for Bluetooth tests."""
 
 import asyncio
+import collections
 from collections.abc import AsyncGenerator, Callable, Coroutine, Sequence
 import contextlib
 import dataclasses
@@ -24,6 +25,7 @@ import logging
 import pathlib
 import re
 import secrets
+import sys
 from typing import Any, ClassVar, Never, TypeAlias, cast, final
 
 from absl.testing import absltest
@@ -37,6 +39,8 @@ from mobly import runtime_test_info
 from mobly import signals
 from mobly.controllers import android_device
 from mobly.controllers.android_device_lib import adb
+from mobly.controllers.android_device_lib import apk_utils
+import mobly.snippet.errors
 from snippet_uiautomator import uiautomator
 from typing_extensions import override
 
@@ -44,6 +48,7 @@ from navi.bumble_ext import crown
 from navi.utils import adb_snippets
 from navi.utils import android_constants
 from navi.utils import bl4a_api
+from navi.utils import constants
 from navi.utils import errors
 from navi.utils import logcat
 from navi.utils import matcher
@@ -54,6 +59,9 @@ _NAVI_PARAMETERIZED = "_NAVI_PARAMETERIZED"
 _SETUP_TIMEOUT_SECONDS = 10.0
 # 100 * 0.625ms = 62.5ms
 _DEFAULT_ADVERTISING_INTERVAL = 100
+RECORD_FULL_DATA = "record_full_data"
+DUMP_CROWN_LOG_ON_FAIL = "dump_crown_log_on_fail"
+_DEFAULT_STEP_TIMEOUT_SECONDS = 10.0
 
 
 class CrownDriver(enum.StrEnum):
@@ -209,6 +217,11 @@ def parameterized(*args_sets,) -> Callable[[Callable[..., Any]], Callable[..., A
             except TypeError as e:
                 raise ValueError(f"Invalid args: {args}. The signature is {signature}") from e
             testcase_name = ", ".join([getattr(arg, "name", None) or str(arg) for arg in args])
+            # Replace reserved characters with their Unicode equivalents.
+            if sys.platform == "win32":
+                testcase_name = (testcase_name.replace(">", "＞").replace("<", "＜").replace(
+                    ":", "：").replace('"', "'").replace("/", "／").replace("\\", "＼").replace(
+                        "|", "｜").replace("?", "？").replace("*", "＊"))
             param_sets[testcase_name] = (args, {})
         setattr(func, _NAVI_PARAMETERIZED, (False, param_sets))
         return func
@@ -405,22 +418,35 @@ class BaseTestBase(base_test.BaseTestClass, absltest.TestCase):
 
     @override
     def _get_test_methods(self, test_names: list[str]) -> list[tuple[str, Callable[..., Any]]]:
-        methods = list[tuple[str, Callable[..., Any]]]()
+        methods = collections.OrderedDict[str, Callable[..., Any]]()
         for test_name in test_names:
-            if not test_name.startswith("test_") and not test_name.startswith("r:"):
+            if not test_name.startswith(("test_", "r:", "shard:")):
                 raise base_test.Error(
                     f"Test method name {test_name} does not follow naming convention"
                     " test_* or regex matcher r:(regex pattern), abort.")
 
             if test_name.startswith("r:"):
                 test_name_pattern = re.compile(test_name[2:])
-                methods.extend((test_name, test_method)
+                methods.update((test_name, test_method)
                                for test_name, test_method in self._generated_test_table.items()
                                if test_name_pattern.fullmatch(test_name))
+            elif test_name.startswith("shard:"):
+                m = re.fullmatch(r"(\d+)/(\d+)", test_name[6:])
+                if not m:
+                    raise ValueError(f"Invalid shard format: {test_name}")
+                shard_index = int(m.group(1)) - 1  # 1-index to 0-index
+                shard_count = int(m.group(2))
+                test_count = len(self._generated_test_table)
+                test_per_shard = test_count // shard_count + min(test_count % shard_count, 1)
+                methods.update({
+                    test_name: test_method
+                    for test_name, test_method in list(self._generated_test_table.items())
+                    [test_per_shard * shard_index:test_per_shard * (shard_index + 1)]
+                })
             elif test_method := self._generated_test_table.get(test_name):
-                methods.append((test_name, test_method))
+                methods[test_name] = test_method
 
-        return methods
+        return list(methods.items())
 
     @override
     def get_existing_test_names(self) -> list[str]:
@@ -607,6 +633,7 @@ class AndroidBumbleTestBase(BaseTestBase):
                                   AndroidSnippetDeviceWrapper] = AndroidSnippetDeviceWrapper
     _refs: Sequence[crown.CrownDevice] = ()
     NUM_REF_DEVICES: int
+    test_case_log_handler: logging.FileHandler | None = None
 
     def _get_passthrough_hci_specs(self) -> list[str]:
         hci_specs = self.user_params.get("crown_driver_specs", [])
@@ -692,8 +719,19 @@ class AndroidBumbleTestBase(BaseTestBase):
                     "run_identifier": f"[{manufacturer}-{self.dut.device.model}]",
                 }))
 
-    @override
-    def on_fail(self, record: records.TestResultRecord) -> None:
+    def write_test_output_data(self, filename: str, data: bytes | bytearray | memoryview) -> None:
+        """Writes the data to a file in the test output directory.
+
+    Args:
+      filename: The name of the file to save the data to.
+      data: The data to save.
+    """
+        self.logger.info("[DUT] Saving data to file.")
+        file_path = pathlib.Path(self.current_test_info.output_path, filename)
+        with open(file_path, "wb") as f:
+            f.write(data)
+
+    def _get_btsnoop_and_dumpsys(self) -> None:
         adb_snippets.download_btsnoop(
             device=self.dut.device,
             destination_base_path=self.current_test_info.output_path,
@@ -719,9 +757,22 @@ class AndroidBumbleTestBase(BaseTestBase):
                     filename_prefix="bumble",
                 )
 
-    @retry_lib.retry_on_exception(initial_delay_sec=1, num_retries=3)
+    @retry_lib.retry_on_exception()
     @override
     async def async_setup_test(self) -> None:
+        await super().async_setup_test()
+
+        # Bumble logger.
+        self.test_case_log_handler = logging.FileHandler(
+            pathlib.Path(self.current_test_info.output_path, "test_log.DEBUG"))
+        self.test_case_log_handler.setFormatter(
+            logging.Formatter(
+                "%(asctime)s.%(msecs).03d %(levelname)s %(message)s",
+                "%m-%d %H:%M:%S",
+            ))
+        self.test_case_log_handler.setLevel(logging.DEBUG)
+        logging.getLogger().addHandler(self.test_case_log_handler)
+
         # Make sure Bluetooth is enabled before factory reset.
         self.assertTrue(self.dut.bt.enable())
 
@@ -740,17 +791,50 @@ class AndroidBumbleTestBase(BaseTestBase):
         self.assertTrue(self.dut.bt.enable())
 
     @override
+    async def async_teardown_test(self) -> None:
+        try:
+            self.dut.bt.ping()
+        except (BrokenPipeError, mobly.snippet.errors.Error) as e:
+            if self.dut.device.is_adb_detectable():
+                self.logger.exception("Snippet is broken, reloading")
+                self.dut.reload_snippet()
+            else:
+                raise signals.TestAbortAll("DUT is disconnected, cannot continue the test.") from e
+        # Collect logcat.
+        self.dut.device.services.create_output_excerpts_all(self.current_test_info)
+        # Close test case log handler.
+        if self.test_case_log_handler is not None:
+            self.test_case_log_handler.close()
+            logging.getLogger().removeHandler(self.test_case_log_handler)
+            self.test_case_log_handler = None
+        await super().async_teardown_test()
+
+    @override
+    def on_fail(self, record: records.TestResultRecord) -> None:
+        self._get_btsnoop_and_dumpsys()
+
+    @override
+    def on_pass(self, record: records.TestResultRecord) -> None:
+        if self.user_params.get(RECORD_FULL_DATA):
+            self._get_btsnoop_and_dumpsys()
+
+    @override
     async def async_teardown_class(self) -> None:
+        has_error_or_fail = self.results.failed or self.results.error
+        if has_error_or_fail or self.user_params.get(RECORD_FULL_DATA):
+            self.dut.device.take_bug_report()
         await super().async_teardown_class()
         for ref in self._refs:
             ref.adapter.stop()
-        if self.results.failed or self.results.error:
-            self.dut.device.take_bug_report()
+            if self.user_params.get(DUMP_CROWN_LOG_ON_FAIL) and has_error_or_fail:
+                ref.adapter.dump_debug_logs(self.log_path)
 
     @retry_lib.retry_on_exception(initial_delay_sec=1, num_retries=3)
-    async def classic_connect_and_pair(self,
-                                       ref: crown.CrownDevice | None = None
-                                      ) -> bumble.device.Connection:
+    async def classic_connect_and_pair(
+        self,
+        ref: crown.CrownDevice | None = None,
+        direction: constants.Direction = constants.Direction.OUTGOING,
+    ) -> bumble.device.Connection:
         """Connects and creates bond from DUT over BR/EDR.
 
     This is the most common pairing scenario between Android and headsets,
@@ -762,12 +846,15 @@ class AndroidBumbleTestBase(BaseTestBase):
     Args:
       ref: The Bumble device to pair with. If None, first Bumble device will be
         used.
+      direction: The direction of the pairing.
 
     Returns:
       REF->DUT ACL connection instance.
     """
         if ref is None:
             ref = self._refs[0]
+
+        auth_task: asyncio.Task[None] | None = None
 
         with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_cb:
             match self.dut.bt.getBondState(ref.address):
@@ -791,16 +878,32 @@ class AndroidBumbleTestBase(BaseTestBase):
                     )
 
         with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_cb:
-            self.assertTrue(
-                self.dut.bt.createBond(ref.address, android_constants.Transport.CLASSIC),
-                "Failed to create bond.",
-            )
+            if direction == constants.Direction.OUTGOING:
+                self.assertTrue(
+                    self.dut.bt.createBond(ref.address, android_constants.Transport.CLASSIC),
+                    "Failed to create bond.",
+                )
+            else:
+                self.logger.info("[REF] Connect to DUT.")
+                ref_dut = await ref.device.connect(
+                    f"{self.dut.address}/P",
+                    transport=bumble.core.BT_BR_EDR_TRANSPORT,
+                    timeout=_SETUP_TIMEOUT_SECONDS,
+                )
+                self.logger.info("[REF] Create bond.")
+                auth_task = asyncio.tasks.create_task(ref_dut.authenticate())
+
             self.logger.info("[DUT] Wait for pairing request.")
             await dut_cb.wait_for_event(
-                bl4a_api.PairingRequest(address=ref.address, variant=matcher.ANY, pin=matcher.ANY),
-                timeout=_SETUP_TIMEOUT_SECONDS,
-            )
+                bl4a_api.PairingRequest(address=ref.address, variant=matcher.ANY, pin=matcher.ANY),)
+
+            self.logger.info("[DUT] Handle pairing confirmation.")
             self.assertTrue(self.dut.bt.setPairingConfirmation(ref.address, True))
+
+            if auth_task is not None:
+                async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+                    await auth_task
+
             self.logger.info("[DUT] Wait for bond state change.")
             BondState: TypeAlias = android_constants.BondState
             pairing_complete_event = await dut_cb.wait_for_event(
@@ -825,6 +928,8 @@ class AndroidBumbleTestBase(BaseTestBase):
         self,
         ref_address_type: bumble.hci.OwnAddressType,
         ref: crown.CrownDevice | None = None,
+        direction: constants.Direction = constants.Direction.OUTGOING,
+        connect_profiles: bool = False,
     ) -> None:
         """Connects and creates bond from DUT over LE.
 
@@ -836,6 +941,9 @@ class AndroidBumbleTestBase(BaseTestBase):
       ref_address_type: OwnAddressType advertised by ref.
       ref: The Bumble device to pair with. If None, first Bumble device will be
         used.
+      direction: The direction of the pairing.
+      connect_profiles: Whether to connect profiles after pairing. This may
+        fails if REF has no known service UUIDs.
 
     Returns:
       None.
@@ -878,12 +986,31 @@ class AndroidBumbleTestBase(BaseTestBase):
                                                  DISPLAY_OUTPUT_AND_YES_NO_INPUT),
             )
 
-            async with self.assert_not_timeout(_SETUP_TIMEOUT_SECONDS):
-                await ref.device.start_advertising(own_address_type=ref_address_type,
-                                                   auto_restart=False)
+            pair_task: asyncio.Task[None] | None = None
+            if direction == constants.Direction.OUTGOING:
+                async with self.assert_not_timeout(_SETUP_TIMEOUT_SECONDS):
+                    await ref.device.start_advertising(own_address_type=ref_address_type,
+                                                       auto_restart=False)
 
-            self.assertTrue(
-                self.dut.bt.createBond(ref_addr, android_constants.Transport.LE, dut_scan_type))
+                self.assertTrue(
+                    self.dut.bt.createBond(ref_addr, android_constants.Transport.LE, dut_scan_type))
+            else:
+                advertiser = await self.dut.bl4a.start_legacy_advertiser(
+                    bl4a_api.LegacyAdvertiseSettings(
+                        own_address_type=android_constants.AddressTypeStatus.PUBLIC,
+                        connectable=True,
+                    ))
+                with advertiser:
+                    ref_dut_acl = await ref.device.connect(
+                        f"{self.dut.address}/P",
+                        transport=bumble.core.PhysicalTransport.LE,
+                        own_address_type=ref_address_type,
+                        timeout=_SETUP_TIMEOUT_SECONDS,
+                    )
+                    async with self.assert_not_timeout(_SETUP_TIMEOUT_SECONDS):
+                        await ref_dut_acl.get_remote_le_features()
+                    pair_task = asyncio.create_task(ref_dut_acl.pair())
+
             self.logger.info("[DUT] Wait for pairing request.")
             await dut_cb.wait_for_event(
                 bl4a_api.PairingRequest(address=ref_addr, variant=matcher.ANY, pin=matcher.ANY),
@@ -904,6 +1031,20 @@ class AndroidBumbleTestBase(BaseTestBase):
             self.logger.info("[DUT] Pairing complete.")
             async with self.assert_not_timeout(_SETUP_TIMEOUT_SECONDS):
                 await ref.device.stop_advertising()
+
+            if pair_task:
+                async with self.assert_not_timeout(_SETUP_TIMEOUT_SECONDS):
+                    self.logger.info("[REF] Wait for pairing complete.")
+                    await pair_task
+
+            if connect_profiles:
+                self.logger.info("[DUT] Wait for UUID changed.")
+                await dut_cb.wait_for_event(
+                    bl4a_api.UuidChanged(address=ref_addr, uuids=matcher.ANY),
+                    timeout=_SETUP_TIMEOUT_SECONDS,
+                )
+                # Trigger profile connections.
+                self.dut.bt.connect(ref_addr)
 
 
 class OneDeviceTestBase(AndroidBumbleTestBase):

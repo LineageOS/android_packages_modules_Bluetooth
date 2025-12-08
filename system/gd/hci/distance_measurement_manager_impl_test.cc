@@ -22,11 +22,14 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <string>
+#include <vector>
+
 #include "common/bind.h"
 #include "common/strings.h"
 #include "hal/ranging_hal.h"
 #include "hal/ranging_hal_mock.h"
-#include "hci/acl_manager_mock.h"
+#include "hci/acl_manager/acl_manager_le_mock.h"
 #include "hci/address.h"
 #include "hci/controller_mock.h"
 #include "hci/distance_measurement_manager_mock.h"
@@ -38,6 +41,7 @@
 #include "ras/ras_packets.h"
 
 using android::bluetooth::ChannelSoundingStopReason;
+using bluetooth::hal::RangingSessionType;
 using bluetooth::os::fake_timer::fake_timerfd_advance;
 using bluetooth::os::fake_timer::fake_timerfd_reset;
 using bluetooth::packet::BitInserter;
@@ -45,6 +49,9 @@ using testing::_;
 using testing::AtLeast;
 using testing::Return;
 using testing::Sequence;
+using testing::Test;
+using testing::TestParamInfo;
+using testing::Values;
 using testing::WithParamInterface;
 
 namespace {
@@ -221,6 +228,8 @@ struct CsModule {
     client_handler_->Clear();
     client_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
 
+    test_hci_layer_.reset();
+
     delete client_handler_;
     delete thread_;
   }
@@ -357,7 +366,7 @@ struct CsModule {
     uint8_t packet_antenna = 1;  // 0x01 to 0x04
     if (role == CsRole::INITIATOR) {
       uint16_t measured_freq_offset = 0;
-      return GetCsStepData<LeCsMode0InitatorData>(LeCsMode0InitatorData(
+      return GetCsStepData<LeCsMode0InitiatorData>(LeCsMode0InitiatorData(
               packet_quality, packet_rssi, packet_antenna, measured_freq_offset));
     }
     // reflector
@@ -397,11 +406,12 @@ struct CsModule {
     }
     if (cs_role == CsRole::INITIATOR) {
       if (has_packet_pct) {
-        return GetCsStepData<LeCsMode1InitatorDataWithPacketPct>(LeCsMode1InitatorDataWithPacketPct(
-                packet_quality, nadm, packet_rssi, toa_tod_initiator, packet_antenna, packet_pct1,
-                packet_pct2));
+        return GetCsStepData<LeCsMode1InitiatorDataWithPacketPct>(
+                LeCsMode1InitiatorDataWithPacketPct(packet_quality, nadm, packet_rssi,
+                                                    toa_tod_initiator, packet_antenna, packet_pct1,
+                                                    packet_pct2));
       } else {
-        return GetCsStepData<LeCsMode1InitatorData>(LeCsMode1InitatorData(
+        return GetCsStepData<LeCsMode1InitiatorData>(LeCsMode1InitiatorData(
                 packet_quality, nadm, packet_rssi, toa_tod_initiator, packet_antenna));
       }
     } else {
@@ -635,7 +645,7 @@ struct CsModule {
   }
 };
 
-class DistanceMeasurementManagerTest : public ::testing::Test {
+class DistanceMeasurementManagerTest : public Test {
 protected:
   void SetUp() override {
     metrics_ = std::make_shared<metrics::MockMetrics>();
@@ -1176,7 +1186,7 @@ TEST_F(DistanceMeasurementManagerTest, b2b_conflict_before_requester_stop) {
   cs_requester_.RespondTillProcedureEnableComplete(params);
   cs_requester_.sync_client_handler();
 
-  // make sure the reponder still can handle the subevent
+  // make sure the responder still can handle the subevent
   EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
               OnRasFragmentReady(params.requester_addr, 0, /*is_last=*/true, _));
 
@@ -1196,7 +1206,7 @@ TEST_F(DistanceMeasurementManagerTest, b2b_conflict_after_requester_stop) {
   // inject the responder event
   cs_requester_.RespondTillProcedureEnableComplete(params);
 
-  // make sure the reponder still can handle the subevent
+  // make sure the responder still can handle the subevent
   EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
               OnRasFragmentReady(params.requester_addr, 0, /*is_last=*/true, _));
 
@@ -1498,7 +1508,6 @@ class DistanceMeasurementManagerInvalidRasTest
 public:
   static void make_invalid_testing_segment(std::vector<uint8_t>& segment_data,
                                            InvalidRasTestingItem testing_item) {
-    uint8_t origin_value = 0;
     switch (testing_item) {
       case RANGING_DONE_STATUS:
         segment_data.at(9) = (segment_data.at(9) & 0xF0) | 0x02;
@@ -1560,10 +1569,10 @@ TEST_P(DistanceMeasurementManagerInvalidRasTest, invalid_ras_segment_data) {
 }
 
 INSTANTIATE_TEST_SUITE_P(invalid_ras_segment, DistanceMeasurementManagerInvalidRasTest,
-                         ::testing::Values(InvalidRasTestingItem::RANGING_DONE_STATUS,
-                                           InvalidRasTestingItem::SUBEVENT_DONE_STATUS,
-                                           InvalidRasTestingItem::RANGING_ABORT_REASON,
-                                           InvalidRasTestingItem::SUBEVENT_ABORT_REASON));
+                         Values(InvalidRasTestingItem::RANGING_DONE_STATUS,
+                                InvalidRasTestingItem::SUBEVENT_DONE_STATUS,
+                                InvalidRasTestingItem::RANGING_ABORT_REASON,
+                                InvalidRasTestingItem::SUBEVENT_ABORT_REASON));
 
 struct RttTypeParams {
   CsRttType rtt_type;
@@ -1685,10 +1694,10 @@ TEST_P(DistanceMeasurementManagerRttTest, complete_mode3_procedure) {
 }
 
 INSTANTIATE_TEST_SUITE_P(complete_mode1_mode3_procedure, DistanceMeasurementManagerRttTest,
-                         ::testing::Values(CsRttType::RTT_WITH_32_BIT_SOUNDING_SEQUENCE,
-                                           CsRttType::RTT_WITH_96_BIT_SOUNDING_SEQUENCE,
-                                           CsRttType::RTT_AA_ONLY,
-                                           CsRttType::RTT_WITH_32_BIT_RANDOM_SEQUENCE));
+                         Values(CsRttType::RTT_WITH_32_BIT_SOUNDING_SEQUENCE,
+                                CsRttType::RTT_WITH_96_BIT_SOUNDING_SEQUENCE,
+                                CsRttType::RTT_AA_ONLY,
+                                CsRttType::RTT_WITH_32_BIT_RANDOM_SEQUENCE));
 
 TEST_F(DistanceMeasurementManagerTest, get_rssi_result_success) {
   cs_requester_.ReceivedReadLocalCapabilitiesComplete();
@@ -1730,6 +1739,91 @@ TEST_F(DistanceMeasurementManagerTest, get_rssi_result_success) {
           /*num_hci_command_packets=*/128, ErrorCode::SUCCESS, params.connection_handle, rssi));
   fake_timerfd_reset();
   cs_requester_.sync_client_handler();
+}
+
+struct GetSupportedSessionTypesTestParams {
+  std::vector<RangingSessionType> session_types;
+  bool expect_offload_enabled_called;
+  std::string test_name;
+};
+
+class DistanceMeasurementManagerGetSupportedSessionTypesTest
+    : public DistanceMeasurementManagerTest,
+      public WithParamInterface<GetSupportedSessionTypesTestParams> {};
+
+TEST_P(DistanceMeasurementManagerGetSupportedSessionTypesTest, VerifyOffloadCallback) {
+  const auto& params = GetParam();
+  EXPECT_CALL(*cs_requester_.mock_ranging_hal_, GetSupportedSessionTypes())
+          .WillOnce(Return(params.session_types));
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_, OnRangingHardwareOffloadEnabled())
+          .Times(params.expect_offload_enabled_called ? 1 : 0);
+
+  StartMeasurementParameters measurement_params;
+  cs_requester_.StartMeasurementTillRasConnectedEvent(measurement_params);
+
+  cs_requester_.sync_client_handler();
+}
+
+INSTANTIATE_TEST_SUITE_P(GetSupportedSessionTypesTests,
+                         DistanceMeasurementManagerGetSupportedSessionTypesTest,
+                         Values(
+                                 GetSupportedSessionTypesTestParams{
+                                         {RangingSessionType::HARDWARE_OFFLOAD_DATA_PARSING},
+                                         true,
+                                         "HardwareOffloadEnabled"},
+                                 GetSupportedSessionTypesTestParams{
+                                         {RangingSessionType::SOFTWARE_STACK_DATA_PARSING},
+                                         false,
+                                         "SoftwareParsingOnly"},
+                                 GetSupportedSessionTypesTestParams{{}, false, "Empty"},
+                                 GetSupportedSessionTypesTestParams{
+                                         {RangingSessionType::SOFTWARE_STACK_DATA_PARSING,
+                                          RangingSessionType::HARDWARE_OFFLOAD_DATA_PARSING},
+                                         true,
+                                         "HardwareAndSoftware"}),
+                         [](const TestParamInfo<GetSupportedSessionTypesTestParams>& info) {
+                           return info.param.test_name;
+                         });
+
+TEST_F(DistanceMeasurementManagerTest, ranging_hal_on_closed_before_started) {
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillRasConnectedEvent(params);
+
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+              OnDistanceMeasurementStopped(params.responder_addr,
+                                           DistanceMeasurementErrorCode::REASON_INTERNAL_ERROR,
+                                           DistanceMeasurementMethod::METHOD_CS))
+          .Times(0);
+
+  cs_requester_.mock_ranging_hal_->GetRangingHalCallback()->OnClosed(params.connection_handle,
+                                                                     hal::Reason::ERROR_UNKNOWN);
+  cs_requester_.sync_client_handler();
+}
+
+TEST_F(DistanceMeasurementManagerTest, ranging_hal_on_closed_after_started) {
+  StartMeasurementParameters params;
+  cs_requester_.StartMeasurementTillProcedureEnableComplete(params);
+  cs_requester_.sync_client_handler();
+  cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
+
+  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+              OnDistanceMeasurementStopped(params.responder_addr,
+                                           DistanceMeasurementErrorCode::REASON_INTERNAL_ERROR,
+                                           DistanceMeasurementMethod::METHOD_CS))
+          .Times(1);
+
+  cs_requester_.mock_ranging_hal_->GetRangingHalCallback()->OnClosed(params.connection_handle,
+                                                                     hal::Reason::ERROR_UNKNOWN);
+
+  CsProcedureEnableCompleteEvent complete_event;
+  cs_requester_.test_hci_layer_->GetCommand(OpCode::LE_CS_PROCEDURE_ENABLE);
+  cs_requester_.test_hci_layer_->IncomingEvent(LeCsProcedureEnableStatusBuilder::Create(
+          /*status=*/ErrorCode::SUCCESS, /*num_hci_command_packets=*/0xff));
+  cs_requester_.test_hci_layer_->IncomingLeMetaEvent(CsModule::GetProcedureEnableCompleteEvent(
+          params.connection_handle, Enable::DISABLED, complete_event));
+
+  cs_requester_.sync_client_handler();
+  cs_requester_.test_hci_layer_->AssertNoQueuedCommand();
 }
 
 }  // namespace

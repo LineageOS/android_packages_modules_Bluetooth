@@ -266,46 +266,69 @@ impl Worker {
 
         let halt = Arc::new(AtomicBool::new(false));
         let halt_clone = halt.clone();
-        let thread = thread::spawn(move || {
-            let min_delay = min(Duration::from_millis(10), anchor_delay);
-            let mut worker = WorkerThread::new(audio, max_sdu_size, send);
-            let mut clocker = Clocker::new(audio.frame_duration_us, min_delay, anchor_delay);
-            let mut underrun = 0;
+        let thread = thread::Builder::new()
+            .name("lea_swoff".to_owned())
+            .spawn(move || {
+                #[cfg(not(target_env = "musl"))]
+                {
+                    // Configure the thread scheduling to be SCHED_FIFO with priority 1.
+                    // SAFETY: sched_param is passed by reference and thus is a valid pointer.
+                    let res = unsafe {
+                        let sched_param = libc::sched_param { sched_priority: 1 };
+                        libc::sched_setscheduler(
+                            // If pid equals zero, the scheduling policy and parameters of
+                            // the calling thread will be set.
+                            0,
+                            libc::SCHED_FIFO,
+                            &sched_param,
+                        )
+                    };
 
-            log::info!("Streaming started");
-
-            while !halt_clone.load(Ordering::Relaxed) {
-                let iso_snapshot = { *iso.read().unwrap() };
-                let now = Instant::now();
-                let Some((deadline, seq_nums)) = clocker.deadline(iso_snapshot, now) else {
-                    break;
-                };
-
-                sleep(deadline - now);
-
-                let timeout = anchor_delay - min_delay - (now - deadline);
-                let Some(frame) = fifo.get(frame_len, timeout) else {
-                    if underrun == 0 {
-                        log::warn!("PCM underrun starts");
-                    } else if underrun % (1_000_000 / frame_duration_us) == 0 {
-                        log::warn!("PCM underrun: {} SDU starved", underrun);
+                    if res != 0 {
+                        log::warn!("failed to configure sched priority");
                     }
-                    underrun += 1;
-                    continue;
-                };
-                if underrun > 0 {
-                    log::warn!("PCM underrun ends: {} SDU starved", underrun);
-                    underrun = 0;
                 }
 
-                worker.run(frame, iso_snapshot, seq_nums);
-            }
+                let min_delay = min(Duration::from_millis(10), anchor_delay);
+                let mut worker = WorkerThread::new(audio, max_sdu_size, send);
+                let mut clocker = Clocker::new(audio.frame_duration_us, min_delay, anchor_delay);
+                let mut underrun = 0;
 
-            if underrun > 0 {
-                log::warn!("PCM underrun ends: {} SDU starved before stopped", underrun);
-            }
-            log::info!("Streaming stopped");
-        });
+                log::info!("Streaming started");
+
+                while !halt_clone.load(Ordering::Relaxed) {
+                    let iso_snapshot = { *iso.read().unwrap() };
+                    let now = Instant::now();
+                    let Some((deadline, seq_nums)) = clocker.deadline(iso_snapshot, now) else {
+                        break;
+                    };
+
+                    sleep(deadline - now);
+
+                    let timeout = anchor_delay - min_delay - (now - deadline);
+                    let Some(frame) = fifo.get(frame_len, timeout) else {
+                        if underrun == 0 {
+                            log::warn!("PCM underrun starts");
+                        } else if underrun % (1_000_000 / frame_duration_us) == 0 {
+                            log::warn!("PCM underrun: {underrun} SDU starved");
+                        }
+                        underrun += 1;
+                        continue;
+                    };
+                    if underrun > 0 {
+                        log::warn!("PCM underrun ends: {underrun} SDU starved");
+                        underrun = 0;
+                    }
+
+                    worker.run(frame, iso_snapshot, seq_nums);
+                }
+
+                if underrun > 0 {
+                    log::warn!("PCM underrun ends: {underrun} SDU starved before stopped");
+                }
+                log::info!("Streaming stopped");
+            })
+            .expect("failed to spawn worker thread");
 
         Self { thread: Some(thread), halt }
     }
@@ -385,7 +408,7 @@ impl Clocker {
         if now > pos_ref - self.min_delay {
             let gap = ((now - deadline).as_micros() as u64).div_ceil(interval_us);
             if self.seq_nums[i_ref].is_some() {
-                log::warn!("Real-time loss: {} packet(s) skipped", gap);
+                log::warn!("Real-time loss: {gap} packet(s) skipped");
             }
 
             sn_ref += gap;

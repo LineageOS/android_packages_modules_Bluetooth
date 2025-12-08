@@ -28,6 +28,8 @@ pub trait IBluetoothAdmin {
     fn get_allowed_services(&self) -> Vec<Uuid>;
     /// Get the PolicyEffect struct of a device
     fn get_device_policy_effect(&self, device: BluetoothDevice) -> Option<PolicyEffect>;
+    /// Set adapter policy of accepting incoming ssp request.
+    fn set_accept_ssp_request(&mut self, enable: bool) -> bool;
     /// Register client callback
     fn register_admin_policy_callback(
         &mut self,
@@ -50,11 +52,12 @@ pub struct PolicyEffect {
 #[derive(Clone)]
 pub(crate) struct BluetoothAdminPolicyHelper {
     allowed_services: HashSet<Uuid>,
+    accept_ssp_request: bool,
 }
 
 impl Default for BluetoothAdminPolicyHelper {
     fn default() -> Self {
-        Self { allowed_services: HashSet::default() }
+        Self { allowed_services: HashSet::default(), accept_ssp_request: false }
     }
 }
 
@@ -65,6 +68,10 @@ impl BluetoothAdminPolicyHelper {
 
     pub(crate) fn is_profile_allowed(&self, profile: &Profile) -> bool {
         self.is_service_allowed(UuidHelper::get_profile_uuid(&profile).unwrap())
+    }
+
+    pub(crate) fn is_accept_ssp_request(&self) -> bool {
+        self.accept_ssp_request
     }
 
     fn set_allowed_services(&mut self, services: Vec<Uuid>) -> bool {
@@ -83,6 +90,15 @@ impl BluetoothAdminPolicyHelper {
 
     fn get_blocked_services(&self, remote_uuids: &Vec<Uuid>) -> Vec<Uuid> {
         remote_uuids.iter().filter(|&uu| !self.is_service_allowed(uu)).cloned().collect()
+    }
+
+    fn set_accept_ssp_request(&mut self, enable: bool) -> bool {
+        if self.accept_ssp_request != enable {
+            self.accept_ssp_request = enable;
+            true
+        } else {
+            false
+        }
     }
 }
 
@@ -183,38 +199,47 @@ impl BluetoothAdmin {
         let mut contents = String::new();
         file.read_to_string(&mut contents)?;
         let json = serde_json::from_str::<Value>(contents.as_str())?;
-        let allowed_services = Self::get_config_from_json(&json)
+        let (allowed_services, accept_ssp) = Self::get_config_from_json(&json)
             .ok_or(Error::new(ErrorKind::Other, "Failed converting json to config"))?;
         if !self.admin_helper.set_allowed_services(allowed_services) {
-            info!("Admin: load_config: Unchanged");
+            info!("Admin: load_config: allowed service unchanged");
+        }
+        if !self.admin_helper.set_accept_ssp_request(accept_ssp) {
+            info!("Admin: load_config: ssp policy unchanged");
         }
         Ok(())
     }
 
-    fn get_config_from_json(json: &Value) -> Option<Vec<Uuid>> {
-        Some(
-            json.get("allowed_services")?
-                .as_array()?
-                .iter()
-                .filter_map(|v| Uuid::from_string(v.as_str()?))
-                .collect(),
-        )
+    fn get_config_from_json(json: &Value) -> Option<(Vec<Uuid>, bool)> {
+        let allowed_services = json
+            .get("allowed_services")?
+            .as_array()?
+            .iter()
+            .filter_map(|v| Uuid::from_string(v.as_str()?))
+            .collect();
+
+        // Default to false if the key is missing.
+        let accept_ssp = json.get("accept_ssp_request").and_then(Value::as_bool).unwrap_or(false);
+
+        Some((allowed_services, accept_ssp))
     }
 
     fn write_config(&self) -> Result<()> {
         let mut f = File::create(&self.path)?;
-        f.write_all(
-            Self::get_config_json_string(self.admin_helper.get_allowed_services()).as_bytes(),
-        )
+        f.write_all(Self::get_config_json_string(&self.admin_helper).as_bytes())
     }
 
-    fn get_config_json_string(uuids: Vec<Uuid>) -> String {
+    fn get_config_json_string(admin_helper: &BluetoothAdminPolicyHelper) -> String {
+        let uuids = admin_helper.get_allowed_services();
+        let accept_ssp = admin_helper.accept_ssp_request;
+
         serde_json::to_string_pretty(&json!({
             "allowed_services":
                 uuids
                     .iter()
                     .map(|uu| uu.to_string())
-                    .collect::<Vec<String>>()
+                    .collect::<Vec<String>>(),
+            "accept_ssp_request": accept_ssp,
         }))
         .ok()
         .unwrap()
@@ -229,7 +254,7 @@ impl BluetoothAdmin {
     }
 
     pub fn on_device_found(&mut self, remote_device: &BluetoothDevice) {
-        self.device_policy_affect_cache.insert(remote_device.clone(), None).or_else(|| {
+        self.device_policy_affect_cache.entry(remote_device.clone()).or_insert_with(|| {
             self.callbacks.for_all_callbacks(|cb| {
                 cb.on_device_policy_effect_changed(remote_device.clone(), None);
             });
@@ -322,6 +347,21 @@ impl IBluetoothAdmin for BluetoothAdmin {
             warn!("Device not found in cache");
             None
         }
+    }
+
+    fn set_accept_ssp_request(&mut self, enable: bool) -> bool {
+        if !self.admin_helper.set_accept_ssp_request(enable) {
+            // ssp policy is not changed.
+            return true;
+        }
+
+        if let Err(e) = self.write_config() {
+            warn!("Admin: Failed to write config: {}", e);
+            return false;
+        } else {
+            info!("Admin: Write settings into {} successfully", &self.path);
+        }
+        true
     }
 
     fn register_admin_policy_callback(
@@ -460,7 +500,7 @@ mod tests {
         admin_helper: &BluetoothAdminPolicyHelper,
     ) -> Vec<String> {
         let mut v = serde_json::from_str::<Value>(
-            BluetoothAdmin::get_config_json_string(admin_helper.get_allowed_services()).as_str(),
+            BluetoothAdmin::get_config_json_string(admin_helper).as_str(),
         )
         .unwrap()
         .get("allowed_services")
@@ -496,25 +536,38 @@ mod tests {
         allowed_services_str.sort();
         allowed_services_uuid.sort_by(|lhs, rhs| lhs.uu.cmp(&rhs.uu));
 
-        // valid configuration
-        assert_eq!(
-            BluetoothAdmin::get_config_from_json(&json!({
-                "allowed_services": allowed_services_str.clone()
-            }))
-            .map(|uuids| admin_helper.set_allowed_services(uuids)),
-            Some(true)
-        );
+        // Case 1: valid configuration with explicit accept_ssp_request = true
+        let (services, accept_ssp) = BluetoothAdmin::get_config_from_json(&json!({
+            "allowed_services": allowed_services_str.clone(),
+            "accept_ssp_request": true
+        }))
+        .unwrap();
+        admin_helper.set_allowed_services(services);
+        admin_helper.set_accept_ssp_request(accept_ssp);
+        assert!(admin_helper.is_accept_ssp_request());
         assert_eq!(get_sorted_allowed_services(&admin_helper), allowed_services_uuid);
         assert_eq!(get_sorted_allowed_services_from_config(&admin_helper), allowed_services_str);
 
-        // invalid configuration
-        assert_eq!(
-            BluetoothAdmin::get_config_from_json(&json!({ "allowed_services": a2dp_sink_str }))
-                .map(|uuids| admin_helper.set_allowed_services(uuids)),
-            None
-        );
+        // Case 2: invalid configuration for services (state should not change)
+        assert!(BluetoothAdmin::get_config_from_json(
+            &json!({ "allowed_services": a2dp_sink_str })
+        )
+        .is_none());
         // config should remain unchanged
+        assert!(admin_helper.is_accept_ssp_request());
         assert_eq!(get_sorted_allowed_services(&admin_helper), allowed_services_uuid);
         assert_eq!(get_sorted_allowed_services_from_config(&admin_helper), allowed_services_str);
+
+        // Case 3: valid configuration with accept_ssp_request missing (should default to false)
+        let (services, accept_ssp) = BluetoothAdmin::get_config_from_json(&json!({
+            "allowed_services": allowed_services_str.clone()
+        }))
+        .unwrap();
+        admin_helper.set_allowed_services(services);
+        admin_helper.set_accept_ssp_request(accept_ssp);
+        assert!(!admin_helper.is_accept_ssp_request());
+        let json_string = BluetoothAdmin::get_config_json_string(&admin_helper);
+        let json_value: Value = serde_json::from_str(&json_string).unwrap();
+        assert_eq!(json_value["accept_ssp_request"], false);
     }
 }

@@ -17,13 +17,13 @@
 #include "topshim/csis/csis_shim.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <hardware/bluetooth.h>
 
 #include <string>
 
 #include "src/profiles/csis.rs.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 namespace rusty = ::bluetooth::topshim::rust;
 

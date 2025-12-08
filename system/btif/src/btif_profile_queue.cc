@@ -31,6 +31,7 @@
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <string.h>
 
 #include <cstdint>
@@ -40,7 +41,6 @@
 #include "btif/include/stack_manager_t.h"
 #include "btif_common.h"
 #include "hardware/bluetooth.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -64,7 +64,7 @@ public:
   /**
    * Initiate the connection.
    *
-   * @return BT_STATUS_SUCCESS on success, othewise the corresponding error
+   * @return BT_STATUS_SUCCESS on success, otherwise the corresponding error
    * code. Note: if a previous connect request hasn't been completed, the
    * return value is BT_STATUS_SUCCESS.
    */
@@ -73,7 +73,7 @@ public:
       return BT_STATUS_SUCCESS;
     }
     busy_ = true;
-    return connect_cb_(&address_, uuid_);
+    return connect_cb_(address_, uuid_);
   }
 
 private:
@@ -151,8 +151,8 @@ static void queue_int_release() { connect_queue.clear(); }
  * Returns          BT_STATUS_SUCCESS if successful
  *
  ******************************************************************************/
-bt_status_t btif_queue_connect(uint16_t uuid, const RawAddress* bda, btif_connect_cb_t connect_cb) {
-  return do_in_jni_thread(base::BindOnce(&queue_int_add, uuid, *bda, connect_cb));
+bt_status_t btif_queue_connect(uint16_t uuid, const RawAddress bda, btif_connect_cb_t connect_cb) {
+  return do_in_jni_thread(base::BindOnce(&queue_int_add, uuid, bda, connect_cb));
 }
 
 /*******************************************************************************

@@ -30,6 +30,7 @@ cc_defaults {
         "libbluetooth_headers",
     ],
     defaults: [
+        "bluetooth_fuzz_config",
         "latest_android_hardware_audio_common_ndk_static",
         "latest_android_hardware_bluetooth_audio_ndk_static",
         "latest_android_media_audio_common_types_ndk_static",
@@ -55,15 +56,15 @@ cc_defaults {
         "android.hardware.common.fmq-V1-ndk",
         "android.system.suspend-V1-ndk",
         "android.system.suspend.control-V1-ndk",
-        "bluetooth_flags_c_lib",
+        "bluetooth_flags_c_lib_for_test",
         "libFraunhoferAAC",
         "libbase",
-        "libbluetooth-types",
         "libbluetooth_core_rs",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
+        "libbluetooth_types",
         "libbt-audio-hal-interface",
         "libbt-bta",
         "libbt-btu-main-thread",
@@ -103,18 +104,6 @@ cc_defaults {
         "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/stack/include",
     ],
-    fuzz_config: {
-        cc: ["android-bluetooth-security@google.com"],
-        componentid: 27441,
-        hotlists: [
-            "4593311",
-        ],
-        description: "The fuzzer targets the APIs of libbt-audio-hal-interface",
-        vector: "local_no_privileges_required",
-        service_privilege: "privileged",
-        users: "multi_user",
-        fuzzed_code_usage: "shipped",
-    },
     target: {
         android: {
             static_libs: [

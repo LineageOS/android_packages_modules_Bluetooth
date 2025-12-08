@@ -38,9 +38,12 @@ class SnoopLogger;
 }
 
 namespace hci {
+namespace acl_manager {
+class AclManagerClassic;
+}
 class Controller;
 class HciInterface;
-class AclManager;
+class AclManagerLe;
 class RemoteNameRequestModule;
 class DistanceMeasurementManager;
 class LeAdvertisingManager;
@@ -70,7 +73,8 @@ hci::LeScanningManager* GetScanning();
 lpp::LppOffloadInterface* GetLppOffloadManager();
 hal::SnoopLogger* GetSnoopLogger();
 storage::StorageModule* GetStorage();
-hci::AclManager* GetAclManager();
+hci::acl_manager::AclManagerClassic* GetAclManagerClassic();
+hci::AclManagerLe* GetAclManagerLe();
 hci::MsftExtensionManager* GetMsftExtensionManager();
 
 }  // namespace shim

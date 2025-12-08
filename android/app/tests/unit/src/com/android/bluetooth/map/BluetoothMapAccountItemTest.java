@@ -16,13 +16,13 @@
 
 package com.android.bluetooth.map;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static com.google.common.truth.Truth.assertThat;
 
 import android.graphics.drawable.ColorDrawable;
 
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Rule;
 import org.junit.Test;

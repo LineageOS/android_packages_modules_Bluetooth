@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstddef>
@@ -37,7 +38,6 @@
 #include "stack/include/l2cdefs.h"
 #include "stack/rfcomm/port_int.h"
 #include "stack/rfcomm/rfc_int.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -91,7 +91,7 @@ void rfcomm_l2cap_if_init() {
  ******************************************************************************/
 void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid, uint16_t /* psm */, uint8_t id) {
   tRFC_MCB* p_mcb = rfc_alloc_multiplexer_channel(bd_addr, false);
-  if (!com::android::bluetooth::flags::rfcomm_fix_mux_collision_handling()) {
+  if (!com_android_bluetooth_flags_rfcomm_fix_mux_collision_handling()) {
     if (p_mcb != nullptr && p_mcb->is_initiator && p_mcb->state == RFC_MX_STATE_WAIT_CONN_CNF) {
       p_mcb->pending_lcid = lcid;
 
@@ -172,7 +172,7 @@ void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid, uint16_t /* psm
 void RFCOMM_ConnectCnf(uint16_t lcid, tL2CAP_CONN result) {
   tRFC_MCB* p_mcb = rfc_find_lcid_mcb(lcid);
 
-  if (com::android::bluetooth::flags::rfcomm_fix_mux_collision_handling() && p_mcb == nullptr) {
+  if (com_android_bluetooth_flags_rfcomm_fix_mux_collision_handling() && p_mcb == nullptr) {
     /* Check if we cached corresponding lcid for collision */
     for (auto& [cid, mcb] : rfc_lcid_mcb) {
       if (mcb == nullptr || mcb->collision_outgoing_lcid != lcid) {
@@ -242,7 +242,7 @@ void RFCOMM_ConfigInd(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
   tRFC_MCB* p_mcb = rfc_find_lcid_mcb(lcid);
 
   if (p_mcb == nullptr) {
-    if (!com::android::bluetooth::flags::rfcomm_fix_mux_collision_handling()) {
+    if (!com_android_bluetooth_flags_rfcomm_fix_mux_collision_handling()) {
       log::error("RFCOMM_ConfigInd LCID:0x{:x}", lcid);
       for (auto& [cid, mcb] : rfc_lcid_mcb) {
         if (mcb != nullptr && mcb->pending_lcid == lcid) {
@@ -303,7 +303,7 @@ void RFCOMM_DisconnectInd(uint16_t lcid, bool is_conf_needed) {
   log::verbose("lcid:0x{:x}, is_conf_needed:{}", lcid, is_conf_needed);
   tRFC_MCB* p_mcb = rfc_find_lcid_mcb(lcid);
   if (p_mcb == nullptr) {
-    if (!com::android::bluetooth::flags::rfcomm_fix_mux_collision_handling()) {
+    if (!com_android_bluetooth_flags_rfcomm_fix_mux_collision_handling()) {
       log::warn("no mcb for lcid 0x{:x}", lcid);
       return;
     }

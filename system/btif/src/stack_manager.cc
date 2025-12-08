@@ -134,68 +134,27 @@ static future_t* hack_future;
 // Interface functions
 
 static void init_stack(bluetooth::core::CoreInterface* interface) {
-  if (com::android::bluetooth::flags::remove_legacy_management_thread()) {
-    // This code is executed on the Java main thread
-    std::promise<void> promise;
-    event_init_stack(std::move(promise), interface);
-    return;
-  }
-
-  // This is a synchronous process. Post it to the thread though, so
-  // state modification only happens there. Using the thread to perform
-  // all stack operations ensures that the operations are done serially
-  // and do not overlap.
+  // This code is executed on the Java main thread
   std::promise<void> promise;
-  auto future = promise.get_future();
-  management_thread.DoInThread(
-          base::BindOnce(event_init_stack, std::move(promise), base::Unretained(interface)));
-  future.wait();
+  event_init_stack(std::move(promise), interface);
 }
 
 static void start_up_stack_async(bluetooth::core::CoreInterface* interface,
                                  ProfileStartCallback startProfiles,
                                  ProfileStopCallback stopProfiles) {
-  if (com::android::bluetooth::flags::remove_legacy_management_thread()) {
-    // This code is executed on the Java main thread
-    event_start_up_stack(interface, startProfiles, stopProfiles);
-    return;
-  }
-  management_thread.DoInThread(
-          base::BindOnce(event_start_up_stack, interface, startProfiles, stopProfiles));
+  // This code is executed on the Java main thread
+  event_start_up_stack(interface, startProfiles, stopProfiles);
 }
 
 static void shut_down_stack_async(ProfileStopCallback stopProfiles) {
-  if (com::android::bluetooth::flags::remove_legacy_management_thread()) {
-    // This code is executed on the Java main thread
-    event_shut_down_stack(stopProfiles);
-    return;
-  }
-  management_thread.DoInThread(base::BindOnce(event_shut_down_stack, stopProfiles));
+  // This code is executed on the Java main thread
+  event_shut_down_stack(stopProfiles);
 }
 
 static void clean_up_stack(ProfileStopCallback stopProfiles) {
-  if (com::android::bluetooth::flags::remove_legacy_management_thread()) {
-    // This code is executed on the Java main thread
-    std::promise<void> promise;
-    event_clean_up_stack(std::move(promise), stopProfiles);
-    return;
-  }
-
-  // This is a synchronous process. Post it to the thread though, so
-  // state modification only happens there.
+  // This code is executed on the Java main thread
   std::promise<void> promise;
-  auto future = promise.get_future();
-  management_thread.DoInThread(
-          base::BindOnce(event_clean_up_stack, std::move(promise), stopProfiles));
-
-  auto status = future.wait_for(std::chrono::milliseconds(
-          bluetooth::os::GetSystemPropertyUint32("bluetooth.cleanup_timeout",
-                                                 /* default_value = */ 1000)));
-  if (status == std::future_status::ready) {
-    management_thread.ShutDown();
-  } else {
-    error("cleanup could not be completed in time, abandon it");
-  }
+  event_clean_up_stack(std::move(promise), stopProfiles);
 }
 
 static bool get_stack_is_running() { return stack_is_running; }
@@ -326,10 +285,8 @@ static void event_start_up_stack(bluetooth::core::CoreInterface* interface,
     return;
   }
 
-  if (com::android::bluetooth::flags::channel_sounding_in_stack()) {
-    bluetooth::ras::GetRasServer()->Initialize();
-    bluetooth::ras::GetRasClient()->Initialize();
-  }
+  bluetooth::ras::GetRasServer()->Initialize();
+  bluetooth::ras::GetRasClient()->Initialize();
 
   stack_is_running = true;
   info("finished");
@@ -370,7 +327,7 @@ static void event_shut_down_stack(ProfileStopCallback stopProfiles) {
   future_await(local_hack_future);
 
   gatt_free();
-  if (com::android::bluetooth::flags::call_sdp_free_in_main_thread()) {
+  if (com_android_bluetooth_flags_call_sdp_free_in_main_thread()) {
     do_in_main_thread(base::BindOnce(sdp_free));
   } else {
     sdp_free();
@@ -407,7 +364,7 @@ static void event_clean_up_stack(std::promise<void> promise, ProfileStopCallback
 
   btif_cleanup_bluetooth();
 
-  if (com::android::bluetooth::flags::shutdown_main_thread_before_cleanup()) {
+  if (com_android_bluetooth_flags_shutdown_main_thread_before_cleanup()) {
     main_thread_shut_down();
   }
 
@@ -422,7 +379,7 @@ static void event_clean_up_stack(std::promise<void> promise, ProfileStopCallback
 
   module_clean_up(get_local_module(OSI_MODULE));
 
-  if (!com::android::bluetooth::flags::shutdown_main_thread_before_cleanup()) {
+  if (!com_android_bluetooth_flags_shutdown_main_thread_before_cleanup()) {
     main_thread_shut_down();
   }
 
@@ -445,28 +402,10 @@ static void event_signal_stack_down(void* /* context */) {
   future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
 }
 
-static void ensure_manager_initialized() {
-  if (com::android::bluetooth::flags::remove_legacy_management_thread()) {
-    return;
-  }
-  if (management_thread.IsRunning()) {
-    return;
-  }
-
-  management_thread.StartUp();
-  if (!management_thread.IsRunning()) {
-    error("unable to start stack management thread");
-    return;
-  }
-}
-
 static const stack_manager_t interface = {init_stack, start_up_stack_async, shut_down_stack_async,
                                           clean_up_stack, get_stack_is_running};
 
-const stack_manager_t* stack_manager_get_interface() {
-  ensure_manager_initialized();
-  return &interface;
-}
+const stack_manager_t* stack_manager_get_interface() { return &interface; }
 
 future_t* stack_manager_get_hack_future() { return hack_future; }
 

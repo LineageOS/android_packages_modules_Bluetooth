@@ -21,8 +21,6 @@ import android.bluetooth.le.PeriodicAdvertisingParameters;
 
 /** Native interface for AdvertiseManager */
 public class AdvertiseManagerNativeInterface {
-    private static final String TAG = AdvertiseManagerNativeInterface.class.getSimpleName();
-
     private final AdvertiseManager mManager;
 
     AdvertiseManagerNativeInterface(AdvertiseManager manager) {

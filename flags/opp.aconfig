@@ -2,36 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "opp_set_insets_for_edge_to_edge"
-    namespace: "bluetooth"
-    description: "Set proper insets in BluetoothOppTransferHistory to adapt to edge-to-edge."
-    bug: "378813445"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "update_opp_launcher_user_changed"
-    namespace: "bluetooth"
-    description: "Enable/disable OPP launcher when user changed"
-    bug: "389596902"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "opp_remove_empty_group_notification"
-    namespace: "bluetooth"
-    description: "As a solution of removing empty group notification, don't use group summary anymore"
-    bug: "395546332"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "opp_device_picker_extra_intent_apis"
     is_exported: true
     namespace: "bluetooth"

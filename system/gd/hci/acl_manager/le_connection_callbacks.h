@@ -30,7 +30,7 @@ class LeConnectionCallbacks {
 public:
   virtual ~LeConnectionCallbacks() = default;
   // Invoked when controller sends Connection Complete event with Success error code
-  // AddressWithType is always equal to the object used in AclManager#CreateLeConnection
+  // AddressWithType is always equal to the object used in AclManagerLe#CreateLeConnection
   virtual void OnLeConnectSuccess(AddressWithType, std::unique_ptr<LeAclConnection>) = 0;
   // Invoked when create connection timeout or controller sends Connection Complete event with
   // non-Success error code

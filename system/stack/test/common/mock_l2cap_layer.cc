@@ -18,10 +18,10 @@
 #include "stack/test/common/mock_l2cap_layer.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include "stack/include/bt_hdr.h"
 #include "stack/l2cap/l2c_int.h"
-#include "types/raw_address.h"
 
 static bluetooth::l2cap::MockL2capInterface* l2cap_interface = nullptr;
 

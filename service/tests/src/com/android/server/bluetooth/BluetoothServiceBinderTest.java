@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ package com.android.server.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+import static android.Manifest.permission.CHANGE_COMPONENT_ENABLED_STATE;
 import static android.Manifest.permission.LOCAL_MAC_ADDRESS;
+import static android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -29,6 +31,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockingDetails;
@@ -48,14 +51,21 @@ import android.content.ContextWrapper;
 import android.os.IBinder;
 import android.os.Process;
 import android.os.UserManager;
+import android.os.test.TestLooper;
+import android.platform.test.annotations.DisableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
+
+import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.FlagsWrapper;
+import com.android.tests.bluetooth.MockitoRule;
 
 import libcore.junit.util.compat.CoreCompatChangeRule.DisableCompatChanges;
 import libcore.junit.util.compat.CoreCompatChangeRule.EnableCompatChanges;
+
+import kotlin.Unit;
 
 import org.junit.After;
 import org.junit.Before;
@@ -64,15 +74,17 @@ import org.junit.Test;
 import org.junit.function.ThrowingRunnable;
 import org.junit.rules.TestRule;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
 
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
+
+import java.util.List;
 import java.util.function.BooleanSupplier;
 
 @SmallTest
-@RunWith(AndroidJUnit4.class)
+@RunWith(ParameterizedAndroidJunit4.class)
 @SuppressLint("AndroidFrameworkRequiresPermission")
 public class BluetoothServiceBinderTest {
     private static final String TAG = BluetoothServiceBinderTest.class.getSimpleName();
@@ -80,13 +92,12 @@ public class BluetoothServiceBinderTest {
     private static final String READ_COMPAT_CHANGE_CONFIG =
             "android.permission.READ_COMPAT_CHANGE_CONFIG";
 
-    @Rule public MockitoRule mockito = MockitoJUnit.rule().strictness(STRICT_STUBS);
-
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
-
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule().strictness(STRICT_STUBS);
     @Rule public TestRule compatChangeRule = new PlatformCompatChangeRule();
 
-    @Mock private BluetoothManagerService mManagerService;
+    @Rule public final SetFlagsRule mSetFlagsRule;
+
+    @Mock private BluetoothManagerServiceApi mApi;
     @Mock private UserManager mUserManager;
     @Mock private AppOpsManager mAppOpsManager;
     @Mock private DevicePolicyManager mDevicePolicyManager;
@@ -100,12 +111,24 @@ public class BluetoothServiceBinderTest {
             spy(new AttributionSource.Builder(Process.myUid()).build());
 
     private BluetoothServiceBinder mBinder;
+    private TestLooper mLooper;
+    private InOrder mInOrder;
+
+    @Parameters(name = "{0}")
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(Flags.FLAG_USER_RESTRICTION_REFACTOR);
+    }
+
+    public BluetoothServiceBinderTest(FlagsWrapper flagsWrapper) {
+        mSetFlagsRule = new SetFlagsRule(flagsWrapper.getFlags());
+    }
 
     @Before
     public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
+        mInOrder = inOrder(mUserManager);
         lenient().doReturn(TAG).when(mSource).getPackageName();
+        mLooper = new TestLooper();
+        mLooper.startAutoDispatch();
 
         InstrumentationRegistry.getInstrumentation()
                 .getUiAutomation()
@@ -115,8 +138,9 @@ public class BluetoothServiceBinderTest {
         final String devicePolicy = mContext.getSystemServiceName(DevicePolicyManager.class);
         doReturn(mAppOpsManager).when(mContext).getSystemService(eq(appOps));
         doReturn(mDevicePolicyManager).when(mContext).getSystemService(eq(devicePolicy));
+        doReturn(mUserManager).when(mContext).getSystemService(UserManager.class);
 
-        mBinder = new BluetoothServiceBinder(mManagerService, mContext, mUserManager);
+        mBinder = new BluetoothServiceBinder(mLooper.getLooper(), mApi, mContext);
     }
 
     @After
@@ -128,38 +152,48 @@ public class BluetoothServiceBinderTest {
     }
 
     @Test
-    public void registerAdapter() {
-        assertThrows(NullPointerException.class, () -> mBinder.registerAdapter(null));
-        mBinder.registerAdapter(mock(IBluetoothManagerCallback.class));
-        verify(mManagerService).registerAdapter(any());
+    public void getMessenger() {
+        assertThat(mBinder.getServiceMessenger()).isNotNull();
         verifyMock();
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    public void registerAdapter() {
+        assertThrows(NullPointerException.class, () -> mBinder.registerAdapter(null));
+        mBinder.registerAdapter(mock(IBluetoothManagerCallback.class));
+        verify(mApi).registerAdapter(any());
+        verifyMock();
+    }
+
+    @Test
+    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
     public void unregisterAdapter() {
         assertThrows(NullPointerException.class, () -> mBinder.unregisterAdapter(null));
         mBinder.unregisterAdapter(mock(IBluetoothManagerCallback.class));
-        verify(mManagerService).unregisterAdapter(any());
+        verify(mApi).unregisterAdapter(any());
         verifyMock();
     }
 
     @Test
     @DisableCompatChanges({ChangeIds.RESTRICT_ENABLE_DISABLE})
-    public void enableNoRestrictEnable() {
+    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    public void enableNoRestrictEnable() throws Exception {
         assertThrows(NullPointerException.class, () -> mBinder.enable(null));
 
         checkDisabled(() -> mBinder.enable(mSource));
         checkHardDenied(() -> mBinder.enable(mSource), true);
-        doReturn(true).when(mManagerService).enableFromBinder(any());
+        doReturn(true).when(mApi).enable(anyInt(), any());
         checkGranted(() -> mBinder.enable(mSource), true);
         verify(mUserManager).getProfileParent(any());
-        verify(mManagerService).enableFromBinder(eq(TAG));
+        verify(mApi).enable(eq(ENABLE_DISABLE_REASON_APPLICATION_REQUEST), eq(TAG));
         verifyMock();
     }
 
     @Test
     @EnableCompatChanges({ChangeIds.RESTRICT_ENABLE_DISABLE})
-    public void enableWithRestrictEnable() {
+    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    public void enableWithRestrictEnable() throws Exception {
         assertThrows(NullPointerException.class, () -> mBinder.enable(null));
 
         checkDisabled(() -> mBinder.enable(mSource));
@@ -172,7 +206,8 @@ public class BluetoothServiceBinderTest {
     }
 
     @Test
-    public void enableNoAutoConnect() {
+    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    public void enableNoAutoConnect() throws Exception {
         assertThrows(NullPointerException.class, () -> mBinder.enableNoAutoConnect(null));
 
         checkDisabled(() -> mBinder.enableNoAutoConnect(mSource));
@@ -181,7 +216,10 @@ public class BluetoothServiceBinderTest {
         // enableNoAutoConnect is only available for Nfc and will fail otherwise
         assertThrows(SecurityException.class, () -> mBinder.enableNoAutoConnect(mSource));
 
-        verify(mUserManager).hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
+        if (!Flags.userRestrictionRefactor()) {
+            mInOrder.verify(mUserManager)
+                    .hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
+        }
         verify(mAppOpsManager).checkPackage(anyInt(), eq(TAG));
         verifyMock();
 
@@ -190,23 +228,25 @@ public class BluetoothServiceBinderTest {
 
     @Test
     @DisableCompatChanges({ChangeIds.RESTRICT_ENABLE_DISABLE})
-    public void disableNoRestrictEnable() {
+    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    public void disableNoRestrictEnable() throws Exception {
         assertThrows(NullPointerException.class, () -> mBinder.disable(null, true));
 
         assertThrows(SecurityException.class, () -> mBinder.disable(mSource, false));
 
         checkDisabled(() -> mBinder.disable(mSource, true));
         checkHardDenied(() -> mBinder.disable(mSource, true), true);
-        doReturn(true).when(mManagerService).disableFromBinder(any(), anyBoolean());
+        doReturn(true).when(mApi).disable(any(), anyBoolean());
         checkGranted(() -> mBinder.disable(mSource, true), true);
         verify(mUserManager).getProfileParent(any());
-        verify(mManagerService).disableFromBinder(eq(TAG), anyBoolean());
+        verify(mApi).disable(eq(TAG), anyBoolean());
         verifyMock();
     }
 
     @Test
     @EnableCompatChanges({ChangeIds.RESTRICT_ENABLE_DISABLE})
-    public void disableWithRestrictEnable() {
+    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    public void disableWithRestrictEnable() throws Exception {
         assertThrows(NullPointerException.class, () -> mBinder.disable(null, true));
 
         assertThrows(SecurityException.class, () -> mBinder.disable(mSource, false));
@@ -223,11 +263,12 @@ public class BluetoothServiceBinderTest {
     @Test
     public void getStateFromSystemServer() {
         mBinder.getState();
-        verify(mManagerService).getState();
+        verify(mApi).getState();
         verifyMock();
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
     public void getAddress() {
         assertThrows(NullPointerException.class, () -> mBinder.getAddress(null));
 
@@ -248,15 +289,16 @@ public class BluetoothServiceBinderTest {
         // TODO(b/280518177): add more test from not System / ...
         // TODO(b/280518177): add more test when caller is not in foreground
 
-        doReturn("foo").when(mManagerService).getAddress();
+        doReturn("foo").when(mApi).getAddress();
         assertThat(mBinder.getAddress(mSource)).isEqualTo("foo");
 
-        verify(mManagerService).getAddress();
+        verify(mApi).getAddress();
         verifyMockForCheckIfCallerIsForegroundUser();
     }
 
     @Test
     public void getName() {
+        mSetFlagsRule.disableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER);
         assertThrows(NullPointerException.class, () -> mBinder.getName(null));
 
         assertThrows(SecurityException.class, () -> mBinder.getName(mSource));
@@ -267,96 +309,83 @@ public class BluetoothServiceBinderTest {
         // TODO(b/280518177): add more test from not System / ...
         // TODO(b/280518177): add more test when caller is not in foreground
 
-        doReturn("foo").when(mManagerService).getName();
+        doReturn("foo").when(mApi).getName();
         assertThat(mBinder.getName(mSource)).isEqualTo("foo");
-        verify(mManagerService).getName();
+        verify(mApi).getName();
         verifyMockForCheckIfCallerIsForegroundUser();
     }
 
     @Test
-    public void onFactoryReset() {
-        assertThrows(NullPointerException.class, () -> mBinder.onFactoryReset(null));
-
-        assertThrows(SecurityException.class, () -> mBinder.onFactoryReset(mSource));
-        InstrumentationRegistry.getInstrumentation()
-                .getUiAutomation()
-                .adoptShellPermissionIdentity(BLUETOOTH_PRIVILEGED);
-
-        assertThrows(SecurityException.class, () -> mBinder.onFactoryReset(mSource));
-        InstrumentationRegistry.getInstrumentation()
-                .getUiAutomation()
-                .adoptShellPermissionIdentity(BLUETOOTH_PRIVILEGED, BLUETOOTH_CONNECT);
-
-        assertThat(mBinder.onFactoryReset(mSource)).isFalse();
-        verify(mManagerService).onFactoryResetFromBinder();
-        verifyMock();
-    }
-
-    @Test
     public void isBleScanAvailable() {
+        mSetFlagsRule.disableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER);
         // No permission needed for this call
         mBinder.isBleScanAvailable();
-        verify(mManagerService).isBleScanAvailable();
+        verify(mApi).isBleScanAvailable();
         verifyMock();
     }
 
     @Test
-    public void enableBle() {
+    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    public void enableBle() throws Exception {
         IBinder token = mock(IBinder.class);
         assertThrows(NullPointerException.class, () -> mBinder.enableBle(null, token));
         assertThrows(NullPointerException.class, () -> mBinder.enableBle(mSource, null));
 
         checkDisabled(() -> mBinder.enableBle(mSource, token));
         checkHardDenied(() -> mBinder.enableBle(mSource, token), false);
-        doReturn(true).when(mManagerService).enableBleFromBinder(eq(TAG), eq(token));
+        doReturn(true).when(mApi).enableBle(eq(TAG), eq(token));
         checkGranted(() -> mBinder.enableBle(mSource, token), true);
-        verify(mManagerService).enableBleFromBinder(eq(TAG), eq(token));
+        verify(mApi).enableBle(eq(TAG), eq(token));
         verifyMock();
     }
 
     @Test
-    public void disableBle() {
+    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
+    public void disableBle() throws Exception {
         IBinder token = mock(IBinder.class);
         assertThrows(NullPointerException.class, () -> mBinder.disableBle(null, token));
         assertThrows(NullPointerException.class, () -> mBinder.disableBle(mSource, null));
 
         checkDisabled(() -> mBinder.disableBle(mSource, token));
         checkHardDenied(() -> mBinder.disableBle(mSource, token), false);
-        doReturn(true).when(mManagerService).disableBleFromBinder(eq(TAG), eq(token));
+        doReturn(true).when(mApi).disableBle(eq(TAG), eq(token));
         checkGranted(() -> mBinder.disableBle(mSource, token), true);
-        verify(mManagerService).disableBleFromBinder(eq(TAG), eq(token));
+        verify(mApi).disableBle(eq(TAG), eq(token));
         verifyMock();
     }
 
     @Test
     public void isHearingAidProfileSupported() {
+        mSetFlagsRule.disableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER);
         // No permission needed for this call
         mBinder.isHearingAidProfileSupported();
-        verify(mManagerService).isHearingAidProfileSupported();
+        verify(mApi).isHearingAidProfileSupported();
         verifyMock();
     }
 
     @Test
     public void setBtHciSnoopLogMode() {
+        mSetFlagsRule.disableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER);
         assertThrows(SecurityException.class, () -> mBinder.setBtHciSnoopLogMode(0));
 
         InstrumentationRegistry.getInstrumentation()
                 .getUiAutomation()
                 .adoptShellPermissionIdentity(BLUETOOTH_PRIVILEGED);
         assertThat(mBinder.setBtHciSnoopLogMode(0)).isEqualTo(0);
-        verify(mManagerService).setBtHciSnoopLogMode(anyInt());
+        verify(mApi).setBtHciSnoopLogMode(anyInt());
         verifyMock();
     }
 
     @Test
     public void getBtHciSnoopLogMode() {
+        mSetFlagsRule.disableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER);
         assertThrows(SecurityException.class, () -> mBinder.getBtHciSnoopLogMode());
 
         InstrumentationRegistry.getInstrumentation()
                 .getUiAutomation()
                 .adoptShellPermissionIdentity(BLUETOOTH_PRIVILEGED);
         assertThat(mBinder.getBtHciSnoopLogMode()).isEqualTo(0);
-        verify(mManagerService).getBtHciSnoopLogMode();
+        verify(mApi).getBtHciSnoopLogMode();
         verifyMock();
     }
 
@@ -372,7 +401,7 @@ public class BluetoothServiceBinderTest {
     }
 
     private void verifyMock() {
-        verifyAndClearMock(mManagerService);
+        verifyAndClearMock(mApi);
         verifyAndClearMock(mUserManager);
         verifyAndClearMock(mAppOpsManager);
         verifyAndClearMock(mDevicePolicyManager);
@@ -383,25 +412,28 @@ public class BluetoothServiceBinderTest {
         verifyMock();
     }
 
-    private void checkDisabled(BooleanSupplier binderCall) {
-        doReturn(true)
-                .when(mUserManager)
-                .hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
+    private void checkDisabled(BooleanSupplier binderCall) throws Exception {
+        setUserRestriction(false);
 
         assertThat(binderCall.getAsBoolean()).isFalse();
 
-        verify(mUserManager).hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
+        if (!Flags.userRestrictionRefactor()) {
+            mInOrder.verify(mUserManager)
+                    .hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
+        }
         verifyMock();
     }
 
-    private void checkHardDenied(ThrowingRunnable binderCall, boolean requireForeground) {
-        doReturn(false)
-                .when(mUserManager)
-                .hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
+    private void checkHardDenied(ThrowingRunnable binderCall, boolean requireForeground)
+            throws Exception {
+        setUserRestriction(true);
 
         assertThrows(SecurityException.class, binderCall);
 
-        verify(mUserManager).hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
+        if (!Flags.userRestrictionRefactor()) {
+            mInOrder.verify(mUserManager)
+                    .hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
+        }
         if (requireForeground) {
             verify(mUserManager).getProfileParent(any());
         }
@@ -417,11 +449,35 @@ public class BluetoothServiceBinderTest {
 
         assertThat(binderCall.getAsBoolean()).isEqualTo(expectedResult);
 
-        verify(mUserManager).hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
+        if (!Flags.userRestrictionRefactor()) {
+            mInOrder.verify(mUserManager)
+                    .hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
+        }
         verify(mAppOpsManager).checkPackage(anyInt(), eq(TAG));
         if (!expectedResult) {
             verify(mDevicePolicyManager).getDeviceOwnerUser();
             verify(mDevicePolicyManager).getDeviceOwnerComponentOnAnyUser();
+        }
+    }
+
+    private void setUserRestriction(boolean isBluetoothAllowed) {
+        if (Flags.userRestrictionRefactor()) {
+            doReturn(!isBluetoothAllowed)
+                    .when(mUserManager)
+                    .hasUserRestriction(eq(UserManager.DISALLOW_BLUETOOTH));
+            InstrumentationRegistry.getInstrumentation()
+                    .getUiAutomation()
+                    .adoptShellPermissionIdentity(CHANGE_COMPONENT_ENABLED_STATE);
+            BluetoothRestriction.handleRestrictionChange(
+                    mContext,
+                    () -> {
+                        return Unit.INSTANCE;
+                    });
+            mInOrder.verify(mUserManager).hasUserRestriction(eq(UserManager.DISALLOW_BLUETOOTH));
+        } else {
+            doReturn(!isBluetoothAllowed)
+                    .when(mUserManager)
+                    .hasUserRestrictionForUser(eq(UserManager.DISALLOW_BLUETOOTH), any());
         }
     }
 }

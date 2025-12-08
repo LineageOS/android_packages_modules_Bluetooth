@@ -26,9 +26,9 @@
 #include "aidl/android/hardware/bluetooth/audio/IBluetoothAudioProvider.h"
 #include "aidl/audio_ctrl_ack.h"
 #include "aidl/le_audio_software_aidl.h"
+#include "aidl/le_audio_utils.h"
 #include "audio_hal_interface/hal_version_manager.h"
 #include "bta/le_audio/mock_codec_manager.h"
-#include "gmock/gmock.h"
 #include "hidl/le_audio_software_hidl.h"
 
 #pragma GCC diagnostic ignored "-Wunused-private-field"
@@ -409,7 +409,7 @@ int BluetoothAudioClientInterface::EndSession() {
 void BluetoothAudioClientInterface::StreamSuspended(const BluetoothAudioCtrlAck& ack) {
   auto instance = MockBluetoothAudioClientInterfaceAidl::GetInstance();
   if (instance) {
-    return instance->StreamSuspended(ack);
+    instance->StreamSuspended(ack);
   }
 }
 
@@ -503,8 +503,8 @@ std::ostream& operator<<(std::ostream& os, const BroadcastConfiguration&) { retu
 
 namespace {
 
-bluetooth::common::MessageLoopThread message_loop_thread("test message loop");
-static base::MessageLoop* message_loop_;
+bluetooth::common::MessageLoopThread message_loop_thread(
+        "test message loop", bluetooth::os::Thread::Priority::REAL_TIME);
 
 static void init_message_loop_thread() {
   message_loop_thread.StartUp();
@@ -516,14 +516,14 @@ static void init_message_loop_thread() {
     bluetooth::log::warn("Unable to set real time scheduling");
   }
 
-  message_loop_ = message_loop_thread.message_loop();
-  if (message_loop_ == nullptr) {
-    FAIL() << "unable to get message loop.";
+  if (!com_android_bluetooth_flags_replace_message_loop_thread_with_gd_handler()) {
+    if (message_loop_thread.message_loop() == nullptr) {
+      FAIL() << "unable to get message loop.";
+    }
   }
 }
 
 static void cleanup_message_loop_thread() {
-  message_loop_ = nullptr;
   message_loop_thread.ShutDown();
 }
 
@@ -632,11 +632,55 @@ protected:
   MockCodecManager* mock_codec_manager_;
 };
 
+// Test scenario: Verify that LeAudioClientInterface::Get() returns a valid,
+// non-null instance and that subsequent calls return the same instance.
+TEST_F(LeAudioSoftwareUnicastTestAidl, GetInstance) {
+  ASSERT_NE(LeAudioClientInterface::Get(), nullptr);
+  // Should return the same instance
+  ASSERT_EQ(LeAudioClientInterface::Get(), LeAudioClientInterface::Get());
+}
+
+// Test scenario: Test the successful acquisition and release of both sink and
+// source interfaces for a unicast session.
 TEST_F(LeAudioSoftwareUnicastTestAidl, AcquireAndRelease) {
   ASSERT_NE(nullptr, sink_);
   ASSERT_NE(nullptr, source_);
 }
 
+// Test scenario: Ensure that attempting to acquire a sink interface a second
+// time (while it's already acquired) fails and returns `nullptr`.
+TEST_F(LeAudioSoftwareUnicastTestAidl, GetSinkTwice) {
+  ASSERT_NE(nullptr, sink_);
+  ASSERT_EQ(LeAudioClientInterface::Get()->GetSink(*unicast_sink_stream_cb_, &message_loop_thread,
+                                                   is_broadcast_),
+            nullptr);
+}
+
+// Test scenario: Verify that attempting to release a sink interface that has
+// not been acquired returns `false`.
+TEST_F(LeAudioSoftwareUnicastTestAidl, ReleaseSinkNotAcquired) {
+  LeAudioClientInterface::Sink sink(false);
+  ASSERT_FALSE(LeAudioClientInterface::Get()->ReleaseSink(&sink));
+}
+
+// Test scenario: Ensure that attempting to acquire a source interface a second
+// time (while it's already acquired) fails and returns `nullptr`.
+TEST_F(LeAudioSoftwareUnicastTestAidl, GetSourceTwice) {
+  ASSERT_NE(nullptr, source_);
+  ASSERT_EQ(LeAudioClientInterface::Get()->GetSource(*unicast_source_stream_cb_,
+                                                     &message_loop_thread),
+            nullptr);
+}
+
+// Test scenario: Verify that attempting to release a source interface that has
+// not been acquired returns `false`.
+TEST_F(LeAudioSoftwareUnicastTestAidl, ReleaseSourceNotAcquired) {
+  LeAudioClientInterface::Source source;
+  ASSERT_FALSE(LeAudioClientInterface::Get()->ReleaseSource(&source));
+}
+
+// Test scenario: Test the update of track metadata for both sink and source,
+// including valid and empty track lists.
 TEST_F(LeAudioSoftwareUnicastTestAidl, TrackListUpdate) {
   ASSERT_NE(nullptr, sink_);
   ASSERT_NE(nullptr, source_);
@@ -702,6 +746,8 @@ protected:
   MockBluetoothAudioClientInterfaceHidl audio_client_interface_;
 };
 
+// Test scenario: Test the successful acquisition and release of both sink and
+// source interfaces for a unicast session using the HIDL HAL.
 TEST_F(LeAudioSoftwareUnicastTestHidl, AcquireAndRelease) {
   ASSERT_NE(nullptr, sink_);
   ASSERT_NE(nullptr, source_);
@@ -715,6 +761,9 @@ protected:
   }
 };
 
+// Test scenario: Test the successful acquisition and release of a sink
+// interface for a broadcast session. Ensure that a source cannot be acquired in
+// a broadcast session.
 TEST_F(LeAudioSoftwareBroadcastTestAidl, AcquireAndRelease) {
   ASSERT_NE(nullptr, sink_);
   ASSERT_EQ(nullptr, source_);
@@ -724,9 +773,711 @@ TEST_F(LeAudioSoftwareBroadcastTestAidl, AcquireAndRelease) {
   ASSERT_EQ(::bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::interface, nullptr);
 }
 
+// Test scenario: Verify that a valid broadcast configuration can be retrieved
+// for a broadcast sink.
 TEST_F(LeAudioSoftwareBroadcastTestAidl, GetBroadcastConfig) {
   ASSERT_NE(nullptr, sink_);
   ASSERT_NE(sink_->GetBroadcastConfig({}, std::nullopt), std::nullopt);
+}
+
+// Test scenario: Test the retrieval of a unicast configuration with valid
+// requirements.
+TEST_F(LeAudioSoftwareUnicastTestAidl, GetUnicastConfig) {
+  ASSERT_NE(nullptr, sink_);
+  bluetooth::le_audio::CodecManager::UnicastConfigurationRequirements reqs = {
+          .audio_context_type = ::bluetooth::le_audio::types::LeAudioContextType::MEDIA,
+  };
+
+  std::vector<::aidl::android::hardware::bluetooth::audio::IBluetoothAudioProvider::
+                      LeAudioAseConfigurationSetting>
+          ret_configs(1);
+  ret_configs[0].audioContext.bitmask =
+          ::aidl::android::hardware::bluetooth::audio::AudioContext::MEDIA;
+  ret_configs[0].sinkAseConfiguration.emplace(1);
+  (*ret_configs[0].sinkAseConfiguration)[0].emplace();
+  (*ret_configs[0].sinkAseConfiguration)[0]->aseConfiguration.targetLatency = ::aidl::android::
+          hardware::bluetooth::audio::LeAudioAseConfiguration::TargetLatency::LOWER;
+  (*ret_configs[0].sinkAseConfiguration)[0]->aseConfiguration.targetPhy =
+          ::aidl::android::hardware::bluetooth::audio::Phy::TWO_M;
+  (*ret_configs[0].sinkAseConfiguration)[0]->aseConfiguration.codecId.emplace();
+  (*ret_configs[0].sinkAseConfiguration)[0]->aseConfiguration.codecId =
+          ::aidl::android::hardware::bluetooth::audio::CodecId::Core::LC3;
+
+  EXPECT_CALL(audio_client_interface_,
+              GetLeAudioAseConfiguration(testing::_, testing::_, testing::_))
+          .WillOnce(Return(ret_configs));
+  ASSERT_NE(sink_->GetUnicastConfig(reqs), std::nullopt);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, GetUnicastConfigEmpty) {
+  ASSERT_NE(nullptr, sink_);
+  bluetooth::le_audio::CodecManager::UnicastConfigurationRequirements reqs = {
+          .audio_context_type = ::bluetooth::le_audio::types::LeAudioContextType::MEDIA,
+  };
+
+  std::vector<::aidl::android::hardware::bluetooth::audio::IBluetoothAudioProvider::
+                      LeAudioAseConfigurationSetting>
+          ret_configs(0);
+  EXPECT_CALL(audio_client_interface_,
+              GetLeAudioAseConfiguration(testing::_, testing::_, testing::_))
+          .WillOnce(Return(ret_configs));
+  ASSERT_EQ(sink_->GetUnicastConfig(reqs), std::nullopt);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, GetUnicastConfigMultiple) {
+  ASSERT_NE(nullptr, sink_);
+  bluetooth::le_audio::CodecManager::UnicastConfigurationRequirements reqs = {
+          .audio_context_type = ::bluetooth::le_audio::types::LeAudioContextType::MEDIA,
+  };
+
+  std::vector<::aidl::android::hardware::bluetooth::audio::IBluetoothAudioProvider::
+                      LeAudioAseConfigurationSetting>
+          ret_configs(2);
+  ret_configs[0].audioContext.bitmask =
+          ::aidl::android::hardware::bluetooth::audio::AudioContext::MEDIA;
+  ret_configs[0].sinkAseConfiguration.emplace(1);
+  (*ret_configs[0].sinkAseConfiguration)[0].emplace();
+  (*ret_configs[0].sinkAseConfiguration)[0]->aseConfiguration.targetLatency = ::aidl::android::
+          hardware::bluetooth::audio::LeAudioAseConfiguration::TargetLatency::LOWER;
+  (*ret_configs[0].sinkAseConfiguration)[0]->aseConfiguration.targetPhy =
+          ::aidl::android::hardware::bluetooth::audio::Phy::TWO_M;
+  (*ret_configs[0].sinkAseConfiguration)[0]->aseConfiguration.codecId.emplace();
+  (*ret_configs[0].sinkAseConfiguration)[0]->aseConfiguration.codecId =
+          ::aidl::android::hardware::bluetooth::audio::CodecId::Core::LC3;
+  ret_configs[1].audioContext.bitmask =
+          ::aidl::android::hardware::bluetooth::audio::AudioContext::MEDIA;
+  ret_configs[1].sinkAseConfiguration.emplace(1);
+  (*ret_configs[1].sinkAseConfiguration)[0].emplace();
+  (*ret_configs[1].sinkAseConfiguration)[0]->aseConfiguration.targetLatency = ::aidl::android::
+          hardware::bluetooth::audio::LeAudioAseConfiguration::TargetLatency::LOWER;
+  (*ret_configs[1].sinkAseConfiguration)[0]->aseConfiguration.targetPhy =
+          ::aidl::android::hardware::bluetooth::audio::Phy::TWO_M;
+  (*ret_configs[1].sinkAseConfiguration)[0]->aseConfiguration.codecId.emplace();
+  (*ret_configs[1].sinkAseConfiguration)[0]
+          ->aseConfiguration.codecId
+          ->set<::aidl::android::hardware::bluetooth::audio::CodecId::Tag::core>(
+                  ::aidl::android::hardware::bluetooth::audio::CodecId::Core::LC3);
+  EXPECT_CALL(audio_client_interface_,
+              GetLeAudioAseConfiguration(testing::_, testing::_, testing::_))
+          .WillOnce(Return(ret_configs));
+  ASSERT_NE(sink_->GetUnicastConfig(reqs), std::nullopt);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, GetOffloadCapabilities) {
+  auto capabilities = bluetooth::audio::le_audio::get_offload_capabilities();
+  ASSERT_EQ(capabilities.unicast_offload_capabilities.size(), (size_t)0);
+  ASSERT_EQ(capabilities.broadcast_offload_capabilities.size(), (size_t)0);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkSetPcmParameters) {
+  ASSERT_NE(nullptr, sink_);
+  LeAudioClientInterface::PcmParameters params = {.data_interval_us = 10000,
+                                                  .sample_rate = 16000,
+                                                  .bits_per_sample = 16,
+                                                  .channels_count = 1};
+  sink_->SetPcmParameters(params);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkSetRemoteDelay) {
+  ASSERT_NE(nullptr, sink_);
+  sink_->SetRemoteDelay(10);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkStartSession) {
+  ASSERT_NE(nullptr, sink_);
+  EXPECT_CALL(audio_client_interface_, UpdateAudioConfig(testing::_)).WillOnce(Return(true));
+  EXPECT_CALL(audio_client_interface_, StartSession()).WillOnce(Return(0));
+  sink_->StartSession();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkStartSessionUpdateConfigFail) {
+  ASSERT_NE(nullptr, sink_);
+  EXPECT_CALL(audio_client_interface_, UpdateAudioConfig(testing::_)).WillOnce(Return(false));
+  sink_->StartSession();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkStopSession) {
+  ASSERT_NE(nullptr, sink_);
+  EXPECT_CALL(audio_client_interface_, EndSession()).WillOnce(Return(0));
+  sink_->StopSession();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkRead) {
+  ASSERT_NE(nullptr, sink_);
+  uint8_t buffer[10];
+  EXPECT_CALL(audio_client_interface_.endpoint, ReadAudioData(buffer, 10)).WillOnce(Return(10));
+  ASSERT_EQ(sink_->Read(buffer, 10), (size_t)10);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceSetPcmParameters) {
+  ASSERT_NE(nullptr, source_);
+  LeAudioClientInterface::PcmParameters params = {.data_interval_us = 10000,
+                                                  .sample_rate = 16000,
+                                                  .bits_per_sample = 16,
+                                                  .channels_count = 1};
+  source_->SetPcmParameters(params);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceSetRemoteDelay) {
+  ASSERT_NE(nullptr, source_);
+  source_->SetRemoteDelay(10);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceStartSession) {
+  ASSERT_NE(nullptr, source_);
+  EXPECT_CALL(audio_client_interface_, UpdateAudioConfig(testing::_)).WillOnce(Return(true));
+  EXPECT_CALL(audio_client_interface_, StartSession()).WillOnce(Return(0));
+  source_->StartSession();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceStartSessionUpdateConfigFail) {
+  ASSERT_NE(nullptr, source_);
+  EXPECT_CALL(audio_client_interface_, UpdateAudioConfig(testing::_)).WillOnce(Return(false));
+  source_->StartSession();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceStopSession) {
+  ASSERT_NE(nullptr, source_);
+  EXPECT_CALL(audio_client_interface_, EndSession()).WillOnce(Return(0));
+  source_->StopSession();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceWrite) {
+  ASSERT_NE(nullptr, source_);
+  uint8_t buffer[10] = {0};
+  EXPECT_CALL(audio_client_interface_.endpoint, WriteAudioData(buffer, 10)).WillOnce(Return(10));
+  ASSERT_EQ(source_->Write(buffer, 10), (size_t)10);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkConfirmStreamingRequest) {
+  ASSERT_NE(nullptr, sink_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
+  instance->SetStartRequestState(
+          bluetooth::audio::le_audio::StartRequestState::PENDING_AFTER_RESUME);
+  EXPECT_CALL(audio_client_interface_,
+              StreamStarted(bluetooth::audio::aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED))
+          .Times(1);
+  sink_->ConfirmStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkConfirmStreamingRequestIdle) {
+  ASSERT_NE(nullptr, sink_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
+  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::IDLE);
+  sink_->ConfirmStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkConfirmStreamingRequestPendingBeforeResume) {
+  ASSERT_NE(nullptr, sink_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
+  instance->SetStartRequestState(
+          bluetooth::audio::le_audio::StartRequestState::PENDING_BEFORE_RESUME);
+  sink_->ConfirmStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkConfirmStreamingRequestConfirmed) {
+  ASSERT_NE(nullptr, sink_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
+  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CONFIRMED);
+  sink_->ConfirmStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkCancelStreamingRequest) {
+  ASSERT_NE(nullptr, sink_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
+  instance->SetStartRequestState(
+          bluetooth::audio::le_audio::StartRequestState::PENDING_AFTER_RESUME);
+  EXPECT_CALL(audio_client_interface_,
+              StreamStarted(bluetooth::audio::aidl::BluetoothAudioCtrlAck::FAILURE))
+          .Times(1);
+  sink_->CancelStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkCancelStreamingRequestIdle) {
+  ASSERT_NE(nullptr, sink_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
+  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::IDLE);
+  sink_->CancelStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkCancelStreamingRequestPendingBeforeResume) {
+  ASSERT_NE(nullptr, sink_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
+  instance->SetStartRequestState(
+          bluetooth::audio::le_audio::StartRequestState::PENDING_BEFORE_RESUME);
+  sink_->CancelStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkCancelStreamingRequestCanceled) {
+  ASSERT_NE(nullptr, sink_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
+  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CANCELED);
+  sink_->CancelStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequest) {
+  ASSERT_NE(nullptr, source_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  instance->SetStartRequestState(
+          bluetooth::audio::le_audio::StartRequestState::PENDING_AFTER_RESUME);
+  EXPECT_CALL(audio_client_interface_,
+              StreamStarted(bluetooth::audio::aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED))
+          .Times(1);
+  source_->ConfirmStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequestIdle) {
+  ASSERT_NE(nullptr, source_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::IDLE);
+  source_->ConfirmStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequestPendingBeforeResume) {
+  ASSERT_NE(nullptr, source_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  instance->SetStartRequestState(
+          bluetooth::audio::le_audio::StartRequestState::PENDING_BEFORE_RESUME);
+  source_->ConfirmStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequestConfirmed) {
+  ASSERT_NE(nullptr, source_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CONFIRMED);
+  source_->ConfirmStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequest) {
+  ASSERT_NE(nullptr, source_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  instance->SetStartRequestState(
+          bluetooth::audio::le_audio::StartRequestState::PENDING_AFTER_RESUME);
+  EXPECT_CALL(audio_client_interface_,
+              StreamStarted(bluetooth::audio::aidl::BluetoothAudioCtrlAck::FAILURE))
+          .Times(1);
+  source_->CancelStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequestIdle) {
+  ASSERT_NE(nullptr, source_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::IDLE);
+  source_->CancelStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequestPendingBeforeResume) {
+  ASSERT_NE(nullptr, source_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  instance->SetStartRequestState(
+          bluetooth::audio::le_audio::StartRequestState::PENDING_BEFORE_RESUME);
+  source_->CancelStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequestCanceled) {
+  ASSERT_NE(nullptr, source_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CANCELED);
+  source_->CancelStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkSuspendedForReconfiguration) {
+  ASSERT_NE(nullptr, sink_);
+  EXPECT_CALL(
+          audio_client_interface_,
+          StreamSuspended(bluetooth::audio::aidl::BluetoothAudioCtrlAck::SUCCESS_RECONFIGURATION))
+          .Times(1);
+  sink_->SuspendedForReconfiguration();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkReconfigurationComplete) {
+  ASSERT_NE(nullptr, sink_);
+  EXPECT_CALL(audio_client_interface_,
+              StreamSuspended(bluetooth::audio::aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED))
+          .Times(1);
+  sink_->ReconfigurationComplete();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkStreamSuspended) {
+  ASSERT_NE(nullptr, sink_);
+  EXPECT_CALL(audio_client_interface_,
+              StreamSuspended(bluetooth::audio::aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED))
+          .Times(1);
+  sink_->StreamSuspended();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceSuspendedForReconfiguration) {
+  ASSERT_NE(nullptr, source_);
+  EXPECT_CALL(
+          audio_client_interface_,
+          StreamSuspended(bluetooth::audio::aidl::BluetoothAudioCtrlAck::SUCCESS_RECONFIGURATION))
+          .Times(1);
+  source_->SuspendedForReconfiguration();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceReconfigurationComplete) {
+  ASSERT_NE(nullptr, source_);
+  EXPECT_CALL(audio_client_interface_,
+              StreamSuspended(bluetooth::audio::aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED))
+          .Times(1);
+  source_->ReconfigurationComplete();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceStreamSuspended) {
+  ASSERT_NE(nullptr, source_);
+  EXPECT_CALL(audio_client_interface_,
+              StreamSuspended(bluetooth::audio::aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED))
+          .Times(1);
+  source_->StreamSuspended();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkCleanupInvalidTransport) {
+  ASSERT_NE(nullptr, sink_);
+  // Set an invalid transport and expect no calls to the mock
+  ON_CALL(hal_version_manager_, GetHalTransport)
+          .WillByDefault(Return(bluetooth::audio::BluetoothAudioHalTransport::UNKNOWN));
+  sink_->Cleanup();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkStartSessionNonV2_1Hidl) {
+  ASSERT_NE(nullptr, sink_);
+  ON_CALL(hal_version_manager_, GetHalVersion())
+          .WillByDefault(Return(bluetooth::audio::BluetoothAudioHalVersion::VERSION_UNAVAILABLE));
+  sink_->StartSession();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkConfirmStreamingRequestInvalidStates) {
+  ASSERT_NE(nullptr, sink_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
+
+  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CONFIRMED);
+  sink_->ConfirmStreamingRequest();
+
+  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CANCELED);
+  sink_->ConfirmStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkCancelStreamingRequestInvalidStates) {
+  ASSERT_NE(nullptr, sink_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::instance_unicast_;
+
+  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CONFIRMED);
+  sink_->CancelStreamingRequest();
+
+  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CANCELED);
+  sink_->CancelStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkUpdateAudioConfigToHalNoOffload) {
+  ASSERT_NE(nullptr, sink_);
+  bluetooth::le_audio::stream_config config;
+  // Set session to non-offload, expect no call
+  ON_CALL(hal_version_manager_, GetHalTransport())
+          .WillByDefault(Return(bluetooth::audio::BluetoothAudioHalTransport::AIDL));
+  sink_->UpdateAudioConfigToHal(config);
+}
+
+TEST_F(LeAudioSoftwareBroadcastTestAidl, GetBroadcastConfigNoOffload) {
+  // This test is for a unicast sink, but we are in a broadcast test fixture.
+  // So we need to release the broadcast sink and create a unicast one.
+  LeAudioClientInterface::Get()->ReleaseSink(sink_);
+  sink_ = LeAudioClientInterface::Get()->GetSink(*unicast_sink_stream_cb_, &message_loop_thread,
+                                                 false);
+  ASSERT_NE(nullptr, sink_);
+  ASSERT_FALSE(sink_->IsBroadcaster());
+  ASSERT_EQ(sink_->GetBroadcastConfig({}, std::nullopt), std::nullopt);
+}
+
+TEST_F(LeAudioSoftwareBroadcastTestAidl, UpdateBroadcastAudioConfigToHalNoOffload) {
+  ASSERT_NE(nullptr, sink_);
+  bluetooth::le_audio::broadcast_offload_config config;
+  // Set session to non-offload, expect no call
+  is_broadcast_ = false;
+  sink_->UpdateBroadcastAudioConfigToHal(config);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceStartSessionNonV2_1Hidl) {
+  ASSERT_NE(nullptr, source_);
+  ON_CALL(hal_version_manager_, GetHalVersion())
+          .WillByDefault(Return(bluetooth::audio::BluetoothAudioHalVersion::VERSION_UNAVAILABLE));
+  source_->StartSession();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceConfirmStreamingRequestInvalidStates) {
+  ASSERT_NE(nullptr, source_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+
+  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CONFIRMED);
+  source_->ConfirmStreamingRequest();
+
+  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CANCELED);
+  source_->ConfirmStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceCancelStreamingRequestInvalidStates) {
+  ASSERT_NE(nullptr, source_);
+  auto instance = bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::instance;
+
+  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CONFIRMED);
+  source_->CancelStreamingRequest();
+
+  instance->SetStartRequestState(bluetooth::audio::le_audio::StartRequestState::CANCELED);
+  source_->CancelStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceUpdateAudioConfigToHalNoOffload) {
+  ASSERT_NE(nullptr, source_);
+  bluetooth::le_audio::stream_config config;
+  // Set session to non-offload, expect no call
+  ON_CALL(hal_version_manager_, GetHalTransport())
+          .WillByDefault(Return(bluetooth::audio::BluetoothAudioHalTransport::AIDL));
+  source_->UpdateAudioConfigToHal(config);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceSetCodecPriorityNoOffload) {
+  ASSERT_NE(nullptr, source_);
+  bluetooth::le_audio::types::LeAudioCodecId codec_id;
+  // Set session to non-offload, expect no call
+  ON_CALL(hal_version_manager_, GetHalTransport())
+          .WillByDefault(Return(bluetooth::audio::BluetoothAudioHalTransport::AIDL));
+  source_->SetCodecPriority(codec_id, 0);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, GetSinkInvalidInterface) {
+  // Release the valid sink first
+  LeAudioClientInterface::Get()->ReleaseSink(sink_);
+  sink_ = nullptr;
+
+  ON_CALL(audio_client_interface_, IsValid).WillByDefault(Return(false));
+  ASSERT_EQ(LeAudioClientInterface::Get()->GetSink(*unicast_sink_stream_cb_, &message_loop_thread,
+                                                   is_broadcast_),
+            nullptr);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, GetSourceInvalidInterface) {
+  // Release the valid source first
+  LeAudioClientInterface::Get()->ReleaseSource(source_);
+  source_ = nullptr;
+
+  ON_CALL(audio_client_interface_, IsValid).WillByDefault(Return(false));
+  ASSERT_EQ(LeAudioClientInterface::Get()->GetSource(*unicast_source_stream_cb_,
+                                                     &message_loop_thread),
+            nullptr);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SetAllowedDsaModesNoUnicastSink) {
+  // Release the unicast sink
+  LeAudioClientInterface::Get()->ReleaseSink(sink_);
+  sink_ = nullptr;
+  LeAudioClientInterface::Get()->SetAllowedDsaModes({bluetooth::le_audio::DsaMode::ACL});
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, GetCodecConfigProviderInfoNoAidl) {
+  ON_CALL(hal_version_manager_, GetHalTransport())
+          .WillByDefault(Return(bluetooth::audio::BluetoothAudioHalTransport::HIDL));
+  auto info = LeAudioClientInterface::Get()->GetCodecConfigProviderInfo();
+  ASSERT_FALSE(info.has_value());
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkUpdateAudioConfigToHal) {
+  ASSERT_NE(nullptr, sink_);
+  bluetooth::le_audio::stream_config config;
+  EXPECT_CALL(audio_client_interface_, UpdateAudioConfig(testing::_)).Times(1);
+  sink_->UpdateAudioConfigToHal(config);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkSetCodecPriority) {
+  ASSERT_NE(nullptr, sink_);
+  bluetooth::le_audio::types::LeAudioCodecId codec_id;
+  sink_->SetCodecPriority(codec_id, 0);
+}
+
+TEST_F(LeAudioSoftwareBroadcastTestAidl, UpdateBroadcastAudioConfigToHal) {
+  ASSERT_NE(nullptr, sink_);
+  bluetooth::le_audio::broadcast_offload_config config;
+  EXPECT_CALL(audio_client_interface_, UpdateAudioConfig(testing::_)).Times(1);
+  sink_->UpdateBroadcastAudioConfigToHal(config);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceUpdateAudioConfigToHal) {
+  ASSERT_NE(nullptr, source_);
+  bluetooth::le_audio::stream_config config;
+  EXPECT_CALL(audio_client_interface_, UpdateAudioConfig(testing::_)).Times(1);
+  source_->UpdateAudioConfigToHal(config);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceSetCodecPriority) {
+  ASSERT_NE(nullptr, source_);
+  bluetooth::le_audio::types::LeAudioCodecId codec_id;
+  source_->SetCodecPriority(codec_id, 0);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SetAllowedDsaModes) {
+  LeAudioClientInterface::Get()->SetAllowedDsaModes({bluetooth::le_audio::DsaMode::ACL});
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, GetCodecConfigProviderInfo) {
+  EXPECT_CALL(audio_client_interface_, GetProviderInfo(testing::_, testing::_))
+          .Times(2)
+          .WillRepeatedly(Return(std::nullopt));
+  auto info = LeAudioClientInterface::Get()->GetCodecConfigProviderInfo();
+  ASSERT_FALSE(info.has_value());
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, GetOffloadCapabilities) {
+  ON_CALL(hal_version_manager_, GetHalTransport())
+          .WillByDefault(Return(bluetooth::audio::BluetoothAudioHalTransport::HIDL));
+  auto capabilities = bluetooth::audio::le_audio::get_offload_capabilities();
+  ASSERT_EQ(capabilities.unicast_offload_capabilities.size(), (size_t)0);
+  ASSERT_EQ(capabilities.broadcast_offload_capabilities.size(), (size_t)0);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SinkSetPcmParameters) {
+  ASSERT_NE(nullptr, sink_);
+  LeAudioClientInterface::PcmParameters params = {.data_interval_us = 10000,
+                                                  .sample_rate = 16000,
+                                                  .bits_per_sample = 16,
+                                                  .channels_count = 1};
+  sink_->SetPcmParameters(params);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SinkSetRemoteDelay) {
+  ASSERT_NE(nullptr, sink_);
+  sink_->SetRemoteDelay(10);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SinkStartSession) {
+  ASSERT_NE(nullptr, sink_);
+  ON_CALL(hal_version_manager_, GetHalVersion())
+          .WillByDefault(Return(bluetooth::audio::BluetoothAudioHalVersion::VERSION_2_1));
+  EXPECT_CALL(audio_client_interface_, UpdateAudioConfig_2_1(testing::_)).WillOnce(Return(true));
+  EXPECT_CALL(audio_client_interface_, StartSession_2_1()).WillOnce(Return(0));
+  sink_->StartSession();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SinkStartSessionUpdateConfigFail) {
+  ASSERT_NE(nullptr, sink_);
+  ON_CALL(hal_version_manager_, GetHalVersion())
+          .WillByDefault(Return(bluetooth::audio::BluetoothAudioHalVersion::VERSION_2_1));
+  EXPECT_CALL(audio_client_interface_, UpdateAudioConfig_2_1(testing::_)).WillOnce(Return(false));
+  sink_->StartSession();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SinkStopSession) {
+  ASSERT_NE(nullptr, sink_);
+  EXPECT_CALL(audio_client_interface_, EndSession()).WillOnce(Return(0));
+  sink_->StopSession();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SinkRead) {
+  ASSERT_NE(nullptr, sink_);
+  uint8_t buffer[10];
+  EXPECT_CALL(audio_client_interface_.endpoint, ReadAudioData(buffer, 10)).WillOnce(Return(10));
+  ASSERT_EQ(sink_->Read(buffer, 10), (size_t)10);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SourceSetPcmParameters) {
+  ASSERT_NE(nullptr, source_);
+  LeAudioClientInterface::PcmParameters params = {.data_interval_us = 10000,
+                                                  .sample_rate = 16000,
+                                                  .bits_per_sample = 16,
+                                                  .channels_count = 1};
+  source_->SetPcmParameters(params);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SourceSetRemoteDelay) {
+  ASSERT_NE(nullptr, source_);
+  source_->SetRemoteDelay(10);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SourceStartSession) {
+  ASSERT_NE(nullptr, source_);
+  ON_CALL(hal_version_manager_, GetHalVersion())
+          .WillByDefault(Return(bluetooth::audio::BluetoothAudioHalVersion::VERSION_2_1));
+  EXPECT_CALL(audio_client_interface_, UpdateAudioConfig_2_1(testing::_)).WillOnce(Return(true));
+  EXPECT_CALL(audio_client_interface_, StartSession_2_1()).WillOnce(Return(0));
+  source_->StartSession();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SourceStartSessionUpdateConfigFail) {
+  ASSERT_NE(nullptr, source_);
+  ON_CALL(hal_version_manager_, GetHalVersion())
+          .WillByDefault(Return(bluetooth::audio::BluetoothAudioHalVersion::VERSION_2_1));
+  EXPECT_CALL(audio_client_interface_, UpdateAudioConfig_2_1(testing::_)).WillOnce(Return(false));
+  source_->StartSession();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SourceStopSession) {
+  ASSERT_NE(nullptr, source_);
+  EXPECT_CALL(audio_client_interface_, EndSession()).WillOnce(Return(0));
+  source_->StopSession();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SourceWrite) {
+  ASSERT_NE(nullptr, source_);
+  uint8_t buffer[10] = {0};
+  EXPECT_CALL(audio_client_interface_.endpoint, WriteAudioData(buffer, 10)).WillOnce(Return(10));
+  ASSERT_EQ(source_->Write(buffer, 10), (size_t)10);
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SinkConfirmStreamingRequest) {
+  ASSERT_NE(nullptr, sink_);
+  auto instance = bluetooth::audio::hidl::le_audio::LeAudioSinkTransport::instance;
+  instance->SetStartRequestState(
+          bluetooth::audio::le_audio::StartRequestState::PENDING_AFTER_RESUME);
+  EXPECT_CALL(audio_client_interface_,
+              StreamStarted(bluetooth::audio::hidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED))
+          .Times(1);
+  sink_->ConfirmStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SinkCancelStreamingRequest) {
+  ASSERT_NE(nullptr, sink_);
+  auto instance = bluetooth::audio::hidl::le_audio::LeAudioSinkTransport::instance;
+  instance->SetStartRequestState(
+          bluetooth::audio::le_audio::StartRequestState::PENDING_AFTER_RESUME);
+  EXPECT_CALL(audio_client_interface_,
+              StreamStarted(bluetooth::audio::hidl::BluetoothAudioCtrlAck::FAILURE))
+          .Times(1);
+  sink_->CancelStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SourceConfirmStreamingRequest) {
+  ASSERT_NE(nullptr, source_);
+  auto instance = bluetooth::audio::hidl::le_audio::LeAudioSourceTransport::instance;
+  instance->SetStartRequestState(
+          bluetooth::audio::le_audio::StartRequestState::PENDING_AFTER_RESUME);
+  EXPECT_CALL(audio_client_interface_,
+              StreamStarted(bluetooth::audio::hidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED))
+          .Times(1);
+  source_->ConfirmStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SourceCancelStreamingRequest) {
+  ASSERT_NE(nullptr, source_);
+  auto instance = bluetooth::audio::hidl::le_audio::LeAudioSourceTransport::instance;
+  instance->SetStartRequestState(
+          bluetooth::audio::le_audio::StartRequestState::PENDING_AFTER_RESUME);
+  EXPECT_CALL(audio_client_interface_,
+              StreamStarted(bluetooth::audio::hidl::BluetoothAudioCtrlAck::FAILURE))
+          .Times(1);
+  source_->CancelStreamingRequest();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SinkSuspendedForReconfiguration) {
+  ASSERT_NE(nullptr, sink_);
+  EXPECT_CALL(audio_client_interface_,
+              StreamSuspended(bluetooth::audio::hidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED))
+          .Times(1);
+  sink_->SuspendedForReconfiguration();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestHidl, SourceSuspendedForReconfiguration) {
+  ASSERT_NE(nullptr, source_);
+  EXPECT_CALL(audio_client_interface_,
+              StreamSuspended(bluetooth::audio::hidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED))
+          .Times(1);
+  source_->SuspendedForReconfiguration();
 }
 
 }  // namespace

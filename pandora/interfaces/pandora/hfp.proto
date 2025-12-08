@@ -36,21 +36,26 @@ service HFP {
   // End a call from a peer device (as a handsfree)
   rpc EndCallAsHandsfree(EndCallAsHandsfreeRequest) returns (EndCallAsHandsfreeResponse);
   // Decline an incoming call from a peer device (as a handsfree)
-  rpc DeclineCallAsHandsfree(DeclineCallAsHandsfreeRequest) returns (DeclineCallAsHandsfreeResponse);
+  rpc DeclineCallAsHandsfree(DeclineCallAsHandsfreeRequest)
+      returns (DeclineCallAsHandsfreeResponse);
   // Connect to an incoming audio stream from a peer device (as a handsfree)
-  rpc ConnectToAudioAsHandsfree(ConnectToAudioAsHandsfreeRequest) returns (ConnectToAudioAsHandsfreeResponse);
+  rpc ConnectToAudioAsHandsfree(ConnectToAudioAsHandsfreeRequest)
+      returns (ConnectToAudioAsHandsfreeResponse);
   // Disconnect from an incoming audio stream from a peer device (as a handsfree)
-  rpc DisconnectFromAudioAsHandsfree(DisconnectFromAudioAsHandsfreeRequest) returns (DisconnectFromAudioAsHandsfreeResponse);
+  rpc DisconnectFromAudioAsHandsfree(DisconnectFromAudioAsHandsfreeRequest)
+      returns (DisconnectFromAudioAsHandsfreeResponse);
   // Make a call to a given phone number (as a handsfree)
   rpc MakeCallAsHandsfree(MakeCallAsHandsfreeRequest) returns (MakeCallAsHandsfreeResponse);
   // Connect a call on hold, and disconnect the current call (as a handsfree)
-  rpc CallTransferAsHandsfree(CallTransferAsHandsfreeRequest) returns (CallTransferAsHandsfreeResponse);
+  rpc CallTransferAsHandsfree(CallTransferAsHandsfreeRequest)
+      returns (CallTransferAsHandsfreeResponse);
   // Enable Service level connection (as a handsfree)
   rpc EnableSlcAsHandsfree(EnableSlcAsHandsfreeRequest) returns (google.protobuf.Empty);
   // Disable Service level connection (as a handsfree)
   rpc DisableSlcAsHandsfree(DisableSlcAsHandsfreeRequest) returns (google.protobuf.Empty);
   // Set voice recognition (as a handsfree)
-  rpc SetVoiceRecognitionAsHandsfree(SetVoiceRecognitionAsHandsfreeRequest) returns (SetVoiceRecognitionAsHandsfreeResponse);
+  rpc SetVoiceRecognitionAsHandsfree(SetVoiceRecognitionAsHandsfreeRequest)
+      returns (SetVoiceRecognitionAsHandsfreeResponse);
   // Send DTMF code from the handsfree
   rpc SendDtmfFromHandsfree(SendDtmfFromHandsfreeRequest) returns (SendDtmfFromHandsfreeResponse);
 }

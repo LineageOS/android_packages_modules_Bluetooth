@@ -45,8 +45,23 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import pandora.HAPGrpc.HAPImplBase
-import pandora.HapProto.*
-import pandora.HostProto.Connection
+import pandora.HapProto.GetActivePresetRequest
+import pandora.HapProto.GetActivePresetResponse
+import pandora.HapProto.GetAllPresetsRequest
+import pandora.HapProto.GetAllPresetsResponse
+import pandora.HapProto.GetFeaturesRequest
+import pandora.HapProto.GetFeaturesResponse
+import pandora.HapProto.GetPresetRequest
+import pandora.HapProto.GetPresetResponse
+import pandora.HapProto.PresetRecord
+import pandora.HapProto.SetActivePresetForGroupRequest
+import pandora.HapProto.SetActivePresetRequest
+import pandora.HapProto.SetNextPresetRequest
+import pandora.HapProto.SetPreviousPresetRequest
+import pandora.HapProto.WaitActivePresetChangedRequest
+import pandora.HapProto.WaitPeripheralRequest
+import pandora.HapProto.WaitPresetChangedResponse
+import pandora.HapProto.WritePresetNameRequest
 
 @kotlinx.coroutines.ExperimentalCoroutinesApi
 class Hap(val context: Context) : HAPImplBase(), Closeable {
@@ -73,57 +88,88 @@ class Hap(val context: Context) : HAPImplBase(), Closeable {
             )
             .shareIn(scope, SharingStarted.Eagerly)
 
-    private class PresetInfoChanged(
-        var connection: Connection,
-        var presetInfoList: List<BluetoothHapPresetInfo>,
-        var reason: Int,
-    ) {}
+    private sealed class HapCallbackEvent {
+        data class PresetSelected(
+            val device: BluetoothDevice,
+            val presetIndex: Int,
+            val reason: Int,
+        ) : HapCallbackEvent()
 
-    private val mPresetChanged = callbackFlow {
-        val callback =
-            object : BluetoothHapClient.Callback {
-                override fun onPresetSelected(
-                    device: BluetoothDevice,
-                    presetIndex: Int,
-                    reason: Int,
-                ) {
-                    Log.i(TAG, "$device preset info changed")
-                }
+        data class PresetSelectionFailed(val device: BluetoothDevice, val reason: Int) :
+            HapCallbackEvent()
 
-                override fun onPresetSelectionFailed(device: BluetoothDevice, reason: Int) {
-                    trySend(null)
-                }
+        data class PresetSelectionForGroupFailed(val hapGroupId: Int, val reason: Int) :
+            HapCallbackEvent()
 
-                override fun onPresetSelectionForGroupFailed(hapGroupId: Int, reason: Int) {
-                    trySend(null)
-                }
+        data class PresetInfoChanged(
+            val device: BluetoothDevice,
+            val presetInfoList: List<BluetoothHapPresetInfo>,
+            val reason: Int,
+        ) : HapCallbackEvent()
 
-                override fun onPresetInfoChanged(
-                    device: BluetoothDevice,
-                    presetInfoList: List<BluetoothHapPresetInfo>,
-                    reason: Int,
-                ) {
-                    Log.i(TAG, "$device preset info changed")
+        data class SetPresetNameFailed(val device: BluetoothDevice, val reason: Int) :
+            HapCallbackEvent()
 
-                    var infoChanged =
-                        PresetInfoChanged(device.toConnection(TRANSPORT_LE), presetInfoList, reason)
-
-                    trySend(infoChanged)
-                }
-
-                override fun onSetPresetNameFailed(device: BluetoothDevice, reason: Int) {
-                    trySend(null)
-                }
-
-                override fun onSetPresetNameForGroupFailed(hapGroupId: Int, reason: Int) {
-                    trySend(null)
-                }
-            }
-
-        bluetoothHapClient.registerCallback(Executors.newSingleThreadExecutor(), callback)
-
-        awaitClose { bluetoothHapClient.unregisterCallback(callback) }
+        data class SetPresetNameForGroupFailed(val hapGroupId: Int, val reason: Int) :
+            HapCallbackEvent()
     }
+
+    private val mCallbackEvents =
+        callbackFlow {
+                val callback =
+                    object : BluetoothHapClient.Callback {
+                        override fun onPresetSelected(
+                            device: BluetoothDevice,
+                            presetIndex: Int,
+                            reason: Int,
+                        ) {
+                            Log.i(TAG, "onPresetSelected($device, $presetIndex, $reason)")
+                            trySend(HapCallbackEvent.PresetSelected(device, presetIndex, reason))
+                        }
+
+                        override fun onPresetSelectionFailed(device: BluetoothDevice, reason: Int) {
+                            Log.i(TAG, "onPresetSelectionFailed($device, $reason)")
+                            trySend(HapCallbackEvent.PresetSelectionFailed(device, reason))
+                        }
+
+                        override fun onPresetSelectionForGroupFailed(hapGroupId: Int, reason: Int) {
+                            Log.i(TAG, "onPresetSelectionForGroupFailed($hapGroupId, $reason)")
+                            trySend(
+                                HapCallbackEvent.PresetSelectionForGroupFailed(hapGroupId, reason)
+                            )
+                        }
+
+                        override fun onPresetInfoChanged(
+                            device: BluetoothDevice,
+                            presetInfoList: List<BluetoothHapPresetInfo>,
+                            reason: Int,
+                        ) {
+                            val presetsFormatted =
+                                presetInfoList.joinToString(separator = "\n\t", prefix = "\n\t")
+                            Log.i(TAG, "onPresetInfoChanged($device, $reason): $presetsFormatted")
+                            trySend(
+                                HapCallbackEvent.PresetInfoChanged(device, presetInfoList, reason)
+                            )
+                        }
+
+                        override fun onSetPresetNameFailed(device: BluetoothDevice, reason: Int) {
+                            Log.i(TAG, "onSetPresetNameFailed($device, $reason)")
+                            trySend(HapCallbackEvent.SetPresetNameFailed(device, reason))
+                        }
+
+                        override fun onSetPresetNameForGroupFailed(hapGroupId: Int, reason: Int) {
+                            Log.i(TAG, "onSetPresetNameForGroupFailed($hapGroupId, $reason)")
+                            trySend(
+                                HapCallbackEvent.SetPresetNameForGroupFailed(hapGroupId, reason)
+                            )
+                        }
+                    }
+
+                bluetoothHapClient.registerCallback(Executors.newSingleThreadExecutor(), callback)
+
+                awaitClose { bluetoothHapClient.unregisterCallback(callback) }
+            }
+            .shareIn(scope, SharingStarted.Eagerly, replay = 1)
 
     override fun close() {
         // Deinit the CoroutineScope
@@ -279,11 +325,14 @@ class Hap(val context: Context) : HAPImplBase(), Closeable {
         request: Empty,
         responseObserver: StreamObserver<WaitPresetChangedResponse>,
     ) {
+        Log.i(TAG, "waitPresetChanged()")
         grpcUnary<WaitPresetChangedResponse>(scope, responseObserver) {
-            val presetChangedReceived = mPresetChanged.first()!!
+            val presetChangedReceived =
+                mCallbackEvents.filter { it is HapCallbackEvent.PresetInfoChanged }.first()
+                    as HapCallbackEvent.PresetInfoChanged
 
             WaitPresetChangedResponse.newBuilder()
-                .setConnection(presetChangedReceived.connection)
+                .setConnection(presetChangedReceived.device.toConnection(TRANSPORT_LE))
                 .addAllPresetRecordList(
                     presetChangedReceived.presetInfoList
                         .stream()
@@ -292,6 +341,25 @@ class Hap(val context: Context) : HAPImplBase(), Closeable {
                 )
                 .setReason(presetChangedReceived.reason)
                 .build()
+        }
+    }
+
+    override fun waitActivePresetChanged(
+        request: WaitActivePresetChangedRequest,
+        responseObserver: StreamObserver<Empty>,
+    ) {
+        grpcUnary<Empty>(scope, responseObserver) {
+            val device = request.connection.toBluetoothDevice(bluetoothAdapter)
+            Log.i(TAG, "waitActivePresetChanged($device, ${request.index})")
+            mCallbackEvents
+                .filter {
+                    it is HapCallbackEvent.PresetSelected &&
+                        it.device == device &&
+                        it.presetIndex == request.index
+                }
+                .first()
+
+            Empty.getDefaultInstance()
         }
     }
 

@@ -20,7 +20,6 @@ namespace bluetooth {
 namespace storage {
 
 namespace {
-const std::string kLeIdentityAddressKey = "LeIdentityAddr";
 // TODO(siyuanh): check if we still need these keys in GD
 // const std::string kLePencKey = "LE_KEY_PENC";
 // const std::string kLePidKey = "LE_KEY_PENC";

@@ -23,6 +23,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <stdint.h>
 
 #include <bit>
@@ -38,7 +39,6 @@
 #include "osi/include/alarm.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_iso_api_types.h"
-#include "types/bluetooth/uuid.h"
 
 namespace bluetooth::le_audio {
 
@@ -158,6 +158,7 @@ constexpr uint8_t kLeAudioCodecFrameDur7500us = 0x00;
 constexpr uint8_t kLeAudioCodecFrameDur10000us = 0x01;
 
 /* Audio Allocations */
+constexpr uint32_t kLeAudioLocationUninitialized = 0xFFFFFFFF;
 constexpr uint32_t kLeAudioLocationMonoAudio = 0x00000000;
 constexpr uint32_t kLeAudioLocationFrontLeft = 0x00000001;
 constexpr uint32_t kLeAudioLocationFrontRight = 0x00000002;

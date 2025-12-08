@@ -44,7 +44,7 @@ object RolePermissionListener {
         session?.let { it.unregister() }
 
         val roleManager = userContext.getSystemService(RoleManager::class.java)!!
-        var userSession = UserSession(looper, roleManager, user, onRoleGranted)
+        val userSession = UserSession(looper, roleManager, user, onRoleGranted)
         if (hasBluetoothBeGivenStackRole(roleManager)) {
             Log.i(TAG, "Bluetooth already holds $BLUETOOTH_ROLE. Starting immediately")
             userSession.unregister()

@@ -27,13 +27,13 @@
 #include "smp_api.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <string.h>
 
 #include "smp_int.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/l2cap_interface.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

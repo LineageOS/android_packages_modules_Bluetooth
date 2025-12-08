@@ -17,6 +17,7 @@
 package android.bluetooth;
 
 import android.annotation.NonNull;
+import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -56,6 +57,7 @@ public final class BluetoothHealthAppConfiguration implements Parcelable {
      *     BluetoothDevice#createL2capChannel(int)}
      */
     @Deprecated
+    @RequiresNoPermission
     public int getDataType() {
         return 0;
     }
@@ -70,6 +72,7 @@ public final class BluetoothHealthAppConfiguration implements Parcelable {
      *     BluetoothDevice#createL2capChannel(int)}
      */
     @Deprecated
+    @RequiresNoPermission
     public String getName() {
         return null;
     }
@@ -84,6 +87,7 @@ public final class BluetoothHealthAppConfiguration implements Parcelable {
      *     BluetoothDevice#createL2capChannel(int)}
      */
     @Deprecated
+    @RequiresNoPermission
     public int getRole() {
         return 0;
     }

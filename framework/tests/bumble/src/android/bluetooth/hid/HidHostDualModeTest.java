@@ -23,7 +23,6 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
-import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
@@ -67,7 +66,6 @@ import android.util.Log;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import com.android.bluetooth.flags.Flags;
 import com.android.compatibility.common.util.AdoptShellPermissionsRule;
 
 import org.hamcrest.CustomTypeSafeMatcher;
@@ -94,6 +92,8 @@ import pandora.HostProto.OwnAddressType;
 
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /** Test cases for {@link BluetoothHidHost}. */
 @SuppressLint("MissingPermission")
@@ -103,6 +103,7 @@ public class HidHostDualModeTest {
     private static final String TAG = HidHostDualModeTest.class.getSimpleName();
 
     private static final Duration INTENT_TIMEOUT = Duration.ofSeconds(10);
+    private static final int REPORT_UPDATE_TIMEOUT_MS = 100;
     private static final int KEYBD_RPT_ID = 1;
     private static final int KEYBD_RPT_SIZE = 9;
     private static final int MOUSE_RPT_ID = 2;
@@ -130,6 +131,7 @@ public class HidHostDualModeTest {
     @Mock private BroadcastReceiver mReceiver;
     private InOrder mInOrder = null;
     private byte[] mReportData = {};
+    private CompletableFuture<Boolean> mIsReportUpdated;
 
     @Mock private BluetoothProfile.ServiceListener mProfileServiceListener;
 
@@ -245,6 +247,9 @@ public class HidHostDualModeTest {
                                     + device
                                     + " reportBufferSize "
                                     + reportBufferSize);
+                    if (mIsReportUpdated != null) {
+                        mIsReportUpdated.complete(true);
+                    }
                 } else {
                     Log.i(TAG, "onReceive(): unknown intent action " + action);
                 }
@@ -386,22 +391,30 @@ public class HidHostDualModeTest {
     public void hogpGetReportTest() throws Exception {
         // Keyboard report
         mReportData = new byte[0];
+        mIsReportUpdated = new CompletableFuture<>();
         mHidService.getReport(mDevice, BluetoothHidHost.REPORT_TYPE_INPUT, (byte) KEYBD_RPT_ID, 0);
         // Report Buffer = Report ID (1 byte) + Report Data (KEYBD_RPT_SIZE byte)
         verifyIntentReceived(
                 hasAction(BluetoothHidHost.ACTION_REPORT),
                 hasExtra(BluetoothHidHost.EXTRA_REPORT_BUFFER_SIZE, KEYBD_RPT_SIZE + 1));
+        mIsReportUpdated
+                .completeOnTimeout(null, REPORT_UPDATE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                .join();
         assertThat(mReportData).isNotNull();
         assertThat(mReportData.length).isGreaterThan(0);
         assertThat(mReportData[0]).isEqualTo(KEYBD_RPT_ID);
 
         // Mouse report
         mReportData = new byte[0];
+        mIsReportUpdated = new CompletableFuture<>();
         mHidService.getReport(mDevice, BluetoothHidHost.REPORT_TYPE_INPUT, (byte) MOUSE_RPT_ID, 0);
         // Report Buffer = Report ID (1 byte) + Report Data (MOUSE_RPT_SIZE byte)
         verifyIntentReceived(
                 hasAction(BluetoothHidHost.ACTION_REPORT),
                 hasExtra(BluetoothHidHost.EXTRA_REPORT_BUFFER_SIZE, MOUSE_RPT_SIZE + 1));
+        mIsReportUpdated
+                .completeOnTimeout(null, REPORT_UPDATE_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                .join();
         assertThat(mReportData).isNotNull();
         assertThat(mReportData.length).isGreaterThan(0);
         assertThat(mReportData[0]).isEqualTo(MOUSE_RPT_ID);
@@ -505,9 +518,7 @@ public class HidHostDualModeTest {
      */
     private void verifyTransportSwitch(BluetoothDevice device, int fromTransport, int toTransport) {
         assertThat(fromTransport).isNotEqualTo(toTransport);
-        if (!Flags.ignoreUnselectedHidTransportStates()) {
-            verifyConnectionState(mDevice, equalTo(fromTransport), equalTo(STATE_DISCONNECTING));
-        }
+
         // Capture the next intent with filter
         // Filter is necessary as otherwise it will corrupt all other unordered verifications
         final Intent[] savedIntent = {null};

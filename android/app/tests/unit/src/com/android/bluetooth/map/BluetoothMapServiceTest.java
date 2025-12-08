@@ -18,7 +18,6 @@ package com.android.bluetooth.map;
 
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
@@ -32,12 +31,13 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.telephony.TelephonyManager;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;
@@ -52,8 +52,7 @@ import org.mockito.Mock;
 public class BluetoothMapServiceTest {
     private BluetoothMapService mService = null;
     private final BluetoothDevice mDevice = getTestDevice(32);
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
@@ -62,9 +61,9 @@ public class BluetoothMapServiceTest {
 
     @Before
     public void setUp() {
-        doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
-        doReturn(mTargetContext.getPackageManager()).when(mAdapterService).getPackageManager();
-        doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();
+        doReturn(mContext.getPackageName()).when(mAdapterService).getPackageName();
+        doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
+        doReturn(mContext.getResources()).when(mAdapterService).getResources();
 
         mockGetSystemService(mAdapterService, TelephonyManager.class);
         mockGetSystemService(mAdapterService, AlarmManager.class);
@@ -77,12 +76,6 @@ public class BluetoothMapServiceTest {
     @After
     public void tearDown() {
         mService.cleanup();
-        assertThat(BluetoothMapService.getBluetoothMapService()).isNull();
-    }
-
-    @Test
-    public void initialize() {
-        assertThat(BluetoothMapService.getBluetoothMapService()).isNotNull();
     }
 
     @Test

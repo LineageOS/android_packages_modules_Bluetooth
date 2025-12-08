@@ -604,23 +604,22 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
             //         are able to provide it.
             for (PlayerStateField settings_field : mPendingStateRequest) {
                 switch (settings_field) {
-                    case PLAYBACK_STATE:
+                    case PLAYBACK_STATE -> {
                         if (mCurrentData.state != null) {
                             handled_request_map.put(
                                     settings_field,
                                     playerState2McsState(mCurrentData.state.getState()));
                         }
-                        break;
-                    case TRACK_DURATION:
-                        handled_request_map.put(settings_field, getCurrentTrackDuration());
-                        break;
-                    case PLAYBACK_SPEED:
+                    }
+                    case TRACK_DURATION ->
+                            handled_request_map.put(settings_field, getCurrentTrackDuration());
+                    case PLAYBACK_SPEED -> {
                         if (mCurrentData.state != null) {
                             handled_request_map.put(
                                     settings_field, mCurrentData.state.getPlaybackSpeed());
                         }
-                        break;
-                    case SEEKING_SPEED:
+                    }
+                    case SEEKING_SPEED -> {
                         float seeking_speed = 1.0f;
                         if (mCurrentData.state != null) {
                             if ((mCurrentData.state.getState()
@@ -632,36 +631,31 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
                         }
 
                         handled_request_map.put(settings_field, seeking_speed);
-                        break;
-                    case PLAYING_ORDER:
-                        handled_request_map.put(settings_field, getCurrentPlayerPlayingOrder());
-                        break;
-                    case TRACK_POSITION:
+                    }
+                    case PLAYING_ORDER ->
+                            handled_request_map.put(settings_field, getCurrentPlayerPlayingOrder());
+                    case TRACK_POSITION -> {
                         if (mCurrentData.state != null) {
                             handled_request_map.put(
                                     settings_field,
                                     getDriftCorrectedTrackPosition(mCurrentData.state));
                         }
-                        break;
-                    case PLAYER_NAME:
+                    }
+                    case PLAYER_NAME -> {
                         String player_name = getCurrentPlayerName();
                         if (player_name != null) {
                             handled_request_map.put(settings_field, player_name);
                         }
-                        break;
-                    case ICON_URL:
-                        // Not implemented
-                        break;
-                    case ICON_OBJ_ID:
-                        // TODO: Implement once we have Object Transfer Service
-                        break;
-                    case PLAYING_ORDER_SUPPORTED:
+                    }
+                    case ICON_URL -> {} // Not implemented
+                    case ICON_OBJ_ID -> {} // TODO: Implement once we have Object Transfer Service
+                    case PLAYING_ORDER_SUPPORTED -> {
                         Integer playing_order = getSupportedPlayingOrder();
                         if (playing_order != null) {
                             handled_request_map.put(settings_field, playing_order.intValue());
                         }
-                        break;
-                    case OPCODES_SUPPORTED:
+                    }
+                    case OPCODES_SUPPORTED -> {
                         if (mCurrentData.state != null) {
                             int opcodes =
                                     playerActions2McsSupportedOpcodes(
@@ -672,10 +666,8 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
                                     "updateSupportedOpcodes setting supported opcodes to: "
                                             + opcodes);
                         }
-                        break;
-                    case TRACK_TITLE:
-                        // Not implemented
-                        break;
+                    }
+                    case TRACK_TITLE -> {} // Not implemented
                 }
             }
         }
@@ -769,6 +761,7 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
             // Instantiate a Service Instance and it's state machine
             int ccid =
                     ContentControlIdKeeper.acquireCcid(
+                            mAdapterService,
                             BluetoothUuid.GENERIC_MEDIA_CONTROL,
                             BluetoothLeAudio.CONTEXT_TYPE_MEDIA
                                     | BluetoothLeAudio.CONTEXT_TYPE_LIVE);
@@ -868,7 +861,7 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
                 service.destroy();
 
                 // Release ccid
-                ContentControlIdKeeper.releaseCcid(ccid);
+                ContentControlIdKeeper.releaseCcid(mAdapterService, ccid);
 
                 mServiceMap.remove(appToken);
             }

@@ -199,7 +199,7 @@ fn generate_profile_enabled_or_tokenstream(item: TokenStream, attr_string: Strin
 
     let fn_name = input.sig.ident.to_string();
 
-    let ret_stmt: proc_macro2::TokenStream = format!("return {};", attr_string).parse().unwrap();
+    let ret_stmt: proc_macro2::TokenStream = format!("return {attr_string};").parse().unwrap();
 
     let check_block = quote::quote! {
         if !self.is_enabled() {

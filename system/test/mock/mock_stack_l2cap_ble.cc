@@ -25,10 +25,11 @@
 
 // Original included files, if any
 
+#include <bluetooth/types/address.h>
+
 #include "stack/include/l2cap_controller_interface.h"
 #include "stack/include/l2cap_hci_link_interface.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
 // Mocked internal structures, if any
@@ -41,6 +42,7 @@ namespace stack_l2cap_ble {
 struct L2CA_UpdateBleConnParams L2CA_UpdateBleConnParams;
 struct L2CA_LockBleConnParamsForServiceDiscovery L2CA_LockBleConnParamsForServiceDiscovery;
 struct L2CA_LockBleConnParamsForProfileConnection L2CA_LockBleConnParamsForProfileConnection;
+struct L2CA_LockBleConnParamsForLeAudioSubrate L2CA_LockBleConnParamsForLeAudioSubrate;
 struct L2CA_ConsolidateParams L2CA_ConsolidateParams;
 struct L2CA_GetBleConnRole L2CA_GetBleConnRole;
 struct L2CA_GetBleConnInterval L2CA_GetBleConnInterval;
@@ -84,6 +86,10 @@ void L2CA_LockBleConnParamsForServiceDiscovery(const RawAddress& rem_bda, bool e
 void L2CA_LockBleConnParamsForProfileConnection(const RawAddress& rem_bda, bool enable) {
   inc_func_call_count(__func__);
   return test::mock::stack_l2cap_ble::L2CA_LockBleConnParamsForProfileConnection(rem_bda, enable);
+}
+void L2CA_LockBleConnParamsForLeAudioSubrate(const RawAddress& rem_bda, bool lock) {
+  inc_func_call_count(__func__);
+  return test::mock::stack_l2cap_ble::L2CA_LockBleConnParamsForLeAudioSubrate(rem_bda, lock);
 }
 void L2CA_Consolidate(const RawAddress& identity_addr, const RawAddress& rpa) {
   inc_func_call_count(__func__);

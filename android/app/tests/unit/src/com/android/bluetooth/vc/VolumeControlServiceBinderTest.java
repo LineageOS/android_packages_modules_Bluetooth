@@ -16,21 +16,27 @@
 
 package com.android.bluetooth.vc;
 
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.IAudioInputCallback;
 import android.content.AttributionSource;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.SmallTest;
-import androidx.test.runner.AndroidJUnit4;
+
+import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.FlagsWrapper;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -38,11 +44,18 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
+
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 /** Test cases for {@link VolumeControlServiceBinder}. */
 @SmallTest
-@RunWith(AndroidJUnit4.class)
+@RunWith(ParameterizedAndroidJunit4.class)
 public class VolumeControlServiceBinderTest {
-
+    @Rule public final SetFlagsRule mSetFlagsRule;
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AttributionSource mAttributionSource;
@@ -52,9 +65,31 @@ public class VolumeControlServiceBinderTest {
 
     private VolumeControlServiceBinder mBinder;
 
+    @Parameters(name = "{0}")
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(Flags.FLAG_VCP_ON_MAIN_LOOPER);
+    }
+
+    public VolumeControlServiceBinderTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
+    }
+
     @Before
     public void setUp() throws Exception {
-        when(mService.isAvailable()).thenReturn(true);
+        doReturn(true).when(mService).isAvailable();
+        doAnswer(
+                        inv -> {
+                            ((Consumer) inv.getArgument(0)).accept(mService);
+                            return null;
+                        })
+                .when(mService)
+                .post(any());
+        doAnswer(
+                        inv -> {
+                            return ((Function) inv.getArgument(0)).apply(mService);
+                        })
+                .when(mService)
+                .syncPost(any(), any());
         mBinder = new VolumeControlServiceBinder(mService);
     }
 
@@ -80,7 +115,7 @@ public class VolumeControlServiceBinderTest {
 
     @Test
     public void setConnectionPolicy() {
-        int connectionPolicy = 1;
+        int connectionPolicy = CONNECTION_POLICY_ALLOWED;
 
         mBinder.setConnectionPolicy(mDevice, connectionPolicy, mAttributionSource);
         verify(mService).setConnectionPolicy(mDevice, connectionPolicy);
@@ -120,59 +155,6 @@ public class VolumeControlServiceBinderTest {
 
         mBinder.setDeviceVolume(mDevice, volume, isGroupOp, mAttributionSource);
         verify(mService).setDeviceVolume(mDevice, volume, isGroupOp);
-    }
-
-    @Test
-    public void setGroupVolume() {
-        int groupId = 1;
-        int volume = 2;
-
-        mBinder.setGroupVolume(groupId, volume, mAttributionSource);
-        verify(mService).setGroupVolume(groupId, volume);
-    }
-
-    @Test
-    public void getGroupVolume() {
-        int groupId = 1;
-
-        mBinder.getGroupVolume(groupId, mAttributionSource);
-        verify(mService).getGroupVolume(groupId);
-    }
-
-    @Test
-    public void setGroupActive() {
-        int groupId = 1;
-        boolean active = true;
-
-        mBinder.setGroupActive(groupId, active, mAttributionSource);
-        verify(mService).setGroupActive(groupId, active);
-    }
-
-    @Test
-    public void mute() {
-        mBinder.mute(mDevice, mAttributionSource);
-        verify(mService).mute(mDevice);
-    }
-
-    @Test
-    public void muteGroup() {
-        int groupId = 1;
-        mBinder.muteGroup(groupId, mAttributionSource);
-        verify(mService).muteGroup(groupId);
-    }
-
-    @Test
-    public void unmute() {
-        mBinder.unmute(mDevice, mAttributionSource);
-        verify(mService).unmute(mDevice);
-    }
-
-    @Test
-    public void unmuteGroup() {
-        int groupId = 1;
-
-        mBinder.unmuteGroup(groupId, mAttributionSource);
-        verify(mService).unmuteGroup(groupId);
     }
 
     @Test

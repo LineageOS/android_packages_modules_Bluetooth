@@ -23,6 +23,8 @@
 // Mock include file to share data between tests and mock
 #include "test/mock/mock_stack_acl.h"
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 #include <string>
 
@@ -34,7 +36,6 @@
 #include "stack/include/inq_hci_link_interface.h"
 #include "stack/include/l2cap_acl_interface.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
 // Mocked internal structures, if any

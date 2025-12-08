@@ -38,19 +38,23 @@
 #include "hci/controller_mock.h"
 #include "hci/le_rand_callback.h"
 #include "stack/include/btm_status.h"
-#include "test/common/main_handler.h"
 #include "test/common/mock_functions.h"
+#include "test/common/sync_main_handler.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_osi_alarm.h"
 #include "test/mock/mock_osi_allocator.h"
 #include "test/mock/mock_osi_properties.h"
 #include "test/mock/mock_stack_acl.h"
 #include "test/mock/mock_stack_btm_interface.h"
+#include "test/mock/mock_stack_l2cap_interface.h"
 
 #define TEST_BT com::android::bluetooth::flags
 
+using ::testing::NiceMock;
+
 using namespace std::chrono_literals;
 using namespace bluetooth;
+using ::testing::_;
 
 namespace {
 constexpr uint8_t kUnusedTimer = BTA_ID_MAX;
@@ -66,7 +70,7 @@ protected:
   void SetUp() override {
     BtaWithContextTest::SetUp();
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockController>();
+            std::make_unique<NiceMock<bluetooth::hci::testing::MockController>>();
     ON_CALL(*bluetooth::hci::testing::mock_controller_, LeRand)
             .WillByDefault([](bluetooth::hci::LeRandCallback cb) { cb(0x1234); });
 
@@ -111,6 +115,8 @@ TEST_F(BtaDmTest, nop) {
 }
 
 TEST_F(BtaDmCustomAlarmTest, disable_no_acl_links) {
+  EXPECT_CALL(mock_l2cap_interface_, L2CA_SetIdleTimeoutByBdAddr(_, _, _)).Times(2);
+
   bta_dm_cb.disabling = true;
 
   bta_dm_disable();  // Waiting for all ACL connections to drain
@@ -126,6 +132,8 @@ TEST_F(BtaDmCustomAlarmTest, disable_no_acl_links) {
 }
 
 TEST_F(BtaDmCustomAlarmTest, disable_first_pass_with_acl_links) {
+  EXPECT_CALL(mock_l2cap_interface_, L2CA_SetIdleTimeoutByBdAddr(_, _, _)).Times(2);
+
   test::mock::stack_acl::BTM_GetNumAclLinks.body = []() { return 1; };
   bta_dm_cb.disabling = true;
   // ACL link is open
@@ -146,6 +154,8 @@ TEST_F(BtaDmCustomAlarmTest, disable_first_pass_with_acl_links) {
 }
 
 TEST_F(BtaDmCustomAlarmTest, disable_second_pass_with_acl_links) {
+  EXPECT_CALL(mock_l2cap_interface_, L2CA_SetIdleTimeoutByBdAddr(_, _, _)).Times(2);
+
   test::mock::stack_acl::BTM_GetNumAclLinks.body = []() { return 1; };
   bta_dm_cb.disabling = true;
   // ACL link is open
@@ -347,8 +357,6 @@ TEST_F(BtaDmTest, bta_dm_remname_cback__HCI_ERR_CONNECTION_EXISTS) {
 }
 
 TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__BR_EDR) {
-  tBTA_DM_SEARCH_CB& search_cb = bluetooth::legacy::testing::bta_dm_disc_search_cb();
-
   mock_btm_client_interface.peer.BTM_ReadDevInfo = [](const RawAddress& /*remote_bda*/,
                                                       tBT_DEVICE_TYPE* p_dev_type,
                                                       tBLE_ADDR_TYPE* p_addr_type) {
@@ -361,8 +369,6 @@ TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__BR_EDR) {
 }
 
 TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__BLE__PUBLIC) {
-  tBTA_DM_SEARCH_CB& search_cb = bluetooth::legacy::testing::bta_dm_disc_search_cb();
-
   mock_btm_client_interface.peer.BTM_ReadDevInfo = [](const RawAddress& /*remote_bda*/,
                                                       tBT_DEVICE_TYPE* p_dev_type,
                                                       tBLE_ADDR_TYPE* p_addr_type) {
@@ -375,8 +381,6 @@ TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__BLE__PUBLIC) {
 }
 
 TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__DUMO) {
-  tBTA_DM_SEARCH_CB& search_cb = bluetooth::legacy::testing::bta_dm_disc_search_cb();
-
   mock_btm_client_interface.peer.BTM_ReadDevInfo = [](const RawAddress& /*remote_bda*/,
                                                       tBT_DEVICE_TYPE* p_dev_type,
                                                       tBLE_ADDR_TYPE* p_addr_type) {
@@ -445,22 +449,20 @@ TEST_F(BtaDmCustomAlarmTest, bta_dm_sniff_cback) {
   ASSERT_EQ(2, get_func_call_count("alarm_set_on_mloop"));
 }
 
-TEST_F(BtaDmCustomAlarmTest, sniff_offload_feature__test_sysprop) {
-  bool is_property_enabled = true;
-  test::mock::osi_properties::osi_property_get_bool.body =
-          [&](const char* /*key*/, bool /*default_value*/) -> int { return is_property_enabled; };
-
+TEST_F(BtaWithContextTest, sniff_offload_feature__test_sysprop) {
   // Expect not to trigger bta_dm_init_pm due to sysprop enabled
   // and reset the value of .srvc_id.
-  is_property_enabled = true;
+  test::mock::osi_properties::osi_property_get_bool.return_value = true;
   BTA_dm_on_hw_on();
-  ASSERT_EQ(0, bta_dm_cb.pm_timer[0].srvc_id[0]);
+  EXPECT_EQ(0, bta_dm_cb.pm_timer[0].srvc_id[0]);
+  BTA_dm_on_hw_off();
 
   // Expect to trigger bta_dm_init_pm and init the value of .srvc_id to
   // BTA_ID_MAX due to sysprop disabled.
-  is_property_enabled = false;
+  test::mock::osi_properties::osi_property_get_bool.return_value = false;
   BTA_dm_on_hw_on();
-  ASSERT_EQ((uint8_t)BTA_ID_MAX, bta_dm_cb.pm_timer[0].srvc_id[0]);
+  EXPECT_EQ((uint8_t)BTA_ID_MAX, bta_dm_cb.pm_timer[0].srvc_id[0]);
+  BTA_dm_on_hw_off();
 
   // Shouldn't crash even there's no active timer when calling
   // bta_dm_disable_pm.

@@ -92,6 +92,7 @@ public:
           const ::bluetooth::le_audio::broadcast_offload_config& config) override;
   void SuspendedForReconfiguration() override;
   void ReconfigurationComplete() override;
+  void StreamSuspended() override;
 
   // Internal functionality
   SourceImpl(bool is_broadcaster)
@@ -242,7 +243,8 @@ void SourceImpl::SendAudioData() {
 bool SourceImpl::InitAudioSinkThread() {
   const std::string thread_name = is_broadcaster_ ? "bt_le_audio_broadcast_sink_worker_thread"
                                                   : "bt_le_audio_unicast_sink_worker_thread";
-  worker_thread_ = new bluetooth::common::MessageLoopThread(thread_name);
+  worker_thread_ = new bluetooth::common::MessageLoopThread(
+          thread_name, bluetooth::os::Thread::Priority::REAL_TIME);
 
   worker_thread_->StartUp();
   if (!worker_thread_->IsRunning()) {
@@ -261,22 +263,20 @@ bool SourceImpl::InitAudioSinkThread() {
 }
 
 void SourceImpl::StartAudioTicks() {
-  if (!com::android::bluetooth::flags::ref_counted_native_wakelock() ||
-      !audio_timer_.IsScheduled()) {
+  if (!com_android_bluetooth_flags_ref_counted_native_wakelock() || !audio_timer_.IsScheduled()) {
     wakelock_acquire();
   }
   asrc_ = std::make_unique<bluetooth::audio::asrc::SourceAudioHalAsrc>(
           worker_thread_, source_codec_config_.num_channels, source_codec_config_.sample_rate,
           source_codec_config_.bits_per_sample, source_codec_config_.data_interval_us);
   audio_timer_.SchedulePeriodic(
-          worker_thread_->GetWeakPtr(),
+          worker_thread_,
           base::BindRepeating(&SourceImpl::SendAudioData, weak_factory_.GetWeakPtr()),
           std::chrono::microseconds(source_codec_config_.data_interval_us));
 }
 
 void SourceImpl::StopAudioTicks() {
-  if (!com::android::bluetooth::flags::ref_counted_native_wakelock() ||
-      audio_timer_.IsScheduled()) {
+  if (!com_android_bluetooth_flags_ref_counted_native_wakelock() || audio_timer_.IsScheduled()) {
     audio_timer_.CancelAndWait();
     asrc_.reset(nullptr);
     wakelock_release();
@@ -427,6 +427,16 @@ void SourceImpl::ReconfigurationComplete() {
 
   log::info("");
   halSinkInterface_->ReconfigurationComplete();
+}
+
+void SourceImpl::StreamSuspended() {
+  if ((halSinkInterface_ == nullptr) || (le_audio_sink_hal_state_ != HAL_STARTED)) {
+    log::error("Audio HAL Audio sink was not started!");
+    return;
+  }
+
+  log::info("");
+  halSinkInterface_->StreamSuspended();
 }
 
 void SourceImpl::CancelStreamingRequest() {

@@ -17,11 +17,11 @@
 #pragma once
 
 #include <base/functional/callback.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <gmock/gmock.h>
 
 #include "bta_gatt_api.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 namespace gatt {
 

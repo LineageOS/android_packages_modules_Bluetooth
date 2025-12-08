@@ -18,6 +18,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -43,7 +44,6 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_ble_api.h"
 #include "stack/include/btm_client_interface.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace bqr {
@@ -65,13 +65,16 @@ static uint16_t LmpLlMessageTraceCounter = 0;
 // Counter of Bluetooth Multi-profile/Coex scheduling trace
 static uint16_t BtSchedulingTraceCounter = 0;
 
+// Must match the value of BqrCommon.BQR_COMMON_LEN in BluetoothQualityReport.java exactly.
+static const int kBqrCommonLength = 85;
+
 class BluetoothQualityReportInterfaceImpl;
 static std::unique_ptr<BluetoothQualityReportInterface> bluetoothQualityReportInstance;
 
 namespace {
 static std::recursive_mutex life_cycle_guard_;
 static common::PostableContext* to_bind_ = nullptr;
-}
+}  // namespace
 
 void BqrVseSubEvt::ParseBqrLinkQualityEvt(uint8_t length, const uint8_t* p_param_buf) {
   if (length < kLinkQualityParamTotalLen) {
@@ -288,7 +291,7 @@ std::string BqrVseSubEvt::ToString() const {
      << ", OverFlow: " << std::to_string(bqr_link_quality_event_.buffer_overflow_bytes)
      << ", UndFlow: " << std::to_string(bqr_link_quality_event_.buffer_underflow_bytes);
   if (vendor_cap_supported_version >= kBqrVersion5_0) {
-    ss << ", RemoteDevAddr: " << bqr_link_quality_event_.bdaddr.ToColonSepHexString()
+    ss << ", RemoteDevAddr: " << bqr_link_quality_event_.bdaddr.ToRedactedStringForLogging()
        << ", CalFailedItems: " << std::to_string(bqr_link_quality_event_.cal_failed_item_count);
   }
   if (vendor_cap_supported_version >= kBqrIsoVersion) {
@@ -724,34 +727,30 @@ static void CategorizeBqrEvent(uint8_t length, const uint8_t* p_bqr_event) {
       break;
 
     case QUALITY_REPORT_ID_ENERGY_MONITOR:
-      if (com::android::bluetooth::flags::support_bluetooth_quality_report_v6()) {
-        if (vendor_cap_supported_version >= kBqrVersion6_0) {
-          if (length < kEnergyMonitorParamTotalLen) {
-            log::fatal(
-                    "Event {} Parameter total length: {} is abnormal. It shall be not shorter "
-                    "than: {}",
-                    quality_report_id, length, kEnergyMonitorParamTotalLen);
-            return;
-          }
-
-          AddEnergyMonitorEventToQueue(length, p_bqr_event);
+      if (vendor_cap_supported_version >= kBqrVersion6_0) {
+        if (length < kEnergyMonitorParamTotalLen) {
+          log::fatal(
+                  "Event {} Parameter total length: {} is abnormal. It shall be not shorter "
+                  "than: {}",
+                  quality_report_id, length, kEnergyMonitorParamTotalLen);
+          return;
         }
+
+        AddEnergyMonitorEventToQueue(length, p_bqr_event);
       }
       break;
 
     case QUALITY_REPORT_ID_RF_STATS:
-      if (com::android::bluetooth::flags::support_bluetooth_quality_report_v6()) {
-        if (vendor_cap_supported_version >= kBqrVersion6_0) {
-          if (length < kRFStatsParamTotalLen) {
-            log::fatal(
-                    "Event {} Parameter total length: {} is abnormal. It shall be not shorter "
-                    "than: {}",
-                    quality_report_id, length, kEnergyMonitorParamTotalLen);
-            return;
-          }
-
-          AddRFStatsEventToQueue(length, p_bqr_event);
+      if (vendor_cap_supported_version >= kBqrVersion6_0) {
+        if (length < kRFStatsParamTotalLen) {
+          log::fatal(
+                  "Event {} Parameter total length: {} is abnormal. It shall be not shorter "
+                  "than: {}",
+                  quality_report_id, length, kEnergyMonitorParamTotalLen);
+          return;
         }
+
+        AddRFStatsEventToQueue(length, p_bqr_event);
       }
       break;
 
@@ -779,8 +778,6 @@ static void AddLinkQualityEventToQueue(uint8_t length, const uint8_t* p_link_qua
           p_bqr_event->bqr_link_quality_event_.no_rx_count,
           p_bqr_event->bqr_link_quality_event_.nak_count);
 
-  metrics::LogMetricBluetoothQualityReport(p_bqr_event->bqr_link_quality_event_);
-
   BluetoothQualityReportInterface* bqrItf = getBluetoothQualityReportInterface();
 
   if (bqrItf != NULL) {
@@ -802,6 +799,8 @@ static void AddLinkQualityEventToQueue(uint8_t length, const uint8_t* p_link_qua
     log::warn("failed to deliver BQR, bqrItf is NULL");
   }
 
+  metrics::LogMetricBluetoothQualityReport(bd_addr, p_bqr_event->bqr_link_quality_event_);
+
   kpBqrEventQueue.Enqueue(p_bqr_event.release());
 }
 
@@ -812,6 +811,9 @@ static void AddEnergyMonitorEventToQueue(uint8_t length, const uint8_t* p_energy
     log::warn("failed to parse BQR energy monitor event");
     return;
   }
+
+  metrics::LogMetricBluetoothEnergyMonitorReported(vendor_cap_supported_version,
+                                                   p_bqr_event->bqr_energy_monitor_event_);
 
   BluetoothQualityReportInterface* bqrItf = getBluetoothQualityReportInterface();
 
@@ -830,6 +832,9 @@ static void AddRFStatsEventToQueue(uint8_t length, const uint8_t* p_rf_stats_eve
     log::warn("failed to parse BQR RF stats event");
     return;
   }
+
+  metrics::LogMetricBluetoothRFStatsReported(vendor_cap_supported_version,
+                                             p_bqr_event->bqr_rf_stats_event_);
 
   BluetoothQualityReportInterface* bqrItf = getBluetoothQualityReportInterface();
 
@@ -989,16 +994,24 @@ class BluetoothQualityReportInterfaceImpl : public bluetooth::bqr::BluetoothQual
     }
 
     std::vector<uint8_t> raw_data;
-    raw_data.insert(raw_data.begin(), bqr_raw_data, bqr_raw_data + bqr_raw_data_len);
+    if (com_android_bluetooth_flags_bqr_common_part_unified_length()) {
+      raw_data = generate_unified_bqr_data(bqr_raw_data, bqr_raw_data_len);
+      if (raw_data.empty()) {
+        log::error("unified bqr data is empty");
+        return;
+      }
+    } else {
+      raw_data.insert(raw_data.begin(), bqr_raw_data, bqr_raw_data + bqr_raw_data_len);
 
-    if (vendor_cap_supported_version < kBqrVersion5_0 &&
-        bqr_raw_data_len < kLinkQualityParamTotalLen + kVersion5_0ParamsTotalLen) {
-      std::vector<uint8_t>::iterator it = raw_data.begin() + kLinkQualityParamTotalLen;
-      /**
-       * Insert zeros as remote address and calibration count
-       * for BQR 5.0 incompatible devices
-       */
-      raw_data.insert(it, kVersion5_0ParamsTotalLen, 0);
+      if (vendor_cap_supported_version < kBqrVersion5_0 &&
+          bqr_raw_data_len < kLinkQualityParamTotalLen + kVersion5_0ParamsTotalLen) {
+        std::vector<uint8_t>::iterator it = raw_data.begin() + kLinkQualityParamTotalLen;
+        /**
+         * Insert zeros as remote address and calibration count
+         * for BQR 5.0 incompatible devices
+         */
+        raw_data.insert(it, kVersion5_0ParamsTotalLen, 0);
+      }
     }
 
     bt_remote_version_t info = btif_get_remote_version(bd_addr);
@@ -1019,6 +1032,71 @@ class BluetoothQualityReportInterfaceImpl : public bluetooth::bqr::BluetoothQual
 
 private:
   BluetoothQualityReportCallbacks* callbacks = nullptr;
+
+  int get_unified_bqr_common_len() {
+    int length = kLinkQualityParamTotalLen + kVersion5_0ParamsTotalLen;
+    if (vendor_cap_supported_version < kBqrIsoVersion) {
+      return length;
+    }
+
+    length += kISOLinkQualityParamTotalLen;
+    if (vendor_cap_supported_version <= kBqrVersion5_0) {
+      return length;
+    }
+
+    length += kVersion6_0ParamsTotalLen;
+    if (vendor_cap_supported_version <= kBqrVersion7_0) {
+      return length;
+    }
+
+    log::error("Unsupported BQR version: {:#x}", vendor_cap_supported_version);
+    return -1;
+  }
+
+  std::vector<uint8_t> generate_unified_bqr_data(const uint8_t* bqr_raw_data,
+                                                 uint32_t bqr_raw_data_len) {
+    std::vector<uint8_t> unified_data(bqr_raw_data, bqr_raw_data + bqr_raw_data_len);
+
+    std::set<uint8_t> report_ids_with_common_part = {
+            QUALITY_REPORT_ID_MONITOR_MODE,      QUALITY_REPORT_ID_APPROACH_LSTO,
+            QUALITY_REPORT_ID_A2DP_AUDIO_CHOPPY, QUALITY_REPORT_ID_SCO_VOICE_CHOPPY,
+            QUALITY_REPORT_ID_LE_AUDIO_CHOPPY,   QUALITY_REPORT_ID_CONNECT_FAIL,
+    };
+    uint8_t report_id;
+    STREAM_TO_UINT8(report_id, bqr_raw_data);
+    if (report_ids_with_common_part.count(report_id) == 0) {
+      return unified_data;
+    }
+
+    int common_len = get_unified_bqr_common_len();
+    if (common_len == -1) {
+      return {};
+    }
+
+    bool is_version_before_5_0 = vendor_cap_supported_version < kBqrVersion5_0;
+    int required_len = is_version_before_5_0 ? common_len - kVersion5_0ParamsTotalLen : common_len;
+
+    if (bqr_raw_data_len < static_cast<uint32_t>(required_len)) {
+      return {};
+    }
+
+    if (is_version_before_5_0 && bqr_raw_data_len < static_cast<uint32_t>(common_len)) {
+      auto insert_pos = unified_data.begin() + kLinkQualityParamTotalLen;
+      /**
+       * Insert zeros as remote address and calibration count
+       * for BQR 5.0 incompatible devices
+       */
+      unified_data.insert(insert_pos, kVersion5_0ParamsTotalLen, 0);
+    }
+
+    int padding_length = kBqrCommonLength - common_len;
+    if (padding_length > 0) {
+      auto insert_pos = unified_data.begin() + common_len;
+      unified_data.insert(insert_pos, padding_length, 0);
+    }
+
+    return unified_data;
+  }
 };
 
 BluetoothQualityReportInterface* getBluetoothQualityReportInterface() {
@@ -1052,7 +1130,7 @@ static void vendor_specific_event_callback(
     case QUALITY_REPORT_ID_CONNECT_FAIL:
     case QUALITY_REPORT_ID_ENERGY_MONITOR:
     case QUALITY_REPORT_ID_RF_STATS:
-      if (com::android::bluetooth::flags::fix_unhandled_bqr_subevent()) {
+      if (com_android_bluetooth_flags_fix_unhandled_bqr_subevent()) {
         CategorizeBqrEvent(bytes.size(), bytes.data());
       }
       break;
@@ -1080,7 +1158,7 @@ static void vendor_specific_event_callback(
       log::info("Unhandled BQR subevent 0x{:02x}", quality_report_id);
   }
 
-  if (!com::android::bluetooth::flags::fix_unhandled_bqr_subevent()) {
+  if (!com_android_bluetooth_flags_fix_unhandled_bqr_subevent()) {
     CategorizeBqrEvent(bytes.size(), bytes.data());
   }
 }

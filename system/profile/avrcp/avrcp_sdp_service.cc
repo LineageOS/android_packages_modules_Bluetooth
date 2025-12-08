@@ -40,21 +40,21 @@ uint16_t AvrcpSdpService::AddRecord(const AvrcpSdpRecord& add_sdp_record_request
   return AVRC_FAIL;
 }
 
-uint16_t AvrcpSdpService::EnableCovertArt(const uint16_t service_uuid, uint16_t cover_art_psm,
-                                          const uint16_t request_id) {
+uint16_t AvrcpSdpService::EnableCoverArt(const uint16_t service_uuid, uint16_t cover_art_psm,
+                                         const uint16_t request_id) {
   if (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET) {
-    return target_sdp_record_helper_.EnableCovertArt(cover_art_psm, request_id);
+    return target_sdp_record_helper_.EnableCoverArt(cover_art_psm, request_id);
   } else if (service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL) {
-    return control_sdp_record_helper_.EnableCovertArt(cover_art_psm, request_id);
+    return control_sdp_record_helper_.EnableCoverArt(cover_art_psm, request_id);
   }
   return AVRC_FAIL;
 }
 
-uint16_t AvrcpSdpService::DisableCovertArt(const uint16_t service_uuid, const uint16_t request_id) {
+uint16_t AvrcpSdpService::DisableCoverArt(const uint16_t service_uuid, const uint16_t request_id) {
   if (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET) {
-    return target_sdp_record_helper_.DisableCovertArt(request_id);
+    return target_sdp_record_helper_.DisableCoverArt(request_id);
   } else if (service_uuid == UUID_SERVCLASS_AV_REMOTE_CONTROL) {
-    return control_sdp_record_helper_.DisableCovertArt(request_id);
+    return control_sdp_record_helper_.DisableCoverArt(request_id);
   }
   return AVRC_FAIL;
 }

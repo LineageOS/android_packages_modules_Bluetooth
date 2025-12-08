@@ -156,6 +156,10 @@ impl Rule for ControllerRule {
     fn report_signals(&self) -> &[Signal] {
         self.signals.as_slice()
     }
+
+    fn output_json(&self, _writer: &mut dyn Write) {
+        // Not implemented.
+    }
 }
 
 /// Get a rule group with connection rules.

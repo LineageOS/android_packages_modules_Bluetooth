@@ -16,27 +16,10 @@ flag {
 }
 
 flag {
-    name: "phy_to_native"
-    namespace: "bluetooth"
-    description: "Expose advertising PHY settings to native layer"
-    bug: "326249470"
-}
-
-flag {
     name: "msft_addr_tracking_quirk"
     namespace: "bluetooth"
     description: "Scanning with MSFT paddress tracking for Realtek BT controllers"
     bug: "332438857"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "gatt_callback_on_failure"
-    namespace: "bluetooth"
-    description: "Invoke callbacks on early failure from the native stack"
-    bug: "356550596"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -53,16 +36,6 @@ flag {
 }
 
 flag {
-    name: "le_impl_ack_pause_disarmed"
-    namespace: "bluetooth"
-    description: "Let le_impl AckPause when disarmed to prevent stuck in pausing state"
-    bug: "357024179"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "gatt_clear_cache_on_factory_reset"
     namespace: "bluetooth"
     description: "Clear GATT cache/hash on factory reset"
@@ -73,125 +46,10 @@ flag {
 }
 
 flag {
-    name: "le_scan_remove_non_oneway_binder_calls"
-    namespace: "bluetooth"
-    description: "Remove non-oneway binder calls from BluetoothLeScanner.startScan"
-    bug: "375558872"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "initial_conn_params_p1"
     namespace: "bluetooth"
     description: "Use aggressive connection parameters when <2 connections exist. go/initial-connection-parameter-optimization"
     bug: "378595485"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "rpa_offload_to_bt_controller"
-    namespace: "bluetooth"
-    description: "Offload LE RPA rotation to BT controller. go/rpa-offload-to-bt-controller"
-    bug: "378398874"
-}
-
-flag {
-    name: "directed_advertising_api"
-    namespace: "bluetooth"
-    is_exported: true
-    description: "Add new API for directed advertising"
-    bug: "378230500"
-}
-
-flag {
-    name: "gatt_queue_cleanup_connected"
-    namespace: "bluetooth"
-    description: "Cleans up BtaGattQueue when connected"
-    bug: "379007400"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "configure_scan_on_resume"
-    namespace: "bluetooth"
-    description: "Configure scan paramters when start scanning from onResume"
-    bug: "383436218"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "unregister_gatt_client_disconnected"
-    namespace: "bluetooth"
-    description: "Unregister gatt client when disconneted to prevent client leaks"
-    bug: "380388092"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "fix_execute_write_no_pending"
-    namespace: "bluetooth"
-    description: "Send ATT_EXECUTE_WRITE_RSP when no pending write requests"
-    bug: "385118069"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "change_default_trackable_adv_number"
-    namespace: "bluetooth"
-    description: "Change the default value for number of trackable advertisements for onFound"
-    bug: "389568695"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "fix_unusable_adv_slot_due_to_map_access"
-    namespace: "bluetooth"
-    description: "Fixes the advertising slot becoming unusable due to incorrect map access via [] operator."
-    bug: "388615378"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "fix_bluetooth_gatt_getting_duplicate_services"
-    namespace: "bluetooth"
-    description: "Fixes BluetoothGatt getting duplicate GATT services"
-    bug: "391773937"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "batch_scan_optimization"
-    namespace: "bluetooth"
-    description: "Optimized batch scan for less wakeups"
-    bug: "392132489"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "prevent_concurrent_conn_param_updates"
-    namespace: "bluetooth"
-    description: "Makes only one connection parameter update can be processed at a time per device."
-    bug: "397316770"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -222,16 +80,6 @@ flag {
     namespace: "bluetooth"
     description: "Start discovery again when service change indication arrives."
     bug: "400828637"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "le_disconnect_notification_handling"
-    namespace: "bluetooth"
-    description: "Fix LE link disconnection notification to stack's upper layers"
-    bug: "403433488"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -270,16 +118,6 @@ flag {
     namespace: "bluetooth"
     description: "Update bond state check in IRK scan to cover all identity address types."
     bug: "406905829"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "gatt_reuse_discovering_client"
-    namespace: "bluetooth"
-    description: "Reuse discovering GATT client on service change indication"
-    bug: "407060739"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -368,4 +206,131 @@ flag {
     metadata {
         purpose: PURPOSE_BUGFIX
     }
+}
+
+flag {
+    name: "resolve_address_for_adv_report"
+    namespace: "bluetooth"
+    description: "Change address resolve timing to match between adv data and scan response."
+    bug: "424062882"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "gatt_failure_callback_on_cancel"
+    namespace: "bluetooth"
+    description: "Invoke failure callback on cancelling connection right after connected."
+    bug: "425563544"
+    metadata {
+            purpose: PURPOSE_BUGFIX
+        }
+}
+
+flag {
+    name: "original_address_filter_match"
+    namespace: "bluetooth"
+    description: "Match other filters along with device address when we use original address."
+    bug: "425250980"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "get_svc_uuids_bugfix"
+    namespace: "bluetooth"
+    description: "Bug fixes for the flag get_svc_uuids_from_ble_adv_data"
+    bug: "428792613"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "prevent_adding_both_pseudo_and_identity_addr"
+    namespace: "bluetooth"
+    description: "Prevent adding both pseudo and identity address to the accept list."
+    bug: "428800297"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "remove_address_cache_from_ble_scanner"
+    namespace: "bluetooth"
+    description: "Fix the case where device name is not updated when pairing failed."
+    bug: "432614634"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "broadcast_transport_type_on_reset"
+    namespace: "bluetooth"
+    description: "Broadcast the transport type on BT reset as part of ACL_DISCONNECTED."
+    bug: "433990971"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "update_cod_if_missing"
+    namespace: "bluetooth"
+    description: "Update CoD on incoming connection for the bonded devices if it is missing."
+    bug: "435690191"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "l2c_not_cancel_timeout"
+    namespace: "bluetooth"
+    description: "Do not cancel timeout alarm if l2cap is connecting"
+    bug: "436736160"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "reset_service_change_ind_counter"
+    namespace: "bluetooth"
+    description: "Resets service change indication counter when fail to start discover"
+    bug: "438099407"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "ensure_acl_connection_is_removed_from_pending_list"
+    namespace: "bluetooth"
+    description: "Fix that ACL connection is left in the pending list when advertiser is removed right before connection is established."
+    bug: "441211531"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "l2cap_improve_segmented_sdu"
+    namespace: "bluetooth"
+    description: "Improve sending segmented sdu"
+    bug: "437272601"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "delay_jv_pm_idle"
+    namespace: "bluetooth"
+    description: "Delay the transition to the idle state for JV PM connection"
+    bug: "440618134"
 }

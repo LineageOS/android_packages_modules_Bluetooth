@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 #include <list>
 
@@ -28,7 +30,6 @@
 #include "stack/btm/security_device_record.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/security_client_callbacks.h"
-#include "types/raw_address.h"
 
 class tBTM_SEC_CB {
 public:
@@ -64,7 +65,8 @@ public:
   PIN_CODE pin_code;                                     /* for legacy devices */
   tBTM_PAIRING_STATE pairing_state{BTM_PAIR_STATE_IDLE}; /* The current pairing state    */
   uint8_t pairing_flags{0};                              /* The current pairing flags    */
-  RawAddress pairing_bda;                                /* The device currently pairing */
+  tAclLinkSpec link_spec;                                /* The device currently pairing.
+                                                            Address type is ignored currently */
   alarm_t* pairing_timer{nullptr};                       /* Timer for pairing process    */
   alarm_t* execution_wait_timer{nullptr};                /* To avoid concurrent auth request */
   list_t* sec_dev_rec{nullptr};                          /* list of tBTM_SEC_DEV_REC */

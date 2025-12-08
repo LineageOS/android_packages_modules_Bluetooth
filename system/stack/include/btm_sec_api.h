@@ -17,6 +17,9 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
+
 #include <cstdint>
 
 #include "stack/include/bt_dev_class.h"
@@ -24,8 +27,6 @@
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  SECURITY MANAGEMENT FUNCTIONS

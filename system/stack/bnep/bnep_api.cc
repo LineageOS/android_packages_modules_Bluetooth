@@ -25,6 +25,9 @@
 #include "bnep_api.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/uuid.h>
 #include <string.h>
 
 #include <cstdint>
@@ -38,9 +41,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/l2cap_interface.h"
-#include "types/bluetooth/uuid.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using bluetooth::Uuid;
@@ -536,128 +536,6 @@ tBNEP_RESULT BNEP_Write(uint16_t handle, const RawAddress& dest_addr, uint8_t* p
 
   /* Send the data or queue it up */
   bnepu_check_send_packet(p_bcb, p_buf);
-
-  return BNEP_SUCCESS;
-}
-
-/*******************************************************************************
- *
- * Function         BNEP_SetProtocolFilters
- *
- * Description      This function sets the protocol filters on peer device
- *
- * Parameters:      handle        - Handle for the connection
- *                  num_filters   - total number of filter ranges
- *                  p_start_array - Array of beginings of all protocol ranges
- *                  p_end_array   - Array of ends of all protocol ranges
- *
- * Returns          BNEP_WRONG_HANDLE           - if the connection handle is
- *                                                not valid
- *                  BNEP_SET_FILTER_FAIL        - if the connection is in wrong
- *                                                state
- *                  BNEP_TOO_MANY_FILTERS       - if too many filters
- *                  BNEP_SUCCESS                - if request sent successfully
- *
- ******************************************************************************/
-tBNEP_RESULT BNEP_SetProtocolFilters(uint16_t handle, uint16_t num_filters, uint16_t* p_start_array,
-                                     uint16_t* p_end_array) {
-  uint16_t xx;
-  tBNEP_CONN* p_bcb;
-
-  if ((!handle) || (handle > BNEP_MAX_CONNECTIONS)) {
-    return BNEP_WRONG_HANDLE;
-  }
-
-  p_bcb = &(bnep_cb.bcb[handle - 1]);
-
-  /* Check the connection state */
-  if ((p_bcb->con_state != BNEP_STATE_CONNECTED) &&
-      (!(p_bcb->con_flags & BNEP_FLAGS_CONN_COMPLETED))) {
-    return BNEP_WRONG_STATE;
-  }
-
-  /* Validate the parameters */
-  if (num_filters && (!p_start_array || !p_end_array)) {
-    return BNEP_SET_FILTER_FAIL;
-  }
-
-  if (num_filters > BNEP_MAX_PROT_FILTERS) {
-    return BNEP_TOO_MANY_FILTERS;
-  }
-
-  /* Fill the filter values in connnection block */
-  for (xx = 0; xx < num_filters; xx++) {
-    p_bcb->sent_prot_filter_start[xx] = *p_start_array++;
-    p_bcb->sent_prot_filter_end[xx] = *p_end_array++;
-  }
-
-  p_bcb->sent_num_filters = num_filters;
-
-  bnepu_send_peer_our_filters(p_bcb);
-
-  return BNEP_SUCCESS;
-}
-
-/*******************************************************************************
- *
- * Function         BNEP_SetMulticastFilters
- *
- * Description      This function sets the filters for multicast addresses for
- *                  BNEP.
- *
- * Parameters:      handle        - Handle for the connection
- *                  num_filters   - total number of filter ranges
- *                  p_start_array - Pointer to sequence of beginings of all
- *                                         multicast address ranges
- *                  p_end_array   - Pointer to sequence of ends of all
- *                                         multicast address ranges
- *
- * Returns          BNEP_WRONG_HANDLE           - if the connection handle is
- *                                                not valid
- *                  BNEP_SET_FILTER_FAIL        - if the connection is in wrong
- *                                                state
- *                  BNEP_TOO_MANY_FILTERS       - if too many filters
- *                  BNEP_SUCCESS                - if request sent successfully
- *
- ******************************************************************************/
-tBNEP_RESULT BNEP_SetMulticastFilters(uint16_t handle, uint16_t num_filters, uint8_t* p_start_array,
-                                      uint8_t* p_end_array) {
-  uint16_t xx;
-  tBNEP_CONN* p_bcb;
-
-  if ((!handle) || (handle > BNEP_MAX_CONNECTIONS)) {
-    return BNEP_WRONG_HANDLE;
-  }
-
-  p_bcb = &(bnep_cb.bcb[handle - 1]);
-
-  /* Check the connection state */
-  if ((p_bcb->con_state != BNEP_STATE_CONNECTED) &&
-      (!(p_bcb->con_flags & BNEP_FLAGS_CONN_COMPLETED))) {
-    return BNEP_WRONG_STATE;
-  }
-
-  /* Validate the parameters */
-  if (num_filters && (!p_start_array || !p_end_array)) {
-    return BNEP_SET_FILTER_FAIL;
-  }
-
-  if (num_filters > BNEP_MAX_MULTI_FILTERS) {
-    return BNEP_TOO_MANY_FILTERS;
-  }
-
-  /* Fill the multicast filter values in connnection block */
-  for (xx = 0; xx < num_filters; xx++) {
-    memcpy(p_bcb->sent_mcast_filter_start[xx].address, p_start_array, BD_ADDR_LEN);
-    memcpy(p_bcb->sent_mcast_filter_end[xx].address, p_end_array, BD_ADDR_LEN);
-
-    p_start_array += BD_ADDR_LEN;
-    p_end_array += BD_ADDR_LEN;
-  }
-
-  p_bcb->sent_mcast_filters = num_filters;
-
-  bnepu_send_peer_our_multi_filters(p_bcb);
 
   return BNEP_SUCCESS;
 }

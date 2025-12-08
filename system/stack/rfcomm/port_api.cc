@@ -27,6 +27,7 @@
 #include "stack/include/port_api.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -40,7 +41,6 @@
 #include "stack/include/btm_log_history.h"
 #include "stack/include/rfcdefs.h"
 #include "stack/rfcomm/rfc_int.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -201,13 +201,11 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn, bool is_serv
 
   // Set the optional configuration for future use when the server or client negotiates the
   // parameters with the peer device.
-  if (com::android::bluetooth::flags::socket_settings_api()) {
-    p_port->rfc_cfg_info = cfg;
-    // Update the local mtu with the optional configuration if set by the app
-    if (p_port->rfc_cfg_info.rx_mtu_present) {
-      p_port->mtu =
-              (p_port->rfc_cfg_info.rx_mtu < rfcomm_mtu) ? p_port->rfc_cfg_info.rx_mtu : rfcomm_mtu;
-    }
+  p_port->rfc_cfg_info = cfg;
+  // Update the local mtu with the optional configuration if set by the app
+  if (p_port->rfc_cfg_info.rx_mtu_present) {
+    p_port->mtu =
+            (p_port->rfc_cfg_info.rx_mtu < rfcomm_mtu) ? p_port->rfc_cfg_info.rx_mtu : rfcomm_mtu;
   }
 
   // Other states
@@ -474,8 +472,6 @@ int PORT_CheckConnection(uint16_t handle, RawAddress* bd_addr, uint16_t* p_lcid)
 }
 
 static const tPORT* get_port_from_mcb(const tRFC_MCB* multiplexer_cb) {
-  tPORT* p_port = nullptr;
-
   for (tPORT& port : rfc_cb.port.port) {
     if (port.rfc.p_mcb == multiplexer_cb) {
       return &port;
@@ -517,13 +513,13 @@ bool PORT_IsCollisionDetected(RawAddress bd_addr) {
       const tPORT* p_port = get_port_from_mcb(&multiplexer_cb);
       log::info("RFC_MX_STATE_CONNECTED, found_port={}, tRFC_PORT_STATE={}",
                 (p_port != nullptr) ? "T" : "F", (p_port != nullptr) ? p_port->rfc.sm_cb.state : 0);
-      if ((com::android::bluetooth::flags::donot_collide_with_closed_port()) &&
+      if ((com_android_bluetooth_flags_donot_collide_with_closed_port()) &&
           ((p_port == nullptr) || (p_port->rfc.sm_cb.state > RFC_STATE_CLOSED &&
                                    p_port->rfc.sm_cb.state < RFC_STATE_OPENED))) {
         log::info("In RFC_MX_STATE_CONNECTED but port is being established, returning true");
         return true;
       }
-      if ((!com::android::bluetooth::flags::donot_collide_with_closed_port()) &&
+      if ((!com_android_bluetooth_flags_donot_collide_with_closed_port()) &&
           ((p_port == nullptr) || p_port->rfc.sm_cb.state < RFC_STATE_OPENED)) {
         log::info("In RFC_MX_STATE_CONNECTED but port is not established yet, returning true");
         return true;

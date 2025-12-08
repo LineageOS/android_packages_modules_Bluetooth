@@ -65,8 +65,8 @@ message CloseRequest {
 
 // Request of the `Register` method.
 message RegisterRequest {
-  uint32 capability = 1; // left or right device, monaural or binaural device.
-  repeated uint32 hisyncid = 2; // id identifying two hearing aids as one pair.
+  uint32 capability = 1;         // left or right device, monaural or binaural device.
+  repeated uint32 hisyncid = 2;  // id identifying two hearing aids as one pair.
 }
 
 // Request of the `CaptureAudio` method.

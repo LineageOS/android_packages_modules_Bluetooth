@@ -28,7 +28,7 @@
     </target_preparer>
 
     <target_preparer class="com.android.tradefed.targetprep.RunCommandTargetPreparer">
-        <option name="run-command" value="setprop persist.bluetooth.btsnooplogmode full" />
+        <option name="run-command" value="setprop persist.bluetooth.btsnoopdefaultmode full" />
         <option name="run-command" value="setprop persist.bluetooth.btsnoopsize 0xfffffffffffffff" />
     </target_preparer>
 
@@ -63,6 +63,7 @@
         <option name="profile" value="AVDTP/SNK" />
         <option name="profile" value="AVDTP/SRC" />
         <option name="profile" value="AVRCP" />
+        <option name="profile" value="BAP" />
         <option name="profile" value="BNEP" />
         <option name="profile" value="GAP" />
         <option name="profile" value="GATT" />

@@ -25,13 +25,13 @@
 #define PAN_API_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 
 #include "bnep_api.h"
 #include "macros.h"
 #include "stack/include/bt_hdr.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants
@@ -317,32 +317,6 @@ tPAN_RESULT PAN_Disconnect(uint16_t handle);
 
 /*******************************************************************************
  *
- * Function         PAN_Write
- *
- * Description      This sends data over the PAN connections. If this is called
- *                  on GN or NAP side and the packet is multicast or broadcast
- *                  it will be sent on all the links. Otherwise the correct link
- *                  is found based on the destination address and forwarded on
- *                  it. If the return value is not PAN_SUCCESS the application
- *                  should take care of releasing the message buffer
- *
- * Parameters:      dst      - MAC or BD Addr of the destination device
- *                  src      - MAC or BD Addr of the source who sent this packet
- *                  protocol - protocol of the ethernet packet like IP or ARP
- *                  p_data   - pointer to the data
- *                  len      - length of the data
- *                  ext      - to indicate that extension headers present
- *
- * Returns          PAN_SUCCESS       - if the data is sent successfully
- *                  PAN_FAILURE       - if the connection is not found or
- *                                           there is an error in sending data
- *
- ******************************************************************************/
-tPAN_RESULT PAN_Write(uint16_t handle, const RawAddress& dst, const RawAddress& src,
-                      uint16_t protocol, uint8_t* p_data, uint16_t len, bool ext);
-
-/*******************************************************************************
- *
  * Function         PAN_WriteBuf
  *
  * Description      This sends data over the PAN connections. If this is called
@@ -365,46 +339,6 @@ tPAN_RESULT PAN_Write(uint16_t handle, const RawAddress& dst, const RawAddress& 
  ******************************************************************************/
 tPAN_RESULT PAN_WriteBuf(uint16_t handle, const RawAddress& dst, const RawAddress& src,
                          uint16_t protocol, BT_HDR* p_buf, bool ext);
-
-/*******************************************************************************
- *
- * Function         PAN_SetProtocolFilters
- *
- * Description      This function is used to set protocol filters on the peer
- *
- * Parameters:      handle      - handle for the connection
- *                  num_filters - number of protocol filter ranges
- *                  start       - array of starting protocol numbers
- *                  end         - array of ending protocol numbers
- *
- *
- * Returns          PAN_SUCCESS     if protocol filters are set successfully
- *                  PAN_FAILURE     if connection not found or error in setting
- *
- ******************************************************************************/
-tPAN_RESULT PAN_SetProtocolFilters(uint16_t handle, uint16_t num_filters, uint16_t* p_start_array,
-                                   uint16_t* p_end_array);
-
-/*******************************************************************************
- *
- * Function         PAN_SetMulticastFilters
- *
- * Description      This function is used to set multicast filters on the peer
- *
- * Parameters:      handle      - handle for the connection
- *                  num_filters - number of multicast filter ranges
- *                  p_start_array - Pointer to sequence of beginings of all
- *                                         multicast address ranges
- *                  p_end_array   - Pointer to sequence of ends of all
- *                                         multicast address ranges
- *
- *
- * Returns          PAN_SUCCESS     if multicast filters are set successfully
- *                  PAN_FAILURE     if connection not found or error in setting
- *
- ******************************************************************************/
-tPAN_RESULT PAN_SetMulticastFilters(uint16_t handle, uint16_t num_mcast_filters,
-                                    uint8_t* p_start_array, uint8_t* p_end_array);
 
 /*******************************************************************************
  *

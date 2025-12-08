@@ -69,9 +69,9 @@ cc_library {
         "src/metric_id_manager.cc",
     ],
     static_libs: [
-        "libbluetooth-types",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_types",
         "libbt-platform-protos-lite",
         "libchrome",
     ],
@@ -130,9 +130,9 @@ cc_library {
         "src/metric_id_manager.cc",
     ],
     static_libs: [
-        "libbluetooth-types",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_types",
         "libbt-platform-protos-lite",
         "libchrome",
         "libgmock",

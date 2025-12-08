@@ -18,8 +18,6 @@ package com.android.bluetooth.opp;
 
 import static android.os.UserHandle.myUserId;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -38,6 +36,7 @@ import android.provider.OpenableColumns;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.tests.bluetooth.MockitoRule;
 
 import com.google.testing.junit.testparameterinjector.TestParameter;
 import com.google.testing.junit.testparameterinjector.TestParameterInjector;

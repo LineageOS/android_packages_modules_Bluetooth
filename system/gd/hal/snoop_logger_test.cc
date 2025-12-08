@@ -27,6 +27,7 @@
 #include <unordered_map>
 
 #include "hal/snoop_logger_common.h"
+#include "hal/snoop_logger_file.h"
 #include "hal/syscall_wrapper_impl.h"
 #include "os/fake_timer/fake_timerfd.h"
 #include "os/files.h"
@@ -235,7 +236,7 @@ TEST_P(SnoopLoggerTest, capture_one_packet_test) {
   ASSERT_TRUE(std::filesystem::exists(temp_snoop_log_));
   ASSERT_FALSE(std::filesystem::exists(temp_snoop_log_last_));
   ASSERT_EQ(std::filesystem::file_size(temp_snoop_log_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType) +
+            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLoggerFile::PacketHeaderType) +
                     kInformationRequest.size());
 }
 
@@ -248,7 +249,7 @@ TEST_P(SnoopLoggerTest, capture_hci_cmd_btsnooz_test) {
 
   ASSERT_TRUE(std::filesystem::exists(temp_snooz_log_));
   ASSERT_EQ(std::filesystem::file_size(temp_snooz_log_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType) +
+            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLoggerFile::PacketHeaderType) +
                     kInformationRequest.size());
   snoop_logger.reset();
 
@@ -267,7 +268,7 @@ TEST_P(SnoopLoggerTest, capture_l2cap_signal_packet_btsnooz_test) {
 
   ASSERT_TRUE(std::filesystem::exists(temp_snooz_log_));
   ASSERT_EQ(std::filesystem::file_size(temp_snooz_log_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType) +
+            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLoggerFile::PacketHeaderType) +
                     kSdpConnectionRequest.size());
 
   snoop_logger.reset();
@@ -287,7 +288,7 @@ TEST_P(SnoopLoggerTest, capture_l2cap_short_data_packet_btsnooz_test) {
 
   ASSERT_TRUE(std::filesystem::exists(temp_snooz_log_));
   ASSERT_EQ(std::filesystem::file_size(temp_snooz_log_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType) +
+            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLoggerFile::PacketHeaderType) +
                     kAvdtpSuspend.size());
 
   snoop_logger.reset();
@@ -307,7 +308,8 @@ TEST_P(SnoopLoggerTest, capture_l2cap_long_data_packet_btsnooz_test) {
 
   ASSERT_TRUE(std::filesystem::exists(temp_snooz_log_));
   ASSERT_EQ(std::filesystem::file_size(temp_snooz_log_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType) + 14);
+            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLoggerFile::PacketHeaderType) +
+                    14);
 
   snoop_logger.reset();
 
@@ -326,7 +328,8 @@ TEST_P(SnoopLoggerTest, snoop_log_persists) {
 
   ASSERT_TRUE(std::filesystem::exists(temp_snooz_log_));
   ASSERT_EQ(std::filesystem::file_size(temp_snooz_log_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType) + 14);
+            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLoggerFile::PacketHeaderType) +
+                    14);
 
   snoop_logger.reset();
   ASSERT_TRUE(std::filesystem::exists(temp_snooz_log_));
@@ -378,7 +381,7 @@ TEST_P(SnoopLoggerTest, rotate_file_at_new_session_test) {
   ASSERT_TRUE(std::filesystem::exists(temp_snoop_log_));
   ASSERT_FALSE(std::filesystem::exists(temp_snoop_log_last_));
   ASSERT_EQ(std::filesystem::file_size(temp_snoop_log_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType) +
+            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLoggerFile::PacketHeaderType) +
                     kInformationRequest.size());
 
   // Start again
@@ -396,9 +399,9 @@ TEST_P(SnoopLoggerTest, rotate_file_at_new_session_test) {
   ASSERT_TRUE(std::filesystem::exists(temp_snoop_log_last_));
   ASSERT_EQ(std::filesystem::file_size(temp_snoop_log_),
             sizeof(SnoopLoggerCommon::FileHeaderType) +
-                    (sizeof(SnoopLogger::PacketHeaderType) + kInformationRequest.size()) * 2);
+                    (sizeof(SnoopLoggerFile::PacketHeaderType) + kInformationRequest.size()) * 2);
   ASSERT_EQ(std::filesystem::file_size(temp_snoop_log_last_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType) +
+            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLoggerFile::PacketHeaderType) +
                     kInformationRequest.size());
 }
 
@@ -418,10 +421,10 @@ TEST_P(SnoopLoggerTest, rotate_file_after_full_test) {
   ASSERT_TRUE(std::filesystem::exists(temp_snoop_log_last_));
   ASSERT_EQ(std::filesystem::file_size(temp_snoop_log_),
             sizeof(SnoopLoggerCommon::FileHeaderType) +
-                    (sizeof(SnoopLogger::PacketHeaderType) + kInformationRequest.size()) * 1);
+                    (sizeof(SnoopLoggerFile::PacketHeaderType) + kInformationRequest.size()) * 1);
   ASSERT_EQ(std::filesystem::file_size(temp_snoop_log_last_),
             sizeof(SnoopLoggerCommon::FileHeaderType) +
-                    (sizeof(SnoopLogger::PacketHeaderType) + kInformationRequest.size()) * 10);
+                    (sizeof(SnoopLoggerFile::PacketHeaderType) + kInformationRequest.size()) * 10);
 }
 
 TEST_P(SnoopLoggerTest, qualcomm_debug_log_test) {
@@ -432,7 +435,7 @@ TEST_P(SnoopLoggerTest, qualcomm_debug_log_test) {
 
   ASSERT_TRUE(std::filesystem::exists(temp_snooz_log_));
   ASSERT_EQ(std::filesystem::file_size(temp_snooz_log_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType) +
+            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLoggerFile::PacketHeaderType) +
                     kQualcommConnectionRequest.size());
 
   snoop_logger.reset();
@@ -451,9 +454,9 @@ TEST_P(SnoopLoggerTest, qualcomm_debug_log_regression_test) {
     snoop_logger->DumpSnoozLogToFile();
 
     ASSERT_TRUE(std::filesystem::exists(temp_snooz_log_));
-    ASSERT_EQ(
-            std::filesystem::file_size(temp_snooz_log_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType) + 14);
+    ASSERT_EQ(std::filesystem::file_size(temp_snooz_log_),
+              sizeof(SnoopLoggerCommon::FileHeaderType) +
+                      sizeof(SnoopLoggerFile::PacketHeaderType) + 14);
     snoop_logger.reset();
   }
 
@@ -469,9 +472,9 @@ TEST_P(SnoopLoggerTest, qualcomm_debug_log_regression_test) {
     snoop_logger->DumpSnoozLogToFile();
 
     ASSERT_TRUE(std::filesystem::exists(temp_snooz_log_));
-    ASSERT_EQ(
-            std::filesystem::file_size(temp_snooz_log_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType) + 14);
+    ASSERT_EQ(std::filesystem::file_size(temp_snooz_log_),
+              sizeof(SnoopLoggerCommon::FileHeaderType) +
+                      sizeof(SnoopLoggerFile::PacketHeaderType) + 14);
     snoop_logger.reset();
   }
 
@@ -576,7 +579,7 @@ TEST_P(SnoopLoggerTest, a2dp_packets_filtered_negative_test) {
   ASSERT_TRUE(std::filesystem::exists(temp_snoop_log_filtered_));
   // Should not filter
   ASSERT_EQ(std::filesystem::file_size(temp_snoop_log_filtered_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType) +
+            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLoggerFile::PacketHeaderType) +
                     kA2dpMediaPacket.size());
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
@@ -607,12 +610,13 @@ TEST_P(SnoopLoggerTest, headers_filtered_test) {
   // Verify states after test
   ASSERT_TRUE(std::filesystem::exists(temp_snoop_log_filtered_));
   log::info("const size: {}", (int)(sizeof(SnoopLoggerCommon::FileHeaderType) +
-                                    sizeof(SnoopLogger::PacketHeaderType)));
+                                    sizeof(SnoopLoggerFile::PacketHeaderType)));
 
   // Packet should be filtered
   const size_t file_size = (size_t)std::filesystem::file_size(temp_snoop_log_filtered_);
   const size_t expected_file_size = sizeof(SnoopLoggerCommon::FileHeaderType) +
-                                    sizeof(SnoopLogger::PacketHeaderType) + GetMaxFilteredSize();
+                                    sizeof(SnoopLoggerFile::PacketHeaderType) +
+                                    GetMaxFilteredSize();
   ASSERT_EQ(file_size, expected_file_size);
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
@@ -659,8 +663,9 @@ TEST_P(SnoopLoggerTest, rfcomm_channel_filtered_sabme_ua_test) {
 
   // Packets should not be filtered because because they are SAMBE and UA events.
   ASSERT_EQ(std::filesystem::file_size(temp_snoop_log_filtered_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + 2 * sizeof(SnoopLogger::PacketHeaderType) +
-                    kRfcommSabme.size() + kRfcommUa.size());
+            sizeof(SnoopLoggerCommon::FileHeaderType) +
+                    2 * sizeof(SnoopLoggerFile::PacketHeaderType) + kRfcommSabme.size() +
+                    kRfcommUa.size());
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
 
@@ -705,7 +710,7 @@ TEST_P(SnoopLoggerTest, rfcomm_channel_filtered_acceptlisted_dlci_test) {
 
   // Packet should not be filtered because DLCI acceptlisted
   ASSERT_EQ(std::filesystem::file_size(temp_snoop_log_filtered_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType) +
+            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLoggerFile::PacketHeaderType) +
                     kRfcommDlci.size());
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
@@ -751,7 +756,7 @@ TEST_P(SnoopLoggerTest, rfcomm_channel_filtered_not_acceptlisted_dlci_test) {
 
   // Packet should be filtered because DLCI not acceptlisted
   ASSERT_EQ(std::filesystem::file_size(temp_snoop_log_filtered_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType) +
+            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLoggerFile::PacketHeaderType) +
                     GetL2capHeaderSize());
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
@@ -792,7 +797,7 @@ TEST_P(SnoopLoggerTest, rfcomm_channel_filtered_not_acceptlisted_l2cap_channel_t
 
   // Packet should be filtered because L2CAP channel not acceptlisted
   ASSERT_EQ(std::filesystem::file_size(temp_snoop_log_filtered_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType) +
+            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLoggerFile::PacketHeaderType) +
                     GetL2capHeaderSize());
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
@@ -835,7 +840,7 @@ TEST_P(SnoopLoggerTest, rfcomm_channel_filtered_acceptlisted_l2cap_channel_test)
 
   // Packet should not be filtered because L2CAP channel acceptlisted
   ASSERT_EQ(std::filesystem::file_size(temp_snoop_log_filtered_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType) +
+            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLoggerFile::PacketHeaderType) +
                     kRfcommL2capChannel.size());
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
@@ -902,7 +907,7 @@ TEST_P(SnoopLoggerTest, profiles_filtered_hfp_hf_test) {
 
   // Packet should be filtered
   ASSERT_EQ(std::filesystem::file_size(temp_snoop_log_filtered_),
-            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLogger::PacketHeaderType) +
+            sizeof(SnoopLoggerCommon::FileHeaderType) + sizeof(SnoopLoggerFile::PacketHeaderType) +
                     HEADER_SIZE + strlen(clcc_pattern.c_str()));
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
@@ -967,8 +972,8 @@ TEST_P(SnoopLoggerTest, profiles_filtered_pbap_magic_test) {
   // Packets should be filtered
   ASSERT_EQ(std::filesystem::file_size(temp_snoop_log_filtered_),
             sizeof(SnoopLoggerCommon::FileHeaderType) +
-                    (int)kTestData.size() * (sizeof(SnoopLogger::PacketHeaderType) + HEADER_SIZE +
-                                             strlen(magic_string.c_str())));
+                    (int)kTestData.size() * (sizeof(SnoopLoggerFile::PacketHeaderType) +
+                                             HEADER_SIZE + strlen(magic_string.c_str())));
 
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
@@ -1032,7 +1037,8 @@ TEST_P(SnoopLoggerTest, profiles_filtered_pbap_header_test) {
   // Packets should be filtered
   ASSERT_EQ(std::filesystem::file_size(temp_snoop_log_filtered_),
             sizeof(SnoopLoggerCommon::FileHeaderType) +
-                    (int)kTestData.size() * (sizeof(SnoopLogger::PacketHeaderType) + HEADER_SIZE));
+                    (int)kTestData.size() *
+                            (sizeof(SnoopLoggerFile::PacketHeaderType) + HEADER_SIZE));
 
   ASSERT_TRUE(std::filesystem::remove(temp_snoop_log_filtered_));
 }
@@ -1149,7 +1155,7 @@ TEST_P(SnoopLoggerTest, default_socket_enabled_capture_recv_test) {
   ASSERT_EQ(0, ret);
 
   char recv_buf1[sizeof(SnoopLoggerCommon::FileHeaderType)];
-  char recv_buf2[sizeof(SnoopLogger::PacketHeaderType)];
+  char recv_buf2[sizeof(SnoopLoggerFile::PacketHeaderType)];
   char recv_buf3[99];
   int bytes_read = -1;
 
@@ -1204,7 +1210,7 @@ TEST_P(SnoopLoggerTest, custom_socket_register_enabled_capture_recv_test) {
   ASSERT_EQ(0, ret);
 
   char recv_buf1[sizeof(SnoopLoggerCommon::FileHeaderType)];
-  char recv_buf2[sizeof(SnoopLogger::PacketHeaderType)];
+  char recv_buf2[sizeof(SnoopLoggerFile::PacketHeaderType)];
   char recv_buf3[99];
   int bytes_read = -1;
 
@@ -1349,7 +1355,7 @@ TEST_P(SnoopLoggerTest, custom_socket_profiles_filtered_hfp_hf_test) {
   ASSERT_EQ(0, ret);
 
   char recv_buf1[sizeof(SnoopLoggerCommon::FileHeaderType)];
-  char recv_buf2[sizeof(SnoopLogger::PacketHeaderType)];
+  char recv_buf2[sizeof(SnoopLoggerFile::PacketHeaderType)];
   char recv_buf3[kPhoneNumber.size()];
   int bytes_read = -1;
 
@@ -1385,8 +1391,6 @@ TEST_P(SnoopLoggerTest, custom_socket_profiles_filtered_hfp_hf_test) {
 
 #ifdef __ANDROID__
 TEST_P(SnoopLoggerTest, recreate_log_directory_when_enabled_test) {
-  com::android::bluetooth::flags::provider_->snoop_logger_recreate_logs_directory(true);
-  const testing::TestInfo* const test_info = testing::UnitTest::GetInstance()->current_test_info();
   const std::filesystem::path file_path = os::ParameterProvider::SnoopLogFilePath();
   const std::filesystem::path temp_dir_ = file_path.parent_path();
 
@@ -1415,8 +1419,6 @@ TEST_P(SnoopLoggerTest, recreate_log_directory_when_enabled_test) {
 }
 
 TEST_P(SnoopLoggerTest, recreate_log_directory_when_filtered_test) {
-  com::android::bluetooth::flags::provider_->snoop_logger_recreate_logs_directory(true);
-  const testing::TestInfo* const test_info = testing::UnitTest::GetInstance()->current_test_info();
   const std::filesystem::path file_path = os::ParameterProvider::SnoopLogFilePath();
   const std::filesystem::path temp_dir_ = file_path.parent_path();
 

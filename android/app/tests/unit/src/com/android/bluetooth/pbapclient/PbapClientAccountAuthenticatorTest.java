@@ -23,14 +23,16 @@ import static org.junit.Assert.assertThrows;
 import android.accounts.Account;
 import android.accounts.AccountAuthenticatorResponse;
 import android.accounts.AccountManager;
-import android.content.Context;
 import android.os.Bundle;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
+
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -39,18 +41,18 @@ import org.mockito.Mock;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class PbapClientAccountAuthenticatorTest {
-
-    private Context mTargetContext;
-    private PbapClientAccountAuthenticator mAuthenticator;
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock AccountAuthenticatorResponse mResponse;
 
     @Mock Account mAccount;
 
+    private PbapClientAccountAuthenticator mAuthenticator;
+
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
-        mAuthenticator = new PbapClientAccountAuthenticator(mTargetContext);
+        final var context = InstrumentationRegistry.getInstrumentation().getContext();
+        mAuthenticator = new PbapClientAccountAuthenticator(context);
     }
 
     @Test

@@ -26,7 +26,7 @@ import android.content.AttributionSource;
  *   Internal interactions within com.android.bluetooth should be handled through
  *   HeadsetService directly instead of going through binder
  *
- * {@hide}
+ * @hide
  */
 interface IBluetoothHeadset {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")

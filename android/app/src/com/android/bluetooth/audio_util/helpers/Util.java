@@ -52,6 +52,8 @@ class Util {
     // TODO (apanicke): Remove this prefix later, for now it makes debugging easier.
     public static final String NOW_PLAYING_PREFIX = "NowPlayingId";
 
+    private Util() {}
+
     /** Get an empty set of Metadata */
     public static final Metadata empty_data() {
         Metadata.Builder builder = new Metadata.Builder();
@@ -157,7 +159,7 @@ class Util {
     // Helper method to close a list of ListItems so that if the callee wants
     // to mutate the list they can do it without affecting any internally cached info
     public static List<ListItem> cloneList(List<ListItem> list) {
-        List<ListItem> clone = new ArrayList<ListItem>(list.size());
+        List<ListItem> clone = new ArrayList<>(list.size());
         for (ListItem item : list) clone.add(item.clone());
         return clone;
     }

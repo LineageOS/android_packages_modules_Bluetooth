@@ -19,6 +19,7 @@ android_test {
         include_filter: [
             "android.bluetooth.**",
             "com.android.bluetooth.**",
+            "com.android.server.bluetooth.**",
         ],
         exclude_filter: [],
     },

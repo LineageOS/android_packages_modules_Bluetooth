@@ -257,7 +257,8 @@ public class MediaPlayerWrapper {
 
     /** Return whether the queue, metadata, and queueID are all in sync. */
     boolean isMetadataSynced() {
-        return isMetadataSynced(new MediaData(
+        return isMetadataSynced(
+                new MediaData(
                         Util.toMetadata(mContext, getMetadata()),
                         getPlaybackState(),
                         Util.toMetadataList(mContext, getQueue())));
@@ -288,7 +289,8 @@ public class MediaPlayerWrapper {
 
                 // Some player do not provide full song info in queue item, allow case
                 // that only title and artist match.
-                if (qitem != null && Objects.equals(qitem.title, mdata.title)
+                if (qitem != null
+                        && Objects.equals(qitem.title, mdata.title)
                         && Objects.equals(qitem.artist, mdata.artist)) {
                     Log.d(TAG, "Only Title and Artist info sync for metadata");
                     return true;
@@ -444,12 +446,13 @@ public class MediaPlayerWrapper {
             trySendMediaUpdate(getQueue(), getMetadata(), getPlaybackState());
         }
 
-        void trySendMediaUpdate(List<MediaSession.QueueItem> queue,
-                                MediaMetadata metadata,
-                                PlaybackState state) {
-            final MediaData mdata = new MediaData(Util.toMetadata(mContext, metadata),
-                                                  state,
-                                                  Util.toMetadataList(mContext, queue));
+        void trySendMediaUpdate(
+                List<MediaSession.QueueItem> queue, MediaMetadata metadata, PlaybackState state) {
+            final MediaData mdata =
+                    new MediaData(
+                            Util.toMetadata(mContext, metadata),
+                            state,
+                            Util.toMetadataList(mContext, queue));
             synchronized (mTimeoutHandlerLock) {
                 if (mTimeoutHandler == null) return;
                 mTimeoutHandler.removeMessages(TimeoutHandler.MSG_TIMEOUT);
@@ -482,12 +485,7 @@ public class MediaPlayerWrapper {
             }
 
             final Metadata mData = Util.toMetadata(mContext, mediaMetadata);
-            Log.v(
-                    TAG,
-                    "onMetadataChanged(): "
-                            + mPackageName
-                            + " : "
-                            + mData);
+            Log.v(TAG, "onMetadataChanged(): " + mPackageName + " : " + mData);
 
             // TODO: Certain players update different metadata fields as they load, such as Album
             // Art. For track changed updates we only care about the song information like title

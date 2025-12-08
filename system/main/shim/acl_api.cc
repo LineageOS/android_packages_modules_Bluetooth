@@ -18,13 +18,15 @@
 
 #include <android_bluetooth_sysprop.h>
 #include <base/location.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <future>
 #include <optional>
 
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/acl_manager_le.h"
 #include "hci/remote_name_request.h"
 #include "main/shim/acl.h"
 #include "main/shim/entry.h"
@@ -39,16 +41,10 @@
 #include "stack/include/main_thread.h"
 #include "stack/include/rnr_interface.h"
 #include "stack/rnr/remote_name_request.h"
-#include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 #ifndef PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED
 #define PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED \
   "bluetooth.core.gap.le.privacy.own_address_type.enabled"
 #endif
-
-namespace {
-constexpr char kBtmLogTag[] = "ACL";
-}
 
 void bluetooth::shim::ACL_CreateClassicConnection(const RawAddress& address) {
   Stack::GetInstance()->GetAcl()->CreateClassicConnection(address);
@@ -82,7 +78,7 @@ void bluetooth::shim::ACL_ConfigureLePrivacy(bool is_le_privacy_enabled) {
   /* This is a Floss only flag. Android determines address policy according to
    * privacy mode, hence it is not necessary to enable resolvable address with
    * another sysprop */
-  if (com::android::bluetooth::flags::floss_separate_host_privacy_and_llprivacy()) {
+  if (com_android_bluetooth_flags_floss_separate_host_privacy_and_llprivacy()) {
     address_policy = hci::LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS;
     if (osi_property_get_bool(PROPERTY_BLE_PRIVACY_OWN_ADDRESS_ENABLED, is_le_privacy_enabled)) {
       address_policy = hci::LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS;
@@ -99,7 +95,7 @@ void bluetooth::shim::ACL_ConfigureLePrivacy(bool is_le_privacy_enabled) {
   auto maximum_rotation_time = std::chrono::minutes(
           android::sysprop::bluetooth::Ble::random_address_rotation_interval_max().value_or(15));
 
-  Stack::GetInstance()->GetAclManager()->SetPrivacyPolicyForInitiatorAddress(
+  Stack::GetInstance()->GetAclManagerLe()->SetPrivacyPolicyForInitiatorAddress(
           address_policy, empty_address_with_type, minimum_rotation_time, maximum_rotation_time);
 }
 

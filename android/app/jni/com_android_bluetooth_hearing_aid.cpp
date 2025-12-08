@@ -17,6 +17,7 @@
 #define LOG_TAG "BluetoothHearingAidServiceJni"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <jni.h>
 #include <nativehelper/JNIHelp.h>
 #include <nativehelper/scoped_local_ref.h>
@@ -30,11 +31,10 @@
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_hearing_aid.h"
-#include "types/raw_address.h"
 
-using bluetooth::hearing_aid::ConnectionState;
-using bluetooth::hearing_aid::HearingAidCallbacks;
-using bluetooth::hearing_aid::HearingAidInterface;
+using bluetooth::asha::ConnectionState;
+using bluetooth::asha::HearingAidCallbacks;
+using bluetooth::asha::HearingAidInterface;
 
 namespace android {
 static jmethodID method_onConnectionStateChanged;

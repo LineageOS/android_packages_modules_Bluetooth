@@ -19,15 +19,19 @@ module majorly refers to the implementation of AOSP:
 * packages/modules/Bluetooth/system/stack/include/
 """
 
+from collections.abc import Sequence
 import dataclasses
 import enum
 import struct
-from typing import ClassVar
+from typing import ClassVar, TypeVar
 
 from bumble import a2dp
 from bumble import avdtp
+from bumble import avrcp
 from bumble import codecs
+from bumble import device as bumble_device
 
+from navi.bumble_ext import ogg
 from navi.utils import constants
 
 
@@ -54,21 +58,6 @@ class LdacChannelMode(enum.IntFlag):
     MONO = 0x04
     DUAL = 0x02
     STEREO = 0x01
-
-
-class OpusChannelMode(enum.IntFlag):
-    MONO = 0x01
-    STEREO = 0x02
-    DUAL_MONO = 0x04
-
-
-class OpusFrameSize(enum.IntFlag):
-    SIZE_10_MILLISECONDS = 0x08
-    SIZE_20_MILLISECONDS = 0x10
-
-
-class OpusSamplingRate(enum.IntFlag):
-    RATE_48000 = 0x80
 
 
 @dataclasses.dataclass(frozen=True)
@@ -130,26 +119,6 @@ class LdacCodecInformation:
         )
 
 
-@dataclasses.dataclass(frozen=True)
-class OpusCodecInformation:
-    """OPUS codec information."""
-
-    sample_rate: OpusSamplingRate
-    channel_mode: OpusChannelMode
-    frame_size: OpusFrameSize
-
-    VENDOR_ID: ClassVar[int] = 0xE0
-    CODEC_ID: ClassVar[int] = 0x01
-
-    def __bytes__(self) -> bytes:
-        return struct.pack(
-            '<IHB',
-            self.VENDOR_ID,
-            self.CODEC_ID,
-            self.sample_rate | self.channel_mode | self.frame_size,
-        )
-
-
 @enum.unique
 class A2dpCodec(constants.ShortReprEnum):
     """A2DP codecs.
@@ -158,6 +127,7 @@ class A2dpCodec(constants.ShortReprEnum):
   packages/modules/Bluetooth/android/app/res/values/config.xml
   """
 
+    OPUS = enum.auto()
     LDAC = enum.auto()
     APTX_HD = enum.auto()
     APTX = enum.auto()
@@ -234,6 +204,77 @@ class A2dpCodec(constants.ShortReprEnum):
                         channel_mode=LdacChannelMode.STEREO,
                     ),
                 )
+            case A2dpCodec.OPUS:
+                return avdtp.MediaCodecCapabilities(
+                    media_type=avdtp.AVDTP_AUDIO_MEDIA_TYPE,
+                    media_codec_type=avdtp.A2DP_NON_A2DP_CODEC_TYPE,
+                    media_codec_information=a2dp.OpusMediaCodecInformation(
+                        sampling_frequency=a2dp.OpusMediaCodecInformation.SamplingFrequency.
+                        SF_48000,
+                        channel_mode=a2dp.OpusMediaCodecInformation.ChannelMode.STEREO,
+                        frame_size=a2dp.OpusMediaCodecInformation.FrameSize.FS_20MS,
+                    ),
+                )
+
+    def get_media_packet_pump(self, peer_mtu: int) -> avdtp.MediaPacketPump:
+        """Returns an empty packet pump for the given codec."""
+
+        # Empty packet source.
+        async def read(size: int) -> bytes:
+            return bytes(size)
+
+        source: a2dp.SbcPacketSource | a2dp.AacPacketSource
+        match self:
+            case A2dpCodec.SBC:
+                source = a2dp.SbcPacketSource(read, peer_mtu)
+            case A2dpCodec.AAC:
+                source = a2dp.AacPacketSource(read, peer_mtu)
+            case _:
+                raise ValueError(f'Unsupported codec: {self}')
+        return avdtp.MediaPacketPump(source.packets)
+
+    @property
+    def format(self) -> str:
+        """Container format of the codec.
+
+    Older ffmpeg doesn't support "opus" format and so we use "ogg" instead.
+    """
+        if self == A2dpCodec.OPUS:
+            return 'ogg'
+        return self.name.lower()
+
+    @property
+    def codec_id(self) -> int:
+        return {
+            A2dpCodec.SBC: 0,
+            A2dpCodec.AAC: 0,
+            A2dpCodec.APTX: AptxCodecInformation.CODEC_ID,
+            A2dpCodec.APTX_HD: AptxHdCodecInformation.CODEC_ID,
+            A2dpCodec.LDAC: LdacCodecInformation.CODEC_ID,
+            A2dpCodec.OPUS: a2dp.OpusMediaCodecInformation.CODEC_ID,
+        }[self]
+
+    @property
+    def vendor_id(self) -> int:
+        return {
+            A2dpCodec.SBC: 0,
+            A2dpCodec.AAC: 0,
+            A2dpCodec.APTX: AptxCodecInformation.VENDOR_ID,
+            A2dpCodec.APTX_HD: AptxHdCodecInformation.VENDOR_ID,
+            A2dpCodec.LDAC: LdacCodecInformation.VENDOR_ID,
+            A2dpCodec.OPUS: a2dp.OpusMediaCodecInformation.VENDOR_ID,
+        }[self]
+
+    @property
+    def codec_type(self) -> int:
+        return {
+            A2dpCodec.SBC: a2dp.A2DP_SBC_CODEC_TYPE,
+            A2dpCodec.AAC: a2dp.A2DP_MPEG_2_4_AAC_CODEC_TYPE,
+            A2dpCodec.APTX: a2dp.A2DP_NON_A2DP_CODEC_TYPE,
+            A2dpCodec.APTX_HD: a2dp.A2DP_NON_A2DP_CODEC_TYPE,
+            A2dpCodec.LDAC: a2dp.A2DP_NON_A2DP_CODEC_TYPE,
+            A2dpCodec.OPUS: a2dp.A2DP_NON_A2DP_CODEC_TYPE,
+        }[self]
 
 
 def register_sink_buffer(sink: avdtp.LocalSink, codec: A2dpCodec) -> bytearray | None:
@@ -248,15 +289,15 @@ def register_sink_buffer(sink: avdtp.LocalSink, codec: A2dpCodec) -> bytearray |
   """
     buffer = bytearray()
     match codec:
-        case A2dpCodec.SBC:
+        case A2dpCodec.SBC | A2dpCodec.LDAC:
 
-            @sink.on('rtp_packet')
+            @sink.on(avdtp.LocalSink.EVENT_RTP_PACKET)
             def _(packet: avdtp.MediaPacket) -> None:
                 buffer.extend(packet.payload[1:])
 
         case A2dpCodec.AAC:
 
-            @sink.on('rtp_packet')
+            @sink.on(avdtp.LocalSink.EVENT_RTP_PACKET)
             def _(packet: avdtp.MediaPacket) -> None:
                 buffer.extend(codecs.AacAudioRtpPacket.from_bytes(packet.payload).to_adts())
 
@@ -268,13 +309,132 @@ def register_sink_buffer(sink: avdtp.LocalSink, codec: A2dpCodec) -> bytearray |
             sink.on_avdtp_packet = on_avdtp_packet  # type: ignore[method-assign]
             if sink.stream and sink.stream.rtp_channel:
                 sink.stream.rtp_channel.sink = sink.on_avdtp_packet
+
         case A2dpCodec.APTX_HD:
 
-            @sink.on('rtp_packet')
+            @sink.on(avdtp.LocalSink.EVENT_RTP_PACKET)
             def _(packet: avdtp.MediaPacket) -> None:
                 buffer.extend(packet.payload)
+
+        case A2dpCodec.OPUS:
+
+            # https://datatracker.ietf.org/doc/html/rfc7845#section-3
+            # First page must be the ID header.
+            buffer.extend(
+                ogg.Page(
+                    # Change this when we support other codec configurations.
+                    payload=ogg.OpusIdHeader(sample_rate=48000, channel_count=2),
+                    header_type=ogg.Page.HeaderType.IS_FIRST_PAGE,
+                    page_sequence_number=0,
+                ).to_bytes())
+            # Second page must be the comment header. It can be empty.
+            buffer.extend(
+                ogg.Page(
+                    payload=ogg.OpusCommentHeader(),
+                    page_sequence_number=1,
+                ).to_bytes())
+            page_sequence_number = 2
+
+            @sink.on(avdtp.LocalSink.EVENT_RTP_PACKET)
+            def _(packet: avdtp.MediaPacket) -> None:
+                nonlocal page_sequence_number
+                buffer.extend(
+                    ogg.Page(
+                        payload=packet.payload[1:],
+                        page_sequence_number=page_sequence_number,
+                    ).to_bytes())
+                page_sequence_number += 1
 
         case _:
             # Unexpected codec or no decoder.
             return None
     return buffer
+
+
+def _endpoint_supports_codec(
+    endpoint: avdtp.LocalStreamEndPoint,
+    codec_type: int,
+    vendor_id: int = 0,
+    codec_id: int = 0,
+) -> bool:
+    """Checks if the endpoint supports the codec."""
+    for capability in endpoint.capabilities:
+        if not (isinstance(capability, avdtp.MediaCodecCapabilities) and capability.media_type
+                == avdtp.AVDTP_AUDIO_MEDIA_TYPE and capability.media_codec_type == codec_type):
+            continue
+        codec_info = capability.media_codec_information
+        if not isinstance(codec_info, avdtp.VendorSpecificMediaCodecInformation) or (
+                codec_info.vendor_id == vendor_id and codec_info.codec_id == codec_id):
+            return True
+    return False
+
+
+_ENDPOINT = TypeVar('_ENDPOINT', bound=avdtp.LocalStreamEndPoint)
+
+
+def find_local_endpoints_by_codec(
+    protocol: avdtp.Protocol,
+    codec_type: int,
+    endpoint_type: type[_ENDPOINT],
+    vendor_id: int = 0,
+    codec_id: int = 0,
+) -> list[_ENDPOINT]:
+    """Finds the local source by codec type and vendor/codec ID."""
+    return [
+        endpoint for endpoint in protocol.local_endpoints if isinstance(endpoint, endpoint_type) and
+        _endpoint_supports_codec(endpoint, codec_type, vendor_id, codec_id)
+    ]
+
+
+def setup_sink_server(
+    device: bumble_device.Device,
+    supported_capabilities: Sequence[avdtp.MediaCodecCapabilities],
+    a2dp_sink_handle: int,
+) -> avdtp.Listener:
+    """Sets up the sink server on the device.
+
+  Args:
+    device: The device to set up the sink server on.
+    supported_capabilities: The capabilities of the sink server.
+    a2dp_sink_handle: The handle of the A2DP sink service record.
+
+  Returns:
+    The AVDTP listener.
+  """
+    listener = avdtp.Listener.for_device(device)
+
+    @listener.on(listener.EVENT_CONNECTION)
+    def _(server: avdtp.Protocol) -> None:
+        for capability in supported_capabilities:
+            server.add_sink(capability)
+
+    device.sdp_service_records.update({
+        a2dp_sink_handle: a2dp.make_audio_sink_service_sdp_records(a2dp_sink_handle),
+    })
+    return listener
+
+
+def setup_avrcp_server(
+    device: bumble_device.Device,
+    avrcp_controller_handle: int,
+    avrcp_target_handle: int,
+    delegate: avrcp.Delegate | None = None,
+) -> avrcp.Protocol:
+    """Sets up the AVRCP server on the device.
+
+  Args:
+    device: The device to set up the AVRCP server on.
+    avrcp_controller_handle: The handle of the AVRCP service record.
+    avrcp_target_handle: The handle of the AVRCP target service record.
+    delegate: The delegate to handle AVRCP events.
+
+  Returns:
+    The AVRCP protocol.
+  """
+    avrcp_protocol = avrcp.Protocol(delegate)
+    avrcp_protocol.listen(device)
+    device.sdp_service_records.update({
+        avrcp_controller_handle: avrcp.make_controller_service_sdp_records(avrcp_controller_handle),
+        avrcp_target_handle: avrcp.make_target_service_sdp_records(avrcp_target_handle),
+    })
+    return avrcp_protocol

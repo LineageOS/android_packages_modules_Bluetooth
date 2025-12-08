@@ -17,12 +17,13 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <algorithm>
 #include <deque>
 #include <memory>
 
 #include "stack/gatt/gatt_int.h"
-#include "types/raw_address.h"
 
 #define EATT_MIN_MTU_MPS (64)
 #define EATT_DEFAULT_MTU (256)
@@ -86,12 +87,12 @@ public:
       if (state == EattChannelState::EATT_CHANNEL_OPENED) {
         server_outstanding_cmd_ = tGATT_SR_CMD{};
         char name[64];
-        sprintf(name, "eatt_ind_ack_timer_%s_cid_0x%04x", bda_.ToRedactedStringForLogging().c_str(),
-                cid_);
+        snprintf(name, sizeof(name), "eatt_ind_ack_timer_%s_cid_0x%04x",
+                 bda_.ToRedactedStringForLogging().c_str(), cid_);
         ind_ack_timer_ = alarm_new(name);
 
-        sprintf(name, "eatt_ind_conf_timer_%s_cid_0x%04x",
-                bda_.ToRedactedStringForLogging().c_str(), cid_);
+        snprintf(name, sizeof(name), "eatt_ind_conf_timer_%s_cid_0x%04x",
+                 bda_.ToRedactedStringForLogging().c_str(), cid_);
         ind_confirmation_timer_ = alarm_new(name);
       }
     }

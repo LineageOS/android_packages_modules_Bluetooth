@@ -40,8 +40,8 @@ namespace security::internal {
 class SecurityManagerImpl;
 }
 
-namespace hci {
-class AclManagerImpl;
+namespace hci::acl_manager {
+class AclManagerLeImpl;
 }
 
 namespace storage {
@@ -134,7 +134,7 @@ public:
 
 protected:
   friend shim::BtifConfigInterface;
-  friend hci::AclManagerImpl;
+  friend hci::acl_manager::AclManagerLeImpl;
   friend security::internal::SecurityManagerImpl;
   // For unit test only
   ConfigCache* GetMemoryOnlyConfigCache();

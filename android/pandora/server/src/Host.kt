@@ -230,6 +230,14 @@ class Host(
         }
     }
 
+    private fun restartSettingsApp() {
+        // Restart settings and system UI after ACL connection to avoid auto profile connection
+        // which leads test failure
+        Log.d(TAG, "Restarting Settings and SystemUI")
+        Runtime.getRuntime().exec("am crash com.android.systemui").waitFor()
+        Runtime.getRuntime().exec("am crash com.android.settings").waitFor()
+    }
+
     private suspend fun waitPairingRequestIntent(bluetoothDevice: BluetoothDevice) {
         Log.i(TAG, "waitPairingRequestIntent: device=$bluetoothDevice")
         var pairingVariant =
@@ -249,6 +257,7 @@ class Host(
         if (pairingVariant in confirmationCases) {
             bluetoothDevice.setPairingConfirmation(true)
         }
+        restartSettingsApp()
     }
 
     private suspend fun waitConnectionIntent(bluetoothDevice: BluetoothDevice) {
@@ -315,6 +324,7 @@ class Host(
             }
 
             waitedAclConnection.add(bluetoothDevice)
+            restartSettingsApp()
 
             WaitConnectionResponse.newBuilder()
                 .setConnection(bluetoothDevice.toConnection(TRANSPORT_BREDR))

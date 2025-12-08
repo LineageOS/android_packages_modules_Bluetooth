@@ -25,6 +25,7 @@ import com.android.bluetooth.avrcpcontroller.BipImageDescriptor;
 import com.android.bluetooth.avrcpcontroller.BipImageFormat;
 import com.android.bluetooth.avrcpcontroller.BipImageProperties;
 import com.android.bluetooth.avrcpcontroller.BipPixel;
+import com.android.bluetooth.flags.Flags;
 
 import java.io.ByteArrayOutputStream;
 import java.security.MessageDigest;
@@ -125,9 +126,95 @@ public class CoverArt {
             return null;
         }
 
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        mImage.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
-        return outputStream.toByteArray();
+        if (!Flags.implementGetImageFromDescriptorForCoverArt()) {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            mImage.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+            return outputStream.toByteArray();
+        }
+
+        BipPixel pixel = descriptor.getPixel();
+        int maxSize = descriptor.getMaxSize();
+        debug("pixel: " + pixel);
+        BipEncoding encoding = descriptor.getEncoding();
+        Bitmap.CompressFormat compressFormat;
+        if (encoding.getType() == BipEncoding.JPEG) {
+            compressFormat = Bitmap.CompressFormat.JPEG;
+        } else if (encoding.getType() == BipEncoding.PNG) {
+            compressFormat = Bitmap.CompressFormat.PNG;
+        } else {
+            error("Unsupported encoding format type: " + encoding.getType());
+            return null;
+        }
+
+        // Scale the bitmap to the requested size
+        Bitmap scaledBitmap = mImage;
+        if (pixel != null) {
+            debug("scaleBitmap: org w: " + mImage.getWidth() + ", h: " + mImage.getHeight());
+            scaledBitmap =
+                    Bitmap.createScaledBitmap(
+                            mImage, pixel.getMinWidth(), pixel.getMinHeight(), true);
+            debug(
+                    "scaleBitmap: scaled w: "
+                            + scaledBitmap.getWidth()
+                            + ", h: "
+                            + scaledBitmap.getHeight());
+        }
+
+        // Compress the bitmap using a heuristic guess followed by binary search.
+        byte[] imageBytes = null;
+        if (maxSize > 0) {
+            debug("Starting compression with maxSize constraint: " + maxSize + " bytes");
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            int low = 1;
+            int high = 100;
+            int bestQuality = -1;
+
+            long rawSize = scaledBitmap.getByteCount();
+            int initialGuess = Math.max(1, Math.min(100, (int) (100.0 * maxSize / rawSize)));
+            outputStream.reset();
+            scaledBitmap.compress(compressFormat, initialGuess, outputStream);
+            debug("Heuristic guess: quality=" + initialGuess + ", size=" + outputStream.size());
+
+            if (outputStream.size() <= maxSize) {
+                low = initialGuess;
+                bestQuality = initialGuess;
+                imageBytes = outputStream.toByteArray();
+            } else {
+                high = initialGuess - 1;
+            }
+
+            debug("Refined binary search range: [" + low + ", " + high + "]");
+            while (low <= high) {
+                outputStream.reset();
+                int mid = (low + high) / 2;
+                scaledBitmap.compress(compressFormat, mid, outputStream);
+
+                if (outputStream.size() <= maxSize) {
+                    bestQuality = mid;
+                    imageBytes = outputStream.toByteArray();
+                    low = mid + 1;
+                } else {
+                    high = mid - 1;
+                }
+            }
+
+            if (bestQuality != -1) {
+                debug("Found best quality: " + bestQuality + ", final size: " + imageBytes.length);
+            } else {
+                error(
+                        "Could not compress image to be under "
+                                + maxSize
+                                + " bytes with quality > 0.");
+                return null;
+            }
+        } else {
+            debug("No maxSize constraint, using quality 100");
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            scaledBitmap.compress(compressFormat, 100, outputStream);
+            imageBytes = outputStream.toByteArray();
+        }
+        return imageBytes;
     }
 
     /** Determine if a given image descriptor is valid */
@@ -140,7 +227,8 @@ public class CoverArt {
 
         int encodingType = encoding.getType();
         if ((encodingType == BipEncoding.JPEG || encodingType == BipEncoding.PNG)
-                && PIXEL_THUMBNAIL.equals(pixel)) {
+                && (Flags.implementGetImageFromDescriptorForCoverArt()
+                        || PIXEL_THUMBNAIL.equals(pixel))) {
             return true;
         }
         return false;

@@ -18,12 +18,11 @@
 #pragma once
 
 #include <aics/api.h>
+#include <bluetooth/types/address.h>
 #include <hardware/bluetooth.h>
 
 #include <string>
 #include <variant>
-
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace vc {

@@ -293,7 +293,7 @@ bool SDP_AddAttribute(uint32_t handle, uint16_t attr_id, uint8_t attr_type, uint
       log::verbose("SDP_AddAttribute: handle:{:X}, id:{:04X}, type:{}, len:{}, p_val:{}, *p_val:{}",
                    handle, attr_id, attr_type, attr_len, std::format_ptr(p_val), *p_val);
     } else if ((attr_type == TEXT_STR_DESC_TYPE) || (attr_type == URL_DESC_TYPE)) {
-      if (p_val[attr_len - 1] == '\0') {
+      if (attr_len > 0 && p_val[attr_len - 1] == '\0') {
         log::verbose(
                 "SDP_AddAttribute: handle:{:X}, id:{:04X}, type:{}, len:{}, p_val:{}, *p_val:{}",
                 handle, attr_id, attr_type, attr_len, std::format_ptr(p_val), (char*)p_val);

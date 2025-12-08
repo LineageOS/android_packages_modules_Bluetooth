@@ -18,10 +18,10 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <hardware/bt_sock.h>
 
 #include "btif_uid.h"
-#include "types/raw_address.h"
 
 enum {
   SOCKET_CONNECTION_STATE_UNKNOWN,

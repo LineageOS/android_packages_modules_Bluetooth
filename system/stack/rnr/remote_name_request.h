@@ -15,6 +15,8 @@
  */
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include "osi/include/alarm.h"
 #include "stack/include/bt_device_type.h"
 #include "stack/include/bt_name.h"
@@ -22,7 +24,6 @@
 #include "stack/include/hci_error_code.h"
 #include "stack/include/rnr_interface.h"
 #include "stack/include/security_client_callbacks.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace stack {

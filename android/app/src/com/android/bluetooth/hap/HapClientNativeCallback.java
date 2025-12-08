@@ -16,26 +16,21 @@
 
 package com.android.bluetooth.hap;
 
-import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED;
-import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_DEVICE_AVAILABLE;
-import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_DEVICE_FEATURES;
-import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED;
-import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED_FOR_GROUP;
-import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_ON_ACTIVE_PRESET_SELECT_ERROR;
-import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_ON_PRESET_INFO;
-import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_ON_PRESET_INFO_ERROR;
-import static com.android.bluetooth.hap.HapClientStackEvent.EVENT_TYPE_ON_PRESET_NAME_SET_ERROR;
+import static android.bluetooth.BluetoothUtils.inlineStackTrace;
 
 import static java.util.Objects.requireNonNull;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHapPresetInfo;
+import android.bluetooth.BluetoothStatusCodes;
+import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
+import java.util.function.Consumer;
 
 /** Hearing Access Profile Client Native Callback (from native to Java). */
 public class HapClientNativeCallback {
@@ -53,129 +48,124 @@ public class HapClientNativeCallback {
         return mAdapterService.getDeviceFromByte(address);
     }
 
-    @VisibleForTesting
-    void onConnectionStateChanged(int state, byte[] address) {
-        HapClientStackEvent event = new HapClientStackEvent(EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        event.device = getDevice(address);
-        event.valueInt1 = state;
+    private void sendMessageToService(Consumer<HapClientService> action) {
+        if (Flags.hapOnMainLooper()) {
+            mHapClientService.post(action);
+            return;
+        }
+        if (!mHapClientService.isAvailable()) {
+            Log.e(TAG, "Action ignored, service not available. " + inlineStackTrace());
+            return;
+        }
+        action.accept(mHapClientService);
+    }
 
-        mHapClientService.messageFromNative(event);
+    @VisibleForTesting
+    void onConnectionStateChanged(byte[] address, int state) {
+        BluetoothDevice device = getDevice(address);
+
+        sendMessageToService(s -> s.onConnectionStateChanged(device, state));
     }
 
     @VisibleForTesting
     void onDeviceAvailable(byte[] address, int features) {
-        HapClientStackEvent event = new HapClientStackEvent(EVENT_TYPE_DEVICE_AVAILABLE);
-        event.device = getDevice(address);
-        event.valueInt1 = features;
+        BluetoothDevice device = getDevice(address);
 
-        mHapClientService.messageFromNative(event);
+        sendMessageToService(s -> s.onDeviceAvailable(device, features));
     }
 
     @VisibleForTesting
     void onFeaturesUpdate(byte[] address, int features) {
-        HapClientStackEvent event = new HapClientStackEvent(EVENT_TYPE_DEVICE_FEATURES);
-        event.device = getDevice(address);
-        event.valueInt1 = features;
+        BluetoothDevice device = getDevice(address);
 
-        mHapClientService.messageFromNative(event);
+        sendMessageToService(s -> s.onFeaturesUpdate(device, features));
     }
 
     @VisibleForTesting
-    void onActivePresetSelected(byte[] address, int presetIndex) {
-        HapClientStackEvent event = new HapClientStackEvent(EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED);
-        event.device = getDevice(address);
-        event.valueInt1 = presetIndex;
+    void onPresetSelected(byte[] address, int presetIndex) {
+        BluetoothDevice device = getDevice(address);
 
-        mHapClientService.messageFromNative(event);
+        sendMessageToService(s -> s.onPresetSelected(device, presetIndex));
     }
 
     @VisibleForTesting
-    void onActivePresetSelectedForGroup(int groupId, int presetIndex) {
-        HapClientStackEvent event =
-                new HapClientStackEvent(EVENT_TYPE_ON_ACTIVE_PRESET_SELECTED_FOR_GROUP);
-        event.valueInt1 = presetIndex;
-        event.valueInt2 = groupId;
-
-        mHapClientService.messageFromNative(event);
+    void onPresetSelectedForGroup(int groupId, int presetIndex) {
+        sendMessageToService(s -> s.onPresetSelectedForGroup(groupId, presetIndex));
     }
 
     @VisibleForTesting
-    void onActivePresetSelectError(byte[] address, int resultCode) {
-        HapClientStackEvent event =
-                new HapClientStackEvent(EVENT_TYPE_ON_ACTIVE_PRESET_SELECT_ERROR);
-        event.device = getDevice(address);
-        event.valueInt1 = resultCode;
+    void onPresetSelectionFailed(byte[] address, int nativeStatus) {
+        BluetoothDevice device = getDevice(address);
+        int status = nativeStatusToBluetoothStatusCodes(nativeStatus);
 
-        mHapClientService.messageFromNative(event);
+        sendMessageToService(s -> s.onPresetSelectionFailed(device, status));
     }
 
     @VisibleForTesting
-    void onActivePresetGroupSelectError(int groupId, int resultCode) {
-        HapClientStackEvent event =
-                new HapClientStackEvent(EVENT_TYPE_ON_ACTIVE_PRESET_SELECT_ERROR);
-        event.valueInt1 = resultCode;
-        event.valueInt2 = groupId;
+    void onPresetSelectionForGroupFailed(int groupId, int nativeStatus) {
+        int status = nativeStatusToBluetoothStatusCodes(nativeStatus);
 
-        mHapClientService.messageFromNative(event);
+        sendMessageToService(s -> s.onPresetSelectionForGroupFailed(groupId, status));
     }
 
     @VisibleForTesting
-    void onPresetInfo(byte[] address, int infoReason, BluetoothHapPresetInfo[] presets) {
-        HapClientStackEvent event = new HapClientStackEvent(EVENT_TYPE_ON_PRESET_INFO);
-        event.device = getDevice(address);
-        event.valueInt2 = infoReason;
-        event.valueList = new ArrayList<>(Arrays.asList(presets));
+    void onPresetInfo(byte[] address, int reason, BluetoothHapPresetInfo[] presetsArray) {
+        BluetoothDevice device = getDevice(address);
+        List<BluetoothHapPresetInfo> presets = List.of(presetsArray);
 
-        mHapClientService.messageFromNative(event);
+        sendMessageToService(s -> s.onPresetInfo(device, reason, presets));
     }
 
     @VisibleForTesting
-    void onGroupPresetInfo(int groupId, int infoReason, BluetoothHapPresetInfo[] presets) {
-        HapClientStackEvent event = new HapClientStackEvent(EVENT_TYPE_ON_PRESET_INFO);
-        event.valueInt2 = infoReason;
-        event.valueInt3 = groupId;
-        event.valueList = new ArrayList<>(Arrays.asList(presets));
+    void onPresetInfoForGroup(int groupId, int reason, BluetoothHapPresetInfo[] presetsArray) {
+        List<BluetoothHapPresetInfo> presets = List.of(presetsArray);
 
-        mHapClientService.messageFromNative(event);
+        sendMessageToService(s -> s.onPresetInfoForGroup(groupId, reason, presets));
     }
 
     @VisibleForTesting
-    void onPresetNameSetError(byte[] address, int presetIndex, int resultCode) {
-        HapClientStackEvent event = new HapClientStackEvent(EVENT_TYPE_ON_PRESET_NAME_SET_ERROR);
-        event.device = getDevice(address);
-        event.valueInt1 = resultCode;
-        event.valueInt2 = presetIndex;
+    void onSetPresetNameFailed(byte[] address, int nativeStatus) {
+        BluetoothDevice device = getDevice(address);
+        int status = nativeStatusToBluetoothStatusCodes(nativeStatus);
 
-        mHapClientService.messageFromNative(event);
+        sendMessageToService(s -> s.onSetPresetNameFailed(device, status));
     }
 
     @VisibleForTesting
-    void onGroupPresetNameSetError(int groupId, int presetIndex, int resultCode) {
-        HapClientStackEvent event = new HapClientStackEvent(EVENT_TYPE_ON_PRESET_NAME_SET_ERROR);
-        event.valueInt1 = resultCode;
-        event.valueInt2 = presetIndex;
-        event.valueInt3 = groupId;
+    void onSetPresetNameForGroupFailed(int groupId, int nativeStatus) {
+        int status = nativeStatusToBluetoothStatusCodes(nativeStatus);
 
-        mHapClientService.messageFromNative(event);
+        sendMessageToService(s -> s.onSetPresetNameForGroupFailed(groupId, status));
     }
 
-    @VisibleForTesting
-    void onPresetInfoError(byte[] address, int presetIndex, int resultCode) {
-        HapClientStackEvent event = new HapClientStackEvent(EVENT_TYPE_ON_PRESET_INFO_ERROR);
-        event.device = getDevice(address);
-        event.valueInt1 = resultCode;
-        event.valueInt2 = presetIndex;
+    /* WARNING: Matches status codes defined in bta_has.h */
+    @VisibleForTesting static final int STATUS_NO_ERROR = 0;
+    @VisibleForTesting static final int STATUS_SET_NAME_NOT_ALLOWED = 1;
+    @VisibleForTesting static final int STATUS_OPERATION_NOT_SUPPORTED = 2;
+    @VisibleForTesting static final int STATUS_OPERATION_NOT_POSSIBLE = 3;
+    @VisibleForTesting static final int STATUS_INVALID_PRESET_NAME_LENGTH = 4;
+    @VisibleForTesting static final int STATUS_INVALID_PRESET_INDEX = 5;
+    @VisibleForTesting static final int STATUS_GROUP_OPERATION_NOT_SUPPORTED = 6;
+    @VisibleForTesting static final int STATUS_PROCEDURE_ALREADY_IN_PROGRESS = 7;
+    @VisibleForTesting static final int STATUS_TIMEOUT = 8;
 
-        mHapClientService.messageFromNative(event);
-    }
-
-    @VisibleForTesting
-    void onGroupPresetInfoError(int groupId, int presetIndex, int resultCode) {
-        HapClientStackEvent event = new HapClientStackEvent(EVENT_TYPE_ON_PRESET_INFO_ERROR);
-        event.valueInt1 = resultCode;
-        event.valueInt2 = presetIndex;
-        event.valueInt3 = groupId;
-
-        mHapClientService.messageFromNative(event);
+    private static int nativeStatusToBluetoothStatusCodes(int statusCode) {
+        return switch (statusCode) {
+            case STATUS_NO_ERROR -> BluetoothStatusCodes.SUCCESS;
+            case STATUS_SET_NAME_NOT_ALLOWED ->
+                    BluetoothStatusCodes.ERROR_REMOTE_OPERATION_REJECTED;
+            case STATUS_OPERATION_NOT_SUPPORTED ->
+                    BluetoothStatusCodes.ERROR_REMOTE_OPERATION_NOT_SUPPORTED;
+            case STATUS_OPERATION_NOT_POSSIBLE ->
+                    BluetoothStatusCodes.ERROR_REMOTE_OPERATION_REJECTED;
+            case STATUS_INVALID_PRESET_NAME_LENGTH ->
+                    BluetoothStatusCodes.ERROR_HAP_PRESET_NAME_TOO_LONG;
+            case STATUS_INVALID_PRESET_INDEX -> BluetoothStatusCodes.ERROR_HAP_INVALID_PRESET_INDEX;
+            case STATUS_GROUP_OPERATION_NOT_SUPPORTED ->
+                    BluetoothStatusCodes.ERROR_REMOTE_OPERATION_NOT_SUPPORTED;
+            case STATUS_PROCEDURE_ALREADY_IN_PROGRESS -> BluetoothStatusCodes.ERROR_UNKNOWN;
+            case STATUS_TIMEOUT -> BluetoothStatusCodes.ERROR_TIMEOUT;
+            default -> BluetoothStatusCodes.ERROR_UNKNOWN;
+        };
     }
 }

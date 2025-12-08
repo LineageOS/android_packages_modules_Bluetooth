@@ -28,6 +28,7 @@
 #include "a2dp_sbc.h"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <string.h>
 
 #include <cstdint>
@@ -43,6 +44,7 @@
 #include "a2dp_sbc_encoder.h"
 #include "avdt_api.h"
 #include "embdrv/sbc/encoder/include/sbc_encoder.h"
+#include "gd/common/utils.h"
 #include "hardware/bt_av.h"
 #include "internal_include/bt_trace.h"
 #include "stack/include/bt_hdr.h"
@@ -126,6 +128,41 @@ static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilitySbc(const tA2DP_SBC_CIE* p_ca
                                                        const uint8_t* p_codec_info,
                                                        bool is_capability);
 
+// Adjusts the bitpool values in case we receive invalid bitpool values
+// from remote devices.
+static void A2DP_AdjustBitpool(tA2DP_SBC_CIE* p_ie) {
+  if (bluetooth::common::IsPtsTestMode()) {
+    return;
+  }
+
+  // minbitpool < 2, then set minbitpool = 2
+  if (p_ie->min_bitpool < A2DP_SBC_IE_MIN_BITPOOL) {
+    log::verbose("min_bitpool value adjusted from: {} to {}", p_ie->min_bitpool,
+                 A2DP_SBC_IE_MIN_BITPOOL);
+    p_ie->min_bitpool = A2DP_SBC_IE_MIN_BITPOOL;
+  }
+  // minbitpool > 250, then set minbitpool = 250
+  if (p_ie->min_bitpool > A2DP_SBC_IE_MAX_BITPOOL) {
+    log::verbose("min_bitpool value adjusted from: {} to {}", p_ie->min_bitpool,
+                 A2DP_SBC_IE_MAX_BITPOOL);
+    p_ie->min_bitpool = A2DP_SBC_IE_MAX_BITPOOL;
+  }
+  // maxbitpool > 250, then set maxbitpool = 250
+  if (p_ie->max_bitpool > A2DP_SBC_IE_MAX_BITPOOL) {
+    log::verbose("max_bitpool value adjusted from: {} to {}", p_ie->max_bitpool,
+                 A2DP_SBC_IE_MAX_BITPOOL);
+    p_ie->max_bitpool = A2DP_SBC_IE_MAX_BITPOOL;
+  }
+  // minbitpool > maxbitpool, then set maxbitpool = minbitpool
+  if (p_ie->min_bitpool > p_ie->max_bitpool) {
+    p_ie->max_bitpool = p_ie->min_bitpool;
+    log::verbose(
+            "min bitpool value received for SBC is more than DUT supported Max bitpool"
+            "Clamping the max bitpool configuration further from {} to {}",
+            p_ie->max_bitpool, p_ie->min_bitpool);
+  }
+}
+
 // Builds the SBC Media Codec Capabilities byte sequence beginning from the
 // LOSC octet. |media_type| is the media type |AVDT_MEDIA_TYPE_*|.
 // |p_ie| is a pointer to the SBC Codec Information Element information.
@@ -197,6 +234,11 @@ static tA2DP_STATUS A2DP_ParseInfoSbc(tA2DP_SBC_CIE* p_ie, const uint8_t* p_code
   p_codec_info++;
   p_ie->min_bitpool = *p_codec_info++;
   p_ie->max_bitpool = *p_codec_info++;
+
+  if (com::android::bluetooth::flags::a2dp_adjust_sbc_bitpool()) {
+    A2DP_AdjustBitpool(p_ie);
+  }
+
   if (p_ie->min_bitpool < A2DP_SBC_IE_MIN_BITPOOL || p_ie->min_bitpool > A2DP_SBC_IE_MAX_BITPOOL) {
     return A2DP_INVALID_MINIMUM_BITPOOL_VALUE;
   }
@@ -1266,6 +1308,11 @@ tA2DP_STATUS A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_
   if (result_config_cie.max_bitpool > peer_info_cie.max_bitpool) {
     result_config_cie.max_bitpool = peer_info_cie.max_bitpool;
   }
+
+  if (com::android::bluetooth::flags::a2dp_adjust_sbc_bitpool()) {
+    A2DP_AdjustBitpool(&result_config_cie);
+  }
+
   if (result_config_cie.min_bitpool > result_config_cie.max_bitpool) {
     log::error(
             "cannot match min/max bitpool: local caps min/max = 0x{:x}/0x{:x} peer "

@@ -16,17 +16,18 @@
  *
  ******************************************************************************/
 
+#include <bluetooth/types/address.h>
 #include <gtest/gtest.h>
 
 #include <memory>
 
 #include "bta/hf_client/bta_hf_client_int.h"
 #include "test/fake/fake_osi.h"
-#include "types/raw_address.h"
 
 namespace {
 const RawAddress bdaddr1({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
 const RawAddress bdaddr2({0x66, 0x55, 0x44, 0x33, 0x22, 0x11});
+
 }  // namespace
 
 class BtaHfClientTest : public testing::Test {
@@ -37,6 +38,16 @@ protected:
     // would start operating
     bta_hf_client_cb_arr_init();
   }
+  void TearDown() override {
+    // Clean up the collision timers to satisfy the memory checker
+    for (int i = 0; i < HF_CLIENT_MAX_DEVICES; i++) {
+      alarm_free(bta_hf_client_cb_arr.cb[i].collision_timer);
+      alarm_free(bta_hf_client_cb_arr.cb[i].at_cb.resp_timer);
+      alarm_free(bta_hf_client_cb_arr.cb[i].at_cb.hold_timer);
+    }
+  }
+
+private:
   std::unique_ptr<test::fake::FakeOsi> fake_osi_;
 };
 

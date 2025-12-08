@@ -117,7 +117,7 @@ void btif_storage_add_groups(const RawAddress& addr) {
   inc_func_call_count(__func__);
   test::mock::btif_profile_storage::btif_storage_add_groups(addr);
 }
-void btif_storage_add_hearing_aid(const HearingDevice& dev_info) {
+void btif_storage_add_hearing_aid(const bluetooth::asha::HearingDevice& dev_info) {
   inc_func_call_count(__func__);
   test::mock::btif_profile_storage::btif_storage_add_hearing_aid(dev_info);
 }

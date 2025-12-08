@@ -43,22 +43,10 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.uiautomator.UiDevice;
 
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
-import com.android.dx.mockito.inline.extended.StaticMockitoSession;
-import com.android.dx.mockito.inline.extended.StaticMockitoSessionBuilder;
-
-import org.junit.rules.MethodRule;
-import org.junit.rules.TestRule;
-import org.junit.runner.Description;
-import org.junit.runners.model.FrameworkMethod;
-import org.junit.runners.model.Statement;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.quality.Strictness;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -260,7 +248,7 @@ public class TestUtils {
             }
         }
 
-        public void waitForComplete() {
+        void waitForComplete() {
             synchronized (this) {
                 while (!mComplete) {
                     try {
@@ -313,7 +301,7 @@ public class TestUtils {
                 return false;
             }
 
-            public synchronized void waitForIdle() {
+            synchronized void waitForIdle() {
                 while (!mIdle) {
                     try {
                         wait();
@@ -340,153 +328,6 @@ public class TestUtils {
         final Intent intent = new Intent(getContext(), BluetoothMediaBrowserService.class);
         intent.setAction(MediaBrowserService.SERVICE_INTERFACE);
         return intent;
-    }
-
-    private static String sSystemScreenOffTimeout = "10000";
-
-    public static void setUpUiTest() throws Exception {
-        final UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
-        // Disable animation
-        device.executeShellCommand("settings put global window_animation_scale 0.0");
-        device.executeShellCommand("settings put global transition_animation_scale 0.0");
-        device.executeShellCommand("settings put global animator_duration_scale 0.0");
-
-        // change device screen_off_timeout to 5 minutes
-        sSystemScreenOffTimeout =
-                device.executeShellCommand("settings get system screen_off_timeout");
-        device.executeShellCommand("settings put system screen_off_timeout 300000");
-
-        // Turn on screen and unlock
-        device.wakeUp();
-        device.executeShellCommand("wm dismiss-keyguard");
-
-        // Back to home screen, in case some dialog/activity is in front
-        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).pressHome();
-    }
-
-    public static void tearDownUiTest() throws Exception {
-        final UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
-        device.executeShellCommand("wm dismiss-keyguard");
-
-        // Re-enable animation
-        device.executeShellCommand("settings put global window_animation_scale 1.0");
-        device.executeShellCommand("settings put global transition_animation_scale 1.0");
-        device.executeShellCommand("settings put global animator_duration_scale 1.0");
-
-        // restore screen_off_timeout
-        device.executeShellCommand(
-                "settings put system screen_off_timeout " + sSystemScreenOffTimeout);
-    }
-
-    public static class RetryTestRule implements TestRule {
-        private int retryCount = 5;
-
-        public RetryTestRule() {
-            this(5);
-        }
-
-        public RetryTestRule(int retryCount) {
-            this.retryCount = retryCount;
-        }
-
-        public Statement apply(Statement base, Description description) {
-            return new Statement() {
-                @Override
-                public void evaluate() throws Throwable {
-                    Throwable caughtThrowable = null;
-
-                    // implement retry logic here
-                    for (int i = 0; i < retryCount; i++) {
-                        try {
-                            base.evaluate();
-                            return;
-                        } catch (Throwable t) {
-                            caughtThrowable = t;
-                            Log.e(
-                                    TAG,
-                                    description.getDisplayName() + ": run " + (i + 1) + " failed",
-                                    t);
-                        }
-                    }
-                    Log.e(
-                            TAG,
-                            description.getDisplayName()
-                                    + ": giving up after "
-                                    + retryCount
-                                    + " failures");
-                    throw caughtThrowable;
-                }
-            };
-        }
-    }
-
-    /** Wrapper around MockitoJUnit.rule() to clear the inline mock at the end of the test. */
-    public static class MockitoRule implements MethodRule {
-        private final org.mockito.junit.MockitoRule mMockitoRule = MockitoJUnit.rule();
-
-        public Statement apply(Statement base, FrameworkMethod method, Object target) {
-            Statement nestedStatement = mMockitoRule.apply(base, method, target);
-
-            return new Statement() {
-                @Override
-                public void evaluate() throws Throwable {
-                    nestedStatement.evaluate();
-
-                    // Prevent OutOfMemory errors due to mock maker leaks.
-                    // See https://github.com/mockito/mockito/issues/1614, b/259280359, b/396177821
-                    Mockito.framework().clearInlineMocks();
-                }
-            };
-        }
-    }
-
-    /** Similar to {@link MockitoRule}, but allows mocking static methods. */
-    public static class StaticMockitoRule implements MethodRule {
-        private final Class<?>[] mClasses;
-
-        public StaticMockitoRule(Class<?>... classes) {
-            mClasses = classes;
-        }
-
-        @Override
-        public Statement apply(Statement base, FrameworkMethod method, Object target) {
-            return new Statement() {
-                public void evaluate() throws Throwable {
-                    StaticMockitoSessionBuilder builder =
-                            ExtendedMockito.mockitoSession()
-                                    .name(
-                                            target.getClass().getSimpleName()
-                                                    + "."
-                                                    + method.getName())
-                                    .initMocks(target)
-                                    .strictness(Strictness.LENIENT);
-
-                    for (Class<?> clazz : mClasses) {
-                        builder.mockStatic(clazz);
-                    }
-
-                    StaticMockitoSession session = builder.startMocking();
-
-                    Throwable testFailure;
-                    try {
-                        base.evaluate();
-                        testFailure = null;
-                    } catch (Throwable throwable) {
-                        testFailure = throwable;
-                    }
-
-                    session.finishMocking(testFailure);
-
-                    // Prevent OutOfMemory errors due to mock maker leaks.
-                    // See https://github.com/mockito/mockito/issues/1614, b/259280359, b/396177821
-                    Mockito.framework().clearInlineMocks();
-
-                    if (testFailure != null) {
-                        throw testFailure;
-                    }
-                }
-            };
-        }
     }
 
     public static final class FakeTimeProvider implements Utils.TimeProvider {

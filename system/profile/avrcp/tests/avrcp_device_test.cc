@@ -16,6 +16,7 @@
 
 #include <base/functional/bind.h>
 #include <base/threading/thread.h>
+#include <bluetooth/types/address.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -29,7 +30,6 @@
 #include "internal_include/stack_config.h"
 #include "tests/avrcp/avrcp_test_packets.h"
 #include "tests/packet_test_helper.h"
-#include "types/raw_address.h"
 
 bool btif_av_src_sink_coexist_enabled(void) { return true; }
 
@@ -781,7 +781,7 @@ TEST_F(AvrcpDeviceTest, getMediaPlayerListTest) {
 
   auto expected_response =
           GetFolderItemsResponseBuilder::MakePlayerListBuilder(Status::NO_ERROR, 0x0000, 0xFFFF);
-  expected_response->AddMediaPlayer(MediaPlayerItem(0, "Test Player", true));
+  expected_response->AddMediaPlayer(MediaPlayerItem(0, "Test Player", true, PlayState::PAUSED));
   EXPECT_CALL(response_cb, Call(1, true, matchPacket(std::move(expected_response)))).Times(1);
 
   auto request = TestBrowsePacket::Make(get_folder_items_request);
@@ -1279,7 +1279,7 @@ TEST_F(AvrcpDeviceTest, playPushedActiveDeviceTest) {
   PlayStatus status = {0x1234, 0x5678, PlayState::PLAYING};
   EXPECT_CALL(interface, GetPlayStatus(_)).Times(1).WillOnce(InvokeCb<0>(status));
 
-  EXPECT_CALL(interface, SendKeyEvent(0x44, KeyState::PUSHED)).Times(1);
+  EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, 0x44, KeyState::PUSHED)).Times(1);
 
   auto play_pushed_pkt = TestAvrcpPacket::Make();
   play_pushed->Serialize(play_pushed_pkt);
@@ -1307,7 +1307,7 @@ TEST_F(AvrcpDeviceTest, playPushedInactiveDeviceTest) {
   // No play command should be sent since the music is already playing
   PlayStatus status = {0x1234, 0x5678, PlayState::PLAYING};
   EXPECT_CALL(interface, GetPlayStatus(_)).Times(1).WillOnce(InvokeCb<0>(status));
-  EXPECT_CALL(interface, SendKeyEvent(0x44, KeyState::PUSHED)).Times(0);
+  EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, 0x44, KeyState::PUSHED)).Times(0);
 
   auto play_pushed_pkt = TestAvrcpPacket::Make();
   play_pushed->Serialize(play_pushed_pkt);
@@ -1331,7 +1331,7 @@ TEST_F(AvrcpDeviceTest, mediaKeyActiveDeviceTest) {
 
   EXPECT_CALL(interface, GetPlayStatus(_)).Times(0);
 
-  EXPECT_CALL(interface, SendKeyEvent(0x44, KeyState::RELEASED)).Times(1);
+  EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, 0x44, KeyState::RELEASED)).Times(1);
 
   auto play_released_pkt = TestAvrcpPacket::Make();
   play_released->Serialize(play_released_pkt);
@@ -1356,7 +1356,7 @@ TEST_F(AvrcpDeviceTest, mediaKeyInactiveDeviceTest) {
   EXPECT_CALL(interface, GetPlayStatus(_)).Times(0);
 
   // Expect that the key event wont be sent to the media interface
-  EXPECT_CALL(interface, SendKeyEvent(0x44, KeyState::RELEASED)).Times(0);
+  EXPECT_CALL(interface, SendKeyEvent(RawAddress::kAny, 0x44, KeyState::RELEASED)).Times(0);
 
   auto play_released_pkt = TestAvrcpPacket::Make();
   play_released->Serialize(play_released_pkt);

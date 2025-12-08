@@ -27,8 +27,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.tests.R;
@@ -44,8 +44,7 @@ import java.io.InputStream;
 @RunWith(AndroidJUnit4.class)
 public final class AvrcpCoverArtStorageTest {
 
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
     private final Resources mTestResources = TestUtils.getTestApplicationResources();
     private final BluetoothDevice mDevice1 = getTestDevice(56);
     private final BluetoothDevice mDevice2 = getTestDevice(57);
@@ -60,7 +59,7 @@ public final class AvrcpCoverArtStorageTest {
         InputStream is2 = mTestResources.openRawResource(R.raw.image_600_600);
         mImage2 = BitmapFactory.decodeStream(is2);
 
-        mAvrcpCoverArtStorage = new AvrcpCoverArtStorage(mTargetContext);
+        mAvrcpCoverArtStorage = new AvrcpCoverArtStorage(mContext);
     }
 
     @After

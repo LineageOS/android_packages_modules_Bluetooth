@@ -22,6 +22,7 @@
 #include "btif_a2dp.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstddef>
@@ -35,7 +36,6 @@
 #include "btif_av.h"
 #include "btif_av_co.h"
 #include "btif_hf.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using bluetooth::audio::a2dp::Status;

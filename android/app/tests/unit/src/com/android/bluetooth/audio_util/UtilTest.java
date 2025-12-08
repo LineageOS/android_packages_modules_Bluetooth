@@ -26,10 +26,9 @@ import android.media.browse.MediaBrowser;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -41,12 +40,7 @@ public class UtilTest {
     private static final String SONG_ARTIST = "BT Test Artist";
     private static final String SONG_ALBUM = "BT Test Album";
 
-    private Context mContext;
-
-    @Before
-    public void setUp() {
-        mContext = InstrumentationRegistry.getInstrumentation().getContext();
-    }
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
 
     @Test
     public void getDisplayName() throws Exception {

@@ -18,6 +18,8 @@
 #pragma once
 
 #include <aics/api.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <hardware/bt_vc.h>
 
 #include <algorithm>
@@ -27,8 +29,6 @@
 
 #include "bta/include/bta_groups.h"
 #include "osi/include/alarm.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace vc {
@@ -213,7 +213,7 @@ public:
     int n = Size();
     stream << "     == number of inputs: " << n << " == \n";
 
-    for (auto const v : volume_audio_inputs) {
+    for (auto const& v : volume_audio_inputs) {
       stream << "   id: " << +v.id << "\n"
              << "    description: " << v.description << "\n"
              << "    type: " << static_cast<int>(v.type) << "\n"
@@ -303,7 +303,7 @@ public:
     int n = Size();
     stream << "     == number of offsets: " << n << " == \n";
 
-    for (auto const v : volume_offsets) {
+    for (auto const& v : volume_offsets) {
       stream << "   id: " << +v.id << "\n"
              << "    offset: " << +v.offset << "\n"
              << "    changeCnt: " << +v.change_counter << "\n"

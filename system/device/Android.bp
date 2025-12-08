@@ -34,6 +34,7 @@ cc_library_static {
         "libaconfig_storage_read_api_cc",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_types",
         "libflatbuffers-cpp",
         "server_configurable_flags",
     ],
@@ -57,9 +58,9 @@ cc_test {
         "liblog",
     ],
     static_libs: [
-        "libbluetooth-types",
         "libbluetooth_gd",
         "libbluetooth_log",
+        "libbluetooth_types",
         "libbtcore",
         "libbtdevice",
         "libchrome",
@@ -95,8 +96,8 @@ cc_test {
         "liblog",
     ],
     static_libs: [
-        "libbluetooth-types",
         "libbluetooth_log",
+        "libbluetooth_types",
         "libbtcore",
         "libbtdevice",
         "libchrome",

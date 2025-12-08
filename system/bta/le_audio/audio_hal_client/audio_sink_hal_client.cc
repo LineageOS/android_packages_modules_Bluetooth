@@ -59,6 +59,7 @@ public:
   void UpdateAudioConfigToHal(const ::bluetooth::le_audio::stream_config& config) override;
   void SuspendedForReconfiguration() override;
   void ReconfigurationComplete() override;
+  void StreamSuspended() override;
 
   // Internal functionality
   SinkImpl() = default;
@@ -283,6 +284,16 @@ void SinkImpl::ReconfigurationComplete() {
 
   log::info("");
   halSourceInterface_->ReconfigurationComplete();
+}
+
+void SinkImpl::StreamSuspended() {
+  if ((halSourceInterface_ == nullptr) || (le_audio_source_hal_state != HAL_STARTED)) {
+    log::error("Audio HAL Audio source was not started!");
+    return;
+  }
+
+  log::info("");
+  halSourceInterface_->StreamSuspended();
 }
 
 void SinkImpl::CancelStreamingRequest() {

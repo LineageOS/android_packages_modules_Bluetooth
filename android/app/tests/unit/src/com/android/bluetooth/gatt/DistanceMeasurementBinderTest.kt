@@ -24,10 +24,10 @@ import android.content.AttributionSource
 import android.os.ParcelUuid
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import com.android.bluetooth.TestUtils.MockitoRule
 import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.gatt.DistanceMeasurementManager.GetResultTask
+import com.android.tests.bluetooth.MockitoRule
 import java.util.UUID
 import org.junit.Before
 import org.junit.Rule

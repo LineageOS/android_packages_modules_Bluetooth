@@ -25,6 +25,8 @@
 #define BTA_AV_INT_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/hci_role.h>
 
 #include <cstdint>
 #include <string>
@@ -42,8 +44,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/sdp/sdp_discovery_db.h"
-#include "types/hci_role.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants
@@ -705,7 +705,6 @@ void bta_av_sm_execute(tBTA_AV_CB* p_cb, uint16_t event, tBTA_AV_DATA* p_data);
 void bta_av_ssm_execute(tBTA_AV_SCB* p_scb, uint16_t event, tBTA_AV_DATA* p_data);
 bool bta_av_hdl_event(const BT_HDR_RIGID* p_msg);
 const char* bta_av_evt_code(uint16_t evt_code);
-bool bta_av_switch_if_needed(tBTA_AV_SCB* p_scb);
 bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits);
 
 /* nsm action functions */

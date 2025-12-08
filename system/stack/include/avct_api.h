@@ -25,12 +25,13 @@
 #ifndef AVCT_API_H
 #define AVCT_API_H
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 #include <string>
 
 #include "include/macros.h"
 #include "stack/include/bt_hdr.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants

@@ -4,5 +4,4 @@ option java_outer_classname = "PbapProto";
 
 package pandora;
 
-service PBAP {
-}
+service PBAP {}

@@ -27,6 +27,7 @@
 
 #include "a2dp_codec_api.h"
 #include "a2dp_constants.h"
+#include "a2dp_encoding_aidl_utils.h"
 #include "a2dp_vendor.h"
 #include "a2dp_vendor_aptx_constants.h"
 #include "a2dp_vendor_aptx_hd_constants.h"
@@ -311,41 +312,6 @@ bool ProviderInfo::SupportsCodec(btav_a2dp_codec_index_t codec_index) const {
   return assigned_codec_indexes.find(codec_index) != assigned_codec_indexes.end();
 }
 
-bool ProviderInfo::BuildCodecCapabilities(CodecId const& codec_id,
-                                          std::vector<uint8_t> const& capabilities,
-                                          uint8_t* codec_info) {
-  switch (codec_id.getTag()) {
-    case CodecId::a2dp: {
-      auto id = codec_id.get<CodecId::a2dp>();
-      codec_info[0] = 2 + capabilities.size();
-      codec_info[1] = AVDT_MEDIA_TYPE_AUDIO << 4;
-      codec_info[2] = static_cast<uint8_t>(id);
-      memcpy(codec_info + 3, capabilities.data(), capabilities.size());
-      return true;
-    }
-    case CodecId::vendor: {
-      auto id = codec_id.get<CodecId::vendor>();
-      uint32_t vendor_id = static_cast<uint32_t>(id.id);
-      uint16_t codec_id = static_cast<uint16_t>(id.codecId);
-      codec_info[0] = 8 + capabilities.size();
-      codec_info[1] = AVDT_MEDIA_TYPE_AUDIO << 4;
-      codec_info[2] = A2DP_MEDIA_CT_NON_A2DP;
-      codec_info[3] = static_cast<uint8_t>(vendor_id >> 0);
-      codec_info[4] = static_cast<uint8_t>(vendor_id >> 8);
-      codec_info[5] = static_cast<uint8_t>(vendor_id >> 16);
-      codec_info[6] = static_cast<uint8_t>(vendor_id >> 24);
-      codec_info[7] = static_cast<uint8_t>(codec_id >> 0);
-      codec_info[8] = static_cast<uint8_t>(codec_id >> 8);
-      memcpy(codec_info + 9, capabilities.data(), capabilities.size());
-      return true;
-    }
-    case CodecId::core:
-    default:
-      break;
-  }
-  return false;
-}
-
 bool ProviderInfo::CodecCapabilities(btav_a2dp_codec_index_t codec_index,
                                      bluetooth::a2dp::CodecId* codec_id, uint8_t* codec_info,
                                      btav_a2dp_codec_config_t* codec_config) const {
@@ -442,7 +408,7 @@ bool ProviderInfo::CodecCapabilities(btav_a2dp_codec_index_t codec_index,
   }
 
   return codec_info == nullptr ||
-         BuildCodecCapabilities(codec->id, transport.capabilities, codec_info);
+         convertCodecCapabilities(codec->id, transport.capabilities, codec_info);
 }
 
 }  // namespace bluetooth::audio::aidl::a2dp

@@ -120,7 +120,7 @@ if (use.test) {
       "test/hfp_lc3_mmc_encoder_test.cc",
       "test/mock/mock_embdrv_lc3.cc",
     ]
-    include_dirs = [ "//bt/system" ]
+    include_dirs = [ "//bt/system/types/include" ]
     configs += [
       ":target_defaults",
       "//bt/system/log:log_defaults",
@@ -145,7 +145,7 @@ if (use.test) {
       "test/hfp_lc3_mmc_decoder_test.cc",
       "test/mock/mock_embdrv_lc3.cc",
     ]
-    include_dirs = [ "//bt/system" ]
+    include_dirs = [ "//bt/system/types/include" ]
     configs += [
       ":target_defaults",
       "//bt/system/log:log_defaults",

@@ -18,6 +18,7 @@
 
 #include <base/functional/bind.h>
 #include <base/memory/weak_ptr.h>
+#include <bluetooth/types/address.h>
 
 #include <map>
 #include <memory>
@@ -27,7 +28,6 @@
 #include "packet/base/packet.h"
 #include "profile/avrcp/device.h"
 #include "stack/include/sdp_status.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace avrcp {
@@ -145,9 +145,10 @@ private:
   static ConnectionHandler* instance_;
 
   using SdpCallback = base::Callback<void(tSDP_STATUS status, uint16_t version, uint16_t features)>;
-  virtual bool SdpLookup(const RawAddress& bdaddr, SdpCallback cb, bool retry);
+  virtual bool SdpLookup(const RawAddress& bdaddr, SdpCallback cb, bool retry,
+                         bool incoming_connection);
   void SdpCb(RawAddress bdaddr, SdpCallback cb, tSDP_DISCOVERY_DB* disc_db, bool retry,
-             tSDP_STATUS status);
+             bool incoming_connection, tSDP_STATUS status);
 
   virtual bool AvrcpConnect(bool initiator, const RawAddress& bdaddr);
 

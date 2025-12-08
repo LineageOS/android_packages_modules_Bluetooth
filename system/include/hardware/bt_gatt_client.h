@@ -17,12 +17,12 @@
 #ifndef ANDROID_INCLUDE_BT_GATT_CLIENT_H
 #define ANDROID_INCLUDE_BT_GATT_CLIENT_H
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <stdint.h>
 
 #include "bt_common_types.h"
 #include "bt_gatt_types.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 __BEGIN_DECLS
 

@@ -65,7 +65,8 @@ service Host {
   // none are lost before and in between calls.
   rpc WaitConnectionUpdate(WaitConnectionUpdateRequest) returns (WaitConnectionUpdateResponse);
   // Returns the current ACL LE connection parameters.
-  rpc GetConnectionParameters(GetConnectionParametersRequest) returns (GetConnectionParametersResponse);
+  rpc GetConnectionParameters(GetConnectionParametersRequest)
+      returns (GetConnectionParametersResponse);
   // Disconnect an ACL connection.
   // The related Connection must not be reused afterwards.
   rpc Disconnect(DisconnectRequest) returns (google.protobuf.Empty);
@@ -140,12 +141,16 @@ message Connection {
 // when specified.
 // See Core Supplement, Part A, Data Types for details.
 message DataTypes {
-  repeated string incomplete_service_class_uuids16 = 1; // Incomplete List of 16bit Service Class UUIDs
-  repeated string complete_service_class_uuids16 = 2; // Complete List of 16bit Service Class UUIDs
-  repeated string incomplete_service_class_uuids32 = 3; // Incomplete List of 32bit Service Class UUIDs
-  repeated string complete_service_class_uuids32 = 4; // Complete List of 32bit Service Class UUIDs
-  repeated string incomplete_service_class_uuids128 = 5; // Incomplete List of 128bit Service Class UUIDs
-  repeated string complete_service_class_uuids128 = 6; // Complete List of 128bit Service Class UUIDs
+  repeated string incomplete_service_class_uuids16 =
+      1;  // Incomplete List of 16bit Service Class UUIDs
+  repeated string complete_service_class_uuids16 = 2;  // Complete List of 16bit Service Class UUIDs
+  repeated string incomplete_service_class_uuids32 =
+      3;  // Incomplete List of 32bit Service Class UUIDs
+  repeated string complete_service_class_uuids32 = 4;  // Complete List of 32bit Service Class UUIDs
+  repeated string incomplete_service_class_uuids128 =
+      5;  // Incomplete List of 128bit Service Class UUIDs
+  repeated string complete_service_class_uuids128 =
+      6;  // Complete List of 128bit Service Class UUIDs
   // Shortened Local Name
   oneof shortened_local_name_oneof {
     string shortened_local_name = 7;
@@ -166,26 +171,28 @@ message DataTypes {
     uint32 class_of_device = 13;
     bool include_class_of_device = 14;
   }
-  uint32 peripheral_connection_interval_min = 15; // Peripheral Connection Interval Range minimum value, 16 bits
-  uint32 peripheral_connection_interval_max = 16; // Peripheral Connection Interval Range maximum value, 16 bits
-  repeated string service_solicitation_uuids16 = 17; // List of 16bit Service Solicitation UUIDs
-  repeated string service_solicitation_uuids128 = 18; // List of 128bit Service Solicitation UUIDs
-  map<string, bytes> service_data_uuid16 = 19; // Service Data 16bit UUID
-  repeated bytes public_target_addresses = 20; // Public Target Addresses
-  repeated bytes random_target_addresses = 21; // Random Target Addresses
-  uint32 appearance = 22; // Appearance (16bits)
+  uint32 peripheral_connection_interval_min =
+      15;  // Peripheral Connection Interval Range minimum value, 16 bits
+  uint32 peripheral_connection_interval_max =
+      16;  // Peripheral Connection Interval Range maximum value, 16 bits
+  repeated string service_solicitation_uuids16 = 17;   // List of 16bit Service Solicitation UUIDs
+  repeated string service_solicitation_uuids128 = 18;  // List of 128bit Service Solicitation UUIDs
+  map<string, bytes> service_data_uuid16 = 19;         // Service Data 16bit UUID
+  repeated bytes public_target_addresses = 20;         // Public Target Addresses
+  repeated bytes random_target_addresses = 21;         // Random Target Addresses
+  uint32 appearance = 22;                              // Appearance (16bits)
   // Advertising Interval
   oneof advertising_interval_oneof {
-    uint32 advertising_interval = 23; // 16 bits
+    uint32 advertising_interval = 23;  // 16 bits
     bool include_advertising_interval = 24;
   }
-  repeated string service_solicitation_uuids32 = 25; // List of 32bit Service Solicitation UUIDs
-  map<string, bytes> service_data_uuid32 = 26; // Service Data 32bit UUID
-  map<string, bytes> service_data_uuid128 = 27; // Service Data 128bit UUID
-  string uri = 28; // URI
-  bytes le_supported_features = 29; // LE Supported Features
-  bytes manufacturer_specific_data = 30; // Manufacturer Specific Data
-  DiscoverabilityMode le_discoverability_mode = 31; // Flags LE Discoverability Mode
+  repeated string service_solicitation_uuids32 = 25;  // List of 32bit Service Solicitation UUIDs
+  map<string, bytes> service_data_uuid32 = 26;        // Service Data 32bit UUID
+  map<string, bytes> service_data_uuid128 = 27;       // Service Data 128bit UUID
+  string uri = 28;                                    // URI
+  bytes le_supported_features = 29;                   // LE Supported Features
+  bytes manufacturer_specific_data = 30;              // Manufacturer Specific Data
+  DiscoverabilityMode le_discoverability_mode = 31;   // Flags LE Discoverability Mode
   DataTypes encrypted_data = 32;
   bytes resolvable_set_identifier = 33;
 }

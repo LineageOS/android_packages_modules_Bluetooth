@@ -19,20 +19,25 @@ package com.android.bluetooth.hap;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.IBluetoothHapClientCallback;
 import android.content.AttributionSource;
+import android.platform.test.flag.junit.SetFlagsRule;
 
-import androidx.test.filters.MediumTest;
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.filters.SmallTest;
+
+import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.FlagsWrapper;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -41,29 +46,60 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
+
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 /** Test cases for {@link HapClientServiceBinder}. */
-@MediumTest
-@RunWith(AndroidJUnit4.class)
+@SmallTest
+@RunWith(ParameterizedAndroidJunit4.class)
 public class HapClientServiceBinderTest {
+    @Rule public final SetFlagsRule mSetFlagsRule;
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AttributionSource mAttributionSource;
-    @Mock private HapClientService mHapClientService;
+    @Mock private HapClientService mService;
 
     private final BluetoothDevice mDevice = getTestDevice(0);
 
     private HapClientServiceBinder mBinder;
 
+    @Parameters(name = "{0}")
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(Flags.FLAG_HAP_ON_MAIN_LOOPER);
+    }
+
+    public HapClientServiceBinderTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
+    }
+
     @Before
     public void setUp() throws Exception {
-        mBinder = new HapClientServiceBinder(mHapClientService);
+        doCallRealMethod().when(mService).syncPost(any());
+        doAnswer(
+                        inv -> {
+                            ((Consumer) inv.getArgument(0)).accept(mService);
+                            return null;
+                        })
+                .when(mService)
+                .post(any());
+        doAnswer(
+                        inv -> {
+                            return ((Function) inv.getArgument(0)).apply(mService);
+                        })
+                .when(mService)
+                .syncPost(any(), any());
+        mBinder = new HapClientServiceBinder(mService);
     }
 
     @Test
     public void getConnectedDevices() {
         assertThrows(NullPointerException.class, () -> mBinder.getConnectedDevices(null));
         mBinder.getConnectedDevices(mAttributionSource);
-        verify(mHapClientService).getConnectedDevices();
+        verify(mService).getConnectedDevices();
     }
 
     @Test
@@ -72,7 +108,7 @@ public class HapClientServiceBinderTest {
                 NullPointerException.class,
                 () -> mBinder.getDevicesMatchingConnectionStates(null, null));
         mBinder.getDevicesMatchingConnectionStates(null, mAttributionSource);
-        verify(mHapClientService).getDevicesMatchingConnectionStates(any());
+        verify(mService).getDevicesMatchingConnectionStates(any());
     }
 
     @Test
@@ -83,7 +119,7 @@ public class HapClientServiceBinderTest {
                 () -> mBinder.getConnectionState(null, mAttributionSource));
 
         mBinder.getConnectionState(mDevice, mAttributionSource);
-        verify(mHapClientService).getConnectionState(eq(mDevice));
+        verify(mService).getConnectionState(eq(mDevice));
     }
 
     @Test
@@ -103,7 +139,7 @@ public class HapClientServiceBinderTest {
                                 mDevice, CONNECTION_POLICY_UNKNOWN, mAttributionSource));
 
         mBinder.setConnectionPolicy(mDevice, CONNECTION_POLICY_ALLOWED, mAttributionSource);
-        verify(mHapClientService).setConnectionPolicy(eq(mDevice), eq(CONNECTION_POLICY_ALLOWED));
+        verify(mService).setConnectionPolicy(eq(mDevice), eq(CONNECTION_POLICY_ALLOWED));
     }
 
     @Test
@@ -113,7 +149,7 @@ public class HapClientServiceBinderTest {
                 NullPointerException.class,
                 () -> mBinder.getConnectionPolicy(null, mAttributionSource));
         mBinder.getConnectionPolicy(mDevice, mAttributionSource);
-        verify(mHapClientService).getConnectionPolicy(eq(mDevice));
+        verify(mService).getConnectionPolicy(eq(mDevice));
     }
 
     @Test
@@ -123,7 +159,7 @@ public class HapClientServiceBinderTest {
                 NullPointerException.class,
                 () -> mBinder.getActivePresetIndex(null, mAttributionSource));
         mBinder.getActivePresetIndex(mDevice, mAttributionSource);
-        verify(mHapClientService).getActivePresetIndex(eq(mDevice));
+        verify(mService).getActivePresetIndex(eq(mDevice));
     }
 
     @Test
@@ -133,7 +169,7 @@ public class HapClientServiceBinderTest {
                 NullPointerException.class,
                 () -> mBinder.getActivePresetInfo(null, mAttributionSource));
         mBinder.getActivePresetInfo(mDevice, mAttributionSource);
-        verify(mHapClientService).getActivePresetInfo(eq(mDevice));
+        verify(mService).getActivePresetInfo(eq(mDevice));
     }
 
     @Test
@@ -142,7 +178,7 @@ public class HapClientServiceBinderTest {
         assertThrows(
                 NullPointerException.class, () -> mBinder.getHapGroup(null, mAttributionSource));
         mBinder.getHapGroup(mDevice, mAttributionSource);
-        verify(mHapClientService).getHapGroup(eq(mDevice));
+        verify(mService).getHapGroup(eq(mDevice));
     }
 
     @Test
@@ -153,7 +189,7 @@ public class HapClientServiceBinderTest {
                 NullPointerException.class,
                 () -> mBinder.selectPreset(null, index, mAttributionSource));
         mBinder.selectPreset(mDevice, index, mAttributionSource);
-        verify(mHapClientService).selectPreset(eq(mDevice), eq(index));
+        verify(mService).selectPreset(eq(mDevice), eq(index));
     }
 
     @Test
@@ -164,7 +200,7 @@ public class HapClientServiceBinderTest {
                 NullPointerException.class,
                 () -> mBinder.selectPresetForGroup(groupId, index, null));
         mBinder.selectPresetForGroup(groupId, index, mAttributionSource);
-        verify(mHapClientService).selectPresetForGroup(eq(groupId), eq(index));
+        verify(mService).selectPresetForGroup(eq(groupId), eq(index));
     }
 
     @Test
@@ -174,7 +210,7 @@ public class HapClientServiceBinderTest {
                 NullPointerException.class,
                 () -> mBinder.switchToNextPreset(null, mAttributionSource));
         mBinder.switchToNextPreset(mDevice, mAttributionSource);
-        verify(mHapClientService).switchToNextPreset(eq(mDevice));
+        verify(mService).switchToNextPreset(eq(mDevice));
     }
 
     @Test
@@ -184,7 +220,7 @@ public class HapClientServiceBinderTest {
                 NullPointerException.class,
                 () -> mBinder.switchToNextPresetForGroup(groupId, null));
         mBinder.switchToNextPresetForGroup(groupId, mAttributionSource);
-        verify(mHapClientService).switchToNextPresetForGroup(eq(groupId));
+        verify(mService).switchToNextPresetForGroup(eq(groupId));
     }
 
     @Test
@@ -195,7 +231,7 @@ public class HapClientServiceBinderTest {
                 NullPointerException.class,
                 () -> mBinder.switchToPreviousPreset(null, mAttributionSource));
         mBinder.switchToPreviousPreset(mDevice, mAttributionSource);
-        verify(mHapClientService).switchToPreviousPreset(eq(mDevice));
+        verify(mService).switchToPreviousPreset(eq(mDevice));
     }
 
     @Test
@@ -205,7 +241,7 @@ public class HapClientServiceBinderTest {
                 NullPointerException.class,
                 () -> mBinder.switchToPreviousPresetForGroup(groupId, null));
         mBinder.switchToPreviousPresetForGroup(groupId, mAttributionSource);
-        verify(mHapClientService).switchToPreviousPresetForGroup(eq(groupId));
+        verify(mService).switchToPreviousPresetForGroup(eq(groupId));
     }
 
     @Test
@@ -216,7 +252,7 @@ public class HapClientServiceBinderTest {
                 NullPointerException.class,
                 () -> mBinder.getPresetInfo(null, index, mAttributionSource));
         mBinder.getPresetInfo(mDevice, index, mAttributionSource);
-        verify(mHapClientService).getPresetInfo(eq(mDevice), eq(index));
+        verify(mService).getPresetInfo(eq(mDevice), eq(index));
     }
 
     @Test
@@ -226,7 +262,7 @@ public class HapClientServiceBinderTest {
                 NullPointerException.class,
                 () -> mBinder.getAllPresetInfo(null, mAttributionSource));
         mBinder.getAllPresetInfo(mDevice, mAttributionSource);
-        verify(mHapClientService).getAllPresetInfo(eq(mDevice));
+        verify(mService).getAllPresetInfo(eq(mDevice));
     }
 
     @Test
@@ -235,7 +271,7 @@ public class HapClientServiceBinderTest {
         assertThrows(
                 NullPointerException.class, () -> mBinder.getFeatures(null, mAttributionSource));
         mBinder.getFeatures(mDevice, mAttributionSource);
-        verify(mHapClientService).getFeatures(eq(mDevice));
+        verify(mService).getFeatures(eq(mDevice));
     }
 
     @Test
@@ -252,7 +288,7 @@ public class HapClientServiceBinderTest {
                 NullPointerException.class,
                 () -> mBinder.setPresetName(mDevice, index, name, null));
         mBinder.setPresetName(mDevice, index, name, mAttributionSource);
-        verify(mHapClientService).setPresetName(eq(mDevice), eq(index), eq(name));
+        verify(mService).setPresetName(eq(mDevice), eq(index), eq(name));
     }
 
     @Test
@@ -267,7 +303,7 @@ public class HapClientServiceBinderTest {
                 NullPointerException.class,
                 () -> mBinder.setPresetNameForGroup(groupId, index, name, null));
         mBinder.setPresetNameForGroup(groupId, index, name, mAttributionSource);
-        verify(mHapClientService).setPresetNameForGroup(eq(groupId), eq(index), eq(name));
+        verify(mService).setPresetNameForGroup(eq(groupId), eq(index), eq(name));
     }
 
     @Test
@@ -278,7 +314,7 @@ public class HapClientServiceBinderTest {
                 () -> mBinder.registerCallback(null, mAttributionSource));
         assertThrows(NullPointerException.class, () -> mBinder.registerCallback(callback, null));
         mBinder.registerCallback(callback, mAttributionSource);
-        verify(mHapClientService).registerCallback(eq(callback));
+        verify(mService).registerCallback(eq(callback));
     }
 
     @Test
@@ -289,6 +325,6 @@ public class HapClientServiceBinderTest {
                 () -> mBinder.unregisterCallback(null, mAttributionSource));
         assertThrows(NullPointerException.class, () -> mBinder.unregisterCallback(callback, null));
         mBinder.unregisterCallback(callback, mAttributionSource);
-        verify(mHapClientService).unregisterCallback(eq(callback));
+        verify(mService).unregisterCallback(eq(callback));
     }
 }

@@ -29,6 +29,9 @@
 #include <optional>
 
 // Original included files, if any
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
+
 #include "stack/btm/btm_ble_sec.h"
 #include "stack/include/bt_device_type.h"
 #include "stack/include/bt_octets.h"
@@ -37,8 +40,6 @@
 #include "stack/include/btm_ble_sec_api_types.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
-#include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
 
 typedef uint8_t tBTM_SEC_ACTION;
 

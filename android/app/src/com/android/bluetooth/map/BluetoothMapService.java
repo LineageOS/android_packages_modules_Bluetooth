@@ -138,8 +138,6 @@ public class BluetoothMapService extends ConnectableProfile {
     private boolean mSdpSearchInitiated = false;
     private SdpMnsRecord mMnsRecord = null;
 
-    private static BluetoothMapService sBluetoothMapService;
-
     private static final ParcelUuid[] MAP_UUIDS = {
         BluetoothUuid.MAP, BluetoothUuid.MNS,
     };
@@ -189,7 +187,6 @@ public class BluetoothMapService extends ConnectableProfile {
         createMasInstances(); // Uses mEnabledAccounts
 
         sendStartListenerMessage(-1);
-        setBluetoothMapService(this);
     }
 
     private synchronized void closeService() {
@@ -272,7 +269,9 @@ public class BluetoothMapService extends ConnectableProfile {
         boolean connected = false;
         for (int i = 0, c = mMasInstances.size(); i < c; i++) {
             try {
-                if (mMasInstances.valueAt(i).startObexServerSession(mBluetoothMnsObexClient)) {
+                if (mMasInstances
+                        .valueAt(i)
+                        .startObexServerSession(this, mBluetoothMnsObexClient)) {
                     connected = true;
                 }
             } catch (IOException e) {
@@ -380,59 +379,42 @@ public class BluetoothMapService extends ConnectableProfile {
             Log.v(TAG, "Handler(): got msg=" + msg.what);
 
             switch (msg.what) {
-                case UPDATE_MAS_INSTANCES:
-                    updateMasInstancesHandler();
-                    break;
-                case START_LISTENER:
-                    startSocketListeners(msg.arg1);
-                    break;
-                case MSG_MAS_CONNECT:
-                    onConnectHandler(msg.arg1);
-                    break;
-                case MSG_MAS_CONNECT_CANCEL:
-                    /* TODO: We need to handle this by accepting the connection and reject at
-                     * OBEX level, by using ObexRejectServer - add timeout to handle clients not
-                     * closing the transport channel.
-                     */
-                    stopObexServerSessions(-1);
-                    break;
-                case USER_TIMEOUT:
-                    if (mIsWaitingAuthorization) {
-                        Intent intent = new Intent(BluetoothDevice.ACTION_CONNECTION_ACCESS_CANCEL);
-                        intent.setPackage(
-                                SystemProperties.get(
-                                        Utils.PAIRING_UI_PROPERTY,
-                                        getString(R.string.pairing_ui_package)));
-                        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mRemoteDevice);
-                        intent.putExtra(
-                                BluetoothDevice.EXTRA_ACCESS_REQUEST_TYPE,
-                                BluetoothDevice.REQUEST_TYPE_MESSAGE_ACCESS);
-                        BluetoothMapService.this.sendBroadcast(
-                                intent,
-                                BLUETOOTH_CONNECT,
-                                Utils.getTempBroadcastOptions().toBundle());
-                        cancelUserTimeoutAlarm();
-                        mIsWaitingAuthorization = false;
-                        stopObexServerSessions(-1);
+                case UPDATE_MAS_INSTANCES -> updateMasInstancesHandler();
+                case START_LISTENER -> startSocketListeners(msg.arg1);
+                case MSG_MAS_CONNECT -> onConnectHandler(msg.arg1);
+                // TODO: We need to handle this by accepting the connection and reject at OBEX
+                // level, by using ObexRejectServer - add timeout to handle clients not closing the
+                // transport channel.
+                case MSG_MAS_CONNECT_CANCEL -> stopObexServerSessions(-1);
+                case USER_TIMEOUT -> {
+                    if (!mIsWaitingAuthorization) {
+                        break;
                     }
-                    break;
-                case MSG_SERVERSESSION_CLOSE:
-                    stopObexServerSessions(msg.arg1);
-                    break;
-                case MSG_SESSION_ESTABLISHED:
-                    break;
-                case MSG_SESSION_DISCONNECTED:
-                    // handled elsewhere
-                    break;
-                case DISCONNECT_MAP:
+                    Intent intent = new Intent(BluetoothDevice.ACTION_CONNECTION_ACCESS_CANCEL);
+                    intent.setPackage(
+                            SystemProperties.get(
+                                    Utils.PAIRING_UI_PROPERTY,
+                                    getString(R.string.pairing_ui_package)));
+                    intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mRemoteDevice);
+                    intent.putExtra(
+                            BluetoothDevice.EXTRA_ACCESS_REQUEST_TYPE,
+                            BluetoothDevice.REQUEST_TYPE_MESSAGE_ACCESS);
+                    BluetoothMapService.this.sendBroadcast(
+                            intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+                    cancelUserTimeoutAlarm();
+                    mIsWaitingAuthorization = false;
+                    stopObexServerSessions(-1);
+                }
+                case MSG_SERVERSESSION_CLOSE -> stopObexServerSessions(msg.arg1);
+                case MSG_SESSION_ESTABLISHED -> {}
+                case MSG_SESSION_DISCONNECTED -> {} // handled elsewhere
+                case DISCONNECT_MAP -> {
                     BluetoothDevice device = (BluetoothDevice) msg.obj;
                     disconnectMap(device);
-                    break;
-                case SHUTDOWN:
-                    // Call close from this handler to avoid starting because of pending messages
-                    closeService();
-                    break;
-                case MSG_ACQUIRE_WAKE_LOCK:
+                }
+                // Call close from this handler to avoid starting because of pending messages
+                case SHUTDOWN -> closeService();
+                case MSG_ACQUIRE_WAKE_LOCK -> {
                     Log.v(TAG, "Acquire Wake Lock request message");
                     if (mWakeLock == null) {
                         PowerManager pm = obtainSystemService(PowerManager.class);
@@ -450,15 +432,15 @@ public class BluetoothMapService extends ConnectableProfile {
                     mSessionStatusHandler.sendMessageDelayed(
                             mSessionStatusHandler.obtainMessage(MSG_RELEASE_WAKE_LOCK),
                             RELEASE_WAKE_LOCK_DELAY);
-                    break;
-                case MSG_RELEASE_WAKE_LOCK:
+                }
+                case MSG_RELEASE_WAKE_LOCK -> {
                     Log.v(TAG, "Release Wake Lock request message");
                     if (mWakeLock != null) {
                         mWakeLock.release();
                         Log.d(TAG, "  Released Wake Lock by message");
                     }
-                    break;
-                case MSG_MNS_SDP_SEARCH:
+                }
+                case MSG_MNS_SDP_SEARCH -> {
                     if (mRemoteDevice != null) {
                         Log.d(TAG, "MNS SDP Initiate Search ..");
                         mRemoteDevice.sdpSearch(BluetoothMnsObexClient.BLUETOOTH_UUID_OBEX_MNS);
@@ -471,8 +453,8 @@ public class BluetoothMapService extends ConnectableProfile {
                                         .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                                 3);
                     }
-                    break;
-                case MSG_OBSERVER_REGISTRATION:
+                }
+                case MSG_OBSERVER_REGISTRATION -> {
                     Log.d(
                             TAG,
                             "ContentObserver Registration MASID: "
@@ -480,26 +462,26 @@ public class BluetoothMapService extends ConnectableProfile {
                                     + " Enable: "
                                     + msg.arg2);
                     BluetoothMapMasInstance masInst = mMasInstances.get(msg.arg1);
-                    if (masInst != null && masInst.mObserver != null) {
-                        try {
-                            if (msg.arg2 == BluetoothMapAppParams.NOTIFICATION_STATUS_YES) {
-                                masInst.mObserver.registerObserver();
-                            } else {
-                                masInst.mObserver.unregisterObserver();
-                            }
-                        } catch (RemoteException e) {
-                            ContentProfileErrorReportUtils.report(
-                                    mProfileId,
-                                    BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
-                                    BluetoothStatsLog
-                                            .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                                    4);
-                            Log.e(TAG, "ContentObserverRegistration Failed: " + e);
-                        }
+                    if (masInst == null || masInst.mObserver == null) {
+                        break;
                     }
-                    break;
-                default:
-                    break;
+                    try {
+                        if (msg.arg2 == BluetoothMapAppParams.NOTIFICATION_STATUS_YES) {
+                            masInst.mObserver.registerObserver();
+                        } else {
+                            masInst.mObserver.unregisterObserver();
+                        }
+                    } catch (RemoteException e) {
+                        ContentProfileErrorReportUtils.report(
+                                mProfileId,
+                                BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
+                                BluetoothStatsLog
+                                        .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                                4);
+                        Log.e(TAG, "ContentObserverRegistration Failed: " + e);
+                    }
+                }
+                default -> {}
             }
         }
     }
@@ -519,7 +501,7 @@ public class BluetoothMapService extends ConnectableProfile {
                                 + mRemoteDevice
                                 + " automatically as trusted device");
                 if (mBluetoothMnsObexClient != null && masInst != null) {
-                    masInst.startObexServerSession(mBluetoothMnsObexClient);
+                    masInst.startObexServerSession(this, mBluetoothMnsObexClient);
                 } else {
                     startObexServerSessions();
                 }
@@ -566,7 +548,7 @@ public class BluetoothMapService extends ConnectableProfile {
             intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
             intent.putExtra(BluetoothProfile.EXTRA_STATE, mState);
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mRemoteDevice);
-            sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+            sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
         }
     }
 
@@ -583,15 +565,11 @@ public class BluetoothMapService extends ConnectableProfile {
 
     void disconnectMap(BluetoothDevice device) {
         Log.d(TAG, "disconnectMap");
-        if (getRemoteDevice() != null && getRemoteDevice().equals(device)) {
-            switch (mState) {
-                case BluetoothMap.STATE_CONNECTED:
-                    // Disconnect all connections and restart all MAS instances
-                    stopObexServerSessions(-1);
-                    break;
-                default:
-                    break;
-            }
+        if (getRemoteDevice() != null
+                && getRemoteDevice().equals(device)
+                && mState == BluetoothMap.STATE_CONNECTED) {
+            // Disconnect all connections and restart all MAS instances
+            stopObexServerSessions(-1);
         }
     }
 
@@ -665,7 +643,7 @@ public class BluetoothMapService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.v(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
+        if (!mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
@@ -677,36 +655,6 @@ public class BluetoothMapService extends ConnectableProfile {
     @Override
     protected IProfileServiceBinder initBinder() {
         return new BluetoothMapServiceBinder(this);
-    }
-
-    /**
-     * @return current instance of {@link BluetoothMapService}
-     */
-    public static synchronized BluetoothMapService getBluetoothMapService() {
-        if (sBluetoothMapService == null) {
-            Log.w(TAG, "getBluetoothMapService(): service is null");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                    8);
-            return null;
-        }
-        if (!sBluetoothMapService.isAvailable()) {
-            Log.w(TAG, "getBluetoothMapService(): service is not available");
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MAP_SERVICE,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                    9);
-            return null;
-        }
-        return sBluetoothMapService;
-    }
-
-    private static synchronized void setBluetoothMapService(BluetoothMapService instance) {
-        Log.d(TAG, "setBluetoothMapService(): set to: " + instance);
-        sBluetoothMapService = instance;
     }
 
     /**
@@ -843,7 +791,6 @@ public class BluetoothMapService extends ConnectableProfile {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        setBluetoothMapService(null);
         unregisterReceiver(mMapReceiver);
         mAppObserver.shutdown();
         sendShutdownMessage();
@@ -905,7 +852,7 @@ public class BluetoothMapService extends ConnectableProfile {
             sendOrderedBroadcast(
                     intent,
                     BLUETOOTH_CONNECT,
-                    Utils.getTempBroadcastOptions().toBundle(),
+                    Utils.getTempBroadcastBundle(),
                     null,
                     null,
                     Activity.RESULT_OK,

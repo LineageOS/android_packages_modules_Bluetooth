@@ -15,6 +15,7 @@
  */
 
 #include <base/functional/bind.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -27,7 +28,6 @@
 #include "connection_handler.h"
 #include "sdpdefs.h"
 #include "stack/include/sdp_status.h"
-#include "types/raw_address.h"
 
 using ::testing::_;
 using ::testing::DoAll;

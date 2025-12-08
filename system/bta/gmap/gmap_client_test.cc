@@ -90,7 +90,6 @@ TEST_F(GmapClientTest, test_is_gmap_client_enabled) {
   GmapClient::UpdateGmapOffloaderSupport(false);
   ASSERT_EQ(GmapClient::IsGmapClientEnabled(), false);
 
-  com::android::bluetooth::flags::provider_->leaudio_gmap_client(true);
   osi_property_set_bool(kGmapEnabledSysProp, true);
 
   GmapClient::UpdateGmapOffloaderSupport(true);

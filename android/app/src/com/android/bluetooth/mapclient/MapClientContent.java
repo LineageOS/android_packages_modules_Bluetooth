@@ -27,6 +27,7 @@ import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.UserManager;
 import android.provider.BaseColumns;
 import android.provider.Telephony;
 import android.provider.Telephony.Mms;
@@ -41,6 +42,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.map.BluetoothMapbMessageMime;
 import com.android.bluetooth.map.BluetoothMapbMessageMime.MimePart;
 import com.android.vcard.VCardConstants;
@@ -233,16 +235,19 @@ class MapClientContent {
                         + ", folder="
                         + message.getFolder());
 
+        if (Flags.ignoreMessageSmsDisallowed()) {
+            UserManager userManager = mContext.getSystemService(UserManager.class);
+            if (userManager != null
+                    && userManager.getUserRestrictions().getBoolean(UserManager.DISALLOW_SMS)) {
+                warn("SMS is disallowed for the user, skip storing message");
+                return;
+            }
+        }
+
         switch (message.getType()) {
-            case MMS:
-                storeMms(message, handle, timestamp, seen);
-                return;
-            case SMS_CDMA:
-            case SMS_GSM:
-                storeSms(message, handle, timestamp, seen);
-                return;
-            default:
-                debug("Request to store unsupported message type: " + message.getType());
+            case MMS -> storeMms(message, handle, timestamp, seen);
+            case SMS_CDMA, SMS_GSM -> storeSms(message, handle, timestamp, seen);
+            default -> debug("Request to store unsupported message type: " + message.getType());
         }
     }
 
@@ -893,7 +898,7 @@ class MapClientContent {
             String handle, Uri uri, long timestamp, long threadId, Type type)
             implements Comparable<MessageDumpElement> {
 
-        public static String getFormattedColumnNames() {
+        static String getFormattedColumnNames() {
             return String.format(
                     "%-19s %s %-16s %s %s", "Timestamp", "ThreadId", "Handle", "Type", "Uri");
         }

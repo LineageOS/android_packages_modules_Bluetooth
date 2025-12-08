@@ -15,6 +15,11 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/hci_role.h>
+
 #include <cstdint>
 
 #include "stack/acl/acl.h"
@@ -22,10 +27,6 @@
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
-#include "types/ble_address_with_type.h"
-#include "types/bt_transport.h"
-#include "types/hci_role.h"
-#include "types/raw_address.h"
 
 // Note: From stack/include/btm_api.h
 
@@ -92,7 +93,8 @@ bool BTM_IsAclConnectionUpAndHandleValid(const RawAddress& remote_bda, tBT_TRANS
  *                  tBTM_STATUS::BTM_UNKNOWN_ADDR if no active link with bd addr specified
  *
  ******************************************************************************/
-tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, tHCI_ROLE* p_role);
+tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, tBT_TRANSPORT transport,
+                        tHCI_ROLE* p_role);
 
 /*******************************************************************************
  *

@@ -19,7 +19,6 @@ package com.android.bluetooth.btservice;
 import static android.bluetooth.BluetoothAdapter.SCAN_MODE_CONNECTABLE;
 import static android.bluetooth.BluetoothAdapter.SCAN_MODE_NONE;
 
-import static com.android.bluetooth.TestUtils.StaticMockitoRule;
 import static com.android.bluetooth.TestUtils.mockSystemPropertyGet;
 import static com.android.bluetooth.btservice.AdapterSuspend.BLUETOOTH_SUSPEND_DISCONNECT_ACL;
 import static com.android.bluetooth.btservice.AdapterSuspend.BLUETOOTH_SUSPEND_SCAN_MODE_NONE;
@@ -37,12 +36,17 @@ import android.hardware.devicestate.DeviceStateManager;
 import android.hardware.display.DisplayManager;
 import android.os.PowerManager;
 import android.os.SystemProperties;
+import android.platform.test.annotations.DisableFlags;
+import android.platform.test.annotations.EnableFlags;
+import android.platform.test.flag.junit.SetFlagsRule;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
+import com.android.bluetooth.flags.Flags;
+import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -60,6 +64,8 @@ import java.util.List;
 public class AdapterSuspendTest {
     @Rule
     public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(SystemProperties.class);
+
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Mock private AdapterNativeInterface mAdapterNativeInterface;
     @Mock private AdapterService mAdapterService;
@@ -93,7 +99,8 @@ public class AdapterSuspendTest {
     }
 
     @Test
-    public void testSuspend() throws Exception {
+    @DisableFlags(Flags.FLAG_ADAPTER_SUSPEND_DISCOVERABILITY)
+    public void testSuspendWithoutFlagSuspendDiscoverability() throws Exception {
         doReturn(SCAN_MODE_CONNECTABLE).when(mAdapterService).getScanMode();
         mAdapterSuspend.handleSuspend(true);
 
@@ -105,7 +112,8 @@ public class AdapterSuspendTest {
     }
 
     @Test
-    public void testResume() throws Exception {
+    @DisableFlags(Flags.FLAG_ADAPTER_SUSPEND_DISCOVERABILITY)
+    public void testResumeWithoutFlagSuspendDiscoverability() throws Exception {
         mAdapterSuspend.setLastScanModeForTest(SCAN_MODE_CONNECTABLE);
         doReturn(SCAN_MODE_NONE).when(mAdapterService).getScanMode();
         mAdapterSuspend.handleResume();
@@ -114,6 +122,29 @@ public class AdapterSuspendTest {
         verify(mAdapterNativeInterface).clearEventFilter();
         verify(mAdapterNativeInterface).restoreFilterAcceptList();
         verify(mAdapterService).setScanMode(eq(SCAN_MODE_CONNECTABLE), eq("handleResume"));
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_DISCOVERABILITY)
+    public void testSuspendWithFlagSuspendDiscoverability() throws Exception {
+        mAdapterSuspend.handleSuspend(true);
+
+        verify(mAdapterService).setSuspendState(true);
+        verify(mAdapterNativeInterface).setDefaultEventMaskExcept(anyLong(), anyLong());
+        verify(mAdapterNativeInterface).clearEventFilter();
+        verify(mAdapterNativeInterface).clearFilterAcceptList();
+        verify(mAdapterNativeInterface).disconnectAllAcls();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_ADAPTER_SUSPEND_DISCOVERABILITY)
+    public void testResumeWithFlagSuspendDiscoverability() throws Exception {
+        mAdapterSuspend.handleResume();
+
+        verify(mAdapterNativeInterface).setDefaultEventMaskExcept(0, 0);
+        verify(mAdapterNativeInterface).clearEventFilter();
+        verify(mAdapterNativeInterface).restoreFilterAcceptList();
+        verify(mAdapterService).setSuspendState(false);
     }
 
     @Test

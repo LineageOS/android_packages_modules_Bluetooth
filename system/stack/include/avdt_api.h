@@ -26,6 +26,7 @@
 #define AVDT_API_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 #include <string>
@@ -33,7 +34,6 @@
 #include "internal_include/bt_target.h"
 #include "macros.h"
 #include "stack/include/bt_hdr.h"
-#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants

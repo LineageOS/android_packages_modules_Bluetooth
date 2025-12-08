@@ -48,8 +48,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class A2dpSinkService extends ConnectableProfile {
     private static final String TAG = A2dpSinkService.class.getSimpleName();
 
-    private static A2dpSinkService sService;
-
     // This is also used as a lock for shared data in {@link A2dpSinkService}
     @GuardedBy("mDeviceStateMap")
     private final Map<BluetoothDevice, A2dpSinkStateMachine> mDeviceStateMap =
@@ -85,8 +83,6 @@ public class A2dpSinkService extends ConnectableProfile {
         synchronized (mStreamHandlerLock) {
             mA2dpSinkStreamHandler = new A2dpSinkStreamHandler(mAdapterService, mNativeInterface);
         }
-
-        setA2dpSinkService(this);
     }
 
     public static boolean isEnabled() {
@@ -97,7 +93,6 @@ public class A2dpSinkService extends ConnectableProfile {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        setA2dpSinkService(null);
         mNativeInterface.cleanup();
         synchronized (mDeviceStateMap) {
             for (A2dpSinkStateMachine stateMachine : mDeviceStateMap.values()) {
@@ -108,16 +103,6 @@ public class A2dpSinkService extends ConnectableProfile {
         synchronized (mStreamHandlerLock) {
             mA2dpSinkStreamHandler.cleanup();
         }
-    }
-
-    public static synchronized A2dpSinkService getA2dpSinkService() {
-        return sService;
-    }
-
-    /** Testing API to inject a mockA2dpSinkService. */
-    @VisibleForTesting
-    public static synchronized void setA2dpSinkService(A2dpSinkService service) {
-        sService = service;
     }
 
     /** Set the device that should be allowed to actively stream */
@@ -331,7 +316,7 @@ public class A2dpSinkService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
+        if (!mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -420,7 +405,7 @@ public class A2dpSinkService extends ConnectableProfile {
     }
 
     void connectionStateChanged(BluetoothDevice device, int fromState, int toState) {
-        mAdapterService.notifyProfileConnectionStateChangeToGatt(mProfileId, fromState, toState);
+        mAdapterService.notifyProfileConnectionStateChangeToScan(mProfileId, fromState, toState);
         mAdapterService.updateProfileConnectionAdapterProperties(
                 device, mProfileId, toState, fromState);
     }

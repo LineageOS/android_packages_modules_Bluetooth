@@ -41,7 +41,7 @@ public:
 
   void AddSupported(OpCode op_code) { supported_opcodes_.insert(op_code); }
 
-  uint8_t GetLeNumberOfSupportedAdverisingSets() const override { return num_advertisers_; }
+  uint8_t GetLeNumberOfSupportedAdvertisingSets() const override { return num_advertisers_; }
 
   uint16_t GetLeMaximumAdvertisingDataLength() const override { return 0x0672; }
 

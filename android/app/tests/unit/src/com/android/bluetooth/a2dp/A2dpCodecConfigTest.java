@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.a2dp;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -33,11 +32,13 @@ import android.bluetooth.BluetoothCodecStatus;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.res.Resources;
+import android.media.AudioManager;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.R;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -51,15 +52,12 @@ import java.util.Arrays;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class A2dpCodecConfigTest {
-
-    private final BluetoothDevice mDevice = getTestDevice(56);
-    private A2dpCodecConfig mA2dpCodecConfig;
-
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private Context mMockContext;
-    @Mock private Resources mMockResources;
+    @Mock private Context mContext;
+    @Mock private Resources mResources;
     @Mock private A2dpNativeInterface mA2dpNativeInterface;
+    @Mock private AudioManager mAudioManager;
 
     private static final int[] sOptionalCodecTypes =
             new int[] {
@@ -215,23 +213,27 @@ public class A2dpCodecConfigTest {
                         0) // Codec-specific fields
             };
 
+    private final BluetoothDevice mDevice = getTestDevice(56);
+
+    private A2dpCodecConfig mA2dpCodecConfig;
+
     @Before
     public void setUp() throws Exception {
-        when(mMockContext.getResources()).thenReturn(mMockResources);
-        when(mMockResources.getInteger(R.integer.a2dp_source_codec_priority_sbc))
+        when(mContext.getResources()).thenReturn(mResources);
+        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_sbc))
                 .thenReturn(SBC_PRIORITY_DEFAULT);
-        when(mMockResources.getInteger(R.integer.a2dp_source_codec_priority_aac))
+        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_aac))
                 .thenReturn(AAC_PRIORITY_DEFAULT);
-        when(mMockResources.getInteger(R.integer.a2dp_source_codec_priority_aptx))
+        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_aptx))
                 .thenReturn(APTX_PRIORITY_DEFAULT);
-        when(mMockResources.getInteger(R.integer.a2dp_source_codec_priority_aptx_hd))
+        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_aptx_hd))
                 .thenReturn(APTX_HD_PRIORITY_DEFAULT);
-        when(mMockResources.getInteger(R.integer.a2dp_source_codec_priority_ldac))
+        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_ldac))
                 .thenReturn(LDAC_PRIORITY_DEFAULT);
-        when(mMockResources.getInteger(R.integer.a2dp_source_codec_priority_opus))
+        when(mResources.getInteger(R.integer.a2dp_source_codec_priority_opus))
                 .thenReturn(OPUS_PRIORITY_DEFAULT);
 
-        mA2dpCodecConfig = new A2dpCodecConfig(mMockContext, mA2dpNativeInterface);
+        mA2dpCodecConfig = new A2dpCodecConfig(mContext, mA2dpNativeInterface, mAudioManager);
 
         doReturn(true)
                 .when(mA2dpNativeInterface)
@@ -710,12 +712,12 @@ public class A2dpCodecConfigTest {
                         0,
                         0); // Codec-specific fields
 
-        // shouldn't invoke to native when current codec is SBC
+        // shouldn't invoke to native when current codec is SBC and priorty is HIGHEST
         mA2dpCodecConfig.disableOptionalCodecs(
                 mDevice,
                 getDefaultCodecConfigByType(
                         BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
-                        BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT));
+                        BluetoothCodecConfig.CODEC_PRIORITY_HIGHEST));
         verify(mA2dpNativeInterface, times(0)).setCodecConfigPreference(mDevice, codecConfigsArray);
 
         // should invoke to native when current codec is an optional codec
@@ -748,17 +750,23 @@ public class A2dpCodecConfigTest {
         // should invoke to native when current codec is SBC
         mA2dpCodecConfig.enableOptionalCodecs(
                 mDevice,
-                getDefaultCodecConfigByType(
-                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
-                        BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT));
+                new BluetoothCodecStatus(
+                        getDefaultCodecConfigByType(
+                                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                                BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT),
+                        Arrays.asList(sCodecCapabilities),
+                        Arrays.asList(sCodecCapabilities)));
         verify(mA2dpNativeInterface).setCodecConfigPreference(mDevice, codecConfigsArray);
 
         // shouldn't invoke to native when current codec is already an optional
         for (int codecType : sOptionalCodecTypes) {
             mA2dpCodecConfig.enableOptionalCodecs(
                     mDevice,
-                    getDefaultCodecConfigByType(
-                            codecType, BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT));
+                    new BluetoothCodecStatus(
+                            getDefaultCodecConfigByType(
+                                    codecType, BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT),
+                            Arrays.asList(sCodecCapabilities),
+                            Arrays.asList(sCodecCapabilities)));
             verify(mA2dpNativeInterface).setCodecConfigPreference(mDevice, codecConfigsArray);
         }
     }

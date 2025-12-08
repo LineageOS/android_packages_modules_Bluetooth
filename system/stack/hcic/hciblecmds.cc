@@ -25,6 +25,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -38,7 +39,6 @@
 #include "stack/include/bt_octets.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btu_hcif.h"
-#include "types/raw_address.h"
 
 /*******************************************************************************
  * BLE Commands
@@ -50,9 +50,7 @@
 
 #define HCIC_PARAM_SIZE_SET_USED_FEAT_CMD 8
 #define HCIC_PARAM_SIZE_WRITE_RANDOM_ADDR_CMD 6
-#define HCIC_PARAM_SIZE_BLE_WRITE_ADV_PARAMS 15
 #define HCIC_PARAM_SIZE_BLE_WRITE_SCAN_RSP 31
-#define HCIC_PARAM_SIZE_WRITE_ADV_ENABLE 1
 #define HCIC_PARAM_SIZE_BLE_WRITE_SCAN_PARAM 7
 #define HCIC_PARAM_SIZE_BLE_WRITE_SCAN_ENABLE 2
 #define HCIC_PARAM_SIZE_BLE_CREATE_LL_CONN 25
@@ -73,7 +71,6 @@
 #define HCIC_PARAM_SIZE_LTK_REQ_REPLY (2 + HCIC_BLE_ENCRYPT_KEY_SIZE)
 #define HCIC_PARAM_SIZE_LTK_REQ_NEG_REPLY 2
 #define HCIC_BLE_CHNL_MAP_SIZE 5
-#define HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA 31
 
 #define HCIC_PARAM_SIZE_BLE_ADD_DEV_RESOLVING_LIST (7 + HCIC_BLE_IRK_SIZE * 2)
 #define HCIC_PARAM_SIZE_BLE_RM_DEV_RESOLVING_LIST 7
@@ -110,69 +107,6 @@
 #define HCIC_PARAM_SIZE_SET_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMS 8
 #define HCIC_PARAM_SIZE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMS 8
 
-void btsnd_hcic_ble_write_adv_params(uint16_t adv_int_min, uint16_t adv_int_max, uint8_t adv_type,
-                                     tBLE_ADDR_TYPE addr_type_own, tBLE_ADDR_TYPE addr_type_dir,
-                                     const RawAddress& direct_bda, uint8_t channel_map,
-                                     uint8_t adv_filter_policy) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_WRITE_ADV_PARAMS;
-  p->offset = 0;
-
-  UINT16_TO_STREAM(pp, HCI_BLE_WRITE_ADV_PARAMS);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_BLE_WRITE_ADV_PARAMS);
-
-  UINT16_TO_STREAM(pp, adv_int_min);
-  UINT16_TO_STREAM(pp, adv_int_max);
-  UINT8_TO_STREAM(pp, adv_type);
-  UINT8_TO_STREAM(pp, addr_type_own);
-  UINT8_TO_STREAM(pp, addr_type_dir);
-  BDADDR_TO_STREAM(pp, direct_bda);
-  UINT8_TO_STREAM(pp, channel_map);
-  UINT8_TO_STREAM(pp, adv_filter_policy);
-
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
-
-void btsnd_hcic_ble_set_adv_data(uint8_t data_len, uint8_t* p_data) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA + 1;
-  p->offset = 0;
-
-  UINT16_TO_STREAM(pp, HCI_BLE_WRITE_ADV_DATA);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA + 1);
-
-  memset(pp, 0, HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA);
-
-  if (p_data != NULL && data_len > 0) {
-    if (data_len > HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA) {
-      data_len = HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA;
-    }
-
-    UINT8_TO_STREAM(pp, data_len);
-
-    ARRAY_TO_STREAM(pp, p_data, data_len);
-  }
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
-
-void btsnd_hcic_ble_set_adv_enable(uint8_t adv_enable) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_WRITE_ADV_ENABLE;
-  p->offset = 0;
-
-  UINT16_TO_STREAM(pp, HCI_BLE_WRITE_ADV_ENABLE);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_WRITE_ADV_ENABLE);
-
-  UINT8_TO_STREAM(pp, adv_enable);
-
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
 void btsnd_hcic_ble_set_scan_params(uint8_t scan_type, uint16_t scan_int, uint16_t scan_win,
                                     uint8_t addr_type_own, uint8_t scan_filter_policy) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);

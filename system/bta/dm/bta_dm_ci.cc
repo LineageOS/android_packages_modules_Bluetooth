@@ -24,12 +24,12 @@
 #include "bta/include/bta_dm_ci.h"
 
 #include <base/functional/bind.h>
+#include <bluetooth/types/address.h>
 
 #include <memory>
 
 #include "bta/dm/bta_dm_sec_int.h"
 #include "stack/include/main_thread.h"
-#include "types/raw_address.h"
 
 /*******************************************************************************
  *

@@ -81,6 +81,7 @@ enum class CsisDiscoveryState : uint8_t {
   CSIS_DISCOVERY_IDLE = 0x00,
   CSIS_DISCOVERY_ONGOING,
   CSIS_DISCOVERY_COMPLETED,
+  CSIS_DISCOVERY_BLOCKED,
 };
 
 class GattServiceDevice {
@@ -95,7 +96,8 @@ public:
   uint16_t service_handle = GAP_INVALID_HANDLE;
   bool is_gatt_service_valid = false;
 
-  GattServiceDevice(const RawAddress& addr, bool /*first_connection*/) : addr(addr) {}
+  GattServiceDevice(const RawAddress& addr, bool connecting)
+      : addr(addr), connecting_actively(connecting) {}
 
   GattServiceDevice() : GattServiceDevice(RawAddress::kEmpty, false) {}
 
@@ -264,12 +266,16 @@ public:
   }
 
   void RemoveCsisInstance(int group_id) {
+    log::info(" group_id: {}", group_id);
+
     for (auto it = csis_instances_.begin(); it != csis_instances_.end(); it++) {
       if (it->second->GetGroupId() == group_id) {
         csis_instances_.erase(it);
         return;
       }
     }
+
+    log::warn("Not found instance for group id {}", group_id);
   }
 
   int GetNumberOfCsisInstances(void) { return csis_instances_.size(); }

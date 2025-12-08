@@ -139,7 +139,7 @@ static tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda, uint64_t 
       clock_offset = get_clock_offset_from_storage(remote_bda);
     }
     page_scan_rep_mode = p_cur->results.page_scan_rep_mode;
-    if (com::android::bluetooth::flags::rnr_validate_page_scan_repetition_mode() &&
+    if (com_android_bluetooth_flags_rnr_validate_page_scan_repetition_mode() &&
         page_scan_rep_mode >= HCI_PAGE_SCAN_REP_MODE_RESERVED_START) {
       log::info(
               "Invalid page scan repetition mode {} from remote_bda:{}, "
@@ -184,12 +184,7 @@ void btm_process_remote_name(const RawAddress* bda, const BD_NAME bdn, uint16_t 
           .hci_status = hci_status,
   };
 
-  bool on_le_link;
-  if (com::android::bluetooth::flags::rnr_store_device_type()) {
-    on_le_link = (btm_cb.rnr.remname_dev_type == BT_DEVICE_TYPE_BLE);
-  } else {
-    on_le_link = get_btm_client_interface().ble.BTM_UseLeLink(btm_cb.rnr.remname_bda);
-  }
+  bool on_le_link = (btm_cb.rnr.remname_dev_type == BT_DEVICE_TYPE_BLE);
 
   /* If the inquire BDA and remote DBA are the same, then stop the timer and set
    * the active to false */
@@ -300,20 +295,13 @@ tBTM_STATUS BTM_ReadRemoteDeviceName(const RawAddress& remote_bda, tBTM_NAME_CMP
  ******************************************************************************/
 tBTM_STATUS BTM_CancelRemoteDeviceName(void) {
   log::verbose("");
-  bool is_le;
 
   /* Make sure there is not already one in progress */
   if (!btm_cb.rnr.remname_active) {
     return tBTM_STATUS::BTM_WRONG_MODE;
   }
 
-  if (com::android::bluetooth::flags::rnr_store_device_type()) {
-    is_le = (btm_cb.rnr.remname_dev_type == BT_DEVICE_TYPE_BLE);
-  } else {
-    is_le = get_btm_client_interface().ble.BTM_UseLeLink(btm_cb.rnr.remname_bda);
-  }
-
-  if (is_le) {
+  if (btm_cb.rnr.remname_dev_type == BT_DEVICE_TYPE_BLE) {
     /* Cancel remote name request for LE device, and process remote name
      * callback. */
     btm_inq_rmt_name_failed_cancelled();

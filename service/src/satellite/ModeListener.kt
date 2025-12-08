@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,24 +25,24 @@ import com.android.server.bluetooth.initializeRadioModeListener
 /**
  * constant copied from {@link Settings.Global}
  *
- * TODO(b/274636414): Migrate to official API in Android V.
+ * TODO(b/338123011): Migrate to official API in Android V.
  */
 internal const val SETTINGS_SATELLITE_MODE_RADIOS = "satellite_mode_radios"
 
 /**
  * constant copied from {@link Settings.Global}
  *
- * TODO(b/274636414): Migrate to official API in Android V.
+ * TODO(b/338123011): Migrate to official API in Android V.
  */
 internal const val SETTINGS_SATELLITE_MODE_ENABLED = "satellite_mode_enabled"
 
 private const val TAG = "SatelliteModeListener"
 
-public var isOn = false
+var isOn = false
     private set
 
 /** Listen on satellite mode and trigger the callback if it has changed */
-public fun initialize(looper: Looper, resolver: ContentResolver, callback: (m: Boolean) -> Unit) {
+fun initialize(looper: Looper, resolver: ContentResolver, callback: (m: Boolean) -> Unit) {
     isOn =
         initializeRadioModeListener(
             looper,
@@ -53,7 +53,7 @@ public fun initialize(looper: Looper, resolver: ContentResolver, callback: (m: B
                 val previousMode = isOn
                 isOn = newMode
                 if (previousMode == isOn) {
-                    Log.d(TAG, "Ignore satellite mode change because is already: " + isOn)
+                    Log.d(TAG, "Ignore satellite mode change because is already: $isOn")
                     return
                 }
                 Log.i(TAG, "Trigger callback with state: $isOn")

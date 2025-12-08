@@ -26,6 +26,7 @@
 #define LOG_TAG "l2c_ble_conn_params"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include "common/le_conn_params.h"
@@ -45,7 +46,6 @@
 #include "stack/include/l2cap_interface.h"
 #include "stack/include/main_thread.h"
 #include "stack/l2cap/l2c_int.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -88,7 +88,7 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int, uint1
   p_lcb->latency = latency;
   p_lcb->timeout = timeout;
   p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
-  if (com::android::bluetooth::flags::initial_conn_params_p1()) {
+  if (com_android_bluetooth_flags_initial_conn_params_p1()) {
     p_lcb->conn_update_mask &= ~L2C_BLE_AGGRESSIVE_INITIAL_PARAM;
   }
 
@@ -125,7 +125,7 @@ void L2CA_LockBleConnParamsForServiceDiscovery(const RawAddress& rem_bda, bool l
   if (lock == p_lcb->conn_update_blocked_by_service_discovery) {
     log::warn("{} service discovery already locked/unlocked conn params: {}", rem_bda, lock);
 
-    if (!lock && com::android::bluetooth::flags::initial_conn_params_p1() &&
+    if (!lock && com_android_bluetooth_flags_initial_conn_params_p1() &&
         (p_lcb->conn_update_mask & L2C_BLE_AGGRESSIVE_INITIAL_PARAM)) {
       p_lcb->conn_update_mask &= ~L2C_BLE_NOT_DEFAULT_PARAM;
       p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
@@ -139,6 +139,11 @@ void L2CA_LockBleConnParamsForServiceDiscovery(const RawAddress& rem_bda, bool l
 
   if (p_lcb->conn_update_blocked_by_profile_connection) {
     log::info("{} conn params stay locked because of audio setup", rem_bda);
+    return;
+  }
+
+  if (p_lcb->conn_update_blocked_by_lea_subrate_device) {
+    log::info("{} conn params stay locked because of lea subrate", rem_bda);
     return;
   }
 
@@ -178,8 +183,56 @@ void L2CA_LockBleConnParamsForProfileConnection(const RawAddress& rem_bda, bool 
     return;
   }
 
+  if (p_lcb->conn_update_blocked_by_lea_subrate_device) {
+    log::info("{} conn params stay locked because of lea subrate device", rem_bda);
+    return;
+  }
+
   log::info("{} Locking/unlocking conn params for audio setup: {}", rem_bda, lock);
   l2c_enable_update_ble_conn_params(p_lcb, !lock);
+}
+
+/* When called with lock=true, LE connection parameters will be locked on
+ * le audio subrate capable device, and we won't accept request to change it from remote. When
+ * called with lock=false, parameters are relaxed.
+ */
+void L2CA_LockBleConnParamsForLeAudioSubrate(const RawAddress& rem_bda, bool lock) {
+  if (stack_config_get_interface()->get_pts_conn_updates_disabled()) {
+    return;
+  }
+
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
+  if (!p_lcb) {
+    log::warn("unknown address {}", rem_bda);
+    return;
+  }
+
+  if (p_lcb->transport != BT_TRANSPORT_LE) {
+    log::warn("{} not LE, link role {}", rem_bda, p_lcb->LinkRole());
+    return;
+  }
+
+  if (lock == p_lcb->conn_update_blocked_by_lea_subrate_device) {
+    log::info("{} lea subrate device already locked/unlocked conn params: {}", rem_bda, lock);
+    return;
+  }
+
+  p_lcb->conn_update_blocked_by_lea_subrate_device = lock;
+
+  if (lock) {
+    p_lcb->conn_update_mask |= L2C_BLE_AUDIO_PARAM_SUBRATE;
+    l2c_enable_update_ble_conn_params(p_lcb, false);
+    return;
+  }
+
+  p_lcb->conn_update_mask &= ~L2C_BLE_AUDIO_PARAM_SUBRATE;
+  if (!(p_lcb->conn_update_blocked_by_service_discovery ||
+        p_lcb->conn_update_blocked_by_profile_connection)) {
+    l2c_enable_update_ble_conn_params(p_lcb, true);
+    return;
+  }
+
+  l2cble_start_conn_update(p_lcb);
 }
 
 static bool l2c_enable_update_ble_conn_params(tL2C_LCB* p_lcb, bool enable) {
@@ -228,12 +281,13 @@ void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
     return;
   }
 
-  if (p_lcb->conn_update_mask & L2C_BLE_CONN_UPDATE_DISABLE) {
+  if ((p_lcb->conn_update_mask & L2C_BLE_CONN_UPDATE_DISABLE) &&
+      !(p_lcb->conn_update_mask & L2C_BLE_AUDIO_PARAM_SUBRATE)) {
     /* application requests to disable parameters update.
        If parameters are already updated, lets set them
        up to what has been requested during connection establishement */
     if (p_lcb->conn_update_mask & L2C_BLE_NOT_DEFAULT_PARAM) {
-      if (com::android::bluetooth::flags::initial_conn_params_p1()) {
+      if (com_android_bluetooth_flags_initial_conn_params_p1()) {
         min_conn_int = LeConnectionParameters::GetMinConnIntervalAggressive();
         max_conn_int = LeConnectionParameters::GetMaxConnIntervalAggressive();
         log::info("min_conn_int={}, max_conn_int={}", min_conn_int, max_conn_int);
@@ -295,13 +349,24 @@ void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
       if (p_lcb->IsLinkRoleCentral() ||
           (bluetooth::shim::GetController()->SupportsBleConnectionParametersRequest() &&
            acl_peer_supports_ble_connection_parameters_request(p_lcb->remote_bd_addr))) {
-        if (com::android::bluetooth::flags::initial_conn_params_p1() &&
+        if (com_android_bluetooth_flags_initial_conn_params_p1() &&
             (p_lcb->conn_update_mask & L2C_BLE_AGGRESSIVE_INITIAL_PARAM)) {
           log::info("Relaxing aggressive initial connection parameters. addr={}",
                     p_lcb->remote_bd_addr);
           p_lcb->min_interval = LeConnectionParameters::GetMinConnIntervalRelaxed();
           p_lcb->max_interval = LeConnectionParameters::GetMaxConnIntervalRelaxed();
           p_lcb->conn_update_mask &= ~L2C_BLE_AGGRESSIVE_INITIAL_PARAM;
+        } else if (p_lcb->conn_update_mask & L2C_BLE_AUDIO_PARAM_SUBRATE) {
+          if (p_lcb->ConnInterval() <=
+                      LeConnectionParameters::GetMaxConnIntervalLeIsoAggressive() &&
+              p_lcb->ConnInterval() >=
+                      LeConnectionParameters::GetMinConnIntervalLeIsoAggressive()) {
+            return;
+          }
+          log::info("Use aggressive connection parameters for LE audio. addr={}",
+                    p_lcb->remote_bd_addr);
+          p_lcb->min_interval = LeConnectionParameters::GetMinConnIntervalLeIsoAggressive();
+          p_lcb->max_interval = LeConnectionParameters::GetMaxConnIntervalLeIsoAggressive();
         }
 
         acl_ble_connection_parameters_request(p_lcb->Handle(), p_lcb->min_interval,
@@ -375,7 +440,7 @@ void l2cble_process_rc_param_request_evt(uint16_t handle, uint16_t int_min, uint
   p_lcb->max_interval = int_max;
   p_lcb->latency = latency;
   p_lcb->timeout = timeout;
-  if (com::android::bluetooth::flags::initial_conn_params_p1()) {
+  if (com_android_bluetooth_flags_initial_conn_params_p1()) {
     p_lcb->conn_update_mask &= ~L2C_BLE_AGGRESSIVE_INITIAL_PARAM;
   }
 
@@ -427,19 +492,12 @@ void l2cble_use_preferred_conn_params(const RawAddress& bda) {
     p_lcb->max_interval = p_dev_rec->conn_params.max_conn_int;
     p_lcb->timeout = p_dev_rec->conn_params.supervision_tout;
     p_lcb->latency = p_dev_rec->conn_params.peripheral_latency;
-    if (com::android::bluetooth::flags::initial_conn_params_p1()) {
+    if (com_android_bluetooth_flags_initial_conn_params_p1()) {
       p_lcb->conn_update_mask &= ~L2C_BLE_AGGRESSIVE_INITIAL_PARAM;
     }
 
-    if (com::android::bluetooth::flags::prevent_concurrent_conn_param_updates()) {
-      p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
-      l2cble_start_conn_update(p_lcb);
-    } else {
-      acl_ble_connection_parameters_request(p_lcb->Handle(), p_dev_rec->conn_params.min_conn_int,
-                                            p_dev_rec->conn_params.max_conn_int,
-                                            p_dev_rec->conn_params.peripheral_latency,
-                                            p_dev_rec->conn_params.supervision_tout, 0, 0);
-    }
+    p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
+    l2cble_start_conn_update(p_lcb);
   }
 }
 
@@ -472,17 +530,24 @@ static void l2cble_start_subrate_change(tL2C_LCB* p_lcb) {
     return;
   }
 
-  if (p_lcb->subrate_req_mask & L2C_BLE_SUBRATE_REQ_DISABLE) {
-    log::verbose("returning L2C_BLE_SUBRATE_REQ_DISABLE");
+  /* application allows to do update, if we were delaying one do it now */
+  if (!(p_lcb->subrate_req_mask & L2C_BLE_NEW_SUBRATE_PARAM)) {
+    log::verbose("returning no L2C_BLE_NEW_SUBRATE_PARAM");
     return;
   }
 
-  /* application allows to do update, if we were delaying one do it now */
-  if (!(p_lcb->subrate_req_mask & L2C_BLE_NEW_SUBRATE_PARAM) ||
-      (p_lcb->conn_update_mask & L2C_BLE_UPDATE_PENDING) ||
-      (p_lcb->conn_update_mask & L2C_BLE_NEW_CONN_PARAM)) {
-    log::verbose("returning L2C_BLE_NEW_SUBRATE_PARAM");
-    return;
+  if (!(p_lcb->conn_update_mask & L2C_BLE_AUDIO_PARAM_SUBRATE)) {
+    if (p_lcb->subrate_req_mask & L2C_BLE_SUBRATE_REQ_DISABLE) {
+      log::verbose("returning L2C_BLE_SUBRATE_REQ_DISABLE");
+      return;
+    }
+
+    /* application allows to do update, if we were delaying one do it now */
+    if ((p_lcb->conn_update_mask & L2C_BLE_UPDATE_PENDING) ||
+        (p_lcb->conn_update_mask & L2C_BLE_NEW_CONN_PARAM)) {
+      log::verbose("returning L2C_BLE_UPDATE_PENDING or L2C_BLE_NEW_CONN_PARAM");
+      return;
+    }
   }
 
   if (!bluetooth::shim::GetController()->SupportsBleConnectionSubrating() ||

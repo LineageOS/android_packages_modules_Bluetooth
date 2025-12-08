@@ -28,7 +28,8 @@ inline std::string bd_features_text(const BD_FEATURES& features) {
   char* pbuf = buf;
   const uint8_t* b = features;
   while (len--) {
-    pbuf += sprintf(pbuf, "0x%02x ", *b++);
+    int remaining = sizeof(buf) - (pbuf - buf);
+    pbuf += snprintf(pbuf, remaining, "0x%02x ", *b++);
   }
   return std::string(buf);
 }

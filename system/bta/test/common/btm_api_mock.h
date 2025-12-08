@@ -16,6 +16,10 @@
  */
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/hci_role.h>
 #include <gmock/gmock.h>
 
 #include <cstdint>
@@ -24,9 +28,6 @@
 #include "bt_octets.h"
 #include "stack/btm/neighbor_inquiry.h"
 #include "stack/btm/security_device_record.h"
-#include "types/ble_address_with_type.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace manager {
@@ -60,6 +61,10 @@ public:
   virtual bool MaybeResolveAddress(RawAddress* bda, tBLE_ADDR_TYPE* bda_type) = 0;
   virtual bool BTM_RandomPseudoToIdentityAddr(RawAddress* random_pseudo,
                                               uint8_t* p_static_addr_type) = 0;
+  virtual bool AclPeerSupportsBleConnectionSubrating(const RawAddress& random_pseudo) = 0;
+  virtual bool AclPeerSupportsBleConnectionSubratingHost(const RawAddress& random_pseudo) = 0;
+  virtual tBTM_STATUS BTM_GetRole(const RawAddress& address, tBT_TRANSPORT transport,
+                                  tHCI_ROLE* role) = 0;
 
   virtual ~BtmInterface() = default;
 };
@@ -105,6 +110,10 @@ public:
   MOCK_METHOD((bool), MaybeResolveAddress, (RawAddress* bda, tBLE_ADDR_TYPE* bda_type), (override));
   MOCK_METHOD((bool), BTM_RandomPseudoToIdentityAddr,
               (RawAddress* random_pseudo, uint8_t* p_static_addr_type), (override));
+  MOCK_METHOD((bool), AclPeerSupportsBleConnectionSubrating, (const RawAddress& bd_addr), (override));
+  MOCK_METHOD((bool), AclPeerSupportsBleConnectionSubratingHost, (const RawAddress& bd_addr), (override));
+  MOCK_METHOD((tBTM_STATUS), BTM_GetRole,
+              (const RawAddress& address, tBT_TRANSPORT transport, tHCI_ROLE* role), (override));
 };
 
 /**

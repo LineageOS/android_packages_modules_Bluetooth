@@ -2,93 +2,23 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "enable_ble_while_disabling_airplane"
+    name: "only_broadcast_to_local_user"
     namespace: "bluetooth"
-    description: "Fix a race between enabling and handling airplane event"
-    bug: "402563502"
+    description: "The bluetooth stack start and exist only for the current user. We should only restrict the intent to the current user"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
+    bug: "435244086"
 }
 
 flag {
-    name: "ble_death_recipient_thread"
+    name: "graceful_disable_without_message"
     namespace: "bluetooth"
-    description: "Fix a race between death recipient and ble count"
-    bug: "414678172"
+    description: "Handle disable requests gracefully without a delayed message"
+    bug: "431067156"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
-}
-
-flag {
-    name: "factory_reset_from_the_system_server"
-    namespace: "bluetooth"
-    description: "make possible to factoryReset the Bluetooth when it is off"
-    bug: "406310419"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "kill_instead_of_exit"
-    namespace: "bluetooth"
-    description: "There is no value in pretending we are exiting properly. This is a kill and we should express it this way when finishing the process"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-    bug: "339553092"
-}
-
-flag {
-    name: "limit_user_switch_propagation"
-    namespace: "bluetooth"
-    description: "Do not change the foreground user without restarting the stack"
-    bug: "416313818"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "user_switch_during_ble_on"
-    namespace: "bluetooth"
-    description: "Clean user switch code to properly restart even during BLE_ON"
-    bug: "419104737"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "oneway_media_profile"
-    namespace: "bluetooth"
-    description: "remove non-oneway call to check if media profile are connected"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-    bug: "416087818"
-}
-
-flag {
-    name: "publish_binder_on_start"
-    namespace: "bluetooth"
-    description: "As mentioned in SystemService.java, binder should be published during onStart"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-    bug: "407096751"
-}
-
-flag {
-    name: "cleanup_starting_user"
-    namespace: "bluetooth"
-    description: "Allow the system server to initialize and start the stack when a foreground user start, without waiting on user switch"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-    bug: "418828239"
 }
 
 flag {
@@ -99,20 +29,20 @@ flag {
 }
 
 flag {
-    name: "system_server_remove_extra_thread_jump"
+    name: "user_restriction_refactor"
     namespace: "bluetooth"
-    description: "Methods are unnecessarily re-posting on the system server thread"
-    bug: "402209603"
+    description: "Move user restriction to Kotlin and properly check before any attempt to start Bluetooth"
+    bug: "420992261"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
 }
 
 flag {
-    name: "wait_stack_role_before_starting"
+    name: "on_to_ble_on_via_off"
     namespace: "bluetooth"
-    description: "RoleManager is racing to give the SYSTEM_BLUETOOTH_STACK role prior to Bluetooth being started."
-    bug: "408242259"
+    description: "When transitioning from ON to BLE_ON, go through OFF state completely to reset bluetooth state."
+    bug: "431079894"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -123,4 +53,11 @@ flag {
     namespace: "bluetooth"
     description: "If there is a watch connected, keep Bluetooth on"
     bug: "416092966"
+}
+
+flag {
+    name: "user_visible_on_user_starting"
+    namespace: "bluetooth"
+    description: "Check userVisible API to determine if user should startup bluetooth instance"
+    bug: "438756896"
 }

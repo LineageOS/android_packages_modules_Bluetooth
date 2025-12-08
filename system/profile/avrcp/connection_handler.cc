@@ -20,6 +20,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <map>
@@ -36,7 +37,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/sdp_status.h"
-#include "types/raw_address.h"
 
 extern bool btif_av_peer_is_connected_sink(const RawAddress& peer_address);
 extern bool btif_av_peer_is_connected_source(const RawAddress& peer_address);
@@ -112,6 +112,7 @@ bool ConnectionHandler::CleanUp() {
   instance_->feature_map_.clear();
 
   instance_->weak_ptr_factory_.InvalidateWeakPtrs();
+  instance_->avrc_->ResetServiceUuid();
 
   delete instance_;
   instance_ = nullptr;
@@ -142,12 +143,12 @@ bool ConnectionHandler::ConnectDevice(const RawAddress& bdaddr) {
               "Failed to do SDP: status=0x{:x} features=0x{:x} supports "
               "controller: {}",
               status, features, features & BTA_AV_FEAT_RCCT);
-      instance_->connection_cb_.Run(std::shared_ptr<Device>());
+      return;
     }
 
     instance_->feature_map_[bdaddr] = features;
 
-    if (com::android::bluetooth::flags::abs_volume_sdp_conflict()) {
+    if (com_android_bluetooth_flags_abs_volume_sdp_conflict()) {
       // Peer may connect avrcp during SDP. Check the connection state when
       // SDP completed to resolve the conflict.
       for (const auto& pair : instance_->device_map_) {
@@ -166,7 +167,7 @@ bool ConnectionHandler::ConnectDevice(const RawAddress& bdaddr) {
     return;
   };
 
-  return SdpLookup(bdaddr, base::Bind(connection_lambda, this, bdaddr), false);
+  return SdpLookup(bdaddr, base::Bind(connection_lambda, this, bdaddr), false, false);
 }
 
 bool ConnectionHandler::DisconnectDevice(const RawAddress& bdaddr) {
@@ -198,7 +199,8 @@ std::vector<std::shared_ptr<Device>> ConnectionHandler::GetListOfDevices() const
   return list;
 }
 
-bool ConnectionHandler::SdpLookup(const RawAddress& bdaddr, SdpCallback cb, bool retry) {
+bool ConnectionHandler::SdpLookup(const RawAddress& bdaddr, SdpCallback cb, bool retry,
+                                  bool incoming_connection) {
   log::info("");
 
   tAVRC_SDP_DB_PARAMS db_params;
@@ -212,9 +214,25 @@ bool ConnectionHandler::SdpLookup(const RawAddress& bdaddr, SdpCallback cb, bool
   db_params.p_db = disc_db;
   db_params.p_attrs = attr_list;
 
+  if (incoming_connection) {
+    bool connected = false;
+    for (auto it = device_map_.begin(); it != device_map_.end(); it++) {
+      if (bdaddr == it->second->GetAddress()) {
+        connected = true;
+        break;
+      }
+    }
+    if (!connected) {
+      log::warn("skip sdp lookup");
+      osi_free(disc_db);
+      return false;
+    }
+  }
+
   return avrc_->FindService(UUID_SERVCLASS_AV_REMOTE_CONTROL, bdaddr, &db_params,
                             base::Bind(&ConnectionHandler::SdpCb, weak_ptr_factory_.GetWeakPtr(),
-                                       bdaddr, cb, disc_db, retry)) == AVRC_SUCCESS;
+                                       bdaddr, cb, disc_db, retry, incoming_connection)) ==
+         AVRC_SUCCESS;
 }
 
 bool ConnectionHandler::AvrcpConnect(bool initiator, const RawAddress& bdaddr) {
@@ -391,7 +409,7 @@ void ConnectionHandler::AcceptorControlCb(uint8_t handle, uint8_t event, uint16_
         }
       };
 
-      if (SdpLookup(*peer_addr, base::Bind(sdp_lambda, this, handle), false)) {
+      if (SdpLookup(*peer_addr, base::Bind(sdp_lambda, this, handle), false, true)) {
         avrc_->OpenBrowse(handle, AVCT_ROLE_ACCEPTOR);
       } else {
         // SDP search failed, this could be due to a collision between outgoing
@@ -472,12 +490,12 @@ void ConnectionHandler::MessageCb(uint8_t handle, uint8_t label, uint8_t opcode,
 }
 
 void ConnectionHandler::SdpCb(RawAddress bdaddr, SdpCallback cb, tSDP_DISCOVERY_DB* disc_db,
-                              bool retry, tSDP_STATUS status) {
-  log::verbose("SDP lookup callback received");
+                              bool retry, bool incoming_connection, tSDP_STATUS status) {
+  log::info("SDP lookup callback received");
 
   if (status == tSDP_STATUS::SDP_CONN_FAILED && !retry) {
     log::warn("SDP Failure retry again");
-    SdpLookup(bdaddr, cb, true);
+    SdpLookup(bdaddr, cb, true, incoming_connection);
     return;
   } else if (status != tSDP_STATUS::SDP_SUCCESS) {
     log::error("SDP Failure: status = {}", (unsigned int)status);

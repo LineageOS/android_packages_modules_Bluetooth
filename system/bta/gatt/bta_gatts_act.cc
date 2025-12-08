@@ -24,6 +24,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -36,7 +37,6 @@
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 #include "stack/include/gatt_api.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

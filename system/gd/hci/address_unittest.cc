@@ -241,7 +241,7 @@ TEST(AddressTest, ToStringForLoggingTestOutputUnderDebuggablePropAndInitFlag) {
   const std::string redacted_loggable_str = "xx:xx:xx:xx:55:ab";
   const std::string loggable_str = "11:22:33:44:55:ab";
 
-  std::string ret1 = addr.ToStringForLogging();
+  std::string ret1 = addr.ToString();
   ASSERT_STREQ(ret1.c_str(), loggable_str.c_str());
   std::string ret2 = addr.ToRedactedStringForLogging();
   ASSERT_STREQ(ret2.c_str(), redacted_loggable_str.c_str());

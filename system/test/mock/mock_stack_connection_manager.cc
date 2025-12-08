@@ -19,11 +19,12 @@
  *   Functions generated:16
  */
 
+#include <bluetooth/types/address.h>
+
 #include <set>
 
 #include "stack/connection_manager/connection_manager.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 using namespace connection_manager;
 
@@ -79,6 +80,11 @@ void connection_manager::on_connection_timed_out_from_shim(const RawAddress& /* 
 void connection_manager::reset(bool /* after_reset */) { inc_func_call_count(__func__); }
 
 bool connection_manager::is_background_connection(const RawAddress& /* address */) {
+  inc_func_call_count(__func__);
+  return false;
+}
+
+bool connection_manager::is_direct_connection(const RawAddress& /* address */) {
   inc_func_call_count(__func__);
   return false;
 }

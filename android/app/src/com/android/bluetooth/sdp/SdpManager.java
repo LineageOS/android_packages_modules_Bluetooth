@@ -17,6 +17,8 @@ package com.android.bluetooth.sdp;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 
+import static java.util.Objects.requireNonNullElseGet;
+
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.SdpDipRecord;
 import android.bluetooth.SdpMasRecord;
@@ -58,11 +60,9 @@ public class SdpManager {
 
     private final AdapterService mAdapterService;
     private final Handler mHandler;
-    private final SdpManagerNativeInterface mNativeInterface =
-            SdpManagerNativeInterface.getInstance();
+    private final SdpManagerNativeInterface mNativeInterface;
 
     private boolean mSearchInProgress = false;
-    private boolean mNativeAvailable;
 
     /* Inner class used for wrapping sdp search instance data */
     private class SdpSearchInstance {
@@ -81,36 +81,36 @@ public class SdpManager {
             mSearching = true;
         }
 
-        public BluetoothDevice getDevice() {
+        BluetoothDevice getDevice() {
             return mDevice;
         }
 
-        public ParcelUuid getUuid() {
+        ParcelUuid getUuid() {
             return mUuid;
         }
 
-        public int getStatus() {
+        int getStatus() {
             return mStatus;
         }
 
-        public void setStatus(int status) {
+        void setStatus(int status) {
             this.mStatus = status;
         }
 
-        public void startSearch() {
+        void startSearch() {
             mSearching = true;
             Message message = mHandler.obtainMessage(MESSAGE_SDP_INTENT, this);
             mHandler.sendMessageDelayed(message, SDP_INTENT_DELAY);
         }
 
-        public void stopSearch() {
+        void stopSearch() {
             if (mSearching) {
                 mHandler.removeMessages(MESSAGE_SDP_INTENT, this);
             }
             mSearching = false;
         }
 
-        public boolean isSearching() {
+        boolean isSearching() {
             return mSearching;
         }
     }
@@ -169,14 +169,18 @@ public class SdpManager {
         }
     }
 
-    public SdpManager(AdapterService adapterService) {
-        this(adapterService, Looper.myLooper());
+    public SdpManager(AdapterService adapterService, SdpManagerNativeInterface nativeInterface) {
+        this(adapterService, nativeInterface, Looper.myLooper());
     }
 
-    public SdpManager(AdapterService adapterService, Looper looper) {
+    public SdpManager(
+            AdapterService adapterService,
+            SdpManagerNativeInterface nativeInterface,
+            Looper looper) {
         mAdapterService = adapterService;
-        mNativeInterface.init(this);
-        mNativeAvailable = true;
+        mNativeInterface =
+                requireNonNullElseGet(nativeInterface, () -> new SdpManagerNativeInterface(this));
+        mNativeInterface.init();
         mHandler =
                 new Handler(looper) {
                     @Override
@@ -195,15 +199,16 @@ public class SdpManager {
                 };
     }
 
+    public SdpManagerNativeInterface getNativeInterface() {
+        return mNativeInterface;
+    }
+
     public void cleanup() {
         synchronized (TRACKER_LOCK) {
             mSdpSearchTracker.clear();
         }
 
-        if (mNativeAvailable) {
-            mNativeInterface.cleanup();
-            mNativeAvailable = false;
-        }
+        mNativeInterface.cleanup();
     }
 
     void sdpMasRecordFoundCallback(
@@ -432,10 +437,6 @@ public class SdpManager {
     }
 
     public void sdpSearch(BluetoothDevice device, ParcelUuid uuid) {
-        if (!mNativeAvailable) {
-            Log.e(TAG, "Native not initialized!");
-            return;
-        }
         synchronized (TRACKER_LOCK) {
             if (mSdpSearchTracker.isSearching(device, uuid)) {
                 /* Search already in progress */
@@ -495,8 +496,7 @@ public class SdpManager {
          * Keep in mind that the MAP client needs to use this as well,
          * hence to make it call-backs, the MAP client profile needs to be
          * part of the Bluetooth APK. */
-        mAdapterService.sendBroadcast(
-                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
 
         if (!moreResults) {
             // Remove the outstanding UUID request

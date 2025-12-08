@@ -206,3 +206,27 @@ prop {
     access: Readonly
     prop_name: "bluetooth.ble.client.subrate_mode_high_cont_number.config"
 }
+
+prop {
+    api_name: "subrate_le_audio_mode_max_subrate"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.client.subrate_le_audio_mode_max_subrate.config"
+}
+
+prop {
+    api_name: "subrate_le_audio_mode_min_subrate"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.client.subrate_le_audio_mode_min_subrate.config"
+}
+
+prop {
+    api_name: "subrate_le_audio_mode_cont_number"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.client.subrate_le_audio_mode_cont_number.config"
+}

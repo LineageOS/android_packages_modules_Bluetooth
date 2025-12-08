@@ -97,6 +97,8 @@ public:
 
   void RegisterAdvertisingCallback(AdvertisingCallback* advertising_callback) override;
 
+  void Dump(int fd) override;
+
 private:
   struct impl;
   std::unique_ptr<impl> pimpl_;

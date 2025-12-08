@@ -15,7 +15,10 @@
 #
 
 config("metrics_config") {
-  include_dirs = [ "//bt/system/metrics/include" ]
+  include_dirs = [
+    "//bt/system/metrics/include",
+    "//bt/system/types/include",
+  ]
 }
 
 static_library("metrics") {

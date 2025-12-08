@@ -20,6 +20,7 @@
 // NOTE: This file should not be included directly.
 //       It is included by the corresponding "...Functions.h" file.
 
+#include <bluetooth/types/address.h>
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include <vector>
@@ -28,7 +29,6 @@
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "stack/a2dp/a2dp_int.h"
-#include "types/raw_address.h"
 
 #define MAX_DB_SIZE 4096
 

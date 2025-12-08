@@ -241,7 +241,7 @@ public class TestLooper {
          *
          * @return RuntimeException Exception created by stopping without dispatching a message
          */
-        public RuntimeException getException() {
+        RuntimeException getException() {
             return mAutoDispatchException;
         }
     }

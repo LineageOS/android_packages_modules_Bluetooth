@@ -17,14 +17,13 @@
 #ifndef BT_STACK_FUZZ_COMMON_HELPERS_H_
 #define BT_STACK_FUZZ_COMMON_HELPERS_H_
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include <cstring>  // For memcpy
 #include <functional>
 #include <vector>
-
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 // Calls a function from the ops_vector
 void callArbitraryFunction(FuzzedDataProvider* fdp,
@@ -58,7 +57,7 @@ RawAddress generateRawAddress(FuzzedDataProvider* fdp) {
 
   // Read as much as we can from the buffer and copy it in
   std::vector<uint8_t> bytes = fdp->ConsumeBytes<uint8_t>(retval.kLength);
-  memcpy(retval.address, bytes.data(), bytes.size());
+  memcpy(retval.address.data(), bytes.data(), bytes.size());
 
   return retval;
 }

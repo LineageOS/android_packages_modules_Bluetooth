@@ -16,10 +16,10 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <functional>
 #include <unordered_map>
-
-#include "types/raw_address.h"
 
 namespace bluetooth::metrics {
 

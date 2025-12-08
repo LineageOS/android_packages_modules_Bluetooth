@@ -40,11 +40,13 @@ rm -rf $(find ${COVERAGE_TMP_FOLDER}/ServiceBluetoothRobo_unzip -iname "*test*")
 rm -rf ${COVERAGE_TMP_FOLDER}/ServiceBluetoothRobo_unzip/com/android/server/bluetooth/'BluetoothAdapterState$waitForState$3$invokeSuspend$$inlined$filter$1.class'
 # shellcheck disable=SC2016
 rm -rf ${COVERAGE_TMP_FOLDER}/ServiceBluetoothRobo_unzip/com/android/server/bluetooth/'BluetoothAdapterState$waitForState$3$invokeSuspend$$inlined$filter$1$2.class'
+# shellcheck disable=SC2016
+rm -rf ${COVERAGE_TMP_FOLDER}/ServiceBluetoothRobo_unzip/com/android/server/bluetooth/'BluetoothAdapterState$waitForState$3$invokeSuspend$$inlined$filter$1$2$1.class'
 rm -rf ${COVERAGE_TMP_FOLDER}/ServiceBluetoothRobo_unzip/com/android/server/bluetooth/R.class
 
 # Generate report:
 # You may want to run "m jacoco-cli" if above command failed
-java -jar "${ANDROID_BUILD_TOP}"/out/host/linux-x86/framework/jacoco-cli.jar report "${COVERAGE_COLLECTED}"/log/invocation_*/inv_*/coverage_*.ec --classfiles ${COVERAGE_TMP_FOLDER}/ServiceBluetoothRobo_unzip --html ${COVERAGE_TMP_FOLDER}/coverage --name coverage.html --sourcefiles ${COVERAGE_TMP_FOLDER}
+java -jar "${ANDROID_BUILD_TOP}"/out/host/linux-x86/framework/jacoco-cli.jar report "${COVERAGE_COLLECTED}"/log/invocation_*/inv_*/ServiceBluetoothRoboTests/coverage_*.ec --classfiles ${COVERAGE_TMP_FOLDER}/ServiceBluetoothRobo_unzip --html ${COVERAGE_TMP_FOLDER}/coverage --name coverage.html --sourcefiles ${COVERAGE_TMP_FOLDER}
 
 # Start python server and expose URL
 printf "Url to connect to the coverage \033[32m http://%s:8000 \033[0m\n" "$(hostname)"

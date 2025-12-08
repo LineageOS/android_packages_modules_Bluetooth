@@ -10,76 +10,6 @@ flag {
 }
 
 flag {
-    name: "close_hid_if_uhid_ready_too_slow"
-    namespace: "bluetooth"
-    description: "Close HID if UHID takes too long to be ready"
-    bug: "362665394"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "dont_send_hid_set_idle"
-    namespace: "bluetooth"
-    description: "Don't send the SET IDLE HID message"
-    bug: "369310847"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "hogp_reconnection"
-    namespace: "bluetooth"
-    description: "Allow reconnection from HOGP device irrespective of disconnection reason"
-    bug: "378162528"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "pending_hid_connection_cancellation"
-    namespace: "bluetooth"
-    description: "Properly cancel the pending connection to the already added devices"
-    bug: "381135214"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "disconnect_hid_channels_serially"
-    namespace: "bluetooth"
-    description: "Only disconnect control channel after interrupt channel disconnection is acked"
-    bug: "387937345"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "vup_for_pending_connection"
-    namespace: "bluetooth"
-    description: "Generate HID VUP for pending connections as well"
-    bug: "396747085"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "ignore_unselected_hid_transport_states"
-    namespace: "bluetooth"
-    description: "Ignore HID state transitions for transports that are not selected"
-    bug: "397460323"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "early_incoming_hid_connection"
     namespace: "bluetooth"
     description: "Allow early incoming HID connection"
@@ -134,6 +64,56 @@ flag {
     namespace: "bluetooth"
     description: "Mark device unused only after it's properly disconnected"
     bug: "412876005"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "hogp_direct_connection_upgrade"
+    namespace: "bluetooth"
+    description: "Allow background connection requests to be upgraded to direct connections"
+    bug: "430179438"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "reset_state_when_removing_non_connected_hid_device"
+    namespace: "bluetooth"
+    description: "When removing a not-yet-connected HID device, set conn_state to UNUSED and CID to 0"
+    bug: "441425948"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "hidh_close_in_jni_thread"
+    namespace: "bluetooth"
+    description: "Handle incoming HID connection timeout in JNI thread"
+    bug: "441661424"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "hidd_handle_set_protocol_before_interrupt_connected"
+    namespace: "bluetooth"
+    description: "Handle incoming SET_PROTOCOL command even when the host hasn't established the interrupt channel"
+    bug: "442379143"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "hid_connection_timeout_in_jni_thread"
+    namespace: "bluetooth"
+    description: "Handle incoming HID connection timeout in JNI thread"
+    bug: "440091360"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

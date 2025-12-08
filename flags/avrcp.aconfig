@@ -12,30 +12,10 @@ flag {
 }
 
 flag {
-    name: "browsing_refactor"
-    namespace: "bluetooth"
-    description: "Broadcast all players instead of BT player, remove MediaBrowser preload, support package modification"
-    bug: "338156685"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "get_all_element_attributes_empty"
     namespace: "bluetooth"
     description: "Return all attributes even if empty when requesting all attributes with GetElementAttributes"
     bug: "362896963"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "set_addressed_player"
-    namespace: "bluetooth"
-    description: "Implement SetAddressedPlayer"
-    bug: "352279986"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -56,4 +36,21 @@ flag {
     metadata {
         purpose: PURPOSE_BUGFIX
     }
+}
+
+flag {
+    name: "implement_get_image_from_descriptor_for_cover_art"
+    namespace: "bluetooth"
+    description: "Implement getImage from descriptor for cover art in AVRCP for IOP, some devices request image not 200*200"
+    bug: "427472266"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "use_returned_absolute_volume"
+    namespace: "bluetooth"
+    description: "Use the volume returned in an accepted SetAbsoluteVolume command"
+    bug: "429364070"
 }

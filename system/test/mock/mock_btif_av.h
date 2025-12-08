@@ -27,10 +27,11 @@
 
 // Original included files, if any
 
+#include <bluetooth/types/address.h>
+
 #include "bta/include/bta_av_api.h"
 #include "btif/include/btif_av.h"
 #include "include/hardware/bt_av.h"
-#include "types/raw_address.h"
 
 // Original usings
 typedef enum {

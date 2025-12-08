@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-import contextlib
 import enum
 import itertools
 from typing import Any
@@ -34,6 +33,7 @@ from navi.tests.smoke import pairing_utils
 from navi.utils import android_constants
 from navi.utils import bl4a_api
 from navi.utils import constants
+from navi.utils import matcher
 from navi.utils import pyee_extensions
 from navi.utils import retry
 
@@ -193,12 +193,12 @@ class LePairingTest(navi_test_base.TwoDevicesTestBase):
         """Tests LE Secure pairing.
 
     Test steps:
-    1. Setup configurations.
-    2. Make ACL connections.
-    3. Start pairing.
-    4. Wait for pairing requests and verify pins.
-    5. Make actions corresponding to variants.
-    6. Verify final states.
+      1. Setup configurations.
+      2. Make ACL connections.
+      3. Start pairing.
+      4. Wait for pairing requests and verify pins.
+      5. Make actions corresponding to variants.
+      6. Verify final states.
 
     Args:
       variant: Action to perform in the pairing procedure.
@@ -346,16 +346,11 @@ class LePairingTest(navi_test_base.TwoDevicesTestBase):
 
         if pair_task:
             self.logger.info('[REF] Wait pairing complete.')
-            expected_errors: list[type[BaseException]]
-            match variant:
-                case TestVariant.REJECT | TestVariant.REJECTED:
-                    expected_errors = [core.ProtocolError]
-                case TestVariant.DISCONNECTED:
-                    expected_errors = [asyncio.exceptions.CancelledError]
-                case _:
-                    expected_errors = []
-            with contextlib.suppress(*expected_errors):
+            if variant == TestVariant.ACCEPT:
                 await pair_task
+            else:
+                with self.assertRaises((core.ProtocolError, asyncio.CancelledError)):
+                    await pair_task
 
     @navi_test_base.parameterized(*(
         (
@@ -395,12 +390,12 @@ class LePairingTest(navi_test_base.TwoDevicesTestBase):
         """Tests LE Secure pairing.
 
     Test steps:
-    1. Setup configurations.
-    2. Make ACL connections.
-    3. Start pairing.
-    4. Wait for pairing requests and verify pins.
-    5. Make actions corresponding to variants.
-    6. Verify final states.
+      1. Setup configurations.
+      2. Make ACL connections.
+      3. Start pairing.
+      4. Wait for pairing requests and verify pins.
+      5. Make actions corresponding to variants.
+      6. Verify final states.
 
     Args:
       variant: Action to perform in the pairing procedure.
@@ -525,7 +520,7 @@ class LePairingTest(navi_test_base.TwoDevicesTestBase):
                 expected_dut_pairing_variant = _AndroidPairingVariant.PIN
                 expected_ref_pairing_variant = (_BumblePairingVariant.PASSKEY_ENTRY_NOTIFICATION)
                 ref_answer = dut_pairing_event.pin if ref_accept else None
-                dut_answer = lambda: self.dut.bt.setPin(ref_addr, f'{ref_pairing_event.arg}:06')
+                dut_answer = lambda: self.dut.bt.setPin(ref_addr, f'{ref_pairing_event.arg:06}')
             case _:
                 raise ValueError(f'Unsupported IO capability: {ref_io_capability}')
 
@@ -560,19 +555,158 @@ class LePairingTest(navi_test_base.TwoDevicesTestBase):
 
         if pair_task:
             self.logger.info('[REF] Wait pairing complete.')
-            expected_errors: list[type[BaseException]]
-            match variant:
-                case TestVariant.REJECT | TestVariant.REJECTED:
-                    expected_errors = [core.ProtocolError]
-                case TestVariant.DISCONNECTED:
-                    expected_errors = [
-                        asyncio.exceptions.CancelledError,
-                        core.ProtocolError,
-                    ]
-                case _:
-                    expected_errors = []
-            with contextlib.suppress(*expected_errors):
+            if variant == TestVariant.ACCEPT:
                 await pair_task
+            else:
+                with self.assertRaises((core.ProtocolError, asyncio.CancelledError)):
+                    await pair_task
+
+    @navi_test_base.named_parameterized(*[
+        dict(
+            testcase_name=(
+                f'{"secure" if sc else "legacy"}_{direction.name}_{address_type.name}'.lower()),
+            sc=sc,
+            pairing_direction=direction,
+            ref_connection_address_type=address_type,
+        )
+        for sc, direction, address_type in itertools.product(
+            {True, False},
+            {_Direction.OUTGOING, _Direction.INCOMING},
+            {_AddressType.PUBLIC, _AddressType.RANDOM},
+        )
+        # Legacy incoming pairing is not supported on Android.
+        if sc or direction == _Direction.OUTGOING
+    ])
+    async def test_oob_pairing(
+        self,
+        sc: bool,
+        pairing_direction: _Direction,
+        ref_connection_address_type: _AddressType,
+    ) -> None:
+        """Tests LE OOB pairing.
+
+    Test steps:
+      1. Setup configurations.
+      2. Exchange OOB data.
+      3. Start pairing.
+      4. Verify final states.
+
+    Note: Legacy variants fail from 24Q4 to 25Q3 due to stack issue.
+
+    Args:
+      sc: Whether to use secure connection.
+      pairing_direction: Direction of pairing. DUT->REF is outgoing, and vice
+        versa.
+      ref_connection_address_type: Address type of the REF device.
+    """
+
+        # TODO: Remove this when the patch is merged.
+        class Session(smp.Session):
+
+            def __init__(
+                self,
+                manager: smp.Manager,
+                connection: smp.Connection,
+                pairing_config: pairing.PairingConfig,
+                is_initiator: bool,
+            ) -> None:
+                super().__init__(manager, connection, pairing_config, is_initiator)
+                if pairing_config.oob and (not self.sc or pairing_config.oob.peer_data):
+                    self.oob_data_flag = 1
+                else:
+                    self.oob_data_flag = 0
+
+        self.ref.device.smp_manager.session_proxy = Session
+
+        pairing_delegate = pairing_utils.PairingDelegate(
+            auto_accept=True,
+            local_initiator_key_distribution=pairing.PairingDelegate.DEFAULT_KEY_DISTRIBUTION,
+            local_responder_key_distribution=pairing.PairingDelegate.DEFAULT_KEY_DISTRIBUTION,
+        )
+        ref_oob_context = pairing.OobContext()
+        ref_oob_legacy_context = pairing.OobLegacyContext()
+        ref_oob_config = pairing.PairingConfig.OobConfig(
+            our_context=ref_oob_context,
+            peer_data=None,
+            legacy_context=ref_oob_legacy_context,
+        )
+        if ref_connection_address_type == _AddressType.RANDOM:
+            ref_address_bytes = bytes(self.ref.device.random_address)
+            ref_address_type = hci.AddressType.RANDOM_DEVICE
+            ref_address = self.ref.random_address
+        else:
+            ref_address_bytes = bytes(self.ref.device.public_address)
+            ref_address_type = hci.AddressType.PUBLIC_DEVICE
+            ref_address = self.ref.address
+        ref_address_with_type_bytes = ref_address_bytes + bytes([ref_address_type])
+
+        def pairing_config_factory(_: device.Connection) -> pairing.PairingConfig:
+            return pairing.PairingConfig(
+                sc=sc,
+                mitm=True,
+                bonding=True,
+                identity_address_type=pairing.PairingConfig.AddressType.PUBLIC,
+                delegate=pairing_delegate,
+                oob=ref_oob_config,
+            )
+
+        self.ref.device.pairing_config_factory = pairing_config_factory
+
+        dut_cb = self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER)
+        self.test_case_context.push(dut_cb)
+        ref_pairing_events = asyncio.Queue[None]()
+
+        # Register a callback to get pairing events from the REF device.
+        @self.ref.device.on(device.Device.EVENT_CONNECTION)
+        def _(connection: device.Connection) -> None:
+            connection.on(connection.EVENT_PAIRING, ref_pairing_events.put)
+
+        if pairing_direction == _Direction.INCOMING:
+            shared_data_from_dut = self.dut.bl4a.generate_oob_data(android_constants.Transport.LE)
+            ref_oob_config.peer_data = pairing.OobSharedData(
+                c=shared_data_from_dut.confirmation_hash,
+                r=shared_data_from_dut.randomizer_hash or b'',
+            )
+            ref_oob_legacy_context.tk = shared_data_from_dut.le_temporary_key or b''
+            ref_dut = await self._make_incoming_connection(ref_connection_address_type)
+            self.logger.info('[REF] Start pairing.')
+            async with self.assert_not_timeout(_DEFAULT_SETUP_TIMEOUT_SECONDS):
+                await ref_dut.pair()
+        else:
+            self.logger.info('[REF] Start advertising.')
+            async with self.assert_not_timeout(_DEFAULT_SETUP_TIMEOUT_SECONDS):
+                await self.ref.device.start_advertising(
+                    own_address_type=ref_connection_address_type, auto_restart=False)
+
+            shared_data_from_ref = ref_oob_context.share()
+            dut_oob_data = bl4a_api.OobData(
+                confirmation_hash=shared_data_from_ref.c,
+                randomizer_hash=shared_data_from_ref.r,
+                device_address_with_type=ref_address_with_type_bytes,
+                le_device_role=core.LeRole.PERIPHERAL_ONLY,
+                le_temporary_key=ref_oob_legacy_context.tk,
+            )
+            self.logger.info('[DUT] Start OOB pairing.')
+            result = self.dut.bl4a.create_bond_oob(
+                address=ref_address,
+                address_type=(android_constants.AddressTypeStatus.RANDOM
+                              if ref_connection_address_type == _AddressType.RANDOM else
+                              android_constants.AddressTypeStatus.PUBLIC),
+                transport=android_constants.Transport.LE,
+                p_192_data=dut_oob_data if not sc else None,
+                p_256_data=dut_oob_data if sc else None,
+            )
+            self.assertTrue(result, '[DUT] Failed to create bond')
+
+        self.logger.info('[DUT] Wait for pairing complete.')
+        bonded_event = await dut_cb.wait_for_event(
+            bl4a_api.BondStateChanged(address=ref_address,
+                                      state=matcher.any_of(*_TERMINATED_BOND_STATES)))
+        self.assertEqual(bonded_event.state, android_constants.BondState.BONDED)
+
+        self.logger.info('[REF] Wait for pairing complete.')
+        async with self.assert_not_timeout(_DEFAULT_SETUP_TIMEOUT_SECONDS):
+            await ref_pairing_events.get()
 
 
 if __name__ == '__main__':

@@ -51,6 +51,7 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -145,22 +146,6 @@ public class DatabaseManager {
     void bondStateChanged(BluetoothDevice device, int state) {
         synchronized (mMetadataCache) {
             String address = device.getAddress();
-            if (!Flags.createMetadataAfterBonding()) {
-                if (state != BluetoothDevice.BOND_NONE) {
-                    if (mMetadataCache.containsKey(address)) {
-                        return;
-                    }
-                    createMetadata(address, false);
-                } else {
-                    Metadata metadata = mMetadataCache.get(address);
-                    if (metadata != null) {
-                        mMetadataCache.remove(address);
-                        deleteDatabase(metadata);
-                    }
-                }
-                return;
-            }
-
             if (state == BluetoothDevice.BOND_BONDED) {
                 if (mMetadataCache.containsKey(address)) {
                     return;
@@ -606,9 +591,6 @@ public class DatabaseManager {
             if (isA2dpDevice) {
                 resetActiveA2dpDevice();
             }
-            if (isHfpDevice && !Flags.autoConnectOnMultipleHfpWhenNoA2dpDevice()) {
-                resetActiveHfpDevice();
-            }
 
             setConnection(device, isA2dpDevice, isHfpDevice);
         }
@@ -669,20 +651,6 @@ public class DatabaseManager {
             if (metadata.is_active_a2dp_device) {
                 Log.d(TAG, "resetActiveA2dpDevice");
                 metadata.is_active_a2dp_device = false;
-                updateDatabase(metadata);
-            }
-        }
-    }
-
-    /** Remove hfpActiveDevice from the current active device in the connection order table */
-    @GuardedBy("mMetadataCache")
-    private void resetActiveHfpDevice() {
-        Log.d(TAG, "resetActiveHfpDevice()");
-        for (Map.Entry<String, Metadata> entry : mMetadataCache.entrySet()) {
-            Metadata metadata = entry.getValue();
-            if (metadata.isActiveHfpDevice) {
-                Log.d(TAG, "resetActiveHfpDevice");
-                metadata.isActiveHfpDevice = false;
                 updateDatabase(metadata);
             }
         }
@@ -780,7 +748,7 @@ public class DatabaseManager {
             entry =
                     mMetadataCache.entrySet().stream()
                             .filter(x -> x.getValue().isActiveHfpDevice)
-                            .findFirst()
+                            .max(Comparator.comparing(x -> x.getValue().last_active_time))
                             .orElse(null);
         }
         if (entry != null) {
@@ -1119,15 +1087,6 @@ public class DatabaseManager {
         return mAdapterService.getDatabasePath(MetadataDatabase.DATABASE_NAME).getAbsolutePath();
     }
 
-    /** Clear all persistence data in database */
-    public void factoryReset() {
-        if (Flags.factoryResetAtBluetoothStart()) {
-            throw new IllegalStateException("flag factoryResetAtBluetoothStart is enabled");
-        }
-        Log.w(TAG, "factoryReset");
-        mHandler.sendEmptyMessage(MSG_CLEAR_DATABASE);
-    }
-
     /** Close and de-init the DatabaseManager */
     public void cleanup() {
         synchronized (mDatabaseLock) {
@@ -1245,21 +1204,18 @@ public class DatabaseManager {
         String hardwareVersion = "";
         String softwareVersion = "";
         switch (key) {
-            case BluetoothDevice.METADATA_MANUFACTURER_NAME:
-                manufacturerName = Utils.byteArrayToUtf8String(bytesValue);
-                break;
-            case BluetoothDevice.METADATA_MODEL_NAME:
-                modelName = Utils.byteArrayToUtf8String(bytesValue);
-                break;
-            case BluetoothDevice.METADATA_HARDWARE_VERSION:
-                hardwareVersion = Utils.byteArrayToUtf8String(bytesValue);
-                break;
-            case BluetoothDevice.METADATA_SOFTWARE_VERSION:
-                softwareVersion = Utils.byteArrayToUtf8String(bytesValue);
-                break;
-            default:
+            case BluetoothDevice.METADATA_MANUFACTURER_NAME ->
+                    manufacturerName = Utils.byteArrayToUtf8String(bytesValue);
+            case BluetoothDevice.METADATA_MODEL_NAME ->
+                    modelName = Utils.byteArrayToUtf8String(bytesValue);
+            case BluetoothDevice.METADATA_HARDWARE_VERSION ->
+                    hardwareVersion = Utils.byteArrayToUtf8String(bytesValue);
+            case BluetoothDevice.METADATA_SOFTWARE_VERSION ->
+                    softwareVersion = Utils.byteArrayToUtf8String(bytesValue);
+            default -> {
                 // Do not log anything if metadata doesn't fall into above categories
                 return;
+            }
         }
         String[] macAddress = device.getAddress().split(":");
         BluetoothStatsLog.write(
@@ -1385,7 +1341,7 @@ public class DatabaseManager {
 
             if (!mMetadataCache.containsKey(address)) {
                 Log.e(TAG, "device is not bonded");
-                return new ArrayList<BluetoothLeAudioCodecConfig>();
+                return new ArrayList<>();
             }
 
             Log.i(TAG, "getLeAudioUnicastInputCodecPreferenceList(" + device + ")");
@@ -1434,7 +1390,7 @@ public class DatabaseManager {
 
             if (!mMetadataCache.containsKey(address)) {
                 Log.e(TAG, "device is not bonded");
-                return new ArrayList<BluetoothLeAudioCodecConfig>();
+                return new ArrayList<>();
             }
 
             Log.i(TAG, "getLeAudioUnicastOutputCodecPreferenceList(" + device + ")");

@@ -17,11 +17,11 @@
 package com.android.bluetooth.btservice;
 
 public final class AbstractionLayer {
-    // Do not modify without updating the HAL files.
+    // Do not modify without updating the HAL files
     // Do not modify without migrating data in the config
 
-    // TODO: Some of the constants are repeated from BluetoothAdapter.java.
-    // Get rid of them and maintain just one.
+    // TODO: Some of the constants are repeated from BluetoothAdapter.java
+    // Get rid of them and maintain just one
     static final int BT_STATE_OFF = 0x00;
     static final int BT_STATE_ON = 0x01;
 
@@ -56,8 +56,8 @@ public final class AbstractionLayer {
     static final int BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA = 0x1F;
 
     public static final int BT_DEVICE_TYPE_BREDR = 0x01;
-    public static final int BT_DEVICE_TYPE_BLE = 0x02;
-    public static final int BT_DEVICE_TYPE_DUAL = 0x03;
+    static final int BT_DEVICE_TYPE_BLE = 0x02;
+    static final int BT_DEVICE_TYPE_DUAL = 0x03;
 
     static final int BT_BOND_STATE_NONE = 0x00;
     static final int BT_BOND_STATE_BONDING = 0x01;
@@ -74,19 +74,24 @@ public final class AbstractionLayer {
     static final int BT_ACL_STATE_CONNECTED = 0x00;
     static final int BT_ACL_STATE_DISCONNECTED = 0x01;
 
+    static final int BT_REASON_FOR_NO_UUIDS_EMPTY_UUID_LIST = 0x01;
+    static final int BT_REASON_FOR_NO_UUIDS_NO_UUID_TYPES_EXIST = 0x02;
+
     static final int BT_UUID_SIZE = 16; // bytes
 
     public static final int BT_STATUS_SUCCESS = 0;
-    public static final int BT_STATUS_FAIL = 1;
-    public static final int BT_STATUS_NOT_READY = 2;
-    public static final int BT_STATUS_NOMEM = 3;
-    public static final int BT_STATUS_BUSY = 4;
-    public static final int BT_STATUS_DONE = 5;
-    public static final int BT_STATUS_UNSUPPORTED = 6;
-    public static final int BT_STATUS_PARM_INVALID = 7;
-    public static final int BT_STATUS_UNHANDLED = 8;
-    public static final int BT_STATUS_AUTH_FAILURE = 9;
-    public static final int BT_STATUS_RMT_DEV_DOWN = 10;
-    public static final int BT_STATUS_AUTH_REJECTED = 11;
-    public static final int BT_STATUS_AUTH_TIMEOUT = 12;
+    static final int BT_STATUS_FAIL = 1;
+    static final int BT_STATUS_NOT_READY = 2;
+    static final int BT_STATUS_NOMEM = 3;
+    static final int BT_STATUS_BUSY = 4;
+    static final int BT_STATUS_DONE = 5;
+    static final int BT_STATUS_UNSUPPORTED = 6;
+    static final int BT_STATUS_PARM_INVALID = 7;
+    static final int BT_STATUS_UNHANDLED = 8;
+    static final int BT_STATUS_AUTH_FAILURE = 9;
+    static final int BT_STATUS_RMT_DEV_DOWN = 10;
+    static final int BT_STATUS_AUTH_REJECTED = 11;
+    static final int BT_STATUS_AUTH_TIMEOUT = 12;
+
+    private AbstractionLayer() {}
 }

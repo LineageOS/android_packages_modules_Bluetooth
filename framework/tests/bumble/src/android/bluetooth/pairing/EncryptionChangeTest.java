@@ -33,7 +33,6 @@ import android.bluetooth.test_utils.EnableBluetoothRule;
 import android.content.Context;
 import android.content.Intent;
 import android.os.ParcelUuid;
-import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.CheckFlagsRule;
 import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 import android.util.Log;
@@ -41,7 +40,6 @@ import android.util.Log;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import com.android.bluetooth.flags.Flags;
 import com.android.compatibility.common.util.AdoptShellPermissionsRule;
 
 import io.grpc.stub.StreamObserver;
@@ -183,7 +181,6 @@ public class EncryptionChangeTest {
      * </ol>
      */
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_ENCRYPTION_CHANGE_BROADCAST})
     public void encryptionChangeSecureLeLink() {
         IntentReceiver intentReceiver =
                 new IntentReceiver.Builder(
@@ -265,7 +262,6 @@ public class EncryptionChangeTest {
      * </ol>
      */
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_ENCRYPTION_CHANGE_BROADCAST})
     public void encryptionChangeSecureClassicLink() {
         IntentReceiver intentReceiver =
                 new IntentReceiver.Builder(

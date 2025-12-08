@@ -47,7 +47,7 @@ public class BipTransformation {
     public static final int FILL = 1;
     public static final int CROP = 2;
 
-    public final HashSet<Integer> mSupportedTransformations = new HashSet<Integer>(3);
+    public final HashSet<Integer> mSupportedTransformations = new HashSet<>(3);
 
     /** Create an empty set of BIP Transformations */
     public BipTransformation() {}
@@ -60,18 +60,10 @@ public class BipTransformation {
         String[] tokens = transformations.split(" ");
         for (String token : tokens) {
             switch (token) {
-                case "stretch":
-                    addTransformation(STRETCH);
-                    break;
-                case "fill":
-                    addTransformation(FILL);
-                    break;
-                case "crop":
-                    addTransformation(CROP);
-                    break;
-                default:
-                    Log.e(TAG, "Found unknown transformation '" + token + "'");
-                    break;
+                case "stretch" -> addTransformation(STRETCH);
+                case "fill" -> addTransformation(FILL);
+                case "crop" -> addTransformation(CROP);
+                default -> Log.e(TAG, "Found unknown transformation '" + token + "'");
             }
         }
     }

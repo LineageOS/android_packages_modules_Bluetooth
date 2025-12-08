@@ -19,12 +19,12 @@
 #include "address_obfuscator.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <openssl/hmac.h>
 
 #include <algorithm>
 
 #include "internal_include/bt_trace.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace common {
@@ -48,11 +48,12 @@ std::string AddressObfuscator::Obfuscate(const RawAddress& address) {
   log::assert_that(IsInitialized(), "assert failed: IsInitialized()");
   std::array<uint8_t, EVP_MAX_MD_SIZE> result = {};
   unsigned int out_len = 0;
-  log::assert_that(::HMAC(EVP_sha256(), salt_256bit_.data(), salt_256bit_.size(), address.address,
-                          address.kLength, result.data(), &out_len) != nullptr,
-                   "assert failed: ::HMAC(EVP_sha256(), salt_256bit_.data(), "
-                   "salt_256bit_.size(), address.address, address.kLength, "
-                   "result.data(), &out_len) != nullptr");
+  log::assert_that(
+          ::HMAC(EVP_sha256(), salt_256bit_.data(), salt_256bit_.size(), address.address.data(),
+                 address.kLength, result.data(), &out_len) != nullptr,
+          "assert failed: ::HMAC(EVP_sha256(), salt_256bit_.data(), "
+          "salt_256bit_.size(), address.address, address.kLength, "
+          "result.data(), &out_len) != nullptr");
   log::assert_that(out_len == static_cast<unsigned int>(kOctet32Length),
                    "assert failed: out_len == static_cast<unsigned int>(kOctet32Length)");
   return std::string(reinterpret_cast<const char*>(result.data()), out_len);

@@ -38,6 +38,7 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.vcard.VCardComposer;
 import com.android.vcard.VCardConfig;
@@ -69,6 +70,9 @@ class BluetoothPbapUtils {
     private static final int FILTER_NICKNAME = 23;
 
     private static final long QUERY_CONTACT_RETRY_INTERVAL = 4000;
+
+    private static final int PHOTO_DIMENSION_LIMIT_IN_PIXELS = 300;
+    private static final int PHOTO_FILE_SIZE_LIMIT_IN_BYTES = 50 * 1024; // 50KB
 
     static AtomicLong sDbIdentifier = new AtomicLong();
 
@@ -112,6 +116,8 @@ class BluetoothPbapUtils {
         EMAIL,
         ADDRESS
     }
+
+    private BluetoothPbapUtils() {}
 
     private static boolean hasFilter(byte[] filter) {
         return filter != null && filter.length > 0;
@@ -172,7 +178,19 @@ class BluetoothPbapUtils {
                 vType |= VCardConfig.FLAG_REFRAIN_EVENTS_EXPORT;
             }
         }
-        return new VCardComposer(ctx, vType, true);
+
+        if (Flags.increaseContactImageResolution()) {
+            return new VCardComposer(
+                    ctx,
+                    ctx.getContentResolver(),
+                    vType,
+                    null,
+                    true,
+                    new VCardComposer.PhotoOptions(
+                            PHOTO_DIMENSION_LIMIT_IN_PIXELS, PHOTO_FILE_SIZE_LIMIT_IN_BYTES));
+        } else {
+            return new VCardComposer(ctx, vType, true);
+        }
     }
 
     public static synchronized String getProfileName(Context context) {

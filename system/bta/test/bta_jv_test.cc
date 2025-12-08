@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <gtest/gtest.h>
 
 #include <memory>
@@ -25,8 +27,6 @@
 #include "test/common/mock_functions.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_stack_sdp_legacy_api.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 namespace {
 const RawAddress kRawAddress = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});

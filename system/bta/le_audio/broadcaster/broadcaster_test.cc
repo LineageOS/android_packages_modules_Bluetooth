@@ -91,7 +91,8 @@ static base::Callback<void(BT_OCTET8)> generator_cb;
 void btsnd_hcic_ble_rand(base::Callback<void(BT_OCTET8)> cb) { generator_cb = cb; }
 
 std::atomic<int> num_async_tasks;
-bluetooth::common::MessageLoopThread message_loop_thread("test message loop");
+bluetooth::common::MessageLoopThread message_loop_thread(
+        "test message loop", bluetooth::os::Thread::Priority::REAL_TIME);
 bluetooth::common::MessageLoopThread* get_main_thread() { return &message_loop_thread; }
 void invoke_switch_buffer_size_cb(bool /*is_low_latency_buffer_size*/) {}
 
@@ -230,6 +231,7 @@ public:
               (override));
   MOCK_METHOD((void), Stop, (), (override));
   MOCK_METHOD((void), ConfirmStreamingRequest, (), (override));
+  MOCK_METHOD((void), StreamSuspended, (), (override));
   MOCK_METHOD((void), CancelStreamingRequest, (), (override));
   MOCK_METHOD((void), UpdateRemoteDelay, (uint16_t delay), (override));
   MOCK_METHOD((void), UpdateAudioConfigToHal, (const ::bluetooth::le_audio::stream_config&),
@@ -257,6 +259,8 @@ class BroadcasterTest : public Test {
 protected:
   void SetUp() override {
     com::android::bluetooth::flags::provider_->reset_flags();
+    com::android::bluetooth::flags::provider_
+            ->leaudio_use_game_sonification_as_regular_sonification(true);
 
     test::mock::osi_alarm::alarm_free.body = [](alarm_t* alarm) {
       if (alarm) {
@@ -827,14 +831,14 @@ static BasicAudioAnnouncementData prepareAnnouncement(
 }
 
 TEST_F(BroadcasterTest, UpdateMetadataFromAudioTrackMetadata) {
-  // Add Audio Actie State while broadcast created
+  // Add Audio Active State while broadcast created
   LeAudioSourceAudioHalClient::Callbacks* audio_receiver;
   EXPECT_CALL(*mock_audio_source_, Start)
           .WillOnce(DoAll(SaveArg<1>(&audio_receiver), Return(true)))
           .WillRepeatedly(Return(false));
 
   ContentControlIdKeeper::GetInstance()->SetCcid(LeAudioContextType::MEDIA, media_ccid);
-  auto broadcast_id = InstantiateBroadcast();
+  InstantiateBroadcast();
 
   ASSERT_NE(audio_receiver, nullptr);
   audio_receiver->OnAudioResume();
@@ -862,7 +866,7 @@ TEST_F(BroadcasterTest, UpdateMetadataFromAudioTrackMetadata) {
   ON_CALL(*sm, GetBroadcastAnnouncement()).WillByDefault(ReturnRef(announcement));
 
   std::vector<struct playback_track_metadata> multitrack_source_metadata = {
-          {{AUDIO_USAGE_GAME, AUDIO_CONTENT_TYPE_SONIFICATION, 0},
+          {{AUDIO_USAGE_GAME, AUDIO_CONTENT_TYPE_MUSIC, 0},
            {AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, 0},
            {AUDIO_USAGE_VOICE_COMMUNICATION_SIGNALLING, AUDIO_CONTENT_TYPE_SPEECH, 0},
            {AUDIO_USAGE_UNKNOWN, AUDIO_CONTENT_TYPE_UNKNOWN, 0}}};

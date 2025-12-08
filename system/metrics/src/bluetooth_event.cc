@@ -17,8 +17,11 @@
 #include <bluetooth/metrics/os_metrics.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 
+#include "bta/include/bta_ag_api.h"
+#include "bta/include/bta_av_api.h"
 #include "bta/include/bta_hfp_api.h"
 #include "main/shim/helpers.h"
+#include "stack/include/avdt_api.h"
 #include "stack/include/btm_api_types.h"
 
 namespace bluetooth::metrics {
@@ -230,7 +233,7 @@ static State MapHCIStatusToState(tHCI_STATUS status) {
       return State::PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED;
     case tHCI_STATUS::HCI_ERR_DIFF_TRANSACTION_COLLISION:
       return State::DIFF_TRANSACTION_COLLISION;
-    case tHCI_STATUS::HCI_ERR_INSUFFCIENT_SECURITY:
+    case tHCI_STATUS::HCI_ERR_INSUFFICIENT_SECURITY:
       return State::INSUFFICIENT_SECURITY;
     case tHCI_STATUS::HCI_ERR_ROLE_SWITCH_PENDING:
       return State::ROLE_SWITCH_PENDING;
@@ -353,6 +356,96 @@ State MapScoCodecToState(uint16_t codec) {
       return State::CODEC_APTX_SWB_SETTINGS_Q3_MASK;
     default:
       return State::CODEC_UNKNOWN;
+  }
+}
+
+State MapAgOpenStatusToState(tBTA_AG_STATUS status) {
+  switch (status) {
+    case BTA_AG_SUCCESS:
+      return State::SUCCESS;
+    case BTA_AG_FAIL_SDP:
+      return State::SDP_DISCOVERY_FAILED;
+    case BTA_AG_FAIL_RFCOMM:
+      return State::RFCOMM_CONNECTION_FAILED;
+    case BTA_AG_FAIL_RESOURCES:
+      return State::RESOURCES_EXCEEDED;
+    default:
+      return State::FAIL;
+  }
+}
+
+static State MapL2capResultToState(tL2CAP_CONN l2cap_result) {
+  switch (l2cap_result) {
+    case tL2CAP_CONN::L2CAP_CONN_OK:
+      return State::L2CAP_CONN_STATUS_OK;
+    case tL2CAP_CONN::L2CAP_CONN_PENDING:
+      return State::L2CAP_CONN_STATUS_PENDING;
+    case tL2CAP_CONN::L2CAP_CONN_NO_PSM:
+      return State::L2CAP_CONN_STATUS_NO_PSM;
+    case tL2CAP_CONN::L2CAP_CONN_SECURITY_BLOCK:
+      return State::L2CAP_CONN_STATUS_SECURITY_BLOCK;
+    case tL2CAP_CONN::L2CAP_CONN_NO_RESOURCES:
+      return State::L2CAP_CONN_STATUS_NO_RESOURCES;
+    case tL2CAP_CONN::L2CAP_CONN_TIMEOUT:
+      return State::L2CAP_CONN_STATUS_TIMEOUT;
+    case tL2CAP_CONN::L2CAP_CONN_OTHER_ERROR:
+      return State::L2CAP_CONN_STATUS_OTHER_ERROR;
+    case tL2CAP_CONN::L2CAP_CONN_ACL_CONNECTION_FAILED:
+      return State::L2CAP_CONN_STATUS_ACL_CONNECTION_FAILED;
+    case tL2CAP_CONN::L2CAP_CONN_CLIENT_SECURITY_CLEARANCE_FAILED:
+      return State::L2CAP_CONN_STATUS_CLIENT_SECURITY_CLEARANCE_FAILED;
+    case tL2CAP_CONN::L2CAP_CONN_NO_LINK:
+      return State::L2CAP_CONN_STATUS_NO_LINK;
+    case tL2CAP_CONN::L2CAP_CONN_INSUFFICIENT_AUTHENTICATION:
+      return State::L2CAP_CONN_STATUS_INSUFFICIENT_AUTHENTICATION;
+    case tL2CAP_CONN::L2CAP_CONN_INSUFFICIENT_AUTHORIZATION:
+      return State::L2CAP_CONN_STATUS_INSUFFICIENT_AUTHORIZATION;
+    case tL2CAP_CONN::L2CAP_CONN_INSUFFICIENT_ENCRYP_KEY_SIZE:
+      return State::L2CAP_CONN_STATUS_INSUFFICIENT_ENCRYP_KEY_SIZE;
+    case tL2CAP_CONN::L2CAP_CONN_INSUFFICIENT_ENCRYP:
+      return State::L2CAP_CONN_STATUS_INSUFFICIENT_ENCRYP;
+    case tL2CAP_CONN::L2CAP_CONN_INVALID_SOURCE_CID:
+      return State::L2CAP_CONN_STATUS_INVALID_SOURCE_CID;
+    case tL2CAP_CONN::L2CAP_CONN_SOURCE_CID_ALREADY_ALLOCATED:
+      return State::L2CAP_CONN_STATUS_SOURCE_CID_ALREADY_ALLOCATED;
+    case tL2CAP_CONN::L2CAP_CONN_UNACCEPTABLE_PARAMETERS:
+      return State::L2CAP_CONN_STATUS_UNACCEPTABLE_PARAMETERS;
+    case tL2CAP_CONN::L2CAP_CONN_INVALID_PARAMETERS:
+      return State::L2CAP_CONN_STATUS_INVALID_PARAMETERS;
+    default:
+      return State::L2CAP_CONN_STATUS_UNKNOWN_ERROR;
+  }
+}
+
+static State MapBtaAvResultToState(uint8_t result) {
+  switch (result) {
+    case BTA_AV_SUCCESS:
+      return State::BTA_AV_STATUS_SUCCESS;
+    case BTA_AV_FAIL:
+      return State::BTA_AV_STATUS_FAIL;
+    case BTA_AV_FAIL_SDP:
+      return State::BTA_AV_STATUS_FAIL_SDP;
+    case BTA_AV_FAIL_STREAM:
+      return State::BTA_AV_STATUS_FAIL_STREAM;
+    case BTA_AV_FAIL_RESOURCES:
+      return State::BTA_AV_STATUS_FAIL_RESOURCES;
+    case BTA_AV_FAIL_ROLE:
+      return State::BTA_AV_STATUS_FAIL_ROLE;
+    case BTA_AV_FAIL_GET_CAP:
+      return State::BTA_AV_STATUS_FAIL_GET_CAP;
+    default:
+      return State::BTA_AV_STATUS_FAIL;
+  }
+}
+
+static State MapAdditionalAvdtpErrorToState(uint16_t err_code) {
+  switch (err_code) {
+    case AVDT_ERR_CONNECT:
+      return State::AVDT_STATUS_ERR_CONNECT;
+    case AVDT_ERR_TIMEOUT:
+      return State::AVDT_STATUS_ERR_TIMEOUT;
+    default:
+      return State::AVDTP_STATUS_UNKNOWN_ERROR;
   }
 }
 
@@ -493,6 +586,69 @@ void LogMetricHfpSuspendStream(hci::Address address) {
 
 void LogMetricHfpStreamStarted(hci::Address address) {
   LogBluetoothEvent(address, EventType::SCO_SESSION, State::AUDIO_PROVIDER_STREAM_STARTED);
+}
+
+void LogMetricAgOpenStatus(hci::Address address, tBTA_AG_STATUS status) {
+  LogBluetoothEvent(address, EventType::HFP_SESSION,
+                    bluetooth::metrics::MapAgOpenStatusToState(status));
+}
+
+void LogAvdtpL2capEvent(hci::Address address, EventType event, tL2CAP_CONN l2cap_result) {
+  LogBluetoothEvent(address, event, bluetooth::metrics::MapL2capResultToState(l2cap_result));
+}
+
+void LogAvdtpL2capErrorEvent(hci::Address address, tL2CAP_CONN l2cap_result) {
+  LogBluetoothEvent(address, EventType::AVDTP_ON_L2CAP_ERROR,
+                    bluetooth::metrics::MapL2capResultToState(l2cap_result));
+}
+
+void LogAvdtpDiscFailEvent(hci::Address address) {
+  LogBluetoothEvent(address, EventType::AVDTP_DISC_FAIL_EVT, State::A2DP_EVENT_STATUS_FAILURE);
+}
+
+void LogAvdtpGetCapFailEvent(hci::Address address) {
+  LogBluetoothEvent(address, EventType::AVDTP_GETCAP_FAIL_EVT, State::A2DP_EVENT_STATUS_FAILURE);
+}
+
+void LogAvdtpSignalingTimeoutEvent(hci::Address address, uint16_t error_code) {
+  LogBluetoothEvent(address, EventType::AVDTP_SIGNALING_TIMEOUT,
+                    bluetooth::metrics::MapAdditionalAvdtpErrorToState(error_code));
+}
+
+void LogAvdtpOpenRejectedEvent(hci::Address address) {
+  LogBluetoothEvent(address, EventType::AVDTP_OPEN_REJECT_EVT, State::A2DP_EVENT_STATUS_FAILURE);
+}
+
+void LogAvdtpOpenFailEvent(hci::Address address) {
+  LogBluetoothEvent(address, EventType::AVDTP_OPEN_FAIL_EVT, State::A2DP_EVENT_STATUS_FAILURE);
+}
+
+void LogAvdtpSetConfigRejectedEvent(hci::Address address) {
+  LogBluetoothEvent(address, EventType::AVDTP_SET_CONFIG_REJECT_EVT,
+                    State::A2DP_EVENT_STATUS_FAILURE);
+}
+
+void LogAvdtpStartRejectEvent(hci::Address address) {
+  LogBluetoothEvent(address, EventType::AVDTP_START_REJECT_EVT, State::A2DP_EVENT_STATUS_FAILURE);
+}
+
+void LogAvdtpSuspendRejectEvent(hci::Address address) {
+  LogBluetoothEvent(address, EventType::AVDTP_SUSPEND_REJECT_EVT, State::A2DP_EVENT_STATUS_FAILURE);
+}
+
+void LogAvdtpAbortResponseSendEvent(hci::Address address) {
+  LogBluetoothEvent(address, EventType::AVDTP_ABORT_RESPONSE_SEND_EVT,
+                    State::A2DP_EVENT_STATUS_SUCCESS);
+}
+
+void LogAvdtpCloseResponseSendEvent(hci::Address address) {
+  LogBluetoothEvent(address, EventType::AVDTP_CLOSE_RESPONSE_SEND_EVT,
+                    State::A2DP_EVENT_STATUS_SUCCESS);
+}
+
+void LogA2dpBtifAvStateChangeEvent(hci::Address address, uint8_t result) {
+  LogBluetoothEvent(address, EventType::A2DP_BTIF_AV_STATE_CHANGE_EVT,
+                    bluetooth::metrics::MapBtaAvResultToState(result));
 }
 
 }  // namespace bluetooth::metrics

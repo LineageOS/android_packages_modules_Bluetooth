@@ -29,8 +29,12 @@
 #include <vector>
 
 #include "bta/ag/bta_ag_int.h"
+#include "hfp_client_interface_aidl.h"
 
 const uint8_t kFetchAudioProviderRetryNumber = 3;
+
+using bluetooth::audio::aidl::hfp::HfpDecodingTransport;
+using bluetooth::audio::aidl::hfp::HfpEncodingTransport;
 
 namespace bluetooth {
 namespace audio {
@@ -182,7 +186,7 @@ void BluetoothAudioClientInterface::FetchAudioProvider() {
   }
 
   log::info("IBluetoothAudioProvidersFactory::openProvider() returned {}{}",
-            std::format_ptr(provider_.get()), (provider_->isRemote() ? " (remote)" : " (local)"));
+            std::format_ptr(provider_.get()), provider_->isRemote() ? " (remote)" : " (local)");
 }
 
 BluetoothAudioSinkClientInterface::BluetoothAudioSinkClientInterface(
@@ -526,6 +530,16 @@ size_t BluetoothAudioSinkClientInterface::ReadAudioData(uint8_t* p_buf, uint32_t
 void BluetoothAudioClientInterface::RenewAudioProviderAndSession() {
   // NOTE: must be invoked on the same thread where this
   // BluetoothAudioClientInterface is running
+  if (transport_->GetSessionType() == SessionType::HFP_SOFTWARE_DECODING_DATAPATH) {
+    log::info("Restart the pending command for HFP_SOFTWARE_DECODING_DATAPATH");
+    static_cast<HfpDecodingTransport*>(transport_)->ResetPendingCmd();
+  } else if (transport_->GetSessionType() == SessionType::HFP_SOFTWARE_ENCODING_DATAPATH) {
+    log::info("Restart the pending command for HFP_SOFTWARE_ENCODING_DATAPATH");
+    static_cast<HfpEncodingTransport*>(transport_)->ResetPendingCmd();
+  } else if (transport_->GetSessionType() == SessionType::HFP_HARDWARE_OFFLOAD_DATAPATH) {
+    log::info("Restart the pending command for HFP_HARDWARE_OFFLOAD_DATAPATH");
+    static_cast<HfpEncodingTransport*>(transport_)->ResetPendingCmd();
+  }
   FetchAudioProvider();
 
   if (session_started_) {

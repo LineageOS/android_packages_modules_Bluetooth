@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
+#include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <string>
 #include <tuple>
 #include <vector>
 
@@ -24,10 +28,18 @@
 #include "bta/include/bta_le_audio_api.h"
 #include "hci/controller_mock.h"
 #include "stack/btm/btm_int_types.h"
-#include "stack/btm/btm_sco.h"
 #include "stack/btm/internal/btm_api.h"
+#include "test/mock/mock_audio_hal_interface_hfp_client_interface.h"
 #include "test/mock/mock_device_esco_parameters.h"
 #include "test/mock/mock_main_shim_entry.h"
+#include "test/mock/mock_osi_properties.h"
+#include "test/mock/mock_stack_btm_interface.h"
+
+using ::testing::NiceMock;
+using ::testing::Return;
+using ::testing::Test;
+using ::testing::TestWithParam;
+using ::testing::ValuesIn;
 
 tBTM_CB btm_cb;
 LeAudioClient* LeAudioClient::Get() { return nullptr; }
@@ -36,7 +48,7 @@ bool LeAudioClient::IsLeAudioClientInStreaming() { return false; }
 const RawAddress kRawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
 
 class BtaAgScoParameterSelectionTest
-    : public ::testing::TestWithParam<std::tuple<tBTA_AG_FEAT, tBTA_AG_PEER_FEAT, bool>> {
+    : public TestWithParam<std::tuple<tBTA_AG_FEAT, tBTA_AG_PEER_FEAT, bool>> {
 protected:
   void SetUp() override {
     test::mock::device_esco_parameters::esco_parameters_for_codec.body =
@@ -45,11 +57,11 @@ protected:
               return enh_esco_params_t{};
             };
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockController>();
+            std::make_unique<NiceMock<bluetooth::hci::testing::MockController>>();
   }
   void TearDown() override {
-    test::mock::device_esco_parameters::esco_parameters_for_codec = {};
     bluetooth::hci::testing::mock_controller_.reset();
+    test::mock::device_esco_parameters::esco_parameters_for_codec = {};
   }
   esco_codec_t codec;
 };
@@ -73,6 +85,9 @@ TEST_P(BtaAgScoParameterSelectionTest, create_sco_cvsd) {
   } else {
     ASSERT_EQ(this->codec, ESCO_CODEC_CVSD_S3);
   }
+  bta_clear_active_device();
+
+  ASSERT_EQ(RawAddress::kEmpty, bta_ag_get_active_device());
 }
 
 TEST_P(BtaAgScoParameterSelectionTest, create_pending_sco_cvsd) {
@@ -100,6 +115,9 @@ TEST_P(BtaAgScoParameterSelectionTest, create_pending_sco_cvsd) {
   } else {
     ASSERT_EQ(this->codec, ESCO_CODEC_CVSD_S3);
   }
+  bta_clear_active_device();
+
+  ASSERT_EQ(RawAddress::kEmpty, bta_ag_get_active_device());
 }
 
 static std::vector<std::tuple<tBTA_AG_FEAT, tBTA_AG_PEER_FEAT, bool>>
@@ -120,4 +138,263 @@ BtaAgScoParameterSelectionTestParameters() {
 }
 
 INSTANTIATE_TEST_SUITE_P(BtaAgScoParameterSelectionTests, BtaAgScoParameterSelectionTest,
-                         ::testing::ValuesIn(BtaAgScoParameterSelectionTestParameters()));
+                         ValuesIn(BtaAgScoParameterSelectionTestParameters()));
+
+using bluetooth::audio::hfp::testing::mock_hfp_client_interface::mock_decode_;
+using bluetooth::audio::hfp::testing::mock_hfp_client_interface::mock_encode_;
+using bluetooth::audio::hfp::testing::mock_hfp_client_interface::mock_offload_;
+using bluetooth::audio::hfp::testing::mock_hfp_client_interface::MockDecode;
+using bluetooth::audio::hfp::testing::mock_hfp_client_interface::MockEncode;
+using bluetooth::audio::hfp::testing::mock_hfp_client_interface::MockOffload;
+const std::string kPropHfpSoftwarePathEnabled = "bluetooth.hfp.software_datapath.enabled";
+
+enh_esco_params_t sco_managed_by_audio_params{};
+
+class BtaAgScoupdateCodecParametersFromProviderInfoTest : public Test {
+protected:
+  void SetUp() override {
+    bluetooth::hci::testing::mock_controller_ =
+            std::make_unique<bluetooth::hci::testing::MockController>();
+    mock_decode_ = std::make_unique<MockDecode>();
+    mock_encode_ = std::make_unique<MockEncode>();
+    mock_offload_ = std::make_unique<MockOffload>();
+
+    test::mock::osi_properties::osi_property_get_bool.body = [this](const char* key,
+                                                                    bool default_value) {
+      return key == kPropHfpSoftwarePathEnabled ? prop_hfp_software_path_enabled_return_
+                                                : default_value;
+    };
+    com::android::bluetooth::flags::provider_->sco_managed_by_audio_remove_hfp_hal(true);
+
+    sco_managed_by_audio_params = {};
+    mock_btm_client_interface.sco.BTM_SetEScoMode = [](enh_esco_params_t* p_params) -> tBTM_STATUS {
+      sco_managed_by_audio_params = *p_params;
+      return tBTM_STATUS::BTM_SUCCESS;
+    };
+  }
+  void TearDown() override {
+    // Disable sco_managed_by_audio as the rest of the unittests expect this.
+    bta_ag_set_is_sco_managed_by_audio(false);
+    bta_ag_release_hfp_client_interface();
+
+    bluetooth::hci::testing::mock_controller_.reset();
+    mock_decode_.reset();
+    mock_encode_.reset();
+    mock_offload_.reset();
+
+    test::mock::osi_properties::osi_property_get_bool = {};
+    com::android::bluetooth::flags::provider_->reset_flags();
+
+    reset_mock_btm_client_interface();
+  }
+  bool prop_hfp_software_path_enabled_return_;
+};
+
+TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, msbc_offload_path) {
+  EXPECT_CALL(*mock_offload_, GetHfpScoConfig())
+          .WillOnce(Return(std::unordered_map<tBTA_AG_UUID_CODEC, ::hfp::sco_config>{
+                  {tBTA_AG_UUID_CODEC::UUID_CODEC_MSBC,
+                   {
+                           .inputDataPath = ESCO_DATA_PATH_PCM,
+                           .outputDataPath = ESCO_DATA_PATH_PCM,
+                           .useControllerCodec = true,
+                   }},
+          }));
+
+  EXPECT_CALL(*mock_decode_, StartSession()).Times(0);
+  EXPECT_CALL(*mock_encode_, StartSession()).Times(0);
+  EXPECT_CALL(*mock_offload_, StartSession()).Times(1);
+
+  EXPECT_CALL(*mock_decode_, StopSession()).Times(0);
+  EXPECT_CALL(*mock_encode_, StopSession()).Times(0);
+  EXPECT_CALL(*mock_offload_, StopSession()).Times(1);
+
+  EXPECT_CALL(*bluetooth::hci::testing::mock_controller_,
+              IsSupported(bluetooth::hci::OpCode::ENHANCED_SETUP_SYNCHRONOUS_CONNECTION))
+          .WillOnce(Return(true));
+
+  prop_hfp_software_path_enabled_return_ = false;
+  bta_ag_set_is_sco_managed_by_audio(true);  // This calls bta_ag_init_hfp_client_interface
+  bta_ag_api_set_active_device(kRawAddress);
+  tBTA_AG_SCB scb{
+          .peer_addr = kRawAddress,
+          .features = BTA_AG_FEAT_ESCO_S4,
+          .peer_features = BTA_AG_FEAT_ESCO_S4,
+          .sco_idx = BTM_INVALID_SCO_INDEX,
+          .sco_codec = BTM_SCO_CODEC_MSBC,
+          .inuse_codec = tBTA_AG_UUID_CODEC::UUID_CODEC_NONE,
+  };
+  bta_ag_create_sco(&scb, /* is_local = */ true);
+  bta_clear_active_device();
+
+  ASSERT_TRUE(bta_ag_get_wbs_supported());
+  ASSERT_EQ(scb.inuse_codec, tBTA_AG_UUID_CODEC::UUID_CODEC_MSBC);
+  // esco_parameters_for_codec is mocked so not many params will be updated.
+  ASSERT_EQ(sco_managed_by_audio_params.input_data_path, ESCO_DATA_PATH_PCM);
+  ASSERT_EQ(sco_managed_by_audio_params.output_data_path, ESCO_DATA_PATH_PCM);
+}
+
+TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, lc3_offload_path) {
+  EXPECT_CALL(*mock_offload_, GetHfpScoConfig())
+          .WillOnce(Return(std::unordered_map<tBTA_AG_UUID_CODEC, ::hfp::sco_config>{
+                  {tBTA_AG_UUID_CODEC::UUID_CODEC_LC3,
+                   {
+                           .inputDataPath = ESCO_DATA_PATH_PCM,
+                           .outputDataPath = ESCO_DATA_PATH_PCM,
+                           .useControllerCodec = true,
+                   }},
+          }));
+
+  EXPECT_CALL(*mock_decode_, StartSession()).Times(0);
+  EXPECT_CALL(*mock_encode_, StartSession()).Times(0);
+  EXPECT_CALL(*mock_offload_, StartSession()).Times(1);
+
+  EXPECT_CALL(*mock_decode_, StopSession()).Times(0);
+  EXPECT_CALL(*mock_encode_, StopSession()).Times(0);
+  EXPECT_CALL(*mock_offload_, StopSession()).Times(1);
+
+  EXPECT_CALL(*bluetooth::hci::testing::mock_controller_,
+              IsSupported(bluetooth::hci::OpCode::ENHANCED_SETUP_SYNCHRONOUS_CONNECTION))
+          .WillOnce(Return(true));
+
+  prop_hfp_software_path_enabled_return_ = false;
+  bta_ag_set_is_sco_managed_by_audio(true);  // This calls bta_ag_init_hfp_client_interface
+  bta_ag_api_set_active_device(kRawAddress);
+  tBTA_AG_SCB scb{
+          .peer_addr = kRawAddress,
+          .features = BTA_AG_FEAT_ESCO_S4,
+          .peer_features = BTA_AG_FEAT_ESCO_S4,
+          .sco_idx = BTM_INVALID_SCO_INDEX,
+          .sco_codec = BTM_SCO_CODEC_LC3,
+          .inuse_codec = tBTA_AG_UUID_CODEC::UUID_CODEC_NONE,
+  };
+  bta_ag_create_sco(&scb, /* is_local = */ true);
+  bta_clear_active_device();
+
+  ASSERT_TRUE(bta_ag_get_swb_supported());
+  ASSERT_EQ(scb.inuse_codec, tBTA_AG_UUID_CODEC::UUID_CODEC_LC3);
+  // esco_parameters_for_codec is mocked so not many params will be updated.
+  ASSERT_EQ(sco_managed_by_audio_params.input_data_path, ESCO_DATA_PATH_PCM);
+  ASSERT_EQ(sco_managed_by_audio_params.output_data_path, ESCO_DATA_PATH_PCM);
+}
+
+TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, cvsd_software_path) {
+  EXPECT_CALL(*mock_offload_, GetHfpScoConfig()).Times(0);
+
+  EXPECT_CALL(*mock_decode_, StartSession()).Times(1);
+  EXPECT_CALL(*mock_encode_, StartSession()).Times(1);
+  EXPECT_CALL(*mock_offload_, StartSession()).Times(0);
+
+  EXPECT_CALL(*mock_decode_, StopSession()).Times(1);
+  EXPECT_CALL(*mock_encode_, StopSession()).Times(1);
+  EXPECT_CALL(*mock_offload_, StopSession()).Times(0);
+
+  EXPECT_CALL(*bluetooth::hci::testing::mock_controller_,
+              IsSupported(bluetooth::hci::OpCode::ENHANCED_SETUP_SYNCHRONOUS_CONNECTION))
+          .WillOnce(Return(true));
+
+  prop_hfp_software_path_enabled_return_ = true;
+  bta_ag_set_is_sco_managed_by_audio(true);  // This calls bta_ag_init_hfp_client_interface
+  bta_ag_api_set_active_device(kRawAddress);
+  tBTA_AG_SCB scb{
+          .peer_addr = kRawAddress,
+          .features = BTA_AG_FEAT_ESCO_S4,
+          .peer_features = BTA_AG_FEAT_ESCO_S4,
+          .sco_idx = BTM_INVALID_SCO_INDEX,
+          .sco_codec = BTM_SCO_CODEC_CVSD,
+          .inuse_codec = tBTA_AG_UUID_CODEC::UUID_CODEC_NONE,
+  };
+  bta_ag_create_sco(&scb, /* is_local = */ true);
+  bta_clear_active_device();
+
+  ASSERT_EQ(scb.inuse_codec, tBTA_AG_UUID_CODEC::UUID_CODEC_CVSD);
+  // esco_parameters_for_codec is mocked so not many params will be updated.
+  ASSERT_EQ(sco_managed_by_audio_params.input_data_path, ESCO_DATA_PATH_HCI);
+  ASSERT_EQ(sco_managed_by_audio_params.output_data_path, ESCO_DATA_PATH_HCI);
+}
+
+TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, msbc_software_path) {
+  EXPECT_CALL(*mock_offload_, GetHfpScoConfig()).Times(0);
+
+  EXPECT_CALL(*mock_decode_, StartSession()).Times(1);
+  EXPECT_CALL(*mock_encode_, StartSession()).Times(1);
+  EXPECT_CALL(*mock_offload_, StartSession()).Times(0);
+
+  EXPECT_CALL(*mock_decode_, StopSession()).Times(1);
+  EXPECT_CALL(*mock_encode_, StopSession()).Times(1);
+  EXPECT_CALL(*mock_offload_, StopSession()).Times(0);
+
+  EXPECT_CALL(*bluetooth::hci::testing::mock_controller_,
+              IsSupported(bluetooth::hci::OpCode::ENHANCED_SETUP_SYNCHRONOUS_CONNECTION))
+          .WillOnce(Return(true));
+
+  prop_hfp_software_path_enabled_return_ = true;
+  bta_ag_set_is_sco_managed_by_audio(true);  // This calls bta_ag_init_hfp_client_interface
+  bta_ag_api_set_active_device(kRawAddress);
+  tBTA_AG_SCB scb{
+          .peer_addr = kRawAddress,
+          .features = BTA_AG_FEAT_ESCO_S4,
+          .peer_features = BTA_AG_FEAT_ESCO_S4,
+          .sco_idx = BTM_INVALID_SCO_INDEX,
+          .sco_codec = BTM_SCO_CODEC_MSBC,
+          .inuse_codec = tBTA_AG_UUID_CODEC::UUID_CODEC_NONE,
+  };
+  bta_ag_create_sco(&scb, /* is_local = */ true);
+  bta_clear_active_device();
+
+  ASSERT_TRUE(bta_ag_get_wbs_supported());
+  ASSERT_EQ(scb.inuse_codec, tBTA_AG_UUID_CODEC::UUID_CODEC_MSBC);
+  ASSERT_EQ(sco_managed_by_audio_params.input_data_path, ESCO_DATA_PATH_HCI);
+  ASSERT_EQ(sco_managed_by_audio_params.output_data_path, ESCO_DATA_PATH_HCI);
+  ASSERT_EQ(sco_managed_by_audio_params.input_coding_format.coding_format,
+            ESCO_CODING_FORMAT_TRANSPNT);
+  ASSERT_EQ(sco_managed_by_audio_params.output_coding_format.coding_format,
+            ESCO_CODING_FORMAT_TRANSPNT);
+  ASSERT_EQ(sco_managed_by_audio_params.transmit_coding_format.coding_format,
+            ESCO_CODING_FORMAT_TRANSPNT);
+  ASSERT_EQ(sco_managed_by_audio_params.receive_coding_format.coding_format,
+            ESCO_CODING_FORMAT_TRANSPNT);
+}
+
+TEST_F(BtaAgScoupdateCodecParametersFromProviderInfoTest, lc3_software_path) {
+  EXPECT_CALL(*mock_offload_, GetHfpScoConfig()).Times(0);
+
+  EXPECT_CALL(*mock_decode_, StartSession()).Times(1);
+  EXPECT_CALL(*mock_encode_, StartSession()).Times(1);
+  EXPECT_CALL(*mock_offload_, StartSession()).Times(0);
+
+  EXPECT_CALL(*mock_decode_, StopSession()).Times(1);
+  EXPECT_CALL(*mock_encode_, StopSession()).Times(1);
+  EXPECT_CALL(*mock_offload_, StopSession()).Times(0);
+
+  EXPECT_CALL(*bluetooth::hci::testing::mock_controller_,
+              IsSupported(bluetooth::hci::OpCode::ENHANCED_SETUP_SYNCHRONOUS_CONNECTION))
+          .WillOnce(Return(true));
+
+  prop_hfp_software_path_enabled_return_ = true;
+  bta_ag_set_is_sco_managed_by_audio(true);  // This calls bta_ag_init_hfp_client_interface
+  bta_ag_api_set_active_device(kRawAddress);
+  tBTA_AG_SCB scb{
+          .peer_addr = kRawAddress,
+          .features = BTA_AG_FEAT_ESCO_S4,
+          .peer_features = BTA_AG_FEAT_ESCO_S4,
+          .sco_idx = BTM_INVALID_SCO_INDEX,
+          .sco_codec = BTM_SCO_CODEC_LC3,
+          .inuse_codec = tBTA_AG_UUID_CODEC::UUID_CODEC_NONE,
+  };
+  bta_ag_create_sco(&scb, /* is_local = */ true);
+  bta_clear_active_device();
+
+  ASSERT_TRUE(bta_ag_get_swb_supported());
+  ASSERT_EQ(scb.inuse_codec, tBTA_AG_UUID_CODEC::UUID_CODEC_LC3);
+  ASSERT_EQ(sco_managed_by_audio_params.input_data_path, ESCO_DATA_PATH_HCI);
+  ASSERT_EQ(sco_managed_by_audio_params.output_data_path, ESCO_DATA_PATH_HCI);
+  ASSERT_EQ(sco_managed_by_audio_params.input_coding_format.coding_format,
+            ESCO_CODING_FORMAT_TRANSPNT);
+  ASSERT_EQ(sco_managed_by_audio_params.output_coding_format.coding_format,
+            ESCO_CODING_FORMAT_TRANSPNT);
+  ASSERT_EQ(sco_managed_by_audio_params.transmit_coding_format.coding_format,
+            ESCO_CODING_FORMAT_TRANSPNT);
+  ASSERT_EQ(sco_managed_by_audio_params.receive_coding_format.coding_format,
+            ESCO_CODING_FORMAT_TRANSPNT);
+}

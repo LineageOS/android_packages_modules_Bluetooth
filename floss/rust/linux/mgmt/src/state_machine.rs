@@ -9,6 +9,7 @@ use libc;
 use log::{debug, error, info, warn};
 use nix::sys::signal::{self, Signal};
 use nix::unistd::Pid;
+use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap};
 use std::convert::TryFrom;
 use std::fmt::{Display, Formatter};
@@ -66,7 +67,7 @@ pub const INVALID_HCI_INDEX: i32 = -1;
 /// Hci index that doesn't necessarily map to the physical hciN value. Make sure
 /// that |VirtualHciIndex| and |RealHciIndex| don't easily convert to each other
 /// to protect from logical errors.
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
 pub struct VirtualHciIndex(pub i32);
 impl VirtualHciIndex {
     pub(crate) fn to_i32(self) -> i32 {

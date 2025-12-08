@@ -23,14 +23,14 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/hci_role.h>
 
 #include <cstdint>
 
 #include "bta/sys/bta_sys.h"
 #include "bta/sys/bta_sys_int.h"
 #include "stack/include/btm_client_interface.h"
-#include "types/hci_role.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 /*******************************************************************************

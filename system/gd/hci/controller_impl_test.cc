@@ -52,7 +52,6 @@ constexpr uint64_t kRandomNumber = 0x123456789abcdef0;
 /*sbc_supported= 1, aac_supported= 1, aptx_supported= 0, aptx_hd_supported= 0, ldac_supported= 1 */
 constexpr uint32_t kDynamicAudioBufferSupport = 0x13;
 uint16_t feature_spec_version = 55;
-constexpr char title[] = "hci_controller_test";
 
 }  // namespace
 
@@ -130,11 +129,11 @@ public:
       case (OpCode::READ_LOCAL_EXTENDED_FEATURES): {
         ReadLocalExtendedFeaturesView read_command = ReadLocalExtendedFeaturesView::Create(command);
         ASSERT_TRUE(read_command.IsValid());
-        uint8_t page_bumber = read_command.GetPageNumber();
+        uint8_t page_number = read_command.GetPageNumber();
         uint64_t lmp_features = 0x012345678abcdef;
-        lmp_features += page_bumber;
+        lmp_features += page_number;
         event_builder = ReadLocalExtendedFeaturesCompleteBuilder::Create(
-                num_packets, ErrorCode::SUCCESS, page_bumber, 0x02, lmp_features);
+                num_packets, ErrorCode::SUCCESS, page_number, 0x02, lmp_features);
       } break;
       case (OpCode::READ_BUFFER_SIZE): {
         event_builder = ReadBufferSizeCompleteBuilder::Create(
@@ -301,6 +300,9 @@ protected:
     client_handler_->Clear();
     client_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
 
+    controller_.reset();
+    test_hci_layer_.reset();
+
     delete client_handler_;
     delete thread_;
   }
@@ -386,6 +388,31 @@ protected:
   }
 };
 
+class Controller105Test : public ControllerTest {
+protected:
+  void SetUp() override {
+    feature_spec_version_ = 0x100 + 0x05;
+    BaseVendorCapabilities base_vendor_capabilities;
+    base_vendor_capabilities.max_advt_instances_ = 0x10;
+    base_vendor_capabilities.offloaded_resolution_of_private_address_ = 0x01;
+    base_vendor_capabilities.total_scan_results_storage_ = 0x2800;
+    base_vendor_capabilities.max_irk_list_sz_ = 0x20;
+    base_vendor_capabilities.filtering_support_ = 0x01;
+    base_vendor_capabilities.max_filter_ = 0x10;
+    base_vendor_capabilities.activity_energy_info_support_ = 0x01;
+    vendor_capabilities_ = LeGetVendorCapabilitiesComplete105Builder::Create(
+            1, ErrorCode::SUCCESS, base_vendor_capabilities, feature_spec_version_, 0x102,
+            /*extended_scan_support=*/1,
+            /*debug_logging_supported=*/1,
+            /*le_address_generation_offloading_support=*/0,
+            /*a2dp_source_offload_capability_mask=*/0x4,
+            /*bluetooth_quality_report_support=*/1, kDynamicAudioBufferSupport,
+            /*a2dp_offload_v2_support=*/1,
+            /*sniff_offload_support=*/1, std::make_unique<RawBuilder>());
+    ControllerTest::SetUp();
+  }
+};
+
 TEST_F(ControllerTest, startup_teardown) {}
 
 TEST_F(ControllerTest, read_controller_info) {
@@ -409,7 +436,7 @@ TEST_F(ControllerTest, read_controller_info) {
   ASSERT_EQ(0x56, controller_->GetLeMaximumDataLength().supported_max_rx_octets_);
   ASSERT_EQ(0x78, controller_->GetLeMaximumDataLength().supported_max_rx_time_);
   ASSERT_EQ(0x0672, controller_->GetLeMaximumAdvertisingDataLength());
-  ASSERT_EQ(0xF0, controller_->GetLeNumberOfSupportedAdverisingSets());
+  ASSERT_EQ(0xF0, controller_->GetLeNumberOfSupportedAdvertisingSets());
   ASSERT_GT(controller_->GetLocalSupportedBrEdrCodecIds().size(), 0u);
 }
 
@@ -570,6 +597,28 @@ TEST_F(Controller104Test, feature_spec_version_104_test) {
   ASSERT_TRUE(controller_->IsSupported(OpCode::CONTROLLER_A2DP_OPCODE));
   ASSERT_TRUE(controller_->IsSupported(OpCode::DYNAMIC_AUDIO_BUFFER));
   ASSERT_EQ(controller_->GetDabSupportedCodecs(), kDynamicAudioBufferSupport);
+  for (size_t bit = 0; bit < 32; bit++) {
+    if (kDynamicAudioBufferSupport & (1u << bit)) {
+      ASSERT_GT(controller_->GetDabCodecCapabilities()[bit].maximum_time_ms_, 0) << " bit " << bit;
+    } else {
+      ASSERT_EQ(controller_->GetDabCodecCapabilities()[bit].maximum_time_ms_, 0);
+      ASSERT_EQ(controller_->GetDabCodecCapabilities()[bit].minimum_time_ms_, 0);
+      ASSERT_EQ(controller_->GetDabCodecCapabilities()[bit].default_time_ms_, 0);
+    }
+  }
+}
+
+TEST_F(Controller105Test, feature_spec_version_105_test) {
+  ASSERT_EQ(controller_->GetVendorCapabilities().version_supported_, 0x100 + 5);
+  ASSERT_TRUE(controller_->GetVendorCapabilities().a2dp_offload_v2_support_);
+  ASSERT_TRUE(controller_->IsSupported(OpCode::LE_MULTI_ADVT));
+  ASSERT_TRUE(controller_->IsSupported(OpCode::CONTROLLER_DEBUG_INFO));
+  ASSERT_TRUE(controller_->IsSupported(OpCode::CONTROLLER_A2DP_OPCODE));
+  ASSERT_TRUE(controller_->IsSupported(OpCode::DYNAMIC_AUDIO_BUFFER));
+  ASSERT_TRUE(controller_->IsSupported(OpCode::WRITE_SNIFF_OFFLOAD_ENABLE));
+  ASSERT_TRUE(controller_->IsSupported(OpCode::WRITE_SNIFF_OFFLOAD_PARAMETERS));
+  ASSERT_EQ(controller_->GetDabSupportedCodecs(), kDynamicAudioBufferSupport);
+
   for (size_t bit = 0; bit < 32; bit++) {
     if (kDynamicAudioBufferSupport & (1u << bit)) {
       ASSERT_GT(controller_->GetDabCodecCapabilities()[bit].maximum_time_ms_, 0) << " bit " << bit;

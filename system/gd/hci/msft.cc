@@ -65,7 +65,13 @@ struct MsftExtensionManager::impl {
             handler_->BindOnceOn(this, &impl::on_msft_read_supported_features_complete));
   }
 
-  ~impl() {}
+  ~impl() {
+    if (!com_android_bluetooth_flags_same_handler_for_all_modules()) {
+      handler_->Clear();
+      handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
+      delete handler_;
+    }
+  }
 
   void handle_rssi_event(MsftRssiEventPayloadView /* view */) {
     log::warn("The Microsoft MSFT_RSSI_EVENT is not supported yet.");
@@ -123,7 +129,7 @@ struct MsftExtensionManager::impl {
       return;
     }
 
-    if (com::android::bluetooth::flags::msft_addr_tracking_quirk()) {
+    if (com_android_bluetooth_flags_msft_addr_tracking_quirk()) {
       if (monitor.condition_type != MSFT_CONDITION_TYPE_ADDRESS &&
           monitor.condition_type != MSFT_CONDITION_TYPE_PATTERNS) {
         log::warn("Disallowed as MSFT condition type {} is not supported.", monitor.condition_type);
@@ -305,9 +311,12 @@ MsftExtensionManager::MsftExtensionManager(os::Handler* handler, hal::HciHal* ha
                                            hci::HciInterface* hci_layer) {
   log::info("MsftExtensionManager()");
   pimpl_ = std::make_unique<impl>(handler, hal, hci_layer);
+  log::verbose("module started !!");
 }
 
-MsftExtensionManager::~MsftExtensionManager() = default;
+MsftExtensionManager::~MsftExtensionManager() {
+  log::verbose("module stopped !!");
+};
 
 bool MsftExtensionManager::SupportsMsftExtensions() { return pimpl_->supports_msft_extensions(); }
 

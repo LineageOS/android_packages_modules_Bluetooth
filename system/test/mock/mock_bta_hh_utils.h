@@ -25,8 +25,9 @@
 #include <functional>
 
 // Original included files, if any
+#include <bluetooth/types/address.h>
+
 #include "bta/hh/bta_hh_int.h"
-#include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
 

@@ -18,7 +18,6 @@ package com.android.bluetooth.a2dpsink;
 
 import static java.util.Objects.requireNonNull;
 
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
@@ -30,7 +29,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.bluetooth.R;
-import com.android.bluetooth.avrcpcontroller.AvrcpControllerService;
+import com.android.bluetooth.btservice.AdapterService;
 
 /**
  * Bluetooth A2DP SINK Streaming Handler.
@@ -73,7 +72,7 @@ public class A2dpSinkStreamHandler extends Handler {
     private static final int STATE_FOCUS_GRANTED = 1;
 
     // Private variables.
-    private final Context mContext;
+    private final AdapterService mAdapterService;
     private final A2dpSinkNativeInterface mNativeInterface;
     private final AudioManager mAudioManager;
 
@@ -94,20 +93,17 @@ public class A2dpSinkStreamHandler extends Handler {
 
     // Focus changes when we are currently holding focus.
     private final OnAudioFocusChangeListener mAudioFocusListener =
-            new OnAudioFocusChangeListener() {
-                @Override
-                public void onAudioFocusChange(int focusChange) {
-                    Log.d(TAG, "onAudioFocusChangeListener(focusChange= " + focusChange + ")");
-                    A2dpSinkStreamHandler.this
-                            .obtainMessage(AUDIO_FOCUS_CHANGE, focusChange)
-                            .sendToTarget();
-                }
+            focusChange -> {
+                Log.d(TAG, "onAudioFocusChangeListener(focusChange= " + focusChange + ")");
+                A2dpSinkStreamHandler.this
+                        .obtainMessage(AUDIO_FOCUS_CHANGE, focusChange)
+                        .sendToTarget();
             };
 
-    public A2dpSinkStreamHandler(Context ctx, A2dpSinkNativeInterface nativeInterface) {
-        mContext = requireNonNull(ctx);
+    A2dpSinkStreamHandler(AdapterService adapterService, A2dpSinkNativeInterface nativeInterface) {
+        mAdapterService = requireNonNull(adapterService);
         mNativeInterface = requireNonNull(nativeInterface);
-        mAudioManager = requireNonNull(mContext.getSystemService(AudioManager.class));
+        mAudioManager = requireNonNull(mAdapterService.getSystemService(AudioManager.class));
     }
 
     /** Safely clean up this stream handler object */
@@ -176,7 +172,8 @@ public class A2dpSinkStreamHandler extends Handler {
                     // Make the volume duck.
                     case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                         int duckPercent =
-                                mContext.getResources()
+                                mAdapterService
+                                        .getResources()
                                         .getInteger(R.integer.a2dp_sink_duck_percent);
                         if (duckPercent < 0 || duckPercent > 100) {
                             Log.e(TAG, "Invalid duck percent using default.");
@@ -195,13 +192,16 @@ public class A2dpSinkStreamHandler extends Handler {
                 }
 
                 // Route new focus state to AVRCP Controller to handle media player states
-                AvrcpControllerService avrcpControllerService =
-                        AvrcpControllerService.getAvrcpControllerService();
-                if (avrcpControllerService != null) {
-                    avrcpControllerService.onAudioFocusStateChanged(focusChangeCode);
-                } else {
-                    Log.w(TAG, "AVRCP Controller Service not available to send focus events to.");
-                }
+                mAdapterService
+                        .getAvrcpControllerService()
+                        .ifPresentOrElse(
+                                avrcpController ->
+                                        avrcpController.onAudioFocusStateChanged(focusChangeCode),
+                                () ->
+                                        Log.w(
+                                                TAG,
+                                                "AVRCP Controller Service not available to send"
+                                                        + " focus events to."));
             }
             default -> Log.w(TAG, "Received unexpected event: " + message.what);
         }
@@ -261,7 +261,10 @@ public class A2dpSinkStreamHandler extends Handler {
 
             mMediaPlayer =
                     MediaPlayer.create(
-                            mContext, R.raw.silent, attrs, mAudioManager.generateAudioSessionId());
+                            mAdapterService,
+                            R.raw.silent,
+                            attrs,
+                            mAudioManager.generateAudioSessionId());
             if (mMediaPlayer == null) {
                 Log.e(TAG, "Failed to initialize media player. You may not get media key events");
                 return;
@@ -316,15 +319,20 @@ public class A2dpSinkStreamHandler extends Handler {
     }
 
     private boolean isIotDevice() {
-        return mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_EMBEDDED);
+        return mAdapterService
+                .getPackageManager()
+                .hasSystemFeature(PackageManager.FEATURE_EMBEDDED);
     }
 
     private boolean isTvDevice() {
-        return mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_LEANBACK);
+        return mAdapterService
+                .getPackageManager()
+                .hasSystemFeature(PackageManager.FEATURE_LEANBACK);
     }
 
     private boolean shouldRequestFocus() {
-        return mContext.getResources()
+        return mAdapterService
+                .getResources()
                 .getBoolean(R.bool.a2dp_sink_automatically_request_audio_focus);
     }
 }

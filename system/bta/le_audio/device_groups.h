@@ -65,7 +65,7 @@ public:
     bool AssignCisIds(LeAudioDevice* leAudioDevice);
     void AssignCisConnHandles(const std::vector<uint16_t>& conn_handles);
     void UnassignCis(LeAudioDevice* leAudioDevice, uint16_t conn_handle);
-
+    types::BidirectionalPair<bool> GetConnectedCisDirections(void);
     std::vector<struct types::cis> cises;
 
   private:
@@ -126,7 +126,8 @@ public:
         preferred_config_({.sink = nullptr, .source = nullptr}),
         target_state_(types::AseState::BTA_LE_AUDIO_ASE_STATE_IDLE),
         current_state_(types::AseState::BTA_LE_AUDIO_ASE_STATE_IDLE),
-        in_transition_(false) {
+        in_transition_(false),
+        active_confirmed_(false) {
 #ifdef __ANDROID__
     // 22 maps to BluetoothProfile#LE_AUDIO
     is_output_preference_le_audio =
@@ -273,6 +274,15 @@ public:
       in_transition_ = false;
       log::info("In transition flag cleared");
     }
+  }
+
+  inline void SetActiveConfirmed(bool value) {
+    log::debug("group_id: {}, active_confirmed_ -> {}", group_id_, value);
+    active_confirmed_ = value;
+  }
+  bool IsActiveConfirmed(void) const {
+    log::debug("group_id: {}, active_confirmed_ -> {}", group_id_, active_confirmed_);
+    return active_confirmed_;
   }
 
   inline types::AseState GetTargetState(void) const { return target_state_; }
@@ -457,6 +467,9 @@ public:
     return false;
   }
 
+  void StartConnSubrateIfNeeded();
+  void StopConnSubrateIfNeeded();
+
 private:
   bool is_enabled_;
 
@@ -508,6 +521,7 @@ private:
   types::AseState current_state_;
   bool in_transition_;
   std::vector<std::weak_ptr<LeAudioDevice>> leAudioDevices_;
+  bool active_confirmed_;
 };
 
 /* LeAudioDeviceGroup class represents a wraper helper over all device groups in

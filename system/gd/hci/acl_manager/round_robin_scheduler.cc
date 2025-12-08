@@ -17,6 +17,7 @@
 #include "hci/acl_manager/round_robin_scheduler.h"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <memory>
 #include <utility>
@@ -38,11 +39,19 @@ RoundRobinScheduler::RoundRobinScheduler(os::Handler* handler, Controller& contr
   le_hci_mtu_ = le_buffer_size.le_data_packet_length_;
   controller_.RegisterCompletedAclPacketsCallback(
           handler->BindOn(this, &RoundRobinScheduler::incoming_acl_credits));
+  log::verbose("module started !!");
 }
 
 RoundRobinScheduler::~RoundRobinScheduler() {
   unregister_all_connections();
   controller_.UnregisterCompletedAclPacketsCallback();
+  if (!com_android_bluetooth_flags_same_handler_for_all_modules()) {
+    handler_->Clear();
+    handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
+    delete handler_;
+  }
+
+  log::verbose("module stopped !!");
 }
 
 void RoundRobinScheduler::Register(ConnectionType connection_type, uint16_t handle,
@@ -94,6 +103,10 @@ void RoundRobinScheduler::Unregister(uint16_t handle) {
   if (credits_reclaimed_from_zero) {
     start_round_robin();
   }
+}
+
+bool RoundRobinScheduler::IsRegistered(uint16_t handle) {
+  return acl_queue_handlers_.count(handle) != 0;
 }
 
 void RoundRobinScheduler::SetLinkPriority(uint16_t handle, bool high_priority) {

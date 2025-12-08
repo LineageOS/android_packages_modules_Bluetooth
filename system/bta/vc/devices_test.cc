@@ -17,6 +17,8 @@
 
 #include "bta/vc/devices.h"
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -30,8 +32,6 @@
 #include "bta/test/common/btm_api_mock.h"
 #include "gatt/database_builder.h"
 #include "stack/include/bt_uuid16.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace vc {
@@ -59,7 +59,6 @@ protected:
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
 
-    com::android::bluetooth::flags::provider_->leaudio_add_aics_support(true);
     com::android::bluetooth::flags::provider_->vcp_handle_group_id_internally(true);
     devices_ = new VolumeControlDevices();
     gatt::SetMockBtaGattInterface(&gatt_interface);
@@ -223,7 +222,6 @@ protected:
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
 
-    com::android::bluetooth::flags::provider_->leaudio_add_aics_support(true);
     com::android::bluetooth::flags::provider_->vcp_handle_group_id_internally(true);
     device = new VolumeControlDevice(GetTestAddress(1), true);
     gatt::SetMockBtaGattInterface(&gatt_interface);
@@ -359,6 +357,49 @@ protected:
     builder.AddCharacteristic(0x0002, 0x0003, Uuid::From16Bit(0x2a00), GATT_CHAR_PROP_BIT_READ);
     services = builder.Build().Services();
     ASSERT_EQ(false, device->UpdateHandles());
+  }
+
+  /* sample database 1xAICS, 1xVOCS */
+  void SetSampleDatabase3(void) {
+    gatt::DatabaseBuilder builder;
+    builder.AddService(0x0001, 0x0017, kVolumeControlUuid, true);
+    builder.AddIncludedService(0x0002, kVolumeAudioInputUuid, 0x0020, 0x002e);
+    builder.AddIncludedService(0x0004, kVolumeOffsetUuid, 0x0060, 0x0069);
+    builder.AddCharacteristic(0x0010, 0x0011, kVolumeControlStateUuid,
+                              GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
+    builder.AddDescriptor(0x0012, Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
+    builder.AddCharacteristic(0x0013, 0x0014, kVolumeControlPointUuid, GATT_CHAR_PROP_BIT_WRITE);
+    builder.AddCharacteristic(0x0015, 0x0016, kVolumeFlagsUuid,
+                              GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
+    builder.AddDescriptor(0x0017, Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
+
+    // First AICS
+    builder.AddService(0x0020, 0x002e, kVolumeAudioInputUuid, false);
+    builder.AddCharacteristic(0x0021, 0x0022, kVolumeAudioInputStateUuid, GATT_CHAR_PROP_BIT_READ);
+    builder.AddDescriptor(0x0023, Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
+    builder.AddCharacteristic(0x0024, 0x0025, kVolumeAudioInputGainSettingPropertiesUuid,
+                              GATT_CHAR_PROP_BIT_READ);
+    builder.AddCharacteristic(0x0026, 0x0027, kVolumeAudioInputTypeUuid, GATT_CHAR_PROP_BIT_READ);
+    builder.AddCharacteristic(0x0028, 0x0029, kVolumeAudioInputStatusUuid,
+                              GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
+    builder.AddDescriptor(0x002a, Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
+    builder.AddCharacteristic(0x002b, 0x002c, kVolumeAudioInputControlPointUuid,
+                              GATT_CHAR_PROP_BIT_WRITE);
+    builder.AddCharacteristic(0x002d, 0x002e, kVolumeAudioInputDescriptionUuid,
+                              GATT_CHAR_PROP_BIT_READ);
+
+    // First VOCS
+    builder.AddService(0x0060, 0x0069, kVolumeOffsetUuid, false);
+    builder.AddCharacteristic(0x0061, 0x0062, kVolumeOffsetStateUuid,
+                              GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_NOTIFY);
+    builder.AddDescriptor(0x0063, Uuid::From16Bit(GATT_UUID_CHAR_CLIENT_CONFIG));
+    builder.AddCharacteristic(0x0064, 0x0065, kVolumeOffsetLocationUuid, GATT_CHAR_PROP_BIT_READ);
+    builder.AddCharacteristic(0x0066, 0x0067, kVolumeOffsetControlPointUuid,
+                              GATT_CHAR_PROP_BIT_WRITE);
+    builder.AddCharacteristic(0x0068, 0x0069, kVolumeOffsetOutputDescriptionUuid,
+                              GATT_CHAR_PROP_BIT_READ);
+    services = builder.Build().Services();
+    ASSERT_EQ(true, device->UpdateHandles());
   }
 
   VolumeControlDevice* device = nullptr;
@@ -726,7 +767,7 @@ TEST_F(VolumeControlDeviceTest, test_device_ready_handles_first) {
     device->VerifyReady(handle);
   }
 
-  if (!com::android::bluetooth::flags::vcp_handle_group_id_internally()) {
+  if (!com_android_bluetooth_flags_vcp_handle_group_id_internally()) {
     ASSERT_EQ(true, device->device_ready);
   } else {
     ASSERT_EQ(false, device->device_ready);
@@ -772,6 +813,72 @@ TEST_F(VolumeControlDeviceTest, test_enqueue_remaining_requests) {
   Mock::VerifyAndClearExpectations(&gatt_interface);
 }
 
+TEST_F(VolumeControlDeviceTest, test_enqueue_remaining_requests_multiread_single_read_remaining) {
+  com::android::bluetooth::flags::provider_->le_ase_read_multiple_variable(true);
+
+  SetSampleDatabase3();
+
+  tGATT_IF gatt_if = 0x0001;
+  std::vector<uint8_t> register_for_notification_data({0x01, 0x00});
+
+  // The amount of attributes read at once is limited by the MTU size - 1 (here 22)
+  tBTA_GATTC_MULTI expected_to_read_part_1 = {
+          .num_attr = 5,
+          .handles = {0x0062 /* audio output state */, 0x0065 /* audio output location */,
+                      0x0022 /* audio input state */, 0x0025 /* gain setting properties */,
+                      0x0027 /* audio input type */},
+  };
+
+  uint16_t expected_to_read_part_2 = 0x0029; /* audio input status */
+
+  uint16_t expected_audio_input_description = 0x002e;
+  uint16_t expected_audio_output_description = 0x0069;
+
+  tBTA_GATTC_MULTI received_to_read_part_1{};
+  uint16_t received_to_read_part_2 = 0;
+
+  uint16_t audio_input_description_1 = 0;
+  uint16_t audio_output_description_1 = 0;
+
+  {
+    testing::InSequence s;
+
+    EXPECT_CALL(gatt_queue, ReadMultiCharacteristic(_, _, _, _))
+            .WillOnce(SaveArg<1>(&received_to_read_part_1));
+    EXPECT_CALL(gatt_queue, ReadCharacteristic(_, _, _, _))
+            .WillOnce(SaveArg<1>(&received_to_read_part_2));
+    EXPECT_CALL(gatt_queue, ReadCharacteristic(_, _, _, _))
+            .WillOnce(SaveArg<1>(&audio_output_description_1));
+    EXPECT_CALL(gatt_queue, ReadCharacteristic(_, _, _, _))
+            .WillOnce(SaveArg<1>(&audio_input_description_1));
+  }
+  EXPECT_CALL(gatt_queue, WriteDescriptor(_, _, _, GATT_WRITE, _, _)).Times(0);
+  EXPECT_CALL(gatt_interface, RegisterForNotifications(_, _, _)).Times(0);
+
+  auto chrc_read_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
+                         uint16_t /*len*/, uint8_t* /*value*/, void* /*data*/) {};
+  auto chrc_multi_read_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/,
+                               tBTA_GATTC_MULTI& /*handles*/, uint16_t /*len*/, uint8_t* /*value*/,
+                               void* /*data*/) {};
+  auto cccd_write_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
+                          uint16_t /*len*/, const uint8_t* /*value*/, void* /*data*/) {};
+
+  // All characteristics up to audio input status, with their length fields,
+  // occupy 25 octets. That fits under the limit of 27 > 25 + 1 octets.
+  // Singular read should be used to read handle 0x0029.
+  device->mtu_ = 27;
+  device->EnqueueRemainingRequests(gatt_if, chrc_read_cb, chrc_multi_read_cb, cccd_write_cb);
+
+  Mock::VerifyAndClearExpectations(&gatt_queue);
+  Mock::VerifyAndClearExpectations(&gatt_interface);
+
+  ASSERT_EQ(expected_to_read_part_1.num_attr, received_to_read_part_1.num_attr);
+  EXPECT_EQ(expected_to_read_part_2, received_to_read_part_2);
+
+  EXPECT_EQ(expected_audio_input_description, audio_input_description_1);
+  EXPECT_EQ(expected_audio_output_description, audio_output_description_1);
+}
+
 TEST_F(VolumeControlDeviceTest, test_enqueue_remaining_requests_multiread) {
   com::android::bluetooth::flags::provider_->le_ase_read_multiple_variable(true);
 
@@ -782,22 +889,22 @@ TEST_F(VolumeControlDeviceTest, test_enqueue_remaining_requests_multiread) {
 
   // The amount of attributes read at once is limited by the MTU size - 1 (here 22)
   tBTA_GATTC_MULTI expected_to_read_part_1 = {
-          .num_attr = 4,
+          .num_attr = 3,
           .handles = {0x0022 /* audio input state 1 */, 0x0025 /* gain setting properties 1 */,
-                      0x0027 /* audio input type 1 */, 0x0029 /* audio input status 1 */},
+                      0x0027 /* audio input type 1 */},
   };
 
   tBTA_GATTC_MULTI expected_to_read_part_2 = {
-          .num_attr = 5,
-          .handles = {0x0042 /* audio input state 2 */, 0x0045 /* gain setting properties 2 */,
-                      0x0047 /* audio input type 2 */, 0x0049 /* audio input status 2 */,
-                      0x0062 /* audio output state 1 */},
+          .num_attr = 4,
+          .handles = {0x0029 /* audio input status 1 */, 0x0042 /* audio input state 2 */,
+                      0x0045 /* gain setting properties 2 */, 0x0047 /* audio input type 2 */,
+                      0x0049 /* audio input status 2 */},
   };
 
   tBTA_GATTC_MULTI expected_to_read_part_3 = {
-          .num_attr = 3,
-          .handles = {0x0065 /* audio output location 1 */, 0x0082 /* audio output state 1 */,
-                      0x0085 /* audio output location 1 */},
+          .num_attr = 5,
+          .handles = {0x0062 /* audio output state 1 */, 0x0065 /* audio output location 1 */,
+                      0x0082 /* audio output state 1 */, 0x0085 /* audio output location 1 */},
   };
 
   uint16_t expected_audio_input_description_1 = 0x002e;

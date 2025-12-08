@@ -20,11 +20,11 @@
 
 #include <binder/ProcessState.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <mutex>
 
 #include "osi/include/allocator.h"
-#include "types/raw_address.h"
 
 extern bt_interface_t bluetoothInterface;
 

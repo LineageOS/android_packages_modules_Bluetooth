@@ -28,6 +28,7 @@
 
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -48,7 +49,6 @@
 #include "stack/include/main_thread.h"
 #include "stack/l2cap/internal/l2c_api.h"
 #include "stack/l2cap/l2c_int.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -1214,7 +1214,7 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
     // Restore the fixed channel if it was suspended
     l2cu_fixed_channel_restore(p_lcb, fixed_cid);
 
-    if (!com::android::bluetooth::flags::smp_connection_status_handling_when_no_acl()) {
+    if (!com_android_bluetooth_flags_smp_connection_status_handling_when_no_acl()) {
       (*l2cb.fixed_reg[fixed_cid - L2CAP_FIRST_FIXED_CHNL].pL2CA_FixedConn_Cb)(
               fixed_cid, p_lcb->remote_bd_addr, true, 0, p_lcb->transport);
       return true;

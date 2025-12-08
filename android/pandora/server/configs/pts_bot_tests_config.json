@@ -4,6 +4,10 @@
     // Didn't receive a valid AVDTP signal while waiting for signal ID Delay
     // Report and message type Command.
     "A2DP/SNK/SYN/BV-01-C",
+    // Fails with verdict:
+    // Didn't receive a valid AVDTP signal while waiting for signal ID Delay
+    // Report and message type Command.
+    "A2DP/SRC/SYN/BV-02-C",
     "AVCTP/CT/CCM/BV-01-C",
     "AVCTP/CT/CCM/BV-02-C",
     "AVCTP/CT/FRA/BV-01-C",
@@ -11,27 +15,30 @@
     "AVCTP/CT/NFR/BV-01-C",
     "AVCTP/CT/NFR/BV-04-C",
     "AVCTP/TG/FRA/BV-02-C",
+    // Fails with verdict:
+    // The IUT incorrectly rejected the invalid GET CONFIGURATION command sent
+    // by the tester. The IUT is expected to reject the GET CONFIGURATION
+    // command with the error code BAD_ACP_SEID.
     "AVDTP/SNK/ACP/SIG/SMG/BI-11-C",
+    // Fails with verdict:
+    // The IUT incorrectly accepted the invalid CLOSE command sent by the
+    // tester. The IUT is expected to reject the CLOSE command with the error
+    // code BAD ACP SEID.
     "AVDTP/SNK/ACP/SIG/SMG/BI-23-C",
     "AVDTP/SNK/ACP/SIG/SMG/BV-14-C",
     "AVDTP/SNK/ACP/SIG/SMG/BV-34-C",
-    "AVDTP/SNK/ACP/SIG/SMG/ESR05/BV-14-C",
     "AVDTP/SNK/INT/SIG/SMG/BV-11-C",
     "AVDTP/SNK/INT/SIG/SMG/BV-13-C",
-    "AVDTP/SNK/INT/SIG/SMG/BV-19-C",
     "AVDTP/SNK/INT/SIG/SMG/BV-23-C",
     "AVDTP/SNK/INT/SIG/SMG/BV-33-C",
-    "AVDTP/SNK/INT/SIG/SMG/ESR05/BV-13-C",
     "AVDTP/SRC/ACP/SIG/SMG/BI-11-C",
     "AVDTP/SRC/ACP/SIG/SMG/BI-23-C",
     "AVDTP/SRC/ACP/SIG/SMG/BV-14-C",
     "AVDTP/SRC/ACP/SIG/SMG/BV-34-C",
-    "AVDTP/SRC/ACP/SIG/SMG/ESR05/BV-14-C",
     "AVDTP/SRC/INT/SIG/SMG/BV-11-C",
     "AVDTP/SRC/INT/SIG/SMG/BV-13-C",
     "AVDTP/SRC/INT/SIG/SMG/BV-23-C",
     "AVDTP/SRC/INT/SIG/SMG/BV-33-C",
-    "AVDTP/SRC/INT/SIG/SMG/ESR05/BV-13-C",
     "AVRCP/TG/CA/BI-01-C",
     "AVRCP/TG/CA/BI-04-C",
     "AVRCP/TG/CA/BI-06-C",
@@ -60,6 +67,23 @@
     "AVRCP/TG/MDI/BV-05-C",
     "AVRCP/TG/MPS/BV-01-I",
     "AVRCP/TG/NFY/BV-04-C",
+    // BAP: These cases require 2 Lower Testers
+    "BAP/BA/BASS/BV-04-C",
+    "BAP/BA/BASS/BV-04-C_LT2",
+    "BAP/BA/BASS/BV-06-C",
+    "BAP/BA/BASS/BV-06-C_LT2",
+    "BAP/BA/BASS/BV-07-C",
+    "BAP/BA/BASS/BV-07-C_LT2",
+    "BAP/UCL/PD/BV-01-C",
+    "BAP/UCL/PD/BV-01-C_LT2",
+    "BAP/UCL/PD/BV-02-C",
+    "BAP/UCL/PD/BV-02-C_LT2",
+    "BAP/UCL/STR/BV-526-C",
+    "BAP/UCL/STR/BV-526-C_LT2",
+    "BAP/UCL/STR/BV-528-C",
+    "BAP/UCL/STR/BV-528-C_LT2",
+    "BAP/UCL/STR/BV-530-C",
+    "BAP/UCL/STR/BV-530-C_LT2",
     "BNEP/TX-TYPE-0/BV-20-C",
     "GAP/BIS/BBM/BV-01-C",
     "GAP/BOND/BON/BV-02-C",
@@ -325,61 +349,6 @@
     "GMAP/UGG/LLU/BV-49-C_LT2",
     "GMAP/UGG/LLU/BV-50-C",
     "GMAP/UGG/LLU/BV-50-C_LT2",
-    // GMAP: Skipped due to issue with streaming from remote source
-    "GMAP/UGG/LLU/BV-87-C",
-    "GMAP/UGG/LLU/BV-88-C",
-    "GMAP/UGG/LLU/BV-55-C",
-    "GMAP/UGG/LLU/BV-56-C",
-    "GMAP/UGG/LLU/BV-57-C",
-    "GMAP/UGG/LLU/BV-58-C",
-    "GMAP/UGG/LLU/BV-89-C",
-    "GMAP/UGG/LLU/BV-90-C",
-    "GMAP/UGG/LLU/BV-91-C",
-    "GMAP/UGG/LLU/BV-92-C",
-    "GMAP/UGG/LLU/BV-65-C",
-    "GMAP/UGG/LLU/BV-66-C",
-    "GMAP/UGG/LLU/BV-09-C",
-    "GMAP/UGG/LLU/BV-10-C",
-    "GMAP/UGG/LLU/BV-11-C",
-    "GMAP/UGG/LLU/BV-12-C",
-    "GMAP/UGG/LLU/BV-14-C",
-    "GMAP/UGG/LLU/BV-68-C",
-    "GMAP/UGG/LLU/BV-93-C",
-    "GMAP/UGG/LLU/BV-94-C",
-    "GMAP/UGG/LLU/BV-95-C",
-    "GMAP/UGG/LLU/BV-96-C",
-    "GMAP/UGG/LLU/BV-71-C",
-    "GMAP/UGG/LLU/BV-72-C",
-    "GMAP/UGG/LLU/BV-15-C",
-    "GMAP/UGG/LLU/BV-16-C",
-    "GMAP/UGG/LLU/BV-17-C",
-    "GMAP/UGG/LLU/BV-18-C",
-    "GMAP/UGG/LLU/BV-20-C",
-    "GMAP/UGG/LLU/BV-101-C",
-    "GMAP/UGG/LLU/BV-102-C",
-    "GMAP/UGG/LLU/BV-103-C",
-    "GMAP/UGG/LLU/BV-104-C",
-    "GMAP/UGG/LLU/BV-79-C",
-    "GMAP/UGG/LLU/BV-80-C",
-    "GMAP/UGG/LLU/BV-27-C",
-    "GMAP/UGG/LLU/BV-28-C",
-    "GMAP/UGG/LLU/BV-29-C",
-    "GMAP/UGG/LLU/BV-30-C",
-    "GMAP/UGG/LLU/BV-32-C",
-    "GMAP/UGG/LLU/BV-109-C",
-    "GMAP/UGG/LLU/BV-110-C",
-    "GMAP/UGG/LLU/BV-111-C",
-    "GMAP/UGG/LLU/BV-112-C",
-    "GMAP/UGG/LLU/BV-83-C",
-    "GMAP/UGG/LLU/BV-84-C",
-    "GMAP/UGG/LLU/BV-39-C",
-    "GMAP/UGG/LLU/BV-40-C",
-    "GMAP/UGG/LLU/BV-44-C",
-    "GMAP/UGG/LLU/BV-13-C",
-    "GMAP/UGG/LLU/BV-67-C",
-    "GMAP/UGG/LLU/BV-19-C",
-    "GMAP/UGG/LLU/BV-31-C",
-    "GMAP/UGG/LLU/BV-43-C",
     "HAP/HARC/PRE/BV-01-C",
     "HAP/HARC/PRE/BV-11-C",
     "HAP/HARC/PRE/BV-12-C",
@@ -898,13 +867,22 @@
     "TSPC_AVRCP_8_20": true,
     "TSPC_AVRCP_12_1": true,
     "TSPC_AVRCP_13_1": true,
+    "TSPC_BAP_1_1": false,
     "TSPC_BAP_1_2": true,
-    "TSPC_BAP_1_3": true,
-    "TSPC_BAP_1_6": true,
-    "TSPC_BAP_3_2": true,
+    "TSPC_BAP_3_1": true,
+    "TSPC_BAP_8_1": false,
+    "TSPC_BAP_8_2": false,
+    "TSPC_BAP_9_5": false,
+    "TSPC_BAP_9_6": false,
+    "TSPC_BAP_12_4": false,
+    "TSPC_BAP_12_6": false,
+    "TSPC_BAP_13_4": false,
+    "TSPC_BAP_14_4": false,
+    "TSPC_BAP_15_4": false,
+    "TSPC_BAP_16_4": false,
+    "TSPC_BAP_16_6": false,
     "TSPC_BAP_26_1": true,
-    "TSPC_BAP_27_2": true,
-    "TSPC_BAP_27_4": true,
+    "TSPC_BAP_27_5": true,
     "TSPC_BAP_28_2": true,
     "TSPC_BAP_28_4": true,
     "TSPC_BAP_29_1": true,
@@ -946,24 +924,53 @@
     "TSPC_BAP_34_4": true,
     "TSPC_BAP_34_5": true,
     "TSPC_BAP_35_1": true,
+    "TSPC_BAP_36_3": true,
     "TSPC_BAP_36_4": true,
-    "TSPC_BAP_36_6": true,
+    "TSPC_BAP_36_7": true,
     "TSPC_BAP_36_8": true,
+    "TSPC_BAP_36_11": true,
+    "TSPC_BAP_36_12": true,
+    "TSPC_BAP_36_13": true,
+    "TSPC_BAP_36_14": true,
+    "TSPC_BAP_37_3": true,
     "TSPC_BAP_37_4": true,
-    "TSPC_BAP_37_6": true,
+    "TSPC_BAP_37_7": true,
     "TSPC_BAP_37_8": true,
+    "TSPC_BAP_37_11": true,
     "TSPC_BAP_37_12": true,
+    "TSPC_BAP_37_13": true,
     "TSPC_BAP_37_14": true,
+    "TSPC_BAP_38_3": true,
     "TSPC_BAP_38_4": true,
+    "TSPC_BAP_38_7": true,
     "TSPC_BAP_38_8": true,
+    "TSPC_BAP_38_11": true,
+    "TSPC_BAP_38_12": true,
+    "TSPC_BAP_38_13": true,
+    "TSPC_BAP_38_14": true,
+    "TSPC_BAP_39_3": true,
     "TSPC_BAP_39_4": true,
+    "TSPC_BAP_39_7": true,
     "TSPC_BAP_39_8": true,
+    "TSPC_BAP_39_11": true,
     "TSPC_BAP_39_12": true,
+    "TSPC_BAP_39_13": true,
     "TSPC_BAP_39_14": true,
+    "TSPC_BAP_40_3": true,
     "TSPC_BAP_40_4": true,
+    "TSPC_BAP_40_7": true,
+    "TSPC_BAP_40_8": true,
+    "TSPC_BAP_40_11": true,
+    "TSPC_BAP_40_12": true,
+    "TSPC_BAP_40_13": true,
+    "TSPC_BAP_40_14": true,
+    "TSPC_BAP_41_3": true,
     "TSPC_BAP_41_4": true,
-    "TSPC_BAP_41_6": true,
+    "TSPC_BAP_41_7": true,
+    "TSPC_BAP_41_8": true,
+    "TSPC_BAP_41_11": true,
     "TSPC_BAP_41_12": true,
+    "TSPC_BAP_41_13": true,
     "TSPC_BAP_41_14": true,
     "TSPC_BAP_44_1": true,
     "TSPC_BAP_44_2": true,
@@ -993,99 +1000,21 @@
     "TSPC_BAP_46_3": true,
     "TSPC_BAP_46_4": true,
     "TSPC_BAP_46_5": true,
-    "TSPC_BAP_46_7": true,
-    "TSPC_BAP_46_8": true,
     "TSPC_BAP_46_9": true,
-    "TSPC_BAP_46_10": true,
-    "TSPC_BAP_46_11": true,
-    "TSPC_BAP_46_12": true,
-    "TSPC_BAP_47_1": true,
-    "TSPC_BAP_47_2": true,
+    "TSPC_BAP_46_14": true,
     "TSPC_BAP_48_1": true,
     "TSPC_BAP_48_2": true,
     "TSPC_BAP_48_3": true,
-    "TSPC_BAP_49_1": true,
-    "TSPC_BAP_50_1": true,
-    "TSPC_BAP_51_1": true,
-    "TSPC_BAP_51_3": true,
-    "TSPC_BAP_51_4": true,
-    "TSPC_BAP_51_5": true,
-    "TSPC_BAP_51_6": true,
-    "TSPC_BAP_52_1": true,
-    "TSPC_BAP_52_2": true,
-    "TSPC_BAP_52_3": true,
-    "TSPC_BAP_52_4": true,
-    "TSPC_BAP_52_5": true,
-    "TSPC_BAP_53_1": true,
-    "TSPC_BAP_54_4": true,
-    "TSPC_BAP_54_11": true,
-    "TSPC_BAP_54_12": true,
-    "TSPC_BAP_54_13": true,
-    "TSPC_BAP_54_14": true,
-    "TSPC_BAP_55_4": true,
-    "TSPC_BAP_55_11": true,
-    "TSPC_BAP_55_12": true,
-    "TSPC_BAP_55_13": true,
-    "TSPC_BAP_55_14": true,
-    "TSPC_BAP_56_4": true,
-    "TSPC_BAP_56_6": true,
-    "TSPC_BAP_56_11": true,
-    "TSPC_BAP_56_12": true,
-    "TSPC_BAP_56_13": true,
-    "TSPC_BAP_56_14": true,
-    "TSPC_BAP_58_1": true,
-    "TSPC_BAP_58_2": true,
-    "TSPC_BAP_59_1": true,
-    "TSPC_BAP_59_3": true,
-    "TSPC_BAP_60_1": true,
-    "TSPC_BAP_60_2": true,
-    "TSPC_BAP_60_3": true,
-    "TSPC_BAP_60_5": true,
-    "TSPC_BAP_61_1": true,
-    "TSPC_BAP_61_2": true,
-    "TSPC_BAP_61_3": true,
-    "TSPC_BAP_61_4": true,
-    "TSPC_BAP_61_5": true,
-    "TSPC_BAP_61_6": true,
-    "TSPC_BAP_83_1": true,
-    "TSPC_BAP_84_1": true,
-    "TSPC_BAP_85_2": true,
-    "TSPC_BAP_86_1": true,
-    "TSPC_BAP_86_2": true,
-    "TSPC_BAP_86_3": true,
-    "TSPC_BAP_86_4": true,
-    "TSPC_BAP_88_3": true,
-    "TSPC_BAP_88_6": true,
-    "TSPC_BAP_88_7": true,
-    "TSPC_BAP_89_1": true,
-    "TSPC_BAP_89_2": true,
-    "TSPC_BAP_89_3": true,
-    "TSPC_BAP_89_4": true,
-    "TSPC_BAP_89_5": true,
-    "TSPC_BAP_89_6": true,
-    "TSPC_BAP_89_7": true,
-    "TSPC_BAP_89_8": true,
-    "TSPC_BAP_89_9": true,
-    "TSPC_BAP_89_10": true,
-    "TSPC_BAP_89_11": true,
-    "TSPC_BAP_89_12": true,
-    "TSPC_BAP_89_13": true,
-    "TSPC_BAP_90_3": true,
-    "TSPC_BAP_90_4": true,
-    "TSPC_BAP_90_5": true,
-    "TSPC_BAP_90_6": true,
-    "TSPC_BAP_90_7": true,
-    "TSPC_BAP_90_9": true,
-    "TSPC_BAP_90_10": true,
-    "TSPC_BAP_90_11": true,
-    "TSPC_BAP_90_12": true,
-    "TSPC_BAP_90_13": true,
-    "TSPC_BAP_90_18": true,
-    "TSPC_BAP_91_1": true,
-    "TSPC_BAP_91_2": true,
-    "TSPC_BAP_92_1": true,
-    "TSPC_BAP_92_2": true,
-    "TSPC_BAP_92_3": true,
+    "TSPC_BAP_93_2": true,
+    "TSPC_BAP_93_4": true,
+    "TSPC_BAP_93_6": true,
+    "TSPC_BAP_94_1": true,
+    "TSPC_BAP_94_2": true,
+    "TSPC_BAP_95_2": true,
+    "TSPC_BAP_95_4": true,
+    "TSPC_BAP_95_6": true,
+    "TSPC_BAP_96_1": true,
+    "TSPC_BAP_96_2": true,
     "TSPC_BASS_0_1": true,
     "TSPC_BASS_2_2": true,
     "TSPC_BASS_3_1": true,
@@ -2605,14 +2534,20 @@
     "AVRCP": {
       "TSPX_player_feature_bitmask": "0000000000B7010C0A00000000000000"
     },
+    "BAP": {
+      "TSPX_mtu_size": "128"
+    },
     "BNEP": {},
     "DID": {},
-    "GAP": {},
+    "GAP": {
+      "TSPX_gap_iut_role": "Central"
+    },
     "GATT": {},
     "GAVDP": {},
     "GMAP": {
       "TSPX_delete_link_key": "TRUE",
-      "TSPX_delete_ltk": "TRUE"
+      "TSPX_delete_ltk": "TRUE",
+      "TSPX_mtu_size": "128"
     },
     "HAP": {},
     "HFP": {
@@ -2647,7 +2582,9 @@
   "flags": [
     {
       "flags": [
-        "a2dp_version_1_4"
+        "a2dp_set_configuration_during_discovery",
+        "a2dp_cancel_acceptor_alarm_for_avdt_init",
+        "a2dp_adjust_sbc_bitpool"
       ],
       "tests": [
         "A2DP"
@@ -2655,8 +2592,6 @@
     },
     {
       "flags": [
-        "set_addressed_player",
-        "browsing_refactor",
         "avrcp_16_default"
       ],
       "tests": [
@@ -2665,53 +2600,6 @@
         "AVRCP/TG/CA/BI-07-C",
         "AVRCP/TG/CA/BI-10-C",
         "AVRCP/TG/CA/BV-16-C"
-      ]
-    },
-    {
-      "flags": [
-        "leaudio_allow_leaudio_only_devices",
-        "enable_hap_by_default"
-      ],
-      "tests": [
-        "HAP"
-      ]
-    },
-    {
-      "flags": [
-        "leaudio_add_aics_support",
-        "aics_api"
-      ],
-      "tests": [
-        "VCP/VC/AICP/BV-01-C",
-        "VCP/VC/AICP/BV-02-C",
-        "VCP/VC/AICP/BV-03-C",
-        "VCP/VC/AICP/BV-04-C",
-        "VCP/VC/AICP/BV-05-C",
-        "VCP/VC/CGGIT/CHA/BV-08-C",
-        "VCP/VC/CGGIT/CHA/BV-09-C",
-        "VCP/VC/CGGIT/CHA/BV-10-C",
-        "VCP/VC/CGGIT/CHA/BV-11-C",
-        "VCP/VC/CGGIT/CHA/BV-12-C",
-        "VCP/VC/CGGIT/CHA/BV-13-C",
-        "VCP/VC/CGGIT/SER/BV-03-C",
-        "VCP/VC/SPE/BI-08-C",
-        "VCP/VC/SPE/BI-09-C",
-        "VCP/VC/SPE/BI-10-C",
-        "VCP/VC/SPE/BI-11-C",
-        "VCP/VC/SPE/BI-12-C",
-        "VCP/VC/SPE/BI-14-C",
-        "VCP/VC/SPE/BI-17-C",
-        "VCP/VC/SPE/BI-18-C",
-        "VCP/VC/SPE/BI-19-C",
-        "VCP/VC/SPE/BI-20-C"
-      ]
-    },
-    {
-      "flags": [
-        "leaudio_gmap_client"
-      ],
-      "tests": [
-        "GMAP"
       ]
     }
   ],
@@ -2745,6 +2633,29 @@
     },
     {
       "system_properties": {
+        "bluetooth.le_audio.software_datapath_test.enabled": "true",
+        "bluetooth.leaudio.dual_bidirection_swb.supported": "true",
+        "bluetooth.auto_connect_profiles.enabled": "true",
+        "persist.bluetooth.leaudio.device.set.state.timeoutms": "20000"
+      },
+      "tests": [
+        "BAP"
+      ]
+    },
+    {
+      "system_properties": {
+        "bluetooth.le_audio.software_datapath_test.enabled": "true",
+        "bluetooth.leaudio.dual_bidirection_swb.supported": "true",
+        "bluetooth.auto_connect_profiles.enabled": "true",
+        "persist.bluetooth.leaudio.device.set.state.timeoutms": "20000",
+        "bluetooth.le_audio.dynamic_direction_opening_test.enabled": "true"
+      },
+      "tests": [
+        "BAP/UCL/STR/BV-543-C"
+      ]
+    },
+    {
+      "system_properties": {
         "bluetooth.profile.hfp.hf.enabled": "true",
         "bluetooth.profile.hfp.ag.enabled": "false"
       },
@@ -2769,19 +2680,31 @@
         "A2DP/SNK/SYN/BV-01-C"
       ]
     },
-    // VCP does not require CSIS,
-    // in PTS test mode, enabling this system property will
-    // add device to DeviceGroups without CSIS
     {
       "system_properties": {
         "persist.bluetooth.pts": "true"
       },
       "tests": [
+        // A2DP tests for bitpool validation fail with a workaround added
+        // for interoperability for the Toyota Highlander.
+        // TODO(b/404201032): Remove pts test mode when an interop is added.
+        "A2DP/SNK/AVP/BI-14-C",
+        "A2DP/SNK/AVP/BI-15-C",
+        // VCP does not require CSIS,
+        // in PTS test mode, enabling this system property will
+        // add device to DeviceGroups without CSIS
         "VCP/VC/AICP/BV-01-C",
         "VCP/VC/AICP/BV-02-C",
         "VCP/VC/AICP/BV-03-C",
         "VCP/VC/AICP/BV-04-C",
         "VCP/VC/AICP/BV-05-C",
+        "VCP/VC/CGGIT/CHA/BV-08-C",
+        "VCP/VC/CGGIT/CHA/BV-09-C",
+        "VCP/VC/CGGIT/CHA/BV-10-C",
+        "VCP/VC/CGGIT/CHA/BV-11-C",
+        "VCP/VC/CGGIT/CHA/BV-12-C",
+        "VCP/VC/CGGIT/CHA/BV-13-C",
+        "VCP/VC/CGGIT/SER/BV-03-C",
         "VCP/VC/SPE/BI-05-C",
         "VCP/VC/SPE/BI-08-C",
         "VCP/VC/SPE/BI-09-C",
@@ -2802,8 +2725,10 @@
     {
       "system_properties": {
         "bluetooth.profile.gmap.enabled": "true",
-        "bluetooth.le_audio.gmap.software_datapath.enabled": "true",
-        "bluetooth.auto_connect_profiles.enabled": "true"
+        "bluetooth.le_audio.software_datapath_test.enabled": "true",
+        "bluetooth.leaudio.dual_bidirection_swb.supported": "true",
+        "bluetooth.auto_connect_profiles.enabled": "true",
+        "persist.bluetooth.leaudio.device.set.state.timeoutms": "20000"
       },
       "tests": [
         "GMAP"

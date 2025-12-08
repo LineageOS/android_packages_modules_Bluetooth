@@ -256,7 +256,7 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
      */
     @RequiresNoPermission
     public boolean connect(BluetoothDevice device) {
-        log("connect(" + device + ")" + "not supported for SAPS");
+        log("connect(" + device + ") not supported for SAPS");
         return false;
     }
 

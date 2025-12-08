@@ -20,8 +20,12 @@
 #include <com_android_bluetooth_flags.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
+#include <memory>
+#include <mutex>
 #include <utility>
+#include <vector>
 
 #include "asrc_tables.h"
 #include "common/repeating_timer.h"
@@ -169,7 +173,7 @@ public:
   ClockRecovery(bluetooth::common::MessageLoopThread* thread)
       : state_{.id = StateId::RESET}, reference_timing_{0, 0, 0} {
     read_clock_timer_.SchedulePeriodic(
-            thread->GetWeakPtr(),
+            thread,
             base::BindRepeating(
                     [](void*) {
                       bluetooth::shim::GetHciLayer()->EnqueueCommand(

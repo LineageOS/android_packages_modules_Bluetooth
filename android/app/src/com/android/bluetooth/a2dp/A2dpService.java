@@ -54,21 +54,16 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.avrcp.AvrcpTargetService;
-import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.hfp.HeadsetService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -79,8 +74,6 @@ public class A2dpService extends ConnectableProfile {
     // TODO(b/240635097): remove in U
     private static final int SOURCE_CODEC_TYPE_OPUS = 6;
 
-    private static A2dpService sA2dpService;
-
     private final A2dpNativeInterface mNativeInterface;
     private final A2dpCodecConfig mA2dpCodecConfig;
     private final AudioManager mAudioManager;
@@ -89,9 +82,6 @@ public class A2dpService extends ConnectableProfile {
     private final Handler mHandler;
     // Upper limit of all A2DP devices that are Connected or Connecting
     private final int mMaxConnectedAudioDevices;
-
-    // TODO(b/422543753) Delete on flag cleanup
-    @VisibleForTesting ServiceFactory mFactory = new ServiceFactory();
 
     @GuardedBy("mStateMachines")
     private BluetoothDevice mActiveDevice;
@@ -111,12 +101,17 @@ public class A2dpService extends ConnectableProfile {
     private final AudioManagerAudioDeviceCallback mAudioManagerAudioDeviceCallback =
             new AudioManagerAudioDeviceCallback();
 
-    public A2dpService(AdapterService adapterService) {
-        this(adapterService, null, Looper.getMainLooper());
+    public A2dpService(
+            AdapterService adapterService, CompanionDeviceManager companionDeviceManager) {
+        this(adapterService, null, companionDeviceManager, Looper.getMainLooper());
     }
 
     @VisibleForTesting
-    A2dpService(AdapterService adapterService, A2dpNativeInterface nativeInterface, Looper looper) {
+    A2dpService(
+            AdapterService adapterService,
+            A2dpNativeInterface nativeInterface,
+            CompanionDeviceManager companionDeviceManager,
+            Looper looper) {
         super(BluetoothProfile.A2DP, requireNonNull(adapterService));
         mNativeInterface =
                 requireNonNullElseGet(
@@ -126,14 +121,14 @@ public class A2dpService extends ConnectableProfile {
                                         adapterService,
                                         new A2dpNativeCallback(adapterService, this)));
         mAudioManager = requireNonNull(obtainSystemService(AudioManager.class));
-        mCompanionDeviceManager = requireNonNull(obtainSystemService(CompanionDeviceManager.class));
+        mCompanionDeviceManager = companionDeviceManager;
         mLooper = requireNonNull(looper);
         mHandler = new Handler(mLooper);
 
         mMaxConnectedAudioDevices = mAdapterService.getMaxConnectedAudioDevices();
         Log.i(TAG, "Max connected audio devices set to " + mMaxConnectedAudioDevices);
 
-        mA2dpCodecConfig = new A2dpCodecConfig(this, mNativeInterface);
+        mA2dpCodecConfig = new A2dpCodecConfig(this, mNativeInterface, mAudioManager);
 
         mNativeInterface.init(
                 mMaxConnectedAudioDevices,
@@ -144,34 +139,10 @@ public class A2dpService extends ConnectableProfile {
         Log.d(TAG, "A2DP offload flag set to " + mA2dpOffloadEnabled);
 
         mAudioManager.registerAudioDeviceCallback(mAudioManagerAudioDeviceCallback, mHandler);
-
-        setA2dpService(this);
-    }
-
-    // TODO(b/422543753) Delete on flag cleanup
-    Optional<AvrcpTargetService> getAvrcpTargetService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getAvrcpTargetService();
-        } else {
-            return Optional.ofNullable(mFactory.getAvrcpTargetService());
-        }
-    }
-
-    // TODO(b/422543753) Delete on flag cleanup
-    Optional<HeadsetService> getHeadsetService() {
-        if (Flags.adapterServiceProfilesUseOptional()) {
-            return mAdapterService.getHeadsetService();
-        } else {
-            return Optional.ofNullable(HeadsetService.getHeadsetService());
-        }
     }
 
     public static boolean isEnabled() {
         return BluetoothProperties.isProfileA2dpSourceEnabled().orElse(false);
-    }
-
-    ActiveDeviceManager getActiveDeviceManager() {
-        return mAdapterService.getActiveDeviceManager();
     }
 
     @Override
@@ -183,16 +154,8 @@ public class A2dpService extends ConnectableProfile {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        if (sA2dpService == null) {
-            Log.w(TAG, "cleanup() called before initialization");
-            return;
-        }
-
         // Step 9: Clear active device and stop playing audio
         removeActiveDevice(true);
-
-        // Step 8: Mark service as stopped
-        setA2dpService(null);
 
         // Step 7: Unregister Audio Device Callback
         mAudioManager.unregisterAudioDeviceCallback(mAudioManagerAudioDeviceCallback);
@@ -215,31 +178,21 @@ public class A2dpService extends ConnectableProfile {
         return mCompanionDeviceManager;
     }
 
-    public static synchronized A2dpService getA2dpService() {
-        if (sA2dpService == null) {
-            Log.w(TAG, "getA2dpService(): service is null");
-            return null;
-        }
-        if (!sA2dpService.isAvailable()) {
-            Log.w(TAG, "getA2dpService(): service is not available");
-            return null;
-        }
-        return sA2dpService;
-    }
-
-    private static synchronized void setA2dpService(A2dpService instance) {
-        Log.d(TAG, "setA2dpService(): set to: " + instance);
-        sA2dpService = instance;
-    }
-
     @Override
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect(): " + device);
 
-        if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN) {
-            Log.e(TAG, "Cannot connect to " + device + " : CONNECTION_POLICY_FORBIDDEN");
-            return false;
+        if (Flags.validateConnectionPolicyBeforeAcceptingConnection()) {
+            if (!okToConnect(device)) {
+                return false;
+            }
+        } else {
+            if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN) {
+                Log.e(TAG, "Cannot connect to " + device + " : CONNECTION_POLICY_FORBIDDEN");
+                return false;
+            }
         }
+
         if (!Utils.arrayContains(mAdapterService.getRemoteUuids(device), BluetoothUuid.A2DP_SINK)) {
             Log.e(TAG, "Cannot connect to " + device + " : Remote does not have A2DP Sink UUID");
             return false;
@@ -344,7 +297,6 @@ public class A2dpService extends ConnectableProfile {
      *     for incoming connection request
      * @return true if connection is allowed, otherwise false
      */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
     public boolean okToConnect(BluetoothDevice device, boolean isOutgoingRequest) {
         Log.i(TAG, "okToConnect: device " + device + " isOutgoingRequest: " + isOutgoingRequest);
         // Check if this is an incoming connection in Quiet mode.
@@ -364,7 +316,7 @@ public class A2dpService extends ConnectableProfile {
         if (connectionPolicy != CONNECTION_POLICY_UNKNOWN
                 && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
             if (!isOutgoingRequest) {
-                final var headset = getHeadsetService();
+                final var headset = mAdapterService.getHeadsetService();
                 if (headset.isPresent() && headset.get().okToAcceptConnection(device, true)) {
                     Log.d(
                             TAG,
@@ -578,7 +530,7 @@ public class A2dpService extends ConnectableProfile {
 
             // Tasks of Bluetooth are done, and now restore the AudioManager side.
             int rememberedVolume = -1;
-            final var avrcpTarget = getAvrcpTargetService();
+            final var avrcpTarget = mAdapterService.getAvrcpTargetService();
             if (avrcpTarget.isPresent()) {
                 rememberedVolume = avrcpTarget.get().getRememberedVolumeForDevice(newActiveDevice);
             }
@@ -630,7 +582,7 @@ public class A2dpService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
+        if (!mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -642,7 +594,9 @@ public class A2dpService extends ConnectableProfile {
     }
 
     public void setAvrcpAbsoluteVolume(int volume) {
-        getAvrcpTargetService().ifPresent(avrcpTarget -> avrcpTarget.sendVolumeChanged(volume));
+        mAdapterService
+                .getAvrcpTargetService()
+                .ifPresent(avrcpTarget -> avrcpTarget.sendVolumeChanged(volume));
     }
 
     boolean isA2dpPlaying(BluetoothDevice device) {
@@ -743,7 +697,7 @@ public class A2dpService extends ConnectableProfile {
             return;
         }
         updateLowLatencyAudioSupport(device);
-        mA2dpCodecConfig.enableOptionalCodecs(device, codecStatus.getCodecConfig());
+        mA2dpCodecConfig.enableOptionalCodecs(device, codecStatus);
     }
 
     /**
@@ -988,11 +942,6 @@ public class A2dpService extends ConnectableProfile {
     private class AudioManagerAudioDeviceCallback extends AudioDeviceCallback {
         @Override
         public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
-            if (mAudioManager == null || mAdapterService == null) {
-                Log.e(TAG, "Callback called when A2dpService is stopped");
-                return;
-            }
-
             synchronized (mStateMachines) {
                 for (AudioDeviceInfo deviceInfo : addedDevices) {
                     if (deviceInfo.getType() != AudioDeviceInfo.TYPE_BLUETOOTH_A2DP) {
@@ -1042,11 +991,6 @@ public class A2dpService extends ConnectableProfile {
 
         @Override
         public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
-            if (mAudioManager == null || mAdapterService == null) {
-                Log.e(TAG, "Callback called when LeAudioService is stopped");
-                return;
-            }
-
             synchronized (mStateMachines) {
                 for (AudioDeviceInfo deviceInfo : removedDevices) {
                     if (deviceInfo.getType() != AudioDeviceInfo.TYPE_BLUETOOTH_A2DP) {
@@ -1078,7 +1022,8 @@ public class A2dpService extends ConnectableProfile {
         Log.d(TAG, "updateAndBroadcastActiveDevice(" + device + ")");
 
         // Make sure volume has been store before device been remove from active.
-        getAvrcpTargetService()
+        mAdapterService
+                .getAvrcpTargetService()
                 .ifPresent(avrcpTarget -> avrcpTarget.handleA2dpActiveDeviceChanged(device));
 
         mAdapterService.handleActiveDeviceChange(mProfileId, device);
@@ -1094,7 +1039,7 @@ public class A2dpService extends ConnectableProfile {
         intent.addFlags(
                 Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                         | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-        sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+        sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
     }
 
     private void broadcastCodecConfig(BluetoothDevice device, BluetoothCodecStatus codecStatus) {
@@ -1105,23 +1050,12 @@ public class A2dpService extends ConnectableProfile {
         intent.addFlags(
                 Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                         | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-        sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+        sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
     }
 
     @Override
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
         mHandler.post(() -> bondStateChanged(device, toState));
-    }
-
-    // TODO: b/395691070 delete this method
-    @VisibleForTesting
-    void bondStateChangedFromTest(BluetoothDevice device, int bondState) {
-        Log.d(
-                TAG,
-                ("bondStateChangedFromTest(" + device + ", " + bondState + "): ")
-                        + "called while A2DP_CLEANUP_ON_REMOVE_DEVICE is set to "
-                        + Flags.a2dpCleanupOnRemoveDevice());
-        bondStateChanged(device, bondState);
     }
 
     /**
@@ -1139,7 +1073,8 @@ public class A2dpService extends ConnectableProfile {
         if (bondState != BluetoothDevice.BOND_NONE) {
             return;
         }
-        getAvrcpTargetService()
+        mAdapterService
+                .getAvrcpTargetService()
                 .ifPresent(
                         avrcpTarget -> {
                             Log.d(TAG, "bondStateChanged: going for removeStoredVolumeForDevice");
@@ -1149,15 +1084,6 @@ public class A2dpService extends ConnectableProfile {
             A2dpStateMachine sm = mStateMachines.get(device);
             if (sm == null) {
                 Log.d(TAG, "bondStateChanged: SM is null, return ");
-                return;
-            }
-
-            // Bond removal implies that the ACL is disconnected and device properties are removed.
-            // If pseudo address is not same as the identity address, all further events from the
-            // native stack would get ignored. So the state machine must be removed right away.
-            if (!Flags.a2dpCleanupOnRemoveDevice()
-                    && sm.getConnectionState() != STATE_DISCONNECTED) {
-                Log.d(TAG, "bondStateChanged: not in STATE_DISCONNECTED, return ");
                 return;
             }
         }
@@ -1284,16 +1210,18 @@ public class A2dpService extends ConnectableProfile {
         // Check if the device is disconnected - if unbond, remove the state machine
         if (toState == STATE_DISCONNECTED) {
             if (mAdapterService.getBondState(device) == BluetoothDevice.BOND_NONE) {
-                getAvrcpTargetService()
+                mAdapterService
+                        .getAvrcpTargetService()
                         .ifPresent(avrcpTarget -> avrcpTarget.removeStoredVolumeForDevice(device));
                 removeStateMachine(device);
             }
         }
-        getAvrcpTargetService()
+        mAdapterService
+                .getAvrcpTargetService()
                 .ifPresent(
                         avrcpTarget ->
                                 avrcpTarget.handleA2dpConnectionStateChanged(device, toState));
-        mAdapterService.notifyProfileConnectionStateChangeToGatt(mProfileId, fromState, toState);
+        mAdapterService.notifyProfileConnectionStateChangeToScan(mProfileId, fromState, toState);
         mAdapterService.handleProfileConnectionStateChange(mProfileId, device, fromState, toState);
         mAdapterService
                 .getActiveDeviceManager()

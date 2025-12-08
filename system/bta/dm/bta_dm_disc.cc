@@ -20,6 +20,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstddef>
@@ -47,7 +48,6 @@
 #include "stack/include/hidh_api.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/sdp_status.h"
-#include "types/raw_address.h"
 
 #ifdef TARGET_FLOSS
 #include "stack/include/srvc_api.h"
@@ -219,6 +219,10 @@ void bta_dm_sdp_callback(const RawAddress& /* bd_addr */, tSDP_STATUS sdp_status
 
   if (bta_dm_discovery_get_state() == BTA_DM_DISCOVER_IDLE || !sdp_pending ||
       !bta_dm_discovery_cb.sdp_state) {
+    if (com_android_bluetooth_flags_sdp_reset_transport_status_if_disconnect()) {
+      log::info("Clearing transport mask (was: 0x{:02x})", bta_dm_discovery_cb.transports);
+      bta_dm_discovery_cb.transports &= ~BT_TRANSPORT_BR_EDR;
+    }
     return;
   }
 
@@ -283,7 +287,7 @@ static void bta_dm_disc_result(tBTA_DM_SVC_RES& disc_result) {
       // Some devices provide PPCP values that are incompatible with the device-side firmware.
       log::info("disable PPCP read: interop matched name {} address {}", remote_name,
                 bta_dm_discovery_cb.peer_bdaddr);
-    } else if (!com::android::bluetooth::flags::read_ppcp_only_for_success() ||
+    } else if (!com_android_bluetooth_flags_read_ppcp_only_for_success() ||
                disc_result.result == BTA_SUCCESS) {
       log::info("reading PPCP");
       GAP_BleReadPeerPrefConnParams(bta_dm_discovery_cb.peer_bdaddr);
@@ -469,7 +473,6 @@ void bta_dm_disc_gattc_register(void) {
   get_gatt_interface().BTA_GATTC_AppRegister(
           "bta_dm_disc_gatt", bta_dm_gattc_callback,
           base::Bind([](uint8_t client_id, uint8_t status) {
-            tGATT_STATUS gatt_status = static_cast<tGATT_STATUS>(status);
             if (static_cast<tGATT_STATUS>(status) == GATT_SUCCESS) {
               log::info("Registered device discovery search gatt client tGATT_IF:{}", client_id);
               bta_dm_discovery_cb.client_if = client_id;
@@ -573,20 +576,13 @@ static void bta_dm_gatt_disc_complete(tCONN_ID conn_id, tGATT_STATUS status) {
 
 /* This function close the GATT connection after delay timeout */
 static void bta_dm_close_gatt_conn(uint16_t conn_id) {
-  if (com::android::bluetooth::flags::bta_dm_disc_close_proper_conn_id()) {
-    if (conn_id != GATT_INVALID_CONN_ID) {
-      BTA_GATTC_Close(conn_id);
-    }
-  } else {
-    if (bta_dm_discovery_cb.conn_id != GATT_INVALID_CONN_ID) {
-      BTA_GATTC_Close(bta_dm_discovery_cb.conn_id);
-    }
+  if (conn_id != GATT_INVALID_CONN_ID) {
+    BTA_GATTC_Close(conn_id);
   }
 
   bta_dm_discovery_cb.pending_close_bda = RawAddress::kEmpty;
 
-  if (!com::android::bluetooth::flags::bta_dm_disc_close_proper_conn_id() ||
-      bta_dm_discovery_cb.conn_id == conn_id) {
+  if (bta_dm_discovery_cb.conn_id == conn_id) {
     bta_dm_discovery_cb.conn_id = GATT_INVALID_CONN_ID;
   }
 }
@@ -601,15 +597,22 @@ static void bta_dm_close_gatt_conn(uint16_t conn_id) {
  *
  ******************************************************************************/
 static void btm_dm_start_gatt_discovery(const RawAddress& bd_addr) {
-  constexpr bool kUseOpportunistic = true;
-
   /* connection is already open */
   if (bta_dm_discovery_cb.pending_close_bda == bd_addr &&
       bta_dm_discovery_cb.conn_id != GATT_INVALID_CONN_ID) {
     bta_dm_discovery_cb.pending_close_bda = RawAddress::kEmpty;
     alarm_cancel(bta_dm_discovery_cb.gatt_close_timer);
     get_gatt_interface().BTA_GATTC_ServiceSearchRequest(bta_dm_discovery_cb.conn_id, nullptr);
+    return;
+  }
+
+  if (com_android_bluetooth_flags_gatt_discovery_is_non_opportunistic_client()) {
+    /* GATT Discovery always uses non oportunistic direct connected */
+    log::debug(" {} , transport:{}", bd_addr, bt_transport_text(BT_TRANSPORT_LE));
+    get_gatt_interface().BTA_GATTC_Open(bta_dm_discovery_cb.client_if, bd_addr,
+                                        BTM_BLE_DIRECT_CONNECTION, false, 0, false);
   } else {
+    bool kUseOpportunistic = true;
     if (get_btm_client_interface().peer.BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
       log::debug(
               "Use existing gatt client connection for discovery peer:{} "

@@ -19,6 +19,7 @@
 #include "le_advertising_manager.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_gatt.h>
@@ -31,7 +32,6 @@
 #include "main/shim/helpers.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/main_thread.h"
-#include "types/raw_address.h"
 #include "utils.h"
 
 using bluetooth::hci::Address;
@@ -85,7 +85,7 @@ public:
     if (client_id != kAdvertiserClientIdJni) {
       native_reg_id_map_[client_id].erase(reg_id);
     }
-    if (com::android::bluetooth::flags::fix_private_gatt_advertisement()) {
+    if (com_android_bluetooth_flags_fix_private_gatt_advertisement()) {
       // TODO(b/406124107): When removing flag, consider this lock_guard.
       std::lock_guard<std::mutex> lock(reg_callback_mutex_);
       reg_id_to_reg_callback_.erase(reg_id);
@@ -173,7 +173,7 @@ public:
       native_reg_id_map_[client_id].insert(reg_id);
     }
 
-    if (com::android::bluetooth::flags::fix_private_gatt_advertisement()) {
+    if (com_android_bluetooth_flags_fix_private_gatt_advertisement()) {
       // TODO(b/406124107): When removing flag, consider this lock_guard.
       std::lock_guard<std::mutex> lock(reg_callback_mutex_);
       if (!reg_id_to_reg_callback_.insert_or_assign(reg_id, register_cb).second) {
@@ -264,7 +264,7 @@ public:
       return;
     }
 
-    if (com::android::bluetooth::flags::fix_private_gatt_advertisement()) {
+    if (com_android_bluetooth_flags_fix_private_gatt_advertisement()) {
       // TODO(b/406124107): When removing flag, consider this lock_guard.
       std::lock_guard<std::mutex> lock(reg_callback_mutex_);
       if (reg_id_to_reg_callback_.contains(reg_id)) {

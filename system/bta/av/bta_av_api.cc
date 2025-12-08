@@ -29,6 +29,7 @@
 #include "bta_av_api.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -45,7 +46,6 @@
 #include "osi/include/compat.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

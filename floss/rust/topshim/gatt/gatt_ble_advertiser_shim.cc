@@ -18,6 +18,8 @@
 
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 
 #include <algorithm>
 #include <iterator>
@@ -28,8 +30,6 @@
 #include "include/hardware/bt_common_types.h"
 #include "rust/cxx.h"
 #include "src/profiles/gatt.rs.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace topshim {

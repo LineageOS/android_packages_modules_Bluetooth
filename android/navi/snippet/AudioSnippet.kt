@@ -317,7 +317,7 @@ class AudioSnippet : Snippet {
 
     /** Starts a recorder streaming to [outputPath]. */
     @Rpc(description = "Start recording")
-    fun startRecording(outputPath: String) {
+    fun startRecording(outputPath: String, @RpcOptional source: Int? = null) {
         if (outputPath in recorders) {
             throw IllegalArgumentException("$outputPath is already recording")
         }
@@ -329,7 +329,7 @@ class AudioSnippet : Snippet {
             ) * 2
         val recorder =
             AudioRecord(
-                MediaRecorder.AudioSource.MIC,
+                source ?: MediaRecorder.AudioSource.DEFAULT,
                 48000,
                 AudioFormat.CHANNEL_IN_STEREO,
                 AudioFormat.ENCODING_PCM_16BIT,
@@ -364,7 +364,7 @@ class AudioSnippet : Snippet {
                         .apply {
                             order(ByteOrder.LITTLE_ENDIAN)
                             put(WAVE_HEADER_RIFF)
-                            putInt(outputBuffer.size + 44) // File size
+                            putInt(outputBuffer.size + 36) // File size
                             put(WAVE_HEADER_WAVE)
                             put(WAVE_HEADER_FMT)
                             putInt(16) // Size of previous headers

@@ -16,10 +16,10 @@
 
 #pragma once
 
-#include <string>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
 
-#include "types/ble_address_with_type.h"
-#include "types/raw_address.h"
+#include <string>
 
 void BTM_LogHistory(const std::string& tag, const RawAddress& addr, const std::string& msg);
 void BTM_LogHistory(const std::string& tag, const RawAddress& addr, const std::string& msg,

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/uuid.h>
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include <cstdint>
@@ -30,7 +31,6 @@
 #include "test/mock/mock_btif_config.h"
 #include "test/mock/mock_stack_l2cap_api.h"
 #include "test/mock/mock_stack_l2cap_interface.h"
-#include "types/bluetooth/uuid.h"
 
 using ::testing::NiceMock;
 using ::testing::Unused;
@@ -42,7 +42,7 @@ namespace {
 constexpr uint16_t kDummyCID = 0x1234;
 constexpr uint16_t kDummyPSM = 0x7788;
 constexpr uint8_t kDummyID = 0x99;
-constexpr uint8_t kDummyAddr[] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
+constexpr RawAddress kDummyAddr({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
 
 // Set up default callback structure
 tL2CAP_APPL_INFO cb_info = {
@@ -85,7 +85,6 @@ public:
             });
     ON_CALL(mock_l2cap_interface, L2CA_DataWrite)
             .WillByDefault([](uint16_t cid, BT_HDR* p_data) -> tL2CAP_DW_RESULT {
-              auto len = p_data->len;
               osi_free(p_data);
               return tL2CAP_DW_RESULT::SUCCESS;
             });

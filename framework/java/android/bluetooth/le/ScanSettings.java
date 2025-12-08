@@ -19,6 +19,7 @@ package android.bluetooth.le;
 import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.app.compat.CompatChanges;
 import android.bluetooth.BluetoothDevice;
@@ -231,29 +232,35 @@ public final class ScanSettings implements Parcelable {
 
     private final int mScanType;
 
+    @RequiresNoPermission
     public int getScanMode() {
         return mScanMode;
     }
 
+    @RequiresNoPermission
     public int getCallbackType() {
         return mCallbackType;
     }
 
+    @RequiresNoPermission
     public int getScanResultType() {
         return mScanResultType;
     }
 
     /** Returns report delay timestamp based on the device clock. */
+    @RequiresNoPermission
     public long getReportDelayMillis() {
         return mReportDelayMillis;
     }
 
     /** @hide */
+    @RequiresNoPermission
     public int getMatchMode() {
         return mMatchMode;
     }
 
     /** @hide */
+    @RequiresNoPermission
     public int getNumOfMatches() {
         return mNumOfMatchesPerFilter;
     }
@@ -262,23 +269,26 @@ public final class ScanSettings implements Parcelable {
      * Returns whether only legacy advertisements will be returned. Legacy advertisements include
      * advertisements as specified by the Bluetooth core specification 4.2 and below.
      */
+    @RequiresNoPermission
     public boolean getLegacy() {
         return mLegacy;
     }
 
     /** Returns the physical layer used during a scan. */
+    @RequiresNoPermission
     public int getPhy() {
         return mPhy;
     }
 
     @FlaggedApi(Flags.FLAG_RSSI_SCAN_FILTER)
+    @RequiresNoPermission
     public int getRssiThreshold() {
         return mRssiThreshold;
     }
 
     @FlaggedApi(Flags.FLAG_SUPPORT_PASSIVE_SCANNING)
-    @ScanType
-    public int getScanType() {
+    @RequiresNoPermission
+    public @ScanType int getScanType() {
         return mScanType;
     }
 
@@ -365,8 +375,7 @@ public final class ScanSettings implements Parcelable {
 
         // Instance initializer for mNumOfMatchesPerFilter
         {
-            if (Flags.changeDefaultTrackableAdvNumber()
-                    && CompatChanges.isChangeEnabled(CHANGE_DEFAULT_TRACKABLE_ADV_NUMBER)) {
+            if (CompatChanges.isChangeEnabled(CHANGE_DEFAULT_TRACKABLE_ADV_NUMBER)) {
                 mNumOfMatchesPerFilter = MATCH_NUM_FEW_ADVERTISEMENT;
             }
         }
@@ -379,6 +388,7 @@ public final class ScanSettings implements Parcelable {
          *     ScanSettings#SCAN_MODE_LOW_LATENCY}.
          * @throws IllegalArgumentException If the {@code scanMode} is invalid.
          */
+        @RequiresNoPermission
         public Builder setScanMode(int scanMode) {
             if (!List.of(
                             SCAN_MODE_OPPORTUNISTIC,
@@ -402,6 +412,7 @@ public final class ScanSettings implements Parcelable {
          * @param callbackType The callback type flags for the scan.
          * @throws IllegalArgumentException If the {@code callbackType} is invalid.
          */
+        @RequiresNoPermission
         public Builder setCallbackType(int callbackType) {
 
             if (!isValidCallbackType(callbackType)) {
@@ -432,6 +443,7 @@ public final class ScanSettings implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public Builder setScanResultType(int scanResultType) {
             if (scanResultType < SCAN_RESULT_TYPE_FULL
                     || scanResultType > SCAN_RESULT_TYPE_ABBREVIATED) {
@@ -450,6 +462,7 @@ public final class ScanSettings implements Parcelable {
          * @param reportDelayMillis how frequently scan results should be delivered in milliseconds
          * @throws IllegalArgumentException if {@code reportDelayMillis} &lt; 0
          */
+        @RequiresNoPermission
         public Builder setReportDelay(long reportDelayMillis) {
             if (reportDelayMillis < 0) {
                 throw new IllegalArgumentException("reportDelay must be > 0");
@@ -467,6 +480,7 @@ public final class ScanSettings implements Parcelable {
          *     ScanSettings#MATCH_NUM_MAX_ADVERTISEMENT}
          * @throws IllegalArgumentException If the {@code matchMode} is invalid.
          */
+        @RequiresNoPermission
         public Builder setNumOfMatches(int numOfMatches) {
             if (numOfMatches < MATCH_NUM_ONE_ADVERTISEMENT
                     || numOfMatches > MATCH_NUM_MAX_ADVERTISEMENT) {
@@ -483,6 +497,7 @@ public final class ScanSettings implements Parcelable {
          *     or {@link ScanSettings#MATCH_MODE_STICKY}
          * @throws IllegalArgumentException If the {@code matchMode} is invalid.
          */
+        @RequiresNoPermission
         public Builder setMatchMode(int matchMode) {
             if (matchMode < MATCH_MODE_AGGRESSIVE || matchMode > MATCH_MODE_STICKY) {
                 throw new IllegalArgumentException("invalid matchMode " + matchMode);
@@ -498,6 +513,7 @@ public final class ScanSettings implements Parcelable {
          *
          * @param legacy true if only legacy advertisements will be returned
          */
+        @RequiresNoPermission
         public Builder setLegacy(boolean legacy) {
             mLegacy = legacy;
             return this;
@@ -514,6 +530,7 @@ public final class ScanSettings implements Parcelable {
          * @param phy Can be one of {@link BluetoothDevice#PHY_LE_1M}, {@link
          *     BluetoothDevice#PHY_LE_CODED} or {@link ScanSettings#PHY_LE_ALL_SUPPORTED}
          */
+        @RequiresNoPermission
         public Builder setPhy(int phy) {
             mPhy = phy;
             return this;
@@ -527,6 +544,7 @@ public final class ScanSettings implements Parcelable {
          * @return this builder
          */
         @FlaggedApi(Flags.FLAG_RSSI_SCAN_FILTER)
+        @RequiresNoPermission
         public @NonNull Builder setRssiThreshold(int rssiThreshold) {
             mRssiThreshold = rssiThreshold;
             return this;
@@ -542,6 +560,7 @@ public final class ScanSettings implements Parcelable {
          * @throws IllegalArgumentException if invalid scan type is given.
          */
         @FlaggedApi(Flags.FLAG_SUPPORT_PASSIVE_SCANNING)
+        @RequiresNoPermission
         public @NonNull Builder setScanType(@ScanType int scanType) {
             if (scanType != SCAN_TYPE_PASSIVE && scanType != SCAN_TYPE_ACTIVE) {
                 throw new IllegalArgumentException("invalid scan type");
@@ -555,6 +574,7 @@ public final class ScanSettings implements Parcelable {
          *
          * @throws IllegalArgumentException if the settings cannot be built.
          */
+        @RequiresNoPermission
         public ScanSettings build() {
             if (mCallbackType == CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH
                     && mReportDelayMillis < AUTO_BATCH_MIN_REPORT_DELAY_MILLIS) {
@@ -581,6 +601,7 @@ public final class ScanSettings implements Parcelable {
      *
      * @hide
      */
+    @RequiresNoPermission
     public static String getScanModeString(int scanMode) {
         return switch (scanMode) {
             case SCAN_MODE_OPPORTUNISTIC -> "SCAN_MODE_OPPORTUNISTIC";

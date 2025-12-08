@@ -23,7 +23,7 @@
     <test class="com.android.tradefed.testtype.mobly.MoblyBinaryHostTest">
         <option name="mobly-par-file-name" value="navi-tf" />
         <option name="mobly-config-file-name" value="config.yml" />
-        <option name="mobly-test-timeout" value="1800000" />
+        <option name="mobly-test-timeout" value="7200000" />
         <option name="test-bed" value="cuttlefish" />
     </test>
     <object type="module_controller" class="com.android.tradefed.testtype.suite.module.MainlineTestModuleController">

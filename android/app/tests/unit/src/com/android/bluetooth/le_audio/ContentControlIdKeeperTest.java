@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.le_audio;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -28,14 +26,15 @@ import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothLeAudio;
 import android.os.ParcelUuid;
+import android.platform.test.flag.junit.SetFlagsRule;
 import android.util.Pair;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.btservice.ServiceFactory;
+import com.android.bluetooth.btservice.AdapterService;
+import com.android.tests.bluetooth.MockitoRule;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,33 +42,30 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /** Test cases for {@link ContentControlIdKeeper}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class ContentControlIdKeeperTest {
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock ServiceFactory mServiceFactoryMock;
-    @Mock LeAudioService mLeAudioServiceMock;
+    @Mock private AdapterService mAdapterService;
+    @Mock private LeAudioService mLeAudioService;
 
     @Before
     public void setUp() throws Exception {
-        doReturn(mLeAudioServiceMock).when(mServiceFactoryMock).getLeAudioService();
-        ContentControlIdKeeper.initForTesting(mServiceFactoryMock);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        ContentControlIdKeeper.initForTesting(null);
+        doReturn(Optional.of(mLeAudioService)).when(mAdapterService).getLeAudioService();
+        ContentControlIdKeeper.initForTesting();
     }
 
     public int testCcidAcquire(ParcelUuid uuid, int context, int expectedListSize) {
-        int ccid = ContentControlIdKeeper.acquireCcid(uuid, context);
+        int ccid = ContentControlIdKeeper.acquireCcid(mAdapterService, uuid, context);
         assertThat(ccid).isNotEqualTo(ContentControlIdKeeper.CCID_INVALID);
 
-        verify(mLeAudioServiceMock).setCcidInformation(eq(uuid), eq(ccid), eq(context));
+        verify(mLeAudioService).setCcidInformation(eq(uuid), eq(ccid), eq(context));
         Map<ParcelUuid, Pair<Integer, Integer>> uuidToCcidContextPair =
                 ContentControlIdKeeper.getUuidToCcidContextPairMap();
         assertThat(uuidToCcidContextPair).hasSize(expectedListSize);
@@ -85,11 +81,11 @@ public class ContentControlIdKeeperTest {
                 ContentControlIdKeeper.getUuidToCcidContextPairMap();
         assertThat(uuidToCcidContextPair).containsKey(uuid);
 
-        ContentControlIdKeeper.releaseCcid(ccid);
+        ContentControlIdKeeper.releaseCcid(mAdapterService, ccid);
         uuidToCcidContextPair = ContentControlIdKeeper.getUuidToCcidContextPairMap();
         assertThat(uuidToCcidContextPair).doesNotContainKey(uuid);
 
-        verify(mLeAudioServiceMock).setCcidInformation(eq(uuid), eq(ccid), eq(0));
+        verify(mLeAudioService).setCcidInformation(eq(uuid), eq(ccid), eq(0));
 
         assertThat(uuidToCcidContextPair).hasSize(expectedListSize);
     }
@@ -123,10 +119,10 @@ public class ContentControlIdKeeperTest {
     public void testAcquireInvalidContext() {
         ParcelUuid uuid = new ParcelUuid(UUID.randomUUID());
 
-        assertThat(ContentControlIdKeeper.acquireCcid(uuid, 0))
+        assertThat(ContentControlIdKeeper.acquireCcid(mAdapterService, uuid, 0))
                 .isEqualTo(ContentControlIdKeeper.CCID_INVALID);
 
-        verify(mLeAudioServiceMock, times(0))
+        verify(mLeAudioService, times(0))
                 .setCcidInformation(any(ParcelUuid.class), any(int.class), any(int.class));
         Map<ParcelUuid, Pair<Integer, Integer>> uuidToCcidContextPair =
                 ContentControlIdKeeper.getUuidToCcidContextPairMap();

@@ -16,11 +16,12 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
+
 #include "stack/include/a2dp_api.h"
 #include "stack/include/avrc_api.h"
 #include "stack/include/bt_hdr.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 /**
  * Wrapper classes for the API functions currently defined in
@@ -59,6 +60,8 @@ public:
   virtual uint16_t MsgReq(uint8_t handle, uint8_t label, uint8_t ctype, BT_HDR* p_pkt) = 0;
 
   virtual void SaveControllerVersion(const RawAddress& bdaddr, uint16_t version) = 0;
+
+  virtual void ResetServiceUuid() = 0;
 
   virtual ~AvrcpInterface() = default;
 };

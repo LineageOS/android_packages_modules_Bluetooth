@@ -377,16 +377,13 @@ public final class BluetoothOppProvider extends ContentProvider {
 
         int match = sURIMatcher.match(uri);
         switch (match) {
-            case SHARES:
-                qb.setTables(DB_TABLE);
-                break;
-            case SHARES_ID:
+            case SHARES -> qb.setTables(DB_TABLE);
+            case SHARES_ID -> {
                 qb.setTables(DB_TABLE);
                 qb.appendWhere(BluetoothShare._ID + "=");
                 qb.appendWhere(uri.getPathSegments().get(1));
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown URI: " + uri);
+            }
+            default -> throw new IllegalArgumentException("Unknown URI: " + uri);
         }
 
         // The following is a large enough debug operation such that we want to guard it with an

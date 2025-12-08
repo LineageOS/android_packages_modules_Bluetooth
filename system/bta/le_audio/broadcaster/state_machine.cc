@@ -19,6 +19,8 @@
 
 #include <bind_helpers.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <algorithm>
 #include <array>
@@ -35,6 +37,7 @@
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
 #include "bta/le_audio/broadcaster/broadcaster_types.h"
+#include "bta/le_audio/codec_manager.h"
 #include "bta/le_audio/le_audio_types.h"
 #include "btm_api_types.h"
 #include "btm_iso_api_types.h"
@@ -45,7 +48,6 @@
 #include "hcidefs.h"
 #include "main/shim/le_advertising_manager.h"
 #include "stack/include/btm_iso_api.h"
-#include "types/raw_address.h"
 
 using bluetooth::common::ToString;
 using bluetooth::hci::IsoManager;
@@ -506,6 +508,17 @@ private:
     }
   }
 
+  static void PrepareDataPath(hci_data_direction_t data_path_dir,
+                              uint8_t data_path_id,
+                              const std::vector<uint8_t>& data_path_config) {
+    if (!com_android_bluetooth_flags_leaudio_broadcast_config_data_path_before_set_iso_data_path()) {
+      log::debug("leaudio_broadcast_config_data_path_before_set_iso_data_path is not enabled");
+      return;
+    }
+    bluetooth::le_audio::CodecManager::GetInstance()->ConfigureDataPath(
+            data_path_dir, data_path_id, data_path_config);
+  }
+
   void TriggerIsoDatapathSetup(uint16_t conn_handle) {
     log::info("conn_hdl={}", conn_handle);
     log::assert_that(active_config_ != std::nullopt,
@@ -532,6 +545,11 @@ private:
             .controller_delay = iso_datapath_config.controllerDelayUs,
             .codec_conf = iso_datapath_config.configuration,
     };
+
+    PrepareDataPath(static_cast<hci_data_direction_t>(param.data_path_dir),
+                    param.data_path_id,
+                    sm_config_.config.data_path.dataPathConfig);
+
     IsoManager::GetInstance()->SetupIsoDataPath(conn_handle, std::move(param));
   }
 

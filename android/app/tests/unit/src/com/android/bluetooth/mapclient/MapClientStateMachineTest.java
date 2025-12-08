@@ -29,7 +29,6 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasPackage;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -67,7 +66,6 @@ import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
 import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Telephony.Sms;
 import android.telephony.SmsManager;
@@ -85,6 +83,8 @@ import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.obex.HeaderSet;
+import com.android.tests.bluetooth.FlagsWrapper;
+import com.android.tests.bluetooth.MockitoRule;
 import com.android.vcard.VCardConstants;
 import com.android.vcard.VCardEntry;
 import com.android.vcard.VCardProperty;
@@ -159,8 +159,7 @@ public class MapClientStateMachineTest {
             "com.android.bluetooth.mapclient.MapClientStateMachineTest.action.MESSAGE_DELIVERED";
 
     private final BluetoothDevice mDevice = getTestDevice(74);
-    private final Context mTargetContext =
-            InstrumentationRegistry.getInstrumentation().getContext();
+    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
 
     private Bmessage mTestIncomingSmsBmessage;
     private Bmessage mTestIncomingMmsBmessage;
@@ -187,7 +186,7 @@ public class MapClientStateMachineTest {
             }
         }
 
-        public boolean isActionReceived(long timeout) {
+        boolean isActionReceived(long timeout) {
             boolean result = false;
             try {
                 result = mActionReceivedLatch.await(timeout, TimeUnit.MILLISECONDS);
@@ -199,14 +198,14 @@ public class MapClientStateMachineTest {
     }
 
     @Parameters(name = "{0}")
-    public static List<FlagsParameterization> getParams() {
-        return FlagsParameterization.progressionOf(
+    public static List<FlagsWrapper> getParams() {
+        return FlagsWrapper.progressionOf(
                 Flags.FLAG_HANDLE_DELIVERY_SENDING_FAILURE_EVENTS,
                 Flags.FLAG_USE_ENTIRE_MESSAGE_HANDLE);
     }
 
-    public MapClientStateMachineTest(FlagsParameterization flags) {
-        mSetFlagsRule = new SetFlagsRule(flags);
+    public MapClientStateMachineTest(FlagsWrapper flags) {
+        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
     }
 
     @Before
@@ -223,7 +222,7 @@ public class MapClientStateMachineTest {
 
         when(mService.getContentResolver()).thenReturn(contentResolver);
 
-        doReturn(mTargetContext.getResources()).when(mService).getResources();
+        doReturn(mContext.getResources()).when(mService).getResources();
 
         when(mMasClient.makeRequest(any(Request.class))).thenReturn(true);
         mStateMachine =
@@ -256,7 +255,7 @@ public class MapClientStateMachineTest {
         filter.addAction(ACTION_MESSAGE_DELIVERED);
         filter.addAction(ACTION_MESSAGE_SENT);
         mSentDeliveryReceiver = new SentDeliveryReceiver();
-        mTargetContext.registerReceiver(mSentDeliveryReceiver, filter, Context.RECEIVER_EXPORTED);
+        mContext.registerReceiver(mSentDeliveryReceiver, filter, Context.RECEIVER_EXPORTED);
     }
 
     @After
@@ -265,7 +264,7 @@ public class MapClientStateMachineTest {
             mStateMachine.doQuit();
         }
 
-        mTargetContext.unregisterReceiver(mSentDeliveryReceiver);
+        mContext.unregisterReceiver(mSentDeliveryReceiver);
     }
 
     /** Test that default state is STATE_CONNECTING */
@@ -903,7 +902,7 @@ public class MapClientStateMachineTest {
 
     private PendingIntent createPendingIntent(String action) {
         return PendingIntent.getBroadcast(
-                mTargetContext, 1, new Intent(action), PendingIntent.FLAG_IMMUTABLE);
+                mContext, 1, new Intent(action), PendingIntent.FLAG_IMMUTABLE);
     }
 
     private void sendMapMessageWithPendingIntents(

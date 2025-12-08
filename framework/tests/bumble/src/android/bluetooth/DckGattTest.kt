@@ -321,7 +321,7 @@ public class DckGattTest() {
     }
 
     companion object {
-        private const val TAG = "DckTest"
+        private const val TAG = "DckGattTest"
         private const val TIMEOUT: Long = 2000
         private const val DISCOVERY_TIMEOUT: Long = 5000
         private const val TEST_ADDRESS_RANDOM_STATIC = "F0:43:A8:23:10:11"

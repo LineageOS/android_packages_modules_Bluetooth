@@ -108,7 +108,7 @@ impl<'a> PcmFrame<'a> {
             .step_by(stride)
             .map(|bytes| {
                 let it = bytes.iter().enumerate();
-                let v = it.fold(0i32, |v, (i, b)| v | (*b as i32) << (i * 8 + (32 - BITDEPTH)));
+                let v = it.fold(0i32, |v, (i, b)| v | ((*b as i32) << (i * 8 + (32 - BITDEPTH))));
                 v as f32 * (-31f32).exp2()
             })
             .collect()

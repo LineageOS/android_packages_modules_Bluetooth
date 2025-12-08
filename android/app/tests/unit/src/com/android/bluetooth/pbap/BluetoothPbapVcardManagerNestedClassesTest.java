@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.pbap;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.mock;
@@ -28,12 +26,13 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.provider.ContactsContract;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.pbap.BluetoothPbapVcardManager.ContactCursorFilter;
 import com.android.bluetooth.pbap.BluetoothPbapVcardManager.PropertySelector;
 import com.android.bluetooth.pbap.BluetoothPbapVcardManager.VCardFilter;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;

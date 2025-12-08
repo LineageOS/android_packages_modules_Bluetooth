@@ -19,8 +19,9 @@
 #include "main/shim/btm_api.h"
 
 #include <base/functional/callback.h>
+#include <bluetooth/types/address.h>
 
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/acl_manager_le.h"
 #include "hci/controller.h"
 #include "main/shim/acl.h"
 #include "main/shim/entry.h"
@@ -29,7 +30,6 @@
 #include "stack/btm/btm_ble_sec.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/include/btm_status.h"
-#include "types/raw_address.h"
 
 tBTM_STATUS bluetooth::shim::BTM_ClearEventFilter() {
   GetController()->SetEventFilterClearAll();
@@ -74,10 +74,10 @@ tBTM_STATUS bluetooth::shim::BTM_AllowWakeByHid(
 
   // Allow BLE HID
   for (auto hid_address : le_hid_devices) {
-    tBLE_BD_ADDR bdadr = BTM_Sec_GetAddressWithType(hid_address.first);
-    bluetooth::shim::GetAclManager()->CreateLeConnection(ToAddressWithTypeFromLegacy(bdadr),
-                                                         /*is_direct=*/false,
-                                                         /*prefer_relax_mode=*/false);
+    tBLE_BD_ADDR bdaddr = BTM_Sec_GetAddressWithType(hid_address.first);
+    bluetooth::shim::GetAclManagerLe()->CreateLeConnection(ToAddressWithTypeFromLegacy(bdaddr),
+                                                           /*is_direct=*/false,
+                                                           /*prefer_relax_mode=*/false);
   }
 
   return tBTM_STATUS::BTM_SUCCESS;
@@ -91,10 +91,10 @@ tBTM_STATUS bluetooth::shim::BTM_RestoreFilterAcceptList(
   // Next, Allow BLE connection from all devices that need to be restored.
   // This will also re-arm the LE connection.
   for (auto address_pair : le_devices) {
-    tBLE_BD_ADDR bdadr = BTM_Sec_GetAddressWithType(address_pair.first);
-    bluetooth::shim::GetAclManager()->CreateLeConnection(ToAddressWithTypeFromLegacy(bdadr),
-                                                         /*is_direct=*/false,
-                                                         /*prefer_relax_mode=*/false);
+    tBLE_BD_ADDR bdaddr = BTM_Sec_GetAddressWithType(address_pair.first);
+    bluetooth::shim::GetAclManagerLe()->CreateLeConnection(ToAddressWithTypeFromLegacy(bdaddr),
+                                                           /*is_direct=*/false,
+                                                           /*prefer_relax_mode=*/false);
   }
 
   return tBTM_STATUS::BTM_SUCCESS;

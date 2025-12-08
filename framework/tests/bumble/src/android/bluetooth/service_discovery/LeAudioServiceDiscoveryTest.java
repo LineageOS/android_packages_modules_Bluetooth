@@ -24,12 +24,12 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothUuid;
-import android.bluetooth.Host;
 import android.bluetooth.PandoraDevice;
 import android.bluetooth.Utils;
 import android.bluetooth.VirtualOnly;
@@ -103,7 +103,6 @@ public class LeAudioServiceDiscoveryTest {
 
     private InOrder mInOrder;
     private BluetoothDevice mBumbleDevice;
-    private Host mHost;
 
     @Before
     public void setUp() throws Exception {
@@ -111,7 +110,6 @@ public class LeAudioServiceDiscoveryTest {
 
         mInOrder = inOrder(mReceiver);
         mBumbleDevice = mBumble.getRemoteDevice();
-        mHost = new Host(mTargetContext);
         mBumble.bumbleConfigBlocking()
                 .override(
                         OverrideRequest.newBuilder()
@@ -138,6 +136,8 @@ public class LeAudioServiceDiscoveryTest {
         filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
         filter.addAction(BluetoothDevice.ACTION_UUID);
         filter.addAction(BluetoothDevice.ACTION_FOUND);
+        filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        filter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST);
 
         mTargetContext.registerReceiver(mReceiver, filter);
         Utils.setupIntentLogger(TAG, mReceiver);
@@ -146,9 +146,8 @@ public class LeAudioServiceDiscoveryTest {
     @After
     public void tearDown() throws Exception {
         if (mBumbleDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
-            mHost.removeBondAndVerify(mBumbleDevice);
+            removeBond(mBumbleDevice);
         }
-        mHost.close();
         mTargetContext.unregisterReceiver(mReceiver);
     }
 
@@ -217,19 +216,40 @@ public class LeAudioServiceDiscoveryTest {
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
         assertThat(mAdapter.cancelDiscovery()).isTrue();
 
-        // Create Bond
-        mHost.createBondAndVerify(mBumbleDevice);
+        // Start pairing from Android with Auto transport
+        assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_AUTO)).isTrue();
 
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING));
         // Verify  ACL connection on LE transport first and then Classic transport
         verifyIntentReceived(
                 hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE));
         verifyIntentReceived(
-                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+                hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(
+                        BluetoothDevice.EXTRA_PAIRING_VARIANT,
+                        BluetoothDevice.PAIRING_VARIANT_CONSENT));
 
-        // Verify both LE and Classic Services
+        // Approve pairing from Android
+        assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
+
+        verifyIntentReceivedUnordered(
+                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+        // Ensure that pairing succeeds
         verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
+        // Verify both LE and Classic Services
+        verifyIntentReceivedUnorderedAtLeast(
+                1,
                 hasAction(BluetoothDevice.ACTION_UUID),
                 hasExtra(
                         BluetoothDevice.EXTRA_UUID,
@@ -266,7 +286,7 @@ public class LeAudioServiceDiscoveryTest {
      */
     @Test
     @VirtualOnly
-    public void testServiceDiscoveryWithRandomAddr() {
+    public void testServiceDiscoveryWithRandomAddr() throws Exception {
         // Register Battery and Le Audio services on Bumble
         mBumble.gattBlocking()
                 .registerService(
@@ -285,14 +305,6 @@ public class LeAudioServiceDiscoveryTest {
                                                 .build())
                                 .build());
 
-        // Make Bumble connectable
-        mBumble.hostBlocking()
-                .advertise(
-                        AdvertiseRequest.newBuilder()
-                                .setLegacy(true)
-                                .setConnectable(true)
-                                .setOwnAddressType(OwnAddressType.RANDOM)
-                                .build());
         // Make Bumble discoverable over BR/EDR
         mBumble.hostBlocking()
                 .setDiscoverabilityMode(
@@ -306,19 +318,48 @@ public class LeAudioServiceDiscoveryTest {
                 hasExtra(BluetoothDevice.EXTRA_NAME, Utils.BUMBLE_DEVICE_NAME),
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
         assertThat(mAdapter.cancelDiscovery()).isTrue();
-        // Create Bond
-        mHost.createBondAndVerify(mBumbleDevice);
+        // Start pairing from Android with Auto transport
+        assertThat(mBumbleDevice.createBond(BluetoothDevice.TRANSPORT_AUTO)).isTrue();
 
-        // Verify  ACL connection on classic transport first and then LE transport
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING));
         verifyIntentReceived(
                 hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR));
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(
+                        BluetoothDevice.EXTRA_PAIRING_VARIANT,
+                        BluetoothDevice.PAIRING_VARIANT_CONSENT));
+
+        // Approve pairing from Android
+        assertThat(mBumbleDevice.setPairingConfirmation(true)).isTrue();
+
+        // Make Bumble connectable with some delay
+        Thread.sleep(300);
+        mBumble.hostBlocking()
+                .advertise(
+                        AdvertiseRequest.newBuilder()
+                                .setLegacy(true)
+                                .setConnectable(true)
+                                .setOwnAddressType(OwnAddressType.RANDOM)
+                                .build());
+
         verifyIntentReceived(
                 hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE));
-
-        // Verify both LE and Classic Services
+        // Ensure that pairing succeeds
         verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
+        // Verify both LE and Classic Services
+        verifyIntentReceivedUnorderedAtLeast(
+                1,
                 hasAction(BluetoothDevice.ACTION_UUID),
                 hasExtra(
                         BluetoothDevice.EXTRA_UUID,
@@ -331,9 +372,34 @@ public class LeAudioServiceDiscoveryTest {
                                 Matchers.hasItemInArray(BluetoothUuid.BATTERY))));
     }
 
+    private void removeBond(BluetoothDevice device) {
+        assertThat(device.removeBond()).isTrue();
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE));
+    }
+
     @SafeVarargs
     private void verifyIntentReceived(Matcher<Intent>... matchers) {
         mInOrder.verify(mReceiver, timeout(INTENT_TIMEOUT.toMillis()))
                 .onReceive(any(Context.class), MockitoHamcrest.argThat(AllOf.allOf(matchers)));
+    }
+
+    @SafeVarargs
+    private void verifyIntentReceivedUnordered(int num, Matcher<Intent>... matchers) {
+        mInOrder.verify(mReceiver, timeout(INTENT_TIMEOUT.toMillis()).times(num))
+                .onReceive(any(Context.class), MockitoHamcrest.argThat(AllOf.allOf(matchers)));
+    }
+
+    @SafeVarargs
+    private void verifyIntentReceivedUnorderedAtLeast(int atLeast, Matcher<Intent>... matchers) {
+        verify(mReceiver, timeout(INTENT_TIMEOUT.toMillis()).atLeast(atLeast))
+                .onReceive(any(Context.class), MockitoHamcrest.argThat(AllOf.allOf(matchers)));
+    }
+
+    @SafeVarargs
+    private void verifyIntentReceivedUnordered(Matcher<Intent>... matchers) {
+        verifyIntentReceivedUnordered(1, matchers);
     }
 }

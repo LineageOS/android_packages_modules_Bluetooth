@@ -29,35 +29,38 @@ import org.junit.runner.RunWith
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class ScanClientTest {
-    private val scanClient = ScanClient(1)
-
-    @Test
-    fun constructor() {
-        val scanClientWithDefaultSettings = ScanClient(1)
-        assertThat(scanClientWithDefaultSettings.mSettings.scanMode)
-            .isEqualTo(ScanSettings.SCAN_MODE_LOW_LATENCY)
-    }
-
-    @Test
-    fun constructor_emptyFilters() {
-        val scanClientEmptyFilters = ScanClient(1)
-        assertThat(scanClientEmptyFilters.mFilters).isEmpty()
-    }
-
     @Test
     fun constructor_withFilters() {
+        val appUid = 1234
         val filters = listOf(ScanFilter.Builder().build())
         val scanSettings = ScanSettings.Builder().build()
-        val scanClientWithFilters = ScanClient(1, scanSettings, filters)
-        assertThat(scanClientWithFilters.mFilters).isEqualTo(filters)
+        val scanClientWithFilters = ScanClient(1, scanSettings, filters, appUid)
+        assertThat(scanClientWithFilters.filters).isEqualTo(filters)
     }
 
     @Test
-    fun constructor_withAppUid() {
+    fun constructor_noFilters() {
         val appUid = 1234
         val scanSettings = ScanSettings.Builder().build()
         val scanClientWithAppUid = ScanClient(1, scanSettings, null, appUid)
-        assertThat(scanClientWithAppUid.mAppUid).isEqualTo(appUid)
+        assertThat(scanClientWithAppUid.appUid).isEqualTo(appUid)
+    }
+
+    @Test
+    fun updateScanMode() {
+        val appUid = 1234
+        val scanSettings = ScanSettings.Builder().build()
+        val scanClient = ScanClient(1, scanSettings, null, appUid)
+
+        val newScanMode = ScanSettings.SCAN_MODE_BALANCED
+        val updated = scanClient.updateScanMode(newScanMode)
+        assertThat(updated).isTrue()
+        assertThat(scanClient.settings.scanMode).isEqualTo(newScanMode)
+
+        val sameScanMode = scanClient.settings.scanMode
+        val notUpdated = scanClient.updateScanMode(sameScanMode)
+        assertThat(notUpdated).isFalse()
+        assertThat(scanClient.settings.scanMode).isEqualTo(sameScanMode)
     }
 
     @Test
@@ -65,31 +68,20 @@ class ScanClientTest {
         val scanSettings = ScanSettings.Builder().build()
         EqualsTester()
             .addEqualityGroup(
-                ScanClient(1, scanSettings, null),
-                ScanClient(1, scanSettings, null),
-                ScanClient(1, scanSettings, listOf(ScanFilter.Builder().build())),
                 ScanClient(1, scanSettings, null, 1234),
                 ScanClient(1, scanSettings, null, 5678),
+                ScanClient(1, scanSettings, listOf(ScanFilter.Builder().build()), 1234),
+                ScanClient(1, scanSettings, listOf(ScanFilter.Builder().build()), 5678),
             )
-            .addEqualityGroup(ScanClient(2, scanSettings, null))
+            .addEqualityGroup(ScanClient(2, scanSettings, null, 1234))
             .testEquals()
     }
 
     @Test
     fun toString_doesNotCrash() {
+        val appUid = 1234
+        val scanSettings = ScanSettings.Builder().build()
+        val scanClient = ScanClient(1, scanSettings, null, appUid)
         scanClient.toString()
-    }
-
-    @Test
-    fun updateScanMode() {
-        val newScanMode = ScanSettings.SCAN_MODE_BALANCED
-        val updated = scanClient.updateScanMode(newScanMode)
-        assertThat(updated).isTrue()
-        assertThat(scanClient.mSettings.scanMode).isEqualTo(newScanMode)
-
-        val sameScanMode = scanClient.mSettings.scanMode
-        val notUpdated = scanClient.updateScanMode(sameScanMode)
-        assertThat(notUpdated).isFalse()
-        assertThat(scanClient.mSettings.scanMode).isEqualTo(sameScanMode)
     }
 }

@@ -45,6 +45,7 @@ enum class ErrorCode : uint8_t {
   INVALID_PRESET_INDEX,
   GROUP_OPERATION_NOT_SUPPORTED,
   PROCEDURE_ALREADY_IN_PROGRESS,
+  TIMEOUT
 };
 
 enum class PresetInfoReason : uint8_t {

@@ -26,9 +26,10 @@
 #include <cstdint>
 
 // Original included files, if any
+#include <bluetooth/types/address.h>
+
 #include "stack/include/smp_api.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
 // Mocked internal structures, if any

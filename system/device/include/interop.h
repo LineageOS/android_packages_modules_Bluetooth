@@ -18,12 +18,12 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <hardware/bluetooth.h>
 #include <stdbool.h>
 
 #include "include/hardware/bluetooth.h"
 #include "osi/include/list.h"
-#include "types/raw_address.h"
 
 static const char INTEROP_MODULE[] = "interop_module";
 
@@ -347,6 +347,9 @@ typedef enum {
   // collision.
   INTEROP_DELAY_AUTH,
 
+  // Add remote device into INTEROP_A2DP_DELAY_DISCONNECT blacklist
+  INTEROP_A2DP_DELAY_DISCONNECT,
+
   // Some LE HID devices contain more than one HOGP service.
   INTEROP_MULTIPLE_HOGP_SERVICE_CHOOSE_THIRD,
 
@@ -369,11 +372,19 @@ typedef enum {
   // Some devices claim to support HFP in EIR but does not actually support it.
   INTEROP_DISABLE_HF_PROFILE,
 
-  // Some devices don't respond to LE appearance read request.
   INTEROP_DISABLE_READ_LE_APPEARANCE,
 
   // Some devices need inband ringing disabled
   INTEROP_INBAND_RINGTONE_SET_TO_FALSE,
+
+  // Some devices don't respond when accept connection request
+  // with central role.
+  INTEROP_REMAIN_PERIPHERAL_ON_ACCEPT_CONNECTION_REQUEST,
+
+  // Some devices do not work well with incoming SMP over BR/EDR pairing requests
+  INTEROP_DISABLE_OUTGOING_BR_SMP,
+
+  INTEROP_HFP_SEND_OK_FOR_CLCC_AFTER_VOIP_CALL_END,
 
   END_OF_INTEROP_LIST
 } interop_feature_t;

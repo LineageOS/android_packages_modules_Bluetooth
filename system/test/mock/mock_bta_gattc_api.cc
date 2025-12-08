@@ -21,15 +21,15 @@
 
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/uuid.h>
 
 #include "bta/gatt/bta_gattc_int.h"
 #include "bta/gatt/database.h"
 #include "bta/include/bta_gatt_api.h"
 #include "stack/include/gatt_api.h"
 #include "test/common/mock_functions.h"
-#include "types/bluetooth/uuid.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 void BTA_GATTC_Disable(void) { inc_func_call_count(__func__); }
 const gatt::Characteristic* BTA_GATTC_GetCharacteristic(uint16_t /* conn_id */,
@@ -156,3 +156,7 @@ void bta_gattc_continue_discovery_if_needed(const RawAddress& /* bd_addr */,
   inc_func_call_count(__func__);
 }
 void bta_gatt_client_dump(int /* fd */) { inc_func_call_count(__func__); }
+
+void bta_gattc_link_cache_for_bonded_device(const RawAddress& /*bd_addr*/) {
+  inc_func_call_count(__func__);
+}

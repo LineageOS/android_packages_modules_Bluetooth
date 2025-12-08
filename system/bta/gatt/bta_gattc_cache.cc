@@ -29,6 +29,9 @@
 #include <base/functional/callback.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <cstdio>
@@ -45,8 +48,6 @@
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/sdp_api.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
@@ -203,7 +204,8 @@ RobustCachingSupport GetRobustCachingSupport(const tBTA_GATTC_CLCB* p_clcb,
     return GATT_ERROR;
   }
 
-  if (p_clcb->transport == BT_TRANSPORT_LE) {
+  if (p_clcb->transport == BT_TRANSPORT_LE ||
+      com_android_bluetooth_flags_br_edr_discover_gatt_services_over_gatt()) {
     return GATTC_Discover(conn_id, disc_type, 0x0001, 0xFFFF);
   }
 
@@ -1040,4 +1042,24 @@ void bta_gattc_get_gatt_db(tCONN_ID conn_id, uint16_t start_handle, uint16_t end
   }
 
   bta_gattc_get_gatt_db_impl(p_clcb->p_srcb, start_handle, end_handle, db, count);
+}
+
+void bta_gattc_link_cache_for_bonded_device(const RawAddress& bd_addr) {
+  log::info("");
+  tBTA_GATTC_SERV* p_srcb = bta_gattc_find_srcb(bd_addr);
+  if (p_srcb == nullptr || p_srcb->gatt_database.IsEmpty()) {
+    return;
+  }
+  gatt::Database db = bta_gattc_cache_load(p_srcb->server_bda);
+  if (!db.IsEmpty()) {
+    return;
+  }
+
+  if (BTM_IsBonded(bd_addr)) {
+    Octet16 hash = p_srcb->gatt_database.Hash();
+
+    log::debug("Linking db hash to bonded device {}",
+               p_srcb->server_bda.ToRedactedStringForLogging());
+    bta_gattc_cache_link(p_srcb->server_bda, hash);
+  }
 }

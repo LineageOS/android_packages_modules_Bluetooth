@@ -17,7 +17,7 @@
 package com.android.bluetooth.gatt;
 
 import static com.android.bluetooth.Utils.transportToString;
-import static com.android.bluetooth.util.AttributionSourceUtil.getLastAttributionTag;
+import static com.android.bluetooth.util.AttributionSourceUtils.getLastAttributionTag;
 
 import android.annotation.Nullable;
 import android.bluetooth.BluetoothDevice;
@@ -52,11 +52,153 @@ import java.util.function.Predicate;
  *
  * @param <C> the callback type (must implement {@link IInterface}) for this map
  */
-public class ContextMap<C extends IInterface> {
-    private static final String TAG =
-            GattServiceConfig.TAG_PREFIX + ContextMap.class.getSimpleName();
+class ContextMap<C extends IInterface> {
+    private static final String TAG = GattUtil.TAG_PREFIX + ContextMap.class.getSimpleName();
 
     private static final int MAX_LAST_RECORDS = 5;
+
+    /** Our internal application list */
+    private final Object mAppsLock = new Object();
+
+    @GuardedBy("mAppsLock")
+    private final List<App> mApps = new ArrayList<>();
+
+    @GuardedBy("mAppsLock")
+    private final List<AppRecord> mOngoingRecords = new ArrayList<>();
+
+    @GuardedBy("mAppsLock")
+    private final List<AppRecord> mLastRecords = new ArrayList<>();
+
+    private final Object mConnectionsLock = new Object();
+
+    /** Internal list of connected devices */
+    @GuardedBy("mConnectionsLock")
+    private final List<Connection> mConnections = new ArrayList<>();
+
+    /** Application entry mapping UUIDs to appIDs and callbacks. */
+    class App {
+        final UUID mUuid;
+        private final C mCallback;
+        final int mUid;
+        private final String mPackageName;
+        private final int mTransport;
+        @Nullable final String mAttributionTag;
+
+        public int id;
+
+        /** Flag to signal that transport is congested */
+        public Boolean isCongested = false;
+
+        private IBinder.DeathRecipient mDeathRecipient;
+
+        /** Internal callback info queue, waiting to be send on congestion clear */
+        private final List<CallbackInfo> mCongestionQueue = new ArrayList<>();
+
+        /** Creates a new app context. */
+        private App(
+                UUID uuid,
+                C callback,
+                int appUid,
+                String packageName,
+                int transport,
+                AttributionSource source) {
+            mUuid = uuid;
+            mCallback = callback;
+            mUid = appUid;
+            mPackageName = packageName;
+            mTransport = transport;
+            mAttributionTag = getLastAttributionTag(source);
+        }
+
+        C getCallback() {
+            return mCallback;
+        }
+
+        String getPackageName() {
+            return mPackageName;
+        }
+
+        int getTransport() {
+            return mTransport;
+        }
+
+        void linkToDeath(IBinder.DeathRecipient deathRecipient) {
+            // It might not be a binder object
+            if (mCallback == null) {
+                return;
+            }
+            try {
+                mCallback.asBinder().linkToDeath(deathRecipient, 0);
+                mDeathRecipient = deathRecipient;
+            } catch (RemoteException e) {
+                Log.e(TAG, "Unable to link deathRecipient for app id " + id);
+            }
+        }
+
+        void unlinkToDeath() {
+            if (mDeathRecipient != null) {
+                try {
+                    mCallback.asBinder().unlinkToDeath(mDeathRecipient, 0);
+                } catch (NoSuchElementException e) {
+                    Log.e(TAG, "Unable to unlink deathRecipient for app id " + id);
+                }
+            }
+        }
+
+        void queueCallback(CallbackInfo callbackInfo) {
+            mCongestionQueue.add(callbackInfo);
+        }
+
+        CallbackInfo popQueuedCallback() {
+            if (mCongestionQueue.size() == 0) {
+                return null;
+            }
+            return mCongestionQueue.remove(0);
+        }
+    }
+
+    private class AppRecord {
+        private final UUID mUuid;
+        private final String mPackageName;
+        private final int mTransport;
+        @Nullable private final String mAttributionTag;
+        private final Instant mRegisterTime;
+
+        private int mClientIf;
+        private RemoveReason mReason;
+        @Nullable private Instant mUnregisterTime;
+
+        AppRecord(App app) {
+            mUuid = app.mUuid;
+            mPackageName = app.mPackageName;
+            mTransport = app.getTransport();
+            mAttributionTag = app.mAttributionTag;
+            mRegisterTime = Instant.now();
+        }
+
+        private static final DateTimeFormatter sDateFormat =
+                DateTimeFormatter.ofPattern("MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("AppRecord<")
+                    .append(sDateFormat.format(mRegisterTime))
+                    .append(" ~ ")
+                    .append(sDateFormat.format(mUnregisterTime))
+                    .append(" app_if: ")
+                    .append(mClientIf)
+                    .append(", appName: ")
+                    .append(mPackageName)
+                    .append(", transport: ")
+                    .append(transportToString(mTransport));
+            if (mAttributionTag != null) {
+                sb.append(", tag: ").append(mAttributionTag);
+            }
+            sb.append(", reason: ").append(mReason).append(">");
+            return sb.toString();
+        }
+    }
 
     /** Connection class helps map connection IDs to devices. */
     record Connection(
@@ -82,123 +224,7 @@ public class ContextMap<C extends IInterface> {
         }
     }
 
-    /** Application entry mapping UUIDs to appIDs and callbacks. */
-    class App {
-        public final UUID uuid;
-        public final int uid;
-        public final String packageName;
-        @Nullable public final String attributionTag;
-
-        public int id;
-        public C callback;
-
-        public int transport;
-
-        /** Flag to signal that transport is congested */
-        public Boolean isCongested = false;
-
-        private IBinder.DeathRecipient mDeathRecipient;
-
-        /** Internal callback info queue, waiting to be send on congestion clear */
-        private final List<CallbackInfo> mCongestionQueue = new ArrayList<>();
-
-        /** Creates a new app context. */
-        App(
-                UUID uuid,
-                C callback,
-                int appUid,
-                String packageName,
-                int transport,
-                AttributionSource source) {
-            this.uuid = uuid;
-            this.callback = callback;
-            this.uid = appUid;
-            this.packageName = packageName;
-            this.transport = transport;
-            attributionTag = getLastAttributionTag(source);
-        }
-
-        /** Link death recipient */
-        public void linkToDeath(IBinder.DeathRecipient deathRecipient) {
-            // It might not be a binder object
-            if (callback == null) {
-                return;
-            }
-            try {
-                callback.asBinder().linkToDeath(deathRecipient, 0);
-                mDeathRecipient = deathRecipient;
-            } catch (RemoteException e) {
-                Log.e(TAG, "Unable to link deathRecipient for app id " + id);
-            }
-        }
-
-        /** Unlink death recipient */
-        public void unlinkToDeath() {
-            if (mDeathRecipient != null) {
-                try {
-                    callback.asBinder().unlinkToDeath(mDeathRecipient, 0);
-                } catch (NoSuchElementException e) {
-                    Log.e(TAG, "Unable to unlink deathRecipient for app id " + id);
-                }
-            }
-        }
-
-        void queueCallback(CallbackInfo callbackInfo) {
-            mCongestionQueue.add(callbackInfo);
-        }
-
-        CallbackInfo popQueuedCallback() {
-            if (mCongestionQueue.size() == 0) {
-                return null;
-            }
-            return mCongestionQueue.remove(0);
-        }
-    }
-
-    private class AppRecord {
-        public final UUID uuid;
-        public final String packageName;
-        public final int transport;
-        @Nullable public final String attributionTag;
-        public final Instant registerTime;
-
-        public int clientIf;
-        public RemoveReason reason;
-        @Nullable public Instant unregisterTime;
-
-        AppRecord(App app) {
-            uuid = app.uuid;
-            packageName = app.packageName;
-            transport = app.transport;
-            attributionTag = app.attributionTag;
-            registerTime = Instant.now();
-        }
-
-        private static final DateTimeFormatter sDateFormat =
-                DateTimeFormatter.ofPattern("MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("AppRecord<")
-                    .append(sDateFormat.format(registerTime))
-                    .append(" ~ ")
-                    .append(sDateFormat.format(unregisterTime))
-                    .append(" app_if: ")
-                    .append(clientIf)
-                    .append(", appName: ")
-                    .append(packageName)
-                    .append(", transport: ")
-                    .append(transport);
-            if (attributionTag != null) {
-                sb.append(", tag: ").append(attributionTag);
-            }
-            sb.append(", reason: ").append(reason).append(">");
-            return sb.toString();
-        }
-    }
-
-    public enum RemoveReason {
+    enum RemoveReason {
         REASON_UNREGISTER_ALL,
         REASON_UNREGISTER_CLIENT,
         REASON_UNREGISTER_SERVER,
@@ -208,26 +234,8 @@ public class ContextMap<C extends IInterface> {
         REASON_UNKNOWN
     }
 
-    /** Our internal application list */
-    private final Object mAppsLock = new Object();
-
-    @GuardedBy("mAppsLock")
-    private final List<App> mApps = new ArrayList<>();
-
-    @GuardedBy("mAppsLock")
-    private final List<AppRecord> mOngoingRecords = new ArrayList<>();
-
-    @GuardedBy("mAppsLock")
-    private final List<AppRecord> mLastRecords = new ArrayList<>();
-
-    /** Internal list of connected devices */
-    private final List<Connection> mConnections = new ArrayList<>();
-
-    private final Object mConnectionsLock = new Object();
-
     /** Add an entry to the application context list. */
-    public App add(
-            UUID uuid, C callback, int transport, Context context, AttributionSource source) {
+    App add(UUID uuid, C callback, int transport, Context context, AttributionSource source) {
         int appUid = Binder.getCallingUid();
         String appName = context.getPackageManager().getNameForUid(appUid);
         if (appName == null) {
@@ -244,12 +252,12 @@ public class ContextMap<C extends IInterface> {
     }
 
     /** Remove the context for a given UUID */
-    public void remove(UUID uuid, RemoveReason reason) {
+    void remove(UUID uuid, RemoveReason reason) {
         synchronized (mAppsLock) {
             Iterator<App> i = mApps.iterator();
             while (i.hasNext()) {
                 App entry = i.next();
-                if (entry.uuid.equals(uuid)) {
+                if (entry.mUuid.equals(uuid)) {
                     entry.unlinkToDeath();
                     i.remove();
                     recordUnregisterApp(entry, reason);
@@ -260,7 +268,7 @@ public class ContextMap<C extends IInterface> {
     }
 
     /** Remove the context for a given application ID. */
-    public void remove(int id, RemoveReason reason) {
+    void remove(int id, RemoveReason reason) {
         boolean find = false;
         synchronized (mAppsLock) {
             Iterator<App> i = mApps.iterator();
@@ -280,8 +288,8 @@ public class ContextMap<C extends IInterface> {
         }
     }
 
-    public List<Integer> getAllAppsIds() {
-        List<Integer> appIds = new ArrayList();
+    List<Integer> getAllAppsIds() {
+        List<Integer> appIds = new ArrayList<>();
         synchronized (mAppsLock) {
             for (App entry : mApps) {
                 appIds.add(entry.id);
@@ -291,11 +299,11 @@ public class ContextMap<C extends IInterface> {
     }
 
     /** Get all registered application callbacks. */
-    public List<C> getAllAppsCallbackId() {
-        List<C> appIds = new ArrayList();
+    List<C> getAllAppsCallbackId() {
+        List<C> appIds = new ArrayList<>();
         synchronized (mAppsLock) {
             for (App entry : mApps) {
-                appIds.add(entry.callback);
+                appIds.add(entry.getCallback());
             }
         }
         return appIds;
@@ -338,7 +346,7 @@ public class ContextMap<C extends IInterface> {
     }
 
     /** Get an application context by ID. */
-    public App getById(int id) {
+    App getById(int id) {
         App app = getAppByPredicate(entry -> entry.id == id);
         if (app == null) {
             Log.e(TAG, "Context not found for ID " + id);
@@ -347,8 +355,9 @@ public class ContextMap<C extends IInterface> {
     }
 
     /** Get an application context by its callback object. */
-    public App getByCallbackId(C callbackId) {
-        App app = getAppByPredicate(entry -> entry.callback.asBinder() == callbackId.asBinder());
+    App getByCallbackId(C callbackId) {
+        App app =
+                getAppByPredicate(entry -> entry.getCallback().asBinder() == callbackId.asBinder());
         if (app == null) {
             Log.e(TAG, "Context not found for callbackID " + callbackId);
         }
@@ -356,8 +365,8 @@ public class ContextMap<C extends IInterface> {
     }
 
     /** Get an application context by UUID. */
-    public App getByUuid(UUID uuid) {
-        App app = getAppByPredicate(entry -> entry.uuid.equals(uuid));
+    App getByUuid(UUID uuid) {
+        App app = getAppByPredicate(entry -> entry.mUuid.equals(uuid));
         if (app == null) {
             Log.e(TAG, "Context not found for UUID " + uuid);
         }
@@ -408,7 +417,7 @@ public class ContextMap<C extends IInterface> {
      * <p>This function provides a way to get all connections for a device so we can do the above.
      */
     List<Connection> getConnectionsByDevice(int appId, BluetoothDevice device) {
-        List<Connection> currentConnections = new ArrayList<Connection>();
+        List<Connection> currentConnections = new ArrayList<>();
         synchronized (mConnectionsLock) {
             for (Connection connection : mConnections) {
                 if (connection.device.equals(device) && connection.appId == appId) {
@@ -432,8 +441,8 @@ public class ContextMap<C extends IInterface> {
     }
 
     /** Returns all Connections that have a given app UID. */
-    public List<Connection> getConnectionByApp(int appId) {
-        List<Connection> currentConnections = new ArrayList<Connection>();
+    List<Connection> getConnectionByApp(int appId) {
+        List<Connection> currentConnections = new ArrayList<>();
         synchronized (mConnectionsLock) {
             for (Connection connection : mConnections) {
                 if (connection.appId == appId) {
@@ -445,14 +454,14 @@ public class ContextMap<C extends IInterface> {
     }
 
     /** Counts the number of applications that have a given app UID. */
-    public int countByAppUid(int appUid) {
+    int countByAppUid(int appUid) {
         synchronized (mAppsLock) {
-            return (int) (mApps.stream().filter(app -> app.uid == appUid).count());
+            return (int) (mApps.stream().filter(app -> app.mUid == appUid).count());
         }
     }
 
     /** Erases all application context entries. */
-    public void clear() {
+    void clear() {
         synchronized (mAppsLock) {
             for (App entry : mApps) {
                 entry.unlinkToDeath();
@@ -497,11 +506,11 @@ public class ContextMap<C extends IInterface> {
     @GuardedBy("mAppsLock")
     private void recordUnregisterApp(App app, RemoveReason reason) {
         for (int i = 0; i < mOngoingRecords.size(); i++) {
-            if (app.uuid.equals(mOngoingRecords.get(i).uuid)) {
+            if (app.mUuid.equals(mOngoingRecords.get(i).mUuid)) {
                 AppRecord record = mOngoingRecords.remove(i);
-                record.clientIf = app.id;
-                record.reason = reason;
-                record.unregisterTime = Instant.now();
+                record.mClientIf = app.id;
+                record.mReason = reason;
+                record.mUnregisterTime = Instant.now();
 
                 if (mLastRecords.size() >= MAX_LAST_RECORDS) {
                     mLastRecords.remove(0);

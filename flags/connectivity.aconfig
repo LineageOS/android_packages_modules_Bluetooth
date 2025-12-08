@@ -2,17 +2,30 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "allow_gatt_connect_from_the_apps_without_making_leaudio_device_active"
-    namespace: "bluetooth"
-    description: "Allows for GATT connection without making LeAudio device active after connection"
-    bug: "389274300"
-}
-
-flag {
     name: "idempotent_direct_connect_add"
     namespace: "bluetooth"
     description: "Make direct_connect_add idempotent"
     bug: "409239278"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "fix_race_in_orphaned_acls"
+    namespace: "bluetooth"
+    description: "Fix race in CheckForOrphanedAclConnections"
+    bug: "436611420"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "allow_rearm_if_suspend_scan_params_used"
+    namespace: "bluetooth"
+    description: "When suspend scan params are used, allow re-arm connection even if device is in accept list"
+    bug: "435261884"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

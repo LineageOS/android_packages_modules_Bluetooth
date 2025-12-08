@@ -63,7 +63,7 @@ public:
               (override));
   MOCK_METHOD(void, ScanFilterAdd, (uint8_t, std::vector<AdvertisingPacketContentFilterCommand>),
               (override));
-  MOCK_METHOD(void, BatchScanConifgStorage, (uint8_t, uint8_t, uint8_t, ScannerId), (override));
+  MOCK_METHOD(void, BatchScanConfigStorage, (uint8_t, uint8_t, uint8_t, ScannerId), (override));
   MOCK_METHOD(void, BatchScanEnable, (BatchScanMode, uint32_t, uint32_t, BatchScanDiscardRule),
               (override));
   MOCK_METHOD(void, BatchScanDisable, (), (override));

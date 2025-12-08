@@ -241,7 +241,7 @@ int mgmt_notify_sco_connection_change(int fd, int hci, RawAddress device, bool i
   cp->hci_dev = hci;
   cp->connected = is_connected;
   cp->codec = codec;
-  memcpy(cp->addr, device.address, sizeof(cp->addr));
+  memcpy(cp->addr, device.address.data(), sizeof(cp->addr));
   cp->addr_type = 0;
 
   int ret;

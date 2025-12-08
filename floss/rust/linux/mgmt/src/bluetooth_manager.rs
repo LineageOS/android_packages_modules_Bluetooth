@@ -9,6 +9,7 @@ use glob::glob;
 
 use crate::powerd_suspend_manager::SuspendManagerContext;
 
+use crate::config_util::UnstableAflagsUseMode;
 use crate::iface_bluetooth_experimental::IBluetoothExperimental;
 use crate::iface_bluetooth_manager::{
     AdapterWithEnabled, IBluetoothManager, IBluetoothManagerCallback,
@@ -215,6 +216,19 @@ impl IBluetoothManager for BluetoothManager {
             Some(ctx) => ctx.lock().unwrap().tablet_mode = tablet_mode,
             None => warn!("Context not available to set tablet mode."),
         }
+    }
+
+    fn get_unstable_aflags_use_mode(&mut self) -> UnstableAflagsUseMode {
+        config_util::get_unstable_aflags_use_mode()
+    }
+
+    fn set_unstable_aflags_use_mode(&mut self, mode: UnstableAflagsUseMode) -> bool {
+        warn!("Set unstable Aflags use mode={:?}", mode);
+        if config_util::set_unstable_aflags_use_mode(mode) && config_util::setup_unstable_aflags() {
+            self.restart_adapters();
+            return true;
+        }
+        false
     }
 }
 

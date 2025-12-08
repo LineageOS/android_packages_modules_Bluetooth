@@ -38,13 +38,18 @@ import android.util.Log;
 import android.view.Display;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class AdapterSuspend {
@@ -61,6 +66,11 @@ public class AdapterSuspend {
     private static final int DEVICE_STATE_LID_OPEN = 3;
     private static final int DEVICE_STATE_TABLET = 4;
 
+    enum SuspendTasks {
+        PROFILE_DISCONNECTION,
+        ADVERTISEMENT,
+    }
+
     @VisibleForTesting
     static final String BLUETOOTH_SUSPEND_DISCONNECT_ACL =
             "bluetooth.power.suspend.disconnect_acl.enabled";
@@ -69,6 +79,13 @@ public class AdapterSuspend {
     static final String BLUETOOTH_SUSPEND_SCAN_MODE_NONE =
             "bluetooth.power.suspend.scan_mode_none.enabled";
 
+    static final String BLUETOOTH_SUSPEND_STOP_LE_SCAN =
+            "bluetooth.power.suspend.stop_le_scan.enabled";
+
+    @VisibleForTesting
+    static final String BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT =
+            "bluetooth.power.suspend.pause_advertisement.enabled";
+
     private static final int[] AUDIO_PROFILES = {
         BluetoothProfile.A2DP,
         BluetoothProfile.HEADSET,
@@ -76,18 +93,27 @@ public class AdapterSuspend {
         BluetoothProfile.LE_AUDIO
     };
 
+    private static final int[] DISCONNECT_PROFILES = {BluetoothProfile.HEARING_AID};
+
     private final AdapterService mAdapterService;
     private final AdapterNativeInterface mAdapterNativeInterface;
-
     private final DeviceStateManager mDeviceStateManager;
     private final PowerManager mPowerManager;
     private final AdapterSuspendStateMachine mSuspendStateMachine;
     private final DisplayManager mDisplayManager;
+    private final Handler mHandler;
 
-    private boolean mDisconnectAclOnSuspend;
-    private boolean mScanModeNoneOnSuspend;
+    private final boolean mDisconnectAclOnSuspend;
+    private final boolean mScanModeNoneOnSuspend;
+    private final boolean mStopLeScanOnSuspend;
+    private final boolean mPauseAdvertisementOnSuspend;
+
     private int mScanModeOnLastSuspend;
     private List<BluetoothDevice> mLastActiveAudioDevices = new ArrayList<>();
+
+    private final Set<BluetoothDevice> mDisconnectProfileDevices = new HashSet<>();
+    private boolean mAllowWakeByHid;
+    private EnumSet<SuspendTasks> mDelayedSuspendTasks = EnumSet.noneOf(SuspendTasks.class);
 
     @VisibleForTesting
     void setLastScanModeForTest(int val) {
@@ -101,30 +127,30 @@ public class AdapterSuspend {
                     int nextState = DEVICE_STATE_NONE;
                     if (state.hasProperty(PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_DOCKED)) {
                         nextState = DEVICE_STATE_DOCKED;
-                    }
-                    if (state.hasProperty(PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_LID_CLOSED)) {
+                    } else if (state.hasProperty(
+                            PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_LID_CLOSED)) {
                         nextState = DEVICE_STATE_LID_CLOSED;
-                    }
-                    if (state.hasProperty(PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_LID_OPEN)) {
+                    } else if (state.hasProperty(PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_LID_OPEN)) {
                         nextState = DEVICE_STATE_LID_OPEN;
-                    }
-                    if (state.hasProperty(PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_SLATE)) {
+                    } else if (state.hasProperty(PROPERTY_LAPTOP_HARDWARE_CONFIGURATION_SLATE)) {
                         nextState = DEVICE_STATE_TABLET;
+                    } else {
+                        Log.w(TAG, "device state does not have a valid property");
                     }
 
                     switch (nextState) {
-                        case DEVICE_STATE_LID_OPEN, DEVICE_STATE_DOCKED, DEVICE_STATE_TABLET -> {
-                            switch (nextState) {
-                                case DEVICE_STATE_LID_OPEN, DEVICE_STATE_DOCKED ->
-                                        mSuspendStateMachine.setTabletMode(false);
-                                case DEVICE_STATE_TABLET ->
-                                        mSuspendStateMachine.setTabletMode(true);
-                                default -> Log.e(TAG, "Unknown form factor " + nextState);
-                            }
+                        case DEVICE_STATE_LID_OPEN -> {
+                            Log.d(TAG, "lid open, screen on");
+                            mSuspendStateMachine.setTabletMode(false);
+                            mSuspendStateMachine.sendMessage(
+                                    AdapterSuspendStateMachine.MSG_SCREEN_ON);
                         }
-                        case DEVICE_STATE_LID_CLOSED ->
-                                mSuspendStateMachine.sendMessage(
-                                        AdapterSuspendStateMachine.MSG_CLOSED);
+                        case DEVICE_STATE_DOCKED -> mSuspendStateMachine.setTabletMode(false);
+                        case DEVICE_STATE_TABLET -> mSuspendStateMachine.setTabletMode(true);
+                        case DEVICE_STATE_LID_CLOSED -> {
+                            Log.d(TAG, "lid closed");
+                            mSuspendStateMachine.sendMessage(AdapterSuspendStateMachine.MSG_CLOSED);
+                        }
                         default -> Log.d(TAG, "Unknown state " + nextState);
                     }
                 }
@@ -160,6 +186,13 @@ public class AdapterSuspend {
                                     + screenOn
                                     + " Interactive="
                                     + interactive);
+
+                    if (Flags.stopLeScanSystemSuspend()) {
+                        final var scanController = mAdapterService.getBluetoothScanController();
+                        if (scanController != null) {
+                            scanController.onDisplayChanged(screenOn);
+                        }
+                    }
                     if (interactive != screenOn) {
                         return;
                     }
@@ -184,15 +217,38 @@ public class AdapterSuspend {
         mSuspendStateMachine =
                 new AdapterSuspendStateMachine(adapterService, this, requireNonNull(looper));
         mDisplayManager = requireNonNull(displayManager);
-        Handler handler = new Handler(looper);
-        mDisplayManager.registerDisplayListener(mDisplayListener, handler);
+        mHandler = new Handler(looper);
+        mDisplayManager.registerDisplayListener(mDisplayListener, mHandler);
         mDeviceStateManager = requireNonNull(deviceStateManager);
-        mDeviceStateManager.registerCallback(handler::post, mDeviceStateCallback);
+        mDeviceStateManager.registerCallback(mHandler::post, mDeviceStateCallback);
 
         mDisconnectAclOnSuspend =
                 SystemProperties.getBoolean(BLUETOOTH_SUSPEND_DISCONNECT_ACL, false);
         mScanModeNoneOnSuspend =
                 SystemProperties.getBoolean(BLUETOOTH_SUSPEND_SCAN_MODE_NONE, false);
+        mStopLeScanOnSuspend = SystemProperties.getBoolean(BLUETOOTH_SUSPEND_STOP_LE_SCAN, false);
+        mPauseAdvertisementOnSuspend =
+                SystemProperties.getBoolean(BLUETOOTH_SUSPEND_PAUSE_ADVERTISEMENT, false);
+    }
+
+    void profileConnectionStateChanged(
+            int profile, BluetoothDevice device, int fromState, int toState) {
+        // The profile in this function matches with profiles in DISCONNECT_PROFILES.
+        // Currently, only the ASHA hearing aid device needs to be disconnected by profile.
+        // The other devices are disconnected by disconnecting ACLs. There is no need to
+        // track profile connection state.
+        if (profile == BluetoothProfile.HEARING_AID
+                && toState == BluetoothProfile.STATE_DISCONNECTED
+                && mDisconnectProfileDevices.contains(device)) {
+            Log.d(TAG, "device disconnected: " + device);
+            mDisconnectProfileDevices.remove(device);
+            if (mDisconnectProfileDevices.isEmpty()) {
+                disconnectAllAcls();
+                onSuspendTaskCompleted(SuspendTasks.PROFILE_DISCONNECTION);
+            } else {
+                Log.d(TAG, "remaining devices to disconnect " + mDisconnectProfileDevices);
+            }
+        }
     }
 
     void cleanup() {
@@ -204,20 +260,55 @@ public class AdapterSuspend {
         long mask = MASK_DISCONNECT_CMPLT | MASK_MODE_CHANGE;
         long leMask = 0;
 
-        mScanModeOnLastSuspend = mAdapterService.getScanMode();
-        if (mScanModeNoneOnSuspend && mScanModeOnLastSuspend != SCAN_MODE_NONE) {
-            mAdapterService.setScanMode(SCAN_MODE_NONE, "handleSuspend");
+        mDelayedSuspendTasks = EnumSet.noneOf(SuspendTasks.class);
+        mAllowWakeByHid = allowWakeByHid;
+        if (mScanModeNoneOnSuspend) {
+            if (Flags.adapterSuspendDiscoverability()) {
+                mAdapterService.setSuspendState(true /* suspend */);
+            } else if (mScanModeOnLastSuspend != SCAN_MODE_NONE) {
+                mScanModeOnLastSuspend = mAdapterService.getScanMode();
+                mAdapterService.setScanMode(SCAN_MODE_NONE, "handleSuspend");
+            }
         }
+
+        if (Flags.stopLeScanSystemSuspend() && mStopLeScanOnSuspend) {
+            final var scanController = mAdapterService.getBluetoothScanController();
+            if (scanController != null) {
+                scanController.onSystemSuspendChanged(true /* suspend */);
+            }
+        }
+
         if (mDisconnectAclOnSuspend) {
+            mAdapterService
+                    .getLeAudioService()
+                    .ifPresent(leAudio -> leAudio.setSystemSuspended(true));
             mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
             mAdapterNativeInterface.clearEventFilter();
             mAdapterNativeInterface.clearFilterAcceptList();
             storeActiveAudioDevices();
-            mAdapterNativeInterface.disconnectAllAcls();
+            getDisconnectProfileDevices();
 
-            if (allowWakeByHid) {
-                mAdapterNativeInterface.allowWakeByHid();
+            if (!mDisconnectProfileDevices.isEmpty()) {
+                Log.d(TAG, "disconnect profiles for " + mDisconnectProfileDevices);
+                mDelayedSuspendTasks.add(SuspendTasks.PROFILE_DISCONNECTION);
+                disconnectProfiles();
+            } else {
+                disconnectAllAcls();
             }
+        }
+
+        if (mPauseAdvertisementOnSuspend && Flags.adapterSuspendAdvertisement()) {
+            mAdapterService
+                    .getGattService()
+                    .ifPresent(
+                            gattService -> {
+                                mDelayedSuspendTasks.add(SuspendTasks.ADVERTISEMENT);
+                                gattService.getAdvertiseManager().enterSuspend();
+                            });
+        }
+
+        if (!isSuspendReady()) {
+            mAdapterService.acquireWakeLock("bt_suspend_ready");
         }
     }
 
@@ -225,6 +316,9 @@ public class AdapterSuspend {
         long mask = 0;
         long leMask = 0;
         if (mDisconnectAclOnSuspend) {
+            mAdapterService
+                    .getLeAudioService()
+                    .ifPresent(leAudio -> leAudio.setSystemSuspended(false));
             mAdapterNativeInterface.setDefaultEventMaskExcept(mask, leMask);
             mAdapterNativeInterface.clearEventFilter();
             mAdapterNativeInterface.restoreFilterAcceptList();
@@ -234,9 +328,34 @@ public class AdapterSuspend {
                 mAdapterService.connectAllEnabledProfiles(device);
             }
             mLastActiveAudioDevices.clear();
+            if (!mDisconnectProfileDevices.isEmpty()) {
+                Log.w(TAG, "device list to disconnect is not empty: " + mDisconnectProfileDevices);
+                mDisconnectProfileDevices.clear();
+            }
         }
-        if (mScanModeNoneOnSuspend && (mAdapterService.getScanMode() != mScanModeOnLastSuspend)) {
-            mAdapterService.setScanMode(mScanModeOnLastSuspend, "handleResume");
+
+        if (Flags.stopLeScanSystemSuspend() && mStopLeScanOnSuspend) {
+            final var scanController = mAdapterService.getBluetoothScanController();
+            if (scanController != null) {
+                scanController.onSystemSuspendChanged(false /* suspend */);
+            }
+        }
+
+        if (mScanModeNoneOnSuspend) {
+            if (Flags.adapterSuspendDiscoverability()) {
+                mAdapterService.setSuspendState(false /* suspend */);
+            } else if (mAdapterService.getScanMode() != mScanModeOnLastSuspend) {
+                mAdapterService.setScanMode(mScanModeOnLastSuspend, "handleResume");
+            }
+        }
+
+        if (Flags.adapterSuspendAdvertisement()) {
+            mAdapterService
+                    .getGattService()
+                    .ifPresent(
+                            gattService -> {
+                                gattService.getAdvertiseManager().exitSuspend();
+                            });
         }
     }
 
@@ -251,12 +370,32 @@ public class AdapterSuspend {
         for (int audioProfile : AUDIO_PROFILES) {
             List<BluetoothDevice> devices = mAdapterService.getActiveDevices(audioProfile);
             // getActiveDevices might return a list containing null elements. Filter them first.
-            devices = devices.stream().filter(d -> d != null).collect(Collectors.toList());
+            devices = devices.stream().filter(Objects::nonNull).collect(Collectors.toList());
             if (!devices.isEmpty()) {
                 mLastActiveAudioDevices = devices;
-                Log.i(TAG, "store " + devices + " for reconnection for profile=" + audioProfile);
+                Log.i(
+                        TAG,
+                        "store "
+                                + devices
+                                + " for reconnection for profile="
+                                + BluetoothProfile.getProfileName(audioProfile));
                 break;
             }
+        }
+    }
+
+    void getDisconnectProfileDevices() {
+        if (!mDisconnectProfileDevices.isEmpty()) {
+            Log.w(TAG, "disconnect devices have been collected: " + mDisconnectProfileDevices);
+            return;
+        }
+        for (int profile : DISCONNECT_PROFILES) {
+            Log.i(
+                    TAG,
+                    "disconnect devices for profile " + BluetoothProfile.getProfileName(profile));
+            mAdapterService.getConnectedMediaDevices(profile).stream()
+                    .filter(Objects::nonNull)
+                    .forEach(mDisconnectProfileDevices::add);
         }
     }
 
@@ -272,11 +411,48 @@ public class AdapterSuspend {
         }
     }
 
+    private void disconnectProfiles() {
+        for (BluetoothDevice device : mDisconnectProfileDevices) {
+            mAdapterService.disconnectAllEnabledProfiles(device);
+        }
+    }
+
+    private void onSuspendTaskCompleted(SuspendTasks task) {
+        if (isSuspendReady()) {
+            Log.w(TAG, "task " + task + " is completed after wakelock was released");
+            return;
+        }
+
+        mDelayedSuspendTasks.remove(task);
+        Log.v(TAG, "suspend remaining tasks: " + mDelayedSuspendTasks);
+        if (isSuspendReady()) {
+            Log.i(TAG, "suspend ready");
+            mAdapterService.releaseWakeLock("bt_suspend_ready");
+        }
+    }
+
+    private void disconnectAllAcls() {
+        mAdapterNativeInterface.disconnectAllAcls();
+        if (mAllowWakeByHid) {
+            mAdapterNativeInterface.allowWakeByHid();
+        }
+    }
+
+    /**
+     * Called by the advertising thread to notify that it has finished the preparation for suspend.
+     */
+    public void advertiseSuspendReady() {
+        mHandler.post(() -> onSuspendTaskCompleted(SuspendTasks.ADVERTISEMENT));
+    }
+
+    private boolean isSuspendReady() {
+        return mDelayedSuspendTasks.isEmpty();
+    }
+
     protected void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
         writer.println(TAG);
         writer.println("  " + "Disconnect ACL on suspend: " + mDisconnectAclOnSuspend);
         writer.println("  " + "Set scan mode to none on suspend: " + mScanModeNoneOnSuspend);
-        writer.println("  " + "Scan mode on last suspend: " + mScanModeOnLastSuspend);
         writer.println();
         mSuspendStateMachine.dump(fd, writer, args);
     }

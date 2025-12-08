@@ -89,6 +89,8 @@ const tBTA_DM_RM* p_bta_dm_rm_cfg = &bta_dm_rm_cfg[0];
 #define BTA_DM_NUM_PM_ENTRY 25 /* number of entries in bta_dm_pm_cfg except the first */
 #define BTA_DM_NUM_PM_SPEC 16  /* number of entries in bta_dm_pm_spec */
 
+size_t bta_dm_get_num_pm_entry() { return BTA_DM_NUM_PM_ENTRY; }
+
 tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_CFG bta_dm_pm_cfg[BTA_DM_NUM_PM_ENTRY + 1] = {
         {BTA_ID_SYS, BTA_DM_NUM_PM_ENTRY, 0}, /* reserved: specifies length of this table. */
         {BTA_ID_AG, BTA_ALL_APP_ID, 0},       /* ag uses first spec table for app id 0 */

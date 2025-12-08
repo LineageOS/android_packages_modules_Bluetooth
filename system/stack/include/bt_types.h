@@ -24,10 +24,11 @@
 #include "stack/include/bt_device_type.h"
 #include "stack/include/bt_hdr.h"
 #ifdef __cplusplus
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
+
 #include "include/hardware/bluetooth.h"
 #include "stack/include/bt_octets.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 #endif  // __cplusplus
 
 /* READ WELL !!

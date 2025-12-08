@@ -28,6 +28,8 @@
 #include "stack/include/btm_inq.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -68,8 +70,6 @@
 #include "stack/include/hcimsgs.h"
 #include "stack/include/inq_hci_link_interface.h"
 #include "stack/include/main_thread.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 /* MACRO to set the service bit mask in a bit stream */
 #define BTM_EIR_SET_SERVICE(p, service)                              \
@@ -266,15 +266,6 @@ tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode) {
   bool is_limited;
   bool cod_limited;
 
-  log::verbose("");
-  if (bluetooth::shim::GetController()->SupportsBle()) {
-    if (btm_ble_set_discoverability((uint16_t)(inq_mode)) == tBTM_STATUS::BTM_SUCCESS) {
-      btm_cb.btm_inq_vars.discoverable_mode &= (~BTM_BLE_DISCOVERABLE_MASK);
-      btm_cb.btm_inq_vars.discoverable_mode |= (inq_mode & BTM_BLE_DISCOVERABLE_MASK);
-    }
-  }
-  inq_mode &= ~BTM_BLE_DISCOVERABLE_MASK;
-
   /*** Check mode parameter ***/
   if (inq_mode > BTM_MAX_DISCOVERABLE) {
     return tBTM_STATUS::BTM_ILLEGAL_VALUE;
@@ -441,15 +432,6 @@ tBTM_STATUS BTM_SetInquiryMode(uint8_t mode) {
  ******************************************************************************/
 tBTM_STATUS BTM_SetConnectability(uint16_t page_mode) {
   uint8_t scan_mode = 0;
-
-  if (bluetooth::shim::GetController()->SupportsBle()) {
-    if (btm_ble_set_connectability(page_mode) != tBTM_STATUS::BTM_SUCCESS) {
-      return tBTM_STATUS::BTM_NO_RESOURCES;
-    }
-    btm_cb.btm_inq_vars.connectable_mode &= (~BTM_BLE_CONNECTABLE_MASK);
-    btm_cb.btm_inq_vars.connectable_mode |= (page_mode & BTM_BLE_CONNECTABLE_MASK);
-  }
-  page_mode &= ~BTM_BLE_CONNECTABLE_MASK;
 
   /*** Check mode parameter ***/
   if (page_mode != BTM_NON_CONNECTABLE && page_mode != BTM_CONNECTABLE) {
@@ -960,9 +942,6 @@ void btm_inq_db_reset(void) {
   btm_cb.btm_inq_vars.connectable_mode = BTM_NON_CONNECTABLE;
   btm_cb.btm_inq_vars.page_scan_type = BTM_SCAN_TYPE_STANDARD;
   btm_cb.btm_inq_vars.inq_scan_type = BTM_SCAN_TYPE_STANDARD;
-
-  btm_cb.btm_inq_vars.discoverable_mode |= BTM_BLE_NON_DISCOVERABLE;
-  btm_cb.btm_inq_vars.connectable_mode |= BTM_BLE_NON_CONNECTABLE;
   return;
 }
 
@@ -1244,7 +1223,7 @@ static void btm_process_inq_results_standard(EventView event) {
       }
 
       p_cur->inq_result_type |= BT_DEVICE_TYPE_BREDR;
-      p_cur->last_inq_result_from_type = BT_DEVICE_TYPE_BREDR;
+      p_cur->last_inq_result_transport = BT_TRANSPORT_BR_EDR;
       if (p_i->inq_count != btm_cb.btm_inq_vars.inq_counter) {
         p_cur->device_type = BT_DEVICE_TYPE_BREDR;
         p_i->scan_rsp = false;
@@ -1388,7 +1367,7 @@ static void btm_process_inq_results_rssi(EventView event) {
       }
 
       p_cur->inq_result_type |= BT_DEVICE_TYPE_BREDR;
-      p_cur->last_inq_result_from_type = BT_DEVICE_TYPE_BREDR;
+      p_cur->last_inq_result_transport = BT_TRANSPORT_BR_EDR;
       if (p_i->inq_count != btm_cb.btm_inq_vars.inq_counter) {
         p_cur->device_type = BT_DEVICE_TYPE_BREDR;
         p_i->scan_rsp = false;
@@ -1538,7 +1517,7 @@ static void btm_process_inq_results_extended(EventView event) {
       }
 
       p_cur->inq_result_type |= BT_DEVICE_TYPE_BREDR;
-      p_cur->last_inq_result_from_type = BT_DEVICE_TYPE_BREDR;
+      p_cur->last_inq_result_transport = BT_TRANSPORT_BR_EDR;
       if (p_i->inq_count != btm_cb.btm_inq_vars.inq_counter) {
         p_cur->device_type = BT_DEVICE_TYPE_BREDR;
         p_i->scan_rsp = false;

@@ -34,10 +34,21 @@
       <option name="host-setup-command" value="adb -s $SERIAL forward tcp:6211 vsock:2:7300" />
       <option name="host-teardown-command" value="adb -s $SERIAL forward --remove tcp:6211" />
 
+      <option name="host-setup-command" value="adb -s $SERIAL reverse tcp:6411 vsock:2:7400" />
+      <option name="host-teardown-command" value="adb -s $SERIAL reverse --remove tcp:6411" />
+
+      <option name="host-setup-command" value="adb -s $SERIAL reverse tcp:6511 vsock:2:7500" />
+      <option name="host-teardown-command" value="adb -s $SERIAL reverse --remove tcp:6511" />
+
       <option name="host-setup-command" value="adb -s $SERIAL reverse tcp:7999 tcp:7999" />
       <option name="host-background-command"
         value="$EXTRA_FILE(host_testcases:testsdir)/BumbleBluetoothTests/bumble_pandora_server --rootcanal-port 6211 --config $EXTRA_FILE(host_testcases:testsdir)/BumbleBluetoothTests/bumble_config.json"/>
       <option name="host-teardown-command" value="adb -s $SERIAL reverse --remove tcp:7999" />
+
+      <option name="host-setup-command" value="adb -s $SERIAL reverse tcp:7998 tcp:7998" />
+      <option name="host-background-command"
+        value="$EXTRA_FILE(host_testcases:testsdir)/BumbleBluetoothTests/bumble_pandora_server --grpc-port 7998 --rootcanal-port 6211 --config $EXTRA_FILE(host_testcases:testsdir)/BumbleBluetoothTests/bumble_config_2.json"/>
+      <option name="host-teardown-command" value="adb -s $SERIAL reverse --remove tcp:7998" />
     </target_preparer>
 
     <target_preparer class="com.android.tradefed.targetprep.RunCommandTargetPreparer">

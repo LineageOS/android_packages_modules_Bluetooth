@@ -24,6 +24,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.IBinder;
@@ -35,6 +36,7 @@ import android.util.Pair;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
+import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.messages.SystemMessageProto.SystemMessage;
 
 import java.time.LocalDateTime;
@@ -45,7 +47,7 @@ public class NotificationHelperService extends Service {
     private static final String TAG = NotificationHelperService.class.getSimpleName();
 
     private static final String APM_WIFI_BT_NOTIFICATION = "apm_wifi_bt_notification";
-    private static final String APM_BT_NOTIFICATION = "apm_bt_notification";
+    @VisibleForTesting static final String APM_BT_NOTIFICATION = "apm_bt_notification";
     private static final String APM_BT_NOTIFICATION_ON_WATCH = "apm_bt_notification_on_watch";
     private static final String APM_BT_NOTIFICATION_DUE_TO_WATCH =
             "apm_bt_notification_due_to_watch";
@@ -54,13 +56,16 @@ public class NotificationHelperService extends Service {
     private static final String APM_BT_ENABLED_NOTIFICATION = "apm_bt_enabled_notification";
     private static final String AUTO_ON_BT_ENABLED_NOTIFICATION = "auto_on_bt_enabled_notification";
 
-    private static final String NOTIFICATION_TAG = "com.android.bluetooth";
+    @VisibleForTesting static final String NOTIFICATION_TAG = "com.android.bluetooth";
     private static final String NOTIFICATION_CHANNEL = "notification_toggle_channel";
     private static final int NOTIFICATION_GROUP = R.string.bluetooth_notification_group;
 
-    private static final String NOTIFICATION_ACTION =
+    @VisibleForTesting
+    static final String NOTIFICATION_ACTION =
             "android.bluetooth.notification.action.SEND_TOGGLE_NOTIFICATION";
-    private static final String NOTIFICATION_EXTRA =
+
+    @VisibleForTesting
+    static final String NOTIFICATION_EXTRA =
             "android.bluetooth.notification.extra.NOTIFICATION_REASON";
 
     private static final Map<String, Pair<Integer /* titleId */, Integer /* messageId */>>
@@ -94,6 +99,14 @@ public class NotificationHelperService extends Service {
                             Pair.create(
                                     R.string.bluetooth_stays_on_title,
                                     R.string.bluetooth_stays_on_message_due_to_media));
+
+    // Keep a constructor for Android framework
+    public NotificationHelperService() {}
+
+    @VisibleForTesting
+    NotificationHelperService(Context context) {
+        attachBaseContext(context);
+    }
 
     @Override
     public IBinder onBind(Intent intent) {

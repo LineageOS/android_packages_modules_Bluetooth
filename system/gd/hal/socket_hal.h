@@ -20,19 +20,13 @@
 #include <string>
 #include <variant>
 
+#include "hal/endpoint.h"
+
 namespace bluetooth::hal {
 
 enum SocketStatus {
   SUCCESS = 0,
   FAILURE,
-};
-
-struct EndpointInfo {
-  // The ID of the Hub to which the end point belongs for hardware offload data path.
-  uint64_t hub_id;
-
-  //  The ID of the Hub endpoint for hardware offload data path.
-  uint64_t endpoint_id;
 };
 
 struct LeCocCapabilities {

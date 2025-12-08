@@ -15,6 +15,7 @@
  *
  */
 
+#include <bluetooth/types/ble_address_with_type.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -38,7 +39,6 @@
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_legacy_hci_interface.h"
 #include "test/mock/mock_main_shim_entry.h"
-#include "types/ble_address_with_type.h"
 
 using ::testing::_;
 using ::testing::Each;
@@ -47,7 +47,6 @@ using ::testing::Invoke;
 
 tL2C_CB l2cb;
 
-const std::string kSmpOptions("mock smp options");
 const std::string kBroadcastAudioConfigOptions("mock broadcast audio config options");
 
 void btm_inq_remote_name_timer_timeout(void*) {}

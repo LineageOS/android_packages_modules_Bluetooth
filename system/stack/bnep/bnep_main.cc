@@ -23,6 +23,8 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
 #include <string.h>
 
 #include <cstdint>
@@ -43,8 +45,6 @@
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/l2cap_interface.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -583,44 +583,6 @@ void bnep_conn_timer_timeout(void* data) {
     }
 
     bnepu_release_bcb(p_bcb);
-  } else if (p_bcb->con_flags & BNEP_FLAGS_FILTER_RESP_PEND) {
-    if (p_bcb->re_transmits++ != BNEP_MAX_RETRANSMITS) {
-      bnepu_send_peer_our_filters(p_bcb);
-      alarm_set_on_mloop(p_bcb->conn_timer, BNEP_FILTER_SET_TIMEOUT_MS, bnep_conn_timer_timeout,
-                         p_bcb);
-    } else {
-      if (!stack::l2cap::get_interface().L2CA_DisconnectReq(p_bcb->l2cap_cid)) {
-        log::warn("Unable to request L2CAP disconnect peer:{} cid:{}", p_bcb->rem_bda,
-                  p_bcb->l2cap_cid);
-      }
-
-      /* Tell the user if there is a callback */
-      if (bnep_cb.p_conn_state_cb) {
-        (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda, BNEP_SET_FILTER_FAIL, false);
-      }
-
-      bnepu_release_bcb(p_bcb);
-      return;
-    }
-  } else if (p_bcb->con_flags & BNEP_FLAGS_MULTI_RESP_PEND) {
-    if (p_bcb->re_transmits++ != BNEP_MAX_RETRANSMITS) {
-      bnepu_send_peer_our_multi_filters(p_bcb);
-      alarm_set_on_mloop(p_bcb->conn_timer, BNEP_FILTER_SET_TIMEOUT_MS, bnep_conn_timer_timeout,
-                         p_bcb);
-    } else {
-      if (!stack::l2cap::get_interface().L2CA_DisconnectReq(p_bcb->l2cap_cid)) {
-        log::warn("Unable to request L2CAP disconnect peer:{} cid:{}", p_bcb->rem_bda,
-                  p_bcb->l2cap_cid);
-      }
-
-      /* Tell the user if there is a callback */
-      if (bnep_cb.p_conn_state_cb) {
-        (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda, BNEP_SET_FILTER_FAIL, false);
-      }
-
-      bnepu_release_bcb(p_bcb);
-      return;
-    }
   }
 }
 

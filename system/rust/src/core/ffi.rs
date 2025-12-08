@@ -26,7 +26,7 @@ unsafe impl ExternType for Uuid {
 mod inner {
     #[namespace = "bluetooth"]
     extern "C++" {
-        include!("types/bluetooth/uuid.h");
+        include!("bluetooth/types/uuid.h");
         type Uuid = crate::core::uuid::Uuid;
     }
 }

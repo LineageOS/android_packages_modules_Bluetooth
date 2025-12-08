@@ -2,27 +2,20 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "l2cap_tx_complete_cb_info"
+    name: "delay_offload_le_coc_connection_ind"
     namespace: "bluetooth"
-    description: "Provide l2cap transmit complete information b/301168932"
-    bug: "314819704"
-}
-
-flag {
-    name: "l2cap_fcs_option_fix"
-    namespace: "bluetooth"
-    description: "Use fcs_option for non BASIC mode "
-    bug: "372605959"
+    description: "Delay LE CoC connection indication callback if controller Tx window is full"
+    bug: "408478753"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
 }
 
 flag {
-    name: "delay_offload_le_coc_connection_ind"
+    name: "ldac_rate_control"
     namespace: "bluetooth"
-    description: "Delay LE CoC connection indication callback if controller Tx window is full"
-    bug: "408478753"
+    description: "Configure LDAC rate control based on the LDAC bitrate."
+    bug: "422347819"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

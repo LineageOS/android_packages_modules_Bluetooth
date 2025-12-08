@@ -23,43 +23,25 @@ public final class AvrcpControllerUtils {
     public static final String TAG_PREFIX_AVRCP = "Avrcp";
     public static final String TAG_PREFIX_AVRCP_CONTROLLER = TAG_PREFIX_AVRCP + "Controller.";
 
+    private AvrcpControllerUtils() {}
+
     /** Convert an AVRCP Passthrough command id to a human readable version of the key */
     public static String passThruIdToString(int id) {
-        StringBuilder sb = new StringBuilder();
-        switch (id) {
-            case AvrcpControllerService.PASS_THRU_CMD_ID_PLAY:
-                sb.append("PLAY");
-                break;
-            case AvrcpControllerService.PASS_THRU_CMD_ID_PAUSE:
-                sb.append("PAUSE");
-                break;
-            case AvrcpControllerService.PASS_THRU_CMD_ID_VOL_UP:
-                sb.append("VOL_UP");
-                break;
-            case AvrcpControllerService.PASS_THRU_CMD_ID_VOL_DOWN:
-                sb.append("VOL_DOWN");
-                break;
-            case AvrcpControllerService.PASS_THRU_CMD_ID_STOP:
-                sb.append("STOP");
-                break;
-            case AvrcpControllerService.PASS_THRU_CMD_ID_FF:
-                sb.append("FF");
-                break;
-            case AvrcpControllerService.PASS_THRU_CMD_ID_REWIND:
-                sb.append("REWIND");
-                break;
-            case AvrcpControllerService.PASS_THRU_CMD_ID_FORWARD:
-                sb.append("FORWARD");
-                break;
-            case AvrcpControllerService.PASS_THRU_CMD_ID_BACKWARD:
-                sb.append("BACKWARD");
-                break;
-            default:
-                sb.append("UNKNOWN_CMD_").append(id);
-                break;
-        }
-        sb.append(" (").append(id).append(")");
-        return sb.toString();
+        return switch (id) {
+                    case AvrcpControllerService.PASS_THRU_CMD_ID_PLAY -> "PLAY";
+                    case AvrcpControllerService.PASS_THRU_CMD_ID_PAUSE -> "PAUSE";
+                    case AvrcpControllerService.PASS_THRU_CMD_ID_VOL_UP -> "VOL_UP";
+                    case AvrcpControllerService.PASS_THRU_CMD_ID_VOL_DOWN -> "VOL_DOWN";
+                    case AvrcpControllerService.PASS_THRU_CMD_ID_STOP -> "STOP";
+                    case AvrcpControllerService.PASS_THRU_CMD_ID_FF -> "FF";
+                    case AvrcpControllerService.PASS_THRU_CMD_ID_REWIND -> "REWIND";
+                    case AvrcpControllerService.PASS_THRU_CMD_ID_FORWARD -> "FORWARD";
+                    case AvrcpControllerService.PASS_THRU_CMD_ID_BACKWARD -> "BACKWARD";
+                    default -> "UNKNOWN_CMD";
+                }
+                + " ("
+                + id
+                + ")";
     }
 
     /** Convert an entire PlaybackStateCompat to a string that contains human readable states */
@@ -85,49 +67,25 @@ public final class AvrcpControllerUtils {
 
     /** Convert a playback state constant to a human readable version of the state */
     public static String playbackStateToString(int playbackState) {
-        StringBuilder sb = new StringBuilder();
-        switch (playbackState) {
-            case PlaybackStateCompat.STATE_NONE:
-                sb.append("STATE_NONE");
-                break;
-            case PlaybackStateCompat.STATE_STOPPED:
-                sb.append("STATE_STOPPED");
-                break;
-            case PlaybackStateCompat.STATE_PAUSED:
-                sb.append("STATE_PAUSED");
-                break;
-            case PlaybackStateCompat.STATE_PLAYING:
-                sb.append("STATE_PLAYING");
-                break;
-            case PlaybackStateCompat.STATE_FAST_FORWARDING:
-                sb.append("STATE_FAST_FORWARDING");
-                break;
-            case PlaybackStateCompat.STATE_REWINDING:
-                sb.append("STATE_REWINDING");
-                break;
-            case PlaybackStateCompat.STATE_BUFFERING:
-                sb.append("STATE_BUFFERING");
-                break;
-            case PlaybackStateCompat.STATE_ERROR:
-                sb.append("STATE_ERROR");
-                break;
-            case PlaybackStateCompat.STATE_CONNECTING:
-                sb.append("STATE_CONNECTING");
-                break;
-            case PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS:
-                sb.append("STATE_SKIPPING_TO_PREVIOUS");
-                break;
-            case PlaybackStateCompat.STATE_SKIPPING_TO_NEXT:
-                sb.append("STATE_SKIPPING_TO_NEXT");
-                break;
-            case PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM:
-                sb.append("STATE_SKIPPING_TO_QUEUE_ITEM");
-                break;
-            default:
-                sb.append("UNKNOWN_PLAYBACK_STATE");
-                break;
-        }
-        sb.append(" (").append(playbackState).append(")");
-        return sb.toString();
+        return switch (playbackState) {
+                    case PlaybackStateCompat.STATE_NONE -> "STATE_NONE";
+                    case PlaybackStateCompat.STATE_STOPPED -> "STATE_STOPPED";
+                    case PlaybackStateCompat.STATE_PAUSED -> "STATE_PAUSED";
+                    case PlaybackStateCompat.STATE_PLAYING -> "STATE_PLAYING";
+                    case PlaybackStateCompat.STATE_FAST_FORWARDING -> "STATE_FAST_FORWARDING";
+                    case PlaybackStateCompat.STATE_REWINDING -> "STATE_REWINDING";
+                    case PlaybackStateCompat.STATE_BUFFERING -> "STATE_BUFFERING";
+                    case PlaybackStateCompat.STATE_ERROR -> "STATE_ERROR";
+                    case PlaybackStateCompat.STATE_CONNECTING -> "STATE_CONNECTING";
+                    case PlaybackStateCompat.STATE_SKIPPING_TO_PREVIOUS ->
+                            "STATE_SKIPPING_TO_PREVIOUS";
+                    case PlaybackStateCompat.STATE_SKIPPING_TO_NEXT -> "STATE_SKIPPING_TO_NEXT";
+                    case PlaybackStateCompat.STATE_SKIPPING_TO_QUEUE_ITEM ->
+                            "STATE_SKIPPING_TO_QUEUE_ITEM";
+                    default -> "UNKNOWN_PLAYBACK_STATE";
+                }
+                + " ("
+                + playbackState
+                + ")";
     }
 }

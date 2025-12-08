@@ -33,6 +33,8 @@
 #include <base/location.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/hci_role.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -59,8 +61,6 @@
 #include "stack/include/sco_hci_link_interface.h"
 #include "stack/include/sec_hci_link_interface.h"
 #include "stack/include/smp_api.h"
-#include "types/hci_role.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using bluetooth::hci::IsoManager;
@@ -919,10 +919,6 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p, uint16_t 
     case HCI_READ_INQ_TX_POWER_LEVEL:
       break;
 
-    case HCI_BLE_WRITE_ADV_ENABLE:
-      btm_ble_write_adv_enable_complete(p, evt_len);
-      break;
-
     case HCI_BLE_CREATE_LL_CONN:
     case HCI_LE_EXTENDED_CREATE_CONNECTION:
       // No command complete event for those commands according to spec
@@ -1059,15 +1055,7 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status, const u
     case HCI_SETUP_ESCO_CONNECTION:
     case HCI_ENH_SETUP_ESCO_CONNECTION:
       if (status != HCI_SUCCESS) {
-        if (com::android::bluetooth::flags::fix_sco_command_status_handling()) {
-          log::debug("flag: fix_sco_command_status_handling is enabled");
-          btm_sco_create_command_status_failed(hci_status);
-        } else {
-          log::debug("flag: fix_sco_command_status_handling is disabled");
-          STREAM_TO_UINT16(handle, p_cmd);
-          RawAddress addr(RawAddress::kEmpty);
-          btm_sco_connection_failed(hci_status, addr, handle, nullptr);
-        }
+        btm_sco_create_command_status_failed(hci_status);
       }
       break;
 
@@ -1168,9 +1156,16 @@ static void btu_hcif_mode_change_evt(uint8_t* p) {
   STREAM_TO_UINT16(handle, p);
   STREAM_TO_UINT8(current_mode, p);
   STREAM_TO_UINT16(interval, p);
-  btm_sco_chk_pend_unpark(static_cast<tHCI_STATUS>(status), handle);
-  btm_pm_proc_mode_change(static_cast<tHCI_STATUS>(status), handle,
-                          static_cast<tHCI_MODE>(current_mode), interval);
+  if (com_android_bluetooth_flags_mode_change_before_sco_unpark()) {
+    // Do mode change first, then unpark pending SCO links.
+    btm_pm_proc_mode_change(static_cast<tHCI_STATUS>(status), handle,
+                            static_cast<tHCI_MODE>(current_mode), interval);
+    btm_sco_chk_pend_unpark(static_cast<tHCI_STATUS>(status), handle);
+  } else {
+    btm_sco_chk_pend_unpark(static_cast<tHCI_STATUS>(status), handle);
+    btm_pm_proc_mode_change(static_cast<tHCI_STATUS>(status), handle,
+                            static_cast<tHCI_MODE>(current_mode), interval);
+  }
 
 #if (HID_DEV_INCLUDED == TRUE && HID_DEV_PM_INCLUDED == TRUE)
   hidd_pm_proc_mode_change(status, current_mode, interval);

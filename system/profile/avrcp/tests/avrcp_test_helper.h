@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <gmock/gmock.h>
 
 #include <type_traits>
@@ -26,8 +28,6 @@
 #include "stack/include/a2dp_api.h"
 #include "stack/include/bt_hdr.h"
 #include "tests/packet_test_helper.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace avrcp {
@@ -38,7 +38,7 @@ using TestBrowsePacket = TestPacketType<BrowsePacket>;
 
 class MockMediaInterface : public MediaInterface {
 public:
-  MOCK_METHOD2(SendKeyEvent, void(uint8_t, KeyState));
+  MOCK_METHOD3(SendKeyEvent, void(const RawAddress&, uint8_t, KeyState));
   MOCK_METHOD1(GetSongInfo, void(MediaInterface::SongInfoCallback));
   MOCK_METHOD1(GetPlayStatus, void(MediaInterface::PlayStatusCallback));
   MOCK_METHOD1(GetNowPlayingList, void(MediaInterface::NowPlayingCallback));
@@ -88,6 +88,7 @@ public:
   MOCK_METHOD1(CloseBrowse, uint16_t(uint8_t));
   MOCK_METHOD4(MsgReq, uint16_t(uint8_t, uint8_t, uint8_t, BT_HDR*));
   MOCK_METHOD2(SaveControllerVersion, void(const RawAddress&, uint16_t));
+  MOCK_METHOD0(ResetServiceUuid, void(void));
 };
 
 class MockA2dpInterface : public A2dpInterface {

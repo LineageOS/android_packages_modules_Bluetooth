@@ -17,12 +17,12 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
 
 #include "adapter/bluetooth_test.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 namespace {
 

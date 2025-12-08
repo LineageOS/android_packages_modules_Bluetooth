@@ -10,16 +10,6 @@ flag {
 }
 
 flag {
-    name: "advertise_thread"
-    namespace: "bluetooth"
-    description: "Run all advertise functions on a single thread"
-    bug: "391508617"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "gatt_multi_bearer_connections"
     namespace: "bluetooth"
     description: "Run all advertise functions on a single thread"
@@ -44,4 +34,45 @@ flag {
     namespace: "bluetooth"
     description: "TbsGatt will avoid BluetoothGattServerProxy and use GattServer directly"
     bug: "422544191"
+}
+
+flag {
+    name: "gatt_offload_api"
+    namespace: "bluetooth"
+    description: "New gatt API to offload characteristics"
+    bug: "427099808"
+}
+
+flag {
+    name: "gatt_messaging_permissions"
+    namespace: "bluetooth"
+    description: "Check messaging permission for ANCS"
+    bug: "428743016"
+}
+
+flag {
+    name: "le_subrate_manager"
+    namespace: "bluetooth"
+    description: "Add subrate manager to control LE subrate parameters"
+    bug: "433670627"
+}
+
+flag {
+    name: "br_edr_discover_gatt_services_over_gatt"
+    namespace: "bluetooth"
+    description: "Do GATT service discovery over GATT rather than SDP"
+    bug: "426086352"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "disconnect_acl_on_gatt_timeout"
+    namespace: "bluetooth"
+    description: "Disconnect ACL when a gatt response or confirmation timeout occurs"
+    bug: "438985552"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
 }

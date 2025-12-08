@@ -136,6 +136,7 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
                     BluetoothStatusCodes.ERROR_REMOTE_OPERATION_NOT_SUPPORTED,
                     BluetoothStatusCodes.ERROR_HAP_INVALID_PRESET_INDEX,
                     BluetoothStatusCodes.ERROR_CSIP_INVALID_GROUP_ID,
+                    BluetoothStatusCodes.ERROR_TIMEOUT,
                 })
         @interface GroupPresetSelectionFailureReason {}
 
@@ -757,7 +758,7 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      * Selects the currently active preset for a HA device
      *
      * <p>On success, {@link Callback#onPresetSelected(BluetoothDevice, int, int)} will be called
-     * with reason code {@link BluetoothStatusCodes#REASON_LOCAL_APP_REQUEST} On failure, {@link
+     * with reason code {@link BluetoothStatusCodes#REASON_LOCAL_APP_REQUEST}. On failure, {@link
      * Callback#onPresetSelectionFailed(BluetoothDevice, int)} will be called.
      *
      * @param device is the device for which we want to set the active preset
@@ -786,8 +787,15 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
      *
      * <p>On success, {@link Callback#onPresetSelected(BluetoothDevice, int, int)} will be called
      * for each device within the group with reason code {@link
-     * BluetoothStatusCodes#REASON_LOCAL_APP_REQUEST} On failure, {@link
+     * BluetoothStatusCodes#REASON_LOCAL_APP_REQUEST}. On failure, {@link
      * Callback#onPresetSelectionForGroupFailed(int, int)} will be called for the group.
+     *
+     * <p>When the group is not fully updated in time, {@link
+     * Callback#onPresetSelected(BluetoothDevice, int, int)} will be called for the devices that
+     * changed preset, followed by {@link Callback#onPresetSelectionForGroupFailed(int, int)} with
+     * reason {@link BluetoothStatusCodes#ERROR_TIMEOUT}. When this happens, the group may end up in
+     * a de-synchronize state (that may or may not recover on its own as this is implementation
+     * defined).
      *
      * @param groupId is the device group identifier for which want to set the active preset
      * @param presetIndex is an index of one of the available presets

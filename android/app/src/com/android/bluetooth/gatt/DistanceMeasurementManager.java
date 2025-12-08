@@ -58,7 +58,8 @@ import java.util.concurrent.TimeoutException;
 /** Manages distance measurement operations and interacts with Gabeldorsche stack. */
 @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
 public class DistanceMeasurementManager {
-    private static final String TAG = DistanceMeasurementManager.class.getSimpleName();
+    private static final String TAG =
+            GattUtil.TAG_PREFIX + DistanceMeasurementManager.class.getSimpleName();
 
     private static final long RUN_SYNC_WAIT_TIME_MS = 2000L;
 
@@ -113,14 +114,10 @@ public class DistanceMeasurementManager {
                         nativeInterface, () -> new DistanceMeasurementNativeInterface(this));
         mNativeInterface.init();
         mDistanceMeasurementBinder = new DistanceMeasurementBinder(adapterService, this);
-        if (Flags.channelSounding25q2Apis()) {
-            mHasChannelSoundingFeature =
-                    adapterService
-                            .getPackageManager()
-                            .hasSystemFeature(FEATURE_BLUETOOTH_LE_CHANNEL_SOUNDING);
-        } else {
-            mHasChannelSoundingFeature = true;
-        }
+        mHasChannelSoundingFeature =
+                adapterService
+                        .getPackageManager()
+                        .hasSystemFeature(FEATURE_BLUETOOTH_LE_CHANNEL_SOUNDING);
         postOnDistanceMeasurementThread(
                 () -> {
                     int[] csTypes = {

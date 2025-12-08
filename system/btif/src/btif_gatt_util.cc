@@ -21,6 +21,10 @@
 #include "btif_gatt_util.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/uuid.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_gatt.h>
 #include <stdlib.h>
@@ -34,10 +38,6 @@
 #include "os/system_properties.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
-#include "types/ble_address_with_type.h"
-#include "types/bluetooth/uuid.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

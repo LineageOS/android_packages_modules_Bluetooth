@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.mapclient;
 
+import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
@@ -41,6 +42,7 @@ import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -106,7 +108,10 @@ public class MapClientService extends ConnectableProfile {
             throw new IllegalArgumentException("Null device");
         }
         Log.d(TAG, "connect(device= " + device + "): devices=" + mMapInstanceMap.keySet());
-        if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN) {
+        if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN
+                || (Flags.mapClientCheckAccessPermission()
+                        && mAdapterService.getMessageAccessPermission(device)
+                                != BluetoothDevice.ACCESS_ALLOWED)) {
             Log.w(
                     TAG,
                     "Connection not allowed: <"
@@ -237,7 +242,7 @@ public class MapClientService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.v(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
+        if (!mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -289,8 +294,7 @@ public class MapClientService extends ConnectableProfile {
      * @param device BluetoothDevice address of remote device
      * @param sm the state machine to clean up or {@code null} to clean up any state machine.
      */
-    @VisibleForTesting
-    public void cleanupDevice(BluetoothDevice device, MceStateMachine sm) {
+    void cleanupDevice(BluetoothDevice device, MceStateMachine sm) {
         Log.d(TAG, "cleanup(device= " + device + "): devices=" + mMapInstanceMap.keySet());
         synchronized (mMapInstanceMap) {
             MceStateMachine stateMachine = mMapInstanceMap.get(device);
@@ -375,7 +379,7 @@ public class MapClientService extends ConnectableProfile {
                 TAG,
                 "Received ACL disconnection event, device=" + device + ", transport=" + transport);
 
-        if (transport != BluetoothDevice.TRANSPORT_BREDR) {
+        if (transport != TRANSPORT_BREDR) {
             return;
         }
 

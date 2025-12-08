@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <vector>
 
 #include "a2dp_constants.h"
@@ -24,7 +26,6 @@
 #include "common/message_loop_thread.h"
 #include "hardware/bt_av.h"
 #include "osi/include/properties.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace audio {
@@ -131,7 +132,8 @@ std::optional<::bluetooth::audio::a2dp::provider::a2dp_configuration> get_a2dp_c
         RawAddress peer_address,
         std::vector<::bluetooth::audio::a2dp::provider::a2dp_remote_capabilities> const&
                 remote_seps,
-        btav_a2dp_codec_config_t const& user_preferences);
+        btav_a2dp_codec_config_t const& user_preferences,
+        ::bluetooth::a2dp::CodecId user_preferred_codec_id);
 
 /***
  * Query the codec parameters from the audio HAL.
@@ -139,12 +141,19 @@ std::optional<::bluetooth::audio::a2dp::provider::a2dp_configuration> get_a2dp_c
  * received from the peer and decide whether accept
  * the it or not.
  ***/
-tA2DP_STATUS parse_a2dp_configuration(btav_a2dp_codec_index_t codec_index,
+tA2DP_STATUS parse_a2dp_configuration(::bluetooth::a2dp::CodecId codec_id,
                                       const uint8_t* codec_info,
                                       btav_a2dp_codec_config_t* codec_parameters,
                                       std::vector<uint8_t>* vendor_specific_parameters);
 
 }  // namespace provider
+
+/***
+ * Reads the provider information from the HAL.
+ * May return std::nullopt if the HAL Provider Info is empty.
+ ***/
+std::optional<btav_a2dp_hal_provider_info_t> get_provider_info();
+
 }  // namespace a2dp
 }  // namespace aidl
 }  // namespace audio

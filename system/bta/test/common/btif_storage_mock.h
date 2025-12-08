@@ -16,12 +16,14 @@
  */
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <gmock/gmock.h>
 
 #include "include/hardware/bluetooth.h"
-#include "types/raw_address.h"
 
+namespace bluetooth::asha {
 struct HearingDevice;
+}  // namespace bluetooth::asha
 
 namespace bluetooth {
 namespace storage {
@@ -55,7 +57,7 @@ public:
   virtual bool GetHearingAidProp(const RawAddress& address, uint8_t* capabilities,
                                  uint64_t* hi_sync_id, uint16_t* render_delay,
                                  uint16_t* preparation_delay, uint16_t* codecs) = 0;
-  virtual void AddHearingAid(const HearingDevice* dev_info) = 0;
+  virtual void AddHearingAid(const asha::HearingDevice* dev_info) = 0;
 
   virtual ~BtifStorageInterface() = default;
 };
@@ -99,7 +101,7 @@ public:
               (const RawAddress& address, uint8_t* capabilities, uint64_t* hi_sync_id,
                uint16_t* render_delay, uint16_t* preparation_delay, uint16_t* codecs),
               (override));
-  MOCK_METHOD((void), AddHearingAid, (const HearingDevice* dev_info), (override));
+  MOCK_METHOD((void), AddHearingAid, (const asha::HearingDevice* dev_info), (override));
 };
 
 /**

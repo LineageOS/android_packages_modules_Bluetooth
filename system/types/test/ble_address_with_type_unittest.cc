@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#include "types/ble_address_with_type.h"
-
+#include <bluetooth/types/ble_address_with_type.h>
 #include <gtest/gtest.h>
-static constexpr uint8_t RAW_ADDRESS_TEST1[6] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
+
+static constexpr RawAddress RAW_ADDRESS_TEST1({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
 
 TEST(BleAddressWithTypeTest, to_ble_addr_type) {
   for (unsigned i = 0; i < 0xff + 1; i++) {

@@ -19,6 +19,7 @@
 #include "database.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 
 #include <algorithm>
 #include <list>
@@ -28,7 +29,6 @@
 #include "internal_include/bt_trace.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/gattdefs.h"
-#include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;

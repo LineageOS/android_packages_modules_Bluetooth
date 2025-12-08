@@ -18,11 +18,12 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
+
 #include <cstdint>
 
 #include "internal_include/bt_target.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 /* Masks for attr_value field of tSDP_DISC_ATTR */
 #define SDP_DISC_ATTR_LEN_MASK 0x0FFF

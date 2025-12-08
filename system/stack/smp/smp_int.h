@@ -25,6 +25,8 @@
 #define SMP_INT_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/hci_role.h>
 
 #include <cstdint>
 
@@ -33,8 +35,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/smp_api_types.h"
-#include "types/hci_role.h"
-#include "types/raw_address.h"
 
 typedef enum : uint16_t {
   SMP_METRIC_COMMAND_LE_FLAG = 0x0000,
@@ -63,6 +63,8 @@ typedef enum : uint8_t {
 } tSMP_ASSO_MODEL;
 
 #define SMP_WAIT_FOR_RSP_TIMEOUT_MS (30 * 1000)
+
+/* TODO(b/436319185): Remove when the flag conclude_le_pairing_immediately is shipped */
 #define SMP_DELAYED_AUTH_TIMEOUT_MS 500
 
 /* SMP command code */

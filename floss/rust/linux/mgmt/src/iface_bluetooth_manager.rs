@@ -3,6 +3,7 @@ use btstack::RPCProxy;
 use std::sync::{Arc, Mutex};
 
 use crate::bluetooth_manager::BluetoothManager;
+use crate::config_util::UnstableAflagsUseMode;
 
 #[derive(Debug, Default)]
 pub struct AdapterWithEnabled {
@@ -55,6 +56,15 @@ pub trait IBluetoothManager {
     /// Set the tablet mode of the device. The device that is in tablet mode does not allow
     /// wakeup by the HID devices.
     fn set_tablet_mode(&mut self, tablet_mode: bool);
+
+    /// Get the current unstable Aflags use mode. When the mode is set to Auto, the unstable Aflags
+    /// are only used in the Dev and Beta channels.
+    fn get_unstable_aflags_use_mode(&mut self) -> UnstableAflagsUseMode;
+
+    /// Set whether to use the unstable Aflags. When the mode is set to Auto, the unstable Aflags
+    /// are only used in the Dev and Beta channels.
+    /// Returns true on success, false otherwise.
+    fn set_unstable_aflags_use_mode(&mut self, mode: UnstableAflagsUseMode) -> bool;
 }
 
 /// Interface of Bluetooth Manager callbacks.

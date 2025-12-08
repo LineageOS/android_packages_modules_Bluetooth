@@ -20,15 +20,12 @@ import static android.bluetooth.BluetoothSocket.SocketType;
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
-
-import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -44,7 +41,6 @@ import java.util.UUID;
  * @see BluetoothAdapter#listenUsingSocketSettings
  * @see BluetoothDevice#createUsingSocketSettings
  */
-@FlaggedApi(Flags.FLAG_SOCKET_SETTINGS_API)
 public final class BluetoothSocketSettings {
 
     private static final int L2CAP_PSM_UNSPECIFIED = -1;
@@ -388,7 +384,6 @@ public final class BluetoothSocketSettings {
     }
 
     /** Builder for {@link BluetoothSocketSettings}. */
-    @FlaggedApi(Flags.FLAG_SOCKET_SETTINGS_API)
     public static final class Builder {
         private int mSocketType = BluetoothSocket.TYPE_RFCOMM;
         private int mL2capPsm = L2CAP_PSM_UNSPECIFIED;

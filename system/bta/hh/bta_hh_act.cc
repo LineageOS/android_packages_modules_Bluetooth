@@ -25,6 +25,9 @@
 #define LOG_TAG "bt_bta_hh"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_transport.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstddef>
@@ -48,9 +51,6 @@
 #include "stack/include/hidh_api.h"
 #include "stack/include/sdp_api.h"
 #include "stack/sdp/sdp_discovery_db.h"
-#include "types/ble_address_with_type.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
@@ -483,6 +483,29 @@ static void bta_hh_bredr_conn(tBTA_HH_DEV_CB* p_cb) {
   }
 
   bta_hh_sm_execute(p_cb, BTA_HH_SDP_CMPL_EVT, &bta_hh_data);
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_hh_le_connect_upgrade
+ *
+ * Description      Upgrade ongoing LE background connection to direct
+ *                  connection. This function is called only in
+ *                  BTA_HH_W4_CONN_ST state.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void bta_hh_connect_upgrade(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
+  const tBTA_HH_API_CONN& api_conn = p_data->api_conn;
+  if (api_conn.link_spec.transport != BT_TRANSPORT_LE || !api_conn.direct) {
+    log::info("Already connecting to {}", api_conn.link_spec);
+    return;
+  }
+
+  log::info("Upgrading to direct connection {}", api_conn.link_spec);
+  p_cb->mode = p_data->api_conn.mode;
+  bta_hh_le_open_conn(p_cb, true);
 }
 
 /*******************************************************************************
@@ -978,7 +1001,7 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
       break;
 
     default:
-      log::verbose("invalid command");
+      log::warn("Invalid command {} for device {}", p_dev_info->sub_event, p_dev_info->link_spec);
       break;
   }
 

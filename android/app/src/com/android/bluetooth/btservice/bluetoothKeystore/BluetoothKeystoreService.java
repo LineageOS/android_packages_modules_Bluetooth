@@ -25,7 +25,6 @@ import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothKeystoreProto;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
 import com.google.protobuf.ByteString;
@@ -157,18 +156,6 @@ public class BluetoothKeystoreService {
         }
 
         loadConfigData();
-    }
-
-    /** Factory reset the keystore service. */
-    public void factoryReset() {
-        if (Flags.factoryResetAtBluetoothStart()) {
-            throw new IllegalStateException("flag factoryResetAtBluetoothStart is enabled");
-        }
-        try {
-            cleanupAll();
-        } catch (IOException e) {
-            reportBluetoothKeystoreException(e, "IO error while file operating.");
-        }
     }
 
     /** Cleans up the keystore service. */
@@ -826,7 +813,7 @@ public class BluetoothKeystoreService {
             infoLog("ComputeDataThread: Stop, doEncrypt: " + mDoEncrypt);
         }
 
-        public void setWaitQueueEmptyForStop() {
+        void setWaitQueueEmptyForStop() {
             mWaitQueueEmptyForStop = true;
             if (mPendingEncryptKey.isEmpty()) {
                 interrupt();

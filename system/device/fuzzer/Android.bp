@@ -25,7 +25,10 @@ package {
 
 cc_fuzz {
     name: "btdevice_esco_fuzzer",
-    defaults: ["fluoride_defaults"],
+    defaults: [
+        "bluetooth_fuzz_config",
+        "fluoride_defaults",
+    ],
     cflags: [
         "-Wno-missing-prototypes",
     ],
@@ -44,11 +47,11 @@ cc_fuzz {
         "server_configurable_flags",
     ],
     static_libs: [
-        "bluetooth_flags_c_lib",
-        "libbluetooth-types",
+        "bluetooth_flags_c_lib_for_test",
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_types",
         "libbtcore",
         "libbtdevice",
         "libchrome",
@@ -60,16 +63,4 @@ cc_fuzz {
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
     ],
-    fuzz_config: {
-        cc: ["android-bluetooth-security@google.com"],
-        componentid: 27441,
-        hotlists: [
-            "4593311",
-        ],
-        description: "The fuzzer targets the APIs of libbtdevice library",
-        vector: "local_no_privileges_required",
-        service_privilege: "privileged",
-        users: "multi_user",
-        fuzzed_code_usage: "shipped",
-    },
 }

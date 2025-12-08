@@ -20,6 +20,7 @@
  */
 
 #include <base/functional/bind.h>
+#include <bluetooth/types/ble_address_with_type.h>
 
 #include <cstdint>
 
@@ -28,7 +29,6 @@
 #include "btif/include/btif_common.h"
 #include "include/hardware/bluetooth.h"
 #include "test/common/mock_functions.h"
-#include "types/ble_address_with_type.h"
 
 bool btif_is_dut_mode() {
   inc_func_call_count(__func__);

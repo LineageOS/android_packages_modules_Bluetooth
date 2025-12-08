@@ -23,7 +23,7 @@ from pandora.host_pb2 import PUBLIC, RANDOM
 from pandora.security_grpc import Security, SecurityStorage
 from pandora.security_pb2 import LE_LEVEL3, PairingEventAnswer
 from pandora.gatt_grpc import GATT
-from pandora.le_audio_pb2 import LeAudioPlaybackAudioRequest, AUDIO_USAGE_GAME
+from pandora.le_audio_pb2 import LeAudioPlaybackAudioRequest, AUDIO_USAGE_GAME, AUDIO_SOURCE_VOICE_PERFORMANCE
 from pandora.le_audio_grpc import LeAudio
 
 AUDIO_SIGNAL_AMPLITUDE = 0.8
@@ -43,6 +43,7 @@ class GMAPProxy(ProfileProxy):
         self.pairing_events = self.security.OnPairing()
         self.discovered_services = None
         self.connection = None
+        self.is_recording_active = False
 
         def convert_frame(data):
             return LeAudioPlaybackAudioRequest(data=data)
@@ -108,10 +109,53 @@ class GMAPProxy(ProfileProxy):
         to streaming state.
         """
 
+        def start_capture():
+            self.capture_stream = self.le_audio.LeAudioCaptureAudio(connection=self.connection)
+            self.is_recording_active = True
+
+        self.log(f"ASE role: {ase_role}")
         self.le_audio.Open(connection=self.connection)
         if "SINK" in ase_role:
             self.le_audio.LeAudioStart(connection=self.connection, audioUsage=AUDIO_USAGE_GAME)
             self.audio.start()
+        elif "SOURCE" in ase_role:
+            capture_thread = threading.Thread(target=start_capture)
+            self.le_audio.LeAudioPrepareRecorder(connection=self.connection,
+                                                 audioSource=AUDIO_SOURCE_VOICE_PERFORMANCE)
+            capture_thread.start()
+        else:
+            assert False
+
+        return "OK"
+
+    @match_description
+    def _mmi_313(self, num_sink_ases: int, num_source_ases: int, **kwargs):
+        """
+        Please configure (?P<num_sink_ases>\d) SINK and (?P<num_source_ases>\d) SOURCE ASE with Config Setting: .
+        After
+        that, configure both ASEes to streaming state.
+        """
+
+        def start_playback():
+            self.audio.start()
+
+        def start_capture():
+            self.capture_stream = self.le_audio.LeAudioCaptureAudio(connection=self.connection)
+            self.is_recording_active = True
+
+        capture_thread = threading.Thread(target=start_capture)
+        playback_thread = threading.Thread(target=start_playback)
+        self.le_audio.Open(connection=self.connection)
+        self.le_audio.LeAudioPrepareRecorder(connection=self.connection,
+                                             audioSource=AUDIO_SOURCE_VOICE_PERFORMANCE)
+        self.le_audio.LeAudioStart(connection=self.connection,
+                                   audioUsage=AUDIO_USAGE_GAME,
+                                   metadataTag="VX_AOSP_bidirectional")
+
+        capture_thread.start()
+        playback_thread.start()
+        playback_thread.join()
+        capture_thread.join()
 
         return "OK"
 
@@ -123,6 +167,9 @@ class GMAPProxy(ProfileProxy):
         if self.audio.thread is not None:
             self.audio.wait_complete()
             self.le_audio.LeAudioStop(connection=self.connection)
+
+        if self.is_recording_active:
+            self.le_audio.LeAudioStopRecorder(connection=self.connection)
 
         return "OK"
 

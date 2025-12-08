@@ -12,8 +12,8 @@ use std::time::Duration;
 use crate::dbus_iface::{export_suspend_callback_dbus_intf, SuspendDBus};
 use crate::service_watcher::ServiceWatcher;
 use crate::suspend::{
-    RegisterSuspendDelayReply, RegisterSuspendDelayRequest, SuspendDone, SuspendImminent,
-    SuspendImminent_Reason, SuspendReadinessInfo,
+    suspend_imminent, RegisterSuspendDelayReply, RegisterSuspendDelayRequest, SuspendDone,
+    SuspendImminent, SuspendReadinessInfo,
 };
 
 const POWERD_SERVICE: &str = "org.chromium.PowerManager";
@@ -68,11 +68,14 @@ impl SuspendCallback {
 
 fn generate_proto_bytes<T: protobuf::Message>(request: &T) -> Option<Vec<u8>> {
     let mut proto_bytes: Vec<u8> = vec![];
-    let mut output_stream = CodedOutputStream::vec(&mut proto_bytes);
-    let write_result = request.write_to_with_cached_sizes(&mut output_stream);
-    if let Err(e) = write_result {
-        log::error!("Error serializing proto to bytes: {}", e);
-        return None;
+    // Additional scope to drop output_stream (which borrows proto_bytes) first before returning.
+    {
+        let mut output_stream = CodedOutputStream::vec(&mut proto_bytes);
+        let write_result = request.write_to_with_cached_sizes(&mut output_stream);
+        if let Err(e) = write_result {
+            log::error!("Error serializing proto to bytes: {}", e);
+            return None;
+        }
     }
     Some(proto_bytes)
 }
@@ -92,8 +95,8 @@ fn send_handle_suspend_readiness(
         tokio::spawn(async move {
             log::debug!(
                 "Sending HandleSuspendReadiness, delay id = {}, suspend id = {}",
-                suspend_readiness_info.get_delay_id(),
-                suspend_readiness_info.get_suspend_id()
+                suspend_readiness_info.delay_id(),
+                suspend_readiness_info.suspend_id()
             );
             let ret: Result<(), dbus::Error> = powerd_proxy
                 .method_call(
@@ -136,7 +139,7 @@ impl ISuspendCallback for SuspendCallback {
                 send_handle_suspend_readiness(
                     powerd_session.powerd_proxy.clone(),
                     powerd_session.delay_id,
-                    pending_suspend_imminent.get_suspend_id(),
+                    pending_suspend_imminent.suspend_id(),
                 );
             } else if let (Some(adapter_suspend_dbus), None) =
                 (&context.adapter_suspend_dbus, &context.pending_suspend_imminent)
@@ -428,10 +431,10 @@ impl PowerdSuspendManager {
                         log::error!("Error decoding RegisterSuspendDelayReply {:?}", e);
                     }
 
-                    log::debug!("Suspend delay id = {}", reply.get_delay_id());
+                    log::debug!("Suspend delay id = {}", reply.delay_id());
 
                     self.context.lock().unwrap().powerd_session =
-                        Some(PowerdSession { delay_id: reply.get_delay_id(), powerd_proxy });
+                        Some(PowerdSession { delay_id: reply.delay_id(), powerd_proxy });
                 }
             }
         } else {
@@ -460,8 +463,8 @@ impl PowerdSuspendManager {
 
         log::debug!(
             "received suspend imminent: suspend_id = {:?}, reason = {:?}",
-            suspend_imminent.get_suspend_id(),
-            suspend_imminent.get_reason()
+            suspend_imminent.suspend_id(),
+            suspend_imminent.reason()
         );
 
         if self.context.lock().unwrap().pending_suspend_imminent.is_some() {
@@ -481,21 +484,21 @@ impl PowerdSuspendManager {
                 tokio::spawn(async move {
                     let result = suspend_dbus_rpc
                         .suspend(
-                            match (tablet_mode, suspend_imminent.get_reason()) {
+                            match (tablet_mode, suspend_imminent.reason()) {
                                 // No wakes allowed on tablet mode.
                                 (true, _) => SuspendType::NoWakesAllowed,
 
                                 // When not in tablet mode, choose wake type based on suspend
                                 // reason.
-                                (false, SuspendImminent_Reason::IDLE) => {
+                                (false, suspend_imminent::Reason::IDLE) => {
                                     SuspendType::AllowWakeFromHid
                                 }
-                                (false, SuspendImminent_Reason::LID_CLOSED) => {
+                                (false, suspend_imminent::Reason::LID_CLOSED) => {
                                     SuspendType::NoWakesAllowed
                                 }
-                                (false, SuspendImminent_Reason::OTHER) => SuspendType::Other,
+                                (false, suspend_imminent::Reason::OTHER) => SuspendType::Other,
                             },
-                            suspend_imminent.get_suspend_id(),
+                            suspend_imminent.suspend_id(),
                         )
                         .await;
 
@@ -509,7 +512,7 @@ impl PowerdSuspendManager {
                     send_handle_suspend_readiness(
                         session.powerd_proxy.clone(),
                         session.delay_id,
-                        suspend_imminent.get_suspend_id(),
+                        suspend_imminent.suspend_id(),
                     );
                 } else {
                     log::warn!("SuspendImminent is received when there is no powerd session");

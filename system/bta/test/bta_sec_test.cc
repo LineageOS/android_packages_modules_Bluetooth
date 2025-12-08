@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/address.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <sys/socket.h>
@@ -23,7 +24,6 @@
 #include "stack/include/btm_status.h"
 #include "test/mock/mock_stack_btm_interface.h"
 #include "test/mock/mock_stack_rnr_interface.h"
-#include "types/raw_address.h"
 
 using ::testing::_;
 using ::testing::ElementsAre;
@@ -31,7 +31,6 @@ using ::testing::Return;
 
 namespace {
 const RawAddress kRawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
-const RawAddress kRawAddress2({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
 const DEV_CLASS kDeviceClass = {0x11, 0x22, 0x33};
 
 constexpr char kRemoteName[] = "TheRemoteName";

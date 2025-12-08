@@ -21,7 +21,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -46,12 +45,13 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.SdpPseRecord;
 import android.content.Context;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.obex.ResponseCodes;
+import com.android.tests.bluetooth.MockitoRule;
 import com.android.vcard.VCardEntry;
 
 import org.junit.Before;
@@ -68,6 +68,13 @@ import java.util.List;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class PbapClientStateMachineTest {
+    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
+
+    @Mock private AdapterService mAdapterService;
+    @Mock private Context mMockContext;
+    @Mock private PbapClientContactsStorage mMockStorage;
+    @Mock private PbapClientObexClient mMockObexClient;
+    @Mock private PbapClientStateMachine.Callback mMockCallback;
 
     private static final int L2CAP_PSM = 4101;
     private static final int RFCOMM_CHANNEL = 5;
@@ -89,22 +96,14 @@ public class PbapClientStateMachineTest {
     private static final int SDP_BUSY = 2;
     private static final int SDP_UNKNOWN = -1;
 
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-
     private final BluetoothDevice mDevice = getTestDevice(1);
+    private final List<Account> mMockedAccounts = new ArrayList<>();
 
-    @Mock private AdapterService mAdapterService;
-    @Mock private Context mMockContext;
     private TestLooper mTestLooper;
 
-    @Mock private PbapClientContactsStorage mMockStorage;
     ArgumentCaptor<PbapClientContactsStorage.Callback> mCaptor =
             ArgumentCaptor.forClass(PbapClientContactsStorage.Callback.class);
     private PbapClientContactsStorage.Callback mStorageCallback;
-    private final List<Account> mMockedAccounts = new ArrayList<>();
-
-    @Mock private PbapClientObexClient mMockObexClient;
-    @Mock private PbapClientStateMachine.Callback mMockCallback;
 
     private PbapClientStateMachine mPbapClientStateMachine = null;
     private PbapClientStateMachine.PbapClientObexClientCallback mObexCallback;
@@ -790,29 +789,25 @@ public class PbapClientStateMachineTest {
                 .when(mMockObexClient)
                 .requestPhonebookMetadata(eq(phonebook), any(PbapApplicationParameters.class));
 
+        // Create mocks once outside the doAnswer block.
+        PbapPhonebook book = mock(PbapPhonebook.class);
+        List<VCardEntry> contacts = mock(List.class);
+        doReturn(phonebook).when(book).getPhonebook();
+        doReturn(contacts).when(book).getList();
+
         doAnswer(
                         invocation -> {
                             String pb = (String) invocation.getArgument(0);
                             PbapApplicationParameters params = invocation.getArgument(1);
-                            PbapPhonebook book = mock(PbapPhonebook.class);
-                            List<VCardEntry> contacts = mock(List.class);
-
-                            doReturn(pb).when(book).getPhonebook();
 
                             int offset = params.getListStartOffset();
-                            int end = offset + params.getMaxListCount();
-                            end = (end >= numContacts ? numContacts : end);
+                            int end = Math.min(offset + params.getMaxListCount(), numContacts);
+                            int count = (offset < numContacts) ? (end - offset) : 0;
 
-                            if (offset < numContacts) {
-                                doReturn(end - offset).when(contacts).size();
-                                doReturn(end - offset).when(book).getCount();
-                            } else {
-                                doReturn(0).when(contacts).size();
-                                doReturn(0).when(book).getCount();
-                            }
-
+                            // Re-stub the behavior of the existing mocks for each invocation.
+                            doReturn(count).when(contacts).size();
+                            doReturn(count).when(book).getCount();
                             doReturn(offset).when(book).getOffset();
-                            doReturn(contacts).when(book).getList();
 
                             mObexCallback.onPhonebookContactsDownloaded(
                                     ResponseCodes.OBEX_HTTP_OK, pb, book);

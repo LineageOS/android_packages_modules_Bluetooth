@@ -10,7 +10,7 @@ use log::warn;
 #[cxx::bridge(namespace = bluetooth::topshim::rust)]
 pub mod ffi {
     unsafe extern "C++" {
-        include!("types/raw_address.h");
+        include!("bluetooth/types/address.h");
         #[namespace = ""]
         type RawAddress = crate::btif::RawAddress;
     }
@@ -41,6 +41,7 @@ pub mod ffi {
         Inactive = 0,
         Active,
         TurnedIdleDuringCall,
+        AutonomousInactive,
     }
 
     #[derive(Debug, Copy, Clone)]
@@ -246,6 +247,7 @@ impl From<BtLeAudioGroupStatus> for i32 {
             BtLeAudioGroupStatus::Inactive => 0,
             BtLeAudioGroupStatus::Active => 1,
             BtLeAudioGroupStatus::TurnedIdleDuringCall => 2,
+            BtLeAudioGroupStatus::AutonomousInactive => 3,
             _ => panic!("Invalid value {:?} to BtLeAudioGroupStatus", value),
         }
     }
@@ -257,6 +259,7 @@ impl From<i32> for BtLeAudioGroupStatus {
             0 => BtLeAudioGroupStatus::Inactive,
             1 => BtLeAudioGroupStatus::Active,
             2 => BtLeAudioGroupStatus::TurnedIdleDuringCall,
+            3 => BtLeAudioGroupStatus::AutonomousInactive,
             _ => panic!("Invalid value {} for BtLeAudioGroupStatus", value),
         }
     }

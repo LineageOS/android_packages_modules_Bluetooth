@@ -21,8 +21,9 @@ import android.bluetooth.IBluetoothCallback
 import android.os.IBinder
 import android.os.RemoteException
 
+private const val TAG = "AdapterBinder"
+
 class AdapterBinder(rawBinder: IBinder) {
-    private val TAG = "AdapterBinder"
     val adapterBinder: IAdapter = IAdapter.Stub.asInterface(rawBinder)
     var adapterServiceBinder: IBinder? = null
     private val createdAt = System.currentTimeMillis()
@@ -65,27 +66,8 @@ class AdapterBinder(rawBinder: IBinder) {
     }
 
     @Throws(RemoteException::class)
-    fun setForegroundUserId(userId: Int) {
-        adapterBinder.setForegroundUserId(userId)
-    }
-
-    @Throws(RemoteException::class)
     fun unregAllGattClient() {
         adapterBinder.unregAllGattClient()
-    }
-
-    @Throws(RemoteException::class)
-    fun factoryReset() {
-        adapterBinder.onewayFactoryReset()
-    }
-
-    fun isMediaProfileConnected(): Boolean {
-        try {
-            return adapterBinder.isMediaProfileConnected()
-        } catch (ex: RemoteException) {
-            Log.e(TAG, "Error when calling isMediaProfileConnected", ex)
-        }
-        return false
     }
 
     @Throws(RemoteException::class)

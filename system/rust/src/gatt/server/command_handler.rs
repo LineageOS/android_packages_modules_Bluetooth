@@ -90,4 +90,19 @@ mod test {
 
         // assert: nothing happens (we crash if anything is unhandled within a mock)
     }
+
+    #[test]
+    fn test_malformed_write_command() {
+        // arrange
+        let db = new_test_database(vec![]);
+        let (client, _) = AttClient::new_test_client(TCB_IDX, &db);
+        let handler = AttCommandHandler::new(client.downgrade());
+
+        // act: send a write command with a payload that can't be parsed
+        let att = att::Att { opcode: att::AttOpcode::WriteCommand, payload: vec![0] };
+        let att_view = AttCommand::new(att).unwrap();
+        handler.process_packet(att_view);
+
+        // assert: nothing happens (we crash if anything is unhandled within a mock)
+    }
 }

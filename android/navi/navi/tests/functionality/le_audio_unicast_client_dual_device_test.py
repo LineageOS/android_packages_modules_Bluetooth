@@ -20,10 +20,12 @@ import functools
 import secrets
 import struct
 from typing import TypeVar, cast
+from unittest import mock
 
 from bumble import core
 from bumble import device
 from bumble import gatt
+from bumble import gatt_client
 from bumble import hci
 from bumble import pairing
 from bumble.profiles import ascs
@@ -31,12 +33,15 @@ from bumble.profiles import bap
 from bumble.profiles import cap
 from bumble.profiles import csip
 from bumble.profiles import le_audio
+from bumble.profiles import mcp
 from bumble.profiles import pacs
 from bumble.profiles import vcs
 from mobly import test_runner
 from mobly import signals
 from typing_extensions import override
 
+from navi.bumble_ext import ccp
+from navi.bumble_ext import gatt_helper
 from navi.tests import navi_test_base
 from navi.utils import android_constants
 from navi.utils import bl4a_api
@@ -64,6 +69,7 @@ _Direction = constants.Direction
 _TestRole = constants.TestRole
 _StreamType = android_constants.StreamType
 _CallState = android_constants.CallState
+_McpOpcode = mcp.MediaControlPointOpcode
 _AndroidProperty = android_constants.Property
 
 
@@ -102,6 +108,37 @@ def _get_audio_context_entry(ase: ascs.AseStateMachine,) -> le_audio.Metadata.En
     )
 
 
+# The original implementation doesn't handle the case when notifications are
+# sent to all clients, we need to override the write_control_point method to
+# wait for the response.
+class _GenericMediaControlServiceProxy(mcp.GenericMediaControlServiceProxy):
+    _media_control_point_result: asyncio.futures.Future[bytes] | None = None
+
+    @override
+    async def write_control_point(
+            self, opcode: mcp.MediaControlPointOpcode) -> mcp.MediaControlPointResultCode:
+        if not self.media_control_point:
+            raise core.InvalidOperationError("Peer does not have media control point")
+
+        async with self.lock:
+            self._media_control_point_result = (asyncio.get_running_loop().create_future())
+            await self.media_control_point.write_value(
+                bytes([opcode]),
+                with_response=False,
+            )
+
+            (response_opcode, response_code) = await self._media_control_point_result
+            if response_opcode != opcode:
+                raise core.InvalidStateError(
+                    f"Expected {opcode} notification, but get {response_opcode}")
+            return mcp.MediaControlPointResultCode(response_code)
+
+    @override
+    def _on_media_control_point(self, data: bytes) -> None:
+        if (self._media_control_point_result and not self._media_control_point_result.done()):
+            self._media_control_point_result.set_result(data)
+
+
 class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
     """Tests for LE Audio Unicast client functionality, where the remote device set contains two individual devices.
 
@@ -121,6 +158,8 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
 
     first_bond_timestamp: datetime.datetime | None = None
     dut_vcp_enabled: bool = False
+    dut_mcp_enabled: bool = False
+    dut_ccp_enabled: bool = False
 
     @classmethod
     def _default_pacs(cls,
@@ -229,6 +268,11 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
             self.assertEqual(event.state, android_constants.BondState.BONDED)
             self.first_bond_timestamp = datetime.datetime.now()
 
+            self.logger.info("[DUT] Wait for UUID Change")
+            await dut_adapter_cb.wait_for_event(
+                bl4a_api.UuidChanged(address=ref_address, uuids=mock.ANY))
+            self.dut.bt.connect(ref_address)
+
             self.logger.info("[DUT] Wait for LE Audio connected")
             await dut_lea_cb.wait_for_event(
                 bl4a_api.ProfileConnectionStateChanged(address=ref_address,
@@ -299,6 +343,12 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
                 lambda e: e.address == ref_address and e.state in _TERMINATION_BOND_STATES,
             )
             self.assertEqual(event.state, android_constants.BondState.BONDED)
+
+            self.logger.info("[DUT] Wait for UUID Change")
+            await dut_adapter_cb.wait_for_event(
+                bl4a_api.UuidChanged(address=ref_address, uuids=mock.ANY))
+            self.dut.bt.connect(ref_address)
+
             self.logger.info("[DUT] Wait for 2nd REF to be connected")
             await dut_lea_cb.wait_for_event(
                 bl4a_api.ProfileConnectionStateChanged(address=ref_address,
@@ -306,13 +356,31 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
                 timeout=_DEFAULT_STEP_TIMEOUT_SECONDS,
             )
 
+    _PROXY = TypeVar("_PROXY", bound=gatt_client.ProfileServiceProxy)
+
+    async def _make_service_clients(self, proxy_class: type[_PROXY]) -> list[_PROXY]:
+        self.logger.info("[REF] Connect %s", proxy_class.__name__)
+        clients = []
+        for ref in self.refs:
+            ref_dut_acl = ref.device.find_connection_by_bd_addr(hci.Address(self.dut.address),
+                                                                transport=core.BT_LE_TRANSPORT)
+            if not ref_dut_acl:
+                self.fail("No ACL connection found")
+            async with device.Peer(ref_dut_acl) as peer:
+                client = peer.create_service_proxy(proxy_class)
+                if not client:
+                    self.fail("Failed to connect %s", proxy_class.__name__)
+                clients.append(client)
+        return clients
+
     @override
     async def async_setup_class(self) -> None:
         await super().async_setup_class()
         if self.dut.getprop(_AndroidProperty.BAP_UNICAST_CLIENT_ENABLED) != "true":
             raise signals.TestAbortClass("Unicast client is not enabled")
 
-        if self.dut.getprop(_AndroidProperty.LEAUDIO_BYPASS_ALLOW_LIST) != "true":
+        if (self.dut.getprop(_AndroidProperty.LEAUDIO_BYPASS_ALLOW_LIST) != "true" and
+                not self.dut.device.is_emulator):
             # Allow list will not be used in the test, but here we still check if the
             # allow list is empty to make sure DUT is ready to use LE Audio.
             if not self.dut.getprop(_AndroidProperty.LEAUDIO_ALLOW_LIST):
@@ -320,6 +388,8 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
                     "Allow list is empty, DUT is probably not ready to use LE Audio.")
 
         self.dut_vcp_enabled = (self.dut.getprop(_AndroidProperty.VCP_CONTROLLER_ENABLED) == "true")
+        self.dut_mcp_enabled = (self.dut.getprop(_AndroidProperty.MCP_SERVER_ENABLED) == "true")
+        self.dut_ccp_enabled = (self.dut.getprop(_AndroidProperty.CCP_SERVER_ENABLED) == "true")
         for ref in self.refs:
             ref.config.cis_enabled = True
             async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
@@ -331,7 +401,7 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
         # Disable the allow list to allow the connect LE Audio to Bumble.
         self.dut.setprop(_AndroidProperty.LEAUDIO_BYPASS_ALLOW_LIST, "true")
         # Always repeat audio to avoid audio stopping.
-        self.dut.bt.audioSetRepeat(android_constants.RepeatMode.ALL)
+        self.dut.bt.audioSetRepeat(android_constants.RepeatMode.ONE)
 
     @override
     async def async_setup_test(self) -> None:
@@ -410,6 +480,9 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
       is_active: True if reconnect is actively initialized by DUT, otherwise TA
         will be used to perform the reconnection passively.
     """
+        if self.dut.device.is_emulator and not is_active:
+            self.skipTest("Rootcanal doesn't support APCF.")
+
         # Pair and connect devices.
         await self._pair_major_device()
         await self._pair_minor_device()
@@ -483,7 +556,7 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
             sink_ase_states.extend(
                 pyee_extensions.EventTriggeredValueObserver(
                     ase,
-                    "state_change",
+                    ase.EVENT_STATE_CHANGE,
                     functools.partial(lambda ase: cast(ascs.AseStateMachine, ase).state, ase),
                 )
                 for ase in _get_service_from_device(
@@ -530,7 +603,7 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
             ase_states.extend(
                 pyee_extensions.EventTriggeredValueObserver(
                     ase,
-                    "state_change",
+                    ase.EVENT_STATE_CHANGE,
                     functools.partial(lambda ase: cast(ascs.AseStateMachine, ase).state, ase),
                 ) for ase in _get_service_from_device(
                     ref.device, ascs.AudioStreamControlService).ase_state_machines.values())
@@ -595,7 +668,7 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
         sink_ase_states = [
             pyee_extensions.EventTriggeredValueObserver(
                 ase,
-                "state_change",
+                ase.EVENT_STATE_CHANGE,
                 functools.partial(lambda ase: cast(ascs.AseStateMachine, ase).state, ase),
             ) for ase in sink_ases
         ]
@@ -650,6 +723,9 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
       4. Start advertising from REF(Right), wait for DUT to connect.
       5. Wait for audio streaming to start from REF(Right).
     """
+        if self.dut.device.is_emulator:
+            self.skipTest("Rootcanal doesn't support APCF.")
+
         # Pair and connect the major device.
         await self._pair_major_device()
         await self._pair_minor_device()
@@ -670,7 +746,7 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
             sink_ase_states.extend(
                 pyee_extensions.EventTriggeredValueObserver(
                     ase,
-                    "state_change",
+                    ase.EVENT_STATE_CHANGE,
                     functools.partial(lambda ase: cast(ascs.AseStateMachine, ase).state, ase),
                 )
                 for ase in _get_service_from_device(
@@ -687,8 +763,8 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
                     advertising_data=bytes(
                         _CapAnnouncement(announcement_type=bap.AnnouncementType.TARGETED)),
                 )
-            self.logger.info("[REF] Wait for ASE to be streaming")
-            await sink_ase.wait_for_target_value(ascs.AseStateMachine.State.STREAMING)
+                self.logger.info("[REF] Wait for ASE to be streaming")
+                await sink_ase.wait_for_target_value(ascs.AseStateMachine.State.STREAMING)
 
     async def test_volume_initialization(self) -> None:
         """Makes sure DUT sets the volume correctly after connecting to REF."""
@@ -775,7 +851,7 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
                         self.logger.info("[REF-%d] Wait for volume to be set to %d", i, ref_volume)
                         await pyee_extensions.EventTriggeredValueObserver[int](
                             ref_vcs_service,
-                            "volume_state_change",
+                            ref_vcs_service.EVENT_VOLUME_STATE_CHANGE,
                             functools.partial(get_volume_setting, ref_vcs_service),
                         ).wait_for_target_value(ref_volume)
                 # Only when remote device sets volume, DUT can receive the intent.
@@ -784,6 +860,127 @@ class LeAudioUnicastClientDualDeviceTest(navi_test_base.MultiDevicesTestBase):
                     await dut_audio_cb.wait_for_event(
                         bl4a_api.VolumeChanged(stream_type=_StreamType.MUSIC,
                                                volume_value=dut_volume),)
+
+    async def test_mcp_play_pause(self) -> None:
+        """Tests playing and pausing media playback over MCP.
+
+    Test steps:
+      1. Connect MCP.
+      2. Subscribe MCP characteristics.
+      3. Play media playback on DUT.
+      4. Pause media playback over MCP.
+      5. Wait for playback to pause.
+      6. Resume media playback over MCP.
+      7. Wait for playback to start.
+    """
+        if not self.dut_mcp_enabled:
+            self.skipTest("MCP is not enabled on DUT")
+
+        await self._pair_major_device()
+        await self._pair_minor_device()
+
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            self.logger.info("[REF] Connect GMCS")
+            ref_mcp_clients = await self._make_service_clients(_GenericMediaControlServiceProxy)
+            self.logger.info("[REF] Subscribe MCP characteristics")
+            for ref_mcp_client in ref_mcp_clients:
+                await ref_mcp_client.subscribe_characteristics()
+
+        media_states = [
+            await gatt_helper.MutableCharacteristicState.create(ref_mcp_client.media_state)
+            for ref_mcp_client in ref_mcp_clients
+            if ref_mcp_client.media_state
+        ]
+        self.assertLen(media_states, self.NUM_REF_DEVICES)
+
+        dut_player_cb = self.dut.bl4a.register_callback(bl4a_api.Module.PLAYER)
+        self.test_case_context.push(dut_player_cb)
+
+        self.logger.info("[DUT] Play")
+        await asyncio.to_thread(self.dut.bt.audioPlaySine)
+        self.logger.info("[DUT] Wait for playback started")
+        await dut_player_cb.wait_for_event(bl4a_api.PlayerIsPlayingChanged(is_playing=True))
+
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS, msg="[REF] Pause"):
+            # Pause from the first REF device.
+            result = await ref_mcp_clients[0].write_control_point(_McpOpcode.PAUSE)
+            self.assertEqual(result, mcp.MediaControlPointResultCode.SUCCESS)
+            for i, media_state in enumerate(media_states):
+                self.logger.info("[REF-%d] Wait for media state to be PAUSED", i)
+                await media_state.wait_for_target_value(bytes([mcp.MediaState.PAUSED]))
+        self.logger.info("[DUT] Wait for playback paused")
+        await dut_player_cb.wait_for_event(bl4a_api.PlayerIsPlayingChanged(is_playing=False),)
+
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS, msg="[REF] Play"):
+            # Resume from the second REF device.
+            result = await ref_mcp_clients[1].write_control_point(_McpOpcode.PLAY)
+            self.assertEqual(result, mcp.MediaControlPointResultCode.SUCCESS)
+            for i, media_state in enumerate(media_states):
+                self.logger.info("[REF-%d] Wait for media state to be PLAYING", i)
+                await media_state.wait_for_target_value(bytes([mcp.MediaState.PLAYING]))
+        self.logger.info("[DUT] Wait for playback started")
+        await dut_player_cb.wait_for_event(bl4a_api.PlayerIsPlayingChanged(is_playing=True))
+
+    async def test_ccp_accept_and_terminate_call(self) -> None:
+        """Tests answering and terminating a call over CCP.
+
+    Test steps:
+      1. Connect CCP.
+      2. Read and subscribe CCP characteristics.
+      3. Put an incoming call from DUT.
+      4. Accept the call on REF.
+      5. Terminate the call on REF.
+    """
+        if not self.dut_ccp_enabled:
+            self.skipTest("CCP is not enabled on DUT")
+
+        await self._pair_major_device()
+        await self._pair_minor_device()
+
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS):
+            self.logger.info("[REF] Connect TBS")
+            ref_tbs_clients = await self._make_service_clients(
+                ccp.GenericTelephoneBearerServiceProxy)
+            self.logger.info("[REF] Read and subscribe TBS characteristics")
+            for ref_tbs_client in ref_tbs_clients:
+                await ref_tbs_client.read_and_subscribe_characteristics()
+
+        expected_call_index = 1
+        call = self.dut.bl4a.make_phone_call(_CALLER_NAME, _CALLER_NUMBER, _Direction.INCOMING)
+        self.test_case_context.push(call)
+        dut_telecom_cb = self.dut.bl4a.register_callback(bl4a_api.Module.TELECOM)
+        self.test_case_context.push(dut_telecom_cb)
+        for i, ref_tbs_client in enumerate(ref_tbs_clients):
+            async with self.assert_not_timeout(
+                    _DEFAULT_STEP_TIMEOUT_SECONDS,
+                    msg=f"[REF-{i}] Wait for call state change",
+            ):
+                await ref_tbs_client.call_state.wait_for_target_value(
+                    bytes([expected_call_index, ccp.CallState.INCOMING,
+                           ccp.CallFlag(0)]))
+
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS,
+                                           msg="[REF-0] Accept call"):
+            await ref_tbs_clients[0].accept(expected_call_index)
+
+        self.logger.info("[DUT] Wait for call to be active")
+        await dut_telecom_cb.wait_for_event(
+            bl4a_api.CallStateChanged(state=_CallState.ACTIVE, handle=mock.ANY, name=mock.ANY),)
+
+        async with self.assert_not_timeout(_DEFAULT_STEP_TIMEOUT_SECONDS,
+                                           msg="[REF-1] Terminate call"):
+            await ref_tbs_clients[1].terminate(expected_call_index)
+
+        self.logger.info("[DUT] Wait for call to be disconnected")
+        await dut_telecom_cb.wait_for_event(
+            bl4a_api.CallStateChanged(state=_CallState.DISCONNECTED, handle=mock.ANY,
+                                      name=mock.ANY),)
+        for i, ref_tbs_client in enumerate(ref_tbs_clients):
+            async with self.assert_not_timeout(
+                    _DEFAULT_STEP_TIMEOUT_SECONDS,
+                    msg=f"[REF-{i}] Wait for call state change",
+            ):
+                await ref_tbs_client.call_state.wait_for_target_value(b"")
 
 
 if __name__ == "__main__":

@@ -19,36 +19,27 @@ import android.content.AttributionSource;
 
 /**
  * Expose adapter method to be called by the Bluetooth System Server only
- * {@hide}
+ * @hide
  */
-interface IAdapter
+oneway interface IAdapter
 {
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
-    oneway void offToBleOn(boolean quietMode, in String hciInstanceName);
+    void offToBleOn(boolean quietMode, in String hciInstanceName);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
-    oneway void onToBleOn();
+    void onToBleOn();
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
-    oneway void bleOnToOn();
+    void bleOnToOn();
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
-    oneway void bleOnToOff();
+    void bleOnToOff();
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
-    oneway void registerCallback(in IBluetoothCallback callback);
+    void registerCallback(in IBluetoothCallback callback);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
-    oneway void unregisterCallback(in IBluetoothCallback callback);
+    void unregisterCallback(in IBluetoothCallback callback);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
-    oneway void setForegroundUserId(in int userId);
+    void unregAllGattClient();
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
-    oneway void onewayFactoryReset();
-
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
-    boolean isMediaProfileConnected();
-
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
-    oneway void unregAllGattClient();
-
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
-    oneway void killBluetoothProcess();
+    void killBluetoothProcess();
 }

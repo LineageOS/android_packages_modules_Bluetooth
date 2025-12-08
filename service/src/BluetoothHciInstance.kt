@@ -18,8 +18,8 @@ package com.android.server.bluetooth
 
 import android.os.ServiceManager
 
-private val BLUETOOTH_HCI_INTERFACE = "android.hardware.bluetooth.IBluetoothHci"
-private val HCI_DEFAULT_INSTANCE_NAME = "default"
+private const val BLUETOOTH_HCI_INTERFACE = "android.hardware.bluetooth.IBluetoothHci"
+private const val HCI_DEFAULT_INSTANCE_NAME = "default"
 
 class BluetoothHciInstance {
     private val hciInstances: Array<String> =
@@ -29,7 +29,7 @@ class BluetoothHciInstance {
         Log.i("Service manager declared bluetooth hci instances: ${hciInstances.contentToString()}")
     }
 
-    public fun getInstance(): String {
+    fun getInstance(): String {
         // For now return only the first one, or default if none to adhere to legacy behavior
         return if (hciInstances.isEmpty()) HCI_DEFAULT_INSTANCE_NAME else hciInstances[0]
     }

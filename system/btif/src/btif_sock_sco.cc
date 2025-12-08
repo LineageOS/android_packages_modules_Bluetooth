@@ -21,6 +21,7 @@
 #include "btif_sock_sco.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -36,7 +37,6 @@
 #include "osi/include/thread.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
-#include "types/raw_address.h"
 
 // This module provides a socket abstraction for SCO connections to a higher
 // layer. It returns file descriptors representing two types of sockets:

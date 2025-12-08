@@ -52,7 +52,8 @@ using bluetooth::le_audio::LeAudioSourceAudioHalClient;
 
 using namespace bluetooth;
 
-bluetooth::common::MessageLoopThread message_loop_thread("test message loop");
+bluetooth::common::MessageLoopThread message_loop_thread(
+        "test message loop", bluetooth::os::Thread::Priority::REAL_TIME);
 bluetooth::common::MessageLoopThread* get_main_thread() { return &message_loop_thread; }
 bt_status_t do_in_main_thread(base::OnceClosure task) {
   if (!message_loop_thread.DoInThread(std::move(task))) {
@@ -87,6 +88,7 @@ public:
   MOCK_METHOD((void), StopSession, (), (override));
   MOCK_METHOD((void), ConfirmStreamingRequest, (), (override));
   MOCK_METHOD((void), CancelStreamingRequest, (), (override));
+  MOCK_METHOD((void), StreamSuspended, (), (override));
   MOCK_METHOD((void), SetCodecPriority,
               (const ::bluetooth::le_audio::types::LeAudioCodecId& codecId, int32_t priority),
               (override));
@@ -113,6 +115,7 @@ public:
   MOCK_METHOD((void), StopSession, (), (override));
   MOCK_METHOD((void), ConfirmStreamingRequest, (), (override));
   MOCK_METHOD((void), CancelStreamingRequest, (), (override));
+  MOCK_METHOD((void), StreamSuspended, (), (override));
   MOCK_METHOD((void), SetCodecPriority,
               (const ::bluetooth::le_audio::types::LeAudioCodecId& codecId, int32_t priority),
               (override));
@@ -172,6 +175,7 @@ void LeAudioClientInterface::Sink::StartSession() {}
 void LeAudioClientInterface::Sink::StopSession() {}
 void LeAudioClientInterface::Sink::ConfirmStreamingRequest() {}
 void LeAudioClientInterface::Sink::CancelStreamingRequest() {}
+void LeAudioClientInterface::Sink::StreamSuspended() {}
 void LeAudioClientInterface::Sink::SetCodecPriority(
         const ::bluetooth::le_audio::types::LeAudioCodecId&, int32_t) {}
 void LeAudioClientInterface::Sink::UpdateAudioConfigToHal(
@@ -200,6 +204,7 @@ void LeAudioClientInterface::Source::StartSession() {}
 void LeAudioClientInterface::Source::StopSession() {}
 void LeAudioClientInterface::Source::ConfirmStreamingRequest() {}
 void LeAudioClientInterface::Source::CancelStreamingRequest() {}
+void LeAudioClientInterface::Source::StreamSuspended() {}
 void LeAudioClientInterface::Source::SetCodecPriority(
         const ::bluetooth::le_audio::types::LeAudioCodecId&, int32_t) {}
 void LeAudioClientInterface::Source::UpdateAudioConfigToHal(
@@ -420,6 +425,8 @@ TEST_F(LeAudioClientAudioTest, testLeAudioClientAudioSinkSuspend) {
    */
   EXPECT_CALL(mock_hal_source_event_receiver_, OnAudioSuspend()).Times(1);
   ASSERT_TRUE(source_audio_hal_stream_cb.on_suspend_());
+
+  audio_sink_instance_->Stop();
 }
 
 TEST_F(LeAudioClientAudioTest, testAudioHalClientSuspend) {
@@ -433,6 +440,8 @@ TEST_F(LeAudioClientAudioTest, testAudioHalClientSuspend) {
    */
   EXPECT_CALL(mock_hal_sink_event_receiver_, OnAudioSuspend()).Times(1);
   ASSERT_TRUE(sink_audio_hal_stream_cb.on_suspend_());
+
+  audio_source_instance_->Stop();
 }
 
 TEST_F(LeAudioClientAudioTest, testLeAudioClientAudioSinkResume) {
@@ -447,81 +456,8 @@ TEST_F(LeAudioClientAudioTest, testLeAudioClientAudioSinkResume) {
   EXPECT_CALL(mock_hal_source_event_receiver_, OnAudioResume()).Times(1);
   bool start_media_task = false;
   ASSERT_TRUE(source_audio_hal_stream_cb.on_resume_(start_media_task));
-}
 
-TEST_F(LeAudioClientAudioTest, testAudioHalClientResumeStartSourceTask_workerEnabled) {
-  const LeAudioCodecConfiguration codec_conf{
-          .num_channels = LeAudioCodecConfiguration::kChannelNumberStereo,
-          .sample_rate = LeAudioCodecConfiguration::kSampleRate16000,
-          .bits_per_sample = LeAudioCodecConfiguration::kBitsPerSample24,
-          .data_interval_us = LeAudioCodecConfiguration::kInterval10000Us,
-  };
-  ASSERT_TRUE(AcquireLeAudioSourceHalClient());
-  ASSERT_TRUE(audio_source_instance_->Start(codec_conf, &mock_hal_sink_event_receiver_));
-
-  std::promise<void> promise;
-  auto future = promise.get_future();
-
-  uint32_t calculated_bytes_per_tick = 0;
-  EXPECT_CALL(mock_hal_interface_audio_sink_, Read(_, _))
-          .Times(AtLeast(1))
-          .WillOnce(Invoke([&](uint8_t* p_buf, uint32_t len) -> uint32_t {
-            calculated_bytes_per_tick = len;
-
-            // fake some data from audio framework
-            for (uint32_t i = 0u; i < len; ++i) {
-              p_buf[i] = i;
-            }
-
-            // Return exactly as much data as requested
-            promise.set_value();
-            return len;
-          }))
-          .WillRepeatedly(Invoke([](uint8_t* p_buf, uint32_t len) -> uint32_t {
-            // fake some data from audio framework
-            for (uint32_t i = 0u; i < len; ++i) {
-              p_buf[i] = i;
-            }
-            return len;
-          }));
-
-  std::promise<void> data_promise;
-  auto data_future = data_promise.get_future();
-
-  /* Expect this callback to be called to Client by the HAL glue layer */
-  std::vector<uint8_t> media_data_to_send;
-  EXPECT_CALL(mock_hal_sink_event_receiver_, OnAudioDataReady(_))
-          .Times(AtLeast(1))
-          .WillOnce(Invoke([&](const std::vector<uint8_t>& data) -> void {
-            media_data_to_send = std::move(data);
-            data_promise.set_value();
-          }))
-          .WillRepeatedly(DoDefault());
-
-  /* Expect LeAudio registered event listener to get called when HAL calls the
-   * audio_hal_client's internal resume callback.
-   */
-  ASSERT_NE(sink_audio_hal_stream_cb.on_resume_, nullptr);
-  EXPECT_CALL(mock_hal_sink_event_receiver_, OnAudioResume()).Times(1);
-  bool start_media_task = true;
-  ASSERT_TRUE(sink_audio_hal_stream_cb.on_resume_(start_media_task));
-  audio_source_instance_->ConfirmStreamingRequest();
-
-  ASSERT_EQ(future.wait_for(std::chrono::seconds(1)), std::future_status::ready);
-
-  ASSERT_EQ(data_future.wait_for(std::chrono::seconds(1)), std::future_status::ready);
-
-  // Check against expected payload size
-  // 24 bit audio stream is sent as unpacked, each sample takes 4 bytes.
-  const uint32_t channel_bytes_per_sample = 4;
-  const uint32_t channel_bytes_per_10ms_at_16000Hz =
-          ((10ms).count() * channel_bytes_per_sample * 16000 /*Hz*/) / (1000ms).count();
-
-  // Expect 2 channel (stereo) data
-  ASSERT_EQ(calculated_bytes_per_tick, 2 * channel_bytes_per_10ms_at_16000Hz);
-
-  // Verify if we got just right amount of data in the callback call
-  ASSERT_EQ(media_data_to_send.size(), calculated_bytes_per_tick);
+  audio_sink_instance_->Stop();
 }
 
 TEST_F(LeAudioClientAudioTest, testAudioHalClientResumeStartSourceTask) {
@@ -597,6 +533,8 @@ TEST_F(LeAudioClientAudioTest, testAudioHalClientResumeStartSourceTask) {
 
   // Verify if we got just right amount of data in the callback call
   ASSERT_EQ(media_data_to_send.size(), calculated_bytes_per_tick);
+
+  audio_source_instance_->Stop();
 }
 
 TEST_F(LeAudioClientAudioTest, testAudioHalClientResume) {
@@ -611,4 +549,6 @@ TEST_F(LeAudioClientAudioTest, testAudioHalClientResume) {
   EXPECT_CALL(mock_hal_sink_event_receiver_, OnAudioResume()).Times(1);
   bool start_media_task = false;
   ASSERT_TRUE(sink_audio_hal_stream_cb.on_resume_(start_media_task));
+
+  audio_source_instance_->Stop();
 }

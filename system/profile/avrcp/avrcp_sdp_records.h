@@ -122,7 +122,7 @@ public:
    * @return AVRC_SUCCESS if successful.
    *         AVRC_FAIL otherwise
    */
-  virtual uint16_t EnableCovertArt(uint16_t cover_art_psm, uint16_t request_id) = 0;
+  virtual uint16_t EnableCoverArt(uint16_t cover_art_psm, uint16_t request_id) = 0;
 
   /**
    * Abstract method for child class to implement.
@@ -130,7 +130,7 @@ public:
    * @return AVRC_SUCCESS if successful.
    *         AVRC_FAIL otherwise
    */
-  virtual uint16_t DisableCovertArt(uint16_t request_id) = 0;
+  virtual uint16_t DisableCoverArt(uint16_t request_id) = 0;
 
 protected:
   /**
@@ -178,14 +178,14 @@ public:
    * @param request_id no-op
    * @return AVRC_FAIL as it's unsupported.
    */
-  uint16_t EnableCovertArt(uint16_t cover_art_psm, uint16_t request_id) override;
+  uint16_t EnableCoverArt(uint16_t cover_art_psm, uint16_t request_id) override;
 
   /**
    * Unsupported method for control SDP records.
    * @param request_id no-op
    * @return AVRC_FAIL as it's unsupported.
    */
-  uint16_t DisableCovertArt(uint16_t request_id) override;
+  uint16_t DisableCoverArt(uint16_t request_id) override;
 
 protected:
   /**
@@ -216,7 +216,7 @@ public:
    * @return AVRC_SUCCESS if successful.
    *         AVRC_FAIL otherwise
    */
-  uint16_t EnableCovertArt(uint16_t cover_art_psm, uint16_t request_id) override;
+  uint16_t EnableCoverArt(uint16_t cover_art_psm, uint16_t request_id) override;
 
   /**
    * Disables cover art support. It removes the existing SDP records, removes
@@ -226,6 +226,6 @@ public:
    * @return AVRC_SUCCESS if successful.
    *         AVRC_FAIL otherwise
    */
-  uint16_t DisableCovertArt(uint16_t request_id) override;
+  uint16_t DisableCoverArt(uint16_t request_id) override;
 };
 }  // namespace bluetooth::avrcp

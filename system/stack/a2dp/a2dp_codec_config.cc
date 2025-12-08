@@ -943,7 +943,6 @@ tA2DP_STATUS A2dpCodecs::setCodecOtaConfig(const uint8_t* p_ota_codec_config,
                                            uint8_t* p_result_codec_config, bool* p_restart_input,
                                            bool* p_restart_output, bool* p_config_updated) {
   std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
-  btav_a2dp_codec_index_t codec_type;
   btav_a2dp_codec_config_t codec_user_config;
   btav_a2dp_codec_config_t codec_audio_config;
   A2dpCodecConfig* a2dp_codec_config = nullptr;
@@ -1607,11 +1606,6 @@ bool A2DP_InitCodecConfig(btav_a2dp_codec_index_t codec_index, AvdtpSepConfig* p
   /* Default: no content protection info */
   p_cfg->num_protect = 0;
   p_cfg->protect_info[0] = 0;
-
-  if (::bluetooth::audio::a2dp::provider::supports_codec(codec_index)) {
-    return ::bluetooth::audio::a2dp::provider::codec_info(codec_index, nullptr, p_cfg->codec_info,
-                                                          nullptr);
-  }
 
   switch (codec_index) {
     case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:

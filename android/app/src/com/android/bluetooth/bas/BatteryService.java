@@ -27,7 +27,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.ParcelUuid;
 import android.sysprop.BluetoothProperties;
@@ -36,7 +35,6 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -49,13 +47,7 @@ import java.util.Map;
 public class BatteryService extends ConnectableProfile {
     private static final String TAG = BatteryService.class.getSimpleName();
 
-    // Timeout for state machine thread join, to prevent potential ANR.
-    private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1_000;
-
-    private static BatteryService sBatteryService;
-
-    private final HandlerThread mStateMachinesThread;
-    private final Looper mStateMachinesLooper;
+    private final Looper mLooper;
     private final Handler mHandler;
 
     @GuardedBy("mStateMachines")
@@ -69,16 +61,7 @@ public class BatteryService extends ConnectableProfile {
     BatteryService(AdapterService adapterService, Looper looper) {
         super(BluetoothProfile.BATTERY, requireNonNull(adapterService));
         mHandler = new Handler(requireNonNull(looper));
-
-        if (Flags.batteryServiceUnifiedThread()) {
-            mStateMachinesThread = null;
-            mStateMachinesLooper = looper;
-        } else {
-            mStateMachinesThread = new HandlerThread("BatteryService.StateMachines");
-            mStateMachinesThread.start();
-            mStateMachinesLooper = mStateMachinesThread.getLooper();
-        }
-        setBatteryService(this);
+        mLooper = looper;
     }
 
     public static boolean isEnabled() {
@@ -94,8 +77,6 @@ public class BatteryService extends ConnectableProfile {
     public void cleanup() {
         Log.i(TAG, "cleanup()");
 
-        setBatteryService(null);
-
         // Destroy state machines and stop handler thread
         synchronized (mStateMachines) {
             for (BatteryStateMachine sm : mStateMachines.values()) {
@@ -105,37 +86,7 @@ public class BatteryService extends ConnectableProfile {
             mStateMachines.clear();
         }
 
-        if (!Flags.batteryServiceUnifiedThread()) {
-            try {
-                mStateMachinesThread.quitSafely();
-                mStateMachinesThread.join(SM_THREAD_JOIN_TIMEOUT_MS);
-            } catch (InterruptedException e) {
-                // Do not rethrow as we are shutting down anyway
-            }
-        }
-
         mHandler.removeCallbacksAndMessages(null);
-    }
-
-    /** Gets the BatteryService instance */
-    public static synchronized BatteryService getBatteryService() {
-        if (sBatteryService == null) {
-            Log.w(TAG, "getBatteryService(): service is NULL");
-            return null;
-        }
-
-        if (!sBatteryService.isAvailable()) {
-            Log.w(TAG, "getBatteryService(): service is not available");
-            return null;
-        }
-        return sBatteryService;
-    }
-
-    /** Sets the battery service instance. It should be called only for testing purpose. */
-    @VisibleForTesting
-    public static synchronized void setBatteryService(BatteryService instance) {
-        Log.d(TAG, "setBatteryService(): set to: " + instance);
-        sBatteryService = instance;
     }
 
     /** Connects to the battery service of the given device. */
@@ -332,7 +283,7 @@ public class BatteryService extends ConnectableProfile {
     @Override
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
+        mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy);
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
             connect(device);
         } else if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
@@ -354,7 +305,7 @@ public class BatteryService extends ConnectableProfile {
             }
 
             Log.d(TAG, "Creating a new state machine for " + device);
-            sm = new BatteryStateMachine(this, device, mStateMachinesLooper);
+            sm = new BatteryStateMachine(this, device, mLooper);
             mStateMachines.put(device, sm);
             return sm;
         }

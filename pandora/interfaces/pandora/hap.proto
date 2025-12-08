@@ -28,46 +28,47 @@ service HAP {
   rpc GetPreset(GetPresetRequest) returns (GetPresetResponse);
   rpc GetAllPresets(GetAllPresetsRequest) returns (GetAllPresetsResponse);
   rpc WaitPresetChanged(google.protobuf.Empty) returns (WaitPresetChangedResponse);
+  rpc WaitActivePresetChanged(WaitActivePresetChangedRequest) returns (google.protobuf.Empty);
   rpc WaitPeripheral(WaitPeripheralRequest) returns (google.protobuf.Empty);
 }
 
-message GetFeaturesRequest{
+message GetFeaturesRequest {
   Connection connection = 1;
 }
 
-message GetFeaturesResponse{
-    int32 features = 1;
+message GetFeaturesResponse {
+  int32 features = 1;
 }
 
 message SetActivePresetRequest {
-    Connection connection = 1;
-    uint32 index = 2;
+  Connection connection = 1;
+  uint32 index = 2;
 }
 
 message SetActivePresetForGroupRequest {
-    Connection connection = 1;
-    uint32 index = 2;
+  Connection connection = 1;
+  uint32 index = 2;
 }
 
 message GetActivePresetRequest {
-    Connection connection = 1;
+  Connection connection = 1;
 }
 
 message GetActivePresetResponse {
-    PresetRecord preset_record = 1;
+  PresetRecord preset_record = 1;
 }
 
 message SetNextPresetRequest {
-    Connection connection = 1;
+  Connection connection = 1;
 }
 
 message SetPreviousPresetRequest {
-    Connection connection = 1;
+  Connection connection = 1;
 }
 
 message GetPresetRequest {
-    Connection connection = 1;
-    uint32 index = 2;
+  Connection connection = 1;
+  uint32 index = 2;
 }
 
 message PresetRecord {
@@ -78,15 +79,15 @@ message PresetRecord {
 }
 
 message GetPresetResponse {
-    PresetRecord preset_record = 1;
+  PresetRecord preset_record = 1;
 }
 
 message GetAllPresetsRequest {
-    Connection connection = 1;
+  Connection connection = 1;
 }
 
 message GetAllPresetsResponse {
-    repeated PresetRecord preset_record_list = 1;
+  repeated PresetRecord preset_record_list = 1;
 }
 
 message WritePresetNameRequest {
@@ -101,7 +102,11 @@ message WaitPresetChangedResponse {
   uint32 reason = 3;
 }
 
+message WaitActivePresetChangedRequest {
+  Connection connection = 1;
+  uint32 index = 2;
+}
+
 message WaitPeripheralRequest {
   Connection connection = 1;
 }
-

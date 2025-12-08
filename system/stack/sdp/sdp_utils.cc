@@ -25,6 +25,8 @@
  ******************************************************************************/
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <array>
@@ -54,8 +56,6 @@
 #include "stack/sdp/internal/sdp_api.h"
 #include "stack/sdp/sdpint.h"
 #include "storage/config_keys.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;
@@ -1056,7 +1056,7 @@ uint8_t* sdpu_get_len_from_type(uint8_t* p, uint8_t* p_end, uint8_t type, uint32
 
   switch (type & 7) {
     case SIZE_ONE_BYTE:
-      if (com::android::bluetooth::flags::stack_sdp_detect_nil_property_type()) {
+      if (com_android_bluetooth_flags_stack_sdp_detect_nil_property_type()) {
         // Return NIL type if appropriate
         *p_len = (type == 0) ? 0 : sizeof(uint8_t);
       } else {
@@ -1675,6 +1675,12 @@ void sdpu_set_avrc_target_features(const tSDP_ATTRIBUTE* p_attr, const RawAddres
           "SDP AVRCP DB Version 0x{:x}, browse supported {}, cover art supported "
           "{}",
           avrcp_peer_features, browsing_supported, coverart_supported);
+
+  if (avrcp_version < AVRC_REV_1_4) {
+    log::info("Reset Player App Settings Feature");
+    p_attr->value_ptr[AVRCP_SUPPORTED_FEATURES_POSITION] &= ~AVRCP_APP_SETTINGS_BITMASK;
+  }
+
   if (avrcp_version < AVRC_REV_1_4 || !browsing_supported) {
     log::info("Reset Browsing Feature");
     p_attr->value_ptr[AVRCP_SUPPORTED_FEATURES_POSITION] &= ~AVRCP_BROWSE_SUPPORT_BITMASK;
@@ -1684,6 +1690,11 @@ void sdpu_set_avrc_target_features(const tSDP_ATTRIBUTE* p_attr, const RawAddres
   if (avrcp_version < AVRC_REV_1_6 || !coverart_supported) {
     log::info("Reset CoverArt Feature");
     p_attr->value_ptr[AVRCP_SUPPORTED_FEATURES_POSITION - 1] &= ~AVRCP_CA_SUPPORT_BITMASK;
+  }
+
+  if (avrcp_version >= AVRC_REV_1_4) {
+    log::info("Set Player App Settings Feature");
+    p_attr->value_ptr[AVRCP_SUPPORTED_FEATURES_POSITION] |= AVRCP_APP_SETTINGS_BITMASK;
   }
 
   if (avrcp_version >= AVRC_REV_1_4 && browsing_supported) {

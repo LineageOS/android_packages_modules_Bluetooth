@@ -139,26 +139,26 @@ class PbapClientStateMachine extends StateMachine {
             mNumDownloadedWithImages = 0;
         }
 
-        public void setMetadata(PbapPhonebookMetadata metadata) {
+        void setMetadata(PbapPhonebookMetadata metadata) {
             mMetadata = metadata;
         }
 
-        public void onContactsDownloaded(int numDownloaded, int numWithImages) {
+        void onContactsDownloaded(int numDownloaded, int numWithImages) {
             mNumDownloaded += numDownloaded;
             mNumDownloadedWithImages += numWithImages;
         }
 
-        public int getTotalNumberOfContacts() {
+        int getTotalNumberOfContacts() {
             return (mMetadata == null || mMetadata.size() == PbapPhonebookMetadata.INVALID_SIZE)
                     ? 0
                     : mMetadata.size();
         }
 
-        public int getNumberOfContactsDownloaded() {
+        int getNumberOfContactsDownloaded() {
             return mNumDownloaded;
         }
 
-        public int getNumberOfContactsDownloadedWithImages() {
+        int getNumberOfContactsDownloadedWithImages() {
             return mNumDownloadedWithImages;
         }
 
@@ -381,14 +381,13 @@ class PbapClientStateMachine extends StateMachine {
         public boolean processMessage(Message message) {
             debug("Disconnected: process message, what=" + eventToString(message.what));
             switch (message.what) {
-                case MSG_CONNECT:
-                    transitionTo(mConnecting);
-                    break;
-                default:
+                case MSG_CONNECT -> transitionTo(mConnecting);
+                default -> {
                     warn(
                             "Disconnected: Received unhandled message, what="
                                     + eventToString(message.what));
                     return NOT_HANDLED;
+                }
             }
             return true;
         }
@@ -419,20 +418,14 @@ class PbapClientStateMachine extends StateMachine {
         public boolean processMessage(Message message) {
             debug("Connecting: process message, what=" + eventToString(message.what));
             switch (message.what) {
-                case MSG_DISCONNECT:
-                    transitionTo(mDisconnecting);
-                    break;
+                case MSG_DISCONNECT -> transitionTo(mDisconnecting);
 
-                case MSG_OBEX_CLIENT_CONNECTED:
-                    transitionTo(mConnected);
-                    break;
+                case MSG_OBEX_CLIENT_CONNECTED -> transitionTo(mConnected);
 
-                case MSG_OBEX_CLIENT_DISCONNECTED:
-                case MSG_CONNECT_TIMEOUT:
-                    transitionTo(mDisconnecting);
-                    break;
+                case MSG_OBEX_CLIENT_DISCONNECTED, MSG_CONNECT_TIMEOUT ->
+                        transitionTo(mDisconnecting);
 
-                case MSG_SDP_FAILED:
+                case MSG_SDP_FAILED -> {
                     int failureCode = message.arg1;
                     info("Connecting: SDP unsuccessful, code=" + sdpCodeToString(failureCode));
                     if (failureCode == SDP_BUSY) {
@@ -440,9 +433,9 @@ class PbapClientStateMachine extends StateMachine {
                     } else {
                         transitionTo(mDisconnecting);
                     }
-                    break;
+                }
 
-                case MSG_SDP_COMPLETE:
+                case MSG_SDP_COMPLETE -> {
                     mSdpRecord = (PbapSdpRecord) message.obj;
 
                     info("Connecting: received SDP record, record=" + mSdpRecord);
@@ -494,13 +487,14 @@ class PbapClientStateMachine extends StateMachine {
                                 PbapPhonebook.SIM_OCH_PATH,
                                 new Phonebook(PbapPhonebook.SIM_OCH_PATH));
                     }
-                    break;
+                }
 
-                default:
+                default -> {
                     warn(
                             "Connecting: Received unhandled message, what="
                                     + eventToString(message.what));
                     return NOT_HANDLED;
+                }
             }
             return HANDLED;
         }
@@ -542,12 +536,9 @@ class PbapClientStateMachine extends StateMachine {
         public boolean processMessage(Message message) {
             debug("Connected: process message, what=" + eventToString(message.what));
             switch (message.what) {
-                case MSG_OBEX_CLIENT_DISCONNECTED:
-                case MSG_DISCONNECT:
-                    transitionTo(mDisconnecting);
-                    break;
+                case MSG_OBEX_CLIENT_DISCONNECTED, MSG_DISCONNECT -> transitionTo(mDisconnecting);
 
-                case MSG_STORAGE_READY:
+                case MSG_STORAGE_READY -> {
                     if (mContactsStorage.getStorageAccounts().contains(mAccount)) {
                         info("Connected: Account already exists, time to download");
                         if (!mHasDownloaded) {
@@ -558,30 +549,29 @@ class PbapClientStateMachine extends StateMachine {
                         info("Connected: Account not found. Requesting to add it.");
                         mContactsStorage.addAccount(mAccount);
                     }
-                    break;
+                }
 
-                case MSG_ACCOUNT_ADDED:
+                case MSG_ACCOUNT_ADDED -> {
                     info("Connected: account was added, time to download");
                     if (!mHasDownloaded) {
                         download();
                         mHasDownloaded = true;
                     }
-                    break;
+                }
 
-                case MSG_ACCOUNT_REMOVED:
+                case MSG_ACCOUNT_REMOVED -> {
                     info("Connected: account was removed, time to disconnect");
                     transitionTo(mDisconnecting);
-                    break;
+                }
 
-                case MSG_DOWNLOAD:
-                    transitionTo(mDownloading);
-                    break;
+                case MSG_DOWNLOAD -> transitionTo(mDownloading);
 
-                default:
+                default -> {
                     warn(
                             "Connected: received unhandled message, what="
                                     + eventToString(message.what));
                     return NOT_HANDLED;
+                }
             }
             return HANDLED;
         }
@@ -619,11 +609,9 @@ class PbapClientStateMachine extends StateMachine {
             String phonebook = null;
             debug("Downloading: process message, what=" + eventToString(message.what));
             switch (message.what) {
-                case MSG_DISCONNECT:
-                    transitionTo(mDisconnecting);
-                    break;
+                case MSG_DISCONNECT -> transitionTo(mDisconnecting);
 
-                case MSG_PHONEBOOK_METADATA_RECEIVED:
+                case MSG_PHONEBOOK_METADATA_RECEIVED -> {
                     // The asyncTraceForTrackBeginForDevice and asyncTraceForTrackEndForDevice
                     // methods must be called
                     // within processMessage. This ensures that they are invoked in the proper order
@@ -632,119 +620,116 @@ class PbapClientStateMachine extends StateMachine {
                     // downloadPhonebookMetadata().
                     PbapPhonebookMetadata metadata = (PbapPhonebookMetadata) message.obj;
                     phonebook = metadata.phonebook();
-                    if (currentPhonebook != null && currentPhonebook.equals(phonebook)) {
-                        info("Downloading: received metadata=" + metadata);
-
-                        // Process Metadata
-                        mPhonebooks.get(phonebook).setMetadata(metadata);
-
-                        // If phonebook has contacts, begin downloading them
-                        if (metadata.size() > 0) {
-                            asyncTraceForTrackBeginForDevice(
-                                    "downloadPhonebook(" + phonebook + ")");
-                            downloadPhonebook(currentPhonebook, 0, CONTACT_DOWNLOAD_BATCH_SIZE);
-                        } else {
-                            warn(
-                                    "Downloading: no contacts for phonebook="
-                                            + currentPhonebook
-                                            + ", skipping");
-                            // In order to ensure thread safety asyncTraceForTrackBegin needs to be
-                            // called within processMessage. Placing this tracing method within
-                            // downloadPhonebookMetadata or other methods is unsafe as there is no
-                            // guarantee that it will always be called within processMessage.
-                            if (mPhonebooksToDownload.size() - 1 > 0) {
-                                asyncTraceForTrackBeginForDevice(
-                                        "downloadPhonebookMetadata(phonebook="
-                                                + mPhonebooksToDownload.get(1)
-                                                + ")");
-                            }
-                            setNextPhonebookOrComplete();
-                            break;
-                        }
-                    } else {
+                    if (currentPhonebook == null || !currentPhonebook.equals(phonebook)) {
                         warn(
                                 "Downloading: dropped metadata event for phonebook="
                                         + phonebook
                                         + ", current="
                                         + currentPhonebook);
+                        break;
                     }
-                    break;
+                    info("Downloading: received metadata=" + metadata);
 
-                case MSG_PHONEBOOK_CONTACTS_RECEIVED:
+                    // Process Metadata
+                    mPhonebooks.get(phonebook).setMetadata(metadata);
+
+                    // If phonebook has contacts, begin downloading them
+                    if (metadata.size() > 0) {
+                        asyncTraceForTrackBeginForDevice("downloadPhonebook(" + phonebook + ")");
+                        downloadPhonebook(currentPhonebook, 0, CONTACT_DOWNLOAD_BATCH_SIZE);
+                        break;
+                    }
+                    warn(
+                            "Downloading: no contacts for phonebook="
+                                    + currentPhonebook
+                                    + ", skipping");
+                    // In order to ensure thread safety asyncTraceForTrackBegin needs to be
+                    // called within processMessage. Placing this tracing method within
+                    // downloadPhonebookMetadata or other methods is unsafe as there is no
+                    // guarantee that it will always be called within processMessage.
+                    if (mPhonebooksToDownload.size() - 1 > 0) {
+                        asyncTraceForTrackBeginForDevice(
+                                "downloadPhonebookMetadata(phonebook="
+                                        + mPhonebooksToDownload.get(1)
+                                        + ")");
+                    }
+                    setNextPhonebookOrComplete();
+                }
+
+                case MSG_PHONEBOOK_CONTACTS_RECEIVED -> {
                     PbapPhonebook contacts = (PbapPhonebook) message.obj;
                     phonebook = contacts.getPhonebook();
-                    if (currentPhonebook != null && currentPhonebook.equals(phonebook)) {
-                        int numReceived = contacts.getCount();
-                        int numImagesDownloaded = contacts.getCountWithPhotoData();
-                        mPhonebooks
-                                .get(phonebook)
-                                .onContactsDownloaded(numReceived, numImagesDownloaded);
-                        int totalContactsDownloaded =
-                                mPhonebooks.get(phonebook).getNumberOfContactsDownloaded();
-                        int totalContactsExpected =
-                                mPhonebooks.get(phonebook).getTotalNumberOfContacts();
-                        int totalContactsDownloadedWithImages =
-                                mPhonebooks
-                                        .get(phonebook)
-                                        .getNumberOfContactsDownloadedWithImages();
-
-                        info(
-                                "Downloading: received contacts, phonebook="
-                                        + phonebook
-                                        + ", entries="
-                                        + numReceived
-                                        + (" (images=" + numImagesDownloaded + ")")
-                                        + ", total="
-                                        + totalContactsDownloaded
-                                        + "/"
-                                        + totalContactsExpected
-                                        + (" (images=" + totalContactsDownloadedWithImages + ")"));
-                        if (numReceived != 0) {
-                            storeDownloadedContacts(phonebook, contacts);
-                        } else {
-                            warn(
-                                    "Downloading: contacts empty for phonebook="
-                                            + phonebook
-                                            + ", proceed to next phonebook");
-                            asyncTraceForTrackEndForDevice(); // End trace slice for
-                            // downloadPhonebook().
-                            if (mPhonebooksToDownload.size() - 1 > 0) {
-                                asyncTraceForTrackBeginForDevice(
-                                        "downloadPhonebookMetadata(phonebook="
-                                                + mPhonebooksToDownload.get(1)
-                                                + ")");
-                            }
-                            setNextPhonebookOrComplete();
-                            break;
-                        }
-
-                        if (totalContactsDownloaded >= totalContactsExpected) {
-                            info("Downloading: download complete, phonebook=" + phonebook);
-                            asyncTraceForTrackEndForDevice(); // End trace slice for
-                            // downloadPhonebook().
-                            if (mPhonebooksToDownload.size() - 1 > 0) {
-                                asyncTraceForTrackBeginForDevice(
-                                        "downloadPhonebookMetadata(phonebook="
-                                                + mPhonebooksToDownload.get(1)
-                                                + ")");
-                            }
-                            setNextPhonebookOrComplete();
-                        } else {
-                            downloadPhonebook(
-                                    currentPhonebook,
-                                    totalContactsDownloaded,
-                                    CONTACT_DOWNLOAD_BATCH_SIZE);
-                        }
-                    } else {
+                    if (currentPhonebook == null || !currentPhonebook.equals(phonebook)) {
                         warn("Downloading: dropped received contacts, phonebook=" + phonebook);
+                        break;
                     }
-                    break;
+                    int numReceived = contacts.getCount();
+                    int numImagesDownloaded = contacts.getCountWithPhotoData();
+                    mPhonebooks
+                            .get(phonebook)
+                            .onContactsDownloaded(numReceived, numImagesDownloaded);
+                    int totalContactsDownloaded =
+                            mPhonebooks.get(phonebook).getNumberOfContactsDownloaded();
+                    int totalContactsExpected =
+                            mPhonebooks.get(phonebook).getTotalNumberOfContacts();
+                    int totalContactsDownloadedWithImages =
+                            mPhonebooks.get(phonebook).getNumberOfContactsDownloadedWithImages();
 
-                default:
+                    info(
+                            "Downloading: received contacts, phonebook="
+                                    + phonebook
+                                    + ", entries="
+                                    + numReceived
+                                    + (" (images=" + numImagesDownloaded + ")")
+                                    + ", total="
+                                    + totalContactsDownloaded
+                                    + "/"
+                                    + totalContactsExpected
+                                    + (" (images=" + totalContactsDownloadedWithImages + ")"));
+                    if (numReceived != 0) {
+                        storeDownloadedContacts(phonebook, contacts);
+                    } else {
+                        warn(
+                                "Downloading: contacts empty for phonebook="
+                                        + phonebook
+                                        + ", proceed to next phonebook");
+                        asyncTraceForTrackEndForDevice(); // End trace slice for
+                        // downloadPhonebook().
+                        if (mPhonebooksToDownload.size() - 1 > 0) {
+                            asyncTraceForTrackBeginForDevice(
+                                    "downloadPhonebookMetadata(phonebook="
+                                            + mPhonebooksToDownload.get(1)
+                                            + ")");
+                        }
+                        setNextPhonebookOrComplete();
+                        break;
+                    }
+
+                    if (totalContactsDownloaded >= totalContactsExpected) {
+                        info("Downloading: download complete, phonebook=" + phonebook);
+                        asyncTraceForTrackEndForDevice(); // End trace slice for
+                        // downloadPhonebook().
+                        if (mPhonebooksToDownload.size() - 1 > 0) {
+                            asyncTraceForTrackBeginForDevice(
+                                    "downloadPhonebookMetadata(phonebook="
+                                            + mPhonebooksToDownload.get(1)
+                                            + ")");
+                        }
+                        setNextPhonebookOrComplete();
+                    } else {
+                        downloadPhonebook(
+                                currentPhonebook,
+                                totalContactsDownloaded,
+                                CONTACT_DOWNLOAD_BATCH_SIZE);
+                    }
+                }
+
+                default -> {
                     debug(
                             "Downloading: passing message to parent state, type="
                                     + eventToString(message.what));
                     return NOT_HANDLED;
+                }
             }
             return HANDLED;
         }
@@ -884,26 +869,25 @@ class PbapClientStateMachine extends StateMachine {
         public boolean processMessage(Message message) {
             debug("Disconnecting: process message, what=" + eventToString(message.what));
             switch (message.what) {
-                case MSG_OBEX_CLIENT_DISCONNECTED:
+                case MSG_OBEX_CLIENT_DISCONNECTED -> {
                     removeMessages(MSG_DISCONNECT_TIMEOUT);
                     transitionTo(mDisconnected);
-                    break;
+                }
 
-                case MSG_DISCONNECT:
-                    deferMessage(message);
-                    break;
+                case MSG_DISCONNECT -> deferMessage(message);
 
-                case MSG_DISCONNECT_TIMEOUT:
+                case MSG_DISCONNECT_TIMEOUT -> {
                     warn("Disconnecting: Timeout, Forcing");
                     mObexClient.close();
                     transitionTo(mDisconnected);
-                    break;
+                }
 
-                default:
+                default -> {
                     warn(
                             "Disconnecting: Received unhandled message, what="
                                     + eventToString(message.what));
                     return NOT_HANDLED;
+                }
             }
             return HANDLED;
         }

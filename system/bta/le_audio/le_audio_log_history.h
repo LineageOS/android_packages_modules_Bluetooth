@@ -16,9 +16,9 @@
 
 #pragma once
 
-#include <string>
+#include <bluetooth/types/address.h>
 
-#include "types/raw_address.h"
+#include <string>
 
 /* Some predefined tags */
 static std::string kLogConnectionTag("CONN_STATE");
@@ -64,6 +64,7 @@ static std::string kLogAfSuspendConfirm("SUSPEND_CONFIRMED: ");
 static std::string kLogAfCancel("REQUEST_CANCELED: ");
 static std::string kLogAfReconfigComplete("RECONFIG_COMPLETE_EVT: ");
 static std::string kLogAfSuspendForReconfig("SUSPEND_FOR_RECONFIG_EVT: ");
+static std::string kLogAfStreamSuspended("SUSPENDED_EVT: ");
 
 class LeAudioLogHistory {
 public:

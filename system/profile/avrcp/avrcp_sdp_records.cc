@@ -131,7 +131,7 @@ bool AvrcSdpRecordHelper::MergeSdpRecords(AvrcpSdpRecord& merged_sdp_record_refe
   }
   return true;
 }
-uint16_t TargetAvrcSdpRecordHelper::EnableCovertArt(uint16_t cover_art_psm, uint16_t request_id) {
+uint16_t TargetAvrcSdpRecordHelper::EnableCoverArt(uint16_t cover_art_psm, uint16_t request_id) {
   log::debug("Adding cover art support for request id {}", request_id);
   AVRC_RemoveRecord(sdp_record_handle_);
   sdp_record_handle_ = RECORD_NOT_ASSIGNED;
@@ -144,7 +144,7 @@ uint16_t TargetAvrcSdpRecordHelper::EnableCovertArt(uint16_t cover_art_psm, uint
   return AVRC_FAIL;
 }
 
-uint16_t TargetAvrcSdpRecordHelper::DisableCovertArt(uint16_t request_id) {
+uint16_t TargetAvrcSdpRecordHelper::DisableCoverArt(uint16_t request_id) {
   log::debug("Disabling cover art support for request id {}", request_id);
   AVRC_RemoveRecord(sdp_record_handle_);
   sdp_record_handle_ = RECORD_NOT_ASSIGNED;
@@ -179,8 +179,8 @@ uint16_t ControlAvrcSdpRecordHelper::UpdateRecord(const uint16_t new_categories)
   return result ? AVRC_SUCCESS : AVRC_FAIL;
 }
 
-uint16_t ControlAvrcSdpRecordHelper::EnableCovertArt(uint16_t /*cover_art_psm*/,
-                                                     const uint16_t /*request_id*/) {
+uint16_t ControlAvrcSdpRecordHelper::EnableCoverArt(uint16_t /*cover_art_psm*/,
+                                                    const uint16_t /*request_id*/) {
   log::warn(
           "Enabling cover art support dynamically is not supported for service "
           "UUID {:x}",
@@ -188,7 +188,7 @@ uint16_t ControlAvrcSdpRecordHelper::EnableCovertArt(uint16_t /*cover_art_psm*/,
   return AVRC_FAIL;
 }
 
-uint16_t ControlAvrcSdpRecordHelper::DisableCovertArt(const uint16_t /*request_id*/) {
+uint16_t ControlAvrcSdpRecordHelper::DisableCoverArt(const uint16_t /*request_id*/) {
   log::warn(
           "Disabling cover art support dynamically is not supported for service "
           "UUID {:x}",

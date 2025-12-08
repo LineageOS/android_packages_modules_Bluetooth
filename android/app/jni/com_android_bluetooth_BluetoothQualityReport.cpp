@@ -17,6 +17,7 @@
 #define LOG_TAG "BluetoothQualityReportJni"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <jni.h>
 #include <nativehelper/scoped_local_ref.h>
 
@@ -29,7 +30,6 @@
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_bqr.h"
-#include "types/raw_address.h"
 
 using bluetooth::bqr::BluetoothQualityReportInterface;
 
@@ -69,7 +69,8 @@ public:
       return;
     }
 
-    sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress), (jbyte*)bd_addr.address);
+    sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
+                                     (jbyte*)bd_addr.address.data());
 
     ScopedLocalRef<jbyteArray> raw_data(sCallbackEnv.get(),
                                         sCallbackEnv->NewByteArray(bqr_raw_data.size()));

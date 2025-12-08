@@ -23,6 +23,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 #include <string>
@@ -40,7 +41,6 @@
 #include "osi/include/compat.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_client_interface.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -219,6 +219,24 @@ void bta_ag_scb_dealloc(tBTA_AG_SCB* p_scb) {
     if (!allocated) {
       (*bta_ag_cb.p_cback)(BTA_AG_DISABLE_EVT, nullptr);
     }
+  }
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_ag_sco_reset
+ *
+ * Description      reset the sco data.
+ *
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void bta_ag_sco_reset(tBTA_AG_SCB* p_scb) {
+  tBTA_AG_SCO_CB* p_sco = &bta_ag_cb.sco;
+  if (p_scb == p_sco->p_curr_scb) {
+    log::verbose("bta_ag_sco_reset {}", bta_ag_scb_to_idx(p_scb));
+    *p_sco = {};
   }
 }
 
@@ -421,6 +439,8 @@ void bta_ag_api_enable(tBTA_AG_CBACK* p_cback) {
 
   bta_sys_collision_register(BTA_ID_AG, bta_ag_collision_cback);
 
+  bta_ag_init_hfp_client_interface();
+
   /* call callback with enable event */
   (*bta_ag_cb.p_cback)(BTA_AG_ENABLE_EVT, nullptr);
 }
@@ -459,6 +479,7 @@ void bta_ag_api_disable() {
   if (bta_ag_is_sco_managed_by_audio()) {
     // Stop session if not done
     bta_clear_active_device();
+    bta_ag_release_hfp_client_interface();
   }
 
   if (!do_dereg) {
@@ -490,7 +511,8 @@ void bta_ag_api_register(tBTA_SERVICE_MASK services, tBTA_AG_FEAT features,
     data.api_register.app_id = app_id;
     for (int i = 0; i < BTA_AG_NUM_IDX; i++) {
       if (!service_names[i].empty()) {
-        osi_strlcpy(data.api_register.p_name[i], service_names[i].c_str(), BTA_SERVICE_NAME_LEN);
+        osi_strlcpy(data.api_register.p_name[i], service_names[i].c_str(),
+                    BTA_SERVICE_NAME_LEN + 1);
       } else {
         data.api_register.p_name[i][0] = 0;
       }

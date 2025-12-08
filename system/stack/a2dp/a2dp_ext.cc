@@ -68,7 +68,7 @@ tA2DP_STATUS A2dpCodecConfigExt::setCodecConfig(const uint8_t* p_peer_codec_info
 
   auto result = provider::get_a2dp_configuration(
           RawAddress::kEmpty, std::vector<provider::a2dp_remote_capabilities>{capabilities},
-          codec_user_config_);
+          codec_user_config_, codec_id_);
   if (!result.has_value()) {
     log::error("Failed to set a configuration for {}", name_);
     return AVDTP_UNSUPPORTED_CONFIGURATION;

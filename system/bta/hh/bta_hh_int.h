@@ -26,6 +26,7 @@
 #define BTA_HH_INT_H
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 
@@ -34,7 +35,6 @@
 #include "bta/include/bta_hh_api.h"
 #include "bta/sys/bta_sys.h"
 #include "stack/include/bt_hdr.h"
-#include "types/raw_address.h"
 
 #define ANDROID_HEADTRACKER_DATA_SIZE 13
 #define ANDROID_HEADTRACKER_REPORT_ID 1
@@ -260,6 +260,7 @@ void bta_hh_close_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
 void bta_hh_data_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
 void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
 void bta_hh_connect(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
+void bta_hh_connect_upgrade(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
 void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
 void bta_hh_write_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
 void bta_hh_get_dscp_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);

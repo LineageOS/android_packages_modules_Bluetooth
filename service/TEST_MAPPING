@@ -1,0 +1,20 @@
+{
+  "presubmit": [
+    {
+      "name": "CtsDevicePolicyTestCases",
+      "options": [
+        {
+          "include-filter": "android.devicepolicy.cts.BluetoothTest"
+        }
+      ]
+    },
+    {
+      "name": "CtsDevicePolicyManagerTestCases",
+      "options": [
+        {
+          "include-filter": "com.android.cts.devicepolicy.DeviceOwnerTest#testBluetoothRestriction"
+        }
+      ]
+    }
+  ]
+}

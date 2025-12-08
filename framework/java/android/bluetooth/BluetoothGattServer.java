@@ -356,7 +356,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                 @Override
                 @RequiresNoPermission // Callback to app
                 public void onMtuChanged(BluetoothDevice device, int mtu) {
-                    Log.d(TAG, "onMtuChanged() - " + "device=" + device + ", mtu=" + mtu);
+                    Log.d(TAG, "onMtuChanged() - device=" + device + ", mtu=" + mtu);
 
                     Attributable.setAttributionSource(device, mAttributionSource);
                     try {

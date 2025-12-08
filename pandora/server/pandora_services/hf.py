@@ -2,7 +2,9 @@ from __future__ import annotations
 import asyncio
 import grpc
 import logging
+import functools
 
+from bumble import utils as bumble_utils
 from bumble import core
 from bumble import rfcomm
 from bumble import hci
@@ -68,6 +70,36 @@ class HFService(HFPServicer):
         # Start the HFP
         self.hf_protocol = HfProtocol(dlc, self.hf_config)
         asyncio.create_task(self.hf_protocol.run())
+
+        def on_sco_request(connection: bumble.device.Connection, link_type: int,
+                           protocol: HfProtocol):
+            logging.info('SCO request received')
+            if connection == protocol.dlc.multiplexer.l2cap_channel.connection:
+                if link_type == hci.HCI_Connection_Complete_Event.SCO_LINK_TYPE:
+                    esco_parameters = hfp.ESCO_PARAMETERS[hfp.DefaultCodecParameters.SCO_CVSD_D1]
+                elif protocol.active_codec == hfp.AudioCodec.MSBC:
+                    esco_parameters = hfp.ESCO_PARAMETERS[hfp.DefaultCodecParameters.ESCO_MSBC_T2]
+                elif protocol.active_codec == hfp.AudioCodec.CVSD:
+                    esco_parameters = hfp.ESCO_PARAMETERS[hfp.DefaultCodecParameters.ESCO_CVSD_S4]
+                else:
+                    raise RuntimeError("unknown active codec")
+
+                bumble_utils.cancel_on_event(
+                    connection,
+                    connection.EVENT_DISCONNECTION,
+                    connection.device.send_command(
+                        hci.HCI_Enhanced_Accept_Synchronous_Connection_Request_Command(
+                            bd_addr=connection.peer_address, **esco_parameters.asdict())),
+                )
+
+        logging.info('Registering SCO handler')
+        handler = functools.partial(on_sco_request, protocol=self.hf_protocol)
+        dlc.multiplexer.l2cap_channel.connection.device.on(self.device.EVENT_SCO_REQUEST, handler)
+        dlc.multiplexer.l2cap_channel.once(
+            dlc.multiplexer.l2cap_channel.EVENT_CLOSE,
+            lambda: dlc.multiplexer.l2cap_channel.connection.device.remove_listener(
+                self.device.EVENT_SCO_REQUEST, handler),
+        )
 
     @utils.rpc
     async def EnableSlcAsHandsfree(self, request: EnableSlcAsHandsfreeRequest,

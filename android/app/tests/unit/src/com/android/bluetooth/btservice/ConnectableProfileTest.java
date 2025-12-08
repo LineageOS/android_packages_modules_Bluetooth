@@ -18,8 +18,6 @@ package com.android.bluetooth.btservice;
 
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.doReturn;
@@ -28,10 +26,10 @@ import static org.mockito.Mockito.verify;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
-import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -49,7 +47,6 @@ public class ConnectableProfileTest {
 
     @Mock private AdapterService mAdapterService;
     @Mock private ProfileService.IProfileServiceBinder mBinder;
-    @Mock private DatabaseManager mDatabaseManager;
     @Mock private BluetoothDevice mDevice;
 
     private TestConnectableProfile mConnectableProfile;
@@ -82,7 +79,6 @@ public class ConnectableProfileTest {
 
     @Before
     public void setUp() {
-        doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         mConnectableProfile = new TestConnectableProfile(TEST_PROFILE_ID, mAdapterService);
     }
 
@@ -120,22 +116,22 @@ public class ConnectableProfileTest {
     public void getConnectionPolicy_callsDatabaseManager_returnsExpectedPolicy() {
         final int expectedPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
         doReturn(expectedPolicy)
-                .when(mDatabaseManager)
+                .when(mAdapterService)
                 .getProfileConnectionPolicy(mDevice, TEST_PROFILE_ID);
 
         assertThat(mConnectableProfile.getConnectionPolicy(mDevice)).isEqualTo(expectedPolicy);
-        verify(mDatabaseManager).getProfileConnectionPolicy(mDevice, TEST_PROFILE_ID);
+        verify(mAdapterService).getProfileConnectionPolicy(mDevice, TEST_PROFILE_ID);
     }
 
     @Test
     public void getConnectionPolicy_callsDatabaseManager_onNullDevice_returnsPolicyUnknown() {
         final var policyUnknown = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
         doReturn(policyUnknown)
-                .when(mDatabaseManager)
+                .when(mAdapterService)
                 .getProfileConnectionPolicy(null, TEST_PROFILE_ID);
 
         assertThat(mConnectableProfile.getConnectionPolicy(null)).isEqualTo(policyUnknown);
-        verify(mDatabaseManager).getProfileConnectionPolicy(null, TEST_PROFILE_ID);
+        verify(mAdapterService).getProfileConnectionPolicy(null, TEST_PROFILE_ID);
     }
 
     @Test

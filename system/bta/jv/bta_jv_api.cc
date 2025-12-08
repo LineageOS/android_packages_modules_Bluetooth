@@ -26,6 +26,8 @@
 #include <base/functional/bind.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 
 #include <cstdint>
 #include <memory>
@@ -37,8 +39,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/gap_api.h"
 #include "stack/include/main_thread.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using base::Bind;
 using bluetooth::Uuid;

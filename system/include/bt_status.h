@@ -67,6 +67,9 @@ public:
   // Used to cast to bool, true if is success, false otherwise.
   operator bool() const { return code_ == BT_SUCCESS; }
 
+  // To allow use as map keys
+  bool operator<(const BtStatus& other) const { return toUint32() < other.toUint32(); }
+
   // Used for logging
   const std::string toString() const {
     if (code_ == BT_SUCCESS) {
@@ -97,3 +100,9 @@ inline std::ostream& operator<<(std::ostream& os, const BtStatus& status) {
   os << status.toString();
   return os;
 }
+
+// To allow use as map keys
+template <>
+struct std::hash<BtStatus> {
+  size_t operator()(const BtStatus& status) const { return status.toUint32(); }
+};

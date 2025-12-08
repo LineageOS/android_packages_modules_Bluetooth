@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "separate_service_storage"
-    namespace: "bluetooth"
-    description: "Store LE and Classic services separately"
-    bug: "382015666"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "service_discovery_on_connected_transport"
     namespace: "bluetooth"
     description: "Prefer to perform service discovery on all connected transport when transport is not specified"

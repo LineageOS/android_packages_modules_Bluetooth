@@ -22,6 +22,7 @@
 
 #include <vector>
 
+#include "a2dp_encoding_aidl_utils.h"
 #include "a2dp_provider_info.h"
 #include "audio_aidl_interfaces.h"
 #include "client_interface_aidl.h"
@@ -590,59 +591,6 @@ bool provider::codec_info(btav_a2dp_codec_index_t codec_index, bluetooth::a2dp::
                  : false;
 }
 
-static btav_a2dp_codec_channel_mode_t convert_channel_mode(ChannelMode channel_mode) {
-  switch (channel_mode) {
-    case ChannelMode::MONO:
-      return BTAV_A2DP_CODEC_CHANNEL_MODE_MONO;
-    case ChannelMode::STEREO:
-      return BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO;
-    default:
-      log::error("unknown channel mode");
-      break;
-  }
-  return BTAV_A2DP_CODEC_CHANNEL_MODE_NONE;
-}
-
-static btav_a2dp_codec_sample_rate_t convert_sampling_frequency_hz(int sampling_frequency_hz) {
-  switch (sampling_frequency_hz) {
-    case 44100:
-      return BTAV_A2DP_CODEC_SAMPLE_RATE_44100;
-    case 48000:
-      return BTAV_A2DP_CODEC_SAMPLE_RATE_48000;
-    case 88200:
-      return BTAV_A2DP_CODEC_SAMPLE_RATE_88200;
-    case 96000:
-      return BTAV_A2DP_CODEC_SAMPLE_RATE_96000;
-    case 176400:
-      return BTAV_A2DP_CODEC_SAMPLE_RATE_176400;
-    case 192000:
-      return BTAV_A2DP_CODEC_SAMPLE_RATE_192000;
-    case 16000:
-      return BTAV_A2DP_CODEC_SAMPLE_RATE_16000;
-    case 24000:
-      return BTAV_A2DP_CODEC_SAMPLE_RATE_24000;
-    default:
-      log::error("unknown sampling frequency {}", sampling_frequency_hz);
-      break;
-  }
-  return BTAV_A2DP_CODEC_SAMPLE_RATE_NONE;
-}
-
-static btav_a2dp_codec_bits_per_sample_t convert_bitdepth(int bitdepth) {
-  switch (bitdepth) {
-    case 16:
-      return BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16;
-    case 24:
-      return BTAV_A2DP_CODEC_BITS_PER_SAMPLE_24;
-    case 32:
-      return BTAV_A2DP_CODEC_BITS_PER_SAMPLE_32;
-    default:
-      log::error("unknown bit depth {}", bitdepth);
-      break;
-  }
-  return BTAV_A2DP_CODEC_BITS_PER_SAMPLE_NONE;
-}
-
 /***
  * Query the codec selection fromt the audio HAL.
  * The HAL is expected to pick the best audio configuration based on the
@@ -653,11 +601,8 @@ provider::get_a2dp_configuration(
         RawAddress peer_address,
         std::vector<::bluetooth::audio::a2dp::provider::a2dp_remote_capabilities> const&
                 remote_seps,
-        btav_a2dp_codec_config_t const& user_preferences) {
-  if (provider_info == nullptr) {
-    return std::nullopt;
-  }
-
+        btav_a2dp_codec_config_t const& user_preferences,
+        ::bluetooth::a2dp::CodecId user_preferred_codec_id) {
   using ::aidl::android::hardware::bluetooth::audio::A2dpRemoteCapabilities;
   using ::aidl::android::hardware::bluetooth::audio::CodecId;
 
@@ -702,7 +647,7 @@ provider::get_a2dp_configuration(
 
   // Convert the user preferences into a configuration hint.
   A2dpConfigurationHint hint;
-  hint.bdAddr = peer_address.ToArray();
+  hint.bdAddr = peer_address.address;
   auto& codecParameters = hint.codecParameters.emplace();
   switch (user_preferences.channel_mode) {
     case BTAV_A2DP_CODEC_CHANNEL_MODE_MONO:
@@ -756,10 +701,9 @@ provider::get_a2dp_configuration(
       break;
   }
 
-  auto codec = provider_info->GetCodec(user_preferences.codec_type);
-  if (codec.has_value()) {
-    hint.codecId = codec.value()->id;
-  }
+  auto aidl_codec_id = convertCodecId(user_preferred_codec_id);
+  log::assert_that(aidl_codec_id.has_value(), "convertCodecId failed");
+  hint.codecId = aidl_codec_id.value();
 
   log::info("remote capabilities:");
   for (auto const& sep : a2dp_remote_capabilities) {
@@ -785,21 +729,9 @@ provider::get_a2dp_configuration(
   }
 
   log::info("provider selected {}", result->toString());
-
-  ::bluetooth::audio::a2dp::provider::a2dp_configuration a2dp_configuration;
-  a2dp_configuration.remote_seid = result->remoteSeid;
-  a2dp_configuration.vendor_specific_parameters = result->parameters.vendorSpecificParameters;
-  ProviderInfo::BuildCodecCapabilities(result->id, result->configuration,
-                                       a2dp_configuration.codec_config);
+  auto a2dp_configuration = convertA2dpConfiguration(result.value());
   a2dp_configuration.codec_parameters.codec_type =
           provider_info->SourceCodecIndex(result->id).value();
-  a2dp_configuration.codec_parameters.channel_mode =
-          convert_channel_mode(result->parameters.channelMode);
-  a2dp_configuration.codec_parameters.sample_rate =
-          convert_sampling_frequency_hz(result->parameters.samplingFrequencyHz);
-  a2dp_configuration.codec_parameters.bits_per_sample =
-          convert_bitdepth(result->parameters.bitdepth);
-
   return std::make_optional(a2dp_configuration);
 }
 
@@ -809,46 +741,71 @@ provider::get_a2dp_configuration(
  * received from the peer and decide whether accept
  * the it or not.
  ***/
-tA2DP_STATUS provider::parse_a2dp_configuration(btav_a2dp_codec_index_t codec_index,
+tA2DP_STATUS provider::parse_a2dp_configuration(::bluetooth::a2dp::CodecId codec_id,
                                                 const uint8_t* codec_info,
                                                 btav_a2dp_codec_config_t* codec_parameters,
                                                 std::vector<uint8_t>* vendor_specific_parameters) {
   std::vector<uint8_t> configuration;
   CodecParameters codec_parameters_aidl;
 
-  if (provider_info == nullptr) {
-    log::error("provider_info is null");
-    return A2DP_FAIL;
-  }
-
-  auto codec = provider_info->GetCodec(codec_index);
-  if (!codec.has_value()) {
-    log::error("codec index not recognized by provider");
-    return A2DP_FAIL;
-  }
+  auto aidl_codec_id = convertCodecId(codec_id);
+  log::assert_that(aidl_codec_id.has_value(), "convertCodecId failed");
 
   std::copy(codec_info, codec_info + AVDT_CODEC_SIZE, std::back_inserter(configuration));
 
   auto a2dp_status = offloading_hal_interface->ParseA2dpConfiguration(
-          codec.value()->id, configuration, &codec_parameters_aidl);
+          aidl_codec_id.value(), configuration, &codec_parameters_aidl);
 
   if (!a2dp_status.has_value()) {
     log::error("provider failed to parse configuration");
     return A2DP_FAIL;
   }
 
-  if (codec_parameters != nullptr) {
-    codec_parameters->channel_mode = convert_channel_mode(codec_parameters_aidl.channelMode);
-    codec_parameters->sample_rate =
-            convert_sampling_frequency_hz(codec_parameters_aidl.samplingFrequencyHz);
-    codec_parameters->bits_per_sample = convert_bitdepth(codec_parameters_aidl.bitdepth);
-  }
+  convertCodecParameters(codec_parameters_aidl, codec_parameters);
 
   if (vendor_specific_parameters != nullptr) {
     *vendor_specific_parameters = codec_parameters_aidl.vendorSpecificParameters;
   }
 
   return static_cast<tA2DP_STATUS>(a2dp_status.value());
+}
+
+/***
+ * Reads the provider information from the HAL.
+ * May return std::nullopt if the HAL Provider Info is empty.
+ ***/
+std::optional<btav_a2dp_hal_provider_info_t> get_provider_info() {
+  auto source_provider_info = BluetoothAudioClientInterface::GetProviderInfo(
+          SessionType::A2DP_HARDWARE_OFFLOAD_ENCODING_DATAPATH, nullptr);
+
+  auto sink_provider_info = BluetoothAudioClientInterface::GetProviderInfo(
+          SessionType::A2DP_HARDWARE_OFFLOAD_DECODING_DATAPATH, nullptr);
+
+  if (!source_provider_info.has_value() && !sink_provider_info.has_value()) {
+    log::warn("the provider info is empty");
+    return std::nullopt;
+  }
+
+  btav_a2dp_hal_provider_info_t codecs_info;
+
+  for (auto& codec_info : source_provider_info->codecInfos) {
+    auto source_codec = convertCodecInfo(codec_info);
+    if (source_codec.has_value()) {
+      log::verbose("provider source codec: {}", source_codec.value().ToString());
+      codecs_info.source_codecs.push_back(source_codec.value());
+    }
+  }
+
+  for (auto& codec_info : sink_provider_info->codecInfos) {
+    auto sink_codec = convertCodecInfo(codec_info);
+    if (sink_codec.has_value()) {
+      log::verbose("provider sink codec: {}", sink_codec.value().ToString());
+      codecs_info.sink_codecs.push_back(sink_codec.value());
+    }
+  }
+
+  log::info("successfully loaded provider info");
+  return std::make_optional<btav_a2dp_hal_provider_info_t>(codecs_info);
 }
 
 }  // namespace a2dp

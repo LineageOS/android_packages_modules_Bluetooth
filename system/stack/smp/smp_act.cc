@@ -19,6 +19,7 @@
 #define LOG_TAG "smp_act"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstring>
@@ -41,7 +42,6 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/smp_api.h"
 #include "stack/include/smp_api_types.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -543,18 +543,16 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   /* erase all keys if it is peripheral proc pairing req */
   if (p_dev_rec && (p_cb->role == HCI_ROLE_PERIPHERAL)) {
-    if (com::android::bluetooth::flags::key_missing_ble_peripheral()) {
-      /* If we bonded, but not encrypted, it's a key missing - disconnect.
-       * If we are bonded, its key upgrade and ok to continue.
-       * If we are not bonded, its new device pairing and ok.
-       */
-      if (BTM_IsBonded(p_cb->pairing_bda, BT_TRANSPORT_LE) &&
-          !BTM_IsEncrypted(p_cb->pairing_bda, BT_TRANSPORT_LE)) {
-        get_btm_client_interface().security.BTM_SecReportBondLoss(p_cb->pairing_bda,
-                                                                  BT_TRANSPORT_LE);
-        return;
-      }
+    /* If we bonded, but not encrypted, it's a key missing - disconnect.
+     * If we are bonded, its key upgrade and ok to continue.
+     * If we are not bonded, its new device pairing and ok.
+     */
+    if (BTM_IsBonded(p_cb->pairing_bda, BT_TRANSPORT_LE) &&
+        !BTM_IsEncrypted(p_cb->pairing_bda, BT_TRANSPORT_LE)) {
+      get_btm_client_interface().security.BTM_SecReportBondLoss(p_cb->pairing_bda, BT_TRANSPORT_LE);
+      return;
     }
+
     btm_sec_clear_ble_keys(p_dev_rec);
   }
 
@@ -1186,7 +1184,7 @@ void smp_start_enc(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Description   processing for discard security request
  ******************************************************************************/
 void smp_proc_discard(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
-  if (com::android::bluetooth::flags::unrelated_device_smp_cancellation()) {
+  if (com_android_bluetooth_flags_unrelated_device_smp_cancellation()) {
     if (p_data == nullptr) {
       log::warn("Invalid data for discard request");
       return;
@@ -1368,14 +1366,19 @@ void smp_key_distribution(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
       }
 
       if (p_cb->total_tx_unacked == 0) {
-        /*
-         * Instead of declaring authorization complete immediately,
-         * delay the event from being sent by SMP_DELAYED_AUTH_TIMEOUT_MS.
-         * This allows the peripheral to send over Pairing Failed if the
-         * last key is rejected.  During this waiting window, the
-         * state should remain in SMP_STATE_BOND_PENDING.
-         */
-        if (!alarm_is_scheduled(p_cb->delayed_auth_timer_ent)) {
+        if (com_android_bluetooth_flags_conclude_le_pairing_immediately()) {
+          log::verbose("SMP pairing concluded {}", p_cb->pairing_bda);
+          tSMP_INT_DATA smp_int_data;
+          smp_int_data.status = SMP_SUCCESS;
+          smp_sm_event(&smp_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
+        } else if (!alarm_is_scheduled(p_cb->delayed_auth_timer_ent)) {
+          /*
+           * Instead of declaring authorization complete immediately,
+           * delay the event from being sent by SMP_DELAYED_AUTH_TIMEOUT_MS.
+           * This allows the peripheral to send over Pairing Failed if the
+           * last key is rejected.  During this waiting window, the
+           * state should remain in SMP_STATE_BOND_PENDING.
+           */
           log::verbose("delaying auth complete");
           alarm_set_on_mloop(p_cb->delayed_auth_timer_ent, SMP_DELAYED_AUTH_TIMEOUT_MS,
                              smp_delayed_auth_complete_timeout, NULL);

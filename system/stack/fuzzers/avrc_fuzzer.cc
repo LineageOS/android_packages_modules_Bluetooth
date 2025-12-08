@@ -16,6 +16,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include <cstdint>
@@ -32,7 +33,6 @@
 #include "test/mock/mock_stack_btm_dev.h"
 #include "test/mock/mock_stack_l2cap_api.h"
 #include "test/mock/mock_stack_l2cap_interface.h"
-#include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;
@@ -57,7 +57,7 @@ namespace {
 
 constexpr uint16_t kDummyCid = 0x1234;
 constexpr uint8_t kDummyId = 0x77;
-constexpr uint8_t kDummyRemoteAddr[] = {0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC};
+constexpr RawAddress kDummyRemoteAddr({0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC});
 
 // Set up default callback structure
 static tL2CAP_APPL_INFO avct_appl, avct_br_appl;

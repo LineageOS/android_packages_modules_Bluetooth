@@ -26,8 +26,9 @@
 #include <functional>
 
 // Original included files, if any
+#include <bluetooth/types/address.h>
+
 #include "btif/include/btif_profile_queue.h"
-#include "types/raw_address.h"
 
 // Original usings
 
@@ -57,14 +58,14 @@ struct btif_queue_cleanup {
 extern struct btif_queue_cleanup btif_queue_cleanup;
 
 // Name: btif_queue_connect
-// Params: uint16_t uuid, const RawAddress* bda, btif_connect_cb_t connect_cb
+// Params: uint16_t uuid, const RawAddress bda, btif_connect_cb_t connect_cb
 // Return: bt_status_t
 struct btif_queue_connect {
   static bt_status_t return_value;
-  std::function<bt_status_t(uint16_t uuid, const RawAddress* bda, btif_connect_cb_t connect_cb)>
-          body{[](uint16_t /* uuid */, const RawAddress* /* bda */,
+  std::function<bt_status_t(uint16_t uuid, const RawAddress bda, btif_connect_cb_t connect_cb)>
+          body{[](uint16_t /* uuid */, const RawAddress /* bda */,
                   btif_connect_cb_t /* connect_cb */) { return return_value; }};
-  bt_status_t operator()(uint16_t uuid, const RawAddress* bda, btif_connect_cb_t connect_cb) {
+  bt_status_t operator()(uint16_t uuid, const RawAddress bda, btif_connect_cb_t connect_cb) {
     return body(uuid, bda, connect_cb);
   }
 };

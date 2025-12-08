@@ -62,6 +62,8 @@ struct bta_ag_set_sco_allowed bta_ag_set_sco_allowed;
 struct bta_ag_set_sco_offload_enabled bta_ag_set_sco_offload_enabled;
 struct bta_ag_stream_suspended bta_ag_stream_suspended;
 struct bta_clear_active_device bta_clear_active_device;
+struct bta_ag_get_wbs_supported bta_ag_get_wbs_supported;
+struct bta_ag_get_swb_supported bta_ag_get_swb_supported;
 
 }  // namespace bta_ag_sco
 }  // namespace mock
@@ -80,6 +82,8 @@ bool bta_ag_sco_is_open::return_value = false;
 bool bta_ag_sco_is_opening::return_value = false;
 size_t bta_ag_sco_read::return_value = 0;
 size_t bta_ag_sco_write::return_value = 0;
+bool bta_ag_get_wbs_supported::return_value = false;
+bool bta_ag_get_swb_supported::return_value = false;
 
 }  // namespace bta_ag_sco
 }  // namespace mock
@@ -181,6 +185,14 @@ void bta_ag_stream_suspended() {
 void bta_clear_active_device() {
   inc_func_call_count(__func__);
   test::mock::bta_ag_sco::bta_clear_active_device();
+}
+bool bta_ag_get_wbs_supported() {
+  inc_func_call_count(__func__);
+  return test::mock::bta_ag_sco::bta_ag_get_wbs_supported();
+}
+bool bta_ag_get_swb_supported() {
+  inc_func_call_count(__func__);
+  return test::mock::bta_ag_sco::bta_ag_get_swb_supported();
 }
 // Mocked functions complete
 // END mockcify generation

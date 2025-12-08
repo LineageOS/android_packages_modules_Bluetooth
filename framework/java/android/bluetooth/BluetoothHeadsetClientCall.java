@@ -17,6 +17,7 @@
 package android.bluetooth;
 
 import android.annotation.NonNull;
+import android.annotation.RequiresNoPermission;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.AttributionSource;
 import android.os.Build;
@@ -105,6 +106,7 @@ public final class BluetoothHeadsetClientCall implements Parcelable, Attributabl
     }
 
     /** @hide */
+    @RequiresNoPermission
     public void setAttributionSource(@NonNull AttributionSource source) {
         Attributable.setAttributionSource(mDevice, source);
     }
@@ -116,6 +118,7 @@ public final class BluetoothHeadsetClientCall implements Parcelable, Attributabl
      *
      * @param state new call state.
      */
+    @RequiresNoPermission
     public void setState(int state) {
         mState = state;
     }
@@ -127,6 +130,7 @@ public final class BluetoothHeadsetClientCall implements Parcelable, Attributabl
      *
      * @param number String representing phone number.
      */
+    @RequiresNoPermission
     public void setNumber(String number) {
         mNumber = number;
     }
@@ -138,6 +142,7 @@ public final class BluetoothHeadsetClientCall implements Parcelable, Attributabl
      *
      * @param multiParty if <code>true</code> sets this call as a part of multi party conference.
      */
+    @RequiresNoPermission
     public void setMultiParty(boolean multiParty) {
         mMultiParty = multiParty;
     }
@@ -147,6 +152,7 @@ public final class BluetoothHeadsetClientCall implements Parcelable, Attributabl
      *
      * @return call device.
      */
+    @RequiresNoPermission
     public BluetoothDevice getDevice() {
         return mDevice;
     }
@@ -157,6 +163,7 @@ public final class BluetoothHeadsetClientCall implements Parcelable, Attributabl
      * @return call id.
      */
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
+    @RequiresNoPermission
     public int getId() {
         return mId;
     }
@@ -167,6 +174,7 @@ public final class BluetoothHeadsetClientCall implements Parcelable, Attributabl
      * @return call uuid
      * @hide
      */
+    @RequiresNoPermission
     public UUID getUUID() {
         return mUUID;
     }
@@ -177,6 +185,7 @@ public final class BluetoothHeadsetClientCall implements Parcelable, Attributabl
      * @return state of this particular phone call.
      */
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
+    @RequiresNoPermission
     public int getState() {
         return mState;
     }
@@ -187,6 +196,7 @@ public final class BluetoothHeadsetClientCall implements Parcelable, Attributabl
      * @return string representing phone number.
      */
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
+    @RequiresNoPermission
     public String getNumber() {
         return mNumber;
     }
@@ -196,6 +206,7 @@ public final class BluetoothHeadsetClientCall implements Parcelable, Attributabl
      *
      * @return long representing the creation time.
      */
+    @RequiresNoPermission
     public long getCreationElapsedMilli() {
         return mCreationElapsedMilli;
     }
@@ -206,6 +217,7 @@ public final class BluetoothHeadsetClientCall implements Parcelable, Attributabl
      * @return <code>true</code> if call is a multi party call, <code>false</code> otherwise.
      */
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
+    @RequiresNoPermission
     public boolean isMultiParty() {
         return mMultiParty;
     }
@@ -216,6 +228,7 @@ public final class BluetoothHeadsetClientCall implements Parcelable, Attributabl
      * @return <code>true</code> if its outgoing call, <code>false</code> otherwise.
      */
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
+    @RequiresNoPermission
     public boolean isOutgoing() {
         return mOutgoing;
     }
@@ -225,6 +238,7 @@ public final class BluetoothHeadsetClientCall implements Parcelable, Attributabl
      *
      * @return <code>true</code> if in band ring is enabled, <code>false</code> otherwise.
      */
+    @RequiresNoPermission
     public boolean isInBandRing() {
         return mInBandRing;
     }
@@ -248,35 +262,18 @@ public final class BluetoothHeadsetClientCall implements Parcelable, Attributabl
         builder.append(", mUUID: ");
         builder.append(mUUID);
         builder.append(", mState: ");
-        switch (mState) {
-            case CALL_STATE_ACTIVE:
-                builder.append("ACTIVE");
-                break;
-            case CALL_STATE_HELD:
-                builder.append("HELD");
-                break;
-            case CALL_STATE_DIALING:
-                builder.append("DIALING");
-                break;
-            case CALL_STATE_ALERTING:
-                builder.append("ALERTING");
-                break;
-            case CALL_STATE_INCOMING:
-                builder.append("INCOMING");
-                break;
-            case CALL_STATE_WAITING:
-                builder.append("WAITING");
-                break;
-            case CALL_STATE_HELD_BY_RESPONSE_AND_HOLD:
-                builder.append("HELD_BY_RESPONSE_AND_HOLD");
-                break;
-            case CALL_STATE_TERMINATED:
-                builder.append("TERMINATED");
-                break;
-            default:
-                builder.append(mState);
-                break;
-        }
+        builder.append(
+                switch (mState) {
+                    case CALL_STATE_ACTIVE -> "ACTIVE";
+                    case CALL_STATE_HELD -> "HELD";
+                    case CALL_STATE_DIALING -> "DIALING";
+                    case CALL_STATE_ALERTING -> "ALERTING";
+                    case CALL_STATE_INCOMING -> "INCOMING";
+                    case CALL_STATE_WAITING -> "WAITING";
+                    case CALL_STATE_HELD_BY_RESPONSE_AND_HOLD -> "HELD_BY_RESPONSE_AND_HOLD";
+                    case CALL_STATE_TERMINATED -> "TERMINATED";
+                    default -> mState;
+                });
         builder.append(", mNumber: ");
         builder.append(loggable ? mNumber : mNumber.hashCode());
         builder.append(", mMultiParty: ");

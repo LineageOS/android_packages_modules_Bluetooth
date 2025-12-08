@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.sdp;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -31,14 +30,14 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Looper;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AbstractionLayer;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.tests.bluetooth.MockitoRule;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -64,19 +63,13 @@ public class DipTest {
 
     @Before
     public void setUp() throws Exception {
-        SdpManagerNativeInterface.setInstance(mNativeInterface);
         doReturn("00:01:02:03:04:05").when(mAdapterService).getIdentityAddress("00:01:02:03:04:05");
 
         if (Looper.myLooper() == null) {
             Looper.prepare();
         }
 
-        mSdpManager = new SdpManager(mAdapterService);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        SdpManagerNativeInterface.setInstance(null);
+        mSdpManager = new SdpManager(mAdapterService, mNativeInterface);
     }
 
     private static void verifyDipSdpRecordIntent(

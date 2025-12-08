@@ -26,11 +26,12 @@ import android.telecom.PhoneAccount;
 import android.telecom.TelecomManager;
 import android.util.Log;
 
-import com.android.internal.annotations.VisibleForTesting;
+import com.android.bluetooth.btservice.AdapterService;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 // Helper class that manages the call handling for one device. HfpClientConnectionService holds a
@@ -324,13 +325,14 @@ class HfpClientDeviceBlock {
     private static Bundle getScoStateFromDevice(BluetoothDevice device) {
         Bundle bundle = new Bundle();
 
-        HeadsetClientService headsetClientService = HeadsetClientService.getHeadsetClientService();
-        if (headsetClientService == null) {
+        final var headsetClient =
+                Optional.ofNullable(AdapterService.deprecatedGetAdapterService())
+                        .flatMap(AdapterService::getHeadsetClientService);
+        if (headsetClient.isEmpty()) {
             return bundle;
         }
 
-        bundle.putInt(KEY_SCO_STATE, headsetClientService.getAudioState(device));
-
+        bundle.putInt(KEY_SCO_STATE, headsetClient.get().getAudioState(device));
         return bundle;
     }
 
@@ -353,31 +355,6 @@ class HfpClientDeviceBlock {
         sb.append(" conference=").append(mConference);
         sb.append(">");
         return sb.toString();
-    }
-
-    /** Factory class for {@link HfpClientDeviceBlock} */
-    public static class Factory {
-        private static Factory sInstance = new Factory();
-
-        @VisibleForTesting
-        static void setInstance(Factory instance) {
-            sInstance = instance;
-        }
-
-        /** Returns an instance of {@link HfpClientDeviceBlock} */
-        public static HfpClientDeviceBlock build(
-                BluetoothDevice device,
-                HfpClientConnectionService connServ,
-                HeadsetClientServiceInterface serviceInterface) {
-            return sInstance.buildInternal(device, connServ, serviceInterface);
-        }
-
-        protected HfpClientDeviceBlock buildInternal(
-                BluetoothDevice device,
-                HfpClientConnectionService connServ,
-                HeadsetClientServiceInterface serviceInterface) {
-            return new HfpClientDeviceBlock(device, connServ, serviceInterface);
-        }
     }
 
     // Per-Device logging

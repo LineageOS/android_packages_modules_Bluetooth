@@ -60,7 +60,7 @@ impl Arbiter {
     pub fn add_connection(&self, handle: u16) {
         let (state, _) = &*self.state_cvar;
         if state.lock().unwrap().in_transit.insert(handle, 0).is_some() {
-            panic!("Connection with handle 0x{:03x} already exists", handle);
+            panic!("Connection with handle 0x{handle:03x} already exists");
         }
     }
 

@@ -19,6 +19,9 @@
 #include <base/functional/callback.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <hardware/bt_csis.h>
 #include <hardware/bt_gatt_types.h>
@@ -67,9 +70,6 @@
 #include "stack/include/btm_ble_sec_api.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
-#include "types/bluetooth/uuid.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 using base::Closure;
 using bluetooth::Uuid;
@@ -113,7 +113,7 @@ DeviceGroupsCallbacks* device_group_callbacks;
  * Flow:
  * If connected device contains CSIS services, and it is included into CAP
  * service or is not included at all, implementation reads all its
- * characteristisc. The only mandatory characteristic is Set Identity Resolving
+ * characteristic. The only mandatory characteristic is Set Identity Resolving
  * Key (SIRK) and once this is read implementation assumes there is at least 2
  * devices in the set and start to search for other members by looking for new
  * Advertising Type (RSI Type) and Resolvable Set Identifier (RSI) in it.
@@ -232,7 +232,9 @@ public:
     AssignCsisGroup(address, group_id, false, Uuid::kEmpty);
   }
 
-  void OnGroupRemovedCb(const bluetooth::Uuid& /*uuid*/, int group_id) {
+  void OnGroupRemovedCb(const bluetooth::Uuid& uuid, int group_id) {
+    log::debug("uuid: {}, group_id: {}", uuid.ToString(), group_id);
+
     RemoveCsisGroup(group_id);
   }
 
@@ -294,6 +296,8 @@ public:
   void Connect(const RawAddress& address) override {
     log::info("{}", address);
 
+    bool use_opportunistic_connect = false;
+
     auto device = FindDeviceByAddress(address);
     if (device == nullptr) {
       if (!BTM_IsBonded(address, BT_TRANSPORT_LE)) {
@@ -303,10 +307,15 @@ public:
       }
       devices_.emplace_back(std::make_shared<CsisDevice>(address, true));
     } else {
+      /* When this is already known device, we should use opportunistic connect for this profile.
+       * Non opportunistic one is needed only after bonding to make sure the device is not
+       * disconnected in case leAudio is not enabled by default.
+       */
+      use_opportunistic_connect = true;
       device->connecting_actively = true;
     }
 
-    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, false);
+    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, use_opportunistic_connect);
   }
 
   void Disconnect(const RawAddress& addr) override {
@@ -581,7 +590,7 @@ public:
       SetLock(csis_device, csis_instance, new_lock_state);
     } else {
       /* For unlocking, we don't have to monitor status of unlocking device,
-       * therefore, we can just send unlock to all of them, in oposite rank
+       * therefore, we can just send unlock to all of them, in opposite rank
        * order and check if we get new state notification.
        */
       auto csis_device = csis_group->GetLastDevice();
@@ -704,7 +713,7 @@ public:
   }
 
   void StartOpportunisticConnect(const RawAddress& address) {
-    /* Oportunistic works only for direct connect,
+    /* Opportunistic works only for direct connect,
      * but in fact this is background connect
      */
     log::info(": {}", address);
@@ -822,7 +831,7 @@ private:
   }
 
   void RemoveCsisDevice(std::shared_ptr<CsisDevice>& device, int group_id) {
-    log::info("");
+    log::info("{}", device->addr);
     auto it = find_if(devices_.begin(), devices_.end(), CsisDevice::MatchAddress(device->addr));
     if (it == devices_.end()) {
       return;
@@ -837,6 +846,9 @@ private:
         return;
       }
 
+      /* If the device is being removed, it is assumed that the group it belongs to is also being
+       * blocked */
+      csis_group->SetDiscoveryState(CsisDiscoveryState::CSIS_DISCOVERY_BLOCKED);
       csis_group->RemoveDevice(device->addr);
 
       if (csis_group->IsEmpty()) {
@@ -884,12 +896,16 @@ private:
   }
 
   void RemoveCsisGroup(int group_id) {
+    log::info("group_id: {}", group_id);
+
     for (auto it = csis_groups_.begin(); it != csis_groups_.end(); it++) {
       if ((*it)->GetGroupId() == group_id) {
         csis_groups_.erase(it);
         return;
       }
     }
+
+    log::warn("Not found group id {}", group_id);
   }
 
   /* Handle encryption */
@@ -1266,8 +1282,8 @@ private:
 
 #ifdef CSIS_DEBUG
     auto irk = BTM_BleGetPeerIRK(address);
-    log::info("LTK {}", base::HexEncode(*pltk.data(), 16));
-    log::info("IRK {}", base::HexEncode(*irk.data(), 16));
+    log::info("LTK {}", base::HexEncode(pltk.value().data(), 16));
+    log::info("IRK {}", irk.has_value() ? base::HexEncode(irk.value().data(), 16) : 0x00);
 #endif
 
     /* Calculate salt CSIS d1.0r05 4.3 */
@@ -1282,7 +1298,7 @@ private:
 #ifdef CSIS_DEBUG
     log::info("s1 (le) {}", base::HexEncode(s1.data(), 16));
     /* Create K = LTK */
-    log::info("K (le) {}", base::HexEncode(*pltk.data(), 16));
+    log::info("K (le) {}", base::HexEncode(pltk.value().data(), 16));
 #endif
 
     Octet16 T = crypto_toolbox::aes_cmac(s1, *pltk);
@@ -1447,7 +1463,7 @@ private:
     });
     BTA_DmBleScan(enable, bluetooth::csis::kDefaultScanDurationS);
 
-    /* Need to call it by ourselfs */
+    /* Need to call these ourselves */
     if (!enable) {
       OnCsisObserveCompleted();
       CsisObserverSetBackground(true);
@@ -1518,6 +1534,10 @@ private:
 
     /* Notify all the groups this device belongs to. */
     for (auto& group : csis_groups_) {
+      if (group->GetDiscoveryState() == CsisDiscoveryState::CSIS_DISCOVERY_BLOCKED) {
+        log::info("Group {} under destroying, set member should be blocked.", group->GetGroupId());
+        continue;
+      }
       for (auto& rsi : all_rsi) {
         if (group->IsRsiMatching(rsi)) {
           log::info("Device {} match to group id {}", result->bd_addr, group->GetGroupId());
@@ -1667,6 +1687,7 @@ private:
 
     log::verbose("Expected group size {},  actual group Size: {}", csis_group->GetDesiredSize(),
                  csis_group->GetCurrentSize());
+    log::verbose("Current all CSIS groups count: {}", csis_groups_.size());
 
     if (csis_group->GetDesiredSize() == csis_group->GetCurrentSize()) {
       auto iter = devices_.cbegin();
@@ -1945,9 +1966,7 @@ private:
 
     device->connecting_actively = false;
     device->conn_id = evt.conn_id;
-    if (com::android::bluetooth::flags::gatt_queue_cleanup_connected()) {
-      BtaGattQueue::Clean(evt.conn_id);
-    }
+    BtaGattQueue::Clean(evt.conn_id);
     /* Verify bond */
     if (BTM_SecIsLeSecurityPending(device->addr)) {
       /* if security collision happened, wait for encryption done
@@ -2273,7 +2292,7 @@ private:
        * that its SIRK is different. Device connection was triggered by RSI
        * match for group.
        */
-      log::error("Joining device {}, does not match any existig group", address);
+      log::error("Joining device {}, does not match any existing group", address);
       BTA_DmSirkConfirmDeviceReply(address, false);
       return;
     }

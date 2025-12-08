@@ -15,6 +15,7 @@
  */
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -26,7 +27,6 @@
 #include "test/fake/fake_looper.h"
 #include "test/mock/mock_osi_allocator.h"
 #include "test/mock/mock_osi_thread.h"
-#include "types/raw_address.h"
 
 tBTM_CB btm_cb;
 
@@ -38,8 +38,6 @@ const BD_NAME kEmptyName = "";
 
 tBTM_REMOTE_DEV_NAME gBTM_REMOTE_DEV_NAME{};
 bool gBTM_REMOTE_DEV_NAME_sent{false};
-
-static constexpr uint8_t kNumCommandPackets = 1;
 
 }  // namespace
 

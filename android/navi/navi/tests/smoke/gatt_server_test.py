@@ -85,7 +85,7 @@ class GattServerTest(navi_test_base.TwoDevicesTestBase):
     async def test_add_service(self) -> None:
         """Tests opening a GATT server on DUT, adding a service discovered by REF.
 
-    Test Steps:
+    Test steps:
       1. Open a GATT server on DUT.
       2. Add a GATT service to the server instance.
       3. Discover services from REF.
@@ -122,7 +122,7 @@ class GattServerTest(navi_test_base.TwoDevicesTestBase):
     async def test_handle_characteristic_read_request(self) -> None:
         """Tests handling a characteristic read request.
 
-    Test Steps:
+    Test steps:
       1. Open a GATT server on DUT.
       2. Add a GATT service including a readable characteristic to the server
       instance.
@@ -174,7 +174,7 @@ class GattServerTest(navi_test_base.TwoDevicesTestBase):
     async def test_handle_characteristic_write_request(self) -> None:
         """Tests handling a characteristic write request.
 
-    Test Steps:
+    Test steps:
       1. Open a GATT server on DUT.
       2. Add a GATT service including a writable characteristic to the server
       instance.
@@ -229,7 +229,7 @@ class GattServerTest(navi_test_base.TwoDevicesTestBase):
     async def test_notify(self) -> None:
         """Tests sending GATT notification.
 
-    Test Steps:
+    Test steps:
       1. Add a GATT service including a characteristic to the server instance.
       2. Subscribe GATT characteristic from REF.
       3. Handle the subscribe request (CCCD write) from DUT.

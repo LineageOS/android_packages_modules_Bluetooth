@@ -28,7 +28,13 @@ import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.media.*
+import android.media.AudioDeviceCallback
+import android.media.AudioDeviceInfo
+import android.media.AudioManager
+import android.media.AudioRouting
+import android.media.AudioTrack
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.google.protobuf.BoolValue
 import com.google.protobuf.ByteString
@@ -43,8 +49,11 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -76,6 +85,8 @@ class A2dp(val context: Context) : A2DPImplBase(), Closeable {
     private val bluetoothA2dp = getProfileProxy<BluetoothA2dp>(context, BluetoothProfile.A2DP)
 
     private var audioTrack: AudioTrack? = null
+
+    private val handler = Handler(Looper.getMainLooper())
 
     init {
         scope = CoroutineScope(Dispatchers.Default.limitedParallelism(1))
@@ -166,9 +177,81 @@ class A2dp(val context: Context) : A2DPImplBase(), Closeable {
             // already.
             bluetoothA2dp.setActiveDevice(device)
 
+            // wait until a2dp device is added as an audio device
+            val audioDeviceAddedFlow = callbackFlow {
+                val audioDeviceCallback =
+                    object : AudioDeviceCallback() {
+                        override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>) {
+                            addedDevices
+                                .firstOrNull {
+                                    it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP &&
+                                        it.address.equals(device.getAddress())
+                                }
+                                ?.let {
+                                    Log.d(
+                                        TAG,
+                                        "TYPE_BLUETOOTH_A2DP added with address: ${it.address}",
+                                    )
+                                    trySendBlocking(null)
+                                }
+                        }
+                    }
+
+                audioManager.registerAudioDeviceCallback(audioDeviceCallback, handler)
+
+                val outputDevices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+                outputDevices
+                    .firstOrNull {
+                        it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP &&
+                            it.address == device.address
+                    }
+                    ?.let { trySendBlocking(null) }
+
+                awaitClose { audioManager.unregisterAudioDeviceCallback(audioDeviceCallback) }
+            }
+            audioDeviceAddedFlow.first()
+
             // Play an audio track.
             audioTrack = buildAudioTrack()
-            audioTrack?.play() ?: throw RuntimeException("audioTrack is null")
+            val localAudioTrack = audioTrack ?: throw RuntimeException("audioTrack is null")
+            localAudioTrack.play()
+
+            // wait a2dp device is selected as routed device
+            val audioRoutingFlow = callbackFlow {
+                val audioRoutingListener =
+                    object : AudioRouting.OnRoutingChangedListener {
+                        override fun onRoutingChanged(router: AudioRouting) {
+                            if (router.routedDevice.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP) {
+                                Log.d(TAG, "Route to TYPE_BLUETOOTH_A2DP")
+                                trySendBlocking(null)
+                            } else {
+                                val outputDevices =
+                                    audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+                                for (outputDevice in outputDevices) {
+                                    Log.d(
+                                        TAG,
+                                        "available output device in listener:${outputDevice.type}",
+                                    )
+                                    if (outputDevice.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP) {
+                                        val result = router.setPreferredDevice(outputDevice)
+                                        Log.d(TAG, "setPreferredDevice result:$result")
+                                        trySendBlocking(null)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                localAudioTrack.addOnRoutingChangedListener(audioRoutingListener, handler)
+
+                if (localAudioTrack.routedDevice.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP) {
+                    Log.d(TAG, "already route to TYPE_BLUETOOTH_A2DP")
+                    trySendBlocking(null)
+                }
+
+                awaitClose { localAudioTrack.removeOnRoutingChangedListener(audioRoutingListener) }
+            }
+            audioRoutingFlow.first()
 
             // If A2dp is not already playing, wait for it
             if (!bluetoothA2dp.isA2dpPlaying(device)) {

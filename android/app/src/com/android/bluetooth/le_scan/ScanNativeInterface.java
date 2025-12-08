@@ -17,54 +17,30 @@
 package com.android.bluetooth.le_scan;
 
 import android.annotation.Nullable;
-import android.os.RemoteException;
-import android.util.Log;
-
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /** BLE Scan Native Interface to/from JNI. */
 public class ScanNativeInterface {
-    private static final String TAG = ScanNativeInterface.class.getSimpleName();
-
-    private static ScanNativeInterface sInterface;
+    private final ScanController mScanController;
 
     private CountDownLatch mLatch = new CountDownLatch(1);
-    @Nullable private ScanController mScanController;
 
-    private ScanNativeInterface() {}
-
-    /**
-     * This class is a singleton because native library should only be loaded once
-     *
-     * @return default instance
-     */
-    public static ScanNativeInterface getInstance() {
-        synchronized (ScanNativeInterface.class) {
-            if (sInterface == null) {
-                sInterface = new ScanNativeInterface();
-            }
-        }
-        return sInterface;
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    public static void setInstance(ScanNativeInterface instance) {
-        synchronized (ScanNativeInterface.class) {
-            sInterface = instance;
-        }
-    }
-
-    void init(ScanController scanController) {
+    ScanNativeInterface(ScanController scanController) {
         mScanController = scanController;
+    }
+
+    void init() {
         initializeNative();
     }
 
     void cleanup() {
         cleanupNative();
+    }
+
+    private void doOnScanThread(Runnable r) {
+        mScanController.doOnScanThread(r);
     }
 
     /* Native methods */
@@ -77,7 +53,7 @@ public class ScanNativeInterface {
 
     private native void unregisterScannerNative(int scannerId);
 
-    private native void gattClientScanNative(boolean start);
+    private native void scanNative(boolean start);
 
     private native void gattSetScanParametersNative(
             int clientIf1m,
@@ -89,41 +65,41 @@ public class ScanNativeInterface {
             int scanPhy);
 
     /************************** Filter related native methods ********************************/
-    private native void gattClientScanFilterAddNative(
+    private native void scanFilterAddNative(
             int clientId, ScanFilterQueue.Entry[] entries, int filterIndex);
 
-    private native void gattClientScanFilterParamAddNative(FilterParams filtValue);
+    private native void scanFilterParamAddNative(FilterParams filtValue);
 
     // Note this effectively remove scan filters for ALL clients.
-    private native void gattClientScanFilterParamClearAllNative(int clientIf);
+    private native void scanFilterParamClearAllNative(int clientIf);
 
-    private native void gattClientScanFilterParamDeleteNative(int clientIf, int filtIndex);
+    private native void scanFilterParamDeleteNative(int clientIf, int filtIndex);
 
-    private native void gattClientScanFilterClearNative(int clientIf, int filterIndex);
+    private native void scanFilterClearNative(int clientIf, int filterIndex);
 
-    private native void gattClientScanFilterEnableNative(int clientIf, boolean enable);
+    private native void scanFilterEnableNative(int clientIf, boolean enable);
 
     /************************** MSFT scan related native methods *****************************/
-    private native boolean gattClientIsMsftSupportedNative();
+    private native boolean isMsftSupportedNative();
 
-    private native void gattClientMsftAdvMonitorAddNative(
+    private native void msftAdvMonitorAddNative(
             MsftAdvMonitor.Monitor msft_adv_monitor,
             MsftAdvMonitor.Pattern[] msft_adv_monitor_patterns,
             MsftAdvMonitor.Address msft_adv_monitor_address,
             int filter_index);
 
-    private native void gattClientMsftAdvMonitorRemoveNative(int filter_index, int monitor_handle);
+    private native void msftAdvMonitorRemoveNative(int filter_index, int monitor_handle);
 
-    private native void gattClientMsftAdvMonitorEnableNative(boolean enable);
+    private native void msftAdvMonitorEnableNative(boolean enable);
 
     /************************** Batch related native methods *********************************/
-    private native void gattClientConfigBatchScanStorageNative(
+    private native void configBatchScanStorageNative(
             int clientIf,
             int maxFullReportsPercent,
             int maxTruncatedReportsPercent,
             int notifyThresholdPercent);
 
-    private native void gattClientStartBatchScanNative(
+    private native void startBatchScanNative(
             int clientIf,
             int scanMode,
             int scanIntervalUnit,
@@ -131,27 +107,27 @@ public class ScanNativeInterface {
             int addressType,
             int discardRule);
 
-    private native void gattClientStopBatchScanNative(int clientIf);
+    private native void stopBatchScanNative(int clientIf);
 
-    private native void gattClientReadScanReportsNative(int clientIf, int scanType);
+    private native void readScanReportsNative(int clientIf, int scanType);
 
     /** Register BLE scanner */
-    public void registerScanner(long appUuidLsb, long appUuidMsb) {
+    void registerScanner(long appUuidLsb, long appUuidMsb) {
         registerScannerNative(appUuidLsb, appUuidMsb);
     }
 
     /** Unregister BLE scanner */
-    public void unregisterScanner(int scannerId) {
+    void unregisterScanner(int scannerId) {
         unregisterScannerNative(scannerId);
     }
 
     /** Enable/disable BLE scan */
-    public void gattClientScan(boolean start) {
-        gattClientScanNative(start);
+    void scan(boolean start) {
+        scanNative(start);
     }
 
     /** Configure BLE scan parameters */
-    public void gattSetScanParameters(
+    void gattSetScanParameters(
             int clientIf1m,
             int scanInterval1m,
             int scanWindow1m,
@@ -170,49 +146,48 @@ public class ScanNativeInterface {
     }
 
     /** Add BLE scan filter */
-    public void gattClientScanFilterAdd(
-            int clientId, ScanFilterQueue.Entry[] entries, int filterIndex) {
-        gattClientScanFilterAddNative(clientId, entries, filterIndex);
+    void scanFilterAdd(int clientId, ScanFilterQueue.Entry[] entries, int filterIndex) {
+        scanFilterAddNative(clientId, entries, filterIndex);
     }
 
     /** Add BLE scan filter parameters */
-    public void gattClientScanFilterParamAdd(FilterParams filtValue) {
-        gattClientScanFilterParamAddNative(filtValue);
+    void scanFilterParamAdd(FilterParams filtValue) {
+        scanFilterParamAddNative(filtValue);
     }
 
     /** Clear all BLE scan filter parameters */
     // Note this effectively remove scan filters for ALL clients.
-    public void gattClientScanFilterParamClearAll(int clientIf) {
-        gattClientScanFilterParamClearAllNative(clientIf);
+    void scanFilterParamClearAll(int clientIf) {
+        scanFilterParamClearAllNative(clientIf);
     }
 
     /** Delete BLE scan filter parameters */
-    public void gattClientScanFilterParamDelete(int clientIf, int filtIndex) {
-        gattClientScanFilterParamDeleteNative(clientIf, filtIndex);
+    void scanFilterParamDelete(int clientIf, int filtIndex) {
+        scanFilterParamDeleteNative(clientIf, filtIndex);
     }
 
     /** Clear BLE scan filter */
-    public void gattClientScanFilterClear(int clientIf, int filterIndex) {
-        gattClientScanFilterClearNative(clientIf, filterIndex);
+    void scanFilterClear(int clientIf, int filterIndex) {
+        scanFilterClearNative(clientIf, filterIndex);
     }
 
     /** Enable/disable BLE scan filter */
-    public void gattClientScanFilterEnable(int clientIf, boolean enable) {
-        gattClientScanFilterEnableNative(clientIf, enable);
+    void scanFilterEnable(int clientIf, boolean enable) {
+        scanFilterEnableNative(clientIf, enable);
     }
 
     /** Check if MSFT HCI extension is supported */
-    public boolean gattClientIsMsftSupported() {
-        return gattClientIsMsftSupportedNative();
+    boolean isMsftSupported() {
+        return isMsftSupportedNative();
     }
 
     /** Add a MSFT Advertisement Monitor */
-    public void gattClientMsftAdvMonitorAdd(
+    void msftAdvMonitorAdd(
             MsftAdvMonitor.Monitor msft_adv_monitor,
             MsftAdvMonitor.Pattern[] msft_adv_monitor_patterns,
             MsftAdvMonitor.Address msft_adv_monitor_address,
             int filter_index) {
-        gattClientMsftAdvMonitorAddNative(
+        msftAdvMonitorAddNative(
                 msft_adv_monitor,
                 msft_adv_monitor_patterns,
                 msft_adv_monitor_address,
@@ -220,24 +195,26 @@ public class ScanNativeInterface {
     }
 
     /** Remove a MSFT Advertisement Monitor */
-    public void gattClientMsftAdvMonitorRemove(int filter_index) {
-        int monitor_handle = mScanController.msftMonitorHandleFromFilterIndex(filter_index);
+    void msftAdvMonitorRemove(int filter_index) {
+        final int monitor_handle =
+                mScanController.fetchOnScanThread(
+                        () -> mScanController.msftMonitorHandleFromFilterIndex(filter_index), -1);
         if (monitor_handle < 0) return;
-        gattClientMsftAdvMonitorRemoveNative(filter_index, monitor_handle);
+        msftAdvMonitorRemoveNative(filter_index, monitor_handle);
     }
 
     /** Enable a MSFT Advertisement Monitor */
-    public void gattClientMsftAdvMonitorEnable(boolean enable) {
-        gattClientMsftAdvMonitorEnableNative(enable);
+    void msftAdvMonitorEnable(boolean enable) {
+        msftAdvMonitorEnableNative(enable);
     }
 
     /** Configure BLE batch scan storage */
-    public void gattClientConfigBatchScanStorage(
+    void configBatchScanStorage(
             int clientIf,
             int maxFullReportsPercent,
             int maxTruncatedReportsPercent,
             int notifyThresholdPercent) {
-        gattClientConfigBatchScanStorageNative(
+        configBatchScanStorageNative(
                 clientIf,
                 maxFullReportsPercent,
                 maxTruncatedReportsPercent,
@@ -245,25 +222,25 @@ public class ScanNativeInterface {
     }
 
     /** Enable BLE batch scan with the parameters */
-    public void gattClientStartBatchScan(
+    void startBatchScan(
             int clientIf,
             int scanMode,
             int scanIntervalUnit,
             int scanWindowUnit,
             int addressType,
             int discardRule) {
-        gattClientStartBatchScanNative(
+        startBatchScanNative(
                 clientIf, scanMode, scanIntervalUnit, scanWindowUnit, addressType, discardRule);
     }
 
     /** Disable BLE batch scan */
-    public void gattClientStopBatchScan(int clientIf) {
-        gattClientStopBatchScanNative(clientIf);
+    void stopBatchScan(int clientIf) {
+        stopBatchScanNative(clientIf);
     }
 
     /** Read BLE batch scan reports */
-    public void gattClientReadScanReports(int clientIf, int scanType) {
-        gattClientReadScanReportsNative(clientIf, scanType);
+    void readScanReports(int clientIf, int scanType) {
+        readScanReportsNative(clientIf, scanType);
     }
 
     void callbackDone() {
@@ -297,90 +274,65 @@ public class ScanNativeInterface {
             int periodicAdvInt,
             byte[] advData,
             String originalAddress) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
-        mScanController.onScanResult(
-                eventType,
-                addressType,
-                address,
-                primaryPhy,
-                secondaryPhy,
-                advertisingSid,
-                txPower,
-                rssi,
-                periodicAdvInt,
-                advData,
-                originalAddress);
+        doOnScanThread(
+                () ->
+                        mScanController.onScanResult(
+                                eventType,
+                                addressType,
+                                address,
+                                primaryPhy,
+                                secondaryPhy,
+                                advertisingSid,
+                                txPower,
+                                rssi,
+                                periodicAdvInt,
+                                advData,
+                                originalAddress));
     }
 
-    void onScannerRegistered(int status, int scannerId, long uuidLsb, long uuidMsb)
-            throws RemoteException {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
-        mScanController.onScannerRegistered(status, scannerId, uuidLsb, uuidMsb);
+    void onScannerRegistered(int status, int scannerId, long uuidLsb, long uuidMsb) {
+        doOnScanThread(
+                () -> mScanController.onScannerRegistered(status, scannerId, uuidLsb, uuidMsb));
     }
 
     void onScanFilterEnableDisabled(int action, int status, int clientIf) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
-        mScanController.onScanFilterEnableDisabled(action, status, clientIf);
+        doOnScanThread(() -> mScanController.onScanFilterEnableDisabled(action, status, clientIf));
     }
 
     void onScanFilterParamsConfigured(int action, int status, int clientIf, int availableSpace) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
-        mScanController.onScanFilterParamsConfigured(action, status, clientIf, availableSpace);
+        doOnScanThread(
+                () ->
+                        mScanController.onScanFilterParamsConfigured(
+                                action, status, clientIf, availableSpace));
     }
 
     void onScanFilterConfig(
             int action, int status, int clientIf, int filterType, int availableSpace) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
-        mScanController.onScanFilterConfig(action, status, clientIf, filterType, availableSpace);
+        doOnScanThread(
+                () ->
+                        mScanController.onScanFilterConfig(
+                                action, status, clientIf, filterType, availableSpace));
     }
 
     void onBatchScanStorageConfigured(int status, int clientIf) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
-        mScanController.onBatchScanStorageConfigured(status, clientIf);
+        doOnScanThread(() -> mScanController.onBatchScanStorageConfigured(status, clientIf));
     }
 
     void onBatchScanStartStopped(int startStopAction, int status, int clientIf) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
-        mScanController.onBatchScanStartStopped(startStopAction, status, clientIf);
+        doOnScanThread(
+                () -> mScanController.onBatchScanStartStopped(startStopAction, status, clientIf));
     }
 
     void onBatchScanReports(
-            int status, int scannerId, int reportType, int numRecords, byte[] recordData)
-            throws RemoteException {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
-        mScanController.onBatchScanReports(status, scannerId, reportType, numRecords, recordData);
+            int status, int scannerId, int reportType, int numRecords, byte[] recordData) {
+        doOnScanThread(
+                () ->
+                        mScanController.onBatchScanReports(
+                                status, scannerId, reportType, numRecords, recordData));
     }
 
     void onBatchScanThresholdCrossed(int clientIf) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
-        mScanController.onBatchScanThresholdCrossed(clientIf);
+        doOnScanThread(() -> mScanController.onBatchScanThresholdCrossed(clientIf));
     }
 
     @Nullable
@@ -398,10 +350,6 @@ public class ScanNativeInterface {
             int txPower,
             int rssiValue,
             int timeStamp) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return null;
-        }
         return mScanController.createOnTrackAdvFoundLostObject(
                 clientIf,
                 advPacketLen,
@@ -418,43 +366,24 @@ public class ScanNativeInterface {
                 timeStamp);
     }
 
-    void onTrackAdvFoundLost(AdvtFilterOnFoundOnLostInfo trackingInfo) throws RemoteException {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
-        mScanController.onTrackAdvFoundLost(trackingInfo);
+    void onTrackAdvFoundLost(AdvtFilterOnFoundOnLostInfo trackingInfo) {
+        doOnScanThread(() -> mScanController.onTrackAdvFoundLost(trackingInfo));
     }
 
-    void onScanParamSetupCompleted(int status, int scannerId) throws RemoteException {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
-        mScanController.onScanParamSetupCompleted(status, scannerId);
+    void onScanParamSetupCompleted(int status, int scannerId) {
+        doOnScanThread(() -> mScanController.onScanParamSetupCompleted(status, scannerId));
     }
 
     void onMsftAdvMonitorAdd(int filter_index, int monitor_handle, int status) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
-        mScanController.onMsftAdvMonitorAdd(filter_index, monitor_handle, status);
+        doOnScanThread(
+                () -> mScanController.onMsftAdvMonitorAdd(filter_index, monitor_handle, status));
     }
 
     void onMsftAdvMonitorRemove(int filter_index, int status) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
-        mScanController.onMsftAdvMonitorRemove(filter_index, status);
+        doOnScanThread(() -> mScanController.onMsftAdvMonitorRemove(filter_index, status));
     }
 
-    void onMsftAdvMonitorEnable(int status) {
-        if (mScanController == null) {
-            Log.e(TAG, "ScanController is null!");
-            return;
-        }
-        mScanController.onMsftAdvMonitorEnable(status);
+    void onMsftAdvMonitorEnable(boolean enable, int status) {
+        doOnScanThread(() -> mScanController.onMsftAdvMonitorEnable(enable, status));
     }
 }

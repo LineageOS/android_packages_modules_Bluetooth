@@ -31,6 +31,7 @@
 #include "btif/include/btif_hd.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <string.h>
 
 #include <cstddef>
@@ -52,7 +53,6 @@
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
-#include "types/raw_address.h"
 
 #define BTIF_HD_APP_NAME_LEN 50
 #define BTIF_HD_APP_DESCRIPTION_LEN 50

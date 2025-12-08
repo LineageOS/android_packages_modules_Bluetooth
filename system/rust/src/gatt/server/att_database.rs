@@ -60,3 +60,17 @@ impl AttPermissions {
         self.contains(AttPermissions::INDICATE)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_att_permissions() {
+        let p = AttPermissions::READABLE | AttPermissions::WRITABLE_WITH_RESPONSE;
+        assert!(p.readable());
+        assert!(p.writable_with_response());
+        assert!(!p.writable_without_response());
+        assert!(!p.indicate());
+    }
+}

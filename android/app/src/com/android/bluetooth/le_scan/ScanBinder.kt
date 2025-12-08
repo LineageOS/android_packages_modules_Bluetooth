@@ -36,6 +36,8 @@ import android.util.Log
 import com.android.bluetooth.Utils.checkScanPermissionForDataDelivery
 import com.android.bluetooth.btservice.AdapterService
 
+private const val TAG = "ScanBinder"
+
 class ScanBinder(
     private val adapterService: AdapterService,
     private val scanController: ScanController,
@@ -45,6 +47,17 @@ class ScanBinder(
 
     fun cleanup() {
         isAvailable = false
+    }
+
+    @RequiresPermission(BLUETOOTH_SCAN)
+    private fun withControllerRunOnScanThread(
+        source: AttributionSource,
+        method: String,
+        block: ScanController.() -> Unit,
+    ) {
+        getController(source, method)?.let { controller ->
+            controller.doOnScanThread { controller.block() }
+        }
     }
 
     @RequiresPermission(BLUETOOTH_SCAN)
@@ -66,11 +79,13 @@ class ScanBinder(
         if (workSource != null) {
             adapterService.enforceCallingOrSelfPermission(UPDATE_DEVICE_STATS, null)
         }
-        getController(source, "registerScanner")?.registerScanner(callback, workSource, source)
+        withControllerRunOnScanThread(source, "registerScanner") {
+            registerScanner(callback, workSource, source)
+        }
     }
 
     override fun unregisterScanner(scannerId: Int, source: AttributionSource) {
-        getController(source, "unregisterScanner")?.unregisterScanner(scannerId)
+        withControllerRunOnScanThread(source, "unregisterScanner") { unregisterScanner(scannerId) }
     }
 
     override fun startScan(
@@ -81,7 +96,9 @@ class ScanBinder(
     ) {
         enforcePrivilegedPermissionIfNeeded(settings)
         enforcePrivilegedPermissionIfNeeded(filters)
-        getController(source, "startScan")?.startScan(scannerId, settings, filters, source)
+        withControllerRunOnScanThread(source, "startScan") {
+            startScan(scannerId, settings, filters, source)
+        }
     }
 
     override fun registerPiAndStartScan(
@@ -92,20 +109,23 @@ class ScanBinder(
     ) {
         enforcePrivilegedPermissionIfNeeded(settings)
         enforcePrivilegedPermissionIfNeeded(filters)
-        getController(source, "registerPiAndStartScan")
-            ?.registerPiAndStartScan(intent, settings, filters, source)
+        withControllerRunOnScanThread(source, "registerPiAndStartScan") {
+            registerPiAndStartScan(intent, settings, filters, source)
+        }
     }
 
     override fun stopScan(scannerId: Int, source: AttributionSource) {
-        getController(source, "stopScan")?.stopScan(scannerId)
+        withControllerRunOnScanThread(source, "stopScan") { stopScan(scannerId) }
     }
 
     override fun stopScanForIntent(intent: PendingIntent, source: AttributionSource) {
-        getController(source, "stopScanForIntent")?.stopScan(intent)
+        withControllerRunOnScanThread(source, "stopScanForIntent") { stopScan(intent) }
     }
 
     override fun flushPendingBatchResults(scannerId: Int, source: AttributionSource) {
-        getController(source, "flushPendingBatchResults")?.flushPendingBatchResults(scannerId)
+        withControllerRunOnScanThread(source, "flushPendingBatchResults") {
+            flushPendingBatchResults(scannerId)
+        }
     }
 
     override fun registerSync(
@@ -115,12 +135,13 @@ class ScanBinder(
         callback: IPeriodicAdvertisingCallback,
         source: AttributionSource,
     ) {
-        getController(source, "registerSync")
-            ?.registerSync(scanResult, skip, timeout, callback, source)
+        withControllerRunOnScanThread(source, "registerSync") {
+            registerSync(scanResult, skip, timeout, callback)
+        }
     }
 
     override fun unregisterSync(callback: IPeriodicAdvertisingCallback, source: AttributionSource) {
-        getController(source, "unregisterSync")?.unregisterSync(callback, source)
+        withControllerRunOnScanThread(source, "unregisterSync") { unregisterSync(callback) }
     }
 
     override fun transferSync(
@@ -129,7 +150,9 @@ class ScanBinder(
         syncHandle: Int,
         source: AttributionSource,
     ) {
-        getController(source, "transferSync")?.transferSync(device, serviceData, syncHandle, source)
+        withControllerRunOnScanThread(source, "transferSync") {
+            transferSync(device, serviceData, syncHandle)
+        }
     }
 
     override fun transferSetInfo(
@@ -139,13 +162,14 @@ class ScanBinder(
         callback: IPeriodicAdvertisingCallback,
         source: AttributionSource,
     ) {
-        getController(source, "transferSetInfo")
-            ?.transferSetInfo(device, serviceData, advHandle, callback, source)
+        withControllerRunOnScanThread(source, "transferSetInfo") {
+            transferSetInfo(device, serviceData, advHandle, callback)
+        }
     }
 
     override fun numHwTrackFiltersAvailable(source: AttributionSource): Int {
-        return getController(source, "numHwTrackFiltersAvailable")
-            ?.numHwTrackFiltersAvailable(source) ?: 0
+        val controller = getController(source, "numHwTrackFiltersAvailable") ?: return 0
+        return controller.fetchOnScanThread({ controller.numHwTrackFiltersAvailable() }, 0)
     }
 
     @SuppressLint("AndroidFrameworkRequiresPermission")
@@ -167,17 +191,17 @@ class ScanBinder(
         }
 
         // Ambient discovery mode, needs privileged permission.
-        if (settings.getScanMode() == ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY) {
+        if (settings.scanMode == ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY) {
             return true
         }
 
         // Regular scan, no special permission.
-        if (settings.getReportDelayMillis() == 0L) {
+        if (settings.reportDelayMillis == 0L) {
             return false
         }
 
         // Batch scan, truncated mode needs permission.
-        return settings.getScanResultType() == ScanSettings.SCAN_RESULT_TYPE_ABBREVIATED
+        return settings.scanResultType == ScanSettings.SCAN_RESULT_TYPE_ABBREVIATED
     }
 
     /**
@@ -192,7 +216,7 @@ class ScanBinder(
         for (filter in filters) {
             // The only case to enforce here is if there is an address. If there is an address,
             // enforce if the correct combination criteria is met.
-            if (filter.getDeviceAddress() != null) {
+            if (filter.deviceAddress != null) {
                 // At this point we have an address, that means a caller used the
                 // setDeviceAddress(address) public API for the ScanFilter. We don't want to enforce
                 // if the type is PUBLIC and the IRK is null. However, if we have a different type
@@ -200,8 +224,7 @@ class ScanBinder(
                 // type) or setDeviceAddress(address, type, irk) which are both @SystemApi and
                 // require permissions to be enforced
                 if (
-                    filter.getAddressType() == BluetoothDevice.ADDRESS_TYPE_PUBLIC &&
-                        filter.getIrk() == null
+                    filter.addressType == BluetoothDevice.ADDRESS_TYPE_PUBLIC && filter.irk == null
                 ) {
                     // Do not enforce
                 } else {
@@ -210,9 +233,5 @@ class ScanBinder(
                 }
             }
         }
-    }
-
-    companion object {
-        private val TAG = ScanBinder::class.java.simpleName
     }
 }

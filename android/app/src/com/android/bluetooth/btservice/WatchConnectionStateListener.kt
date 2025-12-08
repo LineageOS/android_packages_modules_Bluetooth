@@ -27,6 +27,8 @@ import android.util.Log
 import com.android.bluetooth.Utils.isWatch
 import com.android.bluetooth.Utils.remoteDeviceIsWatch
 
+private const val TAG = "WatchConnectionStateListener"
+
 /**
  * On Watch device: This class will inform the SystemServer if a device is connected (of any type !)
  *
@@ -35,7 +37,7 @@ import com.android.bluetooth.Utils.remoteDeviceIsWatch
  */
 class WatchConnectionStateListener(private val adapterService: AdapterService, looper: Looper) :
     OnAssociationsChangedListener {
-    private val TAG = "WatchConnectionStateListener"
+
     // Map value is the bitmask of the connected transport
     private val connectedDevices: MutableMap<BluetoothDevice, Int> = mutableMapOf()
     private var associatedWatches: Set<BluetoothDevice> = setOf()
@@ -45,7 +47,7 @@ class WatchConnectionStateListener(private val adapterService: AdapterService, l
         if (!isWatch(adapterService)) {
             val cdm = adapterService.getSystemService(CompanionDeviceManager::class.java)
             cdm.addOnAssociationsChangedListener(Handler(looper)::post, this)
-            onAssociationsChanged(cdm.getAllAssociations())
+            onAssociationsChanged(cdm.allAssociations)
         }
     }
 

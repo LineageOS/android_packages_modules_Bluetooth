@@ -18,6 +18,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 
 #include <optional>
 #include <string>
@@ -28,7 +29,6 @@
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/sec_hci_link_interface.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 using namespace bluetooth::hci;

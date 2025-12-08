@@ -55,12 +55,12 @@ public class BluetoothMapUtils {
      *       in stead of a bit to indicate the message type. Then 4
      *       bit can be use for 16 different message types.
      */
-    private static final long HANDLE_TYPE_MASK = (((long) 0xff) << 56);
-    private static final long HANDLE_TYPE_MMS_MASK = (((long) 0x01) << 56);
-    private static final long HANDLE_TYPE_EMAIL_MASK = (((long) 0x02) << 56);
-    private static final long HANDLE_TYPE_SMS_GSM_MASK = (((long) 0x04) << 56);
-    private static final long HANDLE_TYPE_SMS_CDMA_MASK = (((long) 0x08) << 56);
-    private static final long HANDLE_TYPE_IM_MASK = (((long) 0x10) << 56);
+    private static final long HANDLE_TYPE_MASK = (0xffL << 56);
+    private static final long HANDLE_TYPE_MMS_MASK = (0x01L << 56);
+    private static final long HANDLE_TYPE_EMAIL_MASK = (0x02L << 56);
+    private static final long HANDLE_TYPE_SMS_GSM_MASK = (0x04L << 56);
+    private static final long HANDLE_TYPE_SMS_CDMA_MASK = (0x08L << 56);
+    private static final long HANDLE_TYPE_IM_MASK = (0x10L << 56);
 
     public static final long CONVO_ID_TYPE_SMS_MMS = 1;
     public static final long CONVO_ID_TYPE_EMAIL_IM = 2;
@@ -128,6 +128,8 @@ public class BluetoothMapUtils {
             return NONE;
         }
     }
+
+    private BluetoothMapUtils() {}
 
     public static void printCursor(Cursor c) {
         StringBuilder sb = new StringBuilder();

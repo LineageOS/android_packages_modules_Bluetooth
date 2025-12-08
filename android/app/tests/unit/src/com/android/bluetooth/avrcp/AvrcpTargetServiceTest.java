@@ -18,7 +18,6 @@ package com.android.bluetooth.avrcp;
 
 import static android.Manifest.permission.MEDIA_CONTENT_CONTROL;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -29,6 +28,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.media.AudioDeviceCallback;
@@ -37,14 +38,15 @@ import android.media.session.MediaSessionManager;
 import android.net.Uri;
 import android.os.UserManager;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.audio_util.Image;
 import com.android.bluetooth.audio_util.Metadata;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;
@@ -65,11 +67,14 @@ public class AvrcpTargetServiceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AdapterService mMockAdapterService;
+    @Mock private BluetoothManager mBluetoothManager;
+    @Mock private BluetoothAdapter mAdapter;
     @Mock private AudioManager mMockAudioManager;
     @Mock private AvrcpNativeInterface mMockNativeInterface;
     @Mock private Resources mMockResources;
     @Mock private SharedPreferences mMockSharedPreferences;
     @Mock private SharedPreferences.Editor mMockSharedPreferencesEditor;
+    @Mock private UserManager mUserManager;
 
     @Captor private ArgumentCaptor<AudioDeviceCallback> mAudioDeviceCb;
 
@@ -92,11 +97,12 @@ public class AvrcpTargetServiceTest {
 
         mockGetSystemService(mMockAdapterService, AudioManager.class, mMockAudioManager);
         mockGetSystemService(mMockAdapterService, MediaSessionManager.class, mMediaSessionManager);
+        mockGetSystemService(mMockAdapterService, BluetoothManager.class, mBluetoothManager);
+        doReturn(mAdapter).when(mBluetoothManager).getAdapter();
 
         doReturn(mLooper.getNewExecutor()).when(mMockAdapterService).getMainExecutor();
 
         doReturn(mMockAdapterService).when(mMockAdapterService).getApplicationContext();
-        mockGetSystemService(mMockAdapterService, UserManager.class);
         doReturn(mMockResources).when(mMockAdapterService).getResources();
 
         doReturn(mMockSharedPreferencesEditor).when(mMockSharedPreferences).edit();
@@ -159,6 +165,7 @@ public class AvrcpTargetServiceTest {
                         mMockAudioManager,
                         mMockNativeInterface,
                         volumeManager,
+                        mUserManager,
                         mLooper.getLooper());
 
         verify(mMockAudioManager).registerAudioDeviceCallback(mAudioDeviceCb.capture(), any());

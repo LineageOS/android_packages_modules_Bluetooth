@@ -118,7 +118,7 @@ protected:
     InitRangingService();
     gatt::SetMockBtaGattInterface(&mock_gatt_interface_);
     bluetooth::manager::SetMockBtmInterface(&btm_interface_);
-    RawAddress::FromString("11:22:33:44:55:66", test_address_);
+    test_address_ = RawAddress::FromString("11:22:33:44:55:66").value();
     VendorSpecificCharacteristic vendor_specific_characteristic1, vendor_specific_characteristic2;
     vendor_specific_characteristic1.characteristicUuid_ = kVendorSpecificCharacteristic1;
     vendor_specific_characteristic1.reply_value_ = {0x01, 0x02, 0x03};
@@ -478,7 +478,7 @@ TEST_F(RasClientTestNoInit, SetFirstSegmentTimeoutInLowPowerMode) {
 
   EXPECT_CALL(mock_ras_client_callbacks_, OnRemoteDataTimeout(test_address_));
 
-  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  fake_osi_alarm_expired(fake_osi_alarm_set_on_mloop_);
 
   DisconnectGatt();
 }

@@ -24,23 +24,23 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 
 #include <deque>
 #include <map>
 
 #include "base/functional/callback.h"
 #include "btif/include/btif_storage.h"
+#include "device/include/interop.h"
 #include "eatt/eatt.h"
 #include "gatt_api.h"
 #include "gatt_int.h"
-#include "device/include/interop.h"
 #include "internal_include/bt_target.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
-#include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_ble_addr.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
+#include "stack/include/btm_sec_api.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;

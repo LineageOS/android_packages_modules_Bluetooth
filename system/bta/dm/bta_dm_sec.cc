@@ -17,6 +17,8 @@
 #define LOG_TAG "bt_bta_dm_sec"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
 
 #include <cstdint>
 
@@ -34,8 +36,6 @@
 #include "stack/include/gatt_api.h"
 #include "stack/include/rnr_interface.h"
 #include "stack/include/security_client_callbacks.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

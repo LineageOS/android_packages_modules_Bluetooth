@@ -16,7 +16,7 @@
 
 package com.android.bluetooth.le_scan;
 
-// All values of this class are accessed from native; see com_android_bluetooth_gatt.cpp
+// All values of this class are accessed from native; see com_android_bluetooth_scan.cpp
 record FilterParams(
         int clientInterface,
         int filterIndex,

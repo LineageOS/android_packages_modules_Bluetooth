@@ -20,6 +20,8 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothQualityReport
+import android.bluetooth.OobData
 import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
@@ -36,6 +38,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
+import android.os.ParcelUuid
 import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.android.bluetooth.snippet.Utils.postSnippetEvent
@@ -45,15 +48,17 @@ import com.google.android.mobly.snippet.rpc.Rpc
 import com.google.android.mobly.snippet.rpc.RpcOptional
 import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.channels.trySendBlocking
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.timeout
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 
 // Permissions are requested with UiAutomation.
 @SuppressLint("MissingPermission")
@@ -67,6 +72,8 @@ class BluetoothAdapterSnippet : Snippet {
     private val scanners = mutableMapOf<String, ScanCallback>()
     private val adapterState = MutableStateFlow(bluetoothAdapter.state)
     private val broadcastReceivers = mutableMapOf<String, BroadcastReceiver>()
+    private val bqrCallbacks =
+        mutableMapOf<String, BluetoothAdapter.BluetoothQualityReportReadyCallback>()
 
     init {
         instrumentation.uiAutomation.adoptShellPermissionIdentity()
@@ -91,24 +98,37 @@ class BluetoothAdapterSnippet : Snippet {
     /** Resets Bluetooth, waits for auto-restart, and returns whether everything succeeds. */
     @Rpc(description = "Completely reset Bluetooth")
     fun factoryReset(): Boolean = runBlocking {
+        val turningOff = async {
+            adapterState
+                .timeout(BLUETOOTH_ON_OFF_TIMEOUT)
+                .catch { exception ->
+                    if (exception is TimeoutCancellationException) {
+                        throw RuntimeException(
+                            "Bluetooth isn't turned off after ${BLUETOOTH_ON_OFF_TIMEOUT}, " +
+                                "final state=${BluetoothAdapter.nameForState(adapterState.value)}"
+                        )
+                    }
+                }
+                .first { it != BluetoothAdapter.STATE_OFF }
+        }
         val result = bluetoothAdapter.clearBluetooth()
         if (result) {
-            adapterState.timeout(BLUETOOTH_ON_OFF_TIMEOUT).firstOrNull {
-                it == BluetoothAdapter.STATE_OFF
-            }
-                ?: throw RuntimeException(
-                    "Bluetooth isn't turned off after ${BLUETOOTH_ON_OFF_TIMEOUT}, " +
-                        "final state=${BluetoothAdapter.nameForState(adapterState.value)}"
-                )
-            adapterState.timeout(BLUETOOTH_ON_OFF_TIMEOUT).firstOrNull {
-                it == BluetoothAdapter.STATE_ON
-            }
-                ?: throw RuntimeException(
-                    "Bluetooth isn't turned on after ${BLUETOOTH_ON_OFF_TIMEOUT}, " +
-                        "final state=${BluetoothAdapter.nameForState(adapterState.value)}"
-                )
+            turningOff.await()
+            adapterState
+                .timeout(BLUETOOTH_ON_OFF_TIMEOUT)
+                .catch { exception ->
+                    if (exception is TimeoutCancellationException) {
+                        throw RuntimeException(
+                            "Bluetooth isn't turned on after ${BLUETOOTH_ON_OFF_TIMEOUT}, " +
+                                "final state=${BluetoothAdapter.nameForState(adapterState.value)}"
+                        )
+                    }
+                }
+                .first { it == BluetoothAdapter.STATE_ON }
             // b/266611263: Delay to initialize the Bluetooth completely and to fix flakiness
             delay(1.seconds)
+        } else {
+            turningOff.cancel()
         }
         result
     }
@@ -162,6 +182,7 @@ class BluetoothAdapterSnippet : Snippet {
                 addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
                 addAction(BluetoothDevice.ACTION_FOUND)
                 addAction(BluetoothDevice.ACTION_BATTERY_LEVEL_CHANGED)
+                addAction(BluetoothDevice.ACTION_UUID)
             }
         broadcastReceivers[callbackId] =
             object : BroadcastReceiver() {
@@ -221,6 +242,21 @@ class BluetoothAdapterSnippet : Snippet {
                                     ),
                                 )
                             }
+                        BluetoothDevice.ACTION_UUID ->
+                            postSnippetEvent(callbackId, SnippetConstants.UUID_CHANGED) {
+                                putString(SnippetConstants.FIELD_DEVICE, device?.address)
+                                intent
+                                    .getParcelableArrayExtra(
+                                        BluetoothDevice.EXTRA_UUID,
+                                        ParcelUuid::class.java,
+                                    )
+                                    ?.let { uuids ->
+                                        putStringArray(
+                                            SnippetConstants.FIELD_UUID,
+                                            uuids.map { it.uuid.toString() }.toTypedArray(),
+                                        )
+                                    }
+                            }
                     }
                 }
             }
@@ -275,8 +311,67 @@ class BluetoothAdapterSnippet : Snippet {
                     addressType ?: BluetoothDevice.ADDRESS_TYPE_RANDOM,
                 )
             BluetoothDevice.TRANSPORT_BREDR -> bluetoothAdapter.getRemoteDevice(address)
+            BluetoothDevice.TRANSPORT_AUTO ->
+                if (addressType == null) {
+                    bluetoothAdapter.getRemoteDevice(address)
+                } else {
+                    bluetoothAdapter.getRemoteLeDevice(address, addressType)
+                }
             else -> throw IllegalArgumentException("Invalid transport type $transport")
         }.createBond(transport)
+    }
+
+    /** Creates bond to a remote device using out of band data, and returns true if successful. */
+    @Rpc(description = "Create bond to a device using out of band data")
+    fun createBondOutOfBand(
+        address: String,
+        transport: Int,
+        @RpcOptional addressType: Int?,
+        @RpcOptional remoteP192data: OobData?,
+        @RpcOptional remoteP256data: OobData?,
+    ): Boolean {
+        return when (transport) {
+            BluetoothDevice.TRANSPORT_LE ->
+                bluetoothAdapter.getRemoteLeDevice(
+                    address,
+                    addressType ?: BluetoothDevice.ADDRESS_TYPE_RANDOM,
+                )
+            BluetoothDevice.TRANSPORT_BREDR -> bluetoothAdapter.getRemoteDevice(address)
+            BluetoothDevice.TRANSPORT_AUTO ->
+                if (addressType == null) {
+                    bluetoothAdapter.getRemoteDevice(address)
+                } else {
+                    bluetoothAdapter.getRemoteLeDevice(address, addressType)
+                }
+            else -> throw IllegalArgumentException("Invalid transport type $transport")
+        }.createBondOutOfBand(transport, remoteP192data, remoteP256data)
+    }
+
+    /** Creates bond to a remote device using out of band data, and returns true if successful. */
+    @Rpc(description = "Create bond to a device using out of band data")
+    fun generateLocalOobData(transport: Int): OobData {
+        val deferred = CompletableDeferred<OobData>()
+        val callback =
+            object : BluetoothAdapter.OobDataCallback {
+                override fun onOobData(transport: Int, data: OobData) {
+                    Log.i(TAG, "onOobData transport: $transport, data: $data")
+                    deferred.complete(data)
+                }
+
+                override fun onError(errorCode: Int) {
+                    Log.i(TAG, "onError errorCode: $errorCode")
+                    deferred.completeExceptionally(
+                        RuntimeException("Failed to generate local OobData, errorCode=$errorCode")
+                    )
+                }
+            }
+        bluetoothAdapter.generateLocalOobData(transport, context.mainExecutor, callback)
+        return runBlocking {
+            withTimeoutOrNull(OOB_DATA_GENERATION_TIMEOUT) { deferred.await() }
+                ?: throw RuntimeException(
+                    "Failed to generate local OobData after ${OOB_DATA_GENERATION_TIMEOUT}"
+                )
+        }
     }
 
     @Rpc(description = "Remove bond to a device")
@@ -350,39 +445,34 @@ class BluetoothAdapterSnippet : Snippet {
         advertiseSettings: AdvertiseSettings,
         @RpcOptional advertiseData: AdvertiseData?,
         @RpcOptional scanResponse: AdvertiseData?,
-    ): String? {
+    ): String = runBlocking {
         val advertiser = bluetoothAdapter.bluetoothLeAdvertiser
-        var cookie: String? = null
+        val deferred = CompletableDeferred<Unit>()
+        val advertiseCallback =
+            object : AdvertiseCallback() {
+                override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
+                    deferred.complete(Unit)
+                }
 
-        val flow =
-            callbackFlow<AdvertiseCallback?> {
-                val advertiseCallback =
-                    object : AdvertiseCallback() {
-                        override fun onStartSuccess(settingsInEffect: AdvertiseSettings?) {
-                            super.onStartSuccess(settingsInEffect)
-                            val unused = trySendBlocking(this)
-                        }
-
-                        override fun onStartFailure(errorCode: Int) {
-                            super.onStartFailure(errorCode)
-                            val unused = trySendBlocking(null)
-                        }
-                    }
-
-                advertiser.startAdvertising(
-                    advertiseSettings,
-                    advertiseData,
-                    scanResponse,
-                    advertiseCallback,
-                )
-                awaitClose()
+                override fun onStartFailure(errorCode: Int) {
+                    deferred.completeExceptionally(
+                        RuntimeException("Advertising failed with error code $errorCode")
+                    )
+                }
             }
-        runBlocking {
-            flow.timeout(ADVERTISING_START_TIMEOUT).first()?.let { callback ->
-                cookie = UUID.randomUUID().toString().also { advertisers[it] = callback }
-            }
-        }
-        return cookie
+
+        advertiser.startAdvertising(
+            advertiseSettings,
+            advertiseData,
+            scanResponse,
+            advertiseCallback,
+        )
+
+        withTimeoutOrNull(ADVERTISING_START_TIMEOUT) { deferred.await() }
+            ?: throw RuntimeException("Advertising didn't start after ${ADVERTISING_START_TIMEOUT}")
+        val cookie = UUID.randomUUID().toString()
+        advertisers[cookie] = advertiseCallback
+        cookie
     }
 
     /**
@@ -397,39 +487,39 @@ class BluetoothAdapterSnippet : Snippet {
         @RpcOptional scanResponse: AdvertiseData?,
         @RpcOptional periodicAdvertisingParameters: PeriodicAdvertisingParameters?,
         @RpcOptional periodicAdvertisingData: AdvertiseData?,
-    ): String {
-        val flow =
-            callbackFlow<Pair<Int, AdvertisingSetCallback>> {
-                val advertisingSetCallback =
-                    object : AdvertisingSetCallback() {
-                        override fun onAdvertisingSetStarted(
-                            advertisingSet: AdvertisingSet,
-                            txPower: Int,
-                            status: Int,
-                        ) {
-                            val unused = trySendBlocking(Pair(status, this))
-                        }
+    ): String = runBlocking {
+        val deferred = CompletableDeferred<Unit>()
+        val advertisingSetCallback =
+            object : AdvertisingSetCallback() {
+                override fun onAdvertisingSetStarted(
+                    advertisingSet: AdvertisingSet,
+                    txPower: Int,
+                    status: Int,
+                ) {
+                    if (status == AdvertisingSetCallback.ADVERTISE_SUCCESS) {
+                        deferred.complete(Unit)
+                    } else {
+                        deferred.completeExceptionally(
+                            RuntimeException("Unable to start advertising, status=$status")
+                        )
                     }
+                }
+            }
 
-                bluetoothAdapter.bluetoothLeAdvertiser.startAdvertisingSet(
-                    advertiseSetParameters,
-                    advertiseData,
-                    scanResponse,
-                    periodicAdvertisingParameters,
-                    periodicAdvertisingData,
-                    advertisingSetCallback,
-                )
-                awaitClose()
-            }
-        return runBlocking {
-            val (status, callback) = flow.timeout(ADVERTISING_START_TIMEOUT).first()
-            if (status != AdvertisingSetCallback.ADVERTISE_SUCCESS) {
-                throw RuntimeException("Unable to start advertising, status=$status")
-            }
-            val cookie = UUID.randomUUID().toString()
-            advertisingSets[cookie] = callback
-            cookie
-        }
+        bluetoothAdapter.bluetoothLeAdvertiser.startAdvertisingSet(
+            advertiseSetParameters,
+            advertiseData,
+            scanResponse,
+            periodicAdvertisingParameters,
+            periodicAdvertisingData,
+            advertisingSetCallback,
+        )
+
+        withTimeoutOrNull(ADVERTISING_START_TIMEOUT) { deferred.await() }
+            ?: throw RuntimeException("Advertising didn't start after ${ADVERTISING_START_TIMEOUT}")
+        val cookie = UUID.randomUUID().toString()
+        advertisingSets[cookie] = advertisingSetCallback
+        cookie
     }
 
     /** Stops BLE advertiser with [cookie]. */
@@ -531,9 +621,38 @@ class BluetoothAdapterSnippet : Snippet {
     fun setSimAccessPermission(address: String, permission: Int): Boolean =
         bluetoothAdapter.getRemoteDevice(address).setSimAccessPermission(permission)
 
+    /** Registers Bluetooth Quality Report Callback. */
+    @AsyncRpc(description = "Register Bluetooth Quality Report Callback")
+    fun registerBluetoothQualityReportCallback(callbackId: String) {
+        val callback =
+            object : BluetoothAdapter.BluetoothQualityReportReadyCallback {
+                override fun onBluetoothQualityReportReady(
+                    device: BluetoothDevice,
+                    report: BluetoothQualityReport,
+                    status: Int,
+                ) {
+                    postSnippetEvent(callbackId, SnippetConstants.BLUETOOTH_QUALITY_REPORT) {
+                        putString(SnippetConstants.FIELD_DEVICE, device.address)
+                        putInt(SnippetConstants.FIELD_STATUS, status)
+                        putParcelable(SnippetConstants.FIELD_REPORT, report)
+                    }
+                }
+            }
+        bluetoothAdapter.registerBluetoothQualityReportReadyCallback(context.mainExecutor, callback)
+        bqrCallbacks[callbackId] = callback
+    }
+
+    @Rpc(description = "Unregister Bluetooth Quality Report Callback")
+    fun unregisterBluetoothQualityReportCallback(callbackId: String) {
+        bqrCallbacks.remove(callbackId)?.let {
+            bluetoothAdapter.unregisterBluetoothQualityReportReadyCallback(it)
+        }
+    }
+
     companion object {
         const val TAG = "BluetoothAdapterSnippet"
         private val BLUETOOTH_ON_OFF_TIMEOUT = 12.seconds
         private val ADVERTISING_START_TIMEOUT = 3.seconds
+        private val OOB_DATA_GENERATION_TIMEOUT = 10.seconds
     }
 }

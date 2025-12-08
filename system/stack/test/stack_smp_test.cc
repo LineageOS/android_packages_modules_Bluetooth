@@ -15,6 +15,8 @@
  *  limitations under the License.
  *
  ******************************************************************************/
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/hci_role.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <stdarg.h>
@@ -33,8 +35,6 @@
 #include "stack/smp/p_256_ecc_pp.h"
 #include "stack/smp/smp_int.h"
 #include "test/mock/mock_stack_acl.h"
-#include "types/hci_role.h"
-#include "types/raw_address.h"
 
 using testing::StrEq;
 

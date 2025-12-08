@@ -16,10 +16,11 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
+
 #include "bta/include/bta_api.h"  // tBTA_DM_SEARCH_CBACK
 #include "stack/include/bt_hdr.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 // Bta module start and stop entry points
 void bta_dm_disc_start(bool delay_close_gatt);

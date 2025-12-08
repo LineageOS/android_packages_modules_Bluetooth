@@ -17,13 +17,15 @@
 #pragma once
 
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 
+#include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_sec_api.h"
 #include "hci/address.h"
 #include "hci/hci_packets.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
-#include "types/raw_address.h"
+#include "stack/include/l2cdefs.h"
 
 namespace bluetooth::metrics {
 
@@ -32,6 +34,8 @@ android::bluetooth::State MapErrorCodeToState(hci::ErrorCode reason);
 android::bluetooth::State MapHfpVersionToState(uint16_t version);
 
 android::bluetooth::State MapScoCodecToState(uint16_t codec);
+
+android::bluetooth::State MapAgOpenStatusToState(tBTA_AG_STATUS status);
 
 void LogIncomingAclStartEvent(const hci::Address& address);
 
@@ -156,5 +160,95 @@ void LogMetricHfpSuspendStream(hci::Address address);
  * @param address
  */
 void LogMetricHfpStreamStarted(hci::Address address);
+
+/**
+ * Logs the status when the AG connection is opened
+ * @param address
+ * @param status
+ */
+void LogMetricAgOpenStatus(hci::Address address, tBTA_AG_STATUS status);
+
+/**
+ * Logs AVDTP L2CAP channel events
+ * @param address
+ * @param event The type of L2CAP from AVDTP event
+ * @param l2cap_result The result of the L2CAP events
+ */
+void LogAvdtpL2capEvent(hci::Address address, EventType event, tL2CAP_CONN l2cap_result);
+
+/**
+ * Logs AVDTP L2CAP channel error events
+ * @param address
+ * @param l2cap_result The result of the L2CAP events
+ */
+void LogAvdtpL2capErrorEvent(hci::Address address, tL2CAP_CONN l2cap_result);
+
+/**
+ * Logs AVDTP discovery failure events
+ * @param address
+ */
+void LogAvdtpDiscFailEvent(hci::Address address);
+
+/**
+ * Logs AVDTP get capabilities failure events
+ * @param address
+ */
+void LogAvdtpGetCapFailEvent(hci::Address address);
+
+/**
+ * Logs AVDTP signaling timeout events
+ * @param address
+ * @param error_code The error code of the AVDTP signaling timeout
+ */
+void LogAvdtpSignalingTimeoutEvent(hci::Address address, uint16_t error_code);
+
+/**
+ * Logs AVDTP open rejected events
+ * @param address
+ */
+void LogAvdtpOpenRejectedEvent(hci::Address address);
+
+/**
+ * Logs AVDTP open failure events
+ * @param address
+ */
+void LogAvdtpOpenFailEvent(hci::Address address);
+
+/**
+ * Logs AVDTP set config rejected events
+ * @param address
+ */
+void LogAvdtpSetConfigRejectedEvent(hci::Address address);
+
+/**
+ * Logs AVDTP start reject events
+ * @param address
+ */
+void LogAvdtpStartRejectEvent(hci::Address address);
+
+/**
+ * Logs AVDTP suspend reject events
+ * @param address
+ */
+void LogAvdtpSuspendRejectEvent(hci::Address address);
+
+/**
+ * Logs AVDTP abort response send events
+ * @param address
+ */
+void LogAvdtpAbortResponseSendEvent(hci::Address address);
+
+/**
+ * Logs AVDTP close response send events
+ * @param address
+ */
+void LogAvdtpCloseResponseSendEvent(hci::Address address);
+
+/**
+ * Logs A2DP BTIF AV state change report events
+ * @param address
+ * @param result The result of the state change
+ */
+void LogA2dpBtifAvStateChangeEvent(hci::Address address, uint8_t result);
 
 }  // namespace bluetooth::metrics

@@ -24,8 +24,8 @@ source_set("BluetoothHciPacketSources") {
   include_dirs = [
     "hci/hci_status.h",
     "hci/include",
-    "//bt/system",
     "//bt/system/gd",
+    "//bt/system/types/include",
   ]
 }
 

@@ -52,6 +52,7 @@ import com.google.protobuf.ByteString
 import java.io.IOException
 import java.time.Duration
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 import kotlinx.coroutines.*
@@ -457,12 +458,15 @@ class RfcommTest {
      * - Create listening socket and connect
      * - Disconnect RFCOMM from remote device
      */
-    @RequiresFlagsEnabled(Flags.FLAG_TRIGGER_SEC_PROC_ON_INC_ACCESS_REQ)
+    @RequiresFlagsEnabled(
+        Flags.FLAG_TRIGGER_SEC_PROC_ON_INC_ACCESS_REQ,
+        Flags.FLAG_UPGRADE_TEMP_BONDING_ON_AUTH_REQ,
+    )
     @Test
     fun serverSecureConnectThenRemoteDisconnect() {
         updateSecurityConfig()
         // step 1
-        val (serverSock, connection) = connectRemoteToListeningSocket()
+        val (serverSock, connection) = connectRemoteToListeningSocket(mRemoteDevice)
         val disconnectRequest =
             RfcommProto.DisconnectionRequest.newBuilder().setConnection(connection).build()
         // step 2
@@ -475,12 +479,15 @@ class RfcommTest {
      * - Create listening socket and connect
      * - Disconnect RFCOMM from local device
      */
-    @RequiresFlagsEnabled(Flags.FLAG_TRIGGER_SEC_PROC_ON_INC_ACCESS_REQ)
+    @RequiresFlagsEnabled(
+        Flags.FLAG_TRIGGER_SEC_PROC_ON_INC_ACCESS_REQ,
+        Flags.FLAG_UPGRADE_TEMP_BONDING_ON_AUTH_REQ,
+    )
     @Test
     fun serverSecureConnectThenLocalDisconnect() {
         updateSecurityConfig()
         // step 1
-        val (serverSock, _) = connectRemoteToListeningSocket()
+        val (serverSock, _) = connectRemoteToListeningSocket(mRemoteDevice)
         // step 2
         serverSock.close()
         Truth.assertThat(serverSock.channel).isEqualTo(-1) // ensure disconnected at RFCOMM Layer
@@ -549,6 +556,151 @@ class RfcommTest {
 
     /**
      * Test Steps:
+     * - Update security configuration.
+     * - Disable discoverability and connectability on the remote host.
+     * - Create an RFCOMM client socket.
+     * - Attempt to connect to the socket in a separate thread.
+     * - Ensure the connection attempt finishes within a timeout.
+     * - Verify an IOException is caught during the connection attempt.
+     */
+    @Test
+    fun clientConnectionFailedRaisesException() {
+        updateSecurityConfig()
+        // Disable inquiry and page scan
+        mBumble
+            .hostBlocking()
+            .setDiscoverabilityMode(
+                HostProto.SetDiscoverabilityModeRequest.newBuilder()
+                    .setMode(HostProto.DiscoverabilityMode.NOT_DISCOVERABLE)
+                    .build()
+            )
+        mBumble
+            .hostBlocking()
+            .setConnectabilityMode(
+                HostProto.SetConnectabilityModeRequest.newBuilder()
+                    .setMode(HostProto.ConnectabilityMode.NOT_CONNECTABLE)
+                    .build()
+            )
+
+        startServer("ServerPort1", TEST_UUID) { serverId ->
+            // Latch to signal connection attempt completion.
+            val connectionAttemptFinished = CountDownLatch(1)
+            // Flag to track if an IOException was thrown.
+            var exceptionThrown = false
+
+            // Start a new thread for the connection attempt.
+            val t = thread {
+                try {
+                    val socket = createSocket(mRemoteDevice, isSecure = false, TEST_UUID)
+                    acceptSocket(serverId)
+                } catch (e: IOException) {
+                    Log.i(TAG, "Expect socket connection failure $e")
+                    exceptionThrown = true
+                } finally {
+                    // Signal that the attempt is complete.
+                    connectionAttemptFinished.countDown()
+                }
+                Log.i(TAG, "Done connecting to socket")
+            }
+
+            // Wait for the connection attempt to finish.
+            connectionAttemptFinished.await(
+                CONNECTION_ATTEMPT_TIMEOUT.toMillis(),
+                TimeUnit.MILLISECONDS,
+            )
+
+            // Check assert an rfcomm socket IOException was thrown.
+            Truth.assertThat(exceptionThrown).isTrue()
+
+            t.join()
+        }
+    }
+
+    /**
+     * Test Steps:
+     * - Disable inquiry and page scan
+     * - Initialize latches and flags for two concurrent connection attempts.
+     * - Create two distinct RFCOMM client sockets.
+     * - Attempt to connect each socket in separate threads.
+     * - Verify an IOException is caught for both attempts.
+     * - Wait for both concurrent attempts to complete.
+     * - Assert both attempts threw exceptions.
+     */
+    @Test
+    fun clientConcurrentConnectionFailedRaisesException() {
+        updateSecurityConfig()
+        // Disable inquiry and page scan
+        mBumble
+            .hostBlocking()
+            .setDiscoverabilityMode(
+                HostProto.SetDiscoverabilityModeRequest.newBuilder()
+                    .setMode(HostProto.DiscoverabilityMode.NOT_DISCOVERABLE)
+                    .build()
+            )
+        mBumble
+            .hostBlocking()
+            .setConnectabilityMode(
+                HostProto.SetConnectabilityModeRequest.newBuilder()
+                    .setMode(HostProto.ConnectabilityMode.NOT_CONNECTABLE)
+                    .build()
+            )
+
+        startServer("ServerPort1", TEST_UUID) { serverId1 ->
+            startServer("ServerPort2", SERIAL_PORT_UUID) { serverId2 ->
+                // Latch for two concurrent attempts.
+                val connectionAttemptFinished = CountDownLatch(2)
+                // Flag for socket1's exception.
+                var exceptionThrown1 = false
+                // Flag for socket2's exception.
+                var exceptionThrown2 = false
+
+                val t1 = thread {
+                    try {
+                        val socket1 = createSocket(mRemoteDevice, isSecure = false, TEST_UUID)
+                        acceptSocket(serverId1)
+                    } catch (e: IOException) {
+                        Log.i(TAG, "Expect socket1 connection failure $e")
+                        exceptionThrown1 = true
+                    } finally {
+                        // Signal that the attempt is complete.
+                        connectionAttemptFinished.countDown()
+                    }
+                    Log.i(TAG, "Done connecting to socket1")
+                }
+
+                val t2 = thread {
+                    try {
+                        val socket2 =
+                            createSocket(mRemoteDevice, isSecure = false, SERIAL_PORT_UUID)
+                        acceptSocket(serverId2)
+                    } catch (e: IOException) {
+                        Log.i(TAG, "Expect socket2 connection failure $e")
+                        exceptionThrown2 = true
+                    } finally {
+                        // Signal that the attempt is complete.
+                        connectionAttemptFinished.countDown()
+                    }
+                    Log.i(TAG, "Done connecting to socket2")
+                }
+
+                // Wait for both attempts to finish.
+                connectionAttemptFinished.await(
+                    CONNECTION_ATTEMPT_TIMEOUT.toMillis() * 2,
+                    TimeUnit.MILLISECONDS,
+                )
+
+                // Check assert both rfcomm socket IOExceptions were thrown.
+                Truth.assertThat(exceptionThrown1).isTrue()
+                Truth.assertThat(exceptionThrown2).isTrue()
+
+                t1.join()
+                t2.join()
+            }
+        }
+    }
+
+    /**
+     * Test Steps:
      * - Create an insecure socket
      * - Connect to the socket
      * - Verify that devices are connected
@@ -556,7 +708,6 @@ class RfcommTest {
      * - Verify bumble received that data
      */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_SOCKET_SETTINGS_API)
     fun clientSendDataOverInsecureSocketUsingSocketSettings() {
         updateSecurityConfig()
         startServer { serverId ->
@@ -584,7 +735,6 @@ class RfcommTest {
      * - Verify bumble received that data
      */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_SOCKET_SETTINGS_API)
     fun clientSendDataOverEncryptedOnlySocketUsingSocketSettings() {
         updateSecurityConfig(true, false)
         startServer { serverId ->
@@ -615,7 +765,6 @@ class RfcommTest {
      * - Verify bumble received that data
      */
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_SOCKET_SETTINGS_API)
     fun clientSendDataOverSecureSocketUsingSocketSettings() {
         updateSecurityConfig(true, true)
         startServer { serverId ->
@@ -669,9 +818,9 @@ class RfcommTest {
             // disable Bluetooth to BLE_ON mode
             mAdapter.disable()
             waitingBluetoothLeStates(BluetoothAdapter.STATE_BLE_ON)
-
-            // Validate Bluetooth is in BLE_ON and didn't just "transition" out of it
-            Truth.assertThat(mAdapter.leState).isEqualTo(BluetoothAdapter.STATE_BLE_ON)
+            // Note: There is no guarantee that BT will stay in BLE_ON state for the duration of the
+            // test. The test is intended to verify ACL is already disconnected at this point,
+            // even before reaching OFF state
 
             // 1. In Bluetooth disabled state, under BLE_ON mode, it's impossible to determine the
             // device's connection status.
@@ -683,9 +832,6 @@ class RfcommTest {
 
             // Verify that Rfcomm Socket is disconnected
             assertThrows(IOException::class.java) { socketOs.write(data) }
-
-            // Validate that the test run while Bluetooth stayed in BLE_ON all along
-            Truth.assertThat(mAdapter.leState).isEqualTo(BluetoothAdapter.STATE_BLE_ON)
         }
     }
 
@@ -862,6 +1008,7 @@ class RfcommTest {
     }
 
     private fun connectRemoteToListeningSocket(
+        device: BluetoothDevice,
         name: String = TEST_SERVER_NAME,
         uuid: String = TEST_UUID,
     ): Pair<BluetoothServerSocket, RfcommProto.RfcommConnection> {
@@ -878,7 +1025,23 @@ class RfcommTest {
         val socket = mAdapter.listenUsingRfcommWithServiceRecord(name, UUID.fromString(uuid))
 
         try {
-            socket.accept(3000) // 3 second timeout
+            runBlocking(mScope.coroutineContext) {
+                withTimeout(CONNECT_TIMEOUT.toMillis()) {
+                    // We need to reply to the pairing request in the case where the devices aren't
+                    // bonded yet
+                    if (!mAdapter.bondedDevices.contains(device)) {
+                        launch {
+                            Log.i(TAG, "Waiting for ACTION_PAIRING_REQUEST")
+                            mFlow
+                                .filter { it.action == BluetoothDevice.ACTION_PAIRING_REQUEST }
+                                .filter { it.getBluetoothDeviceExtra() == device }
+                                .first()
+                            device.setPairingConfirmation(true)
+                        }
+                    }
+                    socket.accept(ACCEPT_TIMEOUT.toMillis().toInt())
+                }
+            }
         } catch (e: IOException) {
             Log.e(TAG, "Unexpected IOException: $e")
         }
@@ -926,10 +1089,12 @@ class RfcommTest {
         }
 
     companion object {
-        private val TAG = RfcommTest::class.java.getSimpleName()
+        private const val TAG = "RfcommTest"
         private val GRPC_TIMEOUT = Duration.ofSeconds(10)
         private val CONNECT_TIMEOUT = Duration.ofSeconds(7)
         private val STATE_CHANGE_TIMEOUT = Duration.ofSeconds(5)
+        private val CONNECTION_ATTEMPT_TIMEOUT = Duration.ofSeconds(10)
+        private val ACCEPT_TIMEOUT = Duration.ofSeconds(7)
         private const val TEST_UUID = "2ac5d8f1-f58d-48ac-a16b-cdeba0892d65"
         private const val SERIAL_PORT_UUID = "00001101-0000-1000-8000-00805F9B34FB"
         private const val TEST_SERVER_NAME = "RFCOMM Server"

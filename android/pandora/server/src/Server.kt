@@ -67,6 +67,7 @@ class Server(context: Context) {
                         BluetoothProfile.PBAP to ::Pbap,
                         BluetoothProfile.OPP to ::Opp,
                         BluetoothProfile.MAP to ::Map,
+                        BluetoothProfile.MAP_CLIENT to ::MapClient,
                         BluetoothProfile.LE_AUDIO to ::LeAudio,
                         BluetoothProfile.VOLUME_CONTROL to ::Vcp,
                     )

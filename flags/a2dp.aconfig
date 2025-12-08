@@ -2,36 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "a2dp_ignore_started_when_responder"
-    namespace: "bluetooth"
-    description: "Ignore the event BTA_AV_START_EVT when source and responder"
-    bug : "341178856"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "fix_avdt_rconfig_not_setting_l2cap"
-    namespace: "bluetooth"
-    description: "Set L2CAP flushable and high priority after A2DP reconfigure"
-    bug: "361717220"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "avdt_handle_suspend_cfm_bad_state"
-    namespace: "bluetooth"
-    description: "Close connection on AVDTP Suspend Confirmation with BAD STATE error"
-    bug: "377830155"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "a2dp_lhdc_api"
     namespace: "bluetooth"
     description: "API change for LHDC codec support"
@@ -40,60 +10,10 @@ flag {
 }
 
 flag {
-    name: "a2dp_cleanup_on_remove_device"
-    namespace: "bluetooth"
-    description: "Always remove A2DP state machine when device is removed"
-    bug: "381313622"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "avdt_handle_signaling_on_peer_failure"
-    namespace: "bluetooth"
-    description: "Abort AVDTP on failed connection as the acceptor and retry as the initiator"
-    bug: "381388684"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "a2dp_sm_ignore_connect_events_in_connecting_state"
-    namespace: "bluetooth"
-    description: "When received CONNECT event in Connecting state, with no prior DISCONNECT - ignore the event"
-    bug: "383576378"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "avdt_wait_for_initial_delay_report_as_initiator"
     namespace: "bluetooth"
     description: "As signaling initiator wait for delay report for peer sink and only then send open command"
     bug: "394553654"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "a2dp_version_1_4"
-    namespace: "bluetooth"
-    description: "Update the supported A2DP version to v1.4"
-    bug: "400784026"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "avdtp_prevent_double_suspend"
-    namespace: "bluetooth"
-    description: "Add state to prevent sending multiple AVDTP Suspend command in a row"
-    bug: "402241316"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -131,6 +51,110 @@ flag {
     namespace: "bluetooth"
     description: "Delay Sniff Subrating as in some remote's timing issues were observed"
     bug: "419205731"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_set_configuration_during_discovery"
+    namespace: "bluetooth"
+    description: "Accept AVDTP SetConfiguration during ongoing AVDTP Discovery"
+    bug: "425738557"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "lhdc_codec_support"
+    namespace: "bluetooth"
+    description: "Implement support for the LHDCv5 codec"
+    bug: "423977897"
+}
+
+flag {
+    name: "a2dp_delay_report_in_dumpsys"
+    namespace: "bluetooth"
+    description: "Log AVDTP delay report events in dumpsys"
+    bug: "426021684"
+}
+
+flag {
+    name: "a2dp_pm_app_id"
+    namespace: "bluetooth"
+    description: "Use one PM service for each A2DP device"
+    bug: "427802783"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "avdt_close_on_start_failure_bad_state"
+    namespace: "bluetooth"
+    description: "Close the AVDT connection on received BAD_STATE error on Start request"
+    bug: "429135675"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "synchronize_codec_preferences_and_priority"
+    namespace: "bluetooth"
+    description: "Resolve incorrect codec priority of mandatory codec"
+    bug: "438373657"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_source_null_fixed_queue"
+    namespace: "bluetooth"
+    description: "Resolve race in btif_a2dp_source between start and shutdown"
+    bug: "432232478"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_adjust_sbc_bitpool"
+    namespace: "bluetooth"
+    description: "Correct invalid SBC bitpool values received from remote devices"
+    bug: "441146545"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_reject_sho_request"
+    namespace: "bluetooth"
+    description: "Reject SHO request when rsp pending from active device"
+    bug: "440286060"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_delay_disconnect"
+    namespace: "bluetooth"
+    description: "Delay A2DP profile disconnection to fix interoperability issues"
+    bug: "440507683"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "a2dp_cancel_acceptor_alarm_for_avdt_init"
+    namespace: "bluetooth"
+    description: "Cancel unnecessary timer for signalling as ACP"
+    bug: "440264270"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

@@ -157,6 +157,7 @@ public:
   MOCK_METHOD((size_t), SendData, (uint8_t* data, uint16_t size), (override));
   MOCK_METHOD((void), ConfirmStreamingRequest, (), (override));
   MOCK_METHOD((void), CancelStreamingRequest, (), (override));
+  MOCK_METHOD((void), StreamSuspended, (), (override));
   MOCK_METHOD((void), UpdateRemoteDelay, (uint16_t delay), (override));
   MOCK_METHOD((void), UpdateAudioConfigToHal, (const ::bluetooth::le_audio::stream_config&),
               (override));
@@ -192,6 +193,7 @@ public:
   MOCK_METHOD((void), Stop, (), (override));
   MOCK_METHOD((void), ConfirmStreamingRequest, (), (override));
   MOCK_METHOD((void), CancelStreamingRequest, (), (override));
+  MOCK_METHOD((void), StreamSuspended, (), (override));
   MOCK_METHOD((void), UpdateRemoteDelay, (uint16_t delay), (override));
   MOCK_METHOD((void), UpdateAudioConfigToHal, (const ::bluetooth::le_audio::stream_config&),
               (override));
@@ -546,6 +548,232 @@ TEST_F(CodecManagerTestAdsp, testStreamConfigurationAdspDownMix) {
     ASSERT_EQ(1, config.codec_frames_blocks_per_sdu);
     ASSERT_EQ(44, config.peer_delay_ms);
   }
+}
+
+TEST_F(CodecManagerTestAdsp, test_configuration_update_cis_disconnected) {
+  const std::vector<bluetooth::le_audio::btle_audio_codec_config_t> offloading_preference(0);
+  codec_manager->Start(offloading_preference);
+
+  /* Scenario:
+   * 1. There are two devices and two unidirectional CISes
+   * 2. Call UpdateActiveAudioConfig twice and make sure only once the `update_receiver` is called.
+   * 3. One device gets disconnected and CISes are updated
+   * 4. Call UpdateActiveAudioConfig twice and make sure only once the `update_receiver` is called.
+   * 5. Reconnect device and update CISes
+   * 6. Call UpdateActiveAudioConfig twice and make sure only once the `update_receiver` is called.
+   */
+
+  // Current CIS configuration for two earbuds
+  std::vector<struct types::cis> cises_both_connected{
+          {
+                  .id = 0x00,
+                  .type = types::CisType::CIS_TYPE_UNIDIRECTIONAL_SINK,
+                  .conn_handle = 96,
+          },
+          {
+                  .id = 0x01,
+                  .type = types::CisType::CIS_TYPE_UNIDIRECTIONAL_SINK,
+                  .conn_handle = 97,
+          },
+  };
+
+  // Stream parameters
+  types::BidirectionalPair<stream_parameters> stream_params_both_connected{
+          .sink =
+                  {
+                          .audio_channel_allocation = codec_spec_conf::kLeAudioLocationFrontLeft |
+                                                      codec_spec_conf::kLeAudioLocationFrontRight,
+                          .stream_config =
+                                  {
+                                          .stream_map =
+                                                  {
+                                                          stream_map_info(
+                                                                  96,
+                                                                  codec_spec_conf::
+                                                                          kLeAudioLocationFrontLeft,
+                                                                  true),
+                                                          stream_map_info(
+                                                                  97,
+                                                                  codec_spec_conf::
+                                                                          kLeAudioLocationFrontRight,
+                                                                  true),
+                                                  },
+                                          .bits_per_sample = 16,
+                                          .sampling_frequency_hz = 16000,
+                                          .frame_duration_us = 10000,
+                                          .octets_per_codec_frame = 40,
+                                          .codec_frames_blocks_per_sdu = 1,
+                                          .peer_delay_ms = 44,
+                                  },
+                          .num_of_channels = 2,
+                          .num_of_devices = 2,
+                  },
+  };
+
+  codec_manager->UpdateCisConfiguration(cises_both_connected, stream_params_both_connected.sink,
+                                        kLeAudioDirectionSink);
+
+  // Verify the offloader config content
+  types::BidirectionalPair<int> number_of_calls = {0, 0};
+  codec_manager->UpdateActiveAudioConfig(
+          stream_params_both_connected,
+          [&number_of_calls](const stream_config& /*config*/, uint8_t direction) {
+            number_of_calls.get(direction)++;
+          });
+
+  codec_manager->UpdateActiveAudioConfig(
+          stream_params_both_connected,
+          [&number_of_calls](const stream_config& /*config*/, uint8_t direction) {
+            number_of_calls.get(direction)++;
+          });
+
+  // Expect sink & source configurations with empty CIS channel allocation map.
+  ASSERT_EQ(number_of_calls.sink, 1);
+  ASSERT_EQ(number_of_calls.source, 0);
+
+  /* Disconnect first CIS */
+  std::vector<struct types::cis> cises_one_connected{
+          {
+                  .id = 0x00,
+                  .type = types::CisType::CIS_TYPE_UNIDIRECTIONAL_SINK,
+                  .conn_handle = 96,
+          },
+  };
+
+  // Stream parameters
+  types::BidirectionalPair<stream_parameters> stream_params_one_connected{
+          .sink =
+                  {
+                          .audio_channel_allocation = codec_spec_conf::kLeAudioLocationFrontLeft,
+                          .stream_config =
+                                  {
+                                          .stream_map =
+                                                  {
+                                                          stream_map_info(
+                                                                  96,
+                                                                  codec_spec_conf::
+                                                                          kLeAudioLocationFrontLeft,
+                                                                  true),
+                                                  },
+                                          .bits_per_sample = 16,
+                                          .sampling_frequency_hz = 16000,
+                                          .frame_duration_us = 10000,
+                                          .octets_per_codec_frame = 40,
+                                          .codec_frames_blocks_per_sdu = 1,
+                                          .peer_delay_ms = 44,
+                                  },
+                          .num_of_channels = 1,
+                          .num_of_devices = 1,
+                  },
+  };
+
+  codec_manager->UpdateCisConfiguration(cises_one_connected, stream_params_one_connected.sink,
+                                        kLeAudioDirectionSink);
+
+  codec_manager->UpdateActiveAudioConfig(
+          stream_params_one_connected,
+          [&number_of_calls](const stream_config& /*config*/, uint8_t direction) {
+            number_of_calls.get(direction)++;
+          });
+
+  // Expect sink & source configurations with empty CIS channel allocation map.
+  ASSERT_EQ(number_of_calls.sink, 2);
+  ASSERT_EQ(number_of_calls.source, 0);
+
+  // Call again and check that Audio HAL (callback) is not called as configuration was already
+  // notified
+  codec_manager->UpdateActiveAudioConfig(
+          stream_params_one_connected,
+          [&number_of_calls](const stream_config& /*config*/, uint8_t direction) {
+            number_of_calls.get(direction)++;
+          });
+  ASSERT_EQ(number_of_calls.sink, 2);
+  ASSERT_EQ(number_of_calls.source, 0);
+
+  // Update CISes for bidirectional case
+  std::vector<struct types::cis> cises_bidirectional_connected{
+          {
+                  .id = 0x00,
+                  .type = types::CisType::CIS_TYPE_BIDIRECTIONAL,
+                  .conn_handle = 96,
+          },
+  };
+
+  // Stream parameters
+  types::BidirectionalPair<stream_parameters> stream_params_bidirectional_connected{
+          .sink =
+                  {
+                          .audio_channel_allocation = codec_spec_conf::kLeAudioLocationFrontLeft,
+                          .stream_config =
+                                  {
+                                          .stream_map =
+                                                  {
+                                                          stream_map_info(
+                                                                  96,
+                                                                  codec_spec_conf::
+                                                                          kLeAudioLocationFrontLeft,
+                                                                  true),
+                                                  },
+                                          .bits_per_sample = 16,
+                                          .sampling_frequency_hz = 16000,
+                                          .frame_duration_us = 10000,
+                                          .octets_per_codec_frame = 40,
+                                          .codec_frames_blocks_per_sdu = 1,
+                                          .peer_delay_ms = 44,
+                                  },
+                          .num_of_channels = 1,
+                          .num_of_devices = 1,
+                  },
+          .source =
+                  {
+                          .audio_channel_allocation = codec_spec_conf::kLeAudioLocationFrontLeft,
+                          .stream_config =
+                                  {
+                                          .stream_map =
+                                                  {
+                                                          stream_map_info(
+                                                                  96,
+                                                                  codec_spec_conf::
+                                                                          kLeAudioLocationFrontLeft,
+                                                                  true),
+                                                  },
+                                          .bits_per_sample = 16,
+                                          .sampling_frequency_hz = 16000,
+                                          .frame_duration_us = 10000,
+                                          .octets_per_codec_frame = 40,
+                                          .codec_frames_blocks_per_sdu = 1,
+                                          .peer_delay_ms = 44,
+                                  },
+                          .num_of_channels = 1,
+                          .num_of_devices = 1,
+                  },
+  };
+
+  codec_manager->UpdateCisConfiguration(cises_bidirectional_connected,
+                                        stream_params_bidirectional_connected.sink,
+                                        kLeAudioDirectionSink);
+  codec_manager->UpdateCisConfiguration(cises_bidirectional_connected,
+                                        stream_params_bidirectional_connected.source,
+                                        kLeAudioDirectionSource);
+
+  codec_manager->UpdateActiveAudioConfig(
+          stream_params_bidirectional_connected,
+          [&number_of_calls](const stream_config& /*config*/, uint8_t direction) {
+            number_of_calls.get(direction)++;
+          });
+
+  ASSERT_EQ(number_of_calls.sink, 3);
+  ASSERT_EQ(number_of_calls.source, 1);
+
+  // Call again and check that Audio HAL (callback) is not called as configuration was already
+  // notified
+  codec_manager->UpdateActiveAudioConfig(
+          stream_params_bidirectional_connected,
+          [&number_of_calls](const stream_config& /*config*/, uint8_t direction) {
+            number_of_calls.get(direction)++;
+          });
+  ASSERT_EQ(number_of_calls.sink, 3);
+  ASSERT_EQ(number_of_calls.source, 1);
 }
 
 TEST_F(CodecManagerTestAdsp, testStreamConfigurationMono) {
@@ -1166,7 +1394,6 @@ TEST_F(CodecManagerTestHost, test_dual_bidir_swb_supported) {
               } else {
                 num_of_dual_bidir_swb_configs +=
                         std::count_if(confs->begin(), confs->end(), [&](auto const& cfg) {
-                          bool is_bidir = codec_manager->CheckCodecConfigIsDualBiDirSwb(*cfg);
                           return codec_manager->CheckCodecConfigIsDualBiDirSwb(*cfg);
                         });
               }
@@ -1216,7 +1443,6 @@ TEST_F(CodecManagerTestAdsp, test_dual_bidir_swb_supported) {
               } else {
                 num_of_dual_bidir_swb_configs +=
                         std::count_if(confs->begin(), confs->end(), [&](auto const& cfg) {
-                          bool is_bidir = codec_manager->CheckCodecConfigIsDualBiDirSwb(*cfg);
                           return codec_manager->CheckCodecConfigIsDualBiDirSwb(*cfg);
                         });
               }
@@ -1336,6 +1562,44 @@ TEST_F(CodecManagerTestHost, test_dont_call_hal_for_config) {
   codec_manager->Start(offloading_preference);
   codec_manager->UpdateActiveUnicastAudioHalClient(mock_le_audio_source_hal_client_,
                                                    mock_le_audio_sink_hal_client_, true);
+
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, GetUnicastConfig(_)).Times(0);
+  codec_manager->GetCodecConfig(
+          {.audio_context_type = types::LeAudioContextType::MEDIA},
+          [&](const CodecManager::UnicastConfigurationRequirements& /*requirements*/,
+              const types::AudioSetConfigurations* /*confs*/)
+                  -> std::unique_ptr<types::AudioSetConfiguration> {
+            // In this case the chosen configuration doesn't matter - select none
+            return nullptr;
+          });
+}
+
+TEST_F(CodecManagerTestAdsp, test_hal_client_set_unset) {
+  osi_property_set_bool(kPropLeAudioCodecExtensibility, true);
+
+  // Set the offloader capabilities
+  std::vector<AudioSetConfiguration> offload_capabilities;
+  set_mock_offload_capabilities(offload_capabilities);
+
+  const std::vector<bluetooth::le_audio::btle_audio_codec_config_t> offloading_preference = {};
+  codec_manager->Start(offloading_preference);
+  codec_manager->UpdateActiveUnicastAudioHalClient(mock_le_audio_source_hal_client_,
+                                                   mock_le_audio_sink_hal_client_, true);
+
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, GetUnicastConfig(_)).Times(1);
+  codec_manager->GetCodecConfig(
+          {.audio_context_type = types::LeAudioContextType::MEDIA},
+          [&](const CodecManager::UnicastConfigurationRequirements& /*requirements*/,
+              const types::AudioSetConfigurations* /*confs*/)
+                  -> std::unique_ptr<types::AudioSetConfiguration> {
+            // In this case the chosen configuration doesn't matter - select none
+            return nullptr;
+          });
+  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+
+  // Unset the hal client references and expect the call to be handled gracefully
+  codec_manager->UpdateActiveUnicastAudioHalClient(mock_le_audio_source_hal_client_,
+                                                   mock_le_audio_sink_hal_client_, false);
 
   EXPECT_CALL(*mock_le_audio_source_hal_client_, GetUnicastConfig(_)).Times(0);
   codec_manager->GetCodecConfig(
@@ -1548,7 +1812,7 @@ TEST_F(CodecManagerTestAdsp, test_notify_hal_with_empty_cis_handles_unsupported)
 
 TEST_F(CodecManagerTestAdsp, test_notify_hal_with_empty_cis_handles) {
   osi_property_set_bool(kPropLeAudioCodecExtensibility, true);
-  provider_info->isMulticodecSupported = true;
+  provider_info = bluetooth::le_audio::ProviderInfo({.isMulticodecSupported = true});
 
   // Set the offloader capabilities
   std::vector<AudioSetConfiguration> offload_capabilities;

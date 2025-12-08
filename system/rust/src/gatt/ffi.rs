@@ -38,7 +38,7 @@ mod inner {
 
     #[namespace = "bluetooth"]
     extern "C++" {
-        include!("types/bluetooth/uuid.h");
+        include!("bluetooth/types/uuid.h");
         /// A C++ UUID.
         type Uuid = crate::core::uuid::Uuid;
     }
@@ -743,5 +743,32 @@ mod test {
         ]);
 
         assert!(res.is_err());
+    }
+
+    #[test]
+    fn test_ignored_records() {
+        let records = vec![
+            make_service_record(SERVICE_UUID, SERVICE_HANDLE),
+            GattRecord {
+                uuid: Uuid::new(0),
+                record_type: GattRecordType::SecondaryService,
+                attribute_handle: 100,
+                properties: 0,
+                extended_properties: 0,
+                permissions: 0,
+            },
+            GattRecord {
+                uuid: Uuid::new(0),
+                record_type: GattRecordType::IncludedService,
+                attribute_handle: 101,
+                properties: 0,
+                extended_properties: 0,
+                permissions: 0,
+            },
+        ];
+        let service = records_to_service(&records).unwrap();
+        assert_eq!(service.handle, SERVICE_HANDLE);
+        assert_eq!(service.type_, SERVICE_UUID);
+        assert_eq!(service.characteristics.len(), 0);
     }
 }

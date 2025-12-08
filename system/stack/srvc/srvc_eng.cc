@@ -17,6 +17,8 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 
 #include "gatt_api.h"
 #include "osi/include/allocator.h"
@@ -24,8 +26,6 @@
 #include "srvc_dis_int.h"
 #include "srvc_eng_int.h"
 #include "stack/include/bt_uuid16.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 

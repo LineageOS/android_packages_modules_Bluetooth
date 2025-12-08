@@ -15,6 +15,9 @@
  */
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/hci_role.h>
 #include <fcntl.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -30,11 +33,12 @@
 
 #include "btif/include/btif_hh.h"
 #include "hal/hci_hal.h"
+#include "hci/acl_manager/acl_manager_classic_mock.h"
+#include "hci/acl_manager/acl_manager_le_mock.h"
 #include "hci/acl_manager/classic_acl_connection.h"
 #include "hci/acl_manager/connection_management_callbacks.h"
 #include "hci/acl_manager/le_acl_connection.h"
 #include "hci/acl_manager/le_connection_management_callbacks.h"
-#include "hci/acl_manager_mock.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
 #include "hci/controller_mock.h"
@@ -61,14 +65,11 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/hci_error_code.h"
+#include "stack/include/main_thread.h"
 #include "stack/l2cap/l2c_int.h"
 #include "test/common/jni_thread.h"
-#include "test/common/main_handler.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_main_shim_entry.h"
-#include "types/ble_address_with_type.h"
-#include "types/hci_role.h"
-#include "types/raw_address.h"
 
 using ::testing::_;
 
@@ -324,6 +325,8 @@ protected:
 
     /* extern */ test::mock_controller_ =
             std::make_unique<bluetooth::hci::testing::MockController>();
+    /* extern */ test::mock_acl_manager_classic_ =
+            std::make_unique<bluetooth::hci::acl_manager::testing::MockAclManagerClassic>();
     /* extern */ test::mock_acl_manager_ =
             std::make_unique<bluetooth::hci::testing::MockAclManager>();
     /* extern */ test::mock_le_scanning_manager_ =
@@ -334,8 +337,9 @@ protected:
             new bluetooth::hci::testing::MockDistanceMeasurementManager();
   }
   void TearDown() override {
-    test::mock_controller_.reset();
     test::mock_acl_manager_.release();
+    test::mock_acl_manager_classic_.release();
+    test::mock_controller_.reset();
     delete test::mock_le_advertising_manager_;
     test::mock_le_advertising_manager_ = nullptr;
     delete test::mock_le_scanning_manager_;
@@ -356,7 +360,7 @@ protected:
 
   // Convenience method to create ACL objects
   std::unique_ptr<shim::Acl> MakeAcl() {
-    EXPECT_CALL(*test::mock_acl_manager_, RegisterCallbacks(_, _)).Times(1);
+    EXPECT_CALL(*test::mock_acl_manager_classic_, RegisterCallbacks(_, _)).Times(1);
     EXPECT_CALL(*test::mock_acl_manager_, RegisterLeCallbacks(_, _)).Times(1);
     EXPECT_CALL(*test::mock_controller_, RegisterCompletedMonitorAclPacketsCallback(_)).Times(1);
     EXPECT_CALL(*test::mock_controller_, UnregisterCompletedMonitorAclPacketsCallback).Times(1);
@@ -373,7 +377,7 @@ protected:
     acl_ = MakeAcl();
 
     // Create connection
-    EXPECT_CALL(*test::mock_acl_manager_, CreateConnection(_)).Times(1);
+    EXPECT_CALL(*test::mock_acl_manager_classic_, CreateConnection(_)).Times(1);
     acl_->CreateClassicConnection(address);
 
     // Respond with a mock connection created
@@ -444,7 +448,7 @@ TEST_F(MainShimTest, connect_and_disconnect) {
   auto acl = MakeAcl();
 
   // Create connection
-  EXPECT_CALL(*test::mock_acl_manager_, CreateConnection(_)).Times(1);
+  EXPECT_CALL(*test::mock_acl_manager_classic_, CreateConnection(_)).Times(1);
   acl->CreateClassicConnection(address);
 
   // Respond with a mock connection created

@@ -113,6 +113,15 @@ public:
   A2dpCodecConfig* GetPeerCurrentCodec(const RawAddress& peer_address);
 
   /**
+   * Process the audio initialization.
+   * Get the codec configuration for given codec index.
+   *
+   * @param codec_index the index of the codec
+   * @param p_cfg pointer to the configuration, where the codec info will be stored
+   */
+  bool ProcessAudioInit(btav_a2dp_codec_index_t codec_index, AvdtpSepConfig* p_cfg);
+
+  /**
    * Process the AVDTP discovery result: number of Stream End Points (SEP)
    * found during the AVDTP stream discovery process.
    *

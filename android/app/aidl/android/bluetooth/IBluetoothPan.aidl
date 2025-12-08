@@ -23,7 +23,7 @@ import android.content.AttributionSource;
 /**
  * API for Bluetooth Pan service
  *
- * {@hide}
+ * @hide
  */
 interface IBluetoothPan {
     // Public API

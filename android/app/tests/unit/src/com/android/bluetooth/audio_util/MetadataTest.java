@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.audio_util;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.when;
@@ -37,11 +35,12 @@ import android.os.Bundle;
 import android.test.mock.MockContentProvider;
 import android.test.mock.MockContentResolver;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.tests.R;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;
@@ -82,7 +81,6 @@ public class MetadataTest {
     private static final String SONG_GENRE = "BT Music";
     private static final String SONG_DURATION = "5000";
 
-    private Context mTargetContext;
     private MockContentResolver mTestContentResolver;
     private Image mSongImage = null; /* to be set to Image(mTestBitmap) once context is set */
     private Bitmap mTestBitmap = null;
@@ -90,8 +88,8 @@ public class MetadataTest {
     @Before
     public void setUp() throws Exception {
         mTestBitmap = loadImage(R.raw.image_200_200);
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
-        mTestContentResolver = new MockContentResolver(mTargetContext);
+        final var context = InstrumentationRegistry.getInstrumentation().getContext();
+        mTestContentResolver = new MockContentResolver(context);
         mTestContentResolver.addProvider(
                 TEST_AUTHORITY,
                 new MockContentProvider() {
@@ -116,8 +114,6 @@ public class MetadataTest {
         mSongImage = null;
         mTestContentResolver = null;
         mTestBitmap = null;
-        mTargetContext = null;
-        mMockContext = null;
         Util.UriImagesSupport.sValue = false;
     }
 

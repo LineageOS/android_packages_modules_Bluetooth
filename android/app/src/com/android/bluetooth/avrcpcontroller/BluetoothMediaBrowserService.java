@@ -34,11 +34,13 @@ import androidx.media.MediaBrowserServiceCompat;
 
 import com.android.bluetooth.BluetoothPrefs;
 import com.android.bluetooth.R;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Implements the MediaBrowserService interface to AVRCP and A2DP
@@ -141,8 +143,8 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
      */
     @Override
     public void onCreate() {
-        Log.d(TAG, "Service Created");
         super.onCreate();
+        Log.d(TAG, "Service Created");
 
         // Create and configure the MediaSessionCompat
         mSession = new MediaSessionCompat(this, TAG);
@@ -206,13 +208,14 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
     }
 
     BrowseResult getContents(final String parentMediaId) {
-        AvrcpControllerService avrcpControllerService =
-                AvrcpControllerService.getAvrcpControllerService();
-        if (avrcpControllerService == null) {
+        final var avrcpController =
+                Optional.ofNullable(AdapterService.deprecatedGetAdapterService())
+                        .flatMap(AdapterService::getAvrcpControllerService);
+        if (avrcpController.isEmpty()) {
             Log.w(TAG, "getContents(id=" + parentMediaId + "): AVRCP Controller Service not ready");
             return new BrowseResult(null, BrowseResult.ERROR_NO_AVRCP_SERVICE);
         } else {
-            return avrcpControllerService.getContents(parentMediaId);
+            return avrcpController.get().getContents(parentMediaId);
         }
     }
 

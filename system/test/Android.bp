@@ -172,6 +172,13 @@ filegroup {
 }
 
 filegroup {
+    name: "TestMockBtaVaps",
+    srcs: [
+        "mock/mock_bta_vaps_*.cc",
+    ],
+}
+
+filegroup {
     name: "TestMockBtaVc",
     srcs: [
         "mock/mock_bta_vc*.cc",
@@ -202,6 +209,7 @@ filegroup {
         ":TestMockBtaRfcMetrics",
         ":TestMockBtaSdp",
         ":TestMockBtaSys",
+        ":TestMockBtaVaps",
         ":TestMockBtaVc",
     ],
 }
@@ -501,14 +509,6 @@ filegroup {
     name: "TestCommonJniThread",
     srcs: [
         "common/jni_thread.cc",
-    ],
-}
-
-filegroup {
-    name: "TestCommonMainHandler",
-    srcs: [
-        ":TestCommonSyncMainHandler",
-        "common/main_handler.cc",
     ],
 }
 

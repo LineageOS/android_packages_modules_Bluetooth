@@ -66,7 +66,7 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
             case _OwnAddressType.RANDOM:
                 ref_address = str(self.ref.random_address)
             case _:
-                self.fail(f'Invalid address type {ref_address_type}.')
+                self.fail(f"Invalid address type {ref_address_type}.")
 
         with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_cb:
 
@@ -112,7 +112,7 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
         with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_cb:
             # [REF] Connect GATT.
             ref_dut_acl = await self.ref.device.connect(
-                f'{self.dut.address}/P',
+                f"{self.dut.address}/P",
                 core.BT_LE_TRANSPORT,
                 own_address_type=_OwnAddressType.PUBLIC,
             )
@@ -149,7 +149,7 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
     """
         match ref_advertising_variant:
             case _AdvertisingVariant.LEGACY_NO_ADV_DATA:
-                advertising_data = b''
+                advertising_data = b""
                 advertising_properties = device.AdvertisingEventProperties(
                     is_connectable=True,
                     is_scannable=True,
@@ -162,7 +162,7 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
                 advertising_data = bytes(200)
                 advertising_properties = device.AdvertisingEventProperties(is_connectable=True,)
             case _:
-                self.fail(f'Invalid advertising variant {ref_advertising_variant}.')
+                self.fail(f"Invalid advertising variant {ref_advertising_variant}.")
 
         # [REF] Start advertising.
         await self.ref.device.create_advertising_set(
@@ -207,7 +207,7 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
             # [REF] Scan for DUT.
             scan_results = asyncio.Queue[device.Advertisement]()
 
-            @watcher.on(self.ref.device, 'advertisement')
+            @watcher.on(self.ref.device, self.ref.device.EVENT_ADVERTISEMENT)
             def _(adv: device.Advertisement) -> None:
                 if (service_uuids := adv.data.get(
                         _AdvertisingData.Type.COMPLETE_LIST_OF_128_BIT_SERVICE_CLASS_UUIDS)
@@ -235,9 +235,9 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
 
             # [REF] Scan for DUT.
             scan_results = asyncio.Queue[device.Advertisement]()
-            dut_address = hci.Address(f'{self.dut.address}/P')
+            dut_address = hci.Address(f"{self.dut.address}/P")
 
-            @watcher.on(self.ref.device, 'advertisement')
+            @watcher.on(self.ref.device, self.ref.device.EVENT_ADVERTISEMENT)
             def on_advertising_report(adv: device.Advertisement) -> None:
                 if adv.address == dut_address:
                     scan_results.put_nowait(adv)
@@ -272,7 +272,7 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
         # Generate a random UUID for testing.
         service_uuid = str(uuid.uuid4())
 
-        self.logger.info('[DUT] Start advertising with service UUID.')
+        self.logger.info("[DUT] Start advertising with service UUID.")
         advertise = await self.dut.bl4a.start_extended_advertising_set(
             bl4a_api.AdvertisingSetParameters(
                 secondary_phy=phy,
@@ -291,12 +291,12 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
                 scan_results.put_nowait(adv)
 
         with pyee_extensions.EventWatcher() as watcher:
-            watcher.on(self.ref.device, 'advertisement', on_advertising_report)
+            watcher.on(self.ref.device, "advertisement", on_advertising_report)
 
-            self.logger.info('[REF] Start scanning for DUT.')
+            self.logger.info("[REF] Start scanning for DUT.")
             await self.ref.device.start_scanning()
 
-            self.logger.info('[REF] Wait for advertising report from DUT.')
+            self.logger.info("[REF] Wait for advertising report from DUT.")
             async with self.assert_not_timeout(_DEFAULT_TIMEOUT_SECONDS):
                 advertisement = await scan_results.get()
             advertise.stop()
@@ -304,7 +304,7 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
 
             match own_address_type:
                 case android_constants.AddressTypeStatus.PUBLIC:
-                    self.assertEqual(advertisement.address, hci.Address(f'{self.dut.address}/P'))
+                    self.assertEqual(advertisement.address, hci.Address(f"{self.dut.address}/P"))
                 case android_constants.AddressTypeStatus.RANDOM:
                     self.assertTrue(advertisement.address.is_random)
                     self.assertTrue(advertisement.address.is_resolvable)
@@ -312,7 +312,7 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
                     self.assertTrue(advertisement.address.is_random)
                     self.assertFalse(advertisement.address.is_resolvable)
                 case _:
-                    self.fail(f'Invalid address type {own_address_type}.')
+                    self.fail(f"Invalid address type {own_address_type}.")
 
     @navi_test_base.retry(max_count=2)
     async def test_le_discovery(self) -> None:
@@ -340,7 +340,7 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
                         ),
                         (
                             _AdvertisingData.COMPLETE_LOCAL_NAME,
-                            'Super Bumble'.encode(),
+                            "Super Bumble".encode(),
                         ),
                     ])),
             )
@@ -382,25 +382,25 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
             identity_address = self.ref.address
             identity_address_type = android_constants.AddressTypeStatus.PUBLIC
 
-        self.logger.info('[DUT] Pair with REF.')
+        self.logger.info("[DUT] Pair with REF.")
         await self.le_connect_and_pair(identity_address_type)
         ref_dut_acl = list(self.ref.device.connections.values())[0]
 
-        self.logger.info('[REF] Disconnect.')
+        self.logger.info("[REF] Disconnect.")
         with self.dut.bl4a.register_callback(bl4a_api.Module.ADAPTER) as dut_cb:
             await ref_dut_acl.disconnect()
             await dut_cb.wait_for_event(bl4a_api.AclDisconnected)
 
-        self.logger.info('[REF] Start advertising.')
+        self.logger.info("[REF] Start advertising.")
         await self.ref.device.start_advertising(own_address_type=ref_address_type)
 
-        self.logger.info('[DUT] Start scanning for REF.')
+        self.logger.info("[DUT] Start scanning for REF.")
         dut_scanner = self.dut.bl4a.start_scanning(scan_filter=bl4a_api.ScanFilter(
             device=identity_address,
             address_type=identity_address_type,
         ),)
         await dut_scanner.wait_for_event(bl4a_api.ScanResult)
-        self.logger.info('[DUT] Found REF, start connecting GATT.')
+        self.logger.info("[DUT] Found REF, start connecting GATT.")
         await self.dut.bl4a.connect_gatt_client(
             address=identity_address,
             address_type=identity_address_type,
@@ -408,5 +408,5 @@ class LeHostTest(navi_test_base.TwoDevicesTestBase):
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_runner.main()

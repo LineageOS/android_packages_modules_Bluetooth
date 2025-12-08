@@ -15,10 +15,11 @@
  */
 
 #pragma once
+#include <bluetooth/types/address.h>
+
 #include "bta/include/bta_av_api.h"
 #include "stack/include/a2dp_codec_api.h"
 #include "stack/include/bt_types.h"
-#include "types/raw_address.h"
 
 // Macro to retrieve the number of elements in a statically allocated array
 #define BTA_AV_CO_NUM_ELEMENTS(__a) (sizeof(__a) / sizeof((__a)[0]))

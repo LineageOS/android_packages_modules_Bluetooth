@@ -22,6 +22,7 @@
 
 #include <base/functional/bind.h>
 #include <base/location.h>
+#include <bluetooth/types/address.h>
 #include <hardware/bt_hearing_aid.h>
 
 #include <cstdint>
@@ -33,13 +34,9 @@
 #include "btif_profile_storage.h"
 #include "hardware/avrcp/avrcp.h"
 #include "stack/include/main_thread.h"
-#include "types/raw_address.h"
 
 using base::Bind;
 using base::Unretained;
-using bluetooth::hearing_aid::ConnectionState;
-using bluetooth::hearing_aid::HearingAidCallbacks;
-using bluetooth::hearing_aid::HearingAidInterface;
 
 // template specialization
 template <>
@@ -47,12 +44,12 @@ base::Callback<void()> jni_thread_wrapper(base::Callback<void()> cb) {
   return base::Bind([](base::Callback<void()> cb) { do_in_jni_thread(cb); }, std::move(cb));
 }
 
+namespace bluetooth::asha {
 namespace {
-class HearingAidInterfaceImpl;
+
 std::unique_ptr<HearingAidInterface> hearingAidInstance;
 
-class HearingAidInterfaceImpl : public bluetooth::hearing_aid::HearingAidInterface,
-                                public HearingAidCallbacks {
+class HearingAidInterfaceImpl : public HearingAidInterface, public HearingAidCallbacks {
   ~HearingAidInterfaceImpl() override = default;
 
   void Init(HearingAidCallbacks* callbacks) override {
@@ -106,11 +103,12 @@ private:
 };
 
 }  // namespace
+}  // namespace bluetooth::asha
 
-HearingAidInterface* btif_hearing_aid_get_interface() {
-  if (!hearingAidInstance) {
-    hearingAidInstance.reset(new HearingAidInterfaceImpl());
+bluetooth::asha::HearingAidInterface* btif_hearing_aid_get_interface() {
+  if (!bluetooth::asha::hearingAidInstance) {
+    bluetooth::asha::hearingAidInstance.reset(new bluetooth::asha::HearingAidInterfaceImpl());
   }
 
-  return hearingAidInstance.get();
+  return bluetooth::asha::hearingAidInstance.get();
 }

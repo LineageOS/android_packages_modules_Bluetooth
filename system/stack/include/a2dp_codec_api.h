@@ -21,6 +21,7 @@
 #ifndef A2DP_CODEC_API_H
 #define A2DP_CODEC_API_H
 
+#include <bluetooth/types/address.h>
 #include <hardware/bt_av.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -35,7 +36,6 @@
 #include "a2dp_api.h"
 #include "avdt_api.h"
 #include "stack/include/bt_hdr.h"
-#include "types/raw_address.h"
 
 class tBT_A2DP_OFFLOAD;
 

@@ -28,6 +28,7 @@
 #include "btif/include/bta_av_co.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 
@@ -56,7 +57,6 @@
 #include "stack/include/avdt_api.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -136,7 +136,12 @@ A2dpCodecConfig* BtaAvCo::GetActivePeerCurrentCodec() {
   std::lock_guard<std::recursive_mutex> lock(peer_cache_->codec_lock_);
 
   BtaAvCoPeer* active_peer = bta_av_source_state_.getActivePeer();
-  if (active_peer == nullptr || active_peer->GetCodecs() == nullptr) {
+  if (active_peer == nullptr) {
+    log::error("active_peer is null");
+    return nullptr;
+  }
+  if (active_peer->GetCodecs() == nullptr) {
+    log::error("active_peer codecs are null");
     return nullptr;
   }
   return active_peer->GetCodecs()->getCurrentCodecConfig();
@@ -146,10 +151,23 @@ A2dpCodecConfig* BtaAvCo::GetPeerCurrentCodec(const RawAddress& peer_address) {
   std::lock_guard<std::recursive_mutex> lock(peer_cache_->codec_lock_);
 
   BtaAvCoPeer* peer = peer_cache_->FindPeer(peer_address);
-  if (peer == nullptr || peer->GetCodecs() == nullptr) {
+  if (peer == nullptr) {
+    log::error("peer {} not found", peer_address);
+    return nullptr;
+  }
+  if (peer->GetCodecs() == nullptr) {
+    log::error("peer {} codecs are null", peer_address);
     return nullptr;
   }
   return peer->GetCodecs()->getCurrentCodecConfig();
+}
+
+bool BtaAvCo::ProcessAudioInit(btav_a2dp_codec_index_t codec_index, AvdtpSepConfig* p_cfg) {
+  if (::bluetooth::audio::a2dp::provider::supports_codec(codec_index)) {
+    return ::bluetooth::audio::a2dp::provider::codec_info(codec_index, nullptr, p_cfg->codec_info,
+                                                          nullptr);
+  }
+  return A2DP_InitCodecConfig(codec_index, p_cfg);
 }
 
 void BtaAvCo::ProcessDiscoveryResult(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address,
@@ -1023,12 +1041,18 @@ BtaAvCo::GetProviderCodecConfiguration(BtaAvCoPeer* p_peer) {
   }
 
   // Get the configuration of the preferred codec as codec hint.
-  btav_a2dp_codec_config_t codec_config =
-          p_peer->GetCodecs()->orderedSourceCodecs().front()->getCodecUserConfig();
+  auto a2dp_codec_config = p_peer->GetCodecs()->orderedSourceCodecs().front();
+
+  auto a2dp_codec_user_config = a2dp_codec_config->getCodecUserConfig();
+  if (!::bluetooth::audio::a2dp::provider::supports_codec(a2dp_codec_config->codecIndex())) {
+    log::debug("User preferred codec not supported by the provider: {}",
+               a2dp_codec_user_config.codec_type);
+    return std::nullopt;
+  }
 
   // Pass all gathered codec capabilities to the provider
-  return ::bluetooth::audio::a2dp::provider::get_a2dp_configuration(p_peer->addr, a2dp_remote_caps,
-                                                                    codec_config);
+  return ::bluetooth::audio::a2dp::provider::get_a2dp_configuration(
+          p_peer->addr, a2dp_remote_caps, a2dp_codec_user_config, a2dp_codec_config->codecId());
 }
 
 BtaAvCoSep* BtaAvCo::SelectProviderCodecConfiguration(
@@ -1311,12 +1335,25 @@ tA2DP_STATUS BtaAvCo::SetCodecOtaConfig(BtaAvCoPeer* p_peer, const uint8_t* p_ot
   // Find the peer SEP codec to use
   const BtaAvCoSep* p_sink = peer_cache_->FindPeerSink(
           p_peer, A2DP_SourceCodecIndex(p_ota_codec_config), ContentProtectFlag());
-  if ((p_peer->num_sup_sinks > 0) && (p_sink == nullptr)) {
-    // There are no peer SEPs if we didn't do the discovery procedure yet.
-    // We have all the information we need from the peer, so we can
-    // proceed with the OTA codec configuration.
-    log::error("peer {} : cannot find peer SEP to configure", p_peer->addr);
-    return AVDTP_UNSUPPORTED_CONFIGURATION;
+
+  if (!com_android_bluetooth_flags_a2dp_set_configuration_during_discovery()) {
+    if ((p_peer->num_sup_sinks > 0) && (p_sink == nullptr)) {
+      // There are no peer SEPs if we didn't do the discovery procedure yet.
+      // We have all the information we need from the peer, so we can
+      // proceed with the OTA codec configuration.
+      log::error("peer {} : cannot find peer SEP to configure", p_peer->addr);
+      return AVDTP_UNSUPPORTED_CONFIGURATION;
+    }
+  } else {
+    bool is_discovery_completed =
+            p_peer->num_sinks > 0 && p_peer->num_sinks == p_peer->num_rx_sinks;
+    if (is_discovery_completed && p_sink == nullptr) {
+      // There are no peer SEPs if we didn't do the discovery procedure yet.
+      // We have all the information we need from the peer, so we can
+      // proceed with the OTA codec configuration.
+      log::error("peer {} : cannot find peer SEP to configure", p_peer->addr);
+      return AVDTP_UNSUPPORTED_CONFIGURATION;
+    }
   }
 
   tA2DP_ENCODER_INIT_PEER_PARAMS peer_params;
@@ -1363,7 +1400,7 @@ A2dpCodecConfig* bta_av_get_a2dp_peer_current_codec(const RawAddress& peer_addre
 }
 
 bool bta_av_co_audio_init(btav_a2dp_codec_index_t codec_index, AvdtpSepConfig* p_cfg) {
-  return A2DP_InitCodecConfig(codec_index, p_cfg);
+  return bta_av_co_cb.ProcessAudioInit(codec_index, p_cfg);
 }
 
 void bta_av_co_audio_disc_res(tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address,

@@ -129,9 +129,3 @@ A2dpCodecConfigOpusSink::~A2dpCodecConfigOpusSink() {}
 bool A2dpCodecConfigOpusSink::init() { return false; }
 
 bool A2dpCodecConfigOpusSink::useRtpHeaderMarkerBit() const { return false; }
-
-bool A2dpCodecConfigOpusSink::updateEncoderUserConfig(
-        const tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_params, bool* p_restart_input,
-        bool* p_restart_output, bool* p_config_updated) {
-  return false;
-}

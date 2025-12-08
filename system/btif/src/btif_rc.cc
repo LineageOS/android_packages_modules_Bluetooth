@@ -28,6 +28,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_rc.h>
 #include <stdio.h>
@@ -55,7 +56,6 @@
 #include "stack/include/avrc_defs.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
-#include "types/raw_address.h"
 
 #define RC_INVALID_TRACK_ID (0xFFFFFFFFFFFFFFFFULL)
 
@@ -238,35 +238,6 @@ typedef struct {
 
 /* Response status code - Unknown Error - this is changed to "reserved" */
 #define BTIF_STS_GEN_ERROR 0x06
-
-/* Utility table to map hal status codes to bta status codes for the response
- * status */
-static const uint8_t status_code_map[] = {
-        /* BTA_Status codes        HAL_Status codes */
-        AVRC_STS_BAD_CMD,         /* BTRC_STS_BAD_CMD */
-        AVRC_STS_BAD_PARAM,       /* BTRC_STS_BAD_PARAM */
-        AVRC_STS_NOT_FOUND,       /* BTRC_STS_NOT_FOUND */
-        AVRC_STS_INTERNAL_ERR,    /* BTRC_STS_INTERNAL_ERR */
-        AVRC_STS_NO_ERROR,        /* BTRC_STS_NO_ERROR */
-        AVRC_STS_UID_CHANGED,     /* BTRC_STS_UID_CHANGED */
-        BTIF_STS_GEN_ERROR,       /* BTRC_STS_RESERVED */
-        AVRC_STS_BAD_DIR,         /* BTRC_STS_INV_DIRN */
-        AVRC_STS_NOT_DIR,         /* BTRC_STS_INV_DIRECTORY */
-        AVRC_STS_NOT_EXIST,       /* BTRC_STS_INV_ITEM */
-        AVRC_STS_BAD_SCOPE,       /* BTRC_STS_INV_SCOPE */
-        AVRC_STS_BAD_RANGE,       /* BTRC_STS_INV_RANGE */
-        AVRC_STS_UID_IS_DIR,      /* BTRC_STS_DIRECTORY */
-        AVRC_STS_IN_USE,          /* BTRC_STS_MEDIA_IN_USE */
-        AVRC_STS_NOW_LIST_FULL,   /* BTRC_STS_PLAY_LIST_FULL */
-        AVRC_STS_SEARCH_NOT_SUP,  /* BTRC_STS_SRCH_NOT_SPRTD */
-        AVRC_STS_SEARCH_BUSY,     /* BTRC_STS_SRCH_IN_PROG */
-        AVRC_STS_BAD_PLAYER_ID,   /* BTRC_STS_INV_PLAYER */
-        AVRC_STS_PLAYER_N_BR,     /* BTRC_STS_PLAY_NOT_BROW */
-        AVRC_STS_PLAYER_N_ADDR,   /* BTRC_STS_PLAY_NOT_ADDR */
-        AVRC_STS_BAD_SEARCH_RES,  /* BTRC_STS_INV_RESULTS */
-        AVRC_STS_NO_AVAL_PLAYER,  /* BTRC_STS_NO_AVBL_PLAY */
-        AVRC_STS_ADDR_PLAYER_CHG, /* BTRC_STS_ADDR_PLAY_CHGD */
-};
 
 static void initialize_device(btif_rc_device_cb_t* p_dev);
 static void send_reject_response(uint8_t rc_handle, uint8_t label, uint8_t pdu, uint8_t status,
@@ -2573,12 +2544,18 @@ static void cleanup_ctrl() {
     bt_rc_ctrl_callbacks = NULL;
   }
 
+  /*
+   * TODO: the void* casts are a workaround to silence a glibc+clang warning that memset
+   *       should not be used on complex data structures / classes.
+   */
   for (int idx = 0; idx < BTIF_RC_NUM_CONN; idx++) {
     alarm_free(btif_rc_cb.rc_multi_cb[idx].rc_play_status_timer);
-    memset(&btif_rc_cb.rc_multi_cb[idx], 0, sizeof(btif_rc_cb.rc_multi_cb[idx]));
+
+    void* ptr = static_cast<void*>(&btif_rc_cb.rc_multi_cb[idx]);
+    memset(ptr, 0, sizeof(btif_rc_cb.rc_multi_cb[idx]));
   }
 
-  memset(&btif_rc_cb.rc_multi_cb, 0, sizeof(btif_rc_cb.rc_multi_cb));
+  memset(static_cast<void*>(&btif_rc_cb.rc_multi_cb), 0, sizeof(btif_rc_cb.rc_multi_cb));
   log::verbose("completed");
 }
 
@@ -2719,7 +2696,7 @@ static bt_status_t get_playback_state_cmd(const RawAddress& bd_addr) {
  *
  * Description      Fetch the now playing list
  *
- * Paramters        start_item: First item to fetch (0 to fetch from beganning)
+ * Parameters       start_item: First item to fetch (0 to fetch from beganning)
  *                  end_item: Last item to fetch (0xffffffff to fetch until end)
  *
  * Returns          BT_STATUS_SUCCESS if command issued successfully otherwise
@@ -2766,7 +2743,7 @@ static bt_status_t get_item_attribute_cmd(uint64_t uid, int scope, uint8_t /*num
  *
  * Description      Fetch the currently selected folder list
  *
- * Paramters        start_item: First item to fetch (0 to fetch from beganning)
+ * Parameters       start_item: First item to fetch (0 to fetch from beganning)
  *                  end_item: Last item to fetch (0xffffffff to fetch until end)
  *
  * Returns          BT_STATUS_SUCCESS if command issued successfully otherwise
@@ -2785,7 +2762,7 @@ static bt_status_t get_folder_list_cmd(const RawAddress& bd_addr, uint32_t start
  *
  * Description      Fetch the player list
  *
- * Paramters        start_item: First item to fetch (0 to fetch from beganning)
+ * Parameters       start_item: First item to fetch (0 to fetch from beganning)
  *                  end_item: Last item to fetch (0xffffffff to fetch until end)
  *
  * Returns          BT_STATUS_SUCCESS if command issued successfully otherwise
@@ -2804,7 +2781,7 @@ static bt_status_t get_player_list_cmd(const RawAddress& bd_addr, uint32_t start
  *
  * Description      Change the folder.
  *
- * Paramters        direction: Direction (Up/Down) to change folder
+ * Parameters       direction: Direction (Up/Down) to change folder
  *                  uid: The UID of folder to move to
  *                  start_item: First item to fetch (0 to fetch from beganning)
  *                  end_item: Last item to fetch (0xffffffff to fetch until end)
@@ -2840,7 +2817,7 @@ static bt_status_t change_folder_path_cmd(const RawAddress& bd_addr, uint8_t dir
  *
  * Description      Change the browsed player.
  *
- * Paramters        id: The UID of player to move to
+ * Parameters       id: The UID of player to move to
  *
  * Returns          BT_STATUS_SUCCESS if command issued successfully otherwise
  *                  BT_STATUS_FAIL.
@@ -2867,7 +2844,7 @@ static bt_status_t set_browsed_player_cmd(const RawAddress& bd_addr, uint16_t id
  **
  ** Description      Change the addressed player.
  **
- ** Paramters        id: The UID of player to move to
+ ** Parameters       id: The UID of player to move to
  **
  ** Returns          BT_STATUS_SUCCESS if command issued successfully otherwise
  **                  BT_STATUS_FAIL.
@@ -2896,7 +2873,7 @@ static bt_status_t set_addressed_player_cmd(const RawAddress& bd_addr, uint16_t 
  * Description      Helper function to browse the content hierarchy of the
  *                  TG device.
  *
- * Paramters        scope: AVRC_SCOPE_NOW_PLAYING (etc) for various browseable
+ * Parameters       scope: AVRC_SCOPE_NOW_PLAYING (etc) for various browseable
  *                  content
  *                  start_item: First item to fetch (0 to fetch from beganning)
  *                  end_item: Last item to fetch (0xffff to fetch until end)
@@ -3478,7 +3455,7 @@ static void start_transaction_timer(btif_rc_device_cb_t* p_dev, uint8_t label,
   }
 
   std::stringstream ss;
-  ss << "btif_rc." << p_dev->rc_addr.ToColonSepHexString() << "." << transaction->label;
+  ss << "btif_rc." << p_dev->rc_addr.ToRedactedStringForLogging() << "." << transaction->label;
   alarm_free(transaction->timer);
   transaction->timer = alarm_new(ss.str().c_str());
   alarm_set_on_mloop(transaction->timer, timeout_ms, btif_rc_transaction_timer_timeout,

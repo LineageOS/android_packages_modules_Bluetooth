@@ -19,6 +19,8 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/remote_version.h>
 
 #include <cstdint>
 #include <string>
@@ -30,8 +32,6 @@
 #include "stack/include/bt_octets.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/hci_error_code.h"
-#include "types/ble_address_with_type.h"
-#include "types/remote_version_type.h"
 
 typedef struct {
   uint16_t min_conn_int;
@@ -321,14 +321,22 @@ public:
 
   bool is_device_type_has_ble() const { return device_type & BT_DEVICE_TYPE_BLE; }
 
-  bool SupportsSecureConnections() const { return remote_supports_secure_connections; }
+  bool HostSupportsSecureConnections() const { return remote_host_supports_secure_connections; }
+  bool ControllerSupportsSecureConnections() const {
+    return remote_controller_supports_secure_connections;
+  }
+
+  bool SupportsSecureConnections() const {
+    return HostSupportsSecureConnections() && ControllerSupportsSecureConnections();
+  }
 
   std::string ToString() const {
     return std::format(
             "{} {:6s} cod:{} remote_info:{:<14s} sm4:0x{:02x} SecureConn:{:c} "
             "name:\"{}\" sec_prop:{}, in_resolving_list: {}",
             bd_addr, DeviceTypeText(device_type), dev_class_text(dev_class),
-            remote_version_info.ToString(), sm4, remote_supports_secure_connections ? 'T' : 'F',
+            remote_version_info.ToString(), sm4,
+            remote_host_supports_secure_connections ? 'T' : 'F',
             reinterpret_cast<char const*>(sec_bd_name), sec_rec.ToString(),
             (ble.in_controller_list & BTM_RESOLVING_LIST_BIT) ? 'T' : 'F');
   }
@@ -360,13 +368,15 @@ public:
   bool remote_supports_hci_role_switch = false;
   bool remote_supports_bredr;
   bool remote_supports_ble;
-  bool remote_supports_secure_connections;
+  bool remote_host_supports_secure_connections;
+  bool remote_controller_supports_secure_connections;
   bool remote_feature_received = false;
 
   tREMOTE_VERSION_INFO remote_version_info;
 
   bool role_central;  /* true if current mode is central (BLE) */
   bool is_originator; /* true if device is originating ACL connection */
+  bool switch_role_after_encryption; /* true if role switch must be requested after encryption */
 
   // BLE connection parameters
   tBTM_LE_CONN_PRAMS conn_params;

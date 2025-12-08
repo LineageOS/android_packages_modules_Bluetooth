@@ -17,8 +17,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
-
-#include "types/raw_address.h"
+#include <bluetooth/types/address.h>
 
 typedef enum {
   BTHF_CLIENT_CONNECTION_STATE_DISCONNECTED = 0,
@@ -151,20 +150,16 @@ typedef enum {
 
 /* Peer call handling features masks */
 #define BTHF_CLIENT_CHLD_FEAT_REL 0x00000001 /* 0  Release waiting call or held calls */
-#define BTHF_CLIENT_CHLD_FEAT_REL_ACC                                                      \
-  0x00000002                                   /* 1  Release active calls and accept other \
-                                                     (waiting or held) cal */
+#define BTHF_CLIENT_CHLD_FEAT_REL_ACC \
+  0x00000002 /* 1  Release active calls and accept other (waiting or held) cal */
 #define BTHF_CLIENT_CHLD_FEAT_REL_X 0x00000004 /* 1x Release specified active call only */
-#define BTHF_CLIENT_CHLD_FEAT_HOLD_ACC                   \
-  0x00000008 /* 2  Active calls on hold and accept other \
-                   (waiting or held) call */
-#define BTHF_CLIENT_CHLD_FEAT_PRIV_X                                                     \
-  0x00000010                                   /* 2x Request private mode with specified \
-                                                     call (put the rest on hold) */
+#define BTHF_CLIENT_CHLD_FEAT_HOLD_ACC \
+  0x00000008 /* 2  Active calls on hold and accept other (waiting or held) call */
+#define BTHF_CLIENT_CHLD_FEAT_PRIV_X \
+  0x00000010 /* 2x Request private mode with specified call (put the rest on hold) */
 #define BTHF_CLIENT_CHLD_FEAT_MERGE 0x00000020 /* 3  Add held call to multiparty */
-#define BTHF_CLIENT_CHLD_FEAT_MERGE_DETACH     \
-  0x00000040 /* 4  Connect two calls and leave \
-                   (disconnect from) multiparty */
+#define BTHF_CLIENT_CHLD_FEAT_MERGE_DETACH \
+  0x00000040 /* 4  Connect two calls and leave (disconnect from) multiparty */
 
 /** Callback for connection state change.
  *  state will have one of the values from BtHfConnectionState
@@ -324,64 +319,64 @@ typedef struct {
   bt_status_t (*init)(bthf_client_callbacks_t* callbacks);
 
   /** connect to audio gateway */
-  bt_status_t (*connect)(const RawAddress* bd_addr);
+  bt_status_t (*connect)(const RawAddress bd_addr);
 
   /** disconnect from audio gateway */
-  bt_status_t (*disconnect)(const RawAddress* bd_addr);
+  bt_status_t (*disconnect)(const RawAddress bd_addr);
 
   /** create an audio connection */
-  bt_status_t (*connect_audio)(const RawAddress* bd_addr);
+  bt_status_t (*connect_audio)(const RawAddress bd_addr);
 
   /** close the audio connection */
-  bt_status_t (*disconnect_audio)(const RawAddress* bd_addr);
+  bt_status_t (*disconnect_audio)(const RawAddress bd_addr);
 
   /** start voice recognition */
-  bt_status_t (*start_voice_recognition)(const RawAddress* bd_addr);
+  bt_status_t (*start_voice_recognition)(const RawAddress bd_addr);
 
   /** stop voice recognition */
-  bt_status_t (*stop_voice_recognition)(const RawAddress* bd_addr);
+  bt_status_t (*stop_voice_recognition)(const RawAddress bd_addr);
 
   /** volume control */
-  bt_status_t (*volume_control)(const RawAddress* bd_addr, bthf_client_volume_type_t type,
+  bt_status_t (*volume_control)(const RawAddress bd_addr, bthf_client_volume_type_t type,
                                 int volume);
 
   /** place a call with number a number
-   * if number is NULL last called number is called (aka re-dial)*/
-  bt_status_t (*dial)(const RawAddress* bd_addr, const char* number);
+   * if number is NULL or empty, last called number is called (aka re-dial)*/
+  bt_status_t (*dial)(const RawAddress bd_addr, const char* number);
 
   /** place a call with number specified by location (speed dial) */
-  bt_status_t (*dial_memory)(const RawAddress* bd_addr, int location);
+  bt_status_t (*dial_memory)(const RawAddress bd_addr, int location);
 
   /** perform specified call related action
    * idx is limited only for enhanced call control related action
    */
-  bt_status_t (*handle_call_action)(const RawAddress* bd_addr, bthf_client_call_action_t action,
+  bt_status_t (*handle_call_action)(const RawAddress bd_addr, bthf_client_call_action_t action,
                                     int idx);
 
   /** query list of current calls */
-  bt_status_t (*query_current_calls)(const RawAddress* bd_addr);
+  bt_status_t (*query_current_calls)(const RawAddress bd_addr);
 
   /** query name of current selected operator */
-  bt_status_t (*query_current_operator_name)(const RawAddress* bd_addr);
+  bt_status_t (*query_current_operator_name)(const RawAddress bd_addr);
 
   /** Retrieve subscriber information */
-  bt_status_t (*retrieve_subscriber_info)(const RawAddress* bd_addr);
+  bt_status_t (*retrieve_subscriber_info)(const RawAddress bd_addr);
 
   /** Send DTMF code*/
-  bt_status_t (*send_dtmf)(const RawAddress* bd_addr, char code);
+  bt_status_t (*send_dtmf)(const RawAddress bd_addr, char code);
 
   /** Request a phone number from AG corresponding to last voice tag recorded */
-  bt_status_t (*request_last_voice_tag_number)(const RawAddress* bd_addr);
+  bt_status_t (*request_last_voice_tag_number)(const RawAddress bd_addr);
 
   /** Closes the interface. */
   void (*cleanup)(void);
 
   /** Send AT Command. */
-  bt_status_t (*send_at_cmd)(const RawAddress* bd_addr, int cmd, int val1, int val2,
+  bt_status_t (*send_at_cmd)(const RawAddress bd_addr, int cmd, int val1, int val2,
                              const char* arg);
 
   /** Send hfp audio policy to remote */
-  bt_status_t (*send_android_at)(const RawAddress* bd_addr, const char* arg);
+  bt_status_t (*send_android_at)(const RawAddress bd_addr, const char* arg);
 } bthf_client_interface_t;
 
 namespace std {

@@ -58,6 +58,7 @@ import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.map.BluetoothMapContract.MessageColumns;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 import com.android.bluetooth.map.BluetoothMapbMessageMime.MimePart;
@@ -1335,7 +1336,7 @@ public class BluetoothMapContentObserver {
                         BluetoothProtoEnums.BLUETOOTH_MAP_CONTENT_OBSERVER,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         9);
-                Log.e(TAG, "Failed to initialize the list of messages: " + e.toString());
+                Log.e(TAG, "Failed to initialize the list of messages: " + e);
                 return;
             }
 
@@ -1351,6 +1352,8 @@ public class BluetoothMapContentObserver {
                         msgListSms.put(id, msg);
                     } while (c.moveToNext());
                 }
+            } catch (SQLiteException e) {
+                Log.e(TAG, "Failed to initialize the list of messages: " + e);
             } finally {
                 if (c != null) {
                     c.close();
@@ -1385,6 +1388,8 @@ public class BluetoothMapContentObserver {
                         msgListMms.put(id, msg);
                     } while (c.moveToNext());
                 }
+            } catch (SQLiteException e) {
+                Log.e(TAG, "Failed to initialize the list of messages: " + e);
             } finally {
                 if (c != null) {
                     c.close();
@@ -1418,6 +1423,8 @@ public class BluetoothMapContentObserver {
                         msgList.put(id, msg);
                     } while (c.moveToNext());
                 }
+            } catch (SQLiteException e) {
+                Log.e(TAG, "Failed to initialize the list of messages: " + e);
             } finally {
                 if (c != null) {
                     c.close();
@@ -1481,6 +1488,8 @@ public class BluetoothMapContentObserver {
                     contactList.put(uci, contact);
                 } while (c.moveToNext());
             }
+        } catch (SQLiteException e) {
+            Log.e(TAG, "Failed to initialize the list of contacts: " + e);
         } finally {
             if (c != null) {
                 c.close();
@@ -1705,6 +1714,8 @@ public class BluetoothMapContentObserver {
                         }
                     } while (c.moveToNext());
                 }
+            } catch (SQLiteException e) {
+                Log.e(TAG, "Failed to handle change of sms list: " + e);
             } finally {
                 if (c != null) {
                     c.close();
@@ -1968,6 +1979,8 @@ public class BluetoothMapContentObserver {
                         }
                     } while (c.moveToNext());
                 }
+            } catch (SQLiteException e) {
+                Log.e(TAG, "Failed to handle change of mms list: " + e);
             } finally {
                 if (c != null) {
                     c.close();
@@ -2199,6 +2212,8 @@ public class BluetoothMapContentObserver {
                         }
                     } while (c.moveToNext());
                 }
+            } catch (SQLiteException e) {
+                Log.e(TAG, "Failed to handle change of messages list: " + e);
             } finally {
                 if (c != null) {
                     c.close();
@@ -2520,6 +2535,8 @@ public class BluetoothMapContentObserver {
                         }
                         setContactList(contactList, listChanged);
                     } // end synchronized
+                } catch (SQLiteException e) {
+                    Log.e(TAG, "Failed to handle contact list changed: " + e);
                 } finally {
                     if (c != null) {
                         c.close();
@@ -2676,6 +2693,13 @@ public class BluetoothMapContentObserver {
                         .contentResolverQuery(mResolver, uri, null, null, null, null);
         try {
             if (c != null && c.moveToFirst()) {
+                if (Flags.notDeleteLockedMessage()) {
+                    int lockedColIndex = c.getColumnIndex(Sms.LOCKED);
+                    if (lockedColIndex >= 0 && c.getInt(lockedColIndex) == 1) {
+                        Log.w(TAG, "Can't delete locked MMS");
+                        return false;
+                    }
+                }
                 /* Move to deleted folder, or delete if already in deleted folder */
                 int threadId = c.getInt(c.getColumnIndex(Mms.THREAD_ID));
                 if (threadId != DELETED_THREAD_ID) {
@@ -2778,6 +2802,13 @@ public class BluetoothMapContentObserver {
                         .contentResolverQuery(mResolver, uri, null, null, null, null);
         try {
             if (c != null && c.moveToFirst()) {
+                if (Flags.notDeleteLockedMessage()) {
+                    int lockedColIndex = c.getColumnIndex(Sms.LOCKED);
+                    if (lockedColIndex >= 0 && c.getInt(lockedColIndex) == 1) {
+                        Log.w(TAG, "Can't delete locked SMS");
+                        return false;
+                    }
+                }
                 /* Move to deleted folder, or delete if already in deleted folder */
                 int threadId = c.getInt(c.getColumnIndex(Sms.THREAD_ID));
                 if (threadId != DELETED_THREAD_ID) {
@@ -3395,7 +3426,7 @@ public class BluetoothMapContentObserver {
         } else {
             /* not allowed to push mms to anything but outbox/draft */
             throw new IllegalArgumentException(
-                    "Cannot push message to other " + "folders than outbox/draft");
+                    "Cannot push message to other folders than outbox/draft");
         }
     }
 
@@ -3786,7 +3817,7 @@ public class BluetoothMapContentObserver {
     }
 
     private class SmsBroadcastReceiver extends BroadcastReceiver {
-        public void register() {
+        void register() {
             Handler handler = new Handler(Looper.getMainLooper());
 
             IntentFilter intentFilter = new IntentFilter();
@@ -3806,7 +3837,7 @@ public class BluetoothMapContentObserver {
             mContext.registerReceiver(this, intentFilter, null, handler);
         }
 
-        public void unregister() {
+        void unregister() {
             try {
                 mContext.unregisterReceiver(this);
             } catch (IllegalArgumentException e) {
@@ -3956,7 +3987,7 @@ public class BluetoothMapContentObserver {
     }
 
     private class CeBroadcastReceiver extends BroadcastReceiver {
-        public void register() {
+        void register() {
             UserManager manager = mContext.getSystemService(UserManager.class);
             if (manager == null || manager.isUserUnlocked()) {
                 mStorageUnlocked = true;
@@ -3970,7 +4001,7 @@ public class BluetoothMapContentObserver {
             mContext.registerReceiver(this, intentFilter, null, handler);
         }
 
-        public void unregister() {
+        void unregister() {
             try {
                 mContext.unregisterReceiver(this);
             } catch (IllegalArgumentException e) {
@@ -4187,6 +4218,8 @@ public class BluetoothMapContentObserver {
                     sendMessage(msgInfo, msgBody);
                 } while (c.moveToNext());
             }
+        } catch (SQLiteException e) {
+            Log.e(TAG, "Failed to resend pending message: " + e);
         } finally {
             if (c != null) {
                 c.close();
@@ -4209,6 +4242,8 @@ public class BluetoothMapContentObserver {
                     Utils.moveMessageToFolder(mContext, msgInfo.uri, false);
                 } while (c.moveToNext());
             }
+        } catch (SQLiteException e) {
+            Log.e(TAG, "Failed to move pending messages from outbox: " + e);
         } finally {
             if (c != null) {
                 c.close();

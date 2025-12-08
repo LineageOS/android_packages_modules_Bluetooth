@@ -16,11 +16,12 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <vector>
 
 #include "base/functional/callback.h"
 #include "stack/include/btm_status.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace shim {

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 #include <bluetooth/metrics/metric_id_api.h>
+#include <bluetooth/types/address.h>
 
 #include "hci/address.h"
 #include "main/shim/helpers.h"
 #include "metric_id_manager.h"
-#include "types/raw_address.h"
 
 namespace bluetooth::metrics {
 

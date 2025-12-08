@@ -33,6 +33,10 @@
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/metric_id_api.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/bt_transport.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <cstdlib>
@@ -41,6 +45,7 @@
 #include <utility>
 #include <vector>
 
+#include "bta/ag/bta_ag_int.h"
 #include "bta/gatt/bta_gattc_int.h"
 #include "bta/hh/bta_hh_int.h"
 #include "bta/include/bta_api.h"
@@ -53,6 +58,7 @@
 #include "bta/include/bta_le_audio_api.h"
 #include "bta/include/bta_le_audio_broadcaster_api.h"
 #include "bta/include/bta_vc_api.h"
+#include "bta/include/bta_vaps_server_api.h"
 #include "btif/avrcp/avrcp_service.h"
 #include "btif/include/bluetooth.h"
 #include "btif/include/btif_a2dp.h"
@@ -129,9 +135,6 @@
 #include "stack/include/pan_api.h"
 #include "stack/include/sdp_api.h"
 #include "storage/config_keys.h"
-#include "types/ble_address_with_type.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -314,7 +317,7 @@ struct CoreInterfaceImpl : bluetooth::core::CoreInterface {
   }
 
   void onLinkDown(const RawAddress& bd_addr, tBT_TRANSPORT transport) override {
-    btif_hh_disconnected(bd_addr, transport);
+    btif_hh_acl_disconnected(bd_addr, transport);
 
     if (transport != BT_TRANSPORT_BR_EDR) {
       return;
@@ -355,7 +358,7 @@ static bluetooth::core::CoreInterface* CreateInterfaceToProfiles() {
           .btif_av_set_dynamic_audio_buffer_size = btif_av_set_dynamic_audio_buffer_size,
 
           // ASHA
-          .GetHearingAidDeviceCount = HearingAid::GetDeviceCount,
+          .GetHearingAidDeviceCount = bluetooth::asha::HearingAid::GetDeviceCount,
 
           // LE Audio
           .IsLeAudioClientRunning = LeAudioClient::IsLeAudioClientRunning,
@@ -479,9 +482,9 @@ static void cleanup(void) { stack_manager_get_interface()->clean_up_stack(&stop_
 
 bool is_restricted_mode() { return restricted_mode; }
 
-static bool get_wbs_supported() { return hfp_hal_interface::get_wbs_supported(); }
+static bool get_wbs_supported() { return bta_ag_get_wbs_supported(); }
 
-static bool get_swb_supported() { return hfp_hal_interface::get_swb_supported(); }
+static bool get_swb_supported() { return bta_ag_get_swb_supported(); }
 
 static bool is_coding_format_supported(esco_coding_format_t coding_format) {
   return hfp_hal_interface::is_coding_format_supported(coding_format);
@@ -847,6 +850,12 @@ static int set_event_filter_connection_setup_all_devices() {
 }
 
 static void dump(int fd, const char** /*arguments*/) {
+  if (com_android_bluetooth_flags_protect_dumpsys_during_stack_shutdown() &&
+      !stack_manager_get_interface()->get_stack_is_running()) {
+    log::error("Stack is not running, skipping dumpsys!!");
+    return;
+  }
+
   log::debug("Started bluetooth dumpsys");
   btif_debug_conn_dump(fd);
   btif_debug_bond_event_dump(fd);
@@ -866,10 +875,11 @@ static void dump(int fd, const char** /*arguments*/) {
   alarm_debug_dump(fd);
   bluetooth::csis::CsisClient::DebugDump(fd);
   ::bluetooth::le_audio::has::HasClient::DebugDump(fd);
-  HearingAid::DebugDump(fd);
+  ::bluetooth::asha::HearingAid::DebugDump(fd);
   LeAudioClient::DebugDump(fd);
   LeAudioBroadcaster::DebugDump(fd);
   VolumeControl::DebugDump(fd);
+  bluetooth::vaps::GetVapsServer()->DebugDump(fd);
   connection_manager::dump(fd);
   bluetooth::bqr::DebugDump(fd);
   AVCT_Dumpsys(fd);
@@ -972,6 +982,10 @@ static const void* get_profile_interface(const char* profile_id) {
 
   if (is_profile(profile_id, BT_PROFILE_CSIS_CLIENT_ID)) {
     return btif_csis_client_get_interface();
+  }
+
+  if (is_profile(profile_id, BT_PROFILE_VAPS_SERVER_ID)) {
+    return btif_vaps_server_get_interface();
   }
 
   if (is_profile(profile_id, BT_BQR_ID)) {

@@ -18,4 +18,4 @@
 
 #include "hardware/bt_hearing_aid.h"
 
-bluetooth::hearing_aid::HearingAidInterface* btif_hearing_aid_get_interface();
+bluetooth::asha::HearingAidInterface* btif_hearing_aid_get_interface();

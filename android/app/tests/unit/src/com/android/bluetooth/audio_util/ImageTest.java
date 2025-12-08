@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.audio_util;
 
-import static com.android.bluetooth.TestUtils.MockitoRule;
-
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.when;
@@ -35,11 +33,12 @@ import android.os.Bundle;
 import android.test.mock.MockContentProvider;
 import android.test.mock.MockContentResolver;
 
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.tests.R;
+import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
 import org.junit.Before;
@@ -59,7 +58,6 @@ public class ImageTest {
 
     private final Resources mTestResources = TestUtils.getTestApplicationResources();
 
-    private Context mTargetContext;
     private MockContentResolver mTestContentResolver;
 
     private static final String TEST_AUTHORITY = "com.android.bluetooth.avrcp.test";
@@ -86,8 +84,8 @@ public class ImageTest {
     @Before
     public void setUp() throws Exception {
         mTestBitmap = loadImage(R.raw.image_200_200);
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getContext();
-        mTestContentResolver = new MockContentResolver(mTargetContext);
+        final var context = InstrumentationRegistry.getInstrumentation().getContext();
+        mTestContentResolver = new MockContentResolver(context);
         mTestContentResolver.addProvider(
                 TEST_AUTHORITY,
                 new MockContentProvider() {
@@ -111,8 +109,6 @@ public class ImageTest {
     public void tearDown() throws Exception {
         mTestContentResolver = null;
         mTestBitmap = null;
-        mTargetContext = null;
-        mMockContext = null;
         Util.UriImagesSupport.sValue = false;
     }
 

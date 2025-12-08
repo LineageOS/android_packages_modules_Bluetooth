@@ -310,7 +310,7 @@ public:
   void UpdateActiveAudioConfig(
           const types::BidirectionalPair<stream_parameters>& stream_params,
           std::function<void(const stream_config& config, uint8_t direction)> update_receiver,
-          uint8_t remote_directions_to_update) {
+          uint8_t remote_directions_to_update, bool force_update) {
     if (GetCodecLocation() != bluetooth::le_audio::types::CodecLocation::ADSP) {
       return;
     }
@@ -323,7 +323,7 @@ public:
       }
 
       auto& stream_map = offloader_stream_maps.get(direction);
-      if (!stream_map.has_changed && !stream_map.is_initial) {
+      if (!force_update && !stream_map.has_changed && !stream_map.is_initial) {
         log::warn("unexpected call for direction {}, stream_map.has_changed {}", direction,
                   stream_map.has_changed, stream_map.is_initial);
         continue;
@@ -340,6 +340,7 @@ public:
                       : stream_map.streams_map_current;
       update_receiver(unicast_cfg, direction);
       stream_map.is_initial = false;
+      stream_map.has_changed = false;
     }
   }
 
@@ -361,6 +362,11 @@ public:
       return;
     }
 
+    if (!codec_provider_info_.has_value()) {
+      log::debug("Codec extensions not enabled");
+      return;
+    }
+
     log::debug("isMulticodecSupported: {}", codec_provider_info_->isMulticodecSupported);
 
     if (!codec_provider_info_->isMulticodecSupported) {
@@ -368,7 +374,7 @@ public:
       return;
     }
 
-    if (!com::android::bluetooth::flags::leaudio_add_opus_hi_res_codec_type()) {
+    if (!com_android_bluetooth_flags_leaudio_add_opus_hi_res_codec_type()) {
       log::verbose("Skipped due to disabled `leaudio_add_opus_hi_res_codec_type` flag.");
       return;
     }
@@ -570,6 +576,10 @@ public:
           const CodecManager::UnicastConfigurationRequirements& requirements,
           CodecManager::UnicastConfigurationProvider provider) {
     if (IsUsingCodecExtensibility()) {
+      if (unicast_local_source_hal_client == nullptr) {
+        log::warn("No HAL client available. Potentially no active device is currently set.");
+        return nullptr;
+      }
       auto hal_config = unicast_local_source_hal_client->GetUnicastConfig(requirements);
       if (hal_config) {
         return std::make_unique<AudioSetConfiguration>(*hal_config);
@@ -886,6 +896,9 @@ public:
     }
 
     auto& stream_map = offloader_stream_maps.get(direction);
+    if (!stream_map.streams_map_target.empty() || !stream_map.streams_map_current.empty()) {
+      stream_map.has_changed = true;
+    }
     stream_map.streams_map_target.clear();
     stream_map.streams_map_current.clear();
   }
@@ -1507,10 +1520,10 @@ std::vector<bluetooth::le_audio::btle_audio_codec_config_t> CodecManager::GetRem
 void CodecManager::UpdateActiveAudioConfig(
         const types::BidirectionalPair<stream_parameters>& stream_params,
         std::function<void(const stream_config& config, uint8_t direction)> update_receiver,
-        uint8_t remote_directions_to_update) {
+        uint8_t remote_directions_to_update, bool force_update) {
   if (pimpl_->IsRunning()) {
     pimpl_->codec_manager_impl_->UpdateActiveAudioConfig(stream_params, update_receiver,
-                                                         remote_directions_to_update);
+                                                         remote_directions_to_update, force_update);
   }
 }
 

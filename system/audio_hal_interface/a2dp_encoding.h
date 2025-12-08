@@ -188,18 +188,22 @@ struct a2dp_remote_capabilities {
 // discovered remote SEPs.
 std::optional<a2dp_configuration> get_a2dp_configuration(
         RawAddress peer_address, std::vector<a2dp_remote_capabilities> const& remote_seps,
-        btav_a2dp_codec_config_t const& user_preferences);
+        btav_a2dp_codec_config_t const& user_preferences,
+        ::bluetooth::a2dp::CodecId user_preferred_codec_id);
 
 // Query the codec parameters from the audio HAL.
 // The HAL is expected to parse the codec configuration
 // received from the peer and decide whether accept
 // the it or not.
-tA2DP_STATUS parse_a2dp_configuration(btav_a2dp_codec_index_t codec_index,
+tA2DP_STATUS parse_a2dp_configuration(::bluetooth::a2dp::CodecId codec_id,
                                       const uint8_t* codec_info,
                                       btav_a2dp_codec_config_t* codec_parameters,
                                       std::vector<uint8_t>* vendor_specific_parameters);
 
 }  // namespace provider
+
+std::optional<btav_a2dp_hal_provider_info_t> get_provider_info();
+
 }  // namespace a2dp
 }  // namespace audio
 }  // namespace bluetooth

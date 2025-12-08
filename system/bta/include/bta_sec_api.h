@@ -20,6 +20,7 @@
 
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <cstdint>
 
@@ -31,7 +32,6 @@
 #include "stack/include/btm_ble_sec_api_types.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/hci_error_code.h"
-#include "types/raw_address.h"
 
 /* Security Setting Mask */
 #define BTA_SEC_AUTHENTICATE \

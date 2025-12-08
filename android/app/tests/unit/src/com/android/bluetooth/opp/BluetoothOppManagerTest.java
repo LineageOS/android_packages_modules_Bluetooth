@@ -20,8 +20,7 @@ import static androidx.test.espresso.intent.Intents.intended;
 import static androidx.test.espresso.intent.Intents.intending;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.anyIntent;
 
-import static com.android.bluetooth.TestUtils.StaticMockitoRule;
-import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.TestUtils.getRealDevice;
 import static com.android.bluetooth.opp.BluetoothOppManager.ALLOWED_INSERT_SHARE_THREAD_NUMBER;
 import static com.android.bluetooth.opp.BluetoothOppManager.OPP_PREFERENCE_FILE;
 
@@ -42,12 +41,13 @@ import android.content.ContextWrapper;
 import android.net.Uri;
 
 import androidx.test.espresso.intent.Intents;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
+import com.android.tests.bluetooth.StaticMockitoRule;
 
 import org.junit.After;
 import org.junit.Before;
@@ -165,7 +165,7 @@ public class BluetoothOppManagerTest {
                                 Uri.parse("content:///123/456.txt"))),
                 false,
                 true);
-        BluetoothDevice device = getTestDevice(56);
+        BluetoothDevice device = getRealDevice(56);
         bluetoothOppManager.startTransfer(device);
         // add 2 files
         verify(mCallProxy, timeout(5_000).times(3))
@@ -177,7 +177,7 @@ public class BluetoothOppManagerTest {
         BluetoothOppManager bluetoothOppManager = BluetoothOppManager.getInstance(mContext);
         bluetoothOppManager.saveSendingFileInfo(
                 "text/plain", "content:///abc/xyz.txt", false, true);
-        BluetoothDevice device = getTestDevice(34);
+        BluetoothDevice device = getRealDevice(34);
         bluetoothOppManager.startTransfer(device);
         verify(mCallProxy, timeout(5_000))
                 .contentResolverInsert(any(), nullable(Uri.class), nullable(ContentValues.class));
@@ -190,7 +190,7 @@ public class BluetoothOppManagerTest {
         BluetoothOppManager bluetoothOppManager = BluetoothOppManager.getInstance(mContext);
         bluetoothOppManager.saveSendingFileInfo(
                 "text/plain", "content:///abc/xyz.txt", false, true);
-        BluetoothDevice device = getTestDevice(72);
+        BluetoothDevice device = getRealDevice(72);
 
         AtomicBoolean intended = new AtomicBoolean(false);
         intending(anyIntent())

@@ -32,14 +32,14 @@
 //       for this effort.  This compilation unit may compile as-is, or
 //       may need attention to prune from (or add to ) the inclusion set.
 #include <alloca.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/uuid.h>
 #include <stdlib.h>
 
 #include <vector>
 
 #include "bta/include/bta_hearing_aid_api.h"
-#include "types/ble_address_with_type.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 // Original usings
 using bluetooth::Uuid;
@@ -64,9 +64,9 @@ extern struct btif_storage_add_groups btif_storage_add_groups;
 // Params: const HearingDevice& dev_info
 // Return: void
 struct btif_storage_add_hearing_aid {
-  std::function<void(const HearingDevice& dev_info)> body{
-          [](const HearingDevice& /* dev_info */) {}};
-  void operator()(const HearingDevice& dev_info) { body(dev_info); }
+  std::function<void(const bluetooth::asha::HearingDevice& dev_info)> body{
+          [](const bluetooth::asha::HearingDevice& /* dev_info */) {}};
+  void operator()(const bluetooth::asha::HearingDevice& dev_info) { body(dev_info); }
 };
 extern struct btif_storage_add_hearing_aid btif_storage_add_hearing_aid;
 

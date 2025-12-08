@@ -33,6 +33,8 @@
 #include <base/functional/bind.h>
 #include <base/threading/platform_thread.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -63,8 +65,6 @@
 #include "stack/include/btm_ble_api.h"
 #include "stack/include/btm_client_interface.h"
 #include "storage/config_keys.h"
-#include "types/ble_address_with_type.h"
-#include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
 using namespace bluetooth;
@@ -124,7 +124,7 @@ bool btif_is_dut_mode() { return btif_dut_mode == 1; }
  *
  * Description      checks if main adapter is fully enabled
  *
- * Returns          1 if fully enabled, otherwize 0
+ * Returns          1 if fully enabled, otherwise 0
  *
  ******************************************************************************/
 
@@ -134,9 +134,7 @@ int btif_is_enabled(void) {
 
 void btif_init_ok() {
   btif_dm_load_ble_local_keys();
-  if (com::android::bluetooth::flags::separate_service_storage()) {
-    btif_storage_migrate_services();
-  }
+  btif_storage_migrate_services();
 }
 
 /*******************************************************************************
@@ -299,7 +297,6 @@ static bt_status_t btif_in_get_adapter_properties(void) {
 
   RawAddress addr;
   bt_bdname_t name;
-  bt_scan_mode_t mode;
   uint32_t disc_timeout;
   tBLE_BD_ADDR_SERIALIZED serialized_bonded_devices[BTM_SEC_MAX_DEVICE_RECORDS];
   Uuid local_uuids[BT_MAX_NUM_UUIDS];
@@ -377,12 +374,10 @@ static bt_status_t btif_in_get_remote_device_properties(RawAddress* bd_addr) {
   btif_storage_get_remote_device_property(bd_addr, &remote_properties[num_props]);
   num_props++;
 
-  if (com::android::bluetooth::flags::separate_service_storage()) {
-    BTIF_STORAGE_FILL_PROPERTY(&remote_properties[num_props], BT_PROPERTY_UUIDS_LE,
-                               sizeof(remote_uuids_le), &remote_uuids_le);
-    btif_storage_get_remote_device_property(bd_addr, &remote_properties[num_props]);
-    num_props++;
-  }
+  BTIF_STORAGE_FILL_PROPERTY(&remote_properties[num_props], BT_PROPERTY_UUIDS_LE,
+                             sizeof(remote_uuids_le), &remote_uuids_le);
+  btif_storage_get_remote_device_property(bd_addr, &remote_properties[num_props]);
+  num_props++;
 
   tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
   BTIF_STORAGE_FILL_PROPERTY(&remote_properties[num_props], BT_PROPERTY_REMOTE_ADDR_TYPE,
@@ -473,7 +468,7 @@ void btif_get_adapter_property(bt_property_type_t type) {
     auto controller = bluetooth::shim::GetController();
 
     if (controller->SupportsBleExtendedAdvertising()) {
-      local_le_features.max_adv_instance = controller->GetLeNumberOfSupportedAdverisingSets();
+      local_le_features.max_adv_instance = controller->GetLeNumberOfSupportedAdvertisingSets();
     }
     local_le_features.le_2m_phy_supported = controller->SupportsBle2mPhy();
     local_le_features.le_coded_phy_supported = controller->SupportsBleCodedPhy();

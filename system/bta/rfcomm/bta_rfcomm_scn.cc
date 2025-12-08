@@ -111,18 +111,10 @@ bool BTA_FreeSCN(uint8_t scn) {
    * that aren't reserved for HFP, which is range [2, RFCOMM_MAX_SCN].
    */
 
-  if (com::android::bluetooth::flags::allow_free_last_scn()) {
-    if (scn <= RFCOMM_MAX_SCN && scn > 1) {
-      bta_jv_cb.scn_in_use[scn - 1] = false;
-      log::debug("Freed SCN: {}", scn);
-      return true;
-    }
-  } else {
-    if (scn < RFCOMM_MAX_SCN && scn > 1) {
-      bta_jv_cb.scn_in_use[scn - 1] = false;
-      log::debug("Freed SCN: {}", scn);
-      return true;
-    }
+  if (scn <= RFCOMM_MAX_SCN && scn > 1) {
+    bta_jv_cb.scn_in_use[scn - 1] = false;
+    log::debug("Freed SCN: {}", scn);
+    return true;
   }
 
   log::warn("Invalid SCN: {}", scn);

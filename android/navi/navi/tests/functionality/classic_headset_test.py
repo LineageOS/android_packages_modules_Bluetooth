@@ -16,20 +16,15 @@
 import asyncio
 from typing import TypeAlias
 
-from bumble import a2dp
-from bumble import avdtp
-from bumble import avrcp
 from bumble import device
 from bumble import hci
 from bumble import hfp
-from bumble import rfcomm
 from mobly import test_runner
 from typing_extensions import override
 
 from navi.bumble_ext import a2dp as a2dp_ext
 from navi.bumble_ext import hfp as hfp_ext
 from navi.tests import navi_test_base
-from navi.tests.smoke import a2dp_test
 from navi.utils import android_constants
 from navi.utils import bl4a_api
 from navi.utils import constants
@@ -47,12 +42,17 @@ _Module: TypeAlias = bl4a_api.Module
 _ScoState = android_constants.ScoState
 _HfpAgAudioStateChange = bl4a_api.HfpAgAudioStateChanged
 
+_DEFAULT_HFP_CONFIGURATION = hfp.HfConfiguration(
+    supported_hf_features=[],
+    supported_hf_indicators=[],
+    supported_audio_codecs=[
+        _AudioCodec.CVSD,
+        _AudioCodec.MSBC,
+    ],
+)
+
 
 class ClassicHeadsetTest(navi_test_base.TwoDevicesTestBase):
-    ref_hfp_protocol: hfp_ext.HfProtocol | None = None
-    ref_sinks: dict[a2dp_ext.A2dpCodec, avdtp.LocalSink] = {}
-    ref_avrcp_protocol: avrcp.Protocol
-    ref_avrcp_delegator: a2dp_test.AvrcpDelegate
     ref_supports_lc3: bool
 
     @override
@@ -70,28 +70,11 @@ class ClassicHeadsetTest(navi_test_base.TwoDevicesTestBase):
         self.ref_supports_lc3 = hci.CodecID.LC3 in supported_codecs
 
     @override
-    async def async_setup_test(self) -> None:
-        await super().async_setup_test()
-        self.ref_hfp_protocol = None
-        self.ref_sinks.clear()
-
-    @override
     async def async_teardown_test(self) -> None:
         await super().async_teardown_test()
         self.dut.bt.audioStop()
         # Reset audio attributes.
         self.dut.bt.setAudioAttributes(None, False)
-
-    @classmethod
-    def _default_hfp_configuration(cls) -> hfp.HfConfiguration:
-        return hfp.HfConfiguration(
-            supported_hf_features=[],
-            supported_hf_indicators=[],
-            supported_audio_codecs=[
-                _AudioCodec.CVSD,
-                _AudioCodec.MSBC,
-            ],
-        )
 
     def _setup_headset_device(
         self,
@@ -99,46 +82,21 @@ class ClassicHeadsetTest(navi_test_base.TwoDevicesTestBase):
         a2dp_codecs: list[a2dp_ext.A2dpCodec],
     ) -> None:
         """Setup HFP and A2DP servicer on the REF device."""
-
-        # Setup HFP
-        def on_dlc(dlc: rfcomm.DLC) -> None:
-            self.logger.info("[REF] HFP DLC connected %s.", dlc)
-            self.ref_hfp_protocol = hfp_ext.HfProtocol(dlc, hfp_configuration)
-            dlc.multiplexer.l2cap_channel.connection.abort_on("disconnection",
-                                                              self.ref_hfp_protocol.run())
-
-        # Create and register a server.
-        rfcomm_server = rfcomm.Server(self.ref.device)
-
-        # Listen for incoming DLC connections.
-        channel_number = rfcomm_server.listen(on_dlc)
-        self.logger.info("[REF] Listening for RFCOMM connection on channel %s.", channel_number)
-        self.ref.device.sdp_service_records = {
-            _HFP_SDP_HANDLE:
-                hfp.make_hf_sdp_records(
-                    service_record_handle=_HFP_SDP_HANDLE,
-                    rfcomm_channel=channel_number,
-                    configuration=hfp_configuration,
-                ),
-            _A2DP_SERVICE_RECORD_HANDLE:
-                a2dp.make_audio_sink_service_sdp_records(_A2DP_SERVICE_RECORD_HANDLE),
-            _AVRCP_CONTROLLER_RECORD_HANDLE:
-                (avrcp.make_controller_service_sdp_records(_AVRCP_CONTROLLER_RECORD_HANDLE)),
-            _AVRCP_TARGET_RECORD_HANDLE:
-                avrcp.make_target_service_sdp_records(_AVRCP_TARGET_RECORD_HANDLE),
-        }
-
-        def on_avdtp_connection(server: avdtp.Protocol) -> None:
-            for codec in a2dp_codecs:
-                self.ref_sinks[codec] = server.add_sink(codec.get_default_capabilities())
-
-        avdtp_listener = avdtp.Listener.for_device(self.ref.device)
-        avdtp_listener.on("connection", on_avdtp_connection)
-
-        self.ref_avrcp_delegator = a2dp_test.AvrcpDelegate(
-            supported_events=(avrcp.EventId.VOLUME_CHANGED,))
-        self.ref_avrcp_protocol = avrcp.Protocol(self.ref_avrcp_delegator)
-        self.ref_avrcp_protocol.listen(self.ref.device)
+        hfp_ext.HfProtocol.setup_server(
+            self.ref.device,
+            sdp_handle=_HFP_SDP_HANDLE,
+            configuration=hfp_configuration,
+        )
+        a2dp_ext.setup_sink_server(
+            self.ref.device,
+            [codec.get_default_capabilities() for codec in a2dp_codecs],
+            _A2DP_SERVICE_RECORD_HANDLE,
+        )
+        a2dp_ext.setup_avrcp_server(
+            self.ref.device,
+            avrcp_controller_handle=_AVRCP_CONTROLLER_RECORD_HANDLE,
+            avrcp_target_handle=_AVRCP_TARGET_RECORD_HANDLE,
+        )
 
     async def test_pair_and_connect(self) -> None:
         """Tests HFP connection establishment right after a pairing session.
@@ -154,7 +112,7 @@ class ClassicHeadsetTest(navi_test_base.TwoDevicesTestBase):
                 self.dut.bl4a.register_callback(_Module.HFP_AG) as dut_cb_hfp,
         ):
             self._setup_headset_device(
-                hfp_configuration=self._default_hfp_configuration(),
+                hfp_configuration=_DEFAULT_HFP_CONFIGURATION,
                 a2dp_codecs=[a2dp_ext.A2dpCodec.SBC],
             )
             self.logger.info("[DUT] Connect and pair REF.")
@@ -250,7 +208,7 @@ class ClassicHeadsetTest(navi_test_base.TwoDevicesTestBase):
                                              state=android_constants.A2dpState.PLAYING),)
 
         sco_links = asyncio.Queue[device.ScoLink]()
-        self.ref.device.on("sco_connection", sco_links.put_nowait)
+        self.ref.device.on(self.ref.device.EVENT_SCO_CONNECTION, sco_links.put_nowait)
 
         dut_player_cb = self.dut.bl4a.register_callback(_Module.PLAYER)
         self.test_case_context.push(dut_player_cb)
@@ -281,7 +239,7 @@ class ClassicHeadsetTest(navi_test_base.TwoDevicesTestBase):
                 sco_link = await sco_links.get()
 
             sco_disconnected = asyncio.Event()
-            sco_link.once("disconnection", lambda *_: sco_disconnected.set())
+            sco_link.once(sco_link.EVENT_DISCONNECTION, lambda *_: sco_disconnected.set())
 
             self.logger.info("[DUT] Terminate call.")
             call.close()

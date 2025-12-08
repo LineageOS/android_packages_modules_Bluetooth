@@ -18,6 +18,7 @@
 #include <base/functional/bind.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/bt_transport.h>
 #include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -45,22 +46,13 @@
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_stack_gap_conn_interface.h"
 #include "test/mock/mock_stack_l2cap_interface.h"
-#include "types/bt_transport.h"
 
 static std::map<const char*, bool> fake_osi_bool_props;
 
-namespace bluetooth {
-namespace hearing_aid {
-namespace internal {
+namespace bluetooth::asha {
 namespace {
 
 using base::HexEncode;
-
-using namespace bluetooth::hearing_aid;
-
-using ::bluetooth::hearing_aid::ConnectionState;
-using ::bluetooth::hearing_aid::HearingAidCallbacks;
-using ::bluetooth::hearing_aid::HearingAidInterface;
 
 using bluetooth::common::MessageLoopThread;
 using ::testing::_;
@@ -79,7 +71,8 @@ using ::testing::SetArgPointee;
 using ::testing::WithArg;
 
 std::atomic<int> num_async_tasks;
-bluetooth::common::MessageLoopThread message_loop_thread("test message loop");
+bluetooth::common::MessageLoopThread message_loop_thread(
+        "test message loop", bluetooth::os::Thread::Priority::REAL_TIME);
 
 bt_status_t do_in_main_thread(base::OnceClosure task) {
   // Wrap the task with task counter so we could later know if there are
@@ -162,7 +155,6 @@ protected:
   void set_sample_database(uint16_t conn_id) {
     static constexpr uint16_t kGapSvcStartHdl = 0x0001;
     static constexpr uint16_t kGapDeviceNameValHdl = 0x0003;
-    static constexpr uint16_t kGapSvcEndHdl = kGapDeviceNameValHdl;
 
     gatt::DatabaseBuilder bob;
 
@@ -667,6 +659,7 @@ TEST_F(HearingAidTest, start_stream) {
 TEST_F(HearingAidTest, service_changed_before_stream_start) {
   set_sample_database(1);
   SetEncryptionResult(test_address, true);
+  com::android::bluetooth::flags::provider_->asha_omit_gatt_after_svc_changed(false);
 
   EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
   EXPECT_CALL(*callbacks, OnDeviceAvailable(_, _, test_address)).Times(1);
@@ -746,12 +739,14 @@ TEST_F(HearingAidTest, conn_update_after_service_changed) {
  * 2. Service changed event is received
  * 3. Stream start is requested
  * 4. Volume is set
- *    Check if GATT operations were executed after service changed event, using old handles.
+ *    Check if GATT operations were not executed after service changed event.
  * 5. Service search complete event arrives
  *    Check if write to AudioControlPoint was executed.
  * 6. Second Service changed event is received
  * 7. Stream is suspended
  *    Check if write to AudioControlPoint was executed, using old handle.
+ * This test should replace service_changed_before_stream_start after flag
+ * asha_omit_gatt_after_svc_changed is released.
  */
 TEST_F(HearingAidTest, service_changed_before_stream_start_gatt_omitted_after_svc_changed) {
   com::android::bluetooth::flags::provider_->asha_omit_gatt_after_svc_changed(true);
@@ -809,7 +804,7 @@ TEST_F(HearingAidTest, service_changed_before_stream_start_gatt_omitted_after_sv
 /* 1. Hearing aid gets connected.
  * 2. Service changed event is received
  * 3. Connection Update event is received
- *    Check if write to AudioControlPoint was executed, using old handle.
+ *    Check if write to AudioControlPoint was not executed.
  */
 TEST_F(HearingAidTest, conn_update_after_service_changed_gatt_omitted_after_svc_changed) {
   com::android::bluetooth::flags::provider_->asha_omit_gatt_after_svc_changed(true);
@@ -835,6 +830,4 @@ TEST_F(HearingAidTest, conn_update_after_service_changed_gatt_omitted_after_svc_
 }
 
 }  // namespace
-}  // namespace internal
-}  // namespace hearing_aid
-}  // namespace bluetooth
+}  // namespace bluetooth::asha

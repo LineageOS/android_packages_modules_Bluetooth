@@ -42,6 +42,7 @@ public:
               (Address address, std::vector<bluetooth::hal::VendorSpecificCharacteristic>
                                         vendor_specific_characteristics));
   MOCK_METHOD(void, OnHandleVendorSpecificReplyComplete, (Address address, bool success));
+  MOCK_METHOD(void, OnRangingHardwareOffloadEnabled, ());
 };
 
 class MockDistanceMeasurementManager : public DistanceMeasurementManager {

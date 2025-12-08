@@ -64,7 +64,7 @@ const CommandPdu kCommandPduVal[] = {CommandPdu::GET_CAPABILITIES,
 class FakeMediaInterface : public MediaInterface {
 public:
   FakeMediaInterface(FuzzedDataProvider* fdp) : mFdp(fdp) {}
-  void SendKeyEvent(uint8_t /* key */, KeyState /* state */) { return; }
+  void SendKeyEvent(const RawAddress&, uint8_t /* key */, KeyState /* state */) { return; }
   using SongInfoCallback = base::Callback<void(SongInfo)>;
   void GetSongInfo(SongInfoCallback info_cb) {
     SongInfo sInfo;
@@ -184,7 +184,7 @@ class FakePlayerSettingsInterface : public PlayerSettingsInterface {
 public:
   FakePlayerSettingsInterface(FuzzedDataProvider* fdp) : mFdp(fdp) {}
   void ListPlayerSettings(ListPlayerSettingsCallback cb) {
-    uint8_t label = mFdp->ConsumeIntegral<uint8_t>();
+    mFdp->ConsumeIntegral<uint8_t>();
     size_t size = mFdp->ConsumeIntegralInRange<uint8_t>(kMinSize, kMaxSize);
     std::vector<PlayerAttribute> attributes;
     for (size_t iter = 0; iter < size; ++iter) {

@@ -31,6 +31,7 @@ public class A2dpStackEvent {
     public static final int EVENT_TYPE_CONNECTION_STATE_CHANGED = 1;
     public static final int EVENT_TYPE_AUDIO_STATE_CHANGED = 2;
     public static final int EVENT_TYPE_CODEC_CONFIG_CHANGED = 3;
+    public static final int EVENT_TYPE_AUDIO_DELAY_REPORTED = 4;
 
     // Match up with btav_audio_state_t enum of bt_av.h
     static final int AUDIO_STATE_REMOTE_SUSPEND = 0;
@@ -67,29 +68,22 @@ public class A2dpStackEvent {
             case EVENT_TYPE_CONNECTION_STATE_CHANGED -> "EVENT_TYPE_CONNECTION_STATE_CHANGED";
             case EVENT_TYPE_AUDIO_STATE_CHANGED -> "EVENT_TYPE_AUDIO_STATE_CHANGED";
             case EVENT_TYPE_CODEC_CONFIG_CHANGED -> "EVENT_TYPE_CODEC_CONFIG_CHANGED";
+            case EVENT_TYPE_AUDIO_DELAY_REPORTED -> "EVENT_TYPE_AUDIO_DELAY_REPORTED";
             default -> "EVENT_TYPE_UNKNOWN:" + type;
         };
     }
 
     private static String eventTypeValueIntToString(int type, int value) {
-        switch (type) {
-            case EVENT_TYPE_CONNECTION_STATE_CHANGED:
-                return getConnectionStateName(value);
-            case EVENT_TYPE_AUDIO_STATE_CHANGED:
-                switch (value) {
-                    case AUDIO_STATE_REMOTE_SUSPEND:
-                        return "REMOTE_SUSPEND";
-                    case AUDIO_STATE_STOPPED:
-                        return "STOPPED";
-                    case AUDIO_STATE_STARTED:
-                        return "STARTED";
-                    default:
-                        break;
-                }
-                break;
-            default:
-                break;
-        }
-        return Integer.toString(value);
+        return switch (type) {
+            case EVENT_TYPE_CONNECTION_STATE_CHANGED -> getConnectionStateName(value);
+            case EVENT_TYPE_AUDIO_STATE_CHANGED ->
+                    switch (value) {
+                        case AUDIO_STATE_REMOTE_SUSPEND -> "REMOTE_SUSPEND";
+                        case AUDIO_STATE_STOPPED -> "STOPPED";
+                        case AUDIO_STATE_STARTED -> "STARTED";
+                        default -> Integer.toString(value);
+                    };
+            default -> Integer.toString(value);
+        };
     }
 }

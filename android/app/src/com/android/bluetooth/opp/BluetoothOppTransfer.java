@@ -235,7 +235,6 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
         mBatch.registerListener(this);
     }
 
-
     public int getBatchId() {
         return mBatch.mId;
     }
@@ -820,29 +819,17 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
             mSdpInitiated = false;
 
             /* Use BluetoothSocket to connect */
-            try {
-                if (mIsInterrupted) {
-                    Log.e(TAG, "btSocket connect interrupted ");
-                    ContentProfileErrorReportUtils.report(
-                            BluetoothProfile.OPP,
-                            BluetoothProtoEnums.BLUETOOTH_OPP_TRANSFER,
-                            BluetoothStatsLog
-                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
-                            18);
-                    markConnectionFailed(mBtSocket);
-                    return;
-                } else {
-                    mBtSocket = mDevice.createInsecureL2capSocket(mL2cChannel);
-                }
-            } catch (IOException e1) {
+            if (mIsInterrupted) {
+                Log.e(TAG, "btSocket connect interrupted ");
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.OPP,
                         BluetoothProtoEnums.BLUETOOTH_OPP_TRANSFER,
-                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                        19);
-                Log.e(TAG, "L2cap socket create error", e1);
-                connectRfcommSocket();
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                        18);
+                markConnectionFailed(mBtSocket);
                 return;
+            } else {
+                mBtSocket = mDevice.createInsecureL2capSocket(mL2cChannel);
             }
             try {
                 mBtSocket.connect();

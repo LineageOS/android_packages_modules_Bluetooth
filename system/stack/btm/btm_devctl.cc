@@ -26,6 +26,7 @@
 #define LOG_TAG "devctl"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,7 +52,6 @@
 #include "stack/include/dev_hci_link_interface.h"
 #include "stack/include/hcidefs.h"
 #include "stack/include/l2cap_controller_interface.h"
-#include "types/raw_address.h"
 
 using namespace ::bluetooth;
 
@@ -144,7 +144,6 @@ void BTM_reset_complete() {
   btm_cb.btm_inq_vars.page_scan_period = HCI_DEF_PAGESCAN_INTERVAL;
   btm_cb.btm_inq_vars.page_scan_type = HCI_DEF_SCAN_TYPE;
 
-  btm_cb.ble_ctr_cb.set_connection_state_idle();
   connection_manager::reset(true);
 
   btm_pm_reset();

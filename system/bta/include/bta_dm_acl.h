@@ -16,11 +16,12 @@
 
 #pragma once
 
+#include <bluetooth/types/ble_address_with_type.h>
+#include <bluetooth/types/hci_role.h>
+
 #include <cstdint>
 
 #include "stack/include/hci_error_code.h"
-#include "types/ble_address_with_type.h"
-#include "types/hci_role.h"
 
 void BTA_dm_acl_up(const tAclLinkSpec& link_spec, uint16_t acl_handle);
 void BTA_dm_acl_up_failed(const tAclLinkSpec& link_spec, tHCI_STATUS hci_status);

@@ -745,7 +745,7 @@ class A2DPProxy(ProfileProxy):
             # The PTS expects the host stack to start the stream for the above
             # listed tests.
             self.a2dp.Start(source=self.source)
-            self.audio.start(duration_s=30.)
+            self.audio.start(duration_s=60.)
 
         return "OK"
 
@@ -837,4 +837,21 @@ class A2DPProxy(ProfileProxy):
         Were the spoken numbers the same as the number shown on the screen?
         """
 
+        return "OK"
+
+    def TSC_A2DP_mmi_iut_initiate_local_video_remote_audio_sync(self, **kwargs):
+        """
+        Take action to start streaming the Conformance Test Video provided by
+        the Bluetooth SIG, with delay reporting configured.  The video should
+        playback locally, while the audio is streamed to the tester.
+
+        Note:
+        Conformance Test Video can be found at https://www.bluetooth.org/en-
+        us/test-qualification/qualification-overview/test-requirements.  The
+        video can also be found in the PTS installation directory at /Bluetooth
+        PTS/bin/audio/conformanceTestVideo.3gp
+        """
+
+        self.a2dp.Start(source=self.source)
+        self.audio.start(duration_s=60.)
         return "OK"

@@ -16,13 +16,13 @@
  *
  ******************************************************************************/
 
+#include <bluetooth/types/uuid.h>
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
 
 #include "gatt/gatt_test.h"
 #include "gd/os/rand.h"
-#include "types/bluetooth/uuid.h"
 
 namespace bttest {
 

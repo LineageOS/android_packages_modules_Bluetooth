@@ -26,8 +26,9 @@
 #include <string>
 
 // Original included files, if any
+#include <bluetooth/types/address.h>
+
 #include "stack/include/pan_api.h"
-#include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
 namespace test {
@@ -58,35 +59,6 @@ struct PAN_Disconnect {
   tPAN_RESULT operator()(uint16_t handle) { return body(handle); }
 };
 extern struct PAN_Disconnect PAN_Disconnect;
-// Name: PAN_SetMulticastFilters
-// Params: uint16_t handle, uint16_t num_mcast_filters, uint8_t* p_start_array,
-// uint8_t* p_end_array Returns: tPAN_RESULT
-struct PAN_SetMulticastFilters {
-  std::function<tPAN_RESULT(uint16_t handle, uint16_t num_mcast_filters, uint8_t* p_start_array,
-                            uint8_t* p_end_array)>
-          body{[](uint16_t /* handle */, uint16_t /* num_mcast_filters */,
-                  uint8_t* /* p_start_array */,
-                  uint8_t* /* p_end_array */) { return PAN_SUCCESS; }};
-  tPAN_RESULT operator()(uint16_t handle, uint16_t num_mcast_filters, uint8_t* p_start_array,
-                         uint8_t* p_end_array) {
-    return body(handle, num_mcast_filters, p_start_array, p_end_array);
-  }
-};
-extern struct PAN_SetMulticastFilters PAN_SetMulticastFilters;
-// Name: PAN_SetProtocolFilters
-// Params: uint16_t handle, uint16_t num_filters, uint16_t* p_start_array,
-// uint16_t* p_end_array Returns: tPAN_RESULT
-struct PAN_SetProtocolFilters {
-  std::function<tPAN_RESULT(uint16_t handle, uint16_t num_filters, uint16_t* p_start_array,
-                            uint16_t* p_end_array)>
-          body{[](uint16_t /* handle */, uint16_t /* num_filters */, uint16_t* /* p_start_array */,
-                  uint16_t* /* p_end_array */) { return PAN_SUCCESS; }};
-  tPAN_RESULT operator()(uint16_t handle, uint16_t num_filters, uint16_t* p_start_array,
-                         uint16_t* p_end_array) {
-    return body(handle, num_filters, p_start_array, p_end_array);
-  }
-};
-extern struct PAN_SetProtocolFilters PAN_SetProtocolFilters;
 // Name: PAN_SetRole
 // Params: uint8_t role, const std::string p_user_name, const std::string
 // p_nap_name Returns: tPAN_RESULT
@@ -100,22 +72,6 @@ struct PAN_SetRole {
   }
 };
 extern struct PAN_SetRole PAN_SetRole;
-// Name: PAN_Write
-// Params: uint16_t handle, const RawAddress& dst, const RawAddress& src,
-// uint16_t protocol, uint8_t* p_data, uint16_t len, bool ext Returns:
-// tPAN_RESULT
-struct PAN_Write {
-  std::function<tPAN_RESULT(uint16_t handle, const RawAddress& dst, const RawAddress& src,
-                            uint16_t protocol, uint8_t* p_data, uint16_t len, bool ext)>
-          body{[](uint16_t /* handle */, const RawAddress& /* dst */, const RawAddress& /* src */,
-                  uint16_t /* protocol */, uint8_t* /* p_data */, uint16_t /* len */,
-                  bool /* ext */) { return PAN_SUCCESS; }};
-  tPAN_RESULT operator()(uint16_t handle, const RawAddress& dst, const RawAddress& src,
-                         uint16_t protocol, uint8_t* p_data, uint16_t len, bool ext) {
-    return body(handle, dst, src, protocol, p_data, len, ext);
-  }
-};
-extern struct PAN_Write PAN_Write;
 // Name: PAN_WriteBuf
 // Params: uint16_t handle, const RawAddress& dst, const RawAddress& src,
 // uint16_t protocol, BT_HDR* p_buf, bool ext Returns: tPAN_RESULT

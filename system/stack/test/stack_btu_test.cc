@@ -37,17 +37,7 @@ protected:
 
 TEST_F(StackBtuTest, post_on_main) {}
 
-TEST_F(StackBtuTest, btm_sco_connection_failed_called) {
-  // TODO b/358573137  - remove when flag is removing
-  com::android::bluetooth::flags::provider_->fix_sco_command_status_handling(false);
-  uint8_t p_cmd[10];  // garbage data for testing
-  bluetooth::legacy::testing::btu_hcif_hdl_command_status(HCI_SETUP_ESCO_CONNECTION,
-                                                          HCI_ERR_UNSPECIFIED, p_cmd);
-  ASSERT_EQ(1, get_func_call_count("btm_sco_connection_failed"));
-}
-
 TEST_F(StackBtuTest, btm_sco_connection_failed_called_fixed) {
-  com::android::bluetooth::flags::provider_->fix_sco_command_status_handling(true);
   uint8_t test_data[18];  // garbage data for testing
   bluetooth::legacy::testing::btu_hcif_hdl_command_status(HCI_SETUP_ESCO_CONNECTION,
                                                           HCI_ERR_UNSPECIFIED, test_data);
@@ -71,7 +61,6 @@ TEST_F(StackBtuTest, btm_sco_connection_failed_called_fixed) {
 }
 
 TEST_F(StackBtuTest, btm_sco_create_connection_status_failed_called) {
-  com::android::bluetooth::flags::provider_->fix_sco_command_status_handling(true);
   uint8_t test_data[10];  // garbage data for testing
   bluetooth::legacy::testing::btu_hcif_hdl_command_status(HCI_SETUP_ESCO_CONNECTION,
                                                           HCI_ERR_UNSPECIFIED, test_data);

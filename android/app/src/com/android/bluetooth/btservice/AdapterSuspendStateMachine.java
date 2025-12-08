@@ -21,6 +21,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
+import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 
@@ -146,7 +147,8 @@ final class AdapterSuspendStateMachine extends StateMachine {
         }
     }
 
-    private class ActiveState extends BaseSuspendState {
+    @VisibleForTesting
+    class ActiveState extends BaseSuspendState {
         @Override
         public String toString() {
             return "ACTIVE";
@@ -183,7 +185,8 @@ final class AdapterSuspendStateMachine extends StateMachine {
         }
     }
 
-    private class BusyState extends BaseSuspendState {
+    @VisibleForTesting
+    class BusyState extends BaseSuspendState {
         @Override
         public String toString() {
             return "BUSY";
@@ -223,7 +226,8 @@ final class AdapterSuspendStateMachine extends StateMachine {
         }
     }
 
-    private class SuspendedState extends BaseSuspendState {
+    @VisibleForTesting
+    class SuspendedState extends BaseSuspendState {
         @Override
         public String toString() {
             return "SUSPENDED(" + mWakeByHidAllowed + ")";

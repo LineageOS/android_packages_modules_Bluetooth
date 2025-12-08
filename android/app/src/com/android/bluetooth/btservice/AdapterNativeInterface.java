@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.btservice;
 
+import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
+
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.OobData;
 import android.os.ParcelUuid;
@@ -275,7 +277,7 @@ public class AdapterNativeInterface {
     }
 
     boolean disconnectAllAcls(BluetoothDevice device) {
-        return disconnectAcl(device, BluetoothDevice.TRANSPORT_AUTO);
+        return disconnectAcl(device, TRANSPORT_AUTO);
     }
 
     boolean disconnectAcl(BluetoothDevice device, int transport) {

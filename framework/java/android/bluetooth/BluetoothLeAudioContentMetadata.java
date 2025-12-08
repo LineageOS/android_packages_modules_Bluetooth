@@ -18,6 +18,7 @@ package android.bluetooth;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.bluetooth.BluetoothUtils.TypeValueEntry;
 import android.os.Parcel;
@@ -86,6 +87,7 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @Nullable String getProgramInfo() {
         return mProgramInfo;
     }
@@ -97,6 +99,7 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public @Nullable String getLanguage() {
         return mLanguage;
     }
@@ -109,6 +112,7 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
      *
      * @return raw bytes of stream metadata in Bluetooth LTV format
      */
+    @RequiresNoPermission
     public @NonNull byte[] getRawMetadata() {
         return mRawMetadata;
     }
@@ -171,6 +175,7 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
      * @hide
      */
     @SystemApi
+    @RequiresNoPermission
     public static @NonNull BluetoothLeAudioContentMetadata fromRawBytes(@NonNull byte[] rawBytes) {
         if (rawBytes == null) {
             throw new IllegalArgumentException("Raw bytes cannot be null");
@@ -245,6 +250,7 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder setProgramInfo(@Nullable String programInfo) {
             mProgramInfo = programInfo;
             return this;
@@ -258,6 +264,7 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull Builder setLanguage(@Nullable String language) {
             mLanguage = language;
             return this;
@@ -271,6 +278,7 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresNoPermission
         public @NonNull BluetoothLeAudioContentMetadata build() {
             List<TypeValueEntry> entries = new ArrayList<>();
             if (mRawMetadata != null) {

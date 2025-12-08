@@ -47,7 +47,6 @@ import com.android.obex.ResponseCodes;
 import com.android.obex.ServerOperation;
 import com.android.vcard.VCardComposer;
 import com.android.vcard.VCardConfig;
-import com.android.vcard.VCardPhoneNumberTranslationCallback;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -239,7 +238,7 @@ public class BluetoothPbapVcardManager {
                 new String[] {Calls.NUMBER, Calls.CACHED_NAME, Calls.NUMBER_PRESENTATION};
 
         Cursor callCursor = null;
-        ArrayList<String> list = new ArrayList<String>();
+        ArrayList<String> list = new ArrayList<>();
         try {
             callCursor =
                     BluetoothMethodProxy.getInstance()
@@ -283,7 +282,7 @@ public class BluetoothPbapVcardManager {
     }
 
     public final List<String> getPhonebookNameList(final int orderByWhat) {
-        List<String> nameList = new ArrayList<String>();
+        List<String> nameList = new ArrayList<>();
         // Owner vCard enhancement. Use "ME" profile if configured
         String ownerName = null;
         if (BluetoothPbapConfig.useProfileForOwnerVcard()) {
@@ -348,7 +347,7 @@ public class BluetoothPbapVcardManager {
             int pbSize,
             byte[] selector,
             String vCardSelectorOperator) {
-        List<String> nameList = new ArrayList<String>();
+        List<String> nameList = new ArrayList<>();
         PropertySelector vcardselector = new PropertySelector(selector);
         int vcardType;
 
@@ -361,18 +360,10 @@ public class BluetoothPbapVcardManager {
         VCardComposer composer =
                 BluetoothPbapUtils.createFilteredVCardComposer(mContext, vcardType, null);
         composer.setPhoneNumberTranslationCallback(
-                new VCardPhoneNumberTranslationCallback() {
-
-                    @Override
-                    public String onValueReceived(
-                            String rawValue, int type, String label, boolean isPrimary) {
-                        String numberWithControlSequence =
-                                convertAndStrip(rawValue)
-                                        .replace(PhoneNumberUtils.PAUSE, 'p')
-                                        .replace(PhoneNumberUtils.WAIT, 'w');
-                        return numberWithControlSequence;
-                    }
-                });
+                (rawValue, type, label, isPrimary) ->
+                        convertAndStrip(rawValue)
+                                .replace(PhoneNumberUtils.PAUSE, 'p')
+                                .replace(PhoneNumberUtils.WAIT, 'w'));
 
         // Owner vCard enhancement. Use "ME" profile if configured
         String ownerName = null;
@@ -398,7 +389,7 @@ public class BluetoothPbapVcardManager {
                                     null,
                                     Phone.CONTACT_ID);
 
-            ArrayList<String> contactNameIdList = new ArrayList<String>();
+            ArrayList<String> contactNameIdList = new ArrayList<>();
             appendDistinctNameIdList(
                     contactNameIdList,
                     mContext.getString(android.R.string.unknownName),
@@ -483,7 +474,7 @@ public class BluetoothPbapVcardManager {
     }
 
     public final List<String> getContactNamesByNumber(final String phoneNumber) {
-        List<String> nameList = new ArrayList<String>();
+        List<String> nameList = new ArrayList<>();
 
         Cursor contactCursor = null;
         Uri uri = null;
@@ -873,20 +864,14 @@ public class BluetoothPbapVcardManager {
             // other formatting
             // done by vCard library by default.
             composer.setPhoneNumberTranslationCallback(
-                    new VCardPhoneNumberTranslationCallback() {
-                        @Override
-                        public String onValueReceived(
-                                String rawValue, int type, String label, boolean isPrimary) {
-                            // 'p' and 'w' are the standard characters for pause and
-                            // wait
-                            // (see RFC 3601)
-                            // so use those when exporting phone numbers via vCard.
-                            String numberWithControlSequence =
-                                    convertAndStrip(rawValue)
-                                            .replace(PhoneNumberUtils.PAUSE, 'p')
-                                            .replace(PhoneNumberUtils.WAIT, 'w');
-                            return numberWithControlSequence;
-                        }
+                    (rawValue, type, label, isPrimary) -> {
+                        // 'p' and 'w' are the standard characters for pause and
+                        // wait
+                        // (see RFC 3601)
+                        // so use those when exporting phone numbers via vCard.
+                        return convertAndStrip(rawValue)
+                                .replace(PhoneNumberUtils.PAUSE, 'p')
+                                .replace(PhoneNumberUtils.WAIT, 'w');
                     });
             buffer = new HandlerForStringBuffer(op, ownerVCard);
             Log.v(TAG, "contactIdCursor size: " + contactIdCursor.getCount());
@@ -993,17 +978,11 @@ public class BluetoothPbapVcardManager {
             /* BT does want PAUSE/WAIT conversion while it doesn't want the
              * other formatting done by vCard library by default. */
             composer.setPhoneNumberTranslationCallback(
-                    new VCardPhoneNumberTranslationCallback() {
-                        @Override
-                        public String onValueReceived(
-                                String rawValue, int type, String label, boolean isPrimary) {
-                            /* 'p' and 'w' are the standard characters for pause and wait
-                             * (see RFC 3601) so use those when exporting phone numbers via vCard.*/
-                            String numberWithControlSequence =
-                                    rawValue.replace(PhoneNumberUtils.PAUSE, 'p')
-                                            .replace(PhoneNumberUtils.WAIT, 'w');
-                            return numberWithControlSequence;
-                        }
+                    (rawValue, type, label, isPrimary) -> {
+                        /* 'p' and 'w' are the standard characters for pause and wait
+                         * (see RFC 3601) so use those when exporting phone numbers via vCard.*/
+                        return rawValue.replace(PhoneNumberUtils.PAUSE, 'p')
+                                .replace(PhoneNumberUtils.WAIT, 'w');
                     });
             buffer = new HandlerForStringBuffer(op, ownerVCard);
             Log.v(TAG, "contactIdCursor size: " + contactIdCursor.getCount());
@@ -1242,10 +1221,10 @@ public class BluetoothPbapVcardManager {
             NICKNAME(23, "NICKNAME", false, true),
             DATETIME(28, "X-IRMC-CALL-DATETIME", false, false);
 
-            public final int pos;
-            public final String prop;
-            public final boolean onlyCheckV21;
-            public final boolean excludeForV21;
+            final int pos;
+            final String prop;
+            final boolean onlyCheckV21;
+            final boolean excludeForV21;
 
             FilterBit(int pos, String prop, boolean onlyCheckV21, boolean excludeForV21) {
                 this.pos = pos;
@@ -1344,8 +1323,8 @@ public class BluetoothPbapVcardManager {
             NICKNAME(23, "NICKNAME"),
             DATETIME(28, "DATETIME");
 
-            public final int mBitPosition;
-            public final String mProperty;
+            final int mBitPosition;
+            final String mProperty;
 
             PropertyMask(int bitPosition, String property) {
                 this.mBitPosition = bitPosition;

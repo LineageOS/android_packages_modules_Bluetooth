@@ -18,6 +18,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/address.h>
 
 #include <chrono>
 #include <cstdint>
@@ -28,7 +29,6 @@
 
 #include "hardware/bt_le_audio.h"
 #include "le_audio_types.h"
-#include "types/raw_address.h"
 
 namespace bluetooth::le_audio {
 
@@ -70,6 +70,101 @@ static int32_t to_atom_context_type(const LeAudioContextType stack_type) {
     return static_cast<int32_t>(it->second);
   }
   return static_cast<int32_t>(LeAudioMetricsContextType::INVALID);
+}
+
+const static std::unordered_map<tGATT_STATUS, ConnectionStatus> kGattStatToConnectionStatusTable = {
+        {GATT_SUCCESS, ConnectionStatus::SUCCESS},
+        {GATT_INVALID_HANDLE, ConnectionStatus::FAILED_GATT_INVALID_HANDLE},
+        {GATT_READ_NOT_PERMIT, ConnectionStatus::FAILED_GATT_READ_NOT_PERMIT},
+        {GATT_WRITE_NOT_PERMIT, ConnectionStatus::FAILED_GATT_WRITE_NOT_PERMIT},
+        {GATT_INVALID_PDU, ConnectionStatus::FAILED_GATT_INVALID_PDU},
+        {GATT_INSUF_AUTHENTICATION, ConnectionStatus::FAILED_GATT_INSUF_AUTHENTICATION},
+        {GATT_REQ_NOT_SUPPORTED, ConnectionStatus::FAILED_GATT_REQ_NOT_SUPPORTED},
+        {GATT_INVALID_OFFSET, ConnectionStatus::FAILED_GATT_INVALID_OFFSET},
+        {GATT_INSUF_AUTHORIZATION, ConnectionStatus::FAILED_GATT_INSUF_AUTHORIZATION},
+        {GATT_PREPARE_Q_FULL, ConnectionStatus::FAILED_GATT_PREPARE_Q_FULL},
+        {GATT_NOT_FOUND, ConnectionStatus::FAILED_GATT_NOT_FOUND},
+        {GATT_NOT_LONG, ConnectionStatus::FAILED_GATT_NOT_LONG},
+        {GATT_INSUF_KEY_SIZE, ConnectionStatus::FAILED_GATT_INSUF_KEY_SIZE},
+        {GATT_INVALID_ATTR_LEN, ConnectionStatus::FAILED_GATT_INVALID_ATTR_LEN},
+        {GATT_ERR_UNLIKELY, ConnectionStatus::FAILED_GATT_ERR_UNLIKELY},
+        {GATT_INSUF_ENCRYPTION, ConnectionStatus::FAILED_GATT_INSUF_ENCRYPTION},
+        {GATT_UNSUPPORT_GRP_TYPE, ConnectionStatus::FAILED_GATT_UNSUPPORT_GRP_TYPE},
+        {GATT_INSUF_RESOURCE, ConnectionStatus::FAILED_GATT_INSUF_RESOURCE},
+        {GATT_DATABASE_OUT_OF_SYNC, ConnectionStatus::FAILED_GATT_DATABASE_OUT_OF_SYNC},
+        {GATT_VALUE_NOT_ALLOWED, ConnectionStatus::FAILED_GATT_VALUE_NOT_ALLOWED},
+        {GATT_ILLEGAL_PARAMETER, ConnectionStatus::FAILED_GATT_ILLEGAL_PARAMETER},
+        {GATT_NO_RESOURCES, ConnectionStatus::FAILED_GATT_NO_RESOURCES},
+        {GATT_INTERNAL_ERROR, ConnectionStatus::FAILED_GATT_INTERNAL_ERROR},
+        {GATT_WRONG_STATE, ConnectionStatus::FAILED_GATT_WRONG_STATE},
+        {GATT_DB_FULL, ConnectionStatus::FAILED_GATT_DB_FULL},
+        {GATT_BUSY, ConnectionStatus::FAILED_GATT_BUSY},
+        {GATT_ERROR, ConnectionStatus::FAILED_GATT_ERROR},
+        {GATT_CMD_STARTED, ConnectionStatus::FAILED_GATT_CMD_STARTED},
+        {GATT_PENDING, ConnectionStatus::FAILED_GATT_PENDING},
+        {GATT_AUTH_FAIL, ConnectionStatus::FAILED_GATT_AUTH_FAIL},
+        {GATT_INVALID_CFG, ConnectionStatus::FAILED_GATT_INVALID_CFG},
+        {GATT_SERVICE_STARTED, ConnectionStatus::FAILED_GATT_SERVICE_STARTED},
+        {GATT_ENCRYPED_NO_MITM, ConnectionStatus::FAILED_GATT_ENCRYPED_NO_MITM},
+        {GATT_NOT_ENCRYPTED, ConnectionStatus::FAILED_GATT_NOT_ENCRYPTED},
+        {GATT_CONGESTED, ConnectionStatus::FAILED_GATT_CONGESTED},
+        {GATT_DUP_REG, ConnectionStatus::FAILED_GATT_DUP_REG},
+        {GATT_ALREADY_OPEN, ConnectionStatus::FAILED_GATT_ALREADY_OPEN},
+        {GATT_CANCEL, ConnectionStatus::FAILED_GATT_CANCEL},
+        {GATT_CONNECTION_TIMEOUT, ConnectionStatus::FAILED_GATT_CONNECTION_TIMEOUT},
+        {GATT_CCC_CFG_ERR, ConnectionStatus::FAILED_GATT_CCC_CFG_ERR},
+        {GATT_PRC_IN_PROGRESS, ConnectionStatus::FAILED_GATT_PRC_IN_PROGRESS},
+        {GATT_OUT_OF_RANGE, ConnectionStatus::FAILED_GATT_OUT_OF_RANGE},
+};
+
+ConnectionStatus to_atom_gatt_status(tGATT_STATUS gatt_status) {
+  auto it = kGattStatToConnectionStatusTable.find(gatt_status);
+  if (it != kGattStatToConnectionStatusTable.end()) {
+    return it->second;
+  }
+  return ConnectionStatus::FAILED;
+}
+
+const static std::unordered_map<tBTM_STATUS, ConnectionStatus> kBtmStatToConnectionStatusTable = {
+        {tBTM_STATUS::BTM_SUCCESS, ConnectionStatus::SUCCESS},
+        {tBTM_STATUS::BTM_CMD_STARTED, ConnectionStatus::FAILED_BTM_CMD_STARTED},
+        {tBTM_STATUS::BTM_BUSY, ConnectionStatus::FAILED_BTM_BUSY},
+        {tBTM_STATUS::BTM_NO_RESOURCES, ConnectionStatus::FAILED_BTM_NO_RESOURCES},
+        {tBTM_STATUS::BTM_MODE_UNSUPPORTED, ConnectionStatus::FAILED_BTM_MODE_UNSUPPORTED},
+        {tBTM_STATUS::BTM_ILLEGAL_VALUE, ConnectionStatus::FAILED_BTM_ILLEGAL_VALUE},
+        {tBTM_STATUS::BTM_WRONG_MODE, ConnectionStatus::FAILED_BTM_WRONG_MODE},
+        {tBTM_STATUS::BTM_UNKNOWN_ADDR, ConnectionStatus::FAILED_BTM_UNKNOWN_ADDR},
+        {tBTM_STATUS::BTM_DEVICE_TIMEOUT, ConnectionStatus::FAILED_BTM_DEVICE_TIMEOUT},
+        {tBTM_STATUS::BTM_BAD_VALUE_RET, ConnectionStatus::FAILED_BTM_BAD_VALUE_RET},
+        {tBTM_STATUS::BTM_ERR_PROCESSING, ConnectionStatus::FAILED_BTM_ERR_PROCESSING},
+        {tBTM_STATUS::BTM_NOT_AUTHORIZED, ConnectionStatus::FAILED_BTM_NOT_AUTHORIZED},
+        {tBTM_STATUS::BTM_DEV_RESET, ConnectionStatus::FAILED_BTM_DEV_RESET},
+        {tBTM_STATUS::BTM_CMD_STORED, ConnectionStatus::FAILED_BTM_CMD_STORED},
+        {tBTM_STATUS::BTM_ILLEGAL_ACTION, ConnectionStatus::FAILED_BTM_ILLEGAL_ACTION},
+        {tBTM_STATUS::BTM_DELAY_CHECK, ConnectionStatus::FAILED_BTM_DELAY_CHECK},
+        {tBTM_STATUS::BTM_SCO_BAD_LENGTH, ConnectionStatus::FAILED_BTM_SCO_BAD_LENGTH},
+        {tBTM_STATUS::BTM_SUCCESS_NO_SECURITY, ConnectionStatus::FAILED_BTM_SUCCESS_NO_SECURITY},
+        {tBTM_STATUS::BTM_FAILED_ON_SECURITY, ConnectionStatus::FAILED_BTM_FAILED_ON_SECURITY},
+        {tBTM_STATUS::BTM_REPEATED_ATTEMPTS, ConnectionStatus::FAILED_BTM_REPEATED_ATTEMPTS},
+        {tBTM_STATUS::BTM_MODE4_LEVEL4_NOT_SUPPORTED,
+         ConnectionStatus::FAILED_BTM_MODE4_LEVEL4_NOT_SUPPORTED},
+        {tBTM_STATUS::BTM_DEV_RESTRICT_LISTED, ConnectionStatus::FAILED_BTM_DEV_RESTRICT_LISTED},
+        {tBTM_STATUS::BTM_ERR_KEY_MISSING, ConnectionStatus::FAILED_BTM_ERR_KEY_MISSING},
+        {tBTM_STATUS::BTM_NOT_AUTHENTICATED, ConnectionStatus::FAILED_BTM_NOT_AUTHENTICATED},
+        {tBTM_STATUS::BTM_NOT_ENCRYPTED, ConnectionStatus::FAILED_BTM_NOT_ENCRYPTED},
+        {tBTM_STATUS::BTM_INSUFFICIENT_ENCRYPT_KEY_SIZE,
+         ConnectionStatus::FAILED_BTM_INSUFFICIENT_ENCRYPT_KEY_SIZE},
+        {tBTM_STATUS::BTM_MAX_STATUS_VALUE,
+         ConnectionStatus::FAILED_BTM_MAX_STATUS_VALUE},
+        {tBTM_STATUS::BTM_UNDEFINED, ConnectionStatus::FAILED_BTM_UNDEFINED},
+};
+
+ConnectionStatus to_atom_btm_status(tBTM_STATUS btm_status) {
+  auto it = kBtmStatToConnectionStatusTable.find(btm_status);
+  if (it != kBtmStatToConnectionStatusTable.end()) {
+    return it->second;
+  }
+  return ConnectionStatus::FAILED;
 }
 
 class DeviceMetrics {

@@ -206,8 +206,8 @@ public class BipImageFormat {
         }
 
         StringBuilder sb = new StringBuilder();
-        switch (mFormatType) {
-            case FORMAT_NATIVE:
+        return switch (mFormatType) {
+            case FORMAT_NATIVE -> {
                 sb.append("<native");
                 sb.append(" encoding=\"").append(mEncoding.toString()).append("\"");
                 sb.append(" pixel=\"").append(mPixel.toString()).append("\"");
@@ -215,8 +215,9 @@ public class BipImageFormat {
                     sb.append(" size=\"").append(mSize).append("\"");
                 }
                 sb.append(" />");
-                return sb.toString();
-            case FORMAT_VARIANT:
+                yield sb.toString();
+            }
+            case FORMAT_VARIANT -> {
                 sb.append("<variant");
                 sb.append(" encoding=\"").append(mEncoding.toString()).append("\"");
                 sb.append(" pixel=\"").append(mPixel.toString()).append("\"");
@@ -230,11 +231,13 @@ public class BipImageFormat {
                     sb.append(" maxsize=\"").append(mMaxSize).append("\"");
                 }
                 sb.append(" />");
-                return sb.toString();
-            default:
+                yield sb.toString();
+            }
+            default -> {
                 error("Unsupported format type '" + mFormatType + "'");
-        }
-        return null;
+                yield null;
+            }
+        };
     }
 
     private static void error(String msg) {

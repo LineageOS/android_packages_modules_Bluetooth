@@ -20,6 +20,7 @@
 
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <stddef.h>
 
@@ -44,7 +45,6 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/rnr_interface.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -137,12 +137,11 @@ static void bta_dm_search_cancel() {
     /* If no Service Search going on then issue cancel remote name in case it is active */
     if (get_stack_rnr_interface().BTM_CancelRemoteDeviceName() != tBTM_STATUS::BTM_CMD_STARTED) {
       log::warn("Unable to cancel RNR");
+      if (com_android_bluetooth_flags_complete_disc_if_no_rnr()) {
+        bta_dm_search_cmpl();
+      }
     }
     /* bta_dm_search_cmpl is called when receiving the remote name cancel evt */
-    if (!com::android::bluetooth::flags::
-                bta_dm_defer_device_discovery_state_change_until_rnr_complete()) {
-      bta_dm_search_cmpl();
-    }
   } else {
     bta_dm_inq_cmpl();
   }
@@ -189,7 +188,7 @@ static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, const uint8_t* p_eir,
 
   result.inq_res.ble_addr_type = p_inq->ble_addr_type;
   result.inq_res.inq_result_type = p_inq->inq_result_type;
-  result.inq_res.last_inq_result_from_type = p_inq->last_inq_result_from_type;
+  result.inq_res.last_inq_result_transport = p_inq->last_inq_result_transport;
   result.inq_res.device_type = p_inq->device_type;
   result.inq_res.flag = p_inq->flag;
   result.inq_res.include_rsi = p_inq->include_rsi;
@@ -496,7 +495,7 @@ static void bta_dm_discover_name(const RawAddress& remote_bd_addr) {
     log::verbose("appl_knows_rem_name {}", bta_dm_search_cb.p_btm_inq_info->appl_knows_rem_name);
   }
   if (((bta_dm_search_cb.p_btm_inq_info) &&
-       (bta_dm_search_cb.p_btm_inq_info->results.device_type == BT_DEVICE_TYPE_BLE) &&
+       (bta_dm_search_cb.p_btm_inq_info->results.inq_result_type == BT_DEVICE_TYPE_BLE) &&
        (bta_dm_search_get_state() == BTA_DM_SEARCH_ACTIVE)) ||
       (transport == BT_TRANSPORT_LE &&
        interop_match_addr(INTEROP_DISABLE_NAME_REQUEST, &bta_dm_search_cb.peer_bdaddr))) {
@@ -590,7 +589,7 @@ static void bta_dm_observe_results_cb(tBTM_INQ_RESULTS* p_inq, const uint8_t* p_
   result.inq_res.rssi = p_inq->rssi;
   result.inq_res.ble_addr_type = p_inq->ble_addr_type;
   result.inq_res.inq_result_type = p_inq->inq_result_type;
-  result.inq_res.last_inq_result_from_type = p_inq->last_inq_result_from_type;
+  result.inq_res.last_inq_result_transport = p_inq->last_inq_result_transport;
   result.inq_res.device_type = p_inq->device_type;
   result.inq_res.flag = p_inq->flag;
   result.inq_res.ble_evt_type = p_inq->ble_evt_type;
@@ -639,7 +638,7 @@ static void bta_dm_opportunistic_observe_results_cb(tBTM_INQ_RESULTS* p_inq, con
   result.inq_res.rssi = p_inq->rssi;
   result.inq_res.ble_addr_type = p_inq->ble_addr_type;
   result.inq_res.inq_result_type = p_inq->inq_result_type;
-  result.inq_res.last_inq_result_from_type = p_inq->last_inq_result_from_type;
+  result.inq_res.last_inq_result_transport = p_inq->last_inq_result_transport;
   result.inq_res.device_type = p_inq->device_type;
   result.inq_res.flag = p_inq->flag;
   result.inq_res.ble_evt_type = p_inq->ble_evt_type;

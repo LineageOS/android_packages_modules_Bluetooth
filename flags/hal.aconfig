@@ -2,20 +2,10 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "snoop_logger_tracing"
+    name: "snoop_logger_save_multiple_snoop_logs"
     namespace: "bluetooth"
-    description: "Add snoop logger tracing"
-    bug: "369428038"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "snoop_logger_recreate_logs_directory"
-    namespace: "bluetooth"
-    description: "Recreate logs directory if removed"
-    bug: "383876267"
+    description: "Save more than the current and the last snoop logs and rotate the log names."
+    bug: "434047798"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

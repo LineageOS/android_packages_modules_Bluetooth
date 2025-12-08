@@ -20,6 +20,8 @@
 #include <base/task/cancelable_task_tracker.h>
 #include <base/threading/thread.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 
@@ -56,8 +58,6 @@
 #include "stack/include/sdp_callback.h"
 #include "stack/include/sdpdefs.h"
 #include "stack/sdp/sdp_discovery_db.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 using bluetooth::legacy::stack::sdp::get_legacy_stack_sdp_api;
 using namespace bluetooth::avrcp;
@@ -137,6 +137,7 @@ public:
   void SaveControllerVersion(const RawAddress& bdaddr, uint16_t version) override {
     AVRC_SaveControllerVersion(bdaddr, version);
   }
+  void ResetServiceUuid() { AVRC_ResetServiceUuid(); }
 } avrcp_interface_;
 
 static class SdpInterfaceImpl : public SdpInterface {
@@ -170,9 +171,9 @@ class MediaInterfaceWrapper : public MediaInterface {
 public:
   explicit MediaInterfaceWrapper(MediaInterface* cb) : wrapped_(cb) {}
 
-  void SendKeyEvent(uint8_t key, KeyState state) override {
-    do_in_jni_thread(
-            base::Bind(&MediaInterface::SendKeyEvent, base::Unretained(wrapped_), key, state));
+  void SendKeyEvent(const RawAddress& bdaddr, uint8_t key, KeyState state) override {
+    do_in_jni_thread(base::Bind(&MediaInterface::SendKeyEvent, base::Unretained(wrapped_), bdaddr,
+                                key, state));
   }
 
   void GetSongInfo(SongInfoCallback info_cb) override {
@@ -480,15 +481,14 @@ void AvrcpService::RegisterBipServer(int psm) {
   log::info("AVRCP Target Service has registered a BIP OBEX server, psm={}", psm);
 
   const std::shared_ptr<AvrcpSdpService>& avrcp_sdp_service = AvrcpSdpService::Get();
-  avrcp_sdp_service->EnableCovertArt(UUID_SERVCLASS_AV_REM_CTRL_TARGET, psm,
-                                     target_sdp_request_id_);
+  avrcp_sdp_service->EnableCoverArt(UUID_SERVCLASS_AV_REM_CTRL_TARGET, psm, target_sdp_request_id_);
 }
 
 void AvrcpService::UnregisterBipServer() {
   log::info("AVRCP Target Service has unregistered a BIP OBEX server");
 
   const std::shared_ptr<AvrcpSdpService>& avrcp_sdp_service = AvrcpSdpService::Get();
-  avrcp_sdp_service->DisableCovertArt(UUID_SERVCLASS_AV_REM_CTRL_TARGET, target_sdp_request_id_);
+  avrcp_sdp_service->DisableCoverArt(UUID_SERVCLASS_AV_REM_CTRL_TARGET, target_sdp_request_id_);
 }
 
 AvrcpService* AvrcpService::Get() {

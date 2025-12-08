@@ -18,6 +18,7 @@ package android.bluetooth.le;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.bluetooth.Attributable;
 import android.bluetooth.BluetoothDevice;
 import android.content.AttributionSource;
@@ -191,6 +192,7 @@ public final class ScanResult implements Parcelable, Attributable {
     }
 
     /** @hide */
+    @RequiresNoPermission
     public void setAttributionSource(@NonNull AttributionSource source) {
         Attributable.setAttributionSource(mDevice, source);
     }
@@ -201,22 +203,25 @@ public final class ScanResult implements Parcelable, Attributable {
      * will return the address that was originally bonded with (either identity address or random
      * address).
      */
+    @RequiresNoPermission
     public BluetoothDevice getDevice() {
         return mDevice;
     }
 
     /** Returns the scan record, which is a combination of advertisement and scan response. */
-    @Nullable
-    public ScanRecord getScanRecord() {
+    @RequiresNoPermission
+    public @Nullable ScanRecord getScanRecord() {
         return mScanRecord;
     }
 
     /** Returns the received signal strength in dBm. The valid range is [-127, 126]. */
+    @RequiresNoPermission
     public int getRssi() {
         return mRssi;
     }
 
     /** Returns timestamp since boot when the scan record was observed. */
+    @RequiresNoPermission
     public long getTimestampNanos() {
         return mTimestampNanos;
     }
@@ -225,11 +230,13 @@ public final class ScanResult implements Parcelable, Attributable {
      * Returns true if this object represents legacy scan result. Legacy scan results do not contain
      * advanced advertising information as specified in the Bluetooth Core Specification v5.
      */
+    @RequiresNoPermission
     public boolean isLegacy() {
         return (mEventType & ET_LEGACY_MASK) != 0;
     }
 
     /** Returns true if this object represents connectable scan result. */
+    @RequiresNoPermission
     public boolean isConnectable() {
         return (mEventType & ET_CONNECTABLE_MASK) != 0;
     }
@@ -238,6 +245,7 @@ public final class ScanResult implements Parcelable, Attributable {
      * Returns the data status. Can be one of {@link ScanResult#DATA_COMPLETE} or {@link
      * ScanResult#DATA_TRUNCATED}.
      */
+    @RequiresNoPermission
     public int getDataStatus() {
         // return bit 5 and 6
         return (mEventType >> 5) & 0x03;
@@ -247,6 +255,7 @@ public final class ScanResult implements Parcelable, Attributable {
      * Returns the primary Physical Layer on which this advertisement was received. Can be one of
      * {@link BluetoothDevice#PHY_LE_1M} or {@link BluetoothDevice#PHY_LE_CODED}.
      */
+    @RequiresNoPermission
     public int getPrimaryPhy() {
         return mPrimaryPhy;
     }
@@ -257,6 +266,7 @@ public final class ScanResult implements Parcelable, Attributable {
      * BluetoothDevice#PHY_LE_CODED} or {@link ScanResult#PHY_UNUSED} - if the advertisement was not
      * received on a secondary physical channel.
      */
+    @RequiresNoPermission
     public int getSecondaryPhy() {
         return mSecondaryPhy;
     }
@@ -265,6 +275,7 @@ public final class ScanResult implements Parcelable, Attributable {
      * Returns the advertising set id. May return {@link ScanResult#SID_NOT_PRESENT} if no set id
      * was is present.
      */
+    @RequiresNoPermission
     public int getAdvertisingSid() {
         return mAdvertisingSid;
     }
@@ -273,6 +284,7 @@ public final class ScanResult implements Parcelable, Attributable {
      * Returns the transmit power in dBm. Valid range is [-127, 126]. A value of {@link
      * ScanResult#TX_POWER_NOT_PRESENT} indicates that the TX power is not present.
      */
+    @RequiresNoPermission
     public int getTxPower() {
         return mTxPower;
     }
@@ -282,6 +294,7 @@ public final class ScanResult implements Parcelable, Attributable {
      * 65536 (81918.75ms). A value of {@link ScanResult#PERIODIC_INTERVAL_NOT_PRESENT} means
      * periodic advertising interval is not present.
      */
+    @RequiresNoPermission
     public int getPeriodicAdvertisingInterval() {
         return mPeriodicAdvertisingInterval;
     }

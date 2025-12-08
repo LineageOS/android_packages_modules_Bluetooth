@@ -19,13 +19,14 @@
 #ifndef SRVC_DIS_API_H
 #define SRVC_DIS_API_H
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
+
 #include <cstdint>
 
 #include "gatt_api.h"
 #include "gattdefs.h"
 #include "internal_include/bt_target.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 #define DIS_SUCCESS GATT_SUCCESS
 #define DIS_ILLEGAL_PARAM GATT_ILLEGAL_PARAMETER

@@ -27,11 +27,12 @@
 #ifndef BTIF_SOCK_RFC_H
 #define BTIF_SOCK_RFC_H
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
+
 #include "btif_uid.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_sock.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 bt_status_t btsock_rfc_init(int handle, uid_set_t* set);
 void btsock_rfc_cleanup();

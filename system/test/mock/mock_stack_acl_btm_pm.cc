@@ -19,6 +19,8 @@
  *   Functions generated:17
  */
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 
 #include "stack/btm/power_mode.h"
@@ -26,7 +28,6 @@
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btm_status.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 bool BTM_ReadPowerMode(const RawAddress& /* remote_bda */, tBTM_PM_MODE* /* p_mode */) {
   inc_func_call_count(__func__);
@@ -35,10 +36,6 @@ bool BTM_ReadPowerMode(const RawAddress& /* remote_bda */, tBTM_PM_MODE* /* p_mo
 bool BTM_SetLinkPolicyActiveMode(const RawAddress& /* remote_bda */) {
   inc_func_call_count(__func__);
   return false;
-}
-tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void) {
-  inc_func_call_count(__func__);
-  return BTM_CONTRL_UNKNOWN;
 }
 uint8_t BTM_PM_ReadSniffLinkCount(void) {
   inc_func_call_count(__func__);

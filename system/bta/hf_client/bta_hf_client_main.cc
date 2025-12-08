@@ -18,6 +18,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 
@@ -38,7 +39,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/sdp_api.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
@@ -251,7 +251,7 @@ static const tBTA_SYS_REG bta_hf_client_reg = {bta_hf_client_hdl_event, BTA_HfCl
  *
  ******************************************************************************/
 void bta_hf_client_cb_arr_init() {
-  memset(&bta_hf_client_cb_arr, 0, sizeof(tBTA_HF_CLIENT_CB_ARR));
+  bta_hf_client_cb_arr = tBTA_HF_CLIENT_CB_ARR{};
 
   // reset the handles and make the CBs non-allocated
   for (int i = 0; i < HF_CLIENT_MAX_DEVICES; i++) {
@@ -918,7 +918,7 @@ void bta_hf_client_dump_statistics(int fd) {
 
     dprintf(fd, "  Control block #%d\n", i + 1);
 
-    uint8_t* a = client_cb->peer_addr.address;
+    uint8_t const* a = client_cb->peer_addr.address.data();
     // Device name
     dprintf(fd, "    Peer Device: %02x:%02x:%02x:%02x:%02x:%02x\n", a[0], a[1], a[2], a[3], a[4],
             a[5]);

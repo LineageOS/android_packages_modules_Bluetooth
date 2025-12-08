@@ -2,33 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "key_missing_ble_peripheral"
-    namespace: "bluetooth"
-    description: "Key missing broadcast for LE devices in peripheral role"
-    bug: "392895615"
-    metadata {
-      purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "key_missing_as_ordered_broadcast"
-    namespace: "bluetooth"
-    description: "Key missing broadcast would be send as ordered broadcast"
-    bug: "333634398"
-}
-
-flag {
-  name: "le_enc_on_reconnect"
-  namespace: "bluetooth"
-  description: "Encrypt LE link on reconnection with bonded devices"
-  bug: "388864535"
-  metadata {
-    purpose: PURPOSE_BUGFIX
-  }
-}
-
-flag {
   name: "btsec_cycle_irks"
   namespace: "bluetooth"
   description: "Change the IRK per BT spec when all devices are unbonded"
@@ -53,16 +26,6 @@ flag {
     namespace: "bluetooth"
     description: "Upgrade security If it is on temp bonding & authentication is requirement"
     bug: "385747513"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "disconnect_reason_for_encryption_failure"
-    namespace: "bluetooth"
-    description: "Change the disconnect reason for encryption failure from authentication failure to status report"
-    bug: "391764832"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

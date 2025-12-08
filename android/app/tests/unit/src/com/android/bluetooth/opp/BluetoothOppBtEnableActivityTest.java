@@ -33,28 +33,21 @@ import android.content.Intent;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.action.ViewActions;
 import androidx.test.espresso.intent.Intents;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.R;
-import com.android.bluetooth.TestUtils;
 
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /** Test cases for {@link BluetoothOppBtEnableActivity}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppBtEnableActivityTest {
-    // Activity tests can sometimes flaky because of external factors like system dialog, etc.
-    // making the expected Espresso's root not focused or the activity doesn't show up.
-    // Add retry rule to resolve this problem.
-    @Rule public TestUtils.RetryTestRule mRetryTestRule = new TestUtils.RetryTestRule();
-
     private static final Context sContext =
             InstrumentationRegistry.getInstrumentation().getContext();
 
@@ -78,13 +71,11 @@ public class BluetoothOppBtEnableActivityTest {
         mIntent.setClass(sContext, BluetoothOppBtEnableActivity.class);
 
         Intents.init();
-        TestUtils.setUpUiTest();
     }
 
     @After
     public void tearDown() throws Exception {
         Intents.release();
-        TestUtils.tearDownUiTest();
     }
 
     @Test

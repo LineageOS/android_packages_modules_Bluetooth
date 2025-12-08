@@ -47,7 +47,6 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ConnectableProfile;
-import com.android.bluetooth.hfp.HeadsetService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -283,7 +282,7 @@ public class HeadsetClientService extends ConnectableProfile {
     }
 
     // API methods
-    public static synchronized HeadsetClientService getHeadsetClientService() {
+    private static synchronized HeadsetClientService getHeadsetClientService() {
         if (sHeadsetClientService == null) {
             Log.w(TAG, "getHeadsetClientService(): service is null");
             return null;
@@ -295,8 +294,7 @@ public class HeadsetClientService extends ConnectableProfile {
         return sHeadsetClientService;
     }
 
-    /** Set a {@link HeadsetClientService} instance. */
-    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PRIVATE)
+    @VisibleForTesting
     public static synchronized void setHeadsetClientService(HeadsetClientService instance) {
         Log.d(TAG, "setHeadsetClientService(): set to: " + instance);
         sHeadsetClientService = instance;
@@ -352,22 +350,24 @@ public class HeadsetClientService extends ConnectableProfile {
     public List<BluetoothDevice> getConnectedDevices() {
         List<BluetoothDevice> connectedDevices = new ArrayList<>();
         synchronized (mStateMachineMap) {
-            for (BluetoothDevice bd : mStateMachineMap.keySet()) {
-                HeadsetClientStateMachine sm = mStateMachineMap.get(bd);
+            for (var entry : mStateMachineMap.entrySet()) {
+                BluetoothDevice bd = entry.getKey();
+                HeadsetClientStateMachine sm = entry.getValue();
                 if (sm != null && sm.getConnectionState(bd) == STATE_CONNECTED) {
                     connectedDevices.add(bd);
                 }
             }
+            return connectedDevices;
         }
-        return connectedDevices;
     }
 
     List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
-        List<BluetoothDevice> devices = new ArrayList<BluetoothDevice>();
+        List<BluetoothDevice> devices = new ArrayList<>();
         synchronized (mStateMachineMap) {
-            for (BluetoothDevice bd : mStateMachineMap.keySet()) {
+            for (var entry : mStateMachineMap.entrySet()) {
+                BluetoothDevice bd = entry.getKey();
+                HeadsetClientStateMachine sm = entry.getValue();
                 for (int state : states) {
-                    HeadsetClientStateMachine sm = mStateMachineMap.get(bd);
                     if (sm != null && sm.getConnectionState(bd) == state) {
                         devices.add(bd);
                     }
@@ -414,7 +414,7 @@ public class HeadsetClientService extends ConnectableProfile {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
+        if (!mAdapterService.setProfileConnectionPolicy(device, mProfileId, connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
@@ -515,20 +515,6 @@ public class HeadsetClientService extends ConnectableProfile {
         HeadsetClientStateMachine sm = getStateMachine(device);
         if (sm != null) {
             sm.setAudioPolicy(policies);
-        }
-    }
-
-    /**
-     * sets the audio policy feature support status for the corresponding device.
-     *
-     * @param device for whom the policies to be set
-     * @param supported support status
-     */
-    void setAudioPolicyRemoteSupported(BluetoothDevice device, boolean supported) {
-        Log.i(TAG, "setAudioPolicyRemoteSupported: " + supported);
-        HeadsetClientStateMachine sm = getStateMachine(device);
-        if (sm != null) {
-            sm.setAudioPolicyRemoteSupported(supported);
         }
     }
 
@@ -926,7 +912,7 @@ public class HeadsetClientService extends ConnectableProfile {
                     new HeadsetClientStateMachine(
                             mAdapterService,
                             this,
-                            HeadsetService.getHeadsetService(),
+                            mAdapterService.getHeadsetService(),
                             mSmThread.getLooper(),
                             mNativeInterface);
             mStateMachineMap.put(device, sm);

@@ -26,6 +26,7 @@ from mmi2grpc._modem import Modem
 from mmi2grpc._rootcanal import RootCanal
 from mmi2grpc.a2dp import A2DPProxy
 from mmi2grpc.avrcp import AVRCPProxy
+from mmi2grpc.bap import BAPProxy
 from mmi2grpc.gap import GAPProxy
 from mmi2grpc.gatt import GATTProxy
 from mmi2grpc.gmap import GMAPProxy
@@ -76,6 +77,7 @@ class IUT:
         # Profile proxies.
         self._a2dp = None
         self._avrcp = None
+        self._bap = None
         self._bnep = None
         self._gatt = None
         self._gmap = None
@@ -96,15 +98,21 @@ class IUT:
 
     def __enter__(self):
         """Resets the IUT when starting a PTS test."""
+
+        print(f"Connecting to RootCanal at port {self.rootcanal_control_port}", file=sys.stderr)
         self.rootcanal = RootCanal(port=self.rootcanal_control_port)
         self.rootcanal.move_in_range()
 
+        print(f"Connecting to Modem at port {self.modem_simulator_port}", file=sys.stderr)
         self.modem = Modem(port=self.modem_simulator_port)
 
         try:
             # Note: we don't keep a single gRPC channel instance in the IUT class
             # because reset is allowed to close the gRPC server.
+            print(f"Connecting to Pandora server at port {self.pandora_server_port}",
+                  file=sys.stderr)
             with grpc.insecure_channel(f'localhost:{self.pandora_server_port}') as channel:
+                print("Executing FactoryReset", file=sys.stderr)
                 Host(channel).FactoryReset(wait_for_ready=True, timeout=15.0)
         except grpc.RpcError as exn:
             # FactoryReset might be cancelled before completion by the gRPC server
@@ -121,6 +129,7 @@ class IUT:
 
         self._a2dp = None
         self._avrcp = None
+        self._bap = None
         self._bnep = None
         self._gatt = None
         self._gap = None
@@ -214,6 +223,12 @@ class IUT:
                 self._avrcp = AVRCPProxy(
                     grpc.insecure_channel(f"localhost:{self.pandora_server_port}"))
             return self._avrcp.interact(test, interaction, description, pts_address)
+        # Handles BAP MMIs.
+        if profile in ("BAP",):
+            if not self._bap:
+                self._bap = BAPProxy(grpc.insecure_channel(f"localhost:{self.pandora_server_port}"),
+                                     self.rootcanal)
+            return self._bap.interact(test, interaction, description, pts_address)
         # Handles GATT MMIs.
         if profile in ("GATT"):
             if not self._gatt:

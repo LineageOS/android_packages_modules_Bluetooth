@@ -404,7 +404,7 @@ enh_esco_params_t esco_parameters_for_codec(esco_codec_t codec, bool offload) {
     param.output_bandwidth = TXRX_64KBITS_RATE;
   }
 
-  if (com::android::bluetooth::flags::fix_hfp_qual_1_9()) {
+  if (com_android_bluetooth_flags_fix_hfp_qual_1_9()) {
     esco_packet_types_t new_packet_types = param.packet_types;
     if (codec == ESCO_CODEC_CVSD_S3 || codec == ESCO_CODEC_CVSD_S4 || codec == ESCO_CODEC_MSBC_T2 ||
         codec == ESCO_CODEC_LC3_T2) {

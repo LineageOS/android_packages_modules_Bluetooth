@@ -17,13 +17,13 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <string>
 
 #include "bta/include/bta_api.h"
 #include "macros.h"
 #include "stack/btm/neighbor_inquiry.h"
-#include "types/raw_address.h"
 
 /* DM search events */
 typedef enum : uint16_t {

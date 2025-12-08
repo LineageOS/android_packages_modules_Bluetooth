@@ -25,6 +25,9 @@
 #define LOG_TAG "bt_bta_gattc"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/hci_role.h>
 
 #include <cstdint>
 
@@ -34,9 +37,6 @@
 #include "internal_include/bt_trace.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"
-#include "types/bt_transport.h"
-#include "types/hci_role.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -220,6 +220,7 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB* p_clcb) {
     p_srcb->connected = false;
     p_srcb->state = BTA_GATTC_SERV_IDLE;
     p_srcb->mtu = 0;
+    p_srcb->in_use = false;
 
     // clear reallocating
     p_srcb->gatt_database.Clear();
@@ -556,7 +557,6 @@ void bta_gattc_clear_notif_registration(tBTA_GATTC_SERV* /*p_srcb*/, tCONN_ID co
 bool bta_gattc_mark_bg_conn(tGATT_IF client_if, const RawAddress& remote_bda_ptr, bool add) {
   tBTA_GATTC_BG_TCK* p_bg_tck = &bta_gattc_cb.bg_track[0];
   uint8_t i = 0;
-  tBTA_GATTC_CIF_MASK* p_cif_mask;
 
   for (i = 0; i < ble_acceptlist_size(); i++, p_bg_tck++) {
     if (p_bg_tck->in_use &&

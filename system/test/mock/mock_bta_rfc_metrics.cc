@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/address.h>
+
 #include "bta/include/bta_jv_api.h"
 #include "bta/include/bta_rfcomm_metrics.h"
 #include "test/common/mock_functions.h"
-#include "types/raw_address.h"
 
 void bta_collect_rfc_metrics_after_sdp_fail(tBTA_JV_STATUS /* sdp_status */, RawAddress /* addr */,
                                             int /* app_uid */, int /* security */,

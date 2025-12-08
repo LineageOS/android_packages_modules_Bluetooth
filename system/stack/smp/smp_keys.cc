@@ -26,6 +26,7 @@
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 
 #include <algorithm>
 #include <cstdint>
@@ -45,7 +46,6 @@
 #include "stack/include/btm_ble_api.h"
 #include "stack/include/btm_ble_sec_api.h"
 #include "stack/include/main_thread.h"
-#include "types/raw_address.h"
 
 using bluetooth::common::BindOnce;
 using bluetooth::common::OnceCallback;

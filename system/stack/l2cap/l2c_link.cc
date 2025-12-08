@@ -26,6 +26,8 @@
 #define LOG_TAG "l2c_link"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -48,8 +50,6 @@
 #include "stack/include/l2cap_hci_link_interface.h"
 #include "stack/include/l2cap_security_interface.h"
 #include "stack/l2cap/l2c_int.h"
-#include "types/bt_transport.h"
-#include "types/raw_address.h"
 
 using namespace bluetooth;
 
@@ -158,7 +158,7 @@ void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle, const RawAddres
     } else /* there are any CCBs remaining */
     {
       if ((ci.hci_status == HCI_ERR_CONNECTION_EXISTS) ||
-          (com::android::bluetooth::flags::flag_handle_hci_error_controller_busy() &&
+          (com_android_bluetooth_flags_flag_handle_hci_error_controller_busy() &&
            ci.hci_status == HCI_ERR_CONTROLLER_BUSY)) {
         /* we are in collision situation, wait for connecttion request from
          * controller */
@@ -183,7 +183,6 @@ void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle, const RawAddres
 void l2c_link_sec_comp(RawAddress p_bda, tBT_TRANSPORT transport, void* p_ref_data,
                        tBTM_STATUS btm_status) {
   tL2C_CCB* p_ccb;
-  tL2C_CCB* p_next_ccb;
 
   log::debug("btm_status={}, BD_ADDR={}, transport={}", btm_status_text(btm_status), p_bda,
              bt_transport_text(transport));
@@ -342,7 +341,7 @@ bool l2c_link_hci_disc_comp(uint16_t handle, tHCI_REASON reason) {
      */
     if (p_lcb->transport == BT_TRANSPORT_LE) {
       btm_acl_removed(handle);
-      if (com::android::bluetooth::flags::invalidate_hci_handle_on_acl_removal()) {
+      if (com_android_bluetooth_flags_invalidate_hci_handle_on_acl_removal()) {
         p_lcb->InvalidateHandle();
       }
     } else {

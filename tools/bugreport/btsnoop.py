@@ -40,11 +40,18 @@ class EventCode(enum.IntEnum):
     REMOTE_NAME_REQUEST_COMPLETE = 0x07
     NUMBER_OF_COMPLETED_PACKETS = 0x13
     LE_META_EVENT = 0x3E
+    VENDOR_SPECIFIC_EVENT = 0xFF
 
 
-class SubEventCode(enum.IntEnum):
-    CONNECTION_COMPLETE = 0x01
-    ENHANCED_CONNECTION_COMPLETE = 0x0A
+class LeMetaEventCode(enum.IntEnum):
+    LE_CONNECTION_COMPLETE = 0x01
+    LE_ENHANCED_CONNECTION_COMPLETE = 0x0A
+    LE_CIS_ESTABLISHED_V1 = 0x19
+    LE_CIS_ESTABLISHED_V2 = 0x2A
+
+
+class VendorSpecificEventCode(enum.IntEnum):
+    ISO_LINK_FEEDBACK = 0x5C
 
 
 class L2capCommandCode(enum.IntEnum):
@@ -181,7 +188,8 @@ class Btsnoop:
                     )
 
                     if status == 0:
-                        remote_names[bd_addr] = remote_name.decode("utf-8")
+                        remote_name = remote_name.split(b'\x00')[0]
+                        remote_names[bd_addr] = remote_name.decode("utf-8", errors="replace")
 
         self.acl_connections = []
         self.le_acl_connections = []
@@ -229,8 +237,8 @@ class Btsnoop:
                         del active_acl_connections[connection_handle]
 
                 elif event_code == EventCode.LE_META_EVENT and (
-                    subevent_code == SubEventCode.CONNECTION_COMPLETE
-                    or subevent_code == SubEventCode.ENHANCED_CONNECTION_COMPLETE
+                    subevent_code == LeMetaEventCode.LE_CONNECTION_COMPLETE
+                    or subevent_code == LeMetaEventCode.LE_ENHANCED_CONNECTION_COMPLETE
                 ):
                     status, connection_handle = struct.unpack(
                         "<BH", packet.payload[3:6]

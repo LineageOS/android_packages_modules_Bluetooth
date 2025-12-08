@@ -23,6 +23,7 @@ fn main() {
         "/system/include/hardware",
         "/system/log/include",
         "/system/types",
+        "/system/types/include",
     ];
 
     let bt_searches =

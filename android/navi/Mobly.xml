@@ -19,7 +19,7 @@
         <target_preparer class="AndroidInstallAppsDecorator" />
     </device>
 
-    <test class="MoblyAospPackageTest" />
+    <test class="MoblyAospTest" />
 
     <option name="mobly_pkg" key="file" value="navi" />
     <option name="build_apk" key="file" value="BluetoothSnippet.apk" />

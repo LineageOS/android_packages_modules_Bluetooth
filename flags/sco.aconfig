@@ -1,12 +1,2 @@
 package: "com.android.bluetooth.flags"
 container: "com.android.bt"
-
-flag {
-    name: "fix_sco_command_status_handling"
-    namespace: "bluetooth"
-    description: "Make sure to properly handle Command Status error when SCO is creating"
-    bug: "358573137"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}

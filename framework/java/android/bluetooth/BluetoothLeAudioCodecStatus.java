@@ -18,6 +18,7 @@ package android.bluetooth;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -165,6 +166,7 @@ public final class BluetoothLeAudioCodecStatus implements Parcelable {
      * @param codecConfig the codec config to compare against
      * @return {@code true} if the codec config matches, {@code false} otherwise
      */
+    @RequiresNoPermission
     public boolean isInputCodecConfigSelectable(@Nullable BluetoothLeAudioCodecConfig codecConfig) {
         if (codecConfig == null) {
             return false;
@@ -184,6 +186,7 @@ public final class BluetoothLeAudioCodecStatus implements Parcelable {
      * @param codecConfig the codec config to compare against
      * @return {@code true} if the codec config matches, {@code false} otherwise
      */
+    @RequiresNoPermission
     public boolean isOutputCodecConfigSelectable(
             @Nullable BluetoothLeAudioCodecConfig codecConfig) {
         if (codecConfig == null) {
@@ -271,6 +274,7 @@ public final class BluetoothLeAudioCodecStatus implements Parcelable {
      *
      * @return The current input codec config.
      */
+    @RequiresNoPermission
     public @Nullable BluetoothLeAudioCodecConfig getInputCodecConfig() {
         return mInputCodecConfig;
     }
@@ -280,6 +284,7 @@ public final class BluetoothLeAudioCodecStatus implements Parcelable {
      *
      * @return The current output codec config.
      */
+    @RequiresNoPermission
     public @Nullable BluetoothLeAudioCodecConfig getOutputCodecConfig() {
         return mOutputCodecConfig;
     }
@@ -289,6 +294,7 @@ public final class BluetoothLeAudioCodecStatus implements Parcelable {
      *
      * @return The list of codec config that supported by the local system.
      */
+    @RequiresNoPermission
     public @NonNull List<BluetoothLeAudioCodecConfig> getInputCodecLocalCapabilities() {
         return (mInputCodecsLocalCapabilities == null)
                 ? Collections.emptyList()
@@ -300,6 +306,7 @@ public final class BluetoothLeAudioCodecStatus implements Parcelable {
      *
      * @return The list of codec config that supported by the local system.
      */
+    @RequiresNoPermission
     public @NonNull List<BluetoothLeAudioCodecConfig> getOutputCodecLocalCapabilities() {
         return (mOutputCodecsLocalCapabilities == null)
                 ? Collections.emptyList()
@@ -312,6 +319,7 @@ public final class BluetoothLeAudioCodecStatus implements Parcelable {
      * @return The list of codec config that supported by both of the local system and remote
      *     devices.
      */
+    @RequiresNoPermission
     public @NonNull List<BluetoothLeAudioCodecConfig> getInputCodecSelectableCapabilities() {
         return (mInputCodecsSelectableCapabilities == null)
                 ? Collections.emptyList()
@@ -324,6 +332,7 @@ public final class BluetoothLeAudioCodecStatus implements Parcelable {
      * @return The list of codec config that supported by both of the local system and remote
      *     devices.
      */
+    @RequiresNoPermission
     public @NonNull List<BluetoothLeAudioCodecConfig> getOutputCodecSelectableCapabilities() {
         return (mOutputCodecsSelectableCapabilities == null)
                 ? Collections.emptyList()

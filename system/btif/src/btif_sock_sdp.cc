@@ -21,6 +21,7 @@
 #include "btif/include/btif_sock_sdp.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/uuid.h>
 
 #include "bta/include/bta_jv_api.h"
 #include "bta/include/bta_op_api.h"
@@ -32,7 +33,6 @@
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/sdp_api.h"
 #include "stack/include/sdpdefs.h"
-#include "types/bluetooth/uuid.h"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;

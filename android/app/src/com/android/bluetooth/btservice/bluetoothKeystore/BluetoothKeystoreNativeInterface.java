@@ -45,18 +45,8 @@ public class BluetoothKeystoreNativeInterface {
     // state machine the message should be routed to.
 
     private void setEncryptKeyOrRemoveKeyCallback(String prefixString, String decryptedString) {
-        final BluetoothKeystoreService service = mBluetoothKeystoreService;
-
-        if (service == null) {
-            Log.e(
-                    TAG,
-                    "setEncryptKeyOrRemoveKeyCallback: Event ignored, service not available: "
-                            + prefixString);
-            return;
-        }
-
         try {
-            service.setEncryptKeyOrRemoveKey(prefixString, decryptedString);
+            mBluetoothKeystoreService.setEncryptKeyOrRemoveKey(prefixString, decryptedString);
         } catch (InterruptedException e) {
             Log.e(TAG, "Interrupted while operating.");
         } catch (IOException e) {
@@ -67,14 +57,7 @@ public class BluetoothKeystoreNativeInterface {
     }
 
     private String getKeyCallback(String prefixString) {
-        final BluetoothKeystoreService service = mBluetoothKeystoreService;
-
-        if (service == null) {
-            Log.e(TAG, "getKeyCallback: Event ignored, service not available: " + prefixString);
-            return null;
-        }
-
-        return service.getKey(prefixString);
+        return mBluetoothKeystoreService.getKey(prefixString);
     }
 
     // Native methods that call into the JNI interface

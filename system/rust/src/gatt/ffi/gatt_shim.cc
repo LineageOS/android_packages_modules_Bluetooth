@@ -18,6 +18,8 @@
 #include <base/functional/callback.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/uuid.h>
 
 #include <cstdint>
 #include <optional>
@@ -29,8 +31,6 @@
 #include "rust/cxx.h"
 #include "src/gatt/arbiter.rs.h"
 #include "stack/include/gatt_api.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
 bt_status_t do_in_jni_thread(base::OnceClosure task);
 

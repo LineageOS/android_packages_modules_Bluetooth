@@ -17,8 +17,11 @@
 package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
-import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
+import static android.bluetooth.BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
@@ -42,6 +45,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothUtils;
+import android.bluetooth.EncryptionStatus;
 import android.bluetooth.IBluetoothConnectionCallback;
 import android.content.Intent;
 import android.net.MacAddress;
@@ -55,7 +59,6 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.bas.BatteryService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetHalConstants;
 import com.android.internal.annotations.VisibleForTesting;
@@ -68,6 +71,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -92,7 +96,7 @@ public class RemoteDevices {
     private static final String LOG_SOURCE_DIS = "DIS";
 
     private final LinkedHashMap<String, DeviceProperties> mDevices;
-    private final HashMap<String, String> mDualDevicesMap;
+    private final HashMap<String, String> mAddressMap; // Identity address to pseudo address map
     private final WatchConnectionStateListener mWatchConnectionStateListener;
 
     /**
@@ -158,7 +162,7 @@ public class RemoteDevices {
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mSdpTracker = new ArrayList<>();
         mDevices = new LinkedHashMap<>(MAX_DEVICE_QUEUE_SIZE);
-        mDualDevicesMap = new HashMap<>();
+        mAddressMap = new HashMap<>();
         mHandler = new RemoteDevicesHandler(looper);
         mMainHandler = new Handler(Looper.getMainLooper());
         if (Flags.watchDeviceOverrideAirplaneMode()) {
@@ -210,29 +214,46 @@ public class RemoteDevices {
                                         + bluetoothDevice.isConnected());
 
                         if (bluetoothDevice.isConnected()) {
-                            if (deviceProperties.getConnectionHandle(
-                                            BluetoothDevice.TRANSPORT_BREDR)
-                                    != BluetoothDevice.ERROR) {
-                                mAdapterService.notifyAclDisconnected(
-                                        bluetoothDevice, BluetoothDevice.TRANSPORT_BREDR);
-                            }
-                            if (deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_LE)
-                                    != BluetoothDevice.ERROR) {
-                                mAdapterService.notifyAclDisconnected(
-                                        bluetoothDevice, BluetoothDevice.TRANSPORT_LE);
-                            }
                             Intent intent = new Intent(BluetoothDevice.ACTION_ACL_DISCONNECTED);
                             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, bluetoothDevice);
                             intent.addFlags(
                                     Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                                             | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-                            mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
+
+                            if (deviceProperties.getConnectionHandle(TRANSPORT_BREDR)
+                                    != BluetoothDevice.ERROR) {
+                                if (Flags.linkStatusApi()) {
+                                    deviceProperties.setDisconnected(TRANSPORT_BREDR);
+                                }
+                                mAdapterService.notifyAclDisconnected(
+                                        bluetoothDevice, TRANSPORT_BREDR);
+                                if (Flags.broadcastTransportTypeOnReset()) {
+                                    intent.putExtra(
+                                            BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_BREDR);
+                                    mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
+                                }
+                            }
+                            if (deviceProperties.getConnectionHandle(TRANSPORT_LE)
+                                    != BluetoothDevice.ERROR) {
+                                if (Flags.linkStatusApi()) {
+                                    deviceProperties.setDisconnected(TRANSPORT_LE);
+                                }
+                                mAdapterService.notifyAclDisconnected(
+                                        bluetoothDevice, TRANSPORT_LE);
+                                if (Flags.broadcastTransportTypeOnReset()) {
+                                    intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_LE);
+                                    mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
+                                }
+                            }
+                            if (!Flags.broadcastTransportTypeOnReset()) {
+                                mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
+                            }
                         }
                     });
             mDevices.clear();
         }
 
-        mDualDevicesMap.clear();
+        mAddressMap.clear();
     }
 
     @Override
@@ -246,7 +267,7 @@ public class RemoteDevices {
         }
 
         synchronized (mDevices) {
-            String address = mDualDevicesMap.get(device.getAddress());
+            String address = mAddressMap.get(device.getAddress());
             // If the device is not in the dual map, use its original address
             if (address == null || mDevices.get(address) == null) {
                 address = device.getAddress();
@@ -299,7 +320,7 @@ public class RemoteDevices {
         if (address == null) {
             return null;
         }
-        String deviceAddress = mDualDevicesMap.get(address);
+        String deviceAddress = mAddressMap.get(address);
         // If the device is not in the dual map, use its original address
         if (deviceAddress == null || mDevices.get(deviceAddress) == null) {
             deviceAddress = address;
@@ -317,7 +338,6 @@ public class RemoteDevices {
         return getDevice(addressString);
     }
 
-    @VisibleForTesting
     DeviceProperties addDeviceProperties(byte[] address, int addressType) {
         synchronized (mDevices) {
             String key = Utils.getAddressStringFromByte(address);
@@ -366,7 +386,6 @@ public class RemoteDevices {
         }
     }
 
-    @VisibleForTesting
     DeviceProperties addDeviceProperties(byte[] address) {
         return addDeviceProperties(address, BluetoothDevice.ADDRESS_TYPE_PUBLIC);
     }
@@ -382,14 +401,14 @@ public class RemoteDevices {
         private BluetoothAddress mIdentityAddress = UNKNOWN_ADDRESS;
         private boolean mIsConsolidated = false;
         private int mBluetoothClass = BluetoothClass.Device.Major.UNCATEGORIZED;
-        private int mBredrConnectionHandle = BluetoothDevice.ERROR;
-        private int mLeConnectionHandle = BluetoothDevice.ERROR;
         private short mRssi;
         private String mAlias;
         private BluetoothDevice mDevice;
         private int mBondingInitiator;
         private int mBatteryLevelFromHfp = BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
         private int mBatteryLevelFromBatteryService = BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
+        // This is the cached battery level to handle temporary disconnection from BAS.
+        private int mLastBatteryLevelFromBatteryService = BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
         private boolean mIsCoordinatedSetMember;
         private int mAshaCapability;
         private int mAshaTruncatedHiSyncId;
@@ -407,10 +426,35 @@ public class RemoteDevices {
         @VisibleForTesting boolean mHfpBatteryIndicator = false;
         private BluetoothSinkAudioPolicy mAudioPolicy;
 
+        static class LinkState {
+            private final int mConnectionHandle;
+            private EncryptionStatus mEncryptionStatus;
+
+            public LinkState(int handle) {
+                mConnectionHandle = handle;
+                mEncryptionStatus = null;
+            }
+
+            public int getConnectionHandle() {
+                return mConnectionHandle;
+            }
+
+            public void setEncryptionStatus(EncryptionStatus encryptionStatus) {
+                mEncryptionStatus = encryptionStatus;
+            }
+
+            public EncryptionStatus getEncryptionStatus() {
+                return mEncryptionStatus;
+            }
+        }
+
+        private LinkState mBredrLink;
+        private LinkState mLeLink;
+
         // LRU cache of package names associated to this device
         private final Set<String> mPackages =
                 Collections.newSetFromMap(
-                        new LinkedHashMap<String, Boolean>() {
+                        new LinkedHashMap<>() {
                             // This is called on every add. Returning true removes the eldest entry.
                             protected boolean removeEldestEntry(Map.Entry<String, Boolean> eldest) {
                                 return size() >= MAX_PACKAGE_NAMES;
@@ -442,7 +486,8 @@ public class RemoteDevices {
         /**
          * @return the mIdentityAddress
          */
-        @NonNull BluetoothAddress getIdentityAddress() {
+        @NonNull
+        BluetoothAddress getIdentityAddress() {
             synchronized (mObject) {
                 return mIdentityAddress;
             }
@@ -499,29 +544,97 @@ public class RemoteDevices {
          */
         int getConnectionHandle(int transport) {
             synchronized (mObject) {
-                if (transport == BluetoothDevice.TRANSPORT_BREDR) {
-                    return mBredrConnectionHandle;
-                } else if (transport == BluetoothDevice.TRANSPORT_LE) {
-                    return mLeConnectionHandle;
-                } else {
+                if (transport == TRANSPORT_AUTO) {
                     return BluetoothDevice.ERROR;
+                }
+                LinkState linkState = (transport == TRANSPORT_BREDR) ? mBredrLink : mLeLink;
+                if (linkState == null) {
+                    return BluetoothDevice.ERROR;
+                }
+                return linkState.getConnectionHandle();
+            }
+        }
+
+        /**
+         * Initializes the LinkState object for the given transport with connectionHandle. The
+         * non-null LinkState object for the given transport indicates that the device is now
+         * connected.
+         *
+         * @param connectionHandle the connectionHandle to set
+         * @param transport the transport on which to set the handle
+         */
+        void setConnected(int transport, int connectionHandle) {
+            synchronized (mObject) {
+                switch (transport) {
+                    case TRANSPORT_BREDR -> mBredrLink = new LinkState(connectionHandle);
+                    case TRANSPORT_LE -> mLeLink = new LinkState(connectionHandle);
+                    default -> errorLog("setConnected(): unexpected transport value " + transport);
                 }
             }
         }
 
         /**
-         * @param connectionHandle the connectionHandle to set
-         * @param transport the transport on which to set the handle
+         * Sets the link state to disconnected for the given transport. The respective transport
+         * based LinkState object is set to null.
+         *
+         * @param transport the transport on which the connection exists
          */
-        void setConnectionHandle(int connectionHandle, int transport) {
+        void setDisconnected(int transport) {
             synchronized (mObject) {
-                if (transport == BluetoothDevice.TRANSPORT_BREDR) {
-                    mBredrConnectionHandle = connectionHandle;
-                } else if (transport == BluetoothDevice.TRANSPORT_LE) {
-                    mLeConnectionHandle = connectionHandle;
-                } else {
-                    errorLog("setConnectionHandle() unexpected transport value " + transport);
+                switch (transport) {
+                    case TRANSPORT_BREDR -> mBredrLink = null;
+                    case TRANSPORT_LE -> mLeLink = null;
+                    default ->
+                            errorLog("setDisconnected(): unexpected transport value " + transport);
                 }
+            }
+        }
+
+        /**
+         * @param transport the transport on which the connection exists
+         * @param keySize the encryption key size
+         * @param algorithm the encryption algorithm (E0/AES)
+         */
+        void setEncryptionStatus(int transport, int keySize, int algorithm) {
+            synchronized (mObject) {
+                if (transport == TRANSPORT_AUTO) {
+                    errorLog("setEncryptionStatus(): unexpected transport value " + transport);
+                    return;
+                }
+                LinkState linkState = getLinkState(transport);
+                if (linkState == null) {
+                    errorLog("setEncryptionStatus(): the device is not connected");
+                    return;
+                }
+                if (keySize > 0 && algorithm > 0) {
+                    linkState.setEncryptionStatus(new EncryptionStatus(keySize, algorithm));
+                } else {
+                    linkState.setEncryptionStatus(null);
+                }
+            }
+        }
+
+        /**
+         * @param transport the transport on which the connection exists
+         * @return the current {@link LinkState} object for the given transport, or null if the
+         *     device is not connected.
+         */
+        LinkState getLinkState(int transport) {
+            synchronized (mObject) {
+                LinkState linkState = null;
+                switch (transport) {
+                    case TRANSPORT_BREDR -> linkState = mBredrLink;
+                    case TRANSPORT_LE -> linkState = mLeLink;
+                    default -> errorLog("getLinkState(): unexpected transport value " + transport);
+                }
+                return linkState;
+            }
+        }
+
+        EncryptionStatus getEncryptionStatus(int transport) {
+            synchronized (mObject) {
+                LinkState linkState = getLinkState(transport);
+                return (linkState == null) ? null : linkState.getEncryptionStatus();
             }
         }
 
@@ -536,12 +649,11 @@ public class RemoteDevices {
                 int combinedUuidsLength =
                         (mUuidsBrEdr != null ? mUuidsBrEdr.length : 0)
                                 + (mUuidsLe != null ? mUuidsLe.length : 0);
-                if (!Flags.separateServiceStorage() || combinedUuidsLength == 0) {
+                if (combinedUuidsLength == 0) {
                     return mUuidsBrEdr;
                 }
 
-                java.util.LinkedHashSet<ParcelUuid> result =
-                        new java.util.LinkedHashSet<ParcelUuid>();
+                LinkedHashSet<ParcelUuid> result = new LinkedHashSet<>();
                 if (mUuidsBrEdr != null) {
                     for (ParcelUuid uuid : mUuidsBrEdr) {
                         result.add(uuid);
@@ -710,7 +822,7 @@ public class RemoteDevices {
                 intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
                 intent.putExtra(BluetoothDevice.EXTRA_NAME, mAlias);
                 mAdapterService.sendBroadcast(
-                        intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+                        intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
             }
         }
 
@@ -799,9 +911,15 @@ public class RemoteDevices {
          */
         int getBatteryLevel() {
             synchronized (mObject) {
-                if (mBatteryLevelFromBatteryService != BluetoothDevice.BATTERY_LEVEL_UNKNOWN) {
+                if (mBatteryLevelFromBatteryService != BATTERY_LEVEL_UNKNOWN) {
                     return mBatteryLevelFromBatteryService;
                 }
+                // Returns one from BAS to prevent battery level fluctuation.
+                if (Flags.consistentBatteryLevel()
+                        && mLastBatteryLevelFromBatteryService != BATTERY_LEVEL_UNKNOWN) {
+                    return mLastBatteryLevelFromBatteryService;
+                }
+
                 return mBatteryLevelFromHfp;
             }
         }
@@ -827,13 +945,18 @@ public class RemoteDevices {
                     return;
                 }
                 mBatteryLevelFromHfp = batteryLevel;
+                // The battery level from HFP is changed, now HFP value is reliable.
+                if (Flags.consistentBatteryLevel()
+                        && mBatteryLevelFromBatteryService == BATTERY_LEVEL_UNKNOWN) {
+                    mLastBatteryLevelFromBatteryService = BATTERY_LEVEL_UNKNOWN;
+                }
             }
         }
 
         void setBatteryLevelFromBatteryService(int batteryLevel) {
             synchronized (mObject) {
-                if (mBatteryLevelFromBatteryService == batteryLevel) {
-                    return;
+                if (Flags.consistentBatteryLevel() && batteryLevel != BATTERY_LEVEL_UNKNOWN) {
+                    mLastBatteryLevelFromBatteryService = batteryLevel;
                 }
                 mBatteryLevelFromBatteryService = batteryLevel;
             }
@@ -852,9 +975,7 @@ public class RemoteDevices {
          * @param isCoordinatedSetMember the mIsCoordinatedSetMember to set
          */
         void setIsCoordinatedSetMember(boolean isCoordinatedSetMember) {
-            if ((mAdapterService.getSupportedProfilesBitMask()
-                            & (1 << BluetoothProfile.CSIP_SET_COORDINATOR))
-                    == 0) {
+            if (!Config.isProfileSupported(BluetoothProfile.CSIP_SET_COORDINATOR)) {
                 debugLog("CSIP is not supported");
                 return;
             }
@@ -918,7 +1039,7 @@ public class RemoteDevices {
             }
         }
 
-        public void setOnheadDetectionEnabledState(int enabledState) {
+        public void setOnHeadDetectionEnabledState(int enabledState) {
             synchronized (mObject) {
                 this.mOnHeadDetectionEnabledState = enabledState;
             }
@@ -976,8 +1097,7 @@ public class RemoteDevices {
         Intent intent = new Intent(BluetoothDevice.ACTION_UUID);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         intent.putExtra(BluetoothDevice.EXTRA_UUID, uuids);
-        mAdapterService.sendBroadcast(
-                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
 
         // SDP Sent UUID Intent here
         MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_SENT_UUID, 1);
@@ -1079,8 +1199,7 @@ public class RemoteDevices {
         intent.putExtra(BluetoothDevice.EXTRA_BATTERY_LEVEL, batteryLevel);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
         intent.addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-        mAdapterService.sendBroadcast(
-                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
     }
 
     /**
@@ -1169,9 +1288,7 @@ public class RemoteDevices {
                         intent.putExtra(BluetoothDevice.EXTRA_NAME, deviceProperties.getName());
                         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
                         mAdapterService.sendBroadcast(
-                                intent,
-                                BLUETOOTH_CONNECT,
-                                Utils.getTempBroadcastOptions().toBundle());
+                                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
                         debugLog("Remote device name is: " + deviceProperties.getName());
                     }
                     case AbstractionLayer.BT_PROPERTY_REMOTE_FRIENDLY_NAME -> {
@@ -1200,9 +1317,7 @@ public class RemoteDevices {
                                 new BluetoothClass(deviceProperties.getBluetoothClass()));
                         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
                         mAdapterService.sendBroadcast(
-                                intent,
-                                BLUETOOTH_CONNECT,
-                                Utils.getTempBroadcastOptions().toBundle());
+                                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
                         debugLog(
                                 "Remote class update, device="
                                         + bdDevice
@@ -1244,13 +1359,52 @@ public class RemoteDevices {
                     }
                     case AbstractionLayer.BT_PROPERTY_DISCOVERY_RESULT_TYPE ->
                             deviceProperties.setDiscoveryResultType(val[0]);
-                    case AbstractionLayer.BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE -> {
-                        final ParcelUuid[] newUuids = Utils.byteArrayToUuid(val);
-                        deviceProperties.setUuidsFromExtendedInquiryResponse(newUuids);
-                    }
-                    case AbstractionLayer.BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA -> {
-                        final ParcelUuid[] newUuids = Utils.byteArrayToUuid(val);
-                        deviceProperties.setUuidsFromLeAdvertisingData(newUuids);
+                    case AbstractionLayer.BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE,
+                            AbstractionLayer.BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA -> {
+                        // Flags.getSvcUuidsFromBleAdvData() == true
+
+                        if (Flags.getSvcUuidsBugfix()) {
+                            final ParcelUuid[] newUuids;
+                            if (val.length != 1) {
+                                newUuids = Utils.byteArrayToUuid(val);
+                            } else if (val[0]
+                                    == AbstractionLayer.BT_REASON_FOR_NO_UUIDS_EMPTY_UUID_LIST) {
+                                newUuids = new ParcelUuid[0];
+                            } else {
+                                // val[0] ==
+                                // AbstractionLayer.BT_REASON_FOR_NO_UUIDS_NO_UUID_TYPES_EXIST
+                                newUuids = null;
+                            }
+
+                            Log.d(
+                                    TAG,
+                                    "UUID from EIR/AD. type="
+                                            + type
+                                            + ", newUuids="
+                                            + Arrays.toString(newUuids));
+
+                            if (type
+                                    == AbstractionLayer
+                                            .BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE) {
+                                deviceProperties.setUuidsFromExtendedInquiryResponse(newUuids);
+                            } else {
+                                // type ==
+                                // AbstractionLayer.BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA
+                                deviceProperties.setUuidsFromLeAdvertisingData(newUuids);
+                            }
+                        } else {
+                            if (type
+                                    == AbstractionLayer
+                                            .BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE) {
+                                final ParcelUuid[] newUuids = Utils.byteArrayToUuid(val);
+                                deviceProperties.setUuidsFromExtendedInquiryResponse(newUuids);
+                            } else {
+                                // type ==
+                                // AbstractionLayer.BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA
+                                final ParcelUuid[] newUuids = Utils.byteArrayToUuid(val);
+                                deviceProperties.setUuidsFromLeAdvertisingData(newUuids);
+                            }
+                        }
                     }
                     // RSSI from hal is in one byte
                     case AbstractionLayer.BT_PROPERTY_REMOTE_RSSI ->
@@ -1369,8 +1523,8 @@ public class RemoteDevices {
                             new String[] {BLUETOOTH_SCAN, pkg.permission()},
                             Utils.getTempBroadcastOptions());
                 } else {
-                    mAdapterService.sendBroadcastMultiplePermissions(
-                            intent, new String[] {BLUETOOTH_SCAN}, Utils.getTempBroadcastOptions());
+                    mAdapterService.sendBroadcast(
+                            intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
                 }
             }
         }
@@ -1400,7 +1554,7 @@ public class RemoteDevices {
         deviceProperties.setIdentityAddress(
                 Utils.getAddressStringFromByte(secondaryAddress),
                 BluetoothDevice.ADDRESS_TYPE_PUBLIC);
-        mDualDevicesMap.put(
+        mAddressMap.put(
                 deviceProperties.getIdentityAddress().getAddress(),
                 Utils.getAddressStringFromByte(mainAddress));
     }
@@ -1409,18 +1563,18 @@ public class RemoteDevices {
      * Callback to associate an LE-only device's RPA with its identity address and identity address
      * type
      *
-     * @param mainAddress the device's RPA
-     * @param secondaryAddress the device's identity address
+     * @param pseudoAddress the device's RPA
+     * @param identityAddress the device's identity address
      * @param identityAddressType the device's identity address type from native
      */
     void leAddressAssociateCallback(
-            byte[] mainAddress, byte[] secondaryAddress, int identityAddressType) {
+            byte[] pseudoAddress, byte[] identityAddress, int identityAddressType) {
         DeviceProperties deviceProperties;
-        BluetoothDevice device = getDevice(mainAddress);
+        BluetoothDevice device = getDevice(pseudoAddress);
         if (device == null) {
             // Address association happens only for the random device addresses
             deviceProperties =
-                    addDeviceProperties(mainAddress, BluetoothDevice.ADDRESS_TYPE_RANDOM);
+                    addDeviceProperties(pseudoAddress, BluetoothDevice.ADDRESS_TYPE_RANDOM);
             device = deviceProperties.getDevice();
         } else {
             deviceProperties = getDeviceProperties(device);
@@ -1429,8 +1583,8 @@ public class RemoteDevices {
                 TAG,
                 "leAddressAssociateCallback device: "
                         + device
-                        + ", secondaryAddress:"
-                        + Utils.getRedactedAddressStringFromByte(secondaryAddress)
+                        + ", identityAddress:"
+                        + Utils.getRedactedAddressStringFromByte(identityAddress)
                         + ", identityAddressType="
                         + identityAddressType);
 
@@ -1440,13 +1594,17 @@ public class RemoteDevices {
                     case 0x01 -> BluetoothDevice.ADDRESS_TYPE_RANDOM;
                     default -> {
                         errorLog(
-                                 "Unexpected identity address type received from native: "
+                                "Unexpected identity address type received from native: "
                                         + identityAddressType);
                         yield BluetoothDevice.ADDRESS_TYPE_UNKNOWN;
                     }
                 };
-        deviceProperties.setIdentityAddress(
-                Utils.getAddressStringFromByte(secondaryAddress), addressType);
+
+        String identityAddressString = Utils.getAddressStringFromByte(identityAddress);
+        deviceProperties.setIdentityAddress(identityAddressString, addressType);
+        if (Flags.leAddressMapUpdate()) {
+            mAddressMap.put(identityAddressString, Utils.getAddressStringFromByte(pseudoAddress));
+        }
     }
 
     void aclStateChangeCallback(
@@ -1495,7 +1653,7 @@ public class RemoteDevices {
 
         Intent intent = null;
         if (newState == AbstractionLayer.BT_ACL_STATE_CONNECTED) {
-            deviceProperties.setConnectionHandle(handle, transport);
+            deviceProperties.setConnected(transport, handle);
             if (state == BluetoothAdapter.STATE_ON || state == BluetoothAdapter.STATE_TURNING_ON) {
                 intent = new Intent(BluetoothDevice.ACTION_ACL_CONNECTED);
                 intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, transport);
@@ -1503,10 +1661,10 @@ public class RemoteDevices {
                     || state == BluetoothAdapter.STATE_BLE_TURNING_ON) {
                 intent = new Intent(BluetoothAdapter.ACTION_BLE_ACL_CONNECTED);
             }
-            BatteryService batteryService = BatteryService.getBatteryService();
-            if (batteryService != null && transport == BluetoothDevice.TRANSPORT_LE) {
-                batteryService.connectIfPossible(device);
-            }
+            mAdapterService
+                    .getBatteryService()
+                    .filter(battery -> transport == TRANSPORT_LE)
+                    .ifPresent(battery -> battery.connectIfPossible(device));
             mAdapterService.updatePhonePolicyOnAclConnect(device);
             SecurityLog.writeEvent(
                     SecurityLog.TAG_BLUETOOTH_CONNECTION,
@@ -1514,7 +1672,7 @@ public class RemoteDevices {
                     1, /* reason */
                     "");
         } else {
-            deviceProperties.setConnectionHandle(BluetoothDevice.ERROR, transport);
+            deviceProperties.setDisconnected(transport);
             if (getBondState(device) == BluetoothDevice.BOND_BONDING) {
                 // Send PAIRING_CANCEL intent to dismiss any dialog requesting bonding.
                 sendPairingCancelIntent(device);
@@ -1536,12 +1694,11 @@ public class RemoteDevices {
             }
             // Reset battery level on complete disconnection
             if (mAdapterService.getConnectionState(device) == 0) {
-                BatteryService batteryService = BatteryService.getBatteryService();
-                if (batteryService != null
-                        && batteryService.getConnectionState(device) != STATE_DISCONNECTED
-                        && transport == BluetoothDevice.TRANSPORT_LE) {
-                    batteryService.disconnect(device);
-                }
+                mAdapterService
+                        .getBatteryService()
+                        .filter(battery -> transport == TRANSPORT_LE)
+                        .filter(battery -> battery.getConnectionState(device) != STATE_DISCONNECTED)
+                        .ifPresent(battery -> battery.disconnect(device));
                 resetBatteryLevel(device, /* isBas= */ true);
             }
 
@@ -1550,10 +1707,8 @@ public class RemoteDevices {
                 if (deviceProp != null && deviceProp.isBondingInitiatedLocally()) {
                     // Reset bonding initiator state if both transports are disconnected
                     boolean disconnected =
-                            deviceProp.getConnectionHandle(BluetoothDevice.TRANSPORT_LE)
-                                            == BluetoothDevice.ERROR
-                                    && deviceProp.getConnectionHandle(
-                                                    BluetoothDevice.TRANSPORT_BREDR)
+                            deviceProp.getConnectionHandle(TRANSPORT_LE) == BluetoothDevice.ERROR
+                                    && deviceProp.getConnectionHandle(TRANSPORT_BREDR)
                                             == BluetoothDevice.ERROR;
                     if (!Flags.bondingInitiatorStateReset() || disconnected) {
                         deviceProp.setBondingInitiatedLocally(false);
@@ -1600,8 +1755,7 @@ public class RemoteDevices {
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device)
                 .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT)
                 .addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
-        mAdapterService.sendBroadcast(
-                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
 
         RemoteExceptionIgnoringConsumer<IBluetoothConnectionCallback> connectionChangeConsumer;
         if (connectionState == BluetoothAdapter.STATE_CONNECTED) {
@@ -1614,7 +1768,7 @@ public class RemoteDevices {
         } else {
             final int disconnectReason;
             if (hciReason == 0x16 /* HCI_ERR_CONN_CAUSE_LOCAL_HOST */
-                    && mAdapterService.getDatabaseManager().getKeyMissingCount(device) > 0) {
+                    && mAdapterService.getKeyMissingCount(device) > 0) {
                 // Native stack disconnects the link on detecting the bond loss. Native GATT would
                 // return HCI_ERR_CONN_CAUSE_LOCAL_HOST in such case, but the apps should see
                 // HCI_ERR_AUTH_FAILURE.
@@ -1651,24 +1805,21 @@ public class RemoteDevices {
                         mAdapterService.getString(R.string.pairing_ui_package)));
 
         Log.i(TAG, "sendPairingCancelIntent: device=" + device);
-        mAdapterService.sendBroadcast(
-                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
     }
 
     private void removeDeviceProperties(String address) {
         DeviceProperties deviceProperties = mDevices.get(address);
         if (deviceProperties != null) {
-            String pseudoAddress = mDualDevicesMap.get(address);
+            String pseudoAddress = mAddressMap.get(address);
             if (pseudoAddress != null) {
                 deviceProperties = mDevices.get(pseudoAddress);
             }
         }
 
         if (deviceProperties != null) {
-            int leConnectionHandle =
-                    deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_LE);
-            int bredrConnectionHandle =
-                    deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_BREDR);
+            int leConnectionHandle = deviceProperties.getConnectionHandle(TRANSPORT_LE);
+            int bredrConnectionHandle = deviceProperties.getConnectionHandle(TRANSPORT_BREDR);
             if (leConnectionHandle != BluetoothDevice.ERROR
                     || bredrConnectionHandle != BluetoothDevice.ERROR) {
                 // Device still connected, wait for disconnection to remove the properties
@@ -1682,8 +1833,8 @@ public class RemoteDevices {
             mDevices.remove(address);
 
             // Remove from dual mode device mappings
-            mDualDevicesMap.values().remove(address);
-            mDualDevicesMap.remove(address);
+            mAddressMap.values().remove(address);
+            mAddressMap.remove(address);
         }
     }
 
@@ -1719,9 +1870,13 @@ public class RemoteDevices {
                                 Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                                         | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
 
+        if (Flags.addBondLossReason()) {
+            intent.putExtra(BluetoothDevice.EXTRA_BOND_LOSS_REASON, reason);
+        }
+
         // Log transition to key missing state, if the key missing count is 0 which indicates
         // that the device is bonded until now.
-        if (mAdapterService.getDatabaseManager().getKeyMissingCount(device) == 0) {
+        if (mAdapterService.getKeyMissingCount(device) == 0) {
             MetricsLogger.getInstance()
                     .logBluetoothEvent(
                             device,
@@ -1733,7 +1888,7 @@ public class RemoteDevices {
         }
 
         // Bond loss detected, add to the count.
-        mAdapterService.getDatabaseManager().updateKeyMissingCount(device, true);
+        mAdapterService.updateKeyMissingCount(device, true);
 
         // Some apps are not able to handle the key missing broadcast, so we need to remove
         // the bond to prevent them from misbehaving.
@@ -1752,37 +1907,15 @@ public class RemoteDevices {
             device.removeBond();
         }
 
-        if (Flags.keyMissingPublic()) {
-            mAdapterService.sendOrderedBroadcast(
-                    intent,
-                    BLUETOOTH_CONNECT,
-                    Utils.getTempBroadcastOptions().toBundle(),
-                    null /* resultReceiver */,
-                    null /* scheduler */,
-                    Activity.RESULT_OK /* initialCode */,
-                    null /* initialData */,
-                    null /* initialExtras */);
-            return;
-        }
-
-        if (Flags.keyMissingAsOrderedBroadcast()
-                && android.os.Flags.orderedBroadcastMultiplePermissions()) {
-            mAdapterService.sendOrderedBroadcastMultiplePermissions(
-                    intent,
-                    new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
-                    null /* receiverAppOp */,
-                    null /* resultReceiver */,
-                    null /* scheduler */,
-                    Activity.RESULT_OK /* initialCode */,
-                    null /* initialData */,
-                    null /* initialExtras */,
-                    Utils.getTempBroadcastOptions().toBundle());
-        } else {
-            mAdapterService.sendBroadcastMultiplePermissions(
-                    intent,
-                    new String[] {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
-                    Utils.getTempBroadcastOptions());
-        }
+        mAdapterService.sendOrderedBroadcast(
+                intent,
+                BLUETOOTH_CONNECT,
+                Utils.getTempBroadcastBundle(),
+                null /* resultReceiver */,
+                null /* scheduler */,
+                Activity.RESULT_OK /* initialCode */,
+                null /* initialData */,
+                null /* initialExtras */);
     }
 
     void encryptionChangeCallback(
@@ -1816,7 +1949,7 @@ public class RemoteDevices {
 
         int algorithm = BluetoothDevice.ENCRYPTION_ALGORITHM_NONE;
         if (encryptionEnable) {
-            if (secureConnection || transport == BluetoothDevice.TRANSPORT_LE) {
+            if (secureConnection || transport == TRANSPORT_LE) {
                 /* LE link or Classic Secure Connections */
                 algorithm = BluetoothDevice.ENCRYPTION_ALGORITHM_AES;
             } else {
@@ -1826,7 +1959,7 @@ public class RemoteDevices {
 
             // Log transition to encryption change state (bonded), if the key missing count is > 0
             //  which indicates that the device is in key missing state.
-            if (mAdapterService.getDatabaseManager().getKeyMissingCount(bluetoothDevice) > 0) {
+            if (mAdapterService.getKeyMissingCount(bluetoothDevice) > 0) {
                 MetricsLogger.getInstance()
                         .logBluetoothEvent(
                                 bluetoothDevice,
@@ -1837,8 +1970,12 @@ public class RemoteDevices {
                                 0);
 
                 // Successful bond detected, reset the count.
-                mAdapterService.getDatabaseManager().updateKeyMissingCount(bluetoothDevice, false);
+                mAdapterService.updateKeyMissingCount(bluetoothDevice, false);
             }
+        }
+
+        if (Flags.linkStatusApi()) {
+            getDeviceProperties(bluetoothDevice).setEncryptionStatus(transport, keySize, algorithm);
         }
 
         Intent intent =
@@ -1850,9 +1987,7 @@ public class RemoteDevices {
                         .putExtra(BluetoothDevice.EXTRA_KEY_SIZE, keySize)
                         .putExtra(BluetoothDevice.EXTRA_ENCRYPTION_ALGORITHM, algorithm);
 
-        if (com.android.bluetooth.flags.Flags.encryptionChangeBroadcast()) {
-            mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
-        }
+        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
     }
 
     void fetchUuids(BluetoothDevice device, int transport) {
@@ -1900,27 +2035,24 @@ public class RemoteDevices {
 
         // Some apps expect service discovery to be performed on all connected transports.
         if (deviceProperties != null
-                && transport == BluetoothDevice.TRANSPORT_AUTO
-                && serviceDiscoveryIopFixNeeded(device)) {
+                && transport == TRANSPORT_AUTO
+                && (Flags.serviceDiscoveryOnConnectedTransport()
+                        || serviceDiscoveryIopFixNeeded(device))) {
             boolean startedLeServiceDiscovery = false;
             boolean startedBredrServiceDiscovery = false;
-            if (deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_LE)
-                    != BluetoothDevice.ERROR) {
+            if (deviceProperties.getConnectionHandle(TRANSPORT_LE) != BluetoothDevice.ERROR) {
                 mAdapterService
                         .getNative()
                         .getRemoteServices(
-                                Utils.getBytesFromAddress(device.getAddress()),
-                                BluetoothDevice.TRANSPORT_LE);
+                                Utils.getBytesFromAddress(device.getAddress()), TRANSPORT_LE);
                 startedLeServiceDiscovery = true;
             }
 
-            if (deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_BREDR)
-                    != BluetoothDevice.ERROR) {
+            if (deviceProperties.getConnectionHandle(TRANSPORT_BREDR) != BluetoothDevice.ERROR) {
                 mAdapterService
                         .getNative()
                         .getRemoteServices(
-                                Utils.getBytesFromAddress(device.getAddress()),
-                                BluetoothDevice.TRANSPORT_BREDR);
+                                Utils.getBytesFromAddress(device.getAddress()), TRANSPORT_BREDR);
                 startedBredrServiceDiscovery = true;
             }
 
@@ -2172,9 +2304,10 @@ public class RemoteDevices {
 
     @VisibleForTesting
     boolean hasBatteryService(BluetoothDevice device) {
-        BatteryService batteryService = BatteryService.getBatteryService();
-        return batteryService != null
-                && batteryService.getConnectionState(device) == STATE_CONNECTED;
+        return mAdapterService
+                .getBatteryService()
+                .map(battery -> battery.getConnectionState(device) == STATE_CONNECTED)
+                .orElse(false);
     }
 
     /** Handles headset client connection state change event. */
@@ -2238,11 +2371,12 @@ public class RemoteDevices {
         return false;
     }
 
+    // TODO (b/419542108): Remove when the flag service_discovery_on_connected_transport is released
     private static final String[] SERVICE_DISCOVERY_IOP_PACKAGES = {
         "com.sony.songpal.",
     };
 
-    // TODO (b/395011801): Remove when fetchUuidsWithSdp(transport) is upgraded to public API
+    // TODO (b/419542108): Remove when the flag service_discovery_on_connected_transport is released
     public boolean serviceDiscoveryIopFixNeeded(BluetoothDevice device) {
         return packageAssociated(device, SERVICE_DISCOVERY_IOP_PACKAGES);
     }
@@ -2310,11 +2444,9 @@ public class RemoteDevices {
             int identityAddressType = deviceProperties.getIdentityAddress().getAddressType();
 
             boolean connectedBrEdr =
-                    deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_BREDR)
-                            != BluetoothDevice.ERROR;
+                    deviceProperties.getConnectionHandle(TRANSPORT_BREDR) != BluetoothDevice.ERROR;
             boolean connectedLe =
-                    deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_LE)
-                            != BluetoothDevice.ERROR;
+                    deviceProperties.getConnectionHandle(TRANSPORT_LE) != BluetoothDevice.ERROR;
 
             StringBuilder sb = bonded ? sbBonded : sbKnown;
             sb.append("    ")
@@ -2337,6 +2469,10 @@ public class RemoteDevices {
                     .append(connectedBrEdr ? "Y" : "N")
                     .append(" LE:")
                     .append(connectedLe ? "Y" : "N")
+                    .append("] [ Encryption status(BR/EDR): ")
+                    .append(deviceProperties.getEncryptionStatus(TRANSPORT_BREDR))
+                    .append(" LE: ")
+                    .append(deviceProperties.getEncryptionStatus(TRANSPORT_LE))
                     .append("] ")
                     .append(deviceProperties.getName())
                     .append("\n");

@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
+#include <bluetooth/types/uuid.h>
+
 #include <cstdint>
 
 #include "stack/include/sdp_api.h"
-#include "types/bluetooth/uuid.h"
 
 namespace test {
 namespace mock {

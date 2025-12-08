@@ -36,6 +36,9 @@ pub trait Rule {
     /// used to bucket interesting behavior. Not all reportable events are signals but all signals
     /// are reportable events.
     fn report_signals(&self) -> &[Signal];
+
+    /// Generate a meaningful JSON format data and write to the writer.
+    fn output_json(&self, writer: &mut dyn Write);
 }
 
 /// Grouping of rules. This is used to make it easier to enable/disable certain rules for
@@ -72,6 +75,12 @@ impl RuleGroup {
             }
         }
     }
+
+    pub fn output_json(&self, writer: &mut dyn Write) {
+        for rule in &self.rules {
+            rule.output_json(writer);
+        }
+    }
 }
 /// Main entry point to process input data and run rules on them.
 pub struct RuleEngine {
@@ -103,6 +112,12 @@ impl RuleEngine {
     pub fn report_signals(&self, writer: &mut dyn Write) {
         for group in self.groups.values() {
             group.report_signals(writer);
+        }
+    }
+
+    pub fn output_json(&self, writer: &mut dyn Write) {
+        for group in self.groups.values() {
+            group.output_json(writer);
         }
     }
 }

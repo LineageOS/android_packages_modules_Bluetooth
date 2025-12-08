@@ -69,26 +69,27 @@ public class LeAudioStackEvent {
     static final int GROUP_STATUS_INACTIVE = 0;
     static final int GROUP_STATUS_ACTIVE = 1;
     static final int GROUP_STATUS_TURNED_IDLE_DURING_CALL = 2;
+    static final int GROUP_STATUS_AUTONOMOUS_INACTIVE = 3;
 
     static final int GROUP_NODE_ADDED = 1;
     static final int GROUP_NODE_REMOVED = 2;
 
     // Do not modify without updating the HAL bt_le_audio.h files.
     // Match up with BroadcastState enum of bt_le_audio.h
-    static final int BROADCAST_STATE_STOPPED = 0;
-    static final int BROADCAST_STATE_CONFIGURING = 1;
-    static final int BROADCAST_STATE_PAUSED = 2;
-    static final int BROADCAST_STATE_ENABLING = 3;
-    static final int BROADCAST_STATE_DISABLING = 4;
-    static final int BROADCAST_STATE_STOPPING = 5;
-    static final int BROADCAST_STATE_STREAMING = 6;
+    public static final int BROADCAST_STATE_STOPPED = 0;
+    public static final int BROADCAST_STATE_CONFIGURING = 1;
+    public static final int BROADCAST_STATE_PAUSED = 2;
+    public static final int BROADCAST_STATE_ENABLING = 3;
+    public static final int BROADCAST_STATE_DISABLING = 4;
+    public static final int BROADCAST_STATE_STOPPING = 5;
+    public static final int BROADCAST_STATE_STREAMING = 6;
 
     // Do not modify without updating the HAL bt_le_audio.h files.
     // Match up with UnicastMonitorModeStatus enum of bt_le_audio.h
-    static final int STATUS_LOCAL_STREAM_REQUESTED = 0;
-    static final int STATUS_LOCAL_STREAM_STREAMING = 1;
-    static final int STATUS_LOCAL_STREAM_SUSPENDED = 2;
-    static final int STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE = 3;
+    public static final int STATUS_LOCAL_STREAM_REQUESTED = 0;
+    public static final int STATUS_LOCAL_STREAM_STREAMING = 1;
+    public static final int STATUS_LOCAL_STREAM_SUSPENDED = 2;
+    public static final int STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE = 3;
 
     // Do not modify without updating le_audio_types.h
     // Match up with defines of le_audio_types.h
@@ -241,6 +242,7 @@ public class LeAudioStackEvent {
                         case GROUP_STATUS_INACTIVE -> "GROUP_STATUS_INACTIVE";
                         case GROUP_STATUS_TURNED_IDLE_DURING_CALL ->
                                 "GROUP_STATUS_TURNED_IDLE_DURING_CALL";
+                        case GROUP_STATUS_AUTONOMOUS_INACTIVE -> "GROUP_STATUS_AUTONOMOUS_INACTIVE";
                         default -> Integer.toString(value);
                     };
             case EVENT_TYPE_GROUP_NODE_STATUS_CHANGED ->

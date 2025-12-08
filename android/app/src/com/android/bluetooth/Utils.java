@@ -27,6 +27,9 @@ import static android.Manifest.permission.NETWORK_SETUP_WIZARD;
 import static android.Manifest.permission.RADIO_SCAN_WITHOUT_LOCATION;
 import static android.Manifest.permission.RENOUNCE_PERMISSIONS;
 import static android.Manifest.permission.WRITE_SMS;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringRunnable;
 import static android.bluetooth.BluetoothUtils.USER_HANDLE_NULL;
 import static android.content.pm.PackageManager.GET_PERMISSIONS;
@@ -58,6 +61,8 @@ import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Bundle;
+import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.PowerExemptionManager;
 import android.os.Process;
@@ -71,8 +76,6 @@ import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
-import com.android.bluetooth.flags.Flags;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -120,26 +123,11 @@ public final class Utils {
     private static final long DEFAULT_TEMP_ALLOW_LIST_DURATION_MS = 20_000;
 
     private static int sSystemUiUid = USER_HANDLE_NULL.getIdentifier();
-    private static int sForegroundUserId = USER_HANDLE_NULL.getIdentifier();
 
     private Utils() {}
 
     public static void setSystemUiUid(int uid) {
         sSystemUiUid = uid;
-    }
-
-    public static int getForegroundUserId() {
-        if (Flags.limitUserSwitchPropagation()) {
-            throw new IllegalStateException("limitUserSwitchPropagation is enabled");
-        }
-        return sForegroundUserId;
-    }
-
-    public static void setForegroundUserId(int userId) {
-        if (Flags.limitUserSwitchPropagation()) {
-            throw new IllegalStateException("limitUserSwitchPropagation is enabled");
-        }
-        sForegroundUserId = userId;
     }
 
     /**
@@ -178,8 +166,7 @@ public final class Utils {
         }
 
         // Check metadata
-        DatabaseManager mDbManager = service.getDatabaseManager();
-        byte[] deviceType = mDbManager.getCustomMeta(device, BluetoothDevice.METADATA_DEVICE_TYPE);
+        byte[] deviceType = service.getMetadata(device, BluetoothDevice.METADATA_DEVICE_TYPE);
         if (deviceType == null) {
             return false;
         }
@@ -247,9 +234,9 @@ public final class Utils {
     /** Convert a BluetoothDevice transport constant to a string for printing in debug lines */
     public static String transportToString(int transport) {
         return switch (transport) {
-            case BluetoothDevice.TRANSPORT_AUTO -> "AUTO";
-            case BluetoothDevice.TRANSPORT_BREDR -> "BR/EDR";
-            case BluetoothDevice.TRANSPORT_LE -> "LE";
+            case TRANSPORT_AUTO -> "AUTO";
+            case TRANSPORT_BREDR -> "BR/EDR";
+            case TRANSPORT_LE -> "LE";
             default -> "Unknown transport (" + transport + ")";
         };
     }
@@ -503,13 +490,13 @@ public final class Utils {
 
     @PermissionMethod
     private static boolean checkPermissionForPreflight(
-            Context context, @PermissionName String permission) {
+            Context context, @PermissionName String permission, AttributionSource source) {
         PermissionManager pm = context.getSystemService(PermissionManager.class);
         if (pm == null) {
             return false;
         }
-        final int result =
-                pm.checkPermissionForPreflight(permission, context.getAttributionSource());
+        requireNonNull(source);
+        final int result = pm.checkPermissionForPreflight(permission, source);
         if (result == PERMISSION_GRANTED) {
             return true;
         }
@@ -532,8 +519,6 @@ public final class Utils {
         if (isInstrumentationTestMode()) {
             return true;
         }
-        // STOPSHIP(b/188391719): enable this security enforcement
-        // source.enforceCallingUid();
         AttributionSource currentAttribution =
                 new AttributionSource.Builder(context.getAttributionSource())
                         .setNext(requireNonNull(source))
@@ -568,8 +553,9 @@ public final class Utils {
      */
     @SuppressLint("AndroidFrameworkRequiresPermission") // This method enforce the permission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    public static boolean checkConnectPermissionForPreflight(Context context) {
-        return checkPermissionForPreflight(context, BLUETOOTH_CONNECT);
+    public static boolean checkConnectPermissionForPreflight(
+            Context context, AttributionSource source) {
+        return checkPermissionForPreflight(context, BLUETOOTH_CONNECT, source);
     }
 
     /**
@@ -598,18 +584,6 @@ public final class Utils {
      * Returns true if the BLUETOOTH_SCAN permission is granted for the calling app. Returns false
      * if the result is a soft denial. Throws SecurityException if the result is a hard denial.
      *
-     * <p>Should be used in situations where the app op should not be noted.
-     */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // This method enforce the permission
-    @RequiresPermission(BLUETOOTH_SCAN)
-    public static boolean checkScanPermissionForPreflight(Context context) {
-        return checkPermissionForPreflight(context, BLUETOOTH_SCAN);
-    }
-
-    /**
-     * Returns true if the BLUETOOTH_SCAN permission is granted for the calling app. Returns false
-     * if the result is a soft denial. Throws SecurityException if the result is a hard denial.
-     *
      * <p>Should be used in situations where data will be delivered and hence the app op should be
      * noted.
      */
@@ -619,19 +593,6 @@ public final class Utils {
             Context context, AttributionSource source, String tag, String method) {
         return checkPermissionForDataDelivery(
                 context, BLUETOOTH_SCAN, source, tag + "." + method + "()");
-    }
-
-    /**
-     * Returns true if the BLUETOOTH_ADVERTISE permission is granted for the calling app. Returns
-     * false if the result is a soft denial. Throws SecurityException if the result is a hard
-     * denial.
-     *
-     * <p>Should be used in situations where the app op should not be noted.
-     */
-    @SuppressLint("AndroidFrameworkRequiresPermission") // This method enforce the permission
-    @RequiresPermission(BLUETOOTH_ADVERTISE)
-    public static boolean checkAdvertisePermissionForPreflight(Context context) {
-        return checkPermissionForPreflight(context, BLUETOOTH_ADVERTISE);
     }
 
     /**
@@ -706,12 +667,7 @@ public final class Utils {
         int callingUid = Binder.getCallingUid();
         UserHandle callingUser = UserHandle.getUserHandleForUid(callingUid);
 
-        if (Flags.limitUserSwitchPropagation()) {
-            return Process.myUserHandle().equals(callingUser)
-                    || (UserHandle.getAppId(sSystemUiUid) == UserHandle.getAppId(callingUid))
-                    || (UserHandle.getAppId(Process.SYSTEM_UID) == UserHandle.getAppId(callingUid));
-        }
-        return (sForegroundUserId == callingUser.getIdentifier())
+        return Process.myUserHandle().equals(callingUser)
                 || (UserHandle.getAppId(sSystemUiUid) == UserHandle.getAppId(callingUid))
                 || (UserHandle.getAppId(Process.SYSTEM_UID) == UserHandle.getAppId(callingUid));
     }
@@ -737,7 +693,7 @@ public final class Utils {
         }
         final boolean res = checkCallerIsSystem();
         if (!res) {
-            Log.w(TAG, tag + "." + method + "()" + " - Not allowed outside system server");
+            Log.w(TAG, tag + "." + method + "() - Not allowed outside system server");
         }
         return res;
     }
@@ -754,7 +710,6 @@ public final class Utils {
         try {
             UserManager um = context.getSystemService(UserManager.class);
             UserHandle uh = um.getProfileParent(callingUser);
-            int parentUser = (uh != null) ? uh.getIdentifier() : USER_HANDLE_NULL.getIdentifier();
 
             // In HSUM mode, UserHandle.SYSTEM is only for System and the human users will use other
             // ids
@@ -762,16 +717,8 @@ public final class Utils {
                     um.isHeadlessSystemUserMode() && callingUser.equals(UserHandle.SYSTEM);
 
             // Always allow SystemUI/System access.
-            if (Flags.limitUserSwitchPropagation()) {
-                return Process.myUserHandle().equals(callingUser)
-                        || Process.myUserHandle().equals(uh)
-                        || (UserHandle.getAppId(sSystemUiUid) == UserHandle.getAppId(callingUid))
-                        || (UserHandle.getAppId(Process.SYSTEM_UID)
-                                == UserHandle.getAppId(callingUid))
-                        || (isSystemUserInHsumMode);
-            }
-            return (sForegroundUserId == callingUser.getIdentifier())
-                    || (sForegroundUserId == parentUser)
+            return Process.myUserHandle().equals(callingUser)
+                    || Process.myUserHandle().equals(uh)
                     || (UserHandle.getAppId(sSystemUiUid) == UserHandle.getAppId(callingUid))
                     || (UserHandle.getAppId(Process.SYSTEM_UID) == UserHandle.getAppId(callingUid))
                     || (isSystemUserInHsumMode);
@@ -1039,15 +986,41 @@ public final class Utils {
         return "uid/pid=" + Binder.getCallingUid() + "/" + Binder.getCallingPid();
     }
 
+    private static final DateTimeFormatter DATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("MM-dd HH:mm:ss.SSS").withZone(ZoneId.systemDefault());
+
     /**
-     * Get system local time
+     * Get the current system local time as a formatted string.
      *
-     * @return "MM-dd HH:mm:ss.SSS"
+     * @return A formatted string representing the current time ("MM-dd HH:mm:ss.SSS")
      */
     public static String getLocalTimeString() {
-        return DateTimeFormatter.ofPattern("MM-dd HH:mm:ss.SSS")
-                .withZone(ZoneId.systemDefault())
-                .format(Instant.now());
+        return formatInstant(Instant.now());
+    }
+
+    /**
+     * Converts a time value from {@link android.os.SystemClock#elapsedRealtime()} to a
+     * human-readable string.
+     *
+     * <p>To get a `long` time value, see {@link SystemClockTimeProvider#elapsedRealtime()}
+     *
+     * @param elapsedRealtimeMillis The timestamp from elapsedRealtime() to convert.
+     * @return A formatted string representing the given time ("MM-dd HH:mm:ss.SSS").
+     */
+    public static String formatElapsedRealtime(long elapsedRealtimeMillis) {
+        final long timeDeltaMillis = elapsedRealtimeMillis - sSystemClock.elapsedRealtime();
+        final long eventTimeEpochMillis = System.currentTimeMillis() + timeDeltaMillis;
+        return formatInstant(Instant.ofEpochMilli(eventTimeEpochMillis));
+    }
+
+    /**
+     * Formats a specific Instant into a system local time string.
+     *
+     * @param instant The Instant to format
+     * @return A formatted string representing the given Instant ("MM-dd HH:mm:ss.SSS")
+     */
+    public static String formatInstant(Instant instant) {
+        return DATE_TIME_FORMATTER.format(instant);
     }
 
     public static void skipCurrentTag(XmlPullParser parser)
@@ -1131,6 +1104,10 @@ public final class Utils {
             Binder.restoreCallingIdentity(ident);
         }
         return bOptions;
+    }
+
+    public static @NonNull Bundle getTempBroadcastBundle() {
+        return getTempBroadcastOptions().toBundle();
     }
 
     /**
@@ -1309,6 +1286,24 @@ public final class Utils {
             if (interrupted) {
                 Thread.currentThread().interrupt();
             }
+        }
+    }
+
+    public static void enforceMainLooperIsUsed() {
+        if (Utils.isInstrumentationTestMode()) {
+            return;
+        }
+        if (!Looper.getMainLooper().isCurrentThread()) {
+            throw new IllegalThreadStateException("Must be called on main thread");
+        }
+    }
+
+    public static void enforceMainLooperIsNotUsed() {
+        if (Utils.isInstrumentationTestMode()) {
+            return;
+        }
+        if (Looper.getMainLooper().isCurrentThread()) {
+            throw new IllegalThreadStateException("Must NOT be called on main thread");
         }
     }
 }

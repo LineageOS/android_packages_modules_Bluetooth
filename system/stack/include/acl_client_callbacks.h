@@ -16,12 +16,13 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+#include <bluetooth/types/bt_transport.h>
+#include <bluetooth/types/hci_role.h>
+
 #include <cstdint>
 
 #include "stack/include/hci_error_code.h"
-#include "types/bt_transport.h"
-#include "types/hci_role.h"
-#include "types/raw_address.h"
 
 struct acl_client_callback_s {
   virtual void on_acl_link_down(const RawAddress bd_addr, tBT_TRANSPORT transport) = 0;

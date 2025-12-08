@@ -13,6 +13,17 @@ filegroup {
     visibility: ["//packages/modules/Bluetooth/framework/tests/unit"],
 }
 
+// Allow to share the SystemServiceMessenger class between system and Fwk
+filegroup {
+    name: "bluetooth-system-server-messenger",
+    srcs: [
+        "java/android/bluetooth/SystemServiceMessenger.java",
+        "java/android/bluetooth/annotations/RequiresBluetoothConnectPermission.java",
+    ],
+    path: "java",
+    visibility: ["//packages/modules/Bluetooth/service:__subpackages__"],
+}
+
 // defaults shared between `framework-bluetooth` & `framework-bluetooth-pre-jarjar`
 // java_sdk_library `framework-bluetooth` needs sources to generate stubs, so it cannot reuse
 // `framework-bluetooth-pre-jarjar`
@@ -156,6 +167,13 @@ java_defaults {
 filegroup {
     name: "bluetooth-jarjar-rules",
     srcs: ["jarjar-rules.txt"],
+}
+
+// Test is using a different jarjar to enforce that there is no class conflict
+// with the currently installed apex
+filegroup {
+    name: "bluetooth-jarjar-rules-tests",
+    srcs: ["jarjar-rules-tests.txt"],
 }
 
 platform_compat_config {

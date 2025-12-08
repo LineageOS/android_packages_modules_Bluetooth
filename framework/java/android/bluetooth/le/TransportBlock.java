@@ -18,6 +18,7 @@ package android.bluetooth.le;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
@@ -121,6 +122,7 @@ public final class TransportBlock implements Parcelable {
      * Gets the Organization ID of the Transport Block which corresponds to one of the Bluetooth SIG
      * Assigned Numbers.
      */
+    @RequiresNoPermission
     public int getOrgId() {
         return mOrgId;
     }
@@ -129,18 +131,20 @@ public final class TransportBlock implements Parcelable {
      * Gets the TDS flags of the Transport Block which represents the role of the device and
      * information about its state and supported features.
      */
+    @RequiresNoPermission
     public int getTdsFlags() {
         return mTdsFlags;
     }
 
     /** Gets the total number of octets in the Transport Data field in this Transport Block. */
+    @RequiresNoPermission
     public int getTransportDataLength() {
         return mTransportDataLength;
     }
 
     /** Gets the Transport Data of the Transport Block which contains organization-specific data. */
-    @Nullable
-    public byte[] getTransportData() {
+    @RequiresNoPermission
+    public @Nullable byte[] getTransportData() {
         return mTransportData;
     }
 
@@ -149,8 +153,8 @@ public final class TransportBlock implements Parcelable {
      *
      * @return byte array representation of this Transport Block or null if the conversion failed
      */
-    @Nullable
-    public byte[] toByteArray() {
+    @RequiresNoPermission
+    public @Nullable byte[] toByteArray() {
         try {
             ByteBuffer buffer = ByteBuffer.allocate(totalBytes());
             buffer.put((byte) mOrgId);
@@ -169,6 +173,7 @@ public final class TransportBlock implements Parcelable {
     /**
      * @return total byte count of this TransportBlock
      */
+    @RequiresNoPermission
     public int totalBytes() {
         // 3 uint8 + byte[] length
         int size = 3 + mTransportDataLength;

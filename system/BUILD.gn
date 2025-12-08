@@ -71,6 +71,7 @@ if (defined(use.android) && use.android) {
 config("target_defaults") {
   include_dirs = [
     "//bt/system",
+    "//bt/system/types/include",
     "//bt/flags/exported_include",
     "//bt/sysprop/exported_include",
     "//bt/system/include",
@@ -200,7 +201,7 @@ pkg_config("pkd_fmtlib") {
   pkg_deps = [ "fmt" ]
 }
 
-# To include ChroemOS-specific libraries and build dependencies.
+# To include ChromeOS-specific libraries and build dependencies.
 if (target_os == "chromeos") {
   config("external_chromeos") {
     configs = [ ":pkgpkg_libstructuredmetrics" ]

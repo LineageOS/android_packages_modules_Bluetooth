@@ -80,6 +80,7 @@ interface IBluetoothLeAudio {
     const int GROUP_STATUS_INACTIVE = 0;
     const int GROUP_STATUS_ACTIVE = 1;
     const int GROUP_STATUS_TURNED_IDLE_DURING_CALL = 2;
+    const int GROUP_STATUS_AUTONOMOUS_INACTIVE = 3;
 
     const int GROUP_NODE_ADDED = 1;
     const int GROUP_NODE_REMOVED = 2;

@@ -28,7 +28,6 @@ import com.android.bluetooth.BluetoothObexTransport;
 import com.android.bluetooth.IObexConnectionHandler;
 import com.android.bluetooth.ObexServerSockets;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.obex.ServerSession;
 
 import java.io.IOException;
@@ -55,18 +54,20 @@ public class MnsService {
         mAdapterService = requireNonNull(adapterService);
         mMapClientService = service;
         mServerSockets = ObexServerSockets.create(mAdapterService, mAcceptThread);
-        SdpManagerNativeInterface nativeInterface = SdpManagerNativeInterface.getInstance();
-        if (!nativeInterface.isAvailable()) {
+        final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();
+        if (nativeInterface.isEmpty()) {
             Log.e(TAG, "SdpManagerNativeInterface is not available");
             return;
         }
         mSdpHandle =
-                nativeInterface.createMapMnsRecord(
-                        "MAP Message Notification Service",
-                        mServerSockets.getRfcommChannel(),
-                        mServerSockets.getL2capPsm(),
-                        MNS_VERSION,
-                        MasClient.MAP_SUPPORTED_FEATURES);
+                nativeInterface
+                        .get()
+                        .createMapMnsRecord(
+                                "MAP Message Notification Service",
+                                mServerSockets.getRfcommChannel(),
+                                mServerSockets.getL2capPsm(),
+                                MNS_VERSION,
+                                MasClient.MAP_SUPPORTED_FEATURES);
     }
 
     void stop() {
@@ -86,8 +87,8 @@ public class MnsService {
         }
         int sdpHandle = mSdpHandle;
         mSdpHandle = -1;
-        SdpManagerNativeInterface nativeInterface = SdpManagerNativeInterface.getInstance();
-        if (!nativeInterface.isAvailable()) {
+        final var nativeInterface = mAdapterService.getSdpManagerNativeInterface();
+        if (nativeInterface.isEmpty()) {
             Log.e(
                     TAG,
                     "cleanUpSdpRecord failed, SdpManagerNativeInterface is not available,"
@@ -96,7 +97,7 @@ public class MnsService {
             return;
         }
         Log.i(TAG, "cleanUpSdpRecord, mSdpHandle=" + sdpHandle);
-        if (!nativeInterface.removeSdpRecord(sdpHandle)) {
+        if (!nativeInterface.get().removeSdpRecord(sdpHandle)) {
             Log.e(TAG, "cleanUpSdpRecord, removeSdpRecord failed, sdpHandle=" + sdpHandle);
         }
     }

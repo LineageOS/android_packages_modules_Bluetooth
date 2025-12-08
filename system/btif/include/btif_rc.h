@@ -16,9 +16,10 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include "bta_av_api.h"
 #include "hardware/bt_rc.h"
-#include "types/raw_address.h"
 
 class RawAddress;
 

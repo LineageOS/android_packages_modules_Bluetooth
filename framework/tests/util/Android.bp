@@ -23,8 +23,9 @@ java_library {
         "PlatformProperties",
         "androidx.test.ext.truth",
         "bluetooth_flags_java_lib",
-        "compatibility-device-util-axt",
+        "compatibility-device-util-axt-minus-dexmaker",
         "junit",
+        "libprotobuf-java-lite",
     ],
     srcs: [
         "src/**/*.java",

@@ -19,9 +19,6 @@ package com.android.bluetooth.le_scan;
 import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
-import com.android.internal.annotations.GuardedBy;
-import com.android.internal.annotations.VisibleForTesting;
-
 /** NativeInterface for PeriodicScanManager */
 public class PeriodicScanNativeInterface {
     private static final String TAG = PeriodicScanNativeInterface.class.getSimpleName();
@@ -29,34 +26,13 @@ public class PeriodicScanNativeInterface {
     private static final int PA_SOURCE_LOCAL = 1;
     private static final int PA_SOURCE_REMOTE = 2;
 
-    private PeriodicScanManager mManager;
+    private final PeriodicScanManager mManager;
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static PeriodicScanNativeInterface sInstance;
-
-    private static final Object INSTANCE_LOCK = new Object();
-
-    private PeriodicScanNativeInterface() {}
-
-    static PeriodicScanNativeInterface getInstance() {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new PeriodicScanNativeInterface();
-            }
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    public static void setInstance(PeriodicScanNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
-        }
-    }
-
-    void init(PeriodicScanManager manager) {
+    PeriodicScanNativeInterface(PeriodicScanManager manager) {
         mManager = manager;
+    }
+
+    void init() {
         initializeNative();
     }
 

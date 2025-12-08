@@ -26,10 +26,12 @@
 #include <utility>
 #include <vector>
 
+#include "com_android_bluetooth_flags.h"
 #include "common/bind.h"
 #include "common/stop_watch.h"
 #include "hal/hci_hal.h"
 #include "hci/class_of_device.h"
+#include "hci/hci_data_router.h"
 #include "hci/hci_metrics_logging.h"
 #include "hci/inquiry_interface.h"
 #include "os/alarm.h"
@@ -84,9 +86,10 @@ static std::chrono::milliseconds getHciTimeoutRestartMs() {
 static void fail_if_reset_complete_not_success(CommandCompleteView complete) {
   auto reset_complete = ResetCompleteView::Create(complete);
   log::assert_that(reset_complete.IsValid(), "assert failed: reset_complete.IsValid()");
-  log::debug("Reset completed with status: {}", ErrorCodeText(ErrorCode::SUCCESS));
   log::assert_that(reset_complete.GetStatus() == ErrorCode::SUCCESS,
                    "assert failed: reset_complete.GetStatus() == ErrorCode::SUCCESS");
+
+  log::info("HciLayer::reset is completed");
 }
 
 static void abort_after_time_out(OpCode op_code) {
@@ -149,7 +152,7 @@ public:
 
 struct HciLayer::impl {
   impl(os::Handler* handler, hal::HciHal* hal, storage::StorageModule* storage, HciLayer& module)
-      : hal_(hal), storage_(storage), module_(module) {
+      : hal_(hal), storage_(storage), module_(module), router_(handler, acl_queue_.GetUpEnd()) {
     handler_ = handler;
     hci_timeout_alarm_ = new Alarm(&handler->thread());
   }
@@ -165,6 +168,13 @@ struct HciLayer::impl {
       delete hci_abort_alarm_;
     }
     command_queue_.clear();
+  }
+
+  void SetLeAclDataConsumer(LeAclDataConsumer* le_acl_data_consumer) {
+    router_.SetLeAclDataConsumer(le_acl_data_consumer);
+  }
+  void SetClassicAclDataConsumer(ClassicAclDataConsumer* classic_acl_data_consumer) {
+    router_.SetClassicAclDataConsumer(classic_acl_data_consumer);
   }
 
   void drop(EventView event) {
@@ -274,24 +284,6 @@ struct HciLayer::impl {
               std::move(response_view));
     }
 
-#ifdef TARGET_FLOSS
-    // Although UNKNOWN_CONNECTION might be a controller issue in some command status, we treat it
-    // as a disconnect event to maintain consistent connection state between stack and controller
-    // since there might not be further HCI Disconnect Event after this status event.
-    // Currently only do this on LE_READ_REMOTE_FEATURES because it is the only one we know that
-    // would return UNKNOWN_CONNECTION in some cases.
-    if (op_code == OpCode::LE_READ_REMOTE_FEATURES && is_status && status_view.IsValid() &&
-        status_view.GetStatus() == ErrorCode::UNKNOWN_CONNECTION) {
-      auto& command_view = *command_queue_.front().command_view;
-      auto le_read_features_view = bluetooth::hci::LeReadRemoteFeaturesView::Create(
-              LeConnectionManagementCommandView::Create(AclCommandView::Create(command_view)));
-      if (le_read_features_view.IsValid()) {
-        uint16_t handle = le_read_features_view.GetConnectionHandle();
-        module_.Disconnect(handle, ErrorCode::UNKNOWN_CONNECTION);
-      }
-    }
-#endif
-
     command_queue_.pop_front();
     waiting_command_ = OpCode::NONE;
     if (hci_timeout_alarm_ != nullptr) {
@@ -318,11 +310,18 @@ struct HciLayer::impl {
 #endif
 
     common::StopWatch::DumpStopWatchLog();
-    log::error("Timed out waiting for {} for {}ms", OpCodeText(op_code), getHciTimeoutMs().count());
+    log::error("Timed out waiting for {} for {}ms, which was armed at: {}", OpCodeText(op_code),
+               getHciTimeoutMs().count(), hci_timeout_alarm_->GetArmedTime());
 
     bluetooth::metrics::LogMetricHciTimeoutEvent(static_cast<uint32_t>(op_code));
 
-    log::error("Flushing {} waiting commands", command_queue_.size());
+    log::error("Flushing #{} waiting commands", command_queue_.size());
+    for (auto& command : command_queue_) {
+      log::debug("Flushing command: opcode:{}, waiting for: {}",
+                 command.command_view ? OpCodeText(command.command_view->GetOpCode()) : "??",
+                 static_cast<int>(command.waiting_for_));
+    }
+
     // Clear any waiting commands (there is an abort coming anyway)
     command_queue_.clear();
     command_credits_ = 1;
@@ -342,7 +341,7 @@ struct HciLayer::impl {
       hci_abort_alarm_->Schedule(BindOnce(&abort_after_time_out, op_code),
                                  getHciTimeoutRestartMs());
     } else {
-      log::warn("Unable to schedul abort timer");
+      log::warn("Unable to schedule abort timer");
     }
   }
 
@@ -402,7 +401,12 @@ struct HciLayer::impl {
   }
 
   void unregister_le_event(SubeventCode event) {
-    le_event_handlers_.erase(le_event_handlers_.find(event));
+    auto it = le_event_handlers_.find(event);
+    if (it == le_event_handlers_.end()) {
+      log::warn("Can not unregister a non-existent handler for {}", SubeventCodeText(event));
+      return;
+    }
+    le_event_handlers_.erase(it);
   }
 
   void register_vs_event(VseSubeventCode event,
@@ -413,7 +417,12 @@ struct HciLayer::impl {
   }
 
   void unregister_vs_event(VseSubeventCode event) {
-    vs_event_handlers_.erase(vs_event_handlers_.find(event));
+    auto it = vs_event_handlers_.find(event);
+    if (it == vs_event_handlers_.end()) {
+      log::warn("Can not unregister a non-existent handler for {}", VseSubeventCodeText(event));
+      return;
+    }
+    vs_event_handlers_.erase(it);
   }
 
   void register_vs_event_default(ContextualCallback<void(VendorSpecificEventView)> handler) {
@@ -476,7 +485,7 @@ struct HciLayer::impl {
     }
     power_telemetry::GetInstance().LogHciEvtDetail();
     EventCode event_code = event.GetEventCode();
-    // Root Inflamation is a special case, since it aborts here
+    // Root Inflammation is a special case, since it aborts here
     if (event_code == EventCode::VENDOR_SPECIFIC) {
       auto view = VendorSpecificEventView::Create(event);
       log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
@@ -582,6 +591,8 @@ struct HciLayer::impl {
   // ISO packets
   BidiQueue<IsoView, IsoBuilder> iso_queue_{3 /* TODO: Set queue depth */};
   os::EnqueueBuffer<IsoView> incoming_iso_buffer_{iso_queue_.GetDownEnd()};
+
+  HciDataRouter router_;
 };
 
 // All functions here are running on the HAL thread
@@ -898,12 +909,24 @@ LeAdvertisingInterface* HciLayer::GetLeAdvertisingInterface(
   return &le_advertising_interface;
 }
 
+void HciLayer::ReleaseLeAdvertisingInterface() {
+  for (const auto subevent : LeAdvertisingEvents) {
+    UnregisterLeEventHandler(subevent);
+  }
+}
+
 LeScanningInterface* HciLayer::GetLeScanningInterface(
         ContextualCallback<void(LeMetaEventView)> event_handler) {
   for (const auto subevent : LeScanningEvents) {
     RegisterLeEventHandler(subevent, event_handler);
   }
   return &le_scanning_interface;
+}
+
+void HciLayer::ReleaseLeScanningInterface() {
+  for (const auto subevent : LeScanningEvents) {
+    UnregisterLeEventHandler(subevent);
+  }
 }
 
 LeIsoInterface* HciLayer::GetLeIsoInterface(
@@ -922,6 +945,12 @@ DistanceMeasurementInterface* HciLayer::GetDistanceMeasurementInterface(
   return &distance_measurement_interface;
 }
 
+void HciLayer::ReleaseDistanceMeasurementInterface() {
+  for (const auto subevent : DistanceMeasurementEvents) {
+    UnregisterLeEventHandler(subevent);
+  }
+}
+
 std::unique_ptr<InquiryInterface> HciLayer::GetInquiryInterface(
         ContextualCallback<void(EventView)> event_handler) {
   for (const auto event : InquiryEvents) {
@@ -935,6 +964,13 @@ std::unique_ptr<InquiryInterface> HciLayer::GetInquiryInterface(
           },
           common::Unretained(this));
   return std::make_unique<CommandInterfaceImpl<DiscoveryCommandBuilder>>(this, std::move(cleanup));
+}
+
+void HciLayer::SetLeAclDataConsumer(LeAclDataConsumer* le_acl_data_consumer) {
+  impl_->SetLeAclDataConsumer(le_acl_data_consumer);
+}
+void HciLayer::SetClassicAclDataConsumer(ClassicAclDataConsumer* classic_acl_data_consumer) {
+  impl_->SetClassicAclDataConsumer(classic_acl_data_consumer);
 }
 
 HciLayer::HciLayer(Handler* handler, hal::HciHal* hal, storage::StorageModule* storage) {
@@ -952,6 +988,8 @@ HciLayer::HciLayer(Handler* handler, hal::HciHal* hal, storage::StorageModule* s
   StartWithNoHalDependencies(handler);
   hal->registerIncomingPacketCallback(hal_callbacks_);
   EnqueueCommand(ResetBuilder::Create(), handler->BindOnce(&fail_if_reset_complete_not_success));
+
+  log::verbose("module started !!");
 }
 
 HciLayer::HciLayer(Handler*) { impl_ = nullptr; }
@@ -969,6 +1007,15 @@ void HciLayer::StartWithNoHalDependencies(Handler* handler) {
                        handler->BindOn(this, &HciLayer::on_connection_request));
 }
 
+// Unregister event handlers that don't depend on the HAL
+void HciLayer::StopWithNoHalDependencies() {
+  UnregisterEventHandler(EventCode::DISCONNECTION_COMPLETE);
+  UnregisterEventHandler(EventCode::READ_REMOTE_VERSION_INFORMATION_COMPLETE);
+  UnregisterEventHandler(EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE);
+  UnregisterEventHandler(EventCode::MAX_SLOTS_CHANGE);
+  UnregisterEventHandler(EventCode::CONNECTION_REQUEST);
+}
+
 HciLayer::~HciLayer() {
   std::unique_lock<std::recursive_mutex> lock(life_cycle_guard);
   life_cycle_stopped = true;
@@ -979,10 +1026,16 @@ HciLayer::~HciLayer() {
   impl_->hal_->unregisterIncomingPacketCallback();
   delete hal_callbacks_;
 
+  if (com_android_bluetooth_flags_fix_event_handler_reg_and_dereg()) {
+    StopWithNoHalDependencies();
+  }
+
   impl_->acl_queue_.GetDownEnd()->UnregisterDequeue();
   impl_->sco_queue_.GetDownEnd()->UnregisterDequeue();
   impl_->iso_queue_.GetDownEnd()->UnregisterDequeue();
   delete impl_;
+
+  log::verbose("module stopped !!");
 }
 
 // Function to stop sending and handling incoming packets

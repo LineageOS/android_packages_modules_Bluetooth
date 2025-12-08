@@ -71,6 +71,8 @@ public:
 
   bool IsAbortedProcedureRequired(uint16_t connection_handle) override;
 
+  std::vector<RangingSessionType> GetSupportedSessionTypes() override;
+
 protected:
   RangingHalVersion get_ranging_hal_version();
 

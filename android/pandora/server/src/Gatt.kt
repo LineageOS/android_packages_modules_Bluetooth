@@ -17,6 +17,7 @@
 package com.android.pandora
 
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt.GATT_SUCCESS
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
@@ -26,6 +27,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.util.Log
+import com.google.protobuf.Empty
 import io.grpc.stub.StreamObserver
 import java.io.Closeable
 import java.util.UUID
@@ -114,6 +116,41 @@ class Gatt(private val context: Context) : GATTImplBase(), Closeable {
                     .setHandle(valueWrote.handle)
                     .setStatus(valueWrote.status)
                     .build()
+            }
+        }
+    }
+
+    override fun writeAttFromHandleWithoutResponse(
+        request: WriteWithoutResponseRequest,
+        responseObserver: StreamObserver<Empty>,
+    ) {
+        grpcUnary<Empty>(mScope, responseObserver) {
+            Log.i(TAG, "writeAttFromHandleWithoutResponse handle=${request.handle}")
+            val gattInstance = GattInstance.get(request.connection.address)
+            val characteristic: BluetoothGattCharacteristic? =
+                getCharacteristicWithHandle(request.handle, gattInstance)
+            if (characteristic == null) {
+                val descriptor: BluetoothGattDescriptor? =
+                    getDescriptorWithHandle(request.handle, gattInstance)
+                checkNotNull(descriptor) {
+                    "Found no characteristic or descriptor with handle ${request.handle}"
+                }
+                val valueWrote =
+                    gattInstance.writeDescriptorNonBlocking(descriptor, request.value.toByteArray())
+                check(valueWrote == GATT_SUCCESS) {
+                    "Error on writing descriptor with handle ${request.handle}"
+                }
+                Empty.getDefaultInstance()
+            } else {
+                val valueWrote =
+                    gattInstance.writeCharacteristicNonBlocking(
+                        characteristic,
+                        request.value.toByteArray(),
+                    )
+                check(valueWrote == GATT_SUCCESS) {
+                    "Error on writing characteristic with handle ${request.handle}"
+                }
+                Empty.getDefaultInstance()
             }
         }
     }

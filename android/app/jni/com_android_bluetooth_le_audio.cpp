@@ -17,6 +17,7 @@
 #define LOG_TAG "BluetoothLeAudioServiceJni"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <jni.h>
 #include <nativehelper/JNIHelp.h>
 #include <nativehelper/scoped_local_ref.h>
@@ -38,7 +39,6 @@
 #include "com_android_bluetooth.h"
 #include "hardware/bluetooth.h"
 #include "hardware/bt_le_audio.h"
-#include "types/raw_address.h"
 
 using bluetooth::le_audio::BroadcastId;
 using bluetooth::le_audio::BroadcastState;
@@ -740,6 +740,18 @@ static void setGroupAllowedContextMaskNative(JNIEnv* /* env */, jobject /* objec
 
   sLeAudioClientInterface->SetGroupAllowedContextMask(groupId, sinkContextTypes,
                                                       sourceContextTypes);
+}
+
+static void groupConfirmActiveNative(JNIEnv* /* env */, jobject /* object */, jint group_id) {
+  log::info("");
+  std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
+
+  if (!sLeAudioClientInterface) {
+    log::error("Failed to get the Bluetooth LeAudio Interface");
+    return;
+  }
+
+  sLeAudioClientInterface->GroupConfirmActive(group_id);
 }
 
 /* Le Audio Broadcaster */
@@ -1531,10 +1543,10 @@ static int register_com_android_bluetooth_le_audio_broadcaster(JNIEnv* env) {
   GET_JAVA_METHODS(env, "android/bluetooth/BluetoothLeBroadcastSubgroup",
                    javaLeBroadcastSubgroupMethods);
 
-  const JNIJavaMethod javaBluetoothDevieceMethods[] = {
+  const JNIJavaMethod javaBluetoothDeviceMethods[] = {
           {"<init>", "(Ljava/lang/String;I)V", &android_bluetooth_BluetoothDevice.constructor},
   };
-  GET_JAVA_METHODS(env, "android/bluetooth/BluetoothDevice", javaBluetoothDevieceMethods);
+  GET_JAVA_METHODS(env, "android/bluetooth/BluetoothDevice", javaBluetoothDeviceMethods);
 
   const JNIJavaMethod javaLeBroadcastMetadataMethods[] = {
           {"<init>",
@@ -1568,6 +1580,7 @@ int register_com_android_bluetooth_le_audio(JNIEnv* env) {
           {"setUnicastMonitorModeNative", "(IZ)V", (void*)setUnicastMonitorModeNative},
           {"sendAudioProfilePreferencesNative", "(IZZ)V", (void*)sendAudioProfilePreferencesNative},
           {"setGroupAllowedContextMaskNative", "(III)V", (void*)setGroupAllowedContextMaskNative},
+          {"groupConfirmActiveNative", "(I)V", (void*)groupConfirmActiveNative},
   };
 
   const int result = REGISTER_NATIVE_METHODS(

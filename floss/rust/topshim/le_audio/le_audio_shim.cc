@@ -17,13 +17,13 @@
 #include "topshim/le_audio/le_audio_shim.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/types/address.h>
 #include <hardware/bluetooth.h>
 
 #include <vector>
 
 #include "bta/le_audio/le_audio_types.h"
 #include "src/profiles/le_audio.rs.h"
-#include "types/raw_address.h"
 
 namespace rusty = ::bluetooth::topshim::rust;
 
@@ -117,6 +117,8 @@ static BtLeAudioGroupStatus to_rust_btle_audio_group_status(le_audio::GroupStatu
       return BtLeAudioGroupStatus::Active;
     case le_audio::GroupStatus::TURNED_IDLE_DURING_CALL:
       return BtLeAudioGroupStatus::TurnedIdleDuringCall;
+    case le_audio::GroupStatus::AUTONOMOUS_INACTIVE:
+      return BtLeAudioGroupStatus::AutonomousInactive;
     default:
       log::assert_that(false, "Unhandled enum value from C++");
   }

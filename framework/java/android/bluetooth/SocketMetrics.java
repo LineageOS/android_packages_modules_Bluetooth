@@ -50,7 +50,7 @@ class SocketMetrics {
             Log.w(TAG, "logSocketConnect: bluetoothProxy is null");
             return;
         }
-        if (connType == BluetoothSocket.TYPE_L2CAP_LE) {
+        if (connType == BluetoothSocket.TYPE_LE) {
             try {
                 bluetoothProxy.logL2capcocClientConnection(
                         device,
@@ -78,7 +78,7 @@ class SocketMetrics {
             long socketCreationTimeMillis,
             long socketCreationLatencyMillis,
             long socketConnectionTimeMillis) {
-        if (connType != BluetoothSocket.TYPE_L2CAP_LE) {
+        if (connType != BluetoothSocket.TYPE_LE) {
             return;
         }
         IBluetooth bluetoothProxy = BluetoothAdapter.getDefaultAdapter().getBluetoothService();

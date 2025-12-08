@@ -29,6 +29,9 @@
 #include <vector>
 
 #include "audio_hal_client/audio_hal_client.h"
+#include "bta_groups.h"
+#include "common/strings.h"
+#include "common/time_util.h"
 #include "le_audio_types.h"
 
 namespace bluetooth::le_audio {
@@ -154,6 +157,221 @@ inline std::string contentTypeToString(audio_content_type_t content_type) {
       return "unknown content type ";
   }
 }
+
+class AudioDeviceActiveSpeedTracker {
+public:
+  AudioDeviceActiveSpeedTracker(void)
+      : group_id_(bluetooth::groups::kGroupUnknown),
+        start_time_(0),
+        total_time_(0),
+        end_ts_(0),
+        suspend_calls_({0, 0}),
+        resume_calls_({0, 0}) {}
+
+  void Start(int group_id) {
+    if (group_id_ != bluetooth::groups::kGroupUnknown) {
+      return;
+    }
+    group_id_ = group_id;
+    start_time_ = bluetooth::common::time_get_os_boottime_us();
+    clock_gettime(CLOCK_REALTIME, &start_ts_);
+    total_time_ = 0;
+  }
+
+  void Stop(void) {
+    if (group_id_ == bluetooth::groups::kGroupUnknown) {
+      return;
+    }
+    total_time_ = (bluetooth::common::time_get_os_boottime_us() - start_time_) / 1000;
+    clock_gettime(CLOCK_REALTIME, &end_ts_);
+    log::verbose("AudioDeviceActiveSpeedTracker group_id: {}, total time {} ms", group_id_,
+                 total_time_);
+  }
+
+  void Dump(std::stringstream& stream) {
+    char start_ts[20];
+    std::strftime(start_ts, sizeof(start_ts), "%T", std::gmtime(&start_ts_.tv_sec));
+    char end_ts[20];
+    std::strftime(end_ts, sizeof(end_ts), "%T", std::gmtime(&end_ts_.tv_sec));
+    auto lsink_s = suspend_calls_.sink;
+    auto lsink_r = resume_calls_.sink;
+    auto lsource_s = suspend_calls_.source;
+    auto lsource_r = resume_calls_.source;
+
+    char lsink_r_ts[20] = {0};
+    if (lsink_r > 0) {
+      std::strftime(lsink_r_ts, sizeof(lsink_r_ts), "%T",
+                    std::gmtime(&resume_calls_ts_.sink.tv_sec));
+    }
+
+    char lsource_r_ts[20] = {0};
+    if (lsource_r > 0) {
+      std::strftime(lsource_r_ts, sizeof(lsource_r_ts), "%T",
+                    std::gmtime(&resume_calls_ts_.source.tv_sec));
+    }
+
+    stream << "[ " << start_ts << "->" << end_ts << ", gID:" << group_id_ << ", t:" << total_time_
+           << "ms, " << "LSink(s/r) " << lsink_s << "/" << lsink_r << ": " << lsink_r_ts
+           << ", LSource(s/r)" << lsource_s << "/" << lsource_r << ": " << lsource_r_ts << "]";
+  }
+
+  void Reset(void) {
+    group_id_ = bluetooth::groups::kGroupUnknown;
+    start_time_ = 0;
+    suspend_calls_ = {0, 0};
+    resume_calls_ = {0, 0};
+  }
+
+  void LogAHALSuspendOperation(int group_id, uint8_t direction) {
+    if (group_id_ != group_id) {
+      return;
+    }
+    suspend_calls_.get(direction)++;
+  }
+
+  void LogAHALResumeOperation(int group_id, uint8_t direction) {
+    if (group_id_ != group_id) {
+      return;
+    }
+    resume_calls_.get(direction)++;
+    clock_gettime(CLOCK_REALTIME, &resume_calls_ts_.get(direction));
+  }
+
+private:
+  int group_id_;
+  uint64_t start_time_;
+  uint64_t total_time_;
+  timespec start_ts_;
+  timespec end_ts_;
+  types::BidirectionalPair<int> suspend_calls_;
+  types::BidirectionalPair<int> resume_calls_;
+  types::BidirectionalPair<timespec> resume_calls_ts_;
+};
+
+class StreamSpeedTracker {
+public:
+  StreamSpeedTracker(void)
+      : is_started_(false),
+        group_id_(bluetooth::groups::kGroupUnknown),
+        num_of_devices_(0),
+        context_type_(types::LeAudioContextType::UNSPECIFIED),
+        reconfig_start_ts_(0),
+        setup_start_ts_(0),
+        total_time_(0),
+        reconfig_time_(0),
+        stream_setup_time_(0) {}
+
+  void Init(int group_id, types::LeAudioContextType context_type, int num_of_devices) {
+    Reset(bluetooth::groups::kGroupUnknown);
+    group_id_ = group_id;
+    context_type_ = context_type;
+    num_of_devices_ = num_of_devices;
+    log::verbose("StreamSpeedTracker group_id: {}, context: {} #{}", group_id_,
+                 common::ToString(context_type_), num_of_devices);
+  }
+
+  void Reset(int group_id) {
+    if (group_id != bluetooth::groups::kGroupUnknown && group_id != group_id_) {
+      log::verbose("StreamSpeedTracker Reset called for invalid group_id: {} != {}", group_id,
+                   group_id_);
+      return;
+    }
+
+    log::verbose("StreamSpeedTracker group_id: {}", group_id_);
+    is_started_ = false;
+    group_id_ = bluetooth::groups::kGroupUnknown;
+    reconfig_start_ts_ = setup_start_ts_ = total_time_ = reconfig_time_ = stream_setup_time_ =
+            num_of_devices_ = 0;
+    context_type_ = types::LeAudioContextType::UNSPECIFIED;
+  }
+
+  void ReconfigStarted(void) {
+    log::verbose("StreamSpeedTracker group_id: {}", group_id_);
+    reconfig_time_ = 0;
+    is_started_ = true;
+    reconfig_start_ts_ = bluetooth::common::time_get_os_boottime_us();
+  }
+
+  void StartStream(void) {
+    log::verbose("StreamSpeedTracker group_id: {}", group_id_);
+    setup_start_ts_ = bluetooth::common::time_get_os_boottime_us();
+    clock_gettime(CLOCK_REALTIME, &start_ts_);
+    is_started_ = true;
+  }
+
+  void ReconfigurationComplete(void) {
+    reconfig_time_ = (bluetooth::common::time_get_os_boottime_us() - reconfig_start_ts_) / 1000;
+    log::verbose("StreamSpeedTracker group_id: {}, {} reconfig time {} ms", group_id_,
+                 common::ToString(context_type_), reconfig_time_);
+  }
+
+  void StreamCreated(void) {
+    stream_setup_time_ = (bluetooth::common::time_get_os_boottime_us() - setup_start_ts_) / 1000;
+    log::verbose("StreamSpeedTracker group_id: {}, {} stream create  time {} ms", group_id_,
+                 common::ToString(context_type_), stream_setup_time_);
+  }
+
+  void StopStreamSetup(void) {
+    is_started_ = false;
+    uint64_t start_ts = reconfig_time_ != 0 ? reconfig_start_ts_ : setup_start_ts_;
+    total_time_ = (bluetooth::common::time_get_os_boottime_us() - start_ts) / 1000;
+    clock_gettime(CLOCK_REALTIME, &end_ts_);
+    log::verbose("StreamSpeedTracker group_id: {}, {} setup time {} ms", group_id_,
+                 common::ToString(context_type_), total_time_);
+  }
+
+  bool IsStarted(int group_id) {
+    if (is_started_ && group_id_ == group_id) {
+      log::verbose("StreamSpeedTracker group_id: {}, {} is_started_: {} ", group_id_,
+                   common::ToString(context_type_), is_started_);
+      return true;
+    }
+    log::verbose("StreamSpeedTracker not started {} or group_id does not match ({} ! = {}) ",
+                 is_started_, group_id, group_id_);
+    return false;
+  }
+
+  void Dump(std::stringstream& stream) {
+    char start_ts[20];
+    std::strftime(start_ts, sizeof(start_ts), "%T", std::gmtime(&start_ts_.tv_sec));
+    char end_ts[20];
+    std::strftime(end_ts, sizeof(end_ts), "%T", std::gmtime(&end_ts_.tv_sec));
+
+    if (total_time_ < 900) {
+      stream << "[ 🌕 ";
+    } else if (total_time_ < 1500) {
+      stream << "[ 🌔 ";
+    } else if (total_time_ < 2500) {
+      stream << "[ 🌓 ";
+    } else {
+      stream << "[ 🌒 ";
+    }
+
+    stream << start_ts << "->" << end_ts << ", gID:" << group_id_ << ", #dev:" << num_of_devices_
+           << ", " << context_type_;
+    auto hal_idle = total_time_ - stream_setup_time_ - reconfig_time_;
+    if (reconfig_time_ != 0) {
+      stream << ", t:" << total_time_ << "ms (r:" << reconfig_time_ << "/s:" << stream_setup_time_
+             << "/hal:" << hal_idle << ")";
+    } else {
+      stream << ", t:" << total_time_ << "ms (hal:" << hal_idle << ")";
+    }
+    stream << "]";
+  }
+
+private:
+  bool is_started_;
+  int group_id_;
+  int num_of_devices_;
+  types::LeAudioContextType context_type_;
+  struct timespec start_ts_;
+  struct timespec end_ts_;
+  uint64_t reconfig_start_ts_;
+  uint64_t setup_start_ts_;
+  uint64_t total_time_;
+  uint64_t reconfig_time_;
+  uint64_t stream_setup_time_;
+};
 
 /* Helpers to get btle_audio_codec_config_t for Java */
 bluetooth::le_audio::btle_audio_codec_index_t translateLeAudioCodecIdToCodecType(

@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bluetooth/types/address.h>
 #include <gtest/gtest.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_gatt.h>
@@ -30,8 +31,6 @@
 #include <map>
 #include <mutex>
 #include <string>
-
-#include "types/raw_address.h"
 
 class btsemaphore {
 public:

@@ -1,6 +1,7 @@
 package {
     default_visibility: [":__subpackages__"],
     default_applicable_licenses: ["system_bt_license"],
+    default_team: "trendy_team_bluetooth",
 }
 
 // Added automatically by a large-scale-change that took the approach of
@@ -77,14 +78,35 @@ cc_defaults {
         // Override global.go that demote the error to a warning
         "-Werror=format",
         "-Werror=reorder-init-list",
+        "-Werror=unused-variable",
         "-Wthread-safety",
     ],
     c_std: "c99",
     cpp_std: "c++20",
-    arch: {
-        riscv64: {
-            ldflags: ["-Wl,--no-relax"],
-        },
+}
+
+// Base configuration for Bluetooth fuzz targets.
+cc_defaults {
+    name: "bluetooth_fuzz_config",
+    fuzz_config: {
+        componentid: 27441, // Android > Android OS & Apps > Systems > bluetooth
+        fuzzed_code_usage: "shipped",
+        service_privilege: "privileged",
+        vector: "remote",
+        users: "single_user",
+        cc: [
+            "android-bluetooth-security@google.com",
+            "android-security-assurance-redteam@google.com",
+        ],
+        hotlists: [
+            "3705175", // ASA Red Team Discovered Issues
+            "4593311", // Ittiam Fuzzer Bug
+            "4810445", // ASA Red Team: Bluetooth Engagement Issues
+        ],
+        acknowledgement: [
+            "Android Bluetooth Team of Google",
+            "Android Red Team of Google",
+        ],
     },
 }
 
@@ -139,6 +161,7 @@ java_defaults {
             "-Xep:DateFormatConstant:ERROR",
             "-Xep:DirectInvocationOnMock:ERROR",
             "-Xep:DuplicateBranches:ERROR",
+            "-Xep:EffectivelyPrivate:ERROR",
             "-Xep:EmptyBlockTag:ERROR",
             "-Xep:EmptyCatch:ERROR",
             "-Xep:EnumOrdinal:ERROR",
@@ -158,6 +181,7 @@ java_defaults {
             "-Xep:IncrementInForLoopAndHeader:ERROR",
             "-Xep:InlineFormatString:ERROR",
             "-Xep:InlineMeInliner:ERROR",
+            "-Xep:IntLiteralCast:ERROR",
             "-Xep:InvalidBlockTag:ERROR",
             "-Xep:InvalidInlineTag:ERROR",
             "-Xep:InvalidLink:ERROR",

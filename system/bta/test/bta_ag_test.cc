@@ -27,10 +27,12 @@
 #include <string>
 
 #include "bta/ag/bta_ag_int.h"
+#include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_ag_swb_aptx.h"
+#include "bta/include/bta_hfp_api.h"
 #include "hci/controller_mock.h"
 #include "stack/include/btm_status.h"
-#include "test/common/main_handler.h"
+#include "stack/include/main_thread.h"
 #include "test/common/mock_functions.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_bta_sys_main.h"
@@ -41,6 +43,11 @@
 #include "test/mock/mock_stack_btm_interface.h"
 
 #define TEST_BT com::android::bluetooth::flags
+
+using ::testing::_;
+using ::testing::MockFunction;
+using ::testing::NiceMock;
+using ::testing::Test;
 
 using namespace bluetooth;
 
@@ -60,13 +67,13 @@ static bool enable_aptx_voice_property(bool enable) {
   return android::base::SetProperty(kBtCodecAptxVoiceEnabled, value);
 }
 
-class BtaAgTest : public testing::Test {
+class BtaAgTest : public Test {
 protected:
   void SetUp() override {
     reset_mock_function_count_map();
     fake_osi_ = std::make_unique<test::fake::FakeOsi>();
     bluetooth::hci::testing::mock_controller_ =
-            std::make_unique<bluetooth::hci::testing::MockController>();
+            std::make_unique<NiceMock<bluetooth::hci::testing::MockController>>();
 
     main_thread_start_up();
     post_on_bt_main([]() { log::info("Main thread started up"); });
@@ -74,7 +81,7 @@ protected:
     bta_sys_register(BTA_ID_AG, &bta_ag_reg);
 
     bta_ag_cb.p_cback = [](tBTA_AG_EVT /*event*/, tBTA_AG* /*p_data*/) {};
-    RawAddress::FromString("00:11:22:33:44:55", addr);
+    addr = RawAddress::FromString("00:11:22:33:44:55").value();
     test::mock::device_esco_parameters::esco_parameters_for_codec.body = [this](esco_codec_t codec,
                                                                                 bool /*offload*/) {
       this->codec = codec;
@@ -130,8 +137,8 @@ TEST_F(BtaAgSwbTest, parse_qac_at_command) {
 
 TEST_F(BtaAgSwbTest, enable_swb_codec) {
   ASSERT_TRUE(enable_aptx_voice_property(true));
-  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, &addr));
-  ASSERT_TRUE(get_swb_codec_status(bluetooth::headset::BTHF_SWB_CODEC_VENDOR_APTX, &addr));
+  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, addr));
+  ASSERT_TRUE(get_swb_codec_status(bluetooth::headset::BTHF_SWB_CODEC_VENDOR_APTX, addr));
   ASSERT_TRUE(enable_aptx_voice_property(false));
 }
 
@@ -230,7 +237,7 @@ TEST_F(BtaAgCmdTest, at_hfp_cback__qac_ev_codec_enabled) {
           .peer_addr = addr, .app_id = 0, .peer_codecs = BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK};
 
   ASSERT_TRUE(enable_aptx_voice_property(true));
-  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, &addr));
+  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, addr));
   bta_ag_at_hfp_cback(&p_scb, BTA_AG_AT_QAC_EVT, 0, (char*)&test_strings[0][0],
                       (char*)&test_strings[0][12], BTA_AG_SCO_APTX_SWB_SETTINGS_Q0);
   ASSERT_TRUE(p_scb.codec_updated);
@@ -282,13 +289,13 @@ TEST_F(BtaAgCmdTest, at_hfp_cback__qcs_ev_codec_q0_enabled) {
   bta_ag_api_set_active_device(addr);
   ASSERT_EQ(addr, bta_ag_get_active_device());
 
-  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, &addr));
+  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, addr));
   bta_ag_at_hfp_cback(&p_scb, BTA_AG_AT_QCS_EVT, 0, (char*)&test_strings[0][0],
                       (char*)&test_strings[0][12], BTA_AG_SCO_APTX_SWB_SETTINGS_Q0);
 
   ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
   ASSERT_EQ(1, get_func_call_count("esco_parameters_for_codec"));
-  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, &addr));
+  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, addr));
   ASSERT_EQ(1, get_func_call_count("BTM_SetEScoMode"));
   ASSERT_EQ(1, get_func_call_count("BTM_CreateSco"));
   ASSERT_EQ(this->codec, ESCO_CODEC_SWB_Q0);
@@ -323,13 +330,13 @@ TEST_F(BtaAgCmdTest, handle_swb_at_event__qcs_ev_codec_q1_fallback_to_q0) {
   bta_ag_api_set_active_device(addr);
   ASSERT_EQ(addr, bta_ag_get_active_device());
 
-  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, &addr));
+  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, addr));
   bta_ag_at_hfp_cback(&p_scb, BTA_AG_AT_QCS_EVT, 0, (char*)&test_strings[0][0],
                       (char*)&test_strings[0][12], BTA_AG_SCO_APTX_SWB_SETTINGS_Q1);
 
   ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
   ASSERT_EQ(1, get_func_call_count("esco_parameters_for_codec"));
-  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, &addr));
+  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, addr));
   ASSERT_EQ(1, get_func_call_count("BTM_SetEScoMode"));
   ASSERT_EQ(1, get_func_call_count("BTM_CreateSco"));
   ASSERT_EQ(this->codec, ESCO_CODEC_SWB_Q0);
@@ -366,7 +373,7 @@ TEST_F_WITH_FLAGS(BtaAgScoTest, codec_negotiate__aptx_state_on,
   p_scb->is_aptx_swb_codec = false;
 
   ASSERT_TRUE(enable_aptx_voice_property(true));
-  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, &addr));
+  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(true, addr));
   bta_ag_codec_negotiate(p_scb);
   ASSERT_EQ(1, get_func_call_count("BTM_ReadRemoteFeatures"));
   ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
@@ -374,6 +381,8 @@ TEST_F_WITH_FLAGS(BtaAgScoTest, codec_negotiate__aptx_state_on,
   ASSERT_TRUE(p_scb->is_aptx_swb_codec);
   ASSERT_EQ(p_scb->sco_codec, BTA_AG_SCO_APTX_SWB_SETTINGS_Q0);
   ASSERT_TRUE(enable_aptx_voice_property(false));
+
+  bta_ag_deregister(p_scb, tBTA_AG_DATA::kEmpty);
 }
 
 TEST_F_WITH_FLAGS(BtaAgScoTest, codec_negotiate__aptx_state_off,
@@ -386,7 +395,7 @@ TEST_F_WITH_FLAGS(BtaAgScoTest, codec_negotiate__aptx_state_off,
   p_scb->is_aptx_swb_codec = true;
 
   ASSERT_TRUE(enable_aptx_voice_property(true));
-  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(false, &addr));
+  ASSERT_EQ(BT_STATUS_SUCCESS, enable_aptx_swb_codec(false, addr));
   bta_ag_codec_negotiate(p_scb);
   ASSERT_EQ(1, get_func_call_count("BTM_ReadRemoteFeatures"));
   ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
@@ -394,6 +403,8 @@ TEST_F_WITH_FLAGS(BtaAgScoTest, codec_negotiate__aptx_state_off,
   ASSERT_FALSE(p_scb->is_aptx_swb_codec);
   ASSERT_EQ(p_scb->sco_codec, BTM_SCO_CODEC_MSBC);
   ASSERT_TRUE(enable_aptx_voice_property(false));
+
+  bta_ag_deregister(p_scb, tBTA_AG_DATA::kEmpty);
 }
 
 TEST_F(BtaAgScoTest, codec_negotiate__aptx_disabled) {
@@ -406,12 +417,14 @@ TEST_F(BtaAgScoTest, codec_negotiate__aptx_disabled) {
   p_scb->codec_updated = true;
 
   ASSERT_TRUE(enable_aptx_voice_property(false));
-  ASSERT_EQ(BT_STATUS_FAIL, enable_aptx_swb_codec(false, &addr));
+  ASSERT_EQ(BT_STATUS_FAIL, enable_aptx_swb_codec(false, addr));
   bta_ag_codec_negotiate(p_scb);
   ASSERT_EQ(1, get_func_call_count("BTM_ReadRemoteFeatures"));
   ASSERT_EQ(0, get_func_call_count("PORT_WriteData"));
   ASSERT_EQ(0, get_func_call_count("alarm_set_on_mloop"));
   ASSERT_FALSE(p_scb->codec_updated);
+
+  bta_ag_deregister(p_scb, tBTA_AG_DATA::kEmpty);
 }
 
 TEST_F_WITH_FLAGS(BtaAgScoTest, ag_sco_shutdown,
@@ -423,4 +436,842 @@ TEST_F_WITH_FLAGS(BtaAgScoTest, ag_sco_shutdown,
   bta_ag_sco_shutdown(p_scb, tBTA_AG_DATA::kEmpty);
   ASSERT_EQ(bta_ag_cb.sco.state, BTA_AG_SCO_SHUTDOWN_ST);
   ASSERT_EQ(bta_ag_cb.sco.p_curr_scb, nullptr);
+}
+
+class BtaAgCmdAtHfpCbackTest : public BtaAgTest {
+protected:
+  void SetUp() override {
+    BtaAgTest::SetUp();
+    p_scb = &bta_ag_cb.scb[0];
+    p_scb->in_use = true;
+    p_scb->app_id = 0;
+    p_scb->peer_addr = addr;
+    p_scb->conn_service = BTA_AG_HFP;
+    bta_ag_cb.p_cback = [](tBTA_AG_EVT event, tBTA_AG* p_data) { event_cb.Call(event, p_data); };
+  }
+
+  void TearDown() override {
+    p_scb->in_use = false;
+    BtaAgTest::TearDown();
+    testing::Mock::VerifyAndClearExpectations(&event_cb);
+  }
+
+  tBTA_AG_SCB* p_scb;
+  inline static MockFunction<void(tBTA_AG_EVT, tBTA_AG*)> event_cb;
+};
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_a_evt) {
+  char p_arg[] = "";
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_A_EVT, _));
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_A_EVT, 0, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_spk_evt) {
+  char p_arg[] = "10";
+  EXPECT_CALL(event_cb, Call(BTA_AG_SPK_EVT, _))
+          .WillOnce([](tBTA_AG_EVT /* event */, tBTA_AG* p_data) {
+            tBTA_AG_VAL* val = (tBTA_AG_VAL*)p_data;
+            ASSERT_EQ(val->num, 10U);
+          });
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_SPK_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 10);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_mic_evt) {
+  char p_arg[] = "8";
+  EXPECT_CALL(event_cb, Call(BTA_AG_MIC_EVT, _))
+          .WillOnce([](tBTA_AG_EVT /* event */, tBTA_AG* p_data) {
+            tBTA_AG_VAL* val = (tBTA_AG_VAL*)p_data;
+            ASSERT_EQ(val->num, 8U);
+          });
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_MIC_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 8);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_chup_evt) {
+  char p_arg[] = "";
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_CHUP_EVT, _));
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_CHUP_EVT, 0, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_cbc_evt) {
+  char p_arg[] = "50";
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_CBC_EVT, _))
+          .WillOnce([](tBTA_AG_EVT /* event */, tBTA_AG* p_data) {
+            tBTA_AG_VAL* val = (tBTA_AG_VAL*)p_data;
+            ASSERT_EQ(val->num, 50U);
+          });
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_CBC_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 50);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_bldn_evt) {
+  char p_arg[] = "";
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_BLDN_EVT, _));
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_BLDN_EVT, 0, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(0, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_d_evt_mem_dial_ok) {
+  char p_arg[] = ">12345";
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_D_EVT, _));
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_D_EVT, 0, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(0, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_d_evt_mem_dial_fail) {
+  char p_arg[] = ">123a5";
+  EXPECT_CALL(event_cb, Call(_, _)).Times(0);
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_D_EVT, 0, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // ERROR
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_d_evt_voip_ok) {
+  char p_arg[] = "V12345";
+  p_scb->peer_features |= BTA_AG_PEER_FEAT_VOIP;
+  p_scb->features |= BTA_AG_FEAT_VOIP;
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_D_EVT, _));
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_D_EVT, 0, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(0, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_d_evt_voip_fail) {
+  char p_arg[] = "V12345";
+  p_scb->peer_features &= ~BTA_AG_PEER_FEAT_VOIP;
+  p_scb->features &= ~BTA_AG_FEAT_VOIP;
+  EXPECT_CALL(event_cb, Call(_, _)).Times(0);
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_D_EVT, 0, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // ERROR
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_d_evt_dial_ok) {
+  char p_arg[] = "12345#*+";
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_D_EVT, _));
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_D_EVT, 0, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(0, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_d_evt_dial_fail) {
+  char p_arg[] = "12345g";
+  EXPECT_CALL(event_cb, Call(_, _)).Times(0);
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_D_EVT, 0, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // ERROR
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_chld_evt_test) {
+  char p_arg[] = "";
+  p_scb->peer_version = 0x0105;  // HFP_VERSION_1_5
+  p_scb->features |= BTA_AG_FEAT_ECC;
+  p_scb->peer_features |= BTA_AG_PEER_FEAT_ECC;
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_CHLD_EVT, _)).Times(0);
+  EXPECT_CALL(event_cb, Call(testing::Ne(BTA_AG_AT_CHLD_EVT), _)).Times(testing::AnyNumber());
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_CHLD_EVT, BTA_AG_AT_TEST, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(2, get_func_call_count("PORT_WriteData"));  // result + OK
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_chld_evt_set_ok) {
+  char p_arg[] = "1";
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_CHLD_EVT, _));
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_CHLD_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(0, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_chld_evt_set_fail) {
+  char p_arg[] = "a";
+  EXPECT_CALL(event_cb, Call(_, _)).Times(0);
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_CHLD_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // ERROR
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_bind_evt_set_ok) {
+  char p_arg[] = "1,2";
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_BIND_EVT, _));
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_BIND_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(p_scb->peer_hf_indicators[0].ind_id, 1);
+  ASSERT_EQ(p_scb->peer_hf_indicators[1].ind_id, 2);
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // OK
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_bind_evt_set_fail) {
+  char p_arg[] = "";
+  EXPECT_CALL(event_cb, Call(_, _)).Times(0);
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_BIND_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // ERROR
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_bind_evt_test) {
+  char p_arg[] = "";
+  EXPECT_CALL(event_cb, Call(_, _)).Times(0);
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_BIND_EVT, BTA_AG_AT_TEST, p_arg, p_arg + strlen(p_arg), 0);
+
+  // bta_ag_local_hf_ind_cfg has 3 supported indicators by default
+  ASSERT_EQ(2, get_func_call_count("PORT_WriteData"));  // result + OK
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_biev_evt_ok) {
+  char p_arg[] = "1,1";
+  p_scb->local_hf_indicators[0].ind_id = 1;
+  p_scb->local_hf_indicators[0].is_supported = true;
+  p_scb->local_hf_indicators[0].is_enable = true;
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_BIEV_EVT, _))
+          .WillOnce([](tBTA_AG_EVT /* event */, tBTA_AG* p_data) {
+            tBTA_AG_VAL* val = (tBTA_AG_VAL*)p_data;
+            ASSERT_EQ(val->lidx, 1U);
+            ASSERT_EQ(val->num, 1U);
+          });
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_BIEV_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // OK
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_biev_evt_fail) {
+  char p_arg[] = "1,5";  // value out of range
+  p_scb->local_hf_indicators[0].ind_id = 1;
+  p_scb->local_hf_indicators[0].is_supported = true;
+  p_scb->local_hf_indicators[0].is_enable = true;
+  EXPECT_CALL(event_cb, Call(_, _)).Times(0);
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_BIEV_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // ERROR
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_cind_evt_test) {
+  char p_arg[] = "";
+  EXPECT_CALL(event_cb, Call(_, _)).Times(0);
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_CIND_EVT, BTA_AG_AT_TEST, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(2, get_func_call_count("PORT_WriteData"));  // result + OK
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_cind_evt_read) {
+  char p_arg[] = "";
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_CIND_EVT, _));
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_CIND_EVT, BTA_AG_AT_READ, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(0, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_vts_evt_ok) {
+  char p_arg[] = "1";
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_VTS_EVT, _));
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_VTS_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // OK
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_vts_evt_fail) {
+  char p_arg[] = "12";
+  EXPECT_CALL(event_cb, Call(_, _)).Times(0);
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_VTS_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // ERROR
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_binp_evt_ok) {
+  char p_arg[] = "1";
+  p_scb->features |= BTA_AG_FEAT_VTAG;
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_BINP_EVT, _));
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_BINP_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 1);
+
+  ASSERT_EQ(0, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_binp_evt_fail) {
+  char p_arg[] = "1";
+  p_scb->features &= ~BTA_AG_FEAT_VTAG;
+  EXPECT_CALL(event_cb, Call(_, _)).Times(0);
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_BINP_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 1);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // ERROR
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_bvra_evt_ok) {
+  char p_arg[] = "1";
+  p_scb->features |= BTA_AG_FEAT_VREC;
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_BVRA_EVT, _));
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_BVRA_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 1);
+
+  ASSERT_EQ(0, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_bvra_evt_fail) {
+  char p_arg[] = "1";
+  p_scb->features &= ~BTA_AG_FEAT_VREC;
+  EXPECT_CALL(event_cb, Call(_, _)).Times(0);
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_BVRA_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 1);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // ERROR
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_nrec_evt_ok) {
+  char p_arg[] = "1";
+  p_scb->features |= BTA_AG_FEAT_ECNR;
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_NREC_EVT, _));
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_NREC_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 1);
+
+  ASSERT_TRUE(p_scb->nrec_enabled);
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // OK
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_nrec_evt_fail) {
+  char p_arg[] = "1";
+  p_scb->features &= ~BTA_AG_FEAT_ECNR;
+  EXPECT_CALL(event_cb, Call(_, _)).Times(0);
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_NREC_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 1);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // ERROR
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_btrh_evt_set_ok) {
+  char p_arg[] = "1";
+  p_scb->features |= BTA_AG_FEAT_BTRH;
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_BTRH_EVT, _));
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_BTRH_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 1);
+
+  ASSERT_EQ(2, get_func_call_count("PORT_WriteData"));  // result + OK
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_btrh_evt_read_ok) {
+  char p_arg[] = "";
+  p_scb->features |= BTA_AG_FEAT_BTRH;
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_BTRH_EVT, _))
+          .WillOnce([](tBTA_AG_EVT /* event */, tBTA_AG* p_data) {
+            tBTA_AG_VAL* val = (tBTA_AG_VAL*)p_data;
+            ASSERT_EQ(val->num, (uint32_t)BTA_AG_BTRH_READ);
+          });
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_BTRH_EVT, BTA_AG_AT_READ, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(0, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_btrh_evt_fail) {
+  char p_arg[] = "1";
+  p_scb->features &= ~BTA_AG_FEAT_BTRH;
+  EXPECT_CALL(event_cb, Call(_, _)).Times(0);
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_BTRH_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 1);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // ERROR
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_cops_evt_set) {
+  char p_arg[] = "";
+  EXPECT_CALL(event_cb, Call(_, _)).Times(0);
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_COPS_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // OK
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_cops_evt_read) {
+  char p_arg[] = "";
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_COPS_EVT, _));
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_COPS_EVT, BTA_AG_AT_READ, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(0, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_bia_evt_ok) {
+  char p_arg[] = "1,1,0";
+  p_scb->bia_masked_out = 0;
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_BIA_EVT, _))
+          .WillOnce([](tBTA_AG_EVT /* event */, tBTA_AG* p_data) {
+            tBTA_AG_VAL* val = (tBTA_AG_VAL*)p_data;
+            ASSERT_EQ(val->num, (uint32_t)(1 << 3));
+          });
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_BIA_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(p_scb->bia_masked_out, (uint32_t)(1 << 3));
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // OK
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_bia_evt_fail) {
+  char p_arg[] = "1,2,0";  // invalid char '2'
+  EXPECT_CALL(event_cb, Call(_, _)).Times(0);
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_BIA_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // ERROR
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_cnum_evt) {
+  char p_arg[] = "";
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_CNUM_EVT, _));
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_CNUM_EVT, 0, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(0, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_clcc_evt_ok) {
+  char p_arg[] = "";
+  p_scb->features |= BTA_AG_FEAT_ECS;
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_CLCC_EVT, _));
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_CLCC_EVT, 0, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(0, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_clcc_evt_fail) {
+  char p_arg[] = "";
+  p_scb->features &= ~BTA_AG_FEAT_ECS;
+  EXPECT_CALL(event_cb, Call(_, _)).Times(0);
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_CLCC_EVT, 0, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // ERROR
+}
+
+TEST_F(BtaAgCmdAtHfpCbackTest, bta_ag_bac_evt) {
+  char p_arg[] = "1,2";  // CVSD, mSBC
+  p_scb->peer_features |= BTA_AG_PEER_FEAT_CODEC;
+  p_scb->features |= BTA_AG_FEAT_CODEC;
+  EXPECT_CALL(event_cb, Call(BTA_AG_AT_BAC_EVT, _))
+          .WillOnce([](tBTA_AG_EVT /* event */, tBTA_AG* p_data) {
+            tBTA_AG_VAL* val = (tBTA_AG_VAL*)p_data;
+            ASSERT_EQ(val->num, (uint32_t)(BTM_SCO_CODEC_CVSD | BTM_SCO_CODEC_MSBC));
+          });
+
+  bta_ag_at_hfp_cback(p_scb, BTA_AG_AT_BAC_EVT, BTA_AG_AT_SET, p_arg, p_arg + strlen(p_arg), 0);
+
+  ASSERT_TRUE(p_scb->received_at_bac);
+  ASSERT_TRUE(p_scb->codec_updated);
+  ASSERT_EQ(p_scb->peer_codecs, BTM_SCO_CODEC_CVSD | BTM_SCO_CODEC_MSBC);
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // OK
+}
+
+class BtaAgCmdResultTest : public BtaAgTest {
+protected:
+  void SetUp() override {
+    BtaAgTest::SetUp();
+    p_scb = &bta_ag_cb.scb[0];
+    *p_scb = {};
+    p_scb->in_use = true;
+    p_scb->app_id = 0;
+    p_scb->peer_addr = addr;
+    p_scb->conn_service = BTA_AG_HFP;
+    bta_ag_cb.p_cback = [](tBTA_AG_EVT event, tBTA_AG* p_data) { event_cb.Call(event, p_data); };
+  }
+
+  void TearDown() override {
+    p_scb->in_use = false;
+    BtaAgTest::TearDown();
+    testing::Mock::VerifyAndClearExpectations(&event_cb);
+  }
+
+  tBTA_AG_SCB* p_scb;
+  inline static MockFunction<void(tBTA_AG_EVT, tBTA_AG*)> event_cb;
+};
+
+TEST_F(BtaAgCmdResultTest, bta_ag_spk_res) {
+  const tBTA_AG_DATA data = {.api_result = {.result = BTA_AG_SPK_RES, .data = {.num = 10}}};
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_mic_res) {
+  const tBTA_AG_DATA data = {.api_result = {.result = BTA_AG_MIC_RES, .data = {.num = 8}}};
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_in_call_res) {
+  tBTA_AG_DATA data{.api_result = {.result = BTA_AG_IN_CALL_RES}};
+  snprintf(data.api_result.data.str, BTA_AG_AT_MAX_LEN, "1234567890");
+  p_scb->ring_timer = alarm_new("bta_ag.scb_ring_timer");
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(1, get_func_call_count("alarm_set_on_mloop"));  // ring_timer
+  alarm_free(p_scb->ring_timer);
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_in_call_conn_res) {
+  const tBTA_AG_DATA data = {.api_result = {.result = BTA_AG_IN_CALL_CONN_RES,
+                                            .data = {.audio_handle = bta_ag_scb_to_idx(p_scb)}}};
+  p_scb->ring_timer = alarm_new("bta_ag.scb_ring_timer");
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+  ASSERT_EQ(p_scb->call_ind, BTA_AG_CALL_ACTIVE);
+  ASSERT_EQ(p_scb->callsetup_ind, BTA_AG_CALLSETUP_NONE);
+  alarm_free(p_scb->ring_timer);
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_out_call_orig_res) {
+  const tBTA_AG_DATA data = {.api_result = {.result = BTA_AG_OUT_CALL_ORIG_RES,
+                                            .data = {.audio_handle = bta_ag_scb_to_idx(p_scb)}}};
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(p_scb->call_ind, BTA_AG_CALL_INACTIVE);
+  ASSERT_EQ(p_scb->callsetup_ind, BTA_AG_CALLSETUP_OUTGOING);
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_end_call_res) {
+  const tBTA_AG_DATA data = {.api_result = {.result = BTA_AG_END_CALL_RES}};
+  p_scb->ring_timer = alarm_new("bta_ag.scb_ring_timer");
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+  ASSERT_EQ(p_scb->call_ind, BTA_AG_CALL_INACTIVE);
+  ASSERT_EQ(p_scb->callsetup_ind, BTA_AG_CALLSETUP_NONE);
+  alarm_free(p_scb->ring_timer);
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_inband_ring_res) {
+  const tBTA_AG_DATA data = {
+          .api_result = {.result = BTA_AG_INBAND_RING_RES, .data = {.state = true}}};
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_TRUE(p_scb->inband_enabled);
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_unat_res) {
+  tBTA_AG_DATA data{.api_result = {.result = BTA_AG_UNAT_RES, .data = {.ok_flag = BTA_AG_OK_DONE}}};
+  snprintf(data.api_result.data.str, BTA_AG_AT_MAX_LEN, "AT+X=1");
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(2, get_func_call_count("PORT_WriteData"));  // result + OK
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_in_call_held_res) {
+  const tBTA_AG_DATA data = {.api_result = {.result = BTA_AG_IN_CALL_HELD_RES}};
+  p_scb->ring_timer = alarm_new("bta_ag.scb_ring_timer");
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+  ASSERT_EQ(p_scb->call_ind, BTA_AG_CALL_ACTIVE);
+  ASSERT_EQ(p_scb->callsetup_ind, BTA_AG_CALLSETUP_NONE);
+  alarm_free(p_scb->ring_timer);
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_out_call_alert_res) {
+  const tBTA_AG_DATA data = {.api_result = {.result = BTA_AG_OUT_CALL_ALERT_RES,
+                                            .data = {.audio_handle = bta_ag_scb_to_idx(p_scb)}}};
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(p_scb->call_ind, BTA_AG_CALL_INACTIVE);
+  ASSERT_EQ(p_scb->callsetup_ind, BTA_AG_CALLSETUP_ALERTING);
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_multi_call_res) {
+  const tBTA_AG_DATA data = {.api_result = {.result = BTA_AG_MULTI_CALL_RES,
+                                            .data = {.audio_handle = bta_ag_scb_to_idx(p_scb)}}};
+
+  bta_ag_result(p_scb, data);
+
+  // No state change, just opens sco
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_out_call_conn_res) {
+  const tBTA_AG_DATA data = {.api_result = {.result = BTA_AG_OUT_CALL_CONN_RES,
+                                            .data = {.audio_handle = bta_ag_scb_to_idx(p_scb)}}};
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(p_scb->call_ind, BTA_AG_CALL_ACTIVE);
+  ASSERT_EQ(p_scb->callsetup_ind, BTA_AG_CALLSETUP_NONE);
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_call_cancel_res) {
+  const tBTA_AG_DATA data = {.api_result = {.result = BTA_AG_CALL_CANCEL_RES}};
+  p_scb->ring_timer = alarm_new("bta_ag.scb_ring_timer");
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+  ASSERT_EQ(p_scb->call_ind, BTA_AG_CALL_INACTIVE);
+  ASSERT_EQ(p_scb->callsetup_ind, BTA_AG_CALLSETUP_NONE);
+  alarm_free(p_scb->ring_timer);
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_cind_res) {
+  tBTA_AG_DATA data{.api_result = {.result = BTA_AG_CIND_RES}};
+  snprintf(data.api_result.data.str, BTA_AG_AT_MAX_LEN, "1,2,3,4,5,6,7");
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(p_scb->call_ind, 1);
+  ASSERT_EQ(p_scb->callsetup_ind, 2);
+  ASSERT_EQ(p_scb->service_ind, 3);
+  ASSERT_EQ(p_scb->signal_ind, 4);
+  ASSERT_EQ(p_scb->roam_ind, 5);
+  ASSERT_EQ(p_scb->battchg_ind, 6);
+  ASSERT_EQ(p_scb->callheld_ind, 7);
+  ASSERT_EQ(2, get_func_call_count("PORT_WriteData"));  // result + OK
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_binp_res) {
+  tBTA_AG_DATA data{.api_result = {.result = BTA_AG_BINP_RES, .data = {.ok_flag = BTA_AG_OK_DONE}}};
+  snprintf(data.api_result.data.str, BTA_AG_AT_MAX_LEN, "12345");
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(2, get_func_call_count("PORT_WriteData"));  // result + OK
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_cnum_res) {
+  tBTA_AG_DATA data{.api_result = {.result = BTA_AG_CNUM_RES, .data = {.ok_flag = BTA_AG_OK_DONE}}};
+  snprintf(data.api_result.data.str, BTA_AG_AT_MAX_LEN, "12345");
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(2, get_func_call_count("PORT_WriteData"));  // result + OK
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_clcc_res) {
+  tBTA_AG_DATA data{.api_result = {.result = BTA_AG_CLCC_RES, .data = {.ok_flag = BTA_AG_OK_DONE}}};
+  snprintf(data.api_result.data.str, BTA_AG_AT_MAX_LEN, "1");
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(2, get_func_call_count("PORT_WriteData"));  // result + OK
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_cops_res) {
+  tBTA_AG_DATA data{.api_result = {.result = BTA_AG_COPS_RES, .data = {.ok_flag = BTA_AG_OK_DONE}}};
+  snprintf(data.api_result.data.str, BTA_AG_AT_MAX_LEN, "T-Mobile");
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(2, get_func_call_count("PORT_WriteData"));  // result + OK
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_call_wait_res) {
+  tBTA_AG_DATA data{.api_result = {.result = BTA_AG_CALL_WAIT_RES}};
+  snprintf(data.api_result.data.str, BTA_AG_AT_MAX_LEN, "1234567890");
+  p_scb->ccwa_enabled = true;
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
+  ASSERT_EQ(p_scb->callsetup_ind, BTA_AG_CALLSETUP_INCOMING);
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_ind_res) {
+  const tBTA_AG_DATA data = {
+          .api_result = {.result = BTA_AG_IND_RES,
+                         .data = {.ind = {.id = BTA_AG_IND_CALL, .value = BTA_AG_CALL_ACTIVE}}}};
+  p_scb->cmer_enabled = true;
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
+  ASSERT_EQ(p_scb->call_ind, BTA_AG_CALL_ACTIVE);
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_bvra_res) {
+  const tBTA_AG_DATA data = {.api_result = {.result = BTA_AG_BVRA_RES, .data = {.state = true}}};
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_btrh_res) {
+  const tBTA_AG_DATA data = {
+          .api_result = {
+                  .result = BTA_AG_BTRH_RES,
+                  .data = {.num = BTA_AG_BTRH_SET_HOLD, .ok_flag = BTA_AG_OK_DONE},
+          }};
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(2, get_func_call_count("PORT_WriteData"));  // result + OK
+}
+
+TEST_F(BtaAgCmdResultTest, bta_ag_bind_res) {
+  const tBTA_AG_DATA data = {
+          .api_result = {.result = BTA_AG_BIND_RES, .data = {.ind = {.id = 1, .on_demand = true}}}};
+  p_scb->local_hf_indicators[0].ind_id = 1;
+  p_scb->local_hf_indicators[0].is_enable = false;
+  p_scb->peer_hf_indicators[0].ind_id = 1;
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
+  ASSERT_TRUE(p_scb->local_hf_indicators[0].is_enable);
+}
+
+class BtaAgCmdHspResultTest : public BtaAgTest {
+protected:
+  void SetUp() override {
+    BtaAgTest::SetUp();
+    p_scb = &bta_ag_cb.scb[0];
+    *p_scb = {};
+    p_scb->in_use = true;
+    p_scb->app_id = 0;
+    p_scb->peer_addr = addr;
+    p_scb->conn_service = BTA_AG_HSP;
+    bta_ag_cb.p_cback = [](tBTA_AG_EVT event, tBTA_AG* p_data) { event_cb.Call(event, p_data); };
+
+    reset_mock_btm_client_interface();
+    mock_btm_client_interface.sco.BTM_CreateSco =
+            [](const RawAddress* /* remote_bda */, bool /* is_orig */, uint16_t /* pkt_types */,
+               uint16_t* p_sco_inx, tBTM_SCO_CB* /* p_conn_cb */,
+               tBTM_SCO_CB* /* p_disc_cb */) -> tBTM_STATUS {
+      inc_func_call_count("BTM_CreateSco");
+      if (p_sco_inx) {
+        *p_sco_inx = 0;
+      }
+      return tBTM_STATUS::BTM_CMD_STARTED;
+    };
+    mock_btm_client_interface.sco.BTM_RemoveSco = [](uint16_t /* sco_inx */) -> tBTM_STATUS {
+      inc_func_call_count("BTM_RemoveSco");
+      return tBTM_STATUS::BTM_CMD_STARTED;
+    };
+    p_scb->ring_timer = alarm_new("bta_ag.scb_ring_timer");
+  }
+
+  void TearDown() override {
+    alarm_free(p_scb->ring_timer);
+    p_scb->in_use = false;
+    BtaAgTest::TearDown();
+    testing::Mock::VerifyAndClearExpectations(&event_cb);
+  }
+
+  tBTA_AG_SCB* p_scb;
+  inline static MockFunction<void(tBTA_AG_EVT, tBTA_AG*)> event_cb;
+};
+
+TEST_F(BtaAgCmdHspResultTest, bta_ag_spk_res) {
+  const tBTA_AG_DATA data = {.api_result = {.result = BTA_AG_SPK_RES, .data = {.num = 10}}};
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdHspResultTest, bta_ag_mic_res) {
+  const tBTA_AG_DATA data = {.api_result = {.result = BTA_AG_MIC_RES, .data = {.num = 8}}};
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));
+}
+
+TEST_F(BtaAgCmdHspResultTest, bta_ag_in_call_res_sco_already_open) {
+  const tBTA_AG_DATA data = {.api_result = {.result = BTA_AG_IN_CALL_RES}};
+  p_scb->sco_idx = 0;  // sco is open
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // For RING
+  ASSERT_EQ(0, get_func_call_count("BTM_CreateSco"));
+}
+
+TEST_F(BtaAgCmdHspResultTest, bta_ag_in_call_res_no_inband_ring) {
+  const tBTA_AG_DATA data = {.api_result = {.result = BTA_AG_IN_CALL_RES}};
+  p_scb->sco_idx = BTM_INVALID_SCO_INDEX;
+  p_scb->inband_enabled = false;
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // For RING
+  ASSERT_EQ(0, get_func_call_count("BTM_CreateSco"));
+}
+
+TEST_F(BtaAgCmdHspResultTest, bta_ag_in_call_res_nosco_feature) {
+  const tBTA_AG_DATA data = {.api_result = {.result = BTA_AG_IN_CALL_RES}};
+  p_scb->sco_idx = BTM_INVALID_SCO_INDEX;
+  p_scb->inband_enabled = true;
+  p_scb->features |= BTA_AG_FEAT_NOSCO;
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // For RING
+  ASSERT_EQ(0, get_func_call_count("BTM_CreateSco"));
+}
+
+TEST_F(BtaAgCmdHspResultTest, bta_ag_inband_ring_res) {
+  const tBTA_AG_DATA data = {
+          .api_result = {.result = BTA_AG_INBAND_RING_RES, .data = {.state = true}}};
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_TRUE(p_scb->inband_enabled);
+}
+
+TEST_F(BtaAgCmdHspResultTest, bta_ag_unat_res_ok_done) {
+  tBTA_AG_DATA data{.api_result = {.result = BTA_AG_UNAT_RES, .data = {.ok_flag = BTA_AG_OK_DONE}}};
+  snprintf(data.api_result.data.str, BTA_AG_AT_MAX_LEN, "AT+X=1");
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(2, get_func_call_count("PORT_WriteData"));  // result + OK
+}
+
+TEST_F(BtaAgCmdHspResultTest, bta_ag_unat_res_ok_error) {
+  const tBTA_AG_DATA data = {
+          .api_result = {.result = BTA_AG_UNAT_RES, .data = {.ok_flag = BTA_AG_OK_DONE}}};
+
+  bta_ag_result(p_scb, data);
+
+  ASSERT_EQ(1, get_func_call_count("PORT_WriteData"));  // ERROR
 }

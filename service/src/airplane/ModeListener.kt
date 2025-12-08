@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import kotlin.time.TimeSource
 private const val TAG = "AirplaneModeListener"
 
 /** @return true if Bluetooth state is currently impacted by airplane mode */
-public var isOnOverrode = false
+var isOnOverrode = false
     private set
 
 /**
@@ -46,7 +46,7 @@ public var isOnOverrode = false
  * This need to be used instead of reading the settings properties to avoid race condition from
  * within the BluetoothManagerService thread
  */
-public var isOn = false
+var isOn = false
     private set
 
 /**
@@ -61,13 +61,12 @@ public var isOn = false
  * </ul>
  */
 @kotlin.time.ExperimentalTime
-public fun initialize(
+fun initialize(
     looper: Looper,
     systemResolver: ContentResolver,
     state: BluetoothAdapterState,
     modeCallback: (m: Boolean) -> Unit,
     notificationCallback: (state: String) -> Unit,
-    mediaCallback: () -> Boolean,
     getUser: () -> Context,
     timeSource: TimeSource,
 ) {
@@ -90,14 +89,8 @@ public fun initialize(
             Settings.Global.AIRPLANE_MODE_ON,
             fun(newMode: Boolean) {
                 isOn = newMode
-                val previousMode = isOnOverrode
+                val previous = isOnOverrode
                 val isBluetoothOn = state.oneOf(State.ON, State.TURNING_ON, State.TURNING_OFF)
-                val isMediaConnected =
-                    if (Flags.onewayMediaProfile()) {
-                        isMediaProfileConnected
-                    } else {
-                        isBluetoothOn && mediaCallback()
-                    }
 
                 isOnOverrode =
                     airplaneModeValueOverride(
@@ -106,7 +99,6 @@ public fun initialize(
                         isBluetoothOn,
                         notificationCallback,
                         getUser,
-                        isMediaConnected,
                     )
 
                 AirplaneMetricSession.handleModeChange(
@@ -114,14 +106,12 @@ public fun initialize(
                     isBluetoothOn,
                     notificationCallback,
                     getUser,
-                    isMediaConnected,
                     timeSource.markNow(),
                 )
 
-                val description =
-                    "previousMode=$previousMode, isOn=$isOn, isOnOverrode=$isOnOverrode, isMediaConnected=$isMediaConnected"
+                val description = "previous=$previous, isOn=$isOn, isOnOverrode=$isOnOverrode"
 
-                if (previousMode == isOnOverrode) {
+                if (previous == isOnOverrode) {
                     Log.d(TAG, "Ignore mode change to same state. $description")
                     return
                 } else if (isOnOverrode == false && state.oneOf(State.ON)) {
@@ -142,7 +132,6 @@ public fun initialize(
             null, // Do not provide a Bluetooth on / off as we want to evaluate override
             null, // Do not provide a notification callback as we want to keep the boot silent
             getUser,
-            false,
         )
 
     // Bluetooth is always off during initialize, and no media profile can be connected
@@ -151,14 +140,13 @@ public fun initialize(
         false,
         notificationCallback,
         getUser,
-        false,
         timeSource.markNow(),
     )
     Log.i(TAG, "Init completed. isOn=$isOn, isOnOverrode=$isOnOverrode")
 }
 
 @kotlin.time.ExperimentalTime
-public fun notifyUserToggledBluetooth(
+fun notifyUserToggledBluetooth(
     resolver: ContentResolver,
     userContext: Context,
     isBluetoothOn: Boolean,
@@ -166,15 +154,15 @@ public fun notifyUserToggledBluetooth(
     AirplaneMetricSession.notifyUserToggledBluetooth(resolver, userContext, isBluetoothOn)
 }
 
-public fun setIsMediaProfileConnected(connected: Boolean) {
+fun setIsMediaProfileConnected(connected: Boolean) {
     isMediaProfileConnected = connected
 }
 
-public fun setWatchConnectionState(connected: Boolean) {
+fun setWatchConnectionState(connected: Boolean) {
     watchConnectionState = connected
 }
 
-public fun factoryReset(resolver: ContentResolver, userContext: Context) {
+fun factoryReset(resolver: ContentResolver, userContext: Context) {
     Settings.Global.putInt(resolver, APM_ENHANCEMENT, DEFAULT_APM_ENHANCEMENT_STATE)
     Settings.Global.putInt(resolver, ToastNotification.TOAST_COUNT, 0)
     setUserSettingsSecure(userContext, BLUETOOTH_APM_STATE, 0)
@@ -195,7 +183,6 @@ private fun airplaneModeValueOverride(
     currentBluetoothStatus: Boolean?,
     sendAirplaneModeNotification: ((state: String) -> Unit)?,
     getUser: () -> Context,
-    isMediaConnected: Boolean,
 ): Boolean {
     // Airplane mode is being disabled or bluetooth was not ON: no override
     if (!currentAirplaneMode || currentBluetoothStatus == false) {
@@ -223,7 +210,7 @@ private fun airplaneModeValueOverride(
     //           2. User switches airplane while there is media => so Bluetooth stays ON
     //           3. User turns airplane OFF, stops media and toggles airplane back ON
     //       Should we turn Bluetooth OFF like asked initially ? Or keep it ON like the toggle ?
-    if (isMediaConnected) {
+    if (isMediaProfileConnected) {
         Log.i(TAG, "Legacy Mode: override and stays ON since media profile are connected")
         if (Flags.watchDeviceOverrideAirplaneMode()) {
             sendAirplaneModeNotification?.invoke(APM_BT_NOTIFICATION_DUE_TO_MEDIA)
@@ -280,10 +267,10 @@ internal class ToastNotification private constructor() {
 private class AirplaneMetricSession(
     private val isBluetoothOnBeforeApmToggle: Boolean,
     private val sendAirplaneModeNotification: (state: String) -> Unit,
-    private val isMediaProfileConnectedBeforeApmToggle: Boolean,
     private val sessionStartTime: TimeMark,
 ) {
 
+    private val isMediaProfileConnectedBeforeApmToggle = isMediaProfileConnected
     private val isBluetoothOnAfterApmToggle = !isOnOverrode
     private var userToggledBluetoothDuringApm = false
     private var userToggledBluetoothDuringApmWithinMinute = false
@@ -338,17 +325,11 @@ private class AirplaneMetricSession(
             isBluetoothOn: Boolean,
             sendAirplaneModeNotification: (state: String) -> Unit,
             getUser: () -> Context,
-            isMediaConnected: Boolean,
             startTime: TimeMark,
         ) {
             if (isAirplaneModeOn) {
                 session =
-                    AirplaneMetricSession(
-                        isBluetoothOn,
-                        sendAirplaneModeNotification,
-                        isMediaConnected,
-                        startTime,
-                    )
+                    AirplaneMetricSession(isBluetoothOn, sendAirplaneModeNotification, startTime)
             } else {
                 session?.let { it.terminate(getUser, isBluetoothOn) }
                 session = null

@@ -19,9 +19,9 @@ package android.bluetooth;
 /**
  * System private API for Bluetooth service callbacks.
  *
- * {@hide}
+ * @hide
  */
-interface IBluetoothCallback
+oneway interface IBluetoothCallback
 {
     void onBluetoothStateChange(int prevState, int newState);
     void onAdapterNameChange(String name);
