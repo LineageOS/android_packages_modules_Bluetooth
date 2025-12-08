@@ -277,7 +277,7 @@ static bt_status_t btif_in_get_adapter_properties(void) {
   return BT_STATUS_SUCCESS;
 }
 
-static bt_status_t btif_in_get_remote_device_properties(RawAddress* bd_addr) {
+static bt_status_t btif_in_get_remote_device_properties(RawAddress bd_addr) {
   bt_property_t remote_properties[10];
   uint32_t num_props = 0;
 
@@ -324,7 +324,7 @@ static bt_status_t btif_in_get_remote_device_properties(RawAddress* bd_addr) {
   num_props++;
 
   GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
-          BT_STATUS_SUCCESS, *bd_addr, (uint8_t)addr_type, num_props, remote_properties);
+          BT_STATUS_SUCCESS, bd_addr, (uint8_t)addr_type, num_props, remote_properties);
 
   return BT_STATUS_SUCCESS;
 }
@@ -339,11 +339,11 @@ void btif_adapter_properties_evt(bt_status_t status, uint32_t num_props, bt_prop
   GetInterfaceToProfiles()->events->invoke_adapter_properties_cb(status, num_props, p_props);
 }
 
-void btif_remote_properties_evt(bt_status_t status, RawAddress* remote_addr,
+void btif_remote_properties_evt(bt_status_t status, RawAddress remote_addr,
                                 tBLE_ADDR_TYPE addr_type, uint32_t num_props,
                                 bt_property_t* p_props) {
   GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
-          status, *remote_addr, addr_type, num_props, p_props);
+          status, remote_addr, addr_type, num_props, p_props);
 }
 
 /*******************************************************************************
@@ -565,11 +565,11 @@ void btif_get_remote_device_property(RawAddress remote_addr, bt_property_type_t 
   prop.val = (void*)buf;
   prop.len = sizeof(buf);
 
-  bt_status_t status = btif_storage_get_remote_device_property(&remote_addr, &prop);
+  bt_status_t status = btif_storage_get_remote_device_property(remote_addr, &prop);
 
   tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
   bt_property_t addr_type_prop = {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type};
-  btif_storage_get_remote_device_property(&remote_addr, &addr_type_prop);
+  btif_storage_get_remote_device_property(remote_addr, &addr_type_prop);
 
   GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(status, remote_addr,
                                                                        addr_type, 1, &prop);
@@ -583,7 +583,7 @@ void btif_get_remote_device_property(RawAddress remote_addr, bt_property_type_t 
  *
  ******************************************************************************/
 void btif_get_remote_device_properties(RawAddress remote_addr) {
-  btif_in_get_remote_device_properties(&remote_addr);
+  btif_in_get_remote_device_properties(remote_addr);
 }
 
 /*******************************************************************************
@@ -595,7 +595,7 @@ void btif_get_remote_device_properties(RawAddress remote_addr) {
  *                  remote device property that can be set
  *
  ******************************************************************************/
-void btif_set_remote_device_property(RawAddress* remote_addr, bt_property_t* property) {
+void btif_set_remote_device_property(RawAddress remote_addr, bt_property_t* property) {
   btif_storage_set_remote_device_property(remote_addr, property);
 }
 

@@ -197,7 +197,7 @@ void btif_get_remote_device_properties(RawAddress remote_addr);
  *                  remote device property that can be set
  *
  ******************************************************************************/
-void btif_set_remote_device_property(RawAddress* remote_addr, bt_property_t* property);
+void btif_set_remote_device_property(RawAddress remote_addr, bt_property_t* property);
 
 /*******************************************************************************
  *  BTIF DM API

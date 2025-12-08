@@ -407,7 +407,7 @@ typedef enum {
 // identified by the |interop_feature_t| enum. This API is used for simple
 // address based lookups where more information is not available. No
 // look-ups or random address resolution are performed on |addr|.
-bool interop_match_addr(const interop_feature_t feature, const RawAddress* addr);
+bool interop_match_addr(const interop_feature_t feature, RawAddress addr);
 
 // Check if a given remote device |name| matches a known workaround.
 // Name comparisons are case sensitive and do not allow for partial matches.
@@ -420,8 +420,8 @@ bool interop_match_name(const interop_feature_t feature, const char* name);
 // This api will lookup remote name with |addr| by btif_storage api internally.
 // Then if either interop_match_addr or interop_match_name is matched, this
 // function will return true.
-bool interop_match_addr_or_name(const interop_feature_t feature, const RawAddress* addr,
-                                bt_status_t (*get_remote_device_property)(const RawAddress*,
+bool interop_match_addr_or_name(const interop_feature_t feature, RawAddress addr,
+                                bt_status_t (*get_remote_device_property)(RawAddress,
                                                                           bt_property_t*));
 
 // Check if a given |manufacturer| matches a known interoperability workaround
@@ -454,7 +454,7 @@ bool interop_database_match_version(const interop_feature_t feature, uint16_t ve
 // address based lookups where more information is not available. No look-ups or
 // random address resolution are performed on |addr|. If address is matched, max
 // latency for SSR stored for particular remote device is returned.
-bool interop_match_addr_get_max_lat(const interop_feature_t feature, const RawAddress* addr,
+bool interop_match_addr_get_max_lat(const interop_feature_t feature, RawAddress addr,
                                     uint16_t* max_lat);
 
 // Return feature's enum value according to feature'name.

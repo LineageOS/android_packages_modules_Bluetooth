@@ -42,7 +42,7 @@ namespace device_interop {
 
 // Shared state between mocked functions and tests
 // Name: interop_database_add
-// Params: const uint16_t feature, const RawAddress* addr, size_t length
+// Params: const uint16_t feature, RawAddress addr, size_t length
 // Return: void
 struct interop_database_add {
   std::function<void(const uint16_t feature, const RawAddress addr, size_t length)> body{
@@ -54,26 +54,26 @@ struct interop_database_add {
 extern struct interop_database_add interop_database_add;
 
 // Name: interop_database_add_addr
-// Params: const uint16_t feature, const RawAddress* addr, size_t length
+// Params: const uint16_t feature, RawAddress addr, size_t length
 // Return: void
 struct interop_database_add_addr {
-  std::function<void(const uint16_t feature, const RawAddress* addr, size_t length)> body{
-          [](const uint16_t /* feature */, const RawAddress* /* addr */, size_t /* length */) {}};
-  void operator()(const uint16_t feature, const RawAddress* addr, size_t length) {
+  std::function<void(const uint16_t feature, RawAddress addr, size_t length)> body{
+          [](const uint16_t /* feature */, RawAddress /* addr */, size_t /* length */) {}};
+  void operator()(const uint16_t feature, RawAddress addr, size_t length) {
     body(feature, addr, length);
   }
 };
 extern struct interop_database_add_addr interop_database_add_addr;
 
 // Name: interop_database_add_addr_lmp_version
-// Params: const interop_feature_t feature, const RawAddress* addr, uint8_t
+// Params: const interop_feature_t feature, RawAddress addr, uint8_t
 // lmp_ver, uint16_t lmp_sub_ver Return: void
 struct interop_database_add_addr_lmp_version {
-  std::function<void(const interop_feature_t feature, const RawAddress* addr, uint8_t lmp_ver,
+  std::function<void(const interop_feature_t feature, RawAddress addr, uint8_t lmp_ver,
                      uint16_t lmp_sub_ver)>
-          body{[](const interop_feature_t /* feature */, const RawAddress* /* addr */,
+          body{[](const interop_feature_t /* feature */, RawAddress /* addr */,
                   uint8_t /* lmp_ver */, uint16_t /* lmp_sub_ver */) {}};
-  void operator()(const interop_feature_t feature, const RawAddress* addr, uint8_t lmp_ver,
+  void operator()(const interop_feature_t feature, RawAddress addr, uint8_t lmp_ver,
                   uint16_t lmp_sub_ver) {
     body(feature, addr, lmp_ver, lmp_sub_ver);
   }
@@ -81,13 +81,13 @@ struct interop_database_add_addr_lmp_version {
 extern struct interop_database_add_addr_lmp_version interop_database_add_addr_lmp_version;
 
 // Name: interop_database_add_addr_max_lat
-// Params: const interop_feature_t feature, const RawAddress* addr, uint16_t
+// Params: const interop_feature_t feature, RawAddress addr, uint16_t
 // max_lat Return: void
 struct interop_database_add_addr_max_lat {
-  std::function<void(const interop_feature_t feature, const RawAddress* addr, uint16_t max_lat)>
-          body{[](const interop_feature_t /* feature */, const RawAddress* /* addr */,
-                  uint16_t /* max_lat */) {}};
-  void operator()(const interop_feature_t feature, const RawAddress* addr, uint16_t max_lat) {
+  std::function<void(const interop_feature_t feature, RawAddress addr, uint16_t max_lat)> body{
+          [](const interop_feature_t /* feature */, RawAddress /* addr */, uint16_t /* max_lat */) {
+          }};
+  void operator()(const interop_feature_t feature, RawAddress addr, uint16_t max_lat) {
     body(feature, addr, max_lat);
   }
 };
@@ -148,30 +148,28 @@ struct interop_database_clear {
 extern struct interop_database_clear interop_database_clear;
 
 // Name: interop_database_match_addr
-// Params: const interop_feature_t feature, const RawAddress* addr
+// Params: const interop_feature_t feature, RawAddress addr
 // Return: bool
 struct interop_database_match_addr {
   static bool return_value;
-  std::function<bool(const interop_feature_t feature, const RawAddress* addr)> body{
-          [](const interop_feature_t /* feature */, const RawAddress* /* addr */) {
+  std::function<bool(const interop_feature_t feature, RawAddress addr)> body{
+          [](const interop_feature_t /* feature */, RawAddress /* addr */) {
             return return_value;
           }};
-  bool operator()(const interop_feature_t feature, const RawAddress* addr) {
-    return body(feature, addr);
-  }
+  bool operator()(const interop_feature_t feature, RawAddress addr) { return body(feature, addr); }
 };
 extern struct interop_database_match_addr interop_database_match_addr;
 
 // Name: interop_database_match_addr_get_lmp_ver
-// Params: const interop_feature_t feature, const RawAddress* addr, uint8_t*
+// Params: const interop_feature_t feature, RawAddress addr, uint8_t*
 // lmp_ver, uint16_t* lmp_sub_ver Return: bool
 struct interop_database_match_addr_get_lmp_ver {
   static bool return_value;
-  std::function<bool(const interop_feature_t feature, const RawAddress* addr, uint8_t* lmp_ver,
+  std::function<bool(const interop_feature_t feature, RawAddress addr, uint8_t* lmp_ver,
                      uint16_t* lmp_sub_ver)>
-          body{[](const interop_feature_t /* feature */, const RawAddress* /* addr */,
+          body{[](const interop_feature_t /* feature */, RawAddress /* addr */,
                   uint8_t* /* lmp_ver */, uint16_t* /* lmp_sub_ver */) { return return_value; }};
-  bool operator()(const interop_feature_t feature, const RawAddress* addr, uint8_t* lmp_ver,
+  bool operator()(const interop_feature_t feature, RawAddress addr, uint8_t* lmp_ver,
                   uint16_t* lmp_sub_ver) {
     return body(feature, addr, lmp_ver, lmp_sub_ver);
   }
@@ -179,14 +177,14 @@ struct interop_database_match_addr_get_lmp_ver {
 extern struct interop_database_match_addr_get_lmp_ver interop_database_match_addr_get_lmp_ver;
 
 // Name: interop_database_match_addr_get_max_lat
-// Params: const interop_feature_t feature, const RawAddress* addr, uint16_t*
+// Params: const interop_feature_t feature, RawAddress addr, uint16_t*
 // max_lat Return: bool
 struct interop_database_match_addr_get_max_lat {
   static bool return_value;
-  std::function<bool(const interop_feature_t feature, const RawAddress* addr, uint16_t* max_lat)>
-          body{[](const interop_feature_t /* feature */, const RawAddress* /* addr */,
-                  uint16_t* /* max_lat */) { return return_value; }};
-  bool operator()(const interop_feature_t feature, const RawAddress* addr, uint16_t* max_lat) {
+  std::function<bool(const interop_feature_t feature, RawAddress addr, uint16_t* max_lat)> body{
+          [](const interop_feature_t /* feature */, RawAddress /* addr */,
+             uint16_t* /* max_lat */) { return return_value; }};
+  bool operator()(const interop_feature_t feature, RawAddress addr, uint16_t* max_lat) {
     return body(feature, addr, max_lat);
   }
 };
@@ -250,30 +248,28 @@ struct interop_database_match_vndr_prdt {
 extern struct interop_database_match_vndr_prdt interop_database_match_vndr_prdt;
 
 // Name: interop_database_remove_addr
-// Params: const interop_feature_t feature, const RawAddress* addr
+// Params: const interop_feature_t feature, RawAddress addr
 // Return: bool
 struct interop_database_remove_addr {
   static bool return_value;
-  std::function<bool(const interop_feature_t feature, const RawAddress* addr)> body{
-          [](const interop_feature_t /* feature */, const RawAddress* /* addr */) {
+  std::function<bool(const interop_feature_t feature, RawAddress addr)> body{
+          [](const interop_feature_t /* feature */, RawAddress /* addr */) {
             return return_value;
           }};
-  bool operator()(const interop_feature_t feature, const RawAddress* addr) {
-    return body(feature, addr);
-  }
+  bool operator()(const interop_feature_t feature, RawAddress addr) { return body(feature, addr); }
 };
 extern struct interop_database_remove_addr interop_database_remove_addr;
 
 // Name: interop_database_remove_addr_lmp_version
-// Params: const interop_feature_t feature, const RawAddress* addr, uint8_t
+// Params: const interop_feature_t feature, RawAddress addr, uint8_t
 // lmp_ver, uint16_t lmp_sub_ver Return: bool
 struct interop_database_remove_addr_lmp_version {
   static bool return_value;
-  std::function<bool(const interop_feature_t feature, const RawAddress* addr, uint8_t lmp_ver,
+  std::function<bool(const interop_feature_t feature, RawAddress addr, uint8_t lmp_ver,
                      uint16_t lmp_sub_ver)>
-          body{[](const interop_feature_t /* feature */, const RawAddress* /* addr */,
+          body{[](const interop_feature_t /* feature */, RawAddress /* addr */,
                   uint8_t /* lmp_ver */, uint16_t /* lmp_sub_ver */) { return return_value; }};
-  bool operator()(const interop_feature_t feature, const RawAddress* addr, uint8_t lmp_ver,
+  bool operator()(const interop_feature_t feature, RawAddress addr, uint8_t lmp_ver,
                   uint16_t lmp_sub_ver) {
     return body(feature, addr, lmp_ver, lmp_sub_ver);
   }
@@ -281,14 +277,15 @@ struct interop_database_remove_addr_lmp_version {
 extern struct interop_database_remove_addr_lmp_version interop_database_remove_addr_lmp_version;
 
 // Name: interop_database_remove_addr_max_lat
-// Params: const interop_feature_t feature, const RawAddress* addr, uint16_t
+// Params: const interop_feature_t feature, RawAddress addr, uint16_t
 // max_lat Return: bool
 struct interop_database_remove_addr_max_lat {
   static bool return_value;
-  std::function<bool(const interop_feature_t feature, const RawAddress* addr, uint16_t max_lat)>
-          body{[](const interop_feature_t /* feature */, const RawAddress* /* addr */,
-                  uint16_t /* max_lat */) { return return_value; }};
-  bool operator()(const interop_feature_t feature, const RawAddress* addr, uint16_t max_lat) {
+  std::function<bool(const interop_feature_t feature, RawAddress addr, uint16_t max_lat)> body{
+          [](const interop_feature_t /* feature */, RawAddress /* addr */, uint16_t /* max_lat */) {
+            return return_value;
+          }};
+  bool operator()(const interop_feature_t feature, RawAddress addr, uint16_t max_lat) {
     return body(feature, addr, max_lat);
   }
 };
@@ -374,46 +371,45 @@ struct interop_feature_name_to_feature_id {
 extern struct interop_feature_name_to_feature_id interop_feature_name_to_feature_id;
 
 // Name: interop_match_addr
-// Params: const interop_feature_t feature, const RawAddress* addr
+// Params: const interop_feature_t feature, RawAddress addr
 // Return: bool
 struct interop_match_addr {
   static bool return_value;
-  std::function<bool(const interop_feature_t feature, const RawAddress* addr)> body{
-          [](const interop_feature_t /* feature */, const RawAddress* /* addr */) {
+  std::function<bool(const interop_feature_t feature, RawAddress addr)> body{
+          [](const interop_feature_t /* feature */, RawAddress /* addr */) {
             return return_value;
           }};
-  bool operator()(const interop_feature_t feature, const RawAddress* addr) {
-    return body(feature, addr);
-  }
+  bool operator()(const interop_feature_t feature, RawAddress addr) { return body(feature, addr); }
 };
 extern struct interop_match_addr interop_match_addr;
 
 // Name: interop_match_addr_get_max_lat
-// Params: const interop_feature_t feature, const RawAddress* addr, uint16_t*
+// Params: const interop_feature_t feature, RawAddress addr, uint16_t*
 // max_lat Return: bool
 struct interop_match_addr_get_max_lat {
   static bool return_value;
-  std::function<bool(const interop_feature_t feature, const RawAddress* addr, uint16_t* max_lat)>
-          body{[](const interop_feature_t /* feature */, const RawAddress* /* addr */,
-                  uint16_t* /* max_lat */) { return return_value; }};
-  bool operator()(const interop_feature_t feature, const RawAddress* addr, uint16_t* max_lat) {
+  std::function<bool(const interop_feature_t feature, RawAddress addr, uint16_t* max_lat)> body{
+          [](const interop_feature_t /* feature */, RawAddress /* addr */,
+             uint16_t* /* max_lat */) { return return_value; }};
+  bool operator()(const interop_feature_t feature, RawAddress addr, uint16_t* max_lat) {
     return body(feature, addr, max_lat);
   }
 };
 extern struct interop_match_addr_get_max_lat interop_match_addr_get_max_lat;
 
 // Name: interop_match_addr_or_name
-// Params: const interop_feature_t feature, const RawAddress* addr, bt_status_t
+// Params: const interop_feature_t feature, RawAddress addr, bt_status_t
 // (*get_remote_device_property Return: bool
 struct interop_match_addr_or_name {
   static bool return_value;
-  std::function<bool(const interop_feature_t feature, const RawAddress* addr,
-                     bt_status_t (*get_remote_device_property)(const RawAddress*, bt_property_t*))>
-          body{[](const interop_feature_t /* feature */, const RawAddress* /* addr */,
-                  bt_status_t (* /* get_remote_device_property */)(
-                          const RawAddress*, bt_property_t*)) { return return_value; }};
-  bool operator()(const interop_feature_t feature, const RawAddress* addr,
-                  bt_status_t (*get_remote_device_property)(const RawAddress*, bt_property_t*)) {
+  std::function<bool(const interop_feature_t feature, RawAddress addr,
+                     bt_status_t (*get_remote_device_property)(RawAddress, bt_property_t*))>
+          body{[](const interop_feature_t /* feature */, RawAddress /* addr */,
+                  bt_status_t (* /* get_remote_device_property */)(RawAddress, bt_property_t*)) {
+            return return_value;
+          }};
+  bool operator()(const interop_feature_t feature, RawAddress addr,
+                  bt_status_t (*get_remote_device_property)(RawAddress, bt_property_t*)) {
     return body(feature, addr, get_remote_device_property);
   }
 };

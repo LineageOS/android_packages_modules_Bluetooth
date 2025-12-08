@@ -113,9 +113,7 @@ BtStatus do_in_jni_thread(base::OnceClosure task) {
   return BtifStatus();
 }
 bluetooth::common::MessageLoopThread* get_main_thread() { return nullptr; }
-bool interop_match_addr(const interop_feature_t /*feature*/, const RawAddress* /*addr*/) {
-  return false;
-}
+bool interop_match_addr(const interop_feature_t /*feature*/, RawAddress /*addr*/) { return false; }
 
 /**
  * Test class to test selected functionality in hci/src/hci_layer.cc

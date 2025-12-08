@@ -810,8 +810,8 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   p_scb->uuid_int = p_data->api_open.uuid;
   if (p_scb->AvdtpVersion() != 0 &&
-      interop_match_addr_or_name(INTEROP_A2DP_SKIP_SDP_DURING_RECONNECTION, &p_scb->PeerAddress(),
-                                 &btif_storage_get_remote_device_property)) {
+      interop_match_addr_or_name(INTEROP_A2DP_SKIP_SDP_DURING_RECONNECTION, p_scb->PeerAddress(),
+                                 btif_storage_get_remote_device_property)) {
     log::info("Skip SDP with valid AVDTP version 0x{:04x}", p_scb->AvdtpVersion());
     bta_av_a2dp_sdp_cback(true, nullptr, p_scb->PeerAddress());
     return;
@@ -1120,8 +1120,7 @@ void bta_av_setconfig_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       p_scb->uuid_int = p_scb->open_api.uuid;
     }
     if (com_android_bluetooth_flags_a2dp_skip_discover_after_set_config()) {
-      if (interop_match_addr(INTEROP_AVDTP_SKIP_DISCOVER_AFTER_CONFIG,
-                             &p_scb->PeerAddress())) {
+      if (interop_match_addr(INTEROP_AVDTP_SKIP_DISCOVER_AFTER_CONFIG, p_scb->PeerAddress())) {
         log::info("IOP workaround for {}: skip discover after set config", p_scb->PeerAddress());
       } else {
         bta_av_discover_req(p_scb, NULL);
@@ -1171,7 +1170,7 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   // Don't use AVDTP SUSPEND for restrict listed devices
   btif_storage_get_stored_remote_name(p_scb->PeerAddress(), remote_name);
   if (interop_match_name(INTEROP_DISABLE_AVDTP_SUSPEND, remote_name) ||
-      interop_match_addr(INTEROP_DISABLE_AVDTP_SUSPEND, &p_scb->PeerAddress())) {
+      interop_match_addr(INTEROP_DISABLE_AVDTP_SUSPEND, p_scb->PeerAddress())) {
     log::info("disable AVDTP SUSPEND: interop matched name {} address {}", remote_name,
               p_scb->PeerAddress());
     p_scb->suspend_sup = false;
@@ -1224,7 +1223,7 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
         open.edr |= BTA_AV_EDR_2MBPS;
       }
       if (HCI_EDR_ACL_3MPS_SUPPORTED(p)) {
-        if (!interop_match_addr(INTEROP_2MBPS_LINK_ONLY, &p_scb->PeerAddress())) {
+        if (!interop_match_addr(INTEROP_2MBPS_LINK_ONLY, p_scb->PeerAddress())) {
           open.edr |= BTA_AV_EDR_3MBPS;
         }
       }
@@ -2845,8 +2844,7 @@ void bta_av_rcfg_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     char remote_name[BD_NAME_LEN] = "";
     if (btif_storage_get_stored_remote_name(p_scb->PeerAddress(), remote_name)) {
       if (interop_match_name(INTEROP_DISABLE_AVDTP_RECONFIGURE, remote_name) ||
-          interop_match_addr(INTEROP_DISABLE_AVDTP_RECONFIGURE,
-                             (const RawAddress*)&p_scb->PeerAddress())) {
+          interop_match_addr(INTEROP_DISABLE_AVDTP_RECONFIGURE, p_scb->PeerAddress())) {
         log::info("disable AVDTP RECONFIGURE: interop matched name {} address {}", remote_name,
                   p_scb->PeerAddress());
         disable_avdtp_reconfigure = true;

@@ -561,7 +561,7 @@ void bta_ag_rfc_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   bta_ag_cback_open(p_scb, p_scb->peer_addr, BTA_AG_SUCCESS);
 
   int ag_conn_timeout = p_bta_ag_cfg->conn_tout;
-  if (interop_match_addr(INTEROP_INCREASE_AG_CONN_TIMEOUT, &p_scb->peer_addr)) {
+  if (interop_match_addr(INTEROP_INCREASE_AG_CONN_TIMEOUT, p_scb->peer_addr)) {
     /* use higher value for ag conn timeout */
     ag_conn_timeout = SLC_EXCEPTION_TIMEOUT_MS;
   }

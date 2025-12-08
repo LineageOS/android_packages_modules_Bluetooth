@@ -629,7 +629,7 @@ static bool check_cached_model_name(const RawAddress& bd_addr) {
   bt_bdname_t model_name;
   BTIF_STORAGE_FILL_PROPERTY(&prop, BT_PROPERTY_REMOTE_MODEL_NUM, sizeof(model_name), &model_name);
 
-  if (btif_storage_get_remote_device_property(&bd_addr, &prop) != BT_STATUS_SUCCESS ||
+  if (btif_storage_get_remote_device_property(bd_addr, &prop) != BT_STATUS_SUCCESS ||
       prop.len == 0) {
     log::info("Device {} no cached model name", bd_addr);
     return false;
@@ -637,7 +637,7 @@ static bool check_cached_model_name(const RawAddress& bd_addr) {
 
   tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
   bt_property_t addr_type_prop = {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type), &addr_type};
-  btif_storage_get_remote_device_property(&bd_addr, &addr_type_prop);
+  btif_storage_get_remote_device_property(bd_addr, &addr_type_prop);
 
   GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(BT_STATUS_SUCCESS, bd_addr,
                                                                        addr_type, 1, &prop);
@@ -660,12 +660,12 @@ static void read_dis_cback(const RawAddress& bd_addr, tDIS_VALUE* p_dis_value) {
 
         log::info("Device {}, model name: {}", bd_addr, (char*)prop.val);
 
-        btif_storage_set_remote_device_property(&bd_addr, &prop);
+        btif_storage_set_remote_device_property(bd_addr, &prop);
 
         tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
         bt_property_t addr_type_prop = {BT_PROPERTY_REMOTE_ADDR_TYPE, sizeof(addr_type),
                                         &addr_type};
-        btif_storage_get_remote_device_property(&bd_addr, &addr_type_prop);
+        btif_storage_get_remote_device_property(bd_addr, &addr_type_prop);
 
         GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
                 BT_STATUS_SUCCESS, bd_addr, addr_type, 1, &prop);

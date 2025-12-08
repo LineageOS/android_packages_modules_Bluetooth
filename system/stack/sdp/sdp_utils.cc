@@ -1559,10 +1559,10 @@ void sdpu_set_avrc_target_version(const tSDP_ATTRIBUTE* p_attr, const RawAddress
   // AVRCP version. If those devices are in IOP database and our version higher
   // than device, we reply a lower version to them.
   uint16_t iop_version = 0;
-  if (dut_avrcp_version > AVRC_REV_1_4 && interop_match_addr(INTEROP_AVRCP_1_4_ONLY, bdaddr)) {
+  if (dut_avrcp_version > AVRC_REV_1_4 && interop_match_addr(INTEROP_AVRCP_1_4_ONLY, *bdaddr)) {
     iop_version = AVRC_REV_1_4;
   } else if (dut_avrcp_version > AVRC_REV_1_3 &&
-             interop_match_addr(INTEROP_AVRCP_1_3_ONLY, bdaddr)) {
+             interop_match_addr(INTEROP_AVRCP_1_3_ONLY, *bdaddr)) {
     iop_version = AVRC_REV_1_3;
   }
 

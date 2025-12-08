@@ -181,7 +181,7 @@ RobustCachingSupport GetRobustCachingSupport(const tBTA_GATTC_CLCB* p_clcb,
   // Some LMP 5.2 devices also don't support robust caching. This workaround
   // conditionally disables the feature based on a combination of LMP
   // version and OUI prefix.
-  if (lmp_version < 0x0c && interop_match_addr(INTEROP_DISABLE_ROBUST_CACHING, &p_clcb->bda)) {
+  if (lmp_version < 0x0c && interop_match_addr(INTEROP_DISABLE_ROBUST_CACHING, p_clcb->bda)) {
     log::warn(
             "Device LMP version 0x{:02x} <= Bluetooth 5.2 and MAC addr on interop "
             "list, skipping robust caching",

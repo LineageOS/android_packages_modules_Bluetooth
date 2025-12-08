@@ -813,7 +813,7 @@ static void hh_get_dscp_handler(tBTA_HH_DEV_DSCP_INFO& dscp_info) {
   bt_bdname_t bdname = {};
   bt_property_t prop_name = {};
   BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_BDNAME, sizeof(bt_bdname_t), &bdname);
-  if (btif_storage_get_remote_device_property(&p_dev->link_spec.addrt.bda, &prop_name) ==
+  if (btif_storage_get_remote_device_property(p_dev->link_spec.addrt.bda, &prop_name) ==
       BT_STATUS_SUCCESS) {
     cached_name = (char*)bdname.name;
   } else {
