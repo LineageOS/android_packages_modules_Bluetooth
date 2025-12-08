@@ -20,3 +20,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "reset_l2cap_idle_timeout_when_reusing_l2cap_context"
+    namespace: "bluetooth"
+    description: "Reset L2CAP idle timeout when reusing L2CAP context."
+    bug: "466943800"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
