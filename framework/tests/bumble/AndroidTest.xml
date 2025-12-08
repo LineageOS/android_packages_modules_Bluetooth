@@ -22,12 +22,6 @@
         <option name="install-arg" value="-g" />
     </target_preparer>
 
-    <target_preparer class="com.android.tradefed.targetprep.PythonVirtualenvPreparer">
-        <!-- TODO(b/267785204): Import python dependencies -->
-        <option name="dep-module" value="grpcio==1.70.0" />
-        <option name="dep-module" value="cryptography==35" />
-    </target_preparer>
-
     <target_preparer class="com.android.tradefed.targetprep.RunHostCommandTargetPreparer">
       <option name="python-virtualenv" value="true"/>
 
@@ -88,4 +82,3 @@
         <option name="mainline-module-package-name" value="com.google.android.bt" />
     </object>
 </configuration>
-

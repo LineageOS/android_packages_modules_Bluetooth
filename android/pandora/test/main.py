@@ -1,7 +1,3 @@
-import site
-
-site.main()
-
 import argparse
 import logging
 import itertools
