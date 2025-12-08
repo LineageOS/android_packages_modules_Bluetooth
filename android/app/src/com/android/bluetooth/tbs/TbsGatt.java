@@ -725,12 +725,17 @@ public class TbsGatt {
         if (entryExist
                 && (((mStatusFlagValue.get(device) & STATUS_FLAG_INBAND_RINGTONE_ENABLED) != 0)
                         == set)) {
-            Log.i(TAG, "Silent mode already set for " + device);
+            Log.i(TAG, "Inband ringtone mode already set for " + device);
             return false;
         }
 
         Integer valueInt = entryExist ? mStatusFlagValue.get(device) : 0;
-        valueInt ^= STATUS_FLAG_INBAND_RINGTONE_ENABLED;
+
+        if (set) {
+            valueInt |= STATUS_FLAG_INBAND_RINGTONE_ENABLED;
+        } else {
+            valueInt &= ~STATUS_FLAG_INBAND_RINGTONE_ENABLED;
+        }
 
         if (entryExist) {
             mStatusFlagValue.replace(device, valueInt);
