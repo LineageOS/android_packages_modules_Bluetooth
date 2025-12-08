@@ -777,7 +777,7 @@ TEST_F(PacsTests, RemoteWriteAudioLocationsNotPermitted) {
                                    sink_value);
 }
 
-TEST_F(PacsWritableAudioLocationsTest, RemoteWriteAudioLocationsPermitted) {
+TEST_F(PacsWritableAudioLocationsTest, RemoteWriteAudioLocationsConfirmed) {
   auto test_dev1 = GetTestAddress(0x10);
   InjectGattConnectedEvent(test_dev1);
 
@@ -785,7 +785,7 @@ TEST_F(PacsWritableAudioLocationsTest, RemoteWriteAudioLocationsPermitted) {
   ON_CALL(pac_callbacks_, OnAudioLocationsWritten(test_dev1, _, _))
           .WillByDefault([this](const RawAddress& pseudo_addr, uint8_t /*direction*/,
                                 const types::AudioLocations& /*audio_locations*/) {
-            pacs_->ConfirmAudioLocationsWritten(pseudo_addr);
+            pacs_->ConfirmAudioLocationsWritten(pseudo_addr, true);
           });
 
   // Test Sink Audio Location write - should succeed
@@ -808,6 +808,41 @@ TEST_F(PacsWritableAudioLocationsTest, RemoteWriteAudioLocationsPermitted) {
   EXPECT_CALL(pac_callbacks_,
               OnAudioLocationsWritten(test_dev1, types::kLeAudioDirectionSource, source_locations));
   EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_SUCCESS, _));
+  InjectCharacteristicWriteRequest(test_dev1, uuid::kSourceAudioLocationCharacteristicUuid,
+                                   source_value, true);
+}
+
+TEST_F(PacsWritableAudioLocationsTest, RemoteWriteAudioLocationsRejected) {
+  auto test_dev1 = GetTestAddress(0x10);
+  InjectGattConnectedEvent(test_dev1);
+
+  // Confirm the locations write request
+  ON_CALL(pac_callbacks_, OnAudioLocationsWritten(test_dev1, _, _))
+          .WillByDefault([this](const RawAddress& pseudo_addr, uint8_t /*direction*/,
+                                const types::AudioLocations& /*audio_locations*/) {
+            pacs_->ConfirmAudioLocationsWritten(pseudo_addr, false);
+          });
+
+  // Test Sink Audio Location write - should succeed
+  types::AudioLocations sink_locations(codec_spec_conf::kLeAudioLocationFrontLeft);
+  auto sink_value = pacs::AudioLocationsCharValueBuilder::Create(sink_locations.to_ullong())
+                            ->SerializeToBytes();
+  EXPECT_CALL(pac_callbacks_,
+              OnAudioLocationsWritten(test_dev1, types::kLeAudioDirectionSink, sink_locations));
+  EXPECT_CALL(gatt_server_interface_,
+              SendRsp(conn_id_by_address_.at(test_dev1), _, GATT_WRITE_REQ_REJECTED, _));
+  InjectCharacteristicWriteRequest(test_dev1, uuid::kSinkAudioLocationCharacteristicUuid,
+                                   sink_value, true);
+  Mock::VerifyAndClearExpectations(&pac_callbacks_);
+  Mock::VerifyAndClearExpectations(&gatt_server_interface_);
+
+  // Test Source Audio Location write with response - should succeed
+  types::AudioLocations source_locations(codec_spec_conf::kLeAudioLocationFrontRight);
+  auto source_value = pacs::AudioLocationsCharValueBuilder::Create(source_locations.to_ullong())
+                              ->SerializeToBytes();
+  EXPECT_CALL(pac_callbacks_,
+              OnAudioLocationsWritten(test_dev1, types::kLeAudioDirectionSource, source_locations));
+  EXPECT_CALL(gatt_server_interface_, SendRsp(_, _, GATT_WRITE_REQ_REJECTED, _));
   InjectCharacteristicWriteRequest(test_dev1, uuid::kSourceAudioLocationCharacteristicUuid,
                                    source_value, true);
 }
