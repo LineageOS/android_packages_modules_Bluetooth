@@ -752,7 +752,12 @@ public class TbsGatt {
             }
 
             Integer valueInt = entryExist ? mStatusFlagValue.get(device) : 0;
-            valueInt ^= STATUS_FLAG_SILENT_MODE_ENABLED;
+
+            if (set) {
+                valueInt |= STATUS_FLAG_SILENT_MODE_ENABLED;
+            } else {
+                valueInt &= ~STATUS_FLAG_SILENT_MODE_ENABLED;
+            }
 
             if (entryExist) {
                 mStatusFlagValue.replace(device, valueInt);
