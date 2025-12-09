@@ -273,7 +273,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                         leAudio.get().removeActiveDevice(true);
                     }
                 }
-                setA2dpActiveDevice(device, false);
+                a2dp.get().setActiveDevice(device);
             }
         }
 
