@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <com_android_bluetooth_flags.h>
+
 #include <memory>
 
 #include "common/bidi_queue.h"
@@ -116,7 +118,13 @@ private:
       return;
     }
     if (unknown_acl_alarm_ == nullptr) {
-      unknown_acl_alarm_.reset(new os::Alarm(&handler_->thread()));
+      if (com::android::bluetooth::flags::fix_module_shutdown_sync_with_stack()) {
+        // Do a blocking wait for `kHandlerStopTimeout` before destructing the alarm. This prevents
+        // the HciDataRouter destruction while the alarm's task is still running.
+        unknown_acl_alarm_.reset(new os::Alarm(&handler_->thread(), kHandlerStopTimeout));
+      } else {
+        unknown_acl_alarm_.reset(new os::Alarm(&handler_->thread()));
+      }
     }
     waiting_packets_.push_back(*packet);
     log::info("Saving packet of size {} to unknown connection 0x{:x}", packet->size(),
