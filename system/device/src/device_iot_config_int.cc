@@ -65,10 +65,6 @@ future_t* device_iot_config_module_init(void) {
   config_timer = NULL;
   config = NULL;
 
-  if (device_iot_config_is_factory_reset()) {
-    device_iot_config_delete_files();
-  }
-
   config = config_new(IOT_CONFIG_FILE_PATH);
   device_iot_config_source = ORIGINAL;
   if (!config) {
@@ -292,13 +288,4 @@ void device_iot_config_set_modified_time() {
     config_set_string(config.get(), INFO_SECTION, FILE_MODIFIED_TIMESTAMP,
                       device_iot_config_time_modified);
   }
-}
-
-bool device_iot_config_is_factory_reset(void) {
-  return osi_property_get_bool(PROPERTY_FACTORY_RESET, false);
-}
-
-void device_iot_config_delete_files(void) {
-  remove(IOT_CONFIG_FILE_PATH);
-  remove(IOT_CONFIG_BACKUP_PATH);
 }
