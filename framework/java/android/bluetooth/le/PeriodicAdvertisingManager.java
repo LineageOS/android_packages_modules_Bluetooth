@@ -61,14 +61,14 @@ public final class PeriodicAdvertisingManager {
     private final IdentityHashMap<PeriodicAdvertisingCallback, IPeriodicAdvertisingCallback>
             mCallbackWrappers = new IdentityHashMap<>();
 
-    private final BluetoothAdapter mBluetoothAdapter;
+    private final BluetoothAdapter mAdapter;
     private final AttributionSource mAttributionSource;
 
     /** Use {@link BluetoothAdapter#getBluetoothLeScanner()} instead. */
     @Hide
     public PeriodicAdvertisingManager(BluetoothAdapter bluetoothAdapter) {
-        mBluetoothAdapter = requireNonNull(bluetoothAdapter);
-        mAttributionSource = mBluetoothAdapter.getAttributionSource();
+        mAdapter = requireNonNull(bluetoothAdapter);
+        mAttributionSource = mAdapter.getAttributionSource();
     }
 
     /**
@@ -152,7 +152,7 @@ public final class PeriodicAdvertisingManager {
         IPeriodicAdvertisingCallback wrapped = wrap(callback, handler);
         mCallbackWrappers.put(callback, wrapped);
 
-        IBluetoothScan scan = mBluetoothAdapter.getBluetoothScan();
+        IBluetoothScan scan = mAdapter.getBluetoothScan();
         try {
             scan.registerSync(scanResult, skip, timeout, wrapped, mAttributionSource);
         } catch (RemoteException e) {
@@ -180,7 +180,7 @@ public final class PeriodicAdvertisingManager {
             throw new IllegalArgumentException("callback was not properly registered");
         }
 
-        IBluetoothScan scan = mBluetoothAdapter.getBluetoothScan();
+        IBluetoothScan scan = mAdapter.getBluetoothScan();
         try {
             scan.unregisterSync(wrapper, mAttributionSource);
         } catch (RemoteException e) {
@@ -193,7 +193,7 @@ public final class PeriodicAdvertisingManager {
     @RequiresBluetoothScanPermission
     @RequiresPermission(BLUETOOTH_SCAN)
     public void transferSync(BluetoothDevice bda, int serviceData, int syncHandle) {
-        IBluetoothScan scan = mBluetoothAdapter.getBluetoothScan();
+        IBluetoothScan scan = mAdapter.getBluetoothScan();
         try {
             scan.transferSync(bda, serviceData, syncHandle, mAttributionSource);
         } catch (RemoteException e) {
@@ -231,7 +231,7 @@ public final class PeriodicAdvertisingManager {
 
         IPeriodicAdvertisingCallback wrapper = wrap(callback, handler);
 
-        IBluetoothScan scan = mBluetoothAdapter.getBluetoothScan();
+        IBluetoothScan scan = mAdapter.getBluetoothScan();
         try {
             scan.transferSetInfo(bda, serviceData, advHandle, wrapper, mAttributionSource);
         } catch (RemoteException e) {

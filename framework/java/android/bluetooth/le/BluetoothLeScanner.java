@@ -87,7 +87,7 @@ public final class BluetoothLeScanner {
      */
     public static final String EXTRA_CALLBACK_TYPE = "android.bluetooth.le.extra.CALLBACK_TYPE";
 
-    private final BluetoothAdapter mBluetoothAdapter;
+    private final BluetoothAdapter mAdapter;
     private final AttributionSource mSource;
     private final Handler mHandler;
     private final Map<ScanCallback, BleScanCallbackWrapper> mLeScanClients;
@@ -95,8 +95,8 @@ public final class BluetoothLeScanner {
     /** Use {@link BluetoothAdapter#getBluetoothLeScanner()} instead. */
     @Hide
     public BluetoothLeScanner(BluetoothAdapter bluetoothAdapter) {
-        mBluetoothAdapter = requireNonNull(bluetoothAdapter);
-        mSource = mBluetoothAdapter.getAttributionSource();
+        mAdapter = requireNonNull(bluetoothAdapter);
+        mSource = mAdapter.getAttributionSource();
         mHandler = new Handler(Looper.getMainLooper());
         mLeScanClients = new HashMap<>();
     }
@@ -313,7 +313,7 @@ public final class BluetoothLeScanner {
         if (settings == null) {
             throw new IllegalArgumentException("settings is null");
         }
-        if (!BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter)) {
+        if (!BluetoothLeUtils.checkAdapterStateOn(mAdapter)) {
             Log.w(TAG, "doStartScan(): BLE is not available");
             return postCallbackErrorOrReturn(callback, ScanCallback.SCAN_FAILED_INTERNAL_ERROR);
         }
@@ -322,7 +322,7 @@ public final class BluetoothLeScanner {
                 return postCallbackErrorOrReturn(
                         callback, ScanCallback.SCAN_FAILED_ALREADY_STARTED);
             }
-            IBluetoothScan scan = mBluetoothAdapter.getBluetoothScan();
+            IBluetoothScan scan = mAdapter.getBluetoothScan();
             if (scan == null) {
                 return postCallbackErrorOrReturn(callback, ScanCallback.SCAN_FAILED_INTERNAL_ERROR);
             }
@@ -338,7 +338,7 @@ public final class BluetoothLeScanner {
                 return postCallbackErrorOrReturn(
                         callback, ScanCallback.SCAN_FAILED_FEATURE_UNSUPPORTED);
             }
-            if (!mBluetoothAdapter.isOffloadedScanBatchingSupported()
+            if (!mAdapter.isOffloadedScanBatchingSupported()
                     && settings.getReportDelayMillis() > 0) {
                 Log.w(TAG, "Batch scan requested but not supported");
                 return postCallbackErrorOrReturn(
@@ -374,7 +374,7 @@ public final class BluetoothLeScanner {
     @RequiresBluetoothScanPermission
     @RequiresPermission(BLUETOOTH_SCAN)
     public void stopScan(ScanCallback callback) {
-        if (!BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter)) {
+        if (!BluetoothLeUtils.checkAdapterStateOn(mAdapter)) {
             Log.w(TAG, "stopScan(callback): BLE is not available");
             return;
         }
@@ -400,12 +400,12 @@ public final class BluetoothLeScanner {
     @RequiresBluetoothScanPermission
     @RequiresPermission(BLUETOOTH_SCAN)
     public void stopScan(PendingIntent callbackIntent) {
-        if (!BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter)) {
+        if (!BluetoothLeUtils.checkAdapterStateOn(mAdapter)) {
             Log.w(TAG, "stopScan(callbackIntent): BLE is not available");
             return;
         }
         try {
-            IBluetoothScan scan = mBluetoothAdapter.getBluetoothScan();
+            IBluetoothScan scan = mAdapter.getBluetoothScan();
             if (scan == null) {
                 Log.w(TAG, "stopScan called after bluetooth has been turned off");
                 return;
@@ -428,7 +428,7 @@ public final class BluetoothLeScanner {
     @RequiresBluetoothScanPermission
     @RequiresPermission(BLUETOOTH_SCAN)
     public void flushPendingScanResults(ScanCallback callback) {
-        if (!BluetoothLeUtils.checkAdapterStateOn(mBluetoothAdapter)) {
+        if (!BluetoothLeUtils.checkAdapterStateOn(mAdapter)) {
             Log.w(TAG, "flushPendingScanResults(): BLE is not available");
             return;
         }
@@ -722,7 +722,7 @@ public final class BluetoothLeScanner {
     }
 
     private boolean isSettingsConfigAllowedForScan(ScanSettings settings) {
-        if (mBluetoothAdapter.isOffloadedFilteringSupported()) {
+        if (mAdapter.isOffloadedFilteringSupported()) {
             return true;
         }
         final int callbackType = settings.getCallbackType();
@@ -760,8 +760,8 @@ public final class BluetoothLeScanner {
         if ((callbackType & ScanSettings.CALLBACK_TYPE_FIRST_MATCH) != 0
                 || (callbackType & ScanSettings.CALLBACK_TYPE_MATCH_LOST) != 0) {
             // For onlost/onfound, we required hw support be available
-            return (mBluetoothAdapter.isOffloadedFilteringSupported()
-                    && mBluetoothAdapter.isHardwareTrackingFiltersAvailable());
+            return (mAdapter.isOffloadedFilteringSupported()
+                    && mAdapter.isHardwareTrackingFiltersAvailable());
         }
         return true;
     }
