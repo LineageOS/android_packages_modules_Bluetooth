@@ -16,6 +16,7 @@
 
 #include "main/shim/acl.h"
 
+#include <base/functional/bind.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/bluetooth_event.h>
@@ -328,8 +329,8 @@ public:
         send_data_upwards_(send_data_upwards),
         queue_up_end_(queue_up_end),
         creation_time_(creation_time) {
-    queue_up_end_->RegisterDequeue(handler_, common::Bind(&ShimAclConnection::data_ready_callback,
-                                                          common::Unretained(this)));
+    queue_up_end_->RegisterDequeue(
+            handler_, base::Bind(&ShimAclConnection::data_ready_callback, base::Unretained(this)));
   }
 
   virtual ~ShimAclConnection() {
@@ -435,7 +436,7 @@ private:
     }
     is_enqueue_registered_ = true;
     queue_up_end_->RegisterEnqueue(
-            handler_, common::Bind(&ShimAclConnection::handle_enqueue, common::Unretained(this)));
+            handler_, base::Bind(&ShimAclConnection::handle_enqueue, base::Unretained(this)));
   }
 
   virtual void RegisterCallbacks() = 0;
