@@ -522,19 +522,6 @@ void ParentDef::GenSerialize(std::ostream& s) const {
         s << "insert(" << vector_name << "bytes, i, ";
         s << field->GetSize().bits() << ");";
       }
-    } else if (field->GetFieldType() == ChecksumStartField::kFieldType) {
-      const auto& field_name = ((ChecksumStartField*)field)->GetStartedFieldName();
-      const auto& started_field = fields_.GetField(field_name);
-      if (started_field == nullptr) {
-        ERROR(field) << __func__ << ": Can't find checksum field named " << field_name << "("
-                     << field->GetName() << ")";
-      }
-      s << "auto shared_checksum_ptr = std::make_shared<" << started_field->GetDataType() << ">();";
-      s << "shared_checksum_ptr->Initialize();";
-      s << "i.RegisterObserver(packet::ByteObserver(";
-      s << "[shared_checksum_ptr](uint8_t byte){ shared_checksum_ptr->AddByte(byte);},";
-      s << "[shared_checksum_ptr](){ return "
-           "static_cast<uint64_t>(shared_checksum_ptr->GetChecksum());}));";
     } else if (field->GetFieldType() == PaddingField::kFieldType) {
       s << "ASSERT(unpadded_size <= " << field->GetSize().bytes() << ");";
       s << "size_t padding_bytes = ";

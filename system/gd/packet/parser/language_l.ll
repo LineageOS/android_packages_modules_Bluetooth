@@ -64,10 +64,8 @@ string_literal \".*\"
 "_count_"               { return(token::COUNT); }
 "_fixed_"               { return(token::FIXED); }
 "_reserved_"            { return(token::RESERVED); }
-"_checksum_start_"      { return(token::CHECKSUM_START); }
 "_padding_"             { return(token::PADDING); }
   /* Types */
-"checksum"              { return(token::CHECKSUM); }
 "custom_field"          { return(token::CUSTOM_FIELD); }
 "enum"                  { return(token::ENUM); }
 "group"                 { return(token::GROUP); }

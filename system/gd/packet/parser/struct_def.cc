@@ -53,7 +53,6 @@ void StructDef::GenToString(std::ostream& s) const {
     bool firstfield = true;
     for (const auto& field : fields_) {
       if (field->GetFieldType() == ReservedField::kFieldType ||
-          field->GetFieldType() == ChecksumStartField::kFieldType ||
           field->GetFieldType() == FixedScalarField::kFieldType ||
           field->GetFieldType() == CountField::kFieldType ||
           field->GetFieldType() == SizeField::kFieldType) {
@@ -123,8 +122,6 @@ void StructDef::GenParse(std::ostream& s) const {
     if (field->GetFieldType() != ReservedField::kFieldType &&
         field->GetFieldType() != BodyField::kFieldType &&
         field->GetFieldType() != FixedScalarField::kFieldType &&
-        field->GetFieldType() != ChecksumStartField::kFieldType &&
-        field->GetFieldType() != ChecksumField::kFieldType &&
         field->GetFieldType() != CountField::kFieldType) {
       total_bits += field->GetSize().bits();
     }
@@ -142,8 +139,6 @@ void StructDef::GenParse(std::ostream& s) const {
         field->GetFieldType() != BodyField::kFieldType &&
         field->GetFieldType() != FixedScalarField::kFieldType &&
         field->GetFieldType() != SizeField::kFieldType &&
-        field->GetFieldType() != ChecksumStartField::kFieldType &&
-        field->GetFieldType() != ChecksumField::kFieldType &&
         field->GetFieldType() != CountField::kFieldType) {
       s << "{";
       int num_leading_bits = field->GenBounds(s, GetStructOffsetForField(field->GetName()), Size(),

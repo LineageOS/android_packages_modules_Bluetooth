@@ -202,51 +202,6 @@ void PacketDef::GenValidator(std::ostream& s) const {
 
   // For any variable length fields, use their size check.
   for (const auto& field : fields_) {
-    if (field->GetFieldType() == ChecksumStartField::kFieldType) {
-      auto offset = GetOffsetForField(field->GetName(), false);
-      if (!offset.empty()) {
-        s << "size_t sum_index = (" << offset << ") / 8;";
-      } else {
-        offset = GetOffsetForField(field->GetName(), true);
-        if (offset.empty()) {
-          ERROR(field) << "Checksum Start Field offset can not be determined.";
-        }
-        s << "size_t sum_index = size() - (" << offset << ") / 8;";
-      }
-
-      const auto& field_name = ((ChecksumStartField*)field)->GetStartedFieldName();
-      const auto& started_field = fields_.GetField(field_name);
-      if (started_field == nullptr) {
-        ERROR(field) << __func__ << ": Can't find checksum field named " << field_name << "("
-                     << field->GetName() << ")";
-      }
-      auto end_offset = GetOffsetForField(started_field->GetName(), false);
-      if (!end_offset.empty()) {
-        s << "size_t end_sum_index = (" << end_offset << ") / 8;";
-      } else {
-        end_offset = GetOffsetForField(started_field->GetName(), true);
-        if (end_offset.empty()) {
-          ERROR(started_field) << "Checksum Field end_offset can not be determined.";
-        }
-        s << "size_t end_sum_index = size() - (" << started_field->GetSize() << " - " << end_offset
-          << ") / 8;";
-      }
-      s << "if (end_sum_index >= size()) { return false; }";
-      if (is_little_endian_) {
-        s << "auto checksum_view = GetLittleEndianSubview(sum_index, end_sum_index);";
-      } else {
-        s << "auto checksum_view = GetBigEndianSubview(sum_index, end_sum_index);";
-      }
-      s << started_field->GetDataType() << " checksum;";
-      s << "checksum.Initialize();";
-      s << "for (uint8_t byte : checksum_view) { ";
-      s << "checksum.AddByte(byte);}";
-      s << "if (checksum.GetChecksum() != (begin() + end_sum_index).extract<"
-        << util::GetTypeForSize(started_field->GetSize().bits()) << ">()) { return false; }";
-
-      continue;
-    }
-
     auto field_size = field->GetSize();
     // Fixed size fields have already been handled.
     if (!field_size.has_dynamic()) {
@@ -323,8 +278,7 @@ void PacketDef::GenParserToString(std::ostream& s) const {
     bool firstfield = true;
     for (const auto& field : fields_) {
       if (field->GetFieldType() == ReservedField::kFieldType ||
-          field->GetFieldType() == FixedScalarField::kFieldType ||
-          field->GetFieldType() == ChecksumStartField::kFieldType) {
+          field->GetFieldType() == FixedScalarField::kFieldType) {
         continue;
       }
 
