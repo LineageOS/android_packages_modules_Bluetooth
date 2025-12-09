@@ -170,3 +170,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "hid_default_preferred_transport"
+    namespace: "bluetooth"
+    description: "Link default HID preferred transport to LE Audio system property"
+    bug: "467386258"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
