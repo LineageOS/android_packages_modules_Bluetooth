@@ -969,33 +969,17 @@ static bool cleanupNative(JNIEnv* env, jobject /* obj */) {
   return JNI_TRUE;
 }
 
-static jboolean enableNative(JNIEnv* env, jobject /* obj */, jstring jLocalName) {
-  log::verbose("");
-
-  if (!sBluetoothInterface) {
-    return JNI_FALSE;
-  }
-
+static void enableNative(JNIEnv* env, jobject /* obj */, jstring jLocalName) {
   const std::string local_name = stringFromJstring(env, jLocalName);
+  log::verbose("lock_name={}", local_name);
 
-  int ret = sBluetoothInterface->enable(std::move(local_name));
-
-  return (ret == BT_STATUS_SUCCESS || ret == BT_STATUS_DONE) ? JNI_TRUE : JNI_FALSE;
+  bluetooth_enable(std::move(local_name));
 }
 
-static jboolean disableNative(JNIEnv* /* env */, jobject /* obj */) {
+static void disableNative(JNIEnv* /* env */, jobject /* obj */) {
   log::verbose("");
 
-  if (!sBluetoothInterface) {
-    return JNI_FALSE;
-  }
-
-  int ret = sBluetoothInterface->disable();
-  /* Retrun JNI_FALSE only when BTIF explicitly reports
-     BT_STATUS_FAIL. It is fine for the BT_STATUS_NOT_READY
-     case which indicates that stack had not been enabled.
-  */
-  return (ret == BT_STATUS_FAIL) ? JNI_FALSE : JNI_TRUE;
+  bluetooth_disable();
 }
 
 static jboolean startDiscoveryNative(JNIEnv* /* env */, jobject /* obj */) {
@@ -1917,8 +1901,8 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
   const JNINativeMethod methods[] = {
           {"initNative", "(ZZIZLjava/lang/String;)Z", reinterpret_cast<void*>(initNative)},
           {"cleanupNative", "()V", reinterpret_cast<void*>(cleanupNative)},
-          {"enableNative", "(Ljava/lang/String;)Z", reinterpret_cast<void*>(enableNative)},
-          {"disableNative", "()Z", reinterpret_cast<void*>(disableNative)},
+          {"enableNative", "(Ljava/lang/String;)V", reinterpret_cast<void*>(enableNative)},
+          {"disableNative", "()V", reinterpret_cast<void*>(disableNative)},
           {"setScanModeNative", "(I)Z", reinterpret_cast<void*>(setScanModeNative)},
           {"setLocalNameNative", "(Ljava/lang/String;)V",
            reinterpret_cast<void*>(setLocalNameNative)},

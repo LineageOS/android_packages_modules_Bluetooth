@@ -462,23 +462,16 @@ static void stop_profiles() {
   btif_pan_cleanup();
 }
 
-static int enable(const std::string local_name) {
-  if (!interface_ready()) {
-    return BT_STATUS_NOT_READY;
-  }
+void bluetooth_enable(const std::string local_name) {
+  log::assert_that(interface_ready(), "interface not ready");
 
-  stack_manager_get_interface()->start_up_stack_async(CreateInterfaceToProfiles(), &start_profiles,
-                                                      local_name);
-  return BT_STATUS_SUCCESS;
+  stack_enable(&start_profiles, local_name);
 }
 
-static int disable(void) {
-  if (!interface_ready()) {
-    return BT_STATUS_NOT_READY;
-  }
+void bluetooth_disable(void) {
+  log::assert_that(interface_ready(), "interface not ready");
 
-  stack_manager_get_interface()->shut_down_stack_async(&stop_profiles);
-  return BT_STATUS_SUCCESS;
+  stack_disable(&stop_profiles);
 }
 
 static void cleanup(void) { stack_manager_get_interface()->clean_up_stack(&stop_profiles); }
@@ -1150,8 +1143,6 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
 #ifdef TARGET_FLOSS
         .set_adapter_index = set_adapter_index,
 #endif
-        .enable = enable,
-        .disable = disable,
         .cleanup = cleanup,
         .get_adapter_properties = get_adapter_properties,
         .get_adapter_property = get_adapter_property,

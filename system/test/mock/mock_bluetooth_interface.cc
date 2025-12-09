@@ -65,16 +65,10 @@ void invoke_encryption_change_cb(bt_encryption_change_evt /* bd_addr */) {}
 
 static void init_stack(bluetooth::core::CoreInterface* /* interface */) {}
 
-static void start_up_stack_async(bluetooth::core::CoreInterface* /* interface */,
-                                 ProfileStartCallback /* startProfiles */, const std::string) {}
-
-static void shut_down_stack_async(ProfileStopCallback /* stopProfiles */) {}
-
 static void clean_up_stack(ProfileStopCallback /* stopProfiles */) {}
 
 static bool get_stack_is_running() { return true; }
 
-static const stack_manager_t interface = {init_stack, start_up_stack_async, shut_down_stack_async,
-                                          clean_up_stack, get_stack_is_running};
+static const stack_manager_t interface = {init_stack, clean_up_stack, get_stack_is_running};
 
 const stack_manager_t* stack_manager_get_interface() { return &interface; }

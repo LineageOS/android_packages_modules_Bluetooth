@@ -30,13 +30,13 @@ using ProfileStopCallback = void();
 
 typedef struct {
   void (*init_stack)(bluetooth::core::CoreInterface*);
-  void (*start_up_stack_async)(bluetooth::core::CoreInterface*, ProfileStartCallback,
-                               const std::string local_name);
-  void (*shut_down_stack_async)(ProfileStopCallback);
   void (*clean_up_stack)(ProfileStopCallback);
 
   bool (*get_stack_is_running)(void);
 } stack_manager_t;
+
+void stack_enable(ProfileStartCallback startProfiles, const std::string local_name);
+void stack_disable(ProfileStopCallback stopProfiles);
 
 const stack_manager_t* stack_manager_get_interface();
 
