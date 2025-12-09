@@ -35,8 +35,6 @@ public:
 
   void GenTestingParserFromBytes(std::ostream& s) const;
 
-  void GenParserDefinitionPybind11(std::ostream& s) const;
-
   void GenParserFieldGetter(std::ostream& s, const PacketField* field) const;
 
   void GenValidator(std::ostream& s) const;
@@ -47,8 +45,6 @@ public:
 
   void GenBuilderDefinition(std::ostream& s, bool generate_fuzzing, bool generate_tests) const;
 
-  void GenBuilderDefinitionPybind11(std::ostream& s) const;
-
   void GenTestDefine(std::ostream& s) const;
 
   void GenReflectTestDefine(std::ostream& s) const;
@@ -57,8 +53,6 @@ public:
   FieldList GetParametersToValidate() const;
 
   void GenBuilderCreate(std::ostream& s) const;
-
-  void GenBuilderCreatePybind11(std::ostream& s) const;
 
   void GenBuilderParameterChecker(std::ostream& s) const;
 
