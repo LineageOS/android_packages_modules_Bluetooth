@@ -19,7 +19,6 @@
 #include <gtest/gtest.h>
 
 #include "common/bidi_queue.h"
-#include "common/callback.h"
 #include "hci/controller_mock.h"
 #include "hci/hci_packets.h"
 #include "os/handler.h"

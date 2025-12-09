@@ -16,6 +16,7 @@
 
 #include "hci/acl_manager/classic_acl_connection.h"
 
+#include <base/functional/callback.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
@@ -310,7 +311,7 @@ public:
   AclConnectionInterface* acl_connection_interface_;
   os::Handler* client_handler_ = nullptr;
   ConnectionManagementCallbacks* client_callbacks_ = nullptr;
-  std::list<common::OnceClosure> queued_callbacks_;
+  std::list<base::OnceClosure> queued_callbacks_;
   Address address_;
   uint16_t connection_handle_;
 };

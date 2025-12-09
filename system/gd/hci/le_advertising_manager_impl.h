@@ -15,12 +15,12 @@
  */
 #pragma once
 
+#include <base/functional/callback.h>
 #include <bluetooth/log.h>
 
 #include <memory>
 #include <vector>
 
-#include "common/callback.h"
 #include "hci/controller.h"
 #include "hci/hci_interface.h"
 #include "hci/hci_packets.h"
