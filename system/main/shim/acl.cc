@@ -1214,38 +1214,11 @@ shim::Acl::~Acl() {
 }
 
 bool shim::Acl::CheckForOrphanedAclConnections() const {
-  if (com_android_bluetooth_flags_fix_race_in_orphaned_acls()) {
-    std::promise<bool> promise;
-    auto future = promise.get_future();
-    handler_->CallOn(pimpl_.get(), &Acl::impl::check_for_orphaned_acl_connections,
-                     std::move(promise));
-    return future.get();
-  }
-
-  bool orphaned_acl_connections = false;
-
-  if (!pimpl_->handle_to_classic_connection_map_.empty()) {
-    log::error("About to destroy classic active ACL");
-    for (const auto& connection : pimpl_->handle_to_classic_connection_map_) {
-      log::error("Orphaned classic ACL handle:0x{:04x} bd_addr:{} created:{}",
-                 connection.second->Handle(), connection.second->GetRemoteAddress(),
-                 common::StringFormatTimeWithMilliseconds(kConnectionDescriptorTimeFormat,
-                                                          connection.second->GetCreationTime()));
-    }
-    orphaned_acl_connections = true;
-  }
-
-  if (!pimpl_->handle_to_le_connection_map_.empty()) {
-    log::error("About to destroy le active ACL");
-    for (const auto& connection : pimpl_->handle_to_le_connection_map_) {
-      log::error("Orphaned le ACL handle:0x{:04x} bd_addr:{} created:{}",
-                 connection.second->Handle(), connection.second->GetRemoteAddressWithType(),
-                 common::StringFormatTimeWithMilliseconds(kConnectionDescriptorTimeFormat,
-                                                          connection.second->GetCreationTime()));
-    }
-    orphaned_acl_connections = true;
-  }
-  return orphaned_acl_connections;
+  std::promise<bool> promise;
+  auto future = promise.get_future();
+  handler_->CallOn(pimpl_.get(), &Acl::impl::check_for_orphaned_acl_connections,
+                   std::move(promise));
+  return future.get();
 }
 
 void shim::Acl::on_incoming_acl_credits(uint16_t handle, uint16_t credits) {
