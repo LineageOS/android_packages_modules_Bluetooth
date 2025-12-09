@@ -160,3 +160,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "hid_propagate_idle_handshake"
+    namespace: "bluetooth"
+    description: "Propagate the handshake reply of get_idle and set_idle to the java layer"
+    bug: "464973851"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

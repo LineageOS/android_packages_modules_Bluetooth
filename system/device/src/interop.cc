@@ -202,8 +202,7 @@ static bool interop_config_remove(const std::string& section, const std::string&
 
 // Interface functions
 
-bool interop_match_addr(const interop_feature_t feature, const RawAddress* addr) {
-  log::assert_that(addr != nullptr, "assert failed: addr != nullptr");
+bool interop_match_addr(const interop_feature_t feature, RawAddress addr) {
   return interop_database_match_addr(feature, addr);
 }
 
@@ -212,10 +211,9 @@ bool interop_match_name(const interop_feature_t feature, const char* name) {
   return interop_database_match_name(feature, name);
 }
 
-bool interop_match_addr_or_name(const interop_feature_t feature, const RawAddress* addr,
-                                bt_status_t (*get_remote_device_property)(const RawAddress*,
+bool interop_match_addr_or_name(const interop_feature_t feature, RawAddress addr,
+                                bt_status_t (*get_remote_device_property)(RawAddress,
                                                                           bt_property_t*)) {
-  log::assert_that(addr != nullptr, "assert failed: addr != nullptr");
   log::assert_that(get_remote_device_property != nullptr,
                    "assert failed: get_remote_device_property != nullptr");
 
@@ -247,7 +245,7 @@ bool interop_match_vendor_product_ids(const interop_feature_t feature, uint16_t 
   return interop_database_match_vndr_prdt(feature, vendor_id, product_id);
 }
 
-bool interop_match_addr_get_max_lat(const interop_feature_t feature, const RawAddress* addr,
+bool interop_match_addr_get_max_lat(const interop_feature_t feature, RawAddress addr,
                                     uint16_t* max_lat) {
   return interop_database_match_addr_get_max_lat(feature, addr, max_lat);
 }
@@ -255,7 +253,7 @@ bool interop_match_addr_get_max_lat(const interop_feature_t feature, const RawAd
 void interop_database_add(const uint16_t feature, RawAddress addr, size_t length) {
   log::assert_that(length > 0, "assert failed: length > 0");
   log::assert_that(length < sizeof(RawAddress), "assert failed: length < sizeof(RawAddress)");
-  interop_database_add_addr(feature, &addr, length);
+  interop_database_add_addr(feature, addr, length);
 }
 
 void interop_database_clear() {
@@ -1168,15 +1166,14 @@ static void interop_config_cleanup(void) {
   pthread_mutex_destroy(&file_lock);
 }
 
-void interop_database_add_addr(const uint16_t feature, const RawAddress* addr, size_t length) {
-  log::assert_that(addr != nullptr, "assert failed: addr != nullptr");
+void interop_database_add_addr(const uint16_t feature, RawAddress addr, size_t length) {
   log::assert_that(length > 0, "assert failed: length > 0");
   log::assert_that(length < sizeof(RawAddress), "assert failed: length < sizeof(RawAddress)");
 
   interop_db_entry_t* entry = (interop_db_entry_t*)osi_calloc(sizeof(interop_db_entry_t));
   entry->bl_type = INTEROP_BL_TYPE_ADDR;
   entry->bl_entry_type = INTEROP_ENTRY_TYPE_DYNAMIC;
-  memcpy(&entry->entry_type.addr_entry.addr, addr, length);
+  memcpy(&entry->entry_type.addr_entry.addr, addr.address.data(), length);
   entry->entry_type.addr_entry.feature = (interop_feature_t)feature;
   entry->entry_type.addr_entry.length = length;
   interop_database_add_(entry, true);
@@ -1216,14 +1213,12 @@ void interop_database_add_vndr_prdt(const interop_feature_t feature, uint16_t ve
   interop_database_add_(entry, true);
 }
 
-void interop_database_add_addr_max_lat(const interop_feature_t feature, const RawAddress* addr,
+void interop_database_add_addr_max_lat(const interop_feature_t feature, RawAddress addr,
                                        uint16_t max_lat) {
-  log::assert_that(addr != nullptr, "assert failed: addr != nullptr");
-
   interop_db_entry_t* entry = (interop_db_entry_t*)osi_calloc(sizeof(interop_db_entry_t));
   entry->bl_type = INTEROP_BL_TYPE_SSR_MAX_LAT;
   entry->bl_entry_type = INTEROP_ENTRY_TYPE_DYNAMIC;
-  entry->entry_type.ssr_max_lat_entry.addr = *addr;
+  entry->entry_type.ssr_max_lat_entry.addr = addr;
   entry->entry_type.ssr_max_lat_entry.feature = feature;
   entry->entry_type.ssr_max_lat_entry.max_lat = max_lat;
   interop_database_add_(entry, true);
@@ -1238,14 +1233,12 @@ void interop_database_add_version(const interop_feature_t feature, uint16_t vers
   interop_database_add_(entry, true);
 }
 
-void interop_database_add_addr_lmp_version(const interop_feature_t feature, const RawAddress* addr,
+void interop_database_add_addr_lmp_version(const interop_feature_t feature, RawAddress addr,
                                            uint8_t lmp_ver, uint16_t lmp_sub_ver) {
-  log::assert_that(addr != nullptr, "assert failed: addr != nullptr");
-
   interop_db_entry_t* entry = (interop_db_entry_t*)osi_calloc(sizeof(interop_db_entry_t));
   entry->bl_type = INTEROP_BL_TYPE_LMP_VERSION;
   entry->bl_entry_type = INTEROP_ENTRY_TYPE_DYNAMIC;
-  entry->entry_type.lmp_version_entry.addr = *addr;
+  entry->entry_type.lmp_version_entry.addr = addr;
   entry->entry_type.lmp_version_entry.feature = feature;
   entry->entry_type.lmp_version_entry.lmp_ver = lmp_ver;
   entry->entry_type.lmp_version_entry.lmp_sub_ver = lmp_sub_ver;
@@ -1293,31 +1286,29 @@ bool interop_database_match_name(const interop_feature_t feature, const char* na
   return false;
 }
 
-bool interop_database_match_addr(const interop_feature_t feature, const RawAddress* addr) {
-  log::assert_that(addr != nullptr, "assert failed: addr != nullptr");
-
+bool interop_database_match_addr(const interop_feature_t feature, RawAddress addr) {
   interop_db_entry_t entry;
 
   entry.bl_type = INTEROP_BL_TYPE_ADDR;
-  entry.entry_type.addr_entry.addr = *addr;
+  entry.entry_type.addr_entry.addr = addr;
   entry.entry_type.addr_entry.feature = (interop_feature_t)feature;
   entry.entry_type.addr_entry.length = sizeof(RawAddress);
 
   if (interop_database_match(
               &entry, NULL,
               (interop_entry_type)(INTEROP_ENTRY_TYPE_STATIC | INTEROP_ENTRY_TYPE_DYNAMIC))) {
-    log::warn("Device {} is a match for interop workaround {}.", *addr,
+    log::warn("Device {} is a match for interop workaround {}.", addr,
               interop_feature_string_(feature));
     return true;
   }
 
   entry.bl_type = INTEROP_BL_TYPE_ADDR_RANGE;
   entry.bl_entry_type = INTEROP_ENTRY_TYPE_STATIC;
-  entry.entry_type.addr_range_entry.addr_start = *addr;
+  entry.entry_type.addr_range_entry.addr_start = addr;
   entry.entry_type.addr_range_entry.feature = (interop_feature_t)feature;
 
   if (interop_database_match(&entry, NULL, (interop_entry_type)(INTEROP_ENTRY_TYPE_STATIC))) {
-    log::warn("Device {} is a match for interop workaround {}.", *addr,
+    log::warn("Device {} is a match for interop workaround {}.", addr,
               interop_feature_string_(feature));
     return true;
   }
@@ -1345,20 +1336,20 @@ bool interop_database_match_vndr_prdt(const interop_feature_t feature, uint16_t 
   return false;
 }
 
-bool interop_database_match_addr_get_max_lat(const interop_feature_t feature,
-                                             const RawAddress* addr, uint16_t* max_lat) {
+bool interop_database_match_addr_get_max_lat(const interop_feature_t feature, RawAddress addr,
+                                             uint16_t* max_lat) {
   interop_db_entry_t entry;
   interop_db_entry_t* ret_entry = NULL;
 
   entry.bl_type = INTEROP_BL_TYPE_SSR_MAX_LAT;
 
   entry.entry_type.ssr_max_lat_entry.feature = feature;
-  entry.entry_type.ssr_max_lat_entry.addr = *addr;
+  entry.entry_type.ssr_max_lat_entry.addr = addr;
   entry.entry_type.ssr_max_lat_entry.feature = feature;
   if (interop_database_match(
               &entry, &ret_entry,
               (interop_entry_type)(INTEROP_ENTRY_TYPE_STATIC | INTEROP_ENTRY_TYPE_DYNAMIC))) {
-    log::warn("Device {} is a match for interop workaround {}.", *addr,
+    log::warn("Device {} is a match for interop workaround {}.", addr,
               interop_feature_string_(feature));
     *max_lat = ret_entry->entry_type.ssr_max_lat_entry.max_lat;
     return true;
@@ -1385,21 +1376,20 @@ bool interop_database_match_version(const interop_feature_t feature, uint16_t ve
   return false;
 }
 
-bool interop_database_match_addr_get_lmp_ver(const interop_feature_t feature,
-                                             const RawAddress* addr, uint8_t* lmp_ver,
-                                             uint16_t* lmp_sub_ver) {
+bool interop_database_match_addr_get_lmp_ver(const interop_feature_t feature, RawAddress addr,
+                                             uint8_t* lmp_ver, uint16_t* lmp_sub_ver) {
   interop_db_entry_t entry;
   interop_db_entry_t* ret_entry = NULL;
 
   entry.bl_type = INTEROP_BL_TYPE_LMP_VERSION;
 
   entry.entry_type.lmp_version_entry.feature = feature;
-  entry.entry_type.lmp_version_entry.addr = *addr;
+  entry.entry_type.lmp_version_entry.addr = addr;
   entry.entry_type.lmp_version_entry.feature = feature;
   if (interop_database_match(
               &entry, &ret_entry,
               (interop_entry_type)(INTEROP_ENTRY_TYPE_STATIC | INTEROP_ENTRY_TYPE_DYNAMIC))) {
-    log::warn("Device {} is a match for interop workaround {}.", *addr,
+    log::warn("Device {} is a match for interop workaround {}.", addr,
               interop_feature_string_(feature));
     *lmp_ver = ret_entry->entry_type.lmp_version_entry.lmp_ver;
     *lmp_sub_ver = ret_entry->entry_type.lmp_version_entry.lmp_sub_ver;
@@ -1444,18 +1434,16 @@ bool interop_database_remove_manufacturer(const interop_feature_t feature, uint1
   return false;
 }
 
-bool interop_database_remove_addr(const interop_feature_t feature, const RawAddress* addr) {
-  log::assert_that(addr != nullptr, "assert failed: addr != nullptr");
-
+bool interop_database_remove_addr(const interop_feature_t feature, RawAddress addr) {
   interop_db_entry_t entry;
 
   entry.bl_type = INTEROP_BL_TYPE_ADDR;
   entry.bl_entry_type = INTEROP_ENTRY_TYPE_DYNAMIC;
-  entry.entry_type.addr_entry.addr = *addr;
+  entry.entry_type.addr_entry.addr = addr;
   entry.entry_type.addr_entry.feature = (interop_feature_t)feature;
   entry.entry_type.addr_entry.length = sizeof(RawAddress);
   if (interop_database_remove_(&entry)) {
-    log::warn("Device {} is a removed from interop workaround {}.", *addr,
+    log::warn("Device {} is a removed from interop workaround {}.", addr,
               interop_feature_string_(feature));
     return true;
   }
@@ -1555,19 +1543,19 @@ bool interop_database_remove_vndr_prdt(const interop_feature_t feature, uint16_t
   return false;
 }
 
-bool interop_database_remove_addr_max_lat(const interop_feature_t feature, const RawAddress* addr,
+bool interop_database_remove_addr_max_lat(const interop_feature_t feature, RawAddress addr,
                                           uint16_t max_lat) {
   interop_db_entry_t entry;
 
   entry.bl_type = INTEROP_BL_TYPE_SSR_MAX_LAT;
   entry.bl_entry_type = INTEROP_ENTRY_TYPE_DYNAMIC;
 
-  entry.entry_type.ssr_max_lat_entry.addr = *addr;
+  entry.entry_type.ssr_max_lat_entry.addr = addr;
   entry.entry_type.ssr_max_lat_entry.feature = feature;
   entry.entry_type.ssr_max_lat_entry.max_lat = max_lat;
 
   if (interop_database_remove_(&entry)) {
-    log::warn("Device {} is a removed from interop workaround {}.", *addr,
+    log::warn("Device {} is a removed from interop workaround {}.", addr,
               interop_feature_string_(feature));
     return true;
   }
@@ -1591,21 +1579,20 @@ bool interop_database_remove_version(const interop_feature_t feature, uint16_t v
   return false;
 }
 
-bool interop_database_remove_addr_lmp_version(const interop_feature_t feature,
-                                              const RawAddress* addr, uint8_t lmp_ver,
-                                              uint16_t lmp_sub_ver) {
+bool interop_database_remove_addr_lmp_version(const interop_feature_t feature, RawAddress addr,
+                                              uint8_t lmp_ver, uint16_t lmp_sub_ver) {
   interop_db_entry_t entry;
 
   entry.bl_type = INTEROP_BL_TYPE_LMP_VERSION;
   entry.bl_entry_type = INTEROP_ENTRY_TYPE_DYNAMIC;
 
-  entry.entry_type.lmp_version_entry.addr = *addr;
+  entry.entry_type.lmp_version_entry.addr = addr;
   entry.entry_type.lmp_version_entry.feature = feature;
   entry.entry_type.lmp_version_entry.lmp_ver = lmp_ver;
   entry.entry_type.lmp_version_entry.lmp_sub_ver = lmp_sub_ver;
 
   if (interop_database_remove_(&entry)) {
-    log::warn("Device {} is a removed from interop workaround {}.", *addr,
+    log::warn("Device {} is a removed from interop workaround {}.", addr,
               interop_feature_string_(feature));
     return true;
   }

@@ -570,7 +570,7 @@ static int set_remote_device_property(RawAddress remote_addr, const bt_property_
 
   do_in_main_thread(base::BindOnce(
           [](RawAddress remote_addr, bt_property_t* property) {
-            btif_set_remote_device_property(&remote_addr, property);
+            btif_set_remote_device_property(remote_addr, property);
             osi_free(property);
           },
           remote_addr, property_deep_copy(property)));
@@ -1044,22 +1044,6 @@ static int set_os_callouts(bt_os_callouts_t* callouts) {
   return BT_STATUS_SUCCESS;
 }
 
-static int config_clear(void) {
-  log::info("");
-  int ret = BT_STATUS_SUCCESS;
-  if (!btif_config_clear()) {
-    log::error("Failed to clear btif config");
-    ret = BT_STATUS_FAIL;
-  }
-
-  if (!device_iot_config_clear()) {
-    log::error("Failed to clear device iot config");
-    ret = BT_STATUS_FAIL;
-  }
-
-  return ret;
-}
-
 static bluetooth::avrcp::ServiceInterface* get_avrcp_service(void) {
   return bluetooth::avrcp::AvrcpService::GetServiceInterface();
 }
@@ -1102,7 +1086,7 @@ static bool interop_match_addr(const char* feature_name, RawAddress addr) {
     return false;
   }
 
-  return interop_match_addr((interop_feature_t)feature, &addr);
+  return interop_match_addr((interop_feature_t)feature, addr);
 }
 
 static bool interop_match_name(const char* feature_name, const char* name) {
@@ -1130,7 +1114,7 @@ static bool interop_match_addr_or_name(const char* feature_name, RawAddress addr
     return false;
   }
 
-  return interop_match_addr_or_name((interop_feature_t)feature, &addr,
+  return interop_match_addr_or_name((interop_feature_t)feature, addr,
                                     &btif_storage_get_remote_device_property);
 }
 
@@ -1147,9 +1131,9 @@ static void interop_database_add_remove_addr(bool do_add, const char* feature_na
   }
 
   if (do_add) {
-    interop_database_add_addr((interop_feature_t)feature, &addr, (size_t)length);
+    interop_database_add_addr((interop_feature_t)feature, addr, (size_t)length);
   } else {
-    interop_database_remove_addr((interop_feature_t)feature, &addr);
+    interop_database_remove_addr((interop_feature_t)feature, addr);
   }
 }
 
@@ -1206,7 +1190,6 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
         .set_os_callouts = set_os_callouts,
         .read_energy_info = read_energy_info,
         .dump = dump,
-        .config_clear = config_clear,
         .interop_database_clear = interop_database_clear,
         .interop_database_add = interop_database_add,
         .get_avrcp_service = get_avrcp_service,

@@ -123,7 +123,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
               fuzzAddress = RawAddress::FromString(addressString).value_or(RawAddress::kEmpty);
               interop_match_addr(
                       mFuzzedDataProvider.PickValueInArray(kInteropFeature) /* feature */,
-                      &fuzzAddress);
+                      fuzzAddress);
             },
             [&]() {
               interop_match_name(
@@ -168,7 +168,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
               uint16_t max_lat = 0;
               interop_match_addr_get_max_lat(
                       mFuzzedDataProvider.PickValueInArray(kInteropFeature) /* feature */,
-                      &fuzzAddress, &max_lat);
+                      fuzzAddress, &max_lat);
             },
             [&]() {
               generateString(mFuzzedDataProvider, addressString);
@@ -195,7 +195,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
               fuzzAddress = RawAddress::FromString(addressString).value_or(RawAddress::kEmpty);
               interop_database_add_addr_max_lat(
                       mFuzzedDataProvider.PickValueInArray(kInteropFeature) /* feature */,
-                      &fuzzAddress, mFuzzedDataProvider.ConsumeIntegral<uint16_t>() /* max_lat */);
+                      fuzzAddress, mFuzzedDataProvider.ConsumeIntegral<uint16_t>() /* max_lat */);
             },
             [&]() {
               interop_database_add_version(
@@ -205,7 +205,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
             [&]() {
               interop_database_add_addr_lmp_version(
                       mFuzzedDataProvider.PickValueInArray(kInteropFeature) /* feature */,
-                      &fuzzAddress, mFuzzedDataProvider.ConsumeIntegral<uint8_t>() /* lmp_ver */,
+                      fuzzAddress, mFuzzedDataProvider.ConsumeIntegral<uint8_t>() /* lmp_ver */,
                       mFuzzedDataProvider.ConsumeIntegral<uint16_t>() /* lmp_sub_ver */);
             },
             [&]() {
@@ -213,7 +213,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
               uint16_t lmp_sub_ver = 0;
               interop_database_match_addr_get_lmp_ver(
                       mFuzzedDataProvider.PickValueInArray(kInteropFeature) /* feature */,
-                      &fuzzAddress, &lmp_ver, &lmp_sub_ver);
+                      fuzzAddress, &lmp_ver, &lmp_sub_ver);
             },
             [&]() {
               interop_database_remove_manufacturer(
@@ -231,7 +231,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
               fuzzAddress = RawAddress::FromString(addressString).value_or(RawAddress::kEmpty);
               interop_database_remove_addr_max_lat(
                       mFuzzedDataProvider.PickValueInArray(kInteropFeature) /* feature */,
-                      &fuzzAddress, mFuzzedDataProvider.ConsumeIntegral<uint16_t>() /* max_lat */);
+                      fuzzAddress, mFuzzedDataProvider.ConsumeIntegral<uint16_t>() /* max_lat */);
             },
             [&]() {
               interop_database_remove_version(
@@ -241,7 +241,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
             [&]() {
               interop_database_remove_addr_lmp_version(
                       mFuzzedDataProvider.PickValueInArray(kInteropFeature) /* feature */,
-                      &fuzzAddress, mFuzzedDataProvider.ConsumeIntegral<uint8_t>() /* lmp_ver */,
+                      fuzzAddress, mFuzzedDataProvider.ConsumeIntegral<uint8_t>() /* lmp_ver */,
                       mFuzzedDataProvider.ConsumeIntegral<uint16_t>() /* lmp_sub_ver */);
             },
     });

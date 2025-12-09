@@ -82,4 +82,3 @@ std::vector<std::string> bluetooth::shim::BtifConfigInterface::GetPersistentDevi
   return std::vector<std::string>();
 }
 void bluetooth::shim::BtifConfigInterface::ConvertEncryptOrDecryptKeyIfNeeded() {}
-void bluetooth::shim::BtifConfigInterface::Clear() {}

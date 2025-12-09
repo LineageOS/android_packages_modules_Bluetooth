@@ -3232,7 +3232,7 @@ static bool btm_sec_perform_ctkd(BtmDevice* p_device) {
         /* BR/EDR is encrypted with LK that can be used to derive LE LTK */
         p_device->sec_rec.new_encryption_key_is_p256 = false;
 
-        if (!interop_match_addr(INTEROP_DISABLE_OUTGOING_BR_SMP, &p_device->bd_addr)) {
+        if (!interop_match_addr(INTEROP_DISABLE_OUTGOING_BR_SMP, p_device->bd_addr)) {
           log::verbose("start SM over BR/EDR");
           SMP_BR_PairWith(p_device->bd_addr);
           return true;
@@ -3275,7 +3275,7 @@ static bool btm_sec_perform_ctkd(BtmDevice* p_device) {
   }
 
   /* CTKD must not be disabled for this device */
-  if (interop_match_addr(INTEROP_DISABLE_OUTGOING_BR_SMP, &p_device->bd_addr)) {
+  if (interop_match_addr(INTEROP_DISABLE_OUTGOING_BR_SMP, p_device->bd_addr)) {
     log::warn("BR SMP is disabled due to interop issues {}", p_device->bd_addr);
     return false;
   }
@@ -4801,7 +4801,7 @@ static void btm_sec_wait_and_start_authentication(BtmDevice* p_device) {
 
   /* Overwrite the system-wide authentication delay if device-specific
    * interoperability delay is needed. */
-  if (interop_match_addr(INTEROP_DELAY_AUTH, &p_device->bd_addr) ||
+  if (interop_match_addr(INTEROP_DELAY_AUTH, p_device->bd_addr) ||
       interop_match_name(INTEROP_DELAY_AUTH,
                          reinterpret_cast<char const*>(p_device->sec_bd_name))) {
     delay_auth = BTM_SEC_START_AUTH_DELAY;

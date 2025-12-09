@@ -279,7 +279,7 @@ struct ControllerImpl::impl {
       return;
     }
     auto complete_view = NumberOfCompletedPacketsView::Create(event);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     for (auto completed_packets : complete_view.GetCompletedPackets()) {
       uint16_t handle = completed_packets.connection_handle_;
       uint16_t credits = completed_packets.host_num_of_completed_packets_;
@@ -322,14 +322,14 @@ struct ControllerImpl::impl {
 
   void write_secure_connections_host_support_complete_handler(CommandCompleteView view) {
     auto complete_view = WriteSecureConnectionsHostSupportCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
   }
 
   void read_local_version_information_complete_handler(CommandCompleteView view) {
     auto complete_view = ReadLocalVersionInformationCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
 
@@ -344,7 +344,7 @@ struct ControllerImpl::impl {
 
   void read_local_supported_commands_complete_handler(CommandCompleteView view) {
     auto complete_view = ReadLocalSupportedCommandsCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
     local_supported_commands_ = complete_view.GetSupportedCommands();
@@ -353,7 +353,7 @@ struct ControllerImpl::impl {
   void read_local_extended_features_complete_handler(std::promise<void> promise,
                                                      CommandCompleteView view) {
     auto complete_view = ReadLocalExtendedFeaturesCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
     uint8_t page_number = complete_view.GetPageNumber();
@@ -382,7 +382,7 @@ struct ControllerImpl::impl {
 
   void read_buffer_size_complete_handler(CommandCompleteView view) {
     auto complete_view = ReadBufferSizeCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
     acl_buffer_length_ = complete_view.GetAclDataPacketLength();
@@ -394,7 +394,7 @@ struct ControllerImpl::impl {
 
   void read_controller_mac_address_handler(std::promise<void> promise, CommandCompleteView view) {
     auto complete_view = ReadBdAddrCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
     mac_address_ = complete_view.GetBdAddr();
@@ -403,7 +403,7 @@ struct ControllerImpl::impl {
 
   void le_read_buffer_size_handler(CommandCompleteView view) {
     auto complete_view = LeReadBufferSizeV1CompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
     le_buffer_size_ = complete_view.GetLeBufferSize();
@@ -420,7 +420,7 @@ struct ControllerImpl::impl {
 
   void read_local_supported_codecs_v1_handler(CommandCompleteView view) {
     auto complete_view = ReadLocalSupportedCodecsV1CompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
     local_supported_codec_ids_ = complete_view.GetSupportedCodecs();
@@ -429,14 +429,14 @@ struct ControllerImpl::impl {
 
   void set_min_encryption_key_size_handler(CommandCompleteView view) {
     auto complete_view = SetMinEncryptionKeySizeCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
   }
 
   void le_read_buffer_size_v2_handler(CommandCompleteView view) {
     auto complete_view = LeReadBufferSizeV2CompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
     le_buffer_size_ = complete_view.GetLeBufferSize();
@@ -454,7 +454,7 @@ struct ControllerImpl::impl {
 
   void le_set_host_feature_handler(CommandCompleteView view) {
     auto complete_view = LeSetHostFeatureCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
   }
@@ -517,7 +517,7 @@ struct ControllerImpl::impl {
 
   void le_read_local_supported_features_handler(CommandCompleteView view) {
     auto complete_view = LeReadLocalSupportedFeaturesCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", status, ErrorCodeText(status));
     le_local_supported_features_ = complete_view.GetLeFeatures();
@@ -525,7 +525,7 @@ struct ControllerImpl::impl {
 
   void le_read_supported_states_handler(CommandCompleteView view) {
     auto complete_view = LeReadSupportedStatesCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
     le_supported_states_ = complete_view.GetLeStates();
@@ -533,7 +533,7 @@ struct ControllerImpl::impl {
 
   void le_read_accept_list_size_handler(CommandCompleteView view) {
     auto complete_view = LeReadFilterAcceptListSizeCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
     le_accept_list_size_ = complete_view.GetFilterAcceptListSize();
@@ -541,7 +541,7 @@ struct ControllerImpl::impl {
 
   void le_read_resolving_list_size_handler(CommandCompleteView view) {
     auto complete_view = LeReadResolvingListSizeCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
     le_resolving_list_size_ = complete_view.GetResolvingListSize();
@@ -549,7 +549,7 @@ struct ControllerImpl::impl {
 
   void le_read_maximum_data_length_handler(CommandCompleteView view) {
     auto complete_view = LeReadMaximumDataLengthCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
     le_maximum_data_length_ = complete_view.GetLeMaximumDataLength();
@@ -557,7 +557,7 @@ struct ControllerImpl::impl {
 
   void le_read_suggested_default_data_length_handler(CommandCompleteView view) {
     auto complete_view = LeReadSuggestedDefaultDataLengthCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
     le_suggested_default_data_length_ = complete_view.GetTxOctets();
@@ -565,7 +565,7 @@ struct ControllerImpl::impl {
 
   void le_read_maximum_advertising_data_length_handler(CommandCompleteView view) {
     auto complete_view = LeReadMaximumAdvertisingDataLengthCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
     le_maximum_advertising_data_length_ = complete_view.GetMaximumAdvertisingDataLength();
@@ -573,7 +573,7 @@ struct ControllerImpl::impl {
 
   void le_read_number_of_supported_advertising_sets_handler(CommandCompleteView view) {
     auto complete_view = LeReadNumberOfSupportedAdvertisingSetsCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
     le_number_supported_advertising_sets_ = complete_view.GetNumberSupportedAdvertisingSets();
@@ -581,7 +581,7 @@ struct ControllerImpl::impl {
 
   void le_read_periodic_advertiser_list_size_handler(CommandCompleteView view) {
     auto complete_view = LeReadPeriodicAdvertiserListSizeCompleteView::Create(view);
-    ASSERT(complete_view.IsValid());
+    log::assert_that(complete_view.IsValid(), "Complete view is invalid");
     ErrorCode status = complete_view.GetStatus();
     log::assert_that(status == ErrorCode::SUCCESS, "Status {}", ErrorCodeText(status));
     le_periodic_advertiser_list_size_ = complete_view.GetPeriodicAdvertiserListSize();
@@ -599,7 +599,6 @@ struct ControllerImpl::impl {
     vendor_capabilities_.filtering_support_ = 0x00;
     vendor_capabilities_.max_filter_ = 0x00;
     vendor_capabilities_.activity_energy_info_support_ = 0x00;
-    vendor_capabilities_.version_supported_ = 0x00;
     vendor_capabilities_.version_supported_ = 0x00;
     vendor_capabilities_.total_num_of_advt_tracked_ = 0x00;
     vendor_capabilities_.extended_scan_support_ = 0x00;
@@ -823,9 +822,9 @@ struct ControllerImpl::impl {
   }
 
   void le_rand_cb(LeRandCallback cb, CommandCompleteView view) {
-    ASSERT(view.IsValid());
+    log::assert_that(view.IsValid(), "View is invalid");
     auto status_view = LeRandCompleteView::Create(view);
-    ASSERT(status_view.IsValid());
+    log::assert_that(status_view.IsValid(), "Status view is invalid");
     ASSERT(status_view.GetStatus() == ErrorCode::SUCCESS);
     std::move(cb)(status_view.GetRandomNumber());
   }

@@ -749,8 +749,8 @@ public:
     // Some devices would not respond when local accept connection as central.
     RawAddress raw_address = ToRawAddress(address);
     if (role == AcceptConnectionRequestRole::BECOME_CENTRAL &&
-        (interop_match_addr(INTEROP_REMAIN_PERIPHERAL_ON_ACCEPT_CONNECTION_REQUEST, &raw_address) ||
-         interop_match_addr(INTEROP_DISABLE_ROLE_SWITCH, &raw_address))) {
+        (interop_match_addr(INTEROP_REMAIN_PERIPHERAL_ON_ACCEPT_CONNECTION_REQUEST, raw_address) ||
+         interop_match_addr(INTEROP_DISABLE_ROLE_SWITCH, raw_address))) {
       log::info("IOP workaround for {}, accept connection as peripheral", raw_address);
       role = AcceptConnectionRequestRole::REMAIN_PERIPHERAL;
     }

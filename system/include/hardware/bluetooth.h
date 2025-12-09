@@ -947,11 +947,6 @@ typedef struct {
   void (*dump)(int fd, const char** arguments);
 
   /**
-   * Clear /data/misc/bt_config.conf and erase all stored connections
-   */
-  int (*config_clear)(void);
-
-  /**
    * Clear (reset) the dynamic portion of the device interoperability database.
    */
   void (*interop_database_clear)(void);

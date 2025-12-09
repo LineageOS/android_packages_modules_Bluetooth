@@ -145,7 +145,5 @@ void BtifConfigInterface::ConvertEncryptOrDecryptKeyIfNeeded() {
   GetStorage()->ConvertEncryptOrDecryptKeyIfNeeded();
 }
 
-void BtifConfigInterface::Clear() { GetStorage()->Clear(); }
-
 }  // namespace shim
 }  // namespace bluetooth

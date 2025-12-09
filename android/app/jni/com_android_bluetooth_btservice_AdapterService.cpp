@@ -1560,15 +1560,6 @@ static void dumpNative(JNIEnv* env, jobject /* obj */, jobject fdObj, jobjectArr
   delete[] argObjs;
 }
 
-static jboolean factoryResetNative(JNIEnv* /* env */, jobject /* obj */) {
-  log::verbose("");
-  if (!sBluetoothInterface) {
-    return JNI_FALSE;
-  }
-  int ret = sBluetoothInterface->config_clear();
-  return (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
-}
-
 static jbyteArray obfuscateAddressNative(JNIEnv* env, jobject /* obj */, jbyteArray address) {
   log::verbose("");
   if (!sBluetoothInterface) {
@@ -1988,7 +1979,6 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"readEnergyInfoNative", "()I", reinterpret_cast<void*>(readEnergyInfoNative)},
           {"dumpNative", "(Ljava/io/FileDescriptor;[Ljava/lang/String;)V",
            reinterpret_cast<void*>(dumpNative)},
-          {"factoryResetNative", "()Z", reinterpret_cast<void*>(factoryResetNative)},
           {"obfuscateAddressNative", "([B)[B", reinterpret_cast<void*>(obfuscateAddressNative)},
           {"setBufferLengthMillisNative", "(II)Z",
            reinterpret_cast<void*>(setBufferLengthMillisNative)},

@@ -531,7 +531,7 @@ tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
     return tBTM_STATUS::BTM_SUCCESS;
   }
 
-  if (interop_match_addr(INTEROP_DISABLE_ROLE_SWITCH, &remote_bd_addr)) {
+  if (interop_match_addr(INTEROP_DISABLE_ROLE_SWITCH, remote_bd_addr)) {
     log::info("Remote device is on list preventing role switch");
     return tBTM_STATUS::BTM_DEV_RESTRICT_LISTED;
   }
@@ -546,7 +546,7 @@ tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
     return tBTM_STATUS::BTM_BUSY;
   }
 
-  if (interop_match_addr(INTEROP_DYNAMIC_ROLE_SWITCH, &remote_bd_addr)) {
+  if (interop_match_addr(INTEROP_DYNAMIC_ROLE_SWITCH, remote_bd_addr)) {
     log::debug("Device restrict listed under INTEROP_DYNAMIC_ROLE_SWITCH");
     return tBTM_STATUS::BTM_DEV_RESTRICT_LISTED;
   }
@@ -671,7 +671,7 @@ static void btm_set_link_policy(tACL_CONN* conn, tLINK_POLICY policy) {
   conn->link_policy = policy;
   check_link_policy(&conn->link_policy);
   if ((conn->link_policy & HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH) &&
-      interop_match_addr(INTEROP_DISABLE_SNIFF, &(conn->link_spec.addrt.bda))) {
+      interop_match_addr(INTEROP_DISABLE_SNIFF, conn->link_spec.addrt.bda)) {
     conn->link_policy &= (~HCI_ENABLE_SNIFF_MODE);
   }
   btsnd_hcic_write_policy_set(conn->hci_handle, static_cast<uint16_t>(conn->link_policy));
@@ -1109,7 +1109,7 @@ void btm_rejectlist_role_change_device(const RawAddress& bd_addr, uint8_t hci_st
   const uint32_t cod = ((dev_class[0] << 16) | (dev_class[1] << 8) | dev_class[2]) & 0xffffff;
   if ((hci_status != HCI_SUCCESS) && (p->is_switch_role_switching_or_in_progress()) &&
       ((cod & cod_audio_device) == cod_audio_device) &&
-      (!interop_match_addr(INTEROP_DYNAMIC_ROLE_SWITCH, &bd_addr))) {
+      (!interop_match_addr(INTEROP_DYNAMIC_ROLE_SWITCH, bd_addr))) {
     p->switch_role_failed_attempts++;
     if (p->switch_role_failed_attempts == BTM_MAX_SW_ROLE_FAILED_ATTEMPTS) {
       log::warn(
