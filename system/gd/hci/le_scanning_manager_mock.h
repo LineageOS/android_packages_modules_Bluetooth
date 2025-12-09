@@ -15,6 +15,7 @@
  */
 #pragma once
 
+#include <bluetooth/types/uuid.h>
 #include <gmock/gmock.h>
 
 #include <memory>
@@ -22,14 +23,13 @@
 #include "hci/address.h"
 #include "hci/le_scanning_callback.h"
 #include "hci/le_scanning_manager.h"
-#include "hci/uuid.h"
 
 namespace bluetooth {
 namespace hci {
 namespace testing {
 
 class MockScanningCallback : public ScanningCallback {
-  MOCK_METHOD(void, OnScannerRegistered, (const bluetooth::hci::Uuid, ScannerId, ScanningStatus));
+  MOCK_METHOD(void, OnScannerRegistered, (const bluetooth::Uuid, ScannerId, ScanningStatus));
   MOCK_METHOD(void, OnSetScannerParameterComplete, (ScannerId scanner_id, ScanningStatus status));
   MOCK_METHOD(void, OnScanResult,
               (uint16_t, uint8_t, Address, uint8_t, uint8_t, uint8_t, int8_t, int8_t, uint16_t,

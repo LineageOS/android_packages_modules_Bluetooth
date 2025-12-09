@@ -15,6 +15,8 @@
  */
 #pragma once
 
+#include <bluetooth/types/uuid.h>
+
 #include <functional>
 #include <limits>
 #include <optional>
@@ -27,7 +29,6 @@
 #include "hci/address_with_type.h"
 #include "hci/class_of_device.h"
 #include "hci/enum_helper.h"
-#include "hci/uuid.h"
 #include "storage/config_cache.h"
 #include "storage/config_cache_helper.h"
 #include "storage/config_keys.h"
@@ -100,16 +101,16 @@ public:
                               std::to_string(current_value | value));
   }
 
-  std::optional<std::vector<hci::Uuid>> GetServiceUuidsLe() const {
+  std::optional<std::vector<Uuid>> GetServiceUuidsLe() const {
     auto value = config_->GetProperty(section_, BTIF_STORAGE_KEY_REMOTE_SERVICE_LE);
     if (!value) {
       return std::nullopt;
     }
     auto values = common::StringSplit(*value, " ");
-    std::vector<hci::Uuid> result;
+    std::vector<Uuid> result;
     result.reserve(values.size());
     for (const auto& str : values) {
-      auto v = hci::Uuid::FromString(str);
+      auto v = Uuid::FromString(str);
       if (!v) {
         return std::nullopt;
       }
