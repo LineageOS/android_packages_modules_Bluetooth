@@ -186,16 +186,6 @@ flag {
 }
 
 flag {
-    name: "prevent_adding_both_pseudo_and_identity_addr"
-    namespace: "bluetooth"
-    description: "Prevent adding both pseudo and identity address to the accept list."
-    bug: "428800297"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "broadcast_transport_type_on_reset"
     namespace: "bluetooth"
     description: "Broadcast the transport type on BT reset as part of ACL_DISCONNECTED."
