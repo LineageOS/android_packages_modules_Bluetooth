@@ -146,16 +146,6 @@ flag {
 }
 
 flag {
-    name: "resolve_address_for_adv_report"
-    namespace: "bluetooth"
-    description: "Change address resolve timing to match between adv data and scan response."
-    bug: "424062882"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "gatt_failure_callback_on_cancel"
     namespace: "bluetooth"
     description: "Invoke failure callback on cancelling connection right after connected."

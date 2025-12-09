@@ -417,15 +417,13 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
                                            int8_t tx_power, int8_t rssi,
                                            uint16_t periodic_advertising_interval,
                                            const std::vector<uint8_t>& advertising_data) {
-    if (com_android_bluetooth_flags_resolve_address_for_adv_report()) {
-      RawAddress raw_address = ToRawAddress(address);
-      tBLE_ADDR_TYPE ble_addr_type = to_ble_addr_type(address_type);
+    RawAddress raw_address = ToRawAddress(address);
+    tBLE_ADDR_TYPE ble_addr_type = to_ble_addr_type(address_type);
 
-      if (ble_addr_type != BLE_ADDR_ANONYMOUS) {
-        btm_ble_process_adv_addr(raw_address, &ble_addr_type);
-        address = raw_address;
-        address_type = ble_addr_type;
-      }
+    if (ble_addr_type != BLE_ADDR_ANONYMOUS) {
+      btm_ble_process_adv_addr(raw_address, &ble_addr_type);
+      address = raw_address;
+      address_type = ble_addr_type;
     }
 
     // When using the vendor command Le Set Extended Params to

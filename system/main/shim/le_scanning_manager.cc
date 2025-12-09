@@ -470,10 +470,6 @@ void BleScannerInterfaceImpl::on_scan_result(uint16_t event_type, uint8_t addres
   tBLE_ADDR_TYPE ble_addr_type = to_ble_addr_type(address_type);
 
   btm_cb.neighbor.le_scan.results++;
-  if (!com_android_bluetooth_flags_resolve_address_for_adv_report() &&
-      ble_addr_type != BLE_ADDR_ANONYMOUS) {
-    btm_ble_process_adv_addr(raw_address, &ble_addr_type);
-  }
 
   // Do not update device properties of already bonded devices.
   if (!BTM_IsBonded(raw_address)) {
