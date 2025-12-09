@@ -272,14 +272,14 @@ void gatt_offload_sessions_dump(int fd) {
            << session.hal_session.acl_connection_handle
            << " att_mtu: " << session.hal_session.att_mtu
            << " gatt_role: " << static_cast<int>(session.hal_session.role)
-           << " service_uuid: " << session.hal_session.service_uuid
+           << " service_uuid: " << session.hal_session.service_uuid.ToString()
            << " endpoint_id: " << session.hal_session.endpoint_info.endpoint_id
            << " hub_id: " << session.hal_session.endpoint_info.hub_id
            << " conn_id: " << session.conn_id;
     for (const auto& characteristic : session.hal_session.characteristics) {
-      stream << " char uuid: " << characteristic.uuid << " char properties: " << std::setw(1)
-             << std::setfill('0') << std::hex << characteristic.properties
-             << " char handle: " << characteristic.value_handle;
+      stream << " char uuid: " << characteristic.uuid.ToString()
+             << " char properties: " << std::setw(1) << std::setfill('0') << std::hex
+             << characteristic.properties << " char handle: " << characteristic.value_handle;
     }
     stream << "\n";
   }

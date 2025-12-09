@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include <stdint.h>
-
 #include <array>
+#include <cstdint>
+#include <format>
 #include <string>
 
 namespace bluetooth {
@@ -118,20 +118,12 @@ private:
   UUID128Bit uu;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const bluetooth::Uuid& a) {
-  os << a.ToString();
-  return os;
-}
-
 }  // namespace bluetooth
 
-// Custom std::hash specialization so that bluetooth::UUID can be used as a key
-// in std::unordered_map.
 namespace std {
-
 template <>
-struct hash<bluetooth::Uuid> {
-  std::size_t operator()(const bluetooth::Uuid& key) const {
+struct hash<::bluetooth::Uuid> {
+  std::size_t operator()(const ::bluetooth::Uuid& key) const {
     const auto& uuid_bytes = key.To128BitBE();
     std::hash<std::string> hash_fn;
     return hash_fn(
@@ -139,17 +131,12 @@ struct hash<bluetooth::Uuid> {
   }
 };
 
-}  // namespace std
-
-// This file is used outside bluetooth in components
-// that do not have access to bluetooth/log.h
-#if __has_include(<bluetooth/log.h>)
-
-#include <bluetooth/log.h>
-
-namespace std {
 template <>
-struct formatter<bluetooth::Uuid> : ostream_formatter {};
+struct formatter<::bluetooth::Uuid> : formatter<std::string> {
+  template <class Context>
+  typename Context::iterator format(const ::bluetooth::Uuid& uuid, Context& ctx) const {
+    std::string repr = uuid.ToString();
+    return std::formatter<std::string>::format(repr, ctx);
+  }
+};
 }  // namespace std
-
-#endif  // __has_include(<bluetooth/log.h>)

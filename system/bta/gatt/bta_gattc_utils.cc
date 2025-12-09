@@ -856,7 +856,8 @@ void bta_gatt_client_dump(int fd) {
   stream << " ->cl_rcb (dynamic)\n";
   for (auto& [i, p_cl_rcb] : bta_gattc_cb.cl_rcb_map) {
     entry_count++;
-    stream << "  client_if: " << +p_cl_rcb->client_if << "  app uuids: " << p_cl_rcb->app_uuid
+    stream << "  client_if: " << +p_cl_rcb->client_if
+           << "  app uuids: " << p_cl_rcb->app_uuid.ToString()
            << "  clcb_num: " << +p_cl_rcb->num_clcb;
     stream << "\n";
   }
