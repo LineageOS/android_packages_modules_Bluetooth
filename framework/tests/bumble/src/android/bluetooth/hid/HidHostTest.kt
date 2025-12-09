@@ -219,6 +219,7 @@ class HidHostTest {
         val filter =
             IntentFilter().apply {
                 addAction(BluetoothDevice.ACTION_FOUND)
+                addAction(BluetoothDevice.ACTION_UUID)
                 addAction(ACTION_PAIRING_REQUEST)
                 addAction(ACTION_BOND_STATE_CHANGED)
                 addAction(BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED)
@@ -269,6 +270,8 @@ class HidHostTest {
             hasExtra(EXTRA_DEVICE, device),
             hasExtra(EXTRA_BOND_STATE, BOND_BONDED),
         )
+
+        verifyIntentReceived(hasAction(BluetoothDevice.ACTION_UUID), hasExtra(EXTRA_DEVICE, device))
 
         if (a2dpService.getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED) {
             assertThat(a2dpService.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN))
@@ -460,6 +463,11 @@ class HidHostTest {
                 BluetoothHidHost.EXTRA_VIRTUAL_UNPLUG_STATUS,
                 BluetoothHidHost.VIRTUAL_UNPLUG_STATUS_SUCCESS,
             ),
+        )
+        verifyIntentReceived(
+            hasAction(ACTION_BOND_STATE_CHANGED),
+            hasExtra(EXTRA_DEVICE, device),
+            hasExtra(EXTRA_BOND_STATE, BOND_NONE),
         )
     }
 

@@ -263,6 +263,7 @@ class HidHostDualModeTest {
             hasExtra(EXTRA_DEVICE, device),
             hasExtra(EXTRA_BOND_STATE, BOND_BONDED),
         )
+        verifyIntentReceived(hasAction(BluetoothDevice.ACTION_UUID), hasExtra(EXTRA_DEVICE, device))
 
         if (a2dpService.getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED) {
             assertThat(a2dpService.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN))
