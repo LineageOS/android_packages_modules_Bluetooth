@@ -225,7 +225,6 @@ public class BluetoothOppTransferActivity extends AlertActivity
     }
 
     private View createView() {
-
         mView = getLayoutInflater().inflate(R.layout.file_transfer, null);
 
         mProgressTransfer = (ProgressBar) mView.findViewById(R.id.progress_transfer);

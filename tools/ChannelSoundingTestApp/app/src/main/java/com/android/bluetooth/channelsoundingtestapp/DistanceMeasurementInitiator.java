@@ -157,7 +157,6 @@ class DistanceMeasurementInitiator {
     @SuppressLint("MissingPermission") // permissions are checked upfront
     void startDistanceMeasurement(
             String distanceMeasurementMethodName, String selectedFreq, int duration) {
-
         if (mTargetDevice == null) {
             printLog("do Gatt connect first");
             return;

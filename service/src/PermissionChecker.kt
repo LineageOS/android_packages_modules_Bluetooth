@@ -115,7 +115,6 @@ class PermissionChecker(
         apiName: String,
         foregroundRequired: Boolean,
     ) {
-
         enforceBluetoothRestriction()
 
         val callingAppId = UserHandle.getAppId(source.uid)

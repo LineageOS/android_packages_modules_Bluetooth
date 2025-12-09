@@ -60,7 +60,6 @@ public class BluetoothMapAccountLoader {
      */
     public Map<BluetoothMapAccountItem, List<BluetoothMapAccountItem>> parsePackages(
             boolean includeIcon) {
-
         Map<BluetoothMapAccountItem, List<BluetoothMapAccountItem>> groups = new LinkedHashMap<>();
         Intent[] searchIntents = new Intent[2];
         // Array <Intent> searchIntents = new Array <Intent>();

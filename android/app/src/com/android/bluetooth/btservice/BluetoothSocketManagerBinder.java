@@ -56,7 +56,6 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
             int port,
             int flag,
             AttributionSource source) {
-
         enforceActiveUser();
 
         if (!Util.enforceConnectPermissionForPreflight(mService, source)) {
@@ -110,7 +109,6 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
             long endpointId,
             int maximumPacketSize,
             AttributionSource source) {
-
         enforceActiveUser();
 
         if (!Util.enforceConnectPermissionForPreflight(mService, source)) {
@@ -165,7 +163,6 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
             int port,
             int flag,
             AttributionSource source) {
-
         enforceActiveUser();
 
         if (!Util.enforceConnectPermissionForPreflight(mService, source)) {
@@ -221,7 +218,6 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
             long endpointId,
             int maximumPacketSize,
             AttributionSource source) {
-
         enforceActiveUser();
 
         if (!Util.enforceConnectPermissionForPreflight(mService, source)) {

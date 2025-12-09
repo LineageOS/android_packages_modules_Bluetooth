@@ -47,7 +47,6 @@ class MessagesListing {
             while (event != XmlPullParser.END_DOCUMENT) {
                 if (event == XmlPullParser.START_TAG) {
                     if (xpp.getName().equals("msg")) {
-
                         Map<String, String> attrs = new HashMap<>();
 
                         for (int i = 0; i < xpp.getAttributeCount(); i++) {

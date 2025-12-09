@@ -109,7 +109,6 @@ public class BluetoothMapAccountItem implements Comparable<BluetoothMapAccountIt
 
     @Override
     public int compareTo(BluetoothMapAccountItem other) {
-
         if (!other.mId.equals(this.mId)) {
             Log.v(TAG, "Wrong id : " + this.mId + " vs " + other.mId);
             return -1;

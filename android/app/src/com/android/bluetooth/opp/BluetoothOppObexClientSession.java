@@ -241,7 +241,6 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
         }
 
         private void doSend() {
-
             int status = BluetoothShare.STATUS_SUCCESS;
 
             /* connection is established too fast to get first mInfo */

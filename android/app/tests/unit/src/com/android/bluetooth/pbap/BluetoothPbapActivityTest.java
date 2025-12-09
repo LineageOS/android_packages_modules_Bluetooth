@@ -125,7 +125,6 @@ public class BluetoothPbapActivityTest {
         AtomicBoolean finishCalled = new AtomicBoolean(false);
         try (ActivityScenario<BluetoothPbapActivity> activityScenario =
                 ActivityScenario.launch(mIntent)) {
-
             activityScenario.onActivity(
                     activity -> {
                         activity.onPositive();

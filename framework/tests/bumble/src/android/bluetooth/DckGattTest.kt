@@ -147,7 +147,6 @@ class DckGattTest() {
      */
     @Test
     fun testDiscoverDkGattService() {
-
         // 2. Advertise the host's (presumably the car's) Bluetooth capabilities using another
         //    gRPC call:
         // - `hostBlocking()` accesses another gRPC service related to the host.

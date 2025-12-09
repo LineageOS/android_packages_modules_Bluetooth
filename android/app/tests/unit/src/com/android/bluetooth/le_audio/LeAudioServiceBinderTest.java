@@ -88,7 +88,6 @@ public class LeAudioServiceBinderTest {
 
     @Test
     public void getConnectedDevices() {
-
         mBinder.getConnectedDevices(mSource);
         verify(mService).getConnectedDevices();
     }
@@ -127,14 +126,12 @@ public class LeAudioServiceBinderTest {
 
     @Test
     public void setActiveDevice_withNullDevice_callsRemoveActiveDevice() {
-
         mBinder.setActiveDevice(null, mSource);
         verify(mService).removeActiveDevice(true);
     }
 
     @Test
     public void getActiveDevices() {
-
         mBinder.getActiveDevices(mSource);
         verify(mService).getActiveDevices();
     }
@@ -281,7 +278,6 @@ public class LeAudioServiceBinderTest {
 
     @Test
     public void getAllBroadcastMetadata() {
-
         mBinder.getAllBroadcastMetadata(mSource);
         verify(mService).getAllBroadcastMetadata();
     }

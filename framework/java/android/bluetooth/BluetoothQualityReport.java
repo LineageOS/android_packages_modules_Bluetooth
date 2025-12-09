@@ -722,7 +722,6 @@ public final class BluetoothQualityReport implements Parcelable {
         private int mCoexInfoMask;
 
         private BqrCommon(byte[] rawData, int offset) {
-
             mQualityReportId = rawData[0] & 0xFF;
             if ((mQualityReportId == QUALITY_REPORT_ID_ENERGY_MONITOR)
                     || (mQualityReportId == QUALITY_REPORT_ID_RF_STATS)) {

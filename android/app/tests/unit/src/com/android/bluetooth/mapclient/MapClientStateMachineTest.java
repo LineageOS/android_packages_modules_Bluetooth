@@ -1022,7 +1022,6 @@ public class MapClientStateMachineTest {
             String mFolder,
             String mOldFolder,
             String mMsgType) {
-
         HashMap<String, String> attrs = new HashMap<String, String>();
 
         attrs.put("type", mType);

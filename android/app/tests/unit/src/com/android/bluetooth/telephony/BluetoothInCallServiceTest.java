@@ -1029,7 +1029,6 @@ public class BluetoothInCallServiceTest {
     @Test
     @RequiresFlagsEnabled(Flags.FLAG_MERGE_CALL_WITH_HELD_CONFERENCE)
     public void mergeActiveCallWithConferenceCall() {
-
         List<BluetoothCall> calls = new ArrayList<>();
         // Call 1 active call is added
         BluetoothCall activeCall_1 = createActiveCall(UUID.randomUUID());
@@ -1314,7 +1313,6 @@ public class BluetoothInCallServiceTest {
     @Test
     @RequiresFlagsEnabled(Flags.FLAG_HOLD_CONFERENCE_CALL_FROM_REMOTE)
     public void processChldHoldActiveConfCall() {
-
         BluetoothCall parentCall = createActiveCall(UUID.randomUUID());
         BluetoothCall childCall = createActiveCall(UUID.randomUUID());
         doReturn(List.of(parentCall, childCall)).when(mCallInfo).getBluetoothCalls();

@@ -55,7 +55,6 @@ public final class ObexTime {
         Matcher m = p.matcher(time);
 
         if (m.matches()) {
-
             /*
              * MAP spec says to default to "Local Time basis" for a message listing timestamp. We'll
              * use the system default timezone and assume it knows best what our local timezone is.

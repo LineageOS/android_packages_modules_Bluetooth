@@ -71,7 +71,6 @@ public class BluetoothMapAppObserver {
     }
 
     private void handleAccountChanges(String packageNameWithProvider) {
-
         Log.d(
                 TAG,
                 "handleAccountChanges (packageNameWithProvider: " + packageNameWithProvider + "\n");

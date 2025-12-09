@@ -555,7 +555,6 @@ public final class BondStateMachine extends StateMachine {
             int pairingAlgorithm,
             int pairingVariant,
             int reason) {
-
         // If new bond state is invalid, immediately return.
         if (newState < BluetoothDevice.BOND_NONE || newState > BluetoothDevice.BOND_BONDED) {
             logE("handleBondStateChanged: Invalid new state: " + newState);
@@ -660,7 +659,6 @@ public final class BondStateMachine extends StateMachine {
 
     /** UUIDs received or timeout, send bonded intent */
     void handlePendingUuids(BluetoothDevice device) {
-
         if (!mDevicesWaitingForUuids.contains(device)) {
             logW("handlePendingUuids: " + device + " was not waiting for UUIDs, abort.");
             return;

@@ -181,7 +181,6 @@ public final class BluetoothManager {
     @RequiresPermission(BLUETOOTH_CONNECT)
     public BluetoothGattServer openGattServer(
             Context context, BluetoothGattServerCallback callback) {
-
         return (openGattServer(context, callback, BluetoothDevice.TRANSPORT_AUTO));
     }
 
