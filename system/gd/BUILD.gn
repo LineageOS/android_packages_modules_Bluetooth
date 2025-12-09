@@ -77,8 +77,6 @@ static_library("libbluetooth_gd") {
     "storage/config_cache_helper.cc",
     "storage/device.cc",
     "storage/legacy_config_file.cc",
-    "storage/mutation.cc",
-    "storage/mutation_entry.cc",
     "storage/storage_module.cc",
     "sysprops/sysprops_module.cc",
   ]

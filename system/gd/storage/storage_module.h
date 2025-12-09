@@ -28,7 +28,6 @@
 #include "os/handler.h"
 #include "storage/config_cache.h"
 #include "storage/device.h"
-#include "storage/mutation.h"
 
 namespace bluetooth {
 
@@ -127,10 +126,6 @@ public:
 
   // Get a list of bonded devices from config
   std::vector<Device> GetBondedDevices();
-
-  // Modify the underlying config by starting a mutation. All entries in the mutation will be
-  // applied atomically when Commit() is called. User should never touch ConfigCache() directly.
-  Mutation Modify();
 
 protected:
   friend shim::BtifConfigInterface;

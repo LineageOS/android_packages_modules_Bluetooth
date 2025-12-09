@@ -129,8 +129,6 @@ cc_defaults {
         "storage/config_cache_helper.cc",
         "storage/device.cc",
         "storage/legacy_config_file.cc",
-        "storage/mutation.cc",
-        "storage/mutation_entry.cc",
         "storage/storage_module.cc",
     ],
     shared_libs: [
@@ -507,7 +505,6 @@ cc_test {
         "storage/device_test.cc",
         "storage/le_device_test.cc",
         "storage/legacy_config_file_test.cc",
-        "storage/mutation_test.cc",
         "storage/storage_module_test.cc",
     ],
     cflags: [

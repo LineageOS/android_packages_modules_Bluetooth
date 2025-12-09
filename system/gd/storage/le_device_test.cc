@@ -20,7 +20,6 @@
 #include <gtest/gtest.h>
 
 #include "storage/device.h"
-#include "storage/mutation.h"
 
 using bluetooth::hci::Address;
 using bluetooth::hci::AddressType;
@@ -28,7 +27,6 @@ using bluetooth::hci::DeviceType;
 using bluetooth::storage::ConfigCache;
 using bluetooth::storage::Device;
 using bluetooth::storage::LeDevice;
-using bluetooth::storage::Mutation;
 using ::testing::Eq;
 using ::testing::Optional;
 
@@ -44,8 +42,7 @@ TEST(LeDeviceTest, set_property) {
   Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
   LeDevice device(&config, address.ToString());
   ASSERT_FALSE(device.GetAddressType());
-  Mutation mutation(&config);
-  mutation.Add(device.SetAddressType(AddressType::RANDOM_DEVICE_ADDRESS));
-  mutation.Commit();
+
+  device.SetAddressType(AddressType::RANDOM_DEVICE_ADDRESS);
   ASSERT_THAT(device.GetAddressType(), Optional(Eq(AddressType::RANDOM_DEVICE_ADDRESS)));
 }

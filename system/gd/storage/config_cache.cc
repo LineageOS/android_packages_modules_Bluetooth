@@ -24,7 +24,6 @@
 
 #include "hci/enum_helper.h"
 #include "os/parameter_provider.h"
-#include "storage/mutation.h"
 
 namespace {
 
@@ -353,15 +352,6 @@ std::vector<std::string> ConfigCache::GetPersistentSections() const {
     paired_devices.emplace_back(elem.first);
   }
   return paired_devices;
-}
-
-void ConfigCache::Commit(std::queue<MutationEntry>& mutation_entries) {
-  std::lock_guard<std::recursive_mutex> lock(mutex_);
-  while (!mutation_entries.empty()) {
-    auto entry = std::move(mutation_entries.front());
-    mutation_entries.pop();
-    SetProperty(std::move(entry.section), std::move(entry.property), std::move(entry.value));
-  }
 }
 
 std::string ConfigCache::SerializeToLegacyFormat() const {
