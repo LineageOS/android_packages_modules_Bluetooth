@@ -147,16 +147,6 @@ flag {
 }
 
 flag {
-    name: "sco_state_machine_update_in_codec_state"
-    namespace: "bluetooth"
-    description: "sco state machine update when other HFP device disconnected during codec negotiation"
-    bug: "416436313"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "sco_state_machine_update_revision"
     namespace: "bluetooth"
     description: "Flag check correction for ag/33454932"
