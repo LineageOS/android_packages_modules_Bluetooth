@@ -112,6 +112,19 @@ public class AdvertiseManager {
 
     void cleanup() {
         Log.i(TAG, "cleanup()");
+        if (Flags.gattThread()) {
+            enforceThread();
+
+            mIsAvailable = false;
+            mHandler.removeCallbacksAndMessages(null);
+            mAdvertiserMap.clear();
+            mAdvertiseBinder.cleanup();
+            mNativeInterface.cleanup();
+            mAdvertisers.clear();
+            mAdvertiseSuspendManager.cleanup();
+            return;
+        }
+
         mIsAvailable = false;
         mHandler.removeCallbacksAndMessages(null);
         forceRunSyncOnAdvertiseThread(
