@@ -701,9 +701,7 @@ static uint32_t on_srv_rfc_connect_offload(tBTA_JV_RFCOMM_SRV_OPEN* p_open, rfc_
     cleanup_rfc_slot(accept_rs, BTSOCK_ERROR_OFFLOAD_HAL_OPEN_FAILURE);
   } else {
     log::info("RFCOMM socket opened successful. Will send connect signal in async callback.");
-    if (com_android_bluetooth_flags_monitor_read_flag_on_offloaded_socket()) {
-      btsock_thread_add_fd(pth, accept_rs->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_RD, accept_rs->id);
-    }
+    btsock_thread_add_fd(pth, accept_rs->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_RD, accept_rs->id);
   }
 
   // Start monitoring the socket.
