@@ -2296,7 +2296,6 @@ public class HeadsetServiceAndStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_SEND_OK_CLCC_BEFORE_SLC)
     public void testProcessSendClccResponse_rfcommNotCompleted() {
         doReturn(true).when(mSystemInterface).listCurrentCalls(mHeadsetService);
         BluetoothDevice device = getTestDevice(0);
@@ -2346,7 +2345,6 @@ public class HeadsetServiceAndStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_SEND_OK_CLCC_BEFORE_SLC)
     public void testProcessSendClccResponse_rfcommCompleted() {
         doReturn(true).when(mSystemInterface).listCurrentCalls(mHeadsetService);
         BluetoothDevice device = getTestDevice(0);
