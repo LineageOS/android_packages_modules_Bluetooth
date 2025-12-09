@@ -35,7 +35,7 @@ namespace hci {
 // 2. Bytes representing UUID coming from upper layers, Java or Binder, are Big Endian.
 // 3. Bytes representing UUID coming from lower layer, HCI packets, are Little Endian.
 // 4. UUID in storage is always string.
-class Uuid final : public storage::Serializable<Uuid> {
+class Uuid final {
 public:
   static constexpr size_t kNumBytes128 = 16;
   static constexpr size_t kNumBytes32 = 4;
@@ -53,16 +53,14 @@ public:
 
   inline const uint8_t* data() const { return uu.data(); }
 
-  // storage::Serializable methods
   // Converts string representing 128, 32, or 16 bit UUID in
   // xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx, xxxxxxxx, or xxxx format to UUID.
   // return uuid on success, std::nullopt otherwise
   static std::optional<Uuid> FromString(const std::string& uuid);
-  static std::optional<Uuid> FromLegacyConfigString(const std::string& uuid);
+
   // Returns string representing this UUID in
   // xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx format, lowercase.
-  std::string ToString() const override;
-  std::string ToLegacyConfigString() const override;
+  std::string ToString() const;
 
   // Returns the shortest possible representation of this UUID in bytes. Either
   // kNumBytes16, kNumBytes32, or kNumBytes128

@@ -113,29 +113,6 @@ public:
     return bluetooth::FromLegacyConfigString<T>(*value);
   }
 
-  template <typename T, typename std::enable_if<
-                                bluetooth::common::is_specialization_of<T, std::vector>::value &&
-                                        std::is_base_of_v<Serializable<typename T::value_type>,
-                                                          typename T::value_type>,
-                                int>::type = 0>
-  std::optional<T> Get(const std::string& section, const std::string& property) {
-    auto value = config_cache_.GetProperty(section, property);
-    if (!value) {
-      return std::nullopt;
-    }
-    auto values = common::StringSplit(*value, " ");
-    T result;
-    result.reserve(values.size());
-    for (const auto& str : values) {
-      auto v = T::value_type::FromLegacyConfigString(str);
-      if (!v) {
-        return std::nullopt;
-      }
-      result.push_back(*v);
-    }
-    return result;
-  }
-
 private:
   ConfigCache& config_cache_;
 };
