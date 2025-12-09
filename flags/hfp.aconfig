@@ -127,16 +127,6 @@ flag {
 }
 
 flag {
-    name: "hfp_sco_state_reset_when_profile_restart"
-    namespace: "bluetooth"
-    description: "Reset sco state when BT profile restart without BT stack shutdown"
-    bug: "424125580"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "microphone_mute_status_sync"
     namespace: "bluetooth"
     description: "Synchronize microphone Mute status of phone with peripheral"
