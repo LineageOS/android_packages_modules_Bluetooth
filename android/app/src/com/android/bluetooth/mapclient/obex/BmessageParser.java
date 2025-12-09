@@ -208,7 +208,6 @@ class BmessageParser {
         prop = mParser.next();
 
         while (prop.equals(BEGIN_VCARD)) {
-
             /* <bmessage-originator>::= <vcard> <CRLF> */
 
             StringBuilder vcard = new StringBuilder();

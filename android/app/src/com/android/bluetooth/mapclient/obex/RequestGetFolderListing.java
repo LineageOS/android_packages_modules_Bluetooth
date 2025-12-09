@@ -32,7 +32,6 @@ final class RequestGetFolderListing extends Request {
     private FolderListing mResponse = null;
 
     RequestGetFolderListing(int maxListCount, int listStartOffset) {
-
         if (maxListCount < 0 || maxListCount > 65535) {
             throw new IllegalArgumentException("maxListCount should be [0..65535]");
         }

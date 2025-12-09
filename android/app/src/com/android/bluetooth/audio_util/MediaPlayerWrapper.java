@@ -367,7 +367,6 @@ public class MediaPlayerWrapper {
     }
 
     private void sendMediaUpdate(MediaData newData) {
-
         if (newData.equals(mCurrentData)) {
             // This may happen if the controller is fully synced by the time the
             // first update is completed

@@ -953,7 +953,6 @@ class MceStateMachine extends StateMachine {
          */
         private void processMessageListingForOwnNumber(
                 RequestGetMessagesListingForOwnNumber request) {
-
             if (request.isSearchCompleted()) {
                 Log.d(TAG, "processMessageListingForOwnNumber: search completed");
                 if (request.getOwnNumber() != null) {

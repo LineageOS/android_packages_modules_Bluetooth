@@ -1027,7 +1027,6 @@ public class BluetoothMapContentObserver {
         }
 
         if (mAccount != null) {
-
             mProviderClient = mResolver.acquireUnstableContentProviderClient(mAuthority);
             if (mProviderClient == null) {
                 throw new RemoteException("Failed to acquire provider for " + mAuthority);
@@ -1069,7 +1068,6 @@ public class BluetoothMapContentObserver {
             mResolver.registerContentObserver(uri, true, mObserver);
 
             if (mAccount.getType() == TYPE.IM) {
-
                 uri =
                         Uri.parse(
                                 mAccount.mBase_uri_no_account

@@ -2278,12 +2278,10 @@ public class HeadsetClientStateMachine extends StateMachine {
     }
 
     private void warn(String message) {
-
         Log.w(TAG, "[" + mCurrentDevice + "]: " + message);
     }
 
     private void error(String message) {
-
         Log.e(TAG, "[" + mCurrentDevice + "]: " + message);
     }
 

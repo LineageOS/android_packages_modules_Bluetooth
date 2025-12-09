@@ -98,6 +98,7 @@ import java.util.Optional;
 public class PhonePolicyTest {
     @Rule
     public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(SystemProperties.class);
+
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public final TemporaryFolder mTempFolder = new TemporaryFolder();
 
@@ -941,7 +942,6 @@ public class PhonePolicyTest {
     @Test
     @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void testAutoConnectHfpOnly_old() {
-
         // Return desired values from the mocked object(s)
         doReturn(false).when(mAdapterService).isQuietModeEnabled();
 
@@ -1021,7 +1021,6 @@ public class PhonePolicyTest {
     @Test
     @EnableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE)
     public void autoConnect_whenMultiHfp_startConnection() {
-
         List<BluetoothDevice> devices = List.of(mDevice1, mDevice2, mDevice3);
         for (BluetoothDevice device : devices) {
             mStorage.onDeviceConnected(device, BluetoothProfile.HEADSET);

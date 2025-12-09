@@ -740,7 +740,6 @@ public class SapServer extends Thread implements Handler.Callback {
      */
     @VisibleForTesting
     void shutdown() {
-
         Log.d(TAG_HANDLER, "in Shutdown()");
         try {
             if (mRfcommOut != null) {
@@ -764,7 +763,6 @@ public class SapServer extends Thread implements Handler.Callback {
 
     @VisibleForTesting
     void startDisconnectTimer(int discType, int timeMs) {
-
         stopDisconnectTimer();
         synchronized (this) {
             Intent sapDisconnectIntent = new Intent(SapServer.SAP_DISCONNECT_ACTION);
@@ -810,7 +808,6 @@ public class SapServer extends Thread implements Handler.Callback {
     @VisibleForTesting
     void handleRfcommReply(SapMessage sapMsg) {
         if (sapMsg != null) {
-
             Log.d(
                     TAG_HANDLER,
                     "handleRfcommReply() handling "

@@ -56,7 +56,6 @@ public class BleConnectionFragment extends Fragment {
             @NonNull LayoutInflater inflater,
             @Nullable ViewGroup container,
             @Nullable Bundle savedInstanceState) {
-
         View root = inflater.inflate(R.layout.fragment_ble_connection, container, false);
         mBtnAdvertising = root.findViewById(R.id.btn_advertising);
         mButtonUpdate = (Button) root.findViewById(R.id.btn_update_devices);

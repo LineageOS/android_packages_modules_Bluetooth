@@ -220,7 +220,6 @@ class VolumeControlInputDescriptor {
         Descriptor desc = mVolumeInputs[id];
 
         if (gainSetting > desc.mGainSettingsMax || gainSetting < desc.mGainSettingsMin) {
-
             throw new IllegalArgumentException(
                     ("gainSetting=" + gainSetting + " is not in correct range")
                             + (" [" + desc.mGainSettingsMin + "-" + desc.mGainSettingsMax + "]"));

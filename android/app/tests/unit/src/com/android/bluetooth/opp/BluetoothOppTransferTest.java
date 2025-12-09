@@ -265,7 +265,6 @@ public class BluetoothOppTransferTest {
 
     @Test
     public void eventHandler_handleMessage_MSG_SHARE_INTERRUPTED_batchFailed() {
-
         mInitShareInfo =
                 new BluetoothOppShareInfo(
                         123,

@@ -168,7 +168,6 @@ class PairingTest {
     @After
     @Throws(Exception::class)
     fun tearDown() {
-
         for (device in adapter.bondedDevices) {
             util.removeBond(null, device)
         }

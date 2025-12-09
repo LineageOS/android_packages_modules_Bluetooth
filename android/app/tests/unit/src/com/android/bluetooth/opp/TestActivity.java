@@ -216,7 +216,6 @@ public class TestActivity extends Activity {
             new OnClickListener() {
                 @Override
                 public void onClick(View view) {
-
                     String address = null;
                     if (mAddressView.getText().length() != 0) {
                         address = mAddressView.getText().toString();
@@ -523,7 +522,6 @@ class TestTcpServer extends ServerRequestHandler implements Runnable {
 
     @Override
     public int onConnect(HeaderSet request, HeaderSet reply) {
-
         updateStatus("[server:] The client has created an OBEX session");
         /* sleep for 2000 ms to wait for the batch contains all ShareInfos */
         synchronized (this) {
@@ -593,7 +591,6 @@ class TestTcpServer extends ServerRequestHandler implements Runnable {
 
     @Override
     public int onSetPath(HeaderSet request, HeaderSet reply, boolean backup, boolean create) {
-
         return ResponseCodes.OBEX_HTTP_NOT_IMPLEMENTED;
     }
 

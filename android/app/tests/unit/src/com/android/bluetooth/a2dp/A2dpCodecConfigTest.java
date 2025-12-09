@@ -968,7 +968,6 @@ public class A2dpCodecConfigTest {
             int oldCodecType,
             int oldCodecPriority,
             boolean shouldApplyWhenAllSelectable) {
-
         BluetoothCodecConfig[] newCodecConfigsArray =
                 new BluetoothCodecConfig[] {
                     getDefaultCodecConfigByType(newCodecType, newCodecPriority)

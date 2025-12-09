@@ -199,7 +199,6 @@ public class LowerTester implements Runnable {
 
             try (InputStream inputStream = socket.getInputStream();
                     OutputStream outputStream = socket.getOutputStream()) {
-
                 mIsThreadRunning = true;
                 while (mIsThreadRunning) {
                     Packet packet = receivePacket(inputStream);

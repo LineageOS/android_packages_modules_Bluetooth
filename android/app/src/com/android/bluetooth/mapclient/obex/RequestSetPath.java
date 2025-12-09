@@ -46,7 +46,6 @@ class RequestSetPath extends Request {
 
     @Override
     public void execute(ClientSession session) {
-
         try {
             HeaderSet hs =
                     switch (mDir) {

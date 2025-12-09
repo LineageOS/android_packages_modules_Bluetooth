@@ -405,7 +405,6 @@ public final class ScanSettings implements Parcelable {
          */
         @RequiresNoPermission
         public Builder setCallbackType(int callbackType) {
-
             if (!isValidCallbackType(callbackType)) {
                 throw new IllegalArgumentException("invalid callback type - " + callbackType);
             }

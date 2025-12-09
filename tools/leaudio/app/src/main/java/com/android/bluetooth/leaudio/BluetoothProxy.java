@@ -1355,7 +1355,6 @@ public class BluetoothProxy {
 
     public void connectGattBr(
             Context context, LeAudioDeviceStateWrapper device_wrapper, boolean connect) {
-
         BluetoothGatt bluetoothGatt = bluetoothGattMap.get(device_wrapper);
         if (bluetoothGatt == null) {
             bluetoothGatt =

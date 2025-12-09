@@ -926,7 +926,6 @@ public final class ScanFilter implements Parcelable {
          */
         private @NonNull Builder setDeviceAddressInternal(
                 @NonNull String deviceAddress, @AddressType int addressType, @Nullable byte[] irk) {
-
             // Make sure our deviceAddress is valid!
             requireNonNull(deviceAddress);
             if (!BluetoothAdapter.checkBluetoothAddress(deviceAddress)) {

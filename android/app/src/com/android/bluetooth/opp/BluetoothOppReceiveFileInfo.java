@@ -87,7 +87,6 @@ public class BluetoothOppReceiveFileInfo {
 
     // public static final int BATCH_STATUS_CANCELED = 4;
     public static BluetoothOppReceiveFileInfo generateFileInfo(Context context, int id) {
-
         ContentResolver contentResolver = context.getContentResolver();
         Uri contentUri = Uri.parse(BluetoothShare.CONTENT_URI + "/" + id);
         String hint = null, mimeType = null;
