@@ -19,6 +19,7 @@ mod service;
 pub use service::{HciProxy, HciProxyCallbacks};
 
 use core::ffi::CStr;
+use log::LevelFilter;
 use std::io::Write;
 
 #[allow(missing_docs)]
@@ -60,6 +61,9 @@ use ffi::{CInterface, Ffi};
 /// Add the binder service, and use HAL C/C++ backend defined as CInterface.
 #[no_mangle]
 pub extern "C" fn __add_bluetooth_hci_service(cintf: CInterface) {
+    logger::init(
+        logger::Config::default().with_max_level(LevelFilter::Info).with_tag_on_device("swoff_hal"),
+    );
     binder::add_service(
         &format!("{}/default", BpBluetoothHci::get_descriptor()),
         BnBluetoothHci::new_binder(

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use crate::client::Stream;
+use log::LevelFilter;
 use std::ffi::{c_int, c_uint, c_void};
 use std::slice;
 use std::time::Duration;
@@ -101,6 +102,12 @@ pub extern "C" fn swoff_leaudio_setup(
     anchor_delay_us: c_uint,
     callbacks: *const CCallbacks,
 ) -> *mut Stream {
+    logger::init(
+        logger::Config::default()
+            .with_max_level(LevelFilter::Info)
+            .with_tag_on_device("swoff_leaudio"),
+    );
+
     match Stream::new(
         // SAFETY: `iso_streams` points to a table of `CIsoStream` with `num_iso_streams` entries,
         //         valid until this function returns.
