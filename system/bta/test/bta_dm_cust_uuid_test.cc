@@ -48,8 +48,8 @@ TEST_F(BtaWithMocksTest, test_add_remove_cust_uuid) {
   bta_dm_eir_update_cust_uuid(curr1_expect, true);
   ASSERT_STREQ(uuid2.ToString().c_str(), curr1.custom_uuid.ToString().c_str());
 
-  curr0_expect.custom_uuid.UpdateUuid(Uuid::kEmpty);
-  curr1_expect.custom_uuid.UpdateUuid(Uuid::kEmpty);
+  curr0_expect.custom_uuid = Uuid::kEmpty;
+  curr1_expect.custom_uuid = Uuid::kEmpty;
   // Remove first 128 bit custom UUID
   bta_dm_eir_update_cust_uuid(curr0_expect, false);
   ASSERT_STREQ(Uuid::kEmpty.ToString().c_str(), curr0.custom_uuid.ToString().c_str());

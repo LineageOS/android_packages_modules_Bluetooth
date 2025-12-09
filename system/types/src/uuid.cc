@@ -179,8 +179,6 @@ bool Uuid::IsEmpty() const { return *this == kEmpty; }
 
 bool Uuid::IsBase() const { return *this == kBase; }
 
-void Uuid::UpdateUuid(const Uuid& uuid) { uu = uuid.uu; }
-
 bool Uuid::operator<(const Uuid& rhs) const {
   return std::lexicographical_compare(uu.begin(), uu.end(), rhs.uu.begin(), rhs.uu.end());
 }
