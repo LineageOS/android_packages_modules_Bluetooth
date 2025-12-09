@@ -155,29 +155,28 @@ public class DistanceMeasurementManager {
                         BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED,
                         DISTANCE_MEASUREMENT_METHOD_RSSI);
             }
-            return;
+        } else {
+            forceRunSyncOnDistanceMeasurementThread(
+                    () -> {
+                        mIsTurnedOff = true;
+                        mHandler.removeCallbacksAndMessages(null);
+                        mDistanceMeasurementBinder.cleanup();
+                        mNativeInterface.cleanup();
+                        Log.d(TAG, "stop all sessions as BT is off");
+                        for (String addressForCs : mCsTrackers.keySet()) {
+                            onDistanceMeasurementStopped(
+                                    addressForCs,
+                                    BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED,
+                                    DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING);
+                        }
+                        for (String addressForRssi : mRssiTrackers.keySet()) {
+                            onDistanceMeasurementStopped(
+                                    addressForRssi,
+                                    BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED,
+                                    DISTANCE_MEASUREMENT_METHOD_RSSI);
+                        }
+                    });
         }
-
-        forceRunSyncOnDistanceMeasurementThread(
-                () -> {
-                    mIsTurnedOff = true;
-                    mHandler.removeCallbacksAndMessages(null);
-                    mDistanceMeasurementBinder.cleanup();
-                    mNativeInterface.cleanup();
-                    Log.d(TAG, "stop all sessions as BT is off");
-                    for (String addressForCs : mCsTrackers.keySet()) {
-                        onDistanceMeasurementStopped(
-                                addressForCs,
-                                BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED,
-                                DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING);
-                    }
-                    for (String addressForRssi : mRssiTrackers.keySet()) {
-                        onDistanceMeasurementStopped(
-                                addressForRssi,
-                                BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED,
-                                DISTANCE_MEASUREMENT_METHOD_RSSI);
-                    }
-                });
     }
 
     DistanceMeasurementBinder getBinder() {
