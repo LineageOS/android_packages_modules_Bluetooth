@@ -211,6 +211,10 @@ public:
    * Warning: base::CancelableClosure objects must be created on, posted to,
    * cancelled on, and destroyed on the same thread.
    *
+   * Note: Please call this method very carefully as this is a blocking synchronous call. This will
+   * block the current thread on the target thread and if there is an existing deadlock this may
+   * result in a crash.
+   *
    * @param task task created through base::Bind()
    * @param delay delay for the task to be executed
    * @return true if task is successfully scheduled, false if task cannot be
