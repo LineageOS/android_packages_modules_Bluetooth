@@ -4122,9 +4122,7 @@ void btif_av_set_audio_delay(const RawAddress& peer_address, uint16_t delay,
 
   BtifAvPeer* peer = btif_av_find_peer(peer_address, local_a2dp_type);
   if (peer != nullptr && peer->IsSink()) {
-    if (com_android_bluetooth_flags_a2dp_delay_report_in_dumpsys()) {
-      btif_report_audio_delay(peer_address, delay);
-    }
+    btif_report_audio_delay(peer_address, delay);
     peer->SetDelayReport(delay);
     if (peer->IsActivePeer()) {
       bluetooth::audio::a2dp::set_remote_delay(peer->GetDelayReport());
