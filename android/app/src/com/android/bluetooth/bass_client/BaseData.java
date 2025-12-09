@@ -18,6 +18,8 @@ package com.android.bluetooth.bass_client;
 
 import android.util.Log;
 
+import com.android.bluetooth.flags.Flags;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -50,6 +52,7 @@ record BaseData(Base base) {
         long mCodecId;
         byte[] mCodecSpecificConfiguration;
         byte[] mMetadata;
+        LtvData mLtvData;
         List<BaseBis> mBises = new ArrayList<>();
 
         void print(String prefix) {
@@ -61,6 +64,11 @@ record BaseData(Base base) {
                             + "  mCodecSpecificConfiguration: "
                             + Arrays.toString(mCodecSpecificConfiguration));
             Log.d(TAG, prefix + "  mMetadata: " + Arrays.toString(mMetadata));
+            if (Flags.leaudioBroadcastExtendAudioActiveState()) {
+                if (mLtvData != null) {
+                    Log.d(TAG, prefix + "  " + mLtvData.toString());
+                }
+            }
             Log.d(TAG, prefix + "  mBises: [");
             if (mBises != null && !mBises.isEmpty()) {
                 mBises.forEach(bis -> bis.print(prefix + "    "));
@@ -166,6 +174,9 @@ record BaseData(Base base) {
             }
             subgroup.mMetadata = new byte[metadataLength];
             System.arraycopy(serviceData, offset, subgroup.mMetadata, 0, metadataLength);
+            if (Flags.leaudioBroadcastExtendAudioActiveState()) {
+                subgroup.mLtvData = LtvData.parse(subgroup.mMetadata);
+            }
             offset += metadataLength;
 
             // Parse level 3 BASE (bises)

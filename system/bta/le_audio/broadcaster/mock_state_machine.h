@@ -108,6 +108,11 @@ public:
             .WillByDefault([this]() -> bluetooth::le_audio::PublicBroadcastAnnouncementData& {
               return this->cfg.public_announcement;
             });
+
+    ON_CALL(*this, GetBroadcastAnnouncement())
+            .WillByDefault([this]() -> bluetooth::le_audio::BasicAudioAnnouncementData& {
+              return this->cfg.announcement;
+            });
   }
 
   ~MockBroadcastStateMachine() { cb->OnStateMachineDestroyed(this->cfg.broadcast_id); }

@@ -27,11 +27,15 @@ import android.bluetooth.BluetoothLeAudioContentMetadata;
 import android.bluetooth.BluetoothLeBroadcastChannel;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 import android.bluetooth.BluetoothLeBroadcastSubgroup;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import com.android.bluetooth.flags.Flags;
+
 import com.google.common.primitives.Bytes;
 
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -40,6 +44,7 @@ import java.util.Random;
 /** Test cases for {@link PublicBroadcastData}. */
 @RunWith(AndroidJUnit4.class)
 public class PublicBroadcastDataTest {
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Test
     public void publicBroadcastInfo() {
@@ -86,7 +91,7 @@ public class PublicBroadcastDataTest {
         publicBroadcastInfo.audioConfigQuality =
                 BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_HIGH;
         publicBroadcastInfo.isEncrypted = true;
-        publicBroadcastInfo.metaData = new byte[] {0x04, 0x03, 0x02, 0x08, 0x01};
+        publicBroadcastInfo.metaData = new byte[] {0x02, 0x08, 0x01}; // Audio Active State = TRUE
         PublicBroadcastData publicBroadcastData = new PublicBroadcastData(publicBroadcastInfo);
 
         BluetoothLeBroadcastMetadata.Builder builder =
@@ -103,10 +108,17 @@ public class PublicBroadcastDataTest {
 
         PublicBroadcastData pbData = PublicBroadcastData.buildPublicBroadcastData(metadata);
 
-        assertThat(publicBroadcastData.getAudioConfigQuality())
-                .isEqualTo(pbData.getAudioConfigQuality());
-        assertThat(publicBroadcastData.getMetadataLength()).isEqualTo(pbData.getMetadataLength());
-        assertThat(publicBroadcastData.getMetadata()).isEqualTo(pbData.getMetadata());
+        assertThat(pbData).isNotNull();
+        assertThat(pbData.isEncrypted()).isEqualTo(publicBroadcastData.isEncrypted());
+        assertThat(pbData.getAudioConfigQuality())
+                .isEqualTo(publicBroadcastData.getAudioConfigQuality());
+        assertThat(pbData.getMetadata()).isEqualTo(publicBroadcastData.getMetadata());
+        assertThat(pbData.getMetadataLength()).isEqualTo(publicBroadcastData.getMetadataLength());
+        if (Flags.leaudioBroadcastExtendAudioActiveState()) {
+            assertThat(pbData.getLtvData()).isNotNull();
+            assertThat(pbData.getLtvData().getAudioActiveState())
+                    .isEqualTo(LtvData.AudioActiveState.TRUE);
+        }
     }
 
     @Test
@@ -130,6 +142,11 @@ public class PublicBroadcastDataTest {
         assertThat(pbData.getAudioConfigQuality())
                 .isEqualTo(BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_STANDARD);
         assertThat(pbData.getMetadata()).isEqualTo(new byte[0]);
+        if (Flags.leaudioBroadcastExtendAudioActiveState()) {
+            assertThat(pbData.getLtvData()).isNotNull();
+            assertThat(pbData.getLtvData().getAudioActiveState())
+                    .isEqualTo(LtvData.AudioActiveState.NONE);
+        }
     }
 
     @Test
@@ -155,15 +172,20 @@ public class PublicBroadcastDataTest {
                 new byte[] {
                     (byte) 0x07, // features
                     (byte) 0x03, // metaDataLength
-                    (byte) 0x06,
-                    (byte) 0x07,
-                    (byte) 0x08, // metaData
+                    (byte) 0x02,
+                    (byte) 0x08,
+                    (byte) 0x01, // metaData: Audio Active State = TRUE
                 };
         PublicBroadcastData data = PublicBroadcastData.parsePublicBroadcastData(serviceData);
         assertThat(data.isEncrypted()).isTrue();
         assertThat(data.getAudioConfigQuality()).isEqualTo(3);
         assertThat(data.getMetadataLength()).isEqualTo(3);
-        assertThat(data.getMetadata()).isEqualTo(new byte[] {0x06, 0x07, 0x08});
+        assertThat(data.getMetadata()).isEqualTo(new byte[] {0x02, 0x08, 0x01});
+        if (Flags.leaudioBroadcastExtendAudioActiveState()) {
+            assertThat(data.getLtvData()).isNotNull();
+            assertThat(data.getLtvData().getAudioActiveState())
+                    .isEqualTo(LtvData.AudioActiveState.TRUE);
+        }
 
         byte[] serviceDataNoMetaData =
                 new byte[] {
@@ -176,6 +198,11 @@ public class PublicBroadcastDataTest {
         assertThat(dataNoMetaData.getAudioConfigQuality()).isEqualTo(1);
         assertThat(dataNoMetaData.getMetadataLength()).isEqualTo(0);
         assertThat(dataNoMetaData.getMetadata()).isEqualTo(new byte[] {});
+        if (Flags.leaudioBroadcastExtendAudioActiveState()) {
+            assertThat(dataNoMetaData.getLtvData()).isNotNull();
+            assertThat(dataNoMetaData.getLtvData().getAudioActiveState())
+                    .isEqualTo(LtvData.AudioActiveState.NONE);
+        }
     }
 
     @Test
@@ -220,6 +247,11 @@ public class PublicBroadcastDataTest {
         assertThat(data.getAudioConfigQuality()).isEqualTo(3);
         assertThat(data.getMetadataLength()).isEqualTo(metaDataLength);
         assertThat(data.getMetadata()).isEqualTo(Bytes.concat(metadataHeader, metadataPayload));
+        if (Flags.leaudioBroadcastExtendAudioActiveState()) {
+            assertThat(data.getLtvData()).isNotNull();
+            assertThat(data.getLtvData().getAudioActiveState())
+                    .isEqualTo(LtvData.AudioActiveState.NONE);
+        }
 
         byte[] serviceDataNoMetaData =
                 new byte[] {
@@ -232,5 +264,10 @@ public class PublicBroadcastDataTest {
         assertThat(dataNoMetaData.getAudioConfigQuality()).isEqualTo(1);
         assertThat(dataNoMetaData.getMetadataLength()).isEqualTo(0);
         assertThat(dataNoMetaData.getMetadata()).isEqualTo(new byte[] {});
+        if (Flags.leaudioBroadcastExtendAudioActiveState()) {
+            assertThat(dataNoMetaData.getLtvData()).isNotNull();
+            assertThat(dataNoMetaData.getLtvData().getAudioActiveState())
+                    .isEqualTo(LtvData.AudioActiveState.NONE);
+        }
     }
 }
