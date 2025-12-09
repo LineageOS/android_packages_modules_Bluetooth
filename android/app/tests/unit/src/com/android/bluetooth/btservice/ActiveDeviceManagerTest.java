@@ -2132,6 +2132,57 @@ public class ActiveDeviceManagerTest {
         verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
     }
 
+    /**
+     * Verifies that when connecting an LE hearing aid, if setting it as active fails, it is not
+     * stored as the active device.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_ADM_REMOVE_HAP_VARIABLES)
+    public void leAudioConnected_hearingAid_setActiveFails() {
+        // LE Audio service fails to set active device
+        when(mLeAudioService.setActiveDevice(mLeHearingAidDevice)).thenReturn(false);
+
+        // Connect LE Hearing Aid as LE Audio
+        leAudioConnected(mLeHearingAidDevice);
+        mTestLooper.dispatchAll();
+
+        // Verify that we tried to set it active but it failed, and it's not the active device.
+        verify(mLeAudioService).setActiveDevice(mLeHearingAidDevice);
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isNull();
+    }
+
+    /**
+     * Verifies that if setting an LE Audio device as active fails during a fallback, it is not
+     * stored as the active device.
+     */
+    @Test
+    public void fallbackToLeAudio_setActiveFails() {
+        when(mAudioManager.getMode()).thenReturn(AudioManager.MODE_NORMAL);
+        when(mLeAudioService.getGroupId(mLeAudioDevice)).thenReturn(1);
+
+        // Connect LE Audio device, but don't make it active
+        leAudioConnected(mLeAudioDevice);
+        leAudioActiveDeviceChanged(null);
+        mTestLooper.dispatchAll();
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isNull();
+        Mockito.clearInvocations(mLeAudioService);
+
+        // Connect and disconnect A2DP device to trigger fallback
+        a2dpConnected(mA2dpDevice, false);
+        mTestLooper.dispatchAll();
+        verify(mA2dpService).setActiveDevice(mA2dpDevice);
+
+        // Make setActive fail for LE Audio
+        when(mLeAudioService.setActiveDevice(mLeAudioDevice)).thenReturn(false);
+
+        a2dpDisconnected(mA2dpDevice);
+        mTestLooper.dispatchAll();
+
+        // Verify that we tried to set LE Audio active but it failed.
+        verify(mLeAudioService).setActiveDevice(mLeAudioDevice);
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isNull();
+    }
+
     /** Helper to indicate A2dp connected for a device. */
     private void a2dpConnected(BluetoothDevice device, boolean supportHfp) {
         doReturn(supportHfp ? CONNECTION_POLICY_ALLOWED : CONNECTION_POLICY_UNKNOWN)
