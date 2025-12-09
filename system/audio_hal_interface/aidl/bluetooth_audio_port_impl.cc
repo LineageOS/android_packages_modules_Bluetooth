@@ -209,6 +209,12 @@ ndk::ScopedAStatus BluetoothAudioPortImpl::setLatencyMode(LatencyMode latency_mo
   return ndk::ScopedAStatus::ok();
 }
 
+ndk::ScopedAStatus BluetoothAudioPortImpl::updateSinkLatency(int64_t in_latency_ms) {
+  log::verbose("in_latency_ms: {}", in_latency_ms);
+  transport_instance_->UpdateSinkLatency(in_latency_ms);
+  return ndk::ScopedAStatus::ok();
+}
+
 PresentationPosition::TimeSpec BluetoothAudioPortImpl::timespec_convert_to_hal(const timespec& ts) {
   return {.tvSec = static_cast<int64_t>(ts.tv_sec), .tvNSec = static_cast<int64_t>(ts.tv_nsec)};
 }

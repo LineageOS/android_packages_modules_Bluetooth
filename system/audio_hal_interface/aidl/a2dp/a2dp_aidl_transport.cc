@@ -114,6 +114,14 @@ void A2dpTransport::SetLatencyMode(LatencyMode latency_mode) {
   stream_callbacks_->SetLatencyMode(latency_mode == LatencyMode::LOW_LATENCY);
 }
 
+void A2dpTransport::UpdateSinkLatency(int64_t latency_ms) {
+  if (session_type_ != SessionType::A2DP_HARDWARE_OFFLOAD_DECODING_DATAPATH) {
+    return;
+  }
+  log::info("latency_ms: {}", latency_ms);
+  stream_callbacks_->UpdateSinkLatency(latency_ms);
+}
+
 void A2dpTransport::SourceMetadataChanged(btav_a2dp_codec_audio_context_t audio_context) {
   stream_callbacks_->SourceMetadataChanged(audio_context);
 }
