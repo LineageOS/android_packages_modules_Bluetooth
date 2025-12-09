@@ -532,6 +532,18 @@ void L2CA_DeregisterLECoc(uint16_t psm);
 
 /*******************************************************************************
  *
+ * Function         L2CA_SetRateControlEnabled
+ *
+ * Description      Enable or disable rate control algorithm for a channel.
+ *
+ * Returns          true if a valid channel, else false
+ *
+ ******************************************************************************/
+
+[[nodiscard]] bool L2CA_SetRateControlEnabled(const RawAddress& bd_addr, bool enabled);
+
+/*******************************************************************************
+ *
  * Function         L2CA_SetTxPriority
  *
  * Description      Sets the transmission priority for a channel. (FCR Mode)

@@ -141,6 +141,10 @@ void bluetooth::stack::l2cap::Impl::L2CA_DeregisterLECoc(uint16_t psm) {
   return ::L2CA_SetAclLatency(bd_addr, latency);
 }
 
+[[nodiscard]] bool bluetooth::stack::l2cap::Impl::L2CA_SetRateControlEnabled(
+        const RawAddress& bd_addr, bool enabled) {
+  return ::L2CA_SetRateControlEnabled(bd_addr, enabled);
+}
 [[nodiscard]] bool bluetooth::stack::l2cap::Impl::L2CA_SetTxPriority(
         uint16_t cid, tL2CAP_CHNL_PRIORITY priority) {
   return ::L2CA_SetTxPriority(cid, priority);

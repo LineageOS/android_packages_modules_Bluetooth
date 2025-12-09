@@ -19,6 +19,7 @@
 #include <gmock/gmock.h>
 
 #include <cstdint>
+#include <cstdlib>
 #include <vector>
 
 #include "stack/include/l2cap_interface.h"
@@ -62,6 +63,7 @@ public:
               (uint16_t psm, const RawAddress& bd_addr, uint16_t sec_level));
   MOCK_METHOD(bool, L2CA_SetAclLatency, (const RawAddress& bd_addr, tL2CAP_LATENCY latency));
   MOCK_METHOD(bool, L2CA_UseLatencyMode, (const RawAddress& bd_addr, bool use_latency_mode));
+  MOCK_METHOD(bool, L2CA_SetRateControlEnabled, (const RawAddress& bd_addr, bool enabled));
   MOCK_METHOD(bool, L2CA_GetPeerFeatures,
               (const RawAddress& bd_addr, uint32_t* p_ext_feat, uint8_t* p_chnl_mask));
   MOCK_METHOD(bool, L2CA_SetAclPriority, (const RawAddress& bd_addr, tL2CAP_PRIORITY priority));

@@ -59,11 +59,13 @@
 #include "osi/include/fixed_queue.h"
 #include "osi/include/wakelock.h"
 #include "stack/include/a2dp_sbc_constants.h"
+#include "stack/include/a2dp_vendor_ldac_constants.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_api_types.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"
+#include "stack/include/l2cap_interface.h"
 #include "stack/include/main_thread.h"
 
 #ifdef __ANDROID__
@@ -519,6 +521,15 @@ static uint16_t btif_a2dp_get_peer_mtu(A2dpCodecConfig* a2dp_config) {
   return peer_mtu;
 }
 
+// Rate control is active only when using LDAC ABR quality mode.
+// It is disabled for all other codecs or LDAC is not in ABR mode.
+static bool get_rate_control_enabled(A2dpCodecConfig* a2dp_codec_config) {
+  btav_a2dp_codec_config_t codec_config = a2dp_codec_config->getCodecConfig();
+  return codec_config.codec_type == BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC &&
+         (codec_config.codec_specific_1 == 0 ||
+          codec_config.codec_specific_1 % 10 == A2DP_LDAC_QUALITY_ABR);
+}
+
 static void btif_a2dp_source_start_session_delayed(const RawAddress& peer_address,
                                                    std::promise<void> peer_ready_promise) {
   log::info("peer_address={} state={}", peer_address, btif_a2dp_source_cb.StateStr());
@@ -544,6 +555,11 @@ static void btif_a2dp_source_start_session_delayed(const RawAddress& peer_addres
 
   encoder_interface->encoder_init(&peer_params, a2dp_codec_config, btif_a2dp_source_read_callback,
                                   btif_a2dp_source_enqueue_callback);
+
+  if (com::android::bluetooth::flags::ldac_rate_control()) {
+    stack::l2cap::get_interface().L2CA_SetRateControlEnabled(
+            peer_address, get_rate_control_enabled(a2dp_codec_config));
+  }
 
   // Save a local copy of the encoder_interval_ms
   btif_a2dp_source_cb.encoder_interface = encoder_interface;
@@ -867,8 +883,7 @@ static void btif_a2dp_source_audio_tx_start_event(void) {
   btif_a2dp_source_cb.tx_flush = false;
   btif_a2dp_source_cb.sw_audio_is_encoding = true;
   btif_a2dp_source_cb.media_alarm.SchedulePeriodic(
-          &btif_a2dp_source_thread,
-          base::BindRepeating(&btif_a2dp_source_audio_handle_timer),
+          &btif_a2dp_source_thread, base::BindRepeating(&btif_a2dp_source_audio_handle_timer),
           std::chrono::milliseconds(
                   btif_a2dp_source_cb.encoder_interface->get_encoder_interval_ms()));
 }
