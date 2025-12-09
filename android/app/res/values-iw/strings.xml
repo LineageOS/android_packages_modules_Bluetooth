@@ -21,8 +21,8 @@
     <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"‏מאפשר לאפליקציה לגשת למנהל BluetoothShare ולהשתמש בו להעברת קבצים."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"‏גישה לרשימת ההיתרים של מכשיר Bluetooth."</string>
     <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"‏התכונה הזו מאפשרת לאפליקציה להוסיף מכשיר Bluetooth לרשימת ההיתרים באופן זמני, ובכך לאפשר לאותו מכשיר לשלוח קבצים למכשיר זה ללא אישור משתמש."</string>
-    <string name="permlab_bluetoothBackup" msgid="49451988877877942">"‏מתן הרשאה לשדר גיבויים ב-Bluetooth."</string>
-    <string name="permdesc_bluetoothBackup" msgid="2871500153259509669">"‏מאפשר לאפליקציית Bluetooth לקבל שידורים כדי להפעיל גיבוי של נתוני ההגדרות"</string>
+    <string name="permlab_bluetoothBackup" msgid="49451988877877942">"‏אם תינתן הרשאה, תהיה ל-Bluetooth אפשרות לשדר גיבויים."</string>
+    <string name="permdesc_bluetoothBackup" msgid="2871500153259509669">"‏ההרשאה מאפשרת לאפליקציית Bluetooth לקבל שידורים כדי להפעיל גיבוי של נתוני ההגדרות"</string>
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetooth"</string>
     <string name="unknown_device" msgid="2317679521750821654">"מכשיר לא ידוע"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"לא ידוע"</string>
