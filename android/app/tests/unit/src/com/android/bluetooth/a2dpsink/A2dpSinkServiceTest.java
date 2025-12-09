@@ -467,7 +467,7 @@ public class A2dpSinkServiceTest {
     @Test
     public void testReconnection() {
         initTest();
-        doReturn(false).when(mAdapterService).setProfileConnectionPolicy(any(), anyInt(), anyInt());
+        mockDevicePriority(mDevice1, CONNECTION_POLICY_ALLOWED);
 
         // Report and process connection event.
         mService.onConnectionStateChangedFromNative(mDevice1, STATE_CONNECTED);
