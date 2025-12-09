@@ -211,22 +211,6 @@ bool BTM_GetRemoteDeviceName(const RawAddress& bda, BD_NAME bd_name);
 
 /*******************************************************************************
  *
- * Function         BTM_ReadConnectedTransportAddress
- *
- * Description      This function is called to read the paired device/address
- *                  type of other device paired corresponding to the BD_address
- *
- * Parameter        remote_bda: remote device address, carry out the transport
- *                              address
- *                  transport: active transport
- *
- * Return           true if an active link is identified; false otherwise
- *
- ******************************************************************************/
-bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda, tBT_TRANSPORT transport);
-
-/*******************************************************************************
- *
  * Function         BTM_GetConnectedTransportAddress
  *
  *
