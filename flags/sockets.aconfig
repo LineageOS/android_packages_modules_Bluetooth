@@ -167,3 +167,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fix_flow_control_logic_at_l2cap"
+    namespace: "bluetooth"
+    description: "Fix the flow control logic at l2cap layer"
+    bug: "467155293"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
