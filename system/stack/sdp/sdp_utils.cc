@@ -1344,6 +1344,11 @@ uint16_t sdpu_get_attrib_seq_len(const tSDP_RECORD* p_rec, const tSDP_ATTR_SEQ* 
 
       /* If doing a range, stick with this one till no more attributes found */
       if (start_id != end_id) {
+        if (p_attr->id == UINT16_MAX) {
+          log::error("invalid p_attr id:{}", p_attr->id);
+          return len1;
+        }
+
         /* Update for next time through */
         start_id = p_attr->id + 1;
         xx--;
