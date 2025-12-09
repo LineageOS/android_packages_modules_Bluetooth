@@ -206,16 +206,6 @@ flag {
 }
 
 flag {
-    name: "remove_address_cache_from_ble_scanner"
-    namespace: "bluetooth"
-    description: "Fix the case where device name is not updated when pairing failed."
-    bug: "432614634"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "broadcast_transport_type_on_reset"
     namespace: "bluetooth"
     description: "Broadcast the transport type on BT reset as part of ACL_DISCONNECTED."
