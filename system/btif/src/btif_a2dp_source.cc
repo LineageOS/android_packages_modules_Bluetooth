@@ -202,8 +202,7 @@ public:
     fixed_queue_free(tx_audio_queue, nullptr);
     tx_audio_queue = nullptr;
     tx_flush = false;
-    if (!com_android_bluetooth_flags_ref_counted_native_wakelock() ||
-        btif_a2dp_source_is_streaming()) {
+    if (btif_a2dp_source_is_streaming()) {
       media_alarm.CancelAndWait();
       wakelock_release();
     }
@@ -664,8 +663,7 @@ void btif_a2dp_source_shutdown(std::promise<void> shutdown_complete_promise) {
   btif_a2dp_source_cb.SetState(BtifA2dpSource::kStateShuttingDown);
 
   // Stop the timer.
-  if (!com_android_bluetooth_flags_ref_counted_native_wakelock() ||
-      btif_a2dp_source_is_streaming()) {
+  if (btif_a2dp_source_is_streaming()) {
     btif_a2dp_source_cb.media_alarm.CancelAndWait();
     wakelock_release();
   }

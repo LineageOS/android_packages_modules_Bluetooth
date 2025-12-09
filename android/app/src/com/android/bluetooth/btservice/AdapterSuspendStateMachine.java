@@ -21,7 +21,6 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.bluetooth.Util;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -129,14 +128,10 @@ final class AdapterSuspendStateMachine extends StateMachine {
         }
 
         void handleSuspendLocked(boolean wakeByHidAllowed) {
-            if (Flags.refCountedNativeWakelock()) {
-                mAdapterService.acquireWakeLock("bluetooth_suspend");
-            }
+            mAdapterService.acquireWakeLock("bluetooth_suspend");
             mWakeByHidAllowed = wakeByHidAllowed;
             mAdapterSuspend.handleSuspend(wakeByHidAllowed);
-            if (Flags.refCountedNativeWakelock()) {
-                mAdapterService.releaseWakeLock("bluetooth_suspend");
-            }
+            mAdapterService.releaseWakeLock("bluetooth_suspend");
         }
 
         void infoLog(String msg) {
@@ -239,13 +234,9 @@ final class AdapterSuspendStateMachine extends StateMachine {
             switch (msg.what) {
                 case MSG_SCREEN_ON -> {
                     mScreenOn = true;
-                    if (Flags.refCountedNativeWakelock()) {
-                        mAdapterService.acquireWakeLock("bluetooth_resume");
-                    }
+                    mAdapterService.acquireWakeLock("bluetooth_resume");
                     mAdapterSuspend.handleResume();
-                    if (Flags.refCountedNativeWakelock()) {
-                        mAdapterService.releaseWakeLock("bluetooth_resume");
-                    }
+                    mAdapterService.releaseWakeLock("bluetooth_resume");
                     if (!mWakeLockHeld) {
                         transitionTo(mActiveState);
                     } else {

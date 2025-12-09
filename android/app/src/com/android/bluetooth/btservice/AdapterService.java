@@ -4439,14 +4439,12 @@ public class AdapterService extends Service {
         synchronized (this) {
             if (mWakeLock == null) {
                 mWakeLock = mPowerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, lockName);
-                if (Flags.refCountedNativeWakelock() && Flags.adapterSuspendMgmt()) {
+                if (Flags.adapterSuspendMgmt()) {
                     mWakeLock.setStateListener(mHandler::post, mWakeLockListener);
                 }
             }
 
-            if (!mWakeLock.isHeld() || Flags.refCountedNativeWakelock()) {
-                mWakeLock.acquire();
-            }
+            mWakeLock.acquire();
         }
         return true;
     }
@@ -4462,9 +4460,7 @@ public class AdapterService extends Service {
                 return false;
             }
 
-            if (mWakeLock.isHeld() || Flags.refCountedNativeWakelock()) {
-                mWakeLock.release();
-            }
+            mWakeLock.release();
         }
         return true;
     }
