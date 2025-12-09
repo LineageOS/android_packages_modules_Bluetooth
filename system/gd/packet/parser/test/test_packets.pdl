@@ -68,39 +68,6 @@ packet ChildWithSixBytes : ParentWithSixBytes (two_bytes = 0x1234) {
   child_six_bytes : SixBytes,
 }
 
-checksum SimpleSum : 16 "packet/parser/test/"
-
-packet ParentWithSum {
-  two_bytes : 16,
-  _checksum_start_(example_checksum),
-  sum_bytes : 16,
-  _payload_,
-  example_checksum : SimpleSum,
-}
-
-packet ChildWithSum : ParentWithSum {
-  more_bytes : 32,
-  another_byte : 8,
-}
-
-packet ChildWithNestedSum : ParentWithSum {
-  _checksum_start_(nested_checksum),
-  more_bytes : 32,
-  nested_checksum : SimpleSum,
-}
-
-packet SizedWithSum {
-  two_bytes : 16,
-  _size_(_payload_) : 8,
-  _checksum_start_(example_checksum),
-  _payload_,
-  example_checksum : SimpleSum,
-}
-
-test SizedWithSum {
-  "\x01\x02\x03\x01\x02\x03\x06\x00",
-}
-
 packet ParentSizeModifier {
   _size_(_payload_) : 8,
   _payload_ : [+2], // Include two_bytes in the size
@@ -225,11 +192,9 @@ packet ArrayOfStruct {
 struct StructWithFixedTypes {
   four_bits : FourBits,
   _reserved_ : 4,
-  _checksum_start_(example_checksum),
   _fixed_ = 0xf3 : 8,
   id : 8,
   array : 8[3],
-  example_checksum : SimpleSum,
   six_bytes : SixBytes,
 }
 
