@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-//! Crate root for the Unified Bluetooth Rust Stack.
+//! Common Bluetooth data types.
 
-/// Common Bluetooth data types.
-pub mod types;
+/// Bluetooth address types.
+pub mod address;
 
-pub use types::*;
+pub use address::*;
