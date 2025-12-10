@@ -42,16 +42,6 @@ flag {
 }
 
 flag {
-    name: "reboke_permission_on_unbond"
-    namespace: "bluetooth"
-    description: "Remove permissions for message phonebookand sim access when unbonded"
-    bug: "405333875"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "btsec_disable_legacy_auto_pair"
     namespace: "bluetooth"
     description: "Remove support for auto-pairing with code 0000 against some legacy devices"
