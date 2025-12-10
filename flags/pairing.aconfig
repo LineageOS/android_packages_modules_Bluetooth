@@ -140,16 +140,6 @@ flag {
 }
 
 flag {
-    name: "avoid_ctkd_for_temp_pairing"
-    namespace: "bluetooth"
-    description: "Do not perform CTKD for temporary pairing"
-    bug: "436957985"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "pairing_collision_with_same_device"
     namespace: "bluetooth"
     description: "Continue pairing if collision is detected with the same device"
