@@ -3034,9 +3034,10 @@ public class AdapterService extends Service {
             OobData remoteP256Data,
             String callingPackage) {
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
-        if (deviceProp != null && deviceProp.getBondState() != BluetoothDevice.BOND_NONE) {
-            // true for BONDING, false for BONDED
-            return deviceProp.getBondState() == BluetoothDevice.BOND_BONDING;
+        int bondState = deviceProp != null ? deviceProp.getBondState() : BluetoothDevice.BOND_NONE;
+
+        if (bondState != BluetoothDevice.BOND_NONE) {
+            return bondState == BluetoothDevice.BOND_BONDING; // true for BONDING, false for BONDED
         }
 
         if (!isEnabled()) {
