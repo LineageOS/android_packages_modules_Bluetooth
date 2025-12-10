@@ -859,7 +859,7 @@ public class RemoteDevices {
 
                     // Identity address of the bonded device may not be provided by the native
                     // stack if it is same as the pseudo address.
-                    if (Flags.alwaysSetIdentityAddr() && mIdentityAddress == UNKNOWN_ADDRESS) {
+                    if (mIdentityAddress == UNKNOWN_ADDRESS) {
                         mIdentityAddress =
                                 new BluetoothAddress(
                                         mDevice.getAddress(), mDevice.getAddressType());
