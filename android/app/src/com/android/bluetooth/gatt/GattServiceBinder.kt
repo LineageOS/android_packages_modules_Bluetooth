@@ -641,7 +641,7 @@ class GattServiceBinder(private var gattService: GattService?) :
      * T+ for specific handles that are stored in [GattService.restrictedHandles] via the code flow
      * found in [GattService.isRestrictedSrvcUuid].
      */
-    @SuppressWarnings("IncorrectRequiresPermissionPropagation")
+    @Suppress("IncorrectRequiresPermissionPropagation")
     private fun <T> onGattThreadAndEnforcePrivilegedOnBinderIfNeeded(
         gatt: GattService,
         callback: IBluetoothGattCallback,
