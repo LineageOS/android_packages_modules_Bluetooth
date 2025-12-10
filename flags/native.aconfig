@@ -56,16 +56,6 @@ flag {
 }
 
 flag {
-    name: "fix_use_after_object_destroyed"
-    namespace: "bluetooth"
-    description: "Fix use of object passed to handler bind after the object is destroyed."
-    bug: "433736221"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "add_watchdog_with_timeout"
     namespace : "bluetooth"
     description: "Implement a watchdog mechanism with a set timeout to monitor the AIDL backend callback. If the timeout is exceeded, trigger the generation of a tombstone."

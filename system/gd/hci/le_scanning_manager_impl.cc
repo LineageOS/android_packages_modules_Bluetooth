@@ -217,11 +217,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   ~impl() {
     stop();
     if (address_manager_registered_) {
-      if (com_android_bluetooth_flags_fix_use_after_object_destroyed()) {
-        le_address_manager_->UnregisterSync(this);
-      } else {
-        le_address_manager_->Unregister(this);
-      }
+      le_address_manager_->UnregisterSync(this);
     }
   }
 
