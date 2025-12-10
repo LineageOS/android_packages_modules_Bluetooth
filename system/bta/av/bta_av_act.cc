@@ -529,19 +529,25 @@ tBTA_AV_LCB* bta_av_find_lcb(const RawAddress& addr, uint8_t op) {
  ******************************************************************************/
 void bta_av_rc_opened(tBTA_AV_CB* p_cb, tBTA_AV_DATA* p_data) {
   tBTA_AV_RC_OPEN rc_open;
-  tBTA_AV_SCB* p_scb;
-  int i;
+  tBTA_AV_SCB* p_scb = NULL;
   uint8_t shdl = 0;
   tBTA_AV_LCB* p_lcb;
   tBTA_AV_RCB* p_rcb;
   uint8_t tmp;
   uint8_t disc = 0;
 
-  /* find the SCB & stop the timer */
-  for (i = 0; i < BTA_AV_NUM_STRS; i++) {
+  uint8_t rc_handle = p_data->rc_conn_chg.handle;
+  if (rc_handle >= BTA_AV_NUM_RCB) {
+    log::error("Invalid rc_conn_chg.handle: {} >= BTA_AV_NUM_RCB ({})", rc_handle, BTA_AV_NUM_RCB);
+    AVRC_Close(rc_handle);
+    return;
+  }
+
+  // find the SCB & stop the timer
+  for (int i = 0; i < BTA_AV_NUM_STRS; i++) {
     p_scb = p_cb->p_scb[i];
     if (p_scb && p_scb->PeerAddress() == p_data->rc_conn_chg.peer_addr) {
-      p_scb->rc_handle = p_data->rc_conn_chg.handle;
+      p_scb->rc_handle = rc_handle;
       log::verbose("shdl:{}, srch {}", i + 1, p_scb->rc_handle);
       shdl = i + 1;
       log::info("allow incoming AVRCP connections:{}", p_scb->use_rc);
@@ -551,39 +557,39 @@ void bta_av_rc_opened(tBTA_AV_CB* p_cb, tBTA_AV_DATA* p_data) {
     }
   }
 
-  i = p_data->rc_conn_chg.handle;
-  if (p_cb->rcb[i].handle == BTA_AV_RC_HANDLE_NONE) {
-    log::error("not a valid handle:{} any more", i);
+  if (p_cb->rcb[rc_handle].handle == BTA_AV_RC_HANDLE_NONE) {
+    log::error("not a valid handle:{} any more", rc_handle);
     return;
   }
 
-  log::verbose("local features {} peer features {}", p_cb->features, p_cb->rcb[i].peer_features);
+  log::verbose("local features {} peer features {}", p_cb->features,
+               p_cb->rcb[rc_handle].peer_features);
 
   /* listen to browsing channel when the connection is open,
    * if peer initiated AVRCP connection and local device supports browsing
    * channel */
-  AVRC_OpenBrowse(p_data->rc_conn_chg.handle, AVCT_ROLE_ACCEPTOR);
+  AVRC_OpenBrowse(rc_handle, AVCT_ROLE_ACCEPTOR);
 
-  if (p_cb->rcb[i].lidx == (BTA_AV_NUM_LINKS + 1) && shdl != 0) {
+  if (p_cb->rcb[rc_handle].lidx == (BTA_AV_NUM_LINKS + 1) && shdl != 0) {
     /* rc is opened on the RC only ACP channel, but is for a specific
      * SCB -> need to switch RCBs */
     p_rcb = bta_av_get_rcb_by_shdl(shdl);
     if (p_rcb) {
-      p_rcb->shdl = p_cb->rcb[i].shdl;
+      p_rcb->shdl = p_cb->rcb[rc_handle].shdl;
       tmp = p_rcb->lidx;
-      p_rcb->lidx = p_cb->rcb[i].lidx;
-      p_cb->rcb[i].lidx = tmp;
+      p_rcb->lidx = p_cb->rcb[rc_handle].lidx;
+      p_cb->rcb[rc_handle].lidx = tmp;
       p_cb->rc_acp_handle = p_rcb->handle;
       p_cb->rc_acp_idx = (p_rcb - p_cb->rcb) + 1;
       log::verbose("switching RCB rc_acp_handle:{} idx:{}", p_cb->rc_acp_handle, p_cb->rc_acp_idx);
     }
   }
 
-  p_cb->rcb[i].shdl = shdl;
-  rc_open.rc_handle = i;
-  log::error("rcb[{}] shdl:{} lidx:{}/{}", i, shdl, p_cb->rcb[i].lidx,
+  p_cb->rcb[rc_handle].shdl = shdl;
+  rc_open.rc_handle = rc_handle;
+  log::error("rcb[{}] shdl:{} lidx:{}/{}", rc_handle, shdl, p_cb->rcb[rc_handle].lidx,
              p_cb->lcb[BTA_AV_NUM_LINKS].lidx);
-  p_cb->rcb[i].status |= BTA_AV_RC_CONN_MASK;
+  p_cb->rcb[rc_handle].status |= BTA_AV_RC_CONN_MASK;
 
   if (!shdl && 0 == p_cb->lcb[BTA_AV_NUM_LINKS].lidx) {
     /* no associated SCB -> connected to an RC only device
@@ -591,25 +597,25 @@ void bta_av_rc_opened(tBTA_AV_CB* p_cb, tBTA_AV_DATA* p_data) {
     p_lcb = &p_cb->lcb[BTA_AV_NUM_LINKS];
     p_lcb->addr = p_data->rc_conn_chg.peer_addr;
     p_lcb->lidx = BTA_AV_NUM_LINKS + 1;
-    p_cb->rcb[i].lidx = p_lcb->lidx;
+    p_cb->rcb[rc_handle].lidx = p_lcb->lidx;
     p_lcb->conn_msk = 1;
-    log::error("bd_addr: {} rcb[{}].lidx={}, lcb.conn_msk=x{:x}", p_lcb->addr, i, p_cb->rcb[i].lidx,
-               p_lcb->conn_msk);
-    disc = p_data->rc_conn_chg.handle | BTA_AV_CHNL_MSK;
+    log::error("bd_addr: {} rcb[{}].lidx={}, lcb.conn_msk=x{:x}", p_lcb->addr, rc_handle,
+               p_cb->rcb[rc_handle].lidx, p_lcb->conn_msk);
+    disc = rc_handle | BTA_AV_CHNL_MSK;
   }
 
   rc_open.peer_addr = p_data->rc_conn_chg.peer_addr;
-  rc_open.peer_features = p_cb->rcb[i].peer_features;
-  rc_open.cover_art_psm = p_cb->rcb[i].cover_art_psm;
+  rc_open.peer_features = p_cb->rcb[rc_handle].peer_features;
+  rc_open.cover_art_psm = p_cb->rcb[rc_handle].cover_art_psm;
   if (btif_av_both_enable()) {
     if (rc_open.peer_addr == p_cb->rc_feature.peer_addr) {
       rc_open.peer_features = p_cb->rc_feature.peer_features;
       rc_open.peer_ct_features = p_cb->rc_feature.peer_ct_features;
       rc_open.peer_tg_features = p_cb->rc_feature.peer_tg_features;
     } else {
-      rc_open.peer_features = p_cb->rcb[i].peer_features;
-      rc_open.peer_ct_features = p_cb->rcb[i].peer_ct_features;
-      rc_open.peer_tg_features = p_cb->rcb[i].peer_tg_features;
+      rc_open.peer_features = p_cb->rcb[rc_handle].peer_features;
+      rc_open.peer_ct_features = p_cb->rcb[rc_handle].peer_ct_features;
+      rc_open.peer_tg_features = p_cb->rcb[rc_handle].peer_tg_features;
     }
     rc_open.status = BTA_AV_SUCCESS;
     log::verbose(
@@ -639,9 +645,9 @@ void bta_av_rc_opened(tBTA_AV_CB* p_cb, tBTA_AV_DATA* p_data) {
     if ((p_cb->features & BTA_AV_FEAT_BROWSE) &&
         ((rc_open.peer_ct_features & BTA_AV_FEAT_BROWSE) ||
          (rc_open.peer_tg_features & BTA_AV_FEAT_BROWSE))) {
-      if ((p_cb->rcb[i].status & BTA_AV_RC_ROLE_MASK) == BTA_AV_RC_ROLE_INT) {
+      if ((p_cb->rcb[rc_handle].status & BTA_AV_RC_ROLE_MASK) == BTA_AV_RC_ROLE_INT) {
         log::verbose("opening AVRC Browse channel");
-        AVRC_OpenBrowse(p_data->rc_conn_chg.handle, AVCT_ROLE_INITIATOR);
+        AVRC_OpenBrowse(rc_handle, AVCT_ROLE_INITIATOR);
       }
     }
     return;
@@ -670,9 +676,9 @@ void bta_av_rc_opened(tBTA_AV_CB* p_cb, tBTA_AV_DATA* p_data) {
    * TODO (sanketa): Some TG would not broadcast browse feature hence check
    * inter-op. */
   if ((p_cb->features & BTA_AV_FEAT_BROWSE) && (rc_open.peer_features & BTA_AV_FEAT_BROWSE) &&
-      ((p_cb->rcb[i].status & BTA_AV_RC_ROLE_MASK) == BTA_AV_RC_ROLE_INT)) {
+      ((p_cb->rcb[rc_handle].status & BTA_AV_RC_ROLE_MASK) == BTA_AV_RC_ROLE_INT)) {
     log::verbose("opening AVRC Browse channel");
-    AVRC_OpenBrowse(p_data->rc_conn_chg.handle, AVCT_ROLE_INITIATOR);
+    AVRC_OpenBrowse(rc_handle, AVCT_ROLE_INITIATOR);
   }
 }
 
