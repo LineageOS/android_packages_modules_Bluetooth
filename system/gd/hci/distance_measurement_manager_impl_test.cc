@@ -16,6 +16,7 @@
 
 #include "hci/distance_measurement_manager_impl.h"
 
+#include <base/functional/bind.h>
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
@@ -26,7 +27,6 @@
 #include <string>
 #include <vector>
 
-#include "common/bind.h"
 #include "common/strings.h"
 #include "hal/ranging_hal.h"
 #include "hal/ranging_hal_mock.h"
@@ -257,12 +257,12 @@ struct CsModule {
   std::future<void> fake_timer_advance(uint64_t ms) {
     std::promise<void> promise;
     auto future = promise.get_future();
-    client_handler_->Post(common::BindOnce(
+    client_handler_->Post(base::BindOnce(
             [](std::promise<void> promise, uint64_t ms) {
               fake_timerfd_advance(ms);
               promise.set_value();
             },
-            common::Passed(std::move(promise)), ms));
+            base::Passed(std::move(promise)), ms));
 
     return future;
   }

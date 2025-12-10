@@ -16,6 +16,7 @@
 
 #include "hci/hci_layer_fake.h"
 
+#include <base/functional/bind.h>
 #include <bluetooth/log.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -283,7 +284,7 @@ void HciLayerFake::IncomingAclData(uint16_t handle, std::unique_ptr<AclBuilder> 
                               promise.set_value();
                               return std::make_unique<AclView>(acl2);
                             },
-                            queue_end, handle, acl_view, common::Passed(std::move(promise))));
+                            queue_end, handle, acl_view, base::Passed(std::move(promise))));
   auto status = future.wait_for(std::chrono::milliseconds(1000));
   ASSERT_EQ(status, std::future_status::ready);
 }

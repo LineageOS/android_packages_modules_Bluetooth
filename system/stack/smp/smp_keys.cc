@@ -48,8 +48,7 @@
 #include "stack/include/btm_ble_sec_api.h"
 #include "stack/include/main_thread.h"
 
-using bluetooth::common::BindOnce;
-using bluetooth::common::OnceCallback;
+using base::BindOnce;
 using crypto_toolbox::aes_128;
 using namespace bluetooth;
 
@@ -61,7 +60,7 @@ static void smp_process_stk(tSMP_CB* p_cb, Octet16* p);
 static Octet16 smp_calculate_legacy_short_term_key(tSMP_CB* p_cb);
 static void smp_process_private_key(tSMP_CB* p_cb);
 
-static void send_ble_rand(OnceCallback<void(uint64_t)> callback);
+static void send_ble_rand(base::OnceCallback<void(uint64_t)> callback);
 
 #define SMP_PASSKEY_MASK 0x000fffff
 
@@ -1052,6 +1051,6 @@ void smp_start_nonce_generation(tSMP_CB* p_cb) {
           p_cb));
 }
 
-static void send_ble_rand(OnceCallback<void(uint64_t)> callback) {
+static void send_ble_rand(base::OnceCallback<void(uint64_t)> callback) {
   bluetooth::shim::GetController()->LeRand(get_main_thread()->BindOnce(std::move(callback)));
 }

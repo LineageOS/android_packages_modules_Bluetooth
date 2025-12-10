@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <base/functional/callback.h>
 #include <sys/epoll.h>
 
 #include <atomic>
@@ -26,7 +27,6 @@
 #include <mutex>
 #include <thread>
 
-#include "common/callback.h"
 #include "os/utils.h"
 
 namespace bluetooth {

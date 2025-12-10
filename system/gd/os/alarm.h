@@ -16,11 +16,12 @@
 
 #pragma once
 
+#include <base/functional/callback.h>
+
 #include <functional>
 #include <memory>
 #include <mutex>
 
-#include "common/callback.h"
 #include "os/thread.h"
 #include "os/utils.h"
 
@@ -54,7 +55,7 @@ public:
   ~Alarm();
 
   // Schedule the alarm with given delay
-  void Schedule(common::OnceClosure task, std::chrono::milliseconds delay);
+  void Schedule(base::OnceClosure task, std::chrono::milliseconds delay);
 
   // Cancel the alarm. No-op if it's not armed.
   void Cancel();
@@ -62,7 +63,7 @@ public:
   std::chrono::system_clock::time_point GetArmedTime() { return armed_time_; }
 
 private:
-  common::OnceClosure task_;
+  base::OnceClosure task_;
   std::chrono::system_clock::time_point armed_time_;
   Thread* thread_;
   int fd_ = 0;
