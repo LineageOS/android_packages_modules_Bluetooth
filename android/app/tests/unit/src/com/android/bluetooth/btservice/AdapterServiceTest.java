@@ -1363,7 +1363,6 @@ public class AdapterServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_REBOKE_PERMISSION_ON_UNBOND)
     public void testRemovePermissionBondedToBonding() {
         initTest();
         SharedPreferences mockPreferences = mock(SharedPreferences.class);

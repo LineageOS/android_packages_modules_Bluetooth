@@ -4160,8 +4160,7 @@ public class AdapterService extends Service {
         handleBondStateChange(BluetoothProfile.CSIP_SET_COORDINATOR, device, fromState, toState);
         mDatabaseManager.handleBondStateChanged(device, fromState, toState);
 
-        if (toState == BOND_NONE
-                || (Flags.rebokePermissionOnUnbond() && fromState == BOND_BONDED)) {
+        if (toState == BOND_NONE || fromState == BOND_BONDED) {
             // Remove the permissions for unbonded devices
             setMessageAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN);
             setPhonebookAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN);
