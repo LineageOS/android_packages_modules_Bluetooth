@@ -3365,11 +3365,11 @@ void bta_av_api_set_peer_sep(tBTA_AV_DATA* p_data) {
     if (p_data->peer_sep.sep == AVDT_TSEP_SNK) {
       // src close legacy cback
       log::warn("current dut is src");
-      AVRC_UpdateCcb(&p_data->peer_sep.addr, AVRC_CO_METADATA);
+      AVRC_UpdateCcb(p_data->peer_sep.addr, AVRC_CO_METADATA);
     } else if (p_data->peer_sep.sep == AVDT_TSEP_SRC) {
       // sink close new cback
       log::warn("current dut is sink");
-      AVRC_UpdateCcb(&p_data->peer_sep.addr, AVRC_CO_GOOGLE);
+      AVRC_UpdateCcb(p_data->peer_sep.addr, AVRC_CO_GOOGLE);
     }
   }
 }
