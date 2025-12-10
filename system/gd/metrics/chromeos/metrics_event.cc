@@ -251,10 +251,10 @@ AddressPrivacyState ToAddressPrivacyState(uint32_t state) {
   return state == 1 ? AddressPrivacyState::Enabled : AddressPrivacyState::Disabled;
 }
 
-ConnectionType ToPairingDeviceType(std::string addr, uint32_t device_type) {
+ConnectionType ToPairingDeviceType(RawAddress addr, uint32_t device_type) {
   // A map stores the pending ConnectionType used to match a pairing event with unknown type.
   // map<address, type>
-  static std::map<std::string, ConnectionType> pending_type;
+  static std::map<RawAddress, ConnectionType> pending_type;
 
   switch ((BtDeviceType)device_type) {
     case BtDeviceType::Ble:
