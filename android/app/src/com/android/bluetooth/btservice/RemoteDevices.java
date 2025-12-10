@@ -1593,9 +1593,7 @@ public class RemoteDevices {
 
         String identityAddressString = Utils.getAddressStringFromByte(identityAddress);
         deviceProperties.setIdentityAddress(identityAddressString, addressType);
-        if (Flags.leAddressMapUpdate()) {
-            mAddressMap.put(identityAddressString, Utils.getAddressStringFromByte(pseudoAddress));
-        }
+        mAddressMap.put(identityAddressString, Utils.getAddressStringFromByte(pseudoAddress));
     }
 
     void aclStateChangeCallback(

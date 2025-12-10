@@ -110,16 +110,6 @@ flag {
 }
 
 flag {
-    name: "le_address_map_update"
-    namespace: "bluetooth"
-    description: "Update address map for LE devices as well"
-    bug: "424898845"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "fix_ongoing_rnr_while_bonding"
     namespace: "bluetooth"
     description: "Fix pairing failure when RNR onging"
