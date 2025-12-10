@@ -259,3 +259,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "prevent_btm_sec_cb_overwrite_during_pairing"
+    namespace: "bluetooth"
+    description: "If the pairing state is not idle, do not overwrite btm_sec_cb"
+    bug: "467193133"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
