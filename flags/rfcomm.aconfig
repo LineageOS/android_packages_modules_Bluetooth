@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "rfcomm_fix_mux_collision_handling"
-    namespace: "bluetooth"
-    description: "Properly handle incoming connections while connecting"
-    bug: "399420482"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "rfcomm_fix_bta_ag_rfc_acp_open_error"
     namespace: "bluetooth"
     description: "Properly handle bta_ag_rfc_acp_open when check connection fail"

@@ -102,12 +102,6 @@ typedef struct {
   bool collision_outgoing_conn_cnf;        /* true if peer responded to start_req after collision */
   bool collision_outgoing_cfg_complete;    /* true if configuration of outgoing conn completed */
   tL2CAP_CFG_INFO collision_cfg_info = {}; /* collision: store cfg info for outgoing connection */
-  // TODO: b/399420482 - delete pending_XXX when removing flag
-  uint16_t pending_lcid;                   /* store LCID for incoming connection while connecting */
-  bool pending_configure_complete;         /* true if confiquration of the pending
-                                              connection was completed*/
-  tL2CAP_CFG_INFO pending_cfg_info = {};   /* store configure info for incoming
-                                         connection while connecting */
 } tRFC_MCB;
 
 /*
