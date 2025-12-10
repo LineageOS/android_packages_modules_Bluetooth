@@ -23,8 +23,6 @@ import android.text.util.Rfc822Token;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
-import com.android.bluetooth.flags.Flags;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -191,11 +189,7 @@ public class BluetoothMapbMessageMimeTest {
 
         assertThat(mimeToCreateByParsing.getSubject()).isEqualTo(TEST_SUBJECT);
         assertThat(mimeToCreateByParsing.getMessageId()).isEqualTo(TEST_MESSAGE_ID);
-        if (Flags.mapMimeMultipart()) {
-            assertThat(mimeToCreateByParsing.getContentType()).isEqualTo("multipart/mixed");
-        } else {
-            assertThat(mimeToCreateByParsing.getContentType()).isEqualTo(TEST_CONTENT_TYPE);
-        }
+        assertThat(mimeToCreateByParsing.getContentType()).isEqualTo("multipart/mixed");
 
         assertThat(mimeToCreateByParsing.getFrom().get(0).getName())
                 .isEqualTo(TEST_FROM.get(0).getName());
