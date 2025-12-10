@@ -389,9 +389,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
   }
 
   void stop() {
-    if (com_android_bluetooth_flags_fix_event_handler_reg_and_dereg()) {
-      hci_layer_->ReleaseDistanceMeasurementInterface();
-    }
+    hci_layer_->ReleaseDistanceMeasurementInterface();
 
     hci_layer_->UnregisterLeEventHandler(hci::SubeventCode::TRANSMIT_POWER_REPORTING);
     cs_requester_trackers_.clear();

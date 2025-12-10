@@ -217,22 +217,12 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   ~impl() {
     stop();
     if (address_manager_registered_) {
-      if (com_android_bluetooth_flags_fix_use_after_object_destroyed()) {
-        le_address_manager_->UnregisterSync(this);
-      } else {
-        le_address_manager_->Unregister(this);
-      }
+      le_address_manager_->UnregisterSync(this);
     }
   }
 
   void stop() {
-    if (com_android_bluetooth_flags_fix_event_handler_reg_and_dereg()) {
-      hci_layer_->ReleaseLeScanningInterface();
-    } else {
-      for (auto subevent_code : LeScanningEvents) {
-        hci_layer_->UnregisterLeEventHandler(subevent_code);
-      }
-    }
+    hci_layer_->ReleaseLeScanningInterface();
 
     if (is_batch_scan_supported_) {
       // TODO implete vse module
