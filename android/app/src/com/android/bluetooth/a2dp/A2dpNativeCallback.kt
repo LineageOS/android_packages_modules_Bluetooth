@@ -14,71 +14,64 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.a2dp;
+package com.android.bluetooth.a2dp
 
-import static java.util.Objects.requireNonNull;
+import android.bluetooth.BluetoothA2dp
+import android.bluetooth.BluetoothCodecConfig
+import android.bluetooth.BluetoothCodecStatus
+import android.util.Log
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.profile.NativeCallback
+import com.android.internal.annotations.VisibleForTesting
 
-import android.annotation.NonNull;
-import android.bluetooth.BluetoothA2dp;
-import android.bluetooth.BluetoothCodecConfig;
-import android.bluetooth.BluetoothCodecStatus;
-import android.util.Log;
+class A2dpNativeCallback(adapterService: AdapterService, private val a2dpService: A2dpService) :
+    NativeCallback(adapterService) {
 
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.profile.NativeCallback;
-import com.android.internal.annotations.VisibleForTesting;
+    companion object {
+        private val TAG: String = A2dpNativeCallback::class.java.simpleName
 
-import java.util.Arrays;
-
-class A2dpNativeCallback extends NativeCallback {
-    private static final String TAG = A2dpNativeCallback.class.getSimpleName();
-
-    // Match up with btav_audio_state_t enum of bt_av.h
-    static final int AUDIO_STATE_REMOTE_SUSPEND = 0;
-    static final int AUDIO_STATE_STOPPED = 1;
-    static final int AUDIO_STATE_STARTED = 2;
-
-    private final A2dpService mA2dpService;
-
-    @VisibleForTesting
-    A2dpNativeCallback(@NonNull AdapterService adapterService, @NonNull A2dpService a2dpService) {
-        super(adapterService);
-        mA2dpService = requireNonNull(a2dpService);
+        // Match up with btav_audio_state_t enum of bt_av.h
+        const val AUDIO_STATE_REMOTE_SUSPEND = 0
+        const val AUDIO_STATE_STOPPED = 1
+        const val AUDIO_STATE_STARTED = 2
     }
 
     @VisibleForTesting
-    void onConnectionStateChanged(byte[] address, int state, int reason) {
-        mA2dpService.onConnectionStateChangedFromNative(getDevice(address), state, reason);
+    fun onConnectionStateChanged(address: ByteArray, state: Int, reason: Int) {
+        a2dpService.onConnectionStateChangedFromNative(getDevice(address), state, reason)
     }
 
     @VisibleForTesting
-    void onAudioStateChanged(byte[] address, int state) {
-        mA2dpService.onAudioStateChangedFromNative(getDevice(address), state);
+    fun onAudioStateChanged(address: ByteArray, state: Int) {
+        a2dpService.onAudioStateChangedFromNative(getDevice(address), state)
     }
 
     @VisibleForTesting
-    void onCodecConfigChanged(
-            byte[] address,
-            BluetoothCodecConfig newCodecConfig,
-            BluetoothCodecConfig[] codecsLocalCapabilities,
-            BluetoothCodecConfig[] codecsSelectableCapabilities) {
-        mA2dpService.onCodecConfigChangedFromNative(
-                getDevice(address),
-                new BluetoothCodecStatus(
-                        newCodecConfig,
-                        Arrays.asList(codecsLocalCapabilities),
-                        Arrays.asList(codecsSelectableCapabilities)));
+    fun onCodecConfigChanged(
+        address: ByteArray,
+        newCodecConfig: BluetoothCodecConfig,
+        codecsLocalCapabilities: Array<BluetoothCodecConfig>,
+        codecsSelectableCapabilities: Array<BluetoothCodecConfig>,
+    ) {
+        a2dpService.onCodecConfigChangedFromNative(
+            getDevice(address),
+            BluetoothCodecStatus(
+                newCodecConfig,
+                codecsLocalCapabilities.toList(),
+                codecsSelectableCapabilities.toList(),
+            ),
+        )
     }
 
-    void onAudioDelayReported(byte[] address, int audioDelay) {
-        mA2dpService.onAudioDelayReportedFromNative(getDevice(address), audioDelay);
+    fun onAudioDelayReported(address: ByteArray, audioDelay: Int) {
+        a2dpService.onAudioDelayReportedFromNative(getDevice(address), audioDelay)
     }
 
     @VisibleForTesting
-    boolean isMandatoryCodecPreferred(byte[] address) {
-        int enabled = mA2dpService.getOptionalCodecsEnabled(getDevice(address));
+    fun isMandatoryCodecPreferred(address: ByteArray): Boolean {
+        val enabled = a2dpService.getOptionalCodecsEnabled(getDevice(address))
 
-        Log.d(TAG, "isMandatoryCodecPreferred: optional preference " + enabled);
-        return enabled == BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED;
+        Log.d(TAG, "isMandatoryCodecPreferred: optional preference \$enabled")
+        return enabled == BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED
     }
 }

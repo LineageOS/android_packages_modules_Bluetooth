@@ -13,70 +13,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.bluetooth.a2dp
 
-/*
- * Defines the native interface that is used by state machine/service to
- * send or receive messages from the native stack. This file is registered
- * for the native methods in the corresponding JNI C++ file.
- */
-
-package com.android.bluetooth.a2dp;
-
-import static java.util.Objects.requireNonNull;
-
-import android.annotation.NonNull;
-import android.bluetooth.BluetoothCodecConfig;
-import android.bluetooth.BluetoothCodecType;
-import android.bluetooth.BluetoothDevice;
-
-import com.android.bluetooth.Utils;
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.profile.NativeInterface;
-import com.android.internal.annotations.VisibleForTesting;
-
-import java.util.Arrays;
-import java.util.List;
+import android.bluetooth.BluetoothCodecConfig
+import android.bluetooth.BluetoothCodecType
+import android.bluetooth.BluetoothDevice
+import com.android.bluetooth.Utils
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.profile.NativeInterface
 
 /** A2DP Native Interface to/from JNI. */
-public class A2dpNativeInterface extends NativeInterface<A2dpNativeCallback> {
-    private static final String TAG = A2dpNativeInterface.class.getSimpleName();
-
-    private final AdapterService mAdapterService;
-
-    private BluetoothCodecType[] mSupportedCodecTypes;
-
-    @VisibleForTesting
-    A2dpNativeInterface(
-            @NonNull AdapterService adapterService, @NonNull A2dpNativeCallback nativeCallback) {
-        super(requireNonNull(nativeCallback));
-        mAdapterService = requireNonNull(adapterService);
-    }
+class A2dpNativeInterface(
+    private val mAdapterService: AdapterService,
+    nativeCallback: A2dpNativeCallback,
+) : NativeInterface<A2dpNativeCallback>(nativeCallback) {
+    private var mSupportedCodecTypes: Array<BluetoothCodecType>? = null
 
     /**
      * Initializes the native interface.
      *
      * @param maxConnectedAudioDevices maximum number of A2DP Sink devices that can be connected
-     *     simultaneously
+     *   simultaneously
      * @param codecConfigPriorities an array with the codec configuration priorities to configure.
      */
-    public void init(
-            int maxConnectedAudioDevices,
-            BluetoothCodecConfig[] codecConfigPriorities,
-            BluetoothCodecConfig[] codecConfigOffloading) {
-        initNative(maxConnectedAudioDevices, codecConfigPriorities, codecConfigOffloading);
+    fun init(
+        maxConnectedAudioDevices: Int,
+        codecConfigPriorities: Array<BluetoothCodecConfig>,
+        codecConfigOffloading: Array<BluetoothCodecConfig>,
+    ) {
+        initNative(maxConnectedAudioDevices, codecConfigPriorities, codecConfigOffloading)
     }
 
-    @Override
-    public void cleanup() {
-        cleanupNative();
+    override fun cleanup() {
+        cleanupNative()
     }
 
     /** Returns the list of locally supported codec types. */
-    public List<BluetoothCodecType> getSupportedCodecTypes() {
+    fun getSupportedCodecTypes(): List<BluetoothCodecType> {
         if (mSupportedCodecTypes == null) {
-            mSupportedCodecTypes = getSupportedCodecTypesNative();
+            mSupportedCodecTypes = getSupportedCodecTypesNative()
         }
-        return Arrays.asList(mSupportedCodecTypes);
+        return mSupportedCodecTypes?.toList() ?: emptyList()
     }
 
     /**
@@ -85,8 +62,8 @@ public class A2dpNativeInterface extends NativeInterface<A2dpNativeCallback> {
      * @param device the remote device
      * @return true on success, otherwise false.
      */
-    public boolean connectA2dp(BluetoothDevice device) {
-        return connectA2dpNative(getByteAddress(device));
+    fun connectA2dp(device: BluetoothDevice): Boolean {
+        return connectA2dpNative(getByteAddress(device))
     }
 
     /**
@@ -95,8 +72,8 @@ public class A2dpNativeInterface extends NativeInterface<A2dpNativeCallback> {
      * @param device the remote device
      * @return true on success, otherwise false.
      */
-    public boolean disconnectA2dp(BluetoothDevice device) {
-        return disconnectA2dpNative(getByteAddress(device));
+    fun disconnectA2dp(device: BluetoothDevice): Boolean {
+        return disconnectA2dpNative(getByteAddress(device))
     }
 
     /**
@@ -105,8 +82,8 @@ public class A2dpNativeInterface extends NativeInterface<A2dpNativeCallback> {
      * @param device the remote device
      * @return true on success, otherwise false.
      */
-    public boolean setSilenceDevice(BluetoothDevice device, boolean silence) {
-        return setSilenceDeviceNative(getByteAddress(device), silence);
+    fun setSilenceDevice(device: BluetoothDevice, silence: Boolean): Boolean {
+        return setSilenceDeviceNative(getByteAddress(device), silence)
     }
 
     /**
@@ -115,8 +92,8 @@ public class A2dpNativeInterface extends NativeInterface<A2dpNativeCallback> {
      * @param device the remote device
      * @return true on success, otherwise false.
      */
-    public boolean setActiveDevice(BluetoothDevice device) {
-        return setActiveDeviceNative(getByteAddress(device));
+    fun setActiveDevice(device: BluetoothDevice?): Boolean {
+        return setActiveDeviceNative(getByteAddress(device))
     }
 
     /**
@@ -126,35 +103,40 @@ public class A2dpNativeInterface extends NativeInterface<A2dpNativeCallback> {
      * @param codecConfigArray an array with the codec configurations to configure.
      * @return true on success, otherwise false.
      */
-    public boolean setCodecConfigPreference(
-            BluetoothDevice device, BluetoothCodecConfig[] codecConfigArray) {
-        return setCodecConfigPreferenceNative(getByteAddress(device), codecConfigArray);
+    fun setCodecConfigPreference(
+        device: BluetoothDevice?,
+        codecConfigArray: Array<BluetoothCodecConfig>,
+    ): Boolean {
+        return setCodecConfigPreferenceNative(getByteAddress(device), codecConfigArray)
     }
 
-    private byte[] getByteAddress(BluetoothDevice device) {
+    private fun getByteAddress(device: BluetoothDevice?): ByteArray {
         if (device == null) {
-            return Utils.getBytesFromAddress("00:00:00:00:00:00");
+            return Utils.getBytesFromAddress("00:00:00:00:00:00")
         }
-        return mAdapterService.getByteBrEdrAddress(device);
+        return mAdapterService.getByteBrEdrAddress(device)
     }
 
-    private native void initNative(
-            int maxConnectedAudioDevices,
-            BluetoothCodecConfig[] codecConfigPriorities,
-            BluetoothCodecConfig[] codecConfigOffloading);
+    private external fun initNative(
+        maxConnectedAudioDevices: Int,
+        codecConfigPriorities: Array<BluetoothCodecConfig>,
+        codecConfigOffloading: Array<BluetoothCodecConfig>,
+    )
 
-    private native void cleanupNative();
+    private external fun cleanupNative()
 
-    private native BluetoothCodecType[] getSupportedCodecTypesNative();
+    private external fun getSupportedCodecTypesNative(): Array<BluetoothCodecType>
 
-    private native boolean connectA2dpNative(byte[] address);
+    private external fun connectA2dpNative(address: ByteArray): Boolean
 
-    private native boolean disconnectA2dpNative(byte[] address);
+    private external fun disconnectA2dpNative(address: ByteArray): Boolean
 
-    private native boolean setSilenceDeviceNative(byte[] address, boolean silence);
+    private external fun setSilenceDeviceNative(address: ByteArray, silence: Boolean): Boolean
 
-    private native boolean setActiveDeviceNative(byte[] address);
+    private external fun setActiveDeviceNative(address: ByteArray): Boolean
 
-    private native boolean setCodecConfigPreferenceNative(
-            byte[] address, BluetoothCodecConfig[] codecConfigArray);
+    private external fun setCodecConfigPreferenceNative(
+        address: ByteArray,
+        codecConfigArray: Array<BluetoothCodecConfig>,
+    ): Boolean
 }
