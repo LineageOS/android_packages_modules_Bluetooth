@@ -18,8 +18,6 @@
 
 #include "fields/array_field.h"
 #include "fields/body_field.h"
-#include "fields/checksum_field.h"
-#include "fields/checksum_start_field.h"
 #include "fields/count_field.h"
 #include "fields/custom_field.h"
 #include "fields/custom_field_fixed_size.h"

@@ -10,14 +10,11 @@ package {
 cc_binary_host {
     name: "bluetooth_packetgen",
     srcs: [
-        "checksum_def.cc",
         "custom_field_def.cc",
         "enum_def.cc",
         "enum_gen.cc",
         "fields/array_field.cc",
         "fields/body_field.cc",
-        "fields/checksum_field.cc",
-        "fields/checksum_start_field.cc",
         "fields/count_field.cc",
         "fields/custom_field.cc",
         "fields/custom_field_fixed_size.cc",

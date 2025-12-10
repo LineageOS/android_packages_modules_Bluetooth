@@ -93,7 +93,6 @@ bool generate_cpp_headers_one_file(const Declarations& decls, bool generate_fuzz
 #include "packet/packet_builder.h"
 #include "packet/packet_struct.h"
 #include "packet/packet_view.h"
-#include "packet/checksum_type_checker.h"
 #include "packet/custom_type_checker.h"
 
 #if __has_include(<bluetooth/log.h>)
@@ -124,8 +123,7 @@ bool generate_cpp_headers_one_file(const Declarations& decls, bool generate_fuzz
   }
 
   for (const auto& c : decls.type_defs_queue_) {
-    if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM ||
-        c.second->GetDefinitionType() == TypeDef::Type::CHECKSUM) {
+    if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM) {
       ((CustomFieldDef*)c.second)->GenInclude(out_file);
     }
   }
@@ -137,8 +135,7 @@ bool generate_cpp_headers_one_file(const Declarations& decls, bool generate_fuzz
   out_file << "\n\n";
 
   for (const auto& c : decls.type_defs_queue_) {
-    if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM ||
-        c.second->GetDefinitionType() == TypeDef::Type::CHECKSUM) {
+    if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM) {
       ((CustomFieldDef*)c.second)->GenUsing(out_file);
     }
   }
@@ -155,7 +152,6 @@ using ::bluetooth::packet::kLittleEndian;
 using ::bluetooth::packet::PacketBuilder;
 using ::bluetooth::packet::PacketStruct;
 using ::bluetooth::packet::PacketView;
-using ::bluetooth::packet::parser::ChecksumTypeChecker;
 )";
 
   if (generate_fuzzing || generate_tests) {
@@ -183,13 +179,6 @@ using ::bluetooth::packet::RawBuilder;
       out_file << "\n\n";
     }
   }
-  for (const auto& ch : decls.type_defs_queue_) {
-    if (ch.second->GetDefinitionType() == TypeDef::Type::CHECKSUM) {
-      const auto* checksum_def = static_cast<const ChecksumDef*>(ch.second);
-      checksum_def->GenChecksumCheck(out_file);
-    }
-  }
-  out_file << "\n/* Done ChecksumChecks */\n";
 
   for (const auto& c : decls.type_defs_queue_) {
     if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM) {

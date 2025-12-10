@@ -71,8 +71,6 @@
 %token RESERVED "reserved"
 %token GROUP "group"
 %token CUSTOM_FIELD "custom_field"
-%token CHECKSUM "checksum"
-%token CHECKSUM_START "checksum_start"
 %token PADDING "padding"
 %token TEST "test"
 
@@ -86,7 +84,6 @@
 %type<packet_field_type> group_field_definition;
 %type<packet_field_type> type_def_field_definition;
 %type<packet_field_type> scalar_field_definition;
-%type<packet_field_type> checksum_start_field_definition;
 %type<packet_field_type> padding_field_definition;
 %type<packet_field_type> size_field_definition;
 %type<packet_field_type> payload_field_definition;
@@ -142,10 +139,6 @@ declaration
     {
       // All actions are handled in group_definition
     }
-  | checksum_definition
-    {
-      // All actions are handled in checksum_definition
-    }
   | custom_field_definition
     {
       // All actions are handled in custom_field_definition
@@ -199,15 +192,6 @@ group_definition
     {
       decls->AddGroupDef(*$2, $4);
       delete $2;
-    }
-
-checksum_definition
-  : CHECKSUM IDENTIFIER ':' INTEGER STRING
-    {
-      DEBUG() << "Checksum field defined\n";
-      decls->AddTypeDef(*$2, new ChecksumDef(*$2, *$5, $4));
-      delete $2;
-      delete $5;
     }
 
 custom_field_definition
@@ -469,11 +453,6 @@ field_definition
       DEBUG() << "Scalar field\n";
       $$ = $1;
     }
-  | checksum_start_field_definition
-    {
-      DEBUG() << "Checksum start field\n";
-      $$ = $1;
-    }
   | padding_field_definition
     {
       DEBUG() << "Padding field\n";
@@ -640,14 +619,6 @@ payload_field_definition
     {
       DEBUG() << "Payload field\n";
       $$ = new PayloadField("", LOC);
-    }
-
-checksum_start_field_definition
-  : CHECKSUM_START '(' IDENTIFIER ')'
-    {
-      DEBUG() << "ChecksumStart field defined\n";
-      $$ = new ChecksumStartField(*$3, LOC);
-      delete $3;
     }
 
 padding_field_definition
