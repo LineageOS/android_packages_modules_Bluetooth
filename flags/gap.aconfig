@@ -146,16 +146,6 @@ flag {
 }
 
 flag {
-    name: "gatt_failure_callback_on_cancel"
-    namespace: "bluetooth"
-    description: "Invoke failure callback on cancelling connection right after connected."
-    bug: "425563544"
-    metadata {
-            purpose: PURPOSE_BUGFIX
-        }
-}
-
-flag {
     name: "original_address_filter_match"
     namespace: "bluetooth"
     description: "Match other filters along with device address when we use original address."
