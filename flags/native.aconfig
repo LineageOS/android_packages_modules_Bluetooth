@@ -16,16 +16,6 @@ flag {
 }
 
 flag {
-    name: "use_shared_promise_for_le_address_manager"
-    namespace: "bluetooth"
-    description: "Use shared promise for LE Address Manager."
-    bug: "432148110"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "fix_event_handler_reg_and_dereg"
     namespace: "bluetooth"
     description: "Fix the event handler registration and deregistration."

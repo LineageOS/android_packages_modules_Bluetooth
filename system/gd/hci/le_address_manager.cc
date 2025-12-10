@@ -298,12 +298,8 @@ bool LeAddressManager::UnregisterSync(LeAddressManagerCallback* callback,
   handler_->BindOnceOn(this, &LeAddressManager::unregister_client, callback)();
   std::promise<void> promise;
   auto future = promise.get_future();
-  if (com_android_bluetooth_flags_use_shared_promise_for_le_address_manager()) {
-    handler_->Post(base::BindOnce([](std::promise<void> promise) { promise.set_value(); },
-                                  std::move(promise)));
-  } else {
-    handler_->Post(base::BindOnce(&std::promise<void>::set_value, base::Unretained(&promise)));
-  }
+  handler_->Post(base::BindOnce([](std::promise<void> promise) { promise.set_value(); },
+                                std::move(promise)));
 
   return future.wait_for(timeout) == std::future_status::ready;
 }
