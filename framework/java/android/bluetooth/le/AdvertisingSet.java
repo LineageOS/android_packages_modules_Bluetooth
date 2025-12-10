@@ -45,17 +45,13 @@ public final class AdvertisingSet {
     private static final String TAG = AdvertisingSet.class.getSimpleName();
 
     private final IBluetoothAdvertise mAdvertise;
-    private int mAdvertiserId;
     private final AttributionSource mAttributionSource;
+    private int mAdvertiserId;
 
-    AdvertisingSet(
-            IBluetoothAdvertise advertise,
-            int advertiserId,
-            BluetoothAdapter bluetoothAdapter,
-            AttributionSource source) {
-        mAdvertiserId = advertiserId;
-        mAttributionSource = source;
+    AdvertisingSet(IBluetoothAdvertise advertise, int advertiserId, AttributionSource source) {
         mAdvertise = requireNonNull(advertise);
+        mAttributionSource = source;
+        mAdvertiserId = advertiserId;
     }
 
     /* package */ void setAdvertiserId(int advertiserId) {
