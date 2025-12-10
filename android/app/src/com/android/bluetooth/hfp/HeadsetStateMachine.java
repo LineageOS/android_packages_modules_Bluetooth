@@ -2675,7 +2675,7 @@ class HeadsetStateMachine extends StateMachine {
         if (!hasMessages(CLCC_RSP_TIMEOUT)) {
             return;
         }
-        if (Flags.sendOkClccBeforeSlc() && !mHasRfcommConnectionCompleted) {
+        if (!mHasRfcommConnectionCompleted) {
             log("rfcomm not completed, not sending clcc response");
             return;
         }

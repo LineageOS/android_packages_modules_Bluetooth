@@ -77,16 +77,6 @@ flag {
 }
 
 flag {
-    name: "send_ok_clcc_before_slc"
-    namespace: "bluetooth"
-    description: "Send clcc response ok before slc is completed to avoid remote issues"
-    bug: "421323693"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "merge_call_with_held_conference"
     namespace: "bluetooth"
     description: "Merge the active call with held conference call"
