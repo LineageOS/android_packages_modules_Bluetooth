@@ -148,19 +148,6 @@ private:
                       uint8_t primary_phy, uint8_t secondary_phy, uint8_t advertising_sid,
                       int8_t tx_power, int8_t rssi, uint16_t periodic_advertising_interval,
                       std::vector<uint8_t> advertising_data);
-
-  class AddressCache {
-  public:
-    void init(void);
-    void add(const RawAddress& p_bda);
-    bool find(const RawAddress& p_bda);
-
-  private:
-    // all access to this variable should be done on the jni thread
-    std::set<RawAddress> remote_bdaddr_cache_;
-    std::queue<RawAddress> remote_bdaddr_cache_ordered_;
-    const size_t remote_bdaddr_cache_max_size_ = 1024;
-  } address_cache_;
 };
 
 }  // namespace shim

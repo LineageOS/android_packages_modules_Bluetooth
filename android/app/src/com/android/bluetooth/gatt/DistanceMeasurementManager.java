@@ -32,9 +32,9 @@ import android.bluetooth.le.DistanceMeasurementParams;
 import android.bluetooth.le.DistanceMeasurementResult;
 import android.bluetooth.le.IDistanceMeasurementCallback;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.RemoteException;
+import android.util.ArraySet;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
@@ -44,12 +44,12 @@ import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -74,14 +74,11 @@ public class DistanceMeasurementManager {
     private static final int INVALID_ALTITUDE_ANGLE_DEGREE = -91;
 
     private final AdapterService mAdapterService;
-    private final HandlerThread mHandlerThread;
     private final Handler mHandler;
     private final DistanceMeasurementNativeInterface mNativeInterface;
     private final DistanceMeasurementBinder mDistanceMeasurementBinder;
-    private final ConcurrentHashMap<String, CopyOnWriteArraySet<DistanceMeasurementTracker>>
-            mRssiTrackers = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, CopyOnWriteArraySet<DistanceMeasurementTracker>>
-            mCsTrackers = new ConcurrentHashMap<>();
+    private final Map<String, Set<DistanceMeasurementTracker>> mRssiTrackers = new HashMap<>();
+    private final Map<String, Set<DistanceMeasurementTracker>> mCsTrackers = new HashMap<>();
     private final boolean mHasChannelSoundingFeature;
 
     private volatile boolean mIsTurnedOff = false;
@@ -92,21 +89,7 @@ public class DistanceMeasurementManager {
             DistanceMeasurementNativeInterface nativeInterface,
             Looper looper) {
         mAdapterService = adapterService;
-
-        if (Flags.distanceMeasurementThread()) {
-            // TODO(b/391508617): When removing this flag, remove all 'synchronized' and replace
-            // java.util.concurrent data structures with the basic ones.
-            // Also, remove mHandlerThread variable.
-            mHandler = new Handler(looper);
-
-            mHandlerThread = null;
-        } else {
-            // Start a HandlerThread that handles distance measurement operations
-            mHandlerThread = new HandlerThread("DistanceMeasurementManager");
-            mHandlerThread.start();
-
-            mHandler = new Handler(mHandlerThread.getLooper());
-        }
+        mHandler = new Handler(looper);
 
         var nativeCallback = new DistanceMeasurementNativeCallback(mAdapterService, this);
         mNativeInterface =
@@ -274,10 +257,9 @@ public class DistanceMeasurementManager {
         }
     }
 
-    private synchronized void startRssiTracker(DistanceMeasurementTracker tracker) {
-        mRssiTrackers.putIfAbsent(tracker.mIdentityAddress, new CopyOnWriteArraySet<>());
-        CopyOnWriteArraySet<DistanceMeasurementTracker> set =
-                mRssiTrackers.get(tracker.mIdentityAddress);
+    private void startRssiTracker(DistanceMeasurementTracker tracker) {
+        mRssiTrackers.putIfAbsent(tracker.mIdentityAddress, new ArraySet<>());
+        Set<DistanceMeasurementTracker> set = mRssiTrackers.get(tracker.mIdentityAddress);
         if (!set.add(tracker)) {
             Log.w(TAG, "Already registered");
             return;
@@ -291,10 +273,9 @@ public class DistanceMeasurementManager {
                 tracker.mLocationType);
     }
 
-    private synchronized void startCsTracker(DistanceMeasurementTracker tracker) {
-        mCsTrackers.putIfAbsent(tracker.mIdentityAddress, new CopyOnWriteArraySet<>());
-        CopyOnWriteArraySet<DistanceMeasurementTracker> set =
-                mCsTrackers.get(tracker.mIdentityAddress);
+    private void startCsTracker(DistanceMeasurementTracker tracker) {
+        mCsTrackers.putIfAbsent(tracker.mIdentityAddress, new ArraySet<>());
+        Set<DistanceMeasurementTracker> set = mCsTrackers.get(tracker.mIdentityAddress);
         if (!set.add(tracker)) {
             Log.w(TAG, "Already registered");
             return;
@@ -367,8 +348,8 @@ public class DistanceMeasurementManager {
         throw new UnsupportedOperationException("Channel Sounding is not supported.");
     }
 
-    private synchronized int stopRssiTracker(UUID uuid, String identityAddress, boolean timeout) {
-        CopyOnWriteArraySet<DistanceMeasurementTracker> set = mRssiTrackers.get(identityAddress);
+    private int stopRssiTracker(UUID uuid, String identityAddress, boolean timeout) {
+        Set<DistanceMeasurementTracker> set = mRssiTrackers.get(identityAddress);
         if (set == null) {
             Log.w(TAG, "Can't find rssi tracker");
             return BluetoothStatusCodes.ERROR_DISTANCE_MEASUREMENT_INTERNAL;
@@ -396,8 +377,8 @@ public class DistanceMeasurementManager {
         return BluetoothStatusCodes.SUCCESS;
     }
 
-    private synchronized int stopCsTracker(UUID uuid, String identityAddress, boolean timeout) {
-        CopyOnWriteArraySet<DistanceMeasurementTracker> set = mCsTrackers.get(identityAddress);
+    private int stopCsTracker(UUID uuid, String identityAddress, boolean timeout) {
+        Set<DistanceMeasurementTracker> set = mCsTrackers.get(identityAddress);
         if (set == null) {
             Log.w(TAG, "Can't find CS tracker");
             return BluetoothStatusCodes.ERROR_DISTANCE_MEASUREMENT_INTERNAL;
@@ -492,7 +473,7 @@ public class DistanceMeasurementManager {
     }
 
     private void handleRssiStarted(String address) {
-        CopyOnWriteArraySet<DistanceMeasurementTracker> set = mRssiTrackers.get(address);
+        Set<DistanceMeasurementTracker> set = mRssiTrackers.get(address);
         if (set == null) {
             Log.w(TAG, "Can't find rssi tracker");
             return;
@@ -511,7 +492,7 @@ public class DistanceMeasurementManager {
     }
 
     private void handleCsStarted(String address) {
-        CopyOnWriteArraySet<DistanceMeasurementTracker> set = mCsTrackers.get(address);
+        Set<DistanceMeasurementTracker> set = mCsTrackers.get(address);
         if (set == null) {
             Log.w(TAG, "Can't find CS tracker");
             return;
@@ -546,7 +527,7 @@ public class DistanceMeasurementManager {
     }
 
     private void handleRssiStopped(String address, int reason) {
-        CopyOnWriteArraySet<DistanceMeasurementTracker> set = mRssiTrackers.get(address);
+        Set<DistanceMeasurementTracker> set = mRssiTrackers.get(address);
         if (set == null) {
             Log.w(TAG, "Can't find rssi tracker");
             return;
@@ -563,7 +544,7 @@ public class DistanceMeasurementManager {
     }
 
     private void handleCsStopped(String address, int reason) {
-        CopyOnWriteArraySet<DistanceMeasurementTracker> set = mCsTrackers.get(address);
+        Set<DistanceMeasurementTracker> set = mCsTrackers.get(address);
         if (set == null) {
             Log.w(TAG, "Can't find CS tracker");
             return;
@@ -640,7 +621,7 @@ public class DistanceMeasurementManager {
     }
 
     private void handleRssiResult(String address, DistanceMeasurementResult result) {
-        CopyOnWriteArraySet<DistanceMeasurementTracker> set = mRssiTrackers.get(address);
+        Set<DistanceMeasurementTracker> set = mRssiTrackers.get(address);
         if (set == null) {
             Log.w(TAG, "Can't find rssi tracker");
             return;
@@ -658,7 +639,7 @@ public class DistanceMeasurementManager {
     }
 
     private void handleCsResult(String address, DistanceMeasurementResult result) {
-        CopyOnWriteArraySet<DistanceMeasurementTracker> set = mCsTrackers.get(address);
+        Set<DistanceMeasurementTracker> set = mCsTrackers.get(address);
         if (set == null) {
             Log.w(TAG, "Can't find cs tracker");
             return;
@@ -680,15 +661,11 @@ public class DistanceMeasurementManager {
     }
 
     void postOnDistanceMeasurementThread(Runnable r) {
-        if (Flags.distanceMeasurementThread()) {
-            mHandler.post(r);
-        } else {
-            r.run();
-        }
+        mHandler.post(r);
     }
 
     <T> T runOnDistanceMeasurementThreadAndWaitForResult(GetResultTask<T> task) throws Throwable {
-        if (Flags.distanceMeasurementThread() && !mHandler.getLooper().isCurrentThread()) {
+        if (!mHandler.getLooper().isCurrentThread()) {
             CompletableFuture<T> result = new CompletableFuture<>();
             mHandler.post(
                     () -> {
@@ -714,7 +691,7 @@ public class DistanceMeasurementManager {
     }
 
     private void forceRunSyncOnDistanceMeasurementThread(Runnable r) {
-        if (!Flags.distanceMeasurementThread() || Utils.isInstrumentationTestMode()) {
+        if (Utils.isInstrumentationTestMode()) {
             r.run();
             return;
         }
@@ -735,7 +712,7 @@ public class DistanceMeasurementManager {
     private void enforceThread() {
         if (Utils.isInstrumentationTestMode()) return;
 
-        if (Flags.distanceMeasurementThread() && !mHandler.getLooper().isCurrentThread()) {
+        if (!mHandler.getLooper().isCurrentThread()) {
             throw new IllegalStateException("Not on distance measurement thread");
         }
     }

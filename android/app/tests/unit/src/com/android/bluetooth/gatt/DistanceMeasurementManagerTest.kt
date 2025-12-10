@@ -26,7 +26,6 @@ import android.bluetooth.le.IDistanceMeasurementCallback
 import android.content.pm.PackageManager
 import android.os.HandlerThread
 import android.os.TestLooperManager
-import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
@@ -35,7 +34,6 @@ import com.android.bluetooth.BluetoothStatsLog
 import com.android.bluetooth.TestUtils
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.btservice.MetricsLogger
-import com.android.bluetooth.flags.Flags
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
 import java.util.UUID
@@ -57,7 +55,6 @@ import org.mockito.kotlin.whenever
 /** Test cases for [DistanceMeasurementManager]. */
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@EnableFlags(Flags.FLAG_DISTANCE_MEASUREMENT_THREAD)
 class DistanceMeasurementManagerTest {
     @get:Rule val mockitoRule = MockitoRule()
     @get:Rule val setFlagsRule = SetFlagsRule()

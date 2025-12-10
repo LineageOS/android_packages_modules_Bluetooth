@@ -171,13 +171,6 @@ void BleScannerInterfaceImpl::Scan(bool start) {
               btm_cb.ble_ctr_cb.is_ble_observe_active());
     return;
   }
-
-  // TODO (b/432614634): When the flag remove_address_cache_from_ble_scanner is removed,
-  //                     also remove the AddressCache class entirely.
-  if (!com_android_bluetooth_flags_remove_address_cache_from_ble_scanner()) {
-    do_in_jni_thread(base::BindOnce(&BleScannerInterfaceImpl::AddressCache::init,
-                                    base::Unretained(&address_cache_)));
-  }
 }
 
 /** Setup scan filter params */
@@ -487,10 +480,6 @@ void BleScannerInterfaceImpl::on_scan_result(uint16_t event_type, uint8_t addres
   tBLE_ADDR_TYPE ble_addr_type = to_ble_addr_type(address_type);
 
   btm_cb.neighbor.le_scan.results++;
-  if (!com_android_bluetooth_flags_resolve_address_for_adv_report() &&
-      ble_addr_type != BLE_ADDR_ANONYMOUS) {
-    btm_ble_process_adv_addr(raw_address, &ble_addr_type);
-  }
 
   // Do not update device properties of already bonded devices.
   if (!BTM_IsBonded(raw_address)) {
@@ -801,24 +790,17 @@ void BleScannerInterfaceImpl::handle_remote_properties(RawAddress bd_addr, tBLE_
 
   // update device name
   if (p_eir_remote_name) {
-    if (com_android_bluetooth_flags_remove_address_cache_from_ble_scanner() ||
-        !address_cache_.find(bd_addr)) {
-      if (!com_android_bluetooth_flags_remove_address_cache_from_ble_scanner()) {
-        address_cache_.add(bd_addr);
-      }
-
-      if (remote_name_len > BD_NAME_LEN + 1 ||
-          (remote_name_len == BD_NAME_LEN + 1 && p_eir_remote_name[BD_NAME_LEN] != '\0')) {
-        log::info("dropping invalid packet - device name too long: {}", remote_name_len);
-        return;
-      }
-
-      memcpy(bdname.name, p_eir_remote_name, remote_name_len);
-      if (remote_name_len < BD_NAME_LEN + 1) {
-        bdname.name[remote_name_len] = '\0';
-      }
-      btif_update_remote_properties(bd_addr, bdname.name, kDevClassEmpty, device_type);
+    if (remote_name_len > BD_NAME_LEN + 1 ||
+        (remote_name_len == BD_NAME_LEN + 1 && p_eir_remote_name[BD_NAME_LEN] != '\0')) {
+      log::info("dropping invalid packet - device name too long: {}", remote_name_len);
+      return;
     }
+
+    memcpy(bdname.name, p_eir_remote_name, remote_name_len);
+    if (remote_name_len < BD_NAME_LEN + 1) {
+      bdname.name[remote_name_len] = '\0';
+    }
+    btif_update_remote_properties(bd_addr, bdname.name, kDevClassEmpty, device_type);
   }
 
   DEV_CLASS dev_class = btm_ble_get_appearance_as_cod(advertising_data);
@@ -840,26 +822,6 @@ void BleScannerInterfaceImpl::handle_remote_properties(RawAddress bd_addr, tBLE_
   bluetooth::storage::LeDevice le_device = device.Le();
   mutation2.Add(le_device.SetAddressType((bluetooth::hci::AddressType)addr_type));
   mutation2.Commit();
-}
-
-void BleScannerInterfaceImpl::AddressCache::add(const RawAddress& p_bda) {
-  // Remove the oldest entries
-  while (remote_bdaddr_cache_.size() >= remote_bdaddr_cache_max_size_) {
-    const RawAddress& raw_address = remote_bdaddr_cache_ordered_.front();
-    remote_bdaddr_cache_.erase(raw_address);
-    remote_bdaddr_cache_ordered_.pop();
-  }
-  remote_bdaddr_cache_.insert(p_bda);
-  remote_bdaddr_cache_ordered_.push(p_bda);
-}
-
-bool BleScannerInterfaceImpl::AddressCache::find(const RawAddress& p_bda) {
-  return remote_bdaddr_cache_.find(p_bda) != remote_bdaddr_cache_.end();
-}
-
-void BleScannerInterfaceImpl::AddressCache::init(void) {
-  remote_bdaddr_cache_.clear();
-  remote_bdaddr_cache_ordered_ = {};
 }
 
 BleScannerInterface* bluetooth::shim::get_ble_scanner_instance() {

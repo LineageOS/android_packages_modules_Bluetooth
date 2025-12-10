@@ -43,16 +43,6 @@ flag {
 }
 
 flag {
-    name: "distance_measurement_thread"
-    namespace: "bluetooth"
-    description: "Makes distance measurement operations run on one thread."
-    bug: "397809459"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "scan_controller_thread"
     namespace: "bluetooth"
     description: "Makes scan controller operations run on one thread."
@@ -156,16 +146,6 @@ flag {
 }
 
 flag {
-    name: "resolve_address_for_adv_report"
-    namespace: "bluetooth"
-    description: "Change address resolve timing to match between adv data and scan response."
-    bug: "424062882"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "gatt_failure_callback_on_cancel"
     namespace: "bluetooth"
     description: "Invoke failure callback on cancelling connection right after connected."
@@ -190,26 +170,6 @@ flag {
     namespace: "bluetooth"
     description: "Bug fixes for the flag get_svc_uuids_from_ble_adv_data"
     bug: "428792613"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "prevent_adding_both_pseudo_and_identity_addr"
-    namespace: "bluetooth"
-    description: "Prevent adding both pseudo and identity address to the accept list."
-    bug: "428800297"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "remove_address_cache_from_ble_scanner"
-    namespace: "bluetooth"
-    description: "Fix the case where device name is not updated when pairing failed."
-    bug: "432614634"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

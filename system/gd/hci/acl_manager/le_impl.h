@@ -645,8 +645,7 @@ public:
                                                     false /* is_connect */, reason);
 
     tBLE_BD_ADDR legacy_addr = ToLegacyAddressWithType(remote_address);
-    if (com::android::bluetooth::flags::prevent_adding_both_pseudo_and_identity_addr() &&
-        remote_address.IsRpa() &&
+    if (remote_address.IsRpa() &&
         btm_random_pseudo_to_identity_addr(&legacy_addr.bda, &legacy_addr.type)) {
       log::info("connection with pseudo address is disconnected");
 
@@ -1181,16 +1180,15 @@ public:
       return;
     }
 
-    if (com::android::bluetooth::flags::prevent_adding_both_pseudo_and_identity_addr()) {
-      tBLE_BD_ADDR legacy_addr = ToLegacyAddressWithType(address_with_type);
-      if (address_with_type.GetAddress() != Address::kEmpty &&
-          btm_identity_addr_to_random_pseudo(&legacy_addr.bda, &legacy_addr.type, false)) {
-        AddressWithType pseudo_addr = ToAddressWithTypeFromLegacy(legacy_addr);
-        if (connections.alreadyConnected(pseudo_addr)) {
-          log::info("Device already connected as pseudo address. Skip adding public addr to "
-                    "accept list");
-          return;
-        }
+    tBLE_BD_ADDR legacy_addr = ToLegacyAddressWithType(address_with_type);
+    if (address_with_type.GetAddress() != Address::kEmpty &&
+        btm_identity_addr_to_random_pseudo(&legacy_addr.bda, &legacy_addr.type, false)) {
+      AddressWithType pseudo_addr = ToAddressWithTypeFromLegacy(legacy_addr);
+      if (connections.alreadyConnected(pseudo_addr)) {
+        log::info(
+                "Device already connected as pseudo address. Skip adding public addr to "
+                "accept list");
+        return;
       }
     }
 
