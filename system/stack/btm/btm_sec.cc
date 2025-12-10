@@ -1823,7 +1823,7 @@ void btm_sec_conn_req(const RawAddress& bda, const DEV_CLASS dc) {
   p_device->sm4 |= BTM_SM4_CONN_PEND;
 
   // CoD may be missing for devices bonded without BR/EDR device discovery
-  if (com_android_bluetooth_flags_update_cod_if_missing() && p_device->sec_rec.is_bonded() &&
+  if (p_device->sec_rec.is_bonded() &&
       (p_device->dev_class == kDevClassEmpty || p_device->dev_class == kDevClassUnclassified)) {
     log::debug("Updating CoD for bonded device {} to [0x{:x}, 0x{:x}, 0x{:x}]", bda, dc[0], dc[1],
                dc[2]);
