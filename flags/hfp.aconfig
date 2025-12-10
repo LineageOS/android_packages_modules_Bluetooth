@@ -213,3 +213,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fix_sco_type_mask_check"
+    namespace: "bluetooth"
+    description: "Masking for excepting sco pakcets correctly"
+    bug: "467252341"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
