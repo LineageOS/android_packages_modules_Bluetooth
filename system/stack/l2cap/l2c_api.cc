@@ -1074,6 +1074,20 @@ bool L2CA_SetAclLatency(const RawAddress& bd_addr, tL2CAP_LATENCY latency) {
 
 /*******************************************************************************
  *
+ * Function         L2CA_SetRateControlEnabled
+ *
+ * Description      Enable or disable rate control algorithm for a channel.
+ *
+ * Returns          true if a valid channel, else false
+ *
+ ******************************************************************************/
+bool L2CA_SetRateControlEnabled(const RawAddress& bd_addr, bool enabled) {
+  log::info("BDA: {}. enabled: {}", bd_addr, enabled);
+  return l2cu_set_rate_control_enabled(bd_addr, enabled);
+}
+
+/*******************************************************************************
+ *
  * Function         L2CA_SetTxPriority
  *
  * Description      Sets the transmission priority for a channel.

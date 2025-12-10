@@ -1582,7 +1582,6 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
      *     ResponseCodes.OBEX_HTTP_BAD_REQUEST} on error.
      */
     private int sendMASInstanceInformationRsp(Operation op, BluetoothMapAppParams appParams) {
-
         OutputStream outStream = null;
         byte[] outBytes = null;
         String outString = null;

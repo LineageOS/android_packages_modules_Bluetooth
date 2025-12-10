@@ -41,14 +41,6 @@ typedef struct {
   uint8_t status;
 } btgatt_read_params_t;
 
-/** Parameters for GATT write operations */
-typedef struct {
-  btgatt_srvc_id_t srvc_id;
-  btgatt_gatt_id_t char_id;
-  btgatt_gatt_id_t descr_id;
-  uint8_t status;
-} btgatt_write_params_t;
-
 /** Attribute change notification parameters */
 typedef struct {
   uint8_t value[GATT_MAX_ATTR_LEN];
@@ -57,36 +49,6 @@ typedef struct {
   uint16_t len;
   uint8_t is_notify;
 } btgatt_notify_params_t;
-
-typedef struct {
-  RawAddress* bda1;
-  bluetooth::Uuid* uuid1;
-  uint16_t u1;
-  uint16_t u2;
-  uint16_t u3;
-  uint16_t u4;
-  uint16_t u5;
-} btgatt_test_params_t;
-
-/* BT GATT client error codes */
-typedef enum {
-  BT_GATTC_COMMAND_SUCCESS = 0,       /* 0  Command succeeded                 */
-  BT_GATTC_COMMAND_STARTED,           /* 1  Command started OK.               */
-  BT_GATTC_COMMAND_BUSY,              /* 2  Device busy with another command  */
-  BT_GATTC_COMMAND_STORED,            /* 3 request is stored in control block */
-  BT_GATTC_NO_RESOURCES,              /* 4  No resources to issue command     */
-  BT_GATTC_MODE_UNSUPPORTED,          /* 5  Request for 1 or more unsupported modes */
-  BT_GATTC_ILLEGAL_VALUE,             /* 6  Illegal command /parameter value  */
-  BT_GATTC_INCORRECT_STATE,           /* 7  Device in wrong state for request  */
-  BT_GATTC_UNKNOWN_ADDR,              /* 8  Unknown remote BD address         */
-  BT_GATTC_DEVICE_TIMEOUT,            /* 9  Device timeout                    */
-  BT_GATTC_INVALID_CONTROLLER_OUTPUT, /* 10  An incorrect value was received
-                                         from HCI */
-  BT_GATTC_SECURITY_ERROR,            /* 11 Authorization or security failure or not
-                                         authorized  */
-  BT_GATTC_DELAYED_ENCRYPTION_CHECK,  /*12 Delayed encryption check */
-  BT_GATTC_ERR_PROCESSING             /* 12 Generic error                     */
-} btgattc_error_t;
 
 /** BT-GATT Client callback structure. */
 

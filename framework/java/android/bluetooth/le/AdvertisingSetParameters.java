@@ -18,6 +18,7 @@ package android.bluetooth.le;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.FlaggedApi;
 import android.annotation.Hide;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
@@ -29,6 +30,8 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevice.AddressType;
 import android.os.Parcel;
 import android.os.Parcelable;
+
+import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -86,8 +89,21 @@ public final class AdvertisingSetParameters implements Parcelable {
     /** Minimum value for TX power. */
     public static final int TX_POWER_MIN = -127;
 
-    /** Maximum value for TX power. */
+    /**
+     * Maximum value for TX power.
+     *
+     * @deprecated Use {@link #TX_POWER_MAX_AVAILABLE}
+     */
+    @FlaggedApi(Flags.FLAG_MAX_ADVERTISING_POWER)
+    @Deprecated
     public static final int TX_POWER_MAX = 1;
+
+    /** Use the maximum available power for TX. */
+    @FlaggedApi(Flags.FLAG_MAX_ADVERTISING_POWER)
+    public static final int TX_POWER_MAX_AVAILABLE = 20;
+
+    // TODO(b/464003245): Remove when flag is cleaned up.
+    private static final int MAX_TX_POWER_VALUE = 20;
 
     @Hide
     @IntDef(
@@ -521,7 +537,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          * Set the transmission power level for the advertising.
          *
          * @param txPowerLevel Transmission power of Bluetooth LE Advertising, in dBm. The valid
-         *     range is [-127, 1] Recommended values are: {@link
+         *     range is [-127, 20] Recommended values are: {@link
          *     AdvertisingSetParameters#TX_POWER_ULTRA_LOW}, {@link
          *     AdvertisingSetParameters#TX_POWER_LOW}, {@link
          *     AdvertisingSetParameters#TX_POWER_MEDIUM}, or {@link
@@ -530,7 +546,7 @@ public final class AdvertisingSetParameters implements Parcelable {
          */
         @RequiresNoPermission
         public Builder setTxPowerLevel(int txPowerLevel) {
-            if (txPowerLevel < TX_POWER_MIN || txPowerLevel > TX_POWER_MAX) {
+            if (txPowerLevel < TX_POWER_MIN || txPowerLevel > MAX_TX_POWER_VALUE) {
                 throw new IllegalArgumentException("unknown txPowerLevel " + txPowerLevel);
             }
             mTxPowerLevel = txPowerLevel;

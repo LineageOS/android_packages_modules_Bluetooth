@@ -22,7 +22,6 @@
 #include "osi/include/config.h"
 
 #define PROPERTY_ENABLE_LOGGING "persist.bluetooth.device_iot_config.enablelogging"
-#define PROPERTY_FACTORY_RESET "persist.bluetooth.factoryreset"
 
 #define INFO_SECTION "Info"
 #define VERSION_KEY "Version"
@@ -80,5 +79,3 @@ void device_iot_config_restrict_device_num(config_t& config);
 bool device_iot_config_compare_key(const entry_t& first, const entry_t& second);
 void device_iot_config_timer_save_cb(void* /* data */);
 void device_iot_config_set_modified_time();
-bool device_iot_config_is_factory_reset(void);
-void device_iot_config_delete_files(void);

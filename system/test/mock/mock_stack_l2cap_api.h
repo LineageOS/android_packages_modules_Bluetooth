@@ -24,6 +24,7 @@
  */
 
 #include <functional>
+#include <type_traits>
 #include <vector>
 
 // Original included files, if any
@@ -282,6 +283,16 @@ struct L2CA_SetAclLatency {
   }
 };
 extern struct L2CA_SetAclLatency L2CA_SetAclLatency;
+// Name: L2CA_SetRateControlEnabled
+// Params: const RawAddress& bd_addr, bool enabled
+// Returns: bool
+struct L2CA_SetRateControlEnabled {
+  std::function<bool(const RawAddress& bd_addr, bool enabled)> body{
+          [](const RawAddress& /* bd_addr */, bool /* enabled */) { return false; }};
+  bool operator()(const RawAddress& bd_addr, bool enabled) { return body(bd_addr, enabled); }
+};
+extern struct L2CA_SetRateControlEnabled L2CA_SetRateControlEnabled;
+
 // Name: L2CA_SetTxPriority
 // Params: uint16_t cid, tL2CAP_CHNL_PRIORITY priority
 // Returns: bool

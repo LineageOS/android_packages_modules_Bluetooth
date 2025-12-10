@@ -278,7 +278,7 @@ class HandleMap {
     fun dump(sb: StringBuilder) {
         sb.appendLine("  Entries: ${entries.size}")
         for (entry in entries) {
-            sb.append("      ${entry.serverIf}: [${entry.handle}] ")
+            sb.append("    ${entry.serverIf}: [${entry.handle.toString().padStart(3, ' ')}] ")
             when (entry.type) {
                 Type.SERVICE -> sb.appendLine("Service ${entry.uuid}, started ${entry.started}")
                 Type.CHARACTERISTIC -> sb.appendLine("  Characteristic ${entry.uuid}")

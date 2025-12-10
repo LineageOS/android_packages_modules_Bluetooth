@@ -514,7 +514,6 @@ public class BroadcasterActivity extends AppCompatActivity {
             boolean isPublic,
             String broadcastName,
             String broadcastCode) {
-
         final BluetoothLeAudioContentMetadata.Builder contentBuilder =
                 new BluetoothLeAudioContentMetadata.Builder();
         if (!programInfo.isEmpty()) {
@@ -562,7 +561,6 @@ public class BroadcasterActivity extends AppCompatActivity {
             boolean isPublic,
             String broadcastName,
             String broadcastCode) {
-
         SharedPreferences broadcastsPrefs = getSharedPreferences(BROADCAST_PREFS_KEY, 0);
         if (broadcastsPrefs.contains(broadcastName)) {
             return false;
@@ -597,7 +595,6 @@ public class BroadcasterActivity extends AppCompatActivity {
             final EditText broadcast_name,
             final CheckBox publicCheckbox,
             final EditText public_content) {
-
         ArrayList<String> listSavedBroadcast = new ArrayList<>();
 
         final SharedPreferences broadcastsPrefs = getSharedPreferences(BROADCAST_PREFS_KEY, 0);

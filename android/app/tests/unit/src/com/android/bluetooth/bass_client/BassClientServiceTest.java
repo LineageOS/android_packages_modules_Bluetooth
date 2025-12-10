@@ -1476,7 +1476,6 @@ public class BassClientServiceTest {
             int encryptionState,
             byte[] badCode,
             long bisSyncState) {
-
         return injectRemoteSourceStateSourceAdded(
                 sm, meta, sourceId, paSynState, encryptionState, badCode, bisSyncState, false);
     }

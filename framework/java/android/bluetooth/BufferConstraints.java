@@ -41,7 +41,6 @@ public final class BufferConstraints implements Parcelable {
     private final List<BufferConstraint> mBufferConstraintList;
 
     public BufferConstraints(@NonNull List<BufferConstraint> bufferConstraintList) {
-
         mBufferConstraintList = new ArrayList<>(bufferConstraintList);
         mBufferConstraints = new HashMap<>();
         for (int i = 0; i < BUFFER_CODEC_MAX_NUM; i++) {

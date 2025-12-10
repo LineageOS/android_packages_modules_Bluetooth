@@ -390,7 +390,6 @@ public class BluetoothMapUtils {
      * @return byte array containing valid utf8 characters with max length
      */
     public static byte[] truncateUtf8StringToByteArray(String utf8String, int maxLength) {
-
         byte[] utf8Bytes = new byte[utf8String.length() + 1];
         System.arraycopy(
                 utf8String.getBytes(StandardCharsets.UTF_8), 0, utf8Bytes, 0, utf8String.length());

@@ -584,7 +584,6 @@ class MapClientContent {
                         null,
                         null,
                         null)) {
-
             if (cursor.moveToNext()) {
                 debug("Columns" + Arrays.toString(cursor.getColumnNames()));
                 verbose(

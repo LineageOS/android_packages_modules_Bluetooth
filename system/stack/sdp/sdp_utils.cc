@@ -313,11 +313,10 @@ void sdpu_log_attribute_metrics(const RawAddress& bda, tSDP_DISCOVERY_DB* p_db) 
  *
  ******************************************************************************/
 tCONN_CB* sdpu_find_ccb_by_cid(uint16_t cid) {
-  uint16_t xx;
-  tCONN_CB* p_ccb{};
+  tCONN_CB* p_ccb = sdp_cb.ccb;
 
   /* Look through each connection control block */
-  for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
+  for (uint16_t xx = 0; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
     if ((p_ccb->con_state != tSDP_STATE::IDLE) && (p_ccb->con_state != tSDP_STATE::CONN_PEND) &&
         (p_ccb->connection_id == cid)) {
       return p_ccb;
@@ -339,12 +338,11 @@ tCONN_CB* sdpu_find_ccb_by_cid(uint16_t cid) {
  *
  ******************************************************************************/
 tCONN_CB* sdpu_find_ccb_by_db(const tSDP_DISCOVERY_DB* p_db) {
-  uint16_t xx;
-  tCONN_CB* p_ccb{};
+  tCONN_CB* p_ccb = sdp_cb.ccb;
 
   if (p_db) {
     /* Look through each connection control block */
-    for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
+    for (uint16_t xx = 0; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
       if ((p_ccb->con_state != tSDP_STATE::IDLE) && (p_ccb->p_db == p_db)) {
         return p_ccb;
       }
@@ -364,11 +362,10 @@ tCONN_CB* sdpu_find_ccb_by_db(const tSDP_DISCOVERY_DB* p_db) {
  *
  ******************************************************************************/
 tCONN_CB* sdpu_allocate_ccb(void) {
-  uint16_t xx;
-  tCONN_CB* p_ccb{};
+  tCONN_CB* p_ccb = sdp_cb.ccb;
 
   /* Look through each connection control block for a free one */
-  for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
+  for (uint16_t xx = 0; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
     if (p_ccb->con_state == tSDP_STATE::IDLE) {
       alarm_t* alarm = p_ccb->sdp_conn_timer;
       *p_ccb = {};
@@ -432,10 +429,9 @@ void sdpu_release_ccb(tCONN_CB& ccb) {
  *
  ******************************************************************************/
 void sdpu_dump_all_ccb() {
-  uint16_t xx{};
-  tCONN_CB* p_ccb{};
+  tCONN_CB* p_ccb = sdp_cb.ccb;
 
-  for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
+  for (uint16_t xx = 0; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
     log::info("peer:{} cid:{} state:{} flags:{} ", p_ccb->device_address, p_ccb->connection_id,
               sdp_state_text(p_ccb->con_state), sdp_flags_text(p_ccb->con_flags));
   }
@@ -454,11 +450,10 @@ void sdpu_dump_all_ccb() {
  *
  ******************************************************************************/
 uint16_t sdpu_get_active_ccb_cid(const RawAddress& bd_addr) {
-  uint16_t xx;
-  tCONN_CB* p_ccb{};
+  tCONN_CB* p_ccb = sdp_cb.ccb;
 
   // Look through each connection control block for active sdp on given remote
-  for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
+  for (uint16_t xx = 0; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
     if ((p_ccb->con_state == tSDP_STATE::CONN_SETUP) ||
         (p_ccb->con_state == tSDP_STATE::CFG_SETUP) ||
         (p_ccb->con_state == tSDP_STATE::CONNECTED)) {
@@ -485,11 +480,10 @@ uint16_t sdpu_get_active_ccb_cid(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 bool sdpu_process_pend_ccb_same_cid(const tCONN_CB& ccb) {
-  uint16_t xx;
-  tCONN_CB* p_ccb{};
+  tCONN_CB* p_ccb = sdp_cb.ccb;
 
   // Look through each connection control block for active sdp on given remote
-  for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
+  for (uint16_t xx = 0; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
     if ((p_ccb->con_state == tSDP_STATE::CONN_PEND) &&
         (p_ccb->connection_id == ccb.connection_id) && (p_ccb->con_flags & SDP_FLAGS_IS_ORIG)) {
       p_ccb->con_state = tSDP_STATE::CONNECTED;
@@ -514,13 +508,12 @@ bool sdpu_process_pend_ccb_same_cid(const tCONN_CB& ccb) {
  *
  ******************************************************************************/
 bool sdpu_process_pend_ccb_new_cid(const tCONN_CB& ccb) {
-  uint16_t xx;
-  tCONN_CB* p_ccb{};
+  tCONN_CB* p_ccb = sdp_cb.ccb;
   uint16_t new_cid = 0;
   bool new_conn = false;
 
   // Look through each ccb to replace the obsolete cid with a new one.
-  for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
+  for (uint16_t xx = 0; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
     if ((p_ccb->con_state == tSDP_STATE::CONN_PEND) &&
         (p_ccb->connection_id == ccb.connection_id) && (p_ccb->con_flags & SDP_FLAGS_IS_ORIG)) {
       if (!new_conn) {
@@ -555,11 +548,10 @@ bool sdpu_process_pend_ccb_new_cid(const tCONN_CB& ccb) {
  *
  ******************************************************************************/
 void sdpu_clear_pend_ccb(const tCONN_CB& ccb) {
-  uint16_t xx;
-  tCONN_CB* p_ccb{};
+  tCONN_CB* p_ccb = sdp_cb.ccb;
 
   // Look through each connection control block for active sdp on given remote
-  for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
+  for (uint16_t xx = 0; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
     if ((p_ccb->con_state == tSDP_STATE::CONN_PEND) &&
         (p_ccb->connection_id == ccb.connection_id) && (p_ccb->con_flags & SDP_FLAGS_IS_ORIG)) {
       sdpu_callback(*p_ccb, tSDP_STATUS::SDP_CONN_FAILED);
@@ -581,11 +573,10 @@ void sdpu_clear_pend_ccb(const tCONN_CB& ccb) {
  *
  ******************************************************************************/
 void sdpu_clear_all_ccbs_for_cid(uint16_t cid) {
-  uint16_t xx;
-  tCONN_CB* p_ccb{};
+  tCONN_CB* p_ccb = sdp_cb.ccb;
 
   // Look through each connection control block for active sdp on given cid
-  for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
+  for (uint16_t xx = 0; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
     if ((p_ccb->connection_id == cid) && (p_ccb->con_flags & SDP_FLAGS_IS_ORIG)) {
       sdpu_callback(*p_ccb, tSDP_STATUS::SDP_CONN_FAILED);
       sdpu_release_ccb(*p_ccb);
@@ -605,23 +596,36 @@ void sdpu_clear_all_ccbs_for_cid(uint16_t cid) {
  * Returns          Pointer to next byte in the output buffer.
  *
  ******************************************************************************/
-uint8_t* sdpu_build_attrib_seq(uint8_t* p_out, uint16_t* p_attr, uint16_t num_attrs) {
-  uint16_t xx;
+uint8_t* sdpu_build_attrib_seq(uint8_t* p_out, uint16_t* p_attr, uint16_t num_attrs,
+                               uint16_t& bytes_left) {
+  int content_len, header_len;
 
-  /* First thing is the data element header. See if the length fits 1 byte */
   /* If no attributes, assume a 4-byte wildcard */
   if (!p_attr) {
-    xx = 5;
+    content_len = 5;
   } else {
-    xx = num_attrs * 3;
+    content_len = num_attrs * 3;
   }
 
-  if (xx > 255) {
+  /* First thing is the data element header. See if the length fits 1 byte */
+  if (content_len > 255) {
+    header_len = 3;
+  } else {
+    header_len = 2;
+  }
+
+  if (bytes_left < content_len + header_len) {
+    DCHECK(0) << "SDP: No space for attrib seq";
+    return p_out;
+  }
+  bytes_left -= (header_len + content_len);
+
+  if (content_len > 255) {
     UINT8_TO_BE_STREAM(p_out, (DATA_ELE_SEQ_DESC_TYPE << 3) | SIZE_IN_NEXT_WORD);
-    UINT16_TO_BE_STREAM(p_out, xx);
+    UINT16_TO_BE_STREAM(p_out, content_len);
   } else {
     UINT8_TO_BE_STREAM(p_out, (DATA_ELE_SEQ_DESC_TYPE << 3) | SIZE_IN_NEXT_BYTE);
-    UINT8_TO_BE_STREAM(p_out, xx);
+    UINT8_TO_BE_STREAM(p_out, content_len);
   }
 
   /* If there are no attributes specified, assume caller wants wildcard */
@@ -631,7 +635,7 @@ uint8_t* sdpu_build_attrib_seq(uint8_t* p_out, uint16_t* p_attr, uint16_t num_at
     UINT16_TO_BE_STREAM(p_out, 0xFFFF);
   } else {
     /* Loop through and put in all the attributes(s) */
-    for (xx = 0; xx < num_attrs; xx++, p_attr++) {
+    for (uint16_t xx = 0; xx < num_attrs; xx++, p_attr++) {
       UINT8_TO_BE_STREAM(p_out, (UINT_DESC_TYPE << 3) | SIZE_TWO_BYTES);
       UINT16_TO_BE_STREAM(p_out, *p_attr);
     }
@@ -1115,9 +1119,7 @@ uint8_t* sdpu_get_len_from_type(uint8_t* p, uint8_t* p_end, uint8_t type, uint32
  *
  ******************************************************************************/
 bool sdpu_is_base_uuid(uint8_t* p_uuid) {
-  uint16_t xx;
-
-  for (xx = 4; xx < Uuid::kNumBytes128; xx++) {
+  for (uint16_t xx = 4; xx < Uuid::kNumBytes128; xx++) {
     if (p_uuid[xx] != sdp_base_uuid[xx]) {
       return false;
     }
@@ -1328,11 +1330,10 @@ uint16_t sdpu_get_list_len(tSDP_UUID_SEQ* uid_seq, tSDP_ATTR_SEQ* attr_seq) {
 uint16_t sdpu_get_attrib_seq_len(const tSDP_RECORD* p_rec, const tSDP_ATTR_SEQ* attr_seq) {
   const tSDP_ATTRIBUTE* p_attr;
   uint16_t len1 = 0;
-  uint16_t xx;
   bool is_range = false;
   uint16_t start_id = 0, end_id = 0;
 
-  for (xx = 0; xx < attr_seq->num_attr; xx++) {
+  for (uint16_t xx = 0; xx < attr_seq->num_attr; xx++) {
     if (!is_range) {
       start_id = attr_seq->attr_entry[xx].start;
       end_id = attr_seq->attr_entry[xx].end;
@@ -1343,6 +1344,11 @@ uint16_t sdpu_get_attrib_seq_len(const tSDP_RECORD* p_rec, const tSDP_ATTR_SEQ* 
 
       /* If doing a range, stick with this one till no more attributes found */
       if (start_id != end_id) {
+        if (p_attr->id == UINT16_MAX) {
+          log::error("invalid p_attr id:{}", p_attr->id);
+          return len1;
+        }
+
         /* Update for next time through */
         start_id = p_attr->id + 1;
         xx--;

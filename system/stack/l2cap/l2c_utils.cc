@@ -2302,9 +2302,15 @@ bool l2cu_lcb_disconnecting(void) {
 
 static void l2cu_set_acl_priority_latency_brcm(tL2C_LCB* p_lcb, tL2CAP_PRIORITY priority) {
   uint8_t vs_param;
+  log::info("acl_priority: {}, preset_acl_latency: {}, rate_control_enabled: {}",
+            p_lcb->acl_priority, p_lcb->acl_latency, p_lcb->rate_control_enabled);
+
   if (priority == L2CAP_PRIORITY_HIGH) {
-    // priority to high, if using latency mode check preset latency
-    if (p_lcb->use_latency_mode && p_lcb->preset_acl_latency == L2CAP_LATENCY_LOW) {
+    if (!p_lcb->rate_control_enabled) {
+      log::info("Set ACL priority: High Priority and Disable Rate Control");
+      vs_param = HCI_BRCM_ACL_HIGH_PRIORITY_DISABLE_RATE_CONTROL;
+    } else if (p_lcb->use_latency_mode && p_lcb->preset_acl_latency == L2CAP_LATENCY_LOW) {
+      // priority to high, if using latency mode check preset latency
       log::info("Set ACL priority: High Priority and Low Latency Mode");
       vs_param = HCI_BRCM_ACL_HIGH_PRIORITY_LOW_LATENCY;
       p_lcb->set_latency(L2CAP_LATENCY_LOW);
@@ -2572,6 +2578,31 @@ bool l2cu_set_acl_latency(const RawAddress& bd_addr, tL2CAP_LATENCY latency) {
   }
   /* save the latency mode even if acl does not use latency mode or start*/
   p_lcb->preset_acl_latency = latency;
+
+  return true;
+}
+
+/*******************************************************************************
+ *
+ * Function         L2CA_DisableRateControl
+ *
+ * Description      Disable rate control algorithm for a channel.
+ *
+ * Returns          true if a valid channel, else false
+ *
+ ******************************************************************************/
+
+bool l2cu_set_rate_control_enabled(const RawAddress& bd_addr, bool enabled) {
+  log::info("enabled={}", enabled);
+
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_BR_EDR);
+
+  if (p_lcb == nullptr) {
+    log::warn("Set rate control in use failed: LCB is null");
+    return false;
+  }
+
+  p_lcb->set_rate_control_enabled(enabled);
 
   return true;
 }

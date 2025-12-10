@@ -127,11 +127,21 @@ public class A2dpSinkStateMachineTest {
     }
 
     @Test
-    public void testIncomingConnectedInDisconnected() {
+    public void testAllowedConnectedInDisconnected() {
+        mockDeviceConnectionPolicy(mDevice, CONNECTION_POLICY_ALLOWED);
         sendConnectionEvent(STATE_CONNECTED);
         verify(mService).connectionStateChanged(mDevice, STATE_DISCONNECTED, STATE_CONNECTING);
         verify(mService).connectionStateChanged(mDevice, STATE_CONNECTING, STATE_CONNECTED);
         assertThat(mStateMachine.getState()).isEqualTo(STATE_CONNECTED);
+    }
+
+    @Test
+    public void testForbiddenConnectedInDisconnected() {
+        mockDeviceConnectionPolicy(mDevice, CONNECTION_POLICY_FORBIDDEN);
+
+        sendConnectionEvent(STATE_CONNECTED);
+        verify(mNativeInterface).disconnectA2dpSink(mDevice);
+        assertThat(mStateMachine.getState()).isEqualTo(STATE_DISCONNECTED);
     }
 
     @Test

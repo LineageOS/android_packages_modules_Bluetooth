@@ -33,7 +33,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -83,7 +82,6 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
-import org.mockito.stubbing.Answer;
 
 import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
 import platform.test.runner.parameterized.Parameters;
@@ -136,8 +134,6 @@ public class GattServiceTest {
     private final List<ContextMap.Connection> CLIENT_CONN_LIST = Arrays.asList(CLIENT_CONN);
     private final FakeTimeProvider mTimeProvider = new FakeTimeProvider();
 
-    private final List<ContextMap.Connection> mServerConnections = new ArrayList<>();
-
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
         return FlagsWrapper.progressionOf(Flags.FLAG_GATT_THREAD);
@@ -172,54 +168,6 @@ public class GattServiceTest {
         doReturn(clientApp, (Object[]) null)
                 .when(mClientMap)
                 .remove(anyInt(), any(ContextMap.RemoveReason.class));
-
-        doAnswer(
-                        (Answer<Void>)
-                                invocation -> {
-                                    Object[] arguments = invocation.getArguments();
-                                    int id = (int) arguments[0];
-                                    int connId = (int) arguments[1];
-                                    int transport = (int) arguments[2];
-                                    BluetoothDevice device = (BluetoothDevice) arguments[3];
-                                    mServerConnections.add(
-                                            new ContextMap.Connection(
-                                                    connId, device, transport, id));
-                                    return null;
-                                })
-                .when(mServerMap)
-                .addConnection(anyInt(), anyInt(), anyInt(), any(BluetoothDevice.class));
-        doAnswer(
-                        (Answer<Void>)
-                                invocation -> {
-                                    Object[] arguments = invocation.getArguments();
-                                    int id = (int) arguments[0];
-                                    int connId = (int) arguments[1];
-                                    mServerConnections.removeIf(
-                                            conn ->
-                                                    conn.getAppId() == id
-                                                            && conn.getConnId() == connId);
-                                    return null;
-                                })
-                .when(mServerMap)
-                .removeConnection(anyInt(), anyInt());
-        doAnswer(
-                        (Answer<List<ContextMap.Connection>>)
-                                invocation -> {
-                                    List<ContextMap.Connection> currentConnections =
-                                            new ArrayList<ContextMap.Connection>();
-                                    Object[] arguments = invocation.getArguments();
-                                    int id = (int) arguments[0];
-                                    BluetoothDevice device = (BluetoothDevice) arguments[1];
-                                    for (ContextMap.Connection connection : mServerConnections) {
-                                        if (connection.getDevice().equals(device)
-                                                && connection.getAppId() == id) {
-                                            currentConnections.add(connection);
-                                        }
-                                    }
-                                    return currentConnections;
-                                })
-                .when(mServerMap)
-                .getConnectionsByDevice(anyInt(), any(BluetoothDevice.class));
 
         doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
         doReturn(mContext.getSharedPreferences("GattServiceTestPrefs", Context.MODE_PRIVATE))

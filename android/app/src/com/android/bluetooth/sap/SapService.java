@@ -317,7 +317,6 @@ public class SapService extends ConnectableProfile
     }
 
     private void stopSapServerSession() {
-
         /* When we reach this point, the SapServer is closed down, and the client is
          * supposed to close the RFCOMM connection. */
         Log.v(TAG, "SAP Service stopSapServerSession");

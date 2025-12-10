@@ -1369,6 +1369,106 @@ public class HeadsetServiceTest {
     }
 
     @Test
+    public void isScoAcceptable_notActiveDevice_returnsError() {
+        BluetoothDevice device = getTestDevice(0);
+        connectTestDevice(device);
+        // Don't set active device
+        assertThat(mHeadsetService.getActiveDevice()).isNull();
+
+        assertThat(mHeadsetService.isScoAcceptable(device))
+                .isEqualTo(BluetoothStatusCodes.ERROR_NOT_ACTIVE_DEVICE);
+    }
+
+    @Test
+    public void isScoAcceptable_nullDevice_returnsError() {
+        BluetoothDevice device = getTestDevice(0);
+        connectAndSetActiveDevice(device);
+
+        assertThat(mHeadsetService.isScoAcceptable(null))
+                .isEqualTo(BluetoothStatusCodes.ERROR_NOT_ACTIVE_DEVICE);
+    }
+
+    @Test
+    public void isScoAcceptable_audioRouteNotAllowed_returnsError() {
+        BluetoothDevice device = getTestDevice(0);
+        connectAndSetActiveDevice(device);
+        mHeadsetService.setAudioRouteAllowed(false);
+
+        assertThat(mHeadsetService.isScoAcceptable(device))
+                .isEqualTo(BluetoothStatusCodes.ERROR_AUDIO_ROUTE_BLOCKED);
+    }
+
+    @Test
+    public void isScoAcceptable_idle_returnsError() {
+        BluetoothDevice device = getTestDevice(0);
+        connectAndSetActiveDevice(device);
+        when(mSystemInterface.isCallIdle()).thenReturn(true);
+        when(mSystemInterface.isInCall()).thenReturn(false);
+        when(mSystemInterface.isRinging()).thenReturn(false);
+
+        assertThat(mHeadsetService.isScoAcceptable(device))
+                .isEqualTo(BluetoothStatusCodes.ERROR_CALL_ACTIVE);
+    }
+
+    @Test
+    public void isScoAcceptable_inCall_returnsSuccess() {
+        BluetoothDevice device = getTestDevice(0);
+        connectAndSetActiveDevice(device);
+        when(mSystemInterface.isInCall()).thenReturn(true);
+
+        assertThat(mHeadsetService.isScoAcceptable(device)).isEqualTo(BluetoothStatusCodes.SUCCESS);
+    }
+
+    @Test
+    public void isScoAcceptable_ringingWithInbandEnabled_returnsSuccess() {
+        BluetoothDevice device = getTestDevice(0);
+        connectAndSetActiveDevice(device);
+        when(mSystemInterface.isRinging()).thenReturn(true);
+        // isInbandRingingEnabled() is true by default in test setup
+
+        assertThat(mHeadsetService.isScoAcceptable(device)).isEqualTo(BluetoothStatusCodes.SUCCESS);
+    }
+
+    @Test
+    public void isScoAcceptable_ringingWithInbandDisabled_returnsError() {
+        BluetoothDevice device = getTestDevice(0);
+        connectAndSetActiveDevice(device);
+        when(mSystemInterface.isRinging()).thenReturn(true);
+        // Disable inband ringing
+        when(mStateMachines.get(device).getHfpCallAudioPolicy())
+                .thenReturn(
+                        new BluetoothSinkAudioPolicy.Builder()
+                                .setInBandRingtonePolicy(
+                                        BluetoothSinkAudioPolicy.POLICY_NOT_ALLOWED)
+                                .build());
+        assertThat(mHeadsetService.isInbandRingingEnabled()).isFalse();
+
+        assertThat(mHeadsetService.isScoAcceptable(device))
+                .isEqualTo(BluetoothStatusCodes.ERROR_CALL_ACTIVE);
+    }
+
+    @Test
+    public void isScoAcceptable_voiceRecognitionStarted_returnsSuccess() {
+        BluetoothDevice device = getTestDevice(0);
+        connectAndSetActiveDevice(device);
+        when(mNativeInterface.isVoiceRecognitionSupported(device)).thenReturn(true);
+        when(mSystemInterface.isCallIdle()).thenReturn(true); // for isAudioModeIdle check
+        assertThat(mHeadsetService.startVoiceRecognition(device)).isTrue();
+
+        assertThat(mHeadsetService.isScoAcceptable(device)).isEqualTo(BluetoothStatusCodes.SUCCESS);
+    }
+
+    @Test
+    public void isScoAcceptable_virtualCallStarted_returnsSuccess() {
+        BluetoothDevice device = getTestDevice(0);
+        connectAndSetActiveDevice(device);
+        when(mSystemInterface.isCallIdle()).thenReturn(true); // for isAudioModeIdle check
+        assertThat(mHeadsetService.startScoUsingVirtualVoiceCall()).isTrue();
+
+        assertThat(mHeadsetService.isScoAcceptable(device)).isEqualTo(BluetoothStatusCodes.SUCCESS);
+    }
+
+    @Test
     @RequiresFlagsEnabled({
         android.media.audio.Flags.FLAG_UNIFY_ABSOLUTE_VOLUME_MANAGEMENT,
         android.media.audio.Flags.FLAG_DEPRECATE_STREAM_BT_SCO
@@ -1491,5 +1591,26 @@ public class HeadsetServiceTest {
                         mSystemInterface);
         when(mStateMachines.get(device).getDevice()).thenReturn(device);
         when(mStateMachines.get(device).getConnectionState()).thenReturn(STATE_CONNECTED);
+    }
+
+    private void connectTestDevice(BluetoothDevice device) {
+        when(mAdapterService.getProfileConnectionPolicy(
+                        any(BluetoothDevice.class), eq(BluetoothProfile.HEADSET)))
+                .thenReturn(CONNECTION_POLICY_UNKNOWN);
+        assertThat(mHeadsetService.connect(device)).isTrue();
+        HeadsetStateMachine stateMachine = mStateMachines.get(device);
+        when(stateMachine.getDevice()).thenReturn(device);
+        when(stateMachine.getConnectionState()).thenReturn(STATE_CONNECTED);
+        when(stateMachine.getConnectingTimestampMs()).thenReturn(SystemClock.uptimeMillis());
+        when(stateMachine.getHfpCallAudioPolicy())
+                .thenReturn(new BluetoothSinkAudioPolicy.Builder().build());
+        mHeadsetService.onConnectionStateChangedFromStateMachine(
+                device, STATE_DISCONNECTED, STATE_CONNECTED);
+    }
+
+    private void connectAndSetActiveDevice(BluetoothDevice device) {
+        connectTestDevice(device);
+        assertThat(mHeadsetService.setActiveDevice(device)).isTrue();
+        assertThat(mHeadsetService.getActiveDevice()).isEqualTo(device);
     }
 }

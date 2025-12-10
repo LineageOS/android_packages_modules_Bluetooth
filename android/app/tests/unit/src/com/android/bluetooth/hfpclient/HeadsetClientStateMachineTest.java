@@ -999,7 +999,6 @@ public class HeadsetClientStateMachineTest {
 
     @Test
     public void testSetGetCallAudioPolicy() {
-
         setUpHfpClientConnection();
         setUpServiceLevelConnection(true);
 

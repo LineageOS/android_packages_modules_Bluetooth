@@ -62,7 +62,6 @@ public class A2dpSinkServiceBinderTest {
 
     @Test
     public void getConnectedDevices() {
-
         mBinder.getConnectedDevices(mSource);
         verify(mService).getConnectedDevices();
     }

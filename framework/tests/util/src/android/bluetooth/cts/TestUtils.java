@@ -16,16 +16,11 @@
 
 package android.bluetooth.cts;
 
-import static com.google.common.truth.Truth.assertThat;
-
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 public class TestUtils extends android.bluetooth.test_utils.TestUtils {
@@ -133,25 +128,6 @@ public class TestUtils extends android.bluetooth.test_utils.TestUtils {
                 return false;
             }
         }
-    }
-
-    /**
-     * Get {@link BluetoothAdapter} via {@link android.bluetooth.BluetoothManager} Fail the test if
-     * {@link BluetoothAdapter} is null
-     *
-     * @return instance of {@link BluetoothAdapter}
-     * @deprecated keeping assert here as many tests currently depend on this method to fail if
-     *     adapter is null
-     */
-    @Deprecated
-    @NonNull
-    public static BluetoothAdapter getBluetoothAdapterOrDie() {
-        Context context = InstrumentationRegistry.getInstrumentation().getContext();
-        BluetoothManager manager = context.getSystemService(BluetoothManager.class);
-        assertThat(manager).isNotNull();
-        BluetoothAdapter adapter = manager.getAdapter();
-        assertThat(adapter).isNotNull();
-        return adapter;
     }
 
     /**

@@ -1613,7 +1613,6 @@ public class LeAudioServiceTest {
     /** Test group direction changed */
     @Test
     public void testGroupDirectionChanged_AudioConfChangedActiveGroup() {
-
         int testVolume = 100;
 
         ArgumentCaptor<BluetoothProfileConnectionInfo> testConnectioInfoCapture =
@@ -1784,7 +1783,6 @@ public class LeAudioServiceTest {
     }
 
     private void sendEventAndVerifyIntentForGroupStatusChanged(int groupId, int groupStatus) {
-
         onGroupStatusCallbackCalled = false;
 
         IBluetoothLeAudioCallback leAudioCallbacks =
@@ -1861,7 +1859,6 @@ public class LeAudioServiceTest {
     }
 
     private void sendEventAndVerifyGroupStreamStatusChanged(int groupId, int groupStreamStatus) {
-
         onGroupStreamStatusCallbackCalled = false;
 
         IBluetoothLeAudioCallback leAudioCallbacks =

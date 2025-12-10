@@ -176,14 +176,12 @@ public class A2dpServiceBinderTest {
 
     @Test
     public void enableOptionalCodecs() {
-
         mBinder.enableOptionalCodecs(mDevice, mSource);
         verify(mA2dpService).enableOptionalCodecs(mDevice);
     }
 
     @Test
     public void disableOptionalCodecs() {
-
         mBinder.disableOptionalCodecs(mDevice, mSource);
         verify(mA2dpService).disableOptionalCodecs(mDevice);
     }

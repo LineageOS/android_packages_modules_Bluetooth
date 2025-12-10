@@ -291,7 +291,6 @@ public class BluetoothMnsObexClient {
     }
 
     public void connect() {
-
         mConnected = true;
 
         BluetoothSocket btSocket = null;
@@ -389,7 +388,6 @@ public class BluetoothMnsObexClient {
     }
 
     private int sendEventHandler(byte[] eventBytes, int masInstanceId) {
-
         boolean error = false;
         int responseCode = -1;
         HeaderSet request;
@@ -440,7 +438,6 @@ public class BluetoothMnsObexClient {
             }
 
             if (!error) {
-
                 maxChunkSize = putOperation.getMaxPacketSize();
 
                 while (bytesWritten < eventBytes.length) {

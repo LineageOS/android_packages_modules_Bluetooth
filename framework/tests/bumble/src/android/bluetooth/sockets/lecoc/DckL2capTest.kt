@@ -119,7 +119,6 @@ class DckL2capTest() : Closeable {
 
     @Before
     fun setUp() {
-
         host = Host(context)
 
         bumble
@@ -1205,7 +1204,6 @@ class DckL2capTest() : Closeable {
                 }
 
                 override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-
                     Log.i(TAG, "Discovering services status=$status")
                     if (status == BluetoothGatt.GATT_SUCCESS) {
                         Log.i(TAG, "Services have been discovered")

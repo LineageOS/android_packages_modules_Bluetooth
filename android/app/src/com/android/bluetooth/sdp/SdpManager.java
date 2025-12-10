@@ -223,7 +223,6 @@ public class SdpManager {
             int supportedMessageTypes,
             String serviceName,
             boolean moreResults) {
-
         synchronized (TRACKER_LOCK) {
             SdpSearchInstance inst = mSdpSearchTracker.getSearchInstance(address, uuid);
             SdpMasRecord sdpRecord = null;
@@ -327,7 +326,6 @@ public class SdpManager {
             String serviceName,
             byte[] formatsList,
             boolean moreResults) {
-
         synchronized (TRACKER_LOCK) {
             SdpSearchInstance inst = mSdpSearchTracker.getSearchInstance(address, uuid);
             SdpOppOpsRecord sdpRecord = null;
@@ -360,7 +358,6 @@ public class SdpManager {
             int profileVersion,
             String serviceName,
             boolean moreResults) {
-
         synchronized (TRACKER_LOCK) {
             SdpSearchInstance inst = mSdpSearchTracker.getSearchInstance(address, uuid);
             SdpSapsRecord sdpRecord = null;
@@ -453,7 +450,6 @@ public class SdpManager {
     /* Caller must hold the mTrackerLock */
     @GuardedBy("TRACKER_LOCK")
     private void startSearch() {
-
         SdpSearchInstance inst = mSdpSearchTracker.getNext();
 
         if ((inst != null) && (!mSearchInProgress)) {
@@ -478,7 +474,6 @@ public class SdpManager {
     /* Caller must hold the mTrackerLock */
     @GuardedBy("TRACKER_LOCK")
     private void sendSdpIntent(SdpSearchInstance inst, Parcelable record, boolean moreResults) {
-
         inst.stopSearch();
 
         mAdapterService.sendSdpSearchRecord(

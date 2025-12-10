@@ -505,7 +505,6 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
     }
 
     private void startObexSession() {
-
         mBatch.mStatus = Constants.BATCH_STATUS_RUNNING;
 
         mCurrentShare = mBatch.getPendingShare();

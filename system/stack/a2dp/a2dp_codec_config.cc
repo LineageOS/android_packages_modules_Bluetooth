@@ -1545,10 +1545,12 @@ btav_a2dp_codec_index_t A2DP_SourceCodecIndex(const uint8_t* p_codec_info) {
   switch (codec_type) {
     case A2DP_MEDIA_CT_SBC:
       return BTAV_A2DP_CODEC_INDEX_SOURCE_SBC;
+#if !defined(EXCLUDE_NONSTANDARD_CODECS)
     case A2DP_MEDIA_CT_AAC:
       return BTAV_A2DP_CODEC_INDEX_SOURCE_AAC;
     case A2DP_MEDIA_CT_NON_A2DP:
       return A2DP_VendorSourceCodecIndex(p_codec_info);
+#endif
     default:
       break;
   }
@@ -1568,10 +1570,12 @@ btav_a2dp_codec_index_t A2DP_SinkCodecIndex(const uint8_t* p_codec_info) {
   switch (codec_type) {
     case A2DP_MEDIA_CT_SBC:
       return BTAV_A2DP_CODEC_INDEX_SINK_SBC;
+#if !defined(EXCLUDE_NONSTANDARD_CODECS)
     case A2DP_MEDIA_CT_AAC:
       return BTAV_A2DP_CODEC_INDEX_SINK_AAC;
     case A2DP_MEDIA_CT_NON_A2DP:
       return A2DP_VendorSinkCodecIndex(p_codec_info);
+#endif
     default:
       break;
   }
