@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "service_discovery_on_connected_transport"
-    namespace: "bluetooth"
-    description: "Prefer to perform service discovery on all connected transport when transport is not specified"
-    bug: "419542108"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "ignore_redundant_discovery_if_same_state"
     namespace: "bluetooth"
     description: "Ignore redundant service discovery enable or disable call if the state is the same"
