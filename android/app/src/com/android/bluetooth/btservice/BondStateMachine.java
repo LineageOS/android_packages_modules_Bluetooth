@@ -129,21 +129,8 @@ public final class BondStateMachine extends StateMachine {
         start(false);
     }
 
-    BondStateMachine(AdapterService service, AdapterProperties prop, RemoteDevices remoteDevices) {
-        super("BondStateMachine:");
-
-        addState(mStateIdle);
-        addState(mStateBonding);
-        mAdapterService = service;
-        mRemoteDevices = remoteDevices;
-        mAdapterProperties = prop;
-        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
-        setInitialState(mStateIdle);
-        start();
-    }
-
     public synchronized void doQuit() {
-        quitNow(!Flags.bondStateMachineLooper());
+        quitNow(false);
     }
 
     private class StateIdle extends State {
@@ -926,17 +913,7 @@ public final class BondStateMachine extends StateMachine {
                 .flatMap(Optional::stream)
                 .forEach(
                         profile -> {
-                            if (profile.getProfileId() == HAP_CLIENT
-                                    && Flags.hapOnMainLooper()
-                                    && !Flags.bondStateMachineLooper()) {
-                                ((HapClientService) profile)
-                                        .syncPost(
-                                                hap ->
-                                                        hap.setConnectionPolicy(
-                                                                device, CONNECTION_POLICY_UNKNOWN));
-                            } else {
-                                profile.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
-                            }
+                            profile.setConnectionPolicy(device, CONNECTION_POLICY_UNKNOWN);
                         });
     }
 

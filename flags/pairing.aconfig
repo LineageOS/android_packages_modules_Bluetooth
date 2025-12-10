@@ -72,16 +72,6 @@ flag {
 }
 
 flag {
-    name: "bond_state_machine_looper"
-    namespace: "bluetooth"
-    description: "Use main looper in BondStateMachine"
-    bug: "412423957"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "identity_to_pseudo_addr"
     namespace: "bluetooth"
     description: "Convert identity address to pseudo address during connection"
