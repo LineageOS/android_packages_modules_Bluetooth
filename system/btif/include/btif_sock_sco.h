@@ -28,4 +28,4 @@ typedef struct thread_t thread_t;
 BtStatus btsock_sco_init(thread_t* thread);
 BtStatus btsock_sco_cleanup(void);
 BtStatus btsock_sco_listen(int* sock_fd, int flags);
-BtStatus btsock_sco_connect(const RawAddress* bd_addr, int* sock_fd, int flags);
+BtStatus btsock_sco_connect(RawAddress bd_addr, int* sock_fd, int flags);

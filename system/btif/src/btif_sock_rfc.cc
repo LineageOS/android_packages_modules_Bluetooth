@@ -86,10 +86,10 @@ typedef struct {
   Uuid service_uuid;
   char service_name[256];
   int fd;
-  int app_fd;   // Temporary storage for the half of the socketpair that's
-                // sent back to upper layers.
+  int app_fd;     // Temporary storage for the half of the socketpair that's
+                  // sent back to upper layers.
   int listen_fd;  // listen socket fd from our side
-  int app_uid;  // UID of the app for which this socket was created.
+  int app_uid;    // UID of the app for which this socket was created.
   int mtu;
   uint8_t* packet;
   int sdp_handle;
@@ -103,12 +103,12 @@ typedef struct {
   int64_t tx_bytes;
   // Cumulative number of bytes received on this socket
   int64_t rx_bytes;
-  uint64_t socket_id;            // Socket ID in connected state
-  btsock_data_path_t data_path;  // socket data path
-  char socket_name[128];         // descriptive socket name
-  uint64_t hub_id;               // ID of the hub to which the end point belongs
-  uint64_t endpoint_id;          // ID of the hub end point
-  bool is_accepting;             // is app accepting on server socket?
+  uint64_t socket_id;                 // Socket ID in connected state
+  btsock_data_path_t data_path;       // socket data path
+  char socket_name[128];              // descriptive socket name
+  uint64_t hub_id;                    // ID of the hub to which the end point belongs
+  uint64_t endpoint_id;               // ID of the hub end point
+  bool is_accepting;                  // is app accepting on server socket?
   uint64_t connection_start_time_ms;  // Timestamp when the connection state started
 } rfc_slot_t;
 
@@ -430,8 +430,8 @@ BtStatus btsock_rfc_listen(const char* service_name, const Uuid* service_uuid, i
   return BtifStatus();
 }
 
-BtStatus btsock_rfc_connect(const RawAddress* bd_addr, const Uuid* service_uuid, int channel,
-                            int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
+BtStatus btsock_rfc_connect(RawAddress bd_addr, const Uuid* service_uuid, int channel, int* sock_fd,
+                            int flags, int app_uid, btsock_data_path_t data_path,
                             const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
                             int max_rx_packet_size) {
   log::assert_that(sock_fd != NULL, "assert failed: sock_fd != NULL");
@@ -452,9 +452,9 @@ BtStatus btsock_rfc_connect(const RawAddress* bd_addr, const Uuid* service_uuid,
 
   std::unique_lock<std::recursive_mutex> lock(slot_lock);
 
-  rfc_slot_t* slot = alloc_rfc_slot(bd_addr, NULL, *service_uuid, channel, flags, false);
+  rfc_slot_t* slot = alloc_rfc_slot(&bd_addr, NULL, *service_uuid, channel, flags, false);
   if (!slot) {
-    log::error("unable to allocate RFCOMM slot. bd_addr:{}", *bd_addr);
+    log::error("unable to allocate RFCOMM slot. bd_addr:{}", bd_addr);
     return BtifStatus(NOMEM);
   }
 
@@ -474,11 +474,11 @@ BtStatus btsock_rfc_connect(const RawAddress* bd_addr, const Uuid* service_uuid,
       return BtifStatus(SOCKET_ERROR);
     }
   } else {
-    log::info("service_uuid:{}, bd_addr:{}, slot_id:{}", service_uuid->ToString(), *bd_addr,
+    log::info("service_uuid:{}, bd_addr:{}, slot_id:{}", service_uuid->ToString(), bd_addr,
               slot->id);
     if (!is_requesting_sdp()) {
       slot->sdp_start_time_ms = common::time_gettimeofday_us() / 1000;
-      BTA_JvStartDiscovery(*bd_addr, 1, service_uuid, slot->id);
+      BTA_JvStartDiscovery(bd_addr, 1, service_uuid, slot->id);
       slot->f.pending_sdp_request = false;
       slot->f.doing_sdp_request = true;
     } else {
@@ -1431,8 +1431,7 @@ int bta_co_rfc_data_outgoing(uint32_t id, uint8_t* buf, uint16_t size) {
   return true;
 }
 
-BtStatus btsock_rfc_disconnect(const RawAddress* bd_addr) {
-  log::assert_that(bd_addr != NULL, "assert failed: bd_addr != NULL");
+BtStatus btsock_rfc_disconnect(RawAddress bd_addr) {
   if (!is_init_done()) {
     log::error("BT not ready");
     return BtifStatus(NOT_READY);
@@ -1440,7 +1439,7 @@ BtStatus btsock_rfc_disconnect(const RawAddress* bd_addr) {
 
   std::unique_lock<std::recursive_mutex> lock(slot_lock);
   for (size_t i = 0; i < ARRAY_SIZE(rfc_slots); ++i) {
-    if (rfc_slots[i].id && rfc_slots[i].addr == *bd_addr) {
+    if (rfc_slots[i].id && rfc_slots[i].addr == bd_addr) {
       cleanup_rfc_slot(&rfc_slots[i], BTSOCK_ERROR_NONE);
     }
   }

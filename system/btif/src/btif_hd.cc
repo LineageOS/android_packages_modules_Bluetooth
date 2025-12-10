@@ -151,7 +151,7 @@ static void btif_hd_free_buf() {
  ******************************************************************************/
 void btif_hd_remove_device(RawAddress bd_addr) {
   BTA_HdRemoveDevice(bd_addr);
-  btif_storage_remove_hidd(&bd_addr);
+  btif_storage_remove_hidd(bd_addr);
 }
 
 /*******************************************************************************

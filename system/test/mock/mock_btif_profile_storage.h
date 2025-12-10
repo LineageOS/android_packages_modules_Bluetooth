@@ -351,13 +351,13 @@ struct btif_storage_remove_hid_info {
 extern struct btif_storage_remove_hid_info btif_storage_remove_hid_info;
 
 // Name: btif_storage_remove_hidd
-// Params: RawAddress* remote_bd_addr
+// Params: RawAddress remote_bd_addr
 // Return: bt_status_t
 struct btif_storage_remove_hidd {
   static bt_status_t return_value;
-  std::function<bt_status_t(RawAddress* remote_bd_addr)> body{
-          [](RawAddress* /* remote_bd_addr */) { return return_value; }};
-  bt_status_t operator()(RawAddress* remote_bd_addr) { return body(remote_bd_addr); }
+  std::function<bt_status_t(RawAddress remote_bd_addr)> body{
+          [](RawAddress /* remote_bd_addr */) { return return_value; }};
+  bt_status_t operator()(RawAddress remote_bd_addr) { return body(remote_bd_addr); }
 };
 extern struct btif_storage_remove_hidd btif_storage_remove_hidd;
 

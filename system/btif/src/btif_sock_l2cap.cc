@@ -89,14 +89,14 @@ typedef struct l2cap_socket {
   int64_t tx_bytes;
   // Cumulative number of bytes received on this socket
   int64_t rx_bytes;
-  uint16_t local_cid;   // The local CID
-  uint16_t remote_cid;  // The remote CID
-  uint64_t socket_id;   // Socket ID in connected state
-  btsock_data_path_t data_path;  // socket data path
-  char socket_name[128];         // descriptive socket name
-  uint64_t hub_id;               // ID of the hub to which the end point belongs
-  uint64_t endpoint_id;          // ID of the hub end point
-  bool is_accepting;             // is app accepting on server socket?
+  uint16_t local_cid;                 // The local CID
+  uint16_t remote_cid;                // The remote CID
+  uint64_t socket_id;                 // Socket ID in connected state
+  btsock_data_path_t data_path;       // socket data path
+  char socket_name[128];              // descriptive socket name
+  uint64_t hub_id;                    // ID of the hub to which the end point belongs
+  uint64_t endpoint_id;               // ID of the hub end point
+  bool is_accepting;                  // is app accepting on server socket?
   uint64_t connection_start_time_ms;  // Timestamp when the connection state started
   uint8_t lecoc_fixed_psm_slots;      // Range of LE PSM channels at the end of valid PSM range
 } l2cap_socket;
@@ -524,8 +524,7 @@ static void on_cl_l2cap_init(tBTA_JV_L2CAP_CL_INIT* p_init, uint32_t id) {
   sock->handle = p_init->handle;
 }
 
-static void clone_server_socket_to_accepted_socket(tBTA_JV_L2CAP_OPEN* p_open,
-                                                   l2cap_socket* sock,
+static void clone_server_socket_to_accepted_socket(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket* sock,
                                                    l2cap_socket* accept_rs) {
   accept_rs->connected = true;
   accept_rs->security = sock->security;
@@ -974,8 +973,9 @@ static BtStatus btsock_l2cap_listen_or_connect(const char* name, const RawAddres
   sock->app_uid = app_uid;
   sock->is_le_coc = is_le_coc;
   if (com::android::bluetooth::flags::lecoc_with_fixed_psm()) {
-    sock->lecoc_fixed_psm_slots = android::sysprop::bluetooth::Ble::lecoc_fixed_psm_slots()
-                                          .value_or(LECOC_FIXED_PSM_SLOTS_DEFAULT);
+    sock->lecoc_fixed_psm_slots =
+            android::sysprop::bluetooth::Ble::lecoc_fixed_psm_slots().value_or(
+                    LECOC_FIXED_PSM_SLOTS_DEFAULT);
     log::info("fixed psm range : {}", sock->lecoc_fixed_psm_slots);
     if (sock->lecoc_fixed_psm_slots < LECOC_FIXED_PSM_RANGE_MIN ||
         sock->lecoc_fixed_psm_slots > LECOC_FIXED_PSM_RANGE_MAX) {
@@ -1047,10 +1047,10 @@ BtStatus btsock_l2cap_listen(const char* name, int channel, int* sock_fd, int fl
                                         socket_name, hub_id, endpoint_id, max_rx_packet_size);
 }
 
-BtStatus btsock_l2cap_connect(const RawAddress* bd_addr, int channel, int* sock_fd, int flags,
-                              int app_uid, btsock_data_path_t data_path, const char* socket_name,
+BtStatus btsock_l2cap_connect(RawAddress bd_addr, int channel, int* sock_fd, int flags, int app_uid,
+                              btsock_data_path_t data_path, const char* socket_name,
                               uint64_t hub_id, uint64_t endpoint_id, int max_rx_packet_size) {
-  return btsock_l2cap_listen_or_connect(NULL, bd_addr, channel, sock_fd, flags, 0, app_uid,
+  return btsock_l2cap_listen_or_connect(NULL, &bd_addr, channel, sock_fd, flags, 0, app_uid,
                                         data_path, socket_name, hub_id, endpoint_id,
                                         max_rx_packet_size);
 }
@@ -1203,10 +1203,7 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
   }
 }
 
-BtStatus btsock_l2cap_disconnect(const RawAddress* bd_addr) {
-  if (!bd_addr) {
-    return BtifStatus(PARM_INVALID);
-  }
+BtStatus btsock_l2cap_disconnect(RawAddress bd_addr) {
   if (!is_inited()) {
     return BtifStatus(NOT_READY);
   }
@@ -1216,7 +1213,7 @@ BtStatus btsock_l2cap_disconnect(const RawAddress* bd_addr) {
 
   while (sock) {
     l2cap_socket* next = sock->next;
-    if (sock->addr == *bd_addr) {
+    if (sock->addr == bd_addr) {
       btsock_l2cap_free_l(sock, BTSOCK_ERROR_NONE);
     }
     sock = next;

@@ -91,7 +91,7 @@ void btsock_rfc_cleanup(void) {
   inc_func_call_count(__func__);
   test::mock::btif_sock_rfc::btsock_rfc_cleanup();
 }
-BtStatus btsock_rfc_connect(const RawAddress* bd_addr, const bluetooth::Uuid* uuid, int channel,
+BtStatus btsock_rfc_connect(RawAddress bd_addr, const bluetooth::Uuid* uuid, int channel,
                             int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
                             const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
                             int max_rx_packet_size) {
@@ -107,7 +107,7 @@ BtStatus btsock_rfc_control_req(uint8_t dlci, const RawAddress& bd_addr, uint8_t
   return test::mock::btif_sock_rfc::btsock_rfc_control_req(
           dlci, bd_addr, modem_signal, break_signal, discard_buffers, break_signal_seq, fc);
 }
-BtStatus btsock_rfc_disconnect(const RawAddress* bd_addr) {
+BtStatus btsock_rfc_disconnect(RawAddress bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::btif_sock_rfc::btsock_rfc_disconnect(bd_addr);
 }

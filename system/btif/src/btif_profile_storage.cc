@@ -1050,8 +1050,8 @@ bt_status_t btif_storage_set_hidd(const RawAddress& remote_bd_addr) {
  * Returns          BT_STATUS_SUCCESS
  *
  ******************************************************************************/
-bt_status_t btif_storage_remove_hidd(RawAddress* remote_bd_addr) {
-  btif_config_remove(remote_bd_addr->ToString(), BTIF_STORAGE_KEY_HID_DEVICE_CABLED);
+bt_status_t btif_storage_remove_hidd(RawAddress remote_bd_addr) {
+  btif_config_remove(remote_bd_addr.ToString(), BTIF_STORAGE_KEY_HID_DEVICE_CABLED);
 
   return BT_STATUS_SUCCESS;
 }
