@@ -16,16 +16,6 @@ flag {
 }
 
 flag {
-    name: "fix_event_handler_reg_and_dereg"
-    namespace: "bluetooth"
-    description: "Fix the event handler registration and deregistration."
-    bug: "433222144"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "add_watchdog_with_timeout"
     namespace : "bluetooth"
     description: "Implement a watchdog mechanism with a set timeout to monitor the AIDL backend callback. If the timeout is exceeded, trigger the generation of a tombstone."

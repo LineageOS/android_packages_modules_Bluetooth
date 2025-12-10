@@ -222,13 +222,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   }
 
   void stop() {
-    if (com_android_bluetooth_flags_fix_event_handler_reg_and_dereg()) {
-      hci_layer_->ReleaseLeScanningInterface();
-    } else {
-      for (auto subevent_code : LeScanningEvents) {
-        hci_layer_->UnregisterLeEventHandler(subevent_code);
-      }
-    }
+    hci_layer_->ReleaseLeScanningInterface();
 
     if (is_batch_scan_supported_) {
       // TODO implete vse module

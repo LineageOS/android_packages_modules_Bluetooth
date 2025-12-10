@@ -1087,9 +1087,7 @@ HciLayer::~HciLayer() {
   impl_->hal_->unregisterIncomingPacketCallback();
   delete hal_callbacks_;
 
-  if (com_android_bluetooth_flags_fix_event_handler_reg_and_dereg()) {
-    StopWithNoHalDependencies();
-  }
+  StopWithNoHalDependencies();
 
   impl_->acl_queue_.GetDownEnd()->UnregisterDequeue();
   impl_->sco_queue_.GetDownEnd()->UnregisterDequeue();
