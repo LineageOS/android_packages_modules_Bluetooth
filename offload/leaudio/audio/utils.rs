@@ -12,16 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! LE Audio - Audio module
+/// Inits logging for Android
+#[cfg(target_os = "android")]
+pub fn init_logging() {
+    android_logger::init_once(
+        android_logger::Config::default()
+            .with_tag("swoff_leaudio")
+            .with_max_level(log::LevelFilter::Info),
+    );
+}
 
-mod client;
-mod codec;
-mod ffi;
-mod streamer;
-mod utils;
-
-#[cfg(feature = "lc3")]
-mod lc3;
-
-#[cfg(feature = "opus")]
-mod opus;
+/// Inits logging for host
+#[cfg(not(target_os = "android"))]
+pub fn init_logging() {
+    env_logger::Builder::new().parse_default_env().try_init().ok();
+}
