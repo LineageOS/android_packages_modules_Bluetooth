@@ -26,16 +26,6 @@ flag {
 }
 
 flag {
-    name: "protect_dumpsys_during_stack_shutdown"
-    namespace: "bluetooth"
-    description: "Do not proceed with dumpsys if the stack is not running."
-    bug: "429999031"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "use_shared_promise_for_le_address_manager"
     namespace: "bluetooth"
     description: "Use shared promise for LE Address Manager."
