@@ -2636,10 +2636,6 @@ void btm_io_capabilities_rsp(const tBTM_SP_IO_RSP evt_data) {
   if (p_device->sec_rec.is_bonded(BT_TRANSPORT_BR_EDR) &&
       !p_device->sec_rec.is_device_encrypted()) {
     log::warn("Incoming bond request, but {} is already bonded (notifying user)", evt_data.bd_addr);
-    if (!com_android_bluetooth_flags_gen_key_missing_evt_only_from_iocapreq()) {
-      btm_sec_report_bond_loss(p_device, BT_TRANSPORT_BR_EDR,
-                               BTM_KEY_MISSING_BREDR_INCOMING_PAIRING);
-    }
     return;
   }
 
