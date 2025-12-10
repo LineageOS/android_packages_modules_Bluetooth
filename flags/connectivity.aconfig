@@ -12,16 +12,6 @@ flag {
 }
 
 flag {
-    name: "fix_race_in_orphaned_acls"
-    namespace: "bluetooth"
-    description: "Fix race in CheckForOrphanedAclConnections"
-    bug: "436611420"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "allow_rearm_if_suspend_scan_params_used"
     namespace: "bluetooth"
     description: "When suspend scan params are used, allow re-arm connection even if device is in accept list"
