@@ -88,7 +88,7 @@ public:
       if (bluetooth::le_audio::types::kLeAudioContextAllBidir.test(context_type)) {
         /* Some of the bidirectional context needs to be allowed also by Audio Framework */
         if (!isBidirectionalControlledByAudioFramework(context_type) ||
-            isMetadataTagPresent(entry.tags, "VX_AOSP_bidirectional")) {
+            isMetadataTagPresent(entry.tags, "VX_AOSP_BIDIRECTIONAL")) {
           local_encoding_contexts_types_.sink.set(context_type);
         }
       }
