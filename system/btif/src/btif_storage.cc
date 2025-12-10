@@ -1101,7 +1101,7 @@ bt_status_t btif_storage_load_bonded_devices(void) {
 #if TARGET_FLOSS
       // Floss needs VID:PID for metrics purposes
       bt_vendor_product_info_t vp_info;
-      if (btif_storage_get_remote_prop(p_remote_addr, BT_PROPERTY_VENDOR_PRODUCT_INFO, &vp_info,
+      if (btif_storage_get_remote_prop(remote_addr, BT_PROPERTY_VENDOR_PRODUCT_INFO, &vp_info,
                                        sizeof(vp_info),
                                        &remote_properties[num_props]) == BT_STATUS_SUCCESS) {
         num_props++;
@@ -1308,7 +1308,7 @@ bt_status_t btif_storage_set_remote_addr_type(RawAddress remote_bd_addr, tBLE_AD
 
 #if TARGET_FLOSS
   // Floss needs to get address type for diagnosis API.
-  btif_storage_invoke_addr_type_update(*remote_bd_addr, addr_type);
+  btif_storage_invoke_addr_type_update(remote_bd_addr, addr_type);
 #endif
 
   return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
