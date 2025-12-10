@@ -163,8 +163,10 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
     } else if (controller_->IsSupported(hci::OpCode::LE_MULTI_ADVT)) {
       advertising_api_type_ = AdvertisingApiType::ANDROID_HCI;
       num_instances_ = controller_->GetVendorCapabilities().max_advt_instances_;
-      // number of LE_MULTI_ADVT start from 1
-      num_instances_ += 1;
+      if (!com::android::bluetooth::flags::multi_adv_index()) {
+        // number of LE_MULTI_ADVT start from 1
+        num_instances_ += 1;
+      }
     } else {
       advertising_api_type_ = AdvertisingApiType::LEGACY;
       hci_->EnqueueCommand(
@@ -404,8 +406,13 @@ struct LeAdvertisingManagerImpl::impl : public bluetooth::hci::LeAddressManagerC
   }
 
   AdvertiserId allocate_advertiser() {
-    // number of LE_MULTI_ADVT start from 1
-    AdvertiserId id = advertising_api_type_ == AdvertisingApiType::ANDROID_HCI ? 1 : 0;
+    AdvertiserId id;
+    if (com::android::bluetooth::flags::multi_adv_index()) {
+      id = 0;
+    } else {
+      // number of LE_MULTI_ADVT start from 1
+      id = advertising_api_type_ == AdvertisingApiType::ANDROID_HCI ? 1 : 0;
+    }
     while (id < num_instances_ && advertising_sets_.contains(id) && advertising_sets_[id].in_use) {
       id++;
     }
