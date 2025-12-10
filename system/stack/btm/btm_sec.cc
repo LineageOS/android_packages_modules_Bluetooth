@@ -3206,42 +3206,6 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
  *
  *****************************************************************************/
 static bool btm_sec_perform_ctkd(BtmDevice* p_device) {
-  if (!com_android_bluetooth_flags_avoid_ctkd_for_temp_pairing()) {
-    /* if BR key is temporary no need for LE LTK derivation */
-    bool derive_ltk = true;
-    if (p_device->sec_rec.rmt_auth_req == BTM_AUTH_SP_NO &&
-        btm_sec_cb.devcb.loc_auth_req == BTM_AUTH_SP_NO) {
-      derive_ltk = false;
-      log::verbose("BR key is temporary, skip derivation of LE LTK");
-    }
-
-    tHCI_ROLE role = HCI_ROLE_UNKNOWN;
-    if (get_btm_client_interface().link_policy.BTM_GetRole(p_device->bd_addr, BT_TRANSPORT_BR_EDR,
-                                                           &role) != tBTM_STATUS::BTM_SUCCESS) {
-      log::warn("Unable to get link policy role peer:{}", p_device->bd_addr);
-    }
-
-    if (p_device->sec_rec.new_encryption_key_is_p256) {
-      if (btm_sec_use_smp_br_chnl(p_device) && role == HCI_ROLE_CENTRAL &&
-          /* if LE key is not known, do deriving */
-          (!(p_device->sec_rec.sec_flags & BTM_SEC_LE_LINK_KEY_KNOWN) ||
-           /* or BR key is higher security than existing LE keys */
-           (!(p_device->sec_rec.sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED) &&
-            (p_device->sec_rec.sec_flags & BTM_SEC_LINK_KEY_AUTHED))) &&
-          derive_ltk) {
-        /* BR/EDR is encrypted with LK that can be used to derive LE LTK */
-        p_device->sec_rec.new_encryption_key_is_p256 = false;
-
-        if (!interop_match_addr(INTEROP_DISABLE_OUTGOING_BR_SMP, p_device->bd_addr)) {
-          log::verbose("start SM over BR/EDR");
-          SMP_BR_PairWith(p_device->bd_addr);
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
   /* Must be bonded over BR/EDR */
   if (!p_device->sec_rec.is_bonded(BT_TRANSPORT_BR_EDR)) {
     return false;
