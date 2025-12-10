@@ -194,6 +194,8 @@ TEST_F(StackRfcommTest, test_PORT_IsCollisionDetected) {
 
   // Only some situations where state is CONNECTED can be collisions.
   rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_CONNECTED;
+  // Null port shouldn't trigger collision
+  ASSERT_FALSE(PORT_IsCollisionDetected(test_bd_addr));
   rfc_cb.port.port[0].rfc.p_mcb = &rfc_cb.port.rfc_mcb[0];
 
   rfc_cb.port.port[0].rfc.sm_cb.state = RFC_STATE_CLOSED;
