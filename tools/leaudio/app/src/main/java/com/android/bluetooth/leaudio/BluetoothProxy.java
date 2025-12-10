@@ -936,13 +936,13 @@ public class BluetoothProxy {
     }
 
     private void initBassProxy() {
-        if (!isLeAudioBroadcastScanAssistanSupported()) return;
+        if (!isLeAudioBroadcastScanAssistantSupported()) return;
         bluetoothAdapter.getProfileProxy(
                 this.application, profileListener, BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT);
     }
 
     private void cleanupBassProxy() {
-        if (!isLeAudioBroadcastScanAssistanSupported()) return;
+        if (!isLeAudioBroadcastScanAssistantSupported()) return;
         if (mBluetoothLeBroadcastAssistant != null) {
             mBluetoothLeBroadcastAssistant.unregisterCallback(mBroadcastAssistantCallback);
             bluetoothAdapter.closeProfileProxy(
@@ -1659,7 +1659,7 @@ public class BluetoothProxy {
                 == BluetoothStatusCodes.FEATURE_SUPPORTED);
     }
 
-    public boolean isLeAudioBroadcastScanAssistanSupported() {
+    public boolean isLeAudioBroadcastScanAssistantSupported() {
         return (bluetoothAdapter.isLeAudioBroadcastAssistantSupported()
                 == BluetoothStatusCodes.FEATURE_SUPPORTED);
     }
