@@ -1556,10 +1556,14 @@ package android.bluetooth.le {
     method public double getErrorAzimuthAngle();
     method @FloatRange(from=0.0) public double getErrorMeters();
     method public long getMeasurementTimestampNanos();
+    method @FlaggedApi("com.android.bluetooth.flags.include_power_and_rssi_in_distance_measurement_result") public int getRemoteTxPowerDbm();
     method public double getResultMeters();
+    method @FlaggedApi("com.android.bluetooth.flags.include_power_and_rssi_in_distance_measurement_result") public int getRssiDbm();
     method public double getVelocityMetersPerSecond();
     method public void writeToParcel(android.os.Parcel, int);
     field @NonNull public static final android.os.Parcelable.Creator<android.bluetooth.le.DistanceMeasurementResult> CREATOR;
+    field @FlaggedApi("com.android.bluetooth.flags.include_power_and_rssi_in_distance_measurement_result") public static final int INVALID_RSSI_DBM = 127; // 0x7f
+    field @FlaggedApi("com.android.bluetooth.flags.include_power_and_rssi_in_distance_measurement_result") public static final int INVALID_TX_POWER_DBM = 127; // 0x7f
     field public static final int NADM_ATTACK_IS_EXTREMELY_LIKELY = 6; // 0x6
     field public static final int NADM_ATTACK_IS_EXTREMELY_UNLIKELY = 0; // 0x0
     field public static final int NADM_ATTACK_IS_LIKELY = 4; // 0x4
@@ -1581,6 +1585,8 @@ package android.bluetooth.le {
     method @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setErrorAltitudeAngle(@FloatRange(from=0.0, to=180.0) double);
     method @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setErrorAzimuthAngle(@FloatRange(from=0.0, to=360.0) double);
     method @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setMeasurementTimestampNanos(long);
+    method @FlaggedApi("com.android.bluetooth.flags.include_power_and_rssi_in_distance_measurement_result") @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setRemoteTxPowerDbm(@IntRange(from=0xffffff81, to=127) int);
+    method @FlaggedApi("com.android.bluetooth.flags.include_power_and_rssi_in_distance_measurement_result") @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setRssiDbm(@IntRange(from=0xffffff81, to=127) int);
     method @NonNull public android.bluetooth.le.DistanceMeasurementResult.Builder setVelocityMetersPerSecond(double);
   }
 

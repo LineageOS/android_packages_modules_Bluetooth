@@ -16,14 +16,18 @@
 
 package android.bluetooth.le;
 
+import android.annotation.FlaggedApi;
 import android.annotation.FloatRange;
 import android.annotation.Hide;
 import android.annotation.IntDef;
+import android.annotation.IntRange;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
 import android.annotation.SystemApi;
 import android.os.Parcel;
 import android.os.Parcelable;
+
+import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -78,6 +82,20 @@ public final class DistanceMeasurementResult implements Parcelable {
     /** Unknown NADM, if a device is unable to determine a NADM value, then it shall report this. */
     @Hide @SystemApi public static final int NADM_UNKNOWN = 0xFF;
 
+    /** Value for invalid TX Power */
+    @Hide
+    @FlaggedApi(Flags.FLAG_INCLUDE_POWER_AND_RSSI_IN_DISTANCE_MEASUREMENT_RESULT)
+    @SystemApi
+    // sync with system/gd/hci/DistanceMeasurementManager
+    public static final int INVALID_TX_POWER_DBM = 127;
+
+    /** Value for invalid RSSI */
+    @Hide
+    @FlaggedApi(Flags.FLAG_INCLUDE_POWER_AND_RSSI_IN_DISTANCE_MEASUREMENT_RESULT)
+    @SystemApi
+    // sync with system/gd/hci/DistanceMeasurementManager
+    public static final int INVALID_RSSI_DBM = 127;
+
     private final double mMeters;
     private final double mErrorMeters;
     private final double mAzimuthAngle;
@@ -89,6 +107,8 @@ public final class DistanceMeasurementResult implements Parcelable {
     private final int mDetectedAttackLevel;
     private final double mVelocityMetersPerSecond;
     private final long mMeasurementTimestampNanos;
+    private final int mRemoteTxPowerDbm;
+    private final int mRssiDbm;
 
     private DistanceMeasurementResult(
             double meters,
@@ -101,7 +121,9 @@ public final class DistanceMeasurementResult implements Parcelable {
             double confidenceLevel,
             @Nadm int detectedAttackLevel,
             double velocityMetersPerSecond,
-            long measurementTimestampNanos) {
+            long measurementTimestampNanos,
+            int remoteTxPowerDbm,
+            int rssiDbm) {
         mMeters = meters;
         mErrorMeters = errorMeters;
         mAzimuthAngle = azimuthAngle;
@@ -113,6 +135,8 @@ public final class DistanceMeasurementResult implements Parcelable {
         mDetectedAttackLevel = detectedAttackLevel;
         mVelocityMetersPerSecond = velocityMetersPerSecond;
         mMeasurementTimestampNanos = measurementTimestampNanos;
+        mRemoteTxPowerDbm = remoteTxPowerDbm;
+        mRssiDbm = rssiDbm;
     }
 
     /**
@@ -277,6 +301,32 @@ public final class DistanceMeasurementResult implements Parcelable {
         return mMeasurementTimestampNanos;
     }
 
+    /**
+     * Get remote TX power. Will return {@link #INVALID_TX_POWER_DBM} if it does not exist.
+     *
+     * @return remote TX power in dBm
+     */
+    @Hide
+    @FlaggedApi(Flags.FLAG_INCLUDE_POWER_AND_RSSI_IN_DISTANCE_MEASUREMENT_RESULT)
+    @SystemApi
+    @RequiresNoPermission
+    public int getRemoteTxPowerDbm() {
+        return mRemoteTxPowerDbm;
+    }
+
+    /**
+     * Get RSSI represented in dBm. Will return {@link #INVALID_RSSI_DBM} if it does not exist.
+     *
+     * @return RSSI in dBm
+     */
+    @Hide
+    @FlaggedApi(Flags.FLAG_INCLUDE_POWER_AND_RSSI_IN_DISTANCE_MEASUREMENT_RESULT)
+    @SystemApi
+    @RequiresNoPermission
+    public int getRssiDbm() {
+        return mRssiDbm;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -295,6 +345,10 @@ public final class DistanceMeasurementResult implements Parcelable {
         out.writeInt(mDetectedAttackLevel);
         out.writeDouble(mVelocityMetersPerSecond);
         out.writeLong(mMeasurementTimestampNanos);
+        if (Flags.includePowerAndRssiInDistanceMeasurementResult()) {
+            out.writeInt(mRemoteTxPowerDbm);
+            out.writeInt(mRssiDbm);
+        }
     }
 
     @Override
@@ -309,7 +363,9 @@ public final class DistanceMeasurementResult implements Parcelable {
                 + (", confidenceLevel=" + mConfidenceLevel)
                 + (", detectedAttackLevel=" + mDetectedAttackLevel)
                 + (", velocityMetersPerSecond=" + mVelocityMetersPerSecond)
-                + (", elapsedRealtimeNanos=" + mMeasurementTimestampNanos + "]");
+                + (", elapsedRealtimeNanos=" + mMeasurementTimestampNanos)
+                + (", remoteTxPowerDbm=" + mRemoteTxPowerDbm)
+                + (", rssiDbm=" + mRssiDbm + "]");
     }
 
     /** A {@link Parcelable.Creator} to create {@link DistanceMeasurementResult} from parcel. */
@@ -317,17 +373,23 @@ public final class DistanceMeasurementResult implements Parcelable {
             new Parcelable.Creator<DistanceMeasurementResult>() {
                 @Override
                 public @NonNull DistanceMeasurementResult createFromParcel(@NonNull Parcel in) {
-                    return new Builder(in.readDouble(), in.readDouble())
-                            .setAzimuthAngle(in.readDouble())
-                            .setErrorAzimuthAngle(in.readDouble())
-                            .setAltitudeAngle(in.readDouble())
-                            .setErrorAltitudeAngle(in.readDouble())
-                            .setDelaySpreadMeters(in.readDouble())
-                            .setConfidenceLevel(in.readDouble())
-                            .setDetectedAttackLevel(in.readInt())
-                            .setVelocityMetersPerSecond(in.readDouble())
-                            .setMeasurementTimestampNanos(in.readLong())
-                            .build();
+                    Builder builder =
+                            new Builder(in.readDouble(), in.readDouble())
+                                    .setAzimuthAngle(in.readDouble())
+                                    .setErrorAzimuthAngle(in.readDouble())
+                                    .setAltitudeAngle(in.readDouble())
+                                    .setErrorAltitudeAngle(in.readDouble())
+                                    .setDelaySpreadMeters(in.readDouble())
+                                    .setConfidenceLevel(in.readDouble())
+                                    .setDetectedAttackLevel(in.readInt())
+                                    .setVelocityMetersPerSecond(in.readDouble())
+                                    .setMeasurementTimestampNanos(in.readLong());
+
+                    if (Flags.includePowerAndRssiInDistanceMeasurementResult()) {
+                        builder =
+                                builder.setRemoteTxPowerDbm(in.readInt()).setRssiDbm(in.readInt());
+                    }
+                    return builder.build();
                 }
 
                 @Override
@@ -351,6 +413,11 @@ public final class DistanceMeasurementResult implements Parcelable {
         private int mDetectedAttackLevel = NADM_UNKNOWN;
         private double mVelocityMetersPerSecond = Double.NaN;
         private long mMeasurementTimestampNanos = -1L;
+
+        private int mRemoteTxPowerDbm =
+                Flags.includePowerAndRssiInDistanceMeasurementResult() ? INVALID_TX_POWER_DBM : 127;
+        private int mRssiDbm =
+                Flags.includePowerAndRssiInDistanceMeasurementResult() ? INVALID_RSSI_DBM : 127;
 
         /**
          * Constructor of the Builder.
@@ -541,6 +608,35 @@ public final class DistanceMeasurementResult implements Parcelable {
         }
 
         /**
+         * Set the remote TX power
+         *
+         * @param remoteTxPowerDbm remote TX power
+         */
+        @Hide
+        @FlaggedApi(Flags.FLAG_INCLUDE_POWER_AND_RSSI_IN_DISTANCE_MEASUREMENT_RESULT)
+        @SystemApi
+        @RequiresNoPermission
+        public @NonNull Builder setRemoteTxPowerDbm(
+                @IntRange(from = -127, to = 127) int remoteTxPowerDbm) {
+            mRemoteTxPowerDbm = remoteTxPowerDbm;
+            return this;
+        }
+
+        /**
+         * Set RSSI represented in dBm.
+         *
+         * @param rssiDbm RSSI in dBm
+         */
+        @Hide
+        @FlaggedApi(Flags.FLAG_INCLUDE_POWER_AND_RSSI_IN_DISTANCE_MEASUREMENT_RESULT)
+        @SystemApi
+        @RequiresNoPermission
+        public @NonNull Builder setRssiDbm(@IntRange(from = -127, to = 127) int rssiDbm) {
+            mRssiDbm = rssiDbm;
+            return this;
+        }
+
+        /**
          * Builds the {@link DistanceMeasurementResult} object.
          *
          * @throws IllegalStateException if meters, error, or confidence are not set
@@ -560,7 +656,9 @@ public final class DistanceMeasurementResult implements Parcelable {
                     mConfidenceLevel,
                     mDetectedAttackLevel,
                     mVelocityMetersPerSecond,
-                    mMeasurementTimestampNanos);
+                    mMeasurementTimestampNanos,
+                    mRemoteTxPowerDbm,
+                    mRssiDbm);
         }
     }
 }

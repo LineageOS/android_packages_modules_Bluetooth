@@ -588,8 +588,8 @@ public class DistanceMeasurementManager {
             int altitudeAngle,
             int errorAltitudeAngle,
             long elapsedRealtimeNanos,
-            int remoteTxPower, // TODO(b/462311235): Use this when creating related APIs
-            int reflectorRssi, // TODO(b/462311235): Use this when creating related APIs
+            int remoteTxPowerDbm,
+            int rssiDbm,
             int confidenceLevel,
             double delaySpreadMeters,
             int detectedAttackLevel,
@@ -606,6 +606,11 @@ public class DistanceMeasurementManager {
         DistanceMeasurementResult.Builder builder =
                 new DistanceMeasurementResult.Builder(centimeter / 100.0, errorCentimeter / 100.0)
                         .setMeasurementTimestampNanos(elapsedRealtimeNanos);
+
+        if (Flags.includePowerAndRssiInDistanceMeasurementResult()) {
+            builder.setRemoteTxPowerDbm(remoteTxPowerDbm);
+            builder.setRssiDbm(rssiDbm);
+        }
 
         switch (method) {
             case DISTANCE_MEASUREMENT_METHOD_RSSI -> handleRssiResult(address, builder.build());
@@ -627,7 +632,6 @@ public class DistanceMeasurementManager {
                 if (velocityMetersPerSecond >= 0) {
                     builder.setVelocityMetersPerSecond(velocityMetersPerSecond);
                 }
-                // TODO(b/459954352): Set remoteTxPower and reflectorRssi when creating APIs
                 builder.setDetectedAttackLevel(detectedAttackLevel);
                 handleCsResult(address, builder.build());
             }
