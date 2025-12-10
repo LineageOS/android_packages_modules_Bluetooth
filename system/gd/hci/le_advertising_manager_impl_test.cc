@@ -455,6 +455,7 @@ TEST_F(LeAndroidHciAdvertisingManagerTest, startup_teardown) {}
 TEST_F(LeExtendedAdvertisingManagerTest, startup_teardown) {}
 
 TEST_F(LeAdvertisingManagerTest, create_advertiser_test) {
+  set_com_android_bluetooth_flags_multi_adv_index(true);
   AdvertisingConfig advertising_config{};
   advertising_config.scannable = true;
   advertising_config.connectable = true;
