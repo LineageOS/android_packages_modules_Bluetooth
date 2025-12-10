@@ -57,4 +57,12 @@ ScopedLocalRef<jstring> addressToJString(JNIEnv* env, RawAddress address) {
   return object;
 }
 
+std::string stringFromJstring(JNIEnv* env, const jstring object) {
+  const char* string_char = env->GetStringUTFChars(object, nullptr);
+  log::assert_that(string_char != nullptr, "null string");
+  std::string cpp_string = std::string(string_char);
+  env->ReleaseStringUTFChars(object, string_char);
+  return cpp_string;
+}
+
 }  // namespace android
