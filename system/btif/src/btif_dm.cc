@@ -983,44 +983,48 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
     cod = COD_UNCLASSIFIED;
   }
 
-  /* check for auto pair possibility only if bond was initiated by local device
-   */
-  if (!(is_autonomous_repairing_supported() && btm_is_bond_lost(bd_addr)) &&
-      pairing_cb.is_local_initiated && !p_pin_req->min_16_digit) {
-    if (btif_check_cod(&bd_addr, COD_AV_HEADSETS) || btif_check_cod(&bd_addr, COD_AV_HEADPHONES) ||
-        btif_check_cod(&bd_addr, COD_AV_PORTABLE_AUDIO) ||
-        btif_check_cod(&bd_addr, COD_AV_HIFI_AUDIO) ||
-        btif_check_cod_hid_major(bd_addr, COD_HID_POINTING)) {
-      /*  Check if this device can be auto paired  */
-      if (!interop_match_addr(INTEROP_DISABLE_AUTO_PAIRING, bd_addr) &&
-          !interop_match_name(INTEROP_DISABLE_AUTO_PAIRING, (const char*)bd_name.name) &&
-          (pairing_cb.autopair_attempts == 0)) {
-        log::debug("Attempting auto pair w/ IOP");
-        pin_code.pin[0] = 0x30;
-        pin_code.pin[1] = 0x30;
-        pin_code.pin[2] = 0x30;
-        pin_code.pin[3] = 0x30;
+  if (!com::android::bluetooth::flags::btsec_disable_legacy_auto_pair()) {
+    /* check for auto pair possibility only if bond was initiated by local device
+    */
+    if (!(is_autonomous_repairing_supported() && btm_is_bond_lost(bd_addr)) &&
+        pairing_cb.is_local_initiated && !p_pin_req->min_16_digit) {
+      if (btif_check_cod(&bd_addr, COD_AV_HEADSETS) ||
+          btif_check_cod(&bd_addr, COD_AV_HEADPHONES) ||
+          btif_check_cod(&bd_addr, COD_AV_PORTABLE_AUDIO) ||
+          btif_check_cod(&bd_addr, COD_AV_HIFI_AUDIO) ||
+          btif_check_cod_hid_major(bd_addr, COD_HID_POINTING)) {
+        /*  Check if this device can be auto paired  */
+        if (!interop_match_addr(INTEROP_DISABLE_AUTO_PAIRING, bd_addr) &&
+            !interop_match_name(INTEROP_DISABLE_AUTO_PAIRING, (const char*)bd_name.name) &&
+            (pairing_cb.autopair_attempts == 0)) {
+          log::debug("Attempting auto pair w/ IOP");
+          pin_code.pin[0] = 0x30;
+          pin_code.pin[1] = 0x30;
+          pin_code.pin[2] = 0x30;
+          pin_code.pin[3] = 0x30;
 
-        pairing_cb.autopair_attempts++;
-        BTA_DmPinReply(bd_addr, true, 4, pin_code.pin);
-        return;
-      }
-    } else if (btif_check_cod_hid_major(bd_addr, COD_HID_KEYBOARD) ||
-               btif_check_cod_hid_major(bd_addr, COD_HID_COMBO)) {
-      if ((interop_match_addr(INTEROP_KEYBOARD_REQUIRES_FIXED_PIN, bd_addr) == true) &&
-          (pairing_cb.autopair_attempts == 0)) {
-        log::debug("Attempting auto pair w/ IOP");
-        pin_code.pin[0] = 0x30;
-        pin_code.pin[1] = 0x30;
-        pin_code.pin[2] = 0x30;
-        pin_code.pin[3] = 0x30;
+          pairing_cb.autopair_attempts++;
+          BTA_DmPinReply(bd_addr, true, 4, pin_code.pin);
+          return;
+        }
+      } else if (btif_check_cod_hid_major(bd_addr, COD_HID_KEYBOARD) ||
+                btif_check_cod_hid_major(bd_addr, COD_HID_COMBO)) {
+        if ((interop_match_addr(INTEROP_KEYBOARD_REQUIRES_FIXED_PIN, bd_addr) == true) &&
+            (pairing_cb.autopair_attempts == 0)) {
+          log::debug("Attempting auto pair w/ IOP");
+          pin_code.pin[0] = 0x30;
+          pin_code.pin[1] = 0x30;
+          pin_code.pin[2] = 0x30;
+          pin_code.pin[3] = 0x30;
 
-        pairing_cb.autopair_attempts++;
-        BTA_DmPinReply(bd_addr, true, 4, pin_code.pin);
-        return;
+          pairing_cb.autopair_attempts++;
+          BTA_DmPinReply(bd_addr, true, 4, pin_code.pin);
+          return;
+        }
       }
     }
   }
+
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Pin request",
                  std::format("name:\"{}\" min16:{:c}", reinterpret_cast<char const*>(bd_name.name),
                              p_pin_req->min_16_digit ? 'T' : 'F'));
