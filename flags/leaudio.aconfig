@@ -509,3 +509,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "le_audio_use_highest_sample_rate_for_mic"
+    namespace: "bluetooth"
+    description: "Use highest sample rate available for mic in LE audio"
+    bug: "464457342"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
