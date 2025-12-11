@@ -19,11 +19,9 @@ flag {
 }
 
 flag {
-    name: "add_rssi_and_power_in_distance_measurement_result"
+    name: "include_power_and_rssi_in_distance_measurement_result"
     namespace: "bluetooth"
-    description: "Add RSSI and power in DistanceMeasurementResult"
+    is_exported: true
+    description: "Include remote TX power and reflector RSSI in DistanceMeasurementResult"
     bug: "462311235"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
 }

@@ -291,109 +291,11 @@ TEST(GeneratedPacketTest, testChildWithSixBytes) {
 }
 
 namespace {
-vector<uint8_t> parent_with_sum = {
-        0x11 /* TwoBytes */,
-        0x12,
-        0x21 /* Sum Bytes */,
-        0x22,
-        0x43 /* Sum, excluding TwoBytes */,
-        0x00,
-};
-
-}  // namespace
-
-TEST(GeneratedPacketTest, testParentWithSum) {
-  uint16_t two_bytes = 0x1211;
-  uint16_t sum_bytes = 0x2221;
-  auto packet = ParentWithSumBuilder::Create(two_bytes, sum_bytes,
-                                             std::make_unique<packet::RawBuilder>());
-
-  ASSERT_EQ(parent_with_sum.size(), packet->size());
-
-  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
-  BitInserter it(*packet_bytes);
-  packet->Serialize(it);
-
-  ASSERT_EQ(packet_bytes->size(), parent_with_sum.size());
-  for (size_t i = 0; i < parent_with_sum.size(); i++) {
-    ASSERT_EQ(packet_bytes->at(i), parent_with_sum[i]);
-  }
-
-  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
-  ParentWithSumView parent_view = ParentWithSumView::Create(packet_bytes_view);
-  ASSERT_TRUE(parent_view.IsValid());
-  ASSERT_EQ(two_bytes, parent_view.GetTwoBytes());
-
-  // Corrupt checksum
-  packet_bytes->back()++;
-  PacketView<kLittleEndian> corrupted_bytes_view(packet_bytes);
-  ParentWithSumView corrupted_view = ParentWithSumView::Create(corrupted_bytes_view);
-  ASSERT_FALSE(corrupted_view.IsValid());
-}
-
-namespace {
-vector<uint8_t> child_with_nested_sum = {
-        0x11 /* TwoBytes */,
-        0x12,
-        0x21 /* Sum Bytes */,
-        0x22,
-        0x31 /* More Bytes */,
-        0x32,
-        0x33,
-        0x34,
-        0xca /* Nested Sum */,
-        0x00,
-        0xd7 /* Sum, excluding TwoBytes */,
-        0x01,
-};
-
-}  // namespace
-
-TEST(GeneratedPacketTest, testChildWithNestedSum) {
-  uint16_t two_bytes = 0x1211;
-  uint16_t sum_bytes = 0x2221;
-  uint32_t more_bytes = 0x34333231;
-  auto packet = ChildWithNestedSumBuilder::Create(two_bytes, sum_bytes, more_bytes);
-
-  ASSERT_EQ(child_with_nested_sum.size(), packet->size());
-
-  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
-  BitInserter it(*packet_bytes);
-  packet->Serialize(it);
-
-  ASSERT_EQ(packet_bytes->size(), child_with_nested_sum.size());
-  for (size_t i = 0; i < child_with_nested_sum.size(); i++) {
-    ASSERT_EQ(packet_bytes->at(i), child_with_nested_sum[i]);
-  }
-
-  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
-  ParentWithSumView parent_view = ParentWithSumView::Create(packet_bytes_view);
-  ASSERT_TRUE(parent_view.IsValid());
-  ASSERT_EQ(two_bytes, parent_view.GetTwoBytes());
-
-  ChildWithNestedSumView child_view = ChildWithNestedSumView::Create(parent_view);
-  ASSERT_TRUE(child_view.IsValid());
-
-  ASSERT_EQ(more_bytes, child_view.GetMoreBytes());
-}
-
-TEST(GeneratedPacketTest, testSizedWithSumBadSize) {
-  vector<uint8_t> size_too_big{0x01, 0x02, 0x23, 0x11, 0x22, 0x33, 0x66, 0x00};
-
-  auto shared_bytes = std::make_shared<std::vector<uint8_t>>(size_too_big);
-  PacketView<kLittleEndian> packet_bytes_view(shared_bytes);
-
-  auto sws = SizedWithSumView::Create(packet_bytes_view);
-  ASSERT_FALSE(sws.IsValid());
-}
-
-namespace {
 vector<uint8_t> parent_size_modifier = {
         0x02 /* Size */,
         0x11 /* TwoBytes */,
         0x12,
 };
-
 }  // namespace
 
 TEST(GeneratedPacketTest, testParentSizeModifier) {
@@ -427,7 +329,6 @@ vector<uint8_t> child_size_modifier = {
         0x11 /* TwoBytes = 0x1211 */,
         0x12,
 };
-
 }  // namespace
 
 TEST(GeneratedPacketTest, testChildSizeModifier) {
@@ -470,7 +371,7 @@ vector<uint8_t> fixed_array_enum{
         0xff,  // FFFF
         0xff,
 };
-}
+}  // namespace
 
 TEST(GeneratedPacketTest, testFixedArrayEnum) {
   std::array<ForArrays, 5> fixed_array{{ForArrays::ONE, ForArrays::TWO, ForArrays::ONE_TWO,
@@ -516,7 +417,7 @@ vector<uint8_t> sized_array_enum{
         0xff,  // FFFF
         0xff,
 };
-}
+}  // namespace
 
 TEST(GeneratedPacketTest, testSizedArrayEnum) {
   std::vector<ForArrays> sized_array{{ForArrays::ONE, ForArrays::TWO, ForArrays::ONE_TWO,
@@ -557,7 +458,7 @@ vector<uint8_t> count_array_enum{
         0xff,  // FFFF
         0xff,
 };
-}
+}  // namespace
 
 TEST(GeneratedPacketTest, testCountArrayEnum) {
   std::vector<ForArrays> count_array{{ForArrays::ONE, ForArrays::TWO_THREE, ForArrays::FFFF}};
@@ -1059,7 +960,6 @@ vector<uint8_t> one_fixed_types_struct{
         0xf3,                                // _fixed_
         0x0d,                                // id = 0x0d
         0x01, 0x02, 0x03,                    // array = { 1, 2, 3}
-        0x06, 0x01,                          // example_checksum
         0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6,  // six_bytes
 };
 
@@ -1858,7 +1758,7 @@ TEST(GeneratedPacketTest, testToStringOneFixedTypesStruct) {
 
   ASSERT_EQ(
           "OneFixedTypesStruct { one = StructWithFixedTypes { four_bits = FIVE(0x5), id = 0xd, "
-          "array = ARRAY[0x1, 0x2, 0x3], example_checksum = CHECKSUM, six_bytes = SixBytes } }",
+          "array = ARRAY[0x1, 0x2, 0x3], six_bytes = SixBytes } }",
           view.ToString());
 }
 

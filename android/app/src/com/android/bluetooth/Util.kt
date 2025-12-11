@@ -232,7 +232,7 @@ object Util {
      * that is, if they have specified the `neverForLocation` flag on the [BLUETOOTH_SCAN]
      * permission.
      */
-    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
+    @Suppress("IncorrectRequiresPermissionPropagation") // This method checks the permission
     @JvmStatic
     fun hasDisavowedLocationForScan(
         context: Context,
@@ -298,7 +298,7 @@ object Util {
         !getSystemService(LocationManager::class.java).isLocationEnabledForUser(userHandle)
 
     /** Checks that calling process has ACCESS_COARSE_LOCATION and OP_COARSE_LOCATION is allowed */
-    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
+    @Suppress("IncorrectRequiresPermissionPropagation") // This method checks the permission
     @JvmStatic
     fun Context.checkCallerHasCoarseLocation(
         source: AttributionSource,
@@ -329,7 +329,7 @@ object Util {
      * Checks that calling process has ACCESS_COARSE_LOCATION and OP_COARSE_LOCATION is allowed or
      * ACCESS_FINE_LOCATION and OP_FINE_LOCATION is allowed
      */
-    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
+    @Suppress("IncorrectRequiresPermissionPropagation") // This method checks the permission
     @JvmStatic
     fun Context.checkCallerHasCoarseOrFineLocation(
         source: AttributionSource,
@@ -371,7 +371,7 @@ object Util {
     }
 
     /** Checks that calling process has ACCESS_FINE_LOCATION and OP_FINE_LOCATION is allowed */
-    @SuppressWarnings("IncorrectRequiresPermissionPropagation") // This method checks the permission
+    @Suppress("IncorrectRequiresPermissionPropagation") // This method checks the permission
     @JvmStatic
     fun Context.checkCallerHasFineLocation(
         source: AttributionSource,

@@ -1386,6 +1386,13 @@ static bool btm_ble_complete_evt_ignore(const BtmDevice* p_device, const tBTM_LE
 
 static void btm_ble_user_confirmation_req(const RawAddress& bd_addr, BtmDevice* p_device,
                                           tBTM_LE_EVT event, tBTM_LE_EVT_DATA* p_data) {
+  if (com_android_bluetooth_flags_prevent_btm_sec_cb_overwrite_during_pairing() &&
+      btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE &&
+      (bd_addr != btm_sec_cb.link_spec.addrt.bda ||
+       BT_TRANSPORT_LE != btm_sec_cb.link_spec.transport)) {
+    log::warn("Already in pairing state, ignoring user confirmation request from {}", bd_addr);
+    return;
+  }
   p_device->sec_rec.sec_flags |= BTM_SEC_LE_AUTHENTICATED;
   p_device->sec_rec.le_link = tSECURITY_STATE::AUTHENTICATING;
   btm_sec_cb.link_spec.addrt.bda = bd_addr;
@@ -1408,6 +1415,13 @@ static void btm_ble_sec_req(const RawAddress& bd_addr, BtmDevice* p_device,
 }
 
 static void btm_ble_consent_req(const RawAddress& bd_addr, tBTM_LE_EVT_DATA* p_data) {
+  if (com_android_bluetooth_flags_prevent_btm_sec_cb_overwrite_during_pairing() &&
+      btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE &&
+      (bd_addr != btm_sec_cb.link_spec.addrt.bda ||
+       BT_TRANSPORT_LE != btm_sec_cb.link_spec.transport)) {
+    log::warn("Already in pairing state, ignoring pairing request from {}", bd_addr);
+    return;
+  }
   btm_sec_cb.link_spec.addrt.bda = bd_addr;
   btm_sec_cb.link_spec.transport = BT_TRANSPORT_LE;
   btm_sec_cb.pairing_flags |= BTM_PAIR_FLAGS_LE_ACTIVE;

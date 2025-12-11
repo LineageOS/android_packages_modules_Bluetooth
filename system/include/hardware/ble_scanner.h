@@ -28,6 +28,9 @@
 #include "bt_gatt_client.h"
 #include "bt_gatt_types.h"
 
+constexpr uint8_t kScannerClientIdJni = 0xff;
+constexpr uint8_t kScannerClientIdLeAudio = 0x1;
+
 class AdvertisingTrackInfo {
 public:
   // For MSFT-based advertisement monitor.
@@ -157,10 +160,11 @@ public:
   virtual void BatchScanReadReports(int client_if, int scan_mode) = 0;
 
   virtual void StartSync(uint8_t sid, RawAddress address, uint8_t address_type, uint16_t skip,
-                         uint16_t timeout, int reg_id) = 0;
+                         uint16_t timeout, int reg_id, uint8_t client_id = kScannerClientIdJni) = 0;
   virtual void StopSync(uint16_t handle) = 0;
 
   virtual void RegisterCallbacks(ScanningCallbacks* callbacks) = 0;
+  virtual void RegisterCallbacksNative(ScanningCallbacks* callbacks, uint8_t client_id) = 0;
 
   virtual void CancelCreateSync(uint8_t sid, RawAddress address) = 0;
 

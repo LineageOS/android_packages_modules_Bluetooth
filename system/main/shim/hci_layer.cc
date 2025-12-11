@@ -279,7 +279,7 @@ static void iso_data_callback() {
 static void register_for_iso() {
   hci_iso_queue_end = bluetooth::shim::GetHciLayer()->GetIsoQueueEnd();
   hci_iso_queue_end->RegisterDequeue(bluetooth::shim::GetGdShimHandler(),
-                                     bluetooth::common::Bind(iso_data_callback));
+                                     base::Bind(iso_data_callback));
   pending_iso_data =
           new bluetooth::os::EnqueueBuffer<bluetooth::hci::IsoBuilder>(hci_iso_queue_end);
   // Register ISO for disconnect notifications

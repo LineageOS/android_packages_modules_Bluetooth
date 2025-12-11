@@ -122,19 +122,18 @@ public class AdvertiseManager {
             mNativeInterface.cleanup();
             mAdvertisers.clear();
             mAdvertiseSuspendManager.cleanup();
-            return;
+        } else {
+            mIsAvailable = false;
+            mHandler.removeCallbacksAndMessages(null);
+            forceRunSyncOnAdvertiseThread(
+                    () -> {
+                        mAdvertiserMap.clear();
+                        mAdvertiseBinder.cleanup();
+                        mNativeInterface.cleanup();
+                        mAdvertisers.clear();
+                        mAdvertiseSuspendManager.cleanup();
+                    });
         }
-
-        mIsAvailable = false;
-        mHandler.removeCallbacksAndMessages(null);
-        forceRunSyncOnAdvertiseThread(
-                () -> {
-                    mAdvertiserMap.clear();
-                    mAdvertiseBinder.cleanup();
-                    mNativeInterface.cleanup();
-                    mAdvertisers.clear();
-                    mAdvertiseSuspendManager.cleanup();
-                });
     }
 
     void dump(StringBuilder sb) {

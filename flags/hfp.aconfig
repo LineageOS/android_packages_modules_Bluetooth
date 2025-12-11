@@ -59,16 +59,6 @@ flag {
 }
 
 flag {
-    name: "qc_aptx_codec_negotiation"
-    namespace: "bluetooth"
-    description: "QC patch to not do codec negotiation with aptx"
-    bug: "410921017"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "voice_recognition_fixes"
     namespace: "bluetooth"
     description: "Fix issues with starting/stopping voice recognition"
@@ -84,16 +74,6 @@ flag {
     is_exported: true
     description: "Add api support for a zoomed in icon metadata"
     bug: "417245933"
-}
-
-flag {
-    name: "send_ok_clcc_before_slc"
-    namespace: "bluetooth"
-    description: "Send clcc response ok before slc is completed to avoid remote issues"
-    bug: "421323693"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
 }
 
 flag {
@@ -127,16 +107,6 @@ flag {
 }
 
 flag {
-    name: "hfp_sco_state_reset_when_profile_restart"
-    namespace: "bluetooth"
-    description: "Reset sco state when BT profile restart without BT stack shutdown"
-    bug: "424125580"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "microphone_mute_status_sync"
     namespace: "bluetooth"
     description: "Synchronize microphone Mute status of phone with peripheral"
@@ -147,30 +117,10 @@ flag {
 }
 
 flag {
-    name: "sco_state_machine_update_in_codec_state"
-    namespace: "bluetooth"
-    description: "sco state machine update when other HFP device disconnected during codec negotiation"
-    bug: "416436313"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "sco_state_machine_update_revision"
     namespace: "bluetooth"
     description: "Flag check correction for ag/33454932"
     bug: "459353324"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "mode_change_before_sco_unpark"
-    namespace: "bluetooth"
-    description: "Do mode change before SCO unpark"
-    bug: "419189913"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -209,6 +159,16 @@ flag {
     namespace: "bluetooth"
     description: "Reject to hang up call that is STATE_SIMULATED_RINGING state"
     bug: "460640390"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "fix_sco_type_mask_check"
+    namespace: "bluetooth"
+    description: "Masking for excepting sco pakcets correctly"
+    bug: "467252341"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

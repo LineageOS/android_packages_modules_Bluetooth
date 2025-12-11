@@ -72,30 +72,10 @@ flag {
 }
 
 flag {
-    name: "bond_state_machine_looper"
-    namespace: "bluetooth"
-    description: "Use main looper in BondStateMachine"
-    bug: "412423957"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "identity_to_pseudo_addr"
     namespace: "bluetooth"
     description: "Convert identity address to pseudo address during connection"
     bug: "414509356"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "always_set_identity_addr"
-    namespace: "bluetooth"
-    description: "Always set the identity address of the bonded devices"
-    bug: "415404383"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -107,16 +87,6 @@ flag {
     namespace: "bluetooth"
     description: "Add Link Status API to BluetoothDevice"
     bug: "419143231"
-}
-
-flag {
-    name: "le_address_map_update"
-    namespace: "bluetooth"
-    description: "Update address map for LE devices as well"
-    bug: "424898845"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
 }
 
 flag {
@@ -285,6 +255,16 @@ flag {
     namespace: "bluetooth"
     description: "Fixes pairing with devices which are in BR/EDR security mode 3."
     bug: "460502961"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "prevent_btm_sec_cb_overwrite_during_pairing"
+    namespace: "bluetooth"
+    description: "If the pairing state is not idle, do not overwrite btm_sec_cb"
+    bug: "467193133"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

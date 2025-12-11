@@ -64,7 +64,7 @@ void AVRC_SaveControllerVersion(const RawAddress& /* bdaddr */, uint16_t /* vers
   inc_func_call_count(__func__);
 }
 
-void AVRC_UpdateCcb(RawAddress* /* addr */, uint32_t /* company_id */) {
+void AVRC_UpdateCcb(RawAddress /* addr */, uint32_t /* company_id */) {
   inc_func_call_count(__func__);
 }
 

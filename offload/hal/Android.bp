@@ -24,11 +24,11 @@ rust_ffi {
     vendor_available: true,
     rustlibs: [
         "android.hardware.bluetooth-V1-rust",
+        "libandroid_logger",
         "libbinder_rs",
         "libbluetooth_offload_hci",
         "libbluetooth_offload_leaudio_hci",
         "liblog_rust",
-        "liblogger",
     ],
     export_include_dirs: [
         "include",

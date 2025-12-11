@@ -16,6 +16,7 @@
 
 #include "hci/distance_measurement_manager_impl.h"
 
+#include <base/functional/bind.h>
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
@@ -26,7 +27,6 @@
 #include <string>
 #include <vector>
 
-#include "common/bind.h"
 #include "common/strings.h"
 #include "hal/ranging_hal.h"
 #include "hal/ranging_hal_mock.h"
@@ -257,12 +257,12 @@ struct CsModule {
   std::future<void> fake_timer_advance(uint64_t ms) {
     std::promise<void> promise;
     auto future = promise.get_future();
-    client_handler_->Post(common::BindOnce(
+    client_handler_->Post(base::BindOnce(
             [](std::promise<void> promise, uint64_t ms) {
               fake_timerfd_advance(ms);
               promise.set_value();
             },
-            common::Passed(std::move(promise)), ms));
+            base::Passed(std::move(promise)), ms));
 
     return future;
   }
@@ -1806,10 +1806,17 @@ TEST_F(DistanceMeasurementManagerTest, get_rssi_result_success) {
   int8_t rssi_drop_off_at_1m = 41;
   double pow_value = (transmit_power_level - rssi - rssi_drop_off_at_1m) / 20.0;
   double distance = pow(10.0, pow_value);
-  EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
-              OnDistanceMeasurementResult(params.responder_addr, distance * 100, distance * 100, _,
-                                          _, _, _, _, _, _, _, _, _, _,
-                                          DistanceMeasurementMethod::METHOD_RSSI));
+  if (com::android::bluetooth::flags::include_power_and_rssi_in_distance_measurement_result()) {
+    EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+                OnDistanceMeasurementResult(params.responder_addr, distance * 100, distance * 100,
+                                            _, _, _, _, _, transmit_power_level, rssi, _, _, _, _,
+                                            DistanceMeasurementMethod::METHOD_RSSI));
+  } else {
+    EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
+                OnDistanceMeasurementResult(params.responder_addr, distance * 100, distance * 100,
+                                            _, _, _, _, _, _, _, _, _, _, _,
+                                            DistanceMeasurementMethod::METHOD_RSSI));
+  }
   cs_requester_.test_hci_layer_->IncomingEvent(ReadRssiCompleteBuilder::Create(
           /*num_hci_command_packets=*/128, ErrorCode::SUCCESS, params.connection_handle, rssi));
   fake_timerfd_reset();
@@ -1922,6 +1929,7 @@ TEST_F(DistanceMeasurementManagerTest, ranging_hal_on_result_v2) {
   // We expect OnDistanceMeasurementResult to be called with:
   // - Distances converted to centimeters (10.5m -> 1050cm)
   // - The exact timestamp from the V2 HAL result
+  // TODO(b/462311235): Add call path for check_cs_procedure_complete so that rssi can be tested.
   EXPECT_CALL(cs_requester_.mock_dm_callbacks_,
               OnDistanceMeasurementResult(
                       params.responder_addr,

@@ -217,22 +217,12 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   ~impl() {
     stop();
     if (address_manager_registered_) {
-      if (com_android_bluetooth_flags_fix_use_after_object_destroyed()) {
-        le_address_manager_->UnregisterSync(this);
-      } else {
-        le_address_manager_->Unregister(this);
-      }
+      le_address_manager_->UnregisterSync(this);
     }
   }
 
   void stop() {
-    if (com_android_bluetooth_flags_fix_event_handler_reg_and_dereg()) {
-      hci_layer_->ReleaseLeScanningInterface();
-    } else {
-      for (auto subevent_code : LeScanningEvents) {
-        hci_layer_->UnregisterLeEventHandler(subevent_code);
-      }
-    }
+    hci_layer_->ReleaseLeScanningInterface();
 
     if (is_batch_scan_supported_) {
       // TODO implete vse module
@@ -417,15 +407,13 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
                                            int8_t tx_power, int8_t rssi,
                                            uint16_t periodic_advertising_interval,
                                            const std::vector<uint8_t>& advertising_data) {
-    if (com_android_bluetooth_flags_resolve_address_for_adv_report()) {
-      RawAddress raw_address = ToRawAddress(address);
-      tBLE_ADDR_TYPE ble_addr_type = to_ble_addr_type(address_type);
+    RawAddress raw_address = ToRawAddress(address);
+    tBLE_ADDR_TYPE ble_addr_type = to_ble_addr_type(address_type);
 
-      if (ble_addr_type != BLE_ADDR_ANONYMOUS) {
-        btm_ble_process_adv_addr(raw_address, &ble_addr_type);
-        address = raw_address;
-        address_type = ble_addr_type;
-      }
+    if (ble_addr_type != BLE_ADDR_ANONYMOUS) {
+      btm_ble_process_adv_addr(raw_address, &ble_addr_type);
+      address = raw_address;
+      address_type = ble_addr_type;
     }
 
     // When using the vendor command Le Set Extended Params to

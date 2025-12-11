@@ -249,9 +249,7 @@ void alarm_cancel(alarm_t* alarm) {
   {
     std::lock_guard<std::mutex> lock(alarms_mutex);
     local_mutex_ref = alarm->callback_mutex;
-    if (com_android_bluetooth_flags_set_ptr_null_after_free()) {
-      log::assert_that(local_mutex_ref != nullptr, "assert failed: local_mutex_ref != nullptr");
-    }
+    log::assert_that(local_mutex_ref != nullptr, "assert failed: local_mutex_ref != nullptr");
     alarm_cancel_internal(alarm);
   }
 

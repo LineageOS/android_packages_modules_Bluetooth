@@ -859,7 +859,7 @@ public class RemoteDevices {
 
                     // Identity address of the bonded device may not be provided by the native
                     // stack if it is same as the pseudo address.
-                    if (Flags.alwaysSetIdentityAddr() && mIdentityAddress == UNKNOWN_ADDRESS) {
+                    if (mIdentityAddress == UNKNOWN_ADDRESS) {
                         mIdentityAddress =
                                 new BluetoothAddress(
                                         mDevice.getAddress(), mDevice.getAddressType());
@@ -1593,9 +1593,7 @@ public class RemoteDevices {
 
         String identityAddressString = Utils.getAddressStringFromByte(identityAddress);
         deviceProperties.setIdentityAddress(identityAddressString, addressType);
-        if (Flags.leAddressMapUpdate()) {
-            mAddressMap.put(identityAddressString, Utils.getAddressStringFromByte(pseudoAddress));
-        }
+        mAddressMap.put(identityAddressString, Utils.getAddressStringFromByte(pseudoAddress));
     }
 
     void aclStateChangeCallback(
@@ -2050,9 +2048,7 @@ public class RemoteDevices {
         MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.SDP_INVOKE_SDP_CYCLE, 1);
 
         // Some apps expect service discovery to be performed on all connected transports.
-        if (transport == TRANSPORT_AUTO
-                && (Flags.serviceDiscoveryOnConnectedTransport()
-                        || serviceDiscoveryIopFixNeeded(device))) {
+        if (transport == TRANSPORT_AUTO) {
             boolean startedLeServiceDiscovery = false;
             boolean startedBredrServiceDiscovery = false;
             if (deviceProperties.getConnectionHandle(TRANSPORT_LE) != BluetoothDevice.ERROR) {
@@ -2387,16 +2383,6 @@ public class RemoteDevices {
         }
 
         return false;
-    }
-
-    // TODO (b/419542108): Remove when the flag service_discovery_on_connected_transport is released
-    private static final String[] SERVICE_DISCOVERY_IOP_PACKAGES = {
-        "com.sony.songpal.",
-    };
-
-    // TODO (b/419542108): Remove when the flag service_discovery_on_connected_transport is released
-    public boolean serviceDiscoveryIopFixNeeded(BluetoothDevice device) {
-        return packageAssociated(device, SERVICE_DISCOVERY_IOP_PACKAGES);
     }
 
     private static final String[] BOND_LOSS_IOP_PACKAGES = {

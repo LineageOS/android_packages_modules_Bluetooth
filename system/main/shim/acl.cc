@@ -16,6 +16,7 @@
 
 #include "main/shim/acl.h"
 
+#include <base/functional/bind.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/bluetooth_event.h>
@@ -328,8 +329,8 @@ public:
         send_data_upwards_(send_data_upwards),
         queue_up_end_(queue_up_end),
         creation_time_(creation_time) {
-    queue_up_end_->RegisterDequeue(handler_, common::Bind(&ShimAclConnection::data_ready_callback,
-                                                          common::Unretained(this)));
+    queue_up_end_->RegisterDequeue(
+            handler_, base::Bind(&ShimAclConnection::data_ready_callback, base::Unretained(this)));
   }
 
   virtual ~ShimAclConnection() {
@@ -435,7 +436,7 @@ private:
     }
     is_enqueue_registered_ = true;
     queue_up_end_->RegisterEnqueue(
-            handler_, common::Bind(&ShimAclConnection::handle_enqueue, common::Unretained(this)));
+            handler_, base::Bind(&ShimAclConnection::handle_enqueue, base::Unretained(this)));
   }
 
   virtual void RegisterCallbacks() = 0;
@@ -1214,38 +1215,11 @@ shim::Acl::~Acl() {
 }
 
 bool shim::Acl::CheckForOrphanedAclConnections() const {
-  if (com_android_bluetooth_flags_fix_race_in_orphaned_acls()) {
-    std::promise<bool> promise;
-    auto future = promise.get_future();
-    handler_->CallOn(pimpl_.get(), &Acl::impl::check_for_orphaned_acl_connections,
-                     std::move(promise));
-    return future.get();
-  }
-
-  bool orphaned_acl_connections = false;
-
-  if (!pimpl_->handle_to_classic_connection_map_.empty()) {
-    log::error("About to destroy classic active ACL");
-    for (const auto& connection : pimpl_->handle_to_classic_connection_map_) {
-      log::error("Orphaned classic ACL handle:0x{:04x} bd_addr:{} created:{}",
-                 connection.second->Handle(), connection.second->GetRemoteAddress(),
-                 common::StringFormatTimeWithMilliseconds(kConnectionDescriptorTimeFormat,
-                                                          connection.second->GetCreationTime()));
-    }
-    orphaned_acl_connections = true;
-  }
-
-  if (!pimpl_->handle_to_le_connection_map_.empty()) {
-    log::error("About to destroy le active ACL");
-    for (const auto& connection : pimpl_->handle_to_le_connection_map_) {
-      log::error("Orphaned le ACL handle:0x{:04x} bd_addr:{} created:{}",
-                 connection.second->Handle(), connection.second->GetRemoteAddressWithType(),
-                 common::StringFormatTimeWithMilliseconds(kConnectionDescriptorTimeFormat,
-                                                          connection.second->GetCreationTime()));
-    }
-    orphaned_acl_connections = true;
-  }
-  return orphaned_acl_connections;
+  std::promise<bool> promise;
+  auto future = promise.get_future();
+  handler_->CallOn(pimpl_.get(), &Acl::impl::check_for_orphaned_acl_connections,
+                   std::move(promise));
+  return future.get();
 }
 
 void shim::Acl::on_incoming_acl_credits(uint16_t handle, uint16_t credits) {

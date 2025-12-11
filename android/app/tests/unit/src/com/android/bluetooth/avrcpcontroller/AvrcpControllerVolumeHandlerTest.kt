@@ -24,6 +24,7 @@ import com.android.bluetooth.TestUtils.mockGetSystemService
 import com.android.bluetooth.btservice.AdapterService
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -58,6 +59,11 @@ class AvrcpControllerVolumeHandlerTest {
         doReturn(mPackageManager).whenever(mAdapterService).packageManager
 
         mockGetSystemService(mAdapterService, AudioManager::class.java, mAudioManager)
+    }
+
+    @After
+    fun tearDown() {
+        destroyAvrcpControllerVolumeHandler()
     }
 
     // *********************************************************************************************
@@ -150,6 +156,12 @@ class AvrcpControllerVolumeHandlerTest {
             .hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
 
         mVolumeHandler = AvrcpControllerVolumeHandler(mAdapterService, mDevice)
+        mVolumeHandler.start()
+    }
+
+    /** Destroy a volume handler you created to test */
+    private fun destroyAvrcpControllerVolumeHandler() {
+        mVolumeHandler.stop()
     }
 
     private fun verifySetAbsVolume(setLabel: Byte, absVol: Int, absVolRsp: Int) {

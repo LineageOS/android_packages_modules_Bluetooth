@@ -453,6 +453,7 @@ class AvrcpControllerStateMachine extends StateMachine {
                 BluetoothMediaBrowserService.onBrowseNodeChanged(
                         mService.getBrowseTree().mRootNode);
                 connectCoverArt(); // only works if we have a valid PSM
+                mVolumeHandler.start();
             } else {
                 debug("Connected: Re-entering Connected ");
             }
@@ -795,6 +796,11 @@ class AvrcpControllerStateMachine extends StateMachine {
             BluetoothMediaBrowserService.onBrowseNodeChanged(mBrowseTree.mRootNode);
             removeUnusedArtworkFromBrowseTree();
             requestContents(mBrowseTree.mRootNode);
+        }
+
+        @Override
+        public void exit() {
+            mVolumeHandler.stop();
         }
     }
 

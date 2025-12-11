@@ -682,8 +682,7 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
   // if remote supports codec negotiation or AptX voice codec
   if (((p_scb->codec_updated || p_scb->codec_fallback) && (p_scb->features & BTA_AG_FEAT_CODEC) &&
        (p_scb->peer_features & BTA_AG_PEER_FEAT_CODEC)) ||
-      (aptx_voice && (com_android_bluetooth_flags_qc_aptx_codec_negotiation() &&
-                      (p_scb->peer_codecs & BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK)))) {
+      (aptx_voice && (p_scb->peer_codecs & BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK))) {
     log::info("Starting codec negotiation");
     /* Change the power mode to Active until SCO open is completed. */
     bta_sys_busy(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
@@ -699,8 +698,7 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
       /* Send +QCS to the peer */
       bta_ag_send_qcs(p_scb);
     } else {
-      if (aptx_voice && (com_android_bluetooth_flags_qc_aptx_codec_negotiation() &&
-                         (p_scb->peer_codecs & BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK))) {
+      if (aptx_voice && (p_scb->peer_codecs & BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK)) {
         p_scb->sco_codec = BTM_SCO_CODEC_MSBC;
         p_scb->is_aptx_swb_codec = false;
       }
@@ -816,27 +814,17 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
           /* remove listening connection */
           bta_ag_remove_sco(p_scb, false);
 
-          if (!com_android_bluetooth_flags_sco_state_machine_update_in_codec_state() &&
-              p_scb == p_sco->p_curr_scb) {
-            p_sco->p_curr_scb = nullptr;
-          }
-
           /* If last SCO instance then finish shutting down */
           if (!bta_ag_other_scb_open(p_scb)) {
             p_sco->state = BTA_AG_SCO_SHUTDOWN_ST;
           } else {
-            if (com_android_bluetooth_flags_sco_state_machine_update_in_codec_state()) {
-              if (p_scb == p_sco->p_curr_scb) {
-                /* If SCO disconnected during codec negotiation, just go back to listening to allow
-                 * SCO reconnection */
-                p_sco->state = BTA_AG_SCO_LISTEN_ST;
-                if (!com_android_bluetooth_flags_sco_state_machine_update_revision()) {
-                  p_sco->p_curr_scb = nullptr;
-                }
-              }
-            } else {
-              /* just go back to listening */
+            if (p_scb == p_sco->p_curr_scb) {
+              /* If SCO disconnected during codec negotiation, just go back to listening to allow
+               * SCO reconnection */
               p_sco->state = BTA_AG_SCO_LISTEN_ST;
+              if (!com_android_bluetooth_flags_sco_state_machine_update_revision()) {
+                p_sco->p_curr_scb = nullptr;
+              }
             }
           }
           if (com_android_bluetooth_flags_sco_state_machine_update_revision() &&
@@ -846,15 +834,10 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
           break;
 
         case BTA_AG_SCO_CLOSE_E:
-          if (com_android_bluetooth_flags_sco_state_machine_update_in_codec_state()) {
-            if (p_scb == p_sco->p_curr_scb) {
-              /* sco open is not started yet. just go back to listening */
-              p_sco->state = BTA_AG_SCO_LISTEN_ST;
-              p_sco->p_curr_scb = nullptr;
-            }
-          } else {
+          if (p_scb == p_sco->p_curr_scb) {
             /* sco open is not started yet. just go back to listening */
             p_sco->state = BTA_AG_SCO_LISTEN_ST;
+            p_sco->p_curr_scb = nullptr;
           }
           break;
 

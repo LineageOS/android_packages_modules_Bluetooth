@@ -23,16 +23,16 @@ namespace bluetooth {
 namespace metrics {
 
 void LogMetricsAdapterStateChanged(uint32_t state);
-void LogMetricsBondCreateAttempt(RawAddress* addr, uint32_t device_type);
-void LogMetricsBondStateChanged(RawAddress* addr, uint32_t device_type, uint32_t status,
+void LogMetricsBondCreateAttempt(RawAddress addr, uint32_t device_type);
+void LogMetricsBondStateChanged(RawAddress addr, uint32_t device_type, uint32_t status,
                                 uint32_t bond_state, int32_t fail_reason);
-void LogMetricsDeviceInfoReport(RawAddress* addr, uint32_t device_type, uint32_t class_of_device,
+void LogMetricsDeviceInfoReport(RawAddress addr, uint32_t device_type, uint32_t class_of_device,
                                 uint32_t appearance, uint32_t vendor_id, uint32_t vendor_id_src,
                                 uint32_t product_id, uint32_t version);
-void LogMetricsProfileConnectionStateChanged(RawAddress* addr, uint32_t profile, uint32_t status,
+void LogMetricsProfileConnectionStateChanged(RawAddress addr, uint32_t profile, uint32_t status,
                                              uint32_t state);
-void LogMetricsAclConnectAttempt(RawAddress* addr, uint32_t acl_state);
-void LogMetricsAclConnectionStateChanged(RawAddress* addr, uint32_t transport, uint32_t status,
+void LogMetricsAclConnectAttempt(RawAddress addr, uint32_t acl_state);
+void LogMetricsAclConnectionStateChanged(RawAddress addr, uint32_t transport, uint32_t status,
                                          uint32_t acl_state, uint32_t direction,
                                          uint32_t hci_reason);
 void LogMetricsChipsetInfoReport();

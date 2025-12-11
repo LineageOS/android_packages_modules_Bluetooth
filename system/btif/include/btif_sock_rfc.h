@@ -44,12 +44,12 @@ BtStatus btsock_rfc_listen(const char* name, const bluetooth::Uuid* uuid, int ch
                            int flags, int app_uid, btsock_data_path_t data_path,
                            const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
                            int max_rx_packet_size);
-BtStatus btsock_rfc_connect(const RawAddress* bd_addr, const bluetooth::Uuid* uuid, int channel,
+BtStatus btsock_rfc_connect(RawAddress bd_addr, const bluetooth::Uuid* uuid, int channel,
                             int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
                             const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
                             int max_rx_packet_size);
 void btsock_rfc_signaled(int fd, int flags, uint32_t user_id);
-BtStatus btsock_rfc_disconnect(const RawAddress* bd_addr);
+BtStatus btsock_rfc_disconnect(RawAddress bd_addr);
 bool btsock_rfc_in_use(uint64_t socket_id);
 void on_btsocket_rfc_opened_complete(uint64_t socket_id, bool success);
 void on_btsocket_rfc_close(uint64_t socket_id);

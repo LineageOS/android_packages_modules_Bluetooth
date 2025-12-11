@@ -125,12 +125,11 @@ BtStatus btsock_sco_listen(int* sock_fd, int /* flags */) {
   return BtifStatus();
 }
 
-BtStatus btsock_sco_connect(const RawAddress* bd_addr, int* sock_fd, int /* flags */) {
-  log::assert_that(bd_addr != NULL, "assert failed: bd_addr != NULL");
+BtStatus btsock_sco_connect(RawAddress bd_addr, int* sock_fd, int /* flags */) {
   log::assert_that(sock_fd != NULL, "assert failed: sock_fd != NULL");
 
   std::unique_lock<std::mutex> lock(sco_lock);
-  sco_socket_t* sco_socket = sco_socket_establish_locked(false, bd_addr, sock_fd);
+  sco_socket_t* sco_socket = sco_socket_establish_locked(false, &bd_addr, sock_fd);
 
   return (sco_socket != NULL) ? BtifStatus() : BtifStatus(SOCKET_ERROR);
 }

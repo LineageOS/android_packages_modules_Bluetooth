@@ -134,43 +134,6 @@ void PacketDef::GenTestingParserFromBytes(std::ostream& s) const {
   s << "\n#endif\n";
 }
 
-void PacketDef::GenParserDefinitionPybind11(std::ostream& s) const {
-  s << "py::class_<" << name_ << "View";
-  if (parent_ != nullptr) {
-    s << ", " << parent_->name_ << "View";
-  } else {
-    s << ", PacketView<" << (is_little_endian_ ? "" : "!") << "kLittleEndian>";
-  }
-  s << ">(m, \"" << name_ << "View\")";
-  if (parent_ != nullptr) {
-    s << ".def(py::init([](" << parent_->name_ << "View parent) {";
-  } else {
-    s << ".def(py::init([](PacketView<" << (is_little_endian_ ? "" : "!")
-      << "kLittleEndian> parent) {";
-  }
-  s << "auto view =" << name_ << "View::Create(std::move(parent));";
-  s << "if (!view.IsValid()) { throw std::invalid_argument(\"Bad packet view\"); }";
-  s << "return view; }))";
-
-  s << ".def(py::init(&" << name_ << "View::Create))";
-  std::set<std::string> protected_field_types = {
-          FixedScalarField::kFieldType,
-          FixedEnumField::kFieldType,
-          SizeField::kFieldType,
-          CountField::kFieldType,
-  };
-  const auto& public_fields = fields_.GetFieldsWithoutTypes(protected_field_types);
-  for (const auto& field : public_fields) {
-    auto getter_func_name = field->GetGetterFunctionName();
-    if (getter_func_name.empty()) {
-      continue;
-    }
-    s << ".def(\"" << getter_func_name << "\", &" << name_ << "View::" << getter_func_name << ")";
-  }
-  s << ".def(\"IsValid\", &" << name_ << "View::IsValid)";
-  s << ";\n";
-}
-
 void PacketDef::GenParserFieldGetter(std::ostream& s, const PacketField* field) const {
   // Start field offset
   auto start_field_offset = GetOffsetForField(field->GetName(), false);
@@ -239,51 +202,6 @@ void PacketDef::GenValidator(std::ostream& s) const {
 
   // For any variable length fields, use their size check.
   for (const auto& field : fields_) {
-    if (field->GetFieldType() == ChecksumStartField::kFieldType) {
-      auto offset = GetOffsetForField(field->GetName(), false);
-      if (!offset.empty()) {
-        s << "size_t sum_index = (" << offset << ") / 8;";
-      } else {
-        offset = GetOffsetForField(field->GetName(), true);
-        if (offset.empty()) {
-          ERROR(field) << "Checksum Start Field offset can not be determined.";
-        }
-        s << "size_t sum_index = size() - (" << offset << ") / 8;";
-      }
-
-      const auto& field_name = ((ChecksumStartField*)field)->GetStartedFieldName();
-      const auto& started_field = fields_.GetField(field_name);
-      if (started_field == nullptr) {
-        ERROR(field) << __func__ << ": Can't find checksum field named " << field_name << "("
-                     << field->GetName() << ")";
-      }
-      auto end_offset = GetOffsetForField(started_field->GetName(), false);
-      if (!end_offset.empty()) {
-        s << "size_t end_sum_index = (" << end_offset << ") / 8;";
-      } else {
-        end_offset = GetOffsetForField(started_field->GetName(), true);
-        if (end_offset.empty()) {
-          ERROR(started_field) << "Checksum Field end_offset can not be determined.";
-        }
-        s << "size_t end_sum_index = size() - (" << started_field->GetSize() << " - " << end_offset
-          << ") / 8;";
-      }
-      s << "if (end_sum_index >= size()) { return false; }";
-      if (is_little_endian_) {
-        s << "auto checksum_view = GetLittleEndianSubview(sum_index, end_sum_index);";
-      } else {
-        s << "auto checksum_view = GetBigEndianSubview(sum_index, end_sum_index);";
-      }
-      s << started_field->GetDataType() << " checksum;";
-      s << "checksum.Initialize();";
-      s << "for (uint8_t byte : checksum_view) { ";
-      s << "checksum.AddByte(byte);}";
-      s << "if (checksum.GetChecksum() != (begin() + end_sum_index).extract<"
-        << util::GetTypeForSize(started_field->GetSize().bits()) << ">()) { return false; }";
-
-      continue;
-    }
-
     auto field_size = field->GetSize();
     // Fixed size fields have already been handled.
     if (!field_size.has_dynamic()) {
@@ -360,8 +278,7 @@ void PacketDef::GenParserToString(std::ostream& s) const {
     bool firstfield = true;
     for (const auto& field : fields_) {
       if (field->GetFieldType() == ReservedField::kFieldType ||
-          field->GetFieldType() == FixedScalarField::kFieldType ||
-          field->GetFieldType() == ChecksumStartField::kFieldType) {
+          field->GetFieldType() == FixedScalarField::kFieldType) {
         continue;
       }
 
@@ -458,30 +375,6 @@ void PacketDef::GenTestingFromView(std::ostream& s) const {
   s << "}";
 
   s << "\n#endif\n";
-}
-
-void PacketDef::GenBuilderDefinitionPybind11(std::ostream& s) const {
-  s << "py::class_<" << name_ << "Builder";
-  if (parent_ != nullptr) {
-    s << ", " << parent_->name_ << "Builder";
-  } else {
-    if (is_little_endian_) {
-      s << ", PacketBuilder<kLittleEndian>";
-    } else {
-      s << ", PacketBuilder<!kLittleEndian>";
-    }
-  }
-  s << ", std::shared_ptr<" << name_ << "Builder>";
-  s << ">(m, \"" << name_ << "Builder\")";
-  if (!fields_.HasBody()) {
-    GenBuilderCreatePybind11(s);
-  }
-  s << ".def(\"Serialize\", [](" << name_ << "Builder& builder){";
-  s << "std::vector<uint8_t> bytes;";
-  s << "BitInserter bi(bytes);";
-  s << "builder.Serialize(bi);";
-  s << "return bytes;})";
-  s << ";\n";
 }
 
 void PacketDef::GenTestDefine(std::ostream& s) const {
@@ -613,92 +506,6 @@ void PacketDef::GenBuilderCreate(std::ostream& s) const {
   }
   s << "return builder;";
   s << "}\n";
-}
-
-void PacketDef::GenBuilderCreatePybind11(std::ostream& s) const {
-  s << ".def(py::init([](";
-  auto params = GetParamList();
-  std::vector<std::string> constructor_args;
-  for (const auto& param : params) {
-    std::stringstream ss;
-    auto param_type = param->GetBuilderParameterType();
-    if (param_type.empty()) {
-      continue;
-    }
-    // Use shared_ptr instead of unique_ptr for the Python interface
-    if (param->BuilderParameterMustBeMoved()) {
-      param_type = util::StringFindAndReplaceAll(param_type, "unique_ptr", "shared_ptr");
-    }
-    ss << param_type << " " << param->GetName();
-    constructor_args.push_back(ss.str());
-  }
-  s << util::StringJoin(",", constructor_args) << "){";
-
-  // Deal with move only args
-  for (const auto& param : params) {
-    std::stringstream ss;
-    auto param_type = param->GetBuilderParameterType();
-    if (param_type.empty()) {
-      continue;
-    }
-    if (!param->BuilderParameterMustBeMoved()) {
-      continue;
-    }
-    auto move_only_param_name = param->GetName() + "_move_only";
-    s << param_type << " " << move_only_param_name << ";";
-    if (param->IsContainerField()) {
-      // Assume single layer container and copy it
-      auto struct_type = param->GetElementField()->GetDataType();
-      struct_type = util::StringFindAndReplaceAll(struct_type, "std::unique_ptr<", "");
-      struct_type = util::StringFindAndReplaceAll(struct_type, ">", "");
-      s << "for (size_t i = 0; i < " << param->GetName() << ".size(); i++) {";
-      // Serialize each struct
-      s << "auto " << param->GetName() + "_bytes = std::make_shared<std::vector<uint8_t>>();";
-      s << param->GetName() + "_bytes->reserve(" << param->GetName() << "[i]->size());";
-      s << "BitInserter " << param->GetName() + "_bi(*" << param->GetName() << "_bytes);";
-      s << param->GetName() << "[i]->Serialize(" << param->GetName() << "_bi);";
-      // Parse it again
-      s << "auto " << param->GetName() << "_view = PacketView<kLittleEndian>(" << param->GetName()
-        << "_bytes);";
-      s << param->GetElementField()->GetDataType() << " " << param->GetName() << "_reparsed = ";
-      s << "Parse" << struct_type << "(" << param->GetName() + "_view.begin());";
-      // Push it into a new container
-      if (param->GetFieldType() == VectorField::kFieldType) {
-        s << move_only_param_name << ".push_back(std::move(" << param->GetName() + "_reparsed));";
-      } else if (param->GetFieldType() == ArrayField::kFieldType) {
-        s << move_only_param_name << "[i] = std::move(" << param->GetName() << "_reparsed);";
-      } else {
-        ERROR() << param << " is not supported by Pybind11";
-      }
-      s << "}";
-    } else {
-      // Serialize the parameter and pass the bytes in a RawBuilder
-      s << "std::vector<uint8_t> " << param->GetName() + "_bytes;";
-      s << param->GetName() + "_bytes.reserve(" << param->GetName() << "->size());";
-      s << "BitInserter " << param->GetName() + "_bi(" << param->GetName() << "_bytes);";
-      s << param->GetName() << "->Serialize(" << param->GetName() + "_bi);";
-      s << move_only_param_name << " = ";
-      s << "std::make_unique<RawBuilder>(" << param->GetName() << "_bytes);";
-    }
-  }
-  s << "return " << name_ << "Builder::Create(";
-  std::vector<std::string> builder_vars;
-  for (const auto& param : params) {
-    std::stringstream ss;
-    auto param_type = param->GetBuilderParameterType();
-    if (param_type.empty()) {
-      continue;
-    }
-    auto param_name = param->GetName();
-    if (param->BuilderParameterMustBeMoved()) {
-      ss << "std::move(" << param_name << "_move_only)";
-    } else {
-      ss << param_name;
-    }
-    builder_vars.push_back(ss.str());
-  }
-  s << util::StringJoin(",", builder_vars) << ");}";
-  s << "))";
 }
 
 void PacketDef::GenBuilderParameterChecker(std::ostream& s) const {

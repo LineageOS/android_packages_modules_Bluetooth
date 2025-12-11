@@ -43,7 +43,6 @@
 
 namespace bluetooth {
 namespace hci {
-using bluetooth::common::BindOn;
 using bluetooth::common::BindOnce;
 using bluetooth::common::ContextualCallback;
 using bluetooth::common::ContextualOnceCallback;
@@ -1040,12 +1039,12 @@ HciLayer::HciLayer(Handler* handler, hal::HciHal* hal, storage::StorageModule* s
   hal_callbacks_ = new hal_callbacks(*this);
   life_cycle_stopped = false;
 
-  impl_->acl_queue_.GetDownEnd()->RegisterDequeue(handler,
-                                                  BindOn(impl_, &impl::on_outbound_acl_ready));
-  impl_->sco_queue_.GetDownEnd()->RegisterDequeue(handler,
-                                                  BindOn(impl_, &impl::on_outbound_sco_ready));
-  impl_->iso_queue_.GetDownEnd()->RegisterDequeue(handler,
-                                                  BindOn(impl_, &impl::on_outbound_iso_ready));
+  impl_->acl_queue_.GetDownEnd()->RegisterDequeue(
+          handler, base::Bind(&impl::on_outbound_acl_ready, base::Unretained(impl_)));
+  impl_->sco_queue_.GetDownEnd()->RegisterDequeue(
+          handler, base::Bind(&impl::on_outbound_sco_ready, base::Unretained(impl_)));
+  impl_->iso_queue_.GetDownEnd()->RegisterDequeue(
+          handler, base::Bind(&impl::on_outbound_iso_ready, base::Unretained(impl_)));
   StartWithNoHalDependencies(handler);
   hal->registerIncomingPacketCallback(hal_callbacks_);
   EnqueueCommand(ResetBuilder::Create(), handler->BindOnce(&fail_if_reset_complete_not_success));
@@ -1087,9 +1086,7 @@ HciLayer::~HciLayer() {
   impl_->hal_->unregisterIncomingPacketCallback();
   delete hal_callbacks_;
 
-  if (com_android_bluetooth_flags_fix_event_handler_reg_and_dereg()) {
-    StopWithNoHalDependencies();
-  }
+  StopWithNoHalDependencies();
 
   impl_->acl_queue_.GetDownEnd()->UnregisterDequeue();
   impl_->sco_queue_.GetDownEnd()->UnregisterDequeue();

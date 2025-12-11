@@ -166,8 +166,8 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
       } else {
         address_rotation_wake_alarm_ = std::make_unique<os::Alarm>(&handler_->thread(), true);
         address_rotation_non_wake_alarm_ = std::make_unique<os::Alarm>(&handler_->thread(), false);
-        set_random_address();
       }
+      set_random_address();
       break;
     case AddressPolicy::POLICY_NOT_SET:
       log::fatal("invalid parameters");
@@ -298,12 +298,8 @@ bool LeAddressManager::UnregisterSync(LeAddressManagerCallback* callback,
   handler_->BindOnceOn(this, &LeAddressManager::unregister_client, callback)();
   std::promise<void> promise;
   auto future = promise.get_future();
-  if (com_android_bluetooth_flags_use_shared_promise_for_le_address_manager()) {
-    handler_->Post(base::BindOnce([](std::promise<void> promise) { promise.set_value(); },
-                                  std::move(promise)));
-  } else {
-    handler_->Post(base::BindOnce(&std::promise<void>::set_value, base::Unretained(&promise)));
-  }
+  handler_->Post(base::BindOnce([](std::promise<void> promise) { promise.set_value(); },
+                                std::move(promise)));
 
   return future.wait_for(timeout) == std::future_status::ready;
 }

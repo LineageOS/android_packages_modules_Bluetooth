@@ -322,3 +322,11 @@ prop {
     access: Readonly
     prop_name: "bluetooth.ble.primary_supervision_timeout.config"
 }
+
+prop {
+    api_name: "high_data_throughput_phy"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.high_data_throughput_phy.enabled"
+}

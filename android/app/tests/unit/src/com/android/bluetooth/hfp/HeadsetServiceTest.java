@@ -1055,7 +1055,6 @@ public class HeadsetServiceTest {
 
     /** Verifies that all CLCC responses are sent to the connecting device. */
     @Test
-    @EnableFlags(Flags.FLAG_SEND_OK_CLCC_BEFORE_SLC)
     public void testClccResponse_withOneDeviceConnecting() {
         when(mAdapterService.getProfileConnectionPolicy(
                         any(BluetoothDevice.class), eq(BluetoothProfile.HEADSET)))
@@ -1124,7 +1123,6 @@ public class HeadsetServiceTest {
      * the middle of generating CLCC responses.
      */
     @Test
-    @EnableFlags(Flags.FLAG_SEND_OK_CLCC_BEFORE_SLC)
     public void testClccResponse_withMultipleDevicesConnecting() {
         ArrayList<BluetoothDevice> connectedDevices = new ArrayList<>();
         when(mAdapterService.getProfileConnectionPolicy(

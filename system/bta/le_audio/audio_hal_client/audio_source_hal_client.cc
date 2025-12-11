@@ -266,7 +266,7 @@ bool SourceImpl::InitAudioSinkThread() {
 }
 
 void SourceImpl::StartAudioTicks() {
-  if (!com_android_bluetooth_flags_ref_counted_native_wakelock() || !audio_timer_.IsScheduled()) {
+  if (!audio_timer_.IsScheduled()) {
     wakelock_acquire();
   }
   asrc_ = std::make_unique<bluetooth::audio::asrc::SourceAudioHalAsrc>(
@@ -279,7 +279,7 @@ void SourceImpl::StartAudioTicks() {
 }
 
 void SourceImpl::StopAudioTicks() {
-  if (!com_android_bluetooth_flags_ref_counted_native_wakelock() || audio_timer_.IsScheduled()) {
+  if (audio_timer_.IsScheduled()) {
     audio_timer_.CancelAndWait();
     asrc_.reset(nullptr);
     wakelock_release();

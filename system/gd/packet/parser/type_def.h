@@ -33,7 +33,6 @@ public:
   enum class Type {
     INVALID,
     ENUM,
-    CHECKSUM,
     CUSTOM,
     PACKET,
     STRUCT,

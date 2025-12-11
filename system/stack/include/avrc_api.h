@@ -786,7 +786,7 @@ bool AVRC_IsValidAvcType(uint8_t pdu_id, uint8_t avc_type);
  ******************************************************************************/
 bool AVRC_IsValidPlayerAttr(uint8_t attr);
 
-void AVRC_UpdateCcb(RawAddress* addr, uint32_t company_id);
+void AVRC_UpdateCcb(RawAddress addr, uint32_t company_id);
 
 void AVRC_ResetServiceUuid();
 #endif /* AVRC_API_H */

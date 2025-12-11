@@ -237,7 +237,7 @@ bt_status_t btif_storage_remove_hid_info(const AclLinkSpec& link_spec) {
   inc_func_call_count(__func__);
   return test::mock::btif_profile_storage::btif_storage_remove_hid_info(link_spec);
 }
-bt_status_t btif_storage_remove_hidd(RawAddress* remote_bd_addr) {
+bt_status_t btif_storage_remove_hidd(RawAddress remote_bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::btif_profile_storage::btif_storage_remove_hidd(remote_bd_addr);
 }

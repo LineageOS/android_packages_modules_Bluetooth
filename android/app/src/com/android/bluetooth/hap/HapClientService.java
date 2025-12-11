@@ -247,7 +247,7 @@ public class HapClientService extends ConnectableProfile {
 
     @Override
     public void handleBondStateChanged(BluetoothDevice device, int fromState, int toState) {
-        if (Flags.hapOnMainLooper() && Flags.bondStateMachineLooper()) {
+        if (Flags.hapOnMainLooper()) {
             bondStateChanged(device, toState);
         } else {
             mHandler.post(() -> bondStateChanged(device, toState));

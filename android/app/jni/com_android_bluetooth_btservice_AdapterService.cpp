@@ -915,9 +915,7 @@ static int hal_util_load_bt_library(const bt_interface_t** interface) {
 }
 
 static bool initNative(JNIEnv* env, jobject obj, jboolean isGuest, jboolean isCommonCriteriaMode,
-                       int configCompareResult, jboolean isAtvDevice, jstring hciInstanceName) {
-  log::assert_that(hciInstanceName != nullptr, "hciInstanceName is never null");
-
+                       int configCompareResult, jboolean isAtvDevice, jstring jHciInstanceName) {
   std::unique_lock<std::shared_timed_mutex> lock(jniObjMutex);
 
   log::verbose("");
@@ -932,16 +930,12 @@ static bool initNative(JNIEnv* env, jobject obj, jboolean isGuest, jboolean isCo
     return JNI_FALSE;
   }
 
-  const char* nativeHciInstanceName = env->GetStringUTFChars(hciInstanceName, nullptr);
-  if (!nativeHciInstanceName) {
-    return JNI_FALSE;
-  }
+  const std::string hci_instance_name = stringFromJstring(env, jHciInstanceName);
 
-  int ret = sBluetoothInterface->init(&sBluetoothCallbacks, isGuest == JNI_TRUE ? 1 : 0,
-                                      isCommonCriteriaMode == JNI_TRUE ? 1 : 0, configCompareResult,
-                                      isAtvDevice == JNI_TRUE ? 1 : 0, nativeHciInstanceName);
-
-  env->ReleaseStringUTFChars(hciInstanceName, nativeHciInstanceName);
+  int ret =
+          sBluetoothInterface->init(&sBluetoothCallbacks, isGuest == JNI_TRUE ? 1 : 0,
+                                    isCommonCriteriaMode == JNI_TRUE ? 1 : 0, configCompareResult,
+                                    isAtvDevice == JNI_TRUE ? 1 : 0, std::move(hci_instance_name));
 
   if (ret != BT_STATUS_SUCCESS) {
     log::error("Error while setting the callbacks: {}", ret);
@@ -1000,14 +994,10 @@ static jboolean enableNative(JNIEnv* env, jobject /* obj */, jstring jLocalName)
   if (!sBluetoothInterface) {
     return JNI_FALSE;
   }
-  const char* nativeLocalName = env->GetStringUTFChars(jLocalName, nullptr);
-  if (!nativeLocalName) {
-    return JNI_FALSE;
-  }
-  std::string nativeName = std::string(nativeLocalName);
-  env->ReleaseStringUTFChars(jLocalName, nativeLocalName);
 
-  int ret = sBluetoothInterface->enable(std::move(nativeName));
+  const std::string local_name = stringFromJstring(env, jLocalName);
+
+  int ret = sBluetoothInterface->enable(std::move(local_name));
 
   return (ret == BT_STATUS_SUCCESS || ret == BT_STATUS_DONE) ? JNI_TRUE : JNI_FALSE;
 }
@@ -1411,14 +1401,10 @@ static void setLocalNameNative(JNIEnv* env, jobject /* obj */, jstring jLocalNam
   if (!sBluetoothInterface) {
     return;
   }
-  const char* nativeLocalName = env->GetStringUTFChars(jLocalName, nullptr);
-  if (!nativeLocalName) {
-    return;
-  }
-  std::string nativeName = std::string(nativeLocalName);
-  env->ReleaseStringUTFChars(jLocalName, nativeLocalName);
 
-  BTA_DmSetDeviceName(nativeName.c_str());
+  const std::string local_name = stringFromJstring(env, jLocalName);
+
+  BTA_DmSetDeviceName(local_name.c_str());
 }
 
 static jboolean setAdapterPropertyNative(JNIEnv* env, jobject /* obj */, jint type,

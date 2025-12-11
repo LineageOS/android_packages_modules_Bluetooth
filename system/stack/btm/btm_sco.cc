@@ -27,6 +27,7 @@
 
 #include "stack/btm/btm_sco.h"
 
+#include <base/functional/bind.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
 #include <bluetooth/types/address.h>
@@ -120,7 +121,7 @@ static void sco_data_callback() {
 static void register_for_sco() {
   hci_sco_queue_end = bluetooth::shim::GetHciLayer()->GetScoQueueEnd();
   hci_sco_queue_end->RegisterDequeue(bluetooth::shim::GetGdShimHandler(),
-                                     bluetooth::common::Bind(sco_data_callback));
+                                     base::Bind(sco_data_callback));
   pending_sco_data =
           new bluetooth::os::EnqueueBuffer<bluetooth::hci::ScoBuilder>(hci_sco_queue_end);
 

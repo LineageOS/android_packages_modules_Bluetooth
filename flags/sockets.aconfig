@@ -92,16 +92,6 @@ flag {
 }
 
 flag {
-    name: "monitor_read_flag_on_offloaded_socket"
-    namespace: "bluetooth"
-    description: "Monitor read flag on the offloaded socket to catch close signal"
-    bug: "419864098"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "fix_socket_connection_failed_no_callback"
     namespace: "bluetooth"
     description: "Fix Rfcomm Socket connection failed but callback not called"
@@ -163,6 +153,16 @@ flag {
     namespace: "bluetooth"
     description: "Derive the pseudo address from the identity address for LE CoC"
     bug: "465859619"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "fix_flow_control_logic_at_l2cap"
+    namespace: "bluetooth"
+    description: "Fix the flow control logic at l2cap layer"
+    bug: "467155293"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

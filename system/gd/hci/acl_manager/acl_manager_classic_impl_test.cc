@@ -16,6 +16,7 @@
 
 #include "hci/acl_manager/acl_manager_classic_impl.h"
 
+#include <base/functional/bind.h>
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
@@ -223,7 +224,7 @@ protected:
                       promise.set_value();
                       return NextPayload(handle);
                     },
-                    queue_end, handle, common::Passed(std::move(promise))));
+                    queue_end, handle, base::Passed(std::move(promise))));
     auto status = future.wait_for(kTimeout);
     ASSERT_EQ(status, std::future_status::ready);
   }

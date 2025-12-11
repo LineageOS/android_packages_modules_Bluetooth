@@ -1119,16 +1119,10 @@ static void btu_hcif_mode_change_evt(uint8_t* p) {
   STREAM_TO_UINT16(handle, p);
   STREAM_TO_UINT8(current_mode, p);
   STREAM_TO_UINT16(interval, p);
-  if (com_android_bluetooth_flags_mode_change_before_sco_unpark()) {
-    // Do mode change first, then unpark pending SCO links.
-    btm_pm_proc_mode_change(static_cast<tHCI_STATUS>(status), handle,
-                            static_cast<tHCI_MODE>(current_mode), interval);
-    btm_sco_chk_pend_unpark(static_cast<tHCI_STATUS>(status), handle);
-  } else {
-    btm_sco_chk_pend_unpark(static_cast<tHCI_STATUS>(status), handle);
-    btm_pm_proc_mode_change(static_cast<tHCI_STATUS>(status), handle,
-                            static_cast<tHCI_MODE>(current_mode), interval);
-  }
+
+  btm_pm_proc_mode_change(static_cast<tHCI_STATUS>(status), handle,
+                          static_cast<tHCI_MODE>(current_mode), interval);
+  btm_sco_chk_pend_unpark(static_cast<tHCI_STATUS>(status), handle);
 
 #if (HID_DEV_INCLUDED == TRUE && HID_DEV_PM_INCLUDED == TRUE)
   hidd_pm_proc_mode_change(status, current_mode, interval);

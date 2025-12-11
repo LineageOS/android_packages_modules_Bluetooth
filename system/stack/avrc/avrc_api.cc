@@ -1456,11 +1456,11 @@ void AVRC_SaveControllerVersion(const RawAddress& bdaddr, uint16_t new_version) 
   }
 }
 
-void AVRC_UpdateCcb(RawAddress* addr, uint32_t company_id) {
+void AVRC_UpdateCcb(RawAddress addr, uint32_t company_id) {
   for (uint8_t i = 0; i < AVCT_NUM_CONN; i++) {
     log::info("handle:{}, update cback:0x{:0x}", i, company_id);
     if (avrc_cb.ccb[i].company_id == company_id) {
-      avrc_cb.ccb[i].ctrl_cback.Run(i, AVRC_CLOSE_IND_EVT, 0, addr);
+      avrc_cb.ccb[i].ctrl_cback.Run(i, AVRC_CLOSE_IND_EVT, 0, &addr);
     }
   }
 }

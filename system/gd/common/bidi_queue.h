@@ -18,7 +18,8 @@
 
 #pragma once
 
-#include "common/callback.h"
+#include <base/functional/callback.h>
+
 #include "os/queue.h"
 
 namespace bluetooth {

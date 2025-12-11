@@ -146,7 +146,7 @@ typedef struct {
    * Disconnect all RFCOMM and L2CAP socket connections with the associated
    * device address.
    */
-  BtStatus (*disconnect_all)(const RawAddress* bd_addr);
+  BtStatus (*disconnect_all)(RawAddress bd_addr);
 } btsock_interface_t;
 
 __END_DECLS

@@ -60,7 +60,7 @@ static BtStatus btsock_control_req(uint8_t dlci, const RawAddress& bd_addr, uint
                                    uint8_t break_signal_seq, bool fc);
 
 static void btsock_signaled(int fd, int type, int flags, uint32_t user_id);
-static BtStatus btsock_disconnect_all(const RawAddress* bd_addr);
+static BtStatus btsock_disconnect_all(RawAddress bd_addr);
 
 static std::atomic_int thread_handle{-1};
 static thread_t* thread;
@@ -226,7 +226,7 @@ static BtStatus btsock_connect(const RawAddress bd_addr, btsock_type_t type, con
           channel, 0, 0, uuid ? uuid->ToString().c_str() : "", 0, BTSOCK_ERROR_NONE, data_path);
   switch (type) {
     case BTSOCK_RFCOMM:
-      status = btsock_rfc_connect(&bd_addr, uuid, channel, sock_fd, flags, app_uid, data_path,
+      status = btsock_rfc_connect(bd_addr, uuid, channel, sock_fd, flags, app_uid, data_path,
                                   socket_name, hub_id, endpoint_id, max_rx_packet_size);
       if (!status) {
         bluetooth::metrics::LogBluetoothEvent(
@@ -236,16 +236,16 @@ static BtStatus btsock_connect(const RawAddress bd_addr, btsock_type_t type, con
       break;
 
     case BTSOCK_L2CAP:
-      status = btsock_l2cap_connect(&bd_addr, channel, sock_fd, flags, app_uid, data_path,
+      status = btsock_l2cap_connect(bd_addr, channel, sock_fd, flags, app_uid, data_path,
                                     socket_name, hub_id, endpoint_id, max_rx_packet_size);
       break;
     case BTSOCK_L2CAP_LE:
       status =
-              btsock_l2cap_connect(&bd_addr, channel, sock_fd, flags | BTSOCK_FLAG_LE_COC, app_uid,
+              btsock_l2cap_connect(bd_addr, channel, sock_fd, flags | BTSOCK_FLAG_LE_COC, app_uid,
                                    data_path, socket_name, hub_id, endpoint_id, max_rx_packet_size);
       break;
     case BTSOCK_SCO:
-      status = btsock_sco_connect(&bd_addr, sock_fd, flags);
+      status = btsock_sco_connect(bd_addr, sock_fd, flags);
       break;
 
     default:
@@ -286,9 +286,7 @@ static void btsock_signaled(int fd, int type, int flags, uint32_t user_id) {
   }
 }
 
-static BtStatus btsock_disconnect_all(const RawAddress* bd_addr) {
-  log::assert_that(bd_addr != NULL, "assert failed: bd_addr != NULL");
-
+static BtStatus btsock_disconnect_all(RawAddress bd_addr) {
   BtStatus rfc_status = btsock_rfc_disconnect(bd_addr);
   BtStatus l2cap_status = btsock_l2cap_disconnect(bd_addr);
   /* SCO is disconnected via btif_hf, so is not handled here. */

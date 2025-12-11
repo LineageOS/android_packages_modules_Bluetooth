@@ -20,7 +20,6 @@
 #include <map>
 #include <optional>
 
-#include "checksum_def.h"
 #include "custom_field_def.h"
 #include "enum_def.h"
 #include "enum_gen.h"

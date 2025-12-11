@@ -406,9 +406,8 @@ int GetAdapterIndex() { return 0; }  // Unsupported outside of FLOSS
 #endif  // TARGET_FLOSS
 
 static int init(bt_callbacks_t* callbacks, bool start_restricted, bool is_common_criteria_mode,
-                int config_compare_result, bool is_atv, const char* hci_instance_name) {
+                int config_compare_result, bool is_atv, const std::string hci_instance_name) {
   log::assert_that(callbacks != nullptr, "assert failed: callbacks != nullptr");
-  log::assert_that(hci_instance_name != nullptr, "assert failed: hci_instance_name != nullptr");
 
   log::info(
           "start_restricted={} common_criteria_mode={}, config_compare_result={} instance_name={}",
@@ -430,7 +429,7 @@ static int init(bt_callbacks_t* callbacks, bool start_restricted, bool is_common
   } else {
     bluetooth::os::ParameterProvider::SetCommonCriteriaConfigCompareResult(CONFIG_COMPARE_ALL_PASS);
   }
-  bluetooth::os::ParameterProvider::SetHciInstanceName(hci_instance_name);
+  bluetooth::os::ParameterProvider::SetHciInstanceName(std::move(hci_instance_name));
 
   is_local_device_atv = is_atv;
 
@@ -845,8 +844,7 @@ static int set_event_filter_connection_setup_all_devices() {
 }
 
 static void dump(int fd, const char** /*arguments*/) {
-  if (com_android_bluetooth_flags_protect_dumpsys_during_stack_shutdown() &&
-      !stack_manager_get_interface()->get_stack_is_running()) {
+  if (!stack_manager_get_interface()->get_stack_is_running()) {
     log::error("Stack is not running, skipping dumpsys!!");
     return;
   }
