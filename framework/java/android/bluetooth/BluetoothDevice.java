@@ -597,7 +597,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
                 ENCRYPTION_ALGORITHM_AES,
                 ENCRYPTION_ALGORITHM_UNKNOWN
             })
-    @FlaggedApi(Flags.FLAG_LINK_STATUS_API)
     public @interface EncryptionAlgorithm {}
 
     /** Indicates that link was not encrypted using any algorithm */
@@ -610,7 +609,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     public static final int ENCRYPTION_ALGORITHM_AES = 2;
 
     /** Indicates link was encrypted using unknown algorithm */
-    @FlaggedApi(Flags.FLAG_LINK_STATUS_API)
     public static final int ENCRYPTION_ALGORITHM_UNKNOWN = 3;
 
     /**
@@ -1345,7 +1343,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @IntDef(
             prefix = {"TRANSPORT_"},
             value = {TRANSPORT_BREDR, TRANSPORT_LE})
-    @FlaggedApi(Flags.FLAG_LINK_STATUS_API)
     public @interface SupportedTransport {}
 
     /** No preference of physical transport for GATT connections to remote dual-mode devices */
@@ -3644,7 +3641,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * @return the encryption status of the device, null if the device is not encrypted or not
      *     connected.
      */
-    @FlaggedApi(Flags.FLAG_LINK_STATUS_API)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public @Nullable EncryptionStatus getEncryptionStatus(@SupportedTransport int transport) {
@@ -3664,7 +3660,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *
      * @return True if there is at least one open connection to this device.
      */
-    @FlaggedApi(Flags.FLAG_LINK_STATUS_API)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean isConnected(@SupportedTransport int transport) {

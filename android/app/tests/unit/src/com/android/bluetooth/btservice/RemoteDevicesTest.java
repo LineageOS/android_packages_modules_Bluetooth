@@ -874,7 +874,6 @@ public class RemoteDevicesTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LINK_STATUS_API)
     public void testLinkState_bredr() {
         final int transport = TRANSPORT_BREDR;
 
