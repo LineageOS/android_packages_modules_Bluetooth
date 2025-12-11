@@ -3629,7 +3629,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * @return number of times {@link ACTION_KEY_MISSING} intent was thrown for this device since
      *     the last successful encrypted connection
      */
-    @FlaggedApi(Flags.FLAG_KEY_MISSING_COUNT_API)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public int getKeyMissingCount() {
