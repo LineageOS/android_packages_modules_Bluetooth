@@ -59,7 +59,7 @@
 #include "bta/include/bta_le_audio_api.h"
 #include "bta/include/bta_le_audio_broadcaster_api.h"
 #include "bta/include/bta_vaps_server_api.h"
-#include "bta/include/bta_vc_api.h"
+#include "bta/include/bta_vcp_controller_api.h"
 #include "btif/avrcp/avrcp_service.h"
 #include "btif/include/bluetooth.h"
 #include "btif/include/btif_a2dp.h"
@@ -103,7 +103,7 @@
 #include "hardware/bt_rc.h"
 #include "hardware/bt_sdp.h"
 #include "hardware/bt_sock.h"
-#include "hardware/bt_vc.h"
+#include "hardware/bt_vcp_controller.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
 #include "os/parameter_provider.h"
@@ -311,8 +311,8 @@ struct CoreInterfaceImpl : bluetooth::core::CoreInterface {
       btif_le_audio_get_interface()->RemoveDevice(bd_addr);
     }
 
-    if (VolumeControl::IsVolumeControlRunning()) {
-      btif_volume_control_get_interface()->RemoveDevice(bd_addr);
+    if (VolumeController::IsRunning()) {
+      btif_vcp_controller_get_interface()->RemoveDevice(bd_addr);
     }
   }
 
@@ -874,7 +874,7 @@ static void dump(int fd, const char** /*arguments*/) {
   ::bluetooth::asha::HearingAid::DebugDump(fd);
   LeAudioClient::DebugDump(fd);
   LeAudioBroadcaster::DebugDump(fd);
-  VolumeControl::DebugDump(fd);
+  VolumeController::DebugDump(fd);
   bluetooth::vaps::GetVapsServer()->DebugDump(fd);
   connection_manager::dump(fd);
   bluetooth::bqr::DebugDump(fd);
@@ -972,8 +972,8 @@ static const void* get_profile_interface(const char* profile_id) {
     return btif_le_audio_broadcaster_get_interface();
   }
 
-  if (is_profile(profile_id, BT_PROFILE_VC_ID)) {
-    return btif_volume_control_get_interface();
+  if (is_profile(profile_id, BT_PROFILE_VCP_CONTROLLER_ID)) {
+    return btif_vcp_controller_get_interface();
   }
 
   if (is_profile(profile_id, BT_PROFILE_CSIS_CLIENT_ID)) {

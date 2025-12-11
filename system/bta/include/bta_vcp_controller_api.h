@@ -19,23 +19,23 @@
 
 #include <aics/api.h>
 #include <bluetooth/types/address.h>
-#include <hardware/bt_vc.h>
+#include <hardware/bt_vcp_controller.h>
 
 #include <string>
 
-class VolumeControl {
+class VolumeController {
 public:
-  virtual ~VolumeControl() = default;
+  virtual ~VolumeController() = default;
 
-  static void Initialize(bluetooth::vc::VolumeControlCallbacks* callbacks,
+  static void Initialize(bluetooth::vcp::VolumeControllerCallbacks* callbacks,
                          base::OnceClosure initCb);
   static void CleanUp();
-  static VolumeControl* Get();
+  static VolumeController* Get();
   static void DebugDump(int fd);
 
   static void AddFromStorage(const RawAddress& address);
 
-  static bool IsVolumeControlRunning();
+  static bool IsRunning();
 
   /* Volume Control Server (VCS) */
   virtual void Connect(const RawAddress& address) = 0;

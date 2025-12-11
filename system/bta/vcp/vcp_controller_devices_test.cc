@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-#include "bta/vc/devices.h"
+#include "bta/vcp/vcp_controller_devices.h"
 
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
@@ -34,7 +34,7 @@
 #include "stack/include/bt_uuid16.h"
 
 namespace bluetooth {
-namespace vc {
+namespace vcp {
 namespace internal {
 
 using ::testing::_;
@@ -53,13 +53,13 @@ static RawAddress GetTestAddress(int index) {
   return result;
 }
 
-class VolumeControlDevicesTest : public ::testing::Test {
+class VolumeControllerDevicesTest : public ::testing::Test {
 protected:
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
 
-    devices_ = new VolumeControlDevices();
+    devices_ = new VolumeControllerDevices();
     gatt::SetMockBtaGattInterface(&gatt_interface);
     gatt::SetMockBtaGattQueue(&gatt_queue);
   }
@@ -70,19 +70,19 @@ protected:
     delete devices_;
   }
 
-  VolumeControlDevices* devices_ = nullptr;
+  VolumeControllerDevices* devices_ = nullptr;
   NiceMock<gatt::MockBtaGattInterface> gatt_interface;
   NiceMock<gatt::MockBtaGattQueue> gatt_queue;
 };
 
-TEST_F(VolumeControlDevicesTest, test_add) {
+TEST_F(VolumeControllerDevicesTest, test_add) {
   RawAddress test_address_0 = GetTestAddress(0);
   ASSERT_EQ((size_t)0, devices_->Size());
   devices_->Add(test_address_0, true);
   ASSERT_EQ((size_t)1, devices_->Size());
 }
 
-TEST_F(VolumeControlDevicesTest, test_add_twice) {
+TEST_F(VolumeControllerDevicesTest, test_add_twice) {
   RawAddress test_address_0 = GetTestAddress(0);
   ASSERT_EQ((size_t)0, devices_->Size());
   devices_->Add(test_address_0, true);
@@ -90,7 +90,7 @@ TEST_F(VolumeControlDevicesTest, test_add_twice) {
   ASSERT_EQ((size_t)1, devices_->Size());
 }
 
-TEST_F(VolumeControlDevicesTest, test_remove) {
+TEST_F(VolumeControllerDevicesTest, test_remove) {
   RawAddress test_address_0 = GetTestAddress(0);
   RawAddress test_address_1 = GetTestAddress(1);
   devices_->Add(test_address_0, true);
@@ -100,7 +100,7 @@ TEST_F(VolumeControlDevicesTest, test_remove) {
   ASSERT_EQ((size_t)1, devices_->Size());
 }
 
-TEST_F(VolumeControlDevicesTest, test_clear) {
+TEST_F(VolumeControllerDevicesTest, test_clear) {
   RawAddress test_address_0 = GetTestAddress(0);
   ASSERT_EQ((size_t)0, devices_->Size());
   devices_->Add(test_address_0, true);
@@ -109,39 +109,39 @@ TEST_F(VolumeControlDevicesTest, test_clear) {
   ASSERT_EQ((size_t)0, devices_->Size());
 }
 
-TEST_F(VolumeControlDevicesTest, test_find_by_address) {
+TEST_F(VolumeControllerDevicesTest, test_find_by_address) {
   RawAddress test_address_0 = GetTestAddress(0);
   RawAddress test_address_1 = GetTestAddress(1);
   RawAddress test_address_2 = GetTestAddress(2);
   devices_->Add(test_address_0, true);
   devices_->Add(test_address_1, false);
   devices_->Add(test_address_2, true);
-  VolumeControlDevice* device = devices_->FindByAddress(test_address_1);
+  VolumeControllerDevice* device = devices_->FindByAddress(test_address_1);
   ASSERT_NE(nullptr, device);
   ASSERT_EQ(test_address_1, device->address);
 }
 
-TEST_F(VolumeControlDevicesTest, test_find_by_conn_id) {
+TEST_F(VolumeControllerDevicesTest, test_find_by_conn_id) {
   RawAddress test_address_0 = GetTestAddress(0);
   devices_->Add(test_address_0, true);
-  VolumeControlDevice* test_device = devices_->FindByAddress(test_address_0);
+  VolumeControllerDevice* test_device = devices_->FindByAddress(test_address_0);
   test_device->connection_id = 0x0005;
   ASSERT_NE(nullptr, devices_->FindByConnId(test_device->connection_id));
 }
 
-TEST_F(VolumeControlDevicesTest, test_disconnect) {
+TEST_F(VolumeControllerDevicesTest, test_disconnect) {
   RawAddress test_address_0 = GetTestAddress(0);
   RawAddress test_address_1 = GetTestAddress(1);
   devices_->Add(test_address_0, true);
   devices_->Add(test_address_1, true);
-  VolumeControlDevice* test_device_0 = devices_->FindByAddress(test_address_0);
+  VolumeControllerDevice* test_device_0 = devices_->FindByAddress(test_address_0);
   test_device_0->connection_id = 0x0005;
   tGATT_IF gatt_if = 8;
   EXPECT_CALL(gatt_interface, Close(test_device_0->connection_id));
   devices_->Disconnect(gatt_if);
 }
 
-TEST_F(VolumeControlDevicesTest, test_control_point_operation) {
+TEST_F(VolumeControllerDevicesTest, test_control_point_operation) {
   uint8_t opcode = 50;
   std::vector<RawAddress> devices;
 
@@ -152,7 +152,7 @@ TEST_F(VolumeControlDevicesTest, test_control_point_operation) {
     uint16_t control_point_handle = 0x0020 + i;
     uint16_t connection_id = i;
     devices_->Add(test_address, true);
-    VolumeControlDevice* device = devices_->FindByAddress(test_address);
+    VolumeControllerDevice* device = devices_->FindByAddress(test_address);
     device->connection_id = connection_id;
     device->change_counter = change_counter;
     device->volume_control_point_handle = control_point_handle;
@@ -168,7 +168,7 @@ TEST_F(VolumeControlDevicesTest, test_control_point_operation) {
   devices_->ControlPointOperation(devices, opcode, arg, cb, cb_data);
 }
 
-TEST_F(VolumeControlDevicesTest, test_control_point_operation_args) {
+TEST_F(VolumeControllerDevicesTest, test_control_point_operation_args) {
   uint8_t opcode = 60;
   uint8_t arg_1 = 0x02;
   uint8_t arg_2 = 0x05;
@@ -181,7 +181,7 @@ TEST_F(VolumeControlDevicesTest, test_control_point_operation_args) {
     uint16_t control_point_handle = 0x0020 + i;
     uint16_t connection_id = i;
     devices_->Add(test_address, true);
-    VolumeControlDevice* device = devices_->FindByAddress(test_address);
+    VolumeControllerDevice* device = devices_->FindByAddress(test_address);
     device->connection_id = connection_id;
     device->change_counter = change_counter;
     device->volume_control_point_handle = control_point_handle;
@@ -197,10 +197,10 @@ TEST_F(VolumeControlDevicesTest, test_control_point_operation_args) {
   devices_->ControlPointOperation(devices, opcode, &arg, cb, cb_data);
 }
 
-TEST_F(VolumeControlDevicesTest, test_control_point_skip_not_connected) {
+TEST_F(VolumeControllerDevicesTest, test_control_point_skip_not_connected) {
   RawAddress test_address = GetTestAddress(1);
   devices_->Add(test_address, true);
-  VolumeControlDevice* device = devices_->FindByAddress(test_address);
+  VolumeControllerDevice* device = devices_->FindByAddress(test_address);
   device->connection_id = GATT_INVALID_CONN_ID;
   uint16_t control_point_handle = 0x0020;
   device->volume_control_point_handle = control_point_handle;
@@ -215,13 +215,13 @@ TEST_F(VolumeControlDevicesTest, test_control_point_skip_not_connected) {
   devices_->ControlPointOperation(devices, opcode, arg, cb, cb_data);
 }
 
-class VolumeControlDeviceTest : public ::testing::Test {
+class VolumeControllerDeviceTest : public ::testing::Test {
 protected:
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
 
-    device = new VolumeControlDevice(GetTestAddress(1), true);
+    device = new VolumeControllerDevice(GetTestAddress(1), true);
     gatt::SetMockBtaGattInterface(&gatt_interface);
     gatt::SetMockBtaGattQueue(&gatt_queue);
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
@@ -400,19 +400,19 @@ protected:
     ASSERT_EQ(true, device->UpdateHandles());
   }
 
-  VolumeControlDevice* device = nullptr;
+  VolumeControllerDevice* device = nullptr;
   NiceMock<gatt::MockBtaGattInterface> gatt_interface;
   NiceMock<gatt::MockBtaGattQueue> gatt_queue;
   NiceMock<bluetooth::manager::MockBtmInterface> btm_interface;
   std::list<gatt::Service> services;
 };
 
-TEST_F(VolumeControlDeviceTest, test_service_volume_control_not_found) {
+TEST_F(VolumeControllerDeviceTest, test_service_volume_control_not_found) {
   SetSampleDatabase2();
   ASSERT_EQ(false, device->HasHandles());
 }
 
-TEST_F(VolumeControlDeviceTest, test_service_aics_incomplete) {
+TEST_F(VolumeControllerDeviceTest, test_service_aics_incomplete) {
   gatt::DatabaseBuilder builder;
   builder.AddService(0x0001, 0x000a, kVolumeControlUuid, true);
   builder.AddIncludedService(0x0002, kVolumeAudioInputUuid, 0x000b, 0x0018);
@@ -448,7 +448,7 @@ TEST_F(VolumeControlDeviceTest, test_service_aics_incomplete) {
   ASSERT_EQ(true, device->HasHandles());
 }
 
-TEST_F(VolumeControlDeviceTest, test_service_aics_found) {
+TEST_F(VolumeControllerDeviceTest, test_service_aics_found) {
   gatt::DatabaseBuilder builder;
   builder.AddService(0x0001, 0x000a, kVolumeControlUuid, true);
   builder.AddIncludedService(0x0002, kVolumeAudioInputUuid, 0x000b, 0x001a);
@@ -491,7 +491,7 @@ TEST_F(VolumeControlDeviceTest, test_service_aics_found) {
   ASSERT_EQ(true, device->HasHandles());
 }
 
-TEST_F(VolumeControlDeviceTest, test_service_volume_control_incomplete) {
+TEST_F(VolumeControllerDeviceTest, test_service_volume_control_incomplete) {
   gatt::DatabaseBuilder builder;
   builder.AddService(0x0001, 0x0006, kVolumeControlUuid, true);
   builder.AddCharacteristic(0x0002, 0x0003, kVolumeControlStateUuid,
@@ -509,7 +509,7 @@ TEST_F(VolumeControlDeviceTest, test_service_volume_control_incomplete) {
   ASSERT_EQ(false, device->HasHandles());
 }
 
-TEST_F(VolumeControlDeviceTest, test_service_vocs_incomplete) {
+TEST_F(VolumeControllerDeviceTest, test_service_vocs_incomplete) {
   gatt::DatabaseBuilder builder;
   builder.AddService(0x0001, 0x000a, kVolumeControlUuid, true);
   builder.AddIncludedService(0x0002, kVolumeOffsetUuid, 0x000b, 0x0013);
@@ -541,7 +541,7 @@ TEST_F(VolumeControlDeviceTest, test_service_vocs_incomplete) {
   ASSERT_EQ(true, device->HasHandles());
 }
 
-TEST_F(VolumeControlDeviceTest, test_service_vocs_found) {
+TEST_F(VolumeControllerDeviceTest, test_service_vocs_found) {
   gatt::DatabaseBuilder builder;
   builder.AddService(0x0001, 0x000a, kVolumeControlUuid, true);
   builder.AddIncludedService(0x0002, kVolumeOffsetUuid, 0x000b, 0x0015);
@@ -578,7 +578,7 @@ TEST_F(VolumeControlDeviceTest, test_service_vocs_found) {
   ASSERT_EQ(true, device->HasHandles());
 }
 
-TEST_F(VolumeControlDeviceTest, test_multiple_services_found) {
+TEST_F(VolumeControllerDeviceTest, test_multiple_services_found) {
   SetSampleDatabase1();
   ASSERT_EQ((size_t)2, device->audio_offsets.Size());
   ASSERT_EQ((size_t)2, device->audio_inputs.Size());
@@ -595,7 +595,7 @@ TEST_F(VolumeControlDeviceTest, test_multiple_services_found) {
   ASSERT_NE(offset_1->service_handle, offset_2->service_handle);
 }
 
-TEST_F(VolumeControlDeviceTest, test_services_changed) {
+TEST_F(VolumeControllerDeviceTest, test_services_changed) {
   SetSampleDatabase1();
   ASSERT_NE((size_t)0, device->audio_offsets.Size());
   ASSERT_NE((size_t)0, device->audio_inputs.Size());
@@ -612,7 +612,7 @@ TEST_F(VolumeControlDeviceTest, test_services_changed) {
   ASSERT_EQ(false, device->HasHandles());
 }
 
-TEST_F(VolumeControlDeviceTest, test_enqueue_initial_requests) {
+TEST_F(VolumeControllerDeviceTest, test_enqueue_initial_requests) {
   SetSampleDatabase1();
 
   tGATT_IF gatt_if = 0x0001;
@@ -650,7 +650,7 @@ TEST_F(VolumeControlDeviceTest, test_enqueue_initial_requests) {
   Mock::VerifyAndClearExpectations(&gatt_interface);
 }
 
-TEST_F(VolumeControlDeviceTest, test_device_ready_group_first_no_handles_requested) {
+TEST_F(VolumeControllerDeviceTest, test_device_ready_group_first_no_handles_requested) {
   SetSampleDatabase1();
 
   device->group_id = 5;  // Set by VolumeControl in verify_device_ready
@@ -691,7 +691,7 @@ TEST_F(VolumeControlDeviceTest, test_device_ready_group_first_no_handles_request
   ASSERT_EQ(true, device->device_ready);
 }
 
-TEST_F(VolumeControlDeviceTest, test_device_ready_group_first_handles_requested) {
+TEST_F(VolumeControllerDeviceTest, test_device_ready_group_first_handles_requested) {
   SetSampleDatabase1();
 
   // grab all the handles requested
@@ -731,7 +731,7 @@ TEST_F(VolumeControlDeviceTest, test_device_ready_group_first_handles_requested)
   ASSERT_EQ(true, device->device_ready);
 }
 
-TEST_F(VolumeControlDeviceTest, test_device_ready_handles_first) {
+TEST_F(VolumeControllerDeviceTest, test_device_ready_handles_first) {
   SetSampleDatabase1();
 
   // grab all the handles requested
@@ -771,7 +771,8 @@ TEST_F(VolumeControlDeviceTest, test_device_ready_handles_first) {
   ASSERT_EQ(true, device->device_ready);
 }
 
-TEST_F(VolumeControlDeviceTest, test_enqueue_remaining_requests_multiread_single_read_remaining) {
+TEST_F(VolumeControllerDeviceTest,
+       test_enqueue_remaining_requests_multiread_single_read_remaining) {
   SetSampleDatabase3();
 
   tGATT_IF gatt_if = 0x0001;
@@ -835,7 +836,7 @@ TEST_F(VolumeControlDeviceTest, test_enqueue_remaining_requests_multiread_single
   EXPECT_EQ(expected_audio_output_description, audio_output_description_1);
 }
 
-TEST_F(VolumeControlDeviceTest, test_enqueue_remaining_requests_multiread) {
+TEST_F(VolumeControllerDeviceTest, test_enqueue_remaining_requests_multiread) {
   SetSampleDatabase1();
 
   tGATT_IF gatt_if = 0x0001;
@@ -919,7 +920,7 @@ TEST_F(VolumeControlDeviceTest, test_enqueue_remaining_requests_multiread) {
   EXPECT_EQ(expected_audio_output_description_2, audio_output_description_2);
 }
 
-TEST_F(VolumeControlDeviceTest, test_check_link_encrypted) {
+TEST_F(VolumeControllerDeviceTest, test_check_link_encrypted) {
   ON_CALL(btm_interface, BTM_IsEncrypted(_, _)).WillByDefault(DoAll(Return(true)));
   ASSERT_EQ(true, device->IsEncryptionEnabled());
 
@@ -927,7 +928,7 @@ TEST_F(VolumeControlDeviceTest, test_check_link_encrypted) {
   ASSERT_NE(true, device->IsEncryptionEnabled());
 }
 
-TEST_F(VolumeControlDeviceTest, test_control_point_operation) {
+TEST_F(VolumeControllerDeviceTest, test_control_point_operation) {
   GATT_WRITE_OP_CB write_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
                                  uint16_t /*len*/, const uint8_t* /*value*/, void* /*data*/) {};
   SetSampleDatabase1();
@@ -938,7 +939,7 @@ TEST_F(VolumeControlDeviceTest, test_control_point_operation) {
   device->ControlPointOperation(0x03, nullptr, write_cb, nullptr);
 }
 
-TEST_F(VolumeControlDeviceTest, test_control_point_operation_arg) {
+TEST_F(VolumeControllerDeviceTest, test_control_point_operation_arg) {
   GATT_WRITE_OP_CB write_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
                                  uint16_t /*len*/, const uint8_t* /*value*/, void* /*data*/) {};
   SetSampleDatabase1();
@@ -950,7 +951,7 @@ TEST_F(VolumeControlDeviceTest, test_control_point_operation_arg) {
   device->ControlPointOperation(0x01, &arg, write_cb, nullptr);
 }
 
-TEST_F(VolumeControlDeviceTest, test_get_ext_audio_out_volume_offset) {
+TEST_F(VolumeControllerDeviceTest, test_get_ext_audio_out_volume_offset) {
   GATT_READ_OP_CB read_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
                                uint16_t /*len*/, uint8_t* /*value*/, void* /*data*/) {};
   SetSampleDatabase1();
@@ -958,7 +959,7 @@ TEST_F(VolumeControlDeviceTest, test_get_ext_audio_out_volume_offset) {
   device->GetExtAudioOutVolumeOffset(1, read_cb, nullptr);
 }
 
-TEST_F(VolumeControlDeviceTest, test_get_ext_audio_out_location) {
+TEST_F(VolumeControllerDeviceTest, test_get_ext_audio_out_location) {
   GATT_READ_OP_CB read_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
                                uint16_t /*len*/, uint8_t* /*value*/, void* /*data*/) {};
   SetSampleDatabase1();
@@ -966,7 +967,7 @@ TEST_F(VolumeControlDeviceTest, test_get_ext_audio_out_location) {
   device->GetExtAudioOutLocation(2, read_cb, nullptr);
 }
 
-TEST_F(VolumeControlDeviceTest, test_set_ext_audio_out_location) {
+TEST_F(VolumeControllerDeviceTest, test_set_ext_audio_out_location) {
   SetSampleDatabase1();
   std::vector<uint8_t> expected_data({0x44, 0x33, 0x22, 0x11});
   EXPECT_CALL(gatt_queue,
@@ -974,13 +975,13 @@ TEST_F(VolumeControlDeviceTest, test_set_ext_audio_out_location) {
   device->SetExtAudioOutLocation(2, 0x11223344);
 }
 
-TEST_F(VolumeControlDeviceTest, test_set_ext_audio_out_location_non_writable) {
+TEST_F(VolumeControllerDeviceTest, test_set_ext_audio_out_location_non_writable) {
   SetSampleDatabase1();
   EXPECT_CALL(gatt_queue, WriteCharacteristic(_, _, _, _, _, _)).Times(0);
   device->SetExtAudioOutLocation(1, 0x11223344);
 }
 
-TEST_F(VolumeControlDeviceTest, test_get_ext_audio_out_description) {
+TEST_F(VolumeControllerDeviceTest, test_get_ext_audio_out_description) {
   GATT_READ_OP_CB read_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
                                uint16_t /*len*/, uint8_t* /*value*/, void* /*data*/) {};
   SetSampleDatabase1();
@@ -988,7 +989,7 @@ TEST_F(VolumeControlDeviceTest, test_get_ext_audio_out_description) {
   device->GetExtAudioOutDescription(2, read_cb, nullptr);
 }
 
-TEST_F(VolumeControlDeviceTest, test_set_ext_audio_out_description) {
+TEST_F(VolumeControllerDeviceTest, test_set_ext_audio_out_description) {
   SetSampleDatabase1();
   std::string descr = "right front";
   std::vector<uint8_t> expected_data(descr.begin(), descr.end());
@@ -997,14 +998,14 @@ TEST_F(VolumeControlDeviceTest, test_set_ext_audio_out_description) {
   device->SetExtAudioOutDescription(2, descr);
 }
 
-TEST_F(VolumeControlDeviceTest, test_set_ext_audio_out_description_non_writable) {
+TEST_F(VolumeControllerDeviceTest, test_set_ext_audio_out_description_non_writable) {
   SetSampleDatabase1();
   std::string descr = "left front";
   EXPECT_CALL(gatt_queue, WriteCharacteristic(_, _, _, _, _, _)).Times(0);
   device->SetExtAudioOutDescription(1, descr);
 }
 
-TEST_F(VolumeControlDeviceTest, test_ext_audio_out_control_point_operation) {
+TEST_F(VolumeControllerDeviceTest, test_ext_audio_out_control_point_operation) {
   GATT_WRITE_OP_CB write_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
                                  uint16_t /*len*/, const uint8_t* /*value*/, void* /*data*/) {};
   SetSampleDatabase1();
@@ -1017,7 +1018,7 @@ TEST_F(VolumeControlDeviceTest, test_ext_audio_out_control_point_operation) {
   device->ExtAudioOutControlPointOperation(1, 0x0b, nullptr, write_cb, nullptr);
 }
 
-TEST_F(VolumeControlDeviceTest, test_ext_audio_out_control_point_operation_arg) {
+TEST_F(VolumeControllerDeviceTest, test_ext_audio_out_control_point_operation_arg) {
   GATT_WRITE_OP_CB write_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
                                  uint16_t /*len*/, const uint8_t* /*value*/, void* /*data*/) {};
   SetSampleDatabase1();
@@ -1031,7 +1032,7 @@ TEST_F(VolumeControlDeviceTest, test_ext_audio_out_control_point_operation_arg) 
   device->ExtAudioOutControlPointOperation(1, 0x0b, &arg, write_cb, nullptr);
 }
 
-TEST_F(VolumeControlDeviceTest, test_get_ext_audio_in_state) {
+TEST_F(VolumeControllerDeviceTest, test_get_ext_audio_in_state) {
   GATT_READ_OP_CB read_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
                                uint16_t /*len*/, uint8_t* /*value*/, void* /*data*/) {};
   SetSampleDatabase1();
@@ -1039,7 +1040,7 @@ TEST_F(VolumeControlDeviceTest, test_get_ext_audio_in_state) {
   device->GetExtAudioInState(0, read_cb, nullptr);
 }
 
-TEST_F(VolumeControlDeviceTest, test_get_ext_audio_in_status) {
+TEST_F(VolumeControllerDeviceTest, test_get_ext_audio_in_status) {
   GATT_READ_OP_CB read_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
                                uint16_t /*len*/, uint8_t* /*value*/, void* /*data*/) {};
   SetSampleDatabase1();
@@ -1047,7 +1048,7 @@ TEST_F(VolumeControlDeviceTest, test_get_ext_audio_in_status) {
   device->GetExtAudioInStatus(1, read_cb, nullptr);
 }
 
-TEST_F(VolumeControlDeviceTest, test_get_ext_audio_in_gain_props) {
+TEST_F(VolumeControllerDeviceTest, test_get_ext_audio_in_gain_props) {
   GATT_READ_OP_CB read_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
                                uint16_t /*len*/, uint8_t* /*value*/, void* /*data*/) {};
   SetSampleDatabase1();
@@ -1055,7 +1056,7 @@ TEST_F(VolumeControlDeviceTest, test_get_ext_audio_in_gain_props) {
   device->GetExtAudioInGainProps(0, read_cb, nullptr);
 }
 
-TEST_F(VolumeControlDeviceTest, test_get_ext_audio_in_description) {
+TEST_F(VolumeControllerDeviceTest, test_get_ext_audio_in_description) {
   GATT_READ_OP_CB read_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
                                uint16_t /*len*/, uint8_t* /*value*/, void* /*data*/) {};
   SetSampleDatabase1();
@@ -1063,7 +1064,7 @@ TEST_F(VolumeControlDeviceTest, test_get_ext_audio_in_description) {
   device->GetExtAudioInDescription(0, read_cb, nullptr);
 }
 
-TEST_F(VolumeControlDeviceTest, test_set_ext_audio_in_description) {
+TEST_F(VolumeControllerDeviceTest, test_set_ext_audio_in_description) {
   SetSampleDatabase1();
   std::string descr = "HDMI";
   std::vector<uint8_t> expected_data(descr.begin(), descr.end());
@@ -1072,7 +1073,7 @@ TEST_F(VolumeControlDeviceTest, test_set_ext_audio_in_description) {
   device->SetExtAudioInDescription(1, descr);
 }
 
-TEST_F(VolumeControlDeviceTest, test_set_ext_audio_in_description_non_writable) {
+TEST_F(VolumeControllerDeviceTest, test_set_ext_audio_in_description_non_writable) {
   SetSampleDatabase1();
   std::string descr = "AUX";
   std::vector<uint8_t> expected_data(descr.begin(), descr.end());
@@ -1080,7 +1081,7 @@ TEST_F(VolumeControlDeviceTest, test_set_ext_audio_in_description_non_writable) 
   device->SetExtAudioInDescription(0, descr);
 }
 
-TEST_F(VolumeControlDeviceTest, test_ext_audio_in_control_point_operation) {
+TEST_F(VolumeControllerDeviceTest, test_ext_audio_in_control_point_operation) {
   GATT_WRITE_OP_CB write_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
                                  uint16_t /*len*/, const uint8_t* /*value*/, void* /*data*/) {};
   SetSampleDatabase1();
@@ -1093,7 +1094,7 @@ TEST_F(VolumeControlDeviceTest, test_ext_audio_in_control_point_operation) {
   device->ExtAudioInControlPointOperation(1, 0x0c, nullptr, write_cb, nullptr);
 }
 
-TEST_F(VolumeControlDeviceTest, test_ext_audio_in_control_point_operation_arg) {
+TEST_F(VolumeControllerDeviceTest, test_ext_audio_in_control_point_operation_arg) {
   GATT_WRITE_OP_CB write_cb = [](uint16_t /*conn_id*/, tGATT_STATUS /*status*/, uint16_t /*handle*/,
                                  uint16_t /*len*/, const uint8_t* /*value*/, void* /*data*/) {};
   SetSampleDatabase1();
@@ -1108,5 +1109,5 @@ TEST_F(VolumeControlDeviceTest, test_ext_audio_in_control_point_operation_arg) {
 }
 
 }  // namespace internal
-}  // namespace vc
+}  // namespace vcp
 }  // namespace bluetooth

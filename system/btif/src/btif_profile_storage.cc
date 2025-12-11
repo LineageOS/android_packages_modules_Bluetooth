@@ -43,7 +43,7 @@
 #include "bta_hearing_aid_api.h"
 #include "bta_hh_api.h"
 #include "bta_le_audio_api.h"
-#include "bta_vc_api.h"
+#include "bta_vcp_controller_api.h"
 #include "btif/include/btif_dm.h"
 #include "btif/include/btif_jni_task.h"
 #include "btif_config.h"
@@ -943,7 +943,7 @@ void btif_storage_load_bonded_volume_control_devices(void) {
   for (const auto& bd_addr : btif_config_get_paired_devices()) {
     if (btif_device_supports_profile(bd_addr,
                                      Uuid::From16Bit(UUID_SERVCLASS_VOLUME_CONTROL_SERVER))) {
-      do_in_main_thread(BindOnce(&VolumeControl::AddFromStorage, bd_addr));
+      do_in_main_thread(BindOnce(&VolumeController::AddFromStorage, bd_addr));
     }
   }
 }
