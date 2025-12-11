@@ -219,21 +219,32 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     /* If called by BluetoothAdapter it means Audio should not be stopped.
                      * For this reason let's say that fallback device exists
                      */
-                    leAudio.get().removeActiveDevice(true /* hasFallbackDevice */);
+                    if (Flags.admUseSetActiveDeviceHelpers()) {
+                        setLeAudioActiveDevice(null, /* stopAudio= */ false);
+                    } else {
+                        leAudio.get().removeActiveDevice(true /* hasFallbackDevice */);
+                    }
                 } else {
-                    if (a2dp.isPresent() && a2dp.get().getActiveDevice() != null) {
-                        // TODO:  b/312396770
-                        a2dp.get().removeActiveDevice(false);
+                    if (Flags.admUseSetActiveDeviceHelpers()) {
+                        setA2dpActiveDevice(null, /* stopAudio= */ false);
+                        setHfpActiveDevice(null);
+                        setHearingAidActiveDevice(null, /* stopAudio= */ false);
+                        setLeAudioActiveDevice(device, /* stopAudio= */ false);
+                    } else {
+                        if (a2dp.isPresent() && a2dp.get().getActiveDevice() != null) {
+                            // TODO:  b/312396770
+                            a2dp.get().removeActiveDevice(false);
+                        }
+                        if (headset.isPresent() && headset.get().getActiveDevice() != null) {
+                            headset.get().setActiveDevice(null);
+                        }
+                        if (hearingAid.isPresent()
+                                && (hearingAid.get().getActiveDevices().get(0) != null
+                                        || hearingAid.get().getActiveDevices().get(1) != null)) {
+                            hearingAid.get().removeActiveDevice(false);
+                        }
+                        leAudio.get().setActiveDevice(device);
                     }
-                    if (headset.isPresent() && headset.get().getActiveDevice() != null) {
-                        headset.get().setActiveDevice(null);
-                    }
-                    if (hearingAid.isPresent()
-                            && (hearingAid.get().getActiveDevices().get(0) != null
-                                    || hearingAid.get().getActiveDevices().get(1) != null)) {
-                        hearingAid.get().removeActiveDevice(false);
-                    }
-                    leAudio.get().setActiveDevice(device);
                 }
             } else {
                 Log.i(TAG, "setActiveDevice: Setting active Le Audio device " + device);
@@ -241,13 +252,22 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     /* If called by BluetoothAdapter it means Audio should not be stopped.
                      * For this reason let's say that fallback device exists
                      */
-                    leAudio.get().removeActiveDevice(true /* hasFallbackDevice */);
-                } else {
-                    if (a2dp.isPresent() && a2dp.get().getActiveDevice() != null) {
-                        // TODO:  b/312396770
-                        a2dp.get().removeActiveDevice(false);
+                    if (Flags.admUseSetActiveDeviceHelpers()) {
+                        setLeAudioActiveDevice(null, /* stopAudio= */ false);
+                    } else {
+                        leAudio.get().removeActiveDevice(true /* hasFallbackDevice */);
                     }
-                    leAudio.get().setActiveDevice(device);
+                } else {
+                    if (Flags.admUseSetActiveDeviceHelpers()) {
+                        setA2dpActiveDevice(null, /* stopAudio= */ false);
+                        setLeAudioActiveDevice(device, /* stopAudio= */ false);
+                    } else {
+                        if (a2dp.isPresent() && a2dp.get().getActiveDevice() != null) {
+                            // TODO:  b/312396770
+                            a2dp.get().removeActiveDevice(false);
+                        }
+                        leAudio.get().setActiveDevice(device);
+                    }
                 }
             }
         }
@@ -255,13 +275,21 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
         // Order matters, some devices do not accept A2DP connection before HFP connection
         if (setHeadset && hfpSupported) {
             Log.i(TAG, "setActiveDevice: Setting active Headset " + device);
-            headset.get().setActiveDevice(device);
+            if (Flags.admUseSetActiveDeviceHelpers()) {
+                setHfpActiveDevice(device);
+            } else {
+                headset.get().setActiveDevice(device);
+            }
         }
 
         if (setA2dp && a2dpSupported) {
             Log.i(TAG, "setActiveDevice: Setting active A2dp device " + device);
             if (device == null) {
-                a2dp.get().removeActiveDevice(false);
+                if (Flags.admUseSetActiveDeviceHelpers()) {
+                    setA2dpActiveDevice(null, /* stopAudio= */ false);
+                } else {
+                    a2dp.get().removeActiveDevice(false);
+                }
             } else {
                 /* Workaround for the controller issue which is not able to handle correctly
                  * A2DP offloader vendor specific command while ISO Data path is set.
@@ -270,10 +298,18 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 if (leAudio.isPresent()) {
                     List<BluetoothDevice> activeLeAudioDevices = leAudio.get().getActiveDevices();
                     if (activeLeAudioDevices.get(0) != null) {
-                        leAudio.get().removeActiveDevice(true);
+                        if (Flags.admUseSetActiveDeviceHelpers()) {
+                            setLeAudioActiveDevice(null, false);
+                        } else {
+                            leAudio.get().removeActiveDevice(true);
+                        }
                     }
                 }
-                a2dp.get().setActiveDevice(device);
+                if (Flags.admUseSetActiveDeviceHelpers()) {
+                    setA2dpActiveDevice(device, /* stopAudio= */ false);
+                } else {
+                    a2dp.get().setActiveDevice(device);
+                }
             }
         }
 
@@ -281,10 +317,14 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
             if (device == null
                     || hearingAid.get().getConnectionPolicy(device) == CONNECTION_POLICY_ALLOWED) {
                 Log.i(TAG, "setActiveDevice: Setting active Hearing Aid " + device);
-                if (device == null) {
-                    hearingAid.get().removeActiveDevice(false);
+                if (Flags.admUseSetActiveDeviceHelpers()) {
+                    setHearingAidActiveDevice(device, /* stopAudio= */ false);
                 } else {
-                    hearingAid.get().setActiveDevice(device);
+                    if (device == null) {
+                        hearingAid.get().removeActiveDevice(false);
+                    } else {
+                        hearingAid.get().setActiveDevice(device);
+                    }
                 }
             }
         }
@@ -407,7 +447,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     boolean a2dpMadeActive = setA2dpActiveDevice(device, /* stopAudio= */ true);
                     boolean hfpMadeActive = setHfpActiveDevice(device);
                     if ((a2dpMadeActive || hfpMadeActive) && !Utils.isDualModeAudioEnabled()) {
-                        setLeAudioActiveDevice(null, true);
+                        setLeAudioActiveDevice(null, /* stopAudio= */ false);
                     }
                     return;
                 }
@@ -417,7 +457,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                         || mAudioManager.getMode() == AudioManager.MODE_NORMAL) {
                     boolean a2dpMadeActive = setA2dpActiveDevice(device, /* stopAudio= */ true);
                     if (a2dpMadeActive && !Utils.isDualModeAudioEnabled()) {
-                        setLeAudioActiveDevice(null, true);
+                        setLeAudioActiveDevice(null, /* stopAudio= */ false);
                     }
                 } else {
                     Log.i(TAG, "A2DP activation is suspended until HFP connected: " + device);
@@ -477,7 +517,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     /* Make LEA inactive if device is made active for any classic audio profile
                     and dual mode is disabled */
                     if ((a2dpMadeActive || hfpMadeActive) && !Utils.isDualModeAudioEnabled()) {
-                        setLeAudioActiveDevice(null, true);
+                        setLeAudioActiveDevice(null, /* stopAudio= */ false);
                     }
                     return;
                 }
@@ -494,7 +534,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
 
                     // Makes LEA inactive if device is made active for HFP & dual mode is disabled
                     if (hfpMadeActive && !Utils.isDualModeAudioEnabled()) {
-                        setLeAudioActiveDevice(null, true);
+                        setLeAudioActiveDevice(null, /* stopAudio= */ false);
                     }
                 } else {
                     Log.i(TAG, "HFP activation is suspended until A2DP connected: " + device);
@@ -532,7 +572,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 return;
             }
             // New connected device: select it as active
-            if (setHearingAidActiveDevice(device, false)) {
+            if (setHearingAidActiveDevice(device, /* stopAudio= */ true)) {
                 setA2dpActiveDevice(null, /* stopAudio= */ false);
                 setHfpActiveDevice(null);
                 mAdapterService
@@ -540,8 +580,10 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                         .ifPresentOrElse(
                                 leAudio ->
                                         setLeAudioActiveDevice(
-                                                null, !leAudio.getActiveDevices().contains(device)),
-                                () -> setLeAudioActiveDevice(null, true));
+                                                null,
+                                                /* stopAudio= */ leAudio.getActiveDevices()
+                                                        .contains(device)),
+                                () -> setLeAudioActiveDevice(null, /* stopAudio= */ false));
             }
         }
     }
@@ -580,14 +622,15 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 if (!isAnyHearingAidDeviceActive()
                         && Objects.equals(device, leAudio.get().getLeadDevice(device))) {
                     // New connected device: select it as active
-                    boolean leAudioMadeActive = setLeAudioActiveDevice(device, false);
+                    boolean leAudioMadeActive =
+                            setLeAudioActiveDevice(device, /* stopAudio= */ true);
                     if (leAudioMadeActive && !Utils.isDualModeAudioEnabled()) {
                         setA2dpActiveDevice(null, /* stopAudio= */ false);
                         setHfpActiveDevice(null);
                     }
                 } else if (isLeAudioHearingAidDevice(device)) {
-                    if (setLeAudioActiveDevice(device, false)) {
-                        setHearingAidActiveDevice(null, true);
+                    if (setLeAudioActiveDevice(device, /* stopAudio= */ true)) {
+                        setHearingAidActiveDevice(null, /* stopAudio= */ false);
                         setA2dpActiveDevice(null, /* stopAudio= */ false);
                         setHfpActiveDevice(null);
                     }
@@ -599,14 +642,14 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     && mPendingLeHearingAidActiveDevice.isEmpty()
                     && Objects.equals(device, leAudio.get().getLeadDevice(device))) {
                 // New connected device: select it as active
-                boolean leAudioMadeActive = setLeAudioActiveDevice(device, false);
+                boolean leAudioMadeActive = setLeAudioActiveDevice(device, /* stopAudio= */ true);
                 if (leAudioMadeActive && !Utils.isDualModeAudioEnabled()) {
                     setA2dpActiveDevice(null, /* stopAudio= */ false);
                     setHfpActiveDevice(null);
                 }
             } else if (mPendingLeHearingAidActiveDevice.contains(device)) {
                 if (setLeHearingAidActiveDevice(device)) {
-                    setHearingAidActiveDevice(null, true);
+                    setHearingAidActiveDevice(null, /* stopAudio= */ false);
                     setA2dpActiveDevice(null, /* stopAudio= */ false);
                     setHfpActiveDevice(null);
                 }
@@ -640,7 +683,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
             } else {
                 // New connected device: select it as active
                 if (setLeHearingAidActiveDevice(device)) {
-                    setHearingAidActiveDevice(null, true);
+                    setHearingAidActiveDevice(null, /* stopAudio= */ false);
                     setA2dpActiveDevice(null, /* stopAudio= */ false);
                     setHfpActiveDevice(null);
                 }
@@ -711,7 +754,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
             }
             if (mHearingAidActiveDevices.remove(device) && mHearingAidActiveDevices.isEmpty()) {
                 if (!setFallbackDeviceActiveLocked(device)) {
-                    setHearingAidActiveDevice(null, false);
+                    setHearingAidActiveDevice(null, /* stopAudio= */ true);
                 }
             }
         }
@@ -789,7 +832,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 // If the active device for a classic audio profile is changed
                 // to a dual mode compatible device, then also update the
                 // active device for LE Audio.
-                setLeAudioActiveDevice(nextActiveDevice, false);
+                setLeAudioActiveDevice(nextActiveDevice, /* stopAudio= */ true);
             }
         } else {
             boolean wasDualModeDevice =
@@ -798,7 +841,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 // If the active device for a classic audio profile was a
                 // dual mode compatible device, then also update the
                 // active device for LE Audio.
-                setLeAudioActiveDevice(null, true);
+                setLeAudioActiveDevice(null, /* stopAudio= */ false);
             }
         }
     }
@@ -829,14 +872,14 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
 
             if (!Objects.equals(mA2dpActiveDevice, device)) {
                 if (device != null) {
-                    setHearingAidActiveDevice(null, true);
+                    setHearingAidActiveDevice(null, /* stopAudio= */ false);
                 }
                 updateLeAudioActiveDeviceIfDualMode(mA2dpActiveDevice, device);
             } else {
                 if (Utils.isDualModeAudioEnabled()
                         && !mAdapterService.isProfileSupported(device, BluetoothProfile.LE_AUDIO)) {
                     Log.i(TAG, "Set LE Audio in-active as new classic device become active ");
-                    setLeAudioActiveDevice(null, true);
+                    setLeAudioActiveDevice(null, /* stopAudio= */ false);
                 }
             }
 
@@ -906,7 +949,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
 
             if (!Objects.equals(mHfpActiveDevice, device)) {
                 if (device != null) {
-                    setHearingAidActiveDevice(null, true);
+                    setHearingAidActiveDevice(null, /* stopAudio= */ false);
                 }
 
                 updateLeAudioActiveDeviceIfDualMode(mHfpActiveDevice, device);
@@ -920,7 +963,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     /* HFP device becoming active is not dual mode and was not set as
                      * active LE Audio device. Inactivate LE Audio device.
                      */
-                    setLeAudioActiveDevice(null, true);
+                    setLeAudioActiveDevice(null, /* stopAudio= */ false);
                 }
 
                 if ((!Utils.isDualModeAudioEnabled() && device == null)) {
@@ -933,7 +976,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 if (Utils.isDualModeAudioEnabled()
                         && !mAdapterService.isProfileSupported(device, BluetoothProfile.LE_AUDIO)) {
                     Log.i(TAG, "Set LE Audio in-active as new classic device become active ");
-                    setLeAudioActiveDevice(null, true);
+                    setLeAudioActiveDevice(null, /* stopAudio= */ false);
                 }
             }
 
@@ -1009,7 +1052,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
             if (device != null) {
                 setA2dpActiveDevice(null, /* stopAudio= */ false);
                 setHfpActiveDevice(null);
-                setLeAudioActiveDevice(null, true);
+                setLeAudioActiveDevice(null, /* stopAudio= */ false);
             }
         }
     }
@@ -1044,7 +1087,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     setA2dpActiveDevice(null, /* stopAudio= */ false);
                     setHfpActiveDevice(null);
                 }
-                setHearingAidActiveDevice(null, true);
+                setHearingAidActiveDevice(null, /* stopAudio= */ false);
             }
 
             if (!Flags.admRemoveHapVariables()) {
@@ -1172,14 +1215,13 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
         return true;
     }
 
-    private boolean setHearingAidActiveDevice(
-            @Nullable BluetoothDevice device, boolean hasFallbackDevice) {
+    private boolean setHearingAidActiveDevice(@Nullable BluetoothDevice device, boolean stopAudio) {
         Log.i(
                 TAG,
                 "setHearingAidActiveDevice("
                         + device
                         + ")"
-                        + (device == null ? " hasFallbackDevice=" + hasFallbackDevice : ""));
+                        + (device == null ? " stopAudio=" + stopAudio : ""));
 
         final var hearingAid = mAdapterService.getHearingAidService();
         if (hearingAid.isEmpty()) {
@@ -1188,7 +1230,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
 
         synchronized (mLock) {
             if (device == null) {
-                if (!hearingAid.get().removeActiveDevice(!hasFallbackDevice)) {
+                if (!hearingAid.get().removeActiveDevice(stopAudio)) {
                     return false;
                 }
                 mHearingAidActiveDevices.clear();
@@ -1210,9 +1252,13 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
         return true;
     }
 
-    private boolean setLeAudioActiveDevice(
-            @Nullable BluetoothDevice device, boolean hasFallbackDevice) {
-        Log.i(TAG, "setLeAudioActiveDevice(" + device + ", " + hasFallbackDevice + ")");
+    private boolean setLeAudioActiveDevice(@Nullable BluetoothDevice device, boolean stopAudio) {
+        Log.i(
+                TAG,
+                "setLeAudioActiveDevice("
+                        + device
+                        + ")"
+                        + (device == null ? " stopAudio=" + stopAudio : ""));
         synchronized (mLock) {
             final var leAudio = mAdapterService.getLeAudioService();
             if (leAudio.isEmpty()) {
@@ -1221,7 +1267,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
             }
             boolean success;
             if (device == null) {
-                success = leAudio.get().removeActiveDevice(hasFallbackDevice);
+                success = leAudio.get().removeActiveDevice(!stopAudio);
             } else {
                 if ((mLeAudioActiveDevice != null)
                         && (Objects.equals(
@@ -1252,7 +1298,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
         Log.i(TAG, "setLeHearingAidActiveDevice(" + device + ")");
         synchronized (mLock) {
             if (!Objects.equals(mLeAudioActiveDevice, device)) {
-                if (!setLeAudioActiveDevice(device, false)) {
+                if (!setLeAudioActiveDevice(device, /* stopAudio= */ true)) {
                     return false;
                 }
             }
@@ -1349,10 +1395,10 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
 
                 if (mHearingAidConnectedDevices.contains(device)) {
                     Log.i(TAG, "Found a hearing aid fallback device: " + device);
-                    setHearingAidActiveDevice(device, false);
+                    setHearingAidActiveDevice(device, /* stopAudio= */ true);
                     setA2dpActiveDevice(null, /* stopAudio= */ !hasFallbackDevice);
                     setHfpActiveDevice(null);
-                    setLeAudioActiveDevice(null, hasFallbackDevice);
+                    setLeAudioActiveDevice(null, /* stopAudio= */ !hasFallbackDevice);
                 } else {
                     Log.i(TAG, "Found a LE hearing aid fallback device: " + device);
                     if (areSameGroupMembers(recentlyRemovedDevice, device)) {
@@ -1363,11 +1409,11 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                         return true;
                     }
                     if (Flags.admRemoveHapVariables()) {
-                        setLeAudioActiveDevice(device, false);
+                        setLeAudioActiveDevice(device, /* stopAudio= */ true);
                     } else {
                         setLeHearingAidActiveDevice(device);
                     }
-                    setHearingAidActiveDevice(null, hasFallbackDevice);
+                    setHearingAidActiveDevice(null, /* stopAudio= */ !hasFallbackDevice);
                     setA2dpActiveDevice(null, /* stopAudio= */ !hasFallbackDevice);
                     setHfpActiveDevice(null);
                 }
@@ -1428,9 +1474,9 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                         /* If dual mode is enabled, LEA will be made active once all supported
                         classic audio profiles are made active for the device. */
                         if (!Utils.isDualModeAudioEnabled()) {
-                            setLeAudioActiveDevice(null, true);
+                            setLeAudioActiveDevice(null, /* stopAudio= */ false);
                         }
-                        setHearingAidActiveDevice(null, true);
+                        setHearingAidActiveDevice(null, /* stopAudio= */ false);
                         break;
                     } else {
                         Log.i(TAG, "Found a LE audio fallback device: " + device);
@@ -1442,7 +1488,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                             continue;
                         }
 
-                        if (!setLeAudioActiveDevice(device, false)) {
+                        if (!setLeAudioActiveDevice(device, /* stopAudio= */ true)) {
                             return false;
                         }
 
@@ -1450,7 +1496,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                             setA2dpActiveDevice(null, /* stopAudio= */ false);
                             setHfpActiveDevice(null);
                         }
-                        setHearingAidActiveDevice(null, true);
+                        setHearingAidActiveDevice(null, /* stopAudio= */ false);
                         break;
                     }
                 } else {
@@ -1459,9 +1505,9 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                         setHfpActiveDevice(device);
                         setA2dpActiveDevice(a2dpFallbackDevice, /* stopAudio= */ true);
                         if (!Utils.isDualModeAudioEnabled()) {
-                            setLeAudioActiveDevice(null, true);
+                            setLeAudioActiveDevice(null, /* stopAudio= */ false);
                         }
-                        setHearingAidActiveDevice(null, true);
+                        setHearingAidActiveDevice(null, /* stopAudio= */ false);
                         break;
                     } else {
                         Log.i(TAG, "Found an LE audio fallback device: " + device);
@@ -1473,12 +1519,12 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                             continue;
                         }
 
-                        setLeAudioActiveDevice(device, false);
+                        setLeAudioActiveDevice(device, /* stopAudio= */ true);
                         if (!Utils.isDualModeAudioEnabled()) {
                             setA2dpActiveDevice(null, /* stopAudio= */ false);
                             setHfpActiveDevice(null);
                         }
-                        setHearingAidActiveDevice(null, true);
+                        setHearingAidActiveDevice(null, /* stopAudio= */ false);
                         break;
                     }
                 }
@@ -1499,9 +1545,9 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 /* If dual mode is enabled, LEA will be made active once all supported
                 classic audio profiles are made active for the device. */
                 if (!Utils.isDualModeAudioEnabled()) {
-                    setLeAudioActiveDevice(null, true);
+                    setLeAudioActiveDevice(null, /* stopAudio= */ false);
                 }
-                setHearingAidActiveDevice(null, true);
+                setHearingAidActiveDevice(null, /* stopAudio= */ false);
             } else {
                 Log.i(TAG, "Found a LE audio fallback device: " + device);
                 if (areSameGroupMembers(recentlyRemovedDevice, device)) {
@@ -1512,7 +1558,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     return true;
                 }
 
-                if (!setLeAudioActiveDevice(device, false)) {
+                if (!setLeAudioActiveDevice(device, /* stopAudio= */ true)) {
                     return false;
                 }
 
@@ -1520,7 +1566,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     setA2dpActiveDevice(null, /* stopAudio= */ false);
                     setHfpActiveDevice(null);
                 }
-                setHearingAidActiveDevice(null, true);
+                setHearingAidActiveDevice(null, /* stopAudio= */ false);
             }
         } else {
             if (Objects.equals(headsetFallbackDevice, device)) {
@@ -1528,9 +1574,9 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 setHfpActiveDevice(device);
                 setA2dpActiveDevice(a2dpFallbackDevice, /* stopAudio= */ true);
                 if (!Utils.isDualModeAudioEnabled()) {
-                    setLeAudioActiveDevice(null, true);
+                    setLeAudioActiveDevice(null, /* stopAudio= */ false);
                 }
-                setHearingAidActiveDevice(null, true);
+                setHearingAidActiveDevice(null, /* stopAudio= */ false);
             } else {
                 Log.i(TAG, "Found a LE audio fallback device: " + device);
                 if (areSameGroupMembers(recentlyRemovedDevice, device)) {
@@ -1541,12 +1587,12 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                     return true;
                 }
 
-                setLeAudioActiveDevice(device, false);
+                setLeAudioActiveDevice(device, /* stopAudio= */ true);
                 if (!Utils.isDualModeAudioEnabled()) {
                     setA2dpActiveDevice(null, /* stopAudio= */ false);
                     setHfpActiveDevice(null);
                 }
-                setHearingAidActiveDevice(null, true);
+                setHearingAidActiveDevice(null, /* stopAudio= */ false);
             }
         }
         return true;
