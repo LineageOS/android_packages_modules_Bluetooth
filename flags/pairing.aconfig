@@ -249,3 +249,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "non_ctkd_dual_mode_pairing"
+    namespace: "bluetooth"
+    description: "Allow applications to initiate separate pairing for different transports with non-CTKD supporting dual mode devices"
+    bug: "467761282"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
