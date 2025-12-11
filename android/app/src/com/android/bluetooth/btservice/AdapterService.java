@@ -1078,10 +1078,7 @@ public class AdapterService extends Service {
             mDatabaseManager.start(MetadataDatabase.createDatabase(this)); // Migrating
         }
 
-        boolean isAutomotiveDevice =
-                getApplicationContext()
-                        .getPackageManager()
-                        .hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE);
+        var isAutomotiveDevice = Util.isAutomotive(getApplicationContext());
 
         /*
          * Phone policy is specific to phone implementations and hence if a device wants to exclude
