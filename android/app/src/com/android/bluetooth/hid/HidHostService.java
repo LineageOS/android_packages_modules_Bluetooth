@@ -672,6 +672,24 @@ public class HidHostService extends ConnectableProfile {
         BluetoothDevice device = (BluetoothDevice) msg.obj;
         InputDevice inputDevice = getOrCreateInputDevice(device);
 
+        // Set default preferred transport to LE if the device supports both HID and Headtracker and
+        // LE Audio is enabled for the device.
+        if (Flags.hidDefaultPreferredTransport()
+                && inputDevice.mSelectedTransport == TRANSPORT_AUTO) {
+            final ParcelUuid[] uuids = getAdapterService().getRemoteUuids(device);
+            boolean hidSupported = Utils.arrayContains(uuids, BluetoothUuid.HID);
+            boolean headtrackerSupported =
+                    Utils.arrayContains(uuids, HidHostService.ANDROID_HEADTRACKER_UUID);
+
+            if (hidSupported
+                    && headtrackerSupported
+                    && getAdapterService()
+                                    .getProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO)
+                            == BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
+                inputDevice.mSelectedTransport = TRANSPORT_LE;
+            }
+        }
+
         int connectionPolicy = getConnectionPolicy(device);
         if (connectionPolicy != CONNECTION_POLICY_ALLOWED) {
             Log.e(
