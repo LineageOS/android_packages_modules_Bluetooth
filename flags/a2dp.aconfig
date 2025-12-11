@@ -17,16 +17,6 @@ flag {
 }
 
 flag {
-    name: "a2dp_sbc_underflow_recovery"
-    namespace: "bluetooth"
-    description: "Reset the SBC feeding counter to the limiting size"
-    bug: "417543022"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "delay_sniff_subrating"
     namespace: "bluetooth"
     description: "Delay Sniff Subrating as in some remote's timing issues were observed"
