@@ -16,50 +16,59 @@
 
 package com.android.bluetooth.vaps;
 
-import static com.android.bluetooth.vaps.VapsServerStackEvent.EVENT_TYPE_ON_INITIALIZED;
-import static com.android.bluetooth.vaps.VapsServerStackEvent.EVENT_TYPE_ON_START_VA_SESSION;
-import static com.android.bluetooth.vaps.VapsServerStackEvent.EVENT_TYPE_ON_STOP_VA_SESSION;
-
 import static java.util.Objects.requireNonNull;
 
+import android.bluetooth.BluetoothDevice;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.profile.NativeCallback;
 import com.android.internal.annotations.VisibleForTesting;
 
+import java.util.function.Consumer;
+
 /** Voice Assistant Profile Server Native Callback (from native to Java). */
 public class VapsServerNativeCallback extends NativeCallback {
     private static final String TAG = VapsServerNativeCallback.class.getSimpleName();
 
     private final VapsServerService mVapsServerService;
+    private final Handler mHandler;
 
     VapsServerNativeCallback(AdapterService adapterService, VapsServerService vapsServerService) {
         super(adapterService);
         mVapsServerService = requireNonNull(vapsServerService);
+        mHandler = new Handler(Looper.getMainLooper());
+    }
+
+    private void sendMessageToService(Consumer<VapsServerService> action) {
+        mHandler.post(
+                () -> {
+                    if (!mVapsServerService.isAvailable()) {
+                        Log.e(TAG, "Action ignored, service not available.");
+                        return;
+                    }
+                    action.accept(mVapsServerService);
+                });
     }
 
     void onInitialized() {
-        VapsServerStackEvent event = new VapsServerStackEvent(EVENT_TYPE_ON_INITIALIZED);
-        Log.d(TAG, "onInitialized: " + event);
-        mVapsServerService.messageFromNative(event);
+        Log.d(TAG, "onInitialized");
+        sendMessageToService(service -> service.onInitialized());
     }
 
     @VisibleForTesting
     void onStartVaSession(byte[] address) {
-        VapsServerStackEvent event = new VapsServerStackEvent(EVENT_TYPE_ON_START_VA_SESSION);
-        event.device = getDevice(address);
-
-        Log.d(TAG, "onStartVaSession: " + event);
-        mVapsServerService.messageFromNative(event);
+        BluetoothDevice device = getDevice(address);
+        Log.d(TAG, "onStartVaSession: device=" + device);
+        sendMessageToService(service -> service.onStartVaSession(device));
     }
 
     @VisibleForTesting
     void onStopVaSession(byte[] address) {
-        VapsServerStackEvent event = new VapsServerStackEvent(EVENT_TYPE_ON_STOP_VA_SESSION);
-        event.device = getDevice(address);
-
-        Log.d(TAG, "onStopVaSession: " + event);
-        mVapsServerService.messageFromNative(event);
+        BluetoothDevice device = getDevice(address);
+        Log.d(TAG, "onStopVaSession: device=" + device);
+        sendMessageToService(service -> service.onStopVaSession(device));
     }
 }
