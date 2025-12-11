@@ -5386,7 +5386,9 @@ public class BassClientService extends ConnectableProfile {
             // Clear paused broadcast sink if autonomously resumed by remote
             if (Flags.leaudioBroadcastStopBigMonitoringBasedOnBisSync()
                     && !isAnyChannelSelected(getMetadataFromSinkWithBroadcastId(sink, broadcastId))
-                    && isReceiveStateSyncedToBis(receiveState)) {
+                    && isReceiveStateSyncedToBis(receiveState)
+                    && (!Flags.leaudioBroadcastCheckSyncAdvancementOnRemoteResume()
+                            || broadcastSyncIsAdvancing)) {
                 mPausedBroadcastSinks.remove(sink);
                 mSinksToRestoreFromPeer.remove(sink);
                 // If all sinks for this broadcast are actively synced (PA or BIG) and there is no

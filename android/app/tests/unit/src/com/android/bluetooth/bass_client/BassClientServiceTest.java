@@ -7228,7 +7228,10 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_STOP_BIG_MONITORING_BASED_ON_BIS_SYNC)
+    @EnableFlags({
+        Flags.FLAG_LEAUDIO_BROADCAST_STOP_BIG_MONITORING_BASED_ON_BIS_SYNC,
+        Flags.FLAG_LEAUDIO_BROADCAST_CHECK_SYNC_ADVANCEMENT_ON_REMOTE_RESUME
+    })
     public void broadcastMonitoring_stopOnSuspendedByHost() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -7242,6 +7245,11 @@ public class BassClientServiceTest {
         // Inject Receiver State without synchronized PA. With BIG MONITORING,
         // we'd expect this to cause resynchronization attempt.
         // Assure BIG MONITORING is off
+        // Check corner cases, such as a repeated Receive State or losing PA sync before BIS unsync
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1BisNotSelected, /* isPaSynced */ true, /* isBisSynced */ true);
+        injectRemoteSourceStateChanged(
+                mBroadcastMetadata1BisNotSelected, /* isPaSynced */ false, /* isBisSynced */ true);
         injectRemoteSourceStateChanged(
                 mBroadcastMetadata1BisNotSelected, /* isPaSynced */ false, /* isBisSynced */ false);
         verifyStopBroadcastMonitoringWithoutUnsync();
