@@ -23,6 +23,8 @@
 #include <format>
 #include <string>
 
+#include "consteval_helpers.h"
+
 namespace bluetooth {
 
 // This class is representing Bluetooth UUIDs across whole stack.
@@ -46,6 +48,58 @@ public:
   using UUID128Bit = std::array<uint8_t, kNumBytes128>;
 
   Uuid() = default;
+
+  // Consteval constructor to create an UUID from the 16-bit string representation with format
+  // xxxx. Invalid input values will trigger compile time errors.
+  consteval Uuid(const char (&s)[5]) {
+    consteval_assert(s[4] == '\0', "expected nul termination");
+    for (size_t i = 0; i < 4; i++) {
+      consteval_assert(is_hex_char(s[i]), "expected alphanumerical character");
+    }
+
+    uu = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00,
+          0x80, 0x00, 0x00, 0x80, 0x5f, 0x9b, 0x34, 0xfb};
+    uu[2] = hex_to_byte(s[0], s[1]);
+    uu[3] = hex_to_byte(s[2], s[3]);
+  }
+
+  // Consteval constructor to create an UUID from the 32-bit string representation with format
+  // xxxxxxxx. Invalid input values will trigger compile time errors.
+  consteval Uuid(const char (&s)[9]) {
+    consteval_assert(s[8] == '\0', "expected nul termination");
+    for (size_t i = 0; i < 8; i++) {
+      consteval_assert(is_hex_char(s[i]), "expected alphanumerical character");
+    }
+
+    uu = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00,
+          0x80, 0x00, 0x00, 0x80, 0x5f, 0x9b, 0x34, 0xfb};
+    uu[0] = hex_to_byte(s[0], s[1]);
+    uu[1] = hex_to_byte(s[2], s[3]);
+    uu[2] = hex_to_byte(s[4], s[5]);
+    uu[3] = hex_to_byte(s[6], s[7]);
+  }
+
+  // Consteval constructor to create an UUID from the 128-bit string representation with format
+  // xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx. Invalid input values will trigger compile time errors.
+  consteval Uuid(const char (&s)[37]) {
+    consteval_assert(s[36] == '\0', "expected nul termination");
+    for (size_t i = 0; i < 36; i++) {
+      if (i == 8 || i == 13 || i == 18 || i == 23) {
+        consteval_assert(s[i] == '-', "expected hyphens");
+      } else {
+        consteval_assert(is_hex_char(s[i]), "expected alphanumerical character");
+      }
+    }
+
+    uu = {
+            hex_to_byte(s[0], s[1]),   hex_to_byte(s[2], s[3]),   hex_to_byte(s[4], s[5]),
+            hex_to_byte(s[6], s[7]),   hex_to_byte(s[9], s[10]),  hex_to_byte(s[11], s[12]),
+            hex_to_byte(s[14], s[15]), hex_to_byte(s[16], s[17]), hex_to_byte(s[19], s[20]),
+            hex_to_byte(s[21], s[22]), hex_to_byte(s[24], s[25]), hex_to_byte(s[26], s[27]),
+            hex_to_byte(s[28], s[29]), hex_to_byte(s[30], s[31]), hex_to_byte(s[32], s[33]),
+            hex_to_byte(s[34], s[35]),
+    };
+  }
 
   // Returns the shortest possible representation of this UUID in bytes. Either
   // kNumBytes16, kNumBytes32, or kNumBytes128
@@ -116,6 +170,10 @@ private:
 
   // Network-byte-ordered ID (Big Endian).
   UUID128Bit uu;
+
+  friend class UuidTest_ConstructorUuid16_Test;
+  friend class UuidTest_ConstructorUuid32_Test;
+  friend class UuidTest_ConstructorUuid128_Test;
 };
 
 }  // namespace bluetooth
