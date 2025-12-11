@@ -35,9 +35,8 @@ using bluetooth::log::warn;
 static const char kPropertyAndroidAPILevel[] = "ro.build.version.sdk";
 static const uint32_t kPropertyAndroidAPILevelDefault = 0;
 
-const Uuid ANDROID_INFORMATION_SERVICE_UUID =
-        Uuid::FromString(ANDROID_INFORMATION_SERVICE_UUID_STRING);
-const Uuid GATT_UUID_AIS_API_LEVEL = Uuid::FromString(GATT_UUID_AIS_API_LEVEL_STRING);
+constinit Uuid ANDROID_INFORMATION_SERVICE_UUID(ANDROID_INFORMATION_SERVICE_UUID_STRING);
+constinit Uuid GATT_UUID_AIS_API_LEVEL(GATT_UUID_AIS_API_LEVEL_STRING);
 
 /* LE AIS attribute handle */
 static uint16_t attr_api_level_handle;

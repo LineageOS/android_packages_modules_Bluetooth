@@ -360,11 +360,11 @@ static bool btif_device_supports_classic_hid(const RawAddress& bd_addr) {
 }
 
 static bool btif_device_supports_hearing_aid(const RawAddress& bd_addr) {
-  return btif_device_supports_profile(bd_addr, Uuid::FromString("FDF0"));
+  return btif_device_supports_profile(bd_addr, Uuid("FDF0"));
 }
 
 static bool btif_device_supports_le_audio(const RawAddress& bd_addr) {
-  return btif_device_supports_profile(bd_addr, Uuid::FromString("184E"));
+  return btif_device_supports_profile(bd_addr, Uuid("184E"));
 }
 
 /*******************************************************************************

@@ -123,16 +123,16 @@ constexpr char kBtmLogTagSdp[] = "SDP";
  *  Constants & Macros
  *****************************************************************************/
 
-const Uuid UUID_HEARING_AID = Uuid::FromString("FDF0");
-const Uuid UUID_VC = Uuid::FromString("1844");
-const Uuid UUID_CSIS = Uuid::FromString("1846");
-const Uuid UUID_LE_AUDIO = Uuid::FromString("184E");
-const Uuid UUID_LE_MIDI = Uuid::FromString("03B80E5A-EDE8-4B33-A751-6CE34EC4C700");
-const Uuid UUID_HAS = Uuid::FromString("1854");
-const Uuid UUID_BASS = Uuid::FromString("184F");
-const Uuid UUID_BATTERY = Uuid::FromString("180F");
-const Uuid UUID_A2DP_SINK = Uuid::FromString("110B");
-const Uuid UUID_GMAP = Uuid::FromString("1858");
+constinit Uuid UUID_HEARING_AID("FDF0");
+constinit Uuid UUID_VC("1844");
+constinit Uuid UUID_CSIS("1846");
+constinit Uuid UUID_LE_AUDIO("184E");
+constinit Uuid UUID_LE_MIDI("03B80E5A-EDE8-4B33-A751-6CE34EC4C700");
+constinit Uuid UUID_HAS("1854");
+constinit Uuid UUID_BASS("184F");
+constinit Uuid UUID_BATTERY("180F");
+constinit Uuid UUID_A2DP_SINK("110B");
+constinit Uuid UUID_GMAP("1858");
 
 #define BTIF_DM_MAX_SDP_ATTEMPTS_AFTER_PAIRING 2
 
