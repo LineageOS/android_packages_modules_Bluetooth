@@ -36,6 +36,7 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.R;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.util.DevicePolicyUtils;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.Operation;
@@ -359,11 +360,12 @@ public class BluetoothPbapVcardManager {
                                     null,
                                     Phone.CONTACT_ID);
 
+            // TODO: remove this when the flag is removed
             ArrayList<String> contactNameIdList = new ArrayList<>();
-            appendDistinctNameIdList(
-                    contactNameIdList,
-                    mContext.getString(android.R.string.unknownName),
-                    contactCursor);
+            String defaultName = mContext.getString(android.R.string.unknownName);
+            if (!Flags.pbapCorrectFilteredIndex()) {
+                appendDistinctNameIdList(contactNameIdList, defaultName, contactCursor);
+            }
 
             if (contactCursor != null) {
                 if (!composer.init(contactCursor)) {
@@ -373,7 +375,9 @@ public class BluetoothPbapVcardManager {
                 if (idColumn < 0) {
                     idColumn = contactCursor.getColumnIndex(Contacts._ID);
                 }
+                int nameColumn = contactCursor.getColumnIndex(Data.DISPLAY_NAME);
 
+                // TODO: remove i when the flag is removed
                 int i = 0;
                 contactCursor.moveToFirst();
                 while (!contactCursor.isAfterLast()) {
@@ -399,11 +403,13 @@ public class BluetoothPbapVcardManager {
                         pbSize--;
                         continue;
                     } else {
-                        String name = getNameFromVCard(vcard);
-                        if (TextUtils.isEmpty(name)) {
-                            name = mContext.getString(android.R.string.unknownName);
+                        if (Flags.pbapCorrectFilteredIndex()) {
+                            nameList.add(
+                                    createDistinctNameId(
+                                            defaultName, idColumn, nameColumn, contactCursor));
+                        } else {
+                            nameList.add(contactNameIdList.get(i));
                         }
-                        nameList.add(contactNameIdList.get(i));
                     }
                     i++;
                 }
@@ -1300,14 +1306,24 @@ public class BluetoothPbapVcardManager {
         final int nameColumn = cursor.getColumnIndex(Data.DISPLAY_NAME);
         cursor.moveToPosition(-1);
         while (cursor.moveToNext()) {
-            final long contactId =
-                    cursor.getLong(contactIdColumn != -1 ? contactIdColumn : idColumn);
-            String displayName = nameColumn != -1 ? cursor.getString(nameColumn) : defaultName;
-            if (TextUtils.isEmpty(displayName)) {
-                displayName = defaultName;
-            }
+            String newString;
+            if (Flags.pbapCorrectFilteredIndex()) {
+                newString =
+                        createDistinctNameId(
+                                defaultName,
+                                contactIdColumn != -1 ? contactIdColumn : idColumn,
+                                nameColumn,
+                                cursor);
+            } else {
+                final long contactId =
+                        cursor.getLong(contactIdColumn != -1 ? contactIdColumn : idColumn);
+                String displayName = nameColumn != -1 ? cursor.getString(nameColumn) : defaultName;
+                if (TextUtils.isEmpty(displayName)) {
+                    displayName = defaultName;
+                }
 
-            String newString = displayName + "," + contactId;
+                newString = displayName + "," + contactId;
+            }
             if (!resultList.contains(newString)) {
                 resultList.add(newString);
             }
@@ -1315,6 +1331,17 @@ public class BluetoothPbapVcardManager {
         for (String nameId : resultList) {
             Log.i(TAG, "appendDistinctNameIdList result: " + nameId);
         }
+    }
+
+    private static String createDistinctNameId(
+            String defaultName, int idColumn, int nameColumn, Cursor cursor) {
+        long contactId = cursor.getLong(idColumn);
+        String displayName = nameColumn != -1 ? cursor.getString(nameColumn) : defaultName;
+        if (TextUtils.isEmpty(displayName)) {
+            displayName = defaultName;
+        }
+
+        return displayName + "," + contactId;
     }
 
     @VisibleForTesting
