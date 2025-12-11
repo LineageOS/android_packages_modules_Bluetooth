@@ -1213,6 +1213,14 @@ BtStatus btif_hh_connect(const AclLinkSpec& link_spec) {
     return BtifStatus();
   }
 
+  if (com_android_bluetooth_flags_ignore_duplicate_hid_connect_request() &&
+      std::find(btif_hh_cb.new_connection_requests.begin(),
+                btif_hh_cb.new_connection_requests.end(),
+                link_spec) != btif_hh_cb.new_connection_requests.end()) {
+    log::debug("Already connecting {}", link_spec);
+    return BtifStatus();
+  }
+
   if (p_dev) {
     p_dev->state = BTHH_CONN_STATE_CONNECTING;
   }
