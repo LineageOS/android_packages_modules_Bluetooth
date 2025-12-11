@@ -21,7 +21,6 @@ import android.content.Context
 import android.os.IBinder
 import android.os.Looper
 import android.os.UserHandle
-import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.util.TimeProvider
 import com.android.server.bluetooth.airplane.initialize as initializeAirplaneMode
 import com.android.server.bluetooth.satellite.initialize as initializeSatelliteMode
@@ -36,22 +35,17 @@ class BluetoothSupervisor(
     bluetoothComponent: BluetoothComponent,
 ) {
     private val bms: BluetoothManagerService
+    private val hciInstance = BluetoothHciInstance()
+
     private var mInitialized = false
     val api: BluetoothManagerServiceApi = Api(BmsProvider())
 
     init {
-        val hciInstance =
-            if (Flags.hciInstanceNameUseInjected()) {
-                BluetoothHciInstance().getInstance()
-            } else {
-                "default"
-            }
-
         bms =
             BluetoothManagerService(
                 context,
                 looper,
-                hciInstance,
+                hciInstance.getInstance(),
                 bluetoothComponent,
                 TimeProvider.systemClock,
             )
