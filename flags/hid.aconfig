@@ -170,3 +170,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "ignore_duplicate_hid_connect_request"
+    namespace: "bluetooth"
+    description: "Ignore duplicate HID connection requests"
+    bug: "467422920"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
