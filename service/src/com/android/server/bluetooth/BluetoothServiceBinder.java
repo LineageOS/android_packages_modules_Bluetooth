@@ -481,8 +481,8 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
         requireNonNull(pkg);
         var tag = source.getAttributionTag();
-        if ("android".equals(pkg) && tag == null) {
-            Log.wtf(TAG, "System caller must set the attribution tag."); // TODO throw error
+        if ("android".equals(pkg)) {
+            return pkg + "/" + requireNonNull(tag);
         }
         if (tag != null) {
             return pkg + "/" + tag;
