@@ -455,29 +455,23 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *   <li>{@link #BOND_LOSS_REASON_LE_INCOMING_PAIRING}
      * </ul>
      */
-    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
     @SuppressLint("ActionValue")
     public static final String EXTRA_BOND_LOSS_REASON =
             "android.bluetooth.device.extra.BOND_LOSS_REASON";
 
     /** Indicates the reason for the bond loss is unknown. */
-    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
     public static final int BOND_LOSS_REASON_UNKNOWN = 0;
 
     /** Indicates the reason for the bond loss is BREDR authentication failure. */
-    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
     public static final int BOND_LOSS_REASON_BREDR_AUTH_FAILURE = 1;
 
     /** Indicates the reason for the bond loss is BREDR pairing failure. */
-    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
     public static final int BOND_LOSS_REASON_BREDR_INCOMING_PAIRING = 2;
 
     /** Indicates the reason for the bond loss is LE encryption failure. */
-    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
     public static final int BOND_LOSS_REASON_LE_ENCRYPT_FAILURE = 3;
 
     /** Indicates the reason for the bond loss is LE pairing failure. */
-    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
     public static final int BOND_LOSS_REASON_LE_INCOMING_PAIRING = 4;
 
     /**

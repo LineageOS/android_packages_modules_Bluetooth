@@ -578,11 +578,11 @@ package android.bluetooth {
     field public static final int ADDRESS_TYPE_UNKNOWN = 65535; // 0xffff
     field public static final int BOND_BONDED = 12; // 0xc
     field public static final int BOND_BONDING = 11; // 0xb
-    field @FlaggedApi("com.android.bluetooth.flags.add_bond_loss_reason") public static final int BOND_LOSS_REASON_BREDR_AUTH_FAILURE = 1; // 0x1
-    field @FlaggedApi("com.android.bluetooth.flags.add_bond_loss_reason") public static final int BOND_LOSS_REASON_BREDR_INCOMING_PAIRING = 2; // 0x2
-    field @FlaggedApi("com.android.bluetooth.flags.add_bond_loss_reason") public static final int BOND_LOSS_REASON_LE_ENCRYPT_FAILURE = 3; // 0x3
-    field @FlaggedApi("com.android.bluetooth.flags.add_bond_loss_reason") public static final int BOND_LOSS_REASON_LE_INCOMING_PAIRING = 4; // 0x4
-    field @FlaggedApi("com.android.bluetooth.flags.add_bond_loss_reason") public static final int BOND_LOSS_REASON_UNKNOWN = 0; // 0x0
+    field public static final int BOND_LOSS_REASON_BREDR_AUTH_FAILURE = 1; // 0x1
+    field public static final int BOND_LOSS_REASON_BREDR_INCOMING_PAIRING = 2; // 0x2
+    field public static final int BOND_LOSS_REASON_LE_ENCRYPT_FAILURE = 3; // 0x3
+    field public static final int BOND_LOSS_REASON_LE_INCOMING_PAIRING = 4; // 0x4
+    field public static final int BOND_LOSS_REASON_UNKNOWN = 0; // 0x0
     field public static final int BOND_NONE = 10; // 0xa
     field @NonNull public static final android.os.Parcelable.Creator<android.bluetooth.BluetoothDevice> CREATOR;
     field public static final int DEVICE_TYPE_CLASSIC = 1; // 0x1
@@ -594,7 +594,7 @@ package android.bluetooth {
     field public static final int ENCRYPTION_ALGORITHM_NONE = 0; // 0x0
     field @FlaggedApi("com.android.bluetooth.flags.link_status_api") public static final int ENCRYPTION_ALGORITHM_UNKNOWN = 3; // 0x3
     field public static final int ERROR = -2147483648; // 0x80000000
-    field @FlaggedApi("com.android.bluetooth.flags.add_bond_loss_reason") public static final String EXTRA_BOND_LOSS_REASON = "android.bluetooth.device.extra.BOND_LOSS_REASON";
+    field public static final String EXTRA_BOND_LOSS_REASON = "android.bluetooth.device.extra.BOND_LOSS_REASON";
     field public static final String EXTRA_BOND_STATE = "android.bluetooth.device.extra.BOND_STATE";
     field public static final String EXTRA_CLASS = "android.bluetooth.device.extra.CLASS";
     field public static final String EXTRA_DEVICE = "android.bluetooth.device.extra.DEVICE";
