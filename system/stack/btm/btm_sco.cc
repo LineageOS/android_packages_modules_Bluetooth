@@ -31,6 +31,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/os_metrics.h>
 #include <bluetooth/types/address.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <cstring>
@@ -179,10 +180,10 @@ void tSCO_CB::Free() {
   (HCI_PKT_TYPES_MASK_HV1 | HCI_PKT_TYPES_MASK_HV2 | HCI_PKT_TYPES_MASK_HV3)
 
 /* Mask defining only the SCO types of an esco packet type */
-#define BTM_ESCO_PKT_TYPE_MASK \
+#define BTM_ESCO_PKT_SCO_TYPE_MASK \
   (ESCO_PKT_TYPES_MASK_HV1 | ESCO_PKT_TYPES_MASK_HV2 | ESCO_PKT_TYPES_MASK_HV3)
 
-#define BTM_ESCO_2_SCO(escotype) ((uint16_t)(((escotype) & BTM_ESCO_PKT_TYPE_MASK) << 5))
+#define BTM_ESCO_2_SCO(escotype) ((uint16_t)(((escotype) & BTM_ESCO_PKT_SCO_TYPE_MASK) << 5))
 
 /* Define masks for supported and exception 2.0 SCO packet types */
 #define BTM_SCO_SUPPORTED_PKTS_MASK                                              \
@@ -591,8 +592,15 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle, enh_esco_params
       const bool remote_supports_sc = BTM_PeerSupportsSecureConnections(bd_addr);
 
       if (local_supports_sc && remote_supports_sc) {
-        temp_packet_types &= ~(BTM_SCO_PKT_TYPE_MASK);
-        if (temp_packet_types == 0) {
+        if (com_android_bluetooth_flags_fix_sco_type_mask_check()) {
+          temp_packet_types &= ~(BTM_ESCO_PKT_SCO_TYPE_MASK);
+        } else {
+          temp_packet_types &= ~(BTM_SCO_PKT_TYPE_MASK);
+        }
+
+        if ((com_android_bluetooth_flags_fix_sco_type_mask_check() &&
+             temp_packet_types == BTM_SCO_EXCEPTION_PKTS_MASK) ||
+            (!com_android_bluetooth_flags_fix_sco_type_mask_check() && temp_packet_types == 0)) {
           log::error(
                   "SCO connection cannot support any packet types for "
                   "acl_handle:0x{:04x}",
