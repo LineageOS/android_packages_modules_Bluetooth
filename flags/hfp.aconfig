@@ -173,3 +173,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "hfp_avoid_deadlock"
+    namespace: "bluetooth"
+    description: "do the task outside synchronized to avoid deadlock with Audio Fwk"
+    bug: "462377292"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
