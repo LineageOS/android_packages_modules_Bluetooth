@@ -393,12 +393,16 @@ void RFCOMM_CongestionStatusInd(uint16_t lcid, bool is_congested) {
  *
  ******************************************************************************/
 tRFC_MCB* rfc_find_lcid_mcb(uint16_t lcid) {
-  tRFC_MCB* p_mcb = rfc_lcid_mcb[lcid];
-  if (p_mcb != nullptr) {
-    if (p_mcb->lcid != lcid) {
-      log::warn("LCID reused lcid=:0x{:x}, current_lcid=0x{:x}", lcid, p_mcb->lcid);
-      return nullptr;
-    }
+  auto it = rfc_lcid_mcb.find(lcid);
+  if (it == rfc_lcid_mcb.end()) {
+    log::warn("no mcb saved for lcid:{}", lcid);
+    return nullptr;
+  }
+
+  tRFC_MCB* p_mcb = it->second;
+  if (p_mcb->lcid != lcid) {
+    log::warn("LCID reused lcid=:0x{:x}, current_lcid=0x{:x}", lcid, p_mcb->lcid);
+    return nullptr;
   }
   return p_mcb;
 }
@@ -407,10 +411,13 @@ tRFC_MCB* rfc_find_lcid_mcb(uint16_t lcid) {
  *
  * Function         rfc_save_lcid_mcb
  *
- * Description      This function returns MCB block supporting local cid
+ * Description      This function saves a (lcid, p_mcb) mapping to rfc_lcid_mcb
  *
  ******************************************************************************/
 void rfc_save_lcid_mcb(tRFC_MCB* p_mcb, uint16_t lcid) {
-  auto mcb_index = static_cast<size_t>(lcid);
-  rfc_lcid_mcb[mcb_index] = p_mcb;
+  if (p_mcb == nullptr) {
+    rfc_lcid_mcb.erase(lcid);
+    return;
+  }
+  rfc_lcid_mcb[lcid] = p_mcb;
 }
