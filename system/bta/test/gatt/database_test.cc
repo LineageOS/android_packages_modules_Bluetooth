@@ -179,14 +179,18 @@ TEST(GattCacheTest, stored_attribute_to_binary_characteristic_test) {
                                        .uuid = Uuid::FromString("2a00")}},
   };
 
+  // There is one byte of padding at offset 18 in the union. This is causing the test to fail on
+  // some platforms, so manually clear the byte. An alternative option would be to explicitly
+  // declare the padding byte in the union.
+  reinterpret_cast<uint8_t*>(&attr)[19] = 0x00;
+
   constexpr size_t len = sizeof(StoredAttribute);
   // clang-format off
   uint8_t binary_form[len] = {
-      /*handle */ 0x02, 0x00,
+      /* handle */ 0x02, 0x00,
       /* type */ 0x00, 0x00, 0x28, 0x03, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB,
       /* properties */ 0x02,
-      /* after properties there is one byte padding. This might cause troube
-         on other platforms, investigate if it's ever a problem */ 0x00,
+      /* padding byte */ 0x00,
       /* value handle */ 0x03, 0x00,
       /* uuid */ 0x00, 0x00, 0x2a, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB};
   // clang-format on
