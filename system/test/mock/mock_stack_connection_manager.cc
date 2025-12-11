@@ -61,6 +61,9 @@ bool connection_manager::remove_unconditional(const RawAddress& /* address */) {
   inc_func_call_count(__func__);
   return false;
 }
+void connection_manager::on_removed_from_accept_list(const RawAddress& /* address */) {
+  inc_func_call_count(__func__);
+}
 std::set<tAPP_ID> connection_manager::get_apps_connecting_to(const RawAddress& /* address */) {
   inc_func_call_count(__func__);
   return std::set<tAPP_ID>();

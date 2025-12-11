@@ -104,7 +104,7 @@ struct tAPPS_CONNECTING {
 
 namespace {
 // Maps address to apps trying to connect to it
-std::map<RawAddress, tAPPS_CONNECTING> bgconn_dev; // Guarded by bgconn_dev_mutex
+std::map<RawAddress, tAPPS_CONNECTING> bgconn_dev;  // Guarded by bgconn_dev_mutex
 std::recursive_mutex bgconn_dev_mutex;
 
 int num_of_targeted_announcements_users(void) {
@@ -358,6 +358,16 @@ bool remove_unconditional(const RawAddress& address) {
 
   ACL_IgnoreLeConnectionFrom(BTM_Sec_GetAddressWithType(address));
   return count > 0;
+}
+
+/** Marks the specified address as removed from the Accept List, enabling reconnection */
+void on_removed_from_accept_list(const RawAddress& address) {
+  auto it = bgconn_dev.find(address);
+  if (it == bgconn_dev.end()) {
+    log::warn("address {} is not found", address);
+    return;
+  }
+  it->second.is_in_accept_list = false;
 }
 
 /** Remove device from the background connection device list or listening to

@@ -58,6 +58,8 @@ bool background_connect_remove(tAPP_ID app_id, const RawAddress& address);
 
 bool remove_unconditional(const RawAddress& address);
 
+void on_removed_from_accept_list(const RawAddress& address);
+
 void reset(bool after_reset);
 
 void on_app_deregistered(tAPP_ID app_id);
