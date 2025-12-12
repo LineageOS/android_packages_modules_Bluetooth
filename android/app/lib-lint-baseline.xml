@@ -1,97 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.4.0-alpha08" type="baseline" client="" dependencies="true" name="" variant="all" version="8.4.0-alpha08">
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 36.1 (current min is 36): `android.media.AudioDeviceVolumeManager#setDeviceAbsoluteMultiVolumeBehavior`"
-        errorLine1="                .setDeviceAbsoluteMultiVolumeBehavior("
-        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="275"
-            column="18"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 37.1 (current min is 36): `android.media.BluetoothProfileConnectionInfo#createHfpInfo`"
-        errorLine1="                                BluetoothProfileConnectionInfo.createHfpInfo());"
-        errorLine2="                                                               ~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1126"
-            column="64"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 37.1 (current min is 36): `android.media.BluetoothProfileConnectionInfo#createHfpInfo`"
-        errorLine1="                                    BluetoothProfileConnectionInfo.createHfpInfo());"
-        errorLine2="                                                                   ~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1207"
-            column="68"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 37.1 (current min is 36): `android.media.BluetoothProfileConnectionInfo#createHfpInfo`"
-        errorLine1="                                    BluetoothProfileConnectionInfo.createHfpInfo());"
-        errorLine2="                                                                   ~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1225"
-            column="68"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 37.1 (current min is 36): `android.media.BluetoothProfileConnectionInfo#createHfpInfo`"
-        errorLine1="                                    BluetoothProfileConnectionInfo.createHfpInfo());"
-        errorLine2="                                                                   ~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="1255"
-            column="68"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Class requires API level 36.1 (current min is 36): `android.media.AudioDeviceVolumeManager.OnAudioDeviceVolumeChangedListener`"
-        errorLine1="            implements AudioDeviceVolumeManager.OnAudioDeviceVolumeChangedListener {"
-        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
-            line="2243"
-            column="24"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 37.1 (current min is 36): `android.media.AudioManager#isScoManagedByAudio`"
-        errorLine1="            boolean isScoManagedByAudio = mAudioManager.isScoManagedByAudio();"
-        errorLine2="                                                        ~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetSystemInterface.java"
-            line="391"
-            column="57"/>
-    </issue>
-
-    <issue
-        id="DefaultLocale"
-        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
-        errorLine1="            return String.format("
-        errorLine2="                   ^">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/mapclient/MapClientContent.java"
-            line="908"
-            column="20"/>
-    </issue>
+<issues format="6" by="lint 8.13.0-alpha04" type="baseline" client="" dependencies="true" name="" variant="all" version="8.13.0-alpha04">
 
     <issue
         id="GestureBackNavigation"
-        message="If intercepting back events, this should be handled through the registration of callbacks on the window level; Please see https://developer.android.com/about/versions/13/features/predictive-back-gesture"
+        message="If intercepting back events, this should be handled through the registration of callbacks; see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture"
         errorLine1="        if (keyCode == KeyEvent.KEYCODE_BACK) {"
         errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -102,7 +14,7 @@
 
     <issue
         id="GestureBackNavigation"
-        message="If intercepting back events, this should be handled through the registration of callbacks on the window level; Please see https://developer.android.com/about/versions/13/features/predictive-back-gesture"
+        message="If intercepting back events, this should be handled through the registration of callbacks; see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture"
         errorLine1="        if (keyCode == KeyEvent.KEYCODE_BACK) {"
         errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~">
         <location
@@ -145,14 +57,69 @@
     </issue>
 
     <issue
-        id="GuardedLogInvocation"
-        message="Do not guard log invocations with if blocks using log enforcement variables or isLoggable(). The Log framework does this check for you. Remove the surrounding if block and call to log completely unguarded"
-        errorLine1="        if (Log.isLoggable(TAG, Log.DEBUG)) {"
-        errorLine2="        ^">
+        id="DefaultLocale"
+        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
+        errorLine1="            return String.format("
+        errorLine2="                   ^">
         <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/a2dp/A2dpStateMachine.java"
-            line="678"
-            column="9"/>
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/mapclient/MapClientContent.java"
+            line="907"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 36.1 (current min is 36): `android.media.AudioDeviceVolumeManager#setDeviceAbsoluteMultiVolumeBehavior`"
+        errorLine1="                .setDeviceAbsoluteMultiVolumeBehavior("
+        errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
+            line="285"
+            column="18"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level CUR_DEVELOPMENT/10000 (current min is 36): `android.media.BluetoothProfileConnectionInfo#createHfpInfo`"
+        errorLine1="                                BluetoothProfileConnectionInfo.createHfpInfo());"
+        errorLine2="                                                               ~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
+            line="1128"
+            column="64"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level CUR_DEVELOPMENT/10000 (current min is 36): `android.media.BluetoothProfileConnectionInfo#createHfpInfo`"
+        errorLine1="                                BluetoothProfileConnectionInfo.createHfpInfo());"
+        errorLine2="                                                               ~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
+            line="1200"
+            column="64"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level 36.1 (current min is 36): `android.media.AudioDeviceVolumeManager.OnAudioDeviceVolumeChangedListener`"
+        errorLine1="            implements AudioDeviceVolumeManager.OnAudioDeviceVolumeChangedListener {"
+        errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetService.java"
+            line="2256"
+            column="24"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level CUR_DEVELOPMENT/10000 (current min is 36): `android.media.AudioManager#isScoManagedByAudio`"
+        errorLine1="            boolean isScoManagedByAudio = mAudioManager.isScoManagedByAudio();"
+        errorLine2="                                                        ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hfp/HeadsetSystemInterface.java"
+            line="391"
+            column="57"/>
     </issue>
 
     <issue
@@ -162,7 +129,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/a2dp/A2dpStateMachine.java"
-            line="678"
+            line="635"
             column="9"/>
     </issue>
 
@@ -173,7 +140,18 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/a2dp/A2dpStateMachine.java"
-            line="678"
+            line="635"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="GuardedLogInvocation"
+        message="Do not guard log invocations with if blocks using log enforcement variables or isLoggable(). The Log framework does this check for you. Remove the surrounding if block and call to log completely unguarded"
+        errorLine1="        if (Log.isLoggable(TAG, Log.DEBUG)) {"
+        errorLine2="        ^">
+        <location
+            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/a2dp/A2dpStateMachine.java"
+            line="635"
             column="9"/>
     </issue>
 
@@ -184,7 +162,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="682"
+            line="679"
             column="9"/>
     </issue>
 
@@ -195,7 +173,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="682"
+            line="679"
             column="9"/>
     </issue>
 
@@ -206,7 +184,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="682"
+            line="679"
             column="9"/>
     </issue>
 
@@ -217,7 +195,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="682"
+            line="679"
             column="9"/>
     </issue>
 
@@ -250,7 +228,7 @@
         errorLine2="            ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/audio_util/MediaPlayerWrapper.java"
-            line="573"
+            line="572"
             column="13"/>
     </issue>
 
@@ -305,7 +283,7 @@
         errorLine2="                                                                    ~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppTransferActivity.java"
-            line="229"
+            line="228"
             column="69"/>
     </issue>
 
@@ -338,7 +316,7 @@
         errorLine2="                    ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientService.java"
-            line="3424"
+            line="3491"
             column="21"/>
     </issue>
 
@@ -349,7 +327,7 @@
         errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientService.java"
-            line="3642"
+            line="3709"
             column="18"/>
     </issue>
 
@@ -360,7 +338,7 @@
         errorLine2="                 ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="438"
+            line="445"
             column="18"/>
     </issue>
 
@@ -371,7 +349,7 @@
         errorLine2="                 ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="491"
+            line="498"
             column="18"/>
     </issue>
 
@@ -382,7 +360,7 @@
         errorLine2="                   ~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="1121"
+            line="1138"
             column="20"/>
     </issue>
 
@@ -393,7 +371,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2260"
+            line="2293"
             column="24"/>
     </issue>
 
@@ -404,7 +382,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2265"
+            line="2298"
             column="24"/>
     </issue>
 
@@ -415,7 +393,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2273"
+            line="2306"
             column="24"/>
     </issue>
 
@@ -426,7 +404,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2278"
+            line="2311"
             column="24"/>
     </issue>
 
@@ -437,7 +415,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2283"
+            line="2316"
             column="24"/>
     </issue>
 
@@ -448,7 +426,7 @@
         errorLine2="                       ~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2288"
+            line="2321"
             column="24"/>
     </issue>
 
@@ -459,7 +437,7 @@
         errorLine2="                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2293"
+            line="2326"
             column="24"/>
     </issue>
 
@@ -470,7 +448,7 @@
         errorLine2="                    ~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2299"
+            line="2332"
             column="21"/>
     </issue>
 
@@ -481,7 +459,7 @@
         errorLine2="                    ~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/bass_client/BassClientStateMachine.java"
-            line="2304"
+            line="2337"
             column="21"/>
     </issue>
 
@@ -613,7 +591,7 @@
         errorLine2="                 ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppTransfer.java"
-            line="593"
+            line="592"
             column="18"/>
     </issue>
 
@@ -624,7 +602,7 @@
         errorLine2="                     ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppTransfer.java"
-            line="652"
+            line="651"
             column="22"/>
     </issue>
 
@@ -635,7 +613,7 @@
         errorLine2="                    ~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppTransfer.java"
-            line="701"
+            line="700"
             column="21"/>
     </issue>
 
@@ -822,7 +800,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/RemoteDevices.java"
-            line="2548"
+            line="2544"
             column="25"/>
     </issue>
 
@@ -871,58 +849,14 @@
     </issue>
 
     <issue
-        id="Wakelock"
-        message="The `release()` call is not always reached (because of a possible exception in the path acquire() → d() → removeMessages() → sendMessageDelayed() → obtainMessage() → v() → exit; use try/finally to ensure `release` is always called)"
-        errorLine1="                        mWakeLock.release();"
-        errorLine2="                                  ~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/map/BluetoothMapService.java"
-            line="415"
-            column="35"/>
-    </issue>
-
-    <issue
-        id="Wakelock"
-        message="The `release()` call is not always reached (because of a possible exception in the path acquire() → try → sleep() → if → ! → then → connect() → loop → if → ! → then → doSend() → exit; use try/finally to ensure `release` is always called)"
-        errorLine1="                mWakeLock.release();"
-        errorLine2="                          ~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/opp/BluetoothOppObexClientSession.java"
-            line="180"
-            column="27"/>
-    </issue>
-
-    <issue
-        id="Wakelock"
-        message="The `release()` call is not always reached (because of a possible exception in the path acquire() → w() → removeMessages() → sendMessageDelayed() → obtainMessage() → exit; use try/finally to ensure `release` is always called)"
-        errorLine1="                        mWakeLock.release();"
-        errorLine2="                                  ~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/pbap/BluetoothPbapService.java"
-            line="533"
-            column="35"/>
-    </issue>
-
-    <issue
-        id="Wakelock"
-        message="The `release()` call is not always reached (because of a possible exception in the path acquire() → d() → removeMessages() → sendMessageDelayed() → obtainMessage() → v() → exit; use try/finally to ensure `release` is always called)"
-        errorLine1="                                mWakeLock.release();"
-        errorLine2="                                          ~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
-            line="498"
-            column="43"/>
-    </issue>
-
-    <issue
         id="WakelockTimeout"
         message="Provide a timeout when requesting a wakelock with `PowerManager.Wakelock.acquire(long timeout)`. This will ensure the OS will cleanup any wakelocks that last longer than you intend, and will save your user&apos;s battery."
-        errorLine1="                mWakeLock.acquire();"
-        errorLine2="                ~~~~~~~~~~~~~~~~~~~">
+        errorLine1="            mWakeLock.acquire();"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/AdapterService.java"
-            line="4436"
-            column="17"/>
+            line="4476"
+            column="13"/>
     </issue>
 
     <issue
@@ -998,7 +932,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
-            line="487"
+            line="486"
             column="33"/>
     </issue>
 
@@ -1009,7 +943,7 @@
         errorLine2="        ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/btservice/AdapterService.java"
-            line="1122"
+            line="1118"
             column="9"/>
     </issue>
 
@@ -1033,17 +967,6 @@
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/audio_util/mockable/MediaPlayerWrapperFactory.java"
             line="32"
             column="13"/>
-    </issue>
-
-    <issue
-        id="VectorPath"
-        message="Very long vector path (1535 characters), which is bad for performance. Considering reducing precision, removing minor details or rasterizing vector."
-        errorLine1="        android:pathData=&quot;M450,472.15L277.08,645.08Q268.77,653.38 256.19,653.58Q243.62,653.77 234.92,645.08Q226.23,636.38 226.23,624Q226.23,611.62 234.92,602.92L437.85,400L234.92,197.08Q226.62,188.77 226.42,176.19Q226.23,163.62 234.92,154.92Q243.62,146.23 256,146.23Q268.38,146.23 277.08,154.92L450,327.85L450,71.23Q450,54.77 461.04,44.62Q472.08,34.46 486.15,34.46Q493,34.46 499.42,37.08Q505.85,39.69 511.46,45.31L668.84,202.69Q674.46,208.31 676.77,214.54Q679.08,220.77 679.08,228Q679.08,235.23 676.77,241.46Q674.46,247.69 668.84,253.31L522.15,400L668.84,546.69Q674.46,552.31 676.77,558.54Q679.08,564.77 679.08,572Q679.08,579.23 676.77,585.46Q674.46,591.69 668.84,597.31L511.46,754.69Q505.85,760.31 499.42,762.92Q493,765.54 486.15,765.54Q472.08,765.54 461.04,755.38Q450,745.23 450,728.77L450,472.15ZM510,670.62L609.85,572L510,472.15L510,670.62ZM510,327.85L609.85,228L510,129.38L510,327.85ZM320,955.38Q305.31,955.38 294.96,945.04Q284.62,934.69 284.62,920Q284.62,905.31 294.96,894.96Q305.31,884.62 320,884.62Q334.69,884.62 345.04,894.96Q355.38,905.31 355.38,920Q355.38,934.69 345.04,945.04Q334.69,955.38 320,955.38ZM480,955.38Q465.31,955.38 454.96,945.04Q444.62,934.69 444.62,920Q444.62,905.31 454.96,894.96Q465.31,884.62 480,884.62Q494.69,884.62 505.04,894.96Q515.38,905.31 515.38,920Q515.38,934.69 505.04,945.04Q494.69,955.38 480,955.38ZM640,955.38Q625.31,955.38 614.96,945.04Q604.62,934.69 604.62,920Q604.62,905.31 614.96,894.96Q625.31,884.62 640,884.62Q654.69,884.62 665.04,894.96Q675.38,905.31 675.38,920Q675.38,934.69 665.04,945.04Q654.69,955.38 640,955.38Z&quot; />"
-        errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/res/drawable/ic_bluetooth_settings.xml"
-            line="9"
-            column="27"/>
     </issue>
 
     <issue
@@ -1108,7 +1031,7 @@
         errorLine2="            ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/hid/HidHostService.java"
-            line="303"
+            line="327"
             column="13"/>
     </issue>
 
@@ -1119,7 +1042,7 @@
         errorLine2="            ^">
         <location
             file="packages/modules/Bluetooth/android/app/src/com/android/bluetooth/sap/SapService.java"
-            line="454"
+            line="453"
             column="13"/>
     </issue>
 
@@ -1130,7 +1053,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ar/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1141,7 +1064,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-az/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1152,7 +1075,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-b+sr+Latn/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1163,7 +1086,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-be/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1174,7 +1097,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bg/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1185,7 +1108,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ca/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1196,7 +1119,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-cs/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1207,7 +1130,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-de/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1218,7 +1141,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-el/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1229,7 +1152,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es-rUS/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1240,7 +1163,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-et/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1251,7 +1174,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-gl/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1262,7 +1185,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-gu/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1273,7 +1196,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hr/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1284,7 +1207,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hu/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1295,7 +1218,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hy/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1306,7 +1229,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ja/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1317,7 +1240,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ko/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1328,7 +1251,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lo/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1339,7 +1262,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lt/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1350,7 +1273,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lv/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1361,7 +1284,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mk/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1372,7 +1295,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mr/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1383,7 +1306,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ms/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1394,7 +1317,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-nb/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1405,7 +1328,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ne/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1416,7 +1339,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pt-rPT/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1427,7 +1350,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ro/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1438,7 +1361,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ru/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1449,7 +1372,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sk/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1460,7 +1383,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sl/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1471,7 +1394,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sr/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1482,7 +1405,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sv/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1493,7 +1416,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sw/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1504,7 +1427,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-th/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1515,7 +1438,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-tr/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1526,7 +1449,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-uk/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1537,7 +1460,7 @@
         errorLine2="                                                              ~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zh-rCN/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1548,7 +1471,7 @@
         errorLine2="                                                              ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zu/strings.xml"
-            line="52"
+            line="54"
             column="63"/>
     </issue>
 
@@ -1559,7 +1482,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-am/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1570,7 +1493,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ar/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1581,7 +1504,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-az/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1592,7 +1515,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-b+sr+Latn/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1603,7 +1526,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-be/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1614,7 +1537,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bg/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1625,7 +1548,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bn/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1636,7 +1559,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ca/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1647,7 +1570,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-cs/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1658,7 +1581,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-de/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1669,7 +1592,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-el/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1680,7 +1603,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es-rUS/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1691,7 +1614,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-et/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1702,7 +1625,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-fr/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1713,7 +1636,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-gl/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1724,7 +1647,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hr/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1735,7 +1658,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hu/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1746,7 +1669,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hy/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1757,7 +1680,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ja/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1768,7 +1691,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ko/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1779,7 +1702,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lo/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1790,7 +1713,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lt/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1801,7 +1724,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lv/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1812,7 +1735,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mk/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1823,7 +1746,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ms/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1834,7 +1757,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-nb/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1845,7 +1768,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ne/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1856,7 +1779,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pt-rPT/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1867,7 +1790,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ro/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1878,7 +1801,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ru/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1889,7 +1812,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sk/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1900,7 +1823,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sl/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1911,7 +1834,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sr/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1922,7 +1845,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sv/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1933,7 +1856,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sw/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1944,7 +1867,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-th/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1955,7 +1878,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-tl/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1966,7 +1889,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-tr/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1977,7 +1900,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-uk/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1988,7 +1911,7 @@
         errorLine2="                                                            ~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zh-rCN/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -1999,7 +1922,7 @@
         errorLine2="                                                            ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zu/strings.xml"
-            line="66"
+            line="68"
             column="61"/>
     </issue>
 
@@ -2010,7 +1933,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-az/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2021,7 +1944,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-be/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2032,7 +1955,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bn/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2043,7 +1966,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-cs/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2054,7 +1977,7 @@
         errorLine2="                                                                       ~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-da/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2065,7 +1988,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-de/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2076,7 +1999,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-el/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2087,7 +2010,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es-rUS/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2098,7 +2021,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2109,7 +2032,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-fr/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2120,7 +2043,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-gl/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2131,7 +2054,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-gu/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2142,7 +2065,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hi/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2153,7 +2076,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hu/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2164,7 +2087,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hy/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2175,7 +2098,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-iw/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2186,7 +2109,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ja/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2197,7 +2120,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ka/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2208,7 +2131,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-km/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2219,7 +2142,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lo/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2230,7 +2153,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lt/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2241,7 +2164,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mk/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2252,7 +2175,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mn/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2263,7 +2186,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mr/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2274,7 +2197,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ms/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2285,7 +2208,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-nb/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2296,7 +2219,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ne/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2307,7 +2230,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-nl/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2318,7 +2241,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pa/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2329,7 +2252,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pt-rPT/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2340,7 +2263,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pt/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2351,7 +2274,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ro/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2362,7 +2285,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ru/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2373,7 +2296,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-si/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2384,7 +2307,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sk/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2395,7 +2318,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sl/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2406,7 +2329,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sq/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2417,7 +2340,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-te/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2428,7 +2351,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-th/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2439,7 +2362,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-tr/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2450,7 +2373,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-vi/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2461,7 +2384,7 @@
         errorLine2="                                                                       ~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zh-rCN/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2472,7 +2395,7 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zu/strings.xml"
-            line="77"
+            line="79"
             column="72"/>
     </issue>
 
@@ -2483,7 +2406,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-am/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2494,7 +2417,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ar/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2505,7 +2428,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-az/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2516,7 +2439,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-be/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2527,7 +2450,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bg/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2538,7 +2461,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-bn/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2549,7 +2472,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ca/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2560,7 +2483,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-da/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2571,7 +2494,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-de/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2582,7 +2505,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es-rUS/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2593,7 +2516,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2604,7 +2527,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-et/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2615,7 +2538,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-fi/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2626,7 +2549,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hu/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2637,7 +2560,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-hy/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2648,7 +2571,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-in/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2659,7 +2582,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ja/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2670,7 +2593,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ko/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2681,7 +2604,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lo/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2692,7 +2615,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-lv/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2703,7 +2626,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-mk/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2714,7 +2637,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ms/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2725,7 +2648,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ne/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2736,7 +2659,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-pt/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2747,7 +2670,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ro/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2758,7 +2681,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-ru/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2769,7 +2692,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sk/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2780,7 +2703,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-sw/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2791,7 +2714,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-tr/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2802,7 +2725,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-uk/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2813,7 +2736,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zh-rCN/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2824,7 +2747,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zh-rHK/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2835,7 +2758,7 @@
         errorLine2="                                                                        ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-zu/strings.xml"
-            line="78"
+            line="80"
             column="73"/>
     </issue>
 
@@ -2846,7 +2769,7 @@
         errorLine2="                                                                                                 ~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-de/strings.xml"
-            line="81"
+            line="83"
             column="98"/>
     </issue>
 

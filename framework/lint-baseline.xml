@@ -1,16 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.4.0-alpha08" type="baseline" client="" dependencies="true" name="" variant="all" version="8.4.0-alpha08">
-
-    <issue
-        id="Range"
-        message="Value must be ≥ 128 (was -2)"
-        errorLine1="                    psm = settings.getL2capPsm();"
-        errorLine2="                    ~~~">
-        <location
-            file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothAdapter.java"
-            line="4182"
-            column="21"/>
-    </issue>
+<issues format="6" by="lint 8.13.0-alpha04" type="baseline" client="" dependencies="true" name="" variant="all" version="8.13.0-alpha04">
 
     <issue
         id="WrongConstant"
@@ -41,7 +30,7 @@
         errorLine2="                               ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothQualityReport.java"
-            line="726"
+            line="725"
             column="32"/>
     </issue>
 
@@ -140,7 +129,7 @@
         errorLine2="                   ~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothAdapter.java"
-            line="1579"
+            line="1578"
             column="20"/>
     </issue>
 
@@ -151,7 +140,7 @@
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothAdapter.java"
-            line="2700"
+            line="2702"
             column="33"/>
     </issue>
 
@@ -162,7 +151,7 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothAdapter.java"
-            line="3246"
+            line="3254"
             column="17"/>
     </issue>
 
@@ -173,7 +162,7 @@
         errorLine2="                            ~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothAdapter.java"
-            line="3371"
+            line="3379"
             column="29"/>
     </issue>
 
@@ -184,7 +173,7 @@
         errorLine2="               ~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothDevice.java"
-            line="2208"
+            line="2120"
             column="16"/>
     </issue>
 
@@ -195,7 +184,7 @@
         errorLine2="                   ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/BluetoothDevice.java"
-            line="2568"
+            line="2384"
             column="20"/>
     </issue>
 
