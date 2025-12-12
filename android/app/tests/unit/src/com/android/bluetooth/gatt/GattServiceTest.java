@@ -45,7 +45,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.IBluetoothGattCallback;
-import android.bluetooth.IBluetoothGattServerCallback;
 import android.companion.CompanionDeviceManager;
 import android.content.AttributionSource;
 import android.content.Context;
@@ -106,7 +105,6 @@ public class GattServiceTest {
     @Mock private AttributionSource mSource;
     @Mock private IBluetoothGattCallback mGattCallback;
     @Mock private ContextMap<IBluetoothGattCallback> mClientMap;
-    @Mock private ContextMap<IBluetoothGattServerCallback> mServerMap;
     @Mock private Set<BluetoothDevice> mReliableQueue;
     @Mock private GattNativeInterface mNativeInterface;
     @Mock private AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
@@ -192,7 +190,6 @@ public class GattServiceTest {
                         mAdvertiseManagerNativeInterface,
                         mDistanceMeasurementNativeInterface,
                         mClientMap,
-                        mServerMap,
                         mReliableQueue,
                         mCompanionDeviceManager,
                         mLooper.getLooper(),
@@ -217,7 +214,6 @@ public class GattServiceTest {
                             mAdvertiseManagerNativeInterface,
                             mDistanceMeasurementNativeInterface,
                             mClientMap,
-                            mServerMap,
                             mReliableQueue,
                             mCompanionDeviceManager,
                             mLooper.getLooper(),
@@ -325,10 +321,6 @@ public class GattServiceTest {
     public void testDumpDoesNotCrash() {
         mService.dump(new StringBuilder());
     }
-
-    // ---------------------------------------------------------------------------------------------
-    // GATT Client Tests
-    // ---------------------------------------------------------------------------------------------
 
     @Test
     public void registerClient() {
