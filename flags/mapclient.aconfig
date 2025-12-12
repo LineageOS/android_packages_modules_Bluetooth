@@ -43,16 +43,6 @@ flag {
 }
 
 flag {
-    name: "map_continue_operation"
-    namespace: "bluetooth"
-    description: "Continue operation for a put operation to handle large MMS."
-    bug: "422499403"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "map_client_check_access_permission"
     namespace: "bluetooth"
     description: "Check if message access permission is allowed before connecting"
