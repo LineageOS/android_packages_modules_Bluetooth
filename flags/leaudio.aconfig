@@ -240,16 +240,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_broadcast_simplify_set_bcast_code"
-    namespace: "bluetooth"
-    description: "Simplify the use of SET_BCAST_CODE"
-    bug: "434681485"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_use_game_sonification_as_regular_sonification"
     namespace: "bluetooth"
     description: "GAME sonifications will not impact on the main use case i.e. will not force context type change."

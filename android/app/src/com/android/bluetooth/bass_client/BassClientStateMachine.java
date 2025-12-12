@@ -114,10 +114,6 @@ class BassClientStateMachine extends StateMachine {
     static final int UPDATE_METADATA = 17;
     static final int ENCRYPTION_STATE_CHANGED = 18;
 
-    // Type of argument for set broadcast code operation
-    static final int ARGTYPE_METADATA = 1;
-    static final int ARGTYPE_RCVSTATE = 2;
-
     static final int ATT_WRITE_CMD_HDR_LEN = 3;
 
     /*key is combination of sourceId, Address and advSid for this hashmap*/
@@ -155,10 +151,6 @@ class BassClientStateMachine extends StateMachine {
     @VisibleForTesting int mPendingOperation = -1;
     @VisibleForTesting byte mPendingSourceId = -1;
     @VisibleForTesting BluetoothLeBroadcastMetadata mPendingMetadata = null;
-
-    // !Flags.leaudioBroadcastSimplifySetBcastCode()
-    private BluetoothLeBroadcastMetadata mSetBroadcastPINMetadata = null;
-    @VisibleForTesting boolean mSetBroadcastCodePending = false;
 
     private final Map<Integer, Boolean> mPendingRemove = new HashMap<>();
     private boolean mForceSB = false;
@@ -635,21 +627,9 @@ class BassClientStateMachine extends StateMachine {
         if (recvState.getBigEncryptionState()
                 == BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_CODE_REQUIRED) {
             Log.d(TAG, "Update the Broadcast now");
-            if (!Flags.leaudioBroadcastSimplifySetBcastCode()) {
-                if (mSetBroadcastPINMetadata != null) {
-                    setCurrentBroadcastMetadata(recvState.getSourceId(), mSetBroadcastPINMetadata);
-                }
-                Message m = obtainMessage(BassClientStateMachine.SET_BCAST_CODE);
-                m.obj = recvState;
-                m.arg1 = ARGTYPE_RCVSTATE;
-                sendMessage(m);
-                mSetBroadcastCodePending = false;
-                mSetBroadcastPINMetadata = null;
-            } else {
-                Message m = obtainMessage(BassClientStateMachine.SET_BCAST_CODE);
-                m.obj = recvState;
-                sendMessage(m);
-            }
+            Message m = obtainMessage(BassClientStateMachine.SET_BCAST_CODE);
+            m.obj = recvState;
+            sendMessage(m);
         }
     }
 
@@ -1697,13 +1677,6 @@ class BassClientStateMachine extends StateMachine {
                     setPendingRemove(sourceId, /* remove */ true);
                 }
 
-                if (!Flags.leaudioBroadcastSimplifySetBcastCode()) {
-                    if (metadata != null
-                            && metadata.isEncrypted()
-                            && metadata.getBroadcastCode() != null) {
-                        mSetBroadcastCodePending = true;
-                    }
-                }
                 mPendingMetadata = metadata;
                 transitionTo(mConnectedProcessing);
                 sendMessageDelayed(
@@ -1848,11 +1821,6 @@ class BassClientStateMachine extends StateMachine {
                         writeBassControlPoint(addSourceInfo);
                         mPendingOperation = message.what;
                         mPendingMetadata = metaData;
-                        if (!Flags.leaudioBroadcastSimplifySetBcastCode()) {
-                            if (metaData.isEncrypted() && (metaData.getBroadcastCode() != null)) {
-                                mSetBroadcastCodePending = true;
-                            }
-                        }
                         transitionTo(mConnectedProcessing);
                         sendMessageDelayed(
                                 GATT_TXN_TIMEOUT,
@@ -1888,30 +1856,11 @@ class BassClientStateMachine extends StateMachine {
                             false /* setPendingRemove */);
                 }
                 case SET_BCAST_CODE -> {
-                    BluetoothLeBroadcastReceiveState recvState = null;
-                    if (!Flags.leaudioBroadcastSimplifySetBcastCode()) {
-                        int argType = message.arg1;
-                        mSetBroadcastCodePending = false;
-                        if (argType == ARGTYPE_METADATA) {
-                            mSetBroadcastPINMetadata = (BluetoothLeBroadcastMetadata) message.obj;
-                            mSetBroadcastCodePending = true;
-                        } else {
-                            recvState = (BluetoothLeBroadcastReceiveState) message.obj;
-                            if (!isItRightTimeToUpdateBroadcastPin(
-                                    (byte) recvState.getSourceId())) {
-                                mSetBroadcastCodePending = true;
-                            }
-                        }
-                        if (mSetBroadcastCodePending == true) {
-                            Log.d(TAG, "Ignore SET_BCAST now, but restore it for later");
-                            break;
-                        }
-                    } else {
-                        recvState = (BluetoothLeBroadcastReceiveState) message.obj;
-                        if (!isItRightTimeToUpdateBroadcastPin((byte) recvState.getSourceId())) {
-                            Log.d(TAG, "Ignore SET_BCAST now, but restore it for later");
-                            break;
-                        }
+                    BluetoothLeBroadcastReceiveState recvState =
+                            (BluetoothLeBroadcastReceiveState) message.obj;
+                    if (!isItRightTimeToUpdateBroadcastPin((byte) recvState.getSourceId())) {
+                        Log.d(TAG, "Ignore SET_BCAST now, but restore it for later");
+                        break;
                     }
                     byte[] setBroadcastPINcmd =
                             convertRecvStateToSetBroadcastCodeByteArray(recvState);
