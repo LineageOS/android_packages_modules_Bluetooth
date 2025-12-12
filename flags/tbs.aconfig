@@ -1,12 +1,2 @@
 package: "com.android.bluetooth.flags"
 container: "com.android.bt"
-
-flag {
-    name: "tbs_set_lea_from_btservice"
-    namespace: "bluetooth"
-    description: "When TBS is setting active LE audio device, it shall use AdapterService"
-    bug: "433406466"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
