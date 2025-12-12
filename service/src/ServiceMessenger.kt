@@ -45,10 +45,15 @@ private fun getCallerIdentity(source: AttributionSource): String =
     } else {
         val pkg = requireNotNull(source.packageName) { "Unknown package caller. Identify yourself" }
         val tag = source.attributionTag
-        if ("android" == pkg && tag == null) {
-            Log.wtf(TAG, "System caller must set the attribution tag.") // TODO throw error
+
+        // When called from android system, we must set an attribution tag to allow tracking.
+        //      Ex: context.createAttributionContext(SERVICE_NAME)
+
+        if ("android" == pkg) {
+            "$pkg/" + requireNotNull(tag) { "System generic caller must set the Attribution tag" }
+        } else {
+            tag?.let { "$pkg/$it" } ?: pkg
         }
-        tag?.let { "$pkg/$it" } ?: pkg
     }
 
 internal class ServiceMessenger(
