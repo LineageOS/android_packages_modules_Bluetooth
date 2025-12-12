@@ -275,11 +275,7 @@ public class AvrcpTargetService extends ProfileService {
      * device. See packages/modules/Bluetooth/system/profile/avrcp/device.cc.
      */
     private void setA2dpActiveDevice(@NonNull BluetoothDevice device) {
-        if (Flags.setA2dpActiveDeviceThroughAdapterService()) {
-            getAdapterService().setActiveDevice(device, BluetoothAdapter.ACTIVE_DEVICE_AUDIO);
-            return;
-        }
-        getAdapterService().getA2dpService().ifPresent(a2dp -> a2dp.setActiveDevice(device));
+        getAdapterService().setActiveDevice(device, BluetoothAdapter.ACTIVE_DEVICE_AUDIO);
     }
 
     /** Informs {@link AvrcpVolumeManager} that a new device is connected */
