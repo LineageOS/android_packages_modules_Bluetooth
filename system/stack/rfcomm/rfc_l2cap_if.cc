@@ -163,10 +163,6 @@ void RFCOMM_ConnectCnf(uint16_t lcid, tL2CAP_CONN result) {
     log::error("MCB for LCID 0x{:x} not found", lcid);
     return;
   }
-  if (p_mcb == nullptr) {
-    log::error("RFCOMM_ConnectCnf LCID:0x{:x}", lcid);
-    return;
-  }
 
   bluetooth::metrics::LogRfcommL2capEvent(
           p_mcb->bd_addr, bluetooth::metrics::EventType::RFCOMM_L2CAP_CONNECTION_RESPONSE_RECEIVED,
