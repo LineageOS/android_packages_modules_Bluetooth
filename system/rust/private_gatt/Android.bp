@@ -8,7 +8,7 @@ package {
 }
 
 rust_defaults {
-    name: "libbluetooth_core_rs_defaults",
+    name: "libbluetooth_private_gatt_rs_defaults",
     min_sdk_version: "36",
     dylib: {
         enabled: false,
@@ -16,7 +16,7 @@ rust_defaults {
     srcs: [
         "src/lib.rs",
 
-        ":bluetooth_core_rust_packets",
+        ":bluetooth_private_gatt_rust_packets",
     ],
     shared_libs: [
         "libbase",
@@ -41,7 +41,7 @@ rust_defaults {
         "libscopeguard",
     ],
     whole_static_libs: [
-        "libbluetooth_core_rs_bridge",
+        "libbluetooth_private_gatt_rs_bridge",
     ],
     target: {
         android: {
@@ -89,9 +89,9 @@ rust_defaults {
 }
 
 rust_ffi_static {
-    name: "libbluetooth_core_rs",
-    crate_name: "bluetooth_core",
-    defaults: ["libbluetooth_core_rs_defaults"],
+    name: "libbluetooth_private_gatt_rs",
+    crate_name: "bluetooth_private_gatt",
+    defaults: ["libbluetooth_private_gatt_rs_defaults"],
     rustlibs: [
         "libbluetooth_aconfig_flags_rust",
         "libtokio",
@@ -107,9 +107,9 @@ rust_ffi_static {
 }
 
 rust_test {
-    name: "libbluetooth_core_rs_test",
+    name: "libbluetooth_private_gatt_rs_test",
     host_supported: true,
-    defaults: ["libbluetooth_core_rs_defaults"],
+    defaults: ["libbluetooth_private_gatt_rs_defaults"],
     rustlibs: [
         "libbluetooth_aconfig_flags_rust",
         "libtokio_for_test",
@@ -118,7 +118,7 @@ rust_test {
 }
 
 cc_library_static {
-    name: "libbluetooth_core_rs_bridge",
+    name: "libbluetooth_private_gatt_rs_bridge",
     defaults: ["bluetooth_cflags"],
     cflags: [
         // The generated code triggers these warnings.
@@ -143,38 +143,38 @@ cc_library_static {
     ],
     generated_headers: [
         "cxx-bridge-header",
-        "libbluetooth_core_rs_bridge_codegen_header",
+        "libbluetooth_private_gatt_rs_bridge_codegen_header",
     ],
     export_generated_headers: [
         "cxx-bridge-header",
-        "libbluetooth_core_rs_bridge_codegen_header",
+        "libbluetooth_private_gatt_rs_bridge_codegen_header",
     ],
     host_supported: true,
-    generated_sources: ["libbluetooth_core_rs_bridge_codegen"],
+    generated_sources: ["libbluetooth_private_gatt_rs_bridge_codegen"],
     apex_available: ["com.android.bt"],
     min_sdk_version: "36",
 }
 
 /// FFI codegen
 ///
-/// The static library libbluetooth_core_rs_bridge is included by
-/// libbluetooth_core_rs and depends on libbluetooth_core. libbluetooth
-/// depends on libbluetooth_core_rs.
+/// The static library libbluetooth_private_gatt_rs_bridge is included by
+/// libbluetooth_private_gatt_rs and depends on libbluetooth_private_gatt. libbluetooth
+/// depends on libbluetooth_private_gatt_rs.
 /// i.e.
-/// libbluetooth -> {libbluetooth_core_rs, libbluetooth_core_rs_bridge} -> libbluetooth-core
+/// libbluetooth -> {libbluetooth_private_gatt_rs, libbluetooth_private_gatt_rs_bridge} -> libbluetooth-core
 ///
 /// Thus, FFI can be either:
 ///  * Rust to GD
 ///  * Legacy C++ to Rust
-///     * Core to Rust only via injected callbacks (libbluetooth_core does not
-///       depend on libbluetooth_core_rs)
+///     * Core to Rust only via injected callbacks (libbluetooth_private_gatt does not
+///       depend on libbluetooth_private_gatt_rs)
 ///     * Legacy C++ to Rust can be made directly (as libbluetooth *does* depend
-///       on libbluetooth_core_rs).
+///       on libbluetooth_private_gatt_rs).
 ///
 /// To add FFI for a new module, create an ffi.rs file, and add it to the filegroup below.
 
 filegroup {
-    name: "libbluetooth_core_rs_ffi",
+    name: "libbluetooth_private_gatt_rs_ffi",
     srcs: [
         "src/core/ffi.rs",
         "src/gatt/arbiter.rs",
@@ -183,24 +183,24 @@ filegroup {
 }
 
 gensrcs {
-    name: "libbluetooth_core_rs_bridge_codegen_header",
+    name: "libbluetooth_private_gatt_rs_bridge_codegen_header",
     tools: ["cxxbridge"],
     cmd: "$(location cxxbridge) $(in) --header > $(out)",
-    srcs: [":libbluetooth_core_rs_ffi"],
+    srcs: [":libbluetooth_private_gatt_rs_ffi"],
     output_extension: "rs.h",
     export_include_dirs: ["."],
 }
 
 gensrcs {
-    name: "libbluetooth_core_rs_bridge_codegen",
+    name: "libbluetooth_private_gatt_rs_bridge_codegen",
     tools: ["cxxbridge"],
     cmd: "$(location cxxbridge) $(in) > $(out)",
-    srcs: [":libbluetooth_core_rs_ffi"],
+    srcs: [":libbluetooth_private_gatt_rs_ffi"],
     output_extension: "cc",
 }
 
 genrule {
-    name: "bluetooth_core_rust_packets",
+    name: "bluetooth_private_gatt_rust_packets",
     defaults: ["pdl_rust_generator_defaults"],
     srcs: ["src/packets.pdl"],
     out: ["_packets.rs"],

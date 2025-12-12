@@ -196,11 +196,11 @@ cc_defaults {
         "android.hardware.common.fmq-V1-ndk",
         "libFraunhoferAAC",
         "libbase",
-        "libbluetooth_core_rs",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
         "libbluetooth_metrics_mock",
+        "libbluetooth_private_gatt_rs",
         "libbluetooth_types",
         "libbt-common", // needed for MessageLoopThread
         "libbt-jni-thread",
