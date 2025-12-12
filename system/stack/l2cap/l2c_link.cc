@@ -32,9 +32,7 @@
 
 #include <cstdint>
 
-#include "btif/include/btif_storage.h"
 #include "device/include/device_iot_config.h"
-#include "device/include/interop.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_int_types.h"
@@ -109,17 +107,8 @@ void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle, const RawAddres
     /* Connected OK. Change state to connected */
     p_lcb->link_state = LST_CONNECTED;
 
-    // TODO: This interop fix is temporary. Need to remove If there is a better
-    //  way to handle this
-    char remote_name[BD_NAME_LEN] = "";
-    btif_storage_get_stored_remote_name(p_bda, remote_name);
-    if (interop_match_name(INTEROP_L2CAP_DISABLE_ERTM, remote_name)) {
-      log::info("INTEROP_L2CAP_DISABLE_ERTM: interop matched name {} address {}", remote_name,
-                p_bda);
-    } else {
-      /* Get the peer information if the l2cap flow-control/rtrans is supported */
-      l2cu_send_peer_info_req(p_lcb, L2CAP_EXTENDED_FEATURES_INFO_TYPE);
-    }
+    /* Get the peer information if the l2cap flow-control/rtrans is supported */
+    l2cu_send_peer_info_req(p_lcb, L2CAP_EXTENDED_FEATURES_INFO_TYPE);
 
     if (p_lcb->IsBonding()) {
       log::debug("Link is dedicated bonding handle:0x{:04x}", p_lcb->Handle());

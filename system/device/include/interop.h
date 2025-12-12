@@ -400,10 +400,6 @@ typedef enum {
   // fallback in the stack for those devices.
   INTEROP_DISABLE_PROFILE_FALLBACK,
 
-  // Some devices do not support ERTM from peer and donot send response for
-  // for INFO response during connection.
-  INTEROP_L2CAP_DISABLE_ERTM,
-
   END_OF_INTEROP_LIST
 } interop_feature_t;
 

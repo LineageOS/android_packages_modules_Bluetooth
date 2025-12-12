@@ -390,8 +390,6 @@ TEST_F(InteropTest, test_name_hit) {
   EXPECT_TRUE(interop_match_name(INTEROP_CHANGE_HID_VID_PID, "CK87BT"));
   EXPECT_TRUE(interop_match_name(INTEROP_DISABLE_PROFILE_FALLBACK, "BMW 88876"));
   EXPECT_TRUE(interop_match_name(INTEROP_DISABLE_PROFILE_FALLBACK, "myCadillac"));
-  EXPECT_TRUE(interop_match_name(INTEROP_L2CAP_DISABLE_ERTM, "AirPods"));
-  EXPECT_TRUE(interop_match_name(INTEROP_L2CAP_DISABLE_ERTM, "AirPods Pro"));
 #endif
 
   module_clean_up(&interop_module);
@@ -462,7 +460,6 @@ TEST_F(InteropTest, test_name_miss) {
   EXPECT_FALSE(interop_match_name(INTEROP_SLC_SKIP_BIND_COMMAND, "TEST"));
   EXPECT_FALSE(interop_match_name(INTEROP_AVRCP_1_3_ONLY, "TEST"));
   EXPECT_FALSE(interop_match_name(INTEROP_DISABLE_PROFILE_FALLBACK, "TEST"));
-  EXPECT_FALSE(interop_match_name(INTEROP_L2CAP_DISABLE_ERTM, "TEST"));
 
   module_clean_up(&interop_module);
 }
