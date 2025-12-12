@@ -1595,41 +1595,8 @@ private:
       return;
     }
 
-    if (com_android_bluetooth_flags_hap_safely_erase_pending_operation_timeout()) {
-      for (auto it = pending_group_operation_timeouts_.rbegin();
-           it != pending_group_operation_timeouts_.rend();) {
-        auto& group_op_coordinator = it->second;
-
-        bool matches = false;
-        switch (group_op_coordinator.operation.opcode) {
-          case PresetCtpOpcode::SET_ACTIVE_PRESET:
-          case PresetCtpOpcode::SET_NEXT_PRESET:
-          case PresetCtpOpcode::SET_PREV_PRESET:
-          case PresetCtpOpcode::SET_ACTIVE_PRESET_SYNC:
-          case PresetCtpOpcode::SET_NEXT_PRESET_SYNC:
-          case PresetCtpOpcode::SET_PREV_PRESET_SYNC: {
-            if (group_op_coordinator.SetCompleted(device->addr)) {
-              matches = true;
-              break;
-            }
-          } break;
-          default:
-            /* Ignore */
-            break;
-        }
-        if (group_op_coordinator.IsFullyCompleted()) {
-          it = decltype(it)(pending_group_operation_timeouts_.erase(std::next(it).base()));
-        } else {
-          ++it;
-        }
-        if (matches) {
-          break;
-        }
-      }
-      return;
-    }
     for (auto it = pending_group_operation_timeouts_.rbegin();
-         it != pending_group_operation_timeouts_.rend(); ++it) {
+         it != pending_group_operation_timeouts_.rend();) {
       auto& group_op_coordinator = it->second;
 
       bool matches = false;
@@ -1650,7 +1617,9 @@ private:
           break;
       }
       if (group_op_coordinator.IsFullyCompleted()) {
-        pending_group_operation_timeouts_.erase(it->first);
+        it = decltype(it)(pending_group_operation_timeouts_.erase(std::next(it).base()));
+      } else {
+        ++it;
       }
       if (matches) {
         break;
