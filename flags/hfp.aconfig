@@ -127,6 +127,16 @@ flag {
 }
 
 flag {
+    name: "call_end_codec_negotiation"
+    namespace: "bluetooth"
+    description: "Close SCO when end call during codec negotiation"
+    bug: "461739981"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "end_outgoing_call_on_chld"
     namespace: "bluetooth"
     description: "End outgoing call on CHLD"
