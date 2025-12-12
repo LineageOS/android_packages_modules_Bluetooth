@@ -274,10 +274,9 @@ protected:
   // Max packet data size when headersfiltered option enabled
   static const size_t MAX_HCI_ACL_LEN;
 
-  SnoopLogger(os::Handler* handler, std::string snoop_log_path, std::string snooz_log_path,
-              size_t max_packets_per_file, size_t max_packets_per_buffer,
-              const std::string& btsnoop_mode, bool qualcomm_debug_log_enabled,
-              const std::chrono::milliseconds snooz_log_life_time,
+  SnoopLogger(os::Handler* handler, std::string snoop_dir_path, size_t max_packets_per_file,
+              size_t max_packets_per_buffer, const std::string& btsnoop_mode,
+              bool qualcomm_debug_log_enabled, const std::chrono::milliseconds snooz_log_life_time,
               const std::chrono::milliseconds snooz_log_delete_alarm_interval,
               bool snoop_log_persists, int port = SnoopLoggerSocket::kDefaultPort);
 
@@ -319,7 +318,7 @@ protected:
 private:
   os::Handler* handler_;
   std::string btsnoop_mode_;
-  std::string snooz_log_path_;
+  std::string snooz_dir_path_;
   std::unique_ptr<SnoopLoggerFile> btsnoop_file_;
   common::CircularBuffer<std::string> btsnooz_buffer_;
   bool qualcomm_debug_log_enabled_ = false;
