@@ -20,7 +20,8 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothDevice.TRANSPORT_AUTO
 import android.bluetooth.BluetoothDevice.TRANSPORT_BREDR
 import android.bluetooth.BluetoothDevice.TRANSPORT_LE
-import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGatt.GATT_FAILURE
+import android.bluetooth.BluetoothGatt.GATT_SUCCESS
 import android.bluetooth.BluetoothGattService
 import android.bluetooth.IBluetoothGattServerCallback
 import android.content.AttributionSource
@@ -88,7 +89,7 @@ class GattServerManagerTest {
     @Test
     fun onServerRegistered_appNotFound_doesNotLinkToDeath() {
         val uuid = UUID.randomUUID()
-        serverManager.onServerRegisteredFromNative(BluetoothGatt.GATT_SUCCESS, SERVER_IF, uuid)
+        serverManager.onServerRegisteredFromNative(GATT_SUCCESS, SERVER_IF, uuid)
         verify(gattServerCallback, never()).onServerRegistered(any())
     }
 
@@ -157,7 +158,7 @@ class GattServerManagerTest {
         register(TRANSPORT_LE, SERVER_IF, gattServerCallback, onRegistered = true)
         onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
 
-        verify(gattServerCallback).onServerConnectionState(eq(0), eq(true), eq(device))
+        verify(gattServerCallback).onServerConnectionState(eq(GATT_SUCCESS), eq(true), eq(device))
     }
 
     @Test
@@ -170,7 +171,7 @@ class GattServerManagerTest {
         // Second call should do nothing
         onConnected(device, TRANSPORT_LE, SERVER_CONN_ID_2, SERVER_IF)
         verify(gattServerCallback, never())
-            .onServerConnectionState(any<Int>(), any<Boolean>(), any())
+            .onServerConnectionState(eq(GATT_SUCCESS), any<Boolean>(), any())
     }
 
     @Test
@@ -181,7 +182,7 @@ class GattServerManagerTest {
         // connected = false should remove connection
         onDisconnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
         assertThat(serverManager.serverMap.getConnectionByApp(SERVER_IF)).isEmpty()
-        verify(gattServerCallback).onServerConnectionState(eq(0), eq(false), eq(device))
+        verify(gattServerCallback).onServerConnectionState(eq(GATT_SUCCESS), eq(false), eq(device))
     }
 
     @Test
@@ -208,8 +209,8 @@ class GattServerManagerTest {
         onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
 
         val service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1)
-        serverManager.onServiceAddedFromNative(0, SERVER_IF, listOf(service))
-        verify(gattServerCallback).onServiceAdded(eq(0), any<BluetoothGattService>())
+        serverManager.onServiceAddedFromNative(GATT_SUCCESS, SERVER_IF, listOf(service))
+        verify(gattServerCallback).onServiceAdded(eq(GATT_SUCCESS), any<BluetoothGattService>())
     }
 
     @Test
@@ -218,8 +219,9 @@ class GattServerManagerTest {
         onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF, isRegistered = false)
 
         val service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1)
-        serverManager.onServiceAddedFromNative(0, SERVER_IF, listOf(service))
-        verify(gattServerCallback, never()).onServiceAdded(any<Int>(), any<BluetoothGattService>())
+        serverManager.onServiceAddedFromNative(GATT_SUCCESS, SERVER_IF, listOf(service))
+        verify(gattServerCallback, never())
+            .onServiceAdded(eq(GATT_SUCCESS), any<BluetoothGattService>())
     }
 
     @Test
@@ -228,7 +230,7 @@ class GattServerManagerTest {
         onConnected(device, TRANSPORT_LE, SERVER_CONN_ID, SERVER_IF)
 
         val service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1)
-        serverManager.onServiceAddedFromNative(1, SERVER_IF, listOf(service))
+        serverManager.onServiceAddedFromNative(GATT_FAILURE, SERVER_IF, listOf(service))
         verify(gattServerCallback, never()).onServiceAdded(any<Int>(), any<BluetoothGattService>())
     }
 
@@ -271,7 +273,7 @@ class GattServerManagerTest {
         val service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1)
         val characteristic = createCharacteristic(SERVER_TEST_CHAR_UUID, 2, 0, 0)
         val serviceList = listOf(service, characteristic)
-        serverManager.onServiceAddedFromNative(0, SERVER_IF, serviceList)
+        serverManager.onServiceAddedFromNative(GATT_SUCCESS, SERVER_IF, serviceList)
         serverManager.onServerReadCharacteristicFromNative(
             device,
             SERVER_CONN_ID,
@@ -302,7 +304,7 @@ class GattServerManagerTest {
         val characteristic = createCharacteristic(SERVER_TEST_CHAR_UUID, 2, 0, 0)
         val descriptor = createDescriptor(SERVER_TEST_DESC_UUID, 3, 0)
         val serviceList = listOf(service, characteristic, descriptor)
-        serverManager.onServiceAddedFromNative(0, SERVER_IF, serviceList)
+        serverManager.onServiceAddedFromNative(GATT_SUCCESS, SERVER_IF, serviceList)
         serverManager.onServerReadDescriptorFromNative(
             device,
             SERVER_CONN_ID,
@@ -332,7 +334,7 @@ class GattServerManagerTest {
         val service = createPrimaryService(SERVER_TEST_SERVICE_UUID, 1)
         val characteristic = createCharacteristic(SERVER_TEST_CHAR_UUID, 2, 0, 0)
         val serviceList = listOf(service, characteristic)
-        serverManager.onServiceAddedFromNative(0, SERVER_IF, serviceList)
+        serverManager.onServiceAddedFromNative(GATT_SUCCESS, SERVER_IF, serviceList)
         val data = byteArrayOf(5, 6)
         serverManager.onServerWriteCharacteristicFromNative(
             device,
@@ -370,7 +372,7 @@ class GattServerManagerTest {
         val characteristic = createCharacteristic(SERVER_TEST_CHAR_UUID, 2, 0, 0)
         val descriptor = createDescriptor(SERVER_TEST_DESC_UUID, 3, 0)
         val serviceList = listOf(service, characteristic, descriptor)
-        serverManager.onServiceAddedFromNative(0, SERVER_IF, serviceList)
+        serverManager.onServiceAddedFromNative(GATT_SUCCESS, SERVER_IF, serviceList)
         val data = byteArrayOf(5, 6)
         serverManager.onServerWriteDescriptorFromNative(
             device,
@@ -422,7 +424,7 @@ class GattServerManagerTest {
             gattServerCallback,
             device,
             0, /* request ID */
-            0, /* status */
+            GATT_SUCCESS,
             0, /* offset */
             null, /* Data null for a prepared write response */
         )
@@ -432,7 +434,7 @@ class GattServerManagerTest {
                 eq(SERVER_IF),
                 eq(SERVER_CONN_ID),
                 eq(SERVER_REQUEST_TRANSACTION_ID),
-                eq(0), /* status */
+                eq(GATT_SUCCESS),
                 eq(0), /* prepared write executes don't use a handle, use 0x0 */
                 eq(0), /* offset */
                 eq(null),
@@ -464,7 +466,7 @@ class GattServerManagerTest {
             gattServerCallback,
             device,
             0, /* request ID */
-            0, /* status */
+            GATT_SUCCESS,
             0, /* offset */
             null, /* Data null for a prepared write cancel response */
         )
@@ -474,7 +476,7 @@ class GattServerManagerTest {
                 eq(SERVER_IF),
                 eq(SERVER_CONN_ID),
                 eq(SERVER_REQUEST_TRANSACTION_ID),
-                eq(0), /* status */
+                eq(GATT_SUCCESS),
                 eq(0), /* prepared write executes don't use a handle, use 0x0 */
                 eq(0), /* offset */
                 eq(null),
@@ -493,7 +495,7 @@ class GattServerManagerTest {
             gattServerCallback,
             device,
             0, /* request ID */
-            0, /* status */
+            GATT_SUCCESS,
             0, /* offset */
             data,
         )
@@ -503,7 +505,7 @@ class GattServerManagerTest {
                 eq(SERVER_IF),
                 eq(SERVER_CONN_ID),
                 eq(SERVER_REQUEST_TRANSACTION_ID),
-                eq(0), /* status */
+                eq(GATT_SUCCESS),
                 eq(2), /* handle of characteristic, from previous test */
                 eq(0), /* offset */
                 eq(data),
@@ -522,7 +524,7 @@ class GattServerManagerTest {
             gattServerCallback,
             device,
             85, /* request ID, intentionally wrong so it doesn't exist */
-            0, /* status */
+            GATT_SUCCESS,
             0, /* offset */
             data,
         )
@@ -547,7 +549,7 @@ class GattServerManagerTest {
             gattServerCallback,
             device,
             0, /* request ID */
-            0, /* status */
+            GATT_SUCCESS,
             0, /* offset */
             data,
         )
@@ -576,7 +578,7 @@ class GattServerManagerTest {
         val characteristic1 = createCharacteristic(SERVER_TEST_CHAR_UUID, 2, 0, 0)
         val characteristic2 = createCharacteristic(SERVER_TEST_CHAR_UUID, 3, 0, 0)
         val serviceList = listOf(service, characteristic1, characteristic2)
-        serverManager.onServiceAddedFromNative(0, SERVER_IF, serviceList)
+        serverManager.onServiceAddedFromNative(GATT_SUCCESS, SERVER_IF, serviceList)
         serverManager.onServerReadCharacteristicFromNative(
             device,
             SERVER_CONN_ID,
@@ -599,16 +601,16 @@ class GattServerManagerTest {
             gattServerCallback,
             device,
             0, /* request ID, from bearer/request 1 */
+            GATT_SUCCESS,
             0, /* offset */
-            0, /* status */
             data,
         )
         serverManager.sendResponse(
             gattServerCallback,
             device,
             1, /* request ID, from bearer/request 2 */
+            GATT_SUCCESS,
             0, /* offset */
-            0, /* status */
             data,
         )
 
@@ -617,7 +619,7 @@ class GattServerManagerTest {
                 eq(SERVER_IF),
                 eq(SERVER_CONN_ID),
                 eq(SERVER_REQUEST_TRANSACTION_ID),
-                eq(0), /* status */
+                eq(GATT_SUCCESS),
                 eq(2), /* handle of characteristic, from previous test */
                 eq(0), /* offset */
                 eq(data),
@@ -628,7 +630,7 @@ class GattServerManagerTest {
                 eq(SERVER_IF),
                 eq(SERVER_CONN_ID_2),
                 eq(SERVER_REQUEST_TRANSACTION_ID),
-                eq(0), /* status */
+                eq(GATT_SUCCESS),
                 eq(3), /* handle of characteristic, from previous test */
                 eq(0), /* offset */
                 eq(data),
@@ -648,8 +650,8 @@ class GattServerManagerTest {
             gattServerCallback2,
             device,
             0, /* request ID belongs to other server */
+            GATT_SUCCESS,
             0, /* offset */
-            0, /* status */
             data,
         )
 
@@ -658,7 +660,7 @@ class GattServerManagerTest {
                 any<Int>(),
                 any<Int>(),
                 any<Int>(),
-                any<Int>(),
+                eq(GATT_SUCCESS),
                 any<Int>(),
                 any<Int>(),
                 any<ByteArray>(),
@@ -797,9 +799,9 @@ class GattServerManagerTest {
         serverApp: ContextApp<IBluetoothGattServerCallback>,
         callback: IBluetoothGattServerCallback,
     ) {
-        serverManager.onServerRegisteredFromNative(BluetoothGatt.GATT_SUCCESS, serverIf, uuid)
+        serverManager.onServerRegisteredFromNative(GATT_SUCCESS, serverIf, uuid)
         assertThat(serverApp.id).isEqualTo(serverIf)
-        verify(callback).onServerRegistered(BluetoothGatt.GATT_SUCCESS)
+        verify(callback).onServerRegistered(GATT_SUCCESS)
     }
 
     private fun onConnected(
