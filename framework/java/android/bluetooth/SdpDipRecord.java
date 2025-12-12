@@ -20,7 +20,7 @@ import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-/** Data representation of a Object Push Profile Server side SDP record. */
+/** Data representation of a Device Identification Profile SDP record. */
 @Hide
 public class SdpDipRecord implements Parcelable {
     private final int mSpecificationId;
