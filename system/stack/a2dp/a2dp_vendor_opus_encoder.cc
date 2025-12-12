@@ -335,7 +335,6 @@ static void a2dp_opus_encode_frames(uint8_t nb_frame) {
   uint8_t read_buffer[p_encoder_params->framesize * p_encoder_params->pcm_wlength *
                       p_encoder_params->channel_mode];
 
-  int32_t out_frames = 0;
   int32_t written = 0;
 
   uint32_t bytes_read = 0;
@@ -370,12 +369,11 @@ static void a2dp_opus_encode_frames(uint8_t nb_frame) {
           a2dp_opus_encoder_cb.stats.media_read_total_dropped_packets++;
           osi_free(p_buf);
           return;
-        } else {
-          out_frames++;
         }
+
         p_buf->len += written;
         nb_frame--;
-        p_buf->layer_specific += out_frames;  // added a frame to the buffer
+        p_buf->layer_specific++;  // added a frame to the buffer
       } else {
         log::warn("Opus src buffer underflow {}", nb_frame);
         a2dp_opus_encoder_cb.opus_feeding_state.counter +=
