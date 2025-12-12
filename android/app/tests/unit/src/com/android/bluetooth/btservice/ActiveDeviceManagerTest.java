@@ -1735,39 +1735,38 @@ public class ActiveDeviceManagerTest {
     @Test
     @EnableFlags(Flags.FLAG_ADM_SUSPEND_FALLBACK_DURING_CHANGE)
     public void fallbackNotTriggeredWhenDevicePendingActive() {
-        // Three devices connected: LE Audio active, ASHA as fallback and A2DP
+        // Three devices connected: A2DP active, ASHA as fallback and Le Audio
         hearingAidConnected(mHearingAidDevice);
         leAudioConnected(mLeAudioDevice);
         a2dpConnected(mA2dpDevice, false);
         hearingAidActiveDeviceChanged(null);
-        a2dpActiveDeviceChanged(null);
-        leAudioActiveDeviceChanged(mLeAudioDevice);
+        leAudioActiveDeviceChanged(null);
+        a2dpActiveDeviceChanged(mA2dpDevice);
         mTestLooper.dispatchAll();
-        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isEqualTo(mLeAudioDevice);
+        assertThat(mActiveDeviceManager.getA2dpActiveDevice()).isEqualTo(mA2dpDevice);
         Mockito.clearInvocations(mLeAudioService);
         Mockito.clearInvocations(mHearingAidService);
         Mockito.clearInvocations(mA2dpService);
 
-        when(mLeAudioService.getActiveDevices()).thenReturn(List.of(mLeAudioDevice));
+        when(mA2dpService.getActiveDevice()).thenReturn(mA2dpDevice);
 
-        // Set A2DP device as active.
-        mActiveDeviceManager.setActiveDevice(mA2dpDevice, BluetoothAdapter.ACTIVE_DEVICE_ALL);
+        // Set LE Audio device as active.
+        when(mHearingAidService.getActiveDevices()).thenReturn(List.of(mHearingAidDevice));
+        mActiveDeviceManager.setActiveDevice(mLeAudioDevice, BluetoothAdapter.ACTIVE_DEVICE_ALL);
 
-        // Simulate LE Audio device disconnecting.
-        leAudioDisconnected(mLeAudioDevice);
+        // Simulate A2DP device disconnecting.
+        leAudioDisconnected(mA2dpDevice);
         mTestLooper.dispatchAll();
 
-        // Fallback should be prevented because mA2dpDevice is pending to be active.
-        // So, no other device should become active for LE audio.
-        verify(mLeAudioService, never()).setActiveDevice(any());
+        // Fallback should be prevented because mLeAudioDevice is pending to be active.
+        // So, no other device should become active for A2DP.
+        verify(mA2dpService, never()).setActiveDevice(any());
         verify(mHearingAidService, never()).setActiveDevice(any());
-        // In handleLeAudioDisconnected -> deviceDisconnected() hasFallbackDevice is false.
-        verify(mLeAudioService).deviceDisconnected(mLeAudioDevice, false);
 
-        // Now, let the A2DP active device change happen.
-        a2dpActiveDeviceChanged(mA2dpDevice);
+        // Now, let the LE Audio active device change happen.
+        leAudioActiveDeviceChanged(mLeAudioDevice);
         mTestLooper.dispatchAll();
-        assertThat(mActiveDeviceManager.getA2dpActiveDevice()).isEqualTo(mA2dpDevice);
+        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isEqualTo(mLeAudioDevice);
     }
 
     @Test
@@ -1778,36 +1777,32 @@ public class ActiveDeviceManagerTest {
         leAudioConnected(mLeAudioDevice);
         a2dpConnected(mA2dpDevice, false);
         hearingAidActiveDeviceChanged(null);
-        a2dpActiveDeviceChanged(null);
+        leAudioActiveDeviceChanged(null);
 
-        // set LE Audio as active device
-        leAudioActiveDeviceChanged(mLeAudioDevice);
+        // set A2DP as active device
+        a2dpActiveDeviceChanged(mA2dpDevice);
         mTestLooper.dispatchAll();
-        assertThat(mActiveDeviceManager.getLeAudioActiveDevice()).isEqualTo(mLeAudioDevice);
+        assertThat(mActiveDeviceManager.getA2dpActiveDevice()).isEqualTo(mA2dpDevice);
         Mockito.clearInvocations(mLeAudioService);
         Mockito.clearInvocations(mHearingAidService);
         Mockito.clearInvocations(mA2dpService);
 
-        when(mLeAudioService.getActiveDevices()).thenReturn(List.of(mLeAudioDevice));
+        // Set LE Audio device as active.
+        when(mHearingAidService.getActiveDevices()).thenReturn(List.of(mHearingAidDevice));
+        mActiveDeviceManager.setActiveDevice(mLeAudioDevice, BluetoothAdapter.ACTIVE_DEVICE_ALL);
 
-        // Set A2DP device as active.
-        mActiveDeviceManager.setActiveDevice(mA2dpDevice, BluetoothAdapter.ACTIVE_DEVICE_ALL);
-
-        Mockito.clearInvocations(mA2dpService);
-
-        // A2DP disconnects before becomes active
-        a2dpDisconnected(mA2dpDevice);
-        // LE Audio device (current active) disconnects
+        // LE Audio disconnects before becomes active
         leAudioDisconnected(mLeAudioDevice);
+
+        // A2DP device (current active) disconnects
+        a2dpDisconnected(mA2dpDevice);
 
         mTestLooper.dispatchAll();
 
         // Fall back to ASHA successful
         verify(mA2dpService, never()).setActiveDevice(any());
-        verify(mLeAudioService, never()).setActiveDevice(any());
-        verify(mHearingAidService).setActiveDevice(any());
-        // In handleLeAudioDisconnected -> deviceDisconnected() hasFallbackDevice is false.
-        verify(mLeAudioService).deviceDisconnected(mLeAudioDevice, true);
+        verify(mLeAudioService).setActiveDevice(any());
+        assertThat(mActiveDeviceManager.getHearingAidActiveDevices()).contains(mHearingAidDevice);
     }
 
     /**

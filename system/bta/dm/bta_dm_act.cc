@@ -991,12 +991,9 @@ static void bta_dm_adjust_roles(bool delay_role_switch) {
                 break;
             }
           } else {
-            uint64_t delay = BTA_DM_SWITCH_DELAY_TIMER_MS;
-            if (com_android_bluetooth_flags_extend_and_randomize_role_switch_delay()) {
-              delay = bluetooth::os::GenerateRandom() %
-                              (BTA_DM_MAX_SWITCH_DELAY_MS - BTA_DM_MIN_SWITCH_DELAY_MS) +
-                      BTA_DM_MIN_SWITCH_DELAY_MS;
-            }
+            uint64_t delay = bluetooth::os::GenerateRandom() %
+                                     (BTA_DM_MAX_SWITCH_DELAY_MS - BTA_DM_MIN_SWITCH_DELAY_MS) +
+                             BTA_DM_MIN_SWITCH_DELAY_MS;
             log::debug("Set timer to delay role switch:{}", delay);
             alarm_set_on_mloop(bta_dm_cb.switch_delay_timer, delay, bta_dm_delay_role_switch_cback,
                                NULL);

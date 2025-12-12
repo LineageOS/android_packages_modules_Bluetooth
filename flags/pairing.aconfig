@@ -72,16 +72,6 @@ flag {
 }
 
 flag {
-    name: "identity_to_pseudo_addr"
-    namespace: "bluetooth"
-    description: "Convert identity address to pseudo address during connection"
-    bug: "414509356"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "link_status_api"
     is_exported: true
     namespace: "bluetooth"
@@ -134,16 +124,6 @@ flag {
     namespace: "bluetooth"
     description: "Do add unnecessary delay to conclude LE pairing"
     bug: "436319185"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "avoid_ctkd_for_temp_pairing"
-    namespace: "bluetooth"
-    description: "Do not perform CTKD for temporary pairing"
-    bug: "436957985"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -265,6 +245,16 @@ flag {
     namespace: "bluetooth"
     description: "If the pairing state is not idle, do not overwrite btm_sec_cb"
     bug: "467193133"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "non_ctkd_dual_mode_pairing"
+    namespace: "bluetooth"
+    description: "Allow applications to initiate separate pairing for different transports with non-CTKD supporting dual mode devices"
+    bug: "467761282"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

@@ -15,19 +15,19 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.btservice;
+package com.android.bluetooth.btservice
 
-import android.bluetooth.BluetoothUtils;
-import android.util.Log;
+import android.bluetooth.BluetoothUtils
+import android.util.Log
+import com.android.bluetooth.Util
 
-import com.android.bluetooth.Util;
+private const val TAG = Util.BT_PREFIX + "InteropUtil"
 
 /**
  * APIs of interoperability workaround utilities. These APIs will call stack layer's interop APIs of
  * interop.cc to do matching or entry adding/removing.
  */
-public class InteropUtil {
-    private static final String TAG = Util.BT_PREFIX + InteropUtil.class.getSimpleName();
+object InteropUtil {
 
     /**
      * Add interop feature from device/include/interop.h to below InteropFeature if this feature
@@ -35,7 +35,7 @@ public class InteropUtil {
      * matching, so make sure that the added feature's name is exactly same as that in
      * device/include/interop.h.
      */
-    public enum InteropFeature {
+    enum class InteropFeature {
         INTEROP_NOT_UPDATE_AVRCP_PAUSED_TO_REMOTE,
         INTEROP_PHONE_POLICY_INCREASED_DELAY_CONNECT_OTHER_PROFILES,
         INTEROP_PHONE_POLICY_REDUCED_DELAY_CONNECT_OTHER_PROFILES,
@@ -46,34 +46,32 @@ public class InteropUtil {
         INTEROP_ADV_PBAP_VER_1_2,
         INTEROP_HFP_SEND_OK_FOR_CLCC_AFTER_VOIP_CALL_END,
         INTEROP_A2DP_DELAY_DISCONNECT,
-        INTEROP_DISABLE_PROFILE_FALLBACK
+        INTEROP_DISABLE_PROFILE_FALLBACK,
     }
-
-    private InteropUtil() {}
 
     /**
      * Check if a given address or remote device name matches a known interoperability workaround
      * identified by the interop feature. remote device name will be fetched internally based on the
      * given address at stack layer.
      *
-     * @param feature a given interop feature defined in {@link InteropFeature}.
+     * @param feature a given interop feature defined in [InteropFeature].
      * @param address a given address to be matched.
-     * @return true if matched, false otherwise
+     * @return `true` if matched, `false` otherwise
      */
-    public static boolean interopMatchAddrOrName(
-            AdapterService adapterService, InteropFeature feature, String address) {
-        Log.d(
-                TAG,
-                "interopMatchAddrOrName: feature="
-                        + feature.name()
-                        + ", address="
-                        + BluetoothUtils.toAnonymizedAddress(address));
+    @JvmStatic
+    fun interopMatchAddrOrName(
+        adapterService: AdapterService,
+        feature: InteropFeature,
+        address: String?,
+    ): Boolean {
+        val anonymizedAddress = BluetoothUtils.toAnonymizedAddress(address)
+        Log.d(TAG, "interopMatchAddrOrName: feature=${feature.name}, address=$anonymizedAddress")
         if (address == null) {
-            return false;
+            return false
         }
 
-        boolean matched = adapterService.interopMatchAddrOrName(feature, address);
-        Log.d(TAG, "interopMatchAddrOrName: matched=" + matched);
-        return matched;
+        val matched = adapterService.interopMatchAddrOrName(feature, address)
+        Log.d(TAG, "interopMatchAddrOrName: matched=$matched")
+        return matched
     }
 }

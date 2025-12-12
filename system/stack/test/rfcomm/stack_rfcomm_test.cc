@@ -194,6 +194,8 @@ TEST_F(StackRfcommTest, test_PORT_IsCollisionDetected) {
 
   // Only some situations where state is CONNECTED can be collisions.
   rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_CONNECTED;
+  // Null port shouldn't trigger collision
+  ASSERT_FALSE(PORT_IsCollisionDetected(test_bd_addr));
   rfc_cb.port.port[0].rfc.p_mcb = &rfc_cb.port.rfc_mcb[0];
 
   rfc_cb.port.port[0].rfc.sm_cb.state = RFC_STATE_CLOSED;
@@ -216,9 +218,7 @@ TEST_F(StackRfcommTest, test_PORT_IsCollisionDetected) {
  * 4. Send UA and PN in response to SABME
  * 5. Verify mux connected
  */
-TEST_F_WITH_FLAGS(StackRfcommTest, collide_then_establish_incoming_conn,
-                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
-                                                      rfcomm_fix_mux_collision_handling))) {
+TEST_F(StackRfcommTest, collide_then_establish_incoming_conn) {
   uint16_t server_handle = 0;
   uint16_t client_handle = 0;
 
@@ -264,9 +264,7 @@ TEST_F_WITH_FLAGS(StackRfcommTest, collide_then_establish_incoming_conn,
  * 7. Receive UA in response to SABME
  * 8. Verify mux connected
  */
-TEST_F_WITH_FLAGS(StackRfcommTest, collide_then_establish_outgoing_conn,
-                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
-                                                      rfcomm_fix_mux_collision_handling))) {
+TEST_F(StackRfcommTest, collide_then_establish_outgoing_conn) {
   uint16_t server_handle = 0;
   uint16_t client_handle = 0;
 
@@ -324,9 +322,7 @@ TEST_F_WITH_FLAGS(StackRfcommTest, collide_then_establish_outgoing_conn,
  * 3. Receive error for outgoing connection
  * 4. Verify nothing cached anymore
  */
-TEST_F_WITH_FLAGS(StackRfcommTest, collide_then_err_outgoing_conn,
-                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
-                                                      rfcomm_fix_mux_collision_handling))) {
+TEST_F(StackRfcommTest, collide_then_err_outgoing_conn) {
   uint16_t server_handle = 0;
   uint16_t client_handle = 0;
 
@@ -354,9 +350,7 @@ TEST_F_WITH_FLAGS(StackRfcommTest, collide_then_err_outgoing_conn,
  * 3. Receive Disconnect request for outgoing connection
  * 4. Verify nothing cached anymore
  */
-TEST_F_WITH_FLAGS(StackRfcommTest, collide_then_close_outgoing_conn,
-                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
-                                                      rfcomm_fix_mux_collision_handling))) {
+TEST_F(StackRfcommTest, collide_then_close_outgoing_conn) {
   uint16_t server_handle = 0;
   uint16_t client_handle = 0;
 
@@ -385,9 +379,7 @@ TEST_F_WITH_FLAGS(StackRfcommTest, collide_then_close_outgoing_conn,
  * 5. Receive error from peer
  * 6. Verify PORT_START_FAILED and mux now IDLE
  */
-TEST_F_WITH_FLAGS(StackRfcommTest, collide_then_err_outgoing_after_timeout,
-                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
-                                                      rfcomm_fix_mux_collision_handling))) {
+TEST_F(StackRfcommTest, collide_then_err_outgoing_after_timeout) {
   uint16_t server_handle = 0;
   uint16_t client_handle = 0;
 
@@ -431,9 +423,7 @@ TEST_F_WITH_FLAGS(StackRfcommTest, collide_then_err_outgoing_after_timeout,
  * 7. Close outgoing connection
  * 8. Verify PORT_PEER_CONNECTION_FAILED and mux now IDLE
  */
-TEST_F_WITH_FLAGS(StackRfcommTest, collide_then_close_outgoing_after_timeout,
-                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
-                                                      rfcomm_fix_mux_collision_handling))) {
+TEST_F(StackRfcommTest, collide_then_close_outgoing_after_timeout) {
   uint16_t server_handle = 0;
   uint16_t client_handle = 0;
 

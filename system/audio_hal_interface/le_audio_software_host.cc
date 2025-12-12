@@ -536,8 +536,8 @@ bool LeAudioClientInterface::ReleaseSink(LeAudioClientInterface::Sink* sink) {
 
 LeAudioClientInterface::Source* LeAudioClientInterface::GetSource(
         StreamCallbacks stream_cb, bluetooth::common::MessageLoopThread* /*message_loop*/) {
-  if (source_ == nullptr) {
-    source_ = new Source();
+  if (unicast_source_ == nullptr) {
+    unicast_source_ = new Source();
   } else {
     log::warn("Source is already acquired");
     return nullptr;
@@ -548,13 +548,13 @@ LeAudioClientInterface::Source* LeAudioClientInterface::GetSource(
   host::le_audio::LeAudioSourceTransport::instance =
           new host::le_audio::LeAudioSourceTransport(std::move(stream_cb));
 
-  return source_;
+  return unicast_source_;
 }
 
-bool LeAudioClientInterface::IsSourceAcquired() { return source_ != nullptr; }
+bool LeAudioClientInterface::IsUnicastSourceAcquired() { return unicast_source_ != nullptr; }
 
 bool LeAudioClientInterface::ReleaseSource(LeAudioClientInterface::Source* source) {
-  if (source != source_) {
+  if (source != unicast_source_) {
     log::warn("Can't release not acquired source");
     return false;
   }
@@ -565,8 +565,8 @@ bool LeAudioClientInterface::ReleaseSource(LeAudioClientInterface::Source* sourc
     source->Cleanup();
   }
 
-  delete (source_);
-  source_ = nullptr;
+  delete (unicast_source_);
+  unicast_source_ = nullptr;
 
   return true;
 }

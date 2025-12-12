@@ -58,7 +58,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   bluetooth::audio::le_audio::StreamCallbacks streamCb = {onResume, onSuspend, onMetadataUpdate,
                                                           onSinkMetadataUpdate};
 
-  if (!interface->IsSourceAcquired()) {
+  if (!interface->IsUnicastSourceAcquired()) {
     LeAudioClientInterface::Source* source = interface->GetSource(streamCb, &messageLoopThread);
     if (source != nullptr) {
       uint16_t delay = fdp.ConsumeIntegral<uint16_t>();

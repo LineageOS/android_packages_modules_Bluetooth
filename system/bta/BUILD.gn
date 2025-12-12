@@ -139,8 +139,8 @@ static_library("bta") {
     "sys/utl.cc",
     "vaps/vaps_server.cc",
     "vaps/vaps_server_utils.cc",
-    "vc/device.cc",
-    "vc/vc.cc",
+    "vcp/vcp_controller_device.cc",
+    "vcp/vcp_controller.cc",
   ]
 
   include_dirs = [

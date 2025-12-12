@@ -255,7 +255,6 @@ static uint8_t btif_a2dp_source_dynamic_audio_buffer_size = MAX_OUTPUT_A2DP_FRAM
 
 static void btif_a2dp_source_init_delayed(void);
 static bool btif_a2dp_source_startup(void);
-static void btif_a2dp_source_startup_delayed(void);
 static void btif_a2dp_source_start_session_delayed(const RawAddress& peer_address,
                                                    std::promise<void> start_session_promise);
 static void btif_a2dp_source_audio_tx_start_event(void);
@@ -329,12 +328,10 @@ bool btif_a2dp_source_init(void) {
   // Start A2DP Source media task
   btif_a2dp_source_thread.StartUp();
 
-  if (com_android_bluetooth_flags_a2dp_source_null_fixed_queue()) {
-    if (!btif_a2dp_source_thread.EnableRealTimeScheduling()) {
+  if (!btif_a2dp_source_thread.EnableRealTimeScheduling()) {
 #if defined(__ANDROID__)
-      log::fatal("unable to enable real time scheduling");
+    log::fatal("unable to enable real time scheduling");
 #endif
-    }
   }
 
   do_in_main_thread(base::BindOnce(&btif_a2dp_source_init_delayed));
@@ -440,33 +437,13 @@ static bool btif_a2dp_source_startup(void) {
   btif_a2dp_source_cb.SetState(BtifA2dpSource::kStateStartingUp);
   btif_a2dp_source_cb.tx_audio_queue = fixed_queue_new(SIZE_MAX);
 
-  if (com_android_bluetooth_flags_a2dp_source_null_fixed_queue()) {
-    if (!bluetooth::audio::a2dp::init(get_main_thread(), &a2dp_stream_callbacks,
-                                      btif_av_is_a2dp_offload_enabled())) {
-      log::warn("Failed to setup the bluetooth audio HAL");
-    }
-    btif_a2dp_source_cb.SetState(BtifA2dpSource::kStateRunning);
-  } else {
-    // Schedule the rest of the operations
-    do_in_main_thread(base::BindOnce(&btif_a2dp_source_startup_delayed));
-  }
-
-  return true;
-}
-
-static void btif_a2dp_source_startup_delayed() {
-  log::info("state={}", btif_a2dp_source_cb.StateStr());
-
-  if (!btif_a2dp_source_thread.EnableRealTimeScheduling()) {
-#if defined(__ANDROID__)
-    log::fatal("unable to enable real time scheduling");
-#endif
-  }
   if (!bluetooth::audio::a2dp::init(get_main_thread(), &a2dp_stream_callbacks,
                                     btif_av_is_a2dp_offload_enabled())) {
     log::warn("Failed to setup the bluetooth audio HAL");
   }
+
   btif_a2dp_source_cb.SetState(BtifA2dpSource::kStateRunning);
+  return true;
 }
 
 bool btif_a2dp_source_start_session(const RawAddress& peer_address,

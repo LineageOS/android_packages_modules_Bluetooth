@@ -1078,10 +1078,7 @@ public class AdapterService extends Service {
             mDatabaseManager.start(MetadataDatabase.createDatabase(this)); // Migrating
         }
 
-        boolean isAutomotiveDevice =
-                getApplicationContext()
-                        .getPackageManager()
-                        .hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE);
+        var isAutomotiveDevice = Util.isAutomotive(getApplicationContext());
 
         /*
          * Phone policy is specific to phone implementations and hence if a device wants to exclude
@@ -3034,9 +3031,10 @@ public class AdapterService extends Service {
             OobData remoteP256Data,
             String callingPackage) {
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
-        if (deviceProp != null && deviceProp.getBondState() != BluetoothDevice.BOND_NONE) {
-            // true for BONDING, false for BONDED
-            return deviceProp.getBondState() == BluetoothDevice.BOND_BONDING;
+        int bondState = deviceProp != null ? deviceProp.getBondState() : BluetoothDevice.BOND_NONE;
+
+        if (bondState != BluetoothDevice.BOND_NONE) {
+            return bondState == BluetoothDevice.BOND_BONDING; // true for BONDING, false for BONDED
         }
 
         if (!isEnabled()) {
@@ -3638,9 +3636,7 @@ public class AdapterService extends Service {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
 
-        if (Flags.identityToPseudoAddr()) {
-            device = requireNonNullElse(mRemoteDevices.getDevice(device.getAddress()), device);
-        }
+        device = requireNonNullElse(mRemoteDevices.getDevice(device.getAddress()), device);
 
         // Checks if any profiles are enabled or disabled and if so, only connect enabled profiles
         if (!isAllProfilesUnknown(device)) {

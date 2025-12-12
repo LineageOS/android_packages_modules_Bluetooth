@@ -145,7 +145,7 @@ public final class BluetoothLeAdvertiser {
                 throw new IllegalArgumentException("callback cannot be null");
             }
             if (!BluetoothLeUtils.checkAdapterStateOn(mAdapter)) {
-                Log.w(TAG, "BLE is not available");
+                Log.w(TAG, "startAdvertising(): BLE is not available");
                 postStartFailure(callback, AdvertiseCallback.ADVERTISE_FAILED_INTERNAL_ERROR);
                 return;
             }
@@ -556,7 +556,7 @@ public final class BluetoothLeAdvertiser {
             throw new IllegalArgumentException("callback cannot be null");
         }
         if (!BluetoothLeUtils.checkAdapterStateOn(mAdapter)) {
-            Log.w(TAG, "BLE is not available");
+            Log.w(TAG, "startAdvertisingSet(): BLE is not available");
             postStartSetFailure(
                     handler, callback, AdvertiseCallback.ADVERTISE_FAILED_INTERNAL_ERROR);
             return;

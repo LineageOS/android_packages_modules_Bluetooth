@@ -270,7 +270,7 @@ impl BtSocket {
 
     #[log_args]
     pub fn disconnect_all(&self, addr: RawAddress) -> BtStatus {
-        ccall!(self, disconnect_all, &addr).into()
+        ccall!(self, disconnect_all, addr).into()
     }
 }
 

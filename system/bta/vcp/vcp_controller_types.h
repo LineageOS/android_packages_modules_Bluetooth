@@ -20,7 +20,7 @@
 #include <aics/api.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/uuid.h>
-#include <hardware/bt_vc.h>
+#include <hardware/bt_vcp_controller.h>
 
 #include <algorithm>
 #include <queue>
@@ -31,7 +31,7 @@
 #include "osi/include/alarm.h"
 
 namespace bluetooth {
-namespace vc {
+namespace vcp {
 namespace internal {
 
 /* clang-format off */
@@ -320,5 +320,5 @@ public:
 };
 
 }  // namespace internal
-}  // namespace vc
+}  // namespace vcp
 }  // namespace bluetooth

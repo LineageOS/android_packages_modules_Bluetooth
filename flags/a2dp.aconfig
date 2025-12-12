@@ -17,30 +17,10 @@ flag {
 }
 
 flag {
-    name: "a2dp_sbc_underflow_recovery"
-    namespace: "bluetooth"
-    description: "Reset the SBC feeding counter to the limiting size"
-    bug: "417543022"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "delay_sniff_subrating"
     namespace: "bluetooth"
     description: "Delay Sniff Subrating as in some remote's timing issues were observed"
     bug: "419205731"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "a2dp_set_configuration_during_discovery"
-    namespace: "bluetooth"
-    description: "Accept AVDTP SetConfiguration during ongoing AVDTP Discovery"
-    bug: "425738557"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -68,16 +48,6 @@ flag {
     namespace: "bluetooth"
     description: "Resolve incorrect codec priority of mandatory codec"
     bug: "438373657"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "a2dp_source_null_fixed_queue"
-    namespace: "bluetooth"
-    description: "Resolve race in btif_a2dp_source between start and shutdown"
-    bug: "432232478"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

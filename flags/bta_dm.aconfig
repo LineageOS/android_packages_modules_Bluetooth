@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "extend_and_randomize_role_switch_delay"
-    namespace: "bluetooth"
-    description: "Fix the possible conflicts between role switch and authentication"
-    bug: "388459732"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "sniff_offload_with_vsc_based_control"
     namespace: "bluetooth"
     description: "Feature to enable sniff offload with VSC based control"

@@ -25,7 +25,7 @@
 #include <variant>
 
 namespace bluetooth {
-namespace vc {
+namespace vcp {
 
 // Must be kept in sync with BluetoothProfile.java
 enum class ConnectionState { DISCONNECTED = 0, CONNECTING, CONNECTED, DISCONNECTING };
@@ -45,9 +45,9 @@ enum class VolumeInputType : uint8_t {
 
 enum class VolumeInputStatus : uint8_t { Inactive = 0x00, Active, RFU };
 
-class VolumeControlCallbacks {
+class VolumeControllerCallbacks {
 public:
-  virtual ~VolumeControlCallbacks() = default;
+  virtual ~VolumeControllerCallbacks() = default;
 
   /** Callback for profile connection state change */
   virtual void OnConnectionState(ConnectionState state, const RawAddress& address) = 0;
@@ -95,12 +95,12 @@ public:
                                               std::string description, bool is_writable) = 0;
 };
 
-class VolumeControlInterface {
+class VolumeControllerInterface {
 public:
-  virtual ~VolumeControlInterface() = default;
+  virtual ~VolumeControllerInterface() = default;
 
   /** Register the Volume Control callbacks */
-  virtual void Init(VolumeControlCallbacks* callbacks) = 0;
+  virtual void Init(VolumeControllerCallbacks* callbacks) = 0;
 
   /** Closes the interface */
   virtual void Cleanup(void) = 0;
@@ -146,14 +146,14 @@ public:
                                  bluetooth::aics::Mute mute) = 0;
 };
 
-} /* namespace vc */
+} /* namespace vcp */
 } /* namespace bluetooth */
 
 namespace std {
 template <>
-struct formatter<bluetooth::vc::VolumeInputType> : enum_formatter<bluetooth::vc::VolumeInputType> {
-};
+struct formatter<bluetooth::vcp::VolumeInputType>
+    : enum_formatter<bluetooth::vcp::VolumeInputType> {};
 template <>
-struct formatter<bluetooth::vc::VolumeInputStatus>
-    : enum_formatter<bluetooth::vc::VolumeInputStatus> {};
+struct formatter<bluetooth::vcp::VolumeInputStatus>
+    : enum_formatter<bluetooth::vcp::VolumeInputStatus> {};
 }  // namespace std

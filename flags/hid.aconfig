@@ -22,16 +22,6 @@ flag {
 }
 
 flag {
-    name: "hogp_direct_connection_upgrade"
-    namespace: "bluetooth"
-    description: "Allow background connection requests to be upgraded to direct connections"
-    bug: "430179438"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "reset_state_when_removing_non_connected_hid_device"
     namespace: "bluetooth"
     description: "When removing a not-yet-connected HID device, set conn_state to UNUSED and CID to 0"
@@ -166,6 +156,16 @@ flag {
     namespace: "bluetooth"
     description: "Propagate the handshake reply of get_idle and set_idle to the java layer"
     bug: "464973851"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "hid_default_preferred_transport"
+    namespace: "bluetooth"
+    description: "Link default HID preferred transport to LE Audio system property"
+    bug: "467386258"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

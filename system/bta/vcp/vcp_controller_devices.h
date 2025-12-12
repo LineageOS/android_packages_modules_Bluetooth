@@ -26,13 +26,13 @@
 #include <vector>
 
 #include "bta/include/bta_gatt_api.h"
-#include "bta/vc/types.h"
+#include "bta/vcp/vcp_controller_types.h"
 
 namespace bluetooth {
-namespace vc {
+namespace vcp {
 namespace internal {
 
-class VolumeControlDevice {
+class VolumeControllerDevice {
 public:
   RawAddress address;
 
@@ -64,7 +64,7 @@ public:
    * notifications */
   bool device_ready;
 
-  VolumeControlDevice(const RawAddress& address, bool connecting_actively)
+  VolumeControllerDevice(const RawAddress& address, bool connecting_actively)
       : address(address),
         connecting_actively(connecting_actively),
         known_service_handles_(false),
@@ -82,7 +82,7 @@ public:
         device_ready(false),
         requests_initiated(false) {}
 
-  ~VolumeControlDevice() = default;
+  ~VolumeControllerDevice() = default;
 
   std::string ToRedactedStringForLogging() const { return address.ToRedactedStringForLogging(); }
 
@@ -173,7 +173,7 @@ private:
                                    GATT_WRITE_OP_CB cb);
 };
 
-class VolumeControlDevices {
+class VolumeControllerDevices {
 public:
   void Add(const RawAddress& address, bool connecting_actively) {
     if (FindByAddress(address) != nullptr) {
@@ -192,27 +192,27 @@ public:
     }
   }
 
-  VolumeControlDevice* FindByAddress(const RawAddress& address) {
+  VolumeControllerDevice* FindByAddress(const RawAddress& address) {
     auto iter = std::find_if(
             devices_.begin(), devices_.end(),
-            [&address](const VolumeControlDevice& device) { return device.address == address; });
+            [&address](const VolumeControllerDevice& device) { return device.address == address; });
 
     return (iter == devices_.end()) ? nullptr : &(*iter);
   }
 
-  VolumeControlDevice* FindByConnId(tCONN_ID connection_id) {
+  VolumeControllerDevice* FindByConnId(tCONN_ID connection_id) {
     auto iter = std::find_if(devices_.begin(), devices_.end(),
-                             [&connection_id](const VolumeControlDevice& device) {
+                             [&connection_id](const VolumeControllerDevice& device) {
                                return device.connection_id == connection_id;
                              });
 
     return (iter == devices_.end()) ? nullptr : &(*iter);
   }
 
-  std::vector<VolumeControlDevice*> getGroupDevices(int group_id) {
-    std::vector<VolumeControlDevice*> groupDevices;
+  std::vector<VolumeControllerDevice*> getGroupDevices(int group_id) {
+    std::vector<VolumeControllerDevice*> groupDevices;
     std::for_each(devices_.begin(), devices_.end(),
-                  [&groupDevices, &group_id](VolumeControlDevice& device) {
+                  [&groupDevices, &group_id](VolumeControllerDevice& device) {
                     if (device.group_id == group_id) {
                       groupDevices.push_back(&device);
                     }
@@ -254,7 +254,7 @@ public:
   void ControlPointOperation(const std::vector<RawAddress>& devices, uint8_t opcode,
                              const std::vector<uint8_t>* arg, GATT_WRITE_OP_CB cb, void* cb_data) {
     for (auto& addr : devices) {
-      VolumeControlDevice* device = FindByAddress(addr);
+      VolumeControllerDevice* device = FindByAddress(addr);
       if (device && device->IsConnected()) {
         device->ControlPointOperation(opcode, arg, cb, cb_data);
       }
@@ -262,9 +262,9 @@ public:
   }
 
 private:
-  std::vector<VolumeControlDevice> devices_;
+  std::vector<VolumeControllerDevice> devices_;
 };
 
 }  // namespace internal
-}  // namespace vc
+}  // namespace vcp
 }  // namespace bluetooth

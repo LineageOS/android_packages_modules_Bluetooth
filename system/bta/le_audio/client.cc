@@ -1722,15 +1722,38 @@ public:
     /* We use same frame duration for sink/source */
     audio_framework_sink_config.data_interval_us = frame_duration_us * codec_frame_blocks_per_sdu;
 
-    /* If group supports more than 16kHz for the microphone in converstional
-     * case let's use that also for Audio Framework.
-     */
-    auto sink_configuration = group->GetAudioSessionCodecConfigForDirection(
-            LeAudioContextType::CONVERSATIONAL,
-            bluetooth::le_audio::types::kLeAudioDirectionSource);
-    if (!sink_configuration.IsInvalid() &&
-        sink_configuration.sample_rate > bluetooth::audio::le_audio::kSampleRate16000) {
-      audio_framework_sink_config.sample_rate = sink_configuration.sample_rate;
+    if (com_android_bluetooth_flags_le_audio_use_highest_sample_rate_for_mic()) {
+      /* If group supports more than 16kHz for the microphone
+       * let's use that also for Audio Framework.
+       *
+       * Note that liblc3 decoder only supports upsampling
+       * (see condition in `lc3_hr_setup_decoder``) so we will choose the
+       * highest possible sample rate for the PCM to feed to Audio Framework.
+       */
+      const auto sink_context_types = {LeAudioContextType::UNSPECIFIED,
+                                       LeAudioContextType::CONVERSATIONAL, LeAudioContextType::GAME,
+                                       LeAudioContextType::VOICEASSISTANTS,
+                                       LeAudioContextType::LIVE};
+      audio_framework_sink_config.sample_rate = bluetooth::audio::le_audio::kSampleRate16000;
+      for (auto context_type : sink_context_types) {
+        auto sink_configuration = group->GetAudioSessionCodecConfigForDirection(
+                context_type, bluetooth::le_audio::types::kLeAudioDirectionSource);
+        if (!sink_configuration.IsInvalid() &&
+            sink_configuration.sample_rate > audio_framework_sink_config.sample_rate) {
+          audio_framework_sink_config.sample_rate = sink_configuration.sample_rate;
+        }
+      }
+    } else {
+      /* If group supports more than 16kHz for the microphone in converstional
+       * case let's use that also for Audio Framework.
+       */
+      auto sink_configuration = group->GetAudioSessionCodecConfigForDirection(
+              LeAudioContextType::CONVERSATIONAL,
+              bluetooth::le_audio::types::kLeAudioDirectionSource);
+      if (!sink_configuration.IsInvalid() &&
+          sink_configuration.sample_rate > bluetooth::audio::le_audio::kSampleRate16000) {
+        audio_framework_sink_config.sample_rate = sink_configuration.sample_rate;
+      }
     }
 
     le_audio_sink_hal_client_->Start(audio_framework_sink_config, audioSourceReceiver, dsa_modes);

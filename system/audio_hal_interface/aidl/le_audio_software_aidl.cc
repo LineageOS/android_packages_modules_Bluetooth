@@ -466,11 +466,11 @@ void LeAudioSinkTransport::SetBluetoothRequestStateUnsafe(BluetoothRequest reque
 }
 
 void flush_source() {
-  if (LeAudioSourceTransport::interface == nullptr) {
+  if (LeAudioSourceTransport::interface_unicast_ == nullptr) {
     return;
   }
 
-  LeAudioSourceTransport::interface->FlushAudioData();
+  LeAudioSourceTransport::interface_unicast_->FlushAudioData();
 }
 
 LeAudioSourceTransport::LeAudioSourceTransport(SessionType session_type, StreamCallbacks stream_cb)

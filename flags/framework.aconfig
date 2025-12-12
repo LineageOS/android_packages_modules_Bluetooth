@@ -22,13 +22,6 @@ flag {
 }
 
 flag {
-    name: "hci_instance_name_use_injected"
-    namespace: "bluetooth"
-    description: "Inject service manager bluetooth hci instance name"
-    bug: "413484664"
-}
-
-flag {
     name: "add_profile_as_intent_extra"
     is_exported: true
     namespace: "bluetooth"

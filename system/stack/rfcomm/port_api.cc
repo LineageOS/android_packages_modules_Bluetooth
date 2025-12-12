@@ -505,17 +505,20 @@ bool PORT_IsCollisionDetected(RawAddress bd_addr) {
         (multiplexer_cb.state < RFC_MX_STATE_CONNECTED)) {
       // this rfc_mcb is in the middle of opening
       // bd_addr either matches or is empty and possibly not yet set
-      log::info("Found an opening rfc_mcb, multiplexer bd_addr={},returning true",
+      log::info("Found an opening rfc_mcb, multiplexer bd_addr={}, returning true",
                 multiplexer_cb.bd_addr);
       return true;
     }
     if (multiplexer_cb.state == RFC_MX_STATE_CONNECTED) {
       const tPORT* p_port = get_port_from_mcb(&multiplexer_cb);
-      log::info("RFC_MX_STATE_CONNECTED, found_port={}, tRFC_PORT_STATE={}",
-                (p_port != nullptr) ? "T" : "F", (p_port != nullptr) ? p_port->rfc.sm_cb.state : 0);
-      if ((p_port == nullptr) || (p_port->rfc.sm_cb.state > RFC_STATE_CLOSED &&
-                                  p_port->rfc.sm_cb.state < RFC_STATE_OPENED)) {
-        log::info("In RFC_MX_STATE_CONNECTED but port is being established, returning true");
+      if (p_port == nullptr) {
+        log::info("RFC_MX_STATE_CONNECTED, port not found");
+        return false;
+      }
+      log::info("RFC_MX_STATE_CONNECTED, port found, state={}", p_port->rfc.sm_cb.state);
+      if (p_port->rfc.sm_cb.state > RFC_STATE_CLOSED &&
+          p_port->rfc.sm_cb.state < RFC_STATE_OPENED) {
+        // A port associated with this mux is in the process of being established
         return true;
       }
     }
