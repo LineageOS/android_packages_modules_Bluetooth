@@ -189,11 +189,34 @@ public interface BluetoothProfile {
     /** Voice Assistant Profile and Service */
     @Hide int VAPS_SERVER = 32;
 
+    /** Le Audio Server Profile */
+    @FlaggedApi(Flags.FLAG_LEAUDIO_PERIPHERAL_FEATURE)
+    @Hide
+    @SystemApi
+    int LE_AUDIO_PERIPHERAL = 33;
+
     /**
-     * Max profile ID. This value should be updated whenever a new profile is added to match the
-     * largest value assigned to a profile.
+     * Gets the maximum profile ID.
+     *
+     * <p>The value returned is dependent on feature flags.
+     *
+     * @return the maximum profile ID.
      */
-    @Hide int MAX_PROFILE_ID = 32;
+    @Hide
+    static int getMaxProfileId() {
+        /* Return value dependent on feature flags */
+        if (Flags.leaudioPeripheralFeature()) {
+            return LE_AUDIO_PERIPHERAL;
+        }
+
+        /* Max profile ID. This value should be updated whenever a new profile is added to match the
+         * largest value assigned to a profile.
+         */
+        return VAPS_SERVER;
+    }
+
+    /** Max profile ID. */
+    @Hide int MAX_PROFILE_ID = getMaxProfileId();
 
     /**
      * Default priority for devices that we try to auto-connect to and allow incoming connections
@@ -349,6 +372,10 @@ public interface BluetoothProfile {
     @NonNull
     @RequiresNoPermission
     static String getProfileName(int profile) {
+        if (Flags.leaudioPeripheralFeature()) {
+            if (profile == LE_AUDIO_PERIPHERAL) return "LE_AUDIO_PERIPHERAL";
+        }
+
         return switch (profile) {
             case HEADSET -> "HEADSET";
             case A2DP -> "A2DP";
