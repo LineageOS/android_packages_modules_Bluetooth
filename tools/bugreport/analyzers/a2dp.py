@@ -773,6 +773,10 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
     started_ts = acl_connection.connected.timestamp if acl_connection.connected else acl_packets[0].packet.timestamp
     print(f"---- {started_ts} | 0x{acl_connection.connection_handle:04x} ----")
 
+    # List transmission times of AVDTP Start and Suspend commands.
+    start_responses = []
+    suspend_responses = []
+
     for packet in acl_packets:
         if isinstance(packet, L2capSignalingPacket):
             signal = packet.signal
@@ -863,6 +867,7 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
                 session.configuration = packet
 
             elif isinstance(packet.signal, avdtp.StartResponse):
+                start_responses.append(packet.packet.timestamp_us)
                 media_codec_capability = None
                 for (
                     service_capability
@@ -877,6 +882,7 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
                 all_streams.append(active_stream)
 
             elif isinstance(packet.signal, avdtp.SuspendResponse):
+                suspend_responses.append(packet.packet.timestamp_us)
                 active_stream.suspended = packet
                 active_stream = None
 
@@ -916,5 +922,12 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
     axs[1].xaxis.set_tick_params(rotation=45)
 
     plot_tx_queue(axs[1], acl_connection)
+
+    for ts in start_responses:
+        axs[0].axvline(np.datetime64(ts, 'us'), color='green')
+        axs[1].axvline(np.datetime64(ts, 'us'), color='green')
+    for ts in suspend_responses:
+        axs[0].axvline(np.datetime64(ts, 'us'), color='red')
+        axs[1].axvline(np.datetime64(ts, 'us'), color='red')
 
     plt.show()
