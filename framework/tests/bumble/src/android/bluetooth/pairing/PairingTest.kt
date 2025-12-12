@@ -38,7 +38,6 @@ import android.bluetooth.toAddressBytes
 import android.bluetooth.toAddressString
 import android.content.Context
 import android.os.ParcelUuid
-import android.platform.test.annotations.RequiresFlagsEnabled
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
@@ -242,7 +241,6 @@ class PairingTest {
      * 6. Android verifies bonded intent
      */
     @Test
-    @RequiresFlagsEnabled("com.android.bluetooth.flags.ignore_unrelated_cancel_bond")
     fun testBrEdrPairing_cancelBond_forUnrelatedDevice() {
         val intentReceiver =
             IntentReceiver.Builder(
