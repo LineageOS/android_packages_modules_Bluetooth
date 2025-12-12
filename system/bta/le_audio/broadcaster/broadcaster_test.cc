@@ -37,6 +37,7 @@
 #include "btm_iso_api_types.h"
 #include "gd/common/utils.h"
 #include "hci/controller_mock.h"
+#include "mock_test_sync_main_handler.h"
 #include "stack/include/btm_iso_api.h"
 #include "stack/include/main_thread.h"
 #include "test/common/mock_functions.h"
@@ -93,41 +94,7 @@ static base::OnceCallback<void(Octet8)> generator_cb;
 
 void btsnd_hcic_ble_rand(base::OnceCallback<void(Octet8)> cb) { generator_cb = std::move(cb); }
 
-std::atomic<int> num_async_tasks;
-bluetooth::common::MessageLoopThread message_loop_thread(
-        "test message loop", bluetooth::os::Thread::Priority::REAL_TIME);
-bluetooth::common::MessageLoopThread* get_main_thread() { return &message_loop_thread; }
 void invoke_switch_buffer_size_cb(bool /*is_low_latency_buffer_size*/) {}
-
-BtStatus do_in_main_thread(base::OnceClosure task) {
-  // Wrap the task with task counter so we could later know if there are
-  // any callbacks scheduled and we should wait before performing some actions
-  if (!message_loop_thread.DoInThread(base::BindOnce(
-              [](base::OnceClosure task, std::atomic<int>& num_async_tasks) {
-                std::move(task).Run();
-                num_async_tasks--;
-              },
-              std::move(task), std::ref(num_async_tasks)))) {
-    log::error("failed to post task to task runner!");
-    return BtifStatus(FAIL);
-  }
-  num_async_tasks++;
-  return BtifStatus();
-}
-
-static void init_message_loop_thread() {
-  num_async_tasks = 0;
-  message_loop_thread.StartUp();
-  if (!message_loop_thread.IsRunning()) {
-    FAIL() << "unable to create message loop thread.";
-  }
-
-  if (!message_loop_thread.EnableRealTimeScheduling()) {
-    log::error("Unable to set real time scheduling");
-  }
-}
-
-static void cleanup_message_loop_thread() { message_loop_thread.ShutDown(); }
 
 bool LeAudioClient::IsLeAudioClientRunning(void) { return false; }
 
@@ -1043,6 +1010,7 @@ TEST_F(BroadcasterTest, QueuedBroadcast) {
   uint32_t broadcast_id = LeAudioBroadcaster::kInstanceIdUndefined;
 
   iso_active_callback(true);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_broadcaster_callbacks_, OnBroadcastCreated(_, true))
           .WillOnce(SaveArg<0>(&broadcast_id));
@@ -1052,6 +1020,7 @@ TEST_F(BroadcasterTest, QueuedBroadcast) {
 
   /* Notify about ISO being free, check if broadcast would be created */
   iso_active_callback(false);
+  SyncOnMainLoop();
   ASSERT_NE(broadcast_id, LeAudioBroadcaster::kInstanceIdUndefined);
   ASSERT_EQ(broadcast_id, MockBroadcastStateMachine::GetLastInstance()->GetBroadcastId());
 
@@ -1069,6 +1038,7 @@ TEST_F(BroadcasterTest, QueuedBroadcast) {
 
 TEST_F(BroadcasterTest, QueuedBroadcastBusyIso) {
   iso_active_callback(true);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_broadcaster_callbacks_, OnBroadcastCreated(_, true)).Times(0);
 
@@ -1554,6 +1524,7 @@ TEST_F(BroadcasterTest, AudioResumeAfterSuspend) {
 
   // Imitate busy ISO
   iso_active_callback(true);
+  SyncOnMainLoop();
 
   EXPECT_CALL(mock_broadcaster_callbacks_,
               OnBroadcastStateChanged(broadcast_id, BroadcastState::STREAMING))
@@ -1566,6 +1537,7 @@ TEST_F(BroadcasterTest, AudioResumeAfterSuspend) {
               OnBroadcastStateChanged(broadcast_id, BroadcastState::STREAMING))
           .Times(1);
   iso_active_callback(false);
+  SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_broadcaster_callbacks_);
 }
 
