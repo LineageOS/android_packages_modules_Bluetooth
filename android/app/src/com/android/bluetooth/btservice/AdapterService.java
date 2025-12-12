@@ -550,21 +550,21 @@ public class AdapterService extends Service {
 
     private static synchronized void setAdapterService(AdapterService instance) {
         if (instance == null) {
-            Log.e(TAG, "setAdapterService() - instance is null");
+            Log.e(TAG, "setAdapterService(): Instance is null");
             return;
         }
-        Log.d(TAG, "setAdapterService() - set service to " + instance);
+        Log.d(TAG, "setAdapterService(): Set service to " + instance);
         sAdapterService = instance;
     }
 
     private static synchronized void clearAdapterService(AdapterService instance) {
         if (sAdapterService == instance) {
-            Log.d(TAG, "clearAdapterService() - This adapter was cleared " + instance);
+            Log.d(TAG, "clearAdapterService(): This adapter was cleared " + instance);
             sAdapterService = null;
         } else {
             Log.d(
                     TAG,
-                    "clearAdapterService() - incorrect cleared adapter."
+                    "clearAdapterService(): Incorrect cleared adapter."
                             + (" Instance=" + instance)
                             + (" vs sAdapterService=" + sAdapterService));
         }
@@ -2753,7 +2753,7 @@ public class AdapterService extends Service {
         int n = mPreferredAudioProfilesCallbacks.beginBroadcast();
         Log.d(
                 TAG,
-                "sendPreferredAudioProfilesCallbackToApps() - Broadcasting audio profile "
+                "sendPreferredAudioProfilesCallbackToApps(): Broadcasting audio profile "
                         + ("change callback to device: " + device)
                         + (" and status=" + status)
                         + (" to " + n + " receivers."));
@@ -2765,11 +2765,8 @@ public class AdapterService extends Service {
             } catch (RemoteException e) {
                 Log.d(
                         TAG,
-                        "sendPreferredAudioProfilesCallbackToApps() - Callback #"
-                                + i
-                                + " failed ("
-                                + e
-                                + ")");
+                        ("sendPreferredAudioProfilesCallbackToApps(): Callback #" + i)
+                                + (" failed (" + e + ")"));
             }
         }
         mPreferredAudioProfilesCallbacks.finishBroadcast();
@@ -3206,12 +3203,12 @@ public class AdapterService extends Service {
     }
 
     public boolean isQuietModeEnabled() {
-        Log.d(TAG, "isQuietModeEnabled() - Enabled = " + mQuietMode);
+        Log.d(TAG, "isQuietModeEnabled(): Enabled = " + mQuietMode);
         return mQuietMode;
     }
 
     public void updateUuids() {
-        Log.d(TAG, "updateUuids() - Updating UUIDs for bonded devices");
+        Log.d(TAG, "updateUuids(): Updating UUIDs for bonded devices");
         BluetoothDevice[] bondedDevices = getBondedDevices();
         for (BluetoothDevice device : bondedDevices) {
             mRemoteDevices.updateUuids(device);
@@ -3850,7 +3847,7 @@ public class AdapterService extends Service {
     void aclStateChangeBroadcastCallback(
             RemoteExceptionIgnoringConsumer<IBluetoothConnectionCallback> cb) {
         int n = mBluetoothConnectionCallbacks.beginBroadcast();
-        Log.d(TAG, "aclStateChangeBroadcastCallback() - Broadcasting to " + n + " receivers.");
+        Log.d(TAG, "aclStateChangeBroadcastCallback(): Broadcasting to " + n + " receivers");
         for (int i = 0; i < n; i++) {
             cb.accept(mBluetoothConnectionCallbacks.getBroadcastItem(i));
         }
