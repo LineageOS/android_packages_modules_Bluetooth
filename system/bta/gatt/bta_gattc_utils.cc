@@ -347,36 +347,36 @@ tBTA_GATTC_SERV* bta_gattc_find_scb_by_cid(tCONN_ID conn_id) {
  *
  ******************************************************************************/
 tBTA_GATTC_SERV* bta_gattc_srcb_alloc(const RawAddress& bda) {
-  tBTA_GATTC_SERV *p_tcb = &bta_gattc_cb.known_server[0], *p_recycle = NULL;
+  tBTA_GATTC_SERV *p_srcb = &bta_gattc_cb.known_server[0], *p_recycle = NULL;
   bool found = false;
   uint8_t i;
 
-  for (i = 0; i < ble_acceptlist_size(); i++, p_tcb++) {
-    if (!p_tcb->in_use) {
+  for (i = 0; i < ble_acceptlist_size(); i++, p_srcb++) {
+    if (!p_srcb->in_use) {
       found = true;
       break;
-    } else if (!p_tcb->connected) {
-      p_recycle = p_tcb;
+    } else if (!p_srcb->connected) {
+      p_recycle = p_srcb;
     }
   }
 
   /* if not found, try to recycle one known device */
   if (!found && !p_recycle) {
-    p_tcb = NULL;
+    p_srcb = NULL;
   } else if (!found && p_recycle) {
-    p_tcb = p_recycle;
+    p_srcb = p_recycle;
   }
 
-  if (p_tcb != NULL) {
+  if (p_srcb != NULL) {
     // clear reallocating
-    p_tcb->gatt_database.Clear();
-    p_tcb->pending_discovery.Clear();
-    *p_tcb = tBTA_GATTC_SERV();
+    p_srcb->gatt_database.Clear();
+    p_srcb->pending_discovery.Clear();
+    *p_srcb = tBTA_GATTC_SERV();
 
-    p_tcb->in_use = true;
-    p_tcb->server_bda = bda;
+    p_srcb->in_use = true;
+    p_srcb->server_bda = bda;
   }
-  return p_tcb;
+  return p_srcb;
 }
 
 void bta_gattc_send_mtu_response(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data,
@@ -880,7 +880,7 @@ void bta_gatt_client_dump(int fd) {
   stream << "  -- used: " << entry_count << "\n";
   entry_count = 0;
   stream << " ->known_server (BTA_GATTC_KNOWN_SR_MAX=" << BTA_GATTC_KNOWN_SR_MAX << ")\n";
-  for (int i = 0; i < BTA_GATTC_CL_MAX; i++) {
+  for (int i = 0; i < BTA_GATTC_KNOWN_SR_MAX; i++) {
     tBTA_GATTC_SERV* p_known_server = &bta_gattc_cb.known_server[i];
     if (!p_known_server->in_use) {
       continue;
