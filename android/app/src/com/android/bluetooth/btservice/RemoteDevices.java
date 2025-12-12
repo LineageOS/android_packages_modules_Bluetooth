@@ -118,7 +118,6 @@ public class RemoteDevices {
     static final String ACL_CONNECTION_DELIVERY_GROUP_POLICY = "bluetooth.ACL_CONNECTION";
 
     private final Handler mHandler;
-    private final Handler mMainHandler;
 
     private class RemoteDevicesHandler extends Handler {
 
@@ -175,7 +174,6 @@ public class RemoteDevices {
         mAdapterService = service;
         mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
         mHandler = new RemoteDevicesHandler(looper);
-        mMainHandler = new Handler(Looper.getMainLooper());
         mWatchConnectionStateListener = new WatchConnectionStateListener(mAdapterService, looper);
     }
 
@@ -185,7 +183,7 @@ public class RemoteDevices {
      */
     void reset() {
         // Unregister Handler and stop all queued messages.
-        mMainHandler.removeCallbacksAndMessages(null);
+        mHandler.removeCallbacksAndMessages(null);
 
         synchronized (mDevices) {
             debugLog("reset(): Broadcasting ACL_DISCONNECTED");
@@ -2097,7 +2095,7 @@ public class RemoteDevices {
     /** Handles headset connection state change event */
     public void handleHeadsetConnectionStateChanged(
             BluetoothDevice device, int fromState, int toState) {
-        mMainHandler.post(() -> onHeadsetConnectionStateChanged(device, fromState, toState));
+        mHandler.post(() -> onHeadsetConnectionStateChanged(device, fromState, toState));
     }
 
     @VisibleForTesting
@@ -2114,7 +2112,7 @@ public class RemoteDevices {
     /** Handle Indicator status events from Hands-free. */
     public void handleHfIndicatorStatus(
             BluetoothDevice device, int indicatorId, boolean indicatorStatus) {
-        mMainHandler.post(() -> onHfIndicatorStatus(device, indicatorId, indicatorStatus));
+        mHandler.post(() -> onHfIndicatorStatus(device, indicatorId, indicatorStatus));
     }
 
     @VisibleForTesting
@@ -2131,7 +2129,7 @@ public class RemoteDevices {
     /** Handle indication events from Hands-free. */
     public void handleHfIndicatorValueChanged(
             BluetoothDevice device, int indicatorId, int indicatorValue) {
-        mMainHandler.post(() -> onHfIndicatorValueChanged(device, indicatorId, indicatorValue));
+        mHandler.post(() -> onHfIndicatorValueChanged(device, indicatorId, indicatorValue));
     }
 
     @VisibleForTesting
@@ -2148,8 +2146,7 @@ public class RemoteDevices {
     /** Handles Headset specific Bluetooth events */
     public void handleVendorSpecificHeadsetEvent(
             BluetoothDevice device, String cmd, int companyId, int cmdType, Object[] args) {
-        mMainHandler.post(
-                () -> onVendorSpecificHeadsetEvent(device, cmd, companyId, cmdType, args));
+        mHandler.post(() -> onVendorSpecificHeadsetEvent(device, cmd, companyId, cmdType, args));
     }
 
     @VisibleForTesting
@@ -2327,7 +2324,7 @@ public class RemoteDevices {
     /** Handles headset client connection state change event. */
     public void handleHeadsetClientConnectionStateChanged(
             BluetoothDevice device, int fromState, int toState) {
-        mMainHandler.post(() -> onHeadsetClientConnectionStateChanged(device, fromState, toState));
+        mHandler.post(() -> onHeadsetClientConnectionStateChanged(device, fromState, toState));
     }
 
     @VisibleForTesting
@@ -2343,7 +2340,7 @@ public class RemoteDevices {
 
     /** Handle battery level changes indication events from Audio Gateway. */
     public void handleAgBatteryLevelChanged(BluetoothDevice device, int batteryLevel) {
-        mMainHandler.post(() -> onAgBatteryLevelChanged(device, batteryLevel));
+        mHandler.post(() -> onAgBatteryLevelChanged(device, batteryLevel));
     }
 
     @VisibleForTesting
