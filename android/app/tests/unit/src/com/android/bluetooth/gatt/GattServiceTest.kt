@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,917 +14,954 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.gatt;
+package com.android.bluetooth.gatt
 
-import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
-import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import android.app.ActivityManager
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothStatusCodes
+import android.bluetooth.IBluetoothGattCallback
+import android.companion.CompanionDeviceManager
+import android.content.AttributionSource
+import android.content.Context
+import android.content.res.Resources
+import android.location.LocationManager
+import android.os.Binder
+import android.os.Bundle
+import android.os.IBinder
+import android.os.Process
+import android.platform.test.annotations.DisableFlags
+import android.platform.test.annotations.EnableFlags
+import android.platform.test.flag.junit.SetFlagsRule
+import android.provider.Settings
+import android.test.mock.MockContentProvider
+import android.test.mock.MockContentResolver
+import androidx.test.filters.SmallTest
+import androidx.test.platform.app.InstrumentationRegistry
+import com.android.bluetooth.ActionOnDeathRecipient
+import com.android.bluetooth.TestLooper
+import com.android.bluetooth.TestUtils.getTestDevice
+import com.android.bluetooth.TestUtils.mockGetBluetoothManager
+import com.android.bluetooth.TestUtils.mockGetRemoteDevice
+import com.android.bluetooth.TestUtils.mockGetSystemService
+import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.btservice.CompanionManager
+import com.android.bluetooth.flags.Flags
+import com.android.tests.bluetooth.FakeTimeProvider
+import com.android.tests.bluetooth.FlagsWrapper
+import com.android.tests.bluetooth.MockitoRule
+import com.google.common.truth.Truth.assertThat
+import java.time.Duration
+import java.util.UUID
+import kotlin.time.ExperimentalTime
+import org.junit.After
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.mockito.Mock
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.atLeastOnce
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.inOrder
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4
+import platform.test.runner.parameterized.Parameters
 
-import static com.android.bluetooth.TestUtils.getTestDevice;
-import static com.android.bluetooth.TestUtils.mockGetBluetoothManager;
-import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
-import static com.android.bluetooth.TestUtils.mockGetSystemService;
-
-import static com.google.common.truth.Truth.assertThat;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-
-import android.app.ActivityManager;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothStatusCodes;
-import android.bluetooth.IBluetoothGattCallback;
-import android.companion.CompanionDeviceManager;
-import android.content.AttributionSource;
-import android.content.Context;
-import android.content.res.Resources;
-import android.location.LocationManager;
-import android.os.Binder;
-import android.os.Bundle;
-import android.os.IBinder;
-import android.os.Process;
-import android.platform.test.annotations.DisableFlags;
-import android.platform.test.annotations.EnableFlags;
-import android.platform.test.flag.junit.SetFlagsRule;
-import android.provider.Settings;
-import android.test.mock.MockContentProvider;
-import android.test.mock.MockContentResolver;
-
-import androidx.test.filters.SmallTest;
-import androidx.test.platform.app.InstrumentationRegistry;
-
-import com.android.bluetooth.ActionOnDeathRecipient;
-import com.android.bluetooth.TestLooper;
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.CompanionManager;
-import com.android.bluetooth.flags.Flags;
-import com.android.tests.bluetooth.FakeTimeProvider;
-import com.android.tests.bluetooth.FlagsWrapper;
-import com.android.tests.bluetooth.MockitoRule;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InOrder;
-import org.mockito.Mock;
-
-import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
-import platform.test.runner.parameterized.Parameters;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-/** Test cases for {@link GattService}. */
+/** Test cases for [GattService]. */
+@OptIn(ExperimentalTime::class)
 @SmallTest
-@RunWith(ParameterizedAndroidJunit4.class)
-public class GattServiceTest {
-    @Rule public final MockitoRule mMockitoRule = new MockitoRule();
-    @Rule public final SetFlagsRule mSetFlagsRule;
+@RunWith(ParameterizedAndroidJunit4::class)
+class GattServiceTest(flags: FlagsWrapper) {
+    @get:Rule val mockitoRule = MockitoRule()
+    @get:Rule val setFlagsRule = SetFlagsRule(flags.flags)
 
-    @Mock private AttributionSource mSource;
-    @Mock private IBluetoothGattCallback mGattCallback;
-    @Mock private ContextMap<IBluetoothGattCallback> mClientMap;
-    @Mock private Set<BluetoothDevice> mReliableQueue;
-    @Mock private GattNativeInterface mNativeInterface;
-    @Mock private AdvertiseManagerNativeInterface mAdvertiseManagerNativeInterface;
-    @Mock private DistanceMeasurementNativeInterface mDistanceMeasurementNativeInterface;
-    @Mock private Resources mResources;
-    @Mock private AdapterService mAdapterService;
+    @Mock private lateinit var source: AttributionSource
+    @Mock private lateinit var gattCallback: IBluetoothGattCallback
+    @Mock private lateinit var clientMap: ContextMap<IBluetoothGattCallback>
+    @Mock private lateinit var reliableQueue: MutableSet<BluetoothDevice>
+    @Mock private lateinit var nativeInterface: GattNativeInterface
+    @Mock private lateinit var advertiseManagerNativeInterface: AdvertiseManagerNativeInterface
+    @Mock
+    private lateinit var distanceMeasurementNativeInterface: DistanceMeasurementNativeInterface
+    @Mock private lateinit var resources: Resources
+    @Mock private lateinit var adapterService: AdapterService
 
-    private TestLooper mLooper;
-    private GattService mService;
+    private val context = InstrumentationRegistry.getInstrumentation().context
+    private val companionDeviceManager =
+        context.getSystemService<CompanionDeviceManager>(CompanionDeviceManager::class.java)
 
-    private final Context mContext = InstrumentationRegistry.getInstrumentation().getContext();
-    private final CompanionDeviceManager mCompanionDeviceManager =
-            mContext.getSystemService(CompanionDeviceManager.class);
+    private val device = getTestDevice(109)
 
-    private final BluetoothDevice mDevice = getTestDevice(109);
+    private val CLIENT_CONN =
+        ContextMap.Connection(CLIENT_CONN_ID, device, BluetoothDevice.TRANSPORT_LE, CLIENT_IF)
+    private val CLIENT_CONN_LIST = listOf<ContextMap.Connection>(CLIENT_CONN)
+    private val mTimeProvider = FakeTimeProvider()
 
-    private static final int TEST_RSSI = 43;
-
-    private static final int CLIENT_IF = 12;
-    private static final int CLIENT_CONN_ID = 42;
-
-    private final ContextMap.Connection CLIENT_CONN =
-            new ContextMap.Connection(CLIENT_CONN_ID, mDevice, TRANSPORT_LE, CLIENT_IF);
-
-    private final List<ContextMap.Connection> CLIENT_CONN_LIST = Arrays.asList(CLIENT_CONN);
-    private final FakeTimeProvider mTimeProvider = new FakeTimeProvider();
-
-    @Parameters(name = "{0}")
-    public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_GATT_THREAD);
-    }
-
-    public GattServiceTest(FlagsWrapper flags) {
-        mSetFlagsRule = new SetFlagsRule(flags.getFlags());
-    }
+    private lateinit var looper: TestLooper
+    private lateinit var service: GattService
 
     @Before
-    public void setUp() throws Exception {
-        MockContentResolver mMockContentResolver = new MockContentResolver(mContext);
-        mMockContentResolver.addProvider(
-                Settings.AUTHORITY,
-                new MockContentProvider() {
-                    @Override
-                    public Bundle call(String method, String request, Bundle args) {
-                        return Bundle.EMPTY;
-                    }
-                });
+    fun setUp() {
+        val mockContentResolver = MockContentResolver(context)
+        mockContentResolver.addProvider(
+            Settings.AUTHORITY,
+            object : MockContentProvider() {
+                override fun call(method: String, request: String?, args: Bundle?): Bundle? {
+                    return Bundle.EMPTY
+                }
+            },
+        )
 
-        doReturn(mContext.getPackageName()).when(mSource).getPackageName();
-        doReturn(mContext.getPackageName()).when(mSource).getAttributionTag();
-        doReturn(Binder.getCallingUid()).when(mSource).getUid();
+        doReturn(context.packageName).whenever(source).packageName
+        doReturn(context.packageName).whenever(source).attributionTag
+        doReturn(Binder.getCallingUid()).whenever(source).uid
 
-        doReturn(CLIENT_CONN_LIST).when(mClientMap).getConnectionsByDevice(CLIENT_IF, mDevice);
-        var clientApp = mock(ContextApp.class);
-        doReturn(mGattCallback).when(clientApp).getCallback();
-        doReturn(CLIENT_IF).when(clientApp).getId();
-        doReturn(clientApp).when(mClientMap).getByCallbackId(mGattCallback);
-        doReturn(clientApp).when(mClientMap).getById(CLIENT_IF);
-        doReturn(clientApp, (Object[]) null)
-                .when(mClientMap)
-                .remove(anyInt(), any(ContextMap.RemoveReason.class));
+        doReturn(CLIENT_CONN_LIST).whenever(clientMap).getConnectionsByDevice(CLIENT_IF, device)
+        val clientApp = mock<ContextApp<IBluetoothGattCallback>>()
+        doReturn(gattCallback).whenever(clientApp).callback
+        doReturn(CLIENT_IF).whenever(clientApp).id
+        doReturn(clientApp).whenever(clientMap).getByCallbackId(gattCallback)
+        doReturn(clientApp).whenever(clientMap).getById(CLIENT_IF)
+        doReturn(clientApp, null as Array<Any>?)
+            .whenever(clientMap)
+            .remove(any<Int>(), any<ContextMap.RemoveReason>())
 
-        doReturn(mContext.getPackageManager()).when(mAdapterService).getPackageManager();
-        doReturn(mContext.getSharedPreferences("GattServiceTestPrefs", Context.MODE_PRIVATE))
-                .when(mAdapterService)
-                .getSharedPreferences(anyString(), anyInt());
-        doReturn(mResources).when(mAdapterService).getResources();
-        doReturn(mMockContentResolver).when(mAdapterService).getContentResolver();
+        doReturn(context.packageManager).whenever(adapterService).packageManager
+        doReturn(context.getSharedPreferences("GattServiceTestPrefs", Context.MODE_PRIVATE))
+            .whenever(adapterService)
+            .getSharedPreferences(any<String>(), any<Int>())
+        doReturn(resources).whenever(adapterService).resources
+        doReturn(mockContentResolver).whenever(adapterService).contentResolver
 
-        mockGetBluetoothManager(mAdapterService);
-        mockGetSystemService(mAdapterService, LocationManager.class);
-        mockGetSystemService(mAdapterService, ActivityManager.class);
-        doReturn(mSource).when(mAdapterService).getAttributionSource();
+        mockGetBluetoothManager(adapterService)
+        mockGetSystemService(adapterService, LocationManager::class.java)
+        mockGetSystemService(adapterService, ActivityManager::class.java)
+        doReturn(source).whenever(adapterService).attributionSource
 
-        CompanionManager mBtCompanionManager = new CompanionManager(mAdapterService);
-        doReturn(mBtCompanionManager).when(mAdapterService).getCompanionManager();
+        val btCompanionManager = CompanionManager(adapterService)
+        doReturn(btCompanionManager).whenever(adapterService).companionManager
 
-        mLooper = new TestLooper();
-        mService =
-                new GattService(
-                        mAdapterService,
-                        mNativeInterface,
-                        mAdvertiseManagerNativeInterface,
-                        mDistanceMeasurementNativeInterface,
-                        mClientMap,
-                        mReliableQueue,
-                        mCompanionDeviceManager,
-                        mLooper.getLooper(),
-                        mTimeProvider);
+        looper = TestLooper()
+        service =
+            GattService(
+                adapterService,
+                nativeInterface,
+                advertiseManagerNativeInterface,
+                distanceMeasurementNativeInterface,
+                clientMap,
+                reliableQueue,
+                companionDeviceManager,
+                looper.looper,
+                mTimeProvider,
+            )
 
-        mockGetRemoteDevice(mAdapterService, mDevice);
+        mockGetRemoteDevice(adapterService, device)
     }
 
     @After
-    public void tearDown() throws Exception {
-        mService.cleanup();
+    fun tearDown() {
+        service.cleanup()
     }
 
     @Test
-    public void testServiceUpAndDown() throws Exception {
-        for (int i = 0; i < 3; i++) {
-            mService.cleanup();
-            mService =
-                    new GattService(
-                            mAdapterService,
-                            mNativeInterface,
-                            mAdvertiseManagerNativeInterface,
-                            mDistanceMeasurementNativeInterface,
-                            mClientMap,
-                            mReliableQueue,
-                            mCompanionDeviceManager,
-                            mLooper.getLooper(),
-                            mTimeProvider);
+    fun testServiceUpAndDown() {
+        for (i in 0..2) {
+            service.cleanup()
+            service =
+                GattService(
+                    adapterService,
+                    nativeInterface,
+                    advertiseManagerNativeInterface,
+                    distanceMeasurementNativeInterface,
+                    clientMap,
+                    reliableQueue,
+                    companionDeviceManager,
+                    looper.looper,
+                    mTimeProvider,
+                )
         }
     }
 
     @Test
-    public void cleanUp_doesNotCrash() {
-        mService.cleanup();
+    fun cleanUp_doesNotCrash() {
+        service.cleanup()
     }
 
     @Test
     @DisableFlags(Flags.FLAG_LE_SUBRATE_MANAGER)
-    public void subrateModeRequest_withLeSubrateManagerDisabled() {
-        InOrder inOrder = inOrder(mNativeInterface);
+    fun subrateModeRequest_withLeSubrateManagerDisabled() {
+        val inOrder = inOrder(nativeInterface)
 
-        for (int subrateMode = BluetoothGatt.SUBRATE_MODE_OFF;
-                subrateMode <= BluetoothGatt.SUBRATE_MODE_HIGH;
-                subrateMode++) {
-            mService.subrateModeRequest(mGattCallback, mDevice, subrateMode);
+        for (subrateMode in BluetoothGatt.SUBRATE_MODE_OFF..BluetoothGatt.SUBRATE_MODE_HIGH) {
+            service.subrateModeRequest(gattCallback, device, subrateMode)
 
             // With no cached latency, latency for SUBRATE_MODE_OFF is 0.
             // For other modes, latency is hardcoded to 0.
-            final int expectedLatency = 0;
-            inOrder.verify(mNativeInterface)
-                    .gattSubrateRequest(
-                            eq(CLIENT_IF),
-                            eq(mDevice),
-                            anyInt(),
-                            anyInt(),
-                            eq(expectedLatency),
-                            anyInt(),
-                            anyInt());
+            val expectedLatency = 0
+            inOrder
+                .verify(nativeInterface)
+                .gattSubrateRequest(
+                    eq(CLIENT_IF),
+                    eq(device),
+                    any<Int>(),
+                    any<Int>(),
+                    eq(expectedLatency),
+                    any<Int>(),
+                    any<Int>(),
+                )
         }
     }
 
     @Test
     @EnableFlags(Flags.FLAG_LE_SUBRATE_MANAGER)
-    public void subrateModeRequest_withLeSubrateManagerEnabled() {
-        InOrder inOrder = inOrder(mNativeInterface);
+    fun subrateModeRequest_withLeSubrateManagerEnabled() {
+        val inOrder = inOrder(nativeInterface)
 
-        for (int subrateMode = BluetoothGatt.SUBRATE_MODE_OFF;
-                subrateMode <= BluetoothGatt.SUBRATE_MODE_HIGH;
-                subrateMode++) {
-            mService.subrateModeRequest(mGattCallback, mDevice, subrateMode);
+        for (subrateMode in BluetoothGatt.SUBRATE_MODE_OFF..BluetoothGatt.SUBRATE_MODE_HIGH) {
+            service.subrateModeRequest(gattCallback, device, subrateMode)
 
-            inOrder.verify(mNativeInterface)
-                    .gattSubrateModeRequest(eq(CLIENT_IF), eq(mDevice), eq(subrateMode));
+            inOrder
+                .verify(nativeInterface)
+                .gattSubrateModeRequest(eq(CLIENT_IF), eq(device), eq(subrateMode))
         }
     }
 
     @Test
-    public void subrateModeRequestDisablementLatencyParamRestore() {
-        InOrder inOrder = inOrder(mNativeInterface);
-        int implementInterval = 3;
-        int peripheralLatency = 5;
-        int supervisionTimeout = 6;
-        int status = 0;
+    fun subrateModeRequestDisablementLatencyParamRestore() {
+        val inOrder = inOrder(nativeInterface)
+        val implementInterval = 3
+        val peripheralLatency = 5
+        val supervisionTimeout = 6
+        val status = 0
 
-        var app = mock(ContextApp.class);
-        doReturn(app).when(mClientMap).getByConnId(CLIENT_CONN_ID);
-        doReturn(mGattCallback).when(app).getCallback();
-        doReturn(mDevice).when(mClientMap).deviceByConnId(CLIENT_CONN_ID);
+        val app = mock<ContextApp<IBluetoothGattCallback>>()
+        doReturn(app).whenever(clientMap).getByConnId(CLIENT_CONN_ID)
+        doReturn(gattCallback).whenever(app).callback
+        doReturn(device).whenever(clientMap).deviceByConnId(CLIENT_CONN_ID)
 
-        mService.onClientConnUpdateFromNative(
-                CLIENT_CONN_ID, implementInterval, peripheralLatency, supervisionTimeout, status);
+        service.onClientConnUpdateFromNative(
+            CLIENT_CONN_ID,
+            implementInterval,
+            peripheralLatency,
+            supervisionTimeout,
+            status,
+        )
 
-        mService.subrateModeRequest(mGattCallback, mDevice, BluetoothGatt.SUBRATE_MODE_HIGH);
+        service.subrateModeRequest(gattCallback, device, BluetoothGatt.SUBRATE_MODE_HIGH)
         if (Flags.leSubrateManager()) {
-            inOrder.verify(mNativeInterface)
-                    .gattSubrateModeRequest(
-                            eq(CLIENT_IF), eq(mDevice), eq(BluetoothGatt.SUBRATE_MODE_HIGH));
+            inOrder
+                .verify(nativeInterface)
+                .gattSubrateModeRequest(
+                    eq(CLIENT_IF),
+                    eq(device),
+                    eq(BluetoothGatt.SUBRATE_MODE_HIGH),
+                )
         } else {
-            inOrder.verify(mNativeInterface)
-                    .gattSubrateRequest(
-                            eq(CLIENT_IF),
-                            eq(mDevice),
-                            anyInt(),
-                            anyInt(),
-                            eq(0),
-                            anyInt(),
-                            anyInt());
+            inOrder
+                .verify(nativeInterface)
+                .gattSubrateRequest(
+                    eq(CLIENT_IF),
+                    eq(device),
+                    any<Int>(),
+                    any<Int>(),
+                    eq(0),
+                    any<Int>(),
+                    any<Int>(),
+                )
         }
 
-        mService.subrateModeRequest(mGattCallback, mDevice, BluetoothGatt.SUBRATE_MODE_OFF);
+        service.subrateModeRequest(gattCallback, device, BluetoothGatt.SUBRATE_MODE_OFF)
         if (Flags.leSubrateManager()) {
-            inOrder.verify(mNativeInterface)
-                    .gattSubrateModeRequest(
-                            eq(CLIENT_IF), eq(mDevice), eq(BluetoothGatt.SUBRATE_MODE_OFF));
+            inOrder
+                .verify(nativeInterface)
+                .gattSubrateModeRequest(
+                    eq(CLIENT_IF),
+                    eq(device),
+                    eq(BluetoothGatt.SUBRATE_MODE_OFF),
+                )
         } else {
-            inOrder.verify(mNativeInterface)
-                    .gattSubrateRequest(
-                            eq(CLIENT_IF),
-                            eq(mDevice),
-                            anyInt(),
-                            anyInt(),
-                            eq(peripheralLatency),
-                            anyInt(),
-                            anyInt());
+            inOrder
+                .verify(nativeInterface)
+                .gattSubrateRequest(
+                    eq(CLIENT_IF),
+                    eq(device),
+                    any<Int>(),
+                    any<Int>(),
+                    eq(peripheralLatency),
+                    any<Int>(),
+                    any<Int>(),
+                )
         }
     }
 
     @Test
-    public void testDumpDoesNotCrash() {
-        mService.dump(new StringBuilder());
+    fun testDumpDoesNotCrash() {
+        service.dump(StringBuilder())
     }
 
     @Test
-    public void registerClient() {
-        UUID uuid = UUID.randomUUID();
-        IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
-        boolean eattSupport = true;
-        int transport = TRANSPORT_LE;
+    fun registerClient() {
+        val uuid = UUID.randomUUID()
+        val callback = mock<IBluetoothGattCallback>()
+        val eattSupport = true
+        val transport = BluetoothDevice.TRANSPORT_LE
 
-        mService.registerClient(uuid, callback, eattSupport, transport, mSource);
-        verify(mNativeInterface)
-                .gattClientRegisterApp(
-                        uuid.getLeastSignificantBits(),
-                        uuid.getMostSignificantBits(),
-                        mContext.getPackageName(),
-                        eattSupport);
+        service.registerClient(uuid, callback, eattSupport, transport, source)
+        verify(nativeInterface)
+            .gattClientRegisterApp(
+                uuid.leastSignificantBits,
+                uuid.mostSignificantBits,
+                context.packageName,
+                eattSupport,
+            )
     }
 
     @Test
-    public void registerClient_checkLimitPerApp() {
-        doReturn(GattService.GATT_CLIENT_LIMIT_PER_APP).when(mClientMap).countByAppUid(anyInt());
-        UUID uuid = UUID.randomUUID();
-        IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
-        boolean eattSupport = true;
-        int transport = TRANSPORT_LE;
+    fun registerClient_checkLimitPerApp() {
+        doReturn(GattService.GATT_CLIENT_LIMIT_PER_APP)
+            .whenever(clientMap)
+            .countByAppUid(any<Int>())
+        val uuid = UUID.randomUUID()
+        val callback = mock<IBluetoothGattCallback>()
+        val eattSupport = true
+        val transport = BluetoothDevice.TRANSPORT_LE
 
-        mService.registerClient(uuid, callback, eattSupport, transport, mSource);
-        verify(mClientMap, never()).add(anyInt(), any(), any(), any(), anyInt(), any());
-        verify(mNativeInterface, never())
-                .gattClientRegisterApp(anyLong(), anyLong(), any(), anyBoolean());
+        service.registerClient(uuid, callback, eattSupport, transport, source)
+        verify(clientMap, never()).add(any<Int>(), any(), any(), any(), any<Int>(), any<String>())
+        verify(nativeInterface, never())
+            .gattClientRegisterApp(any<Long>(), any<Long>(), any(), any<Boolean>())
     }
 
     @Test
-    public void unregisterClient() {
-        mService.unregisterClient(
-                mGattCallback, mSource, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
-        verify(mClientMap).remove(CLIENT_IF, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
-        verify(mNativeInterface).gattClientUnregisterApp(CLIENT_IF);
+    fun unregisterClient() {
+        service.unregisterClient(
+            gattCallback,
+            source,
+            ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT,
+        )
+        verify(clientMap).remove(CLIENT_IF, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT)
+        verify(nativeInterface).gattClientUnregisterApp(CLIENT_IF)
     }
 
     @Test
-    public void unregisterClientTwice() {
+    fun unregisterClientTwice() {
         // Simulate simultaneous unregistering from different threads by mocking mClientMap.
-        mService.unregisterClient(
-                mGattCallback, mSource, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
-        mService.unregisterClient(
-                mGattCallback, mSource, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
-        verify(mClientMap, atLeastOnce())
-                .remove(CLIENT_IF, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT);
+        service.unregisterClient(
+            gattCallback,
+            source,
+            ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT,
+        )
+        service.unregisterClient(
+            gattCallback,
+            source,
+            ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT,
+        )
+        verify(clientMap, atLeastOnce())
+            .remove(CLIENT_IF, ContextMap.RemoveReason.REASON_UNREGISTER_CLIENT)
 
         // The second call is not propagated to the native stack.
-        verify(mNativeInterface, times(1)).gattClientUnregisterApp(CLIENT_IF);
+        verify(nativeInterface, times(1)).gattClientUnregisterApp(CLIENT_IF)
     }
 
     @Test
-    public void onClientRegisteredFromNative_success_unregistersOnBinderDied() throws Exception {
-        final UUID uuid = UUID.randomUUID();
-        final int clientIf = 1;
-        final int status = BluetoothGatt.GATT_SUCCESS;
-        final IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
-        final ContextApp<IBluetoothGattCallback> app = mock(ContextApp.class);
+    fun onClientRegisteredFromNative_success_unregistersOnBinderDied() {
+        val uuid = UUID.randomUUID()
+        val clientIf = 1
+        val status = BluetoothGatt.GATT_SUCCESS
+        val callback = mock<IBluetoothGattCallback>()
+        val app = mock<ContextApp<IBluetoothGattCallback>>()
 
-        doReturn(callback).when(app).getCallback();
-        doReturn(app).when(mClientMap).getByUuid(uuid);
-        doReturn(app).when(mClientMap).getByCallbackId(callback);
-        doReturn(clientIf).when(app).getId();
+        doReturn(callback).whenever(app).callback
+        doReturn(app).whenever(clientMap).getByUuid(uuid)
+        doReturn(app).whenever(clientMap).getByCallbackId(callback)
+        doReturn(clientIf).whenever(app).id
         // This mock is needed for unregisterClient to proceed
         doReturn(app)
-                .when(mClientMap)
-                .remove(eq(clientIf), eq(ContextMap.RemoveReason.REASON_BINDER_DIED));
+            .whenever(clientMap)
+            .remove(eq(clientIf), eq(ContextMap.RemoveReason.REASON_BINDER_DIED))
 
         // Call the method under test
-        mService.setAvailable(true);
-        mService.onClientRegisteredFromNative(status, clientIf, uuid);
+        service.isAvailable = true
+        service.onClientRegisteredFromNative(status, clientIf, uuid)
 
         // Verify that the app ID is set
-        verify(app).setId(clientIf);
+        verify(app).id = clientIf
 
         // Verify that linkToDeath is called and capture the DeathRecipient
-        ArgumentCaptor<IBinder.DeathRecipient> captor =
-                ArgumentCaptor.forClass(IBinder.DeathRecipient.class);
-        verify(app).linkToDeath(captor.capture());
-        assertThat(captor.getValue()).isInstanceOf(ActionOnDeathRecipient.class);
+        val captor = argumentCaptor<IBinder.DeathRecipient>()
+        verify(app).linkToDeath(captor.capture())
+        assertThat(captor.firstValue).isInstanceOf(ActionOnDeathRecipient::class.java)
 
         // Verify that the callback is invoked
-        verify(callback).onClientRegistered(status);
+        verify(callback).onClientRegistered(status)
 
         // Trigger binderDied on the captured recipient
-        captor.getValue().binderDied();
-        mLooper.dispatchAll();
+        captor.firstValue.binderDied()
+        looper.dispatchAll()
 
         // Verify that unregisterClient logic is executed
-        verify(mNativeInterface).gattClientUnregisterApp(clientIf);
+        verify(nativeInterface).gattClientUnregisterApp(clientIf)
     }
 
     @Test
-    public void clientConnect() throws Exception {
-        int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
-        boolean isDirect = false;
-        int transport = 2;
-        boolean opportunistic = true;
-        boolean isAutomaticMtuEnabled = false;
+    fun clientConnect() {
+        val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
+        val isDirect = false
+        val transport = 2
+        val opportunistic = true
+        val isAutomaticMtuEnabled = false
 
-        mService.clientConnect(
-                mGattCallback,
-                mDevice,
+        service.clientConnect(
+            gattCallback,
+            device,
+            addressType,
+            isDirect,
+            transport,
+            opportunistic,
+            isAutomaticMtuEnabled,
+            source,
+        )
+
+        verify(nativeInterface)
+            .gattClientConnect(
+                CLIENT_IF,
+                device,
                 addressType,
                 isDirect,
                 transport,
                 opportunistic,
+                0,
+                false,
                 isAutomaticMtuEnabled,
-                mSource);
-
-        verify(mNativeInterface)
-                .gattClientConnect(
-                        CLIENT_IF,
-                        mDevice,
-                        addressType,
-                        isDirect,
-                        transport,
-                        opportunistic,
-                        0,
-                        false,
-                        isAutomaticMtuEnabled);
+            )
     }
 
     @Test
-    public void clientConnect_withCrossDeviceAccessServiceTag_setsPreferRelaxMode() {
-        int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
-        boolean isDirect = false;
-        int transport = 2;
-        boolean opportunistic = true;
-        boolean isAutomaticMtuEnabled = false;
+    fun clientConnect_withCrossDeviceAccessServiceTag_setsPreferRelaxMode() {
+        val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
+        val isDirect = false
+        val transport = 2
+        val opportunistic = true
+        val isAutomaticMtuEnabled = false
 
-        AttributionSource source =
-                new AttributionSource.Builder(Process.myUid())
-                        .setPackageName("com.test.package")
-                        .setAttributionTag("crossdeviceaccessservice")
-                        .build();
+        val tagSource =
+            AttributionSource.Builder(Process.myUid())
+                .setPackageName("com.test.package")
+                .setAttributionTag("crossdeviceaccessservice")
+                .build()
 
-        mService.clientConnect(
-                mGattCallback,
-                mDevice,
+        service.clientConnect(
+            gattCallback,
+            device,
+            addressType,
+            isDirect,
+            transport,
+            opportunistic,
+            isAutomaticMtuEnabled,
+            tagSource,
+        )
+
+        verify(nativeInterface)
+            .gattClientConnect(
+                CLIENT_IF,
+                device,
                 addressType,
                 isDirect,
                 transport,
                 opportunistic,
+                0,
+                true, /* preferRelaxMode */
                 isAutomaticMtuEnabled,
-                source);
-
-        verify(mNativeInterface)
-                .gattClientConnect(
-                        CLIENT_IF,
-                        mDevice,
-                        addressType,
-                        isDirect,
-                        transport,
-                        opportunistic,
-                        0,
-                        true /* preferRelaxMode */,
-                        isAutomaticMtuEnabled);
+            )
     }
 
     @Test
-    public void clientConnectOverLeFailed() throws Exception {
-        int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
-        boolean isDirect = true;
-        int transport = TRANSPORT_LE;
-        boolean opportunistic = false;
-        boolean isAutomaticMtuEnabled = false;
+    fun clientConnectOverLeFailed() {
+        val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
+        val isDirect = true
+        val transport = BluetoothDevice.TRANSPORT_LE
+        val opportunistic = false
+        val isAutomaticMtuEnabled = false
 
-        AttributionSource testAttributeSource =
-                new AttributionSource.Builder(Process.SYSTEM_UID)
-                        .setPid(Process.myPid())
-                        .setDeviceId(Context.DEVICE_ID_DEFAULT)
-                        .setPackageName("com.google.android.gms")
-                        .setAttributionTag("com.google.android.gms.findmydevice")
-                        .build();
+        val testAttributeSource =
+            AttributionSource.Builder(Process.SYSTEM_UID)
+                .setPid(Process.myPid())
+                .setDeviceId(Context.DEVICE_ID_DEFAULT)
+                .setPackageName("com.google.android.gms")
+                .setAttributionTag("com.google.android.gms.findmydevice")
+                .build()
 
-        mService.clientConnect(
-                mGattCallback,
-                mDevice,
+        service.clientConnect(
+            gattCallback,
+            device,
+            addressType,
+            isDirect,
+            transport,
+            opportunistic,
+            isAutomaticMtuEnabled,
+            testAttributeSource,
+        )
+
+        verify(adapterService).notifyDirectLeGattClientConnect(any<Int>(), any<BluetoothDevice>())
+        verify(nativeInterface)
+            .gattClientConnect(
+                CLIENT_IF,
+                device,
                 addressType,
                 isDirect,
                 transport,
                 opportunistic,
+                0,
+                false,
                 isAutomaticMtuEnabled,
-                testAttributeSource);
+            )
 
-        verify(mAdapterService).notifyDirectLeGattClientConnect(anyInt(), any());
-        verify(mNativeInterface)
-                .gattClientConnect(
-                        CLIENT_IF,
-                        mDevice,
-                        addressType,
-                        isDirect,
-                        transport,
-                        opportunistic,
-                        0,
-                        false,
-                        isAutomaticMtuEnabled);
-
-        mService.onConnectedFromNative(
-                CLIENT_IF, 0, transport, BluetoothGatt.GATT_CONNECTION_TIMEOUT, mDevice);
-        verify(mAdapterService).notifyGattClientConnectFailed(anyInt(), any());
+        service.onConnectedFromNative(
+            CLIENT_IF,
+            0,
+            transport,
+            BluetoothGatt.GATT_CONNECTION_TIMEOUT,
+            device,
+        )
+        verify(adapterService).notifyGattClientConnectFailed(any<Int>(), any<BluetoothDevice>())
     }
 
     @Test
-    public void clientConnectDisconnectOverLe() throws Exception {
-        int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
-        boolean isDirect = true;
-        int transport = TRANSPORT_LE;
-        boolean opportunistic = false;
-        boolean isAutomaticMtuEnabled = false;
+    fun clientConnectDisconnectOverLe() {
+        val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
+        val isDirect = true
+        val transport = BluetoothDevice.TRANSPORT_LE
+        val opportunistic = false
+        val isAutomaticMtuEnabled = false
 
-        AttributionSource testAttributeSource =
-                new AttributionSource.Builder(Process.SYSTEM_UID)
-                        .setPid(Process.myPid())
-                        .setDeviceId(Context.DEVICE_ID_DEFAULT)
-                        .setPackageName("com.google.android.gms")
-                        .setAttributionTag("com.google.android.gms.findmydevice")
-                        .build();
+        val testAttributeSource =
+            AttributionSource.Builder(Process.SYSTEM_UID)
+                .setPid(Process.myPid())
+                .setDeviceId(Context.DEVICE_ID_DEFAULT)
+                .setPackageName("com.google.android.gms")
+                .setAttributionTag("com.google.android.gms.findmydevice")
+                .build()
 
-        mService.clientConnect(
-                mGattCallback,
-                mDevice,
+        service.clientConnect(
+            gattCallback,
+            device,
+            addressType,
+            isDirect,
+            transport,
+            opportunistic,
+            isAutomaticMtuEnabled,
+            testAttributeSource,
+        )
+
+        verify(adapterService).notifyDirectLeGattClientConnect(any<Int>(), any<BluetoothDevice>())
+        verify(nativeInterface)
+            .gattClientConnect(
+                CLIENT_IF,
+                device,
                 addressType,
                 isDirect,
                 transport,
                 opportunistic,
+                0,
+                false,
                 isAutomaticMtuEnabled,
-                testAttributeSource);
+            )
 
-        verify(mAdapterService).notifyDirectLeGattClientConnect(anyInt(), any());
-        verify(mNativeInterface)
-                .gattClientConnect(
-                        CLIENT_IF,
-                        mDevice,
-                        addressType,
-                        isDirect,
-                        transport,
-                        opportunistic,
-                        0,
-                        false,
-                        isAutomaticMtuEnabled);
+        service.onConnectedFromNative(CLIENT_IF, 15, transport, BluetoothGatt.GATT_SUCCESS, device)
+        service.clientDisconnect(gattCallback, device, source)
 
-        mService.onConnectedFromNative(
-                CLIENT_IF, 15, transport, BluetoothGatt.GATT_SUCCESS, mDevice);
-        mService.clientDisconnect(mGattCallback, mDevice, mSource);
-
-        verify(mAdapterService).notifyGattClientDisconnect(anyInt(), any());
+        verify(adapterService).notifyGattClientDisconnect(any<Int>(), any<BluetoothDevice>())
     }
 
     @Test
-    public void clientConnectOverLeDisconnectedByRemote() throws Exception {
-        int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
-        boolean isDirect = true;
-        int transport = TRANSPORT_LE;
-        boolean opportunistic = false;
-        boolean isAutomaticMtuEnabled = false;
+    fun clientConnectOverLeDisconnectedByRemote() {
+        val addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM
+        val isDirect = true
+        val transport = BluetoothDevice.TRANSPORT_LE
+        val opportunistic = false
+        val isAutomaticMtuEnabled = false
 
-        AttributionSource testAttributeSource =
-                new AttributionSource.Builder(Process.SYSTEM_UID)
-                        .setPid(Process.myPid())
-                        .setDeviceId(Context.DEVICE_ID_DEFAULT)
-                        .setPackageName("com.google.android.gms")
-                        .setAttributionTag("com.google.android.gms.findmydevice")
-                        .build();
+        val testAttributeSource =
+            AttributionSource.Builder(Process.SYSTEM_UID)
+                .setPid(Process.myPid())
+                .setDeviceId(Context.DEVICE_ID_DEFAULT)
+                .setPackageName("com.google.android.gms")
+                .setAttributionTag("com.google.android.gms.findmydevice")
+                .build()
 
-        mService.clientConnect(
-                mGattCallback,
-                mDevice,
+        service.clientConnect(
+            gattCallback,
+            device,
+            addressType,
+            isDirect,
+            transport,
+            opportunistic,
+            isAutomaticMtuEnabled,
+            testAttributeSource,
+        )
+
+        verify(adapterService).notifyDirectLeGattClientConnect(any<Int>(), any<BluetoothDevice>())
+        verify(nativeInterface)
+            .gattClientConnect(
+                CLIENT_IF,
+                device,
                 addressType,
                 isDirect,
                 transport,
                 opportunistic,
+                0,
+                false,
                 isAutomaticMtuEnabled,
-                testAttributeSource);
+            )
 
-        verify(mAdapterService).notifyDirectLeGattClientConnect(anyInt(), any());
-        verify(mNativeInterface)
-                .gattClientConnect(
-                        CLIENT_IF,
-                        mDevice,
-                        addressType,
-                        isDirect,
-                        transport,
-                        opportunistic,
-                        0,
-                        false,
-                        isAutomaticMtuEnabled);
+        service.onConnectedFromNative(CLIENT_IF, 15, transport, BluetoothGatt.GATT_SUCCESS, device)
+        service.onDisconnectedFromNative(CLIENT_IF, 15, transport, 1, device)
 
-        mService.onConnectedFromNative(
-                CLIENT_IF, 15, transport, BluetoothGatt.GATT_SUCCESS, mDevice);
-        mService.onDisconnectedFromNative(CLIENT_IF, 15, transport, 1, mDevice);
-
-        verify(mAdapterService).notifyGattClientDisconnect(anyInt(), any());
+        verify(adapterService).notifyGattClientDisconnect(any<Int>(), any<BluetoothDevice>())
     }
 
     @Test
-    public void clientGetDevicesMatchingConnectionStates() {
-        int[] states = new int[] {STATE_CONNECTED};
+    fun clientGetDevicesMatchingConnectionStates() {
+        val states = intArrayOf(BluetoothProfile.STATE_CONNECTED)
 
-        BluetoothDevice testDevice = getTestDevice(90);
-        BluetoothDevice[] bluetoothDevices = new BluetoothDevice[] {testDevice};
-        doReturn(bluetoothDevices).when(mAdapterService).getBondedDevices();
+        val testDevice = getTestDevice(90)
+        val bluetoothDevices = arrayOf<BluetoothDevice>(testDevice)
+        doReturn(bluetoothDevices).whenever(adapterService).bondedDevices
 
-        Set<BluetoothDevice> connectedDevices = new HashSet<>();
-        connectedDevices.add(mDevice);
-        doReturn(connectedDevices).when(mClientMap).getConnectedDevices();
+        val connectedDevices = setOf(device)
+        doReturn(connectedDevices).whenever(clientMap).getConnectedDevices()
 
-        List<BluetoothDevice> deviceList = mService.getDevicesMatchingConnectionStates(states);
+        val deviceList = service.getDevicesMatchingConnectionStates(states)
 
-        assertThat(deviceList).containsExactly(mDevice);
+        assertThat(deviceList).containsExactly(device)
     }
 
     @Test
-    public void clientDisconnectAll() {
-        Map<Integer, BluetoothDevice> connMap = new HashMap<>();
-        connMap.put(CLIENT_IF, mDevice);
-        doReturn(connMap).when(mClientMap).getConnectedMap();
+    fun clientDisconnectAll() {
+        val connMap = mapOf(CLIENT_IF to device)
+        doReturn(connMap).whenever(clientMap).getConnectedMap()
 
-        mService.disconnectAll(mSource);
-        verify(mNativeInterface).gattClientDisconnect(CLIENT_IF, mDevice, CLIENT_CONN_ID);
+        service.disconnectAll(source)
+        verify(nativeInterface).gattClientDisconnect(CLIENT_IF, device, CLIENT_CONN_ID)
     }
 
     @Test
-    public void clientConnectionParameterUpdate() {
-        int connectionPriority = BluetoothGatt.CONNECTION_PRIORITY_HIGH;
-        mService.connectionParameterUpdate(mGattCallback, mDevice, connectionPriority);
+    fun clientConnectionParameterUpdate() {
+        var connectionPriority = BluetoothGatt.CONNECTION_PRIORITY_HIGH
+        service.connectionParameterUpdate(gattCallback, device, connectionPriority)
 
-        connectionPriority = BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER;
-        mService.connectionParameterUpdate(mGattCallback, mDevice, connectionPriority);
+        connectionPriority = BluetoothGatt.CONNECTION_PRIORITY_LOW_POWER
+        service.connectionParameterUpdate(gattCallback, device, connectionPriority)
 
-        connectionPriority = BluetoothGatt.CONNECTION_PRIORITY_BALANCED;
-        mService.connectionParameterUpdate(mGattCallback, mDevice, connectionPriority);
+        connectionPriority = BluetoothGatt.CONNECTION_PRIORITY_BALANCED
+        service.connectionParameterUpdate(gattCallback, device, connectionPriority)
 
-        verify(mNativeInterface, times(3))
-                .gattConnectionParameterUpdate(
-                        eq(CLIENT_IF),
-                        eq(mDevice),
-                        anyInt(),
-                        anyInt(),
-                        anyInt(),
-                        anyInt(),
-                        eq(0),
-                        eq(0));
+        verify(nativeInterface, times(3))
+            .gattConnectionParameterUpdate(
+                eq(CLIENT_IF),
+                eq(device),
+                any<Int>(),
+                any<Int>(),
+                any<Int>(),
+                any<Int>(),
+                eq(0),
+                eq(0),
+            )
     }
 
     @Test
-    public void clientReadRemoteRssi_entryIsEmpty() {
-        mService.readRemoteRssi(mGattCallback, mDevice);
+    fun clientReadRemoteRssi_entryIsEmpty() {
+        service.readRemoteRssi(gattCallback, device)
 
-        verify(mNativeInterface).gattClientReadRemoteRssi(CLIENT_IF, mDevice);
+        verify(nativeInterface).gattClientReadRemoteRssi(CLIENT_IF, device)
     }
 
     @Test
     @EnableFlags(Flags.FLAG_READ_RSSI_THROTTLING)
-    public void clientReadRemoteRssi_entryIsNotEmpty_elapsedTimeIsLessThanThrottleMs()
-            throws Exception {
-        mService.mRssiCache.put(
-                mDevice.getAddress(),
-                new com.android.bluetooth.gatt.GattService.RssiCacheEntry(
-                        mTimeProvider.elapsedRealtime(), TEST_RSSI));
+    fun clientReadRemoteRssi_entryIsNotEmpty_elapsedTimeIsLessThanThrottleMs() {
+        service.mRssiCache[device.address] =
+            GattService.RssiCacheEntry(mTimeProvider.elapsedRealtime(), TEST_RSSI)
 
         // 25ms is less than the default throttle ms of 75ms
-        mTimeProvider.advanceTime(Duration.ofMillis(25));
-        mService.readRemoteRssi(mGattCallback, mDevice);
+        mTimeProvider.advanceTime(Duration.ofMillis(25))
+        service.readRemoteRssi(gattCallback, device)
 
-        verify(mGattCallback).onReadRemoteRssi(mDevice, TEST_RSSI, BluetoothGatt.GATT_SUCCESS);
-        verify(mNativeInterface, never()).gattClientReadRemoteRssi(CLIENT_IF, mDevice);
+        verify(gattCallback).onReadRemoteRssi(device, TEST_RSSI, BluetoothGatt.GATT_SUCCESS)
+        verify(nativeInterface, never()).gattClientReadRemoteRssi(CLIENT_IF, device)
     }
 
     @Test
     @EnableFlags(Flags.FLAG_READ_RSSI_THROTTLING)
-    public void clientReadRemoteRssi_entryIsNotEmpty_elapsedTimeIsMoreThanThrottleMs() {
-        mService.mRssiCache.put(
-                mDevice.getAddress(),
-                new com.android.bluetooth.gatt.GattService.RssiCacheEntry(
-                        mTimeProvider.elapsedRealtime(), TEST_RSSI));
+    fun clientReadRemoteRssi_entryIsNotEmpty_elapsedTimeIsMoreThanThrottleMs() {
+        service.mRssiCache[device.address] =
+            GattService.RssiCacheEntry(mTimeProvider.elapsedRealtime(), TEST_RSSI)
 
         // 100ms is more than the default throttle ms of 75ms
-        mTimeProvider.advanceTime(Duration.ofMillis(100));
-        mService.readRemoteRssi(mGattCallback, mDevice);
+        mTimeProvider.advanceTime(Duration.ofMillis(100))
+        service.readRemoteRssi(gattCallback, device)
 
-        verify(mNativeInterface).gattClientReadRemoteRssi(CLIENT_IF, mDevice);
+        verify(nativeInterface).gattClientReadRemoteRssi(CLIENT_IF, device)
     }
 
     @Test
     @EnableFlags(Flags.FLAG_READ_RSSI_THROTTLING)
-    public void clientOnReadRemoteRssiFromNative() throws Exception {
-        mService.onReadRemoteRssiFromNative(
-                CLIENT_IF, mDevice, TEST_RSSI, BluetoothGatt.GATT_SUCCESS);
+    fun clientOnReadRemoteRssiFromNative() {
+        service.onReadRemoteRssiFromNative(CLIENT_IF, device, TEST_RSSI, BluetoothGatt.GATT_SUCCESS)
 
-        assertThat(mService.mRssiCache.get(mDevice.getAddress()).rssi()).isEqualTo(TEST_RSSI);
-        verify(mGattCallback).onReadRemoteRssi(mDevice, TEST_RSSI, BluetoothGatt.GATT_SUCCESS);
+        assertThat(service.mRssiCache[device.address]!!.rssi).isEqualTo(TEST_RSSI)
+        verify(gattCallback).onReadRemoteRssi(device, TEST_RSSI, BluetoothGatt.GATT_SUCCESS)
     }
 
     @Test
-    public void clientLeConnectionUpdate() throws Exception {
-        int minInterval = 3;
-        int maxInterval = 4;
-        int peripheralLatency = 5;
-        int supervisionTimeout = 6;
-        int minConnectionEventLen = 7;
-        int maxConnectionEventLen = 8;
+    fun clientLeConnectionUpdate() {
+        val minInterval = 3
+        val maxInterval = 4
+        val peripheralLatency = 5
+        val supervisionTimeout = 6
+        val minConnectionEventLen = 7
+        val maxConnectionEventLen = 8
 
-        mService.leConnectionUpdate(
-                mGattCallback,
-                mDevice,
+        service.leConnectionUpdate(
+            gattCallback,
+            device,
+            minInterval,
+            maxInterval,
+            peripheralLatency,
+            supervisionTimeout,
+            minConnectionEventLen,
+            maxConnectionEventLen,
+        )
+
+        verify(nativeInterface)
+            .gattConnectionParameterUpdate(
+                CLIENT_IF,
+                device,
                 minInterval,
                 maxInterval,
                 peripheralLatency,
                 supervisionTimeout,
                 minConnectionEventLen,
-                maxConnectionEventLen);
-
-        verify(mNativeInterface)
-                .gattConnectionParameterUpdate(
-                        CLIENT_IF,
-                        mDevice,
-                        minInterval,
-                        maxInterval,
-                        peripheralLatency,
-                        supervisionTimeout,
-                        minConnectionEventLen,
-                        maxConnectionEventLen);
+                maxConnectionEventLen,
+            )
     }
 
     @Test
-    public void clientReadPhy() {
-        mService.clientReadPhy(mGattCallback, mDevice);
-        verify(mNativeInterface).gattClientReadPhy(CLIENT_IF, mDevice);
+    fun clientReadPhy() {
+        service.clientReadPhy(gattCallback, device)
+        verify(nativeInterface).gattClientReadPhy(CLIENT_IF, device)
     }
 
     @Test
-    public void clientSetPreferredPhy() {
-        int txPhy = 2;
-        int rxPhy = 1;
-        int phyOptions = 3;
+    fun clientSetPreferredPhy() {
+        val txPhy = 2
+        val rxPhy = 1
+        val phyOptions = 3
 
-        mService.clientSetPreferredPhy(mGattCallback, mDevice, txPhy, rxPhy, phyOptions);
-        verify(mNativeInterface)
-                .gattClientSetPreferredPhy(CLIENT_IF, mDevice, txPhy, rxPhy, phyOptions);
+        service.clientSetPreferredPhy(gattCallback, device, txPhy, rxPhy, phyOptions)
+        verify(nativeInterface)
+            .gattClientSetPreferredPhy(CLIENT_IF, device, txPhy, rxPhy, phyOptions)
     }
 
     @Test
-    public void clientReadCharacteristic() {
-        int handle = 2;
-        int authReq = 3;
+    fun clientReadCharacteristic() {
+        val handle = 2
+        val authReq = 3
 
-        mService.readCharacteristic(mGattCallback, mDevice, handle, authReq);
-        verify(mNativeInterface).gattClientReadCharacteristic(CLIENT_CONN_ID, handle, authReq);
+        service.readCharacteristic(gattCallback, device, handle, authReq)
+        verify(nativeInterface).gattClientReadCharacteristic(CLIENT_CONN_ID, handle, authReq)
     }
 
     @Test
-    public void clientReadUsingCharacteristicUuid() {
-        UUID uuid = UUID.randomUUID();
-        int startHandle = 2;
-        int endHandle = 3;
-        int authReq = 4;
+    fun clientReadUsingCharacteristicUuid() {
+        val uuid = UUID.randomUUID()
+        val startHandle = 2
+        val endHandle = 3
+        val authReq = 4
 
-        mService.readUsingCharacteristicUuid(
-                mGattCallback, mDevice, uuid, startHandle, endHandle, authReq);
-        verify(mNativeInterface)
-                .gattClientReadUsingCharacteristicUuid(
-                        CLIENT_CONN_ID,
-                        uuid.getLeastSignificantBits(),
-                        uuid.getMostSignificantBits(),
-                        startHandle,
-                        endHandle,
-                        authReq);
+        service.readUsingCharacteristicUuid(
+            gattCallback,
+            device,
+            uuid,
+            startHandle,
+            endHandle,
+            authReq,
+        )
+        verify(nativeInterface)
+            .gattClientReadUsingCharacteristicUuid(
+                CLIENT_CONN_ID,
+                uuid.leastSignificantBits,
+                uuid.mostSignificantBits,
+                startHandle,
+                endHandle,
+                authReq,
+            )
     }
 
     @Test
-    public void clientWriteCharacteristic() {
-        int handle = 2;
-        int writeType = 3;
-        int authReq = 4;
-        byte[] value = new byte[] {5, 6};
+    fun clientWriteCharacteristic() {
+        val handle = 2
+        val writeType = 3
+        val authReq = 4
+        val value = byteArrayOf(5, 6)
 
-        int writeCharacteristicResult =
-                mService.writeCharacteristic(
-                        mGattCallback, mDevice, handle, writeType, authReq, value);
+        val writeCharacteristicResult =
+            service.writeCharacteristic(gattCallback, device, handle, writeType, authReq, value)
         assertThat(writeCharacteristicResult)
-                .isEqualTo(BluetoothStatusCodes.ERROR_DEVICE_NOT_CONNECTED);
+            .isEqualTo(BluetoothStatusCodes.ERROR_DEVICE_NOT_CONNECTED)
     }
 
     @Test
-    public void clientReadDescriptor() throws Exception {
-        int handle = 2;
-        int authReq = 3;
+    fun clientReadDescriptor() {
+        val handle = 2
+        val authReq = 3
 
-        mService.readDescriptor(mGattCallback, mDevice, handle, authReq);
-        verify(mNativeInterface).gattClientReadDescriptor(CLIENT_CONN_ID, handle, authReq);
+        service.readDescriptor(gattCallback, device, handle, authReq)
+        verify(nativeInterface).gattClientReadDescriptor(CLIENT_CONN_ID, handle, authReq)
     }
 
     @Test
-    public void clientBeginReliableWrite() {
-        mService.beginReliableWrite(mDevice);
-        verify(mReliableQueue).add(mDevice);
+    fun clientBeginReliableWrite() {
+        service.beginReliableWrite(device)
+        verify(reliableQueue).add(device)
     }
 
     @Test
-    public void clientEndReliableWrite() {
-        boolean execute = true;
+    fun clientEndReliableWrite() {
+        val execute = true
 
-        mService.endReliableWrite(mGattCallback, mDevice, execute);
-        verify(mReliableQueue).remove(mDevice);
-        verify(mNativeInterface).gattClientExecuteWrite(CLIENT_CONN_ID, execute);
+        service.endReliableWrite(gattCallback, device, execute)
+        verify(reliableQueue).remove(device)
+        verify(nativeInterface).gattClientExecuteWrite(CLIENT_CONN_ID, execute)
     }
 
     @Test
-    public void clientRegisterForNotification() throws Exception {
-        int handle = 2;
-        boolean enable = true;
+    fun clientRegisterForNotification() {
+        val handle = 2
+        val enable = true
 
-        mService.registerForNotification(mGattCallback, mDevice, handle, enable);
+        service.registerForNotification(gattCallback, device, handle, enable)
 
-        verify(mNativeInterface)
-                .gattClientRegisterForNotifications(CLIENT_IF, mDevice, handle, enable);
+        verify(nativeInterface)
+            .gattClientRegisterForNotifications(CLIENT_IF, device, handle, enable)
     }
 
     @Test
-    public void clientReadRemoteRssi() {
-        mService.readRemoteRssi(mGattCallback, mDevice);
-        verify(mNativeInterface).gattClientReadRemoteRssi(CLIENT_IF, mDevice);
+    fun clientReadRemoteRssi() {
+        service.readRemoteRssi(gattCallback, device)
+        verify(nativeInterface).gattClientReadRemoteRssi(CLIENT_IF, device)
     }
 
     @Test
-    public void clientConfigureMTU() {
-        int mtu = 2;
+    fun clientConfigureMTU() {
+        val mtu = 2
 
-        mService.configureMTU(mGattCallback, mDevice, mtu);
-        verify(mNativeInterface).gattClientConfigureMTU(CLIENT_CONN_ID, mtu);
+        service.configureMTU(gattCallback, device, mtu)
+        verify(nativeInterface).gattClientConfigureMTU(CLIENT_CONN_ID, mtu)
     }
 
     @Test
-    public void clientRestrictedHandles() throws Exception {
-        ArrayList<GattDbElement> db = new ArrayList<>();
+    fun clientRestrictedHandles() {
+        val db = arrayListOf<GattDbElement>()
 
-        var app = mock(ContextApp.class);
-        IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
+        val app = mock<ContextApp<IBluetoothGattCallback>>()
+        val callback = mock<IBluetoothGattCallback>()
 
-        doReturn(app).when(mClientMap).getByConnId(CLIENT_CONN_ID);
-        doReturn(callback).when(app).getCallback();
+        doReturn(app).whenever(clientMap).getByConnId(CLIENT_CONN_ID)
+        doReturn(callback).whenever(app).callback
 
-        GattDbElement hidService =
-                GattDbElement.createPrimaryService(
-                        UUID.fromString("00001812-0000-1000-8000-00805F9B34FB"));
-        hidService.id = 1;
+        val hidService =
+            GattDbElement.createPrimaryService(
+                UUID.fromString("00001812-0000-1000-8000-00805F9B34FB")
+            )
+        hidService.id = 1
 
-        GattDbElement hidInfoChar =
-                GattDbElement.createCharacteristic(
-                        UUID.fromString("00002A4A-0000-1000-8000-00805F9B34FB"), 0, 0);
-        hidInfoChar.id = 2;
+        val hidInfoChar =
+            GattDbElement.createCharacteristic(
+                UUID.fromString("00002A4A-0000-1000-8000-00805F9B34FB"),
+                0,
+                0,
+            )
+        hidInfoChar.id = 2
 
-        GattDbElement randomChar =
-                GattDbElement.createCharacteristic(
-                        UUID.fromString("0000FFFF-0000-1000-8000-00805F9B34FB"), 0, 0);
-        randomChar.id = 3;
+        val randomChar =
+            GattDbElement.createCharacteristic(
+                UUID.fromString("0000FFFF-0000-1000-8000-00805F9B34FB"),
+                0,
+                0,
+            )
+        randomChar.id = 3
 
-        db.add(hidService);
-        db.add(hidInfoChar);
-        db.add(randomChar);
+        db.add(hidService)
+        db.add(hidInfoChar)
+        db.add(randomChar)
 
-        mService.onGetGattDbFromNative(CLIENT_CONN_ID, db);
+        service.onGetGattDbFromNative(CLIENT_CONN_ID, db)
         // HID characteristics should be restricted
-        assertThat(mService.getRestrictedHandles().get(CLIENT_CONN_ID)).contains(hidInfoChar.id);
-        assertThat(mService.getRestrictedHandles().get(CLIENT_CONN_ID))
-                .doesNotContain(randomChar.id);
+        assertThat(service.getRestrictedHandles()[CLIENT_CONN_ID]).contains(hidInfoChar.id)
+        assertThat(service.getRestrictedHandles()[CLIENT_CONN_ID]).doesNotContain(randomChar.id)
 
-        mService.onDisconnectedFromNative(
-                CLIENT_IF, CLIENT_CONN_ID, TRANSPORT_LE, BluetoothGatt.GATT_SUCCESS, mDevice);
-        assertThat(mService.getRestrictedHandles()).doesNotContainKey(CLIENT_CONN_ID);
+        service.onDisconnectedFromNative(
+            CLIENT_IF,
+            CLIENT_CONN_ID,
+            BluetoothDevice.TRANSPORT_LE,
+            BluetoothGatt.GATT_SUCCESS,
+            device,
+        )
+        assertThat(service.getRestrictedHandles()).doesNotContainKey(CLIENT_CONN_ID)
     }
 
     @Test
     @EnableFlags(Flags.FLAG_GATT_MESSAGING_PERMISSIONS)
-    public void clientAncsAccessPermissionRejected() throws Exception {
-        ArrayList<GattDbElement> db = new ArrayList<>();
+    fun clientAncsAccessPermissionRejected() {
+        val db = arrayListOf<GattDbElement>()
 
-        var app = mock(ContextApp.class);
-        IBluetoothGattCallback callback = mock(IBluetoothGattCallback.class);
+        val app = mock<ContextApp<IBluetoothGattCallback>>()
+        val callback = mock<IBluetoothGattCallback>()
 
-        doReturn(app).when(mClientMap).getByConnId(CLIENT_CONN_ID);
-        doReturn(callback).when(app).getCallback();
+        doReturn(app).whenever(clientMap).getByConnId(CLIENT_CONN_ID)
+        doReturn(callback).whenever(app).callback
 
-        GattDbElement ancsService =
-                GattDbElement.createPrimaryService(
-                        UUID.fromString("7905F431-B5CE-4E99-A40F-4B1E122D00D0"));
-        ancsService.id = 1;
+        val ancsService =
+            GattDbElement.createPrimaryService(
+                UUID.fromString("7905F431-B5CE-4E99-A40F-4B1E122D00D0")
+            )
+        ancsService.id = 1
 
-        db.add(ancsService);
+        db.add(ancsService)
 
         doReturn(BluetoothDevice.ACCESS_REJECTED)
-                .when(mAdapterService)
-                .getMessageAccessPermission(any(BluetoothDevice.class));
+            .whenever(adapterService)
+            .getMessageAccessPermission(any<BluetoothDevice>())
 
-        mService.onGetGattDbFromNative(CLIENT_CONN_ID, db);
+        service.onGetGattDbFromNative(CLIENT_CONN_ID, db)
         // ANCS should be restricted
-        assertThat(mService.getRestrictedHandles().get(CLIENT_CONN_ID)).contains(ancsService.id);
+        assertThat(service.getRestrictedHandles()[CLIENT_CONN_ID]).contains(ancsService.id)
 
-        mService.onDisconnectedFromNative(
-                CLIENT_IF, CLIENT_CONN_ID, TRANSPORT_LE, BluetoothGatt.GATT_SUCCESS, mDevice);
-        assertThat(mService.getRestrictedHandles()).doesNotContainKey(CLIENT_CONN_ID);
+        service.onDisconnectedFromNative(
+            CLIENT_IF,
+            CLIENT_CONN_ID,
+            BluetoothDevice.TRANSPORT_LE,
+            BluetoothGatt.GATT_SUCCESS,
+            device,
+        )
+        assertThat(service.getRestrictedHandles()).doesNotContainKey(CLIENT_CONN_ID)
+    }
+
+    companion object {
+        private const val TEST_RSSI = 43
+        private const val CLIENT_IF = 12
+        private const val CLIENT_CONN_ID = 42
+
+        @JvmStatic
+        @Parameters(name = "{0}")
+        fun getParams() = FlagsWrapper.progressionOf(Flags.FLAG_GATT_THREAD)
     }
 }
