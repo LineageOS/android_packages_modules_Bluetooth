@@ -4136,8 +4136,6 @@ TEST_F(UnicastTestCsis, ConnectDeviceWithCsisButNotUsedForGrouping) {
 }
 
 TEST_F(UnicastTestCsis, AutoconnectTwoEarbudsOneEarlyConnected) {
-  com::android::bluetooth::flags::provider_->leaudio_do_not_set_autoconnecting_on_connected_device(
-          true);
   // First earbud
   const RawAddress test_address0 = GetTestAddress(0);
   EXPECT_CALL(mock_btif_storage_, AddLeaudioAutoconnect(test_address0, true)).Times(1);
