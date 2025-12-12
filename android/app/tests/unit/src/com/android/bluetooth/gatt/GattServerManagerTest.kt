@@ -278,9 +278,9 @@ class GattServerManagerTest {
             device,
             SERVER_CONN_ID,
             SERVER_REQUEST_TRANSACTION_ID,
-            2, /* handle */
-            0, /* offset */
-            false, /* isLong */
+            handle = 2,
+            offset = 0,
+            isLong = false,
         )
 
         // Transaction ID is mapped to a "request ID" which is an auto-increment starting at 0
@@ -309,9 +309,9 @@ class GattServerManagerTest {
             device,
             SERVER_CONN_ID,
             SERVER_REQUEST_TRANSACTION_ID,
-            2, /* handle */
-            0, /* offset */
-            false, /* isLong */
+            handle = 2,
+            offset = 0,
+            isLong = false,
         )
 
         // Transaction ID is mapped to a "request ID" which is an auto-increment starting at 0
@@ -340,12 +340,12 @@ class GattServerManagerTest {
             device,
             SERVER_CONN_ID,
             SERVER_REQUEST_TRANSACTION_ID,
-            2, /* handle */
-            0, /* offset */
-            2, /* length */
-            false, /* needRsp */
-            false, /* isPrepared */
-            data,
+            handle = 2,
+            offset = 0,
+            length = 2,
+            needRsp = false,
+            isPrep = false,
+            data = data,
         )
 
         // Transaction ID is mapped to a "request ID" which is an auto-increment starting at 0
@@ -378,12 +378,12 @@ class GattServerManagerTest {
             device,
             SERVER_CONN_ID,
             SERVER_REQUEST_TRANSACTION_ID,
-            2, /* handle */
-            0, /* offset */
-            2, /* length */
-            false, /* needRsp */
-            false, /* isPrepared */
-            data,
+            handle = 2,
+            offset = 0,
+            length = 2,
+            needRsp = false,
+            isPrep = false,
+            data = data,
         )
 
         // Transaction ID is mapped to a "request ID" which is an auto-increment starting at 0
@@ -423,10 +423,10 @@ class GattServerManagerTest {
         serverManager.sendResponse(
             gattServerCallback,
             device,
-            0, /* request ID */
-            GATT_SUCCESS,
-            0, /* offset */
-            null, /* Data null for a prepared write response */
+            requestId = 0,
+            status = GATT_SUCCESS,
+            offset = 0,
+            value = null, /* Data null for a prepared write response */
         )
 
         verify(nativeInterface)
@@ -465,10 +465,10 @@ class GattServerManagerTest {
         serverManager.sendResponse(
             gattServerCallback,
             device,
-            0, /* request ID */
-            GATT_SUCCESS,
-            0, /* offset */
-            null, /* Data null for a prepared write cancel response */
+            requestId = 0,
+            status = GATT_SUCCESS,
+            offset = 0,
+            value = null, /* Data null for a prepared write cancel response */
         )
 
         verify(nativeInterface)
@@ -494,10 +494,10 @@ class GattServerManagerTest {
         serverManager.sendResponse(
             gattServerCallback,
             device,
-            0, /* request ID */
-            GATT_SUCCESS,
-            0, /* offset */
-            data,
+            requestId = 0,
+            status = GATT_SUCCESS,
+            offset = 0,
+            value = data,
         )
 
         verify(nativeInterface)
@@ -523,10 +523,10 @@ class GattServerManagerTest {
         serverManager.sendResponse(
             gattServerCallback,
             device,
-            85, /* request ID, intentionally wrong so it doesn't exist */
-            GATT_SUCCESS,
-            0, /* offset */
-            data,
+            requestId = 85, /* Intentionally wrong so it doesn't exist */
+            status = GATT_SUCCESS,
+            offset = 0,
+            value = data,
         )
 
         verify(nativeInterface, never())
@@ -548,10 +548,10 @@ class GattServerManagerTest {
         serverManager.sendResponse(
             gattServerCallback,
             device,
-            0, /* request ID */
-            GATT_SUCCESS,
-            0, /* offset */
-            data,
+            requestId = 0,
+            status = GATT_SUCCESS,
+            offset = 0,
+            value = data,
         )
 
         verify(nativeInterface, never())
@@ -583,35 +583,35 @@ class GattServerManagerTest {
             device,
             SERVER_CONN_ID,
             SERVER_REQUEST_TRANSACTION_ID,
-            2, /* handle */
-            0, /* offset */
-            false, /* isLong */
+            handle = 2,
+            offset = 0,
+            isLong = false,
         )
         serverManager.onServerReadCharacteristicFromNative(
             device,
             SERVER_CONN_ID_2,
             SERVER_REQUEST_TRANSACTION_ID, /* Note: transaction IDs are local to the bearer */
-            3, /* handle */
-            0, /* offset */
-            false, /* isLong */
+            handle = 3,
+            offset = 0,
+            isLong = false,
         )
 
         val data = byteArrayOf(5, 6)
         serverManager.sendResponse(
             gattServerCallback,
             device,
-            0, /* request ID, from bearer/request 1 */
-            GATT_SUCCESS,
-            0, /* offset */
-            data,
+            requestId = 0, /* From bearer/request 1 */
+            status = GATT_SUCCESS,
+            offset = 0,
+            value = data,
         )
         serverManager.sendResponse(
             gattServerCallback,
             device,
-            1, /* request ID, from bearer/request 2 */
-            GATT_SUCCESS,
-            0, /* offset */
-            data,
+            requestId = 1, /* From bearer/request 2 */
+            status = GATT_SUCCESS,
+            offset = 0,
+            value = data,
         )
 
         verify(nativeInterface)
@@ -649,10 +649,10 @@ class GattServerManagerTest {
         serverManager.sendResponse(
             gattServerCallback2,
             device,
-            0, /* request ID belongs to other server */
-            GATT_SUCCESS,
-            0, /* offset */
-            data,
+            requestId = 0, /* Belongs to other server */
+            status = GATT_SUCCESS,
+            offset = 0,
+            value = data,
         )
 
         verify(nativeInterface, never())
