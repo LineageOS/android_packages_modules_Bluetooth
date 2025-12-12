@@ -38,6 +38,7 @@ import android.util.SparseArray;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
+import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface.RemoteFeatures;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.media_audio.sink.BluetoothMediaBrowserService;
 import com.android.bluetooth.profile.ProfileService;
@@ -88,6 +89,7 @@ class AvrcpControllerStateMachine extends StateMachine {
     static final int MESSAGE_PROCESS_CURRENT_APPLICATION_SETTINGS = 218;
     static final int MESSAGE_PROCESS_AVAILABLE_PLAYER_CHANGED = 219;
     static final int MESSAGE_PROCESS_RECEIVED_COVER_ART_PSM = 220;
+    static final int MESSAGE_PROCESS_RECEIVED_REMOTE_FEATURES = 221;
 
     // 300->399 Events for Browsing
     static final int MESSAGE_GET_FOLDER_ITEMS = 300;
@@ -129,7 +131,9 @@ class AvrcpControllerStateMachine extends StateMachine {
 
     private AvrcpPlayer mAddressedPlayer;
     private int mAddressedPlayerId;
+
     private int mVolumeNotificationLabel = -1;
+    private RemoteFeatures mRemoteFeatures;
 
     // Number of items to get in a single fetch
     static final int ITEM_PAGE_SIZE = 20;
@@ -252,6 +256,8 @@ class AvrcpControllerStateMachine extends StateMachine {
                         + (mCoverArtManager != null
                                 ? mCoverArtManager.getState(mDevice) == STATE_CONNECTED
                                 : "false, mCoverArtManager is null"));
+
+        ProfileService.println(sb, "mRemoteFeatures: " + mRemoteFeatures);
         ProfileService.println(sb, "mVolumeHandler: " + mVolumeHandler);
 
         ProfileService.println(sb, "Addressed Player ID: " + mAddressedPlayerId);
@@ -412,6 +418,7 @@ class AvrcpControllerStateMachine extends StateMachine {
             if (mMostRecentState != STATE_DISCONNECTED) {
                 sendMessage(CLEANUP);
             }
+            mRemoteFeatures = null;
             broadcastConnectionStateChanged(STATE_DISCONNECTED);
         }
 
@@ -537,6 +544,9 @@ class AvrcpControllerStateMachine extends StateMachine {
                         }
                         default -> {} // Nothing to do
                     }
+                }
+                case MESSAGE_PROCESS_RECEIVED_REMOTE_FEATURES -> {
+                    onRemoteFeaturesChanged((RemoteFeatures) msg.obj);
                 }
                 case MESSAGE_PROCESS_SET_ABS_VOL_CMD -> {
                     handleAbsVolumeRequest(msg.arg1, msg.arg2);
@@ -1152,6 +1162,12 @@ class AvrcpControllerStateMachine extends StateMachine {
         }
     }
 
+    /** Triggered when the remote device's features are changed/reported. */
+    private void onRemoteFeaturesChanged(RemoteFeatures features) {
+        debug("onRemoteFeaturesChanged: features=" + features);
+        mRemoteFeatures = features;
+    }
+
     /**
      * Handle a request to align our local volume with the volume of a remote device. If we're
      * assuming the source volume is fixed then a response of ABS_VOL_MAX will always be sent and no
@@ -1355,6 +1371,8 @@ class AvrcpControllerStateMachine extends StateMachine {
             case CONNECT_TIMEOUT -> "CONNECT_TIMEOUT";
             case STACK_EVENT -> "STACK_EVENT";
             case MESSAGE_INTERNAL_CMD_TIMEOUT -> "MESSAGE_INTERNAL_CMD_TIMEOUT";
+            case MESSAGE_PROCESS_RECEIVED_REMOTE_FEATURES ->
+                    "MESSAGE_PROCESS_RECEIVED_REMOTE_FEATURES";
             case MESSAGE_PROCESS_SET_ABS_VOL_CMD -> "MESSAGE_PROCESS_SET_ABS_VOL_CMD";
             case MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION ->
                     "MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION";

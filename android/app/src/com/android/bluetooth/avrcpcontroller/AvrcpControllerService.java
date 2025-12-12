@@ -24,7 +24,6 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.content.Intent;
-import android.media.AudioManager;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
@@ -32,9 +31,10 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothPrefs;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface.RemoteFeatures;
+import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.media_audio.sink.BluetoothMediaBrowserService;
 import com.android.bluetooth.media_audio.sink.BluetoothMediaBrowserService.BrowseResult;
-import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -374,6 +374,15 @@ public class AvrcpControllerService extends ProfileService {
         AvrcpControllerStateMachine stateMachine = getOrCreateStateMachine(device);
         stateMachine.sendMessage(
                 AvrcpControllerStateMachine.MESSAGE_PROCESS_RECEIVED_COVER_ART_PSM, psm);
+    }
+
+    // Called by JNI to report remote device's features.
+    synchronized void onRemoteFeaturesChanged(BluetoothDevice device, RemoteFeatures features) {
+        AvrcpControllerStateMachine stateMachine = getStateMachine(device);
+        if (stateMachine != null) {
+            stateMachine.sendMessage(
+                    AvrcpControllerStateMachine.MESSAGE_PROCESS_RECEIVED_REMOTE_FEATURES, features);
+        }
     }
 
     // Called by JNI when remote wants to receive absolute volume notifications.

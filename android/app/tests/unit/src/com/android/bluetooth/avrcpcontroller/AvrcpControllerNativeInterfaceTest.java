@@ -21,12 +21,15 @@ import static com.android.bluetooth.TestUtils.mockGetRemoteDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.mockito.Mockito.verify;
+
 import android.bluetooth.BluetoothDevice;
 import android.support.v4.media.session.PlaybackStateCompat;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
 
+import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface.RemoteFeatures;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.tests.bluetooth.MockitoRule;
 
@@ -47,12 +50,12 @@ public class AvrcpControllerNativeInterfaceTest {
 
     private static final String REMOTE_DEVICE_ADDRESS = "00:00:00:00:00:00";
     private static final byte[] REMOTE_DEVICE_ADDRESS_AS_ARRAY = new byte[] {0, 0, 0, 0, 0, 0};
+    private final BluetoothDevice device = getTestDevice(REMOTE_DEVICE_ADDRESS);
 
     private AvrcpControllerNativeInterface mNativeInterface;
 
     @Before
     public void setUp() {
-        final BluetoothDevice device = getTestDevice(REMOTE_DEVICE_ADDRESS);
         mockGetRemoteDevice(mAdapterService, device);
         mNativeInterface = new AvrcpControllerNativeInterface(mAdapterService, mAvrcpController);
     }
@@ -124,5 +127,14 @@ public class AvrcpControllerNativeInterfaceTest {
         assertThat(player.supportsFeature(0)).isTrue();
         assertThat(player.getName()).isEqualTo(name);
         assertThat(player.getPlayStatus()).isEqualTo(PlaybackStateCompat.STATE_REWINDING);
+    }
+
+    @Test
+    public void onRemoteFeaturesChanged() {
+        RemoteFeatures expectedFeatures = new RemoteFeatures(true, false, false, true);
+
+        mNativeInterface.onRemoteFeaturesChanged(REMOTE_DEVICE_ADDRESS_AS_ARRAY, 0x01 + 0x08);
+
+        verify(mAvrcpController).onRemoteFeaturesChanged(device, expectedFeatures);
     }
 }

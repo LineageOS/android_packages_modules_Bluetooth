@@ -144,6 +144,20 @@ public class AvrcpControllerNativeInterface {
         mAvrcpController.onPlayerAppSettingChanged(device, playerAttribRsp, rspLen);
     }
 
+    // Called by JNI to report remote device's features.
+    void onRemoteFeaturesChanged(byte[] address, int features) {
+        BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
+        RemoteFeatures remoteFeatures =
+                new RemoteFeatures(
+                        (features & JNI_REMOTE_FEATURES_METADATA) != 0,
+                        (features & JNI_REMOTE_FEATURES_ABSOLUTE_VOLUME) != 0,
+                        (features & JNI_REMOTE_FEATURES_BROWSE) != 0,
+                        (features & JNI_REMOTE_FEATURES_COVER_ARTWORK) != 0);
+        Log.d(TAG, "onRemoteFeaturesChanged: device=" + device + ", features=" + remoteFeatures);
+
+        mAvrcpController.onRemoteFeaturesChanged(device, remoteFeatures);
+    }
+
     // Called by JNI when remote wants to set absolute volume.
     void handleSetAbsVolume(byte[] address, byte absVol, byte label) {
         BluetoothDevice device = mAdapterService.getRemoteDevice(getAddressStringFromByte(address));
@@ -344,6 +358,18 @@ public class AvrcpControllerNativeInterface {
             default -> PlaybackStateCompat.STATE_NONE;
         };
     }
+
+    /*
+     *  Remote Feature Values from JNI
+     */
+    private static final byte JNI_REMOTE_FEATURES_NONE = 0x00;
+    private static final byte JNI_REMOTE_FEATURES_METADATA = 0x01;
+    private static final byte JNI_REMOTE_FEATURES_ABSOLUTE_VOLUME = 0x02;
+    private static final byte JNI_REMOTE_FEATURES_BROWSE = 0x04;
+    private static final byte JNI_REMOTE_FEATURES_COVER_ARTWORK = 0x08;
+
+    public record RemoteFeatures(
+            boolean metadata, boolean absoluteVolume, boolean browse, boolean coverArtwork) {}
 
     /**********************************************************************************************/
     /******************************************* native *******************************************/
