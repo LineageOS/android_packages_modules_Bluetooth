@@ -416,7 +416,9 @@ GetStackBroadcastConfigurationFromAidlFormat(
           .subgroups = GetStackSubgroupsFromAidlFormat(setting.subgroupsConfigurations),
           .qos = ::bluetooth::le_audio::broadcaster::BroadcastQosConfig(
                   setting.retransmitionNum, setting.maxTransportLatencyMs),
-          .data_path = GetStackDataPathFromAidlFormat(*setting.dataPathConfiguration),
+          .data_path = GetStackDataPathFromAidlFormat(setting.dataPathConfiguration.value_or(
+                  ::aidl::android::hardware::bluetooth::audio::IBluetoothAudioProvider::
+                          LeAudioDataPathConfiguration{})),
           .sduIntervalUs = (uint32_t)setting.sduIntervalUs,
           .maxSduOctets = (uint16_t)setting.maxSduOctets,
           .phy = 0,  // recomputed later on
