@@ -46,9 +46,10 @@ import androidx.test.rule.ServiceTestRule;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
-import com.android.bluetooth.media_audio.sink.BluetoothMediaBrowserService.BrowseResult;
+import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface.RemoteFeatures;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.media_audio.sink.BluetoothMediaBrowserService.BrowseResult;
 import com.android.tests.bluetooth.MockitoRule;
 
 import org.junit.After;
@@ -337,6 +338,18 @@ public class AvrcpControllerServiceTest {
         verify(mStateMachine)
                 .sendMessage(
                         AvrcpControllerStateMachine.MESSAGE_PROCESS_RECEIVED_COVER_ART_PSM, psm);
+    }
+
+    @Test
+    public void onRemoteFeaturesChanged() {
+        RemoteFeatures features = new RemoteFeatures(true, true, true, true);
+
+        mService.onRemoteFeaturesChanged(mDevice1, features);
+
+        verify(mStateMachine)
+                .sendMessage(
+                        AvrcpControllerStateMachine.MESSAGE_PROCESS_RECEIVED_REMOTE_FEATURES,
+                        features);
     }
 
     @Test

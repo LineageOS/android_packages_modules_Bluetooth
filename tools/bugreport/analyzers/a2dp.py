@@ -600,7 +600,61 @@ def plot_aptx_hd_stream(ax, stream: AvdtpStream):
 def plot_opus_stream(ax, stream: AvdtpStream):
     """Plot and extract an A2DP audio stream encoded with the Opus codec"""
 
-    print(f"Plotting Opus stream")
+    match stream.configuration.media_codec_specific_information_elements[6] & 0x80:
+        case 0x80:
+            sampling_frequency = 48000.0
+        case _:
+            raise ValueError("unknown Opus sampling frequency")
+
+    match stream.configuration.media_codec_specific_information_elements[6] & 0x07:
+        case 0x01 | 0x04:
+            nr_channels = 2
+        case 0x02:
+            nr_channels = 1
+        case _:
+            raise ValueError("unknown Opus channel mode")
+
+    match stream.configuration.media_codec_specific_information_elements[6] & 0x18:
+        case 0x08:
+            frame_size = 0.010
+        case 0x10:
+            frame_size = 0.020
+        case _:
+            raise ValueError("unknown Opus frame size")
+
+    print(f"Plotting Opus stream {nr_channels}x{sampling_frequency}Hz")
+
+    started_ts = (
+        np.datetime64(stream.started.packet.timestamp_us, "us")
+        .item()
+        .strftime("%H:%M:%S.%f")
+    )
+    f = open(f"stream_Opus_{int(sampling_frequency)}_{started_ts}.bt", "wb")
+
+    current_stream_ts = 0
+    real_ts = []
+    stream_ts = []
+    rtp_ts = []
+
+    for packet in stream.packets:
+        data = packet.payload
+        (current_rtp_ts,) = struct.unpack(">I", data[4:8])
+
+        real_ts.append(packet.packet.timestamp_us)
+        stream_ts.append(current_stream_ts)
+        rtp_ts.append(current_rtp_ts / sampling_frequency)
+
+        f.write(data)
+
+        current_stream_ts += frame_size
+
+    real_ts = np.array(real_ts)
+    stream_ts = np.array(stream_ts) - (real_ts - real_ts[0]) / 1000000.0
+    rtp_ts = np.array(rtp_ts) - rtp_ts[0] - (real_ts - real_ts[0]) / 1000000.0
+    real_ts = np.array(real_ts, dtype="datetime64[us]")
+
+    ax.plot(real_ts, stream_ts, color="blue")
+    ax.plot(real_ts, rtp_ts, color="orange")
 
 
 def plot_tx_queue(ax, acl_connection: btsnoop.AclConnection):
@@ -773,6 +827,10 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
     started_ts = acl_connection.connected.timestamp if acl_connection.connected else acl_packets[0].packet.timestamp
     print(f"---- {started_ts} | 0x{acl_connection.connection_handle:04x} ----")
 
+    # List transmission times of AVDTP Start and Suspend commands.
+    start_responses = []
+    suspend_responses = []
+
     for packet in acl_packets:
         if isinstance(packet, L2capSignalingPacket):
             signal = packet.signal
@@ -863,6 +921,7 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
                 session.configuration = packet
 
             elif isinstance(packet.signal, avdtp.StartResponse):
+                start_responses.append(packet.packet.timestamp_us)
                 media_codec_capability = None
                 for (
                     service_capability
@@ -877,6 +936,7 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
                 all_streams.append(active_stream)
 
             elif isinstance(packet.signal, avdtp.SuspendResponse):
+                suspend_responses.append(packet.packet.timestamp_us)
                 active_stream.suspended = packet
                 active_stream = None
 
@@ -916,5 +976,12 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
     axs[1].xaxis.set_tick_params(rotation=45)
 
     plot_tx_queue(axs[1], acl_connection)
+
+    for ts in start_responses:
+        axs[0].axvline(np.datetime64(ts, 'us'), color='green')
+        axs[1].axvline(np.datetime64(ts, 'us'), color='green')
+    for ts in suspend_responses:
+        axs[0].axvline(np.datetime64(ts, 'us'), color='red')
+        axs[1].axvline(np.datetime64(ts, 'us'), color='red')
 
     plt.show()

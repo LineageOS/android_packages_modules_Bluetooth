@@ -54,6 +54,7 @@ class Host(context: Context) : Closeable {
         intentFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
         intentFilter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
         intentFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
+        intentFilter.addAction(BluetoothDevice.ACTION_FOUND)
 
         flow = intentFlow(context, intentFilter, scope).shareIn(scope, SharingStarted.Eagerly)
     }
@@ -98,6 +99,27 @@ class Host(context: Context) : Closeable {
 
                 Log.d(TAG, "createBondAndVerify: bonded")
             }
+        }
+    }
+
+    public fun discoverAndVerify(remoteDeviceName: String): BluetoothDevice {
+        Log.d(TAG, "discoverAndVerify: $remoteDeviceName")
+        return runBlocking(scope.coroutineContext) {
+            val foundDevice: BluetoothDevice =
+                withTimeout(DISCOVERY_TIMEOUT) {
+                    assertThat(adapter.startDiscovery()).isTrue()
+                    val discoveredIntent =
+                        flow
+                            .filter { it.getAction() == BluetoothDevice.ACTION_FOUND }
+                            .filter {
+                                it.getStringExtra(BluetoothDevice.EXTRA_NAME) == remoteDeviceName
+                            }
+                            .first()
+                    Log.d(TAG, "discoverAndVerify: done")
+                    discoveredIntent.getBluetoothDeviceExtra()
+                }
+            assertThat(adapter.cancelDiscovery()).isTrue()
+            foundDevice
         }
     }
 
@@ -159,5 +181,6 @@ class Host(context: Context) : Closeable {
 
     companion object {
         private val TIMEOUT = 20.seconds
+        private val DISCOVERY_TIMEOUT = 2.seconds
     }
 }

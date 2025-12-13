@@ -26,6 +26,7 @@ import android.os.UserHandle
 import android.platform.test.flag.junit.SetFlagsRule
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
+import com.android.bluetooth.flags.Flags
 import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
 import com.android.server.bluetooth.airplane.APM_BT_ENABLED_NOTIFICATION
@@ -59,7 +60,7 @@ import org.robolectric.Shadows.shadowOf
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @kotlin.time.ExperimentalTime
 class AirplaneModeControllerTest(flags: FlagsWrapper) {
-    @get:Rule val mSetFlagsRule: SetFlagsRule = SetFlagsRule(flags.flags)
+    @get:Rule val setFlagsRule = SetFlagsRule(flags.flags)
     @get:Rule val testName = TestName()
 
     private val looper = Looper.getMainLooper()
@@ -389,6 +390,9 @@ class AirplaneModeControllerTest(flags: FlagsWrapper) {
             BluetoothAdapterState.disableCacheForTesting = false
         }
 
-        @JvmStatic @Parameters(name = "{0}") fun getParams() = FlagsWrapper.progressionOf()
+        @JvmStatic
+        @Parameters(name = "{0}")
+        fun getParams() =
+            FlagsWrapper.progressionOf(Flags.FLAG_VALIDATE_BLUETOOTH_NAME_IN_PLATFORM_CONFIG)
     }
 }

@@ -1557,13 +1557,8 @@ public class VolumeControlService extends ConnectableProfile {
     }
 
     @VisibleForTesting
-    synchronized void connectionStateChanged(BluetoothDevice device, int fromState, int toState) {
-        if (!isAvailable()) {
-            Log.w(TAG, "connectionStateChanged: service is not available");
-            return;
-        }
-
-        if ((device == null) || (fromState == toState)) {
+    void connectionStateChanged(BluetoothDevice device, int fromState, int toState) {
+        if (device == null || fromState == toState) {
             Log.e(
                     TAG,
                     "connectionStateChanged: unexpected invocation. device="
@@ -1575,15 +1570,21 @@ public class VolumeControlService extends ConnectableProfile {
             return;
         }
 
+        if (!isAvailable()) { // Safe outside synchronized as this is posted on main Looper
+            Log.w(TAG, "connectionStateChanged: service is not available");
+            return;
+        }
+
         // Check if the device is disconnected - if unbond, remove the state machine
-        if (toState == STATE_DISCONNECTED) {
-            int bondState = getAdapterService().getBondState(device);
-            if (bondState == BOND_NONE) {
+        if (toState == STATE_DISCONNECTED
+                && getAdapterService().getBondState(device) == BOND_NONE) {
+            synchronized (this) { // TODO: Why do we need synchronized here ?
                 Log.d(TAG, device + " is unbond. Remove state machine");
                 removeStateMachine(device);
                 removeDeviceData(device);
             }
         }
+
         getAdapterService()
                 .handleProfileConnectionStateChange(getProfileId(), device, fromState, toState);
     }

@@ -28,7 +28,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ApplicationParameter;
 import com.android.obex.HeaderSet;
@@ -1355,15 +1354,12 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
             lastIndex = pbSize - 1;
         }
 
-        if (Flags.pbapLimitCallLog()) {
-            // Limit the number of call log to CALLLOG_NUM_LIMIT
-            if ((appParamValue.needTag != BluetoothPbapObexServer.ContentType.PHONEBOOK)
-                    && (appParamValue.needTag != BluetoothPbapObexServer.ContentType.FAVORITES)
-                    && (appParamValue.needTag
-                            != BluetoothPbapObexServer.ContentType.SIM_PHONEBOOK)) {
-                if (requestSize > CALLLOG_NUM_LIMIT) {
-                    requestSize = CALLLOG_NUM_LIMIT;
-                }
+        // Limit the number of call log to CALLLOG_NUM_LIMIT
+        if ((appParamValue.needTag != BluetoothPbapObexServer.ContentType.PHONEBOOK)
+                && (appParamValue.needTag != BluetoothPbapObexServer.ContentType.FAVORITES)
+                && (appParamValue.needTag != BluetoothPbapObexServer.ContentType.SIM_PHONEBOOK)) {
+            if (requestSize > CALLLOG_NUM_LIMIT) {
+                requestSize = CALLLOG_NUM_LIMIT;
             }
         }
 
@@ -1376,18 +1372,6 @@ public class BluetoothPbapObexServer extends ServerRequestHandler {
         }
         if (endPoint > lastIndex) {
             endPoint = lastIndex;
-        }
-
-        if (!Flags.pbapLimitCallLog()) {
-            // Limit the number of call log to CALLLOG_NUM_LIMIT
-            if ((appParamValue.needTag != BluetoothPbapObexServer.ContentType.PHONEBOOK)
-                    && (appParamValue.needTag != BluetoothPbapObexServer.ContentType.FAVORITES)
-                    && (appParamValue.needTag
-                            != BluetoothPbapObexServer.ContentType.SIM_PHONEBOOK)) {
-                if (requestSize > CALLLOG_NUM_LIMIT) {
-                    requestSize = CALLLOG_NUM_LIMIT;
-                }
-            }
         }
 
         Log.d(

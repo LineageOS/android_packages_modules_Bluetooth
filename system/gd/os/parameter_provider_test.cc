@@ -31,8 +31,6 @@ constexpr char kDEFAULT_INSTANCE_NAME[] = "default";
 constexpr char kHCI_INSTANCE_NAME[] = "hci1";
 
 constexpr char kBT_CONFIG_FILE[] = "bt_config.conf";
-constexpr char kBT_SNOOP_LOGFILE[] = "btsnoop_hci.log";
-constexpr char kBT_SNOOZ_LOGFILE[] = "btsnooz_hci.log";
 }  // namespace
 
 class ParameterProviderTest : public ::testing::Test {
@@ -59,38 +57,17 @@ TEST_F(ParameterProviderTest, ConfigFilePath_second_instance) {
   ASSERT_STREQ(exp.data(), filename.data());
 }
 
-TEST_F(ParameterProviderTest, SnoopLogFilePath_default_instance) {
+TEST_F(ParameterProviderTest, SnoopLogDirPath_second_instance) {
   ParameterProvider::SetHciInstanceName(kDEFAULT_INSTANCE_NAME);
 
-  const std::string filename =
-          std::filesystem::path(ParameterProvider::SnoopLogFilePath()).filename();
-  ASSERT_STREQ(kBT_SNOOP_LOGFILE, filename.data());
-}
+  const std::string default_dir_name = std::filesystem::path(ParameterProvider::SnoopLogDirPath());
 
-TEST_F(ParameterProviderTest, SnoopLogFilePath_second_instance) {
   ParameterProvider::SetHciInstanceName(kHCI_INSTANCE_NAME);
 
-  const std::string exp = std::format("{}_{}", kHCI_INSTANCE_NAME, kBT_SNOOP_LOGFILE);
-  const std::string filename =
-          std::filesystem::path(ParameterProvider::SnoopLogFilePath()).filename();
-  ASSERT_STREQ(exp.data(), filename.data());
-}
-
-TEST_F(ParameterProviderTest, SnoozLogFilePath_default_instance) {
-  ParameterProvider::SetHciInstanceName(kDEFAULT_INSTANCE_NAME);
-
-  const std::string filename =
-          std::filesystem::path(ParameterProvider::SnoozLogFilePath()).filename();
-  ASSERT_STREQ(kBT_SNOOZ_LOGFILE, filename.data());
-}
-
-TEST_F(ParameterProviderTest, SnoozLogFilePath_second_instance) {
-  ParameterProvider::SetHciInstanceName(kHCI_INSTANCE_NAME);
-
-  const std::string exp = std::format("{}_{}", kHCI_INSTANCE_NAME, kBT_SNOOZ_LOGFILE);
-  const std::string filename =
-          std::filesystem::path(ParameterProvider::SnoozLogFilePath()).filename();
-  ASSERT_STREQ(exp.data(), filename.data());
+  const std::string exp = std::format("{}/{}", default_dir_name, kHCI_INSTANCE_NAME);
+  const std::string second_instance_name =
+          std::filesystem::path(ParameterProvider::SnoopLogDirPath());
+  ASSERT_STREQ(exp.data(), second_instance_name.data());
 }
 
 }  // namespace os

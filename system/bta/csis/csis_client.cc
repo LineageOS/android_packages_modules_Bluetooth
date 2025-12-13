@@ -801,7 +801,7 @@ public:
            << "  Groups:\n";
     for (const auto& g : csis_groups_) {
       stream << "    == id: " << g->GetGroupId() << " ==\n"
-             << "    uuid: " << g->GetUuid() << "\n"
+             << "    uuid: " << g->GetUuid().ToString() << "\n"
              << "    desired size: " << g->GetDesiredSize() << "\n"
              << "    discoverable state: " << static_cast<int>(g->GetDiscoveryState()) << "\n"
              << "    current lock state: " << static_cast<int>(g->GetCurrentLockState()) << "\n"

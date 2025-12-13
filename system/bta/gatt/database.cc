@@ -63,29 +63,33 @@ Service* FindService(std::list<Service>& services, uint16_t handle) {
 }
 
 std::string Database::ToString() const {
-  std::stringstream tmp;
+  std::string result;
+  auto out = std::back_inserter(result);
 
   for (const Service& service : services) {
-    tmp << "Service: handle=" << loghex(service.handle)
-        << ", end_handle=" << loghex(service.end_handle) << ", uuid=" << service.uuid << "\n";
+    std::format_to(out, "Service: handle=0x{:x}, end_handle=0x{:x}, uuid={}\n", service.handle,
+                   service.end_handle, service.uuid);
 
     for (const auto& is : service.included_services) {
-      tmp << "\t Included service: handle=" << loghex(is.handle)
-          << ", start_handle=" << loghex(is.start_handle)
-          << ", end_handle=" << loghex(is.end_handle) << ", uuid=" << is.uuid << "\n";
+      std::format_to(out,
+                     "\tIncluded Service: handle=0x{:x}, start_handle=0x{:x}, end_handle=0x{:x}, "
+                     "uuid={}\n",
+                     is.handle, is.start_handle, is.end_handle, is.uuid);
     }
 
     for (const Characteristic& c : service.characteristics) {
-      tmp << "\t Characteristic: declaration_handle=" << loghex(c.declaration_handle)
-          << ", value_handle=" << loghex(c.value_handle) << ", uuid=" << c.uuid
-          << ", prop=" << loghex(c.properties) << "\n";
+      std::format_to(out,
+                     "\tCharacteristic: declaration_handle=0x{:x}, value_handle=0x{:x}, uuid={}, "
+                     "prop=0x{:x}\n",
+                     c.declaration_handle, c.value_handle, c.uuid, c.properties);
 
       for (const Descriptor& d : c.descriptors) {
-        tmp << "\t\t Descriptor: handle=" << loghex(d.handle) << ", uuid=" << d.uuid << "\n";
+        std::format_to(out, "\t\tDescriptor: handle=0x{:x}, uuid={}\n", d.handle, d.uuid);
       }
     }
   }
-  return tmp.str();
+
+  return result;
 }
 
 std::vector<StoredAttribute> Database::Serialize() const {

@@ -630,12 +630,9 @@ class BluetoothManagerService {
                                 mContentResolver, Settings.Secure.BLUETOOTH_ADDRESS);
         Log.d(
                 TAG,
-                "Local adapter: Name="
-                        + mName
-                        + ", Address="
-                        + Log.address(mAddress)
-                        + " HciInstanceName="
-                        + mHciInstanceName);
+                ("Local adapter: Name=" + mName)
+                        + (", Address=" + Log.address(mAddress))
+                        + (" HciInstanceName=" + mHciInstanceName));
 
         if (isBluetoothPersistedStateOn()) {
             Log.i(TAG, "Startup: Bluetooth persisted state is ON.");

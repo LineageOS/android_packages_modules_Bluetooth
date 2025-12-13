@@ -31,7 +31,7 @@ namespace bluetooth::hal {
 class SnoopLoggerFile {
 public:
   // Create a new file and update symlinks.
-  SnoopLoggerFile(std::filesystem::path snoop_log_path, int max_packet_count);
+  SnoopLoggerFile(std::filesystem::path snoop_dir_path, bool is_filtered, int max_packet_count);
   ~SnoopLoggerFile();
 
   // Put in header for test
@@ -48,12 +48,17 @@ public:
   // and update symlinks if limit is reached.
   void Write(const PacketHeaderType& header, const std::vector<uint8_t>& packet, size_t packet_len);
 
-  // Delete all log files based on base log path.
-  static void DeleteBtsnoopFiles(const std::filesystem::path log_path);
+  // Delete log file and last log file based on log path.
+  static void DeleteBtsnoopFiles(const std::filesystem::path dir_path, bool is_filtered);
+  static void DeleteBtsnoozFiles(const std::filesystem::path dir_path);
+  static std::filesystem::path AssembleFileName(const std::filesystem::path& dir_path,
+                                                bool is_snooz, bool is_filtered, bool is_last);
 
 private:
   std::ofstream btsnoop_ostream_;
+  std::filesystem::path snoop_dir_path_;
   std::filesystem::path snoop_log_path_;
+  bool is_filtered_;
   size_t max_packets_per_file_;
   size_t packet_counter_ = 0;
   mutable std::mutex file_mutex_;

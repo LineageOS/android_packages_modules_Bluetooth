@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "ignore_unrelated_cancel_bond"
-    namespace: "bluetooth"
-    description: "Accept the cancelBond request only for the currently pairing device"
-    bug: "366150975"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "immediate_sdp_results_le"
     namespace: "bluetooth"
     description: "Return SDP results immediately to unblock bonding even if the remote doesn't support LEA"

@@ -72,3 +72,10 @@ flag {
     bug: "450288332"
 }
 
+flag {
+    name: "validate_bluetooth_name_in_platform_config"
+    namespace: "bluetooth"
+    description: "Validate that the platform config match the installed bluetooth package"
+    bug: "467963541"
+}
+

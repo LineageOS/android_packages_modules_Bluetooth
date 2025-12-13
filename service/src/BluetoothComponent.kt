@@ -23,6 +23,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Process
+import com.android.bluetooth.flags.Flags
 
 private const val TAG = "BluetoothComponent"
 
@@ -56,7 +57,60 @@ class BluetoothComponent(context: Context) {
         val serviceInfo = result.serviceInfo
         packageName = serviceInfo.packageName
         componentName = ComponentName(serviceInfo.packageName, serviceInfo.name)
-        Log.i(TAG, "Found Bluetooth component: $componentName")
+        if (Flags.validateBluetoothNameInPlatformConfig()) {
+            validateDeviceConfiguration(context)
+        }
+        Log.i(TAG, "Successfully found Bluetooth component: $componentName")
+    }
+
+    /**
+     * Validate detected Bluetooth package name match the declared configuration.
+     *
+     * Bluetooth apk name is different when packaged as a mainline module. Some components of the
+     * system (permission, telephony) will rely on a global resource to know the name of the
+     * Bluetooth package and grant some permissions.
+     *
+     * If the config is missing, permission may be missing and Bluetooth may not work. If there is a
+     * mis-match, an exception will be thrown and prevent boot.
+     *
+     * To help debugging, booting in safe mode will never throw an exception.
+     *
+     * The name is most likely to be
+     * - `com.android.bluetooth` on a non-mainline device (may be customized by OEM)
+     * - `com.google.android.bluetooth` on a mainline device
+     *
+     * @throws IllegalStateException If the device configuration is invalid
+     */
+    @Throws(IllegalStateException::class)
+    private fun validateDeviceConfiguration(ctx: Context) {
+        val resId = ctx.resources.getIdentifier("config_systemBluetoothStack", "string", "android")
+        if (resId == 0) {
+            Log.w(TAG, "No Device configuration. Bluetooth is expected not to work properly")
+            return
+        }
+        val configPackageName = ctx.resources.getString(resId)
+        if (configPackageName == packageName) {
+            return
+        }
+        val msg =
+            """
+        The system config does not match the installed Bluetooth APK. Bluetooth will not work.
+            - Installed APK: [$packageName]
+            - System Config: config_systemBluetoothStack=[$configPackageName]
+            These values must match to grant correct permissions.
+
+        Resolution:
+            Override `config_systemBluetoothStack` to match the installed APK package name.
+
+        Workarounds:
+             Reboot into Safe Mode to temporarily bypass this check (Bluetooth will be disabled)."""
+                .trimIndent()
+        // Downgrade fatal exception to a log when the device boot in Safe Mode
+        if (ctx.packageManager.isSafeMode()) {
+            Log.e(TAG, "Bypass FATAL due to SafeMode. Original message: $msg")
+        } else {
+            throw IllegalStateException("FATAL: $msg")
+        }
     }
 
     companion object {

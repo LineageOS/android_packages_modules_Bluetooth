@@ -37,6 +37,7 @@ namespace android {
 static jmethodID method_onConnectionStateChanged;
 static jmethodID method_handleplayerappsetting;
 static jmethodID method_handleplayerappsettingchanged;
+static jmethodID method_onRemoteFeaturesChanged;
 static jmethodID method_handleSetAbsVolume;
 static jmethodID method_handleRegisterNotificationAbsVol;
 static jmethodID method_handletrackchanged;
@@ -90,9 +91,22 @@ static void btavrcp_connection_state_callback(bool rc_connect, bool br_connect,
                                (jboolean)br_connect, addr.get());
 }
 
-static void btavrcp_get_rcfeatures_callback(const RawAddress& /* bd_addr */, int /* features */) {
-  log::verbose("--- Not implemented");
+static void btavrcp_get_rcfeatures_callback(const RawAddress& bd_addr, int features) {
+  log::info("");
+  std::shared_lock<std::shared_timed_mutex> lock(sCallbacks_mutex);
+  CallbackEnv sCallbackEnv(__func__);
+  if (!sCallbackEnv.valid()) {
+    return;
+  }
+  if (!sCallbacksObj) {
+    log::error("sCallbacksObj is null");
+    return;
+  }
+
+  ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
+  sCallbackEnv->CallVoidMethod(sCallbacksObj, method_onRemoteFeaturesChanged, addr.get(), features);
 }
+
 static void btavrcp_setplayerapplicationsetting_rsp_callback(const RawAddress& /* bd_addr */,
                                                              uint8_t /* accepted */) {
   log::verbose("--- Not implemented");
@@ -942,6 +956,7 @@ int register_com_android_bluetooth_avrcp_controller(JNIEnv* env) {
           {"getRcPsm", "([BI)V", &method_getRcPsm},
           {"handlePlayerAppSetting", "([B[BI)V", &method_handleplayerappsetting},
           {"onPlayerAppSettingChanged", "([B[BI)V", &method_handleplayerappsettingchanged},
+          {"onRemoteFeaturesChanged", "([BI)V", &method_onRemoteFeaturesChanged},
           {"handleSetAbsVolume", "([BBB)V", &method_handleSetAbsVolume},
           {"handleRegisterNotificationAbsVol", "([BB)V", &method_handleRegisterNotificationAbsVol},
           {"onTrackChanged", "([BB[I[Ljava/lang/String;)V", &method_handletrackchanged},

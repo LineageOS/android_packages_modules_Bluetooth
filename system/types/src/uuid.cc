@@ -17,13 +17,10 @@
  ******************************************************************************/
 
 #include <bluetooth/types/uuid.h>
-#include <string.h>
 
 #include <algorithm>
 #include <cstring>
-#include <iomanip>
-#include <ios>
-#include <sstream>
+#include <format>
 
 namespace bluetooth {
 
@@ -179,8 +176,6 @@ bool Uuid::IsEmpty() const { return *this == kEmpty; }
 
 bool Uuid::IsBase() const { return *this == kBase; }
 
-void Uuid::UpdateUuid(const Uuid& uuid) { uu = uuid.uu; }
-
 bool Uuid::operator<(const Uuid& rhs) const {
   return std::lexicographical_compare(uu.begin(), uu.end(), rhs.uu.begin(), rhs.uu.end());
 }
@@ -190,14 +185,11 @@ bool Uuid::operator==(const Uuid& rhs) const { return uu == rhs.uu; }
 bool Uuid::operator!=(const Uuid& rhs) const { return uu != rhs.uu; }
 
 std::string Uuid::ToString() const {
-  std::stringstream uuid;
-  uuid << std::hex << std::setfill('0');
-  for (size_t i = 0; i < 16; i++) {
-    uuid << std::setw(2) << +uu[i];
-    if (i == 3 || i == 5 || i == 7 || i == 9) {
-      uuid << "-";
-    }
-  }
-  return uuid.str();
+  return std::format(
+          "{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}"
+          "-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
+          uu[0], uu[1], uu[2], uu[3], uu[4], uu[5], uu[6], uu[7], uu[8], uu[9], uu[10], uu[11],
+          uu[12], uu[13], uu[14], uu[15]);
 }
+
 }  // namespace bluetooth
