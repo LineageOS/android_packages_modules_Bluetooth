@@ -154,6 +154,7 @@ import com.android.bluetooth.hfpclient.HeadsetClientService;
 import com.android.bluetooth.hid.HidDeviceService;
 import com.android.bluetooth.hid.HidHostService;
 import com.android.bluetooth.le_audio.LeAudioBroadcast;
+import com.android.bluetooth.le_audio.LeAudioPeripheralService;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.bluetooth.le_scan.PeriodicScanNativeInterface;
 import com.android.bluetooth.le_scan.ScanController;
@@ -956,6 +957,13 @@ public class AdapterService extends Service {
         return getStartedProfile(BluetoothProfile.VAPS_SERVER, VapsServerService.class);
     }
 
+    public Optional<LeAudioPeripheralService> getLeAudioPeripheralService() {
+        return Flags.leaudioPeripheralFeature()
+                ? getStartedProfile(
+                        BluetoothProfile.LE_AUDIO_PERIPHERAL, LeAudioPeripheralService.class)
+                : Optional.empty();
+    }
+
     public Optional<ConnectableProfile> getStartedConnectableProfile(int id) {
         return getStartedProfile(id, ConnectableProfile.class);
     }
@@ -1366,6 +1374,12 @@ public class AdapterService extends Service {
             case BluetoothProfile.SAP -> new SapService(this);
             case BluetoothProfile.VAPS_SERVER -> new VapsServerService(this);
             case BluetoothProfile.VOLUME_CONTROL -> new VolumeControlService(this);
+            case BluetoothProfile.LE_AUDIO_PERIPHERAL -> {
+                if (!Flags.leaudioPeripheralFeature()) {
+                    throw new IllegalArgumentException(getProfileName(id));
+                }
+                yield new LeAudioPeripheralService(this);
+            }
             default -> throw new IllegalArgumentException(getProfileName(id));
         };
     }
@@ -1732,6 +1746,12 @@ public class AdapterService extends Service {
 
         if (!isLeConnectedIsochronousStreamCentralSupported()) {
             for (int profileId : Config.getLeAudioUnicastProfiles()) {
+                nonSupportedProfiles.add(profileId);
+            }
+        }
+
+        if (!isLeConnectedIsochronousStreamPeripheralSupported()) {
+            for (int profileId : Config.getLeAudioUnicastPeripheralProfiles()) {
                 nonSupportedProfiles.add(profileId);
             }
         }
@@ -4057,6 +4077,15 @@ public class AdapterService extends Service {
      */
     public boolean isLeConnectedIsochronousStreamCentralSupported() {
         return mAdapterProperties.isLeConnectedIsochronousStreamCentralSupported();
+    }
+
+    /**
+     * Check if the LE audio CIS peripheral feature is supported.
+     *
+     * @return true, if the LE audio CIS peripheral is supported
+     */
+    public boolean isLeConnectedIsochronousStreamPeripheralSupported() {
+        return mAdapterProperties.isLeConnectedIsochronousStreamPeripheralSupported();
     }
 
     public int getLeMaximumAdvertisingDataLength() {

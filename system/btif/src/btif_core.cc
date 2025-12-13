@@ -432,6 +432,8 @@ void btif_get_adapter_property(bt_property_type_t type) {
     local_le_features.le_channel_sounding_supported = controller->SupportsBleChannelSounding();
     local_le_features.le_high_data_rate_throughput_supported =
             controller->SupportsBleHighDataThroughputPhy();
+    local_le_features.le_connected_isochronous_stream_peripheral_supported =
+            controller->SupportsBleConnectedIsochronousStreamPeripheral();
 
     memcpy(prop.val, &local_le_features, prop.len);
   } else if (prop.type == BT_PROPERTY_DYNAMIC_AUDIO_BUFFER) {
