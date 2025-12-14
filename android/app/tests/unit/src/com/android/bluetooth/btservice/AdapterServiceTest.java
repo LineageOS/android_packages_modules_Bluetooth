@@ -1337,7 +1337,6 @@ public class AdapterServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_REBOKE_PERMISSION_ON_UNBOND)
     @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE) // permission are now part of device entry
     public void testRemovePermissionBondedToBonding() {
         initTest();
