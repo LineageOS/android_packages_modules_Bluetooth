@@ -1115,6 +1115,23 @@ public class RemoteDevicesTest {
         verifyIntentSent(hasAction(BluetoothDevice.ACTION_PAIRING_CANCEL));
     }
 
+    @Test
+    public void setBondState_bondedWithUnknownIdentityAddress_setsIdentityAddress() {
+        // Add a device, its properties will be created with an unknown identity address.
+        DeviceProperties deviceProp =
+                mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+        assertThat(deviceProp.getIdentityAddress())
+                .isEqualTo(DeviceProperties.UNKNOWN_ADDRESS);
+
+        // Set the bond state to BONDED.
+        deviceProp.setBondState(BluetoothDevice.BOND_BONDED);
+
+        // Verify that the identity address is now set to the device's own address.
+        assertThat(deviceProp.getIdentityAddress().getAddress()).isEqualTo(mDevice.getAddress());
+        assertThat(deviceProp.getIdentityAddress().getAddressType())
+                .isEqualTo(mDevice.getAddressType());
+    }
+
     private static Object[] getXEventArray(int batteryLevel, int numLevels) {
         ArrayList<Object> list = new ArrayList<>();
         list.add(BluetoothHeadset.VENDOR_SPECIFIC_HEADSET_EVENT_XEVENT_BATTERY_LEVEL);
