@@ -819,7 +819,9 @@ void GATT_ConfigServiceChangeCCC(const RawAddress& remote_bda, bool /* enable */
   }
 
   /* hold the link here */
-  if (!GATT_Connect(gatt_cb.gatt_if, remote_bda, BTM_BLE_DIRECT_CONNECTION, transport, true)) {
+  if (!GATT_Connect(gatt_cb.gatt_if, remote_bda, BLE_ADDR_PUBLIC, BTM_BLE_DIRECT_CONNECTION,
+                    transport, true, 0, false,
+                    com::android::bluetooth::flags::gatt_conn_settings())) {
     log::warn(
             "Unable to connect GATT client gatt_if:{} peer:{} transport:{} "
             "connection_tyoe:{} opporunistic:{}",

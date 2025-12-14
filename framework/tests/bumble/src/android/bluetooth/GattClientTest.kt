@@ -34,6 +34,7 @@ import java.nio.charset.StandardCharsets
 import java.util.UUID
 import kotlin.concurrent.thread
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import org.junit.After
 import org.junit.Assume
 import org.junit.Assume.assumeTrue
@@ -136,8 +137,11 @@ class GattClientTest {
     }
 
     @Test
-    fun fullGattClientLifecycleWithGattSettings(@TestParameter autoConnect: Boolean) {
-        // val autoConnect = false
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_conn_settings")
+    fun fullGattClientLifecycleWithGattSettings(
+        @TestParameter autoConnect: Boolean,
+        @TestParameter autoMtu: Boolean,
+    ) {
         if (autoConnect) {
             createLeBondAndWaitBonding(remoteLeDevice)
         }
@@ -146,14 +150,85 @@ class GattClientTest {
         val gattSettings =
             BluetoothGattConnectionSettings.Builder()
                 .setTransport(BluetoothDevice.TRANSPORT_LE)
-                .setAutomaticMtuEnabled(true)
-                .setAutoConnectEnabled(false)
+                .setAutomaticMtuEnabled(autoMtu)
+                .setAutoConnectEnabled(autoConnect)
                 .setOpportunisticEnabled(false)
                 .build()
 
         val gatt =
             connectGattAndWaitConnectionWithGattSettings(gattCallback, autoConnect, gattSettings)
+
+        verify(gattCallback, timeout(1000))
+            .onConnectionStateChange(any(), any<Int>(), eq(STATE_CONNECTED))
+
+        // Ensure Application receive MTU update with default ANDROID_MTU value
+        if (autoMtu) {
+            verify(gattCallback, timeout(5000).atLeast(1))
+                .onMtuChanged(eq(gatt), eq(ANDROID_MTU), eq(GATT_SUCCESS))
+        }
         disconnectAndWaitDisconnection(gatt, gattCallback)
+    }
+
+    @Test
+    @RequiresFlagsEnabled("com.android.bluetooth.flags.gatt_conn_settings")
+    fun fullGattClientLifecycleWithGattSettingsWithMultipleClients(
+        @TestParameter autoConnect: Boolean
+    ) {
+        if (autoConnect) {
+            createLeBondAndWaitBonding(remoteLeDevice)
+        }
+
+        val gattCallback = mock<BluetoothGattCallback>()
+        // first gatt connection settings with autoMtu as false
+        val gattSettings =
+            BluetoothGattConnectionSettings.Builder()
+                .setTransport(BluetoothDevice.TRANSPORT_LE)
+                .setAutomaticMtuEnabled(false)
+                .setAutoConnectEnabled(autoConnect)
+                .setOpportunisticEnabled(false)
+                .build()
+
+        // first gatt connection settings with autoMtu as false
+        val gattCallback1 = mock<BluetoothGattCallback>()
+        // second settings with autoMtu as True
+        val gattSettings1 =
+            BluetoothGattConnectionSettings.Builder()
+                .setTransport(BluetoothDevice.TRANSPORT_LE)
+                .setAutomaticMtuEnabled(true)
+                .setAutoConnectEnabled(autoConnect)
+                .setOpportunisticEnabled(false)
+                .build()
+
+        // Trigger gatt connection with gatt connection setting with autoMtu as FALSE
+        val gatt =
+            connectGattAndWaitConnectionWithGattSettings(gattCallback, autoConnect, gattSettings)
+
+        // First Gatt connection should only generate connection state without any
+        // MTU update
+        verify(gattCallback, timeout(1000))
+            .onConnectionStateChange(any(), any<Int>(), eq(STATE_CONNECTED))
+        // No MTU update callback
+        verify(gattCallback, never()).onMtuChanged(eq(gatt), eq(ANDROID_MTU), eq(GATT_SUCCESS))
+
+        // Trigger gatt connection with gatt connection with setting of autoMtu as TRUE
+        val gatt1 =
+            connectGattAndWaitConnectionWithGattSettings(gattCallback1, autoConnect, gattSettings1)
+
+        // Second Gatt connection should only generate connection state for second GATT client
+        // and MTU update for both the GATT clients
+        verify(gattCallback, timeout(1000))
+            .onConnectionStateChange(any(), any<Int>(), eq(STATE_CONNECTED))
+
+        // Ensure both GATT client receive MTU update with default ANDROID_MTU value
+        verify(gattCallback, timeout(5000).atLeast(1))
+            .onMtuChanged(eq(gatt), eq(ANDROID_MTU), eq(GATT_SUCCESS))
+
+        verify(gattCallback1, timeout(5000).atLeast(1))
+            .onMtuChanged(eq(gatt1), eq(ANDROID_MTU), eq(GATT_SUCCESS))
+
+        // disconnect both GATT clients
+        disconnectAndWaitDisconnection(gatt, gattCallback)
+        disconnectAndWaitDisconnection(gatt1, gattCallback1)
     }
 
     @Test

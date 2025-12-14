@@ -1863,14 +1863,6 @@ uint16_t gatt_get_mtu_pref(const tGATT_REG* p_reg, const RawAddress& bda) {
   return 0;
 }
 
-bool is_app_prefer_auto_mtu(tGATT_REG* p_reg, const RawAddress& bda) {
-  auto mtu_pref = p_reg->auto_mtu_enabled.find(bda);
-  if (mtu_pref != p_reg->auto_mtu_enabled.cend()) {
-    return mtu_pref->second;
-  }
-  return false;
-}
-
 uint16_t gatt_get_apps_preferred_mtu(const RawAddress& bda) {
   uint16_t preferred_mtu = 0;
   for (auto& [i, p_reg] : gatt_cb.cl_rcb_map) {

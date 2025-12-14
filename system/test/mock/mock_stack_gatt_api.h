@@ -474,6 +474,14 @@ struct GATTC_InformServiceChangedIndication {
 };
 extern struct GATTC_InformServiceChangedIndication GATTC_InformServiceChangedIndication;
 
+// Name: GATTC_SetDefaultMtu
+// Params: const RawAddress& remote_bda
+struct GATTC_SetDefaultMtu {
+  std::function<void(const RawAddress& remote_bda)> body{[](const RawAddress& /* remote_bda */) {}};
+  void operator()(const RawAddress& remote_bda) { body(remote_bda); }
+};
+extern struct GATTC_SetDefaultMtu GATTC_SetDefaultMtu;
+
 // Name: GATTS_OffloadCharacteristics
 // Params: tCONN_ID conn_id, btgatt_db_element_t* service, size_t elements_count, uint64_t
 // endpoint_id, uint64_t hub_id, std::promise<btgatt_offload_result_t> promise

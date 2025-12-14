@@ -574,12 +574,25 @@ static void gatt_le_connect_cback(uint16_t /* chan */, const RawAddress& bd_addr
     p_tcb->ch_state = GATT_CH_CONN;
   }
 
+  /* Queue MTU exchange before the connection callback
+   * is pushed to application layers so that MTU exchange
+   * is the very first GATT exchange
+   */
+  if (com::android::bluetooth::flags::gatt_conn_settings()) {
+    p_tcb->payload_size = GATT_DEF_BLE_MTU_SIZE;
+    // Set the default based on the APP's preference
+    GATTC_SetDefaultMtu(p_tcb->peer_bda);
+  }
+
   /* this is incoming connection or background connection callback */
   if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN) {
     /* send callback */
     gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
-    p_tcb->payload_size = GATT_DEF_BLE_MTU_SIZE;
+    if (!com::android::bluetooth::flags::gatt_conn_settings()) {
+      p_tcb->payload_size = GATT_DEF_BLE_MTU_SIZE;
+    }
 
+    // Update connection state
     gatt_send_conn_cback(p_tcb);
   }
   if (check_srv_chg) {
@@ -1020,15 +1033,6 @@ static void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
 
     if (apps.find(p_reg->gatt_if) != apps.end()) {
       gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, true);
-    }
-
-    if (com::android::bluetooth::flags::gatt_conn_settings()) {
-      conn_id = gatt_create_conn_id(p_tcb->tcb_idx, p_reg->gatt_if);
-      /*Set the default based on the APP's preference*/
-      if (is_app_prefer_auto_mtu(p_reg.get(), p_tcb->peer_bda)) {
-        tGATT_STATUS status = GATTC_ConfigureMTU(conn_id, gatt_get_local_mtu());
-        log::verbose("set default MTU for the app: {}, status: {}", p_reg->gatt_if, status);
-      }
     }
 
     if (p_reg->app_cb.p_conn_cb) {

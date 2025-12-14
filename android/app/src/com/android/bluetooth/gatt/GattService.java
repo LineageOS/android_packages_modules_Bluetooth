@@ -834,11 +834,23 @@ public class GattService extends ProfileService {
                 ("onConfigureMTU(): device=" + device)
                         + (", status=" + statusToString(status) + ", mtu=" + mtu));
 
-        var app = mClientMap.getByConnId(connId);
-        if (app == null) {
-            return;
+        if (!Flags.gattConnSettings()) {
+            var app = mClientMap.getByConnId(connId);
+            if (app == null) {
+                return;
+            }
+            callbackToApp(() -> app.getCallback().onConfigureMTU(device, mtu, status));
+        } else {
+            Log.d(TAG, "pushing callback to all registered clients");
+            final Map<Integer, BluetoothDevice> connMap = mClientMap.getConnectedMap();
+            for (Map.Entry<Integer, BluetoothDevice> entry : connMap.entrySet()) {
+                var app = mClientMap.getById(entry.getKey());
+                if (app == null) {
+                    continue;
+                }
+                callbackToApp(() -> app.getCallback().onConfigureMTU(device, mtu, status));
+            }
         }
-        callbackToApp(() -> app.getCallback().onConfigureMTU(device, mtu, status));
     }
 
     void onClientCongestionFromNative(int connId, boolean congested) {
