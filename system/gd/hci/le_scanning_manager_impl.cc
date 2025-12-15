@@ -236,7 +236,8 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   }
 
   void handle_scan_results(LeMetaEventView event) {
-    switch (event.GetSubeventCode()) {
+    auto const subevent_code = event.GetSubeventCode();
+    switch (subevent_code) {
       case SubeventCode::ADVERTISING_REPORT:
         handle_advertising_report(LeAdvertisingReportRawView::Create(event));
         break;
@@ -247,7 +248,6 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         handle_extended_advertising_report(LeExtendedAdvertisingReportRawView::Create(event));
         break;
       case SubeventCode::PERIODIC_ADVERTISING_SYNC_ESTABLISHED:
-        LePeriodicAdvertisingSyncEstablishedView::Create(event);
         periodic_sync_manager_.HandleLePeriodicAdvertisingSyncEstablished(
                 LePeriodicAdvertisingSyncEstablishedView::Create(event));
         break;
@@ -271,7 +271,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
                 LeBigInfoAdvertisingReportView::Create(event));
         break;
       default:
-        log::fatal("Unknown advertising subevent {}", SubeventCodeText(event.GetSubeventCode()));
+        log::fatal("Unknown advertising subevent {}", SubeventCodeText(subevent_code));
     }
   }
 
@@ -1357,7 +1357,8 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
   bool is_ad_type_filter_supported() { return is_ad_type_filter_supported_; }
 
   void on_set_scan_parameter_complete(CommandCompleteView view) {
-    switch (view.GetCommandOpCode()) {
+    auto const opcode = view.GetCommandOpCode();
+    switch (opcode) {
       case (OpCode::LE_SET_SCAN_PARAMETERS): {
         auto status_view = LeSetScanParametersCompleteView::Create(view);
         log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
@@ -1383,7 +1384,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
         }
       } break;
       default:
-        log::fatal("Unhandled event {}", OpCodeText(view.GetCommandOpCode()));
+        log::fatal("Unhandled event {}", OpCodeText(opcode));
     }
   }
 
@@ -1392,7 +1393,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     auto status_view = LeAdvFilterCompleteView::Create(view);
     log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
     if (status_view.GetStatus() != ErrorCode::SUCCESS) {
-      log::info("Got a Command complete {}, status {}", OpCodeText(view.GetCommandOpCode()),
+      log::info("Got a Command complete {}, status {}", OpCodeText(status_view.GetCommandOpCode()),
                 ErrorCodeText(status_view.GetStatus()));
     }
 
@@ -1468,7 +1469,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
                 complete_view.GetApcfAction(), (uint8_t)complete_view.GetStatus());
       } break;
       default:
-        log::warn("Unexpected event type {}", OpCodeText(view.GetCommandOpCode()));
+        log::warn("Unexpected event type {}", ApcfOpcodeText(apcf_opcode));
     }
   }
 
@@ -1480,7 +1481,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
       return;
     }
     if (status_view.GetStatus() != ErrorCode::SUCCESS) {
-      log::warn("Got a Command complete {}, status {}", OpCodeText(view.GetCommandOpCode()),
+      log::warn("Got a Command complete {}, status {}", OpCodeText(status_view.GetCommandOpCode()),
                 ErrorCodeText(status_view.GetStatus()));
       return;
     }
@@ -1506,7 +1507,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
     if (status_view.GetStatus() != ErrorCode::SUCCESS) {
       log::info("Got a Command complete {}, status {}, batch_scan_opcode {}",
-                OpCodeText(view.GetCommandOpCode()), ErrorCodeText(status_view.GetStatus()),
+                OpCodeText(status_view.GetCommandOpCode()), ErrorCodeText(status_view.GetStatus()),
                 BatchScanOpcodeText(status_view.GetBatchScanOpcode()));
     }
   }
@@ -1532,8 +1533,8 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
     auto complete_view = LeBatchScanSetScanParametersCompleteView::Create(status_view);
     log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
-    log::assert_that(status_view.GetStatus() == ErrorCode::SUCCESS,
-                     "assert failed: status_view.GetStatus() == ErrorCode::SUCCESS");
+    log::assert_that(complete_view.GetStatus() == ErrorCode::SUCCESS,
+                     "assert failed: complete_view.GetStatus() == ErrorCode::SUCCESS");
     batch_scan_config_.current_state = BatchScanState::DISABLED_STATE;
   }
 
@@ -1546,7 +1547,7 @@ struct LeScanningManagerImpl::impl : public LeAddressManagerCallback {
     log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
     if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
       log::info("Got batch scan read result complete, status {}",
-                ErrorCodeText(status_view.GetStatus()));
+                ErrorCodeText(complete_view.GetStatus()));
     }
     uint8_t num_of_records = complete_view.GetNumOfRecords();
     auto report_format = complete_view.GetBatchScanDataRead();
