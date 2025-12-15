@@ -1610,9 +1610,7 @@ class HeadsetStateMachine extends StateMachine {
                         processIntentScoVolume((Intent) message.obj, mDevice);
                 case SCO_VOLUME_CHANGED -> processScoVolume(message.arg1, mDevice);
                 case MICROPHONE_VOL_MUTE_CHANGED -> {
-                    if (Flags.microphoneMuteStatusSync()) {
-                        processMicrophoneVolume(mDevice);
-                    }
+                    processMicrophoneVolume(mDevice);
                 }
                 case STACK_EVENT -> {
                     HeadsetStackEvent event = (HeadsetStackEvent) message.obj;
@@ -1978,16 +1976,11 @@ class HeadsetStateMachine extends StateMachine {
                 mSystemInterface.getAudioManager().setStreamVolume(volStream, volume, flag);
             }
         } else if (volumeType == HeadsetHalConstants.VOLUME_TYPE_MIC) {
-            if (Flags.microphoneMuteStatusSync()) {
                 if (mMicVolume != volume) {
                     mMicVolume = volume;
                     Log.i(TAG, "Event: Mic status: " + mMicVolume);
                     mSystemInterface.getAudioManager().setMicrophoneMute(mMicVolume == MIC_MUTE);
                 }
-            } else {
-                // Not used currently
-                mMicVolume = volume;
-            }
         } else {
             Log.e(TAG, "Bad volume type: " + volumeType);
         }
