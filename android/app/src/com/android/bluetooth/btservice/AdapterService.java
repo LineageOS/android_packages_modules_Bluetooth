@@ -3306,24 +3306,15 @@ public class AdapterService extends Service {
     }
 
     /**
-     * Get the disconnect reason for a remote device.
+     * Get and clear the disconnect reason for a remote device
      *
      * @param device Remote device
-     * @return disconnect reason for the device, or {@link BluetoothStatusCodes#SUCCESS} if not
-     *     found
+     * @return disconnect reason for the device, or {@link
+     *     BluetoothStatusCodes#ERROR_DISCONNECT_REASON_LOCAL_REQUEST} if not found
      */
-    public int getDeviceDisconnectReason(BluetoothDevice device) {
-        return mDisconnectReasons.getOrDefault(
-                device, BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL_REQUEST);
-    }
-
-    /**
-     * Clear the disconnect reason for a remote device.
-     *
-     * @param device Remote device
-     */
-    public void clearDeviceDisconnectReason(BluetoothDevice device) {
-        mDisconnectReasons.remove(device);
+    int popDeviceDisconnectReason(BluetoothDevice device) {
+        var reason = mDisconnectReasons.remove(device);
+        return reason != null ? reason : BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL_REQUEST;
     }
 
     private void addGattClientToControlAutoActiveMode(
