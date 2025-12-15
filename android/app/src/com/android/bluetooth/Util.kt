@@ -451,6 +451,37 @@ object Util {
         checkCallingOrSelfPermission(permission) == PERMISSION_GRANTED
 
     /**
+     * Verifies whether the calling package name matches the calling app uid
+     *
+     * @param context the Bluetooth AdapterService context
+     * @param callingPackage the calling application package name
+     * @param callingUid the calling application uid
+     * @return `true` if the package name matches the calling app uid, `false` otherwise
+     */
+    @JvmStatic
+    fun isPackageNameAccurate(context: Context, callingPackage: String, callingUid: Int): Boolean {
+        val header = "isPackageNameAccurate: App with package name $callingPackage"
+        val callingUser = UserHandle.getUserHandleForUid(callingUid)
+
+        // Verifies the integrity of the calling package name
+        try {
+            val packageUid =
+                context
+                    .createContextAsUser(callingUser, 0)
+                    .packageManager
+                    .getPackageUid(callingPackage, 0)
+            if (packageUid != callingUid) {
+                Log.e(TAG, "$header is UID $packageUid but caller is $callingUid")
+                return false
+            }
+        } catch (_: PackageManager.NameNotFoundException) {
+            Log.e(TAG, "$header does not exist")
+            return false
+        }
+        return true
+    }
+
+    /**
      * Returns `true` if the [BLUETOOTH_ADVERTISE] permission is granted for the calling app.
      * Returns `false` if the result is a soft denial. Throws [SecurityException] if the result is a
      * hard denial.

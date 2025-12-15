@@ -38,10 +38,10 @@ import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
 import static android.bluetooth.BluetoothUtils.logRemoteException;
 import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 
+import static com.android.bluetooth.Util.isPackageNameAccurate;
 import static com.android.bluetooth.Utils.callbackToApp;
 import static com.android.bluetooth.Utils.getBytesFromAddress;
 import static com.android.bluetooth.Utils.isDualModeAudioEnabled;
-import static com.android.bluetooth.Utils.isPackageNameAccurate;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;

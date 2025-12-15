@@ -35,7 +35,6 @@ import android.companion.CompanionDeviceManager;
 import android.content.AttributionSource;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Bundle;
@@ -289,7 +288,7 @@ public final class Utils {
             String callingPackage,
             BluetoothDevice device) {
         int callingUid = Binder.getCallingUid();
-        if (!isPackageNameAccurate(context, callingPackage, callingUid)) {
+        if (!Util.isPackageNameAccurate(context, callingPackage, callingUid)) {
             throw new SecurityException(
                     "hasCdmAssociation: Package name "
                             + callingPackage
@@ -322,46 +321,6 @@ public final class Utils {
         if (context.checkCallingOrSelfPermission(BLUETOOTH_PRIVILEGED) != PERMISSION_GRANTED) {
             enforceCdmAssociation(cdm, context, source.getPackageName(), device);
         }
-    }
-
-    /**
-     * Verifies whether the calling package name matches the calling app uid
-     *
-     * @param context the Bluetooth AdapterService context
-     * @param callingPackage the calling application package name
-     * @param callingUid the calling application uid
-     * @return {@code true} if the package name matches the calling app uid, {@code false} otherwise
-     */
-    public static boolean isPackageNameAccurate(
-            Context context, String callingPackage, int callingUid) {
-        UserHandle callingUser = UserHandle.getUserHandleForUid(callingUid);
-
-        // Verifies the integrity of the calling package name
-        try {
-            int packageUid =
-                    context.createContextAsUser(callingUser, 0)
-                            .getPackageManager()
-                            .getPackageUid(callingPackage, 0);
-            if (packageUid != callingUid) {
-                Log.e(
-                        TAG,
-                        "isPackageNameAccurate: App with package name "
-                                + callingPackage
-                                + " is UID "
-                                + packageUid
-                                + " but caller is "
-                                + callingUid);
-                return false;
-            }
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.e(
-                    TAG,
-                    "isPackageNameAccurate: App with package name "
-                            + callingPackage
-                            + " does not exist");
-            return false;
-        }
-        return true;
     }
 
     private static boolean checkCallerIsSystem() {
