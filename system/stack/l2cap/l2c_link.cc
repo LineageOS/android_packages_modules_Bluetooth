@@ -337,6 +337,9 @@ bool l2c_link_hci_disc_comp(uint16_t handle, tHCI_REASON reason) {
    * layer above issued connect request on link that was disconnecting */
   if (p_lcb->ccb_queue.p_first_ccb != nullptr || p_lcb->p_pending_ccb) {
     log::debug("l2c_link_hci_disc_comp: Restarting pending ACL request");
+    if (com_android_bluetooth_flags_reset_l2cap_idle_timeout_when_reusing_l2cap_context()) {
+      p_lcb->idle_timeout = l2cb.idle_timeout;
+    }
     /* Release any held buffers */
     while (!list_is_empty(p_lcb->link_xmit_data_q)) {
       BT_HDR* p_buf = static_cast<BT_HDR*>(list_front(p_lcb->link_xmit_data_q));
