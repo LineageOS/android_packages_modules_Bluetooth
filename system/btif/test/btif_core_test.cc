@@ -1059,7 +1059,7 @@ TEST_F(BtifCoreSocketTest, CreateTwoRfcommServerSockets) {
   static constexpr int kChannelTwo = 2;
   static constexpr int kFlagsTwo = 4;
   static constexpr int kAppUidTwo = 6;
-  const Uuid server_uuid_two = Uuid::FromString("12345678-1234-2345-3456-456789123456");
+  const Uuid server_uuid_two = Uuid("12345678-1234-2345-3456-456789123456");
   int socket_number_two = 1;
   ASSERT_EQ(BtifStatus(), btif_sock_get_interface()->listen(
                                   BTSOCK_RFCOMM, "ServiceTwo", &server_uuid_two, kChannelTwo,

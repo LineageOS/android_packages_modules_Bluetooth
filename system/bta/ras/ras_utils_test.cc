@@ -48,8 +48,7 @@ TEST(RasUtilsTest, GetUuidName) {
             "Client Characteristic Configuration");
 
   // Test unknown UUID
-  EXPECT_EQ(ras::uuid::getUuidName(
-                    bluetooth::Uuid::FromString("00001101-0000-1000-8000-00805F9B34FB")),
+  EXPECT_EQ(ras::uuid::getUuidName(bluetooth::Uuid("00001101-0000-1000-8000-00805F9B34FB")),
             "Unknown UUID");
 }
 
@@ -175,5 +174,5 @@ TEST(RasUtilsTest, IsRangingServiceCharacteristic) {
   EXPECT_FALSE(ras::IsRangingServiceCharacteristic(
           bluetooth::Uuid::From16Bit(ras::uuid::kClientCharacteristicConfiguration16bit)));
   EXPECT_FALSE(ras::IsRangingServiceCharacteristic(
-          bluetooth::Uuid::FromString("00001101-0000-1000-8000-00805F9B34FB")));  // Random UUID
+          bluetooth::Uuid("00001101-0000-1000-8000-00805F9B34FB")));  // Random UUID
 }

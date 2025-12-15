@@ -179,12 +179,12 @@ std::vector<btgatt_db_element_t> create_service_vector() {
   // Define the data as a local vector
   std::vector<btgatt_db_element_t> service_db = {
           {
-                  .uuid = bluetooth::Uuid::FromString("00001801-0000-1000-8000-00805f9b34fb"),
+                  .uuid = bluetooth::Uuid("00001801-0000-1000-8000-00805f9b34fb"),
                   .type = BTGATT_DB_PRIMARY_SERVICE,
                   .attribute_handle = 1,
           },
           {
-                  .uuid = bluetooth::Uuid::FromString("00002a05-0000-1000-8000-00805f9b34fb"),
+                  .uuid = bluetooth::Uuid("00002a05-0000-1000-8000-00805f9b34fb"),
                   .type = BTGATT_DB_CHARACTERISTIC,
                   .attribute_handle = 2,
                   .properties = 2,
@@ -286,10 +286,10 @@ TEST_P(GattOffloadPermissionTest, OffloadCharacteristicsPermissionFail) {
   mock_is_bonded_ = params.mock_is_bonded;
 
   std::vector<btgatt_db_element_t> service = {
-          {.uuid = bluetooth::Uuid::FromString("00001801-0000-1000-8000-00805f9b34fb"),
+          {.uuid = bluetooth::Uuid("00001801-0000-1000-8000-00805f9b34fb"),
            .type = BTGATT_DB_PRIMARY_SERVICE,
            .attribute_handle = 1},
-          {.uuid = bluetooth::Uuid::FromString("00002a05-0000-1000-8000-00805f9b34fb"),
+          {.uuid = bluetooth::Uuid("00002a05-0000-1000-8000-00805f9b34fb"),
            .type = BTGATT_DB_CHARACTERISTIC,
            .attribute_handle = 2,
            .properties = params.properties,
@@ -347,10 +347,10 @@ INSTANTIATE_TEST_SUITE_P(
 TEST_F(GattOffloadPermissionTest, offload_characteristics_invalid_db_element_type_fail) {
   const tCONN_ID conn_id = 0;
   std::vector<btgatt_db_element_t> service = {
-          {.uuid = bluetooth::Uuid::FromString("00001801-0000-1000-8000-00805f9b34fb"),
+          {.uuid = bluetooth::Uuid("00001801-0000-1000-8000-00805f9b34fb"),
            .type = BTGATT_DB_PRIMARY_SERVICE,
            .attribute_handle = 1},
-          {.uuid = bluetooth::Uuid::FromString("00002a05-0000-1000-8000-00805f9b34fb"),
+          {.uuid = bluetooth::Uuid("00002a05-0000-1000-8000-00805f9b34fb"),
            .type = BTGATT_DB_INCLUDED_SERVICE,
            .attribute_handle = 2}};
 
@@ -388,10 +388,9 @@ TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_null_service) {
 
 TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_no_characteristics) {
   const tCONN_ID conn_id = 0;
-  btgatt_db_element_t service[] = {
-          {.uuid = bluetooth::Uuid::FromString("00001801-0000-1000-8000-00805f9b34fb"),
-           .type = BTGATT_DB_PRIMARY_SERVICE,
-           .attribute_handle = 1}};
+  btgatt_db_element_t service[] = {{.uuid = bluetooth::Uuid("00001801-0000-1000-8000-00805f9b34fb"),
+                                    .type = BTGATT_DB_PRIMARY_SERVICE,
+                                    .attribute_handle = 1}};
 
   std::promise<btgatt_offload_result_t> promise;
   auto future = promise.get_future();
@@ -451,10 +450,10 @@ TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_hal_callback_fail
 TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_add_invalid_db_elements_fail) {
   const tCONN_ID conn_id = 0;
   std::vector<btgatt_db_element_t> service = {
-          {.uuid = bluetooth::Uuid::FromString("00001801-0000-1000-8000-00805f9b34fb"),
+          {.uuid = bluetooth::Uuid("00001801-0000-1000-8000-00805f9b34fb"),
            .type = BTGATT_DB_PRIMARY_SERVICE,
            .attribute_handle = 1},
-          {.uuid = bluetooth::Uuid::FromString("00002a05-0000-1000-8000-00805f9b34fb"),
+          {.uuid = bluetooth::Uuid("00002a05-0000-1000-8000-00805f9b34fb"),
            .type = BTGATT_DB_INCLUDED_SERVICE,
            .attribute_handle = 2}};
 
@@ -473,10 +472,10 @@ TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_duplicate_session
   std::vector<btgatt_db_element_t> service1 = create_service_vector();
 
   std::vector<btgatt_db_element_t> service2 = {
-          {.uuid = bluetooth::Uuid::FromString("0000180A-0000-1000-8000-00805f9b34fb"),
+          {.uuid = bluetooth::Uuid("0000180A-0000-1000-8000-00805f9b34fb"),
            .type = BTGATT_DB_PRIMARY_SERVICE,
            .attribute_handle = 10},
-          {.uuid = bluetooth::Uuid::FromString("00002a06-0000-1000-8000-00805f9b34fb"),
+          {.uuid = bluetooth::Uuid("00002a06-0000-1000-8000-00805f9b34fb"),
            .type = BTGATT_DB_CHARACTERISTIC,
            .attribute_handle = 2,
            .properties = 2}};
@@ -743,10 +742,10 @@ TEST_F(GattOffloadCharacteristicsTest, clear_multiple_sessions_by_conn_id_failur
   const tCONN_ID conn_id2 = 1;
   std::vector<btgatt_db_element_t> service1 = create_service_vector();
   std::vector<btgatt_db_element_t> service2 = {
-          {.uuid = bluetooth::Uuid::FromString("0000180A-0000-1000-8000-00805f9b34fb"),
+          {.uuid = bluetooth::Uuid("0000180A-0000-1000-8000-00805f9b34fb"),
            .type = BTGATT_DB_PRIMARY_SERVICE,
            .attribute_handle = 10},
-          {.uuid = bluetooth::Uuid::FromString("00002a06-0000-1000-8000-00805f9b34fb"),
+          {.uuid = bluetooth::Uuid("00002a06-0000-1000-8000-00805f9b34fb"),
            .type = BTGATT_DB_CHARACTERISTIC,
            .attribute_handle = 11,
            .properties = 2}};

@@ -477,7 +477,7 @@ public:
       if (index == 0) {
         // Next- look further for the first CCCD uuid to get the cccd handle
         while (el != service_db_.end()) {
-          if (el->uuid == Uuid::FromString("00002902-0000-1000-8000-00805F9B34FB")) {
+          if (el->uuid == Uuid("00002902-0000-1000-8000-00805F9B34FB")) {
             break;
           }
           ++el;
@@ -532,7 +532,7 @@ public:
       if (index == 0) {
         // Next- look further for the first CCCD uuid to get the cccd handle
         while (el != service_db_.end()) {
-          if (el->uuid == Uuid::FromString("00002902-0000-1000-8000-00805F9B34FB")) {
+          if (el->uuid == Uuid("00002902-0000-1000-8000-00805F9B34FB")) {
             break;
           }
           ++el;

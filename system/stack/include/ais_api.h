@@ -24,8 +24,8 @@
 /* Android Information Service characteristic */
 #define GATT_UUID_AIS_API_LEVEL_STRING "e73e0002-ef1b-4e74-8291-2e4f3164f3b5"
 
-extern const bluetooth::Uuid ANDROID_INFORMATION_SERVICE_UUID;
-extern const bluetooth::Uuid GATT_UUID_AIS_API_LEVEL;
+extern constinit bluetooth::Uuid ANDROID_INFORMATION_SERVICE_UUID;
+extern constinit bluetooth::Uuid GATT_UUID_AIS_API_LEVEL;
 
 /*******************************************************************************
  *
