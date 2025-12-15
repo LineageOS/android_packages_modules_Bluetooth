@@ -26,7 +26,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class HandleMapTest {
-    @get:Rule val expect: Expect = Expect.create()
+    @get:Rule val expect = Expect.create()
 
     private val handleMap = HandleMap()
 

@@ -22,7 +22,7 @@ import android.bluetooth.le.IDistanceMeasurementCallback
 import android.os.HandlerThread
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import com.android.bluetooth.TestUtils.getTestDevice
+import com.android.bluetooth.getTestDevice
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
 import java.util.UUID
