@@ -801,8 +801,13 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
                         sampling_frequency: Optional[int] = None,
                         **kwargs):
 
-    # Prepare packets for ACL parsing.
-    acl_packets = [AclPacket.parse(packet) for packet in acl_connection.packets]
+    try:
+        # Prepare packets for ACL parsing.
+        acl_packets = [AclPacket.parse(packet) for packet in acl_connection.packets]
+    except Exception as exn:
+        # Some connection handles are used to report vendor events.
+        # The format in this case is not compatible with L2CAP PDU.
+        return
 
     # AVDTP state.
     session = None
@@ -951,6 +956,20 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
             if (isinstance(packet.signal, avdtp.SetConfigurationCommand) or
                 isinstance(packet.signal, avdtp.ReconfigureCommand)):
                 session.configuration = packet
+
+            elif isinstance(packet.signal, avdtp.StartResponse):
+                media_codec_capability = None
+                for (
+                    service_capability
+                ) in session.configuration.signal.service_capabilities:
+                    if isinstance(service_capability, avdtp.MediaCodecCapability):
+                        media_codec_capability = service_capability
+
+                if not media_codec_capability:
+                    raise ValueError("Media Codec Capability not found")
+
+                active_stream = AvdtpStream(media_codec_capability, packet)
+                all_streams.append(active_stream)
 
         elif (
             packet.direction == Direction.SENT
