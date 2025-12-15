@@ -31,7 +31,6 @@
 
 #include <android_bluetooth_sysprop.h>
 #include <base/functional/bind.h>
-#include <base/functional/callback.h>
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/metrics/os_metrics.h>
@@ -42,7 +41,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <sstream>
 #include <string>
@@ -57,15 +55,11 @@
 #include "btif/include/btif_profile_queue.h"
 #include "btif/include/btif_util.h"
 #include "btif_status.h"
-#include "btm_api_types.h"
-#include "device/include/device_iot_conf_defs.h"
 #include "device/include/device_iot_config.h"
-#include "hardware/bluetooth.h"
 #include "include/hardware/bluetooth_headset_callbacks.h"
 #include "include/hardware/bluetooth_headset_interface.h"
 #include "include/hardware/bt_hf.h"
 #include "internal_include/bt_target.h"
-#include "main/shim/helpers.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"

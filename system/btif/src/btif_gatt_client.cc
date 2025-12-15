@@ -26,9 +26,7 @@
 
 #define LOG_TAG "bt_btif_gattc"
 
-#include <base/at_exit.h>
 #include <base/functional/bind.h>
-#include <base/threading/thread.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
@@ -39,7 +37,6 @@
 #include <hardware/bt_gatt.h>
 #include <hardware/bt_gatt_types.h>
 
-#include <cstdlib>
 #include <string>
 
 #include "bta/include/bta_api.h"
@@ -49,15 +46,12 @@
 #include "btif/include/btif_config.h"
 #include "btif/include/btif_dm.h"
 #include "btif/include/btif_gatt.h"
-#include "btif/include/btif_gatt_util.h"
 #include "btif_status.h"
 #include "hci/controller.h"
-#include "internal_include/bte_appl.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_api_types.h"
-#include "stack/include/btm_ble_sec_api.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/main_thread.h"

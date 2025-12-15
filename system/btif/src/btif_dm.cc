@@ -36,7 +36,6 @@
 #include <bluetooth/metrics/metric_id_api.h>
 #include <bluetooth/metrics/os_metrics.h>
 #include <bluetooth/types/ble_address_with_type.h>
-#include <bluetooth/types/bt_octets.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <hardware/bluetooth.h>
@@ -44,7 +43,6 @@
 #include <hardware/bt_hearing_aid.h>
 #include <hardware/bt_le_audio.h>
 #include <hardware/bt_vcp_controller.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>
