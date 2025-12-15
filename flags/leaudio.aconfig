@@ -410,6 +410,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_broadcast_check_sync_advancement_on_remote_resume"
+    namespace: "bluetooth"
+    description: "Check broadcast sync advancement when detecting a remote resume"
+    bug: "467968060"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_fallback_group_selection"
     namespace: "bluetooth"
     description: "Allow only local broadcast receiver device to be select as fallback"
