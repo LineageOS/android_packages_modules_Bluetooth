@@ -15,6 +15,8 @@
  */
 #pragma once
 
+#include <bluetooth/types/address.h>
+
 #include <cstdint>
 #include <string>
 
