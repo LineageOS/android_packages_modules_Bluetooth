@@ -30,9 +30,10 @@ import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.getTestDevice
+import com.android.bluetooth.mockPackageManager
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
 import java.util.UUID
@@ -65,13 +66,14 @@ class GattServerManagerTest {
     @Mock private lateinit var service: GattService
     @Mock private lateinit var metricsReporter: GattMetricsReporter
 
-    private val context = InstrumentationRegistry.getInstrumentation().context
     private val device = getTestDevice(109)
 
     private lateinit var serverManager: GattServerManager
 
     @Before
     fun setUp() {
+        val context = InstrumentationRegistry.getInstrumentation().context
+        adapterService.mockPackageManager(context.packageManager)
         doAnswer { invocation ->
                 (invocation.getArgument(0) as Runnable).run()
                 null
@@ -81,7 +83,6 @@ class GattServerManagerTest {
 
         doReturn(binder).whenever(gattServerCallback).asBinder()
         doReturn(binder2).whenever(gattServerCallback2).asBinder()
-        doReturn(context.packageManager).whenever(adapterService).packageManager
         doReturn(nativeInterface).whenever(service).nativeInterface
         serverManager = GattServerManager(adapterService, service, metricsReporter)
     }

@@ -41,13 +41,13 @@ import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.ActionOnDeathRecipient
 import com.android.bluetooth.TestLooper
-import com.android.bluetooth.TestUtils.getTestDevice
-import com.android.bluetooth.TestUtils.mockGetBluetoothManager
-import com.android.bluetooth.TestUtils.mockGetRemoteDevice
-import com.android.bluetooth.TestUtils.mockGetSystemService
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.btservice.CompanionManager
 import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.getTestDevice
+import com.android.bluetooth.mockBluetoothManager
+import com.android.bluetooth.mockGetRemoteDevice
+import com.android.bluetooth.mockGetSystemService
 import com.android.tests.bluetooth.FakeTimeProvider
 import com.android.tests.bluetooth.FlagsWrapper
 import com.android.tests.bluetooth.MockitoRule
@@ -141,9 +141,10 @@ class GattServiceTest(flags: FlagsWrapper) {
         doReturn(resources).whenever(adapterService).resources
         doReturn(mockContentResolver).whenever(adapterService).contentResolver
 
-        mockGetBluetoothManager(adapterService)
-        mockGetSystemService(adapterService, LocationManager::class.java)
-        mockGetSystemService(adapterService, ActivityManager::class.java)
+        adapterService.mockBluetoothManager()
+        adapterService.mockGetSystemService<LocationManager>()
+        adapterService.mockGetSystemService<ActivityManager>()
+        adapterService.mockGetRemoteDevice(device)
         doReturn(source).whenever(adapterService).attributionSource
 
         val btCompanionManager = CompanionManager(adapterService)
@@ -162,8 +163,6 @@ class GattServiceTest(flags: FlagsWrapper) {
                 looper.looper,
                 mTimeProvider,
             )
-
-        mockGetRemoteDevice(adapterService, device)
     }
 
     @After

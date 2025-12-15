@@ -31,10 +31,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.BluetoothStatsLog
-import com.android.bluetooth.TestUtils
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.btservice.MetricsLogger
 import com.android.bluetooth.flags.Flags
+import com.android.bluetooth.getTestDevice
+import com.android.bluetooth.mockPackageManager
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
 import java.util.UUID
@@ -67,7 +68,7 @@ class DistanceMeasurementManagerTest {
     @Mock private lateinit var callback: IDistanceMeasurementCallback
     @Mock private lateinit var mockMetricsLogger: MetricsLogger
 
-    private val device = TestUtils.getTestDevice(57)
+    private val device = getTestDevice(57)
 
     private lateinit var distanceMeasurementManager: DistanceMeasurementManager
     private lateinit var uuid: UUID
@@ -76,7 +77,7 @@ class DistanceMeasurementManagerTest {
 
     @Before
     fun setUp() {
-        doReturn(packageManager).whenever(adapterService).packageManager
+        adapterService.mockPackageManager(packageManager)
         doReturn(true).whenever(packageManager).hasSystemFeature(any())
         doReturn(true).whenever(adapterService).isLeChannelSoundingSupported
         val address = device.address

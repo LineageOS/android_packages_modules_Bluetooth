@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.gatt
 
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.le.DistanceMeasurementMethod
 import android.bluetooth.le.DistanceMeasurementParams
 import android.bluetooth.le.IDistanceMeasurementCallback
@@ -24,9 +23,9 @@ import android.content.AttributionSource
 import android.os.ParcelUuid
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import com.android.bluetooth.TestUtils.getTestDevice
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.gatt.DistanceMeasurementManager.GetResultTask
+import com.android.bluetooth.getTestDevice
 import com.android.tests.bluetooth.MockitoRule
 import java.util.UUID
 import org.junit.Before
@@ -52,6 +51,8 @@ class DistanceMeasurementBinderTest {
     @Mock private lateinit var adapterService: AdapterService
     @Mock private lateinit var gattService: GattService
     @Mock private lateinit var distanceMeasurementManager: DistanceMeasurementManager
+
+    private val device = getTestDevice(3)
 
     private lateinit var binder: DistanceMeasurementBinder
 
@@ -85,7 +86,6 @@ class DistanceMeasurementBinderTest {
     @Test
     fun startDistanceMeasurement() {
         val uuid = UUID.randomUUID()
-        val device: BluetoothDevice = getTestDevice(3)
         val params =
             DistanceMeasurementParams.Builder(device)
                 .setDurationSeconds(123)
@@ -100,7 +100,6 @@ class DistanceMeasurementBinderTest {
     @Test
     fun stopDistanceMeasurement() {
         val uuid = UUID.randomUUID()
-        val device: BluetoothDevice = getTestDevice(3)
         val method = DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI
         binder.stopDistanceMeasurement(ParcelUuid(uuid), device, method, source)
         verify(distanceMeasurementManager).stopDistanceMeasurement(uuid, device, method, false)
