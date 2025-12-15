@@ -46,6 +46,7 @@ import android.location.LocationManager
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import android.os.Process
 import android.os.RemoteException
 import android.os.UserHandle
 import android.permission.PermissionManager
@@ -480,6 +481,28 @@ object Util {
         }
         return true
     }
+
+    /**
+     * Checks if the caller to the method is system server.
+     *
+     * @param tag the log tag to use in case the caller is not system server
+     * @param method the API method name
+     * @return `true` if the caller is system server, `false` otherwise
+     */
+    @JvmStatic
+    fun callerIsSystem(tag: String, method: String): Boolean {
+        if (Utils.isInstrumentationTestMode()) {
+            return true
+        }
+        val res = checkCallerIsSystem()
+        if (!res) {
+            Log.w(TAG, "$tag.$method() - Not allowed outside system server")
+        }
+        return res
+    }
+
+    private fun checkCallerIsSystem() =
+        UserHandle.getAppId(Process.SYSTEM_UID) == UserHandle.getAppId(Binder.getCallingUid())
 
     /**
      * Returns `true` if the [BLUETOOTH_ADVERTISE] permission is granted for the calling app.
