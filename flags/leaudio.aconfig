@@ -225,16 +225,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_broadcast_fix_autonomous_source_adding"
-    namespace: "bluetooth"
-    description: "Improve handling of broadcast autonomous source adding"
-    bug: "422399972"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_connection_subrating"
     namespace: "bluetooth"
     description: "Support LE audio connection subrating to speed up the reconfiguration process"

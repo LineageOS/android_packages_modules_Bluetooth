@@ -978,9 +978,6 @@ public class BassClientServiceTest {
         // and not removing cache because scanning is inactive
         onSyncEstablishedFailed(device1, handle1);
         mLooper.dispatchAll();
-        if (!Flags.leaudioBroadcastFixAutonomousSourceAdding()) {
-            inOrderCallback.verify(mCallback).onSourceLost(eq(broadcastId1));
-        }
         inOrderCallback
                 .verify(mCallback)
                 .onSourceAddFailed(
@@ -1054,9 +1051,6 @@ public class BassClientServiceTest {
         onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
         mLooper.dispatchAll();
         InOrder inOrderCallback = inOrder(mCallback);
-        if (!Flags.leaudioBroadcastFixAutonomousSourceAdding()) {
-            inOrderCallback.verify(mCallback).onSourceLost(eq(TEST_BROADCAST_ID));
-        }
         inOrderCallback
                 .verify(mCallback)
                 .onSourceAddFailed(
@@ -4734,11 +4728,6 @@ public class BassClientServiceTest {
         onPeriodicAdvertisingReport();
         mLooper.dispatchAll();
 
-        if (!Flags.leaudioBroadcastFixAutonomousSourceAdding()) {
-            // Notified
-            inOrder.verify(mCallback).onSourceFound(any());
-        }
-
         // Start searching again clears timeout, mCachedBroadcasts and notifiedFlags but keep syncs
         startSearchingForSources();
 
@@ -6638,9 +6627,6 @@ public class BassClientServiceTest {
         verifyRegisterSyncCalled(mSourceDevice);
         onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
         mLooper.dispatchAll();
-        if (!Flags.leaudioBroadcastFixAutonomousSourceAdding()) {
-            verify(mCallback).onSourceLost(eq(TEST_BROADCAST_ID));
-        }
         verify(mCallback)
                 .onSourceAddFailed(
                         eq(mCurrentDevice),
@@ -7434,7 +7420,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_FIX_AUTONOMOUS_SOURCE_ADDING)
     public void syncRequestForMetadata_localBroadcast() {
         prepareConnectedDeviceGroup();
 
@@ -7453,7 +7438,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_FIX_AUTONOMOUS_SOURCE_ADDING)
     public void syncRequestForMetadata_scannerOn_synced_bigReport() {
         prepareConnectedDeviceGroup();
 
@@ -7494,7 +7478,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_FIX_AUTONOMOUS_SOURCE_ADDING)
     public void syncRequestForMetadata_scannerOn_synced_paReport() {
         prepareConnectedDeviceGroup();
 
@@ -7535,7 +7518,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_FIX_AUTONOMOUS_SOURCE_ADDING)
     public void syncRequestForMetadata_scannerOn_notSynced_cached() {
         prepareConnectedDeviceGroup();
 
@@ -7583,7 +7565,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_FIX_AUTONOMOUS_SOURCE_ADDING)
     public void syncRequestForMetadata_scannerOff_notSynced_cached() {
         prepareConnectedDeviceGroup();
 
@@ -7628,7 +7609,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_FIX_AUTONOMOUS_SOURCE_ADDING)
     public void syncRequestForMetadata_scannerOff_notSynced_notCached() {
         prepareConnectedDeviceGroup();
 
@@ -7673,7 +7653,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_FIX_AUTONOMOUS_SOURCE_ADDING)
     public void syncRequestForMetadata_scannerOff_notSynced_notCached_retries() {
         prepareConnectedDeviceGroup();
 
@@ -7723,7 +7702,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_FIX_AUTONOMOUS_SOURCE_ADDING)
     public void syncRequestForMetadata_scannerOff_notSynced_notCached_timeout() {
         prepareConnectedDeviceGroup();
 
@@ -7775,7 +7753,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_FIX_AUTONOMOUS_SOURCE_ADDING)
     public void syncRequestForMetadata_scannerOff_notSynced_notCached_retries_userScan() {
         prepareConnectedDeviceGroup();
 
@@ -7822,7 +7799,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_FIX_AUTONOMOUS_SOURCE_ADDING)
     public void syncRequestForMetadata_scannerOff_notSynced_notCached_anotherOOR() {
         prepareConnectedDeviceGroup();
 
