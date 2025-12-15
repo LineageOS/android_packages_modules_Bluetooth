@@ -389,7 +389,7 @@ public class AvrcpTargetService extends ProfileService {
     PlayStatus getPlayState() {
         return PlayStatus.fromPlaybackState(
                 mMediaPlayerList.getCurrentPlayStatus(),
-                Long.parseLong(getCurrentSongInfo().duration));
+                Long.parseLong(mMediaPlayerList.getCurrentSongInfo().duration));
     }
 
     /** Returns the current media ID of the active player from {@link MediaPlayerList}. */
@@ -397,7 +397,7 @@ public class AvrcpTargetService extends ProfileService {
         String id = mMediaPlayerList.getCurrentMediaId();
         if (id != null && !id.isEmpty()) return id;
 
-        Metadata song = getCurrentSongInfo();
+        Metadata song = mMediaPlayerList.getCurrentSongInfo();
         if (song != null && !song.mediaId.isEmpty()) return song.mediaId;
 
         // We always want to return something, the error string just makes debugging easier
