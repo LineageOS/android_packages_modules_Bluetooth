@@ -180,3 +180,13 @@ flag {
     description: "Add api support for get hfp connection codec type"
     bug: "464401354"
 }
+
+flag {
+    name: "microphone_mute_gain_retain"
+    namespace: "bluetooth"
+    description: "Retain the mic gain value between MUTE and UNMUTE"
+    bug: "468985625"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
