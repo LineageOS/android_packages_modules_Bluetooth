@@ -69,3 +69,11 @@ flag {
     bug: "457686158"
     is_exported: true
 }
+
+flag {
+    name: "add_local_disconnect_reason"
+    namespace: "bluetooth"
+    description: "Add local disconnect reason to ACL_DISCONNECTED Intent"
+    is_exported: true
+    bug: "421377117"
+}

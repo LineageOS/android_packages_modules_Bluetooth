@@ -392,6 +392,8 @@ public class AdapterService extends Service {
     private String mScanModeChangedDuringSuspendFrom;
     private int mScanModeAfterSuspend;
 
+    private final Map<BluetoothDevice, Integer> mDisconnectReasons = new ConcurrentHashMap<>();
+
     // Report ID definition
     public enum BqrQualityReportId {
         QUALITY_REPORT_ID_MONITOR_MODE(0x01),
@@ -3299,6 +3301,31 @@ public class AdapterService extends Service {
         return getConnectionState(device) != BluetoothDevice.CONNECTION_STATE_DISCONNECTED;
     }
 
+    void setDeviceDisconnectReason(BluetoothDevice device, int reason) {
+        mDisconnectReasons.put(device, reason);
+    }
+
+    /**
+     * Get the disconnect reason for a remote device.
+     *
+     * @param device Remote device
+     * @return disconnect reason for the device, or {@link BluetoothStatusCodes#SUCCESS} if not
+     *     found
+     */
+    public int getDeviceDisconnectReason(BluetoothDevice device) {
+        return mDisconnectReasons.getOrDefault(
+                device, BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL_REQUEST);
+    }
+
+    /**
+     * Clear the disconnect reason for a remote device.
+     *
+     * @param device Remote device
+     */
+    public void clearDeviceDisconnectReason(BluetoothDevice device) {
+        mDisconnectReasons.remove(device);
+    }
+
     private void addGattClientToControlAutoActiveMode(
             LeAudioService leAudio, int clientIf, BluetoothDevice device) {
         /* When GATT client is connecting to LeAudio device, stack should not assume that
@@ -3769,7 +3796,11 @@ public class AdapterService extends Service {
      * @param device is the remote device with which to disconnect these profiles
      * @return true if all profiles successfully disconnected, false if an error occurred
      */
-    public int disconnectAllEnabledProfiles(BluetoothDevice device) {
+    public int disconnectAllEnabledProfiles(BluetoothDevice device, int reason) {
+        if (reason != BluetoothStatusCodes.SUCCESS) {
+            setDeviceDisconnectReason(device, reason);
+        }
+
         if (!profileServicesRunning()) {
             Log.e(TAG, "disconnectAllEnabledProfiles: Not all profile services bound");
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;

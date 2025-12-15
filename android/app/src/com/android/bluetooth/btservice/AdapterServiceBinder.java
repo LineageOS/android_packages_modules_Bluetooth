@@ -722,15 +722,24 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
         Log.i(
                 TAG,
-                "disconnectAllEnabledProfiles: device=" + device + ", from " + getUidPidString());
+                "disconnectAllEnabledProfiles: device="
+                        + device
+                        + ", from "
+                        + getUidPidString()
+                        + " packageName:"
+                        + source.getPackageName());
 
         if (Flags.hapOnMainLooper()) {
             return service.syncPost(
-                    () -> service.disconnectAllEnabledProfiles(device),
+                    () ->
+                            service.disconnectAllEnabledProfiles(
+                                    device,
+                                    BluetoothStatusCodes.ERROR_DISCONNECT_REASON_USER_REQUEST),
                     BluetoothStatusCodes.ERROR_TIMEOUT);
         }
         try {
-            return service.disconnectAllEnabledProfiles(device);
+            return service.disconnectAllEnabledProfiles(
+                    device, BluetoothStatusCodes.ERROR_DISCONNECT_REASON_USER_REQUEST);
         } catch (Exception e) {
             Log.v(TAG, "disconnectAllEnabledProfiles() failed", e);
             SneakyThrow.sneakyThrow(e);

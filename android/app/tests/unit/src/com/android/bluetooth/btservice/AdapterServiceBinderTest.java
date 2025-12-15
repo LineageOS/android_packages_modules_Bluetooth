@@ -323,7 +323,7 @@ public class AdapterServiceBinderTest {
         // Call the method and verify that it returns an error and doesn't proceed
         int result = mBinder.disconnectAllEnabledProfiles(mDevice, mSource);
         assertThat(result).isEqualTo(BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
-        verify(mService, never()).disconnectAllEnabledProfiles(any());
+        verify(mService, never()).disconnectAllEnabledProfiles(any(), anyInt());
     }
 
     @Test
@@ -331,7 +331,9 @@ public class AdapterServiceBinderTest {
         // The service is available
         // Call the method and verify that the underlying service method is called
         mBinder.disconnectAllEnabledProfiles(mDevice, mSource);
-        verify(mService).disconnectAllEnabledProfiles(mDevice);
+        verify(mService)
+                .disconnectAllEnabledProfiles(
+                        mDevice, BluetoothStatusCodes.ERROR_DISCONNECT_REASON_USER_REQUEST);
     }
 
     @Test(expected = NullPointerException.class)

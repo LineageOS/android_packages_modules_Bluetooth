@@ -64,7 +64,6 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1765,7 +1764,7 @@ public class RemoteDevices {
             // TODO the whole method should run on the looper
             mHandler.post(() -> mWatchConnectionStateListener.onDeviceConnected(device, transport));
         } else {
-            final int disconnectReason;
+            final int disconnectReasonFromHci;
             if (hciReason == 0x16 /* HCI_ERR_CONN_CAUSE_LOCAL_HOST */
                     && mAdapterService.getKeyMissingCount(device) > 0) {
                 // Native stack disconnects the link on detecting the bond loss. Native GATT would
@@ -1775,14 +1774,27 @@ public class RemoteDevices {
                         TAG,
                         "aclStateChangeCallback() - disconnected due to bond loss for device="
                                 + device);
-                disconnectReason = 0x05; /* HCI_ERR_AUTH_FAILURE */
+                disconnectReasonFromHci = 0x05; /* HCI_ERR_AUTH_FAILURE */
             } else {
-                disconnectReason = hciReason;
+                disconnectReasonFromHci = hciReason;
             }
-            connectionChangeConsumer =
-                    cb ->
-                            cb.onDeviceDisconnected(
-                                    device, Util.hciToAndroidDisconnectReason(disconnectReason));
+
+            if (Flags.addLocalDisconnectReason()
+                    && hciReason == 0x16 /* HCI_ERR_CONN_CAUSE_LOCAL_HOST */) {
+                // When disconnectAllEnabledProfiles() is user-triggered, the disconnect reason
+                // changes from HCI_ERR_CONN_CAUSE_LOCAL_HOST to
+                // ERROR_DISCONNECT_REASON_USER_REQUEST or ERROR_DISCONNECT_REASON_ADAPTER_SUSPEND.
+                final int disconnectReason = mAdapterService.getDeviceDisconnectReason(device);
+                Log.d(TAG, "ACTION_ACL_DISCONNECTED: reason=" + disconnectReason);
+                mAdapterService.clearDeviceDisconnectReason(device);
+                connectionChangeConsumer = cb -> cb.onDeviceDisconnected(device, disconnectReason);
+            } else {
+                connectionChangeConsumer =
+                        cb ->
+                                cb.onDeviceDisconnected(
+                                        device,
+                                        Util.hciToAndroidDisconnectReason(disconnectReasonFromHci));
+            }
             mHandler.post(
                     () -> mWatchConnectionStateListener.onDeviceDisconnected(device, transport));
         }

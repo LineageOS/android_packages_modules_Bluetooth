@@ -185,7 +185,10 @@ public final class BluetoothStatusCodes {
      *
      * <p>Example cause: This is a normal disconnect reason, e.g., user/app initiates disconnection.
      */
-    @Hide public static final int ERROR_DISCONNECT_REASON_LOCAL_REQUEST = 1100;
+    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @Hide
+    @SystemApi
+    public static final int ERROR_DISCONNECT_REASON_LOCAL_REQUEST = 1100;
 
     /**
      * Indicates that the ACL disconnected due to an explicit request from the remote device.
@@ -194,7 +197,10 @@ public final class BluetoothStatusCodes {
      *
      * <p>Example solution: The app can also prompt the user to check their remote device.
      */
-    @Hide public static final int ERROR_DISCONNECT_REASON_REMOTE_REQUEST = 1101;
+    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @Hide
+    @SystemApi
+    public static final int ERROR_DISCONNECT_REASON_REMOTE_REQUEST = 1101;
 
     /**
      * Generic disconnect reason indicating the ACL disconnected due to an error on the local
@@ -202,7 +208,10 @@ public final class BluetoothStatusCodes {
      *
      * <p>Example solution: Prompt the user to check their local device (e.g., phone, car headunit).
      */
-    @Hide public static final int ERROR_DISCONNECT_REASON_LOCAL = 1102;
+    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @Hide
+    @SystemApi
+    public static final int ERROR_DISCONNECT_REASON_LOCAL = 1102;
 
     /**
      * Generic disconnect reason indicating the ACL disconnected due to an error on the remote
@@ -211,7 +220,10 @@ public final class BluetoothStatusCodes {
      * <p>Example solution: Prompt the user to check their remote device (e.g., headset, car
      * headunit, watch).
      */
-    @Hide public static final int ERROR_DISCONNECT_REASON_REMOTE = 1103;
+    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @Hide
+    @SystemApi
+    public static final int ERROR_DISCONNECT_REASON_REMOTE = 1103;
 
     /**
      * Indicates that the ACL disconnected due to a timeout.
@@ -221,7 +233,10 @@ public final class BluetoothStatusCodes {
      * <p>Example solution: Prompt user to verify their remote device is on or in connection/pairing
      * mode.
      */
-    @Hide public static final int ERROR_DISCONNECT_REASON_TIMEOUT = 1104;
+    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @Hide
+    @SystemApi
+    public static final int ERROR_DISCONNECT_REASON_TIMEOUT = 1104;
 
     /**
      * Indicates that the ACL disconnected due to link key issues.
@@ -231,7 +246,10 @@ public final class BluetoothStatusCodes {
      *
      * <p>Example solution: Prompt user to unpair and pair again.
      */
-    @Hide public static final int ERROR_DISCONNECT_REASON_SECURITY = 1105;
+    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @Hide
+    @SystemApi
+    public static final int ERROR_DISCONNECT_REASON_SECURITY = 1105;
 
     /**
      * Indicates that the ACL disconnected due to the local device's system policy.
@@ -241,7 +259,10 @@ public final class BluetoothStatusCodes {
      * <p>Example solution: Prompt the user to check settings, or check with their system
      * administrator (e.g. some corp-managed devices do not allow OPP connection).
      */
-    @Hide public static final int ERROR_DISCONNECT_REASON_SYSTEM_POLICY = 1106;
+    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @Hide
+    @SystemApi
+    public static final int ERROR_DISCONNECT_REASON_SYSTEM_POLICY = 1106;
 
     /**
      * Indicates that the ACL disconnected due to resource constraints, either on the local device
@@ -253,10 +274,16 @@ public final class BluetoothStatusCodes {
      * <p>Example solution: The app should wait and try again. If still failing, prompt the user to
      * disconnect some devices, or toggle Bluetooth on the local and/or the remote device.
      */
-    @Hide public static final int ERROR_DISCONNECT_REASON_RESOURCE_LIMIT_REACHED = 1107;
+    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @Hide
+    @SystemApi
+    public static final int ERROR_DISCONNECT_REASON_RESOURCE_LIMIT_REACHED = 1107;
 
     /** Indicates that the ACL disconnected because another ACL connection already exists. */
-    @Hide public static final int ERROR_DISCONNECT_REASON_CONNECTION_ALREADY_EXISTS = 1108;
+    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @Hide
+    @SystemApi
+    public static final int ERROR_DISCONNECT_REASON_CONNECTION_ALREADY_EXISTS = 1108;
 
     /**
      * Indicates that the ACL disconnected due to incorrect parameters passed in from the app.
@@ -264,7 +291,33 @@ public final class BluetoothStatusCodes {
      * <p>Example solution: Change parameters and try again. If error persists, the app can report
      * telemetry and/or log the error in a bugreport.
      */
-    @Hide public static final int ERROR_DISCONNECT_REASON_BAD_PARAMETERS = 1109;
+    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @Hide
+    @SystemApi
+    public static final int ERROR_DISCONNECT_REASON_BAD_PARAMETERS = 1109;
+
+    /**
+     * Indicates that the ACL disconnected due to the adapter suspend feature.
+     *
+     * <p>Example cause: The system has put the adapter into a suspended state to save power.
+     *
+     * <p>Example solution: The system will handle reconnection when the suspend state is exited.
+     */
+    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @Hide
+    @SystemApi
+    public static final int ERROR_DISCONNECT_REASON_ADAPTER_SUSPEND = 1110;
+
+    /**
+     * Indicates that the ACL disconnected due to a user-initiated action.
+     *
+     * <p>Example cause: The user selects 'disconnect' from the device settings or quick settings
+     * menu.
+     */
+    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @Hide
+    @SystemApi
+    public static final int ERROR_DISCONNECT_REASON_USER_REQUEST = 1111;
 
     /**
      * Indicates that there is already one device for which SCO audio is connected or connecting.
