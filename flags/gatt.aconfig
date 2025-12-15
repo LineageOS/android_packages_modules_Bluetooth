@@ -59,16 +59,6 @@ flag {
 }
 
 flag {
-    name: "br_edr_discover_gatt_services_over_gatt"
-    namespace: "bluetooth"
-    description: "Do GATT service discovery over GATT rather than SDP"
-    bug: "426086352"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "disconnect_acl_on_gatt_timeout"
     namespace: "bluetooth"
     description: "Disconnect ACL when a gatt response or confirmation timeout occurs"
