@@ -147,3 +147,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fix_gatt_cmd_dequeue"
+    namespace: "bluetooth"
+    description: "Fixes issues related to gatt_cmd_dequeue()"
+    bug: "468220386"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
