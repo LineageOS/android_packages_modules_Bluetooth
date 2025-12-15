@@ -481,7 +481,8 @@ public class BluetoothServiceBinder extends IBluetoothManager.Stub {
         }
         requireNonNull(pkg);
         var tag = source.getAttributionTag();
-        if ("android".equals(pkg)) {
+        if ("android".equals(pkg)
+                && android.bluetooth.platform.flags.Flags.strictConfigurationInSystemServer()) {
             return pkg + "/" + requireNonNull(tag);
         }
         if (tag != null) {
