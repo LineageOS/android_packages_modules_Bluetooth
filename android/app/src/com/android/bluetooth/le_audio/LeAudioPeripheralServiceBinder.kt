@@ -18,7 +18,6 @@ package com.android.bluetooth.le_audio
 
 import android.Manifest.permission.BLUETOOTH_CONNECT
 import android.Manifest.permission.BLUETOOTH_PRIVILEGED
-import android.annotation.PermissionManuallyEnforced
 import android.annotation.RequiresPermission
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
@@ -39,7 +38,6 @@ internal class LeAudioPeripheralServiceBinder(svc: LeAudioPeripheralService?) :
         service = null
     }
 
-    @PermissionManuallyEnforced
     @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED])
     private fun getServiceAndEnforcePrivileged(
         source: AttributionSource
@@ -70,7 +68,6 @@ internal class LeAudioPeripheralServiceBinder(svc: LeAudioPeripheralService?) :
         return service?.syncPost(function, defaultValue) ?: defaultValue
     }
 
-    @PermissionManuallyEnforced
     @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED])
     private fun <T> withService(
         source: AttributionSource,
@@ -82,19 +79,16 @@ internal class LeAudioPeripheralServiceBinder(svc: LeAudioPeripheralService?) :
         return syncPost(service, action, defaultValue)
     }
 
-    @PermissionManuallyEnforced
     @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED])
     private fun withService(source: AttributionSource, action: (LeAudioPeripheralService) -> Unit) {
         withService(source, Unit, action)
     }
 
-    @PermissionManuallyEnforced
     @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED])
     override fun getConnectedDevices(source: AttributionSource): List<BluetoothDevice> {
         return withService(source, defaultValue = emptyList()) { it.getConnectedDevices() }
     }
 
-    @PermissionManuallyEnforced
     @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED])
     override fun getDevicesMatchingConnectionStates(
         states: IntArray,
@@ -105,13 +99,11 @@ internal class LeAudioPeripheralServiceBinder(svc: LeAudioPeripheralService?) :
         }
     }
 
-    @PermissionManuallyEnforced
     @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED])
     override fun getConnectionState(device: BluetoothDevice, source: AttributionSource): Int {
         return withService(source, STATE_DISCONNECTED) { it.getConnectionState(device) }
     }
 
-    @PermissionManuallyEnforced
     @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED])
     override fun registerCallback(
         callback: IBluetoothLeAudioPeripheralCallback,
@@ -120,7 +112,6 @@ internal class LeAudioPeripheralServiceBinder(svc: LeAudioPeripheralService?) :
         withService(source) { it.registerCallback(callback) }
     }
 
-    @PermissionManuallyEnforced
     @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED])
     override fun unregisterCallback(
         callback: IBluetoothLeAudioPeripheralCallback,
@@ -129,7 +120,6 @@ internal class LeAudioPeripheralServiceBinder(svc: LeAudioPeripheralService?) :
         withService(source) { it.unregisterCallback(callback) }
     }
 
-    @PermissionManuallyEnforced
     @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED])
     override fun setStreamTypesEnabled(
         device: BluetoothDevice,
@@ -140,7 +130,6 @@ internal class LeAudioPeripheralServiceBinder(svc: LeAudioPeripheralService?) :
         withService(source) { it.setStreamTypesEnabled(device, streamTypes, enabled) }
     }
 
-    @PermissionManuallyEnforced
     @RequiresPermission(allOf = [BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED])
     override fun getEnabledStreamTypes(device: BluetoothDevice, source: AttributionSource): Int {
         return withService(source, 0) { it.getEnabledStreamTypes(device) }
