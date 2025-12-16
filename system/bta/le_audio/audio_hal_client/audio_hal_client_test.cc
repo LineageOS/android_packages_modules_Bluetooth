@@ -27,8 +27,7 @@
 
 #include "audio_hal_interface/le_audio_software.h"
 #include "base/bind_helpers.h"
-#include "btif_status.h"
-#include "common/message_loop_thread.h"
+#include "le_audio/mock_test_sync_main_handler.h"
 #include "osi/include/wakelock.h"
 #include "stack/include/main_thread.h"
 
@@ -51,30 +50,6 @@ using bluetooth::le_audio::LeAudioSinkAudioHalClient;
 using bluetooth::le_audio::LeAudioSourceAudioHalClient;
 
 using namespace bluetooth;
-
-bluetooth::common::MessageLoopThread message_loop_thread(
-        "test message loop", bluetooth::os::Thread::Priority::REAL_TIME);
-bluetooth::common::MessageLoopThread* get_main_thread() { return &message_loop_thread; }
-BtStatus do_in_main_thread(base::OnceClosure task) {
-  if (!message_loop_thread.DoInThread(std::move(task))) {
-    log::error("failed to post task to task runner!");
-    return BtifStatus(JNI_THREAD_ATTACH_ERROR);
-  }
-  return BtifStatus();
-}
-
-static void init_message_loop_thread() {
-  message_loop_thread.StartUp();
-  if (!message_loop_thread.IsRunning()) {
-    FAIL() << "unable to create message loop thread.";
-  }
-
-  if (!message_loop_thread.EnableRealTimeScheduling()) {
-    log::error("Unable to set real time scheduling");
-  }
-}
-
-static void cleanup_message_loop_thread() { message_loop_thread.ShutDown(); }
 
 using bluetooth::audio::le_audio::LeAudioClientInterface;
 
