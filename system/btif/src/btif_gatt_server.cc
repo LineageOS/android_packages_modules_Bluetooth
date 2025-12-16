@@ -30,17 +30,14 @@
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
-#include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_gatt.h>
 #include <hardware/bt_gatt_types.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "bta/include/bta_gatt_api.h"
-#include "bta/include/bta_sec_api.h"
 #include "btif/include/btif_common.h"
 #include "btif/include/btif_dm.h"
 #include "btif/include/btif_gatt.h"

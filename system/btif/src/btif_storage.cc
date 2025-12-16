@@ -40,10 +40,8 @@
 #include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/bt_octets.h>
 #include <bluetooth/types/uuid.h>
-#include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
 
 #include <unordered_set>
 #include <vector>

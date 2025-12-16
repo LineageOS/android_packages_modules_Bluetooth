@@ -28,14 +28,12 @@
 #include <com_android_bluetooth_flags.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/a2dp/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
-#include <stdio.h>
 
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <future>
-#include <ios>
 #include <map>
 #include <mutex>
 #include <optional>
@@ -47,7 +45,6 @@
 
 #include "audio_hal_interface/a2dp_encoding.h"
 #include "bta/include/bta_api.h"
-#include "bta/include/bta_api_data_types.h"
 #include "bta/include/bta_av_api.h"
 #include "btif/avrcp/avrcp_service.h"
 #include "btif/include/btif_a2dp.h"
@@ -76,7 +73,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_ble_api.h"
-#include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/main_thread.h"
 
