@@ -156,6 +156,28 @@ static tGATT_SUBRATE_MODE get_target_mode_by_address(const RawAddress& bd_addr) 
     return target_mode;
 }
 
+static tGATT_SUBRATE_MODE get_current_mode_by_address(const RawAddress& bd_addr) {
+    tGATT_SUBRATE_CONFIG config = gatt_cb.subrate_info[bd_addr].current_config;
+    if (config.subrate_factor < config.subrate_min ||
+        config.subrate_factor > config.subrate_max) {
+        if (config.subrate_factor == 1) return GATT_SUBRATE_MODE_OFF;
+        else return GATT_SUBRATE_MODE_SYSTEM_UPDATE;
+    } else {
+        tGATT_SUBRATE_MODE target_mode = get_target_mode_by_address(bd_addr);
+        if (gatt_cb.subrate_mode_config[target_mode].fixed_config) {
+            if (config.cont_num > gatt_cb.subrate_mode_config[target_mode].cont_num) {
+                return GATT_SUBRATE_MODE_SYSTEM_UPDATE;
+            }
+        } else {
+            uint16_t ratio = gatt_cb.subrate_mode_config[target_mode].cont_num_ratio;
+            uint16_t cont_num = config.subrate_min * ratio / 100;
+            cont_num = ((config.subrate_min * ratio) % 100 < 50) ? cont_num : cont_num + 1;
+            if (config.cont_num > cont_num) return GATT_SUBRATE_MODE_SYSTEM_UPDATE;
+        }
+        return target_mode;
+    }
+}
+
 static void process_subrate_request(const RawAddress& bd_addr) {
     log::debug("addr:{}", bd_addr);
 
@@ -386,14 +408,12 @@ bool gatt_handle_subrate_cback_status(const RawAddress& bd_addr, uint16_t subrat
         if (status == HCI_SUCCESS) {
             if (cont_num != gatt_cb.subrate_info[bd_addr].current_config.cont_num ||
                 subrate_factor != gatt_cb.subrate_info[bd_addr].current_config.subrate_factor) {
-                gatt_cb.subrate_info[bd_addr].current_config = {
-                    .mode = (subrate_factor == 1) ? GATT_SUBRATE_MODE_OFF
-                                                  : GATT_SUBRATE_MODE_SYSTEM_UPDATE,
-                    .max_latency = latency,
-                    .cont_num = cont_num,
-                    .timeout = timeout,
-                    .subrate_factor = subrate_factor,
-                };
+                gatt_cb.subrate_info[bd_addr].current_config.max_latency = latency;
+                gatt_cb.subrate_info[bd_addr].current_config.cont_num = cont_num;
+                gatt_cb.subrate_info[bd_addr].current_config.timeout = timeout;
+                gatt_cb.subrate_info[bd_addr].current_config.subrate_factor = subrate_factor;
+                gatt_cb.subrate_info[bd_addr].current_config.mode =
+                    get_current_mode_by_address(bd_addr);
                 log::debug("Subrate updated by remote / system");
             }
         }
