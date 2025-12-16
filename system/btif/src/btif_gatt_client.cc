@@ -687,6 +687,13 @@ static BtStatus btif_gattc_subrate_request(const RawAddress& bd_addr, int subrat
                                            int subrate_max, int max_latency, int cont_num,
                                            int sup_timeout) {
   CHECK_BTGATT_INIT();
+  if (com::android::bluetooth::flags::gatt_return_unsupported_when_not_support_subrating()) {
+    if (!bluetooth::shim::GetController()->SupportsBleConnectionSubrating() ||
+        !acl_peer_supports_ble_connection_subrating(bd_addr) ||
+        !acl_peer_supports_ble_connection_subrating_host(bd_addr)) {
+        return BtifStatus(UNSUPPORTED);;
+    }
+  }
   return do_in_jni_thread(BindOnce(base::IgnoreResult(&btif_gattc_subrate_request_impl), bd_addr,
                                    subrate_min, subrate_max, max_latency, cont_num, sup_timeout));
 }
@@ -702,6 +709,11 @@ static void btif_gattc_subrate_mode_request_impl(int client_if, const RawAddress
 static BtStatus btif_gattc_subrate_mode_request(int client_if, const RawAddress& bd_addr,
                                                 uint8_t subrate_mode) {
   CHECK_BTGATT_INIT();
+  if (!bluetooth::shim::GetController()->SupportsBleConnectionSubrating() ||
+      !acl_peer_supports_ble_connection_subrating(bd_addr) ||
+      !acl_peer_supports_ble_connection_subrating_host(bd_addr)) {
+      return BtifStatus(UNSUPPORTED);
+  }
   tGATT_SUBRATE_MODE mode = (tGATT_SUBRATE_MODE) subrate_mode;
   return do_in_jni_thread(BindOnce(base::IgnoreResult(&btif_gattc_subrate_mode_request_impl),
                                    client_if, bd_addr, mode));

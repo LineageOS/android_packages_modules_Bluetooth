@@ -128,3 +128,14 @@ flag {
     }
 }
 
+flag {
+    name: "gatt_return_unsupported_when_not_support_subrating"
+    namespace: "bluetooth"
+    description: "Return UNSUPPORTED Status if local or remote device not supports subrating"
+    bug: "467849306"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+
