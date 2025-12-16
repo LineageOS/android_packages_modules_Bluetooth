@@ -36,7 +36,7 @@
 
 #include "btm_ble_int.h"
 #include "btm_dev.h"
-#include "btm_sec_cb.h"
+#include "btm_security.h"
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "hci/controller.h"
 #include "main/shim/entry.h"

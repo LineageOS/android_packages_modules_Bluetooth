@@ -20,7 +20,7 @@
 #include <unistd.h>
 
 #include "stack/btm/btm_dev.h"
-#include "stack/btm/btm_sec_cb.h"
+#include "stack/btm/btm_security.h"
 #include "stack/test/btm/btm_test_fixtures.h"
 #include "test/mock/mock_main_shim_entry.h"
 

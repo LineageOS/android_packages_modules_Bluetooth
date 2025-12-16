@@ -34,7 +34,7 @@
 // TODO: b/446803190 - Fix the arguments by making them const references.
 typedef bool (*sec_dev_rec_iter_cb)(void* dev_rec, void* context);
 
-class tBTM_SEC_CB {
+class BtmSecurity {
 public:
   tBTM_CFG cfg; /* Device configuration */
 
@@ -62,14 +62,14 @@ public:
   bool pairing_disabled{false};
 
   // TODO : Remove when the flag local_pin_key_type is shipped
-  bool pin_type_changed{false};           /* pin type changed during bonding */
+  bool pin_type_changed{false}; /* pin type changed during bonding */
 
   bool l2c_service_access_pending{false}; /* If an L2CAP service access request is pending */
 
   // TODO(b/460502961): Remove once the flag security_mode_3_pairing is shipped
-  bool security_mode_changed{false};                     /* mode changed during bonding */
-  uint8_t pin_code_len{0};                               /* for legacy devices */
-  PinCode pin_code;                                      /* for legacy devices */
+  bool security_mode_changed{false}; /* mode changed during bonding */
+  uint8_t pin_code_len{0};           /* for legacy devices */
+  PinCode pin_code;                  /* for legacy devices */
 
   tBTM_PAIRING_STATE pairing_state{BTM_PAIR_STATE_IDLE}; /* The current pairing state    */
   uint8_t pairing_flags{0};                              /* The current pairing flags    */
@@ -119,7 +119,7 @@ public:
   BtmDevice* for_each_dev_rec(sec_dev_rec_iter_cb cb, void* context);
 };
 
-extern tBTM_SEC_CB btm_sec_cb;
+extern BtmSecurity btm_sec_cb;
 
 #define BTM_BLE_SEC_CALLBACK(event_, bda_, data_)                                          \
   do {                                                                                     \

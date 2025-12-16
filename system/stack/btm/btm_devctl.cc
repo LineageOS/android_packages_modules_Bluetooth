@@ -33,8 +33,8 @@
 #include <string.h>
 
 #include "acl_api_types.h"
-#include "btm_sec_cb.h"
 #include "btm_sec_int_types.h"
+#include "btm_security.h"
 #include "hci/controller.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/entry.h"

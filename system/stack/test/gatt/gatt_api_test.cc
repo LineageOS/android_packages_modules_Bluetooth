@@ -20,11 +20,11 @@
 #include <gtest/gtest.h>
 
 #include "btm/btm_dev.h"
-#include "btm/btm_sec_cb.h"
+#include "btm/btm_security.h"
 #include "gatt/gatt_int.h"
 #include "osi/include/allocator.h"
 
-extern tBTM_SEC_CB btm_sec_cb;
+extern BtmSecurity btm_sec_cb;
 
 static const size_t QUEUE_SIZE_MAX = 10;
 

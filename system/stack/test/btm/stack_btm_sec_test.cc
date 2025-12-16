@@ -30,7 +30,7 @@
 #include "stack/btm/btm_device_record.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
-#include "stack/btm/btm_sec_cb.h"
+#include "stack/btm/btm_security.h"
 #include "stack/btm/internal/btm_api.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/main_thread.h"
@@ -54,14 +54,12 @@ using bluetooth::legacy::testing::wipe_secrets_and_remove;
 constexpr size_t kBtmSecMaxDeviceRecords = static_cast<size_t>(BTM_SEC_MAX_DEVICE_RECORDS + 1);
 
 class StackBtmSecTest : public BtmWithMocksTest {
-public:
 protected:
   void SetUp() override { BtmWithMocksTest::SetUp(); }
   void TearDown() override { BtmWithMocksTest::TearDown(); }
 };
 
 class StackBtmSecWithQueuesTest : public StackBtmSecTest {
-public:
 protected:
   void SetUp() override {
     StackBtmSecTest::SetUp();

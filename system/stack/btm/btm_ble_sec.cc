@@ -43,8 +43,8 @@
 #include "stack/btm/btm_device_record.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
-#include "stack/btm/btm_sec_cb.h"
 #include "stack/btm/btm_sec_int_types.h"
+#include "stack/btm/btm_security.h"
 #include "stack/btm/internal/btm_api.h"
 #include "stack/eatt/eatt.h"
 #include "stack/include/acl_api.h"
@@ -932,7 +932,7 @@ tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr, tBTM_BLE_SEC_ACT s
  *
  ******************************************************************************/
 void btm_ble_ltk_request(uint16_t handle, Octet8 rand, uint16_t ediv) {
-  tBTM_SEC_CB* p_cb = &btm_sec_cb;
+  BtmSecurity* p_cb = &btm_sec_cb;
   const BtmDevice* p_device = btm_find_dev_by_handle(handle);
 
   p_cb->ediv = ediv;
@@ -954,7 +954,7 @@ void btm_ble_ltk_request(uint16_t handle, Octet8 rand, uint16_t ediv) {
  * Returns tBTM_STATUS::BTM_SUCCESS if encryption was started successfully
  */
 tBTM_STATUS btm_ble_start_encrypt(const RawAddress& bda, bool use_stk, Octet16* p_stk) {
-  tBTM_SEC_CB* p_cb = &btm_sec_cb;
+  BtmSecurity* p_cb = &btm_sec_cb;
   BtmDevice* p_device = btm_get_dev(bda);
   Octet8 dummy_rand = {0};
 
@@ -1102,7 +1102,7 @@ void btm_ble_link_encrypted(const RawAddress& bd_addr, uint8_t encr_enable) {
  ******************************************************************************/
 void btm_ble_ltk_request_reply(const RawAddress& bda, bool use_stk, const Octet16& stk) {
   const BtmDevice* p_device = btm_find_dev(bda);
-  tBTM_SEC_CB* p_cb = &btm_sec_cb;
+  BtmSecurity* p_cb = &btm_sec_cb;
 
   log::debug("bd_addr:{},use_stk:{}", bda, use_stk);
 

@@ -36,7 +36,7 @@
 #include "btif/include/btif_config.h"
 #include "btif/include/btif_storage.h"
 #include "btm_sec_api.h"
-#include "btm_sec_cb.h"
+#include "btm_security.h"
 #include "connection_manager/connection_manager.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
@@ -390,13 +390,11 @@ static BtmDevice* btm_find_dev_by_handle_(uint16_t handle) {
   return nullptr;
 }
 
-const BtmDevice* btm_find_dev_by_handle(uint16_t handle) {
-  return btm_find_dev_by_handle_(handle);
-}
+const BtmDevice* btm_find_dev_by_handle(uint16_t handle) { return btm_find_dev_by_handle_(handle); }
 
 BtmDevice* btm_get_dev_by_handle(uint16_t handle) {
   if (!com::android::bluetooth::flags::fix_sec_dev_rec_access()) {
-    return btm_find_dev_by_handle_(handle); // non-const return
+    return btm_find_dev_by_handle_(handle);  // non-const return
   }
 
   return get_main_thread()->DoInThreadSynchronously(&btm_find_dev_by_handle_, handle);
@@ -463,7 +461,7 @@ static BtmDevice* find_dev_from_list(const RawAddress& bd_addr) {
 
 static BtmDevice* find_dev(const RawAddress& bd_addr) {
   if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
-    return find_dev_from_list(bd_addr); // finds device from sec_dev_rec list
+    return find_dev_from_list(bd_addr);  // finds device from sec_dev_rec list
   }
 
   if (!btm_sec_cb.IsSecCBInitialized()) {
@@ -484,9 +482,7 @@ static BtmDevice* find_dev(const RawAddress& bd_addr) {
   return p_device;
 }
 
-const BtmDevice* btm_find_dev(const RawAddress& bd_addr) {
-  return find_dev(bd_addr);
-}
+const BtmDevice* btm_find_dev(const RawAddress& bd_addr) { return find_dev(bd_addr); }
 
 BtmDevice* btm_get_dev(const RawAddress& bd_addr) {
   if (!com::android::bluetooth::flags::fix_sec_dev_rec_access()) {
@@ -750,7 +746,7 @@ static BtmDevice* btm_find_oldest_dev_rec_(void) {
   if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
     list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
     for (list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec); node != end;
-        node = list_next(node)) {
+         node = list_next(node)) {
       process_record(static_cast<BtmDevice*>(list_node(node)));
     }
   } else {
@@ -810,7 +806,7 @@ static BtmDevice* btm_find_oldest_dev_rec(void) {
   if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
     list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
     for (list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec); node != end;
-        node = list_next(node)) {
+         node = list_next(node)) {
       process_record(static_cast<BtmDevice*>(list_node(node)));
     }
   } else {

@@ -22,7 +22,7 @@
 
 #include "stack/btm/btm_ble_sec.h"
 #include "stack/btm/btm_dev.h"
-#include "stack/btm/btm_sec_cb.h"
+#include "stack/btm/btm_security.h"
 #include "stack/include/btm_ble_sec_api_types.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/smp_api_types.h"

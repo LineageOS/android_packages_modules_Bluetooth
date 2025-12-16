@@ -33,7 +33,7 @@
 #include <algorithm>
 
 #include "btm_dev.h"
-#include "btm_sec_cb.h"
+#include "btm_security.h"
 #include "hci/acl_manager/acl_manager_le.h"
 #include "hci/controller.h"
 #include "main/shim/entry.h"

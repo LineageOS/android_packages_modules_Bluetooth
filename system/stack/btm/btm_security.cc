@@ -15,9 +15,9 @@
  *
  */
 
-#define LOG_TAG "SEC_CB"
+#define LOG_TAG "BtmSecurity"
 
-#include "stack/btm/btm_sec_cb.h"
+#include "stack/btm/btm_security.h"
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
@@ -35,7 +35,7 @@
 
 using namespace bluetooth;
 
-void tBTM_SEC_CB::Init(uint8_t initial_security_mode) {
+void BtmSecurity::Init(uint8_t initial_security_mode) {
   pin_code = {};
   memset(&cfg, 0, sizeof(cfg));
   memset(&devcb, 0, sizeof(devcb));
@@ -65,7 +65,7 @@ void tBTM_SEC_CB::Init(uint8_t initial_security_mode) {
   device_records = {};
 }
 
-void tBTM_SEC_CB::Free() {
+void BtmSecurity::Free() {
   service_access_q.clear();
   enc_request_q.clear();
 
@@ -86,7 +86,7 @@ void tBTM_SEC_CB::Free() {
   execution_wait_timer = nullptr;
 }
 
-tBTM_SEC_CB btm_sec_cb;
+BtmSecurity btm_sec_cb;
 
 void BTM_Sec_Init() {
   btm_sec_cb.Init(stack_config_get_interface()->get_pts_secure_only_mode() ? BTM_SEC_MODE_SC
@@ -105,7 +105,7 @@ void BTM_Sec_Free() { btm_sec_cb.Free(); }
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-tBTM_SEC_SERV_REC* tBTM_SEC_CB::find_first_serv_rec(bool outgoing, uint16_t psm) {
+tBTM_SEC_SERV_REC* BtmSecurity::find_first_serv_rec(bool outgoing, uint16_t psm) {
   tBTM_SEC_SERV_REC* p_serv_rec = &sec_serv_rec[0];
   int i;
 
@@ -124,7 +124,7 @@ tBTM_SEC_SERV_REC* tBTM_SEC_CB::find_first_serv_rec(bool outgoing, uint16_t psm)
   return NULL;
 }
 
-BtmSecurityRecord* tBTM_SEC_CB::getSecRec(const RawAddress bd_addr) {
+BtmSecurityRecord* BtmSecurity::getSecRec(const RawAddress bd_addr) {
   BtmDevice* p_device = btm_get_dev(bd_addr);
   if (p_device != nullptr) {
     return &p_device->sec_rec;
@@ -132,7 +132,7 @@ BtmSecurityRecord* tBTM_SEC_CB::getSecRec(const RawAddress bd_addr) {
   return nullptr;
 }
 
-bool tBTM_SEC_CB::IsDeviceEncrypted(const RawAddress bd_addr, tBT_TRANSPORT transport) {
+bool BtmSecurity::IsDeviceEncrypted(const RawAddress bd_addr, tBT_TRANSPORT transport) {
   BtmSecurityRecord* sec_rec = getSecRec(bd_addr);
   if (sec_rec) {
     if (transport == BT_TRANSPORT_BR_EDR) {
@@ -148,7 +148,7 @@ bool tBTM_SEC_CB::IsDeviceEncrypted(const RawAddress bd_addr, tBT_TRANSPORT tran
   return false;
 }
 
-bool tBTM_SEC_CB::IsLinkKeyAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT transport) {
+bool BtmSecurity::IsLinkKeyAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT transport) {
   BtmSecurityRecord* sec_rec = getSecRec(bd_addr);
   if (sec_rec) {
     if (transport == BT_TRANSPORT_BR_EDR) {
@@ -164,7 +164,7 @@ bool tBTM_SEC_CB::IsLinkKeyAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT
   return false;
 }
 
-bool tBTM_SEC_CB::IsDeviceAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT transport) {
+bool BtmSecurity::IsDeviceAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT transport) {
   BtmSecurityRecord* sec_rec = getSecRec(bd_addr);
   if (sec_rec) {
     if (transport == BT_TRANSPORT_BR_EDR) {
@@ -180,7 +180,7 @@ bool tBTM_SEC_CB::IsDeviceAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT 
   return false;
 }
 
-bool tBTM_SEC_CB::IsDeviceBonded(const RawAddress bd_addr, tBT_TRANSPORT transport) {
+bool BtmSecurity::IsDeviceBonded(const RawAddress bd_addr, tBT_TRANSPORT transport) {
   BtmSecurityRecord* sec_rec = getSecRec(bd_addr);
   if (sec_rec == nullptr) {
     log::verbose("No record for {}", bd_addr);
@@ -191,7 +191,7 @@ bool tBTM_SEC_CB::IsDeviceBonded(const RawAddress bd_addr, tBT_TRANSPORT transpo
 }
 
 #define BTM_NO_AVAIL_SEC_SERVICES ((uint16_t)0xffff)
-bool tBTM_SEC_CB::AddService(bool outgoing, const char* p_name, uint8_t service_id,
+bool BtmSecurity::AddService(bool outgoing, const char* p_name, uint8_t service_id,
                              uint16_t sec_level, uint16_t psm, uint32_t mx_proto_id,
                              uint32_t mx_chan_id) {
   tBTM_SEC_SERV_REC* p_srec;
@@ -309,7 +309,7 @@ bool tBTM_SEC_CB::AddService(bool outgoing, const char* p_name, uint8_t service_
   return record_allocated;
 }
 
-uint8_t tBTM_SEC_CB::RemoveServiceById(uint8_t service_id) {
+uint8_t BtmSecurity::RemoveServiceById(uint8_t service_id) {
   tBTM_SEC_SERV_REC* p_srec = &sec_serv_rec[0];
   uint8_t num_freed = 0;
   int i;
@@ -326,7 +326,7 @@ uint8_t tBTM_SEC_CB::RemoveServiceById(uint8_t service_id) {
   return num_freed;
 }
 
-uint8_t tBTM_SEC_CB::RemoveServiceByPsm(uint16_t psm) {
+uint8_t BtmSecurity::RemoveServiceByPsm(uint16_t psm) {
   tBTM_SEC_SERV_REC* p_srec = &sec_serv_rec[0];
   uint8_t num_freed = 0;
   int i;
@@ -366,7 +366,7 @@ bool BtmSecurityRecord::is_bonded(tBT_TRANSPORT transport) const {
 // instances with actual functionality as the callbacks are invoked only from single place so do
 // that inline.
 // This is similar to list_foreach, but for array.
-BtmDevice* tBTM_SEC_CB::for_each_dev_rec(sec_dev_rec_iter_cb cb, void* context) {
+BtmDevice* BtmSecurity::for_each_dev_rec(sec_dev_rec_iter_cb cb, void* context) {
   log::assert_that(com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec(),
                    "assert failed: flag use_array_instead_list_in_sec_dev_rec is disabled.");
   log::assert_that(cb != NULL, "assert failed: callback is null.");

@@ -62,8 +62,8 @@
 #include "stack/btm/btm_device_record.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
-#include "stack/btm/btm_sec_cb.h"
 #include "stack/btm/btm_sec_int_types.h"
+#include "stack/btm/btm_security.h"
 #include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_dev_class.h"
@@ -4396,7 +4396,7 @@ static void btm_sec_pairing_timeout(void* /* data */) {
  ******************************************************************************/
 void btm_sec_pin_code_request(const RawAddress p_bda) {
   BtmDevice* p_device;
-  tBTM_SEC_CB* p_cb = &btm_sec_cb;
+  BtmSecurity* p_cb = &btm_sec_cb;
 
   /* Tell L2CAP that there was a PIN code request,  */
   /* it may need to stretch timeouts                */
@@ -4871,7 +4871,7 @@ static void btm_restore_mode(void) {
  * Description      This function is called to change pairing state
  *
  ******************************************************************************/
-void tBTM_SEC_CB::change_pairing_state(tBTM_PAIRING_STATE new_state) {
+void BtmSecurity::change_pairing_state(tBTM_PAIRING_STATE new_state) {
   tBTM_PAIRING_STATE old_state = pairing_state;
 
   log::debug("Pairing state changed {} => {} pairing_flags:0x{:x}",
