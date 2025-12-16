@@ -58,7 +58,7 @@ class HearingAidServiceBinder extends IBluetoothHearingAid.Stub implements IProf
         }
 
         if (!Util.checkProfileAvailable(service, TAG)
-                || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
+                || !Util.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
                 || !Util.enforceConnectPermissionForDataDelivery(service, source, TAG)) {
             return null;
         }
@@ -219,7 +219,7 @@ class HearingAidServiceBinder extends IBluetoothHearingAid.Stub implements IProf
         HearingAidService service = mService;
 
         if (!Util.checkProfileAvailable(service, TAG)
-                || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
+                || !Util.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
                 || !Util.enforceScanPermissionForDataDelivery(
                         service, source, TAG, "getAdvertisementServiceData")) {
             return null;

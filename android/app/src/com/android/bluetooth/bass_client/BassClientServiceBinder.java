@@ -63,7 +63,7 @@ class BassClientServiceBinder extends IBluetoothLeBroadcastAssistant.Stub
         }
 
         if (!Util.checkProfileAvailable(service, TAG)
-                || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
+                || !Util.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
                 || !Util.enforceConnectPermissionForDataDelivery(service, source, TAG)) {
             return null;
         }
@@ -82,7 +82,7 @@ class BassClientServiceBinder extends IBluetoothLeBroadcastAssistant.Stub
         }
 
         if (!Util.checkProfileAvailable(service, TAG)
-                || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
+                || !Util.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
                 || !Util.enforceScanPermissionForDataDelivery(
                         service, source, TAG, "getServiceAndEnforceScan")) {
             return null;

@@ -249,4 +249,11 @@ class UtilTest {
             locationManager.setLocationEnabledForUser(false, userHandle)
         }
     }
+
+    @Test
+    fun checkCallerIsSystemOrActiveOrManagedUser() {
+        // In Instrumentation mode, this is expected to return true
+        assertThat(Util.checkCallerIsSystemOrActiveOrManagedUser(context, TAG)).isTrue()
+        assertThat(Util.callerIsSystemOrActiveOrManagedUser(context, TAG, "testMethod")).isTrue()
+    }
 }
