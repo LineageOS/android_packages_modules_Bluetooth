@@ -602,6 +602,7 @@ public final class Utils {
 
     public static boolean isAutonomousRepairingSupported() {
         // TODO (b/440298497): Change this to flag and android check once the SDK check CL is in.
-        return false;
+        return com.android.bluetooth.flags.Flags.autonomousRepairingInitiation()
+                && android.bluetooth.platform.flags.Flags.autonomousRepairingInitiation();
     }
 }

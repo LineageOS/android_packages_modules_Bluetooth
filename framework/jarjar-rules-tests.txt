@@ -28,3 +28,5 @@ rule android.media.audio.CustomFeatureFlags com.android.bluetooth.jarjarForTests
 rule android.media.audio.FeatureFlagsImpl com.android.bluetooth.jarjarForTests.@0
 rule android.media.audio.FakeFeatureFlagsImpl com.android.bluetooth.jarjarForTests.@0
 rule android.media.audio.FeatureFlags com.android.bluetooth.jarjarForTests.@0
+
+rule android.bluetooth.platform.flags.Flags com.android.bluetooth.jarjarForTests.@0
