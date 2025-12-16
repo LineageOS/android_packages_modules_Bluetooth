@@ -25,6 +25,8 @@
 #include <optional>
 #include <string>
 
+#include "consteval_helpers.h"
+
 /** Bluetooth Address */
 class RawAddress final {
 public:
@@ -32,6 +34,28 @@ public:
 
   RawAddress() = default;
   constexpr RawAddress(std::array<uint8_t, 6> const& address) : address(address) {}
+
+  // Consteval constructor to create an address from the string representation with format
+  // xx:xx:xx:xx:xx:xx. Invalid input values will trigger compile time errors.
+  consteval RawAddress(const char (&s)[18]) {
+    using bluetooth::consteval_assert;
+    using bluetooth::hex_to_byte;
+    using bluetooth::is_hex_char;
+
+    consteval_assert(s[17] == '\0', "expected nul termination");
+    for (size_t i = 0; i < 17; i++) {
+      if (i % 3 == 2) {
+        consteval_assert(s[i] == ':', "expected colon separator");
+      } else {
+        consteval_assert(is_hex_char(s[i]), "expected alphanumerical character");
+      }
+    }
+
+    address = {
+            hex_to_byte(s[0], s[1]),  hex_to_byte(s[3], s[4]),   hex_to_byte(s[6], s[7]),
+            hex_to_byte(s[9], s[10]), hex_to_byte(s[12], s[13]), hex_to_byte(s[15], s[16]),
+    };
+  }
 
   bool operator<(const RawAddress& rhs) const { return address < rhs.address; }
   bool operator==(const RawAddress& rhs) const { return address == rhs.address; }

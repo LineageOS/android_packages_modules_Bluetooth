@@ -58,9 +58,9 @@ tL2CAP_APPL_INFO appl_info;
 bluetooth::rfcomm::MockRfcommCallback* rfcomm_callback = nullptr;
 
 constexpr uint8_t kDummyId = 0x77;
-constexpr RawAddress kDummyRemoteAddr({0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC});
+constexpr RawAddress kDummyRemoteAddr("77:88:99:AA:BB:CC");
 constexpr uint16_t kDummyCID = 0x1234;
-constexpr RawAddress kDummyAddr({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+constexpr RawAddress kDummyAddr("11:22:33:44:55:66");
 
 void port_mgmt_cback(const tPORT_RESULT code, uint16_t port_handle) {
   rfcomm_callback->PortManagementCallback(code, port_handle, 0);

@@ -34,7 +34,7 @@ static constexpr char kGmapEnabledSysProp[] = "bluetooth.profile.gmap.enabled";
 
 class GmapClientTest : public ::testing::Test {
 public:
-  RawAddress addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress addr = RawAddress("11:22:33:44:55:66");
   GmapClient gmapClient = GmapClient(addr);
 };
 

@@ -26,8 +26,8 @@
 
 static_assert(sizeof(RawAddress) == 6, "RawAddress must be 6 bytes long!");
 
-const RawAddress RawAddress::kAny{{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}};
-const RawAddress RawAddress::kEmpty{{0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
+const RawAddress RawAddress::kAny("ff:ff:ff:ff:ff:ff");
+const RawAddress RawAddress::kEmpty("00:00:00:00:00:00");
 
 std::string RawAddress::ToString() const {
   return std::format("{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}", address[0], address[1],

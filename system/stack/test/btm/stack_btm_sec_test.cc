@@ -44,7 +44,7 @@ using ::testing::Return;
 using ::testing::Test;
 
 namespace {
-const RawAddress kRawAddress = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+const RawAddress kRawAddress = RawAddress("11:22:33:44:55:66");
 const uint8_t kBdName[] = "kBdName";
 constexpr char kTimeFormat[] = "%Y-%m-%d %H:%M:%S";
 }  // namespace
@@ -107,7 +107,7 @@ protected:
 };
 
 TEST_F(StackBtmSecWithInitFreeTest, btm_sec_encrypt_change) {
-  RawAddress bd_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
+  RawAddress bd_addr = RawAddress("A1:A2:A3:A4:A5:A6");
   const uint16_t classic_handle = 0x1234;
   const uint16_t ble_handle = 0x9876;
 
@@ -157,7 +157,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_encrypt_change) {
 }
 
 TEST_F(StackBtmSecWithInitFreeTest, BTM_SetEncryption) {
-  const RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  const RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
   const tBT_TRANSPORT transport{BT_TRANSPORT_LE};
   tBTM_SEC_CALLBACK* p_callback{nullptr};
   tBTM_BLE_SEC_ACT sec_act{BTM_BLE_SEC_ENCRYPT};
@@ -186,7 +186,7 @@ TEST_F(StackBtmSecTest, btm_ble_sec_req_act_text) {
 
 TEST_F(StackBtmSecWithInitFreeTest, btm_sec_allocate_dev_rec__all) {
   BtmDevice* p_devices[kBtmSecMaxDeviceRecords];
-  const RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  const RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
 
   // Fill up the records
   if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
@@ -265,7 +265,7 @@ TEST_F(StackBtmSecTest, bond_type_text) {
 }
 
 TEST_F(StackBtmSecWithInitFreeTest, wipe_secrets_and_remove) {
-  RawAddress bd_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
+  RawAddress bd_addr = RawAddress("A1:A2:A3:A4:A5:A6");
   const uint16_t classic_handle = 0x1234;
   const uint16_t ble_handle = 0x9876;
 
@@ -304,7 +304,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_rmt_name_request_complete) {
 }
 
 TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_authenticated_temporary) {
-  RawAddress bd_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
+  RawAddress bd_addr = RawAddress("A1:A2:A3:A4:A5:A6");
   const uint16_t classic_handle = 0x1234;
   const uint16_t ble_handle = 0x9876;
 
@@ -328,7 +328,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_authenticated_tempora
 }
 
 TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_non_authenticated_temporary) {
-  RawAddress bd_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
+  RawAddress bd_addr = RawAddress("A1:A2:A3:A4:A5:A6");
   const uint16_t classic_handle = 0x1234;
   const uint16_t ble_handle = 0x9876;
 
@@ -354,7 +354,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_non_authenticated_tem
 }
 
 TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_authenticated_persistent) {
-  RawAddress bd_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
+  RawAddress bd_addr = RawAddress("A1:A2:A3:A4:A5:A6");
   const uint16_t classic_handle = 0x1234;
   const uint16_t ble_handle = 0x9876;
 
@@ -380,7 +380,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_authenticated_persist
 }
 
 TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_upgrade_needed) {
-  RawAddress bd_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
+  RawAddress bd_addr = RawAddress("A1:A2:A3:A4:A5:A6");
   const uint16_t classic_handle = 0x1234;
   const uint16_t ble_handle = 0x9876;
 
@@ -411,7 +411,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_upgrade_needed) {
 }
 
 TEST_F(StackBtmSecWithInitFreeTest, btm_sec_temp_bond_auth_encryption_required) {
-  RawAddress bd_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
+  RawAddress bd_addr = RawAddress("A1:A2:A3:A4:A5:A6");
   const uint16_t classic_handle = 0x1234;
   const uint16_t ble_handle = 0x9876;
 

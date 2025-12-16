@@ -66,8 +66,8 @@ std::array<uint8_t, 32> data32 = {
         0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20,
 };
 
-const RawAddress kDeviceAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
-const RawAddress kDeviceAddressConnecting({0x66, 0x55, 0x44, 0x33, 0x22, 0x11});
+const RawAddress kDeviceAddress("11:22:33:44:55:66");
+const RawAddress kDeviceAddressConnecting("66:55:44:33:22:11");
 const uint16_t kHhHandle = 123;
 const tBLE_ADDR_TYPE kDeviceAddrType = BLE_ADDR_PUBLIC;
 const tBT_TRANSPORT kDeviceTransport = BT_TRANSPORT_AUTO;

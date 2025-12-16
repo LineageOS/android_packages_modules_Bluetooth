@@ -25,8 +25,8 @@
 #include "test/fake/fake_osi.h"
 
 namespace {
-const RawAddress bdaddr1({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
-const RawAddress bdaddr2({0x66, 0x55, 0x44, 0x33, 0x22, 0x11});
+const RawAddress bdaddr1("11:22:33:44:55:66");
+const RawAddress bdaddr2("66:55:44:33:22:11");
 
 }  // namespace
 

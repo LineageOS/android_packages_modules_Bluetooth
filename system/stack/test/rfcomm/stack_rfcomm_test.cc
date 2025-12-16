@@ -48,8 +48,8 @@ using bluetooth::rfcomm::CreateQuickUaPacket;
 using bluetooth::rfcomm::GetDlci;
 
 namespace {
-const RawAddress kRawAddress = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
-const RawAddress kRawAddress2 = RawAddress({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
+const RawAddress kRawAddress = RawAddress("11:22:33:44:55:66");
+const RawAddress kRawAddress2 = RawAddress("01:02:03:04:05:06");
 
 bluetooth::rfcomm::MockRfcommCallback* rfcomm_callback = nullptr;
 

@@ -158,8 +158,7 @@ protected:
             .WillByDefault(
                     [](uint8_t /*inst_id*/, ::BleAdvertiserInterface::GetAddressCallback cb) {
                       uint8_t address_type = 0x02;
-                      RawAddress address({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
-                      std::move(cb).Run(address_type, address);
+                      std::move(cb).Run(address_type, "11:22:33:44:55:66");
                     });
 
     ON_CALL(*mock_ble_advertising_manager_, SetData)

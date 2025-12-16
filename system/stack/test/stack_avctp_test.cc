@@ -31,7 +31,7 @@ using ::testing::SaveArg;
 namespace {
 constexpr uint16_t kRemoteCid = 0x0123;
 constexpr uint16_t kRemoteBrowseCid = 0x0456;
-const RawAddress kRawAddress = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+const RawAddress kRawAddress = RawAddress("11:22:33:44:55:66");
 }  // namespace
 
 class StackAvctpWithMocksTest : public ::testing::Test {

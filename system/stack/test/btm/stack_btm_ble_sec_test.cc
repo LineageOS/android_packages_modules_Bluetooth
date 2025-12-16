@@ -72,7 +72,7 @@ protected:
 TEST_F(StackBtmBleSecTest, btm_ble_user_confirmation_req_pairing_state_busy_without_flag) {
   set_com_android_bluetooth_flags_prevent_btm_sec_cb_overwrite_during_pairing(false);
 
-  const RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  const RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
   BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
   ASSERT_NE(nullptr, p_device);
 
@@ -96,7 +96,7 @@ TEST_F(StackBtmBleSecTest, btm_ble_user_confirmation_req_pairing_state_busy_with
 }
 
 TEST_F(StackBtmBleSecTest, btm_ble_sec_req_pairing_state_idle) {
-  const RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  const RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
   BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
   ASSERT_NE(nullptr, p_device);
 
@@ -118,7 +118,7 @@ TEST_F(StackBtmBleSecTest, btm_ble_sec_req_pairing_state_idle) {
 }
 
 TEST_F(StackBtmBleSecTest, btm_ble_sec_req_pairing_state_busy) {
-  const RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  const RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
   BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
   ASSERT_NE(nullptr, p_device);
 
@@ -142,7 +142,7 @@ TEST_F(StackBtmBleSecTest, btm_ble_sec_req_pairing_state_busy) {
 TEST_F(StackBtmBleSecTest, btm_ble_consent_req_pairing_state_busy_without_flag) {
   set_com_android_bluetooth_flags_prevent_btm_sec_cb_overwrite_during_pairing(false);
 
-  const RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  const RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
   BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
   ASSERT_NE(nullptr, p_device);
 
@@ -175,8 +175,8 @@ protected:
 TEST_P(StackBtmBleSecParamTest, btm_ble_user_confirmation_req) {
   auto [pairing_state, is_same_addr, transport] = GetParam();
 
-  const RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
-  const RawAddress other_addr = RawAddress({0x66, 0x55, 0x44, 0x33, 0x22, 0x11});
+  const RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
+  const RawAddress other_addr = RawAddress("66:55:44:33:22:11");
 
   BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
   ASSERT_NE(nullptr, p_device);
@@ -223,8 +223,8 @@ TEST_P(StackBtmBleSecParamTest, btm_ble_user_confirmation_req) {
 TEST_P(StackBtmBleSecParamTest, btm_ble_consent_req) {
   auto [pairing_state, is_same_addr, transport] = GetParam();
 
-  const RawAddress bd_addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
-  const RawAddress other_addr = RawAddress({0x66, 0x55, 0x44, 0x33, 0x22, 0x11});
+  const RawAddress bd_addr = RawAddress("11:22:33:44:55:66");
+  const RawAddress other_addr = RawAddress("66:55:44:33:22:11");
 
   BtmDevice* p_device = btm_sec_allocate_dev_rec(bd_addr);
   ASSERT_NE(nullptr, p_device);

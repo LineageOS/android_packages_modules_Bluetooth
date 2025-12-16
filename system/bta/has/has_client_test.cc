@@ -82,10 +82,10 @@ using ::testing::Sequence;
 using ::testing::SetArgPointee;
 using ::testing::WithArg;
 
-RawAddress GetTestAddress(int index) {
+static RawAddress GetTestAddress(uint8_t index) {
   EXPECT_LT(index, UINT8_MAX);
-  RawAddress result = {{0xC0, 0xDE, 0xC0, 0xDE, 0x00, static_cast<uint8_t>(index)}};
-  return result;
+  std::array<uint8_t, 6> bytes{0xC0, 0xDE, 0xC0, 0xDE, 0x00, index};
+  return RawAddress(bytes);
 }
 
 static uint16_t GetTestConnId(const RawAddress& address) {

@@ -47,7 +47,7 @@ using bluetooth::le_audio::GmapServer;
 
 class GmapServerTest : public ::testing::Test {
 public:
-  RawAddress addr = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  RawAddress addr = RawAddress("11:22:33:44:55:66");
   NiceMock<gatt::MockBtaGattServerInterface> gatt_server_interface;
   uint8_t role = 0b1;
   uint8_t UGG_feature = 0b111;

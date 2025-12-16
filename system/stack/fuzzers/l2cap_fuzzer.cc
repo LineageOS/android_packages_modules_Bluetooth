@@ -157,12 +157,12 @@ public:
 
 }  // namespace
 
-constexpr RawAddress kAttAddr({0x11, 0x78, 0x78, 0x78, 0x78, 0x78});
+constexpr RawAddress kAttAddr("11:78:78:78:78:78");
 constexpr uint16_t kAttHndl = 0x0111;
 
-constexpr RawAddress kEattAddr({0x22, 0x78, 0x78, 0x78, 0x78, 0x78});
+constexpr RawAddress kEattAddr("22:78:78:78:78:78");
 
-constexpr RawAddress kSmpBrAddr({0x33, 0x78, 0x78, 0x78, 0x78, 0x78});
+constexpr RawAddress kSmpBrAddr("33:78:78:78:78:78");
 constexpr uint16_t kSmpBrHndl = 0x0222;
 
 constexpr uint16_t kNumClassicAclBuffer = 100;
