@@ -200,8 +200,7 @@ static void init_stack(bluetooth::core::CoreInterface* interface) {
 
 // Synchronous function to start up the stack
 static void start_stack(bluetooth::core::CoreInterface* interface,
-                        ProfileStartCallback startProfiles, ProfileStopCallback stopProfiles,
-                        const std::string local_name) {
+                        ProfileStartCallback startProfiles, const std::string local_name) {
   if (stack_is_running) {
     info("stack already brought up");
     return;
@@ -245,10 +244,7 @@ static void start_stack(bluetooth::core::CoreInterface* interface,
   BTA_dm_on_hw_on(local_name);
 
   if (future_await(local_hack_future) != FUTURE_SUCCESS) {
-    error("failed to start up the stack");
-    stack_is_running = true;  // So stack shutdown actually happens
-    stop_stack(stopProfiles);
-    return;
+    fatal("failed to start up the stack");
   }
 
   bluetooth::ras::GetRasServer()->Initialize();

@@ -458,7 +458,7 @@ static int enable(const std::string local_name) {
   }
 
   stack_manager_get_interface()->start_up_stack_async(CreateInterfaceToProfiles(), &start_profiles,
-                                                      &stop_profiles, local_name);
+                                                      local_name);
   return BT_STATUS_SUCCESS;
 }
 
