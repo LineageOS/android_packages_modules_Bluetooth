@@ -582,11 +582,9 @@ TEST_F(StackSdpUtilsTest, sdpu_compare_uuid_with_attr_u16) {
                   },
   };
 
-  bool is_valid{false};
-  bluetooth::Uuid uuid = bluetooth::Uuid::FromString("1234", &is_valid);
+  bluetooth::Uuid uuid = bluetooth::Uuid("1234");
 
   ASSERT_EQ(uuid.As16Bit(), attr.attr_value.v.u16);
-  ASSERT_TRUE(is_valid);
   ASSERT_TRUE(sdpu_compare_uuid_with_attr(uuid, &attr));
 }
 
@@ -604,11 +602,9 @@ TEST_F(StackSdpUtilsTest, sdpu_compare_uuid_with_attr_u32) {
                   },
   };
 
-  bool is_valid{false};
-  bluetooth::Uuid uuid = bluetooth::Uuid::FromString("12345678", &is_valid);
+  bluetooth::Uuid uuid = bluetooth::Uuid("12345678");
 
   ASSERT_EQ(uuid.As32Bit(), attr.attr_value.v.u32);
-  ASSERT_TRUE(is_valid);
   ASSERT_TRUE(sdpu_compare_uuid_with_attr(uuid, &attr));
 }
 
@@ -629,13 +625,10 @@ TEST_F(StackSdpUtilsTest, sdpu_compare_uuid_with_attr_u128) {
   memcpy(p_attr, &attr, sizeof(tSDP_DISC_ATTR));
   memcpy(p_attr->attr_value.v.array, data, 16);
 
-  bool is_valid{false};
-  bluetooth::Uuid uuid =
-          bluetooth::Uuid::FromString("12345678-9abc-def0-1234-56789abcdef0", &is_valid);
+  bluetooth::Uuid uuid = bluetooth::Uuid("12345678-9abc-def0-1234-56789abcdef0");
 
   ASSERT_EQ(0, memcmp(uuid.To128BitBE().data(), (void*)p_attr->attr_value.v.array,
                       bluetooth::Uuid::kNumBytes128));
-  ASSERT_TRUE(is_valid);
   ASSERT_TRUE(sdpu_compare_uuid_with_attr(uuid, p_attr));
 
   free(p_attr);

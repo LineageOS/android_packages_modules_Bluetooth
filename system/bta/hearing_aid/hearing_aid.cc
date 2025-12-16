@@ -132,12 +132,12 @@ constexpr tCONN_ID INVALID_CONN_ID = 0;
 namespace {
 
 // clang-format off
-Uuid HEARING_AID_UUID          = Uuid::FromString("FDF0");
-Uuid READ_ONLY_PROPERTIES_UUID = Uuid::FromString("6333651e-c481-4a3e-9169-7c902aad37bb");
-Uuid AUDIO_CONTROL_POINT_UUID  = Uuid::FromString("f0d4de7e-4a88-476c-9d9f-1937b0996cc0");
-Uuid AUDIO_STATUS_UUID         = Uuid::FromString("38663f1a-e711-4cac-b641-326b56404837");
-Uuid VOLUME_UUID               = Uuid::FromString("00e4ca9e-ab14-41e4-8823-f9e70c7e91df");
-Uuid LE_PSM_UUID               = Uuid::FromString("2d410339-82b6-42aa-b34e-e2e01df8cc1a");
+constinit Uuid HEARING_AID_UUID("FDF0");
+constinit Uuid READ_ONLY_PROPERTIES_UUID("6333651e-c481-4a3e-9169-7c902aad37bb");
+constinit Uuid AUDIO_CONTROL_POINT_UUID("f0d4de7e-4a88-476c-9d9f-1937b0996cc0");
+constinit Uuid AUDIO_STATUS_UUID("38663f1a-e711-4cac-b641-326b56404837");
+constinit Uuid VOLUME_UUID("00e4ca9e-ab14-41e4-8823-f9e70c7e91df");
+constinit Uuid LE_PSM_UUID("2d410339-82b6-42aa-b34e-e2e01df8cc1a");
 // clang-format on
 
 static void read_rssi_callback(void* p_void);

@@ -27,6 +27,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.android.bluetooth.TestLooper
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.mockPackageManager
 import com.android.tests.bluetooth.MockitoRule
 import org.junit.After
 import org.junit.Before
@@ -62,7 +63,7 @@ class AdvertiseManagerTest {
 
     @Before
     fun setUp() {
-        doReturn(packageManager).whenever(adapterService).packageManager
+        adapterService.mockPackageManager(packageManager)
         doReturn(APP_NAME).whenever(packageManager).getNameForUid(anyInt())
 
         advertiseManager =
@@ -70,7 +71,7 @@ class AdvertiseManagerTest {
                 adapterService,
                 gattService,
                 nativeInterface,
-                TestLooper().getLooper(),
+                TestLooper().looper,
                 advertiserMap,
             )
 

@@ -299,10 +299,10 @@ typedef union {
 #define ANDROID_HEADTRACKER_CONTROL_CHARAC_UUID_STRING "8584cbb5-2d58-45a3-ab9d-583e0958b067"
 #define ANDROID_HEADTRACKER_REPORT_CHARAC_UUID_STRING "e66dd173-b2ae-4f5a-ae16-0162af8038ae"
 
-extern const bluetooth::Uuid ANDROID_HEADTRACKER_SERVICE_UUID;
-extern const bluetooth::Uuid ANDROID_HEADTRACKER_VERSION_CHARAC_UUID;
-extern const bluetooth::Uuid ANDROID_HEADTRACKER_CONTROL_CHARAC_UUID;
-extern const bluetooth::Uuid ANDROID_HEADTRACKER_REPORT_CHARAC_UUID;
+extern constinit bluetooth::Uuid ANDROID_HEADTRACKER_SERVICE_UUID;
+extern constinit bluetooth::Uuid ANDROID_HEADTRACKER_VERSION_CHARAC_UUID;
+extern constinit bluetooth::Uuid ANDROID_HEADTRACKER_CONTROL_CHARAC_UUID;
+extern constinit bluetooth::Uuid ANDROID_HEADTRACKER_REPORT_CHARAC_UUID;
 
 /* BTA HH callback function */
 typedef void(tBTA_HH_CBACK)(tBTA_HH_EVT event, tBTA_HH* p_data);

@@ -38,10 +38,10 @@ import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
 import static android.bluetooth.BluetoothUtils.logRemoteException;
 import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 
+import static com.android.bluetooth.Util.isPackageNameAccurate;
 import static com.android.bluetooth.Utils.callbackToApp;
 import static com.android.bluetooth.Utils.getBytesFromAddress;
 import static com.android.bluetooth.Utils.isDualModeAudioEnabled;
-import static com.android.bluetooth.Utils.isPackageNameAccurate;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
@@ -391,6 +391,8 @@ public class AdapterService extends Service {
     private String mLocalName; // Set when SystemServer bind to the AdapterService
     private String mScanModeChangedDuringSuspendFrom;
     private int mScanModeAfterSuspend;
+
+    private final Map<BluetoothDevice, Integer> mDisconnectReasons = new ConcurrentHashMap<>();
 
     // Report ID definition
     public enum BqrQualityReportId {
@@ -3299,6 +3301,22 @@ public class AdapterService extends Service {
         return getConnectionState(device) != BluetoothDevice.CONNECTION_STATE_DISCONNECTED;
     }
 
+    void setDeviceDisconnectReason(BluetoothDevice device, int reason) {
+        mDisconnectReasons.put(device, reason);
+    }
+
+    /**
+     * Get and clear the disconnect reason for a remote device
+     *
+     * @param device Remote device
+     * @return disconnect reason for the device, or {@link
+     *     BluetoothStatusCodes#ERROR_DISCONNECT_REASON_LOCAL_REQUEST} if not found
+     */
+    int popDeviceDisconnectReason(BluetoothDevice device) {
+        var reason = mDisconnectReasons.remove(device);
+        return reason != null ? reason : BluetoothStatusCodes.ERROR_DISCONNECT_REASON_LOCAL_REQUEST;
+    }
+
     private void addGattClientToControlAutoActiveMode(
             LeAudioService leAudio, int clientIf, BluetoothDevice device) {
         /* When GATT client is connecting to LeAudio device, stack should not assume that
@@ -3769,7 +3787,11 @@ public class AdapterService extends Service {
      * @param device is the remote device with which to disconnect these profiles
      * @return true if all profiles successfully disconnected, false if an error occurred
      */
-    public int disconnectAllEnabledProfiles(BluetoothDevice device) {
+    public int disconnectAllEnabledProfiles(BluetoothDevice device, int reason) {
+        if (reason != BluetoothStatusCodes.SUCCESS) {
+            setDeviceDisconnectReason(device, reason);
+        }
+
         if (!profileServicesRunning()) {
             Log.e(TAG, "disconnectAllEnabledProfiles: Not all profile services bound");
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
@@ -4460,8 +4482,7 @@ public class AdapterService extends Service {
             mDatabaseManager.handleBondStateChanged(device, fromState, toState); // Migrating
         }
 
-        if (toState == BOND_NONE
-                || (Flags.rebokePermissionOnUnbond() && fromState == BOND_BONDED)) {
+        if (toState == BOND_NONE || fromState == BOND_BONDED) {
             // Remove the permissions for unbonded devices
             setMessageAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN);
             setPhonebookAccessPermission(device, BluetoothDevice.ACCESS_UNKNOWN);

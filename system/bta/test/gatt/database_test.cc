@@ -38,10 +38,10 @@ const Uuid INCLUDE = Uuid::From16Bit(GATT_UUID_INCLUDE_SERVICE);
 const Uuid CHARACTERISTIC = Uuid::From16Bit(GATT_UUID_CHAR_DECLARE);
 const Uuid CHARACTERISTIC_EXTENDED_PROPERTIES = Uuid::From16Bit(GATT_UUID_CHAR_EXT_PROP);
 
-Uuid SERVICE_1_UUID = Uuid::FromString("1800");
-Uuid SERVICE_2_UUID = Uuid::FromString("1801");
-Uuid SERVICE_1_CHAR_1_UUID = Uuid::FromString("2a00");
-Uuid SERVICE_1_CHAR_1_DESC_1_UUID = Uuid::FromString("2902");
+Uuid SERVICE_1_UUID = Uuid("1800");
+Uuid SERVICE_2_UUID = Uuid("1801");
+Uuid SERVICE_1_CHAR_1_UUID = Uuid("2a00");
+Uuid SERVICE_1_CHAR_1_DESC_1_UUID = Uuid("2902");
 }  // namespace
 
 /* This test makes sure that each possible GATT cache element is properly
@@ -108,7 +108,7 @@ TEST(GattCacheTest, stored_attribute_to_binary_service_test) {
   attr = {
           .handle = 0x0001,
           .type = PRIMARY_SERVICE,
-          .value = {.service = {.uuid = Uuid::FromString("1800"), .end_handle = 0x001c}},
+          .value = {.service = {.uuid = Uuid("1800"), .end_handle = 0x001c}},
   };
 
   constexpr size_t len = sizeof(StoredAttribute);
@@ -144,7 +144,7 @@ TEST(GattCacheTest, stored_attribute_to_binary_included_service_test) {
                             {
                                     .handle = 0x0010,
                                     .end_handle = 0x001f,
-                                    .uuid = Uuid::FromString("1801"),
+                                    .uuid = Uuid("1801"),
                             }},
   };
 
@@ -176,7 +176,7 @@ TEST(GattCacheTest, stored_attribute_to_binary_characteristic_test) {
           .type = CHARACTERISTIC,
           .value = {.characteristic = {.properties = 0x02,
                                        .value_handle = 0x0003,
-                                       .uuid = Uuid::FromString("2a00")}},
+                                       .uuid = Uuid("2a00")}},
   };
 
   // There is one byte of padding at offset 18 in the union. This is causing the test to fail on
@@ -209,7 +209,7 @@ TEST(GattCacheTest, stored_attribute_to_binary_descriptor_test) {
   memset(&attr, 0, sizeof(attr));
 
   attr = {.handle = 0x0003,
-          .type = Uuid::FromString("2902"),
+          .type = Uuid("2902"),
           .value = {.characteristic_extended_properties = 0x00}};
 
   constexpr size_t len = sizeof(StoredAttribute);
@@ -275,7 +275,7 @@ TEST(GattCacheTest, stored_attribute_to_binary_characteristic_extended_propertie
   memset(&attr, 0, sizeof(attr));
 
   attr = {.handle = 0x0003,
-          .type = Uuid::FromString("2900"),
+          .type = Uuid("2900"),
           .value = {.characteristic_extended_properties = 0x0001}};
 
   constexpr size_t len = sizeof(StoredAttribute);
@@ -305,7 +305,7 @@ TEST(GattCacheTest, stored_attribute_serialized_to_binary_characteristic_extende
   StoredAttribute attr;
 
   attr = {.handle = 0x0003,
-          .type = Uuid::FromString("2900"),
+          .type = Uuid("2900"),
           .value = {.characteristic_extended_properties = 0x0001}};
 
   constexpr size_t len = StoredAttribute::kSizeOnDisk;
@@ -337,7 +337,7 @@ TEST(GattCacheTest, stored_attributes_serialized_to_binary_test) {
   /*
   // Characteristic extended property
   attr = {.handle = 0x0003,
-          .type = Uuid::FromString("2900"),
+          .type = Uuid("2900"),
           .value.characteristic_extended_properties = 0x1234};
   log::error("{}", base::HexEncode(&attr, StoredAttribute::kSizeOnDisk));
   */
@@ -363,10 +363,10 @@ TEST(GattCacheTest, stored_attributes_serialized_to_binary_test) {
   // Primary Service
   attr = {
       .handle = 0x0203,
-      .type = Uuid::FromString("2800"),
+      .type = Uuid("2800"),
       .value.service =
           {
-              .uuid = Uuid::FromString("4203"),
+              .uuid = Uuid("4203"),
               .end_handle = 0x1203,
           },
   };
@@ -391,10 +391,10 @@ TEST(GattCacheTest, stored_attributes_serialized_to_binary_test) {
   // Secondary Service
   attr = {
       .handle = 0x0304,
-      .type = Uuid::FromString("2801"),
+      .type = Uuid("2801"),
       .value.service =
           {
-              .uuid = Uuid::FromString("4303"),
+              .uuid = Uuid("4303"),
               .end_handle = 0x1203,
           },
   };
@@ -420,12 +420,12 @@ TEST(GattCacheTest, stored_attributes_serialized_to_binary_test) {
   // Included Service
   attr = {
       .handle = 0x0103,
-      .type = Uuid::FromString("2802"),
+      .type = Uuid("2802"),
       .value.included_service =
           {
               .handle = 0x0134,
               .end_handle = 0x0138,
-              .uuid = Uuid::FromString("3456"),
+              .uuid = Uuid("3456"),
           },
   };
   log::error("{}", base::HexEncode(&attr, StoredAttribute::kSizeOnDisk));
@@ -450,10 +450,10 @@ TEST(GattCacheTest, stored_attributes_serialized_to_binary_test) {
   // characteristic definition
   attr = {
       .handle = 0x0103,
-      .type = Uuid::FromString("2803"),
+      .type = Uuid("2803"),
       .value.characteristic = {.properties = 4,
                                .value_handle = 0x302,
-                               .uuid = Uuid::FromString("3456")},
+                               .uuid = Uuid("3456")},
   };
   log::error("{}", base::HexEncode(&attr, StoredAttribute::kSizeOnDisk));
   */
@@ -477,7 +477,7 @@ TEST(GattCacheTest, stored_attributes_serialized_to_binary_test) {
   // Unknown Uuid
   attr = {
       .handle = 0x0103,
-      .type = Uuid::FromString("4444"),
+      .type = Uuid("4444"),
       .value.characteristic = {},
   };
   log::error("{}", base::HexEncode(&attr, StoredAttribute::kSizeOnDisk));

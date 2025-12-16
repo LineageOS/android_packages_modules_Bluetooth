@@ -40,6 +40,7 @@
 #include "hci/controller.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"
+#include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_ble_api_types.h"
@@ -416,7 +417,7 @@ static void bta_gattc_init_bk_conn(const tBTA_GATTC_API_OPEN* p_data, tBTA_GATTC
   /* always call open to hold a connection */
   if (!GATT_Connect(p_data->client_if, p_data->remote_bda, BLE_ADDR_PUBLIC, p_data->connection_type,
                     p_data->transport, false, p_data->preferred_mtu, p_data->prefer_relax_mode,
-                    false)) {
+                    p_data->auto_mtu_enabled)) {
     log::error("Unable to connect to remote bd_addr={}", p_data->remote_bda);
     bta_gattc_send_open_cback(p_clreg, GATT_ILLEGAL_PARAMETER, p_data->remote_bda,
                               GATT_INVALID_CONN_ID, BT_TRANSPORT_LE, 0);
@@ -511,6 +512,13 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   }
 
   p_clcb->p_srcb->connected = true;
+  if (com::android::bluetooth::flags::gatt_conn_settings()) {
+    if (p_clcb->p_srcb->mtu == GATT_DEF_BLE_MTU_SIZE) {
+      // Set the default based on the APP's preference
+      log::verbose("bd_addr: {}", p_clcb->bda);
+      GATTC_SetDefaultMtu(p_clcb->bda);
+    }
+  }
 
   if (p_clcb->p_srcb->mtu == 0) {
     p_clcb->p_srcb->mtu = GATT_DEF_BLE_MTU_SIZE;
@@ -1230,6 +1238,10 @@ static void bta_gattc_cfg_mtu_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_OP_
     }
   }
 
+  if (com::android::bluetooth::flags::gatt_conn_settings() && p_data->p_cmpl &&
+      p_data->status == GATT_SUCCESS) {
+    p_clcb->p_srcb->mtu = p_data->p_cmpl->mtu;
+  }
   /* configure MTU complete, callback */
   cb_data.cfg_mtu.conn_id = p_clcb->bta_conn_id;
   cb_data.cfg_mtu.status = p_data->status;

@@ -138,12 +138,12 @@ class HearingAidTestBase : public ::testing::Test {
 protected:
   HearingAidAudioReceiver* audio_receiver_;
 
-  Uuid HEARING_AID_UUID = Uuid::FromString("FDF0");
-  Uuid READ_ONLY_PROPERTIES_UUID = Uuid::FromString("6333651e-c481-4a3e-9169-7c902aad37bb");
-  Uuid AUDIO_CONTROL_POINT_UUID = Uuid::FromString("f0d4de7e-4a88-476c-9d9f-1937b0996cc0");
-  Uuid AUDIO_STATUS_UUID = Uuid::FromString("38663f1a-e711-4cac-b641-326b56404837");
-  Uuid VOLUME_UUID = Uuid::FromString("00e4ca9e-ab14-41e4-8823-f9e70c7e91df");
-  Uuid LE_PSM_UUID = Uuid::FromString("2d410339-82b6-42aa-b34e-e2e01df8cc1a");
+  Uuid HEARING_AID_UUID = Uuid("FDF0");
+  Uuid READ_ONLY_PROPERTIES_UUID = Uuid("6333651e-c481-4a3e-9169-7c902aad37bb");
+  Uuid AUDIO_CONTROL_POINT_UUID = Uuid("f0d4de7e-4a88-476c-9d9f-1937b0996cc0");
+  Uuid AUDIO_STATUS_UUID = Uuid("38663f1a-e711-4cac-b641-326b56404837");
+  Uuid VOLUME_UUID = Uuid("00e4ca9e-ab14-41e4-8823-f9e70c7e91df");
+  Uuid LE_PSM_UUID = Uuid("2d410339-82b6-42aa-b34e-e2e01df8cc1a");
 
   static constexpr uint16_t kSvcStartHdl = 0x0010;
   static constexpr uint16_t kReadOnlyProperties = 0x0012;

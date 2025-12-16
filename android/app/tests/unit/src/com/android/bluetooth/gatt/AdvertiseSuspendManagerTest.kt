@@ -55,17 +55,6 @@ class AdvertiseSuspendManagerTest {
 
     private lateinit var advertiseSuspendManager: AdvertiseSuspendManager
 
-    private val REG_ID1 = -1
-    private val REG_ID2 = -2
-    private val ADVERTISER_ID1 = 1
-    private val ADVERTISER_ID2 = 2
-    private val DURATION1 = 60
-    private val DURATION2 = 61
-    private val MAX_EXT_ADV_EVENTS1 = 10
-    private val MAX_EXT_ADV_EVENTS2 = 11
-    private val STATUS_OK = 0
-    private val STATUS_FAIL = 1
-
     @Before
     fun setUp() {
         advertiseSuspendManager = AdvertiseSuspendManager(advertiseManager, adapterService)
@@ -310,5 +299,18 @@ class AdvertiseSuspendManagerTest {
         order.verify(advertiseManager).setAdvertisingData(eq(ADVERTISER_ID1), eq(advertiseData))
         order.verify(advertiseManager).setScanResponseData(eq(ADVERTISER_ID1), eq(scanResponse))
         order.verify(advertiseManager).setAdvertisingParameters(eq(ADVERTISER_ID1), eq(parameters))
+    }
+
+    companion object {
+        private const val REG_ID1 = -1
+        private const val REG_ID2 = -2
+        private const val ADVERTISER_ID1 = 1
+        private const val ADVERTISER_ID2 = 2
+        private const val DURATION1 = 60
+        private const val DURATION2 = 61
+        private const val MAX_EXT_ADV_EVENTS1 = 10
+        private const val MAX_EXT_ADV_EVENTS2 = 11
+        private const val STATUS_OK = 0
+        private const val STATUS_FAIL = 1
     }
 }

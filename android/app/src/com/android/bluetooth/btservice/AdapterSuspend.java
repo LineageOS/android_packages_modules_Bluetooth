@@ -28,6 +28,7 @@ import static java.util.Objects.requireNonNull;
 import android.annotation.NonNull;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothStatusCodes;
 import android.hardware.devicestate.DeviceState;
 import android.hardware.devicestate.DeviceStateManager;
 import android.hardware.display.DisplayManager;
@@ -406,7 +407,12 @@ public class AdapterSuspend {
 
     private void disconnectProfiles() {
         for (BluetoothDevice device : mDisconnectProfileDevices) {
-            mAdapterService.disconnectAllEnabledProfiles(device);
+            if (Flags.addLocalDisconnectReason()) {
+                mAdapterService.disconnectAllEnabledProfiles(
+                        device, BluetoothStatusCodes.ERROR_DISCONNECT_REASON_ADAPTER_SUSPEND);
+            } else {
+                mAdapterService.disconnectAllEnabledProfiles(device, BluetoothStatusCodes.SUCCESS);
+            }
         }
     }
 

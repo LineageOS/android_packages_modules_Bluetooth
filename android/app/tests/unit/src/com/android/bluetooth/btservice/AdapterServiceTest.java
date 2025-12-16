@@ -56,7 +56,9 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.IBluetoothCallback;
+import android.bluetooth.IBluetoothConnectionCallback;
 import android.companion.CompanionDeviceManager;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -110,6 +112,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 
@@ -149,6 +152,7 @@ public class AdapterServiceTest {
     @Mock private ProfileService mMockService1;
     @Mock private ProfileService mMockService2;
     @Mock private IBluetoothCallback mIBluetoothCallback;
+    @Mock private IBluetoothConnectionCallback mConnectionCallback;
     @Mock private Binder mBinder;
     @Mock private MetricsLogger mMockMetricsLogger;
     @Mock private ScanNativeInterface mScanNativeInterface;
@@ -344,6 +348,7 @@ public class AdapterServiceTest {
                 .getDatabasePath(anyString());
 
         doReturn(mBinder).when(mIBluetoothCallback).asBinder();
+        doReturn(mBinder).when(mConnectionCallback).asBinder();
 
         configureEnabledProfiles();
 
@@ -352,6 +357,7 @@ public class AdapterServiceTest {
         mAdapter.onCreate();
         mLooper.dispatchAll();
         mAdapter.registerRemoteCallback(mIBluetoothCallback);
+        mAdapter.getBluetoothConnectionCallbacks().register(mConnectionCallback);
     }
 
     @After
@@ -1337,7 +1343,6 @@ public class AdapterServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_REBOKE_PERMISSION_ON_UNBOND)
     @DisableFlags(Flags.FLAG_MAINLINE_BETA_STORAGE) // permission are now part of device entry
     public void testRemovePermissionBondedToBonding() {
         initTest();
@@ -1406,5 +1411,31 @@ public class AdapterServiceTest {
         // The pending request shall be carried out during resume.
         mAdapter.setSuspendState(false);
         order.verify(mNativeInterface).setScanMode(eq(scanModeDiscoverable));
+    }
+
+    @Test
+    public void onDeviceDisconnected_reasonReported() throws RemoteException {
+        initTest();
+        doEnable(false);
+
+        final int reason = BluetoothStatusCodes.ERROR_UNKNOWN;
+        final byte[] address = Utils.getByteAddress(mDevice1);
+
+        mAdapter.getRemoteDevices()
+                .aclStateChangeCallback(
+                        0, // status
+                        address,
+                        mDevice1.getAddressType(),
+                        1, // BluetoothDevice.TRANSPORT_BR_EDR
+                        AbstractionLayer.BT_ACL_STATE_DISCONNECTED,
+                        reason,
+                        0 // handle
+                        );
+        mLooper.dispatchAll();
+
+        ArgumentCaptor<BluetoothDevice> deviceCaptor =
+                ArgumentCaptor.forClass(BluetoothDevice.class);
+        verify(mConnectionCallback).onDeviceDisconnected(deviceCaptor.capture(), eq(reason));
+        assertThat(deviceCaptor.getValue().getAddress()).isEqualTo(mDevice1.getAddress());
     }
 }

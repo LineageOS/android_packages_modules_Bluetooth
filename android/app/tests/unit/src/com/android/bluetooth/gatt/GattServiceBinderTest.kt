@@ -25,7 +25,7 @@ import android.content.AttributionSource
 import android.os.ParcelUuid
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
-import com.android.bluetooth.TestUtils.getTestDevice
+import com.android.bluetooth.getTestDevice
 import com.android.tests.bluetooth.MockitoRule
 import java.util.UUID
 import java.util.function.Supplier
@@ -58,7 +58,6 @@ class GattServiceBinderTest {
     private lateinit var binder: GattServiceBinder
 
     @Before
-    @Throws(Exception::class)
     fun setUp() {
         doAnswer { invocation ->
                 (invocation.getArgument(0) as Runnable).run()

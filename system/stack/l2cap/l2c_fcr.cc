@@ -1600,7 +1600,14 @@ uint8_t l2c_fcr_chk_chan_modes(tL2C_CCB* p_ccb) {
       p_ccb->p_rcb->ertm_info.preferred_mode == L2CAP_FCR_ERTM_MODE) {
     log::warn("L2CAP - Peer does not support our desired channel types");
     p_ccb->p_rcb->ertm_info.preferred_mode = 0;
-    return false;
+    // TODO: This interop fix is temporary. Need to remove If there is a better
+    // way to handle this
+    if (l2c_should_skip_ertm(p_ccb->p_lcb->remote_bd_addr)) {
+      log::info("candidate device for skip ertm");
+      return true;
+    } else {
+      return false;
+    }
   }
   return true;
 }

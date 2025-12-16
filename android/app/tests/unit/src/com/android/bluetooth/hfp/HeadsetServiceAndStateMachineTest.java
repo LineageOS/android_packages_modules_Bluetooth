@@ -67,7 +67,6 @@ import android.os.ParcelUuid;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.SystemProperties;
-import android.platform.test.annotations.EnableFlags;
 import android.platform.test.annotations.RequiresFlagsDisabled;
 import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.CheckFlagsRule;
@@ -123,7 +122,7 @@ public class HeadsetServiceAndStateMachineTest {
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
-        return FlagsWrapper.progressionOf(Flags.FLAG_VOICE_RECOGNITION_FIXES);
+        return FlagsWrapper.progressionOf();
     }
 
     public HeadsetServiceAndStateMachineTest(FlagsWrapper flags) {
@@ -1052,11 +1051,7 @@ public class HeadsetServiceAndStateMachineTest {
         BluetoothDevice disconnectedDevice = getTestDevice(0);
         assertThat(mHeadsetService.startVoiceRecognition(disconnectedDevice)).isFalse();
         mTestLooper.dispatchAll();
-        if (Flags.voiceRecognitionFixes()) {
-            verify(mNativeInterface).isVoiceRecognitionSupported(disconnectedDevice);
-        } else {
-            verifyNoMoreInteractions(mNativeInterface);
-        }
+        verify(mNativeInterface).isVoiceRecognitionSupported(disconnectedDevice);
         verifyNoMoreInteractions(mAudioManager);
     }
 
@@ -1895,7 +1890,6 @@ public class HeadsetServiceAndStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_VOICE_RECOGNITION_FIXES)
     public void testStopVoiceRecognitionBeforeStop_returnsFalse() {
         BluetoothDevice device = getTestDevice(0);
 
@@ -1923,7 +1917,6 @@ public class HeadsetServiceAndStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_VOICE_RECOGNITION_FIXES)
     public void testStartVoiceRecognitionNotSupported_returnsFalse() {
         BluetoothDevice device = getTestDevice(0);
         doReturn(false).when(mNativeInterface).isVoiceRecognitionSupported(device);

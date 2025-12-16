@@ -33,15 +33,13 @@ namespace {
 inline std::pair<uint16_t, uint16_t> make_pair_u16(uint16_t first, uint16_t second) {
   return std::make_pair(first, second);
 }
-
-Uuid SERVICE_1_UUID = Uuid::FromString("00001800-0000-1000-8000-00805f9b34fb");
-Uuid SERVICE_2_UUID = Uuid::FromString("00001801-0000-1000-8000-00805f9b34fb");
-Uuid SERVICE_3_UUID = Uuid::FromString("0000180f-0000-1000-8000-00805f9b34fb");
-Uuid SERVICE_4_UUID = Uuid::FromString("0000fef5-0000-1000-8000-00805f9b34fb");
-Uuid SERVICE_5_UUID = Uuid::FromString("0000180a-0000-1000-8000-00805f9b34fb");
-Uuid SERVICE_1_CHAR_1_UUID = Uuid::FromString("00002a00-0000-1000-8000-00805f9b34fb");
-Uuid SERVICE_1_CHAR_1_DESC_1_UUID = Uuid::FromString("00002902-0000-1000-8000-00805f9b34fb");
-
+constinit Uuid SERVICE_1_UUID("00001800-0000-1000-8000-00805f9b34fb");
+constinit Uuid SERVICE_2_UUID("00001801-0000-1000-8000-00805f9b34fb");
+constinit Uuid SERVICE_3_UUID("0000180f-0000-1000-8000-00805f9b34fb");
+constinit Uuid SERVICE_4_UUID("0000fef5-0000-1000-8000-00805f9b34fb");
+constinit Uuid SERVICE_5_UUID("0000180a-0000-1000-8000-00805f9b34fb");
+constinit Uuid SERVICE_1_CHAR_1_UUID("00002a00-0000-1000-8000-00805f9b34fb");
+constinit Uuid SERVICE_1_CHAR_1_DESC_1_UUID("00002902-0000-1000-8000-00805f9b34fb");
 }  // namespace
 
 /* Verify adding empty service works ok */

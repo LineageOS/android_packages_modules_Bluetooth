@@ -225,16 +225,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_broadcast_fix_autonomous_source_adding"
-    namespace: "bluetooth"
-    description: "Improve handling of broadcast autonomous source adding"
-    bug: "422399972"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_connection_subrating"
     namespace: "bluetooth"
     description: "Support LE audio connection subrating to speed up the reconfiguration process"
@@ -390,6 +380,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_broadcast_always_use_background_scanner"
+    namespace: "bluetooth"
+    description: "Always use the scanner when trying to sync to a broadcaster"
+    bug: "467625545"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_improve_unicast_monitor"
     namespace: "bluetooth"
     description: "Improve unicast monitor mode robustness"
@@ -404,6 +404,16 @@ flag {
     namespace: "bluetooth"
     description: "Disable BIG monitoring when no BIS are selected to be synced to."
     bug: "441243548"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_broadcast_check_sync_advancement_on_remote_resume"
+    namespace: "bluetooth"
+    description: "Check broadcast sync advancement when detecting a remote resume"
+    bug: "467968060"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

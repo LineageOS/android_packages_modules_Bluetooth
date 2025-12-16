@@ -437,6 +437,17 @@ static tGATT_STATUS bta_gattc_sdp_service_disc(tCONN_ID conn_id, tBTA_GATTC_SERV
 
 /** operation completed */
 void bta_gattc_op_cmpl_during_discovery(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
+  /*
+   * As early MTU exchange related response can arrive when discovery in progress,
+   * this enables pushing the callback to application when MTU response arrives
+   * while GATT discovery is in progress
+   */
+  if (com::android::bluetooth::flags::gatt_conn_settings() && p_clcb->p_q_cmd == NULL) {
+    if (p_data->op_cmpl.op_code == GATTC_OPTYPE_CONFIG) {
+      bta_gattc_op_cmpl(p_clcb, p_data);
+    }
+    log::warn("No pending gatt client command, fall thru");
+  }
   // Currently, there are two cases needed to be handled.
   // 1. Read ext prop descriptor value after service discovery
   // 2. Read db hash before starting service discovery
