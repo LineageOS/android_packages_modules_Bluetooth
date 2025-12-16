@@ -4293,23 +4293,6 @@ public class BassClientService extends ConnectableProfile {
             Message message = stateMachine.obtainMessage(BassClientStateMachine.ADD_BCAST_SOURCE);
             message.obj = sourceMetadata;
             stateMachine.sendMessage(message);
-
-            if (!Flags.leaudioBroadcastSimplifySetBcastCode()) {
-                byte[] code = sourceMetadata.getBroadcastCode();
-                if (code != null && code.length != 0) {
-                    sEventLogger.logd(
-                            TAG,
-                            "Set Broadcast Code (Add Source context): "
-                                    + ("device: " + device)
-                                    + (", broadcastId: " + broadcastId)
-                                    + (", broadcastName: " + sourceMetadata.getBroadcastName()));
-
-                    message = stateMachine.obtainMessage(BassClientStateMachine.SET_BCAST_CODE);
-                    message.obj = sourceMetadata;
-                    message.arg1 = BassClientStateMachine.ARGTYPE_METADATA;
-                    stateMachine.sendMessage(message);
-                }
-            }
         }
     }
 
@@ -4396,25 +4379,6 @@ public class BassClientService extends ConnectableProfile {
                     BassConstants.FLAG_SYNC_PA | BassConstants.FLAG_SYNC_BIS_CHANNEL_PREFERENCE,
                     updatedMetadata,
                     ModifyCallReason.API);
-
-            if (!Flags.leaudioBroadcastSimplifySetBcastCode()) {
-                byte[] code = updatedMetadata.getBroadcastCode();
-                if (code != null && code.length != 0) {
-                    sEventLogger.logd(
-                            TAG,
-                            "Set Broadcast Code (Modify Source context): "
-                                    + ("device: " + device)
-                                    + ("sourceId: " + deviceSourceId)
-                                    + (", updatedBroadcastId: " + updatedMetadata.getBroadcastId())
-                                    + (", updatedBroadcastName: "
-                                            + updatedMetadata.getBroadcastName()));
-                    Message message =
-                            stateMachine.obtainMessage(BassClientStateMachine.SET_BCAST_CODE);
-                    message.obj = updatedMetadata;
-                    message.arg1 = BassClientStateMachine.ARGTYPE_METADATA;
-                    stateMachine.sendMessage(message);
-                }
-            }
         }
     }
 
