@@ -3723,7 +3723,7 @@ void l2cu_update_outstanding_packets_lcb(tL2C_LCB* p_lcb, uint16_t num_sent) {
  *
  *******************************************************************************/
 bool l2c_should_skip_ertm(const RawAddress& bd_addr) {
-  const Uuid RMT_CUSTOM_UUID = Uuid::FromString("74ec2172-0bad-4d01-8f77-997b2be0722a");
+  const Uuid RMT_CUSTOM_UUID = Uuid("74ec2172-0bad-4d01-8f77-997b2be0722a");
   std::vector<bluetooth::Uuid> remote_uuids = btif_storage_get_services(bd_addr);
   return std::find(remote_uuids.begin(), remote_uuids.end(), RMT_CUSTOM_UUID) != remote_uuids.end();
 }
