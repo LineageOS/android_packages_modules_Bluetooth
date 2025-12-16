@@ -418,7 +418,7 @@ class GattServiceBinder(private var gattService: GattService?) :
         source: AttributionSource,
     ): Int {
         val gatt = gatt() ?: return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED
-        if (!Utils.callerIsSystemOrActiveOrManagedUser(gatt, TAG, "subrateModeRequest")) {
+        if (!Util.callerIsSystemOrActiveOrManagedUser(gatt, TAG, "subrateModeRequest")) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED
         }
         if (

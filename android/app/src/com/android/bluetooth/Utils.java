@@ -41,11 +41,8 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.PowerExemptionManager;
-import android.os.Process;
 import android.os.SystemClock;
 import android.os.SystemProperties;
-import android.os.UserHandle;
-import android.os.UserManager;
 import android.provider.DeviceConfig;
 import android.provider.Telephony;
 import android.util.Log;
@@ -97,6 +94,10 @@ public final class Utils {
     private static int sSystemUiUid = USER_HANDLE_NULL.getIdentifier();
 
     private Utils() {}
+
+    static int getSystemUiUid() {
+        return sSystemUiUid;
+    }
 
     public static void setSystemUiUid(int uid) {
         sSystemUiUid = uid;
@@ -321,67 +322,6 @@ public final class Utils {
         if (context.checkCallingOrSelfPermission(BLUETOOTH_PRIVILEGED) != PERMISSION_GRANTED) {
             enforceCdmAssociation(cdm, context, source.getPackageName(), device);
         }
-    }
-
-    private static boolean checkCallerIsSystemOrActiveUser() {
-        int callingUid = Binder.getCallingUid();
-        UserHandle callingUser = UserHandle.getUserHandleForUid(callingUid);
-
-        return Process.myUserHandle().equals(callingUser)
-                || (UserHandle.getAppId(sSystemUiUid) == UserHandle.getAppId(callingUid))
-                || (UserHandle.getAppId(Process.SYSTEM_UID) == UserHandle.getAppId(callingUid));
-    }
-
-    private static boolean checkCallerIsSystemOrActiveOrManagedUser(Context context) {
-        if (context == null) {
-            return checkCallerIsSystemOrActiveUser();
-        }
-        int callingUid = Binder.getCallingUid();
-        UserHandle callingUser = UserHandle.getUserHandleForUid(callingUid);
-
-        // Use the Bluetooth process identity when making call to get parent user
-        final long ident = Binder.clearCallingIdentity();
-        try {
-            UserManager um = context.getSystemService(UserManager.class);
-            UserHandle uh = um.getProfileParent(callingUser);
-
-            // In HSUM mode, UserHandle.SYSTEM is only for System and the human users will use other
-            // ids
-            boolean isSystemUserInHsumMode =
-                    um.isHeadlessSystemUserMode() && callingUser.equals(UserHandle.SYSTEM);
-
-            // Always allow SystemUI/System access.
-            return Process.myUserHandle().equals(callingUser)
-                    || Process.myUserHandle().equals(uh)
-                    || (UserHandle.getAppId(sSystemUiUid) == UserHandle.getAppId(callingUid))
-                    || (UserHandle.getAppId(Process.SYSTEM_UID) == UserHandle.getAppId(callingUid))
-                    || (isSystemUserInHsumMode);
-        } catch (Exception ex) {
-            Log.e(TAG, "checkCallerAllowManagedProfiles: Exception ex=" + ex);
-            return false;
-        } finally {
-            Binder.restoreCallingIdentity(ident);
-        }
-    }
-
-    public static boolean checkCallerIsSystemOrActiveOrManagedUser(Context context, String tag) {
-        if (isInstrumentationTestMode()) {
-            return true;
-        }
-        final boolean res = checkCallerIsSystemOrActiveOrManagedUser(context);
-        if (!res) {
-            Log.w(
-                    TAG,
-                    tag
-                            + " - Not allowed for"
-                            + " non-active user and non-system and non-managed user");
-        }
-        return res;
-    }
-
-    public static boolean callerIsSystemOrActiveOrManagedUser(
-            Context context, String tag, String method) {
-        return checkCallerIsSystemOrActiveOrManagedUser(context, tag + "." + method + "()");
     }
 
     /** Converts {@code milliseconds} to unit. Each unit is 0.625 millisecond. */

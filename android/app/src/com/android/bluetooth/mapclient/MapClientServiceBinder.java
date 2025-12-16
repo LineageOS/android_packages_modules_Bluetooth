@@ -65,7 +65,7 @@ class MapClientServiceBinder extends IBluetoothMapClient.Stub implements IProfil
 
         if (!Util.checkProfileAvailable(service, TAG)
                 || !(getCallingUserHandle().isSystem()
-                        || Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG))
+                        || Util.checkCallerIsSystemOrActiveOrManagedUser(service, TAG))
                 || !Util.enforceConnectPermissionForDataDelivery(service, source, TAG)) {
             return null;
         }
@@ -82,7 +82,7 @@ class MapClientServiceBinder extends IBluetoothMapClient.Stub implements IProfil
 
         if (!Util.checkProfileAvailable(service, TAG)
                 || !(getCallingUserHandle().isSystem()
-                        || Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG))
+                        || Util.checkCallerIsSystemOrActiveOrManagedUser(service, TAG))
                 || !Util.enforceConnectPermissionForDataDelivery(service, source, TAG)) {
             return null;
         }

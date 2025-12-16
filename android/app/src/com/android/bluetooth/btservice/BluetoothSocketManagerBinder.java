@@ -281,7 +281,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
     }
 
     private void enforceActiveUser() {
-        if (!Utils.checkCallerIsSystemOrActiveOrManagedUser(mService, TAG)) {
+        if (!Util.checkCallerIsSystemOrActiveOrManagedUser(mService, TAG)) {
             throw new SecurityException("Not allowed for non-active user");
         }
     }
