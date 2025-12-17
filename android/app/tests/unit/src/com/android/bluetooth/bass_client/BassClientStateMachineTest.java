@@ -2651,6 +2651,39 @@ public class BassClientStateMachineTest {
                 hasExtra(EXTRA_PREVIOUS_STATE, STATE_CONNECTED));
     }
 
+    @Test
+    public void testIsSyncedToTheSource_checksSpecificFailureStates() {
+        prepareInitialReceiveStateForGatt();
+
+        int sourceId = TEST_SOURCE_ID;
+        int paSyncStateIdle = BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE;
+        int bigEncryptState = BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_DECRYPTING;
+
+        // CASE A: PA not synced, BIS indicates FAILED_SYNC_TO_BIG
+        long bisSyncStateFailed = BassConstants.BCAST_RCVR_STATE_BIS_SYNC_FAILED_SYNC_TO_BIG;
+
+        generateBroadcastReceiveStatesAndVerify(
+                mSourceTestDevice, sourceId, paSyncStateIdle, bigEncryptState, bisSyncStateFailed);
+
+        assertThat(mStateMachine.isSyncedToTheSource(sourceId)).isFalse();
+
+        // CASE B: PA not synced, BIS indicates NOT_SYNC_TO_BIS
+        long bisSyncStateNone = BassConstants.BCAST_RCVR_STATE_BIS_SYNC_NOT_SYNC_TO_BIS;
+
+        generateBroadcastReceiveStatesAndVerify(
+                mSourceTestDevice, sourceId, paSyncStateIdle, bigEncryptState, bisSyncStateNone);
+
+        assertThat(mStateMachine.isSyncedToTheSource(sourceId)).isFalse();
+
+        // CASE C: PA not synced, BIS indicates Valid Sync (e.g. bit 1 set)
+        long bisSyncStateSuccess = 0x01; // Channel 1 synced
+
+        generateBroadcastReceiveStatesAndVerify(
+                mSourceTestDevice, sourceId, paSyncStateIdle, bigEncryptState, bisSyncStateSuccess);
+
+        assertThat(mStateMachine.isSyncedToTheSource(sourceId)).isTrue();
+    }
+
     private void initToConnectingState() {
         allowConnection(true);
         allowConnectGatt(true);
