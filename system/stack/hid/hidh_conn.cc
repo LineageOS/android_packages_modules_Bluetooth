@@ -134,11 +134,7 @@ tHID_STATUS hidh_conn_reg(void) {
   }
 
   for (xx = 0; xx < kHID_HOST_MAX_DEVICES; xx++) {
-    if (com_android_bluetooth_flags_wait_hid_disconnect_before_marking_unused()) {
-      hh_cb.devices[xx].state = HIDH_DEV_UNUSED;
-    } else {
-      hh_cb.devices[xx].in_use = false;
-    }
+    hh_cb.devices[xx].state = HIDH_DEV_UNUSED;
     hh_cb.devices[xx].conn.conn_state = HID_CONN_STATE_UNUSED;
   }
 
@@ -546,8 +542,7 @@ static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
   }
 
   if ((p_hcon->ctrl_cid == 0) && (p_hcon->intr_cid == 0)) {
-    if (com_android_bluetooth_flags_wait_hid_disconnect_before_marking_unused() &&
-        hh_cb.devices[dhandle].state == HIDH_DEV_REMOVING) {
+    if (hh_cb.devices[dhandle].state == HIDH_DEV_REMOVING) {
       log::verbose("set handle {} state to UNUSED", dhandle);
       hh_cb.devices[dhandle].state = HIDH_DEV_UNUSED;
     } else {
@@ -627,8 +622,7 @@ static void hidh_l2cif_disconnect_cfm(uint16_t l2cap_cid, uint16_t /* result */)
   }
 
   if ((p_hcon->ctrl_cid == 0) && (p_hcon->intr_cid == 0)) {
-    if (com_android_bluetooth_flags_wait_hid_disconnect_before_marking_unused() &&
-        hh_cb.devices[dhandle].state == HIDH_DEV_REMOVING) {
+    if (hh_cb.devices[dhandle].state == HIDH_DEV_REMOVING) {
       log::verbose("set handle {} state to UNUSED", dhandle);
       hh_cb.devices[dhandle].state = HIDH_DEV_UNUSED;
     } else {
@@ -1019,17 +1013,10 @@ void hidh_dump(int fd) {
 }
 #undef DUMPSYS_TAG
 
-bool hidh_in_use(const per_device_ctb& ctb) {
-  if (com_android_bluetooth_flags_wait_hid_disconnect_before_marking_unused()) {
-    return ctb.state != HIDH_DEV_UNUSED;
-  } else {
-    return ctb.in_use;
-  }
-}
+bool hidh_in_use(const per_device_ctb& ctb) { return ctb.state != HIDH_DEV_UNUSED; }
 
 void hidh_conn_reset(uint8_t dhandle) {
   tHID_HOST_DEV_CTB* p_dev = &hh_cb.devices[dhandle];
-  p_dev->in_use = false;
   p_dev->addr = RawAddress::kEmpty;
   p_dev->attr_mask = 0;
   p_dev->state = HIDH_DEV_UNUSED;
