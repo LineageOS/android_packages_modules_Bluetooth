@@ -86,7 +86,7 @@ bthf_client_callbacks_t hf_client_callbacks = {
         last_voice_tag_number_callback,
         ring_indication_cb,
         unknown_event_cb,
-};  // namespace internal
+};
 
 }  // namespace internal
 
