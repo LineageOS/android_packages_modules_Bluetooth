@@ -1891,7 +1891,6 @@ public class ActiveDeviceManagerTest {
      * remove LE Audio active device.
      */
     @Test
-    @EnableFlags(Flags.FLAG_ADM_UNSET_OTHERS_ON_HFP_CHANGED)
     public void activeDeviceChange_withHeadsetAndLeAudioDevices() {
         Utils.setDualModeAudioStateForTesting(false);
         when(mAudioManager.getMode()).thenReturn(AudioManager.MODE_NORMAL);
@@ -1916,7 +1915,6 @@ public class ActiveDeviceManagerTest {
      * remove LE Audio device.
      */
     @Test
-    @EnableFlags(Flags.FLAG_ADM_UNSET_OTHERS_ON_HFP_CHANGED)
     public void activeDeviceChange_withHeadsetAndDualModeAudioDevices() {
         Utils.setDualModeAudioStateForTesting(true);
         when(mAudioManager.getMode()).thenReturn(AudioManager.MODE_NORMAL);
@@ -1943,7 +1941,6 @@ public class ActiveDeviceManagerTest {
      * This should set LE Audio active device.
      */
     @Test
-    @EnableFlags(Flags.FLAG_ADM_UNSET_OTHERS_ON_HFP_CHANGED)
     public void activeDeviceChange_withTwoDualModeAudioDevices() {
         Utils.setDualModeAudioStateForTesting(true);
         when(mAudioManager.getMode()).thenReturn(AudioManager.MODE_NORMAL);

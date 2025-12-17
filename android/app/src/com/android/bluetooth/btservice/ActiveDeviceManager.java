@@ -956,8 +956,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 /* mLeAudioActiveDevice may be updated due to next or previous device being
                  * a dual mode one.
                  */
-                if (Flags.admUnsetOthersOnHfpChanged()
-                        && mLeAudioActiveDevice != null
+                if (mLeAudioActiveDevice != null
                         && device != null
                         && !mLeAudioActiveDevice.equals(device)) {
                     /* HFP device becoming active is not dual mode and was not set as
