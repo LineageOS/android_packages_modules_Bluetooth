@@ -25,8 +25,6 @@
 #include <optional>
 #include <string>
 
-#include "storage/serializable.h"
-
 class RawAddress;
 
 namespace bluetooth {

@@ -32,7 +32,6 @@
 #include "storage/config_cache.h"
 #include "storage/config_cache_helper.h"
 #include "storage/config_keys.h"
-#include "storage/serializable.h"
 
 namespace bluetooth {
 namespace storage {
