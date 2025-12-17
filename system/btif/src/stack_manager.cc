@@ -114,7 +114,6 @@ static bool stack_is_initialized;
 static bool is_running;
 
 static void event_signal_stack_up(void* context);
-static void event_signal_stack_down(void* context);
 
 static bluetooth::core::CoreInterface* interfaceToProfiles;
 
@@ -264,9 +263,17 @@ void stack_disable(ProfileStopCallback stopProfiles) {
   // btm_free() is called in main thread, and is a blocking call.
   get_btm_client_interface().lifecycle.btm_free();
 
-  hack_future = future_new();
-  do_in_jni_thread(base::BindOnce(event_signal_stack_down, nullptr));
-  future_await(hack_future);
+  std::promise<void> off_promise;
+  std::future<void> off_future = off_promise.get_future();
+
+  do_in_jni_thread(base::BindOnce(
+          [](std::promise<void> off_promise) {
+            GetInterfaceToProfiles()->events->invoke_adapter_state_changed_cb(BT_STATE_OFF);
+            off_promise.set_value();
+          },
+          std::move(off_promise)));
+  off_future.wait();  // TODO: remove this future entirely
+
   info("finished");
 }
 
@@ -309,11 +316,6 @@ static void event_signal_stack_up(void* /* context */) {
   // now time to dispatch all the pending profile connect requests.
   btif_queue_connect_next();
   GetInterfaceToProfiles()->events->invoke_adapter_state_changed_cb(BT_STATE_ON);
-}
-
-static void event_signal_stack_down(void* /* context */) {
-  GetInterfaceToProfiles()->events->invoke_adapter_state_changed_cb(BT_STATE_OFF);
-  future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
 }
 
 future_t* stack_manager_get_hack_future() { return hack_future; }
