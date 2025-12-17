@@ -2321,8 +2321,7 @@ public:
 
   void BackgroundConnectIfNeeded(LeAudioDevice* leAudioDevice) {
     if (!leAudioDevice->autoconnect_flag_ ||
-        (com_android_bluetooth_flags_leaudio_do_not_set_autoconnecting_on_connected_device() &&
-         leAudioDevice->GetConnectionState() != DeviceConnectState::DISCONNECTED)) {
+        leAudioDevice->GetConnectionState() != DeviceConnectState::DISCONNECTED) {
       log::debug("Device {} not in the background connect", leAudioDevice->address_);
       return;
     }
