@@ -17,7 +17,7 @@
 
 package com.android.bluetooth.btservice
 
-import android.bluetooth.BluetoothUtils
+import android.bluetooth.BluetoothDevice
 import android.util.Log
 import com.android.bluetooth.Util
 
@@ -50,26 +50,22 @@ object InteropUtil {
     }
 
     /**
-     * Check if a given address or remote device name matches a known interoperability workaround
-     * identified by the interop feature. remote device name will be fetched internally based on the
-     * given address at stack layer.
+     * Check if a given device's address or remote device name matches a known interoperability
+     * workaround identified by the interop feature. remote device name will be fetched internally
+     * based on the given address at stack layer,
      *
      * @param feature a given interop feature defined in [InteropFeature].
-     * @param address a given address to be matched.
+     * @param device the remote device to be matched.
      * @return `true` if matched, `false` otherwise
      */
     @JvmStatic
-    fun interopMatchAddrOrName(
+    fun interopMatchDevice(
         adapterService: AdapterService,
         feature: InteropFeature,
-        address: String,
+        device: BluetoothDevice,
     ): Boolean {
-        val matched = adapterService.interopMatchAddrOrName(feature, address)
-        Log.d(
-            TAG,
-            "interopMatchAddrOrName: feature=${feature.name}" +
-                ", address=${BluetoothUtils.toAnonymizedAddress(address)}, matched=$matched",
-        )
+        val matched = adapterService.interopMatchDevice(feature, device)
+        Log.d(TAG, "interopMatchDevice(feature=${feature.name}, $device): matched=$matched")
         return matched
     }
 }

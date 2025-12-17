@@ -3892,9 +3892,8 @@ public class AdapterService extends Service {
     private boolean shouldDelayA2dpDisconnection(BluetoothDevice device) {
         Objects.requireNonNull(device, "device must not be null");
         boolean matched =
-                interopMatchAddrOrName(
-                        InteropUtil.InteropFeature.INTEROP_A2DP_DELAY_DISCONNECT,
-                        device.getAddress());
+                interopMatchDevice(
+                        InteropUtil.InteropFeature.INTEROP_A2DP_DELAY_DISCONNECT, device);
         return matched;
     }
 
@@ -5195,8 +5194,8 @@ public class AdapterService extends Service {
         }
     }
 
-    public boolean interopMatchAddrOrName(InteropFeature feature, String address) {
-        return mNativeInterface.interopMatchAddrOrName(feature.name(), address);
+    public boolean interopMatchDevice(InteropFeature feature, BluetoothDevice device) {
+        return mNativeInterface.interopMatchAddrOrName(feature.name(), device.getAddress());
     }
 
     /**

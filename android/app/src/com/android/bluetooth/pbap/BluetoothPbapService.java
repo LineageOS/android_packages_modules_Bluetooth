@@ -460,10 +460,10 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
         Log.d(TAG, "pce_version: " + pce_version);
 
         boolean matched =
-                InteropUtil.interopMatchAddrOrName(
+                InteropUtil.interopMatchDevice(
                         getAdapterService(),
                         InteropUtil.InteropFeature.INTEROP_ADV_PBAP_VER_1_2,
-                        remoteDevice.getAddress());
+                        remoteDevice);
         Log.d(TAG, "INTEROP_ADV_PBAP_VER_1_2: matched=" + matched);
 
         if (pce_version == PBAP_ADV_VERSION && !matched) {
