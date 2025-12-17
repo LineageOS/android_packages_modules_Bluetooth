@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "hap_safely_erase_pending_operation_timeout"
-    namespace: "bluetooth"
-    description: "Fixes erasing pending operation timeout"
-    bug: "437279372"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "hap_keep_bonded_dev_in_ram"
     namespace: "bluetooth"
     description: "Bonded HAS devices are kept in RAM until they are unbonded"
