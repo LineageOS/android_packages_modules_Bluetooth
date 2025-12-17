@@ -10,25 +10,6 @@ use std::os::raw::c_char;
 /// which forces the compiler to check and fail when the wrapper lives longer than the data.
 ///
 /// Example 1:
-///     Get the pointer with from_ref(), and pass the pointer into() a C function.
-///     ```
-///     // let addr: RawAddress;
-///     let addr_ptr = LTCheckedPtr::from_ref(&addr);
-///     // The pointer type would be `*const RawAddress`.
-///     ccall!(self, foo, addr_ptr.into());
-///     ```
-///
-/// Example 2:
-///     Get the pointer from() an array-like type, such as slice, Vec, and String.
-///     Cast and pass the pointer into a C function with cast_into().
-///     ```
-///     // let profile: Vec<u8>;
-///     let profile_ptr = LTCheckedPtr::from(&profile);
-///     // The pointer type would be `*const c_char`.
-///     ccall!(self, bar, profile_ptr.cast_into::<c_char>());
-///     ```
-///
-/// Example 3:
 ///     Get the pointer from() a Box or Option, and pass the pointer into() a C function.
 ///     ```
 ///     // let uuid: Option<Uuid>;
@@ -45,18 +26,6 @@ impl<T> LTCheckedPtr<'static, T> {
     /// Returns a null pointer, which has static lifetime.
     pub(crate) fn null() -> Self {
         Self { ptr: std::ptr::null(), _covariant: PhantomData }
-    }
-}
-
-impl<'a, T> LTCheckedPtr<'a, T> {
-    /// Constructs a lifetime-checked constant pointer from a reference.
-    pub(crate) fn from_ref(val: &'a T) -> Self {
-        Self { ptr: val, _covariant: PhantomData }
-    }
-
-    /// Returns the casted raw constant pointer.
-    pub(crate) fn cast_into<CT>(self) -> *const CT {
-        self.ptr as *const CT
     }
 }
 
@@ -111,15 +80,6 @@ impl<'a, T> From<&'a Box<T>> for LTCheckedPtr<'a, T> {
 /// which forces the compiler to check and fail when the wrapper lives longer than the data.
 ///
 /// Example 1:
-///     Get the pointer with from_ref(), and pass the pointer into() a C function.
-///     ```
-///     // let mut record: bluetooth_sdp_record;
-///     let record_ptr = LTCheckedPtrMut::from_ref(&mut report);
-///     // The pointer type would be `*mut bluetooth_sdp_record`.
-///     ccall!(self, foo, record_ptr.into());
-///     ```
-///
-/// Example 2:
 ///     Get the pointer from() an array-like type, such as slice, Vec, and String.
 ///     Cast and pass the pointer into a C function with cast_into().
 ///     ```
@@ -129,7 +89,7 @@ impl<'a, T> From<&'a Box<T>> for LTCheckedPtr<'a, T> {
 ///     ccall!(self, bar, report_ptr.cast_into::<c_char>());
 ///     ```
 ///
-/// Example 3:
+/// Example 2:
 ///     Get the pointer from() a Box or Option, and pass the pointer into() a C function.
 ///     ```
 ///     // let mut callbacks: Box<bt_callbacks_t>;
@@ -150,11 +110,6 @@ impl<T> LTCheckedPtrMut<'static, T> {
 }
 
 impl<'a, T> LTCheckedPtrMut<'a, T> {
-    /// Constructs a lifetime-checked mutable pointer from a reference.
-    pub(crate) fn from_ref(val: &'a mut T) -> Self {
-        Self { ptr: val, _covariant: PhantomData }
-    }
-
     /// Returns the casted raw mutable pointer.
     pub(crate) fn cast_into<CT>(self) -> *mut CT {
         self.ptr as *mut CT

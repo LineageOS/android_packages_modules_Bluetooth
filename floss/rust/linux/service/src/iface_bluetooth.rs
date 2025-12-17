@@ -1,7 +1,7 @@
 use bt_topshim::btif::{
-    BtAddrType, BtBondState, BtConnectionState, BtDeviceType, BtDiscMode, BtPropertyType,
-    BtSspVariant, BtStatus, BtTransport, BtVendorProductInfo, DisplayAddress, DisplayUuid,
-    RawAddress, Uuid,
+    BtAddrType, BtBondState, BtConnectionState, BtDeviceType, BtDiscMode, BtPropertyType, BtStatus,
+    BtTransport, BtVendorProductInfo, DisplayAddress, DisplayUuid, PairingVariant, RawAddress,
+    Uuid,
 };
 use bt_topshim::profiles::socket::SocketType;
 use bt_topshim::profiles::ProfileConnectionState;
@@ -135,7 +135,7 @@ impl IBluetoothCallback for BluetoothCallbackDBus {
         &mut self,
         remote_device: BluetoothDevice,
         cod: u32,
-        variant: BtSspVariant,
+        variant: PairingVariant,
         passkey: u32,
     ) {
         dbus_generated!()
@@ -175,7 +175,7 @@ impl_dbus_arg_enum!(BtConnectionState);
 impl_dbus_arg_enum!(BtDeviceType);
 impl_dbus_arg_enum!(BtAddrType);
 impl_dbus_arg_enum!(BtPropertyType);
-impl_dbus_arg_enum!(BtSspVariant);
+impl_dbus_arg_enum!(PairingVariant);
 impl_dbus_arg_enum!(BtTransport);
 impl_dbus_arg_enum!(ProfileConnectionState);
 impl_dbus_arg_enum!(BtAdapterRole);
@@ -511,7 +511,7 @@ impl IBluetooth for IBluetoothDBus {
     }
 
     // Not exposed over D-Bus. The stack is automatically initialized when the daemon starts.
-    fn init(&mut self, _hci_index: i32) -> bool {
+    fn init(&mut self, _hci_index: i32) {
         dbus_generated!()
     }
 

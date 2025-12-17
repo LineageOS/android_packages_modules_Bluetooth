@@ -187,11 +187,6 @@ void BleAdvertiserIntf::OnGetAddressCallback(uint8_t adv_id, uint8_t addr_type, 
   gdadv_getaddress_callback(adv_id, addr_type, &addr);
 }
 
-std::unique_ptr<BleAdvertiserIntf> GetBleAdvertiserIntf(const unsigned char* gatt_intf) {
-  return std::make_unique<BleAdvertiserIntf>(
-          reinterpret_cast<const btgatt_interface_t*>(gatt_intf)->advertiser);
-}
-
 }  // namespace rust
 }  // namespace topshim
 }  // namespace bluetooth

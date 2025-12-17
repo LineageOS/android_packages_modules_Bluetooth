@@ -56,7 +56,7 @@ tBT_STATUS_LEGACY SdpIntf::remove_sdp_record(int sdp_handle) const {
   return toLegacyStatus(sdp_intf_->remove_sdp_record(sdp_handle));
 }
 
-std::unique_ptr<SdpIntf> GetSdpProfile(const bt_interface_t& intf) {
+std::unique_ptr<SdpIntf> GetSdpProfile(const BtIntf& intf) {
   if (internal::g_sdp_if) {
     std::abort();
   }

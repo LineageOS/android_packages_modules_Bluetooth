@@ -8,9 +8,8 @@ use crate::dbus_iface::{
     export_qa_callback_dbus_intf, export_scanner_callback_dbus_intf,
     export_socket_callback_dbus_intf, export_suspend_callback_dbus_intf,
 };
-use crate::{console_red, console_yellow, print_error, print_info};
-use crate::{ClientContext, GattRequest};
-use bt_topshim::btif::{BtBondState, BtPropertyType, BtSspVariant, BtStatus, RawAddress, Uuid};
+use crate::{console_red, console_yellow, print_error, print_info, ClientContext, GattRequest};
+use bt_topshim::btif::{BtBondState, BtPropertyType, BtStatus, PairingVariant, RawAddress, Uuid};
 use bt_topshim::profiles::gatt::{AdvertisingStatus, GattStatus, LePhy};
 use bt_topshim::profiles::hfp::HfpCodecId;
 use bt_topshim::profiles::le_audio::{
@@ -212,11 +211,11 @@ impl IBluetoothCallback for BtCallback {
         &mut self,
         remote_device: BluetoothDevice,
         _cod: u32,
-        variant: BtSspVariant,
+        variant: PairingVariant,
         passkey: u32,
     ) {
         match variant {
-            BtSspVariant::PasskeyNotification | BtSspVariant::PasskeyConfirmation => {
+            PairingVariant::PasskeyNotification | PairingVariant::PasskeyConfirmation => {
                 print_info!(
                     "Device [{}: {:?}] would like to pair, enter passkey on remote device: {:06}",
                     remote_device.address.to_string(),
@@ -224,7 +223,7 @@ impl IBluetoothCallback for BtCallback {
                     passkey
                 );
             }
-            BtSspVariant::Consent => {
+            PairingVariant::Consent => {
                 let rd = remote_device.clone();
                 self.context.lock().unwrap().run_callback(Box::new(move |context| {
                     // Auto-confirm bonding attempts that were locally initiated.
@@ -243,8 +242,11 @@ impl IBluetoothCallback for BtCallback {
                     }
                 }));
             }
-            BtSspVariant::PasskeyEntry => {
+            PairingVariant::PasskeyEntry => {
                 println!("Got PasskeyEntry but it is not supported...");
+            }
+            PairingVariant::Participation => {
+                println!("Got Participation but it is not supported...");
             }
         }
     }

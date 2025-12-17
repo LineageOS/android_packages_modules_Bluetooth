@@ -66,7 +66,7 @@ tBT_STATUS_LEGACY SocketIntf::disconnect_all(RawAddress bd_addr) const {
   return toLegacyStatus(sock_intf_->disconnect_all(bd_addr));
 }
 
-std::unique_ptr<SocketIntf> GetSocketProfile(const bt_interface_t& intf) {
+std::unique_ptr<SocketIntf> GetSocketProfile(const BtIntf& intf) {
   if (internal::g_sock_if) {
     std::abort();
   }

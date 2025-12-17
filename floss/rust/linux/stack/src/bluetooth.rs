@@ -3,9 +3,9 @@
 use bt_topshim::btif::{
     AclLinkSpec, BaseCallbacks, BaseCallbacksDispatcher, BluetoothInterface, BluetoothProperty,
     BtAclState, BtAddrType, BtBondState, BtConnectionDirection, BtConnectionState, BtDeviceType,
-    BtDiscMode, BtDiscoveryState, BtHciErrorCode, BtPinCode, BtPropertyType, BtScanMode,
-    BtSspVariant, BtState, BtStatus, BtThreadEvent, BtTransport, BtVendorProductInfo,
-    DisplayAddress, DisplayUuid, RawAddress, ToggleableProfile, Uuid, INVALID_RSSI,
+    BtDiscMode, BtDiscoveryState, BtHciErrorCode, BtPinCode, BtPropertyType, BtScanMode, BtState,
+    BtStatus, BtThreadEvent, BtTransport, BtVendorProductInfo, DisplayAddress, DisplayUuid,
+    PairingVariant, RawAddress, ToggleableProfile, Uuid, INVALID_RSSI,
 };
 use bt_topshim::profiles::gatt::GattStatus;
 use bt_topshim::profiles::hfp::EscoCodingFormat;
@@ -88,7 +88,7 @@ pub trait IBluetooth {
     fn unregister_connection_callback(&mut self, callback_id: u32) -> bool;
 
     /// Inits the bluetooth interface. Should always be called before enable.
-    fn init(&mut self, hci_index: i32) -> bool;
+    fn init(&mut self, hci_index: i32);
 
     /// Enables the adapter.
     ///
@@ -542,7 +542,7 @@ pub trait IBluetoothCallback: RPCProxy {
         &mut self,
         remote_device: BluetoothDevice,
         cod: u32,
-        variant: BtSspVariant,
+        variant: PairingVariant,
         passkey: u32,
     );
 
@@ -1501,7 +1501,7 @@ pub(crate) trait BtifBluetoothCallbacks {
     fn discovery_state(&mut self, state: BtDiscoveryState) {}
 
     #[btif_callback(SspRequest)]
-    fn ssp_request(&mut self, remote_addr: RawAddress, variant: BtSspVariant, passkey: u32) {}
+    fn ssp_request(&mut self, remote_addr: RawAddress, variant: PairingVariant, passkey: u32) {}
 
     #[btif_callback(BondState)]
     fn bond_state(
@@ -1851,10 +1851,10 @@ impl BtifBluetoothCallbacks for Bluetooth {
     }
 
     #[log_cb_args]
-    fn ssp_request(&mut self, remote_addr: RawAddress, variant: BtSspVariant, passkey: u32) {
+    fn ssp_request(&mut self, remote_addr: RawAddress, variant: PairingVariant, passkey: u32) {
         // Accept the Just-Works pairing that we initiated or accept incoming ssp pairing if the
         // policy enabled, reject otherwise.
-        if variant == BtSspVariant::Consent {
+        if variant == PairingVariant::Consent {
             let initiated_by_us = Some(remote_addr) == self.active_pairing_address;
             self.set_pairing_confirmation(
                 BluetoothDevice::new(remote_addr, "".to_string()),
@@ -2235,7 +2235,7 @@ impl IBluetooth for Bluetooth {
         self.connection_callbacks.remove_callback(callback_id)
     }
 
-    fn init(&mut self, hci_index: i32) -> bool {
+    fn init(&mut self, hci_index: i32) {
         self.intf.lock().unwrap().initialize(get_bt_dispatcher(self.tx.clone()), hci_index)
     }
 
@@ -2583,7 +2583,7 @@ impl IBluetooth for Bluetooth {
 
         self.intf.lock().unwrap().ssp_reply(
             device.address,
-            BtSspVariant::PasskeyEntry,
+            PairingVariant::PasskeyEntry,
             accept as u8,
             passkey,
         ) == 0
@@ -2592,7 +2592,7 @@ impl IBluetooth for Bluetooth {
     fn set_pairing_confirmation(&self, device: BluetoothDevice, accept: bool) -> bool {
         self.intf.lock().unwrap().ssp_reply(
             device.address,
-            BtSspVariant::PasskeyConfirmation,
+            PairingVariant::PasskeyConfirmation,
             accept as u8,
             0,
         ) == 0

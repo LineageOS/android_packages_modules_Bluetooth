@@ -21,19 +21,17 @@ pub mod ffi {
         include!("bluetooth/types/address.h");
         #[namespace = ""]
         type RawAddress = crate::btif::RawAddress;
-
-        #[namespace = ""]
-        #[cxx_name = "bt_interface_t"]
-        type BluetoothInterface = crate::btif::CxxBluetoothInterface;
     }
 
     unsafe extern "C++" {
         include!("topshim/btav/btav_shim.h");
         include!("topshim/btav_sink/btav_sink_shim.h");
 
+        type BtIntf = crate::btif::ffi::BtIntf;
+
         type AvrcpIntf;
 
-        unsafe fn GetAvrcpProfile(btif: &BluetoothInterface) -> UniquePtr<AvrcpIntf>;
+        unsafe fn GetAvrcpProfile(btif: &BtIntf) -> UniquePtr<AvrcpIntf>;
 
         fn init(self: Pin<&mut AvrcpIntf>);
         fn cleanup(self: Pin<&mut AvrcpIntf>);
@@ -152,7 +150,7 @@ impl Avrcp {
         let avrcpif: cxx::UniquePtr<ffi::AvrcpIntf>;
 
         unsafe {
-            avrcpif = ffi::GetAvrcpProfile(intf.as_raw_btif());
+            avrcpif = ffi::GetAvrcpProfile(intf.as_btif());
         }
 
         Avrcp { internal: avrcpif, is_init: false, is_enabled: false }
