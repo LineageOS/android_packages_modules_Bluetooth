@@ -43,8 +43,6 @@ typedef enum {
 } tHIDH_DEV_STATE;
 
 typedef struct per_device_ctb {
-  // Deprecate with wait_hid_disconnect_before_marking_unused
-  bool in_use;
   // BD-Addr of the host device
   RawAddress addr;
   // 0x01- virtual_cable; 0x02- normally_connectable; 0x03- reconn_initiate; 0x04- sdp_disable;
