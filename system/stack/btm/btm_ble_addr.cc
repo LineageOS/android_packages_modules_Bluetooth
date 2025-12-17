@@ -152,12 +152,12 @@ static bool btm_ble_match_random_bda(void* data, void* context) {
  */
 BtmDevice* btm_ble_resolve_random_addr(const RawAddress& random_bda) {
   if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
-    if (btm_sec_cb.sec_dev_rec == nullptr) {
+    if (btm_sec_cb.sec_dev_rec_ == nullptr) {
       return nullptr;
     }
 
     list_node_t* n =
-            list_foreach(btm_sec_cb.sec_dev_rec, btm_ble_match_random_bda, (void*)&random_bda);
+            list_foreach(btm_sec_cb.sec_dev_rec_, btm_ble_match_random_bda, (void*)&random_bda);
     return (n == nullptr) ? (nullptr) : (static_cast<BtmDevice*>(list_node(n)));
   }
 
@@ -190,12 +190,12 @@ static bool match_identity_addr(BtmDevice* p_device, const RawAddress& bd_addr, 
 /** Find the security record whose LE identity address is matching */
 // TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.
 static BtmDevice* btm_find_dev_by_identity_addr_(const RawAddress& bd_addr, uint8_t addr_type) {
-  if (btm_sec_cb.sec_dev_rec == nullptr) {
+  if (btm_sec_cb.sec_dev_rec_ == nullptr) {
     return nullptr;
   }
 
-  list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
-  for (list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec); node != end;
+  list_node_t* end = list_end(btm_sec_cb.sec_dev_rec_);
+  for (list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec_); node != end;
        node = list_next(node)) {
     BtmDevice* p_device = static_cast<BtmDevice*>(list_node(node));
     if (match_identity_addr(p_device, bd_addr, addr_type)) {
@@ -215,7 +215,7 @@ static BtmDevice* btm_find_dev_by_identity_addr(const RawAddress& bd_addr, uint8
     return nullptr;
   }
 
-  for (BtmDevice& device : btm_sec_cb.device_records) {
+  for (BtmDevice& device : btm_sec_cb.device_records_) {
     // TODO: b/446803190 - Add "const&" in the foreach loop.
     if (device.IsInitialized() && match_identity_addr(&device, bd_addr, addr_type)) {
       return &device;

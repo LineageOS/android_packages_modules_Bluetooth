@@ -52,7 +52,7 @@ protected:
 
   void SetUp() override {
     if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
-      btm_sec_cb.sec_dev_rec = list_new(osi_free);
+      btm_sec_cb.sec_dev_rec_ = list_new(osi_free);
     } else {
       ::btm_sec_cb.Init(BTM_SEC_MODE_SC);  // Initialize the CB
     }
@@ -63,7 +63,7 @@ protected:
 
   void TearDown() override {
     if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
-      list_free(btm_sec_cb.sec_dev_rec);
+      list_free(btm_sec_cb.sec_dev_rec_);
     } else {
       ::btm_sec_cb.Free();  // Free the CB
     }
