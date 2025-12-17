@@ -678,6 +678,10 @@ public:
       return;
     }
     auto handle = complete_view.GetConnectionHandle();
+    if (!round_robin_scheduler_.IsRegistered(handle)) {
+      log::error("This LE link has not existed");
+      return;
+    }
     connections.execute(handle, [=](LeConnectionManagementCallbacks* callbacks) {
       callbacks->OnConnectionUpdate(complete_view.GetStatus(), complete_view.GetConnInterval(),
                                     complete_view.GetConnLatency(),
@@ -692,6 +696,10 @@ public:
       return;
     }
     auto handle = complete_view.GetConnectionHandle();
+    if (!round_robin_scheduler_.IsRegistered(handle)) {
+      log::error("This LE link has not existed");
+      return;
+    }
     connections.execute(handle, [=](LeConnectionManagementCallbacks* callbacks) {
       callbacks->OnPhyUpdate(complete_view.GetStatus(), complete_view.GetTxPhy(),
                              complete_view.GetRxPhy());
@@ -701,6 +709,10 @@ public:
   void on_le_read_remote_version_information(hci::ErrorCode hci_status, uint16_t handle,
                                              uint8_t version, uint16_t manufacturer_name,
                                              uint16_t sub_version) {
+    if (!round_robin_scheduler_.IsRegistered(handle)) {
+      log::error("This LE link has not existed");
+      return;
+    }
     connections.execute(handle, [=](LeConnectionManagementCallbacks* callbacks) {
       callbacks->OnReadRemoteVersionInformationComplete(hci_status, version, manufacturer_name,
                                                         sub_version);
@@ -714,6 +726,10 @@ public:
       return;
     }
     auto handle = data_length_view.GetConnectionHandle();
+    if (!round_robin_scheduler_.IsRegistered(handle)) {
+      log::error("This LE link has not existed");
+      return;
+    }
     connections.execute(handle, [=](LeConnectionManagementCallbacks* callbacks) {
       callbacks->OnDataLengthChange(
               data_length_view.GetMaxTxOctets(), data_length_view.GetMaxTxTime(),
@@ -727,8 +743,12 @@ public:
       log::error("Invalid packet");
       return;
     }
-
-    connections.execute(request_view.GetConnectionHandle(),
+    auto handle = request_view.GetConnectionHandle();
+    if (!round_robin_scheduler_.IsRegistered(handle)) {
+      log::error("This LE link has not existed");
+      return;
+    }
+    connections.execute(handle,
                         [request_view](LeConnectionManagementCallbacks* callbacks) {
                           callbacks->OnParameterUpdateRequest(
                                   request_view.GetIntervalMin(), request_view.GetIntervalMax(),
@@ -743,6 +763,10 @@ public:
       return;
     }
     auto handle = subrate_change_view.GetConnectionHandle();
+    if (!round_robin_scheduler_.IsRegistered(handle)) {
+      log::error("This LE link has not existed");
+      return;
+    }
     connections.execute(handle, [=](LeConnectionManagementCallbacks* callbacks) {
       callbacks->OnLeSubrateChange(subrate_change_view.GetStatus(),
                                    subrate_change_view.GetSubrateFactor(),

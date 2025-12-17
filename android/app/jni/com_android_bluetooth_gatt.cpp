@@ -39,6 +39,7 @@
 #include <vector>
 
 #include "bt_status.h"
+#include "btif_status.h"
 #include "bta/include/bta_gatt_api.h"
 #include "bta/include/bta_ras_api.h"
 #include "com_android_bluetooth.h"
@@ -1331,8 +1332,16 @@ static int gattSubrateRequestNative(JNIEnv* env, jobject /* object */, jint /* c
     return 1;  // BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED
   }
   // TODO does BtStatus align with BluetoothStatusCodes ?
-  sGattIf->client->subrate_request(str2addr(env, address), subrate_min, subrate_max, max_latency,
-                                   cont_num, sup_timeout);
+  if (com::android::bluetooth::flags::gatt_return_unsupported_when_not_support_subrating()) {
+    BtStatus status = sGattIf->client->subrate_request(str2addr(env, address), subrate_min,
+                                                        subrate_max, max_latency, cont_num,
+                                                        sup_timeout);
+    // BluetoothStatusCodes.FEATURE_NOT_SUPPORTED
+    if (status.code() == UNSUPPORTED) return 11;
+  } else {
+    sGattIf->client->subrate_request(str2addr(env, address), subrate_min, subrate_max, max_latency,
+                                    cont_num, sup_timeout);
+  }
   return 0;  // BluetoothStatusCodes.SUCCESS
 }
 
@@ -1342,7 +1351,14 @@ static int gattSubrateModeRequestNative(JNIEnv* env, jobject /* object */, jint 
     return 1;  // BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED
   }
   // TODO does bt_status_t align with BluetoothStatusCodes ?
-  sGattIf->client->subrate_mode_request(client_if, str2addr(env, address), subrate_mode);
+  if (com::android::bluetooth::flags::gatt_return_unsupported_when_not_support_subrating()) {
+    BtStatus status = sGattIf->client->subrate_mode_request(
+        client_if, str2addr(env, address), subrate_mode);
+    // BluetoothStatusCodes.FEATURE_NOT_SUPPORTED
+    if (status.code() == UNSUPPORTED) return 11;
+  } else {
+    sGattIf->client->subrate_mode_request(client_if, str2addr(env, address), subrate_mode);
+  }
   return 0;  // BluetoothStatusCodes.SUCCESS
 }
 

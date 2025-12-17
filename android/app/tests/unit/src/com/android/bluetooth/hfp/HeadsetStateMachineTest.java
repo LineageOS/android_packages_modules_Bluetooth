@@ -1219,7 +1219,6 @@ public class HeadsetStateMachineTest {
         verify(mNativeInterface).atResponseCode(mDevice, HeadsetHalConstants.AT_RESPONSE_OK, 0);
     }
 
-    @EnableFlags(Flags.FLAG_MICROPHONE_MUTE_STATUS_SYNC)
     @Test
     public void testMicMuteStatusChange_WhenAudioOn() {
         setUpAudioOnState();
@@ -1243,7 +1242,6 @@ public class HeadsetStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_MICROPHONE_MUTE_STATUS_SYNC)
     public void testProcessVolumeEvent_withVolumeTypeMic() {
         doReturn(mDevice).when(mHeadsetService).getActiveDevice();
         AudioManager mockAudioManager = mock(AudioManager.class);
@@ -1258,16 +1256,6 @@ public class HeadsetStateMachineTest {
 
         assertThat(mStateMachine.mMicVolume).isEqualTo(MIC_MUTE);
         verify(mockAudioManager).setMicrophoneMute(true);
-    }
-
-    @Test
-    @DisableFlags(Flags.FLAG_MICROPHONE_MUTE_STATUS_SYNC)
-    public void testProcessVolumeEvent_withVolumeTypeMic_old() {
-        doReturn(mDevice).when(mHeadsetService).getActiveDevice();
-
-        mStateMachine.processVolumeEvent(HeadsetHalConstants.VOLUME_TYPE_MIC, 1);
-
-        assertThat(mStateMachine.mMicVolume).isEqualTo(1);
     }
 
     @Test

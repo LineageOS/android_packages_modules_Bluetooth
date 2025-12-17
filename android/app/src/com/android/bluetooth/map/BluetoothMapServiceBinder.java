@@ -63,7 +63,7 @@ class BluetoothMapServiceBinder extends IBluetoothMap.Stub implements IProfileSe
         }
 
         if (!Util.checkProfileAvailable(service, TAG)
-                || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
+                || !Util.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
                 || !Util.enforceConnectPermissionForDataDelivery(service, source, TAG)) {
             return null;
         }

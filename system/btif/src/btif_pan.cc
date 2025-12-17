@@ -31,7 +31,6 @@
 
 #include <arpa/inet.h>
 #include <base/functional/bind.h>
-#include <base/location.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <fcntl.h>
@@ -48,7 +47,6 @@
 #include <cerrno>
 #include <cstddef>
 #include <cstdint>
-#include <cstdlib>
 #include <cstring>
 #include <string>
 
@@ -57,7 +55,6 @@
 #include "btif/include/btif_pan_internal.h"
 #include "btif/include/btif_sock_thread.h"
 #include "btif_status.h"
-#include "hardware/bluetooth.h"
 #include "hci/controller.h"
 #include "include/hardware/bt_pan.h"
 #include "internal_include/bt_target.h"

@@ -829,8 +829,7 @@ void bta_gattc_start_discover_internal(tBTA_GATTC_CLCB* p_clcb) {
   }
 
   bta_gattc_init_cache(p_clcb->p_srcb);
-  p_clcb->status =
-          bta_gattc_discover_pri_service(p_clcb->bta_conn_id, p_clcb->p_srcb, GATT_DISC_SRVC_ALL);
+  p_clcb->status = bta_gattc_discover_pri_service(p_clcb->bta_conn_id, GATT_DISC_SRVC_ALL);
   if (p_clcb->status != GATT_SUCCESS) {
     log::error("discovery on server failed");
     bta_gattc_reset_discover_st(p_clcb->p_srcb, p_clcb->status);

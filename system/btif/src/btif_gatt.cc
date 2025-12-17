@@ -31,7 +31,6 @@
 #include <com_android_bluetooth_flags.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_gatt.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "bta/include/bta_gatt_api.h"

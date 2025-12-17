@@ -66,8 +66,7 @@ void invoke_encryption_change_cb(bt_encryption_change_evt /* bd_addr */) {}
 static void init_stack(bluetooth::core::CoreInterface* /* interface */) {}
 
 static void start_up_stack_async(bluetooth::core::CoreInterface* /* interface */,
-                                 ProfileStartCallback /* startProfiles */,
-                                 ProfileStopCallback /* stopProfiles */, const std::string) {}
+                                 ProfileStartCallback /* startProfiles */, const std::string) {}
 
 static void shut_down_stack_async(ProfileStopCallback /* stopProfiles */) {}
 

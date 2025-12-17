@@ -1194,7 +1194,7 @@ class PairingTest {
         // connect and disconnect the LE link
         testStep_ConnectDisconnectLE(intentReceiver)
         // Ensure that pairing succeeds
-        intentReceiver.verifyReceivedOrdered(
+        intentReceiver.verifyReceived(
             hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
             hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
             hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED),
@@ -1342,16 +1342,7 @@ class PairingTest {
         intentReceiver.close()
     }
 
-    private fun testStep_ConnectDisconnectLE(parentIntentReceiver: IntentReceiver?) {
-        val intentReceiver =
-            IntentReceiver.update(
-                parentIntentReceiver,
-                IntentReceiver.Builder(
-                    context,
-                    BluetoothDevice.ACTION_ACL_CONNECTED,
-                    BluetoothDevice.ACTION_ACL_DISCONNECTED,
-                ),
-            )
+    private fun testStep_ConnectDisconnectLE(intentReceiver: IntentReceiver) {
         val leConn =
             currentDevice
                 .hostBlocking()
@@ -1377,8 +1368,6 @@ class PairingTest {
             hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
             hasExtra(BluetoothDevice.EXTRA_DEVICE, bumbleDevice),
         )
-        /* Unregisters all intent actions registered in this function */
-        intentReceiver.close()
     }
 
     private fun testStep_BondBredr(parentIntentReceiver: IntentReceiver?) {

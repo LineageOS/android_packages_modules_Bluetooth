@@ -103,15 +103,6 @@ public class UtilsTest {
     }
 
     @Test
-    public void checkCallerIsSystemMethods_doesNotCrash() {
-        Context context = InstrumentationRegistry.getInstrumentation().getContext();
-        String tag = "test_tag";
-
-        Utils.checkCallerIsSystemOrActiveOrManagedUser(context, tag);
-        Utils.checkCallerIsSystemOrActiveOrManagedUser(null, tag);
-    }
-
-    @Test
     public void truncateUtf8_toZeroLength_isEmpty() {
         assertThat(Text.truncateUtf8String("abc", 0)).isEmpty();
     }

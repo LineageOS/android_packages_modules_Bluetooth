@@ -34,7 +34,6 @@
 #include <bluetooth/metrics/os_metrics.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
-#include <bluetooth/types/bt_transport.h>
 #include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
@@ -50,7 +49,6 @@
 #include "bta_api.h"
 #include "bta_hh_api.h"
 #include "bta_hh_co.h"
-#include "bta_sec_api.h"
 #include "btif/include/btif_common.h"
 #include "btif/include/btif_dm.h"
 #include "btif/include/btif_hd.h"
@@ -64,7 +62,6 @@
 #include "main/shim/dumpsys.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
-#include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/hidh_api.h"

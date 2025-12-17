@@ -50,7 +50,7 @@ internal class LeAudioPeripheralServiceBinder(svc: LeAudioPeripheralService?) :
         if (
             service == null ||
                 !service.checkProfileAvailable(TAG) ||
-                !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG) ||
+                !Util.checkCallerIsSystemOrActiveOrManagedUser(service, TAG) ||
                 !Util.enforceConnectPermissionForDataDelivery(service, source, TAG)
         ) {
             return null

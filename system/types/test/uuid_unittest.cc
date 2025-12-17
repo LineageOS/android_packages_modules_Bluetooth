@@ -27,18 +27,6 @@ namespace bluetooth {
 
 using testing::ElementsAre;
 
-static const Uuid ONES =
-        Uuid::From128BitBE(Uuid::UUID128Bit{{0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
-                                             0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11}});
-
-static const Uuid SEQUENTIAL =
-        Uuid::From128BitBE(Uuid::UUID128Bit{{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0xab,
-                                             0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89}});
-
-constexpr Uuid kBase =
-        Uuid::From128BitBE(Uuid::UUID128Bit{{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80,
-                                             0x00, 0x00, 0x80, 0x5f, 0x9b, 0x34, 0xfb}});
-
 // Validate the consteval 16-bit constructor.
 // Note: negative test cases cannot be implemented as they would generate compilation errors.
 TEST(UuidTest, ConstructorUuid16) {
@@ -77,143 +65,91 @@ TEST(UuidTest, ConstructorUuid128) {
 
 TEST(UuidTest, IsEmpty) {
   EXPECT_TRUE(Uuid::kEmpty.IsEmpty());
-  EXPECT_FALSE(kBase.IsEmpty());
-}
-
-TEST(UuidTest, IsSerializable) {
-  const Uuid::UUID128Bit& ones_bytes = ONES.To128BitBE();
-  uint8_t* p_ONES = (uint8_t*)&ONES;
-  uint8_t* p_ones_bytes = (uint8_t*)&ones_bytes;
-  EXPECT_EQ(p_ONES, p_ones_bytes);
-  EXPECT_EQ(0, memcmp(p_ONES, p_ones_bytes, sizeof(Uuid)));
+  EXPECT_FALSE(Uuid("1234").IsEmpty());
 }
 
 TEST(UuidTest, GetShortestRepresentationSize) {
-  EXPECT_TRUE(Uuid::kNumBytes16 == kBase.GetShortestRepresentationSize());
-  EXPECT_TRUE(Uuid::kNumBytes32 == Uuid::From32Bit(0x01234567).GetShortestRepresentationSize());
-  EXPECT_TRUE(Uuid::kNumBytes128 == Uuid::kEmpty.GetShortestRepresentationSize());
+  EXPECT_EQ(Uuid("1111").GetShortestRepresentationSize(), Uuid::kNumBytes16);
+  EXPECT_EQ(Uuid("11112222").GetShortestRepresentationSize(), Uuid::kNumBytes32);
+  EXPECT_EQ(Uuid("11112222-3333-4444-5555-666677778888").GetShortestRepresentationSize(),
+            Uuid::kNumBytes128);
 }
 
 TEST(UuidTest, As16Bit) {
-  // Even though this is is not 16bit UUID, we should be able to get proper bits
-  EXPECT_EQ((uint16_t)0x1111, ONES.As16Bit());
-  EXPECT_EQ((uint16_t)0x4567, SEQUENTIAL.As16Bit());
-  EXPECT_EQ((uint16_t)0x0000, kBase.As16Bit());
+  EXPECT_EQ(Uuid("1111").As16Bit(), 0x1111u);
+  EXPECT_EQ(Uuid("11112222").As16Bit(), 0x2222u);
+  EXPECT_EQ(Uuid("11112222-3333-4444-5555-666677778888").As16Bit(), 0x2222u);
 }
 
 TEST(UuidTest, As32Bit) {
-  // Even though this is is not 32bit UUID, we should be able to get proper bits
-  EXPECT_EQ((uint32_t)0x11111111, ONES.As32Bit());
-  EXPECT_EQ((uint32_t)0x01234567, SEQUENTIAL.As32Bit());
-  EXPECT_EQ((uint32_t)0x00000000, kBase.As32Bit());
-  EXPECT_EQ((uint32_t)0x12345678, Uuid::From32Bit(0x12345678).As32Bit());
+  EXPECT_EQ(Uuid("1111").As32Bit(), 0x00001111u);
+  EXPECT_EQ(Uuid("11112222").As32Bit(), 0x11112222u);
+  EXPECT_EQ(Uuid("11112222-3333-4444-5555-666677778888").As32Bit(), 0x11112222u);
 }
 
 TEST(UuidTest, Is16Bit) {
-  EXPECT_FALSE(ONES.Is16Bit());
-  EXPECT_FALSE(SEQUENTIAL.Is16Bit());
-  EXPECT_TRUE(kBase.Is16Bit());
-  EXPECT_TRUE(Uuid::FromString("1ae8").Is16Bit());
+  EXPECT_TRUE(Uuid("1111").Is16Bit());
+  EXPECT_TRUE(Uuid("00001111").Is16Bit());
+  EXPECT_TRUE(Uuid("00001111-0000-1000-8000-00805f9b34fb").Is16Bit());
+  EXPECT_FALSE(Uuid("11112222").Is16Bit());
+  EXPECT_FALSE(Uuid("11112222-0000-1000-8000-00805f9b34fb").Is16Bit());
+  EXPECT_FALSE(Uuid("11112222-3333-4444-5555-666677778888").Is16Bit());
 }
 
 TEST(UuidTest, From16Bit) {
-  EXPECT_EQ(Uuid::From16Bit(0x0000), kBase);
-
-  const uint8_t u2[] = {0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x10, 0x00,
-                        0x80, 0x00, 0x00, 0x80, 0x5f, 0x9b, 0x34, 0xfb};
-  Uuid uuid = Uuid::From16Bit(0x0001);
-  EXPECT_EQ(0, memcmp(&uuid, u2, sizeof(u2)));
-
-  const uint8_t u3[] = {0x00, 0x00, 0x55, 0x3e, 0x00, 0x00, 0x10, 0x00,
-                        0x80, 0x00, 0x00, 0x80, 0x5f, 0x9b, 0x34, 0xfb};
-  uuid = Uuid::From16Bit(0x553e);
-  EXPECT_EQ(0, memcmp(&uuid, u3, sizeof(u3)));
-
-  const uint8_t u4[] = {0x00, 0x00, 0xff, 0xff, 0x00, 0x00, 0x10, 0x00,
-                        0x80, 0x00, 0x00, 0x80, 0x5f, 0x9b, 0x34, 0xfb};
-  uuid = Uuid::From16Bit(0xffff);
-  EXPECT_EQ(0, memcmp(&uuid, u4, sizeof(u4)));
+  EXPECT_EQ(Uuid::From16Bit(0x0000), Uuid("0000"));
+  EXPECT_EQ(Uuid::From16Bit(0x0123), Uuid("0123"));
 }
 
 TEST(UuidTest, From32Bit) {
-  EXPECT_EQ(Uuid::From32Bit(0x00000000), kBase);
-
-  const uint8_t u2[] = {0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x10, 0x00,
-                        0x80, 0x00, 0x00, 0x80, 0x5f, 0x9b, 0x34, 0xfb};
-  Uuid uuid = Uuid::From32Bit(0x00000001);
-  EXPECT_EQ(0, memcmp(&uuid, u2, sizeof(u2)));
-
-  const uint8_t u3[] = {0x33, 0x44, 0x55, 0x3e, 0x00, 0x00, 0x10, 0x00,
-                        0x80, 0x00, 0x00, 0x80, 0x5f, 0x9b, 0x34, 0xfb};
-  uuid = Uuid::From32Bit(0x3344553e);
-  EXPECT_EQ(0, memcmp(&uuid, u3, sizeof(u3)));
-
-  const uint8_t u4[] = {0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x10, 0x00,
-                        0x80, 0x00, 0x00, 0x80, 0x5f, 0x9b, 0x34, 0xfb};
-  uuid = Uuid::From32Bit(0xffffffff);
-  EXPECT_EQ(0, memcmp(&uuid, u4, sizeof(u4)));
+  EXPECT_EQ(Uuid::From32Bit(0x00000000), Uuid("00000000"));
+  EXPECT_EQ(Uuid::From32Bit(0x0123abcd), Uuid("0123abcd"));
 }
 
 TEST(UuidTest, ToString) {
-  const std::string UUID_BASE_STR = "00000000-0000-1000-8000-00805f9b34fb";
-  const std::string UUID_EMP_STR = "00000000-0000-0000-0000-000000000000";
-  const std::string UUID_ONES_STR = "11111111-1111-1111-1111-111111111111";
-  const std::string UUID_SEQ_STR = "01234567-89ab-cdef-abcd-ef0123456789";
+  constexpr char UUID16_STR[] = "00001111-0000-1000-8000-00805f9b34fb";
+  constexpr char UUID32_STR[] = "11112222-0000-1000-8000-00805f9b34fb";
+  constexpr char UUID128_STR[] = "11111111-1111-1111-1111-111111111111";
 
-  EXPECT_EQ(UUID_BASE_STR, kBase.ToString());
-  EXPECT_EQ(UUID_EMP_STR, Uuid::kEmpty.ToString());
-  EXPECT_EQ(UUID_ONES_STR, ONES.ToString());
-  EXPECT_EQ(UUID_SEQ_STR, SEQUENTIAL.ToString());
-
-  Uuid uuid = Uuid::From32Bit(0x12345678);
-  EXPECT_EQ("12345678-0000-1000-8000-00805f9b34fb", uuid.ToString());
+  EXPECT_EQ(Uuid(UUID16_STR).ToString(), UUID16_STR);
+  EXPECT_EQ(Uuid(UUID32_STR).ToString(), UUID32_STR);
+  EXPECT_EQ(Uuid(UUID128_STR).ToString(), UUID128_STR);
 }
 
-TEST(BtifStorageTest, test_string_to_uuid) {
-  const uint8_t u1[] = {0xe3, 0x9c, 0x62, 0x85, 0x86, 0x7f, 0x4b, 0x1d,
-                        0x9d, 0xb0, 0x35, 0xfb, 0xd9, 0xae, 0xbf, 0x22};
-  bool is_valid = false;
-  Uuid uuid = Uuid::FromString("e39c6285-867f-4b1d-9db0-35fbd9aebf22", &is_valid);
-  EXPECT_TRUE(is_valid);
-  EXPECT_EQ(0, memcmp(&uuid, u1, sizeof(u1)));
+TEST(UuidTest, FromString) {
+  // Valid inputs.
+  constexpr char UUID16[6][5] = {"0123", "4567", "89ab", "cdef", "ABCD", "EF00"};
+  constexpr char UUID32[3][9] = {"01234567", "89abcdef", "ABCDEF00"};
+  constexpr char UUID128[] = "01234567-89ab-cdef-ABCD-EFaAaAaAaAaA";
 
-  const uint8_t u2[] = {0x00, 0x00, 0x1a, 0xe8, 0x00, 0x00, 0x10, 0x00,
-                        0x80, 0x00, 0x00, 0x80, 0x5f, 0x9b, 0x34, 0xfb};
-  is_valid = false;
-  uuid = Uuid::FromString("1Ae8", &is_valid);
-  EXPECT_TRUE(is_valid);
-  EXPECT_EQ(0, memcmp(&uuid, u2, sizeof(u2)));
+  EXPECT_EQ(Uuid::FromString(UUID16[0]), Uuid(UUID16[0]));
+  EXPECT_EQ(Uuid::FromString(UUID16[1]), Uuid(UUID16[1]));
+  EXPECT_EQ(Uuid::FromString(UUID16[2]), Uuid(UUID16[2]));
+  EXPECT_EQ(Uuid::FromString(UUID16[3]), Uuid(UUID16[3]));
+  EXPECT_EQ(Uuid::FromString(UUID16[4]), Uuid(UUID16[4]));
+  EXPECT_EQ(Uuid::FromString(UUID16[5]), Uuid(UUID16[5]));
+  EXPECT_EQ(Uuid::FromString(UUID32[0]), Uuid(UUID32[0]));
+  EXPECT_EQ(Uuid::FromString(UUID32[1]), Uuid(UUID32[1]));
+  EXPECT_EQ(Uuid::FromString(UUID32[2]), Uuid(UUID32[2]));
+  EXPECT_EQ(Uuid::FromString(UUID128), Uuid(UUID128));
 
-  const uint8_t u3[] = {0x12, 0x34, 0x11, 0x28, 0x00, 0x00, 0x10, 0x00,
-                        0x80, 0x00, 0x00, 0x80, 0x5f, 0x9b, 0x34, 0xfb};
-  is_valid = false;
-  uuid = Uuid::FromString("12341128", &is_valid);
-  EXPECT_TRUE(is_valid);
-  EXPECT_EQ(0, memcmp(&uuid, u3, sizeof(u3)));
-}
+  // Invalid lengths.
+  EXPECT_EQ(Uuid::FromString(""), std::nullopt);
+  EXPECT_EQ(Uuid::FromString("012"), std::nullopt);
+  EXPECT_EQ(Uuid::FromString("01234"), std::nullopt);
+  EXPECT_EQ(Uuid::FromString("0123456"), std::nullopt);
+  EXPECT_EQ(Uuid::FromString("012345678"), std::nullopt);
+  EXPECT_EQ(Uuid::FromString("01234567-89ab-cdef-ABCD-EFaAaAaAaAa"), std::nullopt);
+  EXPECT_EQ(Uuid::FromString("01234567-89ab-cdef-ABCD-EFaAaAaAaAaAA"), std::nullopt);
 
-TEST(BtifStorageTest, test_string_to_uuid_invalid) {
-  bool is_valid = false;
-  Uuid uuid = Uuid::FromString("This is not a UUID", &is_valid);
-  EXPECT_FALSE(is_valid);
+  // Invalid hyphen placement.
+  EXPECT_EQ(Uuid::FromString("0123456789abcdefABCDEFaAaAaAaAaA"), std::nullopt);
+  EXPECT_EQ(Uuid::FromString("01234567-89ab-cdef-ABCDE-FaAaAaAaAaA"), std::nullopt);
+  EXPECT_EQ(Uuid::FromString("0123456789a-b-cdef-ABCDE-FaAaAaAaAaA"), std::nullopt);
 
-  uuid = Uuid::FromString("11212", &is_valid);
-  EXPECT_FALSE(is_valid);
-
-  uuid = Uuid::FromString("1121 ", &is_valid);
-  EXPECT_FALSE(is_valid);
-
-  uuid = Uuid::FromString("AGFE", &is_valid);
-  EXPECT_FALSE(is_valid);
-
-  uuid = Uuid::FromString("ABFG", &is_valid);
-  EXPECT_FALSE(is_valid);
-
-  uuid = Uuid::FromString("e39c6285867f14b1d9db035fbd9aebf22", &is_valid);
-  EXPECT_FALSE(is_valid);
-
-  uuid = Uuid::FromString("12234567-89ab-cdef-abcd-ef01234567ZZ", &is_valid);
-  EXPECT_FALSE(is_valid);
+  // Invalid characters.
+  EXPECT_EQ(Uuid::FromString("012_"), std::nullopt);
+  EXPECT_EQ(Uuid::FromString("012g"), std::nullopt);
 }
 
 }  // namespace bluetooth

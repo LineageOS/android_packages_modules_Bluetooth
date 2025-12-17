@@ -65,20 +65,16 @@ uint32_t Uuid::As32Bit() const {
   return (((uint32_t)uu[0]) << 24) + (((uint32_t)uu[1]) << 16) + (((uint32_t)uu[2]) << 8) + uu[3];
 }
 
-Uuid Uuid::FromString(const std::string& uuid, bool* is_valid) {
-  if (is_valid) {
-    *is_valid = false;
-  }
-  Uuid ret = kBase;
-
+std::optional<Uuid> Uuid::FromString(const std::string& uuid) {
   if (uuid.empty()) {
-    return ret;
+    return std::nullopt;
   }
 
+  Uuid ret = kBase;
   uint8_t* p = ret.uu.data();
   if (uuid.size() == kString128BitLen) {
     if (uuid[8] != '-' || uuid[13] != '-' || uuid[18] != '-' || uuid[23] != '-') {
-      return ret;
+      return std::nullopt;
     }
 
     int c;
@@ -88,41 +84,33 @@ Uuid Uuid::FromString(const std::string& uuid, bool* is_valid) {
                     &p[0], &p[1], &p[2], &p[3], &p[4], &p[5], &p[6], &p[7], &p[8], &p[9], &p[10],
                     &p[11], &p[12], &p[13], &p[14], &p[15], &c);
     if (rc != 16) {
-      return ret;
+      return std::nullopt;
     }
     if (c != kString128BitLen) {
-      return ret;
+      return std::nullopt;
     }
 
-    if (is_valid) {
-      *is_valid = true;
-    }
   } else if (uuid.size() == 8) {
     int c;
     int rc = sscanf(uuid.c_str(), "%02hhx%02hhx%02hhx%02hhx%n", &p[0], &p[1], &p[2], &p[3], &c);
     if (rc != 4) {
-      return ret;
+      return std::nullopt;
     }
     if (c != 8) {
-      return ret;
+      return std::nullopt;
     }
 
-    if (is_valid) {
-      *is_valid = true;
-    }
   } else if (uuid.size() == 4) {
     int c;
     int rc = sscanf(uuid.c_str(), "%02hhx%02hhx%n", &p[2], &p[3], &c);
     if (rc != 2) {
-      return ret;
+      return std::nullopt;
     }
     if (c != 4) {
-      return ret;
+      return std::nullopt;
     }
-
-    if (is_valid) {
-      *is_valid = true;
-    }
+  } else {
+    return std::nullopt;
   }
 
   return ret;

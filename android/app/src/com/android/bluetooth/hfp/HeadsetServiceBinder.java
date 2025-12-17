@@ -26,8 +26,8 @@ import static java.util.Objects.requireNonNull;
 
 import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothHeadset;
+import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.IBluetoothHeadset;
 import android.content.AttributionSource;
@@ -63,7 +63,7 @@ class HeadsetServiceBinder extends IBluetoothHeadset.Stub implements IProfileSer
         }
 
         if (!Util.checkProfileAvailable(service, TAG)
-                || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
+                || !Util.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
                 || !Util.enforceConnectPermissionForDataDelivery(service, source, TAG)) {
             return null;
         }

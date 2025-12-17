@@ -200,8 +200,7 @@ static void init_stack(bluetooth::core::CoreInterface* interface) {
 
 // Synchronous function to start up the stack
 static void start_stack(bluetooth::core::CoreInterface* interface,
-                        ProfileStartCallback startProfiles, ProfileStopCallback stopProfiles,
-                        const std::string local_name) {
+                        ProfileStartCallback startProfiles, const std::string local_name) {
   if (stack_is_running) {
     info("stack already brought up");
     return;
@@ -213,11 +212,7 @@ static void start_stack(bluetooth::core::CoreInterface* interface,
     init_stack_internal(interface);
   }
 
-  info("is bringing up the stack");
-  future_t* local_hack_future = future_new();
-  hack_future = local_hack_future;
-
-  info("Gd shim module enabled");
+  info("Bringing up the stack");
   get_btm_client_interface().lifecycle.btm_init();
   module_start_up(get_local_module(BTIF_CONFIG_MODULE));
 
@@ -243,13 +238,6 @@ static void start_stack(bluetooth::core::CoreInterface* interface,
   get_btm_client_interface().lifecycle.BTM_reset_complete();
 
   BTA_dm_on_hw_on(local_name);
-
-  if (future_await(local_hack_future) != FUTURE_SUCCESS) {
-    error("failed to start up the stack");
-    stack_is_running = true;  // So stack shutdown actually happens
-    stop_stack(stopProfiles);
-    return;
-  }
 
   bluetooth::ras::GetRasServer()->Initialize();
   bluetooth::ras::GetRasClient()->Initialize();

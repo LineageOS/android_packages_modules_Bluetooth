@@ -117,10 +117,9 @@ public:
   uint32_t As32Bit() const;
 
   // Converts string representing 128, 32, or 16 bit UUID in
-  // xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx, xxxxxxxx, or xxxx format to UUID. If
-  // set, optional is_valid parameter will be set to true if conversion is
-  // successfull, false otherwise.
-  static Uuid FromString(const std::string& uuid, bool* is_valid = nullptr);
+  // xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx, xxxxxxxx, or xxxx format to UUID.
+  // Returns std::nullopt is the input string is invalid.
+  static std::optional<Uuid> FromString(const std::string& uuid);
 
   // Converts 16bit Little Endian representation of UUID to UUID
   static Uuid From16Bit(uint16_t uuid16bit);

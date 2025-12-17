@@ -40,10 +40,8 @@
 #include <bluetooth/types/ble_address_with_type.h>
 #include <bluetooth/types/bt_octets.h>
 #include <bluetooth/types/uuid.h>
-#include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
 
 #include <unordered_set>
 #include <vector>
@@ -584,13 +582,12 @@ size_t btif_split_uuids_string(const char* str, bluetooth::Uuid* p_uuid, size_t 
 
   size_t num_uuids = 0;
   while (str && num_uuids < max_uuids) {
-    bool is_valid;
-    bluetooth::Uuid tmp = Uuid::FromString(std::string(str, Uuid::kString128BitLen), &is_valid);
-    if (!is_valid) {
+    auto tmp = Uuid::FromString(std::string(str, Uuid::kString128BitLen));
+    if (!tmp.has_value()) {
       break;
     }
 
-    *p_uuid = tmp;
+    *p_uuid = *tmp;
     p_uuid++;
 
     num_uuids++;

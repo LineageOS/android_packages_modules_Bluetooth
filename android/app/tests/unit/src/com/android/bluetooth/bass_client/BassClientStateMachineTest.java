@@ -103,10 +103,8 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.bass_client.BassConstants;
 import com.android.bluetooth.le_scan.ScanController;
 import com.android.tests.bluetooth.MockitoRule;
-import com.android.internal.annotations.VisibleForTesting;
 
 import com.google.common.primitives.Bytes;
 
@@ -1083,9 +1081,6 @@ public class BassClientStateMachineTest {
                 BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED;
         value[BassConstants.BCAST_RCVR_STATE_ENC_STATUS_IDX] =
                 BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_CODE_REQUIRED;
-        if (!Flags.leaudioBroadcastSimplifySetBcastCode()) {
-            mStateMachine.mSetBroadcastCodePending = true;
-        }
         cb.onCharacteristicChanged(null, characteristic);
         mLooper.dispatchAll();
         inOrderCallbacks
@@ -1093,9 +1088,6 @@ public class BassClientStateMachineTest {
                 .notifySourceModified(
                         any(), eq(sourceId), eq(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST));
         assertThat(mStateMachine.mMsgWhats).contains(SET_BCAST_CODE);
-        if (!Flags.leaudioBroadcastSimplifySetBcastCode()) {
-            assertThat(mStateMachine.mMsgAgr1).isEqualTo(BassClientStateMachine.ARGTYPE_RCVSTATE);
-        }
         inOrderCallbacks
                 .verify(callbacks)
                 .notifyReceiveStateChanged(any(), eq(sourceId), receiveStateCaptor.capture());
@@ -1679,17 +1671,10 @@ public class BassClientStateMachineTest {
                         0,
                         Arrays.asList(new Long[0]),
                         Arrays.asList(new BluetoothLeAudioContentMetadata[0]));
-        if (!Flags.leaudioBroadcastSimplifySetBcastCode()) {
-            mStateMachine.mSetBroadcastCodePending = false;
-        }
         mStateMachine.sendMessage(SET_BCAST_CODE, recvState);
         mLooper.dispatchAll();
-        if (!Flags.leaudioBroadcastSimplifySetBcastCode()) {
-            assertThat(mStateMachine.mSetBroadcastCodePending).isTrue();
-        } else {
-            verify(btGatt, never()).writeCharacteristic(any());
-            verify(scanControlPoint, never()).setValue(any(byte[].class));
-        }
+        verify(btGatt, never()).writeCharacteristic(any());
+        verify(scanControlPoint, never()).setValue(any(byte[].class));
 
         recvState =
                 new BluetoothLeBroadcastReceiveState(

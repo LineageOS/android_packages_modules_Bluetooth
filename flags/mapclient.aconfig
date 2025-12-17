@@ -23,16 +23,6 @@ flag {
 }
 
 flag {
-    name: "not_delete_locked_message"
-    namespace: "bluetooth"
-    description: "Do not delete messages if they are locked"
-    bug: "420362857"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "map_mime_multipart"
     namespace: "bluetooth"
     description: "double quote boundary when encoding header"

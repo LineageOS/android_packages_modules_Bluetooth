@@ -65,6 +65,7 @@ cc_library_shared {
     stl: "libc++_static",
     static_libs: [
         "aics",
+        "android.bluetooth.platform.flags-aconfig-cc",
         "android.hardware.audio.common@5.0",
         "android.hardware.bluetooth.audio@2.0",
         "android.hardware.bluetooth.audio@2.1",
@@ -178,6 +179,7 @@ android_library {
         "modules-utils-build",
     ],
     static_libs: [
+        "android.bluetooth.platform.flags-aconfig-java-export",
         "android.hardware.radio-V1.0-java",
         "android.hardware.radio.sap-V1-java",
         "android.media.audio-aconfig-exported-java",

@@ -1079,7 +1079,7 @@ TEST_F(BtifCoreSocketTest, CreateManyRfcommServerSockets) {
     server_uuid_str[2] = (i / 10) % 10 + '0';
     server_uuid_str[1] = (i / 100) % 10 + '0';
     server_uuid_str[0] = (i / 1000) % 10 + '0';
-    Uuid server_uuid = Uuid::FromString(server_uuid_str);
+    Uuid server_uuid = Uuid::FromString(server_uuid_str).value();
     btsock_data_path_t data_path = BTSOCK_DATA_PATH_NO_OFFLOAD;
     uint64_t hub_id = 0;
     uint64_t endpoint_id = 0;

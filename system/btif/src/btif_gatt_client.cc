@@ -26,9 +26,7 @@
 
 #define LOG_TAG "bt_btif_gattc"
 
-#include <base/at_exit.h>
 #include <base/functional/bind.h>
-#include <base/threading/thread.h>
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/ble_address_with_type.h>
@@ -39,7 +37,6 @@
 #include <hardware/bt_gatt.h>
 #include <hardware/bt_gatt_types.h>
 
-#include <cstdlib>
 #include <string>
 
 #include "bta/include/bta_api.h"
@@ -49,15 +46,12 @@
 #include "btif/include/btif_config.h"
 #include "btif/include/btif_dm.h"
 #include "btif/include/btif_gatt.h"
-#include "btif/include/btif_gatt_util.h"
 #include "btif_status.h"
 #include "hci/controller.h"
-#include "internal_include/bte_appl.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_api_types.h"
-#include "stack/include/btm_ble_sec_api.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/main_thread.h"
@@ -687,6 +681,13 @@ static BtStatus btif_gattc_subrate_request(const RawAddress& bd_addr, int subrat
                                            int subrate_max, int max_latency, int cont_num,
                                            int sup_timeout) {
   CHECK_BTGATT_INIT();
+  if (com::android::bluetooth::flags::gatt_return_unsupported_when_not_support_subrating()) {
+    if (!bluetooth::shim::GetController()->SupportsBleConnectionSubrating() ||
+        !acl_peer_supports_ble_connection_subrating(bd_addr) ||
+        !acl_peer_supports_ble_connection_subrating_host(bd_addr)) {
+        return BtifStatus(UNSUPPORTED);;
+    }
+  }
   return do_in_jni_thread(BindOnce(base::IgnoreResult(&btif_gattc_subrate_request_impl), bd_addr,
                                    subrate_min, subrate_max, max_latency, cont_num, sup_timeout));
 }
@@ -702,6 +703,11 @@ static void btif_gattc_subrate_mode_request_impl(int client_if, const RawAddress
 static BtStatus btif_gattc_subrate_mode_request(int client_if, const RawAddress& bd_addr,
                                                 uint8_t subrate_mode) {
   CHECK_BTGATT_INIT();
+  if (!bluetooth::shim::GetController()->SupportsBleConnectionSubrating() ||
+      !acl_peer_supports_ble_connection_subrating(bd_addr) ||
+      !acl_peer_supports_ble_connection_subrating_host(bd_addr)) {
+      return BtifStatus(UNSUPPORTED);
+  }
   tGATT_SUBRATE_MODE mode = (tGATT_SUBRATE_MODE) subrate_mode;
   return do_in_jni_thread(BindOnce(base::IgnoreResult(&btif_gattc_subrate_mode_request_impl),
                                    client_if, bd_addr, mode));
