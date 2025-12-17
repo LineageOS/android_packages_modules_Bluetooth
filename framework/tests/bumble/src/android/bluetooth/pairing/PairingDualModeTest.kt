@@ -50,6 +50,7 @@ import org.mockito.MockitoAnnotations
 import pandora.HostProto
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.AdvertiseResponse
+import pandora.HostProto.OwnAddressType
 import pandora.SecurityProto
 
 private const val TAG = "PairingDualModeTest"
@@ -547,6 +548,93 @@ class PairingDualModeTest {
             .isEqualTo(BluetoothDevice.PAIRING_ALGORITHM_SC)
         util.removeBond(null, bumbleDevice)
         assertThat(bumbleDevice.getBondStatus(BluetoothDevice.TRANSPORT_BREDR)).isNull()
+    }
+
+    /**
+     * Test to verify getBondStatus()
+     *
+     * Steps:
+     * 1. Create a bond over LE
+     * 2. Call getBondStatus()
+     * 3. Remove Bond
+     * 4. Call getBondStatus()
+     */
+    @RequiresFlagsEnabled(
+        "com.android.bluetooth.flags.provide_pairing_algo",
+        "com.android.bluetooth.flags.enable_get_bond_status",
+    )
+    @Test
+    @Throws(Exception::class)
+    fun testLe_GetBondStatus() {
+        testStep_BondLe(null, remoteLeDevice, OwnAddressType.RANDOM)
+        val bondStatus = remoteLeDevice.getBondStatus(BluetoothDevice.TRANSPORT_LE)
+        assertThat(bondStatus).isNotNull()
+        assertThat(bondStatus?.getPairingVariant())
+            .isEqualTo(BluetoothDevice.PAIRING_VARIANT_PASSKEY_CONFIRMATION)
+        assertThat(bondStatus?.getPairingAlgorithm())
+            .isEqualTo(BluetoothDevice.PAIRING_ALGORITHM_SC)
+        util.removeBond(null, remoteLeDevice)
+        assertThat(remoteLeDevice.getBondStatus(BluetoothDevice.TRANSPORT_LE)).isNull()
+    }
+
+    private fun testStep_BondLe(
+        parentIntentReceiver: IntentReceiver?,
+        device: BluetoothDevice,
+        ownAddressType: OwnAddressType,
+    ) {
+        val intentReceiver =
+            IntentReceiver.update(
+                parentIntentReceiver,
+                IntentReceiver.Builder(
+                    context,
+                    BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                    BluetoothDevice.ACTION_ACL_CONNECTED,
+                    BluetoothDevice.ACTION_PAIRING_REQUEST,
+                ),
+            )
+
+        val responseObserver = StreamObserverSpliterator<AdvertiseRequest, AdvertiseResponse>()
+        currentDevice
+            .host()
+            .advertise(
+                AdvertiseRequest.newBuilder()
+                    .setLegacy(true)
+                    .setConnectable(true)
+                    .setOwnAddressType(ownAddressType)
+                    .build(),
+                responseObserver,
+            )
+
+        assertThat(device.createBond(BluetoothDevice.TRANSPORT_LE)).isTrue()
+
+        intentReceiver.verifyReceived(
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING),
+        )
+        intentReceiver.verifyReceivedOrdered(
+            hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+            hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
+        )
+        responseObserver.cancel("Canceling advertise request")
+        intentReceiver.verifyReceived(
+            hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+            hasExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, BluetoothDevice.PAIRING_VARIANT_CONSENT),
+        )
+
+        // Approve pairing from Android
+        assertThat(device.setPairingConfirmation(true)).isTrue()
+
+        // Ensure that pairing succeeds
+        intentReceiver.verifyReceivedOrdered(
+            hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+            hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+            hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED),
+        )
+
+        intentReceiver.close()
     }
 
     private fun testStep_BondBrEdr(parentIntentReceiver: IntentReceiver?) {
