@@ -107,10 +107,6 @@ std::optional<Uuid> Uuid::FromString(const std::string& uuid) {
   return ret;
 }
 
-std::optional<Uuid> Uuid::FromLegacyConfigString(const std::string& uuid) {
-  return FromString(uuid);
-}
-
 Uuid Uuid::From16Bit(uint16_t uuid16) {
   Uuid u = kBase;
 
@@ -173,8 +169,6 @@ std::string Uuid::ToString() const {
                 uu[12], uu[13], uu[14], uu[15]);
   return std::string(buf);
 }
-
-std::string Uuid::ToLegacyConfigString() const { return ToString(); }
 
 }  // namespace hci
 }  // namespace bluetooth

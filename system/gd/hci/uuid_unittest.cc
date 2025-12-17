@@ -147,13 +147,6 @@ TEST(UuidTest, test_string_to_uuid) {
   ASSERT_EQ(0, memcmp(uuid->data(), u3, sizeof(u3)));
 }
 
-TEST(UuidTest, legacy) {
-  const std::string UUID_BASE_STR = "e39c6285-867f-4b1d-9db0-35fbd9aebf22";
-  auto uuid = Uuid::FromString("e39c6285-867f-4b1d-9db0-35fbd9aebf22");
-  ASSERT_EQ(UUID_BASE_STR, uuid->ToLegacyConfigString());
-  ASSERT_EQ(uuid, Uuid::FromLegacyConfigString(UUID_BASE_STR));
-}
-
 TEST(UuidTest, inequalities) {
   auto uuid1 = Uuid::kEmpty;
   auto uuid2 = Uuid::FromString("11111111-1111-1111-1111-111111111111");
