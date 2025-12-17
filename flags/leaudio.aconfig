@@ -42,6 +42,14 @@ flag {
 }
 
 flag {
+    name: "leaudio_codec_id_support"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Allow application to get any codec id along with vendor specific codecs information"
+    bug: "463280176"
+}
+
+flag {
     name: "leaudio_software_bt_request_lock_fix"
     namespace: "bluetooth"
     description: "Fix minor locking issue"
