@@ -133,9 +133,9 @@ void BTM_reset_complete() {
 
   /* Clear current security state */
   if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
-    list_foreach(btm_sec_cb.sec_dev_rec_, set_sec_state_idle, NULL);
+    list_foreach(BtmSecurity::Get().sec_dev_rec_, set_sec_state_idle, NULL);
   } else {
-    btm_sec_cb.for_each_dev_rec(set_sec_state_idle, NULL);
+    BtmSecurity::Get().for_each_dev_rec(set_sec_state_idle, NULL);
   }
 
   /* After the reset controller should restore all parameters to defaults. */
@@ -174,8 +174,8 @@ void BTM_reset_complete() {
   }
 
   if (!com_android_bluetooth_flags_local_pin_key_type()) {
-    BTM_SetPinType(btm_sec_cb.cfg_.pin_type, btm_sec_cb.cfg_.pin_code,
-                   btm_sec_cb.cfg_.pin_code_len);
+    BTM_SetPinType(BtmSecurity::Get().cfg_.pin_type, BtmSecurity::Get().cfg_.pin_code,
+                   BtmSecurity::Get().cfg_.pin_code_len);
   }
 
   decode_controller_support();
@@ -284,7 +284,7 @@ tBTM_STATUS BTM_SetLocalDeviceName(const char* p_name) {
   }
   /* Save the device name if local storage is enabled */
 
-  bd_name_from_char_pointer(btm_sec_cb.cfg_.bd_name, p_name);
+  bd_name_from_char_pointer(BtmSecurity::Get().cfg_.bd_name, p_name);
 
   bluetooth::shim::GetController()->WriteLocalName(p_name);
   return tBTM_STATUS::BTM_CMD_STARTED;
@@ -304,7 +304,7 @@ tBTM_STATUS BTM_SetLocalDeviceName(const char* p_name) {
  *
  ******************************************************************************/
 tBTM_STATUS BTM_ReadLocalDeviceName(const char** p_name) {
-  *p_name = (const char*)btm_sec_cb.cfg_.bd_name;
+  *p_name = (const char*)BtmSecurity::Get().cfg_.bd_name;
   return tBTM_STATUS::BTM_SUCCESS;
 }
 

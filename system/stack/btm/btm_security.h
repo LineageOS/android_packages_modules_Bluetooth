@@ -36,6 +36,11 @@ typedef bool (*sec_dev_rec_iter_cb)(void* dev_rec, void* context);
 
 class BtmSecurity {
 public:
+  /*
+   * Get the singleton instance of BtmSecurity.
+   */
+  static BtmSecurity& Get();
+
   tBTM_CFG cfg_; /* Device configuration */
 
   /*****************************************************
@@ -119,16 +124,14 @@ public:
   BtmDevice* for_each_dev_rec(sec_dev_rec_iter_cb cb, void* context);
 };
 
-extern BtmSecurity btm_sec_cb;
-
-#define BTM_BLE_SEC_CALLBACK(event_, bda_, data_)                                          \
-  do {                                                                                     \
-    if (btm_sec_cb.api_.p_le_callback != nullptr) {                                        \
-      tBTM_STATUS status_ = (*btm_sec_cb.api_.p_le_callback)((event_), (bda_), (data_));   \
-      if (status_ != tBTM_STATUS::BTM_SUCCESS) {                                           \
-        log::warn("Security callback failed {} for {}", btm_status_text(status_), (bda_)); \
-      }                                                                                    \
-    }                                                                                      \
+#define BTM_BLE_SEC_CALLBACK(event_, bda_, data_)                                                \
+  do {                                                                                           \
+    if (BtmSecurity::Get().api_.p_le_callback != nullptr) {                                      \
+      tBTM_STATUS status_ = (*BtmSecurity::Get().api_.p_le_callback)((event_), (bda_), (data_)); \
+      if (status_ != tBTM_STATUS::BTM_SUCCESS) {                                                 \
+        log::warn("Security callback failed {} for {}", btm_status_text(status_), (bda_));       \
+      }                                                                                          \
+    }                                                                                            \
   } while (0)
 
 void BTM_Sec_Init();

@@ -35,6 +35,11 @@
 
 using namespace bluetooth;
 
+BtmSecurity& BtmSecurity::Get() {
+  static BtmSecurity control_block;
+  return control_block;
+}
+
 void BtmSecurity::Init(uint8_t initial_security_mode) {
   pin_code_ = {};
   memset(&cfg_, 0, sizeof(cfg_));
@@ -86,14 +91,13 @@ void BtmSecurity::Free() {
   execution_wait_timer_ = nullptr;
 }
 
-BtmSecurity btm_sec_cb;
-
 void BTM_Sec_Init() {
-  btm_sec_cb.Init(stack_config_get_interface()->get_pts_secure_only_mode() ? BTM_SEC_MODE_SC
-                                                                           : BTM_SEC_MODE_SP);
+  BtmSecurity::Get().Init(stack_config_get_interface()->get_pts_secure_only_mode()
+                                  ? BTM_SEC_MODE_SC
+                                  : BTM_SEC_MODE_SP);
 }
 
-void BTM_Sec_Free() { btm_sec_cb.Free(); }
+void BTM_Sec_Free() { BtmSecurity::Get().Free(); }
 
 /*******************************************************************************
  *

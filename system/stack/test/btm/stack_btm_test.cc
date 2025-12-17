@@ -110,10 +110,10 @@ protected:
     EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_, GetScoQueueEnd())
             .WillOnce(Return(sco_queue_.GetUpEnd()));
     btm_cb.Init();
-    btm_sec_cb.Init(BTM_SEC_MODE_SC);
+    BtmSecurity::Get().Init(BTM_SEC_MODE_SC);
   }
   void TearDown() override {
-    btm_sec_cb.Free();
+    BtmSecurity::Get().Free();
     btm_cb.Free();
     StackBtmWithQueuesTest::TearDown();
   }

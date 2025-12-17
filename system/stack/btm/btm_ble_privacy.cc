@@ -273,9 +273,9 @@ void btm_ble_clear_resolving_list_complete(uint8_t* p, uint16_t evt_len) {
     log::verbose("resolving_list_avail_size={}", btm_cb.ble_ctr_cb.resolving_list_avail_size);
 
     if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
-      list_foreach(btm_sec_cb.sec_dev_rec_, clear_resolving_list_bit, NULL);
+      list_foreach(BtmSecurity::Get().sec_dev_rec_, clear_resolving_list_bit, NULL);
     } else {
-      btm_sec_cb.for_each_dev_rec(clear_resolving_list_bit, NULL);
+      BtmSecurity::Get().for_each_dev_rec(clear_resolving_list_bit, NULL);
     }
   }
 }
@@ -555,7 +555,7 @@ static bool is_peer_identity_key_valid(const BtmDevice& device) {
   return device.sec_rec.ble_keys.key_type & BTM_LE_KEY_PID;
 }
 
-static Octet16 get_local_irk() { return btm_sec_cb.devcb_.id_keys.irk; }
+static Octet16 get_local_irk() { return BtmSecurity::Get().devcb_.id_keys.irk; }
 
 static bool count_resolving_list_entries(void* data, void* context) {
   uint16_t* count = (uint16_t*)context;
@@ -612,10 +612,10 @@ void btm_ble_resolving_list_load_dev(BtmDevice& device) {
 
   uint16_t count = 1; /* we use 1 entry for local controller */
   if (!com::android::bluetooth::flags::use_array_instead_list_in_sec_dev_rec()) {
-    list_foreach(btm_sec_cb.sec_dev_rec_, count_resolving_list_entries, &count);
+    list_foreach(BtmSecurity::Get().sec_dev_rec_, count_resolving_list_entries, &count);
   } else {
-    count += std::count_if(btm_sec_cb.device_records_.begin(), btm_sec_cb.device_records_.end(),
-                           [](const BtmDevice& dev) {
+    count += std::count_if(BtmSecurity::Get().device_records_.begin(),
+                           BtmSecurity::Get().device_records_.end(), [](const BtmDevice& dev) {
                              return dev.IsInitialized() &&
                                     dev.ble.in_controller_list & BTM_RESOLVING_LIST_BIT;
                            });
