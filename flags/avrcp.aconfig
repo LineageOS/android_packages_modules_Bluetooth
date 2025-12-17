@@ -29,16 +29,6 @@ flag {
 }
 
 flag {
-    name: "set_a2dp_active_device_through_adapter_service"
-    namespace: "bluetooth"
-    description: "Instead of calling A2dpService#setActiveDevice, call AdapterService#setActiveDevice"
-    bug: "419448067"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "implement_get_image_from_descriptor_for_cover_art"
     namespace: "bluetooth"
     description: "Implement getImage from descriptor for cover art in AVRCP for IOP, some devices request image not 200*200"
