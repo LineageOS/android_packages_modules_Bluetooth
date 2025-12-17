@@ -642,7 +642,11 @@ static void ble_io_req(const RawAddress& bd_addr, BtIoCap* p_io_cap, tBTM_OOB_DA
    * If the answer can not be obtained right away, set *p_oob_data to BTA_OOB_UNKNOWN and call
    * bta_dm_ci_io_req() when the answer is available. */
 
-  *p_oob_data = btif_dm_set_oob_for_le_io_req(bd_addr, p_auth_req);
+  auto auth_req = btif_dm_le_oob_auth_req(bd_addr, *p_auth_req);
+  if (auth_req.has_value()) {
+    *p_oob_data = true;
+    *p_auth_req = auth_req.value();
+  }
 
   /* Override priority order:
   * 1. Application config
