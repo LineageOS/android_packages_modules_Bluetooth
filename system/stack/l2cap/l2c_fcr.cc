@@ -685,12 +685,10 @@ void l2c_lcc_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
   BT_HDR* p_data = NULL;
 
   uint16_t local_mps = p_ccb->local_conn_cfg.mps;
-  if (com_android_bluetooth_flags_fix_buf_len_check_for_first_k_frame()) {
-    if (p_ccb->is_first_seg) {
-      // for the first k-frame, donot consider sdu_length
-      // as part of the information payload
-      local_mps = p_ccb->local_conn_cfg.mps + sizeof(sdu_length);
-    }
+  if (p_ccb->is_first_seg) {
+    // for the first k-frame, donot consider sdu_length
+    // as part of the information payload
+    local_mps = p_ccb->local_conn_cfg.mps + sizeof(sdu_length);
   }
 
   /* Buffer length should not exceed local mps */
