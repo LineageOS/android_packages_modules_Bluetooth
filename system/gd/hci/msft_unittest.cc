@@ -16,6 +16,7 @@
 
 #include "hci/msft.h"
 
+#include <bluetooth/types/uuid.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -35,8 +36,8 @@ using namespace std::literals::chrono_literals;
 
 class MockScanningCallback : public ScanningCallback {
 public:
- MOCK_METHOD(void, OnScannerRegistered,
-              (const bluetooth::hci::Uuid app_uuid, ScannerId scanner_id, ScanningStatus status),
+  MOCK_METHOD(void, OnScannerRegistered,
+              (const bluetooth::Uuid app_uuid, ScannerId scanner_id, ScanningStatus status),
               (override));
   MOCK_METHOD(void, OnSetScannerParameterComplete, (ScannerId scanner_id, ScanningStatus status),
               (override));

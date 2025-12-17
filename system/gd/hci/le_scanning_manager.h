@@ -15,12 +15,13 @@
  */
 #pragma once
 
+#include <bluetooth/types/uuid.h>
+
 #include <vector>
 
 #include "hci/address_with_type.h"
 #include "hci/hci_packets.h"
 #include "hci/le_scanning_callback.h"
-#include "hci/uuid.h"
 
 namespace bluetooth {
 namespace hci {

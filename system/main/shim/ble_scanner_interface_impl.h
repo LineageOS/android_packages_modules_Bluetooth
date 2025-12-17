@@ -95,8 +95,8 @@ public:
   // bluetooth::hci::ScanningCallback
   void RegisterCallbacks(ScanningCallbacks* callbacks) override;
   void RegisterCallbacksNative(ScanningCallbacks* callbacks, uint8_t client_id) override;
-  void OnScannerRegistered(const bluetooth::hci::Uuid app_uuid,
-                           bluetooth::hci::ScannerId scanner_id, ScanningStatus status) override;
+  void OnScannerRegistered(const bluetooth::Uuid app_uuid, bluetooth::hci::ScannerId scanner_id,
+                           ScanningStatus status) override;
   void OnSetScannerParameterComplete(bluetooth::hci::ScannerId scanner_id,
                                      ScanningStatus status) override;
   void OnScanResult(uint16_t event_type, uint8_t address_type, bluetooth::hci::Address address,

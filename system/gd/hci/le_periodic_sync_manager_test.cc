@@ -16,6 +16,7 @@
 
 #include "hci/le_periodic_sync_manager.h"
 
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
 #include <gmock/gmock.h>
@@ -187,7 +188,7 @@ protected:
   class MockCallbacks : public bluetooth::hci::ScanningCallback {
   public:
     MOCK_METHOD(void, OnScannerRegistered,
-                (const bluetooth::hci::Uuid app_uuid, ScannerId scanner_id, ScanningStatus status),
+                (const bluetooth::Uuid app_uuid, ScannerId scanner_id, ScanningStatus status),
                 (override));
     MOCK_METHOD(void, OnSetScannerParameterComplete, (ScannerId scanner_id, ScanningStatus status),
                 (override));
