@@ -26,6 +26,10 @@ service LeAudio {
   // Wait for a group stream status change
   rpc LeAudioWaitGroupStreamStatusChanged(LeAudioWaitGroupStreamStatusChangedRequest)
       returns (google.protobuf.Empty);
+  // Get ringer mode
+  rpc LeAudioGetRingerMode(google.protobuf.Empty) returns (LeAudioGetRingerModeResponse);
+  // Set ringer mode
+  rpc LeAudioSetRingerMode(LeAudioSetRingerModeRequest) returns (google.protobuf.Empty);
 }
 
 enum AudioUsage {
@@ -66,6 +70,12 @@ enum AudioSource {
 enum GroupStreamStatus {
   GROUP_STREAM_STATUS_IDLE = 0;
   GROUP_STREAM_STATUS_STREAMING = 1;
+}
+
+enum RingerMode {
+  RINGER_MODE_SILENT = 0;
+  RINGER_MODE_VIBRATE = 1;
+  RINGER_MODE_NORMAL = 2;
 }
 
 message OpenRequest {
@@ -118,4 +128,14 @@ message LeAudioStopRecorderRequest {
 message LeAudioWaitGroupStreamStatusChangedRequest {
   Connection connection = 1;
   GroupStreamStatus groupStreamStatus = 2;
+}
+
+// Response of the `LeAudioGetSilentMode` method.
+message LeAudioGetRingerModeResponse {
+  RingerMode ringerMode = 1;
+}
+
+// Request of the `LeAudioSetRingerMode` method.
+message LeAudioSetRingerModeRequest {
+  RingerMode ringerMode = 1;
 }
