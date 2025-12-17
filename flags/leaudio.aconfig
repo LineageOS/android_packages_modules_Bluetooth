@@ -233,16 +233,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_check_ecosystem_base_interval_support"
-    namespace: "bluetooth"
-    description: "Before sending Set Ecosystem Base Interval command, check that the controller actually supports it"
-    bug: "422626923"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_connection_subrating"
     namespace: "bluetooth"
     description: "Support LE audio connection subrating to speed up the reconfiguration process"

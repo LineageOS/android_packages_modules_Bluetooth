@@ -1536,8 +1536,7 @@ void L2CA_AdjustConnectionIntervals(uint16_t* /* min_interval */, uint16_t* max_
 }
 
 void L2CA_SetEcosystemBaseInterval(uint32_t base_interval) {
-  if (com_android_bluetooth_flags_leaudio_check_ecosystem_base_interval_support() &&
-      !bluetooth::shim::GetController()->IsSupported(
+  if (!bluetooth::shim::GetController()->IsSupported(
               bluetooth::hci::OpCode::SET_ECOSYSTEM_BASE_INTERVAL)) {
     // Command not supported! Just exit, no need to update the BLE conn parameter.
     return;
