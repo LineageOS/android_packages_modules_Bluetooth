@@ -1976,11 +1976,20 @@ class HeadsetStateMachine extends StateMachine {
                 mSystemInterface.getAudioManager().setStreamVolume(volStream, volume, flag);
             }
         } else if (volumeType == HeadsetHalConstants.VOLUME_TYPE_MIC) {
+            if (Flags.microphoneMuteGainRetain()) {
+                if (volume != MIC_MUTE) {
+                    mMicVolume = volume;
+                }
+                Log.i(TAG, "Event: Mic status: " + volume);
+                mSystemInterface.getAudioManager().setMicrophoneMute(volume == MIC_MUTE);
+
+            } else {
                 if (mMicVolume != volume) {
                     mMicVolume = volume;
                     Log.i(TAG, "Event: Mic status: " + mMicVolume);
                     mSystemInterface.getAudioManager().setMicrophoneMute(mMicVolume == MIC_MUTE);
                 }
+            }
         } else {
             Log.e(TAG, "Bad volume type: " + volumeType);
         }
