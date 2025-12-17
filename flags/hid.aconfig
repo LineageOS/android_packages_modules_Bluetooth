@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "hh_state_update_race_fix"
-    namespace: "bluetooth"
-    description: "Fix stuck in connecting state due to race when updating state"
-    bug: "403420458"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "wait_hid_disconnect_before_marking_unused"
     namespace: "bluetooth"
     description: "Mark device unused only after it's properly disconnected"

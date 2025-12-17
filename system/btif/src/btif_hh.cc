@@ -1074,7 +1074,8 @@ void btif_hh_remove_device(const AclLinkSpec& link_spec) {
  **
  ** Function         btif_hh_remove_pending_connection
  **
- ** Description      Remove first time pending connection requests.
+ ** Description      Remove first time pending connection requests. This is done
+ **                  inside the BTIF context.
  **
  ** Returns          void
  ******************************************************************************/
@@ -1082,16 +1083,7 @@ static void btif_hh_remove_pending_connection(const AclLinkSpec& link_spec) {
   size_t pending_connections = btif_hh_cb.new_connection_requests.remove_if([link_spec](auto ls) {
     if (ls.addrt.bda == link_spec.addrt.bda) {
       // Notify service of disconnection to avoid state mismatch
-      if (com_android_bluetooth_flags_hh_state_update_race_fix()) {
-        BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK);
-      } else {
-        do_in_jni_thread(base::BindOnce(
-                [](AclLinkSpec ls) {
-                  BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK);
-                },
-                ls));
-      }
-
+      BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_DISCONNECTED, BTHH_OK);
       return true;
     }
     return false;
@@ -1099,18 +1091,9 @@ static void btif_hh_remove_pending_connection(const AclLinkSpec& link_spec) {
 
   if (pending_connections > 0) {
     log::verbose("Removed pending connections to {}", link_spec);
-    if (com_android_bluetooth_flags_hh_state_update_race_fix()) {
-      AclLinkSpec ls = link_spec;
-      HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, ls.addrt.bda, ls.addrt.type, ls.transport,
-                BTHH_OK);
-    } else {
-      do_in_jni_thread(base::BindOnce(
-              [](AclLinkSpec ls) {
-                HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, ls.addrt.bda, ls.addrt.type,
-                          ls.transport, BTHH_OK);
-              },
-              link_spec));
-    }
+    AclLinkSpec ls = link_spec;
+    HAL_CBACK(bt_hh_callbacks, virtual_unplug_cb, ls.addrt.bda, ls.addrt.type, ls.transport,
+              BTHH_OK);
   }
 }
 
@@ -1227,17 +1210,7 @@ BtStatus btif_hh_connect(const AclLinkSpec& link_spec) {
     btif_hh_cb.new_connection_requests.push_back(link_spec);
   }
 
-  if (com_android_bluetooth_flags_hh_state_update_race_fix()) {
-    AclLinkSpec ls = link_spec;
-    BTHH_STATE_UPDATE(ls, BTHH_CONN_STATE_CONNECTING, BTHH_OK);
-  } else {
-    do_in_jni_thread(base::BindOnce(
-            [](AclLinkSpec link_spec) {
-              BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_CONNECTING, BTHH_OK);
-            },
-            link_spec));
-  }
-
+  BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_CONNECTING, BTHH_OK);
   if (btif_hh_cb.pending_incoming_connection.link_spec == link_spec) {
     log::info("Resume pending incoming connection {}", link_spec);
     tBTA_HH_CONN conn = btif_hh_cb.pending_incoming_connection;
@@ -1533,12 +1506,7 @@ static void btif_hh_handle_evt(uint16_t event, char* p_param) {
   switch (event) {
     case BTIF_HH_CONNECT_REQ_EVT: {
       log::debug("BTIF_HH_CONNECT_REQ_EVT: link spec:{}", link_spec);
-      if (btif_hh_connect(link_spec)) {
-        if (!com_android_bluetooth_flags_hh_state_update_race_fix()) {
-          // No need to update state after flag, it has been updated in btif_hh_connect.
-          BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_CONNECTING, BTHH_OK);
-        }
-      } else {
+      if (!btif_hh_connect(link_spec)) {
         BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_DISCONNECTED, BTHH_ERR);
       }
     } break;
