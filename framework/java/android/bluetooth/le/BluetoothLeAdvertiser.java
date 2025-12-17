@@ -673,6 +673,7 @@ public final class BluetoothLeAdvertiser {
 
         IAdvertisingSetCallback wrapped = mCallbackWrappers.remove(callback);
         if (wrapped == null) {
+            Log.e(TAG, "Callback not registered or already removed");
             return;
         }
 
