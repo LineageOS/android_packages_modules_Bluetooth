@@ -709,24 +709,30 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
          * <p>Currently, only the following Codec IDs are supported:
          *
          * <ul>
-         *   <li><b>0x06 (LC3):</b> The upper 32 bits must be 0.
-         *   <li><b>0xFF (Vendor Specific):</b> The LSB must be 0xFF.
+         *   <li><b>LC3:</b> 0x00_0000000006
+         *   <li><b>Vendor Specific:</b> 0xNN_NNNNNNNNFF
          * </ul>
          *
          * @param codecId The 40-bit codec identifier.
          * @return the same Builder instance
-         * @throws IllegalArgumentException if the codecId is not supported (not LC3 or Vendor
-         *     Specific), or if the codecId conflicts with a previously set codec type.
+         * @throws IllegalArgumentException if the codecId is greater than 40 bits, or not
+         * supported (not LC3 or Vendor Specific).
          */
         @RequiresNoPermission
         @FlaggedApi(Flags.FLAG_LEAUDIO_CODEC_ID_SUPPORT)
         public @NonNull Builder setCodecId(long codecId) {
-            // Validate the Codec ID structure (Fail Fast)
+            // Enforce that the input is at most 40 bits (top 24 bits must be zero)
+            if ((codecId & ~0xFF_FFFFFFFFL) != 0) {
+                throw new IllegalArgumentException(
+                        "Codec ID must be 40 bits or less: " + String.format("0x%X", codecId));
+            }
+
+            // Validate the Codec ID structure
             //    - Must be LC3
             //    - OR the LSB must be the Vendor Specific ID (0xFF)
             if (codecId != CODEC_ID_LC3 && (codecId & 0xFF) != CODEC_ID_VENDOR_SPECIFIC) {
                 throw new IllegalArgumentException(
-                        "Invalid Codec ID: " + String.format("0x%010X", codecId));
+                        "Unsupported Codec ID: " + String.format("0x%010X", codecId));
             }
 
             /* Check if mCodecType need to be set properly */
