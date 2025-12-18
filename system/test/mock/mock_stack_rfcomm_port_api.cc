@@ -24,10 +24,6 @@
 #include "port_api.h"
 #include "test/common/mock_functions.h"
 
-const char* PORT_GetResultString(const uint8_t /* result_code */) {
-  inc_func_call_count(__func__);
-  return nullptr;
-}
 int PORT_CheckConnection(uint16_t /* handle */, RawAddress* /* bd_addr */, uint16_t* /* p_lcid */) {
   inc_func_call_count(__func__);
   return 0;

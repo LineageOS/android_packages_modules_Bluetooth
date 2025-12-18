@@ -44,35 +44,6 @@
 
 using namespace bluetooth;
 
-/* Mapping from PORT_* result codes to human readable strings. */
-static const char* result_code_strings[] = {"Success",
-                                            "Unknown error",
-                                            "Already opened",
-                                            "Command pending",
-                                            "App not registered",
-                                            "No memory",
-                                            "No resources",
-                                            "Bad BD address",
-                                            "Unspecified error",
-                                            "Bad handle",
-                                            "Not opened",
-                                            "Line error",
-                                            "Start failed",
-                                            "Parameter negotiation failed",
-                                            "Port negotiation failed",
-                                            "Sec failed",
-                                            "Peer connection failed",
-                                            "Peer failed",
-                                            "Peer timeout",
-                                            "Closed",
-                                            "TX full",
-                                            "Local closed",
-                                            "Local timeout",
-                                            "TX queue disabled",
-                                            "Page timeout",
-                                            "Invalid SCN",
-                                            "Unknown result code"};
-
 namespace {
 const char kBtmLogTag[] = "RFCOMM";
 }  // namespace
@@ -82,8 +53,9 @@ const char kBtmLogTag[] = "RFCOMM";
  * Function         RFCOMM_CreateConnectionWithSecurity
  *
  * Description      RFCOMM_CreateConnectionWithSecurity function is used from
- *the application to establish serial port connection to the peer device, or
- *allow RFCOMM to accept a connection from the peer application.
+ *                  the application to establish serial port connection to the peer
+ *                  device, or allow RFCOMM to accept a connection from the peer
+ *                  application.
  *
  * Parameters:      scn          - Service Channel Number as registered with
  *                                 the SDP (server) or obtained using SDP from
@@ -97,7 +69,8 @@ const char kBtmLogTag[] = "RFCOMM";
  *                  sec_mask     - bitmask of BTM_SEC_* values indicating the
  *                                 minimum security requirements for this
  *                  cfg          - optional configurations for the connection
- *connection Notes:
+ *
+ * Connection Notes:
  *
  * Server can call this function with the same scn parameter multiple times if
  * it is ready to accept multiple simulteneous connections.
@@ -131,8 +104,7 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn, bool is_serv
     dlci = (scn << 1);
   }
 
-  // On the client side, do not allow the same (dlci, bd_addr) to be opened
-  // twice by application
+  // On the client side, do not allow the same (dlci, bd_addr) to be opened twice by application
   tPORT* p_port{nullptr};
   if (!is_server) {
     p_port = port_find_port(dlci, bd_addr);
@@ -190,8 +162,8 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn, bool is_serv
 
   // Find MTU
   // If the MTU is not specified (0), keep MTU decision until the PN frame has
-  // to be send at that time connection should be established and we will know
-  // for sure our prefered MTU
+  // to be sent. At that time connection should be established and we will know
+  // for sure our preferred MTU
   uint16_t rfcomm_mtu = L2CAP_MTU_SIZE - RFCOMM_DATA_OVERHEAD;
   if (mtu) {
     p_port->mtu = (mtu < rfcomm_mtu) ? mtu : rfcomm_mtu;
@@ -212,8 +184,7 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn, bool is_serv
   // server doesn't need to release port when closing
   if (is_server) {
     p_port->keep_port_handle = true;
-    // keep mtu that user asked, p_port->mtu could be updated during param
-    // negotiation
+    // keep mtu that user asked, p_port->mtu could be updated during parameter negotiation
     p_port->keep_mtu = p_port->mtu;
   }
   p_port->local_ctrl.modem_signal = p_port->default_signal_state;
@@ -282,7 +253,7 @@ int RFCOMM_ControlReqFromBTSOCK(uint8_t dlci, const RawAddress& bd_addr, uint8_t
 }
 
 static tPORT* get_port_from_handle(uint16_t handle) {
-  /* Check if handle is valid to avoid crashing */
+  // Check if handle is valid to avoid crashing
   if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
     return nullptr;
   }
@@ -341,7 +312,7 @@ int RFCOMM_RemoveServer(uint16_t handle) {
     return PORT_BAD_HANDLE;
   }
 
-  /* Do not report any events to the client any more. */
+  // Do not report any events to the client any more
   p_port->p_mgmt_callback = nullptr;
 
   if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
@@ -356,7 +327,7 @@ int RFCOMM_RemoveServer(uint16_t handle) {
                  std::format("handle:{} scn:{} dlci:{} is_server:{}", handle, p_port->scn,
                              p_port->dlci, p_port->is_server));
 
-  /* this port will be deallocated after closing */
+  // this port will be deallocated after closing
   p_port->keep_port_handle = false;
   p_port->state = PORT_CONNECTION_STATE_CLOSING;
 
@@ -365,6 +336,20 @@ int RFCOMM_RemoveServer(uint16_t handle) {
   return PORT_SUCCESS;
 }
 
+/*******************************************************************************
+ *
+ * Function         PORT_SetEventMaskAndCallback
+ *
+ * Description      This function sets the port event mask and callback
+ *
+ * Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
+ *                  mask       - Event mask
+ *                  p_port_cb  - Ptr to callback
+ *
+ * Returns          PORT_SUCCESS if success, else
+ *                  tPORT_RESULT that corresponds to the error
+ *
+ ******************************************************************************/
 int PORT_SetEventMaskAndCallback(uint16_t handle, uint32_t mask, tPORT_CALLBACK* p_port_cb) {
   log::verbose("handle:{} mask:0x{:x}", handle, mask);
   tPORT* p_port = get_port_from_handle(handle);
@@ -389,7 +374,11 @@ int PORT_SetEventMaskAndCallback(uint16_t handle, uint32_t mask, tPORT_CALLBACK*
  *
  * Description      Clear the keep handle flag, which will cause not to keep the
  *                  port handle open when closed
+ *
  * Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
+ *
+ * Returns          PORT_SUCCESS if success, else
+ *                  tPORT_RESULT that corresponds to the error
  *
  ******************************************************************************/
 int PORT_ClearKeepHandleFlag(uint16_t handle) {
@@ -413,6 +402,8 @@ int PORT_ClearKeepHandleFlag(uint16_t handle) {
  *                               be called from the RFCOMM when data packet
  *                               is received.
  *
+ * Returns          PORT_SUCCESS if success, else
+ *                  tPORT_RESULT that corresponds to the error
  *
  ******************************************************************************/
 int PORT_SetDataCOCallback(uint16_t handle, tPORT_DATA_CO_CALLBACK* p_port_cb) {
@@ -436,12 +427,15 @@ int PORT_SetDataCOCallback(uint16_t handle, tPORT_DATA_CO_CALLBACK* p_port_cb) {
  *
  * Function         PORT_CheckConnection
  *
- * Description      This function returns PORT_SUCCESS if connection referenced
- *                  by handle is up and running
+ * Description      This function checks if a connection associated with a given
+ *                  handle is up and running.
  *
  * Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
  *                  bd_addr    - OUT bd_addr of the peer
  *                  p_lcid     - OUT L2CAP's LCID
+ *
+ * Returns          PORT_SUCCESS if connection is up, else
+ *                  tPORT_RESULT that corresponds to the error
  *
  ******************************************************************************/
 int PORT_CheckConnection(uint16_t handle, RawAddress* bd_addr, uint16_t* p_lcid) {
@@ -610,7 +604,7 @@ int PORT_SetSettings(uint16_t handle, PortSettings* p_settings) {
   baud_rate = p_port->user_port_settings.baud_rate;
   p_port->user_port_settings = *p_settings;
 
-  /* for now we've been asked to pass only baud rate */
+  // for now we've been asked to pass only baud rate
   if (baud_rate != p_settings->baud_rate) {
     port_start_par_neg(p_port);
   }
@@ -622,7 +616,7 @@ int PORT_SetSettings(uint16_t handle, PortSettings* p_settings) {
  * Function         PORT_GetSettings
  *
  * Description      This function is called to fill PortSettings structure
- *                  with the curremt control settings for the port
+ *                  with the current control settings for the port
  *
  * Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
  *                  p_settings - Pointer to a PortSettings structure in which
@@ -663,7 +657,6 @@ int PORT_GetSettings(uint16_t handle, PortSettings* p_settings) {
  *                  enable     - enables data flow
  *
  ******************************************************************************/
-
 int PORT_FlowControl_MaxCredit(uint16_t handle, bool enable) {
   bool old_fc;
   uint32_t events;
@@ -693,7 +686,7 @@ int PORT_FlowControl_MaxCredit(uint16_t handle, bool enable) {
   } else {
     old_fc = p_port->local_ctrl.fc;
 
-    /* FC is set if user is set or peer is set */
+    // FC is set if user is set or peer is set
     p_port->local_ctrl.fc = (p_port->rx.user_fc | p_port->rx.peer_fc);
 
     if (p_port->local_ctrl.fc != old_fc) {
@@ -701,8 +694,8 @@ int PORT_FlowControl_MaxCredit(uint16_t handle, bool enable) {
     }
   }
 
-  /* Need to take care of the case when we could not deliver events */
-  /* to the application because we were flow controlled */
+  // Need to take care of the case when we could not deliver events
+  // to the application because we were flow controlled
   if (enable && (p_port->rx.queue_size != 0)) {
     events = PORT_EV_RXCHAR;
     if (p_port->rx_flag_ev_pending) {
@@ -824,24 +817,23 @@ int PORT_ReadData(uint16_t handle, char* p_data, uint16_t max_len, uint16_t* p_l
  *
  * Function         port_write
  *
- * Description      This function when a data packet is received from the apper
- *                  layer task.
+ * Description      This function is called when a data packet is received from
+ *                  the upper layer.
  *
  * Parameters:      p_port     - pointer to address of port control block
  *                  p_buf      - pointer to address of buffer with data,
  *
  ******************************************************************************/
 static int port_write(tPORT* p_port, BT_HDR* p_buf) {
-  /* We should not allow to write data in to server port when connection is not
-   * opened */
+  // We should not allow to write data in to server port when connection is not opened
   if (p_port->is_server && (p_port->rfc.sm_cb.state != RFC_STATE_OPENED)) {
     osi_free(p_buf);
     return PORT_CLOSED;
   }
 
-  /* Keep the data in pending queue if peer does not allow data, or */
-  /* Peer is not ready or Port is not yet opened or initial port control */
-  /* command has not been sent */
+  // Keep the data in pending queue if:
+  // peer does not allow data, peer is not ready, port is not yet opened, or
+  // initial port control command has not been sent
   if (p_port->tx.peer_fc || !p_port->rfc.p_mcb || !p_port->rfc.p_mcb->peer_ready ||
       (p_port->rfc.sm_cb.state != RFC_STATE_OPENED) ||
       ((p_port->port_ctrl & (PORT_CTRL_REQ_SENT | PORT_CTRL_IND_RECEIVED)) !=
@@ -922,20 +914,17 @@ int PORT_WriteDataCO(uint16_t handle, int* p_len) {
   if (available == 0) {
     return PORT_SUCCESS;
   }
-  /* Length for each buffer is the smaller of GKI buffer, peer MTU, or max_len
-   */
+  // Length for each buffer is the smaller of GKI buffer, peer MTU, or max_len
   length = RFCOMM_DATA_BUF_SIZE -
            (uint16_t)(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + RFCOMM_DATA_OVERHEAD);
 
-  /* If there are buffers scheduled for transmission check if requested */
-  /* data fits into the end of the queue */
+  // If there are buffers scheduled for transmission, check if requested
+  // data fits into the end of the queue
   mutex_global_lock();
 
   p_buf = (BT_HDR*)fixed_queue_try_peek_last(p_port->tx.queue);
   if ((p_buf != NULL) && (((int)p_buf->len + available) <= (int)p_port->peer_mtu) &&
       (((int)p_buf->len + available) <= (int)length)) {
-    // if(recv(fd, (uint8_t *)(p_buf + 1) + p_buf->offset + p_buf->len,
-    // available, 0) != available)
     if (!p_port->p_data_co_callback(handle, (uint8_t*)(p_buf + 1) + p_buf->offset + p_buf->len,
                                     available, DATA_CO_CALLBACK_TYPE_OUTGOING)) {
       log::error("p_data_co_callback DATA_CO_CALLBACK_TYPE_OUTGOING failed, available:{}",
@@ -943,8 +932,6 @@ int PORT_WriteDataCO(uint16_t handle, int* p_len) {
       mutex_global_unlock();
       return PORT_UNKNOWN_ERROR;
     }
-    // memcpy ((uint8_t *)(p_buf + 1) + p_buf->offset + p_buf->len, p_data,
-    // max_len);
     p_port->tx.queue_size += (uint16_t)available;
 
     *p_len = available;
@@ -957,12 +944,8 @@ int PORT_WriteDataCO(uint16_t handle, int* p_len) {
 
   mutex_global_unlock();
 
-  // int max_read = length < p_port->peer_mtu ? length : p_port->peer_mtu;
-
-  // max_read = available < max_read ? available : max_read;
-
   while (available) {
-    /* if we're over buffer high water mark, we're done */
+    // if we're over buffer high water mark, we're done
     if ((p_port->tx.queue_size > PORT_TX_HIGH_WM) ||
         (fixed_queue_length(p_port->tx.queue) > PORT_TX_BUF_HIGH_WM)) {
       port_flow_control_user(p_port);
@@ -972,7 +955,7 @@ int PORT_WriteDataCO(uint16_t handle, int* p_len) {
       break;
     }
 
-    /* continue with rfcomm data write */
+    // continue with rfcomm data write
     p_buf = (BT_HDR*)osi_malloc(RFCOMM_DATA_BUF_SIZE);
     p_buf->offset = L2CAP_MIN_OFFSET + RFCOMM_MIN_OFFSET;
     p_buf->layer_specific = handle;
@@ -986,9 +969,6 @@ int PORT_WriteDataCO(uint16_t handle, int* p_len) {
     p_buf->len = length;
     p_buf->event = BT_EVT_TO_BTU_SP_DATA;
 
-    // memcpy ((uint8_t *)(p_buf + 1) + p_buf->offset, p_data, length);
-    // if(recv(fd, (uint8_t *)(p_buf + 1) + p_buf->offset, (int)length, 0) !=
-    // (int)length)
     if (!p_port->p_data_co_callback(handle, (uint8_t*)(p_buf + 1) + p_buf->offset, length,
                                     DATA_CO_CALLBACK_TYPE_OUTGOING)) {
       log::error("p_data_co_callback DATA_CO_CALLBACK_TYPE_OUTGOING failed, length:{}", length);
@@ -999,7 +979,7 @@ int PORT_WriteDataCO(uint16_t handle, int* p_len) {
 
     rc = port_write(p_port, p_buf);
 
-    /* If queue went below the threshold need to send flow control */
+    // If queue went below the threshold need to send flow control
     event |= port_flow_control_user(p_port);
 
     if (rc == PORT_SUCCESS) {
@@ -1017,10 +997,10 @@ int PORT_WriteDataCO(uint16_t handle, int* p_len) {
     event |= PORT_EV_TXEMPTY;
   }
 
-  /* Mask out all events that are not of interest to user */
+  // Mask out all events that are not of interest to user
   event &= p_port->ev_mask;
 
-  /* Send event to the application */
+  // Send event to the application
   if (p_port->p_callback && event) {
     (p_port->p_callback)(event, p_port->handle);
   }
@@ -1035,7 +1015,7 @@ int PORT_WriteDataCO(uint16_t handle, int* p_len) {
  * Description      Normally not GKI aware application will call this function
  *                  to send data to the port.
  *
- * Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
+ * Parameters:      handle      - Handle returned in the RFCOMM_CreateConnection
  *                  p_data      - Data area
  *                  max_len     - Byte count requested
  *                  p_len       - Byte count received
@@ -1071,13 +1051,12 @@ int PORT_WriteData(uint16_t handle, const char* p_data, uint16_t max_len, uint16
     return PORT_UNKNOWN_ERROR;
   }
 
-  /* Length for each buffer is the smaller of GKI buffer, peer MTU, or max_len
-   */
+  // Length for each buffer is the smaller of GKI buffer, peer MTU, or max_len
   length = RFCOMM_DATA_BUF_SIZE -
            (uint16_t)(sizeof(BT_HDR) + L2CAP_MIN_OFFSET + RFCOMM_DATA_OVERHEAD);
 
-  /* If there are buffers scheduled for transmission check if requested */
-  /* data fits into the end of the queue */
+  // If there are buffers scheduled for transmission check if requested
+  // data fits into the end of the queue
   mutex_global_lock();
 
   p_buf = (BT_HDR*)fixed_queue_try_peek_last(p_port->tx.queue);
@@ -1097,13 +1076,13 @@ int PORT_WriteData(uint16_t handle, const char* p_data, uint16_t max_len, uint16
   mutex_global_unlock();
 
   while (max_len) {
-    /* if we're over buffer high water mark, we're done */
+    // if we're over buffer high water mark, we're done
     if ((p_port->tx.queue_size > PORT_TX_HIGH_WM) ||
         (fixed_queue_length(p_port->tx.queue) > PORT_TX_BUF_HIGH_WM)) {
       break;
     }
 
-    /* continue with rfcomm data write */
+    // continue with rfcomm data write
     p_buf = (BT_HDR*)osi_malloc(RFCOMM_DATA_BUF_SIZE);
     p_buf->offset = L2CAP_MIN_OFFSET + RFCOMM_MIN_OFFSET;
     p_buf->layer_specific = handle;
@@ -1123,7 +1102,7 @@ int PORT_WriteData(uint16_t handle, const char* p_data, uint16_t max_len, uint16
 
     rc = port_write(p_port, p_buf);
 
-    /* If queue went below the threshold need to send flow control */
+    // If queue went below the threshold, need to send flow control
     event |= port_flow_control_user(p_port);
 
     if (rc == PORT_SUCCESS) {
@@ -1142,10 +1121,10 @@ int PORT_WriteData(uint16_t handle, const char* p_data, uint16_t max_len, uint16
     event |= PORT_EV_TXEMPTY;
   }
 
-  /* Mask out all events that are not of interest to user */
+  // Mask out all events that are not of interest to user
   event &= p_port->ev_mask;
 
-  /* Send event to the application */
+  // Send event to the application
   if (p_port->p_callback && event) {
     (p_port->p_callback)(event, p_port->handle);
   }
@@ -1161,7 +1140,7 @@ int PORT_WriteData(uint16_t handle, const char* p_data, uint16_t max_len, uint16
  *
  ******************************************************************************/
 void RFCOMM_Init() {
-  memset(&rfc_cb, 0, sizeof(tRFC_CB)); /* Init RFCOMM control block */
+  memset(&rfc_cb, 0, sizeof(tRFC_CB));  // Init RFCOMM control block
   rfc_lcid_mcb = {};
 
   rfc_cb.rfc.last_mux = MAX_BD_CONNECTIONS;
@@ -1171,30 +1150,10 @@ void RFCOMM_Init() {
 
 /*******************************************************************************
  *
- * Function         PORT_GetResultString
- *
- * Description      This function returns the human-readable string for a given
- *                  result code.
- *
- * Returns          a pointer to the human-readable string for the given result.
- *
- ******************************************************************************/
-const char* PORT_GetResultString(const uint8_t result_code) {
-  if (result_code > PORT_ERR_MAX) {
-    return result_code_strings[PORT_ERR_MAX];
-  }
-
-  return result_code_strings[result_code];
-}
-
-/*******************************************************************************
- *
  * Function         PORT_GetSecurityMask
  *
- * Description      This function returns the security bitmask for a port.
- *
- * Returns          A result code, and writes the bitmask into the output
- *parameter.
+ * Returns          A result code, and writes the security bitmask into the output
+ *                  parameter.
  *
  ******************************************************************************/
 int PORT_GetSecurityMask(uint16_t handle, uint16_t* sec_mask) {
@@ -1207,6 +1166,16 @@ int PORT_GetSecurityMask(uint16_t handle, uint16_t* sec_mask) {
   return PORT_SUCCESS;
 }
 
+/*******************************************************************************
+ *
+ * Function         PORT_GetSecurityMask
+ *
+ * Description      This function returns the security bitmask for a port.
+ *
+ * Returns          A result code, and writes the channel info into the
+ *                  corresponding output parameters
+ *
+ ******************************************************************************/
 int PORT_GetChannelInfo(uint16_t handle, uint16_t* local_mtu, uint16_t* remote_mtu,
                         uint16_t* local_credit, uint16_t* remote_credit, uint16_t* local_cid,
                         uint16_t* remote_cid, uint16_t* dlci, uint16_t* max_frame_size,
