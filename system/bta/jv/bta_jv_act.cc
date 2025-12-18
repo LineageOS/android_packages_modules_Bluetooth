@@ -229,9 +229,9 @@ static tBTA_JV_RFC_CB* bta_jv_alloc_rfc_cb(uint16_t port_handle, tBTA_JV_PCB** p
       p_cb->max_sess = 1;
       p_cb->curr_sess = 1;
       for (j = 0; j < BTA_JV_MAX_RFC_SR_SESSION; j++) {
-        p_cb->rfc_hdl[j] = 0;
+        p_cb->port_hdls[j] = 0;
       }
-      p_cb->rfc_hdl[0] = port_handle;
+      p_cb->port_hdls[0] = port_handle;
       log::verbose("port_handle={}, jv_handle=0x{:x}", port_handle, p_cb->handle);
 
       p_pcb = &bta_jv_cb.port_cb[port_handle - 1];
@@ -370,7 +370,7 @@ static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB* p_cb, tBTA_JV_PCB* p_pc
   p_pcb->rfcomm_slot_id = 0;
   int si = BTA_JV_RFC_HDL_TO_SIDX(p_pcb->handle);
   if (0 <= si && si < BTA_JV_MAX_RFC_SR_SESSION) {
-    p_cb->rfc_hdl[si] = 0;
+    p_cb->port_hdls[si] = 0;
   }
   p_pcb->handle = 0;
   p_cb->curr_sess--;
@@ -487,8 +487,8 @@ static tBTA_JV_STATUS bta_jv_free_set_pm_profile_cb(uint32_t jv_handle) {
         uint32_t hi = ((jv_handle & BTA_JV_RFC_HDL_MASK) & ~BTA_JV_RFCOMM_MASK) - 1;
         uint32_t si = BTA_JV_RFC_HDL_TO_SIDX(jv_handle);
         if (hi < BTA_JV_MAX_RFC_CONN && bta_jv_cb.rfc_cb[hi].p_cback &&
-            si < BTA_JV_MAX_RFC_SR_SESSION && bta_jv_cb.rfc_cb[hi].rfc_hdl[si]) {
-          tBTA_JV_PCB* p_pcb = bta_jv_rfc_port_to_pcb(bta_jv_cb.rfc_cb[hi].rfc_hdl[si]);
+            si < BTA_JV_MAX_RFC_SR_SESSION && bta_jv_cb.rfc_cb[hi].port_hdls[si]) {
+          tBTA_JV_PCB* p_pcb = bta_jv_rfc_port_to_pcb(bta_jv_cb.rfc_cb[hi].port_hdls[si]);
           if (p_pcb) {
             if (NULL == p_pcb->p_pm_cb) {
               log::warn("jv_handle=0x{:x}, port_handle={}, i={}, no link to pm_cb?", jv_handle,
@@ -1798,8 +1798,8 @@ static tBTA_JV_PCB* bta_jv_add_rfc_port(tBTA_JV_RFC_CB* p_cb, tBTA_JV_PCB* p_pcb
   tBTA_SEC sec_mask;
   if (p_cb->max_sess > 1) {
     for (i = 0; i < p_cb->max_sess; i++) {
-      if (p_cb->rfc_hdl[i] != 0) {
-        p_pcb = &bta_jv_cb.port_cb[p_cb->rfc_hdl[i] - 1];
+      if (p_cb->port_hdls[i] != 0) {
+        p_pcb = &bta_jv_cb.port_cb[p_cb->port_hdls[i] - 1];
         if (p_pcb->state == BTA_JV_ST_SR_LISTEN) {
           listen++;
           if (p_pcb_open == p_pcb) {
@@ -1831,12 +1831,12 @@ static tBTA_JV_PCB* bta_jv_add_rfc_port(tBTA_JV_RFC_CB* p_cb, tBTA_JV_PCB* p_pcb
 
       port_status = RFCOMM_CreateConnectionWithSecurity(
               p_cb->sec_id, p_cb->scn, true, BTA_JV_DEF_RFC_MTU, RawAddress::kAny,
-              &(p_cb->rfc_hdl[si]), bta_jv_port_mgmt_sr_cback, sec_mask, RfcommCfgInfo{});
+              &(p_cb->port_hdls[si]), bta_jv_port_mgmt_sr_cback, sec_mask, RfcommCfgInfo{});
       if (port_status == PORT_SUCCESS) {
         p_cb->curr_sess++;
-        p_pcb = &bta_jv_cb.port_cb[p_cb->rfc_hdl[si] - 1];
+        p_pcb = &bta_jv_cb.port_cb[p_cb->port_hdls[si] - 1];
         p_pcb->state = BTA_JV_ST_SR_LISTEN;
-        p_pcb->port_handle = p_cb->rfc_hdl[si];
+        p_pcb->port_handle = p_cb->port_hdls[si];
         log::verbose("setting p_pcb->rfcomm_slot_id={}", p_pcb_open->rfcomm_slot_id);
         p_pcb->rfcomm_slot_id = p_pcb_open->rfcomm_slot_id;
 
