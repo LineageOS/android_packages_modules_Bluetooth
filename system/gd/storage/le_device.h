@@ -46,8 +46,8 @@ public:
   // Get LE address type of the key address
   GENERATE_PROPERTY_GETTER(AddressType, hci::AddressType, BTIF_STORAGE_KEY_ADDR_TYPE);
 
-  MutationEntry SetAddressType(const hci::AddressType& value) {
-    return MutationEntry::Set(section_, BTIF_STORAGE_KEY_ADDR_TYPE, std::to_string(int(value)));
+  void SetAddressType(const hci::AddressType& value) {
+    config_->SetProperty(section_, BTIF_STORAGE_KEY_ADDR_TYPE, std::to_string(int(value)));
   }
 };
 

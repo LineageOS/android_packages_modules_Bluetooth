@@ -777,16 +777,12 @@ void BleScannerInterfaceImpl::handle_remote_properties(RawAddress bd_addr, tBLE_
   bluetooth::hci::Address address = bd_addr;
 
   // update device type
-  auto mutation = storage_module->Modify();
   bluetooth::storage::Device device = storage_module->GetDeviceByLegacyKey(address);
-  mutation.Add(device.SetDeviceType(device_type));
-  mutation.Commit();
+  device.SetDeviceType(device_type);
 
   // update address type
-  auto mutation2 = storage_module->Modify();
   bluetooth::storage::LeDevice le_device = device.Le();
-  mutation2.Add(le_device.SetAddressType((bluetooth::hci::AddressType)addr_type));
-  mutation2.Commit();
+  le_device.SetAddressType((bluetooth::hci::AddressType)addr_type);
 }
 
 BleScannerInterface* bluetooth::shim::get_ble_scanner_instance() {

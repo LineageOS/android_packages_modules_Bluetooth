@@ -34,7 +34,6 @@
 #include "storage/config_cache.h"
 #include "storage/config_keys.h"
 #include "storage/legacy_config_file.h"
-#include "storage/mutation.h"
 
 namespace bluetooth {
 namespace storage {
@@ -140,11 +139,6 @@ StorageModule::~StorageModule() {
   pimpl_.reset();
 
   log::verbose("Storage module stopped !!");
-}
-
-Mutation StorageModule::Modify() {
-  std::lock_guard<std::recursive_mutex> lock(mutex_);
-  return Mutation(&pimpl_->cache_);
 }
 
 void StorageModule::SaveDelayed() {

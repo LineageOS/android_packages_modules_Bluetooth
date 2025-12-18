@@ -32,7 +32,6 @@
 #include "storage/config_cache.h"
 #include "storage/config_cache_helper.h"
 #include "storage/config_keys.h"
-#include "storage/mutation_entry.h"
 #include "storage/serializable.h"
 
 namespace bluetooth {
@@ -95,10 +94,10 @@ private:
 public:
   GENERATE_PROPERTY_GETTER(DeviceType, hci::DeviceType, BTIF_STORAGE_KEY_DEV_TYPE);
 
-  MutationEntry SetDeviceType(const hci::DeviceType& value) {
+  void SetDeviceType(const hci::DeviceType& value) {
     auto current_value = GetDeviceType().value_or(hci::DeviceType::UNKNOWN);
-    return MutationEntry::Set(section_, BTIF_STORAGE_KEY_DEV_TYPE,
-                              std::to_string(current_value | value));
+    config_->SetProperty(section_, BTIF_STORAGE_KEY_DEV_TYPE,
+                         std::to_string(current_value | value));
   }
 
   std::optional<std::vector<Uuid>> GetServiceUuidsLe() const {

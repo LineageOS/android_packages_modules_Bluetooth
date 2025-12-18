@@ -20,13 +20,11 @@
 #include <gtest/gtest.h>
 
 #include "storage/le_device.h"
-#include "storage/mutation.h"
 
 using bluetooth::hci::Address;
 using bluetooth::hci::DeviceType;
 using bluetooth::storage::ConfigCache;
 using bluetooth::storage::Device;
-using bluetooth::storage::Mutation;
 using ::testing::Eq;
 using ::testing::MatchesRegex;
 using ::testing::Optional;
@@ -88,16 +86,10 @@ TEST(DeviceTest, set_device_type) {
   Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
   Device device(&config, address, Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
   ASSERT_EQ(device.GetDeviceType(), std::nullopt);
-  {
-    Mutation mutation(&config);
-    mutation.Add(device.SetDeviceType(DeviceType::BR_EDR));
-    mutation.Commit();
-  }
+
+  device.SetDeviceType(DeviceType::BR_EDR);
   ASSERT_THAT(device.GetDeviceType(), Optional(Eq(DeviceType::BR_EDR)));
-  {
-    Mutation mutation(&config);
-    mutation.Add(device.SetDeviceType(DeviceType::LE));
-    mutation.Commit();
-  }
+
+  device.SetDeviceType(DeviceType::LE);
   ASSERT_THAT(device.GetDeviceType(), Optional(Eq(DeviceType::DUAL)));
 }
