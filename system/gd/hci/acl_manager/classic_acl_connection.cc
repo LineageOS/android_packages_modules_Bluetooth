@@ -370,11 +370,9 @@ void ClassicAclConnection::RegisterCallbacks(ConnectionManagementCallbacks* call
 }
 
 bool ClassicAclConnection::Disconnect(DisconnectReason reason) {
-  if (com_android_bluetooth_flags_dont_send_hci_disconnect_repeatedly()) {
-    if (is_disconnecting_) {
-      log::info("Already disconnecting {}", address_);
-      return true;
-    }
+  if (is_disconnecting_) {
+    log::info("Already disconnecting {}", address_);
+    return true;
   }
 
   is_disconnecting_ = true;

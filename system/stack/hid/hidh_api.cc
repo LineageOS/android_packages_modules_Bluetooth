@@ -398,7 +398,6 @@ tHID_STATUS HID_HostAddDev(const RawAddress& addr, uint16_t attr_mask, uint8_t* 
   }
 
   if (!hidh_in_use(hh_cb.devices[i])) {
-    hh_cb.devices[i].in_use = true;
     hh_cb.devices[i].addr = addr;
     hh_cb.devices[i].state = HIDH_DEV_NO_CONN;
     hh_cb.devices[i].conn_tries = 0;
@@ -430,15 +429,6 @@ tHID_STATUS HID_HostRemoveDev(uint8_t dev_handle) {
     bluetooth::metrics::Counter(
             bluetooth::metrics::CounterKey::HIDH_ERR_INVALID_PARAM_AT_HOST_REMOVE_DEV);
     return HID_ERR_INVALID_PARAM;
-  }
-
-  if (!com_android_bluetooth_flags_wait_hid_disconnect_before_marking_unused()) {
-    HID_HostCloseDev(dev_handle);
-    hh_cb.devices[dev_handle].in_use = false;
-    hh_cb.devices[dev_handle].conn.conn_state = HID_CONN_STATE_UNUSED;
-    hh_cb.devices[dev_handle].conn.ctrl_cid = hh_cb.devices[dev_handle].conn.intr_cid = 0;
-    hh_cb.devices[dev_handle].attr_mask = 0;
-    return HID_SUCCESS;
   }
 
   hh_cb.devices[dev_handle].attr_mask = 0;

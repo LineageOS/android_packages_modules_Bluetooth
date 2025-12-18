@@ -129,7 +129,7 @@ bool rfc_check_fcs(uint16_t len, uint8_t* p, uint8_t received_fcs) {
  ******************************************************************************/
 tRFC_MCB* rfc_alloc_multiplexer_channel(const RawAddress& bd_addr, bool is_initiator) {
   int i, j;
-  tRFC_MCB* p_mcb = NULL;
+  tRFC_MCB* p_mcb = nullptr;
   log::verbose("bd_addr:{}, is_initiator:{}", bd_addr, is_initiator);
 
   for (i = 0; i < MAX_BD_CONNECTIONS; i++) {
@@ -180,7 +180,7 @@ tRFC_MCB* rfc_alloc_multiplexer_channel(const RawAddress& bd_addr, bool is_initi
       return p_mcb;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 /*******************************************************************************
@@ -194,12 +194,12 @@ void rfc_release_multiplexer_channel(tRFC_MCB* p_mcb) {
   bluetooth::metrics::LogRfcommMxEvent(p_mcb->bd_addr,
                                        bluetooth::metrics::State::STATE_DISCONNECTED);
   /* Remove the MCB from the mapping table */
-  rfc_save_lcid_mcb(NULL, p_mcb->lcid);
+  rfc_save_lcid_mcb(nullptr, p_mcb->lcid);
 
   /* Remove the MCB from the ports */
   for (int i = 0; i < MAX_RFC_PORTS; i++) {
     if (rfc_cb.port.port[i].rfc.p_mcb == p_mcb) {
-      rfc_cb.port.port[i].rfc.p_mcb = NULL;
+      rfc_cb.port.port[i].rfc.p_mcb = nullptr;
     }
   }
 
@@ -289,7 +289,7 @@ void rfc_check_mcb_active(tRFC_MCB* p_mcb) {
   /* On the server side start inactivity timer */
   if (p_mcb->is_disc_initiator) {
     p_mcb->is_disc_initiator = false;
-    rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_CLOSE_REQ, NULL);
+    rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_CLOSE_REQ, nullptr);
   } else {
     rfc_timer_start(p_mcb, RFC_MCB_RELEASE_INACT_TIMER);
   }
@@ -298,13 +298,13 @@ void rfc_check_mcb_active(tRFC_MCB* p_mcb) {
 void rfcomm_port_timer_timeout(void* data) {
   tPORT* p_port = (tPORT*)data;
 
-  rfc_port_sm_execute(p_port, RFC_PORT_EVENT_TIMEOUT, NULL);
+  rfc_port_sm_execute(p_port, RFC_PORT_EVENT_TIMEOUT, nullptr);
 }
 
 void rfcomm_mcb_timer_timeout(void* data) {
   tRFC_MCB* p_mcb = (tRFC_MCB*)data;
 
-  rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_TIMEOUT, NULL);
+  rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_TIMEOUT, nullptr);
 }
 
 /*******************************************************************************
@@ -417,8 +417,8 @@ void rfc_dec_credit(tPORT* p_port) {
  ******************************************************************************/
 void rfc_check_send_cmd(tRFC_MCB* p_mcb, BT_HDR* p_buf) {
   /* if passed a buffer queue it */
-  if (p_buf != NULL) {
-    if (p_mcb->cmd_q == NULL) {
+  if (p_buf != nullptr) {
+    if (p_mcb->cmd_q == nullptr) {
       log::error("empty queue: p_mcb = {} p_mcb->lcid = {} cached p_mcb = {}",
                  std::format_ptr(p_mcb), p_mcb->lcid,
                  std::format_ptr(rfc_find_lcid_mcb(p_mcb->lcid)));
@@ -429,7 +429,7 @@ void rfc_check_send_cmd(tRFC_MCB* p_mcb, BT_HDR* p_buf) {
   /* handle queue if L2CAP not congested */
   while (!p_mcb->l2cap_congested) {
     BT_HDR* p = (BT_HDR*)fixed_queue_try_dequeue(p_mcb->cmd_q);
-    if (p == NULL) {
+    if (p == nullptr) {
       break;
     }
     uint16_t len = p->len;

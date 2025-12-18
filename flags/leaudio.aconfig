@@ -42,6 +42,14 @@ flag {
 }
 
 flag {
+    name: "leaudio_codec_id_support"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "Allow application to get any codec id along with vendor specific codecs information"
+    bug: "463280176"
+}
+
+flag {
     name: "leaudio_software_bt_request_lock_fix"
     namespace: "bluetooth"
     description: "Fix minor locking issue"
@@ -202,16 +210,6 @@ flag {
     namespace: "bluetooth"
     description: "Change the data path dynamically"
     bug: "414773442"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_do_not_set_autoconnecting_on_connected_device"
-    namespace: "bluetooth"
-    description: "When `autoConnect` triggers, do not set CONNECTING_AUTOCONNECT for device that is already in CONNECTED state."
-    bug: "407958032"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

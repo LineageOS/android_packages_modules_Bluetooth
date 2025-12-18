@@ -30,6 +30,7 @@ import android.bluetooth.toAddressBytes
 import android.bluetooth.toAddressString
 import android.content.Context
 import android.os.ParcelUuid
+import android.platform.test.annotations.RequiresFlagsEnabled
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
@@ -409,7 +410,6 @@ class PairingDualModeTest {
             .isEqualTo(bumbleDevice.identityAddressWithType.address)
         assertThat(cod).isEqualTo(bumbleDevice.bluetoothClass)
         assertThat(bumbleDevice.alias).isEqualTo(BUMBLE_ALIAS)
-
     }
 
     /**
@@ -522,6 +522,33 @@ class PairingDualModeTest {
         intentReceiver.close()
     }
 
+    /**
+     * Test to verify getBondStatus()
+     *
+     * Steps:
+     * 1. Create a bond
+     * 2. Call getBondStatus()
+     * 3. Remove Bond
+     * 4. Call getBondStatus()
+     */
+    @RequiresFlagsEnabled(
+        "com.android.bluetooth.flags.provide_pairing_algo",
+        "com.android.bluetooth.flags.enable_get_bond_status",
+    )
+    @Test
+    @Throws(Exception::class)
+    fun testGetBondStatus() {
+        testStep_BondBrEdr(null)
+        val bondStatus = bumbleDevice.getBondStatus(BluetoothDevice.TRANSPORT_BREDR)
+        assertThat(bondStatus).isNotNull()
+        assertThat(bondStatus?.getPairingVariant())
+            .isEqualTo(BluetoothDevice.PAIRING_VARIANT_PASSKEY_CONFIRMATION)
+        assertThat(bondStatus?.getPairingAlgorithm())
+            .isEqualTo(BluetoothDevice.PAIRING_ALGORITHM_SC)
+        util.removeBond(null, bumbleDevice)
+        assertThat(bumbleDevice.getBondStatus(BluetoothDevice.TRANSPORT_BREDR)).isNull()
+    }
+
     private fun testStep_BondBrEdr(parentIntentReceiver: IntentReceiver?) {
         val intentReceiver =
             IntentReceiver.update(
@@ -572,7 +599,6 @@ class PairingDualModeTest {
         testStep_VerifyBondIntents(intentReceiver, bumbleDevice, BluetoothDevice.TRANSPORT_BREDR)
         // Approve pairing from Android
         assertThat(bumbleDevice.setPairingConfirmation(true)).isTrue()
-
     }
 
     private fun testStep_VerifyBondIntents(

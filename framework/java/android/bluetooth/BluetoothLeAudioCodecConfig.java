@@ -24,6 +24,7 @@ import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
 import com.android.bluetooth.flags.Flags;
 
@@ -42,6 +43,38 @@ import java.util.Objects;
  */
 public final class BluetoothLeAudioCodecConfig implements Parcelable {
     // Add an entry for each source codec here.
+    private static final String TAG = BluetoothLeAudioCodecConfig.class.getSimpleName();
+
+    /**
+     * Codec ID for LC3.
+     *
+     * <p>Bluetooth Assigned Numbers Section 2.11: Coding Format and Codec ID (HCI), LC3 is 0x06.
+     */
+    private static final long CODEC_ID_LC3 = 0x0000_0000_06L;
+
+    /**
+     * Codec ID for Opus. This is a Vendor Specific codec.
+     *
+     * <p>The format is: [Vendor Defined Codec ID (16)] [Company ID (16)] [Codec ID (8)]
+     *
+     * <ul>
+     *   <li>Codec ID: 0xFF (Vendor Specific)
+     *   <li>Company ID: 0x00E0 (Google)
+     *   <li>Vendor Defined Codec ID: 0x0001 (Opus)
+     * </ul>
+     *
+     * Bluetooth Assigned Numbers Section 2.11: Coding Format and Codec ID (HCI), Vendor Specific is
+     * 0xFF.
+     */
+    private static final long CODEC_ID_OPUS = 0x0001_00e0_ffL;
+
+    /**
+     * The Codec ID value defined by Bluetooth Assigned Numbers to indicate a Vendor Specific codec.
+     * This is the LSB (0xFF) of the 40-bit Codec ID.
+     */
+    private static final long CODEC_ID_VENDOR_SPECIFIC = 0xffL;
+
+    private static final long CODEC_ID_INVALID = -1L;
 
     @Hide
     @IntDef(
@@ -50,6 +83,7 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
                 SOURCE_CODEC_TYPE_LC3,
                 SOURCE_CODEC_TYPE_OPUS,
                 SOURCE_CODEC_TYPE_OPUS_HI_RES,
+                SOURCE_CODEC_TYPE_VENDOR_SPECIFIC,
                 SOURCE_CODEC_TYPE_INVALID
             })
     @Retention(RetentionPolicy.SOURCE)
@@ -64,6 +98,13 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
     /** Source codec type for Opus High Resolution. */
     @FlaggedApi(Flags.FLAG_LEAUDIO_ADD_OPUS_HI_RES_CODEC_TYPE_API)
     public static final int SOURCE_CODEC_TYPE_OPUS_HI_RES = 2;
+
+    /**
+     * Source codec type used for Vendor Specific codecs. When this type is used, {@link
+     * #getCodecId()} should be used to get more information about the codec.
+     */
+    @FlaggedApi(Flags.FLAG_LEAUDIO_CODEC_ID_SUPPORT)
+    public static final int SOURCE_CODEC_TYPE_VENDOR_SPECIFIC = 0xFF;
 
     public static final int SOURCE_CODEC_TYPE_INVALID = 1000 * 1000;
 
@@ -230,6 +271,7 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
     /** Frame duration 20000 us. */
     @Hide public static final int FRAME_DURATION_20000 = 0x01 << 2;
 
+    private final long mCodecId;
     private final @SourceCodecType int mCodecType;
     private final @CodecPriority int mCodecPriority;
     private final @SampleRate int mSampleRate;
@@ -264,6 +306,51 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
             int minOctetsPerFrame,
             int maxOctetsPerFrame) {
         mCodecType = codecType;
+
+        if (Flags.leaudioCodecIdSupport()) {
+            mCodecId =
+                    switch (codecType) {
+                        case SOURCE_CODEC_TYPE_LC3 -> CODEC_ID_LC3;
+                        case SOURCE_CODEC_TYPE_OPUS -> CODEC_ID_OPUS;
+                        case SOURCE_CODEC_TYPE_VENDOR_SPECIFIC, SOURCE_CODEC_TYPE_INVALID ->
+                                CODEC_ID_INVALID;
+                        default -> {
+                            if (Flags.leaudioAddOpusHiResCodecTypeApi()) {
+                                if (codecType == SOURCE_CODEC_TYPE_OPUS_HI_RES) {
+                                    yield CODEC_ID_OPUS;
+                                }
+                            }
+                            yield CODEC_ID_INVALID;
+                        }
+                    };
+        } else {
+            mCodecId = CODEC_ID_INVALID;
+        }
+
+        mCodecPriority = codecPriority;
+        mSampleRate = sampleRate;
+        mBitsPerSample = bitsPerSample;
+        mChannelCount = channelCount;
+        mFrameDuration = frameDuration;
+        mOctetsPerFrame = octetsPerFrame;
+        mMinOctetsPerFrame = minOctetsPerFrame;
+        mMaxOctetsPerFrame = maxOctetsPerFrame;
+    }
+
+    @FlaggedApi(Flags.FLAG_LEAUDIO_CODEC_ID_SUPPORT)
+    private BluetoothLeAudioCodecConfig(
+            @SourceCodecType int codecType,
+            long codecId,
+            @CodecPriority int codecPriority,
+            @SampleRate int sampleRate,
+            @BitsPerSample int bitsPerSample,
+            @ChannelCount int channelCount,
+            @FrameDuration int frameDuration,
+            int octetsPerFrame,
+            int minOctetsPerFrame,
+            int maxOctetsPerFrame) {
+        mCodecType = codecType;
+        mCodecId = codecId;
         mCodecPriority = codecPriority;
         mSampleRate = sampleRate;
         mBitsPerSample = bitsPerSample;
@@ -292,6 +379,23 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
                     int octetsPerFrame = in.readInt();
                     int minOctetsPerFrame = in.readInt();
                     int maxOctetsPerFrame = in.readInt();
+                    long codecId = CODEC_ID_INVALID;
+
+                    if (Flags.leaudioCodecIdSupport()) {
+                        codecId = in.readLong();
+                        return new BluetoothLeAudioCodecConfig(
+                                codecType,
+                                codecId,
+                                codecPriority,
+                                sampleRate,
+                                bitsPerSample,
+                                channelCount,
+                                frameDuration,
+                                octetsPerFrame,
+                                minOctetsPerFrame,
+                                maxOctetsPerFrame);
+                    }
+
                     return new BluetoothLeAudioCodecConfig(
                             codecType,
                             codecPriority,
@@ -320,6 +424,9 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
         out.writeInt(mOctetsPerFrame);
         out.writeInt(mMinOctetsPerFrame);
         out.writeInt(mMaxOctetsPerFrame);
+        if (Flags.leaudioCodecIdSupport()) {
+            out.writeLong(mCodecId);
+        }
     }
 
     private static String sampleRateToString(@SampleRate int sampleRateBit) {
@@ -356,6 +463,7 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
     public String toString() {
         return ("BluetoothLeAudioCodecConfig [codecName=" + getCodecName())
                 + (",mCodecType=" + mCodecType)
+                + (",mCodecId=" + Long.toHexString(mCodecId))
                 + (",mCodecPriority=" + mCodecPriority)
                 + (",mSampleRate=" + sampleRateToString(mSampleRate))
                 + (",mBitsPerSample=" + mBitsPerSample)
@@ -377,6 +485,29 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
     }
 
     /**
+     * Returns the unique codec identifier.
+     *
+     * <p>The codec identifier is 40 bits as defined by Bluetooth ASCS v1.0.1 in chapter 4.1. Audio
+     * Stream Endpoints
+     *
+     * <ul>
+     *   <li>Bits 0-7: Codec ID, as defined by Bluetooth Assigned numbers 2.11 Coding_Format and
+     *       Codec_ID (HCI)
+     *       <ul>
+     *         <li>0x06: LC3
+     *         <li>0xFF: Vendor
+     *       </ul>
+     *   <li>Bits 8-23: Company ID, set to 0, if octet 0 is not 0xFF.
+     *   <li>Bits 24-39: Vendor-defined codec ID, set to 0, if octet 0 is not 0xFF.
+     * </ul>
+     */
+    @RequiresNoPermission
+    @FlaggedApi(Flags.FLAG_LEAUDIO_CODEC_ID_SUPPORT)
+    public long getCodecId() {
+        return mCodecId;
+    }
+
+    /**
      * Gets the codec name.
      *
      * @return the codec name
@@ -393,7 +524,13 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
                         yield "Opus Hi-Res";
                     }
                 }
-                yield "UNKNOWN CODEC(" + mCodecType + ")";
+
+                if (Flags.leaudioCodecIdSupport()) {
+                    if (mCodecType == SOURCE_CODEC_TYPE_VENDOR_SPECIFIC) {
+                        yield "VENDOR SPECIFIC CODEC(" + mCodecId + ")";
+                    }
+                }
+                yield "UNKNOWN CODEC(" + mCodecType + ", " + mCodecId + ")";
             }
         };
     }
@@ -455,6 +592,19 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
     public boolean equals(@Nullable Object o) {
         if (o instanceof BluetoothLeAudioCodecConfig) {
             BluetoothLeAudioCodecConfig other = (BluetoothLeAudioCodecConfig) o;
+            if (Flags.leaudioCodecIdSupport()) {
+                return (other.getCodecType() == mCodecType
+                        && other.getCodecId() == mCodecId
+                        && other.getCodecPriority() == mCodecPriority
+                        && other.getSampleRate() == mSampleRate
+                        && other.getBitsPerSample() == mBitsPerSample
+                        && other.getChannelCount() == mChannelCount
+                        && other.getFrameDuration() == mFrameDuration
+                        && other.getOctetsPerFrame() == mOctetsPerFrame
+                        && other.getMinOctetsPerFrame() == mMinOctetsPerFrame
+                        && other.getMaxOctetsPerFrame() == mMaxOctetsPerFrame);
+            }
+
             return (other.getCodecType() == mCodecType
                     && other.getCodecPriority() == mCodecPriority
                     && other.getSampleRate() == mSampleRate
@@ -476,6 +626,7 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
     public int hashCode() {
         return Objects.hash(
                 mCodecType,
+                mCodecId,
                 mCodecPriority,
                 mSampleRate,
                 mBitsPerSample,
@@ -502,11 +653,15 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
         private int mOctetsPerFrame = 0;
         private int mMinOctetsPerFrame = 0;
         private int mMaxOctetsPerFrame = 0;
+        private long mCodecId = CODEC_ID_INVALID;
 
         public Builder() {}
 
         public Builder(@NonNull BluetoothLeAudioCodecConfig config) {
             mCodecType = config.getCodecType();
+            if (Flags.leaudioCodecIdSupport()) {
+                mCodecId = config.getCodecId();
+            }
             mCodecPriority = config.getCodecPriority();
             mSampleRate = config.getSampleRate();
             mBitsPerSample = config.getBitsPerSample();
@@ -526,6 +681,89 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
         @RequiresNoPermission
         public @NonNull Builder setCodecType(@SourceCodecType int codecType) {
             mCodecType = codecType;
+            if (Flags.leaudioCodecIdSupport()) {
+                mCodecId =
+                        switch (codecType) {
+                            case SOURCE_CODEC_TYPE_LC3 -> CODEC_ID_LC3;
+                            case SOURCE_CODEC_TYPE_OPUS -> CODEC_ID_OPUS;
+                            case SOURCE_CODEC_TYPE_VENDOR_SPECIFIC -> CODEC_ID_INVALID;
+                            default -> {
+                                if (Flags.leaudioAddOpusHiResCodecTypeApi()) {
+                                    if (codecType == SOURCE_CODEC_TYPE_OPUS_HI_RES) {
+                                        yield CODEC_ID_OPUS;
+                                    }
+                                }
+                                yield CODEC_ID_INVALID;
+                            }
+                        };
+            }
+
+            return this;
+        }
+
+        /**
+         * Sets the codec ID.
+         *
+         * <p>The codec identifier is 40 bits as defined by Bluetooth ASCS v1.0.1.
+         *
+         * <p>Currently, only the following Codec IDs are supported:
+         *
+         * <ul>
+         *   <li><b>0x06 (LC3):</b> The upper 32 bits must be 0.
+         *   <li><b>0xFF (Vendor Specific):</b> The LSB must be 0xFF.
+         * </ul>
+         *
+         * @param codecId The 40-bit codec identifier.
+         * @return the same Builder instance
+         * @throws IllegalArgumentException if the codecId is not supported (not LC3 or Vendor
+         *     Specific), or if the codecId conflicts with a previously set codec type.
+         */
+        @RequiresNoPermission
+        @FlaggedApi(Flags.FLAG_LEAUDIO_CODEC_ID_SUPPORT)
+        public @NonNull Builder setCodecId(long codecId) {
+            // Validate the Codec ID structure (Fail Fast)
+            //    - Must be LC3
+            //    - OR the LSB must be the Vendor Specific ID (0xFF)
+            if (codecId != CODEC_ID_LC3 && (codecId & 0xFF) != CODEC_ID_VENDOR_SPECIFIC) {
+                throw new IllegalArgumentException(
+                        "Invalid Codec ID: " + String.format("0x%010X", codecId));
+            }
+
+            /* Check if mCodecType need to be set properly */
+            if (mCodecType == BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_INVALID) {
+                mCodecId = codecId;
+
+                if (codecId == CODEC_ID_LC3) {
+                    mCodecType = BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3;
+                } else if (codecId == CODEC_ID_OPUS) {
+                    mCodecType = BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_OPUS;
+                } else {
+                    mCodecType = BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_VENDOR_SPECIFIC;
+                }
+                return this;
+            }
+
+            /* Check if codecId is valid */
+            if (mCodecType == BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3) {
+                if (codecId != CODEC_ID_LC3) {
+                    Log.w(TAG, "Invalid codecId for LC3 codec. Setting to proper value");
+                }
+                mCodecId = CODEC_ID_LC3;
+                return this;
+            }
+
+            if (mCodecType == BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_OPUS
+                    || (Flags.leaudioAddOpusHiResCodecTypeApi()
+                            && mCodecType
+                                    == BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_OPUS_HI_RES)) {
+                if (codecId != CODEC_ID_OPUS) {
+                    Log.w(TAG, "Invalid codecId for Opus codec. Setting to proper value");
+                }
+                mCodecId = CODEC_ID_OPUS;
+                return this;
+            }
+
+            mCodecId = codecId;
             return this;
         }
 
@@ -632,6 +870,19 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
          */
         @RequiresNoPermission
         public @NonNull BluetoothLeAudioCodecConfig build() {
+            if (Flags.leaudioCodecIdSupport()) {
+                return new BluetoothLeAudioCodecConfig(
+                        mCodecType,
+                        mCodecId,
+                        mCodecPriority,
+                        mSampleRate,
+                        mBitsPerSample,
+                        mChannelCount,
+                        mFrameDuration,
+                        mOctetsPerFrame,
+                        mMinOctetsPerFrame,
+                        mMaxOctetsPerFrame);
+            }
             return new BluetoothLeAudioCodecConfig(
                     mCodecType,
                     mCodecPriority,

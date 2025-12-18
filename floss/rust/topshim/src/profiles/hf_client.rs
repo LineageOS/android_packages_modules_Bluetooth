@@ -1,15 +1,11 @@
 use crate::bindings::root as bindings;
-use crate::btif::{BluetoothInterface, BtStatus, RawAddress, SupportedProfiles, ToggleableProfile};
-use crate::ccall;
-use crate::profiles::hf_client::bindings::bthf_client_interface_t;
+use crate::btif::{BluetoothInterface, BtStatus, RawAddress, ToggleableProfile};
 use crate::topstack::get_dispatchers;
-use crate::utils::LTCheckedPtrMut;
 
 use num_derive::{FromPrimitive, ToPrimitive};
-use num_traits::cast::FromPrimitive;
 use std::fmt::{Debug, Formatter, Result};
 use std::sync::{Arc, Mutex};
-use topshim_macros::{cb_variant, log_args, profile_enabled_or};
+use topshim_macros::{cb_variant, gen_cxx_extern_trivial_tuple, log_args, profile_enabled_or};
 
 use log::warn;
 
@@ -24,6 +20,55 @@ pub enum BthfClientConnectionState {
     Disconnecting,
 }
 
+#[gen_cxx_extern_trivial_tuple]
+struct CxxBthfClientConnectionState(bindings::bthf_client_connection_state_t);
+
+impl From<CxxBthfClientConnectionState> for BthfClientConnectionState {
+    fn from(item: CxxBthfClientConnectionState) -> Self {
+        match item.0 {
+            bindings::bthf_client_connection_state_t_BTHF_CLIENT_CONNECTION_STATE_DISCONNECTED => {
+                BthfClientConnectionState::Disconnected
+            }
+            bindings::bthf_client_connection_state_t_BTHF_CLIENT_CONNECTION_STATE_CONNECTING => {
+                BthfClientConnectionState::Connecting
+            }
+            bindings::bthf_client_connection_state_t_BTHF_CLIENT_CONNECTION_STATE_CONNECTED => {
+                BthfClientConnectionState::Connected
+            }
+            bindings::bthf_client_connection_state_t_BTHF_CLIENT_CONNECTION_STATE_SLC_CONNECTED => {
+                BthfClientConnectionState::SlcConnected
+            }
+            bindings::bthf_client_connection_state_t_BTHF_CLIENT_CONNECTION_STATE_DISCONNECTING => {
+                BthfClientConnectionState::Disconnecting
+            }
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl From<BthfClientConnectionState> for CxxBthfClientConnectionState {
+    fn from(item: BthfClientConnectionState) -> Self {
+        let i = match item {
+            BthfClientConnectionState::Disconnected => {
+                bindings::bthf_client_connection_state_t_BTHF_CLIENT_CONNECTION_STATE_DISCONNECTED
+            }
+            BthfClientConnectionState::Connecting => {
+                bindings::bthf_client_connection_state_t_BTHF_CLIENT_CONNECTION_STATE_CONNECTING
+            }
+            BthfClientConnectionState::Connected => {
+                bindings::bthf_client_connection_state_t_BTHF_CLIENT_CONNECTION_STATE_CONNECTED
+            }
+            BthfClientConnectionState::SlcConnected => {
+                bindings::bthf_client_connection_state_t_BTHF_CLIENT_CONNECTION_STATE_SLC_CONNECTED
+            }
+            BthfClientConnectionState::Disconnecting => {
+                bindings::bthf_client_connection_state_t_BTHF_CLIENT_CONNECTION_STATE_DISCONNECTING
+            }
+        };
+        CxxBthfClientConnectionState(i)
+    }
+}
+
 #[derive(Clone, Debug, FromPrimitive, ToPrimitive, PartialEq, PartialOrd)]
 #[repr(u32)]
 /// Represents the various connection states the audio channel for a
@@ -32,18 +77,56 @@ pub enum BthfClientAudioState {
     Disconnected = 0,
     Connecting,
     Connected,
-    Disconnecting,
+    ConnectedMsbc,
+    ConnectedLc3,
 }
 
-impl From<bindings::bthf_client_connection_state_t> for BthfClientConnectionState {
-    fn from(item: bindings::bthf_client_connection_state_t) -> Self {
-        BthfClientConnectionState::from_u32(item).unwrap_or(BthfClientConnectionState::Disconnected)
+#[gen_cxx_extern_trivial_tuple]
+struct CxxBthfClientAudioState(bindings::bthf_client_audio_state_t);
+
+impl From<CxxBthfClientAudioState> for BthfClientAudioState {
+    fn from(item: CxxBthfClientAudioState) -> Self {
+        match item.0 {
+            bindings::bthf_client_audio_state_t_BTHF_CLIENT_AUDIO_STATE_DISCONNECTED => {
+                BthfClientAudioState::Disconnected
+            }
+            bindings::bthf_client_audio_state_t_BTHF_CLIENT_AUDIO_STATE_CONNECTING => {
+                BthfClientAudioState::Connecting
+            }
+            bindings::bthf_client_audio_state_t_BTHF_CLIENT_AUDIO_STATE_CONNECTED => {
+                BthfClientAudioState::Connected
+            }
+            bindings::bthf_client_audio_state_t_BTHF_CLIENT_AUDIO_STATE_CONNECTED_MSBC => {
+                BthfClientAudioState::ConnectedMsbc
+            }
+            bindings::bthf_client_audio_state_t_BTHF_CLIENT_AUDIO_STATE_CONNECTED_LC3 => {
+                BthfClientAudioState::ConnectedLc3
+            }
+            _ => unreachable!(),
+        }
     }
 }
 
-impl From<bindings::bthf_client_audio_state_t> for BthfClientAudioState {
-    fn from(item: bindings::bthf_client_audio_state_t) -> Self {
-        BthfClientAudioState::from_u32(item).unwrap_or(BthfClientAudioState::Disconnected)
+impl From<BthfClientAudioState> for CxxBthfClientAudioState {
+    fn from(item: BthfClientAudioState) -> Self {
+        let i = match item {
+            BthfClientAudioState::Disconnected => {
+                bindings::bthf_client_audio_state_t_BTHF_CLIENT_AUDIO_STATE_DISCONNECTED
+            }
+            BthfClientAudioState::Connecting => {
+                bindings::bthf_client_audio_state_t_BTHF_CLIENT_AUDIO_STATE_CONNECTING
+            }
+            BthfClientAudioState::Connected => {
+                bindings::bthf_client_audio_state_t_BTHF_CLIENT_AUDIO_STATE_CONNECTED
+            }
+            BthfClientAudioState::ConnectedMsbc => {
+                bindings::bthf_client_audio_state_t_BTHF_CLIENT_AUDIO_STATE_CONNECTED_MSBC
+            }
+            BthfClientAudioState::ConnectedLc3 => {
+                bindings::bthf_client_audio_state_t_BTHF_CLIENT_AUDIO_STATE_CONNECTED_LC3
+            }
+        };
+        CxxBthfClientAudioState(i)
     }
 }
 
@@ -55,7 +138,6 @@ pub enum BthfClientCallbacks {
 
     /// Callback invoked when the audio connection state of the client changes.
     AudioState(RawAddress, BthfClientAudioState),
-    // TODO(b/262264556): Incomplete implementation. Other callbacks will be implemented if necessary.
 }
 
 pub struct BthfClientCallbacksDispatcher {
@@ -71,25 +153,69 @@ impl Debug for BthfClientCallbacksDispatcher {
 type BthfClientCb = Arc<Mutex<BthfClientCallbacksDispatcher>>;
 
 cb_variant!(BthfClientCb, hf_client_connection_state_cb -> BthfClientCallbacks::ConnectionState,
-    RawAddress, bindings::bthf_client_connection_state_t -> BthfClientConnectionState, u32, u32
+    RawAddress, CxxBthfClientConnectionState -> BthfClientConnectionState, u32, u32
 );
 
 cb_variant!(BthfClientCb, hf_client_audio_state_cb -> BthfClientCallbacks::AudioState,
-    RawAddress, bindings::bthf_client_audio_state_t -> BthfClientAudioState
+    RawAddress, CxxBthfClientAudioState -> BthfClientAudioState
 );
 
-struct RawHfClientWrapper {
-    raw: *const bindings::bthf_client_interface_t,
-}
+// Rust HH FFI that matches the C++ HH Interface defined in /topshim/hh/hh_shim.h
+#[cxx::bridge(namespace = "bluetooth::topshim::rust")]
+mod ffi {
+    unsafe extern "C++" {
+        include!("bluetooth/types/address.h");
+        include!("include/hardware/bt_hf_client.h");
+        include!("topshim/hf_client/hf_client_shim.h");
 
-unsafe impl Send for RawHfClientWrapper {}
+        #[namespace = ""]
+        #[cxx_name = "bt_interface_t"]
+        type BluetoothInterface = crate::btif::CxxBluetoothInterface;
+
+        #[namespace = ""]
+        type RawAddress = crate::btif::RawAddress;
+
+        #[namespace = ""]
+        #[cxx_name = "bthf_client_connection_state_t"]
+        type BthfClientConnectionState = super::CxxBthfClientConnectionState;
+
+        #[namespace = ""]
+        #[cxx_name = "bthf_client_audio_state_t"]
+        type BthfClientAudioState = super::CxxBthfClientAudioState;
+
+        type HfClientIntf;
+
+        fn GetHfClientProfile(btif: &BluetoothInterface) -> UniquePtr<HfClientIntf>;
+
+        fn init(self: &HfClientIntf) -> u32;
+        fn connect(self: &HfClientIntf, addr: RawAddress) -> u32;
+        fn disconnect(self: &HfClientIntf, addr: RawAddress) -> u32;
+        fn connect_audio(self: &HfClientIntf, addr: RawAddress) -> u32;
+        fn disconnect_audio(self: &HfClientIntf, addr: RawAddress) -> u32;
+        fn cleanup(self: &HfClientIntf);
+    }
+
+    // Callbacks from C++ to Rust. Generated by cb_variant!
+    extern "Rust" {
+        fn hf_client_connection_state_cb(
+            addr: RawAddress,
+            state: BthfClientConnectionState,
+            peer_feat: u32,
+            chld_feat: u32,
+        );
+        fn hf_client_audio_state_cb(addr: RawAddress, state: BthfClientAudioState);
+    }
+}
 
 pub struct HfClient {
-    internal: RawHfClientWrapper,
+    internal: cxx::UniquePtr<ffi::HfClientIntf>,
     is_init: bool,
     is_enabled: bool,
-    callbacks: Option<Box<bindings::bthf_client_callbacks_t>>,
 }
+
+// SAFETY: The pointer is to a static, thread-safe interface provided by the
+// Bluetooth stack. It's safe to send this pointer across threads.
+unsafe impl Send for HfClient {}
 
 impl ToggleableProfile for HfClient {
     fn is_enabled(&self) -> bool {
@@ -97,9 +223,7 @@ impl ToggleableProfile for HfClient {
     }
 
     fn enable(&mut self) -> bool {
-        let cb_ptr = LTCheckedPtrMut::from(self.callbacks.as_mut().unwrap());
-
-        let init = ccall!(self, init, cb_ptr.into());
+        let init = self.internal.init();
         self.is_init = BtStatus::from(init) == BtStatus::Success;
         self.is_enabled = self.is_init;
         true
@@ -107,7 +231,7 @@ impl ToggleableProfile for HfClient {
 
     #[profile_enabled_or(false)]
     fn disable(&mut self) -> bool {
-        ccall!(self, cleanup);
+        self.internal.cleanup();
         self.is_enabled = false;
         true
     }
@@ -116,13 +240,9 @@ impl ToggleableProfile for HfClient {
 impl HfClient {
     #[log_args]
     pub fn new(intf: &BluetoothInterface) -> HfClient {
-        let r = intf.get_profile_interface(SupportedProfiles::HfClient);
-        HfClient {
-            internal: RawHfClientWrapper { raw: r as *const bthf_client_interface_t },
-            is_init: false,
-            is_enabled: false,
-            callbacks: None,
-        }
+        let hf_client_intf: cxx::UniquePtr<ffi::HfClientIntf> =
+            ffi::GetHfClientProfile(intf.as_raw_btif());
+        HfClient { internal: hf_client_intf, is_init: false, is_enabled: false }
     }
 
     #[log_args]
@@ -137,65 +257,36 @@ impl HfClient {
             panic!("Tried to set dispatcher for BthfClienCallbacks but it already existed");
         }
 
-        let callbacks = Box::new(bindings::bthf_client_callbacks_t {
-            // TODO(b/262264556): Incomplete implementation. Only necessary callbacks are implemented currently.
-            size: 22 * 8,
-            connection_state_cb: Some(hf_client_connection_state_cb),
-            audio_state_cb: Some(hf_client_audio_state_cb),
-            vr_cmd_cb: None,
-            network_state_cb: None,
-            network_roaming_cb: None,
-            network_signal_cb: None,
-            battery_level_cb: None,
-            current_operator_cb: None,
-            call_cb: None,
-            callsetup_cb: None,
-            callheld_cb: None,
-            resp_and_hold_cb: None,
-            clip_cb: None,
-            call_waiting_cb: None,
-            current_calls_cb: None,
-            volume_change_cb: None,
-            cmd_complete_cb: None,
-            subscriber_info_cb: None,
-            in_band_ring_tone_cb: None,
-            last_voice_tag_number_callback: None,
-            ring_indication_cb: None,
-            unknown_event_cb: None,
-        });
-        self.callbacks = Some(callbacks);
-
         true
     }
 
     #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn connect(&self, addr: RawAddress) -> BtStatus {
-        BtStatus::from(ccall!(self, connect, addr))
+        self.internal.connect(addr).into()
     }
 
     #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn disconnect(&self, addr: RawAddress) -> BtStatus {
-        BtStatus::from(ccall!(self, disconnect, addr))
+        self.internal.disconnect(addr).into()
     }
 
     #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn connect_audio(&mut self, addr: RawAddress) -> BtStatus {
-        BtStatus::from(ccall!(self, connect_audio, addr))
+        self.internal.connect_audio(addr).into()
     }
 
     #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn disconnect_audio(&mut self, addr: RawAddress) -> BtStatus {
-        BtStatus::from(ccall!(self, disconnect_audio, addr))
+        self.internal.disconnect_audio(addr).into()
     }
 
     #[log_args]
     #[profile_enabled_or]
     pub fn cleanup(&mut self) {
-        ccall!(self, cleanup)
+        self.internal.cleanup();
     }
-    // TODO(b/262264556): Incomplete API implementation. Only necessary APIs are implemented currently.
 }

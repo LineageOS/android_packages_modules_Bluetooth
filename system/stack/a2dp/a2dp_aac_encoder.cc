@@ -331,7 +331,7 @@ static void a2dp_aac_encoder_update(A2dpCodecConfig* a2dp_codec_config, bool* p_
             "mode");
     return;  // TODO: Return an error?
   } else if (aac_param_value == A2DP_AAC_VARIABLE_BIT_RATE_ENABLED) {
-    // VBR has 5 modes defined in external/aac/libAACenc/src/aacenc.h
+    // VBR has 5 modes defined in external/aac/cpp/libAACenc/src/aacenc.h
     // A2DP_AAC_VARIABLE_BIT_RATE_DISABLED is equal to AACENC_BR_MODE_CBR
     auto bitrate_mode = a2dp_codec_config->getCodecConfig().codec_specific_1;
     switch (static_cast<AacEncoderBitrateMode>(bitrate_mode)) {

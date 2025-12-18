@@ -201,6 +201,24 @@ class LeAudio(val context: Context) : LeAudioImplBase(), Closeable {
         }
     }
 
+    fun mapRingerMode(ringerMode: RingerMode): Int {
+        return when (ringerMode) {
+            RingerMode.RINGER_MODE_NORMAL -> AudioManager.RINGER_MODE_NORMAL
+            RingerMode.RINGER_MODE_SILENT -> AudioManager.RINGER_MODE_SILENT
+            RingerMode.RINGER_MODE_VIBRATE -> AudioManager.RINGER_MODE_VIBRATE
+            else -> AudioManager.RINGER_MODE_NORMAL
+        }
+    }
+
+    fun mapToProtoRingerMode(ringerMode: Int): RingerMode {
+        return when (ringerMode) {
+            AudioManager.RINGER_MODE_NORMAL -> RingerMode.RINGER_MODE_NORMAL
+            AudioManager.RINGER_MODE_SILENT -> RingerMode.RINGER_MODE_SILENT
+            AudioManager.RINGER_MODE_VIBRATE -> RingerMode.RINGER_MODE_VIBRATE
+            else -> RingerMode.RINGER_MODE_NORMAL
+        }
+    }
+
     fun GroupStreamStatus.toAndroidStatus(): Int {
         return when (this) {
             GroupStreamStatus.GROUP_STREAM_STATUS_IDLE -> BluetoothLeAudio.GROUP_STREAM_STATUS_IDLE
@@ -459,6 +477,28 @@ class LeAudio(val context: Context) : LeAudioImplBase(), Closeable {
                         it.groupStreamStatus == groupStreamStatus.toAndroidStatus()
                 }
                 .first()
+            Empty.getDefaultInstance()
+        }
+    }
+
+    override fun leAudioGetRingerMode(
+        request: Empty,
+        responseObserver: StreamObserver<LeAudioGetRingerModeResponse>,
+    ) {
+        grpcUnary<LeAudioGetRingerModeResponse>(scope, responseObserver) {
+            val ringerMode = mapToProtoRingerMode(audioManager.ringerMode)
+            Log.i(TAG, "getRingerMode: $ringerMode")
+            LeAudioGetRingerModeResponse.newBuilder().setRingerMode(ringerMode).build()
+        }
+    }
+
+    override fun leAudioSetRingerMode(
+        request: LeAudioSetRingerModeRequest,
+        responseObserver: StreamObserver<Empty>,
+    ) {
+        grpcUnary(scope, responseObserver) {
+            Log.i(TAG, "setRingerMode: ${request.ringerMode}")
+            audioManager.ringerMode = mapRingerMode(request.ringerMode)
             Empty.getDefaultInstance()
         }
     }

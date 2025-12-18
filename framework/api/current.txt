@@ -1033,6 +1033,7 @@ package android.bluetooth {
     method public int describeContents();
     method public int getBitsPerSample();
     method public int getChannelCount();
+    method @FlaggedApi("com.android.bluetooth.flags.leaudio_codec_id_support") public long getCodecId();
     method @NonNull public String getCodecName();
     method public int getCodecPriority();
     method public int getCodecType();
@@ -1074,6 +1075,7 @@ package android.bluetooth {
     field public static final int SOURCE_CODEC_TYPE_LC3 = 0; // 0x0
     field public static final int SOURCE_CODEC_TYPE_OPUS = 1; // 0x1
     field @FlaggedApi("com.android.bluetooth.flags.leaudio_add_opus_hi_res_codec_type_api") public static final int SOURCE_CODEC_TYPE_OPUS_HI_RES = 2; // 0x2
+    field @FlaggedApi("com.android.bluetooth.flags.leaudio_codec_id_support") public static final int SOURCE_CODEC_TYPE_VENDOR_SPECIFIC = 255; // 0xff
   }
 
   public static final class BluetoothLeAudioCodecConfig.Builder {
@@ -1082,6 +1084,7 @@ package android.bluetooth {
     method @NonNull public android.bluetooth.BluetoothLeAudioCodecConfig build();
     method @NonNull public android.bluetooth.BluetoothLeAudioCodecConfig.Builder setBitsPerSample(int);
     method @NonNull public android.bluetooth.BluetoothLeAudioCodecConfig.Builder setChannelCount(int);
+    method @FlaggedApi("com.android.bluetooth.flags.leaudio_codec_id_support") @NonNull public android.bluetooth.BluetoothLeAudioCodecConfig.Builder setCodecId(long);
     method @NonNull public android.bluetooth.BluetoothLeAudioCodecConfig.Builder setCodecPriority(int);
     method @NonNull public android.bluetooth.BluetoothLeAudioCodecConfig.Builder setCodecType(int);
     method @NonNull public android.bluetooth.BluetoothLeAudioCodecConfig.Builder setFrameDuration(int);

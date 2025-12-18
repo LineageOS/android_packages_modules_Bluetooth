@@ -1273,6 +1273,20 @@ bool bta_ag_sco_is_opening(tBTA_AG_SCB* p_scb) {
 
 /*******************************************************************************
  *
+ * Function         bta_ag_sco_is_codec_negotiating
+ *
+ * Description      Check if sco is in Codec negotiation.
+ *
+ *
+ * Returns          true if sco is in Codec negotiation for this scb, false
+ *                  otherwise.
+ *
+ ******************************************************************************/
+bool bta_ag_sco_is_codec_negotiating(tBTA_AG_SCB* p_scb) {
+  return (bta_ag_cb.sco.state == BTA_AG_SCO_CODEC_ST) && (bta_ag_cb.sco.p_curr_scb == p_scb);
+}
+/*******************************************************************************
+ *
  * Function         bta_ag_sco_listen
  *
  * Description
@@ -1349,6 +1363,10 @@ void bta_ag_sco_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
    * state. */
   if ((p_scb->sco_idx != BTM_INVALID_SCO_INDEX) || (bta_ag_cb.sco.state == BTA_AG_SCO_CODEC_ST)) {
     log::verbose("bta_ag_sco_close: sco_inx = {}", p_scb->sco_idx);
+    if (com_android_bluetooth_flags_call_end_codec_negotiation() &&
+        bta_ag_cb.sco.state == BTA_AG_SCO_CODEC_ST) {
+      alarm_cancel(p_scb->codec_negotiation_timer);
+    }
     bta_ag_sco_event(p_scb, BTA_AG_SCO_CLOSE_E);
   }
 }

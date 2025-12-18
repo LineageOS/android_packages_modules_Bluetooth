@@ -62,16 +62,14 @@ object InteropUtil {
     fun interopMatchAddrOrName(
         adapterService: AdapterService,
         feature: InteropFeature,
-        address: String?,
+        address: String,
     ): Boolean {
-        val anonymizedAddress = BluetoothUtils.toAnonymizedAddress(address)
-        Log.d(TAG, "interopMatchAddrOrName: feature=${feature.name}, address=$anonymizedAddress")
-        if (address == null) {
-            return false
-        }
-
         val matched = adapterService.interopMatchAddrOrName(feature, address)
-        Log.d(TAG, "interopMatchAddrOrName: matched=$matched")
+        Log.d(
+            TAG,
+            "interopMatchAddrOrName: feature=${feature.name}" +
+                ", address=${BluetoothUtils.toAnonymizedAddress(address)}, matched=$matched",
+        )
         return matched
     }
 }

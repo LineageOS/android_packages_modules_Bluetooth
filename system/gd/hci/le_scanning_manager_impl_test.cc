@@ -18,6 +18,7 @@
 
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -38,7 +39,6 @@
 #include "hci/hci_layer.h"
 #include "hci/hci_layer_fake.h"
 #include "hci/hci_packets.h"
-#include "hci/uuid.h"
 #include "os/system_properties.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
@@ -80,8 +80,8 @@ hci::AdvertisingPacketContentFilterCommand make_filter(const hci::ApcfFilterType
       filter.application_address_type = hci::ApcfApplicationAddressType::RANDOM;
       break;
     case hci::ApcfFilterType::SERVICE_UUID:
-      filter.uuid = hci::Uuid::From32Bit(0x12345678);
-      filter.uuid_mask = hci::Uuid::From32Bit(0xffffffff);
+      filter.uuid = Uuid::From32Bit(0x12345678);
+      filter.uuid_mask = Uuid::From32Bit(0xffffffff);
       break;
     case hci::ApcfFilterType::LOCAL_NAME:
       filter.name = {0x01, 0x02, 0x03};
@@ -197,7 +197,7 @@ public:
 class MockCallbacks : public bluetooth::hci::ScanningCallback {
 public:
   MOCK_METHOD(void, OnScannerRegistered,
-              (const bluetooth::hci::Uuid app_uuid, ScannerId scanner_id, ScanningStatus status),
+              (const bluetooth::Uuid app_uuid, ScannerId scanner_id, ScanningStatus status),
               (override));
   MOCK_METHOD(void, OnSetScannerParameterComplete, (ScannerId scanner_id, ScanningStatus status),
               (override));
@@ -1365,8 +1365,8 @@ TEST_F(LeScanningManagerAndroidHciTest,
   std::vector<AdvertisingPacketContentFilterCommand> filters;
   hci::AdvertisingPacketContentFilterCommand filter = {
           .filter_type = hci::ApcfFilterType::SERVICE_SOLICITATION_UUID,
-          .uuid = hci::Uuid::From16Bit(0x180A),
-          .uuid_mask = hci::Uuid::From16Bit(0xFFFF)};
+          .uuid = Uuid::From16Bit(0x180A),
+          .uuid_mask = Uuid::From16Bit(0xFFFF)};
   filters.push_back(filter);
   le_scanning_manager->ScanFilterAdd(0x01, filters);
   sync_client_handler();

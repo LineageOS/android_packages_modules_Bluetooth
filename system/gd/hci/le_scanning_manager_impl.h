@@ -15,6 +15,8 @@
  */
 #pragma once
 
+#include <bluetooth/types/uuid.h>
+
 #include <memory>
 #include <vector>
 
@@ -25,7 +27,6 @@
 #include "hci/le_address_manager.h"
 #include "hci/le_scanning_callback.h"
 #include "hci/le_scanning_manager.h"
-#include "hci/uuid.h"
 #include "storage/storage_module.h"
 
 namespace bluetooth {

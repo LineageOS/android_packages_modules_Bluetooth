@@ -37,7 +37,6 @@ import android.os.ParcelUuid;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.ContentControlIdKeeper;
 
 import java.util.ArrayList;
@@ -1091,16 +1090,7 @@ public class TbsGeneric {
             return;
         }
 
-        if (Flags.tbsSetLeaFromBtservice()) {
-            mAdapterService.setActiveDevice(device, BluetoothAdapter.ACTIVE_DEVICE_AUDIO);
-            return;
-        }
-
-        mAdapterService
-                .getLeAudioService()
-                .ifPresentOrElse(
-                        leAudio -> leAudio.setActiveDevice(device),
-                        () -> Log.w(TAG, "mLeAudioService not available"));
+        mAdapterService.setActiveDevice(device, BluetoothAdapter.ACTIVE_DEVICE_AUDIO);
     }
 
     private static boolean isCallStateTransitionValid(int callState, int requestedOpcode) {

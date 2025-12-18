@@ -20,6 +20,7 @@
 #include <bluetooth/log.h>
 #include <bluetooth/metrics/bluetooth_event.h>
 #include <bluetooth/metrics/os_metrics.h>
+#include <bluetooth/types/uuid.h>
 #include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
@@ -107,8 +108,8 @@ static const std::string kPropertyEnableBlePrivacy = "bluetooth.core.gap.le.priv
 static const std::string kPropertyEnableBleOnlyInit1mPhy =
         "bluetooth.core.gap.le.conn.only_init_1m_phy.enabled";
 
-const std::optional<hci::Uuid> UUID_ASCS = hci::Uuid::FromString("184E");
-const std::optional<hci::Uuid> UUID_BASS = hci::Uuid::FromString("184F");
+constexpr Uuid UUID_ASCS("184E");
+constexpr Uuid UUID_BASS("184F");
 
 enum class ConnectabilityState {
   DISARMED = 0,
@@ -1108,12 +1109,11 @@ public:
 
     // If found ASCS/BASS UUID in database cache, it is a lea device and reconnection scenario
     for (auto it = accept_list.begin(); it != accept_list.end(); ++it) {
-      std::optional<std::vector<hci::Uuid>> uuids =
+      std::optional<std::vector<Uuid>> uuids =
               storage_module_.GetDeviceByLegacyKey(it->GetAddress()).GetServiceUuidsLe();
-      if (!uuids.has_value() ||
-          std::find_if(uuids->begin(), uuids->end(), [](const hci::Uuid& uuid) {
-            return (uuid == UUID_ASCS) || (uuid == UUID_BASS);
-          }) == uuids->end()) {
+      if (!uuids.has_value() || std::find_if(uuids->begin(), uuids->end(), [](const Uuid& uuid) {
+                                  return (uuid == UUID_ASCS) || (uuid == UUID_BASS);
+                                }) == uuids->end()) {
         log::verbose("{} does not support LE audio", it->GetAddress());
         return false;
       } else {
