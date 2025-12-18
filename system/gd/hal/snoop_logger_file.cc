@@ -39,13 +39,35 @@ using bluetooth::os::fake_timer::fake_timerfd_get_clock;
 namespace bluetooth::hal {
 
 #ifdef __ANDROID__
+// Return permission string in POSIX-style e.g. "rwxr-xr-x".
+static std::string get_permissions_string(std::filesystem::perms p) {
+  std::string str;
+  str.reserve(9);
+
+  using std::filesystem::perms;
+  auto add_bit = [&](char c, perms bit) { str += (p & bit) != perms::none ? c : '-'; };
+
+  add_bit('r', perms::owner_read);
+  add_bit('w', perms::owner_write);
+  add_bit('x', perms::owner_exec);
+  add_bit('r', perms::group_read);
+  add_bit('w', perms::group_write);
+  add_bit('x', perms::group_exec);
+  add_bit('r', perms::others_read);
+  add_bit('w', perms::others_write);
+  add_bit('x', perms::others_exec);
+
+  return str;
+}
+
 // The expected permissions and group for the created directory is like:
 //   drwxrwxr-x bluetooth bluetooth
 bool create_log_directories() {
   std::filesystem::path default_dir_path = os::ParameterProvider::SnoopLogDirPath();
 
   if (std::filesystem::exists(default_dir_path)) {
-    log::info("Directory {} already exists", default_dir_path.string());
+    log::info("Directory {} already exists with permission {}", default_dir_path.string(),
+              get_permissions_string(std::filesystem::status(default_dir_path).permissions()));
     return true;
   }
 
