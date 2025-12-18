@@ -299,3 +299,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "use_address_type_from_batch_scan_result"
+    namespace: "bluetooth"
+    description: "Use the address type from batch scan result"
+    bug: "469914545"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
