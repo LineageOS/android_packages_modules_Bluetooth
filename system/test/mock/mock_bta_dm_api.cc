@@ -94,7 +94,7 @@ namespace bta_dm_api {
 bool BTA_DmCheckLeAudioCapable::return_value = false;
 bool BTA_DmGetConnectionState::return_value = false;
 tBTA_STATUS BTA_DmRemoveDevice::return_value = BTA_SUCCESS;
-tBTA_STATUS BTA_DmSetLocalDiRecord::return_value = BTA_SUCCESS;
+bool BTA_DmSetLocalDiRecord::return_value = true;
 
 }  // namespace bta_dm_api
 }  // namespace mock
@@ -268,9 +268,9 @@ void BTA_DmSetEventFilterInquiryResultAllDevices() {
   inc_func_call_count(__func__);
   test::mock::bta_dm_api::BTA_DmSetEventFilterInquiryResultAllDevices();
 }
-tBTA_STATUS BTA_DmSetLocalDiRecord(tSDP_DI_RECORD* p_device_info, uint32_t* p_handle) {
+bool BTA_DmSetLocalDiRecord(tSDP_DI_RECORD* p_device_info) {
   inc_func_call_count(__func__);
-  return test::mock::bta_dm_api::BTA_DmSetLocalDiRecord(p_device_info, p_handle);
+  return test::mock::bta_dm_api::BTA_DmSetLocalDiRecord(p_device_info);
 }
 void BTA_DmSirkConfirmDeviceReply(const RawAddress& bd_addr, bool accept) {
   inc_func_call_count(__func__);

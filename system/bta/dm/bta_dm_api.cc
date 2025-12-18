@@ -125,22 +125,23 @@ bool BTA_DmGetConnectionState(const RawAddress& bd_addr) {
  *
  * Description      This function adds a DI record to the local SDP database.
  *
- * Returns          BTA_SUCCESS if record set sucessfully, otherwise error code.
+ * Returns          true if record set successfully, false otherwise.
  *
  ******************************************************************************/
-tBTA_STATUS BTA_DmSetLocalDiRecord(tSDP_DI_RECORD* p_device_info, uint32_t* p_handle) {
-  tBTA_STATUS status = BTA_FAILURE;
+bool BTA_DmSetLocalDiRecord(tSDP_DI_RECORD* p_device_info) {
+  bool status = false;
 
   if (bta_dm_di_cb.di_num < BTA_DI_NUM_MAX) {
-    if (get_legacy_stack_sdp_api()->device_id.SDP_SetLocalDiRecord(p_device_info, p_handle) ==
+    uint32_t handle = 0;
+    if (get_legacy_stack_sdp_api()->device_id.SDP_SetLocalDiRecord(p_device_info, &handle) ==
         tSDP_STATUS::SDP_SUCCESS) {
       if (!p_device_info->primary_record) {
-        bta_dm_di_cb.di_handle[bta_dm_di_cb.di_num] = *p_handle;
+        bta_dm_di_cb.di_handle[bta_dm_di_cb.di_num] = handle;
         bta_dm_di_cb.di_num++;
       }
 
       bta_sys_add_uuid(UUID_SERVCLASS_PNP_INFORMATION);
-      status = BTA_SUCCESS;
+      status = true;
     }
   }
 
