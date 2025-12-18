@@ -587,16 +587,20 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
           bd_addr, bt_transport_text(transport), state, pairing_cb.state, pairing_cb.sdp_attempts,
           pairing_type.algorithm);
 
-  if (is_autonomous_repairing_supported() && btm_is_bond_lost(bd_addr) &&
-      (state == BT_BOND_STATE_NONE)) {
-    const std::string bd_addr_str = bd_addr.ToString();
-    bt_status_t fetch_status = btif_in_fetch_bonded_device(bd_addr_str);
-    log::debug(
-            "Re-pairing attempt, changing the bond state from BOND_NONE to BOND_BONDED, fetching "
-            "device details from persistent storage: {}",
-            bt_status_text(fetch_status));
-    status = BT_STATUS_SUCCESS;
-    state = BT_BOND_STATE_BONDED;
+  if (is_autonomous_repairing_supported() && btm_is_bond_lost(bd_addr)) {
+    if (state == BT_BOND_STATE_BONDED) {
+      bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::BOND_REPAIR_SUCCESS);
+    } else if (state == BT_BOND_STATE_NONE) {
+      bluetooth::metrics::Counter(bluetooth::metrics::CounterKey::BOND_REPAIR_FAILURE);
+      const std::string bd_addr_str = bd_addr.ToString();
+      bt_status_t fetch_status = btif_in_fetch_bonded_device(bd_addr_str);
+      log::debug(
+              "Re-pairing attempt, changing the bond state from BOND_NONE to BOND_BONDED, fetching "
+              "device details from persistent storage: {}",
+              bt_status_text(fetch_status));
+      status = BT_STATUS_SUCCESS;
+      state = BT_BOND_STATE_BONDED;
+    }
   }
 
   if (state == BT_BOND_STATE_NONE) {
@@ -983,7 +987,7 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
 
   if (!com::android::bluetooth::flags::btsec_disable_legacy_auto_pair()) {
     /* check for auto pair possibility only if bond was initiated by local device
-    */
+     */
     if (!(is_autonomous_repairing_supported() && btm_is_bond_lost(bd_addr)) &&
         pairing_cb.is_local_initiated && !p_pin_req->min_16_digit) {
       if (btif_check_cod(&bd_addr, COD_AV_HEADSETS) ||
@@ -1006,7 +1010,7 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
           return;
         }
       } else if (btif_check_cod_hid_major(bd_addr, COD_HID_KEYBOARD) ||
-                btif_check_cod_hid_major(bd_addr, COD_HID_COMBO)) {
+                 btif_check_cod_hid_major(bd_addr, COD_HID_COMBO)) {
         if ((interop_match_addr(INTEROP_KEYBOARD_REQUIRES_FIXED_PIN, bd_addr) == true) &&
             (pairing_cb.autopair_attempts == 0)) {
           log::debug("Attempting auto pair w/ IOP");
