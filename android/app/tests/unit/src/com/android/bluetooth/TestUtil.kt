@@ -28,7 +28,9 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.btservice.AdapterService
 import com.google.common.truth.Truth.assertThat
 import org.mockito.Mockito.lenient
+import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
@@ -86,5 +88,7 @@ internal fun Context.mockResources(resources: Resources = mock<Resources>()) =
 internal fun AdapterService.mockGetRemoteDevice(vararg devices: BluetoothDevice) =
     devices.forEach { device ->
         val address = device.address
-        lenient().doReturn(device).whenever(this).getRemoteDevice(address)
+        lenient().doReturn(device).whenever(this).getRemoteDevice(eq(address))
+        // Does not check the address type here
+        lenient().doReturn(device).whenever(this).getRemoteDevice(eq(address), any())
     }

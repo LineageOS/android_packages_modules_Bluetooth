@@ -16,6 +16,11 @@
 
 package com.android.bluetooth.le_scan
 
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.ADDRESS_TYPE_ANONYMOUS
+import android.bluetooth.BluetoothDevice.ADDRESS_TYPE_PUBLIC
+import android.bluetooth.BluetoothDevice.ADDRESS_TYPE_RANDOM
+import android.bluetooth.BluetoothDevice.ADDRESS_TYPE_UNKNOWN
 import android.bluetooth.BluetoothUtils.extractBytes
 import android.bluetooth.le.ScanRecord
 import android.bluetooth.le.ScanResult
@@ -27,6 +32,7 @@ import android.provider.Settings
 import android.util.Log
 import com.android.bluetooth.Utils
 import com.android.bluetooth.btservice.AdapterService
+import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_INTERVAL_MS
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_BALANCED_WINDOW_MS
 import com.android.bluetooth.le_scan.ScanUtil.SCAN_MODE_LOW_POWER_INTERVAL_MS
@@ -163,7 +169,10 @@ object BatchScanUtil {
         if (numRecords == 0) return emptySet()
         val now = Utils.getLocalTimeString()
         val elapsed = SystemClock.elapsedRealtime()
-        Log.d(TAG, "Parsing $numRecords results at $now (elapsed: ${elapsed}ms)")
+        Log.d(
+            TAG,
+            "Parsing $numRecords results (${batchRecord.size} bytes) at $now (elapsed: ${elapsed}ms)",
+        )
         return when (reportType) {
             ScanUtil.SCAN_RESULT_TYPE_TRUNCATED ->
                 truncatedResults(adapterService, numRecords, batchRecord)
@@ -203,10 +212,37 @@ object BatchScanUtil {
             val address = extractBytes(batchRecord, position, 6)
             // TODO: remove temp hack.
             Utils.reverse(address)
-            val device = adapterService.getRemoteDevice(Utils.getAddressStringFromByte(address))
+            val addressStr = Utils.getAddressStringFromByte(address)
             position += 6
-            // Skip address type.
-            position++
+
+            var device: BluetoothDevice? = null
+            if (Flags.useAddressTypeFromBatchScanResult()) {
+                val addressType = batchRecord[position++].toInt() and 0xFF
+
+                val convertedAddressType =
+                    when (addressType) {
+                        ADDRESS_TYPE_PUBLIC,
+                        ADDRESS_TYPE_RANDOM,
+                        ADDRESS_TYPE_ANONYMOUS -> addressType
+                        2 -> ADDRESS_TYPE_PUBLIC // AddressType::PUBLIC_IDENTITY_ADDRESS
+                        3 -> ADDRESS_TYPE_RANDOM // AddressType::RANDOM_IDENTITY_ADDRESS
+                        else -> {
+                            Log.w(TAG, "${addressType} is not a valid Bluetooth address type.")
+                            ADDRESS_TYPE_UNKNOWN
+                        }
+                    }
+
+                try {
+                    device = adapterService.getRemoteDevice(addressStr, convertedAddressType)
+                } catch (e: IllegalArgumentException) {
+                    Log.e(TAG, "Could not get BluetoothDevice.", e)
+                }
+            } else {
+                device = adapterService.getRemoteDevice(addressStr)
+                // Skip address type.
+                position++
+            }
+
             // Skip tx power level
             position++
             val rssi = batchRecord[position++].toInt()
@@ -229,6 +265,11 @@ object BatchScanUtil {
                 advertisePacketLen,
                 scanResponsePacketLen,
             )
+            if (Flags.useAddressTypeFromBatchScanResult() && device == null) {
+                Log.w(TAG, "Dropping scan result due to invalid address / type")
+                continue
+            }
+
             @Suppress("DEPRECATION")
             results.add(ScanResult(device, ScanRecord.parseFromBytes(scanRecordBytes), rssi, nanos))
         }
