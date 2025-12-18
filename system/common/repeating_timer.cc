@@ -17,6 +17,7 @@
 #include "repeating_timer.h"
 
 #include <base/functional/callback.h>
+#include <base/functional/callback_helpers.h>
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 
