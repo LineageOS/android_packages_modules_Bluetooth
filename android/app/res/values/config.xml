@@ -21,6 +21,8 @@
          of the location permissions. -->
     <bool name="strict_location_check">true</bool>
 
+    <!-- Default connection parameter is going to be deprecated in config.xml.
+         Please use system properties instead. -->
     <!-- Specifies the min/max connection interval parameters for high priority,
          balanced and low power GATT configurations. These values are in
          multiples of 1.25ms. -->
