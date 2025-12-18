@@ -142,7 +142,7 @@ public class MetricsLogger {
      */
     @VisibleForTesting
     public static void setInstanceForTesting(MetricsLogger instance) {
-        Utils.enforceInstrumentationTestMode();
+        Util.enforceInstrumentationTestMode();
         synchronized (sLock) {
             Log.d(TAG, "setInstanceForTesting(), set to " + instance);
             sInstance = instance;

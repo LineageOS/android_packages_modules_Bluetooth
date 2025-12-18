@@ -62,6 +62,15 @@ private const val TAG = Util.BT_PREFIX + "Util"
 object Util {
     const val BT_PREFIX = "Bluetooth"
 
+    /**
+     * Throws [IllegalStateException] if we are not in BluetoothInstrumentationTest. Useful for
+     * ensuring certain methods only get called in BluetoothInstrumentationTest
+     */
+    @JvmStatic
+    fun enforceInstrumentationTestMode() {
+        check(Utils.isInstrumentationTestMode()) { "Not in BluetoothInstrumentationTest" }
+    }
+
     @JvmStatic
     fun ProfileService?.checkProfileAvailable(tag: String): Boolean {
         if (this == null) {

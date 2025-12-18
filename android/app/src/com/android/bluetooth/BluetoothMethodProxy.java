@@ -80,7 +80,7 @@ public class BluetoothMethodProxy {
      */
     @VisibleForTesting
     public static void setInstanceForTesting(BluetoothMethodProxy proxy) {
-        Utils.enforceInstrumentationTestMode();
+        Util.enforceInstrumentationTestMode();
         synchronized (INSTANCE_LOCK) {
             Log.d(TAG, "setInstanceForTesting(), set to " + proxy);
             sInstance = proxy;

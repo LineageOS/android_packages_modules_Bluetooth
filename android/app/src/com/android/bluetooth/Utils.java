@@ -355,16 +355,6 @@ public final class Utils {
     }
 
     /**
-     * Throws {@link IllegalStateException} if we are not in BluetoothInstrumentationTest. Useful
-     * for ensuring certain methods only get called in BluetoothInstrumentationTest
-     */
-    public static void enforceInstrumentationTestMode() {
-        if (!isInstrumentationTestMode()) {
-            throw new IllegalStateException("Not in BluetoothInstrumentationTest");
-        }
-    }
-
-    /**
      * Check if we are running in PTS test mode. To enable/disable PTS test mode, invoke {@code adb
      * shell setprop persist.bluetooth.pts true/false}
      *
