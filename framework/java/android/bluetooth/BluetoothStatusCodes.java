@@ -185,7 +185,7 @@ public final class BluetoothStatusCodes {
      *
      * <p>Example cause: This is a normal disconnect reason, e.g., user/app initiates disconnection.
      */
-    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @FlaggedApi(Flags.FLAG_ADD_NEW_LOCAL_DISCONNECT_REASON)
     @Hide
     @SystemApi
     public static final int ERROR_DISCONNECT_REASON_LOCAL_REQUEST = 1100;
@@ -197,7 +197,7 @@ public final class BluetoothStatusCodes {
      *
      * <p>Example solution: The app can also prompt the user to check their remote device.
      */
-    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @FlaggedApi(Flags.FLAG_ADD_NEW_LOCAL_DISCONNECT_REASON)
     @Hide
     @SystemApi
     public static final int ERROR_DISCONNECT_REASON_REMOTE_REQUEST = 1101;
@@ -208,7 +208,7 @@ public final class BluetoothStatusCodes {
      *
      * <p>Example solution: Prompt the user to check their local device (e.g., phone, car headunit).
      */
-    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @FlaggedApi(Flags.FLAG_ADD_NEW_LOCAL_DISCONNECT_REASON)
     @Hide
     @SystemApi
     public static final int ERROR_DISCONNECT_REASON_LOCAL = 1102;
@@ -220,7 +220,7 @@ public final class BluetoothStatusCodes {
      * <p>Example solution: Prompt the user to check their remote device (e.g., headset, car
      * headunit, watch).
      */
-    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @FlaggedApi(Flags.FLAG_ADD_NEW_LOCAL_DISCONNECT_REASON)
     @Hide
     @SystemApi
     public static final int ERROR_DISCONNECT_REASON_REMOTE = 1103;
@@ -233,7 +233,7 @@ public final class BluetoothStatusCodes {
      * <p>Example solution: Prompt user to verify their remote device is on or in connection/pairing
      * mode.
      */
-    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @FlaggedApi(Flags.FLAG_ADD_NEW_LOCAL_DISCONNECT_REASON)
     @Hide
     @SystemApi
     public static final int ERROR_DISCONNECT_REASON_TIMEOUT = 1104;
@@ -246,7 +246,7 @@ public final class BluetoothStatusCodes {
      *
      * <p>Example solution: Prompt user to unpair and pair again.
      */
-    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @FlaggedApi(Flags.FLAG_ADD_NEW_LOCAL_DISCONNECT_REASON)
     @Hide
     @SystemApi
     public static final int ERROR_DISCONNECT_REASON_SECURITY = 1105;
@@ -259,7 +259,7 @@ public final class BluetoothStatusCodes {
      * <p>Example solution: Prompt the user to check settings, or check with their system
      * administrator (e.g. some corp-managed devices do not allow OPP connection).
      */
-    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @FlaggedApi(Flags.FLAG_ADD_NEW_LOCAL_DISCONNECT_REASON)
     @Hide
     @SystemApi
     public static final int ERROR_DISCONNECT_REASON_SYSTEM_POLICY = 1106;
@@ -274,13 +274,13 @@ public final class BluetoothStatusCodes {
      * <p>Example solution: The app should wait and try again. If still failing, prompt the user to
      * disconnect some devices, or toggle Bluetooth on the local and/or the remote device.
      */
-    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @FlaggedApi(Flags.FLAG_ADD_NEW_LOCAL_DISCONNECT_REASON)
     @Hide
     @SystemApi
     public static final int ERROR_DISCONNECT_REASON_RESOURCE_LIMIT_REACHED = 1107;
 
     /** Indicates that the ACL disconnected because another ACL connection already exists. */
-    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @FlaggedApi(Flags.FLAG_ADD_NEW_LOCAL_DISCONNECT_REASON)
     @Hide
     @SystemApi
     public static final int ERROR_DISCONNECT_REASON_CONNECTION_ALREADY_EXISTS = 1108;
@@ -291,7 +291,7 @@ public final class BluetoothStatusCodes {
      * <p>Example solution: Change parameters and try again. If error persists, the app can report
      * telemetry and/or log the error in a bugreport.
      */
-    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @FlaggedApi(Flags.FLAG_ADD_NEW_LOCAL_DISCONNECT_REASON)
     @Hide
     @SystemApi
     public static final int ERROR_DISCONNECT_REASON_BAD_PARAMETERS = 1109;
@@ -303,7 +303,7 @@ public final class BluetoothStatusCodes {
      *
      * <p>Example solution: The system will handle reconnection when the suspend state is exited.
      */
-    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @FlaggedApi(Flags.FLAG_ADD_NEW_LOCAL_DISCONNECT_REASON)
     @Hide
     @SystemApi
     public static final int ERROR_DISCONNECT_REASON_ADAPTER_SUSPEND = 1110;
@@ -314,7 +314,7 @@ public final class BluetoothStatusCodes {
      * <p>Example cause: The user selects 'disconnect' from the device settings or quick settings
      * menu.
      */
-    @FlaggedApi(Flags.FLAG_ADD_LOCAL_DISCONNECT_REASON)
+    @FlaggedApi(Flags.FLAG_ADD_NEW_LOCAL_DISCONNECT_REASON)
     @Hide
     @SystemApi
     public static final int ERROR_DISCONNECT_REASON_USER_REQUEST = 1111;
