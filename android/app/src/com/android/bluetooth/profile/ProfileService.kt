@@ -22,7 +22,7 @@ import android.content.ContextWrapper
 import android.content.pm.PackageManager
 import android.os.IBinder
 import android.util.Log
-import com.android.bluetooth.Utils
+import com.android.bluetooth.Util
 import com.android.bluetooth.btservice.AdapterService
 import java.util.Optional
 
@@ -80,7 +80,7 @@ abstract class ProfileService(val profileId: Int, val adapterService: AdapterSer
 
         val component = ComponentName(packageName, className)
         // Test should not set components available for the device
-        if (Utils.isInstrumentationTestMode()) {
+        if (Util.isInstrumentationTestMode) {
             Log.w(name, "Skip call to setComponentAvailable($component, $enable)")
             return
         }

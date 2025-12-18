@@ -38,7 +38,6 @@ import android.util.Log;
 
 import com.android.bluetooth.ActionOnDeathRecipient;
 import com.android.bluetooth.Util;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
@@ -736,7 +735,7 @@ public class AdvertiseManager {
     }
 
     private void forceRunSyncOnAdvertiseThread(Runnable r) {
-        if (Utils.isInstrumentationTestMode()) {
+        if (Util.isInstrumentationTestMode()) {
             r.run();
             return;
         }
@@ -760,7 +759,7 @@ public class AdvertiseManager {
     }
 
     private void enforceThread() {
-        if (Utils.isInstrumentationTestMode()) return;
+        if (Util.isInstrumentationTestMode()) return;
 
         if (!mHandler.getLooper().isCurrentThread()) {
             throw new IllegalStateException("Not on advertise thread");

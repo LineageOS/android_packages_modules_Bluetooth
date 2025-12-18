@@ -38,7 +38,7 @@ import android.util.ArraySet;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
@@ -690,7 +690,7 @@ public class DistanceMeasurementManager {
     }
 
     private void forceRunSyncOnDistanceMeasurementThread(Runnable r) {
-        if (Utils.isInstrumentationTestMode()) {
+        if (Util.isInstrumentationTestMode()) {
             r.run();
             return;
         }
@@ -709,7 +709,7 @@ public class DistanceMeasurementManager {
     }
 
     private void enforceThread() {
-        if (Utils.isInstrumentationTestMode()) return;
+        if (Util.isInstrumentationTestMode()) return;
 
         if (!mHandler.getLooper().isCurrentThread()) {
             throw new IllegalStateException("Not on distance measurement thread");

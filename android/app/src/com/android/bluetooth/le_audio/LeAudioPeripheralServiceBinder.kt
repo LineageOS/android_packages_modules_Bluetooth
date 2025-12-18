@@ -26,7 +26,6 @@ import android.bluetooth.IBluetoothLeAudioPeripheralCallback
 import android.content.AttributionSource
 import com.android.bluetooth.Util
 import com.android.bluetooth.Util.checkProfileAvailable
-import com.android.bluetooth.Utils
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder
 
 internal class LeAudioPeripheralServiceBinder(svc: LeAudioPeripheralService?) :
@@ -44,7 +43,7 @@ internal class LeAudioPeripheralServiceBinder(svc: LeAudioPeripheralService?) :
     ): LeAudioPeripheralService? {
         requireNotNull(source)
         val service = this.service
-        if (Utils.isInstrumentationTestMode()) {
+        if (Util.isInstrumentationTestMode) {
             return service
         }
         if (

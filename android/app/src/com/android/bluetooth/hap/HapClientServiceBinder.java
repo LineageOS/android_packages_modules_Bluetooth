@@ -39,7 +39,6 @@ import android.content.AttributionSource;
 import android.util.Log;
 
 import com.android.bluetooth.Util;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 
@@ -66,7 +65,7 @@ class HapClientServiceBinder extends IBluetoothHapClient.Stub implements IProfil
         requireNonNull(source);
         HapClientService service = mService;
 
-        if (Utils.isInstrumentationTestMode()) {
+        if (Util.isInstrumentationTestMode()) {
             return service;
         }
 

@@ -18,7 +18,7 @@ package com.android.bluetooth.map;
 import android.util.Log;
 import android.util.Xml;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 
 import org.xmlpull.v1.XmlSerializer;
 
@@ -92,7 +92,7 @@ public class BluetoothMapMessageListing {
         StringWriter sw = new StringWriter();
         boolean isBenzCarkit;
 
-        if (Utils.isInstrumentationTestMode()) {
+        if (Util.isInstrumentationTestMode()) {
             isBenzCarkit = false;
         } else {
             isBenzCarkit =
@@ -127,7 +127,7 @@ public class BluetoothMapMessageListing {
             Log.w(TAG, e);
         }
         /* Fix IOT issue to replace '&amp;' by '&', &lt; by < and '&gt; by '>' in MessageListing */
-        if (!Utils.isInstrumentationTestMode()
+        if (!Util.isInstrumentationTestMode()
                 && DeviceWorkArounds.addressStartsWith(
                         mMapService.getRemoteDevice().getAddress(),
                         DeviceWorkArounds.BREZZA_ZDI_CARKIT)) {

@@ -63,12 +63,23 @@ object Util {
     const val BT_PREFIX = "Bluetooth"
 
     /**
+     * Check if we are running in `BluetoothInstrumentationTest` context by trying to load
+     * `com.android.bluetooth.TestUtils`. If we are not in Instrumentation test mode, this class
+     * should not be found. If `TestUtils` is removed in the future, another test class in
+     * BluetoothInstrumentationTest should be used instead
+     */
+    @JvmStatic
+    val isInstrumentationTestMode: Boolean by lazy {
+        runCatching { Class.forName("com.android.bluetooth.TestUtils") }.isSuccess
+    }
+
+    /**
      * Throws [IllegalStateException] if we are not in BluetoothInstrumentationTest. Useful for
      * ensuring certain methods only get called in BluetoothInstrumentationTest
      */
     @JvmStatic
     fun enforceInstrumentationTestMode() {
-        check(Utils.isInstrumentationTestMode()) { "Not in BluetoothInstrumentationTest" }
+        check(isInstrumentationTestMode) { "Not in BluetoothInstrumentationTest" }
     }
 
     @JvmStatic
@@ -501,7 +512,7 @@ object Util {
      */
     @JvmStatic
     fun callerIsSystem(tag: String, method: String): Boolean {
-        if (Utils.isInstrumentationTestMode()) {
+        if (isInstrumentationTestMode) {
             return true
         }
         val res = checkCallerIsSystem()
@@ -520,7 +531,7 @@ object Util {
 
     @JvmStatic
     fun checkCallerIsSystemOrActiveOrManagedUser(context: Context, tag: String): Boolean {
-        if (Utils.isInstrumentationTestMode()) {
+        if (isInstrumentationTestMode) {
             return true
         }
         val res = checkCallerIsSystemOrActiveOrManagedUser(context)
@@ -644,7 +655,7 @@ object Util {
         source: AttributionSource,
         message: String?,
     ): Boolean {
-        if (Utils.isInstrumentationTestMode()) {
+        if (isInstrumentationTestMode) {
             return true
         }
         val currentAttribution =

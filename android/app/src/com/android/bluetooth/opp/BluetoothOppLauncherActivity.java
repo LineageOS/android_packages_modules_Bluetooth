@@ -56,7 +56,7 @@ import android.widget.Toast;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.R;
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
@@ -262,7 +262,7 @@ public class BluetoothOppLauncherActivity extends Activity {
         } else {
             Log.w(TAG, "Unsupported action: " + action);
             // To prevent activity to finish immediately in testing mode
-            if (!Utils.isInstrumentationTestMode()) {
+            if (!Util.isInstrumentationTestMode()) {
                 finish();
             }
         }
