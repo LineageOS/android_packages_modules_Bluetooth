@@ -33,6 +33,7 @@ cxxbridge_header("btif_bridge_header") {
     "src/profiles/hid_host.rs",
     "src/profiles/le_audio.rs",
     "src/profiles/sdp.rs",
+    "src/profiles/socket.rs",
     "src/profiles/vc.rs",
   ]
   all_dependent_configs = [ ":rust_topshim_config" ]
@@ -52,6 +53,7 @@ cxxbridge_cc("btif_bridge_code") {
     "src/profiles/hid_host.rs",
     "src/profiles/le_audio.rs",
     "src/profiles/sdp.rs",
+    "src/profiles/socket.rs",
     "src/profiles/vc.rs",
   ]
   deps = [
@@ -81,6 +83,7 @@ source_set("btif_cxx_bridge_code") {
     "le_audio/le_audio_shim.cc",
     "metrics/metrics_shim.cc",
     "sdp/sdp_shim.cc",
+    "socket/socket_shim.cc",
     "vc/vc_shim.cc",
   ]
 
