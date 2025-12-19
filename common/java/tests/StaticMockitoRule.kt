@@ -23,7 +23,7 @@ import org.junit.runners.model.Statement
 import org.mockito.Mockito
 import org.mockito.quality.Strictness
 
-/** Similar to {@link MockitoRule}, but allows mocking static methods. */
+/** Similar to {@link MockitoRule}, but allows spying static methods. */
 class StaticMockitoRule(private vararg val classes: Class<*>) : MethodRule {
     override fun apply(base: Statement, method: FrameworkMethod, target: Any): Statement {
         return object : Statement() {
@@ -34,7 +34,8 @@ class StaticMockitoRule(private vararg val classes: Class<*>) : MethodRule {
                         .name("${target::class.simpleName}.${method.name}")
                         .initMocks(target)
                         .strictness(Strictness.LENIENT)
-                        .apply { classes.forEach { mockStatic(it) } }
+                        // We most likely only want to intercept some action, not all. Hence Spying
+                        .apply { classes.forEach { spyStatic(it) } }
                         .startMocking()
 
                 val testFailure =

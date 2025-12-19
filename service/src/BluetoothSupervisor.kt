@@ -35,9 +35,15 @@ class BluetoothSupervisor(
     context: Context,
     private val looper: Looper,
     bluetoothComponent: BluetoothComponent,
+    private val bms: BluetoothManagerService =
+        BluetoothManagerService(
+            context,
+            looper,
+            BluetoothHciInstance().getInstance(),
+            bluetoothComponent,
+            TimeProvider.systemClock,
+        ),
 ) {
-    private val bms: BluetoothManagerService
-    private val hciInstance = BluetoothHciInstance()
 
     private var currentUser: UserHandle? = null
 
@@ -45,15 +51,6 @@ class BluetoothSupervisor(
     val api: BluetoothManagerServiceApi = Api(BmsProvider())
 
     init {
-        bms =
-            BluetoothManagerService(
-                context,
-                looper,
-                hciInstance.getInstance(),
-                bluetoothComponent,
-                TimeProvider.systemClock,
-            )
-
         initializeAirplaneMode(looper, context.contentResolver, this::onAirplaneModeChanged)
         initializeSatelliteMode(looper, context.contentResolver, this::onSatelliteModeChanged)
         Log.i(TAG, "Created BluetoothSupervisor")
