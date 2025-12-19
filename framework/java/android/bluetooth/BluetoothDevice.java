@@ -19,7 +19,6 @@ package android.bluetooth;
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
-import static android.Manifest.permission.MODIFY_PHONE_STATE;
 import static android.bluetooth.BluetoothUtils.callServiceIfEnabling;
 
 import static java.util.Objects.requireNonNull;
@@ -2181,10 +2180,10 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *
      * <p>This method requires the calling app to have the {@link
      * android.Manifest.permission#BLUETOOTH_CONNECT} permission. Additionally, an app must either
-     * have both {@link android.Manifest.permission#BLUETOOTH_PRIVILEGED} and {@link
-     * android.Manifest.permission#MODIFY_PHONE_STATE} permissions, or be associated with the
-     * Companion Device manager (see {@link android.companion.CompanionDeviceManager#associate(
-     * AssociationRequest, android.companion.CompanionDeviceManager.Callback, Handler)}).
+     * have {@link android.Manifest.permission#BLUETOOTH_PRIVILEGED} permission or be
+     * associated with the Companion Device manager (see {@link
+     * android.companion.CompanionDeviceManager#associate( AssociationRequest,
+     * android.companion.CompanionDeviceManager.Callback, Handler)}).
      *
      * @return whether the messages were successfully sent to try to connect all profiles
      * @throws IllegalArgumentException if the device address is invalid
@@ -2192,7 +2191,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @FlaggedApi(Flags.FLAG_GATT_CONN_SETTINGS)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(
-            allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED, MODIFY_PHONE_STATE},
+            allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
             conditional = true)
     public @ConnectionReturnValues int connect() {
         if (DBG) log("connect()");
