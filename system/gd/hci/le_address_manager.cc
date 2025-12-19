@@ -542,13 +542,6 @@ hci::Address LeAddressManager::generate_nrpa() {
   return address;
 }
 
-std::chrono::milliseconds LeAddressManager::GetNextPrivateAddressIntervalMs() {
-  auto interval_random_part_wake_delay = maximum_rotation_time_ - minimum_rotation_time_;
-  auto random_ms =
-          std::chrono::milliseconds(os::GenerateRandom()) % (interval_random_part_wake_delay);
-  return minimum_rotation_time_ + random_ms;
-}
-
 PrivateAddressIntervalRange LeAddressManager::GetNextPrivateAddressIntervalRange(
         const std::string& client_name) {
   // Get both alarms' delays as following:

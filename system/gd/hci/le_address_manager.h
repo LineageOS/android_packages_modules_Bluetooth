@@ -99,7 +99,6 @@ public:
   void ClearFilterAcceptList();
   void ClearResolvingList();
   void OnCommandComplete(CommandCompleteView view);
-  std::chrono::milliseconds GetNextPrivateAddressIntervalMs();
   PrivateAddressIntervalRange GetNextPrivateAddressIntervalRange(const std::string& client_name);
   void CheckAddressRotationHappenedInExpectedTimeInterval(
           const std::chrono::time_point<std::chrono::system_clock>& interval_min,
