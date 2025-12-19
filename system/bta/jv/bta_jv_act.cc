@@ -307,7 +307,7 @@ static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB* p_cb, tBTA_JV_PCB* p_pc
   }
   log::verbose("max_sess={}, curr_sess={}, p_pcb={}, slot_id={}, state={}, jv_handle=0x{:x}",
                p_cb->max_sess, p_cb->curr_sess, std::format_ptr(p_pcb), p_pcb->rfcomm_slot_id,
-               p_pcb->state, p_pcb->handle);
+               bta_jv_state_text(p_pcb->state), p_pcb->handle);
 
   if (p_cb->curr_sess <= 0) {
     return tBTA_JV_STATUS::SUCCESS;
@@ -316,32 +316,33 @@ static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB* p_cb, tBTA_JV_PCB* p_pc
   switch (p_pcb->state) {
     case BTA_JV_ST_CL_CLOSING:
     case BTA_JV_ST_SR_CLOSING:
-      log::warn("return on closing, port state={}, scn={}, p_pcb={}, slot_id={}", p_pcb->state,
-                p_cb->scn, std::format_ptr(p_pcb), p_pcb->rfcomm_slot_id);
+      log::warn("return on closing, port state={}, scn={}, p_pcb={}, slot_id={}",
+                bta_jv_state_text(p_pcb->state), p_cb->scn, std::format_ptr(p_pcb),
+                p_pcb->rfcomm_slot_id);
       status = tBTA_JV_STATUS::FAILURE;
       return status;
     case BTA_JV_ST_CL_OPEN:
     case BTA_JV_ST_CL_OPENING:
-      log::verbose("state={}, scn={}, slot_id={}", p_pcb->state, p_cb->scn, p_pcb->rfcomm_slot_id);
+      log::verbose("state={}, scn={}, slot_id={}", bta_jv_state_text(p_pcb->state), p_cb->scn,
+                   p_pcb->rfcomm_slot_id);
       p_pcb->state = BTA_JV_ST_CL_CLOSING;
       break;
     case BTA_JV_ST_SR_LISTEN:
       p_pcb->state = BTA_JV_ST_SR_CLOSING;
       remove_server = true;
-      log::verbose("state: BTA_JV_ST_SR_LISTEN, scn={}, slot_id={}", p_cb->scn,
+      log::verbose("state:BTA_JV_ST_SR_LISTEN, scn={}, slot_id={}", p_cb->scn,
                    p_pcb->rfcomm_slot_id);
       break;
     case BTA_JV_ST_SR_OPEN:
       p_pcb->state = BTA_JV_ST_SR_CLOSING;
-      log::verbose(": state: BTA_JV_ST_SR_OPEN, scn={} slot_id={}", p_cb->scn,
-                   p_pcb->rfcomm_slot_id);
+      log::verbose("state:BTA_JV_ST_SR_OPEN, scn={} slot_id={}", p_cb->scn, p_pcb->rfcomm_slot_id);
       break;
     default:
       log::warn(
               "failed, ignore port state= {}, scn={}, p_pcb= {}, jv_handle=0x{:x}, "
               "port_handle={}, slot_id={}",
-              p_pcb->state, p_cb->scn, std::format_ptr(p_pcb), p_pcb->handle, p_pcb->port_handle,
-              p_pcb->rfcomm_slot_id);
+              bta_jv_state_text(p_pcb->state), p_cb->scn, std::format_ptr(p_pcb), p_pcb->handle,
+              p_pcb->port_handle, p_pcb->rfcomm_slot_id);
       status = tBTA_JV_STATUS::FAILURE;
       break;
   }

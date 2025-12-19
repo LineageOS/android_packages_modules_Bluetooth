@@ -63,7 +63,7 @@ typedef struct {
   alarm_t* idle_timer;     /* Intermediate timer for preventing frequent state transition */
 } tBTA_JV_PM_CB;
 
-enum {
+enum BtaJvState {
   BTA_JV_ST_NONE = 0,
   BTA_JV_ST_CL_OPENING,
   BTA_JV_ST_CL_OPEN,
@@ -72,13 +72,13 @@ enum {
   BTA_JV_ST_SR_OPEN,
   BTA_JV_ST_SR_CLOSING
 };
-typedef uint8_t tBTA_JV_STATE;
 #define BTA_JV_ST_CL_MAX BTA_JV_ST_CL_CLOSING
+
 /* JV L2CAP control block */
 typedef struct {
   tBTA_JV_L2CAP_CBACK* p_cback; /* the callback function */
   uint16_t psm;                 /* the psm used for this server connection */
-  tBTA_JV_STATE state;          /* the state of this control block */
+  BtaJvState state;             /* the state of this control block */
   tBTA_SERVICE_ID sec_id;       /* service id */
   uint32_t handle;              /* the handle reported to java app (same as gap handle) */
   bool cong;                    /* true, if congested */
@@ -96,7 +96,7 @@ typedef struct {
 typedef struct {
   uint32_t handle;      /* the rfcomm session handle at jv */
   uint16_t port_handle; /* port handle */
-  tBTA_JV_STATE state;  /* the state of this control block */
+  BtaJvState state;     /* the state of this control block */
   uint8_t max_sess;     /* max sessions */
   uint32_t rfcomm_slot_id;
   bool cong;              /* true, if congested */
@@ -196,9 +196,25 @@ inline std::string bta_jv_pm_state_text(const BtaJvPmState& state) {
   }
 }
 
+inline std::string bta_jv_state_text(const BtaJvState& state) {
+  switch (state) {
+    CASE_RETURN_TEXT(BTA_JV_ST_NONE);
+    CASE_RETURN_TEXT(BTA_JV_ST_CL_OPENING);
+    CASE_RETURN_TEXT(BTA_JV_ST_CL_OPEN);
+    CASE_RETURN_TEXT(BTA_JV_ST_CL_CLOSING);
+    CASE_RETURN_TEXT(BTA_JV_ST_SR_LISTEN);
+    CASE_RETURN_TEXT(BTA_JV_ST_SR_OPEN);
+    CASE_RETURN_TEXT(BTA_JV_ST_SR_CLOSING);
+    default:
+      return std::string("UNKNOWN[") + std::to_string(state) + std::string("]");
+  }
+}
+
 namespace std {
 template <>
 struct formatter<BtaJvPmState> : enum_formatter<BtaJvPmState> {};
+template <>
+struct formatter<BtaJvState> : enum_formatter<BtaJvState> {};
 }  // namespace std
 
 namespace bluetooth::legacy::testing {
