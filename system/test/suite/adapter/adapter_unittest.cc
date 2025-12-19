@@ -24,6 +24,7 @@
 #include "adapter/bluetooth_test.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
+#include "osi/include/wakelock.h"
 
 namespace {
 
@@ -211,7 +212,8 @@ TEST_F(BluetoothTest, AdapterCleanupDuringDiscovery) {
   ASSERT_TRUE(callbacks != nullptr);
 
   for (int i = 0; i < kTestRepeatCount; ++i) {
-    bt_interface()->init(callbacks, false, false, 0, false, "default");
+    bluetooth_init(callbacks, false, false, 0, false, "default", nullptr);
+    wakelock_set_os_callouts(nullptr);  // To force using 'native' wakelock in tests
     EXPECT_EQ(bt_interface()->enable("test_name"), BT_STATUS_SUCCESS);
     semaphore_wait(adapter_state_changed_callback_sem_);
     EXPECT_EQ(GetState(), BT_STATE_ON) << "Adapter did not turn on.";

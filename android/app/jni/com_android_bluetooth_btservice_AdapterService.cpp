@@ -909,11 +909,6 @@ static bt_os_callouts_t sBluetoothOsCallouts = {
         release_wake_lock_callout,
 };
 
-static int hal_util_load_bt_library(const bt_interface_t** interface) {
-  *interface = &bluetoothInterface;
-  return 0;
-}
-
 static bool initNative(JNIEnv* env, jobject obj, jboolean isGuest, jboolean isCommonCriteriaMode,
                        int configCompareResult, jboolean isAtvDevice, jstring jHciInstanceName) {
   std::unique_lock<std::shared_timed_mutex> lock(jniObjMutex);
@@ -932,23 +927,9 @@ static bool initNative(JNIEnv* env, jobject obj, jboolean isGuest, jboolean isCo
 
   const std::string hci_instance_name = stringFromJstring(env, jHciInstanceName);
 
-  int ret =
-          sBluetoothInterface->init(&sBluetoothCallbacks, isGuest == JNI_TRUE ? 1 : 0,
-                                    isCommonCriteriaMode == JNI_TRUE ? 1 : 0, configCompareResult,
-                                    isAtvDevice == JNI_TRUE ? 1 : 0, std::move(hci_instance_name));
-
-  if (ret != BT_STATUS_SUCCESS) {
-    log::error("Error while setting the callbacks: {}", ret);
-    sBluetoothInterface = NULL;
-    return JNI_FALSE;
-  }
-  ret = sBluetoothInterface->set_os_callouts(&sBluetoothOsCallouts);
-  if (ret != BT_STATUS_SUCCESS) {
-    log::error("Error while setting Bluetooth callouts: {}", ret);
-    sBluetoothInterface->cleanup();
-    sBluetoothInterface = NULL;
-    return JNI_FALSE;
-  }
+  bluetooth_init(&sBluetoothCallbacks, isGuest == JNI_TRUE, isCommonCriteriaMode == JNI_TRUE,
+                 configCompareResult, isAtvDevice == JNI_TRUE, std::move(hci_instance_name),
+                 &sBluetoothOsCallouts);
 
   sBluetoothSocketInterface = reinterpret_cast<const btsock_interface_t*>(
           sBluetoothInterface->get_profile_interface(BT_PROFILE_SOCKETS_ID));
@@ -2045,10 +2026,7 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
     log::error("Could not get JavaVM");
   }
 
-  if (hal_util_load_bt_library(&sBluetoothInterface)) {
-    log::error("No Bluetooth Library found");
-  }
-
+  sBluetoothInterface = &bluetoothInterface;
   return 0;
 }
 
