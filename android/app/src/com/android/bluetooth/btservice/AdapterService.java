@@ -5447,7 +5447,7 @@ public class AdapterService extends Service {
             @NonNull DiscoveringPackageInfo pkgInfo,
             @NonNull BluetoothDevice discoveredDevice,
             @NonNull Intent intent) {
-        if (pkgInfo.hasDisavowedLocation()) {
+        if (pkgInfo.getHasDisavowedLocation()) {
             if (mLocationDenylistPredicate.test(discoveredDevice)) {
                 return;
             }
@@ -5455,10 +5455,10 @@ public class AdapterService extends Service {
 
         intent.setPackage(pkgName);
         intent.setAction(BluetoothDevice.ACTION_FOUND);
-        if (pkgInfo.permission() != null) {
+        if (pkgInfo.getPermission() != null) {
             sendBroadcastMultiplePermissions(
                     intent,
-                    new String[] {BLUETOOTH_SCAN, pkgInfo.permission()},
+                    new String[] {BLUETOOTH_SCAN, pkgInfo.getPermission()},
                     Utils.getTempBroadcastOptions());
         } else {
             sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
