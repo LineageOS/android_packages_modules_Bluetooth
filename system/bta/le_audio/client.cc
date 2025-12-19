@@ -317,9 +317,6 @@ public:
 
     audioContextTypeManager_ = bluetooth::le_audio::AudioContextTypeManager::Get();
 
-    log::info("Reconnection mode: TARGETED_ANNOUNCEMENTS");
-    reconnection_mode_ = BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS;
-
     log::info("Loading health status module");
     leAudioHealthStatus_ = LeAudioHealthStatus::Get();
     leAudioHealthStatus_->RegisterCallback(base::BindRepeating(le_audio_health_status_callback));
@@ -2070,7 +2067,7 @@ public:
     }
 
     if (enabled) {
-      group->Enable(gatt_if_, reconnection_mode_);
+      group->Enable(gatt_if_);
     } else {
       group->Disable(gatt_if_);
     }
@@ -2289,8 +2286,7 @@ public:
     /* When adding from storage, make sure that autoconnect is used
      * by all the devices in the group.
      */
-    leAudioDevices_.SetInitialGroupAutoconnectState(group_id, gatt_if_, reconnection_mode_,
-                                                    autoconnect);
+    leAudioDevices_.SetInitialGroupAutoconnectState(group_id, gatt_if_, autoconnect);
   }
 
   bool GetHandlesForStorage(const RawAddress& addr, std::vector<uint8_t>& out) {
@@ -2356,19 +2352,6 @@ public:
         /* User is disconnecting the device, we shall remove the autoconnect
          * flag for this device and all others if not TA is used
          */
-        /* If target announcement is used, do not remove autoconnect
-         */
-        bool remove_from_autoconnect =
-                (reconnection_mode_ != BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS);
-
-        if (leAudioDevice->autoconnect_flag_ && remove_from_autoconnect) {
-          log::info("Removing autoconnect flag for group_id {}", leAudioDevice->group_id_);
-
-          /* Removes device from background connect */
-          BTA_GATTC_CancelOpen(gatt_if_, address, false);
-          btif_storage_set_leaudio_autoconnect(address, false);
-          leAudioDevice->autoconnect_flag_ = false;
-        }
 
         /* Make sure ACL is disconnected to avoid reconnecting immediately
          * when autoconnect with TA reconnection mechanism is used.
@@ -2377,17 +2360,6 @@ public:
 
         auto group = aseGroups_.FindById(leAudioDevice->group_id_);
         if (group) {
-          /* Remove devices from auto connect mode */
-          for (auto dev = group->GetFirstDevice(); dev; dev = group->GetNextDevice(dev)) {
-            if (remove_from_autoconnect &&
-                (dev->GetConnectionState() == DeviceConnectState::CONNECTING_AUTOCONNECT)) {
-              btif_storage_set_leaudio_autoconnect(dev->address_, false);
-              dev->autoconnect_flag_ = false;
-              BTA_GATTC_CancelOpen(gatt_if_, dev->address_, false);
-              dev->SetConnectionState(DeviceConnectState::DISCONNECTED);
-            }
-          }
-
           /* If group is Streaming or is in transition for Streaming - lets stop it
            * and mark device to disconnect when stream is closed
            */
@@ -2767,9 +2739,8 @@ public:
                 address);
       BTA_GATTC_Open(gatt_if_, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
     } else {
-      log::info("Adding {} to background connect (default reconnection_mode (0x{:02x}))", address,
-                reconnection_mode_);
-      BTA_GATTC_Open(gatt_if_, address, reconnection_mode_, false);
+      log::info("Adding {} to background connect", address);
+      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS, false);
     }
   }
 
@@ -2914,12 +2885,12 @@ public:
     BtaGattQueue::Clean(conn_id);
 
     /* Remove device from the background connect (it might be either Allow list
-     * or TA) and add it again with reconnection_mode_. In case it is TA, we are
-     * sure that device will not be in the allow list for other applications
-     * which are using background connect.
+     * or TA) and add it again with BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS.
+     * In case it is TA, we are sure that device will not be in the allow list
+     * for other applications which are using background connect.
      */
     BTA_GATTC_CancelOpen(gatt_if_, address, false);
-    BTA_GATTC_Open(gatt_if_, address, reconnection_mode_, false);
+    BTA_GATTC_Open(gatt_if_, address, BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS, false);
 
     if (bluetooth::shim::GetController()->SupportsBle2mPhy()) {
       log::info("{} set preferred PHY to 2M", address);
@@ -3146,8 +3117,8 @@ public:
 
     if (!group->IsAnyDeviceConnected()) {
       log::info("Group {} is not connected", group_id);
-      /* Make sure all devices are in the default reconnection mode */
-      group->ApplyReconnectionMode(gatt_if_, reconnection_mode_);
+      /* Make sure all devices are in the default BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS */
+      group->ApplyReconnectionMode(gatt_if_);
       return;
     }
 
@@ -3346,7 +3317,7 @@ public:
          */
         scheduleGroupConnectedCheck(leAudioDevice->group_id_);
       } else {
-        group->ApplyReconnectionMode(gatt_if_, reconnection_mode_);
+        group->ApplyReconnectionMode(gatt_if_);
       }
     }
   }
@@ -4180,12 +4151,10 @@ public:
 
     AttachToStreamingGroupIfNeeded(leAudioDevice);
 
-    if (reconnection_mode_ == BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS) {
-      /* Add other devices to allow list if there are any not yet connected
-       * from the group
-       */
-      group->AddToAllowListNotConnectedGroupMembers(gatt_if_);
-    }
+    /* Add other devices to allow list if there are any not yet connected
+     * from the group
+     */
+    group->AddToAllowListNotConnectedGroupMembers(gatt_if_);
   }
 
   bool IsAseAcceptingAudioData(struct ase* ase) {
@@ -4774,10 +4743,7 @@ public:
     stream << "  TBS state: " << (in_call_ ? " In call" : "No calls") << "\n";
     stream << "  Game mode: " << (audioContextTypeManager_->IsInGame() ? "Enabled" : "Disabled")
            << "\n";
-    stream << "  Reconnection mode: "
-           << (reconnection_mode_ == BTM_BLE_BKG_CONNECT_ALLOW_LIST ? "Allow List"
-                                                                    : "Targeted Announcements")
-           << "\n";
+    stream << "  Reconnection mode: Targeted Announcements \n";
     stream << "  Current scenario: " << bluetooth::common::ToString(configuration_context_type_)
            << " (" << loghex(static_cast<uint16_t>(configuration_context_type_)) << ")\n";
     stream << "  Playback metadata context type mask: "
@@ -7463,8 +7429,6 @@ private:
   /* Source stream status which has been notified to Service */
   std::optional<UnicastMonitorModeStatus> source_monitor_notified_status_;
 
-  /* Reconnection mode */
-  tBTM_BLE_CONN_TYPE reconnection_mode_;
   static constexpr uint64_t kGroupConnectedWatchDelayMs = 3000;
   static constexpr uint64_t kRecoveryReconnectDelayMs = 2000;
   static constexpr uint64_t kAutoConnectAfterOwnDisconnectDelayMs = 1000;

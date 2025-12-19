@@ -1694,7 +1694,6 @@ LeAudioDevice* LeAudioDevices::FindByCisConnHdl(uint8_t cig_id, uint16_t conn_hd
 }
 
 void LeAudioDevices::SetInitialGroupAutoconnectState(int group_id, int gatt_if,
-                                                     tBTM_BLE_CONN_TYPE /*reconnection_mode*/,
                                                      bool current_dev_autoconnect_flag) {
   if (!current_dev_autoconnect_flag) {
     /* If current device autoconnect flag is false, check if there is other
