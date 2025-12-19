@@ -40,6 +40,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface.RemoteFeatures;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.media_audio.sink.BluetoothMediaBrowserService;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
@@ -103,6 +104,11 @@ class AvrcpControllerStateMachine extends StateMachine {
 
     // Notification types for Avrcp protocol JNI.
     private static final byte NOTIFICATION_RSP_TYPE_INTERIM = 0x00;
+    private static final byte NOTIFICATION_RSP_TYPE_CHANGED = 0x01;
+
+    // Denotes that we do not have a registration from the AVRCP Target for an Absolute Volume
+    // Changed Notification.
+    private static final int VOLUME_NOTIFICATION_LABEL_NONE = -1;
 
     private final AdapterService mAdapterService;
     private final GetFolderList mGetFolderList;
@@ -132,7 +138,7 @@ class AvrcpControllerStateMachine extends StateMachine {
     private AvrcpPlayer mAddressedPlayer;
     private int mAddressedPlayerId;
 
-    private int mVolumeNotificationLabel = -1;
+    private int mVolumeNotificationLabel = VOLUME_NOTIFICATION_LABEL_NONE;
     private RemoteFeatures mRemoteFeatures;
 
     // Number of items to get in a single fetch
@@ -180,7 +186,21 @@ class AvrcpControllerStateMachine extends StateMachine {
 
         mGetFolderList = new GetFolderList();
         addState(mGetFolderList, mConnected);
-        mVolumeHandler = new AvrcpControllerVolumeHandler(mAdapterService, mDevice);
+
+        AvrcpControllerVolumeHandler.Callback callback =
+                new AvrcpControllerVolumeHandler.Callback() {
+                    @Override
+                    public void onAbsoluteVolumeChanged(int absVol) {
+                        if (!Flags.avrcpControllerAbsVolChangedNotification()) {
+                            return;
+                        }
+                        debug("onAbsoluteVolumeChanged: absVol=" + absVol);
+                        sendMessage(MESSAGE_PROCESS_VOLUME_CHANGED_NOTIFICATION, absVol);
+                    }
+                };
+        mVolumeHandler =
+                new AvrcpControllerVolumeHandler(
+                        mAdapterService, mDevice, callback, getHandler().getLooper());
 
         setInitialState(mDisconnected);
 
@@ -258,6 +278,7 @@ class AvrcpControllerStateMachine extends StateMachine {
                                 : "false, mCoverArtManager is null"));
 
         ProfileService.println(sb, "mRemoteFeatures: " + mRemoteFeatures);
+        ProfileService.println(sb, "mVolumeNotificationLabel: " + mVolumeNotificationLabel);
         ProfileService.println(sb, "mVolumeHandler: " + mVolumeHandler);
 
         ProfileService.println(sb, "Addressed Player ID: " + mAddressedPlayerId);
@@ -545,16 +566,13 @@ class AvrcpControllerStateMachine extends StateMachine {
                         default -> {} // Nothing to do
                     }
                 }
-                case MESSAGE_PROCESS_RECEIVED_REMOTE_FEATURES -> {
-                    onRemoteFeaturesChanged((RemoteFeatures) msg.obj);
-                }
-                case MESSAGE_PROCESS_SET_ABS_VOL_CMD -> {
-                    handleAbsVolumeRequest(msg.arg1, msg.arg2);
-                }
-                case MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION -> {
-                    mVolumeNotificationLabel = msg.arg1;
-                    registerAbsoluteVolumeChanged();
-                }
+                case MESSAGE_PROCESS_RECEIVED_REMOTE_FEATURES ->
+                        onRemoteFeaturesChanged((RemoteFeatures) msg.obj);
+                case MESSAGE_PROCESS_SET_ABS_VOL_CMD -> handleAbsVolumeRequest(msg.arg1, msg.arg2);
+                case MESSAGE_PROCESS_REGISTER_ABS_VOL_NOTIFICATION ->
+                        registerAbsoluteVolumeChanged(msg.arg1);
+                case MESSAGE_PROCESS_VOLUME_CHANGED_NOTIFICATION ->
+                        notifyAbsoluteVolumeChanged(msg.arg1);
                 case MESSAGE_GET_FOLDER_ITEMS -> transitionTo(mGetFolderList);
                 case MESSAGE_PLAY_ITEM -> processPlayItem((BrowseTree.BrowseNode) msg.obj);
                 case MSG_AVRCP_PASSTHRU -> passThru(msg.arg1);
@@ -806,11 +824,6 @@ class AvrcpControllerStateMachine extends StateMachine {
             BluetoothMediaBrowserService.onBrowseNodeChanged(mBrowseTree.mRootNode);
             removeUnusedArtworkFromBrowseTree();
             requestContents(mBrowseTree.mRootNode);
-        }
-
-        @Override
-        public void exit() {
-            mVolumeHandler.stop();
         }
     }
 
@@ -1157,6 +1170,7 @@ class AvrcpControllerStateMachine extends StateMachine {
             onBrowsingDisconnected();
             mService.getBrowseTree().mRootNode.removeChild(mBrowseTree.mRootNode);
             BluetoothMediaBrowserService.onBrowseNodeChanged(mService.getBrowseTree().mRootNode);
+            mVolumeHandler.stop();
             broadcastConnectionStateChanged(STATE_DISCONNECTING);
             transitionTo(mDisconnected);
         }
@@ -1186,12 +1200,24 @@ class AvrcpControllerStateMachine extends StateMachine {
         return mVolumeHandler.getAbsoluteVolume();
     }
 
-    private void registerAbsoluteVolumeChanged() {
+    private void registerAbsoluteVolumeChanged(int label) {
+        mVolumeNotificationLabel = label;
         mNativeInterface.sendRegisterAbsVolRsp(
                 mDeviceAddress,
                 NOTIFICATION_RSP_TYPE_INTERIM,
                 getAbsVolume(),
                 mVolumeNotificationLabel);
+    }
+
+    private void notifyAbsoluteVolumeChanged(int absVol) {
+        if (mVolumeNotificationLabel == VOLUME_NOTIFICATION_LABEL_NONE) {
+            // We don't have an outstanding registration from the AVRCP Target for an Absolute
+            // Volume Changed Notification.
+            return;
+        }
+        mNativeInterface.sendRegisterAbsVolRsp(
+                mDeviceAddress, NOTIFICATION_RSP_TYPE_CHANGED, absVol, mVolumeNotificationLabel);
+        mVolumeNotificationLabel = VOLUME_NOTIFICATION_LABEL_NONE;
     }
 
     private boolean shouldDownloadBrowsedImages() {
