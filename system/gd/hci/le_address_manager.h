@@ -99,13 +99,13 @@ public:
   void ClearFilterAcceptList();
   void ClearResolvingList();
   void OnCommandComplete(CommandCompleteView view);
+  void PrepareToRotateAddress();
   PrivateAddressIntervalRange GetNextPrivateAddressIntervalRange(const std::string& client_name);
   void CheckAddressRotationHappenedInExpectedTimeInterval(
           const std::chrono::time_point<std::chrono::system_clock>& interval_min,
           const std::chrono::time_point<std::chrono::system_clock>& interval_max,
           const std::chrono::time_point<std::chrono::system_clock>& event_time,
           const std::string& client_name);
-  void PrepareToRotateAddress();
 
   // Unsynchronized check for testing purposes
   size_t NumberCachedCommands() const { return cached_commands_.size(); }
@@ -186,8 +186,10 @@ private:
   bool supports_ble_privacy_{false};
 
   // Only used for logging error in address rotation time.
-  std::optional<std::chrono::time_point<std::chrono::system_clock>> address_rotation_interval_min;
-  std::optional<std::chrono::time_point<std::chrono::system_clock>> address_rotation_interval_max;
+  std::optional<std::chrono::time_point<std::chrono::system_clock>>
+          expected_address_rotation_interval_min;
+  std::optional<std::chrono::time_point<std::chrono::system_clock>>
+          expected_address_rotation_interval_max;
 
   Controller* controller_;
 };
