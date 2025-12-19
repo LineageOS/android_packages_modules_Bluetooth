@@ -22,6 +22,8 @@ import static android.Manifest.permission.BLUETOOTH_SCAN;
 import static android.Manifest.permission.MODIFY_PHONE_STATE;
 import static android.bluetooth.BluetoothUtils.callServiceIfEnabling;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.BroadcastBehavior;
 import android.annotation.CallbackExecutor;
 import android.annotation.FlaggedApi;
@@ -455,29 +457,23 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *   <li>{@link #BOND_LOSS_REASON_LE_INCOMING_PAIRING}
      * </ul>
      */
-    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
     @SuppressLint("ActionValue")
     public static final String EXTRA_BOND_LOSS_REASON =
             "android.bluetooth.device.extra.BOND_LOSS_REASON";
 
     /** Indicates the reason for the bond loss is unknown. */
-    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
     public static final int BOND_LOSS_REASON_UNKNOWN = 0;
 
     /** Indicates the reason for the bond loss is BREDR authentication failure. */
-    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
     public static final int BOND_LOSS_REASON_BREDR_AUTH_FAILURE = 1;
 
     /** Indicates the reason for the bond loss is BREDR pairing failure. */
-    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
     public static final int BOND_LOSS_REASON_BREDR_INCOMING_PAIRING = 2;
 
     /** Indicates the reason for the bond loss is LE encryption failure. */
-    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
     public static final int BOND_LOSS_REASON_LE_ENCRYPT_FAILURE = 3;
 
     /** Indicates the reason for the bond loss is LE pairing failure. */
-    @FlaggedApi(Flags.FLAG_ADD_BOND_LOSS_REASON)
     public static final int BOND_LOSS_REASON_LE_INCOMING_PAIRING = 4;
 
     /**
@@ -2186,13 +2182,21 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * For example, to verify a2dp is connected, you would listen for {@link
      * BluetoothA2dp#ACTION_CONNECTION_STATE_CHANGED}
      *
+     * <p>This method requires the calling app to have the {@link
+     * android.Manifest.permission#BLUETOOTH_CONNECT} permission. Additionally, an app must either
+     * have both {@link android.Manifest.permission#BLUETOOTH_PRIVILEGED} and {@link
+     * android.Manifest.permission#MODIFY_PHONE_STATE} permissions, or be associated with the
+     * Companion Device manager (see {@link android.companion.CompanionDeviceManager#associate(
+     * AssociationRequest, android.companion.CompanionDeviceManager.Callback, Handler)}).
+     *
      * @return whether the messages were successfully sent to try to connect all profiles
      * @throws IllegalArgumentException if the device address is invalid
      */
-    @Hide
-    @SystemApi
+    @FlaggedApi(Flags.FLAG_GATT_CONN_SETTINGS)
     @RequiresBluetoothConnectPermission
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED, MODIFY_PHONE_STATE})
+    @RequiresPermission(
+            allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED, MODIFY_PHONE_STATE},
+            conditional = true)
     public @ConnectionReturnValues int connect() {
         if (DBG) log("connect()");
         return callServiceIfEnabled(
@@ -2211,13 +2215,20 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * <p>In the rare event that one or more profiles fail to disconnect, call this method again to
      * send another request to disconnect each connected profile.
      *
+     * <p>This method requires the calling app to have the {@link
+     * android.Manifest.permission#BLUETOOTH_CONNECT} permission. Additionally, an app must either
+     * have both {@link android.Manifest.permission#BLUETOOTH_PRIVILEGED} or be associated with the
+     * Companion Device manager (see {@link android.companion.CompanionDeviceManager#associate(
+     * AssociationRequest, android.companion.CompanionDeviceManager.Callback, Handler)}).
+     *
      * @return whether the messages were successfully sent to try to disconnect all profiles
      * @throws IllegalArgumentException if the device address is invalid
      */
-    @Hide
-    @SystemApi
+    @FlaggedApi(Flags.FLAG_GATT_CONN_SETTINGS)
     @RequiresBluetoothConnectPermission
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
+    @RequiresPermission(
+            allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
+            conditional = true)
     public @ConnectionReturnValues int disconnect() {
         if (DBG) log("disconnect()");
         return callServiceIfEnabled(
@@ -3119,9 +3130,9 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             @NonNull BluetoothGattConnectionSettings gattConnectionSettings,
             @NonNull @CallbackExecutor Executor executor,
             @NonNull BluetoothGattCallback callback) {
-        if (gattConnectionSettings == null || callback == null || executor == null) {
-            throw new NullPointerException("Invalid input prameters");
-        }
+        requireNonNull(gattConnectionSettings);
+        requireNonNull(executor);
+        requireNonNull(callback);
 
         // TODO(Bluetooth) check whether platform support BLE
         //     Do the check here or in GattServer?
@@ -3635,7 +3646,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * @return number of times {@link ACTION_KEY_MISSING} intent was thrown for this device since
      *     the last successful encrypted connection
      */
-    @FlaggedApi(Flags.FLAG_KEY_MISSING_COUNT_API)
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public int getKeyMissingCount() {

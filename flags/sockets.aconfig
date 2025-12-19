@@ -22,16 +22,6 @@ flag {
 }
 
 flag {
-    name: "fix_buf_len_check_for_first_k_frame"
-    namespace: "bluetooth"
-    description: "Fix L2cap buffer length check against MPS for the first k-frame"
-    bug: "386382446"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "invalidate_hci_handle_on_acl_removal"
     namespace: "bluetooth"
     description: "invalidate hci handle associated with lcb on acl removal"

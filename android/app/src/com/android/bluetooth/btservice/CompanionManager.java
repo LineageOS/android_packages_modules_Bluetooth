@@ -30,6 +30,7 @@ import android.util.Log;
 
 import androidx.annotation.VisibleForTesting;
 
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Util;
 
@@ -89,6 +90,18 @@ public class CompanionManager {
     public static final int GATT_CONN_INTERVAL_MAX = 1;
     public static final int GATT_CONN_LATENCY = 2;
 
+    private static final int CONN_HIGH_MODE_INTERVAL_MIN_DEFAULT = 9;
+    private static final int CONN_HIGH_MODE_INTERVAL_MAX_DEFAULT = 12;
+    private static final int CONN_HIGH_MODE_MAX_LATENCY_DEFAULT = 1;
+
+    private static final int CONN_BALANCED_MODE_INTERVAL_MIN_DEFAULT = 24;
+    private static final int CONN_BALANCED_MODE_INTERVAL_MAX_DEFAULT = 40;
+    private static final int CONN_BALANCED_MODE_MAX_LATENCY_DEFAULT = 5;
+
+    private static final int CONN_LOWPOWER_MODE_INTERVAL_MIN_DEFAULT = 80;
+    private static final int CONN_LOWPOWER_MODE_INTERVAL_MAX_DEFAULT = 100;
+    private static final int CONN_LOWPOWER_MODE_MAX_LATENCY_DEFAULT = 7;
+
     @VisibleForTesting static final String COMPANION_INFO = "bluetooth_companion_info";
     @VisibleForTesting static final String COMPANION_DEVICE_KEY = "companion_device";
     @VisibleForTesting static final String COMPANION_TYPE_KEY = "companion_type";
@@ -119,32 +132,77 @@ public class CompanionManager {
 
     public CompanionManager(AdapterService service) {
         mAdapterService = service;
-
         mGattConnHighDefault =
-                new int[] {
-                    getGattConfig(
-                            PROPERTY_HIGH_MIN_INTERVAL, R.integer.gatt_high_priority_min_interval),
-                    getGattConfig(
-                            PROPERTY_HIGH_MAX_INTERVAL, R.integer.gatt_high_priority_max_interval),
-                    getGattConfig(PROPERTY_HIGH_LATENCY, R.integer.gatt_high_priority_latency)
-                };
+                (Flags.leSubrateManager()) ?
+                        new int[] {
+                            SystemProperties.getInt(
+                                    PROPERTY_HIGH_MIN_INTERVAL,
+                                    CONN_HIGH_MODE_INTERVAL_MIN_DEFAULT),
+                            SystemProperties.getInt(
+                                    PROPERTY_HIGH_MAX_INTERVAL,
+                                    CONN_HIGH_MODE_INTERVAL_MAX_DEFAULT),
+                            SystemProperties.getInt(
+                                    PROPERTY_HIGH_LATENCY,
+                                    CONN_HIGH_MODE_MAX_LATENCY_DEFAULT)
+                        } :
+                        new int[] {
+                            getGattConfig(
+                                    PROPERTY_HIGH_MIN_INTERVAL,
+                                    R.integer.gatt_high_priority_min_interval),
+                            getGattConfig(
+                                    PROPERTY_HIGH_MAX_INTERVAL,
+                                    R.integer.gatt_high_priority_max_interval),
+                            getGattConfig(
+                                    PROPERTY_HIGH_LATENCY, R.integer.gatt_high_priority_latency)
+                        };
         mGattConnBalanceDefault =
-                new int[] {
-                    getGattConfig(
-                            PROPERTY_BALANCED_MIN_INTERVAL,
-                            R.integer.gatt_balanced_priority_min_interval),
-                    getGattConfig(
-                            PROPERTY_BALANCED_MAX_INTERVAL,
-                            R.integer.gatt_balanced_priority_max_interval),
-                    getGattConfig(
-                            PROPERTY_BALANCED_LATENCY, R.integer.gatt_balanced_priority_latency)
-                };
+                (Flags.leSubrateManager()) ?
+                        new int[] {
+                            SystemProperties.getInt(
+                                    PROPERTY_BALANCED_MIN_INTERVAL,
+                                    CONN_BALANCED_MODE_INTERVAL_MIN_DEFAULT),
+                            SystemProperties.getInt(
+                                    PROPERTY_BALANCED_MAX_INTERVAL,
+                                    CONN_BALANCED_MODE_INTERVAL_MAX_DEFAULT),
+                            SystemProperties.getInt(
+                                    PROPERTY_BALANCED_LATENCY,
+                                    CONN_BALANCED_MODE_MAX_LATENCY_DEFAULT)
+                        } :
+                        new int[] {
+                            getGattConfig(
+                                    PROPERTY_BALANCED_MIN_INTERVAL,
+                                    R.integer.gatt_balanced_priority_min_interval),
+                            getGattConfig(
+                                    PROPERTY_BALANCED_MAX_INTERVAL,
+                                    R.integer.gatt_balanced_priority_max_interval),
+                            getGattConfig(
+                                    PROPERTY_BALANCED_LATENCY,
+                                    R.integer.gatt_balanced_priority_latency)
+                        };
         mGattConnLowDefault =
-                new int[] {
-                    getGattConfig(PROPERTY_LOW_MIN_INTERVAL, R.integer.gatt_low_power_min_interval),
-                    getGattConfig(PROPERTY_LOW_MAX_INTERVAL, R.integer.gatt_low_power_max_interval),
-                    getGattConfig(PROPERTY_LOW_LATENCY, R.integer.gatt_low_power_latency)
-                };
+                (Flags.leSubrateManager()) ?
+                        new int[] {
+                            SystemProperties.getInt(
+                                    PROPERTY_LOW_MIN_INTERVAL,
+                                    CONN_LOWPOWER_MODE_INTERVAL_MIN_DEFAULT),
+                            SystemProperties.getInt(
+                                    PROPERTY_LOW_MAX_INTERVAL,
+                                    CONN_LOWPOWER_MODE_INTERVAL_MAX_DEFAULT),
+                            SystemProperties.getInt(
+                                    PROPERTY_LOW_LATENCY,
+                                    CONN_LOWPOWER_MODE_MAX_LATENCY_DEFAULT)
+                        } :
+                        new int[] {
+                            getGattConfig(
+                                    PROPERTY_LOW_MIN_INTERVAL,
+                                    R.integer.gatt_low_power_min_interval),
+                            getGattConfig(
+                                    PROPERTY_LOW_MAX_INTERVAL,
+                                    R.integer.gatt_low_power_max_interval),
+                            getGattConfig(
+                                    PROPERTY_LOW_LATENCY,
+                                    R.integer.gatt_low_power_latency)
+                        };
         mGattConnDckDefault =
                 new int[] {
                     getGattConfig(
