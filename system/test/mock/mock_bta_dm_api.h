@@ -480,16 +480,16 @@ extern struct BTA_DmSetEventFilterInquiryResultAllDevices
         BTA_DmSetEventFilterInquiryResultAllDevices;
 
 // Name: BTA_DmSetLocalDiRecord
-// Params: tSDP_DI_RECORD* p_device_info, uint32_t* p_handle
-// Return: tBTA_STATUS
+// Params: tSDP_DI_RECORD* p_device_info
+// Return: bool
 struct BTA_DmSetLocalDiRecord {
-  static tBTA_STATUS return_value;
-  std::function<tBTA_STATUS(tSDP_DI_RECORD* p_device_info, uint32_t* p_handle)> body{
-          [](tSDP_DI_RECORD* /* p_device_info */, uint32_t* /* p_handle */) {
+  static bool return_value;
+  std::function<bool(tSDP_DI_RECORD* p_device_info)> body{
+          [](tSDP_DI_RECORD* /* p_device_info */) {
             return return_value;
           }};
-  tBTA_STATUS operator()(tSDP_DI_RECORD* p_device_info, uint32_t* p_handle) {
-    return body(p_device_info, p_handle);
+  bool operator()(tSDP_DI_RECORD* p_device_info) {
+    return body(p_device_info);
   }
 };
 extern struct BTA_DmSetLocalDiRecord BTA_DmSetLocalDiRecord;

@@ -550,10 +550,10 @@ bool BTA_DmGetConnectionState(const RawAddress& bd_addr);
  *
  * Description      This function adds a DI record to the local SDP database.
  *
- * Returns          BTA_SUCCESS if record set successfully, otherwise error code.
+ * Returns          true if record set successfully, false otherwise.
  *
  ******************************************************************************/
-tBTA_STATUS BTA_DmSetLocalDiRecord(tSDP_DI_RECORD* p_device_info, uint32_t* p_handle);
+bool BTA_DmSetLocalDiRecord(tSDP_DI_RECORD* p_device_info);
 
 /*******************************************************************************
  *
