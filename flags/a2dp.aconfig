@@ -14,6 +14,7 @@ flag {
     namespace: "bluetooth"
     description: "Define the extra parameter DISCONNECTED_REASON for a2dp.CONNECTION_STATE_CHANGED intent"
     bug: "416778270"
+    is_exported: true
 }
 
 flag {
