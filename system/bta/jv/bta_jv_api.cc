@@ -451,7 +451,7 @@ tBTA_JV_STATUS BTA_JvRfcommClose(uint32_t handle, uint32_t rfcomm_slot_id) {
   log::verbose("handle:{}, rfcomm_slot_id:{}", handle, rfcomm_slot_id);
 
   if (hi >= BTA_JV_MAX_RFC_CONN || !bta_jv_cb.rfc_cb[hi].p_cback ||
-      si >= BTA_JV_MAX_RFC_SR_SESSION || !bta_jv_cb.rfc_cb[hi].rfc_hdl[si]) {
+      si >= BTA_JV_MAX_RFC_SR_SESSION || !bta_jv_cb.rfc_cb[hi].port_hdls[si]) {
     return tBTA_JV_STATUS::FAILURE;
   }
 
@@ -528,8 +528,8 @@ uint16_t BTA_JvRfcommGetPortHdl(uint32_t handle) {
   uint32_t si = BTA_JV_RFC_HDL_TO_SIDX(handle);
 
   if (hi < BTA_JV_MAX_RFC_CONN && si < BTA_JV_MAX_RFC_SR_SESSION &&
-      bta_jv_cb.rfc_cb[hi].rfc_hdl[si]) {
-    return bta_jv_cb.port_cb[bta_jv_cb.rfc_cb[hi].rfc_hdl[si] - 1].port_handle;
+      bta_jv_cb.rfc_cb[hi].port_hdls[si]) {
+    return bta_jv_cb.port_cb[bta_jv_cb.rfc_cb[hi].port_hdls[si] - 1].port_handle;
   } else {
     return 0xffff;
   }
@@ -551,7 +551,7 @@ tBTA_JV_STATUS BTA_JvRfcommWrite(uint32_t handle, uint32_t req_id) {
 
   log::verbose("handle:{}, req_id:{}, hi:{}, si:{}", handle, req_id, hi, si);
   if (hi >= BTA_JV_MAX_RFC_CONN || !bta_jv_cb.rfc_cb[hi].p_cback ||
-      si >= BTA_JV_MAX_RFC_SR_SESSION || !bta_jv_cb.rfc_cb[hi].rfc_hdl[si]) {
+      si >= BTA_JV_MAX_RFC_SR_SESSION || !bta_jv_cb.rfc_cb[hi].port_hdls[si]) {
     return tBTA_JV_STATUS::FAILURE;
   }
 
@@ -559,7 +559,7 @@ tBTA_JV_STATUS BTA_JvRfcommWrite(uint32_t handle, uint32_t req_id) {
 
   tBTA_JV_RFC_CB* p_cb = &bta_jv_cb.rfc_cb[hi];
   do_in_main_thread(BindOnce(&bta_jv_rfcomm_write, handle, req_id, p_cb,
-                             &bta_jv_cb.port_cb[p_cb->rfc_hdl[si] - 1]));
+                             &bta_jv_cb.port_cb[p_cb->port_hdls[si] - 1]));
   return tBTA_JV_STATUS::SUCCESS;
 }
 
