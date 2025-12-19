@@ -26,6 +26,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <com_android_bluetooth_flags.h>
 
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
@@ -445,6 +446,10 @@ void sdp_init(void) {
                                                                true /* enable_snoop */, &ertm_info,
                                                                SDP_MTU_SIZE, 0, BTM_SEC_NONE)) {
     log::error("SDP Registration failed");
+  }
+
+  if (com::android::bluetooth::flags::enable_service_discovery_server()) {
+    sdp_register_sdp_discovery_server_records();
   }
 }
 

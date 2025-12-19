@@ -29,6 +29,7 @@
 #include <bluetooth/types/uuid.h>
 
 #include <cstdint>
+#include <optional>
 #include <string>
 
 #include "include/macros.h"
@@ -106,9 +107,16 @@ struct tSDP_RECORD {
   uint8_t attr_pad[SDP_MAX_PAD_LEN];
 };
 
+struct tSERVICE_DISC_SERVER_INFO {
+  uint32_t handle;   /* Record of ServiceDiscoveryServer */
+  uint32_t db_state; /* ServiceDatabaseState of ServiceDiscoveryServer */
+};
+
 /* Define the SDP database */
 struct tSDP_DB {
-  uint32_t di_primary_handle; /* Device ID Primary record or NULL if nonexistent */
+  uint32_t di_primary_handle; /* Device ID Primary record or 0 if nonexistent */
+  std::optional<tSERVICE_DISC_SERVER_INFO>
+          service_disc_server_info; /* ServiceDiscoveryServer info or NULL if nonexistent */
   uint16_t num_records;
   tSDP_RECORD record[SDP_MAX_RECORDS];
 };
@@ -301,6 +309,7 @@ const tSDP_ATTRIBUTE* sdp_db_find_attr_in_rec(const tSDP_RECORD* p_rec, uint16_t
 /* Functions provided by sdp_server.cc */
 void sdp_server_handle_client_req(tCONN_CB* p_ccb, BT_HDR* p_msg);
 bool sdp_dynamic_change_hfp_version(const tSDP_ATTRIBUTE* p_attr, const RawAddress& remote_address);
+void sdp_register_sdp_discovery_server_records();
 
 /* Functions provided by sdp_discovery.cc */
 void sdp_disc_connected(tCONN_CB* p_ccb);

@@ -352,6 +352,7 @@ cc_test {
         ":TestCommonMockFunctions",
         ":TestFakeOsi",
         ":TestMockBtaAg",
+        ":TestMockBtaSys",
         ":TestMockBtif",
         ":TestMockDevice",
         ":TestMockMainShim",

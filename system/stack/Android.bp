@@ -336,6 +336,7 @@ cc_defaults {
         ":TestCommonMockFunctions",
         ":TestFakeOsi",
         ":TestMockBtaAg",
+        ":TestMockBtaSys",
         ":TestMockBtif",
         ":TestMockDevice",
         ":TestMockMainShim",

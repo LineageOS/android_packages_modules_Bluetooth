@@ -104,6 +104,9 @@
 #define ATTR_ID_HID_SSR_HOST_MAX_LAT 0x020F
 #define ATTR_ID_HID_SSR_HOST_MIN_TOUT 0x0210
 
+/* These values are for Service Discovery Server */
+#define ATTR_ID_SERVICE_DATABASE_STATE 0x0201
+
 inline std::string sdp_attr_id_text(const unsigned& id) {
   switch (id) {
     CASE_RETURN_TEXT(ATTR_ID_SERVICE_RECORD_HDL);
