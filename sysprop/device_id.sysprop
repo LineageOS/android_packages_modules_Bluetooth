@@ -24,3 +24,11 @@ prop {
     access: Readonly
     prop_name: "bluetooth.device_id.product_id"
 }
+
+prop {
+    api_name: "version"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.device_id.version"
+}
