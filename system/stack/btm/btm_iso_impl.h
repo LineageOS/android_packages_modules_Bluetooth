@@ -1039,6 +1039,9 @@ struct iso_impl {
     client_cbs->big_callbacks->OnBigSourceEvent(BigSourceEvent::kTerminateCmpl, &evt);
 
     for (auto handle : group_it->second->stream_conn_handles) {
+      auto stream_ptr = GetStream(handle);
+      iso_credits_ += stream_ptr->used_credits;
+      stream_ptr->used_credits = 0;
       conn_hdl_to_iso_stream_map_.erase(handle);
     }
     source_big_handle_to_group_map_.erase(group_it);
