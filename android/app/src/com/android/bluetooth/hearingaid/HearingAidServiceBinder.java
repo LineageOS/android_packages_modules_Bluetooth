@@ -29,7 +29,6 @@ import android.bluetooth.IBluetoothHearingAid;
 import android.content.AttributionSource;
 
 import com.android.bluetooth.Util;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 
 import java.util.Collections;
@@ -53,7 +52,7 @@ class HearingAidServiceBinder extends IBluetoothHearingAid.Stub implements IProf
     private HearingAidService getService(AttributionSource source) {
         HearingAidService service = mService;
 
-        if (Utils.isInstrumentationTestMode()) {
+        if (Util.isInstrumentationTestMode()) {
             return service;
         }
 

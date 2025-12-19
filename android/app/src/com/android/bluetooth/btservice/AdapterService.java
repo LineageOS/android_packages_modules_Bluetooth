@@ -1054,7 +1054,7 @@ public class AdapterService extends Service {
                 getApplicationContext()
                         .getPackageManager()
                         .hasSystemFeature(PackageManager.FEATURE_LEANBACK_ONLY);
-        if (Utils.isInstrumentationTestMode()) {
+        if (Util.isInstrumentationTestMode()) {
             Log.w(TAG, "This Bluetooth App is instrumented. ** Skip loading the native **");
         } else {
             Log.d(TAG, "Loading JNI Library");

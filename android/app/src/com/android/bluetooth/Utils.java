@@ -329,41 +329,6 @@ public final class Utils {
         return (int) (TimeUnit.MILLISECONDS.toMicros(milliseconds) / MICROS_PER_UNIT);
     }
 
-    private static boolean sIsInstrumentationTestModeCacheSet = false;
-    private static boolean sInstrumentationTestModeCache = false;
-
-    /**
-     * Check if we are running in BluetoothInstrumentationTest context by trying to load
-     * com.android.bluetooth.FileSystemWriteTest. If we are not in Instrumentation test mode, this
-     * class should not be found. Thus, the assumption is that FileSystemWriteTest must exist. If
-     * FileSystemWriteTest is removed in the future, another test class in
-     * BluetoothInstrumentationTest should be used instead
-     *
-     * @return true if in BluetoothInstrumentationTest, false otherwise
-     */
-    public static boolean isInstrumentationTestMode() {
-        if (!sIsInstrumentationTestModeCacheSet) {
-            try {
-                sInstrumentationTestModeCache =
-                        Class.forName("com.android.bluetooth.TestUtils") != null;
-            } catch (ClassNotFoundException exception) {
-                sInstrumentationTestModeCache = false;
-            }
-            sIsInstrumentationTestModeCacheSet = true;
-        }
-        return sInstrumentationTestModeCache;
-    }
-
-    /**
-     * Throws {@link IllegalStateException} if we are not in BluetoothInstrumentationTest. Useful
-     * for ensuring certain methods only get called in BluetoothInstrumentationTest
-     */
-    public static void enforceInstrumentationTestMode() {
-        if (!isInstrumentationTestMode()) {
-            throw new IllegalStateException("Not in BluetoothInstrumentationTest");
-        }
-    }
-
     /**
      * Check if we are running in PTS test mode. To enable/disable PTS test mode, invoke {@code adb
      * shell setprop persist.bluetooth.pts true/false}
@@ -583,7 +548,7 @@ public final class Utils {
     }
 
     public static void enforceMainLooperIsUsed() {
-        if (Utils.isInstrumentationTestMode()) {
+        if (Util.isInstrumentationTestMode()) {
             return;
         }
         if (!Looper.getMainLooper().isCurrentThread()) {
@@ -592,7 +557,7 @@ public final class Utils {
     }
 
     public static void enforceMainLooperIsNotUsed() {
-        if (Utils.isInstrumentationTestMode()) {
+        if (Util.isInstrumentationTestMode()) {
             return;
         }
         if (Looper.getMainLooper().isCurrentThread()) {

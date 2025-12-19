@@ -21,7 +21,7 @@ import android.bluetooth.le.PeriodicAdvertisingManager;
 import android.os.Looper;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.le_scan.ScanController;
 import com.android.internal.annotations.VisibleForTesting;
@@ -56,7 +56,7 @@ public class BassObjectsFactory {
      */
     @VisibleForTesting
     public static void setInstanceForTesting(BassObjectsFactory objectsFactory) {
-        Utils.enforceInstrumentationTestMode();
+        Util.enforceInstrumentationTestMode();
         synchronized (INSTANCE_LOCK) {
             Log.d(TAG, "setInstanceForTesting(), set to " + objectsFactory);
             sInstance = objectsFactory;

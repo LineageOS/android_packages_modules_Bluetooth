@@ -20,7 +20,7 @@ import android.bluetooth.BluetoothDevice;
 import android.os.Looper;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.storage.BluetoothStorageManager;
 
@@ -53,7 +53,7 @@ public class HeadsetObjectsFactory {
      * @param objectsFactory a test instance of the HeadsetObjectsFactory
      */
     static void setInstanceForTesting(HeadsetObjectsFactory objectsFactory) {
-        Utils.enforceInstrumentationTestMode();
+        Util.enforceInstrumentationTestMode();
         synchronized (INSTANCE_LOCK) {
             Log.d(TAG, "setInstanceForTesting(), set to " + objectsFactory);
             sInstance = objectsFactory;

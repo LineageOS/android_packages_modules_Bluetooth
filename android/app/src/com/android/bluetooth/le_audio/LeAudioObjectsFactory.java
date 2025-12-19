@@ -19,7 +19,7 @@ package com.android.bluetooth.le_audio;
 import android.content.Context;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.internal.annotations.VisibleForTesting;
 
 /** Factory class for object initialization to help with unit testing */
@@ -52,7 +52,7 @@ public class LeAudioObjectsFactory {
      */
     @VisibleForTesting
     public static void setInstanceForTesting(LeAudioObjectsFactory objectsFactory) {
-        Utils.enforceInstrumentationTestMode();
+        Util.enforceInstrumentationTestMode();
         synchronized (INSTANCE_LOCK) {
             Log.d(TAG, "setInstanceForTesting(), set to " + objectsFactory);
             sInstance = objectsFactory;

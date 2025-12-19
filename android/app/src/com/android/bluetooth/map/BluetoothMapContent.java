@@ -39,6 +39,7 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.SignedLongLong;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.map.BluetoothMapContract.ConversationColumns;
@@ -1249,7 +1250,7 @@ public class BluetoothMapContent {
 
         // Fix Subject Display issue with HONDA Carkit - Ignore subject Mask.
         boolean isHondaCarkit;
-        if (Utils.isInstrumentationTestMode()) {
+        if (Util.isInstrumentationTestMode()) {
             isHondaCarkit = false;
         } else {
             isHondaCarkit =

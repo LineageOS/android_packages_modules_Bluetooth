@@ -31,7 +31,6 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.android.bluetooth.Util;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 
 import java.util.ArrayList;
@@ -58,7 +57,7 @@ class HeadsetClientServiceBinder extends IBluetoothHeadsetClient.Stub
     private HeadsetClientService getService(AttributionSource source) {
         HeadsetClientService service = mService;
 
-        if (Utils.isInstrumentationTestMode()) {
+        if (Util.isInstrumentationTestMode()) {
             return service;
         }
 
