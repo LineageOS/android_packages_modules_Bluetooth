@@ -118,6 +118,17 @@ struct acl_is_switch_role_idle {
   }
 };
 extern struct acl_is_switch_role_idle acl_is_switch_role_idle;
+// Name: acl_link_is_disconnecting
+// Params: const RawAddress& remote_bda, tBT_TRANSPORT transport
+// Returns: bool
+struct acl_link_is_disconnecting {
+  std::function<bool(const RawAddress& remote_bda, tBT_TRANSPORT transport)> body{
+          [](const RawAddress& /* remote_bda */, tBT_TRANSPORT /* transport */) { return false; }};
+  bool operator()(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
+    return body(remote_bda, transport);
+  }
+};
+extern struct acl_link_is_disconnecting acl_link_is_disconnecting;
 // Name: acl_peer_supports_ble_2m_phy
 // Params: uint16_t hci_handle
 // Returns: bool
