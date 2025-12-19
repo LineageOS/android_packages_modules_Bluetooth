@@ -187,6 +187,8 @@ void btif_enable_bluetooth_evt() {
                           DI_VENDOR_ID_SOURCE_BTSIG)),
           .product = uint16_t(
                   android::sysprop::bluetooth::DeviceIDProperties::product_id().value_or(0)),
+          .version = uint16_t(
+                  android::sysprop::bluetooth::DeviceIDProperties::version().value_or(0)),
           .primary_record = true,
   };
 
