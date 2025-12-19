@@ -205,9 +205,7 @@ public class RemoteDevices {
 
                             if (deviceProperties.getConnectionHandle(TRANSPORT_BREDR)
                                     != BluetoothDevice.ERROR) {
-                                if (Flags.linkStatusApi()) {
-                                    deviceProperties.setDisconnected(TRANSPORT_BREDR);
-                                }
+                                deviceProperties.setDisconnected(TRANSPORT_BREDR);
                                 mAdapterService.notifyAclDisconnected(device, TRANSPORT_BREDR);
                                 if (Flags.broadcastTransportTypeOnReset()) {
                                     intent.putExtra(
@@ -217,9 +215,7 @@ public class RemoteDevices {
                             }
                             if (deviceProperties.getConnectionHandle(TRANSPORT_LE)
                                     != BluetoothDevice.ERROR) {
-                                if (Flags.linkStatusApi()) {
-                                    deviceProperties.setDisconnected(TRANSPORT_LE);
-                                }
+                                deviceProperties.setDisconnected(TRANSPORT_LE);
                                 mAdapterService.notifyAclDisconnected(device, TRANSPORT_LE);
                                 if (Flags.broadcastTransportTypeOnReset()) {
                                     intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_LE);
@@ -2004,10 +2000,8 @@ public class RemoteDevices {
             }
         }
 
-        if (Flags.linkStatusApi()) {
-            getDeviceProperties(bluetoothDevice)
-                    .setEncryptionStatus(transport, keySize, encryptionAlgo);
-        }
+        getDeviceProperties(bluetoothDevice)
+                .setEncryptionStatus(transport, keySize, encryptionAlgo);
 
         Intent intent =
                 new Intent(BluetoothDevice.ACTION_ENCRYPTION_CHANGE)
