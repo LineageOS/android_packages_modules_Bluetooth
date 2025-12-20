@@ -932,14 +932,6 @@ public final class BluetoothSocket implements Closeable {
     }
 
     /*package*/ int available() throws IOException {
-        if (!Flags.fixLecocSocketAvailable()) {
-            int socketAvailable = mSocketIS.available();
-            if (VDBG) {
-                Log.d(TAG, "available returns: mSocketIS.available=" + socketAvailable);
-            }
-            return socketAvailable;
-        }
-
         if (mSocketState == SocketState.CLOSED) {
             Log.e(TAG, "available called on closed socket!");
             return 0;

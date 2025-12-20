@@ -32,16 +32,6 @@ flag {
 }
 
 flag {
-    name: "fix_lecoc_socket_available"
-    namespace: "bluetooth"
-    description: "Fix Bluetooth Socket available API for LECOC socket"
-    bug: "402536099"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "make_socket_read_behavior_consistent"
     namespace: "bluetooth"
     description: "Ensure both RFCOMM & LECOC sockets return value is consistent on EOF"
