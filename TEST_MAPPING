@@ -27,7 +27,7 @@
     { "name": "bt_host_test_bta_scn" },
     { "name": "libaptx_enc_tests" },
     { "name": "libaptxhd_enc_tests" },
-    { "name": "libbluetooth_core_rs_test" },
+    { "name": "libbluetooth_private_gatt_rs_test" },
     { "name": "libbluetooth_log_test" },
     { "name": "libbluetooth_offload_hci_test" }
   ],
@@ -61,7 +61,7 @@
     { "name": "bt_host_test_bta_scn" },
     { "name": "libaptx_enc_tests" },
     { "name": "libaptxhd_enc_tests" },
-    { "name": "libbluetooth_core_rs_test" },
+    { "name": "libbluetooth_private_gatt_rs_test" },
     { "name": "libbluetooth_log_test" },
     { "name": "libbluetooth_offload_hci_test" }
   ],

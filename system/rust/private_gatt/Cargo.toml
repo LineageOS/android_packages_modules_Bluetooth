@@ -14,7 +14,7 @@
 #  limitations under the License.
 
 [package]
-name = "bluetooth_core"
+name = "bluetooth_private_gatt"
 version = "0.0.1"
 edition = "2021"
 
