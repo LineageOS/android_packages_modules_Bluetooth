@@ -551,13 +551,13 @@ package android.bluetooth {
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothClass getBluetoothClass();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public int getBondState();
     method @FlaggedApi("com.android.bluetooth.flags.enable_get_bond_status") @Nullable @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BondStatus getBondStatus(int);
-    method @FlaggedApi("com.android.bluetooth.flags.link_status_api") @Nullable @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.EncryptionStatus getEncryptionStatus(int);
+    method @Nullable @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.EncryptionStatus getEncryptionStatus(int);
     method @NonNull @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public android.bluetooth.BluetoothDevice.BluetoothAddress getIdentityAddressWithType();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public int getKeyMissingCount();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public String getName();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public int getType();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.os.ParcelUuid[] getUuids();
-    method @FlaggedApi("com.android.bluetooth.flags.link_status_api") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean isConnected(int);
+    method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean isConnected(int);
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional=true) public int setAlias(@Nullable String);
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public boolean setPairingConfirmation(boolean);
     method @Deprecated @FlaggedApi("com.android.bluetooth.flags.apairing_26q2_permission_improvements") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional=true) public boolean setPin(byte[]);
@@ -594,7 +594,7 @@ package android.bluetooth {
     field public static final int ENCRYPTION_ALGORITHM_AES = 2; // 0x2
     field public static final int ENCRYPTION_ALGORITHM_E0 = 1; // 0x1
     field public static final int ENCRYPTION_ALGORITHM_NONE = 0; // 0x0
-    field @FlaggedApi("com.android.bluetooth.flags.link_status_api") public static final int ENCRYPTION_ALGORITHM_UNKNOWN = 3; // 0x3
+    field public static final int ENCRYPTION_ALGORITHM_UNKNOWN = 3; // 0x3
     field public static final int ERROR = -2147483648; // 0x80000000
     field public static final String EXTRA_BOND_LOSS_REASON = "android.bluetooth.device.extra.BOND_LOSS_REASON";
     field public static final String EXTRA_BOND_STATE = "android.bluetooth.device.extra.BOND_STATE";
@@ -1247,7 +1247,7 @@ package android.bluetooth {
     method public int getPairingVariant();
   }
 
-  @FlaggedApi("com.android.bluetooth.flags.link_status_api") public final class EncryptionStatus {
+  public final class EncryptionStatus {
     ctor public EncryptionStatus(@IntRange(from=1, to=16) int, int);
     method public int getAlgorithm();
     method @IntRange(from=1, to=16) public int getKeySize();

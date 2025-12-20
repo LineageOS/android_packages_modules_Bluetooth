@@ -85,7 +85,7 @@ public class AdvertiseManager {
             AdvertiseManagerNativeInterface nativeInterface,
             Looper advertiseLooper,
             AdvertiserMap advertiserMap) {
-        Log.d(TAG, "advertise manager created");
+        Log.d(TAG, "Created");
         mAdapterService = adapterService;
         mGattService = gattService;
         var nativeCallback = new AdvertiseManagerNativeCallback(mAdapterService, this);
@@ -320,7 +320,7 @@ public class AdvertiseManager {
             mAdvertisers.put(binder, new AdvertiserInfo(cbId, deathRecipient, callback));
             mAdvertiseSuspendManager.onStartAdvertisingSet(cbId, duration, maxExtAdvEvents, source);
 
-            Log.d(TAG, "startAdvertisingSet() - reg_id=" + cbId + ", callback: " + binder);
+            Log.d(TAG, "startAdvertisingSet(): reg_id=" + cbId + ", callback: " + binder);
 
             mAdvertiserMap.addAppAdvertiseStats(uid, appName, cbId, source);
             fetchAppForegroundState(uid, cbId);
@@ -390,7 +390,7 @@ public class AdvertiseManager {
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.w(TAG, "onOwnAddressRead() - bad advertiserId " + advertiserId);
+            Log.w(TAG, "onOwnAddressRead(): Bad advertiserId=" + advertiserId);
             return;
         }
 
@@ -408,7 +408,7 @@ public class AdvertiseManager {
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.w(TAG, "getOwnAddress() - bad advertiserId " + advertiserId);
+            Log.w(TAG, "getOwnAddress(): Bad advertiserId=" + advertiserId);
             return;
         }
         mNativeInterface.getOwnAddress(advertiserId);
@@ -423,11 +423,11 @@ public class AdvertiseManager {
         }
 
         final var binder = callback.asBinder();
-        Log.d(TAG, "stopAdvertisingSet() " + binder);
+        Log.d(TAG, "stopAdvertisingSet(): " + binder);
 
         final var advertiserInfo = mAdvertisers.remove(binder);
         if (advertiserInfo == null) {
-            Log.e(TAG, "stopAdvertisingSet() - no client found for callback");
+            Log.e(TAG, "stopAdvertisingSet(): No client found for callback");
             return;
         }
 
@@ -435,7 +435,7 @@ public class AdvertiseManager {
         binder.unlinkToDeath(advertiserInfo.deathRecipient, 0);
 
         if (advertiserId < 0) {
-            Log.i(TAG, "stopAdvertisingSet() - advertiser not finished registration yet");
+            Log.i(TAG, "stopAdvertisingSet(): Advertiser not finished registration yet");
             // Advertiser will be freed once initiated in onAdvertisingSetStarted()
             return;
         }
@@ -446,7 +446,7 @@ public class AdvertiseManager {
         try {
             callback.onAdvertisingSetStopped(advertiserId);
         } catch (RemoteException e) {
-            Log.i(TAG, "error sending onAdvertisingSetStopped callback", e);
+            Log.i(TAG, "Error calling callback.onAdvertisingSetStopped(" + advertiserId + ")", e);
         }
 
         mAdvertiserMap.recordAdvertiseStop(advertiserId);
@@ -468,7 +468,7 @@ public class AdvertiseManager {
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.w(TAG, "enableAdvertisingSet() - bad advertiserId " + advertiserId);
+            Log.w(TAG, "enableAdvertisingSet(): Bad advertiserId=" + advertiserId);
             return;
         }
 
@@ -490,7 +490,7 @@ public class AdvertiseManager {
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.w(TAG, "setAdvertisingData() - bad advertiserId " + advertiserId);
+            Log.w(TAG, "setAdvertisingData(): Bad advertiserId=" + advertiserId);
             return;
         }
         final String deviceName = mAdapterService.getName();
@@ -518,7 +518,7 @@ public class AdvertiseManager {
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.w(TAG, "setScanResponseData() - bad advertiserId " + advertiserId);
+            Log.w(TAG, "setScanResponseData(): Bad advertiserId=" + advertiserId);
             return;
         }
         final String deviceName = mAdapterService.getName();
@@ -546,7 +546,7 @@ public class AdvertiseManager {
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.w(TAG, "setAdvertisingParameters() - bad advertiserId " + advertiserId);
+            Log.w(TAG, "setAdvertisingParameters(): Bad advertiserId=" + advertiserId);
             return;
         }
         parameters = adjustTxPower(parameters);
@@ -566,7 +566,7 @@ public class AdvertiseManager {
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.w(TAG, "setPeriodicAdvertisingParameters() - bad advertiserId " + advertiserId);
+            Log.w(TAG, "setPeriodicAdvertisingParameters(): Bad advertiserId=" + advertiserId);
             return;
         }
         mNativeInterface.setPeriodicAdvertisingParameters(advertiserId, parameters);
@@ -583,7 +583,7 @@ public class AdvertiseManager {
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.w(TAG, "setPeriodicAdvertisingData() - bad advertiserId " + advertiserId);
+            Log.w(TAG, "setPeriodicAdvertisingData(): Bad advertiserId=" + advertiserId);
             return;
         }
         final String deviceName = mAdapterService.getName();
@@ -611,7 +611,7 @@ public class AdvertiseManager {
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.w(TAG, "setPeriodicAdvertisingEnable() - bad advertiserId " + advertiserId);
+            Log.w(TAG, "setPeriodicAdvertisingEnable(): Bad advertiserId=" + advertiserId);
             return;
         }
         mNativeInterface.setPeriodicAdvertisingEnable(advertiserId, enable);
@@ -619,11 +619,11 @@ public class AdvertiseManager {
 
     void onAdvertisingDataSet(int advertiserId, int status) {
         enforceThread();
-        Log.d(TAG, "onAdvertisingDataSet() advertiserId=" + advertiserId + ", status=" + status);
+        Log.d(TAG, "onAdvertisingDataSet(): advertiserId=" + advertiserId + ", status=" + status);
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.i(TAG, "onAdvertisingDataSet() - bad advertiserId " + advertiserId);
+            Log.i(TAG, "onAdvertisingDataSet(): Bad advertiserId=" + advertiserId);
             return;
         }
 
@@ -633,11 +633,11 @@ public class AdvertiseManager {
 
     void onScanResponseDataSet(int advertiserId, int status) {
         enforceThread();
-        Log.d(TAG, "onScanResponseDataSet() advertiserId=" + advertiserId + ", status=" + status);
+        Log.d(TAG, "onScanResponseDataSet(): advertiserId=" + advertiserId + ", status=" + status);
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.i(TAG, "onScanResponseDataSet() - bad advertiserId " + advertiserId);
+            Log.i(TAG, "onScanResponseDataSet(): Bad advertiserId=" + advertiserId);
             return;
         }
 
@@ -654,7 +654,7 @@ public class AdvertiseManager {
 
         final Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.i(TAG, "onAdvertisingParametersUpdated() - bad advertiserId " + advertiserId);
+            Log.i(TAG, "onAdvertisingParametersUpdated(): Bad advertiserId=" + advertiserId);
             return;
         }
 

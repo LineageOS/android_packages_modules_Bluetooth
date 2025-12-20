@@ -89,8 +89,8 @@ DEV_CLASS btif_dm_get_local_class_of_device();
  * Out-of-band functions
  */
 void btif_dm_set_oob_for_io_req(tBTM_OOB_DATA* p_oob_data);
-tBTM_OOB_DATA btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr,
-                                            tBTM_LE_AUTH_REQ* p_auth_req);
+std::optional<tBTM_LE_AUTH_REQ> btif_dm_le_oob_auth_req(const RawAddress& bd_addr,
+                                                        tBTM_LE_AUTH_REQ auth_req);
 void btif_dm_load_local_oob(void);
 void btif_dm_proc_loc_oob(tBT_TRANSPORT transport, bool is_valid, const Octet16& c,
                           const Octet16& r);

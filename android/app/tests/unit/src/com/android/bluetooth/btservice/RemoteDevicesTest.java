@@ -874,7 +874,6 @@ public class RemoteDevicesTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LINK_STATUS_API)
     public void testLinkState_bredr() {
         final int transport = TRANSPORT_BREDR;
 
@@ -1113,6 +1112,23 @@ public class RemoteDevicesTest {
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNotNull();
         // Verify that a PAIRING_CANCEL intent is sent to dismiss any UI dialogs.
         verifyIntentSent(hasAction(BluetoothDevice.ACTION_PAIRING_CANCEL));
+    }
+
+    @Test
+    public void setBondState_bondedWithUnknownIdentityAddress_setsIdentityAddress() {
+        // Add a device, its properties will be created with an unknown identity address.
+        DeviceProperties deviceProp =
+                mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
+        assertThat(deviceProp.getIdentityAddress())
+                .isEqualTo(DeviceProperties.UNKNOWN_ADDRESS);
+
+        // Set the bond state to BONDED.
+        deviceProp.setBondState(BluetoothDevice.BOND_BONDED);
+
+        // Verify that the identity address is now set to the device's own address.
+        assertThat(deviceProp.getIdentityAddress().getAddress()).isEqualTo(mDevice.getAddress());
+        assertThat(deviceProp.getIdentityAddress().getAddressType())
+                .isEqualTo(mDevice.getAddressType());
     }
 
     private static Object[] getXEventArray(int batteryLevel, int numLevels) {

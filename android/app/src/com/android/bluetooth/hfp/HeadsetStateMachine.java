@@ -2735,10 +2735,10 @@ class HeadsetStateMachine extends StateMachine {
 
     boolean isDeviceDenylistedForDelayingCLCCRespAfterVOIPCall() {
         boolean matched =
-                InteropUtil.interopMatchAddrOrName(
+                InteropUtil.interopMatchDevice(
                         mAdapterService,
                         InteropUtil.InteropFeature.INTEROP_HFP_SEND_OK_FOR_CLCC_AFTER_VOIP_CALL_END,
-                        mDevice.getAddress());
+                        mDevice);
         return matched;
     }
 

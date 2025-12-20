@@ -117,10 +117,10 @@ void btif_dm_remove_bond(const RawAddress /* bd_addr */) { inc_func_call_count(_
 void btif_dm_set_oob_for_io_req(tBTM_OOB_DATA* /* p_has_oob_data */) {
   inc_func_call_count(__func__);
 }
-tBTM_OOB_DATA btif_dm_set_oob_for_le_io_req(const RawAddress& /* bd_addr */,
-                                            tBTM_LE_AUTH_REQ* /* p_auth_req */) {
+std::optional<tBTM_LE_AUTH_REQ> btif_dm_le_oob_auth_req(const RawAddress& /* bd_addr */,
+                                                        tBTM_LE_AUTH_REQ /* auth_req */) {
   inc_func_call_count(__func__);
-  return BTM_OOB_UNKNOWN;
+  return std::nullopt;
 }
 void btif_dm_ssp_reply(const RawAddress /* bd_addr */, bt_ssp_variant_t /* variant */,
                        uint8_t /* accept */) {

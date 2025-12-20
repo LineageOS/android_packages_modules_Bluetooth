@@ -34,7 +34,6 @@ import com.android.bluetooth.flags.Flags;
  * <p>This class is used to hold the encryption status details like key size and algorithm of a
  * Bluetooth device.
  */
-@FlaggedApi(Flags.FLAG_LINK_STATUS_API)
 public final class EncryptionStatus {
     private final InnerParcel mParcel;
 
@@ -56,7 +55,6 @@ public final class EncryptionStatus {
     /**
      * @return the {@link EncryptionStatus} associated with this parcel
      */
-    @FlaggedApi(Flags.FLAG_LINK_STATUS_API)
     @RequiresNoPermission
     static @Nullable EncryptionStatus fromParcel(InnerParcel parcel) {
         if (parcel == null) {

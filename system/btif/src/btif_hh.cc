@@ -807,12 +807,33 @@ static void hh_get_idle_handler(tBTA_HH_HSDATA& hs_data) {
 
   log::verbose("Handle = {}, status = {}, rate = {}", hs_data.handle, hs_data.status,
                hs_data.rsp_data.idle_rate);
-  HAL_CBACK(bt_hh_callbacks, idle_time_cb, p_dev->link_spec.addrt.bda, p_dev->link_spec.addrt.type,
-            p_dev->link_spec.transport, hs_data.status, hs_data.rsp_data.idle_rate);
+  if (!com::android::bluetooth::flags::hid_propagate_idle_handshake() ||
+      hs_data.status == BTHH_OK) {
+    HAL_CBACK(bt_hh_callbacks, idle_time_cb, p_dev->link_spec.addrt.bda,
+              p_dev->link_spec.addrt.type, p_dev->link_spec.transport, hs_data.status,
+              hs_data.rsp_data.idle_rate);
+
+  } else {
+    HAL_CBACK(bt_hh_callbacks, handshake_cb, p_dev->link_spec.addrt.bda,
+              p_dev->link_spec.addrt.type, p_dev->link_spec.transport, hs_data.status);
+  }
 }
 
 static void hh_set_idle_handler(tBTA_HH_CBDATA& dev_status) {
+  if (!com::android::bluetooth::flags::hid_propagate_idle_handshake()) {
+    log::verbose("Status = {}, handle = {}", dev_status.status, dev_status.handle);
+    return;
+  }
+
+  btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_handle(dev_status.handle);
+  if (p_dev == nullptr) {
+    log::warn("Unknown device handle {}", dev_status.handle);
+    return;
+  }
+
   log::verbose("Status = {}, handle = {}", dev_status.status, dev_status.handle);
+  HAL_CBACK(bt_hh_callbacks, handshake_cb, p_dev->link_spec.addrt.bda, p_dev->link_spec.addrt.type,
+            p_dev->link_spec.transport, dev_status.status);
 }
 
 static void hh_get_dscp_handler(tBTA_HH_DEV_DSCP_INFO& dscp_info) {

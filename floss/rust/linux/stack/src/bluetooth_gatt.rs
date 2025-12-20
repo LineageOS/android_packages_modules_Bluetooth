@@ -1858,7 +1858,7 @@ impl BluetoothGatt {
                     {
                         self.gatt.lock().unwrap().client.disconnect(
                             client_id,
-                            &device.address,
+                            device.address,
                             conn_id,
                         );
                     }
@@ -1871,7 +1871,7 @@ impl BluetoothGatt {
                     {
                         self.gatt.lock().unwrap().server.disconnect(
                             server_id,
-                            &device.address,
+                            device.address,
                             conn_id,
                         );
                     }
@@ -2281,7 +2281,7 @@ impl IBluetoothGatt for BluetoothGatt {
             return;
         };
         self.context_map.add(&uuid, callback);
-        self.gatt.lock().unwrap().client.register_client(&uuid, eatt_support);
+        self.gatt.lock().unwrap().client.register_client(uuid, eatt_support);
     }
 
     fn unregister_client(&mut self, client_id: i32) {
@@ -2300,7 +2300,7 @@ impl IBluetoothGatt for BluetoothGatt {
     ) {
         self.gatt.lock().unwrap().client.connect(
             client_id,
-            &addr,
+            addr,
             // Addr type is default PUBLIC.
             0,
             is_direct,
@@ -2317,11 +2317,11 @@ impl IBluetoothGatt for BluetoothGatt {
             return;
         };
 
-        self.gatt.lock().unwrap().client.disconnect(client_id, &addr, conn_id);
+        self.gatt.lock().unwrap().client.disconnect(client_id, addr, conn_id);
     }
 
     fn refresh_device(&self, client_id: i32, addr: RawAddress) {
-        self.gatt.lock().unwrap().client.refresh(client_id, &addr);
+        self.gatt.lock().unwrap().client.refresh(client_id, addr);
     }
 
     fn discover_services(&self, client_id: i32, addr: RawAddress) {
@@ -2352,7 +2352,7 @@ impl IBluetoothGatt for BluetoothGatt {
         };
         let Some(uuid) = Uuid::from_string(uuid) else { return };
 
-        self.gatt.lock().unwrap().client.btif_gattc_discover_service_by_uuid(conn_id, &uuid);
+        self.gatt.lock().unwrap().client.btif_gattc_discover_service_by_uuid(conn_id, uuid);
     }
 
     fn read_characteristic(&self, client_id: i32, addr: RawAddress, handle: i32, auth_req: i32) {
@@ -2383,7 +2383,7 @@ impl IBluetoothGatt for BluetoothGatt {
 
         self.gatt.lock().unwrap().client.read_using_characteristic_uuid(
             conn_id,
-            &uuid,
+            uuid,
             start_handle as u16,
             end_handle as u16,
             auth_req,
@@ -2470,13 +2470,13 @@ impl IBluetoothGatt for BluetoothGatt {
         if enable {
             self.gatt.lock().unwrap().client.register_for_notification(
                 client_id,
-                &addr,
+                addr,
                 handle as u16,
             );
         } else {
             self.gatt.lock().unwrap().client.deregister_for_notification(
                 client_id,
-                &addr,
+                addr,
                 handle as u16,
             );
         }
@@ -2497,7 +2497,7 @@ impl IBluetoothGatt for BluetoothGatt {
     }
 
     fn read_remote_rssi(&self, client_id: i32, addr: RawAddress) {
-        self.gatt.lock().unwrap().client.read_remote_rssi(client_id, &addr);
+        self.gatt.lock().unwrap().client.read_remote_rssi(client_id, addr);
     }
 
     fn configure_mtu(&self, client_id: i32, addr: RawAddress, mtu: i32) {
@@ -2520,7 +2520,7 @@ impl IBluetoothGatt for BluetoothGatt {
         max_ce_len: u16,
     ) {
         self.gatt.lock().unwrap().client.conn_parameter_update(
-            &addr,
+            addr,
             min_interval,
             max_interval,
             latency,
@@ -2561,7 +2561,7 @@ impl IBluetoothGatt for BluetoothGatt {
         }
 
         self.gatt.lock().unwrap().client.set_preferred_phy(
-            &addr,
+            addr,
             tx_phy.to_u8().unwrap(),
             rx_phy.to_u8().unwrap(),
             phy_options as u16,
@@ -2569,7 +2569,7 @@ impl IBluetoothGatt for BluetoothGatt {
     }
 
     fn client_read_phy(&mut self, client_id: i32, addr: RawAddress) {
-        self.gatt.lock().unwrap().client.read_phy(client_id, &addr);
+        self.gatt.lock().unwrap().client.read_phy(client_id, addr);
     }
 
     // GATT Server
@@ -2585,7 +2585,7 @@ impl IBluetoothGatt for BluetoothGatt {
             return;
         };
         self.server_context_map.add(&uuid, callback);
-        self.gatt.lock().unwrap().server.register_server(&uuid, eatt_support);
+        self.gatt.lock().unwrap().server.register_server(uuid, eatt_support);
     }
 
     fn unregister_server(&mut self, server_id: i32) {
@@ -2602,7 +2602,7 @@ impl IBluetoothGatt for BluetoothGatt {
     ) -> bool {
         self.gatt.lock().unwrap().server.connect(
             server_id,
-            &addr,
+            addr,
             // Addr type is default PUBLIC.
             0,
             is_direct,
@@ -2618,7 +2618,7 @@ impl IBluetoothGatt for BluetoothGatt {
             Some(id) => id,
         };
 
-        self.gatt.lock().unwrap().server.disconnect(server_id, &addr, conn_id);
+        self.gatt.lock().unwrap().server.disconnect(server_id, addr, conn_id);
 
         true
     }
@@ -2669,7 +2669,7 @@ impl IBluetoothGatt for BluetoothGatt {
                     conn_id,
                     request_id,
                     status as i32,
-                    &BtGattResponse {
+                    BtGattResponse {
                         attr_value: BtGattValue {
                             value: data,
                             handle: handle as u16,
@@ -2719,7 +2719,7 @@ impl IBluetoothGatt for BluetoothGatt {
         phy_options: i32,
     ) {
         self.gatt.lock().unwrap().server.set_preferred_phy(
-            &addr,
+            addr,
             tx_phy.to_u8().unwrap_or_default(),
             rx_phy.to_u8().unwrap_or_default(),
             phy_options as u16,
@@ -2727,7 +2727,7 @@ impl IBluetoothGatt for BluetoothGatt {
     }
 
     fn server_read_phy(&self, server_id: i32, addr: RawAddress) {
-        self.gatt.lock().unwrap().server.read_phy(server_id, &addr);
+        self.gatt.lock().unwrap().server.read_phy(server_id, addr);
     }
 }
 
@@ -2777,8 +2777,7 @@ pub(crate) trait BtifGattClientCallbacks {
         conn_id: i32,
         status: GattStatus,
         handle: u16,
-        len: u16,
-        value: *const u8,
+        value: Vec<u8>,
     );
 
     #[btif_callback(ReadDescriptor)]
@@ -2790,8 +2789,7 @@ pub(crate) trait BtifGattClientCallbacks {
         conn_id: i32,
         status: GattStatus,
         handle: u16,
-        len: u16,
-        value: *const u8,
+        value: Vec<u8>,
     );
 
     #[btif_callback(ExecuteWrite)]
@@ -2950,8 +2948,7 @@ impl BtifGattClientCallbacks for BluetoothGatt {
         conn_id: i32,
         mut status: GattStatus,
         handle: u16,
-        _len: u16,
-        _value: *const u8,
+        _value: Vec<u8>,
     ) {
         let Some(addr) = self.context_map.get_address_by_conn_id(conn_id) else { return };
         let Some(client) = self.context_map.get_client_by_conn_id_mut(conn_id) else { return };
@@ -2992,8 +2989,7 @@ impl BtifGattClientCallbacks for BluetoothGatt {
         conn_id: i32,
         status: GattStatus,
         handle: u16,
-        _len: u16,
-        _value: *const u8,
+        _value: Vec<u8>,
     ) {
         let Some(addr) = self.context_map.get_address_by_conn_id(conn_id) else { return };
         let Some(client) = self.context_map.get_client_by_conn_id(conn_id) else { return };

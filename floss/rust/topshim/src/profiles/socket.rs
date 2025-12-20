@@ -1,39 +1,82 @@
 use num_derive::{FromPrimitive, ToPrimitive};
-use num_traits::cast::{FromPrimitive, ToPrimitive};
 use std::convert::{TryFrom, TryInto};
 use std::ffi::CString;
 use std::fs::File;
 use std::os::unix::io::FromRawFd;
 
-use topshim_macros::log_args;
+use topshim_macros::{gen_cxx_extern_trivial_tuple, log_args};
 
 use crate::bindings::root as bindings;
-use crate::btif::{BluetoothInterface, BtStatus, RawAddress, SupportedProfiles, Uuid};
-use crate::ccall;
-use crate::utils::{LTCheckedPtr, LTCheckedPtrMut};
+use crate::btif::{BluetoothInterface, BtStatus, RawAddress, Uuid};
 
 #[derive(Clone, Debug, FromPrimitive, ToPrimitive)]
 #[repr(u32)]
 /// Socket interface type.
 pub enum SocketType {
-    /// Unknown socket type value.
-    Unknown = 0,
-
     Rfcomm = 1,
     Sco = 2,
     L2cap = 3,
     L2capLe = 4,
 }
 
-impl From<bindings::btsock_type_t> for SocketType {
-    fn from(item: bindings::btsock_type_t) -> Self {
-        SocketType::from_u32(item).unwrap_or(SocketType::Unknown)
+#[gen_cxx_extern_trivial_tuple]
+struct CxxSocketType(pub bindings::btsock_type_t);
+
+impl From<CxxSocketType> for SocketType {
+    fn from(item: CxxSocketType) -> Self {
+        match item.0 {
+            bindings::btsock_type_t_BTSOCK_RFCOMM => SocketType::Rfcomm,
+            bindings::btsock_type_t_BTSOCK_SCO => SocketType::Sco,
+            bindings::btsock_type_t_BTSOCK_L2CAP => SocketType::L2cap,
+            bindings::btsock_type_t_BTSOCK_L2CAP_LE => SocketType::L2capLe,
+            _ => unreachable!(),
+        }
     }
 }
 
-impl From<SocketType> for bindings::btsock_type_t {
+impl From<SocketType> for CxxSocketType {
     fn from(item: SocketType) -> Self {
-        item.to_u32().unwrap_or(0)
+        let i = match item {
+            SocketType::Rfcomm => bindings::btsock_type_t_BTSOCK_RFCOMM,
+            SocketType::Sco => bindings::btsock_type_t_BTSOCK_SCO,
+            SocketType::L2cap => bindings::btsock_type_t_BTSOCK_L2CAP,
+            SocketType::L2capLe => bindings::btsock_type_t_BTSOCK_L2CAP_LE,
+        };
+        CxxSocketType(i)
+    }
+}
+
+#[derive(Clone, Debug, FromPrimitive, ToPrimitive)]
+#[repr(u32)]
+pub enum SocketDataPath {
+    NoOffload = 0,
+    HardwareOffload = 1,
+}
+
+#[gen_cxx_extern_trivial_tuple]
+struct CxxSocketDataPath(pub bindings::btsock_data_path_t);
+
+impl From<CxxSocketDataPath> for SocketDataPath {
+    fn from(item: CxxSocketDataPath) -> Self {
+        match item.0 {
+            bindings::btsock_data_path_t_BTSOCK_DATA_PATH_NO_OFFLOAD => SocketDataPath::NoOffload,
+            bindings::btsock_data_path_t_BTSOCK_DATA_PATH_HARDWARE_OFFLOAD => {
+                SocketDataPath::HardwareOffload
+            }
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl From<SocketDataPath> for CxxSocketDataPath {
+    fn from(item: SocketDataPath) -> Self {
+        let i = match item {
+            SocketDataPath::NoOffload => bindings::btsock_data_path_t_BTSOCK_DATA_PATH_NO_OFFLOAD,
+            SocketDataPath::HardwareOffload => {
+                bindings::btsock_data_path_t_BTSOCK_DATA_PATH_HARDWARE_OFFLOAD
+            }
+        };
+        CxxSocketDataPath(i)
     }
 }
 
@@ -111,23 +154,95 @@ impl TryFrom<&[u8]> for ConnectionComplete {
     }
 }
 
+// Rust Socket FFI that matches the C++ Socket Interface defined in /topshim/socket/socket_shim.h
+#[cxx::bridge(namespace = "bluetooth::topshim::rust")]
+mod ffi {
+    unsafe extern "C++" {
+        include!("bluetooth/types/address.h");
+        include!("bluetooth/types/uuid.h");
+        include!("include/hardware/bt_sock.h");
+        include!("topshim/socket/socket_shim.h");
+
+        #[namespace = ""]
+        type RawAddress = crate::btif::RawAddress;
+
+        #[namespace = ""]
+        #[cxx_name = "bt_interface_t"]
+        type BluetoothInterface = crate::btif::CxxBluetoothInterface;
+
+        #[namespace = "bluetooth"]
+        type Uuid = crate::btif::Uuid;
+
+        #[namespace = ""]
+        #[cxx_name = "btsock_type_t"]
+        type SocketType = super::CxxSocketType;
+
+        #[namespace = ""]
+        #[cxx_name = "btsock_data_path_t"]
+        type SocketDataPath = super::CxxSocketDataPath;
+
+        type SocketIntf;
+
+        fn GetSocketProfile(btif: &BluetoothInterface) -> UniquePtr<SocketIntf>;
+
+        fn listen(
+            self: &SocketIntf,
+            socket_type: SocketType,
+            service_name: Vec<u8>,
+            uuid: Uuid,
+            channel: i32,
+            sock_fd: &mut i32,
+            flags: i32,
+            app_uid: i32,
+            data_path: SocketDataPath,
+            socket_name: Vec<u8>,
+            hub_id: u64,
+            endpoint_id: u64,
+            max_rx_packet_size: i32,
+        ) -> u32;
+        fn connect(
+            self: &SocketIntf,
+            bd_addr: RawAddress,
+            socket_type: SocketType,
+            uuid: Uuid,
+            channel: i32,
+            sock_fd: &mut i32,
+            flags: i32,
+            app_uid: i32,
+            data_path: SocketDataPath,
+            socket_name: Vec<u8>,
+            hub_id: u64,
+            endpoint_id: u64,
+            max_rx_packet_size: i32,
+        ) -> u32;
+        fn request_max_tx_data_length(self: &SocketIntf, bd_addr: RawAddress);
+        fn control_req(
+            self: &SocketIntf,
+            dlci: u8,
+            bd_addr: RawAddress,
+            modem_signal: u8,
+            break_signal: u8,
+            discard_buffers: u8,
+            break_signal_seq: u8,
+            fc: bool,
+        ) -> u32;
+        fn disconnect_all(self: &SocketIntf, bd_addr: RawAddress) -> u32;
+    }
+}
+
 /// Represents the standard BT SOCKET interface.
 ///
 /// For parameter documentation, see the type |sock_connect_signal_t|.
 pub type SocketConnectSignal = bindings::sock_connect_signal_t;
 
-struct RawBtSockWrapper {
-    raw: *const bindings::btsock_interface_t,
-}
-
-// Pointers unsafe due to ownership but this is a static pointer so Send is ok.
-unsafe impl Send for RawBtSockWrapper {}
-
 /// Bluetooth socket interface wrapper. This allows creation of RFCOMM and L2CAP sockets.
 /// For documentation of functions, see definition of |btsock_interface_t|.
 pub struct BtSocket {
-    internal: RawBtSockWrapper,
+    internal: cxx::UniquePtr<ffi::SocketIntf>,
 }
+
+// Pointers unsafe due to ownership but this is a static pointer so Send is ok.
+unsafe impl Send for BtSocket {}
 
 pub type FdError = &'static str;
 
@@ -142,11 +257,8 @@ pub fn try_from_fd(fd: i32) -> Result<File, FdError> {
 impl BtSocket {
     #[log_args]
     pub fn new(intf: &BluetoothInterface) -> Self {
-        let r = intf.get_profile_interface(SupportedProfiles::Socket);
-        if r.is_null() {
-            panic!("Failed to get Socket interface");
-        }
-        BtSocket { internal: RawBtSockWrapper { raw: r as *const bindings::btsock_interface_t } }
+        let sock_intf: cxx::UniquePtr<ffi::SocketIntf> = ffi::GetSocketProfile(intf.as_raw_btif());
+        BtSocket { internal: sock_intf }
     }
 
     #[log_args]
@@ -160,37 +272,34 @@ impl BtSocket {
         calling_uid: i32,
     ) -> (BtStatus, Result<File, FdError>) {
         let mut sockfd: i32 = -1;
-        let sockfd_ptr = LTCheckedPtrMut::from_ref(&mut sockfd);
 
-        let uuid = service_uuid.or(Some(Uuid::from([0; 16])));
-        let uuid_ptr = LTCheckedPtr::from(&uuid);
+        let uuid = service_uuid.or(Some(Uuid::from([0; 16]))).unwrap();
 
         let name = CString::new(service_name).expect("Service name has null in it.");
-        let name_ptr = LTCheckedPtr::from(&name);
 
-        let data_path: u32 = 0;
+        let data_path = SocketDataPath::NoOffload;
         let sock_name = CString::new("test").expect("Socket name has null in it");
         let hub_id: u64 = 0;
         let endpoint_id: u64 = 0;
         let max_rx_packet_size: i32 = 0;
 
-        let status: BtStatus = ccall!(
-            self,
-            listen,
-            sock_type.into(),
-            name_ptr.into(),
-            uuid_ptr.into(),
-            channel,
-            sockfd_ptr.into(),
-            flags,
-            calling_uid,
-            data_path,
-            sock_name.as_ptr(),
-            hub_id,
-            endpoint_id,
-            max_rx_packet_size
-        )
-        .into();
+        let status: BtStatus = self
+            .internal
+            .listen(
+                sock_type.into(),
+                name.into(),
+                uuid,
+                channel,
+                &mut sockfd,
+                flags,
+                calling_uid,
+                data_path.into(),
+                sock_name.into(),
+                hub_id,
+                endpoint_id,
+                max_rx_packet_size,
+            )
+            .into();
 
         (status, try_from_fd(sockfd))
     }
@@ -206,39 +315,38 @@ impl BtSocket {
         calling_uid: i32,
     ) -> (BtStatus, Result<File, FdError>) {
         let mut sockfd: i32 = -1;
-        let sockfd_ptr = LTCheckedPtrMut::from_ref(&mut sockfd);
-        let uuid_ptr = LTCheckedPtr::from(&service_uuid);
+        let uuid = service_uuid.or(Some(Uuid::from([0; 16]))).unwrap();
 
-        let data_path: u32 = 0;
+        let data_path = SocketDataPath::NoOffload;
         let sock_name = CString::new("test").expect("Socket name has null in it");
         let hub_id: u64 = 0;
         let endpoint_id: u64 = 0;
         let max_rx_packet_size: i32 = 0;
 
-        let status: BtStatus = ccall!(
-            self,
-            connect,
-            addr,
-            sock_type.into(),
-            uuid_ptr.into(),
-            channel,
-            sockfd_ptr.into(),
-            flags,
-            calling_uid,
-            data_path,
-            sock_name.as_ptr(),
-            hub_id,
-            endpoint_id,
-            max_rx_packet_size
-        )
-        .into();
+        let status: BtStatus = self
+            .internal
+            .connect(
+                addr,
+                sock_type.into(),
+                uuid,
+                channel,
+                &mut sockfd,
+                flags,
+                calling_uid,
+                data_path.into(),
+                sock_name.into(),
+                hub_id,
+                endpoint_id,
+                max_rx_packet_size,
+            )
+            .into();
 
         (status, try_from_fd(sockfd))
     }
 
     #[log_args]
     pub fn request_max_tx_data_length(&self, addr: RawAddress) {
-        ccall!(self, request_max_tx_data_length, &addr);
+        self.internal.request_max_tx_data_length(addr);
     }
 
     #[log_args]
@@ -254,23 +362,22 @@ impl BtSocket {
         // we are requested to send an MSC command with FC=0.
         const FC: bool = false;
 
-        ccall!(
-            self,
-            control_req,
-            dlci,
-            &addr,
-            DEFAULT_MODEM_SIGNAL,
-            DEFAULT_BREAK_SIGNAL,
-            DEFAULT_DISCARD_BUFFERS,
-            DEFAULT_BREAK_SIGNAL_SEQ,
-            FC
-        )
-        .into()
+        self.internal
+            .control_req(
+                dlci,
+                addr,
+                DEFAULT_MODEM_SIGNAL,
+                DEFAULT_BREAK_SIGNAL,
+                DEFAULT_DISCARD_BUFFERS,
+                DEFAULT_BREAK_SIGNAL_SEQ,
+                FC,
+            )
+            .into()
     }
 
     #[log_args]
     pub fn disconnect_all(&self, addr: RawAddress) -> BtStatus {
-        ccall!(self, disconnect_all, addr).into()
+        self.internal.disconnect_all(addr).into()
     }
 }
 

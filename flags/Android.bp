@@ -82,13 +82,18 @@ java_aconfig_library {
     name: "bluetooth_exported_flags_java_lib",
     aconfig_declarations: "bluetooth_aconfig_flags",
     defaults: ["framework-minus-apex-aconfig-java-defaults"],
-    min_sdk_version: "36",
+    min_sdk_version: "33",
     mode: "exported",
     visibility: [
         "//cts/tests/tests/bluetooth:__subpackages__",
         "//frameworks/base",
         "//frameworks/base/packages/SettingsLib",
         "//packages/modules/Bluetooth:__subpackages__",
+        "//packages/modules/Uwb/ranging/service:__subpackages__",
+    ],
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.uwb",
     ],
 }
 
