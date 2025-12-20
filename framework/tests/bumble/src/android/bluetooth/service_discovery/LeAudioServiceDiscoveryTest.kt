@@ -51,8 +51,8 @@ import org.mockito.Mockito.any
 import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
-import org.mockito.MockitoAnnotations
 import org.mockito.hamcrest.MockitoHamcrest
+import org.mockito.junit.MockitoJUnit
 import pandora.BumbleConfigProto.IoCapability
 import pandora.BumbleConfigProto.KeyDistribution
 import pandora.BumbleConfigProto.OverrideRequest
@@ -67,12 +67,10 @@ private const val TAG = "LeAudioServiceDiscoveryTest"
 
 @RunWith(AndroidJUnit4::class)
 class LeAudioServiceDiscoveryTest {
+    @get:Rule val mockitoRule = MockitoJUnit.rule()
     @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
-
     @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
-
     @get:Rule(order = 2) val bumble = PandoraDevice()
-
     @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Mock private lateinit var receiver: BroadcastReceiver
@@ -84,8 +82,6 @@ class LeAudioServiceDiscoveryTest {
 
     @Before
     fun setUp() {
-        MockitoAnnotations.initMocks(this)
-
         inOrder = inOrder(receiver)
         bumbleDevice = bumble.remoteDevice
         bumble

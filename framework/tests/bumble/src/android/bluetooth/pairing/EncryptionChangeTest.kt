@@ -44,7 +44,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
-import org.mockito.MockitoAnnotations
+import org.mockito.junit.MockitoJUnit
 import pandora.GattProto
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.OwnAddressType
@@ -53,12 +53,10 @@ import pandora.SecurityProto.PairingEventAnswer
 
 @RunWith(AndroidJUnit4::class)
 class EncryptionChangeTest {
+    @get:Rule val mockitoRule = MockitoJUnit.rule()
     @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
-
     @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
-
     @get:Rule(order = 2) val bumble = PandoraDevice()
-
     @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Mock private lateinit var profileServiceListener: BluetoothProfile.ServiceListener
@@ -83,7 +81,6 @@ class EncryptionChangeTest {
 
     @Before
     fun setUp() {
-        MockitoAnnotations.initMocks(this)
         util =
             TestUtil.Builder(context)
                 .setProfileServiceListener(profileServiceListener)

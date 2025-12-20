@@ -46,7 +46,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
-import org.mockito.MockitoAnnotations
+import org.mockito.junit.MockitoJUnit
 import pandora.HostProto
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.AdvertiseResponse
@@ -57,12 +57,10 @@ private const val TAG = "PairingDualModeTest"
 
 @RunWith(TestParameterInjector::class)
 class PairingDualModeTest {
+    @get:Rule val mockitoRule = MockitoJUnit.rule()
     @get:Rule(order = 0) val permissionRule = AdoptShellPermissionsRule()
-
     @get:Rule(order = 1) val bumble = PandoraDevice()
-
     @get:Rule(order = 2) val secondBumble = PandoraDevice.createSecondPandoraDevice()
-
     @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Mock private lateinit var profileServiceListener: BluetoothProfile.ServiceListener
@@ -77,7 +75,6 @@ class PairingDualModeTest {
     @Before
     @Throws(Exception::class)
     fun setUp() {
-        MockitoAnnotations.openMocks(this)
         util =
             TestUtil.Builder(context)
                 .setProfileServiceListener(profileServiceListener)

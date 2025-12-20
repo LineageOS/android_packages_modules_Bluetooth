@@ -42,8 +42,8 @@ import org.mockito.Mockito.any
 import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
-import org.mockito.MockitoAnnotations
 import org.mockito.hamcrest.MockitoHamcrest.argThat
+import org.mockito.junit.MockitoJUnit
 import pandora.HostProto.DiscoverabilityMode
 import pandora.HostProto.SetDiscoverabilityModeRequest
 
@@ -51,8 +51,8 @@ private const val TAG = "DeviceDiscoveryTest"
 
 @RunWith(AndroidJUnit4::class)
 class DeviceDiscoveryTest {
+    @get:Rule val mockitoRule = MockitoJUnit.rule()
     @get:Rule(order = 0) val permissionRule = AdoptShellPermissionsRule()
-
     @get:Rule(order = 1) val bumble = PandoraDevice()
 
     @Mock private lateinit var receiver: BroadcastReceiver
@@ -63,7 +63,6 @@ class DeviceDiscoveryTest {
 
     @Before
     fun setUp() {
-        MockitoAnnotations.initMocks(this)
         inOrder = inOrder(receiver)
 
         val filter =
