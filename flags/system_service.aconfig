@@ -73,6 +73,16 @@ flag {
 }
 
 flag {
+    name: "switch_when_current_user_stop"
+    namespace: "bluetooth"
+    description: "Due to race condition in user controller we may receive a user_stop prior to a user_switch. This enable a fallback workaround to emulate an user switch when receiving an user stop on the current user"
+    bug: "469419496"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "validate_bluetooth_name_in_platform_config"
     namespace: "bluetooth"
     description: "Validate that the platform config match the installed bluetooth package"
