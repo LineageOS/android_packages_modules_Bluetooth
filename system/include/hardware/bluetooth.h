@@ -817,6 +817,21 @@ typedef struct {
  *   The reverse shall occur whenever the profile 'cleanup' APIs are invoked
  */
 
+/**
+ * Opens the interface and provides the callback routines to the implementation of this interface.
+ * The |start_restricted| flag inits the adapter in restricted mode. In restricted mode, bonds that
+ * are created are marked as restricted in the config file. These devices are deleted upon leaving
+ * restricted mode.
+ * The |is_common_criteria_mode| flag inits the adapter in common criteria mode.
+ * The |config_compare_result| flag show the config checksum check result if is in common criteria
+ * mode.
+ * The |is_atv| flag indicates whether the local device is an Android TV.
+ * The |callouts| sets the OS callbacks functions that the stack needs for alarms and wake locks.
+ */
+void bluetooth_init(bt_callbacks_t* callbacks, bool guest_mode, bool is_common_criteria_mode,
+                    int config_compare_result, bool is_atv, const std::string hci_instance_name,
+                    bt_os_callouts_t* callouts);
+
 /** Represents the standard Bluetooth DM interface. */
 typedef struct {
   /** set to sizeof(bt_interface_t) */
@@ -825,20 +840,6 @@ typedef struct {
   /** set index of the adapter to use */
   void (*set_adapter_index)(int adapter_index);
 #endif
-
-  /**
-   * Opens the interface and provides the callback routines
-   * to the implementation of this interface.
-   * The |start_restricted| flag inits the adapter in restricted mode. In
-   * restricted mode, bonds that are created are marked as restricted in the
-   * config file. These devices are deleted upon leaving restricted mode.
-   * The |is_common_criteria_mode| flag inits the adapter in common criteria
-   * mode. The |config_compare_result| flag show the config checksum check
-   * result if is in common criteria mode. The |is_atv| flag indicates whether
-   * the local device is an Android TV
-   */
-  int (*init)(bt_callbacks_t* callbacks, bool guest_mode, bool is_common_criteria_mode,
-              int config_compare_result, bool is_atv, const std::string hci_instance_name);
 
   /** Enable Bluetooth. */
   int (*enable)(const std::string local_name);
@@ -927,11 +928,6 @@ typedef struct {
   /* opcode MUST be one of: LE_Receiver_Test, LE_Transmitter_Test, LE_Test_End
    */
   int (*le_test_mode)(uint16_t opcode, uint8_t* buf, uint8_t len);
-
-  /** Sets the OS call-out functions that bluedroid needs for alarms and wake
-   * locks. This should be called immediately after a successful |init|.
-   */
-  int (*set_os_callouts)(bt_os_callouts_t* callouts);
 
   /** Read Energy info details - return value indicates BT_STATUS_SUCCESS or
    * BT_STATUS_NOT_READY Success indicates that the VSC command was sent to

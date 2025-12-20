@@ -32,7 +32,6 @@ import android.content.AttributionSource;
 import android.os.ParcelUuid;
 
 import com.android.bluetooth.Util;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 
 import java.util.Collections;
@@ -59,7 +58,7 @@ class CsipSetCoordinatorServiceBinder extends IBluetoothCsipSetCoordinator.Stub
     private CsipSetCoordinatorService getService(AttributionSource source) {
         CsipSetCoordinatorService service = mService;
 
-        if (Utils.isInstrumentationTestMode()) {
+        if (Util.isInstrumentationTestMode()) {
             return service;
         }
 

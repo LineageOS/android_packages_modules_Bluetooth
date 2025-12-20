@@ -17,10 +17,17 @@
 package com.android.bluetooth.avrcpcontroller
 
 import android.bluetooth.BluetoothDevice
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.media.AudioManager
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.android.bluetooth.Util
+import com.android.bluetooth.flags.Flags
+import com.android.internal.annotations.GuardedBy
 
 /**
  * Handler for [AvrcpControllerStateMachine] volume operations, which are handled differently
@@ -49,31 +56,75 @@ import com.android.bluetooth.Util
  *   maximum (127) in response to [AvrcpControllerStateMachine.MESSAGE_PROCESS_SET_ABS_VOL_CMD]
  *   commands from the Target, regardless of the Target's request. This allows the Controller to
  *   receive a consistent line-level input signal while managing its actual speaker output volume
- *   locally and independently. No volume change events are sent back to the Target.
+ *   locally and independently. No volume changed events are sent back to the Target.
  */
 class AvrcpControllerVolumeHandler(
     private val mContext: Context,
     private val mDevice: BluetoothDevice,
+    private val mCallback: Callback,
+    mLooper: Looper,
 ) {
     /** For synchronizing [start] and [stop]. */
     private val mLock = Any()
+    @GuardedBy("mLock") private var mStarted = false
 
     private val mAudioManager: AudioManager = mContext.getSystemService(AudioManager::class.java)
 
+    // For sending volume changed events back to the object owner
+    private val mReceiver = VolumeHandlerBroadcastReceiver()
+
+    // To serialize the processing of volume events with mLastSetStreamVal
+    // Only used with STRATEGY_ABSOLUTE
+    private val mHandler: Handler = Handler(mLooper)
+
+    // For distinguishing external volume changed events from setAbsoluteVolume calls
+    // This volume is a local index, not absolute volume
+    // Only used with STRATEGY_ABSOLUTE
+    private var mLastSetStreamVal: Int = -1
+
     /** The volume strategy in use by our device. */
-    val volumeStrategy: Int =
+    val mVolumeStrategy: Int =
         if (mAudioManager.isVolumeFixed() || Util.isAutomotive(mContext)) STRATEGY_LOUD
         else STRATEGY_ABSOLUTE
 
     private val isLoud: Boolean
-        get() = this.volumeStrategy == STRATEGY_LOUD
+        get() = mVolumeStrategy == STRATEGY_LOUD
 
+    private val isAbsolute: Boolean
+        get() = mVolumeStrategy == STRATEGY_ABSOLUTE
+
+    /** Registers the [VolumeHandlerBroadcastReceiver]. */
     fun start() {
-        synchronized(mLock) { debug("Starting volume handler") }
+        synchronized(mLock) {
+            if (mStarted) {
+                error("Calling start() when already started")
+                return
+            }
+            debug("Starting volume handler")
+            if (Flags.avrcpControllerAbsVolChangedNotification()) {
+                val filter = IntentFilter()
+                filter.priority = IntentFilter.SYSTEM_HIGH_PRIORITY
+                filter.addAction(AudioManager.ACTION_VOLUME_CHANGED)
+                mContext.registerReceiver(mReceiver, filter)
+            }
+            mStarted = true
+        }
     }
 
+    /** Unregisters the [VolumeHandlerBroadcastReceiver]. Clears the handler's message queue. */
     fun stop() {
-        synchronized(mLock) { debug("Stopping volume handler") }
+        synchronized(mLock) {
+            if (!mStarted) {
+                error("Calling stop() when already stopped")
+                return
+            }
+            debug("Stopping volume handler")
+            if (Flags.avrcpControllerAbsVolChangedNotification()) {
+                mContext.unregisterReceiver(mReceiver)
+                mHandler.removeCallbacksAndMessages(null)
+            }
+            mStarted = false
+        }
     }
 
     val absoluteVolume: Int
@@ -83,7 +134,7 @@ class AvrcpControllerVolumeHandler(
          * @return A volume level based on a domain of [0, ABS_VOL_MAX]
          */
         get() {
-            if (this.isLoud) {
+            if (isLoud) {
                 return ABS_VOL_MAX
             }
             val localVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
@@ -103,7 +154,7 @@ class AvrcpControllerVolumeHandler(
     fun setAbsoluteVolume(absVol: Int, label: Int): Int {
         var absVolToSet = absVol
         debug("setAbsoluteVolume: absVol=$absVolToSet, label=$label")
-        if (this.isLoud) {
+        if (isLoud) {
             debug(
                 ("Volume strategy is " +
                     strategyToString(STRATEGY_LOUD) +
@@ -111,7 +162,7 @@ class AvrcpControllerVolumeHandler(
             )
             absVolToSet = ABS_VOL_MAX
         } else {
-            setAbsVolume(absVolToSet)
+            setAbsoluteVolumeInternal(absVolToSet)
         }
         return absVolToSet
     }
@@ -121,11 +172,16 @@ class AvrcpControllerVolumeHandler(
      *
      * @param absVol A volume level based on a domain of [0, ABS_VOL_MAX]
      */
-    private fun setAbsVolume(absVol: Int) {
+    private fun setAbsoluteVolumeInternal(absVol: Int) {
+        if (!isAbsolute) {
+            error("setAbsoluteVolumeInternal: Unsupported volume strategy: $mVolumeStrategy")
+            return
+        }
+
         val reqLocalVolume = absoluteToLocalVolume(absVol)
         val curLocalVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
         debug(
-            "setAbsVolume: absVol=" +
+            "setAbsoluteVolumeInternal: absVol=" +
                 absVol +
                 ", reqLocal=" +
                 reqLocalVolume +
@@ -133,17 +189,97 @@ class AvrcpControllerVolumeHandler(
                 curLocalVolume
         )
 
+        if (Flags.avrcpControllerAbsVolChangedNotification()) {
+            postSetStreamVolume(reqLocalVolume, curLocalVolume)
+        } else {
+            setStreamVolume(reqLocalVolume, curLocalVolume)
+        }
+    }
+
+    /**
+     * Changes the stream volume. Only used with [STRATEGY_ABSOLUTE]. To be removed with
+     * [Flags.avrcpControllerAbsVolChangedNotification].
+     */
+    private fun setStreamVolume(reqLocalVolume: Int, curLocalVolume: Int) {
         /*
          * In some cases change in percentage is not sufficient enough to warrant
          * change in index values which are in range of 0-15. For such cases
          * no action is required
          */
         if (reqLocalVolume != curLocalVolume) {
+            debug("Changing local stream volume from $curLocalVolume to $reqLocalVolume")
             mAudioManager.setStreamVolume(
                 AudioManager.STREAM_MUSIC,
                 reqLocalVolume,
                 AudioManager.FLAG_SHOW_UI,
             )
+            mLastSetStreamVal = reqLocalVolume
+        }
+    }
+
+    /**
+     * Posts a runnable to [mHandler] to change the stream volume. Only used with
+     * [STRATEGY_ABSOLUTE].
+     */
+    private fun postSetStreamVolume(reqLocalVolume: Int, curLocalVolume: Int) {
+        mHandler.post { setStreamVolume(reqLocalVolume, curLocalVolume) }
+    }
+
+    /** Posts a runnable to [mHandler] to handle volume changed events. */
+    private fun postVolumeChanged(newLocalVolume: Int) {
+        mHandler.post {
+            if (mLastSetStreamVal != newLocalVolume) {
+                val newAbsoluteVolume = localToAbsoluteVolume(newLocalVolume)
+                debug(
+                    "Stream volume changed to $newLocalVolume (local), " +
+                        "$newAbsoluteVolume (absolute)"
+                )
+                mLastSetStreamVal = newLocalVolume
+
+                if (!isAbsolute) {
+                    debug(
+                        "Dropping volume changed event because we are using " +
+                            "${strategyToString(mVolumeStrategy)}, not " +
+                            "${strategyToString(STRATEGY_ABSOLUTE)}."
+                    )
+                    return@post
+                }
+
+                mCallback.onAbsoluteVolumeChanged(newAbsoluteVolume)
+            }
+        }
+    }
+
+    /**
+     * A Callback interface so the owning state machine can receive volume changed events from this
+     * handler.
+     */
+    interface Callback {
+        /**
+         * Receive absolute volume level updates
+         *
+         * @param absVol The new absolute volume level
+         */
+        fun onAbsoluteVolumeChanged(absVol: Int)
+    }
+
+    /**
+     * If using absolute volume, listens for [AudioManager.ACTION_VOLUME_CHANGED] events to trigger
+     * the [Callback].
+     */
+    private inner class VolumeHandlerBroadcastReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action != AudioManager.ACTION_VOLUME_CHANGED) {
+                return
+            }
+            val streamType = intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_TYPE, -1)
+            if (streamType != AudioManager.STREAM_MUSIC) {
+                return
+            }
+
+            // This volume is a local index, not absolute volume
+            val newLocalVolume = intent.getIntExtra(AudioManager.EXTRA_VOLUME_STREAM_VALUE, 0)
+            postVolumeChanged(newLocalVolume)
         }
     }
 
@@ -175,11 +311,17 @@ class AvrcpControllerVolumeHandler(
      * @return The output string
      */
     override fun toString(): String {
-        return "Device: $mDevice, Strategy: " + strategyToString(this.volumeStrategy)
+        return "Device: $mDevice" +
+            ", Volume Strategy: ${strategyToString(mVolumeStrategy)}" +
+            ", lastSetStreamVal: $mLastSetStreamVal"
     }
 
     private fun debug(message: String) {
         Log.d(TAG, "[$mDevice]: $message")
+    }
+
+    private fun error(message: String) {
+        Log.e(TAG, "[$mDevice]: $message")
     }
 
     companion object {

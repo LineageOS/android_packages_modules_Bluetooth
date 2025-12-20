@@ -187,13 +187,13 @@ void btif_enable_bluetooth_evt() {
                           DI_VENDOR_ID_SOURCE_BTSIG)),
           .product = uint16_t(
                   android::sysprop::bluetooth::DeviceIDProperties::product_id().value_or(0)),
+          .version = uint16_t(
+                  android::sysprop::bluetooth::DeviceIDProperties::version().value_or(0)),
           .primary_record = true,
   };
 
-  uint32_t record_handle;
-  tBTA_STATUS status = BTA_DmSetLocalDiRecord(&record, &record_handle);
-  if (status != BTA_SUCCESS) {
-    log::error("unable to set device ID record error {}.", bta_status_text(status));
+  if (!BTA_DmSetLocalDiRecord(&record)) {
+    log::error("unable to set device ID record");
   }
 
   btif_dm_load_local_oob();

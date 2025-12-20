@@ -30,7 +30,6 @@ import android.content.AttributionSource;
 import android.util.Log;
 
 import com.android.bluetooth.Util;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 
 import java.util.Arrays;
@@ -56,7 +55,7 @@ class HidDeviceServiceBinder extends IBluetoothHidDevice.Stub implements IProfil
         // Cache mService because it can change while getService is called
         HidDeviceService service = mService;
 
-        if (Utils.isInstrumentationTestMode()) {
+        if (Util.isInstrumentationTestMode()) {
             return service;
         }
         if (!Util.checkProfileAvailable(service, TAG)

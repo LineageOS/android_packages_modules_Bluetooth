@@ -26,6 +26,7 @@
 #include <mutex>
 
 #include "osi/include/allocator.h"
+#include "osi/include/wakelock.h"
 
 extern bt_interface_t bluetoothInterface;
 
@@ -115,8 +116,8 @@ void BluetoothTest::SetUp() {
   remove("/data/misc/bluedroid/bt_config.conf.encrypted-checksum");
 
   instance = this;
-  int status = bluetoothInterface.init(&callbacks, false, false, 0, false, "default");
-  ASSERT_EQ(status, BT_STATUS_SUCCESS);
+  bluetooth_init(&callbacks, false, false, 0, false, "default", nullptr);
+  wakelock_set_os_callouts(nullptr);  // To force using 'native' wakelock in tests
 }
 
 void BluetoothTest::TearDown() {

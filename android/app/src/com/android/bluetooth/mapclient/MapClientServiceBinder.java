@@ -31,7 +31,6 @@ import android.net.Uri;
 import android.util.Log;
 
 import com.android.bluetooth.Util;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.profile.ProfileService.IProfileServiceBinder;
 
 import java.util.Collections;
@@ -59,7 +58,7 @@ class MapClientServiceBinder extends IBluetoothMapClient.Stub implements IProfil
     private MapClientService getService(AttributionSource source) {
         MapClientService service = mService;
 
-        if (Utils.isInstrumentationTestMode()) {
+        if (Util.isInstrumentationTestMode()) {
             return service;
         }
 
@@ -76,7 +75,7 @@ class MapClientServiceBinder extends IBluetoothMapClient.Stub implements IProfil
     private MapClientService getServiceAndEnforcePrivileged(AttributionSource source) {
         MapClientService service = mService;
 
-        if (Utils.isInstrumentationTestMode()) {
+        if (Util.isInstrumentationTestMode()) {
             return service;
         }
 

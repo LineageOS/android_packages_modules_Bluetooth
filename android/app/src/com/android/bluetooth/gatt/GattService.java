@@ -62,7 +62,6 @@ import android.util.Log;
 
 import com.android.bluetooth.ActionOnDeathRecipient;
 import com.android.bluetooth.Util;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AbstractionLayer;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
@@ -1658,7 +1657,7 @@ public class GattService extends ProfileService {
     }
 
     private void forceRunSyncOnGattThread(Runnable r) {
-        if (!Flags.gattThread() || Utils.isInstrumentationTestMode()) {
+        if (!Flags.gattThread() || Util.isInstrumentationTestMode()) {
             r.run();
             return;
         }
@@ -1713,12 +1712,12 @@ public class GattService extends ProfileService {
 
     // TODO(b/377424060) Remove when "use internal APIs instead of framework APIs" is fixed
     boolean isOnGattThread() {
-        if (!Flags.gattThread() || Utils.isInstrumentationTestMode()) return false;
+        if (!Flags.gattThread() || Util.isInstrumentationTestMode()) return false;
         return mGattHandler.getLooper().isCurrentThread();
     }
 
     void enforceGattThread() {
-        if (!Flags.gattThread() || Utils.isInstrumentationTestMode()) return;
+        if (!Flags.gattThread() || Util.isInstrumentationTestMode()) return;
 
         if (!mGattHandler.getLooper().isCurrentThread()) {
             throw new IllegalStateException("Not on gatt thread");
@@ -1726,7 +1725,7 @@ public class GattService extends ProfileService {
     }
 
     private void enforceGattThreadIsNotUsed() {
-        if (!Flags.gattThread() || Utils.isInstrumentationTestMode()) return;
+        if (!Flags.gattThread() || Util.isInstrumentationTestMode()) return;
 
         if (mGattHandler.getLooper().isCurrentThread()) {
             throw new IllegalStateException("Must NOT be on gatt thread");
