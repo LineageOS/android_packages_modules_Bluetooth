@@ -406,7 +406,7 @@ public class AdapterSuspend {
 
     private void disconnectProfiles() {
         for (BluetoothDevice device : mDisconnectProfileDevices) {
-            if (Flags.addLocalDisconnectReason()) {
+            if (Flags.addNewLocalDisconnectReason()) {
                 mAdapterService.disconnectAllEnabledProfiles(
                         device, BluetoothStatusCodes.ERROR_DISCONNECT_REASON_ADAPTER_SUSPEND);
             } else {

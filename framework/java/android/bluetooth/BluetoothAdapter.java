@@ -4528,10 +4528,10 @@ public final class BluetoothAdapter {
 
         /** Returns human-readable strings corresponding to {@link DisconnectReason}. */
         @NonNull
-        // TODO(b/468010549): Remove once addLocalDisconnectReason is stable
+        // TODO(b/468010549): Remove once addNewLocalDisconnectReason is stable
         @SuppressLint("FlaggedApi")
         public static String disconnectReasonToString(@DisconnectReason int reason) {
-            if (Flags.addLocalDisconnectReason()) {
+            if (Flags.addNewLocalDisconnectReason()) {
                 if (BluetoothStatusCodes.ERROR_DISCONNECT_REASON_ADAPTER_SUSPEND == reason) {
                     return "Adapter suspend";
                 } else if (BluetoothStatusCodes.ERROR_DISCONNECT_REASON_USER_REQUEST == reason) {
