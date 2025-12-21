@@ -228,8 +228,8 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
     uint16_t max_procedure_count = 1;
     bool waiting_for_start_callback = false;
     std::unique_ptr<os::Alarm> procedure_schedule_guard_alarm = nullptr;
-    int reflector_rssi_sum;
-    int reflector_rssi_count;
+    int reflector_rssi_sum = 0;
+    int reflector_rssi_count = 0;
     // RAS data
     RangingHeader ranging_header_;
     PacketViewForRecombination segment_data_;
@@ -2562,7 +2562,7 @@ struct DistanceMeasurementManagerImpl::impl : bluetooth::hal::RangingHalCallback
 
     if (com::android::bluetooth::flags::include_power_and_rssi_in_distance_measurement_result()) {
       for (size_t i = 0; i < procedure_data->rssi_reflector.size(); i++) {
-        live_tracker->reflector_rssi_sum = procedure_data->rssi_reflector[i];
+        live_tracker->reflector_rssi_sum += procedure_data->rssi_reflector[i];
       }
       live_tracker->reflector_rssi_count += procedure_data->rssi_reflector.size();
     }

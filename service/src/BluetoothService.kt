@@ -93,7 +93,12 @@ class BluetoothService(context: Context) : SystemService(context) {
     }
 
     override fun onUserStopping(user: TargetUser) {
-        Log.i(TAG, "onUserStopping($user): Not implemented")
+        if (!Flags.switchWhenCurrentUserStop()) {
+            Log.i(TAG, "onUserStopping($user): Not implemented. Flag Disabled")
+            return
+        }
+        Log.i(TAG, "onUserStopping($user)")
+        runOnBmsThread { supervisor.onUserStopping(user.userHandle) }
     }
 
     override fun onUserStopped(user: TargetUser) {

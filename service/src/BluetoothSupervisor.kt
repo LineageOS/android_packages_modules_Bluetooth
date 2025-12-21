@@ -16,11 +16,13 @@
 
 package com.android.server.bluetooth
 
+import android.app.ActivityManager
 import android.bluetooth.IBluetoothManagerCallback
 import android.content.Context
 import android.os.IBinder
 import android.os.Looper
 import android.os.UserHandle
+import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.util.TimeProvider
 import com.android.server.bluetooth.airplane.initialize as initializeAirplaneMode
 import com.android.server.bluetooth.satellite.initialize as initializeSatelliteMode
@@ -36,6 +38,8 @@ class BluetoothSupervisor(
 ) {
     private val bms: BluetoothManagerService
     private val hciInstance = BluetoothHciInstance()
+
+    private var currentUser: UserHandle? = null
 
     private var mInitialized = false
     val api: BluetoothManagerServiceApi = Api(BmsProvider())
@@ -89,6 +93,7 @@ class BluetoothSupervisor(
             Log.i(TAG, "onUserStarting($userHandle) but already initialized")
             return
         }
+        currentUser = userHandle
         bms.handleOnBootPhase(userHandle)
         mInitialized = true
     }
@@ -96,7 +101,34 @@ class BluetoothSupervisor(
     fun onUserSwitching(userHandle: UserHandle) {
         enforceCorrectThread()
         check(mInitialized) { "Initialize did not happen" }
+        if (Flags.switchWhenCurrentUserStop()) {
+            if (userHandle == currentUser) {
+                Log.i(TAG, "onUserSwitching($userHandle): Nothing to do.")
+                return
+            }
+        }
+        currentUser = userHandle
         bms.onUserSwitching(userHandle)
+    }
+
+    // See b/446749636:
+    // Android is meant to always have a foreground user, but in some situation, onUserStopping can
+    // be called before onUserSwitching. This lead to undefined behavior in Bluetooth. To prevent
+    // this, we need to emulate a user switch on the current foreground user using
+    // `ActivityManager.getCurrentUser()`
+    fun onUserStopping(userHandle: UserHandle) {
+        enforceCorrectThread()
+        if (userHandle != currentUser) {
+            Log.v(TAG, "onUserStopping($userHandle): Nothing to do. currentUser=$currentUser.")
+            return
+        }
+        val foregroundUser = UserHandle.of(ActivityManager.getCurrentUser())
+        if (foregroundUser == userHandle) {
+            throw IllegalStateException("onUserStopping($userHandle): No remaining user")
+        }
+        Log.wtf(TAG, "onUserStopping: Called while being the Bluetooth current user !")
+        Log.e(TAG, "onUserStopping: Fallback to onUserSwitching $userHandle => $foregroundUser")
+        onUserSwitching(foregroundUser)
     }
 
     private fun enforceCorrectThread() {

@@ -2379,12 +2379,13 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * #getUuids} to get UUIDs if service discovery is not to be performed. If there is an ongoing
      * bonding process, service discovery or device inquiry, the request will be queued.
      *
+     * <p>To explicitly fetch UUIDs across all transports, use {@link #fetchUuids(int)} by calling
+     * {@code fetchUuids(BluetoothDevice.TRANSPORT_AUTO)}.
+     *
      * @return False if the check fails, True if the process of initiating an ACL connection to the
      *     remote device was started or cached UUIDs will be broadcast.
-     * @deprecated Use {@link #fetchUuids(int)}.
      */
     @FlaggedApi(Flags.FLAG_EXPLICIT_UUID_TRANSPORT_API)
-    @Deprecated
     @RequiresLegacyBluetoothPermission
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
@@ -2404,6 +2405,10 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * there is an ongoing bonding process, service discovery or device inquiry, the request will be
      * queued.
      *
+     * <p>For more explicit control over the transport type used for UUID fetching, use {@link
+     * #fetchUuids(int)}, specifying one of {@link BluetoothDevice#TRANSPORT_AUTO}, {@link
+     * BluetoothDevice#TRANSPORT_BREDR}, or {@link BluetoothDevice#TRANSPORT_LE}.
+     *
      * <p>Requires the {@link android.Manifest.permission#BLUETOOTH_PRIVILEGED} permission only when
      * {@code transport} is not {@code #TRANSPORT_AUTO}.
      *
@@ -2412,10 +2417,8 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      * @param transport - provide type of transport (e.g. LE or Classic).
      * @return False if the check fails, True if the process of initiating an ACL connection to the
      *     remote device was started or cached UUIDs will be broadcast with the specific transport.
-     * @deprecated Use {@link #fetchUuids(int)}.
      */
     @FlaggedApi(Flags.FLAG_EXPLICIT_UUID_TRANSPORT_API)
-    @Deprecated
     @Hide
     @SystemApi
     @RequiresBluetoothConnectPermission

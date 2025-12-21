@@ -249,7 +249,7 @@ package android.bluetooth {
   public final class BluetoothDevice implements android.os.Parcelable {
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public boolean canBondWithoutDialog();
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public boolean createBondOutOfBand(int, @Nullable android.bluetooth.OobData, @Nullable android.bluetooth.OobData);
-    method @Deprecated @FlaggedApi("com.android.bluetooth.flags.explicit_uuid_transport_api") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional=true) public boolean fetchUuidsWithSdp(int);
+    method @FlaggedApi("com.android.bluetooth.flags.explicit_uuid_transport_api") @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}, conditional=true) public boolean fetchUuidsWithSdp(int);
     method @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public int getActiveAudioDevicePolicy();
     method @NonNull public String getAnonymizedAddress();
     method @IntRange(from=0xffffff9c, to=100) @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public int getBatteryLevel();
@@ -1227,18 +1227,18 @@ package android.bluetooth {
     field public static final int ERROR_CSIP_GROUP_LOCKED_BY_OTHER = 1208; // 0x4b8
     field public static final int ERROR_CSIP_INVALID_GROUP_ID = 1207; // 0x4b7
     field public static final int ERROR_CSIP_LOCKED_GROUP_MEMBER_LOST = 1209; // 0x4b9
-    field @FlaggedApi("com.android.bluetooth.flags.add_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_ADAPTER_SUSPEND = 1110; // 0x456
-    field @FlaggedApi("com.android.bluetooth.flags.add_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_BAD_PARAMETERS = 1109; // 0x455
-    field @FlaggedApi("com.android.bluetooth.flags.add_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_CONNECTION_ALREADY_EXISTS = 1108; // 0x454
-    field @FlaggedApi("com.android.bluetooth.flags.add_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_LOCAL = 1102; // 0x44e
-    field @FlaggedApi("com.android.bluetooth.flags.add_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_LOCAL_REQUEST = 1100; // 0x44c
-    field @FlaggedApi("com.android.bluetooth.flags.add_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_REMOTE = 1103; // 0x44f
-    field @FlaggedApi("com.android.bluetooth.flags.add_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_REMOTE_REQUEST = 1101; // 0x44d
-    field @FlaggedApi("com.android.bluetooth.flags.add_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_RESOURCE_LIMIT_REACHED = 1107; // 0x453
-    field @FlaggedApi("com.android.bluetooth.flags.add_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_SECURITY = 1105; // 0x451
-    field @FlaggedApi("com.android.bluetooth.flags.add_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_SYSTEM_POLICY = 1106; // 0x452
-    field @FlaggedApi("com.android.bluetooth.flags.add_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_TIMEOUT = 1104; // 0x450
-    field @FlaggedApi("com.android.bluetooth.flags.add_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_USER_REQUEST = 1111; // 0x457
+    field @FlaggedApi("com.android.bluetooth.flags.add_new_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_ADAPTER_SUSPEND = 1110; // 0x456
+    field @FlaggedApi("com.android.bluetooth.flags.add_new_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_BAD_PARAMETERS = 1109; // 0x455
+    field @FlaggedApi("com.android.bluetooth.flags.add_new_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_CONNECTION_ALREADY_EXISTS = 1108; // 0x454
+    field @FlaggedApi("com.android.bluetooth.flags.add_new_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_LOCAL = 1102; // 0x44e
+    field @FlaggedApi("com.android.bluetooth.flags.add_new_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_LOCAL_REQUEST = 1100; // 0x44c
+    field @FlaggedApi("com.android.bluetooth.flags.add_new_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_REMOTE = 1103; // 0x44f
+    field @FlaggedApi("com.android.bluetooth.flags.add_new_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_REMOTE_REQUEST = 1101; // 0x44d
+    field @FlaggedApi("com.android.bluetooth.flags.add_new_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_RESOURCE_LIMIT_REACHED = 1107; // 0x453
+    field @FlaggedApi("com.android.bluetooth.flags.add_new_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_SECURITY = 1105; // 0x451
+    field @FlaggedApi("com.android.bluetooth.flags.add_new_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_SYSTEM_POLICY = 1106; // 0x452
+    field @FlaggedApi("com.android.bluetooth.flags.add_new_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_TIMEOUT = 1104; // 0x450
+    field @FlaggedApi("com.android.bluetooth.flags.add_new_local_disconnect_reason") public static final int ERROR_DISCONNECT_REASON_USER_REQUEST = 1111; // 0x457
     field public static final int ERROR_DISTANCE_MEASUREMENT_INTERNAL = 1301; // 0x515
     field public static final int ERROR_HAP_INVALID_PRESET_INDEX = 1211; // 0x4bb
     field public static final int ERROR_HAP_PRESET_NAME_TOO_LONG = 1210; // 0x4ba
