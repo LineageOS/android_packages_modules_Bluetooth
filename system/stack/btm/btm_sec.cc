@@ -889,28 +889,23 @@ tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport
                               tBTM_BLE_SEC_ACT sec_act) {
   BtmDevice* p_device = btm_get_dev(bd_addr);
   if (p_device == nullptr) {
-    log::error("Unable to set encryption for unknown device");
+    log::error("Unknown device {}", bd_addr);
     return tBTM_STATUS::BTM_WRONG_MODE;
   }
 
   switch (transport) {
     case BT_TRANSPORT_BR_EDR:
       if (p_device->hci_handle == HCI_INVALID_HANDLE) {
-        log::warn(
-                "Security Manager: BTM_SetEncryption not connected peer:{} "
-                "transport:{}",
-                bd_addr, bt_transport_text(transport));
+        log::warn("Not connected over BR/EDR addr:{}", bd_addr);
         if (p_callback) {
           do_in_main_thread(base::BindOnce(p_callback, bd_addr, transport, p_ref_data,
                                            tBTM_STATUS::BTM_WRONG_MODE));
         }
         return tBTM_STATUS::BTM_WRONG_MODE;
       }
+
       if (p_device->sec_rec.sec_flags & BTM_SEC_ENCRYPTED) {
-        log::debug(
-                "Security Manager: BTM_SetEncryption already encrypted peer:{} "
-                "transport:{}",
-                bd_addr, bt_transport_text(transport));
+        log::debug("Already encrypted over BR/EDR addr:{}", bd_addr);
         if (p_callback) {
           do_in_main_thread(base::BindOnce(p_callback, bd_addr, transport, p_ref_data,
                                            tBTM_STATUS::BTM_SUCCESS));
@@ -921,21 +916,16 @@ tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport
 
     case BT_TRANSPORT_LE:
       if (p_device->ble_hci_handle == HCI_INVALID_HANDLE) {
-        log::warn(
-                "Security Manager: BTM_SetEncryption not connected peer:{} "
-                "transport:{}",
-                bd_addr, bt_transport_text(transport));
+        log::warn("Not connected over LE addr:{}", bd_addr);
         if (p_callback) {
           do_in_main_thread(base::BindOnce(p_callback, bd_addr, transport, p_ref_data,
                                            tBTM_STATUS::BTM_WRONG_MODE));
         }
         return tBTM_STATUS::BTM_WRONG_MODE;
       }
+
       if (p_device->sec_rec.sec_flags & BTM_SEC_LE_ENCRYPTED) {
-        log::debug(
-                "Security Manager: BTM_SetEncryption already encrypted peer:{} "
-                "transport:{}",
-                bd_addr, bt_transport_text(transport));
+        log::debug("Already encrypted over LE addr:{}", bd_addr);
         if (p_callback) {
           do_in_main_thread(base::BindOnce(p_callback, bd_addr, transport, p_ref_data,
                                            tBTM_STATUS::BTM_SUCCESS));
@@ -954,7 +944,7 @@ tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport
 
   /* Enqueue security request if security is active */
   if (p_device->sec_rec.p_callback || state != tSECURITY_STATE::IDLE) {
-    log::warn("Security Manager: BTM_SetEncryption busy, enqueue request");
+    log::warn("Request enqueued, state: {}", security_state_text(state));
     btm_sec_queue_encrypt_request(bd_addr, transport, sec_act, p_callback, p_ref_data);
     return tBTM_STATUS::BTM_CMD_STARTED;
   }
@@ -965,9 +955,8 @@ tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport
   p_device->outgoing = false;
 
   log::debug(
-          "Security Manager: BTM_SetEncryption classic_handle:0x{:04x} "
-          "ble_handle:0x{:04x} le_link:{} classic_link:{} flags:0x{:x} required:0x{:x} "
-          "p_callback={:c}",
+          "classic_handle:0x{:04x} ble_handle:0x{:04x} le_link:{} classic_link:{} flags:0x{:x} "
+          "required:0x{:x} p_callback={:c}",
           p_device->hci_handle, p_device->ble_hci_handle, p_device->sec_rec.le_link,
           p_device->sec_rec.classic_link, p_device->sec_rec.sec_flags,
           p_device->sec_rec.security_required, (p_callback) ? 'T' : 'F');
@@ -980,7 +969,7 @@ tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport
                                     stack::l2cap::get_interface().L2CA_GetBleConnRole(bd_addr));
       } else {
         rc = tBTM_STATUS::BTM_WRONG_MODE;
-        log::warn("cannot call btm_ble_set_encryption, p is NULL");
+        log::warn("Not connected over LE, addr:{}", bd_addr);
       }
       break;
 
