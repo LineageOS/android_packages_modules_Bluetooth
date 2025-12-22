@@ -14,30 +14,17 @@
 
 use crate::math;
 
-fn gmax_calc(
-    a: libc::c_float,
-    b: libc::c_float,
-    c: libc::c_float,
-    d: libc::c_int,
-    len: libc::c_int,
-    e: libc::c_int,
-) -> libc::c_float {
-    a - (b - c) / d as libc::c_float * (len - e) as libc::c_float
+fn gmax_calc(a: f32, b: f32, c: f32, d: i32, len: i32, e: i32) -> f32 {
+    a - (b - c) / d as f32 * (len - e) as f32
 }
 
 const OFFSET_MAX: i32 = (1 << 9) - 8;
 
 pub struct LevelTable {
-    cache: [libc::c_float; 512],
+    cache: [f32; 512],
     // TODO(b/454096420) make non-pub
-    pub start: libc::c_int,
-    jump: libc::c_float,
-}
-
-impl Default for LevelTable {
-    fn default() -> Self {
-        Self::new()
-    }
+    pub start: i32,
+    jump: f32,
 }
 
 impl LevelTable {
@@ -69,82 +56,79 @@ impl LevelTable {
         let mut offset =
             (offset_idx.min(OFFSET_MAX) - self.start) as f32 * self.jump + self.start as f32;
         offset += (offset_idx.max(OFFSET_MAX) - OFFSET_MAX) as f32;
-        offset = offset.min(30.0);
-        offset
+        offset.min(30.0)
     }
 
     pub fn init(&mut self, size: i32, resolution: i32, hz: i32, ms: i32) {
         self.start = 1;
-        let mut offset_max = 30.0f32;
         self.cache.fill(0.0);
-        if ms % 25 as libc::c_int == 0 as libc::c_int && ms <= 100 as libc::c_int {
+
+        let mut offset_max = 30.0f32;
+
+        if ms % 25 == 0 && ms <= 100 {
             match resolution {
                 24 => {
                     match hz {
                         8000 | 16000 | 24000 | 32000 | 44100 | 48000 => {
-                            offset_max = gmax_calc(
-                                26.2f32,
-                                26.2f32,
-                                16.4f32,
-                                575 as libc::c_int,
-                                size,
-                                50 as libc::c_int,
-                            );
+                            offset_max = gmax_calc(26.2, 26.2, 16.4, 575, size, 50);
                         }
                         96000 => {
-                            offset_max = gmax_calc(
-                                25.7f32,
-                                25.7f32,
-                                20.75f32,
-                                575 as libc::c_int,
-                                size,
-                                50 as libc::c_int,
-                            );
+                            offset_max = gmax_calc(25.7, 25.7, 20.75, 575, size, 50);
                         }
                         192000 => {
-                            offset_max = gmax_calc(
-                                25.7f32,
-                                25.7f32,
-                                24.42f32,
-                                575 as libc::c_int,
-                                size,
-                                50 as libc::c_int,
-                            );
+                            offset_max = gmax_calc(25.7, 25.7, 24.42, 575, size, 50);
                         }
                         _ => {}
                     }
-                    self.start = (offset_max / 4 as libc::c_int as libc::c_float) as libc::c_int;
+                    // TODO(b/454096420): explicit ceil / floor selection
+                    self.start = (offset_max / 4.0) as i32;
                 }
                 16 => {
                     match hz {
                         8000 | 16000 | 24000 | 32000 | 44100 => {
-                            offset_max = gmax_calc(
-                                26.15f32,
-                                26.15f32,
-                                16.42f32,
-                                575 as libc::c_int,
-                                size,
-                                50 as libc::c_int,
-                            );
+                            offset_max = gmax_calc(26.15, 26.15, 16.42, 575, size, 50);
                         }
                         48000 => {
-                            offset_max = gmax_calc(
-                                26.18f32,
-                                26.18f32,
-                                16.32f32,
-                                575 as libc::c_int,
-                                size,
-                                50 as libc::c_int,
-                            );
+                            offset_max = gmax_calc(26.18, 26.18, 16.32, 575, size, 50);
                         }
                         _ => {}
                     }
-                    self.start = (offset_max / 2.5f32) as libc::c_int;
+                    // TODO(b/454096420): explicit ceil / floor selection
+                    self.start = (offset_max / 2.5) as i32;
                 }
                 _ => {}
             }
         }
-        let deno = OFFSET_MAX - self.start - 1 as libc::c_int;
-        self.jump = (offset_max - self.start as libc::c_float) / deno as libc::c_float;
+
+        let deno = OFFSET_MAX - self.start - 1;
+        self.jump = (offset_max - self.start as f32) / deno as f32;
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn init() {
+        let test_vectors = [
+            (16, 48000, 25, 10, 0.031080343),
+            (16, 44100, 25, 10, 0.03104242),
+            (24, 48000, 25, 6, 0.038929228),
+            (24, 96000, 25, 6, 0.038771763),
+            (24, 192000, 25, 6, 0.039413873),
+            (16, 48000, 30, 1, 0.057768926),
+            (16, 44100, 30, 1, 0.057768926),
+            (24, 48000, 30, 1, 0.057768926),
+            (24, 96000, 30, 1, 0.057768926),
+            (24, 192000, 30, 1, 0.057768926),
+        ];
+
+        let mut level_table = LevelTable::new();
+        for (resolution, hz, ms, start, jump) in test_vectors {
+            level_table.init(100 /*size*/, resolution, hz, ms);
+            assert_eq!(level_table.start, start);
+            assert_eq!(level_table.jump, jump);
+        }
     }
 }
