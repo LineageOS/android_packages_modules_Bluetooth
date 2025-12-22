@@ -105,25 +105,20 @@ get_aidl_source_transport_instance(bool is_broadcast_sink) {
 }
 
 static bool is_aidl_offload_encoding_session(bool is_broadcaster) {
-  return get_aidl_sink_client_interface(is_broadcaster)
-                 ->GetTransportInstance()
-                 ->GetSessionType() ==
+  aidl::BluetoothAudioSinkClientInterface* interface =
+      get_aidl_sink_client_interface(is_broadcaster);
+  return interface->GetTransportInstance()->GetSessionType() ==
              aidl::SessionType::LE_AUDIO_HARDWARE_OFFLOAD_ENCODING_DATAPATH ||
-         get_aidl_sink_client_interface(is_broadcaster)
-                 ->GetTransportInstance()
-                 ->GetSessionType() ==
-             aidl::SessionType::
-                 LE_AUDIO_BROADCAST_HARDWARE_OFFLOAD_ENCODING_DATAPATH;
+         interface->GetTransportInstance()->GetSessionType() ==
+             aidl::SessionType::LE_AUDIO_BROADCAST_HARDWARE_OFFLOAD_ENCODING_DATAPATH;
 }
 
 static bool is_aidl_offload_decoding_session(bool is_broadcast_sink) {
-  return get_aidl_source_client_interface(is_broadcast_sink)
-                 ->GetTransportInstance()
-                 ->GetSessionType() ==
+  aidl::BluetoothAudioSourceClientInterface* interface =
+      get_aidl_source_client_interface(is_broadcast_sink);
+  return interface->GetTransportInstance()->GetSessionType() ==
              aidl::SessionType::LE_AUDIO_HARDWARE_OFFLOAD_DECODING_DATAPATH ||
-         get_aidl_source_client_interface(is_broadcast_sink)
-                 ->GetTransportInstance()
-                 ->GetSessionType() ==
+         interface->GetTransportInstance()->GetSessionType() ==
              aidl::SessionType::LE_AUDIO_BROADCAST_HARDWARE_OFFLOAD_DECODING_DATAPATH;
 }
 
@@ -182,9 +177,14 @@ void LeAudioClientInterface::Sink::SetPcmParameters(const PcmParameters& params)
             params.sample_rate, params.bits_per_sample, params.channels_count,
             params.data_interval_us);
   }
-  return get_aidl_sink_transport_instance(is_broadcaster_)
-          ->LeAudioSetSelectedHalPcmConfig(params.sample_rate, params.bits_per_sample,
-                                           params.channels_count, params.data_interval_us);
+  aidl::le_audio::LeAudioSinkTransport* instance =
+      get_aidl_sink_transport_instance(is_broadcaster_);
+  if (instance == nullptr) {
+    log::error("sink transport instance is nullptr");
+    return;
+  }
+  return instance->LeAudioSetSelectedHalPcmConfig(params.sample_rate, params.bits_per_sample,
+                                                  params.channels_count, params.data_interval_us);
 }
 
 // Update Le Audio delay report to BluetoothAudio HAL
@@ -194,7 +194,13 @@ void LeAudioClientInterface::Sink::SetRemoteDelay(uint16_t delay_report_ms) {
     hidl::le_audio::LeAudioSinkTransport::instance->SetRemoteDelay(delay_report_ms);
     return;
   }
-  get_aidl_sink_transport_instance(is_broadcaster_)->SetRemoteDelay(delay_report_ms);
+  aidl::le_audio::LeAudioSinkTransport* instance =
+      get_aidl_sink_transport_instance(is_broadcaster_);
+  if (instance == nullptr) {
+    log::error("sink transport instance is nullptr");
+    return;
+  }
+  instance->SetRemoteDelay(delay_report_ms);
 }
 
 void LeAudioClientInterface::Sink::StartSession() {
@@ -210,24 +216,36 @@ void LeAudioClientInterface::Sink::StartSession() {
     hidl::le_audio::LeAudioSinkTransport::interface->StartSession_2_1();
     return;
   } else if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::AIDL) {
+    aidl::BluetoothAudioSinkClientInterface* interface =
+        get_aidl_sink_client_interface(is_broadcaster_);
+    aidl::le_audio::LeAudioSinkTransport* instance =
+        get_aidl_sink_transport_instance(is_broadcaster_);
+    if (interface == nullptr) {
+      log::error("sink client interface is nullptr");
+      return;
+    }
+    if (instance == nullptr) {
+      log::error("sink transport instance is nullptr");
+      return;
+    }
     AudioConfigurationAIDL audio_config;
     if (is_aidl_offload_encoding_session(is_broadcaster_)) {
       if (is_broadcaster_) {
         audio_config.set<AudioConfigurationAIDL::leAudioBroadcastConfig>(
-                get_aidl_sink_transport_instance(is_broadcaster_)->LeAudioGetBroadcastConfig());
+            instance->LeAudioGetBroadcastConfig());
       } else {
         aidl::le_audio::LeAudioConfiguration le_audio_config = {};
         audio_config.set<AudioConfigurationAIDL::leAudioConfig>(le_audio_config);
       }
     } else {
       audio_config.set<AudioConfigurationAIDL::pcmConfig>(
-              get_aidl_sink_transport_instance(is_broadcaster_)->LeAudioGetSelectedHalPcmConfig());
+          instance->LeAudioGetSelectedHalPcmConfig());
     }
-    if (!get_aidl_sink_client_interface(is_broadcaster_)->UpdateAudioConfig(audio_config)) {
+    if (!interface->UpdateAudioConfig(audio_config)) {
       log::error("cannot update audio config to HAL");
       return;
     }
-    get_aidl_sink_client_interface(is_broadcaster_)->StartSession();
+    interface->StartSession();
   }
 }
 
@@ -259,11 +277,21 @@ void LeAudioClientInterface::Sink::ConfirmStreamingRequest() {
     }
     return;
   }
+  aidl::BluetoothAudioSinkClientInterface* interface =
+      get_aidl_sink_client_interface(is_broadcaster_);
+  aidl::le_audio::LeAudioSinkTransport* instance =
+      get_aidl_sink_transport_instance(is_broadcaster_);
+  if (interface == nullptr) {
+    log::error("sink client interface is nullptr");
+    return;
+  }
+  if (instance == nullptr) {
+    log::error("sink transport instance is nullptr");
+    return;
+  }
 
-  auto aidl_instance = get_aidl_sink_transport_instance(is_broadcaster_);
-  if (aidl_instance->IsRequestCompletedAfterUpdate(lambda, BluetoothRequest::RESUME)) {
-    get_aidl_sink_client_interface(is_broadcaster_)
-            ->StreamStarted(aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
+  if (instance->IsRequestCompletedAfterUpdate(lambda, BluetoothRequest::RESUME)) {
+    interface->StreamStarted(aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
   }
 }
 
@@ -295,11 +323,21 @@ void LeAudioClientInterface::Sink::CancelStreamingRequest() {
     }
     return;
   }
+  aidl::BluetoothAudioSinkClientInterface* interface =
+      get_aidl_sink_client_interface(is_broadcaster_);
+  aidl::le_audio::LeAudioSinkTransport* instance =
+      get_aidl_sink_transport_instance(is_broadcaster_);
+  if (interface == nullptr) {
+    log::error("sink client interface is nullptr");
+    return;
+  }
+  if (instance == nullptr) {
+    log::error("sink transport instance is nullptr");
+    return;
+  }
 
-  auto aidl_instance = get_aidl_sink_transport_instance(is_broadcaster_);
-  if (aidl_instance->IsRequestCompletedAfterUpdate(lambda, BluetoothRequest::RESUME)) {
-    get_aidl_sink_client_interface(is_broadcaster_)
-            ->StreamStarted(aidl::BluetoothAudioCtrlAck::FAILURE);
+  if (instance->IsRequestCompletedAfterUpdate(lambda, BluetoothRequest::RESUME)) {
+    interface->StreamStarted(aidl::BluetoothAudioCtrlAck::FAILURE);
   }
 }
 
@@ -311,9 +349,20 @@ void LeAudioClientInterface::Sink::StopSession() {
     hidl::le_audio::LeAudioSinkTransport::interface->EndSession();
     return;
   }
-  get_aidl_sink_transport_instance(is_broadcaster_)
-          ->ClearBluetoothRequestState(BluetoothRequest::RESUME);
-  get_aidl_sink_client_interface(is_broadcaster_)->EndSession();
+  aidl::BluetoothAudioSinkClientInterface* interface =
+      get_aidl_sink_client_interface(is_broadcaster_);
+  aidl::le_audio::LeAudioSinkTransport* instance =
+      get_aidl_sink_transport_instance(is_broadcaster_);
+  if (interface == nullptr) {
+    log::error("sink client interface is nullptr");
+    return;
+  }
+  if (instance == nullptr) {
+    log::error("sink transport instance is nullptr");
+    return;
+  }
+  instance->ClearBluetoothRequestState(BluetoothRequest::RESUME);
+  interface->EndSession();
 }
 
 static inline void dumpOffloadConfig(
@@ -332,6 +381,12 @@ void LeAudioClientInterface::Sink::UpdateAudioConfigToHal(
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::HIDL) {
     return;
   }
+  aidl::BluetoothAudioSinkClientInterface* interface =
+      get_aidl_sink_client_interface(is_broadcaster_);
+  if (interface == nullptr) {
+    log::error("sink client interface is nullptr");
+    return;
+  }
 
   if (is_broadcaster_ || !is_aidl_offload_encoding_session(is_broadcaster_)) {
     return;
@@ -340,7 +395,7 @@ void LeAudioClientInterface::Sink::UpdateAudioConfigToHal(
   auto offload_hal_config = aidl::le_audio::stream_config_to_hal_audio_config(offload_config);
   dumpOffloadConfig("Encoding config:", offload_hal_config);
 
-  get_aidl_sink_client_interface(is_broadcaster_)->UpdateAudioConfig(offload_hal_config);
+  interface->UpdateAudioConfig(offload_hal_config);
 }
 
 void LeAudioClientInterface::Sink::SetCodecPriority(
@@ -348,13 +403,18 @@ void LeAudioClientInterface::Sink::SetCodecPriority(
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::HIDL) {
     return;
   }
+  aidl::BluetoothAudioSinkClientInterface* interface =
+      get_aidl_sink_client_interface(is_broadcaster_);
+  if (interface == nullptr) {
+    log::error("sink client interface is nullptr");
+    return;
+  }
 
   if (is_broadcaster_ || !is_aidl_offload_encoding_session(is_broadcaster_)) {
     return;
   }
 
-  get_aidl_sink_client_interface(is_broadcaster_)
-          ->SetCodecPriority(GetAidlCodecIdFromStackFormat(codecId), priority);
+  interface->SetCodecPriority(GetAidlCodecIdFromStackFormat(codecId), priority);
 }
 
 std::optional<::bluetooth::le_audio::broadcaster::BroadcastConfiguration>
@@ -363,6 +423,12 @@ LeAudioClientInterface::Sink::GetBroadcastConfig(
                 subgroup_quality,
         const std::optional<std::vector<::bluetooth::le_audio::types::acs_ac_record>>& pacs) const {
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::HIDL) {
+    return std::nullopt;
+  }
+  aidl::BluetoothAudioSinkClientInterface* interface =
+      get_aidl_sink_client_interface(is_broadcaster_);
+  if (interface == nullptr) {
+    log::error("sink client interface is nullptr");
     return std::nullopt;
   }
 
@@ -398,9 +464,14 @@ LeAudioClientInterface::Sink::GetUnicastConfig(
           requirements.audio_context_type, requirements.sink_requirements,
           requirements.source_requirements, requirements.flags));
 
+  aidl::BluetoothAudioSinkClientInterface* interface =
+      get_aidl_sink_client_interface(is_broadcaster_);
+  if (interface == nullptr) {
+    log::error("sink client interface is nullptr");
+    return std::nullopt;
+  }
   log::debug("Making an AIDL call");
-  auto aidl_configs = get_aidl_sink_client_interface(is_broadcaster_)
-                              ->GetLeAudioAseConfiguration(aidl_sink_pacs, aidl_source_pacs, reqs);
+  auto aidl_configs = interface->GetLeAudioAseConfiguration(aidl_sink_pacs, aidl_source_pacs, reqs);
 
   log::debug("Received {} configs", aidl_configs.size());
 
@@ -424,15 +495,26 @@ void LeAudioClientInterface::Sink::UpdateBroadcastAudioConfigToHal(
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::HIDL) {
     return;
   }
+  aidl::BluetoothAudioSinkClientInterface* interface =
+      get_aidl_sink_client_interface(is_broadcaster_);
+  aidl::le_audio::LeAudioSinkTransport* instance =
+      get_aidl_sink_transport_instance(is_broadcaster_);
+  if (interface == nullptr) {
+    log::error("sink client interface is nullptr");
+    return;
+  }
+  if (instance == nullptr) {
+    log::error("sink transport instance is nullptr");
+    return;
+  }
 
   if (!is_broadcaster_ || !is_aidl_offload_encoding_session(is_broadcaster_)) {
     return;
   }
 
-  get_aidl_sink_transport_instance(is_broadcaster_)->LeAudioSetBroadcastConfig(offload_config);
-  get_aidl_sink_client_interface(is_broadcaster_)
-          ->UpdateAudioConfig(aidl::le_audio::broadcast_config_to_hal_audio_config(
-                  get_aidl_sink_transport_instance(is_broadcaster_)->LeAudioGetBroadcastConfig()));
+  instance->LeAudioSetBroadcastConfig(offload_config);
+  interface->UpdateAudioConfig(aidl::le_audio::broadcast_config_to_hal_audio_config(
+      instance->LeAudioGetBroadcastConfig()));
 }
 
 void LeAudioClientInterface::Sink::SuspendedForReconfiguration() {
@@ -441,9 +523,14 @@ void LeAudioClientInterface::Sink::SuspendedForReconfiguration() {
             hidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
     return;
   }
+  aidl::BluetoothAudioSinkClientInterface* interface =
+      get_aidl_sink_client_interface(is_broadcaster_);
+  if (interface == nullptr) {
+    log::error("sink client interface is nullptr");
+    return;
+  }
 
-  get_aidl_sink_client_interface(is_broadcaster_)
-          ->StreamSuspended(aidl::BluetoothAudioCtrlAck::SUCCESS_RECONFIGURATION);
+  interface->StreamSuspended(aidl::BluetoothAudioCtrlAck::SUCCESS_RECONFIGURATION);
 }
 
 void LeAudioClientInterface::Sink::ReconfigurationComplete() {
@@ -452,8 +539,13 @@ void LeAudioClientInterface::Sink::ReconfigurationComplete() {
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::AIDL) {
     // FIXME: For now we have to workaround the missing API and use
     //        StreamSuspended() with SUCCESS_FINISHED ack code.
-    get_aidl_sink_client_interface(is_broadcaster_)
-            ->StreamSuspended(aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
+    aidl::BluetoothAudioSinkClientInterface* interface =
+        get_aidl_sink_client_interface(is_broadcaster_);
+    if (interface == nullptr) {
+      log::error("sink client interface is nullptr");
+      return;
+    }
+    interface->StreamSuspended(aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
   }
 }
 
@@ -463,8 +555,13 @@ void LeAudioClientInterface::Sink::StreamSuspended() {
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::AIDL) {
     // FIXME: For now we have to workaround the missing API and use
     //        StreamSuspended() with SUCCESS_FINISHED ack code.
-    get_aidl_sink_client_interface(is_broadcaster_)
-            ->StreamSuspended(aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
+    aidl::BluetoothAudioSinkClientInterface* interface =
+        get_aidl_sink_client_interface(is_broadcaster_);
+    if (interface == nullptr) {
+      log::error("sink client interface is nullptr");
+      return;
+    }
+    interface->StreamSuspended(aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
   }
 }
 
@@ -472,7 +569,13 @@ size_t LeAudioClientInterface::Sink::Read(uint8_t* p_buf, uint32_t len) {
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::HIDL) {
     return hidl::le_audio::LeAudioSinkTransport::interface->ReadAudioData(p_buf, len);
   }
-  return get_aidl_sink_client_interface(is_broadcaster_)->ReadAudioData(p_buf, len);
+  aidl::BluetoothAudioSinkClientInterface* interface =
+      get_aidl_sink_client_interface(is_broadcaster_);
+  if (interface == nullptr) {
+    log::error("sink client interface is nullptr");
+    return 0;
+  }
+  return interface->ReadAudioData(p_buf, len);
 }
 
 void LeAudioClientInterface::Source::Cleanup() {
@@ -519,9 +622,14 @@ void LeAudioClientInterface::Source::SetPcmParameters(const PcmParameters& param
             params.data_interval_us);
     return;
   }
-  return get_aidl_source_transport_instance(is_broadcast_sink_)
-          ->LeAudioSetSelectedHalPcmConfig(params.sample_rate, params.bits_per_sample,
-                                           params.channels_count, params.data_interval_us);
+  aidl::le_audio::LeAudioSourceTransport* instance =
+      get_aidl_source_transport_instance(is_broadcast_sink_);
+  if (instance == nullptr) {
+    log::error("source transport instance is nullptr");
+    return;
+  }
+  return instance->LeAudioSetSelectedHalPcmConfig(params.sample_rate, params.bits_per_sample,
+                                                  params.channels_count, params.data_interval_us);
 }
 
 void LeAudioClientInterface::Source::SetRemoteDelay(uint16_t delay_report_ms) {
@@ -530,7 +638,13 @@ void LeAudioClientInterface::Source::SetRemoteDelay(uint16_t delay_report_ms) {
     hidl::le_audio::LeAudioSourceTransport::instance->SetRemoteDelay(delay_report_ms);
     return;
   }
-  get_aidl_source_transport_instance(is_broadcast_sink_)->SetRemoteDelay(delay_report_ms);
+  aidl::le_audio::LeAudioSourceTransport* instance =
+      get_aidl_source_transport_instance(is_broadcast_sink_);
+  if (instance == nullptr) {
+    log::error("source transport instance is nullptr");
+    return;
+  }
+  instance->SetRemoteDelay(delay_report_ms);
 }
 
 void LeAudioClientInterface::Source::StartSession() {
@@ -546,27 +660,37 @@ void LeAudioClientInterface::Source::StartSession() {
     hidl::le_audio::LeAudioSourceTransport::interface->StartSession_2_1();
     return;
   } else if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::AIDL) {
+    aidl::BluetoothAudioSourceClientInterface* interface =
+        get_aidl_source_client_interface(is_broadcast_sink_);
+    aidl::le_audio::LeAudioSourceTransport* instance =
+        get_aidl_source_transport_instance(is_broadcast_sink_);
+    if (interface == nullptr) {
+      log::error("source client interface is nullptr");
+      return;
+    }
+    if (instance == nullptr) {
+      log::error("source transport instance is nullptr");
+      return;
+    }
     AudioConfigurationAIDL audio_config;
     if (is_aidl_offload_decoding_session(is_broadcast_sink_)) {
       if (is_broadcast_sink_) {
         audio_config.set<AudioConfigurationAIDL::leAudioBroadcastConfig>(
-                get_aidl_source_transport_instance(is_broadcast_sink_)
-                        ->LeAudioGetBroadcastConfig());
+            instance->LeAudioGetBroadcastConfig());
       } else {
         aidl::le_audio::LeAudioConfiguration le_audio_config = {};
         audio_config.set<AudioConfigurationAIDL::leAudioConfig>(le_audio_config);
       }
     } else {
       audio_config.set<AudioConfigurationAIDL::pcmConfig>(
-          get_aidl_source_transport_instance(is_broadcast_sink_)
-              ->LeAudioGetSelectedHalPcmConfig());
+          instance->LeAudioGetSelectedHalPcmConfig());
     }
 
-    if (!get_aidl_source_client_interface(is_broadcast_sink_)->UpdateAudioConfig(audio_config)) {
+    if (!interface->UpdateAudioConfig(audio_config)) {
       log::error("cannot update audio config to HAL");
       return;
     }
-    get_aidl_source_client_interface(is_broadcast_sink_)->StartSession();
+    interface->StartSession();
   }
 }
 
@@ -576,9 +700,14 @@ void LeAudioClientInterface::Source::SuspendedForReconfiguration() {
             hidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
     return;
   }
+  aidl::BluetoothAudioSourceClientInterface* interface =
+      get_aidl_source_client_interface(is_broadcast_sink_);
+  if (interface == nullptr) {
+    log::error("source client interface is nullptr");
+    return;
+  }
 
-  get_aidl_source_client_interface(is_broadcast_sink_)
-          ->StreamSuspended(aidl::BluetoothAudioCtrlAck::SUCCESS_RECONFIGURATION);
+  interface->StreamSuspended(aidl::BluetoothAudioCtrlAck::SUCCESS_RECONFIGURATION);
 }
 
 void LeAudioClientInterface::Source::ReconfigurationComplete() {
@@ -587,8 +716,13 @@ void LeAudioClientInterface::Source::ReconfigurationComplete() {
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::AIDL) {
     // FIXME: For now we have to workaround the missing API and use
     //        StreamSuspended() with SUCCESS_FINISHED ack code.
-    get_aidl_source_client_interface(is_broadcast_sink_)
-            ->StreamSuspended(aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
+    aidl::BluetoothAudioSourceClientInterface* interface =
+        get_aidl_source_client_interface(is_broadcast_sink_);
+    if (interface == nullptr) {
+      log::error("source client interface is nullptr");
+      return;
+    }
+    interface->StreamSuspended(aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
   }
 }
 
@@ -598,8 +732,13 @@ void LeAudioClientInterface::Source::StreamSuspended() {
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::AIDL) {
     // FIXME: For now we have to workaround the missing API and use
     //        StreamSuspended() with SUCCESS_FINISHED ack code.
-    get_aidl_source_client_interface(is_broadcast_sink_)
-            ->StreamSuspended(aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
+    aidl::BluetoothAudioSourceClientInterface* interface =
+        get_aidl_source_client_interface(is_broadcast_sink_);
+    if (interface == nullptr) {
+      log::error("source client interface is nullptr");
+      return;
+    }
+    interface->StreamSuspended(aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
   }
 }
 
@@ -632,10 +771,20 @@ void LeAudioClientInterface::Source::ConfirmStreamingRequest() {
     return;
   }
 
-  auto aidl_instance = get_aidl_source_transport_instance(is_broadcast_sink_);
-  if (aidl_instance->IsRequestCompletedAfterUpdate(lambda, BluetoothRequest::RESUME)) {
-    get_aidl_source_client_interface(is_broadcast_sink_)
-            ->StreamStarted(aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
+  aidl::BluetoothAudioSourceClientInterface* interface =
+      get_aidl_source_client_interface(is_broadcast_sink_);
+  aidl::le_audio::LeAudioSourceTransport* instance =
+      get_aidl_source_transport_instance(is_broadcast_sink_);
+  if (interface == nullptr) {
+    log::error("source client interface is nullptr");
+    return;
+  }
+  if (instance == nullptr) {
+    log::error("source transport instance is nullptr");
+    return;
+  }
+  if (instance->IsRequestCompletedAfterUpdate(lambda, BluetoothRequest::RESUME)) {
+    interface->StreamStarted(aidl::BluetoothAudioCtrlAck::SUCCESS_FINISHED);
   }
 }
 
@@ -668,10 +817,20 @@ void LeAudioClientInterface::Source::CancelStreamingRequest() {
     return;
   }
 
-  auto aidl_instance = get_aidl_source_transport_instance(is_broadcast_sink_);
-  if (aidl_instance->IsRequestCompletedAfterUpdate(lambda, BluetoothRequest::RESUME)) {
-    get_aidl_source_client_interface(is_broadcast_sink_)
-            ->StreamStarted(aidl::BluetoothAudioCtrlAck::FAILURE);
+  aidl::BluetoothAudioSourceClientInterface* interface =
+      get_aidl_source_client_interface(is_broadcast_sink_);
+  aidl::le_audio::LeAudioSourceTransport* instance =
+      get_aidl_source_transport_instance(is_broadcast_sink_);
+  if (interface == nullptr) {
+    log::error("source client interface is nullptr");
+    return;
+  }
+  if (instance == nullptr) {
+    log::error("source transport instance is nullptr");
+    return;
+  }
+  if (instance->IsRequestCompletedAfterUpdate(lambda, BluetoothRequest::RESUME)) {
+    interface->StreamStarted(aidl::BluetoothAudioCtrlAck::FAILURE);
   }
 }
 
@@ -683,14 +842,31 @@ void LeAudioClientInterface::Source::StopSession() {
     hidl::le_audio::LeAudioSourceTransport::interface->EndSession();
     return;
   }
-  get_aidl_source_transport_instance(is_broadcast_sink_)
-          ->ClearBluetoothRequestState(BluetoothRequest::RESUME);
-  get_aidl_source_client_interface(is_broadcast_sink_)->EndSession();
+  aidl::BluetoothAudioSourceClientInterface* interface =
+      get_aidl_source_client_interface(is_broadcast_sink_);
+  aidl::le_audio::LeAudioSourceTransport* instance =
+      get_aidl_source_transport_instance(is_broadcast_sink_);
+  if (interface == nullptr) {
+    log::error("source client interface is nullptr");
+    return;
+  }
+  if (instance == nullptr) {
+    log::error("source transport instance is nullptr");
+    return;
+  }
+  instance->ClearBluetoothRequestState(BluetoothRequest::RESUME);
+  interface->EndSession();
 }
 
 void LeAudioClientInterface::Source::UpdateAudioConfigToHal(
         const ::bluetooth::le_audio::stream_config& offload_config) {
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::HIDL) {
+    return;
+  }
+  aidl::BluetoothAudioSourceClientInterface* interface =
+      get_aidl_source_client_interface(is_broadcast_sink_);
+  if (interface == nullptr) {
+    log::error("source client interface is nullptr");
     return;
   }
 
@@ -701,7 +877,7 @@ void LeAudioClientInterface::Source::UpdateAudioConfigToHal(
   auto offload_hal_config = aidl::le_audio::stream_config_to_hal_audio_config(offload_config);
   dumpOffloadConfig("Decoding config:", offload_hal_config);
 
-  get_aidl_source_client_interface(is_broadcast_sink_)->UpdateAudioConfig(offload_hal_config);
+  interface->UpdateAudioConfig(offload_hal_config);
 }
 
 void LeAudioClientInterface::Source::SetCodecPriority(
@@ -709,13 +885,18 @@ void LeAudioClientInterface::Source::SetCodecPriority(
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::HIDL) {
     return;
   }
+  aidl::BluetoothAudioSourceClientInterface* interface =
+      get_aidl_source_client_interface(is_broadcast_sink_);
+  if (interface == nullptr) {
+    log::error("source client interface is nullptr");
+    return;
+  }
 
   if (is_broadcast_sink_ || !is_aidl_offload_decoding_session(is_broadcast_sink_)) {
     return;
   }
 
-  get_aidl_source_client_interface(is_broadcast_sink_)
-          ->SetCodecPriority(GetAidlCodecIdFromStackFormat(codecId), priority);
+  interface->SetCodecPriority(GetAidlCodecIdFromStackFormat(codecId), priority);
 }
 
 void LeAudioClientInterface::Source::UpdateBroadcastAudioConfigToHal(
@@ -723,23 +904,39 @@ void LeAudioClientInterface::Source::UpdateBroadcastAudioConfigToHal(
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::HIDL) {
     return;
   }
+  aidl::BluetoothAudioSourceClientInterface* interface =
+      get_aidl_source_client_interface(is_broadcast_sink_);
+  aidl::le_audio::LeAudioSourceTransport* instance =
+      get_aidl_source_transport_instance(is_broadcast_sink_);
+  if (interface == nullptr) {
+    log::error("source client interface is nullptr");
+    return;
+  }
+  if (instance == nullptr) {
+    log::error("source transport instance is nullptr");
+    return;
+  }
 
   if (!is_broadcast_sink_ || !is_aidl_offload_decoding_session(is_broadcast_sink_)) {
     return;
   }
 
-  get_aidl_source_transport_instance(is_broadcast_sink_)->LeAudioSetBroadcastConfig(offload_config);
-  get_aidl_source_client_interface(is_broadcast_sink_)
-          ->UpdateAudioConfig(aidl::le_audio::broadcast_config_to_hal_audio_config(
-                  get_aidl_source_transport_instance(is_broadcast_sink_)
-                          ->LeAudioGetBroadcastConfig()));
+  instance->LeAudioSetBroadcastConfig(offload_config);
+  interface->UpdateAudioConfig(aidl::le_audio::broadcast_config_to_hal_audio_config(
+      instance->LeAudioGetBroadcastConfig()));
 }
 
 size_t LeAudioClientInterface::Source::Write(const uint8_t* p_buf, uint32_t len) {
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::HIDL) {
     return hidl::le_audio::LeAudioSourceTransport::interface->WriteAudioData(p_buf, len);
   }
-  return get_aidl_source_client_interface(is_broadcast_sink_)->WriteAudioData(p_buf, len);
+  aidl::BluetoothAudioSourceClientInterface* interface =
+      get_aidl_source_client_interface(is_broadcast_sink_);
+  if (interface == nullptr) {
+    log::error("source client interface is nullptr");
+    return 0;
+  }
+  return interface->WriteAudioData(p_buf, len);
 }
 
 std::optional<::bluetooth::le_audio::broadcaster::BroadcastConfiguration>
@@ -748,6 +945,12 @@ LeAudioClientInterface::Source::GetBroadcastConfig(
                 subgroup_quality,
         const std::optional<std::vector<::bluetooth::le_audio::types::acs_ac_record>>& pacs) const {
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::HIDL) {
+    return std::nullopt;
+  }
+  aidl::BluetoothAudioSourceClientInterface* interface =
+      get_aidl_source_client_interface(is_broadcast_sink_);
+  if (interface == nullptr) {
+    log::error("source client interface is nullptr");
     return std::nullopt;
   }
 

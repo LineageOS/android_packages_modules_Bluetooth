@@ -897,6 +897,16 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SinkSetPcmParameters) {
   sink_->SetPcmParameters(params);
 }
 
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkSetPcmParametersAfterCleanup) {
+  ASSERT_NE(nullptr, sink_);
+  LeAudioClientInterface::PcmParameters params = {.data_interval_us = 10000,
+                                                  .sample_rate = 16000,
+                                                  .bits_per_sample = 16,
+                                                  .channels_count = 1};
+  sink_->Cleanup();
+  sink_->SetPcmParameters(params);
+}
+
 TEST_F(LeAudioSoftwareUnicastTestAidl, SinkSetRemoteDelay) {
   ASSERT_NE(nullptr, sink_);
   sink_->SetRemoteDelay(10);
@@ -906,6 +916,12 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SinkStartSession) {
   ASSERT_NE(nullptr, sink_);
   EXPECT_CALL(audio_client_interface_, UpdateAudioConfig(testing::_)).WillOnce(Return(true));
   EXPECT_CALL(audio_client_interface_, StartSession()).WillOnce(Return(0));
+  sink_->StartSession();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SinkStartSessionAfterCleanup) {
+  ASSERT_NE(nullptr, sink_);
+  sink_->Cleanup();
   sink_->StartSession();
 }
 
@@ -937,6 +953,16 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceSetPcmParameters) {
   source_->SetPcmParameters(params);
 }
 
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceSetPcmParametersAfterCleanup) {
+  ASSERT_NE(nullptr, source_);
+  LeAudioClientInterface::PcmParameters params = {.data_interval_us = 10000,
+                                                  .sample_rate = 16000,
+                                                  .bits_per_sample = 16,
+                                                  .channels_count = 1};
+  source_->Cleanup();
+  source_->SetPcmParameters(params);
+}
+
 TEST_F(LeAudioSoftwareUnicastTestAidl, SourceSetRemoteDelay) {
   ASSERT_NE(nullptr, source_);
   source_->SetRemoteDelay(10);
@@ -946,6 +972,12 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, SourceStartSession) {
   ASSERT_NE(nullptr, source_);
   EXPECT_CALL(audio_client_interface_, UpdateAudioConfig(testing::_)).WillOnce(Return(true));
   EXPECT_CALL(audio_client_interface_, StartSession()).WillOnce(Return(0));
+  source_->StartSession();
+}
+
+TEST_F(LeAudioSoftwareUnicastTestAidl, SourceStartSessionAfterCleanup) {
+  ASSERT_NE(nullptr, source_);
+  source_->Cleanup();
   source_->StartSession();
 }
 
