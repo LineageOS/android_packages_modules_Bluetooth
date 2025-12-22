@@ -1705,6 +1705,16 @@ bool acl_peer_supports_ble_connection_subrating_host(const RawAddress& remote_bd
   return HCI_LE_CONN_SUBRATING_HOST_SUPPORT(p_acl->peer_le_features);
 }
 
+bool acl_link_is_disconnecting(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bda, transport);
+  if (p_acl != nullptr && p_acl->InUse() && p_acl->disconnect_reason != 0) {
+    log::warn("Link is in disconnecting, disconnect_reason:{}, bd_addr:{}",
+               p_acl->disconnect_reason, remote_bda);
+    return true;
+  }
+  return false;
+}
+
 /*******************************************************************************
  *
  * Function         BTM_ReadConnectionAddr
