@@ -115,7 +115,7 @@ struct gatt_interface_t {
                 [](tGATT_IF client_if, const RawAddress& remote_bda, bool is_direct) {
                   BTA_GATTC_CancelOpen(client_if, remote_bda, is_direct);
                 },
-        .BTA_GATTC_Refresh = [](const RawAddress& remote_bda) { BTA_GATTC_Refresh(remote_bda); },
+        .BTA_GATTC_Refresh = [](const RawAddress& remote_bda) { BTA_GATTC_Refresh(0, remote_bda); },
         .BTA_GATTC_GetGattDb =
                 [](tCONN_ID conn_id, uint16_t start_handle, uint16_t end_handle,
                    btgatt_db_element_t** db, int* count) {

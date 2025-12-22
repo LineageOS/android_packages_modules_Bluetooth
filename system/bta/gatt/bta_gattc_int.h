@@ -412,7 +412,7 @@ void bta_gattc_cancel_bk_conn(const tBTA_GATTC_API_CANCEL_OPEN* p_data);
 void bta_gattc_send_open_cback(tBTA_GATTC_RCB* p_clreg, tGATT_STATUS status,
                                const RawAddress& remote_bda, tCONN_ID conn_id,
                                tBT_TRANSPORT transport, uint16_t mtu);
-void bta_gattc_process_api_refresh(const RawAddress& remote_bda);
+void bta_gattc_process_api_refresh(tGATT_IF client_if, const RawAddress& remote_bda);
 void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data);
 tGATT_STATUS bta_gattc_subrate_mode_request(tGATT_IF client_if, const RawAddress& bd_addr,
                                             tGATT_SUBRATE_MODE subrate_mode,
