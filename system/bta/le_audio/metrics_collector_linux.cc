@@ -35,7 +35,8 @@ void MetricsCollector::OnConnectionStateChanged(int32_t /*group_id*/, const RawA
                                                 ConnectionStatus /*status*/) {}
 
 void MetricsCollector::OnStreamStarted(
-        int32_t /*group_id*/, bluetooth::le_audio::types::LeAudioContextType /*context_type*/) {}
+        int32_t /*group_id*/, bluetooth::le_audio::types::LeAudioContextType /*context_type*/,
+        const LeAudioMetricsCodecInfo& /*info*/) {}
 
 void MetricsCollector::OnStreamEnded(int32_t /*group_id*/) {}
 

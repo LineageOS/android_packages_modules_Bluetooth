@@ -22,6 +22,25 @@
 
 namespace bluetooth::metrics {
 
+struct LeAudioMetricsCodecInfoVector {
+  std::vector<int32_t> codec_format;
+  std::vector<int32_t> vendor_company_id;
+  std::vector<int32_t> vendor_codec_id;
+  std::vector<int32_t> sink_sampling_frequency_hz;
+  std::vector<int32_t> source_sampling_frequency_hz;
+  std::vector<bool> is_dsa_active;
+  std::vector<bool> is_gmap_active;
+
+  bool operator==(const LeAudioMetricsCodecInfoVector& other) const {
+    return codec_format == other.codec_format &&
+           vendor_company_id == other.vendor_company_id &&
+           vendor_codec_id == other.vendor_codec_id &&
+           sink_sampling_frequency_hz == other.sink_sampling_frequency_hz &&
+           source_sampling_frequency_hz == other.source_sampling_frequency_hz &&
+           is_dsa_active == other.is_dsa_active && is_gmap_active == other.is_gmap_active;
+  }
+};
+
 class MockMetrics {
 public:
   static void SetInstance(std::shared_ptr<MockMetrics> instance);
@@ -83,7 +102,7 @@ public:
                const std::vector<int64_t>&, const std::vector<int32_t>&,
                const std::vector<int32_t>&, const std::vector<RawAddress>&,
                const std::vector<int64_t>&, const std::vector<int64_t>&,
-               const std::vector<int32_t>&));
+               const std::vector<int32_t>&, const LeAudioMetricsCodecInfoVector&));
   MOCK_METHOD(void, LogMetricLeAudioBroadcastSessionReported, (int64_t));
   MOCK_METHOD(void, LogMetricBluetoothQualityReport, (const RawAddress&,
                                                       const bqr::BqrLinkQualityEvent&));

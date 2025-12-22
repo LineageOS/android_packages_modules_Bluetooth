@@ -458,7 +458,14 @@ void LogMetricLeAudioConnectionSessionReported(
         const std::vector<RawAddress>& device_address,
         const std::vector<int64_t>& streaming_offset_nanos,
         const std::vector<int64_t>& streaming_duration_nanos,
-        const std::vector<int32_t>& streaming_context_type) {
+        const std::vector<int32_t>& streaming_context_type,
+        const std::vector<int32_t>& codec_format,
+        const std::vector<int32_t>& vendor_company_id,
+        const std::vector<int32_t>& vendor_codec_id,
+        const std::vector<int32_t>& sink_sampling_frequency_hz,
+        const std::vector<int32_t>& source_sampling_frequency_hz,
+        const std::vector<bool>& is_dsa_active,
+        const std::vector<bool>& is_gmap_active) {
   std::vector<int32_t> device_metric_id(device_address.size());
   for (uint64_t i = 0; i < device_address.size(); i++) {
     if (!device_address[i].IsEmpty()) {
@@ -467,11 +474,21 @@ void LogMetricLeAudioConnectionSessionReported(
       device_metric_id[i] = 0;
     }
   }
-  int ret = stats_write(LE_AUDIO_CONNECTION_SESSION_REPORTED, group_size, group_metric_id,
-                        connection_duration_nanos, device_connecting_offset_nanos,
-                        device_connected_offset_nanos, device_connection_duration_nanos,
-                        device_connection_status, device_disconnection_status, device_metric_id,
-                        streaming_offset_nanos, streaming_duration_nanos, streaming_context_type);
+
+  auto temp_is_dsa_active_buffer = std::make_unique<bool[]>(is_dsa_active.size());
+  std::copy(is_dsa_active.begin(), is_dsa_active.end(), temp_is_dsa_active_buffer.get());
+  auto temp_is_gmap_active_buffer = std::make_unique<bool[]>(is_gmap_active.size());
+  std::copy(is_gmap_active.begin(), is_gmap_active.end(), temp_is_gmap_active_buffer.get());
+
+  int ret = stats_write(
+          LE_AUDIO_CONNECTION_SESSION_REPORTED, group_size, group_metric_id,
+          connection_duration_nanos, device_connecting_offset_nanos, device_connected_offset_nanos,
+          device_connection_duration_nanos, device_connection_status, device_disconnection_status,
+          device_metric_id, streaming_offset_nanos, streaming_duration_nanos,
+          streaming_context_type, codec_format, vendor_company_id, vendor_codec_id,
+          sink_sampling_frequency_hz, source_sampling_frequency_hz,
+          temp_is_dsa_active_buffer.get(), is_dsa_active.size(),
+          temp_is_gmap_active_buffer.get(), is_gmap_active.size());
   if (ret < 0) {
     log::warn(
             "failed for group {}device_connecting_offset_nanos[{}], "
@@ -479,12 +496,18 @@ void LogMetricLeAudioConnectionSessionReported(
             "device_connection_duration_nanos[{}], device_connection_status[{}], "
             "device_disconnection_status[{}], device_metric_id[{}], "
             "streaming_offset_nanos[{}], streaming_duration_nanos[{}], "
-            "streaming_context_type[{}]",
+            "streaming_context_type[{}], "
+            "codec_format[{}], vendor_company_id[{}], vendor_codec_id[{}], "
+            "sink_sampling_frequency_hz[{}], source_sampling_frequency_hz[{}], "
+            "is_dsa_active[{}], is_gmap_active[{}]",
             group_metric_id, device_connecting_offset_nanos.size(),
             device_connected_offset_nanos.size(), device_connection_duration_nanos.size(),
             device_connection_status.size(), device_disconnection_status.size(),
             device_metric_id.size(), streaming_offset_nanos.size(), streaming_duration_nanos.size(),
-            streaming_context_type.size());
+            streaming_context_type.size(),
+            codec_format.size(), vendor_company_id.size(), vendor_codec_id.size(),
+            sink_sampling_frequency_hz.size(), source_sampling_frequency_hz.size(),
+            is_dsa_active.size(), is_gmap_active.size());
   }
 }
 
