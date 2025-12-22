@@ -62,10 +62,10 @@ std::unordered_set<uint16_t> used_l2cap_classic_dynamic_psm;
 
 static tBTA_JV_PCB* bta_jv_add_rfc_port(tBTA_JV_RFC_CB* p_cb, tBTA_JV_PCB* p_pcb_open);
 static tBTA_JV_STATUS bta_jv_free_set_pm_profile_cb(uint32_t jv_handle);
-static void bta_jv_pm_conn_busy(tBTA_JV_PM_CB* p_cb);
-static void bta_jv_pm_conn_idle(tBTA_JV_PM_CB* p_cb);
-static void bta_jv_pm_state_change(tBTA_JV_PM_CB* p_cb, const tBTA_JV_CONN_STATE state);
-static void bta_jv_reset_sniff_timer(tBTA_JV_PM_CB* p_cb);
+static void bta_jv_pm_conn_busy(BtaJvPmCb* p_cb);
+static void bta_jv_pm_conn_idle(BtaJvPmCb* p_cb);
+static void bta_jv_pm_state_change(BtaJvPmCb* p_cb, const tBTA_JV_CONN_STATE state);
+static void bta_jv_reset_sniff_timer(BtaJvPmCb* p_cb);
 
 #ifndef BTA_JV_SDP_DB_SIZE
 #define BTA_JV_SDP_DB_SIZE 4500
@@ -442,7 +442,7 @@ static tBTA_JV_STATUS bta_jv_free_l2c_cb(tBTA_JV_L2C_CB* p_cb) {
  *             too!
  *
  ******************************************************************************/
-static void bta_jv_clear_pm_cb(tBTA_JV_PM_CB* p_pm_cb, bool close_conn) {
+static void bta_jv_clear_pm_cb(BtaJvPmCb* p_pm_cb, bool close_conn) {
   // needs to be called if registered with bta pm, otherwise we may run out of dm pm slots!
   if (close_conn) {
     bta_sys_conn_close(BTA_ID_JV, p_pm_cb->app_id, p_pm_cb->peer_bd_addr);
@@ -470,7 +470,7 @@ static void bta_jv_clear_pm_cb(tBTA_JV_PM_CB* p_pm_cb, bool close_conn) {
  ******************************************************************************/
 static tBTA_JV_STATUS bta_jv_free_set_pm_profile_cb(uint32_t jv_handle) {
   tBTA_JV_STATUS status = tBTA_JV_STATUS::FAILURE;
-  tBTA_JV_PM_CB** p_cb;
+  BtaJvPmCb** p_cb;
   int i, j, bd_counter = 0, appid_counter = 0;
 
   for (i = 0; i < BTA_JV_PM_MAX_NUM; i++) {
@@ -539,11 +539,11 @@ static tBTA_JV_STATUS bta_jv_free_set_pm_profile_cb(uint32_t jv_handle) {
  * Returns     pointer to allocated cb or NULL in case of failure
  *
  ******************************************************************************/
-static tBTA_JV_PM_CB* bta_jv_alloc_set_pm_profile_cb(uint32_t jv_handle, tBTA_JV_PM_ID app_id) {
+static BtaJvPmCb* bta_jv_alloc_set_pm_profile_cb(uint32_t jv_handle, tBTA_JV_PM_ID app_id) {
   bool bRfcHandle = (jv_handle & BTA_JV_RFCOMM_MASK) != 0;
   RawAddress peer_bd_addr = RawAddress::kEmpty;
   int i, j;
-  tBTA_JV_PM_CB** pp_cb;
+  BtaJvPmCb** pp_cb;
 
   for (i = 0; i < BTA_JV_PM_MAX_NUM; i++) {
     pp_cb = NULL;
@@ -2147,7 +2147,7 @@ void bta_jv_set_pm_profile(uint32_t handle, tBTA_JV_PM_ID app_id, tBTA_JV_CONN_S
               handle, app_id, init_st, bta_jv_status_text(status));
     }
   } else {  // set PM control block
-    tBTA_JV_PM_CB* p_cb = bta_jv_alloc_set_pm_profile_cb(handle, app_id);
+    BtaJvPmCb* p_cb = bta_jv_alloc_set_pm_profile_cb(handle, app_id);
     if (p_cb) {
       bta_jv_pm_state_change(p_cb, init_st);
     } else {
@@ -2166,7 +2166,7 @@ void bta_jv_set_pm_profile(uint32_t handle, tBTA_JV_PM_ID app_id, tBTA_JV_CONN_S
  * Params      p_cb: pm control block of jv connection
  *
  ******************************************************************************/
-static void bta_jv_pm_conn_busy(tBTA_JV_PM_CB* p_cb) {
+static void bta_jv_pm_conn_busy(BtaJvPmCb* p_cb) {
   if (p_cb == nullptr) {
     return;
   }
@@ -2197,7 +2197,7 @@ static void bta_jv_pm_conn_busy(tBTA_JV_PM_CB* p_cb) {
  * Returns     void
  *
  ******************************************************************************/
-static void bta_jv_pm_conn_idle(tBTA_JV_PM_CB* p_cb) {
+static void bta_jv_pm_conn_idle(BtaJvPmCb* p_cb) {
   if (p_cb == nullptr) {
     return;
   }
@@ -2229,7 +2229,7 @@ static void bta_jv_pm_conn_idle(tBTA_JV_PM_CB* p_cb) {
  * Returns      void
  *
  ******************************************************************************/
-static void bta_jv_pm_state_change(tBTA_JV_PM_CB* p_cb, const tBTA_JV_CONN_STATE state) {
+static void bta_jv_pm_state_change(BtaJvPmCb* p_cb, const tBTA_JV_CONN_STATE state) {
   log::verbose("p_cb={}, jv_handle=0x{:x}, busy/idle_state={}, app_id={}, conn_state={}",
                std::format_ptr(p_cb), p_cb->handle, bta_jv_pm_state_text(p_cb->state), p_cb->app_id,
                bta_jv_conn_state_text(state));
@@ -2284,7 +2284,7 @@ static void bta_jv_pm_state_change(tBTA_JV_PM_CB* p_cb, const tBTA_JV_CONN_STATE
  * Params      p_cb: pm control block of jv connection
  *
  ******************************************************************************/
-static void bta_jv_reset_sniff_timer(tBTA_JV_PM_CB* p_cb) {
+static void bta_jv_reset_sniff_timer(BtaJvPmCb* p_cb) {
   if (NULL != p_cb) {
     p_cb->state = BTA_JV_PM_IDLE_ST;
     bta_sys_reset_sniff(BTA_ID_JV, p_cb->app_id, p_cb->peer_bd_addr);
@@ -2303,7 +2303,7 @@ void bta_jv_idle_timeout_handler(void* data) {
     return;
   }
 
-  tBTA_JV_PM_CB* p_cb = (tBTA_JV_PM_CB*)data;
+  BtaJvPmCb* p_cb = (BtaJvPmCb*)data;
 
   // The state has been changed
   if (p_cb->state != BTA_JV_PM_BUSY_TO_IDLE_ST) {
