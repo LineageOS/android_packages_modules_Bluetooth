@@ -58,3 +58,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "pbap_correct_filtered_index"
+    namespace: "bluetooth"
+    description: "Correct indexes for phonebook requests with filter"
+    bug: "467871951"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
