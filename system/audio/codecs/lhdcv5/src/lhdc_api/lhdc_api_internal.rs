@@ -158,7 +158,7 @@ impl Parameters {
 pub const LHDC_ENC_MODE_OPTION_0: Mode = 0;
 pub type Mode = u32;
 
-fn lhdcv5_encoder_cal_frame_size_and_frames_in_packet(handle: &mut Parameters) -> int32_t {
+fn lhdcv5_encoder_cal_frame_size_and_frames_in_packet(handle: &mut Parameters) -> i32 {
     if handle.bits_per_sample_ui != LHDC_ENC_IN_SMPL_FMT_S16
         && handle.bits_per_sample_ui != LHDC_ENC_IN_SMPL_FMT_S24
     {
@@ -275,7 +275,7 @@ fn read_i32_bits(input: &mut &[u8], bytes: usize) -> i32 {
     i32::from_le_bytes(raw) << smear >> smear
 }
 
-fn lhdcv5_encoder_deinterleave24(mut in_0: &[u8], out: &mut [i32], out_samples: usize) -> int32_t {
+fn lhdcv5_encoder_deinterleave24(mut in_0: &[u8], out: &mut [i32], out_samples: usize) -> i32 {
     let left: usize = 0;
     let right: usize = out_samples;
     for i in 0..out_samples {
@@ -284,7 +284,7 @@ fn lhdcv5_encoder_deinterleave24(mut in_0: &[u8], out: &mut [i32], out_samples: 
     }
     LHDC_ENC_IN_FRET_SUCCESS
 }
-fn lhdcv5_encoder_deinterleave16(mut in_0: &[u8], out: &mut [i32], out_samples: usize) -> int32_t {
+fn lhdcv5_encoder_deinterleave16(mut in_0: &[u8], out: &mut [i32], out_samples: usize) -> i32 {
     let left: usize = 0;
     let right: usize = out_samples;
     for i in 0..out_samples {
@@ -303,10 +303,10 @@ impl Parameters {
         frame_duration: u32,
         mtu: u32,
         interval: u32,
-    ) -> int32_t {
+    ) -> i32 {
         let ch_num: u32 = 2;
         let mut samples_per_frame: i32 = 0;
-        let mut encoded_frame_size: int32_t = 0;
+        let mut encoded_frame_size: i32 = 0;
         let mut tmp_bitrate_inx: u32 = 0;
         if self.version != LHDC_ENC_IN_VERSION_1 {
             error!("Invalid version ({})!", self.version);
@@ -371,17 +371,17 @@ impl Parameters {
         if bitrate_inx >= LHDC_ENC_IN_QUALITY_LOW0 && bitrate_inx < LHDC_ENC_IN_QUALITY_AUTO {
             tmp_bitrate_inx = bitrate_inx;
             tmp_bitrate_inx =
-                std::cmp::max(tmp_bitrate_inx as int32_t, self.min_bitrate_inx as int32_t) as u32;
+                std::cmp::max(tmp_bitrate_inx as i32, self.min_bitrate_inx as i32) as u32;
             tmp_bitrate_inx =
-                std::cmp::min(tmp_bitrate_inx as int32_t, self.max_bitrate_inx as int32_t) as u32;
+                std::cmp::min(tmp_bitrate_inx as i32, self.max_bitrate_inx as i32) as u32;
             self.last_bitrate = self.bitrate_table[tmp_bitrate_inx as usize] as u32;
             self.quality_status = tmp_bitrate_inx;
         } else if bitrate_inx == LHDC_ENC_IN_QUALITY_AUTO {
             tmp_bitrate_inx = LHDC_ENC_IN_QUALITY_LOW;
             tmp_bitrate_inx =
-                std::cmp::max(tmp_bitrate_inx as int32_t, self.min_bitrate_inx as int32_t) as u32;
+                std::cmp::max(tmp_bitrate_inx as i32, self.min_bitrate_inx as i32) as u32;
             tmp_bitrate_inx =
-                std::cmp::min(tmp_bitrate_inx as int32_t, self.max_bitrate_inx as int32_t) as u32;
+                std::cmp::min(tmp_bitrate_inx as i32, self.max_bitrate_inx as i32) as u32;
             self.last_bitrate = self.bitrate_table[tmp_bitrate_inx as usize] as u32;
         }
         info!("target bitrate[{}]:{}", tmp_bitrate_inx, self.last_bitrate);
@@ -475,7 +475,7 @@ pub fn lhdcv5_encoder_get_bitrate(
     bitrate_inx: u32,
     bitrate: &mut u32,
     bitrate_table: &[i32],
-) -> int32_t {
+) -> i32 {
     if bitrate_inx >= bitrate_table.len() as _ {
         error!("Input bit rate (index) is out of range ({})!", bitrate_inx);
         return LHDC_ENC_IN_FRET_INVALID_INPUT_PARAM;
@@ -488,7 +488,7 @@ pub fn lhdcv5_encoder_get_bitrate_inx(
     bitrate: u32,
     bitrate_inx: &mut u32,
     bitrate_table: &[i32],
-) -> int32_t {
+) -> i32 {
     let mut index: u32 = 0;
     if bitrate > bitrate_table[bitrate_table.len() - 1] as u32 {
         return LHDC_ENC_IN_FRET_INVALID_INPUT_PARAM;
@@ -503,7 +503,7 @@ pub fn lhdcv5_encoder_get_bitrate_inx(
     LHDC_ENC_IN_FRET_SUCCESS
 }
 
-pub fn lhdcv5_encoder_set_target_bitrate_inx(lhdc: &mut Parameters, bitrate_inx: u32) -> int32_t {
+pub fn lhdcv5_encoder_set_target_bitrate_inx(lhdc: &mut Parameters, bitrate_inx: u32) -> i32 {
     let mut last_bitrate_inx: u32 = LHDC_ENC_IN_QUALITY_LOW;
     if bitrate_inx < LHDC_ENC_IN_QUALITY_LOW0 || bitrate_inx > LHDC_ENC_IN_QUALITY_MAX_BITRATE {
         error!("Input parameter is invalid ({bitrate_inx})!");
@@ -531,7 +531,7 @@ pub fn lhdcv5_encoder_set_target_bitrate_inx(lhdc: &mut Parameters, bitrate_inx:
     LHDC_ENC_IN_FRET_SUCCESS
 }
 
-pub fn lhdcv5_encoder_set_max_bitrate_inx(lhdc: &mut Parameters, max_bitrate_inx: u32) -> int32_t {
+pub fn lhdcv5_encoder_set_max_bitrate_inx(lhdc: &mut Parameters, max_bitrate_inx: u32) -> i32 {
     let mut upd_max_bitrate: u32 = 400;
     if max_bitrate_inx < LHDC_ENC_IN_QUALITY_LOW
         || max_bitrate_inx > LHDC_ENC_IN_QUALITY_MAX_BITRATE
@@ -576,7 +576,7 @@ pub fn lhdcv5_encoder_set_max_bitrate_inx(lhdc: &mut Parameters, max_bitrate_inx
     LHDC_ENC_IN_FRET_SUCCESS
 }
 
-pub fn lhdcv5_encoder_set_min_bitrate_inx(lhdc: &mut Parameters, min_bitrate_inx: u32) -> int32_t {
+pub fn lhdcv5_encoder_set_min_bitrate_inx(lhdc: &mut Parameters, min_bitrate_inx: u32) -> i32 {
     let mut upd_min_bitrate: u32 = 400;
     if min_bitrate_inx < LHDC_ENC_IN_QUALITY_LOW0 || min_bitrate_inx > LHDC_ENC_IN_QUALITY_LOW {
         error!("Error, min bit rate(index) ({min_bitrate_inx})");
@@ -617,7 +617,7 @@ pub fn lhdcv5_encoder_set_min_bitrate_inx(lhdc: &mut Parameters, min_bitrate_inx
     LHDC_ENC_IN_FRET_SUCCESS
 }
 
-pub fn lhdcv5_encoder_get_frame_len(lhdc: &Parameters, samples_per_frame: &mut u32) -> int32_t {
+pub fn lhdcv5_encoder_get_frame_len(lhdc: &Parameters, samples_per_frame: &mut u32) -> i32 {
     if lhdc.frame_duration == LHDC_ENC_IN_FRAME_5MS {
         match lhdc.sample_rate {
             44100 => {
@@ -663,11 +663,11 @@ pub fn lhdcv5_encoder_encode(
     out: &mut [u8],
     written_bytes: &mut u32,
     out_frames: &mut u32,
-) -> int32_t {
+) -> i32 {
     let ch_num: u32 = 2;
     let mut out_frames_cnt: u32 = 0;
-    let mut encoded_bytes: int32_t = 0;
-    let mut encoded_frame_size: int32_t = 0;
+    let mut encoded_bytes: i32 = 0;
+    let mut encoded_frame_size: i32 = 0;
     *out_frames = 0;
     *written_bytes = 0;
     if lhdc.version != LHDC_ENC_IN_VERSION_1 {
@@ -752,7 +752,7 @@ pub fn lhdcv5_encoder_encode(
         error!("Invalid number of frames per packet ({frame_per_packet})!");
         return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
     }
-    encoded_frame_size = lhdc.encoded_frame_size as int32_t;
+    encoded_frame_size = lhdc.encoded_frame_size as i32;
     if encoded_frame_size <= 0 || encoded_frame_size >= LHDC_ENC_IN_MTU_3MBPS as i32 {
         error!("Invalid encoded frames bytes ({})!", encoded_frame_size);
         return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
@@ -760,7 +760,7 @@ pub fn lhdcv5_encoder_encode(
     let bytes_per_frame_in =
         samples_per_frame.wrapping_mul(ch_num).wrapping_mul(lhdc.bits_per_sample).wrapping_div(8);
     let bytes_per_frame = (samples_per_frame.wrapping_mul(ch_num) as libc::c_ulong)
-        .wrapping_mul(::core::mem::size_of::<int32_t>() as libc::c_ulong)
+        .wrapping_mul(::core::mem::size_of::<i32>() as libc::c_ulong)
         as u32;
     if in_0.len() < bytes_per_frame_in as _
         || lhdc.enc_in_buf.len() * std::mem::size_of::<i32>() < bytes_per_frame as usize

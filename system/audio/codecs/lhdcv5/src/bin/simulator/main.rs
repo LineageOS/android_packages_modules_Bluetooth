@@ -236,12 +236,12 @@ fn encode_main(in_0: &str, bitrate: u32) -> i32 {
         block_align: 0,
         bits_per_sample: 0,
     };
-    let channels: uint8_t = 2;
+    let channels: u8 = 2;
     let mut bitrate_inx: u32 = 0;
     let mut samples_per_frame: u32 = 0;
     let mut _pcm_bytes_per_frame: usize = 0;
-    let mut read_buffer: [uint8_t; 15360] = [0; 15360];
-    let mut write_buffer: [uint8_t; 15360] = [0; 15360];
+    let mut read_buffer: [u8; 15360] = [0; 15360];
+    let mut write_buffer: [u8; 15360] = [0; 15360];
     let enc_flen: u32 = 0;
     let mut byte_written: u32 = 0;
     let mut out_frames: u32 = 0;

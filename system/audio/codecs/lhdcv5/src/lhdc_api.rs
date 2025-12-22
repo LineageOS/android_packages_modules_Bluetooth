@@ -19,15 +19,6 @@ pub mod lhdc_api_internal;
 use lhdc_api_internal::*;
 use log::{error, info};
 
-pub type size_t = libc::c_ulong;
-pub type __uint8_t = libc::c_uchar;
-pub type __int32_t = libc::c_int;
-pub type __uint32_t = libc::c_uint;
-pub type __uint64_t = libc::c_ulong;
-pub type int32_t = __int32_t;
-pub type uint8_t = __uint8_t;
-pub type uint32_t = __uint32_t;
-pub type uint64_t = __uint64_t;
 pub type lhdc_log_level = libc::c_uint;
 pub const LHDC_LOGMGR_LEVEL_DEBUG_NO_LOG: lhdc_log_level = 256;
 pub const LHDC_LOGMGR_LEVEL_MAX: lhdc_log_level = 135;
@@ -112,9 +103,10 @@ pub const LHDC_FRET_INVALID_HANDLE_CB: __LHDC_FUNC_RET__ = -2;
 pub const LHDC_FRET_INVALID_INPUT_PARAM: __LHDC_FUNC_RET__ = -1;
 pub const LHDC_FRET_SUCCESS: __LHDC_FUNC_RET__ = 0;
 pub type HANDLE_LHDC_BT = Box<lhdc_cb_t>;
+
 pub struct lhdc_cb_t {
-    pub enc_type: uint32_t,
-    pub err: int32_t,
+    pub enc_type: u32,
+    pub err: i32,
     pub enc: Parameters,
 }
 
@@ -126,7 +118,7 @@ impl lhdc_cb_t {
 }
 
 #[inline]
-fn MAX_BITRATE_LIMIT(X: int32_t, Y: int32_t) -> int32_t {
+fn MAX_BITRATE_LIMIT(X: i32, Y: i32) -> i32 {
     if X > Y {
         Y
     } else {
@@ -135,7 +127,7 @@ fn MAX_BITRATE_LIMIT(X: int32_t, Y: int32_t) -> int32_t {
 }
 
 #[inline]
-fn MIN_BITRATE_LIMIT(X: int32_t, Y: int32_t) -> int32_t {
+fn MIN_BITRATE_LIMIT(X: i32, Y: i32) -> i32 {
     if X < Y {
         Y
     } else {
@@ -156,9 +148,9 @@ pub static g_bitrate_table_192k: [i32; 15] =
 //jimmy
 pub fn lhdcv5_enc_util_get_target_bitrate_inx(
     lhdcBT: &mut lhdc_cb_t,
-    bitrate_kbps: uint32_t,
-    bitrate_inx: &mut uint32_t,
-) -> int32_t {
+    bitrate_kbps: u32,
+    bitrate_inx: &mut u32,
+) -> i32 {
     let func_ret =
         lhdcv5_enc_util_get_bitrate_inx(bitrate_kbps, bitrate_inx, lhdcBT.enc.bitrate_table);
     if func_ret != LHDC_FRET_SUCCESS {
@@ -168,17 +160,17 @@ pub fn lhdcv5_enc_util_get_target_bitrate_inx(
     LHDC_FRET_SUCCESS
 }
 
-pub fn lhdc_get_last_bitrate(lhdcBT: &mut lhdc_cb_t, bitrate: &mut uint32_t) -> int32_t {
+pub fn lhdc_get_last_bitrate(lhdcBT: &mut lhdc_cb_t, bitrate: &mut u32) -> i32 {
     *bitrate = lhdcBT.enc.last_bitrate;
     LHDC_FRET_SUCCESS
 }
 
 pub fn lhdcv5_enc_util_set_target_bitrate_inx(
     lhdcBT: &mut lhdc_cb_t,
-    bitrate_inx: uint32_t,
-    bitrate_inx_set: &mut uint32_t,
+    bitrate_inx: u32,
+    bitrate_inx_set: &mut u32,
     upd_qual_status: bool,
-) -> int32_t {
+) -> i32 {
     if bitrate_inx < LHDC_QUALITY_LOW0 || bitrate_inx > LHDC_QUALITY_AUTO {
         error!("Input bit rate (index) is invalid ({})!!!", bitrate_inx);
         return LHDC_FRET_INVALID_INPUT_PARAM;
@@ -188,23 +180,19 @@ pub fn lhdcv5_enc_util_set_target_bitrate_inx(
         1 => {
             if bitrate_inx == LHDC_QUALITY_AUTO {
                 upd_bitrate_inx = LHDC_QUALITY_LOW;
-                upd_bitrate_inx = MIN_BITRATE_LIMIT(
-                    upd_bitrate_inx as int32_t,
-                    lhdcBT.enc.min_bitrate_inx as int32_t,
-                ) as uint32_t;
-                upd_bitrate_inx = MAX_BITRATE_LIMIT(
-                    upd_bitrate_inx as int32_t,
-                    lhdcBT.enc.max_bitrate_inx as int32_t,
-                ) as uint32_t;
+                upd_bitrate_inx =
+                    MIN_BITRATE_LIMIT(upd_bitrate_inx as i32, lhdcBT.enc.min_bitrate_inx as i32)
+                        as u32;
+                upd_bitrate_inx =
+                    MAX_BITRATE_LIMIT(upd_bitrate_inx as i32, lhdcBT.enc.max_bitrate_inx as i32)
+                        as u32;
             } else {
-                upd_bitrate_inx = MIN_BITRATE_LIMIT(
-                    upd_bitrate_inx as int32_t,
-                    lhdcBT.enc.min_bitrate_inx as int32_t,
-                ) as uint32_t;
-                upd_bitrate_inx = MAX_BITRATE_LIMIT(
-                    upd_bitrate_inx as int32_t,
-                    lhdcBT.enc.max_bitrate_inx as int32_t,
-                ) as uint32_t;
+                upd_bitrate_inx =
+                    MIN_BITRATE_LIMIT(upd_bitrate_inx as i32, lhdcBT.enc.min_bitrate_inx as i32)
+                        as u32;
+                upd_bitrate_inx =
+                    MAX_BITRATE_LIMIT(upd_bitrate_inx as i32, lhdcBT.enc.max_bitrate_inx as i32)
+                        as u32;
             }
             if upd_qual_status {
                 if bitrate_inx == LHDC_QUALITY_AUTO {
@@ -234,9 +222,9 @@ pub fn lhdcv5_enc_util_set_target_bitrate_inx(
 }
 pub fn lhdcv5_enc_util_set_max_bitrate_inx(
     lhdcBT: &mut lhdc_cb_t,
-    max_bitrate_inx: uint32_t,
-    max_bitrate_inx_set: &mut uint32_t,
-) -> int32_t {
+    max_bitrate_inx: u32,
+    max_bitrate_inx_set: &mut u32,
+) -> i32 {
     if max_bitrate_inx < LHDC_QUALITY_LOW || max_bitrate_inx > LHDC_QUALITY_MAX_BITRATE {
         error!("Input MAX. bit rate (index) is invalid ({})!", max_bitrate_inx);
         return LHDC_FRET_INVALID_INPUT_PARAM;
@@ -259,9 +247,9 @@ pub fn lhdcv5_enc_util_set_max_bitrate_inx(
 }
 pub fn lhdcv5_enc_util_set_min_bitrate_inx(
     lhdcBT: &mut lhdc_cb_t,
-    min_bitrate_inx: uint32_t,
-    min_bitrate_inx_set: &mut uint32_t,
-) -> int32_t {
+    min_bitrate_inx: u32,
+    min_bitrate_inx_set: &mut u32,
+) -> i32 {
     if min_bitrate_inx < LHDC_QUALITY_LOW0 || min_bitrate_inx > LHDC_QUALITY_LOW {
         error!("Input MIN. bit rate (index) is invalid ({})!", min_bitrate_inx);
         return LHDC_FRET_INVALID_INPUT_PARAM;
@@ -285,14 +273,14 @@ pub fn lhdcv5_enc_util_set_min_bitrate_inx(
 
 pub fn lhdcv5_enc_util_init_encoder(
     lhdcBT: &mut lhdc_cb_t,
-    sampling_freq: uint32_t,
-    bits_per_sample: uint32_t,
-    bitrate_inx: uint32_t,
-    frame_duration: uint32_t,
-    mtu: uint32_t,
-    interval: uint32_t,
-) -> int32_t {
-    let mut samples_per_frame: uint32_t = 0;
+    sampling_freq: u32,
+    bits_per_sample: u32,
+    bitrate_inx: u32,
+    frame_duration: u32,
+    mtu: u32,
+    interval: u32,
+) -> i32 {
+    let mut samples_per_frame: u32 = 0;
     if sampling_freq != LHDC_SR_44100HZ
         && sampling_freq != LHDC_SR_48000HZ
         && sampling_freq != LHDC_SR_96000HZ
@@ -360,7 +348,7 @@ pub fn lhdcv5_enc_util_init_encoder(
     LHDC_FRET_SUCCESS
 }
 
-pub fn lhdcv5_enc_util_get_block_Size(lhdcBT: &lhdc_cb_t, block_size: &mut uint32_t) -> int32_t {
+pub fn lhdcv5_enc_util_get_block_Size(lhdcBT: &lhdc_cb_t, block_size: &mut u32) -> i32 {
     match lhdcBT.enc_type {
         1 => {
             let func_ret = lhdcv5_encoder_get_frame_len(&lhdcBT.enc, block_size);
@@ -381,9 +369,9 @@ pub fn lhdcv5_enc_util_enc_process(
     lhdcBT: &mut lhdc_cb_t,
     pcm: &[u8],
     out: &mut [u8],
-    written: &mut uint32_t,
-    out_frames: &mut uint32_t,
-) -> int32_t {
+    written: &mut u32,
+    out_frames: &mut u32,
+) -> i32 {
     match lhdcBT.enc_type {
         1 => {
             let func_ret = lhdcv5_encoder_encode(&mut lhdcBT.enc, pcm, out, written, out_frames);
@@ -401,10 +389,10 @@ pub fn lhdcv5_enc_util_enc_process(
 }
 
 pub fn lhdcv5_enc_util_get_bitrate(
-    bitrate_inx: uint32_t,
-    bitrate: &mut uint32_t,
+    bitrate_inx: u32,
+    bitrate: &mut u32,
     bitrate_table: &[i32],
-) -> int32_t {
+) -> i32 {
     if bitrate_inx as usize >= bitrate_table.len() {
         error!("Input bit rate (index) is out of range ({bitrate_inx})!");
         return LHDC_FRET_INVALID_INPUT_PARAM;
@@ -418,10 +406,10 @@ pub fn lhdcv5_enc_util_get_bitrate(
 }
 
 pub fn lhdcv5_enc_util_get_bitrate_inx(
-    bitrate: uint32_t,
-    bitrate_inx: &mut uint32_t,
+    bitrate: u32,
+    bitrate_inx: &mut u32,
     bitrate_table: &[i32],
-) -> int32_t {
+) -> i32 {
     if bitrate > bitrate_table[bitrate_table.len() - 1] as libc::c_uint {
         return LHDC_FRET_INVALID_INPUT_PARAM;
     }
