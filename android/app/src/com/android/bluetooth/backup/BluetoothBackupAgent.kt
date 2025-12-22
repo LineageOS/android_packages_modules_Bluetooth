@@ -19,6 +19,8 @@ package com.android.bluetooth.backup
 import android.app.backup.BackupAgent
 import android.app.backup.BackupDataInput
 import android.app.backup.BackupDataOutput
+import android.app.backup.BackupManager
+import android.app.backup.BackupRestoreEventLogger
 import android.os.ParcelFileDescriptor
 import android.provider.Settings
 import android.util.Log
@@ -35,9 +37,22 @@ class BluetoothBackupAgent : BackupAgent() {
         internal const val BLUETOOTH_APM_USER_TOGGLED = "apm_user_toggled_bluetooth"
         internal const val BLUETOOTH_AUTO_ON = "bluetooth_automatic_turn_on"
 
+        internal const val DATA_TYPE_SETTING = "settings"
+
+        internal const val ERROR_WRITING_TO_SETTINGS = "writing_to_settings"
+
+        internal const val ERROR_DATA_OBJECT_NULL = "data_object_null"
+
         // List of secure settings to be backed up.
         val SETTINGS_TO_SYNC =
             listOf(BLUETOOTH_APM_STATE, BLUETOOTH_APM_USER_TOGGLED, BLUETOOTH_AUTO_ON)
+    }
+
+    lateinit var mLogger: BackupRestoreEventLogger
+
+    override fun onCreate() {
+        super.onCreate()
+        mLogger = BackupManager(applicationContext).getBackupRestoreEventLogger(this)
     }
 
     // Since the settings are read/written to SecureSettings, oldState and newState are not used
@@ -52,6 +67,7 @@ class BluetoothBackupAgent : BackupAgent() {
 
         if (data == null) {
             Log.e(TAG, "Unable to backup settings as data object is null")
+            mLogger.logItemsBackupFailed(DATA_TYPE_SETTING, 1, ERROR_DATA_OBJECT_NULL)
             return
         }
         val dataBufStream = ByteArrayOutputStream()
@@ -65,6 +81,7 @@ class BluetoothBackupAgent : BackupAgent() {
             val buf = dataBufStream.toByteArray()
             data.writeEntityHeader(setting, buf.size)
             data.writeEntityData(buf, buf.size)
+            mLogger.logItemsBackedUp(DATA_TYPE_SETTING, 1)
         }
     }
 
@@ -79,6 +96,7 @@ class BluetoothBackupAgent : BackupAgent() {
 
         if (data == null) {
             Log.e(TAG, "Unable to restore settings as data object is null")
+            mLogger.logItemsRestoreFailed(DATA_TYPE_SETTING, 1, ERROR_DATA_OBJECT_NULL)
             return
         }
 
@@ -110,6 +128,7 @@ class BluetoothBackupAgent : BackupAgent() {
             val status = Settings.Secure.putInt(contentResolver, key, settingBackedUpState)
             if (!status) {
                 Log.w(TAG, "Failed to update setting '$key'.")
+                mLogger.logItemsRestoreFailed(DATA_TYPE_SETTING, 1, ERROR_WRITING_TO_SETTINGS)
             }
         }
     }
