@@ -93,7 +93,7 @@ struct BtaJvL2capCb {
 #define BTA_JV_RFC_H_S_TO_HDL(h, s) ((h) | ((s) << 8))
 
 /* port control block */
-typedef struct {
+struct BtaJvPcb {
   uint32_t handle;       // the rfcomm session handle at jv
   uint16_t port_handle;  // port handle
   BtaJvState state;      // the state of this control block
@@ -101,7 +101,7 @@ typedef struct {
   uint32_t rfcomm_slot_id;
   bool cong;               // true, if congested
   BtaJvPmCb* p_pm_cb;      // ptr to pm control block, NULL: unused
-} tBTA_JV_PCB;
+};
 
 /* JV RFCOMM control block */
 typedef struct {
@@ -123,7 +123,7 @@ struct tBTA_JV_CB {
   tBTA_JV_DM_CBACK* p_dm_cback;
   BtaJvL2capCb l2c_cb[BTA_JV_MAX_L2C_CONN];  // index is GAP handle (index)
   tBTA_JV_RFC_CB rfc_cb[BTA_JV_MAX_RFC_CONN];
-  tBTA_JV_PCB port_cb[MAX_RFC_PORTS];           // index of this array is the port_handle
+  BtaJvPcb port_cb[MAX_RFC_PORTS];              // index of this array is the port_handle
   uint8_t sec_id[BTA_JV_NUM_SERVICE_ID];        // service ID
   uint16_t free_psm_list[BTA_JV_MAX_L2C_CONN];  // PSMs freed by java (can be reused)
   bool scn_in_use[RFCOMM_MAX_SCN];
@@ -176,8 +176,7 @@ void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, uint8_t local_scn, uint8_t ma
                                 tBTA_JV_RFCOMM_CBACK* p_cback, uint32_t rfcomm_slot_id,
                                 RfcommCfgInfo cfg, uint32_t app_uid);
 void bta_jv_rfcomm_stop_server(uint32_t handle, uint32_t rfcomm_slot_id);
-void bta_jv_rfcomm_write(uint32_t handle, uint32_t req_id, tBTA_JV_RFC_CB* p_cb,
-                         tBTA_JV_PCB* p_pcb);
+void bta_jv_rfcomm_write(uint32_t handle, uint32_t req_id, tBTA_JV_RFC_CB* p_cb, BtaJvPcb* p_pcb);
 void bta_jv_set_pm_profile(uint32_t handle, tBTA_JV_PM_ID app_id, tBTA_JV_CONN_STATE init_st);
 
 void bta_jv_l2cap_stop_server_le(uint16_t local_chan);
