@@ -544,6 +544,10 @@ static void gatt_le_connect_cback(uint16_t /* chan */, const RawAddress& bd_addr
     check_srv_chg = true;
   } else if (BTM_IsBonded(bd_addr)) {
     gatt_add_a_bonded_dev_for_srv_chg(bd_addr);
+    if (com_android_bluetooth_flags_send_service_changed_indication_upon_reconnection()) {
+      p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(bd_addr);
+      check_srv_chg = (p_srv_chg_clt != NULL);
+    }
   }
 
   if (!connected) {
@@ -600,6 +604,7 @@ static void gatt_le_connect_cback(uint16_t /* chan */, const RawAddress& bd_addr
     if (com_android_bluetooth_flags_send_service_changed_indication_upon_reconnection() &&
         !p_srv_chg_clt->srv_changed && !p_tcb->is_robust_cache_change_aware) {
       p_srv_chg_clt->srv_changed = true;
+      p_srv_chg_clt->start_handle = GATT_GATT_START_HANDLE;
     }
     gatt_chk_srv_chg(p_srv_chg_clt);
   }
