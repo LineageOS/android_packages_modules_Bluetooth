@@ -5194,6 +5194,15 @@ public class AdapterService extends Service {
         }
     }
 
+    /**
+     * Check if a given device's address or remote device name matches a known interoperability
+     * workaround identified by the interop feature. remote device name will be fetched internally
+     * based on the given address at stack layer.
+     *
+     * @param feature a given interop feature defined in {@link InteropFeature}.
+     * @param device the remote device to be matched.
+     * @return {@code true} if matched, {@code false} otherwise
+     */
     public boolean interopMatchDevice(InteropFeature feature, BluetoothDevice device) {
         return mNativeInterface.interopMatchAddrOrName(feature.name(), device.getAddress());
     }
