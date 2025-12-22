@@ -71,8 +71,8 @@ import org.mockito.Mockito.eq
 import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
-import org.mockito.MockitoAnnotations
 import org.mockito.hamcrest.MockitoHamcrest
+import org.mockito.junit.MockitoJUnit
 import pandora.GattProto
 import pandora.GattProto.GattCharacteristicParams
 import pandora.HIDGrpc
@@ -90,12 +90,10 @@ private const val TAG = "HidHeadTrackerTest"
 
 @RunWith(AndroidJUnit4::class)
 class HidHeadTrackerTest {
+    @get:Rule val mockitoRule = MockitoJUnit.rule()
     @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
-
     @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
-
     @get:Rule(order = 2) val bumble = PandoraDevice()
-
     @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Mock private lateinit var receiver: BroadcastReceiver
@@ -114,7 +112,6 @@ class HidHeadTrackerTest {
     @Before
     @Throws(Exception::class)
     fun setUp() {
-        MockitoAnnotations.initMocks(this)
         hidBlockingStub = bumble.hidBlocking()
 
         inOrder = inOrder(receiver)

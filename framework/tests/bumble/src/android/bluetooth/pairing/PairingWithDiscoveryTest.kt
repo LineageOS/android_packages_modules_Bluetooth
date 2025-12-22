@@ -69,8 +69,8 @@ import org.mockito.Mock
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.timeout
-import org.mockito.MockitoAnnotations
 import org.mockito.hamcrest.MockitoHamcrest
+import org.mockito.junit.MockitoJUnit
 import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import org.mockito.stubbing.Answer
@@ -91,14 +91,11 @@ private const val TAG = "PairingWithDiscoveryTest"
 /** Test cases for [PairingWithDiscoveryTest]. */
 @RunWith(AndroidJUnit4::class)
 class PairingWithDiscoveryTest {
+    @get:Rule val mockitoRule = MockitoJUnit.rule()
     @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
-
     @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
-
     @get:Rule(order = 2) val bumble = PandoraDevice()
-
     @get:Rule(order = 3) val secondBumble = PandoraDevice.createSecondPandoraDevice()
-
     @get:Rule(order = 4) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Mock private lateinit var receiver: BroadcastReceiver
@@ -149,7 +146,6 @@ class PairingWithDiscoveryTest {
     @Before
     @Throws(Exception::class)
     fun setUp() {
-        MockitoAnnotations.openMocks(this)
         doAnswer(intentHandler).whenever(receiver).onReceive(any(), any())
 
         inOrder = inOrder(receiver)

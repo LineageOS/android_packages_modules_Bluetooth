@@ -75,8 +75,8 @@ import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
-import org.mockito.MockitoAnnotations
 import org.mockito.hamcrest.MockitoHamcrest.argThat
+import org.mockito.junit.MockitoJUnit
 import org.mockito.kotlin.whenever
 import pandora.HIDGrpc
 import pandora.HidProto.HidServiceType
@@ -85,12 +85,10 @@ import pandora.HidProto.ServiceRequest
 /** Test cases for [BluetoothHidDevice]. */
 @RunWith(AndroidJUnit4::class)
 class HidDeviceTest {
+    @get:Rule val mockitoRule = MockitoJUnit.rule()
     @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
-
     @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
-
     @get:Rule(order = 2) val bumble = PandoraDevice()
-
     @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Mock private lateinit var callback: BluetoothHidDevice.Callback
@@ -138,8 +136,6 @@ class HidDeviceTest {
 
     @Before
     fun setUp() {
-        MockitoAnnotations.initMocks(this)
-
         doAnswer {
                 bumble.remoteDevice.setPairingConfirmation(true)
                 null
