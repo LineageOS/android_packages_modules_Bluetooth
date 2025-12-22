@@ -411,7 +411,7 @@ static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB* p_cb, tBTA_JV_PCB* p_pc
  *              tBTA_JV_STATUS::FAILURE otherwise
  *
  ******************************************************************************/
-static tBTA_JV_STATUS bta_jv_free_l2c_cb(tBTA_JV_L2C_CB* p_cb) {
+static tBTA_JV_STATUS bta_jv_free_l2c_cb(BtaJvL2capCb* p_cb) {
   tBTA_JV_STATUS status = tBTA_JV_STATUS::SUCCESS;
 
   if (BTA_JV_ST_NONE != p_cb->state) {
@@ -514,7 +514,7 @@ static tBTA_JV_STATUS bta_jv_free_set_pm_profile_cb(uint32_t jv_handle) {
         }
       } else {
         if (jv_handle < BTA_JV_MAX_L2C_CONN) {
-          tBTA_JV_L2C_CB* p_l2c_cb = &bta_jv_cb.l2c_cb[jv_handle];
+          BtaJvL2capCb* p_l2c_cb = &bta_jv_cb.l2c_cb[jv_handle];
           if (p_l2c_cb->p_pm_cb == nullptr) {
             log::warn("jv_handle=0x{:x}, i={} no link to pm_cb?", jv_handle, i);
           }
@@ -1050,7 +1050,7 @@ void bta_jv_delete_record(uint32_t handle) {
  *
  ******************************************************************************/
 static void bta_jv_l2cap_client_cback(uint16_t gap_handle, uint16_t event, tGAP_CB_DATA* data) {
-  tBTA_JV_L2C_CB* p_cb = &bta_jv_cb.l2c_cb[gap_handle];
+  BtaJvL2capCb* p_cb = &bta_jv_cb.l2c_cb[gap_handle];
   tBTA_JV evt_data;
 
   if (gap_handle >= BTA_JV_MAX_L2C_CONN && p_cb->p_cback == nullptr) {
@@ -1188,7 +1188,7 @@ void bta_jv_l2cap_connect(tBTA_JV_CONN_TYPE type, tBTA_SEC sec_mask, uint16_t re
   }
 
   if (evt_data.status == tBTA_JV_STATUS::SUCCESS) {
-    tBTA_JV_L2C_CB* p_cb;
+    BtaJvL2capCb* p_cb;
     p_cb = &bta_jv_cb.l2c_cb[handle];
     p_cb->handle = handle;
     p_cb->p_cback = p_cback;
@@ -1215,7 +1215,7 @@ void bta_jv_l2cap_connect(tBTA_JV_CONN_TYPE type, tBTA_SEC sec_mask, uint16_t re
  * Description  Closes an L2CAP client connection
  *
  *******************************************************************************/
-void bta_jv_l2cap_close(uint32_t handle, tBTA_JV_L2C_CB* p_cb) {
+void bta_jv_l2cap_close(uint32_t handle, BtaJvL2capCb* p_cb) {
   tBTA_JV_L2CAP_CLOSE evt_data;
   tBTA_JV_L2CAP_CBACK* p_cback = p_cb->p_cback;
   uint32_t l2cap_socket_id = p_cb->l2cap_socket_id;
@@ -1240,7 +1240,7 @@ void bta_jv_l2cap_close(uint32_t handle, tBTA_JV_L2C_CB* p_cb) {
  ******************************************************************************/
 static void bta_jv_l2cap_server_cback(uint16_t gap_handle, uint16_t event,
                                       tGAP_CB_DATA* /* data */) {
-  tBTA_JV_L2C_CB* p_cb = &bta_jv_cb.l2c_cb[gap_handle];
+  BtaJvL2capCb* p_cb = &bta_jv_cb.l2c_cb[gap_handle];
   tBTA_JV evt_data;
   tBTA_JV_L2CAP_CBACK* p_cback;
   uint32_t socket_id;
@@ -1377,7 +1377,7 @@ void bta_jv_l2cap_start_server(tBTA_JV_CONN_TYPE type, tBTA_SEC sec_mask, uint16
     bta_jv_free_sec_id(&sec_id);
     evt_data.status = tBTA_JV_STATUS::FAILURE;
   } else {
-    tBTA_JV_L2C_CB* p_cb = &bta_jv_cb.l2c_cb[handle];
+    BtaJvL2capCb* p_cb = &bta_jv_cb.l2c_cb[handle];
     evt_data.status = tBTA_JV_STATUS::SUCCESS;
     evt_data.handle = handle;
     evt_data.sec_id = sec_id;
@@ -1406,7 +1406,7 @@ void bta_jv_l2cap_start_server(tBTA_JV_CONN_TYPE type, tBTA_SEC sec_mask, uint16
 void bta_jv_l2cap_stop_server(uint16_t /* local_psm */, uint32_t l2cap_socket_id) {
   for (int i = 0; i < BTA_JV_MAX_L2C_CONN; i++) {
     if (bta_jv_cb.l2c_cb[i].l2cap_socket_id == l2cap_socket_id) {
-      tBTA_JV_L2C_CB* p_cb = &bta_jv_cb.l2c_cb[i];
+      BtaJvL2capCb* p_cb = &bta_jv_cb.l2c_cb[i];
       tBTA_JV_L2CAP_CBACK* p_cback = p_cb->p_cback;
       tBTA_JV_L2CAP_CLOSE evt_data;
       evt_data.handle = p_cb->handle;
@@ -1430,7 +1430,7 @@ void bta_jv_l2cap_stop_server(uint16_t /* local_psm */, uint32_t l2cap_socket_id
  *
  *******************************************************************************/
 void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, BT_HDR* msg, uint32_t user_id,
-                        tBTA_JV_L2C_CB* p_cb) {
+                        BtaJvL2capCb* p_cb) {
   /* As we check this callback exists before the tBTA_JV_API_L2CAP_WRITE can be
    * send through the API this check should not be needed. But the API is not
    * designed to be used (safely at least) in a multi-threaded scheduler, hence
