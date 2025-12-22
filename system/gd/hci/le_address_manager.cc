@@ -80,11 +80,11 @@ LeAddressManager::~LeAddressManager() {
     address_rotation_non_wake_alarm_->Cancel();
     address_rotation_non_wake_alarm_.reset();
   }
-  if (address_rotation_interval_min.has_value()) {
-    address_rotation_interval_min.reset();
+  if (expected_address_rotation_interval_min.has_value()) {
+    expected_address_rotation_interval_min.reset();
   }
-  if (address_rotation_interval_max.has_value()) {
-    address_rotation_interval_max.reset();
+  if (expected_address_rotation_interval_max.has_value()) {
+    expected_address_rotation_interval_max.reset();
   }
 }
 
@@ -283,11 +283,11 @@ void LeAddressManager::unregister_client(LeAddressManagerCallback* callback) {
     if (address_rotation_non_wake_alarm_ != nullptr) {
       address_rotation_non_wake_alarm_->Cancel();
     }
-    if (address_rotation_interval_min.has_value()) {
-      address_rotation_interval_min.reset();
+    if (expected_address_rotation_interval_min.has_value()) {
+      expected_address_rotation_interval_min.reset();
     }
-    if (address_rotation_interval_max.has_value()) {
-      address_rotation_interval_max.reset();
+    if (expected_address_rotation_interval_max.has_value()) {
+      expected_address_rotation_interval_max.reset();
     }
     log::info("Cancelled address rotation alarm");
   }
@@ -425,14 +425,15 @@ void LeAddressManager::schedule_rotate_random_address() {
           privateAddressIntervalRange.min);
 
   auto now = std::chrono::system_clock::now();
-  if (address_rotation_interval_min.has_value()) {
-    CheckAddressRotationHappenedInExpectedTimeInterval(
-            *address_rotation_interval_min, *address_rotation_interval_max, now, client_name);
+  if (expected_address_rotation_interval_min.has_value()) {
+    CheckAddressRotationHappenedInExpectedTimeInterval(*expected_address_rotation_interval_min,
+                                                       *expected_address_rotation_interval_max, now,
+                                                       client_name);
   }
 
   // Update the expected range here.
-  address_rotation_interval_min.emplace(now + privateAddressIntervalRange.min);
-  address_rotation_interval_max.emplace(now + privateAddressIntervalRange.max);
+  expected_address_rotation_interval_min.emplace(now + privateAddressIntervalRange.min);
+  expected_address_rotation_interval_max.emplace(now + privateAddressIntervalRange.max);
 }
 
 void LeAddressManager::set_random_address() {
@@ -540,13 +541,6 @@ hci::Address LeAddressManager::generate_nrpa() {
   } while (address == public_address_);  // Address shall not be same as the public address
 
   return address;
-}
-
-std::chrono::milliseconds LeAddressManager::GetNextPrivateAddressIntervalMs() {
-  auto interval_random_part_wake_delay = maximum_rotation_time_ - minimum_rotation_time_;
-  auto random_ms =
-          std::chrono::milliseconds(os::GenerateRandom()) % (interval_random_part_wake_delay);
-  return minimum_rotation_time_ + random_ms;
 }
 
 PrivateAddressIntervalRange LeAddressManager::GetNextPrivateAddressIntervalRange(
@@ -843,6 +837,14 @@ void LeAddressManager::OnCommandComplete(bluetooth::hci::CommandCompleteView vie
 }
 
 void LeAddressManager::PrepareToRotateAddress() {
+  // We are rotating the address outside of what we previously scheduled.
+  // Prevent showing the warning log by removing expected time interval for the next rotation.
+  if (expected_address_rotation_interval_min.has_value()) {
+    expected_address_rotation_interval_min.reset();
+  }
+  if (expected_address_rotation_interval_max.has_value()) {
+    expected_address_rotation_interval_max.reset();
+  }
   handler_->BindOnceOn(this, &LeAddressManager::prepare_to_rotate)();
 }
 
