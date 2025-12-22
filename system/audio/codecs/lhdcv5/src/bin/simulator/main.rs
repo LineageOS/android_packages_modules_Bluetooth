@@ -26,39 +26,40 @@ use std::io::Write;
 fn bitrate_to_inx(inx: &mut u32, rate: u32) -> i32 {
     match rate {
         64 => {
-            *inx = LHDC_QUALITY_LOW0 as libc::c_int as u32;
+            *inx = LHDC_QUALITY_LOW0;
         }
         160 => {
-            *inx = LHDC_QUALITY_LOW1 as libc::c_int as u32;
+            *inx = LHDC_QUALITY_LOW1;
         }
         192 => {
-            *inx = LHDC_QUALITY_LOW2 as libc::c_int as u32;
+            *inx = LHDC_QUALITY_LOW2;
         }
         240 | 256 => {
-            *inx = LHDC_QUALITY_LOW3 as libc::c_int as u32;
+            *inx = LHDC_QUALITY_LOW3;
         }
         320 => {
-            *inx = LHDC_QUALITY_LOW4 as libc::c_int as u32;
+            *inx = LHDC_QUALITY_LOW4;
         }
         400 => {
-            *inx = LHDC_QUALITY_LOW as libc::c_int as u32;
+            *inx = LHDC_QUALITY_LOW;
         }
         480 | 500 => {
-            *inx = LHDC_QUALITY_MID as libc::c_int as u32;
+            *inx = LHDC_QUALITY_MID;
         }
         900 => {
-            *inx = LHDC_QUALITY_HIGH as libc::c_int as u32;
+            *inx = LHDC_QUALITY_HIGH;
         }
         1000 => {
-            *inx = LHDC_QUALITY_HIGH1 as libc::c_int as u32;
+            *inx = LHDC_QUALITY_HIGH1;
         }
         0 => {
-            *inx = LHDC_QUALITY_AUTO as libc::c_int as u32;
+            *inx = LHDC_QUALITY_AUTO;
         }
         _ => {}
     }
-    LHDC_FRET_SUCCESS as libc::c_int
+    LHDC_FRET_SUCCESS
 }
+
 fn write_lhdc_file_header(
     f: &mut File,
     channel: libc::c_int,
@@ -77,13 +78,13 @@ fn write_lhdc_file_header(
     f.write_all(_total_samples.as_bytes()).unwrap();
 }
 fn get_handle(version: u32, handle: &mut Option<HANDLE_LHDC_BT>) -> i32 {
-    if version != LHDC_VERSION_1 as libc::c_int as libc::c_uint {
+    if version != LHDC_VERSION_1 {
         error!("Invalid version ({version})!");
-        return LHDC_FRET_ERROR as libc::c_int;
+        return LHDC_FRET_ERROR;
     }
     let h_lhdc_bt = Box::new(lhdc_cb_t::new(version).unwrap());
     *handle = Some(h_lhdc_bt);
-    LHDC_FRET_SUCCESS as libc::c_int
+    LHDC_FRET_SUCCESS
 }
 fn init_encoder(
     lhdc_abr: &mut LHDC_ABR,
@@ -94,41 +95,37 @@ fn init_encoder(
     mtu: u32,
     interval: u32,
 ) -> i32 {
-    if sampling_freq != LHDC_SR_44100HZ as libc::c_int as libc::c_uint
-        && sampling_freq != LHDC_SR_48000HZ as libc::c_int as libc::c_uint
-        && sampling_freq != LHDC_SR_96000HZ as libc::c_int as libc::c_uint
-        && sampling_freq != LHDC_SR_192000HZ as libc::c_int as libc::c_uint
+    if sampling_freq != LHDC_SR_44100HZ
+        && sampling_freq != LHDC_SR_48000HZ
+        && sampling_freq != LHDC_SR_96000HZ
+        && sampling_freq != LHDC_SR_192000HZ
     {
         error!("Invalid sampling frequency ({sampling_freq})!");
-        return LHDC_FRET_INVALID_INPUT_PARAM as libc::c_int;
+        return LHDC_FRET_INVALID_INPUT_PARAM;
     }
-    if bits_per_sample != LHDCBT_SMPL_FMT_S16 as libc::c_int as libc::c_uint
-        && bits_per_sample != LHDCBT_SMPL_FMT_S24 as libc::c_int as libc::c_uint
-    {
+    if bits_per_sample != LHDCBT_SMPL_FMT_S16 && bits_per_sample != LHDCBT_SMPL_FMT_S24 {
         error!("Invalid bits per sample ({bits_per_sample})!");
-        return LHDC_FRET_INVALID_INPUT_PARAM as libc::c_int;
+        return LHDC_FRET_INVALID_INPUT_PARAM;
     }
-    if bitrate_inx < LHDC_QUALITY_LOW0 as libc::c_int as libc::c_uint
-        || bitrate_inx > LHDC_QUALITY_AUTO as libc::c_int as libc::c_uint
-    {
+    if bitrate_inx < LHDC_QUALITY_LOW0 || bitrate_inx > LHDC_QUALITY_AUTO {
         error!("Invalid bit rate (index) ({bitrate_inx})!");
-        return LHDC_FRET_INVALID_INPUT_PARAM as libc::c_int;
+        return LHDC_FRET_INVALID_INPUT_PARAM;
     }
     let func_ret = lhdcv5_enc_util_init_encoder(
         abr.handle,
         sampling_freq,
         bits_per_sample,
         bitrate_inx,
-        LHDC_FRAME_5MS as libc::c_int as u32,
+        LHDC_FRAME_5MS,
         mtu,
         interval,
     );
-    if func_ret != LHDC_FRET_SUCCESS as libc::c_int {
+    if func_ret != LHDC_FRET_SUCCESS {
         error!("Failed to init LHDC encoder ({func_ret})!");
-        return LHDC_FRET_ERROR as libc::c_int;
+        return LHDC_FRET_ERROR;
     }
     lhdc_abr.lhdcBT_autoBR_adjust_bitrate_init(sampling_freq);
-    LHDC_FRET_SUCCESS as libc::c_int
+    LHDC_FRET_SUCCESS
 }
 fn encode(
     handle: &mut lhdc_cb_t,
@@ -138,55 +135,49 @@ fn encode(
     p_out_frames: &mut u32,
 ) -> i32 {
     let func_ret = lhdcv5_enc_util_enc_process(handle, in_pcm, out, p_out_bytes, p_out_frames);
-    if func_ret != LHDC_FRET_SUCCESS as libc::c_int {
+    if func_ret != LHDC_FRET_SUCCESS {
         error!("Failed to encode pcm samples ({func_ret})!");
-        return LHDC_FRET_ERROR as libc::c_int;
+        return LHDC_FRET_ERROR;
     }
-    LHDC_FRET_SUCCESS as libc::c_int
+    LHDC_FRET_SUCCESS
 }
 fn get_block_size(handle: &mut lhdc_cb_t, samples_per_frame: &mut u32) -> i32 {
     let func_ret = lhdcv5_enc_util_get_block_Size(handle, samples_per_frame);
-    if func_ret != LHDC_FRET_SUCCESS as libc::c_int
-        || *samples_per_frame <= 0 as libc::c_int as libc::c_uint
-    {
+    if func_ret != LHDC_FRET_SUCCESS || *samples_per_frame <= 0 {
         error!("Failed to get block size ({func_ret}) ({})!", *samples_per_frame);
-        return LHDC_FRET_ERROR as libc::c_int;
+        return LHDC_FRET_ERROR;
     }
-    LHDC_FRET_SUCCESS as libc::c_int
+    LHDC_FRET_SUCCESS
 }
 fn set_max_bitrate(handle: &mut lhdc_cb_t, max_bitrate_inx: u32) -> i32 {
-    let mut max_bitrate_inx_set: u32 = LHDC_QUALITY_INVALID as libc::c_int as u32;
-    if max_bitrate_inx < LHDC_QUALITY_LOW as libc::c_int as libc::c_uint
-        || max_bitrate_inx > LHDC_QUALITY_MAX_BITRATE as libc::c_int as libc::c_uint
-    {
+    let mut max_bitrate_inx_set: u32 = LHDC_QUALITY_INVALID;
+    if max_bitrate_inx < LHDC_QUALITY_LOW || max_bitrate_inx > LHDC_QUALITY_MAX_BITRATE {
         error!("Invalid max bit rate index ({max_bitrate_inx})!");
-        return LHDC_FRET_INVALID_INPUT_PARAM as libc::c_int;
+        return LHDC_FRET_INVALID_INPUT_PARAM;
     }
     let func_ret =
         lhdcv5_enc_util_set_max_bitrate_inx(handle, max_bitrate_inx, &mut max_bitrate_inx_set);
-    if func_ret != LHDC_FRET_SUCCESS as libc::c_int {
+    if func_ret != LHDC_FRET_SUCCESS {
         error!("failed to set max. bit rate index({func_ret}), ({max_bitrate_inx})!");
-        return LHDC_FRET_ERROR as libc::c_int;
+        return LHDC_FRET_ERROR;
     }
 
-    LHDC_FRET_SUCCESS as libc::c_int
+    LHDC_FRET_SUCCESS
 }
 fn set_min_bitrate(handle: &mut lhdc_cb_t, min_bitrate_inx: u32) -> i32 {
-    let mut min_bitrate_inx_set: u32 = LHDC_QUALITY_INVALID as libc::c_int as u32;
-    if min_bitrate_inx < LHDC_QUALITY_LOW0 as libc::c_int as libc::c_uint
-        || min_bitrate_inx > LHDC_QUALITY_LOW as libc::c_int as libc::c_uint
-    {
+    let mut min_bitrate_inx_set: u32 = LHDC_QUALITY_INVALID;
+    if min_bitrate_inx < LHDC_QUALITY_LOW0 || min_bitrate_inx > LHDC_QUALITY_LOW {
         error!("Invalid min bit rate index ({min_bitrate_inx})!");
-        return LHDC_FRET_INVALID_INPUT_PARAM as libc::c_int;
+        return LHDC_FRET_INVALID_INPUT_PARAM;
     }
     let func_ret =
         lhdcv5_enc_util_set_min_bitrate_inx(handle, min_bitrate_inx, &mut min_bitrate_inx_set);
-    if func_ret != LHDC_FRET_SUCCESS as libc::c_int {
+    if func_ret != LHDC_FRET_SUCCESS {
         error!("failed to set min. bit rate ({func_ret})");
-        return LHDC_FRET_ERROR as libc::c_int;
+        return LHDC_FRET_ERROR;
     }
 
-    LHDC_FRET_SUCCESS as libc::c_int
+    LHDC_FRET_SUCCESS
 }
 fn set_bitrate(abr_handle: &mut LHDC_ABR, abr: &mut AutoBitRate, bitrate_inx: u32) -> i32 {
     let upd_qual_status: bool;
@@ -198,17 +189,17 @@ fn set_bitrate(abr_handle: &mut LHDC_ABR, abr: &mut AutoBitRate, bitrate_inx: u3
             let mut actual_inx = bitrate_inx;
             func_ret = lhdcv5_enc_util_set_target_bitrate_inx(
                 abr.handle,
-                LHDC_QUALITY_LOW as libc::c_int as u32,
+                LHDC_QUALITY_LOW,
                 &mut actual_inx,
                 false,
             );
-            if func_ret != LHDC_FRET_SUCCESS as libc::c_int {
+            if func_ret != LHDC_FRET_SUCCESS {
                 error!("lhdcv5_enc_util_set_target_bitrate_inx error ({func_ret})!");
-                return LHDC_FRET_ERROR as libc::c_int;
+                return LHDC_FRET_ERROR;
             }
         }
         0..=13 => {
-            if bitrate_inx == LHDC_QUALITY_AUTO as libc::c_int as libc::c_uint {
+            if bitrate_inx == LHDC_QUALITY_AUTO {
                 abr_handle.lhdcBT_autoBR_reset_abr_index();
             } else {
                 upd_qual_status = true;
@@ -226,15 +217,15 @@ fn set_bitrate(abr_handle: &mut LHDC_ABR, abr: &mut AutoBitRate, bitrate_inx: u3
             }
         }
         _ => {
-            func_ret = LHDC_FRET_ERROR as libc::c_int;
+            func_ret = LHDC_FRET_ERROR;
         }
     }
-    if func_ret != LHDC_FRET_SUCCESS as libc::c_int {
+    if func_ret != LHDC_FRET_SUCCESS {
         error!("failed to set bitrate ({bitrate_inx}) err({func_ret})!");
-        return LHDC_FRET_ERROR as libc::c_int;
+        return LHDC_FRET_ERROR;
     }
 
-    LHDC_FRET_SUCCESS as libc::c_int
+    LHDC_FRET_SUCCESS
 }
 fn encode_main(in_0: &str, bitrate: u32) -> i32 {
     let mut fmt: wav_chunk_fmt_t = wav_chunk_fmt_t {
@@ -245,17 +236,17 @@ fn encode_main(in_0: &str, bitrate: u32) -> i32 {
         block_align: 0,
         bits_per_sample: 0,
     };
-    let channels: uint8_t = 2 as libc::c_int as uint8_t;
-    let mut bitrate_inx: u32 = 0 as libc::c_int as u32;
-    let mut samples_per_frame: u32 = 0 as libc::c_int as u32;
+    let channels: uint8_t = 2;
+    let mut bitrate_inx: u32 = 0;
+    let mut samples_per_frame: u32 = 0;
     let mut _pcm_bytes_per_frame: usize = 0;
     let mut read_buffer: [uint8_t; 15360] = [0; 15360];
     let mut write_buffer: [uint8_t; 15360] = [0; 15360];
-    let enc_flen: u32 = 0 as libc::c_int as u32;
-    let mut byte_written: u32 = 0 as libc::c_int as u32;
-    let mut out_frames: u32 = 0 as libc::c_int as u32;
-    let mtu: u32 = LHDC_MTU_3MBPS as libc::c_int as u32;
-    let mut abr_queue_len: u32 = 0 as libc::c_int as u32;
+    let enc_flen: u32 = 0;
+    let mut byte_written: u32 = 0;
+    let mut out_frames: u32 = 0;
+    let mtu: u32 = LHDC_MTU_3MBPS;
+    let mut abr_queue_len: u32 = 0;
     let mut win = WavFile::open(&mut fmt, in_0).unwrap();
     let mut _total_samples: u32 = 0;
     let mut _total_frm_num: u32 = 0;
@@ -271,8 +262,8 @@ fn encode_main(in_0: &str, bitrate: u32) -> i32 {
         "Input wav: type={type_0} chan={channel} sample_rate={sample_rate} bits_per_sample={bits_per_sample} size={data_size}"
     );
     let mut handle = Box::new(None);
-    let mut func_ret = get_handle(LHDC_VERSION_1 as libc::c_int as u32, &mut handle);
-    if func_ret != LHDC_FRET_SUCCESS as libc::c_int {
+    let mut func_ret = get_handle(LHDC_VERSION_1, &mut handle);
+    if func_ret != LHDC_FRET_SUCCESS {
         error!("lhdcBT_get_handle error {func_ret}");
         return func_ret;
     }
@@ -352,7 +343,7 @@ fn encode_main(in_0: &str, bitrate: u32) -> i32 {
     //Open and configure output encoded file header
     let len = in_0.len().wrapping_sub(4) as u32;
     let in_1: String = in_0.chars().take(len as usize).collect();
-    let out = if bitrate == 0 as libc::c_int as libc::c_uint {
+    let out = if bitrate == 0 {
         format!("{in_1}_abr.lhdcRs")
     } else {
         format!("{in_1}_{}.lhdcRs", (bitrate * 1000))
@@ -374,7 +365,7 @@ fn encode_main(in_0: &str, bitrate: u32) -> i32 {
         win.read(&mut read_buffer, _byte_of_frame as libc::c_int);
         func_ret =
             encode(abr.handle, &read_buffer, &mut write_buffer, &mut byte_written, &mut out_frames);
-        if func_ret != LHDC_FRET_SUCCESS as libc::c_int {
+        if func_ret != LHDC_FRET_SUCCESS {
             error!("fail to lhdcBT_encode");
             return func_ret;
         }
