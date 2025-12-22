@@ -827,14 +827,14 @@ public final class BondStateMachine extends StateMachine {
 
         Message msg = obtainMessage(MESSAGE_PAIRING_REQUEST);
         msg.obj = device;
+        Bundle bundle = new Bundle();
+        bundle.putInt(KEY_PAIRING_CONTEXT, context);
+        bundle.putInt(KEY_PAIRING_ALGORITHM, pairingAlgorithm);
         if (displayPasskey) {
             msg.arg1 = passkey;
-            Bundle bundle = new Bundle();
             bundle.putByte(KEY_DISPLAY_PASSKEY, (byte) 1 /* true */);
-            bundle.putInt(KEY_PAIRING_CONTEXT, context);
-            bundle.putInt(KEY_PAIRING_ALGORITHM, pairingAlgorithm);
-            msg.setData(bundle);
         }
+        msg.setData(bundle);
         msg.arg2 = variant;
         sendMessage(msg);
     }
