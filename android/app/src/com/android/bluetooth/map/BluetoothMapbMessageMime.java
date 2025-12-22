@@ -20,8 +20,6 @@ import android.text.util.Rfc822Tokenizer;
 import android.util.Base64;
 import android.util.Log;
 
-import com.android.bluetooth.flags.Flags;
-
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
@@ -466,17 +464,9 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
                 sb.append("Message-Id: ").append(mMessageId).append("\r\n");
             }
             if (mContentType != null) {
-                if (Flags.mapMimeMultipart()) {
-                    sb.append("Content-Type: multipart/mixed; boundary=\"")
-                            .append(getBoundary())
-                            .append("\"\r\n");
-                } else {
-                    sb.append("Content-Type: ")
-                            .append(mContentType)
-                            .append("; boundary=")
-                            .append(getBoundary())
-                            .append("\r\n");
-                }
+                sb.append("Content-Type: multipart/mixed; boundary=\"")
+                        .append(getBoundary())
+                        .append("\"\r\n");
             }
         }
         // If no headers exists, we still need two CRLF, hence keep it out of the if above.
