@@ -24,6 +24,13 @@ pub struct Address {
     value: u64,
 }
 
+// SAFETY: The memory layout of the Rust `Address` struct matches the
+// memory layout of the `ffi::Address` struct in C++ (a single uint64_t).
+unsafe impl cxx::ExternType for Address {
+    type Id = cxx::type_id!("ffi::Address");
+    type Kind = cxx::kind::Trivial;
+}
+
 impl Address {
     /// Creates an Address from big-endian bytes (6 bytes).
     pub fn from_be_bytes(bytes: [u8; 6]) -> Self {

@@ -16,6 +16,8 @@
 
 //! Periodic sync module.
 
+mod ffi;
+pub mod manager;
 pub mod traits;
 
 pub use traits::PeriodicSyncManager;
