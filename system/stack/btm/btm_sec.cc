@@ -1291,7 +1291,7 @@ static bool security_upgrade_possible(const BtmDevice* p_device, bool outgoing) 
   uint16_t bond_check = outgoing ? BTM_SEC_OUT_AUTHENTICATE : BTM_SEC_IN_AUTHENTICATE;
   bool bonding_required = sec_rec.security_required & bond_check;
 
-  if (com_android_bluetooth_flags_upgrade_temp_bonding_on_auth_req() && bonding_required &&
+  if (bonding_required &&
       !sec_rec.is_bond_type_persistent()) {
     log::debug("Not bonded, upgrade is possible sec_flags: 0x{:x}", sec_rec.sec_flags);
     return true;

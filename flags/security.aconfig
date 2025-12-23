@@ -22,16 +22,6 @@ flag {
 }
 
 flag {
-    name: "upgrade_temp_bonding_on_auth_req"
-    namespace: "bluetooth"
-    description: "Upgrade security If it is on temp bonding & authentication is requirement"
-    bug: "385747513"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "btsec_check_controller_sc_support"
     namespace: "bluetooth"
     description: "Check for controller as well as host Secure Connections support when dropping connections"
