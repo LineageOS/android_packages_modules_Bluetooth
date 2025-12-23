@@ -69,7 +69,7 @@ tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK* p_cback) {
     return tBTA_JV_STATUS::FAILURE;
   }
 
-  memset(&bta_jv_cb, 0, sizeof(tBTA_JV_CB));
+  bta_jv_cb = {};
   // set handle to invalid value by default
   for (int i = 0; i < BTA_JV_PM_MAX_NUM; i++) {
     bta_jv_cb.pm_cb[i].handle = BTA_JV_PM_HANDLE_CLEAR;
