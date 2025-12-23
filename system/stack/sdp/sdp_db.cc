@@ -26,6 +26,7 @@
 #define LOG_TAG "stack::sdp"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <string.h>
 
 #include <cstdint>
@@ -250,6 +251,37 @@ static int sdp_compose_proto_list(uint8_t* p, uint16_t num_elem, tSDP_PROTOCOL_E
 
 /*******************************************************************************
  *
+ * Function         sdp_update_service_db_state
+ *
+ * Description      This function increments the service database state.
+ *
+ * Returns          none
+ *
+ ******************************************************************************/
+static void sdp_update_service_db_state() {
+  uint8_t db_state_buf[4] = {};
+  uint8_t* db_state_ptr = db_state_buf;
+
+  if (!com::android::bluetooth::flags::enable_service_discovery_server() ||
+      !sdp_cb.server_db.service_disc_server_info.has_value()) {
+    return;
+  }
+
+  sdp_cb.server_db.service_disc_server_info->db_state++;
+  UINT32_TO_BE_STREAM(db_state_ptr, sdp_cb.server_db.service_disc_server_info->db_state);
+  // SDP_AddAttribute will replace the attribute if it already exists.
+  if (!SDP_AddAttribute(sdp_cb.server_db.service_disc_server_info->handle,
+                        ATTR_ID_SERVICE_DATABASE_STATE, UINT_DESC_TYPE, sizeof(db_state_buf),
+                        db_state_buf)) {
+    log::error("Failed to update service discovery database");
+  } else {
+    log::verbose("Successfully update db state to {}",
+                 sdp_cb.server_db.service_disc_server_info->db_state);
+  }
+}
+
+/*******************************************************************************
+ *
  * Function         SDP_AddAttribute
  *
  * Description      This function is called to add an attribute to a record.
@@ -360,6 +392,13 @@ uint32_t SDP_CreateRecord(void) {
 
   p_db->num_records++;
   log::verbose("SDP_CreateRecord ok, num_records:{}", p_db->num_records);
+
+  // Bluetooth Core Specification, Vol 3, Part B, Section 5.2.4:
+  // The ServiceDatabaseState is a 32-bit integer that is used to facilitate caching of
+  // service records. If this attribute exists, its value shall be changed when any of the
+  // other service records are added to or deleted from the server's SDP database.
+  sdp_update_service_db_state();
+
   /* Add the first attribute (the handle) automatically */
   UINT32_TO_BE_FIELD(buf, handle);
   SDP_AddAttribute(handle, ATTR_ID_SERVICE_RECORD_HDL, UINT_DESC_TYPE, 4, buf);
@@ -371,7 +410,7 @@ uint32_t SDP_CreateRecord(void) {
  *
  * Function         SDP_DeleteRecord
  *
- * Description      This function is called to add a record (or all records)
+ * Description      This function is called to delete a record (or all records)
  *                  from the database. This would be through the SDP database
  *                  maintenance API.
  *
@@ -390,6 +429,10 @@ bool SDP_DeleteRecord(uint32_t handle) {
 
     /* require new DI record to be created in SDP_SetLocalDiRecord */
     sdp_cb.server_db.di_primary_handle = 0;
+
+    if (com::android::bluetooth::flags::enable_service_discovery_server()) {
+      sdp_cb.server_db.service_disc_server_info.reset();
+    }
 
     return true;
   }
@@ -417,6 +460,20 @@ bool SDP_DeleteRecord(uint32_t handle) {
     /* value in the control block */
     if (sdp_cb.server_db.di_primary_handle == handle) {
       sdp_cb.server_db.di_primary_handle = 0;
+    }
+
+    if (com::android::bluetooth::flags::enable_service_discovery_server()) {
+      // Check if the record being removed is the service discovery server record itself.
+      if (sdp_cb.server_db.service_disc_server_info.has_value() &&
+          sdp_cb.server_db.service_disc_server_info->handle == handle) {
+        sdp_cb.server_db.service_disc_server_info.reset();
+      } else {
+        // Bluetooth Core Specification, Vol 3, Part B, Section 5.2.4:
+        // The ServiceDatabaseState is a 32-bit integer that is used to facilitate caching of
+        // service records. If this attribute exists, its value shall be changed when any of the
+        // other service records are added to or deleted from the server's SDP database.
+        sdp_update_service_db_state();
+      }
     }
 
     return true;

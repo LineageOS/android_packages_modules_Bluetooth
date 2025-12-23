@@ -39,6 +39,7 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
+#include "stack/include/sdp_api.h"
 #include "stack/include/sdpdefs.h"
 #include "stack/sdp/sdpint.h"
 
@@ -1053,4 +1054,69 @@ void sdp_save_local_pse_record_attributes(int32_t rfcomm_channel_number, int32_t
   sdpPseLocalRecord.profile_version = profile_version;
   sdpPseLocalRecord.supported_features = supported_features;
   sdpPseLocalRecord.supported_repositories = supported_repositories;
+}
+
+void sdp_register_sdp_discovery_server_records() {
+  uint16_t service_uuid = UUID_SERVCLASS_SERVICE_DISCOVERY_SERVER;
+  tSDP_PROTOCOL_ELEM proto_elem_list = {.protocol_uuid = UUID_PROTOCOL_L2CAP, .num_params = 0};
+  const char* service_name = "Service Discovery Server";
+  uint16_t browse = UUID_SERVCLASS_PUBLIC_BROWSE_GROUP;
+  uint32_t handle = 0;
+  uint32_t db_state = 0;
+  uint8_t db_state_buf[4] = {};
+  uint8_t* db_state_ptr = db_state_buf;
+  bool status = true;
+
+  log::assert_that(!sdp_cb.server_db.service_disc_server_info.has_value(),
+                   "assert failed: ServiceDiscoveryServer Service already existed!");
+
+  handle = bluetooth::legacy::stack::sdp::get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
+  if (handle == 0) {
+    log::error("Unable to register ServiceDiscoveryServer Service");
+    return;
+  }
+
+  // The structure of the Service Discovery Server record is defined in the
+  // Bluetooth Core Specification, Volume 3, Part B, Section 5.2:
+  // "ServiceDiscoveryServer service class attribute definitions".
+
+  /* add service class */
+  status &= bluetooth::legacy::stack::sdp::get_legacy_stack_sdp_api()
+                    ->handle.SDP_AddServiceClassIdList(handle, 1, &service_uuid);
+
+  /* add protocol list */
+  status &= bluetooth::legacy::stack::sdp::get_legacy_stack_sdp_api()->handle.SDP_AddProtocolList(
+          handle, 1, &proto_elem_list);
+
+  /* Add a name entry */
+  status &= bluetooth::legacy::stack::sdp::get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+          handle, (uint16_t)ATTR_ID_SERVICE_NAME, (uint8_t)TEXT_STR_DESC_TYPE,
+          (uint32_t)(strlen(service_name) + 1),
+          reinterpret_cast<uint8_t*>(const_cast<char*>(service_name)));
+
+  /* Add ServiceDatabaseState attribute */
+  UINT32_TO_BE_STREAM(db_state_ptr, db_state);
+  status &= bluetooth::legacy::stack::sdp::get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+          handle, ATTR_ID_SERVICE_DATABASE_STATE, UINT_DESC_TYPE, sizeof(db_state_buf),
+          db_state_buf);
+
+  /* Make the service browseable */
+  status &= bluetooth::legacy::stack::sdp::get_legacy_stack_sdp_api()->handle.SDP_AddUuidSequence(
+          handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
+
+  if (!status) {
+    if (!bluetooth::legacy::stack::sdp::get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(
+                handle)) {
+      log::warn("Unable to delete SDP record handle:{}", handle);
+    }
+    log::error("Failed to register ServiceDiscoveryServer Service");
+    return;
+  }
+
+  sdp_cb.server_db.service_disc_server_info = tSERVICE_DISC_SERVER_INFO{
+          .handle = handle,
+          .db_state = db_state,
+  };
+  bta_sys_add_uuid(service_uuid);
+  log::info("SDP Registered (handle 0x{:08x})", handle);
 }
