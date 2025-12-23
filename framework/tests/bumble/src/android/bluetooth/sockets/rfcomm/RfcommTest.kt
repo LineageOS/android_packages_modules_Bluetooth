@@ -458,7 +458,6 @@ class RfcommTest {
      */
     @RequiresFlagsEnabled(
         "com.android.bluetooth.flags.trigger_sec_proc_on_inc_access_req",
-        "com.android.bluetooth.flags.upgrade_temp_bonding_on_auth_req",
     )
     @Test
     fun serverSecureConnectThenRemoteDisconnect() {
@@ -479,7 +478,6 @@ class RfcommTest {
      */
     @RequiresFlagsEnabled(
         "com.android.bluetooth.flags.trigger_sec_proc_on_inc_access_req",
-        "com.android.bluetooth.flags.upgrade_temp_bonding_on_auth_req",
     )
     @Test
     fun serverSecureConnectThenLocalDisconnect() {
