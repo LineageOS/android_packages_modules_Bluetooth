@@ -62,10 +62,10 @@ constexpr RawAddress kDummyRemoteAddr({0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC});
 constexpr uint16_t kDummyCID = 0x1234;
 constexpr RawAddress kDummyAddr({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
 
-void port_mgmt_cback(const tPORT_RESULT code, uint16_t port_handle) {
+void port_mgmt_cback(const tPORT_RESULT code, uint8_t port_handle) {
   rfcomm_callback->PortManagementCallback(code, port_handle, 0);
 }
-void port_event_cback(uint32_t code, uint16_t port_handle) {
+void port_event_cback(uint32_t code, uint8_t port_handle) {
   rfcomm_callback->PortEventCallback(code, port_handle, 0);
 }
 
@@ -109,9 +109,9 @@ public:
 
 }  // namespace
 
-static int Cleanup(uint16_t* server_handle) { return RFCOMM_RemoveServer(*server_handle); }
+static int Cleanup(uint8_t* server_handle) { return RFCOMM_RemoveServer(*server_handle); }
 
-static int ServerInit(FuzzedDataProvider* fdp, uint16_t* server_handle) {
+static int ServerInit(FuzzedDataProvider* fdp, uint8_t* server_handle) {
   RFCOMM_Init();
 
   auto mtu = fdp->ConsumeIntegral<uint16_t>();
@@ -128,7 +128,7 @@ static int ServerInit(FuzzedDataProvider* fdp, uint16_t* server_handle) {
 }
 
 static void FuzzAsServer(FuzzedDataProvider* fdp) {
-  auto server_handle = fdp->ConsumeIntegralInRange<uint16_t>(1, MAX_RFC_PORTS);
+  auto server_handle = fdp->ConsumeIntegralInRange<uint8_t>(1, MAX_RFC_PORTS);
   if (ServerInit(fdp, &server_handle) != PORT_SUCCESS) {
     return;
   }
@@ -156,7 +156,7 @@ static void FuzzAsServer(FuzzedDataProvider* fdp) {
   Cleanup(&server_handle);
 }
 
-static int ClientInit(FuzzedDataProvider* fdp, uint16_t* client_handle) {
+static int ClientInit(FuzzedDataProvider* fdp, uint8_t* client_handle) {
   RFCOMM_Init();
 
   auto mtu = fdp->ConsumeIntegral<uint16_t>();
@@ -173,7 +173,7 @@ static int ClientInit(FuzzedDataProvider* fdp, uint16_t* client_handle) {
 }
 
 static void FuzzAsClient(FuzzedDataProvider* fdp) {
-  auto client_handle = fdp->ConsumeIntegralInRange<uint16_t>(1, MAX_RFC_PORTS);
+  auto client_handle = fdp->ConsumeIntegralInRange<uint8_t>(1, MAX_RFC_PORTS);
 
   if (ClientInit(fdp, &client_handle) != PORT_SUCCESS) {
     return;

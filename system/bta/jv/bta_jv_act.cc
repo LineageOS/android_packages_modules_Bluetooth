@@ -228,7 +228,7 @@ static tBTA_JV_L2CAP_REASON bta_jv_from_gap_l2cap_err(const tL2CAP_CONN& l2cap_r
  * Returns      pointer to allocated control block
  *
  ******************************************************************************/
-static BtaJvRfcommCb* bta_jv_alloc_rfc_cb(uint16_t port_handle, BtaJvPcb** pp_pcb) {
+static BtaJvRfcommCb* bta_jv_alloc_rfc_cb(uint8_t port_handle, BtaJvPcb** pp_pcb) {
   BtaJvRfcommCb* p_cb = nullptr;
   BtaJvPcb* p_pcb;
   int i, j;
@@ -267,7 +267,7 @@ static BtaJvRfcommCb* bta_jv_alloc_rfc_cb(uint16_t port_handle, BtaJvPcb** pp_pc
  * Returns      the port control block associated with the given port handle
  *
  ******************************************************************************/
-static BtaJvPcb* bta_jv_rfc_port_to_pcb(uint16_t port_handle) {
+static BtaJvPcb* bta_jv_rfc_port_to_pcb(uint8_t port_handle) {
   BtaJvPcb* p_pcb = nullptr;
 
   if ((port_handle > 0) && (port_handle <= MAX_RFC_PORTS) &&
@@ -285,7 +285,7 @@ static BtaJvPcb* bta_jv_rfc_port_to_pcb(uint16_t port_handle) {
  * Returns      the RFCOMM control block associated with the given port handle
  *
  ******************************************************************************/
-static BtaJvRfcommCb* bta_jv_rfc_port_to_cb(uint16_t port_handle) {
+static BtaJvRfcommCb* bta_jv_rfc_port_to_cb(uint8_t port_handle) {
   BtaJvRfcommCb* p_cb = nullptr;
   uint32_t handle;
 
@@ -1489,7 +1489,7 @@ void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, BT_HDR* msg, uint32_t 
  * Returns      0 if success, 1 otherwise
  *
  ******************************************************************************/
-static int bta_jv_port_data_co_cback(uint16_t port_handle, uint8_t* buf, uint16_t len, int type) {
+static int bta_jv_port_data_co_cback(uint8_t port_handle, uint8_t* buf, uint16_t len, int type) {
   BtaJvRfcommCb* p_cb = bta_jv_rfc_port_to_cb(port_handle);
   BtaJvPcb* p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
   log::verbose("p_cb={}, p_pcb={}, len={}, type={}", std::format_ptr(p_cb), std::format_ptr(p_pcb),
@@ -1521,7 +1521,7 @@ static int bta_jv_port_data_co_cback(uint16_t port_handle, uint8_t* buf, uint16_
  * Description  callback for port management function of rfcomm client connections
  *
  ******************************************************************************/
-static void bta_jv_port_mgmt_cl_cback(const tPORT_RESULT code, uint16_t port_handle) {
+static void bta_jv_port_mgmt_cl_cback(const tPORT_RESULT code, uint8_t port_handle) {
   BtaJvRfcommCb* p_cb = bta_jv_rfc_port_to_cb(port_handle);
   BtaJvPcb* p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
   RawAddress rem_bda = RawAddress::kEmpty;
@@ -1583,7 +1583,7 @@ static void bta_jv_port_mgmt_cl_cback(const tPORT_RESULT code, uint16_t port_han
  * Description  Callback for RFCOMM client port events
  *
  ******************************************************************************/
-static void bta_jv_port_event_cl_cback(uint32_t code, uint16_t port_handle) {
+static void bta_jv_port_event_cl_cback(uint32_t code, uint8_t port_handle) {
   BtaJvRfcommCb* p_cb = bta_jv_rfc_port_to_cb(port_handle);
   BtaJvPcb* p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
   tBTA_JV evt_data;
@@ -1626,7 +1626,7 @@ static void bta_jv_port_event_cl_cback(uint32_t code, uint16_t port_handle) {
 void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn, const RawAddress& peer_bd_addr,
                            tBTA_JV_RFCOMM_CBACK* p_cback, uint32_t rfcomm_slot_id,
                            RfcommCfgInfo cfg, uint32_t app_uid, uint64_t sdp_duration_ms) {
-  uint16_t handle = 0;
+  uint8_t handle = 0;
   uint32_t event_mask = BTA_JV_RFC_EV_MASK;
   int port_status;
   PortSettings port_settings;
@@ -1755,7 +1755,7 @@ void bta_jv_rfcomm_close(uint32_t handle, uint32_t rfcomm_slot_id) {
  * Description  callback for port management function of rfcomm server connections
  *
  ******************************************************************************/
-static void bta_jv_port_mgmt_sr_cback(const tPORT_RESULT code, uint16_t port_handle) {
+static void bta_jv_port_mgmt_sr_cback(const tPORT_RESULT code, uint8_t port_handle) {
   BtaJvPcb* p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
   BtaJvRfcommCb* p_cb = bta_jv_rfc_port_to_cb(port_handle);
   tBTA_JV evt_data;
@@ -1833,7 +1833,7 @@ static void bta_jv_port_mgmt_sr_cback(const tPORT_RESULT code, uint16_t port_han
  * Description  Callback for RFCOMM server port events
  *
  ******************************************************************************/
-static void bta_jv_port_event_sr_cback(uint32_t code, uint16_t port_handle) {
+static void bta_jv_port_event_sr_cback(uint32_t code, uint8_t port_handle) {
   BtaJvPcb* p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
   BtaJvRfcommCb* p_cb = bta_jv_rfc_port_to_cb(port_handle);
   tBTA_JV evt_data;
@@ -1980,7 +1980,7 @@ static BtaJvPcb* bta_jv_add_rfc_port(BtaJvRfcommCb* p_cb, BtaJvPcb* p_pcb_open) 
 void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, uint8_t local_scn, uint8_t max_session,
                                 tBTA_JV_RFCOMM_CBACK* p_cback, uint32_t rfcomm_slot_id,
                                 RfcommCfgInfo cfg, uint32_t app_uid) {
-  uint16_t handle = 0;
+  uint8_t handle = 0;
   uint32_t event_mask = BTA_JV_RFC_EV_MASK;
   int port_status;
   PortSettings port_settings;
