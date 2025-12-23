@@ -23,13 +23,11 @@
 #include <string>
 
 #include "packet/custom_field_fixed_size_interface.h"
-#include "storage/serializable.h"
 
 namespace bluetooth {
 namespace hci {
 
-class ClassOfDevice final : public packet::CustomFieldFixedSizeInterface<ClassOfDevice>,
-                            public storage::Serializable<ClassOfDevice> {
+class ClassOfDevice final : public packet::CustomFieldFixedSizeInterface<ClassOfDevice> {
 public:
   static constexpr size_t kLength = 3;
 
@@ -42,11 +40,8 @@ public:
   inline uint8_t* data() override { return cod.data(); }
   inline const uint8_t* data() const override { return cod.data(); }
 
-  // storage::Serializable methods
-  std::string ToString() const override;
+  std::string ToString() const;
   static std::optional<ClassOfDevice> FromString(const std::string& str);
-  std::string ToLegacyConfigString() const override;
-  static std::optional<ClassOfDevice> FromLegacyConfigString(const std::string& str);
 
   bool operator<(const ClassOfDevice& rhs) const { return cod < rhs.cod; }
   bool operator==(const ClassOfDevice& rhs) const { return cod == rhs.cod; }

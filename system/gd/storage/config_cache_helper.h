@@ -25,7 +25,6 @@
 #include "common/type_helper.h"
 #include "hci/enum_helper.h"
 #include "storage/config_cache.h"
-#include "storage/serializable.h"
 
 namespace bluetooth {
 namespace storage {

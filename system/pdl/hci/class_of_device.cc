@@ -42,8 +42,6 @@ std::string ClassOfDevice::ToString() const {
   return str;
 }
 
-std::string ClassOfDevice::ToLegacyConfigString() const { return std::to_string(ToUint32Legacy()); }
-
 std::optional<ClassOfDevice> ClassOfDevice::FromString(const std::string& str) {
   if (str.length() != 8) {
     return std::nullopt;
@@ -106,15 +104,6 @@ std::optional<ClassOfDevice> ClassOfDevice::FromUint32Legacy(uint32_t cod_int) {
   result.cod[1] = static_cast<uint8_t>(cod_int >> 8);
   result.cod[0] = static_cast<uint8_t>(cod_int >> 16);
   return result;
-}
-
-std::optional<ClassOfDevice> ClassOfDevice::FromLegacyConfigString(const std::string& str) {
-  char* ptr = nullptr;
-  auto num = std::strtoull(str.data(), &ptr, 10);
-  if (num > 0xffffff) {
-    return std::nullopt;
-  }
-  return FromUint32Legacy(static_cast<uint32_t>(num));
 }
 
 uint32_t ClassOfDevice::ToUint32Legacy() const { return (cod[2]) | (cod[1] << 8) | (cod[0] << 16); }
