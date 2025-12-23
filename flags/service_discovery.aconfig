@@ -12,16 +12,6 @@ flag {
 }
 
 flag {
-    name: "defer_br_edr_sdp_results"
-    namespace: "bluetooth"
-    description: "Delay the BR/EDR service discovery notification until after the LE discovery process"
-    bug: "452481091"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "send_discovered_dev_to_new_pkgs"
     namespace: "bluetooth"
     description: "Send already discovered device to new packages starting discovery"
