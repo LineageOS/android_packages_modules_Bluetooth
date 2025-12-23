@@ -152,10 +152,20 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
             int subrateMode);
 
     private native GattOffloadSession.InnerParcel gattClientOffloadCharacteristicsNative(
-            int connId, List<GattDbElement> characteristics, long endpointId, long hubId);
+            int connId,
+            List<GattDbElement> characteristics,
+            long endpointId,
+            long hubId,
+            int uid,
+            String attributionTag);
 
     private native GattOffloadSession.InnerParcel gattServerOffloadCharacteristicsNative(
-            int connId, List<GattDbElement> characteristics, long endpointId, long hubId);
+            int connId,
+            List<GattDbElement> characteristics,
+            long endpointId,
+            long hubId,
+            int uid,
+            String attributionTag);
 
     private native void gattClientUnoffloadCharacteristicsNative(int connId, int sessionId);
 
@@ -427,14 +437,26 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
 
     /** Offload client characteristics */
     GattOffloadSession.InnerParcel gattClientOffloadCharacteristics(
-            int connId, List<GattDbElement> characteristics, long endpointId, long hubId) {
-        return gattClientOffloadCharacteristicsNative(connId, characteristics, endpointId, hubId);
+            int connId,
+            List<GattDbElement> characteristics,
+            long endpointId,
+            long hubId,
+            int uid,
+            String attributionTag) {
+        return gattClientOffloadCharacteristicsNative(
+                connId, characteristics, endpointId, hubId, uid, attributionTag);
     }
 
     /** Offload server characteristics */
     GattOffloadSession.InnerParcel gattServerOffloadCharacteristics(
-            int connId, List<GattDbElement> characteristics, long endpointId, long hubId) {
-        return gattServerOffloadCharacteristicsNative(connId, characteristics, endpointId, hubId);
+            int connId,
+            List<GattDbElement> characteristics,
+            long endpointId,
+            long hubId,
+            int uid,
+            String attributionTag) {
+        return gattServerOffloadCharacteristicsNative(
+                connId, characteristics, endpointId, hubId, uid, attributionTag);
     }
 
     /** Unoffload client characteristics */

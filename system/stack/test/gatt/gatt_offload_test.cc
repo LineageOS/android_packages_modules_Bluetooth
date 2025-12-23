@@ -208,7 +208,8 @@ TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_success) {
   });
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), std::size(service),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_SUCCESS);
   SyncOnMainLoop();
 
@@ -227,7 +228,8 @@ TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_invalid_conn_id) 
   auto future = promise.get_future();
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), std::size(service),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   SyncOnMainLoop();
 
   auto result = future.get();
@@ -247,7 +249,8 @@ TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_with_invalid_acl_
   auto future = promise.get_future();
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), std::size(service),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
 
   auto result = future.get();
   EXPECT_EQ(result.session_id, BTGATT_OFFLOAD_SESSION_ID_UNKNOWN);
@@ -308,7 +311,7 @@ TEST_P(GattOffloadPermissionTest, OffloadCharacteristicsPermissionFail) {
 
   gatt_offload_characteristics(conn_id, /* is_server=*/true, service.data(), std::size(service),
                                /*endpoint_id=*/0,
-                               /*hub_id=*/0, std::move(promise));
+                               /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"", std::move(promise));
 
   auto result = future.get();
   EXPECT_EQ(result.status, params.expected_status);
@@ -365,7 +368,8 @@ TEST_F(GattOffloadPermissionTest, offload_characteristics_invalid_db_element_typ
   auto future = promise.get_future();
 
   gatt_offload_characteristics(conn_id, /*is_server=*/true, service.data(), std::size(service),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
 
   auto result = future.get();
   EXPECT_EQ(result.status, tGATT_STATUS::GATT_INSUF_AUTHENTICATION);
@@ -378,7 +382,8 @@ TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_null_service) {
   auto future = promise.get_future();
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, nullptr, /*elements_count=*/2,
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   SyncOnMainLoop();
 
   auto result = future.get();
@@ -396,7 +401,8 @@ TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_no_characteristic
   auto future = promise.get_future();
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service, std::size(service),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   SyncOnMainLoop();
 
   auto result = future.get();
@@ -416,7 +422,8 @@ TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_hall_cal_fail) {
   });
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), std::size(service),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   SyncOnMainLoop();
 
   auto result = future.get();
@@ -438,7 +445,8 @@ TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_hal_callback_fail
   });
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), std::size(service),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_FAILURE);
   SyncOnMainLoop();
 
@@ -461,7 +469,8 @@ TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_add_invalid_db_el
   auto future = promise.get_future();
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), std::size(service),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   auto result = future.get();
   EXPECT_EQ(result.status, tGATT_STATUS::GATT_ILLEGAL_PARAMETER);
   EXPECT_EQ(result.session_id, BTGATT_OFFLOAD_SESSION_ID_UNKNOWN);
@@ -488,7 +497,8 @@ TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_duplicate_session
     return true;
   });
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service1.data(), std::size(service1),
-                               /*endpoint_id=*/0, /*hub_id*/ 0, std::move(promise1));
+                               /*endpoint_id=*/0, /*hub_id*/ 0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise1));
 
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_SUCCESS);
   SyncOnMainLoop();
@@ -500,7 +510,8 @@ TEST_F(GattOffloadCharacteristicsTest, offload_characteristics_duplicate_session
   std::promise<btgatt_offload_result_t> promise2;
   auto future2 = promise2.get_future();
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service2.data(), std::size(service2),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise2));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise2));
   SyncOnMainLoop();
 
   auto result2 = future2.get();
@@ -521,7 +532,8 @@ TEST_F(GattOffloadCharacteristicsTest, unoffload_session) {
   });
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), std::size(service),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_SUCCESS);
 
   SyncOnMainLoop();
@@ -548,7 +560,8 @@ TEST_F(GattOffloadCharacteristicsTest, gattc_inform_notification_handle_gatt_ser
     return true;
   });
   gatt_offload_characteristics(conn_id, /*is_server=*/true, service.data(), std::size(service),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_SUCCESS);
 
   SyncOnMainLoop();
@@ -575,7 +588,8 @@ TEST_F(GattOffloadCharacteristicsTest, gattc_inform_notification_handle_gatt_cli
   });
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), std::size(service),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_SUCCESS);
 
   SyncOnMainLoop();
@@ -601,7 +615,8 @@ TEST_F(GattOffloadCharacteristicsTest, gattc_handle_service_changed_indication_g
   });
 
   gatt_offload_characteristics(conn_id, /*is_server=*/true, service.data(), std::size(service),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
 
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_SUCCESS);
   SyncOnMainLoop();
@@ -627,7 +642,8 @@ TEST_F(GattOffloadCharacteristicsTest, gattc_handle_service_changed_indication_g
   });
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), std::size(service),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_SUCCESS);
   SyncOnMainLoop();
 
@@ -651,7 +667,8 @@ TEST_F(GattOffloadCharacteristicsTest, clear_session_by_handle) {
     return true;
   });
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), std::size(service),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
 
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_SUCCESS);
   SyncOnMainLoop();
@@ -691,7 +708,8 @@ TEST_F(GattOffloadCharacteristicsTest, clear_session_by_handle_failure) {
   uint16_t acl_handle = 0x1234;
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), std::size(service),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_SUCCESS);
 
   SyncOnMainLoop();
@@ -719,7 +737,8 @@ TEST_F(GattOffloadCharacteristicsTest, clear_session_by_conn_id) {
     return true;
   });
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), std::size(service),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_SUCCESS);
 
   SyncOnMainLoop();
@@ -759,7 +778,8 @@ TEST_F(GattOffloadCharacteristicsTest, clear_multiple_sessions_by_conn_id_failur
     return true;
   });
   gatt_offload_characteristics(conn_id1, /*is_server=*/false, service1.data(), std::size(service1),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise1));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise1));
   gatt_hal_callback_->registerServiceComplete(session_id1, bluetooth::hal::GATT_SUCCESS);
   SyncOnMainLoop();
   auto res1 = future1.get();
@@ -775,7 +795,8 @@ TEST_F(GattOffloadCharacteristicsTest, clear_multiple_sessions_by_conn_id_failur
     return true;
   });
   gatt_offload_characteristics(conn_id2, /*is_server=*/false, service2.data(), std::size(service2),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise2));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise2));
   gatt_hal_callback_->registerServiceComplete(session_id2, bluetooth::hal::GATT_SUCCESS);
   SyncOnMainLoop();
   auto res2 = future2.get();
@@ -828,7 +849,8 @@ TEST_F(GattOffloadCharacteristicsTest, dump_one_session) {
     return true;
   });
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), service.size(),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_SUCCESS);
 
   SyncOnMainLoop();
@@ -868,7 +890,8 @@ TEST_F(GattOffloadHalCallbackTest, register_service_complete_success) {
   });
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), service.size(),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   ASSERT_NE(session_id, BTGATT_OFFLOAD_SESSION_ID_UNKNOWN);
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_SUCCESS);
   SyncOnMainLoop();
@@ -891,7 +914,8 @@ TEST_F(GattOffloadHalCallbackTest, unregister_service_complete) {
   });
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), service.size(),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
 
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_SUCCESS);
   ASSERT_NE(session_id, BTGATT_OFFLOAD_SESSION_ID_UNKNOWN);
@@ -937,7 +961,8 @@ TEST_F(GattOffloadHalCallbackTest, error_report_out_of_sync) {
   });
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), service.size(),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_SUCCESS);
   SyncOnMainLoop();
 
@@ -976,7 +1001,8 @@ TEST_F(GattOffloadHalCallbackTest, error_report_err_rsp_timeout) {
   });
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), service.size(),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_SUCCESS);
   SyncOnMainLoop();
 
@@ -1013,7 +1039,8 @@ TEST_F(GattOffloadHalCallbackTest, error_report_err_protocol_violation) {
   });
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), service.size(),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_SUCCESS);
   SyncOnMainLoop();
 
@@ -1070,7 +1097,8 @@ TEST_F(GattOffloadHalCallbackTest, error_report_out_of_sync_with_callback) {
   });
 
   gatt_offload_characteristics(conn_id, /*is_server=*/false, service.data(), service.size(),
-                               /*endpoint_id=*/0, /*hub_id=*/0, std::move(promise));
+                               /*endpoint_id=*/0, /*hub_id=*/0, /*uid=*/0, /*attribution_tag=*/"",
+                               std::move(promise));
   gatt_hal_callback_->registerServiceComplete(session_id, bluetooth::hal::GATT_SUCCESS);
   SyncOnMainLoop();
 

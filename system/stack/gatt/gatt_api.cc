@@ -699,14 +699,17 @@ tGATT_STATUS GATTS_SendRsp(tCONN_ID conn_id, uint32_t trans_id, tGATT_STATUS sta
  *                  elements_count  : number of elements in the array.
  *                  endpoint_id     : ID of the hub end point.
  *                  hub_id          : ID of the hub to which the end point belongs.
+ *                  uid             : UID of the app.
+ *                  attribution_tag : attribution tag of the app.
  *                  promise         : object used to signal the completion status.
  *
  ******************************************************************************/
 void GATTS_OffloadCharacteristics(tCONN_ID conn_id, btgatt_db_element_t* service,
                                   size_t elements_count, uint64_t endpoint_id, uint64_t hub_id,
+                                  int uid, std::string attribution_tag,
                                   std::promise<btgatt_offload_result_t> promise) {
   gatt_offload_characteristics(conn_id, /* is_server */ true, service, elements_count, endpoint_id,
-                               hub_id, std::move(promise));
+                               hub_id, uid, std::move(attribution_tag), std::move(promise));
 }
 
 /*******************************************************************************
@@ -1222,14 +1225,17 @@ tGATT_STATUS GATTC_SendHandleValueConfirm(tCONN_ID conn_id, uint16_t cid) {
  *                  elements_count  : number of elements in the service array.
  *                  endpoint_id     : ID of the hub end point.
  *                  hub_id          : ID of the hub to which the end point belongs.
+ *                  uid             : UID of the app.
+ *                  attribution_tag : attribution tag of the app.
  *                  promise         : object used to signal the completion status.
  *
  ******************************************************************************/
 void GATTC_OffloadCharacteristics(tCONN_ID conn_id, btgatt_db_element_t* service,
                                   size_t elements_count, uint64_t endpoint_id, uint64_t hub_id,
+                                  int uid, std::string attribution_tag,
                                   std::promise<btgatt_offload_result_t> promise) {
   gatt_offload_characteristics(conn_id, /* is_server */ false, service, elements_count, endpoint_id,
-                               hub_id, std::move(promise));
+                               hub_id, uid, std::move(attribution_tag), std::move(promise));
 }
 
 /*******************************************************************************

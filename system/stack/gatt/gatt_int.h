@@ -412,6 +412,11 @@ typedef struct {
   tGATT_STATUS status{tGATT_STATUS::GATT_SUCCESS};
   bool in_unregistering_service{false};
   bool in_clearing_services{false};
+  // Android application UID from the calling Java service. Used for permission checks and
+  // attribution.
+  int uid;
+  // Optional attribution tag from the calling Android app for fine-grained usage tracking.
+  std::string attribution_tag;
 } tGATT_OFFLOAD_SESSION;
 
 typedef struct {
@@ -802,6 +807,7 @@ Octet16 gatts_calculate_database_hash(std::shared_ptr<std::list<tGATT_SRV_LIST_E
 bool gatt_offload_init();
 void gatt_offload_characteristics(tCONN_ID conn_id, bool is_server, btgatt_db_element_t* service,
                                   size_t elements_count, uint64_t endpoint_id, uint64_t hub_id,
+                                  int uid, std::string attribution_tag,
                                   std::promise<btgatt_offload_result_t> promise);
 bool gatt_offload_clear_sessions_by_acl_handle(uint16_t acl_connection_handle);
 void gatt_offload_clear_sessions_by_conn_id(tCONN_ID conn_id);
