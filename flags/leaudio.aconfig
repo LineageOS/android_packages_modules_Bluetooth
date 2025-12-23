@@ -241,16 +241,6 @@ flag {
 }
 
 flag {
-    name: "start_leaudio_subrate_for_active_set_only"
-    namespace: "bluetooth"
-    description: "Only start LE audio subrate for the active le audio set"
-    bug: "437449260"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_improve_switching_le_audio_devices"
     namespace: "bluetooth"
     description: "Decreasing time when switching between leAudio devices"

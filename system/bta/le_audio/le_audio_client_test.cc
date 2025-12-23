@@ -1658,7 +1658,6 @@ protected:
             ->leaudio_use_game_sonification_as_regular_sonification(true);
     com::android::bluetooth::flags::provider_->leaudio_improve_switching_le_audio_devices(true);
     com::android::bluetooth::flags::provider_->dsa_use_codec_extensibility(true);
-    com::android::bluetooth::flags::provider_->start_leaudio_subrate_for_active_set_only(true);
     com::android::bluetooth::flags::provider_->leaudio_improve_unicast_monitor(true);
     com::android::bluetooth::flags::provider_->leaudio_improve_state_machine_invalid_status(true);
     com::android::bluetooth::flags::provider_->leaudio_fix_allocation_in_codec_config(true);
