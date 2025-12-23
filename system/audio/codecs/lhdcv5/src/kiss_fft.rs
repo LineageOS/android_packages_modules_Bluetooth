@@ -454,7 +454,7 @@ static FREQUENCY_OFFSET_480: [u8; 96] = [
 
 fn kf_factor(mut n: i32, facbuf: &mut [i32]) {
     let mut p: i32 = 4;
-    let floor_sqrt = (math::sqrt(n as libc::c_float) + 0.5f32) as i32;
+    let floor_sqrt = (math::sqrt(n as f32) + 0.5f32) as i32;
     let mut i = 0;
     loop {
         while n % p != 0 {
