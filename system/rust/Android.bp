@@ -25,7 +25,10 @@ rust_defaults {
     min_sdk_version: "36",
     rustlibs: [
         "libbytes",
+        "libfutures",
         "libpdl_runtime",
+        "libthiserror",
+        "libtokio_stream",
     ],
     apex_available: [
         "//apex_available:platform",
@@ -64,4 +67,7 @@ rust_test {
             ],
         },
     },
+    rustlibs: [
+        "libmockall",
+    ],
 }

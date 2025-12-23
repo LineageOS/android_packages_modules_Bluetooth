@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-//! Crate root for the Unified Bluetooth Rust Stack.
+//! Periodic sync module.
 
-pub mod le_audio;
-pub mod pdl;
-pub mod types;
+pub mod traits;
 
-pub use types::*;
+pub use traits::PeriodicSyncManager;
