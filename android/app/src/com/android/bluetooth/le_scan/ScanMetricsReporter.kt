@@ -17,6 +17,12 @@
 package com.android.bluetooth.le_scan
 
 import android.bluetooth.BluetoothProtoEnums
+import android.bluetooth.BluetoothProtoEnums.LE_SCAN_COUNT_AUTO_BATCH_DISABLE
+import android.bluetooth.BluetoothProtoEnums.LE_SCAN_COUNT_AUTO_BATCH_ENABLE
+import android.bluetooth.BluetoothProtoEnums.LE_SCAN_COUNT_BATCH_DISABLE
+import android.bluetooth.BluetoothProtoEnums.LE_SCAN_COUNT_BATCH_ENABLE
+import android.bluetooth.BluetoothProtoEnums.LE_SCAN_COUNT_FILTERED_DISABLE
+import android.bluetooth.BluetoothProtoEnums.LE_SCAN_COUNT_FILTERED_ENABLE
 import android.bluetooth.le.ScanSettings
 import android.os.BatteryStatsManager
 import android.os.WorkSource
@@ -34,6 +40,8 @@ class ScanMetricsReporter(
     private val workSourceUtil: WorkSourceUtil,
     private val batteryStatsManager: BatteryStatsManager,
 ) {
+    private val logger: MetricsLogger
+        get() = MetricsLogger.getInstance()
 
     fun reportScanResults(numberOfNewResults: Int) {
         batteryStatsManager.reportBleScanResults(workSource, numberOfNewResults)
@@ -64,8 +72,6 @@ class ScanMetricsReporter(
             scan.isBackgroundScan,
             scan.isOpportunisticScan,
         )
-
-        val logger = MetricsLogger.getInstance()
         logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_TOTAL_ENABLE, 1)
         logger.logAppScanStateChanged(
             workSourceUtil.uids,
@@ -85,11 +91,9 @@ class ScanMetricsReporter(
             scan.attributionTag ?: "",
         )
         when {
-            scan.isAutoBatchScan ->
-                logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_AUTO_BATCH_ENABLE, 1)
-            scan.isBatchScan -> logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_BATCH_ENABLE, 1)
-            scan.isFilterScan ->
-                logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_FILTERED_ENABLE, 1)
+            scan.isAutoBatchScan -> logger.cacheCount(LE_SCAN_COUNT_AUTO_BATCH_ENABLE, 1)
+            scan.isBatchScan -> logger.cacheCount(LE_SCAN_COUNT_BATCH_ENABLE, 1)
+            scan.isFilterScan -> logger.cacheCount(LE_SCAN_COUNT_FILTERED_ENABLE, 1)
             else -> logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_UNFILTERED_ENABLE, 1)
         }
     }
@@ -123,8 +127,6 @@ class ScanMetricsReporter(
             scan.isBackgroundScan,
             scan.isOpportunisticScan,
         )
-
-        val logger = MetricsLogger.getInstance()
         logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_TOTAL_DISABLE, 1)
         logger.logAppScanStateChanged(
             workSourceUtil.uids,
@@ -144,17 +146,14 @@ class ScanMetricsReporter(
             scan.attributionTag ?: "",
         )
         when {
-            scan.isAutoBatchScan ->
-                logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_AUTO_BATCH_DISABLE, 1)
-            scan.isBatchScan ->
-                logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_BATCH_DISABLE, 1)
-            scan.isFilterScan ->
-                logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_FILTERED_DISABLE, 1)
+            scan.isAutoBatchScan -> logger.cacheCount(LE_SCAN_COUNT_AUTO_BATCH_DISABLE, 1)
+            scan.isBatchScan -> logger.cacheCount(LE_SCAN_COUNT_BATCH_DISABLE, 1)
+            scan.isFilterScan -> logger.cacheCount(LE_SCAN_COUNT_FILTERED_DISABLE, 1)
             else -> logger.cacheCount(BluetoothProtoEnums.LE_SCAN_COUNT_UNFILTERED_DISABLE, 1)
         }
     }
 
-    fun recordScanTimeoutCountMetrics(scan: AppScanStats.LastScan?, scanTimeoutMillis: Long) {
+    fun recordScanTimeoutCount(scan: AppScanStats.LastScan?, scanTimeoutMillis: Long) {
         BluetoothStatsLog.write(
             BluetoothStatsLog.LE_SCAN_ABUSED,
             workSourceUtil.uids,
@@ -164,14 +163,10 @@ class ScanMetricsReporter(
             scanTimeoutMillis,
             scan?.attributionTag ?: "",
         )
-        MetricsLogger.getInstance()
-            .cacheCount(BluetoothProtoEnums.LE_SCAN_ABUSE_COUNT_SCAN_TIMEOUT, 1)
+        logger.cacheCount(BluetoothProtoEnums.LE_SCAN_ABUSE_COUNT_SCAN_TIMEOUT, 1)
     }
 
-    fun recordHwFilterNotAvailableCountMetrics(
-        scan: AppScanStats.LastScan?,
-        numOfFilterSupported: Long,
-    ) {
+    fun recordHwFilterNotAvailableCount(scan: AppScanStats.LastScan?, numOfFilterSupported: Long) {
         BluetoothStatsLog.write(
             BluetoothStatsLog.LE_SCAN_ABUSED,
             workSourceUtil.uids,
@@ -181,8 +176,7 @@ class ScanMetricsReporter(
             numOfFilterSupported,
             scan?.attributionTag ?: "",
         )
-        MetricsLogger.getInstance()
-            .cacheCount(BluetoothProtoEnums.LE_SCAN_ABUSE_COUNT_HW_FILTER_NOT_AVAILABLE, 1)
+        logger.cacheCount(BluetoothProtoEnums.LE_SCAN_ABUSE_COUNT_HW_FILTER_NOT_AVAILABLE, 1)
     }
 
     private fun convertScanCallbackType(callbackType: CallbackType): Int =
