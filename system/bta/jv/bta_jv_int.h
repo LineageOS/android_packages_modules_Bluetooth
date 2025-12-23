@@ -115,7 +115,7 @@ struct BtaJvRfcommCb {
 };
 
 /* JV control block */
-struct tBTA_JV_CB {
+struct BtaJvCb {
   /* the SDP handle reported to JV user is the (index + 1) to sdp_handle[].
    * if sdp_handle[i]==0, it's not used.
    * otherwise sdp_handle[i] is the stack SDP handle. */
@@ -141,7 +141,7 @@ struct tBTA_JV_CB {
 };
 
 // JV control block
-extern tBTA_JV_CB bta_jv_cb;
+extern BtaJvCb bta_jv_cb;
 
 extern std::unordered_set<uint16_t> used_l2cap_classic_dynamic_psm;
 

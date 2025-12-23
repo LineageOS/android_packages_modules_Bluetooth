@@ -57,7 +57,7 @@
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
 
-tBTA_JV_CB bta_jv_cb;
+BtaJvCb bta_jv_cb;
 std::unordered_set<uint16_t> used_l2cap_classic_dynamic_psm;
 
 static BtaJvPcb* bta_jv_add_rfc_port(BtaJvRfcommCb* p_cb, BtaJvPcb* p_pcb_open);
