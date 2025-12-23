@@ -50,6 +50,3 @@ void l2cble_use_preferred_conn_params(const RawAddress& bda);
 
 // Invoked when HCI mode is changed to HCI_MODE_ACTIVE or HCI_MODE_SNIFF
 void l2c_OnHciModeChangeSendPendingPackets(RawAddress remote);
-
-// Invoked when HCI indicates to L2cap to check Security requirement
-void l2cu_resubmit_pending_sec_req(const RawAddress* p_bda);

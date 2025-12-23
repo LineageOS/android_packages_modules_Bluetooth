@@ -30,6 +30,7 @@ bool l2cu_start_post_bond_timer(uint16_t handle);
 
 void l2c_pin_code_request(const RawAddress& bd_addr);
 
+// Invoked when HCI indicates to L2cap to check Security requirement
 void l2cu_resubmit_pending_sec_req(const RawAddress* p_bda);
 
 // Establish ACL link to remote device for Security Manager/Pairing.

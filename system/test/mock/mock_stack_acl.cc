@@ -86,7 +86,6 @@ struct acl_process_supported_features acl_process_supported_features;
 struct acl_rcv_acl_data acl_rcv_acl_data;
 struct acl_send_data_packet_ble acl_send_data_packet_ble;
 struct acl_set_disconnect_reason acl_set_disconnect_reason;
-struct acl_write_automatic_flush_timeout acl_write_automatic_flush_timeout;
 struct btm_acl_created btm_acl_created;
 struct btm_acl_device_down btm_acl_device_down;
 struct btm_acl_disconnected btm_acl_disconnected;
@@ -277,10 +276,6 @@ void acl_send_data_packet_ble(const RawAddress& bd_addr, BT_HDR* p_buf) {
 void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::acl_set_disconnect_reason(acl_disc_reason);
-}
-void acl_write_automatic_flush_timeout(const RawAddress& bd_addr, uint16_t flush_timeout_in_ticks) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::acl_write_automatic_flush_timeout(bd_addr, flush_timeout_in_ticks);
 }
 void btm_acl_created(const AclLinkSpec& link_spec, uint16_t hci_handle, tHCI_ROLE link_role) {
   inc_func_call_count(__func__);

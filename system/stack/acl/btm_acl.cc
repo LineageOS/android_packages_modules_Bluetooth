@@ -146,6 +146,8 @@ static bool IsEprAvailable(const tACL_CONN& p_acl) {
          bluetooth::shim::GetController()->SupportsEncryptionPause();
 }
 
+static void acl_write_automatic_flush_timeout(const RawAddress& bd_addr,
+                                              uint16_t flush_timeout_in_ticks);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb, uint8_t max_page_number);
 static void btm_read_rssi_timeout(void* data);
 static void btm_set_link_policy(tACL_CONN* conn, tLINK_POLICY policy);
@@ -2028,7 +2030,8 @@ void acl_send_data_packet_ble(const RawAddress& bd_addr, BT_HDR* p_buf) {
   return bluetooth::shim::ACL_WriteData(p_acl->hci_handle, p_buf);
 }
 
-void acl_write_automatic_flush_timeout(const RawAddress& bd_addr, uint16_t flush_timeout_in_ticks) {
+static void acl_write_automatic_flush_timeout(const RawAddress& bd_addr,
+                                              uint16_t flush_timeout_in_ticks) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
   if (p_acl == nullptr) {
     log::warn("Unable to find active acl");
