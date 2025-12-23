@@ -223,13 +223,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_connection_subrating"
-    namespace: "bluetooth"
-    description: "Support LE audio connection subrating to speed up the reconfiguration process"
-    bug: "423028406"
-}
-
-flag {
     name: "leaudio_peripheral_feature"
     is_exported: true
     namespace: "bluetooth"
