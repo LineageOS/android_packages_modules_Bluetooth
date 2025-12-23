@@ -23,16 +23,6 @@ flag {
 }
 
 flag {
-    name: "map_mime_multipart"
-    namespace: "bluetooth"
-    description: "double quote boundary when encoding header"
-    bug: "424374330"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "map_client_check_access_permission"
     namespace: "bluetooth"
     description: "Check if message access permission is allowed before connecting"

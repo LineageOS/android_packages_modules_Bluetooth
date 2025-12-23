@@ -322,7 +322,12 @@ bool gatt_register_subrate_config(tGATT_IF client_if, const RawAddress& bd_addr,
     };
 
     if (!gatt_cb.subrate_info.contains(bd_addr)) {
-        log::error("{} does not exist in gatt_cb.subrate_info", bd_addr);
+        log::error("{} is disconnected which does not exist in gatt_cb.subrate_info", bd_addr);
+        return false;
+    }
+
+    if (acl_link_is_disconnecting(bd_addr, BT_TRANSPORT_LE)) {
+        log::error("{} is disconnecting", bd_addr);
         return false;
     }
 

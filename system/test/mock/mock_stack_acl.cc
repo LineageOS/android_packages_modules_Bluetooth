@@ -52,6 +52,7 @@ struct BTM_ReadRemoteConnectionAddr BTM_ReadRemoteConnectionAddr;
 struct BTM_is_sniff_allowed_for BTM_is_sniff_allowed_for;
 struct acl_is_role_switch_allowed acl_is_role_switch_allowed;
 struct acl_is_switch_role_idle acl_is_switch_role_idle;
+struct acl_link_is_disconnecting acl_link_is_disconnecting;
 struct acl_peer_supports_ble_2m_phy acl_peer_supports_ble_2m_phy;
 struct acl_peer_supports_ble_coded_phy acl_peer_supports_ble_coded_phy;
 struct acl_send_data_packet_br_edr acl_send_data_packet_br_edr;
@@ -140,6 +141,10 @@ bool acl_is_role_switch_allowed() {
 bool acl_is_switch_role_idle(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
   return test::mock::stack_acl::acl_is_switch_role_idle(bd_addr, transport);
+}
+bool acl_link_is_disconnecting(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+  inc_func_call_count(__func__);
+  return test::mock::stack_acl::acl_link_is_disconnecting(bd_addr, transport);
 }
 bool acl_peer_supports_ble_2m_phy(uint16_t hci_handle) {
   inc_func_call_count(__func__);

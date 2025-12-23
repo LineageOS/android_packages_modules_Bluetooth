@@ -56,6 +56,8 @@ void SetUp() override {
         = [](const RawAddress& /*bd_addr*/) { return true; };
     test::mock::stack_acl::acl_peer_supports_ble_connection_subrating_host.body
         = [](const RawAddress& /*bd_addr*/) { return true; };
+    test::mock::stack_acl::acl_link_is_disconnecting.body =
+        [](const RawAddress& /*bd_addr*/, tBT_TRANSPORT /*transport*/) { return false; };
     test::mock::stack_l2cap_utils::l2cu_find_lcb_by_bd_addr.body
         = [](const RawAddress& /*bd_addr*/, tBT_TRANSPORT /* transport */)
             { return (tL2C_LCB*) malloc(sizeof(tL2C_LCB)); };
@@ -376,6 +378,28 @@ TEST_F(GattSubrateManagerTest, RegisterSubrateConfig_NoUpdateNeeded) {
     // Config map now contains both clients
     EXPECT_EQ(2,
         (int)gatt_cb.subrate_info.at(test_addr_).config_map.at(GATT_SUBRATE_MODE_HIGH).size());
+}
+
+TEST_F(GattSubrateManagerTest, RegisterSubrateConfig_AclDisconnecting) {
+    // Setup: ACL link is disconnecting
+    test::mock::stack_acl::acl_link_is_disconnecting.body =
+        [](const RawAddress& /*bd_addr*/, tBT_TRANSPORT /*transport*/) { return true; };
+
+    gatt_cb.subrate_info[test_addr_] =
+        tGATT_SUBRATE_MGR_CB{.bda = test_addr_, .state = GATT_SUBRATE_SM_IDLE};
+
+    // Action: Register a LOW mode request
+    bool success = gatt_register_subrate_config(
+        test_client_if_, test_addr_, GATT_SUBRATE_MODE_LOW);
+
+    // Verification
+    EXPECT_FALSE(success);
+    // Pending queue should be empty as the request should be rejected early
+    EXPECT_TRUE(gatt_cb.subrate_info.at(test_addr_).pending_queue.empty());
+    // Config map should not contain the client
+    EXPECT_TRUE(gatt_cb.subrate_info.at(test_addr_).config_map.empty());
+    // State should remain IDLE
+    EXPECT_EQ(GATT_SUBRATE_SM_IDLE, gatt_cb.subrate_info.at(test_addr_).state);
 }
 
 /*
