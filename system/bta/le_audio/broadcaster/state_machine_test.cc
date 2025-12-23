@@ -1170,9 +1170,6 @@ TEST_F(StateMachineTest, GetMetadataBeforeGettingAddress) {
 }
 
 TEST_F(StateMachineTest, ConfigureDataPathBeforeSetIsoDataPath) {
-  com::android::bluetooth::flags::
-        provider_->leaudio_broadcast_config_data_path_before_set_iso_data_path(true);
-
   EXPECT_CALL(*(sm_callbacks_.get()), OnStateMachineCreateStatus(_, true)).Times(1);
 
   auto sound_context = bluetooth::le_audio::types::LeAudioContextType::MEDIA;

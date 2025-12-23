@@ -512,10 +512,6 @@ private:
 
   static void PrepareDataPath(hci_data_direction_t data_path_dir, uint8_t data_path_id,
                               const std::vector<uint8_t>& data_path_config) {
-    if (!com_android_bluetooth_flags_leaudio_broadcast_config_data_path_before_set_iso_data_path()) {
-      log::debug("leaudio_broadcast_config_data_path_before_set_iso_data_path is not enabled");
-      return;
-    }
     bluetooth::le_audio::CodecManager::GetInstance()->ConfigureDataPath(data_path_dir, data_path_id,
                                                                         data_path_config);
   }

@@ -248,16 +248,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_broadcast_config_data_path_before_set_iso_data_path"
-    namespace: "bluetooth"
-    description: "Configure data path before setting ISO data path"
-    bug: "438088172"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "start_leaudio_subrate_for_active_set_only"
     namespace: "bluetooth"
     description: "Only start LE audio subrate for the active le audio set"
