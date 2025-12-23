@@ -64,7 +64,7 @@ bool bta_jv_enabled = false;
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK* p_cback) {
   log::verbose("");
-  if (!p_cback || bta_jv_enabled) {
+  if (p_cback == nullptr || bta_jv_enabled) {
     log::error("failure");
     return tBTA_JV_STATUS::FAILURE;
   }
@@ -425,7 +425,7 @@ tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, uint8_t remote_scn,
   log::verbose("remote_scn:{}, peer_bd_addr:{}, rfcomm_slot_id:{}", remote_scn, peer_bd_addr,
                rfcomm_slot_id);
 
-  if (!p_cback) {
+  if (p_cback == nullptr) {
     return tBTA_JV_STATUS::FAILURE;  // Nothing to do
   }
 
@@ -479,7 +479,7 @@ tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, uint8_t local_scn, uin
                                        RfcommCfgInfo cfg, uint32_t app_uid) {
   log::verbose("local_scn:{}, rfcomm_slot_id:{}", local_scn, rfcomm_slot_id);
 
-  if (p_cback == NULL) {
+  if (p_cback == nullptr) {
     return tBTA_JV_STATUS::FAILURE;  // Nothing to do
   }
 

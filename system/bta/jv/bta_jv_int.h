@@ -55,13 +55,13 @@ enum BtaJvPmState {
 };
 
 /* BTA JV PM control block */
-typedef struct {
+struct BtaJvPmCb {
   uint32_t handle;          // The connection handle
   BtaJvPmState state;       // see above enum
   tBTA_JV_PM_ID app_id;     // JV app specific id indicating power table to use
   RawAddress peer_bd_addr;  // Peer BD address
   alarm_t* idle_timer;      // Intermediate timer for preventing frequent state transition
-} tBTA_JV_PM_CB;
+};
 
 enum BtaJvState {
   BTA_JV_ST_NONE = 0,
@@ -82,7 +82,7 @@ typedef struct {
   tBTA_SERVICE_ID sec_id;        // service id
   uint32_t handle;               // the handle reported to java app (same as gap handle)
   bool cong;                     // true, if congested
-  tBTA_JV_PM_CB* p_pm_cb;        // ptr to pm control block, NULL: unused
+  BtaJvPmCb* p_pm_cb;            // ptr to pm control block, NULL: unused
   uint32_t l2cap_socket_id;
 } tBTA_JV_L2C_CB;
 
@@ -100,7 +100,7 @@ typedef struct {
   uint8_t max_sess;      // max sessions
   uint32_t rfcomm_slot_id;
   bool cong;               // true, if congested
-  tBTA_JV_PM_CB* p_pm_cb;  // ptr to pm control block, NULL: unused
+  BtaJvPmCb* p_pm_cb;      // ptr to pm control block, NULL: unused
 } tBTA_JV_PCB;
 
 /* JV RFCOMM control block */
@@ -135,7 +135,7 @@ struct tBTA_JV_CB {
     bluetooth::Uuid uuid{bluetooth::Uuid::kEmpty};  // current uuid of sdp discovery
   } sdp_cb;
 
-  tBTA_JV_PM_CB pm_cb[BTA_JV_PM_MAX_NUM];  // PM on a per JV handle bases
+  BtaJvPmCb pm_cb[BTA_JV_PM_MAX_NUM];  // PM on a per JV handle bases
 
   uint16_t dyn_psm;  // Next dynamic PSM value to try to assign
 };
