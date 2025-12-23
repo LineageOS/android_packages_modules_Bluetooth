@@ -10,3 +10,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "use_cached_clock_offset"
+    namespace: "bluetooth"
+    description: "Use cached clock offset for BR/EDR connection requests and RNRs"
+    bug: "471239086"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
