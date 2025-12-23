@@ -26,6 +26,7 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/uuid.h>
+#include <com_android_bluetooth_flags.h>
 #include <string.h>
 
 #include "gatt_int.h"
@@ -1231,7 +1232,13 @@ void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code
   }
 
   uint8_t cmd_code = 0;
-  tGATT_CLCB* p_clcb = gatt_cmd_dequeue(tcb, cid, &cmd_code);
+  tGATT_CLCB* p_clcb;
+  if (com_android_bluetooth_flags_fix_gatt_cmd_dequeue()) {
+    p_clcb = gatt_cmd_peek(tcb, cid, &cmd_code);
+  } else {
+    p_clcb = gatt_cmd_dequeue(tcb, cid, &cmd_code);
+  }
+
   if (!p_clcb) {
     log::warn("ATT - clcb already not in use, ignoring response");
     gatt_cl_send_next_cmd_inq(tcb);
@@ -1239,16 +1246,14 @@ void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code
   }
 
   uint8_t rsp_code = gatt_cmd_to_rsp_code(cmd_code);
-  if (!p_clcb) {
-    log::warn("ATT - clcb already not in use, ignoring response");
-    gatt_cl_send_next_cmd_inq(tcb);
-    return;
-  }
-
   if (rsp_code != op_code && op_code != GATT_RSP_ERROR) {
     log::warn("ATT - Ignore wrong response. Receives ({:02x}) Request({:02x}) Ignored", op_code,
               rsp_code);
     return;
+  }
+
+  if (com_android_bluetooth_flags_fix_gatt_cmd_dequeue()) {
+    p_clcb = gatt_cmd_dequeue(tcb, cid, &cmd_code);
   }
 
   gatt_stop_rsp_timer(p_clcb);
