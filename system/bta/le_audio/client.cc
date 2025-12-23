@@ -1108,8 +1108,7 @@ public:
     auto leAudioDevice = leAudioDevices_.GetByAddress(address);
 
     if (leAudioDevice) {
-      if (com_android_bluetooth_flags_start_leaudio_subrate_for_active_set_only() &&
-          group_id == active_group_id_) {
+      if (group_id == active_group_id_) {
         leAudioDevice->StopConnSubrate();
       }
 
@@ -3082,10 +3081,6 @@ public:
 
       BTA_GATTC_Close(leAudioDevice->conn_id_);
       return;
-    }
-
-    if (!com_android_bluetooth_flags_start_leaudio_subrate_for_active_set_only()) {
-      leAudioDevice->StartConnSubrate();
     }
 
     if (leAudioDevice->encrypted_) {
