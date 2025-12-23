@@ -246,6 +246,18 @@ bool btm_set_bond_type_dev(const RawAddress& bd_addr, tBTM_BOND_TYPE bond_type);
  ******************************************************************************/
 std::vector<BtmDevice*> btm_get_sec_dev_rec();
 
+/*******************************************************************************
+ *
+ * Function         BTM_GetCachedClockOffset
+ *
+ * Description      Get the cached clock offset for a device in the device
+ *                  database with specified BD address.
+ *
+ * Returns          The cached clock offset if known, otherwise 0.
+ *
+ ******************************************************************************/
+uint16_t BTM_GetCachedClockOffset(const RawAddress& bd_addr);
+
 bool BTM_Sec_AddressKnown(const RawAddress& address);
 const tBLE_BD_ADDR BTM_Sec_GetAddressWithType(const RawAddress& bd_addr);
 

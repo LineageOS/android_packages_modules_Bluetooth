@@ -33,6 +33,7 @@
 
 #include <string>
 
+#include "btif/include/btif_config.h"
 #include "btif/include/btif_storage.h"
 #include "btm_sec_api.h"
 #include "btm_sec_cb.h"
@@ -138,6 +139,7 @@ void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class, LinkKey li
   p_device->sec_rec.pin_code_length = pin_length;
 
   p_device->sec_rec.bond_type = BOND_TYPE_PERSISTENT;
+  p_device->clock_offset = BTM_GetCachedClockOffset(bd_addr);
 
   if (pin_length >= 16 || key_type == BTM_LKEY_TYPE_AUTH_COMB ||
       key_type == BTM_LKEY_TYPE_AUTH_COMB_P_256) {
@@ -148,6 +150,22 @@ void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class, LinkKey li
 
   p_device->sec_rec.rmt_io_caps = BtIoCap::DISPLAY_ONLY;
   p_device->device_type |= BT_DEVICE_TYPE_BREDR;
+}
+
+uint16_t BTM_GetCachedClockOffset(const RawAddress& bd_addr) {
+  const BtmDevice* p_device = btm_find_dev(bd_addr);
+  if (p_device != nullptr && (p_device->clock_offset & BTM_CLOCK_OFFSET_VALID) != 0) {
+    return p_device->clock_offset;
+  }
+
+  tBTM_INQ_INFO* inq = BTM_InqDbRead(bd_addr);
+  if (inq != nullptr && (inq->results.clock_offset & BTM_CLOCK_OFFSET_VALID) != 0) {
+    return inq->results.clock_offset;
+  }
+
+  int clock_offset = 0;
+  btif_get_device_clockoffset(bd_addr, &clock_offset);
+  return (clock_offset & BTM_CLOCK_OFFSET_VALID) ? static_cast<uint16_t>(clock_offset) : 0;
 }
 
 /** Free resources associated with the device associated with |bd_addr| address.
@@ -290,7 +308,7 @@ BtmDevice* btm_sec_alloc_dev(const RawAddress& bd_addr) {
 
   if (p_device == nullptr) {
     log::warn("device record allocation failed bd_addr:{}", bd_addr);
-    return NULL;
+    return nullptr;
   }
 
   log::debug("Allocated device record bd_addr:{}", bd_addr);
@@ -298,7 +316,7 @@ BtmDevice* btm_sec_alloc_dev(const RawAddress& bd_addr) {
   /* Check with the BT manager if details about remote device are known */
   /* outgoing connection */
   p_inq_info = BTM_InqDbRead(bd_addr);
-  if (p_inq_info != NULL) {
+  if (p_inq_info != nullptr) {
     p_device->dev_class = p_inq_info->results.dev_class;
 
     p_device->device_type = p_inq_info->results.device_type;
@@ -319,6 +337,8 @@ BtmDevice* btm_sec_alloc_dev(const RawAddress& bd_addr) {
           get_btm_client_interface().peer.BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
   p_device->hci_handle =
           get_btm_client_interface().peer.BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_BR_EDR);
+
+  p_device->clock_offset = BTM_GetCachedClockOffset(bd_addr);
 
   return p_device;
 }

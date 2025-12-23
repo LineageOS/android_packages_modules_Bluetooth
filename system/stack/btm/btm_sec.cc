@@ -4527,21 +4527,17 @@ void btm_sec_pin_code_request(const RawAddress p_bda) {
  *
  ******************************************************************************/
 void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset) {
-  BtmDevice* p_device;
-  tBTM_INQ_INFO* p_inq_info;
-
-  p_device = btm_get_dev_by_handle(handle);
+  BtmDevice* p_device = btm_get_dev_by_handle(handle);
   if (p_device == nullptr) {
     return;
   }
-
   p_device->clock_offset = clock_offset | BTM_CLOCK_OFFSET_VALID;
+  // btif_set_device_clockoffset(p_device->bd_addr, clock_offset);
 
-  p_inq_info = BTM_InqDbRead(p_device->bd_addr);
-  if (p_inq_info == NULL) {
+  tBTM_INQ_INFO* p_inq_info = BTM_InqDbRead(p_device->bd_addr);
+  if (p_inq_info == nullptr) {
     return;
   }
-
   p_inq_info->results.clock_offset = clock_offset | BTM_CLOCK_OFFSET_VALID;
 }
 

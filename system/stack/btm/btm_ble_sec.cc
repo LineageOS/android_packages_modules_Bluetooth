@@ -135,6 +135,8 @@ void BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
                p_info->results.ble_addr_type);
     p_info->results.device_type = p_device->device_type;
   }
+
+  p_device->clock_offset = BTM_GetCachedClockOffset(bd_addr);
 }
 
 /*******************************************************************************
