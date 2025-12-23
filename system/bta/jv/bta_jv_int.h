@@ -48,7 +48,7 @@
 #endif
 
 enum BtaJvPmState {
-  BTA_JV_PM_FREE_ST = 0, /* empty PM slot */
+  BTA_JV_PM_FREE_ST = 0,  // empty PM slot
   BTA_JV_PM_IDLE_ST,
   BTA_JV_PM_BUSY_ST,
   BTA_JV_PM_BUSY_TO_IDLE_ST
@@ -56,14 +56,14 @@ enum BtaJvPmState {
 
 /* BTA JV PM control block */
 typedef struct {
-  uint32_t handle;         /* The connection handle */
-  BtaJvPmState state;      /* see above enum */
-  tBTA_JV_PM_ID app_id;    /* JV app specific id indicating power table to use */
-  RawAddress peer_bd_addr; /* Peer BD address */
-  alarm_t* idle_timer;     /* Intermediate timer for preventing frequent state transition */
+  uint32_t handle;          // The connection handle
+  BtaJvPmState state;       // see above enum
+  tBTA_JV_PM_ID app_id;     // JV app specific id indicating power table to use
+  RawAddress peer_bd_addr;  // Peer BD address
+  alarm_t* idle_timer;      // Intermediate timer for preventing frequent state transition
 } tBTA_JV_PM_CB;
 
-enum {
+enum BtaJvState {
   BTA_JV_ST_NONE = 0,
   BTA_JV_ST_CL_OPENING,
   BTA_JV_ST_CL_OPEN,
@@ -72,17 +72,17 @@ enum {
   BTA_JV_ST_SR_OPEN,
   BTA_JV_ST_SR_CLOSING
 };
-typedef uint8_t tBTA_JV_STATE;
 #define BTA_JV_ST_CL_MAX BTA_JV_ST_CL_CLOSING
+
 /* JV L2CAP control block */
 typedef struct {
-  tBTA_JV_L2CAP_CBACK* p_cback; /* the callback function */
-  uint16_t psm;                 /* the psm used for this server connection */
-  tBTA_JV_STATE state;          /* the state of this control block */
-  tBTA_SERVICE_ID sec_id;       /* service id */
-  uint32_t handle;              /* the handle reported to java app (same as gap handle) */
-  bool cong;                    /* true, if congested */
-  tBTA_JV_PM_CB* p_pm_cb;       /* ptr to pm control block, NULL: unused */
+  tBTA_JV_L2CAP_CBACK* p_cback;  // the callback function
+  uint16_t psm;                  // the psm used for this server connection
+  BtaJvState state;              // the state of this control block
+  tBTA_SERVICE_ID sec_id;        // service id
+  uint32_t handle;               // the handle reported to java app (same as gap handle)
+  bool cong;                     // true, if congested
+  tBTA_JV_PM_CB* p_pm_cb;        // ptr to pm control block, NULL: unused
   uint32_t l2cap_socket_id;
 } tBTA_JV_L2C_CB;
 
@@ -94,24 +94,24 @@ typedef struct {
 
 /* port control block */
 typedef struct {
-  uint32_t handle;      /* the rfcomm session handle at jv */
-  uint16_t port_handle; /* port handle */
-  tBTA_JV_STATE state;  /* the state of this control block */
-  uint8_t max_sess;     /* max sessions */
+  uint32_t handle;       // the rfcomm session handle at jv
+  uint16_t port_handle;  // port handle
+  BtaJvState state;      // the state of this control block
+  uint8_t max_sess;      // max sessions
   uint32_t rfcomm_slot_id;
-  bool cong;              /* true, if congested */
-  tBTA_JV_PM_CB* p_pm_cb; /* ptr to pm control block, NULL: unused */
+  bool cong;               // true, if congested
+  tBTA_JV_PM_CB* p_pm_cb;  // ptr to pm control block, NULL: unused
 } tBTA_JV_PCB;
 
 /* JV RFCOMM control block */
 typedef struct {
-  tBTA_JV_RFCOMM_CBACK* p_cback; /* the callback function */
-  uint16_t port_hdls[BTA_JV_MAX_RFC_SR_SESSION]; /* array of port handles based on session index */
-  tBTA_SERVICE_ID sec_id; /* service id */
-  uint8_t handle;         /* index: the handle reported to java app */
-  uint8_t scn;            /* the scn of the server */
-  uint8_t max_sess;       /* max sessions */
-  int curr_sess;          /* current sessions count*/
+  tBTA_JV_RFCOMM_CBACK* p_cback;                  // the callback function
+  uint16_t port_hdls[BTA_JV_MAX_RFC_SR_SESSION];  // array of port handles based on session index
+  tBTA_SERVICE_ID sec_id;                         // service id
+  uint8_t handle;                                 // index: the handle reported to java app
+  uint8_t scn;                                    // the scn of the server
+  uint8_t max_sess;                               // max sessions
+  int curr_sess;                                  // current sessions count
 } tBTA_JV_RFC_CB;
 
 /* JV control block */
@@ -119,17 +119,15 @@ struct tBTA_JV_CB {
   /* the SDP handle reported to JV user is the (index + 1) to sdp_handle[].
    * if sdp_handle[i]==0, it's not used.
    * otherwise sdp_handle[i] is the stack SDP handle. */
-  uint32_t sdp_handle[BTA_JV_MAX_SDP_REC]; /* SDP records created */
+  uint32_t sdp_handle[BTA_JV_MAX_SDP_REC];  // SDP records created
   tBTA_JV_DM_CBACK* p_dm_cback;
-  tBTA_JV_L2C_CB l2c_cb[BTA_JV_MAX_L2C_CONN]; /* index is GAP handle (index) */
+  tBTA_JV_L2C_CB l2c_cb[BTA_JV_MAX_L2C_CONN];  // index is GAP handle (index)
   tBTA_JV_RFC_CB rfc_cb[BTA_JV_MAX_RFC_CONN];
-  tBTA_JV_PCB port_cb[MAX_RFC_PORTS];          /* index of this array is
-                                                  the port_handle, */
-  uint8_t sec_id[BTA_JV_NUM_SERVICE_ID];       /* service ID */
-  uint16_t free_psm_list[BTA_JV_MAX_L2C_CONN]; /* PSMs freed by java
-                                                (can be reused) */
+  tBTA_JV_PCB port_cb[MAX_RFC_PORTS];           // index of this array is the port_handle
+  uint8_t sec_id[BTA_JV_NUM_SERVICE_ID];        // service ID
+  uint16_t free_psm_list[BTA_JV_MAX_L2C_CONN];  // PSMs freed by java (can be reused)
   bool scn_in_use[RFCOMM_MAX_SCN];
-  uint8_t scn_search_index; /* used to search for free scns */
+  uint8_t scn_search_index;  // used to search for free scns
 
   struct sdp_cb {
     bool sdp_active{false};
@@ -137,12 +135,12 @@ struct tBTA_JV_CB {
     bluetooth::Uuid uuid{bluetooth::Uuid::kEmpty};  // current uuid of sdp discovery
   } sdp_cb;
 
-  tBTA_JV_PM_CB pm_cb[BTA_JV_PM_MAX_NUM]; /* PM on a per JV handle bases */
+  tBTA_JV_PM_CB pm_cb[BTA_JV_PM_MAX_NUM];  // PM on a per JV handle bases
 
-  uint16_t dyn_psm; /* Next dynamic PSM value to try to assign */
+  uint16_t dyn_psm;  // Next dynamic PSM value to try to assign
 };
 
-/* JV control block */
+// JV control block
 extern tBTA_JV_CB bta_jv_cb;
 
 extern std::unordered_set<uint16_t> used_l2cap_classic_dynamic_psm;
@@ -196,9 +194,25 @@ inline std::string bta_jv_pm_state_text(const BtaJvPmState& state) {
   }
 }
 
+inline std::string bta_jv_state_text(const BtaJvState& state) {
+  switch (state) {
+    CASE_RETURN_TEXT(BTA_JV_ST_NONE);
+    CASE_RETURN_TEXT(BTA_JV_ST_CL_OPENING);
+    CASE_RETURN_TEXT(BTA_JV_ST_CL_OPEN);
+    CASE_RETURN_TEXT(BTA_JV_ST_CL_CLOSING);
+    CASE_RETURN_TEXT(BTA_JV_ST_SR_LISTEN);
+    CASE_RETURN_TEXT(BTA_JV_ST_SR_OPEN);
+    CASE_RETURN_TEXT(BTA_JV_ST_SR_CLOSING);
+    default:
+      return std::string("UNKNOWN[") + std::to_string(state) + std::string("]");
+  }
+}
+
 namespace std {
 template <>
 struct formatter<BtaJvPmState> : enum_formatter<BtaJvPmState> {};
+template <>
+struct formatter<BtaJvState> : enum_formatter<BtaJvState> {};
 }  // namespace std
 
 namespace bluetooth::legacy::testing {
@@ -206,4 +220,4 @@ void bta_jv_start_discovery_cback(uint32_t rfcomm_slot_id, const RawAddress& bd_
                                   tSDP_RESULT result);
 }  // namespace bluetooth::legacy::testing
 
-#endif /* BTA_JV_INT_H */
+#endif  // BTA_JV_INT_H
