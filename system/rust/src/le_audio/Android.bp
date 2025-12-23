@@ -50,6 +50,19 @@ cc_library_static {
         // The generated code triggers these warnings.
         "-Wno-missing-prototypes",
     ],
+    srcs: [
+        "periodic_sync/periodic_sync_shim.cc",
+    ],
+    static_libs: [
+        "libbase",
+        "libbluetooth_log",
+        "libbluetooth_types",
+        "libchrome",
+    ],
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/include",
+    ],
     generated_headers: [
         "cxx-bridge-header",
         "libbluetooth_le_audio_rs_bridge_codegen_header",
