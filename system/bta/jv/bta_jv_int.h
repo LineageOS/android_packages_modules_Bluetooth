@@ -104,7 +104,7 @@ struct BtaJvPcb {
 };
 
 /* JV RFCOMM control block */
-typedef struct {
+struct BtaJvRfcommCb {
   tBTA_JV_RFCOMM_CBACK* p_cback;                  // the callback function
   uint16_t port_hdls[BTA_JV_MAX_RFC_SR_SESSION];  // array of port handles based on session index
   tBTA_SERVICE_ID sec_id;                         // service id
@@ -112,7 +112,7 @@ typedef struct {
   uint8_t scn;                                    // the scn of the server
   uint8_t max_sess;                               // max sessions
   int curr_sess;                                  // current sessions count
-} tBTA_JV_RFC_CB;
+};
 
 /* JV control block */
 struct tBTA_JV_CB {
@@ -122,7 +122,7 @@ struct tBTA_JV_CB {
   uint32_t sdp_handle[BTA_JV_MAX_SDP_REC];  // SDP records created
   tBTA_JV_DM_CBACK* p_dm_cback;
   BtaJvL2capCb l2c_cb[BTA_JV_MAX_L2C_CONN];  // index is GAP handle (index)
-  tBTA_JV_RFC_CB rfc_cb[BTA_JV_MAX_RFC_CONN];
+  BtaJvRfcommCb rfc_cb[BTA_JV_MAX_RFC_CONN];
   BtaJvPcb port_cb[MAX_RFC_PORTS];              // index of this array is the port_handle
   uint8_t sec_id[BTA_JV_NUM_SERVICE_ID];        // service ID
   uint16_t free_psm_list[BTA_JV_MAX_L2C_CONN];  // PSMs freed by java (can be reused)
@@ -176,7 +176,7 @@ void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, uint8_t local_scn, uint8_t ma
                                 tBTA_JV_RFCOMM_CBACK* p_cback, uint32_t rfcomm_slot_id,
                                 RfcommCfgInfo cfg, uint32_t app_uid);
 void bta_jv_rfcomm_stop_server(uint32_t handle, uint32_t rfcomm_slot_id);
-void bta_jv_rfcomm_write(uint32_t handle, uint32_t req_id, tBTA_JV_RFC_CB* p_cb, BtaJvPcb* p_pcb);
+void bta_jv_rfcomm_write(uint32_t handle, uint32_t req_id, BtaJvRfcommCb* p_cb, BtaJvPcb* p_pcb);
 void bta_jv_set_pm_profile(uint32_t handle, tBTA_JV_PM_ID app_id, tBTA_JV_CONN_STATE init_st);
 
 void bta_jv_l2cap_stop_server_le(uint16_t local_chan);

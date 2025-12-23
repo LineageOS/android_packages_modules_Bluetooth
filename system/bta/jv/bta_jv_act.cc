@@ -60,7 +60,7 @@ using namespace bluetooth;
 tBTA_JV_CB bta_jv_cb;
 std::unordered_set<uint16_t> used_l2cap_classic_dynamic_psm;
 
-static BtaJvPcb* bta_jv_add_rfc_port(tBTA_JV_RFC_CB* p_cb, BtaJvPcb* p_pcb_open);
+static BtaJvPcb* bta_jv_add_rfc_port(BtaJvRfcommCb* p_cb, BtaJvPcb* p_pcb_open);
 static tBTA_JV_STATUS bta_jv_free_set_pm_profile_cb(uint32_t jv_handle);
 static void bta_jv_pm_conn_busy(BtaJvPmCb* p_cb);
 static void bta_jv_pm_conn_idle(BtaJvPmCb* p_cb);
@@ -228,8 +228,8 @@ static tBTA_JV_L2CAP_REASON bta_jv_from_gap_l2cap_err(const tL2CAP_CONN& l2cap_r
  * Returns      pointer to allocated control block
  *
  ******************************************************************************/
-static tBTA_JV_RFC_CB* bta_jv_alloc_rfc_cb(uint16_t port_handle, BtaJvPcb** pp_pcb) {
-  tBTA_JV_RFC_CB* p_cb = nullptr;
+static BtaJvRfcommCb* bta_jv_alloc_rfc_cb(uint16_t port_handle, BtaJvPcb** pp_pcb) {
+  BtaJvRfcommCb* p_cb = nullptr;
   BtaJvPcb* p_pcb;
   int i, j;
   for (i = 0; i < BTA_JV_MAX_RFC_CONN; i++) {
@@ -285,8 +285,8 @@ static BtaJvPcb* bta_jv_rfc_port_to_pcb(uint16_t port_handle) {
  * Returns      the RFCOMM control block associated with the given port handle
  *
  ******************************************************************************/
-static tBTA_JV_RFC_CB* bta_jv_rfc_port_to_cb(uint16_t port_handle) {
-  tBTA_JV_RFC_CB* p_cb = nullptr;
+static BtaJvRfcommCb* bta_jv_rfc_port_to_cb(uint16_t port_handle) {
+  BtaJvRfcommCb* p_cb = nullptr;
   uint32_t handle;
 
   if ((port_handle > 0) && (port_handle <= MAX_RFC_PORTS) &&
@@ -313,7 +313,7 @@ static tBTA_JV_RFC_CB* bta_jv_rfc_port_to_cb(uint16_t port_handle) {
  *              tBTA_JV_STATUS::FAILURE otherwise
  *
  ******************************************************************************/
-static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB* p_cb, BtaJvPcb* p_pcb) {
+static tBTA_JV_STATUS bta_jv_free_rfc_cb(BtaJvRfcommCb* p_cb, BtaJvPcb* p_pcb) {
   tBTA_JV_STATUS status = tBTA_JV_STATUS::SUCCESS;
   bool remove_server = false;
 
@@ -1490,7 +1490,7 @@ void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, BT_HDR* msg, uint32_t 
  *
  ******************************************************************************/
 static int bta_jv_port_data_co_cback(uint16_t port_handle, uint8_t* buf, uint16_t len, int type) {
-  tBTA_JV_RFC_CB* p_cb = bta_jv_rfc_port_to_cb(port_handle);
+  BtaJvRfcommCb* p_cb = bta_jv_rfc_port_to_cb(port_handle);
   BtaJvPcb* p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
   log::verbose("p_cb={}, p_pcb={}, len={}, type={}", std::format_ptr(p_cb), std::format_ptr(p_pcb),
                len, type);
@@ -1522,7 +1522,7 @@ static int bta_jv_port_data_co_cback(uint16_t port_handle, uint8_t* buf, uint16_
  *
  ******************************************************************************/
 static void bta_jv_port_mgmt_cl_cback(const tPORT_RESULT code, uint16_t port_handle) {
-  tBTA_JV_RFC_CB* p_cb = bta_jv_rfc_port_to_cb(port_handle);
+  BtaJvRfcommCb* p_cb = bta_jv_rfc_port_to_cb(port_handle);
   BtaJvPcb* p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
   RawAddress rem_bda = RawAddress::kEmpty;
   uint16_t lcid;
@@ -1584,7 +1584,7 @@ static void bta_jv_port_mgmt_cl_cback(const tPORT_RESULT code, uint16_t port_han
  *
  ******************************************************************************/
 static void bta_jv_port_event_cl_cback(uint32_t code, uint16_t port_handle) {
-  tBTA_JV_RFC_CB* p_cb = bta_jv_rfc_port_to_cb(port_handle);
+  BtaJvRfcommCb* p_cb = bta_jv_rfc_port_to_cb(port_handle);
   BtaJvPcb* p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
   tBTA_JV evt_data;
 
@@ -1655,7 +1655,7 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn, const RawAddre
     bta_jv.rfc_cl_init.status = tBTA_JV_STATUS::FAILURE;
   } else {
     BtaJvPcb* p_pcb;
-    tBTA_JV_RFC_CB* p_cb = bta_jv_alloc_rfc_cb(handle, &p_pcb);
+    BtaJvRfcommCb* p_cb = bta_jv_alloc_rfc_cb(handle, &p_pcb);
     if (p_cb) {
       p_cb->p_cback = p_cback;
       p_cb->scn = 0;
@@ -1704,7 +1704,7 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn, const RawAddre
   }
 }
 
-static int find_rfc_pcb(uint32_t rfcomm_slot_id, tBTA_JV_RFC_CB** cb, BtaJvPcb** pcb) {
+static int find_rfc_pcb(uint32_t rfcomm_slot_id, BtaJvRfcommCb** cb, BtaJvPcb** pcb) {
   *cb = nullptr;
   *pcb = nullptr;
   int i;
@@ -1739,7 +1739,7 @@ void bta_jv_rfcomm_close(uint32_t handle, uint32_t rfcomm_slot_id) {
 
   log::verbose("rfc_handle={}", handle);
 
-  tBTA_JV_RFC_CB* p_cb = nullptr;
+  BtaJvRfcommCb* p_cb = nullptr;
   BtaJvPcb* p_pcb = nullptr;
 
   if (!find_rfc_pcb(rfcomm_slot_id, &p_cb, &p_pcb)) {
@@ -1757,7 +1757,7 @@ void bta_jv_rfcomm_close(uint32_t handle, uint32_t rfcomm_slot_id) {
  ******************************************************************************/
 static void bta_jv_port_mgmt_sr_cback(const tPORT_RESULT code, uint16_t port_handle) {
   BtaJvPcb* p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
-  tBTA_JV_RFC_CB* p_cb = bta_jv_rfc_port_to_cb(port_handle);
+  BtaJvRfcommCb* p_cb = bta_jv_rfc_port_to_cb(port_handle);
   tBTA_JV evt_data;
   RawAddress rem_bda = RawAddress::kEmpty;
   uint16_t lcid;
@@ -1835,7 +1835,7 @@ static void bta_jv_port_mgmt_sr_cback(const tPORT_RESULT code, uint16_t port_han
  ******************************************************************************/
 static void bta_jv_port_event_sr_cback(uint32_t code, uint16_t port_handle) {
   BtaJvPcb* p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
-  tBTA_JV_RFC_CB* p_cb = bta_jv_rfc_port_to_cb(port_handle);
+  BtaJvRfcommCb* p_cb = bta_jv_rfc_port_to_cb(port_handle);
   tBTA_JV evt_data;
 
   if (p_cb == nullptr || p_cb->p_cback == nullptr) {
@@ -1878,7 +1878,7 @@ static void bta_jv_port_event_sr_cback(uint32_t code, uint16_t port_handle) {
  * Returns      a pointer to BtaJvPcb just added
  *
  ******************************************************************************/
-static BtaJvPcb* bta_jv_add_rfc_port(tBTA_JV_RFC_CB* p_cb, BtaJvPcb* p_pcb_open) {
+static BtaJvPcb* bta_jv_add_rfc_port(BtaJvRfcommCb* p_cb, BtaJvPcb* p_pcb_open) {
   uint8_t used = 0, i, listen = 0;
   uint32_t si = 0;
   int port_status;
@@ -1984,7 +1984,7 @@ void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, uint8_t local_scn, uint8_t ma
   uint32_t event_mask = BTA_JV_RFC_EV_MASK;
   int port_status;
   PortSettings port_settings;
-  tBTA_JV_RFC_CB* p_cb = nullptr;
+  BtaJvRfcommCb* p_cb = nullptr;
   BtaJvPcb* p_pcb;
   tBTA_JV_RFCOMM_START evt_data;
 
@@ -2070,7 +2070,7 @@ void bta_jv_rfcomm_stop_server(uint32_t handle, uint32_t rfcomm_slot_id) {
   }
 
   log::verbose("jv_handle={}, slot_id={}", handle, rfcomm_slot_id);
-  tBTA_JV_RFC_CB* p_cb = nullptr;
+  BtaJvRfcommCb* p_cb = nullptr;
   BtaJvPcb* p_pcb = nullptr;
 
   if (!find_rfc_pcb(rfcomm_slot_id, &p_cb, &p_pcb)) {
@@ -2087,7 +2087,7 @@ void bta_jv_rfcomm_stop_server(uint32_t handle, uint32_t rfcomm_slot_id) {
  * Description  Writes data to an RFCOMM connection
  *
  *******************************************************************************/
-void bta_jv_rfcomm_write(uint32_t handle, uint32_t req_id, tBTA_JV_RFC_CB* p_cb, BtaJvPcb* p_pcb) {
+void bta_jv_rfcomm_write(uint32_t handle, uint32_t req_id, BtaJvRfcommCb* p_cb, BtaJvPcb* p_pcb) {
   if (p_pcb->state == BTA_JV_ST_NONE) {
     log::error("in state BTA_JV_ST_NONE - cannot write");
     return;

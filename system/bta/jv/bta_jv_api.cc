@@ -559,7 +559,7 @@ tBTA_JV_STATUS BTA_JvRfcommWrite(uint32_t handle, uint32_t req_id) {
 
   log::verbose("write ok");
 
-  tBTA_JV_RFC_CB* p_cb = &bta_jv_cb.rfc_cb[hi];
+  BtaJvRfcommCb* p_cb = &bta_jv_cb.rfc_cb[hi];
   do_in_main_thread(BindOnce(&bta_jv_rfcomm_write, handle, req_id, p_cb,
                              &bta_jv_cb.port_cb[p_cb->port_hdls[si] - 1]));
   return tBTA_JV_STATUS::SUCCESS;
