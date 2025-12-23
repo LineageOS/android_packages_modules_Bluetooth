@@ -262,13 +262,13 @@ class AppScanStats(
     @Synchronized
     fun recordScanTimeoutCountMetrics(scannerId: Int, scanTimeoutMillis: Long) {
         val scan = getScanFromScannerId(scannerId)
-        scanMetricsReporter.recordScanTimeoutCountMetrics(scan, scanTimeoutMillis)
+        scanMetricsReporter.recordScanTimeoutCount(scan, scanTimeoutMillis)
     }
 
     @Synchronized
     fun recordHwFilterNotAvailableCountMetrics(scannerId: Int, numOfFilterSupported: Long) {
         val scan = getScanFromScannerId(scannerId)
-        scanMetricsReporter.recordHwFilterNotAvailableCountMetrics(scan, numOfFilterSupported)
+        scanMetricsReporter.recordHwFilterNotAvailableCount(scan, numOfFilterSupported)
     }
 
     @Synchronized
