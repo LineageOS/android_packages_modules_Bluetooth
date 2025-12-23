@@ -54,6 +54,7 @@ using ::testing::Eq;
 using ::testing::Field;
 using ::testing::Mock;
 using ::testing::MockFunction;
+using ::testing::Return;
 using ::testing::SaveArg;
 using ::testing::VariantWith;
 using ::testing::WithArg;
@@ -275,6 +276,16 @@ protected:
     le_impl_->set_privacy_policy_for_initiator_address(
             LeAddressManager::AddressPolicy::USE_STATIC_ADDRESS, address_with_type, rotation_irk,
             minimum_rotation_time, maximum_rotation_time);
+    hci_layer_->GetCommand(OpCode::LE_SET_RANDOM_ADDRESS);
+    hci_layer_->IncomingEvent(LeSetRandomAddressCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  }
+
+  void set_resolvable_address_policy() {
+    // Set address policy as USE_RESOLVABLE_ADDRESS
+    hci::Address address = Address::FromString("A0:05:04:03:02:01").value();
+    hci::AddressWithType address_with_type(address, hci::AddressType::RANDOM_DEVICE_ADDRESS);
+    set_privacy_policy_for_initiator_address(
+            address_with_type, LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS);
     hci_layer_->GetCommand(OpCode::LE_SET_RANDOM_ADDRESS);
     hci_layer_->IncomingEvent(LeSetRandomAddressCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   }
@@ -620,6 +631,48 @@ TEST_F(LeImplTest, connection_complete_with_central_role) {
   ASSERT_EQ(ConnectabilityState::DISARMED, le_impl_->connectability_state_);
 }
 
+TEST_F(LeImplTest, connection_complete_with_central_role__ADDRESS_ROTATION) {
+  ON_CALL(*controller_, IsRpaGenerationSupported()).WillByDefault(Return(false));
+  com::android::bluetooth::flags::provider_->rotate_address_when_connected(true);
+
+  set_resolvable_address_policy();
+
+  hci::Address remote_address = Address::FromString("D0:05:04:03:02:01").value();
+  hci::AddressWithType remote_address_with_type(remote_address,
+                                                hci::AddressType::PUBLIC_DEVICE_ADDRESS);
+  // Create connection
+  le_impl_->create_le_connection(remote_address_with_type, true, false, false);
+  hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
+  hci_layer_->IncomingEvent(
+          LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  hci_layer_->GetCommand(OpCode::LE_CREATE_CONNECTION);
+  hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
+  sync_handler();
+
+  // Check state is ARMED
+  ASSERT_EQ(ConnectabilityState::ARMED, le_impl_->connectability_state_);
+
+  // Receive connection complete of outgoing connection (Role::CENTRAL)
+  EXPECT_CALL(mock_le_connection_callbacks_, OnLeConnectSuccess(remote_address_with_type, _));
+  hci_layer_->IncomingLeMetaEvent(LeConnectionCompleteBuilder::Create(
+          ErrorCode::SUCCESS, 0x0041, Role::CENTRAL, AddressType::PUBLIC_DEVICE_ADDRESS,
+          remote_address, 0x0024, 0x0000, 0x0011, ClockAccuracy::PPM_30));
+  sync_handler();
+
+  // Check state is DISARMED
+  ASSERT_EQ(ConnectabilityState::DISARMED, le_impl_->connectability_state_);
+
+  hci_layer_->GetCommand(OpCode::LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST);
+  hci_layer_->IncomingEvent(
+          LeRemoveDeviceFromFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  ASSERT_EQ(ConnectabilityState::DISARMED, le_impl_->connectability_state_);
+
+  // Check the address rotation command is queued.
+  sync_handler();
+  auto address_rotation_cmd_view = hci_layer_->GetCommand(OpCode::LE_SET_RANDOM_ADDRESS);
+  ASSERT_TRUE(address_rotation_cmd_view.IsValid());
+}
+
 TEST_F(LeImplTest, enhanced_connection_complete_with_central_role) {
   set_random_device_address_policy();
 
@@ -649,6 +702,52 @@ TEST_F(LeImplTest, enhanced_connection_complete_with_central_role) {
 
   // Check state is DISARMED
   ASSERT_EQ(ConnectabilityState::DISARMED, le_impl_->connectability_state_);
+}
+
+TEST_F(LeImplTest, enhanced_connection_complete_with_central_role__ADDRESS_ROTATION) {
+  ON_CALL(*controller_, IsRpaGenerationSupported()).WillByDefault(Return(false));
+  com::android::bluetooth::flags::provider_->rotate_address_when_connected(true);
+
+  set_resolvable_address_policy();
+
+  controller_->AddSupported(OpCode::LE_EXTENDED_CREATE_CONNECTION);
+  hci::Address remote_address = Address::FromString("D0:05:04:03:02:01").value();
+  hci::AddressWithType remote_address_with_type(remote_address,
+                                                hci::AddressType::PUBLIC_DEVICE_ADDRESS);
+
+  // Create connection
+  le_impl_->create_le_connection(remote_address_with_type, true, false, false);
+  hci_layer_->GetCommand(OpCode::LE_ADD_DEVICE_TO_FILTER_ACCEPT_LIST);
+  hci_layer_->IncomingEvent(
+          LeAddDeviceToFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  hci_layer_->GetCommand(OpCode::LE_EXTENDED_CREATE_CONNECTION);
+  hci_layer_->IncomingEvent(
+          LeExtendedCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
+  sync_handler();
+
+  // Check state is ARMED
+  ASSERT_EQ(ConnectabilityState::ARMED, le_impl_->connectability_state_);
+
+  // Receive connection complete of outgoing connection (Role::CENTRAL)
+  EXPECT_CALL(mock_le_connection_callbacks_, OnLeConnectSuccess(remote_address_with_type, _));
+  hci_layer_->IncomingLeMetaEvent(LeEnhancedConnectionCompleteBuilder::Create(
+          ErrorCode::SUCCESS, 0x0041, Role::CENTRAL, AddressType::PUBLIC_DEVICE_ADDRESS,
+          remote_address, Address::kEmpty, Address::kEmpty, 0x0024, 0x0000, 0x0011,
+          ClockAccuracy::PPM_30));
+  sync_handler();
+
+  // Check state is DISARMED
+  ASSERT_EQ(ConnectabilityState::DISARMED, le_impl_->connectability_state_);
+
+  hci_layer_->GetCommand(OpCode::LE_REMOVE_DEVICE_FROM_FILTER_ACCEPT_LIST);
+  hci_layer_->IncomingEvent(
+          LeRemoveDeviceFromFilterAcceptListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  ASSERT_EQ(ConnectabilityState::DISARMED, le_impl_->connectability_state_);
+
+  // Check the address rotation command is queued.
+  sync_handler();
+  auto address_rotation_cmd_view = hci_layer_->GetCommand(OpCode::LE_SET_RANDOM_ADDRESS);
+  ASSERT_TRUE(address_rotation_cmd_view.IsValid());
 }
 
 TEST_F(LeImplTest, aggressive_connection_mode_selected_when_no_ongoing_le_connections_exist) {
