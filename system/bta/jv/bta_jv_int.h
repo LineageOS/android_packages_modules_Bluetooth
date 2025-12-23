@@ -33,6 +33,7 @@
 #include "bta/include/bta_jv_api.h"
 #include "bta/include/bta_sec_api.h"
 #include "internal_include/bt_target.h"
+#include "macros.h"
 #include "osi/include/alarm.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/rfcdefs.h"
@@ -46,7 +47,7 @@
 #define BTA_JV_RFC_EV_MASK (PORT_EV_RXCHAR | PORT_EV_TXEMPTY | PORT_EV_FC | PORT_EV_FCS)
 #endif
 
-enum {
+enum BtaJvPmState {
   BTA_JV_PM_FREE_ST = 0, /* empty PM slot */
   BTA_JV_PM_IDLE_ST,
   BTA_JV_PM_BUSY_ST,
@@ -56,7 +57,7 @@ enum {
 /* BTA JV PM control block */
 typedef struct {
   uint32_t handle;         /* The connection handle */
-  uint8_t state;           /* state: see above enum */
+  BtaJvPmState state;      /* see above enum */
   tBTA_JV_PM_ID app_id;    /* JV app specific id indicating power table to use */
   RawAddress peer_bd_addr; /* Peer BD address */
   alarm_t* idle_timer;     /* Intermediate timer for preventing frequent state transition */
@@ -183,6 +184,22 @@ void bta_jv_set_pm_profile(uint32_t handle, tBTA_JV_PM_ID app_id, tBTA_JV_CONN_S
 
 void bta_jv_l2cap_stop_server_le(uint16_t local_chan);
 void bta_jv_idle_timeout_handler(void* data);
+
+inline std::string bta_jv_pm_state_text(const BtaJvPmState& state) {
+  switch (state) {
+    CASE_RETURN_TEXT(BTA_JV_PM_FREE_ST);
+    CASE_RETURN_TEXT(BTA_JV_PM_IDLE_ST);
+    CASE_RETURN_TEXT(BTA_JV_PM_BUSY_ST);
+    CASE_RETURN_TEXT(BTA_JV_PM_BUSY_TO_IDLE_ST);
+    default:
+      return std::string("UNKNOWN[") + std::to_string(state) + std::string("]");
+  }
+}
+
+namespace std {
+template <>
+struct formatter<BtaJvPmState> : enum_formatter<BtaJvPmState> {};
+}  // namespace std
 
 namespace bluetooth::legacy::testing {
 void bta_jv_start_discovery_cback(uint32_t rfcomm_slot_id, const RawAddress& bd_addr,

@@ -2119,7 +2119,7 @@ static void bta_jv_pm_conn_idle(tBTA_JV_PM_CB* p_cb) {
  ******************************************************************************/
 static void bta_jv_pm_state_change(tBTA_JV_PM_CB* p_cb, const tBTA_JV_CONN_STATE state) {
   log::verbose("p_cb={}, jv_handle=0x{:x}, busy/idle_state={}, app_id={}, conn_state={}",
-               std::format_ptr(p_cb), p_cb->handle, p_cb->state, p_cb->app_id,
+               std::format_ptr(p_cb), p_cb->handle, bta_jv_pm_state_text(p_cb->state), p_cb->app_id,
                bta_jv_conn_state_text(state));
 
   switch (state) {
