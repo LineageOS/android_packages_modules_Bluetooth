@@ -213,6 +213,20 @@ class AvrcpControllerVolumeHandlerTest {
     }
 
     /**
+     * If a volume changed event matches the current stream volume, absolute volume devices should
+     * not trigger the callback.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_AVRCP_CONTROLLER_ABS_VOL_CHANGED_NOTIFICATION)
+    fun testEvent_isStrategyAbsolute_currentVol_verifiesNoCallback() {
+        makeVolumeHandler(isVolumeFixed = false, isAutomotive = false)
+
+        // Volume changed event that matches the current stream volume
+        sendVolumeChangedEvent(25)
+        verify(mCallback, never()).onAbsoluteVolumeChanged(any<Int>())
+    }
+
+    /**
      * If a volume changed event occurs after setting absolute volume, for a different volume than
      * was set, absolute volume devices should trigger the callback.
      */
