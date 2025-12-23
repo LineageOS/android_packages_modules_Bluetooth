@@ -1741,7 +1741,9 @@ static void bta_ag_hfp_result(tBTA_AG_SCB* p_scb, const tBTA_AG_API_RESULT& resu
             bta_ag_sco_is_codec_negotiating(p_scb))) &&
           !(p_scb->features & BTA_AG_FEAT_NOSCO)) {
         p_scb->post_sco = BTA_AG_POST_SCO_CALL_END;
-        bta_ag_sco_close(p_scb, tBTA_AG_DATA::kEmpty);
+        if (!bta_ag_is_sco_managed_by_audio()) {
+          bta_ag_sco_close(p_scb, tBTA_AG_DATA::kEmpty);
+        }
       } else if (p_scb->post_sco == BTA_AG_POST_SCO_CALL_END_INCALL) {
         /* sco closing for outgoing call because of incoming call */
         /* Send only callsetup end indicator after sco close */
