@@ -133,7 +133,8 @@ tRFC_MCB* rfc_alloc_multiplexer_channel(const RawAddress& bd_addr, bool is_initi
   log::verbose("bd_addr:{}, is_initiator:{}", bd_addr, is_initiator);
 
   for (i = 0; i < MAX_BD_CONNECTIONS; i++) {
-    log::verbose("rfc_cb.port.rfc_mcb[{}] - state:{}, bd_addr:{}", i, rfc_cb.port.rfc_mcb[i].state,
+    log::verbose("rfc_cb.port.rfc_mcb[{}] - state:{}, bd_addr:{}", i,
+                 rfcomm_mx_state_text(rfc_cb.port.rfc_mcb[i].state),
                  rfc_cb.port.rfc_mcb[i].bd_addr);
 
     if ((rfc_cb.port.rfc_mcb[i].state != RFC_MX_STATE_IDLE) &&
@@ -425,9 +426,8 @@ void rfc_check_send_cmd(tRFC_MCB* p_mcb, BT_HDR* p_buf) {
   /* if passed a buffer queue it */
   if (p_buf != nullptr) {
     if (p_mcb->cmd_q == nullptr) {
-      log::error("empty queue: p_mcb = {} p_mcb->lcid = {} cached p_mcb = {}",
-                 std::format_ptr(p_mcb), p_mcb->lcid,
-                 std::format_ptr(rfc_find_lcid_mcb(p_mcb->lcid)));
+      log::error("empty queue: p_mcb={} p_mcb->lcid=0x{:x} cached p_mcb={}", std::format_ptr(p_mcb),
+                 p_mcb->lcid, std::format_ptr(rfc_find_lcid_mcb(p_mcb->lcid)));
     }
     fixed_queue_enqueue(p_mcb->cmd_q, p_buf);
   }
@@ -440,7 +440,7 @@ void rfc_check_send_cmd(tRFC_MCB* p_mcb, BT_HDR* p_buf) {
     }
     uint16_t len = p->len;
     if (stack::l2cap::get_interface().L2CA_DataWrite(p_mcb->lcid, p) != tL2CAP_DW_RESULT::SUCCESS) {
-      log::warn("Unable to write L2CAP data peer:{} cid:{} len:{}", p_mcb->bd_addr, p_mcb->lcid,
+      log::warn("Unable to write L2CAP data peer:{} cid:0x{:x} len:{}", p_mcb->bd_addr, p_mcb->lcid,
                 len);
     }
   }

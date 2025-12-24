@@ -194,9 +194,8 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn, bool is_serv
 
   log::info(
           "bd_addr={}, scn={}, is_server={}, mtu={}, uuid=0x{:x}, dlci={}, "
-          "signal_state=0x{:x}, p_port={}",
-          bd_addr, scn, is_server, mtu, uuid, dlci, p_port->default_signal_state,
-          std::format_ptr(p_port));
+          "signal_state=0x{:x}, port_handle={}",
+          bd_addr, scn, is_server, mtu, uuid, dlci, p_port->default_signal_state, p_port->handle);
 
   // If this is not initiator of the connection need to just wait
   if (p_port->is_server) {
@@ -661,7 +660,7 @@ int PORT_FlowControl_MaxCredit(uint8_t handle, bool enable) {
   bool old_fc;
   uint32_t events;
 
-  log::verbose("handle:{} enable: {}", handle, enable);
+  log::verbose("handle:{} enable:{}", handle, enable);
 
   tPORT* p_port = get_port_from_handle(handle);
   if (p_port == nullptr) {
@@ -851,11 +850,9 @@ static int port_write(tPORT* p_port, BT_HDR* p_buf) {
       return PORT_TX_FULL;
     }
 
-    log::verbose(
-            "Data is enqueued. flow disabled {} peer_ready {} state {} ctrl_state "
-            "{:x}",
-            p_port->tx.peer_fc, p_port->rfc.p_mcb && p_port->rfc.p_mcb->peer_ready,
-            p_port->rfc.sm_cb.state, p_port->port_ctrl);
+    log::verbose("Data is enqueued. flow disabled:{}, peer_ready:{}, state:{}, ctrl_state:{:x}",
+                 p_port->tx.peer_fc, p_port->rfc.p_mcb && p_port->rfc.p_mcb->peer_ready,
+                 p_port->rfc.sm_cb.state, p_port->port_ctrl);
 
     fixed_queue_enqueue(p_port->tx.queue, p_buf);
     p_port->tx.queue_size += p_buf->len;
@@ -1200,17 +1197,17 @@ int PORT_GetChannelInfo(uint8_t handle, uint16_t* local_mtu, uint16_t* remote_mt
 
   uint16_t rcid, ahandle, lmtu;
   if (!stack::l2cap::get_interface().L2CA_GetRemoteChannelId(p_port->rfc.p_mcb->lcid, &rcid)) {
-    log::error("L2CA_GetRemoteChannelId failed, local cid: {}", p_port->rfc.p_mcb->lcid);
+    log::error("L2CA_GetRemoteChannelId failed, lcid:0x{:x}", p_port->rfc.p_mcb->lcid);
     return PORT_PEER_FAILED;
   }
 
   if (!stack::l2cap::get_interface().L2CA_GetAclHandle(p_port->rfc.p_mcb->lcid, &ahandle)) {
-    log::error("L2CA_GetAclHandle failed, local cid: {}", p_port->rfc.p_mcb->lcid);
+    log::error("L2CA_GetAclHandle failed, lcid:0x{:x}", p_port->rfc.p_mcb->lcid);
     return PORT_PEER_FAILED;
   }
 
   if (!stack::l2cap::get_interface().L2CA_GetLocalMtu(p_port->rfc.p_mcb->lcid, &lmtu)) {
-    log::error("L2CA_GetLocalMtu failed, local cid: {}", p_port->rfc.p_mcb->lcid);
+    log::error("L2CA_GetLocalMtu failed, lcid:0x{:x}", p_port->rfc.p_mcb->lcid);
     return PORT_PEER_FAILED;
   }
   *local_mtu = lmtu;

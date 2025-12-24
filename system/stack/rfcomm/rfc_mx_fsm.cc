@@ -278,7 +278,8 @@ void rfc_mx_sm_state_configure(tRFC_MCB* p_mcb, tRFC_MX_EVENT event, void* p_dat
     case RFC_MX_EVENT_START_REQ:
     case RFC_MX_EVENT_CONN_CNF:
 
-      log::error("Mx error state {} event {}", p_mcb->state, event);
+      log::error("Mx error state {} event {}", rfcomm_mx_state_text(p_mcb->state),
+                 rfcomm_mx_event_text(event));
       return;
 
     case RFC_MX_EVENT_CONF_IND:
@@ -300,7 +301,7 @@ void rfc_mx_sm_state_configure(tRFC_MCB* p_mcb, tRFC_MX_EVENT event, void* p_dat
               p_mcb->bd_addr, bluetooth::metrics::State::RFCOMM_MX_L2CAP_CONFIG_TIMEOUT);
       p_mcb->state = RFC_MX_STATE_IDLE;
       if (!stack::l2cap::get_interface().L2CA_DisconnectReq(p_mcb->lcid)) {
-        log::warn("Unable to send L2CAP disconnect request peer:{} cid:{}", p_mcb->bd_addr,
+        log::warn("Unable to send L2CAP disconnect request peer:{} cid:0x{:x}", p_mcb->bd_addr,
                   p_mcb->lcid);
       }
 
@@ -379,7 +380,7 @@ void rfc_mx_sm_sabme_wait_ua(tRFC_MCB* p_mcb, tRFC_MX_EVENT event, void* /* p_da
               p_mcb->bd_addr, bluetooth::metrics::State::RFCOMM_MX_SABME_WAIT_UA_TIMEOUT);
       p_mcb->state = RFC_MX_STATE_IDLE;
       if (!stack::l2cap::get_interface().L2CA_DisconnectReq(p_mcb->lcid)) {
-        log::warn("Unable to send L2CAP disonnect request peer:{} cid:{}", p_mcb->bd_addr,
+        log::warn("Unable to send L2CAP disconnect request peer:{} cid:{}", p_mcb->bd_addr,
                   p_mcb->lcid);
       }
 
@@ -451,7 +452,7 @@ void rfc_mx_sm_state_wait_sabme(tRFC_MCB* p_mcb, tRFC_MX_EVENT event, void* p_da
         rfc_mx_retry_with_cached_lcid(p_mcb);
       } else {
         if (!stack::l2cap::get_interface().L2CA_DisconnectReq(p_mcb->lcid)) {
-          log::warn("Unable to send L2CAP disconnect request peer:{} cid:{}", p_mcb->bd_addr,
+          log::warn("Unable to send L2CAP disconnect request peer:{} cid:0x{:x}", p_mcb->bd_addr,
                     p_mcb->lcid);
         }
         PORT_CloseInd(p_mcb);
@@ -500,7 +501,7 @@ void rfc_mx_sm_state_connected(tRFC_MCB* p_mcb, tRFC_MX_EVENT event, void* /* p_
       rfc_send_ua(p_mcb, RFCOMM_MX_DLCI);
       if (p_mcb->is_initiator) {
         if (!stack::l2cap::get_interface().L2CA_DisconnectReq(p_mcb->lcid)) {
-          log::warn("Unable to send L2CAP disconnect request peer:{} cid:{}", p_mcb->bd_addr,
+          log::warn("Unable to send L2CAP disconnect request peer:{} cid:0x{:x}", p_mcb->bd_addr,
                     p_mcb->lcid);
         }
       }
@@ -640,7 +641,7 @@ void rfc_on_l2cap_error(uint16_t lcid, uint16_t result) {
       log::error("disconnect L2CAP due to config failure for {}", p_mcb->bd_addr);
       PORT_StartCnf(p_mcb, static_cast<uint16_t>(result));
       if (!stack::l2cap::get_interface().L2CA_DisconnectReq(p_mcb->lcid)) {
-        log::warn("Unable to send L2CAP disconnect request peer:{} cid:{}", p_mcb->bd_addr,
+        log::warn("Unable to send L2CAP disconnect request peer:{} cid:0x{:x}", p_mcb->bd_addr,
                   p_mcb->lcid);
       }
     }
@@ -776,10 +777,11 @@ static void rfc_mx_swap_directions(tRFC_MCB* p_mcb) {
  *
  ******************************************************************************/
 static void rfc_mx_handle_invalid_collision(tRFC_MCB* p_mcb) {
-  log::warn("we cannot accept connection request from peer at this state.  lcid:{}", p_mcb->lcid);
+  log::warn("we cannot accept connection request from peer at this state.  lcid:0x{:x}",
+            p_mcb->lcid);
   /* don't update lcid - disconnect instead */
   if (!stack::l2cap::get_interface().L2CA_DisconnectReq(p_mcb->lcid)) {
-    log::warn("Unable to disconnect L2CAP cid:{}", p_mcb->lcid);
+    log::warn("Unable to disconnect L2CAP cid:0x{:x}", p_mcb->lcid);
   }
 
   /* set p_mcb to pre-collision values */

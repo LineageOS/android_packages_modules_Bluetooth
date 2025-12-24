@@ -292,7 +292,8 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
   }
 
   if (rfc_cb.rfc.rx_frame.dlci == RFCOMM_MX_DLCI) {
-    log::verbose("handle multiplexer event {}, p_mcb={}", event, std::format_ptr(p_mcb));
+    log::verbose("handle multiplexer event {}, p_mcb={}", rfcomm_event_text(event),
+                 std::format_ptr(p_mcb));
     /* Take special care of the Multiplexer Control Messages */
     if (event == RFC_EVENT_UIH) {
       rfc_process_mx_message(p_mcb, p_buf);
@@ -391,13 +392,13 @@ void RFCOMM_CongestionStatusInd(uint16_t lcid, bool is_congested) {
 tRFC_MCB* rfc_find_lcid_mcb(uint16_t lcid) {
   auto it = rfc_lcid_mcb.find(lcid);
   if (it == rfc_lcid_mcb.end()) {
-    log::warn("no mcb saved for lcid:{}", lcid);
+    log::warn("no mcb saved for lcid:0x{:x}", lcid);
     return nullptr;
   }
 
   tRFC_MCB* p_mcb = it->second;
   if (p_mcb->lcid != lcid) {
-    log::warn("LCID reused lcid=:0x{:x}, current_lcid=0x{:x}", lcid, p_mcb->lcid);
+    log::warn("LCID reused lcid=0x{:x}, current_lcid=0x{:x}", lcid, p_mcb->lcid);
     return nullptr;
   }
   return p_mcb;

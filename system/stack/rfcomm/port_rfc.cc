@@ -66,7 +66,7 @@ static void port_get_credits(tPORT* p_port, uint8_t k);
  *
  ******************************************************************************/
 int port_open_continue(tPORT* p_port) {
-  log::verbose("port_open_continue, p_port:{}", std::format_ptr(p_port));
+  log::verbose("port_open_continue, port_handle:{}", p_port->handle);
 
   /* Check if multiplexer channel has already been established */
   tRFC_MCB* p_mcb = rfc_alloc_multiplexer_channel(p_port->bd_addr, true);
@@ -386,7 +386,7 @@ void PORT_ParNegInd(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu, uint8_t cl, uin
  *
  ******************************************************************************/
 void PORT_ParNegCnf(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu, uint8_t cl, uint8_t k) {
-  log::verbose("PORT_ParNegCnf dlci:{} mtu:{} cl: {} k: {}", dlci, mtu, cl, k);
+  log::verbose("PORT_ParNegCnf dlci:{} mtu:{} cl:{} k:{}", dlci, mtu, cl, k);
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, dlci);
   if (p_port == nullptr) {
     log::warn("port is null for {}", p_mcb->bd_addr);
@@ -437,8 +437,8 @@ void PORT_ParNegCnf(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu, uint8_t cl, uin
 void PORT_DlcEstablishInd(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu) {
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, dlci);
 
-  log::verbose("p_mcb:{}, dlci:{} mtu:{}i, p_port:{}, bd_addr:{}", std::format_ptr(p_mcb), dlci,
-               mtu, std::format_ptr(p_port), p_mcb->bd_addr);
+  log::verbose("p_mcb:{}, dlci:{}, mtu:{}, port_handle:{}, bd_addr:{}", std::format_ptr(p_mcb),
+               dlci, mtu, p_port->handle, p_mcb->bd_addr);
 
   if (p_port == nullptr) {
     /* This can be a first request for this port */
@@ -827,8 +827,8 @@ void PORT_DataInd(tRFC_MCB* p_mcb, uint8_t dlci, BT_HDR* p_buf) {
   uint8_t* p;
   int i;
 
-  log::verbose("PORT_DataInd with data length {}, p_mcb:{},p_port:{},dlci:{}", p_buf->len,
-               std::format_ptr(p_mcb), std::format_ptr(p_port), dlci);
+  log::verbose("PORT_DataInd with data length {}, p_mcb:{}, port_handle:{}, dlci:{}", p_buf->len,
+               std::format_ptr(p_mcb), p_port->handle, dlci);
   if (p_port == nullptr) {
     log::warn("port is null for {}", p_mcb->bd_addr);
     osi_free(p_buf);
