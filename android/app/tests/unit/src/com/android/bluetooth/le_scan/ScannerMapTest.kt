@@ -30,7 +30,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.android.bluetooth.btservice.AdapterService
-import com.android.bluetooth.mockGetSystemService
 import com.android.bluetooth.mockPackageManager
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
@@ -53,12 +52,12 @@ class ScannerMapTest {
 
     @Mock private lateinit var source: AttributionSource
     @Mock private lateinit var adapterService: AdapterService
+    @Mock private lateinit var batteryStatsManager: BatteryStatsManager
     @Mock private lateinit var packageManager: PackageManager
     @Mock private lateinit var scannerCallback: IScannerCallback
 
     @Before
     fun setUp() {
-        adapterService.mockGetSystemService<BatteryStatsManager>()
         adapterService.mockPackageManager(packageManager)
         doReturn(APP_NAME).whenever(packageManager).getNameForUid(any())
     }
@@ -82,6 +81,7 @@ class ScannerMapTest {
                 scanSettings,
                 filters,
                 adapterService,
+                batteryStatsManager,
             )
         app.id = SCANNER_ID
 
@@ -112,6 +112,7 @@ class ScannerMapTest {
                 scanSettings,
                 filters,
                 adapterService,
+                batteryStatsManager,
             )
         app.id = SCANNER_ID
 
@@ -143,6 +144,7 @@ class ScannerMapTest {
                 scanSettings,
                 filters,
                 adapterService,
+                batteryStatsManager,
             )
         app.id = SCANNER_ID
 
@@ -171,6 +173,7 @@ class ScannerMapTest {
             scanSettings,
             filters,
             adapterService,
+            batteryStatsManager,
         )
         scannerMap.dump(sb, emptyMap())
     }
