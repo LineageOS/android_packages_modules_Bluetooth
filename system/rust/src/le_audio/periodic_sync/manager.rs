@@ -155,3 +155,174 @@ impl PeriodicSyncManager for PeriodicSyncManagerImpl {
         ReceiverStream::new(receiver)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use futures::StreamExt;
+    use googletest::prelude::*;
+    use tokio::spawn;
+    use tokio::time::{sleep, timeout};
+
+    use crate::pdl::hci::AddressType;
+    use crate::Address;
+
+    #[googletest::test]
+    fn test_new_initializes_manager_with_valid_shim() {
+        // Verify that creating a new manager correctly initializes the underlying FFI shim.
+        let manager = PeriodicSyncManagerImpl::new();
+        expect_that!(manager.shim.lock().unwrap().is_null(), is_false());
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_broadcast_event_reaches_all_active_subscribers() {
+        // Verify that multiple registered event subscribers all receive generated events.
+        let manager = PeriodicSyncManagerImpl::new();
+        let mut stream1 = manager.subscribe_events();
+        let mut stream2 = manager.subscribe_events();
+
+        // Broadcast a simulated event.
+        let event = PeriodicSyncEvent::PaSyncLost { sync_handle: 42 };
+        manager.sync_registry.lock().unwrap().broadcast_event(event);
+
+        // Verify both subscribers receive it.
+        expect_that!(
+            timeout(DEFAULT_TIMEOUT, stream1.next()).await,
+            ok(some(matches_pattern!(&PeriodicSyncEvent::PaSyncLost { sync_handle: eq(42) })))
+        );
+        expect_that!(
+            timeout(DEFAULT_TIMEOUT, stream2.next()).await,
+            ok(some(matches_pattern!(&PeriodicSyncEvent::PaSyncLost { sync_handle: eq(42) })))
+        );
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_broadcast_event_removes_dropped_subscribers() {
+        // Verify that the manager automatically cleans up and removes event subscribers that have
+        // been dropped.
+        let manager = PeriodicSyncManagerImpl::new();
+
+        {
+            let _stream = manager.subscribe_events();
+            expect_that!(manager.sync_registry.lock().unwrap().event_subscribers.len(), eq(1));
+            // _stream dropped here.
+        }
+
+        // Broadcast to trigger cleanup logic.
+        manager
+            .sync_registry
+            .lock()
+            .unwrap()
+            .broadcast_event(PeriodicSyncEvent::PaSyncLost { sync_handle: 0 });
+
+        // Verify dead subscriber is removed.
+        expect_that!(manager.sync_registry.lock().unwrap().event_subscribers.len(), eq(0));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_start_sync_removes_pending_request_on_timeout() {
+        // Verify that a synchronization request that times out is properly removed from the
+        // pending requests registry.
+        let manager = PeriodicSyncManagerImpl::new();
+        let params = PaCreateSyncParams {
+            broadcast_id: 99,
+            advertising_sid: 1,
+            advertiser_addr: Address::default(),
+            advertiser_addr_type: AddressType::PublicDeviceAddress,
+            skip: 0,
+            sync_timeout: Duration::from_millis(2000),
+        };
+
+        // This will timeout because we don't trigger the FFI callback.
+        let result = timeout(DEFAULT_TIMEOUT, manager.start_sync(params)).await;
+        expect_that!(result, ok(err(anything())));
+
+        // Verify pending request is removed after timeout.
+        expect_that!(
+            manager.sync_registry.lock().unwrap().pending_requests.start_sync.is_empty(),
+            is_true()
+        );
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_stop_sync_removes_active_handle_on_success() {
+        // Verify that stopping a synchronization with a valid handle successfully removes it from
+        // the active handles set.
+        let manager = PeriodicSyncManagerImpl::new();
+        manager.sync_registry.lock().unwrap().active_handles.insert(123);
+
+        let result = timeout(DEFAULT_TIMEOUT, manager.stop_sync(123)).await;
+        expect_that!(result, ok(ok(anything())));
+        expect_that!(manager.sync_registry.lock().unwrap().active_handles.is_empty(), is_true());
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_stop_sync_returns_error_for_unknown_handle() {
+        // Verify that attempting to stop synchronization with a handle that is not active returns
+        // an invalid handle error.
+        let manager = PeriodicSyncManagerImpl::new();
+
+        let result = timeout(DEFAULT_TIMEOUT, manager.stop_sync(456)).await;
+        expect_that!(result, ok(err(eq(&PeriodicSyncError::InvalidHandle))));
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_start_sync_returns_timeout_error_when_no_response() {
+        // Verify that start_sync returns a timeout error if the underlying stack does not respond
+        // within the expected duration.
+        let manager = PeriodicSyncManagerImpl::new();
+        let params = PaCreateSyncParams {
+            broadcast_id: 1,
+            advertising_sid: 1,
+            advertiser_addr: Address::from_be_bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x01]),
+            advertiser_addr_type: AddressType::PublicDeviceAddress,
+            skip: 0,
+            sync_timeout: Duration::from_secs(2),
+        };
+
+        let result = timeout(DEFAULT_TIMEOUT, manager.start_sync(params)).await;
+        expect_that!(result, ok(err(eq(&PeriodicSyncError::Timeout))));
+        expect_that!(
+            manager.sync_registry.lock().unwrap().pending_requests.start_sync.is_empty(),
+            is_true()
+        );
+    }
+
+    #[googletest::test]
+    #[tokio::test]
+    async fn test_start_sync_fails_when_duplicate_broadcast_id_provided() {
+        // Verify that attempting to start a second synchronization with the same broadcast ID
+        // while one is already in progress returns an internal error.
+        let manager = Arc::new(PeriodicSyncManagerImpl::new());
+        let params = PaCreateSyncParams {
+            broadcast_id: 1,
+            advertising_sid: 1,
+            advertiser_addr: Address::from_be_bytes([0x00, 0x00, 0x00, 0x00, 0x00, 0x01]),
+            advertiser_addr_type: AddressType::PublicDeviceAddress,
+            skip: 0,
+            sync_timeout: Duration::from_secs(2),
+        };
+
+        let manager_clone = manager.clone();
+        let params_clone = params.clone();
+        // Start the first sync in a background task.
+        spawn(async move {
+            let _ = timeout(DEFAULT_TIMEOUT, manager_clone.start_sync(params_clone)).await;
+        });
+
+        // Ensure the first task has enough time to acquire the lock and register.
+        sleep(Duration::from_millis(20)).await;
+
+        // Attempt a second sync with the same broadcast_id.
+        let second_sync_result = timeout(DEFAULT_TIMEOUT, manager.start_sync(params)).await;
+
+        expect_that!(second_sync_result, ok(err(eq(&PeriodicSyncError::Internal))));
+    }
+}

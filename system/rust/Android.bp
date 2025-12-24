@@ -77,4 +77,12 @@ rust_test {
         "libgoogletest_rust",
         "libmockall",
     ],
+    static_libs: [
+        "libbase",
+        "libbluetooth_le_audio_rs_test_mocks",
+        "libbluetooth_log",
+        "libbluetooth_types",
+        "libchrome",
+        "liblog",
+    ],
 }
