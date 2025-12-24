@@ -88,8 +88,8 @@ import org.mockito.Mockito.eq
 import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
-import org.mockito.MockitoAnnotations
 import org.mockito.hamcrest.MockitoHamcrest
+import org.mockito.junit.MockitoJUnit
 import org.mockito.kotlin.whenever
 import org.mockito.stubbing.Answer
 import pandora.HIDGrpc
@@ -105,12 +105,10 @@ private const val TAG = "HidHostDualModeTest"
 @RunWith(AndroidJUnit4::class)
 @VirtualOnly
 class HidHostDualModeTest {
+    @get:Rule val mockitoRule = MockitoJUnit.rule()
     @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
-
     @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
-
     @get:Rule(order = 2) val bumble = PandoraDevice()
-
     @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Mock private lateinit var receiver: BroadcastReceiver
@@ -201,8 +199,6 @@ class HidHostDualModeTest {
 
     @Before
     fun setUp() {
-        MockitoAnnotations.initMocks(this)
-
         doAnswer(intentHandler).whenever(receiver).onReceive(any(), any())
 
         inOrder = inOrder(receiver)

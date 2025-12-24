@@ -832,10 +832,10 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
           /* delete this device entry from Sec Dev DB */
           bta_dm_remove_sec_dev_entry(bda);
         }
-
       } else {
         sec_event.auth_cmpl.success = true;
-        if (!p_data->complt.smp_over_br) {
+        if (!com_android_bluetooth_flags_gatt_service_changed_subscription() &&
+            !p_data->complt.smp_over_br) {
           GATT_ConfigServiceChangeCCC(bda, true, BT_TRANSPORT_LE);
         }
       }

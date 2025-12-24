@@ -1460,15 +1460,20 @@ static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, const RawAddress& bda) {
 
 /** process refresh API to delete cache and start a new discovery if currently
  * connected */
-void bta_gattc_process_api_refresh(const RawAddress& remote_bda) {
+void bta_gattc_process_api_refresh(tGATT_IF client_if, const RawAddress& remote_bda) {
   tBTA_GATTC_SERV* p_srvc_cb = bta_gattc_find_srvr_cache(remote_bda);
   if (p_srvc_cb) {
+    // Service discovery is in progress, ignore the request.
+    if (p_srvc_cb->state == BTA_GATTC_SERV_DISC || p_srvc_cb->state == BTA_GATTC_SERV_DISC_ACT) {
+      return;
+    }
     /* try to find a CLCB */
     if (p_srvc_cb->connected && p_srvc_cb->num_clcb != 0) {
       bool found = false;
       tBTA_GATTC_CLCB* p_clcb = nullptr;
       for (auto& p_clcb_i : bta_gattc_cb.clcb_set) {
-        if (p_clcb_i->in_use && p_clcb_i->p_srcb == p_srvc_cb) {
+        if (p_clcb_i->in_use && p_clcb_i->p_srcb == p_srvc_cb &&
+            (client_if == 0 || p_clcb_i->p_rcb->client_if == client_if)) {
           p_clcb = p_clcb_i.get();
           found = true;
           break;

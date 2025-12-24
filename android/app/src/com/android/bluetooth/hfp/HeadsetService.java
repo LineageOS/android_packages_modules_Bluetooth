@@ -2439,11 +2439,9 @@ public class HeadsetService extends ConnectableProfile {
         if (connectionPolicy != CONNECTION_POLICY_UNKNOWN
                 && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
             // Otherwise, reject the connection if connection policy is not valid.
-            boolean matched =
-                    InteropUtil.interopMatchDevice(
-                            getAdapterService(),
-                            InteropUtil.InteropFeature.INTEROP_DISABLE_PROFILE_FALLBACK,
-                            device);
+            var feature = InteropUtil.InteropFeature.INTEROP_DISABLE_PROFILE_FALLBACK;
+            var matched = getAdapterService().interopMatchDevice(feature, device);
+            Log.d(TAG, "INTEROP_DISABLE_PROFILE_FALLBACK: matched=" + matched);
             if (!isOutgoingRequest && !matched) {
                 final var a2dp = getAdapterService().getA2dpService();
                 if (a2dp.isPresent() && a2dp.get().okToConnect(device, true)) {

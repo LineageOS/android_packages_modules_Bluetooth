@@ -325,11 +325,9 @@ public class A2dpService extends ConnectableProfile {
         int connectionPolicy = getConnectionPolicy(device);
         if (connectionPolicy != CONNECTION_POLICY_UNKNOWN
                 && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
-            boolean matched =
-                    InteropUtil.interopMatchDevice(
-                            getAdapterService(),
-                            InteropUtil.InteropFeature.INTEROP_DISABLE_PROFILE_FALLBACK,
-                            device);
+            var feature = InteropUtil.InteropFeature.INTEROP_DISABLE_PROFILE_FALLBACK;
+            var matched = getAdapterService().interopMatchDevice(feature, device);
+            Log.d(TAG, "INTEROP_DISABLE_PROFILE_FALLBACK: matched=" + matched);
             if (!isOutgoingRequest && !matched) {
                 final var headset = getAdapterService().getHeadsetService();
                 if (headset.isPresent() && headset.get().okToAcceptConnection(device, true)) {

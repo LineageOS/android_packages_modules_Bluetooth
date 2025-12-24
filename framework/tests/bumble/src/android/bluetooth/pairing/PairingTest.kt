@@ -64,7 +64,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
-import org.mockito.MockitoAnnotations
+import org.mockito.junit.MockitoJUnit
 import pandora.BumbleConfigProto.OverrideRequest
 import pandora.BumbleConfigProto.PairingConfig
 import pandora.GattProto
@@ -90,14 +90,11 @@ private const val TAG = "PairingTest"
 
 @RunWith(TestParameterInjector::class)
 class PairingTest {
+    @get:Rule val mockitoRule = MockitoJUnit.rule()
     @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
-
     @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
-
     @get:Rule(order = 2) val bumble = PandoraDevice()
-
     @get:Rule(order = 3) val secondBumble = PandoraDevice.createSecondPandoraDevice()
-
     @get:Rule(order = 4) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Mock private lateinit var profileServiceListener: BluetoothProfile.ServiceListener
@@ -115,7 +112,6 @@ class PairingTest {
     @Before
     @Throws(Exception::class)
     fun setUp() {
-        MockitoAnnotations.openMocks(this)
         util =
             TestUtil.Builder(context)
                 .setProfileServiceListener(profileServiceListener)

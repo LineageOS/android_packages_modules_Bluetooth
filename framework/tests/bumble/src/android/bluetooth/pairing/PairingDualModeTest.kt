@@ -35,6 +35,7 @@ import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra
+import com.android.bluetooth.flags.Flags
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.ByteString
@@ -46,7 +47,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
-import org.mockito.MockitoAnnotations
+import org.mockito.junit.MockitoJUnit
 import pandora.HostProto
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.AdvertiseResponse
@@ -57,12 +58,10 @@ private const val TAG = "PairingDualModeTest"
 
 @RunWith(TestParameterInjector::class)
 class PairingDualModeTest {
+    @get:Rule val mockitoRule = MockitoJUnit.rule()
     @get:Rule(order = 0) val permissionRule = AdoptShellPermissionsRule()
-
     @get:Rule(order = 1) val bumble = PandoraDevice()
-
     @get:Rule(order = 2) val secondBumble = PandoraDevice.createSecondPandoraDevice()
-
     @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Mock private lateinit var profileServiceListener: BluetoothProfile.ServiceListener
@@ -77,7 +76,6 @@ class PairingDualModeTest {
     @Before
     @Throws(Exception::class)
     fun setUp() {
-        MockitoAnnotations.openMocks(this)
         util =
             TestUtil.Builder(context)
                 .setProfileServiceListener(profileServiceListener)
@@ -618,11 +616,29 @@ class PairingDualModeTest {
             hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE),
         )
         responseObserver.cancel("Canceling advertise request")
-        intentReceiver.verifyReceived(
-            hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
-            hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
-            hasExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, BluetoothDevice.PAIRING_VARIANT_CONSENT),
-        )
+        if (Flags.providePairingAlgo()) {
+            intentReceiver.verifyReceived(
+                hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+                hasExtra(
+                    BluetoothDevice.EXTRA_PAIRING_VARIANT,
+                    BluetoothDevice.PAIRING_VARIANT_CONSENT,
+                ),
+                hasExtra(
+                    BluetoothDevice.EXTRA_PAIRING_ALGORITHM,
+                    BluetoothDevice.PAIRING_ALGORITHM_SC,
+                ),
+            )
+        } else {
+            intentReceiver.verifyReceived(
+                hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+                hasExtra(
+                    BluetoothDevice.EXTRA_PAIRING_VARIANT,
+                    BluetoothDevice.PAIRING_VARIANT_CONSENT,
+                ),
+            )
+        }
 
         // Approve pairing from Android
         assertThat(device.setPairingConfirmation(true)).isTrue()
@@ -705,12 +721,29 @@ class PairingDualModeTest {
             hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
             hasExtra(BluetoothDevice.EXTRA_TRANSPORT, transport),
         )
-
-        intentReceiver.verifyReceived(
-            hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
-            hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
-            hasExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, BluetoothDevice.PAIRING_VARIANT_CONSENT),
-        )
+        if (Flags.providePairingAlgo()) {
+            intentReceiver.verifyReceived(
+                hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+                hasExtra(
+                    BluetoothDevice.EXTRA_PAIRING_VARIANT,
+                    BluetoothDevice.PAIRING_VARIANT_CONSENT,
+                ),
+                hasExtra(
+                    BluetoothDevice.EXTRA_PAIRING_ALGORITHM,
+                    BluetoothDevice.PAIRING_ALGORITHM_SC,
+                ),
+            )
+        } else {
+            intentReceiver.verifyReceived(
+                hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+                hasExtra(
+                    BluetoothDevice.EXTRA_PAIRING_VARIANT,
+                    BluetoothDevice.PAIRING_VARIANT_CONSENT,
+                ),
+            )
+        }
     }
 
     private fun testStep_restartBt() {

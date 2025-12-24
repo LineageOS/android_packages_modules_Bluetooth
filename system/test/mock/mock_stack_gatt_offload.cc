@@ -25,7 +25,8 @@ bool gatt_offload_init() {
 }
 void gatt_offload_characteristics(tCONN_ID /* conn_id */, bool /* is_server */,
                                   btgatt_db_element_t* /* service */, size_t /* elements_count */,
-                                  uint64_t /* endpoint_id */, uint64_t /* hub_id */,
+                                  uint64_t /* endpoint_id */, uint64_t /* hub_id */, int /* uid */,
+                                  std::string /* attribution_tag */,
                                   std::promise<btgatt_offload_result_t> /* promise */) {
   inc_func_call_count(__func__);
 }

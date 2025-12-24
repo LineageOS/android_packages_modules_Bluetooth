@@ -202,6 +202,14 @@ RobustCachingSupport GetRobustCachingSupport(const tBTA_GATTC_CLCB* p_clcb,
     return GATT_ERROR;
   }
 
+  if (com_android_bluetooth_flags_gatt_service_changed_subscription() &&
+      p_clcb->transport == BT_TRANSPORT_LE) {
+    // Subscribing to service changed indication before discovering services, so that we can
+    // restart service discovery if remote database changes during database discovery.
+    log::info("Subscribing to service changed indication before discovering services");
+    GATT_ConfigServiceChangeCCC(p_clcb->p_srcb->server_bda, true, BT_TRANSPORT_LE);
+  }
+
   return GATTC_Discover(conn_id, disc_type, 0x0001, 0xFFFF);
 }
 

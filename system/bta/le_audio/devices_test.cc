@@ -2688,8 +2688,6 @@ class LeAudioDeviceSubrateTest : public Test {
 protected:
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
-    com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->leaudio_connection_subrating(true);
 
     gatt::SetMockBtaGattInterface(&gatt_interface_);
     // default action for SubrateModeRequest function call
@@ -2710,7 +2708,6 @@ protected:
 
   void TearDown() override {
     delete device_;
-    com::android::bluetooth::flags::provider_->reset_flags();
     bluetooth::hci::testing::mock_controller_.reset();
     gatt::SetMockBtaGattInterface(nullptr);
     bluetooth::manager::SetMockBtmInterface(nullptr);

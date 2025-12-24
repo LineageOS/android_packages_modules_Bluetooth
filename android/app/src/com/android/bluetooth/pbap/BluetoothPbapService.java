@@ -459,11 +459,8 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
         int pce_version = getAdapterService().getRemotePbapPceVersion(remoteDevice.getAddress());
         Log.d(TAG, "pce_version: " + pce_version);
 
-        boolean matched =
-                InteropUtil.interopMatchDevice(
-                        getAdapterService(),
-                        InteropUtil.InteropFeature.INTEROP_ADV_PBAP_VER_1_2,
-                        remoteDevice);
+        var feature = InteropUtil.InteropFeature.INTEROP_ADV_PBAP_VER_1_2;
+        var matched = getAdapterService().interopMatchDevice(feature, remoteDevice);
         Log.d(TAG, "INTEROP_ADV_PBAP_VER_1_2: matched=" + matched);
 
         if (pce_version == PBAP_ADV_VERSION && !matched) {

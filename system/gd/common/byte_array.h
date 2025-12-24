@@ -25,14 +25,12 @@
 
 #include "common/strings.h"
 #include "packet/custom_field_fixed_size_interface.h"
-#include "storage/serializable.h"
 
 namespace bluetooth {
 namespace common {
 
 template <std::size_t LENGTH>
-class ByteArray : public packet::CustomFieldFixedSizeInterface<ByteArray<LENGTH>>,
-                  public storage::Serializable<ByteArray<LENGTH>> {
+class ByteArray : public packet::CustomFieldFixedSizeInterface<ByteArray<LENGTH>> {
 public:
   static constexpr size_t kLength = LENGTH;
   ByteArray() = default;
@@ -53,8 +51,7 @@ public:
   bool operator>=(const ByteArray& rhs) const { return !(*this < rhs); }
   bool operator!=(const ByteArray& rhs) const { return !(*this == rhs); }
 
-  // storage::Serializable methods
-  std::string ToString() const override { return common::ToHexString(bytes.begin(), bytes.end()); }
+  std::string ToString() const { return common::ToHexString(bytes.begin(), bytes.end()); }
   static std::optional<ByteArray<kLength>> FromString(const std::string& from) {
     if (from.length() != (kLength * 2)) {
       return std::nullopt;
@@ -66,10 +63,6 @@ public:
     ByteArray<kLength> byte_array = {};
     std::move(vec->data(), vec->data() + vec->size(), byte_array.data());
     return byte_array;
-  }
-  std::string ToLegacyConfigString() const override { return ToString(); }
-  static std::optional<ByteArray<kLength>> FromLegacyConfigString(const std::string& from) {
-    return FromString(from);
   }
 };
 

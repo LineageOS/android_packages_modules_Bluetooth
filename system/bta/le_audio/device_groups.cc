@@ -2645,10 +2645,6 @@ std::unique_ptr<types::AudioSetConfiguration> LeAudioDeviceGroup::FindFirstSuppo
 }
 
 void LeAudioDeviceGroup::StartConnSubrateIfNeeded() {
-  if (!com_android_bluetooth_flags_start_leaudio_subrate_for_active_set_only()) {
-    return;
-  }
-
   for (auto* leAudioDevice = GetFirstDevice(); leAudioDevice;
        leAudioDevice = GetNextDevice(leAudioDevice)) {
     leAudioDevice->StartConnSubrate();
@@ -2656,10 +2652,6 @@ void LeAudioDeviceGroup::StartConnSubrateIfNeeded() {
 }
 
 void LeAudioDeviceGroup::StopConnSubrateIfNeeded() {
-  if (!com_android_bluetooth_flags_start_leaudio_subrate_for_active_set_only()) {
-    return;
-  }
-
   for (auto* leAudioDevice = GetFirstDevice(); leAudioDevice;
        leAudioDevice = GetNextDevice(leAudioDevice)) {
     leAudioDevice->StopConnSubrate();

@@ -21,6 +21,9 @@ import static com.google.common.truth.Truth.assertThat;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.platform.test.annotations.DisableFlags;
+import android.platform.test.annotations.EnableFlags;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
@@ -31,10 +34,12 @@ import com.android.bluetooth.avrcpcontroller.BipImageDescriptor;
 import com.android.bluetooth.avrcpcontroller.BipImageFormat;
 import com.android.bluetooth.avrcpcontroller.BipImageProperties;
 import com.android.bluetooth.avrcpcontroller.BipPixel;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.tests.R;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -56,6 +61,8 @@ public class CoverArtTest {
 
     private Image mImage = null;
     private Image mImage2 = null;
+
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Before
     public void setUp() throws Exception {
@@ -262,5 +269,54 @@ public class CoverArtTest {
     public void testToString() {
         CoverArt artwork = new CoverArt(mImage);
         assertThat(artwork.toString()).isNotNull();
+    }
+
+    /**
+     * Make sure getImage(<smaller descriptor>) yields an image when the feature flag is enabled.
+     * This verifies that descriptors for sizes smaller than the thumbnail are accepted.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_IMPLEMENT_GET_IMAGE_FROM_DESCRIPTOR_FOR_COVER_ART)
+    public void testGetImageWithSmallerDescriptor_whenFlagEnabled() {
+        CoverArt artwork = new CoverArt(mImage);
+        BipImageDescriptor descriptor = getDescriptor(BipEncoding.JPEG, 100, 100);
+        assertThat(artwork.getImage(descriptor)).isNotNull();
+    }
+
+    /**
+     * Make sure getImage(<larger descriptor>) yields null when the feature flag is enabled. This
+     * verifies that descriptors for sizes larger than the thumbnail are rejected to prevent
+     * out-of-memory errors.
+     */
+    @Test
+    @EnableFlags(Flags.FLAG_IMPLEMENT_GET_IMAGE_FROM_DESCRIPTOR_FOR_COVER_ART)
+    public void testGetImageWithLargerDescriptor_whenFlagEnabled() {
+        CoverArt artwork = new CoverArt(mImage);
+        BipImageDescriptor descriptor = getDescriptor(BipEncoding.JPEG, 300, 300);
+        assertThat(artwork.getImage(descriptor)).isNull();
+    }
+
+    /**
+     * Make sure getImage(<smaller descriptor>) yields null when the feature flag is disabled. With
+     * the flag off, only exact thumbnail dimensions are allowed.
+     */
+    @Test
+    @DisableFlags(Flags.FLAG_IMPLEMENT_GET_IMAGE_FROM_DESCRIPTOR_FOR_COVER_ART)
+    public void testGetImageWithSmallerDescriptor_whenFlagDisabled() {
+        CoverArt artwork = new CoverArt(mImage);
+        BipImageDescriptor descriptor = getDescriptor(BipEncoding.JPEG, 50, 50);
+        assertThat(artwork.getImage(descriptor)).isNull();
+    }
+
+    /**
+     * Make sure getImage(<larger descriptor>) yields null when the feature flag is disabled. With
+     * the flag off, only exact thumbnail dimensions are allowed.
+     */
+    @Test
+    @DisableFlags(Flags.FLAG_IMPLEMENT_GET_IMAGE_FROM_DESCRIPTOR_FOR_COVER_ART)
+    public void testGetImageWithLargerDescriptor_whenFlagDisabled() {
+        CoverArt artwork = new CoverArt(mImage);
+        BipImageDescriptor descriptor = getDescriptor(BipEncoding.JPEG, 300, 300);
+        assertThat(artwork.getImage(descriptor)).isNull();
     }
 }

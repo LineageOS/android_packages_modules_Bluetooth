@@ -619,7 +619,7 @@ public class BassClientService extends ConnectableProfile {
     }
 
     public Boolean isEncrypted(BluetoothDevice device) {
-        return mEncryptionStates.get(device);
+        return mEncryptionStates.getOrDefault(device, false);
     }
 
     public BassClientService(AdapterService adapterService, ScanController scanController) {

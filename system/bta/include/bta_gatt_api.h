@@ -847,12 +847,13 @@ void BTA_GATTC_ReadMultiple(tCONN_ID conn_id, tBTA_GATTC_MULTI& p_read_multi, bo
  *
  * Description      Refresh the server cache of the remote device
  *
- * Parameters       remote_bda: remote device BD address.
+ * Parameters       client_if - the client requesting refresh.
+ *                  remote_bda - remote device BD address.
  *
  * Returns          void
  *
  ******************************************************************************/
-void BTA_GATTC_Refresh(const RawAddress& remote_bda);
+void BTA_GATTC_Refresh(tGATT_IF client_if, const RawAddress& remote_bda);
 
 /*******************************************************************************
  *
@@ -881,11 +882,14 @@ void BTA_GATTC_ConfigureMTU(tCONN_ID conn_id, uint16_t mtu, GATT_CONFIGURE_MTU_O
  *                  service - vector describing service.
  *                  endpoint_id - ID of the hub end point.
  *                  hub_id - ID of the hub to which the end point belongs.
+ *                  uid - UID of the app.
+ *                  attribution_tag - attribution tag of the app.
  *                  promise - object used to signal the completion status.
  *
  ******************************************************************************/
 void BTA_GATTC_OffloadCharacteristics(tCONN_ID conn_id, std::vector<btgatt_db_element_t> service,
-                                      uint64_t endpoint_id, uint64_t hub_id,
+                                      uint64_t endpoint_id, uint64_t hub_id, int uid,
+                                      std::string attribution_tag,
                                       std::promise<btgatt_offload_result_t> promise);
 
 /*******************************************************************************
@@ -1140,11 +1144,14 @@ void BTA_GATTS_InitBonded(void);
  *                  service - vector describing service.
  *                  endpoint_id - ID of the hub end point.
  *                  hub_id - ID of the hub to which the end point belongs.
+ *                  uid - UID of the app.
+ *                  attribution_tag - attribution tag of the app.
  *                  promise - object used to signal the completion status.
  *
  ******************************************************************************/
 void BTA_GATTS_OffloadCharacteristics(tCONN_ID conn_id, std::vector<btgatt_db_element_t> service,
-                                      uint64_t endpoint_id, uint64_t hub_id,
+                                      uint64_t endpoint_id, uint64_t hub_id, int uid,
+                                      std::string attribution_tag,
                                       std::promise<btgatt_offload_result_t> promise);
 
 /*******************************************************************************

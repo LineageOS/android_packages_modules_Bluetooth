@@ -39,6 +39,7 @@ import com.android.bluetooth.Util.checkProfileAvailable
 import com.android.bluetooth.Utils
 import com.android.bluetooth.gatt.GattUtil.isHidCharUuid
 import com.android.bluetooth.profile.ProfileService
+import com.android.bluetooth.util.getLastAttributionTag
 
 private const val TAG = GattUtil.TAG_PREFIX + "GattServiceBinder"
 
@@ -576,6 +577,8 @@ class GattServiceBinder(private var gattService: GattService?) :
                     characteristics,
                     endpointId,
                     hubId,
+                    source.uid,
+                    source.getLastAttributionTag(),
                 )
             }
         val message = "Failed to complete offloadClientCharacteristics synchronously on GATT thread"
@@ -613,6 +616,8 @@ class GattServiceBinder(private var gattService: GattService?) :
                     characteristics,
                     endpointId,
                     hubId,
+                    source.uid,
+                    source.getLastAttributionTag(),
                 )
             }
         val message = "Failed to complete offloadServerCharacteristics synchronously on GATT thread"

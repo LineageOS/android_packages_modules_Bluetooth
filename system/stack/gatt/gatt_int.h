@@ -412,6 +412,11 @@ typedef struct {
   tGATT_STATUS status{tGATT_STATUS::GATT_SUCCESS};
   bool in_unregistering_service{false};
   bool in_clearing_services{false};
+  // Android application UID from the calling Java service. Used for permission checks and
+  // attribution.
+  int uid;
+  // Optional attribution tag from the calling Android app for fine-grained usage tracking.
+  std::string attribution_tag;
 } tGATT_OFFLOAD_SESSION;
 
 typedef struct {
@@ -741,7 +746,8 @@ void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status, void* p_data);
 void gatt_act_discovery(tGATT_CLCB* p_clcb);
 void gatt_act_read(tGATT_CLCB* p_clcb, uint16_t offset);
 void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act);
-tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB& tcb, uint16_t cid, uint8_t* p_opcode);
+tGATT_CLCB* gatt_cmd_peek(tGATT_TCB& tcb, uint16_t cid, uint8_t* p_op_code);
+tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB& tcb, uint16_t cid, uint8_t* p_op_code);
 bool gatt_cmd_enq(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, bool to_send, uint8_t op_code, BT_HDR* p_buf);
 void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code, uint16_t len,
                                    uint8_t* p_data);
@@ -801,6 +807,7 @@ Octet16 gatts_calculate_database_hash(std::shared_ptr<std::list<tGATT_SRV_LIST_E
 bool gatt_offload_init();
 void gatt_offload_characteristics(tCONN_ID conn_id, bool is_server, btgatt_db_element_t* service,
                                   size_t elements_count, uint64_t endpoint_id, uint64_t hub_id,
+                                  int uid, std::string attribution_tag,
                                   std::promise<btgatt_offload_result_t> promise);
 bool gatt_offload_clear_sessions_by_acl_handle(uint16_t acl_connection_handle);
 void gatt_offload_clear_sessions_by_conn_id(tCONN_ID conn_id);

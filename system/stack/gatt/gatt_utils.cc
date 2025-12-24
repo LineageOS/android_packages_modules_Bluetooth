@@ -760,12 +760,23 @@ void gatt_rsp_timeout(void* data) {
       p_clcb->retry_count < GATT_REQ_RETRY_LIMIT) {
     uint8_t rsp_code;
     log::warn("retry discovery primary service");
-    if (p_clcb != gatt_cmd_dequeue(*p_clcb->p_tcb, p_clcb->cid, &rsp_code)) {
-      log::error("command queue out of sync, disconnect");
+    if (com_android_bluetooth_flags_fix_gatt_cmd_dequeue()) {
+      if (p_clcb != gatt_cmd_peek(*p_clcb->p_tcb, p_clcb->cid, &rsp_code)) {
+        log::error("command queue out of sync, disconnect");
+      } else {
+        gatt_cmd_dequeue(*p_clcb->p_tcb, p_clcb->cid, &rsp_code);
+        p_clcb->retry_count++;
+        gatt_act_discovery(p_clcb);
+        return;
+      }
     } else {
-      p_clcb->retry_count++;
-      gatt_act_discovery(p_clcb);
-      return;
+      if (p_clcb != gatt_cmd_dequeue(*p_clcb->p_tcb, p_clcb->cid, &rsp_code)) {
+        log::error("command queue out of sync, disconnect");
+      } else {
+        p_clcb->retry_count++;
+        gatt_act_discovery(p_clcb);
+        return;
+      }
     }
   }
 
@@ -1589,6 +1600,30 @@ bool gatt_cmd_enq(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, bool to_send, uint8_t op_c
   }
 
   return true;
+}
+
+tGATT_CLCB* gatt_cmd_peek(tGATT_TCB& tcb, uint16_t cid, uint8_t* p_op_code) {
+  std::deque<tGATT_CMD_Q>* cl_cmd_q_p;
+
+  if (cid == tcb.att_lcid) {
+    cl_cmd_q_p = &tcb.cl_cmd_q;
+  } else {
+    EattChannel* channel = EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
+    if (channel == nullptr) {
+      log::warn("{}, cid 0x{:02x} already disconnected", tcb.peer_bda, cid);
+      return nullptr;
+    }
+
+    cl_cmd_q_p = &channel->cl_cmd_q_;
+  }
+
+  if (cl_cmd_q_p->empty()) {
+    return nullptr;
+  }
+
+  tGATT_CMD_Q cmd = cl_cmd_q_p->front();
+  *p_op_code = cmd.op_code;
+  return cmd.p_clcb;
 }
 
 /** dequeue the command in the client CCB command queue */

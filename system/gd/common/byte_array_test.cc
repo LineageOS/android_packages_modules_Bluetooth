@@ -80,23 +80,6 @@ void simple_to_string_test(const char* byte_string, const T (&data)[N]) {
   ASSERT_STREQ(str.c_str(), byte_string);
 }
 
-template <typename T, size_t N>
-void simple_from_legacy_string_test(const char* byte_string, const T (&data)[N]) {
-  auto byte_array = ByteArray<N>::FromLegacyConfigString(byte_string);
-  ASSERT_TRUE(byte_array);
-
-  for (size_t i = 0; i < ByteArray<N>::kLength; i++) {
-    ASSERT_EQ(data[i], byte_array->bytes[i]);
-  }
-}
-
-template <typename T, size_t N>
-void simple_to_legacy_string_test(const char* byte_string, const T (&data)[N]) {
-  const ByteArray<N> byte_array(data);
-  std::string str = byte_array.ToLegacyConfigString();
-  ASSERT_STREQ(str.c_str(), byte_string);
-}
-
 }  // namespace
 
 TEST(ByteArrayTest, test_simple_constructor) {
@@ -127,23 +110,9 @@ TEST(ByteArrayTest, test_from_str) {
   simple_from_string_test<const uint8_t, 28>(byte_string28, byte_data28);
 }
 
-TEST(ByteArrayTest, test_from_legacy_str) {
-  simple_from_legacy_string_test<const uint8_t, 16>(byte_string16, byte_data16);
-  simple_from_legacy_string_test<const uint8_t, 21>(byte_string21, byte_data21);
-  simple_from_legacy_string_test<const uint8_t, 23>(byte_string23, byte_data23);
-  simple_from_legacy_string_test<const uint8_t, 28>(byte_string28, byte_data28);
-}
-
 TEST(ByteArrayTest, test_to_str) {
   simple_to_string_test<const uint8_t, 16>(byte_string16, byte_data16);
   simple_to_string_test<const uint8_t, 21>(byte_string21, byte_data21);
   simple_to_string_test<const uint8_t, 23>(byte_string23, byte_data23);
   simple_to_string_test<const uint8_t, 28>(byte_string28, byte_data28);
-}
-
-TEST(ByteArrayTest, test_to_legacy_str) {
-  simple_to_legacy_string_test<const uint8_t, 16>(byte_string16, byte_data16);
-  simple_to_legacy_string_test<const uint8_t, 21>(byte_string21, byte_data21);
-  simple_to_legacy_string_test<const uint8_t, 23>(byte_string23, byte_data23);
-  simple_to_legacy_string_test<const uint8_t, 28>(byte_string28, byte_data28);
 }

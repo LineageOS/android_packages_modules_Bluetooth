@@ -76,9 +76,9 @@ import org.mockito.Mockito.eq
 import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
-import org.mockito.MockitoAnnotations
 import org.mockito.hamcrest.MockitoHamcrest
 import org.mockito.hamcrest.MockitoHamcrest.argThat
+import org.mockito.junit.MockitoJUnit
 import pandora.HFPGrpc
 import pandora.HfpProto
 import pandora.HostProto
@@ -88,12 +88,10 @@ import pandora.SecurityProto
 
 @RunWith(TestParameterInjector::class)
 class HfpTest {
-
+    @get:Rule val mockitoRule = MockitoJUnit.rule()
     @get:Rule(order = 0) val permissionRule: AdoptShellPermissionsRule = AdoptShellPermissionsRule()
-
     @get:Rule(order = 1) val bumble = PandoraDevice()
     @get:Rule(order = 2) val secondBumble = PandoraDevice.createSecondPandoraDevice()
-
     @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Mock private lateinit var receiver: BroadcastReceiver
@@ -111,7 +109,6 @@ class HfpTest {
 
     @Before
     fun setUp() {
-        MockitoAnnotations.initMocks(this)
         inOrder = inOrder(receiver)
 
         val filter =

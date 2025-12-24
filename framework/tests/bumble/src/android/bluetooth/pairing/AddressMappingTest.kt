@@ -26,7 +26,6 @@ import android.bluetooth.pairing.utils.TestUtil
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.bluetooth.toAddressBytes
 import android.content.Context
-import android.platform.test.flag.junit.CheckFlagsRule
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
 import android.util.Log
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -39,7 +38,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.MockitoAnnotations
+import org.mockito.junit.MockitoJUnit
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.DataTypes
 import pandora.HostProto.DiscoverabilityMode
@@ -50,25 +49,21 @@ import pandora.HostProto.SetDiscoverabilityModeRequest
 @RunWith(AndroidJUnit4::class)
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class AddressMappingTest {
+    @get:Rule val mockitoRule = MockitoJUnit.rule()
+    @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
+    @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
+    @get:Rule(order = 2) val bumble = PandoraDevice()
+    @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
+
     private val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
     private val manager: BluetoothManager = context.getSystemService(BluetoothManager::class.java)
     private val adapter: BluetoothAdapter = manager.adapter
     private lateinit var host: Host
 
-    @get:Rule(order = 0)
-    val checkFlagsRule: CheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
-
-    @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
-
-    @get:Rule(order = 2) val bumble = PandoraDevice()
-
-    @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
-
     private lateinit var util: TestUtil
 
     @Before
     fun setUp() {
-        MockitoAnnotations.openMocks(this)
         util = TestUtil.Builder(context).setBluetoothAdapter(adapter).build()
         host = Host(context)
         for (bondedDevice in adapter.bondedDevices) {

@@ -197,14 +197,15 @@ bool BTM_SecDeleteDevice(const RawAddress& bd_addr) {
   log::info("Remove device {} from filter accept list before delete record", bd_addr);
   connection_manager::remove_unconditional(bd_addr);
 
-  /* Clear out any saved BLE keys */
-  btm_sec_clear_ble_keys(p_device);
-  wipe_secrets_and_remove(p_device);
   /* Tell controller to get rid of the link key, if it has one stored */
   btm_sec_hci_delete_stored_link_key(p_device->bd_addr);
   BTM_LogHistory(kBtmLogTag, bd_addr, "Device removed",
                  std::format("device_type:{} bond_type:{}", DeviceTypeText(p_device->device_type),
                              bond_type_text(p_device->sec_rec.bond_type)));
+
+  /* Clear out any saved BLE keys */
+  btm_sec_clear_ble_keys(p_device);
+  wipe_secrets_and_remove(p_device);
 
   return true;
 }

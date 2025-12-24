@@ -435,15 +435,17 @@ extern struct GATT_StartIf GATT_StartIf;
 // endpoint_id, uint64_t hub_id, std::promise<btgatt_offload_result_t> promise
 struct GATTC_OffloadCharacteristics {
   std::function<void(tCONN_ID conn_id, btgatt_db_element_t* service, size_t elements_count,
-                     uint64_t endpoint_id, uint64_t hub_id,
+                     uint64_t endpoint_id, uint64_t hub_id, int uid, std::string attribution_tag,
                      std::promise<btgatt_offload_result_t> promise)>
           body{[](tCONN_ID /* conn_id */, btgatt_db_element_t* /* service */,
                   size_t /* elements_count */, uint64_t /* endpoint_id */, uint64_t /* hub_id */,
+                  int /* uid */, std::string /* attribution_tag */,
                   std::promise<btgatt_offload_result_t> /* promise */) {}};
   void operator()(tCONN_ID conn_id, btgatt_db_element_t* service, size_t elements_count,
-                  uint64_t endpoint_id, uint64_t hub_id,
+                  uint64_t endpoint_id, uint64_t hub_id, int uid, std::string attribution_tag,
                   std::promise<btgatt_offload_result_t> promise) {
-    body(conn_id, service, elements_count, endpoint_id, hub_id, std::move(promise));
+    body(conn_id, service, elements_count, endpoint_id, hub_id, uid, std::move(attribution_tag),
+         std::move(promise));
   }
 };
 extern struct GATTC_OffloadCharacteristics GATTC_OffloadCharacteristics;
@@ -487,15 +489,17 @@ extern struct GATTC_SetDefaultMtu GATTC_SetDefaultMtu;
 // endpoint_id, uint64_t hub_id, std::promise<btgatt_offload_result_t> promise
 struct GATTS_OffloadCharacteristics {
   std::function<void(tCONN_ID conn_id, btgatt_db_element_t* service, size_t elements_count,
-                     uint64_t endpoint_id, uint64_t hub_id,
+                     uint64_t endpoint_id, uint64_t hub_id, int uid, std::string attribution_tag,
                      std::promise<btgatt_offload_result_t> promise)>
           body{[](tCONN_ID /* conn_id */, btgatt_db_element_t* /* service */,
                   size_t /* elements_count */, uint64_t /* endpoint_id */, uint64_t /* hub_id */,
+                  int /* uid */, std::string /* attribution_tag */,
                   std::promise<btgatt_offload_result_t> /* promise */) {}};
   void operator()(tCONN_ID conn_id, btgatt_db_element_t* service, size_t elements_count,
-                  uint64_t endpoint_id, uint64_t hub_id,
+                  uint64_t endpoint_id, uint64_t hub_id, int uid, std::string attribution_tag,
                   std::promise<btgatt_offload_result_t> promise) {
-    body(conn_id, service, elements_count, endpoint_id, hub_id, std::move(promise));
+    body(conn_id, service, elements_count, endpoint_id, hub_id, uid, std::move(attribution_tag),
+         std::move(promise));
   }
 };
 extern struct GATTS_OffloadCharacteristics GATTS_OffloadCharacteristics;

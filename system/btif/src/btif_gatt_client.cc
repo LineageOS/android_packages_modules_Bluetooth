@@ -394,9 +394,9 @@ static BtStatus btif_gattc_close(int client_if, const RawAddress& bd_addr, int c
   return do_in_jni_thread(BindOnce(&btif_gattc_close_impl, client_if, bd_addr, conn_id));
 }
 
-static BtStatus btif_gattc_refresh(int /* client_if */, const RawAddress& bd_addr) {
+static BtStatus btif_gattc_refresh(int client_if, const RawAddress& bd_addr) {
   CHECK_BTGATT_INIT();
-  return do_in_jni_thread(BindOnce(&BTA_GATTC_Refresh, bd_addr));
+  return do_in_jni_thread(BindOnce(&BTA_GATTC_Refresh, static_cast<tGATT_IF>(client_if), bd_addr));
 }
 
 static BtStatus btif_gattc_search_service(int conn_id, const Uuid* filter_uuid) {
@@ -715,15 +715,17 @@ static BtStatus btif_gattc_subrate_mode_request(int client_if, const RawAddress&
 
 static BtStatus btif_gattc_offload_characteristics(int conn_id, btgatt_db_element_t* service,
                                                    size_t elements_count, uint64_t endpoint_id,
-                                                   uint64_t hub_id,
+                                                   uint64_t hub_id, int uid,
+                                                   std::string attribution_tag,
                                                    btgatt_offload_result_t* result) {
   CHECK_BTGATT_INIT();
   std::promise<btgatt_offload_result_t> promise;
   std::future future = promise.get_future();
 
-  BtStatus status = do_in_main_thread(base::BindOnce(
-          &BTA_GATTC_OffloadCharacteristics, static_cast<tCONN_ID>(conn_id),
-          std::vector(service, service + elements_count), endpoint_id, hub_id, std::move(promise)));
+  BtStatus status = do_in_main_thread(
+          base::BindOnce(&BTA_GATTC_OffloadCharacteristics, static_cast<tCONN_ID>(conn_id),
+                         std::vector(service, service + elements_count), endpoint_id, hub_id, uid,
+                         std::move(attribution_tag), std::move(promise)));
   if (!status) {
     return status;
   }

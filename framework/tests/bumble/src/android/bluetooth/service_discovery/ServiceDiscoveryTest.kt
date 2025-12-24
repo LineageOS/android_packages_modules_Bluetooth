@@ -47,8 +47,8 @@ import org.mockito.Mock
 import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verifyNoMoreInteractions
-import org.mockito.MockitoAnnotations
 import org.mockito.hamcrest.MockitoHamcrest
+import org.mockito.junit.MockitoJUnit
 import org.mockito.kotlin.any
 import pandora.GattProto
 import pandora.HostProto.AdvertiseRequest
@@ -58,12 +58,10 @@ private const val TAG = "ServiceDiscoveryTest"
 
 @RunWith(AndroidJUnit4::class)
 class ServiceDiscoveryTest {
+    @get:Rule val mockitoRule = MockitoJUnit.rule()
     @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
-
     @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
-
     @get:Rule(order = 2) val bumble = PandoraDevice()
-
     @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Mock private lateinit var receiver: BroadcastReceiver
@@ -72,13 +70,10 @@ class ServiceDiscoveryTest {
 
     private lateinit var inOrder: InOrder
     private lateinit var bumbleDevice: BluetoothDevice
-    private lateinit var closeable: AutoCloseable
 
     @Before
     @Throws(Exception::class)
     fun setUp() {
-        closeable = MockitoAnnotations.openMocks(this)
-
         inOrder = inOrder(receiver)
         bumbleDevice = bumble.remoteDevice
 
@@ -97,7 +92,6 @@ class ServiceDiscoveryTest {
     fun tearDown() {
         Log.d(TAG, "start tearDown")
         context.unregisterReceiver(receiver)
-        closeable.close()
     }
 
     /**

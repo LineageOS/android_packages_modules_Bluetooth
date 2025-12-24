@@ -70,7 +70,7 @@ tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK* p_cback) {
   }
 
   memset(&bta_jv_cb, 0, sizeof(tBTA_JV_CB));
-  /* set handle to invalid value by default */
+  // set handle to invalid value by default
   for (int i = 0; i < BTA_JV_PM_MAX_NUM; i++) {
     bta_jv_cb.pm_cb[i].handle = BTA_JV_PM_HANDLE_CLEAR;
   }
@@ -353,7 +353,7 @@ tBTA_JV_STATUS BTA_JvL2capRead(uint32_t handle, uint32_t req_id, uint8_t* p_data
  * Function         BTA_JvL2capReady
  *
  * Description      This function determined if there is data to read from
- *                    an L2CAP connection
+ *                  an L2CAP connection
  *
  * Returns          tBTA_JV_STATUS::SUCCESS, if data queue size is in
  *                  *p_data_size.
@@ -406,7 +406,7 @@ tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id, BT_HDR* msg, u
  *
  * Function         BTA_JvRfcommConnect
  *
- * Description      This function makes an RFCOMM conection to a remote BD
+ * Description      This function makes an RFCOMM connection to a remote BD
  *                  Address.
  *                  When the connection is initiated or failed to initiate,
  *                  tBTA_JV_RFCOMM_CBACK is called with
@@ -426,7 +426,7 @@ tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, uint8_t remote_scn,
                rfcomm_slot_id);
 
   if (!p_cback) {
-    return tBTA_JV_STATUS::FAILURE; /* Nothing to do */
+    return tBTA_JV_STATUS::FAILURE;  // Nothing to do
   }
 
   do_in_main_thread(BindOnce(&bta_jv_rfcomm_connect, sec_mask, remote_scn, peer_bd_addr, p_cback,
@@ -480,7 +480,7 @@ tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, uint8_t local_scn, uin
   log::verbose("local_scn:{}, rfcomm_slot_id:{}", local_scn, rfcomm_slot_id);
 
   if (p_cback == NULL) {
-    return tBTA_JV_STATUS::FAILURE; /* Nothing to do */
+    return tBTA_JV_STATUS::FAILURE;  // Nothing to do
   }
 
   if (max_session == 0) {
@@ -520,7 +520,9 @@ tBTA_JV_STATUS BTA_JvRfcommStopServer(uint32_t handle, uint32_t rfcomm_slot_id) 
  *
  * Description      This function fetches the rfcomm port handle
  *
- * Returns
+ * Parameters       handle - rfc_handle associated with the rfcomm port
+ *
+ * Returns          port handle if handle is valid, 0xffff otherwise
  *
  ******************************************************************************/
 uint16_t BTA_JvRfcommGetPortHdl(uint32_t handle) {

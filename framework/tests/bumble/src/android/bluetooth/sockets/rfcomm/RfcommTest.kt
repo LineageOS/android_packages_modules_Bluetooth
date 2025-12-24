@@ -74,8 +74,8 @@ import org.mockito.InOrder
 import org.mockito.Mock
 import org.mockito.Mockito.any
 import org.mockito.Mockito.inOrder
-import org.mockito.MockitoAnnotations
 import org.mockito.hamcrest.MockitoHamcrest.argThat
+import org.mockito.junit.MockitoJUnit
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.timeout
@@ -89,8 +89,8 @@ import pandora.RfcommProto.ServerId
 @RunWith(AndroidJUnit4::class)
 @ExperimentalCoroutinesApi
 class RfcommTest {
+    @get:Rule val mockitoRule = MockitoJUnit.rule()
     @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
-
     @get:Rule(order = 1)
     val permissionRule =
         AdoptShellPermissionsRule(
@@ -99,9 +99,7 @@ class RfcommTest {
             Manifest.permission.BLUETOOTH_PRIVILEGED,
             Manifest.permission.MODIFY_PHONE_STATE,
         )
-
     @get:Rule(order = 2) val bumble = PandoraDevice()
-
     @get:Rule(order = 3) val enableBluetoothRule = EnableBluetoothRule(false, true)
 
     @Mock private lateinit var receiver: BroadcastReceiver
@@ -133,7 +131,6 @@ class RfcommTest {
     @Before
     fun setUp() {
         Log.d(TAG, "start setUp")
-        MockitoAnnotations.initMocks(this)
         inOrder = inOrder(receiver)
 
         val filter =
@@ -461,7 +458,6 @@ class RfcommTest {
      */
     @RequiresFlagsEnabled(
         "com.android.bluetooth.flags.trigger_sec_proc_on_inc_access_req",
-        "com.android.bluetooth.flags.upgrade_temp_bonding_on_auth_req",
     )
     @Test
     fun serverSecureConnectThenRemoteDisconnect() {
@@ -482,7 +478,6 @@ class RfcommTest {
      */
     @RequiresFlagsEnabled(
         "com.android.bluetooth.flags.trigger_sec_proc_on_inc_access_req",
-        "com.android.bluetooth.flags.upgrade_temp_bonding_on_auth_req",
     )
     @Test
     fun serverSecureConnectThenLocalDisconnect() {

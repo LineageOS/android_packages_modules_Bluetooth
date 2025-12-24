@@ -60,8 +60,8 @@ import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoMoreInteractions
-import org.mockito.MockitoAnnotations
 import org.mockito.hamcrest.MockitoHamcrest
+import org.mockito.junit.MockitoJUnit
 import org.mockito.kotlin.whenever
 import pandora.HostProto.ConnectRequest
 import pandora.HostProto.ConnectabilityMode
@@ -75,10 +75,9 @@ import pandora.SecurityProto.SecurityLevel
 
 @RunWith(AndroidJUnit4::class)
 class BondLossTest {
+    @get:Rule val mockitoRule = MockitoJUnit.rule()
     @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
-
     @get:Rule(order = 2) val bumble = PandoraDevice()
-
     @get:Rule(order = 3)
     val enableBluetoothRule =
         EnableBluetoothRule(false /* enableTestMode */, true /* toggleBluetooth */)
@@ -98,8 +97,6 @@ class BondLossTest {
 
     @Before
     fun setUp() {
-        MockitoAnnotations.initMocks(this)
-
         doAnswer {
                 val intent = it.getArgument<Intent>(1)
                 val action = intent.action

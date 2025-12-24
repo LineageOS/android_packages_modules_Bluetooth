@@ -49,8 +49,8 @@ import org.mockito.Mock
 import org.mockito.Mockito.any
 import org.mockito.Mockito.inOrder
 import org.mockito.Mockito.timeout
-import org.mockito.MockitoAnnotations
 import org.mockito.hamcrest.MockitoHamcrest
+import org.mockito.junit.MockitoJUnit
 import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.AdvertiseResponse
 import pandora.HostProto.DataTypes
@@ -64,10 +64,9 @@ private const val TAG = "GetUuidsFromLeAdvertisingDataTest"
 /** Test cases for getting BLE UUIDs from [BluetoothDevice.ACTION_FOUND]. */
 @RunWith(TestParameterInjector::class)
 class GetUuidsFromLeAdvertisingDataTest {
+    @get:Rule val mockitoRule = MockitoJUnit.rule()
     @get:Rule(order = 0) val checkFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule()
-
     @get:Rule(order = 1) val permissionRule = AdoptShellPermissionsRule()
-
     @get:Rule(order = 2) val bumble = PandoraDevice()
 
     @Mock private lateinit var receiver: BroadcastReceiver
@@ -79,7 +78,6 @@ class GetUuidsFromLeAdvertisingDataTest {
 
     @Before
     fun setUp() {
-        MockitoAnnotations.initMocks(this)
         inOrder = inOrder(receiver)
 
         randomAddressBumbleDevice =
