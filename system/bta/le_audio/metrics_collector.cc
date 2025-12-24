@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -209,6 +210,13 @@ private:
   std::vector<int64_t> streaming_offset_nanos_;
   std::vector<int64_t> streaming_duration_nanos_;
   std::vector<int32_t> streaming_context_type_;
+  std::vector<int32_t> codec_format_;
+  std::vector<int32_t> vendor_company_id_;
+  std::vector<int32_t> vendor_codec_id_;
+  std::vector<int32_t> sink_sampling_frequency_hz_;
+  std::vector<int32_t> source_sampling_frequency_hz_;
+  std::vector<bool> is_dsa_active_;
+  std::vector<bool> is_gmap_active_;
 
 public:
   GroupMetricsImpl() : group_id_(kInvalidGroupId), group_size_(0) {
@@ -235,12 +243,26 @@ public:
     }
   }
 
-  void AddStreamStartedEvent(bluetooth::le_audio::types::LeAudioContextType context_type) override {
+  void AddStreamStartedEvent(bluetooth::le_audio::types::LeAudioContextType context_type,
+                           const LeAudioMetricsCodecInfo& info) override {
     int32_t atom_context_type = to_atom_context_type(context_type);
     // Make sure events aligned
+    // Check if the context type or codec info(Codec, DSA, GMAP)
+    //    have changed while the stream is active.
+    // If so, we implicitly split the session
+    //    by ending the current stream segment and starting a new one.
     if (streaming_offset_nanos_.size() - streaming_duration_nanos_.size() != 0) {
-      // Allow type switching
-      if (!streaming_context_type_.empty() && streaming_context_type_.back() != atom_context_type) {
+      // Allow type switching. If the stream is active, vectors are not empty.
+      if (streaming_context_type_.back() != atom_context_type ||
+          codec_format_.back() != info.codec_format ||
+          vendor_company_id_.back() != info.vendor_company_id ||
+          vendor_codec_id_.back() != info.vendor_codec_id ||
+          static_cast<uint32_t>(sink_sampling_frequency_hz_.back()) !=
+                  info.sink_sampling_frequency_hz ||
+          static_cast<uint32_t>(source_sampling_frequency_hz_.back()) !=
+                  info.source_sampling_frequency_hz ||
+          is_dsa_active_.back() != info.is_dsa_active ||
+          is_gmap_active_.back() != info.is_gmap_active) {
         AddStreamEndedEvent();
       } else {
         return;
@@ -249,6 +271,13 @@ public:
     streaming_offset_nanos_.push_back(
             get_timedelta_nanos(std::chrono::high_resolution_clock::now(), beginning_timepoint_));
     streaming_context_type_.push_back(atom_context_type);
+    codec_format_.push_back(info.codec_format);
+    vendor_company_id_.push_back(info.vendor_company_id);
+    vendor_codec_id_.push_back(info.vendor_codec_id);
+    sink_sampling_frequency_hz_.push_back(info.sink_sampling_frequency_hz);
+    source_sampling_frequency_hz_.push_back(info.source_sampling_frequency_hz);
+    is_dsa_active_.push_back(info.is_dsa_active);
+    is_gmap_active_.push_back(info.is_gmap_active);
   }
 
   void AddStreamEndedEvent() override {
@@ -298,7 +327,10 @@ public:
             group_size_, group_id_, connection_duration_nanos, device_connecting_offset_nanos,
             device_connected_offset_nanos, device_connection_duration_nanos,
             device_connection_statuses, device_disconnection_statuses, device_address,
-            streaming_offset_nanos_, streaming_duration_nanos_, streaming_context_type_);
+            streaming_offset_nanos_, streaming_duration_nanos_, streaming_context_type_,
+            codec_format_, vendor_company_id_, vendor_codec_id_,
+            sink_sampling_frequency_hz_, source_sampling_frequency_hz_,
+            is_dsa_active_, is_gmap_active_);
   }
 
   void Flush() {
@@ -348,13 +380,14 @@ void MetricsCollector::OnConnectionStateChanged(int32_t group_id, const RawAddre
 }
 
 void MetricsCollector::OnStreamStarted(
-        int32_t group_id, bluetooth::le_audio::types::LeAudioContextType context_type) {
+        int32_t group_id, bluetooth::le_audio::types::LeAudioContextType context_type,
+        const LeAudioMetricsCodecInfo& info) {
   if (group_id <= 0) {
     return;
   }
   auto it = opened_groups_.find(group_id);
   if (it != opened_groups_.end()) {
-    it->second->AddStreamStartedEvent(context_type);
+    it->second->AddStreamStartedEvent(context_type, info);
   }
 }
 

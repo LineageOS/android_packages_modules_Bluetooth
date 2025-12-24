@@ -337,7 +337,14 @@ void LogMetricLeAudioConnectionSessionReported(
         const std::vector<RawAddress>& device_address,
         const std::vector<int64_t>& streaming_offset_nanos,
         const std::vector<int64_t>& streaming_duration_nanos,
-        const std::vector<int32_t>& streaming_context_type);
+        const std::vector<int32_t>& streaming_context_type,
+        const std::vector<int32_t>& codec_format,
+        const std::vector<int32_t>& vendor_company_id,
+        const std::vector<int32_t>& vendor_codec_id,
+        const std::vector<int32_t>& sink_sampling_frequency_hz,
+        const std::vector<int32_t>& source_sampling_frequency_hz,
+        const std::vector<bool>& is_dsa_active,
+        const std::vector<bool>& is_gmap_active);
 
 void LogMetricLeAudioBroadcastSessionReported(int64_t duration_nanos);
 
