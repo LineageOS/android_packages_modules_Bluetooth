@@ -322,13 +322,19 @@ void rfc_sec_check_complete(RawAddress /* bd_addr */, tBT_TRANSPORT /* transport
   log::assert_that(p_ref_data != nullptr, "assert failed: p_ref_data != nullptr");
   tPORT* p_port = (tPORT*)p_ref_data;
 
-  /* Verify that PORT is still waiting for Security to complete */
-  if (!p_port->in_use || ((p_port->rfc.sm_cb.state != RFC_STATE_ORIG_WAIT_SEC_CHECK) &&
-                          (p_port->rfc.sm_cb.state != RFC_STATE_TERM_WAIT_SEC_CHECK))) {
+  if (!p_port->in_use) {
+    log::warn("port not in use, port_handle={}", p_port->handle);
     return;
   }
 
-  rfc_port_sm_execute((tPORT*)p_ref_data, RFC_PORT_EVENT_SEC_COMPLETE, &res);
+  // Verify that port is still waiting for security to complete
+  if (p_port->rfc.sm_cb.state != RFC_STATE_ORIG_WAIT_SEC_CHECK &&
+      p_port->rfc.sm_cb.state != RFC_STATE_TERM_WAIT_SEC_CHECK) {
+    log::warn("no longer waiting for security, port_handle={}", p_port->handle);
+    return;
+  }
+
+  rfc_port_sm_execute(p_port, RFC_PORT_EVENT_SEC_COMPLETE, &res);
 }
 
 /*******************************************************************************

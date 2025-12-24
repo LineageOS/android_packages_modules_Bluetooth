@@ -951,7 +951,7 @@ void PORT_FlowInd(tRFC_MCB* p_mcb, uint8_t dlci, bool enable_data) {
     events &= p_port->ev_mask;
 
     /* Send event to the application */
-    if (p_port->p_callback && events) {
+    if (p_port->p_callback != nullptr && events) {
       (p_port->p_callback)(events, p_port->handle);
     }
 
