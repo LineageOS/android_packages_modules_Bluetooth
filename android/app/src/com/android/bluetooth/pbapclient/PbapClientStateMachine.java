@@ -313,8 +313,10 @@ class PbapClientStateMachine extends StateMachine {
     public void onSdpResultReceived(int status, PbapSdpRecord record) {
         if (status != SDP_SUCCESS) {
             sendMessage(MSG_SDP_FAILED, status);
-        } else {
+        } else if (record != null) {
             sendMessage(MSG_SDP_COMPLETE, record);
+        } else {
+            Log.e(TAG, "Received null PSE record for device=" + mDevice);
         }
     }
 

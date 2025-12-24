@@ -356,18 +356,18 @@ public class PbapClientService extends ConnectableProfile {
                         + BluetoothUuid.PBAP_PSE.toString()
                         + ")");
         if (uuid.equals(BluetoothUuid.PBAP_PSE)) {
-            SdpPseRecord pseRecord = (SdpPseRecord) record;
-            if (pseRecord == null) {
-                Log.w(TAG, "Received null PSE record for device=" + device);
-                return;
-            }
-
             PbapClientStateMachine stateMachine = getDeviceStateMachine(device);
             if (stateMachine == null) {
                 Log.e(TAG, "No StateMachine found for the device=" + device.toString());
                 return;
             }
-            stateMachine.onSdpResultReceived(status, new PbapSdpRecord(device, pseRecord));
+
+            SdpPseRecord pseRecord = (SdpPseRecord) record;
+            PbapSdpRecord pbapRecord = null;
+            if (pseRecord != null) {
+                pbapRecord = new PbapSdpRecord(device, pseRecord);
+            }
+            stateMachine.onSdpResultReceived(status, pbapRecord);
         }
     }
 
