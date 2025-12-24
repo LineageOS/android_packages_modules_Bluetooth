@@ -3008,98 +3008,112 @@ static bool btm_sec_auth_retry(uint16_t handle, uint8_t status) {
 }
 
 void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
+  tBTM_PAIRING_STATE old_state = btm_sec_cb.pairing_state;
   BtmDevice* p_device = btm_get_dev_by_handle(handle);
-  if (p_device == nullptr) {
-    log::warn("Unknown device handle:0x{:04x} status:{} state:{}", handle,
-              hci_status_code_text(status), btm_pair_state_descr(btm_sec_cb.pairing_state));
-    return;
+  bool are_bonding = false;
+  bool was_authenticating = false;
+
+  if (p_device) {
+    bluetooth::metrics::LogAuthenticationComplete(p_device->bd_addr, status);
+    log::verbose(
+            "Security Manager: in state: {}, handle: {}, status: {}, "
+            "dev->sec_rec.classic_link:{}, bda: {}, RName: {}",
+            btm_pair_state_descr(btm_sec_cb.pairing_state), handle, status,
+            p_device->sec_rec.classic_link, p_device->bd_addr,
+            reinterpret_cast<char const*>(p_device->sec_bd_name));
+
+    if (status == HCI_ERR_KEY_MISSING) {
+      if (is_autonomous_repairing_supported()) {
+        // Reset the security state to IDLE to allow for a new pairing attempt.
+        p_device->sec_rec.classic_link = tSECURITY_STATE::IDLE;
+      }
+
+      btm_sec_report_bond_loss(p_device, BT_TRANSPORT_BR_EDR, BTM_KEY_MISSING_BREDR_AUTH_FAILURE);
+      return;
+    }
+
+  } else {
+    log::verbose("Security Manager: in state: {}, handle: {}, status: {}",
+                 btm_pair_state_descr(btm_sec_cb.pairing_state), handle, status);
   }
 
-  bluetooth::metrics::LogAuthenticationComplete(p_device->bd_addr, status);
-
-  // Only peripheral receives the collision error, so we can retry right away
-  if (status == HCI_ERR_LMP_ERR_TRANS_COLLISION || status == HCI_ERR_DIFF_TRANSACTION_COLLISION) {
-    log::warn("Collision! device: {} status:{}", p_device->bd_addr, hci_status_code_text(status));
+  /* For transaction collision we need to wait and repeat.  There is no need */
+  /* for random timeout because only peripheral should receive the result */
+  if ((status == HCI_ERR_LMP_ERR_TRANS_COLLISION) ||
+      (status == HCI_ERR_DIFF_TRANSACTION_COLLISION)) {
     btm_sec_auth_collision(handle);
     return;
   } else if (btm_sec_auth_retry(handle, status)) {
-    log::warn("Retrying authentication for device: {} status:{}", p_device->bd_addr,
-              hci_status_code_text(status));
     return;
   }
 
-  if (status == HCI_ERR_KEY_MISSING) {
-    if (is_autonomous_repairing_supported()) {
-      // Reset the security state to IDLE to allow for a new pairing attempt.
-      p_device->sec_rec.classic_link = tSECURITY_STATE::IDLE;
-    }
-
-    btm_sec_report_bond_loss(p_device, BT_TRANSPORT_BR_EDR, BTM_KEY_MISSING_BREDR_AUTH_FAILURE);
-    return;
-  }
-
-  log::verbose("state: {}, handle: {}, status: {}, classic_link: {}, bda: {}, name: {}",
-               btm_pair_state_descr(btm_sec_cb.pairing_state), handle, status,
-               p_device->sec_rec.classic_link, p_device->bd_addr,
-               reinterpret_cast<char const*>(p_device->sec_bd_name));
-
-  if (btm_sec_cb.p_collided_dev && p_device->bd_addr == btm_sec_cb.p_collided_dev->bd_addr) {
+  if (p_device && btm_sec_cb.p_collided_dev &&
+      p_device->bd_addr == btm_sec_cb.p_collided_dev->bd_addr) {
     btm_sec_cb.collision_start_time = 0;
     btm_sec_cb.p_collided_dev = NULL;
-    if (alarm_is_scheduled(btm_sec_cb.sec_collision_timer)) {
+    if (alarm_is_scheduled(btm_sec_cb.sec_collision_timer))
       alarm_cancel(btm_sec_cb.sec_collision_timer);
-    }
   }
 
   btm_restore_mode();
 
-  // Start L2CAP idle timer if ACL was established for dedicated bonding
-  if ((btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) &&
+  /* Check if connection was made just to do bonding.  If we authenticate
+     the connection that is up, this is the last event received.
+  */
+  if (p_device && (btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) &&
       !(btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_DISC_WHEN_DONE)) {
     p_device->sec_rec.security_required &= ~BTM_SEC_OUT_AUTHENTICATE;
 
     l2cu_start_post_bond_timer(p_device->hci_handle);
   }
 
-  bool authenticating = false;
+  if (!p_device) {
+    return;
+  }
+
   if (p_device->sec_rec.classic_link == tSECURITY_STATE::AUTHENTICATING) {
     p_device->sec_rec.classic_link = tSECURITY_STATE::IDLE;
-    authenticating = true;
-    // There can be a race condition when we are starting authentication and the peer device is
-    // doing encryption. If link is encrypted, no need to do authentication.
-    if (status == HCI_ERR_COMMAND_DISALLOWED &&
-        (p_device->sec_rec.sec_flags & (BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED)) ==
-                (BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED)) {
+    was_authenticating = true;
+    /* There can be a race condition, when we are starting authentication
+     * and the peer device is doing encryption.
+     * If first we receive encryption change up, then initiated
+     * authentication can not be performed.
+     * According to the spec we can not do authentication on the
+     * encrypted link, so device is correct.
+     */
+    if ((status == HCI_ERR_COMMAND_DISALLOWED) &&
+        ((p_device->sec_rec.sec_flags & (BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED)) ==
+         (BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED))) {
       status = HCI_SUCCESS;
     }
-
     if (status == HCI_SUCCESS) {
       p_device->sec_rec.sec_flags |= BTM_SEC_AUTHENTICATED;
     }
   }
 
-  tBTM_PAIRING_STATE current_state = btm_sec_cb.pairing_state;
-  bool bonding = false;
   if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE &&
       p_device->bd_addr == btm_sec_cb.link_spec.addrt.bda) {
     if (btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) {
-      bonding = true;
+      are_bonding = true;
     }
     btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_IDLE);
   }
 
-  if (!authenticating) {
-    if (status != HCI_SUCCESS && current_state != BTM_PAIR_STATE_IDLE) {
+  if (was_authenticating == false) {
+    if (status != HCI_SUCCESS && old_state != BTM_PAIR_STATE_IDLE) {
       NotifyBondingChange(*p_device, status);
     }
     return;
   }
 
-  if (btm_sec_cb.api.p_auth_complete_callback &&
-      (current_state != BTM_PAIR_STATE_IDLE || status != HCI_SUCCESS)) {
-    // Report the authentication status
-    (*btm_sec_cb.api.p_auth_complete_callback)(p_device->bd_addr, p_device->dev_class,
-                                               p_device->sec_bd_name, status);
+  /* Currently we do not notify user if it is a keyboard which connects */
+  /* User probably Disabled the keyboard while it was asleap.  Let them try */
+  if (btm_sec_cb.api.p_auth_complete_callback) {
+    /* report the suthentication status */
+    if ((old_state != BTM_PAIR_STATE_IDLE) || (status != HCI_SUCCESS)) {
+      (*btm_sec_cb.api.p_auth_complete_callback)(p_device->bd_addr, p_device->dev_class,
+                                                 p_device->sec_bd_name, status);
+    }
   }
 
   if (is_autonomous_repairing_supported() && status == HCI_SUCCESS) {
@@ -3107,8 +3121,13 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
     p_device->bond_lost = false;
   }
 
-  // If bonding failed, disconnect the link. If bonding succeeded, encrypt the link
-  if (bonding) {
+  /* If this is a bonding procedure can disconnect the link now */
+  if (are_bonding) {
+    tHCI_ROLE role = HCI_ROLE_UNKNOWN;
+    if (get_btm_client_interface().link_policy.BTM_GetRole(p_device->bd_addr, BT_TRANSPORT_BR_EDR,
+                                                           &role) != tBTM_STATUS::BTM_SUCCESS) {
+      log::warn("Unable to get link role peer:{}", p_device->bd_addr);
+    }
     p_device->role_switch_pending = BtmDevice::RoleSwitchPending::kNone;
     p_device->sec_rec.security_required &= ~BTM_SEC_OUT_AUTHENTICATE;
 
@@ -3116,17 +3135,11 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
       if (status != HCI_ERR_PEER_USER && status != HCI_ERR_CONN_CAUSE_LOCAL_HOST) {
         btm_sec_send_hci_disconnect(
                 p_device, HCI_ERR_PEER_USER, p_device->hci_handle,
-                "stack::btm::btm_sec::btm_sec_auth_complete Auth fail while bonding");
+                "stack::btm::btm_sec::btm_sec_auth_retry Auth fail while bonding");
       }
     } else {
       BTM_LogHistory(kBtmLogTag, p_device->bd_addr, "Bonding completed",
                      hci_error_code_text(status));
-
-      tHCI_ROLE role = HCI_ROLE_UNKNOWN;
-      if (get_btm_client_interface().link_policy.BTM_GetRole(p_device->bd_addr, BT_TRANSPORT_BR_EDR,
-                                                             &role) != tBTM_STATUS::BTM_SUCCESS) {
-        log::warn("Unable to get link role peer:{}", p_device->bd_addr);
-      }
       p_device->role_switch_pending =
               (p_device->IsLocallyInitiated() && role == HCI_ROLE_PERIPHERAL)
                       ? BtmDevice::RoleSwitchPending::kAfterEnc
@@ -3138,7 +3151,7 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
     return;
   }
 
-  // If authentication failed, notify the waiting layer
+  /* If authentication failed, notify the waiting layer */
   if (status != HCI_SUCCESS) {
     btm_sec_dev_rec_cback_event(p_device, tBTM_STATUS::BTM_ERR_PROCESSING, false);
 
@@ -3152,14 +3165,16 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
   if (p_device->sec_rec.pin_code_length >= 16 ||
       p_device->sec_rec.link_key_type == BTM_LKEY_TYPE_AUTH_COMB ||
       p_device->sec_rec.link_key_type == BTM_LKEY_TYPE_AUTH_COMB_P_256) {
-    // If we have MITM protection we have a higher level of security than provided by 16 digits PIN
+    // If we have MITM protection we have a higher level of security than
+    // provided by 16 digits PIN
     p_device->sec_rec.sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED;
   }
 
-  // Authentication succeeded, execute the next security procedure, if any
+  /* Authentication succeeded, execute the next security procedure, if any */
   tBTM_STATUS btm_status = btm_sec_execute_procedure(p_device);
 
-  // If there is no next procedure, or procedure failed to start, notify the caller
+  /* If there is no next procedure, or procedure failed to start, notify the
+   * caller */
   if (btm_status != tBTM_STATUS::BTM_CMD_STARTED) {
     btm_sec_dev_rec_cback_event(p_device, btm_status, false);
   }
