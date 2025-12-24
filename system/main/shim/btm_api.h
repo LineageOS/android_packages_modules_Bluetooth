@@ -131,6 +131,17 @@ tBTM_STATUS BTM_SetEventFilterInquiryResultAllDevices(void);
 
 /*******************************************************************************
  *
+ * Function         BTM_SetSuspendState
+ *
+ * Description      Set the suspend state
+ *
+ * Parameters       whether we're suspending or not
+ *
+ *******************************************************************************/
+tBTM_STATUS BTM_SetSuspendState(bool suspend);
+
+/*******************************************************************************
+ *
  * Function         BTM_BleResetId
  *
  * Description      Resets the local BLE keys

@@ -76,6 +76,11 @@ tBTM_STATUS bluetooth::shim::BTM_SetEventFilterInquiryResultAllDevices() {
   return tBTM_STATUS::BTM_SUCCESS;
 }
 
+tBTM_STATUS bluetooth::shim::BTM_SetSuspendState(bool /* suspend */) {
+  inc_func_call_count(__func__);
+  return tBTM_STATUS::BTM_SUCCESS;
+}
+
 tBTM_STATUS bluetooth::shim::BTM_BleResetId() {
   inc_func_call_count(__func__);
   return tBTM_STATUS::BTM_SUCCESS;

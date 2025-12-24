@@ -114,6 +114,11 @@ tBTM_STATUS bluetooth::shim::BTM_SetEventFilterInquiryResultAllDevices() {
   return tBTM_STATUS::BTM_SUCCESS;
 }
 
+tBTM_STATUS bluetooth::shim::BTM_SetSuspendState(bool suspend) {
+  Stack::GetInstance()->GetAcl()->SetSystemSuspendState(suspend);
+  return tBTM_STATUS::BTM_SUCCESS;
+}
+
 tBTM_STATUS bluetooth::shim::BTM_BleResetId() {
   get_security_client_interface().BTM_BleResetId();
   return tBTM_STATUS::BTM_SUCCESS;

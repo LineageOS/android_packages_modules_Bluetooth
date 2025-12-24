@@ -1772,6 +1772,20 @@ void bta_dm_set_event_filter_inquiry_result_all_devices() {
 
 /*******************************************************************************
  *
+ * Function         bta_dm_set_suspend_state
+ *
+ * Description      Set the suspend state
+ *
+ * Parameters       whether we're suspending or not
+ *
+ *******************************************************************************/
+void bta_dm_set_suspend_state(bool suspend) {
+  // Autoplumbed
+  bluetooth::shim::BTM_SetSuspendState(suspend);
+}
+
+/*******************************************************************************
+ *
  * Function         bta_dm_ble_reset_id
  *
  * Description      Reset the local adapter BLE keys.

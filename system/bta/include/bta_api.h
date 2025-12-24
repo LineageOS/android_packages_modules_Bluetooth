@@ -793,6 +793,17 @@ void BTA_DmSetEventFilterInquiryResultAllDevices();
 
 /*******************************************************************************
  *
+ * Function         BTA_DmSetSuspendState
+ *
+ * Description      Set the suspend state
+ *
+ * Parameters       whether we're suspending or not
+ *
+ *******************************************************************************/
+void BTA_DmSetSuspendState(bool suspend);
+
+/*******************************************************************************
+ *
  * Function         BTA_DmBleResetId
  *
  * Description      This function resets the ble keys such as IRK

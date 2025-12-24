@@ -367,6 +367,11 @@ void BTA_DmSetEventFilterInquiryResultAllDevices() {
   do_in_main_thread(base::BindOnce(bta_dm_set_event_filter_inquiry_result_all_devices));
 }
 
+void BTA_DmSetSuspendState(bool suspend) {
+  log::verbose("BTA_DmSetSuspendState");
+  do_in_main_thread(base::BindOnce(bta_dm_set_suspend_state, suspend));
+}
+
 /*******************************************************************************
  *
  * Function         BTA_DmBleResetId

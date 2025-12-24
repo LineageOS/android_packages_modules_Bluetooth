@@ -4444,6 +4444,11 @@ void btif_dm_set_event_filter_inquiry_result_all_devices() {
   BTA_DmSetEventFilterInquiryResultAllDevices();
 }
 
+void btif_dm_set_suspend_state(bool suspend) {
+  // Autoplumbed
+  BTA_DmSetSuspendState(suspend);
+}
+
 void btif_dm_metadata_changed(const RawAddress& remote_bd_addr, int key,
                               std::vector<uint8_t> value) {
   static const int METADATA_LE_AUDIO = 26;

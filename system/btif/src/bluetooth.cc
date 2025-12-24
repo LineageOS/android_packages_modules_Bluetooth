@@ -857,6 +857,14 @@ static int set_event_filter_connection_setup_all_devices() {
   return BT_STATUS_SUCCESS;
 }
 
+static int set_suspend_state(bool suspend) {
+  if (!interface_ready()) {
+    return BT_STATUS_NOT_READY;
+  }
+  do_in_main_thread(base::BindOnce(btif_dm_set_suspend_state, suspend));
+  return BT_STATUS_SUCCESS;
+}
+
 static void dump(int fd, const char** /*arguments*/) {
   if (!stack_is_running()) {
     log::error("Stack is not running, skipping dumpsys!!");
@@ -1212,6 +1220,7 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
         .allow_wake_by_hid = allow_wake_by_hid,
         .set_event_filter_connection_setup_all_devices =
                 set_event_filter_connection_setup_all_devices,
+        .set_suspend_state = set_suspend_state,
         .get_wbs_supported = get_wbs_supported,
         .get_swb_supported = get_swb_supported,
         .is_coding_format_supported = is_coding_format_supported,
