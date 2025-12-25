@@ -62,8 +62,7 @@ public:
   }
 
   ::ndk::ScopedAStatus registerServiceComplete(
-          int32_t in_session_id,
-          ::aidl::android::hardware::bluetooth::gatt::IBluetoothGattCallback::Status in_status,
+          int32_t in_session_id, ::aidl::android::hardware::bluetooth::gatt::Status in_status,
           const std::string& in_reason) override {
     log::info("session_id: {}, status: {}, reason: {}", static_cast<uint16_t>(in_session_id),
               static_cast<int>(in_status), in_reason);
@@ -88,15 +87,13 @@ public:
   }
 
   ::ndk::ScopedAStatus errorReport(
-          int32_t in_acl_connection_handle, int32_t in_local_cid,
-          ::aidl::android::hardware::bluetooth::gatt::IBluetoothGattCallback::Error in_error,
-          const std::string& in_reason) override {
+          const ::aidl::android::hardware::bluetooth::gatt::ErrorReport& in_report) override {
     log::info("acl_connection_handle: 0x{:x}, local_cid: 0x{:x}, error: {}, reason: {}",
-              static_cast<uint16_t>(in_acl_connection_handle), static_cast<uint16_t>(in_local_cid),
-              static_cast<int>(in_error), in_reason);
-    gatt_hal_cb_->errorReport(static_cast<uint16_t>(in_acl_connection_handle),
-                              static_cast<uint16_t>(in_local_cid),
-                              static_cast<hal::GattError>(in_error));
+              in_report.aclConnectionHandle, in_report.localCid, static_cast<int>(in_report.error),
+              in_report.reason);
+    gatt_hal_cb_->errorReport(static_cast<uint16_t>(in_report.aclConnectionHandle),
+                              static_cast<uint16_t>(in_report.localCid),
+                              static_cast<hal::GattError>(in_report.error));
     return ::ndk::ScopedAStatus::ok();
   }
 
@@ -204,10 +201,10 @@ bool GattHalImpl::RegisterService(const hal::GattSession& session) const {
           static_cast<int>(session.role), session.service_uuid, session.endpoint_info.hub_id,
           session.endpoint_info.endpoint_id);
 
-  ::aidl::android::hardware::bluetooth::gatt::IBluetoothGatt::Role gatt_role =
+  ::aidl::android::hardware::bluetooth::gatt::GattSession::Role gatt_role =
           (session.role == hal::GattRole::GATT_SERVER)
-                  ? ::aidl::android::hardware::bluetooth::gatt::IBluetoothGatt::Role::SERVER
-                  : ::aidl::android::hardware::bluetooth::gatt::IBluetoothGatt::Role::CLIENT;
+                  ? ::aidl::android::hardware::bluetooth::gatt::GattSession::Role::SERVER
+                  : ::aidl::android::hardware::bluetooth::gatt::GattSession::Role::CLIENT;
 
   ::aidl::android::hardware::bluetooth::gatt::Uuid service_uuid;
   std::copy(session.service_uuid.To128BitLE().begin(), session.service_uuid.To128BitLE().end(),
@@ -230,9 +227,17 @@ bool GattHalImpl::RegisterService(const hal::GattSession& session) const {
           .hubId = static_cast<int64_t>(session.endpoint_info.hub_id),
   };
 
-  ::ndk::ScopedAStatus status = gatt_hal_instance_->registerService(
-          session.id, session.acl_connection_handle, session.att_mtu, gatt_role, service_uuid,
-          characteristics, endpoint_id);
+  ::aidl::android::hardware::bluetooth::gatt::GattSession aidl_session = {
+          .sessionId = session.id,
+          .aclConnectionHandle = session.acl_connection_handle,
+          .attMtu = session.att_mtu,
+          .role = gatt_role,
+          .serviceUuid = service_uuid,
+          .characteristics = characteristics,
+          .endpointId = endpoint_id,
+  };
+
+  ::ndk::ScopedAStatus status = gatt_hal_instance_->registerService(aidl_session);
   if (!status.isOk()) {
     log::error("registerService failure: {}", status.getDescription());
     return false;

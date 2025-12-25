@@ -28,7 +28,7 @@
 
 using namespace bluetooth;
 
-extern tBTA_JV_CB bta_jv_cb;
+extern BtaJvCb bta_jv_cb;
 
 /*******************************************************************************
  *

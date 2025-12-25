@@ -360,8 +360,8 @@ tBT_STATUS_LEGACY GattClientIntf::offload_characteristics(int conn_id, btgatt_db
                                                           size_t elements_count,
                                                           uint64_t endpoint_id, uint64_t hub_id,
                                                           btgatt_offload_result_t result) const {
-  return toLegacyStatus(client_intf_->offload_characteristics(conn_id, &service, elements_count,
-                                                              endpoint_id, hub_id, &result));
+  return toLegacyStatus(client_intf_->offload_characteristics(
+          conn_id, &service, elements_count, endpoint_id, hub_id, -1, "", &result));
 }
 
 tBT_STATUS_LEGACY GattClientIntf::unoffload_characteristics(int conn_id, int session_id) const {
@@ -437,8 +437,8 @@ tBT_STATUS_LEGACY GattServerIntf::offload_characteristics(int conn_id, btgatt_db
                                                           size_t element_count,
                                                           uint64_t endpoint_id, uint64_t hub_id,
                                                           btgatt_offload_result_t result) const {
-  return toLegacyStatus(server_intf_->offload_characteristics(conn_id, &service, element_count,
-                                                              endpoint_id, hub_id, &result));
+  return toLegacyStatus(server_intf_->offload_characteristics(
+          conn_id, &service, element_count, endpoint_id, hub_id, -1, "", &result));
 }
 
 tBT_STATUS_LEGACY GattServerIntf::unoffload_characteristics(int conn_id, int session_id) const {

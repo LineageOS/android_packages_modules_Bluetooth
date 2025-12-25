@@ -64,12 +64,12 @@ bool bta_jv_enabled = false;
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK* p_cback) {
   log::verbose("");
-  if (!p_cback || bta_jv_enabled) {
+  if (p_cback == nullptr || bta_jv_enabled) {
     log::error("failure");
     return tBTA_JV_STATUS::FAILURE;
   }
 
-  memset(&bta_jv_cb, 0, sizeof(tBTA_JV_CB));
+  bta_jv_cb = {};
   // set handle to invalid value by default
   for (int i = 0; i < BTA_JV_PM_MAX_NUM; i++) {
     bta_jv_cb.pm_cb[i].handle = BTA_JV_PM_HANDLE_CLEAR;
@@ -425,7 +425,7 @@ tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, uint8_t remote_scn,
   log::verbose("remote_scn:{}, peer_bd_addr:{}, rfcomm_slot_id:{}", remote_scn, peer_bd_addr,
                rfcomm_slot_id);
 
-  if (!p_cback) {
+  if (p_cback == nullptr) {
     return tBTA_JV_STATUS::FAILURE;  // Nothing to do
   }
 
@@ -479,7 +479,7 @@ tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, uint8_t local_scn, uin
                                        RfcommCfgInfo cfg, uint32_t app_uid) {
   log::verbose("local_scn:{}, rfcomm_slot_id:{}", local_scn, rfcomm_slot_id);
 
-  if (p_cback == NULL) {
+  if (p_cback == nullptr) {
     return tBTA_JV_STATUS::FAILURE;  // Nothing to do
   }
 
@@ -559,7 +559,7 @@ tBTA_JV_STATUS BTA_JvRfcommWrite(uint32_t handle, uint32_t req_id) {
 
   log::verbose("write ok");
 
-  tBTA_JV_RFC_CB* p_cb = &bta_jv_cb.rfc_cb[hi];
+  BtaJvRfcommCb* p_cb = &bta_jv_cb.rfc_cb[hi];
   do_in_main_thread(BindOnce(&bta_jv_rfcomm_write, handle, req_id, p_cb,
                              &bta_jv_cb.port_cb[p_cb->port_hdls[si] - 1]));
   return tBTA_JV_STATUS::SUCCESS;

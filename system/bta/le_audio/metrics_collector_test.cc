@@ -82,7 +82,7 @@ TEST_F(MetricsCollectorTest, Initialize) {}
 TEST_F(MetricsCollectorTest, ConnectionFailed) {
   EXPECT_CALL(*metrics, LogMetricLeAudioConnectionSessionReported(
                                 _, group_id1, _, _, _, _, ElementsAre(ConnectionStatus::FAILED),
-                                ElementsAre(_), ElementsAre(device1), _, _, _))
+                                ElementsAre(_), ElementsAre(device1), _, _, _, _))
           .Times(1);
 
   collector->OnConnectionStateChanged(group_id1, device1,
@@ -98,7 +98,7 @@ TEST_F(MetricsCollectorTest, ConnectingConnectedDisconnected) {
                                 _, group_id1, _, ElementsAre(_), ElementsAre(_), ElementsAre(_),
                                 ElementsAre(ConnectionStatus::SUCCESS),
                                 ElementsAre(ConnectionStatus::SUCCESS), ElementsAre(device1),
-                                IsEmpty(), IsEmpty(), IsEmpty()))
+                                IsEmpty(), IsEmpty(), IsEmpty(), _))
           .Times(1);
 
   collector->OnConnectionStateChanged(group_id1, device1,
@@ -117,7 +117,7 @@ TEST_F(MetricsCollectorTest, SingleDeviceTwoConnections) {
                                 _, group_id1, _, ElementsAre(_), ElementsAre(_), ElementsAre(_),
                                 ElementsAre(ConnectionStatus::SUCCESS),
                                 ElementsAre(ConnectionStatus::SUCCESS), ElementsAre(device1),
-                                IsEmpty(), IsEmpty(), IsEmpty()))
+                                IsEmpty(), IsEmpty(), IsEmpty(), _))
           .Times(2);
 
   collector->OnConnectionStateChanged(group_id1, device1,
@@ -146,7 +146,7 @@ TEST_F(MetricsCollectorTest, StereoGroupBasicTest) {
                       _, group_id2, _, ElementsAre(_, _), ElementsAre(_, _), ElementsAre(_, _),
                       ElementsAre(ConnectionStatus::SUCCESS, ConnectionStatus::SUCCESS),
                       ElementsAre(ConnectionStatus::SUCCESS, ConnectionStatus::SUCCESS),
-                      ElementsAre(device2, device3), IsEmpty(), IsEmpty(), IsEmpty()))
+                      ElementsAre(device2, device3), IsEmpty(), IsEmpty(), IsEmpty(), _))
           .Times(1);
 
   collector->OnConnectionStateChanged(group_id2, device2,
@@ -175,7 +175,7 @@ TEST_F(MetricsCollectorTest, StereoGroupMultiReconnections) {
                               ConnectionStatus::SUCCESS),
                   ElementsAre(ConnectionStatus::SUCCESS, ConnectionStatus::SUCCESS,
                               ConnectionStatus::SUCCESS),
-                  ElementsAre(device2, device3, device3), IsEmpty(), IsEmpty(), IsEmpty()))
+                  ElementsAre(device2, device3, device3), IsEmpty(), IsEmpty(), IsEmpty(), _))
           .Times(1);
 
   collector->OnConnectionStateChanged(group_id2, device2,
@@ -207,7 +207,7 @@ TEST_F(MetricsCollectorTest, MixGroups) {
                       _, group_id2, _, ElementsAre(_, _), ElementsAre(_, _), ElementsAre(_, _),
                       ElementsAre(ConnectionStatus::SUCCESS, ConnectionStatus::SUCCESS),
                       ElementsAre(ConnectionStatus::SUCCESS, ConnectionStatus::SUCCESS),
-                      ElementsAre(device2, device3), IsEmpty(), IsEmpty(), IsEmpty()))
+                      ElementsAre(device2, device3), IsEmpty(), IsEmpty(), IsEmpty(), _))
           .Times(1);
 
   collector->OnConnectionStateChanged(group_id1, device1,
@@ -236,7 +236,7 @@ TEST_F(MetricsCollectorTest, MixGroups) {
                                 _, group_id1, _, ElementsAre(_), ElementsAre(_), ElementsAre(_),
                                 ElementsAre(ConnectionStatus::SUCCESS),
                                 ElementsAre(ConnectionStatus::SUCCESS), ElementsAre(device1),
-                                IsEmpty(), IsEmpty(), IsEmpty()))
+                                IsEmpty(), IsEmpty(), IsEmpty(), _))
           .Times(1);
 
   collector->OnConnectionStateChanged(group_id1, device1,
@@ -246,7 +246,8 @@ TEST_F(MetricsCollectorTest, MixGroups) {
 
 TEST_F(MetricsCollectorTest, GroupSizeUpdated) {
   EXPECT_CALL(*metrics,
-              LogMetricLeAudioConnectionSessionReported(2, group_id1, _, _, _, _, _, _, _, _, _, _))
+              LogMetricLeAudioConnectionSessionReported(2, group_id1, _, _, _, _, _, _, _, _, _, _,
+                                                        _))
           .Times(1);
 
   collector->OnGroupSizeUpdate(group_id2, 1);
@@ -267,7 +268,8 @@ TEST_F(MetricsCollectorTest, StreamingSessions) {
               LogMetricLeAudioConnectionSessionReported(
                       _, group_id1, _, _, _, _, _, _, _, ElementsAre(_, _), ElementsAre(_, _),
                       ElementsAre(static_cast<int32_t>(LeAudioMetricsContextType::MEDIA),
-                                  static_cast<int32_t>(LeAudioMetricsContextType::COMMUNICATION))))
+                                  static_cast<int32_t>(LeAudioMetricsContextType::COMMUNICATION)),
+                      _))
           .Times(1);
 
   collector->OnConnectionStateChanged(group_id1, device1,
@@ -276,10 +278,123 @@ TEST_F(MetricsCollectorTest, StreamingSessions) {
   collector->OnConnectionStateChanged(group_id1, device1,
                                       bluetooth::le_audio::ConnectionState::CONNECTED,
                                       ConnectionStatus::SUCCESS);
-  collector->OnStreamStarted(group_id1, bluetooth::le_audio::types::LeAudioContextType::MEDIA);
+  LeAudioMetricsCodecInfo info{};
+  collector->OnStreamStarted(group_id1, bluetooth::le_audio::types::LeAudioContextType::MEDIA,
+                             info);
   collector->OnStreamEnded(group_id1);
   collector->OnStreamStarted(group_id1,
-                             bluetooth::le_audio::types::LeAudioContextType::CONVERSATIONAL);
+                             bluetooth::le_audio::types::LeAudioContextType::CONVERSATIONAL, info);
+  collector->OnStreamEnded(group_id1);
+  collector->OnConnectionStateChanged(group_id1, device1,
+                                      bluetooth::le_audio::ConnectionState::DISCONNECTED,
+                                      ConnectionStatus::SUCCESS);
+}
+
+TEST_F(MetricsCollectorTest, StreamingSessionsWithCodecInfo) {
+  bluetooth::metrics::LeAudioMetricsCodecInfoVector info_vector = {
+      .codec_format = {0x06, 0xFF},
+      .vendor_company_id = {0, 0xE0},
+      .vendor_codec_id = {0, 0x01},
+      .sink_sampling_frequency_hz = {48000, 24000},
+      .source_sampling_frequency_hz = {48000, 24000},
+      .is_dsa_active = {true, false},
+      .is_gmap_active = {false, true},
+  };
+  EXPECT_CALL(*metrics,
+              LogMetricLeAudioConnectionSessionReported(
+                      _, group_id1, _, _, _, _, _, _, _, ElementsAre(_, _), ElementsAre(_, _),
+                      ElementsAre(static_cast<int32_t>(LeAudioMetricsContextType::MEDIA),
+                                  static_cast<int32_t>(LeAudioMetricsContextType::COMMUNICATION)),
+                      info_vector))
+          .Times(1);
+
+  collector->OnConnectionStateChanged(group_id1, device1,
+                                      bluetooth::le_audio::ConnectionState::CONNECTING,
+                                      ConnectionStatus::UNKNOWN);
+  collector->OnConnectionStateChanged(group_id1, device1,
+                                      bluetooth::le_audio::ConnectionState::CONNECTED,
+                                      ConnectionStatus::SUCCESS);
+  LeAudioMetricsCodecInfo info0 = {
+      .codec_format = 0x06,
+      .vendor_company_id = 0,
+      .vendor_codec_id = 0,
+      .sink_sampling_frequency_hz = 48000,
+      .source_sampling_frequency_hz = 48000,
+      .is_dsa_active = true,
+      .is_gmap_active = false,
+  };
+  collector->OnStreamStarted(group_id1, bluetooth::le_audio::types::LeAudioContextType::MEDIA,
+                             info0);
+  collector->OnStreamStarted(group_id1, bluetooth::le_audio::types::LeAudioContextType::MEDIA,
+                             info0);
+  collector->OnStreamEnded(group_id1);
+
+  LeAudioMetricsCodecInfo info1 = {
+      .codec_format = 0xFF,
+      .vendor_company_id = 0xE0,
+      .vendor_codec_id = 0x01,
+      .sink_sampling_frequency_hz = 24000,
+      .source_sampling_frequency_hz = 24000,
+      .is_dsa_active = false,
+      .is_gmap_active = true,
+  };
+  collector->OnStreamStarted(group_id1,
+                             bluetooth::le_audio::types::LeAudioContextType::CONVERSATIONAL, info1);
+  collector->OnStreamEnded(group_id1);
+  collector->OnConnectionStateChanged(group_id1, device1,
+                                      bluetooth::le_audio::ConnectionState::DISCONNECTED,
+                                      ConnectionStatus::SUCCESS);
+}
+
+TEST_F(MetricsCollectorTest, StreamingSessionsParameterSwitch) {
+  bluetooth::metrics::LeAudioMetricsCodecInfoVector info_vector = {
+      .codec_format = {0x06, 0xFF},
+      .vendor_company_id = {0, 0xE0},
+      .vendor_codec_id = {0, 0x01},
+      .sink_sampling_frequency_hz = {48000, 48000},
+      .source_sampling_frequency_hz = {48000, 48000},
+      .is_dsa_active = {false, true},
+      .is_gmap_active = {false, false},
+  };
+  EXPECT_CALL(*metrics,
+              LogMetricLeAudioConnectionSessionReported(
+                  _, group_id1, _, _, _, _, _, _, _, ElementsAre(_, _), ElementsAre(_, _),
+                  ElementsAre(static_cast<int32_t>(LeAudioMetricsContextType::MEDIA),
+                              static_cast<int32_t>(LeAudioMetricsContextType::MEDIA)),
+                  info_vector))
+      .Times(1);
+
+  collector->OnConnectionStateChanged(group_id1, device1,
+                                      bluetooth::le_audio::ConnectionState::CONNECTING,
+                                      ConnectionStatus::UNKNOWN);
+  collector->OnConnectionStateChanged(group_id1, device1,
+                                      bluetooth::le_audio::ConnectionState::CONNECTED,
+                                      ConnectionStatus::SUCCESS);
+
+  LeAudioMetricsCodecInfo info0 = {
+      .codec_format = 0x06,
+      .vendor_company_id = 0,
+      .vendor_codec_id = 0,
+      .sink_sampling_frequency_hz = 48000,
+      .source_sampling_frequency_hz = 48000,
+      .is_dsa_active = false,
+      .is_gmap_active = false,
+  };
+  collector->OnStreamStarted(group_id1, bluetooth::le_audio::types::LeAudioContextType::MEDIA,
+                             info0);
+
+  LeAudioMetricsCodecInfo info1 = {
+      .codec_format = 0xFF,
+      .vendor_company_id = 0xE0,
+      .vendor_codec_id = 0x01,
+      .sink_sampling_frequency_hz = 48000,
+      .source_sampling_frequency_hz = 48000,
+      .is_dsa_active = true,
+      .is_gmap_active = false,
+  };
+  collector->OnStreamStarted(group_id1, bluetooth::le_audio::types::LeAudioContextType::MEDIA,
+                             info1);
+
   collector->OnStreamEnded(group_id1);
   collector->OnConnectionStateChanged(group_id1, device1,
                                       bluetooth::le_audio::ConnectionState::DISCONNECTED,
