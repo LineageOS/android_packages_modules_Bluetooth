@@ -29,6 +29,7 @@ import android.companion.CompanionDeviceManager
 import android.content.AttributionSource
 import android.content.Context
 import android.location.LocationManager
+import android.os.BatteryStatsManager
 import android.os.Binder
 import android.os.RemoteException
 import android.os.WorkSource
@@ -85,6 +86,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
     @Mock private lateinit var scanNativeInterface: ScanNativeInterface
     @Mock private lateinit var periodicScanManager: PeriodicScanManager
     @Mock private lateinit var periodicScanNativeInterface: PeriodicScanNativeInterface
+    @Mock private lateinit var batteryStatsManager: BatteryStatsManager
     @Mock private lateinit var companionDeviceManager: CompanionDeviceManager
     @Mock private lateinit var scannerMap: ScannerMap
     @Mock private lateinit var app: ScannerApp
@@ -117,6 +119,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
                 periodicScanManager,
                 periodicScanNativeInterface,
                 scannerMap,
+                batteryStatsManager,
                 companionDeviceManager,
                 TestLooper().looper,
                 timeProvider,
@@ -599,6 +602,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
                 eq(workSource),
                 eq(callback),
                 eq(adapterService),
+                eq(batteryStatsManager),
                 eq(false),
             )
         verify(scanManager).registerScanner(any())

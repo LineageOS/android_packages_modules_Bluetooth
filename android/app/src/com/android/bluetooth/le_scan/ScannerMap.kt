@@ -54,6 +54,7 @@ class ScannerMap {
         workSource: WorkSource?,
         callback: IScannerCallback,
         adapterService: AdapterService,
+        batteryStatsManager: BatteryStatsManager,
         isInternal: Boolean,
     ): ScannerApp =
         add(
@@ -69,6 +70,7 @@ class ScannerMap {
             filters = null,
             piInfo = null,
             adapterService = adapterService,
+            batteryStatsManager = batteryStatsManager,
             isInternal = isInternal,
         )
 
@@ -83,6 +85,7 @@ class ScannerMap {
         settings: ScanSettings? = null, // TODO(b/455057044) Remove nullable on cleanup
         filters: List<ScanFilter>? = null, // TODO(b/455057044) Remove not nullable on cleanup
         adapterService: AdapterService,
+        batteryStatsManager: BatteryStatsManager,
         isInternal: Boolean = false,
     ): ScannerApp =
         add(
@@ -98,6 +101,7 @@ class ScannerMap {
             filters = filters,
             piInfo = null,
             adapterService = adapterService,
+            batteryStatsManager = batteryStatsManager,
             isInternal = isInternal,
         )
 
@@ -110,6 +114,7 @@ class ScannerMap {
         settings: ScanSettings? = null,
         filters: List<ScanFilter>? = null,
         adapterService: AdapterService,
+        batteryStatsManager: BatteryStatsManager,
     ): ScannerApp =
         add(
             appUid = piInfo.callingUid(),
@@ -124,6 +129,7 @@ class ScannerMap {
             filters = filters,
             piInfo = piInfo,
             adapterService = adapterService,
+            batteryStatsManager = batteryStatsManager,
             isInternal = false,
         )
 
@@ -140,6 +146,7 @@ class ScannerMap {
         filters: List<ScanFilter>?, // TODO(b/455057044) Remove nullable on cleanup
         piInfo: ScanController.PendingIntentInfo?,
         adapterService: AdapterService,
+        batteryStatsManager: BatteryStatsManager,
         isInternal: Boolean,
     ): ScannerApp {
         val appScanStats =
@@ -147,17 +154,13 @@ class ScannerMap {
                 // Bill the caller uid if the work source isn't passed through
                 val workSource = workSource ?: WorkSource(appUid, appName)
                 val workSourceUtil = WorkSourceUtil(workSource)
-                val batteryStatsManager =
-                    adapterService.getSystemService(BatteryStatsManager::class.java)
-                val scanMetricsReporter =
-                    ScanMetricsReporter(workSource, workSourceUtil, batteryStatsManager)
                 AppScanStats(
                     appUid,
                     appPid,
                     appName,
                     workSourceUtil,
                     adapterService,
-                    scanMetricsReporter,
+                    ScanMetricsReporter(workSource, workSourceUtil, batteryStatsManager),
                     TimeProvider.systemClock,
                 )
             }
