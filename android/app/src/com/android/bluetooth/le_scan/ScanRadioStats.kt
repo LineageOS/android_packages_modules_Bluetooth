@@ -14,179 +14,172 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.le_scan;
+package com.android.bluetooth.le_scan
 
-import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED;
+import android.app.ActivityManager
+import android.bluetooth.BluetoothProtoEnums
+import android.util.Log
+import com.android.bluetooth.BluetoothStatsLog
+import com.android.bluetooth.btservice.MetricsLogger
+import com.android.bluetooth.util.TimeProvider
+import com.android.bluetooth.util.WorkSourceUtil
 
-import android.annotation.Nullable;
-import android.bluetooth.BluetoothProtoEnums;
-import android.util.Log;
+private const val TAG = ScanUtil.TAG_PREFIX + "ScanRadioStats"
 
-import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.btservice.MetricsLogger;
-import com.android.bluetooth.util.TimeProvider;
-import com.android.bluetooth.util.WorkSourceUtil;
+class ScanRadioStats(private val timeProvider: TimeProvider) {
 
-class ScanRadioStats {
-    private static final String TAG = ScanUtil.TAG_PREFIX + ScanRadioStats.class.getSimpleName();
+    private var isRadioStarted = false
+    private var isScreenOn = false
+    private var radioStartTime = 0L
+    private var radioScanWorkSourceUtil: WorkSourceUtil? = null
+    private var radioScanType = 0
+    private var radioScanMode = 0
+    private var radioScanWindowMs = 0
+    private var radioScanIntervalMs = 0
+    private var radioScanAppImportance = ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED
+    private var radioScanAttributionTag: String? = null
 
-    private final TimeProvider mTimeProvider;
+    private val logger: MetricsLogger
+        get() = MetricsLogger.getInstance()
 
-    private boolean mIsRadioStarted = false;
-    private boolean mIsScreenOn = false;
-    private long mRadioStartTime = 0;
-    private WorkSourceUtil mRadioScanWorkSourceUtil;
-    private int mRadioScanType;
-    private int mRadioScanMode;
-    private int mRadioScanWindowMs;
-    private int mRadioScanIntervalMs;
-    private int mRadioScanAppImportance = IMPORTANCE_CACHED;
-    @Nullable private String mRadioScanAttributionTag;
-
-    ScanRadioStats(TimeProvider timeProvider) {
-        mTimeProvider = timeProvider;
+    fun setScreenState(screenOn: Boolean) {
+        if (isScreenOn == screenOn) {
+            return
+        }
+        if (isRadioStarted) {
+            recordScanRadioDurationMetrics()
+            radioStartTime = timeProvider.elapsedRealtime()
+        }
+        isScreenOn = screenOn
+        recordScreenOnOffMetrics()
     }
 
-    void setScreenState(boolean isScreenOn) {
-        if (mIsScreenOn == isScreenOn) {
-            return;
+    fun recordScanRadioStart(
+        scanMode: Int,
+        scannerId: Int,
+        stats: AppScanStats,
+        scanWindowMs: Int,
+        scanIntervalMs: Int,
+    ) {
+        if (isRadioStarted) {
+            Log.w(TAG, "recordScanRadioStart(): Scan radio already started")
+            return
         }
-        if (mIsRadioStarted) {
-            recordScanRadioDurationMetrics();
-            mRadioStartTime = mTimeProvider.elapsedRealtime();
-        }
-        mIsScreenOn = isScreenOn;
-        recordScreenOnOffMetrics();
+        radioStartTime = timeProvider.elapsedRealtime()
+        radioScanWorkSourceUtil = stats.workSourceUtil
+        radioScanType = ScanMetricsReporter.convertScanType(stats.getScanFromScannerId(scannerId))
+        radioScanMode = scanMode
+        radioScanWindowMs = scanWindowMs
+        radioScanIntervalMs = scanIntervalMs
+        isRadioStarted = true
+        radioScanAppImportance = stats.appImportance
+        radioScanAttributionTag = stats.getAttributionTagFromScannerId(scannerId)
     }
 
-    void recordScanRadioStart(
-            int scanMode, int scannerId, AppScanStats stats, int scanWindowMs, int scanIntervalMs) {
-        if (mIsRadioStarted) {
-            Log.w(TAG, "recordScanRadioStart(): Scan radio already started");
-            return;
+    fun recordScanRadioStop(caller: String?) {
+        if (!isRadioStarted) {
+            Log.w(TAG, "recordScanRadioStop(caller=$caller): No scan radio to stop")
+            return
         }
-        mRadioStartTime = mTimeProvider.elapsedRealtime();
-        mRadioScanWorkSourceUtil = stats.getWorkSourceUtil();
-        mRadioScanType = ScanMetricsReporter.convertScanType(stats.getScanFromScannerId(scannerId));
-        mRadioScanMode = scanMode;
-        mRadioScanWindowMs = scanWindowMs;
-        mRadioScanIntervalMs = scanIntervalMs;
-        mIsRadioStarted = true;
-        mRadioScanAppImportance = stats.getAppImportance();
-        mRadioScanAttributionTag = stats.getAttributionTagFromScannerId(scannerId);
+        recordScanRadioDurationMetrics()
     }
 
-    void recordScanRadioStop(String caller) {
-        if (!mIsRadioStarted) {
-            Log.w(TAG, "recordScanRadioStop(caller=" + caller + "): No scan radio to stop");
-            return;
-        }
-        recordScanRadioDurationMetrics();
-    }
-
-    void recordScanRadioResultCount() {
-        if (!mIsRadioStarted) {
-            return;
+    fun recordScanRadioResultCount() {
+        if (!isRadioStarted) {
+            return
         }
         BluetoothStatsLog.write(
-                BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED,
-                getRadioScanUids(),
-                getRadioScanTags(),
-                1 /* num_results */,
-                BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED__LE_SCAN_TYPE__SCAN_TYPE_REGULAR,
-                mIsScreenOn,
-                getRadioScanAttributionTag());
-        final var logger = MetricsLogger.getInstance();
-        logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_REGULAR, 1);
-        if (mIsScreenOn) {
-            logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_REGULAR_SCREEN_ON, 1);
+            BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED,
+            radioScanUids(),
+            radioScanTags(),
+            1, /* num_results */
+            BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED__LE_SCAN_TYPE__SCAN_TYPE_REGULAR,
+            isScreenOn,
+            radioScanAttributionTag ?: "",
+        )
+        logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_REGULAR, 1)
+        if (isScreenOn) {
+            logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_REGULAR_SCREEN_ON, 1)
         } else {
-            logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_REGULAR_SCREEN_OFF, 1);
+            logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_REGULAR_SCREEN_OFF, 1)
         }
     }
 
-    void recordBatchScanRadioResultCount(int numRecords) {
+    fun recordBatchScanRadioResultCount(numRecords: Int) {
         BluetoothStatsLog.write(
-                BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED,
-                getRadioScanUids(),
-                getRadioScanTags(),
-                numRecords,
-                BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED__LE_SCAN_TYPE__SCAN_TYPE_BATCH,
-                mIsScreenOn,
-                getRadioScanAttributionTag());
-        final var logger = MetricsLogger.getInstance();
-        logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH_BUNDLE, 1);
-        logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH, numRecords);
-        if (mIsScreenOn) {
-            logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH_BUNDLE_SCREEN_ON, 1);
+            BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED,
+            radioScanUids(),
+            radioScanTags(),
+            numRecords,
+            BluetoothStatsLog.LE_SCAN_RESULT_RECEIVED__LE_SCAN_TYPE__SCAN_TYPE_BATCH,
+            isScreenOn,
+            radioScanAttributionTag ?: "",
+        )
+        logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH_BUNDLE, 1)
+        logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH, numRecords.toLong())
+        if (isScreenOn) {
+            logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH_BUNDLE_SCREEN_ON, 1)
             logger.cacheCount(
-                    BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH_SCREEN_ON, numRecords);
+                BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH_SCREEN_ON,
+                numRecords.toLong(),
+            )
         } else {
-            logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH_BUNDLE_SCREEN_OFF, 1);
+            logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH_BUNDLE_SCREEN_OFF, 1)
             logger.cacheCount(
-                    BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH_SCREEN_OFF, numRecords);
+                BluetoothProtoEnums.LE_SCAN_RESULTS_COUNT_BATCH_SCREEN_OFF,
+                numRecords.toLong(),
+            )
         }
     }
 
-    private void recordScanRadioDurationMetrics() {
-        if (!mIsRadioStarted) {
-            return;
+    private fun recordScanRadioDurationMetrics() {
+        if (!isRadioStarted) {
+            return
         }
-        long currentTime = mTimeProvider.elapsedRealtime();
-        long radioScanDuration = currentTime - mRadioStartTime;
-        double scanWeight = ScanUtil.weightForScanMode(mRadioScanMode) * 0.01;
-        long weightedDuration = (long) (radioScanDuration * scanWeight);
+        val currentTime = timeProvider.elapsedRealtime()
+        val radioScanDuration = currentTime - radioStartTime
+        val scanWeight = ScanUtil.weightForScanMode(radioScanMode) * 0.01
+        val weightedDuration = (radioScanDuration * scanWeight).toLong()
 
-        final var logger = MetricsLogger.getInstance();
         logger.logRadioScanStopped(
-                getRadioScanUids(),
-                getRadioScanTags(),
-                mRadioScanType,
-                ScanMetricsReporter.convertScanMode(mRadioScanMode),
-                mRadioScanIntervalMs,
-                mRadioScanWindowMs,
-                mIsScreenOn,
-                radioScanDuration,
-                mRadioScanAppImportance,
-                getRadioScanAttributionTag());
-        mRadioStartTime = 0;
-        mIsRadioStarted = false;
+            radioScanUids(),
+            radioScanTags(),
+            radioScanType,
+            ScanMetricsReporter.convertScanMode(radioScanMode),
+            radioScanIntervalMs.toLong(),
+            radioScanWindowMs.toLong(),
+            isScreenOn,
+            radioScanDuration,
+            radioScanAppImportance,
+            radioScanAttributionTag ?: "",
+        )
+        radioStartTime = 0
+        isRadioStarted = false
         if (weightedDuration > 0) {
-            logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR, weightedDuration);
-            if (mIsScreenOn) {
+            logger.cacheCount(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR, weightedDuration)
+            if (isScreenOn) {
                 logger.cacheCount(
-                        BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON,
-                        weightedDuration);
+                    BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON,
+                    weightedDuration,
+                )
             } else {
                 logger.cacheCount(
-                        BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF,
-                        weightedDuration);
+                    BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_OFF,
+                    weightedDuration,
+                )
             }
         }
     }
 
-    private void recordScreenOnOffMetrics() {
-        final var logger = MetricsLogger.getInstance();
-        if (mIsScreenOn) {
-            logger.cacheCount(BluetoothProtoEnums.SCREEN_ON_EVENT, 1);
+    private fun recordScreenOnOffMetrics() {
+        if (isScreenOn) {
+            logger.cacheCount(BluetoothProtoEnums.SCREEN_ON_EVENT, 1)
         } else {
-            logger.cacheCount(BluetoothProtoEnums.SCREEN_OFF_EVENT, 1);
+            logger.cacheCount(BluetoothProtoEnums.SCREEN_OFF_EVENT, 1)
         }
     }
 
-    private int[] getRadioScanUids() {
-        return mRadioScanWorkSourceUtil != null
-                ? mRadioScanWorkSourceUtil.getUids()
-                : new int[] {0};
-    }
+    private fun radioScanUids() = radioScanWorkSourceUtil?.uids ?: intArrayOf(0)
 
-    private String[] getRadioScanTags() {
-        return mRadioScanWorkSourceUtil != null
-                ? mRadioScanWorkSourceUtil.getTags()
-                : new String[] {""};
-    }
-
-    private String getRadioScanAttributionTag() {
-        return mRadioScanAttributionTag != null ? mRadioScanAttributionTag : "";
-    }
+    private fun radioScanTags() = radioScanWorkSourceUtil?.tags ?: arrayOf("")
 }
