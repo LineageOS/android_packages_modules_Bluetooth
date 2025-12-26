@@ -1953,7 +1953,7 @@ static void btif_on_service_discovery_results(RawAddress bd_addr,
           (bd_addr == pairing_cb.bd_addr || bd_addr == pairing_cb.static_bdaddr);
 
   if (results_for_bonding_device && result != BTA_SUCCESS &&
-      pairing_cb.state == BT_BOND_STATE_BONDED &&
+      (pairing_cb.state == BT_BOND_STATE_BONDED || pairing_cb.sdp_attempts) &&
       pairing_cb.sdp_attempts < BTIF_DM_MAX_SDP_ATTEMPTS_AFTER_PAIRING) {
     if (pairing_cb.sdp_attempts) {
       log::warn("SDP failed after bonding re-attempting for {}", bd_addr);
