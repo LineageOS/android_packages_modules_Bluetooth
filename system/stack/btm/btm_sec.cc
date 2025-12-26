@@ -42,6 +42,7 @@
 
 #include "bta/dm/bta_dm_act.h"
 #include "bta/dm/bta_dm_sec_int.h"
+#include "btif/include/btif_config.h"
 #include "btif/include/btif_dm.h"
 #include "btif/include/btif_storage.h"
 #include "btm_sec_utils.h"
@@ -4547,7 +4548,10 @@ void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset) {
     return;
   }
   p_device->clock_offset = clock_offset | BTM_CLOCK_OFFSET_VALID;
-  // btif_set_device_clockoffset(p_device->bd_addr, clock_offset);
+
+  if (com_android_bluetooth_flags_use_cached_clock_offset()) {
+    btif_set_device_clockoffset(p_device->bd_addr, clock_offset);
+  }
 
   tBTM_INQ_INFO* p_inq_info = BTM_InqDbRead(p_device->bd_addr);
   if (p_inq_info == nullptr) {
