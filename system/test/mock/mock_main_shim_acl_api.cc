@@ -30,7 +30,8 @@
 #include "stack/include/bt_hdr.h"
 #include "test/common/mock_functions.h"
 
-void bluetooth::shim::ACL_CreateClassicConnection(const RawAddress& /* raw_address */) {
+void bluetooth::shim::ACL_CreateClassicConnection(const RawAddress& /* raw_address */,
+                                                  uint16_t /* clock_offset */) {
   inc_func_call_count(__func__);
 }
 void bluetooth::shim::ACL_CancelClassicConnection(const RawAddress& /* raw_address */) {

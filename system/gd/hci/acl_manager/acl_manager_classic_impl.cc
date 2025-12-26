@@ -64,8 +64,8 @@ void AclManagerClassicImpl::UnregisterCallbacks(ConnectionCallbacks* callbacks,
                    common::Unretained(callbacks), std::move(promise));
 }
 
-void AclManagerClassicImpl::CreateConnection(Address address) {
-  handler_->CallOn(&classic_impl_, &classic_impl::create_connection, address);
+void AclManagerClassicImpl::CreateConnection(Address address, uint16_t clock_offset) {
+  handler_->CallOn(&classic_impl_, &classic_impl::create_connection, address, clock_offset);
 }
 
 void AclManagerClassicImpl::CancelConnect(Address address) {

@@ -73,7 +73,7 @@ public:
                            std::promise<void> promise) override;
 
   // Generates OnConnectSuccess if connected, or OnConnectFail otherwise
-  void CreateConnection(Address address) override;
+  void CreateConnection(Address address, uint16_t clock_offset) override;
 
   // Generates OnConnectFail with error code "terminated by local host 0x16" if
   // cancelled, or OnConnectSuccess if not successfully cancelled and already
