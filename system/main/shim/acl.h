@@ -66,7 +66,7 @@ public:
   void GetAdvertisingSetConnectedTo(const RawAddress& remote_bda,
                                     std::promise<std::optional<uint8_t>> promise);
 
-  void CreateClassicConnection(const hci::Address& address);
+  void CreateClassicConnection(const hci::Address& address, uint16_t clock_offset);
   void CancelClassicConnection(const hci::Address& address);
   void DisconnectClassic(uint16_t handle, tHCI_REASON reason, const std::string& comment);
   void DisconnectLe(uint16_t handle, tHCI_REASON reason, const std::string& comment);

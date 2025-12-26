@@ -28,7 +28,7 @@
 namespace bluetooth {
 namespace shim {
 
-void ACL_CreateClassicConnection(const RawAddress& raw_address);
+void ACL_CreateClassicConnection(const RawAddress& raw_address, uint16_t clock_offset);
 void ACL_CancelClassicConnection(const RawAddress& raw_address);
 
 void ACL_Disconnect(uint16_t handle, bool is_classic, tHCI_STATUS reason, std::string comment);

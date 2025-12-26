@@ -379,8 +379,8 @@ protected:
     acl_ = MakeAcl();
 
     // Create connection
-    EXPECT_CALL(*test::mock_acl_manager_classic_, CreateConnection(_)).Times(1);
-    acl_->CreateClassicConnection(address);
+    EXPECT_CALL(*test::mock_acl_manager_classic_, CreateConnection(_, _)).Times(1);
+    acl_->CreateClassicConnection(address, 0);
 
     // Respond with a mock connection created
     auto connection = std::make_unique<MockClassicAclConnection>(address, 123);
@@ -450,8 +450,8 @@ TEST_F(MainShimTest, connect_and_disconnect) {
   auto acl = MakeAcl();
 
   // Create connection
-  EXPECT_CALL(*test::mock_acl_manager_classic_, CreateConnection(_)).Times(1);
-  acl->CreateClassicConnection(address);
+  EXPECT_CALL(*test::mock_acl_manager_classic_, CreateConnection(_, _)).Times(1);
+  acl->CreateClassicConnection(address, 0);
 
   // Respond with a mock connection created
   auto connection = std::make_unique<MockClassicAclConnection>(address, 123);

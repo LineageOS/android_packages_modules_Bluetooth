@@ -86,11 +86,14 @@ struct ACL_ConfigureLePrivacy {
 extern struct ACL_ConfigureLePrivacy ACL_ConfigureLePrivacy;
 
 // Name: ACL_CreateClassicConnection
-// Params: const RawAddress& raw_address
+// Params: const RawAddress& raw_address, uint16_t clock_offset
 // Return: void
 struct ACL_CreateClassicConnection {
-  std::function<void(const RawAddress& raw_address)> body{[](const RawAddress& raw_address) {}};
-  void operator()(const RawAddress& raw_address) { body(raw_address); }
+  std::function<void(const RawAddress& raw_address, uint16_t clock_offset)> body{
+          [](const RawAddress& raw_address, uint16_t clock_offset) {}};
+  void operator()(const RawAddress& raw_address, uint16_t clock_offset) {
+    body(raw_address, clock_offset);
+  }
 };
 extern struct ACL_CreateClassicConnection ACL_CreateClassicConnection;
 

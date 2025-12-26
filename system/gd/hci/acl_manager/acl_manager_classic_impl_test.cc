@@ -258,7 +258,7 @@ protected:
     AclManagerClassicTest::SetUp();
 
     handle_ = 0x123;
-    acl_manager_classic_->CreateConnection(remote);
+    acl_manager_classic_->CreateConnection(remote, 0);
 
     // Wait for the connection request
     auto last_command = GetConnectionManagementCommand(OpCode::CREATE_CONNECTION);
@@ -300,7 +300,7 @@ protected:
 TEST_F(AclManagerClassicTest, startup_teardown) {}
 
 TEST_F(AclManagerClassicTest, invoke_registered_callback_connection_complete_success) {
-  acl_manager_classic_->CreateConnection(remote);
+  acl_manager_classic_->CreateConnection(remote, 0);
 
   // Wait for the connection request
   auto last_command = GetConnectionManagementCommand(OpCode::CREATE_CONNECTION);
@@ -321,7 +321,7 @@ TEST_F(AclManagerClassicTest, invoke_registered_callback_connection_complete_suc
 }
 
 TEST_F(AclManagerClassicTest, invoke_registered_callback_connection_complete_fail) {
-  acl_manager_classic_->CreateConnection(remote);
+  acl_manager_classic_->CreateConnection(remote, 0);
 
   // Wait for the connection request
   auto last_command = GetConnectionManagementCommand(OpCode::CREATE_CONNECTION);
@@ -811,7 +811,7 @@ protected:
 
 TEST_F(AclManagerClassicLifeCycleTest, unregister_classic_after_create_connection) {
   // Inject create connection
-  acl_manager_classic_->CreateConnection(remote);
+  acl_manager_classic_->CreateConnection(remote, 0);
   auto connection_command = GetConnectionManagementCommand(OpCode::CREATE_CONNECTION);
 
   // Unregister callbacks after sending connection request
