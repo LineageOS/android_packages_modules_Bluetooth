@@ -85,6 +85,16 @@ static void btm_inq_rmt_name_failed_cancelled(void) {
 
 void btm_inq_remote_name_timer_timeout(void* /* data */) { btm_inq_rmt_name_failed_cancelled(); }
 
+static uint16_t get_cached_clock_offset(const RawAddress& remote_bda) {
+  if (!com_android_bluetooth_flags_use_cached_clock_offset()) {
+    int clock_offset_in_cfg = 0;
+    return btif_get_device_clockoffset(remote_bda, &clock_offset_in_cfg)
+                   ? static_cast<uint16_t>(clock_offset_in_cfg)
+                   : 0;
+  }
+  return BTM_GetCachedClockOffset(remote_bda);
+}
+
 /*******************************************************************************
  *
  * Function         btm_initiate_rem_name
@@ -109,13 +119,6 @@ void btm_inq_remote_name_timer_timeout(void* /* data */) { btm_inq_rmt_name_fail
  *                  BTM_WRONG_MODE if the device is not up.
  *
  ******************************************************************************/
-static uint16_t get_clock_offset_from_storage(const RawAddress& remote_bda) {
-  int clock_offset_in_cfg = 0;
-  return btif_get_device_clockoffset(remote_bda, &clock_offset_in_cfg)
-                 ? static_cast<uint16_t>(clock_offset_in_cfg)
-                 : 0;
-}
-
 static tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda, uint64_t timeout_ms,
                                          tBTM_NAME_CMPL_CB* p_cb) {
   /*** Make sure the device is ready ***/
@@ -126,7 +129,7 @@ static tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda, uint64_t 
     return tBTM_STATUS::BTM_BUSY;
   }
 
-  uint16_t clock_offset = get_clock_offset_from_storage(remote_bda);
+  uint16_t clock_offset = 0;
   uint8_t page_scan_rep_mode = HCI_PAGE_SCAN_REP_MODE_R1;
   uint8_t page_scan_mode = HCI_MANDATARY_PAGE_SCAN_MODE;
 
@@ -135,9 +138,6 @@ static tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda, uint64_t 
   if (p_i && (p_i->inq_info.results.inq_result_type & BT_DEVICE_TYPE_BREDR)) {
     tBTM_INQ_INFO* p_cur = &p_i->inq_info;
     clock_offset = p_cur->results.clock_offset | BTM_CLOCK_OFFSET_VALID;
-    if (0 == (p_cur->results.clock_offset & BTM_CLOCK_OFFSET_VALID)) {
-      clock_offset = get_clock_offset_from_storage(remote_bda);
-    }
     page_scan_rep_mode = p_cur->results.page_scan_rep_mode;
     if (com_android_bluetooth_flags_rnr_validate_page_scan_repetition_mode() &&
         page_scan_rep_mode >= HCI_PAGE_SCAN_REP_MODE_RESERVED_START) {
@@ -150,6 +150,9 @@ static tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda, uint64_t 
     page_scan_mode = p_cur->results.page_scan_mode;
   }
 
+  if ((clock_offset & BTM_CLOCK_OFFSET_VALID) == 0) {
+    clock_offset = get_cached_clock_offset(remote_bda);
+  }
   bluetooth::shim::ACL_RemoteNameRequest(remote_bda, page_scan_rep_mode, page_scan_mode,
                                          clock_offset);
 

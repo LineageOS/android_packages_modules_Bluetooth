@@ -4199,7 +4199,10 @@ void btm_sec_link_key_notification(const RawAddress& p_bda, const Octet16& link_
      * resolution */
     if (we_are_bonding) {
       bluetooth::shim::ACL_RemoteNameRequest(p_bda, HCI_PAGE_SCAN_REP_MODE_R1,
-                                             HCI_MANDATARY_PAGE_SCAN_MODE, 0);
+                                             HCI_MANDATARY_PAGE_SCAN_MODE,
+                                             com_android_bluetooth_flags_use_cached_clock_offset()
+                                                     ? BTM_GetCachedClockOffset(p_bda)
+                                                     : 0);
     }
 
     log::verbose("rmt_io_caps:{}, sec_flags:x{:x}, dev_class[1]:x{:02x}",
@@ -4526,7 +4529,10 @@ void btm_sec_pin_code_request(const RawAddress p_bda) {
       /* it is not user friendly just to ask for the PIN without name */
       /* try to get name at first */
       bluetooth::shim::ACL_RemoteNameRequest(p_device->bd_addr, HCI_PAGE_SCAN_REP_MODE_R1,
-                                             HCI_MANDATARY_PAGE_SCAN_MODE, 0);
+                                             HCI_MANDATARY_PAGE_SCAN_MODE,
+                                             com_android_bluetooth_flags_use_cached_clock_offset()
+                                                     ? BTM_GetCachedClockOffset(p_device->bd_addr)
+                                                     : 0);
     }
   }
 
@@ -4733,7 +4739,10 @@ static bool btm_sec_start_get_name(BtmDevice* p_device) {
   /* 0 and NULL are as timeout and callback params because they are not used in
    * security get name case */
   bluetooth::shim::ACL_RemoteNameRequest(p_device->bd_addr, HCI_PAGE_SCAN_REP_MODE_R1,
-                                         HCI_MANDATARY_PAGE_SCAN_MODE, 0);
+                                         HCI_MANDATARY_PAGE_SCAN_MODE,
+                                         com_android_bluetooth_flags_use_cached_clock_offset()
+                                                 ? BTM_GetCachedClockOffset(p_device->bd_addr)
+                                                 : 0);
   return true;
 }
 
