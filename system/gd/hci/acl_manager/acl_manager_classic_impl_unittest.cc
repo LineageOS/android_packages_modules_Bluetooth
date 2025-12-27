@@ -236,7 +236,7 @@ protected:
     handle_ = 0x123;
     remote = Address::FromString("A1:A2:A3:A4:A5:A6").value();
 
-    acl_manager_classic_->CreateConnection(remote);
+    acl_manager_classic_->CreateConnection(remote, 0);
 
     // Wait for the connection request
     auto last_command = test_hci_layer_->GetCommand(OpCode::CREATE_CONNECTION);

@@ -49,7 +49,7 @@ public:
   MOCK_METHOD(void, UnregisterCallbacks,
               (acl_manager::ConnectionCallbacks * callbacks, std::promise<void> promise),
               (override));
-  MOCK_METHOD(void, CreateConnection, (Address address), (override));
+  MOCK_METHOD(void, CreateConnection, (Address address, uint16_t clock_offset), (override));
   MOCK_METHOD(void, CancelConnect, (Address address), (override));
   MOCK_METHOD(void, CentralLinkKey, (KeyFlag key_flag), (override));
   MOCK_METHOD(void, SwitchRole, (Address address, Role role), (override));

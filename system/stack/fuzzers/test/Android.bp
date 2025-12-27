@@ -19,6 +19,7 @@ cc_defaults {
     ],
     srcs: [
         ":TestMockStackA2dp",
+        ":TestMockStackBtm",
         "fuzzer_validation_test.cc",
     ],
     strip: {

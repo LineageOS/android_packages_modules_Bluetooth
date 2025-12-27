@@ -36,7 +36,7 @@ public:
                                    std::promise<void> promise) = 0;
 
   // Generates OnConnectSuccess if connected, or OnConnectFail otherwise
-  virtual void CreateConnection(Address address) = 0;
+  virtual void CreateConnection(Address address, uint16_t clock_offset) = 0;
 
   // Generates OnConnectFail with error code "terminated by local host 0x16" if
   // cancelled, or OnConnectSuccess if not successfully cancelled and already

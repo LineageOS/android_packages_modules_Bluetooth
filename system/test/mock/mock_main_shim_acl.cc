@@ -61,7 +61,8 @@ using HciHandle = uint16_t;
 
 struct shim::Acl::impl {};
 
-void shim::Acl::CreateClassicConnection(const hci::Address& /* address */) {
+void shim::Acl::CreateClassicConnection(const hci::Address& /* address */,
+                                        uint16_t /* clock_offset */) {
   inc_func_call_count(__func__);
 }
 

@@ -37,6 +37,7 @@
 #include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"
+#include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_hdr.h"
@@ -2220,7 +2221,8 @@ void l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
  *
  ******************************************************************************/
 void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
-  bluetooth::shim::ACL_CreateClassicConnection(p_lcb->remote_bd_addr);
+  uint16_t clock_offset = BTM_GetCachedClockOffset(p_lcb->remote_bd_addr);
+  bluetooth::shim::ACL_CreateClassicConnection(p_lcb->remote_bd_addr, clock_offset);
 
   alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_LINK_CONNECT_TIMEOUT_MS, l2c_lcb_timer_timeout,
                      p_lcb);

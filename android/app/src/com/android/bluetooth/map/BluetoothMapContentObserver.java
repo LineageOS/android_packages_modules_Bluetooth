@@ -2606,7 +2606,7 @@ public class BluetoothMapContentObserver {
                         .contentResolverQuery(mResolver, uri, null, null, null, null);
         try {
             if (c != null && c.moveToFirst()) {
-                int lockedColIndex = c.getColumnIndex(Sms.LOCKED);
+                int lockedColIndex = c.getColumnIndex(Mms.LOCKED);
                 if (lockedColIndex >= 0 && c.getInt(lockedColIndex) == 1) {
                     Log.w(TAG, "Can't delete locked MMS");
                     return false;

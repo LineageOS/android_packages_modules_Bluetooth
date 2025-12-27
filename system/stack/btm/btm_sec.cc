@@ -42,6 +42,7 @@
 
 #include "bta/dm/bta_dm_act.h"
 #include "bta/dm/bta_dm_sec_int.h"
+#include "btif/include/btif_config.h"
 #include "btif/include/btif_dm.h"
 #include "btif/include/btif_storage.h"
 #include "btm_sec_utils.h"
@@ -4198,7 +4199,10 @@ void btm_sec_link_key_notification(const RawAddress& p_bda, const Octet16& link_
      * resolution */
     if (we_are_bonding) {
       bluetooth::shim::ACL_RemoteNameRequest(p_bda, HCI_PAGE_SCAN_REP_MODE_R1,
-                                             HCI_MANDATARY_PAGE_SCAN_MODE, 0);
+                                             HCI_MANDATARY_PAGE_SCAN_MODE,
+                                             com_android_bluetooth_flags_use_cached_clock_offset()
+                                                     ? BTM_GetCachedClockOffset(p_bda)
+                                                     : 0);
     }
 
     log::verbose("rmt_io_caps:{}, sec_flags:x{:x}, dev_class[1]:x{:02x}",
@@ -4525,7 +4529,10 @@ void btm_sec_pin_code_request(const RawAddress p_bda) {
       /* it is not user friendly just to ask for the PIN without name */
       /* try to get name at first */
       bluetooth::shim::ACL_RemoteNameRequest(p_device->bd_addr, HCI_PAGE_SCAN_REP_MODE_R1,
-                                             HCI_MANDATARY_PAGE_SCAN_MODE, 0);
+                                             HCI_MANDATARY_PAGE_SCAN_MODE,
+                                             com_android_bluetooth_flags_use_cached_clock_offset()
+                                                     ? BTM_GetCachedClockOffset(p_device->bd_addr)
+                                                     : 0);
     }
   }
 
@@ -4547,7 +4554,10 @@ void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset) {
     return;
   }
   p_device->clock_offset = clock_offset | BTM_CLOCK_OFFSET_VALID;
-  // btif_set_device_clockoffset(p_device->bd_addr, clock_offset);
+
+  if (com_android_bluetooth_flags_use_cached_clock_offset()) {
+    btif_set_device_clockoffset(p_device->bd_addr, clock_offset);
+  }
 
   tBTM_INQ_INFO* p_inq_info = BTM_InqDbRead(p_device->bd_addr);
   if (p_inq_info == nullptr) {
@@ -4729,7 +4739,10 @@ static bool btm_sec_start_get_name(BtmDevice* p_device) {
   /* 0 and NULL are as timeout and callback params because they are not used in
    * security get name case */
   bluetooth::shim::ACL_RemoteNameRequest(p_device->bd_addr, HCI_PAGE_SCAN_REP_MODE_R1,
-                                         HCI_MANDATARY_PAGE_SCAN_MODE, 0);
+                                         HCI_MANDATARY_PAGE_SCAN_MODE,
+                                         com_android_bluetooth_flags_use_cached_clock_offset()
+                                                 ? BTM_GetCachedClockOffset(p_device->bd_addr)
+                                                 : 0);
   return true;
 }
 

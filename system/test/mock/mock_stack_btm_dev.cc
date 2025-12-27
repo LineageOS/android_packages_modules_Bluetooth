@@ -115,4 +115,9 @@ const tBLE_BD_ADDR BTM_Sec_GetAddressWithType(const RawAddress& bd_addr) {
   return tBLE_BD_ADDR{.type = BLE_ADDR_PUBLIC, .bda = bd_addr};
 }
 
+uint16_t BTM_GetCachedClockOffset(const RawAddress& /* bd_addr */) {
+  inc_func_call_count(__func__);
+  return 0;
+}
+
 void DumpsysRecord(int /* fd */) { inc_func_call_count(__func__); }

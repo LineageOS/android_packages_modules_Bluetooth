@@ -46,8 +46,9 @@
   "bluetooth.core.gap.le.privacy.own_address_type.enabled"
 #endif
 
-void bluetooth::shim::ACL_CreateClassicConnection(const RawAddress& address) {
-  Stack::GetInstance()->GetAcl()->CreateClassicConnection(address);
+void bluetooth::shim::ACL_CreateClassicConnection(const RawAddress& address,
+                                                  uint16_t clock_offset) {
+  Stack::GetInstance()->GetAcl()->CreateClassicConnection(address, clock_offset);
 }
 
 void bluetooth::shim::ACL_CancelClassicConnection(const RawAddress& address) {
