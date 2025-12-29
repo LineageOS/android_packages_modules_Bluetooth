@@ -1142,7 +1142,8 @@ static void btm_ble_update_inq_result(tINQ_DB_ENT* p_i, uint8_t addr_type,
       local_flag = 0;
     }
     if (has_advertising_flags && (local_flag & BTM_BLE_BREDR_NOT_SPT) == 0) {
-      if (p_cur->ble_addr_type != BLE_ADDR_RANDOM) {
+      if (com_android_bluetooth_flags_unify_device_type_verification_logic() ||
+          p_cur->ble_addr_type != BLE_ADDR_RANDOM) {
         log::verbose("NOT_BR_EDR support bit not set, treat device as DUMO");
         p_cur->device_type |= BT_DEVICE_TYPE_DUMO;
       } else {
