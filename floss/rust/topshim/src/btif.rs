@@ -1083,15 +1083,12 @@ cb_variant!(BaseCb, discovery_state_cb -> BaseCallbacks::DiscoveryState,
     bindings::bt_discovery_state_t -> BtDiscoveryState
 );
 cb_variant!(BaseCb, pin_request_cb -> BaseCallbacks::PinRequest,
-    RawAddress, *mut bindings::bt_bdname_t, u32, bool, bindings::PairingAlgorithm -> _, {
+    RawAddress, *mut bindings::bt_bdname_t, u32, bool, i32 -> _, {
         let _1 = String::from(unsafe{*_1});
     }
 );
 cb_variant!(BaseCb, ssp_request_cb -> BaseCallbacks::SspRequest,
-    RawAddress,
-    bindings::bt_ssp_variant_t -> BtSspVariant,
-    u32,
-    bindings::PairingAlgorithm -> _
+    RawAddress, bindings::bt_ssp_variant_t -> BtSspVariant, u32, i32 -> _
 );
 cb_variant!(BaseCb, bond_state_cb -> BaseCallbacks::BondState,
     u32 -> BtStatus,
