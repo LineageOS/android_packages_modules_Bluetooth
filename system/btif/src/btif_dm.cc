@@ -1031,7 +1031,8 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
                  std::format("name:\"{}\" min16:{:c}", reinterpret_cast<char const*>(bd_name.name),
                              p_pin_req->min_16_digit ? 'T' : 'F'));
   GetInterfaceToProfiles()->events->invoke_pin_request_cb(
-          bd_addr, bd_name, cod, p_pin_req->min_16_digit, pairing_cb.pairing_type.algorithm);
+          bd_addr, bd_name, cod, p_pin_req->min_16_digit,
+          map_pairing_algo_to_api(pairing_cb.pairing_type.algorithm, BT_TRANSPORT_BR_EDR));
 }
 
 static tBTM_BOND_TYPE btif_dm_get_pairing_type(const RawAddress& bd_addr, const bool just_works,
@@ -1103,9 +1104,9 @@ static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Ssp request",
                  std::format("just_works:{:c} pin:{}", (p_ssp_cfm_req->just_works) ? 'T' : 'F',
                              p_ssp_cfm_req->num_val));
-  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(bd_addr, pairing_cb.pairing_type.variant,
-                                                          p_ssp_cfm_req->num_val,
-                                                          pairing_cb.pairing_type.algorithm);
+  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
+          bd_addr, pairing_cb.pairing_type.variant, p_ssp_cfm_req->num_val,
+          map_pairing_algo_to_api(pairing_cb.pairing_type.algorithm, BT_TRANSPORT_BR_EDR));
 }
 
 static void btif_dm_ssp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
@@ -1135,9 +1136,9 @@ static void btif_dm_ssp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
 
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Ssp request",
                  std::format("passkey:{}", p_ssp_key_notif->passkey));
-  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(bd_addr, pairing_cb.pairing_type.variant,
-                                                          p_ssp_key_notif->passkey,
-                                                          pairing_cb.pairing_type.algorithm);
+  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
+          bd_addr, pairing_cb.pairing_type.variant, p_ssp_key_notif->passkey,
+          map_pairing_algo_to_api(pairing_cb.pairing_type.algorithm, BT_TRANSPORT_BR_EDR));
 }
 
 /*******************************************************************************
@@ -3666,9 +3667,9 @@ static void btif_dm_ble_passkey_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif)
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Ssp request",
                  std::format("passkey:{}", p_ssp_key_notif->passkey));
 
-  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(bd_addr, pairing_cb.pairing_type.variant,
-                                                          p_ssp_key_notif->passkey,
-                                                          pairing_cb.pairing_type.algorithm);
+  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
+          bd_addr, pairing_cb.pairing_type.variant, p_ssp_key_notif->passkey,
+          map_pairing_algo_to_api(pairing_cb.pairing_type.algorithm, BT_TRANSPORT_LE));
 }
 
 static bool btif_dm_ble_is_temp_pairing(RawAddress& bd_addr, bool ctkd) {
@@ -3983,8 +3984,9 @@ static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool consent
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "SSP ble request",
                  consent ? "BT_SSP_VARIANT_CONSENT" : "BT_SSP_VARIANT_PARTICIPATION");
 
-  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(bd_addr, pairing_cb.pairing_type.variant,
-                                                          0, pairing_cb.pairing_type.algorithm);
+  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
+          bd_addr, pairing_cb.pairing_type.variant, 0,
+          map_pairing_algo_to_api(pairing_cb.pairing_type.algorithm, BT_TRANSPORT_LE));
 }
 
 /*******************************************************************************
@@ -4023,8 +4025,9 @@ static void btif_dm_ble_passkey_req_evt(tBTA_DM_PIN_REQ* p_passkey_req) {
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "PIN request",
                  std::format("name:'{}'", reinterpret_cast<char const*>(bd_name.name)));
 
-  GetInterfaceToProfiles()->events->invoke_pin_request_cb(bd_addr, bd_name, cod, false,
-                                                          pairing_cb.pairing_type.algorithm);
+  GetInterfaceToProfiles()->events->invoke_pin_request_cb(
+          bd_addr, bd_name, cod, false,
+          map_pairing_algo_to_api(pairing_cb.pairing_type.algorithm, BT_TRANSPORT_LE));
 }
 
 static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF* p_notif_req) {
@@ -4049,9 +4052,9 @@ static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF* p_notif_req) {
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Ssp request",
                  std::format("passkey:{}", p_notif_req->passkey));
 
-  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(bd_addr, pairing_cb.pairing_type.variant,
-                                                          p_notif_req->passkey,
-                                                          pairing_cb.pairing_type.algorithm);
+  GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
+          bd_addr, pairing_cb.pairing_type.variant, p_notif_req->passkey,
+          map_pairing_algo_to_api(pairing_cb.pairing_type.algorithm, BT_TRANSPORT_LE));
 }
 
 static void btif_dm_ble_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
