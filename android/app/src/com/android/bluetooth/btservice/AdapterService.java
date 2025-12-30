@@ -27,6 +27,7 @@ import static android.bluetooth.BluetoothAdapter.nameForState;
 import static android.bluetooth.BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
 import static android.bluetooth.BluetoothDevice.BOND_BONDED;
 import static android.bluetooth.BluetoothDevice.BOND_NONE;
+import static android.bluetooth.BluetoothDevice.TRANSPORT_AUTO;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
@@ -3888,6 +3889,22 @@ public class AdapterService extends Service {
         disconnectEnabledProfile(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, device);
         disconnectEnabledProfile(BluetoothProfile.BATTERY, device);
         return BluetoothStatusCodes.SUCCESS;
+    }
+
+    /**
+     * Disconnects all ACL connections between the local and remote device
+     *
+     * @param device is the remote device with which to disconnect
+     * @param reason is the reason for the disconnection
+     * @return SUCCESS if successful, ERROR_UNKNOWN otherwise
+     */
+    public int disconnectAllAcl(BluetoothDevice device, int reason) {
+        if (reason != BluetoothStatusCodes.SUCCESS) {
+            setDeviceDisconnectReason(device, reason);
+        }
+        return mNativeInterface.disconnectAcl(device, TRANSPORT_AUTO)
+                ? BluetoothStatusCodes.SUCCESS
+                : BluetoothStatusCodes.ERROR_UNKNOWN;
     }
 
     private void disconnectEnabledProfile(int id, BluetoothDevice device) {

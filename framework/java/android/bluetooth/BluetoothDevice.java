@@ -2221,9 +2221,15 @@ public final class BluetoothDevice implements Parcelable, Attributable {
             conditional = true)
     public @ConnectionReturnValues int disconnect() {
         if (DBG) log("disconnect()");
-        return callServiceIfEnabled(
-                s -> s.disconnectAllEnabledProfiles(this, mAttributionSource),
-                BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
+        if (Flags.fixNoAclDisconnectedIntent()) {
+            return callServiceIfEnabled(
+                    s -> s.disconnectAllAcl(this, mAttributionSource),
+                    BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
+        } else {
+            return callServiceIfEnabled(
+                    s -> s.disconnectAllEnabledProfiles(this, mAttributionSource),
+                    BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED);
+        }
     }
 
     /**
