@@ -65,7 +65,8 @@ public final class BluetoothStatusCodes {
 
     /**
      * Error code indicating that the profile service is not bound. You can bind a profile service
-     * by calling {@link BluetoothAdapter#getProfileProxy}.
+     * by calling {@link BluetoothAdapter#getProfileProxy(Context, BluetoothProfile.ServiceListener,
+     * int)}.
      */
     public static final int ERROR_PROFILE_SERVICE_NOT_BOUND = 9;
 
