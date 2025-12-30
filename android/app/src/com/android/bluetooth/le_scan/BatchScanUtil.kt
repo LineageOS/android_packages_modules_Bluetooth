@@ -214,10 +214,10 @@ object BatchScanUtil {
             position += 2
 
             // Combine advertise packet and scan response packet.
-            val advertisePacketLen = batchRecord[position++].toInt()
+            val advertisePacketLen = batchRecord[position++].toInt() and 0xFF
             val advertiseBytes = extractBytes(batchRecord, position, advertisePacketLen)
             position += advertisePacketLen
-            val scanResponsePacketLen = batchRecord[position++].toInt()
+            val scanResponsePacketLen = batchRecord[position++].toInt() and 0xFF
             val scanResponseBytes = extractBytes(batchRecord, position, scanResponsePacketLen)
             position += scanResponsePacketLen
             val scanRecordBytes = ByteArray(advertisePacketLen + scanResponsePacketLen)

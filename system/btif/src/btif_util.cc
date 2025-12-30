@@ -30,6 +30,7 @@
 
 #include "btif_util.h"
 
+#include <bluetooth/log.h>
 #include <ctype.h>
 #include <hardware/bt_av.h>
 #include <netinet/in.h>
@@ -381,4 +382,46 @@ std::string dump_rc_pdu(uint8_t pdu) {
     CASE_RETURN_STRING(AVRC_PDU_GENERAL_REJECT);
   }
   RETURN_UNKNOWN_TYPE_STRING(rc_pdu, pdu);
+}
+
+/**
+ * Maps the native pairing algorithm to the corresponding API definition in `BluetoothDevice.java`.
+ *
+ * @param pairing_algo The native pairing algorithm to map, refer to `PairingAlgorithm` defined in
+ * `packages/modules/Bluetooth/system/include/hardware/bluetooth.h`
+ * @param transport The respective transport for this pairing.
+ * @return The defined API BluetoothDevice.PairingAlgorithm corresponding to the input pairing
+ * algorithm and transport.
+ */
+int map_pairing_algo_to_api(PairingAlgorithm pairing_algo, tBT_TRANSPORT transport) {
+  if (transport == BT_TRANSPORT_LE) {
+    switch (pairing_algo) {
+      case PairingAlgorithm::LEGACY:
+        return API_PAIRING_ALGORITHM_LE_LEGACY;
+      case PairingAlgorithm::SC:
+        return API_PAIRING_ALGORITHM_SC;
+      default:
+        break;
+    }
+  } else if (transport == BT_TRANSPORT_BR_EDR) {
+    switch (pairing_algo) {
+      case PairingAlgorithm::LEGACY:
+        return API_PAIRING_ALGORITHM_BREDR_LEGACY;
+      case PairingAlgorithm::SSP:
+        return API_PAIRING_ALGORITHM_BREDR_SSP;
+      case PairingAlgorithm::SC:
+        return API_PAIRING_ALGORITHM_SC;
+      default:
+        break;
+    }
+  }
+
+  bluetooth::log::error(
+          "map_pairing_algo_to_api: Incorrect transport or pairing algo, transport: {}, "
+          "pairingAlgo: {}",
+          transport, pairing_algo);
+
+  // As this is not a critical failure, we return a logical default instead of failing.
+  return (transport == BT_TRANSPORT_LE) ? API_PAIRING_ALGORITHM_LE_LEGACY
+                                        : API_PAIRING_ALGORITHM_BREDR_LEGACY;
 }

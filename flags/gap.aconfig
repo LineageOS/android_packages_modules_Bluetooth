@@ -289,3 +289,23 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "unify_device_type_verification_logic"
+    namespace: "bluetooth"
+    description: "Unify device type verification logic in GD and BTM"
+    bug: "471319424"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "use_address_type_from_batch_scan_result"
+    namespace: "bluetooth"
+    description: "Use the address type from batch scan result"
+    bug: "469914545"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

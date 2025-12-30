@@ -412,7 +412,7 @@ static void discovery_state_changed_callback(bt_discovery_state_t state) {
 }
 
 static void pin_request_callback(RawAddress bd_addr, bt_bdname_t* bdname, uint32_t cod,
-                                 bool min_16_digits, PairingAlgorithm pairing_algorithm) {
+                                 bool min_16_digits, int pairing_algorithm) {
   std::shared_lock<std::shared_timed_mutex> lock(jniObjMutex);
   if (!sJniCallbacksObj) {
     log::error("JNI obj is null. Failed to call JNI callback");
@@ -436,11 +436,11 @@ static void pin_request_callback(RawAddress bd_addr, bt_bdname_t* bdname, uint32
                                    reinterpret_cast<jbyte*>(bdname));
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_pinRequestCallback, addr.get(),
-                               devname.get(), cod, min_16_digits, (jint)pairing_algorithm);
+                               devname.get(), cod, min_16_digits, pairing_algorithm);
 }
 
 static void ssp_request_callback(RawAddress bd_addr, bt_ssp_variant_t pairing_variant,
-                                 uint32_t pass_key, PairingAlgorithm pairing_algorithm) {
+                                 uint32_t pass_key, int pairing_algorithm) {
   std::shared_lock<std::shared_timed_mutex> lock(jniObjMutex);
   if (!sJniCallbacksObj) {
     log::error("JNI obj is null. Failed to call JNI callback");
@@ -455,7 +455,7 @@ static void ssp_request_callback(RawAddress bd_addr, bt_ssp_variant_t pairing_va
   ScopedLocalRef<jbyteArray> addr = addressToJByteArray(sCallbackEnv.get(), bd_addr);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_sspRequestCallback, addr.get(),
-                               (jint)pairing_variant, pass_key, (jint)pairing_algorithm);
+                               (jint)pairing_variant, pass_key, pairing_algorithm);
 }
 
 static jobject createClassicOobDataObject(JNIEnv* env, bt_oob_data_t oob_data) {
