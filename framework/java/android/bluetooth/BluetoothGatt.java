@@ -1978,6 +1978,7 @@ public final class BluetoothGatt implements BluetoothProfile {
                 BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED,
                 BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION,
                 BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED,
+                BluetoothStatusCodes.FEATURE_NOT_SUPPORTED,
                 BluetoothStatusCodes.ERROR_UNKNOWN
             })
     public @interface SubrateRequestReturnValues {}
