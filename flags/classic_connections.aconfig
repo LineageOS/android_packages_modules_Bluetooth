@@ -20,3 +20,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "role_contention_policy"
+    namespace: "bluetooth"
+    description: "Improves role contention policy"
+    bug: "472561734"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
