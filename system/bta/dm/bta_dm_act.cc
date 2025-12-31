@@ -955,57 +955,45 @@ static void bta_dm_delay_role_switch_cback(void* /* data */) {
  *
  * Description      Adjust roles
  *
- *
  * Returns          void
  *
  ******************************************************************************/
 static void bta_dm_adjust_roles(bool delay_role_switch) {
-  uint8_t i;
-  uint8_t link_count = bta_dm_cb.device_list.count;
-  if (link_count) {
-    for (i = 0; i < bta_dm_cb.device_list.count; i++) {
-      if (bta_dm_cb.device_list.peer_device[i].is_connected() &&
-          bta_dm_cb.device_list.peer_device[i].transport == BT_TRANSPORT_BR_EDR) {
-        if ((bta_dm_cb.device_list.peer_device[i].pref_role == BTA_CENTRAL_ROLE_ONLY) ||
-            (link_count > 1)) {
-          /* Initiating immediate role switch with certain remote devices
-            has caused issues due to role  switch colliding with link encryption
-            setup and
-            causing encryption (and in turn the link) to fail .  These device .
-            Firmware
-            versions are stored in a rejectlist and role switch with these
-            devices are
-            delayed to avoid the collision with link encryption setup */
+  for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
+    auto& peer_device = bta_dm_cb.device_list.peer_device[i];
 
-          if (bta_dm_cb.device_list.peer_device[i].pref_role != BTA_PERIPHERAL_ROLE_ONLY &&
-              !delay_role_switch) {
-            const tBTM_STATUS status =
-                    get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(
-                            bta_dm_cb.device_list.peer_device[i].peer_bdaddr);
-            switch (status) {
-              case tBTM_STATUS::BTM_SUCCESS:
-                log::debug("Role policy already set to central peer:{}",
-                           bta_dm_cb.device_list.peer_device[i].peer_bdaddr);
-                break;
-              case tBTM_STATUS::BTM_CMD_STARTED:
-                log::debug("Role policy started to central peer:{}",
-                           bta_dm_cb.device_list.peer_device[i].peer_bdaddr);
-                break;
-              default:
-                log::warn("Unable to set role policy to central peer:{}",
-                          bta_dm_cb.device_list.peer_device[i].peer_bdaddr);
-                break;
-            }
-          } else {
-            uint64_t delay = bluetooth::os::GenerateRandom() %
-                                     (BTA_DM_MAX_SWITCH_DELAY_MS - BTA_DM_MIN_SWITCH_DELAY_MS) +
-                             BTA_DM_MIN_SWITCH_DELAY_MS;
-            log::debug("Set timer to delay role switch:{}", delay);
-            alarm_set_on_mloop(bta_dm_cb.switch_delay_timer, delay, bta_dm_delay_role_switch_cback,
-                               NULL);
-          }
-        }
+    // Ignore non-connected or non-BR/EDR devices
+    if (!peer_device.is_connected() || peer_device.transport != BT_TRANSPORT_BR_EDR) {
+      continue;
+    }
+
+    // If there is only one connection, switch roles is not needed unless central role is preferred
+    if (bta_dm_cb.device_list.count <= 1 && peer_device.pref_role != BTA_CENTRAL_ROLE_ONLY) {
+      continue;
+    }
+
+    /* Initiating immediate role switch with certain remote devices has caused issues due to role
+     * switch colliding with link encryption setup and causing encryption and in turn link loss. */
+    if (peer_device.pref_role != BTA_PERIPHERAL_ROLE_ONLY && !delay_role_switch) {
+      const tBTM_STATUS status = get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(
+              peer_device.peer_bdaddr);
+      switch (status) {
+        case tBTM_STATUS::BTM_SUCCESS:
+          log::debug("Role policy already set to central peer:{}", peer_device.peer_bdaddr);
+          break;
+        case tBTM_STATUS::BTM_CMD_STARTED:
+          log::debug("Role policy started to central peer:{}", peer_device.peer_bdaddr);
+          break;
+        default:
+          log::warn("Unable to set role policy to central peer:{}", peer_device.peer_bdaddr);
+          break;
       }
+    } else {
+      uint64_t delay = bluetooth::os::GenerateRandom() %
+                               (BTA_DM_MAX_SWITCH_DELAY_MS - BTA_DM_MIN_SWITCH_DELAY_MS) +
+                       BTA_DM_MIN_SWITCH_DELAY_MS;
+      log::debug("Set timer to delay role switch:{}", delay);
+      alarm_set_on_mloop(bta_dm_cb.switch_delay_timer, delay, bta_dm_delay_role_switch_cback, NULL);
     }
   }
 }
