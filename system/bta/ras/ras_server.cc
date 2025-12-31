@@ -50,7 +50,7 @@ using bluetooth::ras::VendorSpecificCharacteristic;
 namespace {
 
 class RasServerImpl;
-RasServerImpl* instance;
+RasServerImpl* instance = nullptr;
 
 static constexpr uint32_t kSupportedFeatures = feature::kRealTimeRangingData;
 static constexpr uint16_t kBufferSize = 3;
@@ -62,6 +62,8 @@ public:
     uint16_t attribute_handle_;
     uint16_t attribute_handle_ccc_;
   };
+
+  RasServerImpl() { instance = this; }
 
   // Struct to save data of specific ranging counter
   struct DataBuffer {
@@ -799,8 +801,8 @@ private:
 }  // namespace
 
 bluetooth::ras::RasServer* bluetooth::ras::GetRasServer() {
-  if (instance == nullptr) {
-    instance = new RasServerImpl();
-  }
-  return instance;
+  // Thread-safe initialization.
+  // The constructor runs exactly once and sets the global 'instance' pointer.
+  static RasServerImpl* safe_instance = new RasServerImpl();
+  return safe_instance;
 }
