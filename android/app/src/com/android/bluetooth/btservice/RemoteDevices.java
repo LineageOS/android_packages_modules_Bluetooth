@@ -1448,6 +1448,14 @@ public class RemoteDevices {
                                 0,
                                 0);
                     }
+
+                    case AbstractionLayer.BT_PROPERTY_BREDR_PAIRING_TYPE ->
+                            updateBondStatus(
+                                    deviceProperties, BluetoothDevice.TRANSPORT_BREDR, val);
+
+                    case AbstractionLayer.BT_PROPERTY_LE_PAIRING_TYPE ->
+                            updateBondStatus(deviceProperties, BluetoothDevice.TRANSPORT_LE, val);
+
                     default -> {} // Nothing to do
                 }
             }
@@ -1460,6 +1468,25 @@ public class RemoteDevices {
                 uuidsUpdated(deviceProperties, true);
             }
         }
+    }
+
+    private static void updateBondStatus(
+            DeviceProperties deviceProperties, int transport, byte[] pairingType) {
+        final int pairingAlgorithm = pairingType[0];
+        final int nativePairingVariant = pairingType[1];
+        final int pairingVariant =
+                BondStateMachine.getPairingVariant(
+                        transport, pairingAlgorithm, nativePairingVariant);
+        debugLog(
+                "updateBondStatus: "
+                        + deviceProperties.getDevice()
+                        + " transport: "
+                        + (transport == BluetoothDevice.TRANSPORT_BREDR ? "BR/EDR" : "LE")
+                        + ", algorithm:"
+                        + pairingAlgorithm
+                        + ", variant:"
+                        + pairingVariant);
+        deviceProperties.setBondStatus(transport, pairingAlgorithm, pairingVariant);
     }
 
     private void uuidsUpdated(DeviceProperties deviceProperties, boolean success) {

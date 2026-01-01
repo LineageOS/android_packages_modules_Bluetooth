@@ -54,6 +54,9 @@ public final class AbstractionLayer {
     static final int BT_PROPERTY_DISCOVERY_RESULT_TYPE = 0x1D;
     static final int BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE = 0x1E;
     static final int BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA = 0x1F;
+    static final int BT_PROPERTY_REMOTE_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED = 0x20;
+    static final int BT_PROPERTY_BREDR_PAIRING_TYPE = 0x21;
+    static final int BT_PROPERTY_LE_PAIRING_TYPE = 0x22;
 
     public static final int BT_DEVICE_TYPE_BREDR = 0x01;
     static final int BT_DEVICE_TYPE_BLE = 0x02;

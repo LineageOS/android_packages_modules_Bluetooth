@@ -822,7 +822,7 @@ bt_status_t btif_storage_add_remote_device(RawAddress remote_bd_addr, uint32_t n
 
 /*******************************************************************************
  *
- * Function         btif_storage_add_bonded_device
+ * Function         btif_storage_add_bredr_keys
  *
  * Description      BTIF storage API - Adds the newly bonded device to NVRAM
  *                  along with the link-key, Key type and Pin key length
@@ -832,12 +832,20 @@ bt_status_t btif_storage_add_remote_device(RawAddress remote_bd_addr, uint32_t n
  *
  ******************************************************************************/
 
-bt_status_t btif_storage_add_bonded_device(RawAddress remote_bd_addr, LinkKey link_key,
-                                           uint8_t key_type, uint8_t pin_length) {
+bt_status_t btif_storage_add_bredr_keys(const RawAddress& remote_bd_addr,
+                                        const PairingType& pairing_type, const LinkKey& link_key,
+                                        uint8_t key_type, uint8_t pin_length) {
   std::string bdstr = remote_bd_addr.ToString();
   bool ret = btif_config_set_int(bdstr, BTIF_STORAGE_KEY_LINK_KEY_TYPE, static_cast<int>(key_type));
   ret &= btif_config_set_int(bdstr, BTIF_STORAGE_KEY_PIN_LENGTH, static_cast<int>(pin_length));
   ret &= btif_config_set_bin(bdstr, BTIF_STORAGE_KEY_LINK_KEY, link_key.data(), link_key.size());
+  ret &= btif_config_set_int(bdstr, BTIF_STORAGE_KEY_BREDR_PAIRING_ALGORITHM,
+                             static_cast<int>(pairing_type.algorithm));
+
+  int pairing_variant = pairing_type.algorithm == PairingAlgorithm::LEGACY
+                                ? static_cast<int>(pairing_type.legacy_variant)
+                                : static_cast<int>(pairing_type.variant);
+  ret &= btif_config_set_int(bdstr, BTIF_STORAGE_KEY_BREDR_PAIRING_VARIANT, pairing_variant);
 
   if (ret) {
     btif_storage_set_mode(remote_bd_addr);
@@ -992,7 +1000,7 @@ bt_status_t btif_storage_load_bonded_devices(void) {
   uint32_t i = 0;
   bt_property_t adapter_props[6];
   uint32_t num_props = 0;
-  bt_property_t remote_properties[11];
+  bt_property_t remote_properties[13];
   RawAddress addr;
   bt_bdname_t name, alias, model_name;
   uint32_t disc_timeout;
@@ -1114,6 +1122,30 @@ bt_status_t btif_storage_load_bonded_devices(void) {
                                    sizeof(model_name), &remote_properties[num_props]);
       num_props++;
 
+      uint8_t bredr_pairing_type_value[2];
+      auto bredr_pairing_type = btif_storage_get_bredr_pairing_type(remote_addr);
+      if (bredr_pairing_type.has_value()) {
+        bredr_pairing_type_value[0] = static_cast<uint8_t>(
+                map_pairing_algo_to_api(bredr_pairing_type.value().algorithm, BT_TRANSPORT_BR_EDR));
+        bredr_pairing_type_value[1] = static_cast<uint8_t>(bredr_pairing_type.value().variant);
+        remote_properties[num_props].type = BT_PROPERTY_BREDR_PAIRING_TYPE;
+        remote_properties[num_props].len = sizeof(bredr_pairing_type_value);
+        remote_properties[num_props].val = &bredr_pairing_type_value;
+        num_props++;
+      }
+
+      uint8_t le_pairing_type_value[2];
+      auto le_pairing_type = btif_storage_get_ble_pairing_type(remote_addr);
+      if (le_pairing_type.has_value()) {
+        le_pairing_type_value[0] = static_cast<uint8_t>(
+                map_pairing_algo_to_api(le_pairing_type.value().algorithm, BT_TRANSPORT_LE));
+        le_pairing_type_value[1] = static_cast<uint8_t>(le_pairing_type.value().variant);
+        remote_properties[num_props].type = BT_PROPERTY_LE_PAIRING_TYPE;
+        remote_properties[num_props].len = sizeof(le_pairing_type_value);
+        remote_properties[num_props].val = &le_pairing_type_value;
+        num_props++;
+      }
+
       btif_remote_properties_evt(BT_STATUS_SUCCESS, remote_addr, addr_type, num_props,
                                  remote_properties);
     }
@@ -1123,7 +1155,7 @@ bt_status_t btif_storage_load_bonded_devices(void) {
 
 /*******************************************************************************
  *
- * Function         btif_storage_add_ble_bonding_key
+ * Function         btif_storage_add_ble_keys
  *
  * Description      BTIF storage API - Adds the newly bonded device to NVRAM
  *                  along with the ble-key, Key type and Pin key length
@@ -1132,9 +1164,8 @@ bt_status_t btif_storage_load_bonded_devices(void) {
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-
-bt_status_t btif_storage_add_ble_bonding_key(RawAddress remote_bd_addr, const uint8_t* key_value,
-                                             uint8_t key_type, uint8_t key_length) {
+bt_status_t btif_storage_add_ble_keys(const RawAddress& remote_bd_addr, const uint8_t* key_value,
+                                      uint8_t key_type, uint8_t key_length) {
   for (size_t i = 0; i < std::size(BTIF_STORAGE_LE_KEYS); i++) {
     auto key = BTIF_STORAGE_LE_KEYS[i];
     if (key.type == key_type) {
@@ -1198,6 +1229,97 @@ bt_status_t btif_storage_remove_ble_bonding_keys(RawAddress remote_bd_addr) {
   }
 
   return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+}
+
+/*******************************************************************************
+ *
+ * Function         btif_storage_set_ble_pairing_type
+ *
+ * Description      BTIF storage API - Sets the LE pairing type for the device
+ *
+ * Returns          BT_STATUS_SUCCESS if the store was successful,
+ *                  BT_STATUS_FAIL otherwise
+ *
+ ******************************************************************************/
+bt_status_t btif_storage_set_ble_pairing_type(const RawAddress& addr,
+                                              const PairingType& pairing_type) {
+  const std::string bdstr = addr.ToString();
+  bool ret = btif_config_set_int(bdstr, BTIF_STORAGE_KEY_LE_PAIRING_ALGORITHM,
+                                 static_cast<int>(pairing_type.algorithm));
+  ret &= btif_config_set_int(bdstr, BTIF_STORAGE_KEY_LE_PAIRING_VARIANT,
+                             static_cast<int>(pairing_type.variant));
+
+  return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+}
+
+/*******************************************************************************
+ *
+ * Function         btif_storage_get_ble_pairing_type
+ *
+ * Description      BTIF storage API - Gets the LE pairing type for the device
+ *
+ * Returns          std::optional<PairingType> if the fetch was successful,
+ *                  std::nullopt otherwise
+ *
+ ******************************************************************************/
+std::optional<PairingType> btif_storage_get_ble_pairing_type(const RawAddress& bd_addr) {
+  const std::string bdstr = bd_addr.ToString();
+
+  int algorithm = 0;
+  auto ret = btif_config_get_int(bdstr, BTIF_STORAGE_KEY_LE_PAIRING_ALGORITHM, &algorithm);
+  if (!ret) {
+    return std::nullopt;
+  }
+
+  PairingType pairing_type = {};
+  pairing_type.algorithm = static_cast<PairingAlgorithm>(algorithm);
+
+  int variant = 0;
+  ret = btif_config_get_int(bdstr, BTIF_STORAGE_KEY_LE_PAIRING_VARIANT, &variant);
+  if (!ret) {
+    return std::nullopt;
+  }
+
+  pairing_type.variant = static_cast<bt_ssp_variant_t>(variant);
+
+  return pairing_type;
+}
+
+/*******************************************************************************
+ *
+ * Function         btif_storage_get_bredr_pairing_type
+ *
+ * Description      BTIF storage API - Gets the BR/EDR pairing type for the device
+ *
+ * Returns          std::optional<PairingType> if the fetch was successful,
+ *                  std::nullopt otherwise
+ *
+ ******************************************************************************/
+std::optional<PairingType> btif_storage_get_bredr_pairing_type(const RawAddress& bd_addr) {
+  const std::string bdstr = bd_addr.ToString();
+
+  int algorithm = 0;
+  auto ret = btif_config_get_int(bdstr, BTIF_STORAGE_KEY_BREDR_PAIRING_ALGORITHM, &algorithm);
+  if (!ret) {
+    return std::nullopt;
+  }
+
+  PairingType pairing_type = {};
+  pairing_type.algorithm = static_cast<PairingAlgorithm>(algorithm);
+
+  int variant = 0;
+  ret = btif_config_get_int(bdstr, BTIF_STORAGE_KEY_BREDR_PAIRING_VARIANT, &variant);
+  if (!ret) {
+    return std::nullopt;
+  }
+
+  if (pairing_type.algorithm == PairingAlgorithm::LEGACY) {
+    pairing_type.legacy_variant = static_cast<LegacyPairingVariant>(variant);
+  } else if (pairing_type.algorithm == PairingAlgorithm::SC) {
+    pairing_type.variant = static_cast<bt_ssp_variant_t>(variant);
+  }
+
+  return pairing_type;
 }
 
 /*******************************************************************************

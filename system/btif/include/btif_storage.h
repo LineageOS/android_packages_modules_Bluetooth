@@ -147,7 +147,7 @@ bt_status_t btif_storage_add_remote_device(RawAddress remote_bd_addr, uint32_t n
 
 /*******************************************************************************
  *
- * Function         btif_storage_add_bonded_device
+ * Function         btif_storage_add_bredr_keys
  *
  * Description      BTIF storage API - Adds the newly bonded device to NVRAM
  *                  along with the link-key, Key type and Pin key length
@@ -156,8 +156,9 @@ bt_status_t btif_storage_add_remote_device(RawAddress remote_bd_addr, uint32_t n
  *                  BT_STATUS_FAIL otherwise
  *
  ******************************************************************************/
-bt_status_t btif_storage_add_bonded_device(RawAddress remote_bd_addr, LinkKey link_key,
-                                           uint8_t key_type, uint8_t pin_length);
+bt_status_t btif_storage_add_bredr_keys(const RawAddress& remote_bd_addr,
+                                        const PairingType& pairing_type, const LinkKey& link_key,
+                                        uint8_t key_type, uint8_t pin_length);
 
 /*******************************************************************************
  *
@@ -348,11 +349,14 @@ bool btif_storage_is_restricted_device(RawAddress remote_bd_addr);
  ******************************************************************************/
 void btif_storage_prune_devices();
 
-bt_status_t btif_storage_add_ble_bonding_key(RawAddress remote_bd_addr, const uint8_t* key,
-                                             uint8_t key_type, uint8_t key_length);
+bt_status_t btif_storage_add_ble_keys(const RawAddress& remote_bd_addr, const uint8_t* key_value,
+                                      uint8_t key_type, uint8_t key_length);
 bt_status_t btif_storage_get_ble_bonding_key(const RawAddress& remote_bd_addr, uint8_t key_type,
                                              uint8_t* key_value, int key_length);
-
+bt_status_t btif_storage_set_ble_pairing_type(const RawAddress& addr,
+                                              const PairingType& pairing_type);
+std::optional<PairingType> btif_storage_get_ble_pairing_type(const RawAddress& bd_addr);
+std::optional<PairingType> btif_storage_get_bredr_pairing_type(const RawAddress& bd_addr);
 bt_status_t btif_storage_add_ble_local_key(const Octet16& key, uint8_t key_type);
 bt_status_t btif_storage_remove_ble_bonding_keys(RawAddress remote_bd_addr);
 bt_status_t btif_storage_get_ble_local_key(uint8_t key_type, Octet16* key_value);
