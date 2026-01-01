@@ -1280,7 +1280,7 @@ std::optional<PairingType> btif_storage_get_ble_pairing_type(const RawAddress& b
     return std::nullopt;
   }
 
-  pairing_type.variant = static_cast<bt_ssp_variant_t>(variant);
+  pairing_type.variant = static_cast<PairingVariant>(variant);
 
   return pairing_type;
 }
@@ -1316,7 +1316,7 @@ std::optional<PairingType> btif_storage_get_bredr_pairing_type(const RawAddress&
   if (pairing_type.algorithm == PairingAlgorithm::LEGACY) {
     pairing_type.legacy_variant = static_cast<LegacyPairingVariant>(variant);
   } else if (pairing_type.algorithm == PairingAlgorithm::SC) {
-    pairing_type.variant = static_cast<bt_ssp_variant_t>(variant);
+    pairing_type.variant = static_cast<PairingVariant>(variant);
   }
 
   return pairing_type;

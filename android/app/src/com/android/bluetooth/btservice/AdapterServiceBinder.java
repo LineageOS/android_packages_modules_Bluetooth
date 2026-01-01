@@ -984,7 +984,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         return service.getNative()
                 .sspReply(
                         getBytesFromAddress(device.getAddress()),
-                        AbstractionLayer.BT_SSP_VARIANT_PASSKEY_CONFIRMATION,
+                        AbstractionLayer.BT_PAIRING_VARIANT_PASSKEY_CONFIRMATION,
                         accept,
                         0);
     }

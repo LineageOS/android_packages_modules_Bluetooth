@@ -142,7 +142,7 @@ void discovery_state_changed_callback(bt_discovery_state_t /* state */) {}
 void pin_request_callback(RawAddress /* remote_bd_addr */, bt_bdname_t* /* bd_name */,
                           uint32_t /* cod */, bool /* min_16_digit */,
                           int /* pairing_algorithm */) {}
-void ssp_request_callback(RawAddress /* remote_bd_addr */, bt_ssp_variant_t /* pairing_variant */,
+void ssp_request_callback(RawAddress /* remote_bd_addr */, PairingVariant /* pairing_variant */,
                           uint32_t /* pass_key */, int /* pairing_algorithm */) {}
 void bond_state_changed_callback(bt_status_t /* status */, RawAddress /* remote_bd_addr */,
                                  tBT_TRANSPORT /* transport */, bt_bond_state_t /* state */,

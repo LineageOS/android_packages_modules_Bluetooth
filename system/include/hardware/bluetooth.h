@@ -568,14 +568,14 @@ typedef enum {
 /** Bluetooth Bond state */
 typedef enum { BT_BOND_STATE_NONE, BT_BOND_STATE_BONDING, BT_BOND_STATE_BONDED } bt_bond_state_t;
 
-/** Bluetooth SSP Bonding Variant */
-typedef enum {
-  BT_SSP_VARIANT_PASSKEY_CONFIRMATION,
-  BT_SSP_VARIANT_PASSKEY_ENTRY,
-  BT_SSP_VARIANT_CONSENT,
-  BT_SSP_VARIANT_PASSKEY_NOTIFICATION,
-  BT_SSP_VARIANT_PARTICIPATION  // Incoming LE pairing request
-} bt_ssp_variant_t;
+/** Bluetooth Pairing Variant */
+enum class PairingVariant : uint8_t {
+  PASSKEY_CONFIRMATION,
+  PASSKEY_ENTRY,
+  CONSENT,
+  PASSKEY_NOTIFICATION,
+  PARTICIPATION  // Incoming LE pairing request
+};
 
 // This is inline with BluetoothDevice.EncryptionAlgorithm.
 enum class EncryptionAlgorithm : uint8_t {
@@ -643,7 +643,7 @@ static inline std::string bredr_legacy_pairing_variant_text(const LegacyPairingV
 struct PairingType {
   PairingAlgorithm algorithm;
   union {
-    bt_ssp_variant_t variant;
+    PairingVariant variant;
     LegacyPairingVariant legacy_variant;
   };
 };
@@ -693,7 +693,7 @@ typedef void (*pin_request_callback)(RawAddress remote_bd_addr, bt_bdname_t* bd_
  *  BT_SSP_PAIRING_PASSKEY_ENTRY */
 /* TODO: Passkey request callback shall not be needed for devices with display
  * capability. We still need support this in the stack for completeness */
-typedef void (*ssp_request_callback)(RawAddress remote_bd_addr, bt_ssp_variant_t pairing_variant,
+typedef void (*ssp_request_callback)(RawAddress remote_bd_addr, PairingVariant pairing_variant,
                                      uint32_t pass_key, int pairing_algorithm);
 
 /** Bluetooth Bond state changed callback */
@@ -931,11 +931,11 @@ typedef struct {
   int (*pin_reply)(RawAddress bd_addr, uint8_t accept, uint8_t pin_len, bt_pin_code_t* pin_code);
 
   /** BT SSP Reply - Just Works, Numeric Comparison and Passkey
-   * passkey shall be zero for BT_SSP_VARIANT_PASSKEY_COMPARISON &
-   * BT_SSP_VARIANT_CONSENT
-   * For BT_SSP_VARIANT_PASSKEY_ENTRY, if accept==FALSE, then passkey
+   * passkey shall be zero for PairingVariant::PASSKEY_COMPARISON &
+   * PairingVariant::CONSENT
+   * For PairingVariant::PASSKEY_ENTRY, if accept==FALSE, then passkey
    * shall be zero */
-  int (*ssp_reply)(RawAddress bd_addr, bt_ssp_variant_t variant, uint8_t accept, uint32_t passkey);
+  int (*ssp_reply)(RawAddress bd_addr, PairingVariant variant, uint8_t accept, uint32_t passkey);
 
   /** Get Bluetooth profile interface */
   const void* (*get_profile_interface)(const char* profile_id);
@@ -1146,7 +1146,7 @@ struct formatter<bt_bond_state_t> : enum_formatter<bt_bond_state_t> {};
 template <>
 struct formatter<bt_property_type_t> : enum_formatter<bt_property_type_t> {};
 template <>
-struct formatter<bt_ssp_variant_t> : enum_formatter<bt_ssp_variant_t> {};
+struct formatter<PairingVariant> : enum_formatter<PairingVariant> {};
 template <>
 struct formatter<BtIoCap> : formatter<std::string> {
   template <class Context>
