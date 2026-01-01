@@ -466,7 +466,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
         DeviceProperties deviceProp = service.getRemoteDevices().getDeviceProperties(device);
 
-        if (!Flags.apairing26q2PermissionImprovements() || !bondingInitiator(deviceProp, source)) {
+        if (!Utils.isBluetoothPairingHardeningSupported() || !bondingInitiator(deviceProp, source)) {
             service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         }
 
@@ -488,7 +488,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
             return false;
         }
 
-        if (Flags.apairing26q2PermissionImprovements()) {
+        if (Utils.isBluetoothPairingHardeningSupported()) {
             boolean checkPrivileged = false;
             final int callingUid = Binder.getCallingUid();
             final long token = Binder.clearCallingIdentity();
@@ -918,7 +918,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
             return false;
         }
 
-        if (Flags.apairing26q2PermissionImprovements()) {
+        if (Utils.isBluetoothPairingHardeningSupported()) {
             boolean checkPrivileged = false;
             final int callingUid = Binder.getCallingUid();
             final long token = Binder.clearCallingIdentity();

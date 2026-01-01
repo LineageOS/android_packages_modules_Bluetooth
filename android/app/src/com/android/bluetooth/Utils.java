@@ -570,4 +570,9 @@ public final class Utils {
         return com.android.bluetooth.flags.Flags.autonomousRepairingInitiation()
                 && android.bluetooth.platform.flags.Flags.autonomousRepairingInitiation();
     }
+
+    public static boolean isBluetoothPairingHardeningSupported() {
+        return com.android.bluetooth.flags.Flags.apairing26q2PermissionImprovements()
+                && android.bluetooth.platform.flags.Flags.bluetoothPairingHardening();
+    }
 }
