@@ -60,26 +60,15 @@ bool handleUnexpectedEncryptionChange() {
  * Description      Save Secure Connections support for this device to file
  *
  ******************************************************************************/
-void btm_sec_store_device_sc_support(uint16_t hci_handle, bool host_secure_connections_supported,
-                                     bool controller_secure_connections_supported) {
+void btm_sec_store_device_sc_support(uint16_t hci_handle, bool host_sc_supported,
+                                     bool controller_sc_supported) {
   const BtmDevice* p_device = btm_find_dev_by_handle(hci_handle);
   if (p_device == nullptr) {
     return;
   }
 
-  uint8_t property_val = (uint8_t)host_secure_connections_supported;
-  bt_property_t property = {.type = BT_PROPERTY_REMOTE_HOST_SECURE_CONNECTIONS_SUPPORTED,
-                            .len = sizeof(uint8_t),
-                            .val = &property_val};
-
-  btif_storage_set_remote_device_property(p_device->bd_addr, &property);
-
-  property_val = (uint8_t)controller_secure_connections_supported;
-  property = {.type = BT_PROPERTY_REMOTE_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED,
-              .len = sizeof(uint8_t),
-              .val = &property_val};
-
-  btif_storage_set_remote_device_property(p_device->bd_addr, &property);
+  btif_storage_set_remote_host_sc_support(p_device->bd_addr, host_sc_supported);
+  btif_storage_set_remote_controller_sc_support(p_device->bd_addr, controller_sc_supported);
 }
 
 /*******************************************************************************
@@ -93,8 +82,8 @@ void btm_sec_store_device_sc_support(uint16_t hci_handle, bool host_secure_conne
  * Returns          bool
  *
  ******************************************************************************/
-bool btm_sec_is_enc_algo_downgrade(uint16_t hci_handle, bool host_secure_connections_supported,
-                                   bool controller_secure_connections_supported) {
+bool btm_sec_is_enc_algo_downgrade(uint16_t hci_handle, bool host_sc_supported,
+                                   bool controller_sc_supported) {
   if (!com_android_bluetooth_flags_btsec_check_controller_sc_support()) {
     return false;
   }
@@ -104,40 +93,15 @@ bool btm_sec_is_enc_algo_downgrade(uint16_t hci_handle, bool host_secure_connect
     return false;
   }
 
-  // If this is a BR/EDR only device, we check only the controller support.
-  // Otherwise, we check both the controller and host support.
-  uint8_t controller_val = 0;
-  bt_property_t property = {.type = BT_PROPERTY_REMOTE_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED,
-                            .len = sizeof(uint8_t),
-                            .val = &controller_val};
+  bool cached_controller_support =
+          btif_storage_get_remote_controller_sc_support(p_device->bd_addr).value_or(false);
+  bool cached_host_support =
+          btif_storage_get_remote_host_sc_support(p_device->bd_addr).value_or(false);
 
-  bt_status_t cached = btif_storage_get_remote_device_property(p_device->bd_addr, &property);
-
-  // No cached value for this device, so it's a new device and we don't need to
-  // make the check.
-  if (cached == BT_STATUS_FAIL) {
-    return false;
-  }
-
-  uint8_t host_val = 0;
-
-  property = {.type = BT_PROPERTY_REMOTE_HOST_SECURE_CONNECTIONS_SUPPORTED,
-              .len = sizeof(uint8_t),
-              .val = &host_val};
-
-  cached = btif_storage_get_remote_device_property(p_device->bd_addr, &property);
-
-  // No cached value for host -- in theory we should always have both or
-  // neither, but let's check this just in case.
-  if (cached == BT_STATUS_FAIL) {
-    return false;
-  }
-
-  // If both the host and controller properties are set to true, then we used
-  // AES-CCM previously.  If support for either one is false now, then we'd be
-  // using E0 and this is a downgrade.
-  if (controller_val && host_val) {
-    if (!host_secure_connections_supported || !controller_secure_connections_supported) {
+  // If both the host and controller properties are set to true, then we used AES-CCM previously.
+  // If support for either one is false now, then we'd be using E0 and this is a downgrade.
+  if (cached_controller_support && cached_host_support) {
+    if (!host_sc_supported || !controller_sc_supported) {
       return true;
     }
   }

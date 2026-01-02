@@ -148,3 +148,11 @@ void btif_storage_add_hearing_aid(const asha::HearingDevice& dev_info) {
   log::assert_that(btif_storage_interface != nullptr, "Mock storage module not set!");
   return btif_storage_interface->AddHearingAid(&dev_info);
 }
+
+std::optional<bool> btif_storage_get_remote_host_sc_support(const RawAddress& /* address */) {
+  return true;
+}
+
+std::optional<bool> btif_storage_get_remote_controller_sc_support(const RawAddress& /* address */) {
+  return true;
+}

@@ -223,14 +223,6 @@ static bool prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
       value[prop->len] = '\0';
       btif_config_set_str(bdstr, BTIF_STORAGE_KEY_DIS_MODEL_NUM, value);
     } break;
-    case BT_PROPERTY_REMOTE_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED:
-      btif_config_set_int(bdstr, BTIF_STORAGE_KEY_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED,
-                          *reinterpret_cast<uint8_t*>(prop->val));
-      break;
-    case BT_PROPERTY_REMOTE_HOST_SECURE_CONNECTIONS_SUPPORTED:
-      btif_config_set_int(bdstr, BTIF_STORAGE_KEY_SECURE_CONNECTIONS_SUPPORTED,
-                          *reinterpret_cast<uint8_t*>(prop->val));
-      break;
     case BT_PROPERTY_REMOTE_MAX_SESSION_KEY_SIZE:
       btif_config_set_int(bdstr, BTIF_STORAGE_KEY_MAX_SESSION_KEY_SIZE,
                           *reinterpret_cast<uint8_t*>(prop->val));
@@ -400,25 +392,6 @@ static bool cfg2prop(const RawAddress* remote_bd_addr, bt_property_t* prop) {
 
       if (prop->len >= static_cast<int>(sizeof(uint8_t))) {
         ret = btif_config_get_int(bdstr, BTIF_STORAGE_KEY_ADDR_TYPE, &val);
-        *reinterpret_cast<uint8_t*>(prop->val) = (uint8_t)val;
-      }
-    } break;
-
-    case BT_PROPERTY_REMOTE_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED: {
-      int val;
-
-      if (prop->len >= static_cast<int>(sizeof(uint8_t))) {
-        ret = btif_config_get_int(bdstr, BTIF_STORAGE_KEY_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED,
-                                  &val);
-        *reinterpret_cast<uint8_t*>(prop->val) = (uint8_t)val;
-      }
-    } break;
-
-    case BT_PROPERTY_REMOTE_HOST_SECURE_CONNECTIONS_SUPPORTED: {
-      int val;
-
-      if (prop->len >= static_cast<int>(sizeof(uint8_t))) {
-        ret = btif_config_get_int(bdstr, BTIF_STORAGE_KEY_SECURE_CONNECTIONS_SUPPORTED, &val);
         *reinterpret_cast<uint8_t*>(prop->val) = (uint8_t)val;
       }
     } break;
@@ -1151,6 +1124,41 @@ bt_status_t btif_storage_load_bonded_devices(void) {
     }
   }
   return BT_STATUS_SUCCESS;
+}
+
+bt_status_t btif_storage_set_remote_host_sc_support(const RawAddress& addr, bool supported) {
+  const std::string bdstr = addr.ToString();
+  bool ret = btif_config_set_int(bdstr, BTIF_STORAGE_KEY_SECURE_CONNECTIONS_SUPPORTED,
+                                 static_cast<int>(supported));
+  return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+}
+
+std::optional<bool> btif_storage_get_remote_host_sc_support(const RawAddress& addr) {
+  const std::string bdstr = addr.ToString();
+  int val = 0;
+  auto ret = btif_config_get_int(bdstr, BTIF_STORAGE_KEY_SECURE_CONNECTIONS_SUPPORTED, &val);
+  if (!ret) {
+    return std::nullopt;
+  }
+  return val != 0;
+}
+
+bt_status_t btif_storage_set_remote_controller_sc_support(const RawAddress& addr, bool supported) {
+  const std::string bdstr = addr.ToString();
+  bool ret = btif_config_set_int(bdstr, BTIF_STORAGE_KEY_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED,
+                                 static_cast<int>(supported));
+  return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+}
+
+std::optional<bool> btif_storage_get_remote_controller_sc_support(const RawAddress& addr) {
+  const std::string bdstr = addr.ToString();
+  int val = 0;
+  auto ret = btif_config_get_int(bdstr, BTIF_STORAGE_KEY_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED,
+                                 &val);
+  if (!ret) {
+    return std::nullopt;
+  }
+  return val != 0;
 }
 
 /*******************************************************************************

@@ -72,6 +72,10 @@ struct btif_storage_set_gatt_cl_db_hash btif_storage_set_gatt_cl_db_hash;
 struct btif_storage_set_gatt_cl_supp_feat btif_storage_set_gatt_cl_supp_feat;
 struct btif_storage_set_gatt_sr_supp_feat btif_storage_set_gatt_sr_supp_feat;
 struct btif_storage_set_remote_addr_type btif_storage_set_remote_addr_type;
+struct btif_storage_set_remote_controller_sc_support btif_storage_set_remote_controller_sc_support;
+struct btif_storage_set_remote_host_sc_support btif_storage_set_remote_host_sc_support;
+struct btif_storage_get_remote_controller_sc_support btif_storage_get_remote_controller_sc_support;
+struct btif_storage_get_remote_host_sc_support btif_storage_get_remote_host_sc_support;
 struct btif_storage_set_remote_device_property btif_storage_set_remote_device_property;
 struct btif_storage_get_services btif_storage_get_services;
 
@@ -109,6 +113,10 @@ bt_status_t btif_storage_load_bonded_devices::return_value = BT_STATUS_SUCCESS;
 bt_status_t btif_storage_remove_ble_bonding_keys::return_value = BT_STATUS_SUCCESS;
 bt_status_t btif_storage_remove_bonded_device::return_value = BT_STATUS_SUCCESS;
 bt_status_t btif_storage_set_adapter_property::return_value = BT_STATUS_SUCCESS;
+bt_status_t btif_storage_set_remote_controller_sc_support::return_value = BT_STATUS_SUCCESS;
+bt_status_t btif_storage_set_remote_host_sc_support::return_value = BT_STATUS_SUCCESS;
+std::optional<bool> btif_storage_get_remote_controller_sc_support::return_value = std::nullopt;
+std::optional<bool> btif_storage_get_remote_host_sc_support::return_value = std::nullopt;
 bt_status_t btif_storage_set_remote_device_property::return_value = BT_STATUS_SUCCESS;
 std::vector<bluetooth::Uuid> btif_storage_get_services::return_value =
         std::vector<bluetooth::Uuid>();
@@ -265,6 +273,22 @@ bt_status_t btif_storage_set_remote_addr_type(RawAddress remote_bd_addr,
                                               const tBLE_ADDR_TYPE addr_type) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_set_remote_addr_type(remote_bd_addr, addr_type);
+}
+bt_status_t btif_storage_set_remote_controller_sc_support(const RawAddress& addr, bool supported) {
+  inc_func_call_count(__func__);
+  return test::mock::btif_storage::btif_storage_set_remote_controller_sc_support(addr, supported);
+}
+bt_status_t btif_storage_set_remote_host_sc_support(const RawAddress& addr, bool supported) {
+  inc_func_call_count(__func__);
+  return test::mock::btif_storage::btif_storage_set_remote_host_sc_support(addr, supported);
+}
+std::optional<bool> btif_storage_get_remote_controller_sc_support(const RawAddress& addr) {
+  inc_func_call_count(__func__);
+  return test::mock::btif_storage::btif_storage_get_remote_controller_sc_support(addr);
+}
+std::optional<bool> btif_storage_get_remote_host_sc_support(const RawAddress& addr) {
+  inc_func_call_count(__func__);
+  return test::mock::btif_storage::btif_storage_get_remote_host_sc_support(addr);
 }
 bt_status_t btif_storage_set_remote_device_property(RawAddress remote_bd_addr,
                                                     bt_property_t* property) {

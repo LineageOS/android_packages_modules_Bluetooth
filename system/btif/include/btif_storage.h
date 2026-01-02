@@ -349,6 +349,11 @@ bool btif_storage_is_restricted_device(RawAddress remote_bd_addr);
  ******************************************************************************/
 void btif_storage_prune_devices();
 
+bt_status_t btif_storage_set_remote_host_sc_support(const RawAddress& addr, bool supported);
+std::optional<bool> btif_storage_get_remote_host_sc_support(const RawAddress& addr);
+bt_status_t btif_storage_set_remote_controller_sc_support(const RawAddress& addr, bool supported);
+std::optional<bool> btif_storage_get_remote_controller_sc_support(const RawAddress& addr);
+
 bt_status_t btif_storage_add_ble_keys(const RawAddress& remote_bd_addr, const uint8_t* key_value,
                                       uint8_t key_type, uint8_t key_length);
 bt_status_t btif_storage_get_ble_bonding_key(const RawAddress& remote_bd_addr, uint8_t key_type,
