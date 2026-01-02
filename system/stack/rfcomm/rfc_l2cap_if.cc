@@ -308,7 +308,7 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
 
   /* The frame was received on the data channel DLCI, verify that DLC exists */
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, rfc_cb.rfc.rx_frame.dlci);
-  if (p_port == nullptr || !p_port->rfc.p_mcb) {
+  if (p_port == nullptr || !p_port->p_mcb) {
     /* If this is a SABME on new port, check if any app is waiting for it */
     if (event != RFC_EVENT_SABME) {
       log::warn("no for none-SABME event, lcid=0x{:x}, bd_addr={}, p_mcb={}", lcid, p_mcb->bd_addr,
@@ -337,7 +337,7 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
                  p_mcb->port_handles[rfc_cb.rfc.rx_frame.dlci], p_port->handle,
                  std::format_ptr(p_mcb));
     p_mcb->port_handles[rfc_cb.rfc.rx_frame.dlci] = p_port->handle;
-    p_port->rfc.p_mcb = p_mcb;
+    p_port->p_mcb = p_mcb;
     if (com_android_bluetooth_flags_hfp_collision_fix_rfcomm_port_rx_buf_critical_error()) {
       port_select_mtu(p_port);
     }

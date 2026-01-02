@@ -161,7 +161,7 @@ void RFCOMM_ParameterNegotiationRequest(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t 
   }
 
   /* Send Parameter Negotiation Command UIH frame */
-  p_port->rfc.expected_rsp |= RFC_RSP_PN;
+  p_port->expected_rsp |= RFC_RSP_PN;
 
   rfc_send_pn(p_mcb, dlci, true, mtu, cl, k);
 
@@ -212,9 +212,9 @@ void RFCOMM_PortParameterNegotiationRequest(tRFC_MCB* p_mcb, uint8_t dlci,
 
   /* Send Parameter Negotiation Command UIH frame */
   if (p_settings == nullptr) {
-    p_port->rfc.expected_rsp |= RFC_RSP_RPN_REPLY;
+    p_port->expected_rsp |= RFC_RSP_RPN_REPLY;
   } else {
-    p_port->rfc.expected_rsp |= RFC_RSP_RPN;
+    p_port->expected_rsp |= RFC_RSP_RPN;
   }
 
   rfc_send_rpn(p_mcb, dlci, true, p_settings, RFCOMM_RPN_PM_MASK);
@@ -254,13 +254,13 @@ void RFCOMM_ControlReq(tRFC_MCB* p_mcb, uint8_t dlci, tPORT_CTRL* p_pars) {
   }
 
   if ((p_port->state != PORT_CONNECTION_STATE_OPENED) ||
-      (p_port->rfc.sm_cb.state != RFC_STATE_OPENED)) {
+      (p_port->sm_cb.state != RFC_STATE_OPENED)) {
     return;
   }
 
   p_port->port_ctrl |= PORT_CTRL_REQ_SENT;
 
-  p_port->rfc.expected_rsp |= RFC_RSP_MSC;
+  p_port->expected_rsp |= RFC_RSP_MSC;
 
   rfc_send_msc(p_mcb, dlci, true, p_pars);
   rfc_port_timer_start(p_port, RFC_T2_TIMEOUT);
@@ -283,13 +283,13 @@ void RFCOMM_FlowReq(tRFC_MCB* p_mcb, uint8_t dlci, bool enable) {
   }
 
   if ((p_port->state != PORT_CONNECTION_STATE_OPENED) ||
-      (p_port->rfc.sm_cb.state != RFC_STATE_OPENED)) {
+      (p_port->sm_cb.state != RFC_STATE_OPENED)) {
     return;
   }
 
   p_port->local_ctrl.fc = !enable;
 
-  p_port->rfc.expected_rsp |= RFC_RSP_MSC;
+  p_port->expected_rsp |= RFC_RSP_MSC;
 
   rfc_send_msc(p_mcb, dlci, true, &p_port->local_ctrl);
   rfc_port_timer_start(p_port, RFC_T2_TIMEOUT);
@@ -311,11 +311,11 @@ void RFCOMM_LineStatusReq(tRFC_MCB* p_mcb, uint8_t dlci, uint8_t status) {
   }
 
   if ((p_port->state != PORT_CONNECTION_STATE_OPENED) ||
-      (p_port->rfc.sm_cb.state != RFC_STATE_OPENED)) {
+      (p_port->sm_cb.state != RFC_STATE_OPENED)) {
     return;
   }
 
-  p_port->rfc.expected_rsp |= RFC_RSP_RLS;
+  p_port->expected_rsp |= RFC_RSP_RLS;
 
   rfc_send_rls(p_mcb, dlci, true, status);
   rfc_port_timer_start(p_port, RFC_T2_TIMEOUT);

@@ -199,8 +199,8 @@ void rfc_release_multiplexer_channel(tRFC_MCB* p_mcb) {
 
   /* Remove the MCB from the ports */
   for (int i = 0; i < MAX_RFC_PORTS; i++) {
-    if (rfc_cb.port.port[i].rfc.p_mcb == p_mcb) {
-      rfc_cb.port.port[i].rfc.p_mcb = nullptr;
+    if (rfc_cb.port.port[i].p_mcb == p_mcb) {
+      rfc_cb.port.port[i].p_mcb = nullptr;
     }
   }
 
@@ -251,7 +251,7 @@ void rfc_port_timer_start(tPORT* p_port, uint16_t timeout) {
   log::verbose("- timeout:{} seconds", timeout);
 
   uint64_t interval_ms = timeout * 1000;
-  alarm_set_on_mloop(p_port->rfc.port_timer, interval_ms, rfcomm_port_timer_timeout, p_port);
+  alarm_set_on_mloop(p_port->port_timer, interval_ms, rfcomm_port_timer_timeout, p_port);
 }
 
 /*******************************************************************************
@@ -264,7 +264,7 @@ void rfc_port_timer_start(tPORT* p_port, uint16_t timeout) {
 void rfc_port_timer_stop(tPORT* p_port) {
   log::verbose("");
 
-  alarm_cancel(p_port->rfc.port_timer);
+  alarm_cancel(p_port->port_timer);
 }
 
 /*******************************************************************************
@@ -329,8 +329,8 @@ void rfc_sec_check_complete(RawAddress /* bd_addr */, tBT_TRANSPORT /* transport
   }
 
   // Verify that port is still waiting for security to complete
-  if (p_port->rfc.sm_cb.state != RFC_STATE_ORIG_WAIT_SEC_CHECK &&
-      p_port->rfc.sm_cb.state != RFC_STATE_TERM_WAIT_SEC_CHECK) {
+  if (p_port->sm_cb.state != RFC_STATE_ORIG_WAIT_SEC_CHECK &&
+      p_port->sm_cb.state != RFC_STATE_TERM_WAIT_SEC_CHECK) {
     log::warn("no longer waiting for security, port_handle={}", p_port->handle);
     return;
   }
@@ -350,7 +350,7 @@ void rfc_sec_check_complete(RawAddress /* bd_addr */, tBT_TRANSPORT /* transport
  *
  ******************************************************************************/
 void rfc_port_closed(tPORT* p_port) {
-  tRFC_MCB* p_mcb = p_port->rfc.p_mcb;
+  tRFC_MCB* p_mcb = p_port->p_mcb;
   rfc_port_timer_stop(p_port);
   rfc_set_state(RFC_STATE_CLOSED, p_port);
 
@@ -378,13 +378,13 @@ void rfc_port_closed(tPORT* p_port) {
  *
  ******************************************************************************/
 void rfc_inc_credit(tPORT* p_port, uint8_t credit) {
-  if (p_port->rfc.p_mcb->flow == PORT_FC_CREDIT) {
+  if (p_port->p_mcb->flow == PORT_FC_CREDIT) {
     p_port->credit_tx += credit;
 
     log::verbose("rfc_inc_credit:{}", p_port->credit_tx);
 
     if (p_port->tx.peer_fc) {
-      PORT_FlowInd(p_port->rfc.p_mcb, p_port->dlci, true);
+      PORT_FlowInd(p_port->p_mcb, p_port->dlci, true);
     }
   }
 }
@@ -401,7 +401,7 @@ void rfc_inc_credit(tPORT* p_port, uint8_t credit) {
  *
  ******************************************************************************/
 void rfc_dec_credit(tPORT* p_port) {
-  if (p_port->rfc.p_mcb->flow == PORT_FC_CREDIT) {
+  if (p_port->p_mcb->flow == PORT_FC_CREDIT) {
     if (p_port->credit_tx > 0) {
       p_port->credit_tx--;
     }
@@ -456,17 +456,17 @@ void rfc_check_send_cmd(tRFC_MCB* p_mcb, BT_HDR* p_buf) {
  ******************************************************************************/
 void rfc_set_state(tRFC_PORT_STATE state, tPORT* p_port) {
   // nothing is going to change if the state doesn't change
-  if (p_port->rfc.sm_cb.state == state) {
+  if (p_port->sm_cb.state == state) {
     log::debug("Already at state {}, no need to update", rfcomm_port_state_text(state));
     return;
   }
 
-  p_port->rfc.sm_cb.state_prior = p_port->rfc.sm_cb.state;
-  p_port->rfc.sm_cb.state = state;
+  p_port->sm_cb.state_prior = p_port->sm_cb.state;
+  p_port->sm_cb.state = state;
 
   if (state == RFC_STATE_OPENED) {
-    p_port->rfc.sm_cb.open_timestamp = bluetooth::common::time_gettimeofday_us();
-  } else if (state == RFC_STATE_CLOSED && p_port->rfc.sm_cb.open_timestamp != 0) {
-    p_port->rfc.sm_cb.close_timestamp = bluetooth::common::time_gettimeofday_us();
+    p_port->sm_cb.open_timestamp = bluetooth::common::time_gettimeofday_us();
+  } else if (state == RFC_STATE_CLOSED && p_port->sm_cb.open_timestamp != 0) {
+    p_port->sm_cb.close_timestamp = bluetooth::common::time_gettimeofday_us();
   }
 }

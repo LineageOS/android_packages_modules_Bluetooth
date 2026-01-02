@@ -46,7 +46,7 @@ void port_collect_attempt_metrics(tPORT* p_port) {
   bool sdp_initiated = (p_port->sdp_duration_ms > 0);
   // If we're calling this metrics function, SDP completed with no problems
   BtaStatus sdp_status = sdp_initiated ? BTA_STATUS_SUCCESS : BTA_STATUS_UNKNOWN;
-  RfcommPortSm sm_cb = p_port->rfc.sm_cb;
+  RfcommPortSm sm_cb = p_port->sm_cb;
   log::assert_that(sm_cb.state == RFC_STATE_CLOSED, "Assert failed: Port not closed");
   uint64_t open_duration_ms = (sm_cb.close_timestamp - sm_cb.open_timestamp) / 1000;
 
