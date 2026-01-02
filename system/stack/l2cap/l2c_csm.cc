@@ -650,7 +650,7 @@ static void l2c_csm_term_w4_sec_comp(tL2C_CCB* p_ccb, tL2CEVT event, void* p_dat
             bool is_offload = (p_ccb->local_conn_cfg.credits == 0);
             /* Check the offloaded channel to delay connection indication until connection response
              * is sent to remote device. */
-            if (com_android_bluetooth_flags_delay_offload_le_coc_connection_ind() && is_offload) {
+            if (is_offload) {
               log::debug("Delaying Connect_Ind_Cb() for offloaded channel, CID: 0x{:04x}",
                          p_ccb->local_cid);
               register_connection_rsp_tx_packet_complete_callback(p_ccb);
