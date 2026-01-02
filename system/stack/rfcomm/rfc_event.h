@@ -23,7 +23,7 @@
 #include "macros.h"
 
 // Events that can be received by both multiplexer or port state machines
-enum tRFC_EVENT : uint16_t {
+enum RfcommEvent : uint16_t {
   RFC_EVENT_SABME = 0,
   RFC_EVENT_UA = 1,
   RFC_EVENT_DM = 2,
@@ -34,7 +34,7 @@ enum tRFC_EVENT : uint16_t {
 };
 
 // Multiplexer events
-enum tRFC_MX_EVENT : uint16_t {
+enum RfcommMuxEvent : uint16_t {
   RFC_MX_EVENT_SABME = RFC_EVENT_SABME,
   RFC_MX_EVENT_UA = RFC_EVENT_UA,
   RFC_MX_EVENT_DM = RFC_EVENT_DM,
@@ -54,7 +54,7 @@ enum tRFC_MX_EVENT : uint16_t {
 };
 
 // Port events
-enum tRFC_PORT_EVENT : uint16_t {
+enum RfcommPortEvent : uint16_t {
   RFC_PORT_EVENT_SABME = RFC_EVENT_SABME,
   RFC_PORT_EVENT_UA = RFC_EVENT_UA,
   RFC_PORT_EVENT_DM = RFC_EVENT_DM,
@@ -70,7 +70,7 @@ enum tRFC_PORT_EVENT : uint16_t {
 };
 
 // Common events for both port and mux
-inline std::string rfcomm_event_text(const tRFC_EVENT& event) {
+inline std::string rfcomm_event_text(const RfcommEvent& event) {
   switch (event) {
     CASE_RETURN_TEXT(RFC_EVENT_SABME);
     CASE_RETURN_TEXT(RFC_EVENT_UA);
@@ -84,7 +84,7 @@ inline std::string rfcomm_event_text(const tRFC_EVENT& event) {
   }
 }
 
-inline std::string rfcomm_mx_event_text(const tRFC_MX_EVENT& event) {
+inline std::string rfcomm_mx_event_text(const RfcommMuxEvent& event) {
   switch (event) {
     CASE_RETURN_TEXT(RFC_MX_EVENT_SABME);
     CASE_RETURN_TEXT(RFC_MX_EVENT_UA);
@@ -107,7 +107,7 @@ inline std::string rfcomm_mx_event_text(const tRFC_MX_EVENT& event) {
   }
 }
 
-inline std::string rfcomm_port_event_text(const tRFC_PORT_EVENT& event) {
+inline std::string rfcomm_port_event_text(const RfcommPortEvent& event) {
   switch (event) {
     CASE_RETURN_TEXT(RFC_PORT_EVENT_SABME);
     CASE_RETURN_TEXT(RFC_PORT_EVENT_UA);
@@ -128,9 +128,9 @@ inline std::string rfcomm_port_event_text(const tRFC_PORT_EVENT& event) {
 
 namespace std {
 template <>
-struct formatter<tRFC_EVENT> : enum_formatter<tRFC_EVENT> {};
+struct formatter<RfcommEvent> : enum_formatter<RfcommEvent> {};
 template <>
-struct formatter<tRFC_MX_EVENT> : enum_formatter<tRFC_MX_EVENT> {};
+struct formatter<RfcommMuxEvent> : enum_formatter<RfcommMuxEvent> {};
 template <>
-struct formatter<tRFC_PORT_EVENT> : enum_formatter<tRFC_PORT_EVENT> {};
+struct formatter<RfcommPortEvent> : enum_formatter<RfcommPortEvent> {};
 }  // namespace std

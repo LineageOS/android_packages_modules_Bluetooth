@@ -110,7 +110,7 @@ typedef struct {
 struct RfcommPortSm {
   tRFC_PORT_STATE state;
   tRFC_PORT_STATE state_prior;
-  tRFC_PORT_EVENT last_event;
+  RfcommPortEvent last_event;
   tPORT_RESULT close_reason;
   uint64_t open_timestamp;
   uint64_t close_timestamp;

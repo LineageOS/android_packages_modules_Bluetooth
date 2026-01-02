@@ -281,7 +281,7 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
     return;
   }
 
-  tRFC_EVENT event = rfc_parse_data(p_mcb, &rfc_cb.rfc.rx_frame, p_buf);
+  RfcommEvent event = rfc_parse_data(p_mcb, &rfc_cb.rfc.rx_frame, p_buf);
 
   /* If the frame did not pass validation just ignore it */
   if (event == RFC_EVENT_BAD_FRAME) {
@@ -301,7 +301,7 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
     }
 
     /* Other multiplexer events go to state machine */
-    rfc_mx_sm_execute(p_mcb, static_cast<tRFC_MX_EVENT>(event), nullptr);
+    rfc_mx_sm_execute(p_mcb, static_cast<RfcommMuxEvent>(event), nullptr);
     osi_free(p_buf);
     return;
   }
@@ -347,7 +347,7 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
     log::verbose("Handling UIH event, buf_len={}, credit={}", p_buf->len,
                  rfc_cb.rfc.rx_frame.credit);
     if (p_buf->len > 0) {
-      rfc_port_sm_execute(p_port, static_cast<tRFC_PORT_EVENT>(event), p_buf);
+      rfc_port_sm_execute(p_port, static_cast<RfcommPortEvent>(event), p_buf);
     } else {
       osi_free(p_buf);
     }
@@ -358,7 +358,7 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
 
     return;
   }
-  rfc_port_sm_execute(p_port, static_cast<tRFC_PORT_EVENT>(event), nullptr);
+  rfc_port_sm_execute(p_port, static_cast<RfcommPortEvent>(event), nullptr);
   osi_free(p_buf);
 }
 

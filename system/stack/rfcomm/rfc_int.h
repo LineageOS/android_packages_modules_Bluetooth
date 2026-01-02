@@ -199,12 +199,12 @@ uint8_t rfc_calc_fcs(uint16_t len, uint8_t* p);
 
 #endif
 
-void rfc_mx_sm_execute(tRFC_MCB* p_mcb, tRFC_MX_EVENT event, void* p_data);
+void rfc_mx_sm_execute(tRFC_MCB* p_mcb, RfcommMuxEvent event, void* p_data);
 
 /*
  * Functions provided by the rfc_port_fsm.cc
  */
-void rfc_port_sm_execute(tPORT* p_port, tRFC_PORT_EVENT event, void* p_data);
+void rfc_port_sm_execute(tPORT* p_port, RfcommPortEvent event, void* p_data);
 
 void rfc_process_pn(tRFC_MCB* p_rfc_mcb, bool is_command, MX_FRAME* p_frame);
 void rfc_process_msc(tRFC_MCB* p_rfc_mcb, bool is_command, MX_FRAME* p_frame);
@@ -259,7 +259,7 @@ void rfc_send_fcoff(tRFC_MCB* p_mcb, bool is_command);
 void rfc_send_buf_uih(tRFC_MCB* p_rfc_mcb, uint8_t dlci, BT_HDR* p_buf);
 void rfc_send_credit(tRFC_MCB* p_mcb, uint8_t dlci, uint8_t credit);
 void rfc_process_mx_message(tRFC_MCB* p_rfc_mcb, BT_HDR* p_buf);
-tRFC_EVENT rfc_parse_data(tRFC_MCB* p_rfc_mcb, MX_FRAME* p_frame, BT_HDR* p_buf);
+RfcommEvent rfc_parse_data(tRFC_MCB* p_rfc_mcb, MX_FRAME* p_frame, BT_HDR* p_buf);
 
 /* Call back functions from RFCOMM */
 void rfcomm_l2cap_if_init(void);
