@@ -68,7 +68,7 @@ private:
 };
 
 #ifdef __ANDROID__
-bool create_log_directories();
+bool create_log_directories(std::filesystem::path dir);
 #endif  // __ANDROID__
 
 }  // namespace bluetooth::hal

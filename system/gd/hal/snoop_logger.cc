@@ -1250,7 +1250,7 @@ void SnoopLogger::DumpSnoozLogToFile() {
   }
 
 #ifdef __ANDROID__
-  if (!create_log_directories()) {
+  if (!create_log_directories(snooz_dir_path_)) {
     log::error("Could not recreate log directory");
   }
 #endif  // __ANDROID__
