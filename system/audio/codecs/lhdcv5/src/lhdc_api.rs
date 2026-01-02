@@ -102,19 +102,13 @@ pub const LHDC_FRET_INVALID_HANDLE_PARA: __LHDC_FUNC_RET__ = -3;
 pub const LHDC_FRET_INVALID_HANDLE_CB: __LHDC_FUNC_RET__ = -2;
 pub const LHDC_FRET_INVALID_INPUT_PARAM: __LHDC_FUNC_RET__ = -1;
 pub const LHDC_FRET_SUCCESS: __LHDC_FUNC_RET__ = 0;
-pub type HANDLE_LHDC_BT = Box<lhdc_cb_t>;
+pub type HANDLE_LHDC_BT = Box<Context>;
 
-pub struct lhdc_cb_t {
-    pub enc_type: u32,
-    pub err: i32,
-    pub enc: Parameters,
-}
-
-impl lhdc_cb_t {
-    // TODO(b/454096420) this suggests some error type refactoring
-    pub fn new(version: u32) -> crate::lhdc_api::lhdc_api_internal::Result<Self> {
-        Ok(Self { enc_type: LHDC_ENC_TYPE_LHDC, err: 0, enc: Parameters::new(version)? })
-    }
+pub struct Context {
+    enc_type: u32,
+    #[allow(dead_code)]
+    err: i32,
+    enc: Parameters,
 }
 
 pub static g_bitrate_table_44k: [u32; 15] =
@@ -126,238 +120,247 @@ pub static g_bitrate_table_96k: [u32; 15] =
 pub static g_bitrate_table_192k: [u32; 15] =
     [64, 160, 192, 256, 320, 400, 500, 900, 1000, 1100, 1200, 1300, 1400, 99999, 1536000];
 
-pub fn lhdcv5_enc_util_get_target_bitrate_inx(
-    lhdcBT: &mut lhdc_cb_t,
-    bitrate_kbps: u32,
-    bitrate_inx: &mut u32,
-) -> i32 {
-    let bitrate_table = &lhdcBT.enc.bitrate_table;
-    if bitrate_kbps > bitrate_table[bitrate_table.len() - 1] {
-        return LHDC_FRET_INVALID_INPUT_PARAM;
+impl Context {
+    // TODO(b/454096420) this suggests some error type refactoring
+    pub fn new(version: u32) -> crate::lhdc_api::lhdc_api_internal::Result<Self> {
+        Ok(Self { enc_type: LHDC_ENC_TYPE_LHDC, err: 0, enc: Parameters::new(version)? })
     }
-    let func_ret = lhdcv5_encoder_get_bitrate_inx(bitrate_kbps, bitrate_inx, bitrate_table);
-    if func_ret != LHDC_FRET_SUCCESS {
-        error!("Fail to get index by bitrate ({bitrate_kbps}) ret({func_ret})");
-        return func_ret;
-    }
-    LHDC_FRET_SUCCESS
-}
 
-pub fn lhdc_get_last_bitrate(lhdcBT: &mut lhdc_cb_t, bitrate: &mut u32) -> i32 {
-    *bitrate = lhdcBT.enc.last_bitrate;
-    LHDC_FRET_SUCCESS
-}
-
-pub fn lhdcv5_enc_util_set_target_bitrate_inx(
-    lhdcBT: &mut lhdc_cb_t,
-    bitrate_inx: u32,
-    bitrate_inx_set: &mut u32,
-    upd_qual_status: bool,
-) -> i32 {
-    if bitrate_inx < LHDC_QUALITY_LOW0 || bitrate_inx > LHDC_QUALITY_AUTO {
-        error!("Input bit rate (index) is invalid ({})!!!", bitrate_inx);
-        return LHDC_FRET_INVALID_INPUT_PARAM;
+    pub fn get_target_bitrate_inx(&self, bitrate_kbps: u32, bitrate_inx: &mut u32) -> i32 {
+        let bitrate_table = &self.enc.bitrate_table;
+        if bitrate_kbps > bitrate_table[bitrate_table.len() - 1] {
+            return LHDC_FRET_INVALID_INPUT_PARAM;
+        }
+        let func_ret = lhdcv5_encoder_get_bitrate_inx(bitrate_kbps, bitrate_inx, bitrate_table);
+        if func_ret != LHDC_FRET_SUCCESS {
+            error!("Fail to get index by bitrate ({bitrate_kbps}) ret({func_ret})");
+            return func_ret;
+        }
+        LHDC_FRET_SUCCESS
     }
-    let mut upd_bitrate_inx = bitrate_inx;
-    match lhdcBT.enc_type {
-        1 => {
-            if bitrate_inx == LHDC_QUALITY_AUTO {
-                upd_bitrate_inx =
-                    LHDC_QUALITY_LOW.clamp(lhdcBT.enc.min_bitrate_inx, lhdcBT.enc.max_bitrate_inx);
-            } else {
-                upd_bitrate_inx =
-                    upd_bitrate_inx.clamp(lhdcBT.enc.min_bitrate_inx, lhdcBT.enc.max_bitrate_inx);
-            }
-            if upd_qual_status {
+
+    pub fn last_bitrate(&self) -> u32 {
+        self.enc.last_bitrate
+    }
+
+    pub fn quality_status(&self) -> u32 {
+        self.enc.quality_status
+    }
+
+    pub fn set_target_bitrate_inx(
+        &mut self,
+        bitrate_inx: u32,
+        bitrate_inx_set: &mut u32,
+        upd_qual_status: bool,
+    ) -> i32 {
+        if bitrate_inx < LHDC_QUALITY_LOW0 || bitrate_inx > LHDC_QUALITY_AUTO {
+            error!("Input bit rate (index) is invalid ({})!!!", bitrate_inx);
+            return LHDC_FRET_INVALID_INPUT_PARAM;
+        }
+        let mut upd_bitrate_inx = bitrate_inx;
+        match self.enc_type {
+            1 => {
                 if bitrate_inx == LHDC_QUALITY_AUTO {
-                    lhdcBT.enc.quality_status = LHDC_QUALITY_AUTO;
+                    upd_bitrate_inx =
+                        LHDC_QUALITY_LOW.clamp(self.enc.min_bitrate_inx, self.enc.max_bitrate_inx);
                 } else {
-                    lhdcBT.enc.quality_status = upd_bitrate_inx;
+                    upd_bitrate_inx =
+                        upd_bitrate_inx.clamp(self.enc.min_bitrate_inx, self.enc.max_bitrate_inx);
+                }
+                if upd_qual_status {
+                    if bitrate_inx == LHDC_QUALITY_AUTO {
+                        self.enc.quality_status = LHDC_QUALITY_AUTO;
+                    } else {
+                        self.enc.quality_status = upd_bitrate_inx;
+                    }
+                }
+                let func_ret =
+                    lhdcv5_encoder_set_target_bitrate_inx(&mut self.enc, upd_bitrate_inx);
+                if func_ret != LHDC_FRET_SUCCESS {
+                    error!("Fail to set target bit rate (index) ({})!", func_ret);
+                    return LHDC_FRET_ERROR;
                 }
             }
-            let func_ret = lhdcv5_encoder_set_target_bitrate_inx(&mut lhdcBT.enc, upd_bitrate_inx);
-            if func_ret != LHDC_FRET_SUCCESS {
-                error!("Fail to set target bit rate (index) ({})!", func_ret);
-                return LHDC_FRET_ERROR;
+            _ => {
+                error!("Invalid encode type ({})!", self.enc_type);
+                return LHDC_FRET_INVALID_CODEC;
             }
         }
-        _ => {
-            error!("Invalid encode type ({})!", lhdcBT.enc_type);
-            return LHDC_FRET_INVALID_CODEC;
-        }
-    }
-    info!(
-        "set target quality succeed: quality_index:{} bitrate_inx:{}",
-        lhdcBT.enc.quality_status, upd_bitrate_inx,
-    );
+        info!(
+            "set target quality succeed: quality_index:{} bitrate_inx:{}",
+            self.enc.quality_status, upd_bitrate_inx,
+        );
 
-    *bitrate_inx_set = upd_bitrate_inx;
-    LHDC_FRET_SUCCESS
-}
-pub fn lhdcv5_enc_util_set_max_bitrate_inx(
-    lhdcBT: &mut lhdc_cb_t,
-    max_bitrate_inx: u32,
-    max_bitrate_inx_set: &mut u32,
-) -> i32 {
-    if max_bitrate_inx < LHDC_QUALITY_LOW || max_bitrate_inx > LHDC_QUALITY_MAX_BITRATE {
-        error!("Input MAX. bit rate (index) is invalid ({})!", max_bitrate_inx);
-        return LHDC_FRET_INVALID_INPUT_PARAM;
+        *bitrate_inx_set = upd_bitrate_inx;
+        LHDC_FRET_SUCCESS
     }
-    match lhdcBT.enc_type {
-        1 => {
-            let func_ret = lhdcv5_encoder_set_max_bitrate_inx(&mut lhdcBT.enc, max_bitrate_inx);
-            if func_ret != LHDC_FRET_SUCCESS {
-                error!("Fail to set max. bit rate ({}) ({})!", func_ret, max_bitrate_inx);
-                return LHDC_FRET_ERROR;
-            }
-            *max_bitrate_inx_set = lhdcBT.enc.max_bitrate_inx;
-        }
-        _ => {
-            error!("Invalid encode type ({})!", lhdcBT.enc_type);
-            return LHDC_FRET_INVALID_CODEC;
-        }
-    }
-    LHDC_FRET_SUCCESS
-}
-pub fn lhdcv5_enc_util_set_min_bitrate_inx(
-    lhdcBT: &mut lhdc_cb_t,
-    min_bitrate_inx: u32,
-    min_bitrate_inx_set: &mut u32,
-) -> i32 {
-    if min_bitrate_inx < LHDC_QUALITY_LOW0 || min_bitrate_inx > LHDC_QUALITY_LOW {
-        error!("Input MIN. bit rate (index) is invalid ({})!", min_bitrate_inx);
-        return LHDC_FRET_INVALID_INPUT_PARAM;
-    }
-    match lhdcBT.enc_type {
-        1 => {
-            let func_ret = lhdcv5_encoder_set_min_bitrate_inx(&mut lhdcBT.enc, min_bitrate_inx);
-            if func_ret != LHDC_FRET_SUCCESS {
-                error!("Fail to set min. bit rate ({}) ({})!", func_ret, min_bitrate_inx);
-                return LHDC_FRET_ERROR;
-            }
-            *min_bitrate_inx_set = lhdcBT.enc.min_bitrate_inx;
-        }
-        _ => {
-            error!("Invalid encode type ({})!", lhdcBT.enc_type);
-            return LHDC_FRET_INVALID_CODEC;
-        }
-    }
-    LHDC_FRET_SUCCESS
-}
 
-pub fn lhdcv5_enc_util_init_encoder(
-    lhdcBT: &mut lhdc_cb_t,
-    sampling_freq: u32,
-    bits_per_sample: u32,
-    bitrate_inx: u32,
-    frame_duration: u32,
-    mtu: u32,
-    interval: u32,
-) -> i32 {
-    let mut samples_per_frame: u32 = 0;
-    if sampling_freq != LHDC_SR_44100HZ
-        && sampling_freq != LHDC_SR_48000HZ
-        && sampling_freq != LHDC_SR_96000HZ
-        && sampling_freq != LHDC_SR_192000HZ
-    {
-        error!("Invalid sampling frequency ({})!", sampling_freq);
-        return LHDC_FRET_INVALID_INPUT_PARAM;
-    }
-    if bits_per_sample != LHDCBT_SMPL_FMT_S16 && bits_per_sample != LHDCBT_SMPL_FMT_S24 {
-        error!("Invalid bits per sample ({bits_per_sample})!");
-        return LHDC_FRET_INVALID_INPUT_PARAM;
-    }
-    if bitrate_inx < LHDC_QUALITY_LOW0 || bitrate_inx > LHDC_QUALITY_AUTO {
-        error!("Invalid bit rate (index) ({bitrate_inx})!");
-        return LHDC_FRET_INVALID_INPUT_PARAM;
-    }
-    if frame_duration != LHDC_FRAME_5MS {
-        error!("Invalid frame duration ({frame_duration})!");
-        return LHDC_FRET_INVALID_INPUT_PARAM;
-    }
-    if mtu < LHDC_MTU_MIN || mtu > LHDC_MTU_MAX {
-        error!("Invalid MTU ({mtu})");
-        return LHDC_FRET_INVALID_INPUT_PARAM;
-    }
-    if interval != LHDC_ENC_INTERVAL_10MS && interval != LHDC_ENC_INTERVAL_20MS {
-        error!("Invalid encode interval ({interval})!");
-        return LHDC_FRET_INVALID_INPUT_PARAM;
-    }
-    match lhdcBT.enc_type {
-        1 => {
-            let mut func_ret = lhdcBT.enc.init(
-                sampling_freq,
-                bits_per_sample,
-                bitrate_inx,
-                frame_duration,
-                mtu,
-                interval,
-            );
-            if func_ret != LHDC_FRET_SUCCESS {
-                error!("Fail to init. CODEC ({func_ret})!");
-                return LHDC_FRET_ERROR;
+    pub fn set_max_bitrate_inx(
+        &mut self,
+        max_bitrate_inx: u32,
+        max_bitrate_inx_set: &mut u32,
+    ) -> i32 {
+        if max_bitrate_inx < LHDC_QUALITY_LOW || max_bitrate_inx > LHDC_QUALITY_MAX_BITRATE {
+            error!("Input MAX. bit rate (index) is invalid ({})!", max_bitrate_inx);
+            return LHDC_FRET_INVALID_INPUT_PARAM;
+        }
+        match self.enc_type {
+            1 => {
+                let func_ret = lhdcv5_encoder_set_max_bitrate_inx(&mut self.enc, max_bitrate_inx);
+                if func_ret != LHDC_FRET_SUCCESS {
+                    error!("Fail to set max. bit rate ({}) ({})!", func_ret, max_bitrate_inx);
+                    return LHDC_FRET_ERROR;
+                }
+                *max_bitrate_inx_set = self.enc.max_bitrate_inx;
             }
-            lhdcBT.enc.frame_duration = frame_duration;
-            func_ret = lhdcv5_encoder_get_frame_len(&lhdcBT.enc, &mut samples_per_frame);
-            if func_ret != LHDC_FRET_SUCCESS {
-                error!("Fail to get frame length ({func_ret})!");
-                return LHDC_FRET_ERROR;
+            _ => {
+                error!("Invalid encode type ({})!", self.enc_type);
+                return LHDC_FRET_INVALID_CODEC;
             }
         }
-        _ => {
-            error!("Invalid encode type ({})!", lhdcBT.enc_type);
-            return LHDC_FRET_INVALID_CODEC;
-        }
+        LHDC_FRET_SUCCESS
     }
-    info!("init encoder done [sample_rate:{} bits_per_sample:{} frame_duration:{} interval:{} bitrate_inx:{} mtu:{} lastBitrate:{} handle:{:?}]",
+
+    pub fn set_min_bitrate_inx(
+        &mut self,
+        min_bitrate_inx: u32,
+        min_bitrate_inx_set: &mut u32,
+    ) -> i32 {
+        if min_bitrate_inx < LHDC_QUALITY_LOW0 || min_bitrate_inx > LHDC_QUALITY_LOW {
+            error!("Input MIN. bit rate (index) is invalid ({})!", min_bitrate_inx);
+            return LHDC_FRET_INVALID_INPUT_PARAM;
+        }
+        match self.enc_type {
+            1 => {
+                let func_ret = lhdcv5_encoder_set_min_bitrate_inx(&mut self.enc, min_bitrate_inx);
+                if func_ret != LHDC_FRET_SUCCESS {
+                    error!("Fail to set min. bit rate ({}) ({})!", func_ret, min_bitrate_inx);
+                    return LHDC_FRET_ERROR;
+                }
+                *min_bitrate_inx_set = self.enc.min_bitrate_inx;
+            }
+            _ => {
+                error!("Invalid encode type ({})!", self.enc_type);
+                return LHDC_FRET_INVALID_CODEC;
+            }
+        }
+        LHDC_FRET_SUCCESS
+    }
+
+    pub fn init_encoder(
+        &mut self,
+        sampling_freq: u32,
+        bits_per_sample: u32,
+        bitrate_inx: u32,
+        frame_duration: u32,
+        mtu: u32,
+        interval: u32,
+    ) -> i32 {
+        let mut samples_per_frame: u32 = 0;
+        if sampling_freq != LHDC_SR_44100HZ
+            && sampling_freq != LHDC_SR_48000HZ
+            && sampling_freq != LHDC_SR_96000HZ
+            && sampling_freq != LHDC_SR_192000HZ
+        {
+            error!("Invalid sampling frequency ({})!", sampling_freq);
+            return LHDC_FRET_INVALID_INPUT_PARAM;
+        }
+        if bits_per_sample != LHDCBT_SMPL_FMT_S16 && bits_per_sample != LHDCBT_SMPL_FMT_S24 {
+            error!("Invalid bits per sample ({bits_per_sample})!");
+            return LHDC_FRET_INVALID_INPUT_PARAM;
+        }
+        if bitrate_inx < LHDC_QUALITY_LOW0 || bitrate_inx > LHDC_QUALITY_AUTO {
+            error!("Invalid bit rate (index) ({bitrate_inx})!");
+            return LHDC_FRET_INVALID_INPUT_PARAM;
+        }
+        if frame_duration != LHDC_FRAME_5MS {
+            error!("Invalid frame duration ({frame_duration})!");
+            return LHDC_FRET_INVALID_INPUT_PARAM;
+        }
+        if mtu < LHDC_MTU_MIN || mtu > LHDC_MTU_MAX {
+            error!("Invalid MTU ({mtu})");
+            return LHDC_FRET_INVALID_INPUT_PARAM;
+        }
+        if interval != LHDC_ENC_INTERVAL_10MS && interval != LHDC_ENC_INTERVAL_20MS {
+            error!("Invalid encode interval ({interval})!");
+            return LHDC_FRET_INVALID_INPUT_PARAM;
+        }
+        match self.enc_type {
+            1 => {
+                let mut func_ret = self.enc.init(
+                    sampling_freq,
+                    bits_per_sample,
+                    bitrate_inx,
+                    frame_duration,
+                    mtu,
+                    interval,
+                );
+                if func_ret != LHDC_FRET_SUCCESS {
+                    error!("Fail to init. CODEC ({func_ret})!");
+                    return LHDC_FRET_ERROR;
+                }
+                self.enc.frame_duration = frame_duration;
+                func_ret = lhdcv5_encoder_get_frame_len(&self.enc, &mut samples_per_frame);
+                if func_ret != LHDC_FRET_SUCCESS {
+                    error!("Fail to get frame length ({func_ret})!");
+                    return LHDC_FRET_ERROR;
+                }
+            }
+            _ => {
+                error!("Invalid encode type ({})!", self.enc_type);
+                return LHDC_FRET_INVALID_CODEC;
+            }
+        }
+        info!("init encoder done [sample_rate:{} bits_per_sample:{} frame_duration:{} interval:{} bitrate_inx:{} mtu:{} lastBitrate:{} handle:{:?}]",
             sampling_freq,
             bits_per_sample,
             frame_duration,
             interval,
             bitrate_inx,
             mtu,
-            lhdcBT.enc.last_bitrate,
-            lhdcBT as *const _,
+            self.enc.last_bitrate,
+            self as *const _,
         );
-    LHDC_FRET_SUCCESS
-}
+        LHDC_FRET_SUCCESS
+    }
 
-pub fn lhdcv5_enc_util_get_block_Size(lhdcBT: &lhdc_cb_t, block_size: &mut u32) -> i32 {
-    match lhdcBT.enc_type {
-        1 => {
-            let func_ret = lhdcv5_encoder_get_frame_len(&lhdcBT.enc, block_size);
-            if func_ret != LHDC_FRET_SUCCESS {
-                error!("Fail to get frame length ({})!", func_ret);
-                return LHDC_FRET_ERROR;
+    pub fn get_block_size(&self, block_size: &mut u32) -> i32 {
+        match self.enc_type {
+            1 => {
+                let func_ret = lhdcv5_encoder_get_frame_len(&self.enc, block_size);
+                if func_ret != LHDC_FRET_SUCCESS {
+                    error!("Fail to get frame length ({})!", func_ret);
+                    return LHDC_FRET_ERROR;
+                }
+            }
+            _ => {
+                error!("Invalid encode type ({})!", self.enc_type);
+                return LHDC_FRET_INVALID_CODEC;
             }
         }
-        _ => {
-            error!("Invalid encode type ({})!", lhdcBT.enc_type);
-            return LHDC_FRET_INVALID_CODEC;
-        }
+        LHDC_FRET_SUCCESS
     }
-    LHDC_FRET_SUCCESS
-}
 
-pub fn lhdcv5_enc_util_enc_process(
-    lhdcBT: &mut lhdc_cb_t,
-    pcm: &[u8],
-    out: &mut [u8],
-    written: &mut u32,
-    out_frames: &mut u32,
-) -> i32 {
-    match lhdcBT.enc_type {
-        1 => {
-            let func_ret = lhdcv5_encoder_encode(&mut lhdcBT.enc, pcm, out, written, out_frames);
-            if func_ret != LHDC_FRET_SUCCESS {
-                error!("Fail to encode ({func_ret})!");
-                return LHDC_FRET_ERROR;
+    pub fn enc_process(
+        &mut self,
+        pcm: &[u8],
+        out: &mut [u8],
+        written: &mut u32,
+        out_frames: &mut u32,
+    ) -> i32 {
+        match self.enc_type {
+            1 => {
+                let func_ret = lhdcv5_encoder_encode(&mut self.enc, pcm, out, written, out_frames);
+                if func_ret != LHDC_FRET_SUCCESS {
+                    error!("Fail to encode ({func_ret})!");
+                    return LHDC_FRET_ERROR;
+                }
+            }
+            _ => {
+                error!("Invalid encode type ({})!", self.enc_type);
+                return LHDC_FRET_INVALID_CODEC;
             }
         }
-        _ => {
-            error!("Invalid encode type ({})!", lhdcBT.enc_type);
-            return LHDC_FRET_INVALID_CODEC;
-        }
+        LHDC_FRET_SUCCESS
     }
-    LHDC_FRET_SUCCESS
 }
