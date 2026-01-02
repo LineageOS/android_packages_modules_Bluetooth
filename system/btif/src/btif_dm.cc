@@ -3004,6 +3004,12 @@ void btif_dm_cancel_bond(const RawAddress bd_addr) {
 void btif_dm_remove_bond(const RawAddress bd_addr) {
   log::verbose("bd_addr={}", bd_addr);
 
+  if (com::android::bluetooth::flags::cancel_pairing_while_remove_bond() && is_bonding_or_sdp() &&
+      pairing_cb.bd_addr == bd_addr) {
+    log::warn("Ongoing pairing/sdp detected, cancelling it first before removing bond.");
+    btif_dm_cancel_bond(bd_addr);
+  }
+
   BTM_LogHistory(kBtmLogTag, bd_addr, "Remove bond");
 
   if (is_autonomous_repairing_supported()) {
