@@ -252,15 +252,42 @@ struct iso_impl {
   }
 
   void notify_iso_traffic_active(bool is_active) {
-    const std::lock_guard<std::mutex> lock(iso_client_mutex_);
+    std::vector<IsoClientHandle> safe_client_handles;
+    std::vector<std::function<void(bool)>> legacy_callbacks;
+
+    {
+      const std::lock_guard<std::mutex> lock(iso_client_mutex_);
+
+      if (com_android_bluetooth_flags_btm_multi_client_support()) {
+        safe_client_handles.reserve(iso_clients_.size());
+        for (const auto& [handle, _] : iso_clients_) {
+          safe_client_handles.push_back(handle);
+        }
+      } else {
+        for (const auto& callback : iso_traffic_active_callbacks_list_) {
+          legacy_callbacks.push_back(callback);
+        }
+      }
+    }
+
     if (com_android_bluetooth_flags_btm_multi_client_support()) {
-      for (const auto& [_, iso_client] : iso_clients_) {
-        if (iso_client.iso_traffic_active_callback) {
-          iso_client.iso_traffic_active_callback(is_active);
+      for (auto handle : safe_client_handles) {
+        std::function<void(bool)> callback_to_invoke = nullptr;
+
+        {
+          const std::lock_guard<std::mutex> lock(iso_client_mutex_);
+          auto it = iso_clients_.find(handle);
+          if (it != iso_clients_.end()) {
+            callback_to_invoke = it->second.iso_traffic_active_callback;
+          }
+        }
+
+        if (callback_to_invoke) {
+          callback_to_invoke(is_active);
         }
       }
     } else {
-      for (const auto& callback : iso_traffic_active_callbacks_list_) {
+      for (const auto& callback : legacy_callbacks) {
         callback(is_active);
       }
     }

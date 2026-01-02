@@ -3384,3 +3384,35 @@ TEST_F(IsoManagerTest, SetBigChannelMapClassificationHciCall) {
   IsoManager::GetInstance()->SetBigChannelMapClassificationByConnHandles(action, big_handle,
                                                                          handles);
 }
+
+TEST_F(IsoManagerTest, NotifyIsoTrafficActiveOnRemoveCigCreateBigDeadlock) {
+  bool reentrancy_success = false;
+
+  auto reentrant_callback = [&](bool is_active) {
+    if (!is_active) {
+      uint8_t new_big_handle = 0xFE;
+      manager_instance_->CreateBig(client_handle_, new_big_handle, kDefaultBigParams);
+
+      reentrancy_success = true;
+    }
+  };
+
+  manager_instance_->DeregisterCallbacks(client_handle_);
+
+  bluetooth::hci::iso_manager::IsoManagerCallbacks callbacks = {
+          .cig_callbacks = cig_callbacks_.get(),
+          .big_callbacks = big_callbacks_.get(),
+          .iso_traffic_active_callback = reentrant_callback,
+  };
+  client_handle_ = manager_instance_->RegisterCallbacks(callbacks);
+
+  // Create CIG triggers is_active = true
+  manager_instance_->CreateCig(client_handle_, volatile_test_cig_create_cmpl_evt_.cig_id,
+                               kDefaultCigParams);
+
+  // Remove CIG triggers is_active = false and callback does module reentrance with Create BIG
+  manager_instance_->RemoveCig(volatile_test_cig_create_cmpl_evt_.cig_id);
+
+  ASSERT_TRUE(reentrancy_success)
+          << "Deadlock detected or callback not fired during RemoveCig -> CreateBig transition!";
+}

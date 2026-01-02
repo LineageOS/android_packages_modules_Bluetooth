@@ -1394,6 +1394,7 @@ cc_test {
         "le_audio/metrics_collector_linux.cc",
         "le_audio/mock_codec_interface.cc",
         "le_audio/mock_codec_manager.cc",
+        "le_audio/mock_test_sync_main_handler.cc",
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
