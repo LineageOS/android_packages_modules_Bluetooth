@@ -259,3 +259,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "cancel_pairing_while_remove_bond"
+    namespace: "bluetooth"
+    description: "Cancel the ongoing pairing or SDP when remove bond is called."
+    bug: "472917739"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
