@@ -76,11 +76,11 @@ class ConnParamTest {
 
     @After
     fun tearDown() {
-        InstrumentationRegistry.getInstrumentation().uiAutomation.dropShellPermissionIdentity()
         val bondedDevices = adapter.bondedDevices
         if (bondedDevices.contains(remoteLeDevice)) {
             host.removeBondAndVerify(remoteLeDevice)
         }
+        InstrumentationRegistry.getInstrumentation().uiAutomation.dropShellPermissionIdentity()
         host.close()
     }
 
