@@ -61,6 +61,7 @@
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_iso_api.h"
+#include "stack/include/main_thread.h"
 
 #ifdef TARGET_FLOSS
 #include <audio_hal_interface/audio_linux.h>
@@ -128,7 +129,8 @@ public:
 
     iso_callbacks_.big_callbacks = this;
     iso_callbacks_.iso_traffic_active_callback = [this](bool is_active) {
-      this->IsoTrafficEventCb(is_active);
+      do_in_main_thread(base::BindOnce(&LeAudioBroadcasterImpl::IsoTrafficEventCb,
+                                       weak_factory_.GetWeakPtr(), is_active));
     };
 
     IsoManager::GetInstance()->Start();
@@ -1486,6 +1488,8 @@ private:
 
   IsoClientHandle iso_client_handle_;
   IsoManagerCallbacks iso_callbacks_;
+
+  base::WeakPtrFactory<LeAudioBroadcasterImpl> weak_factory_{this};
 };
 
 /* Static members definitions */
