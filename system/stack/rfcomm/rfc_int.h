@@ -238,7 +238,7 @@ void rfc_sec_check_complete(RawAddress bd_addr, tBT_TRANSPORT transport, void* p
 void rfc_inc_credit(tPORT* p_port, uint8_t credit);
 void rfc_dec_credit(tPORT* p_port);
 void rfc_check_send_cmd(tRFC_MCB* p_mcb, BT_HDR* p_buf);
-void rfc_set_state(tRFC_PORT_STATE state, tPORT* p_port);
+void rfc_set_state(RfcommPortState state, tPORT* p_port);
 
 /*
  * Functions provided by the rfc_ts_frames.cc

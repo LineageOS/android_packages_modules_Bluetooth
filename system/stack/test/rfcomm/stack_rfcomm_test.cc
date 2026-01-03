@@ -167,14 +167,14 @@ TEST_F(StackRfcommTest, test_PORT_IsCollisionDetected) {
   rfc_cb.port.rfc_mcb[0].bd_addr = test_bd_addr;
   // no collisions will happen if the bd_addr don't match, regardless of state
   for (int state_int = RFC_MX_STATE_IDLE; state_int <= RFC_MX_STATE_DISC_WAIT_UA; state_int++) {
-    rfc_cb.port.rfc_mcb[0].state = tRFC_MX_STATE(state_int);
+    rfc_cb.port.rfc_mcb[0].state = RfcommMuxState(state_int);
     ASSERT_FALSE(PORT_IsCollisionDetected(different_bd_addr));
   }
 
   rfc_cb.port.rfc_mcb[0].is_initiator = false;
   // no collisions will happen if not initiator, regardless of state
   for (int state_int = RFC_MX_STATE_IDLE; state_int <= RFC_MX_STATE_DISC_WAIT_UA; state_int++) {
-    rfc_cb.port.rfc_mcb[0].state = tRFC_MX_STATE(state_int);
+    rfc_cb.port.rfc_mcb[0].state = RfcommMuxState(state_int);
     ASSERT_FALSE(PORT_IsCollisionDetected(test_bd_addr));
   }
 

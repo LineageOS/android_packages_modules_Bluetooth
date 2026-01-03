@@ -38,7 +38,7 @@ using namespace android::bluetooth::rfcomm;
 
 static SocketConnectionSecurity toSecurity(uint16_t sec_mask);
 static PortResult toPortResult(tPORT_RESULT result);
-static RfcommPortState toPortState(tRFC_PORT_STATE state);
+static android::bluetooth::rfcomm::RfcommPortState toPortState(::RfcommPortState state);
 static android::bluetooth::rfcomm::RfcommPortEvent toPortEvent(::RfcommPortEvent event);
 
 void port_collect_attempt_metrics(tPORT* p_port) {
@@ -127,22 +127,22 @@ static PortResult toPortResult(tPORT_RESULT result) {
   return PortResult::PORT_RESULT_UNDEFINED;
 }
 
-static RfcommPortState toPortState(tRFC_PORT_STATE state) {
+static android::bluetooth::rfcomm::RfcommPortState toPortState(::RfcommPortState state) {
   switch (state) {
     case RFC_STATE_SABME_WAIT_UA:
-      return RfcommPortState::PORT_STATE_SABME_WAIT_UA;
+      return android::bluetooth::rfcomm::RfcommPortState::PORT_STATE_SABME_WAIT_UA;
     case RFC_STATE_ORIG_WAIT_SEC_CHECK:
-      return RfcommPortState::PORT_STATE_ORIG_WAIT_SEC_CHECK;
+      return android::bluetooth::rfcomm::RfcommPortState::PORT_STATE_ORIG_WAIT_SEC_CHECK;
     case RFC_STATE_TERM_WAIT_SEC_CHECK:
-      return RfcommPortState::PORT_STATE_TERM_WAIT_SEC_CHECK;
+      return android::bluetooth::rfcomm::RfcommPortState::PORT_STATE_TERM_WAIT_SEC_CHECK;
     case RFC_STATE_OPENED:
-      return RfcommPortState::PORT_STATE_OPENED;
+      return android::bluetooth::rfcomm::RfcommPortState::PORT_STATE_OPENED;
     case RFC_STATE_DISC_WAIT_UA:
-      return RfcommPortState::PORT_STATE_DISC_WAIT_UA;
+      return android::bluetooth::rfcomm::RfcommPortState::PORT_STATE_DISC_WAIT_UA;
     case RFC_STATE_CLOSED:
-      return RfcommPortState::PORT_STATE_CLOSED;
+      return android::bluetooth::rfcomm::RfcommPortState::PORT_STATE_CLOSED;
   }
-  return RfcommPortState::PORT_STATE_UNKNOWN;
+  return android::bluetooth::rfcomm::RfcommPortState::PORT_STATE_UNKNOWN;
 }
 
 static android::bluetooth::rfcomm::RfcommPortEvent toPortEvent(::RfcommPortEvent event) {

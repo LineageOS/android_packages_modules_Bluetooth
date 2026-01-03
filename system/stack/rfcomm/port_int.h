@@ -91,7 +91,7 @@ typedef struct {
   RawAddress bd_addr = RawAddress::kEmpty; /* BD ADDR of the peer if initiator */
   uint16_t lcid;                           /* Local cid used for this channel */
   uint16_t peer_l2cap_mtu;                 /* Max frame that can be sent to peer L2CAP */
-  tRFC_MX_STATE state;                     /* Current multiplexer channel state */
+  RfcommMuxState state;                    /* Current multiplexer channel state */
   uint8_t is_initiator;                    /* true if this side sends SABME (dlci=0) */
   bool restart_required;                   /* true if has to restart channel after disc */
   bool peer_ready;                         /* True if other side can accept frames */
@@ -108,8 +108,8 @@ typedef struct {
  * RFCOMM Port State Machine Control Block
  */
 struct RfcommPortSm {
-  tRFC_PORT_STATE state;
-  tRFC_PORT_STATE state_prior;
+  RfcommPortState state;
+  RfcommPortState state_prior;
   RfcommPortEvent last_event;
   tPORT_RESULT close_reason;
   uint64_t open_timestamp;

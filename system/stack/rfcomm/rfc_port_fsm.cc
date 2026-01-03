@@ -276,7 +276,7 @@ void rfc_port_sm_sabme_wait_ua(tPORT* p_port, RfcommPortEvent event, void* p_dat
       return;
     default:
       log::error("Received unexpected event:{} in state:{}", rfcomm_port_event_text(event),
-                 rfcomm_port_state_text(static_cast<tRFC_PORT_STATE>(p_port->sm_cb.state)));
+                 rfcomm_port_state_text(static_cast<RfcommPortState>(p_port->sm_cb.state)));
   }
   log::warn("Event ignored {}", rfcomm_port_event_text(event));
 }

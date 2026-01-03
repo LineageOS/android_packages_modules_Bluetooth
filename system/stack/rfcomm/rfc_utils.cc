@@ -454,7 +454,7 @@ void rfc_check_send_cmd(tRFC_MCB* p_mcb, BT_HDR* p_buf) {
  *                  new state
  *
  ******************************************************************************/
-void rfc_set_state(tRFC_PORT_STATE state, tPORT* p_port) {
+void rfc_set_state(RfcommPortState state, tPORT* p_port) {
   // nothing is going to change if the state doesn't change
   if (p_port->sm_cb.state == state) {
     log::debug("Already at state {}, no need to update", rfcomm_port_state_text(state));
