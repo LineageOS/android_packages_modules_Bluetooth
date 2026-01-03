@@ -18,7 +18,7 @@ package com.android.bluetooth.le_scan
 
 import android.Manifest.permission.BLUETOOTH_PRIVILEGED
 import android.app.PendingIntent
-import android.bluetooth.BluetoothAdapter
+import android.bluetooth.State
 import android.bluetooth.le.IPeriodicAdvertisingCallback
 import android.bluetooth.le.IScannerCallback
 import android.bluetooth.le.ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED
@@ -77,7 +77,7 @@ class ScanBinderTest {
             }
             .whenever(scanController)
             .fetchOnScanThread<Any>(any(), any())
-        whenever(adapterService.state).thenReturn(BluetoothAdapter.STATE_ON)
+        whenever(adapterService.state).thenReturn(State.ON)
         binder = ScanBinder(adapterService, scanController)
     }
 
@@ -159,7 +159,7 @@ class ScanBinderTest {
 
     @Test
     fun startScan_whenAdapterIsBleOn_enforcesPrivilegedPermission() {
-        whenever(adapterService.state).thenReturn(BluetoothAdapter.STATE_BLE_ON)
+        whenever(adapterService.state).thenReturn(State.BLE_ON)
         val scannerId = 1
         val settings = ScanSettings.Builder().build()
         val filters = listOf<ScanFilter>()

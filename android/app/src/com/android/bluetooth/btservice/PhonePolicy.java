@@ -37,6 +37,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothUuid;
+import android.bluetooth.State;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelUuid;
@@ -116,7 +117,7 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
     public void onBluetoothStateChange(int prevState, int newState) {
         // Only act if the adapter has actually changed state from non-ON to ON.
         // NOTE: ON is the state depicting BREDR ON and not just BLE ON.
-        if (newState == BluetoothAdapter.STATE_ON) {
+        if (newState == State.ON) {
             resetStates();
             autoConnect();
         }
@@ -745,7 +746,7 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
     @VisibleForTesting
     void autoConnect() {
         String log = "autoConnect(): ";
-        if (mAdapterService.getState() != BluetoothAdapter.STATE_ON) {
+        if (mAdapterService.getState() != State.ON) {
             Log.e(TAG, log + "Bluetooth is not ON. Exiting autoConnect");
             return;
         }
@@ -859,7 +860,7 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
     private void processConnectOtherProfiles(BluetoothDevice device) {
         String log = "processConnectOtherProfiles(" + device + "): ";
         int currentState = mAdapterService.getState();
-        if (currentState != BluetoothAdapter.STATE_ON) {
+        if (currentState != State.ON) {
             Log.w(TAG, log + "Bluetooth is " + BluetoothAdapter.nameForState(currentState));
             return;
         }

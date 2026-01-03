@@ -217,31 +217,31 @@ public final class BluetoothAdapter {
     public @interface AdapterState {}
 
     /** Indicates the local Bluetooth adapter is off. */
-    public static final int STATE_OFF = 10;
+    public static final int STATE_OFF = State.OFF;
 
     /**
      * Indicates the local Bluetooth adapter is turning on. However local clients should wait for
      * {@link #STATE_ON} before attempting to use the adapter.
      */
-    public static final int STATE_TURNING_ON = 11;
+    public static final int STATE_TURNING_ON = State.TURNING_ON;
 
     /** Indicates the local Bluetooth adapter is on, and ready for use. */
-    public static final int STATE_ON = 12;
+    public static final int STATE_ON = State.ON;
 
     /**
      * Indicates the local Bluetooth adapter is turning off. Local clients should immediately
      * attempt graceful disconnection of any remote links.
      */
-    public static final int STATE_TURNING_OFF = 13;
+    public static final int STATE_TURNING_OFF = State.TURNING_OFF;
 
     /** Indicates the local Bluetooth adapter is turning Bluetooth LE mode on. */
-    @Hide public static final int STATE_BLE_TURNING_ON = 14;
+    @Hide public static final int STATE_BLE_TURNING_ON = State.BLE_TURNING_ON;
 
     /** Indicates the local Bluetooth adapter is in LE only mode. */
-    @Hide @SystemApi public static final int STATE_BLE_ON = 15;
+    @Hide @SystemApi public static final int STATE_BLE_ON = State.BLE_ON;
 
     /** Indicates the local Bluetooth adapter is turning off LE only mode. */
-    @Hide public static final int STATE_BLE_TURNING_OFF = 16;
+    @Hide public static final int STATE_BLE_TURNING_OFF = State.BLE_TURNING_OFF;
 
     /**
      * Used as an optional extra field for the {@link PendingIntent} provided to {@link
@@ -271,7 +271,7 @@ public final class BluetoothAdapter {
     @Retention(RetentionPolicy.SOURCE)
     public @interface RfcommListenerResult {}
 
-    /** Human-readable string helper for AdapterState and InternalAdapterState */
+    /** Human-readable string helper for Adapter state */
     @Hide
     @SystemApi
     @RequiresNoPermission

@@ -28,6 +28,7 @@ import android.bluetooth.BluetoothHearingAid;
 import android.bluetooth.BluetoothLeAudio;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
+import android.bluetooth.State;
 import android.media.AudioManager;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -390,7 +391,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
 
     private void handleAdapterStateChanged(int currentState) {
         Log.d(TAG, "handleAdapterStateChanged: currentState=" + currentState);
-        if (currentState == BluetoothAdapter.STATE_ON) {
+        if (currentState == State.ON) {
             resetState();
         }
     }

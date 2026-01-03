@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.State;
 import android.content.Context;
 import android.content.Intent;
 import android.view.KeyEvent;
@@ -149,7 +150,7 @@ public class BluetoothOppBtEnablingActivityTest {
             activityScenario.onActivity(
                     activity -> {
                         Intent intent = new Intent(BluetoothAdapter.ACTION_STATE_CHANGED);
-                        intent.putExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_ON);
+                        intent.putExtra(BluetoothAdapter.EXTRA_STATE, State.ON);
                         activity.mBluetoothReceiver.onReceive(sContext, intent);
 
                         finishCalled.set(activity.isFinishing());

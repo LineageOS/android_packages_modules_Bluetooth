@@ -36,6 +36,7 @@ import static android.view.WindowManager.LayoutParams.SYSTEM_FLAG_HIDE_NON_SYSTE
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.State;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -138,7 +139,7 @@ public class BluetoothOppBtEnablingActivity extends AlertActivity {
                         return;
                     }
                     var state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1);
-                    if (BluetoothAdapter.STATE_ON != state) {
+                    if (State.ON != state) {
                         return;
                     }
                     mTimeoutHandler.removeMessages(BT_ENABLING_TIMEOUT);

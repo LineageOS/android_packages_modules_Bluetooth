@@ -45,11 +45,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothCsipSetCoordinator;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
+import android.bluetooth.State;
 import android.content.pm.ApplicationInfo;
 import android.os.ParcelUuid;
 import android.os.SystemProperties;
@@ -142,7 +142,7 @@ public class PhonePolicyTest {
                 .getDatabasePath(anyString());
 
         doReturn(mAdapterService).when(mAdapterService).createDeviceProtectedStorageContext();
-        doReturn(BluetoothAdapter.STATE_ON).when(mAdapterService).getState();
+        doReturn(State.ON).when(mAdapterService).getState();
         doReturn(MAX_CONNECTED_AUDIO_DEVICES).when(mAdapterService).getMaxConnectedAudioDevices();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabaseManager();
         doReturn(Optional.of(mA2dpService)).when(mAdapterService).getA2dpService();
@@ -682,7 +682,7 @@ public class PhonePolicyTest {
         doReturn(CONNECTION_POLICY_ALLOWED).when(mA2dpService).getConnectionPolicy(any());
 
         // Inject an event that the adapter is turned on.
-        mPhonePolicy.onBluetoothStateChange(BluetoothAdapter.STATE_OFF, BluetoothAdapter.STATE_ON);
+        mPhonePolicy.onBluetoothStateChange(State.OFF, State.ON);
 
         // Check that we got a request to connect over HFP and A2DP
         verify(mA2dpService).connect(eq(mDevice1));
