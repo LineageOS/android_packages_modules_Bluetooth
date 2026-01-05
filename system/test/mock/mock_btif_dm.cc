@@ -122,7 +122,7 @@ std::optional<tBTM_LE_AUTH_REQ> btif_dm_le_oob_auth_req(const RawAddress& /* bd_
   inc_func_call_count(__func__);
   return std::nullopt;
 }
-void btif_dm_ssp_reply(const RawAddress /* bd_addr */, bt_ssp_variant_t /* variant */,
+void btif_dm_ssp_reply(const RawAddress /* bd_addr */, PairingVariant /* variant */,
                        uint8_t /* accept */) {
   inc_func_call_count(__func__);
 }

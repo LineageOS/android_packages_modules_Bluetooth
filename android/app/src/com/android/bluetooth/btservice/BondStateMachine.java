@@ -761,23 +761,23 @@ public final class BondStateMachine extends StateMachine {
         boolean displayPasskey = false;
         int context = BluetoothDevice.PAIRING_CONTEXT_USER_APPROVAL_REQUESTED;
         switch (pairingVariant) {
-            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_CONFIRMATION -> {
+            case AbstractionLayer.BT_PAIRING_VARIANT_PASSKEY_CONFIRMATION -> {
                 variant = BluetoothDevice.PAIRING_VARIANT_PASSKEY_CONFIRMATION;
                 displayPasskey = true;
             }
 
-            case AbstractionLayer.BT_SSP_VARIANT_CONSENT ->
+            case AbstractionLayer.BT_PAIRING_VARIANT_CONSENT ->
                     variant = BluetoothDevice.PAIRING_VARIANT_CONSENT;
 
-            case AbstractionLayer.BT_SSP_VARIANT_PARTICIPATION -> {
+            case AbstractionLayer.BT_PAIRING_VARIANT_PARTICIPATION -> {
                 variant = BluetoothDevice.PAIRING_VARIANT_CONSENT;
                 context = BluetoothDevice.PAIRING_CONTEXT_USER_PARTICIPATION_REQUESTED;
             }
 
-            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_ENTRY ->
+            case AbstractionLayer.BT_PAIRING_VARIANT_PASSKEY_ENTRY ->
                     variant = BluetoothDevice.PAIRING_VARIANT_PASSKEY;
 
-            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_NOTIFICATION -> {
+            case AbstractionLayer.BT_PAIRING_VARIANT_PASSKEY_NOTIFICATION -> {
                 variant = BluetoothDevice.PAIRING_VARIANT_DISPLAY_PASSKEY;
                 displayPasskey = true;
             }
@@ -982,12 +982,13 @@ public final class BondStateMachine extends StateMachine {
         }
 
         return switch (nativePairingVariant) {
-            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_CONFIRMATION ->
+            case AbstractionLayer.BT_PAIRING_VARIANT_PASSKEY_CONFIRMATION ->
                     BluetoothDevice.PAIRING_VARIANT_PASSKEY_CONFIRMATION;
-            case AbstractionLayer.BT_SSP_VARIANT_CONSENT -> BluetoothDevice.PAIRING_VARIANT_CONSENT;
-            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_ENTRY ->
+            case AbstractionLayer.BT_PAIRING_VARIANT_CONSENT ->
+                    BluetoothDevice.PAIRING_VARIANT_CONSENT;
+            case AbstractionLayer.BT_PAIRING_VARIANT_PASSKEY_ENTRY ->
                     BluetoothDevice.PAIRING_VARIANT_PASSKEY;
-            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_NOTIFICATION ->
+            case AbstractionLayer.BT_PAIRING_VARIANT_PASSKEY_NOTIFICATION ->
                     BluetoothDevice.PAIRING_VARIANT_DISPLAY_PASSKEY;
             default -> BluetoothDevice.PAIRING_VARIANT_CONSENT;
         };

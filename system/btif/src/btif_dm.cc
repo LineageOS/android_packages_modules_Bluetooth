@@ -1077,15 +1077,15 @@ static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
 
   if (pairing_cb.state == BT_BOND_STATE_BONDING && bd_addr != pairing_cb.bd_addr) {
     log::warn("already in bonding state, reject request");
-    btif_dm_ssp_reply(bd_addr, BT_SSP_VARIANT_PASSKEY_CONFIRMATION, 0);
+    btif_dm_ssp_reply(bd_addr, PairingVariant::PASSKEY_CONFIRMATION, 0);
     return;
   }
 
   bool api_initiated_bonding = (pairing_cb.state == BT_BOND_STATE_BONDING);
   pairing_cb.pairing_type = {.algorithm = p_ssp_cfm_req->pairing_algorithm,
                              .variant = p_ssp_cfm_req->just_works
-                                                ? BT_SSP_VARIANT_CONSENT
-                                                : BT_SSP_VARIANT_PASSKEY_CONFIRMATION};
+                                                ? PairingVariant::CONSENT
+                                                : PairingVariant::PASSKEY_CONFIRMATION};
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_BR_EDR, BT_BOND_STATE_BONDING,
                      pairing_cb.pairing_type);
 
@@ -1097,7 +1097,7 @@ static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
   if (!api_initiated_bonding && pairing_cb.bond_type == BOND_TYPE_TEMPORARY) {
     // Pairing without bonding either initiated by local service or remote device
     log::info("Auto-accept temporary pairing {}", bd_addr);
-    btif_dm_ssp_reply(bd_addr, BT_SSP_VARIANT_CONSENT, true);
+    btif_dm_ssp_reply(bd_addr, PairingVariant::CONSENT, true);
     return;
   }
 
@@ -1128,7 +1128,7 @@ static void btif_dm_ssp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
   RawAddress bd_addr = p_ssp_key_notif->bd_addr;
 
   pairing_cb.pairing_type = {.algorithm = p_ssp_key_notif->pairing_algorithm,
-                             .variant = BT_SSP_VARIANT_PASSKEY_NOTIFICATION};
+                             .variant = PairingVariant::PASSKEY_NOTIFICATION};
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_BR_EDR, BT_BOND_STATE_BONDING,
                      pairing_cb.pairing_type);
   pairing_cb.is_ssp = true;
@@ -3084,7 +3084,7 @@ void btif_dm_pin_reply(const RawAddress bd_addr, uint8_t accept, uint8_t pin_len
  *                  Entry
  *
  ******************************************************************************/
-void btif_dm_ssp_reply(const RawAddress bd_addr, bt_ssp_variant_t variant, uint8_t accept) {
+void btif_dm_ssp_reply(const RawAddress bd_addr, PairingVariant variant, uint8_t accept) {
   log::verbose("accept={}", accept);
   BTM_LogHistory(kBtmLogTag, bd_addr, "Ssp reply",
                  std::format("originator:{} variant:{} accept:{:c} le:{:c} numeric_comparison:{:c}",
@@ -3660,7 +3660,7 @@ static void btif_dm_ble_passkey_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif)
   bd_addr = p_ssp_key_notif->bd_addr;
 
   pairing_cb.pairing_type = {.algorithm = p_ssp_key_notif->pairing_algorithm,
-                             .variant = BT_SSP_VARIANT_PASSKEY_NOTIFICATION};
+                             .variant = PairingVariant::PASSKEY_NOTIFICATION};
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_LE, BT_BOND_STATE_BONDING,
                      pairing_cb.pairing_type);
   pairing_cb.is_ssp = false;
@@ -3981,7 +3981,7 @@ static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool consent
 
   pairing_cb.pairing_type = {
           .algorithm = p_ble_req->pairing_algorithm,
-          .variant = consent ? BT_SSP_VARIANT_CONSENT : BT_SSP_VARIANT_PARTICIPATION};
+          .variant = consent ? PairingVariant::CONSENT : PairingVariant::PARTICIPATION};
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_LE, BT_BOND_STATE_BONDING,
                      pairing_cb.pairing_type);
 
@@ -3991,7 +3991,7 @@ static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool consent
   pairing_cb.is_ssp = false;
 
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "SSP ble request",
-                 consent ? "BT_SSP_VARIANT_CONSENT" : "BT_SSP_VARIANT_PARTICIPATION");
+                 consent ? "PairingVariant::CONSENT" : "PairingVariant::PARTICIPATION");
 
   GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
           bd_addr, pairing_cb.pairing_type.variant, 0,
@@ -4023,7 +4023,7 @@ static void btif_dm_ble_passkey_req_evt(tBTA_DM_PIN_REQ* p_passkey_req) {
   bd_name_copy(bd_name.name, p_passkey_req->bd_name);
 
   pairing_cb.pairing_type = {.algorithm = p_passkey_req->pairing_algorithm,
-                             .variant = BT_SSP_VARIANT_PASSKEY_CONFIRMATION};
+                             .variant = PairingVariant::PASSKEY_CONFIRMATION};
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_LE, BT_BOND_STATE_BONDING,
                      pairing_cb.pairing_type);
   pairing_cb.is_le_only = true;
@@ -4050,7 +4050,7 @@ static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF* p_notif_req) {
                                 BT_DEVICE_TYPE_BLE);
 
   pairing_cb.pairing_type = {.algorithm = p_notif_req->pairing_algorithm,
-                             .variant = BT_SSP_VARIANT_PASSKEY_CONFIRMATION};
+                             .variant = PairingVariant::PASSKEY_CONFIRMATION};
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_TRANSPORT_LE, BT_BOND_STATE_BONDING,
                      pairing_cb.pairing_type);
   pairing_cb.is_ssp = false;
