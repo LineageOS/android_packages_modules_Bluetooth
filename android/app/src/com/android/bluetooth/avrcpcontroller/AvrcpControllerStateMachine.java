@@ -696,10 +696,10 @@ class AvrcpControllerStateMachine extends StateMachine {
                     mAddressedPlayer.setCurrentPlayerApplicationSettings(
                             (PlayerApplicationSettings) msg.obj);
                     if (isActive()) {
-                        BluetoothMediaBrowserService
-                                .onShuffleModeChanged(mAddressedPlayer.getShuffleMode());
-                        BluetoothMediaBrowserService
-                                .onRepeatModeChanged(mAddressedPlayer.getRepeatMode());
+                        BluetoothMediaBrowserService.onShuffleModeChanged(
+                                mAddressedPlayer.getShuffleMode());
+                        BluetoothMediaBrowserService.onRepeatModeChanged(
+                                mAddressedPlayer.getRepeatMode());
                     }
                     notifyPlaybackStateChanged(mAddressedPlayer.getPlaybackState());
                 }

@@ -2180,8 +2180,8 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *
      * <p>This method requires the calling app to have the {@link
      * android.Manifest.permission#BLUETOOTH_CONNECT} permission. Additionally, an app must either
-     * have {@link android.Manifest.permission#BLUETOOTH_PRIVILEGED} permission or be
-     * associated with the Companion Device manager (see {@link
+     * have {@link android.Manifest.permission#BLUETOOTH_PRIVILEGED} permission or be associated
+     * with the Companion Device manager (see {@link
      * android.companion.CompanionDeviceManager#associate( AssociationRequest,
      * android.companion.CompanionDeviceManager.Callback, Handler)}).
      *

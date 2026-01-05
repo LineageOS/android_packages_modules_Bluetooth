@@ -293,7 +293,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
             return;
         }
 
-        Log.d(TAG,"Playback State Changed, state=" + playbackStateCompatToString(state));
+        Log.d(TAG, "Playback State Changed, state=" + playbackStateCompatToString(state));
         service.setPlaybackState(state);
     }
 
@@ -656,8 +656,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
             } else {
                 sb.append("\n    track=").append(metadata);
             }
-            sb.append("\n    playbackState=")
-                    .append(playbackStateCompatToString(playbackState));
+            sb.append("\n    playbackState=").append(playbackStateCompatToString(playbackState));
             sb.append("\n    queue=").append(queue);
             sb.append("\n    session active state=").append(service.isActive());
         } else {

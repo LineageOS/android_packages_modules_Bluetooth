@@ -16,7 +16,6 @@
 
 package android.bluetooth;
 
-import android.annotation.FlaggedApi;
 import android.annotation.Hide;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
@@ -25,8 +24,6 @@ import android.annotation.RequiresNoPermission;
 import android.bluetooth.BluetoothDevice.EncryptionAlgorithm;
 import android.os.Parcel;
 import android.os.Parcelable;
-
-import com.android.bluetooth.flags.Flags;
 
 /**
  * Represents the encryption status of a Bluetooth device.
