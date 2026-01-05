@@ -45,6 +45,7 @@ import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.btservice.CompanionManager
 import com.android.bluetooth.flags.Flags
 import com.android.bluetooth.getTestDevice
+import com.android.bluetooth.mapclient.MapClientService
 import com.android.bluetooth.mockBluetoothManager
 import com.android.bluetooth.mockGetRemoteDevice
 import com.android.bluetooth.mockGetSystemService
@@ -53,6 +54,7 @@ import com.android.tests.bluetooth.FlagsWrapper
 import com.android.tests.bluetooth.MockitoRule
 import com.google.common.truth.Truth.assertThat
 import java.time.Duration
+import java.util.Optional
 import java.util.UUID
 import kotlin.time.ExperimentalTime
 import org.junit.After
@@ -920,6 +922,10 @@ class GattServiceTest(flags: FlagsWrapper) {
     @Test
     @EnableFlags(Flags.FLAG_GATT_MESSAGING_PERMISSIONS)
     fun clientAncsAccessPermissionRejected() {
+        if (Flags.checkMapclientConnectionPolicyForAncs()) {
+            return
+        }
+
         val db = arrayListOf<GattDbElement>()
 
         val app = mock<ContextApp<IBluetoothGattCallback>>()
@@ -939,6 +945,46 @@ class GattServiceTest(flags: FlagsWrapper) {
         doReturn(BluetoothDevice.ACCESS_REJECTED)
             .whenever(adapterService)
             .getMessageAccessPermission(any<BluetoothDevice>())
+
+        service.onGetGattDbFromNative(CLIENT_CONN_ID, db)
+        // ANCS should be restricted
+        assertThat(service.getRestrictedHandles()[CLIENT_CONN_ID]).contains(ancsService.id)
+
+        service.onDisconnectedFromNative(
+            CLIENT_IF,
+            CLIENT_CONN_ID,
+            BluetoothDevice.TRANSPORT_LE,
+            BluetoothGatt.GATT_SUCCESS,
+            device,
+        )
+        assertThat(service.getRestrictedHandles()).doesNotContainKey(CLIENT_CONN_ID)
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_CHECK_MAPCLIENT_CONNECTION_POLICY_FOR_ANCS)
+    fun clientAncsAccessPermissionRejectedV2() {
+        val db = arrayListOf<GattDbElement>()
+
+        val app = mock<ContextApp<IBluetoothGattCallback>>()
+        val callback = mock<IBluetoothGattCallback>()
+
+        doReturn(app).whenever(clientMap).getByConnId(CLIENT_CONN_ID)
+        doReturn(callback).whenever(app).callback
+
+        val ancsService =
+            GattDbElement.createPrimaryService(
+                UUID.fromString("7905F431-B5CE-4E99-A40F-4B1E122D00D0")
+            )
+        ancsService.id = 1
+
+        db.add(ancsService)
+
+        val mapClientService = mock<MapClientService>()
+
+        doReturn(Optional.of(mapClientService)).whenever(adapterService).getMapClientService()
+        doReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED)
+            .whenever(mapClientService)
+            .getConnectionPolicy(any<BluetoothDevice>())
 
         service.onGetGattDbFromNative(CLIENT_CONN_ID, db)
         // ANCS should be restricted
