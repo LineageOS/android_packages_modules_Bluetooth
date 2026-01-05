@@ -582,17 +582,26 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
     return tBTM_STATUS::BTM_NO_RESOURCES;
   }
 
-  log::verbose("before update sec_flags=0x{:x}", p_device->sec_rec.sec_flags);
-
   /* Finished if connection is active and already paired */
-  if (((p_device->hci_handle != HCI_INVALID_HANDLE) && transport == BT_TRANSPORT_BR_EDR &&
-       (btm_get_bond_type_dev(bd_addr) == BOND_TYPE_PERSISTENT) &&
-       (p_device->sec_rec.sec_flags & BTM_SEC_AUTHENTICATED)) ||
-      ((p_device->ble_hci_handle != HCI_INVALID_HANDLE) && transport == BT_TRANSPORT_LE &&
-       (p_device->sec_rec.sec_flags & BTM_SEC_LE_AUTHENTICATED))) {
-    log::warn("Already Paired");
+  if (!com_android_bluetooth_flags_check_bond_status_before_pairing()) {
+    if (transport == BT_TRANSPORT_BR_EDR && p_device->hci_handle != HCI_INVALID_HANDLE &&
+        btm_get_bond_type_dev(bd_addr) == BOND_TYPE_PERSISTENT &&
+        (p_device->sec_rec.sec_flags & BTM_SEC_AUTHENTICATED)) {
+      log::warn("Already Paired");
+      return tBTM_STATUS::BTM_SUCCESS;
+    }
+
+    if (transport == BT_TRANSPORT_LE && p_device->ble_hci_handle != HCI_INVALID_HANDLE &&
+        (p_device->sec_rec.sec_flags & BTM_SEC_LE_AUTHENTICATED)) {
+      log::warn("Already Paired");
+      return tBTM_STATUS::BTM_SUCCESS;
+    }
+  } else if (p_device->sec_rec.is_bonded(transport) && !p_device->bond_lost) {
+    log::info("{} already paired over transport {}", bd_addr, transport);
     return tBTM_STATUS::BTM_SUCCESS;
   }
+
+  log::verbose("before update sec_flags=0x{:x}", p_device->sec_rec.sec_flags);
 
   /* Tell controller to get rid of the link key if it has one stored */
   btm_sec_hci_delete_stored_link_key(bd_addr);
