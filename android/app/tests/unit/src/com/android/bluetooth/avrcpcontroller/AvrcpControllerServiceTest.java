@@ -482,16 +482,20 @@ public class AvrcpControllerServiceTest {
     public void testOnFocusChange_audioGainDeviceActive_sessionActivated() {
         mService.setActiveDevice(mDevice1);
         mService.onAudioFocusStateChanged(AudioManager.AUDIOFOCUS_GAIN);
-        verify(mStateMachine).sendMessage(eq(AvrcpControllerStateMachine.AUDIO_FOCUS_STATE_CHANGE),
-                eq(AudioManager.AUDIOFOCUS_GAIN));
+        verify(mStateMachine)
+                .sendMessage(
+                        eq(AvrcpControllerStateMachine.AUDIO_FOCUS_STATE_CHANGE),
+                        eq(AudioManager.AUDIOFOCUS_GAIN));
     }
 
     @Test
     public void testOnFocusChange_audioLoss_sessionDeactivated() {
         mService.setActiveDevice(mDevice1);
         mService.onAudioFocusStateChanged(AudioManager.AUDIOFOCUS_LOSS);
-        verify(mStateMachine).sendMessage(eq(AvrcpControllerStateMachine.AUDIO_FOCUS_STATE_CHANGE),
-                eq(AudioManager.AUDIOFOCUS_LOSS));
+        verify(mStateMachine)
+                .sendMessage(
+                        eq(AvrcpControllerStateMachine.AUDIO_FOCUS_STATE_CHANGE),
+                        eq(AudioManager.AUDIOFOCUS_LOSS));
     }
 
     /**

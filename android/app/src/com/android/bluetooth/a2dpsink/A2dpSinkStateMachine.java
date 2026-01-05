@@ -310,8 +310,9 @@ class A2dpSinkStateMachine extends StateMachine {
         }
 
         void processAudioStateEvent(int event) {
-            debug("Audio state changed, event="
-                    + A2dpSinkNativeInterface.audioStateToString(event));
+            debug(
+                    "Audio state changed, event="
+                            + A2dpSinkNativeInterface.audioStateToString(event));
         }
 
         void processAudioConfigEvent(int rate, int channels) {
@@ -374,7 +375,7 @@ class A2dpSinkStateMachine extends StateMachine {
     }
 
     private static final String messageToString(int what) {
-        return switch(what) {
+        return switch (what) {
             case -1 /* SM_QUIT_CMD */ -> "SM_QUIT_CMD";
             case -2 /* SM_INIT_CMD */ -> "SM_INIT_CMD";
             case MESSAGE_CONNECT -> "MESSAGE_CONNECT";

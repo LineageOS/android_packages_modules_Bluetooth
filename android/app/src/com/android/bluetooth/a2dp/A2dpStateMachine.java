@@ -420,9 +420,7 @@ final class A2dpStateMachine extends StateMachine {
                 case MESSAGE_CODEC_CONFIG_CHANGED ->
                         processCodecConfigEvent((BluetoothCodecStatus) message.obj);
                 default -> {
-                    Log.e(
-                            TAG,
-                            "Disconnecting: ignoring " + messageWhatToString(message.what));
+                    Log.e(TAG, "Disconnecting: ignoring " + messageWhatToString(message.what));
                     return NOT_HANDLED;
                 }
             }

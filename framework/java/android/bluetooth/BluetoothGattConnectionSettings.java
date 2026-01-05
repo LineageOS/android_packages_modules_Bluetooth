@@ -160,12 +160,11 @@ public final class BluetoothGattConnectionSettings {
         }
 
         /**
-         * Sets if the MTU (Maximum Transmission Unit) needs to be negotiated for given
-         * connection or not. This is set to true by default so that MTU exchange happens
-         * after the connection. Applications have to set it to false to disable the automatic
-         * negotiation. Setting this to false does not prevent MTU negotiation if a client
-         * explicitly requests it using {@link BluetoothGatt#requestMtu} or if it's triggered
-         * internally by other profiles.
+         * Sets if the MTU (Maximum Transmission Unit) needs to be negotiated for given connection
+         * or not. This is set to true by default so that MTU exchange happens after the connection.
+         * Applications have to set it to false to disable the automatic negotiation. Setting this
+         * to false does not prevent MTU negotiation if a client explicitly requests it using {@link
+         * BluetoothGatt#requestMtu} or if it's triggered internally by other profiles.
          *
          * @param automaticMtuEnabled true if Default MTU setting needs to be applied on this
          *     connection, false otherwise.

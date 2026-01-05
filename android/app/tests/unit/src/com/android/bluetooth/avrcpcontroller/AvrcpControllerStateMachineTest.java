@@ -2547,12 +2547,13 @@ public class AvrcpControllerStateMachineTest {
     @Test
     public void testOnShuffleStateChanged() {
         setUpConnectedState(true, true);
-        doReturn(PlaybackStateCompat.SHUFFLE_MODE_ALL).when(mPlayerApplicationSettings)
+        doReturn(PlaybackStateCompat.SHUFFLE_MODE_ALL)
+                .when(mPlayerApplicationSettings)
                 .getSetting(PlayerApplicationSettings.SHUFFLE_STATUS);
 
         mAvrcpStateMachine.sendMessage(
                 AvrcpControllerStateMachine.MESSAGE_PROCESS_CURRENT_APPLICATION_SETTINGS,
-                        mPlayerApplicationSettings);
+                mPlayerApplicationSettings);
 
         TestUtils.waitForLooperToFinishScheduledTask(mAvrcpStateMachine.getHandler().getLooper());
 
@@ -2567,12 +2568,13 @@ public class AvrcpControllerStateMachineTest {
     @Test
     public void testOnRepeatStateChanged() {
         setUpConnectedState(true, true);
-        doReturn(PlaybackStateCompat.REPEAT_MODE_ALL).when(mPlayerApplicationSettings)
+        doReturn(PlaybackStateCompat.REPEAT_MODE_ALL)
+                .when(mPlayerApplicationSettings)
                 .getSetting(PlayerApplicationSettings.REPEAT_STATUS);
 
         mAvrcpStateMachine.sendMessage(
                 AvrcpControllerStateMachine.MESSAGE_PROCESS_CURRENT_APPLICATION_SETTINGS,
-                        mPlayerApplicationSettings);
+                mPlayerApplicationSettings);
 
         TestUtils.waitForLooperToFinishScheduledTask(mAvrcpStateMachine.getHandler().getLooper());
 

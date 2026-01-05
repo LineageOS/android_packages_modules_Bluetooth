@@ -1119,8 +1119,7 @@ public class RemoteDevicesTest {
         // Add a device, its properties will be created with an unknown identity address.
         DeviceProperties deviceProp =
                 mRemoteDevices.addDeviceProperties(Utils.getBytesFromAddress(mDevice.getAddress()));
-        assertThat(deviceProp.getIdentityAddress())
-                .isEqualTo(DeviceProperties.UNKNOWN_ADDRESS);
+        assertThat(deviceProp.getIdentityAddress()).isEqualTo(DeviceProperties.UNKNOWN_ADDRESS);
 
         // Set the bond state to BONDED.
         deviceProp.setBondState(BluetoothDevice.BOND_BONDED);

@@ -17,6 +17,7 @@
 package com.android.bluetooth.map;
 
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertThrows;
 
 import android.telephony.PhoneNumberUtils;

@@ -19,7 +19,6 @@ package com.android.bluetooth.avrcpcontroller;
 import android.bluetooth.BluetoothDevice;
 import android.net.Uri;
 import android.os.SystemClock;
-import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
 
@@ -230,8 +229,9 @@ class AvrcpPlayer {
         if (mCurrentPlayerApplicationSettings == null) {
             return PlaybackStateCompat.SHUFFLE_MODE_NONE;
         }
-        int mode = mCurrentPlayerApplicationSettings
-                .getSetting(PlayerApplicationSettings.SHUFFLE_STATUS);
+        int mode =
+                mCurrentPlayerApplicationSettings.getSetting(
+                        PlayerApplicationSettings.SHUFFLE_STATUS);
         if (mode == -1) {
             return PlaybackStateCompat.SHUFFLE_MODE_NONE;
         }
@@ -242,8 +242,9 @@ class AvrcpPlayer {
         if (mCurrentPlayerApplicationSettings == null) {
             return PlaybackStateCompat.REPEAT_MODE_NONE;
         }
-        int mode = mCurrentPlayerApplicationSettings
-                .getSetting(PlayerApplicationSettings.REPEAT_STATUS);
+        int mode =
+                mCurrentPlayerApplicationSettings.getSetting(
+                        PlayerApplicationSettings.REPEAT_STATUS);
         if (mode == -1) {
             return PlaybackStateCompat.REPEAT_MODE_NONE;
         }

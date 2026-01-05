@@ -158,9 +158,11 @@ public class AvrcpPlayerTest {
 
     @Test
     public void getShuffleMode_shuffleSet_returnsSetValue() {
-        doReturn(true).when(mPlayerApplicationSettings)
+        doReturn(true)
+                .when(mPlayerApplicationSettings)
                 .supportsSetting(PlayerApplicationSettings.SHUFFLE_STATUS);
-        doReturn(PlaybackStateCompat.SHUFFLE_MODE_ALL).when(mPlayerApplicationSettings)
+        doReturn(PlaybackStateCompat.SHUFFLE_MODE_ALL)
+                .when(mPlayerApplicationSettings)
                 .getSetting(PlayerApplicationSettings.SHUFFLE_STATUS);
 
         AvrcpPlayer player = new AvrcpPlayer.Builder().build();
@@ -172,9 +174,11 @@ public class AvrcpPlayerTest {
 
     @Test
     public void getShuffleMode_shuffleUnset_returnsNone() {
-        doReturn(true).when(mPlayerApplicationSettings)
+        doReturn(true)
+                .when(mPlayerApplicationSettings)
                 .supportsSetting(eq(PlayerApplicationSettings.SHUFFLE_STATUS));
-        doReturn(/* jni_invalid */ -1).when(mPlayerApplicationSettings)
+        doReturn(/* jni_invalid */ -1)
+                .when(mPlayerApplicationSettings)
                 .getSetting(eq(PlayerApplicationSettings.SHUFFLE_STATUS));
 
         AvrcpPlayer player = new AvrcpPlayer.Builder().build();
@@ -186,9 +190,11 @@ public class AvrcpPlayerTest {
 
     @Test
     public void getRepeatMode_repeatSet_returnsSetValue() {
-        doReturn(true).when(mPlayerApplicationSettings)
+        doReturn(true)
+                .when(mPlayerApplicationSettings)
                 .supportsSetting(PlayerApplicationSettings.REPEAT_STATUS);
-        doReturn(PlaybackStateCompat.REPEAT_MODE_ALL).when(mPlayerApplicationSettings)
+        doReturn(PlaybackStateCompat.REPEAT_MODE_ALL)
+                .when(mPlayerApplicationSettings)
                 .getSetting(PlayerApplicationSettings.REPEAT_STATUS);
 
         AvrcpPlayer player = new AvrcpPlayer.Builder().build();
@@ -200,9 +206,11 @@ public class AvrcpPlayerTest {
 
     @Test
     public void getRepeatMode_repeatUnset_returnsNone() {
-        doReturn(true).when(mPlayerApplicationSettings)
+        doReturn(true)
+                .when(mPlayerApplicationSettings)
                 .supportsSetting(eq(PlayerApplicationSettings.REPEAT_STATUS));
-        doReturn(/* jni_invalid */ -1).when(mPlayerApplicationSettings)
+        doReturn(/* jni_invalid */ -1)
+                .when(mPlayerApplicationSettings)
                 .getSetting(eq(PlayerApplicationSettings.REPEAT_STATUS));
 
         AvrcpPlayer player = new AvrcpPlayer.Builder().build();
@@ -214,9 +222,11 @@ public class AvrcpPlayerTest {
 
     @Test
     public void getShuffleAndRepeatMode_playerSettingsUnset_returnsNone() {
-        doReturn(true).when(mPlayerApplicationSettings)
+        doReturn(true)
+                .when(mPlayerApplicationSettings)
                 .supportsSetting(eq(PlayerApplicationSettings.SHUFFLE_STATUS));
-        doReturn(true).when(mPlayerApplicationSettings)
+        doReturn(true)
+                .when(mPlayerApplicationSettings)
                 .supportsSetting(eq(PlayerApplicationSettings.REPEAT_STATUS));
 
         AvrcpPlayer player = new AvrcpPlayer.Builder().build();

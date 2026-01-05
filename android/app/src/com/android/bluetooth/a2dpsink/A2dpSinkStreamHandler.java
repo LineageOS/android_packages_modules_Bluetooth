@@ -132,7 +132,7 @@ public class A2dpSinkStreamHandler extends Handler {
                 TAG,
                 "onAudioStateChanged("
                         + ("state=" + A2dpSinkNativeInterface.audioStateToString(state))
-                        +")");
+                        + ")");
         if (state == A2dpSinkNativeInterface.AUDIO_STATE_STARTED) {
             sendEmptyMessage(SRC_STR_START);
         } else if (state == A2dpSinkNativeInterface.AUDIO_STATE_STOPPED
@@ -143,7 +143,7 @@ public class A2dpSinkStreamHandler extends Handler {
                     TAG,
                     "onAudioStateChanged("
                             + ("state=" + A2dpSinkNativeInterface.audioStateToString(state))
-                            +"): State unhandled");
+                            + "): State unhandled");
         }
     }
 
