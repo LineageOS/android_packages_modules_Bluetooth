@@ -498,6 +498,22 @@ typedef enum {
    */
   BT_PROPERTY_REMOTE_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED,
 
+  /**
+   * Description - Pairing type of the remote device on BREDR transport. This includes the pairing
+   * algorithm and the variant.
+   * Access mode - GET.
+   * Data Type - PairingType.
+   */
+  BT_PROPERTY_BREDR_PAIRING_TYPE,
+
+  /**
+   * Description - Pairing type of the remote device on LE transport. This includes the pairing
+   * algorithm and the variant.
+   * Access mode - GET.
+   * Data Type - PairingType.
+   */
+  BT_PROPERTY_LE_PAIRING_TYPE,
+
   BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP = 0xFF,
 } bt_property_type_t;
 

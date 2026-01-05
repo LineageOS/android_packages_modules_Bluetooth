@@ -270,7 +270,7 @@ static size_t btif_events_end_index = 0;
  *****************************************************************************/
 static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool consent);
 static void btif_dm_remove_ble_bonding_keys(void);
-static void btif_dm_save_ble_bonding_keys(RawAddress& bd_addr);
+static void btif_dm_save_ble_keys(const RawAddress& bd_addr);
 static btif_dm_pairing_cb_t pairing_cb;
 static btif_dm_oob_cb_t oob_cb;
 static btif_dm_metadata_cb_t metadata_cb{.le_audio_cache{40}};
@@ -1173,8 +1173,9 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
         ASSERTC(!bd_addr.IsEmpty(), "bd_addr is empty", BT_STATUS_PARM_INVALID);
         log::debug("Storing link key. key_type=0x{:x}, bond_type={}", p_auth_cmpl->key_type,
                    pairing_cb.bond_type);
-        bt_status_t ret = btif_storage_add_bonded_device(
-                bd_addr, p_auth_cmpl->key, p_auth_cmpl->key_type, pairing_cb.pin_code_len);
+        bt_status_t ret =
+                btif_storage_add_bredr_keys(bd_addr, pairing_cb.pairing_type, p_auth_cmpl->key,
+                                            p_auth_cmpl->key_type, pairing_cb.pin_code_len);
         ASSERTC(ret == BT_STATUS_SUCCESS, "storing link key failed", ret);
       } else {
         log::debug("Temporary key. Not storing. key_type=0x{:x}, bond_type={}",
@@ -3775,7 +3776,7 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
       btif_storage_remove_bonded_device(bd_addr);
       state = BT_BOND_STATE_NONE;
     } else {
-      btif_dm_save_ble_bonding_keys(bd_addr);
+      btif_dm_save_ble_keys(bd_addr);
 
       if (is_le_audio_capable_during_service_discovery(bd_addr) &&
           !btif_model_name_known(bd_addr) &&
@@ -3904,7 +3905,7 @@ void btif_dm_get_ble_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK* p_key_mask, Octet16*
   log::verbose("*p_key_mask=0x{:02x}", *p_key_mask);
 }
 
-static void btif_dm_save_ble_bonding_keys(RawAddress& bd_addr) {
+static void btif_dm_save_ble_keys(const RawAddress& bd_addr) {
   log::verbose("{}", bd_addr);
 
   if (bd_addr.IsEmpty()) {
@@ -3912,34 +3913,36 @@ static void btif_dm_save_ble_bonding_keys(RawAddress& bd_addr) {
     return;
   }
 
+  btif_storage_set_ble_pairing_type(bd_addr, pairing_cb.pairing_type);
+
   if (pairing_cb.ble.is_penc_key_rcvd) {
-    btif_storage_add_ble_bonding_key(bd_addr, (uint8_t*)&pairing_cb.ble.penc_key, BTM_LE_KEY_PENC,
-                                     sizeof(tBTM_LE_PENC_KEYS));
+    btif_storage_add_ble_keys(bd_addr, (uint8_t*)&pairing_cb.ble.penc_key, BTM_LE_KEY_PENC,
+                              sizeof(tBTM_LE_PENC_KEYS));
   }
 
   if (pairing_cb.ble.is_pid_key_rcvd) {
-    btif_storage_add_ble_bonding_key(bd_addr, (uint8_t*)&pairing_cb.ble.pid_key, BTM_LE_KEY_PID,
-                                     sizeof(tBTM_LE_PID_KEYS));
+    btif_storage_add_ble_keys(bd_addr, (uint8_t*)&pairing_cb.ble.pid_key, BTM_LE_KEY_PID,
+                              sizeof(tBTM_LE_PID_KEYS));
   }
 
   if (pairing_cb.ble.is_pcsrk_key_rcvd) {
-    btif_storage_add_ble_bonding_key(bd_addr, (uint8_t*)&pairing_cb.ble.pcsrk_key, BTM_LE_KEY_PCSRK,
-                                     sizeof(tBTM_LE_PCSRK_KEYS));
+    btif_storage_add_ble_keys(bd_addr, (uint8_t*)&pairing_cb.ble.pcsrk_key, BTM_LE_KEY_PCSRK,
+                              sizeof(tBTM_LE_PCSRK_KEYS));
   }
 
   if (pairing_cb.ble.is_lenc_key_rcvd) {
-    btif_storage_add_ble_bonding_key(bd_addr, (uint8_t*)&pairing_cb.ble.lenc_key, BTM_LE_KEY_LENC,
-                                     sizeof(tBTM_LE_LENC_KEYS));
+    btif_storage_add_ble_keys(bd_addr, (uint8_t*)&pairing_cb.ble.lenc_key, BTM_LE_KEY_LENC,
+                              sizeof(tBTM_LE_LENC_KEYS));
   }
 
   if (pairing_cb.ble.is_lcsrk_key_rcvd) {
-    btif_storage_add_ble_bonding_key(bd_addr, (uint8_t*)&pairing_cb.ble.lcsrk_key, BTM_LE_KEY_LCSRK,
-                                     sizeof(tBTM_LE_LCSRK_KEYS));
+    btif_storage_add_ble_keys(bd_addr, (uint8_t*)&pairing_cb.ble.lcsrk_key, BTM_LE_KEY_LCSRK,
+                              sizeof(tBTM_LE_LCSRK_KEYS));
   }
 
   if (pairing_cb.ble.is_lidk_key_rcvd) {
     uint8_t empty[] = {};
-    btif_storage_add_ble_bonding_key(bd_addr, empty, BTM_LE_KEY_LID, 0);
+    btif_storage_add_ble_keys(bd_addr, empty, BTM_LE_KEY_LID, 0);
   }
 }
 
