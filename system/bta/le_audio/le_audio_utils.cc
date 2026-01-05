@@ -135,49 +135,6 @@ AudioContexts GetAudioContextsFromSourceMetadata(
   return track_contexts;
 }
 
-AudioContexts GetAudioContextsFromSinkMetadata(
-        const std::vector<struct record_track_metadata_v7>& sink_metadata) {
-  AudioContexts all_track_contexts;
-
-  for (const auto& entry : sink_metadata) {
-    auto track = entry.base;
-    if (track.source == AUDIO_SOURCE_INVALID) {
-      continue;
-    }
-    LeAudioContextType track_context;
-
-    log::debug(
-            "source={}(0x{:02x}), gain={:f}, destination device=0x{:08x}, "
-            "destination device address={:32s}",
-            audioSourceToStr(track.source), track.source, track.gain, track.dest_device,
-            track.dest_device_address);
-
-    if (track.source == AUDIO_SOURCE_MIC) {
-      track_context = LeAudioContextType::LIVE;
-
-    } else if (track.source == AUDIO_SOURCE_VOICE_COMMUNICATION) {
-      track_context = LeAudioContextType::CONVERSATIONAL;
-
-    } else {
-      /* Fallback to voice assistant
-       * This will handle also a case when the device is
-       * AUDIO_SOURCE_VOICE_RECOGNITION
-       */
-      track_context = LeAudioContextType::VOICEASSISTANTS;
-      log::warn(
-              "Could not match the recording track type to group available "
-              "context. Using context {}.",
-              ToString(track_context));
-    }
-
-    all_track_contexts.set(track_context);
-  }
-
-  log::info("Allowed contexts from sink metadata: {} (0x{:08x})",
-            bluetooth::common::ToString(all_track_contexts), all_track_contexts.value());
-  return all_track_contexts;
-}
-
 bluetooth::le_audio::btle_audio_codec_index_t translateLeAudioCodecIdToCodecType(
         const types::LeAudioCodecId& codecId, std::optional<uint32_t> sampling_frequency_hz) {
   if (codecId == types::LeAudioCodecIdLc3) {

@@ -897,19 +897,6 @@ uint16_t LeAudioDeviceGroup::GetRemoteDelay(uint8_t direction) const {
 
 BidirectionalPair<bool> LeAudioDeviceGroup::GetDirectionSupport(
         types::LeAudioContextType ctx_type) const {
-  if (!com_android_bluetooth_flags_leaudio_use_context_type_manager()) {
-    BidirectionalPair<bool> remote_directions = {true, true};
-    // Remove the Source support if Sink only scenario is used
-    // Note: With the RINGTONE we should already prepare for a call.
-    if ((types::kLeAudioContextAllRemoteSinkOnly.test(ctx_type) &&
-         (ctx_type != types::LeAudioContextType::RINGTONE)) ||
-        ctx_type == types::LeAudioContextType::UNSPECIFIED) {
-      log::debug("Remote source not supported for {}", common::ToString(ctx_type));
-      remote_directions.source = false;
-    }
-    return remote_directions;
-  }
-
   auto audio_context_type_manager = AudioContextTypeManager::Get();
   if (audio_context_type_manager == nullptr) {
     log::warn("audio_context_type_manager is nullptr");
@@ -984,22 +971,6 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
         continue;
       }
 
-      if (!com_android_bluetooth_flags_leaudio_use_context_type_manager()) {
-        if (ctx_type == types::LeAudioContextType::VOICEASSISTANTS ||
-            ctx_type == types::LeAudioContextType::GAME) {
-          // For GAME and VOICE ASSISTANT, ignore direction if it is not supported only on a single
-          // direction.
-          auto group_contexts = GetSupportedContexts(types::kLeAudioDirectionBoth);
-          if (group_contexts.test(ctx_type)) {
-            auto direction_contexs = device->GetSupportedContexts(remote_direction);
-            if (!direction_contexs.test(ctx_type)) {
-              log::warn("Device {} has no {} context support", device->address_,
-                        common::ToString(ctx_type));
-              continue;
-            }
-          }
-        }
-      }
       has_location.get(remote_direction) = true;
       auto& direction_req = (remote_direction == types::kLeAudioDirectionSink)
                                     ? new_req.sink_requirements
@@ -1132,8 +1103,7 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
 bool LeAudioDeviceGroup::UpdateAudioSetConfigurationCache(LeAudioContextType ctx_type,
                                                           bool use_preference) const {
   auto requirements = GetAudioSetConfigurationRequirements(ctx_type);
-  if (com_android_bluetooth_flags_leaudio_use_context_type_manager() && !requirements.sink_pacs &&
-      !requirements.source_pacs) {
+  if (!requirements.sink_pacs && !requirements.source_pacs) {
     log::debug("No requirements for context type: {}", common::ToString(ctx_type));
     return false;
   }
