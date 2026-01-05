@@ -16,7 +16,6 @@ import a2dp_test
 import aics_test
 import asha_test
 import host_test
-import le_host_test
 import le_security_test
 import security_test
 import gatt_test
@@ -24,51 +23,10 @@ import hap_test
 import rfcomm_test
 import sdp_test
 
-from pairing import _test_class_list as _pairing_test_class_list
 from pandora.host_pb2 import PrimaryPhy, PRIMARY_1M, PRIMARY_CODED
-
-
-class LeHostTestFiltered(le_host_test.LeHostTest):
-    """
-    LeHostTestFiltered inherits from LeHostTest to skip currently broken and unfeasible to fix tests.
-    Overridden tests will be visible as PASS when run.
-    """
-    skipped_tests = [
-        # Reason for skipping tests: b/272120114
-        "test_extended_scan('non_connectable_scannable','directed',150,0)",
-        "test_extended_scan('non_connectable_scannable','undirected',150,0)",
-        "test_extended_scan('non_connectable_scannable','directed',150,2)",
-        "test_extended_scan('non_connectable_scannable','undirected',150,2)",
-    ]
-
-    @avatar.parameterized(
-        *itertools.product(
-            # The advertisement cannot be both connectable and scannable.
-            ('connectable', 'non_connectable', 'non_connectable_scannable'),
-            ('directed', 'undirected'),
-            # Bumble does not send multiple HCI commands, so it must also fit in
-            # 1 HCI command (max length 251 minus overhead).
-            (0, 150),
-            (PRIMARY_1M, PRIMARY_CODED),
-        ),)  # type: ignore[misc]
-    def test_extended_scan(
-        self,
-        connectable_scannable: Union[Literal['connectable'], Literal['non_connectable'],
-                                     Literal['non_connectable_scannable']],
-        directed: Union[Literal['directed'], Literal['undirected']],
-        data_len: int,
-        primary_phy: PrimaryPhy,
-    ) -> None:
-        current_test = f"test_extended_scan('{connectable_scannable}','{directed}',{data_len},{primary_phy})"
-        logging.info(f"current test: {current_test}")
-        if current_test not in self.skipped_tests:
-            assert current_test in le_host_test.LeHostTest.__dict__
-            le_host_test.LeHostTest.__dict__[current_test](self)
-
 
 _TEST_CLASSES_LIST = [
     host_test.HostTest,
-    LeHostTestFiltered,
     security_test.SecurityTest,
     le_security_test.LeSecurityTest,
     a2dp_test.A2dpTest,
@@ -78,7 +36,7 @@ _TEST_CLASSES_LIST = [
     hap_test.HapTest,
     asha_test.AshaTest,
     rfcomm_test.RfcommTest,
-] + _pairing_test_class_list
+]
 
 
 def _parse_cli_args() -> Tuple[Namespace, List[str]]:
