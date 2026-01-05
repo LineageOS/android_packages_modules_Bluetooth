@@ -207,22 +207,15 @@ public class RemoteDevices {
                                     != BluetoothDevice.ERROR) {
                                 deviceProperties.setDisconnected(TRANSPORT_BREDR);
                                 mAdapterService.notifyAclDisconnected(device, TRANSPORT_BREDR);
-                                if (Flags.broadcastTransportTypeOnReset()) {
-                                    intent.putExtra(
+                                intent.putExtra(
                                             BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_BREDR);
-                                    mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
-                                }
+                                mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
                             }
                             if (deviceProperties.getConnectionHandle(TRANSPORT_LE)
                                     != BluetoothDevice.ERROR) {
                                 deviceProperties.setDisconnected(TRANSPORT_LE);
                                 mAdapterService.notifyAclDisconnected(device, TRANSPORT_LE);
-                                if (Flags.broadcastTransportTypeOnReset()) {
-                                    intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_LE);
-                                    mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
-                                }
-                            }
-                            if (!Flags.broadcastTransportTypeOnReset()) {
+                                intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_LE);
                                 mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
                             }
                         }
