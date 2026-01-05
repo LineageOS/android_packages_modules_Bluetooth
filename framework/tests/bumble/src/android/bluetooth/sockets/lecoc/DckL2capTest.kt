@@ -698,7 +698,6 @@ class DckL2capTest() : Closeable {
 
     @Test
     @VirtualOnly
-    @RequiresFlagsEnabled("com.android.bluetooth.flags.fix_lecoc_socket_available")
     fun testBluetoothSocketAvailable() {
         Log.d(TAG, "testBluetoothSocketAvailable: Connect L2CAP")
         val (l2capServer, bluetoothSocket, channel) =
@@ -773,7 +772,6 @@ class DckL2capTest() : Closeable {
 
     @Test
     @VirtualOnly
-    @RequiresFlagsEnabled("com.android.bluetooth.flags.fix_lecoc_socket_available")
     fun testBluetoothSocketReadOoB() {
         Log.d(TAG, "testBluetoothSockeReadtOoB: Connect L2CAP")
         val (l2capServer, bluetoothSocket, channel) =
