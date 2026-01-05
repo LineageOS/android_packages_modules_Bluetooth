@@ -374,8 +374,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
       break;
     // RFCOMM connected or failed to connect
     case BTA_AG_OPEN_EVT:
-      if (com_android_bluetooth_flags_fix_hfp_rfcomm_collision_state_machine_error() &&
-          p_data->open.status != BTA_AG_SUCCESS) {
+      if (p_data->open.status != BTA_AG_SUCCESS) {
         RawAddress current_bda = p_data->open.bd_addr;  // Get address from event data
 
         // Check if another connection to the same device is already established, both sides may
