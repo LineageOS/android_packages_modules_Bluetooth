@@ -78,8 +78,8 @@ impl Top {
     pub fn reset(&mut self, frequency_size: i32, repeating: i32, sft_num: i32) {
         self.repeating = repeating;
         self.size = frequency_size;
-        self.num1 = frequency_size / 2 as libc::c_int;
-        self.num2 = self.num1 / 2 as libc::c_int;
+        self.num1 = frequency_size / 2;
+        self.num2 = self.num1 / 2;
         self.num3 = repeating / 2;
         self.num4 = (frequency_size - self.num1 - repeating) / 2;
         self.offset_num = sft_num;
