@@ -69,7 +69,8 @@ public:
   MOCK_METHOD(void, InteropDatabaseAdd, (uint16_t, RawAddress, size_t));
   MOCK_METHOD(void, InteropDatabaseClear, ());
   MOCK_METHOD(bool, InteropMatchAddrOrName,
-              (const interop_feature_t, RawAddress, bt_status_t (*)(RawAddress, bt_property_t*)));
+              (const interop_feature_t, RawAddress,
+               bt_status_t (*)(const RawAddress&, bt_property_t*)));
   MOCK_METHOD(bool, InteropMatchManufacturer, (const interop_feature_t, uint16_t));
   MOCK_METHOD(bool, InteropMatchVendorProductIds, (const interop_feature_t, uint16_t, uint16_t));
   MOCK_METHOD(bool, InteropDatabaseMatchVersion, (const interop_feature_t, uint16_t));
@@ -100,7 +101,7 @@ void interop_database_add(uint16_t feature, RawAddress addr, size_t length) {
 void interop_database_clear() { localIopMock->InteropDatabaseClear(); }
 
 bool interop_match_addr_or_name(const interop_feature_t feature, RawAddress addr,
-                                bt_status_t (*get_remote_device_property)(RawAddress,
+                                bt_status_t (*get_remote_device_property)(const RawAddress&,
                                                                           bt_property_t*)) {
   return localIopMock->InteropMatchAddrOrName(feature, addr, get_remote_device_property);
 }
