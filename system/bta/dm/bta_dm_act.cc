@@ -89,7 +89,8 @@ static void bta_dm_set_eir(char* local_name);
 static void bta_dm_disable_conn_down_timer_cback(void* data);
 static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, tBTA_SYS_ID id, uint8_t app_id,
                             const RawAddress& peer_addr);
-static void bta_dm_adjust_roles(bool delay_role_switch);
+static void bta_dm_adjust_roles();
+static void bta_dm_adjust_roles_delayed();
 static void bta_dm_ctrl_features_rd_cmpl_cback(tHCI_STATUS result);
 static tBTA_DM_CONNECTION_INFO bta_dm_get_conn_info(const RawAddress& target);
 
@@ -740,7 +741,7 @@ static void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {
     bta_dm_acl_cb.p_acl_cback(BTA_DM_LINK_UP_EVT, &conn);
     log::debug("Executed security callback for new connection available");
   }
-  bta_dm_adjust_roles(true);
+  bta_dm_adjust_roles_delayed();
 }
 
 void BTA_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {
@@ -800,7 +801,7 @@ static void bta_dm_acl_down(const AclLinkSpec& link_spec) {
     bta_dm_acl_cb.p_acl_cback(BTA_DM_LINK_DOWN_EVT, &conn);
   }
 
-  bta_dm_adjust_roles(true);
+  bta_dm_adjust_roles_delayed();
   bta_dm_remove_on_disconnect(bd_addr, transport);
 }
 
@@ -931,7 +932,7 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, tBTA_SYS_ID id, uint8_t
      excessive switch requests when individual profile busy/idle status
      changes */
   if ((status != BTA_SYS_CONN_BUSY) && (status != BTA_SYS_CONN_IDLE)) {
-    bta_dm_adjust_roles(false);
+    bta_dm_adjust_roles();
   }
 }
 
@@ -944,21 +945,10 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, tBTA_SYS_ID id, uint8_t
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_delay_role_switch_cback(void* /* data */) {
-  log::verbose("initiating Delayed RS");
-  bta_dm_adjust_roles(false);
-}
+static void bta_dm_delay_role_switch_cback(void* /* data */) { bta_dm_adjust_roles(); }
 
-/*******************************************************************************
- *
- * Function         bta_dm_adjust_roles
- *
- * Description      Adjust roles
- *
- * Returns          void
- *
- ******************************************************************************/
-static void bta_dm_adjust_roles(bool delay_role_switch) {
+// TODO (b/472561734): Remove this function once the flag role_contention_policy is shipped
+static void adjust_roles(bool delay_role_switch) {
   for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
     auto& peer_device = bta_dm_cb.device_list.peer_device[i];
 
@@ -996,6 +986,75 @@ static void bta_dm_adjust_roles(bool delay_role_switch) {
       alarm_set_on_mloop(bta_dm_cb.switch_delay_timer, delay, bta_dm_delay_role_switch_cback, NULL);
     }
   }
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_dm_adjust_roles
+ *
+ * Description      Adjust roles
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+static void bta_dm_adjust_roles() {
+  if (!com_android_bluetooth_flags_role_contention_policy()) {
+    adjust_roles(false);
+    return;
+  }
+
+  if (alarm_is_scheduled(bta_dm_cb.switch_delay_timer)) {
+    alarm_cancel(bta_dm_cb.switch_delay_timer);
+  }
+
+  for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
+    auto& peer_device = bta_dm_cb.device_list.peer_device[i];
+
+    // Ignore non-BR/EDR connections and connections which prefer peripheral role
+    if (!peer_device.is_connected() || peer_device.transport != BT_TRANSPORT_BR_EDR ||
+        peer_device.pref_role == BTA_PERIPHERAL_ROLE_ONLY) {
+      continue;
+    }
+
+    // If there is only one connection, switch roles is not needed unless central role is preferred
+    if (peer_device.pref_role != BTA_CENTRAL_ROLE_ONLY && bta_dm_cb.device_list.count <= 1) {
+      continue;
+    }
+
+    const tBTM_STATUS status =
+            get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(peer_device.peer_bdaddr);
+    switch (status) {
+      case tBTM_STATUS::BTM_SUCCESS:
+        log::debug("Role policy already set to central peer:{}", peer_device.peer_bdaddr);
+        break;
+      case tBTM_STATUS::BTM_CMD_STARTED:
+        log::debug("Role policy started to central peer:{}", peer_device.peer_bdaddr);
+        break;
+      default:
+        log::warn("Unable to set role policy to central peer:{}", peer_device.peer_bdaddr);
+        break;
+    }
+  }
+}
+
+static void bta_dm_adjust_roles_delayed() {
+  /* Initiating immediate role switch with certain remote devices has
+   * caused issues due to role switch colliding with link encryption
+   * setup and causing encryption and in turn link loss. */
+  if (!com_android_bluetooth_flags_role_contention_policy()) {
+    adjust_roles(true);
+    return;
+  }
+
+  if (alarm_is_scheduled(bta_dm_cb.switch_delay_timer)) {
+    alarm_cancel(bta_dm_cb.switch_delay_timer);
+  }
+
+  uint64_t delay = bluetooth::os::GenerateRandom() %
+                           (BTA_DM_MAX_SWITCH_DELAY_MS - BTA_DM_MIN_SWITCH_DELAY_MS) +
+                   BTA_DM_MIN_SWITCH_DELAY_MS;
+  log::debug("Set timer to delay role switch:{}", delay);
+  alarm_set_on_mloop(bta_dm_cb.switch_delay_timer, delay, bta_dm_delay_role_switch_cback, NULL);
 }
 
 /*******************************************************************************
