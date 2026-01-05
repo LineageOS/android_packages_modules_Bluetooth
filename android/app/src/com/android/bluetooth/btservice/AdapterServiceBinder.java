@@ -110,7 +110,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         mService = svc;
     }
 
-    public AdapterService getService() {
+    private AdapterService getService() {
         if (!mService.isAvailable()) {
             return null;
         }
