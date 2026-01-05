@@ -703,6 +703,39 @@ public final class BondStateMachine extends StateMachine {
         }
     }
 
+    /** Converts native pairing variant to Java pairing variant */
+    private static int getPairingVariant(
+            int transport, int pairingAlgorithm, int nativePairingVariant) {
+        if (transport == BluetoothDevice.TRANSPORT_BREDR
+                && pairingAlgorithm == BluetoothDevice.PAIRING_ALGORITHM_BREDR_LEGACY) {
+            if (nativePairingVariant == AbstractionLayer.BT_LEGACY_PAIRING_VARIANT_PIN) {
+                return BluetoothDevice.PAIRING_VARIANT_DISPLAY_PIN;
+            } else if (nativePairingVariant == AbstractionLayer.BT_LEGACY_PAIRING_VARIANT_PIN_16) {
+                return BluetoothDevice.PAIRING_VARIANT_PIN_16_DIGITS;
+            } else {
+                logE(
+                        "getPairingVariant: Unknown legacy pairing variant("
+                                + nativePairingVariant
+                                + ") for "
+                                + transport
+                                + " "
+                                + pairingAlgorithm);
+                return BluetoothDevice.PAIRING_VARIANT_DISPLAY_PIN;
+            }
+        }
+
+        return switch (nativePairingVariant) {
+            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_CONFIRMATION ->
+                    BluetoothDevice.PAIRING_VARIANT_PASSKEY_CONFIRMATION;
+            case AbstractionLayer.BT_SSP_VARIANT_CONSENT -> BluetoothDevice.PAIRING_VARIANT_CONSENT;
+            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_ENTRY ->
+                    BluetoothDevice.PAIRING_VARIANT_PASSKEY;
+            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_NOTIFICATION ->
+                    BluetoothDevice.PAIRING_VARIANT_DISPLAY_PASSKEY;
+            default -> BluetoothDevice.PAIRING_VARIANT_CONSENT;
+        };
+    }
+
     /** Callback from native indicating a bond state change */
     void bondStateChangeCallback(
             int status,
@@ -710,7 +743,7 @@ public final class BondStateMachine extends StateMachine {
             int transport,
             int newState,
             int pairingAlgorithm,
-            int pairingVariant,
+            int nativePairingVariant,
             int hciReason) {
         BluetoothDevice device = mRemoteDevices.getDevice(address);
 
@@ -719,6 +752,8 @@ public final class BondStateMachine extends StateMachine {
             device = mAdapter.getRemoteDevice(Utils.getAddressStringFromByte(address));
             logD("bondStateChangeCallback: Unknown device:" + device);
         }
+
+        int pairingVariant = getPairingVariant(transport, pairingAlgorithm, nativePairingVariant);
 
         Message msg = obtainMessage(MESSAGE_BOND_STATE_CHANGE);
         msg.obj = device;
