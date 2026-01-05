@@ -269,3 +269,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "check_bond_status_before_pairing"
+    namespace: "bluetooth"
+    description: "Check bond status of the device and transport before proceeding with a new pairing request"
+    bug: "473128699"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
