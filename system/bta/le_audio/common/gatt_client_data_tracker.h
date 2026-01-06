@@ -218,12 +218,10 @@ public:
       return nullptr;
     }
 
-    tHCI_ROLE role;
-    auto role_status =
-            get_btm_client_interface().link_policy.BTM_GetRole(pseudo_addr, BT_TRANSPORT_LE, &role);
-    if (role_status != tBTM_STATUS::BTM_SUCCESS || role != HCI_ROLE_PERIPHERAL) {
-      log::warn("Unicast server is not available for this connection. {}, status: {}, AclRole: {}",
-                pseudo_addr, btm_status_text(role_status), hci_role_text(role));
+    auto role = get_btm_client_interface().link_policy.BTM_GetRole(pseudo_addr, BT_TRANSPORT_LE);
+    if (!role || role.value() != HCI_ROLE_PERIPHERAL) {
+      log::warn("Unicast server is not available for this connection. {}, AclRole: {}", pseudo_addr,
+                hci_role_text(role.value_or(HCI_ROLE_UNKNOWN)));
       BTA_GATTS_Close(p_data->conn.conn_id);
       return nullptr;
     }
