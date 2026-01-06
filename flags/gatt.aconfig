@@ -52,6 +52,16 @@ flag {
 }
 
 flag {
+    name: "check_mapclient_connection_policy_for_ancs"
+    namespace: "bluetooth"
+    description: "Check MapClient connection policy for ANCS"
+    bug: "473396352"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "le_subrate_manager"
     namespace: "bluetooth"
     description: "Add subrate manager to control LE subrate parameters"

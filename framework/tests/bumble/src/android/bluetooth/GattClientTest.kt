@@ -88,11 +88,11 @@ class GattClientTest {
 
     @After
     fun tearUp() {
-        InstrumentationRegistry.getInstrumentation().uiAutomation.dropShellPermissionIdentity()
         val bondedDevices = adapter.bondedDevices
         if (bondedDevices.contains(remoteLeDevice)) {
             remoteLeDevice.removeBond()
         }
+        InstrumentationRegistry.getInstrumentation().uiAutomation.dropShellPermissionIdentity()
         host.close()
     }
 

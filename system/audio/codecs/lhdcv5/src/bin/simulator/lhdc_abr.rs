@@ -72,15 +72,15 @@ impl LHDC_ABR {
         abr: &mut AutoBitRate,
         queueLen: uint32_t,
     ) -> int32_t {
-        let mut func_ret: int32_t = LHDC_FRET_SUCCESS as libc::c_int;
+        let mut func_ret: int32_t = LHDC_FRET_SUCCESS;
         let mut last_bitrate: uint32_t = 0;
         let mut last_bitrate_inx: u32 = 0;
         let mut new_abr_bitrate_inx: u32 = 0;
         let mut new_bitrate: u32 = 0;
         let mut new_bitrate_inx: u32 = 0;
         let upd_qual_status: bool = false;
-        let mut queueLength: uint32_t = 0 as libc::c_int as uint32_t;
-        let mut queueSumTmp: uint32_t = 0 as libc::c_int as uint32_t;
+        let mut queueLength: uint32_t = 0;
+        let mut queueSumTmp: uint32_t = 0;
 
         if self.handle_abr.down_bitrate_count >= ABR_DOWN_RATE_TIME_CNT {
             queueLength = self.handle_abr.down_bitrate_sum / self.handle_abr.down_bitrate_count;
@@ -293,7 +293,7 @@ impl LHDC_ABR {
         abr: &mut AutoBitRate,
         queue_len: uint32_t,
     ) -> int32_t {
-        let mut func_ret: int32_t = LHDC_FRET_ERROR as libc::c_int;
+        let mut func_ret: int32_t = LHDC_FRET_ERROR;
         // get current quality status (lhdc bitrate operation mode)
         let quality_status = abr.handle.enc.quality_status;
 

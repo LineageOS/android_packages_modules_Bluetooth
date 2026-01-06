@@ -56,11 +56,11 @@ impl WavFile {
         let mut chunk_hdr: wav_chunk_hdr_t = wav_chunk_hdr_t { id: 0, size: 0 };
         let mut file = std::fs::File::open(fname)?;
         file.read_exact(u32.as_mut_bytes())?;
-        if u32 == 0x46464952 as libc::c_int as libc::c_uint {
+        if u32 == 0x46464952 {
             file.read_exact(u32.as_mut_bytes())?;
             file.read_exact(u32.as_mut_bytes())?;
             file.read_exact(chunk_hdr.as_mut_bytes())?;
-            if chunk_hdr.id == 0x20746d66 as libc::c_int as libc::c_uint {
+            if chunk_hdr.id == 0x20746d66 {
                 file.read_exact(fmt.as_mut_bytes())?;
                 if chunk_hdr.size as libc::c_ulong
                     > ::core::mem::size_of::<wav_chunk_fmt_t>() as libc::c_ulong
@@ -69,7 +69,7 @@ impl WavFile {
                 }
                 loop {
                     file.read_exact(chunk_hdr.as_mut_bytes())?;
-                    if chunk_hdr.id == 0x61746164 as libc::c_int as libc::c_uint {
+                    if chunk_hdr.id == 0x61746164 {
                         break;
                     }
                     file.seek(SeekFrom::Current(chunk_hdr.size as _))?;

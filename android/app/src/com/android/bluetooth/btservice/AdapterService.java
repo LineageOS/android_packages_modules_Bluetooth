@@ -3152,8 +3152,11 @@ public class AdapterService extends Service {
             Log.w(TAG, header + "FAIL. No properties for this device");
             return false;
         }
-        if (deviceProp.getBondState() != BluetoothDevice.BOND_BONDED) {
-            Log.w(TAG, header + "FAIL. Device bond state is " + deviceProp.getBondState());
+        final int bondState = deviceProp.getBondState();
+        if (bondState == BluetoothDevice.BOND_NONE
+                || (bondState == BluetoothDevice.BOND_BONDING
+                        && !Flags.cancelPairingWhileRemoveBond())) {
+            Log.w(TAG, header + "FAIL. Device bond state is " + bondState);
             return false;
         }
         deviceProp.setBondingInitiatedLocally(false);

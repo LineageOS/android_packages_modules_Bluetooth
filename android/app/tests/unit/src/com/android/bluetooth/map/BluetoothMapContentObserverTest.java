@@ -479,6 +479,38 @@ public class BluetoothMapContentObserverTest {
     }
 
     @Test
+    public void testDeleteMessageMms_whenMessageIsLocked_returnsFalse() {
+        // Setup a message in the observer's internal list
+        Map<Long, BluetoothMapContentObserver.Msg> map = new HashMap<>();
+        BluetoothMapContentObserver.Msg msg =
+                createMsgWithTypeAndThreadId(Mms.MESSAGE_BOX_ALL, TEST_THREAD_ID);
+        map.put(TEST_HANDLE_ONE, msg);
+        mObserver.setMsgListMms(map, true);
+
+        // Create a cursor representing a locked message
+        MatrixCursor cursor = new MatrixCursor(new String[] {Mms.LOCKED, Mms.THREAD_ID});
+        cursor.addRow(new Object[] {1, TEST_THREAD_ID}); // 1 means locked
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
+
+        // Call the method under test
+        boolean result = mObserver.deleteMessageMms(TEST_HANDLE_ONE);
+
+        // Verify that the delete operation failed
+        assertThat(result).isFalse();
+
+        // Verify that no database modifications were attempted
+        verify(mMapMethodProxy, never()).contentResolverUpdate(any(), any(), any(), any(), any());
+        verify(mMapMethodProxy, never()).contentResolverDelete(any(), any(), any(), any());
+
+        // Verify that the internal message state is unchanged
+        BluetoothMapContentObserver.Msg msgAfter = mObserver.getMsgListMms().get(TEST_HANDLE_ONE);
+        assertThat(msgAfter).isNotNull();
+        assertThat(msgAfter.threadId).isEqualTo(TEST_THREAD_ID);
+    }
+
+    @Test
     public void testDeleteMessageSms_withNonDeletedThreadId() {
         Map<Long, BluetoothMapContentObserver.Msg> map = new HashMap<>();
         BluetoothMapContentObserver.Msg msg =

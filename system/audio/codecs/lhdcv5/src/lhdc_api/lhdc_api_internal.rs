@@ -159,8 +159,8 @@ pub const LHDC_ENC_MODE_OPTION_0: Mode = 0;
 pub type Mode = u32;
 
 fn lhdcv5_encoder_cal_frame_size_and_frames_in_packet(handle: &mut Parameters) -> int32_t {
-    if handle.bits_per_sample_ui != LHDC_ENC_IN_SMPL_FMT_S16 as i32 as u32
-        && handle.bits_per_sample_ui != LHDC_ENC_IN_SMPL_FMT_S24 as i32 as u32
+    if handle.bits_per_sample_ui != LHDC_ENC_IN_SMPL_FMT_S16
+        && handle.bits_per_sample_ui != LHDC_ENC_IN_SMPL_FMT_S24
     {
         error!("Invalid bits per sample ({})!", handle.bits_per_sample_ui);
         return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
@@ -168,26 +168,25 @@ fn lhdcv5_encoder_cal_frame_size_and_frames_in_packet(handle: &mut Parameters) -
     if handle.frame_duration == LHDC_ENC_IN_FRAME_5MS {
         match handle.sample_rate {
             44100 => {
-                if handle.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_44100KHZ as i32 as u32 {
+                if handle.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_44100KHZ {
                     error!("Invalid samples per frame ({})!", handle.samples_per_frame);
                     return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
                 }
             }
             48000 => {
-                if handle.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_48000KHZ as i32 as u32 {
+                if handle.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_48000KHZ {
                     error!("Invalid samples per frame ({})!", handle.samples_per_frame);
                     return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
                 }
             }
             96000 => {
-                if handle.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_96000KHZ as i32 as u32 {
+                if handle.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_96000KHZ {
                     error!("Invalid samples per frame ({})!", handle.samples_per_frame);
                     return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
                 }
             }
             192000 => {
-                if handle.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_192000KHZ as i32 as u32
-                {
+                if handle.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_192000KHZ {
                     error!("Invalid samples per frame ({})!", handle.samples_per_frame);
                     return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
                 }
@@ -201,26 +200,23 @@ fn lhdcv5_encoder_cal_frame_size_and_frames_in_packet(handle: &mut Parameters) -
         error!("Invalid frame duration ({})!", handle.frame_duration);
         return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
     }
-    if handle.encode_interval != LHDC_ENC_IN_INTERVAL_10MS as i32 as u32
-        && handle.encode_interval != LHDC_ENC_IN_INTERVAL_20MS as i32 as u32
+    if handle.encode_interval != LHDC_ENC_IN_INTERVAL_10MS
+        && handle.encode_interval != LHDC_ENC_IN_INTERVAL_20MS
     {
         error!("Invalid encode interval ({})!", handle.encode_interval);
         return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
     }
-    if handle.host_mtu_size < LHDC_ENC_IN_MTU_MIN as i32 as u32
-        || handle.host_mtu_size > LHDC_ENC_IN_MTU_MAX as i32 as u32
-    {
+    if handle.host_mtu_size < LHDC_ENC_IN_MTU_MIN || handle.host_mtu_size > LHDC_ENC_IN_MTU_MAX {
         error!("Invalid AVDTP MTU ({})!", handle.host_mtu_size);
         return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
     }
-    let bytes_per_sample: u32 =
-        (handle.bits_per_sample_ui).wrapping_div(8_i32 as u32).wrapping_mul(2_i32 as u32);
+    let bytes_per_sample: u32 = (handle.bits_per_sample_ui).wrapping_div(8).wrapping_mul(2);
     let bytes_per_frame: u32 = (handle.samples_per_frame).wrapping_mul(bytes_per_sample);
     debug!(
         "sampleRate({}) samples_per_frame({}) bits_per_sample({}) => bytes_per_pcm_frame({})",
         handle.sample_rate, handle.samples_per_frame, handle.bits_per_sample_ui, bytes_per_frame
     );
-    let target_bytes_per_second: u32 = (handle.actual_bitrate).wrapping_div(8_i32 as u32);
+    let target_bytes_per_second: u32 = (handle.actual_bitrate).wrapping_div(8);
     debug!(
         "target_bitrate({} kbps) actual_bitrate({})",
         handle.last_bitrate, handle.actual_bitrate,
@@ -233,7 +229,7 @@ fn lhdcv5_encoder_cal_frame_size_and_frames_in_packet(handle: &mut Parameters) -
     let bytes_per_tick: u32 = (handle.sample_rate)
         .wrapping_mul(bytes_per_sample)
         .wrapping_mul(handle.encode_interval)
-        .wrapping_div(1000_i32 as u32);
+        .wrapping_div(1000);
     let frames_per_tick: u32 =
         (bytes_per_tick as libc::c_float / bytes_per_frame as libc::c_float + 0.5f32) as u32;
     debug!(
@@ -243,7 +239,7 @@ fn lhdcv5_encoder_cal_frame_size_and_frames_in_packet(handle: &mut Parameters) -
     let max_output_bytes_per_tick: u32 =
         (max_output_bytes_per_frame * frames_per_tick as libc::c_float) as u32;
     let mut packet_per_tick: u32 = max_output_bytes_per_tick.wrapping_div(handle.host_mtu_size);
-    packet_per_tick = if packet_per_tick <= 0_i32 as u32 { 1_i32 as u32 } else { packet_per_tick };
+    packet_per_tick = if packet_per_tick <= 0 { 1 } else { packet_per_tick };
     handle.frame_per_packet = frames_per_tick.wrapping_div(packet_per_tick);
     handle.max_frame_per_packet = handle.frame_per_packet;
     let max_mtu_limit: u32 = handle.host_mtu_size;
@@ -308,57 +304,52 @@ impl Parameters {
         mtu: u32,
         interval: u32,
     ) -> int32_t {
-        let ch_num: u32 = 2_i32 as uint32_t;
+        let ch_num: u32 = 2;
         let mut samples_per_frame: i32 = 0;
         let mut encoded_frame_size: int32_t = 0;
-        let mut tmp_bitrate_inx: u32 = 0_i32 as uint32_t;
-        if self.version != LHDC_ENC_IN_VERSION_1 as i32 as u32 {
+        let mut tmp_bitrate_inx: u32 = 0;
+        if self.version != LHDC_ENC_IN_VERSION_1 {
             error!("Invalid version ({})!", self.version);
             return LHDC_ENC_IN_FRET_INVALID_CODEC;
         }
-        if sampling_freq != LHDC_ENC_IN_SR_44100HZ as i32 as u32
-            && sampling_freq != LHDC_ENC_IN_SR_48000HZ as i32 as u32
-            && sampling_freq != LHDC_ENC_IN_SR_96000HZ as i32 as u32
-            && sampling_freq != LHDC_ENC_IN_SR_192000HZ as i32 as u32
+        if sampling_freq != LHDC_ENC_IN_SR_44100HZ
+            && sampling_freq != LHDC_ENC_IN_SR_48000HZ
+            && sampling_freq != LHDC_ENC_IN_SR_96000HZ
+            && sampling_freq != LHDC_ENC_IN_SR_192000HZ
         {
             error!("Invalid sampling frequency ({sampling_freq})");
             return LHDC_ENC_IN_FRET_INVALID_INPUT_PARAM;
         }
-        if bits_per_sample != LHDC_ENC_IN_SMPL_FMT_S16 as i32 as u32
-            && bits_per_sample != LHDC_ENC_IN_SMPL_FMT_S24 as i32 as u32
+        if bits_per_sample != LHDC_ENC_IN_SMPL_FMT_S16
+            && bits_per_sample != LHDC_ENC_IN_SMPL_FMT_S24
         {
             error!("Invalid bits per sample ({bits_per_sample})!");
             return LHDC_ENC_IN_FRET_INVALID_INPUT_PARAM;
         }
-        if bitrate_inx < LHDC_ENC_IN_QUALITY_LOW0 as i32 as u32
-            || bitrate_inx > LHDC_ENC_IN_QUALITY_AUTO as i32 as u32
-        {
+        if bitrate_inx < LHDC_ENC_IN_QUALITY_LOW0 || bitrate_inx > LHDC_ENC_IN_QUALITY_AUTO {
             error!("Invalid bit rate (index) ({bitrate_inx})");
             return LHDC_ENC_IN_FRET_INVALID_INPUT_PARAM;
         }
-        if frame_duration != 25_i32 as u32 && frame_duration != LHDC_ENC_IN_FRAME_5MS as i32 as u32
-        {
+        if frame_duration != 25 && frame_duration != LHDC_ENC_IN_FRAME_5MS {
             error!("Invalid frame duration ({frame_duration})!");
             return LHDC_ENC_IN_FRET_INVALID_INPUT_PARAM;
         }
-        if mtu < LHDC_ENC_IN_MTU_MIN as i32 as u32 || mtu > LHDC_ENC_IN_MTU_MAX as i32 as u32 {
+        if mtu < LHDC_ENC_IN_MTU_MIN || mtu > LHDC_ENC_IN_MTU_MAX {
             error!("Invalid MTU ({mtu})");
             return LHDC_ENC_IN_FRET_INVALID_INPUT_PARAM;
         }
-        if interval != LHDC_ENC_IN_INTERVAL_10MS as i32 as u32
-            && interval != LHDC_ENC_IN_INTERVAL_20MS as i32 as u32
-        {
+        if interval != LHDC_ENC_IN_INTERVAL_10MS && interval != LHDC_ENC_IN_INTERVAL_20MS {
             error!("Invalid encode interval ({interval})!");
             return LHDC_ENC_IN_FRET_INVALID_INPUT_PARAM;
         }
-        if self.min_bitrate_inx < LHDC_ENC_IN_QUALITY_LOW0 as i32 as u32
-            || self.min_bitrate_inx > LHDC_ENC_IN_QUALITY_LOW as i32 as u32
+        if self.min_bitrate_inx < LHDC_ENC_IN_QUALITY_LOW0
+            || self.min_bitrate_inx > LHDC_ENC_IN_QUALITY_LOW
         {
             error!("Error, min bit rate (index) ({})", self.min_bitrate_inx,);
             return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
         }
-        if self.max_bitrate_inx < LHDC_ENC_IN_QUALITY_LOW as i32 as u32
-            || self.max_bitrate_inx > LHDC_ENC_IN_QUALITY_MAX_BITRATE as i32 as u32
+        if self.max_bitrate_inx < LHDC_ENC_IN_QUALITY_LOW
+            || self.max_bitrate_inx > LHDC_ENC_IN_QUALITY_MAX_BITRATE
         {
             error!("Error, max bit rate (index) ({})", self.max_bitrate_inx,);
             return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
@@ -377,9 +368,7 @@ impl Parameters {
             _ => &g_bitrate_table_48k,
         };
         self.quality_status = bitrate_inx;
-        if bitrate_inx >= LHDC_ENC_IN_QUALITY_LOW0 as i32 as u32
-            && bitrate_inx < LHDC_ENC_IN_QUALITY_AUTO as i32 as u32
-        {
+        if bitrate_inx >= LHDC_ENC_IN_QUALITY_LOW0 && bitrate_inx < LHDC_ENC_IN_QUALITY_AUTO {
             tmp_bitrate_inx = bitrate_inx;
             tmp_bitrate_inx =
                 std::cmp::max(tmp_bitrate_inx as int32_t, self.min_bitrate_inx as int32_t) as u32;
@@ -387,8 +376,8 @@ impl Parameters {
                 std::cmp::min(tmp_bitrate_inx as int32_t, self.max_bitrate_inx as int32_t) as u32;
             self.last_bitrate = self.bitrate_table[tmp_bitrate_inx as usize] as u32;
             self.quality_status = tmp_bitrate_inx;
-        } else if bitrate_inx == LHDC_ENC_IN_QUALITY_AUTO as i32 as u32 {
-            tmp_bitrate_inx = LHDC_ENC_IN_QUALITY_LOW as i32 as u32;
+        } else if bitrate_inx == LHDC_ENC_IN_QUALITY_AUTO {
+            tmp_bitrate_inx = LHDC_ENC_IN_QUALITY_LOW;
             tmp_bitrate_inx =
                 std::cmp::max(tmp_bitrate_inx as int32_t, self.min_bitrate_inx as int32_t) as u32;
             tmp_bitrate_inx =
@@ -402,15 +391,14 @@ impl Parameters {
         self.frame_duration = frame_duration;
         self.host_mtu_size = mtu;
         self.encode_interval = interval;
-        self.max_frame_per_interval =
-            interval.wrapping_mul(10_i32 as u32).wrapping_div(frame_duration);
+        self.max_frame_per_interval = interval.wrapping_mul(10).wrapping_div(frame_duration);
         self.input_cbuf.reset();
         if lhdc_enc_init(
             ch_num as i32,
             self.bits_per_sample as i32,
             sampling_freq as i32,
             frame_duration as i32,
-            (self.last_bitrate).wrapping_mul(1000_i32 as u32) as libc::c_int,
+            (self.last_bitrate).wrapping_mul(1000) as libc::c_int,
             &mut self.lhdc_enc,
         )
         .is_err()
@@ -420,33 +408,28 @@ impl Parameters {
         }
         lhdc_enc_get_samples_per_frame(&mut samples_per_frame, &mut self.lhdc_enc);
         self.samples_per_frame = samples_per_frame as _;
-        if self.frame_duration == LHDC_ENC_IN_FRAME_5MS as i32 as u32 {
+        if self.frame_duration == LHDC_ENC_IN_FRAME_5MS {
             match self.sample_rate {
                 44100 => {
-                    if self.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_44100KHZ as i32 as u32
-                    {
+                    if self.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_44100KHZ {
                         error!("Invalid samples per frame ({})!", self.samples_per_frame,);
                         return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
                     }
                 }
                 48000 => {
-                    if self.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_48000KHZ as i32 as u32
-                    {
+                    if self.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_48000KHZ {
                         error!("Invalid samples per frame ({})!", self.samples_per_frame,);
                         return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
                     }
                 }
                 96000 => {
-                    if self.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_96000KHZ as i32 as u32
-                    {
+                    if self.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_96000KHZ {
                         error!("Invalid samples per frame ({})!", self.samples_per_frame,);
                         return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
                     }
                 }
                 192000 => {
-                    if self.samples_per_frame
-                        != LHDC_ENC_IN_SAMPLE_FRAME_5MS_192000KHZ as i32 as u32
-                    {
+                    if self.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_192000KHZ {
                         error!("Invalid samples per frame ({})!", self.samples_per_frame,);
                         return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
                     }
@@ -463,10 +446,10 @@ impl Parameters {
         lhdc_enc_get_encoded_frame_size(&mut encoded_frame_size, &mut self.lhdc_enc);
         self.encoded_frame_size = encoded_frame_size as _;
         self.actual_bitrate = (self.encoded_frame_size)
-            .wrapping_mul(8_i32 as u32)
-            .wrapping_mul(LHDC_ENC_IN_FRAME_1S as i32 as u32)
+            .wrapping_mul(8)
+            .wrapping_mul(LHDC_ENC_IN_FRAME_1S)
             .wrapping_div(self.frame_duration);
-        if self.sample_rate == LHDC_ENC_IN_SR_44100HZ as i32 as u32 {
+        if self.sample_rate == LHDC_ENC_IN_SR_44100HZ {
             self.actual_bitrate =
                 (self.actual_bitrate as libc::c_float * 0.91875f64 as libc::c_float) as u32;
         }
@@ -505,7 +488,7 @@ pub fn lhdcv5_encoder_get_bitrate_inx(
     bitrate_inx: &mut u32,
     bitrate_table: &[i32],
 ) -> int32_t {
-    let mut index: u32 = 0_i32 as uint32_t;
+    let mut index: u32 = 0;
     if bitrate > bitrate_table[bitrate_table.len() - 1] as u32 {
         return LHDC_ENC_IN_FRET_INVALID_INPUT_PARAM;
     }
@@ -520,10 +503,8 @@ pub fn lhdcv5_encoder_get_bitrate_inx(
 }
 
 pub fn lhdcv5_encoder_set_target_bitrate_inx(lhdc: &mut Parameters, bitrate_inx: u32) -> int32_t {
-    let mut last_bitrate_inx: u32 = LHDC_ENC_IN_QUALITY_LOW as i32 as uint32_t;
-    if bitrate_inx < LHDC_ENC_IN_QUALITY_LOW0 as i32 as u32
-        || bitrate_inx > LHDC_ENC_IN_QUALITY_MAX_BITRATE as i32 as u32
-    {
+    let mut last_bitrate_inx: u32 = LHDC_ENC_IN_QUALITY_LOW;
+    if bitrate_inx < LHDC_ENC_IN_QUALITY_LOW0 || bitrate_inx > LHDC_ENC_IN_QUALITY_MAX_BITRATE {
         error!("Input parameter is invalid ({bitrate_inx})!");
         return LHDC_ENC_IN_FRET_INVALID_INPUT_PARAM;
     }
@@ -550,16 +531,16 @@ pub fn lhdcv5_encoder_set_target_bitrate_inx(lhdc: &mut Parameters, bitrate_inx:
 }
 
 pub fn lhdcv5_encoder_set_max_bitrate_inx(lhdc: &mut Parameters, max_bitrate_inx: u32) -> int32_t {
-    let mut upd_max_bitrate: u32 = 400_i32 as uint32_t;
-    if max_bitrate_inx < LHDC_ENC_IN_QUALITY_LOW as i32 as u32
-        || max_bitrate_inx > LHDC_ENC_IN_QUALITY_MAX_BITRATE as i32 as u32
+    let mut upd_max_bitrate: u32 = 400;
+    if max_bitrate_inx < LHDC_ENC_IN_QUALITY_LOW
+        || max_bitrate_inx > LHDC_ENC_IN_QUALITY_MAX_BITRATE
     {
         error!("Input MAX. bit rate (index) is invalid ({max_bitrate_inx})");
         return LHDC_ENC_IN_FRET_INVALID_INPUT_PARAM;
     }
     if max_bitrate_inx != lhdc.max_bitrate_inx {
         lhdc.max_bitrate_inx = max_bitrate_inx;
-        if lhdc.quality_status < LHDC_ENC_IN_QUALITY_AUTO as i32 as u32
+        if lhdc.quality_status < LHDC_ENC_IN_QUALITY_AUTO
             && lhdc.quality_status > lhdc.max_bitrate_inx
         {
             // savitech: for downgrade target bitrate limited by max bitrate
@@ -595,16 +576,14 @@ pub fn lhdcv5_encoder_set_max_bitrate_inx(lhdc: &mut Parameters, max_bitrate_inx
 }
 
 pub fn lhdcv5_encoder_set_min_bitrate_inx(lhdc: &mut Parameters, min_bitrate_inx: u32) -> int32_t {
-    let mut upd_min_bitrate: u32 = 400_i32 as uint32_t;
-    if min_bitrate_inx < LHDC_ENC_IN_QUALITY_LOW0 as i32 as u32
-        || min_bitrate_inx > LHDC_ENC_IN_QUALITY_LOW as i32 as u32
-    {
+    let mut upd_min_bitrate: u32 = 400;
+    if min_bitrate_inx < LHDC_ENC_IN_QUALITY_LOW0 || min_bitrate_inx > LHDC_ENC_IN_QUALITY_LOW {
         error!("Error, min bit rate(index) ({min_bitrate_inx})");
         return LHDC_ENC_IN_FRET_INVALID_INPUT_PARAM;
     }
     if min_bitrate_inx != lhdc.min_bitrate_inx {
         lhdc.min_bitrate_inx = min_bitrate_inx;
-        if lhdc.quality_status < LHDC_ENC_IN_QUALITY_AUTO as i32 as u32
+        if lhdc.quality_status < LHDC_ENC_IN_QUALITY_AUTO
             && lhdc.quality_status < lhdc.min_bitrate_inx
         {
             lhdc.quality_status = lhdc.min_bitrate_inx;
@@ -638,28 +617,28 @@ pub fn lhdcv5_encoder_set_min_bitrate_inx(lhdc: &mut Parameters, min_bitrate_inx
 }
 
 pub fn lhdcv5_encoder_get_frame_len(lhdc: &Parameters, samples_per_frame: &mut u32) -> int32_t {
-    if lhdc.frame_duration == LHDC_ENC_IN_FRAME_5MS as i32 as u32 {
+    if lhdc.frame_duration == LHDC_ENC_IN_FRAME_5MS {
         match lhdc.sample_rate {
             44100 => {
-                if lhdc.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_44100KHZ as i32 as u32 {
+                if lhdc.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_44100KHZ {
                     error!("Invalid samples per frame ({})!", lhdc.samples_per_frame,);
                     return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
                 }
             }
             48000 => {
-                if lhdc.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_48000KHZ as i32 as u32 {
+                if lhdc.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_48000KHZ {
                     error!("Invalid samples per frame ({})!", lhdc.samples_per_frame,);
                     return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
                 }
             }
             96000 => {
-                if lhdc.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_96000KHZ as i32 as u32 {
+                if lhdc.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_96000KHZ {
                     error!("Invalid samples per frame ({})!", lhdc.samples_per_frame,);
                     return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
                 }
             }
             192000 => {
-                if lhdc.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_192000KHZ as i32 as u32 {
+                if lhdc.samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_192000KHZ {
                     error!("Invalid samples per frame ({})!", lhdc.samples_per_frame,);
                     return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
                 }
@@ -684,39 +663,39 @@ pub fn lhdcv5_encoder_encode(
     written_bytes: &mut u32,
     out_frames: &mut u32,
 ) -> int32_t {
-    let ch_num: u32 = 2_i32 as uint32_t;
-    let mut out_frames_cnt: u32 = 0_i32 as uint32_t;
-    let mut encoded_bytes: int32_t = 0_i32;
-    let mut encoded_frame_size: int32_t = 0_i32;
-    *out_frames = 0_i32 as u32;
-    *written_bytes = 0_i32 as u32;
-    if lhdc.version != LHDC_ENC_IN_VERSION_1 as i32 as u32 {
+    let ch_num: u32 = 2;
+    let mut out_frames_cnt: u32 = 0;
+    let mut encoded_bytes: int32_t = 0;
+    let mut encoded_frame_size: int32_t = 0;
+    *out_frames = 0;
+    *written_bytes = 0;
+    if lhdc.version != LHDC_ENC_IN_VERSION_1 {
         error!("Invalid version ({})!", lhdc.version,);
         return LHDC_ENC_IN_FRET_INVALID_CODEC;
     }
     let samples_per_frame = lhdc.samples_per_frame;
-    if lhdc.frame_duration == LHDC_ENC_IN_FRAME_5MS as i32 as u32 {
+    if lhdc.frame_duration == LHDC_ENC_IN_FRAME_5MS {
         match lhdc.sample_rate {
             44100 => {
-                if samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_44100KHZ as i32 as u32 {
+                if samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_44100KHZ {
                     error!("Invalid samples per frame ({})!", samples_per_frame,);
                     return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
                 }
             }
             48000 => {
-                if samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_48000KHZ as i32 as u32 {
+                if samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_48000KHZ {
                     error!("Invalid samples per frame ({samples_per_frame})!");
                     return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
                 }
             }
             96000 => {
-                if samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_96000KHZ as i32 as u32 {
+                if samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_96000KHZ {
                     error!("Invalid samples per frame ({samples_per_frame})!");
                     return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
                 }
             }
             192000 => {
-                if samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_192000KHZ as i32 as u32 {
+                if samples_per_frame != LHDC_ENC_IN_SAMPLE_FRAME_5MS_192000KHZ {
                     error!("Invalid samples per frame ({samples_per_frame})!");
                     return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
                 }
@@ -733,15 +712,15 @@ pub fn lhdcv5_encoder_encode(
     let mut cbuf = &mut lhdc.input_cbuf;
     if lhdc.update_frame_info {
         lhdc.update_frame_info = false;
-        let mut predict_to_update_new_bitrate = 0_i32;
+        let mut predict_to_update_new_bitrate = 0;
         if cbuf.is_empty() {
-            predict_to_update_new_bitrate = 1_i32;
+            predict_to_update_new_bitrate = 1;
             debug!("LossyOnly - predict: empty buffer!");
         }
-        lhdc.update_frame_info = predict_to_update_new_bitrate != 1_i32;
-        if predict_to_update_new_bitrate == 1_i32 {
+        lhdc.update_frame_info = predict_to_update_new_bitrate != 1;
+        if predict_to_update_new_bitrate == 1 {
             if lhdc_enc_set_bitrate(
-                (lhdc.last_bitrate).wrapping_mul(1000_i32 as u32) as libc::c_int,
+                (lhdc.last_bitrate).wrapping_mul(1000) as libc::c_int,
                 &mut lhdc.lhdc_enc,
             )
             .is_err()
@@ -752,10 +731,10 @@ pub fn lhdcv5_encoder_encode(
             lhdc_enc_get_encoded_frame_size(&mut encoded_frame_size, &mut lhdc.lhdc_enc);
             lhdc.encoded_frame_size = encoded_frame_size as u32;
             lhdc.actual_bitrate = (lhdc.encoded_frame_size)
-                .wrapping_mul(8_i32 as u32)
-                .wrapping_mul(LHDC_ENC_IN_FRAME_1S as i32 as u32)
+                .wrapping_mul(8)
+                .wrapping_mul(LHDC_ENC_IN_FRAME_1S)
                 .wrapping_div(lhdc.frame_duration);
-            if lhdc.sample_rate == LHDC_ENC_IN_SR_44100HZ as i32 as u32 {
+            if lhdc.sample_rate == LHDC_ENC_IN_SR_44100HZ {
                 lhdc.actual_bitrate =
                     (lhdc.actual_bitrate as libc::c_float * 0.91875f64 as libc::c_float) as u32;
             }
@@ -768,19 +747,17 @@ pub fn lhdcv5_encoder_encode(
         }
     }
     let frame_per_packet = lhdc.max_frame_per_packet;
-    if frame_per_packet <= 0_i32 as u32 || frame_per_packet > lhdc.max_frame_per_interval {
+    if frame_per_packet <= 0 || frame_per_packet > lhdc.max_frame_per_interval {
         error!("Invalid number of frames per packet ({frame_per_packet})!");
         return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
     }
     encoded_frame_size = lhdc.encoded_frame_size as int32_t;
-    if encoded_frame_size <= 0_i32 || encoded_frame_size >= LHDC_ENC_IN_MTU_3MBPS as i32 {
+    if encoded_frame_size <= 0 || encoded_frame_size >= LHDC_ENC_IN_MTU_3MBPS as i32 {
         error!("Invalid encoded frames bytes ({})!", encoded_frame_size,);
         return LHDC_ENC_IN_FRET_CODEC_NOT_READY;
     }
-    let bytes_per_frame_in = samples_per_frame
-        .wrapping_mul(ch_num)
-        .wrapping_mul(lhdc.bits_per_sample)
-        .wrapping_div(8_i32 as u32);
+    let bytes_per_frame_in =
+        samples_per_frame.wrapping_mul(ch_num).wrapping_mul(lhdc.bits_per_sample).wrapping_div(8);
     let bytes_per_frame = (samples_per_frame.wrapping_mul(ch_num) as libc::c_ulong)
         .wrapping_mul(::core::mem::size_of::<int32_t>() as libc::c_ulong)
         as u32;
@@ -798,9 +775,9 @@ pub fn lhdcv5_encoder_encode(
     }
     // TODO(b/454096420) Should probably make the buffer an `i32` buffer by default
     let in_tmp = &mut lhdc.enc_in_buf;
-    if lhdc.bits_per_sample_ui == LHDC_ENC_IN_SMPL_FMT_S24 as i32 as u32 {
+    if lhdc.bits_per_sample_ui == LHDC_ENC_IN_SMPL_FMT_S24 {
         lhdcv5_encoder_deinterleave24(in_0, in_tmp, samples_per_frame as usize);
-    } else if lhdc.bits_per_sample_ui == LHDC_ENC_IN_SMPL_FMT_S16 as i32 as u32 {
+    } else if lhdc.bits_per_sample_ui == LHDC_ENC_IN_SMPL_FMT_S16 {
         lhdcv5_encoder_deinterleave16(in_0, in_tmp, samples_per_frame as usize);
     } else {
         error!("Invalid bits per sample ({})!", lhdc.bits_per_sample_ui,);
