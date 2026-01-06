@@ -180,3 +180,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "hfp_ag_rfc_race_condition_random_timer"
+    namespace: "bluetooth"
+    description: "Resolve HFP RFCOMM race condition in bta_ag_rfc_acp_open using random timer"
+    bug: "473274758"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
