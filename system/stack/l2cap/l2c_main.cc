@@ -226,8 +226,7 @@ static void process_l2cap_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
 
   /* if l2c free was already called that indicates stack being shutdown, donot process
    * any command*/
-  if (com_android_bluetooth_flags_avoid_l2c_processing_while_stack_shutdown() &&
-      is_l2c_cleanup_inprogress) {
+  if (is_l2c_cleanup_inprogress) {
     log::warn("Do not process any events when stack is being shutdown");
     return;
   }

@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "avoid_l2c_processing_while_stack_shutdown"
-    namespace: "bluetooth"
-    description: "Avoid l2cap processing while stack is shutdown"
-    bug: "379731768"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "invalidate_hci_handle_on_acl_removal"
     namespace: "bluetooth"
     description: "invalidate hci handle associated with lcb on acl removal"
