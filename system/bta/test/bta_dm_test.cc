@@ -137,7 +137,7 @@ TEST_F(BtaDmCustomAlarmTest, disable_first_pass_with_acl_links) {
   test::mock::stack_acl::BTM_GetNumAclLinks.body = []() { return 1; };
   bta_dm_cb.disabling = true;
   // ACL link is open
-  bta_dm_cb.device_list.count = 1;
+  bta_dm_cb.link_db.count = 1;
 
   bta_dm_disable();  // Waiting for all ACL connections to drain
   ASSERT_EQ(1, get_func_call_count("alarm_set_on_mloop"));
@@ -159,7 +159,7 @@ TEST_F(BtaDmCustomAlarmTest, disable_second_pass_with_acl_links) {
   test::mock::stack_acl::BTM_GetNumAclLinks.body = []() { return 1; };
   bta_dm_cb.disabling = true;
   // ACL link is open
-  bta_dm_cb.device_list.count = 1;
+  bta_dm_cb.link_db.count = 1;
 
   bta_dm_disable();  // Waiting for all ACL connections to drain
   ASSERT_EQ(1, get_func_call_count("alarm_set_on_mloop"));
@@ -206,21 +206,20 @@ TEST_F(BtaDmTest, bta_dm_set_encryption) {
   bta_dm_set_encryption(kRawAddress, transport, BTA_DM_ENCRYPT_CBACK, sec_act);
 
   // Setup a connected device
-  tBTA_DM_PEER_DEVICE* device =
-          bluetooth::legacy::testing::allocate_device_for(kRawAddress, transport);
-  ASSERT_TRUE(device != nullptr);
-  device->p_encrypt_cback = nullptr;
+  BtaDmLink* p_link = bluetooth::legacy::testing::allocate_link_for(kRawAddress, transport);
+  ASSERT_TRUE(p_link != nullptr);
+  p_link->p_encrypt_cback = nullptr;
 
   // Setup a device that is busy with another encryption
   // Fake indication that the encryption is in progress with non-null callback
-  device->p_encrypt_cback = BTA_DM_ENCRYPT_CBACK;
+  p_link->p_encrypt_cback = BTA_DM_ENCRYPT_CBACK;
   bta_dm_set_encryption(kRawAddress, transport, BTA_DM_ENCRYPT_CBACK, sec_act);
   ASSERT_EQ(0, get_func_call_count("BTM_SetEncryption"));
   ASSERT_EQ(1UL, BTA_DM_ENCRYPT_CBACK_queue.size());
   auto params = BTA_DM_ENCRYPT_CBACK_queue.front();
   BTA_DM_ENCRYPT_CBACK_queue.pop();
   ASSERT_EQ(BTA_BUSY, params.result);
-  device->p_encrypt_cback = nullptr;
+  p_link->p_encrypt_cback = nullptr;
 
   // Setup a device that fails encryption
   mock_btm_client_interface.security.BTM_SetEncryption =
@@ -234,7 +233,7 @@ TEST_F(BtaDmTest, bta_dm_set_encryption) {
   bta_dm_set_encryption(kRawAddress, transport, BTA_DM_ENCRYPT_CBACK, sec_act);
   ASSERT_EQ(1, get_func_call_count("BTM_SetEncryption"));
   ASSERT_EQ(0UL, BTA_DM_ENCRYPT_CBACK_queue.size());
-  device->p_encrypt_cback = nullptr;
+  p_link->p_encrypt_cback = nullptr;
 
   // Setup a device that successfully starts encryption
   mock_btm_client_interface.security.BTM_SetEncryption =
@@ -248,7 +247,7 @@ TEST_F(BtaDmTest, bta_dm_set_encryption) {
   bta_dm_set_encryption(kRawAddress, transport, BTA_DM_ENCRYPT_CBACK, sec_act);
   ASSERT_EQ(2, get_func_call_count("BTM_SetEncryption"));
   ASSERT_EQ(0UL, BTA_DM_ENCRYPT_CBACK_queue.size());
-  ASSERT_NE(nullptr, device->p_encrypt_cback);
+  ASSERT_NE(nullptr, p_link->p_encrypt_cback);
 
   BTA_DM_ENCRYPT_CBACK_queue = {};
 }
@@ -257,25 +256,24 @@ TEST_F(BtaDmTest, bta_dm_encrypt_cback) {
   const tBT_TRANSPORT transport{BT_TRANSPORT_LE};
 
   // Setup a connected device
-  tBTA_DM_PEER_DEVICE* device =
-          bluetooth::legacy::testing::allocate_device_for(kRawAddress, transport);
-  ASSERT_TRUE(device != nullptr);
+  BtaDmLink* p_link = bluetooth::legacy::testing::allocate_link_for(kRawAddress, transport);
+  ASSERT_TRUE(p_link != nullptr);
 
   // Encryption with no callback set
-  device->p_encrypt_cback = nullptr;
+  p_link->p_encrypt_cback = nullptr;
   bta_dm_encrypt_cback(kRawAddress, transport, nullptr, tBTM_STATUS::BTM_SUCCESS);
   ASSERT_EQ(0UL, BTA_DM_ENCRYPT_CBACK_queue.size());
 
   // Encryption with callback
-  device->p_encrypt_cback = BTA_DM_ENCRYPT_CBACK;
+  p_link->p_encrypt_cback = BTA_DM_ENCRYPT_CBACK;
   bta_dm_encrypt_cback(kRawAddress, transport, nullptr, tBTM_STATUS::BTM_SUCCESS);
-  device->p_encrypt_cback = BTA_DM_ENCRYPT_CBACK;
+  p_link->p_encrypt_cback = BTA_DM_ENCRYPT_CBACK;
   bta_dm_encrypt_cback(kRawAddress, transport, nullptr, tBTM_STATUS::BTM_WRONG_MODE);
-  device->p_encrypt_cback = BTA_DM_ENCRYPT_CBACK;
+  p_link->p_encrypt_cback = BTA_DM_ENCRYPT_CBACK;
   bta_dm_encrypt_cback(kRawAddress, transport, nullptr, tBTM_STATUS::BTM_NO_RESOURCES);
-  device->p_encrypt_cback = BTA_DM_ENCRYPT_CBACK;
+  p_link->p_encrypt_cback = BTA_DM_ENCRYPT_CBACK;
   bta_dm_encrypt_cback(kRawAddress, transport, nullptr, tBTM_STATUS::BTM_BUSY);
-  device->p_encrypt_cback = BTA_DM_ENCRYPT_CBACK;
+  p_link->p_encrypt_cback = BTA_DM_ENCRYPT_CBACK;
   bta_dm_encrypt_cback(kRawAddress, transport, nullptr, tBTM_STATUS::BTM_ILLEGAL_VALUE);
 
   ASSERT_EQ(5UL, BTA_DM_ENCRYPT_CBACK_queue.size());
@@ -433,9 +431,8 @@ TEST_F(BtaDmTest, bta_dm_disc_stop) { bta_dm_disc_stop(); }
 TEST_F(BtaDmCustomAlarmTest, bta_dm_sniff_cback) {
   // Setup a connected device
   const tBT_TRANSPORT transport{BT_TRANSPORT_BR_EDR};
-  tBTA_DM_PEER_DEVICE* device =
-          bluetooth::legacy::testing::allocate_device_for(kRawAddress, transport);
-  ASSERT_TRUE(device != nullptr);
+  BtaDmLink* p_link = bluetooth::legacy::testing::allocate_link_for(kRawAddress, transport);
+  ASSERT_TRUE(p_link != nullptr);
 
   // Trigger a sniff timer
   bta_dm_pm_start_timer(&bta_dm_cb.pm_timer[0], bta_pm_action_to_timer_idx(BTA_DM_PM_SNIFF), 10, 1,

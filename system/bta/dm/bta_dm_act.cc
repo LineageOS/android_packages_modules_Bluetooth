@@ -390,11 +390,10 @@ void bta_dm_disable() {
  *
  ******************************************************************************/
 static bool force_disconnect_all_acl_connections() {
-  const bool is_force_disconnect_needed = (bta_dm_cb.device_list.count > 0);
+  const bool is_force_disconnect_needed = (bta_dm_cb.link_db.count > 0);
 
-  for (auto i = 0; i < bta_dm_cb.device_list.count; i++) {
-    btm_remove_acl(bta_dm_cb.device_list.peer_device[i].peer_bdaddr,
-                   bta_dm_cb.device_list.peer_device[i].transport);
+  for (auto i = 0; i < bta_dm_cb.link_db.count; i++) {
+    btm_remove_acl(bta_dm_cb.link_db.links[i].addr, bta_dm_cb.link_db.links[i].transport);
   }
   return is_force_disconnect_needed;
 }
@@ -594,22 +593,22 @@ bool bta_dm_removal_pending(const RawAddress& bd_addr) {
 
 static void handle_role_change(const RawAddress& bd_addr, tHCI_ROLE new_role,
                                tHCI_STATUS hci_status) {
-  tBTA_DM_PEER_DEVICE* p_dev = bta_dm_find_peer_device(bd_addr);
-  if (!p_dev) {
+  BtaDmLink* p_link = bta_dm_find_link(bd_addr);
+  if (!p_link) {
     log::warn("Unable to find device for role change peer:{} new_role:{} hci_status:{}", bd_addr,
               RoleText(new_role), hci_error_code_text(hci_status));
     return;
   }
 
   log::info("Role change callback peer:{} info:{} new_role:{} dev count:{} hci_status:{}", bd_addr,
-            p_dev->info_text(), RoleText(new_role), bta_dm_cb.device_list.count,
+            p_link->info_text(), RoleText(new_role), bta_dm_cb.link_db.count,
             hci_error_code_text(hci_status));
 
-  if (p_dev->is_av_active()) {
+  if (p_link->is_av_active()) {
     bool need_policy_change = false;
 
     /* there's AV activity on this link */
-    if (new_role == HCI_ROLE_PERIPHERAL && bta_dm_cb.device_list.count > 1 &&
+    if (new_role == HCI_ROLE_PERIPHERAL && bta_dm_cb.link_db.count > 1 &&
         hci_status == HCI_SUCCESS) {
       /* more than one connections and the AV connection is role switched
        * to peripheral
@@ -635,7 +634,7 @@ static void handle_role_change(const RawAddress& bd_addr, tHCI_ROLE new_role,
     }
 
     if (need_policy_change) {
-      get_btm_client_interface().link_policy.BTM_block_role_switch_for(p_dev->peer_bdaddr);
+      get_btm_client_interface().link_policy.BTM_block_role_switch_for(p_link->addr);
     }
   } else {
     /* there's AV no activity on this link and role switch happened
@@ -652,8 +651,8 @@ void BTA_dm_report_role_change(const RawAddress bd_addr, tHCI_ROLE new_role,
 }
 
 static void handle_remote_features_complete(const RawAddress& bd_addr) {
-  tBTA_DM_PEER_DEVICE* p_dev = bta_dm_find_peer_device(bd_addr);
-  if (!p_dev) {
+  BtaDmLink* p_link = bta_dm_find_link(bd_addr);
+  if (!p_link) {
     log::warn("Unable to find device peer:{}", bd_addr);
     return;
   }
@@ -661,7 +660,7 @@ static void handle_remote_features_complete(const RawAddress& bd_addr) {
   if (bluetooth::shim::GetController()->SupportsSniffSubrating() &&
       acl_peer_supports_sniff_subrating(bd_addr)) {
     log::debug("Device supports sniff subrating peer:{}", bd_addr);
-    p_dev->set_both_device_ssr_capable();
+    p_link->set_both_device_ssr_capable();
   } else {
     log::debug("Device does NOT support sniff subrating peer:{}", bd_addr);
   }
@@ -671,23 +670,22 @@ void BTA_dm_notify_remote_features_complete(const RawAddress bd_addr) {
   do_in_main_thread(base::BindOnce(handle_remote_features_complete, bd_addr));
 }
 
-static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
-                                                tBT_TRANSPORT transport) {
-  for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
-    auto device = &bta_dm_cb.device_list.peer_device[i];
-    if (device->peer_bdaddr == bd_addr && device->transport == transport) {
-      return device;
+static BtaDmLink* allocate_link_for(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+  for (uint8_t i = 0; i < bta_dm_cb.link_db.count; i++) {
+    auto link = &bta_dm_cb.link_db.links[i];
+    if (link->addr == bd_addr && link->transport == transport) {
+      return link;
     }
   }
 
-  if (bta_dm_cb.device_list.count < BTA_DM_NUM_PEER_DEVICE) {
-    auto device = &bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count];
-    device->peer_bdaddr = bd_addr;
-    bta_dm_cb.device_list.count++;
+  if (bta_dm_cb.link_db.count < BTA_DM_NUM_LINKS) {
+    auto link = &bta_dm_cb.link_db.links[bta_dm_cb.link_db.count];
+    link->addr = bd_addr;
+    bta_dm_cb.link_db.count++;
     if (transport == BT_TRANSPORT_LE) {
-      bta_dm_cb.device_list.le_count++;
+      bta_dm_cb.link_db.le_count++;
     }
-    return device;
+    return link;
   }
   return nullptr;
 }
@@ -729,17 +727,17 @@ static void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {
     }
   }
 
-  auto device = allocate_device_for(bd_addr, transport);
-  if (device == nullptr) {
+  auto p_link = allocate_link_for(bd_addr, transport);
+  if (p_link == nullptr) {
     log::warn("Unable to allocate device resources for new connection");
     return;
   }
   log::info("Acl connected peer:{} transport:{} handle:{}", bd_addr, bt_transport_text(transport),
             acl_handle);
 
-  device->pref_role = get_preferred_role();
-  device->reset_device_info();
-  device->transport = transport;
+  p_link->pref_role = get_preferred_role();
+  p_link->reset_device_info();
+  p_link->transport = transport;
 
   if (bluetooth::shim::GetController()->SupportsSniffSubrating() &&
       acl_peer_supports_sniff_subrating(bd_addr)) {
@@ -749,7 +747,7 @@ static void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {
     // data is when the BTA_dm_notify_remote_features_complete()
     // callback has completed.  The below assignment is kept for
     // transitional informational purposes only.
-    device->set_both_device_ssr_capable();
+    p_link->set_both_device_ssr_capable();
   }
 
   if (bta_dm_acl_cb.p_acl_cback) {
@@ -785,23 +783,23 @@ static void bta_dm_acl_down(const AclLinkSpec& link_spec) {
   tBT_TRANSPORT transport = link_spec.transport;
 
   log::info("Device {} disconnected over transport {}", bd_addr, bt_transport_text(transport));
-  for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
-    auto device = &bta_dm_cb.device_list.peer_device[i];
-    if (device->peer_bdaddr == bd_addr && device->transport == transport) {
+  for (uint8_t i = 0; i < bta_dm_cb.link_db.count; i++) {
+    auto p_link = &bta_dm_cb.link_db.links[i];
+    if (p_link->addr == bd_addr && p_link->transport == transport) {
       // Move the last item into its place
-      if (i + 1 < bta_dm_cb.device_list.count) {
-        *device = bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count - 1];
+      if (i + 1 < bta_dm_cb.link_db.count) {
+        *p_link = bta_dm_cb.link_db.links[bta_dm_cb.link_db.count - 1];
       }
-      bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count - 1] = {};
+      bta_dm_cb.link_db.links[bta_dm_cb.link_db.count - 1] = {};
       break;
     }
   }
 
-  if (bta_dm_cb.device_list.count > 0) {
-    bta_dm_cb.device_list.count--;
+  if (bta_dm_cb.link_db.count > 0) {
+    bta_dm_cb.link_db.count--;
   }
-  if (transport == BT_TRANSPORT_LE && bta_dm_cb.device_list.le_count > 0) {
-    bta_dm_cb.device_list.le_count--;
+  if (transport == BT_TRANSPORT_LE && bta_dm_cb.link_db.le_count > 0) {
+    bta_dm_cb.link_db.le_count--;
   }
 
   if (bta_dm_cb.disabling && !BTM_GetNumAclLinks()) {
@@ -837,33 +835,33 @@ void BTA_dm_acl_down(const AclLinkSpec& link_spec) {
  *
  ******************************************************************************/
 static void bta_dm_check_av() {
-  uint8_t i;
-  tBTA_DM_PEER_DEVICE* p_dev;
+  if (bta_dm_cb.cur_av_count == 0) {
+    return;
+  }
 
-  if (bta_dm_cb.cur_av_count) {
-    log::info("av_count:{}", bta_dm_cb.cur_av_count);
-    for (i = 0; i < bta_dm_cb.device_list.count; i++) {
-      p_dev = &bta_dm_cb.device_list.peer_device[i];
-      log::warn("[{}]: info:{}, pending removal:{}", i, p_dev->info_text(), p_dev->is_connected());
-      if (p_dev->is_connected() && p_dev->is_av_active()) {
-        /* make central and take away the role switch policy */
-        const tBTM_STATUS status =
-                get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(p_dev->peer_bdaddr);
-        switch (status) {
-          case tBTM_STATUS::BTM_SUCCESS:
-            log::debug("Role policy already set to central peer:{}", p_dev->peer_bdaddr);
-            break;
-          case tBTM_STATUS::BTM_CMD_STARTED:
-            log::debug("Role policy started to central peer:{}", p_dev->peer_bdaddr);
-            break;
-          default:
-            log::warn("Unable to set role policy to central peer:{}", p_dev->peer_bdaddr);
-            break;
-        }
-        /* else either already central or can not switch for some reasons */
-        get_btm_client_interface().link_policy.BTM_block_role_switch_for(p_dev->peer_bdaddr);
-        break;
+  log::info("av_count:{}", bta_dm_cb.cur_av_count);
+
+  for (uint8_t i = 0; i < bta_dm_cb.link_db.count; i++) {
+    BtaDmLink* p_link = &bta_dm_cb.link_db.links[i];
+    log::warn("[{}]: info:{}, pending removal:{}", i, p_link->info_text(), p_link->is_active());
+    if (p_link->is_active() && p_link->is_av_active()) {
+      /* make central and take away the role switch policy */
+      const tBTM_STATUS status =
+              get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(p_link->addr);
+      switch (status) {
+        case tBTM_STATUS::BTM_SUCCESS:
+          log::debug("Role policy already set to central peer:{}", p_link->addr);
+          break;
+        case tBTM_STATUS::BTM_CMD_STARTED:
+          log::debug("Role policy started to central peer:{}", p_link->addr);
+          break;
+        default:
+          log::warn("Unable to set role policy to central peer:{}", p_link->addr);
+          break;
       }
+
+      get_btm_client_interface().link_policy.BTM_block_role_switch_for(p_link->addr);
+      return;
     }
   }
 }
@@ -899,26 +897,23 @@ static void bta_dm_disable_conn_down_timer_cback(void* /* data */) {
  ******************************************************************************/
 static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, tBTA_SYS_ID id, uint8_t app_id,
                             const RawAddress& peer_addr) {
-  uint8_t j;
-  tBTA_PREF_ROLES role;
-  tBTA_DM_PEER_DEVICE* p_dev;
-
   log::debug("BTA Role management callback count:{} status:{} peer:{}", bta_dm_cb.cur_av_count,
              bta_sys_conn_status_text(status), peer_addr);
 
-  p_dev = bta_dm_find_peer_device(peer_addr);
+  BtaDmLink* p_link = bta_dm_find_link(peer_addr);
+
   if (status == BTA_SYS_CONN_OPEN) {
-    if (p_dev) {
-      for (j = 1; j <= p_bta_dm_rm_cfg[0].app_id; j++) {
-        if (((p_bta_dm_rm_cfg[j].app_id == app_id) ||
-             (p_bta_dm_rm_cfg[j].app_id == BTA_ALL_APP_ID)) &&
-            (p_bta_dm_rm_cfg[j].id == id)) {
-          log::assert_that(p_bta_dm_rm_cfg[j].cfg <= BTA_PERIPHERAL_ROLE_ONLY,
+    if (p_link) {
+      for (uint8_t i = 1; i <= p_bta_dm_rm_cfg[0].app_id; i++) {
+        if ((p_bta_dm_rm_cfg[i].app_id == app_id || p_bta_dm_rm_cfg[i].app_id == BTA_ALL_APP_ID) &&
+            p_bta_dm_rm_cfg[i].id == id) {
+          log::assert_that(p_bta_dm_rm_cfg[i].cfg <= BTA_PERIPHERAL_ROLE_ONLY,
                            "Passing illegal preferred role:0x{:02x} [0x{:02x}<=>0x{:02x}]",
-                           p_bta_dm_rm_cfg[j].cfg, BTA_ANY_ROLE, BTA_PERIPHERAL_ROLE_ONLY);
-          role = static_cast<tBTA_PREF_ROLES>(p_bta_dm_rm_cfg[j].cfg);
-          if (role > p_dev->pref_role) {
-            p_dev->pref_role = role;
+                           p_bta_dm_rm_cfg[i].cfg, BTA_ANY_ROLE, BTA_PERIPHERAL_ROLE_ONLY);
+
+          tBTA_PREF_ROLES role = static_cast<tBTA_PREF_ROLES>(p_bta_dm_rm_cfg[i].cfg);
+          if (role > p_link->pref_role) {
+            p_link->pref_role = role;
           }
           break;
         }
@@ -928,16 +923,16 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, tBTA_SYS_ID id, uint8_t
 
   if (BTA_ID_AV == id) {
     if (status == BTA_SYS_CONN_BUSY) {
-      if (p_dev) {
-        p_dev->set_av_active();
+      if (p_link) {
+        p_link->set_av_active();
       }
       /* AV calls bta_sys_conn_open with the A2DP stream count as app_id */
       if (BTA_ID_AV == id) {
         bta_dm_cb.cur_av_count = bta_dm_get_av_count();
       }
     } else if (status == BTA_SYS_CONN_IDLE) {
-      if (p_dev) {
-        p_dev->reset_av_active();
+      if (p_link) {
+        p_link->reset_av_active();
       }
 
       /* get cur_av_count from connected services */
@@ -950,7 +945,7 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, tBTA_SYS_ID id, uint8_t
   /* Don't adjust roles for each busy/idle state transition to avoid
      excessive switch requests when individual profile busy/idle status
      changes */
-  if ((status != BTA_SYS_CONN_BUSY) && (status != BTA_SYS_CONN_IDLE)) {
+  if (status != BTA_SYS_CONN_BUSY && status != BTA_SYS_CONN_IDLE) {
     bta_dm_adjust_roles();
   }
 }
@@ -968,33 +963,33 @@ static void bta_dm_delay_role_switch_cback(void* /* data */) { bta_dm_adjust_rol
 
 // TODO (b/472561734): Remove this function once the flag role_contention_policy is shipped
 static void adjust_roles(bool delay_role_switch) {
-  for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
-    auto& peer_device = bta_dm_cb.device_list.peer_device[i];
+  for (uint8_t i = 0; i < bta_dm_cb.link_db.count; i++) {
+    auto& link = bta_dm_cb.link_db.links[i];
 
     // Ignore non-connected or non-BR/EDR devices
-    if (!peer_device.is_connected() || peer_device.transport != BT_TRANSPORT_BR_EDR) {
+    if (!link.is_active() || link.transport != BT_TRANSPORT_BR_EDR) {
       continue;
     }
 
     // If there is only one connection, switch roles is not needed unless central role is preferred
-    if (bta_dm_cb.device_list.count <= 1 && peer_device.pref_role != BTA_CENTRAL_ROLE_ONLY) {
+    if (bta_dm_cb.link_db.count <= 1 && link.pref_role != BTA_CENTRAL_ROLE_ONLY) {
       continue;
     }
 
     /* Initiating immediate role switch with certain remote devices has caused issues due to role
      * switch colliding with link encryption setup and causing encryption and in turn link loss. */
-    if (peer_device.pref_role != BTA_PERIPHERAL_ROLE_ONLY && !delay_role_switch) {
-      const tBTM_STATUS status = get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(
-              peer_device.peer_bdaddr);
+    if (link.pref_role != BTA_PERIPHERAL_ROLE_ONLY && !delay_role_switch) {
+      const tBTM_STATUS status =
+              get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(link.addr);
       switch (status) {
         case tBTM_STATUS::BTM_SUCCESS:
-          log::debug("Role policy already set to central peer:{}", peer_device.peer_bdaddr);
+          log::debug("Role policy already set to central peer:{}", link.addr);
           break;
         case tBTM_STATUS::BTM_CMD_STARTED:
-          log::debug("Role policy started to central peer:{}", peer_device.peer_bdaddr);
+          log::debug("Role policy started to central peer:{}", link.addr);
           break;
         default:
-          log::warn("Unable to set role policy to central peer:{}", peer_device.peer_bdaddr);
+          log::warn("Unable to set role policy to central peer:{}", link.addr);
           break;
       }
     } else {
@@ -1026,40 +1021,42 @@ static void bta_dm_adjust_roles() {
     alarm_cancel(bta_dm_cb.switch_delay_timer);
   }
 
+  auto& link_db = bta_dm_cb.link_db;
+
   // Ignore when there are only two connections and both are to the same device
-  if (bta_dm_cb.device_list.count == 2 && bta_dm_cb.device_list.le_count == 1 &&
-      bta_dm_cb.device_list.peer_device[0].peer_bdaddr ==
-              bta_dm_cb.device_list.peer_device[1].peer_bdaddr) {
+  if (link_db.count == 2 && link_db.le_count == 1 &&
+      link_db.links[0].addr == link_db.links[1].addr) {
     log::debug("Skipping role switch because both connections are to the same device {}",
-               bta_dm_cb.device_list.peer_device[0].peer_bdaddr);
+               link_db.links[0].addr);
     return;
   }
 
-  for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
-    auto& peer_device = bta_dm_cb.device_list.peer_device[i];
+  for (uint8_t i = 0; i < link_db.count; i++) {
+    auto& link = link_db.links[i];
 
     // Ignore non-BR/EDR connections and connections which prefer peripheral role
-    if (!peer_device.is_connected() || peer_device.transport != BT_TRANSPORT_BR_EDR ||
-        peer_device.pref_role == BTA_PERIPHERAL_ROLE_ONLY) {
+    if (!link.is_active() || link.transport != BT_TRANSPORT_BR_EDR ||
+        link.pref_role == BTA_PERIPHERAL_ROLE_ONLY) {
       continue;
     }
 
-    // If there is only one connection, switch roles is not needed unless central role is preferred
-    if (peer_device.pref_role != BTA_CENTRAL_ROLE_ONLY && bta_dm_cb.device_list.count <= 1) {
+    // If there is only one connection, switch roles is not needed unless central role is
+    // preferred
+    if (link.pref_role != BTA_CENTRAL_ROLE_ONLY && link_db.count <= 1) {
       continue;
     }
 
     const tBTM_STATUS status =
-            get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(peer_device.peer_bdaddr);
+            get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(link.addr);
     switch (status) {
       case tBTM_STATUS::BTM_SUCCESS:
-        log::debug("Role policy already set to central peer:{}", peer_device.peer_bdaddr);
+        log::debug("Role policy already set to central peer:{}", link.addr);
         break;
       case tBTM_STATUS::BTM_CMD_STARTED:
-        log::debug("Role policy started to central peer:{}", peer_device.peer_bdaddr);
+        log::debug("Role policy started to central peer:{}", link.addr);
         break;
       default:
-        log::warn("Unable to set role policy to central peer:{}", peer_device.peer_bdaddr);
+        log::warn("Unable to set role policy to central peer:{}", link.addr);
         break;
     }
   }
@@ -1437,12 +1434,10 @@ void bta_dm_eir_update_uuid(uint16_t uuid16, bool adding) {
   bta_dm_set_eir(NULL);
 }
 
-tBTA_DM_PEER_DEVICE* find_connected_device(const RawAddress& bd_addr,
-                                           tBT_TRANSPORT /* transport */) {
-  for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
-    if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr == bd_addr &&
-        bta_dm_cb.device_list.peer_device[i].is_connected()) {
-      return &bta_dm_cb.device_list.peer_device[i];
+BtaDmLink* find_link(const RawAddress& bd_addr, tBT_TRANSPORT /* transport */) {
+  for (uint8_t i = 0; i < bta_dm_cb.link_db.count; i++) {
+    if (bta_dm_cb.link_db.links[i].addr == bd_addr && bta_dm_cb.link_db.links[i].is_active()) {
+      return &bta_dm_cb.link_db.links[i];
     }
   }
   return nullptr;
@@ -1458,12 +1453,11 @@ tBTA_DM_PEER_DEVICE* find_connected_device(const RawAddress& bd_addr,
  * Returns          true if Peer device found, false otherwise.
  *
  ******************************************************************************/
-static bool bta_dm_dev_connected(const RawAddress& bd_addr,
-                                 tBT_TRANSPORT transport) {
-  for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
-    if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr == bd_addr &&
-        bta_dm_cb.device_list.peer_device[i].transport == transport &&
-        bta_dm_cb.device_list.peer_device[i].is_connected()) {
+static bool bta_dm_dev_connected(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+  for (uint8_t i = 0; i < bta_dm_cb.link_db.count; i++) {
+    if (bta_dm_cb.link_db.links[i].addr == bd_addr &&
+        bta_dm_cb.link_db.links[i].transport == transport &&
+        bta_dm_cb.link_db.links[i].is_active()) {
       return true;
     }
   }
@@ -1569,7 +1563,7 @@ void bta_dm_ble_set_data_length(const RawAddress& bd_addr) {
 
 /** This function returns system context info */
 static tBTM_CONTRL_STATE bta_dm_obtain_system_context() {
-  uint32_t total_acl_num = bta_dm_cb.device_list.count;
+  uint32_t total_acl_num = bta_dm_cb.link_db.count;
   uint32_t sniff_acl_num = BTM_PM_ReadSniffLinkCount();
   uint32_t le_acl_num = BTM_PM_ReadBleLinkCount();
   uint32_t active_acl_num = total_acl_num - sniff_acl_num - le_acl_num;
@@ -1580,9 +1574,9 @@ static tBTM_CONTRL_STATE bta_dm_obtain_system_context() {
   bool is_av_active = false;
   bool is_sco_active = false;
 
-  for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
-    tBTA_DM_PEER_DEVICE* p_dev = &bta_dm_cb.device_list.peer_device[i];
-    if (p_dev->is_connected() && p_dev->is_av_active()) {
+  for (int i = 0; i < bta_dm_cb.link_db.count; i++) {
+    BtaDmLink* p_link = &bta_dm_cb.link_db.links[i];
+    if (p_link->is_active() && p_link->is_av_active()) {
       is_av_active = true;
       break;
     }
@@ -1861,8 +1855,8 @@ void bta_dm_ble_subrate_request(const RawAddress& bd_addr, uint16_t subrate_min,
 namespace bluetooth {
 namespace legacy {
 namespace testing {
-tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
-  return ::allocate_device_for(bd_addr, transport);
+BtaDmLink* allocate_link_for(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+  return ::allocate_link_for(bd_addr, transport);
 }
 
 void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {

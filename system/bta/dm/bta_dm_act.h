@@ -24,12 +24,11 @@
 void bta_dm_process_remove_device_no_callback(const RawAddress& bd_addr);
 void bta_dm_process_remove_device(const RawAddress& bd_addr);
 
-tBTA_DM_PEER_DEVICE* find_connected_device(const RawAddress& bd_addr,
-                                           tBT_TRANSPORT /* transport */);
+BtaDmLink* find_link(const RawAddress& bd_addr, tBT_TRANSPORT /* transport */);
 
 namespace bluetooth::legacy::testing {
 void bta_dm_init_cb(void);
 void bta_dm_acl_down(const AclLinkSpec& link_spec);
 void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle);
-tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr, tBT_TRANSPORT transport);
+BtaDmLink* allocate_link_for(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 }  // namespace bluetooth::legacy::testing
