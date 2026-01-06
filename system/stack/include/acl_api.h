@@ -90,12 +90,11 @@ bool BTM_IsAclConnectionUpAndHandleValid(const RawAddress& remote_bda, tBT_TRANS
  * Description      This function is called to get the role of the local device
  *                  for the ACL connection with the specified remote device
  *
- * Returns          tBTM_STATUS::BTM_SUCCESS if connection exists.
- *                  tBTM_STATUS::BTM_UNKNOWN_ADDR if no active link with bd addr specified
+ * Returns          HCI role if connection exists.
+ *                  std::nullopt if no active link with bd addr specified
  *
  ******************************************************************************/
-tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, tBT_TRANSPORT transport,
-                        tHCI_ROLE* p_role);
+std::optional<tHCI_ROLE> BTM_GetRole(const RawAddress& remote_bd_addr, tBT_TRANSPORT transport);
 
 /*******************************************************************************
  *

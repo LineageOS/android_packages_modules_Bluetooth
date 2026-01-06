@@ -1876,10 +1876,9 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
    * i.e. allow role switch, if we are peripheral.
    * It would not hurt us, if the peer device wants us to be central
    * disable sniff mode unconditionally during streaming */
-  tHCI_ROLE cur_role;
-  if ((get_btm_client_interface().link_policy.BTM_GetRole(p_scb->PeerAddress(), BT_TRANSPORT_BR_EDR,
-                                                          &cur_role) == tBTM_STATUS::BTM_SUCCESS) &&
-      (cur_role == HCI_ROLE_CENTRAL)) {
+  auto role = get_btm_client_interface().link_policy.BTM_GetRole(p_scb->PeerAddress(),
+                                                                 BT_TRANSPORT_BR_EDR);
+  if (role && role.value() == HCI_ROLE_CENTRAL) {
     BTM_block_role_switch_and_sniff_mode_for(p_scb->PeerAddress());
   } else {
     get_btm_client_interface().link_policy.BTM_block_sniff_mode_for(p_scb->PeerAddress());
@@ -2234,7 +2233,6 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   bool suspend = false;
   uint8_t new_role = p_scb->role;
   BT_HDR_RIGID hdr;
-  tHCI_ROLE cur_role;
   uint8_t local_tsep = p_scb->seps[p_scb->sep_idx].tsep;
 
   log::info("peer {} bta_handle:0x{:x} wait:0x{:x} role:0x{:x} local_tsep:{}", p_scb->PeerAddress(),
@@ -2359,10 +2357,9 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
        * Because it would not hurt source, if the peer device wants source to be
        * central.
        * disable sniff mode unconditionally during streaming */
-      if ((get_btm_client_interface().link_policy.BTM_GetRole(p_scb->PeerAddress(),
-                                                              BT_TRANSPORT_BR_EDR, &cur_role) ==
-           tBTM_STATUS::BTM_SUCCESS) &&
-          (cur_role == HCI_ROLE_CENTRAL)) {
+      auto role = get_btm_client_interface().link_policy.BTM_GetRole(p_scb->PeerAddress(),
+                                                                     BT_TRANSPORT_BR_EDR);
+      if (role && role.value() == HCI_ROLE_CENTRAL) {
         BTM_block_role_switch_and_sniff_mode_for(p_scb->PeerAddress());
       } else {
         get_btm_client_interface().link_policy.BTM_block_sniff_mode_for(p_scb->PeerAddress());
