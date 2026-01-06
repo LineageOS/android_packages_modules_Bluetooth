@@ -171,7 +171,11 @@ public class RemoteDevices {
 
     RemoteDevices(AdapterService service, Looper looper) {
         mAdapterService = service;
-        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
+        if (Flags.removeAdapterDependency()) {
+            mAdapter = null;
+        } else {
+            mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
+        }
         mHandler = new RemoteDevicesHandler(looper);
         mWatchConnectionStateListener = new WatchConnectionStateListener(mAdapterService, looper);
     }
@@ -328,11 +332,18 @@ public class RemoteDevices {
             }
 
             DeviceProperties prop = new DeviceProperties();
-            BluetoothDevice device =
-                    Flags.retainAddressType()
-                            ? mAdapter.getRemoteLeDevice(key, addressType)
-                            : mAdapter.getRemoteDevice(key);
-            prop.setDevice(device);
+            if (Flags.removeAdapterDependency()) {
+                if (!Flags.retainAddressType()) {
+                    addressType = BluetoothDevice.ADDRESS_TYPE_PUBLIC;
+                }
+                prop.setDevice(new BluetoothDevice(key, addressType));
+            } else {
+                BluetoothDevice device =
+                        Flags.retainAddressType()
+                                ? mAdapter.getRemoteLeDevice(key, addressType)
+                                : mAdapter.getRemoteDevice(key);
+                prop.setDevice(device);
+            }
 
             DeviceProperties pv = mDevices.put(key, prop);
 
