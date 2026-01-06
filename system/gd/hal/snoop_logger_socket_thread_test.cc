@@ -24,26 +24,16 @@
 #include <future>
 
 #include "hal/snoop_logger_common.h"
-#include "hal/syscall_wrapper_impl.h"
 #include "os/utils.h"
 
-namespace bluetooth {
+namespace bluetooth::hal {
 namespace {
-
-using ::bluetooth::hal::SnoopLoggerCommon;
-using ::bluetooth::hal::SnoopLoggerSocket;
-using ::bluetooth::hal::SnoopLoggerSocketThread;
-using ::bluetooth::hal::SyscallWrapperImpl;
 
 static constexpr int INVALID_FD = -1;
 
-class SnoopLoggerSocketThreadModuleTest : public testing::Test {};
-
-TEST_F(SnoopLoggerSocketThreadModuleTest, socket_start_no_stop_test) {
+TEST(SnoopLoggerSocketThreadTest, socket_start_no_stop_test) {
   {
-    SyscallWrapperImpl socket_if;
-    SnoopLoggerSocketThread sls(
-            std::make_unique<SnoopLoggerSocket>(&socket_if, SnoopLoggerSocket::kLocalHost, 0));
+    SnoopLoggerSocketThread sls(SnoopLoggerSocket::kLocalHost, 0);
     auto thread_start_future = sls.Start();
     thread_start_future.wait();
     ASSERT_TRUE(thread_start_future.get());
@@ -52,19 +42,15 @@ TEST_F(SnoopLoggerSocketThreadModuleTest, socket_start_no_stop_test) {
   // Destructor calls Stop();
 }
 
-TEST_F(SnoopLoggerSocketThreadModuleTest, socket_stop_no_start_test) {
-  SyscallWrapperImpl socket_if;
-  SnoopLoggerSocketThread sls(
-          std::make_unique<SnoopLoggerSocket>(&socket_if, SnoopLoggerSocket::kLocalHost, 0));
+TEST(SnoopLoggerSocketThreadTest, socket_stop_no_start_test) {
+  SnoopLoggerSocketThread sls(SnoopLoggerSocket::kLocalHost, 0);
   sls.Stop();
 
   ASSERT_FALSE(sls.ThreadIsRunning());
 }
 
-TEST_F(SnoopLoggerSocketThreadModuleTest, socket_start_stop_test) {
-  SyscallWrapperImpl socket_if;
-  SnoopLoggerSocketThread sls(
-          std::make_unique<SnoopLoggerSocket>(&socket_if, SnoopLoggerSocket::kLocalHost, 0));
+TEST(SnoopLoggerSocketThreadTest, socket_start_stop_test) {
+  SnoopLoggerSocketThread sls(SnoopLoggerSocket::kLocalHost, 0);
   auto thread_start_future = sls.Start();
   thread_start_future.wait();
   ASSERT_TRUE(thread_start_future.get());
@@ -74,12 +60,10 @@ TEST_F(SnoopLoggerSocketThreadModuleTest, socket_start_stop_test) {
   ASSERT_FALSE(sls.ThreadIsRunning());
 }
 
-TEST_F(SnoopLoggerSocketThreadModuleTest, socket_repeated_start_stop_test) {
+TEST(SnoopLoggerSocketThreadTest, socket_repeated_start_stop_test) {
   int repeat = 10;
   {
-    SyscallWrapperImpl socket_if;
-    SnoopLoggerSocketThread sls(
-            std::make_unique<SnoopLoggerSocket>(&socket_if, SnoopLoggerSocket::kLocalHost, 0));
+    SnoopLoggerSocketThread sls(SnoopLoggerSocket::kLocalHost, 0);
 
     for (int i = 0; i < repeat; ++i) {
       auto thread_start_future = sls.Start();
@@ -93,11 +77,9 @@ TEST_F(SnoopLoggerSocketThreadModuleTest, socket_repeated_start_stop_test) {
   }
 }
 
-TEST_F(SnoopLoggerSocketThreadModuleTest, socket_connect_test) {
+TEST(SnoopLoggerSocketThreadTest, socket_connect_test) {
   int ret = 0;
-  SyscallWrapperImpl socket_if;
-  SnoopLoggerSocketThread sls(
-          std::make_unique<SnoopLoggerSocket>(&socket_if, SnoopLoggerSocket::kLocalHost, 0));
+  SnoopLoggerSocketThread sls(SnoopLoggerSocket::kLocalHost, 0);
   auto thread_start_future = sls.Start();
   thread_start_future.wait();
   ASSERT_TRUE(thread_start_future.get());
@@ -121,11 +103,9 @@ TEST_F(SnoopLoggerSocketThreadModuleTest, socket_connect_test) {
   close(socket_fd);
 }
 
-TEST_F(SnoopLoggerSocketThreadModuleTest, socket_connect_disconnect_test) {
+TEST(SnoopLoggerSocketThreadTest, socket_connect_disconnect_test) {
   int ret = 0;
-  SyscallWrapperImpl socket_if;
-  SnoopLoggerSocketThread sls(
-          std::make_unique<SnoopLoggerSocket>(&socket_if, SnoopLoggerSocket::kLocalHost, 0));
+  SnoopLoggerSocketThread sls(SnoopLoggerSocket::kLocalHost, 0);
   auto thread_start_future = sls.Start();
   thread_start_future.wait();
   ASSERT_TRUE(thread_start_future.get());
@@ -152,10 +132,8 @@ TEST_F(SnoopLoggerSocketThreadModuleTest, socket_connect_disconnect_test) {
   ASSERT_FALSE(sls.ThreadIsRunning());
 }
 
-TEST_F(SnoopLoggerSocketThreadModuleTest, socket_send_no_start_test) {
-  SyscallWrapperImpl socket_if;
-  SnoopLoggerSocketThread sls(
-          std::make_unique<SnoopLoggerSocket>(&socket_if, SnoopLoggerSocket::kLocalHost, 0));
+TEST(SnoopLoggerSocketThreadTest, socket_send_no_start_test) {
+  SnoopLoggerSocketThread sls(SnoopLoggerSocket::kLocalHost, 0);
 
   ASSERT_FALSE(sls.ThreadIsRunning());
 
@@ -164,11 +142,9 @@ TEST_F(SnoopLoggerSocketThreadModuleTest, socket_send_no_start_test) {
   ASSERT_FALSE(sls.ThreadIsRunning());
 }
 
-TEST_F(SnoopLoggerSocketThreadModuleTest, socket_send_before_connect_test) {
+TEST(SnoopLoggerSocketThreadTest, socket_send_before_connect_test) {
   int ret = 0;
-  SyscallWrapperImpl socket_if;
-  SnoopLoggerSocketThread sls(
-          std::make_unique<SnoopLoggerSocket>(&socket_if, SnoopLoggerSocket::kLocalHost, 0));
+  SnoopLoggerSocketThread sls(SnoopLoggerSocket::kLocalHost, 0);
   auto thread_start_future = sls.Start();
   thread_start_future.wait();
   ASSERT_TRUE(thread_start_future.get());
@@ -206,11 +182,9 @@ TEST_F(SnoopLoggerSocketThreadModuleTest, socket_send_before_connect_test) {
   close(socket_fd);
 }
 
-TEST_F(SnoopLoggerSocketThreadModuleTest, socket_recv_file_header_test) {
+TEST(SnoopLoggerSocketThreadTest, socket_recv_file_header_test) {
   int ret = 0;
-  SyscallWrapperImpl socket_if;
-  SnoopLoggerSocketThread sls(
-          std::make_unique<SnoopLoggerSocket>(&socket_if, SnoopLoggerSocket::kLocalHost, 0));
+  SnoopLoggerSocketThread sls(SnoopLoggerSocket::kLocalHost, 0);
   auto thread_start_future = sls.Start();
   thread_start_future.wait();
   ASSERT_TRUE(thread_start_future.get());
@@ -245,11 +219,9 @@ TEST_F(SnoopLoggerSocketThreadModuleTest, socket_recv_file_header_test) {
   close(socket_fd);
 }
 
-TEST_F(SnoopLoggerSocketThreadModuleTest, socket_send_recv_test) {
+TEST(SnoopLoggerSocketThreadTest, socket_send_recv_test) {
   int ret = 0;
-  SyscallWrapperImpl socket_if;
-  SnoopLoggerSocketThread sls(
-          std::make_unique<SnoopLoggerSocket>(&socket_if, SnoopLoggerSocket::kLocalHost, 0));
+  SnoopLoggerSocketThread sls(SnoopLoggerSocket::kLocalHost, 0);
   auto thread_start_future = sls.Start();
   thread_start_future.wait();
   ASSERT_TRUE(thread_start_future.get());
@@ -293,4 +265,4 @@ TEST_F(SnoopLoggerSocketThreadModuleTest, socket_send_recv_test) {
 }
 
 }  // namespace
-}  // namespace bluetooth
+}  // namespace bluetooth::hal

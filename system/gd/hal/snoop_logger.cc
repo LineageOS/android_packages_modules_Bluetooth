@@ -483,18 +483,46 @@ const size_t SnoopLogger::PACKET_TYPE_LENGTH = 1;
 const size_t SnoopLogger::MAX_HCI_ACL_LEN = 14;
 const uint32_t SnoopLogger::L2CAP_HEADER_SIZE = 8;
 
+// Create the snoop logger socket listening on the provided host and port.
+// The constructor will check if the socket is enabled with the dedicated system property.
+static std::unique_ptr<SnoopLoggerSocketInterface> CreateSnoopLoggerSocket(int host, int port) {
+  auto btsnoop_mode = GetBtSnoopMode();
+
+  // Cf b/375056207: The implementation must pass a security review
+  // in order to enable the snoop logger socket in user builds.
+  if (btsnoop_mode == SnoopLogger::kBtSnoopLogModeDisabled ||
+      btsnoop_mode == SnoopLogger::kBtSnoopLogModeKernel || !is_debug_build()) {
+    return nullptr;
+  }
+
+  auto socket = std::make_unique<SnoopLoggerSocketThread>(host, port);
+  auto status = socket->Start();
+  status.wait();
+
+  if (!status.get()) {
+    socket->Stop();
+    return nullptr;
+  }
+
+  return socket;
+}
+
 SnoopLogger::SnoopLogger(os::Handler* handler)
-    : SnoopLogger(handler, os::ParameterProvider::SnoopLogDirPath(), GetMaxPacketsPerFile(),
+    : SnoopLogger(handler,
+                  CreateSnoopLoggerSocket(SnoopLoggerSocket::kLocalHost,
+                                          SnoopLoggerSocket::kDefaultPort),
+                  os::ParameterProvider::SnoopLogDirPath(), GetMaxPacketsPerFile(),
                   GetMaxPacketsPerBuffer(), GetBtSnoopMode(), IsQualcommDebugLogEnabled(),
                   kBtSnoozLogLifeTime, kBtSnoozLogDeleteRepeatingAlarmInterval,
                   IsBtSnoopLogPersisted()) {}
 
-SnoopLogger::SnoopLogger(os::Handler* handler, std::string snoop_dir_path,
-                         size_t max_packets_per_file, size_t max_packets_per_buffer,
-                         const std::string& btsnoop_mode, bool qualcomm_debug_log_enabled,
+SnoopLogger::SnoopLogger(os::Handler* handler, std::unique_ptr<SnoopLoggerSocketInterface> socket,
+                         std::string snoop_dir_path, size_t max_packets_per_file,
+                         size_t max_packets_per_buffer, const std::string& btsnoop_mode,
+                         bool qualcomm_debug_log_enabled,
                          const std::chrono::milliseconds snooz_log_life_time,
                          const std::chrono::milliseconds snooz_log_delete_alarm_interval,
-                         bool snoop_log_persists, int port)
+                         bool snoop_log_persists)
     : handler_(handler),
       btsnoop_mode_(btsnoop_mode),
       snooz_dir_path_(snoop_dir_path),
@@ -503,7 +531,7 @@ SnoopLogger::SnoopLogger(os::Handler* handler, std::string snoop_dir_path,
       snooz_log_life_time_(snooz_log_life_time),
       snooz_log_delete_alarm_interval_(snooz_log_delete_alarm_interval),
       snoop_log_persists(snoop_log_persists),
-      port_(port) {
+      btsnoop_socket_(std::move(socket)) {
   if (btsnoop_mode_ == kBtSnoopLogModeFiltered) {
     log::info("Snoop Logs filtered mode enabled");
     EnableFilters();
@@ -526,9 +554,6 @@ SnoopLogger::SnoopLogger(os::Handler* handler, std::string snoop_dir_path,
     SnoopLoggerFile::DeleteBtsnoopFiles(snoop_dir_path, false);
   }
 
-  snoop_logger_socket_thread_ = nullptr;
-  socket_ = nullptr;
-
   std::lock_guard<std::recursive_mutex> lock(file_mutex_);
   if (btsnoop_mode_ != kBtSnoopLogModeDisabled && btsnoop_mode_ != kBtSnoopLogModeKernel) {
     btsnoop_file_ = std::make_unique<SnoopLoggerFile>(
@@ -536,24 +561,6 @@ SnoopLogger::SnoopLogger(os::Handler* handler, std::string snoop_dir_path,
 
     if (btsnoop_mode_ == kBtSnoopLogModeFiltered) {
       EnableFilters();
-    }
-
-    if (is_debug_build()) {
-      // Cf b/375056207: The implementation must pass a security review
-      // in order to enable the snoop logger socket in user builds.
-      auto snoop_logger_socket = std::make_unique<SnoopLoggerSocket>(
-              &syscall_if, SnoopLoggerSocket::kLocalHost, port_);
-      snoop_logger_socket_thread_ =
-              std::make_unique<SnoopLoggerSocketThread>(std::move(snoop_logger_socket));
-      auto thread_started_future = snoop_logger_socket_thread_->Start();
-      thread_started_future.wait();
-      if (thread_started_future.get()) {
-        RegisterSocket(snoop_logger_socket_thread_.get());
-      } else {
-        snoop_logger_socket_thread_->Stop();
-        snoop_logger_socket_thread_.reset();
-        snoop_logger_socket_thread_ = nullptr;
-      }
     }
   }
 
@@ -564,8 +571,9 @@ SnoopLogger::SnoopLogger(os::Handler* handler, std::string snoop_dir_path,
   alarm_ = std::make_unique<os::RepeatingAlarm>(&handler_->thread());
   std::string snooz_log_path =
           SnoopLoggerFile::AssembleFileName(snooz_dir_path_, true, false, false);
-  alarm_->Schedule(common::Bind(&delete_old_btsnooz_files, std::move(snooz_log_path), snooz_log_life_time_),
-                   snooz_log_delete_alarm_interval_);
+  alarm_->Schedule(
+          common::Bind(&delete_old_btsnooz_files, std::move(snooz_log_path), snooz_log_life_time_),
+          snooz_log_delete_alarm_interval_);
 
   log::verbose("SnoopLogger module started !!");
 }
@@ -1210,9 +1218,9 @@ void SnoopLogger::Capture(const HciPacket& immutable_packet, Direction direction
       btsnoop_file_->Write(header, packet, length);
     }
 
-    if (socket_ != nullptr) {
-      socket_->Write(&header, sizeof(SnoopLoggerFile::PacketHeaderType));
-      socket_->Write(packet.data(), (size_t)(length - 1));
+    if (btsnoop_socket_) {
+      btsnoop_socket_->Write(&header, sizeof(SnoopLoggerFile::PacketHeaderType));
+      btsnoop_socket_->Write(packet.data(), (size_t)(length - 1));
     }
   }
 }
@@ -1275,13 +1283,7 @@ SnoopLogger::~SnoopLogger() {
   log::debug("Closing btsnoop log data");
 
   btsnoop_file_.reset();
-
-  if (snoop_logger_socket_thread_ != nullptr) {
-    snoop_logger_socket_thread_->Stop();
-    snoop_logger_socket_thread_.reset();
-    snoop_logger_socket_thread_ = nullptr;
-    socket_ = nullptr;
-  }
+  btsnoop_socket_.reset();
 
   btsnoop_mode_ = kBtSnoopLogModeDisabled;
   // Disable all filters
@@ -1324,11 +1326,6 @@ size_t SnoopLogger::GetMaxPacketsPerBuffer() {
 }
 
 std::string SnoopLogger::GetCurrentSnoopMode() { return btsnoop_mode_; }
-
-void SnoopLogger::RegisterSocket(SnoopLoggerSocketInterface* socket) {
-  std::lock_guard<std::recursive_mutex> lock(file_mutex_);
-  socket_ = socket;
-}
 
 bool SnoopLogger::IsBtSnoopLogPersisted() {
   return is_debug_build() && os::GetSystemPropertyBool(kBtSnoopLogPersists, false);
