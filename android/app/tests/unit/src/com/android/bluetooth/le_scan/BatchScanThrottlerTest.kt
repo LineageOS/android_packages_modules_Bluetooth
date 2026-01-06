@@ -19,7 +19,7 @@ package com.android.bluetooth.le_scan
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanSettings
 import androidx.test.filters.SmallTest
-import com.android.bluetooth.le_scan.BatchScanThrottler.SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT
+import com.android.bluetooth.le_scan.BatchScanThrottler.Companion.SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT
 import com.android.bluetooth.le_scan.BatchScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS
 import com.android.tests.bluetooth.FakeTimeProvider
 import com.android.tests.bluetooth.MockitoRule

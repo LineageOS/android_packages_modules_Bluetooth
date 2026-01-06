@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,152 +14,149 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.le_scan;
+package com.android.bluetooth.le_scan
 
-import static com.android.bluetooth.le_scan.BatchScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS;
+import android.os.SystemProperties
+import android.provider.DeviceConfig
+import android.util.Log
+import com.android.bluetooth.le_scan.BatchScanUtil.DEFAULT_REPORT_DELAY_FLOOR_MS
+import com.android.bluetooth.util.TimeProvider
+import com.android.internal.annotations.VisibleForTesting
+import kotlin.math.max
+import kotlin.math.min
 
-import static java.util.Objects.requireNonNull;
-
-import android.os.SystemProperties;
-import android.provider.DeviceConfig;
-import android.util.Log;
-
-import com.android.bluetooth.util.TimeProvider;
-import com.android.internal.annotations.VisibleForTesting;
-
-import java.util.Set;
+private const val TAG = ScanUtil.TAG_PREFIX + "BatchScanThrottler"
 
 /**
  * Throttler to reduce the number of times the Bluetooth process wakes up to check for pending batch
  * scan results. The wake-up intervals are increased when no matching results are found and are
  * longer when the screen is off.
  */
-class BatchScanThrottler {
-    private static final String TAG =
-            ScanUtil.TAG_PREFIX + BatchScanThrottler.class.getSimpleName();
+class BatchScanThrottler(private val timeProvider: TimeProvider, screenOn: Boolean) {
+    private val screenOffMinimumDelayFloorMs: Int
+    private val unfilteredDelayFloorMs: Int
+    private val unfilteredScreenOffDelayFloorMs: Int
+    private val screenOffDelayMs: Int
+    private val delayFloorMs: Long
+    private val screenOffDelayFloorMs: Long
 
-    // Minimum batch trigger interval to check for batched results when the screen is off
-    private static final String SCREEN_OFF_MINIMUM_DELAY_FLOOR_PROP =
-            "bluetooth.ble.batch_scan.screen_off_minimum_delay_floor_ms.config";
-    // Adjusted minimum report delay for unfiltered batch scan clients
-    private static final String UNFILTERED_DELAY_FLOOR_PROP =
-            "bluetooth.ble.batch_scan.unfiltered_delay_floor_ms.config";
-    // Adjusted minimum report delay for unfiltered batch scan clients when the screen is off
-    private static final String UNFILTERED_SCREEN_OFF_DELAY_FLOOR_PROP =
-            "bluetooth.ble.batch_scan.unfiltered_screen_off_delay_floor_ms.config";
-    // Start screen-off trigger interval throttling after the screen has been off for this period
-    // of time. This allows the screen-on intervals to be used for a short period of time after the
-    // screen has gone off, and avoids too much flipping between screen-off and screen-on backoffs
-    // when the screen is off for a short period of time
-    private static final String SCREEN_OFF_DELAY_PROP =
-            "bluetooth.ble.batch_scan.screen_off_delay_ms.config";
+    private var backoffStage = 0
+    private var screenOffTriggerTime = 0L
+    private var screenOffThrottling = false
 
-    @VisibleForTesting static final int SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT = 20000;
-    @VisibleForTesting static final int UNFILTERED_DELAY_FLOOR_DEFAULT = 20000;
-    @VisibleForTesting static final int UNFILTERED_SCREEN_OFF_DELAY_FLOOR_DEFAULT = 60000;
-    @VisibleForTesting static final int SCREEN_OFF_DELAY_DEFAULT = 60000;
-
-    // Backoff stages used as multipliers for the minimum delay floor (standard or screen-off)
-    @VisibleForTesting static final int[] BACKOFF_MULTIPLIERS = {1, 1, 2, 2, 4};
-
-    private final TimeProvider mTimeProvider;
-    private final int mScreenOffMinimumDelayFloorMs;
-    private final int mUnfilteredDelayFloorMs;
-    private final int mUnfilteredScreenOffDelayFloorMs;
-    private final int mScreenOffDelayMs;
-    private final long mDelayFloorMs;
-    private final long mScreenOffDelayFloorMs;
-
-    private int mBackoffStage = 0;
-    private long mScreenOffTriggerTime = 0L;
-    private boolean mScreenOffThrottling = false;
-
-    BatchScanThrottler(TimeProvider timeProvider, boolean screenOn) {
-        mTimeProvider = requireNonNull(timeProvider);
-        mScreenOffMinimumDelayFloorMs =
-                SystemProperties.getInt(
-                        SCREEN_OFF_MINIMUM_DELAY_FLOOR_PROP,
-                        SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT);
-        mUnfilteredDelayFloorMs =
-                SystemProperties.getInt(
-                        UNFILTERED_DELAY_FLOOR_PROP, UNFILTERED_DELAY_FLOOR_DEFAULT);
-        mUnfilteredScreenOffDelayFloorMs =
-                SystemProperties.getInt(
-                        UNFILTERED_SCREEN_OFF_DELAY_FLOOR_PROP,
-                        UNFILTERED_SCREEN_OFF_DELAY_FLOOR_DEFAULT);
-        mScreenOffDelayMs =
-                SystemProperties.getInt(SCREEN_OFF_DELAY_PROP, SCREEN_OFF_DELAY_DEFAULT);
-        mDelayFloorMs =
-                DeviceConfig.getLong(
-                        DeviceConfig.NAMESPACE_BLUETOOTH,
-                        "report_delay",
-                        DEFAULT_REPORT_DELAY_FLOOR_MS);
-        mScreenOffDelayFloorMs = Math.max(mDelayFloorMs, mScreenOffMinimumDelayFloorMs);
+    init {
+        screenOffMinimumDelayFloorMs =
+            SystemProperties.getInt(
+                SCREEN_OFF_MINIMUM_DELAY_FLOOR_PROP,
+                SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT,
+            )
+        unfilteredDelayFloorMs =
+            SystemProperties.getInt(UNFILTERED_DELAY_FLOOR_PROP, UNFILTERED_DELAY_FLOOR_DEFAULT)
+        unfilteredScreenOffDelayFloorMs =
+            SystemProperties.getInt(
+                UNFILTERED_SCREEN_OFF_DELAY_FLOOR_PROP,
+                UNFILTERED_SCREEN_OFF_DELAY_FLOOR_DEFAULT,
+            )
+        screenOffDelayMs = SystemProperties.getInt(SCREEN_OFF_DELAY_PROP, SCREEN_OFF_DELAY_DEFAULT)
+        delayFloorMs =
+            DeviceConfig.getLong(
+                DeviceConfig.NAMESPACE_BLUETOOTH,
+                "report_delay",
+                DEFAULT_REPORT_DELAY_FLOOR_MS,
+            )
+        screenOffDelayFloorMs = max(delayFloorMs, screenOffMinimumDelayFloorMs.toLong())
         Log.d(
-                TAG,
-                "Initialized with:"
-                        + (" screenOffMinimumDelayFloorMs=" + mScreenOffMinimumDelayFloorMs)
-                        + (", unfilteredDelayFloorMs=" + mUnfilteredDelayFloorMs)
-                        + (", unfilteredScreenOffDelayFloorMs=" + mUnfilteredScreenOffDelayFloorMs)
-                        + (", screenOffDelayMs=" + mScreenOffDelayMs)
-                        + (", delayFloorMs=" + mDelayFloorMs)
-                        + (", screenOffDelayFloorMs=" + mScreenOffDelayFloorMs));
-        onScreenOn(screenOn);
+            TAG,
+            "Initialized with: screenOffMinimumDelayFloorMs=$screenOffMinimumDelayFloorMs" +
+                ", unfilteredDelayFloorMs=$unfilteredDelayFloorMs" +
+                ", unfilteredScreenOffDelayFloorMs=$unfilteredScreenOffDelayFloorMs" +
+                ", screenOffDelayMs=$screenOffDelayMs, delayFloorMs=$delayFloorMs," +
+                " screenOffDelayFloorMs=$screenOffDelayFloorMs",
+        )
+        onScreenOn(screenOn)
     }
 
-    void resetBackoff() {
-        Log.d(TAG, "resetBackoff() called");
-        mBackoffStage = 0;
+    fun resetBackoff() {
+        Log.d(TAG, "resetBackoff() called")
+        backoffStage = 0
     }
 
-    void onScreenOn(boolean screenOn) {
+    fun onScreenOn(screenOn: Boolean) {
         if (screenOn) {
-            mScreenOffTriggerTime = 0L;
-            mScreenOffThrottling = false;
-            resetBackoff();
+            screenOffTriggerTime = 0L
+            screenOffThrottling = false
+            resetBackoff()
         } else {
             // Screen-off intervals to be used after the trigger time
-            mScreenOffTriggerTime = mTimeProvider.elapsedRealtime() + mScreenOffDelayMs;
+            screenOffTriggerTime = timeProvider.elapsedRealtime() + screenOffDelayMs
         }
     }
 
-    long getBatchTriggerIntervalMillis(Set<ScanClient> batchClients) {
+    fun getBatchTriggerIntervalMillis(batchClients: Set<ScanClient>): Long {
         // Check if we're past the screen-off time and should be using screen-off backoff values
-        if (!mScreenOffThrottling
-                && mScreenOffTriggerTime != 0
-                && mTimeProvider.elapsedRealtime() >= mScreenOffTriggerTime) {
-            mScreenOffThrottling = true;
-            resetBackoff();
+        if (
+            !screenOffThrottling &&
+                screenOffTriggerTime != 0L &&
+                timeProvider.elapsedRealtime() >= screenOffTriggerTime
+        ) {
+            screenOffThrottling = true
+            resetBackoff()
         }
 
-        long minimumReportDelayMs = getMinimumReportDelayMillis(batchClients);
+        val minimumReportDelayMs = getMinimumReportDelayMillis(batchClients)
 
-        final int backoffIndex =
-                mBackoffStage >= BACKOFF_MULTIPLIERS.length
-                        ? BACKOFF_MULTIPLIERS.length - 1
-                        : mBackoffStage++;
-        final long finalInterval =
-                Math.max(
-                        minimumReportDelayMs,
-                        (mScreenOffThrottling ? mScreenOffDelayFloorMs : mDelayFloorMs)
-                                * BACKOFF_MULTIPLIERS[backoffIndex]);
-        Log.d(TAG, "Batch trigger interval: " + finalInterval + "ms");
-        return finalInterval;
+        val backoffIndex =
+            if (backoffStage >= BACKOFF_MULTIPLIERS.size) BACKOFF_MULTIPLIERS.size - 1
+            else backoffStage++
+        val finalInterval =
+            max(
+                minimumReportDelayMs,
+                (if (screenOffThrottling) screenOffDelayFloorMs else delayFloorMs) *
+                    BACKOFF_MULTIPLIERS[backoffIndex],
+            )
+        Log.d(TAG, "Batch trigger interval: ${finalInterval}ms")
+        return finalInterval
     }
 
-    private long getMinimumReportDelayMillis(Set<ScanClient> batchClients) {
-        long unfilteredFloor =
-                mScreenOffThrottling ? mUnfilteredScreenOffDelayFloorMs : mUnfilteredDelayFloorMs;
-        long minimumReportDelayMs = Long.MAX_VALUE;
-        for (ScanClient client : batchClients) {
-            if (client.getSettings().getReportDelayMillis() > 0) {
-                long clientReportDelayMs = client.getSettings().getReportDelayMillis();
-                if (!client.isFiltered() && clientReportDelayMs < unfilteredFloor) {
-                    clientReportDelayMs = unfilteredFloor;
+    private fun getMinimumReportDelayMillis(batchClients: Set<ScanClient>): Long {
+        val unfilteredFloor =
+            (if (screenOffThrottling) unfilteredScreenOffDelayFloorMs else unfilteredDelayFloorMs)
+        var minimumReportDelayMs = Long.MAX_VALUE
+        for (client in batchClients) {
+            if (client.settings.reportDelayMillis > 0) {
+                var clientReportDelayMs = client.settings.reportDelayMillis
+                if (!client.isFiltered && clientReportDelayMs < unfilteredFloor) {
+                    clientReportDelayMs = unfilteredFloor.toLong()
                 }
-                minimumReportDelayMs = Math.min(minimumReportDelayMs, clientReportDelayMs);
+                minimumReportDelayMs = min(minimumReportDelayMs, clientReportDelayMs)
             }
         }
-        return minimumReportDelayMs;
+        return minimumReportDelayMs
+    }
+
+    companion object {
+        // Minimum batch trigger interval to check for batched results when the screen is off
+        private const val SCREEN_OFF_MINIMUM_DELAY_FLOOR_PROP =
+            "bluetooth.ble.batch_scan.screen_off_minimum_delay_floor_ms.config"
+        // Adjusted minimum report delay for unfiltered batch scan clients
+        private const val UNFILTERED_DELAY_FLOOR_PROP =
+            "bluetooth.ble.batch_scan.unfiltered_delay_floor_ms.config"
+        // Adjusted minimum report delay for unfiltered batch scan clients when the screen is off
+        private const val UNFILTERED_SCREEN_OFF_DELAY_FLOOR_PROP =
+            "bluetooth.ble.batch_scan.unfiltered_screen_off_delay_floor_ms.config"
+        // Start screen-off trigger interval throttling after the screen has been off for this
+        // period of time. This allows the screen-on intervals to be used for a short period of time
+        // after the screen has gone off, and avoids too much flipping between screen-off and
+        // screen-on backoffs when the screen is off for a short period of time
+        private const val SCREEN_OFF_DELAY_PROP =
+            "bluetooth.ble.batch_scan.screen_off_delay_ms.config"
+
+        @VisibleForTesting const val SCREEN_OFF_MINIMUM_DELAY_FLOOR_DEFAULT = 20000
+        @VisibleForTesting const val UNFILTERED_DELAY_FLOOR_DEFAULT = 20000
+        @VisibleForTesting const val UNFILTERED_SCREEN_OFF_DELAY_FLOOR_DEFAULT = 60000
+        @VisibleForTesting const val SCREEN_OFF_DELAY_DEFAULT = 60000
+
+        // Backoff stages used as multipliers for the minimum delay floor (standard or screen-off)
+        @VisibleForTesting val BACKOFF_MULTIPLIERS = intArrayOf(1, 1, 2, 2, 4)
     }
 }
