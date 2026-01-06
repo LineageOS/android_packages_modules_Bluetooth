@@ -833,6 +833,7 @@ static void bta_av_sys_rs_cback(tBTA_SYS_CONN_STATUS /* status */, tHCI_ROLE new
                                 tHCI_STATUS hci_status, const RawAddress& peer_addr) {
   int i;
   tBTA_AV_SCB* p_scb = NULL;
+  tHCI_ROLE cur_role;
   uint8_t peer_idx = 0;
 
   log::verbose("peer {} new_role:{} hci_status:0x{:x} bta_av_cb.rs_idx:{}", peer_addr, new_role,
@@ -858,8 +859,10 @@ static void bta_av_sys_rs_cback(tBTA_SYS_CONN_STATUS /* status */, tHCI_ROLE new
   }
 
   /* restore role switch policy, if role switch failed */
-  auto role = get_btm_client_interface().link_policy.BTM_GetRole(peer_addr, BT_TRANSPORT_BR_EDR);
-  if (hci_status != HCI_SUCCESS && role && role.value() == HCI_ROLE_PERIPHERAL) {
+  if ((HCI_SUCCESS != hci_status) &&
+      (get_btm_client_interface().link_policy.BTM_GetRole(peer_addr, BT_TRANSPORT_BR_EDR,
+                                                          &cur_role) == tBTM_STATUS::BTM_SUCCESS) &&
+      (cur_role == HCI_ROLE_PERIPHERAL)) {
     get_btm_client_interface().link_policy.BTM_unblock_role_switch_for(peer_addr);
   }
 
@@ -961,18 +964,18 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, uint8_t num_sco_li
  *
  ******************************************************************************/
 bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
-  auto role = get_btm_client_interface().link_policy.BTM_GetRole(p_scb->PeerAddress(),
-                                                                 BT_TRANSPORT_BR_EDR);
-  if (!role) {
+  tHCI_ROLE role;
+  if (get_btm_client_interface().link_policy.BTM_GetRole(p_scb->PeerAddress(), BT_TRANSPORT_BR_EDR,
+                                                         &role) != tBTM_STATUS::BTM_SUCCESS) {
     log::warn("Unable to find link role for device:{}", p_scb->PeerAddress());
     return true;
   }
 
-  if (role.value() != HCI_ROLE_CENTRAL && (A2DP_BitsSet(bta_av_cb.conn_audio) > bits)) {
+  if (role != HCI_ROLE_CENTRAL && (A2DP_BitsSet(bta_av_cb.conn_audio) > bits)) {
     log::info(
             "Switch link role to central peer:{} bta_handle:0x{:x} current_role:{} "
             "conn_audio:0x{:x} bits:{} features:0x{:x}",
-            p_scb->PeerAddress(), p_scb->hndl, RoleText(role.value()), bta_av_cb.conn_audio, bits,
+            p_scb->PeerAddress(), p_scb->hndl, RoleText(role), bta_av_cb.conn_audio, bits,
             bta_av_cb.features);
     const tBTM_STATUS status =
             get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(p_scb->PeerAddress());

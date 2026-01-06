@@ -172,9 +172,9 @@ TEST_F(StackBtmWithQueuesTest, RoleIsSetOnSuccessfulConnection) {
   on_acl_br_edr_connected(bda, 2, 0, false, HCI_ROLE_CENTRAL);
 
   // Verify that the role is correctly set
-  auto role = BTM_GetRole(bda, BT_TRANSPORT_BR_EDR);
-  ASSERT_EQ(role.has_value(), true);
-  ASSERT_EQ(role.value(), HCI_ROLE_CENTRAL);
+  tHCI_ROLE role = HCI_ROLE_UNKNOWN;
+  ASSERT_EQ(BTM_GetRole(bda, BT_TRANSPORT_BR_EDR, &role), tBTM_STATUS::BTM_SUCCESS);
+  ASSERT_EQ(role, HCI_ROLE_CENTRAL);
 
   get_btm_client_interface().lifecycle.btm_free();
 }

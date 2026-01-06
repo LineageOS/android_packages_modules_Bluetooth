@@ -476,16 +476,25 @@ void btm_acl_device_down(void) {
   BTM_db_reset();
 }
 
-std::optional<tHCI_ROLE> BTM_GetRole(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
-  const tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
-  if (p_acl == nullptr) {
-    log::warn("Unable to find active acl. bd_addr: {}, transport: {}", bd_addr,
-              bt_transport_text(transport));
-    return std::nullopt;
+tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, tBT_TRANSPORT transport,
+                        tHCI_ROLE* p_role) {
+  if (p_role == nullptr) {
+    return tBTM_STATUS::BTM_ILLEGAL_VALUE;
   }
-  log::verbose("{} transport: {}, role: {}", bd_addr, bt_transport_text(transport),
-               hci_role_text(p_acl->link_role));
-  return p_acl->link_role;
+  *p_role = HCI_ROLE_UNKNOWN;
+
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bd_addr, transport);
+  if (p_acl == nullptr) {
+    log::warn("Unable to find active acl. bd_addr: {}, transport: {}", remote_bd_addr,
+              bt_transport_text(transport));
+    return tBTM_STATUS::BTM_UNKNOWN_ADDR;
+  }
+  *p_role = p_acl->link_role;
+
+  log::verbose("{} transport: {}, role: {}", remote_bd_addr, bt_transport_text(transport),
+               hci_role_text(*p_role));
+
+  return tBTM_STATUS::BTM_SUCCESS;
 }
 
 /*******************************************************************************

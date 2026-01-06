@@ -3134,12 +3134,11 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
 
   /* If this is a bonding procedure can disconnect the link now */
   if (are_bonding) {
-    auto role = get_btm_client_interface().link_policy.BTM_GetRole(p_device->bd_addr,
-                                                                   BT_TRANSPORT_BR_EDR);
-    if (!role) {
+    tHCI_ROLE role = HCI_ROLE_UNKNOWN;
+    if (get_btm_client_interface().link_policy.BTM_GetRole(p_device->bd_addr, BT_TRANSPORT_BR_EDR,
+                                                           &role) != tBTM_STATUS::BTM_SUCCESS) {
       log::warn("Unable to get link role peer:{}", p_device->bd_addr);
     }
-
     p_device->role_switch_pending = BtmDevice::RoleSwitchPending::kNone;
     p_device->sec_rec.security_required &= ~BTM_SEC_OUT_AUTHENTICATE;
 
@@ -3153,7 +3152,7 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
       BTM_LogHistory(kBtmLogTag, p_device->bd_addr, "Bonding completed",
                      hci_error_code_text(status));
       p_device->role_switch_pending =
-              (p_device->IsLocallyInitiated() && role && role.value() == HCI_ROLE_PERIPHERAL)
+              (p_device->IsLocallyInitiated() && role == HCI_ROLE_PERIPHERAL)
                       ? BtmDevice::RoleSwitchPending::kAfterEnc
                       : BtmDevice::RoleSwitchPending::kNone;
       BTM_SetEncryption(p_device->bd_addr, BT_TRANSPORT_BR_EDR, NULL, NULL, BTM_BLE_SEC_NONE);
@@ -3226,12 +3225,12 @@ static bool btm_sec_perform_ctkd(BtmDevice* p_device) {
   }
 
   /* Must be in central role */
-  auto role = get_btm_client_interface().link_policy.BTM_GetRole(p_device->bd_addr,
-                                                                 BT_TRANSPORT_BR_EDR);
-  if (!role) {
+  tHCI_ROLE role = HCI_ROLE_UNKNOWN;
+  if (get_btm_client_interface().link_policy.BTM_GetRole(p_device->bd_addr, BT_TRANSPORT_BR_EDR,
+                                                         &role) != tBTM_STATUS::BTM_SUCCESS) {
     log::warn("Unable to get link policy role peer:{}", p_device->bd_addr);
-    return false;
-  } else if (role.value() != HCI_ROLE_CENTRAL) {
+  }
+  if (role != HCI_ROLE_CENTRAL) {
     return false;
   }
 
@@ -3401,15 +3400,15 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
     /* BR/EDR link encrypted successfully */
     btm_sec_perform_ctkd(p_device);
 
-    auto role = get_btm_client_interface().link_policy.BTM_GetRole(p_device->bd_addr,
-                                                                   BT_TRANSPORT_BR_EDR);
-    if (!role) {
+    tHCI_ROLE role = HCI_ROLE_UNKNOWN;
+    if (get_btm_client_interface().link_policy.BTM_GetRole(p_device->bd_addr, BT_TRANSPORT_BR_EDR,
+                                                           &role) != tBTM_STATUS::BTM_SUCCESS) {
       log::warn("Unable to get link policy role peer:{}", p_device->bd_addr);
     }
 
     if (com_android_bluetooth_flags_role_switch_after_encryption() &&
-        p_device->role_switch_pending != BtmDevice::RoleSwitchPending::kNone && role &&
-        role.value() == HCI_ROLE_PERIPHERAL) {
+        p_device->role_switch_pending != BtmDevice::RoleSwitchPending::kNone &&
+        role == HCI_ROLE_PERIPHERAL) {
       if (btm_sec_use_smp_br_chnl(p_device)) {
         /* Role switch request might prevent remote central device from initiating CTKD */
         p_device->role_switch_pending = BtmDevice::RoleSwitchPending::kAfterCtkd;
@@ -3566,7 +3565,7 @@ void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status, uint8_t 
     if (!(is_autonomous_repairing_supported() && status == HCI_ERR_KEY_MISSING)) {
       log::error("Encryption failure {}, disconnecting {}", status, handle);
       btm_sec_disconnect(handle, status,
-                         "stack::btu::btu_hcif::encryption_change_evt Encryption Failure");
+                        "stack::btu::btu_hcif::encryption_change_evt Encryption Failure");
     }
   }
 
