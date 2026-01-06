@@ -1026,6 +1026,15 @@ static void bta_dm_adjust_roles() {
     alarm_cancel(bta_dm_cb.switch_delay_timer);
   }
 
+  // Ignore when there are only two connections and both are to the same device
+  if (bta_dm_cb.device_list.count == 2 && bta_dm_cb.device_list.le_count == 1 &&
+      bta_dm_cb.device_list.peer_device[0].peer_bdaddr ==
+              bta_dm_cb.device_list.peer_device[1].peer_bdaddr) {
+    log::debug("Skipping role switch because both connections are to the same device {}",
+               bta_dm_cb.device_list.peer_device[0].peer_bdaddr);
+    return;
+  }
+
   for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
     auto& peer_device = bta_dm_cb.device_list.peer_device[i];
 
