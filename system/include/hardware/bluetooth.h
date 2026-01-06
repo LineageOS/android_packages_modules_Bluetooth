@@ -565,6 +565,18 @@ enum class PairingVariant : uint8_t {
   PARTICIPATION  // Incoming LE pairing request
 };
 
+static inline std::string pairing_variant_text(const PairingVariant& variant) {
+  switch (variant) {
+    CASE_RETURN_STRING(PairingVariant::PASSKEY_CONFIRMATION);
+    CASE_RETURN_STRING(PairingVariant::PASSKEY_ENTRY);
+    CASE_RETURN_STRING(PairingVariant::CONSENT);
+    CASE_RETURN_STRING(PairingVariant::PASSKEY_NOTIFICATION);
+    CASE_RETURN_STRING(PairingVariant::PARTICIPATION);
+    default:
+      RETURN_UNKNOWN_TYPE_STRING(PairingVariant, variant);
+  }
+}
+
 // This is inline with BluetoothDevice.EncryptionAlgorithm.
 enum class EncryptionAlgorithm : uint8_t {
   NONE, /* Indicates encryption information is not available */
@@ -619,7 +631,7 @@ enum LegacyPairingVariant : uint8_t {
   PIN_16,
 };
 
-static inline std::string bredr_legacy_pairing_variant_text(const LegacyPairingVariant& variant) {
+static inline std::string legacy_pairing_variant_text(const LegacyPairingVariant& variant) {
   switch (variant) {
     CASE_RETURN_STRING(LegacyPairingVariant::PIN);
     CASE_RETURN_STRING(LegacyPairingVariant::PIN_16);
@@ -635,6 +647,13 @@ struct PairingType {
     LegacyPairingVariant legacy_variant;
   };
 };
+
+static inline std::string pairing_type_text(const PairingType& pairing_type) {
+  return pairing_algorithm_text(pairing_type.algorithm) + "-" +
+         (pairing_type.algorithm == PairingAlgorithm::LEGACY
+                  ? legacy_pairing_variant_text(pairing_type.legacy_variant)
+                  : pairing_variant_text(pairing_type.variant));
+}
 
 constexpr PairingType kPairingTypeNone = {.algorithm = PairingAlgorithm::NONE,
                                           .legacy_variant = LegacyPairingVariant::PIN};
@@ -1134,7 +1153,7 @@ struct formatter<bt_bond_state_t> : enum_formatter<bt_bond_state_t> {};
 template <>
 struct formatter<bt_property_type_t> : enum_formatter<bt_property_type_t> {};
 template <>
-struct formatter<PairingVariant> : enum_formatter<PairingVariant> {};
+struct formatter<PairingVariant> : string_formatter<PairingVariant, &pairing_variant_text> {};
 template <>
 struct formatter<BtIoCap> : formatter<std::string> {
   template <class Context>
@@ -1148,7 +1167,10 @@ struct formatter<EncryptionAlgorithm>
 template <>
 struct formatter<PairingAlgorithm> : string_formatter<PairingAlgorithm, &pairing_algorithm_text> {};
 template <>
-struct formatter<LegacyPairingVariant> : enum_formatter<LegacyPairingVariant> {};
+struct formatter<LegacyPairingVariant>
+    : string_formatter<LegacyPairingVariant, &legacy_pairing_variant_text> {};
+template <>
+struct formatter<PairingType> : string_formatter<PairingType, &pairing_type_text> {};
 }  // namespace std
 
 #endif  // __has_include(<bluetooth/log.h>)
