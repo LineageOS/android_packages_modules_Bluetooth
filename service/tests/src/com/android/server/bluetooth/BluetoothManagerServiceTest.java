@@ -36,6 +36,7 @@ import static com.android.server.bluetooth.BluetoothManagerService.TIMEOUT_BIND;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -51,6 +52,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import android.app.ActivityManager;
 import android.app.AppOpsManager;
 import android.app.role.RoleManager;
 import android.bluetooth.IAdapter;
@@ -107,12 +109,16 @@ public class BluetoothManagerServiceTest {
     @Rule public final SetFlagsRule mSetFlagsRule;
 
     @Rule
-    public final StaticMockitoRule mMockitoRule = new StaticMockitoRule(BluetoothProperties.class);
+    public final StaticMockitoRule mMockitoRule =
+            new StaticMockitoRule(BluetoothProperties.class, ActivityManager.class);
 
     @Parameters(name = "{0}")
     public static List<FlagsWrapper> getParams() {
         return FlagsWrapper.progressionOf(Flags.FLAG_SKIP_BLE_ON_WHEN_TURNING_OFF);
     }
+
+    private static final UserHandle DEFAULT_USER = UserHandle.of(42);
+    private static final UserHandle OTHER_USER = UserHandle.of(43);
 
     public BluetoothManagerServiceTest(FlagsWrapper flagsWrapper) {
         mSetFlagsRule = new SetFlagsRule(flagsWrapper.getFlags());
@@ -126,8 +132,6 @@ public class BluetoothManagerServiceTest {
     @Mock Context mContext;
     @Mock UserManager mUserManager;
     @Mock RoleManager mRoleManager;
-    @Mock UserHandle mUser;
-    @Mock UserHandle mNextUser;
     @Mock IBinder mBleBinder;
     @Mock IBinder mBinder;
     @Mock IBluetoothManagerCallback mManagerCallback;
@@ -167,7 +171,13 @@ public class BluetoothManagerServiceTest {
     @Before
     public void setUp() throws Exception {
         mInOrder = inOrder(mContext, mManagerCallback, mAdapterBinder);
-        mCurrentUser = mUser;
+        ExtendedMockito.doNothing().when(() -> BluetoothProperties.factory_reset(true));
+        mCurrentUser = DEFAULT_USER;
+        ExtendedMockito.doAnswer(
+                        inv -> {
+                            return mCurrentUser.getIdentifier();
+                        })
+                .when(() -> ActivityManager.getCurrentUser());
 
         IpcDataCache<IBluetoothManager, Integer> testCache =
                 new IpcDataCache<>(
@@ -249,8 +259,7 @@ public class BluetoothManagerServiceTest {
         BluetoothRestriction.initialize(
                 mContext, mLooper.getLooper(), mManagerService::onBluetoothDisallowed);
 
-        mManagerService.handleOnBootPhase(mUser);
-
+        mManagerService.handleOnBootPhase(DEFAULT_USER);
         mManagerService.registerAdapter(mManagerCallback);
     }
 
@@ -878,7 +887,7 @@ public class BluetoothManagerServiceTest {
                         "default",
                         mBluetoothComponent,
                         mTimeProvider);
-        mManagerService.handleOnBootPhase(mUser);
+        mManagerService.handleOnBootPhase(DEFAULT_USER);
 
         mManagerService.registerAdapter(mManagerCallback);
 
@@ -902,7 +911,7 @@ public class BluetoothManagerServiceTest {
                         "default",
                         mBluetoothComponent,
                         mTimeProvider);
-        mManagerService.handleOnBootPhase(mUser);
+        mManagerService.handleOnBootPhase(DEFAULT_USER);
 
         assertThat(mManagerService.getState()).isEqualTo(State.OFF);
 
@@ -915,7 +924,7 @@ public class BluetoothManagerServiceTest {
         IBluetoothCallback btCallback = transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
-        mManagerService.onUserSwitching(mNextUser);
+        mManagerService.onUserSwitching(OTHER_USER);
         // A third user switch arrives before the first one is processed.
         UserHandle anotherUser = mock(UserHandle.class);
         mManagerService.onUserSwitching(anotherUser);
@@ -934,7 +943,7 @@ public class BluetoothManagerServiceTest {
     public void userSwitch_onSameUserWhenBtOff_canStillStart() throws Exception {
         // This scenario sometimes happen on Boot, when Bluetooth start for secondary user and
         // received a user switch to secondary user simultaneously
-        mManagerService.onUserSwitching(mUser);
+        mManagerService.onUserSwitching(DEFAULT_USER);
 
         mManagerService.enable(0, "userSwitch_onSameUserWhenBtOff_canStillStart");
         transition_offToOn();
@@ -949,7 +958,7 @@ public class BluetoothManagerServiceTest {
         transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
-        mManagerService.onUserSwitching(mUser);
+        mManagerService.onUserSwitching(DEFAULT_USER);
 
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
@@ -965,8 +974,8 @@ public class BluetoothManagerServiceTest {
         IBluetoothCallback btCallback = transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
-        mManagerService.onUserSwitching(mNextUser);
-        mManagerService.onUserSwitching(mUser);
+        mManagerService.onUserSwitching(OTHER_USER);
+        mManagerService.onUserSwitching(DEFAULT_USER);
 
         transition_onToOff(btCallback);
 
@@ -982,7 +991,7 @@ public class BluetoothManagerServiceTest {
         IBluetoothCallback btCallback = transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
-        mManagerService.onUserSwitching(mNextUser);
+        mManagerService.onUserSwitching(OTHER_USER);
 
         // Start the shutdown process
         transition_onToTurningOff();
@@ -1024,12 +1033,12 @@ public class BluetoothManagerServiceTest {
         IBluetoothCallback btCallback = transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
-        mManagerService.onUserSwitching(mNextUser);
+        mManagerService.onUserSwitching(OTHER_USER);
         transition_onToOff(btCallback);
 
-        mCurrentUser = mNextUser;
+        mCurrentUser = OTHER_USER;
 
-        // Restart for mNextUser begins
+        // Restart for OTHER_USER begins
         IBluetoothCallback newBtCallback = transition_offToBleOn();
         mInOrder.verify(mAdapterBinder).bleOnToOn();
         verifyBleStateIntentSent(State.BLE_ON, State.TURNING_ON);
@@ -1068,7 +1077,7 @@ public class BluetoothManagerServiceTest {
         // A late state change that will be posted after the user switching and will be ignored
         btCallback.onBluetoothStateChange(State.BLE_TURNING_ON, State.BLE_ON);
 
-        mManagerService.onUserSwitching(mNextUser);
+        mManagerService.onUserSwitching(OTHER_USER);
 
         // The service should be unbound, and state should go to OFF.
         mInOrder.verify(mContext).unbindService(any());
@@ -1080,7 +1089,7 @@ public class BluetoothManagerServiceTest {
 
     @Test
     public void userSwitch_whenBtOff_stayOff() throws Exception {
-        mManagerService.onUserSwitching(mNextUser);
+        mManagerService.onUserSwitching(OTHER_USER);
         assertThat(mManagerService.getState()).isEqualTo(State.OFF);
 
         endTest();
@@ -1092,7 +1101,7 @@ public class BluetoothManagerServiceTest {
         IBluetoothCallback btCallback = transition_offToBleOn();
         assertThat(mManagerService.getState()).isEqualTo(State.BLE_ON);
 
-        mManagerService.onUserSwitching(mNextUser);
+        mManagerService.onUserSwitching(OTHER_USER);
         transition_bleOnToOff(btCallback);
 
         endTest();
@@ -1104,11 +1113,11 @@ public class BluetoothManagerServiceTest {
         IBluetoothCallback btCallback = transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
 
-        mManagerService.onUserSwitching(mNextUser);
+        mManagerService.onUserSwitching(OTHER_USER);
 
         transition_onToOff(btCallback);
 
-        mCurrentUser = mNextUser;
+        mCurrentUser = OTHER_USER;
 
         transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
@@ -1351,6 +1360,86 @@ public class BluetoothManagerServiceTest {
         mManagerService.onSatelliteModeChanged(false);
         transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(State.ON);
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SWITCH_WHEN_CURRENT_USER_STOP)
+    public void supervisor__userStop_whenCurrent_emulateSwitch() throws Exception {
+        mLooper = new TestLooper(() -> 0L);
+        mManagerService =
+                new BluetoothManagerService(
+                        mContext,
+                        mLooper.getLooper(),
+                        "default",
+                        mBluetoothComponent,
+                        mTimeProvider);
+        BluetoothRestriction.initialize(
+                mContext, mLooper.getLooper(), mManagerService::onBluetoothDisallowed);
+        mManagerService.registerAdapter(mManagerCallback);
+
+        var supervisor =
+                new BluetoothSupervisor(
+                        mContext, mLooper.getLooper(), mBluetoothComponent, mManagerService);
+        supervisor.onUserStarting(DEFAULT_USER);
+
+        mCurrentUser = OTHER_USER;
+        supervisor.onUserStopping(DEFAULT_USER);
+
+        mManagerService.enable(0, "supervisor__userStop_priorToUserSwitch_emulateSwitch");
+        transition_offToOn(); // Enforce mCurrentUser is used (see acceptBluetoothBinding)
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SWITCH_WHEN_CURRENT_USER_STOP)
+    public void supervisor__userStop_whenNotCurrent_nothingHappen() throws Exception {
+        mLooper = new TestLooper(() -> 0L);
+        mManagerService =
+                new BluetoothManagerService(
+                        mContext,
+                        mLooper.getLooper(),
+                        "default",
+                        mBluetoothComponent,
+                        mTimeProvider);
+        BluetoothRestriction.initialize(
+                mContext, mLooper.getLooper(), mManagerService::onBluetoothDisallowed);
+        mManagerService.registerAdapter(mManagerCallback);
+        var supervisor =
+                new BluetoothSupervisor(
+                        mContext, mLooper.getLooper(), mBluetoothComponent, mManagerService);
+        supervisor.onUserStarting(DEFAULT_USER);
+        supervisor.onUserStopping(OTHER_USER);
+
+        mManagerService.enable(0, "supervisor__userStop_priorToUserSwitch_emulateSwitch");
+        transition_offToOn(); // Enforce mCurrentUser is used (see acceptBluetoothBinding)
+
+        endTest();
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SWITCH_WHEN_CURRENT_USER_STOP)
+    public void supervisor__foregroundUserStop_whenCurrent_isUnsupported() throws Exception {
+        mLooper = new TestLooper(() -> 0L);
+        mManagerService =
+                new BluetoothManagerService(
+                        mContext,
+                        mLooper.getLooper(),
+                        "default",
+                        mBluetoothComponent,
+                        mTimeProvider);
+        BluetoothRestriction.initialize(
+                mContext, mLooper.getLooper(), mManagerService::onBluetoothDisallowed);
+        mManagerService.registerAdapter(mManagerCallback);
+        var supervisor =
+                new BluetoothSupervisor(
+                        mContext, mLooper.getLooper(), mBluetoothComponent, mManagerService);
+
+        mCurrentUser = OTHER_USER;
+        supervisor.onUserStarting(OTHER_USER);
+        assertThrows(IllegalStateException.class, () -> supervisor.onUserStopping(mCurrentUser));
 
         endTest();
     }

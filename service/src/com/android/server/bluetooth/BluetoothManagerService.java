@@ -101,7 +101,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 
-class BluetoothManagerService {
+@VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE) // For Kotlin
+public class BluetoothManagerService {
     private static final String TAG = BluetoothManagerService.class.getSimpleName();
 
     private static final int CRASH_LOG_MAX_SIZE = 100;
