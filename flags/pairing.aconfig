@@ -32,16 +32,6 @@ flag {
 }
 
 flag {
-    name: "donot_mandate_auth_along_with_encryption"
-    namespace: "bluetooth"
-    description: "Don't mandate authentication along with encryption"
-    bug: "395476774"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "smp_connection_status_handling_when_no_acl"
     namespace: "bluetooth"
     description: "Fix SMP connection status sent from L2CAP when LE ACL is not connected"
