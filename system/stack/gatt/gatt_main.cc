@@ -429,9 +429,10 @@ void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb, bool is_a
     if (p_tcb->app_hold_link.empty()) {
       if (com_android_bluetooth_flags_gatt_discovery_is_non_opportunistic_client() &&
           p_tcb->transport == BT_TRANSPORT_LE) {
-        auto role = get_btm_client_interface().link_policy.BTM_GetRole(p_tcb->peer_bda,
-                                                                       BT_TRANSPORT_LE);
-        if (role && role.value() == tHCI_ROLE::HCI_ROLE_PERIPHERAL) {
+        tHCI_ROLE role;
+        auto status = get_btm_client_interface().link_policy.BTM_GetRole(p_tcb->peer_bda,
+                                                                         BT_TRANSPORT_LE, &role);
+        if (status == tBTM_STATUS::BTM_SUCCESS && role == tHCI_ROLE::HCI_ROLE_PERIPHERAL) {
           log::info(
                   "{} is peripheral and the central device is responsible to disconnect if needed "
                   "or ACL link should be disconnected.",

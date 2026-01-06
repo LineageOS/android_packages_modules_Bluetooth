@@ -68,9 +68,12 @@ public:
     com::android::bluetooth::flags::provider_->reset_flags();
 
     // Use peripheral role by default
-    get_btm_client_interface().link_policy.BTM_GetRole =
-            [](const RawAddress& /* remote_bd_addr */, tBT_TRANSPORT /* transport */
-               ) -> std::optional<tHCI_ROLE> { return HCI_ROLE_PERIPHERAL; };
+    get_btm_client_interface().link_policy.BTM_GetRole = [](const RawAddress& /* remote_bd_addr */,
+                                                            tBT_TRANSPORT /* transport */,
+                                                            tHCI_ROLE* p_role) -> tBTM_STATUS {
+      *p_role = HCI_ROLE_PERIPHERAL;
+      return tBTM_STATUS::BTM_SUCCESS;
+    };
 
     gatt::SetMockBtaGattServerInterface(&gatt_server_interface_);
     ascs_ = InstantiateAscs();

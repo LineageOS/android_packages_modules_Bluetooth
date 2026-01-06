@@ -61,8 +61,8 @@ void bluetooth::manager::SetMockBtmInterface(MockBtmInterface* mock_btm_interfac
     return btm_interface->BTM_IsAclConnectionUp(remote_bda, transport);
   };
   mock_btm_client_interface.link_policy.BTM_GetRole = [](const RawAddress& bd_addr,
-                                                         tBT_TRANSPORT transport) {
-    return btm_interface->BTM_GetRole(bd_addr, transport);
+                                                         tBT_TRANSPORT transport, tHCI_ROLE* role) {
+    return btm_interface->BTM_GetRole(bd_addr, transport, role);
   };
 }
 
@@ -145,7 +145,7 @@ std::optional<tBLE_BD_ADDR> BTM_BleGetIdentityAddress(const RawAddress address) 
   return btm_interface->BTM_BleGetIdentityAddress(address);
 }
 
-std::optional<tHCI_ROLE> BTM_GetRole(const RawAddress& address, tBT_TRANSPORT transport) {
+tBTM_STATUS BTM_GetRole(const RawAddress& address, tBT_TRANSPORT transport, tHCI_ROLE* role) {
   log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
-  return btm_interface->BTM_GetRole(address, transport);
+  return btm_interface->BTM_GetRole(address, transport, role);
 }

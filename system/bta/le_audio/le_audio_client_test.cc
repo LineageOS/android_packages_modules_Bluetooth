@@ -3137,8 +3137,11 @@ protected:
     EXPECT_CALL(mock_hal_2_1_verifier, Call()).Times(1);
     EXPECT_CALL(mock_storage_load, Call()).Times(1);
 
-    ON_CALL(mock_btm_interface_, BTM_GetRole(_, _))
-            .WillByDefault([](const RawAddress&, tBT_TRANSPORT) { return HCI_ROLE_CENTRAL; });
+    ON_CALL(mock_btm_interface_, BTM_GetRole(_, _, _))
+            .WillByDefault([](const RawAddress&, tBT_TRANSPORT, tHCI_ROLE* role) {
+              *role = HCI_ROLE_CENTRAL;
+              return tBTM_STATUS::BTM_SUCCESS;
+            });
 
     ON_CALL(mock_btm_interface_, GetHCIConnHandle(_, _))
             .WillByDefault(
@@ -3542,9 +3545,10 @@ TEST_F(UnicastTest, ConnectAsPeripheral) {
                                 true,                                /*add_pacs*/
                                 default_ase_cnt /*add_ascs*/);
 
-  ON_CALL(mock_btm_interface_, BTM_GetRole(_, _))
-          .WillByDefault([](const RawAddress&, tBT_TRANSPORT) {
-            return HCI_ROLE_PERIPHERAL;
+  ON_CALL(mock_btm_interface_, BTM_GetRole(_, _, _))
+          .WillByDefault([](const RawAddress&, tBT_TRANSPORT, tHCI_ROLE* role) {
+            *role = HCI_ROLE_PERIPHERAL;
+            return tBTM_STATUS::BTM_SUCCESS;
           });
 
   EXPECT_CALL(mock_gatt_interface_, Close(_)).Times(1);
