@@ -41,6 +41,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.State;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.ContextWrapper;
@@ -1810,7 +1811,7 @@ public class BluetoothInCallServiceTest {
         doReturn(Uri.parse("tel:5550000")).when(ringingCall).getHandle();
 
         Intent intent = new Intent(BluetoothAdapter.ACTION_STATE_CHANGED);
-        intent.putExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.STATE_ON);
+        intent.putExtra(BluetoothAdapter.EXTRA_STATE, State.ON);
         mBluetoothInCallService.mBluetoothAdapterReceiver =
                 mBluetoothInCallService.new BluetoothAdapterReceiver();
         mBluetoothInCallService.mBluetoothAdapterReceiver.onReceive(

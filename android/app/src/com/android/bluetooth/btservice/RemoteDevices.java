@@ -46,6 +46,7 @@ import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BondStatus;
 import android.bluetooth.EncryptionStatus;
 import android.bluetooth.IBluetoothConnectionCallback;
+import android.bluetooth.State;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
@@ -1501,7 +1502,7 @@ public class RemoteDevices {
 
         BluetoothDevice device = deviceProperties.getDevice();
         switch (mAdapterService.getState()) {
-            case BluetoothAdapter.STATE_ON -> {
+            case State.ON -> {
                 if (success) {
                     MetricsLogger.getInstance()
                             .cacheCount(BluetoothProtoEnums.SDP_ADD_UUID_WITH_INTENT, 1);
@@ -1513,7 +1514,7 @@ public class RemoteDevices {
                 }
                 sendUuidIntent(device, deviceProperties, success);
             }
-            case BluetoothAdapter.STATE_BLE_ON -> {
+            case State.BLE_ON -> {
                 if (success) {
                     MetricsLogger.getInstance()
                             .cacheCount(BluetoothProtoEnums.SDP_ADD_UUID_WITH_NO_INTENT, 1);
@@ -1661,19 +1662,17 @@ public class RemoteDevices {
                         + Util.addressTypeToString(addressType)
                         + ") reason: "
                         + hciReason
-                        + " adapter state: "
-                        + BluetoothAdapter.nameForState(state));
+                        + (" adapter state: " + State.$.toString(state)));
 
         Intent intent = null;
         if (newState == AbstractionLayer.BT_ACL_STATE_CONNECTED) {
             deviceProperties.setConnected(transport, handle);
             if (Flags.fixIntentSelectionForAcl()
-                    || state == BluetoothAdapter.STATE_ON
-                    || state == BluetoothAdapter.STATE_TURNING_ON) {
+                    || state == State.ON
+                    || state == State.TURNING_ON) {
                 intent = new Intent(BluetoothDevice.ACTION_ACL_CONNECTED);
                 intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, transport);
-            } else if (state == BluetoothAdapter.STATE_BLE_ON
-                    || state == BluetoothAdapter.STATE_BLE_TURNING_ON) {
+            } else if (state == State.BLE_ON || state == State.BLE_TURNING_ON) {
                 intent = new Intent(BluetoothAdapter.ACTION_BLE_ACL_CONNECTED);
             }
             mAdapterService
@@ -1700,13 +1699,12 @@ public class RemoteDevices {
                 removeDeviceProperties(Utils.getAddressStringFromByte(address));
             }
             if (Flags.fixIntentSelectionForAcl()
-                    || state == BluetoothAdapter.STATE_ON
-                    || state == BluetoothAdapter.STATE_TURNING_OFF) {
+                    || state == State.ON
+                    || state == State.TURNING_OFF) {
                 mAdapterService.notifyAclDisconnected(device, transport);
                 intent = new Intent(BluetoothDevice.ACTION_ACL_DISCONNECTED);
                 intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, transport);
-            } else if (state == BluetoothAdapter.STATE_BLE_ON
-                    || state == BluetoothAdapter.STATE_BLE_TURNING_OFF) {
+            } else if (state == State.BLE_ON || state == State.BLE_TURNING_OFF) {
                 intent = new Intent(BluetoothAdapter.ACTION_BLE_ACL_DISCONNECTED);
             }
             // Reset battery level on complete disconnection

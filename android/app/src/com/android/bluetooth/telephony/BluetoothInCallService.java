@@ -21,6 +21,7 @@ import static java.util.Objects.requireNonNullElseGet;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothLeCall;
+import android.bluetooth.State;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -191,10 +192,10 @@ public class BluetoothInCallService extends InCallService {
                 int state =
                         intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
                 Log.d(TAG, "Bluetooth Adapter state: " + state);
-                if (state == BluetoothAdapter.STATE_ON) {
+                if (state == State.ON) {
                     mLeCallControlClient.registerBearer();
                     queryPhoneState(getHeadsetService());
-                } else if (state == BluetoothAdapter.STATE_TURNING_OFF) {
+                } else if (state == State.TURNING_OFF) {
                     clear();
                 }
             }

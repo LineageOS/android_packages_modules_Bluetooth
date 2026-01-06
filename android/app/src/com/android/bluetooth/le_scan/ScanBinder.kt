@@ -21,9 +21,9 @@ import android.Manifest.permission.BLUETOOTH_SCAN
 import android.Manifest.permission.UPDATE_DEVICE_STATS
 import android.annotation.RequiresPermission
 import android.app.PendingIntent
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.IBluetoothScan
+import android.bluetooth.State
 import android.bluetooth.le.IPeriodicAdvertisingCallback
 import android.bluetooth.le.IScannerCallback
 import android.bluetooth.le.ScanCallback.SCAN_FAILED_APPLICATION_REGISTRATION_FAILED
@@ -203,7 +203,7 @@ class ScanBinder(
 
         fun needsPrivilegedPermissionForScan(settings: ScanSettings): Boolean {
             // BLE scan only mode needs special permission.
-            if (adapterService.getState() != BluetoothAdapter.STATE_ON) {
+            if (adapterService.getState() != State.ON) {
                 return true
             }
 

@@ -60,6 +60,7 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.EncryptionStatus;
+import android.bluetooth.State;
 import android.companion.CompanionDeviceManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -312,7 +313,7 @@ public class RemoteDevicesTest {
 
         // Verify that when device is completely disconnected, RemoteDevices reset battery level to
         // BluetoothDevice.BATTERY_LEVEL_UNKNOWN
-        when(mAdapterService.getState()).thenReturn(BluetoothAdapter.STATE_ON);
+        when(mAdapterService.getState()).thenReturn(State.ON);
         mRemoteDevices.aclStateChangeCallback(
                 0,
                 Utils.getByteAddress(mDevice),
@@ -348,7 +349,7 @@ public class RemoteDevicesTest {
 
         // Verify that when device is completely disconnected, RemoteDevices reset battery level to
         // BluetoothDevice.BATTERY_LEVEL_UNKNOWN
-        when(mAdapterService.getState()).thenReturn(BluetoothAdapter.STATE_ON);
+        when(mAdapterService.getState()).thenReturn(State.ON);
         mRemoteDevices.aclStateChangeCallback(
                 0,
                 Utils.getByteAddress(mDevice),
@@ -907,7 +908,7 @@ public class RemoteDevicesTest {
     @EnableFlags(Flags.FLAG_FIX_INTENT_SELECTION_FOR_ACL)
     public void aclStateChangeCallback_bleOnWithFixIntentFlag_sendsAclIntent() {
         final int transport = TRANSPORT_BREDR;
-        when(mAdapterService.getState()).thenReturn(BluetoothAdapter.STATE_BLE_ON);
+        when(mAdapterService.getState()).thenReturn(State.BLE_ON);
 
         // Test ACL Connected
         mRemoteDevices.aclStateChangeCallback(
@@ -940,7 +941,7 @@ public class RemoteDevicesTest {
     @DisableFlags(Flags.FLAG_FIX_INTENT_SELECTION_FOR_ACL)
     public void aclStateChangeCallback_bleOnWithoutFixIntentFlag_sendsBleAclIntent() {
         final int transport = TRANSPORT_BREDR;
-        when(mAdapterService.getState()).thenReturn(BluetoothAdapter.STATE_BLE_ON);
+        when(mAdapterService.getState()).thenReturn(State.BLE_ON);
 
         // Test ACL Connected
         mRemoteDevices.aclStateChangeCallback(
@@ -1042,7 +1043,7 @@ public class RemoteDevicesTest {
         assertThat(mRemoteDevices.getDeviceProperties(mDevice).getBondingInitiator())
                 .isEqualTo(0); // BONDING_INITIATOR_NONE
 
-        when(mAdapterService.getState()).thenReturn(BluetoothAdapter.STATE_ON);
+        when(mAdapterService.getState()).thenReturn(State.ON);
 
         // Simulate ACL disconnection for this device.
         mRemoteDevices.aclStateChangeCallback(
@@ -1069,7 +1070,7 @@ public class RemoteDevicesTest {
         deviceProp.setBondingInitiatedLocally(true); // Signifies a bonding attempt was made
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNotNull();
 
-        when(mAdapterService.getState()).thenReturn(BluetoothAdapter.STATE_ON);
+        when(mAdapterService.getState()).thenReturn(State.ON);
 
         // Simulate ACL disconnection for this device.
         mRemoteDevices.aclStateChangeCallback(
@@ -1093,7 +1094,7 @@ public class RemoteDevicesTest {
         deviceProp.setBondState(BluetoothDevice.BOND_BONDING);
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNotNull();
 
-        when(mAdapterService.getState()).thenReturn(BluetoothAdapter.STATE_ON);
+        when(mAdapterService.getState()).thenReturn(State.ON);
         // Mock for sendPairingCancelIntent to get the pairing UI package
         ExtendedMockito.doReturn("some.package.name")
                 .when(() -> SystemProperties.get(anyString(), anyString()));
