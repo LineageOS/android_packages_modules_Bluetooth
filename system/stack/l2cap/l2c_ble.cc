@@ -908,50 +908,24 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
                 p_ccb->remote_cid, p_ccb->peer_conn_cfg.mtu, p_ccb->peer_conn_cfg.mps,
                 p_ccb->peer_conn_cfg.credits, con_info.l2cap_result);
 
-        if (com_android_bluetooth_flags_check_l2c_conn_status_before_param_validation()) {
-          if (con_info.l2cap_result ==
-              static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_CONN_OK)) {
-            if (validate_l2cap_params(p_ccb->peer_conn_cfg.mtu, p_ccb->peer_conn_cfg.mps)) {
-              p_ccb->tx_mps = p_ccb->peer_conn_cfg.mps;
-              p_ccb->ble_sdu = NULL;
-              p_ccb->ble_sdu_length = 0;
-              p_ccb->is_first_seg = true;
-              p_ccb->peer_cfg.fcr.mode = L2CAP_FCR_LE_COC_MODE;
-              l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP, &con_info);
-            } else {
-              con_info.l2cap_result =
-                      static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_NO_RESOURCES);
-              l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
-              break;
-            }
+        if (con_info.l2cap_result ==
+            static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_CONN_OK)) {
+          if (validate_l2cap_params(p_ccb->peer_conn_cfg.mtu, p_ccb->peer_conn_cfg.mps)) {
+            p_ccb->tx_mps = p_ccb->peer_conn_cfg.mps;
+            p_ccb->ble_sdu = NULL;
+            p_ccb->ble_sdu_length = 0;
+            p_ccb->is_first_seg = true;
+            p_ccb->peer_cfg.fcr.mode = L2CAP_FCR_LE_COC_MODE;
+            l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP, &con_info);
           } else {
-            l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
-            break;
-          }
-        } else {
-          /* validate the parameters */
-          if (p_ccb->peer_conn_cfg.mtu < L2CAP_LE_MIN_MTU ||
-              p_ccb->peer_conn_cfg.mps < L2CAP_LE_MIN_MPS ||
-              p_ccb->peer_conn_cfg.mps > L2CAP_LE_MAX_MPS) {
-            log::error("L2CAP invalid params");
             con_info.l2cap_result =
                     static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_NO_RESOURCES);
             l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
             break;
           }
-
-          p_ccb->tx_mps = p_ccb->peer_conn_cfg.mps;
-          p_ccb->ble_sdu = NULL;
-          p_ccb->ble_sdu_length = 0;
-          p_ccb->is_first_seg = true;
-          p_ccb->peer_cfg.fcr.mode = L2CAP_FCR_LE_COC_MODE;
-
-          if (con_info.l2cap_result ==
-              static_cast<tL2CAP_CONN>(tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_CONN_OK)) {
-            l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP, &con_info);
-          } else {
-            l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
-          }
+        } else {
+          l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
+          break;
         }
       } else {
         log::verbose("I DO NOT remember the connection req");
