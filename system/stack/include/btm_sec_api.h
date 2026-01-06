@@ -42,8 +42,9 @@
  * Returns          void
  *
  ******************************************************************************/
-void BTM_SecAddDevice(const RawAddress& bd_addr, const DEV_CLASS dev_class, LinkKey link_key,
-                      uint8_t key_type, uint8_t pin_length);
+void BTM_SecAddDevice(const RawAddress& bd_addr, const DEV_CLASS& dev_class,
+                      const PairingType& pairing_type, const LinkKey& link_key, uint8_t key_type,
+                      uint8_t pin_length);
 
 /** Free resources associated with the device associated with |bd_addr| address.
  *

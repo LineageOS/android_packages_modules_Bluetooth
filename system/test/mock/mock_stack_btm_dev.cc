@@ -44,8 +44,9 @@ struct maybe_resolve_address maybe_resolve_address;
 }  // namespace mock
 }  // namespace test
 
-void BTM_SecAddDevice(const RawAddress& /* bd_addr */, const DEV_CLASS /* dev_class */,
-                      LinkKey /* link_key */, uint8_t /* key_type */, uint8_t /* pin_length */) {
+void BTM_SecAddDevice(const RawAddress& /* bd_addr */, const DEV_CLASS& /* dev_class */,
+                      const PairingType& /* pairing_type */, const LinkKey& /* link_key */,
+                      uint8_t /* key_type */, uint8_t /* pin_length */) {
   inc_func_call_count(__func__);
 }
 bool BTM_SecDeleteDevice(const RawAddress& /* bd_addr */) {
