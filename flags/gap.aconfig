@@ -166,16 +166,6 @@ flag {
 }
 
 flag {
-    name: "broadcast_transport_type_on_reset"
-    namespace: "bluetooth"
-    description: "Broadcast the transport type on BT reset as part of ACL_DISCONNECTED."
-    bug: "433990971"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "l2c_not_cancel_timeout"
     namespace: "bluetooth"
     description: "Do not cancel timeout alarm if l2cap is connecting"
