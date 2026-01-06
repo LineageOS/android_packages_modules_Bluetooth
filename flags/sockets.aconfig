@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "set_max_data_length_for_lecoc"
-    namespace: "bluetooth"
-    description: "set le data length to max on le coc connection to achieve better data rate"
-    bug: "373726267"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "avoid_l2c_processing_while_stack_shutdown"
     namespace: "bluetooth"
     description: "Avoid l2cap processing while stack is shutdown"
