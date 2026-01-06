@@ -678,7 +678,7 @@ static BtaDmLink* allocate_link_for(const RawAddress& bd_addr, tBT_TRANSPORT tra
     }
   }
 
-  if (bta_dm_cb.link_db.count < BTA_DM_NUM_LINKS) {
+  if (bta_dm_cb.link_db.count < bta_dm_cb.link_db.links.size()) {
     auto link = &bta_dm_cb.link_db.links[bta_dm_cb.link_db.count];
     link->addr = bd_addr;
     bta_dm_cb.link_db.count++;
@@ -729,7 +729,7 @@ static void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {
 
   auto p_link = allocate_link_for(bd_addr, transport);
   if (p_link == nullptr) {
-    log::warn("Unable to allocate device resources for new connection");
+    log::error("Unable to allocate device resources for new connection {}", link_spec);
     return;
   }
   log::info("Acl connected peer:{} transport:{} handle:{}", bd_addr, bt_transport_text(transport),
