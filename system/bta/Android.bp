@@ -1695,6 +1695,7 @@ cc_test {
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_metrics_mock",
         "libbluetooth_private_gatt_rs_bridge",
         "libbluetooth_types",
         "libbt-btu-main-thread",
