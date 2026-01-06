@@ -104,20 +104,20 @@ public class GattService extends ProfileService {
     private static final int GATT_SUBRATE_LATENCY_INDEX = 2;
     private static final int GATT_SUBRATE_CONT_NUM_INDEX = 3;
 
-    private static final int SUBRATE_LOW_MODE_SUBRATE_MIN_DEFAULT = 2;
-    private static final int SUBRATE_LOW_MODE_SUBRATE_MAX_DEFAULT = 4;
-    private static final int SUBRATE_LOW_MODE_LATENCY_DEFAULT = 0;
-    private static final int SUBRATE_LOW_MODE_CONT_NUM_DEFAULT = 1;
+    private static final int SUBRATE_HIGH_MODE_SUBRATE_MIN_DEFAULT = 2;
+    private static final int SUBRATE_HIGH_MODE_SUBRATE_MAX_DEFAULT = 4;
+    private static final int SUBRATE_HIGH_MODE_LATENCY_DEFAULT = 0;
+    private static final int SUBRATE_HIGH_MODE_CONT_NUM_DEFAULT = 1;
 
     private static final int SUBRATE_BALANCED_MODE_SUBRATE_MIN_DEFAULT = 5;
     private static final int SUBRATE_BALANCED_MODE_SUBRATE_MAX_DEFAULT = 7;
     private static final int SUBRATE_BALANCED_MODE_LATENCY_DEFAULT = 0;
     private static final int SUBRATE_BALANCED_MODE_CONT_NUM_DEFAULT = 4;
 
-    private static final int SUBRATE_HIGH_MODE_SUBRATE_MIN_DEFAULT = 8;
-    private static final int SUBRATE_HIGH_MODE_SUBRATE_MAX_DEFAULT = 10;
-    private static final int SUBRATE_HIGH_MODE_LATENCY_DEFAULT = 0;
-    private static final int SUBRATE_HIGH_MODE_CONT_NUM_DEFAULT = 6;
+    private static final int SUBRATE_LOW_MODE_SUBRATE_MIN_DEFAULT = 8;
+    private static final int SUBRATE_LOW_MODE_SUBRATE_MAX_DEFAULT = 10;
+    private static final int SUBRATE_LOW_MODE_LATENCY_DEFAULT = 0;
+    private static final int SUBRATE_LOW_MODE_CONT_NUM_DEFAULT = 6;
 
     private static final Integer GATT_MTU_MAX = 517;
     private static final Map<String, Integer> EARLY_MTU_EXCHANGE_PACKAGES =
