@@ -25,17 +25,13 @@
 #include <utility>
 #include <vector>
 
-#include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/include/bta_sdp_api.h"
 #include "btif/include/btif_config.h"
-#include "com_android_bluetooth_flags.h"
-#include "common/strings.h"
 #include "internal_include/bt_target.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_log_history.h"
-#include "stack/include/hidh_api.h"
-#include "stack/include/main_thread.h"
+#include "stack/include/sdp_api.h"
 #include "stack/include/sdp_status.h"
 #include "stack/sdp/sdpint.h"  // is_sdp_pbap_pce_disabled
 #include "storage/config_keys.h"
@@ -48,7 +44,7 @@ using bluetooth::Uuid;
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
 
-const uint16_t bta_service_id_to_uuid_lkup_tbl[BTA_MAX_SERVICE_ID] = {
+static const uint16_t bta_service_id_to_uuid_lkup_tbl[BTA_MAX_SERVICE_ID] = {
         UUID_SERVCLASS_PNP_INFORMATION,       /* Reserved */
         UUID_SERVCLASS_SERIAL_PORT,           /* BTA_SPP_SERVICE_ID */
         UUID_SERVCLASS_DIALUP_NETWORKING,     /* BTA_DUN_SERVICE_ID */

@@ -55,6 +55,7 @@
 #include "bluetooth/types/bt_transport.h"
 #include "bt_dev_class.h"
 #include "bt_name.h"
+#include "bta/dm/bta_dm_device_search.h"
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/gatt/bta_gattc_int.h"
 #include "bta/include/bta_api.h"
