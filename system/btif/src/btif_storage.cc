@@ -807,6 +807,8 @@ bt_status_t btif_storage_add_remote_device(const RawAddress& addr, uint32_t num_
 bt_status_t btif_storage_add_bredr_keys(const RawAddress& addr, const PairingType& pairing_type,
                                         const LinkKey& link_key, uint8_t key_type,
                                         uint8_t pin_length) {
+  log::debug("{} type: {}", addr, pairing_type);
+
   std::string bdstr = addr.ToString();
   bool ret = btif_config_set_int(bdstr, BTIF_STORAGE_KEY_LINK_KEY_TYPE, static_cast<int>(key_type));
   ret &= btif_config_set_int(bdstr, BTIF_STORAGE_KEY_PIN_LENGTH, static_cast<int>(pin_length));
@@ -1250,6 +1252,8 @@ bt_status_t btif_storage_remove_ble_bonding_keys(const RawAddress& addr) {
  ******************************************************************************/
 bt_status_t btif_storage_set_ble_pairing_type(const RawAddress& addr,
                                               const PairingType& pairing_type) {
+  log::debug("{} type: {}", addr, pairing_type);
+
   const std::string bdstr = addr.ToString();
   bool ret = btif_config_set_int(bdstr, BTIF_STORAGE_KEY_LE_PAIRING_ALGORITHM,
                                  static_cast<int>(pairing_type.algorithm));
@@ -1289,6 +1293,8 @@ std::optional<PairingType> btif_storage_get_ble_pairing_type(const RawAddress& a
 
   pairing_type.variant = static_cast<PairingVariant>(variant);
 
+  log::debug("{} type: {}", addr, pairing_type);
+
   return pairing_type;
 }
 
@@ -1325,6 +1331,8 @@ std::optional<PairingType> btif_storage_get_bredr_pairing_type(const RawAddress&
   } else if (pairing_type.algorithm == PairingAlgorithm::SC) {
     pairing_type.variant = static_cast<PairingVariant>(variant);
   }
+
+  log::debug("{} type: {}", addr, pairing_type);
 
   return pairing_type;
 }
