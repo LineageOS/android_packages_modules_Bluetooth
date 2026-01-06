@@ -45,7 +45,7 @@
  *  Constants and data types
  ****************************************************************************/
 
-#define BTA_DM_NUM_LINKS 7
+#define BTA_DM_NUM_LINKS 16
 
 typedef enum : uint8_t {
   BTA_DM_DI_NONE = 0x00,      /* nothing special */
@@ -142,7 +142,7 @@ public:
 
 /* structure to store list of active connections */
 typedef struct {
-  BtaDmLink links[BTA_DM_NUM_LINKS];
+  std::array<BtaDmLink, BTA_DM_NUM_LINKS> links;
   uint8_t count;
   uint8_t le_count;
 } BtaDmLinkDb;
