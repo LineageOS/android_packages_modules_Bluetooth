@@ -58,34 +58,83 @@ public:
   }
 
 private:
-  void retry_unknown_acl(bool timed_out) {
-    std::vector<AclView> unsent_packets;
+  struct WaitingPacket {
+    AclView packet;
+    std::chrono::steady_clock::time_point enqueued_timestamp;
+    WaitingPacket(AclView packet, std::chrono::steady_clock::time_point enqueued_timestamp)
+        : packet(std::move(packet)), enqueued_timestamp(enqueued_timestamp) {}
+    WaitingPacket(const WaitingPacket&) = default;
+    WaitingPacket& operator=(const WaitingPacket&) = default;
+    WaitingPacket(WaitingPacket&&) = default;
+    WaitingPacket& operator=(WaitingPacket&&) = default;
+  };
+
+  void retry_unknown_acl_packets_(bool timed_out) {
+    std::vector<WaitingPacket> unsent_packets;
     for (const auto& itr : waiting_packets_) {
-      auto handle = itr.GetHandle();
+      auto handle = itr.packet.GetHandle();
       if (!classic_acl_data_consumer_->SendPacketUpward(
                   handle,
                   [itr](struct acl_manager::assembler* assembler) {
-                    assembler->on_incoming_packet(itr);
+                    assembler->on_incoming_packet(itr.packet);
                   }) &&
           !le_acl_data_consumer_->SendPacketUpward(handle,
                                                    [itr](struct acl_manager::assembler* assembler) {
-                                                     assembler->on_incoming_packet(itr);
+                                                     assembler->on_incoming_packet(itr.packet);
                                                    })) {
         if (!timed_out) {
           unsent_packets.push_back(itr);
         } else {
-          log::error("Dropping packet of size {} to unknown connection 0x{:x}", itr.size(),
-                     itr.GetHandle());
+          log::error("Dropping packet of size {} to unknown connection 0x{:x}", itr.packet.size(),
+                     itr.packet.GetHandle());
         }
       }
     }
     waiting_packets_ = std::move(unsent_packets);
   }
 
+  void retry_unknown_acl(bool timed_out) {
+    if (!com::android::bluetooth::flags::discard_unknown_acl_packet()) {
+      retry_unknown_acl_packets_(timed_out);
+      return;
+    }
+    std::erase_if(waiting_packets_, [this](const WaitingPacket& packet) {
+      if ((classic_acl_data_consumer_->SendPacketUpward(
+                  packet.packet.GetHandle(),
+                  [&packet](struct acl_manager::assembler* assembler) {
+                    assembler->on_incoming_packet(packet.packet);
+                  })) ||
+          (le_acl_data_consumer_->SendPacketUpward(
+                  packet.packet.GetHandle(), [&packet](struct acl_manager::assembler* assembler) {
+                    assembler->on_incoming_packet(packet.packet);
+                  }))) {
+        return true;
+      }
+      bool expired = std::chrono::steady_clock::now() >=
+                     packet.enqueued_timestamp + kWaitBeforeDroppingUnknownAcl;
+      if (expired) {
+        log::error("Dropping packet of size {} to unknown connection 0x{:x}", packet.packet.size(),
+                   packet.packet.GetHandle());
+        return true;
+      }
+      return false;
+    });
+
+    if (waiting_packets_.empty()) {
+      unknown_acl_alarm_.reset();
+    } else if (timed_out) {
+      unknown_acl_alarm_->Schedule(
+              common::BindOnce(&HciDataRouter::on_unknown_acl_timer, common::Unretained(this)),
+              kWaitBeforeDroppingUnknownAcl);
+    }
+  }
+
   void on_unknown_acl_timer() {
     log::info("Timer fired!");
     retry_unknown_acl(/* timed_out = */ true);
-    unknown_acl_alarm_.reset();
+    if (!com::android::bluetooth::flags::discard_unknown_acl_packet()) {
+      unknown_acl_alarm_.reset();
+    }
   }
 
   void dequeue_and_route_acl_packet_to_connection() {
@@ -125,13 +174,20 @@ private:
       } else {
         unknown_acl_alarm_.reset(new os::Alarm(&handler_->thread()));
       }
+      if (com::android::bluetooth::flags::discard_unknown_acl_packet()) {
+        unknown_acl_alarm_->Schedule(
+                common::BindOnce(&HciDataRouter::on_unknown_acl_timer, common::Unretained(this)),
+                kWaitBeforeDroppingUnknownAcl);
+      }
     }
-    waiting_packets_.push_back(*packet);
+    waiting_packets_.emplace_back(*packet, std::chrono::steady_clock::now());
     log::info("Saving packet of size {} to unknown connection 0x{:x}", packet->size(),
               packet->GetHandle());
-    unknown_acl_alarm_->Schedule(
-            common::BindOnce(&HciDataRouter::on_unknown_acl_timer, common::Unretained(this)),
-            kWaitBeforeDroppingUnknownAcl);
+    if (!com::android::bluetooth::flags::discard_unknown_acl_packet()) {
+      unknown_acl_alarm_->Schedule(
+              common::BindOnce(&HciDataRouter::on_unknown_acl_timer, common::Unretained(this)),
+              kWaitBeforeDroppingUnknownAcl);
+    }
   }
 
   os::Handler* handler_;
@@ -140,7 +196,7 @@ private:
   common::BidiQueueEnd<AclBuilder, AclView>* hci_queue_end_ = nullptr;
 
   std::unique_ptr<os::Alarm> unknown_acl_alarm_;
-  std::vector<AclView> waiting_packets_;
+  std::vector<WaitingPacket> waiting_packets_;
 };
 
 }  // namespace bluetooth::hci

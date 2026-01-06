@@ -10,3 +10,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "discard_unknown_acl_packet"
+    namespace: "bluetooth"
+    description: "Fix retry_unknown_acl to properly discard invalid ACL packets"
+    bug: "472652734"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
