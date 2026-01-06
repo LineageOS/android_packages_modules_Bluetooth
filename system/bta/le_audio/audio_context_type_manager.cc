@@ -264,7 +264,7 @@ public:
     }
 
     log::info(
-            "IsInCall: {}, IsInVoip: {}, InInGame: {}, local_encoding_contexts_types_.source: {}, "
+            "IsInCall: {}, IsInVoip: {}, IsInGame: {}, local_encoding_contexts_types_.source: {}, "
             "local_encoding_contexts_types_.sink: {}, "
             "local_decoding_context_types_: {}, remote_directions: {}",
             IsInCall(), IsInVoip(), IsInGame(), ToString(local_encoding_contexts_types_.source),
@@ -303,16 +303,24 @@ public:
     BidirectionalPair<AudioContexts> additional_local_contexts_based_on_states = {AudioContexts(),
                                                                                   AudioContexts()};
     if (IsInGame()) {
-      if (copy_local_encoding_ctxs.source.any()) {
-        log::info("Adding game Mode to remote Sink");
+      if (copy_local_encoding_ctxs.source.none() && copy_local_decoding_ctxs.none()) {
+        log::info(
+                "Adding game Mode to remote Sink as Audio Hal doesn't specify metadata during the "
+                "game mode");
         copy_local_encoding_ctxs.source.set(LeAudioContextType::GAME);
         additional_local_contexts_based_on_states.source.set(LeAudioContextType::GAME);
-      }
+      } else {
+        if (copy_local_encoding_ctxs.source.any()) {
+          log::info("Adding game Mode to remote Sink");
+          copy_local_encoding_ctxs.source.set(LeAudioContextType::GAME);
+          additional_local_contexts_based_on_states.source.set(LeAudioContextType::GAME);
+        }
 
-      if (copy_local_decoding_ctxs.any()) {
-        log::info("Adding game Mode to remote Source");
-        copy_local_decoding_ctxs.set(LeAudioContextType::GAME);
-        additional_local_contexts_based_on_states.sink.set(LeAudioContextType::GAME);
+        if (copy_local_decoding_ctxs.any()) {
+          log::info("Adding game Mode to remote Source");
+          copy_local_decoding_ctxs.set(LeAudioContextType::GAME);
+          additional_local_contexts_based_on_states.sink.set(LeAudioContextType::GAME);
+        }
       }
     }
 

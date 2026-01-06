@@ -6470,9 +6470,9 @@ public:
         group->IsDirectionAvailableForConfiguration(
                 configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
       log::info(
-              "There is no need to reconfigure for the sonification events, "
+              "There is no need to reconfigure for the {} events, "
               "staying with the existing configuration context of {}",
-              ToString(configuration_context_type_));
+              ToString(new_config_context), ToString(configuration_context_type_));
       new_config_context = configuration_context_type_;
 
       if (com_android_bluetooth_flags_leaudio_use_context_type_manager()) {
