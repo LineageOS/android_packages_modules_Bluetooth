@@ -692,6 +692,24 @@ static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
   return nullptr;
 }
 
+static tBTA_PREF_ROLES get_preferred_role() {
+  if (!com_android_bluetooth_flags_role_contention_policy()) {
+    return BTA_ANY_ROLE;
+  }
+
+  auto sysprop_value = android::sysprop::bluetooth::Core::getClassicPreferredRole();
+  if (!sysprop_value.has_value()) {
+    return BTA_ANY_ROLE;
+  }
+
+  if (sysprop_value.value() ==
+      android::sysprop::bluetooth::Core::getClassicPreferredRole_values::CENTRAL) {
+    return BTA_CENTRAL_ROLE_ONLY;
+  }
+
+  return BTA_PERIPHERAL_ROLE_ONLY;
+}
+
 static void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {
   const RawAddress& bd_addr = link_spec.addrt.bda;
   tBT_TRANSPORT transport = link_spec.transport;
@@ -718,7 +736,8 @@ static void bta_dm_acl_up(const AclLinkSpec& link_spec, uint16_t acl_handle) {
   }
   log::info("Acl connected peer:{} transport:{} handle:{}", bd_addr, bt_transport_text(transport),
             acl_handle);
-  device->pref_role = BTA_ANY_ROLE;
+
+  device->pref_role = get_preferred_role();
   device->reset_device_info();
   device->transport = transport;
 
