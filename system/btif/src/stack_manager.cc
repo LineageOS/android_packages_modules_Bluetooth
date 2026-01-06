@@ -99,6 +99,7 @@ static_assert(BTA_HH_INCLUDED,
               "*** Conditional Compilation Directive error");
 
 using bluetooth::common::MessageLoopThread;
+using bluetooth::log::assert_that;
 using bluetooth::log::error;
 using bluetooth::log::fatal;
 using bluetooth::log::info;
@@ -111,8 +112,6 @@ static MessageLoopThread management_thread("bt_stack_manager_thread");
 static bool stack_is_initialized;
 // If running, the stack is fully up and able to bluetooth.
 static bool stack_is_running;
-
-static void stop_stack(ProfileStopCallback stopProfiles);
 
 static void event_signal_stack_up(void* context);
 static void event_signal_stack_down(void* context);
@@ -199,19 +198,13 @@ static void init_stack(bluetooth::core::CoreInterface* interface) {
 }
 
 // Synchronous function to start up the stack
-static void start_stack(bluetooth::core::CoreInterface* interface,
-                        ProfileStartCallback startProfiles, const std::string local_name) {
+void stack_enable(ProfileStartCallback startProfiles, const std::string local_name) {
   if (stack_is_running) {
     info("stack already brought up");
     return;
   }
 
-  if (!stack_is_initialized) {
-    warn("found the stack was uninitialized. Initializing now.");
-    // No future needed since we are calling it directly
-    init_stack_internal(interface);
-  }
-
+  assert_that(stack_is_initialized, "assert failed: stack_is_initialized");
   info("Bringing up the stack");
   get_btm_client_interface().lifecycle.btm_init();
   module_start_up(get_local_module(BTIF_CONFIG_MODULE));
@@ -247,8 +240,7 @@ static void start_stack(bluetooth::core::CoreInterface* interface,
   do_in_jni_thread(base::BindOnce(event_signal_stack_up, nullptr));
 }
 
-// Synchronous function to shut down the stack
-static void stop_stack(ProfileStopCallback stopProfiles) {
+void stack_disable(ProfileStopCallback stopProfiles) {
   if (!stack_is_running) {
     info("stack is already brought down");
     return;
@@ -292,13 +284,6 @@ static void stop_stack(ProfileStopCallback stopProfiles) {
   info("finished");
 }
 
-static void ensure_stack_is_not_running(ProfileStopCallback stopProfiles) {
-  if (stack_is_running) {
-    warn("found the stack was still running. Bringing it down now.");
-    stop_stack(stopProfiles);
-  }
-}
-
 // Synchronous function to clean up the stack
 static void clean_up_stack(ProfileStopCallback stopProfiles) {
   if (!stack_is_initialized) {
@@ -306,7 +291,10 @@ static void clean_up_stack(ProfileStopCallback stopProfiles) {
     return;
   }
 
-  ensure_stack_is_not_running(stopProfiles);
+  if (stack_is_running) {
+    warn("found the stack was still running. Bringing it down now.");
+    stack_disable(stopProfiles);
+  }
 
   info("is cleaning up the stack");
   stack_is_initialized = false;
@@ -350,8 +338,7 @@ static void event_signal_stack_down(void* /* context */) {
   future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
 }
 
-static const stack_manager_t interface = {init_stack, start_stack, stop_stack, clean_up_stack,
-                                          get_stack_is_running};
+static const stack_manager_t interface = {init_stack, clean_up_stack, get_stack_is_running};
 
 const stack_manager_t* stack_manager_get_interface() { return &interface; }
 

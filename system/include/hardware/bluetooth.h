@@ -855,6 +855,12 @@ void bluetooth_init(bt_callbacks_t* callbacks, bool guest_mode, bool is_common_c
                     int config_compare_result, bool is_atv, const std::string hci_instance_name,
                     bt_os_callouts_t* callouts);
 
+/** Enable Bluetooth. */
+void bluetooth_enable(const std::string local_name);
+
+/** Disable Bluetooth. */
+void bluetooth_disable();
+
 /** Represents the standard Bluetooth DM interface. */
 typedef struct {
   /** set to sizeof(bt_interface_t) */
@@ -863,12 +869,6 @@ typedef struct {
   /** set index of the adapter to use */
   void (*set_adapter_index)(int adapter_index);
 #endif
-
-  /** Enable Bluetooth. */
-  int (*enable)(const std::string local_name);
-
-  /** Disable Bluetooth. */
-  int (*disable)(void);
 
   /** Closes the interface. */
   void (*cleanup)(void);
