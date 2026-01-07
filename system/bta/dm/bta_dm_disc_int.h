@@ -116,9 +116,6 @@ typedef struct {
   RawAddress pending_close_bda; /* pending GATT channel remote device address */
 } tBTA_DM_SERVICE_DISCOVERY_CB;
 
-extern const uint32_t bta_service_id_to_btm_srv_id_lkup_tbl[];
-extern const uint16_t bta_service_id_to_uuid_lkup_tbl[];
-
 void bta_dm_disc_override_sdp_performer_for_testing(
         base::RepeatingCallback<void(tBTA_DM_SDP_STATE*)> sdp_performer);
 void bta_dm_disc_override_gatt_performer_for_testing(

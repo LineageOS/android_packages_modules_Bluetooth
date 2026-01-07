@@ -19,16 +19,11 @@
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
 
-#include "bta/include/bta_api.h"  // tBTA_DM_SEARCH_CBACK
-#include "stack/include/bt_hdr.h"
+#include "bta/include/bta_api.h"
 
 // Bta module start and stop entry points
 void bta_dm_disc_start(bool delay_close_gatt);
 void bta_dm_disc_stop();
-
-// Bta device discovery start and stop entry points
-void bta_dm_disc_start_device_discovery(tBTA_DM_SEARCH_CBACK*);
-void bta_dm_disc_stop_device_discovery();
 
 // Bta service discovery start and stop entry points
 void bta_dm_disc_start_service_discovery(service_discovery_callbacks cbacks,
@@ -36,13 +31,6 @@ void bta_dm_disc_start_service_discovery(service_discovery_callbacks cbacks,
 
 // Bta subsystem entrypoint and lifecycle
 void bta_dm_disc_disable_disc();
-
-// LE observe and scan interface
-void bta_dm_ble_scan(bool start, uint8_t duration_sec);
-void bta_dm_ble_csis_observe(bool observe, tBTA_DM_SEARCH_CBACK* p_cback);
-
-// Checks if there is a device discovery request queued
-bool bta_dm_is_search_request_queued();
 
 // GATT service discovery
 void bta_dm_disc_gattc_register();
