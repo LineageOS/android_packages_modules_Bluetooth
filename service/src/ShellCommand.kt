@@ -16,32 +16,18 @@
 
 package com.android.server.bluetooth
 
-import android.bluetooth.IBluetoothManager
 import android.bluetooth.State
 import android.content.AttributionSource
 import android.os.Binder
-import android.os.Handler
-import android.os.Looper
-import android.os.Message
-import android.os.Messenger
-import android.os.Parcelable
 import android.os.Process
 import android.os.RemoteException
-import com.android.bluetooth.flags.Flags
 import com.android.modules.utils.BasicShellCommandHandler
 import java.io.PrintWriter
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionException
-import java.util.concurrent.TimeUnit
 
 private const val TAG = "ShellCommand"
 
-class ShellCommand(
-    private val binder: IBluetoothManager.Stub,
-    private val looper: Looper,
-    private val messenger: Messenger,
-    private val waitForState: (Int) -> Boolean,
-) : BasicShellCommandHandler() {
+class ShellCommand(private val binder: ServerBinder, private val waitForState: (Int) -> Boolean) :
+    BasicShellCommandHandler() {
 
     private val source =
         AttributionSource.Builder(AttributionSource.myAttributionSource())
@@ -53,7 +39,7 @@ class ShellCommand(
         val isPrivileged: Boolean = false,
         val help: (PrintWriter) -> Unit,
         val isMatch: (String) -> Boolean = { it == name },
-        val exec: (String) -> Int,
+        val exec: (String) -> Boolean,
     )
 
     private val commands =
@@ -64,18 +50,7 @@ class ShellCommand(
                     pw.println("  enable")
                     pw.println("    Enable Bluetooth on this device.")
                 },
-                exec = {
-                    if (Flags.bluetoothSystemServerMessenger()) {
-                        val reply =
-                            send(
-                                SystemServiceMessage.Enable().apply { attributionSource = source },
-                                SystemServiceMessage.Enable.Reply::class.java,
-                            )
-                        if (reply.value == true) 0 else -1
-                    } else {
-                        if (binder.enable(source)) 0 else -1
-                    }
-                },
+                exec = { binder.enable(source) },
             ),
             Command(
                 name = "disable",
@@ -83,21 +58,7 @@ class ShellCommand(
                     pw.println("  disable")
                     pw.println("    Disable Bluetooth on this device.")
                 },
-                exec = {
-                    if (Flags.bluetoothSystemServerMessenger()) {
-                        val reply =
-                            send(
-                                SystemServiceMessage.Disable().apply {
-                                    attributionSource = source
-                                    persist = true
-                                },
-                                SystemServiceMessage.Disable.Reply::class.java,
-                            )
-                        if (reply.value == true) 0 else -1
-                    } else {
-                        if (binder.disable(source, true)) 0 else -1
-                    }
-                },
+                exec = { binder.disable(source, true) },
             ),
             Command(
                 name = "enableBle",
@@ -106,21 +67,7 @@ class ShellCommand(
                     pw.println("  enableBle")
                     pw.println("    Call enableBle to activate ble only mode on this device.")
                 },
-                exec = {
-                    if (Flags.bluetoothSystemServerMessenger()) {
-                        val reply =
-                            send(
-                                SystemServiceMessage.Enable().apply {
-                                    attributionSource = source
-                                    bleToken = binder
-                                },
-                                SystemServiceMessage.Enable.Reply::class.java,
-                            )
-                        if (reply.value == true) 0 else -1
-                    } else {
-                        if (binder.enableBle(source, binder)) 0 else -1
-                    }
-                },
+                exec = { binder.enableBle(source, binder) },
             ),
             Command(
                 name = "disableBle",
@@ -129,21 +76,7 @@ class ShellCommand(
                     pw.println("  disableBle")
                     pw.println("    undo the call to enableBle.")
                 },
-                exec = {
-                    if (Flags.bluetoothSystemServerMessenger()) {
-                        val reply =
-                            send(
-                                SystemServiceMessage.Disable().apply {
-                                    attributionSource = source
-                                    bleToken = binder
-                                },
-                                SystemServiceMessage.Disable.Reply::class.java,
-                            )
-                        if (reply.value == true) 0 else -1
-                    } else {
-                        if (binder.disableBle(source, binder)) 0 else -1
-                    }
-                },
+                exec = { binder.disableBle(source, binder) },
             ),
             Command(
                 name = "factoryReset",
@@ -152,20 +85,7 @@ class ShellCommand(
                     pw.println("  factoryReset")
                     pw.println("    Perform a factory reset of Bluetooth settings.")
                 },
-                exec = {
-                    if (Flags.bluetoothSystemServerMessenger()) {
-                        val reply =
-                            send(
-                                SystemServiceMessage.FactoryReset().apply {
-                                    attributionSource = source
-                                },
-                                SystemServiceMessage.FactoryReset.Reply::class.java,
-                            )
-                        if (reply.value == true) 0 else -1
-                    } else {
-                        if (binder.factoryReset(source)) 0 else -1
-                    }
-                },
+                exec = { binder.factoryReset(source) },
             ),
             Command(
                 name = "wait-for-state",
@@ -175,14 +95,7 @@ class ShellCommand(
                     pw.println("    Note: This command can timeout and failed")
                 },
                 isMatch = { it.startsWith("wait-for-state:") },
-                exec = { cmd ->
-                    try {
-                        val state = getWaitingState(cmd)
-                        if (waitForState(state)) 0 else -1
-                    } catch (e: IllegalArgumentException) {
-                        -1
-                    }
-                },
+                exec = { cmd -> waitForState(getWaitingState(cmd)) },
             ),
         )
 
@@ -220,17 +133,21 @@ class ShellCommand(
         }
         outPrintWriter.println("$TAG: Exec $cmd")
         Log.d(TAG, "Exec $cmd")
-        val ret = command.exec(cmd)
-        if (ret == 0) {
-            val msg = "$cmd: Success"
-            Log.d(TAG, msg)
-            outPrintWriter.println(msg)
-        } else {
-            val msg = "$cmd: Failed with status=$ret"
-            Log.e(TAG, msg)
-            errPrintWriter.println("$TAG: $msg")
-        }
-        return ret
+        val msg =
+            try {
+                if (command.exec(cmd)) {
+                    val msg = "$cmd: Success"
+                    Log.d(TAG, msg)
+                    outPrintWriter.println(msg)
+                    return 0
+                }
+                "$cmd: Failed"
+            } catch (e: IllegalArgumentException) {
+                "$cmd: Failed. $e"
+            }
+        Log.e(TAG, msg)
+        errPrintWriter.println("$TAG: $msg")
+        return -1
     }
 
     private fun printHelp(pw: PrintWriter) {
@@ -243,49 +160,4 @@ class ShellCommand(
     }
 
     override fun onHelp() = printHelp(outPrintWriter)
-
-    // Duplicate of SystemServiceMessenger.send due to jarjaring issues
-    private fun <T : Parcelable, U : Any> send(data: T, replyClass: Class<U>): U {
-        val future = CompletableFuture<U>()
-
-        val replyFn =
-            Handler.Callback { reply ->
-                val exception =
-                    reply.data.getSerializable("exception", RuntimeException::class.java)
-                val replyObj = reply.obj
-
-                when {
-                    exception != null -> future.completeExceptionally(exception)
-                    replyClass.isInstance(replyObj) -> future.complete(replyClass.cast(replyObj))
-                    else -> {
-                        val errorMsg =
-                            "Unexpected reply [$replyObj] returned, when calling for [$data]. Expected value: [${replyClass.name}]"
-                        future.completeExceptionally(IllegalArgumentException(errorMsg))
-                    }
-                }
-                true
-            }
-
-        val msg =
-            Message.obtain().apply {
-                obj = data
-                replyTo = Messenger(Handler(looper, replyFn))
-            }
-
-        try {
-            messenger.send(msg)
-        } catch (e: RemoteException) {
-            throw e.rethrowFromSystemServer()
-        }
-
-        try {
-            return future.orTimeout(10, TimeUnit.SECONDS).join()
-        } catch (e: CompletionException) {
-            val cause = e.cause
-            if (cause is RuntimeException) {
-                throw cause
-            }
-            throw e
-        }
-    }
 }
