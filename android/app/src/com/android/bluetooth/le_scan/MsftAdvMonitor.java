@@ -18,13 +18,12 @@ package com.android.bluetooth.le_scan;
 
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanRecord;
 import android.os.ParcelUuid;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.UUID;
 
 /** Helper class used to manage MSFT Advertisement Monitors. */
 public class MsftAdvMonitor {
@@ -117,9 +116,18 @@ public class MsftAdvMonitor {
 
         if (filter.getServiceDataUuid() != null && dataMaskIsEmpty(filter.getServiceDataMask())) {
             Pattern pattern = new Pattern();
-            pattern.ad_type = (byte) 0x16; // Bluetooth Core Spec Part A, Section 1
+            final ParcelUuid uuid = new ParcelUuid(filter.getServiceDataUuid().getUuid());
+            final byte[] uuid_bytes = BluetoothUuid.uuidToBytes(uuid);
+
+            if (BluetoothUuid.is16BitUuid(uuid)) {
+                pattern.ad_type = (byte) ScanRecord.DATA_TYPE_SERVICE_DATA_16_BIT;
+            } else if (BluetoothUuid.is32BitUuid(uuid)) {
+                pattern.ad_type = (byte) ScanRecord.DATA_TYPE_SERVICE_DATA_32_BIT;
+            } else { // if 128-bit UUID
+                pattern.ad_type = (byte) ScanRecord.DATA_TYPE_SERVICE_DATA_128_BIT;
+            }
             pattern.start_byte = FILTER_PATTERN_START_POSITION;
-            pattern.pattern = getUuid16Bit(filter.getServiceDataUuid().getUuid());
+            pattern.pattern = uuid_bytes;
 
             mPatterns.add(pattern);
         }
@@ -163,15 +171,6 @@ public class MsftAdvMonitor {
 
     Address getAddress() {
         return mAddress;
-    }
-
-    private static byte[] getUuid16Bit(UUID uuid) {
-        // Extract the 16-bit UUID (third and fourth bytes) from the 128-bit
-        // UUID in reverse endianness
-        ByteBuffer bb = ByteBuffer.allocate(16); // 16 byte (128 bit) UUID
-        bb.putLong(uuid.getMostSignificantBits());
-        bb.putLong(uuid.getLeastSignificantBits());
-        return new byte[] {bb.get(3), bb.get(2)};
     }
 
     private static boolean dataMaskIsEmpty(byte[] mask) {
