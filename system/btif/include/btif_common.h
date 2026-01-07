@@ -123,7 +123,6 @@ base::Callback<R(Args...)> jni_thread_wrapper(base::Callback<R(Args...)> cb) {
 tBTA_SERVICE_MASK btif_get_enabled_services_mask(void);
 void btif_enable_service(tBTA_SERVICE_ID service_id);
 void btif_disable_service(tBTA_SERVICE_ID service_id);
-int btif_is_enabled(void);
 
 /**
  * BTIF_Events

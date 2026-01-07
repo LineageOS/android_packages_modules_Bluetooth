@@ -896,9 +896,6 @@ typedef struct {
   /** Set Remote Device property of 'type' */
   int (*set_remote_device_property)(RawAddress remote_addr, const bt_property_t* property);
 
-  /** Get Remote Device's service record  for the given UUID */
-  int (*get_remote_service_record)(RawAddress remote_addr, const bluetooth::Uuid& uuid);
-
   /** Start service discovery with transport to get remote services */
   int (*get_remote_services)(RawAddress remote_addr, int transport);
 

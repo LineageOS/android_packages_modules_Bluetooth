@@ -497,7 +497,7 @@ int get_common_criteria_config_compare_result() {
 bool is_atv_device() { return is_local_device_atv; }
 
 static int get_adapter_properties(void) {
-  if (!btif_is_enabled()) {
+  if (!stack_is_running()) {
     return BT_STATUS_NOT_READY;
   }
 
@@ -507,7 +507,7 @@ static int get_adapter_properties(void) {
 
 static int get_adapter_property(bt_property_type_t type) {
   /* Allow get_adapter_property only for BDADDR and BDNAME if BT is disabled */
-  if (!btif_is_enabled() && (type != BT_PROPERTY_BDADDR) && (type != BT_PROPERTY_BDNAME)) {
+  if (!stack_is_running() && (type != BT_PROPERTY_BDADDR) && (type != BT_PROPERTY_BDNAME)) {
     return BT_STATUS_NOT_READY;
   }
 
@@ -520,7 +520,7 @@ static void set_scan_mode(bt_scan_mode_t mode) {
 }
 
 static int set_adapter_property(const bt_property_t* property) {
-  if (!btif_is_enabled()) {
+  if (!stack_is_running()) {
     return BT_STATUS_NOT_READY;
   }
 
@@ -543,7 +543,7 @@ static int set_adapter_property(const bt_property_t* property) {
 }
 
 static int get_remote_device_properties(RawAddress remote_addr) {
-  if (!btif_is_enabled()) {
+  if (!stack_is_running()) {
     return BT_STATUS_NOT_READY;
   }
 
@@ -552,7 +552,7 @@ static int get_remote_device_properties(RawAddress remote_addr) {
 }
 
 static int get_remote_device_property(RawAddress remote_addr, bt_property_type_t type) {
-  if (!btif_is_enabled()) {
+  if (!stack_is_running()) {
     return BT_STATUS_NOT_READY;
   }
 
@@ -561,7 +561,7 @@ static int get_remote_device_property(RawAddress remote_addr, bt_property_type_t
 }
 
 static int set_remote_device_property(RawAddress remote_addr, const bt_property_t* property) {
-  if (!btif_is_enabled()) {
+  if (!stack_is_running()) {
     return BT_STATUS_NOT_READY;
   }
 
@@ -1150,7 +1150,6 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
         .get_remote_device_properties = get_remote_device_properties,
         .get_remote_device_property = get_remote_device_property,
         .set_remote_device_property = set_remote_device_property,
-        .get_remote_service_record = nullptr,
         .get_remote_services = get_remote_services,
         .start_discovery = start_discovery,
         .cancel_discovery = cancel_discovery,

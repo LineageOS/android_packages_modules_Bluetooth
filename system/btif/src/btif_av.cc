@@ -3807,7 +3807,7 @@ void btif_av_stream_start_offload(void) {
 
 bool btif_av_stream_ready(const A2dpType local_a2dp_type) {
   // Make sure the main adapter is enabled
-  if (btif_is_enabled() == 0) {
+  if (!stack_is_running()) {
     log::verbose("Main adapter is not enabled");
     return false;
   }

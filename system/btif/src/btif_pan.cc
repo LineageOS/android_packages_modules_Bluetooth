@@ -54,6 +54,7 @@
 #include "btif/include/btif_common.h"
 #include "btif/include/btif_pan_internal.h"
 #include "btif/include/btif_sock_thread.h"
+#include "btif/include/stack_manager_t.h"
 #include "btif_status.h"
 #include "hci/controller.h"
 #include "include/hardware/bt_pan.h"
@@ -670,7 +671,7 @@ static void btu_exec_tap_fd_read(int fd) {
   // Don't occupy BTU context too long, avoid buffer overruns and
   // give other profiles a chance to run by limiting the amount of memory
   // PAN can use.
-  for (int i = 0; i < PAN_BUF_MAX && btif_is_enabled() && btpan_cb.flow; i++) {
+  for (int i = 0; i < PAN_BUF_MAX && stack_is_running() && btpan_cb.flow; i++) {
     BT_HDR* buffer = (BT_HDR*)osi_malloc(PAN_BUF_SIZE);
     buffer->offset = PAN_MINIMUM_OFFSET;
     buffer->len = PAN_BUF_SIZE - sizeof(BT_HDR) - buffer->offset;
