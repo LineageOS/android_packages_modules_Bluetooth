@@ -297,22 +297,33 @@ static bool btif_a2dp_sink_initialize_a2dp_control_block(const RawAddress& peer_
   btif_a2dp_sink_cb.bits_per_sample = bits_per_sample;
   btif_a2dp_sink_cb.channel_count = channel_count;
 
+#ifdef __ANDROID__
+  // Release a previous track if already present.
+  // The track cannot always be reused because the PCM configuration
+  // varies based on the AVDTP codec configuration.
+  if (btif_a2dp_sink_cb.audio_track != nullptr) {
+    BtifAvrcpAudioTrackStop(btif_a2dp_sink_cb.audio_track);
+    BtifAvrcpAudioTrackDelete(btif_a2dp_sink_cb.audio_track);
+    btif_a2dp_sink_cb.audio_track = nullptr;
+  }
+
   // Release `g_mutex` before calling BtifAvrcpAudioTrackCreate which performs
   // binder calls to the media framework. BtifAvrcpAudioTrackCreate does not
   // modify the stack state and is not required to hold g_mutex.
   lock.unlock();
-  btif_a2dp_sink_cb.audio_track =
-#ifdef __ANDROID__
-          BtifAvrcpAudioTrackCreate(sample_rate, bits_per_sample, channel_count);
-#else
-          NULL;
-#endif
-
+  void* audio_track = BtifAvrcpAudioTrackCreate(sample_rate, bits_per_sample, channel_count);
   lock.lock();
+
+  btif_a2dp_sink_cb.audio_track = audio_track;
+#else
+  btif_a2dp_sink_cb.audio_track = nullptr;
+#endif  // __ANDROID__
+
   if (btif_a2dp_sink_cb.audio_track == nullptr) {
     log::error("track creation failed");
     return false;
   }
+
   log::info("A2DP sink control block initialized");
   return true;
 }
@@ -347,6 +358,7 @@ bool btif_a2dp_sink_restart_session(const RawAddress& old_peer_address,
   if (!old_peer_address.IsEmpty()) {
     btif_a2dp_sink_end_session(old_peer_address);
   }
+
   if (!bta_av_co_set_active_sink_peer(new_peer_address)) {
     log::error("Cannot stream audio: cannot set active peer to {}", new_peer_address);
     peer_ready_promise.set_value();
@@ -356,6 +368,7 @@ bool btif_a2dp_sink_restart_session(const RawAddress& old_peer_address,
   if (old_peer_address.IsEmpty()) {
     btif_a2dp_sink_startup();
   }
+
   btif_a2dp_sink_start_session(new_peer_address, std::move(peer_ready_promise));
 
   return true;
