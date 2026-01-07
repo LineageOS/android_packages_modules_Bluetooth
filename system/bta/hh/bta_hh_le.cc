@@ -632,11 +632,15 @@ static void bta_hh_le_open_cmpl(tBTA_HH_DEV_CB* p_cb) {
     bta_hh_le_register_input_notif(p_cb, p_cb->mode, true);
     bta_hh_sm_execute(p_cb, BTA_HH_OPEN_CMPL_EVT, NULL);
 
-    // Some HOGP devices requires MTU exchange be part of the initial setup to function. The size of
-    // the requested MTU does not matter as long as the procedure is triggered.
-    if (interop_match_vendor_product_ids(INTEROP_HOGP_FORCE_MTU_EXCHANGE, p_cb->dscp_info.vendor_id,
-                                         p_cb->dscp_info.product_id)) {
-      BTA_GATTC_ConfigureMTU(p_cb->conn_id, GATT_MAX_MTU_SIZE);
+    // TODO(b/444476206): Remove INTEROP_HOGP_FORCE_MTU_EXCHANGE from interop database when
+    // hogp_host_mtu_exchange flag is shipped.
+    if (!com_android_bluetooth_flags_hogp_host_mtu_exchange()) {
+      // Some HOGP devices requires MTU exchange be part of the initial setup to function. The size
+      // of the requested MTU does not matter as long as the procedure is triggered.
+      if (interop_match_vendor_product_ids(INTEROP_HOGP_FORCE_MTU_EXCHANGE,
+                                           p_cb->dscp_info.vendor_id, p_cb->dscp_info.product_id)) {
+        BTA_GATTC_ConfigureMTU(p_cb->conn_id, GATT_MAX_MTU_SIZE);
+      }
     }
   }
 }
@@ -1162,8 +1166,11 @@ void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_buf) {
     log::verbose("hid_handle=0x{:2x} conn_id=0x{:04x} cb_index={}", p_cb->hid_handle, p_cb->conn_id,
                  p_cb->index);
 
+    if (com_android_bluetooth_flags_hogp_host_mtu_exchange()) {
+      // Ensure that the MTU is set to the maximum size
+      BTA_GATTC_ConfigureMTU(p_cb->conn_id, GATT_MAX_MTU_SIZE);
+    }
     bta_hh_sm_execute(p_cb, BTA_HH_START_ENC_EVT, NULL);
-
   } else {
     /* open failure */
     tBTA_HH_DATA bta_hh_data;
