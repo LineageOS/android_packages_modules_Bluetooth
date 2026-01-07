@@ -22,7 +22,6 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
-import static com.android.bluetooth.TestUtils.getBluetoothManager;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
@@ -163,13 +162,6 @@ public class AdapterServiceTest {
     private final BluetoothDevice mDevice1 = getTestDevice(0);
     private final BluetoothDevice mDevice2 = getTestDevice(2);
 
-    // SystemService that are not mocked
-    private BluetoothManager mBluetoothManager;
-    private DeviceStateManager mDeviceStateManager;
-    private DisplayManager mDisplayManager;
-    private PowerManager mPowerManager;
-    private PermissionManager mPermissionManager;
-
     private PackageManager mMockPackageManager;
     private MockContentResolver mMockContentResolver;
     private TestLooper mLooper;
@@ -308,12 +300,6 @@ public class AdapterServiceTest {
         doReturn(mMockResources).when(mContext).getResources();
         doReturn(mMockPackageManager).when(mContext).getPackageManager();
 
-        mBluetoothManager = getBluetoothManager();
-        mDeviceStateManager = context.getSystemService(DeviceStateManager.class);
-        mDisplayManager = context.getSystemService(DisplayManager.class);
-        mPermissionManager = context.getSystemService(PermissionManager.class);
-        mPowerManager = context.getSystemService(PowerManager.class);
-
         mockGetSystemService(mContext, AlarmManager.class);
         mockGetSystemService(mContext, AppOpsManager.class);
         mockGetSystemService(mContext, AudioManager.class);
@@ -322,12 +308,18 @@ public class AdapterServiceTest {
         doReturn(false).when(dpm).isCommonCriteriaModeEnabled(any());
         mockGetSystemService(mContext, UserManager.class);
         mockGetSystemService(mContext, BatteryStatsManager.class);
-        mockGetSystemService(mContext, BluetoothManager.class, mBluetoothManager);
         mockGetSystemService(mContext, CompanionDeviceManager.class);
-        mockGetSystemService(mContext, DeviceStateManager.class, mDeviceStateManager);
-        mockGetSystemService(mContext, DisplayManager.class, mDisplayManager);
-        mockGetSystemService(mContext, PermissionManager.class, mPermissionManager);
-        mockGetSystemService(mContext, PowerManager.class, mPowerManager);
+
+        // SystemService that are not mocked
+        mockGetSystemService(mContext, BluetoothManager.class, TestUtils.getBluetoothManager());
+        var deviceStateManager = context.getSystemService(DeviceStateManager.class);
+        mockGetSystemService(mContext, DeviceStateManager.class, deviceStateManager);
+        var displayManager = context.getSystemService(DisplayManager.class);
+        mockGetSystemService(mContext, DisplayManager.class, displayManager);
+        var permissionManager = context.getSystemService(PermissionManager.class);
+        mockGetSystemService(mContext, PermissionManager.class, permissionManager);
+        var powerManager = context.getSystemService(PowerManager.class);
+        mockGetSystemService(mContext, PowerManager.class, powerManager);
 
         doReturn(context.getSharedPreferences("AdapterServiceTestPrefs", Context.MODE_PRIVATE))
                 .when(mContext)
