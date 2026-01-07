@@ -160,3 +160,14 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+
+flag {
+    name: "hogp_host_mtu_exchange"
+    namespace: "bluetooth"
+    description: "HOGP host must exchange ATT MTU on GATT connection"
+    bug: "473936218"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
