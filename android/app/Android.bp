@@ -65,7 +65,6 @@ cc_library_shared {
     stl: "libc++_static",
     static_libs: [
         "aics",
-        "android.bluetooth.platform.flags-aconfig-cc",
         "android.hardware.audio.common@5.0",
         "android.hardware.bluetooth.audio@2.0",
         "android.hardware.bluetooth.audio@2.1",

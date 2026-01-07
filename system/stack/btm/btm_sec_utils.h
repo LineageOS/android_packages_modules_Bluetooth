@@ -48,3 +48,4 @@ void BTM_update_version_info(const RawAddress& bd_addr,
 const char* btm_pair_state_descr(tBTM_PAIRING_STATE state);
 
 bool is_autonomous_repairing_supported();
+void set_autonomous_repairing_supported(bool platform_support_autonomous_repairing_initiation);
