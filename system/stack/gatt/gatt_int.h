@@ -417,6 +417,8 @@ typedef struct {
   int uid;
   // Optional attribution tag from the calling Android app for fine-grained usage tracking.
   std::string attribution_tag;
+  uint64_t creation_timestamp_ms{0};
+  bluetooth::hal::GattError stop_reason{bluetooth::hal::GattError::GATT_ERROR_NONE};
 } tGATT_OFFLOAD_SESSION;
 
 typedef struct {
@@ -809,7 +811,8 @@ void gatt_offload_characteristics(tCONN_ID conn_id, bool is_server, btgatt_db_el
                                   size_t elements_count, uint64_t endpoint_id, uint64_t hub_id,
                                   int uid, std::string attribution_tag,
                                   std::promise<btgatt_offload_result_t> promise);
-bool gatt_offload_clear_sessions_by_acl_handle(uint16_t acl_connection_handle);
+bool gatt_offload_clear_sessions_by_acl_handle(uint16_t acl_connection_handle,
+                                               bluetooth::hal::GattError reason);
 void gatt_offload_clear_sessions_by_conn_id(tCONN_ID conn_id);
 void gatt_unoffload_session(tCONN_ID conn_id, uint16_t session_id,
                             tGATT_STATUS status = tGATT_STATUS::GATT_SUCCESS);

@@ -344,4 +344,18 @@ void LogMetricBluetoothRFStatsReported(uint16_t bqr_version, const bqr::BqrRFSta
   }
 }
 
+void LogGattOffloadSessionStateChanged(const hci::Address& address, int32_t session_id,
+                                       android::bluetooth::gatt::GattRoleEnum gatt_role,
+                                       android::bluetooth::gatt::GattOffloadSessionStateEnum state,
+                                       int32_t gatt_characteristic_properties_bitmask,
+                                       int64_t session_duration_ms,
+                                       android::bluetooth::gatt::GattOffloadErrorEnum error_code,
+                                       int32_t uid, const std::string& attribution_tag) {
+  if (metricsInstance) {
+    metricsInstance->LogGattOffloadSessionStateChanged(
+            address, session_id, gatt_role, state, gatt_characteristic_properties_bitmask,
+            session_duration_ms, error_code, uid, attribution_tag);
+  }
+}
+
 }  // namespace bluetooth::metrics

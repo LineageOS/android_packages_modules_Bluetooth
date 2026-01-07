@@ -492,6 +492,7 @@ cc_defaults {
         "libbluetooth_private_gatt_rs_bridge",
         "libbluetooth_smp_pdl",
         "libbluetooth_types",
+        "libbt-common",
         "libcom.android.sysprop.bluetooth.wrapped",
     ],
 }

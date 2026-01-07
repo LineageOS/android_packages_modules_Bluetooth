@@ -31,7 +31,8 @@ void gatt_offload_characteristics(tCONN_ID /* conn_id */, bool /* is_server */,
   inc_func_call_count(__func__);
 }
 
-bool gatt_offload_clear_sessions_by_acl_handle(uint16_t /* acl_connection_handle */) {
+bool gatt_offload_clear_sessions_by_acl_handle(uint16_t /* acl_connection_handle */,
+                                               bluetooth::hal::GattError /* reason */) {
   inc_func_call_count(__func__);
   return true;
 }
