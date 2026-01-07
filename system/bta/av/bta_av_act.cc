@@ -388,9 +388,14 @@ uint8_t bta_av_rc_create(tBTA_AV_CB* p_cb, tAVCT_ROLE role, uint8_t shdl, uint8_
     return BTA_AV_RC_HANDLE_NONE;
   }
 
-  if (rc_handle != BTA_AV_RC_HANDLE_NONE && rc_handle >= BTA_AV_NUM_RCB) {
-    log::error("rc_handle out of bounds: {}. Closing AVRC.", rc_handle);
-    AVRC_Close(rc_handle);
+  if (rc_handle == BTA_AV_RC_HANDLE_NONE || rc_handle >= BTA_AV_NUM_RCB) {
+    log::error("rc_handle out of bounds or NONE: {}. Cleaning up.", rc_handle);
+
+    // Only call Close if the handle is not NONE
+    if (rc_handle != BTA_AV_RC_HANDLE_NONE) {
+      AVRC_Close(rc_handle);
+    }
+
     return BTA_AV_RC_HANDLE_NONE;
   }
 
