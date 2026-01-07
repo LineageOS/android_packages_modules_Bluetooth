@@ -211,6 +211,8 @@ TEST_F(BluetoothTest, AdapterCleanupDuringDiscovery) {
   bt_callbacks_t* callbacks = bt_callbacks();
   ASSERT_TRUE(callbacks != nullptr);
 
+  bt_interface()->cleanup();  // init is called during SetUp, so we need to cleanup first
+
   for (int i = 0; i < kTestRepeatCount; ++i) {
     bluetooth_init(callbacks, false, false, 0, false, "default", nullptr);
     wakelock_set_os_callouts(nullptr);  // To force using 'native' wakelock in tests
@@ -225,6 +227,9 @@ TEST_F(BluetoothTest, AdapterCleanupDuringDiscovery) {
     EXPECT_EQ(GetState(), BT_STATE_OFF) << "Adapter did not turn off.";
     bt_interface()->cleanup();
   }
+
+  // re-init to allow proper shutdown to happen
+  bluetooth_init(callbacks, false, false, 0, false, "default", nullptr);
 }
 
 }  // namespace bttest

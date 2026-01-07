@@ -474,7 +474,7 @@ void bluetooth_disable(void) {
   stack_disable(&stop_profiles);
 }
 
-static void cleanup(void) { stack_manager_get_interface()->clean_up_stack(&stop_profiles); }
+static void cleanup(void) { stack_manager_get_interface()->clean_up_stack(); }
 
 bool is_restricted_mode() { return restricted_mode; }
 
