@@ -52,16 +52,6 @@ flag {
 }
 
 flag {
-    name: "ignore_le_smp_conn_when_sm_over_br_progress"
-    namespace: "bluetooth"
-    description: "Ignore LE SMP connection when smp over br is still in progress"
-    bug: "405996470"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "retain_address_type"
     namespace: "bluetooth"
     description: "Set correct address type in BluetoothDevice objects created by the Android Bluetooth"
