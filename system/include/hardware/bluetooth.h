@@ -861,6 +861,9 @@ void bluetooth_enable(const std::string local_name);
 /** Disable Bluetooth. */
 void bluetooth_disable();
 
+/** Closes the interface. */
+void bluetooth_cleanup();
+
 /** Represents the standard Bluetooth DM interface. */
 typedef struct {
   /** set to sizeof(bt_interface_t) */
@@ -869,9 +872,6 @@ typedef struct {
   /** set index of the adapter to use */
   void (*set_adapter_index)(int adapter_index);
 #endif
-
-  /** Closes the interface. */
-  void (*cleanup)(void);
 
   /** Get all Bluetooth Adapter properties at init */
   int (*get_adapter_properties)(void);

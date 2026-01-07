@@ -833,7 +833,7 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t duration) {
  ******************************************************************************/
 static void btm_ble_read_remote_name_cmpl(bool status, const RawAddress& bda, uint16_t length,
                                           char* p_name) {
-  if (!stack_manager_get_interface()->get_stack_is_running()) {
+  if (!stack_is_running()) {
     log::warn("stack is not running");
     return;
   }

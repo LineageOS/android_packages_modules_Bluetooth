@@ -945,11 +945,7 @@ static bool cleanupNative(JNIEnv* env, jobject /* obj */) {
 
   log::verbose("");
 
-  if (!sBluetoothInterface) {
-    return JNI_FALSE;
-  }
-
-  sBluetoothInterface->cleanup();
+  bluetooth_cleanup();
   log::info("return from cleanup");
 
   if (sJniCallbacksObj) {

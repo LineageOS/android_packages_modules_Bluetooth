@@ -100,10 +100,10 @@ struct bluetooth::core::HACK_ProfileInterface HACK_profileInterface = {
 
 void InitializeCoreInterface() {
   static auto mockCoreInterface = MockCoreInterface{};
-  stack_manager_get_interface()->init_stack(&mockCoreInterface);
+  stack_init(&mockCoreInterface);
 }
 
-void CleanCoreInterface() { stack_manager_get_interface()->clean_up_stack(); }
+void CleanCoreInterface() { stack_cleanup(); }
 
 MockCoreInterface::MockCoreInterface()
     : bluetooth::core::CoreInterface{&eventCallbacks, &mockConfigInterface, &mockMsbcCodecInterface,

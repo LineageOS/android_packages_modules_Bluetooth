@@ -436,7 +436,7 @@ void bluetooth_init(bt_callbacks_t* callbacks, bool start_restricted, bool is_co
 
   is_local_device_atv = is_atv;
 
-  stack_manager_get_interface()->init_stack(CreateInterfaceToProfiles());
+  stack_init(CreateInterfaceToProfiles());
 
   wakelock_os_callouts_saved = callouts;
   wakelock_set_os_callouts(&wakelock_os_callouts_jni);
@@ -474,7 +474,7 @@ void bluetooth_disable(void) {
   stack_disable(&stop_profiles);
 }
 
-static void cleanup(void) { stack_manager_get_interface()->clean_up_stack(); }
+void bluetooth_cleanup(void) { stack_cleanup(); }
 
 bool is_restricted_mode() { return restricted_mode; }
 
@@ -842,7 +842,7 @@ static int set_event_filter_connection_setup_all_devices() {
 }
 
 static void dump(int fd, const char** /*arguments*/) {
-  if (!stack_manager_get_interface()->get_stack_is_running()) {
+  if (!stack_is_running()) {
     log::error("Stack is not running, skipping dumpsys!!");
     return;
   }
@@ -1143,7 +1143,6 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
 #ifdef TARGET_FLOSS
         .set_adapter_index = set_adapter_index,
 #endif
-        .cleanup = cleanup,
         .get_adapter_properties = get_adapter_properties,
         .get_adapter_property = get_adapter_property,
         .set_scan_mode = set_scan_mode,
