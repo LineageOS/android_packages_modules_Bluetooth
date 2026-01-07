@@ -473,7 +473,10 @@ static bt_status_t btif_in_fetch_bonded_devices(btif_bonded_devices_t* p_bonded_
             dev_class = uint2devclass((uint32_t)cod);
           }
           btif_config_get_int(bdstr, BTIF_STORAGE_KEY_PIN_LENGTH, &pin_length);
-          BTA_DmAddDevice(addr, dev_class, link_key, (uint8_t)linkkey_type, pin_length);
+          PairingType pairing_type =
+                  btif_storage_get_bredr_pairing_type(addr).value_or(kPairingTypeNone);
+          BTA_DmAddDevice(addr, dev_class, pairing_type, link_key,
+                          static_cast<uint8_t>(linkkey_type), pin_length);
 
           int device_type = BT_DEVICE_TYPE_UNKNOWN;
           if (btif_config_get_int(bdstr, BTIF_STORAGE_KEY_DEV_TYPE, &device_type) &&

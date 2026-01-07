@@ -76,16 +76,20 @@ struct BTA_DmAddBleKey {
 extern struct BTA_DmAddBleKey BTA_DmAddBleKey;
 
 // Name: BTA_DmAddDevice
-// Params: const RawAddress& bd_addr, DEV_CLASS dev_class, const LinkKey&
-// link_key, uint8_t key_type, uint8_t pin_length Return: void
+// Params: const RawAddress& bd_addr, const DEV_CLASS& dev_class, const LinkKey&, const PairingType&
+// pairing_type, link_key, uint8_t key_type, uint8_t pin_length
+// Return: void
 struct BTA_DmAddDevice {
-  std::function<void(RawAddress bd_addr, DEV_CLASS dev_class, LinkKey link_key, uint8_t key_type,
+  std::function<void(const RawAddress& bd_addr, const DEV_CLASS& dev_class,
+                     const PairingType& pairing_type, const LinkKey& link_key, uint8_t key_type,
                      uint8_t pin_length)>
-          body{[](RawAddress /* bd_addr */, DEV_CLASS /* dev_class */, LinkKey /* link_key */,
+          body{[](const RawAddress& /* bd_addr */, const DEV_CLASS& /* dev_class */,
+                  const PairingType& /* pairing_type */, const LinkKey& /* link_key */,
                   uint8_t /* key_type */, uint8_t /* pin_length */) {}};
-  void operator()(RawAddress bd_addr, DEV_CLASS dev_class, LinkKey link_key, uint8_t key_type,
+  void operator()(const RawAddress& bd_addr, const DEV_CLASS dev_class,
+                  const PairingType& pairing_type, const LinkKey& link_key, uint8_t key_type,
                   uint8_t pin_length) {
-    body(bd_addr, dev_class, link_key, key_type, pin_length);
+    body(bd_addr, dev_class, pairing_type, link_key, key_type, pin_length);
   }
 };
 extern struct BTA_DmAddDevice BTA_DmAddDevice;

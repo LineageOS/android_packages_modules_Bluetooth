@@ -112,12 +112,11 @@ void BTA_DmConfirm(const RawAddress& bd_addr, bool accept) { bta_dm_confirm(bd_a
  * Returns          void
  *
  ******************************************************************************/
-void BTA_DmAddDevice(RawAddress bd_addr, DEV_CLASS dev_class, LinkKey link_key, uint8_t key_type,
+void BTA_DmAddDevice(const RawAddress& bd_addr, const DEV_CLASS& dev_class,
+                     const PairingType& pairing_type, const LinkKey& link_key, uint8_t key_type,
                      uint8_t pin_length) {
-  auto closure = base::Bind(get_btm_client_interface().security.BTM_SecAddDevice, bd_addr,
-                            dev_class, link_key, key_type, pin_length);
-
-  closure.Run();
+  get_btm_client_interface().security.BTM_SecAddDevice(bd_addr, dev_class, pairing_type, link_key,
+                                                       key_type, pin_length);
 }
 
 /** This function removes a device from the security database list of peer
