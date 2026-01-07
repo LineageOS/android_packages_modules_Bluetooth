@@ -148,16 +148,14 @@ void BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
  *                  information stored in the NVRAM.
  *
  * Parameters:      bd_addr          - BD address of the peer
- *                  p_le_key         - LE key values.
  *                  key_type         - LE SMP key type.
- *
- * Returns          true if added OK, else false
+ *                  key              - LE key value
  *
  ******************************************************************************/
-void BTM_SecAddBleKey(const RawAddress& bd_addr, tBTM_LE_KEY_VALUE* p_le_key,
-                      tBTM_LE_KEY_TYPE key_type) {
+void BTM_SecAddBleKey(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
+                      const tBTM_LE_KEY_VALUE& key) {
   BtmDevice* p_device = btm_get_dev(bd_addr);
-  if (!p_device || !p_le_key ||
+  if (p_device == nullptr ||
       (key_type != BTM_LE_KEY_PENC && key_type != BTM_LE_KEY_PID && key_type != BTM_LE_KEY_PCSRK &&
        key_type != BTM_LE_KEY_LENC && key_type != BTM_LE_KEY_LCSRK && key_type != BTM_LE_KEY_LID)) {
     log::warn("Wrong Type, or No Device record for bdaddr:{}, Type:0{}", bd_addr, key_type);
@@ -166,7 +164,7 @@ void BTM_SecAddBleKey(const RawAddress& bd_addr, tBTM_LE_KEY_VALUE* p_le_key,
 
   log::debug("Adding BLE key device:{} key_type:{}", bd_addr, key_type);
 
-  btm_sec_save_le_key(bd_addr, key_type, p_le_key, false);
+  btm_sec_save_le_key(bd_addr, key_type, key, false);
   // Only set peer irk. Local irk is always the same.
   if (key_type == BTM_LE_KEY_PID) {
     btm_ble_resolving_list_load_dev(*p_device);
@@ -626,13 +624,7 @@ bool btm_get_local_div(const RawAddress& bd_addr, uint16_t* p_div) {
  *
  ******************************************************************************/
 void btm_sec_save_le_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
-                         tBTM_LE_KEY_VALUE* p_keys, bool pass_to_application) {
-  /* Store the updated key in the device database */
-  if (p_keys == nullptr && key_type != BTM_LE_KEY_LID) {
-    log::warn("Key type 0x{:x} with no keys for {}", key_type, bd_addr);
-    return;
-  }
-
+                         const tBTM_LE_KEY_VALUE& key, bool pass_to_application) {
   BtmDevice* p_device = btm_get_dev(bd_addr);
   if (p_device == nullptr) {
     log::warn("Key type 0x{:x} for unknown device {}", key_type, bd_addr);
@@ -643,50 +635,49 @@ void btm_sec_save_le_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
 
   switch (key_type) {
     case BTM_LE_KEY_PENC:
-      p_device->sec_rec.ble_keys.pltk = p_keys->penc_key.ltk;
-      p_device->sec_rec.ble_keys.rand = p_keys->penc_key.rand;
-      p_device->sec_rec.ble_keys.sec_level = p_keys->penc_key.sec_level;
-      p_device->sec_rec.ble_keys.ediv = p_keys->penc_key.ediv;
-      p_device->sec_rec.ble_keys.key_size = p_keys->penc_key.key_size;
+      p_device->sec_rec.ble_keys.pltk = key.penc_key.ltk;
+      p_device->sec_rec.ble_keys.rand = key.penc_key.rand;
+      p_device->sec_rec.ble_keys.sec_level = key.penc_key.sec_level;
+      p_device->sec_rec.ble_keys.ediv = key.penc_key.ediv;
+      p_device->sec_rec.ble_keys.key_size = key.penc_key.key_size;
       p_device->sec_rec.ble_keys.key_type |= BTM_LE_KEY_PENC;
       p_device->sec_rec.sec_flags |= BTM_SEC_LE_LINK_KEY_KNOWN;
-      if (p_keys->penc_key.sec_level == SMP_SEC_AUTHENTICATED) {
+      if (key.penc_key.sec_level == SMP_SEC_AUTHENTICATED) {
         p_device->sec_rec.sec_flags |= BTM_SEC_LE_LINK_KEY_AUTHED;
       } else {
         p_device->sec_rec.sec_flags &= ~BTM_SEC_LE_LINK_KEY_AUTHED;
       }
 
-      if (p_keys->pairing_algorithm != PairingAlgorithm::LEGACY &&
-          p_keys->pairing_algorithm != PairingAlgorithm::SC) {
-        log::error("Invalid pairing algorithm: {} for bd_addr: {}", p_keys->pairing_algorithm,
-                   bd_addr);
+      if (key.pairing_algorithm != PairingAlgorithm::LEGACY &&
+          key.pairing_algorithm != PairingAlgorithm::SC) {
+        log::error("Invalid pairing algorithm: {} for bd_addr: {}", key.pairing_algorithm, bd_addr);
       }
-      p_device->sec_rec.ble_pairing_algorithm = p_keys->pairing_algorithm;
+      p_device->sec_rec.ble_pairing_algorithm = key.pairing_algorithm;
       log::verbose("BTM_LE_KEY_PENC key_type=0x{:x} sec_flags=0x{:x} sec_leve=0x{:x} for {}",
                    p_device->sec_rec.ble_keys.key_type, p_device->sec_rec.sec_flags,
                    p_device->sec_rec.ble_keys.sec_level, bd_addr);
       break;
 
     case BTM_LE_KEY_PID:
-      p_device->sec_rec.ble_keys.irk = p_keys->pid_key.irk;
-      p_device->ble.identity_address_with_type.bda = p_keys->pid_key.identity_addr;
-      p_device->ble.identity_address_with_type.type = p_keys->pid_key.identity_addr_type;
+      p_device->sec_rec.ble_keys.irk = key.pid_key.irk;
+      p_device->ble.identity_address_with_type.bda = key.pid_key.identity_addr;
+      p_device->ble.identity_address_with_type.type = key.pid_key.identity_addr_type;
       p_device->sec_rec.ble_keys.key_type |= BTM_LE_KEY_PID;
       log::verbose(
               "BTM_LE_KEY_PID key_type=0x{:x} save peer IRK, change bd_addr={} "
               "to id_addr={} id_addr_type=0x{:x}",
-              p_device->sec_rec.ble_keys.key_type, p_device->bd_addr, p_keys->pid_key.identity_addr,
-              p_keys->pid_key.identity_addr_type);
+              p_device->sec_rec.ble_keys.key_type, p_device->bd_addr, key.pid_key.identity_addr,
+              key.pid_key.identity_addr_type);
       /* update device record address as identity address */
-      p_device->bd_addr = p_keys->pid_key.identity_addr;
+      p_device->bd_addr = key.pid_key.identity_addr;
       /* combine DUMO device security record if needed */
       btm_consolidate_dev(p_device);
       break;
 
     case BTM_LE_KEY_PCSRK:
-      p_device->sec_rec.ble_keys.pcsrk = p_keys->pcsrk_key.csrk;
-      p_device->sec_rec.ble_keys.srk_sec_level = p_keys->pcsrk_key.sec_level;
-      p_device->sec_rec.ble_keys.counter = p_keys->pcsrk_key.counter;
+      p_device->sec_rec.ble_keys.pcsrk = key.pcsrk_key.csrk;
+      p_device->sec_rec.ble_keys.srk_sec_level = key.pcsrk_key.sec_level;
+      p_device->sec_rec.ble_keys.counter = key.pcsrk_key.counter;
       p_device->sec_rec.ble_keys.key_type |= BTM_LE_KEY_PCSRK;
       p_device->sec_rec.sec_flags |= BTM_SEC_LE_LINK_KEY_KNOWN;
 
@@ -699,18 +690,17 @@ void btm_sec_save_le_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
       break;
 
     case BTM_LE_KEY_LENC:
-      p_device->sec_rec.ble_keys.lltk = p_keys->lenc_key.ltk;
-      p_device->sec_rec.ble_keys.div = p_keys->lenc_key.div; /* update DIV */
-      p_device->sec_rec.ble_keys.sec_level = p_keys->lenc_key.sec_level;
-      p_device->sec_rec.ble_keys.key_size = p_keys->lenc_key.key_size;
+      p_device->sec_rec.ble_keys.lltk = key.lenc_key.ltk;
+      p_device->sec_rec.ble_keys.div = key.lenc_key.div; /* update DIV */
+      p_device->sec_rec.ble_keys.sec_level = key.lenc_key.sec_level;
+      p_device->sec_rec.ble_keys.key_size = key.lenc_key.key_size;
       p_device->sec_rec.ble_keys.key_type |= BTM_LE_KEY_LENC;
 
-      if (p_keys->pairing_algorithm != PairingAlgorithm::LEGACY &&
-          p_keys->pairing_algorithm != PairingAlgorithm::SC) {
-        log::error("Invalid pairing algorithm: {} for bd_addr: {}", p_keys->pairing_algorithm,
-                   bd_addr);
+      if (key.pairing_algorithm != PairingAlgorithm::LEGACY &&
+          key.pairing_algorithm != PairingAlgorithm::SC) {
+        log::error("Invalid pairing algorithm: {} for bd_addr: {}", key.pairing_algorithm, bd_addr);
       }
-      p_device->sec_rec.ble_pairing_algorithm = p_keys->pairing_algorithm;
+      p_device->sec_rec.ble_pairing_algorithm = key.pairing_algorithm;
 
       log::verbose(
               "BTM_LE_KEY_LENC key_type=0x{:x} DIV=0x{:x} key_size=0x{:x} "
@@ -720,10 +710,10 @@ void btm_sec_save_le_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
       break;
 
     case BTM_LE_KEY_LCSRK: /* local CSRK has been delivered */
-      p_device->sec_rec.ble_keys.lcsrk = p_keys->lcsrk_key.csrk;
-      p_device->sec_rec.ble_keys.div = p_keys->lcsrk_key.div; /* update DIV */
-      p_device->sec_rec.ble_keys.local_csrk_sec_level = p_keys->lcsrk_key.sec_level;
-      p_device->sec_rec.ble_keys.local_counter = p_keys->lcsrk_key.counter;
+      p_device->sec_rec.ble_keys.lcsrk = key.lcsrk_key.csrk;
+      p_device->sec_rec.ble_keys.div = key.lcsrk_key.div; /* update DIV */
+      p_device->sec_rec.ble_keys.local_csrk_sec_level = key.lcsrk_key.sec_level;
+      p_device->sec_rec.ble_keys.local_counter = key.lcsrk_key.counter;
       p_device->sec_rec.ble_keys.key_type |= BTM_LE_KEY_LCSRK;
       log::verbose(
               "BTM_LE_KEY_LCSRK key_type=0x{:x} DIV=0x{:x} scrk_sec_level=0x{:x} "
@@ -746,7 +736,7 @@ void btm_sec_save_le_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
      If link key is in progress, it will get sent later.*/
   if (pass_to_application) {
     tBTM_LE_EVT_DATA cb_data = {};
-    cb_data.key.p_key_value = p_keys;
+    cb_data.key.p_key_value = &key;
     cb_data.key.key_type = key_type;
 
     BTM_BLE_SEC_CALLBACK(BTM_LE_KEY_EVT, bd_addr, &cb_data);

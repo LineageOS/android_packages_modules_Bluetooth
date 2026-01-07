@@ -105,8 +105,8 @@ typedef struct {
 
   bool (*BTM_SecDeleteDevice)(const RawAddress& bd_addr);
 
-  void (*BTM_SecAddBleKey)(const RawAddress& bd_addr, tBTM_LE_KEY_VALUE* p_le_key,
-                           tBTM_LE_KEY_TYPE key_type);
+  void (*BTM_SecAddBleKey)(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
+                           const tBTM_LE_KEY_VALUE& key);
 
   void (*BTM_SecClearSecurityFlags)(const RawAddress& bd_addr);
 

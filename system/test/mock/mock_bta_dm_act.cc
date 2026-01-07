@@ -123,10 +123,10 @@ void bta_dm_add_ble_device(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_add_ble_device(bd_addr, addr_type, dev_type);
 }
-void bta_dm_add_blekey(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE blekey,
-                       tBTM_LE_KEY_TYPE key_type) {
+void bta_dm_add_blekey(const RawAddress& bd_addr, const PairingType& pairing_type,
+                       tBTM_LE_KEY_TYPE key_type, const tBTA_LE_KEY_VALUE& key) {
   inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_add_blekey(bd_addr, blekey, key_type);
+  test::mock::bta_dm_act::bta_dm_add_blekey(bd_addr, pairing_type, key_type, key);
 }
 void bta_dm_ble_config_local_privacy(bool privacy_enable) {
   inc_func_call_count(__func__);
