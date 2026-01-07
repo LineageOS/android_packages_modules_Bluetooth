@@ -1547,11 +1547,10 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *
      * @param address valid Bluetooth MAC address
      * @param addressType valid address type
-     * @throws RuntimeException Bluetooth is not available on this platform
      * @throws IllegalArgumentException address or addressType is invalid
      */
     @Hide
-    /*package*/ BluetoothDevice(BluetoothAdapter adapter, String address, int addressType) {
+    BluetoothDevice(BluetoothAdapter adapter, String address, int addressType) {
         if (!BluetoothAdapter.checkBluetoothAddress(address)) {
             throw new IllegalArgumentException(address + " is not a valid Bluetooth address");
         }
@@ -1574,10 +1573,13 @@ public final class BluetoothDevice implements Parcelable, Attributable {
         mAttributionSource = AttributionSource.myAttributionSource();
     }
 
-    // Constructor used by android/app/jni/com_android_bluetooth_le_audio.cpp
-    @SuppressWarnings("unused")
-    private BluetoothDevice(String address, int addressType) {
-        this(BluetoothAdapter.getDefaultAdapter(), address, addressType);
+    /** see {@link #BluetoothDevice(BluetoothAdapter, String, int)} */
+    @Hide
+    public BluetoothDevice(String address, int addressType) {
+        this(
+                Flags.removeAdapterDependency() ? null : BluetoothAdapter.getDefaultAdapter(),
+                address,
+                addressType);
     }
 
     /**
@@ -1705,9 +1707,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     }
 
     /**
-     * Returns the address type of this BluetoothDevice, one of {@link #ADDRESS_TYPE_PUBLIC}, {@link
-     * #ADDRESS_TYPE_RANDOM}, {@link #ADDRESS_TYPE_ANONYMOUS}, or {@link #ADDRESS_TYPE_UNKNOWN}.
-     *
      * @return Bluetooth address type
      */
     @RequiresNoPermission
@@ -2180,8 +2179,8 @@ public final class BluetoothDevice implements Parcelable, Attributable {
      *
      * <p>This method requires the calling app to have the {@link
      * android.Manifest.permission#BLUETOOTH_CONNECT} permission. Additionally, an app must either
-     * have {@link android.Manifest.permission#BLUETOOTH_PRIVILEGED} permission or be
-     * associated with the Companion Device manager (see {@link
+     * have {@link android.Manifest.permission#BLUETOOTH_PRIVILEGED} permission or be associated
+     * with the Companion Device manager (see {@link
      * android.companion.CompanionDeviceManager#associate( AssociationRequest,
      * android.companion.CompanionDeviceManager.Callback, Handler)}).
      *

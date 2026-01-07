@@ -212,7 +212,7 @@ bool interop_match_name(const interop_feature_t feature, const char* name) {
 }
 
 bool interop_match_addr_or_name(const interop_feature_t feature, RawAddress addr,
-                                bt_status_t (*get_remote_device_property)(RawAddress,
+                                bt_status_t (*get_remote_device_property)(const RawAddress&,
                                                                           bt_property_t*)) {
   log::assert_that(get_remote_device_property != nullptr,
                    "assert failed: get_remote_device_property != nullptr");

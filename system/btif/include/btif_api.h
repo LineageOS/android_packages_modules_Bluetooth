@@ -314,7 +314,7 @@ void btif_dm_pin_reply(const RawAddress bd_addr, uint8_t accept, uint8_t pin_len
  *                  Entry
  *
  ******************************************************************************/
-void btif_dm_ssp_reply(const RawAddress bd_addr, bt_ssp_variant_t variant, uint8_t accept);
+void btif_dm_ssp_reply(const RawAddress bd_addr, PairingVariant variant, uint8_t accept);
 
 /*******************************************************************************
  *

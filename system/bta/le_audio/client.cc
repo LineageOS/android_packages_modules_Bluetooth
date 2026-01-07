@@ -2885,11 +2885,9 @@ public:
     }
 
     /* To be a Unicast Source device, this device shall be a Central device. */
-    tHCI_ROLE role;
-    auto role_status = BTM_GetRole(address, BT_TRANSPORT_LE, &role);
-    if (role_status != tBTM_STATUS::BTM_SUCCESS || role != HCI_ROLE_CENTRAL) {
-      log::warn("Unicast client is not available for this connection. {}, status: {}, AclRole: {}",
-                address, btm_status_text(role_status), hci_role_text(role));
+    auto role = BTM_GetRole(address, BT_TRANSPORT_LE);
+    if (!role || role.value() != HCI_ROLE_CENTRAL) {
+      log::warn("Unicast client is not available as {} is not in central role", address);
       BTA_GATTC_Close(conn_id);
       return;
     }
@@ -6470,9 +6468,9 @@ public:
         group->IsDirectionAvailableForConfiguration(
                 configuration_context_type_, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
       log::info(
-              "There is no need to reconfigure for the sonification events, "
+              "There is no need to reconfigure for the {} events, "
               "staying with the existing configuration context of {}",
-              ToString(configuration_context_type_));
+              ToString(new_config_context), ToString(configuration_context_type_));
       new_config_context = configuration_context_type_;
 
       if (com_android_bluetooth_flags_leaudio_use_context_type_manager()) {

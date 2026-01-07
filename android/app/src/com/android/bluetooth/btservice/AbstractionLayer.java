@@ -54,6 +54,9 @@ public final class AbstractionLayer {
     static final int BT_PROPERTY_DISCOVERY_RESULT_TYPE = 0x1D;
     static final int BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE = 0x1E;
     static final int BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA = 0x1F;
+    static final int BT_PROPERTY_REMOTE_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED = 0x20;
+    static final int BT_PROPERTY_BREDR_PAIRING_TYPE = 0x21;
+    static final int BT_PROPERTY_LE_PAIRING_TYPE = 0x22;
 
     public static final int BT_DEVICE_TYPE_BREDR = 0x01;
     static final int BT_DEVICE_TYPE_BLE = 0x02;
@@ -63,11 +66,14 @@ public final class AbstractionLayer {
     static final int BT_BOND_STATE_BONDING = 0x01;
     static final int BT_BOND_STATE_BONDED = 0x02;
 
-    static final int BT_SSP_VARIANT_PASSKEY_CONFIRMATION = 0x00;
-    static final int BT_SSP_VARIANT_PASSKEY_ENTRY = 0x01;
-    static final int BT_SSP_VARIANT_CONSENT = 0x02;
-    static final int BT_SSP_VARIANT_PASSKEY_NOTIFICATION = 0x03;
-    static final int BT_SSP_VARIANT_PARTICIPATION = 0x04; // Incoming LE pairing request
+    static final int BT_LEGACY_PAIRING_VARIANT_PIN = 0x00;
+    static final int BT_LEGACY_PAIRING_VARIANT_PIN_16 = 0x01;
+
+    static final int BT_PAIRING_VARIANT_PASSKEY_CONFIRMATION = 0x00;
+    static final int BT_PAIRING_VARIANT_PASSKEY_ENTRY = 0x01;
+    static final int BT_PAIRING_VARIANT_CONSENT = 0x02;
+    static final int BT_PAIRING_VARIANT_PASSKEY_NOTIFICATION = 0x03;
+    static final int BT_PAIRING_VARIANT_PARTICIPATION = 0x04; // Incoming LE pairing request
 
     static final int BT_DISCOVERY_STOPPED = 0x00;
     static final int BT_DISCOVERY_STARTED = 0x01;

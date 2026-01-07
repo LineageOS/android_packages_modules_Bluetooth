@@ -46,8 +46,8 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.test.platform.app.InstrumentationRegistry;
 
-import com.android.bluetooth.media_audio.sink.BluetoothMediaBrowserService;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.media_audio.sink.BluetoothMediaBrowserService;
 import com.android.dx.mockito.inline.extended.ExtendedMockito;
 
 import java.util.ArrayList;

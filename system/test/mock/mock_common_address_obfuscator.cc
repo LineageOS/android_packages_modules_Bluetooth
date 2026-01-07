@@ -40,7 +40,7 @@ bool AddressObfuscator::IsSaltValid(const Octet32& salt_256bit) {
 }
 std::string AddressObfuscator::Obfuscate(const RawAddress& address) {
   inc_func_call_count(__func__);
-  return 0;
+  return std::string();
 }
 void AddressObfuscator::Initialize(const Octet32& salt_256bit) {
   inc_func_call_count(__func__);

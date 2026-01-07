@@ -104,3 +104,13 @@ flag {
   is_exported: true
 }
 
+flag {
+    name: "remove_adapter_dependency"
+    namespace: "bluetooth"
+    description: "Stop depending on the adapter system Service from withing the app"
+    bug: "473091034"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+

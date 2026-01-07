@@ -715,8 +715,8 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
          *
          * @param codecId The 40-bit codec identifier.
          * @return the same Builder instance
-         * @throws IllegalArgumentException if the codecId is greater than 40 bits, or not
-         * supported (not LC3 or Vendor Specific).
+         * @throws IllegalArgumentException if the codecId is greater than 40 bits, or not supported
+         *     (not LC3 or Vendor Specific).
          */
         @RequiresNoPermission
         @FlaggedApi(Flags.FLAG_LEAUDIO_CODEC_ID_SUPPORT)

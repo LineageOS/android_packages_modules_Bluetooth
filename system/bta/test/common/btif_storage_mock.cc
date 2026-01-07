@@ -130,7 +130,8 @@ void btif_storage_remove_leaudio_has(const RawAddress& address) {
   btif_storage_interface->RemoveLeaudioHas(address);
 }
 
-bt_status_t btif_storage_get_remote_device_property(RawAddress address, bt_property_t* property) {
+bt_status_t btif_storage_get_remote_device_property(const RawAddress& address,
+                                                    bt_property_t* property) {
   log::assert_that(btif_storage_interface != nullptr, "Mock storage module not set!");
   return btif_storage_interface->GetRemoteDeviceProperty(address, property);
 }
@@ -147,4 +148,12 @@ bool btif_storage_get_hearing_aid_prop(const RawAddress& address, uint8_t* capab
 void btif_storage_add_hearing_aid(const asha::HearingDevice& dev_info) {
   log::assert_that(btif_storage_interface != nullptr, "Mock storage module not set!");
   return btif_storage_interface->AddHearingAid(&dev_info);
+}
+
+std::optional<bool> btif_storage_get_remote_host_sc_support(const RawAddress& /* address */) {
+  return true;
+}
+
+std::optional<bool> btif_storage_get_remote_controller_sc_support(const RawAddress& /* address */) {
+  return true;
 }

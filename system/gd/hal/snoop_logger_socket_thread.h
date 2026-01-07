@@ -26,14 +26,15 @@
 #include <thread>
 
 #include "hal/snoop_logger_socket.h"
+#include "hal/syscall_wrapper_impl.h"
 
 namespace bluetooth {
 namespace hal {
 
 class SnoopLoggerSocketThread : public SnoopLoggerSocketInterface {
 public:
-  SnoopLoggerSocketThread(std::unique_ptr<SnoopLoggerSocket>&& socket);
-  SnoopLoggerSocketThread(const SnoopLoggerSocket&) = delete;
+  SnoopLoggerSocketThread(int host, int port);
+  SnoopLoggerSocketThread(const SnoopLoggerSocketThread&) = delete;
   SnoopLoggerSocketThread& operator=(const SnoopLoggerSocketThread&) = delete;
   virtual ~SnoopLoggerSocketThread();
 
@@ -47,13 +48,13 @@ public:
 private:
   void Run(std::promise<bool> thread_started);
 
+  SyscallWrapperImpl syscall_if;
   std::unique_ptr<SnoopLoggerSocket> socket_;
 
   // Socket thread for listening to incoming connections.
   std::unique_ptr<std::thread> listen_thread_;
-  std::atomic<bool> listen_thread_running_ = false;
-
-  std::atomic<bool> stop_thread_;
+  std::atomic<bool> listen_thread_running_{false};
+  std::atomic<bool> stop_thread_{false};
 };
 
 }  // namespace hal

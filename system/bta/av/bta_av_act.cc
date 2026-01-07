@@ -2381,6 +2381,12 @@ void bta_av_rc_disc_done(tBTA_AV_DATA* p_data) {
       }
     }
   } else {
+    if (rc_handle >= BTA_AV_NUM_RCB) {
+      log::error("Invalid rc_handle: {} >= BTA_AV_NUM_RCB ({})", rc_handle, BTA_AV_NUM_RCB);
+      AVRC_Close(rc_handle);
+      return;
+    }
+
     tBTA_AV_RC_FEAT rc_feat;
     p_cb->rcb[rc_handle].peer_features = peer_features;
     rc_feat.rc_handle = rc_handle;

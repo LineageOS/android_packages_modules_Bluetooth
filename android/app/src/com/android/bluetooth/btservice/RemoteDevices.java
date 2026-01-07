@@ -171,7 +171,11 @@ public class RemoteDevices {
 
     RemoteDevices(AdapterService service, Looper looper) {
         mAdapterService = service;
-        mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
+        if (Flags.removeAdapterDependency()) {
+            mAdapter = null;
+        } else {
+            mAdapter = mAdapterService.getSystemService(BluetoothManager.class).getAdapter();
+        }
         mHandler = new RemoteDevicesHandler(looper);
         mWatchConnectionStateListener = new WatchConnectionStateListener(mAdapterService, looper);
     }
@@ -207,22 +211,15 @@ public class RemoteDevices {
                                     != BluetoothDevice.ERROR) {
                                 deviceProperties.setDisconnected(TRANSPORT_BREDR);
                                 mAdapterService.notifyAclDisconnected(device, TRANSPORT_BREDR);
-                                if (Flags.broadcastTransportTypeOnReset()) {
-                                    intent.putExtra(
+                                intent.putExtra(
                                             BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_BREDR);
-                                    mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
-                                }
+                                mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
                             }
                             if (deviceProperties.getConnectionHandle(TRANSPORT_LE)
                                     != BluetoothDevice.ERROR) {
                                 deviceProperties.setDisconnected(TRANSPORT_LE);
                                 mAdapterService.notifyAclDisconnected(device, TRANSPORT_LE);
-                                if (Flags.broadcastTransportTypeOnReset()) {
-                                    intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_LE);
-                                    mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
-                                }
-                            }
-                            if (!Flags.broadcastTransportTypeOnReset()) {
+                                intent.putExtra(BluetoothDevice.EXTRA_TRANSPORT, TRANSPORT_LE);
                                 mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT);
                             }
                         }
@@ -328,11 +325,18 @@ public class RemoteDevices {
             }
 
             DeviceProperties prop = new DeviceProperties();
-            BluetoothDevice device =
-                    Flags.retainAddressType()
-                            ? mAdapter.getRemoteLeDevice(key, addressType)
-                            : mAdapter.getRemoteDevice(key);
-            prop.setDevice(device);
+            if (Flags.removeAdapterDependency()) {
+                if (!Flags.retainAddressType()) {
+                    addressType = BluetoothDevice.ADDRESS_TYPE_PUBLIC;
+                }
+                prop.setDevice(new BluetoothDevice(key, addressType));
+            } else {
+                BluetoothDevice device =
+                        Flags.retainAddressType()
+                                ? mAdapter.getRemoteLeDevice(key, addressType)
+                                : mAdapter.getRemoteDevice(key);
+                prop.setDevice(device);
+            }
 
             DeviceProperties pv = mDevices.put(key, prop);
 
@@ -1448,6 +1452,14 @@ public class RemoteDevices {
                                 0,
                                 0);
                     }
+
+                    case AbstractionLayer.BT_PROPERTY_BREDR_PAIRING_TYPE ->
+                            updateBondStatus(
+                                    deviceProperties, BluetoothDevice.TRANSPORT_BREDR, val);
+
+                    case AbstractionLayer.BT_PROPERTY_LE_PAIRING_TYPE ->
+                            updateBondStatus(deviceProperties, BluetoothDevice.TRANSPORT_LE, val);
+
                     default -> {} // Nothing to do
                 }
             }
@@ -1460,6 +1472,25 @@ public class RemoteDevices {
                 uuidsUpdated(deviceProperties, true);
             }
         }
+    }
+
+    private static void updateBondStatus(
+            DeviceProperties deviceProperties, int transport, byte[] pairingType) {
+        final int pairingAlgorithm = pairingType[0];
+        final int nativePairingVariant = pairingType[1];
+        final int pairingVariant =
+                BondStateMachine.getPairingVariant(
+                        transport, pairingAlgorithm, nativePairingVariant);
+        debugLog(
+                "updateBondStatus: "
+                        + deviceProperties.getDevice()
+                        + " transport: "
+                        + (transport == BluetoothDevice.TRANSPORT_BREDR ? "BR/EDR" : "LE")
+                        + ", algorithm:"
+                        + pairingAlgorithm
+                        + ", variant:"
+                        + pairingVariant);
+        deviceProperties.setBondStatus(transport, pairingAlgorithm, pairingVariant);
     }
 
     private void uuidsUpdated(DeviceProperties deviceProperties, boolean success) {

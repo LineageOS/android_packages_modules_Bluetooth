@@ -40,7 +40,6 @@ import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -424,9 +423,7 @@ public class A2dpSinkService extends ConnectableProfile {
         stateMachine.quitNow();
     }
 
-    /**
-     * Called from a state machine on connection state changes
-     */
+    /** Called from a state machine on connection state changes */
     void connectionStateChanged(BluetoothDevice device, int fromState, int toState) {
         getAdapterService()
                 .notifyProfileConnectionStateChangeToScan(getProfileId(), fromState, toState);

@@ -18,7 +18,6 @@ package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-import static android.bluetooth.BluetoothProfile.HAP_CLIENT;
 
 import static com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__BOND_RETRY;
 import static com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__FAIL;
@@ -45,7 +44,6 @@ import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
 import com.android.bluetooth.flags.Flags;
-import com.android.bluetooth.hap.HapClientService;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -710,7 +708,7 @@ public final class BondStateMachine extends StateMachine {
             int transport,
             int newState,
             int pairingAlgorithm,
-            int pairingVariant,
+            int nativePairingVariant,
             int hciReason) {
         BluetoothDevice device = mRemoteDevices.getDevice(address);
 
@@ -719,6 +717,8 @@ public final class BondStateMachine extends StateMachine {
             device = mAdapter.getRemoteDevice(Utils.getAddressStringFromByte(address));
             logD("bondStateChangeCallback: Unknown device:" + device);
         }
+
+        int pairingVariant = getPairingVariant(transport, pairingAlgorithm, nativePairingVariant);
 
         Message msg = obtainMessage(MESSAGE_BOND_STATE_CHANGE);
         msg.obj = device;
@@ -759,23 +759,23 @@ public final class BondStateMachine extends StateMachine {
         boolean displayPasskey = false;
         int context = BluetoothDevice.PAIRING_CONTEXT_USER_APPROVAL_REQUESTED;
         switch (pairingVariant) {
-            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_CONFIRMATION -> {
+            case AbstractionLayer.BT_PAIRING_VARIANT_PASSKEY_CONFIRMATION -> {
                 variant = BluetoothDevice.PAIRING_VARIANT_PASSKEY_CONFIRMATION;
                 displayPasskey = true;
             }
 
-            case AbstractionLayer.BT_SSP_VARIANT_CONSENT ->
+            case AbstractionLayer.BT_PAIRING_VARIANT_CONSENT ->
                     variant = BluetoothDevice.PAIRING_VARIANT_CONSENT;
 
-            case AbstractionLayer.BT_SSP_VARIANT_PARTICIPATION -> {
+            case AbstractionLayer.BT_PAIRING_VARIANT_PARTICIPATION -> {
                 variant = BluetoothDevice.PAIRING_VARIANT_CONSENT;
                 context = BluetoothDevice.PAIRING_CONTEXT_USER_PARTICIPATION_REQUESTED;
             }
 
-            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_ENTRY ->
+            case AbstractionLayer.BT_PAIRING_VARIANT_PASSKEY_ENTRY ->
                     variant = BluetoothDevice.PAIRING_VARIANT_PASSKEY;
 
-            case AbstractionLayer.BT_SSP_VARIANT_PASSKEY_NOTIFICATION -> {
+            case AbstractionLayer.BT_PAIRING_VARIANT_PASSKEY_NOTIFICATION -> {
                 variant = BluetoothDevice.PAIRING_VARIANT_DISPLAY_PASSKEY;
                 displayPasskey = true;
             }
@@ -956,6 +956,40 @@ public final class BondStateMachine extends StateMachine {
         } else if (state == BluetoothDevice.BOND_BONDED) {
             return "BOND_BONDED";
         } else return "UNKNOWN(" + state + ")";
+    }
+
+    /** Converts native pairing variant to Java pairing variant */
+    public static int getPairingVariant(
+            int transport, int pairingAlgorithm, int nativePairingVariant) {
+        if (transport == BluetoothDevice.TRANSPORT_BREDR
+                && pairingAlgorithm == BluetoothDevice.PAIRING_ALGORITHM_BREDR_LEGACY) {
+            if (nativePairingVariant == AbstractionLayer.BT_LEGACY_PAIRING_VARIANT_PIN) {
+                return BluetoothDevice.PAIRING_VARIANT_DISPLAY_PIN;
+            } else if (nativePairingVariant == AbstractionLayer.BT_LEGACY_PAIRING_VARIANT_PIN_16) {
+                return BluetoothDevice.PAIRING_VARIANT_PIN_16_DIGITS;
+            } else {
+                logE(
+                        "getPairingVariant: Unknown legacy pairing variant("
+                                + nativePairingVariant
+                                + ") for "
+                                + transport
+                                + " "
+                                + pairingAlgorithm);
+                return BluetoothDevice.PAIRING_VARIANT_DISPLAY_PIN;
+            }
+        }
+
+        return switch (nativePairingVariant) {
+            case AbstractionLayer.BT_PAIRING_VARIANT_PASSKEY_CONFIRMATION ->
+                    BluetoothDevice.PAIRING_VARIANT_PASSKEY_CONFIRMATION;
+            case AbstractionLayer.BT_PAIRING_VARIANT_CONSENT ->
+                    BluetoothDevice.PAIRING_VARIANT_CONSENT;
+            case AbstractionLayer.BT_PAIRING_VARIANT_PASSKEY_ENTRY ->
+                    BluetoothDevice.PAIRING_VARIANT_PASSKEY;
+            case AbstractionLayer.BT_PAIRING_VARIANT_PASSKEY_NOTIFICATION ->
+                    BluetoothDevice.PAIRING_VARIANT_DISPLAY_PASSKEY;
+            default -> BluetoothDevice.PAIRING_VARIANT_CONSENT;
+        };
     }
 
     private static void logI(String log) {

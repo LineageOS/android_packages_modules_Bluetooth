@@ -431,13 +431,7 @@ typedef enum {
    */
   BT_PROPERTY_REMOTE_ADDR_TYPE,
 
-  /**
-   * Description - Whether remote device supports Secure Connections mode on
-   * host
-   * Access mode - GET and SET.
-   * Data Type - uint8_t.
-   */
-  BT_PROPERTY_REMOTE_HOST_SECURE_CONNECTIONS_SUPPORTED,
+  BT_PROPERTY_RESERVED_0x19,
 
   /**
    * Description - Maximum observed session key for remote device
@@ -490,13 +484,23 @@ typedef enum {
    */
   BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA,
 
+  BT_PROPERTY_RESERVED_0x20,
+
   /**
-   * Description - Whether remote device supports Secure Connections mode on
-   * controller
-   * Access mode - GET and SET.
-   * Data Type - uint8_t.
+   * Description - Pairing type of the remote device on BREDR transport. This includes the pairing
+   * algorithm and the variant.
+   * Access mode - GET.
+   * Data Type - PairingType.
    */
-  BT_PROPERTY_REMOTE_CONTROLLER_SECURE_CONNECTIONS_SUPPORTED,
+  BT_PROPERTY_BREDR_PAIRING_TYPE,
+
+  /**
+   * Description - Pairing type of the remote device on LE transport. This includes the pairing
+   * algorithm and the variant.
+   * Access mode - GET.
+   * Data Type - PairingType.
+   */
+  BT_PROPERTY_LE_PAIRING_TYPE,
 
   BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP = 0xFF,
 } bt_property_type_t;
@@ -552,14 +556,26 @@ typedef enum {
 /** Bluetooth Bond state */
 typedef enum { BT_BOND_STATE_NONE, BT_BOND_STATE_BONDING, BT_BOND_STATE_BONDED } bt_bond_state_t;
 
-/** Bluetooth SSP Bonding Variant */
-typedef enum {
-  BT_SSP_VARIANT_PASSKEY_CONFIRMATION,
-  BT_SSP_VARIANT_PASSKEY_ENTRY,
-  BT_SSP_VARIANT_CONSENT,
-  BT_SSP_VARIANT_PASSKEY_NOTIFICATION,
-  BT_SSP_VARIANT_PARTICIPATION  // Incoming LE pairing request
-} bt_ssp_variant_t;
+/** Bluetooth Pairing Variant */
+enum class PairingVariant : uint8_t {
+  PASSKEY_CONFIRMATION,
+  PASSKEY_ENTRY,
+  CONSENT,
+  PASSKEY_NOTIFICATION,
+  PARTICIPATION  // Incoming LE pairing request
+};
+
+static inline std::string pairing_variant_text(const PairingVariant& variant) {
+  switch (variant) {
+    CASE_RETURN_STRING(PairingVariant::PASSKEY_CONFIRMATION);
+    CASE_RETURN_STRING(PairingVariant::PASSKEY_ENTRY);
+    CASE_RETURN_STRING(PairingVariant::CONSENT);
+    CASE_RETURN_STRING(PairingVariant::PASSKEY_NOTIFICATION);
+    CASE_RETURN_STRING(PairingVariant::PARTICIPATION);
+    default:
+      RETURN_UNKNOWN_TYPE_STRING(PairingVariant, variant);
+  }
+}
 
 // This is inline with BluetoothDevice.EncryptionAlgorithm.
 enum class EncryptionAlgorithm : uint8_t {
@@ -615,7 +631,7 @@ enum LegacyPairingVariant : uint8_t {
   PIN_16,
 };
 
-static inline std::string bredr_legacy_pairing_variant_text(const LegacyPairingVariant& variant) {
+static inline std::string legacy_pairing_variant_text(const LegacyPairingVariant& variant) {
   switch (variant) {
     CASE_RETURN_STRING(LegacyPairingVariant::PIN);
     CASE_RETURN_STRING(LegacyPairingVariant::PIN_16);
@@ -627,10 +643,17 @@ static inline std::string bredr_legacy_pairing_variant_text(const LegacyPairingV
 struct PairingType {
   PairingAlgorithm algorithm;
   union {
-    bt_ssp_variant_t variant;
+    PairingVariant variant;
     LegacyPairingVariant legacy_variant;
   };
 };
+
+static inline std::string pairing_type_text(const PairingType& pairing_type) {
+  return pairing_algorithm_text(pairing_type.algorithm) + "-" +
+         (pairing_type.algorithm == PairingAlgorithm::LEGACY
+                  ? legacy_pairing_variant_text(pairing_type.legacy_variant)
+                  : pairing_variant_text(pairing_type.variant));
+}
 
 constexpr PairingType kPairingTypeNone = {.algorithm = PairingAlgorithm::NONE,
                                           .legacy_variant = LegacyPairingVariant::PIN};
@@ -677,7 +700,7 @@ typedef void (*pin_request_callback)(RawAddress remote_bd_addr, bt_bdname_t* bd_
  *  BT_SSP_PAIRING_PASSKEY_ENTRY */
 /* TODO: Passkey request callback shall not be needed for devices with display
  * capability. We still need support this in the stack for completeness */
-typedef void (*ssp_request_callback)(RawAddress remote_bd_addr, bt_ssp_variant_t pairing_variant,
+typedef void (*ssp_request_callback)(RawAddress remote_bd_addr, PairingVariant pairing_variant,
                                      uint32_t pass_key, int pairing_algorithm);
 
 /** Bluetooth Bond state changed callback */
@@ -915,11 +938,11 @@ typedef struct {
   int (*pin_reply)(RawAddress bd_addr, uint8_t accept, uint8_t pin_len, bt_pin_code_t* pin_code);
 
   /** BT SSP Reply - Just Works, Numeric Comparison and Passkey
-   * passkey shall be zero for BT_SSP_VARIANT_PASSKEY_COMPARISON &
-   * BT_SSP_VARIANT_CONSENT
-   * For BT_SSP_VARIANT_PASSKEY_ENTRY, if accept==FALSE, then passkey
+   * passkey shall be zero for PairingVariant::PASSKEY_COMPARISON &
+   * PairingVariant::CONSENT
+   * For PairingVariant::PASSKEY_ENTRY, if accept==FALSE, then passkey
    * shall be zero */
-  int (*ssp_reply)(RawAddress bd_addr, bt_ssp_variant_t variant, uint8_t accept, uint32_t passkey);
+  int (*ssp_reply)(RawAddress bd_addr, PairingVariant variant, uint8_t accept, uint32_t passkey);
 
   /** Get Bluetooth profile interface */
   const void* (*get_profile_interface)(const char* profile_id);
@@ -1130,7 +1153,7 @@ struct formatter<bt_bond_state_t> : enum_formatter<bt_bond_state_t> {};
 template <>
 struct formatter<bt_property_type_t> : enum_formatter<bt_property_type_t> {};
 template <>
-struct formatter<bt_ssp_variant_t> : enum_formatter<bt_ssp_variant_t> {};
+struct formatter<PairingVariant> : string_formatter<PairingVariant, &pairing_variant_text> {};
 template <>
 struct formatter<BtIoCap> : formatter<std::string> {
   template <class Context>
@@ -1144,7 +1167,10 @@ struct formatter<EncryptionAlgorithm>
 template <>
 struct formatter<PairingAlgorithm> : string_formatter<PairingAlgorithm, &pairing_algorithm_text> {};
 template <>
-struct formatter<LegacyPairingVariant> : enum_formatter<LegacyPairingVariant> {};
+struct formatter<LegacyPairingVariant>
+    : string_formatter<LegacyPairingVariant, &legacy_pairing_variant_text> {};
+template <>
+struct formatter<PairingType> : string_formatter<PairingType, &pairing_type_text> {};
 }  // namespace std
 
 #endif  // __has_include(<bluetooth/log.h>)

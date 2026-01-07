@@ -110,7 +110,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         mService = svc;
     }
 
-    public AdapterService getService() {
+    private AdapterService getService() {
         if (!mService.isAvailable()) {
             return null;
         }
@@ -466,7 +466,8 @@ class AdapterServiceBinder extends IBluetooth.Stub {
 
         DeviceProperties deviceProp = service.getRemoteDevices().getDeviceProperties(device);
 
-        if (!Utils.isBluetoothPairingHardeningSupported() || !bondingInitiator(deviceProp, source)) {
+        if (!Utils.isBluetoothPairingHardeningSupported()
+                || !bondingInitiator(deviceProp, source)) {
             service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         }
 
@@ -662,7 +663,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
     }
 
     @Override
-    //TODO: remove SuppressWarnings as part of gattConnSettings flag removal
+    // TODO: remove SuppressWarnings as part of gattConnSettings flag removal
     @SuppressWarnings("MissingOrMismatchedRequiresPermissionAnnotation")
     public int connectAllEnabledProfiles(BluetoothDevice device, AttributionSource source) {
         requireNonNull(device);
@@ -984,7 +985,7 @@ class AdapterServiceBinder extends IBluetooth.Stub {
         return service.getNative()
                 .sspReply(
                         getBytesFromAddress(device.getAddress()),
-                        AbstractionLayer.BT_SSP_VARIANT_PASSKEY_CONFIRMATION,
+                        AbstractionLayer.BT_PAIRING_VARIANT_PASSKEY_CONFIRMATION,
                         accept,
                         0);
     }

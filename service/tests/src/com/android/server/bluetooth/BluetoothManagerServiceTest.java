@@ -663,6 +663,7 @@ public class BluetoothManagerServiceTest {
 
         endTest();
     }
+
     @Test
     @EnableFlags(Flags.FLAG_SKIP_BLE_ON_WHEN_TURNING_OFF)
     public void crash_whenOn_goesToOffCorrectly_withBleOnWhenTurningOffFlagOn() throws Exception {

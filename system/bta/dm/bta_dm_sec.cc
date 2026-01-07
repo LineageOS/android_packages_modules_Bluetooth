@@ -92,13 +92,13 @@ void bta_dm_ble_auth_cmpl_cb_register(tBTA_DM_SEC_CBACK* p_cback) {
 }
 
 void bta_dm_consolidate(const RawAddress& identity_addr, const RawAddress& rpa) {
-  for (auto i = 0; i < bta_dm_cb.device_list.count; i++) {
-    if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr != rpa) {
+  for (auto i = 0; i < bta_dm_cb.link_db.count; i++) {
+    if (bta_dm_cb.link_db.links[i].addr != rpa) {
       continue;
     }
 
     log::info("consolidating bda_dm_cb record {} -> {}", rpa, identity_addr);
-    bta_dm_cb.device_list.peer_device[i].peer_bdaddr = identity_addr;
+    bta_dm_cb.link_db.links[i].addr = identity_addr;
   }
 }
 
@@ -344,11 +344,9 @@ static tBTM_STATUS bta_dm_new_link_key_cback(const RawAddress& bd_addr, DEV_CLAS
     bta_dm_sec_cb.p_sec_cback(event, &sec_event);
   }
 
-  // Setting remove_dev_pending flag to false, where it will avoid deleting
-  // the
-  // security device record when the ACL connection link goes down in case of
-  // reconnection.
-  if (bta_dm_cb.device_list.count) {
+  // Setting remove_dev_pending flag to false, where it will avoid deleting the security device
+  // record when the ACL connection link goes down in case of reconnection.
+  if (bta_dm_cb.link_db.count) {
     bta_dm_reset_sec_dev_pending(p_auth_cmpl->bd_addr);
   }
 
@@ -551,12 +549,12 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) 
  *
  ******************************************************************************/
 static void bta_dm_reset_sec_dev_pending(const RawAddress& remote_bd_addr) {
-  for (size_t i = 0; i < bta_dm_cb.device_list.count; i++) {
-    auto& dev = bta_dm_cb.device_list.peer_device[i];
-    if (dev.peer_bdaddr == remote_bd_addr) {
-      if (dev.remove_dev_pending) {
-        log::info("Clearing remove_dev_pending for {}", dev.peer_bdaddr);
-        dev.remove_dev_pending = false;
+  for (size_t i = 0; i < bta_dm_cb.link_db.count; i++) {
+    auto& link = bta_dm_cb.link_db.links[i];
+    if (link.addr == remote_bd_addr) {
+      if (link.remove_dev_pending) {
+        log::info("Clearing remove_dev_pending for {}", link.addr);
+        link.remove_dev_pending = false;
       }
       return;
     }
@@ -581,11 +579,11 @@ static void bta_dm_remove_sec_dev_entry(const RawAddress& remote_bd_addr) {
       get_btm_client_interface().peer.BTM_IsAclConnectionUp(remote_bd_addr, BT_TRANSPORT_BR_EDR)) {
     log::debug("ACL is not down. Schedule for Dev Removal when ACL closes:{}", remote_bd_addr);
     get_btm_client_interface().security.BTM_SecClearSecurityFlags(remote_bd_addr);
-    for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
-      auto& dev = bta_dm_cb.device_list.peer_device[i];
-      if (dev.peer_bdaddr == remote_bd_addr) {
-        log::info("Setting remove_dev_pending for {}", dev.peer_bdaddr);
-        dev.remove_dev_pending = TRUE;
+    for (int i = 0; i < bta_dm_cb.link_db.count; i++) {
+      auto& link = bta_dm_cb.link_db.links[i];
+      if (link.addr == remote_bd_addr) {
+        log::info("Setting remove_dev_pending for {}", link.addr);
+        link.remove_dev_pending = TRUE;
         break;
       }
     }
@@ -877,10 +875,10 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
 void bta_dm_encrypt_cback(RawAddress bd_addr, tBT_TRANSPORT transport, void* /* p_ref_data */,
                           tBTM_STATUS result) {
   tBTA_DM_ENCRYPT_CBACK* p_callback = nullptr;
-  tBTA_DM_PEER_DEVICE* device = find_connected_device(bd_addr, transport);
-  if (device != nullptr) {
-    p_callback = device->p_encrypt_cback;
-    device->p_encrypt_cback = nullptr;
+  BtaDmLink* p_link = find_link(bd_addr, transport);
+  if (p_link != nullptr) {
+    p_callback = p_link->p_encrypt_cback;
+    p_link->p_encrypt_cback = nullptr;
   }
 
   log::debug("Encrypted:{:c}, peer:{} transport:{} status:{} callback:{:c}",
@@ -918,14 +916,14 @@ void bta_dm_set_encryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
     return;
   }
 
-  tBTA_DM_PEER_DEVICE* device = find_connected_device(bd_addr, transport);
-  if (device == nullptr) {
+  BtaDmLink* p_link = find_link(bd_addr, transport);
+  if (p_link == nullptr) {
     log::error("Unable to find active ACL connection device:{} transport:{}", bd_addr,
                bt_transport_text(transport));
     return;
   }
 
-  if (device->p_encrypt_cback) {
+  if (p_link->p_encrypt_cback) {
     log::error("Unable to start encryption as already in progress peer:{} transport:{}", bd_addr,
                bt_transport_text(transport));
     (*p_callback)(bd_addr, transport, BTA_BUSY);
@@ -935,7 +933,7 @@ void bta_dm_set_encryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
   if (get_btm_client_interface().security.BTM_SetEncryption(bd_addr, transport,
                                                             bta_dm_encrypt_cback, NULL, sec_act) ==
       tBTM_STATUS::BTM_CMD_STARTED) {
-    device->p_encrypt_cback = p_callback;
+    p_link->p_encrypt_cback = p_callback;
     log::debug("Started encryption peer:{} transport:{}", bd_addr, bt_transport_text(transport));
   } else {
     log::error("Unable to start encryption process peer:{} transport:{}", bd_addr,

@@ -97,21 +97,37 @@ struct btif_split_uuids_string {
 };
 extern struct btif_split_uuids_string btif_split_uuids_string;
 
-// Name: btif_storage_add_ble_bonding_key
-// Params: RawAddress remote_bd_addr, const uint8_t* key_value, uint8_t
-// key_type, uint8_t key_length Return: bt_status_t
-struct btif_storage_add_ble_bonding_key {
+// Name: btif_storage_add_ble_keys
+// Params: const RawAddress& remote_bd_addr, const uint8_t* key_value, uint8_t
+// key_type, uint8_t key_length
+// Return: bt_status_t
+struct btif_storage_add_ble_keys {
   static bt_status_t return_value;
-  std::function<bt_status_t(RawAddress remote_bd_addr, const uint8_t* key_value, uint8_t key_type,
-                            uint8_t key_length)>
-          body{[](RawAddress /* remote_bd_addr */, const uint8_t* /* key_value */,
+  std::function<bt_status_t(const RawAddress& remote_bd_addr, const uint8_t* key_value,
+                            uint8_t key_type, uint8_t key_length)>
+          body{[](const RawAddress& /* remote_bd_addr */, const uint8_t* /* key_value */,
                   uint8_t /* key_type */, uint8_t /* key_length */) { return return_value; }};
-  bt_status_t operator()(RawAddress remote_bd_addr, const uint8_t* key_value, uint8_t key_type,
-                         uint8_t key_length) {
+  bt_status_t operator()(const RawAddress& remote_bd_addr, const uint8_t* key_value,
+                         uint8_t key_type, uint8_t key_length) {
     return body(remote_bd_addr, key_value, key_type, key_length);
   }
 };
-extern struct btif_storage_add_ble_bonding_key btif_storage_add_ble_bonding_key;
+extern struct btif_storage_add_ble_keys btif_storage_add_ble_keys;
+
+// Name: btif_storage_set_ble_pairing_type
+// Params: const RawAddress& addr, const PairingType& pairing_type
+// Return: bt_status_t
+struct btif_storage_set_ble_pairing_type {
+  static bt_status_t return_value;
+  std::function<bt_status_t(const RawAddress& addr, const PairingType& pairing_type)> body{
+          [](const RawAddress& /* addr */, const PairingType& /* pairing_type */) {
+            return return_value;
+          }};
+  bt_status_t operator()(const RawAddress& addr, const PairingType& pairing_type) {
+    return body(addr, pairing_type);
+  }
+};
+extern struct btif_storage_set_ble_pairing_type btif_storage_set_ble_pairing_type;
 
 // Name: btif_storage_add_ble_local_key
 // Params: const Octet16& key_value, uint8_t key_type
@@ -126,21 +142,23 @@ struct btif_storage_add_ble_local_key {
 };
 extern struct btif_storage_add_ble_local_key btif_storage_add_ble_local_key;
 
-// Name: btif_storage_add_bonded_device
-// Params: RawAddress remote_bd_addr, LinkKey link_key, uint8_t key_type,
-// uint8_t pin_length Return: bt_status_t
-struct btif_storage_add_bonded_device {
+// Name: btif_storage_add_bredr_keys
+// Params: const RawAddress& remote_bd_addr, const PairingType& pairing_type, const LinkKey&
+// link_key, uint8_t key_type, uint8_t pin_length
+// Return: bt_status_t
+struct btif_storage_add_bredr_keys {
   static bt_status_t return_value;
-  std::function<bt_status_t(RawAddress remote_bd_addr, LinkKey link_key, uint8_t key_type,
-                            uint8_t pin_length)>
-          body{[](RawAddress /* remote_bd_addr */, LinkKey /* link_key */, uint8_t /* key_type */,
+  std::function<bt_status_t(const RawAddress& remote_bd_addr, const PairingType& pairing_type,
+                            const LinkKey& link_key, uint8_t key_type, uint8_t pin_length)>
+          body{[](RawAddress /* remote_bd_addr */, const PairingType& /* pairing_type */,
+                  LinkKey /* link_key */, uint8_t /* key_type */,
                   uint8_t /* pin_length */) { return return_value; }};
-  bt_status_t operator()(RawAddress remote_bd_addr, LinkKey link_key, uint8_t key_type,
-                         uint8_t pin_length) {
-    return body(remote_bd_addr, link_key, key_type, pin_length);
+  bt_status_t operator()(const RawAddress& remote_bd_addr, const PairingType& pairing_type,
+                         const LinkKey& link_key, uint8_t key_type, uint8_t pin_length) {
+    return body(remote_bd_addr, pairing_type, link_key, key_type, pin_length);
   }
 };
-extern struct btif_storage_add_bonded_device btif_storage_add_bonded_device;
+extern struct btif_storage_add_bredr_keys btif_storage_add_bredr_keys;
 
 // Name: btif_storage_add_remote_device
 // Params: RawAddress remote_bd_addr, uint32_t num_properties,
@@ -184,6 +202,28 @@ struct btif_storage_get_ble_bonding_key {
   }
 };
 extern struct btif_storage_get_ble_bonding_key btif_storage_get_ble_bonding_key;
+
+// Name: btif_storage_get_ble_pairing_type
+// Params: const RawAddress& bd_addr
+// Return: std::optional<PairingType>
+struct btif_storage_get_ble_pairing_type {
+  static std::optional<PairingType> return_value;
+  std::function<std::optional<PairingType>(const RawAddress& bd_addr)> body{
+          [](const RawAddress& /* bd_addr */) { return return_value; }};
+  std::optional<PairingType> operator()(const RawAddress& bd_addr) { return body(bd_addr); }
+};
+extern struct btif_storage_get_ble_pairing_type btif_storage_get_ble_pairing_type;
+
+// Name: btif_storage_get_bredr_pairing_type
+// Params: const RawAddress& bd_addr
+// Return: std::optional<PairingType>
+struct btif_storage_get_bredr_pairing_type {
+  static std::optional<PairingType> return_value;
+  std::function<std::optional<PairingType>(const RawAddress& bd_addr)> body{
+          [](const RawAddress& /* bd_addr */) { return return_value; }};
+  std::optional<PairingType> operator()(const RawAddress& bd_addr) { return body(bd_addr); }
+};
+extern struct btif_storage_get_bredr_pairing_type btif_storage_get_bredr_pairing_type;
 
 // Name: btif_storage_get_ble_local_key
 // Params: uint8_t key_type, Octet16* key_value
@@ -416,6 +456,29 @@ struct btif_storage_set_remote_addr_type {
 };
 extern struct btif_storage_set_remote_addr_type btif_storage_set_remote_addr_type;
 
+// Name: btif_storage_set_remote_controller_sc_support
+// Params: const RawAddress& addr, bool supported
+// Return: bt_status_t
+struct btif_storage_set_remote_controller_sc_support {
+  static bt_status_t return_value;
+  std::function<bt_status_t(const RawAddress& addr, bool supported)> body{
+          [](const RawAddress& /* addr */, bool /* supported */) { return return_value; }};
+  bt_status_t operator()(const RawAddress& addr, bool supported) { return body(addr, supported); }
+};
+extern struct btif_storage_set_remote_controller_sc_support
+        btif_storage_set_remote_controller_sc_support;
+
+// Name: btif_storage_set_remote_host_sc_support
+// Params: const RawAddress& addr, bool supported
+// Return: bt_status_t
+struct btif_storage_set_remote_host_sc_support {
+  static bt_status_t return_value;
+  std::function<bt_status_t(const RawAddress& addr, bool supported)> body{
+          [](const RawAddress& /* addr */, bool /* supported */) { return return_value; }};
+  bt_status_t operator()(const RawAddress& addr, bool supported) { return body(addr, supported); }
+};
+extern struct btif_storage_set_remote_host_sc_support btif_storage_set_remote_host_sc_support;
+
 // Name: btif_storage_set_remote_device_property
 // Params: RawAddress remote_bd_addr, bt_property_t* property
 // Return: bt_status_t
@@ -430,6 +493,29 @@ struct btif_storage_set_remote_device_property {
   }
 };
 extern struct btif_storage_set_remote_device_property btif_storage_set_remote_device_property;
+
+// Name: btif_storage_get_remote_controller_sc_support
+// Params: const RawAddress& addr
+// Return: std::optional<bool>
+struct btif_storage_get_remote_controller_sc_support {
+  static std::optional<bool> return_value;
+  std::function<std::optional<bool>(const RawAddress& addr)> body{
+          [](const RawAddress& /* addr */) { return return_value; }};
+  std::optional<bool> operator()(const RawAddress& addr) { return body(addr); }
+};
+extern struct btif_storage_get_remote_controller_sc_support
+        btif_storage_get_remote_controller_sc_support;
+
+// Name: btif_storage_get_remote_host_sc_support
+// Params: const RawAddress& addr
+// Return: std::optional<bool>
+struct btif_storage_get_remote_host_sc_support {
+  static std::optional<bool> return_value;
+  std::function<std::optional<bool>(const RawAddress& addr)> body{
+          [](const RawAddress& /* addr */) { return return_value; }};
+  std::optional<bool> operator()(const RawAddress& addr) { return body(addr); }
+};
+extern struct btif_storage_get_remote_host_sc_support btif_storage_get_remote_host_sc_support;
 
 // Name: btif_storage_get_services
 // Params: const RawAddress& bd_addr, tBT_TRANSPORT transport

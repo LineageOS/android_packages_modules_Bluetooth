@@ -146,10 +146,7 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
             int contNumber,
             int supervisionTimeout);
 
-    private native int gattSubrateModeRequestNative(
-            int clientIf,
-            String address,
-            int subrateMode);
+    private native int gattSubrateModeRequestNative(int clientIf, String address, int subrateMode);
 
     private native GattOffloadSession.InnerParcel gattClientOffloadCharacteristicsNative(
             int connId,
@@ -350,14 +347,8 @@ public class GattNativeInterface extends NativeInterface<GattNativeCallback> {
     }
 
     /** Update subrate mode. */
-    int gattSubrateModeRequest(
-            int clientIf,
-            BluetoothDevice device,
-            int subrateMode) {
-        return gattSubrateModeRequestNative(
-                clientIf,
-                device.getAddress(),
-                subrateMode);
+    int gattSubrateModeRequest(int clientIf, BluetoothDevice device, int subrateMode) {
+        return gattSubrateModeRequestNative(clientIf, device.getAddress(), subrateMode);
     }
 
     /** Register GATT server */

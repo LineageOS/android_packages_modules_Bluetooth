@@ -399,17 +399,17 @@ extern struct interop_match_addr_get_max_lat interop_match_addr_get_max_lat;
 
 // Name: interop_match_addr_or_name
 // Params: const interop_feature_t feature, RawAddress addr, bt_status_t
-// (*get_remote_device_property Return: bool
+// (*get_remote_device_property)(const RawAddress&, bt_property_t*)
+// Return: bool
 struct interop_match_addr_or_name {
   static bool return_value;
   std::function<bool(const interop_feature_t feature, RawAddress addr,
-                     bt_status_t (*get_remote_device_property)(RawAddress, bt_property_t*))>
+                     bt_status_t (*get_remote_device_property)(const RawAddress&, bt_property_t*))>
           body{[](const interop_feature_t /* feature */, RawAddress /* addr */,
-                  bt_status_t (* /* get_remote_device_property */)(RawAddress, bt_property_t*)) {
-            return return_value;
-          }};
+                  bt_status_t (* /* get_remote_device_property */)(
+                          const RawAddress&, bt_property_t*)) { return return_value; }};
   bool operator()(const interop_feature_t feature, RawAddress addr,
-                  bt_status_t (*get_remote_device_property)(RawAddress, bt_property_t*)) {
+                  bt_status_t (*get_remote_device_property)(const RawAddress&, bt_property_t*)) {
     return body(feature, addr, get_remote_device_property);
   }
 };

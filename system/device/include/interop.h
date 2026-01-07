@@ -421,7 +421,7 @@ bool interop_match_name(const interop_feature_t feature, const char* name);
 // Then if either interop_match_addr or interop_match_name is matched, this
 // function will return true.
 bool interop_match_addr_or_name(const interop_feature_t feature, RawAddress addr,
-                                bt_status_t (*get_remote_device_property)(RawAddress,
+                                bt_status_t (*get_remote_device_property)(const RawAddress&,
                                                                           bt_property_t*));
 
 // Check if a given |manufacturer| matches a known interoperability workaround

@@ -36,8 +36,8 @@
 namespace bluetooth {
 namespace hal {
 
-SnoopLoggerSocketThread::SnoopLoggerSocketThread(std::unique_ptr<SnoopLoggerSocket>&& socket) {
-  socket_ = std::move(socket);
+SnoopLoggerSocketThread::SnoopLoggerSocketThread(int host, int port) {
+  socket_ = std::make_unique<SnoopLoggerSocket>(&syscall_if, host, port);
   stop_thread_ = false;
   listen_thread_running_ = false;
 }

@@ -112,13 +112,13 @@ pub enum BtSspVariant {
     PasskeyNotification,
 }
 
-impl From<bindings::bt_ssp_variant_t> for BtSspVariant {
-    fn from(item: bindings::bt_ssp_variant_t) -> Self {
+impl From<bindings::PairingVariant> for BtSspVariant {
+    fn from(item: bindings::PairingVariant) -> Self {
         BtSspVariant::from_u32(item).unwrap_or(BtSspVariant::PasskeyConfirmation)
     }
 }
 
-impl From<BtSspVariant> for bindings::bt_ssp_variant_t {
+impl From<BtSspVariant> for bindings::PairingVariant {
     fn from(item: BtSspVariant) -> Self {
         item.to_u32().unwrap_or(0)
     }
@@ -1088,7 +1088,7 @@ cb_variant!(BaseCb, pin_request_cb -> BaseCallbacks::PinRequest,
     }
 );
 cb_variant!(BaseCb, ssp_request_cb -> BaseCallbacks::SspRequest,
-    RawAddress, bindings::bt_ssp_variant_t -> BtSspVariant, u32, i32 -> _
+    RawAddress, bindings::PairingVariant -> BtSspVariant, u32, i32 -> _
 );
 cb_variant!(BaseCb, bond_state_cb -> BaseCallbacks::BondState,
     u32 -> BtStatus,
@@ -1385,7 +1385,7 @@ impl BluetoothInterface {
         accept: u8,
         passkey: u32,
     ) -> i32 {
-        let cvariant = bindings::bt_ssp_variant_t::from(variant);
+        let cvariant = bindings::PairingVariant::from(variant);
         ccall!(self, ssp_reply, addr, cvariant, accept, passkey)
     }
 

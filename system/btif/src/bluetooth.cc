@@ -711,12 +711,12 @@ static int pin_reply(const RawAddress bd_addr, uint8_t accept, uint8_t pin_len,
   return BT_STATUS_SUCCESS;
 }
 
-static int ssp_reply(const RawAddress bd_addr, bt_ssp_variant_t variant, uint8_t accept,
+static int ssp_reply(const RawAddress bd_addr, PairingVariant variant, uint8_t accept,
                      uint32_t /* passkey */) {
   if (!interface_ready()) {
     return BT_STATUS_NOT_READY;
   }
-  if (variant == BT_SSP_VARIANT_PASSKEY_ENTRY) {
+  if (variant == PairingVariant::PASSKEY_ENTRY) {
     return BT_STATUS_PARM_INVALID;
   }
 
@@ -1306,10 +1306,10 @@ void invoke_pin_request_cb(RawAddress bd_addr, bt_bdname_t bd_name, uint32_t cod
           bd_addr, bd_name, cod, min_16_digit, pairing_algorithm));
 }
 
-void invoke_ssp_request_cb(RawAddress bd_addr, bt_ssp_variant_t pairing_variant, uint32_t pass_key,
+void invoke_ssp_request_cb(RawAddress bd_addr, PairingVariant pairing_variant, uint32_t pass_key,
                            int pairing_algorithm) {
   do_in_jni_thread(base::BindOnce(
-          [](RawAddress bd_addr, bt_ssp_variant_t pairing_variant, uint32_t pass_key,
+          [](RawAddress bd_addr, PairingVariant pairing_variant, uint32_t pass_key,
              int pairing_algorithm) {
             HAL_CBACK(bt_hal_cbacks, ssp_request_cb, bd_addr, pairing_variant, pass_key,
                       pairing_algorithm);

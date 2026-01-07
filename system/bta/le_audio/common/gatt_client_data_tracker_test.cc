@@ -56,12 +56,9 @@ public:
     com::android::bluetooth::flags::provider_->reset_flags();
 
     // Use peripheral role by default
-    get_btm_client_interface().link_policy.BTM_GetRole = [](const RawAddress& /* remote_bd_addr */,
-                                                            tBT_TRANSPORT /* transport */,
-                                                            tHCI_ROLE* p_role) -> tBTM_STATUS {
-      *p_role = HCI_ROLE_PERIPHERAL;
-      return tBTM_STATUS::BTM_SUCCESS;
-    };
+    get_btm_client_interface().link_policy.BTM_GetRole =
+            [](const RawAddress& /* remote_bd_addr */, tBT_TRANSPORT /* transport */
+               ) -> std::optional<tHCI_ROLE> { return HCI_ROLE_PERIPHERAL; };
 
     gatt::SetMockBtaGattServerInterface(&gatt_server_interface_);
   }
@@ -205,11 +202,10 @@ TEST_F(GattClientDataTrackerTest, RejectCentralRole) {
   cb_data.conn.remote_bda = test_addr1;
 
   // Mock BTM_GetRole to return HCI_ROLE_CENTRAL
-  get_btm_client_interface().link_policy.BTM_GetRole = [](const RawAddress& /* remote_bd_addr */,
-                                                          tBT_TRANSPORT /* transport */,
-                                                          tHCI_ROLE* p_role) -> tBTM_STATUS {
-    *p_role = HCI_ROLE_CENTRAL;
-    return tBTM_STATUS::BTM_SUCCESS;
+  get_btm_client_interface().link_policy.BTM_GetRole =
+          [](const RawAddress& /* remote_bd_addr */,
+             tBT_TRANSPORT /* transport */) -> std::optional<tHCI_ROLE> {
+    return HCI_ROLE_CENTRAL;
   };
 
   // Expect BTA_GATTS_Close to be called
@@ -235,8 +231,8 @@ TEST_F(GattClientDataTrackerTest, RejectBtmGetRoleFailure) {
 
   // Mock BTM_GetRole to return failure
   get_btm_client_interface().link_policy.BTM_GetRole =
-          [](const RawAddress& /* remote_bd_addr */, tBT_TRANSPORT /* transport */,
-             tHCI_ROLE* /* p_role */) -> tBTM_STATUS { return tBTM_STATUS::BTM_WRONG_MODE; };
+          [](const RawAddress& /* remote_bd_addr */,
+             tBT_TRANSPORT /* transport */) -> std::optional<tHCI_ROLE> { return std::nullopt; };
 
   // Expect BTA_GATTS_Close to be called
   EXPECT_CALL(gatt_server_interface_, Close(cb_data.conn.conn_id)).Times(1);

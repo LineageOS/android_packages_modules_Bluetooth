@@ -382,7 +382,8 @@ public class MetricsLoggerTest {
         doNothing().when(logger).updateHearingDeviceActiveTime(any(), anyInt());
 
         doReturn(new ParcelUuid[] {BluetoothUuid.HEARING_AID, BluetoothUuid.LE_AUDIO})
-                .when(mRemoteDevices).getUuids(mTestDevice);
+                .when(mRemoteDevices)
+                .getUuids(mTestDevice);
 
         logger.logDeviceConnectionStateChanges(
                 mTestDevice, BluetoothProfile.HEARING_AID, BluetoothProfile.STATE_CONNECTED);
@@ -399,7 +400,8 @@ public class MetricsLoggerTest {
         doNothing().when(logger).updateHearingDeviceActiveTime(any(), anyInt());
 
         doReturn(new ParcelUuid[] {BluetoothUuid.HEARING_AID})
-                .when(mRemoteDevices).getUuids(mTestDevice);
+                .when(mRemoteDevices)
+                .getUuids(mTestDevice);
 
         logger.logDeviceConnectionStateChanges(
                 mTestDevice, BluetoothProfile.HEARING_AID, BluetoothProfile.STATE_CONNECTED);
@@ -416,7 +418,8 @@ public class MetricsLoggerTest {
         doNothing().when(logger).updateHearingDeviceActiveTime(any(), anyInt());
 
         doReturn(new ParcelUuid[] {BluetoothUuid.HEARING_AID, BluetoothUuid.LE_AUDIO})
-                .when(mRemoteDevices).getUuids(mTestDevice);
+                .when(mRemoteDevices)
+                .getUuids(mTestDevice);
 
         logger.logDeviceConnectionStateChanges(
                 mTestDevice, BluetoothProfile.HAP_CLIENT, BluetoothProfile.STATE_CONNECTED);
@@ -433,7 +436,8 @@ public class MetricsLoggerTest {
         doNothing().when(logger).updateHearingDeviceActiveTime(any(), anyInt());
 
         doReturn(new ParcelUuid[] {BluetoothUuid.LE_AUDIO})
-                .when(mRemoteDevices).getUuids(mTestDevice);
+                .when(mRemoteDevices)
+                .getUuids(mTestDevice);
 
         logger.logDeviceConnectionStateChanges(
                 mTestDevice, BluetoothProfile.HAP_CLIENT, BluetoothProfile.STATE_CONNECTED);

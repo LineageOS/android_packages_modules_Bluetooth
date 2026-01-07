@@ -439,7 +439,7 @@ static void pin_request_callback(RawAddress bd_addr, bt_bdname_t* bdname, uint32
                                devname.get(), cod, min_16_digits, pairing_algorithm);
 }
 
-static void ssp_request_callback(RawAddress bd_addr, bt_ssp_variant_t pairing_variant,
+static void ssp_request_callback(RawAddress bd_addr, PairingVariant pairing_variant,
                                  uint32_t pass_key, int pairing_algorithm) {
   std::shared_lock<std::shared_timed_mutex> lock(jniObjMutex);
   if (!sJniCallbacksObj) {
@@ -1360,7 +1360,7 @@ static jboolean sspReplyNative(JNIEnv* env, jobject /* obj */, jbyteArray addres
   }
 
   RawAddress bd_addr = addressFromJByteArray(env, address);
-  int ret = sBluetoothInterface->ssp_reply(bd_addr, (bt_ssp_variant_t)type, accept, passkey);
+  int ret = sBluetoothInterface->ssp_reply(bd_addr, (PairingVariant)type, accept, passkey);
 
   return (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
 }
