@@ -29,6 +29,8 @@
 #include "bta/include/bta_dm_ci.h"  // bta_dm_ci_rmt_oob
 #include "btif/include/btif_dm.h"
 #include "internal_include/bt_target.h"
+#include "stack/btm/btm_sec.h"
+#include "stack/btm/btm_sec_utils.h"
 #include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_ble_sec_api_types.h"
 #include "stack/include/btm_client_interface.h"
@@ -828,7 +830,10 @@ static tBTM_STATUS bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda
           log::warn("bonded device disconnected when encrypting - no reason to unbond");
         } else {
           /* delete this device entry from Sec Dev DB */
-          bta_dm_remove_sec_dev_entry(bda);
+          if (!is_autonomous_repairing_supported() || !btm_is_bond_lost(bda)) {
+            // DO NOT remove the device entry from DB. Only user should have the option to remove.
+            bta_dm_remove_sec_dev_entry(bda);
+          }
         }
       } else {
         sec_event.auth_cmpl.success = true;
