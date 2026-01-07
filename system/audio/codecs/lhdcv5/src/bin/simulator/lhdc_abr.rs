@@ -18,10 +18,7 @@ use log::{error, info};
 
 pub type __LHDC_ABR_TYPE__ = libc::c_uint;
 pub const LHDC_AUTOBITRATE_ADJTABLE_COUNT: u32 = 6;
-pub type __int32_t = libc::c_int;
-pub type __uint32_t = libc::c_uint;
-pub type int32_t = __int32_t;
-pub type uint32_t = __uint32_t;
+
 const ABR_MAX_STAGE_BITRATE: u32 = 500;
 const ABR_UP_RATE_TIME_CNT: u32 = 5;
 const ABR_UP_QUEUE_LENGTH_THRESHOLD: u32 = 1;
@@ -43,10 +40,10 @@ pub struct AutoBitRate<'a> {
     pub table_index: usize,
 }
 pub struct LHDC_ABR {
-    pub auto_bitrate_adjust_table_lhdc_44k: [uint32_t; 6],
-    pub auto_bitrate_adjust_table_lhdc_48k: [uint32_t; 6],
-    pub auto_bitrate_adjust_table_lhdc_96k: [uint32_t; 6],
-    pub auto_bitrate_adjust_table_lhdc_192k: [uint32_t; 6],
+    pub auto_bitrate_adjust_table_lhdc_44k: [u32; 6],
+    pub auto_bitrate_adjust_table_lhdc_48k: [u32; 6],
+    pub auto_bitrate_adjust_table_lhdc_96k: [u32; 6],
+    pub auto_bitrate_adjust_table_lhdc_192k: [u32; 6],
     pub handle_abr: LHDC_ABR_Para_T,
 }
 impl LHDC_ABR {
@@ -67,20 +64,16 @@ impl LHDC_ABR {
         }
     }
 
-    fn lhdc_enc_abr_adjust_bitrate(
-        &mut self,
-        abr: &mut AutoBitRate,
-        queueLen: uint32_t,
-    ) -> int32_t {
-        let mut func_ret: int32_t = LHDC_FRET_SUCCESS;
-        let mut last_bitrate: uint32_t = 0;
+    fn lhdc_enc_abr_adjust_bitrate(&mut self, abr: &mut AutoBitRate, queueLen: u32) -> i32 {
+        let mut func_ret: i32 = LHDC_FRET_SUCCESS;
+        let mut last_bitrate: u32 = 0;
         let mut last_bitrate_inx: u32 = 0;
         let mut new_abr_bitrate_inx: u32 = 0;
         let mut new_bitrate: u32 = 0;
         let mut new_bitrate_inx: u32 = 0;
         let upd_qual_status: bool = false;
-        let mut queueLength: uint32_t = 0;
-        let mut queueSumTmp: uint32_t = 0;
+        let mut queueLength: u32 = 0;
+        let mut queueSumTmp: u32 = 0;
 
         if self.handle_abr.down_bitrate_count >= ABR_DOWN_RATE_TIME_CNT {
             queueLength = self.handle_abr.down_bitrate_sum / self.handle_abr.down_bitrate_count;
@@ -283,7 +276,7 @@ impl LHDC_ABR {
         func_ret
     }
 
-    pub fn lhdcBT_autoBR_reset_abr_index(&mut self) -> int32_t {
+    pub fn lhdcBT_autoBR_reset_abr_index(&mut self) -> i32 {
         self.handle_abr.gABR_table_index = LHDC_AUTOBITRATE_ADJTABLE_COUNT - 1;
         LHDC_FRET_SUCCESS
     }
@@ -291,9 +284,9 @@ impl LHDC_ABR {
     pub fn lhdcBT_autoBR_adjust_bitrate_process(
         &mut self,
         abr: &mut AutoBitRate,
-        queue_len: uint32_t,
-    ) -> int32_t {
-        let mut func_ret: int32_t = LHDC_FRET_ERROR;
+        queue_len: u32,
+    ) -> i32 {
+        let mut func_ret: i32 = LHDC_FRET_ERROR;
         // get current quality status (lhdc bitrate operation mode)
         let quality_status = abr.handle.enc.quality_status;
 
