@@ -31,6 +31,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.platform.test.annotations.RequiresFlagsDisabled
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
@@ -131,6 +132,7 @@ class BondLossTest {
         }
     }
 
+    @RequiresFlagsDisabled("android.bluetooth.platform.flags.autonomous_repairing_initiation")
     @Test
     fun testBondBredrBondLoss_Keymissing() {
         registerIntentActions(
@@ -179,6 +181,7 @@ class BondLossTest {
         )
     }
 
+    @RequiresFlagsDisabled("android.bluetooth.platform.flags.autonomous_repairing_initiation")
     @Test
     fun testBondBredrBondLoss_RemoteInitiatedPairing() {
         registerIntentActions(
