@@ -51,15 +51,6 @@ flag {
     }
 }
 
-flag {
-    name: "fix_socket_connection_failed_no_callback"
-    namespace: "bluetooth"
-    description: "Fix Rfcomm Socket connection failed but callback not called"
-    bug: "419814062"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
 
 flag {
     name: "consider_l2c_header_bytes_for_mps_selection"
