@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,43 +14,48 @@
  * limitations under the License.
  */
 
-package com.android.bluetooth.gatt;
+package com.android.bluetooth.gatt
 
-import static java.util.Objects.requireNonNull;
+import com.android.bluetooth.profile.NativeInterface
 
-import com.android.bluetooth.profile.NativeInterface;
+class DistanceMeasurementNativeInterface(nativeCallback: DistanceMeasurementNativeCallback) :
+    NativeInterface<DistanceMeasurementNativeCallback>(nativeCallback) {
 
-public class DistanceMeasurementNativeInterface
-        extends NativeInterface<DistanceMeasurementNativeCallback> {
-
-    DistanceMeasurementNativeInterface(DistanceMeasurementNativeCallback nativeCallback) {
-        super(requireNonNull(nativeCallback));
+    fun init() {
+        initializeNative()
     }
 
-    void init() {
-        initializeNative();
+    override fun cleanup() {
+        cleanupNative()
     }
 
-    @Override
-    public void cleanup() {
-        cleanupNative();
+    fun startDistanceMeasurement(
+        appUid: Int,
+        address: String,
+        interval: Int,
+        method: Int,
+        sightType: Int,
+        locationType: Int,
+    ) {
+        startDistanceMeasurementNative(appUid, address, interval, method, sightType, locationType)
     }
 
-    void startDistanceMeasurement(
-            int appUid, String address, int interval, int method, int sightType, int locationType) {
-        startDistanceMeasurementNative(appUid, address, interval, method, sightType, locationType);
+    fun stopDistanceMeasurement(address: String, method: Int) {
+        stopDistanceMeasurementNative(address, method)
     }
 
-    void stopDistanceMeasurement(String address, int method) {
-        stopDistanceMeasurementNative(address, method);
-    }
+    private external fun initializeNative()
 
-    private native void initializeNative();
+    private external fun cleanupNative()
 
-    private native void cleanupNative();
+    private external fun startDistanceMeasurementNative(
+        appUid: Int,
+        address: String,
+        interval: Int,
+        method: Int,
+        sightType: Int,
+        locationType: Int,
+    )
 
-    private native void startDistanceMeasurementNative(
-            int appUid, String address, int interval, int method, int sightType, int locationType);
-
-    private native void stopDistanceMeasurementNative(String address, int method);
+    private external fun stopDistanceMeasurementNative(address: String, method: Int)
 }
