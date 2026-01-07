@@ -288,7 +288,7 @@ class HeadsetServiceBinder extends IBluetoothHeadset.Stub implements IProfileSer
         }
 
         service.enforceCallingOrSelfPermission(MODIFY_PHONE_STATE, null);
-        return service.setActiveDevice(device);
+        return service.setActiveDevice(device, true);
     }
 
     @Override

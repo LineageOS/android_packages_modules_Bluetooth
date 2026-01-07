@@ -1130,6 +1130,18 @@ public class HeadsetService extends ConnectableProfile {
      * @return true on success, otherwise false
      */
     public boolean setActiveDevice(BluetoothDevice device) {
+        return setActiveDevice(device, false);
+    }
+
+    /**
+     * Set the active device.
+     *
+     * @param device the active device
+     * @param isCallerFromHeadsetServiceBinder whether the caller is from HeadsetServiceBinder
+     * @return true on success, otherwise false
+     */
+    public boolean setActiveDevice(
+            BluetoothDevice device, boolean isCallerFromHeadsetServiceBinder) {
         Log.i(TAG, "setActiveDevice: device=" + device + ", " + Util.getUidPidString());
         if (device == null) {
             removeActiveDevice();
@@ -1138,6 +1150,14 @@ public class HeadsetService extends ConnectableProfile {
         synchronized (mStateMachines) {
             if (device.equals(mActiveDevice)) {
                 Log.i(TAG, "setActiveDevice: device " + device + " is already active");
+                // Adding a workaround for AMSCO when the watch is the active device but doesn't
+                // have audio control for backward compatibility.
+                if (mSystemInterface.isScoManagedByAudioEnabled()
+                        && isCallerFromHeadsetServiceBinder
+                        && Util.remoteDeviceIsWatch(getAdapterService(), device)) {
+                    Log.i(TAG, "requesting audio for the watch");
+                    mSystemInterface.requestBluetoothAudio(device);
+                }
                 return true;
             }
             if (getConnectionState(device) != STATE_CONNECTED) {
