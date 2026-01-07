@@ -34,66 +34,71 @@
 // TODO: b/446803190 - Fix the arguments by making them const references.
 typedef bool (*sec_dev_rec_iter_cb)(void* dev_rec, void* context);
 
-class tBTM_SEC_CB {
+class BtmSecurity {
 public:
-  tBTM_CFG cfg; /* Device configuration */
+  /*
+   * Get the singleton instance of BtmSecurity.
+   */
+  static BtmSecurity& Get();
+
+  tBTM_CFG cfg_; /* Device configuration */
 
   /*****************************************************
   **     Local Device control block (on security)
   *****************************************************/
-  tBTM_SEC_DEVCB devcb;
+  tBTM_SEC_DEVCB devcb_;
 
-  uint16_t enc_handle{0};
-  Octet8 enc_rand;  /* received rand value from LTK request*/
-  uint16_t ediv{0}; /* received ediv value from LTK request */
-  uint8_t key_size{0};
+  uint16_t enc_handle_{0};
+  Octet8 enc_rand_;  /* received rand value from LTK request*/
+  uint16_t ediv_{0}; /* received ediv value from LTK request */
+  uint8_t key_size_{0};
 
 public:
   /*****************************************************
   **      Security Management
   *****************************************************/
-  tBTM_APPL_INFO api;
+  tBTM_APPL_INFO api_;
 
-  BtmDevice* p_collided_dev{nullptr};
-  alarm_t* sec_collision_timer{nullptr};
-  uint64_t collision_start_time{0};
-  uint32_t dev_rec_count{0}; /* Counter used for device record timestamp */
-  uint8_t security_mode{0};
-  bool pairing_disabled{false};
+  BtmDevice* p_collided_dev_{nullptr};
+  alarm_t* sec_collision_timer_{nullptr};
+  uint64_t collision_start_time_{0};
+  uint32_t dev_rec_count_{0}; /* Counter used for device record timestamp */
+  uint8_t security_mode_{0};
+  bool pairing_disabled_{false};
 
   // TODO : Remove when the flag local_pin_key_type is shipped
-  bool pin_type_changed{false};           /* pin type changed during bonding */
+  bool pin_type_changed_{false}; /* pin type changed during bonding */
 
-  bool l2c_service_access_pending{false}; /* If an L2CAP service access request is pending */
+  bool l2c_service_access_pending_{false}; /* If an L2CAP service access request is pending */
 
   // TODO(b/460502961): Remove once the flag security_mode_3_pairing is shipped
-  bool security_mode_changed{false};                     /* mode changed during bonding */
-  uint8_t pin_code_len{0};                               /* for legacy devices */
-  PinCode pin_code;                                      /* for legacy devices */
+  bool security_mode_changed_{false}; /* mode changed during bonding */
+  uint8_t pin_code_len_{0};           /* for legacy devices */
+  PinCode pin_code_;                  /* for legacy devices */
 
-  tBTM_PAIRING_STATE pairing_state{BTM_PAIR_STATE_IDLE}; /* The current pairing state    */
-  uint8_t pairing_flags{0};                              /* The current pairing flags    */
-  AclLinkSpec link_spec;                                 /* The device currently pairing.
+  tBTM_PAIRING_STATE pairing_state_{BTM_PAIR_STATE_IDLE}; /* The current pairing state    */
+  uint8_t pairing_flags_{0};                              /* The current pairing flags    */
+  AclLinkSpec link_spec_;                                 /* The device currently pairing.
                                                              Address type is ignored currently */
-  alarm_t* pairing_timer{nullptr};                       /* Timer for pairing process    */
-  alarm_t* execution_wait_timer{nullptr};                /* To avoid concurrent auth request */
+  alarm_t* pairing_timer_{nullptr};                       /* Timer for pairing process    */
+  alarm_t* execution_wait_timer_{nullptr};                /* To avoid concurrent auth request */
   // TODO(b/444620685): Remove when use_array_instead_list_in_sec_dev_rec is shipped.
-  list_t* sec_dev_rec{nullptr}; /* list of BtmDevice */
-  std::array<BtmDevice, BTM_SEC_MAX_DEVICE_RECORDS + 1> device_records = {};
-  tBTM_SEC_SERV_REC* p_out_serv{nullptr};
-  tBTM_MKEY_CALLBACK* mkey_cback{nullptr};
+  list_t* sec_dev_rec_{nullptr}; /* list of BtmDevice */
+  std::array<BtmDevice, BTM_SEC_MAX_DEVICE_RECORDS + 1> device_records_ = {};
+  tBTM_SEC_SERV_REC* p_out_serv_{nullptr};
+  tBTM_MKEY_CALLBACK* mkey_cback_{nullptr};
 
-  RawAddress connecting_bda;
+  RawAddress connecting_bda_;
 
   // Pending service access requests in tBTM_SERVICE_ACCESS_REQ format
-  std::list<tBTM_SERVICE_ACCESS_REQ> service_access_q = {};
+  std::list<tBTM_SERVICE_ACCESS_REQ> service_access_q_ = {};
 
   // Pending encryption requests
-  std::list<tBTM_SEC_REQ> enc_request_q = {};
+  std::list<tBTM_SEC_REQ> enc_request_q_ = {};
 
-  tBTM_SEC_SERV_REC sec_serv_rec[BTM_SEC_MAX_SERVICE_RECORDS];
+  tBTM_SEC_SERV_REC sec_serv_rec_[BTM_SEC_MAX_SERVICE_RECORDS];
 
-  DEV_CLASS connecting_dc;
+  DEV_CLASS connecting_dc_;
 
   void Init(uint8_t initial_security_mode);
   void Free();
@@ -105,7 +110,7 @@ public:
   bool IsDeviceAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT transport);
   bool IsLinkKeyAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT transport);
   bool IsSecCBInitialized() {
-    return sec_collision_timer != nullptr; /* re-using the timer as init indicator */
+    return sec_collision_timer_ != nullptr; /* re-using the timer as init indicator */
   }
 
   BtmSecurityRecord* getSecRec(const RawAddress bd_addr);
@@ -119,16 +124,14 @@ public:
   BtmDevice* for_each_dev_rec(sec_dev_rec_iter_cb cb, void* context);
 };
 
-extern tBTM_SEC_CB btm_sec_cb;
-
-#define BTM_BLE_SEC_CALLBACK(event_, bda_, data_)                                          \
-  do {                                                                                     \
-    if (btm_sec_cb.api.p_le_callback != nullptr) {                                         \
-      tBTM_STATUS status_ = (*btm_sec_cb.api.p_le_callback)((event_), (bda_), (data_));    \
-      if (status_ != tBTM_STATUS::BTM_SUCCESS) {                                           \
-        log::warn("Security callback failed {} for {}", btm_status_text(status_), (bda_)); \
-      }                                                                                    \
-    }                                                                                      \
+#define BTM_BLE_SEC_CALLBACK(event_, bda_, data_)                                                \
+  do {                                                                                           \
+    if (BtmSecurity::Get().api_.p_le_callback != nullptr) {                                      \
+      tBTM_STATUS status_ = (*BtmSecurity::Get().api_.p_le_callback)((event_), (bda_), (data_)); \
+      if (status_ != tBTM_STATUS::BTM_SUCCESS) {                                                 \
+        log::warn("Security callback failed {} for {}", btm_status_text(status_), (bda_));       \
+      }                                                                                          \
+    }                                                                                            \
   } while (0)
 
 void BTM_Sec_Init();

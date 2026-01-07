@@ -20,7 +20,7 @@
 #include <unistd.h>
 
 #include "stack/btm/btm_dev.h"
-#include "stack/btm/btm_sec_cb.h"
+#include "stack/btm/btm_security.h"
 #include "stack/test/btm/btm_test_fixtures.h"
 #include "test/mock/mock_main_shim_entry.h"
 
@@ -33,16 +33,16 @@ protected:
 TEST_F(StackBtmDevTest, btm_sec_allocate_dev_rec__no_list) {
   const RawAddress bd_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
   ASSERT_EQ(nullptr, btm_sec_allocate_dev_rec(bd_addr));
-  ::btm_sec_cb.Init(BTM_SEC_MODE_SC);
-  ::btm_sec_cb.Free();
+  ::BtmSecurity::Get().Init(BTM_SEC_MODE_SC);
+  ::BtmSecurity::Get().Free();
   ASSERT_EQ(nullptr, btm_sec_allocate_dev_rec(bd_addr));
 }
 
 TEST_F(StackBtmDevTest, btm_sec_allocate_dev_rec__with_list) {
   const RawAddress bd_addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
-  ::btm_sec_cb.Init(BTM_SEC_MODE_SC);
+  ::BtmSecurity::Get().Init(BTM_SEC_MODE_SC);
   ASSERT_NE(nullptr, btm_sec_allocate_dev_rec(bd_addr));
-  ::btm_sec_cb.Free();
+  ::BtmSecurity::Get().Free();
 }
 
 TEST_F(StackBtmDevTest, DumpsysRecord) { DumpsysRecord(STDOUT_FILENO); }

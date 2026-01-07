@@ -28,7 +28,7 @@
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sco.h"
 #include "stack/btm/btm_sec.h"
-#include "stack/btm/btm_sec_cb.h"
+#include "stack/btm/btm_security.h"
 #include "stack/btm/internal/btm_api.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"
@@ -57,7 +57,6 @@ using testing::Return;
 using testing::Test;
 
 class StackBtmTest : public BtmWithMocksTest {
-public:
 protected:
   void SetUp() override {
     BtmWithMocksTest::SetUp();
@@ -71,7 +70,6 @@ protected:
 };
 
 class StackBtmWithQueuesTest : public StackBtmTest {
-public:
 protected:
   void SetUp() override {
     StackBtmTest::SetUp();
@@ -106,17 +104,16 @@ protected:
 };
 
 class StackBtmWithInitFreeTest : public StackBtmWithQueuesTest {
-public:
 protected:
   void SetUp() override {
     StackBtmWithQueuesTest::SetUp();
     EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_, GetScoQueueEnd())
             .WillOnce(Return(sco_queue_.GetUpEnd()));
     btm_cb.Init();
-    btm_sec_cb.Init(BTM_SEC_MODE_SC);
+    BtmSecurity::Get().Init(BTM_SEC_MODE_SC);
   }
   void TearDown() override {
-    btm_sec_cb.Free();
+    BtmSecurity::Get().Free();
     btm_cb.Free();
     StackBtmWithQueuesTest::TearDown();
   }
@@ -224,9 +221,8 @@ TEST_F(StackBtmWithQueuesTest, change_packet_type) {
 
   EXPECT_CALL(legacy_hci_mock_,
               ChangeConnectionPacketType(handle, 0x4400 | HCI_PKT_TYPES_MASK_DM1));
-  EXPECT_CALL(legacy_hci_mock_,
-              ChangeConnectionPacketType(
-                      handle, (0xcc00 | HCI_PKT_TYPES_MASK_DM1 | HCI_PKT_TYPES_MASK_DH1)));
+  EXPECT_CALL(legacy_hci_mock_, ChangeConnectionPacketType(handle, 0xcc00 | HCI_PKT_TYPES_MASK_DM1 |
+                                                                           HCI_PKT_TYPES_MASK_DH1));
 
   btm_set_packet_types_from_address(bda, 0x55aa);
   btm_set_packet_types_from_address(bda, 0xffff);
