@@ -25,16 +25,6 @@ flag {
 }
 
 flag {
-    name: "avdt_close_on_start_failure_bad_state"
-    namespace: "bluetooth"
-    description: "Close the AVDT connection on received BAD_STATE error on Start request"
-    bug: "429135675"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "synchronize_codec_preferences_and_priority"
     namespace: "bluetooth"
     description: "Resolve incorrect codec priority of mandatory codec"

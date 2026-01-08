@@ -89,8 +89,6 @@ from typing_extensions import override
 
 logger = logging.getLogger(__name__)
 
-AVDT_CLOSE_ON_START_FAILURE_BAD_STATE = 'com.android.bluetooth.flags.avdt_close_on_start_failure_bad_state'
-
 AUDIO_SIGNAL_AMPLITUDE = 0.8
 AUDIO_SIGNAL_FREQUENCY = 440
 AUDIO_SIGNAL_PAN_VALUE = 0.5  # 0.0 (left) to 1.0 (right)
@@ -1446,7 +1444,6 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         await disconnect(result.connection, ref1_dut)
 
     @avatar.asynchronous
-    @enableFlag(AVDT_CLOSE_ON_START_FAILURE_BAD_STATE)
     async def test_avdt_handle_start_cfm_bad_state_error(self) -> None:
         """Test AVDTP handling of start confirmation BAD_STATE error.
 

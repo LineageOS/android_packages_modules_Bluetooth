@@ -2421,8 +2421,7 @@ void bta_av_start_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   if (!p_scb->started && !p_scb->co_started) {
     bta_sys_idle(BTA_ID_AV, p_scb->app_id, p_scb->PeerAddress());
 
-    if (com_android_bluetooth_flags_avdt_close_on_start_failure_bad_state() &&
-        err_code == AVDT_ERR_BAD_STATE) {
+    if (err_code == AVDT_ERR_BAD_STATE) {
       /* START failed. Close connection. */
       bta_av_ssm_execute(p_scb, BTA_AV_API_CLOSE_EVT, NULL);
     }
