@@ -22,19 +22,16 @@
 #include <com_android_bluetooth_flags.h>
 
 #include <string>
+#include <utility>
 #include <vector>
 
-#include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/include/bta_sdp_api.h"
 #include "btif/include/btif_config.h"
-#include "com_android_bluetooth_flags.h"
-#include "common/strings.h"
 #include "internal_include/bt_target.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_log_history.h"
-#include "stack/include/hidh_api.h"
-#include "stack/include/main_thread.h"
+#include "stack/include/sdp_api.h"
 #include "stack/include/sdp_status.h"
 #include "stack/sdp/sdpint.h"  // is_sdp_pbap_pce_disabled
 #include "storage/config_keys.h"
@@ -47,7 +44,7 @@ using bluetooth::Uuid;
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
 
-const uint16_t bta_service_id_to_uuid_lkup_tbl[BTA_MAX_SERVICE_ID] = {
+static const uint16_t bta_service_id_to_uuid_lkup_tbl[BTA_MAX_SERVICE_ID] = {
         UUID_SERVCLASS_PNP_INFORMATION,       /* Reserved */
         UUID_SERVCLASS_SERIAL_PORT,           /* BTA_SPP_SERVICE_ID */
         UUID_SERVCLASS_DIALUP_NETWORKING,     /* BTA_DUN_SERVICE_ID */
@@ -152,140 +149,123 @@ static void bta_dm_store_audio_profiles_version(tSDP_DISCOVERY_DB* p_sdp_db) {
   }
 }
 
-/* Process the discovery result from sdp */
-void bta_dm_sdp_result(tSDP_STATUS sdp_result, tBTA_DM_SDP_STATE* sdp_state) {
-  tSDP_DISC_REC* p_sdp_rec = NULL;
-  bool scn_found = false;
-  uint16_t service = 0xFFFF;
-  tSDP_PROTOCOL_ELEM pe;
-
+static std::pair<std::vector<Uuid>, std::vector<Uuid>> bta_dm_sdp_extract_services(
+        tBTA_DM_SDP_STATE* sdp_state, const tSDP_DISCOVERY_DB* p_sdp_db) {
   std::vector<Uuid> uuid_list;
-  tSDP_DISCOVERY_DB* p_sdp_db = (tSDP_DISCOVERY_DB*)sdp_state->sdp_db_buffer;
-
-  if ((sdp_result == tSDP_STATUS::SDP_SUCCESS) || (sdp_result == tSDP_STATUS::SDP_NO_RECS_MATCH) ||
-      (sdp_result == tSDP_STATUS::SDP_DB_FULL)) {
-    log::verbose("sdp_result::0x{:x}", sdp_result);
-    std::vector<Uuid> gatt_uuids;
-    do {
-      p_sdp_rec = NULL;
-      if (sdp_state->service_index == (BTA_USER_SERVICE_ID + 1)) {
-        if (p_sdp_rec && get_legacy_stack_sdp_api()->record.SDP_FindProtocolListElemInRec(
-                                 p_sdp_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
-          sdp_state->peer_scn = (uint8_t)pe.params[0];
-          scn_found = true;
-        }
-      } else {
-        service = bta_service_id_to_uuid_lkup_tbl[sdp_state->service_index - 1];
-        p_sdp_rec =
-                get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(p_sdp_db, service, p_sdp_rec);
-      }
-      /* finished with BR/EDR services, now we check the result for GATT based
-       * service UUID */
-      if (sdp_state->service_index == BTA_MAX_SERVICE_ID) {
-        /* all GATT based services */
-        do {
-          /* find a service record, report it */
-          p_sdp_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(p_sdp_db, 0, p_sdp_rec);
-          if (p_sdp_rec) {
-            Uuid service_uuid;
-            if (get_legacy_stack_sdp_api()->record.SDP_FindServiceUUIDInRec(p_sdp_rec,
-                                                                            &service_uuid)) {
-              gatt_uuids.push_back(service_uuid);
-            }
+  std::vector<Uuid> gatt_uuids;
+  do {
+    if (sdp_state->service_index == BTA_MAX_SERVICE_ID) {
+      tSDP_DISC_REC* p_sdp_rec = nullptr;
+      do {
+        p_sdp_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(p_sdp_db, 0, p_sdp_rec);
+        if (p_sdp_rec) {
+          Uuid service_uuid;
+          if (get_legacy_stack_sdp_api()->record.SDP_FindServiceUUIDInRec(p_sdp_rec,
+                                                                          &service_uuid)) {
+            gatt_uuids.push_back(service_uuid);
           }
-        } while (p_sdp_rec);
-
-        if (!gatt_uuids.empty()) {
-          log::info("GATT services discovered using SDP");
         }
-      } else {
-        if (p_sdp_rec != NULL && service != UUID_SERVCLASS_PNP_INFORMATION) {
-          sdp_state->services_found |=
-                  (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(sdp_state->service_index - 1));
-          uint16_t tmp_svc = bta_service_id_to_uuid_lkup_tbl[sdp_state->service_index - 1];
-          /* Add to the list of UUIDs */
-          uuid_list.push_back(Uuid::From16Bit(tmp_svc));
-        }
-      }
+      } while (p_sdp_rec);
 
-      if (sdp_state->services_to_search == 0) {
-        sdp_state->service_index++;
-      } else { /* regular one service per search or PNP search */
-        break;
+      if (!gatt_uuids.empty()) {
+        log::info("GATT services discovered using SDP");
       }
-    } while (sdp_state->service_index <= BTA_MAX_SERVICE_ID);
-
-    log::verbose("services_found = {:04x}", sdp_state->services_found);
-
-    /* Collect the 128-bit services here and put them into the list */
-    p_sdp_rec = NULL;
-    do {
-      /* find a service record, report it */
-      p_sdp_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb_128bit(p_sdp_db, p_sdp_rec);
-      if (p_sdp_rec) {
-        // SDP_FindServiceUUIDInRec_128bit is used only once, refactor?
-        Uuid temp_uuid;
-        if (get_legacy_stack_sdp_api()->record.SDP_FindServiceUUIDInRec_128bit(p_sdp_rec,
-                                                                               &temp_uuid)) {
-          uuid_list.push_back(temp_uuid);
-        }
+    } else {
+      uint16_t service = bta_service_id_to_uuid_lkup_tbl[sdp_state->service_index - 1];
+      tSDP_DISC_REC* p_sdp_rec =
+              get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(p_sdp_db, service, nullptr);
+      if (p_sdp_rec != nullptr && service != UUID_SERVCLASS_PNP_INFORMATION) {
+        sdp_state->services_found |=
+                (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(sdp_state->service_index - 1));
+        uuid_list.push_back(Uuid::From16Bit(service));
       }
-    } while (p_sdp_rec);
+    }
 
     if (sdp_state->services_to_search == 0) {
-      bta_dm_store_audio_profiles_version(p_sdp_db);
-    }
-
-#if TARGET_FLOSS
-    tSDP_DI_GET_RECORD di_record;
-    if (get_legacy_stack_sdp_api()->device_id.SDP_GetDiRecord(1, &di_record, p_sdp_db) ==
-        tSDP_STATUS::SDP_SUCCESS) {
-      bta_dm_sdp_received_di(sdp_state->bd_addr, di_record);
-    }
-#endif
-
-    /* if there are more services to search for */
-    if (sdp_state->services_to_search) {
-      bta_dm_sdp_find_services(sdp_state);
-      return;
-    }
-
-    /* callbacks */
-    /* start next bd_addr if necessary */
-    BTM_LogHistory(kBtmLogTag, sdp_state->bd_addr, "Discovery completed",
-                   std::format("Result:{} services_found:0x{:x} service_index:0x{}",
-                               sdp_result_text(sdp_result), sdp_state->services_found,
-                               sdp_state->service_index));
-
-    // Copy the raw_data to the discovery result structure
-    if (p_sdp_db != NULL && p_sdp_db->raw_used != 0 && p_sdp_db->raw_data != NULL) {
-      log::verbose("raw_data used = 0x{:x} raw_data_ptr = 0x{}", p_sdp_db->raw_used,
-                   std::format_ptr(p_sdp_db->raw_data));
-
-      p_sdp_db->raw_data = NULL;  // no need to free this - it is a global assigned.
-      p_sdp_db->raw_used = 0;
-      p_sdp_db->raw_size = 0;
+      sdp_state->service_index++;
     } else {
-      log::verbose("raw data size is 0 or raw_data is null!!");
+      break;
     }
+  } while (sdp_state->service_index <= BTA_MAX_SERVICE_ID);
+  return {uuid_list, gatt_uuids};
+}
 
-    tBTA_STATUS result = BTA_SUCCESS;
-    // Piggy back the SCN over result field
-    if (scn_found) {
-      result = static_cast<tBTA_STATUS>(3 + sdp_state->peer_scn);
-
-      log::verbose("Piggy back the SCN over result field  SCN={}", sdp_state->peer_scn);
+static std::vector<Uuid> bta_dm_sdp_extract_128bit_services(const tSDP_DISCOVERY_DB* p_sdp_db) {
+  std::vector<Uuid> uuid_list;
+  tSDP_DISC_REC* p_sdp_rec = nullptr;
+  do {
+    p_sdp_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb_128bit(p_sdp_db, p_sdp_rec);
+    if (p_sdp_rec != nullptr) {
+      Uuid temp_uuid;
+      if (get_legacy_stack_sdp_api()->record.SDP_FindServiceUUIDInRec_128bit(p_sdp_rec,
+                                                                             &temp_uuid)) {
+        uuid_list.push_back(temp_uuid);
+      }
     }
+  } while (p_sdp_rec);
+  return uuid_list;
+}
 
-    bta_dm_sdp_finished(sdp_state->bd_addr, result, uuid_list, gatt_uuids);
-  } else {
+/* Process the discovery result from sdp */
+void bta_dm_sdp_result(tSDP_STATUS sdp_result, tBTA_DM_SDP_STATE* sdp_state) {
+  if (sdp_result != tSDP_STATUS::SDP_SUCCESS && sdp_result != tSDP_STATUS::SDP_NO_RECS_MATCH &&
+      sdp_result != tSDP_STATUS::SDP_DB_FULL) {
     BTM_LogHistory(kBtmLogTag, sdp_state->bd_addr, "Discovery failed",
                    std::format("Result:{}", sdp_result_text(sdp_result)));
     log::error("SDP connection failed {}", sdp_status_text(sdp_result));
 
-    /* not able to connect go to next device */
+    // Not able to connect, go to next device
     bta_dm_sdp_finished(sdp_state->bd_addr, BTA_FAILURE);
+    return;
   }
+
+  log::verbose("sdp_result::0x{:x}", sdp_result);
+  tSDP_DISCOVERY_DB* p_sdp_db = (tSDP_DISCOVERY_DB*)sdp_state->sdp_db_buffer;
+
+  auto [classic_uuids, gatt_uuids] = bta_dm_sdp_extract_services(sdp_state, p_sdp_db);
+  log::verbose("services_found = {:04x}", sdp_state->services_found);
+
+  std::vector<Uuid> classic128_uuids = bta_dm_sdp_extract_128bit_services(p_sdp_db);
+  classic_uuids.insert(classic_uuids.end(), classic128_uuids.begin(), classic128_uuids.end());
+
+  if (sdp_state->services_to_search == 0) {
+    bta_dm_store_audio_profiles_version(p_sdp_db);
+  }
+
+#if TARGET_FLOSS
+  tSDP_DI_GET_RECORD di_record;
+  if (get_legacy_stack_sdp_api()->device_id.SDP_GetDiRecord(1, &di_record, p_sdp_db) ==
+      tSDP_STATUS::SDP_SUCCESS) {
+    bta_dm_sdp_received_di(sdp_state->bd_addr, di_record);
+  }
+#endif
+
+  /* if there are more services to search for */
+  if (sdp_state->services_to_search) {
+    bta_dm_sdp_find_services(sdp_state);
+    return;
+  }
+
+  /* callbacks */
+  /* start next bd_addr if necessary */
+  BTM_LogHistory(kBtmLogTag, sdp_state->bd_addr, "Discovery completed",
+                 std::format("Result:{} services_found:0x{:x} service_index:0x{}",
+                             sdp_result_text(sdp_result), sdp_state->services_found,
+                             sdp_state->service_index));
+
+  // Copy the raw_data to the discovery result structure
+  if (p_sdp_db != nullptr && p_sdp_db->raw_used != 0 && p_sdp_db->raw_data != nullptr) {
+    log::verbose("raw_data used = 0x{:x} raw_data_ptr = 0x{}", p_sdp_db->raw_used,
+                 std::format_ptr(p_sdp_db->raw_data));
+
+    p_sdp_db->raw_data = nullptr;  // no need to free this - it is a global assigned.
+    p_sdp_db->raw_used = 0;
+    p_sdp_db->raw_size = 0;
+  } else {
+    log::verbose("raw data size is 0 or raw_data is null!!");
+  }
+
+  bta_dm_sdp_finished(sdp_state->bd_addr, BTA_SUCCESS, classic_uuids, gatt_uuids);
 }
 
 /*******************************************************************************

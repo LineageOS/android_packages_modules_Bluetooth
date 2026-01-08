@@ -38,6 +38,7 @@ import android.bluetooth.BluetoothDevicePicker;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSocket;
 import android.bluetooth.BluetoothUtils;
+import android.bluetooth.State;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -514,7 +515,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                     if (action.equals(BluetoothAdapter.ACTION_STATE_CHANGED)) {
                         switch (intent.getIntExtra(
                                 BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)) {
-                            case BluetoothAdapter.STATE_ON -> {
+                            case State.ON -> {
                                 Log.v(TAG, "Bluetooth state changed: STATE_ON");
                                 startListener();
                                 // If this is within a sending process, continue the handle

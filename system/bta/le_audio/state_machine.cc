@@ -3606,7 +3606,7 @@ private:
     /* Try to create CISes for the group */
     if (!CisCreate(group)) {
       state_machine_callbacks_->OnStateMachineInvalidStatusCb(
-              group->group_id_, StateMachineInvalidStatus::FAILED_TO_CREATE_CIG);
+              group->group_id_, StateMachineInvalidStatus::FAILED_TO_CREATE_CIS);
     }
   }
 

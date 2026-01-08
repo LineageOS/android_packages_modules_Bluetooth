@@ -20,6 +20,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.bluetooth.State;
 import android.util.Log;
 
 import com.android.bluetooth.btservice.AdapterService;
@@ -154,8 +155,7 @@ public class ObexServerSockets {
             if (!initSocketOK) {
                 // Need to break out of this loop if BT is being turned off.
                 int state = adapter.getState();
-                if ((state != BluetoothAdapter.STATE_TURNING_ON)
-                        && (state != BluetoothAdapter.STATE_ON)) {
+                if ((state != State.TURNING_ON) && (state != State.ON)) {
                     Log.w(TAG, "initServerSockets failed as BT is (being) turned off");
                     break;
                 }
@@ -232,7 +232,7 @@ public class ObexServerSockets {
     /** Signal to the {@link IObexConnectionHandler} that an error have occurred. */
     private synchronized void onAcceptFailed() {
         shutdown(false);
-        if (mAdapterService.getState() == BluetoothAdapter.STATE_ON) {
+        if (mAdapterService.getState() == State.ON) {
             Log.d(TAG, "onAcceptFailed() calling shutdown...");
             mConHandler.onAcceptFailed();
         }

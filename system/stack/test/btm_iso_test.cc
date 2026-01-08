@@ -3004,6 +3004,40 @@ TEST_F(IsoManagerTest, SendIsoDataCreditsReturnedByDisconnection) {
   }
 }
 
+TEST_F(IsoManagerTest, SendIsoDataCreditsReturnedByBigTermination) {
+  uint8_t num_buffers = bluetooth::hci::testing::mock_controller_->GetControllerIsoBufferSize()
+                                .total_num_le_packets_;
+  std::vector<uint8_t> data_vec(108, 0);
+
+  IsoManager::GetInstance()->CreateBig(client_handle_, volatile_test_big_params_evt_.big_handle,
+                                       kDefaultBigParams);
+  IsoManager::GetInstance()->SetupIsoDataPath(volatile_test_big_params_evt_.conn_handles[0],
+                                              kDefaultIsoDataPathParams);
+
+  /* Use all the credits and symulater Controller is not sending number of completed packets */
+  EXPECT_CALL(iso_interface_, HciSend).Times(num_buffers).RetiresOnSaturation();
+  for (uint8_t i = 0; i < (num_buffers); i++) {
+    IsoManager::GetInstance()->SendIsoData(volatile_test_big_params_evt_.conn_handles[0],
+                                           data_vec.data(), data_vec.size());
+  }
+
+  /* Terminate BIG and credits should be returned  */
+  IsoManager::GetInstance()->TerminateBig(volatile_test_big_params_evt_.big_handle, 0x16);
+
+  /* Create new BIG and expect credits are available */
+  IsoManager::GetInstance()->CreateBig(client_handle_, volatile_test_big_params_evt_.big_handle,
+                                       kDefaultBigParams);
+  IsoManager::GetInstance()->SetupIsoDataPath(volatile_test_big_params_evt_.conn_handles[0],
+                                              kDefaultIsoDataPathParams);
+
+  /* Expect we can send ISO data as credits were returned after BIG Termination */
+  EXPECT_CALL(iso_interface_, HciSend).Times(num_buffers).RetiresOnSaturation();
+  for (uint8_t i = 0; i < (num_buffers); i++) {
+    IsoManager::GetInstance()->SendIsoData(volatile_test_big_params_evt_.conn_handles[0],
+                                           data_vec.data(), data_vec.size());
+  }
+}
+
 TEST_F(IsoManagerDeathTest, SendIsoDataWithNoDataPath) {
   std::vector<uint8_t> data_vec(108, 0);
 

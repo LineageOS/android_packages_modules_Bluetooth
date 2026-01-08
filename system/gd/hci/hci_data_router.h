@@ -121,7 +121,14 @@ private:
     });
 
     if (waiting_packets_.empty()) {
-      unknown_acl_alarm_.reset();
+      if (!com::android::bluetooth::flags::fix_module_shutdown_sync_with_stack()) {
+        unknown_acl_alarm_.reset();
+      } else {
+        // Do not reset the alarm, instead just cancel it.
+        // Reset will wait on the reactable to shutdown, which will be a deadlock since the action
+        // is still going on waiting on itself.
+        unknown_acl_alarm_->Cancel();
+      }
     } else if (timed_out) {
       unknown_acl_alarm_->Schedule(
               common::BindOnce(&HciDataRouter::on_unknown_acl_timer, common::Unretained(this)),
@@ -132,7 +139,12 @@ private:
   void on_unknown_acl_timer() {
     log::info("Timer fired!");
     retry_unknown_acl(/* timed_out = */ true);
-    if (!com::android::bluetooth::flags::discard_unknown_acl_packet()) {
+    if (!com::android::bluetooth::flags::discard_unknown_acl_packet() &&
+        !com::android::bluetooth::flags::fix_module_shutdown_sync_with_stack()) {
+      // Do not reset the alarm if the work is done as we are now waiting for the reactable to
+      // finished which will overlap with this and never succeed.
+      // Instead re-use this object as that will be rescheduled again in
+      // `dequeue_and_route_acl_packet_to_connection()`.
       unknown_acl_alarm_.reset();
     }
   }

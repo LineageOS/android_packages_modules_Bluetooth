@@ -40,6 +40,7 @@ import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.State;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelUuid;
@@ -852,7 +853,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                 Log.d(
                         TAG,
                         "onBluetoothStateChange: state=" + BluetoothAdapter.nameForState(newState));
-                if (newState == BluetoothAdapter.STATE_ON) {
+                if (newState == State.ON) {
                     restoreCccValuesForStoredDevices();
                 }
             };

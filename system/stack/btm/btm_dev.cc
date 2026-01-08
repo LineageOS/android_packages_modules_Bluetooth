@@ -76,6 +76,37 @@ static void wipe_secrets_and_remove(BtmDevice* p_device) {
   }
 }
 
+static inline void validate_bredr_pairing_type(const RawAddress& bd_addr,
+                                               const PairingType& pairing_type) {
+  switch (pairing_type.algorithm) {
+    case PairingAlgorithm::NONE:
+      log::error("{} pairing algorithm is NONE", bd_addr);
+      return;
+    case PairingAlgorithm::LEGACY:
+      if (pairing_type.legacy_variant != LegacyPairingVariant::PIN &&
+          pairing_type.legacy_variant != LegacyPairingVariant::PIN_16) {
+        log::error("{} invalid legacy pairing variant {}", bd_addr, pairing_type.legacy_variant);
+        return;
+      }
+      break;
+    case PairingAlgorithm::SSP:
+    case PairingAlgorithm::SC:
+      if (pairing_type.variant != PairingVariant::CONSENT &&
+          pairing_type.variant != PairingVariant::PASSKEY_ENTRY &&
+          pairing_type.variant != PairingVariant::PASSKEY_NOTIFICATION &&
+          pairing_type.variant != PairingVariant::PASSKEY_CONFIRMATION) {
+        log::error("{} invalid SSP pairing variant {}", bd_addr, pairing_type.variant);
+        return;
+      }
+      break;
+    default:
+      log::error("{} unknown pairing algorithm {}", bd_addr, pairing_type.algorithm);
+      return;
+  }
+
+  log::info("{} pairing type: {}", bd_addr, pairing_type);
+}
+
 /*******************************************************************************
  *
  * Function         BTM_SecAddDevice
@@ -91,8 +122,9 @@ static void wipe_secrets_and_remove(BtmDevice* p_device) {
  * Returns          void
  *
  ******************************************************************************/
-void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class, LinkKey link_key,
-                      uint8_t key_type, uint8_t pin_length) {
+void BTM_SecAddDevice(const RawAddress& bd_addr, const DEV_CLASS& dev_class,
+                      const PairingType& pairing_type, const LinkKey& link_key, uint8_t key_type,
+                      uint8_t pin_length) {
   BtmDevice* p_device = btm_get_dev(bd_addr);
 
   if (p_device == nullptr) {
@@ -133,10 +165,13 @@ void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class, LinkKey li
     p_device->dev_class = dev_class;
   }
 
+  validate_bredr_pairing_type(bd_addr, pairing_type);
+
   p_device->sec_rec.sec_flags |= BTM_SEC_LINK_KEY_KNOWN;
   p_device->sec_rec.link_key = link_key;
   p_device->sec_rec.link_key_type = key_type;
   p_device->sec_rec.pin_code_length = pin_length;
+  p_device->sec_rec.pairing_algorithm = pairing_type.algorithm;
 
   p_device->sec_rec.bond_type = BOND_TYPE_PERSISTENT;
   p_device->clock_offset = BTM_GetCachedClockOffset(bd_addr);

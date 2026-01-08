@@ -1647,7 +1647,6 @@ protected:
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->leaudio_use_context_type_manager(true);
     com::android::bluetooth::flags::provider_->leaudio_fix_stop_reconfiguration_timeout(true);
     com::android::bluetooth::flags::provider_->leaudio_use_aggressive_params(true);
     com::android::bluetooth::flags::provider_->le_audio_update_config_preference_to_hal(true);
@@ -3138,8 +3137,11 @@ protected:
     EXPECT_CALL(mock_hal_2_1_verifier, Call()).Times(1);
     EXPECT_CALL(mock_storage_load, Call()).Times(1);
 
-    ON_CALL(mock_btm_interface_, BTM_GetRole(_, _))
-            .WillByDefault([](const RawAddress&, tBT_TRANSPORT) { return HCI_ROLE_CENTRAL; });
+    ON_CALL(mock_btm_interface_, BTM_GetRole(_, _, _))
+            .WillByDefault([](const RawAddress&, tBT_TRANSPORT, tHCI_ROLE* role) {
+              *role = HCI_ROLE_CENTRAL;
+              return tBTM_STATUS::BTM_SUCCESS;
+            });
 
     ON_CALL(mock_btm_interface_, GetHCIConnHandle(_, _))
             .WillByDefault(
@@ -3543,9 +3545,10 @@ TEST_F(UnicastTest, ConnectAsPeripheral) {
                                 true,                                /*add_pacs*/
                                 default_ase_cnt /*add_ascs*/);
 
-  ON_CALL(mock_btm_interface_, BTM_GetRole(_, _))
-          .WillByDefault([](const RawAddress&, tBT_TRANSPORT) {
-            return HCI_ROLE_PERIPHERAL;
+  ON_CALL(mock_btm_interface_, BTM_GetRole(_, _, _))
+          .WillByDefault([](const RawAddress&, tBT_TRANSPORT, tHCI_ROLE* role) {
+            *role = HCI_ROLE_PERIPHERAL;
+            return tBTM_STATUS::BTM_SUCCESS;
           });
 
   EXPECT_CALL(mock_gatt_interface_, Close(_)).Times(1);
@@ -11037,75 +11040,6 @@ TEST_F(UnicastTestCsis, ChangeConfigurationContextType_cigConfigurationChanges) 
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 }
 
-TEST_F(UnicastTestCsis, ChangeConfigurationContextType_cigConfigurationChangesToLive) {
-  com::android::bluetooth::flags::provider_->leaudio_use_context_type_manager(false);
-  com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(false);
-  /* Scenario (Device A and B called Remote)
-   * 1. Remote set does supports all the context types and make them available
-   * 2. Android start stream with SoundeEffect
-   * 3. Android updates context type and moves to LIVE
-   * 4. STREAMING state is achieved and test verifies there is  RECONFIGURATION is triggered
-   */
-
-  const RawAddress test_address0 = GetTestAddress(0);
-  const RawAddress test_address1 = GetTestAddress(1);
-
-  // First earbud connects
-  ConnectCsisDevice(test_address0, 1 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontLeft,
-                    codec_spec_conf::kLeAudioLocationFrontLeft, group_id_1_size_, group_id_1_,
-                    1 /* rank*/);
-
-  // Second earbud connects
-  ConnectCsisDevice(test_address1, 2 /*conn_id*/, codec_spec_conf::kLeAudioLocationFrontRight,
-                    codec_spec_conf::kLeAudioLocationFrontRight, group_id_1_size_, group_id_1_,
-                    2 /* rank*/, true /*connect_through_csis*/);
-
-  log::debug("Start streaming");
-
-  EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
-  EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
-  LeAudioClient::Get()->GroupSetActive(group_id_1_);
-  SyncOnMainLoop();
-
-  BidirectionalPair<AudioContexts> contexts = {
-          .sink = types::AudioContexts(types::LeAudioContextType::SOUNDEFFECTS),
-          .source = types::AudioContexts()};
-
-  EXPECT_CALL(
-          mock_state_machine_,
-          StartStream(_, bluetooth::le_audio::types::LeAudioContextType::SOUNDEFFECTS, contexts, _))
-          .Times(1);
-
-  StartStreaming(AUDIO_USAGE_ASSISTANCE_SONIFICATION, AUDIO_CONTENT_TYPE_UNKNOWN, group_id_1_,
-                 AUDIO_SOURCE_INVALID, false, false);
-
-  SyncOnMainLoop();
-  Mock::VerifyAndClearExpectations(&mock_state_machine_);
-  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
-  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
-
-  ASSERT_NE(0lu, streaming_groups.count(group_id_1_));
-  auto group = streaming_groups.at(group_id_1_);
-
-  log::debug("Suspend but do not drop the stream");
-  LocalAudioSourceSuspend();
-
-  /* Simulate metadata update, expect upadate , metadata */
-  UpdateLocalSinkMetadata(AUDIO_SOURCE_MIC);
-  SyncOnMainLoop();
-
-  log::debug("Resume, and expect LIVE configuration");
-
-  EXPECT_CALL(mock_state_machine_, StopStream(_)).Times(1);
-  LocalAudioSourceResume(false, false);
-  SyncOnMainLoop();
-  LocalAudioSinkResume();
-
-  Mock::VerifyAndClearExpectations(&mock_state_machine_);
-  auto [sink_enabled, source_enabled] = group->GetConfiguredDirections();
-  ASSERT_TRUE(sink_enabled && source_enabled);
-}
-
 TEST_F(UnicastTestCsis, StartStreamToUnsupportedContextTypeUsingUnspecified) {
   /* Scenario (Devices A and B called "Remote")
    * 1. Remote  does supports all the context types and make them available
@@ -15673,7 +15607,6 @@ protected:
   void SetUp() override {
     UnicastTest::SetUp();
     com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->leaudio_use_context_type_manager(true);
     com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
     com::android::bluetooth::flags::provider_->leaudio_game_detector(true);
     GmapClient::UpdateGmapOffloaderSupport(true);
@@ -15692,7 +15625,6 @@ protected:
   void SetUp() override {
     UnicastTestCsis::SetUp();
     com::android::bluetooth::flags::provider_->reset_flags();
-    com::android::bluetooth::flags::provider_->leaudio_use_context_type_manager(true);
     com::android::bluetooth::flags::provider_->leaudio_dynamic_direction_opening(true);
     com::android::bluetooth::flags::provider_->leaudio_game_detector(true);
     GmapClient::UpdateGmapOffloaderSupport(true);

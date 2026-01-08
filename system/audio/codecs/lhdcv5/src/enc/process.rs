@@ -118,7 +118,7 @@ fn lhdc_enc_symbol_generation_step_2(
             let mut stop = 0;
             if tmp != 0 {
                 loop {
-                    if if size2 as i32 >= lossy_symbol_size_top - 3 { 1 } else { 0 } != 0 {
+                    if size2 as i32 >= lossy_symbol_size_top - 3 {
                         return -1;
                     }
                     if tmp < (1 << 2) {
@@ -134,8 +134,7 @@ fn lhdc_enc_symbol_generation_step_2(
                     tmp >>= 2;
                 }
                 tmp = if stop != 0 { tmp - 1 } else { tmp };
-                if if (size2 + tmp as usize) >= lossy_symbol_size_top as usize { 1 } else { 0 } != 0
-                {
+                if (size2 + tmp as usize) >= lossy_symbol_size_top as usize {
                     return -1;
                 }
                 if tmp != 0 {
@@ -161,7 +160,7 @@ fn lhdc_enc_symbol_generation_step_2(
                     }
                 }
             }
-            if if size2 >= lossy_symbol_size_top as usize { 1 } else { 0 } != 0 {
+            if size2 >= lossy_symbol_size_top as usize {
                 return -1;
             }
             if tmp <= 2 {
@@ -423,38 +422,33 @@ pub fn lhdc_enc_freq_shift(
     dirty_bottom =
         ((dirty_bottom as libc::c_longlong * 214748_i32 as libc::c_longlong) >> 31) as libc::c_int;
     dirty_bottom = if dirty_bottom < 1_i32 { 1 as libc::c_int } else { dirty_bottom };
+
     let mut val = dirty_bottom as u32;
-    let i = if val < 64 { 0 } else { 1 };
     let mut tmp;
-    match i {
-        0 => {
-            tmp = logarithm_by_2_tbl_0[val as usize] as _;
-        }
-        _ => {
-            tmp = log_2(val) as _;
-            val >>= tmp - 6_i32;
-            tmp = (logarithm_by_2_tbl_0[val as usize])
-                .wrapping_add(((tmp - 1_i32) << 8 as libc::c_int) as u32) as i32;
-        }
+
+    if val < 64 {
+        tmp = logarithm_by_2_tbl_0[val as usize] as _;
+    } else {
+        tmp = log_2(val) as _;
+        val >>= tmp - 6;
+        tmp = (logarithm_by_2_tbl_0[val as usize]).wrapping_add(((tmp - 1) << 8) as u32) as i32;
     }
+
     let log_dirty_bottom =
         (tmp + 31_i32 * ((1 as libc::c_int) << 8 as libc::c_int)) >> 1 as libc::c_int;
     let mut avg = 0_i32;
     for s in 0..segment.segment_num {
         val = data_sft[s] as u32;
-        let i = if val < 64 { 0 } else { 1 };
-        match i {
-            0 => {
-                tmp = logarithm_by_2_tbl_0[val as usize] as i32;
-            }
-            _ => {
-                tmp = log_2(val) as _;
-                val >>= tmp - 6_i32;
-                tmp = logarithm_by_2_tbl_0[val as usize]
-                    .wrapping_add(((tmp - 1_i32) << 8 as libc::c_int) as u32)
-                    as i32;
-            }
+
+        if val < 64 {
+            tmp = logarithm_by_2_tbl_0[val as usize] as i32;
+        } else {
+            tmp = log_2(val) as _;
+            val >>= tmp - 6_i32;
+            tmp = logarithm_by_2_tbl_0[val as usize]
+                .wrapping_add(((tmp - 1) << 8 as libc::c_int) as u32) as i32;
         }
+
         se[s] = if data_sft[s] < dirty_bottom {
             log_dirty_bottom
         } else {

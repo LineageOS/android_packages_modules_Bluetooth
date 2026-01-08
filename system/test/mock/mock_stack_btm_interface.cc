@@ -23,7 +23,6 @@
 #include <bluetooth/types/address.h>
 #include <bluetooth/types/bt_transport.h>
 
-#include "bluetooth/types/hci_role.h"
 #include "stack/include/btm_ble_api.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_ble_sec_api_types.h"
@@ -87,9 +86,8 @@ struct btm_client_interface_t default_btm_client_interface = {
         },
         .link_policy = {
                 .BTM_GetRole = [](const RawAddress& /* remote_bd_addr */,
-                                  tBT_TRANSPORT /* transport */) -> std::optional<tHCI_ROLE> {
-                  return HCI_ROLE_CENTRAL;
-                },
+                                  tBT_TRANSPORT /* transport */, tHCI_ROLE* /* p_role */)
+                        -> tBTM_STATUS { return tBTM_STATUS::BTM_SUCCESS; },
                 .BTM_SetPowerMode = [](uint8_t /* pm_id */, const RawAddress& /* remote_bda */,
                                        const tBTM_PM_PWR_MD* /* p_mode */) -> tBTM_STATUS {
                   return tBTM_STATUS::BTM_SUCCESS;
@@ -122,9 +120,10 @@ struct btm_client_interface_t default_btm_client_interface = {
                 },
                 .BTM_BleLoadLocalKeys = [](uint8_t /* key_type */,
                                            tBTM_BLE_LOCAL_KEYS* /* p_key */) {},
-                .BTM_SecAddDevice = [](const RawAddress& /* bd_addr */, DEV_CLASS /* dev_class */,
-                                       LinkKey /* link_key */, uint8_t /* key_type */,
-                                       uint8_t /* pin_length */) {},
+                .BTM_SecAddDevice =
+                        [](const RawAddress& /* bd_addr */, const DEV_CLASS& /* dev_class */,
+                           const PairingType& /* pairing_type */, const LinkKey& /* link_key */,
+                           uint8_t /* key_type */, uint8_t /* pin_length */) {},
                 .BTM_SecAddBleDevice = [](const RawAddress& /* bd_addr */,
                                           tBT_DEVICE_TYPE /* dev_type */,
                                           tBLE_ADDR_TYPE /* addr_type */) {},

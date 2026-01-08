@@ -157,17 +157,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_use_context_type_manager"
-    namespace: "bluetooth"
-    description: "Use brand new context type manager supporting bidirectional GAME use cases"
-    bug: "406589272"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-
-flag {
     name: "dsa_use_codec_extensibility"
     namespace: "bluetooth"
     description: "Use the codec extensibility API for passing DSA parameters"

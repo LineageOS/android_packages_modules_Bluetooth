@@ -2,26 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "set_max_data_length_for_lecoc"
-    namespace: "bluetooth"
-    description: "set le data length to max on le coc connection to achieve better data rate"
-    bug: "373726267"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "avoid_l2c_processing_while_stack_shutdown"
-    namespace: "bluetooth"
-    description: "Avoid l2cap processing while stack is shutdown"
-    bug: "379731768"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "invalidate_hci_handle_on_acl_removal"
     namespace: "bluetooth"
     description: "invalidate hci handle associated with lcb on acl removal"
@@ -71,25 +51,6 @@ flag {
     }
 }
 
-flag {
-    name: "fix_socket_connection_failed_no_callback"
-    namespace: "bluetooth"
-    description: "Fix Rfcomm Socket connection failed but callback not called"
-    bug: "419814062"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "check_l2c_conn_status_before_param_validation"
-    namespace: "bluetooth"
-    description: "Check the L2CAP connection status before parameter validation"
-    bug: "423056492"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
 
 flag {
     name: "consider_l2c_header_bytes_for_mps_selection"

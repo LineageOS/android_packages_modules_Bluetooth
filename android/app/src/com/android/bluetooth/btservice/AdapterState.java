@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.btservice;
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.State;
 import android.os.Build;
 import android.os.Looper;
@@ -239,7 +238,7 @@ final class AdapterState extends StateMachine {
         public void enter() {
             int prevState = mPrevState;
             super.enter();
-            if (prevState == BluetoothAdapter.STATE_BLE_TURNING_OFF) {
+            if (prevState == State.BLE_TURNING_OFF) {
                 mAdapterService.cleanup();
             }
         }

@@ -60,12 +60,12 @@ public class AdapterNativeInterface {
         cleanupNative();
     }
 
-    boolean enable(String localName) {
-        return enableNative(localName);
+    void enable(String localName) {
+        enableNative(localName);
     }
 
-    boolean disable() {
-        return disableNative();
+    void disable() {
+        disableNative();
     }
 
     boolean setScanMode(int mode) {
@@ -289,9 +289,9 @@ public class AdapterNativeInterface {
 
     private native void cleanupNative();
 
-    private native boolean enableNative(String localName);
+    private native void enableNative(String localName);
 
-    private native boolean disableNative();
+    private native void disableNative();
 
     private native boolean setScanModeNative(int mode);
 

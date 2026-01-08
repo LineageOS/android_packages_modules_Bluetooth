@@ -26,9 +26,9 @@ struct MockSecurityClientInterface : public SecurityClientInterface {
   MOCK_METHOD((bool), BTM_SecRegister, (const tBTM_APPL_INFO*));
   MOCK_METHOD((void), BTM_BleLoadLocalKeys,
               (uint8_t /* key_type */, tBTM_BLE_LOCAL_KEYS* /* p_key */));
-  MOCK_METHOD((void), BTM_SecAddDevice,
-              (const RawAddress&, DEV_CLASS /* dev_class */, LinkKey /* link_key */,
-               uint8_t /* key_type */, uint8_t /* pin_length */));
+  MOCK_METHOD(void, BTM_SecAddDevice,
+              (const RawAddress&, const DEV_CLASS& /* dev_class */, const PairingType& pairing_type,
+               const LinkKey& /* link_key */, uint8_t /* key_type */, uint8_t /* pin_length */));
   MOCK_METHOD((void), BTM_SecAddBleDevice,
               (const RawAddress& /* bd_addr */, tBT_DEVICE_TYPE /* dev_type */,
                tBLE_ADDR_TYPE /* addr_type */));
