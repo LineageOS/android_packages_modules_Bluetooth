@@ -22,16 +22,6 @@ flag {
 }
 
 flag {
-    name: "flag_handle_hci_error_controller_busy"
-    namespace: "bluetooth"
-    description: "Handle HCI_ERR_CONTROLLER_BUSY error code in L2cap layer"
-    bug: "413065608"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "downgrade_to_basic_mode_on_no_info_resp"
     namespace: "bluetooth"
     description: "Downgrade L2cap mode to basic on info response timeout"
