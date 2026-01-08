@@ -502,7 +502,6 @@ class DckL2capTest() : Closeable {
     }
 
     @Test
-    @RequiresFlagsEnabled("com.android.bluetooth.flags.donot_mandate_auth_along_with_encryption")
     /**
      * Test:
      * - Create Bond between Phone and Bumble (Just works)
@@ -659,7 +658,6 @@ class DckL2capTest() : Closeable {
     }
 
     @Test
-    @RequiresFlagsEnabled("com.android.bluetooth.flags.donot_mandate_auth_along_with_encryption")
     /**
      * Test:
      * - Create Bond between Phone and Bumble (Just works)
