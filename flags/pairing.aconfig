@@ -260,12 +260,21 @@ flag {
     }
 }
 
-
 flag {
     name: "force_encryption_post_successful_pairing"
     namespace: "bluetooth"
     description: "Force encryption after successful pairing"
     bug: "472946151"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "update_cod_on_incoming_connection"
+    namespace: "bluetooth"
+    description: "Update class of device from incoming connection request"
+    bug: "474364095"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
