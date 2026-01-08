@@ -60,7 +60,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.profile.ProfileService;
@@ -718,7 +718,7 @@ final class A2dpStateMachine extends StateMachine {
                 Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                         | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
         mA2dpService.handleConnectionStateChanged(mDevice, prevState, newState);
-        mA2dpService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        mA2dpService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
 
         // Log the A2DP state change to the metrics logger.
         logA2dpStateMetric(mDevice, newState);
@@ -737,7 +737,7 @@ final class A2dpStateMachine extends StateMachine {
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
         intent.putExtra(BluetoothProfile.EXTRA_STATE, newState);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-        mA2dpService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        mA2dpService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
     }
 
     @Override

@@ -29,7 +29,6 @@ import android.os.UserHandle;
 import android.util.Log;
 
 import com.android.bluetooth.Util;
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
 
 import java.util.ArrayList;
@@ -236,11 +235,10 @@ public class SilenceDeviceManager {
         Intent intent = new Intent(BluetoothDevice.ACTION_SILENCE_MODE_CHANGED);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         if (Flags.onlyBroadcastToLocalUser()) {
-            mAdapterService.sendBroadcast(
-                    intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+            mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
         } else {
             mAdapterService.sendBroadcastAsUser(
-                    intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+                    intent, UserHandle.ALL, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
         }
     }
 

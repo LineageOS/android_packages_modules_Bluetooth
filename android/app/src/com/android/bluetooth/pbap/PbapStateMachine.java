@@ -41,7 +41,7 @@ import android.os.UserHandle;
 import android.util.Log;
 
 import com.android.bluetooth.R;
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.obex.BluetoothObexTransport;
@@ -181,10 +181,10 @@ public class PbapStateMachine extends StateMachine {
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
             intent.addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
             if (Flags.onlyBroadcastToLocalUser()) {
-                mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+                mService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
             } else {
                 mService.sendBroadcastAsUser(
-                        intent, UserHandle.ALL, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+                        intent, UserHandle.ALL, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
             }
         }
 

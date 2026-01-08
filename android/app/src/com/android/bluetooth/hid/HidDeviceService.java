@@ -43,7 +43,7 @@ import android.os.RemoteException;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.profile.ProfileService;
 import com.android.internal.annotations.VisibleForTesting;
@@ -592,7 +592,7 @@ public class HidDeviceService extends ProfileService {
         intent.putExtra(BluetoothProfile.EXTRA_STATE, newState);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-        sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
     }
 
     private static int convertHalState(int halState) {

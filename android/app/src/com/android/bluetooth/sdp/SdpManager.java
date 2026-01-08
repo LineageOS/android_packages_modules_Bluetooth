@@ -35,6 +35,7 @@ import android.os.ParcelUuid;
 import android.os.Parcelable;
 import android.util.Log;
 
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AbstractionLayer;
 import com.android.bluetooth.btservice.AdapterService;
@@ -491,7 +492,7 @@ public class SdpManager {
          * Keep in mind that the MAP client needs to use this as well,
          * hence to make it call-backs, the MAP client profile needs to be
          * part of the Bluetooth APK. */
-        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+        mAdapterService.sendBroadcast(intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
 
         if (!moreResults) {
             // Remove the outstanding UUID request

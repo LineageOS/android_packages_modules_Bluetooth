@@ -30,6 +30,7 @@ import android.Manifest.permission.WRITE_SMS
 import android.annotation.PermissionMethod
 import android.annotation.PermissionName
 import android.annotation.RequiresPermission
+import android.app.BroadcastOptions
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothClass
 import android.bluetooth.BluetoothDevice
@@ -46,6 +47,7 @@ import android.location.LocationManager
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerExemptionManager
 import android.os.Process
 import android.os.RemoteException
 import android.os.UserHandle
@@ -53,6 +55,7 @@ import android.os.UserManager
 import android.permission.PermissionManager
 import android.permission.PermissionManager.PERMISSION_GRANTED
 import android.permission.PermissionManager.PERMISSION_HARD_DENIED
+import android.provider.DeviceConfig
 import android.util.Log
 import com.android.bluetooth.btservice.AdapterService
 import com.android.bluetooth.profile.ProfileService
@@ -61,6 +64,9 @@ private const val TAG = Util.BT_PREFIX + "Util"
 
 object Util {
     const val BT_PREFIX = "Bluetooth"
+
+    private const val KEY_TEMP_ALLOW_LIST_DURATION_MS = "temp_allow_list_duration_ms"
+    private const val DEFAULT_TEMP_ALLOW_LIST_DURATION_MS = 20_000L
 
     /**
      * Check if we are running in `BluetoothInstrumentationTest` context by trying to load
@@ -471,6 +477,32 @@ object Util {
     @PermissionMethod
     private fun Context.checkCallerHasPermission(@PermissionName permission: String) =
         checkCallingOrSelfPermission(permission) == PERMISSION_GRANTED
+
+    @JvmStatic fun getTempBroadcastBundle() = getTempBroadcastOptions().toBundle()
+
+    @JvmStatic
+    fun getTempBroadcastOptions(): BroadcastOptions {
+        val broadcastOptions = BroadcastOptions.makeBasic()
+        // Use the Bluetooth process identity to pass permission check when reading DeviceConfig
+        val identity = Binder.clearCallingIdentity()
+        try {
+            val durationMs =
+                DeviceConfig.getLong(
+                    DeviceConfig.NAMESPACE_BLUETOOTH,
+                    KEY_TEMP_ALLOW_LIST_DURATION_MS,
+                    DEFAULT_TEMP_ALLOW_LIST_DURATION_MS,
+                )
+            broadcastOptions.setTemporaryAppAllowlist(
+                durationMs,
+                PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_FOREGROUND_SERVICE_ALLOWED,
+                PowerExemptionManager.REASON_BLUETOOTH_BROADCAST,
+                "",
+            )
+        } finally {
+            Binder.restoreCallingIdentity(identity)
+        }
+        return broadcastOptions
+    }
 
     /**
      * Verifies whether the calling package name matches the calling app uid
