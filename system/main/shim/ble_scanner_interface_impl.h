@@ -37,19 +37,6 @@ namespace shim {
 
 extern ::ScanningCallbacks* default_scanning_callback;
 
-class MsftCallbacks {
-public:
-  using MsftAdvMonitorAddCallback =
-          base::Callback<void(uint8_t /* monitor_handle */, uint8_t /* status */)>;
-  using MsftAdvMonitorRemoveCallback = base::Callback<void(uint8_t /* status */)>;
-  using MsftAdvMonitorEnableCallback =
-          base::Callback<void(bool /* enable */, uint8_t /* status */)>;
-
-  MsftAdvMonitorAddCallback Add;
-  MsftAdvMonitorRemoveCallback Remove;
-  MsftAdvMonitorEnableCallback Enable;
-};
-
 class BleScannerInterfaceImpl : public ::BleScannerInterface,
                                 public bluetooth::hci::ScanningCallback {
 public:
@@ -125,10 +112,11 @@ public:
                                  bluetooth::hci::Address address) override;
   void OnBigInfoReport(uint16_t sync_handle, bool encrypted) override;
 
-  void OnMsftAdvMonitorAdd(uint8_t monitor_handle, bluetooth::hci::ErrorCode status);
-  void OnMsftAdvMonitorRemove(bluetooth::hci::ErrorCode status);
-  void OnMsftAdvMonitorEnable(bool enable, bluetooth::hci::ErrorCode status);
-  MsftCallbacks msft_callbacks_;
+  void OnMsftAdvMonitorAdd(MsftAdvMonitorAddCallback cb, uint8_t monitor_handle,
+                           bluetooth::hci::ErrorCode status);
+  void OnMsftAdvMonitorRemove(MsftAdvMonitorRemoveCallback cb, bluetooth::hci::ErrorCode status);
+  void OnMsftAdvMonitorEnable(MsftAdvMonitorEnableCallback cb, bool enable,
+                              bluetooth::hci::ErrorCode status);
 
   ::ScanningCallbacks* scanning_callbacks_ = default_scanning_callback;
 

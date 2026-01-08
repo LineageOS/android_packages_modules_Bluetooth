@@ -179,7 +179,7 @@ typedef struct {
                                 uint16_t phy_options);
 
   BtStatus (*read_phy)(const RawAddress& bd_addr,
-                       base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb);
+                       base::OnceCallback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb);
 
   /** Offload GATT characteristics */
   BtStatus (*offload_characteristics)(int conn_id, btgatt_db_element_t* service,

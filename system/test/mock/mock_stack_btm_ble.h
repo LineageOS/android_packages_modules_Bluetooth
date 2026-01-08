@@ -113,7 +113,7 @@ struct BTM_BlePasskeyReply {
 extern struct BTM_BlePasskeyReply BTM_BlePasskeyReply;
 
 // Name: BTM_BleReadPhy
-// Params: const RawAddress& bd_addr, base::Callback<void(uint8_t tx_phy,
+// Params: const RawAddress& bd_addr, base::OnceCallback<void(uint8_t tx_phy,
 // uint8_t rx_phy, uint8_t status Return: void
 struct BTM_BleReadPhy {
   std::function<void(

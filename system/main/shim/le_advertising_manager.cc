@@ -99,7 +99,7 @@ public:
   void GetOwnAddress(uint8_t advertiser_id,
                      ::BleAdvertiserInterface::GetAddressCallback cb) override {
     log::info("in shim layer");
-    address_callbacks_[advertiser_id] = jni_thread_wrapper(cb);
+    address_callbacks_[advertiser_id] = jni_thread_wrapper(std::move(cb));
     bluetooth::shim::GetAdvertising()->GetOwnAddress(advertiser_id);
   }
 
@@ -349,9 +349,10 @@ public:
   // bluetooth::hci::AdvertisingCallback
   void OnOwnAddressRead(uint8_t advertiser_id, uint8_t address_type, Address address) override {
     RawAddress raw_address = bluetooth::ToRawAddress(address);
-    if (address_callbacks_.find(advertiser_id) != address_callbacks_.end()) {
-      address_callbacks_[advertiser_id].Run(address_type, raw_address);
-      address_callbacks_.erase(advertiser_id);
+    auto cb_iter = address_callbacks_.find(advertiser_id);
+    if (cb_iter != address_callbacks_.end()) {
+      std::move(cb_iter->second).Run(address_type, raw_address);
+      address_callbacks_.erase(cb_iter);
       return;
     }
     do_in_jni_thread(base::BindOnce(&::AdvertisingCallbacks::OnOwnAddressRead,

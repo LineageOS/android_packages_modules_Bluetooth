@@ -57,7 +57,7 @@ class VolumeControllerInterfaceImpl : public VolumeControllerInterface,
     this->callbacks_ = callbacks;
     do_in_main_thread(BindOnce(
             &VolumeController::Initialize, this,
-            jni_thread_wrapper(base::Bind(&btif_storage_load_bonded_volume_control_devices))));
+            jni_thread_wrapper(base::BindOnce(&btif_storage_load_bonded_volume_control_devices))));
 
     /* It might be not yet initialized, but setting this flag here is safe,
      * because other calls will check this and the native instance

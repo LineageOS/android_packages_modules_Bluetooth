@@ -112,10 +112,10 @@ void post_on_bt_jni(BtJniClosure closure);
  * thread
  */
 template <typename R, typename... Args>
-base::Callback<R(Args...)> jni_thread_wrapper(base::Callback<R(Args...)> cb) {
-  return base::Bind(
-          [](base::Callback<R(Args...)> cb, Args... args) {
-            do_in_jni_thread(base::BindOnce(cb, std::forward<Args>(args)...));
+base::OnceCallback<R(Args...)> jni_thread_wrapper(base::OnceCallback<R(Args...)> cb) {
+  return base::BindOnce(
+          [](base::OnceCallback<R(Args...)> cb, Args... args) {
+            do_in_jni_thread(base::BindOnce(std::move(cb), std::forward<Args>(args)...));
           },
           std::move(cb));
 }

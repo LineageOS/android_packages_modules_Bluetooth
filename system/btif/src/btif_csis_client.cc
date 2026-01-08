@@ -55,7 +55,7 @@ class CsipSetCoordinatorServiceInterfaceImpl : public CsisClientInterface,
 
     do_in_main_thread(
             BindOnce(&CsisClient::Initialize, this,
-                     jni_thread_wrapper(base::Bind(&btif_storage_load_bonded_csis_devices))));
+                     jni_thread_wrapper(base::BindOnce(&btif_storage_load_bonded_csis_devices))));
     /* It might be not yet initialized, but setting this flag here is safe,
      * because other calls will check this and the native instance
      */
