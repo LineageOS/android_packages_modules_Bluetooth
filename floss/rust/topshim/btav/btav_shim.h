@@ -24,6 +24,7 @@
 #include "include/hardware/avrcp/avrcp.h"
 #include "include/hardware/bt_av.h"
 #include "rust/cxx.h"
+#include "topshim/btif/btif_shim.h"
 
 namespace bluetooth {
 namespace topshim {
@@ -81,7 +82,7 @@ private:
   bluetooth::avrcp::ServiceInterface* intf_;
 };
 
-std::unique_ptr<AvrcpIntf> GetAvrcpProfile(const bt_interface_t& intf);
+std::unique_ptr<AvrcpIntf> GetAvrcpProfile(const BtIntf& intf);
 
 }  // namespace rust
 }  // namespace topshim

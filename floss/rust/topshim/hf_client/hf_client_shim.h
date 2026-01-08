@@ -23,6 +23,7 @@
 #include <memory>
 
 #include "rust/cxx.h"
+#include "topshim/btif/btif_shim.h"
 #include "topshim/common/bt_status_helper.h"
 
 namespace bluetooth {
@@ -48,7 +49,7 @@ private:
   const bthf_client_interface_t* hf_client_intf_;
 };
 
-std::unique_ptr<HfClientIntf> GetHfClientProfile(const bt_interface_t& intf);
+std::unique_ptr<HfClientIntf> GetHfClientProfile(const BtIntf& intf);
 
 }  // namespace rust
 }  // namespace topshim

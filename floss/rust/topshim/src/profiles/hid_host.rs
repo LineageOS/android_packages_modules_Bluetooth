@@ -1,7 +1,7 @@
 use crate::bindings::root as bindings;
 use crate::btif::{
-    BluetoothInterface, BtAddrType, BtStatus, BtTransport, CxxBluetoothInterface, CxxBtAddrType,
-    CxxBtTransport, RawAddress, ToggleableProfile,
+    BluetoothInterface, BtAddrType, BtStatus, BtTransport, CxxBtAddrType, CxxBtTransport,
+    RawAddress, ToggleableProfile,
 };
 use crate::topstack::get_dispatchers;
 
@@ -274,10 +274,6 @@ mod ffi {
         type BtTransport = super::CxxBtTransport;
 
         #[namespace = ""]
-        #[cxx_name = "bt_interface_t"]
-        type BluetoothInterface = super::CxxBluetoothInterface;
-
-        #[namespace = ""]
         #[cxx_name = "bthh_hid_info_t"]
         type BthhHidInfo = super::BthhHidInfo;
 
@@ -288,9 +284,11 @@ mod ffi {
         #[namespace = ""]
         type RawAddress = crate::btif::RawAddress;
 
+        type BtIntf = crate::btif::ffi::BtIntf;
+
         type HhIntf;
 
-        fn GetHhProfile(btif: &BluetoothInterface) -> UniquePtr<HhIntf>;
+        fn GetHhProfile(btif: &BtIntf) -> UniquePtr<HhIntf>;
 
         fn init(self: &HhIntf) -> u32;
         fn connect(
@@ -476,7 +474,7 @@ impl ToggleableProfile for HidHost {
 impl HidHost {
     #[log_args]
     pub fn new(intf: &BluetoothInterface) -> HidHost {
-        let hh_intf: cxx::UniquePtr<ffi::HhIntf> = ffi::GetHhProfile(intf.as_raw_btif());
+        let hh_intf: cxx::UniquePtr<ffi::HhIntf> = ffi::GetHhProfile(intf.as_btif());
 
         HidHost {
             internal: hh_intf,

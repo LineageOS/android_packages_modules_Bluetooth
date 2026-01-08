@@ -367,12 +367,6 @@ void BleScannerIntf::RegisterCallbacks() {
   scanner_intf_->RegisterCallbacks(this);
 }
 
-// ScanningCallbacks overrides
-std::unique_ptr<BleScannerIntf> GetBleScannerIntf(const unsigned char* gatt_intf) {
-  return std::make_unique<BleScannerIntf>(
-          reinterpret_cast<const btgatt_interface_t*>(gatt_intf)->scanner);
-}
-
 }  // namespace rust
 }  // namespace topshim
 }  // namespace bluetooth

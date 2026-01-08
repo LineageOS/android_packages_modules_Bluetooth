@@ -166,10 +166,6 @@ mod ffi {
         #[namespace = ""]
         type RawAddress = crate::btif::RawAddress;
 
-        #[namespace = ""]
-        #[cxx_name = "bt_interface_t"]
-        type BluetoothInterface = crate::btif::CxxBluetoothInterface;
-
         #[namespace = "bluetooth"]
         type Uuid = crate::btif::Uuid;
 
@@ -181,9 +177,11 @@ mod ffi {
         #[cxx_name = "btsock_data_path_t"]
         type SocketDataPath = super::CxxSocketDataPath;
 
+        type BtIntf = crate::btif::ffi::BtIntf;
+
         type SocketIntf;
 
-        fn GetSocketProfile(btif: &BluetoothInterface) -> UniquePtr<SocketIntf>;
+        fn GetSocketProfile(btif: &BtIntf) -> UniquePtr<SocketIntf>;
 
         fn listen(
             self: &SocketIntf,
@@ -257,7 +255,7 @@ pub fn try_from_fd(fd: i32) -> Result<File, FdError> {
 impl BtSocket {
     #[log_args]
     pub fn new(intf: &BluetoothInterface) -> Self {
-        let sock_intf: cxx::UniquePtr<ffi::SocketIntf> = ffi::GetSocketProfile(intf.as_raw_btif());
+        let sock_intf: cxx::UniquePtr<ffi::SocketIntf> = ffi::GetSocketProfile(intf.as_btif());
         BtSocket { internal: sock_intf }
     }
 

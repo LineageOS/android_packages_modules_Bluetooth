@@ -454,10 +454,6 @@ mod ffi {
         include!("topshim/sdp/sdp_shim.h");
 
         #[namespace = ""]
-        #[cxx_name = "bt_interface_t"]
-        type BluetoothInterface = crate::btif::CxxBluetoothInterface;
-
-        #[namespace = ""]
         #[cxx_name = "bluetooth_sdp_record"]
         type BtSdpRecord = super::CxxBtSdpRecord;
 
@@ -467,9 +463,11 @@ mod ffi {
         #[namespace = "bluetooth"]
         type Uuid = crate::btif::Uuid;
 
+        type BtIntf = crate::btif::ffi::BtIntf;
+
         type SdpIntf;
 
-        fn GetSdpProfile(btif: &BluetoothInterface) -> UniquePtr<SdpIntf>;
+        fn GetSdpProfile(btif: &BtIntf) -> UniquePtr<SdpIntf>;
 
         fn init(self: &SdpIntf) -> u32;
         #[allow(dead_code)]
@@ -503,7 +501,7 @@ unsafe impl Send for Sdp {}
 impl Sdp {
     #[log_args]
     pub fn new(intf: &BluetoothInterface) -> Sdp {
-        let sdp_intf: cxx::UniquePtr<ffi::SdpIntf> = ffi::GetSdpProfile(intf.as_raw_btif());
+        let sdp_intf: cxx::UniquePtr<ffi::SdpIntf> = ffi::GetSdpProfile(intf.as_btif());
 
         Sdp { internal: sdp_intf, is_init: false }
     }

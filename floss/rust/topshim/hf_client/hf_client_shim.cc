@@ -112,7 +112,7 @@ tBT_STATUS_LEGACY HfClientIntf::disconnect_audio(RawAddress addr) const {
 
 void HfClientIntf::cleanup() const { hf_client_intf_->cleanup(); }
 
-std::unique_ptr<HfClientIntf> GetHfClientProfile(const bt_interface_t& intf) {
+std::unique_ptr<HfClientIntf> GetHfClientProfile(const BtIntf& intf) {
   if (internal::g_hf_client_if) {
     std::abort();
   }

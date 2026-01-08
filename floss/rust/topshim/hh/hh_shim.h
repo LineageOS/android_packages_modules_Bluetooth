@@ -24,6 +24,7 @@
 #include <memory>
 
 #include "rust/cxx.h"
+#include "topshim/btif/btif_shim.h"
 #include "topshim/common/bt_status_helper.h"
 
 namespace bluetooth {
@@ -71,7 +72,7 @@ private:
   const bthh_interface_t* hh_intf_;
 };
 
-std::unique_ptr<HhIntf> GetHhProfile(const bt_interface_t& intf);
+std::unique_ptr<HhIntf> GetHhProfile(const BtIntf& intf);
 
 }  // namespace rust
 }  // namespace topshim
