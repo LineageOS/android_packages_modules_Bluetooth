@@ -53,19 +53,19 @@ const RawAddress kRawAddress2 = RawAddress({0x01, 0x02, 0x03, 0x04, 0x05, 0x06})
 
 bluetooth::rfcomm::MockRfcommCallback* rfcomm_callback = nullptr;
 
-void port_mgmt_cback_0(const tPORT_RESULT code, uint16_t port_handle) {
+void port_mgmt_cback_0(const tPORT_RESULT code, uint8_t port_handle) {
   rfcomm_callback->PortManagementCallback(code, port_handle, 0);
 }
 
-void port_mgmt_cback_1(const tPORT_RESULT code, uint16_t port_handle) {
+void port_mgmt_cback_1(const tPORT_RESULT code, uint8_t port_handle) {
   rfcomm_callback->PortManagementCallback(code, port_handle, 1);
 }
 
-void port_event_cback_0(uint32_t code, uint16_t port_handle) {
+void port_event_cback_0(uint32_t code, uint8_t port_handle) {
   rfcomm_callback->PortEventCallback(code, port_handle, 0);
 }
 
-void port_event_cback_1(uint32_t code, uint16_t port_handle) {
+void port_event_cback_1(uint32_t code, uint8_t port_handle) {
   rfcomm_callback->PortEventCallback(code, port_handle, 1);
 }
 }  // namespace
@@ -108,7 +108,7 @@ public:
    * 3. Process peer ConnectInd
    */
   void StartCollision(uint8_t scn, uint16_t mtu, uint16_t out_lcid, uint16_t in_lcid,
-                      RawAddress peer_addr, uint16_t& server_handle, uint16_t& client_handle) {
+                      RawAddress peer_addr, uint8_t& server_handle, uint8_t& client_handle) {
     log::verbose("Step 1");
     int status = RFCOMM_CreateConnectionWithSecurity(UUID_SERIAL_PORT, scn, true, mtu,
                                                      RawAddress::kAny, &server_handle,
@@ -219,8 +219,8 @@ TEST_F(StackRfcommTest, test_PORT_IsCollisionDetected) {
  * 5. Verify mux connected
  */
 TEST_F(StackRfcommTest, collide_then_establish_incoming_conn) {
-  uint16_t server_handle = 0;
-  uint16_t client_handle = 0;
+  uint8_t server_handle = 0;
+  uint8_t client_handle = 0;
 
   log::verbose("Step 1");
   ASSERT_NO_FATAL_FAILURE(StartCollision(test_scn, test_mtu, outgoing_lcid, incoming_lcid,
@@ -265,8 +265,8 @@ TEST_F(StackRfcommTest, collide_then_establish_incoming_conn) {
  * 8. Verify mux connected
  */
 TEST_F(StackRfcommTest, collide_then_establish_outgoing_conn) {
-  uint16_t server_handle = 0;
-  uint16_t client_handle = 0;
+  uint8_t server_handle = 0;
+  uint8_t client_handle = 0;
 
   log::verbose("Step 1");
   ASSERT_NO_FATAL_FAILURE(StartCollision(test_scn, test_mtu, outgoing_lcid, incoming_lcid,
@@ -323,8 +323,8 @@ TEST_F(StackRfcommTest, collide_then_establish_outgoing_conn) {
  * 4. Verify nothing cached anymore
  */
 TEST_F(StackRfcommTest, collide_then_err_outgoing_conn) {
-  uint16_t server_handle = 0;
-  uint16_t client_handle = 0;
+  uint8_t server_handle = 0;
+  uint8_t client_handle = 0;
 
   log::verbose("Step 1");
   ASSERT_NO_FATAL_FAILURE(StartCollision(test_scn, test_mtu, outgoing_lcid, incoming_lcid,
@@ -351,8 +351,8 @@ TEST_F(StackRfcommTest, collide_then_err_outgoing_conn) {
  * 4. Verify nothing cached anymore
  */
 TEST_F(StackRfcommTest, collide_then_close_outgoing_conn) {
-  uint16_t server_handle = 0;
-  uint16_t client_handle = 0;
+  uint8_t server_handle = 0;
+  uint8_t client_handle = 0;
 
   log::verbose("Step 1");
   ASSERT_NO_FATAL_FAILURE(StartCollision(test_scn, test_mtu, outgoing_lcid, incoming_lcid,
@@ -380,8 +380,8 @@ TEST_F(StackRfcommTest, collide_then_close_outgoing_conn) {
  * 6. Verify PORT_START_FAILED and mux now IDLE
  */
 TEST_F(StackRfcommTest, collide_then_err_outgoing_after_timeout) {
-  uint16_t server_handle = 0;
-  uint16_t client_handle = 0;
+  uint8_t server_handle = 0;
+  uint8_t client_handle = 0;
 
   log::verbose("Step 1");
   ASSERT_NO_FATAL_FAILURE(StartCollision(test_scn, test_mtu, outgoing_lcid, incoming_lcid,
@@ -424,8 +424,8 @@ TEST_F(StackRfcommTest, collide_then_err_outgoing_after_timeout) {
  * 8. Verify PORT_PEER_CONNECTION_FAILED and mux now IDLE
  */
 TEST_F(StackRfcommTest, collide_then_close_outgoing_after_timeout) {
-  uint16_t server_handle = 0;
-  uint16_t client_handle = 0;
+  uint8_t server_handle = 0;
+  uint8_t client_handle = 0;
 
   log::verbose("Step 1");
   ASSERT_NO_FATAL_FAILURE(StartCollision(test_scn, test_mtu, outgoing_lcid, incoming_lcid,

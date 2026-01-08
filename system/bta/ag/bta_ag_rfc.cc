@@ -43,18 +43,18 @@
 using namespace bluetooth;
 
 /* each scb has its own rfcomm callbacks */
-static void bta_ag_port_cback_1(uint32_t code, uint16_t port_handle);
-static void bta_ag_port_cback_2(uint32_t code, uint16_t port_handle);
-static void bta_ag_port_cback_3(uint32_t code, uint16_t port_handle);
-static void bta_ag_port_cback_4(uint32_t code, uint16_t port_handle);
-static void bta_ag_port_cback_5(uint32_t code, uint16_t port_handle);
-static void bta_ag_port_cback_6(uint32_t code, uint16_t port_handle);
-static void bta_ag_mgmt_cback_1(const tPORT_RESULT code, uint16_t port_handle);
-static void bta_ag_mgmt_cback_2(const tPORT_RESULT code, uint16_t port_handle);
-static void bta_ag_mgmt_cback_3(const tPORT_RESULT code, uint16_t port_handle);
-static void bta_ag_mgmt_cback_4(const tPORT_RESULT code, uint16_t port_handle);
-static void bta_ag_mgmt_cback_5(const tPORT_RESULT code, uint16_t port_handle);
-static void bta_ag_mgmt_cback_6(const tPORT_RESULT code, uint16_t port_handle);
+static void bta_ag_port_cback_1(uint32_t code, uint8_t port_handle);
+static void bta_ag_port_cback_2(uint32_t code, uint8_t port_handle);
+static void bta_ag_port_cback_3(uint32_t code, uint8_t port_handle);
+static void bta_ag_port_cback_4(uint32_t code, uint8_t port_handle);
+static void bta_ag_port_cback_5(uint32_t code, uint8_t port_handle);
+static void bta_ag_port_cback_6(uint32_t code, uint8_t port_handle);
+static void bta_ag_mgmt_cback_1(const tPORT_RESULT code, uint8_t port_handle);
+static void bta_ag_mgmt_cback_2(const tPORT_RESULT code, uint8_t port_handle);
+static void bta_ag_mgmt_cback_3(const tPORT_RESULT code, uint8_t port_handle);
+static void bta_ag_mgmt_cback_4(const tPORT_RESULT code, uint8_t port_handle);
+static void bta_ag_mgmt_cback_5(const tPORT_RESULT code, uint8_t port_handle);
+static void bta_ag_mgmt_cback_6(const tPORT_RESULT code, uint8_t port_handle);
 
 /* rfcomm callback function tables */
 typedef tPORT_CALLBACK* tBTA_AG_PORT_CBACK;
@@ -77,7 +77,7 @@ static const tBTA_AG_PORT_MGMT_CBACK bta_ag_mgmt_cback_tbl[] = {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_ag_port_cback(uint32_t /* code */, uint16_t port_handle, uint16_t handle) {
+static void bta_ag_port_cback(uint32_t /* code */, uint8_t port_handle, uint16_t handle) {
   tBTA_AG_SCB* p_scb = bta_ag_scb_by_idx(handle);
   if (p_scb != nullptr) {
     /* ignore port events for port handles other than connected handle */
@@ -105,7 +105,7 @@ static void bta_ag_port_cback(uint32_t /* code */, uint16_t port_handle, uint16_
  * Returns          void
  *
  ******************************************************************************/
-static void bta_ag_mgmt_cback(const tPORT_RESULT code, uint16_t port_handle, uint16_t handle) {
+static void bta_ag_mgmt_cback(const tPORT_RESULT code, uint8_t port_handle, uint16_t handle) {
   tBTA_AG_SCB* p_scb = bta_ag_scb_by_idx(handle);
   log::verbose("code={}, port_handle={}, scb_handle={}, p_scb=0x{}", code, port_handle, handle,
                std::format_ptr(p_scb));
@@ -173,40 +173,40 @@ static void bta_ag_mgmt_cback(const tPORT_RESULT code, uint16_t port_handle, uin
  * Returns          void
  *
  ******************************************************************************/
-static void bta_ag_mgmt_cback_1(const tPORT_RESULT code, uint16_t port_handle) {
+static void bta_ag_mgmt_cback_1(const tPORT_RESULT code, uint8_t port_handle) {
   bta_ag_mgmt_cback(code, port_handle, 1);
 }
-static void bta_ag_mgmt_cback_2(const tPORT_RESULT code, uint16_t port_handle) {
+static void bta_ag_mgmt_cback_2(const tPORT_RESULT code, uint8_t port_handle) {
   bta_ag_mgmt_cback(code, port_handle, 2);
 }
-static void bta_ag_mgmt_cback_3(const tPORT_RESULT code, uint16_t port_handle) {
+static void bta_ag_mgmt_cback_3(const tPORT_RESULT code, uint8_t port_handle) {
   bta_ag_mgmt_cback(code, port_handle, 3);
 }
-static void bta_ag_mgmt_cback_4(const tPORT_RESULT code, uint16_t port_handle) {
+static void bta_ag_mgmt_cback_4(const tPORT_RESULT code, uint8_t port_handle) {
   bta_ag_mgmt_cback(code, port_handle, 4);
 }
-static void bta_ag_mgmt_cback_5(const tPORT_RESULT code, uint16_t port_handle) {
+static void bta_ag_mgmt_cback_5(const tPORT_RESULT code, uint8_t port_handle) {
   bta_ag_mgmt_cback(code, port_handle, 5);
 }
-static void bta_ag_mgmt_cback_6(const tPORT_RESULT code, uint16_t port_handle) {
+static void bta_ag_mgmt_cback_6(const tPORT_RESULT code, uint8_t port_handle) {
   bta_ag_mgmt_cback(code, port_handle, 6);
 }
-static void bta_ag_port_cback_1(uint32_t code, uint16_t port_handle) {
+static void bta_ag_port_cback_1(uint32_t code, uint8_t port_handle) {
   bta_ag_port_cback(code, port_handle, 1);
 }
-static void bta_ag_port_cback_2(uint32_t code, uint16_t port_handle) {
+static void bta_ag_port_cback_2(uint32_t code, uint8_t port_handle) {
   bta_ag_port_cback(code, port_handle, 2);
 }
-static void bta_ag_port_cback_3(uint32_t code, uint16_t port_handle) {
+static void bta_ag_port_cback_3(uint32_t code, uint8_t port_handle) {
   bta_ag_port_cback(code, port_handle, 3);
 }
-static void bta_ag_port_cback_4(uint32_t code, uint16_t port_handle) {
+static void bta_ag_port_cback_4(uint32_t code, uint8_t port_handle) {
   bta_ag_port_cback(code, port_handle, 4);
 }
-static void bta_ag_port_cback_5(uint32_t code, uint16_t port_handle) {
+static void bta_ag_port_cback_5(uint32_t code, uint8_t port_handle) {
   bta_ag_port_cback(code, port_handle, 5);
 }
-static void bta_ag_port_cback_6(uint32_t code, uint16_t port_handle) {
+static void bta_ag_port_cback_6(uint32_t code, uint8_t port_handle) {
   bta_ag_port_cback(code, port_handle, 6);
 }
 

@@ -82,7 +82,7 @@ const char kBtmLogTag[] = "RFCOMM";
  *
  ******************************************************************************/
 int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn, bool is_server, uint16_t mtu,
-                                        const RawAddress& bd_addr, uint16_t* p_handle,
+                                        const RawAddress& bd_addr, uint8_t* p_handle,
                                         tPORT_MGMT_CALLBACK* p_mgmt_callback, uint16_t sec_mask,
                                         RfcommCfgInfo cfg) {
   *p_handle = 0;
@@ -252,7 +252,7 @@ int RFCOMM_ControlReqFromBTSOCK(uint8_t dlci, const RawAddress& bd_addr, uint8_t
   return PORT_SUCCESS;
 }
 
-static tPORT* get_port_from_handle(uint16_t handle) {
+static tPORT* get_port_from_handle(uint8_t handle) {
   // Check if handle is valid to avoid crashing
   if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
     return nullptr;
@@ -269,7 +269,7 @@ static tPORT* get_port_from_handle(uint16_t handle) {
  * Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
  *
  ******************************************************************************/
-int RFCOMM_RemoveConnection(uint16_t handle) {
+int RFCOMM_RemoveConnection(uint8_t handle) {
   log::verbose("RFCOMM_RemoveConnection() handle:{}", handle);
 
   tPORT* p_port = get_port_from_handle(handle);
@@ -305,7 +305,7 @@ int RFCOMM_RemoveConnection(uint16_t handle) {
  * Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
  *
  ******************************************************************************/
-int RFCOMM_RemoveServer(uint16_t handle) {
+int RFCOMM_RemoveServer(uint8_t handle) {
   tPORT* p_port = get_port_from_handle(handle);
   if (p_port == nullptr) {
     log::error("Unable to get RFCOMM port control block bad handle:{}", handle);
@@ -350,7 +350,7 @@ int RFCOMM_RemoveServer(uint16_t handle) {
  *                  tPORT_RESULT that corresponds to the error
  *
  ******************************************************************************/
-int PORT_SetEventMaskAndCallback(uint16_t handle, uint32_t mask, tPORT_CALLBACK* p_port_cb) {
+int PORT_SetEventMaskAndCallback(uint8_t handle, uint32_t mask, tPORT_CALLBACK* p_port_cb) {
   log::verbose("handle:{} mask:0x{:x}", handle, mask);
   tPORT* p_port = get_port_from_handle(handle);
   if (p_port == nullptr) {
@@ -381,7 +381,7 @@ int PORT_SetEventMaskAndCallback(uint16_t handle, uint32_t mask, tPORT_CALLBACK*
  *                  tPORT_RESULT that corresponds to the error
  *
  ******************************************************************************/
-int PORT_ClearKeepHandleFlag(uint16_t handle) {
+int PORT_ClearKeepHandleFlag(uint8_t handle) {
   tPORT* p_port = get_port_from_handle(handle);
   if (p_port == nullptr) {
     log::error("Unable to get RFCOMM port control block bad handle:{}", handle);
@@ -406,7 +406,7 @@ int PORT_ClearKeepHandleFlag(uint16_t handle) {
  *                  tPORT_RESULT that corresponds to the error
  *
  ******************************************************************************/
-int PORT_SetDataCOCallback(uint16_t handle, tPORT_DATA_CO_CALLBACK* p_port_cb) {
+int PORT_SetDataCOCallback(uint8_t handle, tPORT_DATA_CO_CALLBACK* p_port_cb) {
   log::verbose("handle:{} cb 0x{}", handle, std::format_ptr(p_port_cb));
 
   tPORT* p_port = get_port_from_handle(handle);
@@ -438,7 +438,7 @@ int PORT_SetDataCOCallback(uint16_t handle, tPORT_DATA_CO_CALLBACK* p_port_cb) {
  *                  tPORT_RESULT that corresponds to the error
  *
  ******************************************************************************/
-int PORT_CheckConnection(uint16_t handle, RawAddress* bd_addr, uint16_t* p_lcid) {
+int PORT_CheckConnection(uint8_t handle, RawAddress* bd_addr, uint16_t* p_lcid) {
   tPORT* p_port = get_port_from_handle(handle);
   if (p_port == nullptr) {
     log::error("Unable to get RFCOMM port control block bad handle:{}", handle);
@@ -531,7 +531,7 @@ bool PORT_IsCollisionDetected(RawAddress bd_addr) {
  *                  app_uid    - Uid of app that requested the socket
  *
  ******************************************************************************/
-int PORT_SetAppUid(uint16_t handle, uint32_t app_uid) {
+int PORT_SetAppUid(uint8_t handle, uint32_t app_uid) {
   tPORT* p_port = get_port_from_handle(handle);
 
   if (p_port == nullptr) {
@@ -555,7 +555,7 @@ int PORT_SetAppUid(uint16_t handle, uint32_t app_uid) {
  *                  sdp_duration_ms - Time spent doing sdp
  *
  ******************************************************************************/
-int PORT_SetSdpDuration(uint16_t handle, uint64_t sdp_duration_ms) {
+int PORT_SetSdpDuration(uint8_t handle, uint64_t sdp_duration_ms) {
   tPORT* p_port = get_port_from_handle(handle);
 
   if (p_port == nullptr) {
@@ -581,7 +581,7 @@ int PORT_SetSdpDuration(uint16_t handle, uint64_t sdp_duration_ms) {
  *
  *
  ******************************************************************************/
-int PORT_SetSettings(uint16_t handle, PortSettings* p_settings) {
+int PORT_SetSettings(uint8_t handle, PortSettings* p_settings) {
   uint8_t baud_rate;
 
   log::verbose("handle:{}", handle);
@@ -623,7 +623,7 @@ int PORT_SetSettings(uint16_t handle, PortSettings* p_settings) {
  *                               configuration information is returned.
  *
  ******************************************************************************/
-int PORT_GetSettings(uint16_t handle, PortSettings* p_settings) {
+int PORT_GetSettings(uint8_t handle, PortSettings* p_settings) {
   log::verbose("handle:{}", handle);
 
   tPORT* p_port = get_port_from_handle(handle);
@@ -657,7 +657,7 @@ int PORT_GetSettings(uint16_t handle, PortSettings* p_settings) {
  *                  enable     - enables data flow
  *
  ******************************************************************************/
-int PORT_FlowControl_MaxCredit(uint16_t handle, bool enable) {
+int PORT_FlowControl_MaxCredit(uint8_t handle, bool enable) {
   bool old_fc;
   uint32_t events;
 
@@ -724,7 +724,7 @@ int PORT_FlowControl_MaxCredit(uint16_t handle, bool enable) {
  *                  p_len       - Byte count received
  *
  ******************************************************************************/
-int PORT_ReadData(uint16_t handle, char* p_data, uint16_t max_len, uint16_t* p_len) {
+int PORT_ReadData(uint8_t handle, char* p_data, uint16_t max_len, uint16_t* p_len) {
   BT_HDR* p_buf;
   uint16_t count;
 
@@ -879,7 +879,7 @@ static int port_write(tPORT* p_port, BT_HDR* p_buf) {
  *                  p_len      - Byte count returned
  *
  ******************************************************************************/
-int PORT_WriteDataCO(uint16_t handle, int* p_len) {
+int PORT_WriteDataCO(uint8_t handle, int* p_len) {
   BT_HDR* p_buf;
   uint32_t event = 0;
   int rc = 0;
@@ -1021,7 +1021,7 @@ int PORT_WriteDataCO(uint16_t handle, int* p_len) {
  *                  p_len       - Byte count received
  *
  ******************************************************************************/
-int PORT_WriteData(uint16_t handle, const char* p_data, uint16_t max_len, uint16_t* p_len) {
+int PORT_WriteData(uint8_t handle, const char* p_data, uint16_t max_len, uint16_t* p_len) {
   BT_HDR* p_buf;
   uint32_t event = 0;
   int rc = 0;
@@ -1156,7 +1156,7 @@ void RFCOMM_Init() {
  *                  parameter.
  *
  ******************************************************************************/
-int PORT_GetSecurityMask(uint16_t handle, uint16_t* sec_mask) {
+int PORT_GetSecurityMask(uint8_t handle, uint16_t* sec_mask) {
   tPORT* p_port = get_port_from_handle(handle);
   if (p_port == nullptr) {
     log::error("Unable to get RFCOMM port control block bad handle:{}", handle);
@@ -1176,7 +1176,7 @@ int PORT_GetSecurityMask(uint16_t handle, uint16_t* sec_mask) {
  *                  corresponding output parameters
  *
  ******************************************************************************/
-int PORT_GetChannelInfo(uint16_t handle, uint16_t* local_mtu, uint16_t* remote_mtu,
+int PORT_GetChannelInfo(uint8_t handle, uint16_t* local_mtu, uint16_t* remote_mtu,
                         uint16_t* local_credit, uint16_t* remote_credit, uint16_t* local_cid,
                         uint16_t* remote_cid, uint16_t* dlci, uint16_t* max_frame_size,
                         uint16_t* acl_handle, bool* mux_initiator) {

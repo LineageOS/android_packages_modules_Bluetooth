@@ -54,7 +54,7 @@ using namespace bluetooth;
  * Returns          void
  *
  ******************************************************************************/
-static void bta_hf_client_port_cback(uint32_t /* code */, uint16_t port_handle) {
+static void bta_hf_client_port_cback(uint32_t /* code */, uint8_t port_handle) {
   /* ignore port events for port handles other than connected handle */
   tBTA_HF_CLIENT_CB* client_cb = bta_hf_client_find_cb_by_rfc_handle(port_handle);
   if (client_cb == NULL) {
@@ -78,7 +78,7 @@ static void bta_hf_client_port_cback(uint32_t /* code */, uint16_t port_handle) 
  * Returns          void
  *
  ******************************************************************************/
-static void bta_hf_client_mgmt_cback(const tPORT_RESULT code, uint16_t port_handle) {
+static void bta_hf_client_mgmt_cback(const tPORT_RESULT code, uint8_t port_handle) {
   tBTA_HF_CLIENT_CB* client_cb = bta_hf_client_find_cb_by_rfc_handle(port_handle);
 
   log::verbose("code = {}, port_handle = {} serv = {}", code, port_handle,
