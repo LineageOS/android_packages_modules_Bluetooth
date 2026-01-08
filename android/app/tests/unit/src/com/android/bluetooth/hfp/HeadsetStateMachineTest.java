@@ -1317,7 +1317,11 @@ public class HeadsetStateMachineTest {
         mStateMachine.processVolumeEvent(HeadsetHalConstants.VOLUME_TYPE_SPK, 2);
 
         assertThat(mStateMachine.mSpeakerVolume).isEqualTo(2);
-        verify(mockAudioManager).setStreamVolume(AudioManager.STREAM_BLUETOOTH_SCO, 2, 0);
+        verify(mockAudioManager)
+                .setStreamVolume(
+                        AudioManager.STREAM_BLUETOOTH_SCO,
+                        2,
+                        AudioManager.FLAG_BLUETOOTH_ABS_VOLUME);
     }
 
     @Test
@@ -1331,7 +1335,9 @@ public class HeadsetStateMachineTest {
         mStateMachine.processVolumeEvent(HeadsetHalConstants.VOLUME_TYPE_SPK, 2);
 
         assertThat(mStateMachine.mSpeakerVolume).isEqualTo(2);
-        verify(mockAudioManager).setStreamVolume(AudioManager.STREAM_VOICE_CALL, 2, 0);
+        verify(mockAudioManager)
+                .setStreamVolume(
+                        AudioManager.STREAM_VOICE_CALL, 2, AudioManager.FLAG_BLUETOOTH_ABS_VOLUME);
     }
 
     @Test
@@ -1369,6 +1375,23 @@ public class HeadsetStateMachineTest {
         var flagsCaptor = ArgumentCaptor.forClass(Integer.class);
         verify(mockAudioManager).setStreamVolume(anyInt(), anyInt(), flagsCaptor.capture());
         assertThat(flagsCaptor.getValue() & AudioManager.FLAG_SHOW_UI).isEqualTo(0);
+    }
+
+    @Test
+    public void testProcessVolumeEventAudioConnected_withVolumeControlEnabled_SetAbsVolFlag() {
+        setUpAudioOnState();
+
+        doReturn(mDevice).when(mHeadsetService).getActiveDevice();
+        AudioManager mockAudioManager = mock(AudioManager.class);
+        doReturn(1).when(mockAudioManager).getStreamVolume(anyInt());
+        doReturn(mockAudioManager).when(mSystemInterface).getAudioManager();
+
+        mStateMachine.processVolumeEvent(HeadsetHalConstants.VOLUME_TYPE_SPK, 2);
+
+        var flagsCaptor = ArgumentCaptor.forClass(Integer.class);
+        verify(mockAudioManager).setStreamVolume(anyInt(), anyInt(), flagsCaptor.capture());
+        assertThat(flagsCaptor.getValue() & AudioManager.FLAG_BLUETOOTH_ABS_VOLUME)
+                .isEqualTo(AudioManager.FLAG_BLUETOOTH_ABS_VOLUME);
     }
 
     @Test
