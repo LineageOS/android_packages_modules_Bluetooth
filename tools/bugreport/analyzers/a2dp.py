@@ -821,6 +821,21 @@ def plot_acl_connection(acl_connection: btsnoop.AclConnection,
         print(f"Overriding the session with stream CID 0x{stream_cid:04x}")
         session = AvdtpSession(signal_lcid or 0x00, signal_rcid or 0x00)
         session.stream_cid = stream_cid
+        session.configuration = AvdtpSignalingPacket(
+            packet=None,
+            channel_id=0,
+            direction=btsnoop.Direction.SENT,
+            payload=bytes(),
+            signal=avdtp.SetConfigurationCommand(
+                acp_seid=0,
+                int_seid=0,
+                service_capabilities=[
+                    generate_media_codec_capability(
+                        codec_type or 'ldac',
+                        sampling_frequency or 96000,
+                    )
+                ],
+            ))
         active_stream = AvdtpStream(
             generate_media_codec_capability(
                 codec_type or 'ldac',
