@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <mutex>
 #include <vector>
 
 #include "bluetooth/log.h"
@@ -32,6 +33,9 @@ namespace {
 
 namespace log = ::bluetooth::log;
 namespace bt_le_audio = ::bluetooth::le_audio;
+
+std::mutex ref_mutex;
+uint32_t ref_count = 0;
 
 size_t RawPacketSize(const std::map<uint8_t, std::vector<uint8_t>>& values) {
   size_t bytes = 0;
@@ -190,6 +194,12 @@ JniJavaClass android_bluetooth_BluetoothLeBroadcastSubgroup;
 JniJavaClass android_bluetooth_BluetoothLeBroadcastMetadata;
 
 void UtilsInit(JNIEnv* env) {
+  std::lock_guard<std::mutex> lock(ref_mutex);
+
+  if (ref_count++ > 0) {
+    return;
+  }
+
   android_bluetooth_BluetoothDevice.clazz =
           (jclass)env->NewGlobalRef(env->FindClass("android/bluetooth/BluetoothDevice"));
   android_bluetooth_BluetoothDevice.constructor = env->GetMethodID(
@@ -235,6 +245,16 @@ void UtilsInit(JNIEnv* env) {
 }
 
 void UtilsCleanup(JNIEnv* env) {
+  std::lock_guard<std::mutex> lock(ref_mutex);
+
+  if (!ref_count) {
+    log::error("UtilsCleanup called with ref_count == 0");
+    return;
+  }
+  if (--ref_count > 0) {
+    return;
+  }
+
   env->DeleteGlobalRef(android_bluetooth_BluetoothDevice.clazz);
   android_bluetooth_BluetoothDevice.clazz = nullptr;
 
