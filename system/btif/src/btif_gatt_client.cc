@@ -193,9 +193,11 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
                 p_data->open.status, p_data->open.client_if,
                 to_java_transport(p_data->open.transport), p_data->open.remote_bda);
 
-      if (GATT_DEF_BLE_MTU_SIZE != p_data->open.mtu && p_data->open.mtu) {
-        HAL_CBACK(callbacks, client->configure_mtu_cb, static_cast<int>(p_data->open.conn_id),
-                  p_data->open.status, p_data->open.mtu);
+      if (!com::android::bluetooth::flags::gatt_conn_settings()) {
+        if (GATT_DEF_BLE_MTU_SIZE != p_data->open.mtu && p_data->open.mtu) {
+          HAL_CBACK(callbacks, client->configure_mtu_cb, static_cast<int>(p_data->open.conn_id),
+                    p_data->open.status, p_data->open.mtu);
+        }
       }
       break;
     }

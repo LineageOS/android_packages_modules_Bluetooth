@@ -178,9 +178,9 @@ class GattClientTest {
             createLeBondAndWaitBonding(remoteLeDevice)
         }
 
-        val gattCallback = mock<BluetoothGattCallback>()
+        val gattCallback_1 = mock<BluetoothGattCallback>()
         // first gatt connection settings with autoMtu as false
-        val gattSettings =
+        val gattSettingsWithAutoMtuOff =
             BluetoothGattConnectionSettings.Builder()
                 .setTransport(BluetoothDevice.TRANSPORT_LE)
                 .setAutomaticMtuEnabled(false)
@@ -188,10 +188,10 @@ class GattClientTest {
                 .setOpportunisticEnabled(false)
                 .build()
 
-        // first gatt connection settings with autoMtu as false
-        val gattCallback1 = mock<BluetoothGattCallback>()
+        // Second gatt connection settings with autoMtu as true
+        val gattCallback_2 = mock<BluetoothGattCallback>()
         // second settings with autoMtu as True
-        val gattSettings1 =
+        val gattSettingsWithAutoMtuOn =
             BluetoothGattConnectionSettings.Builder()
                 .setTransport(BluetoothDevice.TRANSPORT_LE)
                 .setAutomaticMtuEnabled(true)
@@ -200,35 +200,99 @@ class GattClientTest {
                 .build()
 
         // Trigger gatt connection with gatt connection setting with autoMtu as FALSE
-        val gatt =
-            connectGattAndWaitConnectionWithGattSettings(gattCallback, autoConnect, gattSettings)
+        val gatt_1 =
+            connectGattAndWaitConnectionWithGattSettings(
+                gattCallback_1,
+                autoConnect,
+                gattSettingsWithAutoMtuOff,
+            )
 
         // First Gatt connection should only generate connection state without any
         // MTU update
-        verify(gattCallback, timeout(1000))
+        verify(gattCallback_1, timeout(1000))
             .onConnectionStateChange(any(), any<Int>(), eq(STATE_CONNECTED))
         // No MTU update callback
-        verify(gattCallback, never()).onMtuChanged(eq(gatt), eq(ANDROID_MTU), eq(GATT_SUCCESS))
+        verify(gattCallback_1, never()).onMtuChanged(eq(gatt_1), eq(ANDROID_MTU), eq(GATT_SUCCESS))
 
+        clearInvocations(gattCallback_1)
+        clearInvocations(gattCallback_2)
         // Trigger gatt connection with gatt connection with setting of autoMtu as TRUE
-        val gatt1 =
-            connectGattAndWaitConnectionWithGattSettings(gattCallback1, autoConnect, gattSettings1)
+        val gatt_2: BluetoothGatt
+        gatt_2 =
+            connectGattAndWaitConnectionWithGattSettings(
+                gattCallback_2,
+                autoConnect,
+                gattSettingsWithAutoMtuOn,
+            )
+
+        // Second Gatt connection should only generate connection state for second GATT client
+        // and MTU update only for GATT client 2
+        verify(gattCallback_2, timeout(1000))
+            .onConnectionStateChange(any(), any<Int>(), eq(STATE_CONNECTED))
+
+        // Ensure both clients gets the MTU update
+        verify(gattCallback_1, timeout(5000).atLeast(1))
+            .onMtuChanged(eq(gatt_1), eq(ANDROID_MTU), eq(GATT_SUCCESS))
+        verify(gattCallback_2, timeout(5000).atLeast(1))
+            .onMtuChanged(eq(gatt_2), eq(ANDROID_MTU), eq(GATT_SUCCESS))
+
+        // Now create GATT client 3 with autoMtu as FALSE
+        val gattCallback_3 = mock<BluetoothGattCallback>()
+        val gatt_3 =
+            connectGattAndWaitConnectionWithGattSettings(
+                gattCallback_3,
+                autoConnect,
+                gattSettingsWithAutoMtuOff,
+            )
+
+        clearInvocations(gattCallback_1)
+        clearInvocations(gattCallback_2)
+
+        // Third Gatt connection should only generate connection state for third GATT client
+        // and MTU update only for 3rd client
+        verify(gattCallback_3, timeout(1000))
+            .onConnectionStateChange(any(), any<Int>(), eq(STATE_CONNECTED))
+
+        // Ensure first 2 client won't receive any MTU update callbacks
+        verify(gattCallback_1, never()).onMtuChanged(eq(gatt_1), eq(ANDROID_MTU), eq(GATT_SUCCESS))
+
+        verify(gattCallback_2, never()).onMtuChanged(eq(gatt_2), eq(ANDROID_MTU), eq(GATT_SUCCESS))
+
+        // Only 3rd client supposed to be notified of MTU update
+        verify(gattCallback_3, timeout(5000).atLeast(1))
+            .onMtuChanged(eq(gatt_3), eq(ANDROID_MTU), eq(GATT_SUCCESS))
+
+        // disconnect and connect back the gatt client 2 with MTU on
+        // connecting back should generate the MTU callback on gatt client 2 only
+        clearInvocations(gattCallback_1)
+        clearInvocations(gattCallback_2)
+        clearInvocations(gattCallback_3)
+
+        Log.i(TAG, "calling gat client 2 disconnect")
+        // Trigger gatt connection with gatt connection with setting of autoMtu as TRUE
+        gatt_2.disconnect()
+        verify(gattCallback_2, timeout(1000))
+            .onConnectionStateChange(eq(gatt_2), any<Int>(), eq(STATE_DISCONNECTED))
+        // reuse the same obj to trigger connect
+        gatt_2.connect()
 
         // Second Gatt connection should only generate connection state for second GATT client
         // and MTU update for both the GATT clients
-        verify(gattCallback, timeout(1000))
+        verify(gattCallback_2, timeout(1000))
             .onConnectionStateChange(any(), any<Int>(), eq(STATE_CONNECTED))
 
-        // Ensure both GATT client receive MTU update with default ANDROID_MTU value
-        verify(gattCallback, timeout(5000).atLeast(1))
-            .onMtuChanged(eq(gatt), eq(ANDROID_MTU), eq(GATT_SUCCESS))
+        // Ensure first  client_1 & client_3 won't receive any MTU update callbacks
+        verify(gattCallback_1, never()).onMtuChanged(eq(gatt_1), eq(ANDROID_MTU), eq(GATT_SUCCESS))
+        verify(gattCallback_3, never()).onMtuChanged(eq(gatt_3), eq(ANDROID_MTU), eq(GATT_SUCCESS))
 
-        verify(gattCallback1, timeout(5000).atLeast(1))
-            .onMtuChanged(eq(gatt1), eq(ANDROID_MTU), eq(GATT_SUCCESS))
+        // Ensure only client_2 receive MTU update with default ANDROID_MTU value
+        verify(gattCallback_2, timeout(5000).atLeast(1))
+            .onMtuChanged(eq(gatt_2), eq(ANDROID_MTU), eq(GATT_SUCCESS))
 
         // disconnect both GATT clients
-        disconnectAndWaitDisconnection(gatt, gattCallback)
-        disconnectAndWaitDisconnection(gatt1, gattCallback1)
+        disconnectAndWaitDisconnection(gatt_1, gattCallback_1)
+        disconnectAndWaitDisconnection(gatt_2, gattCallback_2)
+        disconnectAndWaitDisconnection(gatt_3, gattCallback_3)
     }
 
     @Test

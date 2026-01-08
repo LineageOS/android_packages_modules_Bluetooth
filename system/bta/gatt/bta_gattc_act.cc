@@ -1253,7 +1253,27 @@ static void bta_gattc_cfg_mtu_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_OP_
 void bta_gattc_op_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   if (p_clcb->p_q_cmd == NULL) {
     if (p_data->op_cmpl.op_code == GATTC_OPTYPE_CONFIG) {
-      bta_gattc_cfg_mtu_cmpl(p_clcb, &p_data->op_cmpl);
+      if (!com::android::bluetooth::flags::gatt_conn_settings()) {
+        bta_gattc_cfg_mtu_cmpl(p_clcb, &p_data->op_cmpl);
+      } else {
+        if (p_data->op_cmpl.status != GATT_SUCCESS) {
+          // MTU config failures, push it to only to the client which requested
+          // Most likely this is due to invalid value of MTU as input
+          // TODO: check & remove once BluetoothGatt#requestMtu(int) gets deprecated
+          bta_gattc_cfg_mtu_cmpl(p_clcb, &p_data->op_cmpl);
+        } else {
+          log::info("Push callbacks to clients which are not notified before");
+          for (auto& clcb : bta_gattc_cb.clcb_set) {
+            int reported_mtu = bta_gattc_cl_get_reported_mtu(clcb.get()->p_rcb->client_if);
+            if (p_data->op_cmpl.p_cmpl && p_data->op_cmpl.p_cmpl->mtu != reported_mtu) {
+              bta_gattc_cfg_mtu_cmpl(clcb.get(), &p_data->op_cmpl);
+              bta_gattc_cl_set_reported_mtu(p_clcb->p_rcb->client_if, p_data->op_cmpl.p_cmpl->mtu);
+            } else {
+              log::debug("skip reporting mtu, as it is same as before");
+            }
+          }
+        }
+      }
       return;
     }
     log::error("No pending command gatt client command");

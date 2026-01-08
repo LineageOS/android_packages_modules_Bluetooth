@@ -311,6 +311,7 @@ typedef struct {
   bool in_use;
   tBTA_GATTC_STATE state;
   tGATT_STATUS status;
+  int reported_mtu;
 } tBTA_GATTC_CLCB;
 
 /* back ground connection tracking information */
@@ -432,6 +433,9 @@ void bta_gattc_cleanup_clcb();
 void bta_gattc_server_disconnected(tBTA_GATTC_SERV* p_srcb);
 tBTA_GATTC_CLCB* bta_gattc_find_alloc_clcb(tGATT_IF client_if, const RawAddress& remote_bda,
                                            tBT_TRANSPORT transport);
+
+int bta_gattc_cl_get_reported_mtu(uint8_t client_if);
+void bta_gattc_cl_set_reported_mtu(uint8_t client_if, int mtu);
 tBTA_GATTC_RCB* bta_gattc_cl_get_regcb(uint8_t client_if);
 tBTA_GATTC_SERV* bta_gattc_find_srcb(const RawAddress& bda);
 tBTA_GATTC_SERV* bta_gattc_srcb_alloc(const RawAddress& bda);
