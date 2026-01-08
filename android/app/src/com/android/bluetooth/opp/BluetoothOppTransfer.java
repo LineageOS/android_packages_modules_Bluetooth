@@ -742,7 +742,6 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                     Log.e(TAG, "Bluetooth socket close error ", e3);
                 }
                 connectRfcommSocket();
-                return;
             }
         }
     }

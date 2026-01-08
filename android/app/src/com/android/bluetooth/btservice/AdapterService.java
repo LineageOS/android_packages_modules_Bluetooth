@@ -2696,7 +2696,6 @@ public class AdapterService extends Service {
                                 + ", "
                                 + groupId
                                 + ") is not pending");
-                return;
             }
         }
     }
