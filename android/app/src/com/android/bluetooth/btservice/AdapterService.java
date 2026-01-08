@@ -2883,7 +2883,7 @@ public class AdapterService extends Service {
 
                 Intent intent = new Intent(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
                 intent.setPackage(callingPackage);
-                sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
+                sendBroadcast(intent, BLUETOOTH_SCAN, Util.getTempBroadcastBundle());
 
                 // Now start sending all the discovered devices to the new discovering package.
                 if (Flags.sendDiscoveredDevToNewPkgs()) {
@@ -4217,7 +4217,7 @@ public class AdapterService extends Service {
                 new Intent(BluetoothAdapter.ACTION_SCAN_MODE_CHANGED)
                         .putExtra(BluetoothAdapter.EXTRA_SCAN_MODE, mScanMode)
                         .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-        sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
+        sendBroadcast(intent, BLUETOOTH_SCAN, Util.getTempBroadcastBundle());
     }
 
     @GuardedBy("mEnergyInfoLock")
@@ -5473,9 +5473,9 @@ public class AdapterService extends Service {
             sendBroadcastMultiplePermissions(
                     intent,
                     new String[] {BLUETOOTH_SCAN, pkgInfo.getPermission()},
-                    Utils.getTempBroadcastOptions());
+                    Util.getTempBroadcastOptions());
         } else {
-            sendBroadcast(intent, BLUETOOTH_SCAN, Utils.getTempBroadcastBundle());
+            sendBroadcast(intent, BLUETOOTH_SCAN, Util.getTempBroadcastBundle());
         }
     }
 }

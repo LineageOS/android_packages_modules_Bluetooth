@@ -53,6 +53,7 @@ import android.telephony.TelephonyManager;
 import android.util.Log;
 
 import com.android.bluetooth.R;
+import com.android.bluetooth.Util;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.InteropUtil;
@@ -506,7 +507,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
                             BluetoothDevice.EXTRA_ACCESS_REQUEST_TYPE,
                             BluetoothDevice.REQUEST_TYPE_PHONEBOOK_ACCESS);
                     BluetoothPbapService.this.sendBroadcast(
-                            intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastBundle());
+                            intent, BLUETOOTH_CONNECT, Util.getTempBroadcastBundle());
                     stateMachine.sendMessage(PbapStateMachine.REJECTED);
                 }
                 case MSG_ACQUIRE_WAKE_LOCK -> {
@@ -746,7 +747,7 @@ public class BluetoothPbapService extends ConnectableProfile implements IObexCon
             sendOrderedBroadcast(
                     intent,
                     BLUETOOTH_CONNECT,
-                    Utils.getTempBroadcastBundle(),
+                    Util.getTempBroadcastBundle(),
                     null /* resultReceiver */,
                     null /* scheduler */,
                     Activity.RESULT_OK /* initialCode */,
