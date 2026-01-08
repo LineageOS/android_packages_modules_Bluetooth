@@ -604,29 +604,10 @@ static void bta_dm_start_gatt_discovery(const RawAddress& bd_addr) {
     return;
   }
 
-  if (com_android_bluetooth_flags_gatt_discovery_is_non_opportunistic_client()) {
-    /* GATT Discovery always uses non oportunistic direct connected */
-    log::debug(" {} , transport:{}", bd_addr, bt_transport_text(BT_TRANSPORT_LE));
-    get_gatt_interface().BTA_GATTC_Open(bta_dm_discovery_cb.client_if, bd_addr,
-                                        BTM_BLE_DIRECT_CONNECTION, false, 0, false);
-  } else {
-    bool kUseOpportunistic = true;
-    if (get_btm_client_interface().peer.BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
-      log::debug(
-              "Use existing gatt client connection for discovery peer:{} "
-              "transport:{} opportunistic:{:c}",
-              bd_addr, bt_transport_text(BT_TRANSPORT_LE), (kUseOpportunistic) ? 'T' : 'F');
-      get_gatt_interface().BTA_GATTC_Open(bta_dm_discovery_cb.client_if, bd_addr,
-                                          BTM_BLE_DIRECT_CONNECTION, kUseOpportunistic, 0, false);
-    } else {
-      log::debug(
-              "Opening new gatt client connection for discovery peer:{} "
-              "transport:{} opportunistic:{:c}",
-              bd_addr, bt_transport_text(BT_TRANSPORT_LE), (!kUseOpportunistic) ? 'T' : 'F');
-      get_gatt_interface().BTA_GATTC_Open(bta_dm_discovery_cb.client_if, bd_addr,
-                                          BTM_BLE_DIRECT_CONNECTION, !kUseOpportunistic, 0, false);
-    }
-  }
+  /* GATT Discovery always uses non oportunistic direct connected */
+  log::debug(" {} , transport:{}", bd_addr, bt_transport_text(BT_TRANSPORT_LE));
+  get_gatt_interface().BTA_GATTC_Open(bta_dm_discovery_cb.client_if, bd_addr,
+                                      BTM_BLE_DIRECT_CONNECTION, false, 0, false);
 }
 
 /*******************************************************************************
