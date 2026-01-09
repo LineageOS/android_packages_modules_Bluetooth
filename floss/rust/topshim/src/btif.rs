@@ -1205,8 +1205,8 @@ pub(crate) mod ffi {
             is_atv: bool,
             hci_instance_name: String,
         );
-        fn enable(self: &BtIntf) -> i32;
-        fn disable(self: &BtIntf) -> i32;
+        fn bluetooth_enable(self: &BtIntf);
+        fn bluetooth_disable(self: &BtIntf);
         fn cleanup(self: &BtIntf);
         fn get_adapter_properties(self: &BtIntf) -> i32;
         fn get_adapter_property(self: &BtIntf, prop_type: BtPropertyType) -> i32;
@@ -1427,12 +1427,12 @@ impl BluetoothInterface {
         self.internal.cleanup()
     }
 
-    pub fn enable(&self) -> i32 {
-        self.internal.enable()
+    pub fn enable(&self) {
+        self.internal.bluetooth_enable()
     }
 
-    pub fn disable(&self) -> i32 {
-        self.internal.disable()
+    pub fn disable(&self) {
+        self.internal.bluetooth_disable()
     }
 
     pub fn get_adapter_properties(&self) -> i32 {

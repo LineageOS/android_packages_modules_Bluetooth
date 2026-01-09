@@ -836,7 +836,8 @@ impl Bluetooth {
             }
         }
 
-        self.intf.lock().unwrap().disable() == 0
+        self.intf.lock().unwrap().disable();
+        true
     }
 
     fn get_remote_device_property(
@@ -2241,7 +2242,8 @@ impl IBluetooth for Bluetooth {
 
     fn enable(&mut self) -> bool {
         self.disabling = false;
-        self.intf.lock().unwrap().enable() == 0
+        self.intf.lock().unwrap().enable();
+        true
     }
 
     fn disable(&mut self) -> bool {
