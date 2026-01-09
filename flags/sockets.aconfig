@@ -22,17 +22,6 @@ flag {
 }
 
 flag {
-    name: "donot_pm_classic_on_le_traffic"
-    namespace: "bluetooth"
-    description: "Donot exit the sniff on classic link if on LE only traffic"
-    bug: "416266693"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-
-flag {
     name: "consider_l2c_header_bytes_for_mps_selection"
     namespace: "bluetooth"
     description: "while selecting the local MPS, consider the L2cap header bytes"
