@@ -2155,6 +2155,12 @@ jint JNI_OnLoad(JavaVM* jvm, void* /* reserved */) {
     return JNI_ERR;
   }
 
+  status = android::register_com_android_bluetooth_le_audio_broadcaster(e);
+  if (status < 0) {
+    log::error("jni le_audio broadcaster registration failure: {}", status);
+    return JNI_ERR;
+  }
+
   status = android::register_com_android_bluetooth_vc(e);
   if (status < 0) {
     log::error("jni vc registration failure: {}", status);
