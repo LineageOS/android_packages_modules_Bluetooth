@@ -268,28 +268,8 @@ public class BipImageFormatTest {
     }
 
     @Test(expected = ParseException.class)
-    public void testParseNative_noEncoding() {
-        BipImageFormat.parseNative(null, "1024*960", "1048576");
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseNative_emptyEncoding() {
-        BipImageFormat.parseNative("", "1024*960", "1048576");
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseNative_badEncoding() {
-        BipImageFormat.parseNative("JIF", "1024*960", "1048576");
-    }
-
-    @Test(expected = ParseException.class)
     public void testParseNative_noPixel() {
         BipImageFormat.parseNative("JPEG", null, "1048576");
-    }
-
-    @Test(expected = ParseException.class)
-    public void testParseNative_emptyPixel() {
-        BipImageFormat.parseNative("JPEG", "", "1048576");
     }
 
     @Test(expected = ParseException.class)

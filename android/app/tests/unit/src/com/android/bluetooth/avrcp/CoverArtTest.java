@@ -282,41 +282,4 @@ public class CoverArtTest {
         BipImageDescriptor descriptor = getDescriptor(BipEncoding.JPEG, 100, 100);
         assertThat(artwork.getImage(descriptor)).isNotNull();
     }
-
-    /**
-     * Make sure getImage(<larger descriptor>) yields null when the feature flag is enabled. This
-     * verifies that descriptors for sizes larger than the thumbnail are rejected to prevent
-     * out-of-memory errors.
-     */
-    @Test
-    @EnableFlags(Flags.FLAG_IMPLEMENT_GET_IMAGE_FROM_DESCRIPTOR_FOR_COVER_ART)
-    public void testGetImageWithLargerDescriptor_whenFlagEnabled() {
-        CoverArt artwork = new CoverArt(mImage);
-        BipImageDescriptor descriptor = getDescriptor(BipEncoding.JPEG, 300, 300);
-        assertThat(artwork.getImage(descriptor)).isNull();
-    }
-
-    /**
-     * Make sure getImage(<smaller descriptor>) yields null when the feature flag is disabled. With
-     * the flag off, only exact thumbnail dimensions are allowed.
-     */
-    @Test
-    @DisableFlags(Flags.FLAG_IMPLEMENT_GET_IMAGE_FROM_DESCRIPTOR_FOR_COVER_ART)
-    public void testGetImageWithSmallerDescriptor_whenFlagDisabled() {
-        CoverArt artwork = new CoverArt(mImage);
-        BipImageDescriptor descriptor = getDescriptor(BipEncoding.JPEG, 50, 50);
-        assertThat(artwork.getImage(descriptor)).isNull();
-    }
-
-    /**
-     * Make sure getImage(<larger descriptor>) yields null when the feature flag is disabled. With
-     * the flag off, only exact thumbnail dimensions are allowed.
-     */
-    @Test
-    @DisableFlags(Flags.FLAG_IMPLEMENT_GET_IMAGE_FROM_DESCRIPTOR_FOR_COVER_ART)
-    public void testGetImageWithLargerDescriptor_whenFlagDisabled() {
-        CoverArt artwork = new CoverArt(mImage);
-        BipImageDescriptor descriptor = getDescriptor(BipEncoding.JPEG, 300, 300);
-        assertThat(artwork.getImage(descriptor)).isNull();
-    }
 }

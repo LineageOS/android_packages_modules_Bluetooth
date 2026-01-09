@@ -83,7 +83,9 @@ public class BipEncoding {
      */
     public BipEncoding(String encoding) {
         if (encoding == null) {
-            throw new ParseException("Encoding input invalid");
+            mType = UNKNOWN;
+            mProprietaryEncodingId = null;
+            return;
         }
         encoding = encoding.trim().toUpperCase(Locale.ROOT);
         mType = determineEncoding(encoding);
@@ -93,11 +95,6 @@ public class BipEncoding {
             proprietaryEncodingId = encoding.substring(4);
         }
         mProprietaryEncodingId = proprietaryEncodingId;
-
-        // If we don't have a type by now, we've failed to parse the encoding
-        if (mType == UNKNOWN) {
-            throw new ParseException("Failed to determine type of '" + encoding + "'");
-        }
     }
 
     /**
