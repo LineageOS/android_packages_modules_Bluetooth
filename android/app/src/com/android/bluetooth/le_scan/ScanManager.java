@@ -1641,11 +1641,8 @@ class ScanManager {
             int filterIndex,
             int numOfTrackingEntries) {
         int deliveryMode = ScanUtil.deliveryMode(client);
-        int rssiThreshold = Byte.MIN_VALUE;
         ScanSettings settings = client.getSettings();
-        if (Flags.rssiScanFilter()) {
-            rssiThreshold = settings.getRssiThreshold();
-        }
+        int rssiThreshold = settings.getRssiThreshold();
         int onFoundTimeout = ScanUtil.onFoundOnLostTimeoutMillis(settings, true);
         int onFoundCount = ScanUtil.onFoundOnLostSightings(settings);
         int onLostTimeout = 10000;

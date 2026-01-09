@@ -747,7 +747,6 @@ class ScanControllerTest(flags: FlagsWrapper) {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_RSSI_SCAN_FILTER)
     fun matchesFilters_rssiThreshold() {
         val rssiThreshold = -50
         val rssiAboveThreshold = -40
