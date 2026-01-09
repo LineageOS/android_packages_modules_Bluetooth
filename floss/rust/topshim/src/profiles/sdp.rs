@@ -336,6 +336,7 @@ impl From<BtSdpRecord> for CxxBtSdpRecord {
 }
 
 impl BtSdpRecord {
+    // TODO(b/446827362): Do not directly returns structures containing pointers, which is unsafe.
     fn convert_header<'a>(hdr: &'a mut BtSdpHeaderOverlay) -> bindings::bluetooth_sdp_hdr_overlay {
         let srv_name_ptr = LTCheckedPtrMut::from(&mut hdr.service_name);
         let user1_ptr = LTCheckedPtr::from(&hdr.user1_data);
@@ -356,6 +357,7 @@ impl BtSdpRecord {
     }
 
     // Get sdp record with lifetime tied to self
+    // TODO(b/446827362): Do not directly returns structures containing pointers, which is unsafe.
     fn get_unsafe_record<'a>(&'a mut self) -> bindings::bluetooth_sdp_record {
         match self {
             BtSdpRecord::HeaderOverlay(ref mut hdr) => {
