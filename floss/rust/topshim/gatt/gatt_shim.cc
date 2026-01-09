@@ -266,6 +266,10 @@ tBT_STATUS_LEGACY GattClientIntf::search_service(int conn_id, Uuid filter_uuid) 
   return toLegacyStatus(client_intf_->search_service(conn_id, &filter_uuid));
 }
 
+tBT_STATUS_LEGACY GattClientIntf::search_service_all(int conn_id) const {
+  return toLegacyStatus(client_intf_->search_service(conn_id, nullptr));
+}
+
 void GattClientIntf::btif_gattc_discover_service_by_uuid(int conn_id, Uuid uuid) const {
   client_intf_->btif_gattc_discover_service_by_uuid(conn_id, uuid);
 }

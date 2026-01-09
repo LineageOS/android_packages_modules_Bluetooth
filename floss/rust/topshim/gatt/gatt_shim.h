@@ -45,6 +45,7 @@ public:
   tBT_STATUS_LEGACY disconnect(int client_if, RawAddress bd_addr, int conn_id) const;
   tBT_STATUS_LEGACY refresh(int client_if, RawAddress bd_addr) const;
   tBT_STATUS_LEGACY search_service(int conn_id, Uuid filter_uuid) const;
+  tBT_STATUS_LEGACY search_service_all(int conn_id) const;
   void btif_gattc_discover_service_by_uuid(int conn_id, Uuid uuid) const;
   tBT_STATUS_LEGACY read_characteristic(int conn_id, uint16_t handle, int auth_req) const;
   tBT_STATUS_LEGACY read_using_characteristic_uuid(int conn_id, Uuid uuid, uint16_t s_handle,
