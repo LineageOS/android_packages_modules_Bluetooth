@@ -47,7 +47,7 @@ impl From<bindings::bthh_connection_state_t> for BthhConnectionState {
             bindings::bthh_connection_state_t_BTHH_CONN_STATE_UNKNOWN => {
                 BthhConnectionState::Unknown
             }
-            _ => unreachable!(),
+            _ => panic!("Unsupported bthh_connection_state_t {}", item),
         }
     }
 }
@@ -95,7 +95,7 @@ impl From<CxxBthhStatus> for BthhStatus {
             bindings::bthh_status_t_BTHH_ERR_HDL => BthhStatus::ErrHdl,
             bindings::bthh_status_t_BTHH_ERR_SEC => BthhStatus::ErrSec,
             bindings::bthh_status_t_BTHH_ERR_SERVICE_CHANGED => BthhStatus::ErrServiceChanged,
-            _ => unreachable!(),
+            _ => panic!("Unsupported bthh_status_t {}", item.0),
         }
     }
 }
@@ -146,7 +146,7 @@ impl From<CxxBthhProtocolMode> for BthhProtocolMode {
             bindings::bthh_protocol_mode_t_BTHH_UNSUPPORTED_MODE => {
                 BthhProtocolMode::UnsupportedMode
             }
-            _ => unreachable!(),
+            _ => panic!("Unsupported bthh_protocol_mode_t {}", item.0),
         }
     }
 }
@@ -181,7 +181,7 @@ impl From<CxxBthhReportType> for BthhReportType {
             bindings::bthh_report_type_t_BTHH_INPUT_REPORT => BthhReportType::InputReport,
             bindings::bthh_report_type_t_BTHH_OUTPUT_REPORT => BthhReportType::OutputReport,
             bindings::bthh_report_type_t_BTHH_FEATURE_REPORT => BthhReportType::FeatureReport,
-            _ => unreachable!(),
+            _ => panic!("Unsupported bthh_report_type_t {}", item.0),
         }
     }
 }

@@ -32,7 +32,7 @@ impl From<CxxBtState> for BtState {
         match item.0 {
             bindings::bt_state_t_BT_STATE_OFF => BtState::Off,
             bindings::bt_state_t_BT_STATE_ON => BtState::On,
-            _ => panic!("Unsupported enum {}", item.0),
+            _ => panic!("Unsupported bt_state_t {}", item.0),
         }
     }
 }
@@ -64,7 +64,7 @@ impl From<CxxBtTransport> for BtTransport {
             bindings::tBT_TRANSPORT_BT_TRANSPORT_AUTO => BtTransport::Auto,
             bindings::tBT_TRANSPORT_BT_TRANSPORT_BR_EDR => BtTransport::Bredr,
             bindings::tBT_TRANSPORT_BT_TRANSPORT_LE => BtTransport::Le,
-            _ => panic!("Unsupported enum {}", item.0),
+            _ => panic!("Unsupported tBT_TRANSPORT {}", item.0),
         }
     }
 }
@@ -140,7 +140,7 @@ impl From<CxxPairingVariant> for PairingVariant {
             bindings::PairingVariant_CONSENT => PairingVariant::Consent,
             bindings::PairingVariant_PASSKEY_NOTIFICATION => PairingVariant::PasskeyNotification,
             bindings::PairingVariant_PARTICIPATION => PairingVariant::Participation,
-            _ => panic!("Unsupported enum {}", item.0),
+            _ => panic!("Unsupported PairingVariant {}", item.0),
         }
     }
 }
@@ -175,7 +175,7 @@ impl From<CxxBtBondState> for BtBondState {
             bindings::bt_bond_state_t_BT_BOND_STATE_NONE => BtBondState::NotBonded,
             bindings::bt_bond_state_t_BT_BOND_STATE_BONDING => BtBondState::Bonding,
             bindings::bt_bond_state_t_BT_BOND_STATE_BONDED => BtBondState::Bonded,
-            _ => panic!("Unsupported enum {}", item.0),
+            _ => panic!("Unsupported bt_bond_state_t {}", item.0),
         }
     }
 }
@@ -235,7 +235,7 @@ impl From<CxxBtAclState> for BtAclState {
         match item.0 {
             bindings::bt_acl_state_t_BT_ACL_STATE_CONNECTED => BtAclState::Connected,
             bindings::bt_acl_state_t_BT_ACL_STATE_DISCONNECTED => BtAclState::Disconnected,
-            _ => panic!("Unsupported enum {}", item.0),
+            _ => panic!("Unsupported bt_acl_state_t {}", item.0),
         }
     }
 }
@@ -293,6 +293,7 @@ pub enum BtPropertyType {
     Reserved20,
     BredrPairingType,
     LePairingType,
+    Unknown = 0xFE,
     RemoteDeviceTimestamp = 0xFF,
 }
 
@@ -374,7 +375,7 @@ impl From<CxxBtPropertyType> for BtPropertyType {
             bindings::bt_property_type_t_BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP => {
                 BtPropertyType::RemoteDeviceTimestamp
             }
-            _ => panic!("Unsupported enum {}", item.0),
+            _ => BtPropertyType::Unknown,
         }
     }
 }
@@ -454,6 +455,7 @@ impl From<BtPropertyType> for CxxBtPropertyType {
             BtPropertyType::RemoteDeviceTimestamp => {
                 bindings::bt_property_type_t_BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP
             }
+            BtPropertyType::Unknown => panic!("Converting BtPropertyType::Unknown to CXX"),
         };
         CxxBtPropertyType(i)
     }
@@ -474,7 +476,7 @@ impl From<CxxBtDiscoveryState> for BtDiscoveryState {
         match item.0 {
             bindings::bt_discovery_state_t_BT_DISCOVERY_STOPPED => BtDiscoveryState::Stopped,
             bindings::bt_discovery_state_t_BT_DISCOVERY_STARTED => BtDiscoveryState::Started,
-            _ => panic!("Unsupported enum {}", item.0),
+            _ => panic!("Unsupported bt_discovery_state_t {}", item.0),
         }
     }
 }
@@ -539,7 +541,7 @@ impl From<CxxBtConnectionDirection> for BtConnectionDirection {
             bindings::bt_conn_direction_t_BT_CONN_DIRECTION_INCOMING => {
                 BtConnectionDirection::Incoming
             }
-            _ => panic!("Unsupported enum {}", item.0),
+            _ => panic!("Unsupported bt_conn_direction_t {}", item.0),
         }
     }
 }
@@ -651,7 +653,7 @@ impl From<CxxBtScanMode> for BtScanMode {
             bindings::bt_scan_mode_t_BT_SCAN_MODE_CONNECTABLE_LIMITED_DISCOVERABLE => {
                 BtScanMode::ConnectableLimitedDiscoverable
             }
-            _ => panic!("Unsupported enum {}", item.0),
+            _ => panic!("Unsupported bt_scan_mode_t {}", item.0),
         }
     }
 }
@@ -905,6 +907,7 @@ pub enum BluetoothProperty {
     VendorProductInfo(BtVendorProductInfo),
     RemoteAddrType(BtAddrType),
     RemoteDeviceTimestamp(),
+    Unknown,
 }
 
 /// Unknown or invalid RSSI value.
@@ -948,6 +951,7 @@ impl BluetoothProperty {
             BluetoothProperty::VendorProductInfo(_) => BtPropertyType::VendorProductInfo,
             BluetoothProperty::RemoteDeviceTimestamp() => BtPropertyType::RemoteDeviceTimestamp,
             BluetoothProperty::RemoteAddrType(_) => BtPropertyType::RemoteAddrType,
+            BluetoothProperty::Unknown => BtPropertyType::Unknown,
         }
     }
 
@@ -978,6 +982,7 @@ impl BluetoothProperty {
             // TODO(abps) - Figure out sizes for these
             BluetoothProperty::DynamicAudioBuffer() => 0,
             BluetoothProperty::RemoteDeviceTimestamp() => 0,
+            _ => panic!("Converting unsupported BluetoothProperty {:?} to CXX", self),
         }
     }
 
@@ -1086,6 +1091,7 @@ impl BluetoothProperty {
 
             BluetoothProperty::DynamicAudioBuffer() => (),
             BluetoothProperty::RemoteDeviceTimestamp() => (),
+            _ => panic!("Converting unsupported BluetoothProperty {:?} to CXX", self),
         };
 
         data.into()
@@ -1172,7 +1178,7 @@ impl From<CxxBluetoothProperty> for BluetoothProperty {
             // TODO(abps) - Figure out if these values should actually have contents
             BtPropertyType::DynamicAudioBuffer => BluetoothProperty::DynamicAudioBuffer(),
             BtPropertyType::RemoteDeviceTimestamp => BluetoothProperty::RemoteDeviceTimestamp(),
-            _ => panic!("Unsupported enum {:?}", prop_type),
+            _ => BluetoothProperty::Unknown,
         }
     }
 }
@@ -1214,7 +1220,7 @@ impl From<BluetoothProperty> for CxxBluetoothProperty {
                 len: std::mem::size_of::<u32>() as i32,
                 val: &timeout as *const u32 as *mut std::os::raw::c_void,
             },
-            _ => panic!("Unsupported enum {:?}", prop),
+            _ => panic!("Unsupported BluetoothProperty {:?}", prop),
         }
     }
 }

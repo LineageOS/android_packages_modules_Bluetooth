@@ -41,7 +41,7 @@ impl From<CxxBthfClientConnectionState> for BthfClientConnectionState {
             bindings::bthf_client_connection_state_t_BTHF_CLIENT_CONNECTION_STATE_DISCONNECTING => {
                 BthfClientConnectionState::Disconnecting
             }
-            _ => unreachable!(),
+            _ => panic!("Unsupported bthf_client_connection_state_t {}", item.0),
         }
     }
 }
@@ -102,7 +102,7 @@ impl From<CxxBthfClientAudioState> for BthfClientAudioState {
             bindings::bthf_client_audio_state_t_BTHF_CLIENT_AUDIO_STATE_CONNECTED_LC3 => {
                 BthfClientAudioState::ConnectedLc3
             }
-            _ => unreachable!(),
+            _ => panic!("Unsupported bthf_client_audio_state_t: {}", item.0),
         }
     }
 }
