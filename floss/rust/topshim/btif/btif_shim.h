@@ -80,14 +80,14 @@ public:
   bool get_wbs_supported() const;
   bool get_swb_supported() const;
   bool is_coding_format_supported(uint8_t coding_format) const;
+  // TODO(@sarveshkalwit): Remove unsafe access to raw Btif
+  const uint8_t* GetRawBtIntf() const;
 
 private:
   const bt_interface_t* intf_;
 };
 
 std::unique_ptr<BtIntf> GetBtIntf();
-// TODO(@sarveshkalwit): Remove unsafe access to raw Btif
-const uint8_t* GetRawBtIntf();
 
 }  // namespace rust
 }  // namespace topshim

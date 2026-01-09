@@ -294,6 +294,8 @@ bool BtIntf::is_coding_format_supported(uint8_t coding_format) const {
   return intf_->is_coding_format_supported(coding_format);
 }
 
+const uint8_t* BtIntf::GetRawBtIntf() const { return reinterpret_cast<const uint8_t*>(intf_); }
+
 std::unique_ptr<BtIntf> GetBtIntf() {
   if (internal::g_bt_if) {
     std::abort();
@@ -309,8 +311,6 @@ std::unique_ptr<BtIntf> GetBtIntf() {
   internal::g_bt_if = bt_if.get();
   return bt_if;
 }
-
-const uint8_t* GetRawBtIntf() { return reinterpret_cast<const uint8_t*>(internal::g_bt_if); }
 
 }  // namespace rust
 }  // namespace topshim

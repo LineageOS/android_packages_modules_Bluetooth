@@ -1497,7 +1497,7 @@ pub(crate) mod ffi {
         type BtIntf;
 
         fn GetBtIntf() -> UniquePtr<BtIntf>;
-        fn GetRawBtIntf() -> *const u8;
+        fn GetRawBtIntf(self: &BtIntf) -> *const u8;
 
         fn set_adapter_index(self: &BtIntf, adapter_index: i32);
         fn bluetooth_init(
@@ -1876,7 +1876,7 @@ impl BluetoothInterface {
 
     // TODO(@sarveshkalwit): Remove once all modules have been updated with FFI
     pub(crate) fn as_raw_ptr(&self) -> *const u8 {
-        ffi::GetRawBtIntf()
+        self.internal.GetRawBtIntf()
     }
 
     pub(crate) fn as_btif(&self) -> &ffi::BtIntf {
