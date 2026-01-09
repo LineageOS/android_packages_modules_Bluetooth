@@ -22,16 +22,6 @@ flag {
 }
 
 flag {
-    name: "ignore_auth_req_when_collision_timer_active"
-    namespace: "bluetooth"
-    description: "Ignore authentication request when collision timer is still active"
-    bug: "380328715"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "smp_connection_status_handling_when_no_acl"
     namespace: "bluetooth"
     description: "Fix SMP connection status sent from L2CAP when LE ACL is not connected"
