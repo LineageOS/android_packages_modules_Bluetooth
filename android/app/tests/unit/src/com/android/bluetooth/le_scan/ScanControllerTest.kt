@@ -18,6 +18,8 @@ package com.android.bluetooth.le_scan
 
 import android.app.AppOpsManager
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothDevice.ADDRESS_TYPE_PUBLIC
+import android.bluetooth.BluetoothDevice.ADDRESS_TYPE_RANDOM
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.IPeriodicAdvertisingCallback
 import android.bluetooth.le.IScannerCallback
@@ -396,6 +398,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
 
     @Test
     fun onBatchScanReportsInternal_fullBatchScanNoClients() {
+        val addressType = ADDRESS_TYPE_PUBLIC
         val reportType = ScanUtil.SCAN_RESULT_TYPE_FULL
         val numRecords = 1
         val recordData =
@@ -406,7 +409,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
                 0x00,
                 0x00,
                 0x02,
-                0x00, // Note: Address type is not checked in mockGetRemoteDevice
+                addressType.toByte(),
                 0x08,
                 0x09,
                 0x00,
@@ -415,7 +418,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
                 0x00,
             )
 
-        adapterService.mockGetRemoteDevice(getTestDevice("02:00:00:00:00:00"))
+        adapterService.mockGetRemoteDevice(getTestDevice("02:00:00:00:00:00", addressType))
         doReturn(setOf<ScanClient>()).whenever(scanManager).fullBatchScanQueue
 
         scanController.onBatchScanReportsInternal(
@@ -438,6 +441,10 @@ class ScanControllerTest(flags: FlagsWrapper) {
             if (isTruncated) ScanUtil.SCAN_RESULT_TYPE_TRUNCATED else ScanUtil.SCAN_RESULT_TYPE_FULL
         val numRecords = 1
         val recordData: ByteArray
+
+        val addressTypeFromScanRecord: Byte = 0x03 // AddressType::RANDOM_IDENTITY_ADDRESS
+        val expectedConvertedAddressType = ADDRESS_TYPE_RANDOM
+
         if (isTruncated) {
             recordData =
                 byteArrayOf(
@@ -464,7 +471,7 @@ class ScanControllerTest(flags: FlagsWrapper) {
                     0x00,
                     0x00,
                     0x02,
-                    0x00, // Note: Address type is not checked in mockGetRemoteDevice
+                    addressTypeFromScanRecord,
                     0x08,
                     0x09,
                     0x00,
@@ -474,7 +481,14 @@ class ScanControllerTest(flags: FlagsWrapper) {
                 )
         }
 
-        adapterService.mockGetRemoteDevice(getTestDevice("02:00:00:00:00:00"))
+        // TODO(b/469914545): Remove this comment when cleaning up the flag.
+        // For the flag Flags.useAddressTypeFromBatchScanResult(),
+        // When it is false, the address type is ignored, and the address type is not checked.
+        // When it is true, the address type is converted, and the converted type should match.
+        // In both cases, the test should pass.
+        adapterService.mockGetRemoteDevice(
+            getTestDevice("02:00:00:00:00:00", expectedConvertedAddressType)
+        )
         val scanClientSet = mutableSetOf<ScanClient>()
         val appUid = 1234
         val associatedDevices =
