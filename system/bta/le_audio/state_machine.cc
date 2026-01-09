@@ -2326,15 +2326,16 @@ private:
           return;
         }
 
-        uint16_t cig_curr_max_trans_lat_mtos = group->GetMaxTransportLatencyMtos();
-        uint16_t cig_curr_max_trans_lat_stom = group->GetMaxTransportLatencyStom();
-
         if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
           /* We are here because of the reconnection of the single device.
            * Reconfigure CIG if current CIG supported Max Transport Latency for
            * a direction, cannot be supported by the newly connected member
            * device's ASE for the direction.
            */
+
+          uint16_t cig_curr_max_trans_lat_mtos = group->GetMaxTransportLatencyMtos();
+          uint16_t cig_curr_max_trans_lat_stom = group->GetMaxTransportLatencyStom();
+
           if ((ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink &&
                cig_curr_max_trans_lat_mtos > rsp.max_transport_latency) ||
               (ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSource &&

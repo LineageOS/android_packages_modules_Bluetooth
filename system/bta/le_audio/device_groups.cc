@@ -658,33 +658,32 @@ uint8_t LeAudioDeviceGroup::GetFraming(void) const {
 
 /* TODO: Preferred parameter may be other than minimum */
 static uint16_t find_max_transport_latency(const LeAudioDeviceGroup* group, uint8_t direction) {
-  uint16_t max_transport_latency = 0;
+  uint16_t max_transport_latency = types::kMaxTransportLatencyMin;
 
   for (LeAudioDevice* leAudioDevice = group->GetFirstActiveDevice(); leAudioDevice != nullptr;
        leAudioDevice = group->GetNextActiveDevice(leAudioDevice)) {
+    /* Find the minimum Max_Transport_Latency among all active ASEs */
     for (ase* ase = leAudioDevice->GetFirstActiveAseByDirection(direction); ase != nullptr;
          ase = leAudioDevice->GetNextActiveAseWithSameDirection(ase)) {
-      if (!ase) {
-        break;
+      /* The Max_Transport_Latency parameter shall be in the range of 0x0005 to 0x0FA0
+       * as defined in the BAP Assigned Numbers.
+       */
+      if ((ase->qos_config.max_transport_latency <= types::kMaxTransportLatencyMin) ||
+          (ase->qos_config.max_transport_latency > types::kMaxTransportLatencyMax)) {
+        log::warn("Unexpected Max Transport Latency on {}, active ase_id: {}: Latency: {:#x}",
+                  leAudioDevice->address_, ase->id, ase->qos_config.max_transport_latency);
+        continue;
       }
 
-      if (max_transport_latency == 0) {
-        // first assignment
+      /* Assign new value if this is very first assignment or if new value is smaller than previous
+       * one. Note: types::kMaxTransportLatencyMin is special as it is also used as a default value
+       * when the direction is not used.
+       */
+      if (max_transport_latency == types::kMaxTransportLatencyMin ||
+          ase->qos_config.max_transport_latency < max_transport_latency) {
         max_transport_latency = ase->qos_config.max_transport_latency;
-      } else if (ase->qos_config.max_transport_latency < max_transport_latency) {
-        if (ase->qos_config.max_transport_latency != 0) {
-          max_transport_latency = ase->qos_config.max_transport_latency;
-        } else {
-          log::warn("Trying to set latency back to 0, ASE ID {}", ase->id);
-        }
       }
     }
-  }
-
-  if (max_transport_latency < types::kMaxTransportLatencyMin) {
-    max_transport_latency = types::kMaxTransportLatencyMin;
-  } else if (max_transport_latency > types::kMaxTransportLatencyMax) {
-    max_transport_latency = types::kMaxTransportLatencyMax;
   }
 
   return max_transport_latency;
