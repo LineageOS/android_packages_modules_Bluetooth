@@ -82,16 +82,6 @@ flag {
 }
 
 flag {
-    name: "not_set_l2cap_idle_timeout_0_when_disconnect_hid"
-    namespace: "bluetooth"
-    description: "remove l2cap idle timeout to 0 when disconnect HID host"
-    bug: "458592689"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "hogp_cancel_gatt_if_policy_forbidden"
     namespace: "bluetooth"
     description: "Take out the bonded-but-not-connected HoGP device from the accept list when policy is changed to forbidden"
