@@ -9,7 +9,7 @@ use num_traits::cast::ToPrimitive;
 use std::ffi::CString;
 use std::os::raw::c_char;
 
-#[derive(FromPrimitive, ToPrimitive, Debug, Clone, Copy, PartialEq)]
+#[derive(FromPrimitive, ToPrimitive, Debug, Clone, Copy, PartialEq, Default)]
 #[repr(u8)]
 /// Android framework log priority levels.
 /// They are defined in system/logging/liblog/include/android/log.h by
@@ -17,6 +17,7 @@ use std::os::raw::c_char;
 pub enum Level {
     Verbose = 2,
     Debug = 3,
+    #[default]
     Info = 4,
     Warn = 5,
     Error = 6,
@@ -32,12 +33,6 @@ impl From<Level> for i32 {
 impl From<Level> for u8 {
     fn from(item: Level) -> Self {
         item.to_u8().unwrap_or(4)
-    }
-}
-
-impl Default for Level {
-    fn default() -> Self {
-        Level::Info
     }
 }
 

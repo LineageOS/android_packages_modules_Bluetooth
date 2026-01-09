@@ -23,6 +23,7 @@ mod ffi {
             bond_state: u32,
             fail_reason: i32,
         );
+        #[allow(clippy::too_many_arguments)]
         fn device_info_report(
             bt_addr: RawAddress,
             device_type: u32,
@@ -73,10 +74,11 @@ pub fn bond_state_changed(
         device_type as u32,
         status as u32,
         bond_state as u32,
-        fail_reason as i32,
+        fail_reason,
     );
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn device_info_report(
     addr: RawAddress,
     device_type: BtDeviceType,
@@ -90,7 +92,7 @@ pub fn device_info_report(
     ffi::device_info_report(
         addr,
         device_type as u32,
-        class_of_device as u32,
+        class_of_device,
         appearance as u32,
         vendor_id as u32,
         vendor_id_src as u32,

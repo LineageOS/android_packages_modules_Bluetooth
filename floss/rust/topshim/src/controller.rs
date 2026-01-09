@@ -42,3 +42,9 @@ impl Controller {
         self.internal.get_ble_local_supported_features()
     }
 }
+
+impl Default for Controller {
+    fn default() -> Self {
+        Self::new()
+    }
+}

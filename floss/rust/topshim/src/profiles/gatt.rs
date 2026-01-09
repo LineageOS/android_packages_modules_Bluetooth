@@ -141,6 +141,7 @@ pub mod ffi {
             eatt_support: bool,
         ) -> u32;
         fn unregister_client(self: &GattClientIntf, client_if: i32) -> u32;
+        #[allow(clippy::too_many_arguments)]
         fn connect(
             self: &GattClientIntf,
             client_if: i32,
@@ -214,6 +215,7 @@ pub mod ffi {
         fn read_remote_rssi(self: &GattClientIntf, client_if: i32, bd_addr: RawAddress) -> u32;
         fn get_device_type(self: &GattClientIntf, bd_addr: RawAddress) -> i32;
         fn configure_mtu(self: &GattClientIntf, conn_id: i32, mtu: i32) -> u32;
+        #[allow(clippy::too_many_arguments)]
         fn conn_parameter_update(
             self: &GattClientIntf,
             bd_addr: RawAddress,
@@ -380,6 +382,7 @@ pub mod ffi {
             offset: i32,
             is_long: bool,
         );
+        #[allow(clippy::too_many_arguments)]
         fn gs_request_write_characteristic_cb(
             conn_id: i32,
             trans_id: i32,
@@ -390,6 +393,7 @@ pub mod ffi {
             is_prep: bool,
             value: &[u8],
         );
+        #[allow(clippy::too_many_arguments)]
         fn gs_request_write_descriptor_cb(
             conn_id: i32,
             trans_id: i32,
@@ -456,6 +460,7 @@ pub mod ffi {
         fn MsftAdvMonitorAdd(self: Pin<&mut BleScannerIntf>, monitor: &RustMsftAdvMonitor);
         fn MsftAdvMonitorRemove(self: Pin<&mut BleScannerIntf>, monitor_handle: u8);
         fn MsftAdvMonitorEnable(self: Pin<&mut BleScannerIntf>, enable: bool);
+        #[allow(clippy::too_many_arguments)]
         fn SetScanParameters(
             self: Pin<&mut BleScannerIntf>,
             scan_type: u8,
@@ -526,6 +531,7 @@ pub mod ffi {
         // by the ScanningCallbacks handler in shim.
         unsafe fn gdscan_on_scanner_registered(uuid: *const i8, scannerId: u8, status: u8);
         unsafe fn gdscan_on_set_scanner_parameter_complete(scannerId: u8, status: u8);
+        #[allow(clippy::too_many_arguments)]
         unsafe fn gdscan_on_scan_result(
             event_type: u16,
             addr_type: u8,
@@ -632,6 +638,7 @@ pub mod ffi {
             scan_response_data: Vec<u8>,
             timeout_in_sec: i32,
         );
+        #[allow(clippy::too_many_arguments)]
         fn StartAdvertisingSet(
             self: Pin<&mut BleAdvertiserIntf>,
             reg_id: i32,
@@ -781,10 +788,11 @@ impl Display for GattStatus {
     }
 }
 
-#[derive(Debug, FromPrimitive, ToPrimitive, Clone, Copy)]
+#[derive(Debug, FromPrimitive, ToPrimitive, Clone, Copy, Default)]
 #[repr(u32)]
 /// LE Discoverable modes.
 pub enum LeDiscMode {
+    #[default]
     Invalid = 0,
     NonDiscoverable,
     LimitedDiscoverable,
@@ -797,22 +805,17 @@ impl From<u32> for LeDiscMode {
     }
 }
 
-impl Into<u32> for LeDiscMode {
-    fn into(self) -> u32 {
-        self.to_u32().unwrap_or(0)
+impl From<LeDiscMode> for u32 {
+    fn from(val: LeDiscMode) -> Self {
+        val.to_u32().unwrap_or(0)
     }
 }
 
-impl Default for LeDiscMode {
-    fn default() -> Self {
-        LeDiscMode::Invalid
-    }
-}
-
-#[derive(Debug, FromPrimitive, ToPrimitive, Clone, Copy)]
+#[derive(Debug, FromPrimitive, ToPrimitive, Clone, Copy, Default)]
 #[repr(u8)]
 /// Represents LE PHY.
 pub enum LePhy {
+    #[default]
     Invalid = 0,
     Phy1m = 1,
     Phy2m = 2,
@@ -828,12 +831,6 @@ impl From<LePhy> for i32 {
 impl From<LePhy> for u8 {
     fn from(item: LePhy) -> Self {
         item.to_u8().unwrap_or(0)
-    }
-}
-
-impl Default for LePhy {
-    fn default() -> Self {
-        LePhy::Invalid
     }
 }
 
@@ -1166,7 +1163,7 @@ cb_variant!(
     GDScannerCb,
     gdscan_on_scanner_registered -> GattScannerCallbacks::OnScannerRegistered,
     *const i8, u8, u8 -> GattStatus, {
-        let _0 = unsafe { *(_0 as *const Uuid).clone() };
+        let _0 = unsafe { *(_0 as *const Uuid) };
     }
 );
 
@@ -1435,6 +1432,7 @@ impl GattClient {
     }
 
     #[log_args]
+    #[allow(clippy::too_many_arguments)]
     pub fn connect(
         &self,
         client_if: i32,
@@ -1585,6 +1583,7 @@ impl GattClient {
     }
 
     #[log_args]
+    #[allow(clippy::too_many_arguments)]
     pub fn conn_parameter_update(
         &self,
         addr: RawAddress,
@@ -1830,6 +1829,7 @@ impl BleScanner {
     }
 
     #[log_args]
+    #[allow(clippy::too_many_arguments)]
     pub fn set_scan_parameters(
         &mut self,
         scan_type: u8,
@@ -1990,6 +1990,7 @@ impl BleAdvertiser {
         );
     }
     #[log_args]
+    #[allow(clippy::too_many_arguments)]
     pub fn start_advertising_set(
         &mut self,
         reg_id: i32,
@@ -2128,6 +2129,6 @@ impl Gatt {
         self.scanner.internal.pin_mut().RegisterCallbacks();
         self.advertiser.internal.pin_mut().RegisterCallbacks();
 
-        return self.is_init;
+        self.is_init
     }
 }

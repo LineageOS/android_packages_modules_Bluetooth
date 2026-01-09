@@ -21,10 +21,10 @@ pub enum PropertyI32 {
     VendorIdSource,
 }
 
-impl Into<(CString, i32)> for PropertyI32 {
+impl From<PropertyI32> for (CString, i32) {
     /// Convert the property into the property key name and a default value.
-    fn into(self) -> (CString, i32) {
-        let (key, default_value) = match self {
+    fn from(val: PropertyI32) -> Self {
+        let (key, default_value) = match val {
             // Inquiry scan interval = N * 0.625 ms; value of 36 = 22.5ms
             PropertyI32::LeInquiryScanInterval => ("bluetooth.core.le.inquiry_scan_interval", 36),
 
@@ -75,10 +75,10 @@ pub enum PropertyBool {
     LeAudioEnableLeAudioOnly,
 }
 
-impl Into<(CString, bool)> for PropertyBool {
+impl From<PropertyBool> for (CString, bool) {
     /// Convert the property into the property key name and a default value.
-    fn into(self) -> (CString, bool) {
-        let (key, default_value) = match self {
+    fn from(val: PropertyBool) -> Self {
+        let (key, default_value) = match val {
             PropertyBool::LeAdvMonRtlQuirk => ("bluetooth.core.le.adv_mon_rtl_quirk", false),
             PropertyBool::LeAdvMonQcaQuirk => ("bluetooth.core.le.adv_mon_qca_quirk", false),
             PropertyBool::LeAudioEnableLeAudioOnly => {

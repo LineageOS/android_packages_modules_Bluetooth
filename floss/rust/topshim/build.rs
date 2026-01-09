@@ -88,6 +88,8 @@ fn main() {
             // "function pointer comparisons do not produce meaningful results since their addresses
             // are not guaranteed to be unique", thus allow this.
             "#[allow(unpredictable_function_pointer_comparisons)]\n",
+            // bindgen often generates complex types, thus allow this.
+            "#[allow(clippy::type_complexity)]\n",
         )
         .as_bytes(),
     )

@@ -431,7 +431,7 @@ pub fn ascii_to_string(data: &[u8], length: usize) -> String {
 fn u32_from_bytes(item: &[u8]) -> u32 {
     let mut u: [u8; 4] = [0; 4];
     let len = std::cmp::min(item.len(), 4);
-    u[0..len].copy_from_slice(&item);
+    u[0..len].copy_from_slice(item);
     u32::from_ne_bytes(u)
 }
 
@@ -774,7 +774,7 @@ const TYPED_ADDR_LENGTH: usize = bindings::RawAddress_kLength as usize + 1;
 
 impl BluetoothProperty {
     pub fn get_type(&self) -> BtPropertyType {
-        match &*self {
+        match self {
             BluetoothProperty::BdName(_) => BtPropertyType::BdName,
             BluetoothProperty::BdAddr(_) => BtPropertyType::BdAddr,
             BluetoothProperty::Uuids(_) => BtPropertyType::Uuids,
@@ -804,7 +804,7 @@ impl BluetoothProperty {
     /// LTCheckedPtrMut to it.
     ///
     /// The lifetime of the returned pointer is tied to that of the slice given.
-    fn get_data_ptr<'a>(&'a self, data: &'a mut [u8]) -> LTCheckedPtrMut<'a, u8> {
+    fn get_data_ptr<'a>(&self, data: &'a mut [u8]) -> LTCheckedPtrMut<'a, u8> {
         let len = self.get_len();
         match self {
             BluetoothProperty::BdName(name) => {
@@ -858,7 +858,7 @@ impl From<CxxBluetoothProperty> for BluetoothProperty {
             }
             bindings::bt_property_type_t_BT_PROPERTY_ADAPTER_BONDED_DEVICES => {
                 assert!(
-                    len % TYPED_ADDR_LENGTH == 0,
+                    len.is_multiple_of(TYPED_ADDR_LENGTH),
                     "Invalid AdapterBondedDevices prop len: {}",
                     len
                 );
@@ -1313,7 +1313,7 @@ pub(crate) mod ffi {
 }
 
 #[no_mangle]
-extern "C" fn wake_lock_noop(_0: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int {
+extern "C" fn wake_lock_noop(_: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int {
     // The wakelock mechanism is not available on this platform,
     // so just returning success to avoid error log.
     0
@@ -1545,9 +1545,7 @@ pub fn get_btinterface() -> BluetoothInterface {
 
 // Turns C-array T[] to Vec<U>.
 pub(crate) fn ptr_to_vec<T: Copy, U: From<T>>(start: *const T, length: usize) -> Vec<U> {
-    unsafe {
-        (0..length).map(|i| U::from(start.offset(i as isize).read_unaligned())).collect::<Vec<U>>()
-    }
+    unsafe { (0..length).map(|i| U::from(start.add(i).read_unaligned())).collect::<Vec<U>>() }
 }
 
 #[cfg(test)]

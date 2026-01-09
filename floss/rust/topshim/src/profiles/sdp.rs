@@ -238,8 +238,8 @@ pub struct BtSdpMpsRecord {
     pub supported_dependencies: SupportedDependencies, // LibBluetooth expects big endian data
 }
 
-impl BtSdpMpsRecord {
-    pub fn default() -> Self {
+impl Default for BtSdpMpsRecord {
+    fn default() -> Self {
         let empty_uuid = Uuid::try_from(vec![0x0, 0x0]).unwrap();
         BtSdpMpsRecord {
             hdr: BtSdpHeaderOverlay {
@@ -263,7 +263,7 @@ impl BtSdpMpsRecord {
             // - 8 Press Play on Audio Player during active call (HFP-AG_A2DP-SRC)
             // - 10 Start Audio Streaming after AVRCP Play Command (HFP-AG_A2DP-SRC)
             // - 12 Suspend Audio Streaming after AVRCP Pause/Stop (HFP-AG_A2DP-SRC)
-            supported_scenarios_mpsd: [0, 0, 0, 0, 0, 0, 0b_1_0101, 0b_0101_0101],
+            supported_scenarios_mpsd: [0, 0, 0, 0, 0, 0, 0b_0001_0101, 0b_0101_0101],
             supported_scenarios_mpmd: [0; 8],
             // LibBluetooth accepts big endian data. CrOS supports:
             // - 1 Sniff Mode During Streaming
@@ -330,7 +330,7 @@ impl From<CxxBtSdpRecord> for BtSdpRecord {
 
 impl BtSdpRecord {
     // TODO(b/446827362): Do not directly returns structures containing pointers, which is unsafe.
-    fn convert_header<'a>(hdr: &'a mut BtSdpHeaderOverlay) -> bindings::bluetooth_sdp_hdr_overlay {
+    fn convert_header(hdr: &mut BtSdpHeaderOverlay) -> bindings::bluetooth_sdp_hdr_overlay {
         let srv_name_ptr = LTCheckedPtrMut::from(&mut hdr.service_name);
         let user1_ptr = LTCheckedPtr::from(&hdr.user1_data);
         let user2_ptr = LTCheckedPtr::from(&hdr.user2_data);
@@ -351,7 +351,7 @@ impl BtSdpRecord {
 
     // Get sdp record with lifetime tied to self
     // TODO(b/446827362): Do not directly returns structures containing pointers, which is unsafe.
-    fn get_unsafe_record<'a>(&'a mut self) -> bindings::bluetooth_sdp_record {
+    fn get_unsafe_record(&mut self) -> bindings::bluetooth_sdp_record {
         match self {
             BtSdpRecord::HeaderOverlay(ref mut hdr) => {
                 bindings::bluetooth_sdp_record { hdr: BtSdpRecord::convert_header(hdr) }

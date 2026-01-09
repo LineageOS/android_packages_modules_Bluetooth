@@ -251,6 +251,7 @@ pub mod ffi {
         fn hfp_hangup_call_callback(addr: RawAddress);
         fn hfp_dial_call_callback(number: String, addr: RawAddress);
         fn hfp_call_hold_callback(chld: CallHoldCommand, addr: RawAddress);
+        #[allow(clippy::too_many_arguments)]
         fn hfp_debug_dump_callback(
             active: bool,
             codec_id: u16,
@@ -282,6 +283,12 @@ impl TelephonyDeviceStatus {
             signal_strength: 5,
             battery_level: 5,
         }
+    }
+}
+
+impl Default for TelephonyDeviceStatus {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
