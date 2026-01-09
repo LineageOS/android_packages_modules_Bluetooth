@@ -614,6 +614,29 @@ TEST_F(LeAddressManagerWithSingleClientTest, register_during_command_complete) {
   clients[1].get()->WaitForResume();
 }
 
+TEST_F(LeAddressManagerWithSingleClientTest, PrepareToRotateAddress) {
+  // At the start of the test, the client should be resumed.
+  ASSERT_FALSE(clients[0]->paused);
+
+  // Trigger the address rotation.
+  le_address_manager_->PrepareToRotateAddress();
+  sync_handler(handler_);
+
+  // The client should have been paused and should have acked the pause.
+  // This triggers the execution of the rotation command.
+  ASSERT_TRUE(clients[0]->paused);
+
+  // Verify that a new random address is set.
+  hci_layer_->GetCommand(OpCode::LE_SET_RANDOM_ADDRESS);
+
+  // Send the command complete event.
+  hci_layer_->IncomingEvent(LeSetRandomAddressCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+
+  // After the command is complete, the client should be resumed.
+  clients[0]->WaitForResume();
+  ASSERT_FALSE(clients[0]->paused);
+}
+
 }  // namespace
 }  // namespace hci
 }  // namespace bluetooth
