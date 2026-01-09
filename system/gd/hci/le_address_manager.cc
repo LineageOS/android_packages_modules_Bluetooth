@@ -837,6 +837,11 @@ void LeAddressManager::OnCommandComplete(bluetooth::hci::CommandCompleteView vie
 }
 
 void LeAddressManager::PrepareToRotateAddress() {
+  if (controller_->IsRpaGenerationSupported()) {
+    log::warn("Should not be called when RPA generation is supported");
+    return;
+  }
+
   // We are rotating the address outside of what we previously scheduled.
   // Prevent showing the warning log by removing expected time interval for the next rotation.
   if (expected_address_rotation_interval_min.has_value()) {
