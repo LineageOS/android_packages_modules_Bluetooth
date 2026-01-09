@@ -18,30 +18,10 @@ flag {
 }
 
 flag {
-    name: "delay_sniff_subrating"
-    namespace: "bluetooth"
-    description: "Delay Sniff Subrating as in some remote's timing issues were observed"
-    bug: "419205731"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "lhdc_codec_support"
     namespace: "bluetooth"
     description: "Implement support for the LHDCv5 codec"
     bug: "423977897"
-}
-
-flag {
-    name: "avdt_close_on_start_failure_bad_state"
-    namespace: "bluetooth"
-    description: "Close the AVDT connection on received BAD_STATE error on Start request"
-    bug: "429135675"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
 }
 
 flag {
