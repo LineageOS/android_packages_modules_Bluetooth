@@ -1,6 +1,5 @@
 use crate::bindings::root as bindings;
 use crate::btif::{ptr_to_vec, BluetoothInterface, BtStatus, RawAddress, Uuid};
-use crate::mutcxxcall;
 use crate::topstack::get_dispatchers;
 
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -1749,34 +1748,34 @@ impl GattServer {
 }
 
 pub struct BleScanner {
-    internal_cxx: cxx::UniquePtr<ffi::BleScannerIntf>,
+    internal: cxx::UniquePtr<ffi::BleScannerIntf>,
 }
 
 impl BleScanner {
     // TODO(b/383549885) Devise a method to print bound type BleScannerIntf
-    pub(crate) fn new(internal_cxx: cxx::UniquePtr<ffi::BleScannerIntf>) -> Self {
-        BleScanner { internal_cxx }
+    pub(crate) fn new(internal: cxx::UniquePtr<ffi::BleScannerIntf>) -> Self {
+        BleScanner { internal }
     }
 
     #[log_args]
     pub fn register_scanner(&mut self, app_uuid: Uuid) {
-        mutcxxcall!(self, RegisterScanner, app_uuid);
+        self.internal.pin_mut().RegisterScanner(app_uuid);
     }
 
     #[log_args]
     pub fn unregister(&mut self, scanner_id: u8) {
-        mutcxxcall!(self, Unregister, scanner_id);
+        self.internal.pin_mut().Unregister(scanner_id);
     }
 
     // TODO(b/233124021): topshim should expose scan(enable) instead of start_scan and stop_scan.
     #[log_args]
     pub fn start_scan(&mut self) {
-        mutcxxcall!(self, Scan, true);
+        self.internal.pin_mut().Scan(true);
     }
 
     #[log_args]
     pub fn stop_scan(&mut self) {
-        mutcxxcall!(self, Scan, false);
+        self.internal.pin_mut().Scan(false);
     }
 
     #[log_args]
@@ -1787,47 +1786,47 @@ impl BleScanner {
         filter_index: u8,
         param: GattFilterParam,
     ) {
-        mutcxxcall!(self, ScanFilterParamSetup, scanner_id, action, filter_index, param);
+        self.internal.pin_mut().ScanFilterParamSetup(scanner_id, action, filter_index, param);
     }
 
     #[log_args]
     pub fn scan_filter_add(&mut self, filter_index: u8, filters: Vec<ApcfCommand>) {
-        mutcxxcall!(self, ScanFilterAdd, filter_index, filters);
+        self.internal.pin_mut().ScanFilterAdd(filter_index, filters);
     }
 
     #[log_args]
     pub fn scan_filter_clear(&mut self, filter_index: u8) {
-        mutcxxcall!(self, ScanFilterClear, filter_index);
+        self.internal.pin_mut().ScanFilterClear(filter_index);
     }
 
     #[log_args]
     pub fn scan_filter_enable(&mut self) {
-        mutcxxcall!(self, ScanFilterEnable, true);
+        self.internal.pin_mut().ScanFilterEnable(true);
     }
 
     #[log_args]
     pub fn scan_filter_disable(&mut self) {
-        mutcxxcall!(self, ScanFilterEnable, false);
+        self.internal.pin_mut().ScanFilterEnable(false);
     }
 
     #[log_args]
     pub fn is_msft_supported(&mut self) -> bool {
-        mutcxxcall!(self, IsMsftSupported)
+        self.internal.pin_mut().IsMsftSupported()
     }
 
     #[log_args]
     pub fn msft_adv_monitor_add(&mut self, monitor: &MsftAdvMonitor) {
-        mutcxxcall!(self, MsftAdvMonitorAdd, monitor);
+        self.internal.pin_mut().MsftAdvMonitorAdd(monitor);
     }
 
     #[log_args]
     pub fn msft_adv_monitor_remove(&mut self, monitor_handle: u8) {
-        mutcxxcall!(self, MsftAdvMonitorRemove, monitor_handle);
+        self.internal.pin_mut().MsftAdvMonitorRemove(monitor_handle);
     }
 
     #[log_args]
     pub fn msft_adv_monitor_enable(&mut self, enable: bool) {
-        mutcxxcall!(self, MsftAdvMonitorEnable, enable);
+        self.internal.pin_mut().MsftAdvMonitorEnable(enable);
     }
 
     #[log_args]
@@ -1842,9 +1841,7 @@ impl BleScanner {
         scan_window_coded: u16,
         scan_phy: u8,
     ) {
-        mutcxxcall!(
-            self,
-            SetScanParameters,
+        self.internal.pin_mut().SetScanParameters(
             scan_type,
             scanner_id_1m,
             scan_interval_1m,
@@ -1852,7 +1849,7 @@ impl BleScanner {
             scanner_id_coded,
             scan_interval_coded,
             scan_window_coded,
-            scan_phy
+            scan_phy,
         );
     }
 
@@ -1864,13 +1861,11 @@ impl BleScanner {
         trunc_max: i32,
         notify_threshold: i32,
     ) {
-        mutcxxcall!(
-            self,
-            BatchScanConfigStorage,
+        self.internal.pin_mut().BatchScanConfigStorage(
             scanner_id,
             full_max,
             trunc_max,
-            notify_threshold
+            notify_threshold,
         );
     }
 
@@ -1883,25 +1878,23 @@ impl BleScanner {
         addr_type: i32,
         discard_rule: i32,
     ) {
-        mutcxxcall!(
-            self,
-            BatchScanEnable,
+        self.internal.pin_mut().BatchScanEnable(
             scan_mode,
             scan_interval,
             scan_window,
             addr_type,
-            discard_rule
+            discard_rule,
         );
     }
 
     #[log_args]
     pub fn batch_scan_disable(&mut self) {
-        mutcxxcall!(self, BatchScanDisable);
+        self.internal.pin_mut().BatchScanDisable();
     }
 
     #[log_args]
     pub fn batch_scan_read_reports(&mut self, scanner_id: u8, scan_mode: i32) {
-        mutcxxcall!(self, BatchScanReadReports, scanner_id, scan_mode);
+        self.internal.pin_mut().BatchScanReadReports(scanner_id, scan_mode);
     }
 
     #[log_args]
@@ -1913,71 +1906,71 @@ impl BleScanner {
         skip: u16,
         timeout: u16,
     ) {
-        mutcxxcall!(self, StartSync, sid, addr, addr_type, skip, timeout);
+        self.internal.pin_mut().StartSync(sid, addr, addr_type, skip, timeout);
     }
 
     #[log_args]
     pub fn stop_sync(&mut self, handle: u16) {
-        mutcxxcall!(self, StopSync, handle);
+        self.internal.pin_mut().StopSync(handle);
     }
 
     #[log_args]
     pub fn cancel_create_sync(&mut self, sid: u8, addr: RawAddress) {
-        mutcxxcall!(self, CancelCreateSync, sid, addr);
+        self.internal.pin_mut().CancelCreateSync(sid, addr);
     }
 
     #[log_args]
     pub fn transfer_sync(&mut self, addr: RawAddress, service_data: u16, sync_handle: u16) {
-        mutcxxcall!(self, TransferSync, addr, service_data, sync_handle);
+        self.internal.pin_mut().TransferSync(addr, service_data, sync_handle);
     }
 
     #[log_args]
     pub fn transfer_set_info(&mut self, addr: RawAddress, service_data: u16, adv_handle: u8) {
-        mutcxxcall!(self, TransferSetInfo, addr, service_data, adv_handle);
+        self.internal.pin_mut().TransferSetInfo(addr, service_data, adv_handle);
     }
 
     #[log_args]
     pub fn sync_tx_parameters(&mut self, addr: RawAddress, mode: u8, skip: u16, timeout: u16) {
-        mutcxxcall!(self, SyncTxParameters, addr, mode, skip, timeout);
+        self.internal.pin_mut().SyncTxParameters(addr, mode, skip, timeout);
     }
 }
 
 pub struct BleAdvertiser {
-    internal_cxx: cxx::UniquePtr<ffi::BleAdvertiserIntf>,
+    internal: cxx::UniquePtr<ffi::BleAdvertiserIntf>,
 }
 
 impl BleAdvertiser {
     // TODO(b/383549885) Devise a method to print bound type BleAdvertiserIntf
-    pub(crate) fn new(internal_cxx: cxx::UniquePtr<ffi::BleAdvertiserIntf>) -> Self {
-        BleAdvertiser { internal_cxx }
+    pub(crate) fn new(internal: cxx::UniquePtr<ffi::BleAdvertiserIntf>) -> Self {
+        BleAdvertiser { internal }
     }
 
     #[log_args]
     pub fn register_advertiser(&mut self) {
-        mutcxxcall!(self, RegisterAdvertiser);
+        self.internal.pin_mut().RegisterAdvertiser();
     }
 
     #[log_args]
     pub fn unregister(&mut self, adv_id: u8) {
-        mutcxxcall!(self, Unregister, adv_id);
+        self.internal.pin_mut().Unregister(adv_id);
     }
 
     #[log_args]
     pub fn get_own_address(&mut self, adv_id: u8) {
-        mutcxxcall!(self, GetOwnAddress, adv_id);
+        self.internal.pin_mut().GetOwnAddress(adv_id);
     }
 
     #[log_args]
     pub fn set_parameters(&mut self, adv_id: u8, params: AdvertiseParameters) {
-        mutcxxcall!(self, SetParameters, adv_id, params);
+        self.internal.pin_mut().SetParameters(adv_id, params);
     }
     #[log_args]
     pub fn set_data(&mut self, adv_id: u8, set_scan_rsp: bool, data: Vec<u8>) {
-        mutcxxcall!(self, SetData, adv_id, set_scan_rsp, data);
+        self.internal.pin_mut().SetData(adv_id, set_scan_rsp, data);
     }
     #[log_args]
     pub fn enable(&mut self, adv_id: u8, enable: bool, duration: u16, max_ext_adv_events: u8) {
-        mutcxxcall!(self, Enable, adv_id, enable, duration, max_ext_adv_events);
+        self.internal.pin_mut().Enable(adv_id, enable, duration, max_ext_adv_events);
     }
     #[log_args]
     pub fn start_advertising(
@@ -1988,14 +1981,12 @@ impl BleAdvertiser {
         scan_response_data: Vec<u8>,
         timeout_in_sec: i32,
     ) {
-        mutcxxcall!(
-            self,
-            StartAdvertising,
+        self.internal.pin_mut().StartAdvertising(
             adv_id,
             params,
             advertise_data,
             scan_response_data,
-            timeout_in_sec
+            timeout_in_sec,
         );
     }
     #[log_args]
@@ -2010,9 +2001,7 @@ impl BleAdvertiser {
         duration: u16,
         max_ext_adv_events: u8,
     ) {
-        mutcxxcall!(
-            self,
-            StartAdvertisingSet,
+        self.internal.pin_mut().StartAdvertisingSet(
             reg_id,
             params,
             advertise_data,
@@ -2020,7 +2009,7 @@ impl BleAdvertiser {
             periodic_params,
             periodic_data,
             duration,
-            max_ext_adv_events
+            max_ext_adv_events,
         );
     }
     #[log_args]
@@ -2029,15 +2018,15 @@ impl BleAdvertiser {
         adv_id: u8,
         params: PeriodicAdvertisingParameters,
     ) {
-        mutcxxcall!(self, SetPeriodicAdvertisingParameters, adv_id, params);
+        self.internal.pin_mut().SetPeriodicAdvertisingParameters(adv_id, params);
     }
     #[log_args]
     pub fn set_periodic_advertising_data(&mut self, adv_id: u8, data: Vec<u8>) {
-        mutcxxcall!(self, SetPeriodicAdvertisingData, adv_id, data);
+        self.internal.pin_mut().SetPeriodicAdvertisingData(adv_id, data);
     }
     #[log_args]
     pub fn set_periodic_advertising_enable(&mut self, adv_id: u8, enable: bool, include_adi: bool) {
-        mutcxxcall!(self, SetPeriodicAdvertisingEnable, adv_id, enable, include_adi);
+        self.internal.pin_mut().SetPeriodicAdvertisingEnable(adv_id, enable, include_adi);
     }
 }
 
@@ -2136,8 +2125,8 @@ impl Gatt {
         self.is_init = init == BtStatus::Success;
 
         // Register callbacks for gatt scanner and advertiser
-        mutcxxcall!(self.scanner, RegisterCallbacks);
-        mutcxxcall!(self.advertiser, RegisterCallbacks);
+        self.scanner.internal.pin_mut().RegisterCallbacks();
+        self.advertiser.internal.pin_mut().RegisterCallbacks();
 
         return self.is_init;
     }

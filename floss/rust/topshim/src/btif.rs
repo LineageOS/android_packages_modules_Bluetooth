@@ -1313,61 +1313,6 @@ pub(crate) mod ffi {
     }
 }
 
-/// Macro to call functions via function pointers. Expects the self object to
-/// have a raw interface wrapper at `self.internal`. The actual function call is
-/// marked unsafe since it will need to dereference a C object. This can cause
-/// segfaults if not validated beforehand.
-///
-/// Example:
-///     ccall!(self, foobar, arg1, arg2)
-///     Expands to: unsafe {((*self.internal.raw).foobar.unwrap())(arg1, arg2)}
-#[macro_export]
-macro_rules! ccall {
-    ($self:ident,$fn_name:ident) => {
-        unsafe {
-            ((*$self.internal.raw).$fn_name.unwrap())()
-        }
-    };
-    ($self:ident,$fn_name:ident, $($args:expr),*) => {
-        unsafe {
-            ((*$self.internal.raw).$fn_name.unwrap())($($args),*)
-        }
-    };
-}
-
-/// Macro to call const functions via cxx. Expects the self object to have the
-/// cxx object to be called at `self.internal_cxx`.
-///
-/// Example:
-///     cxxcall!(self, foobar, arg1, arg2)
-///     Expands to: self.internal_cxx.foobar(arg1, arg2)
-#[macro_export]
-macro_rules! cxxcall {
-    ($self:expr,$fn_name:ident) => {
-        $self.internal_cxx.$fn_name()
-    };
-    ($self:expr,$fn_name:ident, $($args:expr),*) => {
-        $self.internal_cxx.$fn_name($($args),*)
-    };
-}
-
-/// Macro to call mutable functions via cxx. Mutable functions are always
-/// required to be defined with `self: Pin<&mut Self>`. The self object must
-/// have the cxx object at `self.internal_cxx`.
-///
-/// Example:
-///     mutcxxcall!(self, foobar, arg1, arg2)
-///     Expands to: self.internal_cxx.pin_mut().foobar(arg1, arg2)
-#[macro_export]
-macro_rules! mutcxxcall {
-    ($self:expr,$fn_name:ident) => {
-        $self.internal_cxx.pin_mut().$fn_name()
-    };
-    ($self:expr,$fn_name:ident, $($args:expr),*) => {
-        $self.internal_cxx.pin_mut().$fn_name($($args),*)
-    };
-}
-
 #[no_mangle]
 extern "C" fn wake_lock_noop(_0: *const ::std::os::raw::c_char) -> ::std::os::raw::c_int {
     // The wakelock mechanism is not available on this platform,
