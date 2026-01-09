@@ -17,12 +17,12 @@
 #pragma once
 
 #include <bluetooth/types/address.h>
+#include <hardware/bluetooth_headset_interface.h>
 
 #include <memory>
 
-#include "btif/include/btif_hf.h"
-#include "include/hardware/bluetooth_headset_callbacks.h"
 #include "rust/cxx.h"
+#include "topshim/btif/btif_shim.h"
 
 namespace bluetooth {
 namespace topshim {
@@ -58,9 +58,9 @@ private:
   headset::Interface* intf_;
 };
 
-std::unique_ptr<HfpIntf> GetHfpProfile(const unsigned char* btif);
+std::unique_ptr<HfpIntf> GetHfpProfile(const BtIntf& intf);
 bool interop_insert_call_when_sco_start(RawAddress addr);
-bool interop_disable_hf_profile(const char* name);
+bool interop_disable_hf_profile(const ::rust::String& name);
 
 }  // namespace rust
 }  // namespace topshim

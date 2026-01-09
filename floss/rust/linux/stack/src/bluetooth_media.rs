@@ -15,11 +15,11 @@ use bt_topshim::profiles::avrcp::{
 use bt_topshim::profiles::csis::{
     BtCsisConnectionState, CsisClient, CsisClientCallbacks, CsisClientCallbacksDispatcher,
 };
-use bt_topshim::profiles::hfp::{interop_disable_hf_profile, interop_insert_call_when_sco_start};
 use bt_topshim::profiles::hfp::{
-    BthfAudioState, BthfConnectionState, CallHoldCommand, CallInfo, CallState, EscoCodingFormat,
-    Hfp, HfpCallbacks, HfpCallbacksDispatcher, HfpCodecBitId, HfpCodecFormat, HfpCodecId,
-    PhoneState, TelephonyDeviceStatus,
+    interop_disable_hf_profile, interop_insert_call_when_sco_start, BthfAudioState,
+    BthfConnectionState, CallHoldCommand, CallInfo, CallState, EscoCodingFormat, Hfp, HfpCallbacks,
+    HfpCallbacksDispatcher, HfpCodecBitId, HfpCodecFormat, HfpCodecId, PhoneState,
+    TelephonyDeviceStatus,
 };
 use bt_topshim::profiles::le_audio::{
     BtLeAudioConnectionState, BtLeAudioContentType, BtLeAudioDirection, BtLeAudioGroupNodeStatus,
@@ -48,8 +48,7 @@ use std::collections::{HashMap, HashSet};
 use std::convert::{TryFrom, TryInto};
 use std::fs::File;
 use std::io::Write;
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use tokio::sync::mpsc::Sender;
 use tokio::task::JoinHandle;
@@ -62,9 +61,8 @@ use crate::battery_provider_manager::{
 use crate::bluetooth::{Bluetooth, BluetoothDevice, IBluetooth};
 use crate::bluetooth_admin::BluetoothAdminPolicyHelper;
 use crate::callbacks::Callbacks;
-use crate::uuid;
 use crate::uuid::{Profile, UuidHelper};
-use crate::{make_message_dispatcher, APIMessage, BluetoothAPI, Message, RPCProxy};
+use crate::{make_message_dispatcher, uuid, APIMessage, BluetoothAPI, Message, RPCProxy};
 
 use num_derive::FromPrimitive;
 
@@ -520,7 +518,7 @@ impl BluetoothMedia {
         adapter: Arc<Mutex<Box<Bluetooth>>>,
         battery_provider_manager: Arc<Mutex<Box<BatteryProviderManager>>>,
     ) -> BluetoothMedia {
-        let a2dp = A2dp::new(&intf.lock().unwrap());
+        let a2dp = A2dp::new();
         let avrcp = Avrcp::new(&intf.lock().unwrap());
         let hfp = Hfp::new(&intf.lock().unwrap());
         let le_audio = LeAudioClient::new(&intf.lock().unwrap());

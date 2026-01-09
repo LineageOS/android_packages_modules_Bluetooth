@@ -40,9 +40,11 @@ pub mod ffi {
     unsafe extern "C++" {
         include!("topshim/csis/csis_shim.h");
 
+        type BtIntf = crate::btif::ffi::BtIntf;
+
         type CsisClientIntf;
 
-        unsafe fn GetCsisClientProfile(btif: *const u8) -> UniquePtr<CsisClientIntf>;
+        fn GetCsisClientProfile(btif: &BtIntf) -> UniquePtr<CsisClientIntf>;
 
         fn init(self: Pin<&mut CsisClientIntf>);
         fn connect(self: Pin<&mut CsisClientIntf>, addr: RawAddress);
@@ -151,9 +153,8 @@ impl ToggleableProfile for CsisClient {
 impl CsisClient {
     #[log_args]
     pub fn new(intf: &BluetoothInterface) -> CsisClient {
-        // SAFETY: `intf.as_raw_ptr()` is a valid pointer to a `BluetoothInterface`
         let csis_if: cxx::UniquePtr<ffi::CsisClientIntf> =
-            unsafe { ffi::GetCsisClientProfile(intf.as_raw_ptr()) };
+            ffi::GetCsisClientProfile(intf.as_btif());
 
         CsisClient { internal: csis_if, is_init: false, is_enabled: false }
     }

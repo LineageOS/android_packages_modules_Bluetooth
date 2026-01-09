@@ -189,11 +189,13 @@ pub mod ffi {
     unsafe extern "C++" {
         include!("topshim/hfp/hfp_shim.h");
 
+        type BtIntf = crate::btif::ffi::BtIntf;
+
         type HfpIntf;
 
-        unsafe fn GetHfpProfile(btif: *const u8) -> UniquePtr<HfpIntf>;
-        unsafe fn interop_insert_call_when_sco_start(bt_addr: RawAddress) -> bool;
-        unsafe fn interop_disable_hf_profile(name: *const c_char) -> bool;
+        fn GetHfpProfile(btif: &BtIntf) -> UniquePtr<HfpIntf>;
+        fn interop_insert_call_when_sco_start(bt_addr: RawAddress) -> bool;
+        fn interop_disable_hf_profile(name: &String) -> bool;
         fn init(self: Pin<&mut HfpIntf>) -> i32;
         fn connect(self: Pin<&mut HfpIntf>, bt_addr: RawAddress) -> u32;
         fn connect_audio(
@@ -263,14 +265,11 @@ pub mod ffi {
 }
 
 pub fn interop_insert_call_when_sco_start(bt_addr: RawAddress) -> bool {
-    //Call an unsafe function in c++. This is necessary for bridge C++ interop API with floss(rust).
-    unsafe { return ffi::interop_insert_call_when_sco_start(bt_addr) }
+    ffi::interop_insert_call_when_sco_start(bt_addr)
 }
 
 pub fn interop_disable_hf_profile(name: String) -> bool {
-    let c_name = std::ffi::CString::new(name).unwrap();
-    // Call an unsafe function in c++. This is necessary for bridge C++ interop API with floss(rust).
-    unsafe { return ffi::interop_disable_hf_profile(c_name.as_ptr()) }
+    ffi::interop_disable_hf_profile(&name)
 }
 
 pub type TelephonyDeviceStatus = ffi::TelephonyDeviceStatus;
@@ -443,10 +442,7 @@ impl ToggleableProfile for Hfp {
 impl Hfp {
     #[log_args]
     pub fn new(intf: &BluetoothInterface) -> Hfp {
-        let hfpif: cxx::UniquePtr<ffi::HfpIntf>;
-        unsafe {
-            hfpif = ffi::GetHfpProfile(intf.as_raw_ptr());
-        }
+        let hfpif: cxx::UniquePtr<ffi::HfpIntf> = ffi::GetHfpProfile(intf.as_btif());
 
         Hfp { internal: hfpif, _is_init: false, _is_enabled: false }
     }

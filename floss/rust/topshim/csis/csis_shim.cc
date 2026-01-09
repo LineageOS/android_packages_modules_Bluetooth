@@ -21,8 +21,6 @@
 #include <bluetooth/types/uuid.h>
 #include <hardware/bluetooth.h>
 
-#include <string>
-
 #include "src/profiles/csis.rs.h"
 
 namespace rusty = ::bluetooth::topshim::rust;
@@ -120,16 +118,14 @@ public:
   }
 };
 
-std::unique_ptr<CsisClientIntf> GetCsisClientProfile(const unsigned char* btif) {
+std::unique_ptr<CsisClientIntf> GetCsisClientProfile(const BtIntf& intf) {
   if (internal::g_csis_if) {
     std::abort();
   }
 
-  const bt_interface_t* btif_ = reinterpret_cast<const bt_interface_t*>(btif);
-
   auto csis_if = std::make_unique<CsisClientIntf>(
           const_cast<csis::CsisClientInterface*>(reinterpret_cast<const csis::CsisClientInterface*>(
-                  btif_->get_profile_interface("csis_client"))));
+                  intf.get_profile_interface(BT_PROFILE_CSIS_CLIENT_ID))));
 
   internal::g_csis_if = csis_if.get();
 

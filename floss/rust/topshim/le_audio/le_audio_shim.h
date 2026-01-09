@@ -17,12 +17,12 @@
 #pragma once
 
 #include <bluetooth/types/address.h>
+#include <hardware/bt_le_audio.h>
 
 #include <memory>
 
-#include "audio_hal_interface/le_audio_software_host.h"
-#include "include/hardware/bt_le_audio.h"
 #include "rust/cxx.h"
+#include "topshim/btif/btif_shim.h"
 
 namespace bluetooth {
 namespace topshim {
@@ -76,7 +76,7 @@ private:
   le_audio::LeAudioClientInterface* intf_;
 };
 
-std::unique_ptr<LeAudioClientIntf> GetLeAudioClientProfile(const unsigned char* btif);
+std::unique_ptr<LeAudioClientIntf> GetLeAudioClientProfile(const BtIntf& intf);
 
 }  // namespace rust
 }  // namespace topshim

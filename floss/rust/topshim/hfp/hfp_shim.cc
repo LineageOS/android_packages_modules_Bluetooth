@@ -18,11 +18,10 @@
 
 #include <bluetooth/log.h>
 #include <bluetooth/types/address.h>
+#include <common/strings.h>
+#include <device/include/interop.h>
+#include <hardware/bt_hf.h>
 
-#include "btif/include/btif_hf.h"
-#include "common/strings.h"
-#include "device/include/interop.h"
-#include "include/hardware/bt_hf.h"
 #include "src/profiles/hfp.rs.h"
 
 namespace rusty = ::bluetooth::topshim::rust;
@@ -368,15 +367,14 @@ void HfpIntf::debug_dump() { intf_->DebugDump(); }
 
 void HfpIntf::cleanup() {}
 
-std::unique_ptr<HfpIntf> GetHfpProfile(const unsigned char* btif) {
+std::unique_ptr<HfpIntf> GetHfpProfile(const BtIntf& intf) {
   if (internal::g_hfpif) {
     std::abort();
   }
 
-  const bt_interface_t* btif_ = reinterpret_cast<const bt_interface_t*>(btif);
-
-  auto hfpif = std::make_unique<HfpIntf>(const_cast<headset::Interface*>(
-          reinterpret_cast<const headset::Interface*>(btif_->get_profile_interface("handsfree"))));
+  auto hfpif = std::make_unique<HfpIntf>(
+          const_cast<headset::Interface*>(reinterpret_cast<const headset::Interface*>(
+                  intf.get_profile_interface(BT_PROFILE_HANDSFREE_ID))));
   internal::g_hfpif = hfpif.get();
 
   return hfpif;
@@ -386,8 +384,9 @@ bool interop_insert_call_when_sco_start(RawAddress addr) {
   return interop_match_addr(interop_feature_t::INTEROP_INSERT_CALL_WHEN_SCO_START, addr);
 }
 
-bool interop_disable_hf_profile(const char* name) {
-  return interop_match_name(interop_feature_t::INTEROP_DISABLE_HF_PROFILE, name);
+bool interop_disable_hf_profile(const ::rust::String& name) {
+  std::string c_name(name);
+  return interop_match_name(interop_feature_t::INTEROP_DISABLE_HF_PROFILE, c_name.c_str());
 }
 
 }  // namespace rust

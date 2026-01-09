@@ -17,12 +17,10 @@
 #include "topshim/btav_sink/btav_sink_shim.h"
 
 #include <bluetooth/types/address.h>
+#include <btif/include/btif_av.h>
 
 #include <memory>
 
-#include "btif/include/btif_av.h"
-#include "include/hardware/bluetooth.h"
-#include "rust/cxx.h"
 #include "src/profiles/a2dp.rs.h"
 
 namespace rusty = ::bluetooth::topshim::rust;
@@ -63,12 +61,10 @@ A2dpSinkIntf::~A2dpSinkIntf() {
   // TODO
 }
 
-std::unique_ptr<A2dpSinkIntf> GetA2dpSinkProfile(const unsigned char* btif) {
+std::unique_ptr<A2dpSinkIntf> GetA2dpSinkProfile() {
   if (internal::g_a2dp_sink_if) {
     std::abort();
   }
-
-  const bt_interface_t* btif_ = reinterpret_cast<const bt_interface_t*>(btif);
 
   auto a2dp_sink = std::make_unique<A2dpSinkIntf>();
   internal::g_a2dp_sink_if = a2dp_sink.get();
