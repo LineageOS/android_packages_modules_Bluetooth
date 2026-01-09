@@ -189,7 +189,7 @@ BtStatus btif_queue_connect_next(void) {
   if (connect_queue.empty()) {
     return BtifStatus(FAIL);
   }
-  if (!stack_manager_get_interface()->get_stack_is_running()) {
+  if (!stack_is_running()) {
     return BtifStatus(UNEXPECTED_STATE);
   }
 

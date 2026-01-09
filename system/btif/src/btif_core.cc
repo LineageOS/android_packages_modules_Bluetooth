@@ -96,18 +96,6 @@ using namespace bluetooth;
 static tBTA_SERVICE_MASK btif_enabled_services = 0;
 static uid_set_t* uid_set;
 
-/*******************************************************************************
- *
- * Function         btif_is_enabled
- *
- * Description      checks if main adapter is fully enabled
- *
- * Returns          1 if fully enabled, otherwise 0
- *
- ******************************************************************************/
-
-int btif_is_enabled(void) { return stack_manager_get_interface()->get_stack_is_running(); }
-
 void btif_init_ok() {
   btif_dm_load_ble_local_keys();
   btif_storage_migrate_services();
@@ -626,7 +614,7 @@ void btif_enable_service(tBTA_SERVICE_ID service_id) {
 
   log::verbose("current services:0x{:x}", btif_enabled_services);
 
-  if (btif_is_enabled()) {
+  if (stack_is_running()) {
     btif_dm_enable_service(service_id, true);
   }
 }
@@ -644,7 +632,7 @@ void btif_disable_service(tBTA_SERVICE_ID service_id) {
 
   log::verbose("Current Services:0x{:x}", btif_enabled_services);
 
-  if (btif_is_enabled()) {
+  if (stack_is_running()) {
     btif_dm_enable_service(service_id, false);
   }
 }

@@ -121,7 +121,7 @@ void BluetoothTest::SetUp() {
 }
 
 void BluetoothTest::TearDown() {
-  bluetoothInterface.cleanup();
+  bluetooth_cleanup();
   instance = nullptr;
 }
 

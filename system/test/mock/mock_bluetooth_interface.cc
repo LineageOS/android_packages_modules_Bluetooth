@@ -62,13 +62,6 @@ void invoke_link_quality_report_cb(uint64_t /* timestamp */, int /* report_id */
                                    int /* negative_acknowledgement_count */) {}
 void invoke_key_missing_cb(tBTA_DM_KEY_MISSING /* key_missing */) {}
 void invoke_encryption_change_cb(bt_encryption_change_evt /* bd_addr */) {}
-
-static void init_stack(bluetooth::core::CoreInterface* /* interface */) {}
-
-static void clean_up_stack() {}
-
-static bool get_stack_is_running() { return true; }
-
-static const stack_manager_t interface = {init_stack, clean_up_stack, get_stack_is_running};
-
-const stack_manager_t* stack_manager_get_interface() { return &interface; }
+void stack_init(bluetooth::core::CoreInterface* /* interface */) {}
+void stack_cleanup() {}
+bool stack_is_running() { return true; }
