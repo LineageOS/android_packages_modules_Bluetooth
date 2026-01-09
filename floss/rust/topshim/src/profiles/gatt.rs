@@ -161,7 +161,11 @@ pub mod ffi {
             conn_id: i32,
         ) -> u32;
         fn refresh(self: &GattClientIntf, client_if: i32, bd_addr: RawAddress) -> u32;
+
+        // cxxbridge hasn't yet support Option, thus we split the btif |search_service| API into 2.
         fn search_service(self: &GattClientIntf, conn_id: i32, filter_uuid: Uuid) -> u32;
+        fn search_service_all(self: &GattClientIntf, conn_id: i32) -> u32;
+
         fn btif_gattc_discover_service_by_uuid(self: &GattClientIntf, conn_id: i32, uuid: Uuid);
         fn read_characteristic(
             self: &GattClientIntf,
@@ -1471,7 +1475,11 @@ impl GattClient {
 
     #[log_args]
     pub fn search_service(&self, conn_id: i32, filter_uuid: Option<Uuid>) -> BtStatus {
-        self.internal.search_service(conn_id, filter_uuid.unwrap()).into()
+        if let Some(filter_uuid) = filter_uuid {
+            self.internal.search_service(conn_id, filter_uuid).into()
+        } else {
+            self.internal.search_service_all(conn_id).into()
+        }
     }
 
     #[log_args]
