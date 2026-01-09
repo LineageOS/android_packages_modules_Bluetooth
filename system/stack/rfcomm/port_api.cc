@@ -114,9 +114,9 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn, bool is_serv
         log::error(
                 "already at opened state {}, RFC_state={}, MCB_state={}, "
                 "bd_addr={}, scn={}, is_server={}, mtu={}, uuid=0x{:x}, dlci={}, p_mcb={}, port={}",
-                static_cast<int>(p_port->state), static_cast<int>(p_port->rfc.sm_cb.state),
-                p_port->rfc.p_mcb ? p_port->rfc.p_mcb->state : 0, bd_addr, scn, is_server, mtu,
-                uuid, dlci, std::format_ptr(p_mcb), p_port->handle);
+                static_cast<int>(p_port->state), static_cast<int>(p_port->sm_cb.state),
+                p_port->p_mcb ? p_port->p_mcb->state : 0, bd_addr, scn, is_server, mtu, uuid, dlci,
+                std::format_ptr(p_mcb), p_port->handle);
         *p_handle = p_port->handle;
         return PORT_ALREADY_OPENED;
       }
@@ -282,8 +282,7 @@ int RFCOMM_RemoveConnection(uint8_t handle) {
     return PORT_SUCCESS;
   }
 
-  const RawAddress bd_addr =
-          (p_port->rfc.p_mcb) ? (p_port->rfc.p_mcb->bd_addr) : (RawAddress::kEmpty);
+  const RawAddress bd_addr = (p_port->p_mcb) ? (p_port->p_mcb->bd_addr) : (RawAddress::kEmpty);
   BTM_LogHistory(kBtmLogTag, bd_addr, "Connection closed",
                  std::format("handle:{} scn:{} dlci:{} is_server:{}", handle, p_port->scn,
                              p_port->dlci, p_port->is_server));
@@ -320,8 +319,7 @@ int RFCOMM_RemoveServer(uint8_t handle) {
   }
   log::info("handle={}", handle);
 
-  const RawAddress bd_addr =
-          (p_port->rfc.p_mcb) ? (p_port->rfc.p_mcb->bd_addr) : (RawAddress::kEmpty);
+  const RawAddress bd_addr = (p_port->p_mcb) ? (p_port->p_mcb->bd_addr) : (RawAddress::kEmpty);
   BTM_LogHistory(kBtmLogTag, bd_addr, "Server stopped",
                  std::format("handle:{} scn:{} dlci:{} is_server:{}", handle, p_port->scn,
                              p_port->dlci, p_port->is_server));
@@ -444,21 +442,20 @@ int PORT_CheckConnection(uint8_t handle, RawAddress* bd_addr, uint16_t* p_lcid) 
     return PORT_BAD_HANDLE;
   }
   log::verbose("handle={}, in_use={}, port_state={}, p_mcb={}, peer_ready={}, rfc_state={}", handle,
-               p_port->in_use, p_port->state, std::format_ptr(p_port->rfc.p_mcb),
-               p_port->rfc.p_mcb ? p_port->rfc.p_mcb->peer_ready : -1, p_port->rfc.sm_cb.state);
+               p_port->in_use, p_port->state, std::format_ptr(p_port->p_mcb),
+               p_port->p_mcb ? p_port->p_mcb->peer_ready : -1, p_port->sm_cb.state);
 
   if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
     return PORT_NOT_OPENED;
   }
 
-  if (!p_port->rfc.p_mcb || !p_port->rfc.p_mcb->peer_ready ||
-      (p_port->rfc.sm_cb.state != RFC_STATE_OPENED)) {
+  if (!p_port->p_mcb || !p_port->p_mcb->peer_ready || (p_port->sm_cb.state != RFC_STATE_OPENED)) {
     return PORT_LINE_ERR;
   }
 
-  *bd_addr = p_port->rfc.p_mcb->bd_addr;
+  *bd_addr = p_port->p_mcb->bd_addr;
   if (p_lcid != nullptr) {
-    *p_lcid = p_port->rfc.p_mcb->lcid;
+    *p_lcid = p_port->p_mcb->lcid;
   }
 
   return PORT_SUCCESS;
@@ -466,7 +463,7 @@ int PORT_CheckConnection(uint8_t handle, RawAddress* bd_addr, uint16_t* p_lcid) 
 
 static const tPORT* get_port_from_mcb(const tRFC_MCB* multiplexer_cb) {
   for (tPORT& port : rfc_cb.port.port) {
-    if (port.rfc.p_mcb == multiplexer_cb) {
+    if (port.p_mcb == multiplexer_cb) {
       return &port;
     }
   }
@@ -508,9 +505,8 @@ bool PORT_IsCollisionDetected(RawAddress bd_addr) {
         log::info("RFC_MX_STATE_CONNECTED, port not found");
         return false;
       }
-      log::info("RFC_MX_STATE_CONNECTED, port found, state={}", p_port->rfc.sm_cb.state);
-      if (p_port->rfc.sm_cb.state > RFC_STATE_CLOSED &&
-          p_port->rfc.sm_cb.state < RFC_STATE_OPENED) {
+      log::info("RFC_MX_STATE_CONNECTED, port found, state={}", p_port->sm_cb.state);
+      if (p_port->sm_cb.state > RFC_STATE_CLOSED && p_port->sm_cb.state < RFC_STATE_OPENED) {
         // A port associated with this mux is in the process of being established
         return true;
       }
@@ -672,13 +668,13 @@ int PORT_FlowControl_MaxCredit(uint8_t handle, bool enable) {
     return PORT_NOT_OPENED;
   }
 
-  if (!p_port->rfc.p_mcb) {
+  if (!p_port->p_mcb) {
     return PORT_NOT_OPENED;
   }
 
   p_port->rx.user_fc = !enable;
 
-  if (p_port->rfc.p_mcb->flow == PORT_FC_CREDIT) {
+  if (p_port->p_mcb->flow == PORT_FC_CREDIT) {
     if (!p_port->rx.user_fc) {
       port_flow_control_peer(p_port, true, p_port->credit_rx);
     }
@@ -825,7 +821,7 @@ int PORT_ReadData(uint8_t handle, char* p_data, uint16_t max_len, uint16_t* p_le
  ******************************************************************************/
 static int port_write(tPORT* p_port, BT_HDR* p_buf) {
   // We should not allow to write data in to server port when connection is not opened
-  if (p_port->is_server && (p_port->rfc.sm_cb.state != RFC_STATE_OPENED)) {
+  if (p_port->is_server && (p_port->sm_cb.state != RFC_STATE_OPENED)) {
     osi_free(p_buf);
     return PORT_CLOSED;
   }
@@ -833,8 +829,8 @@ static int port_write(tPORT* p_port, BT_HDR* p_buf) {
   // Keep the data in pending queue if:
   // peer does not allow data, peer is not ready, port is not yet opened, or
   // initial port control command has not been sent
-  if (p_port->tx.peer_fc || !p_port->rfc.p_mcb || !p_port->rfc.p_mcb->peer_ready ||
-      (p_port->rfc.sm_cb.state != RFC_STATE_OPENED) ||
+  if (p_port->tx.peer_fc || !p_port->p_mcb || !p_port->p_mcb->peer_ready ||
+      (p_port->sm_cb.state != RFC_STATE_OPENED) ||
       ((p_port->port_ctrl & (PORT_CTRL_REQ_SENT | PORT_CTRL_IND_RECEIVED)) !=
        (PORT_CTRL_REQ_SENT | PORT_CTRL_IND_RECEIVED))) {
     if ((p_port->tx.queue_size > PORT_TX_CRITICAL_WM) ||
@@ -851,8 +847,8 @@ static int port_write(tPORT* p_port, BT_HDR* p_buf) {
     }
 
     log::verbose("Data is enqueued. flow disabled:{}, peer_ready:{}, state:{}, ctrl_state:{:x}",
-                 p_port->tx.peer_fc, p_port->rfc.p_mcb && p_port->rfc.p_mcb->peer_ready,
-                 p_port->rfc.sm_cb.state, p_port->port_ctrl);
+                 p_port->tx.peer_fc, p_port->p_mcb && p_port->p_mcb->peer_ready,
+                 p_port->sm_cb.state, p_port->port_ctrl);
 
     fixed_queue_enqueue(p_port->tx.queue, p_buf);
     p_port->tx.queue_size += p_buf->len;
@@ -860,7 +856,7 @@ static int port_write(tPORT* p_port, BT_HDR* p_buf) {
     return PORT_CMD_PENDING;
   } else {
     log::verbose("Data is being sent");
-    return RFCOMM_DataReq(p_port->rfc.p_mcb, p_port->dlci, p_buf);
+    return RFCOMM_DataReq(p_port->p_mcb, p_port->dlci, p_buf);
   }
 }
 
@@ -1189,36 +1185,36 @@ int PORT_GetChannelInfo(uint8_t handle, uint16_t* local_mtu, uint16_t* remote_mt
     return PORT_NOT_OPENED;
   }
 
-  if (p_port->rfc.p_mcb == nullptr || p_port->line_status) {
-    log::warn("PORT_LINE_ERR - p_port->rfc.p_mcb == nullptr:{} p_port->line_status:{}",
-              (p_port->rfc.p_mcb == nullptr) ? "T" : "F", p_port->line_status);
+  if (p_port->p_mcb == nullptr || p_port->line_status) {
+    log::warn("PORT_LINE_ERR - p_port->p_mcb == nullptr:{} p_port->line_status:{}",
+              (p_port->p_mcb == nullptr) ? "T" : "F", p_port->line_status);
     return PORT_LINE_ERR;
   }
 
   uint16_t rcid, ahandle, lmtu;
-  if (!stack::l2cap::get_interface().L2CA_GetRemoteChannelId(p_port->rfc.p_mcb->lcid, &rcid)) {
-    log::error("L2CA_GetRemoteChannelId failed, lcid:0x{:x}", p_port->rfc.p_mcb->lcid);
+  if (!stack::l2cap::get_interface().L2CA_GetRemoteChannelId(p_port->p_mcb->lcid, &rcid)) {
+    log::error("L2CA_GetRemoteChannelId failed, lcid:0x{:x}", p_port->p_mcb->lcid);
     return PORT_PEER_FAILED;
   }
 
-  if (!stack::l2cap::get_interface().L2CA_GetAclHandle(p_port->rfc.p_mcb->lcid, &ahandle)) {
-    log::error("L2CA_GetAclHandle failed, lcid:0x{:x}", p_port->rfc.p_mcb->lcid);
+  if (!stack::l2cap::get_interface().L2CA_GetAclHandle(p_port->p_mcb->lcid, &ahandle)) {
+    log::error("L2CA_GetAclHandle failed, lcid:0x{:x}", p_port->p_mcb->lcid);
     return PORT_PEER_FAILED;
   }
 
-  if (!stack::l2cap::get_interface().L2CA_GetLocalMtu(p_port->rfc.p_mcb->lcid, &lmtu)) {
-    log::error("L2CA_GetLocalMtu failed, lcid:0x{:x}", p_port->rfc.p_mcb->lcid);
+  if (!stack::l2cap::get_interface().L2CA_GetLocalMtu(p_port->p_mcb->lcid, &lmtu)) {
+    log::error("L2CA_GetLocalMtu failed, lcid:0x{:x}", p_port->p_mcb->lcid);
     return PORT_PEER_FAILED;
   }
   *local_mtu = lmtu;
-  *remote_mtu = p_port->rfc.p_mcb->peer_l2cap_mtu + RFCOMM_MIN_OFFSET + 1;
+  *remote_mtu = p_port->p_mcb->peer_l2cap_mtu + RFCOMM_MIN_OFFSET + 1;
   *local_credit = p_port->credit_rx;
   *remote_credit = p_port->credit_tx;
-  *local_cid = p_port->rfc.p_mcb->lcid;
+  *local_cid = p_port->p_mcb->lcid;
   *remote_cid = rcid;
   *dlci = p_port->dlci;
   *max_frame_size = p_port->mtu;
   *acl_handle = ahandle;
-  *mux_initiator = p_port->rfc.p_mcb->is_initiator;
+  *mux_initiator = p_port->p_mcb->is_initiator;
   return PORT_SUCCESS;
 }

@@ -38,15 +38,15 @@ using namespace android::bluetooth::rfcomm;
 
 static SocketConnectionSecurity toSecurity(uint16_t sec_mask);
 static PortResult toPortResult(tPORT_RESULT result);
-static RfcommPortState toPortState(tRFC_PORT_STATE state);
-static RfcommPortEvent toPortEvent(tRFC_PORT_EVENT event);
+static android::bluetooth::rfcomm::RfcommPortState toPortState(::RfcommPortState state);
+static android::bluetooth::rfcomm::RfcommPortEvent toPortEvent(::RfcommPortEvent event);
 
 void port_collect_attempt_metrics(tPORT* p_port) {
   bool is_server = p_port->is_server;
   bool sdp_initiated = (p_port->sdp_duration_ms > 0);
   // If we're calling this metrics function, SDP completed with no problems
   BtaStatus sdp_status = sdp_initiated ? BTA_STATUS_SUCCESS : BTA_STATUS_UNKNOWN;
-  RfcommPortSm sm_cb = p_port->rfc.sm_cb;
+  RfcommPortSm sm_cb = p_port->sm_cb;
   log::assert_that(sm_cb.state == RFC_STATE_CLOSED, "Assert failed: Port not closed");
   uint64_t open_duration_ms = (sm_cb.close_timestamp - sm_cb.open_timestamp) / 1000;
 
@@ -127,50 +127,50 @@ static PortResult toPortResult(tPORT_RESULT result) {
   return PortResult::PORT_RESULT_UNDEFINED;
 }
 
-static RfcommPortState toPortState(tRFC_PORT_STATE state) {
+static android::bluetooth::rfcomm::RfcommPortState toPortState(::RfcommPortState state) {
   switch (state) {
     case RFC_STATE_SABME_WAIT_UA:
-      return RfcommPortState::PORT_STATE_SABME_WAIT_UA;
+      return android::bluetooth::rfcomm::RfcommPortState::PORT_STATE_SABME_WAIT_UA;
     case RFC_STATE_ORIG_WAIT_SEC_CHECK:
-      return RfcommPortState::PORT_STATE_ORIG_WAIT_SEC_CHECK;
+      return android::bluetooth::rfcomm::RfcommPortState::PORT_STATE_ORIG_WAIT_SEC_CHECK;
     case RFC_STATE_TERM_WAIT_SEC_CHECK:
-      return RfcommPortState::PORT_STATE_TERM_WAIT_SEC_CHECK;
+      return android::bluetooth::rfcomm::RfcommPortState::PORT_STATE_TERM_WAIT_SEC_CHECK;
     case RFC_STATE_OPENED:
-      return RfcommPortState::PORT_STATE_OPENED;
+      return android::bluetooth::rfcomm::RfcommPortState::PORT_STATE_OPENED;
     case RFC_STATE_DISC_WAIT_UA:
-      return RfcommPortState::PORT_STATE_DISC_WAIT_UA;
+      return android::bluetooth::rfcomm::RfcommPortState::PORT_STATE_DISC_WAIT_UA;
     case RFC_STATE_CLOSED:
-      return RfcommPortState::PORT_STATE_CLOSED;
+      return android::bluetooth::rfcomm::RfcommPortState::PORT_STATE_CLOSED;
   }
-  return RfcommPortState::PORT_STATE_UNKNOWN;
+  return android::bluetooth::rfcomm::RfcommPortState::PORT_STATE_UNKNOWN;
 }
 
-static RfcommPortEvent toPortEvent(tRFC_PORT_EVENT event) {
+static android::bluetooth::rfcomm::RfcommPortEvent toPortEvent(::RfcommPortEvent event) {
   switch (event) {
     case RFC_PORT_EVENT_SABME:
-      return RfcommPortEvent::PORT_EVENT_SABME;
+      return android::bluetooth::rfcomm::RfcommPortEvent::PORT_EVENT_SABME;
     case RFC_PORT_EVENT_UA:
-      return RfcommPortEvent::PORT_EVENT_UA;
+      return android::bluetooth::rfcomm::RfcommPortEvent::PORT_EVENT_UA;
     case RFC_PORT_EVENT_DM:
-      return RfcommPortEvent::PORT_EVENT_DM;
+      return android::bluetooth::rfcomm::RfcommPortEvent::PORT_EVENT_DM;
     case RFC_PORT_EVENT_DISC:
-      return RfcommPortEvent::PORT_EVENT_DISC;
+      return android::bluetooth::rfcomm::RfcommPortEvent::PORT_EVENT_DISC;
     case RFC_PORT_EVENT_UIH:
-      return RfcommPortEvent::PORT_EVENT_UIH;
+      return android::bluetooth::rfcomm::RfcommPortEvent::PORT_EVENT_UIH;
     case RFC_PORT_EVENT_TIMEOUT:
-      return RfcommPortEvent::PORT_EVENT_TIMEOUT;
+      return android::bluetooth::rfcomm::RfcommPortEvent::PORT_EVENT_TIMEOUT;
     case RFC_PORT_EVENT_OPEN:
-      return RfcommPortEvent::PORT_EVENT_OPEN;
+      return android::bluetooth::rfcomm::RfcommPortEvent::PORT_EVENT_OPEN;
     case RFC_PORT_EVENT_ESTABLISH_RSP:
-      return RfcommPortEvent::PORT_EVENT_ESTABLISH_RSP;
+      return android::bluetooth::rfcomm::RfcommPortEvent::PORT_EVENT_ESTABLISH_RSP;
     case RFC_PORT_EVENT_CLOSE:
-      return RfcommPortEvent::PORT_EVENT_CLOSE;
+      return android::bluetooth::rfcomm::RfcommPortEvent::PORT_EVENT_CLOSE;
     case RFC_PORT_EVENT_CLEAR:
-      return RfcommPortEvent::PORT_EVENT_CLEAR;
+      return android::bluetooth::rfcomm::RfcommPortEvent::PORT_EVENT_CLEAR;
     case RFC_PORT_EVENT_DATA:
-      return RfcommPortEvent::PORT_EVENT_DATA;
+      return android::bluetooth::rfcomm::RfcommPortEvent::PORT_EVENT_DATA;
     case RFC_PORT_EVENT_SEC_COMPLETE:
-      return RfcommPortEvent::PORT_EVENT_SEC_COMPLETE;
+      return android::bluetooth::rfcomm::RfcommPortEvent::PORT_EVENT_SEC_COMPLETE;
   }
-  return RfcommPortEvent::PORT_EVENT_UNKNOWN;
+  return android::bluetooth::rfcomm::RfcommPortEvent::PORT_EVENT_UNKNOWN;
 }

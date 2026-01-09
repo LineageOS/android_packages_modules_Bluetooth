@@ -82,7 +82,7 @@ tPORT* port_allocate_port(uint8_t dlci, const RawAddress& bd_addr) {
       p_port->handle = port_index + static_cast<uint8_t>(1);
       // During the open set default state for the port connection
       port_set_defaults(p_port);
-      p_port->rfc.port_timer = alarm_new("rfcomm_port.port_timer");
+      p_port->port_timer = alarm_new("rfcomm_port.port_timer");
       p_port->dlci = dlci;
       p_port->bd_addr = bd_addr;
       rfc_cb.rfc.last_port_index = port_index;
@@ -199,7 +199,7 @@ void port_select_mtu(tPORT* p_port) {
  *
  ******************************************************************************/
 void port_release_port(tPORT* p_port) {
-  log::verbose("port_handle:{} state:{} keep_handle:{}", p_port->handle, p_port->rfc.sm_cb.state,
+  log::verbose("port_handle:{} state:{} keep_handle:{}", p_port->handle, p_port->sm_cb.state,
                p_port->keep_port_handle);
 
   mutex_global_lock();
@@ -215,7 +215,7 @@ void port_release_port(tPORT* p_port) {
   p_port->tx.queue_size = 0;
   mutex_global_unlock();
 
-  alarm_cancel(p_port->rfc.port_timer);
+  alarm_cancel(p_port->port_timer);
 
   p_port->state = PORT_CONNECTION_STATE_CLOSED;
   if (com_android_bluetooth_flags_mark_port_not_in_use_on_release()) {
@@ -223,16 +223,16 @@ void port_release_port(tPORT* p_port) {
     p_port->in_use = false;
   }
 
-  if (p_port->rfc.sm_cb.state == RFC_STATE_CLOSED) {
-    if (p_port->rfc.p_mcb) {
-      p_port->rfc.p_mcb->port_handles[p_port->dlci] = 0;
+  if (p_port->sm_cb.state == RFC_STATE_CLOSED) {
+    if (p_port->p_mcb) {
+      p_port->p_mcb->port_handles[p_port->dlci] = 0;
 
       /* If there are no more ports opened on this MCB release it */
-      rfc_check_mcb_active(p_port->rfc.p_mcb);
+      rfc_check_mcb_active(p_port->p_mcb);
     }
 
     rfc_port_timer_stop(p_port);
-    p_port->rfc.sm_cb = {};
+    p_port->sm_cb = {};
 
     mutex_global_lock();
     fixed_queue_free(p_port->tx.queue, nullptr);
@@ -258,7 +258,7 @@ void port_release_port(tPORT* p_port) {
       p_port->mtu = p_port->keep_mtu;
 
       p_port->state = PORT_CONNECTION_STATE_OPENING;
-      p_port->rfc.p_mcb = nullptr;
+      p_port->p_mcb = nullptr;
       if (p_port->is_server) {
         p_port->dlci &= 0xfe;
         log::info("p_port->dlci={}, p_port->handle={}", p_port->dlci, p_port->handle);
@@ -268,7 +268,7 @@ void port_release_port(tPORT* p_port) {
       p_port->bd_addr = RawAddress::kAny;
     } else {
       log::verbose("Clean-up port_handle:{}", p_port->handle);
-      alarm_free(p_port->rfc.port_timer);
+      alarm_free(p_port->port_timer);
       memset(p_port, 0, sizeof(tPORT));
     }
   }
@@ -339,7 +339,7 @@ tPORT* port_find_mcb_dlci_port(tRFC_MCB* p_mcb, uint8_t dlci) {
  ******************************************************************************/
 tPORT* port_find_dlci_port(uint8_t dlci) {
   for (tPORT& port : rfc_cb.port.port) {
-    if (port.in_use && (port.rfc.p_mcb == nullptr)) {
+    if (port.in_use && (port.p_mcb == nullptr)) {
       if (port.dlci == dlci) {
         return &port;
       } else if ((dlci & 0x01) && (port.dlci == (dlci - 1))) {
@@ -386,7 +386,7 @@ uint32_t port_flow_control_user(tPORT* p_port) {
   /* Flow control to the user can be caused by flow controlling by the peer */
   /* (FlowInd, or flow control by the peer RFCOMM (Fcon) or internally if */
   /* tx_queue is full */
-  bool fc = p_port->tx.peer_fc || !p_port->rfc.p_mcb || !p_port->rfc.p_mcb->peer_ready ||
+  bool fc = p_port->tx.peer_fc || !p_port->p_mcb || !p_port->p_mcb->peer_ready ||
             (p_port->tx.queue_size > PORT_TX_HIGH_WM) ||
             (fixed_queue_length(p_port->tx.queue) > PORT_TX_BUF_HIGH_WM);
 
@@ -461,12 +461,12 @@ uint32_t port_get_signal_changes(tPORT* p_port, uint8_t old_signals, uint8_t sig
  *
  ******************************************************************************/
 void port_flow_control_peer(tPORT* p_port, bool enable, uint16_t count) {
-  if (!p_port->rfc.p_mcb) {
+  if (!p_port->p_mcb) {
     return;
   }
 
   /* If using credit based flow control */
-  if (p_port->rfc.p_mcb->flow == PORT_FC_CREDIT) {
+  if (p_port->p_mcb->flow == PORT_FC_CREDIT) {
     /* if want to enable flow from peer */
     if (enable) {
       /* update rx credits */
@@ -481,7 +481,7 @@ void port_flow_control_peer(tPORT* p_port, bool enable, uint16_t count) {
       /* There might be a special case when we just adjusted rx_max */
       if ((p_port->credit_rx <= p_port->credit_rx_low) && !p_port->rx.user_fc &&
           (p_port->credit_rx_max > p_port->credit_rx)) {
-        rfc_send_credit(p_port->rfc.p_mcb, p_port->dlci,
+        rfc_send_credit(p_port->p_mcb, p_port->dlci,
                         (uint8_t)(p_port->credit_rx_max - p_port->credit_rx));
 
         p_port->credit_rx = p_port->credit_rx_max;
@@ -510,7 +510,7 @@ void port_flow_control_peer(tPORT* p_port, bool enable, uint16_t count) {
 
         /* If user did not force flow control allow traffic now */
         if (!p_port->rx.user_fc) {
-          RFCOMM_FlowReq(p_port->rfc.p_mcb, p_port->dlci, true);
+          RFCOMM_FlowReq(p_port->p_mcb, p_port->dlci, true);
         }
       }
     } else {
@@ -518,7 +518,7 @@ void port_flow_control_peer(tPORT* p_port, bool enable, uint16_t count) {
       /* if client registered data callback, just do what they want */
       if (p_port->p_data_callback || p_port->p_data_co_callback) {
         p_port->rx.peer_fc = true;
-        RFCOMM_FlowReq(p_port->rfc.p_mcb, p_port->dlci, false);
+        RFCOMM_FlowReq(p_port->p_mcb, p_port->dlci, false);
       } else if (((p_port->rx.queue_size > PORT_RX_HIGH_WM) ||
                   (fixed_queue_length(p_port->rx.queue) > PORT_RX_BUF_HIGH_WM)) &&
                  !p_port->rx.peer_fc) {
@@ -527,7 +527,7 @@ void port_flow_control_peer(tPORT* p_port, bool enable, uint16_t count) {
         log::verbose("PORT_DataInd Data reached HW. Sending FC set.");
 
         p_port->rx.peer_fc = true;
-        RFCOMM_FlowReq(p_port->rfc.p_mcb, p_port->dlci, false);
+        RFCOMM_FlowReq(p_port->p_mcb, p_port->dlci, false);
       }
     }
   }
