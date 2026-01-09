@@ -2701,7 +2701,7 @@ impl BluetoothMedia {
             warn!("Can't parse disabled_codecs");
             return false;
         };
-        if self.hfp.connect_audio(addr, sco_offload, disabled_codecs) != 0 {
+        if self.hfp.connect_audio(addr, sco_offload, disabled_codecs) != BtStatus::Success {
             warn!("SCO connect_audio status failed");
             return false;
         }

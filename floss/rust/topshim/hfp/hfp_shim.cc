@@ -23,6 +23,7 @@
 #include <hardware/bt_hf.h>
 
 #include "src/profiles/hfp.rs.h"
+#include "topshim/common/bt_status_helper.h"
 
 namespace rusty = ::bluetooth::topshim::rust;
 
@@ -284,48 +285,59 @@ private:
   headset::Interface* headset_;
 };
 
-int HfpIntf::init() { return intf_->Init(DBusHeadsetCallbacks::GetInstance(intf_), 1, false); }
+tBT_STATUS_LEGACY HfpIntf::init() {
+  return toLegacyStatus(intf_->Init(DBusHeadsetCallbacks::GetInstance(intf_), 1, false));
+}
 
-uint32_t HfpIntf::connect(RawAddress addr) { return intf_->Connect(addr); }
+tBT_STATUS_LEGACY HfpIntf::connect(RawAddress addr) { return toLegacyStatus(intf_->Connect(addr)); }
 
-int HfpIntf::connect_audio(RawAddress addr, bool sco_offload, int disabled_codecs) {
+tBT_STATUS_LEGACY HfpIntf::connect_audio(RawAddress addr, bool sco_offload, int disabled_codecs) {
   intf_->SetScoOffloadEnabled(sco_offload);
-  return intf_->ConnectAudio(addr, disabled_codecs);
+  return toLegacyStatus(intf_->ConnectAudio(addr, disabled_codecs));
 }
 
-int HfpIntf::set_active_device(RawAddress addr) { return intf_->SetActiveDevice(addr); }
-
-int HfpIntf::set_volume(int8_t volume, RawAddress addr) {
-  return intf_->VolumeControl(headset::bthf_volume_type_t::BTHF_VOLUME_TYPE_SPK, volume, addr);
+tBT_STATUS_LEGACY HfpIntf::set_active_device(RawAddress addr) {
+  return toLegacyStatus(intf_->SetActiveDevice(addr));
 }
 
-uint32_t HfpIntf::set_mic_volume(int8_t volume, RawAddress addr) {
-  return intf_->VolumeControl(headset::bthf_volume_type_t::BTHF_VOLUME_TYPE_MIC, volume, addr);
+tBT_STATUS_LEGACY HfpIntf::set_volume(int8_t volume, RawAddress addr) {
+  return toLegacyStatus(
+          intf_->VolumeControl(headset::bthf_volume_type_t::BTHF_VOLUME_TYPE_SPK, volume, addr));
 }
 
-uint32_t HfpIntf::disconnect(RawAddress addr) { return intf_->Disconnect(addr); }
+tBT_STATUS_LEGACY HfpIntf::set_mic_volume(int8_t volume, RawAddress addr) {
+  return toLegacyStatus(
+          intf_->VolumeControl(headset::bthf_volume_type_t::BTHF_VOLUME_TYPE_MIC, volume, addr));
+}
 
-int HfpIntf::disconnect_audio(RawAddress addr) { return intf_->DisconnectAudio(addr); }
+tBT_STATUS_LEGACY HfpIntf::disconnect(RawAddress addr) {
+  return toLegacyStatus(intf_->Disconnect(addr));
+}
 
-uint32_t HfpIntf::device_status_notification(TelephonyDeviceStatus status, RawAddress addr) {
-  return intf_->DeviceStatusNotification(
+tBT_STATUS_LEGACY HfpIntf::disconnect_audio(RawAddress addr) {
+  return toLegacyStatus(intf_->DisconnectAudio(addr));
+}
+
+tBT_STATUS_LEGACY HfpIntf::device_status_notification(TelephonyDeviceStatus status,
+                                                      RawAddress addr) {
+  return toLegacyStatus(intf_->DeviceStatusNotification(
           status.network_available ? headset::BTHF_NETWORK_STATE_AVAILABLE
                                    : headset::BTHF_NETWORK_STATE_NOT_AVAILABLE,
           status.roaming ? headset::BTHF_SERVICE_TYPE_ROAMING : headset::BTHF_SERVICE_TYPE_HOME,
-          status.signal_strength, status.battery_level, addr);
+          status.signal_strength, status.battery_level, addr));
 }
 
-uint32_t HfpIntf::indicator_query_response(TelephonyDeviceStatus device_status,
-                                           PhoneState phone_state, RawAddress addr) {
-  return intf_->CindResponse(device_status.network_available ? 1 : 0, phone_state.num_active,
-                             phone_state.num_held,
-                             topshim::rust::internal::from_rust_call_state(phone_state.state),
-                             device_status.signal_strength, device_status.roaming ? 1 : 0,
-                             device_status.battery_level, addr);
+tBT_STATUS_LEGACY HfpIntf::indicator_query_response(TelephonyDeviceStatus device_status,
+                                                    PhoneState phone_state, RawAddress addr) {
+  return toLegacyStatus(intf_->CindResponse(
+          device_status.network_available ? 1 : 0, phone_state.num_active, phone_state.num_held,
+          topshim::rust::internal::from_rust_call_state(phone_state.state),
+          device_status.signal_strength, device_status.roaming ? 1 : 0, device_status.battery_level,
+          addr));
 }
 
-uint32_t HfpIntf::current_calls_query_response(const ::rust::Vec<CallInfo>& call_list,
-                                               RawAddress addr) {
+tBT_STATUS_LEGACY HfpIntf::current_calls_query_response(const ::rust::Vec<CallInfo>& call_list,
+                                                        RawAddress addr) {
   for (const auto& c : call_list) {
     std::string number{c.number};
     intf_->ClccResponse(c.index,
@@ -338,32 +350,32 @@ uint32_t HfpIntf::current_calls_query_response(const ::rust::Vec<CallInfo>& call
   }
 
   // NULL termination (Completes response)
-  return intf_->ClccResponse(
+  return toLegacyStatus(intf_->ClccResponse(
           /*index=*/0,
           /*dir=*/(headset::bthf_call_direction_t)0,
           /*state=*/(headset::bthf_call_state_t)0,
           /*mode=*/(headset::bthf_call_mode_t)0,
           /*multi_party=*/(headset::bthf_call_mpty_type_t)0,
           /*number=*/"",
-          /*type=*/(headset::bthf_call_addrtype_t)0, addr);
+          /*type=*/(headset::bthf_call_addrtype_t)0, addr));
 }
 
-uint32_t HfpIntf::phone_state_change(PhoneState phone_state, const ::rust::String& number_rs,
-                                     RawAddress addr) {
+tBT_STATUS_LEGACY HfpIntf::phone_state_change(PhoneState phone_state,
+                                              const ::rust::String& number_rs, RawAddress addr) {
   std::string number{number_rs};
-  return intf_->PhoneStateChange(phone_state.num_active, phone_state.num_held,
-                                 topshim::rust::internal::from_rust_call_state(phone_state.state),
-                                 number.c_str(),
-                                 /*type=*/(headset::bthf_call_addrtype_t)0,
-                                 /*name=*/"", addr);
+  return toLegacyStatus(intf_->PhoneStateChange(
+          phone_state.num_active, phone_state.num_held,
+          topshim::rust::internal::from_rust_call_state(phone_state.state), number.c_str(),
+          /*type=*/(headset::bthf_call_addrtype_t)0,
+          /*name=*/"", addr));
 }
 
-uint32_t HfpIntf::simple_at_response(bool ok, RawAddress addr) {
-  return intf_->AtResponse(ok ? headset::BTHF_AT_RESPONSE_OK : headset::BTHF_AT_RESPONSE_ERROR, 0,
-                           addr);
+tBT_STATUS_LEGACY HfpIntf::simple_at_response(bool ok, RawAddress addr) {
+  return toLegacyStatus(intf_->AtResponse(
+          ok ? headset::BTHF_AT_RESPONSE_OK : headset::BTHF_AT_RESPONSE_ERROR, 0, addr));
 }
 
-void HfpIntf::debug_dump() { intf_->DebugDump(); }
+void HfpIntf::debug_dump() { toLegacyStatus(intf_->DebugDump()); }
 
 void HfpIntf::cleanup() {}
 
