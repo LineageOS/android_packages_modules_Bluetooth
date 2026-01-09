@@ -624,11 +624,9 @@ public class ScanController {
     @VisibleForTesting
     static boolean matchesFilters(
             ScanClient client, ScanResult scanResult, String originalAddress) {
-        if (Flags.rssiScanFilter()) {
-            ScanSettings settings = client.getSettings();
-            if (scanResult.getRssi() < settings.getRssiThreshold()) {
-                return false;
-            }
+        ScanSettings settings = client.getSettings();
+        if (scanResult.getRssi() < settings.getRssiThreshold()) {
+            return false;
         }
         if (!client.isFiltered()) {
             // TODO: Do we really wanna return true here?

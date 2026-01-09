@@ -1576,7 +1576,7 @@ package android.bluetooth.le {
     method public boolean getLegacy();
     method public int getPhy();
     method public long getReportDelayMillis();
-    method @FlaggedApi("com.android.bluetooth.flags.rssi_scan_filter") public int getRssiThreshold();
+    method public int getRssiThreshold();
     method public int getScanMode();
     method public int getScanResultType();
     method @FlaggedApi("com.android.bluetooth.flags.support_passive_scanning") public int getScanType();
@@ -1611,7 +1611,7 @@ package android.bluetooth.le {
     method public android.bluetooth.le.ScanSettings.Builder setNumOfMatches(int);
     method public android.bluetooth.le.ScanSettings.Builder setPhy(int);
     method public android.bluetooth.le.ScanSettings.Builder setReportDelay(long);
-    method @FlaggedApi("com.android.bluetooth.flags.rssi_scan_filter") @NonNull public android.bluetooth.le.ScanSettings.Builder setRssiThreshold(int);
+    method @NonNull public android.bluetooth.le.ScanSettings.Builder setRssiThreshold(int);
     method public android.bluetooth.le.ScanSettings.Builder setScanMode(int);
     method @FlaggedApi("com.android.bluetooth.flags.support_passive_scanning") @NonNull public android.bluetooth.le.ScanSettings.Builder setScanType(int);
   }
