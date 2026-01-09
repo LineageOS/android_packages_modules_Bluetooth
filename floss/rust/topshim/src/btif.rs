@@ -1183,6 +1183,7 @@ impl From<CxxBluetoothProperty> for BluetoothProperty {
     }
 }
 
+/// TODO(b/446827362): Consider to strongly tie the lifetime of the data and CxxBluetoothProperty.
 impl From<BluetoothProperty> for (Box<[u8]>, CxxBluetoothProperty) {
     fn from(prop: BluetoothProperty) -> Self {
         let dvec: Vec<u8> = vec![0; prop.get_len()];
@@ -1194,34 +1195,6 @@ impl From<BluetoothProperty> for (Box<[u8]>, CxxBluetoothProperty) {
         };
 
         (data, prop)
-    }
-}
-
-impl From<BluetoothProperty> for CxxBluetoothProperty {
-    fn from(prop: BluetoothProperty) -> Self {
-        match prop {
-            BluetoothProperty::ClassOfDevice(cod) => CxxBluetoothProperty {
-                type_: BtPropertyType::ClassOfDevice as u32,
-                len: std::mem::size_of::<u32>() as i32,
-                val: &cod as *const u32 as *mut std::os::raw::c_void,
-            },
-            BluetoothProperty::BdName(name) => {
-                let Ok(c_string) = std::ffi::CString::new(name) else {
-                    panic!("Failed to convert bd_name to c_string")
-                };
-                CxxBluetoothProperty {
-                    type_: BtPropertyType::BdName as u32,
-                    len: c_string.as_bytes().len() as i32,
-                    val: c_string.as_ptr() as *mut std::os::raw::c_void,
-                }
-            }
-            BluetoothProperty::AdapterDiscoverableTimeout(timeout) => CxxBluetoothProperty {
-                type_: BtPropertyType::AdapterDiscoverableTimeout as u32,
-                len: std::mem::size_of::<u32>() as i32,
-                val: &timeout as *const u32 as *mut std::os::raw::c_void,
-            },
-            _ => panic!("Unsupported BluetoothProperty {:?}", prop),
-        }
     }
 }
 
@@ -1753,7 +1726,8 @@ impl BluetoothInterface {
     }
 
     pub fn set_adapter_property(&self, prop: BluetoothProperty) -> i32 {
-        self.internal.set_adapter_property(prop.into())
+        let (_data, prop): (Box<[u8]>, CxxBluetoothProperty) = prop.into();
+        self.internal.set_adapter_property(prop)
     }
 
     pub fn set_scan_mode(&self, mode: BtScanMode) {
@@ -1769,7 +1743,8 @@ impl BluetoothInterface {
     }
 
     pub fn set_remote_device_property(&self, addr: RawAddress, prop: BluetoothProperty) -> i32 {
-        self.internal.set_remote_device_property(addr, prop.into())
+        let (_data, prop): (Box<[u8]>, CxxBluetoothProperty) = prop.into();
+        self.internal.set_remote_device_property(addr, prop)
     }
 
     pub fn get_remote_services(&self, addr: RawAddress, transport: BtTransport) -> i32 {
