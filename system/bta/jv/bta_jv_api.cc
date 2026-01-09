@@ -200,7 +200,7 @@ void BTA_JvCancelDiscovery(uint32_t rfcomm_slot_id) {
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvCreateRecordByUser(uint32_t rfcomm_slot_id) {
-  log::verbose("rfcomm_slot_id: {}", rfcomm_slot_id);
+  log::verbose("rfcomm_slot_id:{}", rfcomm_slot_id);
 
   do_in_main_thread(BindOnce(&bta_jv_create_record, rfcomm_slot_id));
   return tBTA_JV_STATUS::SUCCESS;
@@ -217,7 +217,7 @@ tBTA_JV_STATUS BTA_JvCreateRecordByUser(uint32_t rfcomm_slot_id) {
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvDeleteRecord(uint32_t handle) {
-  log::verbose("handle:{}", handle);
+  log::verbose("handle:0x{:x}", handle);
 
   do_in_main_thread(BindOnce(&bta_jv_delete_record, handle));
   return tBTA_JV_STATUS::SUCCESS;
@@ -240,7 +240,7 @@ void BTA_JvL2capConnect(tBTA_JV_CONN_TYPE conn_type, tBTA_SEC sec_mask,
                         uint16_t rx_mtu, std::unique_ptr<tL2CAP_CFG_INFO> cfg,
                         const RawAddress& peer_bd_addr, tBTA_JV_L2CAP_CBACK* p_cback,
                         uint32_t l2cap_socket_id) {
-  log::verbose("conn_type:{}, remote_psm:{}, peer_bd_addr:{}, l2cap_socket_id:{}",
+  log::verbose("conn_type:{}, remote_psm:0x{:x}, peer_bd_addr:{}, l2cap_socket_id:{}",
                bta_jv_conn_type_text(conn_type), remote_psm, peer_bd_addr, l2cap_socket_id);
   log::assert_that(p_cback != nullptr, "assert failed: p_cback != nullptr");
 
@@ -260,7 +260,7 @@ void BTA_JvL2capConnect(tBTA_JV_CONN_TYPE conn_type, tBTA_SEC sec_mask,
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvL2capClose(uint32_t handle) {
-  log::verbose("handle:{}", handle);
+  log::verbose("handle:0x{:x}", handle);
 
   if (handle >= BTA_JV_MAX_L2C_CONN || !bta_jv_cb.l2c_cb[handle].p_cback) {
     return tBTA_JV_STATUS::FAILURE;
@@ -288,8 +288,8 @@ void BTA_JvL2capStartServer(tBTA_JV_CONN_TYPE conn_type, tBTA_SEC sec_mask,
                             std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info, uint16_t local_psm,
                             uint16_t rx_mtu, std::unique_ptr<tL2CAP_CFG_INFO> cfg,
                             tBTA_JV_L2CAP_CBACK* p_cback, uint32_t l2cap_socket_id) {
-  log::verbose("conn_type:{}, local_psm:{}, l2cap_socket_id:{}", bta_jv_conn_type_text(conn_type),
-               local_psm, l2cap_socket_id);
+  log::verbose("conn_type:{}, local_psm:0x{:x}, l2cap_socket_id:{}",
+               bta_jv_conn_type_text(conn_type), local_psm, l2cap_socket_id);
   CHECK(p_cback);
 
   do_in_main_thread(BindOnce(&bta_jv_l2cap_start_server, conn_type, sec_mask, local_psm, rx_mtu,
@@ -327,9 +327,9 @@ tBTA_JV_STATUS BTA_JvL2capStopServer(uint16_t local_psm, uint32_t l2cap_socket_i
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvL2capRead(uint32_t handle, uint32_t req_id, uint8_t* p_data, uint16_t len) {
-  log::verbose("handle:{}, req_id:{}, len:{}", handle, req_id, len);
+  log::verbose("handle:0x{:x}, req_id:{}, len:{}", handle, req_id, len);
 
-  if (handle >= BTA_JV_MAX_L2C_CONN || !bta_jv_cb.l2c_cb[handle].p_cback) {
+  if (handle >= BTA_JV_MAX_L2C_CONN || bta_jv_cb.l2c_cb[handle].p_cback == nullptr) {
     return tBTA_JV_STATUS::FAILURE;
   }
 
@@ -363,7 +363,7 @@ tBTA_JV_STATUS BTA_JvL2capRead(uint32_t handle, uint32_t req_id, uint8_t* p_data
 tBTA_JV_STATUS BTA_JvL2capReady(uint32_t handle, uint32_t* p_data_size) {
   tBTA_JV_STATUS status = tBTA_JV_STATUS::FAILURE;
 
-  log::verbose("handle:{}", handle);
+  log::verbose("handle:0x{:x}", handle);
   if (p_data_size && handle < BTA_JV_MAX_L2C_CONN && bta_jv_cb.l2c_cb[handle].p_cback) {
     *p_data_size = 0;
     if (BT_PASS == GAP_GetRxQueueCnt((uint16_t)handle, p_data_size)) {
@@ -390,7 +390,7 @@ tBTA_JV_STATUS BTA_JvL2capReady(uint32_t handle, uint32_t* p_data_size) {
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id, BT_HDR* msg, uint32_t user_id) {
-  log::verbose("handle:{}, user_id:{}", handle, user_id);
+  log::verbose("handle:0x{:x}, user_id:{}", handle, user_id);
 
   if (handle >= BTA_JV_MAX_L2C_CONN || !bta_jv_cb.l2c_cb[handle].p_cback) {
     osi_free(msg);
@@ -448,7 +448,7 @@ tBTA_JV_STATUS BTA_JvRfcommClose(uint32_t handle, uint32_t rfcomm_slot_id) {
   uint32_t hi = ((handle & BTA_JV_RFC_HDL_MASK) & ~BTA_JV_RFCOMM_MASK) - 1;
   uint32_t si = BTA_JV_RFC_HDL_TO_SIDX(handle);
 
-  log::verbose("handle:{}, rfcomm_slot_id:{}", handle, rfcomm_slot_id);
+  log::verbose("handle:0x{:x}, rfcomm_slot_id:{}", handle, rfcomm_slot_id);
 
   if (hi >= BTA_JV_MAX_RFC_CONN || !bta_jv_cb.rfc_cb[hi].p_cback ||
       si >= BTA_JV_MAX_RFC_SR_SESSION || !bta_jv_cb.rfc_cb[hi].port_hdls[si]) {
@@ -508,7 +508,7 @@ tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, uint8_t local_scn, uin
  *
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvRfcommStopServer(uint32_t handle, uint32_t rfcomm_slot_id) {
-  log::verbose("handle:{}, rfcomm_slot_id:{}", handle, rfcomm_slot_id);
+  log::verbose("handle:0x{:x}, rfcomm_slot_id:{}", handle, rfcomm_slot_id);
 
   do_in_main_thread(BindOnce(&bta_jv_rfcomm_stop_server, handle, rfcomm_slot_id));
   return tBTA_JV_STATUS::SUCCESS;
@@ -551,8 +551,8 @@ tBTA_JV_STATUS BTA_JvRfcommWrite(uint32_t handle, uint32_t req_id) {
   uint32_t hi = ((handle & BTA_JV_RFC_HDL_MASK) & ~BTA_JV_RFCOMM_MASK) - 1;
   uint32_t si = BTA_JV_RFC_HDL_TO_SIDX(handle);
 
-  log::verbose("handle:{}, req_id:{}, hi:{}, si:{}", handle, req_id, hi, si);
-  if (hi >= BTA_JV_MAX_RFC_CONN || !bta_jv_cb.rfc_cb[hi].p_cback ||
+  log::verbose("handle:0x{:x}, req_id:{}, hi:{}, si:{}", handle, req_id, hi, si);
+  if (hi >= BTA_JV_MAX_RFC_CONN || bta_jv_cb.rfc_cb[hi].p_cback == nullptr ||
       si >= BTA_JV_MAX_RFC_SR_SESSION || !bta_jv_cb.rfc_cb[hi].port_hdls[si]) {
     return tBTA_JV_STATUS::FAILURE;
   }
@@ -590,7 +590,7 @@ tBTA_JV_STATUS BTA_JvRfcommWrite(uint32_t handle, uint32_t req_id) {
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvSetPmProfile(uint32_t handle, tBTA_JV_PM_ID app_id,
                                   tBTA_JV_CONN_STATE init_st) {
-  log::verbose("handle:{}, app_id:{}, init_st:{}", handle, app_id, handle);
+  log::verbose("handle:0x{:x}, app_id:{}, init_st:{}", handle, app_id, handle);
 
   do_in_main_thread(BindOnce(&bta_jv_set_pm_profile, handle, app_id, init_st));
   return tBTA_JV_STATUS::SUCCESS;
