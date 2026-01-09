@@ -15,6 +15,8 @@
  */
 #include "topshim/btif/btif_shim.h"
 
+#include <btcore/include/hal_util.h>
+
 #include "src/btif.rs.h"
 
 namespace rusty = ::bluetooth::topshim::rust;
@@ -156,8 +158,6 @@ bt_os_callouts_t bt_os_callouts = {
 };
 
 }  // namespace internal
-
-bt_property_type_t get_property_type(const bt_property_t& property) { return property.type; }
 
 ::rust::Slice<const uint8_t> get_property_bytes(const bt_property_t& property) {
   if (property.val == nullptr || property.len <= 0) {

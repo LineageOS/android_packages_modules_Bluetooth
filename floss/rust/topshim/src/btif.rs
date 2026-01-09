@@ -11,7 +11,6 @@ use std::convert::TryFrom;
 use std::fmt::{Debug, Display, Formatter, Result};
 use std::hash::{Hash, Hasher};
 use std::os::fd::RawFd;
-use std::os::raw::c_char;
 use std::sync::{Arc, Mutex};
 use std::vec::Vec;
 use std::{cmp, mem};
@@ -259,126 +258,27 @@ pub enum BtDeviceType {
     Dual,
 }
 
+/// This is part of the DBus API, so avoid making change on it.
 #[derive(Clone, Debug, Eq, Hash, FromPrimitive, ToPrimitive, PartialEq, PartialOrd)]
 #[repr(u32)]
 pub enum BtPropertyType {
-    BdName = 0x1,
-    BdAddr,
-    Uuids,
-    ClassOfDevice,
-    TypeOfDevice,
-    ServiceRecord,
-    Reserved07,
-    AdapterBondedDevices,
-    AdapterDiscoverableTimeout,
-    RemoteFriendlyName,
-    RemoteRssi,
-    RemoteVersionInfo,
-    LocalLeFeatures,
-    Reserved0E,
-    Reserved0F,
-    DynamicAudioBuffer,
-    RemoteIsCoordinatedSetMember,
-    Appearance,
-    VendorProductInfo,
-    Reserved14,
-    RemoteAshaCapability,
-    RemoteAshaTruncatedHiSyncId,
-    RemoteModelNum,
-    RemoteAddrType,
-    UuidsLe,
-    DiscoveryResultType,
-    UuidsFromExtendedInquiryResponse,
-    UuidsFromLeAdvertisingData,
-    Reserved20,
-    BredrPairingType,
-    LePairingType,
+    BdName = 0x01,
+    BdAddr = 0x02,
+    Uuids = 0x03,
+    ClassOfDevice = 0x04,
+    TypeOfDevice = 0x05,
+    AdapterBondedDevices = 0x08,
+    RemoteFriendlyName = 0x0A,
+    RemoteRssi = 0x0B,
+    LocalLeFeatures = 0x0D,
+    Appearance = 0x12,
+    VendorProductInfo = 0x13,
+    RemoteAddrType = 0x18,
     Unknown = 0xFE,
-    RemoteDeviceTimestamp = 0xFF,
 }
 
 #[gen_cxx_extern_trivial_tuple]
 struct CxxBtPropertyType(bindings::bt_property_type_t);
-
-impl From<CxxBtPropertyType> for BtPropertyType {
-    fn from(item: CxxBtPropertyType) -> Self {
-        match item.0 {
-            bindings::bt_property_type_t_BT_PROPERTY_BDNAME => BtPropertyType::BdName,
-            bindings::bt_property_type_t_BT_PROPERTY_BDADDR => BtPropertyType::BdAddr,
-            bindings::bt_property_type_t_BT_PROPERTY_UUIDS => BtPropertyType::Uuids,
-            bindings::bt_property_type_t_BT_PROPERTY_CLASS_OF_DEVICE => {
-                BtPropertyType::ClassOfDevice
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_TYPE_OF_DEVICE => BtPropertyType::TypeOfDevice,
-            bindings::bt_property_type_t_BT_PROPERTY_SERVICE_RECORD => {
-                BtPropertyType::ServiceRecord
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_RESERVED_07 => BtPropertyType::Reserved07,
-            bindings::bt_property_type_t_BT_PROPERTY_ADAPTER_BONDED_DEVICES => {
-                BtPropertyType::AdapterBondedDevices
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_ADAPTER_DISCOVERABLE_TIMEOUT => {
-                BtPropertyType::AdapterDiscoverableTimeout
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_REMOTE_FRIENDLY_NAME => {
-                BtPropertyType::RemoteFriendlyName
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_REMOTE_RSSI => BtPropertyType::RemoteRssi,
-            bindings::bt_property_type_t_BT_PROPERTY_REMOTE_VERSION_INFO => {
-                BtPropertyType::RemoteVersionInfo
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_LOCAL_LE_FEATURES => {
-                BtPropertyType::LocalLeFeatures
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_RESERVED_0E => BtPropertyType::Reserved0E,
-            bindings::bt_property_type_t_BT_PROPERTY_RESERVED_0F => BtPropertyType::Reserved0F,
-            bindings::bt_property_type_t_BT_PROPERTY_DYNAMIC_AUDIO_BUFFER => {
-                BtPropertyType::DynamicAudioBuffer
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_REMOTE_IS_COORDINATED_SET_MEMBER => {
-                BtPropertyType::RemoteIsCoordinatedSetMember
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_APPEARANCE => BtPropertyType::Appearance,
-            bindings::bt_property_type_t_BT_PROPERTY_VENDOR_PRODUCT_INFO => {
-                BtPropertyType::VendorProductInfo
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_RESERVED_0x14 => BtPropertyType::Reserved14,
-            bindings::bt_property_type_t_BT_PROPERTY_REMOTE_ASHA_CAPABILITY => {
-                BtPropertyType::RemoteAshaCapability
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID => {
-                BtPropertyType::RemoteAshaTruncatedHiSyncId
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_REMOTE_MODEL_NUM => {
-                BtPropertyType::RemoteModelNum
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_REMOTE_ADDR_TYPE => {
-                BtPropertyType::RemoteAddrType
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_UUIDS_LE => BtPropertyType::UuidsLe,
-            bindings::bt_property_type_t_BT_PROPERTY_DISCOVERY_RESULT_TYPE => {
-                BtPropertyType::DiscoveryResultType
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE => {
-                BtPropertyType::UuidsFromExtendedInquiryResponse
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA => {
-                BtPropertyType::UuidsFromLeAdvertisingData
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_RESERVED_0x20 => BtPropertyType::Reserved20,
-            bindings::bt_property_type_t_BT_PROPERTY_BREDR_PAIRING_TYPE => {
-                BtPropertyType::BredrPairingType
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_LE_PAIRING_TYPE => {
-                BtPropertyType::LePairingType
-            }
-            bindings::bt_property_type_t_BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP => {
-                BtPropertyType::RemoteDeviceTimestamp
-            }
-            _ => BtPropertyType::Unknown,
-        }
-    }
-}
 
 impl From<BtPropertyType> for CxxBtPropertyType {
     fn from(item: BtPropertyType) -> Self {
@@ -390,70 +290,22 @@ impl From<BtPropertyType> for CxxBtPropertyType {
                 bindings::bt_property_type_t_BT_PROPERTY_CLASS_OF_DEVICE
             }
             BtPropertyType::TypeOfDevice => bindings::bt_property_type_t_BT_PROPERTY_TYPE_OF_DEVICE,
-            BtPropertyType::ServiceRecord => {
-                bindings::bt_property_type_t_BT_PROPERTY_SERVICE_RECORD
-            }
-            BtPropertyType::Reserved07 => bindings::bt_property_type_t_BT_PROPERTY_RESERVED_07,
             BtPropertyType::AdapterBondedDevices => {
                 bindings::bt_property_type_t_BT_PROPERTY_ADAPTER_BONDED_DEVICES
-            }
-            BtPropertyType::AdapterDiscoverableTimeout => {
-                bindings::bt_property_type_t_BT_PROPERTY_ADAPTER_DISCOVERABLE_TIMEOUT
             }
             BtPropertyType::RemoteFriendlyName => {
                 bindings::bt_property_type_t_BT_PROPERTY_REMOTE_FRIENDLY_NAME
             }
             BtPropertyType::RemoteRssi => bindings::bt_property_type_t_BT_PROPERTY_REMOTE_RSSI,
-            BtPropertyType::RemoteVersionInfo => {
-                bindings::bt_property_type_t_BT_PROPERTY_REMOTE_VERSION_INFO
-            }
             BtPropertyType::LocalLeFeatures => {
                 bindings::bt_property_type_t_BT_PROPERTY_LOCAL_LE_FEATURES
-            }
-            BtPropertyType::Reserved0E => bindings::bt_property_type_t_BT_PROPERTY_RESERVED_0E,
-            BtPropertyType::Reserved0F => bindings::bt_property_type_t_BT_PROPERTY_RESERVED_0F,
-            BtPropertyType::DynamicAudioBuffer => {
-                bindings::bt_property_type_t_BT_PROPERTY_DYNAMIC_AUDIO_BUFFER
-            }
-            BtPropertyType::RemoteIsCoordinatedSetMember => {
-                bindings::bt_property_type_t_BT_PROPERTY_REMOTE_IS_COORDINATED_SET_MEMBER
             }
             BtPropertyType::Appearance => bindings::bt_property_type_t_BT_PROPERTY_APPEARANCE,
             BtPropertyType::VendorProductInfo => {
                 bindings::bt_property_type_t_BT_PROPERTY_VENDOR_PRODUCT_INFO
             }
-            BtPropertyType::Reserved14 => bindings::bt_property_type_t_BT_PROPERTY_RESERVED_0x14,
-            BtPropertyType::RemoteAshaCapability => {
-                bindings::bt_property_type_t_BT_PROPERTY_REMOTE_ASHA_CAPABILITY
-            }
-            BtPropertyType::RemoteAshaTruncatedHiSyncId => {
-                bindings::bt_property_type_t_BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID
-            }
-            BtPropertyType::RemoteModelNum => {
-                bindings::bt_property_type_t_BT_PROPERTY_REMOTE_MODEL_NUM
-            }
             BtPropertyType::RemoteAddrType => {
                 bindings::bt_property_type_t_BT_PROPERTY_REMOTE_ADDR_TYPE
-            }
-            BtPropertyType::UuidsLe => bindings::bt_property_type_t_BT_PROPERTY_UUIDS_LE,
-            BtPropertyType::DiscoveryResultType => {
-                bindings::bt_property_type_t_BT_PROPERTY_DISCOVERY_RESULT_TYPE
-            }
-            BtPropertyType::UuidsFromExtendedInquiryResponse => {
-                bindings::bt_property_type_t_BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE
-            }
-            BtPropertyType::UuidsFromLeAdvertisingData => {
-                bindings::bt_property_type_t_BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA
-            }
-            BtPropertyType::Reserved20 => bindings::bt_property_type_t_BT_PROPERTY_RESERVED_0x20,
-            BtPropertyType::BredrPairingType => {
-                bindings::bt_property_type_t_BT_PROPERTY_BREDR_PAIRING_TYPE
-            }
-            BtPropertyType::LePairingType => {
-                bindings::bt_property_type_t_BT_PROPERTY_LE_PAIRING_TYPE
-            }
-            BtPropertyType::RemoteDeviceTimestamp => {
-                bindings::bt_property_type_t_BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP
             }
             BtPropertyType::Unknown => panic!("Converting BtPropertyType::Unknown to CXX"),
         };
@@ -894,19 +746,13 @@ pub enum BluetoothProperty {
     Uuids(Vec<Uuid>),
     ClassOfDevice(u32),
     TypeOfDevice(BtDeviceType),
-    ServiceRecord(BtServiceRecord),
     AdapterBondedDevices(Vec<RawAddress>),
-    AdapterDiscoverableTimeout(u32),
     RemoteFriendlyName(String),
     RemoteRssi(i8),
-    RemoteVersionInfo(BtRemoteVersion),
     LocalLeFeatures(BtLocalLeFeatures),
-    DynamicAudioBuffer(),
-    RemoteIsCoordinatedSetMember(bool),
     Appearance(u16),
     VendorProductInfo(BtVendorProductInfo),
     RemoteAddrType(BtAddrType),
-    RemoteDeviceTimestamp(),
     Unknown,
 }
 
@@ -934,22 +780,12 @@ impl BluetoothProperty {
             BluetoothProperty::Uuids(_) => BtPropertyType::Uuids,
             BluetoothProperty::ClassOfDevice(_) => BtPropertyType::ClassOfDevice,
             BluetoothProperty::TypeOfDevice(_) => BtPropertyType::TypeOfDevice,
-            BluetoothProperty::ServiceRecord(_) => BtPropertyType::ServiceRecord,
             BluetoothProperty::AdapterBondedDevices(_) => BtPropertyType::AdapterBondedDevices,
-            BluetoothProperty::AdapterDiscoverableTimeout(_) => {
-                BtPropertyType::AdapterDiscoverableTimeout
-            }
             BluetoothProperty::RemoteFriendlyName(_) => BtPropertyType::RemoteFriendlyName,
             BluetoothProperty::RemoteRssi(_) => BtPropertyType::RemoteRssi,
-            BluetoothProperty::RemoteVersionInfo(_) => BtPropertyType::RemoteVersionInfo,
             BluetoothProperty::LocalLeFeatures(_) => BtPropertyType::LocalLeFeatures,
-            BluetoothProperty::DynamicAudioBuffer() => BtPropertyType::DynamicAudioBuffer,
-            BluetoothProperty::RemoteIsCoordinatedSetMember(_) => {
-                BtPropertyType::RemoteIsCoordinatedSetMember
-            }
             BluetoothProperty::Appearance(_) => BtPropertyType::Appearance,
             BluetoothProperty::VendorProductInfo(_) => BtPropertyType::VendorProductInfo,
-            BluetoothProperty::RemoteDeviceTimestamp() => BtPropertyType::RemoteDeviceTimestamp,
             BluetoothProperty::RemoteAddrType(_) => BtPropertyType::RemoteAddrType,
             BluetoothProperty::Unknown => BtPropertyType::Unknown,
         }
@@ -959,29 +795,7 @@ impl BluetoothProperty {
     fn get_len(&self) -> usize {
         match self {
             BluetoothProperty::BdName(name) => cmp::min(PROPERTY_NAME_MAX, name.len() + 1),
-            BluetoothProperty::BdAddr(addr) => addr.address.len(),
-            BluetoothProperty::Uuids(uulist) => uulist.len() * mem::size_of::<Uuid>(),
             BluetoothProperty::ClassOfDevice(_) => mem::size_of::<u32>(),
-            BluetoothProperty::TypeOfDevice(_) => mem::size_of::<BtDeviceType>(),
-            BluetoothProperty::ServiceRecord(rec) => {
-                mem::size_of::<BtServiceRecord>() + cmp::min(PROPERTY_NAME_MAX, rec.name.len() + 1)
-            }
-            BluetoothProperty::AdapterBondedDevices(devlist) => devlist.len() * TYPED_ADDR_LENGTH,
-            BluetoothProperty::AdapterDiscoverableTimeout(_) => mem::size_of::<u32>(),
-            BluetoothProperty::RemoteFriendlyName(name) => {
-                cmp::min(PROPERTY_NAME_MAX, name.len() + 1)
-            }
-            BluetoothProperty::RemoteRssi(_) => mem::size_of::<i8>(),
-            BluetoothProperty::RemoteVersionInfo(_) => mem::size_of::<BtRemoteVersion>(),
-            BluetoothProperty::LocalLeFeatures(_) => mem::size_of::<BtLocalLeFeatures>(),
-            BluetoothProperty::RemoteIsCoordinatedSetMember(_) => mem::size_of::<bool>(),
-            BluetoothProperty::Appearance(_) => mem::size_of::<u16>(),
-            BluetoothProperty::VendorProductInfo(_) => mem::size_of::<BtVendorProductInfo>(),
-            BluetoothProperty::RemoteAddrType(_) => mem::size_of::<BtAddrType>(),
-
-            // TODO(abps) - Figure out sizes for these
-            BluetoothProperty::DynamicAudioBuffer() => 0,
-            BluetoothProperty::RemoteDeviceTimestamp() => 0,
             _ => panic!("Converting unsupported BluetoothProperty {:?} to CXX", self),
         }
     }
@@ -998,99 +812,9 @@ impl BluetoothProperty {
                 data[0..copy_len].copy_from_slice(&name.as_bytes()[0..copy_len]);
                 data[copy_len] = 0;
             }
-            BluetoothProperty::BdAddr(addr) => {
-                data.copy_from_slice(&addr.address);
-            }
-            BluetoothProperty::Uuids(uulist) => {
-                for (idx, &uuid) in uulist.iter().enumerate() {
-                    let start = idx * mem::size_of::<Uuid>();
-                    let end = start + mem::size_of::<Uuid>();
-                    data[start..end].copy_from_slice(&uuid.uu);
-                }
-            }
             BluetoothProperty::ClassOfDevice(cod) => {
                 data.copy_from_slice(&cod.to_ne_bytes());
             }
-            BluetoothProperty::TypeOfDevice(tod) => {
-                data.copy_from_slice(&BtDeviceType::to_u32(tod).unwrap_or_default().to_ne_bytes());
-            }
-            BluetoothProperty::ServiceRecord(sr) => {
-                // Do an unsafe cast to binding:: type and assign the values
-                // The underlying memory location is provided by |data| which will
-                // have enough space because it uses get_len()
-                let record =
-                    unsafe { &mut *(data.as_mut_ptr() as *mut bindings::bt_service_record_t) };
-                record.uuid = sr.uuid;
-                record.channel = sr.channel;
-                let name_len = len - mem::size_of::<BtServiceRecord>() - 1;
-                record.name[0..name_len].copy_from_slice(
-                    &(sr.name.as_bytes().iter().map(|x| *x as c_char).collect::<Vec<c_char>>())
-                        [0..name_len],
-                );
-                record.name[name_len] = 0;
-            }
-            BluetoothProperty::AdapterBondedDevices(devlist) => {
-                for (idx, &dev) in devlist.iter().enumerate() {
-                    let start = idx * TYPED_ADDR_LENGTH;
-                    let end = start + mem::size_of::<RawAddress>();
-                    data[start..end].copy_from_slice(&dev.address);
-                    // 0 is public address. We never pass this prop from Rust to LibBluetooth so
-                    // this shouldn't matter for now.
-                    log::error!(
-                        "Converting BluetoothProperty::AdapterBondedDevices to bt_property_t"
-                    );
-                    data[end] = 0;
-                }
-            }
-            BluetoothProperty::AdapterDiscoverableTimeout(timeout) => {
-                data.copy_from_slice(&timeout.to_ne_bytes());
-            }
-            BluetoothProperty::RemoteFriendlyName(name) => {
-                let copy_len = len - 1;
-                data[0..copy_len].copy_from_slice(&name.as_bytes()[0..copy_len]);
-                data[copy_len] = 0;
-            }
-            BluetoothProperty::RemoteRssi(rssi) => {
-                data[0] = *rssi as u8;
-            }
-            BluetoothProperty::RemoteVersionInfo(rvi) => {
-                let ptr: *const BtRemoteVersion = rvi;
-                let slice = unsafe {
-                    std::slice::from_raw_parts(ptr as *mut u8, mem::size_of::<BtRemoteVersion>())
-                };
-                data.copy_from_slice(&slice);
-            }
-            BluetoothProperty::LocalLeFeatures(llf) => {
-                let ptr: *const BtLocalLeFeatures = llf;
-                let slice = unsafe {
-                    std::slice::from_raw_parts(ptr as *mut u8, mem::size_of::<BtLocalLeFeatures>())
-                };
-                data.copy_from_slice(&slice);
-            }
-            BluetoothProperty::RemoteIsCoordinatedSetMember(icsm) => {
-                data[0] = *icsm as u8;
-            }
-            BluetoothProperty::Appearance(appearance) => {
-                data.copy_from_slice(&appearance.to_ne_bytes());
-            }
-            BluetoothProperty::VendorProductInfo(vpi) => {
-                let ptr: *const BtVendorProductInfo = vpi;
-                let slice = unsafe {
-                    std::slice::from_raw_parts(
-                        ptr as *mut u8,
-                        mem::size_of::<BtVendorProductInfo>(),
-                    )
-                };
-                data.copy_from_slice(&slice);
-            }
-            BluetoothProperty::RemoteAddrType(addr_type) => {
-                data.copy_from_slice(
-                    &BtAddrType::to_u32(addr_type).unwrap_or_default().to_ne_bytes(),
-                );
-            }
-
-            BluetoothProperty::DynamicAudioBuffer() => (),
-            BluetoothProperty::RemoteDeviceTimestamp() => (),
             _ => panic!("Converting unsupported BluetoothProperty {:?} to CXX", self),
         };
 
@@ -1104,31 +828,35 @@ pub type CxxBluetoothProperty = bindings::bt_property_t;
 // TODO(abps) - Check that sizes are correct when given a BtProperty
 impl From<CxxBluetoothProperty> for BluetoothProperty {
     fn from(prop: CxxBluetoothProperty) -> Self {
-        let prop_type: BtPropertyType = ffi::get_property_type(&prop).into();
         let slice = ffi::get_property_bytes(&prop);
         let len = slice.len();
 
-        match prop_type {
-            BtPropertyType::BdName => BluetoothProperty::BdName(ascii_to_string(slice, len)),
-            BtPropertyType::BdAddr => {
+        match prop.type_ {
+            bindings::bt_property_type_t_BT_PROPERTY_BDNAME => {
+                BluetoothProperty::BdName(ascii_to_string(slice, len))
+            }
+            bindings::bt_property_type_t_BT_PROPERTY_BDADDR => {
                 BluetoothProperty::BdAddr(RawAddress::from_bytes(slice).unwrap_or_default())
             }
-            BtPropertyType::Uuids | BtPropertyType::UuidsLe => {
+            bindings::bt_property_type_t_BT_PROPERTY_UUIDS
+            | bindings::bt_property_type_t_BT_PROPERTY_UUIDS_LE => {
                 let count = len / mem::size_of::<Uuid>();
                 BluetoothProperty::Uuids(ptr_to_vec(prop.val as *const Uuid, count))
             }
-            BtPropertyType::ClassOfDevice => {
+            // TODO(b/445332302): Make use of this and remove EIR TARGET_FLOSS quirk
+            bindings::bt_property_type_t_BT_PROPERTY_UUIDS_FROM_EXTENDED_INQUIRY_RESPONSE
+            | bindings::bt_property_type_t_BT_PROPERTY_UUIDS_FROM_LE_ADVERTISING_DATA => {
+                BluetoothProperty::Unknown
+            }
+            bindings::bt_property_type_t_BT_PROPERTY_CLASS_OF_DEVICE => {
                 BluetoothProperty::ClassOfDevice(u32_from_bytes(slice))
             }
-            BtPropertyType::TypeOfDevice => BluetoothProperty::TypeOfDevice(
-                BtDeviceType::from_u32(u32_from_bytes(slice)).unwrap_or(BtDeviceType::Unknown),
-            ),
-            BtPropertyType::ServiceRecord => {
-                let v =
-                    unsafe { (prop.val as *const bindings::bt_service_record_t).read_unaligned() };
-                BluetoothProperty::ServiceRecord(BtServiceRecord::from(v))
+            bindings::bt_property_type_t_BT_PROPERTY_TYPE_OF_DEVICE => {
+                BluetoothProperty::TypeOfDevice(
+                    BtDeviceType::from_u32(u32_from_bytes(slice)).unwrap_or(BtDeviceType::Unknown),
+                )
             }
-            BtPropertyType::AdapterBondedDevices => {
+            bindings::bt_property_type_t_BT_PROPERTY_ADAPTER_BONDED_DEVICES => {
                 assert!(
                     len % TYPED_ADDR_LENGTH == 0,
                     "Invalid AdapterBondedDevices prop len: {}",
@@ -1149,35 +877,26 @@ impl From<CxxBluetoothProperty> for BluetoothProperty {
                         .collect(),
                 )
             }
-            BtPropertyType::AdapterDiscoverableTimeout => {
-                BluetoothProperty::AdapterDiscoverableTimeout(u32_from_bytes(slice))
-            }
-            BtPropertyType::RemoteFriendlyName => {
+            bindings::bt_property_type_t_BT_PROPERTY_REMOTE_FRIENDLY_NAME => {
                 BluetoothProperty::RemoteFriendlyName(ascii_to_string(slice, len))
             }
-            BtPropertyType::RemoteRssi => BluetoothProperty::RemoteRssi(slice[0] as i8),
-            BtPropertyType::RemoteVersionInfo => {
-                let v = unsafe { (prop.val as *const BtRemoteVersion).read_unaligned() };
-                BluetoothProperty::RemoteVersionInfo(v)
+            bindings::bt_property_type_t_BT_PROPERTY_REMOTE_RSSI => {
+                BluetoothProperty::RemoteRssi(slice[0] as i8)
             }
-            BtPropertyType::LocalLeFeatures => {
+            bindings::bt_property_type_t_BT_PROPERTY_LOCAL_LE_FEATURES => {
                 let v = unsafe { (prop.val as *const BtLocalLeFeatures).read_unaligned() };
                 BluetoothProperty::LocalLeFeatures(v)
             }
-            BtPropertyType::RemoteIsCoordinatedSetMember => {
-                BluetoothProperty::RemoteIsCoordinatedSetMember(slice[0] != 0)
+            bindings::bt_property_type_t_BT_PROPERTY_APPEARANCE => {
+                BluetoothProperty::Appearance(u16_from_bytes(slice))
             }
-            BtPropertyType::Appearance => BluetoothProperty::Appearance(u16_from_bytes(slice)),
-            BtPropertyType::VendorProductInfo => {
+            bindings::bt_property_type_t_BT_PROPERTY_VENDOR_PRODUCT_INFO => {
                 let v = unsafe { (prop.val as *const BtVendorProductInfo).read_unaligned() };
                 BluetoothProperty::VendorProductInfo(BtVendorProductInfo::from(v))
             }
-            BtPropertyType::RemoteAddrType => {
+            bindings::bt_property_type_t_BT_PROPERTY_REMOTE_ADDR_TYPE => {
                 BluetoothProperty::RemoteAddrType(BtAddrType::from(CxxBtAddrType(slice[0])))
             }
-            // TODO(abps) - Figure out if these values should actually have contents
-            BtPropertyType::DynamicAudioBuffer => BluetoothProperty::DynamicAudioBuffer(),
-            BtPropertyType::RemoteDeviceTimestamp => BluetoothProperty::RemoteDeviceTimestamp(),
             _ => BluetoothProperty::Unknown,
         }
     }
@@ -1470,7 +1189,6 @@ pub(crate) mod ffi {
         #[cxx_name = "bt_oob_data_s"]
         type OobData = super::OobData;
 
-        fn get_property_type(prop: &BluetoothProperty) -> BtPropertyType;
         fn get_property_bytes(prop: &BluetoothProperty) -> &[u8];
 
         type BtIntf;

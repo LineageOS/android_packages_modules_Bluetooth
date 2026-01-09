@@ -21,7 +21,6 @@
 
 #include <memory>
 
-#include "btcore/include/hal_util.h"
 #include "rust/cxx.h"
 
 namespace bluetooth {
@@ -29,7 +28,6 @@ namespace topshim {
 namespace rust {
 
 // BluetoothProperty helper functions
-bt_property_type_t get_property_type(const bt_property_t& property);
 ::rust::Slice<const uint8_t> get_property_bytes(const bt_property_t& property);
 
 // C++ Bluetooth Interface that matches the Rust BTIF FFI defined in /topshim/src/btif.rs
