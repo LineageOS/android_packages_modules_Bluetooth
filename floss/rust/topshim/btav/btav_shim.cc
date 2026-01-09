@@ -271,10 +271,11 @@ static bool mandatory_codec_preferred_cb(const RawAddress& addr) {
   rusty::mandatory_codec_preferred_callback(addr);
   return false;
 }
+static void audio_delay_reported_cb(const RawAddress& /* bd_addr */, int /* delay */) {}
 
 btav_source_callbacks_t g_callbacks = {
-        sizeof(btav_source_callbacks_t), connection_state_cb, audio_state_cb, audio_config_cb,
-        mandatory_codec_preferred_cb,
+        sizeof(btav_source_callbacks_t), connection_state_cb,     audio_state_cb, audio_config_cb,
+        mandatory_codec_preferred_cb,    audio_delay_reported_cb,
 };
 }  // namespace internal
 
