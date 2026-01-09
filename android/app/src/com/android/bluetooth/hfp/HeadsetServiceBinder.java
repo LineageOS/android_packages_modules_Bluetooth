@@ -311,4 +311,13 @@ class HeadsetServiceBinder extends IBluetoothHeadset.Stub implements IProfileSer
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
         return service.isInbandRingingEnabled();
     }
+
+    @Override
+    public int getCodecType(BluetoothDevice device, AttributionSource source) {
+        HeadsetService service = getService(source);
+        if (service == null) {
+            return BluetoothHeadset.CODEC_TYPE_UNSUPPORTED;
+        }
+        return service.getCodecType(device);
+    }
 }

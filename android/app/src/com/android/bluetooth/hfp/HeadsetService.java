@@ -2598,6 +2598,23 @@ public class HeadsetService extends ConnectableProfile {
         }
     }
 
+    /**
+     * Get the name of the device's headset codec. The codec name of this device can only be
+     * obtained after being hfp connected and the codec negotiation process is completed. Returns
+     * {@link BluetoothHeadset#CODEC_TYPE_UNSUPPORTED} if the device is not connected or an error
+     * occurs.
+     */
+    public int getCodecType(BluetoothDevice device) {
+        synchronized (mStateMachines) {
+            HeadsetStateMachine stateMachine = mStateMachines.get(device);
+            if (stateMachine == null) {
+                Log.w(TAG, "getCodecType(), " + device + " does not have a state machine");
+                return BluetoothHeadset.CODEC_TYPE_UNSUPPORTED;
+            }
+            return stateMachine.getCodecType();
+        }
+    }
+
     /** Enable SWB Codec. */
     void enableSwbCodec(int swbCodec, boolean enable, BluetoothDevice device) {
         logD("enableSwbCodec: swbCodec: " + swbCodec + " enable: " + enable + " device: " + device);

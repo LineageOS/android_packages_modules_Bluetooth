@@ -2801,6 +2801,32 @@ class HeadsetStateMachine extends StateMachine {
         }
     }
 
+    /**
+     * Get the codec type of the connected device. The codec type can only be obtained after being
+     * hfp connected and the codec negotiation process is completed.
+     */
+    public int getCodecType() {
+        if (mCurrentState == null) {
+            return BluetoothHeadset.CODEC_TYPE_UNSUPPORTED;
+        }
+        if (mCurrentState == mConnected
+                || mCurrentState == mAudioConnecting
+                || mCurrentState == mAudioDisconnecting
+                || mCurrentState == mAudioOn) {
+
+            if (mHasSwbLc3Enabled) {
+                return BluetoothHeadset.CODEC_TYPE_LC3_SWB;
+            } else if (mHasWbsEnabled) {
+                return BluetoothHeadset.CODEC_TYPE_MSBC;
+            } else if (mHasSwbAptXEnabled) {
+                return BluetoothHeadset.CODEC_TYPE_VENDOR_SPECIFIC;
+            } else {
+                return BluetoothHeadset.CODEC_TYPE_CVSD;
+            }
+        }
+        return BluetoothHeadset.CODEC_TYPE_UNSUPPORTED;
+    }
+
     // Convert AG status codes defined in `bta/include/bta_ag_api.h` to BluetoothStatusCodes values.
     // TODO: migrate the values to AIDL constants to avoid hardcoded values.
     private static int reasonToBluetoothStatusCode(int reason) {

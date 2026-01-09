@@ -870,6 +870,7 @@ package android.bluetooth {
   }
 
   public final class BluetoothHeadset implements android.bluetooth.BluetoothProfile {
+    method @FlaggedApi("com.android.bluetooth.flags.hfp_get_codec_api") @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public int getCodecType(@NonNull android.bluetooth.BluetoothDevice);
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public java.util.List<android.bluetooth.BluetoothDevice> getConnectedDevices();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public int getConnectionState(android.bluetooth.BluetoothDevice);
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public java.util.List<android.bluetooth.BluetoothDevice> getDevicesMatchingConnectionStates(int[]);
@@ -887,6 +888,11 @@ package android.bluetooth {
     field public static final int AT_CMD_TYPE_READ = 0; // 0x0
     field public static final int AT_CMD_TYPE_SET = 2; // 0x2
     field public static final int AT_CMD_TYPE_TEST = 1; // 0x1
+    field @FlaggedApi("com.android.bluetooth.flags.hfp_get_codec_api") public static final int CODEC_TYPE_CVSD = 1; // 0x1
+    field @FlaggedApi("com.android.bluetooth.flags.hfp_get_codec_api") public static final int CODEC_TYPE_LC3_SWB = 3; // 0x3
+    field @FlaggedApi("com.android.bluetooth.flags.hfp_get_codec_api") public static final int CODEC_TYPE_MSBC = 2; // 0x2
+    field @FlaggedApi("com.android.bluetooth.flags.hfp_get_codec_api") public static final int CODEC_TYPE_UNSUPPORTED = -1; // 0xffffffff
+    field @FlaggedApi("com.android.bluetooth.flags.hfp_get_codec_api") public static final int CODEC_TYPE_VENDOR_SPECIFIC = 0; // 0x0
     field @FlaggedApi("com.android.bluetooth.flags.a2dp_disconnect_reason_api") public static final String EXTRA_DISCONNECTED_REASON = "android.bluetooth.headset.extra.DISCONNECTED_REASON";
     field public static final String EXTRA_VENDOR_SPECIFIC_HEADSET_EVENT_ARGS = "android.bluetooth.headset.extra.VENDOR_SPECIFIC_HEADSET_EVENT_ARGS";
     field public static final String EXTRA_VENDOR_SPECIFIC_HEADSET_EVENT_CMD = "android.bluetooth.headset.extra.VENDOR_SPECIFIC_HEADSET_EVENT_CMD";
